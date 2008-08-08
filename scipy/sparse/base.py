@@ -216,7 +216,7 @@ class spmatrix(object):
     #   and operations return in csr format
     #  thus, a new sparse matrix format just needs to define
     #  a tocsr method
-    
+
     def multiply(self, other):
         """Point-wise multiplication by another matrix
         """
@@ -237,7 +237,7 @@ class spmatrix(object):
 
     def __rsub__(self, other):  # other - self
         return self.tocsr().__rsub__(other)
-    
+
     # old __mul__ interfaces
     def matvec(self, other):
         return self * other
@@ -256,11 +256,11 @@ class spmatrix(object):
         """
 
         M,N = self.shape
-        
+
         if isscalarlike(other):
             # scalar value
             return self._mul_scalar(other)
-       
+
         if issparse(other):
             return self._mul_sparse_matrix(other)
 
@@ -284,7 +284,7 @@ class spmatrix(object):
             if other.ndim == 2 and other.shape[1] == 1:
                 # If 'other' was an (nx1) column vector, reshape the result
                 result = result.reshape(-1,1)
-            
+
             return result
 
         elif len(other.shape) == 2:
@@ -293,7 +293,7 @@ class spmatrix(object):
 
             if other.shape[0] != self.shape[1]:
                 raise ValueError('dimension mismatch')
-        
+
             result = self._mul_dense_matrix(asarray(other))
 
             if isinstance(other, matrix):
@@ -414,7 +414,7 @@ class spmatrix(object):
 
     def nonzero(self):
         """nonzero indices
-        
+
         Returns a tuple of arrays (row,col) containing the indices
         of the non-zero elements of the matrix.
 
@@ -430,7 +430,7 @@ class spmatrix(object):
 
         # convert to COOrdinate format
         A = self.tocoo()
-        nz_mask = A.data != 0 
+        nz_mask = A.data != 0
         return (A.row[nz_mask],A.col[nz_mask])
 
 

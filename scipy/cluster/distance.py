@@ -179,7 +179,7 @@ def jaccard(u, v):
     u = np.asarray(u)
     v = np.asarray(v)
     return (np.double(np.bitwise_and((u != v),
-                     np.bitwise_or(u != 0, v != 0)).sum()) 
+                     np.bitwise_or(u != 0, v != 0)).sum())
             /  np.double(np.bitwise_or(u != 0, v != 0).sum()))
 
 def kulsinski(u, v):
@@ -281,7 +281,7 @@ def canberra(u, v):
 def _nbool_correspond_all(u, v):
     if u.dtype != v.dtype:
         raise TypeError("Arrays being compared must be of the same data type.")
-    
+
     if u.dtype == np.int or u.dtype == np.float_ or u.dtype == np.double:
         not_u = 1.0 - u
         not_v = 1.0 - v

@@ -61,7 +61,7 @@ def spdiags(data, diags, m, n, format=None):
 
 def identity(n, dtype='d', format=None):
     """Identity matrix in sparse format
-    
+
     Returns an identity matrix with shape (n,n) using a given
     sparse format and dtype.
 

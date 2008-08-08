@@ -11,7 +11,7 @@ from scipy.interpolate import splrep, splev
 class CheckKrogh(TestCase):
     def setUp(self):
         self.true_poly = scipy.poly1d([-2,3,1,5,-4])
-        self.test_xs = np.linspace(-1,1,100) 
+        self.test_xs = np.linspace(-1,1,100)
         self.xs = np.linspace(-1,1,5)
         self.ys = self.true_poly(self.xs)
 
@@ -122,7 +122,7 @@ class CheckTaylor(TestCase):
 class CheckBarycentric(TestCase):
     def setUp(self):
         self.true_poly = scipy.poly1d([-2,3,1,5,-4])
-        self.test_xs = np.linspace(-1,1,100) 
+        self.test_xs = np.linspace(-1,1,100)
         self.xs = np.linspace(-1,1,5)
         self.ys = self.true_poly(self.xs)
 
@@ -203,7 +203,7 @@ class CheckPiecewise(TestCase):
         xs = [0, 1, 2]
         ys = [[[0,1]],[[1,0],[-1,-1]],[[2,1]]]
         P = PiecewisePolynomial(xs,ys)
-        Pi = [PiecewisePolynomial(xs,[[yd[i] for yd in y] for y in ys]) 
+        Pi = [PiecewisePolynomial(xs,[[yd[i] for yd in y] for y in ys])
             for i in xrange(len(ys[0][0]))]
         test_xs = np.linspace(-1,3,100)
         assert_almost_equal(P(test_xs),

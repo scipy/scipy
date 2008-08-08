@@ -116,20 +116,20 @@ class TestSmoothBivariateSpline(TestCase):
         x = [1,1,1,2,2,2,4,4,4]
         y = [1,2,3,1,2,3,1,2,3]
         z = array([0,7,8,3,4,7,1,3,4])
- 
+
         lut = SmoothBivariateSpline(x,y,z,kx=1,ky=1,s=0)
         tx = [1,2,4]
         ty = [1,2,3]
- 
+
         tz = lut(tx, ty)
         trpz = .25*(diff(tx)[:,None]*diff(ty)[None,:]
                     *(tz[:-1,:-1]+tz[1:,:-1]+tz[:-1,1:]+tz[1:,1:])).sum()
         assert_almost_equal(lut.integral(tx[0], tx[-1], ty[0], ty[-1]), trpz)
- 
+
         lut2 = SmoothBivariateSpline(x,y,z,kx=2,ky=2,s=0)
         assert_almost_equal(lut2.integral(tx[0], tx[-1], ty[0], ty[-1]), trpz,
                             decimal=0) # the quadratures give 23.75 and 23.85
-        
+
         tz = lut(tx[:-1], ty[:-1])
         trpz = .25*(diff(tx[:-1])[:,None]*diff(ty[:-1])[None,:]
                     *(tz[:-1,:-1]+tz[1:,:-1]+tz[:-1,1:]+tz[1:,1:])).sum()

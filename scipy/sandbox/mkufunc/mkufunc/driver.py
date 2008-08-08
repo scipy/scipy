@@ -74,7 +74,7 @@ class ProfInstrument(object):
         env = os.environ.copy()
         env['_INSTRUMENT_COUNTERS'] = str(self.datafile)
         subprocess.call("'%s' %s" % (exe, args), env=env, shell=True)
-        
+
     def after(self):
         # xxx
         os._exit(0)
@@ -100,7 +100,7 @@ class TranslationDriver(SimpleTaskEngine):
 
         if setopts is not None:
             self.config.set(**setopts)
-        
+
         self.exe_name = exe_name
         self.extmod_name = extmod_name
 
@@ -112,7 +112,7 @@ class TranslationDriver(SimpleTaskEngine):
             default_goal, = self.backend_select_goals([default_goal])
             if default_goal in self._maybe_skip():
                 default_goal = None
-        
+
         self.default_goal = default_goal
         self.extra_goals = []
         self.exposed = []
@@ -176,7 +176,7 @@ class TranslationDriver(SimpleTaskEngine):
                     new_goal = cand
                     break
             else:
-                raise Exception, "cannot infer complete goal from: %r" % goal 
+                raise Exception, "cannot infer complete goal from: %r" % goal
             l.append(new_goal)
         return l
 
@@ -186,8 +186,8 @@ class TranslationDriver(SimpleTaskEngine):
     def _maybe_skip(self):
         maybe_skip = []
         if self._disabled:
-             for goal in  self.backend_select_goals(self._disabled):
-                 maybe_skip.extend(self._depending_on_closure(goal))
+            for goal in  self.backend_select_goals(self._disabled):
+                maybe_skip.extend(self._depending_on_closure(goal))
         return dict.fromkeys(maybe_skip).keys()
 
 
@@ -228,7 +228,7 @@ class TranslationDriver(SimpleTaskEngine):
             raise Exception("instrumentation requires the c backend"
                             " and unix for now")
         from pypy.tool.udir import udir
-        
+
         datafile = udir.join('_instrument_counters')
         makeProfInstrument = lambda compiler: ProfInstrument(datafile, compiler)
 
@@ -299,7 +299,7 @@ class TranslationDriver(SimpleTaskEngine):
         policy = self.policy
         self.log.info('with policy: %s.%s' %
                       (policy.__class__.__module__, policy.__class__.__name__))
-        
+
         annmodel.DEBUG = self.config.translation.debug
         annotator = translator.buildannotator(policy=policy)
 
@@ -447,7 +447,7 @@ class TranslationDriver(SimpleTaskEngine):
         from pypy.translator.backendopt.all import backend_optimizations
         backend_optimizations(self.translator)
     #
-    task_backendopt_ootype = taskdef(task_backendopt_ootype, 
+    task_backendopt_ootype = taskdef(task_backendopt_ootype,
                                         [OOTYPE], "ootype back-end optimisations")
     OOBACKENDOPT = 'backendopt_ootype'
 
@@ -456,7 +456,7 @@ class TranslationDriver(SimpleTaskEngine):
         from pypy.translator.transform import insert_ll_stackcheck
         count = insert_ll_stackcheck(self.translator)
         self.log.info("inserted %d stack checks." % (count,))
-        
+
     task_stackcheckinsertion_lltype = taskdef(
         task_stackcheckinsertion_lltype,
         ['?'+BACKENDOPT, RTYPE, 'annotate'],
@@ -495,10 +495,10 @@ class TranslationDriver(SimpleTaskEngine):
         self.database = database
     #
     task_database_c = taskdef(task_database_c,
-                            [STACKCHECKINSERTION, '?'+BACKENDOPT, RTYPE, '?annotate'], 
+                            [STACKCHECKINSERTION, '?'+BACKENDOPT, RTYPE, '?annotate'],
                             "Creating database for generating c source",
                             earlycheck = possibly_check_for_boehm)
-    
+
     def task_source_c(self):  # xxx messy
         translator = self.translator
         cbuilder = self.cbuilder
@@ -512,7 +512,7 @@ class TranslationDriver(SimpleTaskEngine):
     def task_compile_c(self): # xxx messy
         cbuilder = self.cbuilder
         cbuilder.compile()
-        
+
         if self.standalone:
             self.c_entryp = cbuilder.executable_name
             self.create_exe()
@@ -520,19 +520,19 @@ class TranslationDriver(SimpleTaskEngine):
             self.c_entryp = cbuilder.get_entry_point()
     #
     task_compile_c = taskdef(task_compile_c, ['source_c'], "Compiling c source")
-    
-    
+
+
     def task_run_c(self):
         self.backend_run('c')
     #
-    task_run_c = taskdef(task_run_c, ['compile_c'], 
+    task_run_c = taskdef(task_run_c, ['compile_c'],
                          "Running compiled c source",
                          idemp=True)
 
     def task_llinterpret_lltype(self):
         from pypy.rpython.llinterp import LLInterpreter
         py.log.setconsumer("llinterp operation", None)
-        
+
         translator = self.translator
         interp = LLInterpreter(translator.rtyper)
         bk = translator.annotator.bookkeeper
@@ -543,8 +543,8 @@ class TranslationDriver(SimpleTaskEngine):
 
         log.llinterpret.event("result -> %s" % v)
     #
-    task_llinterpret_lltype = taskdef(task_llinterpret_lltype, 
-                                      [STACKCHECKINSERTION, '?'+BACKENDOPT, RTYPE], 
+    task_llinterpret_lltype = taskdef(task_llinterpret_lltype,
+                                      [STACKCHECKINSERTION, '?'+BACKENDOPT, RTYPE],
                                       "LLInterpreting")
 
     def task_source_llvm(self):
@@ -559,8 +559,8 @@ class TranslationDriver(SimpleTaskEngine):
         llvm_filename = self.llvmgen.gen_source(self.entry_point)
         self.log.info("written: %s" % (llvm_filename,))
     #
-    task_source_llvm = taskdef(task_source_llvm, 
-                               [STACKCHECKINSERTION, BACKENDOPT, RTYPE], 
+    task_source_llvm = taskdef(task_source_llvm,
+                               [STACKCHECKINSERTION, BACKENDOPT, RTYPE],
                                "Generating llvm source")
 
     def task_compile_llvm(self):
@@ -572,14 +572,14 @@ class TranslationDriver(SimpleTaskEngine):
         else:
             self.c_module, self.c_entryp = gen.compile_module()
     #
-    task_compile_llvm = taskdef(task_compile_llvm, 
-                                ['source_llvm'], 
+    task_compile_llvm = taskdef(task_compile_llvm,
+                                ['source_llvm'],
                                 "Compiling llvm source")
 
     def task_run_llvm(self):
         self.backend_run('llvm')
     #
-    task_run_llvm = taskdef(task_run_llvm, ['compile_llvm'], 
+    task_run_llvm = taskdef(task_run_llvm, ['compile_llvm'],
                             "Running compiled llvm source",
                             idemp=True)
 
@@ -589,7 +589,7 @@ class TranslationDriver(SimpleTaskEngine):
                       stackless=self.config.translation.stackless)
         filename = self.gen.write_source()
         self.log.info("Wrote %s" % (filename,))
-    task_source_js = taskdef(task_source_js, 
+    task_source_js = taskdef(task_source_js,
                         [OOTYPE],
                         'Generating Javascript source')
 
@@ -630,7 +630,7 @@ class TranslationDriver(SimpleTaskEngine):
         # restore original os values
         if hasattr(self, 'old_cli_defs'):
             unpatch_os(self.old_cli_defs)
-        
+
         self.log.info("Compiled %s" % filename)
         if self.standalone and self.exe_name:
             self.copy_cli_exe()
@@ -641,7 +641,7 @@ class TranslationDriver(SimpleTaskEngine):
         pass
     task_run_cli = taskdef(task_run_cli, ['compile_cli'],
                               'XXX')
-    
+
     def task_source_jvm(self):
         from pypy.translator.jvm.genjvm import GenJvm
         from pypy.translator.jvm.node import EntryPoint
@@ -702,7 +702,7 @@ class TranslationDriver(SimpleTaskEngine):
         if backend in ('cli', 'jvm'):
             from pypy.translator.oosupport.support import patch_os
             driver.old_cli_defs = patch_os()
-        
+
         target = targetspec_dic['target']
         spec = target(driver, args)
 
@@ -712,8 +712,8 @@ class TranslationDriver(SimpleTaskEngine):
             entry_point, inputtypes = spec
             policy = None
 
-        driver.setup(entry_point, inputtypes, 
-                     policy=policy, 
+        driver.setup(entry_point, inputtypes,
+                     policy=policy,
                      extra=targetspec_dic,
                      empty_translator=empty_translator)
 
@@ -725,4 +725,4 @@ class TranslationDriver(SimpleTaskEngine):
         assert 'pypy.rpython.rmodel' not in sys.modules, (
             "cannot fork because the rtyper has already been imported")
     prereq_checkpt_rtype_lltype = prereq_checkpt_rtype
-    prereq_checkpt_rtype_ootype = prereq_checkpt_rtype    
+    prereq_checkpt_rtype_ootype = prereq_checkpt_rtype

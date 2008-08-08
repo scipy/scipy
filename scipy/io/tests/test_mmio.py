@@ -293,13 +293,13 @@ class TestMMIOCoordinate(TestCase):
 
     def test_sparse_formats(self):
         mats = []
-        
+
         I = array([0, 0, 1, 2, 3, 3, 3, 4])
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
 
         V = array([  1.0,   6.0,   10.5, 0.015,   250.5,  -280.0, 33.32, 12.0 ])
         mats.append( scipy.sparse.coo_matrix((V,(I,J)),shape=(5,5)) )
-        
+
         V = array([  1.0 + 3j,    6.0 + 2j,  10.50 + 0.9j, 0.015 + -4.4j,
                    250.5 + 0j, -280.0 + 5j,  33.32 + 6.4j, 12.00 + 0.8j])
         mats.append( scipy.sparse.coo_matrix((V,(I,J)),shape=(5,5)) )
@@ -309,7 +309,7 @@ class TestMMIOCoordinate(TestCase):
             for fmt in ['csr','csc','coo']:
                 fn = mktemp()
                 mmwrite(fn, mat.asformat(fmt))
-        
+
                 result = mmread(fn).todense()
                 assert_array_almost_equal(result, expected)
 

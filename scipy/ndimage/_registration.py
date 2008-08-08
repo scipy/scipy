@@ -116,7 +116,7 @@ def remap_image(image, M_inverse, resample='linear'):
     --------
         image = fmri_series[i]
         x[0:6] = measures[i]['align_rotate'][0:6]
-	M = get_inverse_mappings(x)
+        M = get_inverse_mappings(x)
         # overwrite the fMRI volume with the aligned volume
         fmri_series[i] = remap_image(image, M, resample='cubic')
 
@@ -175,7 +175,7 @@ def get_inverse_mappings(parm_vector):
 
 def register(image1, image1_mat, image2, image2_mat, multires=[4, 2], histo_fwhm=3, 
              ftype=1, lite=0, smhist=0, method='nmi', opt_method='hybrid',
-	     optimize_function=None):
+             optimize_function=None):
 
     """
     parm_vector = register(image1, image1_mat, image2, image2_mat, multires=[4, 2], histo_fwhm=3,
@@ -198,7 +198,7 @@ def register(image1, image1_mat, image2, image2_mat, multires=[4, 2], histo_fwhm
         image2_mat is the source image MAT 
     multires: {list}, optional
         the volume subsample values for each pass of the registration.
-	the default is 2 passes with subsample 4 in pass 1 and subsample 2 in pass 2
+        the default is 2 passes with subsample 4 in pass 1 and subsample 2 in pass 2
     histo_fwhm : {int}, optional
         used for the filter kernel in the low pass filter of the joint histogram 
     ftype : {0, 1}, optional
@@ -214,7 +214,7 @@ def register(image1, image1_mat, image2, image2_mat, multires=[4, 2], histo_fwhm
         flag for type of registration metric. nmi is normalized mutual
         information; mi is mutual information; ecc is entropy cross
         correlation; ncc is normalized cross correlation. mse is mean
-	squared error.
+        squared error.
     opt_method: {'powell', 'cg', 'hybrid'}, optional
         registration is two pass. Pass 1 is low res to get close to alignment
         and pass 2 starts at the pass 1 optimal alignment. In powell pass 1 and
@@ -292,12 +292,12 @@ def register(image1, image1_mat, image2, image2_mat, multires=[4, 2], histo_fwhm
         optimize_function = cost_function
 
     parm_vector = multires_registration(optimize_function, image1, image1_mat, image2, image2_mat,
-		                        multires, histo_fwhm, lite, smhist, method, opt_method)
+                                        multires, histo_fwhm, lite, smhist, method, opt_method)
 
     return parm_vector
 
 def multires_registration(optimize_function, image1, image1_mat, image2, image2_mat,
-		          multires, histo_fwhm, lite, smhist, method, opt_method):
+                          multires, histo_fwhm, lite, smhist, method, opt_method):
 
     """
 
@@ -315,7 +315,7 @@ def multires_registration(optimize_function, image1, image1_mat, image2, image2_
         image2_mat is the source image MAT 
     multires: {list}, optional
         the volume subsample values for each pass of the registration.
-	the default is 2 passes with subsample 4 in pass 1 and subsample 2 in pass 2
+        the default is 2 passes with subsample 4 in pass 1 and subsample 2 in pass 2
     histo_fwhm : {int}, optional
         used for the filter kernel in the low pass filter of the joint histogram 
     ftype : {0, 1}, optional
@@ -331,7 +331,7 @@ def multires_registration(optimize_function, image1, image1_mat, image2, image2_
         flag for type of registration metric. nmi is normalized mutual
         information; mi is mutual information; ecc is entropy cross
         correlation; ncc is normalized cross correlation. mse is mean
-	squared error.
+        squared error.
     opt_method: {'powell', 'cg', 'hybrid'}, optional
         registration is two pass. Pass 1 is low res to get close to alignment
         and pass 2 starts at the pass 1 optimal alignment. In powell pass 1 and
@@ -364,12 +364,12 @@ def multires_registration(optimize_function, image1, image1_mat, image2, image2_
     # the kernel fwhm value for the x and y joint histogram filter
     fwhm[:] = histo_fwhm
     for i in loop:
-	# this is the volume subsample
-	step[:] = multires[i]
-	# optfunc_args is specific to the cost_function in this file
-	# this will need to change if you use another optimize_function.
+        # this is the volume subsample
+        step[:] = multires[i]
+        # optfunc_args is specific to the cost_function in this file
+        # this will need to change if you use another optimize_function.
         optfunc_args = (image1, image1_mat, image2, image2_mat, step, histo_fwhm,
-			lite, smhist, method, ret_histo)
+                        lite, smhist, method, ret_histo)
         p_args = (optfunc_args,)
         if opt_method=='powell':
             print 'POWELL multi-res registration step size ', step
@@ -694,7 +694,7 @@ def cost_function(x, optfunc_args):
         # trilinear interpolation mapping.
         reg.register_linear_resample(image_F, remap_image_F, composite, sample_vector)
         cost = (np.square(image_G-remap_image_F)).mean()
-	# cost is min when G and F are aligned so keep cost positive
+        # cost is min when G and F are aligned so keep cost positive
 
         return cost
 
@@ -718,7 +718,7 @@ def cost_function(x, optfunc_args):
             hkernel = smooth_kernel(fwhm, x)
             output=None
             # 2D filter in 1D separable stages using the same kernel. SPM
-	    # has options for a 2D fwhm kernel yet only uses 1 element
+            # has options for a 2D fwhm kernel yet only uses 1 element
             axis = 0
             joint_histogram = correlate1d(joint_histogram, hkernel, axis, output)
             axis = 1
@@ -919,7 +919,7 @@ def scale_image(image, max_amp=255, image_type=np.uint8, threshold=0.999, fetch_
 
     threshold : float (default 0.999)
         the value of the normalized integrated histogram
-	that when reached sets the high threshold index
+        that when reached sets the high threshold index
 
     Returns 
     -------
@@ -927,7 +927,7 @@ def scale_image(image, max_amp=255, image_type=np.uint8, threshold=0.999, fetch_
         the scaled volume
     ih : {nd_array}
         the integrated histogram. can be used for image display 
-	purpose (histogram equalization)
+        purpose (histogram equalization)
 
     """
 
@@ -1011,8 +1011,8 @@ def check_alignment(image1, image1_mat, image2, image2_mat, histo_fwhm=3, method
 
     step = np.array([1, 1, 1], dtype=np.int32)
     optfunc_args = (image1, image1_mat, image2, image2_mat, step, histo_fwhm, lite,
-		    smhist, method, ret_histo)
-			
+                    smhist, method, ret_histo)
+                        
     if ret_histo:
         cost, joint_histogram = cost_function(P, optfunc_args)
         return cost, joint_histogram 

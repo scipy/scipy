@@ -11,7 +11,7 @@ from coo import coo_matrix
 def tril(A, k=0, format=None):
     """Return the lower triangular portion of a matrix in sparse format
 
-    Returns the elements on or below the k-th diagonal of the matrix A.  
+    Returns the elements on or below the k-th diagonal of the matrix A.
         - k = 0 corresponds to the main diagonal
         - k > 0 is above the main diagonal
         - k < 0 is below the main diagonal
@@ -77,7 +77,7 @@ def tril(A, k=0, format=None):
 def triu(A, k=0, format=None):
     """Return the upper triangular portion of a matrix in sparse format
 
-    Returns the elements on or above the k-th diagonal of the matrix A.  
+    Returns the elements on or above the k-th diagonal of the matrix A.
         - k = 0 corresponds to the main diagonal
         - k > 0 is above the main diagonal
         - k < 0 is below the main diagonal
@@ -138,6 +138,3 @@ def triu(A, k=0, format=None):
     data = A.data[mask]
 
     return coo_matrix( (data,(row,col)), shape=A.shape ).asformat(format)
-
-
-

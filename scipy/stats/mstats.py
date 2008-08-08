@@ -443,7 +443,7 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
     use_missing: {False, True} optional
         Whether missing data should be allocated a rank of 0 (False) or the
         average rank (True)
-        
+
     Returns
     -------
         tau : float
@@ -645,7 +645,7 @@ def theilslopes(y, x=None, alpha=0.05):
             Independent variable. If None, use arange(len(y)) instead.
         alpha : float
             Confidence degree.
-            
+
     Returns
     -------
         medslope : float

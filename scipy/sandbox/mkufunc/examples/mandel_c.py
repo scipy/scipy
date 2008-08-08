@@ -32,7 +32,7 @@ PyUFunc_0(char **args, npy_intp *dimensions, npy_intp *steps, void *func)
         char *ip1 = args[1];
         char *op = args[2];
         n = dimensions[0];
-        
+
         for(i = 0; i < n; i++) {
                 *(long *)op = iterations(*(double *)ip0,
                                          *(double *)ip1);

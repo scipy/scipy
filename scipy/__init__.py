@@ -63,7 +63,7 @@ del _os
 pkgload = PackageLoader()
 pkgload(verbose=SCIPY_IMPORT_VERBOSE,postpone=True)
 
-# Remove subpackage names from __all__ such that they are not imported via 
+# Remove subpackage names from __all__ such that they are not imported via
 # "from scipy import *". This works around a numpy bug present in < 1.2.
 subpackages = """cluster constants fftpack integrate interpolate io lib linalg
 linsolve maxentropy misc ndimage odr optimize sandbox signal sparse special

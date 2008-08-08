@@ -7,7 +7,7 @@ setup(
 
     name         = "mkufunc",
     version      = "0.1",
-    
+
     zip_safe = False,
     package_data = {'': ['*.h']},
     packages = find_packages(),

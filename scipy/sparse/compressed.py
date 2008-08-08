@@ -275,11 +275,11 @@ class _cs_matrix(_data_matrix):
 
         #output array
         result = zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
- 
+
         # csr_matvec or csc_matvec
         fn = getattr(sparsetools,self.format + '_matvec')
         fn(M, N, self.indptr, self.indices, self.data, other, result)
- 
+
         return result
 
 
@@ -295,7 +295,7 @@ class _cs_matrix(_data_matrix):
 
         return result
 
-    
+
     def _mul_sparse_matrix(self, other):
         M, K1 = self.shape
         K2, N = other.shape
@@ -319,10 +319,10 @@ class _cs_matrix(_data_matrix):
                   indptr, indices, data)
 
         return self.__class__((data,indices,indptr),shape=(M,N))
-    
+
     def matvec(self,other):
         return self * other
-    
+
     def matmat(self,other):
         return self * other
 
@@ -358,12 +358,12 @@ class _cs_matrix(_data_matrix):
 
     #    elif isdense(other):
     #        # TODO make sparse * dense matrix multiplication more efficient
-    #        
+    #
     #        # matvec each column of other
     #        result = hstack( [ self * col.reshape(-1,1) for col in asarray(other).T ] )
     #        if isinstance(other, matrix):
     #            result = asmatrix(result)
-    #        return result                
+    #        return result
 
     #    else:
     #        raise TypeError, "need a dense or sparse matrix"

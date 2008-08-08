@@ -338,7 +338,7 @@ class coo_matrix(_data_matrix):
         result = zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
         coo_matvec(self.nnz, self.row, self.col, self.data, other, result)
         return result
-    
+
     def _mul_dense_matrix(self, other):
         return hstack( [ self._mul_vector(col).reshape(-1,1) for col in other.T ] )
 

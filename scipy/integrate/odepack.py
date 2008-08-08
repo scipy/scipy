@@ -28,7 +28,7 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
 
     Solves the initial value problem for stiff or non-stiff systems
     of first order ode-s::
-    
+
         dy/dt = func(y,t0,...)
 
     where y can be a vector.
@@ -59,10 +59,10 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
     y : array, shape (len(y0), len(t))
         Array containing the value of y for each desired time in t,
         with the initial value y0 in the first row.
-    
+
     infodict : dict, only returned if full_output == True
         Dictionary containing additional output information
-        
+
         =======  ============================================================
         key      meaning
         =======  ============================================================
@@ -85,7 +85,7 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         'mused'  a vector of method indicators for each successful time step:
                  1: adams (nonstiff), 2: bdf (stiff)
         =======  ============================================================
-    
+
     Other Parameters
     ----------------
     ml, mu : integer
@@ -100,7 +100,7 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         The input parameters rtol and atol determine the error
         control performed by the solver.  The solver will control the
         vector, e, of estimated local errors in y, according to an
-        inequality of the form::         
+        inequality of the form::
             max-norm of (e / ewt) <= 1
         where ewt is a vector of positive error weights computed as::
             ewt = rtol * abs(y) + atol
@@ -130,7 +130,7 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
     --------
     ode : a more object-oriented integrator based on VODE
     quad : for finding the area under a curve
-    
+
     """
 
     if ml is None:

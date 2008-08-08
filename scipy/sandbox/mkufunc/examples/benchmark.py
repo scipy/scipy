@@ -28,11 +28,11 @@ PyUFunc_0(char **args, npy_intp *dimensions, npy_intp *steps, void *func)
         char *op = args[1];
         n = dimensions[0];
         double x;
-        
+
         for(i = 0; i < n; i++) {
                 x = *(double *)ip0;
                 double *out = (double *)op;
-                
+
                 *out = 4.2 * x*x + 3.7 * x + 1.5;
 
                 ip0 += is0;

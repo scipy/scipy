@@ -16,4 +16,3 @@ class BenchFooBar(TestCase):
 
     def bench_simple(self):
         print 'A long timed benchmark here'
-

@@ -20,7 +20,7 @@ def mandel(cr, ci):
     else:
         return -1
 
-    
+
 
 if __name__ == '__main__':
 

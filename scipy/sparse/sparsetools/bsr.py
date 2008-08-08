@@ -51,484 +51,483 @@ del types
 
 
 def bsr_diagonal(*args):
-  """
-    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        signed char Ax, signed char Yx)
-    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned char Ax, unsigned char Yx)
-    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        short Ax, short Yx)
-    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned short Ax, unsigned short Yx)
-    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        int Ax, int Yx)
-    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned int Ax, unsigned int Yx)
-    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        long long Ax, long long Yx)
-    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned long long Ax, unsigned long long Yx)
-    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        float Ax, float Yx)
-    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        double Ax, double Yx)
-    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        long double Ax, long double Yx)
-    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        npy_cfloat_wrapper Ax, npy_cfloat_wrapper Yx)
-    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        npy_cdouble_wrapper Ax, npy_cdouble_wrapper Yx)
-    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        npy_clongdouble_wrapper Ax, npy_clongdouble_wrapper Yx)
     """
-  return _bsr.bsr_diagonal(*args)
+      bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          signed char Ax, signed char Yx)
+      bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned char Ax, unsigned char Yx)
+      bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          short Ax, short Yx)
+      bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned short Ax, unsigned short Yx)
+      bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          int Ax, int Yx)
+      bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned int Ax, unsigned int Yx)
+      bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          long long Ax, long long Yx)
+      bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned long long Ax, unsigned long long Yx)
+      bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          float Ax, float Yx)
+      bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          double Ax, double Yx)
+      bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          long double Ax, long double Yx)
+      bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          npy_cfloat_wrapper Ax, npy_cfloat_wrapper Yx)
+      bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          npy_cdouble_wrapper Ax, npy_cdouble_wrapper Yx)
+      bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          npy_clongdouble_wrapper Ax, npy_clongdouble_wrapper Yx)
+      """
+    return _bsr.bsr_diagonal(*args)
 
 def bsr_scale_rows(*args):
-  """
-    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        signed char Ax, signed char Xx)
-    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned char Ax, unsigned char Xx)
-    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        short Ax, short Xx)
-    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned short Ax, unsigned short Xx)
-    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        int Ax, int Xx)
-    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned int Ax, unsigned int Xx)
-    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        long long Ax, long long Xx)
-    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned long long Ax, unsigned long long Xx)
-    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        float Ax, float Xx)
-    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        double Ax, double Xx)
-    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        long double Ax, long double Xx)
-    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        npy_cfloat_wrapper Ax, npy_cfloat_wrapper Xx)
-    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        npy_cdouble_wrapper Ax, npy_cdouble_wrapper Xx)
-    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        npy_clongdouble_wrapper Ax, npy_clongdouble_wrapper Xx)
     """
-  return _bsr.bsr_scale_rows(*args)
+      bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          signed char Ax, signed char Xx)
+      bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned char Ax, unsigned char Xx)
+      bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          short Ax, short Xx)
+      bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned short Ax, unsigned short Xx)
+      bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          int Ax, int Xx)
+      bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned int Ax, unsigned int Xx)
+      bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          long long Ax, long long Xx)
+      bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned long long Ax, unsigned long long Xx)
+      bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          float Ax, float Xx)
+      bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          double Ax, double Xx)
+      bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          long double Ax, long double Xx)
+      bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          npy_cfloat_wrapper Ax, npy_cfloat_wrapper Xx)
+      bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          npy_cdouble_wrapper Ax, npy_cdouble_wrapper Xx)
+      bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          npy_clongdouble_wrapper Ax, npy_clongdouble_wrapper Xx)
+      """
+    return _bsr.bsr_scale_rows(*args)
 
 def bsr_scale_columns(*args):
-  """
-    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        signed char Ax, signed char Xx)
-    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned char Ax, unsigned char Xx)
-    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        short Ax, short Xx)
-    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned short Ax, unsigned short Xx)
-    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        int Ax, int Xx)
-    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned int Ax, unsigned int Xx)
-    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        long long Ax, long long Xx)
-    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned long long Ax, unsigned long long Xx)
-    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        float Ax, float Xx)
-    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        double Ax, double Xx)
-    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        long double Ax, long double Xx)
-    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        npy_cfloat_wrapper Ax, npy_cfloat_wrapper Xx)
-    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        npy_cdouble_wrapper Ax, npy_cdouble_wrapper Xx)
-    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        npy_clongdouble_wrapper Ax, npy_clongdouble_wrapper Xx)
     """
-  return _bsr.bsr_scale_columns(*args)
+      bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          signed char Ax, signed char Xx)
+      bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned char Ax, unsigned char Xx)
+      bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          short Ax, short Xx)
+      bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned short Ax, unsigned short Xx)
+      bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          int Ax, int Xx)
+      bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned int Ax, unsigned int Xx)
+      bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          long long Ax, long long Xx)
+      bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned long long Ax, unsigned long long Xx)
+      bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          float Ax, float Xx)
+      bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          double Ax, double Xx)
+      bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          long double Ax, long double Xx)
+      bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          npy_cfloat_wrapper Ax, npy_cfloat_wrapper Xx)
+      bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          npy_cdouble_wrapper Ax, npy_cdouble_wrapper Xx)
+      bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          npy_clongdouble_wrapper Ax, npy_clongdouble_wrapper Xx)
+      """
+    return _bsr.bsr_scale_columns(*args)
 
 def bsr_transpose(*args):
-  """
-    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        signed char Ax, int Bp, int Bj, signed char Bx)
-    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned char Ax, int Bp, int Bj, unsigned char Bx)
-    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        short Ax, int Bp, int Bj, short Bx)
-    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned short Ax, int Bp, int Bj, unsigned short Bx)
-    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        int Ax, int Bp, int Bj, int Bx)
-    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned int Ax, int Bp, int Bj, unsigned int Bx)
-    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        long long Ax, int Bp, int Bj, long long Bx)
-    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned long long Ax, int Bp, int Bj, unsigned long long Bx)
-    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        float Ax, int Bp, int Bj, float Bx)
-    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        double Ax, int Bp, int Bj, double Bx)
-    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        long double Ax, int Bp, int Bj, long double Bx)
-    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        npy_cfloat_wrapper Ax, int Bp, int Bj, npy_cfloat_wrapper Bx)
-    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        npy_cdouble_wrapper Ax, int Bp, int Bj, npy_cdouble_wrapper Bx)
-    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        npy_clongdouble_wrapper Ax, int Bp, int Bj, 
-        npy_clongdouble_wrapper Bx)
     """
-  return _bsr.bsr_transpose(*args)
+      bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          signed char Ax, int Bp, int Bj, signed char Bx)
+      bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned char Ax, int Bp, int Bj, unsigned char Bx)
+      bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          short Ax, int Bp, int Bj, short Bx)
+      bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned short Ax, int Bp, int Bj, unsigned short Bx)
+      bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          int Ax, int Bp, int Bj, int Bx)
+      bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned int Ax, int Bp, int Bj, unsigned int Bx)
+      bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          long long Ax, int Bp, int Bj, long long Bx)
+      bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned long long Ax, int Bp, int Bj, unsigned long long Bx)
+      bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          float Ax, int Bp, int Bj, float Bx)
+      bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          double Ax, int Bp, int Bj, double Bx)
+      bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          long double Ax, int Bp, int Bj, long double Bx)
+      bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          npy_cfloat_wrapper Ax, int Bp, int Bj, npy_cfloat_wrapper Bx)
+      bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          npy_cdouble_wrapper Ax, int Bp, int Bj, npy_cdouble_wrapper Bx)
+      bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          npy_clongdouble_wrapper Ax, int Bp, int Bj,
+          npy_clongdouble_wrapper Bx)
+      """
+    return _bsr.bsr_transpose(*args)
 
 def bsr_matmat_pass2(*args):
-  """
-    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
-        int Aj, signed char Ax, int Bp, int Bj, signed char Bx, 
-        int Cp, int Cj, signed char Cx)
-    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
-        int Aj, unsigned char Ax, int Bp, int Bj, unsigned char Bx, 
-        int Cp, int Cj, unsigned char Cx)
-    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
-        int Aj, short Ax, int Bp, int Bj, short Bx, 
-        int Cp, int Cj, short Cx)
-    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
-        int Aj, unsigned short Ax, int Bp, int Bj, 
-        unsigned short Bx, int Cp, int Cj, unsigned short Cx)
-    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
-        int Aj, int Ax, int Bp, int Bj, int Bx, int Cp, 
-        int Cj, int Cx)
-    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
-        int Aj, unsigned int Ax, int Bp, int Bj, unsigned int Bx, 
-        int Cp, int Cj, unsigned int Cx)
-    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
-        int Aj, long long Ax, int Bp, int Bj, long long Bx, 
-        int Cp, int Cj, long long Cx)
-    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
-        int Aj, unsigned long long Ax, int Bp, int Bj, 
-        unsigned long long Bx, int Cp, int Cj, unsigned long long Cx)
-    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
-        int Aj, float Ax, int Bp, int Bj, float Bx, 
-        int Cp, int Cj, float Cx)
-    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
-        int Aj, double Ax, int Bp, int Bj, double Bx, 
-        int Cp, int Cj, double Cx)
-    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
-        int Aj, long double Ax, int Bp, int Bj, long double Bx, 
-        int Cp, int Cj, long double Cx)
-    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
-        int Aj, npy_cfloat_wrapper Ax, int Bp, int Bj, 
-        npy_cfloat_wrapper Bx, int Cp, int Cj, npy_cfloat_wrapper Cx)
-    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
-        int Aj, npy_cdouble_wrapper Ax, int Bp, int Bj, 
-        npy_cdouble_wrapper Bx, int Cp, int Cj, 
-        npy_cdouble_wrapper Cx)
-    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
-        int Aj, npy_clongdouble_wrapper Ax, int Bp, 
-        int Bj, npy_clongdouble_wrapper Bx, int Cp, 
-        int Cj, npy_clongdouble_wrapper Cx)
     """
-  return _bsr.bsr_matmat_pass2(*args)
+      bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap,
+          int Aj, signed char Ax, int Bp, int Bj, signed char Bx,
+          int Cp, int Cj, signed char Cx)
+      bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap,
+          int Aj, unsigned char Ax, int Bp, int Bj, unsigned char Bx,
+          int Cp, int Cj, unsigned char Cx)
+      bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap,
+          int Aj, short Ax, int Bp, int Bj, short Bx,
+          int Cp, int Cj, short Cx)
+      bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap,
+          int Aj, unsigned short Ax, int Bp, int Bj,
+          unsigned short Bx, int Cp, int Cj, unsigned short Cx)
+      bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap,
+          int Aj, int Ax, int Bp, int Bj, int Bx, int Cp,
+          int Cj, int Cx)
+      bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap,
+          int Aj, unsigned int Ax, int Bp, int Bj, unsigned int Bx,
+          int Cp, int Cj, unsigned int Cx)
+      bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap,
+          int Aj, long long Ax, int Bp, int Bj, long long Bx,
+          int Cp, int Cj, long long Cx)
+      bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap,
+          int Aj, unsigned long long Ax, int Bp, int Bj,
+          unsigned long long Bx, int Cp, int Cj, unsigned long long Cx)
+      bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap,
+          int Aj, float Ax, int Bp, int Bj, float Bx,
+          int Cp, int Cj, float Cx)
+      bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap,
+          int Aj, double Ax, int Bp, int Bj, double Bx,
+          int Cp, int Cj, double Cx)
+      bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap,
+          int Aj, long double Ax, int Bp, int Bj, long double Bx,
+          int Cp, int Cj, long double Cx)
+      bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap,
+          int Aj, npy_cfloat_wrapper Ax, int Bp, int Bj,
+          npy_cfloat_wrapper Bx, int Cp, int Cj, npy_cfloat_wrapper Cx)
+      bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap,
+          int Aj, npy_cdouble_wrapper Ax, int Bp, int Bj,
+          npy_cdouble_wrapper Bx, int Cp, int Cj,
+          npy_cdouble_wrapper Cx)
+      bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap,
+          int Aj, npy_clongdouble_wrapper Ax, int Bp,
+          int Bj, npy_clongdouble_wrapper Bx, int Cp,
+          int Cj, npy_clongdouble_wrapper Cx)
+      """
+    return _bsr.bsr_matmat_pass2(*args)
 
 def bsr_matvec(*args):
-  """
-    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        signed char Ax, signed char Xx, signed char Yx)
-    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned char Ax, unsigned char Xx, unsigned char Yx)
-    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        short Ax, short Xx, short Yx)
-    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned short Ax, unsigned short Xx, unsigned short Yx)
-    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        int Ax, int Xx, int Yx)
-    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned int Ax, unsigned int Xx, unsigned int Yx)
-    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        long long Ax, long long Xx, long long Yx)
-    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned long long Ax, unsigned long long Xx, 
-        unsigned long long Yx)
-    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        float Ax, float Xx, float Yx)
-    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        double Ax, double Xx, double Yx)
-    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        long double Ax, long double Xx, long double Yx)
-    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        npy_cfloat_wrapper Ax, npy_cfloat_wrapper Xx, 
-        npy_cfloat_wrapper Yx)
-    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        npy_cdouble_wrapper Ax, npy_cdouble_wrapper Xx, 
-        npy_cdouble_wrapper Yx)
-    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        npy_clongdouble_wrapper Ax, npy_clongdouble_wrapper Xx, 
-        npy_clongdouble_wrapper Yx)
     """
-  return _bsr.bsr_matvec(*args)
+      bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          signed char Ax, signed char Xx, signed char Yx)
+      bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned char Ax, unsigned char Xx, unsigned char Yx)
+      bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          short Ax, short Xx, short Yx)
+      bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned short Ax, unsigned short Xx, unsigned short Yx)
+      bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          int Ax, int Xx, int Yx)
+      bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned int Ax, unsigned int Xx, unsigned int Yx)
+      bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          long long Ax, long long Xx, long long Yx)
+      bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned long long Ax, unsigned long long Xx,
+          unsigned long long Yx)
+      bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          float Ax, float Xx, float Yx)
+      bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          double Ax, double Xx, double Yx)
+      bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          long double Ax, long double Xx, long double Yx)
+      bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          npy_cfloat_wrapper Ax, npy_cfloat_wrapper Xx,
+          npy_cfloat_wrapper Yx)
+      bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          npy_cdouble_wrapper Ax, npy_cdouble_wrapper Xx,
+          npy_cdouble_wrapper Yx)
+      bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          npy_clongdouble_wrapper Ax, npy_clongdouble_wrapper Xx,
+          npy_clongdouble_wrapper Yx)
+      """
+    return _bsr.bsr_matvec(*args)
 
 def bsr_matvecs(*args):
-  """
-    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
-        int Aj, signed char Ax, signed char Xx, 
-        signed char Yx)
-    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
-        int Aj, unsigned char Ax, unsigned char Xx, 
-        unsigned char Yx)
-    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
-        int Aj, short Ax, short Xx, short Yx)
-    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
-        int Aj, unsigned short Ax, unsigned short Xx, 
-        unsigned short Yx)
-    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
-        int Aj, int Ax, int Xx, int Yx)
-    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
-        int Aj, unsigned int Ax, unsigned int Xx, 
-        unsigned int Yx)
-    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
-        int Aj, long long Ax, long long Xx, long long Yx)
-    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
-        int Aj, unsigned long long Ax, unsigned long long Xx, 
-        unsigned long long Yx)
-    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
-        int Aj, float Ax, float Xx, float Yx)
-    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
-        int Aj, double Ax, double Xx, double Yx)
-    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
-        int Aj, long double Ax, long double Xx, 
-        long double Yx)
-    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
-        int Aj, npy_cfloat_wrapper Ax, npy_cfloat_wrapper Xx, 
-        npy_cfloat_wrapper Yx)
-    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
-        int Aj, npy_cdouble_wrapper Ax, npy_cdouble_wrapper Xx, 
-        npy_cdouble_wrapper Yx)
-    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
-        int Aj, npy_clongdouble_wrapper Ax, npy_clongdouble_wrapper Xx, 
-        npy_clongdouble_wrapper Yx)
     """
-  return _bsr.bsr_matvecs(*args)
+      bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap,
+          int Aj, signed char Ax, signed char Xx,
+          signed char Yx)
+      bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap,
+          int Aj, unsigned char Ax, unsigned char Xx,
+          unsigned char Yx)
+      bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap,
+          int Aj, short Ax, short Xx, short Yx)
+      bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap,
+          int Aj, unsigned short Ax, unsigned short Xx,
+          unsigned short Yx)
+      bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap,
+          int Aj, int Ax, int Xx, int Yx)
+      bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap,
+          int Aj, unsigned int Ax, unsigned int Xx,
+          unsigned int Yx)
+      bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap,
+          int Aj, long long Ax, long long Xx, long long Yx)
+      bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap,
+          int Aj, unsigned long long Ax, unsigned long long Xx,
+          unsigned long long Yx)
+      bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap,
+          int Aj, float Ax, float Xx, float Yx)
+      bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap,
+          int Aj, double Ax, double Xx, double Yx)
+      bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap,
+          int Aj, long double Ax, long double Xx,
+          long double Yx)
+      bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap,
+          int Aj, npy_cfloat_wrapper Ax, npy_cfloat_wrapper Xx,
+          npy_cfloat_wrapper Yx)
+      bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap,
+          int Aj, npy_cdouble_wrapper Ax, npy_cdouble_wrapper Xx,
+          npy_cdouble_wrapper Yx)
+      bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap,
+          int Aj, npy_clongdouble_wrapper Ax, npy_clongdouble_wrapper Xx,
+          npy_clongdouble_wrapper Yx)
+      """
+    return _bsr.bsr_matvecs(*args)
 
 def bsr_elmul_bsr(*args):
-  """
-    bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        signed char Ax, int Bp, int Bj, signed char Bx, 
-        int Cp, int Cj, signed char Cx)
-    bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        unsigned char Ax, int Bp, int Bj, unsigned char Bx, 
-        int Cp, int Cj, unsigned char Cx)
-    bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        short Ax, int Bp, int Bj, short Bx, int Cp, 
-        int Cj, short Cx)
-    bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        unsigned short Ax, int Bp, int Bj, unsigned short Bx, 
-        int Cp, int Cj, unsigned short Cx)
-    bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        int Ax, int Bp, int Bj, int Bx, int Cp, int Cj, 
-        int Cx)
-    bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        unsigned int Ax, int Bp, int Bj, unsigned int Bx, 
-        int Cp, int Cj, unsigned int Cx)
-    bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        long long Ax, int Bp, int Bj, long long Bx, 
-        int Cp, int Cj, long long Cx)
-    bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        unsigned long long Ax, int Bp, int Bj, unsigned long long Bx, 
-        int Cp, int Cj, unsigned long long Cx)
-    bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        float Ax, int Bp, int Bj, float Bx, int Cp, 
-        int Cj, float Cx)
-    bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        double Ax, int Bp, int Bj, double Bx, int Cp, 
-        int Cj, double Cx)
-    bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        long double Ax, int Bp, int Bj, long double Bx, 
-        int Cp, int Cj, long double Cx)
-    bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        npy_cfloat_wrapper Ax, int Bp, int Bj, npy_cfloat_wrapper Bx, 
-        int Cp, int Cj, npy_cfloat_wrapper Cx)
-    bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        npy_cdouble_wrapper Ax, int Bp, int Bj, npy_cdouble_wrapper Bx, 
-        int Cp, int Cj, npy_cdouble_wrapper Cx)
-    bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        npy_clongdouble_wrapper Ax, int Bp, int Bj, 
-        npy_clongdouble_wrapper Bx, int Cp, int Cj, npy_clongdouble_wrapper Cx)
     """
-  return _bsr.bsr_elmul_bsr(*args)
+      bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          signed char Ax, int Bp, int Bj, signed char Bx,
+          int Cp, int Cj, signed char Cx)
+      bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          unsigned char Ax, int Bp, int Bj, unsigned char Bx,
+          int Cp, int Cj, unsigned char Cx)
+      bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          short Ax, int Bp, int Bj, short Bx, int Cp,
+          int Cj, short Cx)
+      bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          unsigned short Ax, int Bp, int Bj, unsigned short Bx,
+          int Cp, int Cj, unsigned short Cx)
+      bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          int Ax, int Bp, int Bj, int Bx, int Cp, int Cj,
+          int Cx)
+      bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          unsigned int Ax, int Bp, int Bj, unsigned int Bx,
+          int Cp, int Cj, unsigned int Cx)
+      bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          long long Ax, int Bp, int Bj, long long Bx,
+          int Cp, int Cj, long long Cx)
+      bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          unsigned long long Ax, int Bp, int Bj, unsigned long long Bx,
+          int Cp, int Cj, unsigned long long Cx)
+      bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          float Ax, int Bp, int Bj, float Bx, int Cp,
+          int Cj, float Cx)
+      bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          double Ax, int Bp, int Bj, double Bx, int Cp,
+          int Cj, double Cx)
+      bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          long double Ax, int Bp, int Bj, long double Bx,
+          int Cp, int Cj, long double Cx)
+      bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          npy_cfloat_wrapper Ax, int Bp, int Bj, npy_cfloat_wrapper Bx,
+          int Cp, int Cj, npy_cfloat_wrapper Cx)
+      bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          npy_cdouble_wrapper Ax, int Bp, int Bj, npy_cdouble_wrapper Bx,
+          int Cp, int Cj, npy_cdouble_wrapper Cx)
+      bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          npy_clongdouble_wrapper Ax, int Bp, int Bj,
+          npy_clongdouble_wrapper Bx, int Cp, int Cj, npy_clongdouble_wrapper Cx)
+      """
+    return _bsr.bsr_elmul_bsr(*args)
 
 def bsr_eldiv_bsr(*args):
-  """
-    bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        signed char Ax, int Bp, int Bj, signed char Bx, 
-        int Cp, int Cj, signed char Cx)
-    bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        unsigned char Ax, int Bp, int Bj, unsigned char Bx, 
-        int Cp, int Cj, unsigned char Cx)
-    bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        short Ax, int Bp, int Bj, short Bx, int Cp, 
-        int Cj, short Cx)
-    bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        unsigned short Ax, int Bp, int Bj, unsigned short Bx, 
-        int Cp, int Cj, unsigned short Cx)
-    bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        int Ax, int Bp, int Bj, int Bx, int Cp, int Cj, 
-        int Cx)
-    bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        unsigned int Ax, int Bp, int Bj, unsigned int Bx, 
-        int Cp, int Cj, unsigned int Cx)
-    bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        long long Ax, int Bp, int Bj, long long Bx, 
-        int Cp, int Cj, long long Cx)
-    bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        unsigned long long Ax, int Bp, int Bj, unsigned long long Bx, 
-        int Cp, int Cj, unsigned long long Cx)
-    bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        float Ax, int Bp, int Bj, float Bx, int Cp, 
-        int Cj, float Cx)
-    bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        double Ax, int Bp, int Bj, double Bx, int Cp, 
-        int Cj, double Cx)
-    bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        long double Ax, int Bp, int Bj, long double Bx, 
-        int Cp, int Cj, long double Cx)
-    bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        npy_cfloat_wrapper Ax, int Bp, int Bj, npy_cfloat_wrapper Bx, 
-        int Cp, int Cj, npy_cfloat_wrapper Cx)
-    bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        npy_cdouble_wrapper Ax, int Bp, int Bj, npy_cdouble_wrapper Bx, 
-        int Cp, int Cj, npy_cdouble_wrapper Cx)
-    bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        npy_clongdouble_wrapper Ax, int Bp, int Bj, 
-        npy_clongdouble_wrapper Bx, int Cp, int Cj, npy_clongdouble_wrapper Cx)
     """
-  return _bsr.bsr_eldiv_bsr(*args)
+      bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          signed char Ax, int Bp, int Bj, signed char Bx,
+          int Cp, int Cj, signed char Cx)
+      bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          unsigned char Ax, int Bp, int Bj, unsigned char Bx,
+          int Cp, int Cj, unsigned char Cx)
+      bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          short Ax, int Bp, int Bj, short Bx, int Cp,
+          int Cj, short Cx)
+      bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          unsigned short Ax, int Bp, int Bj, unsigned short Bx,
+          int Cp, int Cj, unsigned short Cx)
+      bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          int Ax, int Bp, int Bj, int Bx, int Cp, int Cj,
+          int Cx)
+      bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          unsigned int Ax, int Bp, int Bj, unsigned int Bx,
+          int Cp, int Cj, unsigned int Cx)
+      bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          long long Ax, int Bp, int Bj, long long Bx,
+          int Cp, int Cj, long long Cx)
+      bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          unsigned long long Ax, int Bp, int Bj, unsigned long long Bx,
+          int Cp, int Cj, unsigned long long Cx)
+      bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          float Ax, int Bp, int Bj, float Bx, int Cp,
+          int Cj, float Cx)
+      bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          double Ax, int Bp, int Bj, double Bx, int Cp,
+          int Cj, double Cx)
+      bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          long double Ax, int Bp, int Bj, long double Bx,
+          int Cp, int Cj, long double Cx)
+      bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          npy_cfloat_wrapper Ax, int Bp, int Bj, npy_cfloat_wrapper Bx,
+          int Cp, int Cj, npy_cfloat_wrapper Cx)
+      bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          npy_cdouble_wrapper Ax, int Bp, int Bj, npy_cdouble_wrapper Bx,
+          int Cp, int Cj, npy_cdouble_wrapper Cx)
+      bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          npy_clongdouble_wrapper Ax, int Bp, int Bj,
+          npy_clongdouble_wrapper Bx, int Cp, int Cj, npy_clongdouble_wrapper Cx)
+      """
+    return _bsr.bsr_eldiv_bsr(*args)
 
 def bsr_plus_bsr(*args):
-  """
-    bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        signed char Ax, int Bp, int Bj, signed char Bx, 
-        int Cp, int Cj, signed char Cx)
-    bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        unsigned char Ax, int Bp, int Bj, unsigned char Bx, 
-        int Cp, int Cj, unsigned char Cx)
-    bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        short Ax, int Bp, int Bj, short Bx, int Cp, 
-        int Cj, short Cx)
-    bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        unsigned short Ax, int Bp, int Bj, unsigned short Bx, 
-        int Cp, int Cj, unsigned short Cx)
-    bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        int Ax, int Bp, int Bj, int Bx, int Cp, int Cj, 
-        int Cx)
-    bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        unsigned int Ax, int Bp, int Bj, unsigned int Bx, 
-        int Cp, int Cj, unsigned int Cx)
-    bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        long long Ax, int Bp, int Bj, long long Bx, 
-        int Cp, int Cj, long long Cx)
-    bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        unsigned long long Ax, int Bp, int Bj, unsigned long long Bx, 
-        int Cp, int Cj, unsigned long long Cx)
-    bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        float Ax, int Bp, int Bj, float Bx, int Cp, 
-        int Cj, float Cx)
-    bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        double Ax, int Bp, int Bj, double Bx, int Cp, 
-        int Cj, double Cx)
-    bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        long double Ax, int Bp, int Bj, long double Bx, 
-        int Cp, int Cj, long double Cx)
-    bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        npy_cfloat_wrapper Ax, int Bp, int Bj, npy_cfloat_wrapper Bx, 
-        int Cp, int Cj, npy_cfloat_wrapper Cx)
-    bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        npy_cdouble_wrapper Ax, int Bp, int Bj, npy_cdouble_wrapper Bx, 
-        int Cp, int Cj, npy_cdouble_wrapper Cx)
-    bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        npy_clongdouble_wrapper Ax, int Bp, int Bj, 
-        npy_clongdouble_wrapper Bx, int Cp, int Cj, npy_clongdouble_wrapper Cx)
     """
-  return _bsr.bsr_plus_bsr(*args)
+      bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          signed char Ax, int Bp, int Bj, signed char Bx,
+          int Cp, int Cj, signed char Cx)
+      bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          unsigned char Ax, int Bp, int Bj, unsigned char Bx,
+          int Cp, int Cj, unsigned char Cx)
+      bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          short Ax, int Bp, int Bj, short Bx, int Cp,
+          int Cj, short Cx)
+      bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          unsigned short Ax, int Bp, int Bj, unsigned short Bx,
+          int Cp, int Cj, unsigned short Cx)
+      bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          int Ax, int Bp, int Bj, int Bx, int Cp, int Cj,
+          int Cx)
+      bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          unsigned int Ax, int Bp, int Bj, unsigned int Bx,
+          int Cp, int Cj, unsigned int Cx)
+      bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          long long Ax, int Bp, int Bj, long long Bx,
+          int Cp, int Cj, long long Cx)
+      bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          unsigned long long Ax, int Bp, int Bj, unsigned long long Bx,
+          int Cp, int Cj, unsigned long long Cx)
+      bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          float Ax, int Bp, int Bj, float Bx, int Cp,
+          int Cj, float Cx)
+      bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          double Ax, int Bp, int Bj, double Bx, int Cp,
+          int Cj, double Cx)
+      bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          long double Ax, int Bp, int Bj, long double Bx,
+          int Cp, int Cj, long double Cx)
+      bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          npy_cfloat_wrapper Ax, int Bp, int Bj, npy_cfloat_wrapper Bx,
+          int Cp, int Cj, npy_cfloat_wrapper Cx)
+      bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          npy_cdouble_wrapper Ax, int Bp, int Bj, npy_cdouble_wrapper Bx,
+          int Cp, int Cj, npy_cdouble_wrapper Cx)
+      bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          npy_clongdouble_wrapper Ax, int Bp, int Bj,
+          npy_clongdouble_wrapper Bx, int Cp, int Cj, npy_clongdouble_wrapper Cx)
+      """
+    return _bsr.bsr_plus_bsr(*args)
 
 def bsr_minus_bsr(*args):
-  """
-    bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        signed char Ax, int Bp, int Bj, signed char Bx, 
-        int Cp, int Cj, signed char Cx)
-    bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        unsigned char Ax, int Bp, int Bj, unsigned char Bx, 
-        int Cp, int Cj, unsigned char Cx)
-    bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        short Ax, int Bp, int Bj, short Bx, int Cp, 
-        int Cj, short Cx)
-    bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        unsigned short Ax, int Bp, int Bj, unsigned short Bx, 
-        int Cp, int Cj, unsigned short Cx)
-    bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        int Ax, int Bp, int Bj, int Bx, int Cp, int Cj, 
-        int Cx)
-    bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        unsigned int Ax, int Bp, int Bj, unsigned int Bx, 
-        int Cp, int Cj, unsigned int Cx)
-    bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        long long Ax, int Bp, int Bj, long long Bx, 
-        int Cp, int Cj, long long Cx)
-    bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        unsigned long long Ax, int Bp, int Bj, unsigned long long Bx, 
-        int Cp, int Cj, unsigned long long Cx)
-    bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        float Ax, int Bp, int Bj, float Bx, int Cp, 
-        int Cj, float Cx)
-    bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        double Ax, int Bp, int Bj, double Bx, int Cp, 
-        int Cj, double Cx)
-    bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        long double Ax, int Bp, int Bj, long double Bx, 
-        int Cp, int Cj, long double Cx)
-    bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        npy_cfloat_wrapper Ax, int Bp, int Bj, npy_cfloat_wrapper Bx, 
-        int Cp, int Cj, npy_cfloat_wrapper Cx)
-    bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        npy_cdouble_wrapper Ax, int Bp, int Bj, npy_cdouble_wrapper Bx, 
-        int Cp, int Cj, npy_cdouble_wrapper Cx)
-    bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        npy_clongdouble_wrapper Ax, int Bp, int Bj, 
-        npy_clongdouble_wrapper Bx, int Cp, int Cj, npy_clongdouble_wrapper Cx)
     """
-  return _bsr.bsr_minus_bsr(*args)
+      bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          signed char Ax, int Bp, int Bj, signed char Bx,
+          int Cp, int Cj, signed char Cx)
+      bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          unsigned char Ax, int Bp, int Bj, unsigned char Bx,
+          int Cp, int Cj, unsigned char Cx)
+      bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          short Ax, int Bp, int Bj, short Bx, int Cp,
+          int Cj, short Cx)
+      bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          unsigned short Ax, int Bp, int Bj, unsigned short Bx,
+          int Cp, int Cj, unsigned short Cx)
+      bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          int Ax, int Bp, int Bj, int Bx, int Cp, int Cj,
+          int Cx)
+      bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          unsigned int Ax, int Bp, int Bj, unsigned int Bx,
+          int Cp, int Cj, unsigned int Cx)
+      bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          long long Ax, int Bp, int Bj, long long Bx,
+          int Cp, int Cj, long long Cx)
+      bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          unsigned long long Ax, int Bp, int Bj, unsigned long long Bx,
+          int Cp, int Cj, unsigned long long Cx)
+      bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          float Ax, int Bp, int Bj, float Bx, int Cp,
+          int Cj, float Cx)
+      bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          double Ax, int Bp, int Bj, double Bx, int Cp,
+          int Cj, double Cx)
+      bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          long double Ax, int Bp, int Bj, long double Bx,
+          int Cp, int Cj, long double Cx)
+      bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          npy_cfloat_wrapper Ax, int Bp, int Bj, npy_cfloat_wrapper Bx,
+          int Cp, int Cj, npy_cfloat_wrapper Cx)
+      bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          npy_cdouble_wrapper Ax, int Bp, int Bj, npy_cdouble_wrapper Bx,
+          int Cp, int Cj, npy_cdouble_wrapper Cx)
+      bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj,
+          npy_clongdouble_wrapper Ax, int Bp, int Bj,
+          npy_clongdouble_wrapper Bx, int Cp, int Cj, npy_clongdouble_wrapper Cx)
+      """
+    return _bsr.bsr_minus_bsr(*args)
 
 def bsr_sort_indices(*args):
-  """
-    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        signed char Ax)
-    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned char Ax)
-    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        short Ax)
-    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned short Ax)
-    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        int Ax)
-    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned int Ax)
-    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        long long Ax)
-    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        unsigned long long Ax)
-    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        float Ax)
-    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        double Ax)
-    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        long double Ax)
-    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        npy_cfloat_wrapper Ax)
-    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        npy_cdouble_wrapper Ax)
-    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
-        npy_clongdouble_wrapper Ax)
     """
-  return _bsr.bsr_sort_indices(*args)
-
+      bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          signed char Ax)
+      bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned char Ax)
+      bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          short Ax)
+      bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned short Ax)
+      bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          int Ax)
+      bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned int Ax)
+      bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          long long Ax)
+      bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          unsigned long long Ax)
+      bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          float Ax)
+      bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          double Ax)
+      bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          long double Ax)
+      bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          npy_cfloat_wrapper Ax)
+      bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          npy_cdouble_wrapper Ax)
+      bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj,
+          npy_clongdouble_wrapper Ax)
+      """
+    return _bsr.bsr_sort_indices(*args)

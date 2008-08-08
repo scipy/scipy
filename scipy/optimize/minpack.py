@@ -257,7 +257,7 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
 
       brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
 
-      fixed_point -- scalar and vector fixed-point finder      
+      fixed_point -- scalar and vector fixed-point finder
 
     """
     x0 = array(x0,ndmin=1)
@@ -374,7 +374,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
       brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
 
       fixed_point -- scalar and vector fixed-point finder
-            
+
     """
 
     if fprime is not None:
@@ -414,7 +414,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
 # Steffensen's Method using Aitken's Del^2 convergence acceleration.
 def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
     """Find the point where func(x) == x
-    
+
     Given a function of one or more variables and a starting point, find a
     fixed-point of the function: i.e. where func(x)=x.
 
@@ -452,7 +452,7 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
     """
     if not isscalar(x0):
         x0 = asarray(x0)
-        p0 = x0                  
+        p0 = x0
         for iter in range(maxiter):
             p1 = func(p0, *args)
             p2 = func(p1, *args)
@@ -468,7 +468,7 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
             p1 = func(p0, *args)
             p2 = func(p1, *args)
             d = p2 - 2.0 * p1 + p0
-            if d == 0.0:            
+            if d == 0.0:
                 return p2
             else:
                 p = p0 - (p1 - p0)*(p1-p0) / d

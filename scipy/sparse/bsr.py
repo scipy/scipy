@@ -296,11 +296,11 @@ class bsr_matrix(_cs_matrix):
         result = zeros( self.shape[0], dtype=upcast(self.dtype, other.dtype) )
 
         bsr_matvec(M/R, N/C, R, C, \
-            self.indptr, self.indices, self.data.ravel(), 
+            self.indptr, self.indices, self.data.ravel(),
             other, result)
 
         return result
-    
+
     def _mul_dense_matrix(self,other):
         R,C = self.blocksize
         M,N = self.shape
@@ -318,7 +318,7 @@ class bsr_matrix(_cs_matrix):
     #    # TODO make sparse * dense matrix multiplication more efficient
     #    # matvec each column of other
     #    result = hstack( [ self * col.reshape(-1,1) for col in asarray(other).T ] )
-    #    return result                
+    #    return result
 
     def _mul_sparse_matrix(self, other):
         M, K1 = self.shape

@@ -17,7 +17,7 @@ class Translation(object):
 
         self.entry_point = entry_point
         self.context = TranslationContext(config=self.config)
-        
+
         # hook into driver events
         driver_own_event = self.driver._event
         def _event(kind, goal, func):
@@ -25,7 +25,7 @@ class Translation(object):
             driver_own_event(kind, goal, func)
         self.driver._event = _event
         self.driver_setup = False
-        
+
         self.update_options(argtypes, kwds)
         # for t.view() to work just after construction
         graph = self.context.buildflowgraph(entry_point)
@@ -33,8 +33,8 @@ class Translation(object):
 
     def driver_event(self, kind, goal, func):
         if kind == 'pre':
-             self.ensure_setup()
-            
+            self.ensure_setup()
+
     def ensure_setup(self, argtypes=None, policy=None, standalone=False):
         if not self.driver_setup:
             if standalone:
@@ -82,7 +82,7 @@ class Translation(object):
         if self.config.translation.backend is not None:
             return self.ensure_opt('type_system')
         return self.ensure_opt('type_system', type_system, 'lltype')
-        
+
     def ensure_backend(self, backend=None):
         backend = self.ensure_opt('backend', backend)
         self.ensure_type_system()
@@ -99,7 +99,7 @@ class Translation(object):
     def rtype(self, argtypes=None, **kwds):
         self.update_options(argtypes, kwds)
         ts = self.ensure_type_system()
-        return getattr(self.driver, 'rtype_'+ts)()        
+        return getattr(self.driver, 'rtype_'+ts)()
 
     # backend depedent
 
@@ -107,7 +107,7 @@ class Translation(object):
         self.update_options(argtypes, kwds)
         backend = self.ensure_backend()
         self.driver.source_c()
-       
+
     def compile(self, argtypes=None, **kwds):
         self.update_options(argtypes, kwds)
         backend = self.ensure_backend()

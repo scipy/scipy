@@ -14,7 +14,7 @@ from mandel_c import mandel
 @mkufunc(int)
 def color(i):
     return (i * 10) % 256
-    
+
     n = i % 3
     if n == 0:
         c = (255, 127, 128)
@@ -39,7 +39,7 @@ print img.shape
 img = color(img)
 img.dtype = numpy.uint8
 img = img.reshape(h, w, 4)
-    
+
 print img.dtype
 print img.shape
 

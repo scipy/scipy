@@ -332,7 +332,7 @@ class lil_matrix(spmatrix):
             new.data = numpy.array([[val*other for val in rowvals] for
                                     rowvals in new.data], dtype=object)
         return new
-    
+
     def __truediv__(self, other):           # self / other
         if isscalarlike(other):
             new = self.copy()

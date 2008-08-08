@@ -62,125 +62,125 @@ def build_volume(imagedesc, S=[1500.0, 2500.0, 1000.0]):
 class TestRegistration(TestCase):
 
     def test_affine_matrix_build_1(self):
-	"test_affine_matrix_build_1"
+        "test_affine_matrix_build_1"
         P = np.zeros(6)
-	M = reg.build_rotate_matrix(P)
-	E = np.eye(4)
-	match = (E==M).all()
-	assert_equal(match, True)
-	return
+        M = reg.build_rotate_matrix(P)
+        E = np.eye(4)
+        match = (E==M).all()
+        assert_equal(match, True)
+        return
 
     def test_affine_matrix_build_2(self):
-	"test_affine_matrix_build_2"
+        "test_affine_matrix_build_2"
         P = np.zeros(6)
-	P[0] = 1.0
-	M = reg.build_rotate_matrix(P)
-	E = np.array([
-		     [ 1. ,  0.        , 0.        , 0. ],
-       		     [ 0. ,  0.9998477 , 0.01745241, 0. ],
-       		     [ 0. , -0.01745241, 0.9998477 , 0. ],
-       		     [ 0. ,  0.        , 0.        , 1. ]
-		     ])
-	assert_array_almost_equal(E, M, decimal=6)
-	return
+        P[0] = 1.0
+        M = reg.build_rotate_matrix(P)
+        E = np.array([
+                     [ 1. ,  0.        , 0.        , 0. ],
+                     [ 0. ,  0.9998477 , 0.01745241, 0. ],
+                     [ 0. , -0.01745241, 0.9998477 , 0. ],
+                     [ 0. ,  0.        , 0.        , 1. ]
+                     ])
+        assert_array_almost_equal(E, M, decimal=6)
+        return
 
     def test_affine_matrix_build_3(self):
-	"test_affine_matrix_build_3"
+        "test_affine_matrix_build_3"
         P = np.zeros(6)
-	P[0] = 1.0
-	P[1] = 1.0
-	P[2] = 1.0
-	M = reg.build_rotate_matrix(P)
-	E = np.array([
+        P[0] = 1.0
+        P[1] = 1.0
+        P[2] = 1.0
+        M = reg.build_rotate_matrix(P)
+        E = np.array([
                      [ 0.99969541,  0.01744975,  0.01745241,  0. ],
                      [-0.01775429,  0.9996901 ,  0.01744975,  0. ],
                      [-0.0171425 , -0.01775429,  0.99969541,  0. ],
                      [ 0.        ,  0.        ,  0.        ,  1. ]
-		     ])
-	assert_array_almost_equal(E, M, decimal=6)
-	return
+                     ])
+        assert_array_almost_equal(E, M, decimal=6)
+        return
 
     @dec.slow
     def test_autoalign_histogram_1(self):
-	"test_autoalign_histogram_1"
-	desc = load_desc()
-	gvol = build_volume(desc)
+        "test_autoalign_histogram_1"
+        desc = load_desc()
+        gvol = build_volume(desc)
         mat  = np.eye(4)
-	cost, joint = reg.check_alignment(gvol, mat, gvol, mat, ret_histo=1, lite=1)
-	# confirm that with lite=1 only have non-zero on the main diagonal
+        cost, joint = reg.check_alignment(gvol, mat, gvol, mat, ret_histo=1, lite=1)
+        # confirm that with lite=1 only have non-zero on the main diagonal
         j_diag = joint.diagonal()
         Z = np.diag(j_diag)
         W = joint - Z
-	# clip the near-zero fuzz
+        # clip the near-zero fuzz
         W[abs(W) < 1e-10] = 0.0
-	assert_equal(W.max(), 0.0)
-	return
+        assert_equal(W.max(), 0.0)
+        return
 
     @dec.slow
     def test_autoalign_histogram_2(self):
-	"test_autoalign_histogram_2"
-	desc = load_desc()
-	gvol = build_volume(desc)
+        "test_autoalign_histogram_2"
+        desc = load_desc()
+        gvol = build_volume(desc)
         mat  = np.eye(4)
-	cost, joint = reg.check_alignment(gvol, mat, gvol, mat, ret_histo=1, lite=0)
-	# confirm that with lite=0 DO have non-zero on the main diagonal
+        cost, joint = reg.check_alignment(gvol, mat, gvol, mat, ret_histo=1, lite=0)
+        # confirm that with lite=0 DO have non-zero on the main diagonal
         j_diag = joint.diagonal()
         Z = np.diag(j_diag)
         W = joint - Z
-	# clip the near-zero fuzz
+        # clip the near-zero fuzz
         W[abs(W) < 1e-10] = 0.0
-	s = (W.max() > 0.0)
-	# make sure there are off-diagonal values
-	assert_equal(s, True)
-	return
+        s = (W.max() > 0.0)
+        # make sure there are off-diagonal values
+        assert_equal(s, True)
+        return
 
     @dec.slow
     def test_autoalign_ncc_value_1(self):
-	"test_autoalign_ncc_value_1"
-	desc = load_desc()
-	gvol = build_volume(desc)
+        "test_autoalign_ncc_value_1"
+        desc = load_desc()
+        gvol = build_volume(desc)
         mat  = np.eye(4)
-	cost = reg.check_alignment(gvol, mat, gvol, mat, method='ncc', lite=1)
-	# confirm the cross correlation is near 1.0 
-	t = abs(cost) + 0.0001
-	s = (t >= 1.0)
-	assert_equal(s, True)
-	return
+        cost = reg.check_alignment(gvol, mat, gvol, mat, method='ncc', lite=1)
+        # confirm the cross correlation is near 1.0 
+        t = abs(cost) + 0.0001
+        s = (t >= 1.0)
+        assert_equal(s, True)
+        return
 
     @dec.slow
     def test_autoalign_ncc_value_2(self):
-	"test_autoalign_ncc_value_2"
-	desc = load_desc()
-	gvol = build_volume(desc)
+        "test_autoalign_ncc_value_2"
+        desc = load_desc()
+        gvol = build_volume(desc)
         mat  = np.eye(4)
-	cost = reg.check_alignment(gvol, mat, gvol, mat, method='ncc', lite=0)
-	# confirm the cross correlation is near 1.0 
-	t = abs(cost) + 0.0001
-	s = (t >= 1.0)
-	assert_equal(s, True)
-	return
+        cost = reg.check_alignment(gvol, mat, gvol, mat, method='ncc', lite=0)
+        # confirm the cross correlation is near 1.0 
+        t = abs(cost) + 0.0001
+        s = (t >= 1.0)
+        assert_equal(s, True)
+        return
 
     @dec.slow
     def test_autoalign_nmi_value_1(self):
-	"test_autoalign_nmi_value_1"
-	desc = load_desc()
-	gvol = build_volume(desc)
+        "test_autoalign_nmi_value_1"
+        desc = load_desc()
+        gvol = build_volume(desc)
         mat  = np.eye(4)
-	cost = reg.check_alignment(gvol, mat, gvol, mat, method='nmi', lite=1)
-	# confirm the normalized mutual information is near -2.0 
-	assert_almost_equal(cost, -2.0, decimal=6)
-	return
+        cost = reg.check_alignment(gvol, mat, gvol, mat, method='nmi', lite=1)
+        # confirm the normalized mutual information is near -2.0 
+        assert_almost_equal(cost, -2.0, decimal=6)
+        return
 
     @dec.slow
     def test_autoalign_nmi_value_2(self):
-	"test_autoalign_nmi_value_2"
-	desc = load_desc()
-	gvol = build_volume(desc)
+        "test_autoalign_nmi_value_2"
+        desc = load_desc()
+        gvol = build_volume(desc)
         mat  = np.eye(4)
-	cost = reg.check_alignment(gvol, mat, gvol, mat, method='nmi', lite=0)
-	# confirm the normalized mutual information is near -2.0 
-	assert_almost_equal(cost, -1.7973048186515352, decimal=6)
-	return
+        cost = reg.check_alignment(gvol, mat, gvol, mat, method='nmi', lite=0)
+        # confirm the normalized mutual information is near -2.0 
+        assert_almost_equal(cost, -1.7973048186515352, decimal=6)
+        return
 
 
 

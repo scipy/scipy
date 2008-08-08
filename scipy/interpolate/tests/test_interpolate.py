@@ -29,7 +29,7 @@ class TestInterp1D(TestCase):
 
         self.y210 = np.arange(20.).reshape((2, 10))
         self.y102 = np.arange(20.).reshape((10, 2))
-        
+
         self.fill_value = -100.0
 
     def test_validation(self):
@@ -181,7 +181,7 @@ class TestInterp1D(TestCase):
             interp10(np.array([[3.4, 5.6], [2.4, 7.8]])),
             np.array([[3.4, 5.6], [2.4, 7.8]]),
         )
-        
+
         # Multidimensional outputs.
         interp210 = interp1d(self.x10, self.y210, kind=kind)
         assert_array_almost_equal(
@@ -217,7 +217,7 @@ class TestInterp1D(TestCase):
             np.array([[[6.8, 7.8], [11.2, 12.2]],
                       [[4.8, 5.8], [15.6, 16.6]]]),
         )
-        
+
         # Check large ndim output
         a = [4, 5, 6, 7]
         y = np.arange(np.prod(a)).reshape(*a)
@@ -225,7 +225,7 @@ class TestInterp1D(TestCase):
             x = np.arange(s)
             z = interp1d(x, y, axis=n, kind=kind)
             assert_array_almost_equal(z(x), y)
-            
+
             x2 = np.arange(2*3*1).reshape((2,3,1)) / 12.
             b = list(a)
             b[n:n+1] = [2,3,1]

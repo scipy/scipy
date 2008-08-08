@@ -5,7 +5,7 @@ import time, sys
 src = 0
 if len(sys.argv) == 2 and sys.argv[1] == 's':
     src = 1
-    
+
 
 
 from mkufunc.api import mkufunc

@@ -1467,10 +1467,10 @@ def filtfilt(b,a,x):
 
     zi=lfilter_zi(b,a)
 
-    #Grow the signal to have edges for stabilizing 
+    #Grow the signal to have edges for stabilizing
     #the filter with inverted replicas of the signal
     s=r_[2*x[0]-x[edge:1:-1],x,2*x[-1]-x[-1:-edge:-1]]
-    #in the case of one go we only need one of the extrems 
+    #in the case of one go we only need one of the extrems
     # both are needed for filtfilt
 
     (y,zf)=lfilter(b,a,s,-1,zi*s[0])

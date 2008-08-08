@@ -33,16 +33,16 @@ def translate(f, argtypes):
                                    'pypy_%s.c' % func_hash(f, salt=argtypes))
     try:
         return open(cache_file_name).read()
-    
+
     except IOError:
         from interactive import Translation
-        
+
         t = Translation(f, backend='c')
         t.annotate(argtypes)
         t.source()
-        
+
         os.rename(t.driver.c_source_filename, cache_file_name)
-        
+
         return translate(f, argtypes)
 
 
@@ -64,7 +64,7 @@ class Cfunc(object):
     ...     return x * x
 
     >>> signature = [int, int] # only the input arguments are used here
-    
+
     compilation is done upon initialization
     >>> x = Cfunc(sqr, signature, 123)
     ...
@@ -74,7 +74,7 @@ class Cfunc(object):
     1
     >>> x.sig
     [<type 'int'>, <type 'int'>]
-    
+
     Attributes:
         f           -- the Python function object
         n           -- id number
@@ -97,9 +97,9 @@ class Cfunc(object):
         self.nin = f.func_code.co_argcount
         self.nout = len(self.sig) - self.nin
         assert self.nout == 1                  # for now
-        
+
         src = translate(f, signature[:self.nin])
-        
+
         self._prefix = 'f%i_' % self.n
         self._allCsrc = src.replace('pypy_', self._prefix + 'pypy_')
         self.cname = self._prefix + 'pypy_g_' + f.__name__
@@ -116,7 +116,7 @@ class Cfunc(object):
             \{.*?\n\}\n          # function body ending with } in single line
             ''' % self.cname,
             re.DOTALL | re.MULTILINE | re.VERBOSE)
-        
+
         found = p.findall(self._allCsrc)
         assert len(found) == 1
         res = found[0]
@@ -125,9 +125,9 @@ class Cfunc(object):
             print '------------------'
             print res
             print '------------------'
-        
+
         return 'inline %s\n' % res
-    
+
     def ufunc_support_code(self):
         # Unfortunately the code in here is very hard to read.
         # In order to make the code clearer, one would need a real template
@@ -139,33 +139,33 @@ class Cfunc(object):
 
         def varname(i):
             return chr(i + ord('a'))
-        
+
         declargs = ', '.join('%s %s' % (typedict[self.sig[i]].c, varname(i))
                              for i in xrange(self.nin))
-        
+
         args = ', '.join(varname(i) for i in xrange(self.nin))
-        
+
         isn_steps = '\n\t'.join('npy_intp is%i = steps[%i];' % (i, i)
                                 for i in xrange(self.nin))
-        
+
         ipn_args = '\n\t'.join('char *ip%i = args[%i];' % (i, i)
                                for i in xrange(self.nin))
-        
+
         body1d_in = '\n\t\t'.join('%s *in%i = (%s *)ip%i;' %
                                   (2*(typedict[self.sig[i]].c, i))
                                   for i in xrange(self.nin))
-        
+
         body1d_add = '\n\t\t'.join('ip%i += is%i;' % (i, i)
                                    for i in xrange(self.nin))
-        
+
         ptrargs = ', '.join('*in%i' % i for i in xrange(self.nin))
-        
+
         rettype = typedict[self.sig[-1]].c
-        
+
         return '''
 static %(rettype)s wrap_%(cname)s(%(declargs)s)
 {
-	return %(cname)s(%(args)s);
+        return %(cname)s(%(args)s);
 }
 
 typedef %(rettype)s Func_%(n)i(%(declargs)s);
@@ -173,23 +173,23 @@ typedef %(rettype)s Func_%(n)i(%(declargs)s);
 static void
 PyUFunc_%(n)i(char **args, npy_intp *dimensions, npy_intp *steps, void *func)
 {
-	npy_intp i, n;
+        npy_intp i, n;
         %(isn_steps)s
-	npy_intp os = steps[%(nin)s];
+        npy_intp os = steps[%(nin)s];
         %(ipn_args)s
-	char *op = args[%(nin)s];
-	Func_%(n)i *f = (Func_%(n)i *) func;
-	n = dimensions[0];
-        
-	for(i = 0; i < n; i++) {
-		%(body1d_in)s
-		%(rettype)s *out = (%(rettype)s *)op;
-		
-		*out = (%(rettype)s) f(%(ptrargs)s);
+        char *op = args[%(nin)s];
+        Func_%(n)i *f = (Func_%(n)i *) func;
+        n = dimensions[0];
+
+        for(i = 0; i < n; i++) {
+                %(body1d_in)s
+                %(rettype)s *out = (%(rettype)s *)op;
+
+                *out = (%(rettype)s) f(%(ptrargs)s);
 
                 %(body1d_add)s
                 op += os;
-	}
+        }
 }
 ''' % locals()
 
@@ -198,26 +198,26 @@ def support_code(cfuncs):
     """ Given a list of Cfunc instances, return the support code for weave.
     """
     acc = cStringIO.StringIO()
-    
+
     acc.write('/********************* start pypy.h  **************/\n\n')
     acc.write(open(os.path.join(os.path.dirname(__file__),
                                 'pypy.h')).read())
     acc.write('/********************** end pypy.h ****************/\n\n')
-    
+
     for cf in cfuncs:
         acc.write(cf.cfunc())
         acc.write(cf.ufunc_support_code())
-        
+
     fname = cfuncs[0].f.__name__
-    
+
     pyufuncs = ''.join('\tPyUFunc_%i,\n' % cf.n for cf in cfuncs)
-    
+
     data = ''.join('\t(void *) wrap_%s,\n' % cf.cname for cf in cfuncs)
-    
+
     types = ''.join('\t%s  /* %i */\n' %
                     (''.join(typedict[t].npy + ', ' for t in cf.sig), cf.n)
                     for cf in cfuncs)
-    
+
     acc.write('''
 static PyUFuncGenericFunction %(fname)s_functions[] = {
 %(pyufuncs)s};
@@ -233,7 +233,7 @@ static char %(fname)s_types[] = {
         print '------------------ start support_code -----------------'
         print acc.getvalue()
         print '------------------- end support_code ------------------'
-        
+
     return acc.getvalue()
 
 
@@ -244,7 +244,7 @@ def code(f, signatures):
     ntypes = len(signatures)
     fname = f.__name__
     fhash = func_hash(f)
-    
+
     res = '''
 import_ufunc();
 
@@ -280,14 +280,14 @@ def genufunc(f, signatures):
     """
     if len(signatures) == 0:
         raise ValueError("At least one signature needed")
-    
+
     signatures.sort(key=lambda sig: [numpy.dtype(typ).num for typ in sig])
-    
+
     cfuncs = [Cfunc(f, sig, n) for n, sig in enumerate(signatures)]
-    
+
     ufunc_info = weave.base_info.custom_info()
     ufunc_info.add_header('"numpy/ufuncobject.h"')
-    
+
     return weave.inline(code(f, signatures),
                         verbose=verbose,
                         support_code=support_code(cfuncs),
@@ -296,7 +296,7 @@ def genufunc(f, signatures):
 
 def mkufunc(arg0=[float], src=0):
     """ Python decorator which returns compiled UFunc of the function given.
-    
+
     >>> from numpy import arange
     >>> from mkufunc.api import mkufunc
     >>> @mkufunc
@@ -310,7 +310,7 @@ def mkufunc(arg0=[float], src=0):
     array([  6.3,   9.5,  21.1,  41.1,  69.5])
     """
     class UFunc(object):
-        
+
         def __init__(self, f):
             nin = f.func_code.co_argcount
             nout = 1
@@ -321,7 +321,7 @@ def mkufunc(arg0=[float], src=0):
                     signatures[i] = (nin + nout) * (sig,)
                 else:
                     raise TypeError("no match for %r" % sig)
-                
+
             for sig in signatures:
                 assert isinstance(sig, tuple)
                 if len(sig) != nin + nout:
@@ -331,28 +331,28 @@ def mkufunc(arg0=[float], src=0):
                 for t in sig:
                     if t not in typedict.keys():
                         raise TypeError("no match for %r" % t)
-            
+
             self.ufunc = genufunc(f, signatures)
-            
+
         def __call__(self, *args):
             return self.ufunc(*args)
 
     global showC
     showC = src
-    
+
     if isinstance(arg0, FunctionType):
         f = arg0
         signatures = [float]
         return UFunc(f)
-    
+
     elif isinstance(arg0, list):
         signatures = arg0
         return UFunc
-    
+
     elif arg0 in typedict.keys():
         signatures = [arg0]
         return UFunc
-    
+
     else:
         raise TypeError("first argument has to be a function, a type, or "
                         "a list of signatures")

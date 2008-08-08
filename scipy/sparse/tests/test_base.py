@@ -117,7 +117,7 @@ class _TestCommon:
 
     def test_getrow(self):
         assert_array_equal(self.datsp.getrow(1).todense(), self.dat[1,:])
-    
+
     def test_getcol(self):
         assert_array_equal(self.datsp.getcol(1).todense(), self.dat[:,1])
 
@@ -250,7 +250,7 @@ class _TestCommon:
         # real/complex
         assert_almost_equal( Asp.multiply(Dsp).todense(), A*D) #sparse/sparse
         assert_almost_equal( Asp.multiply(D),             A*D) #sparse/dense
-        
+
 
     def test_elementwise_divide(self):
         expected = [[1,0,0,1],[1,0,1,0],[0,1,0,0]]
@@ -713,7 +713,7 @@ class _TestFancyIndexing:
         assert_equal(A[3:4,9].todense(), B[3:4,9])
         assert_equal(A[1:4,-5].todense(),B[1:4,-5])
         assert_equal(A[2:-1,3].todense(),B[2:-1,3])
-        
+
         # [1:2,1:2]
         assert_equal(A[1:2,1:2].todense(),B[1:2,1:2])
         assert_equal(A[4:,3:].todense(),  B[4:,3:])
@@ -763,11 +763,11 @@ class _TestFancyIndexing:
 
 
         # Check bug reported by Robert Cimrman:
-        # http://thread.gmane.org/gmane.comp.python.scientific.devel/7986 
+        # http://thread.gmane.org/gmane.comp.python.scientific.devel/7986
         s = slice(numpy.int8(2),numpy.int8(4),None)
         assert_equal(A[s,:].todense(), B[2:4,:])
         assert_equal(A[:,s].todense(), B[:,2:4])
-        
+
 class _TestArithmetic:
     """
     Test real/complex arithmetic
@@ -1415,7 +1415,7 @@ class TestBSR(_TestCommon, _TestArithmetic, _TestInplaceArithmetic,
         A = bsr_matrix( arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5) )
         x = arange(A.shape[1]*6).reshape(-1,6)
         assert_equal(A*x, A.todense()*x)
-        
+
 
 if __name__ == "__main__":
     run_module_suite()

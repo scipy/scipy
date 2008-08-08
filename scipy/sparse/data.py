@@ -66,4 +66,3 @@ class _data_matrix(spmatrix):
 
     def _mul_scalar(self, other):
         return self._with_data(self.data * other)
-
