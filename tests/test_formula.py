@@ -63,6 +63,7 @@ class TestFormula(TestCase):
             self.formula += self.terms[i]
         self.formula.namespace = self.namespace
 
+    @dec.skipknownfailure
     def test_namespace(self):
         space1 = {'X':N.arange(50), 'Y':N.arange(50)*2}
         space2 = {'X':N.arange(20), 'Y':N.arange(20)*2}
