@@ -180,7 +180,7 @@ double *bspline_prod(double *x, int nx, double *knots, int nknots,
         double *result, *bl, *br;
         int k;
 
-        if (fabs(r - l) <= m) {
+        if (abs(r - l) <= m) {
             result = (double *) malloc(sizeof(*result) * nx);
             bl = (double *) malloc(sizeof(*bl) * nx);
             br = (double *) malloc(sizeof(*br) * nx);
