@@ -32,3 +32,5 @@ Items
   at, most only checked attribute setting, not the results of applying
   the function to data.
 
+* Remove code duplication.  smoothers.py and bspline.py define
+  SmoothingSpline class.
