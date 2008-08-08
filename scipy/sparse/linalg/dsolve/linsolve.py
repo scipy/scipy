@@ -107,9 +107,9 @@ def splu(A, permc_spec=2, diag_pivot_thresh=1.0,
     A linear solver, for a sparse, square matrix A, using LU decomposition where
     L is a lower triangular matrix and U is an upper triagular matrix.
 
-    Returns a factored_lu object. (scipy.linsolve._superlu.SciPyLUType)
+    Returns a factored_lu object. (scipy.sparse.linalg.dsolve._superlu.SciPyLUType)
 
-    See scipy.linsolve._superlu.dgstrf for more info.
+    See scipy.sparse.linalg.dsolve._superlu.dgstrf for more info.
     """
 
     if not isspmatrix_csc(A):

@@ -39,10 +39,10 @@ class TestEigs(TestCase):
 # class TestGeneigs(TestCase):
 #     def test(self):
 #         import pickle
-#         import scipy.linsolve
+#         from scipy.sparse.linalg import dsolve
 #         A,B = pickle.load(file('mats.pickle'))
 #         sigma = 27.
-#         sigma_solve = scipy.linsolve.splu(A - sigma*B).solve
+#         sigma_solve = dsolve.splu(A - sigma*B).solve
 #         w = ARPACK_gen_eigs(B.matvec, sigma_solve, B.shape[0], sigma, 10)[0]
 #         assert_array_almost_equal(w,
 #         [27.346442255386375,  49.100299170945405,  56.508474856551544, 56.835800191692492,

@@ -16,7 +16,6 @@ import types
 import scipy.optimize as optimize
 import scipy.special as special
 import futil
-import numpy as sb
 from numpy.testing.decorators import setastest
 import warnings
 
