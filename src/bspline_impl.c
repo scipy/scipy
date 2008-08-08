@@ -1,4 +1,6 @@
 
+#include <stdlib.h>
+
 /*  function prototypes */
 
 double *bspline(double **, double *, int, double *, int, int, int, int, int); 
