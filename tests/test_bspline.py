@@ -4,7 +4,7 @@ Test functions for models.bspline
 
 import numpy as np
 from numpy.testing import *
-import scipy.stats.models._bspline as bsp
+import scipy.stats.models.bspline as bsp
 
 class TestBSpline(TestCase):
 
