@@ -198,9 +198,9 @@ class BSpline(object):
                  Bspline to avoid extra evaluation in the __call__ method
 
     '''
-    # FIXME: update parameter names, replace single character names 
+    # FIXME: update parameter names, replace single character names
     # FIXME: `order` should be actual spline order (implemented as order+1)
-    ## FIXME: update the use of spline order in extension code (evaluate is recursively called) 
+    ## FIXME: update the use of spline order in extension code (evaluate is recursively called)
     # FIXME: eliminate duplicate M and m attributes (m is order, M is related to tau size)
 
     def __init__(self, knots, order=4, M=None, coef=None, x=None):
@@ -437,7 +437,7 @@ class SmoothingSpline(BSpline):
 
            fhat = ARGMIN_f SUM_i=1^n (y_i-f(x_i))^2 + pen * int f^(2)^2
 
-	   int is integral. pen is lambda (from Hastie)
+           int is integral. pen is lambda (from Hastie)
 
            See Chapter 5 of
 

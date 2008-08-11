@@ -19,8 +19,8 @@ class TestBSpline(TestCase):
     # C extension is working (in a technical sense, not functional).
     def test_basis(self):
         b = bsp.BSpline(np.linspace(0,1,11))
-	x = np.array([0.4, 0.5])
-	v = b.basis(x, lower=0, upper=13)
+        x = np.array([0.4, 0.5])
+        v = b.basis(x, lower=0, upper=13)
         t = np.array([[ 0.        ,  0.        ],
                       [ 0.        ,  0.        ],
                       [ 0.        ,  0.        ],
@@ -34,7 +34,7 @@ class TestBSpline(TestCase):
                       [ 0.        ,  0.        ],
                       [ 0.        ,  0.        ],
                       [ 0.        ,  0.        ]])
-	assert_array_almost_equal(v, t, decimal=6)
+        assert_array_almost_equal(v, t, decimal=6)
 
     # FIXME: Have no idea what this test does.  It's here to simply verify the
     # C extension is working (in a technical sense, not functional).
