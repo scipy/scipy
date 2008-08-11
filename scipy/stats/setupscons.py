@@ -7,7 +7,6 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('stats', parent_package, top_path)
 
     config.add_sconscript('SConstruct')
-    config.add_subpackage('models')
     config.add_data_dir('tests')
 
     return config
