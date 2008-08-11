@@ -30,14 +30,20 @@ def configuration(parent_package='',top_path=None):
                         
     # ND Image routines for ND interpolation
     config.add_extension('_nd_image',
-                        sources=["extensions/ndimage/nd_image.c",
-                                    "extensions/ndimage/ni_filters.c",
-                                    "extensions/ndimage/ni_fourier.c",
-                                    "extensions/ndimage/ni_interpolation.c",
-                                    "extensions/ndimage/ni_measure.c",
-                                    "extensions/ndimage/ni_morphology.c",
-                                    "extensions/ndimage/ni_support.c"],
+                        sources = ["extensions/ndimage/nd_image.c",
+                                        "extensions/ndimage/ni_filters.c",
+                                        "extensions/ndimage/ni_fourier.c",
+                                        "extensions/ndimage/ni_interpolation.c",
+                                        "extensions/ndimage/ni_measure.c",
+                                        "extensions/ndimage/ni_morphology.c",
+                                        "extensions/ndimage/ni_support.c"],
                         include_dirs=['extensions/ndimage']+[get_include()],
+                        )
+    
+    # implements algorithm 526 for 2D interpolation
+    config.add_extension('interp_526',
+                        sources = ['extensions/interp_526a.pyf',
+                                        'extensions/interp_526.f']
                         )
                         
     config.add_data_dir('docs')

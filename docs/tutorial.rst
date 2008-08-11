@@ -564,6 +564,8 @@ a vector is returned.  The only differences from intper1d are
     'linear', 'cubic' and 'spline', however, work in both cases, and we try to give analogous
     methods the same name.  But some methods are particular to, or have only been written
     for, one praticular dimensionality.
+#. In particular, 2D supports the keywork '526', which implements TOMS algorithm 526.
+    See below for more information.
 
 As in 1D, linear interpolation is used by default, while out of bounds returns NaN.
 
@@ -639,6 +641,13 @@ Beyond basic usage, Spline2 also has the methods
 #) get_coeffs
     Same as Spline
     
+-------------------------------
+TOMS Algorithm 526
+-------------------------------
+TOMS (Transactions on Mathematical Software) algorithm 526 is an
+algorithm for interpolation of from scattered 2-dimensional data.  It is
+described in "ALGORITHM 526: Bivariate Interpolation and Smooth
+Fitting for Irregularly Distributed Data Points [El ]" by Hiroshi Akima. 
 
 
 ================================================

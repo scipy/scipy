@@ -2,6 +2,7 @@
 from numpy import NaN, array
 import numpy as np
 from fitpack_wrapper import Spline2d
+from algorithm526_wrapper import algorithm526
 
 def atleast_1d_and_contiguous(ary, dtype = np.float64):
     # FIXME : don't have in 2 places
@@ -19,7 +20,8 @@ method_register = \
                     'Quartic' : Spline2d(kx=4, ky=4), 'quartic' : Spline2d(kx=4, ky=4),
                     'Quar' : Spline2d(kx=4, ky=4), 'quar' : Spline2d(kx=4, ky=4),
                     'Quintic' : Spline2d(kx=5, ky=5), 'quintic' : Spline2d(kx=5, ky=5),
-                    'Quin' : Spline2d(kx=5, ky=5), 'quin' : Spline2d(kx=5, ky=5)
+                    'Quin' : Spline2d(kx=5, ky=5), 'quin' : Spline2d(kx=5, ky=5),
+                    '526' : algorithm526, 'algorithm526':algorithm526,
                 }
                 
 # dictionary of types for casting.  key = possible datatype, value = datatype it is cast to
@@ -133,11 +135,12 @@ class Interpolate2d:
         self._init_xyz(x, y, z, bad_data)
         
         self.kind = self._init_interp_method(kind)
+        
         self.out = self._init_interp_method(out)
         
     def _init_xyz(self, x, y, z, bad_data):
-        # all must be vectors.  Should allow meshgrid, though?  Perhaps.
-        # Mention that in documentation.
+
+        # FIXME : perhaps allow 2D input if it is inthe form of meshgrid
         
         if bad_data is not None:
             try: # check that bad_data contains only numerical values
@@ -248,9 +251,9 @@ class Interpolate2d:
                                 (min(self._y) <= newy) & (newy <= max(self._y))        
         
         # filling array of interpolated z-values
-        result = np.zeros(np.shape(newx))
-        if sum(in_range_mask) > 0: # if there are in-range values.  hack to deal 
-                                                # with behavior of np.vectorize on arrays of length 0
+        result = np.zeros(np.shape(newx), dtype = self._zdtype)
+        if sum(in_range_mask) > 0:  # if there are in-range values.  hack to deal
+                                               # with behavior of np.vectorize on arrays of length 0
             result[in_range_mask] = self.kind(newx[in_range_mask], newy[in_range_mask])        
         if sum(~in_range_mask) > 0:
             result[~in_range_mask] = self.out(newx[~in_range_mask], newy[~in_range_mask])

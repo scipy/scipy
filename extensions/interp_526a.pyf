@@ -1,0 +1,25 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module interp_526 ! in 
+    ! blubber foo bar
+    interface  ! in :interp_526
+        subroutine idbvip(md,ncp,ndp,xd,yd,zd,nip,xi,yi,zi,iwk,wk) ! in :interp_526:interp_526a.f
+            integer optional,check((md>=1)&&(md<=3)):: md = 1
+            integer optional,check((ncp>=2)&&(ncp<ndp)),depend(ndp):: ncp = (ndp-1<4?ndp-1:4)
+            integer depend(xd),intent(hide),check(ndp>=4) :: ndp=len(xd)
+            real dimension(ndp) :: xd
+            real dimension(ndp),depend(ndp),check(len(yd)==ndp) :: yd
+            real dimension(ndp),depend(ndp) :: zd
+            integer depend(xi),intent(hide) :: nip=len(xi)
+            real dimension(nip) :: xi
+            real dimension(nip),depend(nip),check(len(yi)==nip) :: yi
+            real dimension(nip),depend(nip),intent(out) :: zi
+            integer dimension((MAX(31,27+ncp))*ndp+nip),depend(ncp,ndp,nip),intent(hide,cache) :: iwk
+            real dimension(8 * ndp),depend(ndp),intent(hide,cache) :: wk
+        end subroutine idbvip
+    end interface 
+end python module interp_526
+
+! This file was auto-generated with f2py (version:2_2527).
+! See http://cens.ioc.ee/projects/f2py2e/

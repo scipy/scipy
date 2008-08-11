@@ -15,3 +15,6 @@ from interpolate_wrapper import linear, logarithmic, block, block_average_above
 # wrapped by interpolate*.py files
 from fitpack_wrapper import Spline
 
+# wrapper around Fortran implementing Tom's algorithm 526
+from algorithm526_wrapper import algorithm526
+

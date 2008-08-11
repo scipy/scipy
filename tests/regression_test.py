@@ -38,7 +38,8 @@ if True:
         Test1_dict[test_name] = t2-t1
 
     current_dict['Test1'] = Test1_dict
-    
+
+# 2-dimensional
 if True:
     test_list = [name for name in dir(Test2) if name.find('test_') == 0]
     Test2_dict = {}
@@ -52,6 +53,7 @@ if True:
 
     current_dict['Test2'] = Test2_dict
 
+# N-dmensional
 if True:
     test_list = [name for name in dir(TestN) if name.find('test_') == 0]
     TestN_dict = {}

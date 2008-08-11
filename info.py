@@ -56,6 +56,7 @@ __doc__ = \
         logarithmic :  logarithmic interpolation
         block : block interpolation
         block_average_above : block average above interpolation
+        algorithm526 : interpolation of 2D scattered data by TOMS Algorithm 526
 
 """
         

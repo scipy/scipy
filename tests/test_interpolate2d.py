@@ -129,7 +129,7 @@ class Test(unittest.TestCase):
     def test_string_linear(self):
         """ make sure : string 'linear' works
         """
-        N = 7
+        N = 700
         X, Y = meshgrid(arange(N), arange(N))
         Z = X + Y
         x, y, z = map(ravel, [X, Y, Z] )
@@ -145,7 +145,7 @@ class Test(unittest.TestCase):
     def test_string_quadratic(self):
         """ make sure : string 'quadratic' works
         """
-        N = 7
+        N = 700
         X, Y = meshgrid(arange(N), arange(N))
         Z = X + Y
         x, y, z = map(ravel, [X, Y, Z] )
@@ -161,7 +161,7 @@ class Test(unittest.TestCase):
     def test_string_cubic(self):
         """make sure : string "cubic" works
         """
-        N = 7
+        N = 700
         X, Y = meshgrid(arange(N), arange(N))
         Z = X + Y
         x, y, z = map(ravel, [X, Y, Z] )
@@ -170,6 +170,23 @@ class Test(unittest.TestCase):
         newy = newx
         
         interp_func = Interpolate2d(x, y, z, kind='cubic', out='cubic')
+        newz = interp_func(newx, newy)
+        
+        self.assertAllclose(newz, newx+newy)
+        
+    def test_string_526(self):
+        """ make sure : keyword '526' works
+            ie that TOMS algorithm 526 works
+        """
+        N = 700
+        X, Y = meshgrid(arange(N), arange(N))
+        Z = X + Y
+        x, y, z = map(ravel, [X, Y, Z] )
+        
+        newx = np.arange(1, N)-0.5
+        newy = newx
+        
+        interp_func = Interpolate2d(x, y, z, kind='526', out='526')
         newz = interp_func(newx, newy)
         
         self.assertAllclose(newz, newx+newy)
