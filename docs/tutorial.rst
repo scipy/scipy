@@ -95,14 +95,14 @@ with the keyword argument "kind", which is usually a string.  Continuing from th
 
 There is a large selection of strings which specify a range of interpolation methods.  The list includes:
 
-#. 'linear' : linear interpolation, same as the default
-#. 'block' : "round new_x down" to the nearest values where we know y.
-#. 'nearest' : take the y value of the nearest point
-#. 'logarithmic' : logarithmic interpolation (linear in log(y) )
-#. 'spline' : spline interpolation of default order (currently 3)
-#. 'cubic' : 3rd order spline interpolation
-#. 'quartic' : 4th order spline interpolation
-#. 'quintic' : 5th order spline interpolation
+#) 'linear' : linear interpolation, same as the default
+#) 'block' : "round new_x down" to the nearest values where we know y.
+#) 'nearest' : take the y value of the nearest point
+#) 'logarithmic' : logarithmic interpolation (linear in log(y) )
+#) 'spline' : spline interpolation of default order (currently 3)
+#) 'cubic' : 3rd order spline interpolation
+#) 'quartic' : 4th order spline interpolation
+#) 'quintic' : 5th order spline interpolation
 
 The same flexibility is afforded for extrapolation by the keywords low and high, which
 specify how to treat values below and above the range of known data: ::
@@ -315,15 +315,19 @@ depths in the ground.  He wants to 1) get a visual feel for the data,
 and 2) estimate the average temperature.
 ::
 
-    In []: data_array = loadtxt('dataset1.txt')
+    In []: data_array = loadtxt('geology_dataset1.txt')
     In []: shape(data_array)
     Out []: (12, 2)
     In []: depth = data_array[:,0]
     In []: temp = data_array[:,1]
     
     In []: max(depth)
-    Out []: 20
+    Out []: 19.39929
     In []: plot(depth, temp)
+    
+.. image :: plot_temp_vs_depth.png
+
+::
     
     # He realizes that many of the temperatures are 1000, indicating
     # a measurement error, which makes it look terrible.
@@ -332,8 +336,12 @@ and 2) estimate the average temperature.
     In []: import interpolate as I
     In []: plot( I.interp1d(depth, temp, linspace(0,20,100), bad_data = [1000])
     # much better, but he wants to see it smoother too
-    In []: plot( I.interp1d(depth, temp, linspace(0,20,100), kind='cubic', bad_data = [1000])
+    In []: plot( I.interp1d(depth, temp, linspace(0,20,100), kind='cubic', bad_data = [1000]))
     
+.. image :: plot_temp_vs_depth_clean.png
+
+::
+
     # To find the average temp he can't average the data points because the samples
     # are not necessarily uniform, but it is easy to uniformly sample the interpolated function
     In []: average_temp = average( I.interp1d(depth, temp, linspace(0,20,100), 'cubic', bad_data=[1000]) )
@@ -397,7 +405,7 @@ a function from them, guess a good thickness based on that function, make that
 prototype, and repeat.  If she does this, she can "zoom in" on the optimal thickness.  
 ::
 
-    In []: data_array = loadtxt('data.dat')
+    In []: data_array = loadtxt('thickness_data.dat')
     In []: thickness = data_array[:,0]
     In []: performance = data_array[:,1]
     In []: new_thick = linspace( min(thickness), max(thickness), 200 )
@@ -406,11 +414,20 @@ prototype, and repeat.  If she does this, she can "zoom in" on the optimal thick
     # somewhat expensive, making prototypes is much more so
     In []: new_perf = interp1d(thickness, performance, new_thick, kind = 'quintic')
     In []: guess_perf = max(new_perf)
-    In []: guess_thick = new_thick( find( new_perf == best_perf ) )
+    In []: guess_thick = new_thick[ find( new_perf == guess_perf ) ]
     In []: len(guess_thick)
     Out []: 1 # make sure she only got one answer.
+    # To get a feel, she plots the data, the interpolated curve, and the
+    # estimated optimal point
+    In []: plot(thickness, performance, 'r', new_thick, new_perf)
+    In []: scatter(guess_thick, [guess_perf], marker='>') #guess_perf in braces to make iterable
+
+.. image :: optimization.png
+
+::
     
-    # At this point she builds the prototype and calculates its performance.
+    # Now she builds the prototype using the estimated optimal thickness
+    # and measures its performance.
     # She wants to re-insert it into the array and interpolate again
     In []: measured_perf = 10.7 #the measured performance
     In []: where_to_insert = max( find(thickness < guess_thick) ) +1
@@ -457,6 +474,11 @@ of splines arises, since polynomials are easy to work with).  At a knot, where t
 they are required to agree in the first k-1 derivatives (ie all but the highest).  A spline is specified by the 
 locations of its knots and, for each interval, the coefficients of polynomial that describes it.
 
+Below is a simple cubic spline, with the knots indicated by red dots.  The third derivative is not
+continuous at these points, but it is not visualy apparent; the curve appears smooth.
+
+.. image :: spline.png
+
 For interpolation purposes, the knots are typically chosen to be the known data points. It
 is also common for splines to include smoothing of data, so that the curve does not pass
 through all the data points but is smoother than it would be if it had to. k=3 is the most 
@@ -476,7 +498,7 @@ Calls are then made with the new_x array. ::
     In []: new_x = linspace(0, 2*pi, 40)
     In []: plot(x, y, 'r', new_x, interp(new_x), 'g')
 
-..image :: spline_of_sin.png
+.. image :: spline_of_sin.png
 
 Notice that the resulting curve is extremely smooth.  It is this smoothness that makes splines
 in general (and cubic splines in particular) so sought after.
@@ -493,23 +515,24 @@ Optional Arguments
 
 At instantiation:
 
-#. bbox
-This is a 2-element list specifying the endpoints of the approximation interval.
-It default to [x[0],x[-1]]
-#. w
-a 1D sequence of weights which defaults to all ones.
-#. s 
-If s is zero, the interpolation is exact.  If s is not 0, the curve is smoothe subject to
-the constraint that sum((w[i]*( y[i]-s(x[i]) ))**2,axis=0) <= s
+#) bbox
+    This is a 2-element list specifying the endpoints of the approximation interval.
+    It default to [x[0],x[-1]]
+#) w
+    List of non-negative weights indicating the "importance" of each data point.
+    Not relevant unless s is not zero.
+#) s 
+    If s is zero, the interpolation is exact.  If s is not 0, the curve is smoothe subject to
+    the constraint that sum((w[i]*( y[i]-s(x[i]) ))**2,axis=0) <= s
     
 BEWARE : in the current implementation of the code, if s is small but not zero,
-    instantiating Spline can become painfully slow.
+instantiating Spline can become painfully slow.
 
 At calling:
 
-#. nu
-Spline returns, not the spline function S, but the (nu)th derivative of S.  nu defaults
-to 0, so Spline usually returns the zeroth derivative of S, ie S.
+#) nu
+    Spline returns, not the spline function S, but the (nu)th derivative of S.  nu defaults
+    to 0, so Spline usually returns the zeroth derivative of S, ie S.
 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -518,19 +541,19 @@ Special Methods
 
 The following special methods are also available, which are not wrapped by Interpolate1d :
 
-#. set_smoothing_factor(s = 0.0)
-#. get_knots
+#) set_smoothing_factor(s = 0.0)
+#) get_knots
     returns the positions of the knots of the spline
-#. get_coeffs
+#) get_coeffs
     returns the coefficients of the 
-#. get_residual
-    returns the weighted sum of the errors (due to smoothing) at the data points
-    sum((w[i]*( y[i]-s(x[i]) ))**2,axis=0)
-#. integral(a, b)
+#) get_residual
+    returns the weighted sum of the squared errors (due to smoothing) at the data points:
+    sum(   w[i]*( y[i]-s(x[i]) )^2   )
+#) integral(a, b)
     returns the integral from a to b
-#. derivatives(x)
+#) derivatives(x)
     returns all the derivatives of the spline at point x
-#. roots
+#) roots
     This only works for cubic splines.  But it returns the places where the spline
     is identically zero.
 
@@ -539,10 +562,8 @@ The following special methods are also available, which are not wrapped by Inter
 2D Interpolation
 ================================================
 
-*[This is being written preemptively]*
-
 In 2D interpolation, known data are of the form (x, y, z), and we interpolate
-z_new from (x_new, y_new).  
+newz at the point(s) (newx, newy).  
 
 As in the case of 1D interpolation, there is a convenient functional interface
 for 2D interpolation as well as a callable object which can be more efficient.
@@ -560,17 +581,17 @@ where x, y, z, are 1D arrays or lists, and newx and newy may be either arrays, l
 If they are scalars or zero-dimensional arrays, newz will be a scalar as well.  Otherwise
 a vector is returned.  The only differences from intper1d are
 
-#. The known data points are specified by 3 arrays (x, y and z) rather than 2 (x and y).
+#) The known data points are specified by 3 arrays (x, y and z) rather than 2 (x and y).
     z is the dependent variable, while x and y are independent variables.
-#. Where to interpolate values is specified by two arrays, newx and newy, rather
+#) Where to interpolate values is specified by two arrays, newx and newy, rather
     than only one array.
-#. The extrapolation keywords "low" and "high" are replaced by the single keyword "out"
+#) The extrapolation keywords "low" and "high" are replaced by the single keyword "out"
     for out-of-bounds.
-#. Not all of the same keyword arguments are available for 1D and 2D.  The main ones like 
+#) Not all of the same keyword arguments are available for 1D and 2D.  The main ones like 
     'linear', 'cubic' and 'spline', however, work in both cases, and we try to give analogous
     methods the same name.  But some methods are particular to, or have only been written
     for, one praticular dimensionality.
-#. In particular, 2D supports the keywork '526', which implements TOMS algorithm 526.
+#) In particular, 2D supports the keywork '526', which implements TOMS algorithm 526.
     See below for more information.
 
 As in 1D, linear interpolation is used by default, while out of bounds returns NaN.
