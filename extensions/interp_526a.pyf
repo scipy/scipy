@@ -1,9 +1,9 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module interp_526 ! in 
+python module _interp_526 ! in 
     ! blubber foo bar
-    interface  ! in :interp_526
+    interface  ! in :_interp_526
         subroutine idbvip(md,ncp,ndp,xd,yd,zd,nip,xi,yi,zi,iwk,wk) ! in :interp_526:interp_526a.f
             integer optional,check((md>=1)&&(md<=3)):: md = 1
             integer optional,check((ncp>=2)&&(ncp<ndp)),depend(ndp):: ncp = (ndp-1<4?ndp-1:4)
