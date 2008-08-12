@@ -12,16 +12,16 @@ def atleast_1d_and_contiguous(ary, dtype = np.float64):
 method_register = \
                 { 
                     'linear' : Spline2d(kx=1, ky=1),
-                    'Linear' :  Spline2d(kx=1, ky=1),
-                    'Spline' : Spline2d(), 'spline' : Spline2d(),
-                    'Quadratic' : Spline2d(kx=2, ky=2), 'quadratic' : Spline2d(kx=2, ky=2),
-                    'Quad' : Spline2d(kx=2, ky=2), 'quad' : Spline2d(kx=2, ky=2),
-                    'Cubic' : Spline2d(kx=3, ky=3), 'cubic' : Spline2d(kx=3, ky=3),
-                    'Quartic' : Spline2d(kx=4, ky=4), 'quartic' : Spline2d(kx=4, ky=4),
-                    'Quar' : Spline2d(kx=4, ky=4), 'quar' : Spline2d(kx=4, ky=4),
-                    'Quintic' : Spline2d(kx=5, ky=5), 'quintic' : Spline2d(kx=5, ky=5),
-                    'Quin' : Spline2d(kx=5, ky=5), 'quin' : Spline2d(kx=5, ky=5),
+                    'spline' : Spline2d(),
+                    'quadratic' : Spline2d(kx=2, ky=2),
+                    'quad' : Spline2d(kx=2, ky=2),
+                    'cubic' : Spline2d(kx=3, ky=3),
+                    'quartic' : Spline2d(kx=4, ky=4),
+                    'quar' : Spline2d(kx=4, ky=4),
+                    'quintic' : Spline2d(kx=5, ky=5),
+                    'quin' : Spline2d(kx=5, ky=5),
                     '526' : algorithm526, 'algorithm526':algorithm526,
+                    'natural' : Spline2d(kx=3, ky=3),
                 }
                 
 # dictionary of types for casting.  key = possible datatype, value = datatype it is cast to
@@ -177,7 +177,7 @@ class Interpolate2d:
         # primary usage : user passes a string indicating a known function
         # pick interpolator accordingly
         if isinstance(method, basestring):
-            interpolator = method_register.setdefault(method, None )
+            interpolator = method_register.setdefault(method.lower(), None )
             if interpolator is None: 
                 raise TypeError, "input string %s not valid" % method
         else:

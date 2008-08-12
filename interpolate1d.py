@@ -10,22 +10,22 @@ from numpy import array, arange, empty, float64, NaN
 # dictionary of interpolation functions/classes/objects
 method_register = \
                 { # functions
-                    'linear' : linear,  'Linear' : linear, 
-                    'logarithmic' : logarithmic, 'Logarithmic' : logarithmic, 
-                    'block' : block, 'Block' : block, 
-                    'block_average_above' : block_average_above, 
-                    'Block_average_above' : block_average_above, 
-                    'nearest' : nearest, 'Nearest' : nearest,
+                    'linear' : linear,
+                    'logarithmic' : logarithmic,
+                    'block' : block,
+                    'block_average_above' : block_average_above,
+                    'nearest' : nearest,
                     
                     # Splines
-                    'Spline' : Spline, 'spline' : Spline,
-                    'Quadratic' : Spline(k=2), 'quadratic' : Spline(k=2),
-                    'Quad' : Spline(k=2), 'quad' : Spline(k=2),
-                    'Cubic' : Spline(k=3), 'cubic' : Spline(k=3),
-                    'Quartic' : Spline(k=4), 'quartic' : Spline(k=4),
-                    'Quar' : Spline(k=4), 'quar' : Spline(k=4),
-                    'Quintic' : Spline(k=5), 'quintic' : Spline(k=5),
-                    'Quin' : Spline(k=5), 'quin' : Spline(k=5)
+                    'spline' : Spline,
+                    'quadratic' : Spline(k=2),
+                    'quad' : Spline(k=2),
+                    'cubic' : Spline(k=3),
+                    'quartic' : Spline(k=4),
+                    'quar' : Spline(k=4),
+                    'quintic' : Spline(k=5),
+                    'quin' : Spline(k=5),
+                    'natural': Spline(k=3),
                 }
                 
 # dictionary of types for casting.  key = possible datatype, value = datatype it is cast to
@@ -55,6 +55,10 @@ def interp1d(x, y, new_x,
                 y includes the y-values for the data set  to
                 interpolate from.  Note that 2-dimensional
                 y is not currently supported.
+                
+            newx -- list of 1D numpy array
+                x values at which to interpolate the value
+                of the function
                 
         Optional Arguments
         -------------------
@@ -159,6 +163,10 @@ class Interpolate1d(object):
                 y includes the y-values for the data set  to
                 interpolate from.  Note that 2-dimensional
                 y is not supported.
+            
+            newx -- list of 1D numpy array
+                x values at which to interpolate the value
+                of the function
                 
         Optional Arguments
         -------------------
@@ -306,7 +314,7 @@ class Interpolate1d(object):
         # primary usage : user passes a string indicating a known function
         # pick interpolator accordingly
         if isinstance(interp_arg, basestring):
-            interpolator = method_register.setdefault(interp_arg, None )
+            interpolator = method_register.setdefault(interp_arg.lower(), None )
             if interpolator is None: 
                 raise TypeError, "input string %s not valid" % interp_arg
         else:

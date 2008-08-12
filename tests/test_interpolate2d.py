@@ -129,7 +129,7 @@ class Test(unittest.TestCase):
     def test_string_linear(self):
         """ make sure : string 'linear' works
         """
-        N = 700
+        N = 7
         X, Y = meshgrid(arange(N), arange(N))
         Z = X + Y
         x, y, z = map(ravel, [X, Y, Z] )
@@ -145,7 +145,7 @@ class Test(unittest.TestCase):
     def test_string_quadratic(self):
         """ make sure : string 'quadratic' works
         """
-        N = 700
+        N = 7
         X, Y = meshgrid(arange(N), arange(N))
         Z = X + Y
         x, y, z = map(ravel, [X, Y, Z] )
@@ -161,7 +161,7 @@ class Test(unittest.TestCase):
     def test_string_cubic(self):
         """make sure : string "cubic" works
         """
-        N = 700
+        N = 7
         X, Y = meshgrid(arange(N), arange(N))
         Z = X + Y
         x, y, z = map(ravel, [X, Y, Z] )
@@ -178,7 +178,7 @@ class Test(unittest.TestCase):
         """ make sure : keyword '526' works
             ie that TOMS algorithm 526 works
         """
-        N = 700
+        N = 7
         X, Y = meshgrid(arange(N), arange(N))
         Z = X + Y
         x, y, z = map(ravel, [X, Y, Z] )

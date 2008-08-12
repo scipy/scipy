@@ -131,12 +131,21 @@ class InterpolateNd:
     # The array interpolation is handled by the C extension _nd_image.
     def __init__(self, data, starting_coords =None, spacings = None, 
                         kind='linear', out=NaN):
-        """ data = array or list of lists
-            starting_coords = None, list, 1D array or 2D (nx1) array
-            spacings = None, list, 1D array or 2D (nx1) array
-            kind = string or integer
-                0 = block extrapolation between midpoints
-            out = string in 'nearest', 'wrap', 'reflect', 'mirror', 'constant'
+        """ Parameters
+            -----------
+                data = array or list of lists
+                
+            Optional Parameters
+            -------------------
+                starting_coords = None, list, 1D array or 2D (nx1) array
+                        spatial coordinate where data[0,..., 0] is measured.
+                        Defaults to zeros.
+                spacings = None, list, 1D array or 2D (nx1) array
+                        spacings[i] is spacing along axis i
+                        defaults to all ones
+                kind = string or integer
+                        indicates type of interpolation to perform
+                out = string in 'nearest', 'wrap', 'reflect', 'mirror', 'constant'
                         or just NaN
         """
         
@@ -167,32 +176,25 @@ class InterpolateNd:
                 1:1,
                 '1':1,
                 'linear':1,
-                'Linear':1,
                 2:2,
                 '2':2,
                 'quadratic':2,
                 'quad':2,
-                'Quadratic':2,
-                'Quad':2,
                 3:3,
                 '3':3,
                 'spline':3,
-                'Spline':3,
                 'cubic':3,
-                'Cubic':3,
+                'natural':3,
                 4:4,
                 '4':4,
                 'quartic':4,
-                'Quartic':4,
                 5:5,
                 '5':5,
                 'quintic':5,
                 'quint':5,
-                'Quintic':5,
-                'Quint':5
                 }
-        if order_dict.has_key(kind):
-            self.order = order_dict[kind]
+        if order_dict.has_key(str(kind).lower()):
+            self.order = order_dict[str(kind).lower()]
         elif isinstance(kind, int):
             raise ValueError, "Only spline orders 0, 1, ..., 5 are supported"
         else:
@@ -289,7 +291,10 @@ class InterpolateNd:
         return num_indices_in_bounds == self.ndim
 
     def _spline_filter(self, data, order = 3):
-        """ Multi-dimensional spline filter.
+        """ This step is required by the extension module.  I (Field Cady)
+            do not fully understand why.
+        
+            Multi-dimensional spline filter.
 
             Note: The multi-dimensional filter is implemented as a sequence of
             one-dimensional spline filters. The intermediate arrays are stored

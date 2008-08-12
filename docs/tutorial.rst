@@ -429,32 +429,38 @@ actually a wrapper around the Spline class, which contains fast and powerful For
 code for working with splines.  However, Interpolate1d only wraps a part of this functionality.
 For some tasks, it is good to be able to directly access this power.
 
-This section describes the operation of the Spline class.
+This section provides a brief introduction to the mathematics of splines
+and describes the operation of the Spline class.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Intro to Splines
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Splines are a class of functions which 
+Splines are a class of functions which
+
 #) are easy and quick to evaluate, 
 #) can be fitted to any 1D data, and 
 #) are quite smooth
-#) do not show the pathological Runge's phenomenon which mares polynomial fits
+#) do not show the pathological Runge's phenomenon which mars polynomial fits
+
 Thus, they are ideal for interpolation if we need something smoother than
 a simple linear fit.  This is the barest of mathematical primers on splines;
-more information is readily available on the internet.
+more information is readily available on the internet.  Wikipedia, for example, has
+a very accessible but reasonably thorough treatment_ of splines and their use
+in interpolation.
 
+.. _treatment : http://en.wikipedia.org/wiki/Spline_interpolation
 
 Mathematically, a spline function S of order k is defined relative to a sequence of "knots", x1, x2, ..., xn. On
 every interval [xi, x_{i-1}], S is a polynomial of order at most k (it is from this that the ease and speed
-of splines arises).  At a knot, where two of the polynomials meet, they are required to agree in the first
-k-1 derivatives (ie all but the last).  A spline is specified by the locations of its knots and the coefficients
-of its polynomial in each interval.
+of splines arises, since polynomials are easy to work with).  At a knot, where two of the polynomials meet, 
+they are required to agree in the first k-1 derivatives (ie all but the highest).  A spline is specified by the 
+locations of its knots and, for each interval, the coefficients of polynomial that describes it.
 
 For interpolation purposes, the knots are typically chosen to be the known data points. It
 is also common for splines to include smoothing of data, so that the curve does not pass
 through all the data points but is smoother than it would be if it had to. k=3 is the most 
-common order of spline used in interpolation, and is often called a cubic spline.
+common order of spline used in interpolation, and is often called a 'cubic' or 'natural' spline spline.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Basic Usage
