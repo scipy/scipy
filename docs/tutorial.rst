@@ -23,6 +23,8 @@ This tutorial covers how to use the interpolate module, provides some basic exam
 them at work in realistic sample sessions.  These sessions demonstrate how to use the 
 interpolate module, but also highlight some of the uses of interpolation techniques.
 
+
+
 ======================
 1D Interpolation 
 ======================
@@ -85,7 +87,7 @@ NaN at all such points: ::
     Out []: array([        NaN,     NaN,     0.63661977,   0.72676046])
 
 If we want a type of interpolation other than linear, there is a range of options which we can specify 
-with the keyword argument "kind", which is usually a string.  Continuing from the previous example,::
+with the keyword argument "kind", which is usually a (non-case-sensitive) string.  Continuing from the previous example,::
 
     # If we want quadratic (2nd order) spline interpolation, we can use the string 'quadratic'
     In []: new_y_quadratic = interp1d(x, y, new_x, kind = 'quadratic')
@@ -738,5 +740,5 @@ ND Scattered Interpolation
  Still in development.
  
  Ideally the range of interpolation would be the convex hull of the known
- data points, and a Delaunay triangulation would be determined and stored
- at instantiation.  Then again, that would be VERY expensive.
+ data points, and a Delaunay tesselation would be determined and stored
+ at instantiation.  Then again, that would be very expensive.

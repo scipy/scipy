@@ -9,6 +9,7 @@ def atleast_1d_and_contiguous(ary, dtype = np.float64):
     return np.atleast_1d( np.ascontiguousarray(ary, dtype) )
 
 # dictionary of interpolation functions/classes/objects
+# keys are possible values of keyword "kind"
 method_register = \
                 { 
                     'linear' : Spline2d(kx=1, ky=1),
@@ -16,24 +17,28 @@ method_register = \
                     'quadratic' : Spline2d(kx=2, ky=2),
                     'quad' : Spline2d(kx=2, ky=2),
                     'cubic' : Spline2d(kx=3, ky=3),
+                    'natural' : Spline2d(kx=3, ky=3),
                     'quartic' : Spline2d(kx=4, ky=4),
                     'quar' : Spline2d(kx=4, ky=4),
                     'quintic' : Spline2d(kx=5, ky=5),
                     'quin' : Spline2d(kx=5, ky=5),
                     '526' : algorithm526, 'algorithm526':algorithm526,
-                    'natural' : Spline2d(kx=3, ky=3),
                 }
                 
 # dictionary of types for casting.  key = possible datatype, value = datatype it is cast to
 # BEWARE : if you cast things to integers, you will lose interpolation ability
-dtype_register = {np.float32 : np.float32, 
-                            np.float64 : np.float64
-                            }
+dtype_register = {   
+                        np.float32 : np.float32, 
+                        np.float64 : np.float64
+                        }
+# input will be cast to this type if it's not a key in dtype_register
 dtype_default = np.float64
 
+# functional interface: creates and calls an instance of objective interface
 def interp2d(x, y, z, newx, newy, kind='linear', out=NaN, bad_data=None):
     return Interpolate2d(x, y, z, kind=kind, out=out, bad_data=bad_data)(newx, newy)
-    
+
+# objective interface
 class Interpolate2d:
     """ A callable class for interpolation of 1D, real-valued data.
         
@@ -141,14 +146,6 @@ class Interpolate2d:
     def _init_xyz(self, x, y, z, bad_data):
 
         # FIXME : perhaps allow 2D input if it is inthe form of meshgrid
-        
-        if bad_data is not None:
-            try: # check that bad_data contains only numerical values
-                sum_of_bad_data = sum(bad_data)
-            except:
-                raise TypeError, "bad_data must be either None \
-                        or a list of numbers"  
-            x, y, z = self._remove_bad_data(x, y, z, bad_data)
          
         # check acceptable sizes and dimensions
         x = np.atleast_1d(x)
@@ -160,6 +157,15 @@ class Interpolate2d:
         assert z.ndim == 1 , "z must be one-dimensional" 
         assert len(x) == len(y) , "x and y must be of the same length"
         assert len(x) == len(z) , "x and z must be of the same length"
+        
+        # remove bad data if applicable
+        if bad_data is not None:
+            try: # check that bad_data contains only numerical values
+                sum_of_bad_data = sum(bad_data)
+            except:
+                raise TypeError, "bad_data must be either None \
+                        or a list of numbers.  Sorry."  
+            x, y, z = self._remove_bad_data(x, y, z, bad_data)
             
         # select proper dataypes and make arrays
         self._xdtype = dtype_register.setdefault(type(x[0]), dtype_default)

@@ -41,7 +41,7 @@ def configuration(parent_package='',top_path=None):
                         )
     
     # implements algorithm 526 for 2D interpolation
-    config.add_extension('interp_526',
+    config.add_extension('_interp_526',
                         sources = ['extensions/interp_526a.pyf',
                                         'extensions/interp_526.f']
                         )
