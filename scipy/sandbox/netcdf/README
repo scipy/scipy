@@ -1,3 +1,0 @@
-This is an adaptation of Konrad Hinsen's Scientific.IO.NetCDF package to 
-use NumPy.  The original License (for version 2.4.9 of Scientific) is included
-in Scientific_LICENSE.

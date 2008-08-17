@@ -15,7 +15,6 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('misc')
     config.add_subpackage('odr')
     config.add_subpackage('optimize')
-    config.add_subpackage('sandbox')
     config.add_subpackage('signal')
     config.add_subpackage('sparse')
     config.add_subpackage('special')

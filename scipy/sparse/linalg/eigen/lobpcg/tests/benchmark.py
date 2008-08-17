@@ -1,5 +1,5 @@
 from scipy import *
-from scipy.sandbox import lobpcg
+from scipy.sparese.linalg import lobpcg
 from symeig import symeig
 from pylab import plot, show, legend, xlabel, ylabel
 set_printoptions(precision=3,linewidth=90)
