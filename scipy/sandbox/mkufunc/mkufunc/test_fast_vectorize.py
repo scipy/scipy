@@ -3,7 +3,7 @@ import unittest
 
 from numpy import array, arange, allclose
 
-from api import Cfunc, genufunc, mkufunc
+from fast_vectorize import Cfunc, genufunc, fast_vectorize
 
 
 class Util:
@@ -53,13 +53,13 @@ class Arg_Tests(unittest.TestCase, Util):
         self.assert_(f(-2.5) - 6.25 < 1E-10)
 
     def test_direct(self):
-        @mkufunc
+        @fast_vectorize
         def f(x):
             return x * x
         self.check_ufunc(f)
 
     def test_noargs(self):
-        @mkufunc()
+        @fast_vectorize()
         def f(x):
             return x * x
         self.check_ufunc(f)
@@ -68,20 +68,20 @@ class Arg_Tests(unittest.TestCase, Util):
         for arg in (float,
                     [float],
                     [(float, float)]):
-            @mkufunc(arg)
+            @fast_vectorize(arg)
             def f(x):
                 return x * x
             self.check_ufunc(f)
 
     def test_int(self):
-        @mkufunc(int)
+        @fast_vectorize(int)
         def f(x):
             return x * x
         self.assertEqual(f(3), 9)
         self.assert_(isinstance(f(42), int))
 
     def test_mixed(self):
-        @mkufunc([(int, float, int), float])
+        @fast_vectorize([(int, float, int), float])
         def f(n, x):
             return n + x * x
 
@@ -97,12 +97,12 @@ class Arg_Tests(unittest.TestCase, Util):
         def f(x):
             return x
 
-        self.assertRaises(TypeError, mkufunc, {})
-        self.assertRaises(TypeError, mkufunc([(float,)]), f)
-        self.assertRaises(TypeError, mkufunc([3*(float,)]), f)
-        self.assertRaises(TypeError, mkufunc([{}]), f)
-        self.assertRaises(TypeError, mkufunc([(int, {})]), f)
-        self.assertRaises(ValueError, mkufunc([]), f)
+        self.assertRaises(TypeError, fast_vectorize, {})
+        self.assertRaises(TypeError, fast_vectorize([(float,)]), f)
+        self.assertRaises(TypeError, fast_vectorize([3*(float,)]), f)
+        self.assertRaises(TypeError, fast_vectorize([{}]), f)
+        self.assertRaises(TypeError, fast_vectorize([(int, {})]), f)
+        self.assertRaises(ValueError, fast_vectorize([]), f)
 
 
 class Math_Tests(unittest.TestCase, Util):
@@ -118,82 +118,82 @@ class Math_Tests(unittest.TestCase, Util):
         self.assertClose(a, b)
 
     def test_pi(self):
-        @mkufunc
+        @fast_vectorize
         def f(x): return math.pi * x
         self.assertFuncsEqual(f, lambda x: math.pi * x)
 
     def test_e(self):
-        @mkufunc
+        @fast_vectorize
         def f(x): return math.e * x
         self.assertFuncsEqual(f, lambda x: math.e * x)
 
     def test_exp(self):
-        @mkufunc
+        @fast_vectorize
         def f(x): return math.exp(x)
         self.assertFuncsEqual(f, math.exp)
 
     def test_log(self):
-        @mkufunc
+        @fast_vectorize
         def f(x): return math.log(x)
         self.assertFuncsEqual(f, math.log)
 
     def test_log10(self):
-        @mkufunc
+        @fast_vectorize
         def f(x): return math.log10(x)
         self.assertFuncsEqual(f, math.log10)
 
     def test_sqrt(self):
-        @mkufunc
+        @fast_vectorize
         def f(x): return math.sqrt(x)
         self.assertFuncsEqual(f, math.sqrt)
 
     def test_cos(self):
-        @mkufunc
+        @fast_vectorize
         def f(x): return math.cos(x)
         self.assertFuncsEqual(f, math.cos)
 
     def test_sin(self):
-        @mkufunc
+        @fast_vectorize
         def f(x): return math.sin(x)
         self.assertFuncsEqual(f, math.sin)
 
     def test_tan(self):
-        @mkufunc
+        @fast_vectorize
         def f(x): return math.tan(x)
         self.assertFuncsEqual(f, math.tan)
 
     def test_cosh(self):
-        @mkufunc
+        @fast_vectorize
         def f(x): return math.cosh(x)
         self.assertFuncsEqual(f, math.cosh)
 
     def test_sinh(self):
-        @mkufunc
+        @fast_vectorize
         def f(x): return math.sinh(x)
         self.assertFuncsEqual(f, math.sinh)
 
     def test_tanh(self):
-        @mkufunc
+        @fast_vectorize
         def f(x): return math.tanh(x)
         self.assertFuncsEqual(f, math.tanh)
 
     def test_acos(self):
-        @mkufunc
+        @fast_vectorize
         def f(x): return math.acos(x)
         self.assertFuncsEqual(f, math.acos)
 
     def test_asin(self):
-        @mkufunc
+        @fast_vectorize
         def f(x): return math.asin(x)
         self.assertFuncsEqual(f, math.asin)
 
     def test_atan(self):
-        @mkufunc
+        @fast_vectorize
         def f(x): return math.atan(x)
         self.assertFuncsEqual(f, math.atan)
 
     def test_atan2(self):
-        @mkufunc
+        @fast_vectorize
         def f(x, y):
             return math.atan2(x, y)
 
@@ -206,7 +206,7 @@ class Math_Tests(unittest.TestCase, Util):
         self.assertClose(a, b)
 
     def test_pow(self):
-        @mkufunc
+        @fast_vectorize
         def f(x, y):
             return math.pow(x, y)
 
@@ -219,7 +219,7 @@ class Math_Tests(unittest.TestCase, Util):
         self.assertClose(a, b)
 
     def test_hypot(self):
-        @mkufunc
+        @fast_vectorize
         def f(x, y):
             return math.hypot(x, y)
 
@@ -234,12 +234,12 @@ class Math_Tests(unittest.TestCase, Util):
     def test_arithmetic(self):
         def f(x):
             return (4 * x + 2) / (x * x - 7 * x + 1)
-        uf = mkufunc(f)
+        uf = fast_vectorize(f)
         x = arange(0, 2, 0.1)
         self.assertClose(uf(x), f(x))
 
     def test_modulo(self):
-        @mkufunc(int)
+        @fast_vectorize(int)
         def f(i):
             return i % 5
 
@@ -252,7 +252,7 @@ class Math_Tests(unittest.TestCase, Util):
 class Control_Flow_Tests(unittest.TestCase):
 
     def test_if(self):
-        @mkufunc(int)
+        @fast_vectorize(int)
         def f(n):
             if n < 4:
                 return n
@@ -263,7 +263,7 @@ class Control_Flow_Tests(unittest.TestCase):
         self.assertEqual(f(4), 16)
 
     def test_switch(self):
-        @mkufunc(int)
+        @fast_vectorize(int)
         def f(n):
             if n < 4:
                 return n
@@ -280,7 +280,7 @@ class Control_Flow_Tests(unittest.TestCase):
         self.assertEqual(f(6), 36)
 
     def test_loop(self):
-        @mkufunc(int)
+        @fast_vectorize(int)
         def f(n):
             res = 0
             for i in xrange(n):
@@ -295,7 +295,7 @@ class FreeVariable_Tests(unittest.TestCase, Util):
 
     def test_const(self):
         a = 13.6
-        @mkufunc
+        @fast_vectorize
         def f(x):
             return a * x
 
@@ -306,17 +306,16 @@ class FreeVariable_Tests(unittest.TestCase, Util):
 class Misc_Tests(unittest.TestCase, Util):
 
     def test_lambda(self):
-        self.assertRaises(AssertionError, mkufunc, lambda x: x*x + 2)
+        self.assertRaises(AssertionError, fast_vectorize, lambda x: x*x + 2)
 
     def test_angle(self):
         from math import sin, pi, sqrt
-        @mkufunc
+        @fast_vectorize
         def sin_deg(angle):
             return sin(angle / 180.0 * pi)
 
         self.assertClose(sin_deg([0, 30, 45, 60, 90, 180, 270, 360]),
                          [0, 0.5, 1/sqrt(2), sqrt(3)/2, 1, 0, -1, 0])
-
 
 
 

@@ -7,8 +7,10 @@ if len(sys.argv) == 2 and sys.argv[1] == 's':
     src = 1
 
 
+import sys
+sys.path.append('../mkufunc')
+from fast_vectorize import fast_vectorize
 
-from mkufunc.api import mkufunc
 
 
 def count_primes(N):
@@ -27,7 +29,7 @@ print count_primes(100000)
 print 'Python: %.6f sec' % (time.time() - start_time)
 
 
-count_primes = mkufunc(int, src=src)(count_primes)
+count_primes = fast_vectorize(int, src=src)(count_primes)
 
 
 start_time = time.time()

@@ -1,3 +1,8 @@
+"""
+This file is essentially the file pypy-dist/pypy/translator/interactive.py
+with some modifications to get the c_source_filename.
+"""
+
 import driver
 
 from pypy.translator.translator import TranslationContext

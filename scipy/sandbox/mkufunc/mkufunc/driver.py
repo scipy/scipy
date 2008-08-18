@@ -1,3 +1,7 @@
+"""
+This file is essentially the file pypy-dist/pypy/translator/driver.py
+with some modifications to get the c_source_filename.
+"""
 import sys, os
 
 from pypy.translator.translator import TranslationContext, graphof
@@ -131,7 +135,7 @@ class TranslationDriver(SimpleTaskEngine):
             explicit_task = task
             parts = task.split('_')
             if len(parts) == 1:
-                if task in ('annotate'):
+                if task in ('annotate',):
                     expose_task(task)
             else:
                 task, postfix = parts
@@ -186,7 +190,7 @@ class TranslationDriver(SimpleTaskEngine):
     def _maybe_skip(self):
         maybe_skip = []
         if self._disabled:
-            for goal in  self.backend_select_goals(self._disabled):
+            for goal in self.backend_select_goals(self._disabled):
                 maybe_skip.extend(self._depending_on_closure(goal))
         return dict.fromkeys(maybe_skip).keys()
 

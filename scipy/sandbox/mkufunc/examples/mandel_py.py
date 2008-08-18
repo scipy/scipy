@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 from numpy import array
-from mkufunc.api import mkufunc
+
+import sys
+sys.path.append('../mkufunc')
+from fast_vectorize import fast_vectorize
+
 
 D = 1000
 
 
-@mkufunc([(float, float, int)])
+@fast_vectorize([(float, float, int)])
 def mandel(cr, ci):
     d = 1
     zr = cr

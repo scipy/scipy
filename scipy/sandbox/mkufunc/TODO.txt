@@ -1,15 +1,9 @@
 
 - Documentation
 
-- improve caching of pypy compiler output
-
 - think about shipping issues (using weave ext_tools)
 
 - add Csrc attribute to ufunc object
 
+- see if monkeypatch of pypy modules is feasible/desired
 
-- improved function hash
-
-- rename to fast_vectorize
-
-- which python version should this work with?

@@ -6,7 +6,9 @@ import md5
 from numpy import linspace, vectorize, allclose, empty_like
 from scipy import weave
 
-from mkufunc.api import mkufunc
+import sys
+sys.path.append('../mkufunc')
+from fast_vectorize import fast_vectorize
 
 
 def f(x):
@@ -15,7 +17,7 @@ def f(x):
 
 vfunc = vectorize(f)
 
-mfunc = mkufunc([(float, float)])(f)
+mfunc = fast_vectorize([(float, float)])(f)
 
 #####################################################################
 support_code = '''
@@ -94,7 +96,7 @@ print 'vectorize: %.6f sec' % v_time
 start_time = time.time()
 m_y = mfunc(x)
 m_time = time.time() - start_time
-print 'mkufunc: %.6f sec' % m_time
+print 'fast_vectorize: %.6f sec' % m_time
 
 start_time = time.time()
 u_y = ufunc(x)

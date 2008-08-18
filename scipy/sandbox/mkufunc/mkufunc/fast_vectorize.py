@@ -1,11 +1,11 @@
-""" mkufunc (make U function)
+"""fast_vectorize: creates a U function from python source code
 
-
-Author: Ilan Schnell (with help from Travis Oliphant and Eric Jones)
+Author: Ilan Schnell
+Thanks: Travis Oliphant and Eric Jones
 """
 import sys
 import re
-import os, os.path
+import os
 import cStringIO
 import md5
 from types import FunctionType
@@ -13,34 +13,49 @@ from types import FunctionType
 import numpy
 from scipy import weave
 
+# Local imports
+from func_hash import func_hash
 
-verbose = 0
-showC = 0
 
-def func_hash(f, salt=None):
-    """ Return a MD5 hash for a function object as string.
-    """
-    co = f.func_code
-    return md5.md5(co.co_code + repr(co.co_names) + repr(salt)).hexdigest()
+_verbose = 0
+_showc = 0
+_force = 0
+
+def c_source_filename(f, argtypes):
+    try:
+        import pypy
+    except ImportError:
+        raise ImportError("""
+################################################################
+weave.fast_vectorize requires pypy to be installed.
+
+You can download...
+################################################################
+""")
+    
+    from interactive import Translation
+
+    t = Translation(f, backend='c')
+    t.annotate(argtypes)
+    t.source()
+    return t.driver.c_source_filename
 
 
 def translate(f, argtypes):
     """ Return pypy's C output for a given function and argument types.
         The cache files are in weave's directory.
     """
+    if _force:
+        filename = c_source_filename(f, argtypes)
+        return open(filename).read()
+    
     cache_file_name = os.path.join(weave.catalog.default_dir(),
                                    'pypy_%s.c' % func_hash(f, salt=argtypes))
     try:
         return open(cache_file_name).read()
 
     except IOError:
-        from interactive import Translation
-
-        t = Translation(f, backend='c')
-        t.annotate(argtypes)
-        t.source()
-
-        os.rename(t.driver.c_source_filename, cache_file_name)
+        os.rename(c_source_filename(f, argtypes), cache_file_name)
 
         return translate(f, argtypes)
 
@@ -120,7 +135,7 @@ class Cfunc(object):
         assert len(found) == 1
         res = found[0]
         res = res.replace(self._prefix + 'pypy_g_ll_math_ll_math_', '')
-        if showC:
+        if _showc:
             print '------------------'
             print res
             print '------------------'
@@ -228,7 +243,7 @@ static char %(fname)s_types[] = {
 %(types)s};
 ''' % locals())
 
-    if verbose:
+    if _verbose:
         print '------------------ start support_code -----------------'
         print acc.getvalue()
         print '------------------- end support_code ------------------'
@@ -262,11 +277,11 @@ return_val = PyUFunc_FromFuncAndData(
     1,               /* nout */
     PyUFunc_None,    /* identity */
     "%(fname)s",     /* name */
-    "UFunc created by mkufunc", /* doc */
+    "UFunc created by fast_vectorize", /* doc */
     0);
 ''' % locals()
 
-    if verbose:
+    if _verbose:
         print '---------------------- start code ---------------------'
         print res
         print '----------------------- end code ----------------------'
@@ -288,17 +303,18 @@ def genufunc(f, signatures):
     ufunc_info.add_header('"numpy/ufuncobject.h"')
 
     return weave.inline(code(f, signatures),
-                        verbose=verbose,
-                        support_code=support_code(cfuncs),
-                        customize=ufunc_info)
+                        verbose = _verbose,
+                        force = _force,
+                        support_code = support_code(cfuncs),
+                        customize = ufunc_info)
 
 
-def mkufunc(arg0=[float], src=0):
+
+def fast_vectorize(arg0=[float], showc=0, force=0, verbose=0):
     """ Python decorator which returns compiled UFunc of the function given.
 
     >>> from numpy import arange
-    >>> from mkufunc.api import mkufunc
-    >>> @mkufunc
+    >>> @fast_vectorize
     ... def foo(x):
     ...     return 4.2 * x * x - x + 6.3
     ...
@@ -336,9 +352,11 @@ def mkufunc(arg0=[float], src=0):
         def __call__(self, *args):
             return self.ufunc(*args)
 
-    global showC
-    showC = src
-
+    global _showc, _force, _verbose
+    _showc = showc
+    _force = force
+    _verbose = verbose
+    
     if isinstance(arg0, FunctionType):
         f = arg0
         signatures = [float]
