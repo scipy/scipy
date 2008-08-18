@@ -1,6 +1,6 @@
 import unittest
 
-from mkufunc.api import func_hash
+from api import func_hash
 
 
 class Tests(unittest.TestCase):

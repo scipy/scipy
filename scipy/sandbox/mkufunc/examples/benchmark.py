@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from math import sin, cos
-import time, hashlib
+import time
+import md5
 
 from numpy import linspace, vectorize, allclose, empty_like
 from scipy import weave
@@ -51,7 +52,7 @@ static char f_types[] = {
 ufunc_info = weave.base_info.custom_info()
 ufunc_info.add_header('"numpy/ufuncobject.h"')
 
-ufunc = weave.inline('/*' + hashlib.md5(support_code).hexdigest() + '''*/
+ufunc = weave.inline('/*' + md5.md5(support_code).hexdigest() + '''*/
 import_ufunc();
 
 return_val = PyUFunc_FromFuncAndData(

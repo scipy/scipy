@@ -7,7 +7,7 @@ import sys
 import re
 import os, os.path
 import cStringIO
-import hashlib
+import md5
 from types import FunctionType
 
 import numpy
@@ -21,8 +21,7 @@ def func_hash(f, salt=None):
     """ Return a MD5 hash for a function object as string.
     """
     co = f.func_code
-    return hashlib.md5(co.co_code + repr(co.co_names) + repr(salt)
-                       ).hexdigest()
+    return md5.md5(co.co_code + repr(co.co_names) + repr(salt)).hexdigest()
 
 
 def translate(f, argtypes):

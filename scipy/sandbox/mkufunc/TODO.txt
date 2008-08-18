@@ -7,3 +7,9 @@
 
 - add Csrc attribute to ufunc object
 
+
+- improved function hash
+
+- rename to fast_vectorize
+
+- which python version should this work with?

@@ -243,8 +243,10 @@ class Math_Tests(unittest.TestCase, Util):
         def f(i):
             return i % 5
 
-        self.assert_(all(f(range(7)) == array([0, 1, 2, 3, 4, 0, 1])))
-        self.assert_(all(f(arange(8)) == array([0, 1, 2, 3, 4, 0, 1, 2])))
+        for i in xrange(100):
+            self.assertEqual(f(i), i % 5)
+        
+        self.assert_((f(arange(8)) == array([0, 1, 2, 3, 4, 0, 1, 2])).all())
 
 
 class Control_Flow_Tests(unittest.TestCase):
