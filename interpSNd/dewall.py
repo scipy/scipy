@@ -23,14 +23,13 @@ compare_pointlists = lambda L1, L2 : np.alltrue([ point_in_list(l1, L2) for l1 i
 def dewall (P, #set of points 
                 AFL = [], # list of faces: (d-1)face list
                 ):
-                
+    
     # checking input
     assert isinstance(P, list)
     if len(P)>0:
         assert isinstance(P[0], np.ndarray)
     assert isinstance(AFL, list)
     if len(AFL)>0: 
-        #print "AFL[0]: ", AFL[0]
         assert isinstance(AFL[0],tuple)
         assert isinstance(AFL[0][0], list)
         assert isinstance(AFL[0][0][0], np.ndarray)
@@ -53,10 +52,10 @@ def dewall (P, #set of points
                             
     # divide points into two sets separated by alpha
     P1, P2 = pointset_partition(P, alpha) # both lists of points
-    
+        
     # Simplex Wall Construction
     just_starting = False #source of problem?
-    if len(AFL) == 0:
+    if len(AFL) == 0: # This is only executed once, at the start of the algorithm
         just_starting = True
         first_simplex = make_first_simplex(P, alpha)
         AFL = [ (face, get_out_vec(face,first_simplex))\
@@ -79,9 +78,10 @@ def dewall (P, #set of points
             outward_points = filter( lambda p: (np.dot(p,outvec)>np.dot(face[0],outvec)),\
                                             P)
         else:
-            outward_points = filter( lambda p: np.all([not point_in_list(p,vertex) for vertex in face]), P)
+            outward_points = []#filter( lambda p: np.all([not point_in_list(p,vertex) for vertex in face]), P)
                 
         t = make_simplex(face, outward_points) # make only over outer half space
+        
         if t is not None:
             Sigma.append(t)
             # for f0 != f in faces(t) , ie for new outward faces
@@ -90,6 +90,7 @@ def dewall (P, #set of points
                 if is_intersected(f0, alpha):
                     # continue building wall out in that direction
                     AFL_alpha = update(new_pair, AFL_alpha)
+                    #np.random.shuffle(AFL_alpha)
                 if is_subset(f0, P1):
                     AFL1 = update(new_pair, AFL1)
                 if is_subset(f0, P2):
@@ -108,16 +109,6 @@ def select_alpha(P, AFL):
     # dividing plane.  This must divide points into 2 non-empty parts
     # must intersect active face if there is one
     # must not intersect any points
-    
-    #assert isinstance(P, list)
-    #if len(P)>0:
-    #    assert isinstance(P[0], np.ndarray)
-    #assert isinstance(AFL, list)
-    #if len(AFL)>0: 
-    #    assert isinstance(AFL[0],list)
-    #    assert isinstance(AFL[0][0], list)
-    #    assert isinstance(AFL[0][0][0], np.ndarray)
-    #    assert isinstance(AFL[0][1], np.ndarray)
     
     d = len(P[0])
     
@@ -174,8 +165,8 @@ def update (face_pair, face_pair_list):
     # returns face_list with face_pair added if it wasn't there, else deleted
     face, outvec = face_pair
     face_list = [face for face, outvec in face_pair_list]
-    if face_in_list(face, face_pair_list):
-        f_not_equal_face = lambda f :  not np.alltrue([ point_in_list(p, f[0]) for p in face ])
+    if face_in_list(face, face_list):
+        f_not_equal_face = lambda face_pair :  not np.alltrue([ point_in_list(p, face_pair[0]) for p in face ])
         face_pair_list = filter(f_not_equal_face, face_pair_list)
     else:
         face_pair_list.append(face_pair)

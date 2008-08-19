@@ -41,8 +41,8 @@ class InterpolateSNd:
         
         assert P.ndim == 2, "P must be 2-dimensional"
         d, n = P.shape
-        assert len(fvals)==n, "fvals must have length n,\
-                    where n is number of points"
+        assert len(fvals)==n, \
+            "fvals must have length n, where n is number of points"
         
         # remember dimensionality of space
         self.ndim = d
