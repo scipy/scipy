@@ -3,45 +3,45 @@
 # Before running this be sure to apply Travis Oliphant's patch to PIL:
 # http://www.scipy.org/Cookbook/PIL
 
-import numpy
+from numpy import asarray, concatenate, ogrid, uint8
 from PIL import Image
 
-from mkufunc.api import mkufunc
+
+import sys
+sys.path.append('../mkufunc')
+from fast_vectorize import fast_vectorize
+
 
 from mandel_c import mandel
 
 
-@mkufunc(int)
-def color(i):
-    return (i * 10) % 256
+@fast_vectorize(int)
+def red(i):
+    if i == -1: return 0
+    return (i * 5) % 256
 
-    n = i % 3
-    if n == 0:
-        c = (255, 127, 128)
-    elif n == 1:
-        c = (128, 255, 0)
-    else:
-        c = (0, 128, 255)
+@fast_vectorize(int)
+def green(i):
+    if i == -1: return 0
+    return (i % 16) * 15
 
-    return c[0] + (c[1] + c[2]*256)*256
+@fast_vectorize(int)
+def blue(i):
+    if i == -1: return 0
+    return 255
 
 
+w, h = 1200, 900
 
-w, h = 1024, 768
+y, x = ogrid[-1.5:+1.5:h*1j, -2.75:+1.15:w*1j]
 
-x, y = numpy.ogrid[-2.5:+1.5:w*1j, -1.5:+1.5:h*1j]
+mand = mandel(x, y)
 
-img = mandel(x, y)
+r = asarray(red(mand),   dtype=uint8).reshape(h, w, 1)
+g = asarray(green(mand), dtype=uint8).reshape(h, w, 1)
+b = asarray(blue(mand),  dtype=uint8).reshape(h, w, 1)
 
-print img.dtype
-print img.shape
+a = concatenate((r, g, b), axis=2).reshape(h, w, 3)
 
-img = color(img)
-img.dtype = numpy.uint8
-img = img.reshape(h, w, 4)
-
-print img.dtype
-print img.shape
-
-pilImage = Image.fromarray(img)
-pilImage.save('mandel.png')
+im = Image.fromarray(a)
+im.save('mandel.png')
