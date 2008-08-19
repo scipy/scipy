@@ -1,4 +1,4 @@
-"""fast_vectorize: creates a U function from python source code
+"""fast_vectorize: creates U functions from python source code
 
 Author: Ilan Schnell
 Thanks: Travis Oliphant and Eric Jones
@@ -7,7 +7,6 @@ import sys
 import re
 import os
 import cStringIO
-import md5
 from types import FunctionType
 
 import numpy
@@ -21,43 +20,54 @@ _verbose = 0
 _showc = 0
 _force = 0
 
-def c_source_filename(f, argtypes):
+def get_C_source_filename(f, argtypes):
+    """
+    Return the filename of pypy's C output for a given function
+    and argument types.
+    """
     try:
         import pypy
     except ImportError:
         raise ImportError("""
-################################################################
-weave.fast_vectorize requires pypy to be installed.
+############################################################
+scipy.weave.fast_vectorize requires pypy, see
+  http://codespeak.net/pypy/dist/pypy/doc/home.html
+to be installed.
 
-You can download...
-################################################################
+Use SVN to download the pypy source:
+svn co http://codespeak.net/svn/pypy/dist pypy-dist
+
+Make sure pypy can be imported, e.g. set your PYTHONPATH:
+export PYTHONPATH=<path-to-pypy-dist>
+
+############################################################
 """)
+    from pypy.translator.interactive import Translation
     
-    from interactive import Translation
-
     t = Translation(f, backend='c')
     t.annotate(argtypes)
     t.source()
-    return t.driver.c_source_filename
+    
+    return str(t.driver.cbuilder.c_source_filename)
 
 
-def translate(f, argtypes):
-    """ Return pypy's C output for a given function and argument types.
-        The cache files are in weave's directory.
+def translate_cached(f, argtypes):
+    """
+    Return pypy's C output for a given function and argument types
+    as a string.  This function caches the pypy's C output file in
+    weave's cache directory.
     """
     if _force:
-        filename = c_source_filename(f, argtypes)
-        return open(filename).read()
+        return open(get_C_source_filename(f, argtypes)).read()
     
     cache_file_name = os.path.join(weave.catalog.default_dir(),
                                    'pypy_%s.c' % func_hash(f, salt=argtypes))
-    try:
+
+    if os.access(cache_file_name, os.R_OK):
         return open(cache_file_name).read()
 
-    except IOError:
-        os.rename(c_source_filename(f, argtypes), cache_file_name)
-
-        return translate(f, argtypes)
+    os.rename(get_C_source_filename(f, argtypes), cache_file_name)
+    return translate_cached(f, argtypes)
 
 
 class Ctype:
@@ -72,7 +82,8 @@ typedict = {
 
 
 class Cfunc(object):
-    """ C compiled python functions
+    """
+    C compiled python functions
 
     >>> def sqr(x):
     ...     return x * x
@@ -112,7 +123,7 @@ class Cfunc(object):
         self.nout = len(self.sig) - self.nin
         assert self.nout == 1                  # for now
 
-        src = translate(f, signature[:self.nin])
+        src = translate_cached(f, signature[:self.nin])
 
         self._prefix = 'f%i_' % self.n
         self._allCsrc = src.replace('pypy_', self._prefix + 'pypy_')
@@ -209,7 +220,8 @@ PyUFunc_%(n)i(char **args, npy_intp *dimensions, npy_intp *steps, void *func)
 
 
 def support_code(cfuncs):
-    """ Given a list of Cfunc instances, return the support code for weave.
+    """
+    Given a list of Cfunc instances, return the support code for weave.
     """
     acc = cStringIO.StringIO()
 
@@ -252,7 +264,8 @@ static char %(fname)s_types[] = {
 
 
 def code(f, signatures):
-    """ Return the code for weave.
+    """
+    Return C code which is input for weave.
     """
     nin = f.func_code.co_argcount
     ntypes = len(signatures)
@@ -290,7 +303,8 @@ return_val = PyUFunc_FromFuncAndData(
 
 
 def genufunc(f, signatures):
-    """ Return the Ufunc Python object for given function and signatures.
+    """
+    Return the Ufunc Python object for given function and signatures.
     """
     if len(signatures) == 0:
         raise ValueError("At least one signature needed")
@@ -311,8 +325,9 @@ def genufunc(f, signatures):
 
 
 def fast_vectorize(arg0=[float], showc=0, force=0, verbose=0):
-    """ Python decorator which returns compiled UFunc of the function given.
-
+    """
+    Python decorator which returns compiled UFunc of the function given.
+    
     >>> from numpy import arange
     >>> @fast_vectorize
     ... def foo(x):

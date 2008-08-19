@@ -1,16 +1,5 @@
-"""
-
-Author: Ilan Schnell
-"""
 import md5
-import re
 from types import CodeType, FunctionType
-
-def md5sum(s):
-    return md5.md5(s).hexdigest()
-
-
-pat_hex = re.compile(r'0x[0-9a-f]{4,}', re.I)
 
 
 def func_hash(f, salt=None):
@@ -37,4 +26,4 @@ def func_hash(f, salt=None):
         else:
             res.append(repr(getattr(co, name)))
             
-    return md5sum(''.join(res) + repr(salt))
+    return md5.md5(''.join(res) + repr(salt)).hexdigest()
