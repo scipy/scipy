@@ -10,6 +10,10 @@
 # In particular, calculation of the circumcircle is a purely
 # mathematical operation that really should be made into C.
 
+# WARNING
+# This code doesn't always work.  Occasionally a point that is
+# interior to the convex hull is missed.
+
 import numpy as np
 from numpy.linalg import norm
 
@@ -49,6 +53,7 @@ def dewall (P, #set of points
     Sigma= []
     
     alpha = select_alpha(P, AFL)
+    print "\nalpha:\n", alpha
                             
     # divide points into two sets separated by alpha
     P1, P2 = pointset_partition(P, alpha) # both lists of points
@@ -58,6 +63,7 @@ def dewall (P, #set of points
     if len(AFL) == 0: # This is only executed once, at the start of the algorithm
         just_starting = True
         first_simplex = make_first_simplex(P, alpha)
+        print "\nfirst simplex:\n",first_simplex
         AFL = [ (face, get_out_vec(face,first_simplex))\
                 for face in faces(first_simplex)] # d+1 of them
         Sigma.append(first_simplex)
@@ -71,6 +77,7 @@ def dewall (P, #set of points
         if is_subset(face, P2):
             AFL2.append((face,outvec))
     while len(AFL_alpha) != 0:
+        print "\nAFL_alpha start:",[face for face, vec in AFL_alpha]
         
         face, outvec = AFL_alpha.pop()
         
@@ -78,9 +85,10 @@ def dewall (P, #set of points
             outward_points = filter( lambda p: (np.dot(p,outvec)>np.dot(face[0],outvec)),\
                                             P)
         else:
-            outward_points = []#filter( lambda p: np.all([not point_in_list(p,vertex) for vertex in face]), P)
+            outward_points = filter( lambda p: np.all([not point_in_list(p,vertex) for vertex in face]), P)
                 
         t = make_simplex(face, outward_points) # make only over outer half space
+        print "\nnew simplex:\n",t
         
         if t is not None:
             Sigma.append(t)
@@ -96,6 +104,7 @@ def dewall (P, #set of points
                 if is_subset(f0, P2):
                     AFL2 = update(new_pair, AFL2)
                     
+        print "\nAFL_alpha end:",[face for face, vec in AFL_alpha]
     # now Sigma contains all simplices that intersect alpha
     
     # Recursive Triangulation
@@ -161,14 +170,20 @@ def is_subset(S1, S2):
     # both are lists of arrays
     return np.alltrue([ point_in_list(s1, S2) for s1 in S1])
 
-def update (face_pair, face_pair_list):
+def update (face_pair, face_pair_list): # this func has been problematic
     # returns face_list with face_pair added if it wasn't there, else deleted
     face, outvec = face_pair
-    face_list = [face for face, outvec in face_pair_list]
+    face=face_pair[0]
+    print "face_pair: ", face_pair
+    face_list = [Face for Face, outvec in face_pair_list]
+    print "face: ", face
+    print "face_list: ", face_list
     if face_in_list(face, face_list):
+        print "face in list"
         f_not_equal_face = lambda face_pair :  not np.alltrue([ point_in_list(p, face_pair[0]) for p in face ])
         face_pair_list = filter(f_not_equal_face, face_pair_list)
     else:
+        print "face not in list"
         face_pair_list.append(face_pair)
     return face_pair_list
         

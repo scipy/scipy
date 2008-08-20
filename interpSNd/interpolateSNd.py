@@ -3,6 +3,7 @@
 
 import dewall as dw
 import numpy as np
+from numpy.linalg import norm
 
 class InterpolateSNd:
     """ Interpolation of scatter data in arbitrarily many dimensions
@@ -135,7 +136,7 @@ class InterpolateSNd:
         assert vals.shape == (self.ndim+1,), \
                 "vals wrong shape: "+str(vals.shape)+"need: "+str((self.ndim,))
         
-        weights = self.calculate_weights(simplex, point)
+        weights = self.calculate_weights(simplex, point) # None if point is not weighted average
         return np.dot(np.ravel(weights), np.ravel(vals))
     
     def calculate_weights(self, simplex, points):
@@ -143,6 +144,10 @@ class InterpolateSNd:
             of columns in simplex.  Returns matrix where
             jth column gives these weights for the jth column
             of points.
+            
+            If columns of simplex don't span the space, returns None.
+            FIXME : return correct weight if columns don't span space,
+            so long as point is still a weighted average
         """
         assert simplex.shape == (self.ndim, self.ndim+1), "simplex shape: "+str(simplex.shape)
         d, V = simplex.shape
@@ -159,30 +164,43 @@ class InterpolateSNd:
                                                         axis = 0
                                                         )
         
-        weights_vecs = np.linalg.solve(matrix_to_solve, vec_to_solve)
+        if rank(matrix_to_solve) < d:
+            print "matrix rank: "+str(np.rank(matrix_to_solve))
+            print "needed dim:  "+str(d)
+            weights_vec = None
+        else:
+            weights_vec = np.linalg.solve(matrix_to_solve, vec_to_solve)
         
-        return weights_vecs
+        return weights_vec
         
-def point_is_in_simplex(point, simplex):
-    # point = array
-    # simplex = matrix
-    #assert point.shape == (self.ndim, 1), "wrong shape of point: "+str(point.shape)
-    #assert simplex.shape == (self.ndim, self.ndim+1), "wrong shape of simplex: "+str(simplex.shape)
-    weights_vec = calculate_weights(simplex, point)
-    print "weights:\n", weights_vec
-    weight_in_range = (0.<= weights_vec) & \
-                                    (weights_vec <= 1.)
-    print "in_range:\n", weight_in_range
-    return np.alltrue(weight_in_range, axis=0)
+def rank(matrix):
+    matrix = matrix.copy() 
+    n, m = matrix.shape
     
+    # Graham-Schmidt orthonormalization of input vectors
+    for j in range(m):
+        for k in range(j):
+            matrix[:,j] = matrix[:,j] - np.dot(matrix[:,k],matrix[:,j])*matrix[:,k]
+        if norm(matrix[:,j]) > dw.eps:
+            matrix[:,j]=matrix[:,j]/norm(matrix[:,j])
+    
+    norm_of_each_vec = np.sum( matrix*matrix , axis=0)
+    
+    return int(np.sum(norm_of_each_vec))
+        
 def calculate_weights(simplex, points):
         """ Each column in points is a weighted average
             of columns in simplex.  Returns matrix where
             jth column gives these weights for the jth column
             of points.
+            
+            If columns of simplex don't span the space, returns None.
+            FIXME : return correct weight if columns don't span space,
+            so long as point is still a weighted average
         """
-        N, V = simplex.shape
-        N, P = points.shape
+        #assert simplex.shape == (self.ndim, self.ndim+1), "simplex shape: "+str(simplex.shape)
+        d, V = simplex.shape
+        d, P = points.shape
         
         matrix_to_solve = np.concatenate((simplex, \
                                                         np.ones((1,V))
@@ -195,6 +213,11 @@ def calculate_weights(simplex, points):
                                                         axis = 0
                                                         )
         
-        weights_vecs = np.linalg.solve(matrix_to_solve, vec_to_solve)
+        if np.rank(matrix_to_solve) < d:
+            print "matrix rank: "+str(rank(matrix_to_solve))
+            print "needed dim:  "+str(d)
+            weights_vec = None
+        else:
+            weights_vec = np.linalg.solve(matrix_to_solve, vec_to_solve)
         
-        return weights_vecs
+        return weights_vec

@@ -23,12 +23,12 @@ def plot_circle(circle):
     y = center[1] + y_offset
     pyplot.plot(x,y)
     
-Pb=[array([.25, -.25]), array([0,.75])]
+Pb=[]#[array([.25, -.25]), array([0,.75])]
 
 P = Pa+Pb
 
 P = [ np.array([np.random.gamma(1), np.random.gamma(1)]) \
-        for j in range(6) ]
+        for j in range(10) ]
 
 triangul = dw.dewall(P)
 
@@ -42,8 +42,8 @@ for tri in triangul:
         
 # plotting the circumcircles
 for tri in triangul:
-    plot_circle(dw.circumcircle(tri))
+    pass#plot_circle(dw.circumcircle(tri))
         
 pyplot.show()
 
-print triangul
+print "triangulation:\n",triangul
