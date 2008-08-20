@@ -1,6 +1,8 @@
+==============
+fast_vectorize
+==============
 
-mkufunc (make universal function) is a tool which lets you create
-a C compiled version of a universal function (UFunc).
+fast_vectorize lets you create U functions from python source code.
 
 It works by translating the python function into C and then uses
 scipy.weave to create a UFunc which calls the appropriate C function
@@ -10,10 +12,11 @@ fast (in particular when the arrays involved in the calculation
 are very large).
 
 Requirements:
-
   pypy
 
-You need the pypy path in your PYTHONPATH environment:
 
-$ export PYTHONPATH=/<...>/pypy-dist
+Use SVN to download the pypy source:
+svn co http://codespeak.net/svn/pypy/dist pypy-dist
 
+Make sure pypy can be imported, e.g. set your PYTHONPATH:
+export PYTHONPATH=<path-to-pypy-dist>

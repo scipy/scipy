@@ -1,9 +1,5 @@
 
-- Documentation
+* Documentation
 
-- think about shipping issues (using weave ext_tools)
-
-- add Csrc attribute to ufunc object
-
-- see if monkeypatch of pypy modules is feasible/desired
+* think about shipping issues (using weave ext_tools)
 
