@@ -9,7 +9,7 @@ reload(dw)
 class Test(unittest.TestCase):
     
     def compare_arrays(self, a, b):
-        return np.allclose(a,b,rtol=1e-3) | (np.isnan(a)&np.isnan(b))
+        return np.allclose(a,b,rtol=1e-3) or (np.isnan(a)&np.isnan(b)).all()
     
     ## test Delaunay triangulation itself
     
@@ -27,7 +27,6 @@ class Test(unittest.TestCase):
         tri = dw.dewall(P)
         
     # testing general case using random data
-    
     def _test_2d(self):
         ndim = 2
         nold = 15
@@ -60,7 +59,6 @@ class Test(unittest.TestCase):
         # not checking if its correct, just if it runs.
         
     ## test interpolation, and thus also triangulation by extension
-    
     def _test_linear_on_cube(self):
         x = array([0., 1, 0, 1, 0, 1, 0, 1])
         y = array([0., 0, 1, 1, 0, 0, 1, 1])
@@ -101,6 +99,40 @@ class Test(unittest.TestCase):
         
         newdata = np.random.random_sample((ndim,nnew))
         print "\nnewdata:\n",newdata
+        interpvals = interp(newdata)
+        realvals = np.sum(newdata, axis=0)
+        
+        print "%iD interpvals: "%ndim, interpvals
+        print "%iD realvals:   "%ndim, realvals
+        
+        #self.assert_(self.compare_arrays(np.ravel(interpvals), np.ravel(realvals)))
+        assert self.compare_arrays(np.ravel(interpvals), np.ravel(realvals)), "wrong data"
+
+    def test_linear_3d(self):
+        ndim = 3 # num dimensions
+        nold = 1 # num known data points
+        nnew = 5 # num points at which to interpolate
+        
+        print "%iD Interpolation"%ndim
+        
+        P = [np.random.random_sample(ndim) for i in range(nold)]
+        # points at corners of hypercube and radnimly scattered in the interior
+        points = np.concatenate((corners(ndim) , array(P).reshape((ndim,nold))), axis=1)
+        fvals = np.zeros((1,points.shape[1]))
+        for i in range(ndim):
+            fvals = fvals+points[i,:]
+        fvals = fvals.reshape((points.shape[1]))
+            
+        #print "points:\n",points
+        #print "fvals:\n",fvals
+        
+        interp = SNd.InterpolateSNd(points, fvals)
+        
+        #print "\ntriang:"
+        #for x in interp._triangulation: print x
+        
+        newdata = np.random.random_sample((ndim,nnew))
+        #print "\nnewdata:\n",newdata
         interpvals = interp(newdata)
         realvals = np.sum(newdata, axis=0)
         

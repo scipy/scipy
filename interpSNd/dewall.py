@@ -11,8 +11,8 @@
 # mathematical operation that really should be made into C.
 
 # WARNING
-# This code doesn't always work.  Occasionally a point that is
-# interior to the convex hull is missed.
+# This code doesn't always work.  There are still significant
+# bugs to be fixed.
 
 import numpy as np
 from numpy.linalg import norm
@@ -28,6 +28,8 @@ def dewall (P, #set of points
                 AFL = [], # list of faces: (d-1)face list
                 ):
     
+    print "DEWALL: ",len(AFL)
+    
     # checking input
     assert isinstance(P, list)
     if len(P)>0:
@@ -42,6 +44,7 @@ def dewall (P, #set of points
     # base case
     if len(P) == 0: return []
     if len(P) <= len(P[0]): return [] # better to return [] whenever points are co-hyper-planar
+    if len(P) == len(P[0])+1: return P if linearly_independent([ point-P[0] for point in P[1:]]) else [] # simplex iff not on same hyperplane
     
     # lists of active faces
     # elem = ( [list of d points] , outvec )
@@ -53,7 +56,7 @@ def dewall (P, #set of points
     Sigma= []
     
     alpha = select_alpha(P, AFL)
-    print "\nalpha:\n", alpha
+    print "alpha:\n", alpha
                             
     # divide points into two sets separated by alpha
     P1, P2 = pointset_partition(P, alpha) # both lists of points
@@ -61,40 +64,59 @@ def dewall (P, #set of points
     # Simplex Wall Construction
     just_starting = False #source of problem?
     if len(AFL) == 0: # This is only executed once, at the start of the algorithm
-        just_starting = True
+        #just_starting = True
         first_simplex = make_first_simplex(P, alpha)
-        print "\nfirst simplex:\n",first_simplex
+        print "first_simplex:"
+        display(first_simplex)
         AFL = [ (face, get_out_vec(face,first_simplex))\
                 for face in faces(first_simplex)] # d+1 of them
         Sigma.append(first_simplex)
     for face, outvec in AFL:
         if is_intersected(face, alpha): # not counting as intersected
             AFL_alpha.append((face, \
-                            get_out_vec(face,first_simplex) if just_starting \
-                            else outvec))
-        if is_subset(face, P1):
+                            outvec))#get_out_vec(face,first_simplex) if just_starting \
+                            #else outvec))
+        elif is_subset(face, P1):
             AFL1.append((face,outvec))
-        if is_subset(face, P2):
+        elif is_subset(face, P2):
             AFL2.append((face,outvec))
     while len(AFL_alpha) != 0:
-        print "\nAFL_alpha start:",[face for face, vec in AFL_alpha]
+        print "\nLENGTH: ",len(AFL_alpha)
+        print "AFL_alpha"
+        for FACE, VEC in AFL_alpha: 
+            print "face"
+            display(FACE)
+        print "AFL1"
+        for FACE, VEC in AFL1: 
+            print "face"
+            display(FACE)
+        print "AFL2"
+        for FACE, VEC in AFL2: 
+            print "face"
+            display(FACE)
         
         face, outvec = AFL_alpha.pop()
+        
+        print '\nprocessing face:'
+        display(face)
         
         if outvec is not None:
             outward_points = filter( lambda p: (np.dot(p,outvec)>np.dot(face[0],outvec)),\
                                             P)
         else:
-            outward_points = filter( lambda p: np.all([not point_in_list(p,vertex) for vertex in face]), P)
+            outward_points = []#filter( lambda p: np.all([not point_in_list(p,vertex) for vertex in face]), P)
+        #outward_points = filter( lambda p: (np.dot(p,outvec)>np.dot(face[0],outvec)),\
+            #                                P)
                 
-        t = make_simplex(face, outward_points) # make only over outer half space
-        print "\nnew simplex:\n",t
+        t = make_simplex(face, outward_points)
+        print "\nnew simplex:"
+        display(t)
         
         if t is not None:
             Sigma.append(t)
             # for f0 != f in faces(t) , ie for new outward faces
             for f0 in filter(lambda f: not face_in_list(f,[face]), faces(t)):
-                new_pair = (f0, get_out_vec(f0, t))
+                new_pair = (f0, get_out_vec(f0,t) )
                 if is_intersected(f0, alpha):
                     # continue building wall out in that direction
                     AFL_alpha = update(new_pair, AFL_alpha)
@@ -104,20 +126,33 @@ def dewall (P, #set of points
                 if is_subset(f0, P2):
                     AFL2 = update(new_pair, AFL2)
                     
-        print "\nAFL_alpha end:",[face for face, vec in AFL_alpha]
     # now Sigma contains all simplices that intersect alpha
     
     # Recursive Triangulation
-    if len(AFL2)!=0:
-        Sigma = Sigma + dewall(P2,AFL2)
     if len(AFL1)!=0:
-        Sigma = Sigma + dewall(P1,AFL1) # not doing this branch of recursion
+        print "RECURSING P1"
+        print "P1:"
+        display(P1)
+        print "AFL1:"
+        for face, vec in AFL1: display(face)
+        Sigma = Sigma + dewall(P1,AFL1)
+    if len(AFL2)!=0:
+        print "RECURSING P2"
+        print "P2:"
+        display(P2)
+        print "AFL2:"
+        for face, vec in AFL2: display(face)
+        Sigma = Sigma + dewall(P2,AFL2)
     return Sigma
-
+def display(FACE):
+        if FACE==None: print 'NONE'
+        else:
+            for arr in FACE: print arr
 def select_alpha(P, AFL):
     # dividing plane.  This must divide points into 2 non-empty parts
-    # must intersect active face if there is one
-    # must not intersect any points
+    
+    # creates random plane which divides into 2 non-empty parts
+    # and, if AFL not empty, passes through one of its faces
     
     d = len(P[0])
     
@@ -127,11 +162,14 @@ def select_alpha(P, AFL):
         mid = sum(AFL[0][0])/(d)
     else:
         mid = sum(P)/len(P)
+    direction = np.random.random_sample((d))
+    direction = direction/norm(direction)
     if norm(mid)==0:
-        direction = np.random.random_sample((d))
-        alpha = ( direction/norm(direction), 0)
+        alpha = ( direction , 0)
     else: 
-        alpha =(mid/norm(mid), norm(mid))
+        alpha =(direction, np.dot(direction,mid))
+    if alpha[1] < 0:
+        alpha = (-1*alpha[0], -1*alpha[1])
         
     return alpha
 
@@ -170,22 +208,22 @@ def is_subset(S1, S2):
     # both are lists of arrays
     return np.alltrue([ point_in_list(s1, S2) for s1 in S1])
 
-def update (face_pair, face_pair_list): # this func has been problematic
+def update (face_pair, Face_pair_list): # this func has been problematic
     # returns face_list with face_pair added if it wasn't there, else deleted
-    face, outvec = face_pair
-    face=face_pair[0]
-    print "face_pair: ", face_pair
-    face_list = [Face for Face, outvec in face_pair_list]
-    print "face: ", face
-    print "face_list: ", face_list
-    if face_in_list(face, face_list):
-        print "face in list"
-        f_not_equal_face = lambda face_pair :  not np.alltrue([ point_in_list(p, face_pair[0]) for p in face ])
-        face_pair_list = filter(f_not_equal_face, face_pair_list)
+    face = face_pair[0] #list of arrays
+    Face_list = [Face_pair[0] for Face_pair in Face_pair_list] #list of lists(or arrays)
+    if face_in_list(face, Face_list):
+        #print "face in list"
+        def Face_pair_not_equal_face(Pair):
+            Face = Pair[0]
+            vertex_of_face_in_Face = [point_in_list(vert,Face) for vert in face]
+            return not np.all(vertex_of_face_in_Face)
+        #Face_pair_not_equal_face = lambda Pair :  not np.alltrue([ point_in_list(p, Pair[0]) for p in face ])
+        Face_pair_list = filter(Face_pair_not_equal_face, Face_pair_list)
     else:
-        print "face not in list"
-        face_pair_list.append(face_pair)
-    return face_pair_list
+        #print "not in list"
+        Face_pair_list.append(face_pair)
+    return Face_pair_list
         
 def pointset_partition(P, alpha): #WORKS
     P1 = [p for p in P if np.dot(p,alpha[0])<  alpha[1]]
@@ -211,7 +249,7 @@ def faces(simplex): #WORKS
 
 def make_first_simplex(P, alpha): #WORKS
     # alpha = unit_normal_vec, distance
-    # assume no points on plane
+    # ENSURE!! no points on same hyperplane
 
     d = len(P[0])
     unit_normal, distance = alpha
@@ -222,21 +260,33 @@ def make_first_simplex(P, alpha): #WORKS
     first_point = sorted(points_and_dist_from_alpha,
                                 cmp = compare_first_elem \
                                 )[0][1] # closest to alpha
-                                                    
+    print "first points:\n"
+    display(first_point)
     possible_second_pts = [ (circumcircle([first_point, point])[1], point) \
-                                        for point in P if (point != first_point).any() and \
+                                        for point in P if \
+                                        (point != first_point).any() and \
                                         (np.dot(unit_normal, first_point)-distance)*(np.dot(unit_normal, point)-distance)<=0 \
                                     ]
     second_point = sorted(possible_second_pts, \
                                     cmp = compare_first_elem \
                                     )[0][1]
+    print "second point:\n"
+    display(second_point)
     simplex = [first_point, second_point]
     for i in range(d-1):
         radii_of_circumcircles = [(circumcircle(  copy_list(simplex)+[point.copy()]  )[1], point) \
-                                        for point in P if not point_in_list(point, simplex) ]
-        new_point = sorted(radii_of_circumcircles, \
+                                        for point in P if \
+                                            not point_in_list(point, simplex) and \
+                                            linearly_independent([(point-first_point)]+[ (p-first_point) for p in simplex[1:] ]) \
+                                        ]
+        #new_point = sorted(radii_of_circumcircles, \
+          #                          cmp = compare_first_elem \
+            #                        )[0][1]
+        new_point_pair = sorted(radii_of_circumcircles, \
                                     cmp = compare_first_elem \
-                                    )[0][1]
+                                    )[0]
+        new_point = new_point_pair[1]
+        print "new point:\n", new_point
         simplex.append(new_point)
 
     return simplex
@@ -249,14 +299,14 @@ def copy_list(list_of_arrays): #WORKS
     
 
         
-def make_simplex(f,P): #WORKS
+def make_simplex(f,outward_points): #WORKS
     # must be only in the outer halfspace
     
     # returns the simlex
     
     # clean up by making sure only points not in hyperplane(f) are in P
         
-    valid_points = [p for p in P if not point_in_list(p,f)]
+    valid_points = outward_points#[p for p in P if not point_in_list(p,f)]
     if len(valid_points) == 0: 
         return None
     delaunay_distances = [(delaunay_dist(f,p) ,p) for p in valid_points]
@@ -391,7 +441,22 @@ def linearly_independent(P):
     d=len(P[0])
     if len(P)>d: return False
     matrix = np.array(P).reshape((d,len(P)))
-    return np.rank(matrix)==len(P)
+    return rank(matrix)==len(P)
+
+def rank(matrix):
+    matrix = matrix.copy() 
+    n, m = matrix.shape
+    
+    # Graham-Schmidt orthonormalization of input vectors
+    for j in range(m):
+        for k in range(j):
+            matrix[:,j] = matrix[:,j] - np.dot(matrix[:,k],matrix[:,j])*matrix[:,k]
+        if norm(matrix[:,j]) > eps:
+            matrix[:,j]=matrix[:,j]/norm(matrix[:,j])
+    
+    norm_of_each_vec = np.sum( matrix*matrix , axis=0)
+    
+    return int(np.sum(norm_of_each_vec))
     
     
     

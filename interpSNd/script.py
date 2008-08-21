@@ -31,12 +31,15 @@ P = [ np.array([np.random.gamma(1), np.random.gamma(1)]) \
         for j in range(10) ]
 
 triangul = dw.dewall(P)
+print "triangulation:\n",triangul
+
 
 # plotting the known data points
 for p in P: pyplot.scatter([p[0]],[p[1]])
 
 # plotting the triangulation
 for tri in triangul:
+    print "triangle:\n", tri
     for seg in segments(tri):
         pyplot.plot(seg[0],seg[1])
         
@@ -46,4 +49,3 @@ for tri in triangul:
         
 pyplot.show()
 
-print "triangulation:\n",triangul

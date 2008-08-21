@@ -737,8 +737,14 @@ Finally, removal of bad data points is not supported for ND interpolation.
 ND Scattered Interpolation
 ================================================
  
- Still in development.
+ InterpolateND has the significant disadvantage of requiring uniformly spaced
+ data, which is often not available in applications.  To remedy this problem, 
+ there is a callable class in development that does linear interpolation over the
+ convex hull of the known data points.
  
- Ideally the range of interpolation would be the convex hull of the known
- data points, and a Delaunay tesselation would be determined and stored
- at instantiation.  Then again, that would be very expensive.
+ The class is InterpolateSNd, for "scattered n-dimensional" data.  However, the
+ code is still extremely slow, and more importantly there are significant bugs remaining.
+ Depending on chance (the algorithm uses randomness) and the data used, the convex
+ hull can be improperly calculated, and there is even the possibility of infinite recursion.
+ That said, the algorithm works in other cases, and is expected to improve greatly in
+ the future.

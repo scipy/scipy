@@ -4,7 +4,7 @@ import dewall as dw
 
 reload(SN)
 
-if True:
+if False:
     points = np.array([[ 1.,0.,1.,0.],[0.,0.,1.,1.]])
     z = np.array([1.,0.,2.,1.])
     interp = SN.InterpolateSNd(points,z)
@@ -20,11 +20,13 @@ if True:
     
     
 if True:
-    points = np.array([  [0., 0, 0, 1.,.2],
-                                [0., 1., 0, 0, .2],
-                                [0., 0, 1., 0, .2] ])
-    z = np.array([.1,1.,1.,1.,.6])
+    points = np.array([  [0., 0, 0, 1., 1., 1., 0., 1., .2],
+                                [0., 1., 0, 0, 1., 0., 1., 1., .2],
+                                [0., 0, 1., 0, 0., 1., 1., 1., .2] ])
+    z = np.sum(points,axis=0).reshape(points.shape[1])
     interp = SN.InterpolateSNd(points,z)
+    
+    print "*"*100+'\nMADE IT'
     
     X = np.array([ [.1,.2,.1,.1],
                         [.1,.1,.2,.1],

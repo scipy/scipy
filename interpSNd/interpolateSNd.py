@@ -165,7 +165,7 @@ class InterpolateSNd:
                                                         )
         
         if rank(matrix_to_solve) < d:
-            print "matrix rank: "+str(np.rank(matrix_to_solve))
+            print "matrix rank: "+str(rank(matrix_to_solve))
             print "needed dim:  "+str(d)
             weights_vec = None
         else:
