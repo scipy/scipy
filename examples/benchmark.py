@@ -75,7 +75,7 @@ return_val = PyUFunc_FromFuncAndData(
 #############################################################
 
 
-x = linspace(0, 1, 10000*1000)
+x = linspace(0, 1, 1000*1000)
 
 start_time = time.time()
 b_y = empty_like(x)
