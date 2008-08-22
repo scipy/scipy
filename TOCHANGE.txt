@@ -25,15 +25,6 @@ General
 
 * Improve testing (e.g., increased coverage)
 
-* Get rid of sandbox
-
- * move packages to
-
-  * scipy
-
-  * scikits
-
-  * or a branch
 
 
 Documentation
