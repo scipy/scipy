@@ -1,31 +1,89 @@
 """
+
+Function Reference
+------------------
+
 Distance matrix computation from a collection of raw observation vectors
+stored in a rectangular array.
 
- pdist              computes distances between each observation pair.
++------------------+-------------------------------------------------+
+|pdist             | computes distances between observation pairs.   |
++------------------+-------------------------------------------------+
 
-Distance functions between two vectors u and v
+Distance functions between two vectors ``u`` and ``v``. Computing
+distances over a large collection of vectors is inefficient for these
+functions. Use ``pdist`` for this purpose.
 
- braycurtis         the Bray-Curtis distance.
- canberra           the Canberra distance.
- chebyshev          the Chebyshev distance.
- cityblock          the Manhattan distance.
- correlation        the Correlation distance.
- cosine             the Cosine distance.
- dice               the Dice dissimilarity (boolean).
- euclidean          the Euclidean distance.
- hamming            the Hamming distance (boolean).
- jaccard            the Jaccard distance (boolean).
- kulsinski          the Kulsinski distance (boolean).
- mahalanobis        the Mahalanobis distance.
- matching           the matching dissimilarity (boolean).
- minkowski          the Minkowski distance.
- rogerstanimoto     the Rogers-Tanimoto dissimilarity (boolean).
- russellrao         the Russell-Rao dissimilarity (boolean).
- seuclidean         the normalized Euclidean distance.
- sokalmichener      the Sokal-Michener dissimilarity (boolean).
- sokalsneath        the Sokal-Sneath dissimilarity (boolean).
- sqeuclidean        the squared Euclidean distance.
- yule               the Yule dissimilarity (boolean).
++------------------+-------------------------------------------------+
+|braycurtis        | the Bray-Curtis distance.                       |
+|canberra          | the Canberra distance.                          |
+|chebyshev         | the Chebyshev distance.                         |
+|cityblock         | the Manhattan distance.                         |
+|correlation       | the Correlation distance.                       |
+|cosine            | the Cosine distance.                            |
+|dice              | the Dice dissimilarity (boolean).               |
+|euclidean         | the Euclidean distance.                         |
+|hamming           | the Hamming distance (boolean).                 |
+|jaccard           | the Jaccard distance (boolean).                 |
+|kulsinski         | the Kulsinski distance (boolean).               |
+|mahalanobis       | the Mahalanobis distance.                       |
+|matching          | the matching dissimilarity (boolean).           |
+|minkowski         | the Minkowski distance.                         |
+|rogerstanimoto    | the Rogers-Tanimoto dissimilarity (boolean).    |
+|russellrao        | the Russell-Rao dissimilarity (boolean).        |
+|seuclidean        | the normalized Euclidean distance.              |
+|sokalmichener     | the Sokal-Michener dissimilarity (boolean).     |
+|sokalsneath       | the Sokal-Sneath dissimilarity (boolean).       |
+|sqeuclidean       | the squared Euclidean distance.                 |
+|yule              | the Yule dissimilarity (boolean).               |
++------------------+-------------------------------------------------+
+
+
+References
+----------
+
+.. [Sta07] "Statistics toolbox." API Reference Documentation. The MathWorks.
+   http://www.mathworks.com/access/helpdesk/help/toolbox/stats/.
+   Accessed October 1, 2007.
+
+.. [Mti07] "Hierarchical clustering." API Reference Documentation.
+   The Wolfram Research, Inc.
+   http://reference.wolfram.com/mathematica/HierarchicalClustering/tutorial/HierarchicalClustering.html.
+   Accessed October 1, 2007.
+
+.. [Gow69] Gower, JC and Ross, GJS. "Minimum Spanning Trees and Single Linkage
+   Cluster Analysis." Applied Statistics. 18(1): pp. 54--64. 1969.
+
+.. [War63] Ward Jr, JH. "Hierarchical grouping to optimize an objective
+   function." Journal of the American Statistical Association. 58(301):
+   pp. 236--44. 1963.
+
+.. [Joh66] Johnson, SC. "Hierarchical clustering schemes." Psychometrika.
+   32(2): pp. 241--54. 1966.
+
+.. [Sne62] Sneath, PH and Sokal, RR. "Numerical taxonomy." Nature. 193: pp.
+   855--60. 1962.
+
+.. [Bat95] Batagelj, V. "Comparing resemblance measures." Journal of
+   Classification. 12: pp. 73--90. 1995.
+
+.. [Sok58] Sokal, RR and Michener, CD. "A statistical method for evaluating
+   systematic relationships." Scientific Bulletins. 38(22):
+   pp. 1409--38. 1958.
+
+.. [Ede79] Edelbrock, C. "Mixture model tests of hierarchical clustering
+   algorithms: the problem of classifying everybody." Multivariate
+   Behavioral Research. 14: pp. 367--84. 1979.
+
+.. [Jai88] Jain, A., and Dubes, R., "Algorithms for Clustering Data."
+   Prentice-Hall. Englewood Cliffs, NJ. 1988.
+
+.. [Fis36] Fisher, RA "The use of multiple measurements in taxonomic
+   problems." Annals of Eugenics, 7(2): 179-188. 1936
+
+
+Copyright Notice
+----------------
 
 Copyright (C) Damian Eads, 2007-2008. New BSD License.
 
@@ -72,11 +130,24 @@ def _convert_to_double(X):
 
 def minkowski(u, v, p):
     """
-    d = minkowski(u, v, p)
+    Computes the Minkowski distance between two vectors ``u`` and ``v``,
+    defined as
 
-      Returns the Minkowski distance between two vectors u and v,
+    .. math::
 
-        ||u-v||_p = (\sum {|u_i - v_i|^p})^(1/p).
+       {||u-v||}_p = (\sum {|u_i - v_i|^p})^(1/p).
+
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
+       p : ndarray
+           The norm of the difference :math:`${||u-v||}_p$`.
+
+    :Returns:
+       d : double
+           The Minkowski distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u)
     v = np.asarray(v)
@@ -86,9 +157,22 @@ def minkowski(u, v, p):
 
 def euclidean(u, v):
     """
-    d = euclidean(u, v)
+    Computes the Euclidean distance between two n-vectors ``u`` and ``v``,
+    which is defined as
 
-      Computes the Euclidean distance between two n-vectors u and v, ||u-v||_2
+    .. math::
+
+       {||u-v||}_2
+
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
+
+    :Returns:
+       d : double
+           The Euclidean distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u)
     v = np.asarray(v)
@@ -97,10 +181,23 @@ def euclidean(u, v):
 
 def sqeuclidean(u, v):
     """
-    d = sqeuclidean(u, v)
+    Computes the squared Euclidean distance between two n-vectors u and v,
+    which is defined as
 
-      Computes the squared Euclidean distance between two n-vectors u and v,
-        (||u-v||_2)^2.
+    .. math::
+
+       {||u-v||}_2^2.
+
+
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
+
+    :Returns:
+       d : double
+           The squared Euclidean distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u)
     v = np.asarray(v)
@@ -108,10 +205,22 @@ def sqeuclidean(u, v):
 
 def cosine(u, v):
     """
-    d = cosine(u, v)
+    Computes the Cosine distance between two n-vectors u and v, which
+    is defined as
 
-      Computes the Cosine distance between two n-vectors u and v,
-        (1-uv^T)/(||u||_2 * ||v||_2).
+      .. math::
+
+         \frac{1-uv^T}/\frac{||u||_2 ||v||_2}.
+
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
+
+    :Returns:
+       d : double
+           The Cosine distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u)
     v = np.asarray(v)
@@ -120,16 +229,26 @@ def cosine(u, v):
 
 def correlation(u, v):
     """
-    d = correlation(u, v)
+    Computes the correlation distance between two n-vectors ``u`` and
+    ``v``, which is defined as
 
-      Computes the correlation distance between two n-vectors u and v,
+    .. math::
 
-            1 - (u - n|u|_1)(v - n|v|_1)^T
-            --------------------------------- ,
-            |(u - n|u|_1)|_2 |(v - n|v|_1)|^T
+       \frac{1 - (u - n{|u|}_1){(v - n{|v|}_1)}^T}
+            {{|(u - n{|u|}_1)|}_2 {|(v - n{|v|}_1)|}^T}
 
-      where |*|_1 is the Manhattan norm and n is the common dimensionality
-      of the vectors.
+    where :math:`$|*|_1$` is the Manhattan norm and ``n`` is the
+    common dimensionality of the vectors.
+
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
+
+    :Returns:
+       d : double
+           The correlation distance between vectors ``u`` and ``v``.
     """
     umu = u.mean()
     vmu = v.mean()
@@ -141,19 +260,28 @@ def correlation(u, v):
 
 def hamming(u, v):
     """
-    d = hamming(u, v)
+    Computes the Hamming distance between two n-vectors ``u`` and
+    ``v``, which is simply the proportion of disagreeing components in
+    ``u`` and ``v``. If ``u`` and ``v`` are boolean vectors, the Hamming
+    distance is
 
-      Computes the Hamming distance between two n-vectors u and v,
-      which is simply the proportion of disagreeing components in u
-      and v. If u and v are boolean vectors, the hamming distance is
+    .. math:
 
-         (c_{01} + c_{10}) / n
+       \frac{c_{01} + c_{10}}{n}
 
-      where c_{ij} is the number of occurrences of
+    where :math:`$c_{ij}$` is the number of occurrences of
+    :math:`$\mathtt{u[k]}` = i$ and :math:`$\mathtt{v[k]} = j$` for
+    :math:`$k < n$`.
 
-         u[k] == i and v[k] == j
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
 
-      for k < n.
+    :Returns:
+       d : double
+           The Hamming distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u)
     v = np.asarray(v)
@@ -161,20 +289,27 @@ def hamming(u, v):
 
 def jaccard(u, v):
     """
-    d = jaccard(u, v)
+    Computes the Jaccard-Needham dissimilarity between two boolean
+    n-vectors u and v, which is
 
-      Computes the Jaccard-Needham dissimilarity between two boolean
-      n-vectors u and v, which is
+    .. math::
 
-              c_{TF} + c_{FT}
-         ------------------------
-         c_{TT} + c_{FT} + c_{TF}
+       \frac{c_{TF} + c_{FT}}
+            {c_{TT} + c_{FT} + c_{TF}}
 
-      where c_{ij} is the number of occurrences of
+    where :math:`$c_{ij}$` is the number of occurrences of
+    :math:`$\mathtt{u[k]}` = i$ and :math:`$\mathtt{v[k]} = j$` for
+    :math:`$k < n$`.
 
-         u[k] == i and v[k] == j
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
 
-      for k < n.
+    :Returns:
+       d : double
+           The Jaccard distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u)
     v = np.asarray(v)
@@ -184,20 +319,27 @@ def jaccard(u, v):
 
 def kulsinski(u, v):
     """
-    d = kulsinski(u, v)
+    Computes the Kulsinski dissimilarity between two boolean n-vectors
+    u and v, which is defined as
 
-      Computes the Kulsinski dissimilarity between two boolean n-vectors
-      u and v, which is
+    .. math:
 
-         c_{TF} + c_{FT} - c_{TT} + n
-         ----------------------------
-              c_{FT} + c_{TF} + n
+       \frac{c_{TF} + c_{FT} - c_{TT} + n}
+            {c_{FT} + c_{TF} + n}
 
-      where c_{ij} is the number of occurrences of
+    where :math:`$c_{ij}$` is the number of occurrences of
+    :math:`$\mathtt{u[k]}` = i$ and :math:`$\mathtt{v[k]} = j$` for
+    :math:`$k < n$`.
 
-         u[k] == i and v[k] == j
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
 
-      for k < n.
+    :Returns:
+       d : double
+           The Kulsinski distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u)
     v = np.asarray(v)
@@ -208,11 +350,20 @@ def kulsinski(u, v):
 
 def seuclidean(u, v, V):
     """
-    d = seuclidean(u, v, V)
+    Returns the standardized Euclidean distance between two n-vectors
+    ``u`` and ``v``. ``V`` is an m-dimensional vector of component
+    variances. It is usually computed among a larger collection
+    vectors.
 
-      Returns the standardized Euclidean distance between two
-      n-vectors u and v. V is a m-dimensional vector of component
-      variances. It is usually computed among a larger collection vectors.
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
+
+    :Returns:
+       d : double
+           The standardized Euclidean distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u)
     v = np.asarray(v)
@@ -223,10 +374,22 @@ def seuclidean(u, v, V):
 
 def cityblock(u, v):
     """
-    d = cityblock(u, v)
+    Computes the Manhattan distance between two n-vectors u and v,
+    which is defined as
 
-      Computes the Manhattan distance between two n-vectors u and v,
-         \sum {u_i-v_i}.
+    .. math:
+
+       \sum_i {u_i-v_i}.
+
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
+
+    :Returns:
+       d : double
+           The City Block distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u)
     v = np.asarray(v)
@@ -234,11 +397,23 @@ def cityblock(u, v):
 
 def mahalanobis(u, v, VI):
     """
-    d = mahalanobis(u, v, VI)
+    Computes the Mahalanobis distance between two n-vectors ``u`` and ``v``,
+    which is defiend as
 
-      Computes the Mahalanobis distance between two n-vectors u and v,
-        (u-v)VI(u-v)^T
-      where VI is the inverse covariance matrix.
+    .. math:
+       (u-v)V^{-1}(u-v)^T
+
+    where ``VI`` is the inverse covariance matrix :math:`$V^{-1}$`.
+
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
+
+    :Returns:
+       d : double
+           The Mahalanobis distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u)
     v = np.asarray(v)
@@ -247,10 +422,21 @@ def mahalanobis(u, v, VI):
 
 def chebyshev(u, v):
     """
-    d = chebyshev(u, v)
+    Computes the Chebyshev distance between two n-vectors u and v,
+    which is defined as
 
-      Computes the Chebyshev distance between two n-vectors u and v,
-        \max {|u_i-v_i|}.
+    .. math:
+       \max_i {|u_i-v_i|}.
+
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
+
+    :Returns:
+       d : double
+           The Chebyshev distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u)
     v = np.asarray(v)
@@ -258,10 +444,22 @@ def chebyshev(u, v):
 
 def braycurtis(u, v):
     """
-    d = braycurtis(u, v)
+    Computes the Bray-Curtis distance between two n-vectors ``u`` and
+    ``v``, which is defined as
 
-      Computes the Bray-Curtis distance between two n-vectors u and v,
-        \sum{|u_i-v_i|} / \sum{|u_i+v_i|}.
+    .. math:
+
+       \sum{|u_i-v_i|} / \sum{|u_i+v_i|}.
+
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
+
+    :Returns:
+       d : double
+           The Bray-Curtis distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u)
     v = np.asarray(v)
@@ -269,10 +467,24 @@ def braycurtis(u, v):
 
 def canberra(u, v):
     """
-    d = canberra(u, v)
+    Computes the Canberra distance between two n-vectors u and v,
+    which is defined as
 
-      Computes the Canberra distance between two n-vectors u and v,
-        \sum{|u_i-v_i|} / \sum{|u_i|+|v_i}.
+    .. math:
+
+       \frac{\sum_i {|u_i-v_i|}}
+            {\sum_i {|u_i|+|v_i|}}.
+
+
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
+
+    :Returns:
+       d : double
+           The Canberra distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u)
     v = np.asarray(v)
@@ -318,20 +530,28 @@ def _nbool_correspond_ft_tf(u, v):
 
 def yule(u, v):
     """
-    d = yule(u, v)
-      Computes the Yule dissimilarity between two boolean n-vectors u and v,
+    Computes the Yule dissimilarity between two boolean n-vectors u and v,
+    which is defined as
 
-                  R
-         ---------------------
-         c_{TT} + c_{FF} + R/2
 
-      where c_{ij} is the number of occurrences of
+    .. math:
 
-         u[k] == i and v[k] == j
+         \frac{R}
+         \frac{c_{TT} + c_{FF} + \frac{R}{2}}
 
-      for k < n, and
+    where :math:`$c_{ij}$` is the number of occurrences of
+    :math:`$\mathtt{u[k]}` = i$ and :math:`$\mathtt{v[k]} = j$` for
+    :math:`$k < n$` and :math:`$R = 2.0 * (c_{TF} + c_{FT})$`.
 
-         R = 2.0 * (c_{TF} + c_{FT}).
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
+
+    :Returns:
+       d : double
+           The Yule dissimilarity between vectors ``u`` and ``v``.
     """
     u = np.asarray(u)
     v = np.asarray(v)
@@ -341,18 +561,26 @@ def yule(u, v):
 
 def matching(u, v):
     """
-    d = matching(u, v)
+    Computes the Matching dissimilarity between two boolean n-vectors
+    u and v, which is defined as
 
-      Computes the Matching dissimilarity between two boolean n-vectors
-      u and v, which is
+    .. math:
 
-         (c_{TF} + c_{FT}) / n
+       \frac{c_{TF} + c_{FT}}{n}
 
-      where c_{ij} is the number of occurrences of
+    where :math:`$c_{ij}$` is the number of occurrences of
+    :math:`$\mathtt{u[k]}` = i$ and :math:`$\mathtt{v[k]} = j$` for
+    :math:`$k < n$`.
 
-         u[k] == i and v[k] == j
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
 
-      for k < n.
+    :Returns:
+       d : double
+           The Matching dissimilarity between vectors ``u`` and ``v``.
     """
     u = np.asarray(u)
     v = np.asarray(v)
@@ -361,20 +589,27 @@ def matching(u, v):
 
 def dice(u, v):
     """
-    d = dice(u, v)
+    Computes the Dice dissimilarity between two boolean n-vectors
+    ``u`` and ``v``, which is
 
-      Computes the Dice dissimilarity between two boolean n-vectors
-      u and v, which is
+    .. math:
 
-                c_{TF} + c_{FT}
-         ----------------------------
-         2 * c_{TT} + c_{FT} + c_{TF}
+         \frac{c_{TF} + c_{FT}
+              {2c_{TT} + c_{FT} + c_{TF}}
 
-      where c_{ij} is the number of occurrences of
+    where :math:`$c_{ij}$` is the number of occurrences of
+    :math:`$\mathtt{u[k]}` = i$ and :math:`$\mathtt{v[k]} = j$` for
+    :math:`$k < n$`.
 
-         u[k] == i and v[k] == j
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
 
-      for k < n.
+    :Returns:
+       d : double
+           The Dice dissimilarity between vectors ``u`` and ``v``.
     """
     u = np.asarray(u)
     v = np.asarray(v)
@@ -387,23 +622,27 @@ def dice(u, v):
 
 def rogerstanimoto(u, v):
     """
-    d = rogerstanimoto(u, v)
+    Computes the Rogers-Tanimoto dissimilarity between two boolean
+    n-vectors ``u`` and ``v``, which is defined as
 
-      Computes the Rogers-Tanimoto dissimilarity between two boolean
-      n-vectors u and v,
+    .. math:
+       \frac{R}
+            {c_{TT} + c_{FF} + R}
 
-                  R
-         -------------------
-         c_{TT} + c_{FF} + R
+    where :math:`$c_{ij}$` is the number of occurrences of
+    :math:`$\mathtt{u[k]}` = i$ and :math:`$\mathtt{v[k]} = j$` for
+    :math:`$k < n$` and :math:`$R = 2(c_{TF} + c_{FT})$`.
 
-      where c_{ij} is the number of occurrences of
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
 
-         u[k] == i and v[k] == j
-
-      for k < n, and
-
-         R = 2.0 * (c_{TF} + c_{FT}).
-
+    :Returns:
+       d : double
+           The Rogers-Tanimoto dissimilarity between vectors
+           ``u`` and ``v``.
     """
     u = np.asarray(u)
     v = np.asarray(v)
@@ -412,11 +651,27 @@ def rogerstanimoto(u, v):
 
 def russellrao(u, v):
     """
-    d = russellrao(u, v)
+    Computes the Russell-Rao dissimilarity between two boolean n-vectors
+    ``u`` and ``v``, which is defined as
 
-      Computes the Russell-Rao dissimilarity between two boolean n-vectors
-      u and v, (n - c_{TT}) / n where c_{ij} is the number of occurrences
-      of u[k] == i and v[k] == j for k < n.
+    .. math:
+
+      \frac{n - c_{TT}}
+           {n}
+
+    where :math:`$c_{ij}$` is the number of occurrences of
+    :math:`$\mathtt{u[k]}` = i$ and :math:`$\mathtt{v[k]} = j$` for
+    :math:`$k < n$`.
+
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
+
+    :Returns:
+       d : double
+           The Russell-Rao dissimilarity between vectors ``u`` and ``v``.
     """
     u = np.asarray(u)
     v = np.asarray(v)
@@ -428,12 +683,28 @@ def russellrao(u, v):
 
 def sokalmichener(u, v):
     """
-    d = sokalmichener(u, v)
+    Computes the Sokal-Michener dissimilarity between two boolean vectors
+    ``u`` and ``v``, which is defined as
 
-      Computes the Sokal-Michener dissimilarity between two boolean vectors
-      u and v, 2R / (S + 2R) where c_{ij} is the number of occurrences of
-      u[k] == i and v[k] == j for k < n and R = 2 * (c_{TF} + c{FT}) and
-      S = c_{FF} + c_{TT}.
+    .. math:
+
+       \frac{2R}
+            {S + 2R}
+
+    where :math:`$c_{ij}$` is the number of occurrences of
+    :math:`$\mathtt{u[k]}` = i$ and :math:`$\mathtt{v[k]} = j$` for
+    :math:`$k < n$`, :math:`$R = 2 * (c_{TF} + c{FT})$` and
+    :math:`$S = c_{FF} + c_{TT}$`.
+
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
+
+    :Returns:
+       d : double
+           The Sokal-Michener dissimilarity between vectors ``u`` and ``v``.
     """
     u = np.asarray(u)
     v = np.asarray(v)
@@ -448,11 +719,27 @@ def sokalmichener(u, v):
 
 def sokalsneath(u, v):
     """
-    d = sokalsneath(u, v)
+    Computes the Sokal-Sneath dissimilarity between two boolean vectors
+    ``u`` and ``v``,
 
-      Computes the Sokal-Sneath dissimilarity between two boolean vectors
-      u and v, 2R / (c_{TT} + 2R) where c_{ij} is the number of occurrences
-      of u[k] == i and v[k] == j for k < n and R = 2 * (c_{TF} + c{FT}).
+    .. math:
+
+       \frac{2R}
+            {c_{TT} + 2R}
+
+    where :math:`$c_{ij}$` is the number of occurrences of
+    :math:`$\mathtt{u[k]}` = i$ and :math:`$\mathtt{v[k]} = j$` for
+    :math:`$k < n$` and :math:`$R = 2(c_{TF} + c{FT})$`.
+
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
+
+    :Returns:
+       d : double
+           The Sokal-Sneath dissimilarity between vectors ``u`` and ``v``.
     """
     u = np.asarray(u)
     v = np.asarray(v)
@@ -465,176 +752,211 @@ def sokalsneath(u, v):
 
 
 def pdist(X, metric='euclidean', p=2, V=None, VI=None):
-    """ Y = pdist(X, method='euclidean', p=2)
+    """
+    Computes the distance between m original observations in
+    n-dimensional space. Returns a condensed distance matrix Y.  For
+    each :math:`$i$` and :math:`$j$` (where :math:`$i<j<n$), the
+    metric ``dist(u=X[i], v=X[j])`` is computed and stored in the
+    :math:`ij`th entry.
 
-           Computes the distance between m original observations in
-           n-dimensional space. Returns a condensed distance matrix Y.
-           For each i and j (i<j), the metric dist(u=X[i], v=X[j]) is
-           computed and stored in the ij'th entry. See squareform
-           to learn how to retrieve this entry.
+    See ``squareform`` for information on how to calculate the index of
+    this entry or to convert the condensed distance matrix to a
+    redundant square matrix.
 
-        1. Y = pdist(X)
+    :Parameters:
+       X : ndarray
+           An m by n array of m original observations in an
+           n-dimensional space.
+       metric : string or function
+           The distance metric to use. The distance function can
+           be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
+           'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
+           'jaccard', 'kulsinski', 'mahalanobis', 'matching',
+           'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
+           'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'.
 
-          Computes the distance between m points using Euclidean distance
-          (2-norm) as the distance metric between the points. The points
-          are arranged as m n-dimensional row vectors in the matrix X.
+    :Returns:
+       Y : ndarray
+           A condensed distance matrix.
 
-        2. Y = pdist(X, 'minkowski', p)
+    Calling Conventions
+    -------------------
 
-          Computes the distances using the Minkowski distance ||u-v||_p
-          (p-norm) where p>=1.
+    1. ``Y = pdist(X, 'euclidean')``
 
-        3. Y = pdist(X, 'cityblock')
+       Computes the distance between m points using Euclidean distance
+       (2-norm) as the distance metric between the points. The points
+       are arranged as m n-dimensional row vectors in the matrix X.
 
-          Computes the city block or Manhattan distance between the
-          points.
+    2. ``Y = pdist(X, 'minkowski', p)``
 
-        4. Y = pdist(X, 'seuclidean', V=None)
+       Computes the distances using the Minkowski distance
+       :math:`$||u-v||_p$` (p-norm) where :math:`$p \geq 1$`.
 
-          Computes the standardized Euclidean distance. The standardized
-          Euclidean distance between two n-vectors u and v is
+    3. ``Y = pdist(X, 'cityblock')``
 
-            sqrt(\sum {(u_i-v_i)^2 / V[x_i]}).
+       Computes the city block or Manhattan distance between the
+       points.
 
-          V is the variance vector; V[i] is the variance computed over all
+    4. ``Y = pdist(X, 'seuclidean', V=None)``
+
+       Computes the standardized Euclidean distance. The standardized
+       Euclidean distance between two n-vectors ``u`` and ``v`` is
+
+       .. math:
+
+          sqrt(\sum {(u_i-v_i)^2 / V[x_i]}).
+
+       V is the variance vector; V[i] is the variance computed over all
           the i'th components of the points. If not passed, it is
           automatically computed.
 
-        5. Y = pdist(X, 'sqeuclidean')
+    5. ``Y = pdist(X, 'sqeuclidean')``
 
-          Computes the squared Euclidean distance ||u-v||_2^2 between
-          the vectors.
+       Computes the squared Euclidean distance ||u-v||_2^2 between
+       the vectors.
 
-        6. Y = pdist(X, 'cosine')
+    6. ``Y = pdist(X, 'cosine')``
 
-          Computes the cosine distance between vectors u and v,
+       Computes the cosine distance between vectors u and v,
 
-               1 - uv^T
-             -----------
-             |u|_2 |v|_2
+       .. math:
 
-          where |*|_2 is the 2 norm of its argument *.
+          \frac{1 - uv^T}
+               {{|u|}_2 {|v|}_2}
 
-        7. Y = pdist(X, 'correlation')
+       where |*|_2 is the 2 norm of its argument *.
 
-          Computes the correlation distance between vectors u and v. This is
+    7. ``Y = pdist(X, 'correlation')``
 
-            1 - (u - n|u|_1)(v - n|v|_1)^T
-            --------------------------------- ,
-            |(u - n|u|_1)|_2 |(v - n|v|_1)|^T
+       Computes the correlation distance between vectors u and v. This is
 
-          where |*|_1 is the Manhattan (or 1-norm) of its argument *,
-          and n is the common dimensionality of the vectors.
+       .. math:
 
-        8. Y = pdist(X, 'hamming')
+          \frac{1 - (u - n{|u|}_1){(v - n{|v|}_1)}^T}
+               {{|(u - n{|u|}_1)|}_2 {|(v - n{|v|}_1)|}^T}
 
-          Computes the normalized Hamming distance, or the proportion
-          of those vector elements between two n-vectors u and v which
-          disagree. To save memory, the matrix X can be of type boolean.
+       where :math:`$|*|_1$` is the Manhattan (or 1-norm) of its
+       argument, and :math:`$n$` is the common dimensionality of the
+       vectors.
 
-        9. Y = pdist(X, 'jaccard')
+    8. ``Y = pdist(X, 'hamming')``
 
-          Computes the Jaccard distance between the points. Given two
-          vectors, u and v, the Jaccard distance is the proportion of
-          those elements u_i and v_i that disagree where at least one
-          of them is non-zero.
+       Computes the normalized Hamming distance, or the proportion of
+       those vector elements between two n-vectors ``u`` and ``v``
+       which disagree. To save memory, the matrix ``X`` can be of type
+       boolean.
 
-        10. Y = pdist(X, 'chebyshev')
+    9. ``Y = pdist(X, 'jaccard')``
 
-          Computes the Chebyshev distance between the points. The
-          Chebyshev distance between two n-vectors u and v is the maximum
-          norm-1 distance between their respective elements. More
-          precisely, the distance is given by
+       Computes the Jaccard distance between the points. Given two
+       vectors, ``u`` and ``v``, the Jaccard distance is the
+       proportion of those elements ``u[i]`` and ``v[i]`` that
+       disagree where at least one of them is non-zero.
 
-            d(u,v) = max {|u_i-v_i|}.
+    10. ``Y = pdist(X, 'chebyshev')``
 
-        11. Y = pdist(X, 'canberra')
+       Computes the Chebyshev distance between the points. The
+       Chebyshev distance between two n-vectors ``u`` and ``v`` is the
+       maximum norm-1 distance between their respective elements. More
+       precisely, the distance is given by
 
-          Computes the Canberra distance between the points. The
-          Canberra distance between two points u and v is
+       .. math:
 
-                      |u_1-v_1|     |u_2-v_2|           |u_n-v_n|
-            d(u,v) = ----------- + ----------- + ... + -----------
-                     |u_1|+|v_1|   |u_2|+|v_2|         |u_n|+|v_n|
+          d(u,v) = max_i {|u_i-v_i|}.
 
-        12. Y = pdist(X, 'braycurtis')
+    11. ``Y = pdist(X, 'canberra')``
 
-          Computes the Bray-Curtis distance between the points. The
-          Bray-Curtis distance between two points u and v is
+       Computes the Canberra distance between the points. The
+       Canberra distance between two points ``u`` and ``v`` is
 
-                     |u_1-v_1| + |u_2-v_2| + ... + |u_n-v_n|
-            d(u,v) = ---------------------------------------
-                     |u_1+v_1| + |u_2+v_2| + ... + |u_n+v_n|
+       .. math:
 
-        13. Y = pdist(X, 'mahalanobis', VI=None)
+         d(u,v) = \sum_u {|u_i-v_i|}
+                         {|u_i|+|v_i|}
+                         
 
-          Computes the Mahalanobis distance between the points. The
-          Mahalanobis distance between two points u and v is
-                (u-v)(1/V)(u-v)^T
-          where (1/V) is the inverse covariance. If VI is not None,
-          VI will be used as the inverse covariance matrix.
+    12. ``Y = pdist(X, 'braycurtis')``
 
-        14. Y = pdist(X, 'yule')
+       Computes the Bray-Curtis distance between the points. The
+       Bray-Curtis distance between two points ``u`` and ``v`` is
 
-          Computes the Yule distance between each pair of boolean
-          vectors. (see yule function documentation)
 
-        15. Y = pdist(X, 'matching')
+       .. math:
 
-          Computes the matching distance between each pair of boolean
-          vectors. (see matching function documentation)
+            d(u,v) = \frac{\sum_i {u_i-v_i}}
+                          {\sum_i {u_i+v_i}}
 
-        16. Y = pdist(X, 'dice')
+    13. ``Y = pdist(X, 'mahalanobis', VI=None)``
 
-          Computes the Dice distance between each pair of boolean
-          vectors. (see dice function documentation)
+       Computes the Mahalanobis distance between the points. The
+       Mahalanobis distance between two points ``u`` and ``v`` is
+       :math:`$(u-v)(1/V)(u-v)^T$` where :math:`$(1/V)$` (the ``VI``
+       variable) is the inverse covariance. If ``VI`` is not None,
+       ``VI`` will be used as the inverse covariance matrix.
 
-        17. Y = pdist(X, 'kulsinski')
+    14. ``Y = pdist(X, 'yule')``
 
-          Computes the Kulsinski distance between each pair of
-          boolean vectors. (see kulsinski function documentation)
+       Computes the Yule distance between each pair of boolean
+       vectors. (see yule function documentation)
 
-        17. Y = pdist(X, 'rogerstanimoto')
+    15. ``Y = pdist(X, 'matching')``
 
-          Computes the Rogers-Tanimoto distance between each pair of
-          boolean vectors. (see rogerstanimoto function documentation)
+       Computes the matching distance between each pair of boolean
+       vectors. (see matching function documentation)
 
-        18. Y = pdist(X, 'russellrao')
+    16. ``Y = pdist(X, 'dice')``
 
-          Computes the Russell-Rao distance between each pair of
-          boolean vectors. (see russellrao function documentation)
+       Computes the Dice distance between each pair of boolean
+       vectors. (see dice function documentation)
 
-        19. Y = pdist(X, 'sokalmichener')
+    17. ``Y = pdist(X, 'kulsinski')``
 
-          Computes the Sokal-Michener distance between each pair of
-          boolean vectors. (see sokalmichener function documentation)
+       Computes the Kulsinski distance between each pair of
+       boolean vectors. (see kulsinski function documentation)
 
-        20. Y = pdist(X, 'sokalsneath')
+    18. ``Y = pdist(X, 'rogerstanimoto')``
 
-          Computes the Sokal-Sneath distance between each pair of
-          boolean vectors. (see sokalsneath function documentation)
+       Computes the Rogers-Tanimoto distance between each pair of
+       boolean vectors. (see rogerstanimoto function documentation)
 
-        21. Y = pdist(X, f)
+    19. ``Y = pdist(X, 'russellrao')``
 
-          Computes the distance between all pairs of vectors in X
-          using the user supplied 2-arity function f. For example,
-          Euclidean distance between the vectors could be computed
-          as follows,
+       Computes the Russell-Rao distance between each pair of
+       boolean vectors. (see russellrao function documentation)
 
-            dm = pdist(X, (lambda u, v: np.sqrt(((u-v)*(u-v).T).sum())))
+    20. ``Y = pdist(X, 'sokalmichener')``
 
-          Note that you should avoid passing a reference to one of
-          the distance functions defined in this library. For example,
+       Computes the Sokal-Michener distance between each pair of
+       boolean vectors. (see sokalmichener function documentation)
 
-            dm = pdist(X, sokalsneath)
+    21. ``Y = pdist(X, 'sokalsneath')``
 
-          would calculate the pair-wise distances between the vectors
-          in X using the Python function sokalsneath. This would result
-          in sokalsneath being called {n \choose 2} times, which is
-          inefficient. Instead, the optimized C version is more
-          efficient, and we call it using the following syntax.
+       Computes the Sokal-Sneath distance between each pair of
+       boolean vectors. (see sokalsneath function documentation)
 
-            dm = pdist(X, 'sokalsneath')
+    22. ``Y = pdist(X, f)``
+
+       Computes the distance between all pairs of vectors in X
+       using the user supplied 2-arity function f. For example,
+       Euclidean distance between the vectors could be computed
+       as follows::
+
+         dm = pdist(X, (lambda u, v: np.sqrt(((u-v)*(u-v).T).sum())))
+
+       Note that you should avoid passing a reference to one of
+       the distance functions defined in this library. For example,::
+
+         dm = pdist(X, sokalsneath)
+
+       would calculate the pair-wise distances between the vectors in
+       X using the Python function sokalsneath. This would result in
+       sokalsneath being called :math:`${n \choose 2}$` times, which
+       is inefficient. Instead, the optimized C version is more
+       efficient, and we call it using the following syntax.::
+
+         dm = pdist(X, 'sokalsneath')
+
        """
 #         21. Y = pdist(X, 'test_Y')
 #
