@@ -427,114 +427,153 @@ def ward(y):
 
 
 def linkage(y, method='single', metric='euclidean'):
-    """ Z = linkage(y, method)
+    """ 
+    Performs hierarchical/agglomerative clustering on the
+    condensed distance matrix y. y must be a {n \choose 2} sized
+    vector where n is the number of original observations paired
+    in the distance matrix. The behavior of this function is very
+    similar to the MATLAB(TM) linkage function.
 
-          Performs hierarchical/agglomerative clustering on the
-          condensed distance matrix y. y must be a {n \choose 2} sized
-          vector where n is the number of original observations paired
-          in the distance matrix. The behavior of this function is very
-          similar to the MATLAB(TM) linkage function.
+    A 4 by :math:`$(n-1)$` matrix ``Z`` is returned. At the
+    :math:`$i$`th iteration, clusters with indices ``Z[i, 0]`` and
+    ``Z[i, 1]`` are combined to form cluster :math:`$n + i$`. A
+    cluster with an index less than :math:`$n$` corresponds to one of
+    the :math:`$n$` original observations. The distance between
+    clusters ``Z[i, 0]`` and ``Z[i, 1]`` is given by ``Z[i, 2]``. The
+    fourth value ``Z[i, 3]`` represents the number of original
+    observations in the newly formed cluster.
 
-          A (n - 1) * 4 matrix Z is returned. At the i'th iteration,
-          clusters with indices Z[i, 0] and Z[i, 1] are combined to
-          form cluster n + i. A cluster with an index less than n
-          corresponds to one of the n original observations. The
-          distance between clusters Z[i, 0] and Z[i, 1] is given by
-          Z[i, 2]. The fourth value Z[i, 3] represents the number of
-          original observations in the newly formed cluster.
+    The following linkage methods are used to compute the distance
+    :math:`$d(s, t)$` between two clusters :math:`$s$` and
+    :math:`$t$`. The algorithm begins with a forest of clusters that
+    have yet to be used in the hierarchy being formed. When two
+    clusters :math:`$s$` and :math:`$t$` from this forest are combined
+    into a single cluster :math:`$u$`, :math:`$s$` and :math:`$t$` are
+    removed from the forest, and :math:`$u$` is added to the
+    forest. When only one cluster remains in the forest, the algorithm
+    stops, and this cluster becomes the root.
 
-          The following linkage methods are used to compute the
-          distance dist(s, t) between two clusters s and t. The
-          algorithm begins with a forest of clusters that have yet
-          to be used in the hierarchy being formed. When two clusters
-          s and t from this forest are combined into a single cluster u,
-          s and t are removed from the forest, and u is added to
-          the forest. When only one cluster remains in the forest,
-          the algorithm stops, and this cluster becomes the root.
+    A distance matrix is maintained at each iteration. The ``d[i,j]``
+    entry corresponds to the distance between cluster :math:`$i$` and
+    :math:`$j$` in the original forest.
 
-          A distance matrix is maintained at each iteration. The
-          d[i,j] entry corresponds to the distance between cluster
-          i and j in the original forest.
+    At each iteration, the algorithm must update the distance matrix
+    to reflect the distance of the newly formed cluster u with the
+    remaining clusters in the forest.
 
-          At each iteration, the algorithm must update the distance
-          matrix to reflect the distance of the newly formed cluster
-          u with the remaining clusters in the forest.
+    Suppose there are :math:`$|u|$` original observations
+    :math:`$u[0], \ldots, u[|u|-1]$` in cluster :math:`$u$` and
+    :math:`$|v|$` original objects :math:`$v[0], \ldots, v[|v|-1]$` in
+    cluster :math:`$v$`. Recall :math:`$s$` and :math:`$t$` are
+    combined to form cluster :math:`$u$`. Let :math:`$v$` be any
+    remaining cluster in the forest that is not :math:`$u$`.
 
-          Suppose there are |u| original observations u[0], ..., u[|u|-1]
-          in cluster u and |v| original objects v[0], ..., v[|v|-1]
-          in cluster v. Recall s and t are combined to form cluster
-          u. Let v be any remaining cluster in the forest that is not
-          u.
+    :Parameters:
+       Q : ndarray
+           A condensed or redundant distance matrix. A condensed
+           distance matrix is a flat array containing the upper
+           triangular of the distance matrix. This is the form that
+           ``pdist`` returns. Alternatively, a collection of
+           :math:`$m$` observation vectors in n dimensions may be passed as
+           a :math:`$m$` by :math:`$n$` array.
+       method : string
+           The linkage algorithm to use. See the ``Linkage Methods``
+           section below for full descriptions.
+       metric : string
+           The distance metric to use. See the ``Distance Metric``
+           section below for full descriptions.
 
-          The following are methods for calculating the distance between
-          the newly formed cluster u and each v.
+    Linkage Methods
+    ---------------
 
-            * method='single' assigns dist(u,v) = MIN(dist(u[i],v[j])
-              for all points i in cluster u and j in cluster v.
+    The following are methods for calculating the distance between the
+    newly formed cluster :math:`$u$` and each :math:`$v$`.
 
-                (also called Nearest Point Algorithm)
+    * method=``single`` assigns
 
-            * method='complete' assigns dist(u,v) = MAX(dist(u[i],v[j])
-              for all points i in cluster u and j in cluster v.
+      .. math:
+         d(u,v) = \min(dist(u[i],v[j]))
 
-                (also called Farthest Point Algorithm
-                      or the Voor Hees Algorithm)
+      for all points :math:`$i$` in cluster :math:`$u$` and
+      :math:`$j$` in cluster :math:`$v$`. This is also known as the
+      Nearest Point Algorithm.
 
-           * method='average' assigns dist(u,v) =
-                \sum_{ij} { dist(u[i], v[j]) } / (|u|*|v|)
-             for all points i and j where |u| and |v| are the
-             cardinalities of clusters u and v, respectively.
+    * method=``complete`` assigns
 
-                (also called UPGMA)
+      .. math:
+         d(u, v) = \max(dist(u[i],v[j]))
 
-           * method='weighted' assigns
+      for all points :math:`$i$` in cluster u and :math:`$j$` in
+      cluster :math:`$v$`. This is also known by the Farthest Point
+      Algorithm or Voor Hees Algorithm.
 
-               dist(u,v) = (dist(s,v) + dist(t,v))/2
+    * method=``average`` assigns
 
-             where cluster u was formed with cluster s and t and v
-             is a remaining cluster in the forest. (also called WPGMA)
+      .. math:
+         d(u,v) = \sum_{ij} \frac{d(u[i], v[j])}
+                                 {(|u|*|v|)
 
-        Z = linkage(X, method, metric='euclidean')
+      for all points :math:`$i$` and :math:`$j$` where :math:`$|u|$`
+      and :math:`$|v|$` are the cardinalities of clusters :math:`$u$`
+      and :math:`$v$`, respectively. This is also called the UPGMA
+      algorithm. This is called UPGMA.
 
-         Performs hierarchical clustering on the objects defined by the
-         n by m observation matrix X.
+    * method='weighted' assigns
 
-         If the metric is 'euclidean' then the following methods may be
-         used:
+      .. math:
+         d(u,v) = (dist(s,v) + dist(t,v))/2
 
-           * method='centroid' assigns dist(s,t) = euclid(c_s, c_t) where
-             c_s and c_t are the centroids of clusters s and t,
-             respectively. When two clusters s and t are combined into a new
-             cluster u, the new centroid is computed over all the original
-             objects in clusters s and t. The distance then becomes
-             the Euclidean distance between the centroid of u and the
-             centroid of a remaining cluster v in the forest.
-             (also called UPGMC)
+      where cluster u was formed with cluster s and t and v
+      is a remaining cluster in the forest. (also called WPGMA)
 
-           * method='median' assigns dist(s,t) as above. When two clusters
-             s and t are combined into a new cluster u, the average of
-             centroids s and t give the new centroid u. (also called WPGMC)
 
-           * method='ward' uses the Ward variance minimization algorithm.
-             The new entry dist(u, v) is computed as follows,
+    * method='centroid' assigns
 
-                 dist(u,v) =
+      .. math:
+         dist(s,t) = euclid(c_s, c_t)
 
-                ----------------------------------------------------
-                | |v|+|s|            |v|+|t|            |v|
-                | ------- d(v,s)^2 + ------- d(v,t)^2 - --- d(s,t)^2
-               \|    T                  T                T
+      where :math:`$c_s$` and :math:`$c_t$` are the centroids of
+      clusters :math:`$s$` and :math:`$t$`, respectively. When two
+      clusters :math:`$s$` and :math:`$t$` are combined into a new
+      cluster :math:`$u$`, the new centroid is computed over all the
+      original objects in clusters :math:`$s$` and :math:`$t$`. The
+      distance then becomes the Euclidean distance between the
+      centroid of :math:`$u$` and the centroid of a remaining cluster
+      :math:`$v$` in the forest. This is also known as the UPGMC
+      algorithm.
 
-             where u is the newly joined cluster consisting of clusters
-             s and t, v is an unused cluster in the forest, T=|v|+|s|+|t|,
-             and |*| is the cardinality of its argument.
-             (also called incremental)
+    * method='median' assigns math:`$d(s,t)$` like the ``centroid``
+      method. When two clusters s and t are combined into a new
+      cluster :math:`$u$`, the average of centroids s and t give the
+      new centroid :math:`$u$`. This is also known as the WPGMC
+      algorithm.
 
-           Warning to MATLAB(TM) users: when the minimum distance pair in
-           the forest is chosen, there may be two or more pairs with the
-           same minimum distance. This implementation may chose a
-           different minimum than the MATLAB(TM) version.
-        """
+    * method='ward' uses the Ward variance minimization algorithm.
+      The new entry :math:`$d(u,v)$` is computed as follows,
+
+      .. math:
+
+         d(u,v) = \sqrt{\frac{|v|+|s|}
+                             {T}d(v,s)^2
+                      + \frac{|v|+|t|}
+                             {T}d(v,t)^2
+                      + \frac{|v|}
+                             {T}d(s,t)^2}
+
+      where :math:`$u$` is the newly joined cluster consisting of
+      clusters :math:`$s$` and :math:`$t$`, :math:`$v$` is an unused
+      cluster in the forest, :math:`$T=|v|+|s|+|t|$`, and
+      :math:`$|*|$` is the cardinality of its argument. This is also
+      known as the incremental algorithm.
+
+   Warning
+   -------
+
+   When the minimum distance pair in the forest is chosen, there may
+   be two or more pairs with the same minimum distance. This
+   implementation may chose a different minimum than the MATLAB(TM)
+   version.
+   """
     if not isinstance(method, str):
         raise TypeError("Argument 'method' must be a string.")
 
