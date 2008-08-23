@@ -79,7 +79,6 @@ functions. Use ``pdist`` for this purpose.
 | yule             | the Yule dissimilarity (boolean).               |
 +------------------+-------------------------------------------------+
 
-
 References
 ----------
 

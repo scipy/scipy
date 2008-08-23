@@ -243,13 +243,15 @@ def single(y):
 
     :Parameters:
         y : ndarray
-            The upper triangular of the distance matrix y. The result of
+            The upper triangular of the distance matrix. The result of
             ``pdist`` is returned in this form.
 
     :Returns:
         Z : ndarray
             The linkage matrix.
 
+    :SeeAlso:
+       - linkage: for advanced creation of hierarchical clusterings.
     """
     return linkage(y, method='single', metric='euclidean')
 
@@ -261,9 +263,14 @@ def complete(y):
 
     :Parameters:
         y : ndarray
-            The upper triangular of the distance matrix y. The result of
+            The upper triangular of the distance matrix. The result of
             ``pdist`` is returned in this form.
 
+    :Returns:
+        Z : ndarray
+            A linkage matrix containing the hierarchical clustering. See
+            the ``linkage`` function documentation for more information
+            on its structure.
     """
     return linkage(y, method='complete', metric='euclidean')
 
@@ -275,8 +282,17 @@ def average(y):
 
     :Parameters:
         y : ndarray
-            The upper triangular of the distance matrix y. The result of
+            The upper triangular of the distance matrix. The result of
             ``pdist`` is returned in this form.
+
+    :Returns:
+        Z : ndarray
+            A linkage matrix containing the hierarchical clustering. See
+            the ``linkage`` function documentation for more information
+            on its structure.
+
+    :SeeAlso:
+       - linkage: for advanced creation of hierarchical clusterings.
     """
     return linkage(y, method='average', metric='euclidean')
 
@@ -288,8 +304,17 @@ def weighted(y):
 
     :Parameters:
         y : ndarray
-            The upper triangular of the distance matrix y. The result of
+            The upper triangular of the distance matrix. The result of
             ``pdist`` is returned in this form.
+
+    :Returns:
+        Z : ndarray
+            A linkage matrix containing the hierarchical clustering. See
+            the ``linkage`` function documentation for more information
+            on its structure.
+
+    :SeeAlso:
+       - linkage: for advanced creation of hierarchical clusterings.
     """
     return linkage(y, method='weighted', metric='euclidean')
 
@@ -298,56 +323,105 @@ def centroid(y):
     Performs centroid/UPGMC linkage. See ``linkage`` for more
     information on the return structure and algorithm.
 
+    :Parameters:
+        Q : ndarray
+            A condensed or redundant distance matrix. A condensed
+            distance matrix is a flat array containing the upper
+            triangular of the distance matrix. This is the form that
+            ``pdist`` returns. Alternatively, a collection of
+            m observation vectors in n dimensions may be passed as
+            a m by n array.
 
-    Z = centroid(y)
+    :Returns:
+        Z : ndarray
+            A linkage matrix containing the hierarchical clustering. See
+            the ``linkage`` function documentation for more information
+            on its structure.
 
-    Performs centroid/UPGMC linkage on the condensed distance matrix Z.
-    See linkage for more information on the return structure and
-    algorithm.
+    Calling Conventions
+    -------------------
 
-      (a condensed alias for linkage)
+    1. Z = centroid(y)
 
-    Z = centroid(X)
+       Performs centroid/UPGMC linkage on the condensed distance
+       matrix ``y``.  See ``linkage`` for more information on the return
+       structure and algorithm. 
 
-    Performs centroid/UPGMC linkage on the observation matrix X using
-    Euclidean distance as the distance metric. See linkage for more
-    information on the return structure and algorithm.
+    2. Z = centroid(X)
 
+       Performs centroid/UPGMC linkage on the observation matrix ``X``
+       using Euclidean distance as the distance metric. See ``linkage``
+       for more information on the return structure and algorithm.
+
+    :SeeAlso:
+       - linkage: for advanced creation of hierarchical clusterings.
     """
     return linkage(y, method='centroid', metric='euclidean')
 
 def median(y):
     """
-    Z = median(y)
-
-    Performs median/WPGMC linkage on the condensed distance matrix Z.
-    See linkage for more information on the return structure and
-    algorithm.
-
-    Z = median(X)
-
-    Performs median/WPGMC linkage on the observation matrix X using
-    Euclidean distance as the distance metric. See linkage for more
+    Performs median/WPGMC linkage. See ``linkage`` for more
     information on the return structure and algorithm.
 
-      (a condensed alias for linkage)
+    :Parameters:
+        Q : ndarray
+            A condensed or redundant distance matrix. A condensed
+            distance matrix is a flat array containing the upper
+            triangular of the distance matrix. This is the form that
+            ``pdist`` returns. Alternatively, a collection of
+            m observation vectors in n dimensions may be passed as
+            a m by n array.
+
+    Calling Conventions
+    -------------------
+
+    1. Z = median(y)
+
+       Performs median/WPGMC linkage on the condensed distance matrix
+       ``y``.  See ``linkage`` for more information on the return
+       structure and algorithm.
+
+    2. Z = median(X)
+
+       Performs median/WPGMC linkage on the observation matrix ``X``
+       using Euclidean distance as the distance metric. See linkage
+       for more information on the return structure and algorithm.
+
+    :SeeAlso:
+       - linkage: for advanced creation of hierarchical clusterings.
     """
     return linkage(y, method='median', metric='euclidean')
 
 def ward(y):
     """
-    Z = ward(y)
+    Performs Ward's linkage on a condensed or redundant distance
+    matrix. See linkage for more information on the return structure
+    and algorithm.
 
-    Performs Ward's linkage on the condensed distance matrix Z. See
-    linkage for more information on the return structure and algorithm.
+    :Parameters:
+        Q : ndarray
+            A condensed or redundant distance matrix. A condensed
+            distance matrix is a flat array containing the upper
+            triangular of the distance matrix. This is the form that
+            ``pdist`` returns. Alternatively, a collection of
+            m observation vectors in n dimensions may be passed as
+            a m by n array.
 
-    Z = ward(X)
+    Calling Conventions
+    -------------------
 
-    Performs Ward's linkage on the observation matrix X using Euclidean
-    distance as the distance metric. See linkage for more information
-    on the return structure and algorithm.
+    1. Z = ward(y)
+       Performs Ward's linkage on the condensed distance matrix Z. See
+       linkage for more information on the return structure and
+       algorithm.
 
-      (a condensed alias for linkage)
+    2. Z = ward(X)
+       Performs Ward's linkage on the observation matrix X using
+       Euclidean distance as the distance metric. See linkage for more
+       information on the return structure and algorithm.
+
+    :SeeAlso:
+       - linkage: for advanced creation of hierarchical clusterings.
     """
     return linkage(y, method='ward', metric='euclidean')
 
