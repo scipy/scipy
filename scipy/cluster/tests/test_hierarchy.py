@@ -39,8 +39,8 @@ import os.path
 import numpy as np
 from numpy.testing import *
 
-from scipy.cluster.hierarchy import squareform, linkage, from_mlab_linkage, numobs_dm, numobs_y, numobs_linkage, inconsistent
-from scipy.cluster.distance import pdist, matching, jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule
+from scipy.cluster.hierarchy import linkage, from_mlab_linkage, numobs_dm, numobs_y, numobs_linkage, inconsistent
+from scipy.cluster.distance import squareform, pdist, matching, jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule
 
 _tdist = np.array([[0,    662,  877,  255,  412,  996],
                       [662,  0,    295,  468,  268,  400],
@@ -85,71 +85,6 @@ def load_testing_files():
     #eo['pdist-boolean-inp'] = np.bool_(eo['pdist-boolean-inp'])
 
 load_testing_files()
-
-class TestSquareForm(TestCase):
-
-    ################### squareform
-    def test_squareform_empty_matrix(self):
-        "Tests squareform on an empty matrix."
-        A = np.zeros((0,0))
-        rA = squareform(np.array(A, dtype='double'))
-        self.failUnless(rA.shape == (0,))
-
-    def test_squareform_empty_vector(self):
-        v = np.zeros((0,))
-        rv = squareform(np.array(v, dtype='double'))
-        self.failUnless(rv.shape == (1,1))
-        self.failUnless(rv[0, 0] == 0)
-
-    def test_squareform_1by1_matrix(self):
-        "Tests squareform on a 1x1 matrix."
-        A = np.zeros((1,1))
-        rA = squareform(np.array(A, dtype='double'))
-        self.failUnless(rA.shape == (0,))
-
-    def test_squareform_one_vector(self):
-        "Tests squareform on a 1-D array, length=1."
-        v = np.ones((1,)) * 8.3
-        rv = squareform(np.array(v, dtype='double'))
-        self.failUnless(rv.shape == (2,2))
-        self.failUnless(rv[0,1] == 8.3)
-        self.failUnless(rv[1,0] == 8.3)
-
-    def test_squareform_2by2_matrix(self):
-        "Tests squareform on a 2x2 matrix."
-        A = np.zeros((2,2))
-        A[0,1]=0.8
-        A[1,0]=0.8
-        rA = squareform(np.array(A, dtype='double'))
-        self.failUnless(rA.shape == (1,))
-        self.failUnless(rA[0] == 0.8)
-
-    def test_squareform_multi_matrix(self):
-        "Tests squareform on a square matrices of multiple sizes."
-        for n in xrange(2, 5):
-            yield self.check_squareform_multi_matrix(n)
-
-    def check_squareform_multi_matrix(self, n):
-        X = np.random.rand(n, 4)
-        Y = pdist(X)
-        self.failUnless(len(Y.shape) == 1)
-        A = squareform(Y)
-        Yr = squareform(A)
-        s = A.shape
-        k = 0
-        if verbose >= 3:
-            print A.shape, Y.shape, Yr.shape
-        self.failUnless(len(s) == 2)
-        self.failUnless(len(Yr.shape) == 1)
-        self.failUnless(s[0] == s[1])
-        for i in xrange(0, s[0]):
-            for j in xrange(i+1, s[1]):
-                if i != j:
-                    #print i, j, k, A[i, j], Y[k]
-                    self.failUnless(A[i, j] == Y[k])
-                    k += 1
-                else:
-                    self.failUnless(A[i, j] == 0)
 
 class TestNumObs(TestCase):
 

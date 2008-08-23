@@ -7,7 +7,23 @@ Distance matrix computation from a collection of raw observation vectors
 stored in a rectangular array.
 
 +------------------+-------------------------------------------------+
+|*Function*        | *Description*                                   |
++------------------+-------------------------------------------------+
 |pdist             | computes distances between observation pairs.   |
++------------------+-------------------------------------------------+
+|squareform        | converts a square distance matrix to a          |
+|                  | condensed one and vice versa.                   |
++------------------+-------------------------------------------------+
+
+Predicates for checking the validity of distance matrices, both
+condensed and redundant.
+
++------------------+-------------------------------------------------+
+|*Function*        | *Description*                                   |
++------------------+-------------------------------------------------+
+|is_valid_dm       | checks for a valid distance matrix.             |
++------------------+-------------------------------------------------+
+|is_valid_y        | checks for a valid condensed distance matrix.
 +------------------+-------------------------------------------------+
 
 Distance functions between two vectors ``u`` and ``v``. Computing
@@ -15,27 +31,49 @@ distances over a large collection of vectors is inefficient for these
 functions. Use ``pdist`` for this purpose.
 
 +------------------+-------------------------------------------------+
-|braycurtis        | the Bray-Curtis distance.                       |
-|canberra          | the Canberra distance.                          |
-|chebyshev         | the Chebyshev distance.                         |
-|cityblock         | the Manhattan distance.                         |
-|correlation       | the Correlation distance.                       |
-|cosine            | the Cosine distance.                            |
-|dice              | the Dice dissimilarity (boolean).               |
-|euclidean         | the Euclidean distance.                         |
-|hamming           | the Hamming distance (boolean).                 |
-|jaccard           | the Jaccard distance (boolean).                 |
-|kulsinski         | the Kulsinski distance (boolean).               |
-|mahalanobis       | the Mahalanobis distance.                       |
-|matching          | the matching dissimilarity (boolean).           |
-|minkowski         | the Minkowski distance.                         |
-|rogerstanimoto    | the Rogers-Tanimoto dissimilarity (boolean).    |
-|russellrao        | the Russell-Rao dissimilarity (boolean).        |
-|seuclidean        | the normalized Euclidean distance.              |
-|sokalmichener     | the Sokal-Michener dissimilarity (boolean).     |
-|sokalsneath       | the Sokal-Sneath dissimilarity (boolean).       |
-|sqeuclidean       | the squared Euclidean distance.                 |
-|yule              | the Yule dissimilarity (boolean).               |
+|*Function*        | *Description*                                   |
++------------------+-------------------------------------------------+
+| braycurtis       | the Bray-Curtis distance.                       |
++------------------+-------------------------------------------------+
+| canberra         | the Canberra distance.                          |
++------------------+-------------------------------------------------+
+| chebyshev        | the Chebyshev distance.                         |
++------------------+-------------------------------------------------+
+| cityblock        | the Manhattan distance.                         |
++------------------+-------------------------------------------------+
+| correlation      | the Correlation distance.                       |
++------------------+-------------------------------------------------+
+| cosine           | the Cosine distance.                            |
++------------------+-------------------------------------------------+
+| dice             | the Dice dissimilarity (boolean).               |
++------------------+-------------------------------------------------+
+| euclidean        | the Euclidean distance.                         |
++------------------+-------------------------------------------------+
+| hamming          | the Hamming distance (boolean).                 |
++------------------+-------------------------------------------------+
+| jaccard          | the Jaccard distance (boolean).                 |
++------------------+-------------------------------------------------+
+| kulsinski        | the Kulsinski distance (boolean).               |
++------------------+-------------------------------------------------+
+| mahalanobis      | the Mahalanobis distance.                       |
++------------------+-------------------------------------------------+
+| matching         | the matching dissimilarity (boolean).           |
++------------------+-------------------------------------------------+
+| minkowski        | the Minkowski distance.                         |
++------------------+-------------------------------------------------+
+| rogerstanimoto   | the Rogers-Tanimoto dissimilarity (boolean).    |
++------------------+-------------------------------------------------+
+| russellrao       | the Russell-Rao dissimilarity (boolean).        |
++------------------+-------------------------------------------------+
+| seuclidean       | the normalized Euclidean distance.              |
++------------------+-------------------------------------------------+
+| sokalmichener    | the Sokal-Michener dissimilarity (boolean).     |
++------------------+-------------------------------------------------+
+| sokalsneath      | the Sokal-Sneath dissimilarity (boolean).       |
++------------------+-------------------------------------------------+
+| sqeuclidean      | the squared Euclidean distance.                 |
++------------------+-------------------------------------------------+
+| yule             | the Yule dissimilarity (boolean).               |
 +------------------+-------------------------------------------------+
 
 
@@ -1161,3 +1199,296 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
     else:
         raise TypeError('2nd argument metric must be a string identifier or a function.')
     return dm
+def squareform(X, force="no", checks=True):
+    """
+    Converts a vector-form distance vector to a square-form distance
+    matrix, and vice-versa.
+
+    :Parameters:
+       X : ndarray
+           Either a condensed or redundant distance matrix.
+
+    :Returns:
+       Y : ndarray
+           If a condensed distance matrix is passed, a redundant
+           one is returned, or if a redundant one is passed, a
+           condensed distance matrix is returned.
+
+       force : string
+           As with MATLAB(TM), if force is equal to 'tovector' or
+           'tomatrix', the input will be treated as a distance matrix
+           or distance vector respectively.
+
+       checks : bool
+           If ``checks`` is set to ``False``, no checks will be made
+           for matrix symmetry nor zero diagonals. This is useful if
+           it is known that ``X - X.T1`` is small and ``diag(X)`` is
+           close to zero. These values are ignored any way so they do
+           not disrupt the squareform transformation.
+       
+
+    Calling Conventions
+    -------------------
+
+    1. v = squareform(X)
+
+       Given a square d by d symmetric distance matrix ``X``,
+       ``v=squareform(X)`` returns a :math:`$d*(d-1)/2$` (or
+       `${n \choose 2}$`) sized vector v.
+
+      v[{n \choose 2}-{n-i \choose 2} + (j-i-1)] is the distance
+      between points i and j. If X is non-square or asymmetric, an error
+      is returned.
+
+    X = squareform(v)
+
+      Given a d*d(-1)/2 sized v for some integer d>=2 encoding distances
+      as described, X=squareform(v) returns a d by d distance matrix X. The
+      X[i, j] and X[j, i] values are set to
+      v[{n \choose 2}-{n-i \choose 2} + (j-u-1)] and all
+      diagonal elements are zero.
+
+    """
+
+    X = _convert_to_double(np.asarray(X))
+
+    if not np.issubsctype(X, np.double):
+        raise TypeError('A double array must be passed.')
+
+    s = X.shape
+
+    # X = squareform(v)
+    if len(s) == 1 and force != 'tomatrix':
+        if X.shape[0] == 0:
+            return np.zeros((1,1), dtype=np.double)
+
+        # Grab the closest value to the square root of the number
+        # of elements times 2 to see if the number of elements
+        # is indeed a binomial coefficient.
+        d = int(np.ceil(np.sqrt(X.shape[0] * 2)))
+
+        # Check that v is of valid dimensions.
+        if d * (d - 1) / 2 != int(s[0]):
+            raise ValueError('Incompatible vector size. It must be a binomial coefficient n choose 2 for some integer n >= 2.')
+
+        # Allocate memory for the distance matrix.
+        M = np.zeros((d, d), dtype=np.double)
+
+        # Since the C code does not support striding using strides.
+        # The dimensions are used instead.
+        [X] = _copy_arrays_if_base_present([X])
+
+        # Fill in the values of the distance matrix.
+        _distance_wrap.to_squareform_from_vector_wrap(M, X)
+
+        # Return the distance matrix.
+        M = M + M.transpose()
+        return M
+    elif len(s) != 1 and force.lower() == 'tomatrix':
+        raise ValueError("Forcing 'tomatrix' but input X is not a distance vector.")
+    elif len(s) == 2 and force.lower() != 'tovector':
+        if s[0] != s[1]:
+            raise ValueError('The matrix argument must be square.')
+        if checks:
+            if np.sum(np.sum(X == X.transpose())) != np.product(X.shape):
+                raise ValueError('The distance matrix array must be symmetrical.')
+            if (X.diagonal() != 0).any():
+                raise ValueError('The distance matrix array must have zeros along the diagonal.')
+
+        # One-side of the dimensions is set here.
+        d = s[0]
+
+        if d <= 1:
+            return np.array([], dtype=np.double)
+
+        # Create a vector.
+        v = np.zeros(((d * (d - 1) / 2),), dtype=np.double)
+
+        # Since the C code does not support striding using strides.
+        # The dimensions are used instead.
+        [X] = _copy_arrays_if_base_present([X])
+
+        # Convert the vector to squareform.
+        _distance_wrap.to_vector_from_squareform_wrap(X, v)
+        return v
+    elif len(s) != 2 and force.lower() == 'tomatrix':
+        raise ValueError("Forcing 'tomatrix' but input X is not a distance vector.")
+    else:
+        raise ValueError('The first argument must be one or two dimensional array. A %d-dimensional array is not permitted' % len(s))
+
+def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
+    """
+    Returns True if the variable D passed is a valid distance matrix.
+    Distance matrices must be 2-dimensional numpy arrays containing
+    doubles. They must have a zero-diagonal, and they must be symmetric.
+
+    :Parameters:
+       D : ndarray
+           The candidate object to test for validity.
+       tol : double
+           The distance matrix should be symmetric. tol is the maximum
+           difference between the :math:`$ij$`th entry and the
+           :math:`$ji$`th entry for the distance metric to be
+           considered symmetric.
+       throw : bool
+           An exception is thrown if the distance matrix passed is not
+           valid.
+       name : string
+           the name of the variable to checked. This is useful ifa
+           throw is set to ``True`` so the offending variable can be
+           identified in the exception message when an exception is
+           thrown.
+       warning : boolx
+           Instead of throwing an exception, a warning message is
+           raised.
+
+    :Returns:
+       Returns ``True`` if the variable ``D`` passed is a valid
+       distance matrix.  Small numerical differences in ``D`` and
+       ``D.T`` and non-zeroness of the diagonal are ignored if they are
+       within the tolerance specified by ``tol``.
+    """
+    D = np.asarray(D)
+    valid = True
+    try:
+        if type(D) != np.ndarray:
+            if name:
+                raise TypeError('\'%s\' passed as a distance matrix is not a numpy array.' % name)
+            else:
+                raise TypeError('Variable is not a numpy array.')
+        s = D.shape
+        if D.dtype != np.double:
+            if name:
+                raise TypeError('Distance matrix \'%s\' must contain doubles (double).' % name)
+            else:
+                raise TypeError('Distance matrix must contain doubles (double).')
+        if len(D.shape) != 2:
+            if name:
+                raise ValueError('Distance matrix \'%s\' must have shape=2 (i.e. be two-dimensional).' % name)
+            else:
+                raise ValueError('Distance matrix must have shape=2 (i.e. be two-dimensional).')
+        if tol == 0.0:
+            if not (D == D.T).all():
+                if name:
+                    raise ValueError('Distance matrix \'%s\' must be symmetric.' % name)
+                else:
+                    raise ValueError('Distance matrix must be symmetric.')
+            if not (D[xrange(0, s[0]), xrange(0, s[0])] == 0).all():
+                if name:
+                    raise ValueError('Distance matrix \'%s\' diagonal must be zero.' % name)
+                else:
+                    raise ValueError('Distance matrix diagonal must be zero.')
+        else:
+            if not (D - D.T <= tol).all():
+                if name:
+                    raise ValueError('Distance matrix \'%s\' must be symmetric within tolerance %d.' % (name, tol))
+                else:
+                    raise ValueError('Distance matrix must be symmetric within tolerance %5.5f.' % tol)
+            if not (D[xrange(0, s[0]), xrange(0, s[0])] <= tol).all():
+                if name:
+                    raise ValueError('Distance matrix \'%s\' diagonal must be close to zero within tolerance %5.5f.' % (name, tol))
+                else:
+                    raise ValueError('Distance matrix \'%s\' diagonal must be close to zero within tolerance %5.5f.' % tol)
+    except Exception, e:
+        if throw:
+            raise
+        if warning:
+            _warning(str(e))
+        valid = False
+    return valid
+
+def is_valid_y(y, warning=False, throw=False, name=None):
+    """
+    Returns ``True`` if the variable ``y`` passed is a valid condensed
+    distance matrix. Condensed distance matrices must be 1-dimensional
+    numpy arrays containing doubles. Their length must be a binomial
+    coefficient :math:`${n \choose 2}$` for some positive integer n.
+
+
+    :Parameters:
+       y : ndarray
+           The condensed distance matrix.
+
+       warning : bool
+           Invokes a warning if the variable passed is not a valid
+           condensed distance matrix. The warning message explains why
+           the distance matrix is not valid.  'name' is used when
+           referencing the offending variable.
+
+       throws : throw
+           Throws an exception if the variable passed is not a valid
+           condensed distance matrix.
+
+       name : bool
+           Used when referencing the offending variable in the
+           warning or exception message.
+
+    """
+    y = np.asarray(y)
+    valid = True
+    try:
+        if type(y) != np.ndarray:
+            if name:
+                raise TypeError('\'%s\' passed as a condensed distance matrix is not a numpy array.' % name)
+            else:
+                raise TypeError('Variable is not a numpy array.')
+        if y.dtype != np.double:
+            if name:
+                raise TypeError('Condensed distance matrix \'%s\' must contain doubles (double).' % name)
+            else:
+                raise TypeError('Condensed distance matrix must contain doubles (double).')
+        if len(y.shape) != 1:
+            if name:
+                raise ValueError('Condensed distance matrix \'%s\' must have shape=1 (i.e. be one-dimensional).' % name)
+            else:
+                raise ValueError('Condensed distance matrix must have shape=1 (i.e. be one-dimensional).')
+        n = y.shape[0]
+        d = int(np.ceil(np.sqrt(n * 2)))
+        if (d*(d-1)/2) != n:
+            if name:
+                raise ValueError('Length n of condensed distance matrix \'%s\' must be a binomial coefficient, i.e. there must be a k such that (k \choose 2)=n)!' % name)
+            else:
+                raise ValueError('Length n of condensed distance matrix must be a binomial coefficient, i.e. there must be a k such that (k \choose 2)=n)!')
+    except Exception, e:
+        if throw:
+            raise
+        if warning:
+            _warning(str(e))
+        valid = False
+    return valid
+
+def numobs_dm(D):
+    """
+    Returns the number of original observations that correspond to a
+    square, redudant distance matrix D.
+
+    :Parameters:
+       D : ndarray
+           The target distance matrix.
+
+    :Returns:
+       The number of observations in the redundant distance matrix.
+    """
+    D = np.asarray(D)
+    is_valid_dm(D, tol=np.inf, throw=True, name='D')
+    return D.shape[0]
+
+def numobs_y(Y):
+    """
+    Returns the number of original observations that correspond to a
+    condensed distance matrix Y.
+
+    :Parameters:
+       Y : ndarray
+           The number of original observations in the condensed
+           observation ``Y``.
+
+    :Returns:
+       n : int
+           The number of observations in the condensed distance matrix
+           passed.
+    """
+    Y = np.asarray(Y)
+    is_valid_y(Y, throw=True, name='Y')
+    d = int(np.ceil(np.sqrt(Y.shape[0] * 2)))
+    return d

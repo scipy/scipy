@@ -493,6 +493,44 @@ extern PyObject *pdist_sokalsneath_bool_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("");
 }
 
+extern PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args) {
+  PyArrayObject *M_, *v_;
+  int n;
+  const double *v;
+  double *M;
+  if (!PyArg_ParseTuple(args, "O!O!",
+			&PyArray_Type, &M_,
+			&PyArray_Type, &v_)) {
+    return 0;
+  }
+  else {
+    M = (double*)M_->data;
+    v = (const double*)v_->data;
+    n = M_->dimensions[0];
+    dist_to_squareform_from_vector(M, v, n);
+  }
+  return Py_BuildValue("d", 0.0);
+}
+
+extern PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args) {
+  PyArrayObject *M_, *v_;
+  int n;
+  double *v;
+  const double *M;
+  if (!PyArg_ParseTuple(args, "O!O!",
+			&PyArray_Type, &M_,
+			&PyArray_Type, &v_)) {
+    return 0;
+  }
+  else {
+    M = (const double*)M_->data;
+    v = (double*)v_->data;
+    n = M_->dimensions[0];
+    dist_to_vector_from_squareform(M, v, n);
+  }
+  return Py_BuildValue("d", 0.0);
+}
+
 
 static PyMethodDef _distanceWrapMethods[] = {
   {"pdist_bray_curtis_wrap", pdist_bray_curtis_wrap, METH_VARARGS},
@@ -516,6 +554,10 @@ static PyMethodDef _distanceWrapMethods[] = {
   {"pdist_sokalmichener_bool_wrap", pdist_sokalmichener_bool_wrap, METH_VARARGS},
   {"pdist_sokalsneath_bool_wrap", pdist_sokalsneath_bool_wrap, METH_VARARGS},
   {"pdist_yule_bool_wrap", pdist_yule_bool_wrap, METH_VARARGS},
+  {"to_squareform_from_vector_wrap",
+   to_squareform_from_vector_wrap, METH_VARARGS},
+  {"to_vector_from_squareform_wrap",
+   to_vector_from_squareform_wrap, METH_VARARGS},
   {NULL, NULL}     /* Sentinel - marks the end of this structure */
 };
 

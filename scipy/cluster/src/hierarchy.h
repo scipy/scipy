@@ -86,9 +86,6 @@ typedef struct cinfo {
 
 typedef void (distfunc) (cinfo *info, int mini, int minj, int np, int n); 
 
-void dist_to_squareform_from_vector(double *M, const double *v, int n);
-void dist_to_vector_from_squareform(const double *M, double *v, int n);
-
 void inconsistency_calculation(const double *Z, double *R, int n, int d);
 void inconsistency_calculation_alt(const double *Z, double *R, int n, int d);
 

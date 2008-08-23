@@ -37,6 +37,8 @@
 #ifndef _CPY_DISTANCE_H
 #define _CPY_DISTANCE_H
 
+void dist_to_squareform_from_vector(double *M, const double *v, int n);
+void dist_to_vector_from_squareform(const double *M, double *v, int n);
 void pdist_euclidean(const double *X, double *dm, int m, int n);
 void pdist_seuclidean(const double *X,
 		      const double *var, double *dm, int m, int n);

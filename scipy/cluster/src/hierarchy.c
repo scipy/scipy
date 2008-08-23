@@ -871,32 +871,6 @@ void linkage_alt(double *dm, double *Z, double *X,
   free(centroids);
 }
 
-void dist_to_squareform_from_vector(double *M, const double *v, int n) {
-  double *it;
-  const double *cit;
-  int i, j;
-  cit = v;
-  for (i = 0; i < n - 1; i++) {
-    it = M + (i * n) + i + 1;
-    for (j = i + 1; j < n; j++, it++, cit++) {
-      *it = *cit;
-    }
-  }
-}
-
-void dist_to_vector_from_squareform(const double *M, double *v, int n) {
-  double *it;
-  const double *cit;
-  int i, j;
-  it = v;
-  for (i = 0; i < n - 1; i++) {
-    cit = M + (i * n) + i + 1;
-    for (j = i + 1; j < n; j++, it++, cit++) {
-      *it = *cit;
-    }
-  }
-}
-
 void cpy_to_tree(const double *Z, cnode **tnodes, int n) {
   const double *row;
   cnode *node;
