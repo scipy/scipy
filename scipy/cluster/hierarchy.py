@@ -1,107 +1,152 @@
 """
------------------------------------------
-Hierarchical Clustering Library for Scipy
-  Copyright (C) Damian Eads, 2007-2008.
-             New BSD License
------------------------------------------
+Function Reference
+------------------
 
-Flat cluster formation
+These functions cut hierarchical clusterings into flat clusterings
+or find the roots of the forest formed by a cut by providing the flat
+cluster ids of each observation.
 
- fcluster           forms flat clusters from hierarchical clusters.
- fclusterdata       forms flat clusters directly from data.
- leaders            singleton root nodes for flat cluster.
++------------------+-------------------------------------------------+
+|*Function*        | *Description*                                   |
++------------------+-------------------------------------------------+
+|fcluster          |forms flat clusters from hierarchical clusters.  |
++------------------+-------------------------------------------------+
+|fclusterdata      |forms flat clusters directly from data.          |
++------------------+-------------------------------------------------+
+|leaders           |singleton root nodes for flat cluster.           |
++------------------+-------------------------------------------------+
 
-Agglomerative cluster formation
+These are routines for agglomerative clustering.
 
- linkage            agglomeratively clusters original observations.
- single             the single/min/nearest algorithm. (alias)
- complete           the complete/max/farthest algorithm. (alias)
- average            the average/UPGMA algorithm. (alias)
- weighted           the weighted/WPGMA algorithm. (alias)
- centroid           the centroid/UPGMC algorithm. (alias)
- median             the median/WPGMC algorithm. (alias)
- ward               the Ward/incremental algorithm. (alias)
++------------------+-------------------------------------------------+
+|*Function*        | *Description*                                   |
++------------------+-------------------------------------------------+
+|linkage           |agglomeratively clusters original observations.  |
++------------------+-------------------------------------------------+
+|single            |the single/min/nearest algorithm. (alias)        |
++------------------+-------------------------------------------------+
+|complete          |the complete/max/farthest algorithm. (alias)     |
++------------------+-------------------------------------------------+
+|average           |the average/UPGMA algorithm. (alias)             |
++------------------+-------------------------------------------------+
+|weighted          |the weighted/WPGMA algorithm. (alias)            |
++------------------+-------------------------------------------------+
+|centroid          |the centroid/UPGMC algorithm. (alias)            |
++------------------+-------------------------------------------------+
+|median            |the median/WPGMC algorithm. (alias)              |
++------------------+-------------------------------------------------+
+|ward              |the Ward/incremental algorithm. (alias)          |
++------------------+-------------------------------------------------+
 
-Statistic computations on hierarchies
+These routines compute statistics on hierarchies.
 
- cophenet           computes the cophenetic distance between leaves.
- from_mlab_linkage  converts a linkage produced by MATLAB(TM).
- inconsistent       the inconsistency coefficients for cluster.
- maxinconsts        the maximum inconsistency coefficient for each cluster.
- maxdists           the maximum distance for each cluster.
- maxRstat           the maximum specific statistic for each cluster.
- to_mlab_linkage    converts a linkage to one MATLAB(TM) can understand.
++------------------+-------------------------------------------------+
+|*Function*        | *Description*                                   |
++------------------+-------------------------------------------------+
+|cophenet          |computes the cophenetic distance between leaves. |
++------------------+-------------------------------------------------+
+|from_mlab_linkage |converts a linkage produced by MATLAB(TM).       |
++------------------+-------------------------------------------------+
+|inconsistent      |the inconsistency coefficients for cluster.      |
++------------------+-------------------------------------------------+
+|maxinconsts       |the maximum inconsistency coefficient for each   |
+|                  |cluster.                                         |
++------------------+-------------------------------------------------+
+|maxdists          |the maximum distance for each cluster.           |
++------------------+-------------------------------------------------+
+|maxRstat          |the maximum specific statistic for each cluster. |
++------------------+-------------------------------------------------+
+|to_mlab_linkage   |converts a linkage to one MATLAB(TM) can         |
+|                  |understand.                                      |
++------------------+-------------------------------------------------+
 
-Visualization
+Routines for visualizing flat clusters.
 
- dendrogram         visualizes linkages (requires matplotlib).
++------------------+-------------------------------------------------+
+|*Function*        | *Description*                                   |
++------------------+-------------------------------------------------+
+|dendrogram        |visualizes linkages (requires matplotlib).       |
++------------------+-------------------------------------------------+
 
-Tree representations of hierarchies
+These are data structures and routines for representing hierarchies as
+tree objects.
 
- cnode              represents cluster nodes in a cluster hierarchy.
- lvlist             a left-to-right traversal of the leaves.
- totree             represents a linkage matrix as a tree object.
++------------------+-------------------------------------------------+
+|*Function*        | *Description*                                   |
++------------------+-------------------------------------------------+
+|cnode             |represents cluster nodes in a cluster hierarchy. |
++------------------+-------------------------------------------------+
+|lvlist            |a left-to-right traversal of the leaves.         |
++------------------+-------------------------------------------------+
+|totree            |represents a linkage matrix as a tree object.    |
++------------------+-------------------------------------------------+
 
-Predicates
+These are predicates for checking the validity of linkage and
+inconsistency matrices, both condensed and redundant.
 
- is_valid_im        checks for a valid inconsistency matrix.
- is_valid_linkage   checks for a valid hierarchical clustering.
- is_isomorphic      checks if two flat clusterings are isomorphic.
- is_monotonic       checks if a linkage is monotonic.
- Z_y_correspond     checks for validity of distance matrix given a linkage.
++------------------+-------------------------------------------------+
+|*Function*        | *Description*                                   |
++------------------+-------------------------------------------------+
+|is_valid_im       |checks for a valid inconsistency matrix.         |
++------------------+-------------------------------------------------+
+|is_valid_linkage  |checks for a valid hierarchical clustering.      |
++------------------+-------------------------------------------------+
+|is_isomorphic     |checks if two flat clusterings are isomorphic.   |
++------------------+-------------------------------------------------+
+|is_monotonic      |checks if a linkage is monotonic.                |
++------------------+-------------------------------------------------+
+|Z_y_correspond    |checks for validity of distance matrix given a   |
+|                  |linkage.                                         |
++------------------+-------------------------------------------------+
 
-Utility Functions
 
- numobs_dm          # of observations in a distance matrix.
+* MATLAB and MathWorks are registered trademarks of The MathWorks, Inc.
 
-Legal stuff
-
- copying            Displays the license for this package.
+* Mathematica is a registered trademark of The Wolfram Research, Inc.
 
 
-  MATLAB and MathWorks are registered trademarks of The MathWorks, Inc.
-  Mathematica is a registered trademark of The Wolfram Research, Inc.
+References
+----------
 
-References:
+.. [Sta07] "Statistics toolbox." API Reference Documentation. The MathWorks.
+   http://www.mathworks.com/access/helpdesk/help/toolbox/stats/.
+   Accessed October 1, 2007.
 
- [1] "Statistics toolbox." API Reference Documentation. The MathWorks.
-     http://www.mathworks.com/access/helpdesk/help/toolbox/stats/.
-     Accessed October 1, 2007.
+.. [Mti07] "Hierarchical clustering." API Reference Documentation.
+   The Wolfram Research, Inc.
+   http://reference.wolfram.com/mathematica/HierarchicalClustering/tutorial/HierarchicalClustering.html.
+   Accessed October 1, 2007.
 
- [2] "Hierarchical clustering." API Reference Documentation.
-     The Wolfram Research, Inc. http://reference.wolfram.com/...
-     ...mathematica/HierarchicalClustering/tutorial/...
-     HierarchicalClustering.html. Accessed October 1, 2007.
+.. [Gow69] Gower, JC and Ross, GJS. "Minimum Spanning Trees and Single Linkage
+   Cluster Analysis." Applied Statistics. 18(1): pp. 54--64. 1969.
 
- [3] Gower, JC and Ross, GJS. "Minimum Spanning Trees and Single Linkage
-     Cluster Analysis." Applied Statistics. 18(1): pp. 54--64. 1969.
+.. [War63] Ward Jr, JH. "Hierarchical grouping to optimize an objective
+   function." Journal of the American Statistical Association. 58(301):
+   pp. 236--44. 1963.
 
- [4] Ward Jr, JH. "Hierarchical grouping to optimize an objective
-     function." Journal of the American Statistical Association. 58(301):
-     pp. 236--44. 1963.
+.. [Joh66] Johnson, SC. "Hierarchical clustering schemes." Psychometrika.
+   32(2): pp. 241--54. 1966.
 
- [5] Johnson, SC. "Hierarchical clustering schemes." Psychometrika.
-     32(2): pp. 241--54. 1966.
+.. [Sne62] Sneath, PH and Sokal, RR. "Numerical taxonomy." Nature. 193: pp.
+   855--60. 1962.
 
- [6] Sneath, PH and Sokal, RR. "Numerical taxonomy." Nature. 193: pp.
-     855--60. 1962.
+.. [Bat95] Batagelj, V. "Comparing resemblance measures." Journal of
+   Classification. 12: pp. 73--90. 1995.
 
- [7] Batagelj, V. "Comparing resemblance measures." Journal of
-     Classification. 12: pp. 73--90. 1995.
+.. [Sok58] Sokal, RR and Michener, CD. "A statistical method for evaluating
+   systematic relationships." Scientific Bulletins. 38(22):
+   pp. 1409--38. 1958.
 
- [8] Sokal, RR and Michener, CD. "A statistical method for evaluating
-     systematic relationships." Scientific Bulletins. 38(22):
-     pp. 1409--38. 1958.
+.. [Ede79] Edelbrock, C. "Mixture model tests of hierarchical clustering
+   algorithms: the problem of classifying everybody." Multivariate
+   Behavioral Research. 14: pp. 367--84. 1979.
 
- [9] Edelbrock, C. "Mixture model tests of hierarchical clustering
-     algorithms: the problem of classifying everybody." Multivariate
-     Behavioral Research. 14: pp. 367--84. 1979.
+.. [Jai88] Jain, A., and Dubes, R., "Algorithms for Clustering Data."
+   Prentice-Hall. Englewood Cliffs, NJ. 1988.
 
-[10] Jain, A., and Dubes, R., "Algorithms for Clustering Data."
-     Prentice-Hall. Englewood Cliffs, NJ. 1988.
+.. [Fis36] Fisher, RA "The use of multiple measurements in taxonomic
+   problems." Annals of Eugenics, 7(2): 179-188. 1936
 
-[11] Fisher, RA "The use of multiple measurements in taxonomic
-     problems." Annals of Eugenics, 7(2): 179-188. 1936
 """
 
 _copyingtxt="""
@@ -423,7 +468,7 @@ def linkage(y, method='single', metric='euclidean'):
 
     s = y.shape
     if len(s) == 1:
-        is_valid_y(y, throw=True, name='y')
+        distance.is_valid_y(y, throw=True, name='y')
         d = np.ceil(np.sqrt(s[0] * 2))
         if method not in _cpy_non_euclid_methods.keys():
             raise ValueError("Valid methods when the raw observations are omitted are 'single', 'complete', 'weighted', and 'average'.")
@@ -719,7 +764,7 @@ def cophenet(*args, **kwargs):
 
     Y = args[1]
     Ys = Y.shape
-    is_valid_y(Y, throw=True, name='Y')
+    distance.is_valid_y(Y, throw=True, name='Y')
 
     z = zz.mean()
     y = Y.mean()

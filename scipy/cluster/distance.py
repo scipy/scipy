@@ -16,7 +16,8 @@ stored in a rectangular array.
 +------------------+-------------------------------------------------+
 
 Predicates for checking the validity of distance matrices, both
-condensed and redundant.
+condensed and redundant. Also contained in this module are functions
+for computing the number of observations in a distance matrix.
 
 +------------------+-------------------------------------------------+
 |*Function*        | *Description*                                   |
@@ -24,6 +25,8 @@ condensed and redundant.
 |is_valid_dm       | checks for a valid distance matrix.             |
 +------------------+-------------------------------------------------+
 |is_valid_y        | checks for a valid condensed distance matrix.
++------------------+-------------------------------------------------+
+|numobs_dm          # of observations in a distance matrix.
 +------------------+-------------------------------------------------+
 
 Distance functions between two vectors ``u`` and ``v``. Computing

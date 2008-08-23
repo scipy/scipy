@@ -39,8 +39,8 @@ import os.path
 import numpy as np
 from numpy.testing import *
 
-from scipy.cluster.hierarchy import linkage, from_mlab_linkage, numobs_dm, numobs_y, numobs_linkage, inconsistent
-from scipy.cluster.distance import squareform, pdist, matching, jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule
+from scipy.cluster.hierarchy import linkage, from_mlab_linkage, numobs_linkage, inconsistent
+from scipy.cluster.distance import squareform, pdist, matching, jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule, numobs_dm, numobs_y
 
 _tdist = np.array([[0,    662,  877,  255,  412,  996],
                       [662,  0,    295,  468,  268,  400],

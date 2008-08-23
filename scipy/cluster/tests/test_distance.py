@@ -39,8 +39,8 @@ import os.path
 
 import numpy as np
 from numpy.testing import *
-from scipy.cluster.hierarchy import linkage, from_mlab_linkage, numobs_dm, numobs_y, numobs_linkage
-from scipy.cluster.distance import squareform, pdist, matching, jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule
+from scipy.cluster.hierarchy import linkage, from_mlab_linkage, numobs_linkage
+from scipy.cluster.distance import squareform, pdist, matching, jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule, numobs_dm, numobs_y
 
 #from scipy.cluster.hierarchy import pdist, euclidean
 
