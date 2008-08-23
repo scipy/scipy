@@ -480,8 +480,8 @@ def linkage(y, method='single', metric='euclidean'):
            The linkage algorithm to use. See the ``Linkage Methods``
            section below for full descriptions.
        metric : string
-           The distance metric to use. See the ``Distance Metric``
-           section below for full descriptions.
+           The distance metric to use. See the ``distance.pdist``
+           function for a list of valid distance metrics.
 
     Linkage Methods
     ---------------
@@ -642,62 +642,78 @@ class cnode:
 
     def getId(self):
         """
-        i = nd.getId()
+        The identifier of the target node. For :math:`$0 leq i < n$`,
+        :math:`$i$` corresponds to original observation
+        :math:`$i$`. For :math:`$n \leq i$` < :math:`$2n-1$`,
+        :math:`$i$` corresponds to non-singleton cluster formed at
+        iteration :math:`$i-n$`.
 
-        Returns the id number of the node nd. For 0 <= i < n, i
-        corresponds to original observation i. For n <= i < 2n - 1,
-        i corresponds to non-singleton cluster formed at iteration i-n.
+        :Returns:
+
+           id : int
+                The identifier of the target node.
+
         """
         return self.id
 
     def getCount(self):
         """
-        c = nd.getCount()
+        The number of leaf nodes (original observations) belonging to
+        the cluster node nd. If the target node is a leaf, 1 is
+        returned.
+        
+        :Returns:
 
-        Returns the number of leaf nodes (original observations)
-        belonging to the cluster node nd. If the nd is a leaf, c=1.
+           c : int
+               The number of leaf nodes below the target node.
         """
         return self.count
 
     def getLeft(self):
         """
-        left = nd.getLeft()
+        Returns a reference to the left child tree object. If the node
+        is a leaf, None is returned.
 
-        Returns a reference to the left child. If the node is a
-        leaf, None is returned.
+        :Returns:
+           left : cnode
+                  The left child of the target node.
         """
         return self.left
 
     def getRight(self):
         """
-        left = nd.getLeft()
+        Returns a reference to the right child tree object. If the node
+        is a leaf, None is returned.
 
-        Returns a reference to the right child. If the node is a
-        leaf, None is returned.
+        :Returns:
+           right : cnode
+                  The left child of the target node.
         """
         return self.right
 
     def isLeaf(self):
         """
-        Returns True if the node is a leaf.
+        Returns True iff the target node is a leaf.
+
+        :Returns:
+           leafness : bool
+                      True if the target node is a leaf node.
         """
         return self.left is None
 
     def preOrder(self, func=(lambda x: x.id)):
         """
-        vlst = preOrder(func)
+        Performs preorder traversal without recursive function calls.
+        When a leaf node is first encountered, ``func`` is called with
+        the leaf node as its argument, and its result is appended to
+        the list.
 
-          Performs preorder traversal without recursive function calls.
-          When a leaf node is first encountered, func is called with the
-          leaf node as its argument, and its result is appended to the
-          list vlst.
+        For example, the statement:
+        
+           ids = root.preOrder(lambda x: x.id)
 
-          For example, the statement
-
-            ids = root.preOrder(lambda x: x.id)
-
-          returns a list of the node ids corresponding to the leaf
-          nodes of the tree as they appear from left to right.
+        returns a list of the node ids corresponding to the leaf nodes
+        of the tree as they appear from left to right.
         """
 
         # Do a preorder traversal, caching the result. To avoid having to do
