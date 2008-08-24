@@ -619,6 +619,10 @@ class cnode:
 
     The totree function converts a matrix returned by the linkage
     function into an easy-to-use tree representation.
+
+    :SeeAlso:
+
+       - totree: for converting a linkage matrix Z into a tree object.
     """
 
     def __init__(self, id, left=None, right=None, dist=0, count=1):
@@ -714,6 +718,19 @@ class cnode:
 
         returns a list of the node ids corresponding to the leaf nodes
         of the tree as they appear from left to right.
+
+        :Parameters:
+
+           - func : function
+             Applied to each leaf cnode object in the pre-order
+             traversal. Given the i'th leaf node in the pre-order
+             traversal ``n[i]``, the result of func(n[i]) is stored in
+             L[i]. If not provided, the index of the original observation
+             to which the node corresponds is used.
+
+        :Returns:
+           - L : list
+             The pre-order traversal.                    
         """
 
         # Do a preorder traversal, caching the result. To avoid having to do
@@ -753,30 +770,34 @@ _cnode_type = type(cnode)
 
 def totree(Z, rd=False):
     """
-    r = totree(Z)
+    Converts a hierarchical clustering encoded in the matrix Z (by
+    linkage) into an easy-to-use tree object. The reference r to the
+    root cnode object is returned.
+    
+    Each cnode object has a left, right, dist, id, and count
+    attribute. The left and right attributes point to cnode objects
+    that were combined to generate the cluster. If both are None then
+    the cnode object is a leaf node, its count must be 1, and its
+    distance is meaningless but set to 0.
 
-      Converts a hierarchical clustering encoded in the matrix Z
-      (by linkage) into an easy-to-use tree object. The reference r
-      to the root cnode object is returned.
+    :Parameters:
 
-      Each cnode object has a left, right, dist, id, and count
-      attribute. The left and right attributes point to cnode
-      objects that were combined to generate the cluster. If
-      both are None then the cnode object is a leaf node, its
-      count must be 1, and its distance is meaningless but set
-      to 0.
+        Z : ndarray
+          The linkage matrix in proper form (see the ``linkage``
+          function documentation).
 
-    (r, d) = totree(Z, rd=True)
+        r : bool
+          When ``False``, a reference to the root cnode object is
+          returned.  Otherwise, a tuple (r,d) is returned. ``r`` is a
+          reference to the root node while ``d`` is a dictionary
+          mapping cluster ids to cnode references. If a cluster id is
+          less than n, then it corresponds to a singleton cluster
+          (leaf node). See ``linkage`` for more information on the
+          assignment of cluster ids to clusters.
 
-      Same as totree(Z) except a tuple is returned where r is
-      the reference to the root cnode and d is a reference to a
-      dictionary mapping cluster ids to cnodes. If a cluster id
-      is less than n, then it corresponds to a singleton cluster
-      (leaf node).
-
-    Note: This function is provided for the convenience of the
-    library user. cnodes are not used as input to any of the
-    functions in this library.
+    Note: This function is provided for the convenience of the library
+    user. cnodes are not used as input to any of the functions in this
+    library.
     """
 
     Z = np.asarray(Z)
@@ -845,29 +866,38 @@ def _convert_to_double(X):
 
 def cophenet(*args, **kwargs):
     """
-    d = cophenet(Z)
+
+
+    Calling Conventions
+    -------------------
+
+      1. ``d = cophenet(Z)``
 
       Calculates the cophenetic distances between each observation in the
-      hierarchical clustering defined by the linkage Z.
+      hierarchical clustering defined by the linkage ``Z``.
 
-      Suppose p and q are original observations in disjoint clusters
-      s and t, respectively and s and t are joined by a direct parent
-      cluster u. The cophenetic distance between observations i and j
-      is simply the distance between clusters s and t.
+      Suppose :math:`$p$` and :math:`$q$` are original observations in
+      disjoint clusters :math:`$s$` and :math:`$t$`, respectively and
+      :math:`$s$` and :math:`$t$` are joined by a direct parent
+      cluster :math:`$u$`. The cophenetic distance between
+      observations :math:`$i$` and :math:`$j$` is simply the distance
+      between clusters :math:`$s$` and :math:`$t$`.
 
-      d is cophenetic distance matrix in condensed form. The ij'th
-      entry is the cophenetic distance between original observations
-      i and j.
+      ``d`` is cophenetic distance matrix in condensed form. The
+      :math:`$ij$`th entry is the cophenetic distance between original
+      observations :math:`$i$` and :math:`$j$`.
 
-    c = cophenet(Z, Y)
+      2. ``c = cophenet(Z, Y)``
 
-      Calculates the cophenetic correlation coefficient c of a hierarchical
-      clustering Z of a set of n observations in m dimensions. Y is the
-      condensed distance matrix from which Z was generated.
+      Calculates the cophenetic correlation coefficient ``c`` of a
+      hierarchical clustering defined by the linkage matrix ``Z`` of a
+      set of :math:`$n$` observations in :math:`$m$` dimensions. ``Y``
+      is the condensed distance matrix from which ``Z`` was generated.
 
-    (c, d) = cophenet(Z, Y, [])
+      3. ``(c, d) = cophenet(Z, Y, [])``
 
-      Also returns the cophenetic distance matrix in condensed form.
+      Returns a tuple instead, (c, d). The cophenetic distance matrix
+      ``d`` is included in condensed (upper triangular) form.
 
     """
     Z = np.asarray(Z)
