@@ -14,7 +14,8 @@ from numpy import alltrue, where, arange, put, putmask, \
      zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
      arctan, tanh, ndarray, cos, cosh, sinh, newaxis, array
 from numpy import atleast_1d, polyval, angle, ceil, place, extract, \
-     any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isnan, isinf
+     any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isnan, isinf, \
+     power
 import numpy
 import numpy.random as mtrand
 from numpy import flatnonzero as nonzero
@@ -308,6 +309,8 @@ class rv_continuous(object):
         pdf_signature = inspect.getargspec(self._pdf.im_func)
         numargs2 = len(pdf_signature[0]) - 2
         self.numargs = max(numargs1, numargs2)
+        self.shapes = shapes
+        self.extradoc = extradoc
         if momtype == 0:
             self.generic_moment = sgf(self._mom0_sc,otypes='d')
         else:
@@ -828,15 +831,23 @@ Kolmogorov-Smirnov two-sided test for large N
 ## Normal distribution
 
 # loc = mu, scale = std
+# Keep these implementations out of the class definition so they can be reused
+# by other distributions.
+def _norm_pdf(x):
+    return 1.0/sqrt(2*pi)*exp(-x**2/2.0)
+def _norm_cdf(x):
+    return special.ndtr(x)
+def _norm_ppf(q):
+    return special.ndtri(q)
 class norm_gen(rv_continuous):
     def _rvs(self):
         return mtrand.standard_normal(self._size)
     def _pdf(self,x):
-        return 1.0/sqrt(2*pi)*exp(-x**2/2.0)
+        return _norm_pdf(x)
     def _cdf(self,x):
-        return special.ndtr(x)
+        return _norm_cdf(x)
     def _ppf(self,q):
-        return special.ndtri(q)
+        return _norm_ppf(q)
     def _stats(self):
         return 0.0, 1.0, 0.0, 0.0
     def _entropy(self):
@@ -1354,16 +1365,14 @@ for x >= 0, b > 0.
 """
                         )
 
-## Faigue-Life (Birnbaum-Sanders)
+## Fatigue-Life (Birnbaum-Sanders)
 class fatiguelife_gen(rv_continuous):
     def _rvs(self, c):
         z = norm.rvs(size=self._size)
-        U = random(size=self._size)
-        fac = 2 + c*c*z*z
-        det = sqrt(fac*fac - 4)
-        t1 = fac + det
-        t2 = fac - det
-        return t1*(U>0.5) + t2*(U<0.5)
+        x = 0.5*c*z
+        x2 = x*x
+        t = 1.0 + 2*x2 + 2*x*sqrt(1 + x2)
+        return t
     def _pdf(self, x, c):
         return (x+1)/arr(2*c*sqrt(2*pi*x**3))*exp(-(x-1)**2/arr((2.0*x*c**2)))
     def _cdf(self, x, c):
@@ -2241,12 +2250,14 @@ logistic.pdf(x) = exp(-x)/(1+exp(-x))**2
 ## Log Gamma
 #
 class loggamma_gen(rv_continuous):
+    def _rvs(self, c):
+        return log(mtrand.gamma(c, size=self._size))
     def _pdf(self, x, c):
         return exp(c*x-exp(x)-special.gammaln(c))
     def _cdf(self, x, c):
-        return special.gammainc(c, exp(x))/ special.gamma(c)
+        return special.gammainc(c, exp(x))
     def _ppf(self, q, c):
-        return log(special.gammaincinv(c,q*special.gamma(c)))
+        return log(special.gammaincinv(c,q))
 loggamma = loggamma_gen(name='loggamma', longname="A log gamma",
                         extradoc="""
 
@@ -2713,14 +2724,14 @@ where phi is the normal pdf, and Phi is the normal cdf, and x > 0, s,c > 0.
 
 # Power Normal
 
-class powernorm_gen(norm_gen):
+class powernorm_gen(rv_continuous):
     def _pdf(self, x, c):
-        return c*norm_gen._pdf(self, x)* \
-               (norm_gen._cdf(self, -x)**(c-1.0))
+        return c*norm.pdf(x)* \
+               (norm.cdf(-x)**(c-1.0))
     def _cdf(self, x, c):
-        return 1.0-norm_gen._cdf(self, -x)**(c*1.0)
+        return 1.0-norm.cdf(-x)**(c*1.0)
     def _ppf(self, q, c):
-        return -norm_gen._ppf(self, pow(1.0-q,1.0/c))
+        return -norm.ppf(pow(1.0-q,1.0/c))
 powernorm = powernorm_gen(name='powernorm', longname="A power normal",
                           shapes="c", extradoc="""
 
@@ -2734,6 +2745,7 @@ where phi is the normal pdf, and Phi is the normal cdf, and x > 0, c > 0.
 # R-distribution ( a general-purpose distribution with a
 #  variety of shapes.
 
+# FIXME: PPF does not work.
 class rdist_gen(rv_continuous):
     def _pdf(self, x, c):
         return pow((1.0-x*x),c/2.0-1) / special.beta(0.5,c/2.0)
@@ -2812,6 +2824,7 @@ for a <= x <= b, a,b > 0.
 
 # Rice distribution
 
+# FIXME: PPF does not work.
 class rice_gen(rv_continuous):
     def _pdf(self, x, b):
         return x*exp(-(x*x+b*b)/2.0)*special.i0(x*b)
@@ -2833,6 +2846,7 @@ for x > 0, b > 0.
 
 # Reciprocal Inverse Gaussian
 
+# FIXME: PPF does not work.
 class recipinvgauss_gen(rv_continuous):
     def _pdf(self, x, mu):
         return 1.0/sqrt(2*pi*x)*exp(-(1-mu*x)**2.0 / (2*x*mu**2.0))
@@ -2978,6 +2992,7 @@ Truncated Normal distribution.
 #   to u-shape (lam = 0.5)
 #   to Uniform from -1 to 1 (lam = 1)
 
+# FIXME: RVS does not work.
 class tukeylambda_gen(rv_continuous):
     def _pdf(self, x, lam):
         Fx = arr(special.tklmbda(x,lam))
@@ -3368,6 +3383,8 @@ class rv_discrete:
         self._cdfvec = sgf(self._cdfsingle,otypes='d')
         self.return_integers = 1
         self.vecentropy = vectorize(self._entropy)
+        self.shapes = shapes
+        self.extradoc = extradoc
 
         if values is not None:
             self.xk, self.pk = values
@@ -3880,9 +3897,12 @@ class nbinom_gen(rv_discrete):
         return mtrand.negative_binomial(n, pr, self._size)
     def _argcheck(self, n, pr):
         return (n >= 0) & (pr >= 0) & (pr <= 1)
+    def _pmf(self, x, n, pr):
+        coeff = exp(special.gammaln(n+x) - special.gammaln(x+1) - special.gammaln(n))
+        return coeff * power(pr,n) * power(1-pr,x)
     def _cdf(self, x, n, pr):
         k = floor(x)
-        return special.nbdtr(k,n,pr)
+        return special.betainc(n, k+1, pr)
     def _sf(self, x, n, pr):
         k = floor(x)
         return special.nbdtrc(k,n,pr)
@@ -3999,7 +4019,7 @@ Hypergeometric distribution
                           )
 
 ## Logarithmic (Log-Series), (Series) distribution
-
+# FIXME: Fails _cdfvec
 class logser_gen(rv_discrete):
     def _rvs(self, pr):
         return mtrand.logseries(pr,size=self._size)
@@ -4047,8 +4067,8 @@ class poisson_gen(rv_discrete):
         return special.pdtrc(k,mu)
     def _ppf(self, q, mu):
         vals = ceil(special.pdtrik(q,mu))
-        temp = special.pdtr(vals-1,mu)
-        # fixme: vals1 = vals-1?
+        vals1 = vals-1
+        temp = special.pdtr(vals1,mu)
         return where((temp >= q), vals1, vals)
     def _stats(self, mu):
         var = mu
@@ -4080,7 +4100,7 @@ class planck_gen(rv_discrete):
         return 0  # lambda_ = 0
     def _pmf(self, k, lambda_):
         fact = (1-exp(-lambda_))
-        return fact*exp(-lambda_(k))
+        return fact*exp(-lambda_*k)
     def _cdf(self, x, lambda_):
         k = floor(x)
         return 1-exp(-lambda_*(k+1))
@@ -4111,7 +4131,7 @@ for k*b >= 0
 class boltzmann_gen(rv_discrete):
     def _pmf(self, k, lambda_, N):
         fact = (1-exp(-lambda_))/(1-exp(-lambda_*N))
-        return fact*exp(-lambda_(k))
+        return fact*exp(-lambda_*k)
     def _cdf(self, x, lambda_, N):
         k = floor(x)
         return (1-exp(-lambda_*(k+1)))/(1-exp(-lambda_*N))
@@ -4197,6 +4217,7 @@ Discrete Uniform
 
 # Zipf distribution
 
+# FIXME: problems sampling.
 class zipf_gen(rv_discrete):
     def _rvs(self, a):
         return mtrand.zipf(a, size=self._size)
