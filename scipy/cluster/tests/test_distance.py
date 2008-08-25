@@ -945,7 +945,7 @@ class TestPdist(TestCase):
         self.failUnless(within_tol(y1, y2, eps))
 
     def test_pdist_canberra_match(self):
-        "Tests pdist(X, 'canberra') to see if the two implementations match on random double input data."
+        "Tests pdist(X, 'canberra') to see if the two implementations match on the Iris data set."
         D = eo['iris']
         print D.shape, D.dtype
         eps = 1e-10
@@ -954,6 +954,13 @@ class TestPdist(TestCase):
         print np.abs(y1-y2).max()
         self.failUnless(within_tol(y1, y2, eps))
 
+    def test_pdist_canberra_ticket_711(self):
+        "Tests pdist(X, 'canberra') to see if Canberra gives the right result as reported in Scipy bug report 711."
+        eps = 1e-10
+        pdist_y = pdist(([3.3], [3.4]), "canberra")
+        right_y = array([ 0.01492537])
+        print np.abs(pdist_y-right_y).max()
+        self.failUnless(within_tol(y1, y2, eps))
 
 def within_tol(a, b, tol):
     return np.abs(a - b).max() < tol
