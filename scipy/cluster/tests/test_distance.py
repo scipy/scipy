@@ -956,11 +956,11 @@ class TestPdist(TestCase):
 
     def test_pdist_canberra_ticket_711(self):
         "Tests pdist(X, 'canberra') to see if Canberra gives the right result as reported in Scipy bug report 711."
-        eps = 1e-10
+        eps = 1e-8
         pdist_y = pdist(([3.3], [3.4]), "canberra")
-        right_y = array([ 0.01492537])
+        right_y = 0.01492537
         print np.abs(pdist_y-right_y).max()
-        self.failUnless(within_tol(y1, y2, eps))
+        self.failUnless(within_tol(pdist_y, right_y, eps))
 
 def within_tol(a, b, tol):
     return np.abs(a - b).max() < tol
