@@ -944,6 +944,17 @@ class TestPdist(TestCase):
         print np.abs(y1-y2).max()
         self.failUnless(within_tol(y1, y2, eps))
 
+    def test_pdist_canberra_match(self):
+        "Tests pdist(X, 'canberra') to see if the two implementations match on random double input data."
+        D = eo['iris']
+        print D.shape, D.dtype
+        eps = 1e-10
+        y1 = pdist(D, "canberra")
+        y2 = pdist(D, "test_canberra")
+        print np.abs(y1-y2).max()
+        self.failUnless(within_tol(y1, y2, eps))
+
+
 def within_tol(a, b, tol):
     return np.abs(a - b).max() < tol
 

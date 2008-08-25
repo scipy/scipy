@@ -43,11 +43,11 @@ from scipy.cluster.hierarchy import linkage, from_mlab_linkage, numobs_linkage, 
 from scipy.cluster.distance import squareform, pdist, matching, jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule, numobs_dm, numobs_y
 
 _tdist = np.array([[0,    662,  877,  255,  412,  996],
-                      [662,  0,    295,  468,  268,  400],
-                      [877,  295,  0,    754,  564,  138],
-                      [255,  468,  754,  0,    219,  869],
-                      [412,  268,  564,  219,  0,    669],
-                      [996,  400,  138,  869,  669,  0  ]], dtype='double')
+                   [662,  0,    295,  468,  268,  400],
+                   [877,  295,  0,    754,  564,  138],
+                   [255,  468,  754,  0,    219,  869],
+                   [412,  268,  564,  219,  0,    669],
+                   [996,  400,  138,  869,  669,  0  ]], dtype='double')
 
 _ytdist = squareform(_tdist)
 

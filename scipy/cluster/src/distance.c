@@ -73,11 +73,13 @@ static inline double chebyshev_distance(const double *u, const double *v, int n)
 
 static inline double canberra_distance(const double *u, const double *v, int n) {
   int i;
-  double s = 0.0;
+  double snum = 0.0, sdenom_u = 0.0, sdenom_v = 0.0;
   for (i = 0; i < n; i++) {
-    s += (fabs(u[i] - v[i]) / (fabs(u[i]) + fabs(v[i])));
+    snum += fabs(u[i] - v[i]);
+    sdenom_u += fabs(u[i]);
+    sdenom_v += fabs(v[i]);
   }
-  return s;
+  return snum / (sdenom_u + sdenom_v);
 }
 
 static inline double bray_curtis_distance(const double *u, const double *v, int n) {
