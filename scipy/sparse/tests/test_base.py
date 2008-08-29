@@ -1193,24 +1193,21 @@ class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
         B[0,:] = A[0,:]
         assert_array_equal(A[0,:].A, B[0,:].A)
 
-    def tst_inplace_op(self,op,arr,other,result):
-        cpy = arr
-        getattr(arr,"__i%s__" % op)(other)
 
-        assert_array_equal(cpy.todense(),arr.todense())
-        assert_array_equal(arr.todense(),result)
+    def test_inplace_ops(self):
+        A = lil_matrix([[0,2,3],[4,0,6]])
+        B = lil_matrix([[0,1,0],[0,2,3]])
 
-    def testip_inplace_ops(self):
-        B = self.B[:3,:3].copy()
-        B[:,:] = B-B
-        C = B.todense()
+        data = {'add': (B,A + B),
+                'sub': (B,A - B),
+                'mul': (3,A * 3)}
 
-        data = {'add':(B,C+C),
-                'sub':(B,zeros(B.shape)),
-                'mul':(3,C*3)}
+        for op,(other,expected) in data.iteritems():
+            result = A.copy()
+            getattr(result, '__i%s__' % op)(other)
 
-        return [(self.tst_inplace_op,op,B,other,result)
-                for op,(other,result) in data.iteritems()]
+            assert_array_equal(result.todense(), expected.todense())
+
 
     def test_lil_slice_assignment(self):
         B = lil_matrix((4,3))

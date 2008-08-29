@@ -292,7 +292,14 @@ class lil_matrix(spmatrix):
         if isscalar(x):
             x = self.dtype.type(x)
         elif not isinstance(x, spmatrix):
-            x = numpy.asarray(x, dtype=self.dtype)
+            x = lil_matrix(x)
+
+        if isspmatrix(x) and index == (slice(None), slice(None)):
+            # self[:,:] = other_sparse
+            x = lil_matrix(x)
+            self.rows = x.rows
+            self.data = x.data
+            return
 
         try:
             i, j = index
