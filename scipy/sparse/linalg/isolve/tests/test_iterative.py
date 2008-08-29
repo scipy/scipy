@@ -4,10 +4,10 @@
 
 from numpy.testing import *
 
-from numpy import zeros, dot, diag, ones, arange, array
+from numpy import zeros, dot, diag, ones, arange, array, abs, max
 from numpy.random import rand
 from scipy.linalg import norm
-from scipy.sparse import spdiags
+from scipy.sparse import spdiags, csr_matrix
 
 from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres
 
@@ -21,11 +21,12 @@ from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minr
 #TODO test complex matrices
 #TODO test both preconditioner methods
 
-data = ones((3,10))
+N = 40
+data = ones((3,N))
 data[0,:] =  2
 data[1,:] = -1
 data[2,:] = -1
-Poisson1D = spdiags( data, [0,-1,1], 10, 10, format='csr')
+Poisson1D = spdiags( data, [0,-1,1], N, N, format='csr')
 
 data = array([[6, -5, 2, 7, -1, 10, 4, -3, -8, 9]],dtype='d')
 RandDiag = spdiags( data, [0], 10, 10, format='csr' )
@@ -61,7 +62,26 @@ class TestIterative(TestCase):
         #data[1,:] = -1
         #A = spdiags( data, [0,-1], 10, 10, format='csr')
         #self.cases.append( (A,False,True) )
+    
+    def test_maxiter(self):
+        """test whether maxiter is respected"""
 
+        A = Poisson1D
+
+        for solver,req_sym,req_pos in self.solvers:
+            b  = arange(A.shape[0], dtype=float)
+            x0 = 0*b
+
+            residuals = []
+            def callback(x):
+                residuals.append( norm(b - A*x) )
+
+            x, info = solver(A, b, x0=x0, tol=1e-8, maxiter=3, callback=callback)
+           
+            assert(len(residuals) in [2,3])
+
+            # TODO enforce this condition instead!
+            #assert_equal(len(residuals), 2)
 
 
     def test_convergence(self):
@@ -147,6 +167,24 @@ class TestQMR(TestCase):
 
         assert_equal(info,0)
         assert( norm(b - A*x) < 1e-8*norm(b) )
+
+
+class TestGMRES(TestCase):
+    def test_callback(self):  
+        
+        def store_residual(r, rvec):
+            rvec[rvec.nonzero()[0].max()+1] = r
+
+        #Define, A,b
+        A = csr_matrix(array([[-2,1,0,0,0,0],[1,-2,1,0,0,0],[0,1,-2,1,0,0],[0,0,1,-2,1,0],[0,0,0,1,-2,1],[0,0,0,0,1,-2]]))
+        b = ones((A.shape[0],))
+        maxiter=1
+        rvec = zeros(maxiter+1)
+        rvec[0] = 1.0
+        callback = lambda r:store_residual(r, rvec)
+        x,flag = gmres(A, b, x0=zeros(A.shape[0]), tol=1e-16, maxiter=maxiter, callback=callback)
+        diff = max(abs((rvec - array([1.0,   0.81649658092772603]))))
+        assert(diff < 1e-5)
 
 
 if __name__ == "__main__":
