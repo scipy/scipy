@@ -28,22 +28,6 @@ def remove_whitespace(in_str):
     out = out.replace("\n","")
     return out
 
-def print_assert_equal(test_string,actual,desired):
-    """this should probably be in scipy_test.testing
-    """
-    import pprint
-    try:
-        assert(actual == desired)
-    except AssertionError:
-        import cStringIO
-        msg = cStringIO.StringIO()
-        msg.write(test_string)
-        msg.write(' failed\nACTUAL: \n')
-        pprint.pprint(actual,msg)
-        msg.write('DESIRED: \n')
-        pprint.pprint(desired,msg)
-        raise AssertionError, msg.getvalue()
-
 #----------------------------------------------------------------------------
 # Scalar conversion test classes
 #   int, float, complex
