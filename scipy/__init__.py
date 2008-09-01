@@ -34,7 +34,8 @@ __all__ += ['oldnumeric']+_num.__all__
 
 __all__ += ['randn', 'rand', 'fft', 'ifft']
 
-__doc__ += """
+if __doc__:
+    __doc__ += """
 Contents
 --------
 
@@ -76,17 +77,20 @@ for name in subpackages:
 
 del name, subpackages
 
-__doc__ += """
+if __doc__:
+    __doc__ += """
 
 Available subpackages
 ---------------------
 """
-__doc__ += pkgload.get_pkgdocs()
+if __doc__:
+    __doc__ += pkgload.get_pkgdocs()
 
 from numpy.testing import Tester
 test = Tester().test
 bench = Tester().bench
-__doc__ += """
+if __doc__:
+    __doc__ += """
 
 Utility tools
 -------------

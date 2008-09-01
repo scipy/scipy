@@ -51,7 +51,10 @@ __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'rfftfreq'
            ]
 
-__doc_title__ = __doc__.lstrip().split('\n',1)[0]
+if __doc__:
+    __doc_title__ = __doc__.lstrip().split('\n',1)[0]
+else:
+    __doc_title__ = None
 
 postpone_import = 1
 

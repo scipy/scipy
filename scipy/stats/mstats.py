@@ -591,7 +591,9 @@ def pointbiserialr(x, y):
     t = rpb*ma.sqrt(df/(1.0-rpb**2))
     prob = betai(0.5*df, 0.5, df/(df+t*t))
     return rpb, prob
-pointbiserialr.__doc__ = stats.pointbiserialr.__doc__ + genmissingvaldoc
+
+if stats.pointbiserialr.__doc__:
+    pointbiserialr.__doc__ = stats.pointbiserialr.__doc__ + genmissingvaldoc
 
 
 def linregress(*args):
@@ -630,7 +632,9 @@ def linregress(*args):
     intercept = ymean - slope*xmean
     sterrest = ma.sqrt(1.-r*r) * y.std()
     return slope, intercept, r, prob, sterrest, Syy/Sxx
-linregress.__doc__ = stats.linregress.__doc__ + genmissingvaldoc
+
+if stats.linregress.__doc__:
+    linregress.__doc__ = stats.linregress.__doc__ + genmissingvaldoc
 
 
 def theilslopes(y, x=None, alpha=0.05):
@@ -1084,7 +1088,9 @@ def trim(a, limits=None, inclusive=(True,True), relative=False, axis=None):
         return trimr(a, limits=limits, inclusive=inclusive, axis=axis)
     else:
         return trima(a, limits=limits, inclusive=inclusive)
-trim.__doc__ = trim.__doc__ % trimdoc
+
+if trim.__doc__:
+    trim.__doc__ = trim.__doc__ % trimdoc
 
 
 def trimboth(data, proportiontocut=0.2, inclusive=(True,True), axis=None):

@@ -2,9 +2,9 @@
 
 from info import __doc__
 
-import umfpack
+#import umfpack
 #__doc__ = '\n\n'.join( (__doc__,  umfpack.__doc__) )
-del umfpack
+#del umfpack
 
 from linsolve import *
 

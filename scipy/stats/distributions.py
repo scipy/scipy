@@ -324,7 +324,7 @@ class rv_continuous(object):
             longname = hstr + name
         if self.__doc__ is None:
             self.__doc__ = rv_continuous.__doc__
-        if self.__doc__ is not None:
+        else:
             self.__doc__ = self.__doc__.replace("A Generic",longname)
             if name is not None:
                 self.__doc__ = self.__doc__.replace("generic",name)
@@ -3428,7 +3428,7 @@ class rv_discrete:
             longname = hstr + name
         if self.__doc__ is None:
             self.__doc__ = rv_discrete.__doc__
-        if self.__doc__ is not None:
+        else:
             self.__doc__ = self.__doc__.replace("A Generic",longname)
             if name is not None:
                 self.__doc__ = self.__doc__.replace("generic",name)
