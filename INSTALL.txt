@@ -40,7 +40,7 @@ __ http://www.numpy.org/
 
 3) Complete LAPACK__ library (see NOTES 1, 2, 3)
 
-   Debian packages: atlas3-headers atlas3-base atlas3-base-dev
+   Debian/Ubuntu packages (g77): atlas3-base atlas3-base-dev
 
    Various SciPy packages do linear algebra computations using the LAPACK
    routines. SciPy's setup.py scripts can use number of different LAPACK
@@ -63,13 +63,10 @@ for extra functionality:
 1) C, C++, Fortran 77 compilers (see COMPILER NOTES)
 
    To build SciPy or any other extension modules for Python, you'll need
-   a C compiler.
+   a C compiler. Scipy also requires a C++ compiler.
    
    Various SciPy modules use Fortran 77 libraries, so you'll need also
-   at least a Fortran 77 compiler installed. Currently the SciPy build
-   process does not use a C++ compiler, but the SciPy module Weave uses
-   a C++ compiler at run time, so it is good to have C++ compiler around
-   as well.
+   at least a Fortran 77 compiler installed. 
    
    gcc__ 3.x compilers are recommended.  gcc 2.95 and 4.0.x also work on
    some platforms, but may be more problematic (see COMPILER NOTES).
@@ -79,10 +76,9 @@ for extra functionality:
 __ http://gcc.gnu.org/
 
 
-2) FFTW__ 2.1.x (see Lib/fftpack/NOTES.txt)
+2) FFTW__ x (see Lib/fftpack/NOTES.txt)
 
-   FFTW 3.0.x may also work, but SciPy currently has better performance
-   with FFTW 2.1.x on complex input.
+   FFTW 2.1.x and 3.x work.
 
    Debian packages: fftw2 fftw-dev fftw3 fftw3-dev
 
@@ -98,7 +94,11 @@ NOTES
 
      http://math-atlas.sourceforge.net/errata.html#completelp
 
-   for instructions.
+   for instructions. Please be aware than building your own atlas is
+   error-prone, and should be avoided as much as possible if you don't want to
+   spend time on build issues. Use the blas/lapack packaged by your
+   distribution on Linux; on Mac Os X, you should use the vecLib/Accelerate
+   framework, which are available when installing the apple development tools.
 
    Below follows basic steps for building ATLAS+LAPACK from scratch.
    In case of trouble, consult the documentation of the corresponding
@@ -255,13 +255,12 @@ Note that SciPy is developed mainly using GNU compilers. Compilers from
 other vendors such as Intel, Absoft, Sun, NAG, Compaq, Vast, Porland,
 Lahey, HP, IBM are supported in the form of community feedback.
 
-gcc__ 3.x compilers are recommended.  gcc 4.0.x also works on some
-platforms (e.g. Linux x86).  SciPy is not fully compatible with gcc
-4.0.x on OS X.  If building on OS X, we recommend you use gcc 3.3, by
-typing:
+gcc__ compiler is recommended.  gcc 3.x and 4.x are known to work. 
+If building on OS X, you should use the provided gcc by xcode tools, and the
+gfortran compiler available here:
 
-  gcc_select 3.3
- 
+http://r.research.att.com/tools/
+
 You can specify which Fortran compiler to use by using the following
 install command::
 
@@ -271,9 +270,10 @@ To see a valid list of <Vendor> names, run::
 
   python setup.py config_fc --help-fcompiler
 
-IMPORTANT: It is highly recommended that all libraries that scipy uses
-(e.g. blas and atlas libraries) are built with the same Fortran
-compiler.
+IMPORTANT: It is highly recommended that all libraries that scipy uses (e.g.
+blas and atlas libraries) are built with the same Fortran compiler. In most
+cases, if you mix compilers, you will not be able to import scipy at best, have
+crashes and random results at worse.
 
 __ http://gcc.gnu.org/
 
