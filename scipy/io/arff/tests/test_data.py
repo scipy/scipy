@@ -16,8 +16,8 @@ expect4_data = [(0.1, 0.2, 0.3, 0.4, 'class1'),
         (1, 2, 3, 4, 'class3')]
 
 missing = os.path.join(data_path, 'missing.arff')
-expect_missing_raw = N.array([[1, 5], [2, 4], [N.nan, N.nan]])
-expect_missing = N.empty(3, [('yop', N.float), ('yap', N.float)])
+expect_missing_raw = np.array([[1, 5], [2, 4], [np.nan, np.nan]])
+expect_missing = np.empty(3, [('yop', np.float), ('yap', np.float)])
 expect_missing['yop'] = expect_missing_raw[:, 0]
 expect_missing['yap'] = expect_missing_raw[:, 1]
 

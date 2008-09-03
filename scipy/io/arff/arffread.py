@@ -4,7 +4,7 @@ import re
 import itertools
 import sys
 
-import numpy as N
+import numpy as np
 
 from scipy.io.arff.utils import partial
 
@@ -271,9 +271,9 @@ def safe_float(x):
     """given a string x, convert it to a float. If the stripped string is a ?,
     return a Nan (missing value)."""
     if x.strip() == '?':
-        return N.nan
+        return np.nan
     else:
-        return N.float(x)
+        return np.float(x)
 
 def safe_nominal(value, pvalue):
     svalue = value.strip()
@@ -409,7 +409,7 @@ def loadarff(filename):
 
     # This can be used once we want to support integer as integer values and
     # not as numeric anymore (using masked arrays ?).
-    acls2dtype = {'real' : N.float, 'integer' : N.float, 'numeric' : N.float}
+    acls2dtype = {'real' : np.float, 'integer' : np.float, 'numeric' : np.float}
     acls2conv = {'real' : safe_float, 'integer' : safe_float, 'numeric' : safe_float}
     descr = []
     convertors = []
@@ -489,7 +489,7 @@ def loadarff(filename):
 
     a = generator(ofile, delim = delim)
     # No error should happen here: it is a bug otherwise
-    data = N.fromiter(a, descr)
+    data = np.fromiter(a, descr)
     return data, meta
 
 #-----
@@ -497,7 +497,7 @@ def loadarff(filename):
 #-----
 def basic_stats(data):
     nbfac = data.size * 1. / (data.size - 1)
-    return N.nanmin(data), N.nanmax(data), N.mean(data), N.std(data) * nbfac
+    return np.nanmin(data), np.nanmax(data), np.mean(data), np.std(data) * nbfac
 
 def print_attribute(name, tp, data):
     type = tp[0]

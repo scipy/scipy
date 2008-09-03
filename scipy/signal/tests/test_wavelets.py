@@ -1,4 +1,4 @@
-import numpy as N
+import numpy as np
 from numpy.testing import *
 
 from scipy.signal import wavelets
@@ -36,15 +36,15 @@ class TestWavelets(TestCase):
         assert_equal(x,y)
 
         # miscellaneous tests:
-        x = N.array([1.73752399e-09 +9.84327394e-25j,
-                     6.49471756e-01 +0.00000000e+00j,
-                     1.73752399e-09 -9.84327394e-25j])
+        x = np.array([1.73752399e-09 +9.84327394e-25j,
+                      6.49471756e-01 +0.00000000e+00j,
+                      1.73752399e-09 -9.84327394e-25j])
         y = wavelets.morlet(3,w=2,complete=True)
         assert_array_almost_equal(x,y)
 
-        x = N.array([2.00947715e-09 +9.84327394e-25j,
-                     7.51125544e-01 +0.00000000e+00j,
-                     2.00947715e-09 -9.84327394e-25j])
+        x = np.array([2.00947715e-09 +9.84327394e-25j,
+                      7.51125544e-01 +0.00000000e+00j,
+                      2.00947715e-09 -9.84327394e-25j])
         y = wavelets.morlet(3,w=2,complete=False)
         assert_array_almost_equal(x,y,decimal=2)
 

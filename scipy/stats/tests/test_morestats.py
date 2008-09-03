@@ -6,7 +6,7 @@ from numpy.testing import *
 
 import scipy.stats as stats
 
-import numpy as N
+import numpy as np
 from numpy.random import RandomState
 
 g1 = [1.006, 0.996, 0.998, 1.000, 0.992, 0.993, 1.002, 0.999, 0.994, 1.000]
@@ -63,10 +63,10 @@ class TestAnsari(TestCase):
         assert_almost_equal(pval,0.13499256881897437,11)
 
     def test_approx(self):
-        ramsay = N.array((111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
-                  101, 96, 97, 102, 107, 113, 116, 113, 110, 98))
-        parekh = N.array((107, 108, 106, 98, 105, 103, 110, 105, 104,
-                  100, 96, 108, 103, 104, 114, 114, 113, 108, 106, 99))
+        ramsay = np.array((111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
+                           101, 96, 97, 102, 107, 113, 116, 113, 110, 98))
+        parekh = np.array((107, 108, 106, 98, 105, 103, 110, 105, 104,
+                           100, 96, 108, 103, 104, 114, 114, 113, 108, 106, 99))
         W, pval = stats.ansari(ramsay, parekh)
         assert_almost_equal(W,185.5,11)
         assert_almost_equal(pval,0.18145819972867083,11)

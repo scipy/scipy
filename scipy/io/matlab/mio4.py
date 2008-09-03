@@ -1,7 +1,7 @@
 ''' Classes for read / write of matlab (TM) 4 files
 '''
 
-import numpy as N
+import numpy as np
 
 from miobase import *
 
@@ -76,7 +76,7 @@ class Mat4ArrayReader(MatArrayReader):
         header['mclass'] = T
         header['dims'] = (data['mrows'], data['ncols'])
         header['is_complex'] = data['imagf'] == 1
-        remaining_bytes = header['dtype'].itemsize * N.product(header['dims'])
+        remaining_bytes = header['dtype'].itemsize * np.product(header['dims'])
         if header['is_complex'] and not header['mclass'] == mxSPARSE_CLASS:
             remaining_bytes *= 2
         next_pos = self.mat_stream.tell() + remaining_bytes
@@ -109,10 +109,10 @@ class Mat4MatrixGetter(MatMatrixGetter):
         num_bytes = dt.itemsize
         for d in dims:
             num_bytes *= d
-        arr = N.ndarray(shape=dims,
-                      dtype=dt,
-                      buffer=self.mat_stream.read(num_bytes),
-                      order='F')
+        arr = np.ndarray(shape=dims,
+                         dtype=dt,
+                         buffer=self.mat_stream.read(num_bytes),
+                         order='F')
         if copy:
             arr = arr.copy()
         return arr
@@ -122,9 +122,9 @@ class Mat4FullGetter(Mat4MatrixGetter):
     def __init__(self, array_reader, header):
         super(Mat4FullGetter, self).__init__(array_reader, header)
         if header['is_complex']:
-            self.mat_dtype = N.dtype(N.complex128)
+            self.mat_dtype = np.dtype(np.complex128)
         else:
-            self.mat_dtype = N.dtype(N.float64)
+            self.mat_dtype = np.dtype(np.float64)
 
     def get_raw_array(self):
         if self.header['is_complex']:
@@ -137,12 +137,12 @@ class Mat4FullGetter(Mat4MatrixGetter):
 
 class Mat4CharGetter(Mat4MatrixGetter):
     def get_raw_array(self):
-        arr = self.read_array().astype(N.uint8)
+        arr = self.read_array().astype(np.uint8)
         # ascii to unicode
         S = arr.tostring().decode('ascii')
-        return N.ndarray(shape=self.header['dims'],
-                       dtype=N.dtype('U1'),
-                       buffer = N.array(S)).copy()
+        return np.ndarray(shape=self.header['dims'],
+                          dtype=np.dtype('U1'),
+                          buffer = np.array(S)).copy()
 
 
 class Mat4SparseGetter(Mat4MatrixGetter):
@@ -166,14 +166,14 @@ class Mat4SparseGetter(Mat4MatrixGetter):
         res = self.read_array()
         tmp = res[:-1,:]
         dims = res[-1,0:2]
-        I = N.ascontiguousarray(tmp[:,0],dtype='intc') #fixes byte order also
-        J = N.ascontiguousarray(tmp[:,1],dtype='intc')
+        I = np.ascontiguousarray(tmp[:,0],dtype='intc') #fixes byte order also
+        J = np.ascontiguousarray(tmp[:,1],dtype='intc')
         I -= 1  # for 1-based indexing
         J -= 1
         if res.shape[1] == 3:
-            V = N.ascontiguousarray(tmp[:,2],dtype='float')
+            V = np.ascontiguousarray(tmp[:,2],dtype='float')
         else:
-            V = N.ascontiguousarray(tmp[:,2],dtype='complex')
+            V = np.ascontiguousarray(tmp[:,2],dtype='complex')
             V.imag = tmp[:,3]
         if have_sparse:
             return scipy.sparse.coo_matrix((V,(I,J)), dims)
@@ -201,15 +201,15 @@ class MatFile4Reader(MatFileReader):
     def format_looks_right(self):
         # Mat4 files have a zero somewhere in first 4 bytes
         self.mat_stream.seek(0)
-        mopt_bytes = N.ndarray(shape=(4,),
-                             dtype=N.uint8,
-                             buffer = self.mat_stream.read(4))
+        mopt_bytes = np.ndarray(shape=(4,),
+                                dtype=np.uint8,
+                                buffer = self.mat_stream.read(4))
         self.mat_stream.seek(0)
         return 0 in mopt_bytes
 
     def guess_byte_order(self):
         self.mat_stream.seek(0)
-        mopt = self.read_dtype(N.dtype('i4'))
+        mopt = self.read_dtype(np.dtype('i4'))
         self.mat_stream.seek(0)
         if mopt < 0 or mopt > 5000:
             return ByteOrder.swapped_code
@@ -227,7 +227,7 @@ class Mat4MatrixWriter(MatStreamWriter):
         '''
         if dims is None:
             dims = self.arr.shape
-        header = N.empty((), mdtypes_template['header'])
+        header = np.empty((), mdtypes_template['header'])
         M = not ByteOrder.little_endian
         O = 0
         header['mopt'] = (M * 1000 +
@@ -242,7 +242,7 @@ class Mat4MatrixWriter(MatStreamWriter):
         self.write_string(self.name + '\0')
 
     def arr_to_2d(self):
-        self.arr = N.atleast_2d(self.arr)
+        self.arr = np.atleast_2d(self.arr)
         dims = self.arr.shape
         if len(dims) > 2:
             self.arr = self.arr.reshape(-1,dims[-1])
@@ -284,12 +284,12 @@ class Mat4CharWriter(Mat4MatrixWriter):
                           T=mxCHAR_CLASS)
         if self.arr.dtype.kind == 'U':
             # Recode unicode to ascii
-            n_chars = N.product(dims)
-            st_arr = N.ndarray(shape=(),
-                             dtype=self.arr_dtype_number(n_chars),
-                             buffer=self.arr)
+            n_chars = np.product(dims)
+            st_arr = np.ndarray(shape=(),
+                                dtype=self.arr_dtype_number(n_chars),
+                                buffer=self.arr)
             st = st_arr.item().encode('ascii')
-            self.arr = N.ndarray(shape=dims, dtype='S1', buffer=st)
+            self.arr = np.ndarray(shape=dims, dtype='S1', buffer=st)
         self.write_bytes(self.arr)
 
 
@@ -301,7 +301,7 @@ class Mat4SparseWriter(Mat4MatrixWriter):
         '''
         A = self.arr.tocoo() #convert to sparse COO format (ijv)
         imagf = A.dtype.kind == 'c'
-        ijv = N.zeros((A.nnz + 1, 3+imagf), dtype='f8')
+        ijv = np.zeros((A.nnz + 1, 3+imagf), dtype='f8')
         ijv[:-1,0] = A.row
         ijv[:-1,1] = A.col
         ijv[:-1,0:2] += 1 # 1 based indexing
@@ -326,13 +326,13 @@ def matrix_writer_factory(stream, arr, name):
     if have_sparse:
         if scipy.sparse.issparse(arr):
             return Mat4SparseWriter(stream, arr, name)
-    arr = N.array(arr)
+    arr = np.array(arr)
     dtt = arr.dtype.type
-    if dtt is N.object_:
+    if dtt is np.object_:
         raise TypeError, 'Cannot save object arrays in Mat4'
-    elif dtt is N.void:
+    elif dtt is np.void:
         raise TypeError, 'Cannot save void type arrays'
-    elif dtt in (N.unicode_, N.string_):
+    elif dtt in (np.unicode_, np.string_):
         return Mat4CharWriter(stream, arr, name)
     else:
         return Mat4NumericWriter(stream, arr, name)
