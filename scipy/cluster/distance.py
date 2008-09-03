@@ -596,7 +596,6 @@ def yule(u, v):
     u = np.asarray(u)
     v = np.asarray(v)
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v)
-    print nff, nft, ntf, ntt
     return float(2.0 * ntf * nft) / float(ntt * nff + ntf * nft)
 
 def matching(u, v):
