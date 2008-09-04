@@ -1,6 +1,7 @@
 # FIXME : better docstring.  This needs updating as features change,
 #       and it also discusses technical points as well as user-interface.
 
+
 __doc__ = \
 """
     This module provides several functions and classes for interpolation
