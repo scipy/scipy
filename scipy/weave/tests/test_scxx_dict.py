@@ -9,7 +9,6 @@ from numpy.testing import *
 from scipy.weave import inline_tools
 
 
-
 class TestDictConstruct(TestCase):
     #------------------------------------------------------------------------
     # Check that construction from basic types is allowed and have correct
@@ -111,7 +110,7 @@ class TestDictGetItemOp(TestCase):
     def test_char(self):
         self.generic_get('return_val = a["b"];')
 
-    @dec.skipknownfailure
+    @dec.knownfailureif(True)
     @dec.slow
     def test_char_fail(self):
         # We can't through a KeyError for dicts on RHS of
@@ -134,7 +133,7 @@ class TestDictGetItemOp(TestCase):
                """
         self.generic_get(code,['a'])
 
-    @dec.skipknownfailure
+    @dec.knownfailureif(True)
     @dec.slow
     def test_obj_fail(self):
         # We can't through a KeyError for dicts on RHS of
