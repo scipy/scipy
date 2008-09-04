@@ -12,12 +12,12 @@ def configuration(parent_package='',top_path=None):
                       )
 
     config.add_extension('_fitpack',
-                         sources=['_fitpackmodule.c'],
+                         sources=['src/_fitpackmodule.c'],
                          libraries=['fitpack'],
                         )
 
     config.add_extension('dfitpack',
-                         sources=['fitpack.pyf'],
+                         sources=['src/fitpack.pyf'],
                          libraries=['fitpack'],
                         )
 
