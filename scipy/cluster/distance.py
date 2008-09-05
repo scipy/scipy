@@ -9,7 +9,11 @@ stored in a rectangular array.
 +------------------+-------------------------------------------------+
 |*Function*        | *Description*                                   |
 +------------------+-------------------------------------------------+
-|pdist             | computes distances between observation pairs.   |
+|pdist             | pairwise distances between observation          |
+|                  | vectors.                                        |
++------------------+-------------------------------------------------+
+|cdist             | distances between between two collections of    |
+|                  | observation vectors.                            |
 +------------------+-------------------------------------------------+
 |squareform        | converts a square distance matrix to a          |
 |                  | condensed one and vice versa.                   |

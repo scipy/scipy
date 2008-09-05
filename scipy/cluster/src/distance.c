@@ -618,3 +618,301 @@ void dist_to_vector_from_squareform(const double *M, double *v, int n) {
     }
   }
 }
+
+
+/** cdist */
+
+void cdist_euclidean(const double *XA,
+		     const double *XB, double *dm, int mA, int mB, int n) {
+  int i, j;
+  const double *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = euclidean_distance(u, v, n);
+    }
+  }
+}
+
+void cdist_mahalanobis(const double *XA,
+		       const double *XB,
+		       const double *covinv,
+		       double *dm, int mA, int mB, int n) {
+  int i, j;
+  const double *u, *v;
+  double *it = dm;
+  double *dimbuf1, *dimbuf2;
+  dimbuf1 = (double*)malloc(sizeof(double) * 2 * n);
+  dimbuf2 = dimbuf1 + n;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = mahalanobis_distance(u, v, covinv, dimbuf1, dimbuf2, n);
+    }
+  }
+  dimbuf2 = 0;
+  free(dimbuf1);
+}
+
+void cdist_bray_curtis(const double *XA, const double *XB,
+		       double *dm, int mA, int mB, int n) {
+  int i, j;
+  const double *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = bray_curtis_distance(u, v, n);
+    }
+  }
+}
+
+void cdist_canberra(const double *XA,
+		    const double *XB, double *dm, int mA, int mB, int n) {
+  int i, j;
+  const double *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = canberra_distance(u, v, n);
+    }
+  }
+}
+
+void cdist_hamming(const double *XA,
+		   const double *XB, double *dm, int mA, int mB, int n) {
+  int i, j;
+  const double *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = hamming_distance(u, v, n);
+    }
+  }
+}
+
+void cdist_hamming_bool(const char *XA,
+			const char *XB, const char *X, double *dm, int mA, int mB, int n) {
+  int i, j;
+  const char *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = hamming_distance_bool(u, v, n);
+    }
+  }
+}
+
+void cdist_jaccard(const double *XA,
+		   const double *XB, double *dm, int mA, int mB, int n) {
+  int i, j;
+  const double *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = jaccard_distance(u, v, n);
+    }
+  }
+}
+
+void cdist_jaccard_bool(const char *XA,
+			const char *XB, double *dm, int mA, int mB, int n) {
+  int i, j;
+  const char *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = jaccard_distance_bool(u, v, n);
+    }
+  }
+}
+
+
+void cdist_chebyshev(const double *XA,
+		     const double *XB, double *dm, int mA, int mB, int n) {
+  int i, j;
+  const double *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = chebyshev_distance(u, v, n);
+    }
+  }
+}
+
+void cdist_cosine(const double *XA,
+		  const double *XB, double *dm, int mA, int mB, int n,
+		  const double *normsA, const double *normsB) {
+  int i, j;
+  const double *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = cosine_distance(u, v, n, normsA[i], normsB[j]);
+    }
+  }
+}
+
+void cdist_seuclidean(const double *XA,
+		      const double *XB,
+		      const double *var,
+		      double *dm, int mA, int mB, int n) {
+  int i, j;
+  const double *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = seuclidean_distance(var, u, v, n);
+    }
+  }
+}
+
+void cdist_city_block(const double *XA, const double *XB, double *dm, int mA, int mB, int n) {
+  int i, j;
+  const double *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = city_block_distance(u, v, n);
+    }
+  }
+}
+
+void cdist_minkowski(const double *XA, const double *XB, double *dm, int mA, int mB, int n, double p) {
+  int i, j;
+  const double *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = minkowski_distance(u, v, n, p);
+    }
+  }
+}
+
+void cdist_yule_bool(const char *XA, const char *XB, double *dm, int mA, int mB, int n) {
+  int i, j;
+  const char *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = yule_distance_bool(u, v, n);
+    }
+  }
+}
+
+void cdist_matching_bool(const char *XA, const char *XB, double *dm, int mA, int mB, int n) {
+  int i, j;
+  const char *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = matching_distance_bool(u, v, n);
+    }
+  }
+}
+
+void cdist_dice_bool(const char *XA, const char *XB, double *dm, int mA, int mB, int n) {
+  int i, j;
+  const char *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = dice_distance_bool(u, v, n);
+    }
+  }
+}
+
+void cdist_rogerstanimoto_bool(const char *XA, const char *XB, double *dm, int mA, int mB, int n) {
+  int i, j;
+  const char *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = rogerstanimoto_distance_bool(u, v, n);
+    }
+  }
+}
+
+void cdist_russellrao_bool(const char *XA, const char *XB, double *dm, int mA, int mB, int n) {
+  int i, j;
+  const char *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = russellrao_distance_bool(u, v, n);
+    }
+  }
+}
+
+void cdist_kulsinski_bool(const char *XA, const char *XB, double *dm, int mA, int mB, int n) {
+  int i, j;
+  const char *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = kulsinski_distance_bool(u, v, n);
+    }
+  }
+}
+
+void cdist_sokalsneath_bool(const char *XA, const char *XB, double *dm, int mA, int mB, int n) {
+  int i, j;
+  const char *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = sokalsneath_distance_bool(u, v, n);
+    }
+  }
+}
+
+void cdist_sokalmichener_bool(const char *XA, const char *XB, double *dm, int mA, int mB, int n) {
+  int i, j;
+  const char *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = sokalmichener_distance_bool(u, v, n);
+    }
+  }
+}
