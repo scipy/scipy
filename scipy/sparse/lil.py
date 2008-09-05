@@ -294,17 +294,19 @@ class lil_matrix(spmatrix):
         elif not isinstance(x, spmatrix):
             x = lil_matrix(x)
 
-        if isspmatrix(x) and index == (slice(None), slice(None)):
-            # self[:,:] = other_sparse
-            x = lil_matrix(x)
-            self.rows = x.rows
-            self.data = x.data
-            return
-
         try:
             i, j = index
         except (ValueError, TypeError):
             raise IndexError, "invalid index"
+
+        if isspmatrix(x):
+            if (isinstance(i, slice) and (i == slice(None))) and \
+               (isinstance(j, slice) and (j == slice(None))):
+                # self[:,:] = other_sparse
+                x = lil_matrix(x)
+                self.rows = x.rows
+                self.data = x.data
+                return
 
         if isscalar(i):
             row = self.rows[i]

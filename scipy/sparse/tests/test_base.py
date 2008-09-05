@@ -1260,6 +1260,12 @@ class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
         D = lil_matrix(C)
         assert_array_equal(C.A, D.A)
 
+    def test_fancy_indexing(self):
+        M = arange(25).reshape(5,5) 
+        A = lil_matrix( M )
+
+        assert_equal(A[array([1,2,3]),2:3].todense(), M[array([1,2,3]),2:3])   
+
     def test_point_wise_multiply(self):
         l = lil_matrix((4,3))
         l[0,0] = 1
