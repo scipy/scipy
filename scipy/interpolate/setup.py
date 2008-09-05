@@ -21,6 +21,11 @@ def configuration(parent_package='',top_path=None):
                          libraries=['fitpack'],
                         )
 
+    config.add_extension('_interpolate',
+	                 sources=['src/_interpolate.cpp'],
+	                 include_dirs = ['src'],
+	                 depends = ['src/interpolate.h'])
+
     config.add_data_dir('tests')
 
     return config
