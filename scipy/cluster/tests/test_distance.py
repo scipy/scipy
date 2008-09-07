@@ -40,11 +40,13 @@ import os.path
 import numpy as np
 from numpy.testing import *
 from scipy.cluster.hierarchy import linkage, from_mlab_linkage, numobs_linkage
-from scipy.cluster.distance import squareform, pdist, matching, jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule, numobs_dm, numobs_y
+from scipy.cluster.distance import squareform, pdist, cdist, matching, jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule, numobs_dm, numobs_y
 
 #from scipy.cluster.hierarchy import pdist, euclidean
 
 _filenames = ["iris.txt",
+              "cdist-X1.txt",
+              "cdist-X2.txt",
               "pdist-hamming-ml.txt",
               "pdist-boolean-inp.txt",
               "pdist-jaccard-ml.txt",
@@ -96,6 +98,298 @@ load_testing_files()
 
 #print np.abs(Y_test2 - Y_right).max()
 #print np.abs(Y_test1 - Y_right).max()
+
+class TestCdist(TestCase):
+    """
+    Test suite for the pdist function.
+    """
+
+    def test_cdist_euclidean_random(self):
+        "Tests cdist(X, 'euclidean') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        Y1 = cdist(X1, X2, 'euclidean')
+        Y2 = cdist(X1, X2, 'test_euclidean')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_sqeuclidean_random(self):
+        "Tests cdist(X, 'sqeuclidean') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        Y1 = cdist(X1, X2, 'sqeuclidean')
+        Y2 = cdist(X1, X2, 'test_sqeuclidean')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_cityblock_random(self):
+        "Tests cdist(X, 'sqeuclidean') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        Y1 = cdist(X1, X2, 'cityblock')
+        Y2 = cdist(X1, X2, 'test_cityblock')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_hamming_double_random(self):
+        "Tests cdist(X, 'hamming') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        Y1 = cdist(X1, X2, 'hamming')
+        Y2 = cdist(X1, X2, 'test_hamming')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_hamming_bool_random(self):
+        "Tests cdist(X, 'hamming') on random boolean data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1'] < 0.5
+        X2 = eo['cdist-X2'] < 0.5
+        Y1 = cdist(X1, X2, 'hamming')
+        Y2 = cdist(X1, X2, 'test_hamming')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_jaccard_double_random(self):
+        "Tests cdist(X, 'jaccard') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        Y1 = cdist(X1, X2, 'jaccard')
+        Y2 = cdist(X1, X2, 'test_jaccard')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_jaccard_bool_random(self):
+        "Tests cdist(X, 'jaccard') on random boolean data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1'] < 0.5
+        X2 = eo['cdist-X2'] < 0.5
+        Y1 = cdist(X1, X2, 'jaccard')
+        Y2 = cdist(X1, X2, 'test_jaccard')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_chebychev_random(self):
+        "Tests cdist(X, 'chebychev') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        Y1 = cdist(X1, X2, 'chebychev')
+        Y2 = cdist(X1, X2, 'test_chebychev')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_minkowski_random_p3d8(self):
+        "Tests cdist(X, 'minkowski') on random data. (p=3.8)"
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        Y1 = cdist(X1, X2, 'minkowski', p=3.8)
+        Y2 = cdist(X1, X2, 'test_minkowski', p=3.8)
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_minkowski_random_p4d6(self):
+        "Tests cdist(X, 'minkowski') on random data. (p=4.6)"
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        Y1 = cdist(X1, X2, 'minkowski', p=4.6)
+        Y2 = cdist(X1, X2, 'test_minkowski', p=4.6)
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_minkowski_random_p1d23(self):
+        "Tests cdist(X, 'minkowski') on random data. (p=1.23)"
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        Y1 = cdist(X1, X2, 'minkowski', p=1.23)
+        Y2 = cdist(X1, X2, 'test_minkowski', p=1.23)
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_seuclidean_random(self):
+        "Tests cdist(X, 'seuclidean') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        Y1 = cdist(X1, X2, 'seuclidean')
+        Y2 = cdist(X1, X2, 'test_seuclidean')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_sqeuclidean_random(self):
+        "Tests cdist(X, 'sqeuclidean') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        Y1 = cdist(X1, X2, 'sqeuclidean')
+        Y2 = cdist(X1, X2, 'test_sqeuclidean')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_cosine_random(self):
+        "Tests cdist(X, 'cosine') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        Y1 = cdist(X1, X2, 'cosine')
+        Y2 = cdist(X1, X2, 'test_cosine')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_correlation_random(self):
+        "Tests cdist(X, 'correlation') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        Y1 = cdist(X1, X2, 'correlation')
+        Y2 = cdist(X1, X2, 'test_correlation')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_mahalanobis_random(self):
+        "Tests cdist(X, 'mahalanobis') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        Y1 = cdist(X1, X2, 'mahalanobis')
+        Y2 = cdist(X1, X2, 'test_mahalanobis')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_canberra_random(self):
+        "Tests cdist(X, 'canberra') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1'] < 0.5
+        X2 = eo['cdist-X2'] < 0.5
+        Y1 = cdist(X1, X2, 'canberra')
+        Y2 = cdist(X1, X2, 'test_canberra')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_braycurtis_random(self):
+        "Tests cdist(X, 'braycurtis') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1'] < 0.5
+        X2 = eo['cdist-X2'] < 0.5
+        Y1 = cdist(X1, X2, 'braycurtis')
+        Y2 = cdist(X1, X2, 'test_braycurtis')
+        print Y1, Y2
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_yule_random(self):
+        "Tests cdist(X, 'yule') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1'] < 0.5
+        X2 = eo['cdist-X2'] < 0.5
+        Y1 = cdist(X1, X2, 'yule')
+        Y2 = cdist(X1, X2, 'test_yule')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_matching_random(self):
+        "Tests cdist(X, 'matching') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1'] < 0.5
+        X2 = eo['cdist-X2'] < 0.5
+        Y1 = cdist(X1, X2, 'matching')
+        Y2 = cdist(X1, X2, 'test_matching')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_kulsinski_random(self):
+        "Tests cdist(X, 'kulsinski') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1'] < 0.5
+        X2 = eo['cdist-X2'] < 0.5
+        Y1 = cdist(X1, X2, 'kulsinski')
+        Y2 = cdist(X1, X2, 'test_kulsinski')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_dice_random(self):
+        "Tests cdist(X, 'dice') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1'] < 0.5
+        X2 = eo['cdist-X2'] < 0.5
+        Y1 = cdist(X1, X2, 'dice')
+        Y2 = cdist(X1, X2, 'test_dice')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_rogerstanimoto_random(self):
+        "Tests cdist(X, 'rogerstanimoto') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1'] < 0.5
+        X2 = eo['cdist-X2'] < 0.5
+        Y1 = cdist(X1, X2, 'rogerstanimoto')
+        Y2 = cdist(X1, X2, 'test_rogerstanimoto')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_russellrao_random(self):
+        "Tests cdist(X, 'russellrao') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1'] < 0.5
+        X2 = eo['cdist-X2'] < 0.5
+        Y1 = cdist(X1, X2, 'russellrao')
+        Y2 = cdist(X1, X2, 'test_russellrao')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_sokalmichener_random(self):
+        "Tests cdist(X, 'sokalmichener') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1'] < 0.5
+        X2 = eo['cdist-X2'] < 0.5
+        Y1 = cdist(X1, X2, 'sokalmichener')
+        Y2 = cdist(X1, X2, 'test_sokalmichener')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+
+    def test_cdist_sokalsneath_random(self):
+        "Tests cdist(X, 'sokalsneath') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1'] < 0.5
+        X2 = eo['cdist-X2'] < 0.5
+        Y1 = cdist(X1, X2, 'sokalsneath')
+        Y2 = cdist(X1, X2, 'test_sokalsneath')
+        print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
 
 class TestPdist(TestCase):
     """

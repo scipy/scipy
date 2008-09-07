@@ -700,7 +700,7 @@ void cdist_hamming(const double *XA,
 }
 
 void cdist_hamming_bool(const char *XA,
-			const char *XB, const char *X, double *dm, int mA, int mB, int n) {
+			const char *XB, double *dm, int mA, int mB, int n) {
   int i, j;
   const char *u, *v;
   double *it = dm;

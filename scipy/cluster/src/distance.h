@@ -74,7 +74,7 @@ void cdist_canberra(const double *XA,
 void cdist_hamming(const double *XA,
 		   const double *XB, double *dm, int mA, int mB, int n);
 void cdist_hamming_bool(const char *XA,
-			const char *XB, const char *X, double *dm,
+			const char *XB, double *dm,
 			int mA, int mB, int n);
 void cdist_jaccard(const double *XA,
 		   const double *XB, double *dm, int mA, int mB, int n);
