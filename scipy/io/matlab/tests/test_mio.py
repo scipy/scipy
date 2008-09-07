@@ -267,3 +267,5 @@ def test_gzip_simple():
 
     assert_array_almost_equal(actual['x'].todense(),
                               expected['x'].todense())
+
+    

@@ -87,6 +87,7 @@ mdtypes_template = {
                     ('version', 'u2'),
                     ('endian_test', 'S2')],
     'tag_full': [('mdtype', 'u4'), ('byte_count', 'u4')],
+    'tag_smalldata':[('byte_count_mdtype', 'u4'), ('data', 'S4')],
     'array_flags': [('data_type', 'u4'),
                     ('byte_count', 'u4'),
                     ('flags_class','u4'),
@@ -193,23 +194,28 @@ class Mat5ArrayReader(MatArrayReader):
                          dtype=self.dtypes['tag_full'],
                          buffer=raw_tag)
         mdtype = tag['mdtype'].item()
-
+        # Byte count if this is small data element
         byte_count = mdtype >> 16
         if byte_count: # small data element format
             if byte_count > 4:
                 raise ValueError, 'Too many bytes for sde format'
             mdtype = mdtype & 0xFFFF
-            dt = self.dtypes[mdtype]
-            el_count = byte_count // dt.itemsize
-            return np.ndarray(shape=(el_count,),
-                              dtype=dt,
-                              buffer=raw_tag[4:])
-
-        byte_count = tag['byte_count'].item()
-        if mdtype == miMATRIX:
-            return self.current_getter(byte_count).get_array()
-        elif mdtype in self.codecs: # encoded char data
+            if mdtype == miMATRIX:
+                raise TypeError('Cannot have matrix in SDE format')
+            raw_str = raw_tag[4:byte_count+4]
+        else: # regular element
+            byte_count = tag['byte_count'].item()
+            # Deal with miMATRIX type (cannot pass byte string)
+            if mdtype == miMATRIX:
+                return self.current_getter(byte_count).get_array()
+            # All other types can be read from string
             raw_str = self.mat_stream.read(byte_count)
+            # Seek to next 64-bit boundary
+            mod8 = byte_count % 8
+            if mod8:
+                self.mat_stream.seek(8 - mod8, 1)
+            
+        if mdtype in self.codecs: # encoded char data
             codec = self.codecs[mdtype]
             if not codec:
                 raise TypeError, 'Do not support encoding %d' % mdtype
@@ -219,14 +225,9 @@ class Mat5ArrayReader(MatArrayReader):
             el_count = byte_count // dt.itemsize
             el = np.ndarray(shape=(el_count,),
                             dtype=dt,
-                            buffer=self.mat_stream.read(byte_count))
+                            buffer=raw_str)
             if copy:
                 el = el.copy()
-
-        # Seek to next 64-bit boundary
-        mod8 = byte_count % 8
-        if mod8:
-            self.mat_stream.seek(8 - mod8, 1)
 
         return el
 
@@ -572,18 +573,30 @@ class Mat5MatrixWriter(MatStreamWriter):
 
     def write_element(self, arr, mdtype=None):
         # write tag, data
-        tag = np.zeros((), mdtypes_template['tag_full'])
         if mdtype is None:
-            tag['mdtype'] = np_to_mtypes[arr.dtype.str[1:]]
+            mdtype = np_to_mtypes[arr.dtype.str[1:]]
+        byte_count = arr.size*arr.itemsize
+        if byte_count <= 4:
+            self.write_smalldata_element(arr, mdtype, byte_count)
         else:
-            tag['mdtype'] = mdtype
+            self.write_regular_element(arr, mdtype, byte_count)
 
-        tag['byte_count'] = arr.size*arr.itemsize
+    def write_smalldata_element(self, arr, mdtype, byte_count):
+        # write tag with embedded data
+        tag = np.zeros((), mdtypes_template['tag_smalldata'])
+        tag['byte_count_mdtype'] = (byte_count << 16) + mdtype
+        # if arr.tostring is < 4, the element will be zero-padded as needed.
+        tag['data'] = arr.tostring(order='F')
+        self.write_dtype(tag)
+
+    def write_regular_element(self, arr, mdtype, byte_count):
+        # write tag, data
+        tag = np.zeros((), mdtypes_template['tag_full'])
+        tag['mdtype'] = mdtype
+        tag['byte_count'] = byte_count
         padding = (8 - tag['byte_count']) % 8
-
         self.write_dtype(tag)
         self.write_bytes(arr)
-
         # pad to next 64-bit boundary
         self.write_bytes(np.zeros((padding,),'u1'))
 
@@ -595,7 +608,7 @@ class Mat5MatrixWriter(MatStreamWriter):
         ''' Write header for given data options
         mclass      - mat5 matrix class
         is_global   - True if matrix is global
-        is_complex  - True is matrix is complex
+        is_complex  - True if matrix is complex
         is_logical  - True if matrix is logical
         nzmax        - max non zero elements for sparse arrays
         '''
