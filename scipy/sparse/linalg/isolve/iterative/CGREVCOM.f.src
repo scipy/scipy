@@ -314,4 +314,5 @@
 *
 *     End of CGREVCOM
 *
-      END SUBROUTINE <_c>CGREVCOM
+      END
+*     END SUBROUTINE <_c>CGREVCOM

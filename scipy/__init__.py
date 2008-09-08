@@ -34,7 +34,8 @@ __all__ += ['oldnumeric']+_num.__all__
 
 __all__ += ['randn', 'rand', 'fft', 'ifft']
 
-__doc__ += """
+if __doc__:
+    __doc__ += """
 Contents
 --------
 
@@ -63,11 +64,11 @@ del _os
 pkgload = PackageLoader()
 pkgload(verbose=SCIPY_IMPORT_VERBOSE,postpone=True)
 
-# Remove subpackage names from __all__ such that they are not imported via 
+# Remove subpackage names from __all__ such that they are not imported via
 # "from scipy import *". This works around a numpy bug present in < 1.2.
 subpackages = """cluster constants fftpack integrate interpolate io lib linalg
-linsolve maxentropy misc ndimage odr optimize sandbox signal sparse special
-splinalg stats stsci testing weave""".split()
+linsolve maxentropy misc ndimage odr optimize signal sparse special
+splinalg stats stsci weave""".split()
 for name in subpackages:
     try:
         __all__.remove(name)
@@ -76,17 +77,20 @@ for name in subpackages:
 
 del name, subpackages
 
-__doc__ += """
+if __doc__:
+    __doc__ += """
 
 Available subpackages
 ---------------------
 """
-__doc__ += pkgload.get_pkgdocs()
+if __doc__:
+    __doc__ += pkgload.get_pkgdocs()
 
-from testing.pkgtester import Tester
+from numpy.testing import Tester
 test = Tester().test
 bench = Tester().bench
-__doc__ += """
+if __doc__:
+    __doc__ += """
 
 Utility tools
 -------------

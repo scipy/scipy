@@ -2,12 +2,12 @@
 
 from info import __doc__
 
-import umfpack
+#import umfpack
 #__doc__ = '\n\n'.join( (__doc__,  umfpack.__doc__) )
-del umfpack
+#del umfpack
 
 from linsolve import *
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
-from scipy.testing.pkgtester import Tester
+from numpy.testing import Tester
 test = Tester().test

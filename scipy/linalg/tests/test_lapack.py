@@ -5,7 +5,7 @@
 
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 from numpy import ones
 
 from scipy.linalg import flapack, clapack
@@ -68,4 +68,4 @@ Notes:
 """
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

@@ -1,8 +1,8 @@
 import os
 from StringIO import StringIO
 from tempfile import mkstemp
-from scipy.testing import *
-import numpy as N
+from numpy.testing import *
+import numpy as np
 
 from scipy.io.npfile import npfile, sys_endian_code
 
@@ -12,7 +12,7 @@ class TestNpFile(TestCase):
         fd, fname = mkstemp()
         os.close(fd)
         npf = npfile(fname)
-        arr = N.reshape(N.arange(10), (5,2))
+        arr = np.reshape(np.arange(10), (5,2))
         self.assertRaises(IOError, npf.write_array, arr)
         npf.close()
         npf = npfile(fname, 'w')
@@ -58,7 +58,7 @@ class TestNpFile(TestCase):
 
     def test_read_write_array(self):
         npf = npfile(StringIO())
-        arr = N.reshape(N.arange(10), (5,2))
+        arr = np.reshape(np.arange(10), (5,2))
         # Arr as read in fortran order
         f_arr = arr.reshape((2,5)).T
         # Arr written in fortran order read in C order
@@ -102,4 +102,4 @@ class TestNpFile(TestCase):
         assert_array_equal(npf.read_array(adt, shp, order='C'), cf_arr)
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

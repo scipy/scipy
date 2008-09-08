@@ -11,7 +11,7 @@ Run tests if fftpack is not installed:
   python tests/test_basic.py
 """
 import sys
-from scipy.testing import *
+from numpy.testing import *
 from scipy.fftpack import ifft,fft,fftn,ifftn,rfft,irfft
 
 from numpy import arange, add, array, asarray, zeros, dot, exp, pi,\
@@ -345,17 +345,29 @@ class TestFftn(TestCase):
                                   [4,5,6,0],
                                   [7,8,9,0],
                                   [0,0,0,0]])
-        y = fftn(small_x,shape=(4,4),axes=(-1,))
-        for i in range(4):
-            assert_array_almost_equal (y[i],fft(large_x1[i]))
-        y = fftn(small_x,shape=(4,4),axes=(-2,))
-        for i in range(4):
-            assert_array_almost_equal (y[:,i],fft(large_x1[:,i]))
+        # Disable tests with shape and axes of different lengths
+        #y = fftn(small_x,shape=(4,4),axes=(-1,))
+        #for i in range(4):
+        #    assert_array_almost_equal (y[i],fft(large_x1[i]))
+        #y = fftn(small_x,shape=(4,4),axes=(-2,))
+        #for i in range(4):
+        #    assert_array_almost_equal (y[:,i],fft(large_x1[:,i]))
         y = fftn(small_x,shape=(4,4),axes=(-2,-1))
         assert_array_almost_equal (y,fftn(large_x1))
         y = fftn(small_x,shape=(4,4),axes=(-1,-2))
         assert_array_almost_equal (y,swapaxes(\
             fftn(swapaxes(large_x1,-1,-2)),-1,-2))
+
+    def test_shape_argument_more(self):
+        # Test that fftn raise a value error exception when s.shape is longer
+        # than x.shape
+        x = zeros((4, 4, 2))
+        try:
+            fx = fftn(x, shape = (8, 8, 2, 1))
+            raise AssertionError("s.shape longer than x.shape succeded, "\
+                                 "but should not have.")
+        except ValueError:
+            pass
 
 
 class TestIfftn(TestCase):
@@ -376,4 +388,4 @@ class TestIfftn(TestCase):
             assert_array_almost_equal (fftn(ifftn(x)),x)
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

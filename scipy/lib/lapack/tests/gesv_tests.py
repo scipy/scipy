@@ -1,5 +1,5 @@
 
-from scipy.testing import *
+from numpy.testing import *
 from numpy import dot
 
 class _test_gev(object):

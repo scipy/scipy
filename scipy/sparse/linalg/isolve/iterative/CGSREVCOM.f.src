@@ -422,7 +422,8 @@
 *
 *     End of CGSREVCOM
 *
-      END SUBROUTINE <_c>CGSREVCOM
+      END
+*     END SUBROUTINE <_c>CGSREVCOM
 
 
 

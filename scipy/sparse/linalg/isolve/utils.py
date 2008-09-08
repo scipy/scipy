@@ -1,6 +1,6 @@
 __docformat__ = "restructuredtext en"
 
-__all__ = [] 
+__all__ = []
 
 from warnings import warn
 
@@ -54,7 +54,7 @@ def make_system(A, M, x0, b, xtype=None):
         b : rank 1 ndarray
             right hand side
         postprocess : function
-            converts the solution vector to the appropriate 
+            converts the solution vector to the appropriate
             type and dimensions (e.g. (N,1) matrix)
 
     """

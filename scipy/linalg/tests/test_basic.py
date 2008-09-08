@@ -23,7 +23,7 @@ import numpy
 from numpy import arange, add, array, dot, zeros, identity, conjugate, transpose
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.linalg import solve,inv,det,lstsq, toeplitz, hankel, tri, triu, \
      tril, pinv, pinv2, solve_banded
@@ -429,4 +429,4 @@ class TestPinv(TestCase):
         assert_array_almost_equal(a_pinv,a_pinv2)
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

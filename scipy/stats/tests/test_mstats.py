@@ -9,7 +9,7 @@ import numpy.ma as ma
 from numpy.ma import masked, nomask
 
 import scipy.stats.mstats as mstats
-from scipy.testing import *
+from numpy.testing import *
 from numpy.ma.testutils import assert_equal, assert_almost_equal, \
     assert_array_almost_equal
 
@@ -192,9 +192,12 @@ class TestCorr(TestCase):
                             winter.var(ddof=0))
         assert_almost_equal(mstats.cov(winter,winter,bias=False),
                             winter.var(ddof=1))
-        assert_almost_equal(mstats.cov(winter,spring), 7.7)
-        assert_almost_equal(mstats.cov(winter,summer), 19.1111111, 7)
-        assert_almost_equal(mstats.cov(winter,fall), 20)
+        assert_almost_equal(mstats.cov(winter,spring)[0,1], 7.7)
+        assert_almost_equal(mstats.cov(winter,spring)[1,0], 7.7)
+        assert_almost_equal(mstats.cov(winter,summer)[0,1], 19.1111111, 7)
+        assert_almost_equal(mstats.cov(winter,summer)[1,0], 19.1111111, 7)
+        assert_almost_equal(mstats.cov(winter,fall)[0,1], 20)
+        assert_almost_equal(mstats.cov(winter,fall)[1,0], 20)
 
 
 class TestTrimming(TestCase):
@@ -503,4 +506,4 @@ class TestMisc(TestCase):
 
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

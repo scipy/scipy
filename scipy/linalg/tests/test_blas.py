@@ -17,7 +17,7 @@ import math
 
 from numpy import arange, add, array
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.linalg import fblas, cblas
 
@@ -213,4 +213,4 @@ Notes:
 """
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

@@ -7,7 +7,7 @@ Copyright: Ed Schofield, 2003-2005
 """
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 from numpy import arange, add, array, dot, zeros, identity, log, exp, ones
 from scipy.maxentropy.maxentropy import *
 
@@ -36,4 +36,4 @@ class TestMaxentropy(TestCase):
 
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

@@ -2,12 +2,14 @@
 
 import numpy
 from numpy import array, matrix
-from scipy.testing import *
+from numpy.testing import *
 
 
 from scipy.sparse import csr_matrix, coo_matrix
 
 from scipy.sparse.construct import *
+
+sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok']
 
 #TODO check whether format=XXX is respected
 
@@ -61,13 +63,17 @@ class TestConstructUtils(TestCase):
 
 
     def test_identity(self):
-        a = identity(3)
-        b = array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d')
-        assert_array_equal(a.toarray(), b)
+        assert_equal(identity(1).toarray(), [[1]])
+        assert_equal(identity(2).toarray(), [[1,0],[0,1]])
 
-        a = identity(1)
-        b = array([[1]], dtype='d')
-        assert_array_equal(a.toarray(), b)
+        I = identity(3, dtype='int8', format='dia')
+        assert_equal( I.dtype, 'int8' )
+        assert_equal( I.format, 'dia' )
+
+        for fmt in sparse_formats:
+            I = identity( 3, format=fmt )
+            assert_equal( I.format, fmt )
+            assert_equal( I.toarray(), [[1,0,0],[0,1,0],[0,0,1]])
 
     def test_eye(self):
         a = eye(2, 3 )
@@ -199,4 +205,4 @@ class TestConstructUtils(TestCase):
                             [6,5,0]])
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

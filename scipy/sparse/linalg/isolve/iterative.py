@@ -400,8 +400,8 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=None, maxiter=None, xtype=None, M=None
                have a typecode attribute use xtype=0 for the same type as
                b or use xtype='f','d','F',or 'D'
     callback -- an optional user-supplied function to call after each
-                iteration.  It is called as callback(xk), where xk is the
-                current parameter vector.
+                iteration.  It is called as callback(rk), where rk is the
+                the current relative residual 
     """
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
@@ -427,30 +427,52 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=None, maxiter=None, xtype=None, M=None
     ftflag = True
     bnrm2 = -1.0
     iter_ = maxiter
+    old_ijob = ijob
+    first_pass = True
+    resid_ready = False
+    iter_num = 1
     while True:
         olditer = iter_
         x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
            revcom(b, x, restrt, work, work2, iter_, resid, info, ndx1, ndx2, ijob)
-        if callback is not None and iter_ > olditer:
-            callback(x)
+        #if callback is not None and iter_ > olditer:
+        #    callback(x)
         slice1 = slice(ndx1-1, ndx1-1+n)
         slice2 = slice(ndx2-1, ndx2-1+n)
-        if (ijob == -1):
+        if (ijob == -1): # gmres success, update last residual
+            if resid_ready and callback is not None:
+                callback(resid)
+                resid_ready = False
+            
             break
         elif (ijob == 1):
             work[slice2] *= sclr2
             work[slice2] += sclr1*matvec(x)
         elif (ijob == 2):
             work[slice1] = psolve(work[slice2])
+            if not first_pass and old_ijob==3:
+                resid_ready = True
+
+            first_pass = False    
         elif (ijob == 3):
             work[slice2] *= sclr2
             work[slice2] += sclr1*matvec(work[slice1])
+            if resid_ready and callback is not None:
+                callback(resid)
+                resid_ready = False
+                iter_num = iter_num+1
+
         elif (ijob == 4):
             if ftflag:
                 info = -1
                 ftflag = False
             bnrm2, resid, info = stoptest(work[slice1], b, bnrm2, tol, info)
+        
+        old_ijob = ijob
         ijob = 2
+
+        if iter_num > maxiter:
+            break
 
     return postprocess(x), info
 

@@ -13,7 +13,7 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['argstoarray',
            'betai',
-           'chisquare','corrcoef','count_tied_groups','cov',
+           'chisquare','count_tied_groups',
            'describe',
            'f_oneway','f_value_wilks_lambda','find_repeats','friedmanchisquare',
            'gmean',
@@ -288,95 +288,9 @@ def msign(x):
     """Returns the sign of x, or 0 if x is masked."""
     return ma.filled(np.sign(x), 0)
 
+cov = ma.cov
 
-def cov(x, y=None, rowvar=False, bias=False, allow_masked=True):
-    """Estimates the covariance matrix.
-
-Normalization is by (N-1) where N is the number of observations (unbiased
-estimate).  If bias is True then normalization is by N.
-
-
-
-Parameters
-----------
-    x : ndarray
-        Input data. If x is a 1D array, returns the variance. If x is a 2D array,
-        returns the covariance matrix.
-    y : {None, ndarray} optional
-        Optional set of variables.
-    rowvar : {False, True} optional
-        If rowvar is true, then each row is a variable with obersvations in columns.
-        If rowvar is False, each column is a variable and the observations are in
-        the rows.
-    bias : {False, True} optional
-        Whether to use a biased (True) or unbiased (False) estimate of the covariance.
-        If bias is True, then the normalization is by N, the number of observations.
-        Otherwise, the normalization is by (N-1).
-    allow_masked : {True, False} optional
-        If True, masked values are propagated pair-wise: if a value is masked in x,
-        the corresponding value is masked in y.
-        If False, raises an exception.
-    """
-    x = ma.asarray(x)
-    if y is None:
-        y = x
-    else:
-        y = ma.asarray(y)
-    common_mask = ma.mask_or(ma.getmask(x), ma.getmask(y))
-    if allow_masked:
-        x.unshare_mask()
-        y.unshare_mask()
-        x._mask = y._mask = common_mask
-    elif common_mask is not nomask:
-        raise ValueError("Cannot process masked data...")
-    n = x.count()
-    #
-    if rowvar:
-        (x, y) = (x.T, y.T)
-    #
-    x -= x.mean(0)
-    y -= y.mean(0)
-    result = np.dot(x.filled(0).T, y.filled(0).conj()).squeeze()
-    if bias:
-        result /= float(n)
-    else:
-        result /= (n-1.)
-    return result
-
-
-def corrcoef(x, y=None, rowvar=False, bias=False, allow_masked=True):
-    """The correlation coefficients formed from 2-d array x, where the
-    rows are the observations, and the columns are variables.
-
-    corrcoef(x,y) where x and y are 1d arrays is the same as
-    corrcoef(transpose([x,y]))
-
-Parameters
-----------
-    x : ndarray
-        Input data. If x is a 1D array, returns the variance. If x is a 2D array,
-        returns the covariance matrix.
-    y : {None, ndarray} optional
-        Optional set of variables.
-    rowvar : {False, True} optional
-        If True, then each row is a variable with obersvations in columns.
-        If False, each column is a variable and the observations are in the rows.
-    bias : {False, True} optional
-        Whether to use a biased (True) or unbiased (False) estimate of the
-        covariance.
-        If True, then the normalization is by N, the number of observations.
-        Otherwise, the normalization is by (N-1).
-    allow_masked : {True, False} optional
-        If True, masked values are propagated pair-wise: if a value is masked in x,
-        the corresponding value is masked in y.
-        If False, raises an exception.
-    """
-    if y is not None:
-        x = ma.column_stack([x,y])
-        y = None
-    c = cov(x, y, rowvar=rowvar, bias=bias, allow_masked=allow_masked)
-    d = ma.diagonal(c)
-    return c/ma.sqrt(ma.multiply.outer(d,d))
+corrcoef = ma.corrcoef
 
 
 def pearsonr(x,y):
@@ -529,7 +443,7 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
     use_missing: {False, True} optional
         Whether missing data should be allocated a rank of 0 (False) or the
         average rank (True)
-        
+
     Returns
     -------
         tau : float
@@ -677,7 +591,9 @@ def pointbiserialr(x, y):
     t = rpb*ma.sqrt(df/(1.0-rpb**2))
     prob = betai(0.5*df, 0.5, df/(df+t*t))
     return rpb, prob
-pointbiserialr.__doc__ = stats.pointbiserialr.__doc__ + genmissingvaldoc
+
+if stats.pointbiserialr.__doc__:
+    pointbiserialr.__doc__ = stats.pointbiserialr.__doc__ + genmissingvaldoc
 
 
 def linregress(*args):
@@ -716,7 +632,9 @@ def linregress(*args):
     intercept = ymean - slope*xmean
     sterrest = ma.sqrt(1.-r*r) * y.std()
     return slope, intercept, r, prob, sterrest, Syy/Sxx
-linregress.__doc__ = stats.linregress.__doc__ + genmissingvaldoc
+
+if stats.linregress.__doc__:
+    linregress.__doc__ = stats.linregress.__doc__ + genmissingvaldoc
 
 
 def theilslopes(y, x=None, alpha=0.05):
@@ -731,7 +649,7 @@ def theilslopes(y, x=None, alpha=0.05):
             Independent variable. If None, use arange(len(y)) instead.
         alpha : float
             Confidence degree.
-            
+
     Returns
     -------
         medslope : float
@@ -1170,7 +1088,9 @@ def trim(a, limits=None, inclusive=(True,True), relative=False, axis=None):
         return trimr(a, limits=limits, inclusive=inclusive, axis=axis)
     else:
         return trima(a, limits=limits, inclusive=inclusive)
-trim.__doc__ = trim.__doc__ % trimdoc
+
+if trim.__doc__:
+    trim.__doc__ = trim.__doc__ % trimdoc
 
 
 def trimboth(data, proportiontocut=0.2, inclusive=(True,True), axis=None):

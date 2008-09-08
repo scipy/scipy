@@ -1,7 +1,7 @@
 import warnings
 
 from numpy import array, finfo
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.linalg import norm, inv
 from scipy.sparse import spdiags, csc_matrix, SparseEfficiencyWarning
@@ -40,4 +40,4 @@ class TestLinsolve(TestCase):
 
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

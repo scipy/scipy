@@ -2,13 +2,10 @@ import sys
 import os
 
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.weave import catalog
-
-set_local_path()
 from weave_test_utils import *
-restore_path()
 
 
 class TestDefaultDir(TestCase):

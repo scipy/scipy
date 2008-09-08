@@ -9,7 +9,7 @@ To run it in its simplest form::
 
 """
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy import optimize
 from scipy.optimize import leastsq
@@ -289,4 +289,4 @@ class TestLeastSq(TestCase):
         assert_array_equal(p0, p0_copy)
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

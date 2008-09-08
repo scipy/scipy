@@ -4,8 +4,7 @@ import unittest
 import time
 import os,sys
 
-from scipy.testing import *
-set_local_path()
+from numpy.testing import *
 from test_scxx_object import *
 from test_scxx_sequence import *
 from test_scxx_dict import *

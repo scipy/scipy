@@ -34,7 +34,7 @@
 
 from numpy import dot, array
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.special import *
 import scipy.special._cephes as cephes
@@ -1179,7 +1179,7 @@ class TestHyper(TestCase):
 
         # test contributed by Moritz Deger (2008-05-29)
         # http://projects.scipy.org/scipy/scipy/ticket/659
-        
+
         # reference data obtained from mathematica [ a, b, x, m(a,b,x)]:
         # produced with test_hyp1f1.nb
         ref_data = array([[ -8.38132975e+00,  -1.28436461e+01,  -2.91081397e+01,          1.04178330e+04],
@@ -2003,4 +2003,4 @@ class TestSpherical(TestCase):
         assert_almost_equal(sy3,sphpy,4) #compare correct derivative val. (correct =-system val).
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

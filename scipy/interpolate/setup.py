@@ -12,14 +12,19 @@ def configuration(parent_package='',top_path=None):
                       )
 
     config.add_extension('_fitpack',
-                         sources=['_fitpackmodule.c'],
+                         sources=['src/_fitpackmodule.c'],
                          libraries=['fitpack'],
                         )
 
     config.add_extension('dfitpack',
-                         sources=['fitpack.pyf'],
+                         sources=['src/fitpack.pyf'],
                          libraries=['fitpack'],
                         )
+
+    config.add_extension('_interpolate',
+	                 sources=['src/_interpolate.cpp'],
+	                 include_dirs = ['src'],
+	                 depends = ['src/interpolate.h'])
 
     config.add_data_dir('tests')
 

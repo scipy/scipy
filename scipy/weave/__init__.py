@@ -18,5 +18,5 @@ try:
 except:
     pass
 
-from scipy.testing.pkgtester import Tester
+from numpy.testing import Tester
 test = Tester().test

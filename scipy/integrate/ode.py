@@ -99,7 +99,8 @@ as the "vode" solver.
 
 """
 
-__doc__ += integrator_info
+if __doc__:
+    __doc__ += integrator_info
 
 # XXX: Integrators must have:
 # ===========================
@@ -188,7 +189,8 @@ The integration:
 
 """
 
-    __doc__ += integrator_info
+    if __doc__:
+        __doc__ += integrator_info
 
     def __init__(self, f, jac=None):
         """

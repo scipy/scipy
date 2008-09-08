@@ -11,7 +11,7 @@ import sys
 import numpy
 from numpy import array, identity, dot, sqrt
 
-from scipy.testing import *
+from numpy.testing import *
 
 import scipy.linalg
 from scipy.linalg import signm,logm,funm, sqrtm, expm, expm2, expm3
@@ -98,4 +98,4 @@ class TestExpM(TestCase):
         assert_array_almost_equal(expm3(a),[[1,0],[0,1]])
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

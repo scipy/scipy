@@ -854,30 +854,31 @@ def chebwin(M, at, sym=1):
         M = M+1
 
     # compute the parameter beta
-    beta = cosh(1.0/(M-1.0)*arccosh(10**(at/20.)))
+    order = M - 1.0
+    beta = cosh(1.0/order * arccosh(10**(abs(at)/20.)))
     k = r_[0:M]*1.0
     x = beta*cos(pi*k/M)
     #find the window's DFT coefficients
-    p = zeros(x.shape) * 1.0
-    for i in range(len(x)):
-        if x[i] < 1:
-            p[i] = cos((M - 1) * arccos(x[i]))
-        else:
-            p[i] = cosh((M - 1) * arccosh(x[i]))
+    # Use analytic definition of Chebyshev polynomial instead of expansion
+    # from scipy.special. Using the expansion in scipy.special leads to errors.
+    p = zeros(x.shape)
+    p[x > 1] = cosh(order * arccosh(x[x > 1]))
+    p[x < -1] = (1 - 2*(order%2)) * cosh(order * arccosh(-x[x < -1]))
+    p[numpy.abs(x) <=1 ] = cos(order * arccos(x[numpy.abs(x) <= 1]))
 
     # Appropriate IDFT and filling up
     # depending on even/odd M
     if M % 2:
-        w = real(fft(p));
-        n = (M + 1) / 2;
-        w = w[:n] / w[0];
+        w = real(fft(p))
+        n = (M + 1) / 2
+        w = w[:n] / w[0]
         w = concatenate((w[n - 1:0:-1], w))
     else:
         p = p * exp(1.j*pi / M * r_[0:M])
-        w = real(fft(p));
-        n = M / 2 + 1;
-        w = w / w[1];
-        w = concatenate((w[n - 1:0:-1], w[1:n]));
+        w = real(fft(p))
+        n = M / 2 + 1
+        w = w / w[1]
+        w = concatenate((w[n - 1:0:-1], w[1:n]))
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -1467,10 +1468,10 @@ def filtfilt(b,a,x):
 
     zi=lfilter_zi(b,a)
 
-    #Grow the signal to have edges for stabilizing 
+    #Grow the signal to have edges for stabilizing
     #the filter with inverted replicas of the signal
     s=r_[2*x[0]-x[edge:1:-1],x,2*x[-1]-x[-1:-edge:-1]]
-    #in the case of one go we only need one of the extrems 
+    #in the case of one go we only need one of the extrems
     # both are needed for filtfilt
 
     (y,zf)=lfilter(b,a,s,-1,zi*s[0])

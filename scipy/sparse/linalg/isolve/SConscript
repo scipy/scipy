@@ -3,7 +3,6 @@
 
 from os.path import join as pjoin, splitext
 
-from numpy.distutils.misc_util import get_numpy_include_dirs
 from numscons import GetNumpyEnvironment
 from numscons import CheckF77LAPACK
 
@@ -11,7 +10,6 @@ from numscons import write_info
 
 env = GetNumpyEnvironment(ARGUMENTS)
 env.Tool('f2py')
-env.Append(CPPPATH = [get_numpy_include_dirs(), env['F2PYINCLUDEDIR']])
 #if os.name == 'nt':
 #    # NT needs the pythonlib to run any code importing Python.h, including
 #    # simple code using only typedef and so on, so we need it for configuration
@@ -55,4 +53,4 @@ for method in raw_sources:
     res = env.FromFTemplate(target, pjoin('iterative', method))
     sources.append(res[0])
 
-env.DistutilsPythonExtension('_iterative', source = sources)
+env.NumpyPythonExtension('_iterative', source = sources)

@@ -141,7 +141,7 @@ def b_orthonormalize( B, blockVectorV,
     else:
         return blockVectorV, blockVectorBV
 
-def lobpcg( A, X,  
+def lobpcg( A, X,
             B=None, M=None, Y=None,
             tol= None, maxiter=20,
             largest = True, verbosityLevel = 0,
@@ -151,14 +151,14 @@ def lobpcg( A, X,
     This function implements the Locally Optimal Block Preconditioned
     Conjugate Gradient Method (LOBPCG).
 
-    
+
     Parameters
     ----------
     A : {sparse matrix, dense matrix, LinearOperator}
-        The symmetric linear operator of the problem, usually a 
+        The symmetric linear operator of the problem, usually a
         sparse matrix.  Often called the "stiffness matrix".
     X : array_like
-        Initial approximation to the k eigenvectors. If A has 
+        Initial approximation to the k eigenvectors. If A has
         shape=(n,n) then X should have shape shape=(n,k).
 
     Returns

@@ -2,7 +2,7 @@ import sys
 import numpy
 from numpy import arange, add, array, dot, zeros, identity, conjugate, transpose
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.linalg import solve,inv,det,lstsq, toeplitz, hankel, tri, triu, \
      tril, pinv, pinv2, solve_banded
@@ -127,4 +127,4 @@ class TestDet(TestCase):
 
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

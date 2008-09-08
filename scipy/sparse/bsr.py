@@ -15,7 +15,7 @@ from base import isspmatrix, _formats
 from sputils import isshape, getdtype, to_native, isscalarlike, isdense, \
         upcast
 import sparsetools
-from sparsetools import bsr_matvec, csr_matmat_pass1, csr_matmat_pass2, \
+from sparsetools import bsr_matvec, bsr_matvecs, csr_matmat_pass1, csr_matmat_pass2, \
         bsr_matmat_pass2, bsr_transpose, bsr_sort_indices
 
 class bsr_matrix(_cs_matrix):
@@ -283,112 +283,84 @@ class bsr_matrix(_cs_matrix):
     # Arithmetic methods #
     ######################
 
-    def matvec(self, other, output=None):
-        """Sparse matrix vector product (self * other)
-
-        'other' may be a rank 1 array of length N or a rank 2 array
-        or matrix with shape (N,1).
-
-        If the optional 'output' parameter is defined, it will
-        be used to store the result.  Otherwise, a new vector
-        will be allocated.
-
-        """
-        if isdense(other):
-            M,N = self.shape
-            R,C = self.blocksize
-
-            if other.shape != (N,) and other.shape != (N,1):
-                raise ValueError, "dimension mismatch"
-
-            #output array
-            if output is None:
-                y = zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
-            else:
-                if output.shape != (M,) and output.shape != (M,1):
-                    raise ValueError, "output array has improper dimensions"
-                if not output.flags.c_contiguous:
-                    raise ValueError, "output array must be contiguous"
-                if output.dtype != upcast(self.dtype,other.dtype):
-                    raise ValueError, "output array has dtype=%s "\
-                            "dtype=%s is required" % \
-                            (output.dtype,upcast(self.dtype,other.dtype))
-                y = output
-
-
-            bsr_matvec(M/R, N/C, R, C, \
-                self.indptr, self.indices, ravel(self.data), ravel(other), y)
-
-            if isinstance(other, matrix):
-                y = asmatrix(y)
-
-            if other.ndim == 2 and other.shape[1] == 1:
-                # If 'other' was an (nx1) column vector, reshape the result
-                y = y.reshape(-1,1)
-
-            return y
-
-        elif isspmatrix(other):
-            raise TypeError, "use matmat() for sparse * sparse"
-
-        else:
-            raise TypeError, "need a dense vector"
-
+    def matvec(self, other):
+        return self * other
 
     def matmat(self, other):
-        if isspmatrix(other):
-            M, K1 = self.shape
-            K2, N = other.shape
-            if (K1 != K2):
-                raise ValueError, "shape mismatch error"
+        return self * other
 
-            indptr = empty_like( self.indptr )
+    def _mul_vector(self, other):
+        M,N = self.shape
+        R,C = self.blocksize
 
-            R,n = self.blocksize
+        result = zeros( self.shape[0], dtype=upcast(self.dtype, other.dtype) )
 
-            #convert to this format
-            if isspmatrix_bsr(other):
-                C = other.blocksize[1]
-            else:
-                C = 1
+        bsr_matvec(M/R, N/C, R, C, \
+            self.indptr, self.indices, self.data.ravel(),
+            other, result)
 
-            from csr import isspmatrix_csr
+        return result
 
-            if isspmatrix_csr(other) and n == 1:
-                other = other.tobsr(blocksize=(n,C),copy=False) #convert to this format
-            else:
-                other = other.tobsr(blocksize=(n,C))
+    def _mul_dense_matrix(self,other):
+        R,C = self.blocksize
+        M,N = self.shape
+        n_vecs = other.shape[1] #number of column vectors
 
+        result = zeros( (M,n_vecs), dtype=upcast(self.dtype,other.dtype) )
 
-            csr_matmat_pass1( M/R, N/C, \
-                    self.indptr,  self.indices, \
-                    other.indptr, other.indices, \
-                    indptr)
+        bsr_matvecs(M/R, N/C, n_vecs, R, C, \
+                self.indptr, self.indices, self.data.ravel(), \
+                other.ravel(), result.ravel())
 
-            bnnz = indptr[-1]
-            indices = empty( bnnz, dtype=intc)
-            data    = empty( R*C*bnnz, dtype=upcast(self.dtype,other.dtype))
+        return result
 
-            bsr_matmat_pass2( M/R, N/C, R, C, n, \
-                    self.indptr,  self.indices,  ravel(self.data), \
-                    other.indptr, other.indices, ravel(other.data), \
-                    indptr,       indices,       data)
+    #def _mul_dense_matrix(self, other):
+    #    # TODO make sparse * dense matrix multiplication more efficient
+    #    # matvec each column of other
+    #    result = hstack( [ self * col.reshape(-1,1) for col in asarray(other).T ] )
+    #    return result
 
-            data = data.reshape(-1,R,C)
-            #TODO eliminate zeros
+    def _mul_sparse_matrix(self, other):
+        M, K1 = self.shape
+        K2, N = other.shape
 
-            return bsr_matrix((data,indices,indptr),shape=(M,N),blocksize=(R,C))
-        elif isdense(other):
-            # TODO make sparse * dense matrix multiplication more efficient
-            
-            # matvec each column of other
-            result = hstack( [ self * col.reshape(-1,1) for col in asarray(other).T ] )
-            if isinstance(other, matrix):
-                result = asmatrix(result)
-            return result                
+        indptr = empty_like( self.indptr )
 
+        R,n = self.blocksize
+
+        #convert to this format
+        if isspmatrix_bsr(other):
+            C = other.blocksize[1]
         else:
-            raise TypeError, "need a dense or sparse matrix"
+            C = 1
+
+        from csr import isspmatrix_csr
+
+        if isspmatrix_csr(other) and n == 1:
+            other = other.tobsr(blocksize=(n,C),copy=False) #convert to this format
+        else:
+            other = other.tobsr(blocksize=(n,C))
+
+        csr_matmat_pass1( M/R, N/C, \
+                self.indptr,  self.indices, \
+                other.indptr, other.indices, \
+                indptr)
+
+        bnnz = indptr[-1]
+        indices = empty( bnnz, dtype=intc)
+        data    = empty( R*C*bnnz, dtype=upcast(self.dtype,other.dtype))
+
+        bsr_matmat_pass2( M/R, N/C, R, C, n, \
+                self.indptr,  self.indices,  ravel(self.data), \
+                other.indptr, other.indices, ravel(other.data), \
+                indptr,       indices,       data)
+
+        data = data.reshape(-1,R,C)
+        #TODO eliminate zeros
+
+        return bsr_matrix((data,indices,indptr),shape=(M,N),blocksize=(R,C))
+
+
 
 
     ######################

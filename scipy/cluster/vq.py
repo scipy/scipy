@@ -83,7 +83,7 @@ from numpy.random import randint
 from numpy import shape, zeros, sqrt, argmin, minimum, array, \
      newaxis, arange, compress, equal, common_type, single, double, take, \
      std, mean
-import numpy as N
+import numpy as np
 
 class ClusterError(Exception):
     pass
@@ -233,8 +233,8 @@ def py_vq(obs, code_book):
     """
     # n = number of observations
     # d = number of features
-    if N.ndim(obs) == 1:
-        if not N.ndim(obs) == N.ndim(code_book):
+    if np.ndim(obs) == 1:
+        if not np.ndim(obs) == np.ndim(code_book):
             raise ValueError(
                     "Observation and code_book should have the same rank")
         else:
@@ -244,7 +244,7 @@ def py_vq(obs, code_book):
 
     # code books and observations should have same number of features and same
     # shape
-    if not N.ndim(obs) == N.ndim(code_book):
+    if not np.ndim(obs) == np.ndim(code_book):
         raise ValueError("Observation and code_book should have the same rank")
     elif not d == code_book.shape[1]:
         raise ValueError("Code book(%d) and obs(%d) should have the same " \
@@ -254,7 +254,7 @@ def py_vq(obs, code_book):
     code = zeros(n, dtype=int)
     min_dist = zeros(n)
     for i in range(n):
-        dist = N.sum((obs[i] - code_book) ** 2, 1)
+        dist = np.sum((obs[i] - code_book) ** 2, 1)
         code[i] = argmin(dist)
         min_dist[i] = dist[code[i]]
 
@@ -281,9 +281,9 @@ def _py_vq_1d(obs, code_book):
     raise RuntimeError("_py_vq_1d buggy, do not use rank 1 arrays for now")
     n = obs.size
     nc = code_book.size
-    dist = N.zeros((n, nc))
+    dist = np.zeros((n, nc))
     for i in range(nc):
-        dist[:, i] = N.sum(obs - code_book[i])
+        dist[:, i] = np.sum(obs - code_book[i])
     print dist
     code = argmin(dist)
     min_dist = dist[code]
@@ -327,7 +327,7 @@ def py_vq2(obs, code_book):
             number of features (eg columns)""" % (code_book.shape[1], d))
 
     diff = obs[newaxis, :, :] - code_book[:,newaxis,:]
-    dist = sqrt(N.sum(diff * diff, -1))
+    dist = sqrt(np.sum(diff * diff, -1))
     code = argmin(dist, 0)
     min_dist = minimum.reduce(dist, 0) #the next line I think is equivalent
                                       #  - and should be faster
@@ -520,7 +520,7 @@ def _kpoints(data, k):
     else:
         n = data.size
 
-    p = N.random.permutation(n)
+    p = np.random.permutation(n)
     x = data[p[:k], :].copy()
 
     return x
@@ -541,23 +541,23 @@ def _krandinit(data, k):
 
     """
     def init_rank1(data):
-        mu  = N.mean(data)
-        cov = N.cov(data)
-        x = N.random.randn(k)
-        x *= N.sqrt(cov)
+        mu  = np.mean(data)
+        cov = np.cov(data)
+        x = np.random.randn(k)
+        x *= np.sqrt(cov)
         x += mu
         return x
     def init_rankn(data):
-        mu  = N.mean(data, 0)
-        cov = N.atleast_2d(N.cov(data, rowvar = 0))
+        mu  = np.mean(data, 0)
+        cov = np.atleast_2d(np.cov(data, rowvar = 0))
 
         # k rows, d cols (one row = one obs)
         # Generate k sample of a random variable ~ Gaussian(mu, cov)
-        x = N.random.randn(k, mu.size)
-        x = N.dot(x, N.linalg.cholesky(cov).T) + mu
+        x = np.random.randn(k, mu.size)
+        x = np.dot(x, np.linalg.cholesky(cov).T) + mu
         return x
 
-    nd = N.ndim(data)
+    nd = np.ndim(data)
     if nd == 1:
         return init_rank1(data)
     else:
@@ -628,7 +628,7 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit = 'random',
     if missing not in _valid_miss_meth.keys():
         raise ValueError("Unkown missing method: %s" % str(missing))
     # If data is rank 1, then we have 1 dimension problem.
-    nd  = N.ndim(data)
+    nd  = np.ndim(data)
     if nd == 1:
         d = 1
         #raise ValueError("Input of rank 1 not supported yet")
@@ -637,13 +637,13 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit = 'random',
     else:
         raise ValueError("Input of rank > 2 not supported")
 
-    if N.size(data) < 1:
+    if np.size(data) < 1:
         raise ValueError("Input has 0 items.")
 
     # If k is not a single value, then it should be compatible with data's
     # shape
-    if N.size(k) > 1 or minit == 'matrix':
-        if not nd == N.ndim(k):
+    if np.size(k) > 1 or minit == 'matrix':
+        if not nd == np.ndim(k):
             raise ValueError("k is not an int and has not same rank than data")
         if d == 1:
             nc = len(k)
@@ -683,9 +683,9 @@ def _kmeans2(data, code, niter, nc, missing):
         label = vq(data, code)[0]
         # Update the code by computing centroids using the new code book
         for j in range(nc):
-            mbs = N.where(label==j)
+            mbs = np.where(label==j)
             if mbs[0].size > 0:
-                code[j] = N.mean(data[mbs], axis=0)
+                code[j] = np.mean(data[mbs], axis=0)
             else:
                 missing()
 
@@ -694,13 +694,13 @@ def _kmeans2(data, code, niter, nc, missing):
 if __name__  == '__main__':
     pass
     #import _vq
-    #a = N.random.randn(4, 2)
-    #b = N.random.randn(2, 2)
+    #a = np.random.randn(4, 2)
+    #b = np.random.randn(2, 2)
 
     #print _vq.vq(a, b)
-    #print _vq.vq(N.array([[1], [2], [3], [4], [5], [6.]]),
-    #        N.array([[2.], [5.]]))
-    #print _vq.vq(N.array([1, 2, 3, 4, 5, 6.]), N.array([2., 5.]))
-    #_vq.vq(a.astype(N.float32), b.astype(N.float32))
-    #_vq.vq(a, b.astype(N.float32))
+    #print _vq.vq(np.array([[1], [2], [3], [4], [5], [6.]]),
+    #             np.array([[2.], [5.]]))
+    #print _vq.vq(np.array([1, 2, 3, 4, 5, 6.]), np.array([2., 5.]))
+    #_vq.vq(a.astype(np.float32), b.astype(np.float32))
+    #_vq.vq(a, b.astype(np.float32))
     #_vq.vq([0], b)

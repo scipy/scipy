@@ -1,6 +1,6 @@
 from numpy import asarray
 import stats
-import numpy as N
+import numpy as np
 from types import ListType, TupleType, StringType
 import copy
 
@@ -17,20 +17,20 @@ def abut(source, *args):
     source = asarray(source)
     if len(source.shape)==1:
         width = 1
-        source = N.resize(source,[source.shape[0],width])
+        source = np.resize(source,[source.shape[0],width])
     else:
         width = source.shape[1]
     for addon in args:
         if len(addon.shape)==1:
             width = 1
-            addon = N.resize(addon,[source.shape[0],width])
+            addon = np.resize(addon,[source.shape[0],width])
         else:
             width = source.shape[1]
         if len(addon) < len(source):
-            addon = N.resize(addon,[source.shape[0],addon.shape[1]])
+            addon = np.resize(addon,[source.shape[0],addon.shape[1]])
         elif len(source) < len(addon):
-            source = N.resize(source,[addon.shape[0],source.shape[1]])
-        source = N.concatenate((source,addon),1)
+            source = np.resize(source,[addon.shape[0],source.shape[1]])
+        source = np.concatenate((source,addon),1)
     return source
 
 
@@ -39,37 +39,37 @@ def unique(inarray):
     works on arrays NOT including string items (e.g., type 'O' or 'c').
     """
     inarray = asarray(inarray)
-    uniques = N.array([inarray[0]])
+    uniques = np.array([inarray[0]])
     if len(uniques.shape) == 1:            # IF IT'S A 1D ARRAY
         for item in inarray[1:]:
-            if N.add.reduce(N.equal(uniques,item).flat) == 0:
+            if np.add.reduce(np.equal(uniques,item).flat) == 0:
                 try:
-                    uniques = N.concatenate([uniques,N.array[N.newaxis,:]])
+                    uniques = np.concatenate([uniques,np.array[np.newaxis,:]])
                 except TypeError:
-                    uniques = N.concatenate([uniques,N.array([item])])
+                    uniques = np.concatenate([uniques,np.array([item])])
     else:                                  # IT MUST BE A 2+D ARRAY
         if inarray.typecode() != 'O':  # not an Object array
             for item in inarray[1:]:
-                if not N.sum(N.alltrue(N.equal(uniques,item),1),axis=0):
+                if not np.sum(np.alltrue(np.equal(uniques,item),1),axis=0):
                     try:
-                        uniques = N.concatenate( [uniques,item[N.newaxis,:]] )
+                        uniques = np.concatenate( [uniques,item[np.newaxis,:]] )
                     except TypeError:    # the item to add isn't a list
-                        uniques = N.concatenate([uniques,N.array([item])])
+                        uniques = np.concatenate([uniques,np.array([item])])
                 else:
                     pass  # this item is already in the uniques array
         else:   # must be an Object array, alltrue/equal functions don't work
             for item in inarray[1:]:
                 newflag = 1
                 for unq in uniques:  # NOTE: cmp --> 0=same, -1=<, 1=>
-                    test = N.sum(abs(N.array(map(cmp,item,unq))),axis=0)
+                    test = np.sum(abs(np.array(map(cmp,item,unq))),axis=0)
                     if test == 0:   # if item identical to any 1 row in uniques
                         newflag = 0 # then not a novel item to add
                         break
                 if newflag == 1:
                     try:
-                        uniques = N.concatenate( [uniques,item[N.newaxis,:]] )
+                        uniques = np.concatenate( [uniques,item[np.newaxis,:]] )
                     except TypeError:    # the item to add isn't a list
-                        uniques = N.concatenate([uniques,N.array([item])])
+                        uniques = np.concatenate([uniques,np.array([item])])
     return uniques
 
 def colex(a, indices, axis=1):
@@ -79,12 +79,12 @@ def colex(a, indices, axis=1):
 
     Returns: the columns of a specified by indices\n"""
 
-    if type(indices) not in [ListType,TupleType,N.ndarray]:
+    if type(indices) not in [ListType,TupleType,np.ndarray]:
         indices = [indices]
-    if len(N.shape(a)) == 1:
-        cols = N.resize(a,[a.shape[0],1])
+    if len(np.shape(a)) == 1:
+        cols = np.resize(a,[a.shape[0],1])
     else:
-        cols = N.take(a,indices,axis)
+        cols = np.take(a,indices,axis)
     return cols
 
 def printcc(lst, extra=2):
@@ -137,9 +137,9 @@ Format:  adm (a,criterion)   where criterion is like 'x[2]==37'\n"""
     function = 'lines = filter(lambda x: '+criterion+',a)'
     exec(function)
     try:
-        lines = N.array(lines)
+        lines = np.array(lines)
     except:
-        lines = N.array(lines,'O')
+        lines = np.array(lines,'O')
     return lines
 
 
@@ -150,9 +150,9 @@ def linexand(a, columnlist, valuelist):
     Returns: the rows of a where columnlist[i]=valuelist[i] for ALL i\n"""
 
     a = asarray(a)
-    if type(columnlist) not in [ListType,TupleType,N.ndarray]:
+    if type(columnlist) not in [ListType,TupleType,np.ndarray]:
         columnlist = [columnlist]
-    if type(valuelist) not in [ListType,TupleType,N.ndarray]:
+    if type(valuelist) not in [ListType,TupleType,np.ndarray]:
         valuelist = [valuelist]
     criterion = ''
     for i in range(len(columnlist)):
@@ -183,14 +183,14 @@ def collapse(a, keepcols, collapsecols, stderr=0, ns=0, cfcn=None):
         means = cfcn(avgcol)
         return means
     else:
-        if type(keepcols) not in [ListType,TupleType,N.ndarray]:
+        if type(keepcols) not in [ListType,TupleType,np.ndarray]:
             keepcols = [keepcols]
         values = colex(a,keepcols)   # so that "item" can be appended (below)
         uniques = unique(values)  # get a LIST, so .sort keeps rows intact
         uniques.sort()
         newlist = []
         for item in uniques:
-            if type(item) not in [ListType,TupleType,N.ndarray]:
+            if type(item) not in [ListType,TupleType,np.ndarray]:
                 item =[item]
             tmprows = linexand(a,keepcols,item)
             for col in collapsecols:
@@ -205,9 +205,9 @@ def collapse(a, keepcols, collapsecols, stderr=0, ns=0, cfcn=None):
                     item.append(len(avgcol))
                 newlist.append(item)
         try:
-            new_a = N.array(newlist)
+            new_a = np.array(newlist)
         except TypeError:
-            new_a = N.array(newlist,'O')
+            new_a = np.array(newlist,'O')
         return new_a
 
 

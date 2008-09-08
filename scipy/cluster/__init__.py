@@ -7,5 +7,5 @@ from info import __doc__
 __all__ = ['vq', 'hierarchy', 'distance']
 
 import vq, hierarchy, distance
-from scipy.testing.pkgtester import Tester
+from numpy.testing import Tester
 test = Tester().test

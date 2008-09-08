@@ -702,7 +702,7 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
       splprep, splrep, splint, sproot, splev - evaluation, roots, integral
       UnivariateSpline, BivariateSpline - an alternative wrapping
               of the FITPACK functions
-    
+
     Notes:
     Based on algorithms from:
        Dierckx P. : An algorithm for surface fitting with spline functions
@@ -844,7 +844,7 @@ def bisplev(x,y,tck,dx=0,dy=0):
 
 def dblint(xa,xb,ya,yb,tck):
     """Evaluate the integral of a spline over area [xa,xb] x [ya,yb].
-    
+
     Parameters
     ----------
     xa, xb : float
@@ -892,7 +892,7 @@ def insert(x,tck,m=1,per=0):
         In case of a periodic spline (per != 0) there must be
            either at least k interior knots t(j) satisfying t(k+1)<t(j)<=x
            or at least k interior knots t(j) satisfying x<=t(j)<t(n-k).
-    
+
     Notes:
     Based on algorithms from:
         Boehm W : Inserting new knots into b-spline curves. Computer Aided

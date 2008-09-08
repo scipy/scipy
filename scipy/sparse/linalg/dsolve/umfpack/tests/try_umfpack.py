@@ -4,15 +4,15 @@
 """Benchamrks for umfpack module"""
 
 from optparse import OptionParser
-import scipy.linsolve.umfpack as um
-import numpy as nm
-#import scipy.io as io
-import scipy.sparse as sp
-import scipy.linalg as nla
-#import pylab
 import time
 import urllib
 import gzip
+
+import numpy as np
+
+import scipy.sparse as sp
+import scipy.sparse.linalg.dsolve.umfpack as um
+import scipy.linalg as nla
 
 defaultURL = 'http://www.cise.ufl.edu/research/sparse/HBformat/'
 
@@ -35,8 +35,8 @@ def read_triplet( fd ):
     nRow, nCol = map( int, fd.readline().split() )
     nItem = int( fd.readline() )
 
-    ij = nm.zeros( (nItem,2), nm.int32 )
-    val = nm.zeros( (nItem,), nm.float64 )
+    ij = np.zeros( (nItem,2), np.int32 )
+    val = np.zeros( (nItem,), np.float64 )
     for ii, row in enumerate( fd.readlines() ):
         aux = row.split()
         ij[ii] = int( aux[0] ), int( aux[1] )
@@ -54,7 +54,7 @@ def read_triplet2( fd ):
 
     ij, val = io.read_array( fd,
                              columns = [(0,1), (2,)],
-                             atype = (nm.int32, nm.float64),
+                             atype = (np.int32, np.float64),
                              rowsize = nItem )
 
     mtx = sp.csc_matrix( (val, ij), dims = (nRow, nCol), nzmax = nItem )
@@ -137,14 +137,14 @@ def main():
 
         sizes.append( mtx.shape )
         nnzs.append( mtx.nnz )
-        tts = nm.zeros( (2,), dtype = nm.double )
+        tts = np.zeros( (2,), dtype = np.double )
         times.append( tts )
-        err = nm.zeros( (2,2), dtype = nm.double )
+        err = np.zeros( (2,2), dtype = np.double )
         errors.append( err )
 
         print 'size              : %s (%d nnz)' % (mtx.shape, mtx.nnz)
 
-        sol0 = nm.ones( (mtx.shape[0],), dtype = nm.double )
+        sol0 = np.ones( (mtx.shape[0],), dtype = np.double )
         rhs = mtx * sol0
 
         umfpack = um.UmfpackContext()
@@ -181,7 +181,7 @@ def main():
             import pylab
         except ImportError:
             raise ImportError, "could not import pylab"
-        times = nm.array( times )
+        times = np.array( times )
         print times
         pylab.plot( times[:,0], 'b-o' )
         if options.compare:
@@ -196,17 +196,17 @@ def main():
         xrng = range( len( nnzs ) )
         for ii in xrng:
             yy = y2 + 0.4 * (ax[3] - ax[2])\
-                 * nm.sin( ii * 2 * nm.pi / (len( xrng ) - 1) )
+                 * np.sin( ii * 2 * np.pi / (len( xrng ) - 1) )
 
             if options.compare:
                 pylab.text( ii+0.02, yy,
                             '%s\n%.2e err_umf\n%.2e err_sp'
-                            % (sizes[ii], nm.sum( errors[ii][0,:] ),
-                               nm.sum( errors[ii][1,:] )) )
+                            % (sizes[ii], np.sum( errors[ii][0,:] ),
+                               np.sum( errors[ii][1,:] )) )
             else:
                 pylab.text( ii+0.02, yy,
                             '%s\n%.2e err_umf'
-                            % (sizes[ii], nm.sum( errors[ii][0,:] )) )
+                            % (sizes[ii], np.sum( errors[ii][0,:] )) )
             pylab.plot( [ii, ii], [ax[2], ax[3]], 'k:' )
 
         pylab.xticks( xrng, ['%d' % (nnzs[ii] ) for ii in xrng] )

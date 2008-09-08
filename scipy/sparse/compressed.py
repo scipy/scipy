@@ -227,15 +227,6 @@ class _cs_matrix(_data_matrix):
             raise NotImplementedError
 
 
-    def __mul__(self, other): # self * other
-        """ Scalar, vector, or matrix multiplication
-        """
-        if isscalarlike(other):
-            return self._with_data(self.data * other)
-        else:
-            return self.dot(other)
-
-
     def __rmul__(self, other): # other * self
         if isscalarlike(other):
             return self.__mul__(other)
@@ -245,7 +236,7 @@ class _cs_matrix(_data_matrix):
                 tr = other.transpose()
             except AttributeError:
                 tr = asarray(other).transpose()
-            return self.transpose().dot(tr).transpose()
+            return (self.transpose() * tr).transpose()
 
 
     def __truediv__(self,other):
@@ -274,101 +265,163 @@ class _cs_matrix(_data_matrix):
             other = self.__class__(other)
             return self._binopt(other,'_elmul_')
 
-    def matmat(self, other):
-        if isspmatrix(other):
-            M, K1 = self.shape
-            K2, N = other.shape
-            if (K1 != K2):
-                raise ValueError, "shape mismatch error"
 
-            #return self._binopt(other,'mu',in_shape=(M,N),out_shape=(M,N))
+    ###########################
+    # Multiplication handlers #
+    ###########################
 
-            major_axis = self._swap((M,N))[0]
-            indptr = empty( major_axis + 1, dtype=intc )
+    def _mul_vector(self, other):
+        M,N = self.shape
 
-            other = self.__class__(other) #convert to this format
-            fn = getattr(sparsetools, self.format + '_matmat_pass1')
-            fn( M, N, self.indptr, self.indices, \
-                      other.indptr, other.indices, \
-                      indptr)
+        #output array
+        result = zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
 
-            nnz = indptr[-1]
-            indices = empty( nnz, dtype=intc)
-            data    = empty( nnz, dtype=upcast(self.dtype,other.dtype))
+        # csr_matvec or csc_matvec
+        fn = getattr(sparsetools,self.format + '_matvec')
+        fn(M, N, self.indptr, self.indices, self.data, other, result)
 
-            fn = getattr(sparsetools, self.format + '_matmat_pass2')
-            fn( M, N, self.indptr, self.indices, self.data, \
-                      other.indptr, other.indices, other.data, \
-                      indptr, indices, data)
-
-            return self.__class__((data,indices,indptr),shape=(M,N))
+        return result
 
 
-        elif isdense(other):
-            # TODO make sparse * dense matrix multiplication more efficient
-            
-            # matvec each column of other
-            result = hstack( [ self * col.reshape(-1,1) for col in asarray(other).T ] )
-            if isinstance(other, matrix):
-                result = asmatrix(result)
-            return result                
+    def _mul_dense_matrix(self,other):
+        M,N = self.shape
+        n_vecs = other.shape[1] #number of column vectors
 
-        else:
-            raise TypeError, "need a dense or sparse matrix"
+        result = zeros( (M,n_vecs), dtype=upcast(self.dtype,other.dtype) )
 
-    def matvec(self, other, output=None):
-        """Sparse matrix vector product (self * other)
+        # csr_matvecs or csc_matvecs
+        fn = getattr(sparsetools,self.format + '_matvecs')
+        fn(M, N, n_vecs, self.indptr, self.indices, self.data, other.ravel(), result.ravel())
 
-        'other' may be a rank 1 array of length N or a rank 2 array
-        or matrix with shape (N,1).
+        return result
 
-        """
-        #If the optional 'output' parameter is defined, it will
-        #be used to store the result.  Otherwise, a new vector
-        #will be allocated.
 
-        if isdense(other):
-            M,N = self.shape
+    def _mul_sparse_matrix(self, other):
+        M, K1 = self.shape
+        K2, N = other.shape
 
-            if other.shape != (N,) and other.shape != (N,1):
-                raise ValueError, "dimension mismatch"
+        major_axis = self._swap((M,N))[0]
+        indptr = empty( major_axis + 1, dtype=intc )
 
-            # csrmux, cscmux
-            fn = getattr(sparsetools,self.format + '_matvec')
+        other = self.__class__(other) #convert to this format
+        fn = getattr(sparsetools, self.format + '_matmat_pass1')
+        fn( M, N, self.indptr, self.indices, \
+                  other.indptr, other.indices, \
+                  indptr)
 
-            #output array
-            y = zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
+        nnz = indptr[-1]
+        indices = empty( nnz, dtype=intc)
+        data    = empty( nnz, dtype=upcast(self.dtype,other.dtype))
 
-            #if output is None:
-            #    y = empty( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
-            #else:
-            #    if output.shape != (M,) and output.shape != (M,1):
-            #        raise ValueError, "output array has improper dimensions"
-            #    if not output.flags.c_contiguous:
-            #        raise ValueError, "output array must be contiguous"
-            #    if output.dtype != upcast(self.dtype,other.dtype):
-            #        raise ValueError, "output array has dtype=%s "\
-            #                "dtype=%s is required" % \
-            #                (output.dtype,upcast(self.dtype,other.dtype))
-            #    y = output
+        fn = getattr(sparsetools, self.format + '_matmat_pass2')
+        fn( M, N, self.indptr, self.indices, self.data, \
+                  other.indptr, other.indices, other.data, \
+                  indptr, indices, data)
 
-            fn(self.shape[0], self.shape[1], \
-                self.indptr, self.indices, self.data, numpy.ravel(other), y)
+        return self.__class__((data,indices,indptr),shape=(M,N))
 
-            if isinstance(other, matrix):
-                y = asmatrix(y)
+    def matvec(self,other):
+        return self * other
 
-            if other.ndim == 2 and other.shape[1] == 1:
-                # If 'other' was an (nx1) column vector, reshape the result
-                y = y.reshape(-1,1)
+    def matmat(self,other):
+        return self * other
 
-            return y
+    #def matmat(self, other):
+    #    if isspmatrix(other):
+    #        M, K1 = self.shape
+    #        K2, N = other.shape
+    #        if (K1 != K2):
+    #            raise ValueError, "shape mismatch error"
 
-        elif isspmatrix(other):
-            raise TypeError, "use matmat() for sparse * sparse"
+    #        #return self._binopt(other,'mu',in_shape=(M,N),out_shape=(M,N))
 
-        else:
-            raise TypeError, "need a dense vector"
+    #        major_axis = self._swap((M,N))[0]
+    #        indptr = empty( major_axis + 1, dtype=intc )
+
+    #        other = self.__class__(other) #convert to this format
+    #        fn = getattr(sparsetools, self.format + '_matmat_pass1')
+    #        fn( M, N, self.indptr, self.indices, \
+    #                  other.indptr, other.indices, \
+    #                  indptr)
+
+    #        nnz = indptr[-1]
+    #        indices = empty( nnz, dtype=intc)
+    #        data    = empty( nnz, dtype=upcast(self.dtype,other.dtype))
+
+    #        fn = getattr(sparsetools, self.format + '_matmat_pass2')
+    #        fn( M, N, self.indptr, self.indices, self.data, \
+    #                  other.indptr, other.indices, other.data, \
+    #                  indptr, indices, data)
+
+    #        return self.__class__((data,indices,indptr),shape=(M,N))
+
+
+    #    elif isdense(other):
+    #        # TODO make sparse * dense matrix multiplication more efficient
+    #
+    #        # matvec each column of other
+    #        result = hstack( [ self * col.reshape(-1,1) for col in asarray(other).T ] )
+    #        if isinstance(other, matrix):
+    #            result = asmatrix(result)
+    #        return result
+
+    #    else:
+    #        raise TypeError, "need a dense or sparse matrix"
+
+
+    #def matvec(self, other):
+    #    """Sparse matrix vector product (self * other)
+
+    #    'other' may be a rank 1 array of length N or a rank 2 array
+    #    or matrix with shape (N,1).
+
+    #    """
+    #    #If the optional 'output' parameter is defined, it will
+    #    #be used to store the result.  Otherwise, a new vector
+    #    #will be allocated.
+
+    #    if isdense(other):
+    #        M,N = self.shape
+
+    #        if other.shape != (N,) and other.shape != (N,1):
+    #            raise ValueError, "dimension mismatch"
+
+    #        # csrmux, cscmux
+    #        fn = getattr(sparsetools,self.format + '_matvec')
+
+    #        #output array
+    #        y = zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
+
+    #        #if output is None:
+    #        #    y = empty( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
+    #        #else:
+    #        #    if output.shape != (M,) and output.shape != (M,1):
+    #        #        raise ValueError, "output array has improper dimensions"
+    #        #    if not output.flags.c_contiguous:
+    #        #        raise ValueError, "output array must be contiguous"
+    #        #    if output.dtype != upcast(self.dtype,other.dtype):
+    #        #        raise ValueError, "output array has dtype=%s "\
+    #        #                "dtype=%s is required" % \
+    #        #                (output.dtype,upcast(self.dtype,other.dtype))
+    #        #    y = output
+
+    #        fn(self.shape[0], self.shape[1], \
+    #            self.indptr, self.indices, self.data, numpy.ravel(other), y)
+
+    #        if isinstance(other, matrix):
+    #            y = asmatrix(y)
+
+    #        if other.ndim == 2 and other.shape[1] == 1:
+    #            # If 'other' was an (nx1) column vector, reshape the result
+    #            y = y.reshape(-1,1)
+
+    #        return y
+
+    #    elif isspmatrix(other):
+    #        raise TypeError, "use matmat() for sparse * sparse"
+
+    #    else:
+    #        raise TypeError, "need a dense vector"
 
     def rmatvec(self, other, conjugate=True):
         """Multiplies the vector 'other' by the sparse matrix, returning a
@@ -629,10 +682,7 @@ class _cs_matrix(_data_matrix):
         return coo_matrix((data,(row,col)), self.shape)
 
     def toarray(self):
-        A = self.tocoo(copy=False)
-        M = zeros(self.shape, dtype=self.dtype)
-        M[A.row, A.col] = A.data
-        return M
+        return self.tocoo(copy=False).toarray()
 
     ##############################################################
     # methods that examine or modify the internal data structure #
@@ -679,7 +729,7 @@ class _cs_matrix(_data_matrix):
                     fn( len(self.indptr) - 1, self.indptr, self.indices)
         return self.__has_sorted_indices
 
-    def __set_sorted(self,val):
+    def __set_sorted(self, val):
         self.__has_sorted_indices = bool(val)
 
     has_sorted_indices = property(fget=__get_sorted, fset=__set_sorted)
@@ -704,6 +754,7 @@ class _cs_matrix(_data_matrix):
             fn( len(self.indptr) - 1, self.indptr, self.indices, self.data)
             self.has_sorted_indices = True
 
+    #TODO remove after 0.7
     def ensure_sorted_indices(self, inplace=False):
         """Return a copy of this matrix where the column indices are sorted
         """
@@ -717,16 +768,16 @@ class _cs_matrix(_data_matrix):
             return self.sorted_indices()
 
     def prune(self):
-        """ Remove empty space after all non-zero elements.
+        """Remove empty space after all non-zero elements.
         """
         major_dim = self._swap(self.shape)[0]
 
         if len(self.indptr) != major_dim + 1:
-            raise ValueError, "index pointer has invalid length"
+            raise ValueError('index pointer has invalid length')
         if len(self.indices) < self.nnz:
-            raise ValueError, "indices array has fewer than nnz elements"
+            raise ValueError('indices array has fewer than nnz elements')
         if len(self.data) < self.nnz:
-            raise ValueError, "data array has fewer than nnz elements"
+            raise ValueError('data array has fewer than nnz elements')
 
         self.data    = self.data[:self.nnz]
         self.indices = self.indices[:self.nnz]

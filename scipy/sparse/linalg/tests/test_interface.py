@@ -2,7 +2,7 @@
 """ Test functions for the sparse.linalg.interface module
 """
 
-from scipy.testing import *
+from numpy.testing import *
 
 import numpy
 from numpy import array, matrix, ones, ravel

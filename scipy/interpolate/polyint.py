@@ -7,44 +7,44 @@ __all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator", 
 class KroghInterpolator(object):
     """The interpolating polynomial for a set of points
 
-    Constructs a polynomial that passes through a given set of points,         
+    Constructs a polynomial that passes through a given set of points,
     optionally with specified derivatives at those points.
     Allows evaluation of the polynomial and all its derivatives.
     For reasons of numerical stability, this function does not compute
     the coefficients of the polynomial, although they can be obtained
     by evaluating all the derivatives.
 
-    Be aware that the algorithms implemented here are not necessarily 
-    the most numerically stable known. Moreover, even in a world of 
-    exact computation, unless the x coordinates are chosen very 
-    carefully - Chebyshev zeros (e.g. cos(i*pi/n)) are a good choice - 
-    polynomial interpolation itself is a very ill-conditioned process 
-    due to the Runge phenomenon. In general, even with well-chosen 
+    Be aware that the algorithms implemented here are not necessarily
+    the most numerically stable known. Moreover, even in a world of
+    exact computation, unless the x coordinates are chosen very
+    carefully - Chebyshev zeros (e.g. cos(i*pi/n)) are a good choice -
+    polynomial interpolation itself is a very ill-conditioned process
+    due to the Runge phenomenon. In general, even with well-chosen
     x values, degrees higher than about thirty cause problems with
     numerical instability in this code.
 
-    Based on Krogh 1970, "Efficient Algorithms for Polynomial Interpolation 
+    Based on Krogh 1970, "Efficient Algorithms for Polynomial Interpolation
     and Numerical Differentiation"
     """
     def __init__(self, xi, yi):
         """Construct an interpolator passing through the specified points
 
         The polynomial passes through all the pairs (xi,yi). One may additionally
-        specify a number of derivatives at each point xi; this is done by 
-        repeating the value xi and specifying the derivatives as successive 
-        yi values.  
+        specify a number of derivatives at each point xi; this is done by
+        repeating the value xi and specifying the derivatives as successive
+        yi values.
 
         Parameters
         ----------
         xi : array-like, length N
-            known x-coordinates 
+            known x-coordinates
         yi : array-like, N by R
             known y-coordinates, interpreted as vectors of length R,
             or scalars if R=1
 
         Example
         -------
-        To produce a polynomial that is zero at 0 and 1 and has 
+        To produce a polynomial that is zero at 0 and 1 and has
         derivative 2 at 0, call
 
         >>> KroghInterpolator([0,0,1],[0,2,0])
@@ -86,7 +86,7 @@ class KroghInterpolator(object):
 
     def __call__(self,x):
         """Evaluate the polynomial at the point x
-        
+
         Parameters
         ----------
         x : scalar or array-like of length N
@@ -101,7 +101,7 @@ class KroghInterpolator(object):
         if np.isscalar(x):
             scalar = True
             m = 1
-        else: 
+        else:
             scalar = False
             m = len(x)
         x = np.asarray(x)
@@ -125,11 +125,11 @@ class KroghInterpolator(object):
             else:
                 return p
 
-    def derivatives(self,x,der=None): 
+    def derivatives(self,x,der=None):
         """Evaluate many derivatives of the polynomial at the point x
 
         Produce an array of all derivative values at the point x.
-        
+
         Parameters
         ----------
         x : scalar or array-like of length N
@@ -142,9 +142,9 @@ class KroghInterpolator(object):
         Returns
         -------
         d : array
-            If the interpolator's values are R-dimensional then the 
-            returned array will be der by N by R. If x is a scalar, 
-            the middle dimension will be dropped; if R is 1 then the 
+            If the interpolator's values are R-dimensional then the
+            returned array will be der by N by R. If x is a scalar,
+            the middle dimension will be dropped; if R is 1 then the
             last dimension will be dropped.
 
         Example
@@ -159,7 +159,7 @@ class KroghInterpolator(object):
         if np.isscalar(x):
             scalar = True
             m = 1
-        else: 
+        else:
             scalar = False
             m = len(x)
         x = np.asarray(x)
@@ -201,7 +201,7 @@ class KroghInterpolator(object):
                 return cn[:der,0]
             else:
                 return cn[:der]
-    def derivative(self,x,der): 
+    def derivative(self,x,der):
         """Evaluate one derivative of the polynomial at the point x
 
         Parameters
@@ -209,19 +209,19 @@ class KroghInterpolator(object):
         x : scalar or array-like of length N
             Point or points at which to evaluate the derivatives
         der : None or integer
-            Which derivative to extract. This number includes the 
+            Which derivative to extract. This number includes the
             function value as 0th derivative.
         Returns
         -------
         d : array
-            If the interpolator's values are R-dimensional then the 
-            returned array will be N by R. If x is a scalar, 
-            the middle dimension will be dropped; if R is 1 then the 
+            If the interpolator's values are R-dimensional then the
+            returned array will be N by R. If x is a scalar,
+            the middle dimension will be dropped; if R is 1 then the
             last dimension will be dropped.
 
         Notes
         -----
-        This is computed by evaluating all derivatives up to the desired 
+        This is computed by evaluating all derivatives up to the desired
         one (using self.derivatives()) and then discarding the rest.
         """
         return self.derivatives(x,der=der+1)[der]
@@ -229,34 +229,34 @@ class KroghInterpolator(object):
 def krogh_interpolate(xi,yi,x,der=0):
     """Convenience function for polynomial interpolation.
 
-    Constructs a polynomial that passes through a given set of points,         
+    Constructs a polynomial that passes through a given set of points,
     optionally with specified derivatives at those points.
     Evaluates the polynomial or some of its derivatives.
     For reasons of numerical stability, this function does not compute
     the coefficients of the polynomial, although they can be obtained
     by evaluating all the derivatives.
 
-    Be aware that the algorithms implemented here are not necessarily 
-    the most numerically stable known. Moreover, even in a world of 
-    exact computation, unless the x coordinates are chosen very 
-    carefully - Chebyshev zeros (e.g. cos(i*pi/n)) are a good choice - 
-    polynomial interpolation itself is a very ill-conditioned process 
-    due to the Runge phenomenon. In general, even with well-chosen 
+    Be aware that the algorithms implemented here are not necessarily
+    the most numerically stable known. Moreover, even in a world of
+    exact computation, unless the x coordinates are chosen very
+    carefully - Chebyshev zeros (e.g. cos(i*pi/n)) are a good choice -
+    polynomial interpolation itself is a very ill-conditioned process
+    due to the Runge phenomenon. In general, even with well-chosen
     x values, degrees higher than about thirty cause problems with
     numerical instability in this code.
 
-    Based on Krogh 1970, "Efficient Algorithms for Polynomial Interpolation 
+    Based on Krogh 1970, "Efficient Algorithms for Polynomial Interpolation
     and Numerical Differentiation"
 
     The polynomial passes through all the pairs (xi,yi). One may additionally
-    specify a number of derivatives at each point xi; this is done by 
-    repeating the value xi and specifying the derivatives as successive 
-    yi values.  
+    specify a number of derivatives at each point xi; this is done by
+    repeating the value xi and specifying the derivatives as successive
+    yi values.
 
     Parameters
     ----------
     xi : array-like, length N
-        known x-coordinates 
+        known x-coordinates
     yi : array-like, N by R
         known y-coordinates, interpreted as vectors of length R,
         or scalars if R=1
@@ -265,19 +265,19 @@ def krogh_interpolate(xi,yi,x,der=0):
     der : integer or list
         How many derivatives to extract; None for all potentially
         nonzero derivatives (that is a number equal to the number
-        of points), or a list of derivatives to extract. This number 
+        of points), or a list of derivatives to extract. This number
         includes the function value as 0th derivative.
     Returns
     -------
     d : array
-        If the interpolator's values are R-dimensional then the 
-        returned array will be the number of derivatives by N by R. 
-        If x is a scalar, the middle dimension will be dropped; if 
-        the yi are scalars then the last dimension will be dropped. 
+        If the interpolator's values are R-dimensional then the
+        returned array will be the number of derivatives by N by R.
+        If x is a scalar, the middle dimension will be dropped; if
+        the yi are scalars then the last dimension will be dropped.
 
     Notes
     -----
-    Construction of the interpolating polynomial is a relatively expensive 
+    Construction of the interpolating polynomial is a relatively expensive
     process. If you want to evaluate it repeatedly consider using the class
     KroghInterpolator (which is what this function uses).
     """
@@ -295,7 +295,7 @@ def krogh_interpolate(xi,yi,x,der=0):
 def approximate_taylor_polynomial(f,x,degree,scale,order=None):
     """Estimate the Taylor polynomial of f at x by polynomial fitting
 
-    A polynomial 
+    A polynomial
     Parameters
     ----------
     f : callable
@@ -310,24 +310,24 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
         Function values spread over a range this wide are used to fit the
         polynomial. Must be chosen carefully.
     order : integer or None
-        The order of the polynomial to be used in the fitting; f will be     
+        The order of the polynomial to be used in the fitting; f will be
         evaluated order+1 times. If None, use degree.
 
     Returns
     -------
     p : poly1d
-        the Taylor polynomial (translated to the origin, so that 
+        the Taylor polynomial (translated to the origin, so that
         for example p(0)=f(x)).
 
     Notes
     -----
-    The appropriate choice of "scale" is a tradeoff - too large and the 
-    function differs from its Taylor polynomial too much to get a good 
+    The appropriate choice of "scale" is a tradeoff - too large and the
+    function differs from its Taylor polynomial too much to get a good
     answer, too small and roundoff errors overwhelm the higher-order terms.
-    The algorithm used becomes numerically unstable around order 30 even 
+    The algorithm used becomes numerically unstable around order 30 even
     under ideal circumstances.
 
-    Choosing order somewhat larger than degree may improve the higher-order 
+    Choosing order somewhat larger than degree may improve the higher-order
     terms.
     """
     if order is None:
@@ -351,17 +351,17 @@ class BarycentricInterpolator(object):
     """The interpolating polynomial for a set of points
 
     Constructs a polynomial that passes through a given set of points.
-    Allows evaluation of the polynomial, efficient changing of the y 
-    values to be interpolated, and updating by adding more x values.  
-    For reasons of numerical stability, this function does not compute 
+    Allows evaluation of the polynomial, efficient changing of the y
+    values to be interpolated, and updating by adding more x values.
+    For reasons of numerical stability, this function does not compute
     the coefficients of the polynomial.
 
     This class uses a "barycentric interpolation" method that treats
     the problem as a special case of rational function interpolation.
-    This algorithm is quite stable, numerically, but even in a world of 
-    exact computation, unless the x coordinates are chosen very 
-    carefully - Chebyshev zeros (e.g. cos(i*pi/n)) are a good choice - 
-    polynomial interpolation itself is a very ill-conditioned process 
+    This algorithm is quite stable, numerically, but even in a world of
+    exact computation, unless the x coordinates are chosen very
+    carefully - Chebyshev zeros (e.g. cos(i*pi/n)) are a good choice -
+    polynomial interpolation itself is a very ill-conditioned process
     due to the Runge phenomenon.
 
     Based on Berrut and Trefethen 2004, "Barycentric Lagrange Interpolation".
@@ -379,7 +379,7 @@ class BarycentricInterpolator(object):
             The x coordinates of the points the polynomial should pass through
         yi : array-like N by R or None
             The y coordinates of the points the polynomial should pass through;
-            if R>1 the polynomial is vector-valued. If None the y values 
+            if R>1 the polynomial is vector-valued. If None the y values
             will be supplied later.
         """
         self.n = len(xi)
@@ -393,19 +393,19 @@ class BarycentricInterpolator(object):
             self.wi[:j]*=(self.xi[j]-self.xi[:j])
             self.wi[j] = np.multiply.reduce(self.xi[:j]-self.xi[j])
         self.wi**=-1
-            
+
     def set_yi(self, yi):
         """Update the y values to be interpolated
 
-        The barycentric interpolation algorithm requires the calculation 
-        of weights, but these depend only on the xi. The yi can be changed 
+        The barycentric interpolation algorithm requires the calculation
+        of weights, but these depend only on the xi. The yi can be changed
         at any time.
 
         Parameters
         ----------
         yi : array-like N by R
             The y coordinates of the points the polynomial should pass through;
-            if R>1 the polynomial is vector-valued. If None the y values 
+            if R>1 the polynomial is vector-valued. If None the y values
             will be supplied later.
         """
         if yi is None:
@@ -425,12 +425,12 @@ class BarycentricInterpolator(object):
             raise ValueError("yi dimensions do not match xi dimensions")
         self.yi = yi
         self.r = r
-        
+
 
     def add_xi(self, xi, yi=None):
         """Add more x values to the set to be interpolated
 
-        The barycentric interpolation algorithm allows easy updating by 
+        The barycentric interpolation algorithm allows easy updating by
         adding more points for the polynomial to pass through.
 
         Parameters
@@ -439,8 +439,8 @@ class BarycentricInterpolator(object):
             The x coordinates of the points the polynomial should pass through
         yi : array-like N1 by R or None
             The y coordinates of the points the polynomial should pass through;
-            if R>1 the polynomial is vector-valued. If None the y values 
-            will be supplied later. The yi should be specified if and only if 
+            if R>1 the polynomial is vector-valued. If None the y values
+            will be supplied later. The yi should be specified if and only if
             the interpolator has y values specified.
         """
         if yi is not None:
@@ -489,8 +489,8 @@ class BarycentricInterpolator(object):
 
         Notes
         -----
-        Currently the code computes an outer product between x and the 
-        weights, that is, it constructs an intermediate array of size 
+        Currently the code computes an outer product between x and the
+        weights, that is, it constructs an intermediate array of size
         N by M, where N is the degree of the polynomial.
         """
         scalar = np.isscalar(x)
@@ -516,15 +516,15 @@ def barycentric_interpolate(xi, yi, x):
     """Convenience function for polynomial interpolation
 
     Constructs a polynomial that passes through a given set of points,
-    then evaluates the polynomial. For reasons of numerical stability, 
+    then evaluates the polynomial. For reasons of numerical stability,
     this function does not compute the coefficients of the polynomial.
 
     This function uses a "barycentric interpolation" method that treats
     the problem as a special case of rational function interpolation.
-    This algorithm is quite stable, numerically, but even in a world of 
-    exact computation, unless the x coordinates are chosen very 
-    carefully - Chebyshev zeros (e.g. cos(i*pi/n)) are a good choice - 
-    polynomial interpolation itself is a very ill-conditioned process 
+    This algorithm is quite stable, numerically, but even in a world of
+    exact computation, unless the x coordinates are chosen very
+    carefully - Chebyshev zeros (e.g. cos(i*pi/n)) are a good choice -
+    polynomial interpolation itself is a very ill-conditioned process
     due to the Runge phenomenon.
 
     Based on Berrut and Trefethen 2004, "Barycentric Lagrange Interpolation".
@@ -547,9 +547,9 @@ def barycentric_interpolate(xi, yi, x):
     Notes
     -----
 
-    Construction of the interpolation weights is a relatively slow process. 
-    If you want to call this many times with the same xi (but possibly 
-    varying yi or x) you should use the class BarycentricInterpolator. 
+    Construction of the interpolation weights is a relatively slow process.
+    If you want to call this many times with the same xi (but possibly
+    varying yi or x) you should use the class BarycentricInterpolator.
     This is what this function uses internally.
     """
     return BarycentricInterpolator(xi, yi)(x)
@@ -558,10 +558,10 @@ def barycentric_interpolate(xi, yi, x):
 class PiecewisePolynomial(object):
     """Piecewise polynomial curve specified by points and derivatives
 
-    This class represents a curve that is a piecewise polynomial. It 
-    passes through a list of points and has specified derivatives at 
-    each point. The degree of the polynomial may very from segment to 
-    segment, as may the number of derivatives available. The degree 
+    This class represents a curve that is a piecewise polynomial. It
+    passes through a list of points and has specified derivatives at
+    each point. The degree of the polynomial may very from segment to
+    segment, as may the number of derivatives available. The degree
     should not exceed about thirty.
 
     Appending points to the end of the curve is efficient.
@@ -585,12 +585,12 @@ class PiecewisePolynomial(object):
 
         Notes
         -----
-        If orders is None, or orders[i] is None, then the degree of the 
+        If orders is None, or orders[i] is None, then the degree of the
         polynomial segment is exactly the degree required to match all i
-        available derivatives at both endpoints. If orders[i] is not None, 
-        then some derivatives will be ignored. The code will try to use an     
-        equal number of derivatives from each end; if the total number of 
-        derivatives needed is odd, it will prefer the rightmost endpoint. If 
+        available derivatives at both endpoints. If orders[i] is not None,
+        then some derivatives will be ignored. The code will try to use an
+        equal number of derivatives from each end; if the total number of
+        derivatives needed is odd, it will prefer the rightmost endpoint. If
         not enough derivatives are available, an exception is raised.
         """
         yi0 = np.asarray(yi[0])
@@ -606,7 +606,7 @@ class PiecewisePolynomial(object):
         self.xi = [xi[0]]
         self.yi = [yi0]
         self.n = 1
-        
+
         self.direction = direction
         self.orders = []
         self.polynomials = []
@@ -614,12 +614,12 @@ class PiecewisePolynomial(object):
 
     def _make_polynomial(self,x1,y1,x2,y2,order,direction):
         """Construct the interpolating polynomial object
-        
+
         Deduces the number of derivatives to match at each end
         from order and the number of derivatives available. If
-        possible it uses the same number of derivatives from 
+        possible it uses the same number of derivatives from
         each end; if the number is odd it tries to take the
-        extra one from y2. In any case if not enough derivatives 
+        extra one from y2. In any case if not enough derivatives
         are available at one end or another it draws enough to
         make up the total from the other end.
         """
@@ -647,14 +647,14 @@ class PiecewisePolynomial(object):
 
     def append(self, xi, yi, order=None):
         """Append a single point with derivatives to the PiecewisePolynomial
-        
+
         Parameters
         ----------
         xi : float
         yi : array-like
             yi is the list of derivatives known at xi
         order : integer or None
-            a polynomial order, or instructions to use the highest 
+            a polynomial order, or instructions to use the highest
             possible order
         """
 
@@ -668,7 +668,7 @@ class PiecewisePolynomial(object):
 
         if self.direction is None:
             self.direction = np.sign(xi-self.xi[-1])
-        elif (xi-self.xi[-1])*self.direction < 0: 
+        elif (xi-self.xi[-1])*self.direction < 0:
             raise ValueError("x coordinates must be in the %d direction: %s" % (self.direction, self.xi))
 
         self.xi.append(xi)
@@ -719,7 +719,7 @@ class PiecewisePolynomial(object):
         Parameters
         ----------
         x : scalar or array-like of length N
-        
+
         Returns
         -------
         y : scalar or array-like of length R or length N or N by R
@@ -748,31 +748,31 @@ class PiecewisePolynomial(object):
         x : scalar or array-like of length N
         der : integer
             which single derivative to extract
-        
+
         Returns
         -------
         y : scalar or array-like of length R or length N or N by R
 
         Notes
         -----
-        This currently computes (using self.derivatives()) all derivatives 
-        of the curve segment containing each x but returns only one. 
+        This currently computes (using self.derivatives()) all derivatives
+        of the curve segment containing each x but returns only one.
         """
         return self.derivatives(x,der=der+1)[der]
 
     def derivatives(self, x, der):
-        """Evaluate a derivative of the piecewise polynomial 
+        """Evaluate a derivative of the piecewise polynomial
         Parameters
         ----------
         x : scalar or array-like of length N
         der : integer
-            how many derivatives (including the function value as 
+            how many derivatives (including the function value as
             0th derivative) to extract
-        
+
         Returns
         -------
         y : array-like of shape der by R or der by N or der by N by R
-        
+
         """
         if np.isscalar(x):
             pos = np.clip(np.searchsorted(self.xi, x) - 1, 0, self.n-2)
@@ -805,19 +805,19 @@ def piecewise_polynomial_interpolate(xi,yi,x,orders=None,der=0):
         a list of polynomial orders, or a single universal order
     der : integer
         which single derivative to extract
-    
+
     Returns
     -------
     y : scalar or array-like of length R or length M or M by R
 
     Notes
     -----
-    If orders is None, or orders[i] is None, then the degree of the 
+    If orders is None, or orders[i] is None, then the degree of the
     polynomial segment is exactly the degree required to match all i
-    available derivatives at both endpoints. If orders[i] is not None, 
-    then some derivatives will be ignored. The code will try to use an     
-    equal number of derivatives from each end; if the total number of 
-    derivatives needed is odd, it will prefer the rightmost endpoint. If 
+    available derivatives at both endpoints. If orders[i] is not None,
+    then some derivatives will be ignored. The code will try to use an
+    equal number of derivatives from each end; if the total number of
+    derivatives needed is odd, it will prefer the rightmost endpoint. If
     not enough derivatives are available, an exception is raised.
 
     Construction of these piecewise polynomials can be an expensive process;

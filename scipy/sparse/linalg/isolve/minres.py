@@ -281,7 +281,6 @@ if __name__ == '__main__':
     from scipy.linalg import norm
     from scipy.sparse import spdiags
     from scipy.sparse.linalg import cg
-    #from scipy.sandbox.multigrid import *
 
     n = 10
 

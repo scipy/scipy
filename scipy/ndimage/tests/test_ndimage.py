@@ -31,7 +31,7 @@
 import math
 import numpy
 from numpy import fft
-from scipy.testing import *
+from numpy.testing import *
 import scipy.ndimage as ndimage
 
 eps = 1e-12
@@ -5513,4 +5513,4 @@ class TestNdimage(TestCase):
 #    return len(result.failures), result.testsRun
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

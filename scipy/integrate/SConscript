@@ -3,47 +3,56 @@
 from os.path import join as pjoin
 import warnings
 
-from numpy.distutils.misc_util import get_numpy_include_dirs
 from numscons import GetNumpyEnvironment, CheckF77Clib, CheckF77BLAS
 
 env = GetNumpyEnvironment(ARGUMENTS)
 env.Tool('f2py')
 
 # Configuration
-config = env.NumpyConfigure(custom_tests = {'CheckF77Clib' : CheckF77Clib,
-                                            'CheckF77BLAS' : CheckF77BLAS})
+config = env.NumpyConfigure(custom_tests = {'CheckF77BLAS' : CheckF77BLAS})
 
-if not config.CheckF77Clib():
-    raise Exception("Could not check F77 runtime, needed for interpolate")
 if not config.CheckF77BLAS():
     raise Exception("Could not find F77 BLAS, needed for integrate package")
 
 config.Finish()
 
-env.AppendUnique(CPPPATH = get_numpy_include_dirs())
-env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
-
 # XXX: lapack integration
 
 # Build linpack_lite
-src = [str(s) for s in env.Glob(pjoin('linpack_lite', '*.f'))]
+src = [pjoin("linpack_lite", s) for s in [ "dgbfa.f", "dgbsl.f", "dgefa.f",
+"dgesl.f", "dgtsl.f", "zgbfa.f", "zgbsl.f", "zgefa.f", "zgesl.f"]]
 linpack_lite = env.DistutilsStaticExtLibrary('linpack_lite', source = src)
 
 # Build mach
 # XXX: do not use optimization flags for mach
-src = [str(s) for s in env.Glob(pjoin('mach', '*.f'))]
+src = [pjoin("mach", s) for s in ["d1mach.f", "i1mach.f", "r1mach.f",
+"xerror.f"]]
 mach = env.DistutilsStaticExtLibrary('mach', source = src)
 
 # Build quadpack
-src = [str(s) for s in env.Glob(pjoin('quadpack', '*.f'))]
+src = [pjoin("quadpack", s) for s in ["dqag.f", "dqage.f", "dqagi.f",
+"dqagie.f", "dqagp.f", "dqagpe.f", "dqags.f", "dqagse.f", "dqawc.f",
+"dqawce.f", "dqawf.f", "dqawfe.f", "dqawo.f", "dqawoe.f", "dqaws.f",
+"dqawse.f", "dqc25c.f", "dqc25f.f", "dqc25s.f", "dqcheb.f", "dqelg.f",
+"dqk15.f", "dqk15i.f", "dqk15w.f", "dqk21.f", "dqk31.f", "dqk41.f", "dqk51.f",
+"dqk61.f", "dqmomo.f", "dqng.f", "dqpsrt.f", "dqwgtc.f", "dqwgtf.f",
+"dqwgts.f"]]
 quadpack = env.DistutilsStaticExtLibrary('quadpack', source = src)
 
 # Build odepack
-src = [str(s) for s in env.Glob(pjoin('odepack', '*.f'))]
+src = [pjoin("odepack", s) for s in [ "adjlr.f", "aigbt.f", "ainvg.f",
+"blkdta000.f", "bnorm.f", "cdrv.f", "cfode.f", "cntnzu.f", "ddasrt.f",
+"ddassl.f", "decbt.f", "ewset.f", "fnorm.f", "intdy.f", "iprep.f", "jgroup.f",
+"lsoda.f", "lsodar.f", "lsode.f", "lsodes.f", "lsodi.f", "lsoibt.f", "md.f",
+"mdi.f", "mdm.f", "mdp.f", "mdu.f", "nnfc.f", "nnsc.f", "nntc.f", "nroc.f",
+"nsfc.f", "odrv.f", "pjibt.f", "prep.f", "prepj.f", "prepji.f", "prja.f",
+"prjs.f", "rchek.f", "roots.f", "slsbt.f", "slss.f", "solbt.f",
+"solsy.f", "srcar.f", "srcma.f", "srcms.f", "srcom.f", "sro.f", "stoda.f",
+"stode.f", "stodi.f", "vmnorm.f", "vnorm.f", "vode.f", "xerrwv.f", "xsetf.f",
+"xsetun.f", "zvode.f"]]
 odepack = env.DistutilsStaticExtLibrary('odepack', source = src)
 
 env.AppendUnique(LIBPATH = '.')
-env.AppendUnique(LINKFLAGSEND = env['F77_LDFLAGS'])
 
 quadenv = env.Clone()
 quadenv.Prepend(LIBS = ['quadpack', 'linpack_lite', 'mach'])
@@ -52,10 +61,10 @@ odenv = env.Clone()
 odenv.Prepend(LIBS = ['odepack', 'linpack_lite', 'mach'])
 
 # Build _quadpack
-quadenv.DistutilsPythonExtension('_quadpack', source = '_quadpackmodule.c')
+quadenv.NumpyPythonExtension('_quadpack', source = '_quadpackmodule.c')
 
 # Build _odepack
-odenv.DistutilsPythonExtension('_odepack', source = '_odepackmodule.c')
+odenv.NumpyPythonExtension('_odepack', source = '_odepackmodule.c')
 
 # Build vode
-odenv.DistutilsPythonExtension('vode', source = 'vode.pyf')
+odenv.NumpyPythonExtension('vode', source = 'vode.pyf')

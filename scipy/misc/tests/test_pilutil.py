@@ -1,8 +1,8 @@
 import os.path
 import glob
-import numpy as N
+import numpy as np
 
-from scipy.testing import *
+from numpy.testing import *
 
 try:
     import PIL.Image
@@ -19,14 +19,14 @@ datapath = os.path.dirname(__file__)
 
 class TestPILUtil(TestCase):
     def test_imresize(self):
-        im = N.random.random((10,20))
-        for T in N.sctypes['float'] + [float]:
+        im = np.random.random((10,20))
+        for T in np.sctypes['float'] + [float]:
             im1 = pilutil.imresize(im,T(1.1))
             assert_equal(im1.shape,(11,22))
 
     def test_bytescale(self):
-        x = N.array([0,1,2],N.uint8)
-        y = N.array([0,1,2])
+        x = np.array([0,1,2],np.uint8)
+        y = np.array([0,1,2])
         assert_equal(pilutil.bytescale(x),x)
         assert_equal(pilutil.bytescale(y),[0,127,255])
 
@@ -48,4 +48,4 @@ def test_fromimage():
 decorate_methods(TestPILUtil, _pilskip)
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

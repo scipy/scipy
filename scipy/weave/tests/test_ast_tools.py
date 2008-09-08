@@ -1,10 +1,7 @@
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.weave import ast_tools
-
-set_local_path()
 from weave_test_utils import *
-restore_path()
 
 class TestHarvestVariables(TestCase):
     """ Not much testing going on here, but

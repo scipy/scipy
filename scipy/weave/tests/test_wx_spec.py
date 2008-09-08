@@ -8,7 +8,7 @@ check_return -- test whether a variable is passed in, modified, and
                 then returned as a function return value correctly
 """
 
-from scipy.testing import *
+from numpy.testing import *
 
 e = None
 DONOTRUN = False

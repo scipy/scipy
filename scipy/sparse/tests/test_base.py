@@ -20,7 +20,7 @@ from numpy import arange, zeros, array, dot, ones, matrix, asmatrix, \
         asarray, vstack, ndarray, transpose, diag
 
 import random
-from scipy.testing import *
+from numpy.testing import *
 
 import scipy.sparse as sparse
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
@@ -105,9 +105,19 @@ class _TestCommon:
             assert_equal(self.spmatrix(m).diagonal(),diag(m))
 
 
+    def test_nonzero(self):
+        A   = array([[1, 0, 1],[0, 1, 1],[ 0, 0, 1]])
+        Asp = self.spmatrix(A)
+
+        A_nz   = set( [tuple(ij) for ij in transpose(A.nonzero())] )
+        Asp_nz = set( [tuple(ij) for ij in transpose(Asp.nonzero())] )
+
+        assert_equal(A_nz, Asp_nz)
+
+
     def test_getrow(self):
         assert_array_equal(self.datsp.getrow(1).todense(), self.dat[1,:])
-    
+
     def test_getcol(self):
         assert_array_equal(self.datsp.getcol(1).todense(), self.dat[:,1])
 
@@ -127,15 +137,21 @@ class _TestCommon:
         assert_array_equal(self.dat.mean(axis=0), self.datsp.mean(axis=0))
         assert_array_equal(self.dat.mean(axis=1), self.datsp.mean(axis=1))
 
-    def test_fromdense(self):
-        A = matrix([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
-        assert_array_equal(self.spmatrix(A).todense(),A)
-        assert_array_equal(self.spmatrix(A.A).todense(),A)
-        assert_array_equal(self.spmatrix(A.tolist()).todense(),A)
+    def test_from_array(self):
+        A = array([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
+        assert_array_equal(self.spmatrix(A).todense(), A)
 
-    def test_fromlist(self):
+    def test_from_matrix(self):
         A = matrix([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
-        assert_array_equal(self.spmatrix(A.tolist()).todense(),A)
+        assert_array_equal(self.spmatrix(A).todense(), A)
+
+    def test_from_list(self):
+        A = [[1,0,0],[2,3,4],[0,5,0],[0,0,0]]
+        assert_array_equal(self.spmatrix(A).todense(), A)
+
+    #def test_array(self):
+    #    """test array(A) where A is in sparse format"""
+    #    assert_equal( array(self.datsp), self.dat )
 
     def test_todense(self):
         chk = self.datsp.todense()
@@ -214,7 +230,7 @@ class _TestCommon:
         assert_array_equal(A.todense() - self.datsp,A.todense() - self.dat)
         assert_array_equal(self.datsp - A.todense(),self.dat - A.todense())
 
-    def test_elmul(self):
+    def test_elementwise_multiply(self):
         # real/real
         A = array([[4,0,9],[2,-3,5]])
         B = array([[0,7,0],[0,-4,0]])
@@ -234,9 +250,9 @@ class _TestCommon:
         # real/complex
         assert_almost_equal( Asp.multiply(Dsp).todense(), A*D) #sparse/sparse
         assert_almost_equal( Asp.multiply(D),             A*D) #sparse/dense
-        
 
-    def test_eldiv(self):
+
+    def test_elementwise_divide(self):
         expected = [[1,0,0,1],[1,0,1,0],[0,1,0,0]]
         assert_array_equal((self.datsp / self.datsp).todense(),expected)
 
@@ -383,8 +399,8 @@ class _TestCommon:
             assert_equal( result.shape, (4,2) )
             assert_equal( result, dot(a,b) )
 
-    def test_formatconversions(self):
-        A = sparse.kron([[1,0,1],[0,1,1],[1,0,0]], [[1,1],[0,1]] )
+    def test_sparse_format_conversions(self):
+        A = sparse.kron( [[1,0,2],[0,3,4],[5,0,0]], [[1,2],[0,3]] )
         D = A.todense()
         A = self.spmatrix(A)
 
@@ -402,12 +418,7 @@ class _TestCommon:
             assert_array_equal(c.todense(), D)
 
 
-
-    def test_todia(self):
-        #TODO, add and test .todia(maxdiags)
-        pass
-
-    def test_tocompressedblock(self):
+    def test_tobsr(self):
         x = array([[1,0,2,0],[0,0,0,0],[0,0,4,5]])
         y = array([[0,1,2],[3,0,5]])
         A = numpy.kron(x,y)
@@ -430,7 +441,7 @@ class _TestCommon:
 
 
     def test_add_dense(self):
-        """ Check whether adding a dense matrix to a sparse matrix works
+        """ adding a dense matrix to a sparse matrix
         """
         sum1 = self.dat + self.datsp
         assert_array_equal(sum1, 2*self.dat)
@@ -438,7 +449,7 @@ class _TestCommon:
         assert_array_equal(sum2, 2*self.dat)
 
     def test_sub_dense(self):
-        """ Check whether adding a dense matrix to a sparse matrix works
+        """ subtracting a dense matrix to/from a sparse matrix
         """
         sum1 = 3*self.dat - self.datsp
         assert_array_equal(sum1, 2*self.dat)
@@ -685,61 +696,61 @@ class _TestFancyIndexing:
         A = self.spmatrix( B )
 
         # [i,j]
-        assert_equal(A[2,3],B[2,3])
-        assert_equal(A[-1,8],B[-1,8])
+        assert_equal(A[2,3],  B[2,3])
+        assert_equal(A[-1,8], B[-1,8])
         assert_equal(A[-1,-2],B[-1,-2])
 
         # [i,1:2]
-        assert_equal(A[2,:].todense(),B[2,:])
+        assert_equal(A[2,:].todense(),   B[2,:])
         assert_equal(A[2,5:-2].todense(),B[2,5:-2])
 
         # [i,[1,2]]
-        assert_equal(A[3,[1,3]].todense(),B[3,[1,3]])
+        assert_equal(A[3,[1,3]].todense(),  B[3,[1,3]])
         assert_equal(A[-1,[2,-5]].todense(),B[-1,[2,-5]])
 
         # [1:2,j]
-        assert_equal(A[:,2].todense(),B[:,2])
-        assert_equal(A[3:4,9].todense(),B[3:4,9])
+        assert_equal(A[:,2].todense(),   B[:,2])
+        assert_equal(A[3:4,9].todense(), B[3:4,9])
         assert_equal(A[1:4,-5].todense(),B[1:4,-5])
         assert_equal(A[2:-1,3].todense(),B[2:-1,3])
-        
+
         # [1:2,1:2]
         assert_equal(A[1:2,1:2].todense(),B[1:2,1:2])
-        assert_equal(A[4:,3:].todense(),B[4:,3:])
-        assert_equal(A[:4,:5].todense(),B[:4,:5])
+        assert_equal(A[4:,3:].todense(),  B[4:,3:])
+        assert_equal(A[:4,:5].todense(),  B[:4,:5])
         assert_equal(A[2:-1,:5].todense(),B[2:-1,:5])
 
         # [1:2,[1,2]]
         assert_equal(A[:,[2,8,3,-1]].todense(),B[:,[2,8,3,-1]])
-        assert_equal(A[3:4,[9]].todense(),B[3:4,[9]])
-        assert_equal(A[1:4,[-1,-5]].todense(),B[1:4,[-1,-5]])
+        assert_equal(A[3:4,[9]].todense(),     B[3:4,[9]])
+        assert_equal(A[1:4,[-1,-5]].todense(), B[1:4,[-1,-5]])
 
         # [[1,2],j]
-        assert_equal(A[[1,3],3].todense(),B[[1,3],3])
-        assert_equal(A[[2,-5],-4].todense(),B[[2,-5],-4])
+        assert_equal(A[[1,3],3].todense(),   B[[1,3],3])
+        assert_equal(A[[2,-5],-4].todense(), B[[2,-5],-4])
 
         # [[1,2],1:2]
-        assert_equal(A[[1,3],:].todense(),B[[1,3],:])
+        assert_equal(A[[1,3],:].todense(),    B[[1,3],:])
         assert_equal(A[[2,-5],8:-1].todense(),B[[2,-5],8:-1])
 
         # [[1,2],[1,2]]
-        assert_equal(A[[1,3],[2,4]],B[[1,3],[2,4]])
+        assert_equal(A[[1,3],[2,4]],   B[[1,3],[2,4]])
         assert_equal(A[[-1,-3],[2,-4]],B[[-1,-3],[2,-4]])
 
         # [[[1],[2]],[1,2]]
-        assert_equal(A[[[1],[3]],[2,4]].todense(),B[[[1],[3]],[2,4]])
+        assert_equal(A[[[1],[3]],[2,4]].todense(),        B[[[1],[3]],[2,4]])
         assert_equal(A[[[-1],[-3],[-2]],[2,-4]].todense(),B[[[-1],[-3],[-2]],[2,-4]])
 
         # [i]
-        assert_equal(A[1,:].todense(),B[1,:])
+        assert_equal(A[1,:].todense(), B[1,:])
         assert_equal(A[-2,:].todense(),B[-2,:])
 
         # [1:2]
-        assert_equal(A[1:4].todense(),B[1:4])
+        assert_equal(A[1:4].todense(), B[1:4])
         assert_equal(A[1:-2].todense(),B[1:-2])
 
         # [[1,2]]
-        assert_equal(A[[1,3]].todense(),B[[1,3]])
+        assert_equal(A[[1,3]].todense(),  B[[1,3]])
         assert_equal(A[[-1,-3]].todense(),B[[-1,-3]])
 
         # [[1,2],:][:,[1,2]]
@@ -752,11 +763,11 @@ class _TestFancyIndexing:
 
 
         # Check bug reported by Robert Cimrman:
-        # http://thread.gmane.org/gmane.comp.python.scientific.devel/7986 
+        # http://thread.gmane.org/gmane.comp.python.scientific.devel/7986
         s = slice(numpy.int8(2),numpy.int8(4),None)
         assert_equal(A[s,:].todense(), B[2:4,:])
         assert_equal(A[:,s].todense(), B[:,2:4])
-        
+
 class _TestArithmetic:
     """
     Test real/complex arithmetic
@@ -1182,24 +1193,21 @@ class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
         B[0,:] = A[0,:]
         assert_array_equal(A[0,:].A, B[0,:].A)
 
-    def tst_inplace_op(self,op,arr,other,result):
-        cpy = arr
-        getattr(arr,"__i%s__" % op)(other)
 
-        assert_array_equal(cpy.todense(),arr.todense())
-        assert_array_equal(arr.todense(),result)
+    def test_inplace_ops(self):
+        A = lil_matrix([[0,2,3],[4,0,6]])
+        B = lil_matrix([[0,1,0],[0,2,3]])
 
-    def testip_inplace_ops(self):
-        B = self.B[:3,:3].copy()
-        B[:,:] = B-B
-        C = B.todense()
+        data = {'add': (B,A + B),
+                'sub': (B,A - B),
+                'mul': (3,A * 3)}
 
-        data = {'add':(B,C+C),
-                'sub':(B,zeros(B.shape)),
-                'mul':(3,C*3)}
+        for op,(other,expected) in data.iteritems():
+            result = A.copy()
+            getattr(result, '__i%s__' % op)(other)
 
-        return [(self.tst_inplace_op,op,B,other,result)
-                for op,(other,result) in data.iteritems()]
+            assert_array_equal(result.todense(), expected.todense())
+
 
     def test_lil_slice_assignment(self):
         B = lil_matrix((4,3))
@@ -1251,6 +1259,12 @@ class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
         C = B.tocsr()
         D = lil_matrix(C)
         assert_array_equal(C.A, D.A)
+
+    def test_fancy_indexing(self):
+        M = arange(25).reshape(5,5) 
+        A = lil_matrix( M )
+
+        assert_equal(A[array([1,2,3]),2:3].todense(), M[array([1,2,3]),2:3])   
 
     def test_point_wise_multiply(self):
         l = lil_matrix((4,3))
@@ -1395,6 +1409,16 @@ class TestBSR(_TestCommon, _TestArithmetic, _TestInplaceArithmetic,
         assert_array_equal(asp.nnz, 3*4)
         assert_array_equal(asp.todense(),bsp.todense())
 
+    def test_bsr_matvec(self):
+        A = bsr_matrix( arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5) )
+        x = arange(A.shape[1]).reshape(-1,1)
+        assert_equal(A*x, A.todense()*x)
+
+    def test_bsr_matvecs(self):
+        A = bsr_matrix( arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5) )
+        x = arange(A.shape[1]*6).reshape(-1,6)
+        assert_equal(A*x, A.todense()*x)
+
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

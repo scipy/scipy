@@ -2,7 +2,7 @@
 
 """
 
-from scipy.testing import *
+from numpy.testing import *
 
 
 import numpy
@@ -37,18 +37,18 @@ dists = ['uniform','norm','lognorm','expon','beta',
 
 # check function for test generator
 def check_distribution(dist, args, alpha):
-    D,pval = stats.kstest(dist,'', args=args, N=30)
+    D,pval = stats.kstest(dist,'', args=args, N=1000)
     if (pval < alpha):
-        D,pval = stats.kstest(dist,'',args=args, N=30)
+        D,pval = stats.kstest(dist,'',args=args, N=1000)
         #if (pval < alpha):
-        #    D,pval = stats.kstest(dist,'',args=args, N=30)
+        #    D,pval = stats.kstest(dist,'',args=args, N=1000)
         assert (pval > alpha), "D = " + str(D) + "; pval = " + str(pval) + \
                "; alpha = " + str(alpha) + "\nargs = " + str(args)
 
 # nose test generator
 def test_all_distributions():
     for dist in dists:
-        distfunc = eval('stats.'+dist)
+        distfunc = getattr(stats, dist)
         nargs = distfunc.numargs
         alpha = 0.01
         if dist == 'fatiguelife':
@@ -213,4 +213,4 @@ class TestExpon(TestCase):
         assert_equal(stats.expon.pdf(0),1)
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

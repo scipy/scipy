@@ -10,7 +10,7 @@ import sys
 from numpy import zeros, transpose, newaxis, shape, float32, \
      float64, complex64, complex128, arange, array, common_type, \
      conjugate
-from scipy.testing import *
+from numpy.testing import *
 from scipy.lib.blas import fblas
 
 #decimal accuracy to require between Python and LAPACK/BLAS calculations
@@ -522,4 +522,4 @@ class TestZgerc(BaseGerComplex):
 """
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

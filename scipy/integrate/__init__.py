@@ -12,5 +12,5 @@ from quadpack import *
 from ode import *
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
-from scipy.testing.pkgtester import Tester
+from numpy.testing import Tester
 test = Tester().test

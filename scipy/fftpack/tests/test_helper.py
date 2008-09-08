@@ -12,7 +12,7 @@ Run tests if fftpack is not installed:
 """
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 from scipy.fftpack import fftshift,ifftshift,fftfreq,rfftfreq
 
 from numpy import pi
@@ -58,4 +58,4 @@ class TestRFFTFreq(TestCase):
         assert_array_almost_equal(10*pi*rfftfreq(10,pi),x)
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

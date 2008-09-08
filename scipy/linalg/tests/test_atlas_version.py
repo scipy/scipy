@@ -4,7 +4,7 @@
 #
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 
 import scipy.linalg.atlas_version
 

@@ -1,6 +1,6 @@
 from math import sqrt
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.optimize import zeros as cc
 
@@ -32,4 +32,4 @@ class BenchZeros(TestCase):
             print '\n\n'
 
 if __name__ == '__main__' :
-    nose.run(argv=['', __file__])
+    run_module_suite()

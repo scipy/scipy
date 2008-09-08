@@ -4,7 +4,7 @@ import cPickle
 # Scipy imports.
 import numpy as np
 from numpy import pi
-from scipy.testing import *
+from numpy.testing import *
 from scipy.odr import Data, Model, ODR, RealData, odr_stop
 
 
@@ -311,5 +311,5 @@ class TestODR(TestCase):
 
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()
 #### EOF #######################################################################

@@ -50,7 +50,7 @@ umfpack_libs = umfpack
 :Examples:
 ----------
 
-Assuming this module imported as um (import scipy.linsolve.umfpack as um)
+Assuming this module imported as um (import scipy.sparse.linalg.dsolve.umfpack as um)
 
 Sparse matrix in CSR or CSC format: mtx
 Righthand-side: rhs

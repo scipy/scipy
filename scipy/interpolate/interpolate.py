@@ -328,7 +328,7 @@ class interp1d(object):
             axes = range(nx, ny)
             axes[self.axis:self.axis] = range(nx)
             return y_new.transpose(axes)
-    
+
     def _check_bounds(self, x_new):
         """ Check the inputs for being in the bounds of the interpolated data.
 

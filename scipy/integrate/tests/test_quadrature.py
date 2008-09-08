@@ -1,7 +1,7 @@
 
 import numpy
 from numpy import cos, sin, pi
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.integrate import quadrature, romberg, romb
 
@@ -29,4 +29,4 @@ class TestQuadrature(TestCase):
         assert_equal(romb(numpy.arange(17)),128)
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

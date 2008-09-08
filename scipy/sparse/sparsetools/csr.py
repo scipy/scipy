@@ -299,6 +299,43 @@ def csr_matvec(*args):
     """
   return _csr.csr_matvec(*args)
 
+def csr_matvecs(*args):
+  """
+    csr_matvecs(int n_row, int n_col, int n_vecs, int Ap, int Aj, signed char Ax, 
+        signed char Xx, signed char Yx)
+    csr_matvecs(int n_row, int n_col, int n_vecs, int Ap, int Aj, unsigned char Ax, 
+        unsigned char Xx, unsigned char Yx)
+    csr_matvecs(int n_row, int n_col, int n_vecs, int Ap, int Aj, short Ax, 
+        short Xx, short Yx)
+    csr_matvecs(int n_row, int n_col, int n_vecs, int Ap, int Aj, unsigned short Ax, 
+        unsigned short Xx, unsigned short Yx)
+    csr_matvecs(int n_row, int n_col, int n_vecs, int Ap, int Aj, int Ax, 
+        int Xx, int Yx)
+    csr_matvecs(int n_row, int n_col, int n_vecs, int Ap, int Aj, unsigned int Ax, 
+        unsigned int Xx, unsigned int Yx)
+    csr_matvecs(int n_row, int n_col, int n_vecs, int Ap, int Aj, long long Ax, 
+        long long Xx, long long Yx)
+    csr_matvecs(int n_row, int n_col, int n_vecs, int Ap, int Aj, unsigned long long Ax, 
+        unsigned long long Xx, 
+        unsigned long long Yx)
+    csr_matvecs(int n_row, int n_col, int n_vecs, int Ap, int Aj, float Ax, 
+        float Xx, float Yx)
+    csr_matvecs(int n_row, int n_col, int n_vecs, int Ap, int Aj, double Ax, 
+        double Xx, double Yx)
+    csr_matvecs(int n_row, int n_col, int n_vecs, int Ap, int Aj, long double Ax, 
+        long double Xx, long double Yx)
+    csr_matvecs(int n_row, int n_col, int n_vecs, int Ap, int Aj, npy_cfloat_wrapper Ax, 
+        npy_cfloat_wrapper Xx, 
+        npy_cfloat_wrapper Yx)
+    csr_matvecs(int n_row, int n_col, int n_vecs, int Ap, int Aj, npy_cdouble_wrapper Ax, 
+        npy_cdouble_wrapper Xx, 
+        npy_cdouble_wrapper Yx)
+    csr_matvecs(int n_row, int n_col, int n_vecs, int Ap, int Aj, npy_clongdouble_wrapper Ax, 
+        npy_clongdouble_wrapper Xx, 
+        npy_clongdouble_wrapper Yx)
+    """
+  return _csr.csr_matvecs(*args)
+
 def csr_elmul_csr(*args):
   """
     csr_elmul_csr(int n_row, int n_col, int Ap, int Aj, signed char Ax, 

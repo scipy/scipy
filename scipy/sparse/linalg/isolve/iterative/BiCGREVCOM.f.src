@@ -387,7 +387,8 @@
 *
 *     End of BICGREVCOM
 *
-      END SUBROUTINE <_c>BICGREVCOM
+      END
+*     END SUBROUTINE <_c>BICGREVCOM
 
 
 

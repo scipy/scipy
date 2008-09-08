@@ -2,15 +2,11 @@
 # vim:syntax=python
 from os.path import join as pjoin
 
-from numpy.distutils.misc_util import get_numpy_include_dirs
 from numscons import GetNumpyEnvironment, write_info
 from numscons import CheckFFT, IsMKL, IsFFTW2, IsFFTW3
 
 env = GetNumpyEnvironment(ARGUMENTS)
 env.Tool('f2py')
-
-env.AppendUnique(CPPPATH = get_numpy_include_dirs())
-env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 
 # Check fft implementation
 config = env.NumpyConfigure(custom_tests = {'CheckFFT': CheckFFT})
@@ -30,15 +26,19 @@ if has_fft:
         pass
 
 # Build dfftpack
-src = env.Glob(pjoin('dfftpack', '*.f'))
+src = [pjoin("dfftpack", i) for i in [ "dcosqb.f", "dcosqf.f", "dcosqi.f",
+"dcost.f", "dcosti.f", "dfftb.f", "dfftb1.f", "dfftf.f", "dfftf1.f", "dffti.f",
+"dffti1.f", "dsinqb.f", "dsinqf.f", "dsinqi.f", "dsint.f", "dsint1.f",
+"dsinti.f", "zfftb.f", "zfftb1.f", "zfftf.f", "zfftf1.f", "zffti.f",
+"zffti1.f"]]
 dfftpack = env.DistutilsStaticExtLibrary('dfftpack', source = [str(s) for s in src])
 env.PrependUnique(LIBS = ['dfftpack'])
 env.PrependUnique(LIBPATH = ['.'])
 
 # Build _fftpack
 src = ['src/zfft.c','src/drfft.c','src/zrfft.c', 'src/zfftnd.c', 'fftpack.pyf']
-env.DistutilsPythonExtension('_fftpack', src)
+env.NumpyPythonExtension('_fftpack', src)
 
 # Build convolve
 src = ['src/convolve.c',  'convolve.pyf']
-env.DistutilsPythonExtension('convolve', src)
+env.NumpyPythonExtension('convolve', src)

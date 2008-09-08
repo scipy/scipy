@@ -1,4 +1,4 @@
-from scipy.testing import *
+from numpy.testing import *
 import numpy as np
 
 from scipy.optimize import  fmin_slsqp
@@ -86,4 +86,4 @@ class TestSLSQP(TestCase):
         assert_array_almost_equal(x,[2,1],decimal=3)
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

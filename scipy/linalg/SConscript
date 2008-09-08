@@ -4,8 +4,6 @@
 import os
 from os.path import join as pjoin, splitext
 
-from numpy.distutils.misc_util import get_numpy_include_dirs
-from numscons import get_python_inc#, get_pythonlib_dir
 from numscons import GetNumpyEnvironment
 from numscons import CheckCBLAS, CheckF77BLAS, CheckF77LAPACK,\
                                   CheckCLAPACK, IsVeclib, IsAccelerate, \
@@ -20,10 +18,8 @@ from scons_support import do_generate_interface, do_generate_fake_interface, \
 
 env = GetNumpyEnvironment(ARGUMENTS)
 env.Tool('f2py')
-env.Append(CPPPATH = [get_python_inc(), get_numpy_include_dirs()])
 
 # XXX: handle cblas wrapper for complex (check in numpy.scons or here ?)
-env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 env.AppendUnique(F2PYOPTIONS = '--quiet')
 
 env['BUILDERS']['haha'] = Builder(action = do_generate_interface,
@@ -107,7 +103,7 @@ if IsVeclib(fenv, 'blas') or IsAccelerate(fenv, 'blas'):
     source.append(pjoin('src', 'fblaswrap_veclib_c.c'))
 else:
     source.append(pjoin('src', 'fblaswrap.f'))
-fenv.DistutilsPythonExtension('fblas', source)
+fenv.NumpyPythonExtension('fblas', source)
 
 #------------
 #   cblas
@@ -116,7 +112,7 @@ if has_cblas:
     env.haha('cblas', 'generic_cblas.pyf')
 else:
     env.hihi('cblas', 'generic_cblas.pyf')
-env.DistutilsPythonExtension('cblas', source = 'cblas.pyf')
+env.NumpyPythonExtension('cblas', source = 'cblas.pyf')
 
 #------------
 #   flapack
@@ -124,7 +120,7 @@ env.DistutilsPythonExtension('cblas', source = 'cblas.pyf')
 yop = fenv.haha('flapack', 'generic_flapack.pyf')
 # XXX: automatically scan dependency on flapack_user_routines.pyf ?
 fenv.Depends(yop, 'flapack_user_routines.pyf')
-fenv.DistutilsPythonExtension('flapack', 'flapack.pyf')
+fenv.NumpyPythonExtension('flapack', 'flapack.pyf')
 
 #------------
 #   clapack
@@ -133,7 +129,7 @@ if has_clapack:
     env.haha('clapack', 'generic_clapack.pyf')
 else:
     env.hihi('clapack', 'generic_clapack.pyf')
-env.DistutilsPythonExtension('clapack', source = 'clapack.pyf')
+env.NumpyPythonExtension('clapack', source = 'clapack.pyf')
 
 #----------------
 #   _flinalg
@@ -141,14 +137,14 @@ env.DistutilsPythonExtension('clapack', source = 'clapack.pyf')
 flinalg_fsrc = [pjoin('src', i) for i in ['det.f', 'lu.f']]
 flinalg_src = fenv.F2py(pjoin('src', '_flinalgmodule.c'), flinalg_fsrc)
 
-fenv.DistutilsPythonExtension('_flinalg', source = flinalg_src + flinalg_fsrc)
+fenv.NumpyPythonExtension('_flinalg', source = flinalg_src + flinalg_fsrc)
 
 #----------------
 # calc_lwork:
 #----------------
 calc_fsrc = [pjoin('src', 'calc_lwork.f')]
 calc_src = env.F2py(pjoin('src', 'calc_lworkmodule.c'), calc_fsrc)
-fenv.DistutilsPythonExtension('calc_lwork', calc_src + calc_fsrc)
+fenv.NumpyPythonExtension('calc_lwork', calc_src + calc_fsrc)
 
 #--------------
 # Atlas version
@@ -156,4 +152,4 @@ fenv.DistutilsPythonExtension('calc_lwork', calc_src + calc_fsrc)
 atlas_env = env.Clone()
 if not IsATLAS(env, 'cblas'):
     atlas_env.AppendUnique(CPPDEFINES = "NO_ATLAS_INFO")
-atlas_env.DistutilsPythonExtension('atlas_version', 'atlas_version.c')
+atlas_env.NumpyPythonExtension('atlas_version', 'atlas_version.c')

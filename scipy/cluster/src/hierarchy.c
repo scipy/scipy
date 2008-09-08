@@ -871,32 +871,6 @@ void linkage_alt(double *dm, double *Z, double *X,
   free(centroids);
 }
 
-void dist_to_squareform_from_vector(double *M, const double *v, int n) {
-  double *it;
-  const double *cit;
-  int i, j;
-  cit = v;
-  for (i = 0; i < n - 1; i++) {
-    it = M + (i * n) + i + 1;
-    for (j = i + 1; j < n; j++, it++, cit++) {
-      *it = *cit;
-    }
-  }
-}
-
-void dist_to_vector_from_squareform(const double *M, double *v, int n) {
-  double *it;
-  const double *cit;
-  int i, j;
-  it = v;
-  for (i = 0; i < n - 1; i++) {
-    cit = M + (i * n) + i + 1;
-    for (j = i + 1; j < n; j++, it++, cit++) {
-      *it = *cit;
-    }
-  }
-}
-
 void cpy_to_tree(const double *Z, cnode **tnodes, int n) {
   const double *row;
   cnode *node;
@@ -949,8 +923,8 @@ void cophenetic_distances(const double *Z, double *d, int n) {
   curNode[k] = (n * 2) - 2;
   left[k] = 0;
   nc2 = NCHOOSE2(n);
-  bzero(lvisited, bff);
-  bzero(rvisited, bff);
+  memset(lvisited, 0, bff);
+  memset(rvisited, 0, bff);
 
   while (k >= 0) {
     ndid = curNode[k];
@@ -1041,8 +1015,8 @@ void inconsistency_calculation_alt(const double *Z, double *R, int n, int d) {
     levelSum = 0.0;
     levelCnt = 0;
     levelStdSum = 0.0;
-    bzero(lvisited, bff);
-    bzero(rvisited, bff);
+    memset(lvisited, 0, bff);
+    memset(rvisited, 0, bff);
     curNode[0] = i;
     for (k = 0; k >= 0;) {
       ndid = curNode[k];
@@ -1135,8 +1109,8 @@ void form_member_list(const double *Z, int *members, int n) {
   rvisited = (unsigned char*)malloc(bff);
   curNode[k] = (n * 2) - 2;
   left[k] = 0;
-  bzero(lvisited, bff);
-  bzero(rvisited, bff);
+  memset(lvisited, 0, bff);
+  memset(rvisited, 0, bff);
 
   while (k >= 0) {
     ndid = curNode[k];
@@ -1234,8 +1208,8 @@ void form_flat_clusters_from_monotonic_criterion(const double *Z,
   ms = -1;
   k = 0;
   curNode[k] = (n * 2) - 2;
-  bzero(lvisited, bff);
-  bzero(rvisited, bff);
+  memset(lvisited, 0, bff);
+  memset(rvisited, 0, bff);
   ms = -1;
   while (k >= 0) {
     ndid = curNode[k];
@@ -1312,8 +1286,8 @@ void form_flat_clusters_maxclust_monocrit(const double *Z,
   lvisited = (unsigned char*)malloc(bff);
   rvisited = (unsigned char*)malloc(bff);
   curNode[k] = (n * 2) - 2;
-  bzero(lvisited, bff);
-  bzero(rvisited, bff);
+  memset(lvisited, 0, bff);
+  memset(rvisited, 0, bff);
 
   /** number of clusters formed so far. */
   nc = 0;
@@ -1332,8 +1306,8 @@ void form_flat_clusters_maxclust_monocrit(const double *Z,
     }
     k = 0;
     curNode[k] = (n * 2) - 2;
-    bzero(lvisited, bff);
-    bzero(rvisited, bff);
+    memset(lvisited, 0, bff);
+    memset(rvisited, 0, bff);
     nc = 0;
     ms = -1;
     /** See if the threshold MD[g] works. **/
@@ -1416,8 +1390,8 @@ void get_max_dist_for_each_cluster(const double *Z, double *max_dists, int n) {
   lvisited = (unsigned char*)malloc(bff);
   rvisited = (unsigned char*)malloc(bff);
   curNode[k] = (n * 2) - 2;
-  bzero(lvisited, bff);
-  bzero(rvisited, bff);
+  memset(lvisited, 0, bff);
+  memset(rvisited, 0, bff);
   while (k >= 0) {
     ndid = curNode[k];
     Zrow = Z + ((ndid-n) * CPY_LIS);
@@ -1468,8 +1442,8 @@ void get_max_Rfield_for_each_cluster(const double *Z, const double *R,
   lvisited = (unsigned char*)malloc(bff);
   rvisited = (unsigned char*)malloc(bff);
   curNode[k] = (n * 2) - 2;
-  bzero(lvisited, bff);
-  bzero(rvisited, bff);
+  memset(lvisited, 0, bff);
+  memset(rvisited, 0, bff);
   while (k >= 0) {
     ndid = curNode[k];
     Zrow = Z + ((ndid-n) * CPY_LIS);
@@ -1529,8 +1503,8 @@ int leaders(const double *Z, const int *T, int *L, int *M, int kk, int n) {
   nc = 0;
   k = 0;
   curNode[k] = (n * 2) - 2;
-  bzero(lvisited, bff);
-  bzero(rvisited, bff);
+  memset(lvisited, 0, bff);
+  memset(rvisited, 0, bff);
   while (k >= 0) {
     ndid = curNode[k];
     Zrow = Z + ((ndid-n) * CPY_LIS);

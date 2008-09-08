@@ -1,7 +1,7 @@
 """unit tests for sparse utility functions"""
 
 import numpy as np
-from scipy.testing import *
+from numpy.testing import *
 from scipy.sparse.sputils import *
 
 
@@ -67,4 +67,4 @@ class TestSparseUtils(TestCase):
         assert_equal(isdense( np.matrix([1]) ),True)
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

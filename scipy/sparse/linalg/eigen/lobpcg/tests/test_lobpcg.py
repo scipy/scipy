@@ -3,7 +3,7 @@
 """
 
 import numpy
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy import array, arange, ones, sort, cos, pi, rand, \
      set_printoptions, r_, diag, linalg
@@ -80,4 +80,4 @@ def test_MikotaPair():
 
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

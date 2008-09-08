@@ -1,5 +1,5 @@
 from numpy import array, kron, matrix, diag
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.sparse.spfuncs import *
 from scipy.sparse import csr_matrix, csc_matrix, bsr_matrix
@@ -102,4 +102,4 @@ class TestSparseFunctions(TestCase):
 
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

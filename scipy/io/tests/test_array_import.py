@@ -4,7 +4,7 @@
 # also check out numpyio.fread.__doc__ and other method docstrings.
 
 import os
-from scipy.testing import *
+from numpy.testing import *
 import scipy.io as io
 from scipy.io import numpyio
 from scipy.io import array_import
@@ -24,7 +24,8 @@ class TestNumpyio(TestCase):
         fid.close()
         # Reopen the file and read in data
         fid = open(fname,"rb")
-        print "\nDon't worry about a warning regarding the number of bytes read."
+        if verbose >= 3:
+            print "\nDon't worry about a warning regarding the number of bytes read."
         b = numpyio.fread(fid,1000000,N.Int16,N.Int)
         fid.close()
         assert(N.product(a.astype(N.Int16) == b,axis=0))
@@ -64,4 +65,4 @@ class TestRegression(TestCase):
         f.close()
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

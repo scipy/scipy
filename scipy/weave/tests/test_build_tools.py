@@ -4,7 +4,7 @@
 
 import os, sys, tempfile
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.weave import build_tools
 

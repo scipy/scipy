@@ -1,6 +1,6 @@
 import numpy
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
-from scipy.testing import *
+from numpy.testing import *
 from scipy.integrate import quad, dblquad, tplquad
 
 def assert_quad((value, err), tabledValue, errTol=1.5e-8):
@@ -104,4 +104,4 @@ class TestQuad(TestCase):
                     8/3.0 * (b**4.0 - a**4.0))
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

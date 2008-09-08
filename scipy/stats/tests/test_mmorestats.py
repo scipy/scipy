@@ -14,7 +14,7 @@ from numpy.ma import masked
 import scipy.stats.mstats as ms
 import scipy.stats.mmorestats as mms
 
-from scipy.testing import *
+from numpy.testing import *
 
 
 class TestMisc(TestCase):
@@ -100,4 +100,4 @@ class TestQuantiles(TestCase):
 ###############################################################################
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

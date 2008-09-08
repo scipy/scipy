@@ -8,5 +8,5 @@ License: BSD-style. See LICENSE.txt in the scipy source directory.
 from info import __doc__
 from maxentropy import *
 
-from scipy.testing.pkgtester import Tester
+from numpy.testing import Tester
 test = Tester().test

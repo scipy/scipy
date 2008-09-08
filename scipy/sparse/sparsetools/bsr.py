@@ -269,6 +269,48 @@ def bsr_matvec(*args):
     """
   return _bsr.bsr_matvec(*args)
 
+def bsr_matvecs(*args):
+  """
+    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
+        int Aj, signed char Ax, signed char Xx, 
+        signed char Yx)
+    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
+        int Aj, unsigned char Ax, unsigned char Xx, 
+        unsigned char Yx)
+    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
+        int Aj, short Ax, short Xx, short Yx)
+    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
+        int Aj, unsigned short Ax, unsigned short Xx, 
+        unsigned short Yx)
+    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
+        int Aj, int Ax, int Xx, int Yx)
+    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
+        int Aj, unsigned int Ax, unsigned int Xx, 
+        unsigned int Yx)
+    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
+        int Aj, long long Ax, long long Xx, long long Yx)
+    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
+        int Aj, unsigned long long Ax, unsigned long long Xx, 
+        unsigned long long Yx)
+    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
+        int Aj, float Ax, float Xx, float Yx)
+    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
+        int Aj, double Ax, double Xx, double Yx)
+    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
+        int Aj, long double Ax, long double Xx, 
+        long double Yx)
+    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
+        int Aj, npy_cfloat_wrapper Ax, npy_cfloat_wrapper Xx, 
+        npy_cfloat_wrapper Yx)
+    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
+        int Aj, npy_cdouble_wrapper Ax, npy_cdouble_wrapper Xx, 
+        npy_cdouble_wrapper Yx)
+    bsr_matvecs(int n_brow, int n_bcol, int n_vecs, int R, int C, int Ap, 
+        int Aj, npy_clongdouble_wrapper Ax, npy_clongdouble_wrapper Xx, 
+        npy_clongdouble_wrapper Yx)
+    """
+  return _bsr.bsr_matvecs(*args)
+
 def bsr_elmul_bsr(*args):
   """
     bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 

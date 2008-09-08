@@ -903,10 +903,14 @@ def cholesky(a,lower=0,overwrite_a=0):
 def cho_factor(a, lower=0, overwrite_a=0):
     """Compute the Cholesky decomposition of a matrix, to use in cho_solve
 
-    Returns the Cholesky decomposition, :lm:`A = L L^*` or :lm:`A = U^* U`
-    of a Hermitian positive-definite matrix :lm:`A`.
-
+    Returns a matrix containing the Cholesky decomposition,
+    ``A = L L*`` or ``A = U* U`` of a Hermitian positive-definite matrix `a`.
     The return value can be directly used as the first parameter to cho_solve.
+
+    .. warning::
+        The returned matrix also contains random data in the entries not
+        used by the Cholesky decomposition. If you need to zero these
+        entries, use the function `cholesky` instead.
 
     Parameters
     ----------
@@ -921,11 +925,15 @@ def cho_factor(a, lower=0, overwrite_a=0):
     Returns
     -------
     c : array, shape (M, M)
-        Upper- or lower-triangular Cholesky factor of A
-    lower : array, shape (M, M)
-        Flag indicating whether the factor is lower or upper triangular
+        Matrix whose upper or lower triangle contains the Cholesky factor
+        of `a`. Other parts of the matrix contain random data.
+    lower : boolean
+        Flag indicating whether the factor is in the lower or upper triangle
 
-    Raises LinAlgError if decomposition fails
+    Raises
+    ------
+    LinAlgError
+        Raised if decomposition fails.
 
     """
     a1 = asarray_chkfinite(a)

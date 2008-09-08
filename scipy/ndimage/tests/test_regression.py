@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import *
-    
+
 import scipy.ndimage as ndimage
 
 def test_byte_order_median():

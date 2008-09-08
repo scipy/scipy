@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <functional>
 
+#include "dense.h"
+
 /*
  * Extract main diagonal of CSR matrix A
  *
@@ -690,18 +692,18 @@ void csr_binop_csr(const I n_row,
 /* element-wise binary operations*/
 template <class I, class T>
 void csr_elmul_csr(const I n_row, const I n_col, 
-                   const I Ap [], const I Aj [], const T Ax [],
-                   const I Bp [], const I Bj [], const T Bx [],
-                   I Cp[], I Cj[], T Cx[])
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],       T Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::multiplies<T>());
 }
 
 template <class I, class T>
 void csr_eldiv_csr(const I n_row, const I n_col, 
-                   const I Ap [], const I Aj [], const T Ax [],
-                   const I Bp [], const I Bj [], const T Bx [],
-                   I Cp[], I Cj[], T Cx[])
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],       T Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::divides<T>());
 }
@@ -709,18 +711,18 @@ void csr_eldiv_csr(const I n_row, const I n_col,
 
 template <class I, class T>
 void csr_plus_csr(const I n_row, const I n_col, 
-                 const I Ap [], const I Aj [], const T Ax [],
-                 const I Bp [], const I Bj [], const T Bx [],
-                   I Cp[], I Cj[], T Cx[])
+                  const I Ap[], const I Aj[], const T Ax[],
+                  const I Bp[], const I Bj[], const T Bx[],
+                        I Cp[],       I Cj[],       T Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::plus<T>());
 }
 
 template <class I, class T>
 void csr_minus_csr(const I n_row, const I n_col, 
-                   const I Ap[], const I Aj [], const T Ax [],
-                   const I Bp[], const I Bj [], const T Bx [],
-                         I Cp[], I Cj[], T Cx[])
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],       T Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::minus<T>());
 }
@@ -852,6 +854,47 @@ void csr_matvec(const I n_row,
         Yx[i] = sum;
     }
 }
+
+
+/*
+ * Compute Y += A*X for CSR matrix A and dense block vectors X,Y
+ *
+ *
+ * Input Arguments:
+ *   I  n_row            - number of rows in A
+ *   I  n_col            - number of columns in A
+ *   I  n_vecs           - number of column vectors in X and Y
+ *   I  Ap[n_row+1]      - row pointer
+ *   I  Aj[nnz(A)]       - column indices
+ *   T  Ax[nnz(A)]       - nonzeros
+ *   T  Xx[n_col,n_vecs] - input vector
+ *
+ * Output Arguments:
+ *   T  Yx[n_row,n_vecs] - output vector
+ *
+ */
+template <class I, class T>
+void csr_matvecs(const I n_row,
+	             const I n_col, 
+                 const I n_vecs,
+	             const I Ap[], 
+	             const I Aj[], 
+	             const T Ax[],
+	             const T Xx[],
+	                   T Yx[])
+{
+    for(I i = 0; i < n_row; i++){
+        T * y = Yx + n_vecs * i;
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+            const I j = Aj[jj];
+            const T a = Ax[jj];
+            const T * x = Xx + n_vecs * j;
+            axpy(n_vecs, a, x, y);
+        }
+    }
+}
+
+
 
 
 template<class I, class T>

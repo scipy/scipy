@@ -10,7 +10,7 @@ import warnings
 from numpy import transpose, array, arange
 
 import random
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy import rand, matrix, diag, eye
 from scipy.sparse import csc_matrix, dok_matrix, spdiags, SparseEfficiencyWarning

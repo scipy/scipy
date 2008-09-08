@@ -1,113 +1,152 @@
 """
------------------------------------------
-Hierarchical Clustering Library for Scipy
-  Copyright (C) Damian Eads, 2007-2008.
-             New BSD License
------------------------------------------
+Function Reference
+------------------
 
-Flat cluster formation
+These functions cut hierarchical clusterings into flat clusterings
+or find the roots of the forest formed by a cut by providing the flat
+cluster ids of each observation.
 
- fcluster           forms flat clusters from hierarchical clusters.
- fclusterdata       forms flat clusters directly from data.
- leaders            singleton root nodes for flat cluster.
++------------------+-------------------------------------------------+
+|*Function*        | *Description*                                   |
++------------------+-------------------------------------------------+
+|fcluster          |forms flat clusters from hierarchical clusters.  |
++------------------+-------------------------------------------------+
+|fclusterdata      |forms flat clusters directly from data.          |
++------------------+-------------------------------------------------+
+|leaders           |singleton root nodes for flat cluster.           |
++------------------+-------------------------------------------------+
 
-Agglomerative cluster formation
+These are routines for agglomerative clustering.
 
- linkage            agglomeratively clusters original observations.
- single             the single/min/nearest algorithm. (alias)
- complete           the complete/max/farthest algorithm. (alias)
- average            the average/UPGMA algorithm. (alias)
- weighted           the weighted/WPGMA algorithm. (alias)
- centroid           the centroid/UPGMC algorithm. (alias)
- median             the median/WPGMC algorithm. (alias)
- ward               the Ward/incremental algorithm. (alias)
++------------------+-------------------------------------------------+
+|*Function*        | *Description*                                   |
++------------------+-------------------------------------------------+
+|linkage           |agglomeratively clusters original observations.  |
++------------------+-------------------------------------------------+
+|single            |the single/min/nearest algorithm. (alias)        |
++------------------+-------------------------------------------------+
+|complete          |the complete/max/farthest algorithm. (alias)     |
++------------------+-------------------------------------------------+
+|average           |the average/UPGMA algorithm. (alias)             |
++------------------+-------------------------------------------------+
+|weighted          |the weighted/WPGMA algorithm. (alias)            |
++------------------+-------------------------------------------------+
+|centroid          |the centroid/UPGMC algorithm. (alias)            |
++------------------+-------------------------------------------------+
+|median            |the median/WPGMC algorithm. (alias)              |
++------------------+-------------------------------------------------+
+|ward              |the Ward/incremental algorithm. (alias)          |
++------------------+-------------------------------------------------+
 
- squareform         converts a sq. D.M. to a condensed one and vice versa.
+These routines compute statistics on hierarchies.
 
-Statistic computations on hierarchies
++------------------+-------------------------------------------------+
+|*Function*        | *Description*                                   |
++------------------+-------------------------------------------------+
+|cophenet          |computes the cophenetic distance between leaves. |
++------------------+-------------------------------------------------+
+|from_mlab_linkage |converts a linkage produced by MATLAB(TM).       |
++------------------+-------------------------------------------------+
+|inconsistent      |the inconsistency coefficients for cluster.      |
++------------------+-------------------------------------------------+
+|maxinconsts       |the maximum inconsistency coefficient for each   |
+|                  |cluster.                                         |
++------------------+-------------------------------------------------+
+|maxdists          |the maximum distance for each cluster.           |
++------------------+-------------------------------------------------+
+|maxRstat          |the maximum specific statistic for each cluster. |
++------------------+-------------------------------------------------+
+|to_mlab_linkage   |converts a linkage to one MATLAB(TM) can         |
+|                  |understand.                                      |
++------------------+-------------------------------------------------+
 
- cophenet           computes the cophenetic distance between leaves.
- from_mlab_linkage  converts a linkage produced by MATLAB(TM).
- inconsistent       the inconsistency coefficients for cluster.
- maxinconsts        the maximum inconsistency coefficient for each cluster.
- maxdists           the maximum distance for each cluster.
- maxRstat           the maximum specific statistic for each cluster.
- to_mlab_linkage    converts a linkage to one MATLAB(TM) can understand.
+Routines for visualizing flat clusters.
 
-Visualization
++------------------+-------------------------------------------------+
+|*Function*        | *Description*                                   |
++------------------+-------------------------------------------------+
+|dendrogram        |visualizes linkages (requires matplotlib).       |
++------------------+-------------------------------------------------+
 
- dendrogram         visualizes linkages (requires matplotlib).
+These are data structures and routines for representing hierarchies as
+tree objects.
 
-Tree representations of hierarchies
++------------------+-------------------------------------------------+
+|*Function*        | *Description*                                   |
++------------------+-------------------------------------------------+
+|cnode             |represents cluster nodes in a cluster hierarchy. |
++------------------+-------------------------------------------------+
+|lvlist            |a left-to-right traversal of the leaves.         |
++------------------+-------------------------------------------------+
+|totree            |represents a linkage matrix as a tree object.    |
++------------------+-------------------------------------------------+
 
- cnode              represents cluster nodes in a cluster hierarchy.
- lvlist             a left-to-right traversal of the leaves.
- totree             represents a linkage matrix as a tree object.
+These are predicates for checking the validity of linkage and
+inconsistency matrices, both condensed and redundant.
 
-Predicates
-
- is_valid_dm        checks for a valid distance matrix.
- is_valid_im        checks for a valid inconsistency matrix.
- is_valid_linkage   checks for a valid hierarchical clustering.
- is_valid_y         checks for a valid condensed distance matrix.
- is_isomorphic      checks if two flat clusterings are isomorphic.
- is_monotonic       checks if a linkage is monotonic.
- Z_y_correspond     checks for validity of distance matrix given a linkage.
-
-Utility Functions
-
- numobs_dm          # of observations in a distance matrix.
- numobs_linkage     # of observations in a linkage.
- numobs_y           # of observations in a condensed distance matrix.
-
-Legal stuff
-
- copying            Displays the license for this package.
++------------------+-------------------------------------------------+
+|*Function*        | *Description*                                   |
++------------------+-------------------------------------------------+
+|is_valid_im       |checks for a valid inconsistency matrix.         |
++------------------+-------------------------------------------------+
+|is_valid_linkage  |checks for a valid hierarchical clustering.      |
++------------------+-------------------------------------------------+
+|is_isomorphic     |checks if two flat clusterings are isomorphic.   |
++------------------+-------------------------------------------------+
+|is_monotonic      |checks if a linkage is monotonic.                |
++------------------+-------------------------------------------------+
+|Z_y_correspond    |checks for validity of distance matrix given a   |
+|                  |linkage.                                         |
++------------------+-------------------------------------------------+
 
 
-  MATLAB and MathWorks are registered trademarks of The MathWorks, Inc.
-  Mathematica is a registered trademark of The Wolfram Research, Inc.
+* MATLAB and MathWorks are registered trademarks of The MathWorks, Inc.
 
-References:
+* Mathematica is a registered trademark of The Wolfram Research, Inc.
 
- [1] "Statistics toolbox." API Reference Documentation. The MathWorks.
-     http://www.mathworks.com/access/helpdesk/help/toolbox/stats/.
-     Accessed October 1, 2007.
 
- [2] "Hierarchical clustering." API Reference Documentation.
-     The Wolfram Research, Inc. http://reference.wolfram.com/...
-     ...mathematica/HierarchicalClustering/tutorial/...
-     HierarchicalClustering.html. Accessed October 1, 2007.
+References
+----------
 
- [3] Gower, JC and Ross, GJS. "Minimum Spanning Trees and Single Linkage
-     Cluster Analysis." Applied Statistics. 18(1): pp. 54--64. 1969.
+.. [Sta07] "Statistics toolbox." API Reference Documentation. The MathWorks.
+   http://www.mathworks.com/access/helpdesk/help/toolbox/stats/.
+   Accessed October 1, 2007.
 
- [4] Ward Jr, JH. "Hierarchical grouping to optimize an objective
-     function." Journal of the American Statistical Association. 58(301):
-     pp. 236--44. 1963.
+.. [Mti07] "Hierarchical clustering." API Reference Documentation.
+   The Wolfram Research, Inc.
+   http://reference.wolfram.com/mathematica/HierarchicalClustering/tutorial/HierarchicalClustering.html.
+   Accessed October 1, 2007.
 
- [5] Johnson, SC. "Hierarchical clustering schemes." Psychometrika.
-     32(2): pp. 241--54. 1966.
+.. [Gow69] Gower, JC and Ross, GJS. "Minimum Spanning Trees and Single Linkage
+   Cluster Analysis." Applied Statistics. 18(1): pp. 54--64. 1969.
 
- [6] Sneath, PH and Sokal, RR. "Numerical taxonomy." Nature. 193: pp.
-     855--60. 1962.
+.. [War63] Ward Jr, JH. "Hierarchical grouping to optimize an objective
+   function." Journal of the American Statistical Association. 58(301):
+   pp. 236--44. 1963.
 
- [7] Batagelj, V. "Comparing resemblance measures." Journal of
-     Classification. 12: pp. 73--90. 1995.
+.. [Joh66] Johnson, SC. "Hierarchical clustering schemes." Psychometrika.
+   32(2): pp. 241--54. 1966.
 
- [8] Sokal, RR and Michener, CD. "A statistical method for evaluating
-     systematic relationships." Scientific Bulletins. 38(22):
-     pp. 1409--38. 1958.
+.. [Sne62] Sneath, PH and Sokal, RR. "Numerical taxonomy." Nature. 193: pp.
+   855--60. 1962.
 
- [9] Edelbrock, C. "Mixture model tests of hierarchical clustering
-     algorithms: the problem of classifying everybody." Multivariate
-     Behavioral Research. 14: pp. 367--84. 1979.
+.. [Bat95] Batagelj, V. "Comparing resemblance measures." Journal of
+   Classification. 12: pp. 73--90. 1995.
 
-[10] Jain, A., and Dubes, R., "Algorithms for Clustering Data."
-     Prentice-Hall. Englewood Cliffs, NJ. 1988.
+.. [Sok58] Sokal, RR and Michener, CD. "A statistical method for evaluating
+   systematic relationships." Scientific Bulletins. 38(22):
+   pp. 1409--38. 1958.
 
-[11] Fisher, RA "The use of multiple measurements in taxonomic
-     problems." Annals of Eugenics, 7(2): 179-188. 1936
+.. [Ede79] Edelbrock, C. "Mixture model tests of hierarchical clustering
+   algorithms: the problem of classifying everybody." Multivariate
+   Behavioral Research. 14: pp. 367--84. 1979.
+
+.. [Jai88] Jain, A., and Dubes, R., "Algorithms for Clustering Data."
+   Prentice-Hall. Englewood Cliffs, NJ. 1988.
+
+.. [Fis36] Fisher, RA "The use of multiple measurements in taxonomic
+   problems." Annals of Eugenics, 7(2): 179-188. 1936
+
 """
 
 _copyingtxt="""
@@ -186,12 +225,6 @@ def _copy_arrays_if_base_present(T):
     l = [_copy_array_if_base_present(a) for a in T]
     return l
 
-
-def copying():
-    """ Displays the license for this package."""
-    print _copyingtxt
-    return None
-
 def _randdm(pnts):
     """ Generates a random distance matrix stored in condensed form. A
         pnts * (pnts - 1) / 2 sized vector is returned.
@@ -204,215 +237,343 @@ def _randdm(pnts):
 
 def single(y):
     """
-    Z = single(y)
-
     Performs single/min/nearest linkage on the condensed distance
-    matrix Z. See linkage for more information on the return structure
-    and algorithm.
+    matrix ``y``. See ``linkage`` for more information on the return
+    structure and algorithm.
 
-      (a condensed alias for single)
+    :Parameters:
+        y : ndarray
+            The upper triangular of the distance matrix. The result of
+            ``pdist`` is returned in this form.
+
+    :Returns:
+        Z : ndarray
+            The linkage matrix.
+
+    :SeeAlso:
+       - linkage: for advanced creation of hierarchical clusterings.
     """
     return linkage(y, method='single', metric='euclidean')
 
 def complete(y):
     """
-    Z = complete(y)
-
     Performs complete complete/max/farthest point linkage on the
-    condensed distance matrix Z. See linkage for more information
-    on the return structure and algorithm.
+    condensed distance matrix ``y``. See ``linkage`` for more
+    information on the return structure and algorithm.
 
-      (a condensed alias for linkage)
+    :Parameters:
+        y : ndarray
+            The upper triangular of the distance matrix. The result of
+            ``pdist`` is returned in this form.
+
+    :Returns:
+        Z : ndarray
+            A linkage matrix containing the hierarchical clustering. See
+            the ``linkage`` function documentation for more information
+            on its structure.
     """
     return linkage(y, method='complete', metric='euclidean')
 
 def average(y):
     """
-    Z = average(y)
+    Performs average/UPGMA linkage on the condensed distance matrix
+    ``y``. See ``linkage`` for more information on the return
+    structure and algorithm.
 
-    Performs average/UPGMA linkage on the condensed distance matrix Z. See
-    linkage for more information on the return structure and algorithm.
+    :Parameters:
+        y : ndarray
+            The upper triangular of the distance matrix. The result of
+            ``pdist`` is returned in this form.
 
-      (a condensed alias for linkage)
+    :Returns:
+        Z : ndarray
+            A linkage matrix containing the hierarchical clustering. See
+            the ``linkage`` function documentation for more information
+            on its structure.
+
+    :SeeAlso:
+       - linkage: for advanced creation of hierarchical clusterings.
     """
     return linkage(y, method='average', metric='euclidean')
 
 def weighted(y):
     """
-    Z = weighted(y)
+    Performs weighted/WPGMA linkage on the condensed distance matrix
+    ``y``.  See ``linkage`` for more information on the return
+    structure and algorithm.
 
-    Performs weighted/WPGMA linkage on the condensed distance matrix Z.
-    See linkage for more information on the return structure and
-    algorithm.
+    :Parameters:
+        y : ndarray
+            The upper triangular of the distance matrix. The result of
+            ``pdist`` is returned in this form.
 
-      (a condensed alias for linkage)
+    :Returns:
+        Z : ndarray
+            A linkage matrix containing the hierarchical clustering. See
+            the ``linkage`` function documentation for more information
+            on its structure.
+
+    :SeeAlso:
+       - linkage: for advanced creation of hierarchical clusterings.
     """
     return linkage(y, method='weighted', metric='euclidean')
 
 def centroid(y):
     """
-    Z = centroid(y)
-
-    Performs centroid/UPGMC linkage on the condensed distance matrix Z.
-    See linkage for more information on the return structure and
-    algorithm.
-
-      (a condensed alias for linkage)
-
-    Z = centroid(X)
-
-    Performs centroid/UPGMC linkage on the observation matrix X using
-    Euclidean distance as the distance metric. See linkage for more
+    Performs centroid/UPGMC linkage. See ``linkage`` for more
     information on the return structure and algorithm.
 
+    :Parameters:
+        Q : ndarray
+            A condensed or redundant distance matrix. A condensed
+            distance matrix is a flat array containing the upper
+            triangular of the distance matrix. This is the form that
+            ``pdist`` returns. Alternatively, a collection of
+            m observation vectors in n dimensions may be passed as
+            a m by n array.
+
+    :Returns:
+        Z : ndarray
+            A linkage matrix containing the hierarchical clustering. See
+            the ``linkage`` function documentation for more information
+            on its structure.
+
+    Calling Conventions
+    -------------------
+
+    1. Z = centroid(y)
+
+       Performs centroid/UPGMC linkage on the condensed distance
+       matrix ``y``.  See ``linkage`` for more information on the return
+       structure and algorithm. 
+
+    2. Z = centroid(X)
+
+       Performs centroid/UPGMC linkage on the observation matrix ``X``
+       using Euclidean distance as the distance metric. See ``linkage``
+       for more information on the return structure and algorithm.
+
+    :SeeAlso:
+       - linkage: for advanced creation of hierarchical clusterings.
     """
     return linkage(y, method='centroid', metric='euclidean')
 
 def median(y):
     """
-    Z = median(y)
-
-    Performs median/WPGMC linkage on the condensed distance matrix Z.
-    See linkage for more information on the return structure and
-    algorithm.
-
-    Z = median(X)
-
-    Performs median/WPGMC linkage on the observation matrix X using
-    Euclidean distance as the distance metric. See linkage for more
+    Performs median/WPGMC linkage. See ``linkage`` for more
     information on the return structure and algorithm.
 
-      (a condensed alias for linkage)
+    :Parameters:
+        Q : ndarray
+            A condensed or redundant distance matrix. A condensed
+            distance matrix is a flat array containing the upper
+            triangular of the distance matrix. This is the form that
+            ``pdist`` returns. Alternatively, a collection of
+            m observation vectors in n dimensions may be passed as
+            a m by n array.
+
+    Calling Conventions
+    -------------------
+
+    1. Z = median(y)
+
+       Performs median/WPGMC linkage on the condensed distance matrix
+       ``y``.  See ``linkage`` for more information on the return
+       structure and algorithm.
+
+    2. Z = median(X)
+
+       Performs median/WPGMC linkage on the observation matrix ``X``
+       using Euclidean distance as the distance metric. See linkage
+       for more information on the return structure and algorithm.
+
+    :SeeAlso:
+       - linkage: for advanced creation of hierarchical clusterings.
     """
     return linkage(y, method='median', metric='euclidean')
 
 def ward(y):
     """
-    Z = ward(y)
+    Performs Ward's linkage on a condensed or redundant distance
+    matrix. See linkage for more information on the return structure
+    and algorithm.
 
-    Performs Ward's linkage on the condensed distance matrix Z. See
-    linkage for more information on the return structure and algorithm.
+    :Parameters:
+        Q : ndarray
+            A condensed or redundant distance matrix. A condensed
+            distance matrix is a flat array containing the upper
+            triangular of the distance matrix. This is the form that
+            ``pdist`` returns. Alternatively, a collection of
+            m observation vectors in n dimensions may be passed as
+            a m by n array.
 
-    Z = ward(X)
+    Calling Conventions
+    -------------------
 
-    Performs Ward's linkage on the observation matrix X using Euclidean
-    distance as the distance metric. See linkage for more information
-    on the return structure and algorithm.
+    1. Z = ward(y)
+       Performs Ward's linkage on the condensed distance matrix Z. See
+       linkage for more information on the return structure and
+       algorithm.
 
-      (a condensed alias for linkage)
+    2. Z = ward(X)
+       Performs Ward's linkage on the observation matrix X using
+       Euclidean distance as the distance metric. See linkage for more
+       information on the return structure and algorithm.
+
+    :SeeAlso:
+       - linkage: for advanced creation of hierarchical clusterings.
     """
     return linkage(y, method='ward', metric='euclidean')
 
 
 def linkage(y, method='single', metric='euclidean'):
-    """ Z = linkage(y, method)
+    """ 
+    Performs hierarchical/agglomerative clustering on the
+    condensed distance matrix y. y must be a {n \choose 2} sized
+    vector where n is the number of original observations paired
+    in the distance matrix. The behavior of this function is very
+    similar to the MATLAB(TM) linkage function.
 
-          Performs hierarchical/agglomerative clustering on the
-          condensed distance matrix y. y must be a {n \choose 2} sized
-          vector where n is the number of original observations paired
-          in the distance matrix. The behavior of this function is very
-          similar to the MATLAB(TM) linkage function.
+    A 4 by :math:`$(n-1)$` matrix ``Z`` is returned. At the
+    :math:`$i$`th iteration, clusters with indices ``Z[i, 0]`` and
+    ``Z[i, 1]`` are combined to form cluster :math:`$n + i$`. A
+    cluster with an index less than :math:`$n$` corresponds to one of
+    the :math:`$n$` original observations. The distance between
+    clusters ``Z[i, 0]`` and ``Z[i, 1]`` is given by ``Z[i, 2]``. The
+    fourth value ``Z[i, 3]`` represents the number of original
+    observations in the newly formed cluster.
 
-          A (n - 1) * 4 matrix Z is returned. At the i'th iteration,
-          clusters with indices Z[i, 0] and Z[i, 1] are combined to
-          form cluster n + i. A cluster with an index less than n
-          corresponds to one of the n original observations. The
-          distance between clusters Z[i, 0] and Z[i, 1] is given by
-          Z[i, 2]. The fourth value Z[i, 3] represents the number of
-          original observations in the newly formed cluster.
+    The following linkage methods are used to compute the distance
+    :math:`$d(s, t)$` between two clusters :math:`$s$` and
+    :math:`$t$`. The algorithm begins with a forest of clusters that
+    have yet to be used in the hierarchy being formed. When two
+    clusters :math:`$s$` and :math:`$t$` from this forest are combined
+    into a single cluster :math:`$u$`, :math:`$s$` and :math:`$t$` are
+    removed from the forest, and :math:`$u$` is added to the
+    forest. When only one cluster remains in the forest, the algorithm
+    stops, and this cluster becomes the root.
 
-          The following linkage methods are used to compute the
-          distance dist(s, t) between two clusters s and t. The
-          algorithm begins with a forest of clusters that have yet
-          to be used in the hierarchy being formed. When two clusters
-          s and t from this forest are combined into a single cluster u,
-          s and t are removed from the forest, and u is added to
-          the forest. When only one cluster remains in the forest,
-          the algorithm stops, and this cluster becomes the root.
+    A distance matrix is maintained at each iteration. The ``d[i,j]``
+    entry corresponds to the distance between cluster :math:`$i$` and
+    :math:`$j$` in the original forest.
 
-          A distance matrix is maintained at each iteration. The
-          d[i,j] entry corresponds to the distance between cluster
-          i and j in the original forest.
+    At each iteration, the algorithm must update the distance matrix
+    to reflect the distance of the newly formed cluster u with the
+    remaining clusters in the forest.
 
-          At each iteration, the algorithm must update the distance
-          matrix to reflect the distance of the newly formed cluster
-          u with the remaining clusters in the forest.
+    Suppose there are :math:`$|u|$` original observations
+    :math:`$u[0], \ldots, u[|u|-1]$` in cluster :math:`$u$` and
+    :math:`$|v|$` original objects :math:`$v[0], \ldots, v[|v|-1]$` in
+    cluster :math:`$v$`. Recall :math:`$s$` and :math:`$t$` are
+    combined to form cluster :math:`$u$`. Let :math:`$v$` be any
+    remaining cluster in the forest that is not :math:`$u$`.
 
-          Suppose there are |u| original observations u[0], ..., u[|u|-1]
-          in cluster u and |v| original objects v[0], ..., v[|v|-1]
-          in cluster v. Recall s and t are combined to form cluster
-          u. Let v be any remaining cluster in the forest that is not
-          u.
+    :Parameters:
+       Q : ndarray
+           A condensed or redundant distance matrix. A condensed
+           distance matrix is a flat array containing the upper
+           triangular of the distance matrix. This is the form that
+           ``pdist`` returns. Alternatively, a collection of
+           :math:`$m$` observation vectors in n dimensions may be passed as
+           a :math:`$m$` by :math:`$n$` array.
+       method : string
+           The linkage algorithm to use. See the ``Linkage Methods``
+           section below for full descriptions.
+       metric : string
+           The distance metric to use. See the ``distance.pdist``
+           function for a list of valid distance metrics.
 
-          The following are methods for calculating the distance between
-          the newly formed cluster u and each v.
+    Linkage Methods
+    ---------------
 
-            * method='single' assigns dist(u,v) = MIN(dist(u[i],v[j])
-              for all points i in cluster u and j in cluster v.
+    The following are methods for calculating the distance between the
+    newly formed cluster :math:`$u$` and each :math:`$v$`.
 
-                (also called Nearest Point Algorithm)
+    * method=``single`` assigns
 
-            * method='complete' assigns dist(u,v) = MAX(dist(u[i],v[j])
-              for all points i in cluster u and j in cluster v.
+      .. math:
+         d(u,v) = \min(dist(u[i],v[j]))
 
-                (also called Farthest Point Algorithm
-                      or the Voor Hees Algorithm)
+      for all points :math:`$i$` in cluster :math:`$u$` and
+      :math:`$j$` in cluster :math:`$v$`. This is also known as the
+      Nearest Point Algorithm.
 
-           * method='average' assigns dist(u,v) =
-                \sum_{ij} { dist(u[i], v[j]) } / (|u|*|v|)
-             for all points i and j where |u| and |v| are the
-             cardinalities of clusters u and v, respectively.
+    * method=``complete`` assigns
 
-                (also called UPGMA)
+      .. math:
+         d(u, v) = \max(dist(u[i],v[j]))
 
-           * method='weighted' assigns
+      for all points :math:`$i$` in cluster u and :math:`$j$` in
+      cluster :math:`$v$`. This is also known by the Farthest Point
+      Algorithm or Voor Hees Algorithm.
 
-               dist(u,v) = (dist(s,v) + dist(t,v))/2
+    * method=``average`` assigns
 
-             where cluster u was formed with cluster s and t and v
-             is a remaining cluster in the forest. (also called WPGMA)
+      .. math:
+         d(u,v) = \sum_{ij} \frac{d(u[i], v[j])}
+                                 {(|u|*|v|)
 
-        Z = linkage(X, method, metric='euclidean')
+      for all points :math:`$i$` and :math:`$j$` where :math:`$|u|$`
+      and :math:`$|v|$` are the cardinalities of clusters :math:`$u$`
+      and :math:`$v$`, respectively. This is also called the UPGMA
+      algorithm. This is called UPGMA.
 
-         Performs hierarchical clustering on the objects defined by the
-         n by m observation matrix X.
+    * method='weighted' assigns
 
-         If the metric is 'euclidean' then the following methods may be
-         used:
+      .. math:
+         d(u,v) = (dist(s,v) + dist(t,v))/2
 
-           * method='centroid' assigns dist(s,t) = euclid(c_s, c_t) where
-             c_s and c_t are the centroids of clusters s and t,
-             respectively. When two clusters s and t are combined into a new
-             cluster u, the new centroid is computed over all the original
-             objects in clusters s and t. The distance then becomes
-             the Euclidean distance between the centroid of u and the
-             centroid of a remaining cluster v in the forest.
-             (also called UPGMC)
+      where cluster u was formed with cluster s and t and v
+      is a remaining cluster in the forest. (also called WPGMA)
 
-           * method='median' assigns dist(s,t) as above. When two clusters
-             s and t are combined into a new cluster u, the average of
-             centroids s and t give the new centroid u. (also called WPGMC)
 
-           * method='ward' uses the Ward variance minimization algorithm.
-             The new entry dist(u, v) is computed as follows,
+    * method='centroid' assigns
 
-                 dist(u,v) =
+      .. math:
+         dist(s,t) = euclid(c_s, c_t)
 
-                ----------------------------------------------------
-                | |v|+|s|            |v|+|t|            |v|
-                | ------- d(v,s)^2 + ------- d(v,t)^2 - --- d(s,t)^2
-               \|    T                  T                T
+      where :math:`$c_s$` and :math:`$c_t$` are the centroids of
+      clusters :math:`$s$` and :math:`$t$`, respectively. When two
+      clusters :math:`$s$` and :math:`$t$` are combined into a new
+      cluster :math:`$u$`, the new centroid is computed over all the
+      original objects in clusters :math:`$s$` and :math:`$t$`. The
+      distance then becomes the Euclidean distance between the
+      centroid of :math:`$u$` and the centroid of a remaining cluster
+      :math:`$v$` in the forest. This is also known as the UPGMC
+      algorithm.
 
-             where u is the newly joined cluster consisting of clusters
-             s and t, v is an unused cluster in the forest, T=|v|+|s|+|t|,
-             and |*| is the cardinality of its argument.
-             (also called incremental)
+    * method='median' assigns math:`$d(s,t)$` like the ``centroid``
+      method. When two clusters s and t are combined into a new
+      cluster :math:`$u$`, the average of centroids s and t give the
+      new centroid :math:`$u$`. This is also known as the WPGMC
+      algorithm.
 
-           Warning to MATLAB(TM) users: when the minimum distance pair in
-           the forest is chosen, there may be two or more pairs with the
-           same minimum distance. This implementation may chose a
-           different minimum than the MATLAB(TM) version.
-        """
+    * method='ward' uses the Ward variance minimization algorithm.
+      The new entry :math:`$d(u,v)$` is computed as follows,
+
+      .. math:
+
+         d(u,v) = \sqrt{\frac{|v|+|s|}
+                             {T}d(v,s)^2
+                      + \frac{|v|+|t|}
+                             {T}d(v,t)^2
+                      + \frac{|v|}
+                             {T}d(s,t)^2}
+
+      where :math:`$u$` is the newly joined cluster consisting of
+      clusters :math:`$s$` and :math:`$t$`, :math:`$v$` is an unused
+      cluster in the forest, :math:`$T=|v|+|s|+|t|$`, and
+      :math:`$|*|$` is the cardinality of its argument. This is also
+      known as the incremental algorithm.
+
+   Warning
+   -------
+
+   When the minimum distance pair in the forest is chosen, there may
+   be two or more pairs with the same minimum distance. This
+   implementation may chose a different minimum than the MATLAB(TM)
+   version.
+   """
     if not isinstance(method, str):
         raise TypeError("Argument 'method' must be a string.")
 
@@ -420,7 +581,7 @@ def linkage(y, method='single', metric='euclidean'):
 
     s = y.shape
     if len(s) == 1:
-        is_valid_y(y, throw=True, name='y')
+        distance.is_valid_y(y, throw=True, name='y')
         d = np.ceil(np.sqrt(s[0] * 2))
         if method not in _cpy_non_euclid_methods.keys():
             raise ValueError("Valid methods when the raw observations are omitted are 'single', 'complete', 'weighted', and 'average'.")
@@ -458,6 +619,10 @@ class cnode:
 
     The totree function converts a matrix returned by the linkage
     function into an easy-to-use tree representation.
+
+    :SeeAlso:
+
+       - totree: for converting a linkage matrix Z into a tree object.
     """
 
     def __init__(self, id, left=None, right=None, dist=0, count=1):
@@ -481,62 +646,91 @@ class cnode:
 
     def getId(self):
         """
-        i = nd.getId()
+        The identifier of the target node. For :math:`$0 leq i < n$`,
+        :math:`$i$` corresponds to original observation
+        :math:`$i$`. For :math:`$n \leq i$` < :math:`$2n-1$`,
+        :math:`$i$` corresponds to non-singleton cluster formed at
+        iteration :math:`$i-n$`.
 
-        Returns the id number of the node nd. For 0 <= i < n, i
-        corresponds to original observation i. For n <= i < 2n - 1,
-        i corresponds to non-singleton cluster formed at iteration i-n.
+        :Returns:
+
+           id : int
+                The identifier of the target node.
+
         """
         return self.id
 
     def getCount(self):
         """
-        c = nd.getCount()
+        The number of leaf nodes (original observations) belonging to
+        the cluster node nd. If the target node is a leaf, 1 is
+        returned.
+        
+        :Returns:
 
-        Returns the number of leaf nodes (original observations)
-        belonging to the cluster node nd. If the nd is a leaf, c=1.
+           c : int
+               The number of leaf nodes below the target node.
         """
         return self.count
 
     def getLeft(self):
         """
-        left = nd.getLeft()
+        Returns a reference to the left child tree object. If the node
+        is a leaf, None is returned.
 
-        Returns a reference to the left child. If the node is a
-        leaf, None is returned.
+        :Returns:
+           left : cnode
+                  The left child of the target node.
         """
         return self.left
 
     def getRight(self):
         """
-        left = nd.getLeft()
+        Returns a reference to the right child tree object. If the node
+        is a leaf, None is returned.
 
-        Returns a reference to the right child. If the node is a
-        leaf, None is returned.
+        :Returns:
+           right : cnode
+                  The left child of the target node.
         """
         return self.right
 
     def isLeaf(self):
         """
-        Returns True if the node is a leaf.
+        Returns True iff the target node is a leaf.
+
+        :Returns:
+           leafness : bool
+                      True if the target node is a leaf node.
         """
         return self.left is None
 
     def preOrder(self, func=(lambda x: x.id)):
         """
-        vlst = preOrder(func)
+        Performs preorder traversal without recursive function calls.
+        When a leaf node is first encountered, ``func`` is called with
+        the leaf node as its argument, and its result is appended to
+        the list.
 
-          Performs preorder traversal without recursive function calls.
-          When a leaf node is first encountered, func is called with the
-          leaf node as its argument, and its result is appended to the
-          list vlst.
+        For example, the statement:
+        
+           ids = root.preOrder(lambda x: x.id)
 
-          For example, the statement
+        returns a list of the node ids corresponding to the leaf nodes
+        of the tree as they appear from left to right.
 
-            ids = root.preOrder(lambda x: x.id)
+        :Parameters:
 
-          returns a list of the node ids corresponding to the leaf
-          nodes of the tree as they appear from left to right.
+           - func : function
+             Applied to each leaf cnode object in the pre-order
+             traversal. Given the i'th leaf node in the pre-order
+             traversal ``n[i]``, the result of func(n[i]) is stored in
+             L[i]. If not provided, the index of the original observation
+             to which the node corresponds is used.
+
+        :Returns:
+           - L : list
+             The pre-order traversal.                    
         """
 
         # Do a preorder traversal, caching the result. To avoid having to do
@@ -576,30 +770,34 @@ _cnode_type = type(cnode)
 
 def totree(Z, rd=False):
     """
-    r = totree(Z)
+    Converts a hierarchical clustering encoded in the matrix Z (by
+    linkage) into an easy-to-use tree object. The reference r to the
+    root cnode object is returned.
+    
+    Each cnode object has a left, right, dist, id, and count
+    attribute. The left and right attributes point to cnode objects
+    that were combined to generate the cluster. If both are None then
+    the cnode object is a leaf node, its count must be 1, and its
+    distance is meaningless but set to 0.
 
-      Converts a hierarchical clustering encoded in the matrix Z
-      (by linkage) into an easy-to-use tree object. The reference r
-      to the root cnode object is returned.
+    :Parameters:
 
-      Each cnode object has a left, right, dist, id, and count
-      attribute. The left and right attributes point to cnode
-      objects that were combined to generate the cluster. If
-      both are None then the cnode object is a leaf node, its
-      count must be 1, and its distance is meaningless but set
-      to 0.
+        Z : ndarray
+          The linkage matrix in proper form (see the ``linkage``
+          function documentation).
 
-    (r, d) = totree(Z, rd=True)
+        r : bool
+          When ``False``, a reference to the root cnode object is
+          returned.  Otherwise, a tuple (r,d) is returned. ``r`` is a
+          reference to the root node while ``d`` is a dictionary
+          mapping cluster ids to cnode references. If a cluster id is
+          less than n, then it corresponds to a singleton cluster
+          (leaf node). See ``linkage`` for more information on the
+          assignment of cluster ids to clusters.
 
-      Same as totree(Z) except a tuple is returned where r is
-      the reference to the root cnode and d is a reference to a
-      dictionary mapping cluster ids to cnodes. If a cluster id
-      is less than n, then it corresponds to a singleton cluster
-      (leaf node).
-
-    Note: This function is provided for the convenience of the
-    library user. cnodes are not used as input to any of the
-    functions in this library.
+    Note: This function is provided for the convenience of the library
+    user. cnodes are not used as input to any of the functions in this
+    library.
     """
 
     Z = np.asarray(Z)
@@ -652,107 +850,6 @@ def totree(Z, rd=False):
     else:
         return nd
 
-def squareform(X, force="no", checks=True):
-    """
-    ... = squareform(...)
-
-    Converts a vector-form distance vector to a square-form distance
-    matrix, and vice-versa.
-
-    v = squareform(X)
-
-      Given a square d by d symmetric distance matrix X, v=squareform(X)
-      returns a d*(d-1)/2 (or {n \choose 2}) sized vector v.
-
-      v[{n \choose 2}-{n-i \choose 2} + (j-i-1)] is the distance
-      between points i and j. If X is non-square or asymmetric, an error
-      is returned.
-
-    X = squareform(v)
-
-      Given a d*d(-1)/2 sized v for some integer d>=2 encoding distances
-      as described, X=squareform(v) returns a d by d distance matrix X. The
-      X[i, j] and X[j, i] values are set to
-      v[{n \choose 2}-{n-i \choose 2} + (j-u-1)] and all
-      diagonal elements are zero.
-
-    As with MATLAB(TM), if force is equal to 'tovector' or 'tomatrix',
-    the input will be treated as a distance matrix or distance vector
-    respectively.
-
-    If checks is set to False, no checks will be made for matrix
-    symmetry nor zero diagonals. This is useful if it is known that
-    X - X.T is small and diag(X) is close to zero. These values are
-    ignored any way so they do not disrupt the squareform
-    transformation.
-    """
-
-    X = _convert_to_double(np.asarray(X))
-
-    if not np.issubsctype(X, np.double):
-        raise TypeError('A double array must be passed.')
-
-    s = X.shape
-
-    # X = squareform(v)
-    if len(s) == 1 and force != 'tomatrix':
-        if X.shape[0] == 0:
-            return np.zeros((1,1), dtype=np.double)
-
-        # Grab the closest value to the square root of the number
-        # of elements times 2 to see if the number of elements
-        # is indeed a binomial coefficient.
-        d = int(np.ceil(np.sqrt(X.shape[0] * 2)))
-
-        # Check that v is of valid dimensions.
-        if d * (d - 1) / 2 != int(s[0]):
-            raise ValueError('Incompatible vector size. It must be a binomial coefficient n choose 2 for some integer n >= 2.')
-
-        # Allocate memory for the distance matrix.
-        M = np.zeros((d, d), dtype=np.double)
-
-        # Since the C code does not support striding using strides.
-        # The dimensions are used instead.
-        [X] = _copy_arrays_if_base_present([X])
-
-        # Fill in the values of the distance matrix.
-        _hierarchy_wrap.to_squareform_from_vector_wrap(M, X)
-
-        # Return the distance matrix.
-        M = M + M.transpose()
-        return M
-    elif len(s) != 1 and force.lower() == 'tomatrix':
-        raise ValueError("Forcing 'tomatrix' but input X is not a distance vector.")
-    elif len(s) == 2 and force.lower() != 'tovector':
-        if s[0] != s[1]:
-            raise ValueError('The matrix argument must be square.')
-        if checks:
-            if np.sum(np.sum(X == X.transpose())) != np.product(X.shape):
-                raise ValueError('The distance matrix array must be symmetrical.')
-            if (X.diagonal() != 0).any():
-                raise ValueError('The distance matrix array must have zeros along the diagonal.')
-
-        # One-side of the dimensions is set here.
-        d = s[0]
-
-        if d <= 1:
-            return np.array([], dtype=np.double)
-
-        # Create a vector.
-        v = np.zeros(((d * (d - 1) / 2),), dtype=np.double)
-
-        # Since the C code does not support striding using strides.
-        # The dimensions are used instead.
-        [X] = _copy_arrays_if_base_present([X])
-
-        # Convert the vector to squareform.
-        _hierarchy_wrap.to_vector_from_squareform_wrap(X, v)
-        return v
-    elif len(s) != 2 and force.lower() == 'tomatrix':
-        raise ValueError("Forcing 'tomatrix' but input X is not a distance vector.")
-    else:
-        raise ValueError('The first argument must be one or two dimensional array. A %d-dimensional array is not permitted' % len(s))
-
 def _convert_to_bool(X):
     if X.dtype != np.bool:
         X = np.bool_(X)
@@ -769,29 +866,38 @@ def _convert_to_double(X):
 
 def cophenet(*args, **kwargs):
     """
-    d = cophenet(Z)
+
+
+    Calling Conventions
+    -------------------
+
+      1. ``d = cophenet(Z)``
 
       Calculates the cophenetic distances between each observation in the
-      hierarchical clustering defined by the linkage Z.
+      hierarchical clustering defined by the linkage ``Z``.
 
-      Suppose p and q are original observations in disjoint clusters
-      s and t, respectively and s and t are joined by a direct parent
-      cluster u. The cophenetic distance between observations i and j
-      is simply the distance between clusters s and t.
+      Suppose :math:`$p$` and :math:`$q$` are original observations in
+      disjoint clusters :math:`$s$` and :math:`$t$`, respectively and
+      :math:`$s$` and :math:`$t$` are joined by a direct parent
+      cluster :math:`$u$`. The cophenetic distance between
+      observations :math:`$i$` and :math:`$j$` is simply the distance
+      between clusters :math:`$s$` and :math:`$t$`.
 
-      d is cophenetic distance matrix in condensed form. The ij'th
-      entry is the cophenetic distance between original observations
-      i and j.
+      ``d`` is cophenetic distance matrix in condensed form. The
+      :math:`$ij$`th entry is the cophenetic distance between original
+      observations :math:`$i$` and :math:`$j$`.
 
-    c = cophenet(Z, Y)
+      2. ``c = cophenet(Z, Y)``
 
-      Calculates the cophenetic correlation coefficient c of a hierarchical
-      clustering Z of a set of n observations in m dimensions. Y is the
-      condensed distance matrix from which Z was generated.
+      Calculates the cophenetic correlation coefficient ``c`` of a
+      hierarchical clustering defined by the linkage matrix ``Z`` of a
+      set of :math:`$n$` observations in :math:`$m$` dimensions. ``Y``
+      is the condensed distance matrix from which ``Z`` was generated.
 
-    (c, d) = cophenet(Z, Y, [])
+      3. ``(c, d) = cophenet(Z, Y, [])``
 
-      Also returns the cophenetic distance matrix in condensed form.
+      Returns a tuple instead, (c, d). The cophenetic distance matrix
+      ``d`` is included in condensed (upper triangular) form.
 
     """
     Z = np.asarray(Z)
@@ -817,7 +923,7 @@ def cophenet(*args, **kwargs):
 
     Y = args[1]
     Ys = Y.shape
-    is_valid_y(Y, throw=True, name='Y')
+    distance.is_valid_y(Y, throw=True, name='Y')
 
     z = zz.mean()
     y = Y.mean()
@@ -1035,140 +1141,6 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
         valid = False
     return valid
 
-def is_valid_y(y, warning=False, throw=False, name=None):
-    """
-    is_valid_y(y)
-
-      Returns True if the variable y passed is a valid condensed
-      distance matrix. Condensed distance matrices must be
-      1-dimensional numpy arrays containing doubles. Their length
-      must be a binomial coefficient {n \choose 2} for some positive
-      integer n.
-
-    is_valid_y(..., warning=True, name='V')
-
-      Invokes a warning if the variable passed is not a valid condensed distance
-      matrix. The warning message explains why the distance matrix is not valid.
-      'name' is used when referencing the offending variable.
-
-    is_valid_y(..., throw=True, name='V')
-
-      Throws an exception if the variable passed is not a valid condensed distance
-      matrix. The message explains why variable is not valid. 'name' is used when
-      referencing the offending variable.
-
-    """
-    y = np.asarray(y)
-    valid = True
-    try:
-        if type(y) != np.ndarray:
-            if name:
-                raise TypeError('\'%s\' passed as a condensed distance matrix is not a numpy array.' % name)
-            else:
-                raise TypeError('Variable is not a numpy array.')
-        if y.dtype != np.double:
-            if name:
-                raise TypeError('Condensed distance matrix \'%s\' must contain doubles (double).' % name)
-            else:
-                raise TypeError('Condensed distance matrix must contain doubles (double).')
-        if len(y.shape) != 1:
-            if name:
-                raise ValueError('Condensed distance matrix \'%s\' must have shape=1 (i.e. be one-dimensional).' % name)
-            else:
-                raise ValueError('Condensed distance matrix must have shape=1 (i.e. be one-dimensional).')
-        n = y.shape[0]
-        d = int(np.ceil(np.sqrt(n * 2)))
-        if (d*(d-1)/2) != n:
-            if name:
-                raise ValueError('Length n of condensed distance matrix \'%s\' must be a binomial coefficient, i.e. there must be a k such that (k \choose 2)=n)!' % name)
-            else:
-                raise ValueError('Length n of condensed distance matrix must be a binomial coefficient, i.e. there must be a k such that (k \choose 2)=n)!')
-    except Exception, e:
-        if throw:
-            raise
-        if warning:
-            _warning(str(e))
-        valid = False
-    return valid
-
-
-def is_valid_dm(D, tol=0.0, throw=False, name="D"):
-    """
-    is_valid_dm(D)
-
-      Returns True if the variable D passed is a valid distance matrix.
-      Distance matrices must be 2-dimensional numpy arrays containing
-      doubles. They must have a zero-diagonal, and they must be symmetric.
-
-    is_valid_dm(D, tol)
-
-      Returns True if the variable D passed is a valid distance matrix.
-      Small numerical differences in D and D.T and non-zeroness of the
-      diagonal are ignored if they are within the tolerance specified
-      by tol.
-
-    is_valid_dm(..., warning=True, name='V')
-
-      Invokes a warning if the variable passed is not a valid distance matrix.
-      The warning message explains why the distance matrix is not valid. 'name'
-      is used when referencing the offending variable.
-
-    is_valid_dm(..., throw=True, name='V')
-
-      Throws an exception if the varible passed is not valid. The message
-      explains why the variable is not valid. 'name' is used when referencing
-      the offending variable.
-
-    """
-    D = np.asarray(D)
-    valid = True
-    try:
-        if type(D) != np.ndarray:
-            if name:
-                raise TypeError('\'%s\' passed as a distance matrix is not a numpy array.' % name)
-            else:
-                raise TypeError('Variable is not a numpy array.')
-        s = D.shape
-        if D.dtype != np.double:
-            if name:
-                raise TypeError('Distance matrix \'%s\' must contain doubles (double).' % name)
-            else:
-                raise TypeError('Distance matrix must contain doubles (double).')
-        if len(D.shape) != 2:
-            if name:
-                raise ValueError('Distance matrix \'%s\' must have shape=2 (i.e. be two-dimensional).' % name)
-            else:
-                raise ValueError('Distance matrix must have shape=2 (i.e. be two-dimensional).')
-        if tol == 0.0:
-            if not (D == D.T).all():
-                if name:
-                    raise ValueError('Distance matrix \'%s\' must be symmetric.' % name)
-                else:
-                    raise ValueError('Distance matrix must be symmetric.')
-            if not (D[xrange(0, s[0]), xrange(0, s[0])] == 0).all():
-                if name:
-                    raise ValueError('Distance matrix \'%s\' diagonal must be zero.' % name)
-                else:
-                    raise ValueError('Distance matrix diagonal must be zero.')
-        else:
-            if not (D - D.T <= tol).all():
-                if name:
-                    raise ValueError('Distance matrix \'%s\' must be symmetric within tolerance %d.' % (name, tol))
-                else:
-                    raise ValueError('Distance matrix must be symmetric within tolerance %5.5f.' % tol)
-            if not (D[xrange(0, s[0]), xrange(0, s[0])] <= tol).all():
-                if name:
-                    raise ValueError('Distance matrix \'%s\' diagonal must be close to zero within tolerance %5.5f.' % (name, tol))
-                else:
-                    raise ValueError('Distance matrix \'%s\' diagonal must be close to zero within tolerance %5.5f.' % tol)
-    except Exception, e:
-        if throw:
-            raise
-        if warning:
-            _warning(str(e))
-        valid = False
-    return valid
-
 def numobs_linkage(Z):
     """
     Returns the number of original observations that correspond to a
@@ -1177,29 +1149,6 @@ def numobs_linkage(Z):
     Z = np.asarray(Z)
     is_valid_linkage(Z, throw=True, name='Z')
     return (Z.shape[0] + 1)
-
-def numobs_dm(D):
-    """
-    numobs_dm(D)
-
-      Returns the number of original observations that correspond to a
-      square, non-condensed distance matrix D.
-    """
-    D = np.asarray(D)
-    is_valid_dm(D, tol=np.inf, throw=True, name='D')
-    return D.shape[0]
-
-def numobs_y(Y):
-    """
-    numobs_y(Y)
-
-      Returns the number of original observations that correspond to a
-      condensed distance matrix Y.
-    """
-    Y = np.asarray(Y)
-    is_valid_y(Y, throw=True, name='Y')
-    d = int(np.ceil(np.sqrt(Y.shape[0] * 2)))
-    return d
 
 def Z_y_correspond(Z, Y):
     """
@@ -1213,7 +1162,7 @@ def Z_y_correspond(Z, Y):
     """
     Z = np.asarray(Z)
     Y = np.asarray(Y)
-    return numobs_y(Y) == numobs_Z(Z)
+    return numobs_y(Y) == numobs_linkage(Z)
 
 def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     """
