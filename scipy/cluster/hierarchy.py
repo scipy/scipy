@@ -1093,23 +1093,23 @@ def is_valid_im(R, warning=False, throw=False, name=None):
 
     :Arguments:
          - R : ndarray
-         The inconsistency matrix to check for validity.
+           The inconsistency matrix to check for validity.
 
          - warning : bool
-         When ``True``, issues a Python warning if the inconsistency
-         matrix passed is invalid.
+           When ``True``, issues a Python warning if the linkage
+           matrix passed is invalid.
 
          - throw : bool
-         When ``True``, throws a Python exception if the inconsistency
-         matrix passed is invalid.
+           When ``True``, throws a Python exception if the linkage
+           matrix passed is invalid.
 
          - name : string
-         When passed this string is used to refer to the variable name
-         of the invalid inconsistency matrix.
+           This string refers to the variable name of the invalid
+           linkage matrix.
 
     :Returns:
-         b : bool
-         True iff the inconsistency matrix is valid.
+         - b : bool
+           True iff the inconsistency matrix is valid.
     """
     R = np.asarray(R)
     valid = True
@@ -1149,26 +1149,32 @@ def is_valid_im(R, warning=False, throw=False, name=None):
 
 def is_valid_linkage(Z, warning=False, throw=False, name=None):
     """
-    is_valid_linkage(Z, t)
+    Checks the validity of a linkage matrix. A linkage matrix is valid
+    if it is a two dimensional nd-array (type double) with :math:`$n$`
+    rows and 4 columns.  The first two columns must contain indices
+    between 0 and :math:`$2n-1$`. For a given row ``i``,
+    :math:`$0 \leq \mathtt{Z[i,0]} \leq i+n-1$` and
+    :math:`$0 \leq Z[i,1] \leq i+n-1$` (i.e.  a cluster
+    cannot join another cluster unless the cluster being joined has
+    been generated.)
 
-      Returns True if Z is a valid linkage matrix. The variable must
-      be a 2-dimensional double numpy array with n rows and 4 columns.
-      The first two columns must contain indices between 0 and 2n-1. For a
-      given row i, 0 <= Z[i,0] <= i+n-1 and 0 <= Z[i,1] <= i+n-1 (i.e.
-      a cluster cannot join another cluster unless the cluster being joined
-      has been generated.)
+    :Arguments:
 
-    is_valid_linkage(..., warning=True, name='V')
+         - warning : bool
+           When ``True``, issues a Python warning if the linkage
+           matrix passed is invalid.
 
-      Invokes a warning if the variable passed is not a valid linkage. The message
-      explains why the distance matrix is not valid. 'name' is used when referencing
-      the offending variable.
+         - throw : bool
+           When ``True``, throws a Python exception if the linkage
+           matrix passed is invalid.
 
-    is_valid_linkage(..., throw=True, name='V')
+         - name : string
+           This string refers to the variable name of the invalid
+           linkage matrix.
 
-      Throws an exception if the variable passed is not a valid linkage. The message
-      explains why variable is not valid. 'name' is used when referencing the offending
-      variable.
+    :Returns:
+         - b : bool
+            True iff the inconsistency matrix is valid.
 
     """
     Z = np.asarray(Z)
@@ -1212,8 +1218,16 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
 
 def numobs_linkage(Z):
     """
-    Returns the number of original observations that correspond to a
-    linkage matrix Z.
+    Returns the number of original observations of the linkage matrix
+    passed.
+
+    :Arguments:
+        - Z : ndarray
+            The linkage matrix on which to perform the operation.
+
+    :Returns:
+        - n : int
+            The number of original observations in the linkage.
     """
     Z = np.asarray(Z)
     is_valid_linkage(Z, throw=True, name='Z')
@@ -1221,13 +1235,27 @@ def numobs_linkage(Z):
 
 def Z_y_correspond(Z, Y):
     """
-    yesno = Z_y_correspond(Z, Y)
+    Checks if a linkage matrix Z and condensed distance matrix
+    Y could possibly correspond to one another.
 
-      Returns True if a linkage matrix Z and condensed distance matrix
-      Y could possibly correspond to one another. They must have the same
-      number of original observations. This function is useful as a sanity
-      check in algorithms that make extensive use of linkage and distance
-      matrices that must correspond to the same set of original observations.
+    They must have the same number of original observations for
+    the check to succeed.
+
+    This function is useful as a sanity check in algorithms that make
+    extensive use of linkage and distance matrices that must
+    correspond to the same set of original observations.
+
+    :Arguments:
+        - Z : ndarray
+            The linkage matrix to check for correspondance.
+
+        - Y : ndarray
+            The condensed distance matrix to check for correspondance.
+
+    :Returns:
+        - b : bool
+            A boolean indicating whether the linkage matrix and distance
+            matrix could possibly correspond to one another.
     """
     Z = np.asarray(Z)
     Y = np.asarray(Y)
