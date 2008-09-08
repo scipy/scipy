@@ -265,7 +265,7 @@ def mode(a, axis=0):
         output = _mode1D(ma.ravel(a))
     else:
         output = ma.apply_along_axis(_mode1D, axis, a)
-    return output
+    return tuple(output)
 mode.__doc__ = stats.mode.__doc__
 
 
