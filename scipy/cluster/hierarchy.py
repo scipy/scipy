@@ -866,39 +866,49 @@ def _convert_to_double(X):
 
 def cophenet(*args, **kwargs):
     """
+    Calculates the cophenetic distances between each observation in
+    the hierarchical clustering defined by the linkage ``Z``.
 
+    Suppose :math:`$p$` and :math:`$q$` are original observations in
+    disjoint clusters :math:`$s$` and :math:`$t$`, respectively and
+    :math:`$s$` and :math:`$t$` are joined by a direct parent cluster
+    :math:`$u$`. The cophenetic distance between observations
+    :math:`$i$` and :math:`$j$` is simply the distance between
+    clusters :math:`$s$` and :math:`$t$`.
+
+    :Parameters:
+       - Z : ndarray
+         The encoded linkage matrix on which to perform the calculation.
+
+       - Y : ndarray (optional)
+         Calculates the cophenetic correlation coefficient ``c`` of a
+         hierarchical clustering defined by the linkage matrix ``Z``
+         of a set of :math:`$n$` observations in :math:`$m$`
+         dimensions. ``Y`` is the condensed distance matrix from which
+         ``Z`` was generated. 
+
+    :Returns:
+       - c : ndarray
+         The cophentic correlation distance (if ``y`` is passed).
+ 
+       - d : ndarray
+         The cophenetic distance matrix in condensed form. The
+         :math:`$ij$`th entry is the cophenetic distance between
+         original observations :math:`$i$` and :math:`$j$`.
 
     Calling Conventions
     -------------------
 
       1. ``d = cophenet(Z)``
-
-      Calculates the cophenetic distances between each observation in the
-      hierarchical clustering defined by the linkage ``Z``.
-
-      Suppose :math:`$p$` and :math:`$q$` are original observations in
-      disjoint clusters :math:`$s$` and :math:`$t$`, respectively and
-      :math:`$s$` and :math:`$t$` are joined by a direct parent
-      cluster :math:`$u$`. The cophenetic distance between
-      observations :math:`$i$` and :math:`$j$` is simply the distance
-      between clusters :math:`$s$` and :math:`$t$`.
-
-      ``d`` is cophenetic distance matrix in condensed form. The
-      :math:`$ij$`th entry is the cophenetic distance between original
-      observations :math:`$i$` and :math:`$j$`.
+         Returns just the cophentic distance matrix.
 
       2. ``c = cophenet(Z, Y)``
-
-      Calculates the cophenetic correlation coefficient ``c`` of a
-      hierarchical clustering defined by the linkage matrix ``Z`` of a
-      set of :math:`$n$` observations in :math:`$m$` dimensions. ``Y``
-      is the condensed distance matrix from which ``Z`` was generated.
+         Returns just the cophentic correlation coefficient.
 
       3. ``(c, d) = cophenet(Z, Y, [])``
-
-      Returns a tuple instead, (c, d). The cophenetic distance matrix
-      ``d`` is included in condensed (upper triangular) form.
-
+         Returns a tuple, ``(c, d)`` where ``c`` is the cophenetic
+         correlation coefficient and ``d`` is the condensed cophentic
+         distance matrix (upper triangular form).
     """
     Z = np.asarray(Z)
 
@@ -943,21 +953,35 @@ def cophenet(*args, **kwargs):
 
 def inconsistent(Z, d=2):
     """
-    R = inconsistent(Z, d=2)
+    Calculates inconsistency statistics on a linkage.
 
-      Calculates statistics on links up to d levels below each
-      non-singleton cluster defined in the (n-1)x4 linkage matrix Z.
+    :Parameters:
+       - d : int
+           The number of links up to ``d`` levels below each
+           non-singleton cluster
 
-      R is a (n-1)x5 matrix where the i'th row contains the link
-      statistics for the non-singleton cluster i. The link statistics
-      are computed over the link heights for links d levels below the
-      cluster i. R[i,0] and R[i,1] are the mean and standard deviation of
-      the link heights, respectively; R[i,2] is the number of links
-      included in the calculation; and R[i,3] is the inconsistency
-      coefficient, (Z[i, 2]-R[i,0])/R[i,2].
+       - Z : ndarray
+           The :math:`$(n-1)$` by 4 matrix encoding the linkage
+           (hierarchical clustering).  See ``linkage`` documentation
+           for more information on its form.
+       
 
-      This function behaves similarly to the MATLAB(TM) inconsistent
-      function.
+    :Returns:
+       - R : ndarray
+           A :math:`$(n-1)$` by 5 matrix where the ``i``'th row
+           contains the link statistics for the non-singleton cluster
+           ``i``. The link statistics are computed over the link
+           heights for links :math:`$d$` levels below the cluster
+           ``i``. ``R[i,0]`` and ``R[i,1]`` are the mean and standard
+           deviation of the link heights, respectively; ``R[i,2]`` is
+           the number of links included in the calculation; and
+           ``R[i,3]`` is the inconsistency coefficient,
+           .. math:
+               \frac{\mathtt{Z[i,2]}-\mathtt{R[i,0]}}
+                    {R[i,2]}.
+
+    This function behaves similarly to the MATLAB(TM) inconsistent
+    function.
     """
     Z = np.asarray(Z)
 
@@ -980,17 +1004,29 @@ def inconsistent(Z, d=2):
 
 def from_mlab_linkage(Z):
     """
-    Z2 = from_mlab_linkage(Z)
+    Converts a linkage matrix generated by MATLAB(TM) to a new
+    linkage matrix compatible with this module. The conversion does
+    two things:
 
-    Converts a linkage matrix Z generated by MATLAB(TM) to a new linkage
-    matrix Z2 compatible with this module. The conversion does two
-    things:
+     * the indices are converted from ``1..N`` to ``0..(N-1)`` form,
+       and
 
-     * the indices are converted from 1..N to 0..(N-1) form, and
-
-     * a fourth column Z[:,3] is added where Z[i,3] is equal to
-       the number of original observations (leaves) in the non-singleton
+     * a fourth column Z[:,3] is added where Z[i,3] is represents the
+       number of original observations (leaves) in the non-singleton
        cluster i.
+
+    This function is useful when loading in linkages from legacy data
+    files generated by MATLAB.
+
+    :Arguments:
+
+       - Z : ndarray
+           A linkage matrix generated by MATLAB(TM)
+
+    :Returns:
+
+       - ZS : ndarray
+           A linkage matrix compatible with this library.
     """
     Z = np.asarray(Z)
     Zs = Z.shape
@@ -1007,12 +1043,19 @@ def from_mlab_linkage(Z):
 
 def to_mlab_linkage(Z):
     """
-    Z2 = to_mlab_linkage(Z)
+    Converts a linkage matrix ``Z`` generated by the linkage function
+    of this module to a MATLAB(TM) compatible one. The return linkage
+    matrix has the last column removed and the cluster indices are
+    converted to ``1..N`` indexing.
 
-    Converts a linkage matrix Z generated by the linkage function of this
-    module to one compatible with MATLAB(TM). Z2 is the same as Z with the
-    last column removed and the cluster indices converted to use
-    1..N indexing.
+    :Arguments:
+       - Z : ndarray
+           A linkage matrix generated by this library.
+
+    :Returns:
+       - ZM : ndarray
+           A linkage matrix compatible with MATLAB(TM)'s hierarchical
+           clustering functions.
     """
     Z = np.asarray(Z)
     is_valid_linkage(Z, throw=True, name='Z')
@@ -1021,11 +1064,18 @@ def to_mlab_linkage(Z):
 
 def is_monotonic(Z):
     """
-    is_monotonic(Z)
+    Returns ``True`` if the linkage passed is monotonic. The linkage
+    is monotonic if for every cluster :math:`$s$` and :math:`$t$`
+    joined, the distance between them is no less than the distance
+    between any previously joined clusters.
 
-      Returns True if the linkage Z is monotonic. The linkage is monotonic
-      if for every cluster s and t joined, the distance between them is
-      no less than the distance between any previously joined clusters.
+    :Arguments:
+        - Z : ndarray
+          The linkage matrix to check for monotonicity.
+
+    :Returns:
+        - b : bool
+          A boolean indicating whether the linkage is monotonic.
     """
     Z = np.asarray(Z)
     is_valid_linkage(Z, throw=True, name='Z')
@@ -1035,12 +1085,31 @@ def is_monotonic(Z):
 
 def is_valid_im(R, warning=False, throw=False, name=None):
     """
-    is_valid_im(R)
 
-      Returns True if the inconsistency matrix passed is valid. It must
-      be a n by 4 numpy array of doubles. The standard deviations R[:,1]
-      must be nonnegative. The link counts R[:,2] must be positive and
-      no greater than n-1.
+    Returns True if the inconsistency matrix passed is valid. It must
+    be a :math:`$n$` by 4 numpy array of doubles. The standard
+    deviations ``R[:,1]`` must be nonnegative. The link counts
+    ``R[:,2]`` must be positive and no greater than :math:`$n-1$`.
+
+    :Arguments:
+         - R : ndarray
+         The inconsistency matrix to check for validity.
+
+         - warning : bool
+         When ``True``, issues a Python warning if the inconsistency
+         matrix passed is invalid.
+
+         - throw : bool
+         When ``True``, throws a Python exception if the inconsistency
+         matrix passed is invalid.
+
+         - name : string
+         When passed this string is used to refer to the variable name
+         of the invalid inconsistency matrix.
+
+    :Returns:
+         b : bool
+         True iff the inconsistency matrix is valid.
     """
     R = np.asarray(R)
     valid = True
