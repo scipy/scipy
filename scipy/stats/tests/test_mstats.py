@@ -348,10 +348,10 @@ class TestMoments(TestCase):
         assert_equal(mstats.mode(ma1, axis=None), (0,3))
         assert_equal(mstats.mode(a2, axis=None), (3,4))
         assert_equal(mstats.mode(ma2, axis=None), (0,3))
-        assert_equal(mstats.mode(a2, axis=0), [[0,0,0,1,1],[1,1,1,1,1]])
-        assert_equal(mstats.mode(ma2, axis=0), [[0,0,0,1,1],[1,1,1,1,1]])
-        assert_equal(mstats.mode(a2, axis=-1), [[0,3],[3,3],[3,1]])
-        assert_equal(mstats.mode(ma2, axis=-1), [[0,3],[1,1],[0,0]])
+        assert_equal(mstats.mode(a2, axis=0), ([[0,0,0,1,1]],[[1,1,1,1,1]]))
+        assert_equal(mstats.mode(ma2, axis=0), ([[0,0,0,1,1]],[[1,1,1,1,1]]))
+        assert_equal(mstats.mode(a2, axis=-1), ([[0],[3],[3]], [[3],[3],[1]]))
+        assert_equal(mstats.mode(ma2, axis=-1), ([[0],[1],[0]], [[3],[1],[0]]))
 
 
 class TestPercentile(TestCase):
