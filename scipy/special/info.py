@@ -25,9 +25,9 @@ Bessel Functions
 *  yn       -- Bessel function of second kind (integer order).
 *  yv       -- Bessel function of the second kind (real-valued order).
 *  yve      -- Exponentially scaled Bessel function of the second kind.
-*  kn       -- Modified Bessel function of the third kind (integer order).
-*  kv       -- Modified Bessel function of the third kind (real order).
-*  kve      -- Exponentially scaled modified Bessel function of the third kind.
+*  kn       -- Modified Bessel function of the second kind (integer order).
+*  kv       -- Modified Bessel function of the second kind (real order).
+*  kve      -- Exponentially scaled modified Bessel function of the second kind.
 *  iv       -- Modified Bessel function.
 *  ive      -- Exponentially scaled modified Bessel function.
 *  hankel1  -- Hankel function of the first kind.
@@ -60,10 +60,10 @@ Faster versions of common Bessel Functions
 *  i0e      -- Exponentially scaled modified Bessel function of order 0.
 *  i1       -- Modified Bessel function of order 1.
 *  i1e      -- Exponentially scaled modified Bessel function of order 1.
-*  k0       -- Modified Bessel function of the third kind of order 0.
-*  k0e      -- Exponentially scaled modified Bessel function of the third kind of order 0.
-*  k1       -- Modified Bessel function of the third kind of order 1.
-*  k1e      -- Exponentially scaled modified Bessel function of the third kind of order 1.
+*  k0       -- Modified Bessel function of the second kind of order 0.
+*  k0e      -- Exponentially scaled modified Bessel function of the second kind of order 0.
+*  k1       -- Modified Bessel function of the second kind of order 1.
+*  k1e      -- Exponentially scaled modified Bessel function of the second kind of order 1.
 
 Integrals of Bessel Functions
 .............................
