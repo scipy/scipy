@@ -1,5 +1,5 @@
 /*
- * Last Change: Tue May 13 02:00 PM 2008 J
+ * Last Change: Mon Sep 08 03:00 PM 2008 J
  *
  * RFFTW3 implementation
  *
@@ -17,13 +17,13 @@
 using namespace fft;
 
 class RFFTW3Cache : public Cache<FFTW3CacheId> {
-	public:	
+	public:
 		RFFTW3Cache(const FFTW3CacheId& id);
 		virtual ~RFFTW3Cache();
 
 		int compute_forward(double* inout) const
 		{
-                        assert (m_id.m_isalign ? is_simd_aligned(inout) : 
+                        assert (m_id.m_isalign ? is_simd_aligned(inout) :
                                                  true);
 			fftw_execute_r2r(m_plan, inout, m_wrk);
 			COPYRFFTW2STD(m_wrk, inout, m_id.m_n);
@@ -32,7 +32,7 @@ class RFFTW3Cache : public Cache<FFTW3CacheId> {
 
 		int compute_backward(double* inout) const
 		{
-                        assert (m_id.m_isalign ? is_simd_aligned(inout) : 
+                        assert (m_id.m_isalign ? is_simd_aligned(inout) :
                                                  true);
 			COPYINVRFFTW2STD(inout, m_wrk, m_id.m_n);
 			fftw_execute_r2r(m_plan, m_wrk, inout);
@@ -40,9 +40,9 @@ class RFFTW3Cache : public Cache<FFTW3CacheId> {
 		};
 
 	protected:
-		fftw_plan m_plan;	
-		double 	*m_wrk;	
-		double 	*m_wrk2;	
+		fftw_plan m_plan;
+		double *m_wrk;
+		double *m_wrk2;
 };
 
 RFFTW3Cache::RFFTW3Cache(const FFTW3CacheId& id)
@@ -62,10 +62,10 @@ RFFTW3Cache::RFFTW3Cache(const FFTW3CacheId& id)
 
         if (!m_id.m_isalign) {
                 flags |= FFTW_UNALIGNED;
-        } 
+        }
 
-	m_plan = fftw_plan_r2r_1d(id.m_n, m_wrk, m_wrk2, 
-				  (id.m_dir > 0 ?  FFTW_R2HC:FFTW_HC2R), 
+	m_plan = fftw_plan_r2r_1d(id.m_n, m_wrk, m_wrk2,
+				  (id.m_dir > 0 ?  FFTW_R2HC:FFTW_HC2R),
 				  flags);
 
 	if (m_plan == NULL) {
@@ -100,13 +100,13 @@ void drfft_fftw3(double *inout, int n, int direction, int
 	RFFTW3Cache *cache;
         bool isaligned;
 
-        isaligned = is_simd_aligned(ptr); 
+        isaligned = is_simd_aligned(ptr);
 
         if (howmany > 1) {
-                /* 
+                /*
                  * If executing for several consecutive buffers, we have to
                  * check that the shifting one buffer does not make it
-                 * unaligned 
+                 * unaligned
                  */
                 isaligned = isaligned && is_simd_aligned(ptr + n);
         }
