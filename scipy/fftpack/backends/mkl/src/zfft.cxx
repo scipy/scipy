@@ -30,7 +30,7 @@ MKLCache::MKLCache(const MKLCacheId& id)
 {
         int n = id.m_n;
 
-        DftiCreateDescriptor(&m_hdl, DFTI_DOUBLE, DFTI_COMPLEX, 1, (long)n); 
+        DftiCreateDescriptor(&m_hdl, DFTI_DOUBLE, DFTI_COMPLEX, 1, (long)n);
         DftiCommitDescriptor(m_hdl);
 
         return;
@@ -41,13 +41,13 @@ MKLCache::~MKLCache()
         DftiFreeDescriptor(&m_hdl);
 }
 
-int MKLCache::compute_forward(complex_double *inout) const 
+int MKLCache::compute_forward(complex_double *inout) const
 {
         DftiComputeForward(m_hdl, (double *) inout);
         return 0;
 }
 
-int MKLCache::compute_backward(complex_double *inout) const 
+int MKLCache::compute_backward(complex_double *inout) const
 {
         DftiComputeBackward(m_hdl, (double *) inout);
         return 0;

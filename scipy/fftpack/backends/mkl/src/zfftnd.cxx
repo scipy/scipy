@@ -3,7 +3,7 @@
  *
  * Original code by David M. Cooke
  *
- * Last Change: Tue May 13 05:00 PM 2008 J
+ * Last Change: Mon Sep 08 05:00 PM 2008 J
  */
 #include <new>
 
