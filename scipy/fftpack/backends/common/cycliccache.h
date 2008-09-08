@@ -1,6 +1,8 @@
 #ifndef _CYCLIC_CACHE_H_
 #define _CYCLIC_CACHE_H_
 
+#include <vector>
+
 namespace fft {
 
 class CacheId {
@@ -46,7 +48,7 @@ class CacheManager {
 			m_curn(0),
 			m_last(0)
 		{
-			m_cache = new U*[n];
+			m_cache.resize(n);
 
 		};
 
@@ -57,8 +59,6 @@ class CacheManager {
 			for (i = 0; i < m_curn; ++i) {
 				delete m_cache[i];
 			}
-
-			delete[] m_cache;
 		}
 
 		virtual U* get_cache(const T& id)
@@ -88,7 +88,7 @@ class CacheManager {
 		};
 
 	private:
-		U** m_cache;
+                std::vector<U*> m_cache;
 		int m_n;
 		int m_curn;
 		int m_last;
