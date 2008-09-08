@@ -20,7 +20,6 @@ class CacheId {
 
 	public:
 		int m_n;
-		
 };
 
 template <class T>
@@ -30,8 +29,8 @@ class Cache {
 		Cache(const T& id) : m_id(id) {};
 		virtual ~Cache() {};
 
-		virtual bool operator==(const Cache& other) const 
-		{ 
+		virtual bool operator==(const Cache& other) const
+		{
 			return other.m_id == m_id;
 		};
 
@@ -54,7 +53,7 @@ class CacheManager {
 		virtual ~CacheManager()
 		{
 			int i;
-	
+
 			for (i = 0; i < m_curn; ++i) {
 				delete m_cache[i];
 			}
@@ -89,7 +88,7 @@ class CacheManager {
 		};
 
 	private:
-		U** m_cache;		
+		U** m_cache;
 		int m_n;
 		int m_curn;
 		int m_last;
