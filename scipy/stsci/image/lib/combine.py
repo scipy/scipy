@@ -1,10 +1,10 @@
-import numpy as num
+import numpy as np
 from _combine import combine as _comb
 import operator as _operator
 
 
 def _combine_f(funcstr, arrays, output=None, outtype=None, nlow=0, nhigh=0, badmasks=None):
-    arrays = [ num.asarray(a) for a in arrays ]
+    arrays = [ np.asarray(a) for a in arrays ]
     shape = arrays[0].shape
     if output is None:
         if outtype is not None:
@@ -44,7 +44,7 @@ def median( arrays, output=None, outtype=None, nlow=0, nhigh=0, badmasks=None):
                indicates that a particular pixel is not to be included in the
                median calculation.
 
-    >>> a = num.arange(4)
+    >>> a = np.arange(4)
     >>> a = a.reshape((2,2))
     >>> arrays = [a*16, a*4, a*2, a*8]
     >>> median(arrays)
@@ -56,10 +56,10 @@ def median( arrays, output=None, outtype=None, nlow=0, nhigh=0, badmasks=None):
     >>> median(arrays, nlow=1)
     array([[ 0,  8],
            [16, 24]])
-    >>> median(arrays, outtype=num.float32)
+    >>> median(arrays, outtype=np.float32)
     array([[  0.,   6.],
            [ 12.,  18.]], dtype=float32)
-    >>> bm = num.zeros((4,2,2), dtype=num.bool8)
+    >>> bm = np.zeros((4,2,2), dtype=np.bool8)
     >>> bm[2,...] = 1
     >>> median(arrays, badmasks=bm)
     array([[ 0,  8],
@@ -94,7 +94,7 @@ def average( arrays, output=None, outtype=None, nlow=0, nhigh=0, badmasks=None):
                indicates that a particular pixel is not to be included in the
                average calculation.
 
-    >>> a = num.arange(4)
+    >>> a = np.arange(4)
     >>> a = a.reshape((2,2))
     >>> arrays = [a*16, a*4, a*2, a*8]
     >>> average(arrays)
@@ -106,10 +106,10 @@ def average( arrays, output=None, outtype=None, nlow=0, nhigh=0, badmasks=None):
     >>> average(arrays, nlow=1)
     array([[ 0,  9],
            [18, 28]])
-    >>> average(arrays, outtype=num.float32)
+    >>> average(arrays, outtype=np.float32)
     array([[  0. ,   7.5],
            [ 15. ,  22.5]], dtype=float32)
-    >>> bm = num.zeros((4,2,2), dtype=num.bool8)
+    >>> bm = np.zeros((4,2,2), dtype=np.bool8)
     >>> bm[2,...] = 1
     >>> average(arrays, badmasks=bm)
     array([[ 0,  9],
@@ -145,7 +145,7 @@ def minimum( arrays, output=None, outtype=None, nlow=0, nhigh=0, badmasks=None):
                indicates that a particular pixel is not to be included in the
                minimum calculation.
 
-    >>> a = num.arange(4)
+    >>> a = np.arange(4)
     >>> a = a.reshape((2,2))
     >>> arrays = [a*16, a*4, a*2, a*8]
     >>> minimum(arrays)
@@ -157,10 +157,10 @@ def minimum( arrays, output=None, outtype=None, nlow=0, nhigh=0, badmasks=None):
     >>> minimum(arrays, nlow=1)
     array([[ 0,  4],
            [ 8, 12]])
-    >>> minimum(arrays, outtype=num.float32)
+    >>> minimum(arrays, outtype=np.float32)
     array([[ 0.,  2.],
            [ 4.,  6.]], dtype=float32)
-    >>> bm = num.zeros((4,2,2), dtype=num.bool8)
+    >>> bm = np.zeros((4,2,2), dtype=np.bool8)
     >>> bm[2,...] = 1
     >>> minimum(arrays, badmasks=bm)
     array([[ 0,  4],
@@ -178,9 +178,9 @@ def threshhold(arrays, low=None, high=None, outputs=None):
     boolean value is true where each of the arrays values
     is < the low or >= the high threshholds.
 
-    >>> a=num.arange(100)
+    >>> a=np.arange(100)
     >>> a=a.reshape((10,10))
-    >>> (threshhold(a, 1, 50)).astype(num.int8)
+    >>> (threshhold(a, 1, 50)).astype(np.int8)
     array([[1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -191,7 +191,7 @@ def threshhold(arrays, low=None, high=None, outputs=None):
            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]], dtype=int8)
-    >>> (threshhold([ range(10)]*10, 3, 7)).astype(num.int8)
+    >>> (threshhold([ range(10)]*10, 3, 7)).astype(np.int8)
     array([[1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
            [1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
            [1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
@@ -202,7 +202,7 @@ def threshhold(arrays, low=None, high=None, outputs=None):
            [1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
            [1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
            [1, 1, 1, 0, 0, 0, 0, 1, 1, 1]], dtype=int8)
-    >>> (threshhold(a, high=50)).astype(num.int8)
+    >>> (threshhold(a, high=50)).astype(np.int8)
     array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -213,7 +213,7 @@ def threshhold(arrays, low=None, high=None, outputs=None):
            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]], dtype=int8)
-    >>> (threshhold(a, low=50)).astype(num.int8)
+    >>> (threshhold(a, low=50)).astype(np.int8)
     array([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -227,12 +227,12 @@ def threshhold(arrays, low=None, high=None, outputs=None):
 
     """
 
-    if not isinstance(arrays[0],  num.ndarray):
-        return threshhold( num.asarray(arrays), low, high, outputs)
+    if not isinstance(arrays[0],  np.ndarray):
+        return threshhold( np.asarray(arrays), low, high, outputs)
 
     if outputs is None:
-        outs = num.zeros(shape=(len(arrays),)+arrays[0].shape,
-                         dtype=num.bool8)
+        outs = np.zeros(shape=(len(arrays),)+arrays[0].shape,
+                         dtype=np.bool8)
     else:
         outs = outputs
 
@@ -241,12 +241,12 @@ def threshhold(arrays, low=None, high=None, outputs=None):
         out[:] = 0
 
         if high is not None:
-            num.greater_equal(a, high, out)
+            np.greater_equal(a, high, out)
             if low is not None:
-                num.logical_or(out, a < low, out)
+                np.logical_or(out, a < low, out)
         else:
             if low is not None:
-                num.less(a, low, out)
+                np.less(a, low, out)
 
     if outputs is None:
         return outs
@@ -254,16 +254,16 @@ def threshhold(arrays, low=None, high=None, outputs=None):
 def _bench():
     """time a 10**6 element median"""
     import time
-    a = num.arange(10**6)
+    a = np.arange(10**6)
     a = a.reshape((1000, 1000))
     arrays = [a*2, a*64, a*16, a*8]
     t0 = time.clock()
     median(arrays)
     print "maskless:", time.clock()-t0
 
-    a = num.arange(10**6)
+    a = np.arange(10**6)
     a = a.reshape((1000, 1000))
     arrays = [a*2, a*64, a*16, a*8]
     t0 = time.clock()
-    median(arrays, badmasks=num.zeros((1000,1000), dtype=num.bool8))
+    median(arrays, badmasks=np.zeros((1000,1000), dtype=np.bool8))
     print "masked:", time.clock()-t0

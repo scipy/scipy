@@ -40,10 +40,7 @@ __author__  = "Jochen Küpper <jochen@jochen-kuepper.de>"
 __date__    = "$Date: 2007/03/14 16:35:57 $"[7:-11]
 __version__ = "$Revision: 1.1 $"[11:-2]
 
-
-import numpy as num
 from convolve._lineshape import *
-
 
 class Profile(object):
     """An base object to provide a convolution kernel."""
