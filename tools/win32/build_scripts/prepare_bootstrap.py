@@ -115,7 +115,7 @@ def prepare_bootstrap(src_root, pyver):
     prepare_scipy_sources(src_root, bootstrap)
 
     shutil.copy('build.py', bootstrap)
-    prepare_nsis_script(bootstrap, pyver, get_scipy_version())
+    prepare_nsis_script(bootstrap, pyver, get_scipy_version(src_root))
 
 if __name__ == '__main__':
     ROOT = os.path.join("..", "..", "..")
