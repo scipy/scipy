@@ -56,8 +56,8 @@ def get_svn_version(chdir):
 
     return svnver
 
-def get_scipy_version(chdir):
-    version_file = pjoin(chdir, "scipy", "version.py")
+def get_scipy_version(src_root):
+    version_file = pjoin(src_root, "scipy", "version.py")
     if not pexists(version_file):
         raise IOError("file %s not found" % version_file)
 
@@ -85,7 +85,7 @@ def get_scipy_version(chdir):
     verstr = ".".join([str(i) for i in version])
     if isdev:
         verstr += ".dev"
-        verstr += get_svn_version(ROOT)
+        verstr += get_svn_version(src_root)
     return verstr
 
 def prepare_bootstrap(src_root, pyver):
