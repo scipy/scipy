@@ -3,6 +3,17 @@ import subprocess
 from os.path import join as pjoin, split as psplit, dirname, exists as pexists
 import re
 
+def build_sdist(chdir):
+    cwd = os.getcwd()
+    try:
+        os.chdir(chdir)
+        cmd = ["python", "setup.py", "sdist", "--format=zip"]
+        subprocess.call(cmd)
+    except Exception, e:
+        raise RuntimeError("Error while executing cmd (%s)" % e)
+    finally:
+        os.chdir(cwd)
+
 def get_svn_version(chdir):
     out = subprocess.Popen(['svn', 'info'], 
                            stdout = subprocess.PIPE, cwd = chdir).communicate()[0]
@@ -51,5 +62,4 @@ def get_scipy_version(chdir):
 
 if __name__ == '__main__':
     ROOT = os.path.join("..", "..", "..")
-    print get_scipy_version(ROOT)
-    print get_svn_version(ROOT)
+    print build_sdist(ROOT)
