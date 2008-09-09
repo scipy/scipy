@@ -91,7 +91,7 @@ def write_site_cfg(arch):
     f.close()
 
 def build(arch, pyver):
-    print "Building numpy binary for python %s, arch is %s" % (get_python_exec(pyver), arch)
+    print "Building scipy binary for python %s, arch is %s" % (get_python_exec(pyver), arch)
     get_clean()
     write_site_cfg(arch)
 
@@ -132,7 +132,7 @@ def get_binary_name(arch):
         ext = '.msi'
     else:
         ext = '.exe'
-    return "numpy-%s-%s%s" % (get_scipy_version(), arch, ext)
+    return "scipy-%s-%s%s" % (get_scipy_version(), arch, ext)
 
 def get_windist_exec(pyver):
     """Return the name of the installer built by wininst command."""
@@ -142,7 +142,7 @@ def get_windist_exec(pyver):
         ext = '.msi'
     else:
         ext = '.exe'
-    name = "numpy-%s.win32-py%s%s" % (get_numpy_version(ROOT), pyver, ext)
+    name = "scipy-%s.win32-py%s%s" % (get_scipy_version(ROOT), pyver, ext)
     return name
 
 if __name__ == '__main__':
