@@ -12,12 +12,12 @@ from numpy import asarray, Inf, dot, floor, eye, diag, exp, \
      cast, log, ogrid, isfinite, imag, real, absolute, amax, sign, \
      isfinite, sqrt, identity, single
 from numpy import matrix as mat
-import numpy as sb
+import numpy as np
 from basic import solve, inv, norm, triu, all_mat
 from decomp import eig, schur, rsf2csf, orth, svd
 
-eps = sb.finfo(float).eps
-feps = sb.finfo(single).eps
+eps = np.finfo(float).eps
+feps = np.finfo(single).eps
 
 def expm(A,q=7):
     """Compute the matrix exponential using Pade approximation.
@@ -142,7 +142,7 @@ def toreal(arr,tol=None):
     if tol is None:
         tol = {0:feps*1e3, 1:eps*1e6}[_array_precision[arr.dtype.char]]
     if (arr.dtype.char in ['F', 'D','G']) and \
-       sb.allclose(arr.imag, 0.0, atol=tol):
+       np.allclose(arr.imag, 0.0, atol=tol):
         arr = arr.real
     return arr
 
@@ -455,11 +455,11 @@ def signm(a,disp=1):
     # Shifting to avoid zero eigenvalues. How to ensure that shifting does
     # not change the spectrum too much?
     vals = svd(a,compute_uv=0)
-    max_sv = sb.amax(vals)
+    max_sv = np.amax(vals)
     #min_nonzero_sv = vals[(vals>max_sv*errtol).tolist().count(1)-1]
     #c = 0.5/min_nonzero_sv
     c = 0.5/max_sv
-    S0 = a + c*sb.identity(a.shape[0])
+    S0 = a + c*np.identity(a.shape[0])
     prev_errest = errest
     for i in range(100):
         iS0 = inv(S0)
@@ -508,7 +508,7 @@ def sqrtm(A,disp=1):
     T, Z = rsf2csf(T,Z)
     n,n = T.shape
 
-    R = sb.zeros((n,n),T.dtype.char)
+    R = np.zeros((n,n),T.dtype.char)
     for j in range(n):
         R[j,j] = sqrt(T[j,j])
         for i in range(j-1,-1,-1):
@@ -521,7 +521,7 @@ def sqrtm(A,disp=1):
     X = (Z * R * Z.H)
 
     if disp:
-        nzeig = sb.any(sb.diag(T)==0)
+        nzeig = np.any(diag(T)==0)
         if nzeig:
             print "Matrix is singular and may not have a square root."
         return X.A
