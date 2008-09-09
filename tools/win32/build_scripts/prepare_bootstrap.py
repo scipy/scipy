@@ -88,6 +88,23 @@ def get_scipy_version(src_root):
         verstr += get_svn_version(src_root)
     return verstr
 
+def prepare_nsis_script(bootstrap, pyver, numver):
+    tpl = os.path.join('nsis_scripts', 'scipy-superinstaller.nsi.in')
+    source = open(tpl, 'r')
+    target = open(pjoin(bootstrap, 'scipy-superinstaller.nsi'), 'w')
+
+    installer_name = 'scipy-%s-win32-superpack-python%s.exe' % (numver, pyver)
+    cnt = "".join(source.readlines())
+    cnt = cnt.replace('@SCIPY_INSTALLER_NAME@', installer_name)
+    for arch in ['nosse', 'sse2', 'sse3']:
+        cnt = cnt.replace('@%s_BINARY@' % arch.upper(),
+                          get_binary_name(arch))
+
+    target.write(cnt)
+
+def get_binary_name(arch):
+    return "scipy-%s-%s.exe" % (get_scipy_version(ROOT), arch)
+
 def prepare_bootstrap(src_root, pyver):
     bootstrap = "bootstrap-%s" % pyver
     if os.path.exists(bootstrap):
@@ -98,6 +115,7 @@ def prepare_bootstrap(src_root, pyver):
     prepare_scipy_sources(src_root, bootstrap)
 
     shutil.copy('build.py', bootstrap)
+    prepare_nsis_script(bootstrap, pyver, get_numpy_version())
 
 if __name__ == '__main__':
     ROOT = os.path.join("..", "..", "..")
