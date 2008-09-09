@@ -58,6 +58,7 @@ def get_scipy_version(chdir):
     verstr = ".".join([str(i) for i in version])
     if isdev:
         verstr += ".dev"
+        verstr += get_svn_version(ROOT)
     return verstr
 
 if __name__ == '__main__':
