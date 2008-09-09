@@ -1,7 +1,16 @@
 import os
+import shutil
 import subprocess
 from os.path import join as pjoin, split as psplit, dirname, exists as pexists
 import re
+from zipfile import ZipFile
+
+def get_sdist_tarball(src_root):
+    """Return the name of the installer built by sdist command."""
+    # Yeah, the name logic is harcoded in distutils. We have to reproduce it
+    # here
+    name = "scipy-%s.zip" % get_scipy_version(src_root)
+    return name
 
 def build_sdist(chdir):
     cwd = os.getcwd()
@@ -13,6 +22,24 @@ def build_sdist(chdir):
         raise RuntimeError("Error while executing cmd (%s)" % e)
     finally:
         os.chdir(cwd)
+
+def prepare_scipy_sources(src_root, bootstrap = 'bootstrap'):
+    zid = ZipFile(pjoin(src_root, 'dist', get_sdist_tarball(src_root)))
+    root = 'scipy-%s' % get_scipy_version(src_root)
+
+    # From the sdist-built tarball, extract all files into bootstrap directory,
+    # but removing the numpy-VERSION head path
+    for name in zid.namelist():
+        cnt = zid.read(name)
+        if name.startswith(root):
+            # XXX: even on windows, the path sep in zip is '/' ?
+            name = name.split('/', 1)[1]
+        newname = pjoin(bootstrap, name)
+
+        if not os.path.exists(dirname(newname)):
+            os.makedirs(dirname(newname))
+        fid = open(newname, 'wb')
+        fid.write(cnt)
 
 def get_svn_version(chdir):
     out = subprocess.Popen(['svn', 'info'], 
@@ -61,6 +88,15 @@ def get_scipy_version(chdir):
         verstr += get_svn_version(ROOT)
     return verstr
 
+def prepare_bootstrap(src_root, pyver):
+    bootstrap = "bootstrap-%s" % pyver
+    if os.path.exists(bootstrap):
+        shutil.rmtree(bootstrap)
+    os.makedirs(bootstrap)
+
+    build_sdist(src_root)
+    prepare_scipy_sources(src_root, bootstrap)
+
 if __name__ == '__main__':
     ROOT = os.path.join("..", "..", "..")
-    print build_sdist(ROOT)
+    prepare_bootstrap(ROOT, "2.5")
