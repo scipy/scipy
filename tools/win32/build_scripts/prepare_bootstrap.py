@@ -57,7 +57,7 @@ def get_scipy_version(chdir):
             
     verstr = ".".join([str(i) for i in version])
     if isdev:
-        verstr += "dev"
+        verstr += ".dev"
     return verstr
 
 if __name__ == '__main__':
