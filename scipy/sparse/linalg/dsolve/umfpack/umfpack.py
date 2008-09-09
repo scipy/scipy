@@ -7,7 +7,7 @@ Author: Robert Cimrman
 
 
 #from base import Struct, pause
-import numpy as nm
+import numpy as np
 import scipy.sparse as sp
 import re, imp
 try: # Silence import error.
@@ -275,8 +275,8 @@ class UmfpackContext( Struct ):
             raise TypeError, 'wrong family: %s' % family
 
         self.family = family
-        self.control = nm.zeros( (UMFPACK_CONTROL, ), dtype = nm.double )
-        self.info = nm.zeros( (UMFPACK_INFO, ), dtype = nm.double )
+        self.control = np.zeros( (UMFPACK_CONTROL, ), dtype = np.double )
+        self.info = np.zeros( (UMFPACK_INFO, ), dtype = np.double )
         self._symbolic = None
         self._numeric = None
         self.mtx = None
@@ -328,19 +328,19 @@ class UmfpackContext( Struct ):
         ##
         # Should check types of indices to correspond to familyTypes.
         if self.family[1] == 'i':
-            if (indx.dtype != nm.dtype('i')) \
-                   or mtx.indptr.dtype != nm.dtype('i'):
+            if (indx.dtype != np.dtype('i')) \
+                   or mtx.indptr.dtype != np.dtype('i'):
                 raise ValueError, 'matrix must have int indices'
         else:
-            if (indx.dtype != nm.dtype('l')) \
-                   or mtx.indptr.dtype != nm.dtype('l'):
+            if (indx.dtype != np.dtype('l')) \
+                   or mtx.indptr.dtype != np.dtype('l'):
                 raise ValueError, 'matrix must have long indices'
 
         if self.isReal:
-            if mtx.data.dtype != nm.dtype('<f8'):
+            if mtx.data.dtype != np.dtype('<f8'):
                 raise ValueError, 'matrix must have float64 values'
         else:
-            if mtx.data.dtype != nm.dtype('<c16'):
+            if mtx.data.dtype != np.dtype('<c16'):
                 raise ValueError, 'matrix must have complex128 values'
 
         return indx
@@ -523,13 +523,13 @@ class UmfpackContext( Struct ):
         indx = self._getIndx( mtx )
 
         if self.isReal:
-            rhs = rhs.astype( nm.float64 )
-            sol = nm.zeros( (mtx.shape[1],), dtype = nm.float64 )
+            rhs = rhs.astype( np.float64 )
+            sol = np.zeros( (mtx.shape[1],), dtype = np.float64 )
             status = self.funs.solve( sys, mtx.indptr, indx, mtx.data, sol, rhs,
                                       self._numeric, self.control, self.info )
         else:
-            rhs = rhs.astype( nm.complex128 )
-            sol = nm.zeros( (mtx.shape[1],), dtype = nm.complex128 )
+            rhs = rhs.astype( np.complex128 )
+            sol = np.zeros( (mtx.shape[1],), dtype = np.complex128 )
             mreal, mimag = mtx.data.real.copy(), mtx.data.imag.copy()
             sreal, simag = sol.real.copy(), sol.imag.copy()
             rreal, rimag = rhs.real.copy(), rhs.imag.copy()
@@ -544,7 +544,7 @@ class UmfpackContext( Struct ):
             if status == UMFPACK_WARNING_singular_matrix:
                 ## Change inf, nan to zeros.
                 print 'zeroing nan and inf entries...'
-                sol[~nm.isfinite( sol )] = 0.0
+                sol[~np.isfinite( sol )] = 0.0
             else:
                 raise RuntimeError, '%s failed with %s' % (self.funs.solve,
                                                            umfStatus[status])
@@ -647,20 +647,20 @@ class UmfpackContext( Struct ):
         #allocate storage for decomposition data
         i_type = mtx.indptr.dtype
 
-        Lp = nm.zeros( (n_row+1,), dtype = i_type )
-        Lj = nm.zeros( (lnz,), dtype = i_type )
-        Lx = nm.zeros( (lnz,), dtype = nm.double )
+        Lp = np.zeros( (n_row+1,), dtype = i_type )
+        Lj = np.zeros( (lnz,), dtype = i_type )
+        Lx = np.zeros( (lnz,), dtype = np.double )
 
-        Up = nm.zeros( (n_col+1,), dtype = i_type )
-        Ui = nm.zeros( (unz,), dtype = i_type )
-        Ux = nm.zeros( (unz,), dtype = nm.double )
+        Up = np.zeros( (n_col+1,), dtype = i_type )
+        Ui = np.zeros( (unz,), dtype = i_type )
+        Ux = np.zeros( (unz,), dtype = np.double )
 
-        P  = nm.zeros( (n_row,), dtype = i_type )
-        Q  = nm.zeros( (n_col,), dtype = i_type )
+        P  = np.zeros( (n_row,), dtype = i_type )
+        Q  = np.zeros( (n_col,), dtype = i_type )
 
-        Dx = nm.zeros( (min(n_row,n_col),), dtype = nm.double )
+        Dx = np.zeros( (min(n_row,n_col),), dtype = np.double )
 
-        Rs = nm.zeros( (n_row,), dtype = nm.double )
+        Rs = np.zeros( (n_row,), dtype = np.double )
 
         if self.isReal:
             (status,do_recip) = self.funs.get_numeric( Lp,Lj,Lx,Up,Ui,Ux,
@@ -679,9 +679,9 @@ class UmfpackContext( Struct ):
 
         else:
             #allocate additional storage for imaginary parts
-            Lz = nm.zeros( (lnz,), dtype = nm.double )
-            Uz = nm.zeros( (unz,), dtype = nm.double )
-            Dz = nm.zeros( (min(n_row,n_col),), dtype = nm.double )
+            Lz = np.zeros( (lnz,), dtype = np.double )
+            Uz = np.zeros( (unz,), dtype = np.double )
+            Dz = np.zeros( (min(n_row,n_col),), dtype = np.double )
 
             (status,do_recip) = self.funs.get_numeric(Lp,Lj,Lx,Lz,Up,Ui,Ux,Uz,
                                                       P,Q,Dx,Dz,Rs,
@@ -692,9 +692,9 @@ class UmfpackContext( Struct ):
                       % (self.funs.get_numeric, umfStatus[status])
 
 
-            Lxz = nm.zeros( (lnz,), dtype = nm.complex128 )
-            Uxz = nm.zeros( (unz,), dtype = nm.complex128 )
-            Dxz = nm.zeros( (min(n_row,n_col),), dtype = nm.complex128 )
+            Lxz = np.zeros( (lnz,), dtype = np.complex128 )
+            Uxz = np.zeros( (unz,), dtype = np.complex128 )
+            Dxz = np.zeros( (min(n_row,n_col),), dtype = np.complex128 )
 
             Lxz.real,Lxz.imag = Lx,Lz
             Uxz.real,Uxz.imag = Ux,Uz

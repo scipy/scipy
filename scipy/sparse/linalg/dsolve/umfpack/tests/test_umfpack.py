@@ -18,7 +18,7 @@ from scipy.sparse.linalg import linsolve
 
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
-import numpy as nm
+import numpy as np
 try:
     import scipy.sparse.linalg.dsolve.umfpack as um
 except (ImportError, AttributeError):
@@ -174,7 +174,7 @@ class TestFactorization(TestCase):
 
         self.real_matrices = [csc_matrix(x).astype('d') for x \
                 in self.real_matrices]
-        self.complex_matrices = [x.astype(nm.complex128)
+        self.complex_matrices = [x.astype(np.complex128)
                                  for x in self.real_matrices]
 
 # Skip methods if umfpack not present

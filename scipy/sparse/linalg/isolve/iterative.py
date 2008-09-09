@@ -12,7 +12,7 @@
 __all__ = ['bicg','bicgstab','cg','cgs','gmres','qmr']
 
 import _iterative
-import numpy as sb
+import numpy as np
 import copy
 
 from scipy.sparse.linalg.interface import LinearOperator
@@ -70,7 +70,7 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=Non
     resid = tol
     ndx1 = 1
     ndx2 = -1
-    work = sb.zeros(6*n,dtype=x.dtype)
+    work = np.zeros(6*n,dtype=x.dtype)
     ijob = 1
     info = 0
     ftflag = True
@@ -158,7 +158,7 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback
     resid = tol
     ndx1 = 1
     ndx2 = -1
-    work = sb.zeros(7*n,dtype=x.dtype)
+    work = np.zeros(7*n,dtype=x.dtype)
     ijob = 1
     info = 0
     ftflag = True
@@ -248,7 +248,7 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None)
     resid = tol
     ndx1 = 1
     ndx2 = -1
-    work = sb.zeros(4*n,dtype=x.dtype)
+    work = np.zeros(4*n,dtype=x.dtype)
     ijob = 1
     info = 0
     ftflag = True
@@ -332,7 +332,7 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None
     resid = tol
     ndx1 = 1
     ndx2 = -1
-    work = sb.zeros(7*n,dtype=x.dtype)
+    work = np.zeros(7*n,dtype=x.dtype)
     ijob = 1
     info = 0
     ftflag = True
@@ -420,8 +420,8 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=None, maxiter=None, xtype=None, M=None
     resid = tol
     ndx1 = 1
     ndx2 = -1
-    work  = sb.zeros((6+restrt)*n,dtype=x.dtype)
-    work2 = sb.zeros((restrt+1)*(2*restrt+2),dtype=x.dtype)
+    work  = np.zeros((6+restrt)*n,dtype=x.dtype)
+    work2 = np.zeros((restrt+1)*(2*restrt+2),dtype=x.dtype)
     ijob = 1
     info = 0
     ftflag = True
@@ -545,7 +545,7 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
     resid = tol
     ndx1 = 1
     ndx2 = -1
-    work = sb.zeros(11*n,x.dtype)
+    work = np.zeros(11*n,x.dtype)
     ijob = 1
     info = 0
     ftflag = True
