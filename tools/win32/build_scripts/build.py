@@ -7,7 +7,8 @@ import sys
 import subprocess
 import os
 import shutil
-from os.path import join as pjoin, split as psplit, dirname
+from os.path import join as pjoin, split as psplit, dirname, exists as pexists
+import re
 
 PYEXECS = {"2.5" : "C:\python25\python.exe",
         "2.4" : "C:\python24\python24.exe",
