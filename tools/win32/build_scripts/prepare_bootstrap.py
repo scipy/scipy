@@ -97,6 +97,8 @@ def prepare_bootstrap(src_root, pyver):
     build_sdist(src_root)
     prepare_scipy_sources(src_root, bootstrap)
 
+    shutil.copy('build.py', bootstrap)
+
 if __name__ == '__main__':
     ROOT = os.path.join("..", "..", "..")
     prepare_bootstrap(ROOT, "2.5")
