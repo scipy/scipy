@@ -5,10 +5,9 @@ import math
 import statlib
 import stats
 import distributions
-import inspect
 from numpy import isscalar, r_, log, sum, around, unique, asarray
 from numpy import zeros, arange, sort, amin, amax, any, where, \
-     array, atleast_1d, sqrt, ceil, floor, array, poly1d, compress, not_equal, \
+     atleast_1d, sqrt, ceil, floor, array, poly1d, compress, not_equal, \
      pi, exp, ravel, angle
 import scipy
 import numpy

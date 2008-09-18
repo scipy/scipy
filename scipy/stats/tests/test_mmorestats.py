@@ -9,7 +9,6 @@ __author__ = "Pierre GF Gerard-Marchant ($Author: backtopop $)"
 import numpy as np
 
 import numpy.ma as ma
-from numpy.ma import masked
 
 import scipy.stats.mstats as ms
 import scipy.stats.mmorestats as mms
