@@ -1,6 +1,3 @@
-# Standard library imports.
-import cPickle
-
 # Scipy imports.
 import numpy as np
 from numpy import pi

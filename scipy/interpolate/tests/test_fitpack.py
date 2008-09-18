@@ -12,13 +12,10 @@ Run tests if interpolate is not installed:
 """
 #import libwadpy
 
-import sys
 from numpy.testing import *
 from numpy import array, diff
-from scipy.interpolate.fitpack2 import UnivariateSpline,LSQUnivariateSpline,\
-     InterpolatedUnivariateSpline
-from scipy.interpolate.fitpack2 import LSQBivariateSpline, \
-     SmoothBivariateSpline, RectBivariateSpline
+from scipy.interpolate.fitpack2 import UnivariateSpline, LSQBivariateSpline, \
+    SmoothBivariateSpline, RectBivariateSpline
 
 class TestUnivariateSpline(TestCase):
     def test_linear_constant(self):

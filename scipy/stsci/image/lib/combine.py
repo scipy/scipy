@@ -1,7 +1,5 @@
 import numpy as np
 from _combine import combine as _comb
-import operator as _operator
-
 
 def _combine_f(funcstr, arrays, output=None, outtype=None, nlow=0, nhigh=0, badmasks=None):
     arrays = [ np.asarray(a) for a in arrays ]
