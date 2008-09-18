@@ -3,7 +3,7 @@ __all__ = ['daub','qmf','cascade','morlet']
 import numpy as np
 from numpy.dual import eig
 from scipy.misc import comb
-from scipy import linspace, pi, exp, zeros
+from scipy import linspace, pi, exp
 
 def daub(p):
     """The coefficients for the FIR low-pass filter producing Daubechies wavelets.

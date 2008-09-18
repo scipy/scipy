@@ -4,17 +4,16 @@
 import types
 import sigtools
 from scipy import special, linalg
-from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2
+from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2, fftn, ifftn
 from numpy import polyadd, polymul, polydiv, polysub, \
      roots, poly, polyval, polyder, cast, asarray, isscalar, atleast_1d, \
      ones, sin, linspace, real, extract, real_if_close, zeros, array, arange, \
      where, sqrt, rank, newaxis, argmax, product, cos, pi, exp, \
      ravel, size, less_equal, sum, r_, iscomplexobj, take, \
-     argsort, allclose, expand_dims, unique, prod, sort, reshape, c_, \
-     transpose, dot, any, minimum, maximum, mean, cosh, arccosh, \
+     argsort, allclose, expand_dims, unique, prod, sort, reshape, \
+     transpose, dot, any, mean, cosh, arccosh, \
      arccos, concatenate
-import numpy
-from scipy.fftpack import fftn, ifftn, fft
+import numpy as np
 from scipy.misc import factorial
 
 _modedict = {'valid':0, 'same':1, 'full':2}
@@ -94,8 +93,8 @@ def fftconvolve(in1, in2, mode="full"):
     """
     s1 = array(in1.shape)
     s2 = array(in2.shape)
-    complex_result = (numpy.issubdtype(in1.dtype, numpy.complex) or
-                      numpy.issubdtype(in2.dtype, numpy.complex))
+    complex_result = (np.issubdtype(in1.dtype, np.complex) or
+                      np.issubdtype(in2.dtype, np.complex))
     size = s1+s2-1
     IN1 = fftn(in1,size)
     IN1 *= fftn(in2,size)
@@ -864,7 +863,7 @@ def chebwin(M, at, sym=1):
     p = zeros(x.shape)
     p[x > 1] = cosh(order * arccosh(x[x > 1]))
     p[x < -1] = (1 - 2*(order%2)) * cosh(order * arccosh(-x[x < -1]))
-    p[numpy.abs(x) <=1 ] = cos(order * arccos(x[numpy.abs(x) <= 1]))
+    p[np.abs(x) <=1 ] = cos(order * arccos(x[np.abs(x) <= 1]))
 
     # Appropriate IDFT and filling up
     # depending on even/odd M
@@ -1004,11 +1003,11 @@ def unique_roots(p,tol=1e-3,rtype='min'):
       mult -- The multiplicity of each root
     """
     if rtype in ['max','maximum']:
-        comproot = numpy.maximum
+        comproot = np.maximum
     elif rtype in ['min','minimum']:
-        comproot = numpy.minimum
+        comproot = np.minimum
     elif rtype in ['avg','mean']:
-        comproot = numpy.mean
+        comproot = np.mean
     p = asarray(p)*1.0
     tol = abs(tol)
     p, indx = cmplx_sort(p)
@@ -1381,7 +1380,7 @@ def resample(x,num,t=None,axis=0,window=None):
     sl = [slice(None)]*len(x.shape)
     newshape = list(x.shape)
     newshape[axis] = num
-    N = int(numpy.minimum(num,Nx))
+    N = int(np.minimum(num,Nx))
     Y = zeros(newshape,'D')
     sl[axis] = slice(0,(N+1)/2)
     Y[sl] = X[sl]
