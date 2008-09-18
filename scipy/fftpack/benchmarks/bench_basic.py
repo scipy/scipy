@@ -2,11 +2,9 @@
 """
 import sys
 from numpy.testing import *
-from scipy.fftpack import ifft,fft,fftn,ifftn,rfft,irfft
-from scipy.fftpack import _fftpack as fftpack
+from scipy.fftpack import ifft, fft, fftn, irfft
 
-from numpy import arange, add, array, asarray, zeros, dot, exp, pi,\
-     swapaxes, double, cdouble
+from numpy import arange, asarray, zeros, dot, exp, pi, double, cdouble
 import numpy.fft
 
 from numpy.random import rand

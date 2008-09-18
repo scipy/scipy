@@ -11,7 +11,6 @@ Run tests if fftpack is not installed:
   python tests/test_helper.py [<level>]
 """
 
-import sys
 from numpy.testing import *
 from scipy.fftpack import fftshift,ifftshift,fftfreq,rfftfreq
 

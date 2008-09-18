@@ -10,13 +10,12 @@ Run tests if scipy is installed:
 Run tests if fftpack is not installed:
   python tests/test_pseudo_diffs.py [<level>]
 """
-import sys
-from numpy.testing import *
-from scipy.fftpack import diff,fft,ifft,tilbert,itilbert,hilbert,ihilbert,rfft
-from scipy.fftpack import shift
-from scipy.fftpack import fftfreq
 
-from numpy import arange, add, array, sin, cos, pi,exp,tanh,sum,sign
+from numpy.testing import *
+from scipy.fftpack import diff, fft, ifft, tilbert, itilbert, hilbert, \
+                          ihilbert, shift, fftfreq
+
+from numpy import arange, sin, cos, pi, exp, tanh, sum, sign
 
 def random(size):
     return rand(*size)

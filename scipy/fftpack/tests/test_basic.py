@@ -10,7 +10,7 @@ Run tests if scipy is installed:
 Run tests if fftpack is not installed:
   python tests/test_basic.py
 """
-import sys
+
 from numpy.testing import *
 from scipy.fftpack import ifft,fft,fftn,ifftn,rfft,irfft
 from scipy.fftpack import _fftpack as fftpack

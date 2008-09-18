@@ -2,12 +2,10 @@
 """
 import sys
 
-from numpy import arange, add, array, sin, cos, pi,exp,tanh,sum,sign
+from numpy import arange, sin, cos, pi, exp, tanh, sign
 
 from numpy.testing import *
-from scipy.fftpack import diff,fft,ifft,tilbert,itilbert,hilbert,ihilbert,rfft
-from scipy.fftpack import shift
-from scipy.fftpack import fftfreq
+from scipy.fftpack import diff, fft, ifft, tilbert, hilbert, shift, fftfreq
 
 def random(size):
     return rand(*size)
