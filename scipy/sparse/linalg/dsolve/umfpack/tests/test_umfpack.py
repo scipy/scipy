@@ -6,14 +6,11 @@
 """
 
 import warnings
-
-from numpy import transpose, array, arange
-
 import random
 from numpy.testing import *
 
 from scipy import rand, matrix, diag, eye
-from scipy.sparse import csc_matrix, dok_matrix, spdiags, SparseEfficiencyWarning
+from scipy.sparse import csc_matrix, spdiags, SparseEfficiencyWarning
 from scipy.sparse.linalg import linsolve
 
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
@@ -112,8 +109,8 @@ class TestSolvers(TestCase):
         self.a = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5)
         #print "The sparse matrix (constructed from diagonals):"
         #print self.a
-        self.b = array([1, 2, 3, 4, 5])
-        self.b2 = array([5, 4, 3, 2, 1])
+        self.b = np.array([1, 2, 3, 4, 5])
+        self.b2 = np.array([5, 4, 3, 2, 1])
 
 
 

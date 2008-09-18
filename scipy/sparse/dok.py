@@ -7,7 +7,7 @@ __all__ = ['dok_matrix', 'isspmatrix_dok']
 import operator
 from itertools import izip
 
-from numpy import asarray, asmatrix, intc, isscalar, array, matrix
+from numpy import asarray, intc, isscalar
 
 from base import spmatrix,isspmatrix
 from sputils import isdense, getdtype, isshape, isintlike, isscalarlike

@@ -4,14 +4,12 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['dia_matrix','isspmatrix_dia']
 
-from numpy import asarray, asmatrix, matrix, zeros, arange, array, \
-        empty_like, intc, atleast_1d, atleast_2d, add, multiply, \
-        unique, hstack
+from numpy import asarray, zeros, arange, array, intc, atleast_1d, \
+                  atleast_2d, unique, hstack
 
 from base import isspmatrix, _formats
 from data import _data_matrix
-from sputils import isscalarlike, isshape, upcast, getdtype, isdense
-
+from sputils import isshape, upcast, getdtype
 from sparsetools import dia_matvec
 
 class dia_matrix(_data_matrix):

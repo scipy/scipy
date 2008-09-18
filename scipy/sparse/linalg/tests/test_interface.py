@@ -5,7 +5,7 @@
 from numpy.testing import *
 
 import numpy
-from numpy import array, matrix, ones, ravel
+from numpy import array, matrix, dtype
 from scipy.sparse import csr_matrix
 
 from scipy.sparse.linalg.interface import *
@@ -21,7 +21,7 @@ class TestInterface(TestCase):
 
         class matlike:
             def __init__(self):
-                self.dtype = numpy.dtype('int')
+                self.dtype = dtype('int')
                 self.shape = (2,3)
             def matvec(self,x):
                 y = array([ 1*x[0] + 2*x[1] + 3*x[2],

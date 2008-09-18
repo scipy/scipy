@@ -10,8 +10,6 @@ Authors: Robert Cimrman, Andrew Knyazev
 Examples in tests directory contributed by Nils Wagner.
 """
 
-from warnings import warn
-
 import numpy as np
 import scipy as sp
 

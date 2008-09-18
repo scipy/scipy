@@ -9,7 +9,7 @@ Author: Robert Cimrman
 #from base import Struct, pause
 import numpy as np
 import scipy.sparse as sp
-import re, imp
+import re
 try: # Silence import error.
     import _umfpack as _um
 except:

@@ -5,8 +5,7 @@
 import numpy
 from numpy.testing import *
 
-from scipy import array, arange, ones, sort, cos, pi, rand, \
-     set_printoptions, r_, diag, linalg
+from scipy import arange, ones, rand, set_printoptions, r_, diag, linalg
 from scipy.linalg import eig
 from scipy.sparse.linalg.eigen.lobpcg import lobpcg
 

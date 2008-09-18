@@ -1,9 +1,6 @@
 """test sparse matrix construction functions"""
 
-import numpy
-from numpy import array, matrix
 from numpy.testing import *
-
 from scipy.sparse import csr_matrix
 
 import numpy as np

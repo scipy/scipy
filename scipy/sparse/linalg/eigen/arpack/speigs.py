@@ -1,6 +1,5 @@
 import numpy as np
 import _arpack
-import warnings
 
 __all___=['ArpackException','ARPACK_eigs', 'ARPACK_gen_eigs']
 

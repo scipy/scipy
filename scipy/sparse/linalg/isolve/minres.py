@@ -1,4 +1,4 @@
-from numpy import ndarray, matrix, sqrt, inner, finfo, asarray, zeros
+from numpy import sqrt, inner, finfo, zeros
 from numpy.linalg import norm
 
 from utils import make_system
@@ -280,7 +280,6 @@ if __name__ == '__main__':
     from scipy import ones, arange
     from scipy.linalg import norm
     from scipy.sparse import spdiags
-    from scipy.sparse.linalg import cg
 
     n = 10
 

@@ -5,10 +5,8 @@ __all__ = []
 
 from warnings import warn
 
-import numpy
-from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
-        empty, hstack, isscalar, ndarray, shape, searchsorted, empty_like, \
-        where, concatenate, transpose, deprecate
+from numpy import array, asarray, zeros, rank, intc, empty, isscalar, \
+                  empty_like, where, concatenate, deprecate, diff, multiply
 
 from base import spmatrix, isspmatrix, SparseEfficiencyWarning
 from data import _data_matrix
@@ -166,7 +164,7 @@ class _cs_matrix(_data_matrix):
                 if self.indices.min() < 0:
                     raise ValueError, "%s index values must be >= 0" % \
                             minor_name
-                if numpy.diff(self.indptr).min() < 0:
+                if diff(self.indptr).min() < 0:
                     raise ValueError,'index pointer values must form a " \
                                         "non-decreasing sequence'
 
@@ -260,7 +258,7 @@ class _cs_matrix(_data_matrix):
             raise ValueError('inconsistent shapes')
 
         if isdense(other):
-            return numpy.multiply(self.todense(),other)
+            return multiply(self.todense(),other)
         else:
             other = self.__class__(other)
             return self._binopt(other,'_elmul_')
@@ -541,7 +539,7 @@ class _cs_matrix(_data_matrix):
 
         index  = self.indices[indices] - start
         data   = self.data[indices]
-        indptr = numpy.array([0, len(indices)])
+        indptr = array([0, len(indices)])
         return self.__class__((data, index, indptr), shape=shape, \
                               dtype=self.dtype)
 

@@ -13,7 +13,6 @@ __all__ = ['bicg','bicgstab','cg','cgs','gmres','qmr']
 
 import _iterative
 import numpy as np
-import copy
 
 from scipy.sparse.linalg.interface import LinearOperator
 from utils import make_system

@@ -15,15 +15,12 @@ from numpy import ones, arange, intc, asarray, rank, zeros, \
 
 from sputils import upcast
 
-from csr import csr_matrix, isspmatrix_csr
-from csc import csc_matrix, isspmatrix_csc
+from csr import csr_matrix
+from csc import csc_matrix
 from bsr import bsr_matrix
 from coo import coo_matrix
-from dok import dok_matrix
 from lil import lil_matrix
 from dia import dia_matrix
-from base import isspmatrix
-
 
 def spdiags(data, diags, m, n, format=None):
     """Return a sparse matrix from diagonals.

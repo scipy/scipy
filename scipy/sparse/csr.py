@@ -7,16 +7,12 @@ __all__ = ['csr_matrix', 'isspmatrix_csr']
 
 from warnings import warn
 
-import numpy
-from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
-        empty, hstack, isscalar, ndarray, shape, searchsorted, where, \
-        concatenate, deprecate, arange, ones, ravel
+from numpy import asarray, asmatrix, zeros, intc, empty, isscalar, array, \
+                  searchsorted, where, deprecate, arange, ones, ravel
 
-from base import spmatrix, isspmatrix
 from sparsetools import csr_tocsc, csr_tobsr, csr_count_blocks, \
         get_csr_submatrix
-from sputils import upcast, to_native, isdense, isshape, getdtype, \
-        isscalarlike, isintlike
+from sputils import upcast, isintlike
 
 
 from compressed import _cs_matrix
@@ -319,7 +315,7 @@ class csr_matrix(_cs_matrix):
 
         index  = self.indices[indices] - start
         data   = self.data[indices]
-        indptr = numpy.array([0, len(indices)])
+        indptr = array([0, len(indices)])
         return csr_matrix( (data, index, indptr), shape=(1, stop-start) )
 
     def _get_submatrix( self, row_slice, col_slice ):
