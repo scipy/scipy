@@ -1,6 +1,5 @@
 # Functions which need the PIL
 
-import types
 import numpy
 import tempfile
 

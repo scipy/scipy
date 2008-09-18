@@ -1,5 +1,4 @@
 import os.path
-import glob
 import numpy as np
 
 from numpy.testing import *

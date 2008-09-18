@@ -3,15 +3,8 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 (special, linalg)
 """
 
-import sys
-
-import numpy
-
-from numpy import exp, asarray, arange, \
-     newaxis, hstack, product, array, where, \
-     zeros, extract, place, pi, sqrt, eye, poly1d, dot, r_
-
-from numpy import who
+from numpy import exp, asarray, arange, newaxis, hstack, product, array, \
+                  where, zeros, extract, place, pi, sqrt, eye, poly1d, dot, r_
 
 __all__ = ['factorial','factorial2','factorialk','comb',
            'central_diff_weights', 'derivative', 'pade', 'lena']
