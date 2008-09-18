@@ -147,7 +147,7 @@ __all__ = ['ode']
 __version__ = "$Id$"
 __docformat__ = "restructuredtext en"
 
-from numpy import asarray, array, zeros, sin, int32, isscalar
+from numpy import asarray, array, zeros, int32, isscalar
 import re, sys
 
 #------------------------------------------------------------------------------
