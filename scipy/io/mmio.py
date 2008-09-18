@@ -10,9 +10,8 @@
 #
 
 import os
-from numpy import asarray, real, imag, conj, zeros, ndarray, \
-                  empty, concatenate, ones, ascontiguousarray, \
-                  vstack, savetxt, fromfile, fromstring
+from numpy import asarray, real, imag, conj, zeros, ndarray, concatenate, \
+                  ones, ascontiguousarray, vstack, savetxt, fromfile, fromstring
 
 __all__ = ['mminfo','mmread','mmwrite', 'MMFile']
 

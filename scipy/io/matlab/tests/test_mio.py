@@ -3,10 +3,10 @@
 import os
 from glob import glob
 from cStringIO import StringIO
-from tempfile import mkstemp, mkdtemp
+from tempfile import mkdtemp
 from numpy.testing import *
-from numpy import arange, array, eye, pi, cos, exp, sin, sqrt, ndarray,  \
-     zeros, reshape, transpose, empty
+from numpy import arange, array, pi, cos, exp, sin, sqrt, ndarray,  \
+     zeros, reshape, transpose
 import scipy.sparse as SP
 
 from scipy.io.matlab.mio import loadmat, savemat
@@ -14,11 +14,6 @@ from scipy.io.matlab.mio5 import mat_obj, mat_struct
 
 import shutil
 import gzip
-
-try:  # Python 2.3 support
-    from sets import Set as set
-except:
-    pass
 
 test_data_path = os.path.join(os.path.dirname(__file__), 'data')
 
