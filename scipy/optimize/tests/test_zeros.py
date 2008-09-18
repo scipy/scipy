@@ -7,8 +7,7 @@ from numpy.testing import *
 from scipy.optimize import zeros as cc
 
 # Import testing parameters
-from scipy.optimize._tstutils import methods, mstrings, functions, \
-     fstrings, description
+from scipy.optimize._tstutils import functions, fstrings
 
 class TestBasic(TestCase) :
     def run_check(self, method, name):

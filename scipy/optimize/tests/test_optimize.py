@@ -13,8 +13,7 @@ from numpy.testing import *
 
 from scipy import optimize
 from scipy.optimize import leastsq
-from numpy import array, zeros, float64, dot, log, exp, inf, \
-     pi, sin, cos
+from numpy import array, zeros, float64, dot, log, exp, inf, sin, cos
 import numpy as np
 from scipy.optimize.tnc import RCSTRINGS, MSG_NONE
 import numpy.random
@@ -264,14 +263,14 @@ class TestLeastSq(TestCase):
         return err
 
     def test_basic(self):
-        p0 = numpy.array([0,0,0])
+        p0 = array([0,0,0])
         params_fit, ier = leastsq(self.residuals, p0,
                                   args=(self.y_meas, self.x))
         assert ier in (1,2,3,4), 'solution not found (ier=%d)'%ier
         assert_array_almost_equal( params_fit, self.abc, decimal=2) # low precision due to random
 
     def test_full_output(self):
-        p0 = numpy.array([0,0,0])
+        p0 = array([0,0,0])
         full_output = leastsq(self.residuals, p0,
                               args=(self.y_meas, self.x),
                               full_output=True)
@@ -279,8 +278,8 @@ class TestLeastSq(TestCase):
         assert ier in (1,2,3,4), 'solution not found: %s'%mesg
 
     def test_input_untouched(self):
-        p0 = numpy.array([0,0,0],dtype=numpy.float64)
-        p0_copy = numpy.array(p0, copy=True)
+        p0 = array([0,0,0],dtype=float64)
+        p0_copy = array(p0, copy=True)
         full_output = leastsq(self.residuals, p0,
                               args=(self.y_meas, self.x),
                               full_output=True)
