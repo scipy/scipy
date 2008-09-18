@@ -19,10 +19,9 @@ Run tests if linalg is not installed:
   python tests/test_basic.py
 """
 
-import numpy
 from numpy import arange, add, array, dot, zeros, identity, conjugate, transpose
+import numpy.linalg as linalg
 
-import sys
 from numpy.testing import *
 
 from scipy.linalg import solve,inv,det,lstsq, toeplitz, hankel, tri, triu, \
@@ -50,33 +49,33 @@ class TestSolveBanded(TestCase):
         for b in ([[1,0,0,0],[0,0,0,1],[0,1,0,0],[0,1,0,0]],
                   [[2,1],[-30,4],[2,3],[1,3]]):
             x = solve_banded((l,u),ab,b)
-            assert_array_almost_equal(numpy.dot(a,x),b)
+            assert_array_almost_equal(dot(a,x),b)
 
 class TestSolve(TestCase):
 
     def test_20Feb04_bug(self):
         a = [[1,1],[1.0,0]] # ok
         x0 = solve(a,[1,0j])
-        assert_array_almost_equal(numpy.dot(a,x0),[1,0])
+        assert_array_almost_equal(dot(a,x0),[1,0])
 
         a = [[1,1],[1.2,0]] # gives failure with clapack.zgesv(..,rowmajor=0)
         b = [1,0j]
         x0 = solve(a,b)
-        assert_array_almost_equal(numpy.dot(a,x0),[1,0])
+        assert_array_almost_equal(dot(a,x0),[1,0])
 
     def test_simple(self):
         a = [[1,20],[-30,4]]
         for b in ([[1,0],[0,1]],[1,0],
                   [[2,1],[-30,4]]):
             x = solve(a,b)
-            assert_array_almost_equal(numpy.dot(a,x),b)
+            assert_array_almost_equal(dot(a,x),b)
 
     def test_simple_sym(self):
         a = [[2,3],[3,5]]
         for lower in [0,1]:
             for b in ([[1,0],[0,1]],[1,0]):
                 x = solve(a,b,sym_pos=1,lower=lower)
-                assert_array_almost_equal(numpy.dot(a,x),b)
+                assert_array_almost_equal(dot(a,x),b)
 
     def test_simple_sym_complex(self):
         a = [[5,2],[2,4]]
@@ -85,7 +84,7 @@ class TestSolve(TestCase):
                    [0,2]],
                   ]:
             x = solve(a,b,sym_pos=1)
-            assert_array_almost_equal(numpy.dot(a,x),b)
+            assert_array_almost_equal(dot(a,x),b)
 
     def test_simple_complex(self):
         a = array([[5,2],[2j,4]],'D')
@@ -96,7 +95,7 @@ class TestSolve(TestCase):
                   array([1,0],'D'),
                   ]:
             x = solve(a,b)
-            assert_array_almost_equal(numpy.dot(a,x),b)
+            assert_array_almost_equal(dot(a,x),b)
 
     def test_nils_20Feb04(self):
         n = 2
@@ -117,7 +116,7 @@ class TestSolve(TestCase):
         for i in range(4):
             b = random([n,3])
             x = solve(a,b)
-            assert_array_almost_equal(numpy.dot(a,x),b)
+            assert_array_almost_equal(dot(a,x),b)
 
     def test_random_complex(self):
         n = 20
@@ -126,7 +125,7 @@ class TestSolve(TestCase):
         for i in range(2):
             b = random([n,3])
             x = solve(a,b)
-            assert_array_almost_equal(numpy.dot(a,x),b)
+            assert_array_almost_equal(dot(a,x),b)
 
     def test_random_sym(self):
         n = 20
@@ -138,7 +137,7 @@ class TestSolve(TestCase):
         for i in range(4):
             b = random([n])
             x = solve(a,b,sym_pos=1)
-            assert_array_almost_equal(numpy.dot(a,x),b)
+            assert_array_almost_equal(dot(a,x),b)
 
     def test_random_sym_complex(self):
         n = 20
@@ -147,11 +146,11 @@ class TestSolve(TestCase):
         for i in range(n):
             a[i,i] = abs(20*(.1+a[i,i]))
             for j in range(i):
-                a[i,j] = numpy.conjugate(a[j,i])
+                a[i,j] = conjugate(a[j,i])
         b = random([n])+2j*random([n])
         for i in range(2):
             x = solve(a,b,sym_pos=1)
-            assert_array_almost_equal(numpy.dot(a,x),b)
+            assert_array_almost_equal(dot(a,x),b)
 
 
 class TestInv(TestCase):
@@ -159,11 +158,11 @@ class TestInv(TestCase):
     def test_simple(self):
         a = [[1,2],[3,4]]
         a_inv = inv(a)
-        assert_array_almost_equal(numpy.dot(a,a_inv),
+        assert_array_almost_equal(dot(a,a_inv),
                                   [[1,0],[0,1]])
         a = [[1,2,3],[4,5,6],[7,8,10]]
         a_inv = inv(a)
-        assert_array_almost_equal(numpy.dot(a,a_inv),
+        assert_array_almost_equal(dot(a,a_inv),
                                   [[1,0,0],[0,1,0],[0,0,1]])
 
     def test_random(self):
@@ -172,12 +171,12 @@ class TestInv(TestCase):
             a = random([n,n])
             for i in range(n): a[i,i] = 20*(.1+a[i,i])
             a_inv = inv(a)
-            assert_array_almost_equal(numpy.dot(a,a_inv),
-                                      numpy.identity(n))
+            assert_array_almost_equal(dot(a,a_inv),
+                                      identity(n))
     def test_simple_complex(self):
         a = [[1,2],[3,4j]]
         a_inv = inv(a)
-        assert_array_almost_equal(numpy.dot(a,a_inv),
+        assert_array_almost_equal(dot(a,a_inv),
                                   [[1,0],[0,1]])
 
     def test_random_complex(self):
@@ -186,8 +185,8 @@ class TestInv(TestCase):
             a = random([n,n])+2j*random([n,n])
             for i in range(n): a[i,i] = 20*(.1+a[i,i])
             a_inv = inv(a)
-            assert_array_almost_equal(numpy.dot(a,a_inv),
-                                      numpy.identity(n))
+            assert_array_almost_equal(dot(a,a_inv),
+                                      identity(n))
 
 
 class TestDet(TestCase):
@@ -203,7 +202,6 @@ class TestDet(TestCase):
         assert_almost_equal(a_det,-6+4j)
 
     def test_random(self):
-        import numpy.linalg as linalg
         basic_det = linalg.det
         n = 20
         for i in range(4):
@@ -213,7 +211,6 @@ class TestDet(TestCase):
             assert_almost_equal(d1,d2)
 
     def test_random_complex(self):
-        import numpy.linalg as linalg
         basic_det = linalg.det
         n = 20
         for i in range(4):
@@ -246,7 +243,7 @@ class TestLstsq(TestCase):
         for b in ([[1,0],[0,1]],[1,0],
                   [[2,1],[-30,4]]):
             x = lstsq(a,b)[0]
-            assert_array_almost_equal(numpy.dot(a,x),b)
+            assert_array_almost_equal(dot(a,x),b)
 
     def test_simple_overdet(self):
         a = [[1,2],[4,5],[3,4]]
@@ -271,7 +268,7 @@ class TestLstsq(TestCase):
         for i in range(4):
             b = random([n,3])
             x = lstsq(a,b)[0]
-            assert_array_almost_equal(numpy.dot(a,x),b)
+            assert_array_almost_equal(dot(a,x),b)
 
     def test_random_complex_exact(self):
         n = 20
@@ -280,7 +277,7 @@ class TestLstsq(TestCase):
         for i in range(2):
             b = random([n,3])
             x = lstsq(a,b)[0]
-            assert_array_almost_equal(numpy.dot(a,x),b)
+            assert_array_almost_equal(dot(a,x),b)
 
     def test_random_overdet(self):
         n = 20

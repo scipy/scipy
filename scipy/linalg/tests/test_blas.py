@@ -12,13 +12,9 @@ Run tests if linalg is not installed:
   python tests/test_blas.py [<level>]
 """
 
-import sys
 import math
 
-from numpy import arange, add, array
-
 from numpy.testing import *
-
 from scipy.linalg import fblas, cblas
 
 

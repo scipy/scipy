@@ -3,8 +3,6 @@
 # Created by: Pearu Peterson, September 2002
 #
 
-
-import sys
 from numpy.testing import *
 from numpy import ones
 

@@ -9,7 +9,7 @@ __all__ = ['expm','expm2','expm3','cosm','sinm','tanm','coshm','sinhm',
 
 from numpy import asarray, Inf, dot, floor, eye, diag, exp, \
      product, logical_not, ravel, transpose, conjugate, \
-     cast, log, ogrid, isfinite, imag, real, absolute, amax, sign, \
+     cast, log, ogrid, imag, real, absolute, amax, sign, \
      isfinite, sqrt, identity, single
 from numpy import matrix as mat
 import numpy as np

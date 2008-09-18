@@ -6,11 +6,8 @@
 # !! Complex calculations really aren't checked that carefully.
 # !! Only real valued complex numbers are used in tests.
 
-import sys
-
-from numpy import dot, float32, float64, complex64, complex128, \
-     arange, array, zeros, shape, transpose, newaxis, \
-     common_type, conjugate
+from numpy import float32, float64, complex64, complex128, arange, array, \
+                  zeros, shape, transpose, newaxis, common_type, conjugate
 from scipy.linalg import fblas
 
 from numpy.testing import *
