@@ -32,7 +32,6 @@ import numpy
 import _ni_support
 import _nd_image
 import filters
-import types
 
 
 def _center_is_true(structure, origin):
