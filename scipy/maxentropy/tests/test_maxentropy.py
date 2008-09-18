@@ -6,9 +6,8 @@ Author: Ed Schofield, 2003-2005
 Copyright: Ed Schofield, 2003-2005
 """
 
-import sys
 from numpy.testing import *
-from numpy import arange, add, array, dot, zeros, identity, log, exp, ones
+from numpy import arange, log, exp, ones
 from scipy.maxentropy.maxentropy import *
 
 class TestMaxentropy(TestCase):
