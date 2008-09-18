@@ -34,15 +34,12 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-import sys
 import os.path
 
 import numpy as np
 from numpy.testing import *
-from scipy.cluster.hierarchy import linkage, from_mlab_linkage, numobs_linkage
-from scipy.cluster.distance import squareform, pdist, cdist, matching, jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule, numobs_dm, numobs_y
-
-#from scipy.cluster.hierarchy import pdist, euclidean
+from scipy.cluster.distance import squareform, pdist, cdist, matching, \
+    jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule
 
 _filenames = ["iris.txt",
               "cdist-X1.txt",

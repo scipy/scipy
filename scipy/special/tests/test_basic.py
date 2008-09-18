@@ -32,7 +32,7 @@
 #8   test_sh_jacobi
 #8   test_sh_legendre
 
-from numpy import dot, array
+from numpy import array
 
 from numpy.testing import *
 

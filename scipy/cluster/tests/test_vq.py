@@ -3,13 +3,12 @@
 # David Cournapeau
 # Last Change: Tue Jun 24 04:00 PM 2008 J
 
-import sys
 import os.path
 
 import numpy as np
 from numpy.testing import *
 
-from scipy.cluster.vq import kmeans, kmeans2, py_vq, py_vq2, _py_vq_1d, vq, ClusterError
+from scipy.cluster.vq import kmeans, kmeans2, py_vq, py_vq2, vq, ClusterError
 try:
     from scipy.cluster import _vq
     TESTC=True
