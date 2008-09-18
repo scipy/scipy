@@ -2,7 +2,6 @@ from numpy import *
 from numpy.testing import *
 
 from scipy.weave import inline_tools
-from test_scxx import *
 
 class TestInline(TestCase):
     """ These are long running tests...

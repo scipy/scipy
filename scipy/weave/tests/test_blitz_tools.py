@@ -1,7 +1,7 @@
 import os
 import time
 
-from numpy import dot, float32, float64, complex64, complex128, \
+from numpy import float32, float64, complex64, complex128, \
      zeros, random, array, sum, abs, allclose
 
 from numpy.testing import *

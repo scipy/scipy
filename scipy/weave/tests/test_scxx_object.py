@@ -1,7 +1,6 @@
 """ Test refcounting and behavior of SCXX.
 """
-import time
-import os
+
 import sys
 
 from numpy.testing import *

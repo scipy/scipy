@@ -2,7 +2,7 @@
 """
 
 import time
-import os,sys
+import sys
 
 from numpy.testing import *
 
@@ -17,8 +17,6 @@ from scipy.weave import inline_tools
 #     setItem           DONE
 #     operator[] (get)
 #     operator[] (set)  DONE
-
-from UserList import UserList
 
 class _TestSequenceBase(TestCase):
     seq_type = None
