@@ -1196,7 +1196,7 @@ scipy.stats.var is deprecated; please update your code to use numpy.var.
 Please note that:
     - numpy.var axis argument defaults to None, not 0
     - numpy.var has a ddof argument to replace bias in a more general manner.
-      scipy.stats.var(a, bias=True) can be replaced by scipy.stats.var(x,
+      scipy.stats.var(a, bias=True) can be replaced by numpy.var(x,
 axis=0, ddof=1).""", DeprecationWarning)
     a, axis = _chk_asarray(a, axis)
     mn = np.expand_dims(mean(a,axis),axis)
