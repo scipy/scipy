@@ -478,6 +478,8 @@ class rv_continuous(object):
         goodargs = argsreduce(cond, *((x,)+args+(scale,)))
         scale, goodargs = goodargs[-1], goodargs[:-1]
         place(output,cond,self._pdf(*goodargs) / scale)
+        if output.ndim == 0:
+            return output[()]
         return output
 
     def cdf(self,x,*args,**kwds):
@@ -507,6 +509,8 @@ class rv_continuous(object):
         place(output,cond2,1.0)
         goodargs = argsreduce(cond, *((x,)+args))
         place(output,cond,self._cdf(*goodargs))
+        if output.ndim == 0:
+            return output[()]
         return output
 
     def sf(self,x,*args,**kwds):
@@ -536,6 +540,8 @@ class rv_continuous(object):
         place(output,cond2,1.0)
         goodargs = argsreduce(cond, *((x,)+args))
         place(output,cond,self._sf(*goodargs))
+        if output.ndim == 0:
+            return output[()]        
         return output
 
     def ppf(self,q,*args,**kwds):
@@ -565,6 +571,8 @@ class rv_continuous(object):
         goodargs = argsreduce(cond, *((q,)+args+(scale,loc)))
         scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
         place(output,cond,self._ppf(*goodargs)*scale + loc)
+        if output.ndim == 0:
+            return output[()]        
         return output
 
     def isf(self,q,*args,**kwds):
@@ -594,6 +602,8 @@ class rv_continuous(object):
         goodargs = argsreduce(cond, *((1.0-q,)+args+(scale,loc)))
         scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
         place(output,cond,self._ppf(*goodargs)*scale + loc)
+        if output.ndim == 0:
+            return output[()]
         return output
 
     def stats(self,*args,**kwds):
@@ -3536,6 +3546,8 @@ class rv_discrete:
         place(output,(1-cond0)*(cond1==cond1),self.badvalue)
         goodargs = argsreduce(cond, *((k,)+args))
         place(output,cond,self._pmf(*goodargs))
+        if output.ndim == 0:
+            return output[()]        
         return output
 
     def cdf(self, k, *args, **kwds):
@@ -3564,6 +3576,8 @@ class rv_discrete:
         place(output,cond2*(cond0==cond0), 1.0)
         goodargs = argsreduce(cond, *((k,)+args))
         place(output,cond,self._cdf(*goodargs))
+        if output.ndim == 0:
+            return output[()]        
         return output
 
     def sf(self,k,*args,**kwds):
@@ -3592,6 +3606,8 @@ class rv_discrete:
         place(output,cond2,1.0)
         goodargs = argsreduce(cond, *((k,)+args))
         place(output,cond,self._sf(*goodargs))
+        if output.ndim == 0:
+            return output[()]        
         return output
 
     def ppf(self,q,*args,**kwds):
@@ -3620,6 +3636,8 @@ class rv_discrete:
         goodargs = argsreduce(cond, *((q,)+args+(loc,)))
         loc, goodargs = goodargs[-1], goodargs[:-1]
         place(output,cond,self._ppf(*goodargs) + loc)
+        if output.ndim == 0:
+            return output[()]        
         return output
 
     def isf(self,q,*args,**kwds):
@@ -3649,6 +3667,8 @@ class rv_discrete:
         goodargs = argsreduce(cond, *((q,)+args+(loc,)))
         loc, goodargs = goodargs[-1], goodargs[:-1]
         place(output,cond,self._ppf(*goodargs) + loc)
+        if output.ndim == 0:
+            return output[()]        
         return output
 
     def stats(self, *args, **kwds):
