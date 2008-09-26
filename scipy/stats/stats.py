@@ -482,6 +482,13 @@ def median(a, axis=0):
     The median of each remaining axis, or of all of the values in the array
     if axis is None.
     """
+    warnings.warn("""\
+scipy.stats.median is deprecated; please update your code to use numpy.median.
+Please note that:
+    - numpy.median axis argument defaults to None, not 0
+    - numpy.median has a ddof argument to replace bias in a more general manner.
+      scipy.stats.median(a, bias=True) can be replaced by numpy.median(x,
+axis=0, ddof=1).""", DeprecationWarning)
     a, axis = _chk_asarray(a, axis)
     if axis != 0:
         a = np.rollaxis(a, axis, 0)
