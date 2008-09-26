@@ -1387,6 +1387,11 @@ def cov(m, y=None, rowvar=False, bias=False):
     If rowvar is False, then each row is a variable with
     observations in the columns.
     """
+    warnings.warn("""\
+scipy.stats.cov is deprecated; please update your code to use numpy.cov.
+Please note that:
+    - numpy.cov axis argument defaults to None, not 0
+""", DeprecationWarning)
     m = asarray(m)
     if y is None:
         y = m
