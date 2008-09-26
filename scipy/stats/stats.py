@@ -1390,7 +1390,8 @@ def cov(m, y=None, rowvar=False, bias=False):
     warnings.warn("""\
 scipy.stats.cov is deprecated; please update your code to use numpy.cov.
 Please note that:
-    - numpy.cov axis argument defaults to None, not 0
+    - numpy.cov rowvar argument defaults to true, not false
+    - numpy.cov bias argument defaults to false, not true
 """, DeprecationWarning)
     m = asarray(m)
     if y is None:
@@ -1426,7 +1427,7 @@ def corrcoef(x, y=None, rowvar=False, bias=True):
 scipy.stats.corrcoef is deprecated; please update your code to use numpy.corrcoef.
 Please note that:
     - numpy.corrcoef rowvar argument defaults to true, not false
-    - numpy.corrcoef bias argument defaults to 1, not 0
+    - numpy.corrcoef bias argument defaults to false, not true
 """, DeprecationWarning)
     if y is not None:
         x = np.transpose([x,y])
