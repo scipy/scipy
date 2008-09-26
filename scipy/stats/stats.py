@@ -1185,13 +1185,18 @@ Returns: array containing the value of (mean/stdev) along axis,
     sd = samplestd(instack,axis)
     return np.where(sd == 0, 0, m/sd)
 
-
 def var(a, axis=0, bias=False):
     """
 Returns the estimated population variance of the values in the passed
 array (i.e., N-1).  Axis can equal None (ravel array first), or an
 integer (the axis over which to operate).
 """
+    warnings.warn("""\
+scipy.stats.var is deprecated; please update your code to use numpy.var.
+Please note that:
+    - numpy.var axis argument defaults to None, not 0
+    - numpy.var has a ddof argument to replace bias in a more general manner.
+      scipy.stats.var(a, bias=True) can be replaced by scipy.stats.var(x, axis=0, ddof=1).""")
     a, axis = _chk_asarray(a, axis)
     mn = np.expand_dims(mean(a,axis),axis)
     deviations = a - mn
