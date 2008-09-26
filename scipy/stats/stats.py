@@ -1214,6 +1214,13 @@ Returns the estimated population standard deviation of the values in
 the passed array (i.e., N-1).  Axis can equal None (ravel array
 first), or an integer (the axis over which to operate).
 """
+    warnings.warn("""\
+scipy.stats.std is deprecated; please update your code to use numpy.std.
+Please note that:
+    - numpy.std axis argument defaults to None, not 0
+    - numpy.std has a ddof argument to replace bias in a more general manner.
+      scipy.stats.std(a, bias=True) can be replaced by numpy.std(x,
+axis=0, ddof=1).""", DeprecationWarning)
     return np.sqrt(var(a,axis,bias))
 
 
