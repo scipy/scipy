@@ -1422,6 +1422,12 @@ def corrcoef(x, y=None, rowvar=False, bias=True):
     If rowvar is True, then each row is a variables with
     observations in the columns.
     """
+    warnings.warn("""\
+scipy.stats.corrcoef is deprecated; please update your code to use numpy.corrcoef.
+Please note that:
+    - numpy.corrcoef rowvar argument defaults to true, not false
+    - numpy.corrcoef bias argument defaults to 1, not 0
+""", DeprecationWarning)
     if y is not None:
         x = np.transpose([x,y])
         y = None
