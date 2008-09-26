@@ -404,6 +404,13 @@ def mean(a, axis=0):
     all values in the array if axis=None. The return value will have a floating
     point dtype even if the input data are integers.
     """
+    warnings.warn("""\
+scipy.stats.mean is deprecated; please update your code to use numpy.mean.
+Please note that:
+    - numpy.mean axis argument defaults to None, not 0
+    - numpy.mean has a ddof argument to replace bias in a more general manner.
+      scipy.stats.mean(a, bias=True) can be replaced by numpy.mean(x,
+axis=0, ddof=1).""", DeprecationWarning)
     a, axis = _chk_asarray(a, axis)
     return a.mean(axis)
 
