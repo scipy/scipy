@@ -778,7 +778,7 @@ class rv_continuous(object):
         return optimize.fmin(self.nnlf,x0,args=(ravel(data),),disp=0)
 
     def est_loc_scale(self, data, *args):
-        mu, mu2, g1, g2 = self.stats(*args,**{'moments':'mv'})
+        mu, mu2 = self.stats(*args,**{'moments':'mv'})
         muhat = st.nanmean(data)
         mu2hat = st.nanstd(data)
         Shat = sqrt(mu2hat / mu2)
