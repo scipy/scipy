@@ -1,0 +1,31 @@
+""" Unit tests for nonlinear solvers
+Author: Ondrej Certik
+May 2007
+"""
+
+from numpy.testing import *
+
+from scipy.optimize import nnls
+from numpy import arange, dot
+from numpy.linalg import norm
+
+
+class TestNNLS(TestCase):
+    """ Test case for a simple constrained entropy maximization problem
+    (the machine translation example of Berger et al in
+    Computational Linguistics, vol 22, num 1, pp 39--72, 1996.)
+    """
+
+    def test_nnls(self):
+        a=arange(25.0).reshape(-1,5)
+        x=arange(5.0)
+        y=dot(a,x)
+        x, res= nnls.nnls(a,y)
+        assert res<1e-7
+        assert norm(dot(a,x)-y)<1e-7
+
+if __name__ == "__main__":
+    run_module_suite()
+
+
+
