@@ -199,6 +199,35 @@ def minkowski(u, v, p):
         raise ValueError("p must be at least 1")
     return (abs(u-v)**p).sum() ** (1.0 / p)
 
+def wminkowski(u, v, p, w):
+    """
+    Computes the weighted Minkowski distance between two vectors ``u``
+    and ``v``, defined as
+
+    .. math::
+
+       \sum {(w_i*|u_i - v_i|)^p})^(1/p).
+
+    :Parameters:
+       u : ndarray
+           An :math:`n`-dimensional vector.
+       v : ndarray
+           An :math:`n`-dimensional vector.
+       p : ndarray
+           The norm of the difference :math:`${||u-v||}_p$`.
+       w : ndarray
+           The weight vector.
+
+    :Returns:
+       d : double
+           The Minkowski distance between vectors ``u`` and ``v``.
+    """
+    u = np.asarray(u)
+    v = np.asarray(v)
+    if p < 1:
+        raise ValueError("p must be at least 1")
+    return ((w * abs(u-v))**p).sum() ** (1.0 / p)
+
 def euclidean(u, v):
     """
     Computes the Euclidean distance between two n-vectors ``u`` and ``v``,
@@ -817,6 +846,14 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
            'jaccard', 'kulsinski', 'mahalanobis', 'matching',
            'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
            'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'.
+       w : ndarray
+           The weight vector (for weighted Minkowski).
+       p : double
+           The p-norm to apply (for Minkowski, weighted and unweighted)
+       V : ndarray
+           The variance vector (for standardized Euclidean).
+       VI : ndarray
+           The inverse of the covariance matrix (for Mahalanobis).
 
     :Returns:
        Y : ndarray
@@ -978,6 +1015,11 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
        Computes the Sokal-Sneath distance between each pair of
        boolean vectors. (see sokalsneath function documentation)
 
+    22. ``Y = pdist(X, 'wminkowski')``
+
+       Computes the weighted Minkowski distance between each pair of
+       vectors. (see wminkowski function documentation)
+
     22. ``Y = pdist(X, f)``
 
        Computes the distance between all pairs of vectors in X
@@ -1036,6 +1078,11 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
                 for j in xrange(i+1, m):
                     dm[k] = minkowski(X[i, :], X[j, :], p)
                     k = k + 1
+        elif metric == wminkowski:
+            for i in xrange(0, m - 1):
+                for j in xrange(i+1, m):
+                    dm[k] = wminkowski(X[i, :], X[j, :], p, w)
+                    k = k + 1
         elif metric == seuclidean:
             for i in xrange(0, m - 1):
                 for j in xrange(i+1, m):
@@ -1079,6 +1126,9 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
             _distance_wrap.pdist_chebyshev_wrap(_convert_to_double(X), dm)
         elif mstr in set(['minkowski', 'mi', 'm']):
             _distance_wrap.pdist_minkowski_wrap(_convert_to_double(X), dm, p)
+        elif mstr in set(['wminkowski', 'wmi', 'wm', 'wpnorm']):
+            _distance_wrap.cdist_weighted_minkowski_wrap(_convert_to_double(X),
+                                                         dm, p, w)
         elif mstr in set(['seuclidean', 'se', 's']):
             if V is not None:
                 V = np.asarray(V)
@@ -1174,7 +1224,9 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
         elif metric == 'test_cityblock':
             dm = pdist(X, cityblock)
         elif metric == 'test_minkowski':
-            dm = pdist(X, minkowski, p)
+            dm = pdist(X, minkowski, p=p)
+        elif metric == 'test_wminkowski':
+            dm = pdist(X, wminkowski, p=p, w=w)
         elif metric == 'test_cosine':
             dm = pdist(X, cosine)
         elif metric == 'test_correlation':
@@ -1502,7 +1554,7 @@ def numobs_y(Y):
     return d
 
 
-def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None):
+def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     """
     Computes distance between each pair of observations between two
     collections of vectors. ``XA`` is a :math:`$m_A$` by :math:`$n$`
@@ -1529,7 +1581,17 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None):
            'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
            'jaccard', 'kulsinski', 'mahalanobis', 'matching',
            'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
-           'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'.
+           'sokalmichener', 'sokalsneath', 'sqeuclidean', 'wminkowski',
+           'yule'.
+       w : ndarray
+           The weight vector (for weighted Minkowski).
+       p : double
+           The p-norm to apply (for Minkowski, weighted and unweighted)
+       V : ndarray
+           The variance vector (for standardized Euclidean).
+       VI : ndarray
+           The inverse of the covariance matrix (for Mahalanobis).
+
 
     :Returns:
        Y : ndarray
@@ -1688,10 +1750,16 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None):
 
     21. ``Y = cdist(X, 'sokalsneath')``
 
-       Computes the Sokal-Sneath distance between each pair of
-       boolean vectors. (see sokalsneath function documentation)
+       Computes the Sokal-Sneath distance between the vectors. (see
+       sokalsneath function documentation)
 
-    22. ``Y = cdist(X, f)``
+
+    22. ``Y = cdist(X, 'wminkowski')``
+
+       Computes the weighted Minkowski distance between the
+       vectors. (see sokalsneath function documentation)
+
+    23. ``Y = cdist(X, f)``
 
        Computes the distance between all pairs of vectors in X
        using the user supplied 2-arity function f. For example,
@@ -1755,6 +1823,10 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None):
             for i in xrange(0, mA):
                 for j in xrange(0, mB):
                     dm[i, j] = minkowski(XA[i, :], XB[j, :], p)
+        elif metric == wminkowski:
+            for i in xrange(0, mA):
+                for j in xrange(0, mB):
+                    dm[i, j] = wminkowski(XA[i, :], XB[j, :], p, w)
         elif metric == seuclidean:
             for i in xrange(0, mA):
                 for j in xrange(0, mB):
@@ -1800,9 +1872,12 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None):
         elif mstr in set(['chebychev', 'chebyshev', 'cheby', 'cheb', 'ch']):
             _distance_wrap.cdist_chebyshev_wrap(_convert_to_double(XA),
                                                 _convert_to_double(XB), dm)
-        elif mstr in set(['minkowski', 'mi', 'm']):
+        elif mstr in set(['minkowski', 'mi', 'm', 'pnorm']):
             _distance_wrap.cdist_minkowski_wrap(_convert_to_double(XA),
                                                 _convert_to_double(XB), dm, p)
+        elif mstr in set(['wminkowski', 'wmi', 'wm', 'wpnorm']):
+            _distance_wrap.cdist_weighted_minkowski_wrap(_convert_to_double(XA),
+                                                         _convert_to_double(XB), dm, p, _convert_to_double(w))
         elif mstr in set(['seuclidean', 'se', 's']):
             if V is not None:
                 V = np.asarray(V)
@@ -1921,7 +1996,9 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None):
         elif metric == 'test_cityblock':
             dm = cdist(XA, XB, cityblock)
         elif metric == 'test_minkowski':
-            dm = cdist(XA, XB, minkowski, p)
+            dm = cdist(XA, XB, minkowski, p=p)
+        elif metric == 'test_wminkowski':
+            dm = cdist(XA, XB, wminkowski, p=p, w=w)
         elif metric == 'test_cosine':
             dm = cdist(XA, XB, cosine)
         elif metric == 'test_correlation':

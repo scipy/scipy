@@ -910,14 +910,13 @@ def cophenet(*args, **kwargs):
          correlation coefficient and ``d`` is the condensed cophentic
          distance matrix (upper triangular form).
     """
-    Z = np.asarray(Z)
-
     nargs = len(args)
 
     if nargs < 1:
         raise ValueError('At least one argument must be passed to cophenet.')
 
     Z = args[0]
+    Z = np.asarray(Z)
     is_valid_linkage(Z, throw=True, name='Z')
     Zs = Z.shape
     n = Zs[0] + 1
@@ -932,6 +931,7 @@ def cophenet(*args, **kwargs):
         return zz
 
     Y = args[1]
+    Y = np.asarray(Y)
     Ys = Y.shape
     distance.is_valid_y(Y, throw=True, name='Y')
 

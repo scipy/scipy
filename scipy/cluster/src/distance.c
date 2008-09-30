@@ -294,6 +294,16 @@ double minkowski_distance(const double *u, const double *v, int n, double p) {
   return pow(s, 1.0 / p);
 }
 
+double weighted_minkowski_distance(const double *u, const double *v, int n, double p, const double *w) {
+  int i = 0;
+  double s = 0.0, d;
+  for (i = 0; i < n; i++) {
+    d = fabs(u[i] - v[i]) * w[i];
+    s = s + pow(d, p);
+  }
+  return pow(s, 1.0 / p);
+}
+
 void compute_mean_vector(double *res, const double *X, int m, int n) {
   int i, j;
   const double *v;
@@ -485,6 +495,19 @@ void pdist_minkowski(const double *X, double *dm, int m, int n, double p) {
       u = X + (n * i);
       v = X + (n * j);
       *it = minkowski_distance(u, v, n, p);
+    }
+  }
+}
+
+void pdist_weighted_minkowski(const double *X, double *dm, int m, int n, double p, const double *w) {
+  int i, j;
+  const double *u, *v;
+  double *it = dm;
+  for (i = 0; i < m; i++) {
+    for (j = i + 1; j < m; j++, it++) {
+      u = X + (n * i);
+      v = X + (n * j);
+      *it = weighted_minkowski_distance(u, v, n, p, w);
     }
   }
 }
@@ -809,6 +832,19 @@ void cdist_minkowski(const double *XA, const double *XB, double *dm, int mA, int
       u = XA + (n * i);
       v = XB + (n * j);
       *it = minkowski_distance(u, v, n, p);
+    }
+  }
+}
+
+void cdist_weighted_minkowski(const double *XA, const double *XB, double *dm, int mA, int mB, int n, double p, const double *w) {
+  int i, j;
+  const double *u, *v;
+  double *it = dm;
+  for (i = 0; i < mA; i++) {
+    for (j = 0; j < mB; j++, it++) {
+      u = XA + (n * i);
+      v = XB + (n * j);
+      *it = weighted_minkowski_distance(u, v, n, p, w);
     }
   }
 }

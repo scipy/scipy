@@ -347,12 +347,36 @@ extern PyObject *cdist_minkowski_wrap(PyObject *self, PyObject *args) {
     mA = XA_->dimensions[0];
     mB = XB_->dimensions[0];
     n = XA_->dimensions[1];
-
     cdist_minkowski(XA, XB, dm, mA, mB, n, p);
   }
   return Py_BuildValue("d", 0.0);
 }
 
+extern PyObject *cdist_weighted_minkowski_wrap(PyObject *self, PyObject *args) {
+  PyArrayObject *XA_, *XB_, *dm_, *w_;
+  int mA, mB, n;
+  double *dm;
+  const double *XA, *XB, *w;
+  double p;
+  if (!PyArg_ParseTuple(args, "O!O!O!dO!",
+			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+			&PyArray_Type, &dm_,
+			&p,
+			&PyArray_Type, &w_)) {
+    return 0;
+  }
+  else {
+    XA = (const double*)XA_->data;
+    XB = (const double*)XB_->data;
+    w = (const double*)w_->data;
+    dm = (double*)dm_->data;
+    mA = XA_->dimensions[0];
+    mB = XB_->dimensions[0];
+    n = XA_->dimensions[1];
+    cdist_weighted_minkowski(XA, XB, dm, mA, mB, n, p, w);
+  }
+  return Py_BuildValue("d", 0.0);
+}
 
 extern PyObject *cdist_yule_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
@@ -824,6 +848,30 @@ extern PyObject *pdist_minkowski_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
+extern PyObject *pdist_weighted_minkowski_wrap(PyObject *self, PyObject *args) {
+  PyArrayObject *X_, *dm_, *w_;
+  int m, n;
+  double *dm, *X, *w;
+  double p;
+  if (!PyArg_ParseTuple(args, "O!O!dO!",
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_,
+			&p,
+			&PyArray_Type, &w_)) {
+    return 0;
+  }
+  else {
+    X = (double*)X_->data;
+    dm = (double*)dm_->data;
+    w = (const double*)w_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
+    pdist_weighted_minkowski(X, dm, m, n, p, w);
+  }
+  return Py_BuildValue("d", 0.0);
+}
+
 
 extern PyObject *pdist_yule_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
@@ -1048,6 +1096,7 @@ static PyMethodDef _distanceWrapMethods[] = {
   {"cdist_mahalanobis_wrap", cdist_mahalanobis_wrap, METH_VARARGS},
   {"cdist_matching_bool_wrap", cdist_matching_bool_wrap, METH_VARARGS},
   {"cdist_minkowski_wrap", cdist_minkowski_wrap, METH_VARARGS},
+  {"cdist_weighted_minkowski_wrap", cdist_weighted_minkowski_wrap, METH_VARARGS},
   {"cdist_rogerstanimoto_bool_wrap", cdist_rogerstanimoto_bool_wrap, METH_VARARGS},
   {"cdist_russellrao_bool_wrap", cdist_russellrao_bool_wrap, METH_VARARGS},
   {"cdist_seuclidean_wrap", cdist_seuclidean_wrap, METH_VARARGS},
@@ -1069,6 +1118,7 @@ static PyMethodDef _distanceWrapMethods[] = {
   {"pdist_mahalanobis_wrap", pdist_mahalanobis_wrap, METH_VARARGS},
   {"pdist_matching_bool_wrap", pdist_matching_bool_wrap, METH_VARARGS},
   {"pdist_minkowski_wrap", pdist_minkowski_wrap, METH_VARARGS},
+  {"pdist_weighted_minkowski_wrap", pdist_weighted_minkowski_wrap, METH_VARARGS},
   {"pdist_rogerstanimoto_bool_wrap", pdist_rogerstanimoto_bool_wrap, METH_VARARGS},
   {"pdist_russellrao_bool_wrap", pdist_russellrao_bool_wrap, METH_VARARGS},
   {"pdist_seuclidean_wrap", pdist_seuclidean_wrap, METH_VARARGS},

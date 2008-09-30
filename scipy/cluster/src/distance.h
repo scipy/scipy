@@ -55,6 +55,7 @@ void pdist_jaccard(const double *X, double *dm, int m, int n);
 void pdist_jaccard_bool(const char *X, double *dm, int m, int n);
 void pdist_kulsinski_bool(const char *X, double *dm, int m, int n);
 void pdist_minkowski(const double *X, double *dm, int m, int n, double p);
+void pdist_weighted_minkowski(const double *X, double *dm, int m, int n, double p, const double *w);
 void pdist_yule_bool(const char *X, double *dm, int m, int n);
 void pdist_matching_bool(const char *X, double *dm, int m, int n);
 void pdist_dice_bool(const char *X, double *dm, int m, int n);
@@ -93,6 +94,8 @@ void cdist_city_block(const double *XA, const double *XB, double *dm,
 		      int mA, int mB, int n);
 void cdist_minkowski(const double *XA, const double *XB, double *dm,
 		     int mA, int mB, int n, double p);
+void cdist_weighted_minkowski(const double *XA, const double *XB, double *dm,
+			      int mA, int mB, int n, double p, const double *w);
 void cdist_yule_bool(const char *XA, const char *XB, double *dm,
 		     int mA, int mB, int n);
 void cdist_matching_bool(const char *XA, const char *XB, double *dm,
