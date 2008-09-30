@@ -1,7 +1,7 @@
 import _nnls
 from numpy import asarray_chkfinite, zeros, double
 
-def nnls(A,b, overwrite_a=0, overwrite_b=0):
+def nnls(A,b):
     """ 
           Solve  || Ax - b ||_2 -> min  with  x>=0 
 
