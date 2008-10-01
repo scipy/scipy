@@ -51,6 +51,11 @@ def configuration(parent_package='',top_path=None):
                          sources=['vode.pyf'],
                          libraries=libs,
                          **newblas)
+    # lsodar
+    config.add_extension('lsodar',
+                         sources=['lsodar.pyf'],
+                         libraries=libs,
+                         **newblas)
 
     config.add_data_dir('tests')
     return config
