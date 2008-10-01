@@ -577,7 +577,7 @@ def linkage(y, method='single', metric='euclidean'):
     if not isinstance(method, str):
         raise TypeError("Argument 'method' must be a string.")
 
-    y = _convert_to_double(np.asarray(y))
+    y = _convert_to_double(np.asarray(y, order='c'))
 
     s = y.shape
     if len(s) == 1:
@@ -800,7 +800,7 @@ def totree(Z, rd=False):
     library.
     """
 
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
 
     is_valid_linkage(Z, throw=True, name='Z')
 
@@ -916,7 +916,7 @@ def cophenet(*args, **kwargs):
         raise ValueError('At least one argument must be passed to cophenet.')
 
     Z = args[0]
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
     Zs = Z.shape
     n = Zs[0] + 1
@@ -931,7 +931,7 @@ def cophenet(*args, **kwargs):
         return zz
 
     Y = args[1]
-    Y = np.asarray(Y)
+    Y = np.asarray(Y, order='c')
     Ys = Y.shape
     distance.is_valid_y(Y, throw=True, name='Y')
 
@@ -983,7 +983,7 @@ def inconsistent(Z, d=2):
     This function behaves similarly to the MATLAB(TM) inconsistent
     function.
     """
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
 
     Zs = Z.shape
     is_valid_linkage(Z, throw=True, name='Z')
@@ -1028,7 +1028,7 @@ def from_mlab_linkage(Z):
        - ZS : ndarray
            A linkage matrix compatible with this library.
     """
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
     Zs = Z.shape
     Zpart = Z[:,0:2]
     Zd = Z[:,2].reshape(Zs[0], 1)
@@ -1057,7 +1057,7 @@ def to_mlab_linkage(Z):
            A linkage matrix compatible with MATLAB(TM)'s hierarchical
            clustering functions.
     """
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
 
     return np.hstack([Z[:,0:2] + 1, Z[:,2]])
@@ -1077,7 +1077,7 @@ def is_monotonic(Z):
         - b : bool
           A boolean indicating whether the linkage is monotonic.
     """
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
 
     # We expect the i'th value to be greater than its successor.
@@ -1111,7 +1111,7 @@ def is_valid_im(R, warning=False, throw=False, name=None):
          - b : bool
            True iff the inconsistency matrix is valid.
     """
-    R = np.asarray(R)
+    R = np.asarray(R, order='c')
     valid = True
     try:
         if type(R) != np.ndarray:
@@ -1177,7 +1177,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
             True iff the inconsistency matrix is valid.
 
     """
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
     valid = True
     try:
         if type(Z) != np.ndarray:
@@ -1229,7 +1229,7 @@ def numobs_linkage(Z):
         - n : int
             The number of original observations in the linkage.
     """
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
     return (Z.shape[0] + 1)
 
@@ -1257,8 +1257,8 @@ def Z_y_correspond(Z, Y):
             A boolean indicating whether the linkage matrix and distance
             matrix could possibly correspond to one another.
     """
-    Z = np.asarray(Z)
-    Y = np.asarray(Y)
+    Z = np.asarray(Z, order='c')
+    Y = np.asarray(Y, order='c')
     return numobs_y(Y) == numobs_linkage(Z)
 
 def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
@@ -1318,7 +1318,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
           cluster(Z, t=3, criterion='maxclust_monocrit', monocrit=MI)
 
     """
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
@@ -1332,7 +1332,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
         if R is None:
             R = inconsistent(Z, depth)
         else:
-            R = np.asarray(R)
+            R = np.asarray(R, order='c')
             is_valid_im(R, throw=True, name='R')
             # Since the C code does not support striding using strides.
             # The dimensions are used instead.
@@ -1402,7 +1402,7 @@ def fclusterdata(X, t, criterion='inconsistent', \
 
     This function is similar to MATLAB(TM) clusterdata function.
     """
-    X = np.asarray(X)
+    X = np.asarray(X, order='c')
 
     if type(X) != np.ndarray or len(X.shape) != 2:
         raise TypeError('The observation matrix X must be an n by m numpy array.')
@@ -1412,7 +1412,7 @@ def fclusterdata(X, t, criterion='inconsistent', \
     if R is None:
         R = inconsistent(Z, d=depth)
     else:
-        R = np.asarray(R)
+        R = np.asarray(R, order='c')
     T = fcluster(Z, criterion=criterion, depth=depth, R=R, t=t)
     return T
 
@@ -1423,7 +1423,7 @@ def lvlist(Z):
       Returns a list of leaf node ids as they appear in the tree from
       left to right. Z is a linkage matrix.
     """
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
     n = Z.shape[0] + 1
     ML = np.zeros((n,), dtype=np.int)
@@ -1862,7 +1862,7 @@ def dendrogram(Z, p=30, truncate_mode=None, colorthreshold=None,
     #         or results in a crossing, an exception will be thrown. Passing
     #         None orders leaf nodes based on the order they appear in the
     #         pre-order traversal.
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
 
     is_valid_linkage(Z, throw=True, name='Z')
     Zs = Z.shape
@@ -2226,8 +2226,8 @@ def is_isomorphic(T1, T2):
       Returns True iff two different cluster assignments T1 and T2 are
       equivalent. T1 and T2 must be arrays of the same size.
     """
-    T1 = np.asarray(T1)
-    T2 = np.asarray(T2)
+    T1 = np.asarray(T1, order='c')
+    T2 = np.asarray(T2, order='c')
 
     if type(T1) != np.ndarray:
         raise TypeError('T1 must be a numpy array.')
@@ -2266,7 +2266,7 @@ def maxdists(Z):
       Note that when Z[:,2] is monotonic, Z[:,2] and MD should not differ.
       See linkage for more information on this issue.
     """
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
@@ -2284,8 +2284,8 @@ def maxinconsts(Z, R):
       inconsistency matrix. MI is a monotonic (n-1)-sized numpy array of
       doubles.
     """
-    Z = np.asarray(Z)
-    R = np.asarray(R)
+    Z = np.asarray(Z, order='c')
+    R = np.asarray(R, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
     is_valid_im(R, throw=True, name='R')
 
@@ -2304,8 +2304,8 @@ def maxRstat(Z, R, i):
     is the maximum over R[Q(j)-n, i] where Q(j) the set of all node ids
     corresponding to nodes below and including j.
     """
-    Z = np.asarray(Z)
-    R = np.asarray(R)
+    Z = np.asarray(Z, order='c')
+    R = np.asarray(R, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
     is_valid_im(R, throw=True, name='R')
     if type(i) is not types.IntType:
@@ -2341,8 +2341,8 @@ def leaders(Z, T):
     i < n, i corresponds to an original observation, otherwise it
     corresponds to a non-singleton cluster.
     """
-    Z = np.asarray(Z)
-    T = np.asarray(T)
+    Z = np.asarray(Z, order='c')
+    T = np.asarray(T, order='c')
     if type(T) != np.ndarray or T.dtype != np.int:
         raise TypeError('T must be a one-dimensional numpy array of integers.')
     is_valid_linkage(Z, throw=True, name='Z')
