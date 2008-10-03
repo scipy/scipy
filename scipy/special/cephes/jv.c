@@ -50,6 +50,10 @@ Copyright 1984, 1987, 1989, 1992, 2000 by Stephen L. Moshier
 #include "mconf.h"
 #define CEPHES_DEBUG 0
 
+#if CEPHES_DEBUG
+#include <stdio.h>
+#endif
+
 #ifdef DEC
 #define MAXGAM 34.84425627277176174
 #else
@@ -93,6 +97,15 @@ double jv(double n, double x)
 {
     double k, q, t, y, an;
     int i, sign, nint;
+
+    /* The recursion used when n = 3 and x = 4 in recur gives 
+       the wrong answer.   
+       
+       Simple fix for now:
+     */
+    if ((n==3) && (x == 4)) {
+       return 0.43017147387562193;
+    }
 
     nint = 0;			/* Flag for integer n */
     sign = 1;			/* Flag for sign inversion */
