@@ -2280,7 +2280,6 @@ for all x, c > 0.
 
 ## Log-Laplace  (Log Double Exponential)
 ##
-
 class loglaplace_gen(rv_continuous):
     def _pdf(self, x, c):
         cd2 = c/2.0
@@ -2336,6 +2335,10 @@ Lognormal distribution
 
 lognorm.pdf(x,s) = 1/(s*x*sqrt(2*pi)) * exp(-1/2*(log(x)/s)**2)
 for x > 0, s > 0.
+
+If log x is normally distributed with mean mu and variance sigma**2,
+then x is log-normally distributed with shape paramter sigma and scale
+parameter exp(mu).
 """
                       )
 
