@@ -106,14 +106,14 @@ clacon_(int *n, complex *v, complex *x, float *est, int *kase)
   L20:
     if (*n == 1) {
 	v[0] = x[0];
-	*est = c_abs(&v[0]);
+	*est = slu_c_cabs(&v[0]);
 	/*        ... QUIT */
 	goto L150;
     }
     *est = scsum1_(n, x, &c__1);
 
     for (i = 0; i < *n; ++i) {
-	d__1 = c_abs(&x[i]);
+	d__1 = slu_c_cabs(&x[i]);
 	if (d__1 > safmin) {
 	    d__1 = 1 / d__1;
 	    x[i].r *= d__1;
@@ -158,7 +158,7 @@ L90:
     if (*est <= estold) goto L120;
 
     for (i = 0; i < *n; ++i) {
-	d__1 = c_abs(&x[i]);
+	d__1 = slu_c_cabs(&x[i]);
 	if (d__1 > safmin) {
 	    d__1 = 1 / d__1;
 	    x[i].r *= d__1;

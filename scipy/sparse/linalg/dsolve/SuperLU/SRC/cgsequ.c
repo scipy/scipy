@@ -118,7 +118,7 @@ cgsequ(SuperMatrix *A, float *r, float *c, float *rowcnd,
     for (j = 0; j < A->ncol; ++j)
 	for (i = Astore->colptr[j]; i < Astore->colptr[j+1]; ++i) {
 	    irow = Astore->rowind[i];
-	    r[irow] = SUPERLU_MAX( r[irow], c_abs1(&Aval[i]) );
+	    r[irow] = SUPERLU_MAX( r[irow], slu_c_cabs1(&Aval[i]) );
 	}
 
     /* Find the maximum and minimum scale factors. */
@@ -153,7 +153,7 @@ cgsequ(SuperMatrix *A, float *r, float *c, float *rowcnd,
     for (j = 0; j < A->ncol; ++j)
 	for (i = Astore->colptr[j]; i < Astore->colptr[j+1]; ++i) {
 	    irow = Astore->rowind[i];
-	    c[j] = SUPERLU_MAX( c[j], c_abs1(&Aval[i]) * r[irow] );
+	    c[j] = SUPERLU_MAX( c[j], slu_c_cabs1(&Aval[i]) * r[irow] );
 	}
 
     /* Find the maximum and minimum scale factors. */
