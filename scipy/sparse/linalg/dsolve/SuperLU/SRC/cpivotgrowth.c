@@ -83,15 +83,15 @@ cPivotGrowth(int ncols, SuperMatrix *A, int *perm_c,
 	    maxaj = 0.;
             oldcol = inv_perm_c[j];
 	    for (i = Astore->colptr[oldcol]; i < Astore->colptr[oldcol+1]; ++i)
-		maxaj = SUPERLU_MAX( maxaj, slu_c_cabs1( &Aval[i]) );
+		maxaj = SUPERLU_MAX( maxaj, slu_c_abs1( &Aval[i]) );
 	
 	    maxuj = 0.;
 	    for (i = Ustore->colptr[j]; i < Ustore->colptr[j+1]; i++)
-		maxuj = SUPERLU_MAX( maxuj, slu_c_cabs1( &Uval[i]) );
+		maxuj = SUPERLU_MAX( maxuj, slu_c_abs1( &Uval[i]) );
 	    
 	    /* Supernode */
 	    for (i = 0; i < nz_in_U; ++i)
-		maxuj = SUPERLU_MAX( maxuj, slu_c_cabs1( &luval[i]) );
+		maxuj = SUPERLU_MAX( maxuj, slu_c_abs1( &luval[i]) );
 
 	    ++nz_in_U;
 	    luval += nsupr;

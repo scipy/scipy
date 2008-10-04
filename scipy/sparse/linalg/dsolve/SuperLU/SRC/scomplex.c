@@ -45,7 +45,7 @@ void c_div(complex *c, complex *a, complex *b)
 
 
 /* Returns sqrt(z.r^2 + z.i^2) */
-double slu_c_cabs(complex *z)
+double slu_c_abs(complex *z)
 {
     float temp;
     float real = z->r;
@@ -68,7 +68,7 @@ double slu_c_cabs(complex *z)
 
 /* Approximates the abs */
 /* Returns abs(z.r) + abs(z.i) */
-double slu_c_cabs1(complex *z)
+double slu_c_abs1(complex *z)
 {
     float real = z->r;
     float imag = z->i;
