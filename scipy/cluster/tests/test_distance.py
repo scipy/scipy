@@ -243,7 +243,8 @@ class TestCdist(TestCase):
         w = 1.0 / X1.std(axis=0)
         Y1 = cdist(X1, X2, 'wminkowski', p=3.8, w=w)
         Y2 = cdist(X1, X2, 'test_wminkowski', p=3.8, w=w)
-        print (Y1-Y2).max()
+        if verbose > 2:
+            print (Y1-Y2).max()
         self.failUnless(within_tol(Y1, Y2, eps))
 
     def test_cdist_wminkowski_random_p4d6(self):
@@ -255,7 +256,8 @@ class TestCdist(TestCase):
         w = 1.0 / X1.std(axis=0)
         Y1 = cdist(X1, X2, 'wminkowski', p=4.6, w=w)
         Y2 = cdist(X1, X2, 'test_wminkowski', p=4.6, w=w)
-        print (Y1-Y2).max()
+        if verbose > 2:
+            print (Y1-Y2).max()
         self.failUnless(within_tol(Y1, Y2, eps))
 
     def test_cdist_wminkowski_random_p1d23(self):
@@ -267,7 +269,8 @@ class TestCdist(TestCase):
         w = 1.0 / X1.std(axis=0)
         Y1 = cdist(X1, X2, 'wminkowski', p=1.23, w=w)
         Y2 = cdist(X1, X2, 'test_wminkowski', p=1.23, w=w)
-        print (Y1-Y2).max()
+        if verbose > 2:
+            print (Y1-Y2).max()
         self.failUnless(within_tol(Y1, Y2, eps))
 
 
