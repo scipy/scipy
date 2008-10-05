@@ -3,7 +3,7 @@
 from numpy.testing import *
 
 import numpy as np
-from scipy.spatial import KDTree, distance, Rectangle
+from scipy.spatial import KDTree, distance, Rectangle, distance_matrix
 
 class ConsistencyTests:
     def test_nearest(self):
@@ -337,6 +337,43 @@ class test_count_neighbors:
         for r,result in zip(rs, results):
             assert_equal(self.T1.count_neighbors(self.T2, r), result)
 
+class test_sparse_distance_matrix:
+    def setUp(self):
+        n = 100
+        k = 4
+        self.T1 = KDTree(np.random.randn(n,k),leafsize=2)
+        self.T2 = KDTree(np.random.randn(n,k),leafsize=2)
+        self.r = 0.3
+
+    def test_consistency_with_neighbors(self):
+        M = self.T1.sparse_distance_matrix(self.T2, self.r)
+        r = self.T1.query_ball_tree(self.T2, self.r)
+        for i,l in enumerate(r):
+            for j in l:
+                assert_equal(M[i,j],distance(self.T1.data[i],self.T2.data[j]))
+        for ((i,j),d) in M.items():
+            assert j in r[i]
+
+def test_distance_matrix():
+    m = 10
+    n = 11
+    k = 4
+    xs = np.random.randn(m,k)
+    ys = np.random.randn(n,k)
+    ds = distance_matrix(xs,ys)
+    assert_equal(ds.shape, (m,n))
+    for i in range(m):
+        for j in range(n):
+            assert_equal(distance(xs[i],ys[j]),ds[i,j])
+def test_distance_matrix_looping():
+    m = 10
+    n = 11
+    k = 4
+    xs = np.random.randn(m,k)
+    ys = np.random.randn(n,k)
+    ds = distance_matrix(xs,ys)
+    dsl = distance_matrix(xs,ys,threshold=1)
+    assert_equal(ds,dsl)
 
 if __name__=="__main__":
     run_module_suite()

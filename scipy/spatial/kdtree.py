@@ -2,6 +2,7 @@
 # Released under the scipy license
 import numpy as np
 from heapq import heappush, heappop
+import scipy.sparse
 
 def distance_p(x,y,p=2):
     """Compute the pth power of the L**p distance between x and y
@@ -46,7 +47,12 @@ class Rectangle(object):
         return np.prod(self.maxes-self.mins)
     
     def split(self, d, split):
-        """Produce two hyperrectangles by splitting along axis d."""
+        """Produce two hyperrectangles by splitting along axis d.
+        
+        In general, if you need to compute maximum and minimum
+        distances to the children, it can be done more efficiently
+        by updating the maximum and minimum distances to the parent.
+        """ # FIXME: do this
         mid = np.copy(self.maxes)
         mid[d] = split
         less = Rectangle(self.mins, mid)
@@ -572,3 +578,98 @@ class KDTree(object):
         else:
             raise ValueError("r must be either a single value or a one-dimensional array of values")
         
+    def sparse_distance_matrix(self, other, max_distance, p=2.):
+        """Compute a sparse distance matrix
+
+        Computes a distance matrix between two KDTrees, leaving as zero
+        any distance greater than max_distance.
+
+        Parameters
+        ==========
+
+        other : KDTree
+
+        max_distance : positive float
+
+        Returns
+        =======
+
+        result : dok_matrix
+            Sparse matrix representing the results in "dictionary of keys" format.
+        """
+        result = scipy.sparse.dok_matrix((self.n,other.n))
+
+        def traverse(node1, rect1, node2, rect2):
+            if rect1.min_distance_rectangle(rect2, p)>max_distance:
+                return
+            elif isinstance(node1, KDTree.leafnode):
+                if isinstance(node2, KDTree.leafnode):
+                    for i in node1.idx:
+                        for j in node2.idx:
+                            d = distance(self.data[i],other.data[j],p)
+                            if d<=max_distance:
+                                result[i,j] = d
+                else:
+                    less, greater = rect2.split(node2.split_dim, node2.split)
+                    traverse(node1,rect1,node2.less,less)
+                    traverse(node1,rect1,node2.greater,greater)
+            elif isinstance(node2, KDTree.leafnode):
+                less, greater = rect1.split(node1.split_dim, node1.split)
+                traverse(node1.less,less,node2,rect2)
+                traverse(node1.greater,greater,node2,rect2)
+            else:
+                less1, greater1 = rect1.split(node1.split_dim, node1.split)
+                less2, greater2 = rect2.split(node2.split_dim, node2.split)
+                traverse(node1.less,less1,node2.less,less2)
+                traverse(node1.less,less1,node2.greater,greater2)
+                traverse(node1.greater,greater1,node2.less,less2)
+                traverse(node1.greater,greater1,node2.greater,greater2)
+        traverse(self.tree, Rectangle(self.maxes, self.mins),
+                 other.tree, Rectangle(other.maxes, other.mins))
+
+        return result
+
+
+def distance_matrix(x,y,p=2,threshold=1000000):
+    """Compute the distance matrix.
+
+    Computes the matrix of all pairwise distances.
+
+    Parameters
+    ==========
+
+    x : array-like, m by k
+    y : array-like, n by k
+    p : float 1<=p<=infinity
+        Which Minkowski p-norm to use.
+    threshold : positive integer
+        If m*n*k>threshold use a python loop instead of creating
+        a very large temporary.
+
+    Returns
+    =======
+
+    result : array-like, m by n
+
+
+    """
+
+    x = np.asarray(x)
+    m, k = x.shape
+    y = np.asarray(y)
+    n, kk = y.shape
+
+    if k != kk:
+        raise ValueError("x contains %d-dimensional vectors but y contains %d-dimensional vectors" % (k, kk))
+
+    if m*n*k <= threshold:
+        return distance(x[:,np.newaxis,:],y[np.newaxis,:,:],p)
+    else:
+        result = np.empty((m,n),dtype=np.float) #FIXME: figure out the best dtype
+        if m<n:
+            for i in range(m):
+                result[i,:] = distance(x[i],y,p)
+        else:
+            for j in range(n):
+                result[:,j] = distance(x,y[j],p)
+        return result
