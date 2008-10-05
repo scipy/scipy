@@ -75,10 +75,10 @@ class ConsistencyTests:
     
 class test_random(ConsistencyTests):
     def setUp(self):
-        self.n = 1000
+        self.n = 100
         self.k = 4
         self.data = np.random.randn(self.n, self.k)
-        self.kdtree = KDTree(self.data)
+        self.kdtree = KDTree(self.data,leafsize=2)
         self.x = np.random.randn(self.k)
         self.d = 0.2
         self.m = 10
@@ -192,10 +192,10 @@ class ball_consistency:
 class test_random_ball(ball_consistency):
 
     def setUp(self):
-        n = 1000
+        n = 100
         k = 4
         self.data = np.random.randn(n,k)
-        self.T = KDTree(self.data)
+        self.T = KDTree(self.data,leafsize=2)
         self.x = np.random.randn(k)
         self.p = 2.
         self.eps = 0
@@ -252,7 +252,7 @@ class two_trees_consistency:
 class test_two_random_trees(two_trees_consistency):
 
     def setUp(self):
-        n = 100
+        n = 50
         k = 4
         self.data1 = np.random.randn(n,k)
         self.T1 = KDTree(self.data1,leafsize=2)
@@ -315,8 +315,8 @@ def test_distance_vectorization():
 class test_count_neighbors:
 
     def setUp(self):
-        n = 100
-        k = 4
+        n = 50
+        k = 2
         self.T1 = KDTree(np.random.randn(n,k),leafsize=2)
         self.T2 = KDTree(np.random.randn(n,k),leafsize=2)
         
@@ -331,7 +331,7 @@ class test_count_neighbors:
                 np.sum([len(l) for l in self.T1.query_ball_tree(self.T2,r)]))
 
     def test_multiple_radius(self):
-        rs = np.exp(np.linspace(np.log(0.01),np.log(10),10))
+        rs = np.exp(np.linspace(np.log(0.01),np.log(10),3))
         results = self.T1.count_neighbors(self.T2, rs)
         assert np.all(np.diff(results)>=0)
         for r,result in zip(rs, results):
@@ -339,7 +339,7 @@ class test_count_neighbors:
 
 class test_sparse_distance_matrix:
     def setUp(self):
-        n = 100
+        n = 50
         k = 4
         self.T1 = KDTree(np.random.randn(n,k),leafsize=2)
         self.T2 = KDTree(np.random.randn(n,k),leafsize=2)
