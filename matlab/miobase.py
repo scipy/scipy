@@ -6,14 +6,15 @@ Base classes for matlab (TM) file stream reading
 
 import sys
 
-import numpy as N
+import numpy as np
 
+import byteordercodes as sibc
+
+# sparse module if available
 try:
-    import scipy.sparse
-    have_sparse = 1
+    import scipy.sparse as spsparse
 except ImportError:
-    have_sparse = 0
-
+    spsparse = None
 
 def small_product(arr):
     ''' Faster than product for small arrays '''
@@ -23,57 +24,67 @@ def small_product(arr):
     return res
 
 def get_matfile_version(fileobj):
-    ''' Return '4', '5', or '7' depending on apparent mat file type
-    Inputs
-    fileobj       - file object implementing seek() and read()
-    Outputs
-    version_str   - one of (strings) 4, 5, or 7
-    
+    ''' Return major, minor tuple depending on apparent mat file type
+
+    Where:
+
+     #. 0,x -> version 4 format mat files
+     #. 1,x -> version 5 format mat files
+     #. 2,x -> version 7.3 format mat files (HDF format)
+     
+    Parameters
+    ----------
+    fileobj : {file-like}
+              object implementing seek() and read()
+
+    Returns
+    -------
+    major_version : {0, 1, 2}
+                    major matlab file format version
+    minor_version : int
+                    major matlab file format version
+
+    Notes
+    -----
     Has the side effect of setting the file read pointer to 0
     '''
     # Mat4 files have a zero somewhere in first 4 bytes
     fileobj.seek(0)
-    mopt_bytes = N.ndarray(shape=(4,),
-                           dtype=N.uint8,
+    mopt_bytes = np.ndarray(shape=(4,),
+                           dtype=np.uint8,
                            buffer = fileobj.read(4))
     if 0 in mopt_bytes:
         fileobj.seek(0)
-        return '4'
-    # For 5 or 7 we need to read an integer in the header
-    # bytes 124 through 128 contain a version integer
-    # and an endian test string
+        return (0,0)
+    
+    # For 5 format or 7.3 format we need to read an integer in the
+    # header. Bytes 124 through 128 contain a version integer and an
+    # endian test string
     fileobj.seek(124)
     tst_str = fileobj.read(4)
     fileobj.seek(0)
     maj_ind = int(tst_str[2] == 'I')
-    verb = ord(tst_str[maj_ind])
-    if verb == 1:
-        return '5'
-    elif verb == 2:
-        return '7'
-    raise ValueError('Unknown mat file type, version %d' % verb)
+    maj_val = ord(tst_str[maj_ind])
+    min_val = ord(tst_str[1-maj_ind])
+    ret = (maj_val, min_val)
+    if maj_val in (1, 2):
+        return ret
+    else:
+        raise ValueError('Unknown mat file type, version %s' % ret)
 
 
 class ByteOrder(object):
     ''' Namespace for byte ordering '''
-    little_endian = sys.byteorder == 'little'
-    native_code = little_endian and '<' or '>'
-    swapped_code = little_endian and '>' or '<'
+    little_endian = sibc.sys_is_le
+    native_code = sibc.native_code
+    swapped_code = sibc.swapped_code
+    to_numpy_code = sibc.to_numpy_code
 
-    def to_numpy_code(code):
-        if code is None:
-            return ByteOrder.native_code
-        if code in ('little', '<', 'l', 'L'):
-            return '<'
-        elif code in ('BIG', '>', 'B', 'b'):
-            return '>'
-        elif code in ('native', '='):
-            return ByteOrder.native_code
-        elif code in ('swapped'):
-            return ByteOrder.swapped_code
-        else:
-            raise ValueError, 'We cannot handle byte order %s' % byte_order
-    to_numpy_code = staticmethod(to_numpy_code)
+ByteOrder = np.deprecate_with_doc("""
+We no longer use the ByteOrder class, and deprecate it; we will remove
+it in future versions of scipy.  Please use the
+scipy.io.byteordercodes module instead.
+""")(ByteOrder)
 
 
 class MatStreamAgent(object):
@@ -103,10 +114,10 @@ class MatStreamAgent(object):
         a_dtype is assumed to be correct endianness
         '''
         num_bytes = a_dtype.itemsize
-        arr = N.ndarray(shape=(),
-                        dtype=a_dtype,
-                        buffer=self.mat_stream.read(num_bytes),
-                        order='F')
+        arr = np.ndarray(shape=(),
+                         dtype=a_dtype,
+                         buffer=self.mat_stream.read(num_bytes),
+                         order='F')
         return arr
 
     def read_ztstring(self, num_bytes):
@@ -128,6 +139,7 @@ class MatFileReader(MatStreamAgent):
     matlab_compatible  - returns matrices as would be loaded by matlab
                          (implies squeeze_me=False, chars_as_strings=False
                          mat_dtype=True)
+    struct_as_record   - return strutures as numpy records (only from v5 files)
 
     To make this class functional, you will need to override the
     following methods:
@@ -136,12 +148,14 @@ class MatFileReader(MatStreamAgent):
     matrix_getter_factory   - gives object to fetch next matrix from stream
     guess_byte_order        - guesses file byte order from file
     """
+
     def __init__(self, mat_stream,
                  byte_order=None,
                  mat_dtype=False,
                  squeeze_me=False,
                  chars_as_strings=True,
                  matlab_compatible=False,
+                 struct_as_record=False
                  ):
         # Initialize stream
         self.mat_stream = mat_stream
@@ -197,7 +211,7 @@ class MatFileReader(MatStreamAgent):
     def get_order_code(self):
         return self._order_code
     def set_order_code(self, order_code):
-        order_code = ByteOrder.to_numpy_code(order_code)
+        order_code = sibc.to_numpy_code(order_code)
         self._order_code = order_code
         self.set_dtypes()
     order_code = property(get_order_code,
@@ -212,8 +226,7 @@ class MatFileReader(MatStreamAgent):
     def convert_dtypes(self, dtype_template):
         dtypes = dtype_template.copy()
         for k in dtypes:
-            dtypes[k] = N.dtype(dtypes[k]).newbyteorder(
-                self.order_code)
+            dtypes[k] = np.dtype(dtypes[k]).newbyteorder(self.order_code)
         return dtypes
 
     def matrix_getter_factory(self):
@@ -255,7 +268,7 @@ class MatFileReader(MatStreamAgent):
                     str_arr = arr.reshape(
                         (small_product(n_dims),
                          dims[-1]))
-                    arr = N.empty(n_dims, dtype=object)
+                    arr = np.empty(n_dims, dtype='U%d' % dims[-1])
                     for i in range(0, n_dims[-1]):
                         arr[...,i] = self.chars_to_str(str_arr[i])
                 else: # return string
@@ -266,9 +279,9 @@ class MatFileReader(MatStreamAgent):
                 if getter.mat_dtype is not None:
                     arr = arr.astype(getter.mat_dtype)
             if self.squeeze_me:
-                arr = N.squeeze(arr)
+                arr = np.squeeze(arr)
                 if not arr.size:
-                    arr = N.array([])
+                    arr = np.array([])
                 elif not arr.shape: # 0d coverted to scalar
                     arr = arr.item()
             return arr
@@ -276,10 +289,10 @@ class MatFileReader(MatStreamAgent):
 
     def chars_to_str(self, str_arr):
         ''' Convert string array to string '''
-        dt = N.dtype('U' + str(small_product(str_arr.shape)))
-        return N.ndarray(shape=(),
-                       dtype = dt,
-                       buffer = str_arr.copy()).item()
+        dt = np.dtype('U' + str(small_product(str_arr.shape)))
+        return np.ndarray(shape=(),
+                          dtype = dt,
+                          buffer = str_arr.copy()).item()
 
     def get_variables(self, variable_names=None):
         ''' get variables from stream as dictionary
@@ -380,7 +393,7 @@ class MatStreamWriter(object):
 
     def arr_dtype_number(self, num):
         ''' Return dtype for given number of items per element'''
-        return N.dtype(self.arr.dtype.str[:2] + str(num))
+        return np.dtype(self.arr.dtype.str[:2] + str(num))
 
     def arr_to_chars(self):
         ''' Convert string array to char array '''
@@ -388,9 +401,9 @@ class MatStreamWriter(object):
         if not dims:
             dims = [1]
         dims.append(int(self.arr.dtype.str[2:]))
-        self.arr = N.ndarray(shape=dims,
-                           dtype=self.arr_dtype_number(1),
-                           buffer=self.arr)
+        self.arr = np.ndarray(shape=dims,
+                              dtype=self.arr_dtype_number(1),
+                              buffer=self.arr)
 
     def write_bytes(self, arr):
         self.file_stream.write(arr.tostring(order='F'))
