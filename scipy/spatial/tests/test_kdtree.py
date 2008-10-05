@@ -336,3 +336,7 @@ class test_count_neighbors:
         assert np.all(np.diff(results)>=0)
         for r,result in zip(rs, results):
             assert_equal(self.T1.count_neighbors(self.T2, r), result)
+
+
+if __name__=="__main__":
+    run_module_suite()
