@@ -311,3 +311,28 @@ def test_distance_vectorization():
     x = np.random.randn(10,1,3)
     y = np.random.randn(1,7,3)
     assert_equal(distance(x,y).shape,(10,7))
+
+class test_count_neighbors:
+
+    def setUp(self):
+        n = 100
+        k = 4
+        self.T1 = KDTree(np.random.randn(n,k),leafsize=2)
+        self.T2 = KDTree(np.random.randn(n,k),leafsize=2)
+        
+    def test_one_radius(self):
+        r = 0.2
+        assert_equal(self.T1.count_neighbors(self.T2, r),
+                np.sum([len(l) for l in self.T1.query_ball_tree(self.T2,r)]))
+
+    def test_large_radius(self):
+        r = 1000
+        assert_equal(self.T1.count_neighbors(self.T2, r),
+                np.sum([len(l) for l in self.T1.query_ball_tree(self.T2,r)]))
+
+    def test_multiple_radius(self):
+        rs = np.exp(np.linspace(np.log(0.01),np.log(10),10))
+        results = self.T1.count_neighbors(self.T2, rs)
+        assert np.all(np.diff(results)>=0)
+        for r,result in zip(rs, results):
+            assert_equal(self.T1.count_neighbors(self.T2, r), result)
