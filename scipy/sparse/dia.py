@@ -26,9 +26,9 @@ class dia_matrix(_data_matrix):
             to construct an empty matrix with shape (M, N),
             dtype is optional, defaulting to dtype='d'.
 
-        dia_matrix((data, diags), shape=(M, N))
+        dia_matrix((data, offsets), shape=(M, N))
             where the ``data[k,:]`` stores the diagonal entries for
-            diagonal ``diag[k]`` (See example below)
+            diagonal ``offsets[k]`` (See example below)
 
 
     Examples
@@ -42,8 +42,8 @@ class dia_matrix(_data_matrix):
             [0, 0, 0, 0]], dtype=int8)
 
     >>> data = array([[1,2,3,4]]).repeat(3,axis=0)
-    >>> diags = array([0,-1,2])
-    >>> dia_matrix( (data,diags), shape=(4,4)).todense()
+    >>> offsets = array([0,-1,2])
+    >>> dia_matrix( (data,offsets), shape=(4,4)).todense()
     matrix([[1, 0, 3, 0],
             [1, 2, 0, 4],
             [0, 2, 3, 0],
@@ -57,36 +57,36 @@ class dia_matrix(_data_matrix):
         if isspmatrix_dia(arg1):
             if copy:
                 arg1 = arg1.copy()
-            self.data  = arg1.data
-            self.diags = arg1.diags
-            self.shape = arg1.shape
+            self.data    = arg1.data
+            self.offsets = arg1.offsets
+            self.shape   = arg1.shape
         elif isspmatrix(arg1):
             if isspmatrix_dia(arg1) and copy:
                 A = arg1.copy()
             else:
                 A = arg1.todia()
-            self.data  = A.data
-            self.diags = A.diags
-            self.shape = A.shape
+            self.data    = A.data
+            self.offsets = A.offsets
+            self.shape   = A.shape
         elif isinstance(arg1, tuple):
             if isshape(arg1):
                 # It's a tuple of matrix dimensions (M, N)
                 # create empty matrix
                 self.shape = arg1   #spmatrix checks for errors here
                 self.data  = zeros( (0,0), getdtype(dtype, default=float))
-                self.diags = zeros( (0), dtype=intc)
+                self.offsets = zeros( (0), dtype=intc)
             else:
                 try:
-                    # Try interpreting it as (data, diags)
-                    data, diags = arg1
+                    # Try interpreting it as (data, offsets)
+                    data, offsets = arg1
                 except:
                     raise ValueError('unrecognized form for dia_matrix constructor')
                 else:
                     if shape is None:
                         raise ValueError('expected a shape argument')
-                    self.data  = atleast_2d(array(arg1[0],dtype=dtype,copy=copy))
-                    self.diags = atleast_1d(array(arg1[1],dtype='i',copy=copy))
-                    self.shape = shape
+                    self.data    = atleast_2d(array(arg1[0],dtype=dtype,copy=copy))
+                    self.offsets = atleast_1d(array(arg1[1],dtype='i',copy=copy))
+                    self.shape   = shape
         else:
             #must be dense, convert to COO first, then to DIA
             try:
@@ -96,24 +96,24 @@ class dia_matrix(_data_matrix):
                         " %s_matrix constructor" % self.format
             from coo import coo_matrix
             A = coo_matrix(arg1).todia()
-            self.data  = A.data
-            self.diags = A.diags
-            self.shape = A.shape
+            self.data    = A.data
+            self.offsets = A.offsets
+            self.shape   = A.shape
 
 
         #check format
-        if self.diags.ndim != 1:
-            raise ValueError('diags array must have rank 1')
+        if self.offsets.ndim != 1:
+            raise ValueError('offsets array must have rank 1')
 
         if self.data.ndim != 2:
             raise ValueError('data array must have rank 2')
 
-        if self.data.shape[0] != len(self.diags):
+        if self.data.shape[0] != len(self.offsets):
             raise ValueError('number of diagonals (%d) ' \
-                    'does not match the number of diags (%d)' \
-                    % (self.data.shape[0], len(self.diags)))
+                    'does not match the number of offsets (%d)' \
+                    % (self.data.shape[0], len(self.offsets)))
 
-        if len(unique(self.diags)) != len(self.diags):
+        if len(unique(self.offsets)) != len(self.offsets):
             raise ValueError('offset array contains duplicate values')
 
     def __repr__(self):
@@ -131,7 +131,7 @@ class dia_matrix(_data_matrix):
         """
         M,N = self.shape
         nnz = 0
-        for k in self.diags:
+        for k in self.offsets:
             if k > 0:
                 nnz += min(M,N-k)
             else:
@@ -149,7 +149,7 @@ class dia_matrix(_data_matrix):
 
         M,N = self.shape
 
-        dia_matvec(M,N, len(self.diags), L, self.diags, self.data, x.ravel(), y.ravel())
+        dia_matvec(M,N, len(self.offsets), L, self.offsets, self.data, x.ravel(), y.ravel())
 
         return y
 
@@ -177,7 +177,7 @@ class dia_matrix(_data_matrix):
         row = arange(len_data).reshape(1,-1).repeat(num_data,axis=0)
         col = row.copy()
 
-        for i,k in enumerate(self.diags):
+        for i,k in enumerate(self.offsets):
             row[i,:] -= k
 
         row,col,data = row.ravel(),col.ravel(),self.data.ravel()
@@ -198,9 +198,9 @@ class dia_matrix(_data_matrix):
         but with different data.  By default the structure arrays are copied.
         """
         if copy:
-            return dia_matrix( (data,self.diags.copy()), shape=self.shape)
+            return dia_matrix( (data,self.offsets.copy()), shape=self.shape)
         else:
-            return dia_matrix( (data,self.diags), shape=self.shape)
+            return dia_matrix( (data,self.offsets), shape=self.shape)
 
 
 from sputils import _isinstance
