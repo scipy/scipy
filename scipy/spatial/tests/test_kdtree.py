@@ -3,7 +3,7 @@
 from numpy.testing import *
 
 import numpy as np
-from scipy.spatial import KDTree, distance
+from scipy.spatial import KDTree, distance, Rectangle
 
 class ConsistencyTests:
     def test_nearest(self):
@@ -126,7 +126,7 @@ class test_small_nonleaf(test_small):
         self.m = 4
 
 
-class CheckVectorization(NumpyTestCase):
+class test_vectorization:
     def setUp(self):
         self.data = np.array([[0,0,0],
                               [0,0,1],
@@ -176,4 +176,138 @@ class CheckVectorization(NumpyTestCase):
         assert isinstance(d[0,0],list)
         assert isinstance(i[0,0],list)
 
+class ball_consistency:
 
+    def test_in_ball(self):
+        l = self.T.query_ball_point(self.x, self.d, p=self.p, eps=self.eps)
+        for i in l:
+            assert distance(self.data[i],self.x,self.p)<=self.d*(1.+self.eps)
+
+    def test_found_all(self):
+        c = np.ones(self.T.n,dtype=np.bool)
+        l = self.T.query_ball_point(self.x, self.d, p=self.p, eps=self.eps)
+        c[l] = False
+        assert np.all(distance(self.data[c],self.x,self.p)>=self.d/(1.+self.eps))
+
+class test_random_ball(ball_consistency):
+
+    def setUp(self):
+        n = 1000
+        k = 4
+        self.data = np.random.randn(n,k)
+        self.T = KDTree(self.data)
+        self.x = np.random.randn(k)
+        self.p = 2.
+        self.eps = 0
+        self.d = 0.2
+
+class test_random_ball_approx(test_random_ball):
+
+    def setUp(self):
+        test_random_ball.setUp(self)
+        self.eps = 0.1
+
+class test_random_ball_far(test_random_ball):
+
+    def setUp(self):
+        test_random_ball.setUp(self)
+        self.d = 2.
+
+class test_random_ball_l1(test_random_ball):
+
+    def setUp(self):
+        test_random_ball.setUp(self)
+        self.p = 1
+
+class test_random_ball_linf(test_random_ball):
+
+    def setUp(self):
+        test_random_ball.setUp(self)
+        self.p = np.inf
+
+def test_random_ball_vectorized():
+
+    n = 20
+    k = 5
+    T = KDTree(np.random.randn(n,k))
+    
+    r = T.query_ball_point(np.random.randn(2,3,k),1)
+    assert_equal(r.shape,(2,3))
+    assert isinstance(r[0,0],list)
+
+class two_trees_consistency:
+
+    def test_all_in_ball(self):
+        r = self.T1.query_ball_tree(self.T2, self.d, p=self.p, eps=self.eps)
+        for i, l in enumerate(r):
+            for j in l:
+                assert distance(self.data1[i],self.data2[j],self.p)<=self.d*(1.+self.eps)
+    def test_found_all(self):
+        r = self.T1.query_ball_tree(self.T2, self.d, p=self.p, eps=self.eps)
+        for i, l in enumerate(r):
+            c = np.ones(self.T2.n,dtype=np.bool)
+            c[l] = False
+            assert np.all(distance(self.data2[c],self.data1[i],self.p)>=self.d/(1.+self.eps))
+
+class test_two_random_trees(two_trees_consistency):
+
+    def setUp(self):
+        n = 100
+        k = 4
+        self.data1 = np.random.randn(n,k)
+        self.T1 = KDTree(self.data1,leafsize=2)
+        self.data2 = np.random.randn(n,k)
+        self.T2 = KDTree(self.data2,leafsize=2)
+        self.p = 2.
+        self.eps = 0
+        self.d = 0.2
+
+class test_two_random_trees_far(test_two_random_trees):
+
+    def setUp(self):
+        test_two_random_trees.setUp(self)
+        self.d = 2
+
+class test_two_random_trees_linf(test_two_random_trees):
+
+    def setUp(self):
+        test_two_random_trees.setUp(self)
+        self.p = np.inf
+
+
+class test_rectangle:
+
+    def setUp(self):
+        self.rect = Rectangle([0,0],[1,1])
+
+    def test_min_inside(self):
+        assert_almost_equal(self.rect.min_distance_point([0.5,0.5]),0)
+    def test_min_one_side(self):
+        assert_almost_equal(self.rect.min_distance_point([0.5,1.5]),0.5)
+    def test_min_two_sides(self):
+        assert_almost_equal(self.rect.min_distance_point([2,2]),np.sqrt(2))
+    def test_max_inside(self):
+        assert_almost_equal(self.rect.max_distance_point([0.5,0.5]),1/np.sqrt(2))
+    def test_max_one_side(self):
+        assert_almost_equal(self.rect.max_distance_point([0.5,1.5]),np.hypot(0.5,1.5))
+    def test_max_two_sides(self):
+        assert_almost_equal(self.rect.max_distance_point([2,2]),2*np.sqrt(2))
+
+    def test_split(self):
+        less, greater = self.rect.split(0,0.1)
+        assert_array_equal(less.maxes,[0.1,1])
+        assert_array_equal(less.mins,[0,0])
+        assert_array_equal(greater.maxes,[1,1])
+        assert_array_equal(greater.mins,[0.1,0])
+
+
+def test_distance_l2():
+    assert_almost_equal(distance([0,0],[1,1],2),np.sqrt(2))
+def test_distance_l1():
+    assert_almost_equal(distance([0,0],[1,1],1),2)
+def test_distance_linf():
+    assert_almost_equal(distance([0,0],[1,1],np.inf),1)
+def test_distance_vectorization():
+    x = np.random.randn(10,1,3)
+    y = np.random.randn(1,7,3)
+    assert_equal(distance(x,y).shape,(10,7))

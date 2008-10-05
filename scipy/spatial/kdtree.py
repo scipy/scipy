@@ -4,6 +4,14 @@ import numpy as np
 from heapq import heappush, heappop
 
 def distance_p(x,y,p=2):
+    """Compute the pth power of the L**p distance between x and y
+    
+    For efficiency, this function computes the L**p distance but does
+    not extract the pth root. If p is 1 or infinity, this is equal to
+    the actual L**p distance.
+    """
+    x = np.asarray(x)
+    y = np.asarray(y)
     if p==np.inf:
         return np.amax(np.abs(y-x),axis=-1)
     elif p==1:
@@ -11,10 +19,57 @@ def distance_p(x,y,p=2):
     else:
         return np.sum(np.abs(y-x)**p,axis=-1)
 def distance(x,y,p=2):
+    """Compute the L**p distance between x and y"""
+    x = np.asarray(x)
+    y = np.asarray(y)
     if p==np.inf or p==1:
         return distance_p(x,y,p)
     else:
         return distance_p(x,y,p)**(1./p)
+
+class Rectangle(object):
+    """Hyperrectangle class.
+
+    Represents a Cartesian product of intervals.
+    """
+    def __init__(self, maxes, mins):
+        """Construct a hyperrectangle."""
+        self.maxes = np.maximum(maxes,mins).astype(np.float)
+        self.mins = np.minimum(maxes,mins).astype(np.float)
+        self.k, = self.maxes.shape
+
+    def __repr__(self):
+        return "<Rectangle %s>" % zip(self.mins, self.maxes)
+
+    def volume(self):
+        """Total volume."""
+        return np.prod(self.maxes-self.mins)
+    
+    def split(self, d, split):
+        """Produce two hyperrectangles by splitting along axis d."""
+        mid = np.copy(self.maxes)
+        mid[d] = split
+        less = Rectangle(self.mins, mid)
+        mid = np.copy(self.mins)
+        mid[d] = split
+        greater = Rectangle(mid, self.maxes)
+        return less, greater
+
+    def min_distance_point(self, x, p=2.):
+        """Compute the minimum distance between x and a point in the hyperrectangle."""
+        return distance(0, np.maximum(0,np.maximum(self.mins-x,x-self.maxes)),p)
+
+    def max_distance_point(self, x, p=2.):
+        """Compute the maximum distance between x and a point in the hyperrectangle."""
+        return distance(0, np.maximum(self.maxes-x,x-self.mins),p)
+
+    def min_distance_rectangle(self, other, p=2.):
+        """Compute the minimum distance between points in the two hyperrectangles."""
+        return distance(0, np.maximum(0,np.maximum(self.mins-other.maxes,other.mins-self.maxes)),p)
+
+    def max_distance_rectangle(self, other, p=2.):
+        """Compute the maximum distance between points in the two hyperrectangles."""
+        return distance(0, np.maximum(self.maxes-other.mins,other.maxes-self.mins),p)
 
 
 class KDTree(object):
@@ -42,6 +97,11 @@ class KDTree(object):
     For large dimensions (20 is already large) do not expect this to run 
     significantly faster than brute force. High-dimensional nearest-neighbor
     queries are a substantial open problem in computer science.
+
+    The tree also supports all-neighbors queries, both with arrays of points
+    and with other kd-trees. These do use a reasonably efficient algorithm,
+    but the kd-tree is not necessarily the best data structure for this
+    sort of calculation.
     """
 
     def __init__(self, data, leafsize=10):
@@ -302,4 +362,135 @@ class KDTree(object):
                 raise ValueError("Requested %s nearest neighbors; acceptable numbers are integers greater than or equal to one, or None")
 
 
+    def __query_ball_point(self, x, r, p=2., eps=0):
+        R = Rectangle(self.maxes, self.mins)
 
+        def traverse_checking(node, rect):
+            if rect.min_distance_point(x,p)>=r/(1.+eps):
+                return []
+            elif rect.max_distance_point(x,p)<r*(1.+eps):
+                return traverse_no_checking(node)
+            elif isinstance(node, KDTree.leafnode):
+                d = self.data[node.idx]
+                return node.idx[distance(d,x,p)<=r].tolist()
+            else:
+                less, greater = rect.split(node.split_dim, node.split)
+                return traverse_checking(node.less, less)+traverse_checking(node.greater, greater)
+        def traverse_no_checking(node):
+            if isinstance(node, KDTree.leafnode):
+                
+                return node.idx.tolist()
+            else:
+                return traverse_no_checking(node.less)+traverse_no_checking(node.greater)
+
+        return traverse_checking(self.tree, R)
+
+    def query_ball_point(self, x, r, p=2., eps=0):
+        """Find all points within r of x
+
+        Parameters
+        ==========
+
+        x : array_like, shape tuple + (self.k,)
+            The point or points to search for neighbors of
+        r : positive float
+            The radius of points to return
+        p : float 1<=p<=infinity
+            Which Minkowski p-norm to use
+        eps : nonnegative float
+            Approximate search. Branches of the tree are not explored
+            if their nearest points are further than r/(1+eps), and branches
+            are added in bulk if their furthest points are nearer than r*(1+eps).
+
+        Returns
+        =======
+
+        results : list or array of lists
+            If x is a single point, returns a list of the indices of the neighbors
+            of x. If x is an array of points, returns an object array of shape tuple
+            containing lists of neighbors.
+
+
+        Note: if you have many points whose neighbors you want to find, you may save
+        substantial amounts of time by putting them in a KDTree and using query_ball_tree.
+        """
+        x = np.asarray(x)
+        if x.shape[-1]!=self.k:
+            raise ValueError("Searching for a %d-dimensional point in a %d-dimensional KDTree" % (x.shape[-1],self.k))
+        if len(x.shape)==1:
+            return self.__query_ball_point(x,r,p,eps)
+        else:
+            retshape = x.shape[:-1]
+            result = np.empty(retshape,dtype=np.object)
+            for c in np.ndindex(retshape):
+                result[c] = self.__query_ball_point(x[c], r, p=p, eps=eps)
+            return result
+
+    def query_ball_tree(self, other, r, p=2., eps=0):
+        """Find all pairs of points whose distance is at most r
+
+        Parameters
+        ==========
+
+        other : KDTree
+            The tree containing points to search against
+        r : positive float
+            The maximum distance
+        p : float 1<=p<=infinity
+            Which Minkowski norm to use
+        eps : nonnegative float
+            Approximate search. Branches of the tree are not explored
+            if their nearest points are further than r/(1+eps), and branches
+            are added in bulk if their furthest points are nearer than r*(1+eps).
+        
+        Returns
+        =======
+
+        results : list of lists
+            For each element self.data[i] of this tree, results[i] is a list of the
+            indices of its neighbors in other.data.
+        """
+        results = [[] for i in range(self.n)]
+        def traverse_checking(node1, rect1, node2, rect2):
+            if rect1.min_distance_rectangle(rect2, p)>r/(1.+eps):
+                return
+            elif rect1.max_distance_rectangle(rect2, p)<r*(1.+eps):
+                traverse_no_checking(node1, node2)
+            elif isinstance(node1, KDTree.leafnode):
+                if isinstance(node2, KDTree.leafnode):
+                    d = other.data[node2.idx]
+                    for i in node1.idx:
+                        results[i] += node2.idx[distance(d,self.data[i],p)<=r].tolist()
+                else:
+                    less, greater = rect2.split(node2.split_dim, node2.split)
+                    traverse_checking(node1,rect1,node2.less,less)
+                    traverse_checking(node1,rect1,node2.greater,greater)
+            elif isinstance(node2, KDTree.leafnode):
+                less, greater = rect1.split(node1.split_dim, node1.split)
+                traverse_checking(node1.less,less,node2,rect2)
+                traverse_checking(node1.greater,greater,node2,rect2)
+            else:
+                less1, greater1 = rect1.split(node1.split_dim, node1.split)
+                less2, greater2 = rect2.split(node2.split_dim, node2.split)
+                traverse_checking(node1.less,less1,node2.less,less2)
+                traverse_checking(node1.less,less1,node2.greater,greater2)
+                traverse_checking(node1.greater,greater1,node2.less,less2)
+                traverse_checking(node1.greater,greater1,node2.greater,greater2)
+
+        def traverse_no_checking(node1, node2):
+            if isinstance(node1, KDTree.leafnode):
+                if isinstance(node2, KDTree.leafnode):
+                    for i in node1.idx:
+                        results[i] += node2.idx.tolist()
+                else:
+                    traverse_no_checking(node1, node2.less)
+                    traverse_no_checking(node1, node2.greater)
+            else:
+                traverse_no_checking(node1.less, node2)
+                traverse_no_checking(node1.greater, node2)
+
+        traverse_checking(self.tree, Rectangle(self.maxes, self.mins),
+                          other.tree, Rectangle(other.maxes, other.mins))
+        return results
+
+        
