@@ -6,7 +6,7 @@ Class for reading and writing numpy arrays from / to binary files
 
 import sys
 
-import numpy as N
+import numpy as np
 
 __all__ = ['sys_endian_code', 'npfile']
 
@@ -40,9 +40,9 @@ class npfile(object):
 
     Example use:
     >>> from StringIO import StringIO
-    >>> import numpy as N
+    >>> import numpy as np
     >>> from scipy.io import npfile
-    >>> arr = N.arange(10).reshape(5,2)
+    >>> arr = np.arange(10).reshape(5,2)
     >>> # Make file-like object (could also be file name)
     >>> my_file = StringIO()
     >>> npf = npfile(my_file)
@@ -167,7 +167,7 @@ class npfile(object):
                     (if None from self.order)
         '''
         endian, order = self._endian_order(endian, order)
-        data = N.asarray(data)
+        data = np.asarray(data)
         dt_endian = self._endian_from_dtype(data.dtype)
         if not endian == 'dtype':
             if dt_endian != endian:
@@ -194,7 +194,7 @@ class npfile(object):
         arr       - array from file with given dtype (dt)
         '''
         endian, order = self._endian_order(endian, order)
-        dt = N.dtype(dt)
+        dt = np.dtype(dt)
         try:
             shape = list(shape)
         except TypeError:
@@ -203,7 +203,7 @@ class npfile(object):
         if minus_ones == 0:
             pass
         elif minus_ones == 1:
-            known_dimensions_size = -N.product(shape,axis=0) * dt.itemsize
+            known_dimensions_size = -np.product(shape,axis=0) * dt.itemsize
             unknown_dimension_size, illegal = divmod(self.remaining_bytes(),
                                                      known_dimensions_size)
             if illegal:
@@ -212,10 +212,10 @@ class npfile(object):
         else:
             raise ValueError(
                 "illegal -1 count; can only specify one unknown dimension")
-        sz = dt.itemsize * N.product(shape)
+        sz = dt.itemsize * np.product(shape)
         dt_endian = self._endian_from_dtype(dt)
         buf = self.file.read(sz)
-        arr = N.ndarray(shape=shape,
+        arr = np.ndarray(shape=shape,
                          dtype=dt,
                          buffer=buf,
                          order=order)
@@ -223,7 +223,7 @@ class npfile(object):
             return arr.byteswap()
         return arr.copy()
 
-npfile = N.deprecate_with_doc("""
+npfile = np.deprecate_with_doc("""
 You can achieve the same effect as using npfile, using ndarray.tofile
 and numpy.fromfile.
 

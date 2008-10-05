@@ -4,7 +4,7 @@ import struct
 # assumes file pointer is immediately
 #  after the 'fmt ' id
 def _read_fmt_chunk(fid):
-    res = struct.unpack('lhHLLHH',fid.read(20))
+    res = struct.unpack('ihHIIHH',fid.read(20))
     size, comp, noc, rate, sbytes, ba, bits = res
     if (comp != 1 or size > 16):
         print "Warning:  unfamiliar format bytes..."
@@ -96,7 +96,7 @@ def write(filename, rate, data):
     bits = data.dtype.itemsize * 8
     sbytes = rate*(bits / 8)*noc
     ba = noc * (bits / 8)
-    fid.write(struct.pack('lhHLLHH', 16, 1, noc, rate, sbytes, ba, bits))
+    fid.write(struct.pack('ihHIIHH', 16, 1, noc, rate, sbytes, ba, bits))
     # data chunk
     fid.write('data')
     fid.write(struct.pack('i', data.nbytes))

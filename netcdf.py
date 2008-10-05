@@ -15,7 +15,6 @@ TODO:
 __all__ = ['netcdf_file', 'netcdf_variable']
 
 import struct
-import itertools
 import mmap
 
 from numpy import ndarray, zeros, array
