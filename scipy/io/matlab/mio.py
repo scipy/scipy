@@ -59,13 +59,13 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
             raise IOError, 'Reader needs file name or open file-like object'
         byte_stream = file_name
 
-    mv = get_matfile_version(byte_stream)
-    if mv == '4':
+    mjv, mnv = get_matfile_version(byte_stream)
+    if mjv == 0:
         return MatFile4Reader(byte_stream, **kwargs)
-    elif mv == '5':
+    elif mjv == 1:
         return MatFile5Reader(byte_stream, **kwargs)
-    elif mv == '7':
-        raise NotImplementedError('Please use PyTables for matlab HDF files')
+    elif mjv == 2:
+        raise NotImplementedError('Please use PyTables for matlab v7.3 (HDF) files')
     else:
         raise TypeError('Did not recognize version %s' % mv)
     

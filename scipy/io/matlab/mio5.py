@@ -4,39 +4,15 @@
 # Small fragments of current code adapted from matfile.py by Heiko
 # Henkelmann
 
-## Notice in matfile.py file
-
-# Copyright (c) 2003 Heiko Henkelmann
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to
-# deal in the Software without restriction, including without limitation the
-# rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-# sell copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-# DEALINGS IN THE SOFTWARE.
-
+import sys
 import zlib
-from copy import copy as pycopy
 from cStringIO import StringIO
+from copy import copy as pycopy
+
 import numpy as np
 
-from miobase import *
-
-try:  # Python 2.3 support
-    from sets import Set as set
-except:
-    pass
+from miobase import MatFileReader, MatArrayReader, MatMatrixGetter, \
+     MatFileWriter, MatStreamWriter, spsparse
 
 miINT8 = 1
 miUINT8 = 2
@@ -185,10 +161,6 @@ mx_numbers = (
     mxUINT64_CLASS,
     )
 
-class mat_obj(object):
-    ''' Placeholder for holding read data from objects '''
-    pass
-
 class Mat5ArrayReader(MatArrayReader):
     ''' Class to get Mat5 arrays
 
@@ -290,7 +262,7 @@ class Mat5ArrayReader(MatArrayReader):
         if mc == mxCELL_CLASS:
             return Mat5CellMatrixGetter(self, header)
         if mc == mxSTRUCT_CLASS:
-            return Mat5StructMatrixGetter(self, header, self.struct_as_record)
+            return Mat5StructMatrixGetter(self, header)
         if mc == mxOBJECT_CLASS:
             return Mat5ObjectMatrixGetter(self, header)
         if mc == mxFUNCTION_CLASS:
@@ -400,11 +372,10 @@ class Mat5SparseMatrixGetter(Mat5MatrixGetter):
         nnz = indptr[-1]
         rowind = rowind[:nnz]
         data   = data[:nnz]
-        if have_sparse:
-            from scipy.sparse import csc_matrix
-            return csc_matrix((data,rowind,indptr), shape=(M,N))
+        if spsparse:
+            return spsparse.csc_matrix((data,rowind,indptr), shape=(M,N))
         else:
-            return (dims, data, rowind, indptr)
+            return ((M,N), data, rowind, indptr)
 
 
 class Mat5CharMatrixGetter(Mat5MatrixGetter):
@@ -445,9 +416,9 @@ class mat_struct(object):
     pass
 
 class Mat5StructMatrixGetter(Mat5MatrixGetter):
-    def __init__(self, array_reader, header, struct_as_record):
+    def __init__(self, array_reader, header):
         super(Mat5StructMatrixGetter, self).__init__(array_reader, header)
-        self.struct_as_record = struct_as_record
+        self.struct_as_record = array_reader.struct_as_record
 
     def get_raw_array(self):
         namelength = self.read_element()[0]
@@ -456,27 +427,26 @@ class Mat5StructMatrixGetter(Mat5MatrixGetter):
                        for i in xrange(0,len(names),namelength)]
         tupdims = tuple(self.header['dims'][::-1])
         length = np.product(tupdims)
-        result = np.empty(length, dtype=[(field_name, object) 
-                                         for field_name in field_names])
-        for i in range(length):
-            for field_name in field_names:
-                result[i][field_name] = self.read_element()
-        
-        if not self.struct_as_record:
-            # Backward compatibility with previous format
+        if self.struct_as_record:
+            result = np.empty(length, dtype=[(field_name, object) 
+                                             for field_name in field_names])
+            for i in range(length):
+                for field_name in field_names:
+                    result[i][field_name] = self.read_element()
+        else: # Backward compatibility with previous format
             self.obj_template = mat_struct()
             self.obj_template._fieldnames = field_names
-            newresult = np.empty(length, dtype=object)
+            result = np.empty(length, dtype=object)
             for i in range(length):
                 item = pycopy(self.obj_template)
                 for name in field_names:
-                    item.__dict__[name] = result[i][name]
-                newresult[i] = item
-            result = newresult
+                    item.__dict__[name] = self.read_element()
+                result[i] = item
         
         return result.reshape(tupdims).T
 
-class MatlabObject:
+class MatlabObject(object):
+    ''' Class to contain read data from matlab objects '''
     def __init__(self, classname, field_names):
         self.__dict__['classname'] = classname
         self.__dict__['mobj_recarray'] = np.empty((1,1), dtype=[(field_name, object) 
@@ -540,7 +510,35 @@ class MatFile5Reader(MatFileReader):
                  struct_as_record=False,
                  uint16_codec=None
                  ):
+        '''
+        mat_stream : file-like
+                     object with file API, open for reading
+        byte_order : {None, string} 
+                      specification of byte order, one of:
+		      ('native', '=', 'little', '<', 'BIG', '>')
+        mat_dtype : {True, False} boolean
+                     If True, return arrays in same dtype as loaded into matlab
+                     otherwise return with dtype with which they were saved
+        squeeze_me : {False, True} boolean
+                     If True, squeezes dimensions of size 1 from arrays
+        chars_as_strings : {True, False} boolean
+                     If True, convert char arrays to string arrays
+        matlab_compatible : {False, True} boolean
+                     If True, returns matrices as would be loaded by matlab
+                     (implies squeeze_me=False, chars_as_strings=False
+                     mat_dtype=True, struct_as_record=True)
+        struct_as_record : {False, True} boolean 
+                     If True, return strutures as numpy records,
+                     otherwise, return as custom object (for
+                     compatibility with scipy 0.6)
+        uint16_codec : {None, string}
+                     Set codec to use for uint16 char arrays
+                     (e.g. 'utf-8').  Use system default codec if None
+        '''
         self.codecs = {}
+        # Missing inputs to array reader set later (processor func
+        # below, dtypes, codecs via our own set_dtype function, called
+        # from parent __init__)
         self._array_reader = Mat5ArrayReader(
             mat_stream,
             None,
@@ -853,8 +851,8 @@ class Mat5WriterGetter(object):
         arr         - array to write
         name        - name in matlab (TM) workspace
         '''
-        if have_sparse:
-            if scipy.sparse.issparse(arr):
+        if spsparse:
+            if spsparse.issparse(arr):
                 return Mat5SparseWriter(self.stream, arr, name, is_global)
             
         if isinstance(arr, MatlabFunctionMatrix):

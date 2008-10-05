@@ -4,16 +4,15 @@
 Base classes for matlab (TM) file stream reading
 """
 
-import sys
-
 import numpy as np
 
-try:
-    import scipy.sparse
-    have_sparse = 1
-except ImportError:
-    have_sparse = 0
+import byteordercodes as boc
 
+# sparse module if available
+try:
+    import scipy.sparse as spsparse
+except ImportError:
+    spsparse = None
 
 def small_product(arr):
     ''' Faster than product for small arrays '''
@@ -23,12 +22,28 @@ def small_product(arr):
     return res
 
 def get_matfile_version(fileobj):
-    ''' Return '4', '5', or '7' depending on apparent mat file type
-    Inputs
-    fileobj       - file object implementing seek() and read()
-    Outputs
-    version_str   - one of (strings) 4, 5, or 7
-    
+    ''' Return major, minor tuple depending on apparent mat file type
+
+    Where:
+
+     #. 0,x -> version 4 format mat files
+     #. 1,x -> version 5 format mat files
+     #. 2,x -> version 7.3 format mat files (HDF format)
+     
+    Parameters
+    ----------
+    fileobj : {file-like}
+              object implementing seek() and read()
+
+    Returns
+    -------
+    major_version : {0, 1, 2}
+                    major matlab file format version
+    minor_version : int
+                    major matlab file format version
+
+    Notes
+    -----
     Has the side effect of setting the file read pointer to 0
     '''
     # Mat4 files have a zero somewhere in first 4 bytes
@@ -38,42 +53,36 @@ def get_matfile_version(fileobj):
                            buffer = fileobj.read(4))
     if 0 in mopt_bytes:
         fileobj.seek(0)
-        return '4'
-    # For 5 or 7 we need to read an integer in the header
-    # bytes 124 through 128 contain a version integer
-    # and an endian test string
+        return (0,0)
+    
+    # For 5 format or 7.3 format we need to read an integer in the
+    # header. Bytes 124 through 128 contain a version integer and an
+    # endian test string
     fileobj.seek(124)
     tst_str = fileobj.read(4)
     fileobj.seek(0)
     maj_ind = int(tst_str[2] == 'I')
-    verb = ord(tst_str[maj_ind])
-    if verb == 1:
-        return '5'
-    elif verb == 2:
-        return '7'
-    raise ValueError('Unknown mat file type, version %d' % verb)
+    maj_val = ord(tst_str[maj_ind])
+    min_val = ord(tst_str[1-maj_ind])
+    ret = (maj_val, min_val)
+    if maj_val in (1, 2):
+        return ret
+    else:
+        raise ValueError('Unknown mat file type, version %s' % ret)
 
 
 class ByteOrder(object):
     ''' Namespace for byte ordering '''
-    little_endian = sys.byteorder == 'little'
-    native_code = little_endian and '<' or '>'
-    swapped_code = little_endian and '>' or '<'
+    little_endian = boc.sys_is_le
+    native_code = boc.native_code
+    swapped_code = boc.swapped_code
+    to_numpy_code = boc.to_numpy_code
 
-    def to_numpy_code(code):
-        if code is None:
-            return ByteOrder.native_code
-        if code in ('little', '<', 'l', 'L'):
-            return '<'
-        elif code in ('BIG', '>', 'B', 'b'):
-            return '>'
-        elif code in ('native', '='):
-            return ByteOrder.native_code
-        elif code in ('swapped'):
-            return ByteOrder.swapped_code
-        else:
-            raise ValueError, 'We cannot handle byte order %s' % byte_order
-    to_numpy_code = staticmethod(to_numpy_code)
+ByteOrder = np.deprecate_with_doc("""
+We no longer use the ByteOrder class, and deprecate it; we will remove
+it in future versions of scipy.  Please use the
+scipy.io.matlab.byteordercodes module instead.
+""")(ByteOrder)
 
 
 class MatStreamAgent(object):
@@ -116,20 +125,6 @@ class MatStreamAgent(object):
 class MatFileReader(MatStreamAgent):
     """ Base object for reading mat files
 
-    mat_stream         - initialized byte stream object  - file io interface object
-    byte_order         - byte order ('native', 'little', 'BIG')
-                          in ('native', '=')
-                          or in ('little', '<')
-                          or in ('BIG', '>')
-    mat_dtype          - return arrays in same dtype as loaded into matlab
-                         (instead of the dtype with which they were saved)
-    squeeze_me         - whether to squeeze unit dimensions or not
-    chars_as_strings   - whether to convert char arrays to string arrays
-    matlab_compatible  - returns matrices as would be loaded by matlab
-                         (implies squeeze_me=False, chars_as_strings=False
-                         mat_dtype=True)
-    struct_as_record   - return strutures as numpy records (only from v5 files)
-
     To make this class functional, you will need to override the
     following methods:
 
@@ -146,6 +141,25 @@ class MatFileReader(MatStreamAgent):
                  matlab_compatible=False,
                  struct_as_record=False
                  ):
+        '''
+        mat_stream : file-like
+                     object with file API, open for reading
+        byte_order : {None, string} 
+                      specification of byte order, one of:
+		      ('native', '=', 'little', '<', 'BIG', '>')
+        mat_dtype : {True, False} boolean
+                     If True, return arrays in same dtype as loaded into matlab
+                     otherwise return with dtype with which they were saved
+        squeeze_me : {False, True} boolean
+                     If True, squeezes dimensions of size 1 from arrays
+        chars_as_strings : {True, False} boolean
+                     If True, convert char arrays to string arrays
+        matlab_compatible : {False, True} boolean
+                     If True, returns matrices as would be loaded by matlab
+                     (implies squeeze_me=False, chars_as_strings=False
+                     mat_dtype=True)
+ 
+        '''
         # Initialize stream
         self.mat_stream = mat_stream
         self.dtypes = {}
@@ -195,12 +209,12 @@ class MatFileReader(MatStreamAgent):
     chars_as_strings = property(get_chars_as_strings,
                                 set_chars_as_strings,
                                 None,
-                                'get/set squeeze me property')
+                                'get/set chars_as_strings property')
 
     def get_order_code(self):
         return self._order_code
     def set_order_code(self, order_code):
-        order_code = ByteOrder.to_numpy_code(order_code)
+        order_code = boc.to_numpy_code(order_code)
         self._order_code = order_code
         self.set_dtypes()
     order_code = property(get_order_code,

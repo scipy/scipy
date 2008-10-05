@@ -6,7 +6,7 @@ import numpy as np
 
 from numpy.testing import assert_raises
 
-import scipy.io.byteordercodes as sibc
+import scipy.io.matlab.byteordercodes as sibc
 
 def test_native():
     native_is_le = sys.byteorder == 'little'

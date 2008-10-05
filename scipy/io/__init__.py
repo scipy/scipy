@@ -80,6 +80,7 @@ from matlab.mio import loadmat, savemat
 from netcdf import netcdf_file, netcdf_variable
 
 from recaster import sctype_attributes, Recaster
+import matlab.byteordercodes as byteordercodes
 from data_store import save_as_module
 from mmio import mminfo, mmread, mmwrite
 
