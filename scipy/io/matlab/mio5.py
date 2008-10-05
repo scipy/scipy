@@ -56,6 +56,10 @@ miUTF32 = 18
 
 mxCELL_CLASS = 1
 mxSTRUCT_CLASS = 2
+# The March 2008 edition of "Matlab 7 MAT-File Format" says that
+# mxOBJECT_CLASS = 3, whereas matrix.h says that mxLOGICAL = 3.
+# Matlab 2008a appears to save logicals as type 9, so we assume that
+# the document is correct.  See type 18, below.
 mxOBJECT_CLASS = 3
 mxCHAR_CLASS = 4
 mxSPARSE_CLASS = 5
@@ -67,6 +71,14 @@ mxINT16_CLASS = 10
 mxUINT16_CLASS = 11
 mxINT32_CLASS = 12
 mxUINT32_CLASS = 13
+# The following are not in the March 2008 edition of "Matlab 7
+# MAT-File Format," but were guessed from matrix.h.
+mxINT64_CLASS = 14
+mxUINT64_CLASS = 15
+mxFUNCTION_CLASS = 16
+# Not doing anything with these at the moment.
+mxOPAQUE_CLASS = 17
+mxOBJECT_CLASS_FROM_MATRIX_H = 18
 
 mdtypes_template = {
     miINT8: 'i1',
@@ -102,6 +114,8 @@ mclass_dtypes_template = {
     mxUINT16_CLASS: 'u2',
     mxINT32_CLASS: 'i4',
     mxUINT32_CLASS: 'u4',
+    mxINT64_CLASS: 'i8',
+    mxUINT64_CLASS: 'u8',
     mxSINGLE_CLASS: 'f4',
     mxDOUBLE_CLASS: 'f8',
     }
@@ -117,9 +131,11 @@ np_to_mtypes = {
     'i1': miINT8,
     'i2': miINT16,
     'i4': miINT32,
+    'i8': miINT64,
     'u1': miUINT8,
-    'u4': miUINT32,
     'u2': miUINT16,
+    'u4': miUINT32,
+    'u8': miUINT64,
     'S1': miUINT8,
     'U1': miUTF16,
     }
@@ -132,8 +148,10 @@ np_to_mxtypes = {
     'c16': mxDOUBLE_CLASS,
     'f4': mxSINGLE_CLASS,
     'c8': mxSINGLE_CLASS,
+    'i8': mxINT64_CLASS,
     'i4': mxINT32_CLASS,
     'i2': mxINT16_CLASS,
+    'u8': mxUINT64_CLASS,
     'u2': mxUINT16_CLASS,
     'u1': mxUINT8_CLASS,
     'S1': mxUINT8_CLASS,
@@ -163,11 +181,9 @@ mx_numbers = (
     mxUINT16_CLASS,
     mxINT32_CLASS,
     mxUINT32_CLASS,
+    mxINT64_CLASS,
+    mxUINT64_CLASS,
     )
-
-class mat_struct(object):
-    ''' Placeholder for holding read data from structs '''
-    pass
 
 class mat_obj(object):
     ''' Placeholder for holding read data from objects '''
@@ -180,13 +196,13 @@ class Mat5ArrayReader(MatArrayReader):
     factory function
     '''
 
-    def __init__(self, mat_stream, dtypes, processor_func, codecs, class_dtypes):
+    def __init__(self, mat_stream, dtypes, processor_func, codecs, class_dtypes, struct_as_record):
         super(Mat5ArrayReader, self).__init__(mat_stream,
                                               dtypes,
-                                              processor_func,
-                                              )
+                                              processor_func)
         self.codecs = codecs
         self.class_dtypes = class_dtypes
+        self.struct_as_record = struct_as_record
 
     def read_element(self, copy=True):
         raw_tag = self.mat_stream.read(8)
@@ -228,7 +244,7 @@ class Mat5ArrayReader(MatArrayReader):
                             buffer=raw_str)
             if copy:
                 el = el.copy()
-
+       
         return el
 
     def matrix_getter_factory(self):
@@ -274,9 +290,11 @@ class Mat5ArrayReader(MatArrayReader):
         if mc == mxCELL_CLASS:
             return Mat5CellMatrixGetter(self, header)
         if mc == mxSTRUCT_CLASS:
-            return Mat5StructMatrixGetter(self, header)
+            return Mat5StructMatrixGetter(self, header, self.struct_as_record)
         if mc == mxOBJECT_CLASS:
             return Mat5ObjectMatrixGetter(self, header)
+        if mc == mxFUNCTION_CLASS:
+            return Mat5FunctionMatrixGetter(self, header)
         raise TypeError, 'No reader for class code %s' % mc
 
 
@@ -294,7 +312,8 @@ class Mat5ZArrayReader(Mat5ArrayReader):
             array_reader.dtypes,
             array_reader.processor_func,
             array_reader.codecs,
-            array_reader.class_dtypes)
+            array_reader.class_dtypes,
+            array_reader.struct_as_record)
 
 
 class Mat5MatrixGetter(MatMatrixGetter):
@@ -322,6 +341,7 @@ class Mat5EmptyMatrixGetter(Mat5MatrixGetter):
         self.mat_stream = array_reader.mat_stream
         self.data_position = self.mat_stream.tell()
         self.header = {}
+        self.name = ''
         self.is_global = False
         self.mat_dtype = 'f8'
 
@@ -420,44 +440,92 @@ class Mat5CellMatrixGetter(Mat5MatrixGetter):
     def get_item(self):
         return self.read_element()
 
+class mat_struct(object):
+    ''' Placeholder for holding read data from structs '''
+    pass
 
-class Mat5StructMatrixGetter(Mat5CellMatrixGetter):
-    def __init__(self, *args, **kwargs):
-        super(Mat5StructMatrixGetter, self).__init__(*args, **kwargs)
-        self.obj_template = mat_struct()
+class Mat5StructMatrixGetter(Mat5MatrixGetter):
+    def __init__(self, array_reader, header, struct_as_record):
+        super(Mat5StructMatrixGetter, self).__init__(array_reader, header)
+        self.struct_as_record = struct_as_record
 
     def get_raw_array(self):
         namelength = self.read_element()[0]
-        # get field names
         names = self.read_element()
-        splitnames = [names[i:i+namelength] for i in \
-                      xrange(0,len(names),namelength)]
-        self.obj_template._fieldnames = [x.tostring().strip('\x00')
-                                        for x in splitnames]
-        return super(Mat5StructMatrixGetter, self).get_raw_array()
+        field_names = [names[i:i+namelength].tostring().strip('\x00')
+                       for i in xrange(0,len(names),namelength)]
+        tupdims = tuple(self.header['dims'][::-1])
+        length = np.product(tupdims)
+        result = np.empty(length, dtype=[(field_name, object) 
+                                         for field_name in field_names])
+        for i in range(length):
+            for field_name in field_names:
+                result[i][field_name] = self.read_element()
+        
+        if not self.struct_as_record:
+            # Backward compatibility with previous format
+            self.obj_template = mat_struct()
+            self.obj_template._fieldnames = field_names
+            newresult = np.empty(length, dtype=object)
+            for i in range(length):
+                item = pycopy(self.obj_template)
+                for name in field_names:
+                    item.__dict__[name] = result[i][name]
+                newresult[i] = item
+            result = newresult
+        
+        return result.reshape(tupdims).T
 
-    def get_item(self):
-        item = pycopy(self.obj_template)
-        for element in item._fieldnames:
-            item.__dict__[element]  = self.read_element()
-        return item
+class MatlabObject:
+    def __init__(self, classname, field_names):
+        self.__dict__['classname'] = classname
+        self.__dict__['mobj_recarray'] = np.empty((1,1), dtype=[(field_name, object) 
+                                            for field_name in field_names])
+
+    def __getattr__(self, name):
+        mobj_recarray = self.__dict__['mobj_recarray']
+        if name in mobj_recarray.dtype.fields:
+            return mobj_recarray[0,0][name]
+        else:
+            raise AttributeError, "no field named %s in MatlabObject"%(name)
+
+    def __setattr__(self, name, value):
+        if name in self.__dict__['mobj_recarray'].dtype.fields:
+            self.__dict__['mobj_recarray'][0,0][name] = value
+        else:
+            self.__dict__[name] = value
+        
+
+class Mat5ObjectMatrixGetter(Mat5MatrixGetter):
+    def get_array(self):
+        '''Matlab ojects are essentially structs, with an extra field, the classname.'''
+        classname = self.read_element().tostring()
+        namelength = self.read_element()[0]
+        names = self.read_element()
+        field_names = [names[i:i+namelength].tostring().strip('\x00')
+                       for i in xrange(0,len(names),namelength)]
+        result = MatlabObject(classname, field_names)
+
+        for field_name in field_names:
+            result.__setattr__(field_name, self.read_element())
+
+        return result
 
 
-class Mat5ObjectMatrixGetter(Mat5StructMatrixGetter):
-    def __init__(self, *args, **kwargs):
-        super(Mat5StructMatrixGetter, self).__init__(*args, **kwargs)
-        self.obj_template = mat_obj()
+class MatlabFunctionMatrix:
+    ''' Opaque object representing an array of function handles. '''
+    def __init__(self, arr):
+        self.arr = arr
 
-    def get_raw_array(self):
-        self.obj_template._classname = self.read_element().tostring()
-        return super(Mat5ObjectMatrixGetter, self).get_raw_array()
+class Mat5FunctionMatrixGetter(Mat5CellMatrixGetter):
+    def get_array(self):
+        return MatlabFunctionMatrix(self.get_raw_array())
 
 
 class MatFile5Reader(MatFileReader):
     ''' Reader for Mat 5 mat files
-
     Adds the following attribute to base class
-
+    
     uint16_codec       - char codec to use for uint16 char arrays
                           (defaults to system default codec)
    '''
@@ -469,6 +537,7 @@ class MatFile5Reader(MatFileReader):
                  squeeze_me=False,
                  chars_as_strings=True,
                  matlab_compatible=False,
+                 struct_as_record=False,
                  uint16_codec=None
                  ):
         self.codecs = {}
@@ -478,6 +547,7 @@ class MatFile5Reader(MatFileReader):
             None,
             None,
             None,
+            struct_as_record
             )
         super(MatFile5Reader, self).__init__(
             mat_stream,
@@ -534,6 +604,8 @@ class MatFile5Reader(MatFileReader):
         return self._array_reader.matrix_getter_factory()
 
     def guess_byte_order(self):
+        ''' Guess byte order.
+        Sets stream pointer to 0 '''
         self.mat_stream.seek(126)
         mi = self.mat_stream.read(2)
         self.mat_stream.seek(0)
@@ -548,15 +620,6 @@ class MatFile5Reader(MatFileReader):
         v_minor = hdr['version'] & 0xFF
         hdict['__version__'] = '%d.%d' % (v_major, v_minor)
         return hdict
-
-    def format_looks_right(self):
-        # Mat4 files have a zero somewhere in first 4 bytes
-        self.mat_stream.seek(0)
-        mopt_bytes = np.ndarray(shape=(4,),
-                                dtype=np.uint8,
-                                buffer = self.mat_stream.read(4))
-        self.mat_stream.seek(0)
-        return 0 not in mopt_bytes
 
 
 class Mat5MatrixWriter(MatStreamWriter):
@@ -644,7 +707,6 @@ class Mat5MatrixWriter(MatStreamWriter):
 
 
 class Mat5NumericWriter(Mat5MatrixWriter):
-
     def write(self):
         imagf = self.arr.dtype.kind == 'c'
         try:
@@ -684,10 +746,8 @@ class Mat5UniCharWriter(Mat5CharWriter):
 
 
 class Mat5SparseWriter(Mat5MatrixWriter):
-
     def write(self):
         ''' Sparse matrices are 2D
-
         '''
         A = self.arr.tocsc() # convert to sparse CSC format
         A.sort_indices()     # MATLAB expects sorted row indices
@@ -704,6 +764,80 @@ class Mat5SparseWriter(Mat5MatrixWriter):
         self.update_matrix_tag()
 
 
+class Mat5CompositeWriter(Mat5MatrixWriter):
+    def __init__(self, file_stream, arr, name, is_global=False, unicode_strings=False):
+        super(Mat5CompositeWriter, self).__init__(file_stream, arr, name, is_global)
+        self.unicode_strings = unicode_strings
+        
+
+class Mat5CellWriter(Mat5CompositeWriter):
+    def write(self):
+        self.write_header(mclass=mxCELL_CLASS)
+        # loop over data, column major
+        A = np.atleast_2d(self.arr).flatten('F')
+        MWG = Mat5WriterGetter(self.file_stream, self.unicode_strings)
+        for el in A:
+            MW = MWG.matrix_writer_factory(el, '')
+            MW.write()
+        self.update_matrix_tag()
+
+class Mat5FunctionWriter(Mat5CompositeWriter):
+    def __init__(self, file_stream, arr, name, is_global=False, unicode_strings=False):
+        super(Mat5FunctionWriter, self).__init__(file_stream, arr.arr, name, is_global)
+
+    def write(self):
+        self.write_header(mclass=mxFUNCTION_CLASS)
+        # loop over data, column major
+        A = np.atleast_2d(self.arr).flatten('F')
+        MWG = Mat5WriterGetter(self.file_stream, self.unicode_strings)
+        for el in A:
+            MW = MWG.matrix_writer_factory(el, '')
+            MW.write()
+        self.update_matrix_tag()
+
+
+class Mat5StructWriter(Mat5CompositeWriter):
+    def write(self):
+        self.write_header(mclass=mxSTRUCT_CLASS)
+        
+        # write fieldnames
+        fieldnames = [f[0] for f in self.arr.dtype.descr]
+        self.write_element(np.array([32], dtype='i4'))
+        self.write_element(np.array(fieldnames, dtype='S32'), mdtype=miINT8)
+        
+        A = np.atleast_2d(self.arr).flatten('F')
+        MWG = Mat5WriterGetter(self.file_stream, self.unicode_strings)
+        for el in A:
+            for f in fieldnames:
+                MW = MWG.matrix_writer_factory(el[f], '')
+                MW.write()
+        self.update_matrix_tag()
+
+class Mat5ObjectWriter(Mat5CompositeWriter):
+    def __init__(self, file_stream, arr, name, is_global=False, unicode_strings=False):
+        super(Mat5ObjectWriter, self).__init__(file_stream, arr.__dict__['mobj_recarray'], name, is_global)
+        self.classname = arr.classname
+
+    def write(self):
+        self.write_header(mclass=mxOBJECT_CLASS)
+
+        # write classnames
+        self.write_element(np.array(self.classname, dtype='S'), mdtype=miINT8)
+
+        # write fieldnames
+        fieldnames = [f[0] for f in self.arr.dtype.descr]
+        self.write_element(np.array([32], dtype='i4'))
+        self.write_element(np.array(fieldnames, dtype='S32'), mdtype=miINT8)
+        
+        A = np.atleast_2d(self.arr).flatten('F')
+        MWG = Mat5WriterGetter(self.file_stream, self.unicode_strings)
+        for el in A:
+            for f in fieldnames:
+                MW = MWG.matrix_writer_factory(el[f], '')
+                MW.write()
+        self.update_matrix_tag()
+
+    
 class Mat5WriterGetter(object):
     ''' Wraps stream and options, provides methods for getting Writer objects '''
     def __init__(self, stream, unicode_strings):
@@ -722,15 +856,18 @@ class Mat5WriterGetter(object):
         if have_sparse:
             if scipy.sparse.issparse(arr):
                 return Mat5SparseWriter(self.stream, arr, name, is_global)
+            
+        if isinstance(arr, MatlabFunctionMatrix):
+            return Mat5FunctionWriter(self.stream, arr, name, is_global, self.unicode_strings)
+        if isinstance(arr, MatlabObject):
+            return Mat5ObjectWriter(self.stream, arr, name, is_global, self.unicode_strings)
+        
         arr = np.array(arr)
         if arr.dtype.hasobject:
-            types, arr_type = self.classify_mobjects(arr)
-            if arr_type == 'c':
-                return Mat5CellWriter(self.stream, arr, name, is_global, types)
-            elif arr_type == 's':
-                return Mat5StructWriter(self.stream, arr, name, is_global)
-            elif arr_type == 'o':
-                return Mat5ObjectWriter(self.stream, arr, name, is_global)
+            if arr.dtype.fields == None:
+                return Mat5CellWriter(self.stream, arr, name, is_global, self.unicode_strings)
+            else:
+                return Mat5StructWriter(self.stream, arr, name, is_global, self.unicode_strings)
         if arr.dtype.kind in ('U', 'S'):
             if self.unicode_strings:
                 return Mat5UniCharWriter(self.stream, arr, name, is_global)
@@ -738,47 +875,6 @@ class Mat5WriterGetter(object):
                 return Mat5CharWriter(self.stream, arr, name, is_global)
         else:
             return Mat5NumericWriter(self.stream, arr, name, is_global)
-
-    def classify_mobjects(self, objarr):
-        ''' Function to classify objects passed for writing
-        returns
-        types         - S1 array of same shape as objarr with codes for each object
-                        i  - invalid object
-                        a  - ndarray
-                        s  - matlab struct
-                        o  - matlab object
-        arr_type       - one of
-                        c  - cell array
-                        s  - struct array
-                        o  - object array
-        '''
-        n = objarr.size
-        types = np.empty((n,), dtype='S1')
-        types[:] = 'i'
-        type_set = set()
-        flato = objarr.flat
-        for i in range(n):
-            obj = flato[i]
-            if isinstance(obj, np.ndarray):
-                types[i] = 'a'
-                continue
-            try:
-                fns = tuple(obj._fieldnames)
-            except AttributeError:
-                continue
-            try:
-                cn = obj._classname
-            except AttributeError:
-                types[i] = 's'
-                type_set.add(fns)
-                continue
-            types[i] = 'o'
-            type_set.add((cn, fns))
-        arr_type = 'c'
-        if len(set(types))==1 and len(type_set) == 1:
-            arr_type = types[0]
-        return types.reshape(objarr.shape), arr_type
-
 
 class MatFile5Writer(MatFileWriter):
     ''' Class for writing mat5 files '''
@@ -815,6 +911,8 @@ class MatFile5Writer(MatFileWriter):
 
     def put_variables(self, mdict):
         for name, var in mdict.items():
+            if name[0] == '_':
+                continue
             is_global = name in self.global_vars
             self.writer_getter.rewind()
             self.writer_getter.matrix_writer_factory(

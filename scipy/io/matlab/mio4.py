@@ -198,15 +198,6 @@ class MatFile4Reader(MatFileReader):
     def matrix_getter_factory(self):
         return self._array_reader.matrix_getter_factory()
 
-    def format_looks_right(self):
-        # Mat4 files have a zero somewhere in first 4 bytes
-        self.mat_stream.seek(0)
-        mopt_bytes = np.ndarray(shape=(4,),
-                                dtype=np.uint8,
-                                buffer = self.mat_stream.read(4))
-        self.mat_stream.seek(0)
-        return 0 in mopt_bytes
-
     def guess_byte_order(self):
         self.mat_stream.seek(0)
         mopt = self.read_dtype(np.dtype('i4'))

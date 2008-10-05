@@ -6,7 +6,9 @@ Module for reading and writing matlab (TM) .mat files
 
 import os
 import sys
+import warnings
 
+from miobase import get_matfile_version
 from mio4 import MatFile4Reader, MatFile4Writer
 from mio5 import MatFile5Reader, MatFile5Writer
 
@@ -57,11 +59,16 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
             raise IOError, 'Reader needs file name or open file-like object'
         byte_stream = file_name
 
-    MR = MatFile4Reader(byte_stream, **kwargs)
-    if MR.format_looks_right():
-        return MR
-    return MatFile5Reader(byte_stream, **kwargs)
-
+    mv = get_matfile_version(byte_stream)
+    if mv == '4':
+        return MatFile4Reader(byte_stream, **kwargs)
+    elif mv == '5':
+        return MatFile5Reader(byte_stream, **kwargs)
+    elif mv == '7':
+        raise NotImplementedError('Please use PyTables for matlab HDF files')
+    else:
+        raise TypeError('Did not recognize version %s' % mv)
+    
 def loadmat(file_name,  mdict=None, appendmat=True, basename='raw', **kwargs):
     ''' Load Matlab(tm) file
 
@@ -88,10 +95,17 @@ def loadmat(file_name,  mdict=None, appendmat=True, basename='raw', **kwargs):
     matlab_compatible   - returns matrices as would be loaded by matlab
                           (implies squeeze_me=False, chars_as_strings=False,
                           mat_dtype=True)
+    struct_as_record    - whether to load matlab structs as numpy record arrays, or
+    			  as old-style numpy arrays with dtype=object.
+                          (warns if not set, and defaults to False.  non-recarrays 
+                          cannot be exported via savemat.)
 
     v4 (Level 1.0), v6 and v7.1 matfiles are supported.
 
     '''
+    if not kwargs.get('struct_as_record', False):
+        warnings.warn("loading matlab structures as arrays of dtype=object is deprecated",
+                      DeprecationWarning, stacklevel=2)
     MR = mat_reader_factory(file_name, appendmat, **kwargs)
     matfile_dict = MR.get_variables()
     if mdict is not None:
@@ -125,7 +139,7 @@ def savemat(file_name, mdict, appendmat=True, format='4'):
     if format == '4':
         MW = MatFile4Writer(file_stream)
     elif format == '5':
-        MW = MatFile5Writer(file_stream)
+        MW = MatFile5Writer(file_stream, unicode_strings=True)
     else:
         raise ValueError, 'Format should be 4 or 5'
     MW.put_variables(mdict)

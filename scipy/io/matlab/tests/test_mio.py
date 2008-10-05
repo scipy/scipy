@@ -6,11 +6,11 @@ from cStringIO import StringIO
 from tempfile import mkdtemp
 from numpy.testing import *
 from numpy import arange, array, pi, cos, exp, sin, sqrt, ndarray,  \
-     zeros, reshape, transpose
+     zeros, reshape, transpose, dtype, empty
 import scipy.sparse as SP
 
 from scipy.io.matlab.mio import loadmat, savemat
-from scipy.io.matlab.mio5 import mat_obj, mat_struct
+from scipy.io.matlab.mio5 import MatlabObject
 
 import shutil
 import gzip
@@ -30,7 +30,7 @@ def _check_level(self, label, expected, actual):
             self._check_level(level_label, ev, actual[i])
         return
     # object, as container for matlab structs and objects
-    elif isinstance(expected, mat_struct) or isinstance(expected, mat_obj):
+    elif isinstance(expected, MatlabObject):
         assert isinstance(actual, typex), \
                "Different types %s and %s at %s" % (typex, typac, label)
         ex_fields = dir(expected)
@@ -62,7 +62,7 @@ def _check_level(self, label, expected, actual):
 
 def _check_case(self, name, files, case):
     for file_name in files:
-        matdict = loadmat(file_name)
+        matdict = loadmat(file_name, struct_as_record=True)
         label = "test %s; file %s" % (name, file_name)
         for k, expected in case.items():
             k_label = "%s, variable %s" % (label, k)
@@ -164,10 +164,8 @@ case_table5_rt = [
      'expected': {'testsparsefloat': SP.csc_matrix(array([[-1+2j,0,2],[0,-3j,0]]))},
      },
     ]
-st = mat_struct()
-st.stringfield = u'Rats live on no evil star.'
-st.doublefield = array([sqrt(2),exp(1),pi])
-st.complexfield = (1+1j)*array([sqrt(2),exp(1),pi])
+st = array([(u'Rats live on no evil star.', array([sqrt(2),exp(1),pi]), (1+1j)*array([sqrt(2),exp(1),pi]))], 
+           dtype=[(n, object) for n in ['stringfield', 'doublefield', 'complexfield']])
 case_table5.append(
     {'name': 'struct',
      'expected': {'teststruct': st}
@@ -182,25 +180,24 @@ case_table5.append(
     {'name': 'cellnest',
      'expected': {'testcellnest': a},
      })
-st = mat_struct()
-st.one = array(1)
-st.two = mat_struct()
-st.two.three = u'number 3'
+st = empty((1,1), dtype=[(n, object) for n in ['one', 'two']])
+st[0,0]['one'] = array(1)
+st[0,0]['two'] = empty((1,1), dtype=[('three', object)])
+st[0,0]['two'][0,0]['three'] = u'number 3'
 case_table5.append(
     {'name': 'structnest',
      'expected': {'teststructnest': st}
      })
-a = array([mat_struct(), mat_struct()])
-a[0].one = array(1)
-a[0].two = array(2)
-a[1].one = u'number 1'
-a[1].two = u'number 2'
+a = empty((2,1), dtype=[(n, object) for n in ['one', 'two']])
+a[0,0]['one'] = array(1)
+a[0,0]['two'] = array(2)
+a[1,0]['one'] = u'number 1'
+a[1,0]['two'] = u'number 2'
 case_table5.append(
     {'name': 'structarr',
      'expected': {'teststructarr': a}
      })
-a = mat_obj()
-a._classname = 'inline'
+a = MatlabObject('inline', ['expr', 'args', 'isEmpty', 'numArgs', 'version'])
 a.expr = u'x'
 a.inputExpr = u' x = INLINE_INPUTS_{1};'
 a.args = u'x'
@@ -255,7 +252,7 @@ def test_gzip_simple():
         mat_stream.close()
 
         mat_stream = gzip.open( fname,mode='rb')
-        actual = loadmat(mat_stream)
+        actual = loadmat(mat_stream, struct_as_record=True)
         mat_stream.close()
     finally:
         shutil.rmtree(tmpdir)
