@@ -1,6 +1,7 @@
 #ifndef __CSR_H__
 #define __CSR_H__
 
+#include <set>
 #include <vector>
 #include <algorithm>
 #include <functional>
@@ -39,8 +40,8 @@ void csr_diagonal(const I n_row,
     const I N = std::min(n_row, n_col);
 
     for(I i = 0; i < N; i++){
-        I row_start = Ap[i];
-        I row_end   = Ap[i+1];
+        const I row_start = Ap[i];
+        const I row_end   = Ap[i+1];
 
         T diag = 0;
         for(I jj = row_start; jj < row_end; jj++){
@@ -742,6 +743,7 @@ void csr_minus_csr(const I n_row, const I n_col,
  *   
  * Note:
  *   The column indicies within each row must be in sorted order.
+ *   Explicit zeros are retained.
  *   Ap, Aj, and Ax will be modified *inplace*
  *
  */
@@ -951,7 +953,29 @@ void get_csr_submatrix(const I n_row,
 }
 
 
-
+/*
+ * Count the number of occupied diagonals in CSR matrix A
+ *
+ * Input Arguments:
+ *   I  nnz             - number of nonzeros in A
+ *   I  Ai[nnz(A)]      - row indices
+ *   I  Aj[nnz(A)]      - column indices
+ *
+ */
+template <class I>
+I csr_count_diagonals(const I n_row,
+                      const I Ap[],
+                      const I Aj[])
+{
+    std::set<I> diagonals;
+    
+    for(I i = 0; i < n_row; i++){
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+            diagonals.insert(Aj[jj] - i);
+        }
+    }
+    return diagonals.size();
+}
 
 
 #endif

@@ -8,7 +8,7 @@
 
 %include "csc.h" 
 
-%template(csc_matmat_pass1)   csc_matmat_pass1<int>;
+INSTANTIATE_INDEX(csc_matmat_pass1);
 
 INSTANTIATE_ALL(csc_diagonal)
 INSTANTIATE_ALL(csc_tocsr)

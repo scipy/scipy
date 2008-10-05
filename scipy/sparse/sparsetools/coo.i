@@ -14,4 +14,6 @@ INSTANTIATE_ALL(coo_todense)
 
 INSTANTIATE_ALL(coo_matvec)
 
+INSTANTIATE_INDEX(coo_count_diagonals)
+
 

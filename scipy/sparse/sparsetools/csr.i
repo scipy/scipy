@@ -9,11 +9,10 @@
 %include "csr.h" 
 
 
-%template(expandptr)   expandptr<int>;
-%template(csr_count_blocks)   csr_count_blocks<int>;
-%template(csr_matmat_pass1)   csr_matmat_pass1<int>;
-%template(csr_has_sorted_indices)   csr_has_sorted_indices<int>;
-
+INSTANTIATE_INDEX(expandptr)
+INSTANTIATE_INDEX(csr_matmat_pass1)
+INSTANTIATE_INDEX(csr_count_blocks)
+INSTANTIATE_INDEX(csr_has_sorted_indices)
 
 INSTANTIATE_ALL(csr_diagonal)
 INSTANTIATE_ALL(csr_scale_rows)

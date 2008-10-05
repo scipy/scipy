@@ -80,10 +80,10 @@ class dia_matrix(_data_matrix):
                     # Try interpreting it as (data, diags)
                     data, diags = arg1
                 except:
-                    raise ValueError, "unrecognized form for dia_matrix constructor"
+                    raise ValueError('unrecognized form for dia_matrix constructor')
                 else:
                     if shape is None:
-                        raise ValueError,'expected a shape argument'
+                        raise ValueError('expected a shape argument')
                     self.data  = atleast_2d(array(arg1[0],dtype=dtype,copy=copy))
                     self.diags = atleast_1d(array(arg1[1],dtype='i',copy=copy))
                     self.shape = shape
@@ -103,18 +103,18 @@ class dia_matrix(_data_matrix):
 
         #check format
         if self.diags.ndim != 1:
-            raise ValueError,'diags array must have rank 1'
+            raise ValueError('diags array must have rank 1')
 
         if self.data.ndim != 2:
-            raise ValueError,'data array must have rank 2'
+            raise ValueError('data array must have rank 2')
 
         if self.data.shape[0] != len(self.diags):
-            raise ValueError,'number of diagonals (%d) ' \
+            raise ValueError('number of diagonals (%d) ' \
                     'does not match the number of diags (%d)' \
-                    % (self.data.shape[0], len(self.diags))
+                    % (self.data.shape[0], len(self.diags)))
 
         if len(unique(self.diags)) != len(self.diags):
-            raise ValueError,'offset array contains duplicate values'
+            raise ValueError('offset array contains duplicate values')
 
     def __repr__(self):
         nnz = self.getnnz()
