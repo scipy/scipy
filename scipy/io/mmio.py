@@ -479,14 +479,15 @@ class MMFile (object):
                 precision = 16
 
         if field is None:
-            if typecode in 'li':
+            kind = a.dtype.kind
+            if kind == 'i':
                 field = 'integer'
-            elif typecode in 'df':
+            elif kind == 'f':
                 field = 'real'
-            elif typecode in 'DF':
+            elif kind == 'c':
                 field = 'complex'
             else:
-                raise TypeError,'unexpected typecode '+typecode
+                raise TypeError('unexpected dtype kind ' + kind)
 
         if rep == self.FORMAT_ARRAY:
             symm = self._get_symmetry(a)
@@ -569,23 +570,6 @@ class MMFile (object):
             IJV[:,:2] += 1 # change base 0 -> base 1
 
             savetxt(stream, IJV, fmt=fmt)
-
-
-            ### Old method
-            ## line template
-            #template = '%i %i ' + template
-            #I,J,V = coo.row + 1, coo.col + 1, coo.data # change base 0 -> base 1
-            #if field in (self.FIELD_REAL, self.FIELD_INTEGER):
-            #    for ijv_tuple in izip(I,J,V):
-            #        stream.writelines(template % ijv_tuple)
-            #elif field == self.FIELD_COMPLEX:
-            #    for ijv_tuple in izip(I,J,V.real,V.imag):
-            #        stream.writelines(template % ijv_tuple)
-            #elif field == self.FIELD_PATTERN:
-            #    raise NotImplementedError,`field`
-            #else:
-            #    raise TypeError,'Unknown field type %s'% `field`
-
 
 #-------------------------------------------------------------------------------
 if __name__ == '__main__':
