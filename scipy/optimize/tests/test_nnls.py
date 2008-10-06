@@ -1,6 +1,6 @@
-""" Unit tests for nonlinear solvers
-Author: Ondrej Certik
-May 2007
+""" Unit tests for nonnegative least squares
+Author: Uwe Schmitt
+Sep 2008
 """
 
 from numpy.testing import *
@@ -11,10 +11,6 @@ from numpy.linalg import norm
 
 
 class TestNNLS(TestCase):
-    """ Test case for a simple constrained entropy maximization problem
-    (the machine translation example of Berger et al in
-    Computational Linguistics, vol 22, num 1, pp 39--72, 1996.)
-    """
 
     def test_nnls(self):
         a=arange(25.0).reshape(-1,5)
