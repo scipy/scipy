@@ -33,7 +33,8 @@ dists = ['uniform','norm','lognorm','expon','beta',
          'halflogistic','fatiguelife','foldnorm','ncx2','t','nct',
          'weibull_min','weibull_max','dweibull','maxwell','rayleigh',
          'genlogistic', 'logistic','gumbel_l','gumbel_r','gompertz',
-         'hypsecant', 'laplace', 'reciprocal','triang','tukeylambda']
+         'hypsecant', 'laplace', 'reciprocal','triang','tukeylambda',
+         'vonmises']
 
 # check function for test generator
 def check_distribution(dist, args, alpha):
@@ -63,6 +64,9 @@ def test_all_distributions():
             vals = rand(nargs)
             vals[1] = vals[0] + 1.0
             args = tuple(vals)
+        elif dist == 'vonmises':
+            yield check_distribution, dist, (100,), alpha
+            args = tuple(1.0+rand(nargs))
         else:
             args = tuple(1.0+rand(nargs))
         yield check_distribution, dist, args, alpha

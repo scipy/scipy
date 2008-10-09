@@ -3083,10 +3083,7 @@ class vonmises_gen(rv_continuous):
     def _rvs(self, b):
         return mtrand.vonmises(0.0, b, size=self._size)
     def _pdf(self, x, b):
-        x = arr(angle(exp(1j*x)))
-        Px = where(b < 100, exp(b*cos(x)) / (2*pi*special.i0(b)),
-                   norm.pdf(x, 0.0, sqrt(1.0/b)))
-        return Px
+        return exp(b*cos(x)) / (2*pi*special.i0(b))
     def _cdf(self, x, b):
         x = arr(angle(exp(1j*x)))
         eps2 = sqrt(eps)
@@ -3102,7 +3099,7 @@ class vonmises_gen(rv_continuous):
         vals = ones(len(c_xsimple),float)
         putmask(vals, c_bad, nan)
         putmask(vals, c_xsimple, x / 2.0/pi)
-        st = sqrt(b-0.5)
+        st = 1./sqrt(b-0.5)
         st = where(isnan(st),0.0,st)
         putmask(vals, c_xnormal, norm.cdf(x, scale=st))
 
@@ -3120,7 +3117,8 @@ class vonmises_gen(rv_continuous):
             if (j == 500):
                 print "Warning: did not converge..."
             put(vals, indxiter, val)
-        return vals + 0.5
+        vals[c_xiter]+=0.5
+        return numpy.clip(vals,0,1)
     def _stats(self, b):
         return 0, None, 0, None
 vonmises = vonmises_gen(name='vonmises', longname="A Von Mises",
