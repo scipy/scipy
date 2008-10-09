@@ -21,6 +21,7 @@ import numpy.random as mtrand
 from numpy import flatnonzero as nonzero
 from scipy.special import gammaln as gamln
 from copy import copy
+import vonmises_cython
 
 __all__ = [
            'rv_continuous',
@@ -3079,46 +3080,14 @@ Uniform distribution
 
 eps = numpy.finfo(float).eps
 
+
 class vonmises_gen(rv_continuous):
     def _rvs(self, b):
         return mtrand.vonmises(0.0, b, size=self._size)
     def _pdf(self, x, b):
         return exp(b*cos(x)) / (2*pi*special.i0(b))
     def _cdf(self, x, b):
-        x = arr(angle(exp(1j*x)))
-        eps2 = sqrt(eps)
-
-        c_xsimple = atleast_1d((b==0)&(x==x))
-        c_xiter = atleast_1d((b<100)&(b > 0)&(x==x))
-        c_xnormal = atleast_1d((b>=100)&(x==x))
-        c_bad = atleast_1d((b<=0) | (x != x))
-
-        indxiter = nonzero(c_xiter)
-        xiter = take(x, indxiter, 0)
-
-        vals = ones(len(c_xsimple),float)
-        putmask(vals, c_bad, nan)
-        putmask(vals, c_xsimple, x / 2.0/pi)
-        st = 1./sqrt(b-0.5)
-        st = where(isnan(st),0.0,st)
-        putmask(vals, c_xnormal, norm.cdf(x, scale=st))
-
-        biter = take(atleast_1d(b)*(x==x), indxiter, 0)
-        if len(xiter) > 0:
-            fac = special.i0(biter)
-            x2 = xiter
-            val = x2 / 2.0/ pi
-            for j in range(1,501):
-                trm1 = special.iv(j,biter)/j/fac
-                trm2 = sin(j*x2)/pi
-                val += trm1*trm2
-                if all(trm1 < eps2):
-                    break
-            if (j == 500):
-                print "Warning: did not converge..."
-            put(vals, indxiter, val)
-        vals[c_xiter]+=0.5
-        return numpy.clip(vals,0,1)
+        return vonmises_cython.von_mises_cdf(b,x)
     def _stats(self, b):
         return 0, None, 0, None
 vonmises = vonmises_gen(name='vonmises', longname="A Von Mises",
