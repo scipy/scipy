@@ -700,20 +700,28 @@ class _TestFancyIndexing:
         assert_equal(A[2,3],  B[2,3])
         assert_equal(A[-1,8], B[-1,8])
         assert_equal(A[-1,-2],B[-1,-2])
+        assert_equal(A[array(-1),-2],B[-1,-2])
+        assert_equal(A[-1,array(-2)],B[-1,-2])
+        assert_equal(A[array(-1),array(-2)],B[-1,-2])
 
         # [i,1:2]
         assert_equal(A[2,:].todense(),   B[2,:])
         assert_equal(A[2,5:-2].todense(),B[2,5:-2])
+        assert_equal(A[array(2),5:-2].todense(),B[2,5:-2])
 
         # [i,[1,2]]
         assert_equal(A[3,[1,3]].todense(),  B[3,[1,3]])
         assert_equal(A[-1,[2,-5]].todense(),B[-1,[2,-5]])
+        assert_equal(A[array(-1),[2,-5]].todense(),B[-1,[2,-5]])
+        assert_equal(A[-1,array([2,-5])].todense(),B[-1,[2,-5]])
+        assert_equal(A[array(-1),array([2,-5])].todense(),B[-1,[2,-5]])
 
         # [1:2,j]
         assert_equal(A[:,2].todense(),   B[:,2])
         assert_equal(A[3:4,9].todense(), B[3:4,9])
         assert_equal(A[1:4,-5].todense(),B[1:4,-5])
         assert_equal(A[2:-1,3].todense(),B[2:-1,3])
+        assert_equal(A[2:-1,array(3)].todense(),B[2:-1,3])
 
         # [1:2,1:2]
         assert_equal(A[1:2,1:2].todense(),B[1:2,1:2])
@@ -725,26 +733,38 @@ class _TestFancyIndexing:
         assert_equal(A[:,[2,8,3,-1]].todense(),B[:,[2,8,3,-1]])
         assert_equal(A[3:4,[9]].todense(),     B[3:4,[9]])
         assert_equal(A[1:4,[-1,-5]].todense(), B[1:4,[-1,-5]])
+        assert_equal(A[1:4,array([-1,-5])].todense(), B[1:4,[-1,-5]])
 
         # [[1,2],j]
         assert_equal(A[[1,3],3].todense(),   B[[1,3],3])
         assert_equal(A[[2,-5],-4].todense(), B[[2,-5],-4])
+        assert_equal(A[array([2,-5]),-4].todense(), B[[2,-5],-4])
+        assert_equal(A[[2,-5],array(-4)].todense(), B[[2,-5],-4])
+        assert_equal(A[array([2,-5]),array(-4)].todense(), B[[2,-5],-4])
 
         # [[1,2],1:2]
         assert_equal(A[[1,3],:].todense(),    B[[1,3],:])
         assert_equal(A[[2,-5],8:-1].todense(),B[[2,-5],8:-1])
+        assert_equal(A[array([2,-5]),8:-1].todense(),B[[2,-5],8:-1])
 
         # [[1,2],[1,2]]
         assert_equal(A[[1,3],[2,4]],   B[[1,3],[2,4]])
         assert_equal(A[[-1,-3],[2,-4]],B[[-1,-3],[2,-4]])
+        assert_equal(A[array([-1,-3]),[2,-4]],B[[-1,-3],[2,-4]])
+        assert_equal(A[[-1,-3],array([2,-4])],B[[-1,-3],[2,-4]])
+        assert_equal(A[array([-1,-3]),array([2,-4])],B[[-1,-3],[2,-4]])
 
         # [[[1],[2]],[1,2]]
         assert_equal(A[[[1],[3]],[2,4]].todense(),        B[[[1],[3]],[2,4]])
         assert_equal(A[[[-1],[-3],[-2]],[2,-4]].todense(),B[[[-1],[-3],[-2]],[2,-4]])
+        assert_equal(A[array([[-1],[-3],[-2]]),[2,-4]].todense(),B[[[-1],[-3],[-2]],[2,-4]])
+        assert_equal(A[[[-1],[-3],[-2]],array([2,-4])].todense(),B[[[-1],[-3],[-2]],[2,-4]])
+        assert_equal(A[array([[-1],[-3],[-2]]),array([2,-4])].todense(),B[[[-1],[-3],[-2]],[2,-4]])
 
         # [i]
         assert_equal(A[1,:].todense(), B[1,:])
         assert_equal(A[-2,:].todense(),B[-2,:])
+        assert_equal(A[array(-2),:].todense(),B[-2,:])
 
         # [1:2]
         assert_equal(A[1:4].todense(), B[1:4])
@@ -753,14 +773,17 @@ class _TestFancyIndexing:
         # [[1,2]]
         assert_equal(A[[1,3]].todense(),  B[[1,3]])
         assert_equal(A[[-1,-3]].todense(),B[[-1,-3]])
+        assert_equal(A[array([-1,-3])].todense(),B[[-1,-3]])
 
         # [[1,2],:][:,[1,2]]
         assert_equal(A[[1,3],:][:,[2,4]].todense(),    B[[1,3],:][:,[2,4]]    )
         assert_equal(A[[-1,-3],:][:,[2,-4]].todense(), B[[-1,-3],:][:,[2,-4]] )
+        assert_equal(A[array([-1,-3]),:][:,array([2,-4])].todense(), B[[-1,-3],:][:,[2,-4]] )
 
         # [:,[1,2]][[1,2],:]
         assert_equal(A[:,[1,3]][[2,4],:].todense(),    B[:,[1,3]][[2,4],:]    )
         assert_equal(A[:,[-1,-3]][[2,-4],:].todense(), B[:,[-1,-3]][[2,-4],:] )
+        assert_equal(A[:,array([-1,-3])][array([2,-4]),:].todense(), B[:,[-1,-3]][[2,-4],:] )
 
 
         # Check bug reported by Robert Cimrman:

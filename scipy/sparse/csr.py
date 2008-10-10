@@ -338,7 +338,7 @@ class csr_matrix(_cs_matrix):
 
                 return i0, i1
 
-            elif isscalar( sl ):
+            elif isintlike( sl ):
                 if sl < 0:
                     sl += num
 
