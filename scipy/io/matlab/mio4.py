@@ -67,7 +67,7 @@ class Mat4ArrayReader(MatArrayReader):
         ''' Read header, return matrix getter '''
         data = self.read_dtype(self.dtypes['header'])
         header = {}
-        header['name'] = self.read_ztstring(data['namlen'])
+        header['name'] = self.read_ztstring(int(data['namlen']))
         if data['mopt'] < 0 or  data['mopt'] > 5000:
             ValueError, 'Mat 4 mopt wrong format, byteswapping problem?'
         M,rest = divmod(data['mopt'], 1000)
