@@ -8,7 +8,8 @@ from numpy import ones, array, asarray, empty
 from numpy.testing import *
 
 from scipy import sparse
-from scipy.sparse import csr_matrix, coo_matrix, dia_matrix
+from scipy.sparse import csr_matrix, coo_matrix, dia_matrix, lil_matrix, \
+        dok_matrix
 
 
 def random_sparse(m,n,nnz_per_row):
