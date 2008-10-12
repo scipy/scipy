@@ -66,22 +66,27 @@ class ConsistencyTests:
 
     def test_approx(self):
         x = self.x
-        m = self.m
+        k = self.k
         eps = 0.1
-        d_real, i_real = self.kdtree.query(x, m)
-        d, i = self.kdtree.query(x, m, eps=eps)
+        d_real, i_real = self.kdtree.query(x, k)
+        d, i = self.kdtree.query(x, k, eps=eps)
         assert np.all(d<=d_real*(1+eps))
 
     
 class test_random(ConsistencyTests):
     def setUp(self):
         self.n = 100
-        self.k = 4
-        self.data = np.random.randn(self.n, self.k)
+        self.m = 4
+        self.data = np.random.randn(self.n, self.m)
         self.kdtree = KDTree(self.data,leafsize=2)
-        self.x = np.random.randn(self.k)
+        self.x = np.random.randn(self.m)
         self.d = 0.2
-        self.m = 10
+        self.k = 10
+
+class test_random_far(test_random):
+    def setUp(self):
+        test_random.setUp(self)
+        self.x = np.random.randn(self.m)+10
 
 class test_small(ConsistencyTests):
     def setUp(self):
@@ -95,10 +100,10 @@ class test_small(ConsistencyTests):
                               [1,1,1]])
         self.kdtree = KDTree(self.data)
         self.n = self.kdtree.n
-        self.k = self.kdtree.k
+        self.m = self.kdtree.m
         self.x = np.random.randn(3)
         self.d = 0.5
-        self.m = 4
+        self.k = 4
 
     def test_nearest(self):
         assert_array_equal(
@@ -120,10 +125,10 @@ class test_small_nonleaf(test_small):
                               [1,1,1]])
         self.kdtree = KDTree(self.data,leafsize=1)
         self.n = self.kdtree.n
-        self.k = self.kdtree.k
-        self.x = np.random.randn(3)
+        self.m = self.kdtree.m
+        self.x = np.random.randn(self.m)
         self.d = 0.5
-        self.m = 4
+        self.k = 4
 
 
 class test_vectorization:
@@ -193,10 +198,10 @@ class test_random_ball(ball_consistency):
 
     def setUp(self):
         n = 100
-        k = 4
-        self.data = np.random.randn(n,k)
+        m = 4
+        self.data = np.random.randn(n,m)
         self.T = KDTree(self.data,leafsize=2)
-        self.x = np.random.randn(k)
+        self.x = np.random.randn(m)
         self.p = 2.
         self.eps = 0
         self.d = 0.2
@@ -228,10 +233,10 @@ class test_random_ball_linf(test_random_ball):
 def test_random_ball_vectorized():
 
     n = 20
-    k = 5
-    T = KDTree(np.random.randn(n,k))
+    m = 5
+    T = KDTree(np.random.randn(n,m))
     
-    r = T.query_ball_point(np.random.randn(2,3,k),1)
+    r = T.query_ball_point(np.random.randn(2,3,m),1)
     assert_equal(r.shape,(2,3))
     assert isinstance(r[0,0],list)
 
@@ -253,10 +258,10 @@ class test_two_random_trees(two_trees_consistency):
 
     def setUp(self):
         n = 50
-        k = 4
-        self.data1 = np.random.randn(n,k)
+        m = 4
+        self.data1 = np.random.randn(n,m)
         self.T1 = KDTree(self.data1,leafsize=2)
-        self.data2 = np.random.randn(n,k)
+        self.data2 = np.random.randn(n,m)
         self.T2 = KDTree(self.data2,leafsize=2)
         self.p = 2.
         self.eps = 0
@@ -316,9 +321,9 @@ class test_count_neighbors:
 
     def setUp(self):
         n = 50
-        k = 2
-        self.T1 = KDTree(np.random.randn(n,k),leafsize=2)
-        self.T2 = KDTree(np.random.randn(n,k),leafsize=2)
+        m = 2
+        self.T1 = KDTree(np.random.randn(n,m),leafsize=2)
+        self.T2 = KDTree(np.random.randn(n,m),leafsize=2)
         
     def test_one_radius(self):
         r = 0.2
@@ -340,9 +345,9 @@ class test_count_neighbors:
 class test_sparse_distance_matrix:
     def setUp(self):
         n = 50
-        k = 4
-        self.T1 = KDTree(np.random.randn(n,k),leafsize=2)
-        self.T2 = KDTree(np.random.randn(n,k),leafsize=2)
+        m = 4
+        self.T1 = KDTree(np.random.randn(n,m),leafsize=2)
+        self.T2 = KDTree(np.random.randn(n,m),leafsize=2)
         self.r = 0.3
 
     def test_consistency_with_neighbors(self):

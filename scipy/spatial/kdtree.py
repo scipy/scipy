@@ -37,7 +37,7 @@ class Rectangle(object):
         """Construct a hyperrectangle."""
         self.maxes = np.maximum(maxes,mins).astype(np.float)
         self.mins = np.minimum(maxes,mins).astype(np.float)
-        self.k, = self.maxes.shape
+        self.m, = self.maxes.shape
 
     def __repr__(self):
         return "<Rectangle %s>" % zip(self.mins, self.maxes)
@@ -124,7 +124,7 @@ class KDTree(object):
             brute-force.
         """
         self.data = np.asarray(data)
-        self.n, self.k = np.shape(self.data)
+        self.n, self.m = np.shape(self.data)
         self.leafsize = int(leafsize)
         if self.leafsize<1:
             raise ValueError("leafsize must be at least 1")
@@ -192,13 +192,19 @@ class KDTree(object):
 
     def __query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf):
         
-        side_distances = [max(0,x[i]-self.maxes[i],self.mins[i]-x[i]) for i in range(self.k)]
+        side_distances = np.maximum(0,np.maximum(x-self.maxes,self.mins-x))
+        if p!=np.inf:
+            side_distances**=p
+            min_distance = np.sum(side_distances)
+        else:
+            min_distance = np.amax(side_distances)
+
         # priority queue for chasing nodes
         # entries are:
         #  minimum distance between the cell and the target
         #  distances between the nearest side of the cell and the target
         #  the head node of the cell
-        q = [(distance_p(np.array(side_distances),0),
+        q = [(min_distance,
               tuple(side_distances),                   
               self.tree)]
         # priority queue for the nearest neighbors
@@ -221,13 +227,7 @@ class KDTree(object):
             if isinstance(node, KDTree.leafnode):
                 # brute-force
                 data = self.data[node.idx]
-                a = np.abs(data-x[np.newaxis,:])
-                if p==np.inf:
-                    ds = np.amax(a,axis=1)
-                elif p==1:
-                    ds = np.sum(a,axis=1)
-                else:
-                    ds = np.sum(a**p,axis=1)
+                ds = distance_p(data,x[np.newaxis,:],p)
                 for i in range(len(ds)):
                     if ds[i]<distance_upper_bound:
                         if len(neighbors)==k:
@@ -278,7 +278,7 @@ class KDTree(object):
         Parameters:
         ===========
 
-        x : array-like, last dimension self.k
+        x : array-like, last dimension self.m
             An array of points to query.
         k : integer
             The number of nearest neighbors to return.
@@ -302,7 +302,7 @@ class KDTree(object):
         
         d : array of floats
             The distances to the nearest neighbors. 
-            If x has shape tuple+(self.k,), then d has shape tuple if 
+            If x has shape tuple+(self.m,), then d has shape tuple if 
             k is one, or tuple+(k,) if k is larger than one.  Missing 
             neighbors are indicated with infinite distances.  If k is None, 
             then d is an object array of shape tuple, containing lists 
@@ -313,8 +313,8 @@ class KDTree(object):
             shape as d.
         """
         x = np.asarray(x)
-        if np.shape(x)[-1] != self.k:
-            raise ValueError("x must consist of vectors of length %d but has shape %s" % (self.k, np.shape(x)))
+        if np.shape(x)[-1] != self.m:
+            raise ValueError("x must consist of vectors of length %d but has shape %s" % (self.m, np.shape(x)))
         if p<1:
             raise ValueError("Only p-norms with 1<=p<=infinity permitted")
         retshape = np.shape(x)[:-1]
@@ -399,7 +399,7 @@ class KDTree(object):
         Parameters
         ==========
 
-        x : array_like, shape tuple + (self.k,)
+        x : array_like, shape tuple + (self.m,)
             The point or points to search for neighbors of
         r : positive float
             The radius of points to return
@@ -423,8 +423,8 @@ class KDTree(object):
         substantial amounts of time by putting them in a KDTree and using query_ball_tree.
         """
         x = np.asarray(x)
-        if x.shape[-1]!=self.k:
-            raise ValueError("Searching for a %d-dimensional point in a %d-dimensional KDTree" % (x.shape[-1],self.k))
+        if x.shape[-1]!=self.m:
+            raise ValueError("Searching for a %d-dimensional point in a %d-dimensional KDTree" % (x.shape[-1],self.m))
         if len(x.shape)==1:
             return self.__query_ball_point(x,r,p,eps)
         else:
