@@ -8,6 +8,7 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('spatial', parent_package, top_path)
 
     config.add_data_dir('tests')
+    config.add_extension('ckdtree', sources=['ckdtree.c']) # FIXME: cython
 
     return config
 

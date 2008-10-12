@@ -3,7 +3,7 @@
 from numpy.testing import *
 
 import numpy as np
-from scipy.spatial import KDTree, distance, Rectangle, distance_matrix
+from scipy.spatial import KDTree, distance, Rectangle, distance_matrix, cKDTree
 
 class ConsistencyTests:
     def test_nearest(self):
@@ -115,21 +115,25 @@ class test_small(ConsistencyTests):
                 ([0.1,0.9],[0,1]))
 class test_small_nonleaf(test_small):
     def setUp(self):
-        self.data = np.array([[0,0,0],
-                              [0,0,1],
-                              [0,1,0],
-                              [0,1,1],
-                              [1,0,0],
-                              [1,0,1],
-                              [1,1,0],
-                              [1,1,1]])
+        test_small.setUp(self)
         self.kdtree = KDTree(self.data,leafsize=1)
-        self.n = self.kdtree.n
-        self.m = self.kdtree.m
-        self.x = np.random.randn(self.m)
-        self.d = 0.5
-        self.k = 4
 
+class test_small_compiled(test_small):
+    def setUp(self):
+        test_small.setUp(self)
+        self.kdtree = cKDTree(self.data)
+class test_small_nonleaf_compiled(test_small):
+    def setUp(self):
+        test_small.setUp(self)
+        self.kdtree = cKDTree(self.data,leafsize=1)
+class test_random_compiled(test_random):
+    def setUp(self):
+        test_random.setUp(self)
+        self.kdtree = cKDTree(self.data)
+class test_random_far_compiled(test_random_far):
+    def setUp(self):
+        test_random_far.setUp(self)
+        self.kdtree = cKDTree(self.data)
 
 class test_vectorization:
     def setUp(self):
@@ -180,6 +184,45 @@ class test_vectorization:
 
         assert isinstance(d[0,0],list)
         assert isinstance(i[0,0],list)
+
+class test_vectorization_compiled:
+    def setUp(self):
+        self.data = np.array([[0,0,0],
+                              [0,0,1],
+                              [0,1,0],
+                              [0,1,1],
+                              [1,0,0],
+                              [1,0,1],
+                              [1,1,0],
+                              [1,1,1]])
+        self.kdtree = KDTree(self.data)
+
+    def test_single_query(self):
+        d, i = self.kdtree.query([0,0,0])
+        assert isinstance(d,float)
+        assert isinstance(i,int)
+
+    def test_vectorized_query(self):
+        d, i = self.kdtree.query(np.zeros((2,4,3)))
+        assert_equal(np.shape(d),(2,4))
+        assert_equal(np.shape(i),(2,4))
+
+    def test_single_query_multiple_neighbors(self):
+        s = 23
+        kk = self.kdtree.n+s
+        d, i = self.kdtree.query([0,0,0],k=kk)
+        assert_equal(np.shape(d),(kk,))
+        assert_equal(np.shape(i),(kk,))
+        assert np.all(~np.isfinite(d[-s:]))
+        assert np.all(i[-s:]==self.kdtree.n)
+    def test_vectorized_query_multiple_neighbors(self):
+        s = 23
+        kk = self.kdtree.n+s
+        d, i = self.kdtree.query(np.zeros((2,4,3)),k=kk)
+        assert_equal(np.shape(d),(2,4,kk))
+        assert_equal(np.shape(i),(2,4,kk))
+        assert np.all(~np.isfinite(d[:,:,-s:]))
+        assert np.all(i[:,:,-s:]==self.kdtree.n)
 
 class ball_consistency:
 
