@@ -332,6 +332,9 @@ cdef class cKDTree:
         stdlib.free(node)
 
     def __dealloc__(cKDTree self):
+        if <int>(self.tree) == 0:
+            # should happen only if __init__ was never called
+            return
         self.__free_tree(self.tree)
 
     cdef void __query(cKDTree self, 
@@ -546,7 +549,7 @@ cdef class cKDTree:
         i : array of integers
             The locations of the neighbors in self.data.
             If x has shape tuple+(self.m,), then i has shape tuple+(k,).
-            Missing neighbors are indicated with self.n+1.
+            Missing neighbors are indicated with self.n.
         """
         cdef np.ndarray[int, ndim=2] ii
         cdef np.ndarray[double, ndim=2] dd
