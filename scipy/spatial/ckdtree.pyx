@@ -331,8 +331,7 @@ cdef class cKDTree:
             self.__free_tree(node.greater)
         stdlib.free(node)
 
-    def __del__(cKDTree self):
-        print "freeing cKDTree"
+    def __dealloc__(cKDTree self):
         self.__free_tree(self.tree)
 
     cdef void __query(cKDTree self, 
