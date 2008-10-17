@@ -1,8 +1,9 @@
 import os
-from os.path import join as pjoin, normpath, exists as pexists
+from os.path import join as pjoin, normpath, exists as pexists, dirname
 import subprocess
 from shutil import rmtree
 import re
+from zipfile import ZipFile
 
 SRC_ROOT = normpath(pjoin(os.getcwd(), os.pardir, os.pardir, os.pardir))
 BUILD_ROOT = os.getcwd()
@@ -41,11 +42,35 @@ def build_sdist():
 
 @task
 @needs('build_sdist')
-#@needs('clean')
 def bootstrap():
-    print get_scipy_version(options.src_dir)
+    prepare_scipy_sources(options.src_dir, bootstrap_dir(options.pyver))
 
 # Helpers
+def get_sdist_tarball(src_root):
+    """Return the name of the installer built by sdist command."""
+    # Yeah, the name logic is harcoded in distutils. We have to reproduce it
+    # here
+    name = "scipy-%s.zip" % get_scipy_version(src_root)
+    return name
+
+def prepare_scipy_sources(src_root, bootstrap):
+    zid = ZipFile(pjoin(src_root, 'dist', get_sdist_tarball(src_root)))
+    root = 'scipy-%s' % get_scipy_version(src_root)
+
+    # From the sdist-built tarball, extract all files into bootstrap directory,
+    # but removing the scipy-VERSION head path
+    for name in zid.namelist():
+        cnt = zid.read(name)
+        if name.startswith(root):
+            # XXX: even on windows, the path sep in zip is '/' ?
+            name = name.split('/', 1)[1]
+        newname = pjoin(bootstrap, name)
+
+        if not pexists(dirname(newname)):
+            os.makedirs(dirname(newname))
+        fid = open(newname, 'wb')
+        fid.write(cnt)
+
 def bootstrap_dir(pyver):
     return pjoin(BUILD_ROOT, "bootstrap-%s" % pyver)
 
