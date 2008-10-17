@@ -74,7 +74,7 @@ def get_scipy_version(src_root):
                 isdev = True
             else:
                 raise RuntimeError("isdev already set ?")
-            
+
     verstr = ".".join([str(i) for i in version])
     if isdev:
         verstr += ".dev"
@@ -82,7 +82,7 @@ def get_scipy_version(src_root):
     return verstr
 
 def get_svn_version(chdir):
-    out = subprocess.Popen(['svn', 'info'], 
+    out = subprocess.Popen(['svn', 'info'],
                            stdout = subprocess.PIPE, cwd = chdir).communicate()[0]
     r = re.compile('Revision: ([0-9]+)')
     svnver = None
