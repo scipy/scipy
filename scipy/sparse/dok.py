@@ -14,45 +14,65 @@ from sputils import isdense, getdtype, isshape, isintlike, isscalarlike
 
 class dok_matrix(spmatrix, dict):
     """Dictionary Of Keys based matrix.  This is an efficient
-    structure for constructing sparse matrices
-    """
-    def __init__(self, A=None, shape=None, dtype=None, copy=False):
-        """ Create a new dictionary-of-keys sparse matrix.  An optional
-        argument A is accepted, which initializes the dok_matrix with it.
-        This can be a tuple of dimensions (M, N) or a (dense) array
-        to copy.
-        """
-        #TODO deprecate argument A in favor of arg1 style
+    structure for constructing sparse matrices incrementally.
 
+    This can be instatiated in several ways:
+        dok_matrix(D)
+            with a dense matrix, D
+
+        dok_matrix(S)
+            with a sparse matrix, S
+
+        dok_matrix((M,N), [dtype])
+            create the matrix with initial shape (M,N)
+            dtype is optional, defaulting to dtype='d'
+
+    Notes
+    -----
+    Allows for efficient O(1) access of individual elements.
+    Duplicates are not allowed.
+    Can be efficiently converted to a coo_matrix once constructed.
+
+    Examples
+    --------
+    >>> from scipy.sparse import *
+    >>> from scipy import *
+    >>> S = dok_matrix((5,5), dtype=float32)
+    >>> for i in range(5):
+    >>>     for j in range(5):
+    >>>         S[i,j] = i+j # Update element
+
+    """
+
+    def __init__(self, arg1, shape=None, dtype=None, copy=False):
         dict.__init__(self)
         spmatrix.__init__(self)
-        self.dtype = getdtype(dtype, A, default=float)
-        if A is not None:
-            if isinstance(A, tuple):
-                # Interpret as dimensions
-                if not isshape(A):
-                    raise TypeError, "dimensions must be a 2-tuple of positive"\
-                            " integers"
-                self.shape = A
-            elif isspmatrix(A):
-                if isspmatrix_dok(A) and copy:
-                    A = A.copy()
-                else:
-                    A = A.todok()
-                self.update( A )
-                self.shape = A.shape
-                self.dtype = A.dtype
+
+        self.dtype = getdtype(dtype, default=float)
+        if isinstance(arg1, tuple) and isshape(arg1): # (M,N)
+            M, N = arg1
+            self.shape = (M, N)
+        elif isspmatrix(arg1): # Sparse ctor
+            if isspmatrix_dok(arg1) and copy:
+                arg1 = arg1.copy()
             else:
-                #must be dense, convert to COO first, then to DOK
-                try:
-                    A = asarray(A)
-                except:
-                    raise ValueError, "unrecognized form for" \
-                            " %s_matrix constructor" % self.format
-                from coo import coo_matrix
-                self.update( coo_matrix(A).todok() )
-                self.shape = A.shape
-                self.dtype = A.dtype
+                arg1 = arg1.todok()
+            self.update(arg1)
+            self.shape = arg1.shape
+            self.dtype = arg1.dtype
+        else: # Dense ctor
+            try:
+                arg1 = asarray(arg1)
+            except:
+                raise TypeError('invalid input format')
+
+            if len(arg1.shape)!=2:
+                raise TypeError('expected rank <=2 dense array or matrix')
+
+            from coo import coo_matrix
+            self.update( coo_matrix(arg1).todok() )
+            self.shape = arg1.shape
+            self.dtype = arg1.dtype
 
     def getnnz(self):
         return dict.__len__(self)
@@ -177,12 +197,9 @@ class dok_matrix(spmatrix, dict):
 
     def __setitem__(self, key, value):
         try:
-            assert len(key) == 2
-        except (AssertionError, TypeError):
-            raise TypeError, "index must be a pair of integers, slices, or" \
-                    " sequences"
-        i, j = key
-
+            i, j = key
+        except (ValueError, TypeError):
+            raise TypeError, "index must be a pair of integers or slices"
 
         # First deal with the case where both i and j are integers
         if isintlike(i) and isintlike(j):
@@ -193,20 +210,14 @@ class dok_matrix(spmatrix, dict):
 
             if i < 0 or i >= self.shape[0] or j < 0 or j >= self.shape[1]:
                 raise IndexError, "index out of bounds"
-            if isintlike(value) and value == 0:
-                if key in self.keys():  # get rid of it something already there
-                    del self[key]
-            else:
-                # Ensure value is a single element, not a sequence
-                if isinstance(value, float) or isintlike(value) or \
-                        isinstance(value, complex):
-                    dict.__setitem__(self, (i,j), self.dtype.type(value))
-                    newrows = max(self.shape[0], int(key[0])+1)
-                    newcols = max(self.shape[1], int(key[1])+1)
-                    self.shape = (newrows, newcols)
+
+            if isscalar(value):
+                if value==0:
+                    del self[(i,j)]
                 else:
-                    raise TypeError, "cannot set matrix element to non-scalar"
-            return                 # done
+                    dict.__setitem__(self, (i,j), self.dtype.type(value))
+            else:
+                raise TypeError, "cannot set matrix element to a non-scalar"
         else:
             # Either i or j is a slice, sequence, or invalid.  If i is a slice
             # or sequence, unfold it first and call __setitem__ recursively.

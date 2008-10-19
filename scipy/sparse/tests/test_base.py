@@ -1163,6 +1163,25 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
             caught += 1
         assert_equal(caught,5)
 
+    def test_ctor(self):
+        caught = 0
+        # Empty ctor
+        try:
+            A = dok_matrix()
+        except TypeError, e:
+            caught+=1
+        assert_equal(caught, 1)
+
+        # Dense ctor
+        b = matrix([[1,0,0,0],[0,0,1,0],[0,2,0,3]],'d')
+        A = dok_matrix(b)
+        assert_equal(A.todense(), b)
+
+        # Sparse ctor
+        c = csr_matrix(b)
+        assert_equal(A.todense(), c.todense())
+
+
 
 class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
         _TestBothSlicing, _TestGetSet, _TestSolve,
