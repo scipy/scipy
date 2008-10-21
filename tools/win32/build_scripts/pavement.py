@@ -124,7 +124,8 @@ def get_scipy_version(src_root):
 
 def get_svn_version(chdir):
     out = subprocess.Popen(['svn', 'info'],
-                           stdout = subprocess.PIPE, cwd = chdir).communicate()[0]
+                           stdout = subprocess.PIPE, 
+                           cwd = chdir).communicate()[0]
     r = re.compile('Revision: ([0-9]+)')
     svnver = None
     for line in out.split('\n'):
