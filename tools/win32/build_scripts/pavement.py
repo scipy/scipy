@@ -20,7 +20,7 @@ _SSE3_CFG = r"""[atlas]
 library_dirs = C:\local\lib\yop\sse3"""
 _SSE2_CFG = r"""[atlas]
 library_dirs = C:\local\lib\yop\sse2"""
-_NOSSE_CFG = r"""[ATLAS]
+_NOSSE_CFG = r"""[atlas]
 library_dirs = fakedirectorywhichhopefullydoesnotexist
 [DEFAULT]
 library_dirs = C:\local\lib\yop\nosse"""
@@ -40,6 +40,10 @@ options(
         src_dir = SRC_ROOT
     ),
     build_binary=Bunch(
+        pyver = PYVER,
+        arch = ARCH
+    ),
+    bootstrap_arch=Bunch(
         pyver = PYVER,
         arch = ARCH
     )
@@ -83,6 +87,12 @@ def bootstrap():
     prepare_scipy_sources(options.src_dir, bootstrap_dir(options.pyver))
 
 @task
+def bootstrap_arch():
+    pyver = options.pyver
+    arch = options.arch
+    set_bootstrap_sources(arch, pyver)
+
+@task
 def build_binary():
     pyver = options.pyver
     arch = options.arch
@@ -120,6 +130,10 @@ Look at the build log (%s).""" % (cmd, str(e), build_log)
     move_binary(arch, pyver)
 
 # Helpers
+def set_bootstrap_sources(arch, pyver):
+    bdir = bootstrap_dir(pyver)
+    write_site_cfg(arch, cwd=bdir)
+
 def get_sdist_tarball(src_root):
     """Return the name of the installer built by sdist command."""
     # Yeah, the name logic is harcoded in distutils. We have to reproduce it
