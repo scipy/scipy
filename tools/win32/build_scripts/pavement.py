@@ -1,7 +1,7 @@
 import os
 from os.path import join as pjoin, normpath, exists as pexists, dirname
 import subprocess
-from shutil import rmtree
+from shutil import rmtree, move as shmove
 import re
 from zipfile import ZipFile
 
@@ -41,7 +41,8 @@ options(
     ),
     build_binary=Bunch(
         pyver = PYVER,
-        arch = ARCH
+        arch = ARCH,
+        src_root = SRC_ROOT
     ),
     bootstrap_arch=Bunch(
         pyver = PYVER,
@@ -97,8 +98,10 @@ def bootstrap_arch():
 def build_binary():
     pyver = options.pyver
     arch = options.arch
+    scipy_verstr = get_scipy_version(options.src_root)
     bdir = bootstrap_dir(pyver)
-    print "Building scipy binary for python %s, arch is %s" % (get_python_exec(pyver), arch)
+    print "Building scipy (version %s) binary for python %s, arch is %s" % \
+          (scipy_verstr, get_python_exec(pyver), arch)
 
     if BUILD_MSI:
         cmd = [get_python_exec(pyver), "setup.py", "build", "-c", "mingw32",
@@ -127,7 +130,7 @@ Error was : %s
 Look at the build log (%s).""" % (cmd, str(e), build_log)
         raise Exception(msg)
 
-    move_binary(arch, pyver)
+    move_binary(arch, pyver, bdir, scipy_verstr)
 
 # Helpers
 def set_bootstrap_sources(arch, pyver):
@@ -228,3 +231,28 @@ def write_site_cfg(arch, cwd=None):
     f = open(scfg, 'w')
     f.writelines(SITECFG[arch])
     f.close()
+
+def move_binary(arch, pyver, cwd, scipy_verstr):
+    if not pexists(pjoin(cwd, "binaries")):
+        os.makedirs(pjoin(cwd, "binaries"))
+
+    shmove(pjoin(cwd, 'dist', get_windist_exec(pyver, scipy_verstr)),
+           pjoin(cwd, 'binaries', get_binary_name(arch, scipy_verstr)))
+
+def get_binary_name(arch, scipy_verstr):
+    if BUILD_MSI:
+        ext = '.msi'
+    else:
+        ext = '.exe'
+    return "scipy-%s-%s%s" % (scipy_verstr, arch, ext)
+
+def get_windist_exec(pyver, scipy_verstr):
+    """Return the name of the installer built by wininst command."""
+    # Yeah, the name logic is harcoded in distutils. We have to reproduce it
+    # here
+    if BUILD_MSI:
+        ext = '.msi'
+    else:
+        ext = '.exe'
+    name = "scipy-%s.win32-py%s%s" % (scipy_verstr, pyver, ext)
+    return name
