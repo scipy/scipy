@@ -102,10 +102,10 @@ def build_nsis():
     scipy_verstr = get_scipy_version(options.src_root)
     bdir = bootstrap_dir(options.pyver)
 
+    prepare_nsis_script(bdir, options.pyver, scipy_verstr)
     for arch in ['nosse', 'sse2', 'sse3']:
         raw_clean_bootstrap(options.pyver)
         set_bootstrap_sources(arch, options.pyver)
-        prepare_nsis_script(bdir, pyver, scipy_verstr)
         raw_build_arch(options.pyver, arch, options.src_root)
 
 # Helpers
