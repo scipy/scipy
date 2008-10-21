@@ -128,12 +128,15 @@ def build_binary():
 
     try:
         try:
-            subprocess.call(cmd, #shell = True, 
+            st = subprocess.call(cmd, #shell = True, 
                             stderr = subprocess.STDOUT, stdout = f,
                             cwd=bdir)
+            if st:
+                raise RuntimeError("The cmd failed with status %d" % st)
         finally:
             f.close()
-    except subprocess.CalledProcessError, e:
+    except (subprocess.CalledProcessError, RuntimeError), e:
+        print e
         msg = """
 There was an error while executing the following command:
 
@@ -146,6 +149,14 @@ Look at the build log (%s).""" % (cmd, str(e), build_log)
 
     move_binary(arch, pyver, bdir, scipy_verstr)
 
+@task
+@needs('build_binary')
+@needs('bootstrap_arch')
+@needs('bootstrap_nsis')
+@needs('bootstrap')
+@needs('clean')
+def build_all():
+    pass
 # Helpers
 def set_bootstrap_sources(arch, pyver):
     bdir = bootstrap_dir(pyver)
