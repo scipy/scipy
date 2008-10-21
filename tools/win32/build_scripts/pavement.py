@@ -66,13 +66,7 @@ def clean():
 # Clean the bootstrap source tree for a clean build from scratch
 @task
 def clean_bootstrap():
-    bdir = bootstrap_dir(options.pyver)
-    for d in ["build", "dist"]:
-        if pexists(pjoin(bdir, d)):
-            rmtree(pjoin(bdir, d))
-
-    if pexists(pjoin(bdir, "site.cfg")):
-        os.remove(pjoin(bdir, "site.cfg"))
+    raw_clean_bootstrap(options.pyver)
 
 @task
 def build_sdist():
@@ -298,3 +292,13 @@ def raw_clean(src_dir, pyver):
     bdir = bootstrap_dir(pyver)
     if pexists(bdir):
         rmtree(bdir)
+
+def raw_clean_bootstrap(pyver):
+    bdir = bootstrap_dir(pyver)
+    for d in ["build", "dist"]:
+        if pexists(pjoin(bdir, d)):
+            rmtree(pjoin(bdir, d))
+
+    if pexists(pjoin(bdir, "site.cfg")):
+        os.remove(pjoin(bdir, "site.cfg"))
+
