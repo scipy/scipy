@@ -8,7 +8,12 @@ from zipfile import ZipFile
 SRC_ROOT = normpath(pjoin(os.getcwd(), os.pardir, os.pardir, os.pardir))
 BUILD_ROOT = os.getcwd()
 
-PYVER = 2.5
+PYVER = '2.5'
+ARCH = 'nosse'
+
+PYEXECS = {"2.5" : "C:\python25\python.exe",
+        "2.4" : "C:\python24\python24.exe",
+        "2.3" : "C:\python23\python23.exe"}
 
 options(
     clean=Bunch(
@@ -21,6 +26,10 @@ options(
     ),
     build_sdist=Bunch(
         src_dir = SRC_ROOT
+    ),
+    build=Bunch(
+        pyver = PYVER,
+        arch = ARCH
     )
 )
 
@@ -60,6 +69,12 @@ def build_sdist():
 @needs('build_sdist')
 def bootstrap():
     prepare_scipy_sources(options.src_dir, bootstrap_dir(options.pyver))
+
+@task
+def build():
+    pyver = options.pyver
+    arch = options.arch
+    print "Building scipy binary for python %s, arch is %s" % (get_python_exec(pyver), arch)
 
 # Helpers
 def get_sdist_tarball(src_root):
@@ -137,3 +152,18 @@ def get_svn_version(chdir):
         raise ValueError("Error while parsing svn version ?")
 
     return svnver
+
+def get_python_exec(ver):
+    """Return the executable of python for the given version."""
+    # XXX Check that the file actually exists
+    try:
+        return PYEXECS[ver]
+    except KeyError:
+        raise ValueError("Version %s not supported/recognized" % ver)
+
+def write_site_cfg(arch):
+    if pexists("site.cfg"):
+        os.remove("site.cfg")
+    f = open("site.cfg", 'w')
+    f.writelines(SITECFG[arch])
+    f.close()
