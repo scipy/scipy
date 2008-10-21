@@ -15,11 +15,16 @@ options(
         src_dir = SRC_ROOT,
         pyver = PYVER
     ),
+    clean_bootstrap=Bunch(
+        src_dir = SRC_ROOT,
+        pyver = PYVER
+    ),
     build_sdist=Bunch(
         src_dir = SRC_ROOT
     )
 )
 
+# Clean everything, including bootstrap source tree
 @task
 def clean():
     # Clean sdist
@@ -34,6 +39,17 @@ def clean():
     bdir = bootstrap_dir(options.pyver)
     if pexists(bdir):
         rmtree(bdir)
+
+# Clean the bootstrap source tree for a clean build from scratch
+@task
+def clean_bootstrap():
+    bdir = bootstrap_dir(options.pyver)
+    for d in ["build", "dist"]:
+        if pexists(pjoin(bdir, d)):
+            shutil.rmtree(pjoin(bdir, d))
+
+    if pexists(pjoin(bdir, "site.cfg")):
+        os.remove(pjoin(bdir, "site.cfg"))
 
 @task
 def build_sdist():
