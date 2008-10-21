@@ -51,6 +51,10 @@ options(
     bootstrap_arch=Bunch(
         pyver = PYVER,
         arch = ARCH
+    ),
+    bootstrap_nsis=Bunch(
+        pyver = PYVER,
+        src_root = SRC_ROOT
     )
 )
 
@@ -91,7 +95,6 @@ def build_sdist():
 def bootstrap():
     bdir = bootstrap_dir(options.pyver)
     prepare_scipy_sources(options.src_dir, bdir)
-    prepare_nsis_script(bootstrap, pyver, get_scipy_version(options.src_root))
 
 @task
 def bootstrap_arch():
@@ -100,7 +103,15 @@ def bootstrap_arch():
     set_bootstrap_sources(arch, pyver)
 
 @task
+def bootstrap_nsis():
+    pyver = options.pyver
+    bdir = bootstrap_dir(options.pyver)
+    prepare_nsis_script(bdir, pyver, get_scipy_version(options.src_root))
+
+@task
 @needs('bootstrap_arch')
+@needs('bootstrap_nsis')
+@needs('clean_bootstrap')
 def build_binary():
     pyver = options.pyver
     arch = options.arch
@@ -168,17 +179,17 @@ def prepare_scipy_sources(src_root, bootstrap):
         fid = open(newname, 'wb')
         fid.write(cnt)
 
-def prepare_nsis_script(bootstrap, pyver, numver):
+def prepare_nsis_script(bdir, pyver, numver):
     tpl = pjoin('nsis_scripts', 'scipy-superinstaller.nsi.in')
     source = open(tpl, 'r')
-    target = open(pjoin(bootstrap, 'scipy-superinstaller.nsi'), 'w')
+    target = open(pjoin(bdir, 'scipy-superinstaller.nsi'), 'w')
 
     installer_name = 'scipy-%s-win32-superpack-python%s.exe' % (numver, pyver)
     cnt = "".join(source.readlines())
     cnt = cnt.replace('@SCIPY_INSTALLER_NAME@', installer_name)
     for arch in ['nosse', 'sse2', 'sse3']:
         cnt = cnt.replace('@%s_BINARY@' % arch.upper(),
-                          get_binary_name(arch))
+                          get_binary_name(arch, numver))
 
     target.write(cnt)
 
