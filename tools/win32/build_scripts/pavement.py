@@ -108,6 +108,8 @@ def build_nsis():
         set_bootstrap_sources(arch, options.pyver)
         raw_build_arch(options.pyver, arch, options.src_root)
 
+    raw_build_nsis(options.pyver)
+
 # Helpers
 def set_bootstrap_sources(arch, pyver):
     bdir = bootstrap_dir(pyver)
@@ -317,3 +319,9 @@ Look at the build log (%s).""" % (cmd, str(e), build_log)
 
     move_binary(arch, pyver, bdir, scipy_verstr)
 
+def raw_build_nsis(pyver):
+    bdir = bootstrap_dir(options.pyver)
+    st = subprocess.call(['makensis', 'scipy-superinstaller.nsi'], 
+                         cwd=bdir)
+    if st:
+        raise RuntimeError("Error while executing makensis command")
