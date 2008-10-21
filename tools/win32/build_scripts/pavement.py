@@ -109,9 +109,6 @@ def bootstrap_nsis():
     prepare_nsis_script(bdir, pyver, get_scipy_version(options.src_root))
 
 @task
-@needs('bootstrap_arch')
-@needs('bootstrap_nsis')
-@needs('clean_bootstrap')
 def build_binary():
     pyver = options.pyver
     arch = options.arch
