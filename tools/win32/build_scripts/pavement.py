@@ -93,12 +93,12 @@ def bootstrap_arch():
     set_bootstrap_sources(arch, pyver)
 
 @task
+@needs('bootstrap_arch')
 def build_binary():
     pyver = options.pyver
     arch = options.arch
     bdir = bootstrap_dir(pyver)
     print "Building scipy binary for python %s, arch is %s" % (get_python_exec(pyver), arch)
-    write_site_cfg(arch, cwd=bdir)
 
     if BUILD_MSI:
         cmd = [get_python_exec(pyver), "setup.py", "build", "-c", "mingw32",
@@ -106,13 +106,13 @@ def build_binary():
     else:
         cmd = [get_python_exec(pyver), "setup.py", "build", "-c", "mingw32",
                "bdist_wininst"]
-    # build_log = "build-%s-%s.log" % (arch, pyver)
-    # f = open(build_log, 'w')
+    build_log = "build-%s-%s.log" % (arch, pyver)
+    f = open(build_log, 'w')
 
     try:
         try:
             subprocess.call(cmd, #shell = True, 
-                            #stderr = subprocess.STDOUT, stdout = f,
+                            stderr = subprocess.STDOUT, stdout = f,
                             cwd=bdir)
         finally:
             f.close()
