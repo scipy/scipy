@@ -20,7 +20,9 @@ _SSE3_CFG = r"""[atlas]
 library_dirs = C:\local\lib\yop\sse3"""
 _SSE2_CFG = r"""[atlas]
 library_dirs = C:\local\lib\yop\sse2"""
-_NOSSE_CFG = r"""[DEFAULT]
+_NOSSE_CFG = r"""[ATLAS]
+library_dirs = fakedirectorywhichhopefullydoesnotexist
+[DEFAULT]
 library_dirs = C:\local\lib\yop\nosse"""
 
 SITECFG = {"sse2" : _SSE2_CFG, "sse3" : _SSE3_CFG, "nosse" : _NOSSE_CFG}
@@ -37,7 +39,7 @@ options(
     build_sdist=Bunch(
         src_dir = SRC_ROOT
     ),
-    build=Bunch(
+    build_binary=Bunch(
         pyver = PYVER,
         arch = ARCH
     )
@@ -81,7 +83,7 @@ def bootstrap():
     prepare_scipy_sources(options.src_dir, bootstrap_dir(options.pyver))
 
 @task
-def build():
+def build_binary():
     pyver = options.pyver
     arch = options.arch
     bdir = bootstrap_dir(pyver)
