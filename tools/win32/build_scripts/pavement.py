@@ -72,7 +72,7 @@ def clean_bootstrap():
     bdir = bootstrap_dir(options.pyver)
     for d in ["build", "dist"]:
         if pexists(pjoin(bdir, d)):
-            shutil.rmtree(pjoin(bdir, d))
+            rmtree(pjoin(bdir, d))
 
     if pexists(pjoin(bdir, "site.cfg")):
         os.remove(pjoin(bdir, "site.cfg"))
