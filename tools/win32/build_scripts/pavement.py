@@ -96,8 +96,8 @@ def build_binary():
     raw_build_arch(pyver, arch, options.src_root)
 
 @task
-@needs('clean')
 @needs('bootstrap')
+@needs('clean')
 def build_nsis():
     scipy_verstr = get_scipy_version(options.src_root)
     bdir = bootstrap_dir(options.pyver)
