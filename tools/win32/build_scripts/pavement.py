@@ -61,18 +61,7 @@ options(
 # Clean everything, including bootstrap source tree
 @task
 def clean():
-    # Clean sdist
-    sdir = pjoin(options.src_dir, "dist")
-    if pexists(sdir):
-        rmtree(sdir)
-    mani = pjoin(options.src_dir, "MANIFEST")
-    if pexists(mani):
-        os.remove(mani)
-
-    # Clean bootstrap directory
-    bdir = bootstrap_dir(options.pyver)
-    if pexists(bdir):
-        rmtree(bdir)
+    raw_clean(options.src_dir, options.pyver)
 
 # Clean the bootstrap source tree for a clean build from scratch
 @task
@@ -295,3 +284,17 @@ def get_windist_exec(pyver, scipy_verstr):
         ext = '.exe'
     name = "scipy-%s.win32-py%s%s" % (scipy_verstr, pyver, ext)
     return name
+
+def raw_clean(src_dir, pyver):
+    # Clean sdist
+    sdir = pjoin(src_dir, "dist")
+    if pexists(sdir):
+        rmtree(sdir)
+    mani = pjoin(src_dir, "MANIFEST")
+    if pexists(mani):
+        os.remove(mani)
+
+    # Clean bootstrap directory
+    bdir = bootstrap_dir(pyver)
+    if pexists(bdir):
+        rmtree(bdir)
