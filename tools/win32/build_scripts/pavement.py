@@ -70,14 +70,12 @@ def clean_bootstrap():
 
 @task
 def build_sdist():
-    cmd = ["python", "setup.py", "sdist", "--format=zip"]
-    st = subprocess.call(cmd, cwd=options.src_dir)
+    raw_build_sdist(options.src_dir)
 
 @task
 @needs('build_sdist')
 def bootstrap():
-    bdir = bootstrap_dir(options.pyver)
-    prepare_scipy_sources(options.src_dir, bdir)
+    raw_bootstrap(options.pyver, options.src_dir)
 
 @task
 def bootstrap_arch():
@@ -95,51 +93,21 @@ def bootstrap_nsis():
 def build_binary():
     pyver = options.pyver
     arch = options.arch
-    scipy_verstr = get_scipy_version(options.src_root)
-    bdir = bootstrap_dir(pyver)
-    print "Building scipy (version %s) binary for python %s, arch is %s" % \
-          (scipy_verstr, get_python_exec(pyver), arch)
-
-    if BUILD_MSI:
-        cmd = [get_python_exec(pyver), "setup.py", "build", "-c", "mingw32",
-               "bdist_msi"]
-    else:
-        cmd = [get_python_exec(pyver), "setup.py", "build", "-c", "mingw32",
-               "bdist_wininst"]
-    build_log = "build-%s-%s.log" % (arch, pyver)
-    f = open(build_log, 'w')
-
-    try:
-        try:
-            st = subprocess.call(cmd, #shell = True, 
-                            stderr = subprocess.STDOUT, stdout = f,
-                            cwd=bdir)
-            if st:
-                raise RuntimeError("The cmd failed with status %d" % st)
-        finally:
-            f.close()
-    except (subprocess.CalledProcessError, RuntimeError), e:
-        print e
-        msg = """
-There was an error while executing the following command:
-
-    %s
-
-Error was : %s
-
-Look at the build log (%s).""" % (cmd, str(e), build_log)
-        raise Exception(msg)
-
-    move_binary(arch, pyver, bdir, scipy_verstr)
+    raw_build_arch(pyver, arch, options.src_root)
 
 @task
-@needs('build_binary')
-@needs('bootstrap_arch')
-@needs('bootstrap_nsis')
-@needs('bootstrap')
 @needs('clean')
-def build_all():
-    pass
+@needs('bootstrap')
+def build_nsis():
+    scipy_verstr = get_scipy_version(options.src_root)
+    bdir = bootstrap_dir(options.pyver)
+
+    for arch in ['nosse', 'sse2', 'sse3']:
+        raw_clean_bootstrap(options.pyver)
+        set_bootstrap_sources(arch, options.pyver)
+        prepare_nsis_script(bdir, pyver, scipy_verstr)
+        raw_build_arch(options.pyver, arch, options.src_root)
+
 # Helpers
 def set_bootstrap_sources(arch, pyver):
     bdir = bootstrap_dir(pyver)
@@ -301,4 +269,51 @@ def raw_clean_bootstrap(pyver):
 
     if pexists(pjoin(bdir, "site.cfg")):
         os.remove(pjoin(bdir, "site.cfg"))
+
+def raw_build_sdist(cwd):
+    cmd = ["python", "setup.py", "sdist", "--format=zip"]
+    st = subprocess.call(cmd, cwd=cwd)
+
+def raw_bootstrap(pyver, src_dir):
+    bdir = bootstrap_dir(pyver)
+    prepare_scipy_sources(src_dir, bdir)
+
+def raw_build_arch(pyver, arch, src_root):
+    scipy_verstr = get_scipy_version(src_root)
+    bdir = bootstrap_dir(pyver)
+
+    print "Building scipy (version %s) binary for python %s, arch is %s" % \
+          (scipy_verstr, get_python_exec(pyver), arch)
+
+    if BUILD_MSI:
+        cmd = [get_python_exec(pyver), "setup.py", "build", "-c", "mingw32",
+               "bdist_msi"]
+    else:
+        cmd = [get_python_exec(pyver), "setup.py", "build", "-c", "mingw32",
+               "bdist_wininst"]
+    build_log = "build-%s-%s.log" % (arch, pyver)
+    f = open(build_log, 'w')
+
+    try:
+        try:
+            st = subprocess.call(cmd, #shell = True,
+                            stderr = subprocess.STDOUT, stdout = f,
+                            cwd=bdir)
+            if st:
+                raise RuntimeError("The cmd failed with status %d" % st)
+        finally:
+            f.close()
+    except (subprocess.CalledProcessError, RuntimeError), e:
+        print e
+        msg = """
+There was an error while executing the following command:
+
+    %s
+
+Error was : %s
+
+Look at the build log (%s).""" % (cmd, str(e), build_log)
+        raise Exception(msg)
+
+    move_binary(arch, pyver, bdir, scipy_verstr)
 
