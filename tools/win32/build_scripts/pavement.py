@@ -5,6 +5,7 @@ from shutil import rmtree
 import re
 from zipfile import ZipFile
 
+BUILD_MSI = False
 SRC_ROOT = normpath(pjoin(os.getcwd(), os.pardir, os.pardir, os.pardir))
 BUILD_ROOT = os.getcwd()
 
@@ -14,6 +15,15 @@ ARCH = 'nosse'
 PYEXECS = {"2.5" : "C:\python25\python.exe",
         "2.4" : "C:\python24\python24.exe",
         "2.3" : "C:\python23\python23.exe"}
+
+_SSE3_CFG = r"""[atlas]
+library_dirs = C:\local\lib\yop\sse3"""
+_SSE2_CFG = r"""[atlas]
+library_dirs = C:\local\lib\yop\sse2"""
+_NOSSE_CFG = r"""[DEFAULT]
+library_dirs = C:\local\lib\yop\nosse"""
+
+SITECFG = {"sse2" : _SSE2_CFG, "sse3" : _SSE3_CFG, "nosse" : _NOSSE_CFG}
 
 options(
     clean=Bunch(
@@ -74,7 +84,38 @@ def bootstrap():
 def build():
     pyver = options.pyver
     arch = options.arch
+    bdir = bootstrap_dir(pyver)
     print "Building scipy binary for python %s, arch is %s" % (get_python_exec(pyver), arch)
+    write_site_cfg(arch, cwd=bdir)
+
+    if BUILD_MSI:
+        cmd = [get_python_exec(pyver), "setup.py", "build", "-c", "mingw32",
+               "bdist_msi"]
+    else:
+        cmd = [get_python_exec(pyver), "setup.py", "build", "-c", "mingw32",
+               "bdist_wininst"]
+    # build_log = "build-%s-%s.log" % (arch, pyver)
+    # f = open(build_log, 'w')
+
+    try:
+        try:
+            subprocess.call(cmd, #shell = True, 
+                            #stderr = subprocess.STDOUT, stdout = f,
+                            cwd=bdir)
+        finally:
+            f.close()
+    except subprocess.CalledProcessError, e:
+        msg = """
+There was an error while executing the following command:
+
+    %s
+
+Error was : %s
+
+Look at the build log (%s).""" % (cmd, str(e), build_log)
+        raise Exception(msg)
+
+    move_binary(arch, pyver)
 
 # Helpers
 def get_sdist_tarball(src_root):
@@ -161,9 +202,13 @@ def get_python_exec(ver):
     except KeyError:
         raise ValueError("Version %s not supported/recognized" % ver)
 
-def write_site_cfg(arch):
-    if pexists("site.cfg"):
-        os.remove("site.cfg")
-    f = open("site.cfg", 'w')
+def write_site_cfg(arch, cwd=None):
+    if not cwd:
+        cwd = os.getcwd()
+
+    scfg = pjoin(cwd, "site.cfg")
+    if pexists(scfg):
+        os.remove(scfg)
+    f = open(scfg, 'w')
     f.writelines(SITECFG[arch])
     f.close()
