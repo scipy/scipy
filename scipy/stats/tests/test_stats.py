@@ -8,7 +8,7 @@
 
 from numpy.testing import *
 from numpy import array, arange, zeros, ravel, float32, float64, power
-import numpy
+import numpy as np
 
 import scipy.stats as stats
 
@@ -87,12 +87,12 @@ class TestRound(TestCase):
 
     def test_rounding2(self):
         """ W.II.A.2. Y = 2-INT(EXP(LOG(SQR(2)*SQR(2))))   (Y should be 0)"""
-        y=2-int(numpy.exp(numpy.log(numpy.sqrt(2.)*numpy.sqrt(2.))))
+        y=2-int(np.exp(np.log(np.sqrt(2.)*np.sqrt(2.))))
         assert_equal(y,0)
 
     def test_rounding3(self):
         """ W.II.A.3. Y = INT(3-EXP(LOG(SQR(2)*SQR(2))))    (Y should be 1)"""
-        y=(int(round((3-numpy.exp(numpy.log(numpy.sqrt(2.0)*numpy.sqrt(2.0)))))))
+        y=(int(round((3-np.exp(np.log(np.sqrt(2.0)*np.sqrt(2.0)))))))
         assert_equal(y,1)
 
 class TestBasicStats(TestCase):
@@ -142,7 +142,8 @@ class TestBasicStats(TestCase):
 ##        assert_almost_equal(y, 0.0)
 
     def test_meanBIG(self):
-        y = stats.mean(BIG)
+        y = np.mean(BIG)
+
         assert_almost_equal(y, 99999995.00)
 
     def test_stdBIG(self):
@@ -187,11 +188,11 @@ class TestNanFunc(TestCase):
         self.X = X.copy()
 
         self.Xall = X.copy()
-        self.Xall[:] = numpy.nan
+        self.Xall[:] = np.nan
 
         self.Xsome = X.copy()
         self.Xsomet = X.copy()
-        self.Xsome[0] = numpy.nan
+        self.Xsome[0] = np.nan
         self.Xsomet = self.Xsomet[1:]
 
     def test_nanmean_none(self):
@@ -207,7 +208,7 @@ class TestNanFunc(TestCase):
     def test_nanmean_all(self):
         """Check nanmean when all values are nan."""
         m = stats.nanmean(self.Xall)
-        assert numpy.isnan(m)
+        assert np.isnan(m)
 
     def test_nanstd_none(self):
         """Check nanstd when no values are nan."""
@@ -222,7 +223,7 @@ class TestNanFunc(TestCase):
     def test_nanstd_all(self):
         """Check nanstd when all values are nan."""
         s = stats.nanstd(self.Xall)
-        assert numpy.isnan(s)
+        assert np.isnan(s)
 
     def test_nanmedian_none(self):
         """Check nanmedian when no values are nan."""
@@ -237,7 +238,7 @@ class TestNanFunc(TestCase):
     def test_nanmedian_all(self):
         """Check nanmedian when all values are nan."""
         m = stats.nanmedian(self.Xall)
-        assert numpy.isnan(m)
+        assert np.isnan(m)
 
 class TestCorr(TestCase):
     """ W.II.D. Compute a correlation matrix on all the variables.
@@ -483,9 +484,9 @@ class TestRegression(TestCase):
 
     def test_regress_simple(self):
         """Regress a line with sinusoidal noise."""
-        x = numpy.linspace(0, 100, 100)
-        y = 0.2 * numpy.linspace(0, 100, 100) + 10
-        y += numpy.sin(numpy.linspace(0, 20, 100))
+        x = np.linspace(0, 100, 100)
+        y = 0.2 * np.linspace(0, 100, 100) + 10
+        y += np.sin(np.linspace(0, 20, 100))
 
         res = stats.linregress(x, y)
         assert_almost_equal(res[4], 4.3609875083149268e-3)
