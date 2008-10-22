@@ -142,7 +142,7 @@ class TestBasicStats(TestCase):
 ##        assert_almost_equal(y, 0.0)
 
     def test_meanBIG(self):
-        y = np.mean(BIG)
+        y = stats.mean(BIG)
 
         assert_almost_equal(y, 99999995.00)
 
