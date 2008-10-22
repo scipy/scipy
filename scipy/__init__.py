@@ -29,6 +29,14 @@ from numpy.random import rand, randn
 from numpy.fft import fft, ifft
 from numpy.lib.scimath import *
 
+# Emit a warning if numpy is too old
+majver, minver = [float(i) for i in _num.version.version.split('.')[:2]]
+if majver < 1 or (majver == 1 and minver < 2):
+    import warnings
+    warnings.warn("Numpy 1.2.0 or above is recommended for this version of " \
+                  "scipy (detected version %s)" % _num.version.version,
+                  UserWarning)
+
 __all__ += ['oldnumeric']+_num.__all__
 
 __all__ += ['randn', 'rand', 'fft', 'ifft']
