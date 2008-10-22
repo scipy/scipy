@@ -10,7 +10,7 @@ from numpy import zeros, arange, sort, amin, amax, any, where, \
      atleast_1d, sqrt, ceil, floor, array, poly1d, compress, not_equal, \
      pi, exp, ravel, angle
 import scipy
-import numpy
+import numpy as np
 import types
 import scipy.optimize as optimize
 import scipy.special as special
@@ -784,7 +784,7 @@ def binom_test(x,n=None,p=0.5):
     Returns pval -- Probability that null test is rejected for this set
                     of x and n even though it is true.
     """
-    x = atleast_1d(x).astype(numpy.integer)
+    x = atleast_1d(x).astype(np.integer)
     if len(x) == 2:
         n = x[1]+x[0]
         x = x[0]
@@ -792,7 +792,7 @@ def binom_test(x,n=None,p=0.5):
         x = x[0]
         if n is None or n < x:
             raise ValueError, "n must be >= x"
-        n = numpy.int_(n)
+        n = np.int_(n)
     else:
         raise ValueError, "Incorrect length for x."
 
