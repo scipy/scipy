@@ -12,10 +12,9 @@ Run tests if blas is not installed:
   python tests/test_blas.py [<level>]
 """
 
-import sys
 import math
 
-from numpy import arange, add, array
+from numpy import array
 from numpy.testing import *
 from scipy.lib.blas import fblas
 from scipy.lib.blas import cblas

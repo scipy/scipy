@@ -1,4 +1,4 @@
-import numpy as num
+import numpy as np
 
 """This module defines the function frame() which creates
 a framed copy of an input array with the boundary pixels
@@ -12,7 +12,7 @@ def frame_nearest(a, shape, cval=None):
     and the contents of 'a' in the center.  The boundary pixels are
     copied from the nearest edge pixel in 'a'.
 
-    >>> a = num.arange(16)
+    >>> a = np.arange(16)
     >>> a.shape=(4,4)
     >>> frame_nearest(a, (8,8))
     array([[ 0,  0,  0,  1,  2,  3,  3,  3],
@@ -26,8 +26,8 @@ def frame_nearest(a, shape, cval=None):
 
     """
 
-    b = num.zeros(shape, dtype=a.dtype)
-    delta = (num.array(b.shape) - num.array(a.shape))
+    b = np.zeros(shape, dtype=a.dtype)
+    delta = (np.array(b.shape) - np.array(a.shape))
     dy = delta[0] // 2
     dx = delta[1] // 2
     my = a.shape[0] + dy
@@ -51,7 +51,7 @@ def frame_reflect(a, shape, cval=None):
     and the contents of 'a' in the center.  The boundary pixels are
     reflected from the nearest edge pixels in 'a'.
 
-    >>> a = num.arange(16)
+    >>> a = np.arange(16)
     >>> a.shape = (4,4)
     >>> frame_reflect(a, (8,8))
     array([[ 5,  4,  4,  5,  6,  7,  7,  6],
@@ -64,8 +64,8 @@ def frame_reflect(a, shape, cval=None):
            [ 9,  8,  8,  9, 10, 11, 11, 10]])
     """
 
-    b = num.zeros(shape, dtype=a.dtype)
-    delta = (num.array(b.shape) - num.array(a.shape))
+    b = np.zeros(shape, dtype=a.dtype)
+    delta = (np.array(b.shape) - np.array(a.shape))
     dy = delta[0] // 2
     dx = delta[1] // 2
     my = a.shape[0] + dy
@@ -89,7 +89,7 @@ def frame_wrap(a, shape, cval=None):
     and the contents of 'a' in the center.  The boundary pixels are
     wrapped around to the opposite edge pixels in 'a'.
 
-    >>> a = num.arange(16)
+    >>> a = np.arange(16)
     >>> a.shape=(4,4)
     >>> frame_wrap(a, (8,8))
     array([[10, 11,  8,  9, 10, 11,  8,  9],
@@ -103,8 +103,8 @@ def frame_wrap(a, shape, cval=None):
 
     """
 
-    b = num.zeros(shape, dtype=a.dtype)
-    delta = (num.array(b.shape) - num.array(a.shape))
+    b = np.zeros(shape, dtype=a.dtype)
+    delta = (np.array(b.shape) - np.array(a.shape))
     dy = delta[0] // 2
     dx = delta[1] // 2
     my = a.shape[0] + dy
@@ -128,7 +128,7 @@ def frame_constant(a, shape, cval=0):
     and the contents of 'a' in the center.  The boundary pixels are
     copied from the nearest edge pixel in 'a'.
 
-    >>> a = num.arange(16)
+    >>> a = np.arange(16)
     >>> a.shape=(4,4)
     >>> frame_constant(a, (8,8), cval=42)
     array([[42, 42, 42, 42, 42, 42, 42, 42],
@@ -142,8 +142,8 @@ def frame_constant(a, shape, cval=0):
 
     """
 
-    b = num.zeros(shape, dtype=a.dtype)
-    delta = (num.array(b.shape) - num.array(a.shape))
+    b = np.zeros(shape, dtype=a.dtype)
+    delta = (np.array(b.shape) - np.array(a.shape))
     dy = delta[0] // 2
     dx = delta[1] // 2
     my = a.shape[0] + dy
@@ -183,7 +183,7 @@ def unframe(a, shape):
     """unframe extracts the center slice of framed array 'a' which had
     'shape' prior to framing."""
 
-    delta = num.array(a.shape) - num.array(shape)
+    delta = np.array(a.shape) - np.array(shape)
     dy = delta[0]//2
     dx = delta[1]//2
     my = shape[0] + dy

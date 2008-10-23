@@ -1,7 +1,7 @@
 ## Automatically adapted for scipy Oct 07, 2005 by convertcode.py
 
 import _zeros
-from numpy import sqrt, sign, finfo
+from numpy import finfo
 
 _iter = 100
 _xtol = 1e-12

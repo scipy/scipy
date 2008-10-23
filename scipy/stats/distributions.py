@@ -21,6 +21,7 @@ import numpy.random as mtrand
 from numpy import flatnonzero as nonzero
 from scipy.special import gammaln as gamln
 from copy import copy
+import vonmises_cython
 
 __all__ = [
            'rv_continuous',
@@ -478,6 +479,8 @@ class rv_continuous(object):
         goodargs = argsreduce(cond, *((x,)+args+(scale,)))
         scale, goodargs = goodargs[-1], goodargs[:-1]
         place(output,cond,self._pdf(*goodargs) / scale)
+        if output.ndim == 0:
+            return output[()]
         return output
 
     def cdf(self,x,*args,**kwds):
@@ -507,6 +510,8 @@ class rv_continuous(object):
         place(output,cond2,1.0)
         goodargs = argsreduce(cond, *((x,)+args))
         place(output,cond,self._cdf(*goodargs))
+        if output.ndim == 0:
+            return output[()]
         return output
 
     def sf(self,x,*args,**kwds):
@@ -536,6 +541,8 @@ class rv_continuous(object):
         place(output,cond2,1.0)
         goodargs = argsreduce(cond, *((x,)+args))
         place(output,cond,self._sf(*goodargs))
+        if output.ndim == 0:
+            return output[()]        
         return output
 
     def ppf(self,q,*args,**kwds):
@@ -565,6 +572,8 @@ class rv_continuous(object):
         goodargs = argsreduce(cond, *((q,)+args+(scale,loc)))
         scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
         place(output,cond,self._ppf(*goodargs)*scale + loc)
+        if output.ndim == 0:
+            return output[()]        
         return output
 
     def isf(self,q,*args,**kwds):
@@ -594,6 +603,8 @@ class rv_continuous(object):
         goodargs = argsreduce(cond, *((1.0-q,)+args+(scale,loc)))
         scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
         place(output,cond,self._ppf(*goodargs)*scale + loc)
+        if output.ndim == 0:
+            return output[()]
         return output
 
     def stats(self,*args,**kwds):
@@ -768,7 +779,7 @@ class rv_continuous(object):
         return optimize.fmin(self.nnlf,x0,args=(ravel(data),),disp=0)
 
     def est_loc_scale(self, data, *args):
-        mu, mu2, g1, g2 = self.stats(*args,**{'moments':'mv'})
+        mu, mu2 = self.stats(*args,**{'moments':'mv'})
         muhat = st.nanmean(data)
         mu2hat = st.nanstd(data)
         Shat = sqrt(mu2hat / mu2)
@@ -2270,7 +2281,6 @@ for all x, c > 0.
 
 ## Log-Laplace  (Log Double Exponential)
 ##
-
 class loglaplace_gen(rv_continuous):
     def _pdf(self, x, c):
         cd2 = c/2.0
@@ -2326,6 +2336,10 @@ Lognormal distribution
 
 lognorm.pdf(x,s) = 1/(s*x*sqrt(2*pi)) * exp(-1/2*(log(x)/s)**2)
 for x > 0, s > 0.
+
+If log x is normally distributed with mean mu and variance sigma**2,
+then x is log-normally distributed with shape paramter sigma and scale
+parameter exp(mu).
 """
                       )
 
@@ -3066,48 +3080,14 @@ Uniform distribution
 
 eps = numpy.finfo(float).eps
 
+
 class vonmises_gen(rv_continuous):
     def _rvs(self, b):
         return mtrand.vonmises(0.0, b, size=self._size)
     def _pdf(self, x, b):
-        x = arr(angle(exp(1j*x)))
-        Px = where(b < 100, exp(b*cos(x)) / (2*pi*special.i0(b)),
-                   norm.pdf(x, 0.0, sqrt(1.0/b)))
-        return Px
+        return exp(b*cos(x)) / (2*pi*special.i0(b))
     def _cdf(self, x, b):
-        x = arr(angle(exp(1j*x)))
-        eps2 = sqrt(eps)
-
-        c_xsimple = atleast_1d((b==0)&(x==x))
-        c_xiter = atleast_1d((b<100)&(b > 0)&(x==x))
-        c_xnormal = atleast_1d((b>=100)&(x==x))
-        c_bad = atleast_1d((b<=0) | (x != x))
-
-        indxiter = nonzero(c_xiter)
-        xiter = take(x, indxiter, 0)
-
-        vals = ones(len(c_xsimple),float)
-        putmask(vals, c_bad, nan)
-        putmask(vals, c_xsimple, x / 2.0/pi)
-        st = sqrt(b-0.5)
-        st = where(isnan(st),0.0,st)
-        putmask(vals, c_xnormal, norm.cdf(x, scale=st))
-
-        biter = take(atleast_1d(b)*(x==x), indxiter, 0)
-        if len(xiter) > 0:
-            fac = special.i0(biter)
-            x2 = xiter
-            val = x2 / 2.0/ pi
-            for j in range(1,501):
-                trm1 = special.iv(j,biter)/j/fac
-                trm2 = sin(j*x2)/pi
-                val += trm1*trm2
-                if all(trm1 < eps2):
-                    break
-            if (j == 500):
-                print "Warning: did not converge..."
-            put(vals, indxiter, val)
-        return vals + 0.5
+        return vonmises_cython.von_mises_cdf(b,x)
     def _stats(self, b):
         return 0, None, 0, None
 vonmises = vonmises_gen(name='vonmises', longname="A Von Mises",
@@ -3536,6 +3516,8 @@ class rv_discrete:
         place(output,(1-cond0)*(cond1==cond1),self.badvalue)
         goodargs = argsreduce(cond, *((k,)+args))
         place(output,cond,self._pmf(*goodargs))
+        if output.ndim == 0:
+            return output[()]        
         return output
 
     def cdf(self, k, *args, **kwds):
@@ -3564,6 +3546,8 @@ class rv_discrete:
         place(output,cond2*(cond0==cond0), 1.0)
         goodargs = argsreduce(cond, *((k,)+args))
         place(output,cond,self._cdf(*goodargs))
+        if output.ndim == 0:
+            return output[()]        
         return output
 
     def sf(self,k,*args,**kwds):
@@ -3592,6 +3576,8 @@ class rv_discrete:
         place(output,cond2,1.0)
         goodargs = argsreduce(cond, *((k,)+args))
         place(output,cond,self._sf(*goodargs))
+        if output.ndim == 0:
+            return output[()]        
         return output
 
     def ppf(self,q,*args,**kwds):
@@ -3620,6 +3606,8 @@ class rv_discrete:
         goodargs = argsreduce(cond, *((q,)+args+(loc,)))
         loc, goodargs = goodargs[-1], goodargs[:-1]
         place(output,cond,self._ppf(*goodargs) + loc)
+        if output.ndim == 0:
+            return output[()]        
         return output
 
     def isf(self,q,*args,**kwds):
@@ -3649,6 +3637,8 @@ class rv_discrete:
         goodargs = argsreduce(cond, *((q,)+args+(loc,)))
         loc, goodargs = goodargs[-1], goodargs[:-1]
         place(output,cond,self._ppf(*goodargs) + loc)
+        if output.ndim == 0:
+            return output[()]        
         return output
 
     def stats(self, *args, **kwds):

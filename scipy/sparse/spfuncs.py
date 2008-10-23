@@ -3,15 +3,8 @@
 
 __all__ = ['count_blocks','estimate_blocksize']
 
-from numpy import empty, ravel
-
-from base import isspmatrix
 from csr import isspmatrix_csr, csr_matrix
 from csc import isspmatrix_csc
-from bsr import isspmatrix_bsr
-from sputils import upcast
-
-import sparsetools
 from sparsetools import csr_count_blocks
 
 def extract_diagonal(A):

@@ -577,7 +577,7 @@ def linkage(y, method='single', metric='euclidean'):
     if not isinstance(method, str):
         raise TypeError("Argument 'method' must be a string.")
 
-    y = _convert_to_double(np.asarray(y))
+    y = _convert_to_double(np.asarray(y, order='c'))
 
     s = y.shape
     if len(s) == 1:
@@ -800,7 +800,7 @@ def totree(Z, rd=False):
     library.
     """
 
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
 
     is_valid_linkage(Z, throw=True, name='Z')
 
@@ -866,48 +866,57 @@ def _convert_to_double(X):
 
 def cophenet(*args, **kwargs):
     """
+    Calculates the cophenetic distances between each observation in
+    the hierarchical clustering defined by the linkage ``Z``.
 
+    Suppose :math:`$p$` and :math:`$q$` are original observations in
+    disjoint clusters :math:`$s$` and :math:`$t$`, respectively and
+    :math:`$s$` and :math:`$t$` are joined by a direct parent cluster
+    :math:`$u$`. The cophenetic distance between observations
+    :math:`$i$` and :math:`$j$` is simply the distance between
+    clusters :math:`$s$` and :math:`$t$`.
+
+    :Parameters:
+       - Z : ndarray
+         The encoded linkage matrix on which to perform the calculation.
+
+       - Y : ndarray (optional)
+         Calculates the cophenetic correlation coefficient ``c`` of a
+         hierarchical clustering defined by the linkage matrix ``Z``
+         of a set of :math:`$n$` observations in :math:`$m$`
+         dimensions. ``Y`` is the condensed distance matrix from which
+         ``Z`` was generated. 
+
+    :Returns:
+       - c : ndarray
+         The cophentic correlation distance (if ``y`` is passed).
+ 
+       - d : ndarray
+         The cophenetic distance matrix in condensed form. The
+         :math:`$ij$`th entry is the cophenetic distance between
+         original observations :math:`$i$` and :math:`$j$`.
 
     Calling Conventions
     -------------------
 
       1. ``d = cophenet(Z)``
-
-      Calculates the cophenetic distances between each observation in the
-      hierarchical clustering defined by the linkage ``Z``.
-
-      Suppose :math:`$p$` and :math:`$q$` are original observations in
-      disjoint clusters :math:`$s$` and :math:`$t$`, respectively and
-      :math:`$s$` and :math:`$t$` are joined by a direct parent
-      cluster :math:`$u$`. The cophenetic distance between
-      observations :math:`$i$` and :math:`$j$` is simply the distance
-      between clusters :math:`$s$` and :math:`$t$`.
-
-      ``d`` is cophenetic distance matrix in condensed form. The
-      :math:`$ij$`th entry is the cophenetic distance between original
-      observations :math:`$i$` and :math:`$j$`.
+         Returns just the cophentic distance matrix.
 
       2. ``c = cophenet(Z, Y)``
-
-      Calculates the cophenetic correlation coefficient ``c`` of a
-      hierarchical clustering defined by the linkage matrix ``Z`` of a
-      set of :math:`$n$` observations in :math:`$m$` dimensions. ``Y``
-      is the condensed distance matrix from which ``Z`` was generated.
+         Returns just the cophentic correlation coefficient.
 
       3. ``(c, d) = cophenet(Z, Y, [])``
-
-      Returns a tuple instead, (c, d). The cophenetic distance matrix
-      ``d`` is included in condensed (upper triangular) form.
-
+         Returns a tuple, ``(c, d)`` where ``c`` is the cophenetic
+         correlation coefficient and ``d`` is the condensed cophentic
+         distance matrix (upper triangular form).
     """
-    Z = np.asarray(Z)
-
     nargs = len(args)
 
     if nargs < 1:
         raise ValueError('At least one argument must be passed to cophenet.')
 
     Z = args[0]
+    Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
     Zs = Z.shape
     n = Zs[0] + 1
@@ -922,6 +931,7 @@ def cophenet(*args, **kwargs):
         return zz
 
     Y = args[1]
+    Y = np.asarray(Y, order='c')
     Ys = Y.shape
     distance.is_valid_y(Y, throw=True, name='Y')
 
@@ -943,23 +953,37 @@ def cophenet(*args, **kwargs):
 
 def inconsistent(Z, d=2):
     """
-    R = inconsistent(Z, d=2)
+    Calculates inconsistency statistics on a linkage.
 
-      Calculates statistics on links up to d levels below each
-      non-singleton cluster defined in the (n-1)x4 linkage matrix Z.
+    :Parameters:
+       - d : int
+           The number of links up to ``d`` levels below each
+           non-singleton cluster
 
-      R is a (n-1)x5 matrix where the i'th row contains the link
-      statistics for the non-singleton cluster i. The link statistics
-      are computed over the link heights for links d levels below the
-      cluster i. R[i,0] and R[i,1] are the mean and standard deviation of
-      the link heights, respectively; R[i,2] is the number of links
-      included in the calculation; and R[i,3] is the inconsistency
-      coefficient, (Z[i, 2]-R[i,0])/R[i,2].
+       - Z : ndarray
+           The :math:`$(n-1)$` by 4 matrix encoding the linkage
+           (hierarchical clustering).  See ``linkage`` documentation
+           for more information on its form.
+       
 
-      This function behaves similarly to the MATLAB(TM) inconsistent
-      function.
+    :Returns:
+       - R : ndarray
+           A :math:`$(n-1)$` by 5 matrix where the ``i``'th row
+           contains the link statistics for the non-singleton cluster
+           ``i``. The link statistics are computed over the link
+           heights for links :math:`$d$` levels below the cluster
+           ``i``. ``R[i,0]`` and ``R[i,1]`` are the mean and standard
+           deviation of the link heights, respectively; ``R[i,2]`` is
+           the number of links included in the calculation; and
+           ``R[i,3]`` is the inconsistency coefficient,
+           .. math:
+               \frac{\mathtt{Z[i,2]}-\mathtt{R[i,0]}}
+                    {R[i,2]}.
+
+    This function behaves similarly to the MATLAB(TM) inconsistent
+    function.
     """
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
 
     Zs = Z.shape
     is_valid_linkage(Z, throw=True, name='Z')
@@ -980,19 +1004,31 @@ def inconsistent(Z, d=2):
 
 def from_mlab_linkage(Z):
     """
-    Z2 = from_mlab_linkage(Z)
+    Converts a linkage matrix generated by MATLAB(TM) to a new
+    linkage matrix compatible with this module. The conversion does
+    two things:
 
-    Converts a linkage matrix Z generated by MATLAB(TM) to a new linkage
-    matrix Z2 compatible with this module. The conversion does two
-    things:
+     * the indices are converted from ``1..N`` to ``0..(N-1)`` form,
+       and
 
-     * the indices are converted from 1..N to 0..(N-1) form, and
-
-     * a fourth column Z[:,3] is added where Z[i,3] is equal to
-       the number of original observations (leaves) in the non-singleton
+     * a fourth column Z[:,3] is added where Z[i,3] is represents the
+       number of original observations (leaves) in the non-singleton
        cluster i.
+
+    This function is useful when loading in linkages from legacy data
+    files generated by MATLAB.
+
+    :Arguments:
+
+       - Z : ndarray
+           A linkage matrix generated by MATLAB(TM)
+
+    :Returns:
+
+       - ZS : ndarray
+           A linkage matrix compatible with this library.
     """
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
     Zs = Z.shape
     Zpart = Z[:,0:2]
     Zd = Z[:,2].reshape(Zs[0], 1)
@@ -1007,27 +1043,41 @@ def from_mlab_linkage(Z):
 
 def to_mlab_linkage(Z):
     """
-    Z2 = to_mlab_linkage(Z)
+    Converts a linkage matrix ``Z`` generated by the linkage function
+    of this module to a MATLAB(TM) compatible one. The return linkage
+    matrix has the last column removed and the cluster indices are
+    converted to ``1..N`` indexing.
 
-    Converts a linkage matrix Z generated by the linkage function of this
-    module to one compatible with MATLAB(TM). Z2 is the same as Z with the
-    last column removed and the cluster indices converted to use
-    1..N indexing.
+    :Arguments:
+       - Z : ndarray
+           A linkage matrix generated by this library.
+
+    :Returns:
+       - ZM : ndarray
+           A linkage matrix compatible with MATLAB(TM)'s hierarchical
+           clustering functions.
     """
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
 
     return np.hstack([Z[:,0:2] + 1, Z[:,2]])
 
 def is_monotonic(Z):
     """
-    is_monotonic(Z)
+    Returns ``True`` if the linkage passed is monotonic. The linkage
+    is monotonic if for every cluster :math:`$s$` and :math:`$t$`
+    joined, the distance between them is no less than the distance
+    between any previously joined clusters.
 
-      Returns True if the linkage Z is monotonic. The linkage is monotonic
-      if for every cluster s and t joined, the distance between them is
-      no less than the distance between any previously joined clusters.
+    :Arguments:
+        - Z : ndarray
+          The linkage matrix to check for monotonicity.
+
+    :Returns:
+        - b : bool
+          A boolean indicating whether the linkage is monotonic.
     """
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
 
     # We expect the i'th value to be greater than its successor.
@@ -1035,14 +1085,33 @@ def is_monotonic(Z):
 
 def is_valid_im(R, warning=False, throw=False, name=None):
     """
-    is_valid_im(R)
 
-      Returns True if the inconsistency matrix passed is valid. It must
-      be a n by 4 numpy array of doubles. The standard deviations R[:,1]
-      must be nonnegative. The link counts R[:,2] must be positive and
-      no greater than n-1.
+    Returns True if the inconsistency matrix passed is valid. It must
+    be a :math:`$n$` by 4 numpy array of doubles. The standard
+    deviations ``R[:,1]`` must be nonnegative. The link counts
+    ``R[:,2]`` must be positive and no greater than :math:`$n-1$`.
+
+    :Arguments:
+         - R : ndarray
+           The inconsistency matrix to check for validity.
+
+         - warning : bool
+           When ``True``, issues a Python warning if the linkage
+           matrix passed is invalid.
+
+         - throw : bool
+           When ``True``, throws a Python exception if the linkage
+           matrix passed is invalid.
+
+         - name : string
+           This string refers to the variable name of the invalid
+           linkage matrix.
+
+    :Returns:
+         - b : bool
+           True iff the inconsistency matrix is valid.
     """
-    R = np.asarray(R)
+    R = np.asarray(R, order='c')
     valid = True
     try:
         if type(R) != np.ndarray:
@@ -1080,29 +1149,35 @@ def is_valid_im(R, warning=False, throw=False, name=None):
 
 def is_valid_linkage(Z, warning=False, throw=False, name=None):
     """
-    is_valid_linkage(Z, t)
+    Checks the validity of a linkage matrix. A linkage matrix is valid
+    if it is a two dimensional nd-array (type double) with :math:`$n$`
+    rows and 4 columns.  The first two columns must contain indices
+    between 0 and :math:`$2n-1$`. For a given row ``i``,
+    :math:`$0 \leq \mathtt{Z[i,0]} \leq i+n-1$` and
+    :math:`$0 \leq Z[i,1] \leq i+n-1$` (i.e.  a cluster
+    cannot join another cluster unless the cluster being joined has
+    been generated.)
 
-      Returns True if Z is a valid linkage matrix. The variable must
-      be a 2-dimensional double numpy array with n rows and 4 columns.
-      The first two columns must contain indices between 0 and 2n-1. For a
-      given row i, 0 <= Z[i,0] <= i+n-1 and 0 <= Z[i,1] <= i+n-1 (i.e.
-      a cluster cannot join another cluster unless the cluster being joined
-      has been generated.)
+    :Arguments:
 
-    is_valid_linkage(..., warning=True, name='V')
+         - warning : bool
+           When ``True``, issues a Python warning if the linkage
+           matrix passed is invalid.
 
-      Invokes a warning if the variable passed is not a valid linkage. The message
-      explains why the distance matrix is not valid. 'name' is used when referencing
-      the offending variable.
+         - throw : bool
+           When ``True``, throws a Python exception if the linkage
+           matrix passed is invalid.
 
-    is_valid_linkage(..., throw=True, name='V')
+         - name : string
+           This string refers to the variable name of the invalid
+           linkage matrix.
 
-      Throws an exception if the variable passed is not a valid linkage. The message
-      explains why variable is not valid. 'name' is used when referencing the offending
-      variable.
+    :Returns:
+         - b : bool
+            True iff the inconsistency matrix is valid.
 
     """
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
     valid = True
     try:
         if type(Z) != np.ndarray:
@@ -1143,25 +1218,47 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
 
 def numobs_linkage(Z):
     """
-    Returns the number of original observations that correspond to a
-    linkage matrix Z.
+    Returns the number of original observations of the linkage matrix
+    passed.
+
+    :Arguments:
+        - Z : ndarray
+            The linkage matrix on which to perform the operation.
+
+    :Returns:
+        - n : int
+            The number of original observations in the linkage.
     """
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
     return (Z.shape[0] + 1)
 
 def Z_y_correspond(Z, Y):
     """
-    yesno = Z_y_correspond(Z, Y)
+    Checks if a linkage matrix Z and condensed distance matrix
+    Y could possibly correspond to one another.
 
-      Returns True if a linkage matrix Z and condensed distance matrix
-      Y could possibly correspond to one another. They must have the same
-      number of original observations. This function is useful as a sanity
-      check in algorithms that make extensive use of linkage and distance
-      matrices that must correspond to the same set of original observations.
+    They must have the same number of original observations for
+    the check to succeed.
+
+    This function is useful as a sanity check in algorithms that make
+    extensive use of linkage and distance matrices that must
+    correspond to the same set of original observations.
+
+    :Arguments:
+        - Z : ndarray
+            The linkage matrix to check for correspondance.
+
+        - Y : ndarray
+            The condensed distance matrix to check for correspondance.
+
+    :Returns:
+        - b : bool
+            A boolean indicating whether the linkage matrix and distance
+            matrix could possibly correspond to one another.
     """
-    Z = np.asarray(Z)
-    Y = np.asarray(Y)
+    Z = np.asarray(Z, order='c')
+    Y = np.asarray(Y, order='c')
     return numobs_y(Y) == numobs_linkage(Z)
 
 def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
@@ -1221,7 +1318,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
           cluster(Z, t=3, criterion='maxclust_monocrit', monocrit=MI)
 
     """
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
@@ -1235,7 +1332,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
         if R is None:
             R = inconsistent(Z, depth)
         else:
-            R = np.asarray(R)
+            R = np.asarray(R, order='c')
             is_valid_im(R, throw=True, name='R')
             # Since the C code does not support striding using strides.
             # The dimensions are used instead.
@@ -1305,7 +1402,7 @@ def fclusterdata(X, t, criterion='inconsistent', \
 
     This function is similar to MATLAB(TM) clusterdata function.
     """
-    X = np.asarray(X)
+    X = np.asarray(X, order='c')
 
     if type(X) != np.ndarray or len(X.shape) != 2:
         raise TypeError('The observation matrix X must be an n by m numpy array.')
@@ -1315,7 +1412,7 @@ def fclusterdata(X, t, criterion='inconsistent', \
     if R is None:
         R = inconsistent(Z, d=depth)
     else:
-        R = np.asarray(R)
+        R = np.asarray(R, order='c')
     T = fcluster(Z, criterion=criterion, depth=depth, R=R, t=t)
     return T
 
@@ -1326,7 +1423,7 @@ def lvlist(Z):
       Returns a list of leaf node ids as they appear in the tree from
       left to right. Z is a linkage matrix.
     """
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
     n = Z.shape[0] + 1
     ML = np.zeros((n,), dtype=np.int)
@@ -1765,7 +1862,7 @@ def dendrogram(Z, p=30, truncate_mode=None, colorthreshold=None,
     #         or results in a crossing, an exception will be thrown. Passing
     #         None orders leaf nodes based on the order they appear in the
     #         pre-order traversal.
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
 
     is_valid_linkage(Z, throw=True, name='Z')
     Zs = Z.shape
@@ -2129,8 +2226,8 @@ def is_isomorphic(T1, T2):
       Returns True iff two different cluster assignments T1 and T2 are
       equivalent. T1 and T2 must be arrays of the same size.
     """
-    T1 = np.asarray(T1)
-    T2 = np.asarray(T2)
+    T1 = np.asarray(T1, order='c')
+    T2 = np.asarray(T2, order='c')
 
     if type(T1) != np.ndarray:
         raise TypeError('T1 must be a numpy array.')
@@ -2169,7 +2266,7 @@ def maxdists(Z):
       Note that when Z[:,2] is monotonic, Z[:,2] and MD should not differ.
       See linkage for more information on this issue.
     """
-    Z = np.asarray(Z)
+    Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
@@ -2187,8 +2284,8 @@ def maxinconsts(Z, R):
       inconsistency matrix. MI is a monotonic (n-1)-sized numpy array of
       doubles.
     """
-    Z = np.asarray(Z)
-    R = np.asarray(R)
+    Z = np.asarray(Z, order='c')
+    R = np.asarray(R, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
     is_valid_im(R, throw=True, name='R')
 
@@ -2207,8 +2304,8 @@ def maxRstat(Z, R, i):
     is the maximum over R[Q(j)-n, i] where Q(j) the set of all node ids
     corresponding to nodes below and including j.
     """
-    Z = np.asarray(Z)
-    R = np.asarray(R)
+    Z = np.asarray(Z, order='c')
+    R = np.asarray(R, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
     is_valid_im(R, throw=True, name='R')
     if type(i) is not types.IntType:
@@ -2244,8 +2341,8 @@ def leaders(Z, T):
     i < n, i corresponds to an original observation, otherwise it
     corresponds to a non-singleton cluster.
     """
-    Z = np.asarray(Z)
-    T = np.asarray(T)
+    Z = np.asarray(Z, order='c')
+    T = np.asarray(T, order='c')
     if type(T) != np.ndarray or T.dtype != np.int:
         raise TypeError('T must be a one-dimensional numpy array of integers.')
     is_valid_linkage(Z, throw=True, name='Z')

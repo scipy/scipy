@@ -3,10 +3,7 @@
 """
 import sys
 
-import numpy
 from numpy import linalg
-from scipy.linalg import eigvals
-
 from numpy.testing import *
 
 def random(size):

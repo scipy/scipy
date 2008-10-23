@@ -3,7 +3,6 @@
 # Created by: Pearu Peterson, October 2003
 #
 
-import sys
 from numpy.testing import *
 
 import scipy.linalg.atlas_version

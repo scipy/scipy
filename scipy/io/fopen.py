@@ -2,7 +2,8 @@
 
 # Author: Travis Oliphant
 
-import struct, os, sys
+import struct
+import sys
 import types
 
 from numpy import *

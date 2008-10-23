@@ -7,9 +7,8 @@ To run tests locally:
 
 from numpy.testing import *
 
-from numpy import array,real,imag,finfo,concatenate,\
-    column_stack,argsort,dot,round,conj,sort,random
-from scipy.sparse.linalg.eigen.arpack import eigen_symmetric,eigen
+from numpy import array, finfo, argsort, dot, round, conj, random
+from scipy.sparse.linalg.eigen.arpack import eigen_symmetric, eigen
 
 
 def assert_almost_equal_cc(actual,desired,decimal=7,err_msg='',verbose=True):

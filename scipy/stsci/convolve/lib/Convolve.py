@@ -1,4 +1,4 @@
-import numpy as num
+import numpy as np
 import _correlate
 import numpy.fft as dft
 import iraf_frame
@@ -16,12 +16,12 @@ convolution_modes = {
     }
 
 def _condition_inputs(data, kernel):
-    data, kernel = num.asarray(data), num.asarray(kernel)
-    if num.rank(data) == 0:
+    data, kernel = np.asarray(data), np.asarray(kernel)
+    if np.rank(data) == 0:
         data.shape = (1,)
-    if num.rank(kernel) == 0:
+    if np.rank(kernel) == 0:
         kernel.shape = (1,)
-    if num.rank(data) > 1 or num.rank(kernel) > 1:
+    if np.rank(data) > 1 or np.rank(kernel) > 1:
         raise ValueError("arrays must be 1D")
     if len(data) < len(kernel):
         data, kernel = kernel, data
@@ -30,25 +30,25 @@ def _condition_inputs(data, kernel):
 def correlate(data, kernel, mode=FULL):
     """correlate(data, kernel, mode=FULL)
 
-    >>> correlate(num.arange(8), [1, 2], mode=VALID)
+    >>> correlate(np.arange(8), [1, 2], mode=VALID)
     array([ 2,  5,  8, 11, 14, 17, 20])
-    >>> correlate(num.arange(8), [1, 2], mode=SAME)
+    >>> correlate(np.arange(8), [1, 2], mode=SAME)
     array([ 0,  2,  5,  8, 11, 14, 17, 20])
-    >>> correlate(num.arange(8), [1, 2], mode=FULL)
+    >>> correlate(np.arange(8), [1, 2], mode=FULL)
     array([ 0,  2,  5,  8, 11, 14, 17, 20,  7])
-    >>> correlate(num.arange(8), [1, 2, 3], mode=VALID)
+    >>> correlate(np.arange(8), [1, 2, 3], mode=VALID)
     array([ 8, 14, 20, 26, 32, 38])
-    >>> correlate(num.arange(8), [1, 2, 3], mode=SAME)
+    >>> correlate(np.arange(8), [1, 2, 3], mode=SAME)
     array([ 3,  8, 14, 20, 26, 32, 38, 20])
-    >>> correlate(num.arange(8), [1, 2, 3], mode=FULL)
+    >>> correlate(np.arange(8), [1, 2, 3], mode=FULL)
     array([ 0,  3,  8, 14, 20, 26, 32, 38, 20,  7])
-    >>> correlate(num.arange(8), [1, 2, 3, 4, 5, 6], mode=VALID)
+    >>> correlate(np.arange(8), [1, 2, 3, 4, 5, 6], mode=VALID)
     array([ 70,  91, 112])
-    >>> correlate(num.arange(8), [1, 2, 3, 4, 5, 6], mode=SAME)
+    >>> correlate(np.arange(8), [1, 2, 3, 4, 5, 6], mode=SAME)
     array([ 17,  32,  50,  70,  91, 112,  85,  60])
-    >>> correlate(num.arange(8), [1, 2, 3, 4, 5, 6], mode=FULL)
+    >>> correlate(np.arange(8), [1, 2, 3, 4, 5, 6], mode=FULL)
     array([  0,   6,  17,  32,  50,  70,  91, 112,  85,  60,  38,  20,   7])
-    >>> correlate(num.arange(8), 1+1j)
+    >>> correlate(np.arange(8), 1+1j)
     Traceback (most recent call last):
     ...
     TypeError: array cannot be safely cast to required type
@@ -66,17 +66,17 @@ def correlate(data, kernel, mode=FULL):
     result_type = max(kernel.dtype.name, data.dtype.name)
 
     if mode == VALID:
-        wdata = num.concatenate((kdata, data, kdata))
+        wdata = np.concatenate((kdata, data, kdata))
         result = wdata.astype(result_type)
         _correlate.Correlate1d(kernel, wdata, result)
         return result[lenk+halfk:-lenk-halfk+even]
     elif mode == SAME:
-        wdata = num.concatenate((kdata, data, kdata))
+        wdata = np.concatenate((kdata, data, kdata))
         result = wdata.astype(result_type)
         _correlate.Correlate1d(kernel, wdata, result)
         return result[lenk:-lenk]
     elif mode == FULL:
-        wdata = num.concatenate((kdata, data, kdata))
+        wdata = np.concatenate((kdata, data, kdata))
         result = wdata.astype(result_type)
         _correlate.Correlate1d(kernel, wdata, result)
         return result[halfk+1:-halfk-1+even]
@@ -102,25 +102,25 @@ def convolve(data, kernel, mode=FULL):
     sequences a and v; mode can be 0 (VALID), 1 (SAME), or 2 (FULL)
     to specify size of the resulting sequence.
 
-    >>> convolve(num.arange(8), [1, 2], mode=VALID)
+    >>> convolve(np.arange(8), [1, 2], mode=VALID)
     array([ 1,  4,  7, 10, 13, 16, 19])
-    >>> convolve(num.arange(8), [1, 2], mode=SAME)
+    >>> convolve(np.arange(8), [1, 2], mode=SAME)
     array([ 0,  1,  4,  7, 10, 13, 16, 19])
-    >>> convolve(num.arange(8), [1, 2], mode=FULL)
+    >>> convolve(np.arange(8), [1, 2], mode=FULL)
     array([ 0,  1,  4,  7, 10, 13, 16, 19, 14])
-    >>> convolve(num.arange(8), [1, 2, 3], mode=VALID)
+    >>> convolve(np.arange(8), [1, 2, 3], mode=VALID)
     array([ 4, 10, 16, 22, 28, 34])
-    >>> convolve(num.arange(8), [1, 2, 3], mode=SAME)
+    >>> convolve(np.arange(8), [1, 2, 3], mode=SAME)
     array([ 1,  4, 10, 16, 22, 28, 34, 32])
-    >>> convolve(num.arange(8), [1, 2, 3], mode=FULL)
+    >>> convolve(np.arange(8), [1, 2, 3], mode=FULL)
     array([ 0,  1,  4, 10, 16, 22, 28, 34, 32, 21])
-    >>> convolve(num.arange(8), [1, 2, 3, 4, 5, 6], mode=VALID)
+    >>> convolve(np.arange(8), [1, 2, 3, 4, 5, 6], mode=VALID)
     array([35, 56, 77])
-    >>> convolve(num.arange(8), [1, 2, 3, 4, 5, 6], mode=SAME)
+    >>> convolve(np.arange(8), [1, 2, 3, 4, 5, 6], mode=SAME)
     array([ 4, 10, 20, 35, 56, 77, 90, 94])
-    >>> convolve(num.arange(8), [1, 2, 3, 4, 5, 6], mode=FULL)
+    >>> convolve(np.arange(8), [1, 2, 3, 4, 5, 6], mode=FULL)
     array([ 0,  1,  4, 10, 20, 35, 56, 77, 90, 94, 88, 71, 42])
-    >>> convolve([1.,2.], num.arange(10.))
+    >>> convolve([1.,2.], np.arange(10.))
     array([  0.,   1.,   4.,   7.,  10.,  13.,  16.,  19.,  22.,  25.,  18.])
     """
     data, kernel = _condition_inputs(data, kernel)
@@ -131,15 +131,15 @@ def convolve(data, kernel, mode=FULL):
 
 
 def _gaussian(sigma, mew, npoints, sigmas):
-    ox = num.arange(mew-sigmas*sigma,
-                         mew+sigmas*sigma,
-                         2*sigmas*sigma/npoints, type=num.float64)
+    ox = np.arange(mew-sigmas*sigma,
+                   mew+sigmas*sigma,
+                   2*sigmas*sigma/npoints, type=np.float64)
     x = ox-mew
     x /= sigma
     x = x * x
     x *= -1/2
-    x = num.exp(x)
-    return ox, 1/(sigma * num.sqrt(2*num.pi)) * x
+    x = np.exp(x)
+    return ox, 1/(sigma * np.sqrt(2*np.pi)) * x
 
 def _correlate2d_fft(data0, kernel0, output=None, mode="nearest", cval=0.0):
     """_correlate2d_fft does 2d correlation of 'data' with 'kernel', storing
@@ -153,17 +153,17 @@ def _correlate2d_fft(data0, kernel0, output=None, mode="nearest", cval=0.0):
     """
     shape = data0.shape
     kshape = kernel0.shape
-    oversized = (num.array(shape) + num.array(kshape))
+    oversized = (np.array(shape) + np.array(kshape))
 
     dy = kshape[0] // 2
     dx = kshape[1] // 2
 
-    kernel = num.zeros(oversized, dtype=num.float64)
+    kernel = np.zeros(oversized, dtype=np.float64)
     kernel[:kshape[0], :kshape[1]] = kernel0[::-1,::-1]   # convolution <-> correlation
     data = iraf_frame.frame(data0, oversized, mode=mode, cval=cval)
 
-    complex_result = (isinstance(data, num.complexfloating) or
-                      isinstance(kernel, num.complexfloating))
+    complex_result = (isinstance(data, np.complexfloating) or
+                      isinstance(kernel, np.complexfloating))
 
     Fdata = dft.fft2(data)
     del data
@@ -171,7 +171,7 @@ def _correlate2d_fft(data0, kernel0, output=None, mode="nearest", cval=0.0):
     Fkernel = dft.fft2(kernel)
     del kernel
 
-    num.multiply(Fdata, Fkernel, Fdata)
+    np.multiply(Fdata, Fkernel, Fdata)
     del Fkernel
 
     if complex_result:
@@ -196,14 +196,14 @@ def _fix_data_kernel(data, kernel):
     commutative, _fix_data_kernel reverses kernel and data if necessary
     and panics if there's no good order.
     """
-    data, kernel = map(num.asarray, [data, kernel])
-    if num.rank(data) == 0:
+    data, kernel = map(np.asarray, [data, kernel])
+    if np.rank(data) == 0:
         data.shape = (1,1)
-    elif num.rank(data) == 1:
+    elif np.rank(data) == 1:
         data.shape = (1,) + data.shape
-    if num.rank(kernel) == 0:
+    if np.rank(kernel) == 0:
         kernel.shape = (1,1)
-    elif num.rank(kernel) == 1:
+    elif np.rank(kernel) == 1:
         kernel.shape = (1,) + kernel.shape
     if (kernel.shape[0] > data.shape[0] and
         kernel.shape[1] > data.shape[1]):
@@ -226,12 +226,12 @@ def correlate2d(data, kernel, output=None, mode="nearest", cval=0.0, fft=0):
     If fft is True,  the correlation is performed using the FFT, else the
     correlation is performed using the naive approach.
 
-    >>> a = num.arange(20*20)
+    >>> a = np.arange(20*20)
     >>> a = a.reshape((20,20))
-    >>> b = num.ones((5,5), dtype=num.float64)
+    >>> b = np.ones((5,5), dtype=np.float64)
     >>> rn = correlate2d(a, b, fft=0)
     >>> rf = correlate2d(a, b, fft=1)
-    >>> num.alltrue(num.ravel(rn-rf<1e-10))
+    >>> np.alltrue(np.ravel(rn-rf<1e-10))
     True
     """
     data, kernel = _fix_data_kernel(data, kernel)
@@ -252,12 +252,12 @@ def convolve2d(data, kernel, output=None, mode="nearest", cval=0.0, fft=0):
         'reflect'   elements beyond boundary come from reflection on same array edge.
         'constant'  elements beyond boundary are set to 'cval'
 
-    >>> a = num.arange(20*20)
+    >>> a = np.arange(20*20)
     >>> a = a.reshape((20,20))
-    >>> b = num.ones((5,5), dtype=num.float64)
+    >>> b = np.ones((5,5), dtype=np.float64)
     >>> rn = convolve2d(a, b, fft=0)
     >>> rf = convolve2d(a, b, fft=1)
-    >>> num.alltrue(num.ravel(rn-rf<1e-10))
+    >>> np.alltrue(np.ravel(rn-rf<1e-10))
     True
     """
     data, kernel = _fix_data_kernel(data, kernel)
@@ -269,8 +269,8 @@ def convolve2d(data, kernel, output=None, mode="nearest", cval=0.0, fft=0):
 
 def _boxcar(data, output, boxshape, mode, cval):
     if len(boxshape) == 1:
-        _correlate.Boxcar2d(data[num.newaxis,...], 1, boxshape[0],
-                            output[num.newaxis,...], mode, cval)
+        _correlate.Boxcar2d(data[np.newaxis,...], 1, boxshape[0],
+                            output[np.newaxis,...], mode, cval)
     elif len(boxshape) == 2:
         _correlate.Boxcar2d(data, boxshape[0], boxshape[1], output, mode, cval)
     else:
@@ -290,19 +290,19 @@ def boxcar(data, boxshape, output=None, mode="nearest", cval=0.0):
         'reflect'   elements beyond boundary come from reflection on same array edge.
         'constant'  elements beyond boundary are set to 'cval'
 
-    >>> boxcar(num.array([10, 0, 0, 0, 0, 0, 1000]), (3,), mode="nearest").astype(num.longlong)
+    >>> boxcar(np.array([10, 0, 0, 0, 0, 0, 1000]), (3,), mode="nearest").astype(np.longlong)
     array([  6,   3,   0,   0,   0, 333, 666], dtype=int64)
-    >>> boxcar(num.array([10, 0, 0, 0, 0, 0, 1000]), (3,), mode="wrap").astype(num.longlong)
+    >>> boxcar(np.array([10, 0, 0, 0, 0, 0, 1000]), (3,), mode="wrap").astype(np.longlong)
     array([336,   3,   0,   0,   0, 333, 336], dtype=int64)
-    >>> boxcar(num.array([10, 0, 0, 0, 0, 0, 1000]), (3,), mode="reflect").astype(num.longlong)
+    >>> boxcar(np.array([10, 0, 0, 0, 0, 0, 1000]), (3,), mode="reflect").astype(np.longlong)
     array([  6,   3,   0,   0,   0, 333, 666], dtype=int64)
-    >>> boxcar(num.array([10, 0, 0, 0, 0, 0, 1000]), (3,), mode="constant").astype(num.longlong)
+    >>> boxcar(np.array([10, 0, 0, 0, 0, 0, 1000]), (3,), mode="constant").astype(np.longlong)
     array([  3,   3,   0,   0,   0, 333, 333], dtype=int64)
-    >>> a = num.zeros((10,10))
+    >>> a = np.zeros((10,10))
     >>> a[0,0] = 100
     >>> a[5,5] = 1000
     >>> a[9,9] = 10000
-    >>> boxcar(a, (3,3)).astype(num.longlong)
+    >>> boxcar(a, (3,3)).astype(np.longlong)
     array([[  44,   22,    0,    0,    0,    0,    0,    0,    0,    0],
            [  22,   11,    0,    0,    0,    0,    0,    0,    0,    0],
            [   0,    0,    0,    0,    0,    0,    0,    0,    0,    0],
@@ -313,7 +313,7 @@ def boxcar(data, boxshape, output=None, mode="nearest", cval=0.0):
            [   0,    0,    0,    0,    0,    0,    0,    0,    0,    0],
            [   0,    0,    0,    0,    0,    0,    0,    0, 1111, 2222],
            [   0,    0,    0,    0,    0,    0,    0,    0, 2222, 4444]], dtype=int64)
-    >>> boxcar(a, (3,3), mode="wrap").astype(num.longlong)
+    >>> boxcar(a, (3,3), mode="wrap").astype(np.longlong)
     array([[1122,   11,    0,    0,    0,    0,    0,    0, 1111, 1122],
            [  11,   11,    0,    0,    0,    0,    0,    0,    0,   11],
            [   0,    0,    0,    0,    0,    0,    0,    0,    0,    0],
@@ -324,7 +324,7 @@ def boxcar(data, boxshape, output=None, mode="nearest", cval=0.0):
            [   0,    0,    0,    0,    0,    0,    0,    0,    0,    0],
            [1111,    0,    0,    0,    0,    0,    0,    0, 1111, 1111],
            [1122,   11,    0,    0,    0,    0,    0,    0, 1111, 1122]], dtype=int64)
-    >>> boxcar(a, (3,3), mode="reflect").astype(num.longlong)
+    >>> boxcar(a, (3,3), mode="reflect").astype(np.longlong)
     array([[  44,   22,    0,    0,    0,    0,    0,    0,    0,    0],
            [  22,   11,    0,    0,    0,    0,    0,    0,    0,    0],
            [   0,    0,    0,    0,    0,    0,    0,    0,    0,    0],
@@ -335,7 +335,7 @@ def boxcar(data, boxshape, output=None, mode="nearest", cval=0.0):
            [   0,    0,    0,    0,    0,    0,    0,    0,    0,    0],
            [   0,    0,    0,    0,    0,    0,    0,    0, 1111, 2222],
            [   0,    0,    0,    0,    0,    0,    0,    0, 2222, 4444]], dtype=int64)
-   >>> boxcar(a, (3,3), mode="constant").astype(num.longlong)
+   >>> boxcar(a, (3,3), mode="constant").astype(np.longlong)
    array([[  11,   11,    0,    0,    0,    0,    0,    0,    0,    0],
           [  11,   11,    0,    0,    0,    0,    0,    0,    0,    0],
           [   0,    0,    0,    0,    0,    0,    0,    0,    0,    0],
@@ -347,9 +347,9 @@ def boxcar(data, boxshape, output=None, mode="nearest", cval=0.0):
           [   0,    0,    0,    0,    0,    0,    0,    0, 1111, 1111],
           [   0,    0,    0,    0,    0,    0,    0,    0, 1111, 1111]], dtype=int64)
 
-    >>> a = num.zeros((10,10))
+    >>> a = np.zeros((10,10))
     >>> a[3:6,3:6] = 111
-    >>> boxcar(a, (3,3)).astype(num.longlong)
+    >>> boxcar(a, (3,3)).astype(np.longlong)
     array([[  0,   0,   0,   0,   0,   0,   0,   0,   0,   0],
            [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0],
            [  0,   0,  12,  24,  37,  24,  12,   0,   0,   0],
@@ -363,11 +363,11 @@ def boxcar(data, boxshape, output=None, mode="nearest", cval=0.0):
     """
     mode = pix_modes[ mode ]
     if output is None:
-        woutput = data.astype(num.float64)
+        woutput = data.astype(np.float64)
     else:
         woutput = output
     _fbroadcast(_boxcar, len(boxshape), data.shape,
-                      (data, woutput), (boxshape, mode, cval))
+                (data, woutput), (boxshape, mode, cval))
     if output is None:
         return woutput
 

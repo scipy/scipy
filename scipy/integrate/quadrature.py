@@ -6,7 +6,6 @@ from scipy.special.orthogonal import p_roots
 from scipy.special import gammaln
 from numpy import sum, ones, add, diff, isinf, isscalar, \
      asarray, real, trapz, arange, empty
-import scipy as sp
 import numpy as np
 
 def fixed_quad(func,a,b,args=(),n=5):

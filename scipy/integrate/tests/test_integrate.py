@@ -4,9 +4,8 @@ Tests for numerical integration.
 """
 
 import numpy
-from numpy import (arange, zeros, array, dot, sqrt, cos, sin, absolute,
-                   eye, pi, exp, allclose)
-from scipy.linalg import norm
+from numpy import arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp, \
+                  allclose
 
 from numpy.testing import *
 from scipy.integrate import odeint, ode

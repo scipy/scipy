@@ -3,4 +3,4 @@ function save_test(test_name, v)
   
 global FILEPREFIX FILESUFFIX
 eval([test_name ' = v;']);
-save([FILEPREFIX test_name FILESUFFIX], test_name)
+save([FILEPREFIX test_name FILESUFFIX], test_name, '-V7.3')

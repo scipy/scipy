@@ -1,7 +1,4 @@
 import os
-import sys
-import string
-import pprint
 
 def remove_whitespace(in_str):
     out = in_str.replace(" ","")

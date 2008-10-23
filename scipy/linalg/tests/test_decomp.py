@@ -14,7 +14,6 @@ Run tests if linalg is not installed:
   python tests/test_decomp.py
 """
 
-import sys
 from numpy.testing import *
 
 from scipy.linalg import eig,eigvals,lu,svd,svdvals,cholesky,qr, \
@@ -25,9 +24,8 @@ from scipy.linalg.flapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
 
 from numpy import array, transpose, sometrue, diag, ones, linalg, \
      argsort, zeros, arange, float32, complex64, dot, conj, identity, \
-     ravel, sqrt, iscomplex, shape, sort, sign, conjugate, sign, bmat, \
+     ravel, sqrt, iscomplex, shape, sort, conjugate, bmat, sign, \
      asarray, matrix, isfinite, all
-
 
 from numpy.random import rand
 

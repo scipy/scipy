@@ -18,18 +18,14 @@ __all__ = ['compare_median_ms',
            'trimmed_mean_ci',]
 
 import numpy as np
-from numpy import bool_, float_, int_, ndarray, array as narray
+from numpy import float_, int_, ndarray
 
 import numpy.ma as ma
-from numpy.ma import masked, nomask, MaskedArray
-#from numpy.ma.extras import apply_along_axis, dot, median
+from numpy.ma import MaskedArray
 
 import scipy.stats.mstats as mstats
-#from numpy.ma.mstats import trim_both, trimmed_stde, mquantiles, stde_median
 
 from scipy.stats.distributions import norm, beta, t, binom
-from scipy.stats.morestats import find_repeats
-
 
 
 #####--------------------------------------------------------------------------

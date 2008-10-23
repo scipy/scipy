@@ -48,7 +48,7 @@ def unique(inarray):
                 except TypeError:
                     uniques = np.concatenate([uniques,np.array([item])])
     else:                                  # IT MUST BE A 2+D ARRAY
-        if inarray.typecode() != 'O':  # not an Object array
+        if inarray.dtype.char != 'O':  # not an Object array
             for item in inarray[1:]:
                 if not np.sum(np.alltrue(np.equal(uniques,item),1),axis=0):
                     try:

@@ -2,7 +2,8 @@
 """Tests for parsing full arff files."""
 import os
 
-import numpy as N
+import numpy as np
+
 from numpy.testing import *
 
 from scipy.io.arff.arffread import loadarff

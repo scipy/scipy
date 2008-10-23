@@ -24,7 +24,7 @@ __docformat__ = "restructuredtext en"
 
 import numpy
 from numpy import atleast_1d, eye, mgrid, argmin, zeros, shape, empty, \
-     squeeze, isscalar, vectorize, asarray, absolute, sqrt, Inf, asfarray, isinf
+     squeeze, vectorize, asarray, absolute, sqrt, Inf, asfarray, isinf
 import linesearch
 
 # These have been copied from Numeric's MLab.py

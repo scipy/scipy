@@ -1,7 +1,6 @@
-import numpy as num
+import numpy as np
 import scipy.stsci.convolve
 import scipy.stsci.convolve._correlate as _correlate
-MLab=num
 
 def _translate(a, dx, dy, output=None, mode="nearest", cval=0.0):
     """_translate does positive sub-pixel shifts using bilinear interpolation."""
@@ -14,10 +13,8 @@ def _translate(a, dx, dy, output=None, mode="nearest", cval=0.0):
     y = (1-dx) * dy
     z = dx * dy
 
-    kernel = num.array([
-        [ z, y ],
-        [ x, w ],
-        ])
+    kernel = np.array([[ z, y ],
+                       [ x, w ]])
 
     return convolve.correlate2d(a, kernel, output, mode, cval)
 
@@ -33,7 +30,7 @@ def translate(a, sdx, sdy, output=None, mode="nearest", cval=0.0):
         'reflect'   elements beyond boundary come from reflection on same array edge.
         'constant'  elements beyond boundary are set to 'cval'
     """
-    a = num.asarray(a)
+    a = np.asarray(a)
 
     sdx, sdy = -sdx, -sdy     # Flip sign to match IRAF sign convention
 
@@ -51,11 +48,11 @@ def translate(a, sdx, sdy, output=None, mode="nearest", cval=0.0):
         rotation = 0
         dx, dy = abs(sdx), abs(sdy)
 
-    b = MLab.rot90(a, rotation)
+    b = np.rot90(a, rotation)
     c = _correlate.Shift2d(b, int(dx), int(dy),
                            mode=convolve.pix_modes[mode])
     d = _translate(c, dx % 1, dy % 1, output, mode, cval)
     if output is not None:
-        output._copyFrom(MLab.rot90(output, -rotation%4))
+        output._copyFrom(np.rot90(output, -rotation%4))
     else:
-        return MLab.rot90(d, -rotation % 4).astype(a.type())
+        return np.rot90(d, -rotation % 4).astype(a.type())

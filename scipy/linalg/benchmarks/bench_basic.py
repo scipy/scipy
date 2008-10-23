@@ -1,11 +1,6 @@
 import sys
-import numpy
-from numpy import arange, add, array, dot, zeros, identity, conjugate, transpose
-
 from numpy.testing import *
-
-from scipy.linalg import solve,inv,det,lstsq, toeplitz, hankel, tri, triu, \
-     tril, pinv, pinv2, solve_banded
+import numpy.linalg as linalg
 
 def random(size):
     return rand(*size)
@@ -13,7 +8,6 @@ def random(size):
 class TestSolve(TestCase):
 
     def bench_random(self):
-        import numpy.linalg as linalg
         basic_solve = linalg.solve
         print
         print '      Solving system of linear equations'
@@ -53,7 +47,6 @@ class TestSolve(TestCase):
 class TestInv(TestCase):
 
     def bench_random(self):
-        import numpy.linalg as linalg
         basic_inv = linalg.inv
         print
         print '           Finding matrix inverse'
@@ -92,7 +85,6 @@ class TestInv(TestCase):
 class TestDet(TestCase):
 
     def bench_random(self):
-        import numpy.linalg as linalg
         basic_det = linalg.det
         print
         print '           Finding matrix determinant'

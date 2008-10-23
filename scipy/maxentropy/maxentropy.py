@@ -70,8 +70,8 @@ variances.
 
 
 import math, types, cPickle
-import numpy
-from scipy import optimize, sparse
+import numpy as np
+from scipy import optimize
 from scipy.linalg import norm
 from scipy.maxentropy.maxentutils import *
 
@@ -194,7 +194,7 @@ class basemodel(object):
                                       " using setfeaturesandsamplespace()"
 
         # First convert K to a numpy array if necessary
-        K = numpy.asarray(K, float)
+        K = np.asarray(K, float)
 
         # Store the desired feature expectations as a member variable
         self.K = K
@@ -212,7 +212,7 @@ class basemodel(object):
         # self.gradevals = 0
 
         # Make a copy of the parameters
-        oldparams = numpy.array(self.params)
+        oldparams = np.array(self.params)
 
         callback = self.log
 
@@ -272,7 +272,7 @@ class basemodel(object):
                     + "' is unsupported.  Options are 'CG', 'LBFGSB', " \
                     "'Nelder-Mead', 'Powell', and 'BFGS'"
 
-        if numpy.any(self.params != newparams):
+        if np.any(self.params != newparams):
             self.setparams(newparams)
         self.func_calls = func_calls
 
@@ -322,7 +322,7 @@ class basemodel(object):
             self.setparams(params)
 
         # Subsumes both small and large cases:
-        L = self.lognormconst() - numpy.dot(self.params, self.K)
+        L = self.lognormconst() - np.dot(self.params, self.K)
 
         if self.verbose and self.external is None:
             print "  dual is ", L
@@ -332,7 +332,7 @@ class basemodel(object):
         # Define 0 / 0 = 0 here; this allows a variance term of
         # sigma_i^2==0 to indicate that feature i should be ignored.
         if self.sigma2 is not None and ignorepenalty==False:
-            ratios = numpy.nan_to_num(self.params**2 / self.sigma2)
+            ratios = np.nan_to_num(self.params**2 / self.sigma2)
             # Why does the above convert inf to 1.79769e+308?
 
             L += 0.5 * ratios.sum()
@@ -396,7 +396,7 @@ class basemodel(object):
                 self.test()
 
         if not self.callingback and self.external is None:
-            if self.mindual > -numpy.inf and self.dual() < self.mindual:
+            if self.mindual > -np.inf and self.dual() < self.mindual:
                 raise DivergenceError, "dual is below the threshold 'mindual'" \
                         " and may be diverging to -inf.  Fix the constraints" \
                         " or lower the threshold!"
@@ -428,7 +428,7 @@ class basemodel(object):
         if self.sigma2 is not None and ignorepenalty==False:
             penalty = self.params / self.sigma2
             G += penalty
-            features_to_kill = numpy.where(numpy.isnan(penalty))[0]
+            features_to_kill = np.where(np.isnan(penalty))[0]
             G[features_to_kill] = 0.0
             if self.verbose and self.external is None:
                 normG = norm(G)
@@ -449,7 +449,7 @@ class basemodel(object):
         return G
 
 
-    def crossentropy(self, fx, log_prior_x=None, base=numpy.e):
+    def crossentropy(self, fx, log_prior_x=None, base=np.e):
         """Returns the cross entropy H(q, p) of the empirical
         distribution q of the data (with the given feature matrix fx)
         with respect to the model p.  For discrete distributions this is
@@ -466,9 +466,9 @@ class basemodel(object):
         For continuous distributions this makes no sense!
         """
         H = -self.logpdf(fx, log_prior_x).mean()
-        if base != numpy.e:
+        if base != np.e:
             # H' = H * log_{base} (e)
-            return H / numpy.log(base)
+            return H / np.log(base)
         else:
             return H
 
@@ -483,7 +483,7 @@ class basemodel(object):
         Z = E_aux_dist [{exp (params.f(X))} / aux_dist(X)] using a sample
         from aux_dist.
         """
-        return numpy.exp(self.lognormconst())
+        return np.exp(self.lognormconst())
 
 
     def setsmooth(sigma):
@@ -507,7 +507,7 @@ class basemodel(object):
         length as the model's feature vector f.
         """
 
-        self.params = numpy.array(params, float)        # make a copy
+        self.params = np.array(params, float)        # make a copy
 
         # Log the new params to disk
         self.logparams()
@@ -546,7 +546,7 @@ class basemodel(object):
                 raise ValueError, "specify the number of features / parameters"
 
         # Set parameters, clearing cache variables
-        self.setparams(numpy.zeros(m, float))
+        self.setparams(np.zeros(m, float))
 
         # These bounds on the param values are only effective for the
         # L-BFGS-B optimizer:
@@ -595,7 +595,7 @@ class basemodel(object):
             return
 
         # Check whether the params are NaN
-        if not numpy.all(self.params == self.params):
+        if not np.all(self.params == self.params):
             raise FloatingPointError, "some of the parameters are NaN"
 
         if self.verbose:
@@ -775,15 +775,15 @@ class model(basemodel):
                 raise AttributeError, "prior probability mass function not set"
 
         def p(x):
-            f_x = numpy.array([f[i](x) for i in range(len(f))], float)
+            f_x = np.array([f[i](x) for i in range(len(f))], float)
 
             # Do we have a prior distribution p_0?
             if priorlogpmf is not None:
                 priorlogprob_x = priorlogpmf(x)
-                return math.exp(numpy.dot(self.params, f_x) + priorlogprob_x \
+                return math.exp(np.dot(self.params, f_x) + priorlogprob_x \
                                 - logZ)
             else:
-                return math.exp(numpy.dot(self.params, f_x) - logZ)
+                return math.exp(np.dot(self.params, f_x) - logZ)
         return p
 
 
@@ -893,7 +893,7 @@ class conditionalmodel(model):
         # As an optimization, p_tilde need not be copied or stored at all, since
         # it is only used by this function.
 
-        self.p_tilde_context = numpy.empty(numcontexts, float)
+        self.p_tilde_context = np.empty(numcontexts, float)
         for w in xrange(numcontexts):
             self.p_tilde_context[w] = self.p_tilde[0, w*S : (w+1)*S].sum()
 
@@ -932,7 +932,7 @@ class conditionalmodel(model):
         if self.priorlogprobs is not None:
             log_p_dot += self.priorlogprobs
 
-        self.logZ = numpy.zeros(numcontexts, float)
+        self.logZ = np.zeros(numcontexts, float)
         for w in xrange(numcontexts):
             self.logZ[w] = logsumexp(log_p_dot[w*S: (w+1)*S])
         return self.logZ
@@ -972,8 +972,7 @@ class conditionalmodel(model):
 
         logZs = self.lognormconst()
 
-        L = numpy.dot(self.p_tilde_context, logZs) - numpy.dot(self.params, \
-                                                               self.K)
+        L = np.dot(self.p_tilde_context, logZs) - np.dot(self.params, self.K)
 
         if self.verbose and self.external is None:
             print "  dual is ", L
@@ -1069,7 +1068,7 @@ class conditionalmodel(model):
             log_p_dot += self.priorlogprobs
         if not hasattr(self, 'logZ'):
             # Compute the norm constant (quickly!)
-            self.logZ = numpy.zeros(numcontexts, float)
+            self.logZ = np.zeros(numcontexts, float)
             for w in xrange(numcontexts):
                 self.logZ[w] = logsumexp(log_p_dot[w*S : (w+1)*S])
         # Renormalize
@@ -1366,8 +1365,8 @@ class bigmodel(basemodel):
             #     -log(n-1) + logsumexp(2*log|Z_k - meanZ|)
 
             self.logZapprox = logsumexp(logZs) - math.log(ttrials)
-            stdevlogZ = numpy.array(logZs).std()
-            mus = numpy.array(mus)
+            stdevlogZ = np.array(logZs).std()
+            mus = np.array(mus)
             self.varE = columnvariances(mus)
             self.mu = columnmeans(mus)
             return
@@ -1459,7 +1458,7 @@ class bigmodel(basemodel):
         log_Z_est = self.lognormconst()
 
         def p(fx):
-            return numpy.exp(innerprodtranspose(fx, self.params) - log_Z_est)
+            return np.exp(innerprodtranspose(fx, self.params) - log_Z_est)
         return p
 
 
@@ -1486,7 +1485,7 @@ class bigmodel(basemodel):
         """
         log_Z_est = self.lognormconst()
         if len(fx.shape) == 1:
-            logpdf = numpy.dot(self.params, fx) - log_Z_est
+            logpdf = np.dot(self.params, fx) - log_Z_est
         else:
             logpdf = innerprodtranspose(fx, self.params) - log_Z_est
         if log_prior_x is not None:
@@ -1536,8 +1535,8 @@ class bigmodel(basemodel):
                     # Use Kersten-Deylon accelerated SA, based on the rate of
                     # changes of sign of the gradient.  (If frequent swaps, the
                     # stepsize is too large.)
-                    #n += (numpy.dot(y_k, y_kminus1) < 0)   # an indicator fn
-                    if numpy.dot(y_k, y_kminus1) < 0:
+                    #n += (np.dot(y_k, y_kminus1) < 0)   # an indicator fn
+                    if np.dot(y_k, y_kminus1) < 0:
                         n += 1
                     else:
                         # Store iterations of sign switches (for plotting
@@ -1590,7 +1589,7 @@ class bigmodel(basemodel):
             if self.verbose:
                 print "SA: after iteration " + str(k)
                 print "  approx dual fn is: " + str(self.logZapprox \
-                            - numpy.dot(self.params, K))
+                            - np.dot(self.params, K))
                 print "  norm(mu_est - k) = " + str(norm_y_k)
 
             # Update params (after the convergence tests too ... don't waste the
@@ -1682,7 +1681,7 @@ class bigmodel(basemodel):
         self.external = None
         self.clearcache()
 
-        meandual = numpy.average(dualapprox,axis=0)
+        meandual = np.average(dualapprox,axis=0)
         self.external_duals[self.iters] = dualapprox
         self.external_gradnorms[self.iters] = gradnorms
 
@@ -1692,7 +1691,7 @@ class bigmodel(basemodel):
                  (len(self.externalFs), meandual)
             print "** Mean mean square error of the (unregularized) feature" \
                     " expectation estimates from the external samples =" \
-                    " mean(|| \hat{\mu_e} - k ||,axis=0) =", numpy.average(gradnorms,axis=0)
+                    " mean(|| \hat{\mu_e} - k ||,axis=0) =", np.average(gradnorms,axis=0)
         # Track the parameter vector params with the lowest mean dual estimate
         # so far:
         if meandual < self.bestdual:

@@ -1,9 +1,13 @@
 ''' Classes for read / write of matlab (TM) 4 files
 '''
+import sys
 
 import numpy as np
 
-from miobase import *
+from miobase import MatFileReader, MatArrayReader, MatMatrixGetter, \
+     MatFileWriter, MatStreamWriter, spsparse
+
+SYS_LITTLE_ENDIAN = sys.byteorder == 'little'
 
 miDOUBLE = 0
 miSINGLE = 1
@@ -63,7 +67,7 @@ class Mat4ArrayReader(MatArrayReader):
         ''' Read header, return matrix getter '''
         data = self.read_dtype(self.dtypes['header'])
         header = {}
-        header['name'] = self.read_ztstring(data['namlen'])
+        header['name'] = self.read_ztstring(int(data['namlen']))
         if data['mopt'] < 0 or  data['mopt'] > 5000:
             ValueError, 'Mat 4 mopt wrong format, byteswapping problem?'
         M,rest = divmod(data['mopt'], 1000)
@@ -175,8 +179,8 @@ class Mat4SparseGetter(Mat4MatrixGetter):
         else:
             V = np.ascontiguousarray(tmp[:,2],dtype='complex')
             V.imag = tmp[:,3]
-        if have_sparse:
-            return scipy.sparse.coo_matrix((V,(I,J)), dims)
+        if spsparse:
+            return spsparse.coo_matrix((V,(I,J)), dims)
         return (dims, I, J, V)
 
 
@@ -198,22 +202,13 @@ class MatFile4Reader(MatFileReader):
     def matrix_getter_factory(self):
         return self._array_reader.matrix_getter_factory()
 
-    def format_looks_right(self):
-        # Mat4 files have a zero somewhere in first 4 bytes
-        self.mat_stream.seek(0)
-        mopt_bytes = np.ndarray(shape=(4,),
-                                dtype=np.uint8,
-                                buffer = self.mat_stream.read(4))
-        self.mat_stream.seek(0)
-        return 0 in mopt_bytes
-
     def guess_byte_order(self):
         self.mat_stream.seek(0)
         mopt = self.read_dtype(np.dtype('i4'))
         self.mat_stream.seek(0)
         if mopt < 0 or mopt > 5000:
-            return ByteOrder.swapped_code
-        return ByteOrder.native_code
+            return SYS_LITTLE_ENDIAN and '>' or '<'
+        return SYS_LITTLE_ENDIAN and '<' or '>'
 
 
 class Mat4MatrixWriter(MatStreamWriter):
@@ -228,7 +223,7 @@ class Mat4MatrixWriter(MatStreamWriter):
         if dims is None:
             dims = self.arr.shape
         header = np.empty((), mdtypes_template['header'])
-        M = not ByteOrder.little_endian
+        M = not SYS_LITTLE_ENDIAN
         O = 0
         header['mopt'] = (M * 1000 +
                           O * 100 +
@@ -323,8 +318,8 @@ def matrix_writer_factory(stream, arr, name):
     arr         - array to write
     name        - name in matlab (TM) workspace
     '''
-    if have_sparse:
-        if scipy.sparse.issparse(arr):
+    if spsparse:
+        if spsparse.issparse(arr):
             return Mat4SparseWriter(stream, arr, name)
     arr = np.array(arr)
     dtt = arr.dtype.type

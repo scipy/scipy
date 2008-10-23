@@ -15,9 +15,10 @@ Run tests if sparse is not installed:
 
 import warnings
 
-import numpy
-from numpy import arange, zeros, array, dot, ones, matrix, asmatrix, \
-        asarray, vstack, ndarray, transpose, diag
+import numpy as np
+from numpy import arange, zeros, array, dot, matrix, asmatrix, asarray, \
+                  vstack, ndarray, transpose, diag, kron, inf, conjugate, \
+                  int8
 
 import random
 from numpy.testing import *
@@ -94,12 +95,12 @@ class _TestCommon:
         mats.append( [[0,1],[0,2],[0,3]] )
         mats.append( [[0,0,1],[0,0,2],[0,3,0]] )
 
-        mats.append( numpy.kron(mats[0],[[1,2]]) )
-        mats.append( numpy.kron(mats[0],[[1],[2]]) )
-        mats.append( numpy.kron(mats[1],[[1,2],[3,4]]) )
-        mats.append( numpy.kron(mats[2],[[1,2],[3,4]]) )
-        mats.append( numpy.kron(mats[3],[[1,2],[3,4]]) )
-        mats.append( numpy.kron(mats[3],[[1,2,3,4]]) )
+        mats.append( kron(mats[0],[[1,2]]) )
+        mats.append( kron(mats[0],[[1],[2]]) )
+        mats.append( kron(mats[1],[[1,2],[3,4]]) )
+        mats.append( kron(mats[2],[[1,2],[3,4]]) )
+        mats.append( kron(mats[3],[[1,2],[3,4]]) )
+        mats.append( kron(mats[3],[[1,2,3,4]]) )
 
         for m in mats:
             assert_equal(self.spmatrix(m).diagonal(),diag(m))
@@ -257,7 +258,7 @@ class _TestCommon:
         assert_array_equal((self.datsp / self.datsp).todense(),expected)
 
         denom = self.spmatrix(matrix([[1,0,0,4],[-1,0,0,0],[0,8,0,-5]],'d'))
-        res = matrix([[1,0,0,0.5],[-3,0,numpy.inf,0],[0,0.25,0,0]],'d')
+        res = matrix([[1,0,0,0.5],[-3,0,inf,0],[0,0.25,0,0]],'d')
         assert_array_equal((self.datsp / denom).todense(),res)
 
         # complex
@@ -421,7 +422,7 @@ class _TestCommon:
     def test_tobsr(self):
         x = array([[1,0,2,0],[0,0,0,0],[0,0,4,5]])
         y = array([[0,1,2],[3,0,5]])
-        A = numpy.kron(x,y)
+        A = kron(x,y)
         Asp = self.spmatrix(A)
         for format in ['bsr']:
             fn = getattr(Asp, 'to' + format )
@@ -584,16 +585,16 @@ class _TestSolve:
         Wagner for a 64-bit machine, 02 March 2005 (EJS)
         """
         n = 20
-        numpy.random.seed(0) #make tests repeatable
+        np.random.seed(0) #make tests repeatable
         A = zeros((n,n), dtype=complex)
-        x = numpy.random.rand(n)
-        y = numpy.random.rand(n-1)+1j*numpy.random.rand(n-1)
-        r = numpy.random.rand(n)
+        x = np.random.rand(n)
+        y = np.random.rand(n-1)+1j*np.random.rand(n-1)
+        r = np.random.rand(n)
         for i in range(len(x)):
             A[i,i] = x[i]
         for i in range(len(y)):
             A[i,i+1] = y[i]
-            A[i+1,i] = numpy.conjugate(y[i])
+            A[i+1,i] = conjugate(y[i])
         A = self.spmatrix(A)
         x = splu(A).solve(r)
         assert_almost_equal(A*x,r)
@@ -699,20 +700,28 @@ class _TestFancyIndexing:
         assert_equal(A[2,3],  B[2,3])
         assert_equal(A[-1,8], B[-1,8])
         assert_equal(A[-1,-2],B[-1,-2])
+        assert_equal(A[array(-1),-2],B[-1,-2])
+        assert_equal(A[-1,array(-2)],B[-1,-2])
+        assert_equal(A[array(-1),array(-2)],B[-1,-2])
 
         # [i,1:2]
         assert_equal(A[2,:].todense(),   B[2,:])
         assert_equal(A[2,5:-2].todense(),B[2,5:-2])
+        assert_equal(A[array(2),5:-2].todense(),B[2,5:-2])
 
         # [i,[1,2]]
         assert_equal(A[3,[1,3]].todense(),  B[3,[1,3]])
         assert_equal(A[-1,[2,-5]].todense(),B[-1,[2,-5]])
+        assert_equal(A[array(-1),[2,-5]].todense(),B[-1,[2,-5]])
+        assert_equal(A[-1,array([2,-5])].todense(),B[-1,[2,-5]])
+        assert_equal(A[array(-1),array([2,-5])].todense(),B[-1,[2,-5]])
 
         # [1:2,j]
         assert_equal(A[:,2].todense(),   B[:,2])
         assert_equal(A[3:4,9].todense(), B[3:4,9])
         assert_equal(A[1:4,-5].todense(),B[1:4,-5])
         assert_equal(A[2:-1,3].todense(),B[2:-1,3])
+        assert_equal(A[2:-1,array(3)].todense(),B[2:-1,3])
 
         # [1:2,1:2]
         assert_equal(A[1:2,1:2].todense(),B[1:2,1:2])
@@ -724,26 +733,38 @@ class _TestFancyIndexing:
         assert_equal(A[:,[2,8,3,-1]].todense(),B[:,[2,8,3,-1]])
         assert_equal(A[3:4,[9]].todense(),     B[3:4,[9]])
         assert_equal(A[1:4,[-1,-5]].todense(), B[1:4,[-1,-5]])
+        assert_equal(A[1:4,array([-1,-5])].todense(), B[1:4,[-1,-5]])
 
         # [[1,2],j]
         assert_equal(A[[1,3],3].todense(),   B[[1,3],3])
         assert_equal(A[[2,-5],-4].todense(), B[[2,-5],-4])
+        assert_equal(A[array([2,-5]),-4].todense(), B[[2,-5],-4])
+        assert_equal(A[[2,-5],array(-4)].todense(), B[[2,-5],-4])
+        assert_equal(A[array([2,-5]),array(-4)].todense(), B[[2,-5],-4])
 
         # [[1,2],1:2]
         assert_equal(A[[1,3],:].todense(),    B[[1,3],:])
         assert_equal(A[[2,-5],8:-1].todense(),B[[2,-5],8:-1])
+        assert_equal(A[array([2,-5]),8:-1].todense(),B[[2,-5],8:-1])
 
         # [[1,2],[1,2]]
         assert_equal(A[[1,3],[2,4]],   B[[1,3],[2,4]])
         assert_equal(A[[-1,-3],[2,-4]],B[[-1,-3],[2,-4]])
+        assert_equal(A[array([-1,-3]),[2,-4]],B[[-1,-3],[2,-4]])
+        assert_equal(A[[-1,-3],array([2,-4])],B[[-1,-3],[2,-4]])
+        assert_equal(A[array([-1,-3]),array([2,-4])],B[[-1,-3],[2,-4]])
 
         # [[[1],[2]],[1,2]]
         assert_equal(A[[[1],[3]],[2,4]].todense(),        B[[[1],[3]],[2,4]])
         assert_equal(A[[[-1],[-3],[-2]],[2,-4]].todense(),B[[[-1],[-3],[-2]],[2,-4]])
+        assert_equal(A[array([[-1],[-3],[-2]]),[2,-4]].todense(),B[[[-1],[-3],[-2]],[2,-4]])
+        assert_equal(A[[[-1],[-3],[-2]],array([2,-4])].todense(),B[[[-1],[-3],[-2]],[2,-4]])
+        assert_equal(A[array([[-1],[-3],[-2]]),array([2,-4])].todense(),B[[[-1],[-3],[-2]],[2,-4]])
 
         # [i]
         assert_equal(A[1,:].todense(), B[1,:])
         assert_equal(A[-2,:].todense(),B[-2,:])
+        assert_equal(A[array(-2),:].todense(),B[-2,:])
 
         # [1:2]
         assert_equal(A[1:4].todense(), B[1:4])
@@ -752,19 +773,22 @@ class _TestFancyIndexing:
         # [[1,2]]
         assert_equal(A[[1,3]].todense(),  B[[1,3]])
         assert_equal(A[[-1,-3]].todense(),B[[-1,-3]])
+        assert_equal(A[array([-1,-3])].todense(),B[[-1,-3]])
 
         # [[1,2],:][:,[1,2]]
         assert_equal(A[[1,3],:][:,[2,4]].todense(),    B[[1,3],:][:,[2,4]]    )
         assert_equal(A[[-1,-3],:][:,[2,-4]].todense(), B[[-1,-3],:][:,[2,-4]] )
+        assert_equal(A[array([-1,-3]),:][:,array([2,-4])].todense(), B[[-1,-3],:][:,[2,-4]] )
 
         # [:,[1,2]][[1,2],:]
         assert_equal(A[:,[1,3]][[2,4],:].todense(),    B[:,[1,3]][[2,4],:]    )
         assert_equal(A[:,[-1,-3]][[2,-4],:].todense(), B[:,[-1,-3]][[2,-4],:] )
+        assert_equal(A[:,array([-1,-3])][array([2,-4]),:].todense(), B[:,[-1,-3]][[2,-4],:] )
 
 
         # Check bug reported by Robert Cimrman:
         # http://thread.gmane.org/gmane.comp.python.scientific.devel/7986
-        s = slice(numpy.int8(2),numpy.int8(4),None)
+        s = slice(int8(2),int8(4),None)
         assert_equal(A[s,:].todense(), B[2:4,:])
         assert_equal(A[:,s].todense(), B[:,2:4])
 
@@ -920,9 +944,9 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
 
     def test_constructor4(self):
         """using (data, ij) format"""
-        row  = numpy.array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
-        col  = numpy.array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
-        data = numpy.array([  6.,  10.,   3.,   9.,   1.,   4.,
+        row  = array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
+        col  = array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
+        data = array([  6.,  10.,   3.,   9.,   1.,   4.,
                               11.,   2.,   8.,   5.,   7.])
 
         ij = vstack((row,col))
@@ -994,9 +1018,9 @@ class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
 
     def test_constructor4(self):
         """using (data, ij) format"""
-        row  = numpy.array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
-        col  = numpy.array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
-        data = numpy.array([  6.,  10.,   3.,   9.,   1.,   4.,
+        row  = array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
+        col  = array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
+        data = array([  6.,  10.,   3.,   9.,   1.,   4.,
                               11.,   2.,   8.,   5.,   7.])
 
         ij = vstack((row,col))
@@ -1138,6 +1162,25 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
         except:
             caught += 1
         assert_equal(caught,5)
+
+    def test_ctor(self):
+        caught = 0
+        # Empty ctor
+        try:
+            A = dok_matrix()
+        except TypeError, e:
+            caught+=1
+        assert_equal(caught, 1)
+
+        # Dense ctor
+        b = matrix([[1,0,0,0],[0,0,1,0],[0,2,0,3]],'d')
+        A = dok_matrix(b)
+        assert_equal(A.todense(), b)
+
+        # Sparse ctor
+        c = csr_matrix(b)
+        assert_equal(A.todense(), c.todense())
+
 
 
 class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
@@ -1295,9 +1338,9 @@ class TestCOO(_TestCommon, TestCase):
     spmatrix = coo_matrix
     def test_constructor1(self):
         """unsorted triplet format"""
-        row  = numpy.array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
-        col  = numpy.array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
-        data = numpy.array([  6.,  10.,   3.,   9.,   1.,   4.,
+        row  = array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
+        col  = array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
+        data = array([  6.,  10.,   3.,   9.,   1.,   4.,
                               11.,   2.,   8.,   5.,   7.])
 
         coo = coo_matrix((data,(row,col)),(4,3))
@@ -1306,9 +1349,9 @@ class TestCOO(_TestCommon, TestCase):
 
     def test_constructor2(self):
         """unsorted triplet format with duplicates (which are summed)"""
-        row  = numpy.array([0,1,2,2,2,2,0,0,2,2])
-        col  = numpy.array([0,2,0,2,1,1,1,0,0,2])
-        data = numpy.array([2,9,-4,5,7,0,-1,2,1,-5])
+        row  = array([0,1,2,2,2,2,0,0,2,2])
+        col  = array([0,2,0,2,1,1,1,0,0,2])
+        data = array([2,9,-4,5,7,0,-1,2,1,-5])
         coo = coo_matrix((data,(row,col)),(3,3))
 
         mat = matrix([[4,-1,0],[0,0,9],[-3,7,0]])
@@ -1327,14 +1370,14 @@ class TestCOO(_TestCommon, TestCase):
 
     def test_constructor4(self):
         """from dense matrix"""
-        mat = numpy.array([[0,1,0,0],
+        mat = array([[0,1,0,0],
                            [7,0,3,0],
                            [0,4,0,0]])
         coo = coo_matrix(mat)
         assert_array_equal(coo.todense(),mat)
 
         #upgrade rank 1 arrays to row matrix
-        mat = numpy.array([0,1,0,0])
+        mat = array([0,1,0,0])
         coo = coo_matrix(mat)
         assert_array_equal(coo.todense(),mat.reshape(1,-1))
 
@@ -1366,7 +1409,7 @@ class TestBSR(_TestCommon, _TestArithmetic, _TestInplaceArithmetic,
         data[3] = array([[ 0,  5, 10],
                          [15,  0, 25]])
 
-        A = numpy.kron( [[1,0,2,0],[0,0,0,0],[0,0,4,5]], [[0,1,2],[3,0,5]] )
+        A = kron( [[1,0,2,0],[0,0,0,0],[0,0,4,5]], [[0,1,2],[3,0,5]] )
         Asp = bsr_matrix((data,indices,indptr),shape=(6,12))
         assert_equal(Asp.todense(),A)
 
@@ -1385,7 +1428,7 @@ class TestBSR(_TestCommon, _TestArithmetic, _TestInplaceArithmetic,
         assert_equal(bsr_matrix(A,blocksize=(2,2)).todense(),A)
         assert_equal(bsr_matrix(A,blocksize=(2,3)).todense(),A)
 
-        A = numpy.kron( [[1,0,2,0],[0,0,0,0],[0,0,4,5]], [[0,1,2],[3,0,5]] )
+        A = kron( [[1,0,2,0],[0,0,0,0],[0,0,4,5]], [[0,1,2],[3,0,5]] )
         assert_equal(bsr_matrix(A).todense(),A)
         assert_equal(bsr_matrix(A,shape=(6,12)).todense(),A)
         assert_equal(bsr_matrix(A,blocksize=(1,1)).todense(),A)
@@ -1395,11 +1438,11 @@ class TestBSR(_TestCommon, _TestArithmetic, _TestInplaceArithmetic,
         assert_equal(bsr_matrix(A,blocksize=(3,12)).todense(),A)
         assert_equal(bsr_matrix(A,blocksize=(6,12)).todense(),A)
 
-        A = numpy.kron( [[1,0,2,0],[0,1,0,0],[0,0,0,0]], [[0,1,2],[3,0,5]] )
+        A = kron( [[1,0,2,0],[0,1,0,0],[0,0,0,0]], [[0,1,2],[3,0,5]] )
         assert_equal(bsr_matrix(A,blocksize=(2,3)).todense(),A)
 
     def test_eliminate_zeros(self):
-        data = numpy.kron([1, 0, 0, 0, 2, 0, 3, 0], [[1,1],[1,1]]).T
+        data = kron([1, 0, 0, 0, 2, 0, 3, 0], [[1,1],[1,1]]).T
         data = data.reshape(-1,2,2)
         indices = array( [1, 2, 3, 4, 5, 6, 7, 8] )
         indptr  = array( [0, 3, 8] )

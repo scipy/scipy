@@ -109,7 +109,7 @@ Integer = Integer()
 Double = Double()
 String = String()
 
-import numpy as nx
+import numpy as np
 
 class Vector(Type_Descriptor):
     cxxtype = 'PyArrayObject*'
@@ -214,12 +214,12 @@ typedefs = {
     int : Integer,
     float : Double,
     str: String,
-    (nx.ndarray,1,int): IntegerVector,
-    (nx.ndarray,2,int): Integermatrix,
-    (nx.ndarray,1,nx.long): LongVector,
-    (nx.ndarray,2,nx.long): Longmatrix,
-    (nx.ndarray,1,float): DoubleVector,
-    (nx.ndarray,2,float): Doublematrix,
+    (np.ndarray,1,int): IntegerVector,
+    (np.ndarray,2,int): Integermatrix,
+    (np.ndarray,1,np.long): LongVector,
+    (np.ndarray,2,np.long): Longmatrix,
+    (np.ndarray,1,float): DoubleVector,
+    (np.ndarray,2,float): Doublematrix,
     XRangeType : XRange,
     }
 
@@ -260,7 +260,7 @@ def lookup_type(x):
     try:
         return typedefs[T]
     except:
-        if isinstance(T,nx.ndarray):
+        if isinstance(T,np.ndarray):
             return typedefs[(T,len(x.shape),x.dtype.char)]
         elif issubclass(T, InstanceType):
             return Instance(x)

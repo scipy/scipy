@@ -2,7 +2,6 @@
 
 from scipy.optimize import minpack2
 import numpy
-import sys
 
 import __builtin__
 pymin = __builtin__.min

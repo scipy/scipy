@@ -17,7 +17,9 @@ from __future__ import division
 __author__ = "Ed Schofield"
 __version__ = '2.0'
 
-import random, math, bisect, cmath
+import random
+import math
+import cmath
 import numpy
 from numpy import log, exp, asarray, ndarray
 from scipy import sparse

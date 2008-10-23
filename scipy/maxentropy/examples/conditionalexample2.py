@@ -18,9 +18,7 @@
 
 __author__ =  'Ed Schofield'
 
-import math
 from scipy import maxentropy, sparse
-import numpy
 
 samplespace = ['dans', 'en', 'à', 'au cours de', 'pendant']
 # Occurrences of French words, and their 'next English word' contexts, in

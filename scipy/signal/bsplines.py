@@ -3,7 +3,7 @@
 import scipy.special
 from numpy import logical_and, asarray, pi, zeros_like, \
      piecewise, array, arctan2, tan, zeros, arange, floor
-from numpy.core.umath import sqrt, exp, greater, less, equal, cos, add, sin, \
+from numpy.core.umath import sqrt, exp, greater, less, cos, add, sin, \
      less_equal, greater_equal
 from spline import *      # C-modules
 from scipy.misc import comb

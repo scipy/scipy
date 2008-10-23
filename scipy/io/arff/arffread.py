@@ -2,7 +2,6 @@
 # Last Change: Mon Aug 20 08:00 PM 2007 J
 import re
 import itertools
-import sys
 
 import numpy as np
 

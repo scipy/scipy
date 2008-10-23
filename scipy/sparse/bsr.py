@@ -7,16 +7,15 @@ __all__ = ['bsr_matrix', 'isspmatrix_bsr']
 from warnings import warn
 
 from numpy import zeros, intc, array, asarray, arange, diff, tile, rank, \
-        prod, ravel, empty, matrix, asmatrix, empty_like, hstack
+                  ravel, empty, empty_like
 
 from data import _data_matrix
 from compressed import _cs_matrix
 from base import isspmatrix, _formats
-from sputils import isshape, getdtype, to_native, isscalarlike, isdense, \
-        upcast
+from sputils import isshape, getdtype, to_native, upcast
 import sparsetools
-from sparsetools import bsr_matvec, bsr_matvecs, csr_matmat_pass1, csr_matmat_pass2, \
-        bsr_matmat_pass2, bsr_transpose, bsr_sort_indices
+from sparsetools import bsr_matvec, bsr_matvecs, csr_matmat_pass1, \
+                        bsr_matmat_pass2, bsr_transpose, bsr_sort_indices
 
 class bsr_matrix(_cs_matrix):
     """Block Sparse Row matrix

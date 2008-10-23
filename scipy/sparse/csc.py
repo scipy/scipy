@@ -6,15 +6,9 @@ __all__ = ['csc_matrix', 'isspmatrix_csc']
 
 from warnings import warn
 
-import numpy
-from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
-        empty, hstack, isscalar, ndarray, shape, searchsorted, where, \
-        concatenate, deprecate, transpose, ravel
-
-from base import spmatrix, isspmatrix
+from numpy import asarray, intc, empty, searchsorted, deprecate
 from sparsetools import csc_tocsr
-from sputils import upcast, to_native, isdense, isshape, getdtype, \
-        isscalarlike, isintlike
+from sputils import upcast, isintlike
 
 from compressed import _cs_matrix
 

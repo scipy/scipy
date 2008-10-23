@@ -189,3 +189,9 @@ DECLARE_DATA_TYPE( npy_clongdouble_wrapper )
 %enddef
 
 
+%define INSTANTIATE_INDEX( f_name )
+/* 32-bit indices */
+%template(f_name)   f_name<int>;
+/* 64-bit indices would go here */
+%enddef
+

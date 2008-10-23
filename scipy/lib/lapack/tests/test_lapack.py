@@ -14,10 +14,8 @@ This does the work of collecting the test methods and checking if they
 can be run (see the isrunnable method).
 '''
 
-import os
-import sys
 from numpy.testing import *
-from numpy import dot, ones, zeros
+from numpy import ones
 
 from scipy.lib.lapack import flapack, clapack
 

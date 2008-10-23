@@ -20,8 +20,6 @@
 __author__ =  'Ed Schofield'
 __version__=  '2.1'
 
-
-import math
 from scipy import maxentropy
 
 a_grave = u'\u00e0'

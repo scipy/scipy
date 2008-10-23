@@ -2,6 +2,7 @@
 
 from os.path import join
 
+
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     config = Configuration('stats', parent_package, top_path)
@@ -16,6 +17,11 @@ def configuration(parent_package='',top_path=None):
         sources=['statlib.pyf'],
         f2py_options=['--no-wrap-functions'],
         libraries=['statlib'],
+    )
+
+    # add vonmises_cython module
+    config.add_extension('vonmises_cython',
+        sources=['vonmises_cython.c'], # FIXME: use cython source
     )
 
     # add futil module

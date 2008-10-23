@@ -1,6 +1,7 @@
 #ifndef __CSR_H__
 #define __CSR_H__
 
+#include <set>
 #include <vector>
 #include <algorithm>
 #include <functional>
@@ -39,8 +40,8 @@ void csr_diagonal(const I n_row,
     const I N = std::min(n_row, n_col);
 
     for(I i = 0; i < N; i++){
-        I row_start = Ap[i];
-        I row_end   = Ap[i+1];
+        const I row_start = Ap[i];
+        const I row_end   = Ap[i+1];
 
         T diag = 0;
         for(I jj = row_start; jj < row_end; jj++){
@@ -379,6 +380,54 @@ void csr_tocsc(const I n_row,
 }   
 
 
+
+/*
+ * Compute B = A for CSR matrix A, ELL matrix B
+ *
+ * Input Arguments:
+ *   I  n_row         - number of rows in A
+ *   I  n_col         - number of columns in A
+ *   I  Ap[n_row+1]   - row pointer
+ *   I  Aj[nnz(A)]    - column indices
+ *   T  Ax[nnz(A)]    - nonzeros
+ *   I  row_length    - maximum nnz in a row of A
+ *
+ * Output Arguments:
+ *   I  Bj[n_row * row_length]  - column indices
+ *   T  Bx[n_row * row_length]  - nonzeros
+ *
+ * Note:
+ *   Output arrays Bj, Bx must be preallocated
+ *   Duplicate entries in A are not merged.
+ *   Explicit zeros in A are carried over to B.
+ *   Rows with fewer than row_length columns are padded with zeros.
+ *
+ */
+template <class I, class T>
+void csr_toell(const I n_row,
+	           const I n_col, 
+	           const I Ap[], 
+	           const I Aj[], 
+	           const T Ax[],
+               const I row_length,
+	                 I Bj[],
+	                 T Bx[])
+{
+    const I ell_nnz = row_length * n_row;
+    std::fill(Bj, Bj + ell_nnz, 0);
+    std::fill(Bx, Bx + ell_nnz, 0);
+
+    for(I i = 0; i < n_row; i++){
+        I * Bj_row = Bj + row_length * i;
+        T * Bx_row = Bx + row_length * i;
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+            *Bj_row = Aj[jj];            
+            *Bx_row = Ax[jj];            
+            Bj_row++;
+            Bx_row++;
+        }
+    }
+}
 
 
 /*
@@ -742,6 +791,7 @@ void csr_minus_csr(const I n_row, const I n_col,
  *   
  * Note:
  *   The column indicies within each row must be in sorted order.
+ *   Explicit zeros are retained.
  *   Ap, Aj, and Ax will be modified *inplace*
  *
  */
@@ -951,7 +1001,29 @@ void get_csr_submatrix(const I n_row,
 }
 
 
-
+/*
+ * Count the number of occupied diagonals in CSR matrix A
+ *
+ * Input Arguments:
+ *   I  nnz             - number of nonzeros in A
+ *   I  Ai[nnz(A)]      - row indices
+ *   I  Aj[nnz(A)]      - column indices
+ *
+ */
+template <class I>
+I csr_count_diagonals(const I n_row,
+                      const I Ap[],
+                      const I Aj[])
+{
+    std::set<I> diagonals;
+    
+    for(I i = 0; i < n_row; i++){
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+            diagonals.insert(Aj[jj] - i);
+        }
+    }
+    return diagonals.size();
+}
 
 
 #endif

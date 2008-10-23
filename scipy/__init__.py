@@ -28,7 +28,14 @@ from numpy import *
 from numpy.random import rand, randn
 from numpy.fft import fft, ifft
 from numpy.lib.scimath import *
-_num.seterr(all='ignore')
+
+# Emit a warning if numpy is too old
+majver, minver = [float(i) for i in _num.version.version.split('.')[:2]]
+if majver < 1 or (majver == 1 and minver < 2):
+    import warnings
+    warnings.warn("Numpy 1.2.0 or above is recommended for this version of " \
+                  "scipy (detected version %s)" % _num.version.version,
+                  UserWarning)
 
 __all__ += ['oldnumeric']+_num.__all__
 
@@ -67,7 +74,7 @@ pkgload(verbose=SCIPY_IMPORT_VERBOSE,postpone=True)
 # Remove subpackage names from __all__ such that they are not imported via
 # "from scipy import *". This works around a numpy bug present in < 1.2.
 subpackages = """cluster constants fftpack integrate interpolate io lib linalg
-linsolve maxentropy misc ndimage odr optimize signal sparse special
+linsolve maxentropy misc ndimage odr optimize signal sparse special 
 splinalg stats stsci weave""".split()
 for name in subpackages:
     try:

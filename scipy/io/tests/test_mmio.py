@@ -4,7 +4,6 @@ from tempfile import mktemp
 from numpy import array,transpose
 from numpy.testing import *
 
-import scipy
 import scipy.sparse
 from scipy.io.mmio import mminfo,mmread,mmwrite
 

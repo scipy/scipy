@@ -4,8 +4,7 @@
 
 from numpy.testing import *
 
-from numpy import zeros, dot, diag, ones, arange, array, abs, max
-from numpy.random import rand
+from numpy import zeros, ones, arange, array, abs, max
 from scipy.linalg import norm
 from scipy.sparse import spdiags, csr_matrix
 

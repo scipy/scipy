@@ -14,7 +14,6 @@
 # [25 29] [ 2.49147272  3.83021021]
 #  speed up: 32.56
 
-import numpy
 from numpy import *
 import sys
 sys.path.insert(0,'..')

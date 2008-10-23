@@ -8,8 +8,8 @@ See http://www.netlib.org/toms/733
 __all__ = ['approx_jacobian','fmin_slsqp']
 
 from _slsqp import slsqp
-from numpy import zeros, array, identity, linalg, rank, squeeze, append, \
-                  asfarray,product, concatenate, finfo, sqrt, vstack, transpose
+from numpy import zeros, array, linalg, append, asfarray, concatenate, finfo, \
+                  sqrt, vstack
 from optimize import approx_fprime, wrap_function
 
 __docformat__ = "restructuredtext en"

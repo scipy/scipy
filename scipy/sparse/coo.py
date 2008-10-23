@@ -7,14 +7,13 @@ __all__ = ['coo_matrix', 'isspmatrix_coo']
 from itertools import izip
 from warnings import warn
 
-from numpy import array, asarray, empty, intc, zeros, \
-        unique, searchsorted, atleast_2d, rank, deprecate, hstack
+from numpy import array, asarray, empty, intc, zeros, unique, searchsorted,\
+                  atleast_2d, rank, deprecate, hstack
 
-from sparsetools import coo_tocsr, coo_tocsc, coo_todense, coo_matvec
+from sparsetools import coo_tocsr, coo_todense, coo_matvec
 from base import isspmatrix
 from data import _data_matrix
 from sputils import upcast, to_native, isshape, getdtype
-from spfuncs import estimate_blocksize
 
 class coo_matrix(_data_matrix):
     """A sparse matrix in COOrdinate format.

@@ -1,4 +1,3 @@
-import numpy
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
 from numpy.testing import *
 from scipy.integrate import quad, dblquad, tplquad

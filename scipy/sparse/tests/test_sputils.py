@@ -36,7 +36,7 @@ class TestSparseUtils(TestCase):
         assert_equal(isintlike(3.0),True)
         assert_equal(isintlike(-4),True)
         assert_equal(isintlike(np.array(3)),True)
-        assert_equal(isintlike( np.array([3])), True)
+        assert_equal(isintlike(np.array([3])), False)
 
         assert_equal(isintlike(2.5),False)
         assert_equal(isintlike(1 + 3j),False)

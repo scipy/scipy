@@ -6,19 +6,16 @@
 """
 
 import warnings
-
-from numpy import transpose, array, arange
-
 import random
 from numpy.testing import *
 
 from scipy import rand, matrix, diag, eye
-from scipy.sparse import csc_matrix, dok_matrix, spdiags, SparseEfficiencyWarning
+from scipy.sparse import csc_matrix, spdiags, SparseEfficiencyWarning
 from scipy.sparse.linalg import linsolve
 
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
-import numpy as nm
+import numpy as np
 try:
     import scipy.sparse.linalg.dsolve.umfpack as um
 except (ImportError, AttributeError):
@@ -112,8 +109,8 @@ class TestSolvers(TestCase):
         self.a = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5)
         #print "The sparse matrix (constructed from diagonals):"
         #print self.a
-        self.b = array([1, 2, 3, 4, 5])
-        self.b2 = array([5, 4, 3, 2, 1])
+        self.b = np.array([1, 2, 3, 4, 5])
+        self.b2 = np.array([5, 4, 3, 2, 1])
 
 
 
@@ -174,7 +171,7 @@ class TestFactorization(TestCase):
 
         self.real_matrices = [csc_matrix(x).astype('d') for x \
                 in self.real_matrices]
-        self.complex_matrices = [x.astype(nm.complex128)
+        self.complex_matrices = [x.astype(np.complex128)
                                  for x in self.real_matrices]
 
 # Skip methods if umfpack not present

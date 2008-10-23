@@ -30,7 +30,8 @@ Ed Schofield        -- Maximum entropy and Monte Carlo modules, help with
 Travis Vaught       -- initial work on stats module clean up
 Jeff Whitaker       -- Mac OS X support
 David Cournapeau    -- bug-fixes, refactor of fftpack and cluster, numscons build.
-Damian Eads         -- hiearchical clustering
+Damian Eads         -- hierarchical clustering, dendrogram plotting,
+                       distance functions, vq documentation
 
 
 Testing:

@@ -1,6 +1,5 @@
 import numpy as np
 from scipy import factorial
-from numpy import poly1d
 
 __all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator", "barycentric_interpolate", "PiecewisePolynomial", "piecewise_polynomial_interpolate","approximate_taylor_polynomial"]
 

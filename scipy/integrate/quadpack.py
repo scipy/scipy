@@ -6,9 +6,9 @@ __all__ = ['quad', 'dblquad', 'tplquad', 'quad_explain', 'Inf','inf']
 import _quadpack
 import sys
 import numpy
+from numpy import inf, Inf
 
 error = _quadpack.error
-
 
 def quad_explain(output=sys.stdout):
     output.write("""
@@ -116,8 +116,6 @@ Weighting the integrand:
 """)
     return
 
-
-from numpy import inf, Inf
 
 def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
          limit=50, points=None, weight=None, wvar=None, wopts=None, maxp1=50,

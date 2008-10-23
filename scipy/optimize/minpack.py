@@ -2,7 +2,7 @@ import _minpack
 
 from numpy import atleast_1d, dot, take, triu, shape, eye, \
                   transpose, zeros, product, greater, array, \
-                  any, all, where, isscalar, asarray, ndarray
+                  all, where, isscalar, asarray
 
 error = _minpack.error
 
