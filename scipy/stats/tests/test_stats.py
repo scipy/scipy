@@ -694,6 +694,7 @@ class TestMedian(TestCase):
         assert_equal(stats.median(a3),3.5)
 
     def test_axis(self):
+        """Regression test for #760."""
         a1 = np.array([[3,4,5], [10,-3,-5]])
         assert_equal(stats.median(a1), np.array([6.5, 0.5, 0.]))
         assert_equal(stats.median(a1, axis=-1), np.array([4., -3]))
