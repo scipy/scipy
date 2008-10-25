@@ -4,8 +4,7 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['dia_matrix','isspmatrix_dia']
 
-from numpy import asarray, zeros, arange, array, intc, atleast_1d, \
-                  atleast_2d, unique, hstack
+import numpy as np
 
 from base import isspmatrix, _formats
 from data import _data_matrix
@@ -72,9 +71,9 @@ class dia_matrix(_data_matrix):
             if isshape(arg1):
                 # It's a tuple of matrix dimensions (M, N)
                 # create empty matrix
-                self.shape = arg1   #spmatrix checks for errors here
-                self.data  = zeros( (0,0), getdtype(dtype, default=float))
-                self.offsets = zeros( (0), dtype=intc)
+                self.shape   = arg1   #spmatrix checks for errors here
+                self.data    = np.zeros( (0,0), getdtype(dtype, default=float))
+                self.offsets = np.zeros( (0), dtype=np.intc)
             else:
                 try:
                     # Try interpreting it as (data, offsets)
@@ -84,16 +83,16 @@ class dia_matrix(_data_matrix):
                 else:
                     if shape is None:
                         raise ValueError('expected a shape argument')
-                    self.data    = atleast_2d(array(arg1[0],dtype=dtype,copy=copy))
-                    self.offsets = atleast_1d(array(arg1[1],dtype='i',copy=copy))
+                    self.data    = np.atleast_2d(np.array(arg1[0], dtype=dtype, copy=copy))
+                    self.offsets = np.atleast_1d(np.array(arg1[1], dtype=np.intc, copy=copy))
                     self.shape   = shape
         else:
             #must be dense, convert to COO first, then to DIA
             try:
-                arg1 = asarray(arg1)
+                arg1 = np.asarray(arg1)
             except:
-                raise ValueError, "unrecognized form for" \
-                        " %s_matrix constructor" % self.format
+                raise ValueError("unrecognized form for" \
+                        " %s_matrix constructor" % self.format)
             from coo import coo_matrix
             A = coo_matrix(arg1).todia()
             self.data    = A.data
@@ -113,7 +112,7 @@ class dia_matrix(_data_matrix):
                     'does not match the number of offsets (%d)' \
                     % (self.data.shape[0], len(self.offsets)))
 
-        if len(unique(self.offsets)) != len(self.offsets):
+        if len(np.unique(self.offsets)) != len(self.offsets):
             raise ValueError('offset array contains duplicate values')
 
     def __repr__(self):
@@ -143,7 +142,7 @@ class dia_matrix(_data_matrix):
     def _mul_vector(self, other):
         x = other
 
-        y = zeros( self.shape[0], dtype=upcast(self.dtype,x.dtype))
+        y = np.zeros( self.shape[0], dtype=upcast(self.dtype,x.dtype))
 
         L = self.data.shape[1]
 
@@ -154,7 +153,7 @@ class dia_matrix(_data_matrix):
         return y
 
     def _mul_dense_matrix(self, other):
-        return hstack( [ self._mul_vector(col).reshape(-1,1) for col in other.T ] )
+        return np.hstack( [ self._mul_vector(col).reshape(-1,1) for col in other.T ] )
 
     def todia(self,copy=False):
         if copy:
@@ -174,7 +173,7 @@ class dia_matrix(_data_matrix):
         num_data = len(self.data)
         len_data = self.data.shape[1]
 
-        row = arange(len_data).reshape(1,-1).repeat(num_data,axis=0)
+        row = np.arange(len_data).reshape(1,-1).repeat(num_data,axis=0)
         col = row.copy()
 
         for i,k in enumerate(self.offsets):
@@ -187,10 +186,9 @@ class dia_matrix(_data_matrix):
         mask &= (col < self.shape[1])
         mask &= data != 0
         row,col,data = row[mask],col[mask],data[mask]
-        #row,col,data = row.reshape(-1),col.reshape(-1),data.reshape(-1)
 
         from coo import coo_matrix
-        return coo_matrix((data,(row,col)),shape=self.shape)
+        return coo_matrix((data,(row,col)), shape=self.shape)
 
     # needed by _data_matrix
     def _with_data(self, data, copy=True):
@@ -198,7 +196,7 @@ class dia_matrix(_data_matrix):
         but with different data.  By default the structure arrays are copied.
         """
         if copy:
-            return dia_matrix( (data,self.offsets.copy()), shape=self.shape)
+            return dia_matrix( (data, self.offsets.copy()), shape=self.shape)
         else:
             return dia_matrix( (data,self.offsets), shape=self.shape)
 
