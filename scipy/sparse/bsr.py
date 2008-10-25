@@ -6,8 +6,10 @@ __all__ = ['bsr_matrix', 'isspmatrix_bsr']
 
 from warnings import warn
 
-from numpy import zeros, intc, array, asarray, arange, diff, tile, rank, \
-                  ravel, empty, empty_like
+import numpy as np
+
+#from numpy import zeros, intc, array, asarray, arange, diff, tile, rank, \
+#                  ravel, empty, empty_like
 
 from data import _data_matrix
 from compressed import _cs_matrix
@@ -97,10 +99,10 @@ class bsr_matrix(_cs_matrix):
 
 
         if isspmatrix(arg1):
-            if arg1.format == self.format and copy:
+            if isspmatrix_bsr(arg1) and copy:
                 arg1 = arg1.copy()
             else:
-                arg1 = getattr(arg1,'to' + self.format)(blocksize=blocksize)
+                arg1 = arg1.tobsr(blocksize=blocksize)
             self._set_self( arg1 )
 
         elif isinstance(arg1,tuple):
@@ -113,16 +115,16 @@ class bsr_matrix(_cs_matrix):
                     blocksize = (1,1)
                 else:
                     if not isshape(blocksize):
-                        raise ValueError,'invalid blocksize=%s',blocksize
+                        raise ValueError('invalid blocksize=%s' % blocksize)
                     blocksize = tuple(blocksize)
-                self.data   = zeros( (0,) + blocksize, getdtype(dtype, default=float) )
-                self.indices = zeros( 0, dtype=intc )
+                self.data    = np.zeros( (0,) + blocksize, getdtype(dtype, default=float) )
+                self.indices = np.zeros( 0, dtype=np.intc )
 
                 R,C = blocksize
                 if (M % R) != 0 or (N % C) != 0:
                     raise ValueError, 'shape must be multiple of blocksize'
 
-                self.indptr  = zeros(M/R + 1, dtype=intc )
+                self.indptr  = np.zeros(M/R + 1, dtype=np.intc )
 
             elif len(arg1) == 2:
                 # (data,(row,col)) format
@@ -132,21 +134,20 @@ class bsr_matrix(_cs_matrix):
             elif len(arg1) == 3:
                 # (data,indices,indptr) format
                 (data, indices, indptr) = arg1
-                self.indices = array(indices, copy=copy)
-                self.indptr  = array(indptr,  copy=copy)
-                self.data    = array(data,    copy=copy, \
-                        dtype=getdtype(dtype, data))
+                self.indices = np.array(indices, copy=copy)
+                self.indptr  = np.array(indptr,  copy=copy)
+                self.data    = np.array(data,    copy=copy, dtype=getdtype(dtype, data))
             else:
-                raise ValueError,'unrecognized bsr_matrix constructor usage'
+                raise ValueError('unrecognized bsr_matrix constructor usage')
         else:
             #must be dense
             try:
-                arg1 = asarray(arg1)
+                arg1 = np.asarray(arg1)
             except:
-                raise ValueError, "unrecognized form for" \
-                        " %s_matrix constructor" % self.format
+                raise ValueError("unrecognized form for" \
+                        " %s_matrix constructor" % self.format)
             from coo import coo_matrix
-            arg1 = self.__class__( coo_matrix(arg1), blocksize=blocksize )
+            arg1 = coo_matrix(arg1).tobsr(blocksize=blocksize)
             self._set_self( arg1 )
 
         if shape is not None:
@@ -193,14 +194,14 @@ class bsr_matrix(_cs_matrix):
                     % self.indices.dtype.name )
 
         # only support 32-bit ints for now
-        self.indptr  = asarray(self.indptr,intc)
-        self.indices = asarray(self.indices,intc)
+        self.indptr  = np.asarray(self.indptr, np.intc)
+        self.indices = np.asarray(self.indices, np.intc)
         self.data    = to_native(self.data)
 
         # check array shapes
-        if (rank(self.indices) != 1) or (rank(self.indptr) != 1):
+        if np.rank(self.indices) != 1 or np.rank(self.indptr) != 1:
             raise ValueError,"indices, and indptr should be rank 1"
-        if rank(self.data) != 3:
+        if np.rank(self.data) != 3:
             raise ValueError,"data should be rank 3"
 
         # check index pointer
@@ -260,9 +261,9 @@ class bsr_matrix(_cs_matrix):
         """
         M,N = self.shape
         R,C = self.blocksize
-        y = empty( min(M,N), dtype=upcast(self.dtype) )
+        y = np.empty(min(M,N), dtype=upcast(self.dtype))
         sparsetools.bsr_diagonal(M/R, N/C, R, C, \
-                self.indptr, self.indices, ravel(self.data), y)
+                self.indptr, self.indices, np.ravel(self.data), y)
         return y
 
     ##########################
@@ -292,7 +293,7 @@ class bsr_matrix(_cs_matrix):
         M,N = self.shape
         R,C = self.blocksize
 
-        result = zeros( self.shape[0], dtype=upcast(self.dtype, other.dtype) )
+        result = np.zeros(self.shape[0], dtype=upcast(self.dtype, other.dtype))
 
         bsr_matvec(M/R, N/C, R, C, \
             self.indptr, self.indices, self.data.ravel(),
@@ -305,7 +306,7 @@ class bsr_matrix(_cs_matrix):
         M,N = self.shape
         n_vecs = other.shape[1] #number of column vectors
 
-        result = zeros( (M,n_vecs), dtype=upcast(self.dtype,other.dtype) )
+        result = np.zeros((M,n_vecs), dtype=upcast(self.dtype,other.dtype))
 
         bsr_matvecs(M/R, N/C, n_vecs, R, C, \
                 self.indptr, self.indices, self.data.ravel(), \
@@ -313,17 +314,11 @@ class bsr_matrix(_cs_matrix):
 
         return result
 
-    #def _mul_dense_matrix(self, other):
-    #    # TODO make sparse * dense matrix multiplication more efficient
-    #    # matvec each column of other
-    #    result = hstack( [ self * col.reshape(-1,1) for col in asarray(other).T ] )
-    #    return result
-
     def _mul_sparse_matrix(self, other):
         M, K1 = self.shape
         K2, N = other.shape
 
-        indptr = empty_like( self.indptr )
+        indptr = np.empty_like( self.indptr )
 
         R,n = self.blocksize
 
@@ -336,7 +331,7 @@ class bsr_matrix(_cs_matrix):
         from csr import isspmatrix_csr
 
         if isspmatrix_csr(other) and n == 1:
-            other = other.tobsr(blocksize=(n,C),copy=False) #convert to this format
+            other = other.tobsr(blocksize=(n,C), copy=False) #lightweight conversion
         else:
             other = other.tobsr(blocksize=(n,C))
 
@@ -346,15 +341,16 @@ class bsr_matrix(_cs_matrix):
                 indptr)
 
         bnnz = indptr[-1]
-        indices = empty( bnnz, dtype=intc)
-        data    = empty( R*C*bnnz, dtype=upcast(self.dtype,other.dtype))
+        indices = np.empty(bnnz, dtype=np.intc)
+        data    = np.empty(R*C*bnnz, dtype=upcast(self.dtype,other.dtype))
 
         bsr_matmat_pass2( M/R, N/C, R, C, n, \
-                self.indptr,  self.indices,  ravel(self.data), \
-                other.indptr, other.indices, ravel(other.data), \
+                self.indptr,  self.indices,  np.ravel(self.data), \
+                other.indptr, other.indices, np.ravel(other.data), \
                 indptr,       indices,       data)
 
         data = data.reshape(-1,R,C)
+
         #TODO eliminate zeros
 
         return bsr_matrix((data,indices,indptr),shape=(M,N),blocksize=(R,C))
@@ -391,13 +387,13 @@ class bsr_matrix(_cs_matrix):
         M,N = self.shape
         R,C = self.blocksize
 
-        row  = (R * arange(M/R)).repeat(diff(self.indptr))
+        row  = (R * np.arange(M/R)).repeat(np.diff(self.indptr))
         row  = row.repeat(R*C).reshape(-1,R,C)
-        row += tile( arange(R).reshape(-1,1), (1,C) )
+        row += np.tile(np.arange(R).reshape(-1,1), (1,C))
         row  = row.reshape(-1)
 
         col  = (C * self.indices).repeat(R*C).reshape(-1,R,C)
-        col += tile( arange(C), (R,1) )
+        col += np.tile(np.arange(C), (R,1))
         col  = col.reshape(-1)
 
         data = self.data.reshape(-1)
@@ -406,7 +402,7 @@ class bsr_matrix(_cs_matrix):
             data = data.copy()
 
         from coo import coo_matrix
-        return coo_matrix( (data,(row,col)), shape=self.shape )
+        return coo_matrix((data,(row,col)), shape=self.shape)
 
 
     def transpose(self):
@@ -416,17 +412,17 @@ class bsr_matrix(_cs_matrix):
         NBLK = self.nnz/(R*C)
 
         if self.nnz == 0:
-            return bsr_matrix((N,M),blocksize=(C,R))
+            return bsr_matrix((N,M), blocksize=(C,R))
 
-        indptr  = empty( N/C + 1,    dtype=self.indptr.dtype)
-        indices = empty( NBLK,       dtype=self.indices.dtype)
-        data    = empty( (NBLK,C,R), dtype=self.data.dtype)
+        indptr  = np.empty( N/C + 1,    dtype=self.indptr.dtype)
+        indices = np.empty( NBLK,       dtype=self.indices.dtype)
+        data    = np.empty( (NBLK,C,R), dtype=self.data.dtype)
 
         bsr_transpose(M/R, N/C, R, C, \
                       self.indptr, self.indices, self.data.ravel(), \
                       indptr,      indices,      data.ravel())
 
-        return bsr_matrix( (data,indices,indptr), shape=(N,M) )
+        return bsr_matrix((data,indices,indptr), shape=(N,M))
 
 
     ##############################################################
@@ -510,13 +506,13 @@ class bsr_matrix(_cs_matrix):
         R,C = self.blocksize
 
         max_bnnz = len(self.data) + len(other.data)
-        indptr  = empty_like(self.indptr)
-        indices = empty( max_bnnz, dtype=intc )
-        data    = empty( R*C*max_bnnz, dtype=upcast(self.dtype,other.dtype) )
+        indptr  = np.empty_like(self.indptr)
+        indices = np.empty(max_bnnz, dtype=np.intc)
+        data    = np.empty(R*C*max_bnnz, dtype=upcast(self.dtype,other.dtype))
 
         fn(in_shape[0]/R, in_shape[1]/C, R, C, \
-                self.indptr,  self.indices,  ravel(self.data),
-                other.indptr, other.indices, ravel(other.data),
+                self.indptr,  self.indices,  np.ravel(self.data),
+                other.indptr, other.indices, np.ravel(other.data),
                 indptr,       indices,       data)
 
         actual_bnnz = indptr[-1]
