@@ -4,11 +4,12 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['coo_matrix', 'isspmatrix_coo']
 
-from itertools import izip
 from warnings import warn
 
-from numpy import array, asarray, empty, intc, zeros, unique, searchsorted,\
-                  atleast_2d, rank, deprecate, hstack
+import numpy as np
+
+#from numpy import array, asarray, empty, intc, zeros, unique, searchsorted,\
+#                  atleast_2d, rank, deprecate, hstack
 
 from sparsetools import coo_tocsr, coo_todense, coo_matvec
 from base import isspmatrix
@@ -108,9 +109,9 @@ class coo_matrix(_data_matrix):
             if isshape(arg1):
                 M, N = arg1
                 self.shape = (M,N)
-                self.row  = array([], dtype=intc)
-                self.col  = array([], dtype=intc)
-                self.data = array([], getdtype(dtype, default=float))
+                self.row  = np.array([], dtype=np.intc)
+                self.col  = np.array([], dtype=np.intc)
+                self.data = np.array([], getdtype(dtype, default=float))
             else:
                 try:
                     obj, ij = arg1
@@ -123,9 +124,9 @@ class coo_matrix(_data_matrix):
                 except TypeError:
                     raise TypeError('invalid input format')
 
-                self.row  = array(ij[0], copy=copy, dtype=intc)
-                self.col  = array(ij[1], copy=copy, dtype=intc)
-                self.data = array(  obj, copy=copy)
+                self.row  = np.array(ij[0], copy=copy, dtype=np.intc)
+                self.col  = np.array(ij[1], copy=copy, dtype=np.intc)
+                self.data = np.array(  obj, copy=copy)
 
                 if shape is None:
                     if len(self.row) == 0 or len(self.col) == 0:
@@ -145,9 +146,9 @@ class coo_matrix(_data_matrix):
             warn('coo_matrix(None, shape=(M,N)) is deprecated, ' \
                     'use coo_matrix( (M,N) ) instead', DeprecationWarning)
             self.shape = shape
-            self.data = array([], getdtype(dtype, default=float))
-            self.row = array([], dtype=intc)
-            self.col = array([], dtype=intc)
+            self.data = np.array([], getdtype(dtype, default=float))
+            self.row  = np.array([], dtype=np.intc)
+            self.col  = np.array([], dtype=np.intc)
         else:
             if isspmatrix(arg1):
                 if isspmatrix_coo(arg1) and copy:
@@ -164,11 +165,11 @@ class coo_matrix(_data_matrix):
             else:
                 #dense argument
                 try:
-                    M = atleast_2d(asarray(arg1))
+                    M = np.atleast_2d(np.asarray(arg1))
                 except:
                     raise TypeError('invalid input format')
 
-                if len(M.shape) != 2:
+                if np.rank(M) != 2:
                     raise TypeError('expected rank <= 2 array or matrix')
                 self.shape = M.shape
                 self.row,self.col = (M != 0).nonzero()
@@ -178,10 +179,10 @@ class coo_matrix(_data_matrix):
 
     def getnnz(self):
         nnz = len(self.data)
-        if (nnz != len(self.row)) or (nnz != len(self.col)):
+        if nnz != len(self.row) or nnz != len(self.col):
             raise ValueError('row, column, and data array must all be the same length')
 
-        if rank(self.data) != 1 or rank(self.row) != 1 or rank(self.col) != 1:
+        if np.rank(self.data) != 1 or np.rank(self.row) != 1 or np.rank(self.col) != 1:
             raise ValueError('row, column, and data arrays must have rank 1')
 
         return nnz
@@ -200,8 +201,8 @@ class coo_matrix(_data_matrix):
                     % self.col.dtype.name )
 
         # only support 32-bit ints for now
-        self.row  = asarray(self.row, dtype=intc)
-        self.col  = asarray(self.col, dtype=intc)
+        self.row  = np.asarray(self.row, dtype=np.intc)
+        self.col  = np.asarray(self.col, dtype=np.intc)
         self.data = to_native(self.data)
 
         if nnz > 0:
@@ -215,22 +216,22 @@ class coo_matrix(_data_matrix):
                 raise ValueError('negative column index found')
 
 
-    @deprecate
+    @np.deprecate
     def rowcol(self, num):
         return (self.row[num], self.col[num])
 
-    @deprecate
+    @np.deprecate
     def getdata(self, num):
         return self.data[num]
 
-    def transpose(self,copy=False):
+    def transpose(self, copy=False):
         M,N = self.shape
-        return coo_matrix((self.data,(self.col,self.row)),(N,M),copy=copy)
+        return coo_matrix((self.data, (self.col, self.row)), shape=(N,M), copy=copy)
 
     def toarray(self):
-        B = zeros(self.shape, dtype=self.dtype)
+        B = np.zeros(self.shape, dtype=self.dtype)
         M,N = self.shape
-        coo_todense(M, N, self.nnz, self.row, self.col, self.data, B.ravel() )
+        coo_todense(M, N, self.nnz, self.row, self.col, self.data, B.ravel())
         return B
 
     def tocsc(self):
@@ -257,16 +258,18 @@ class coo_matrix(_data_matrix):
         if self.nnz == 0:
             return csc_matrix(self.shape, dtype=self.dtype)
         else:
-            indptr  = empty(self.shape[1] + 1,dtype=intc)
-            indices = empty(self.nnz, dtype=intc)
-            data    = empty(self.nnz, dtype=upcast(self.dtype))
+            M,N = self.shape
+            indptr  = np.empty(N + 1,    dtype=np.intc)
+            indices = np.empty(self.nnz, dtype=np.intc)
+            data    = np.empty(self.nnz, dtype=upcast(self.dtype))
 
-            coo_tocsr(self.shape[1], self.shape[0], self.nnz, \
+            coo_tocsr(N, M, self.nnz, \
                       self.col, self.row, self.data, \
                       indptr, indices, data)
 
-            A = csc_matrix((data, indices, indptr), self.shape)
+            A = csc_matrix((data, indices, indptr), shape=self.shape)
             A.sum_duplicates()
+
             return A
 
     def tocsr(self):
@@ -293,18 +296,19 @@ class coo_matrix(_data_matrix):
         if self.nnz == 0:
             return csr_matrix(self.shape, dtype=self.dtype)
         else:
-            indptr  = empty(self.shape[0] + 1,dtype=intc)
-            indices = empty(self.nnz, dtype=intc)
-            data    = empty(self.nnz, dtype=upcast(self.dtype))
+            M,N = self.shape
+            indptr  = np.empty(M + 1,    dtype=np.intc)
+            indices = np.empty(self.nnz, dtype=np.intc)
+            data    = np.empty(self.nnz, dtype=upcast(self.dtype))
 
-            coo_tocsr(self.shape[0], self.shape[1], self.nnz, \
+            coo_tocsr(M, N, self.nnz, \
                       self.row, self.col, self.data, \
                       indptr, indices, data)
 
-            A = csr_matrix((data, indices, indptr), self.shape)
+            A = csr_matrix((data, indices, indptr), shape=self.shape)
             A.sum_duplicates()
-            return A
 
+            return A
 
     def tocoo(self, copy=False):
         if copy:
@@ -316,7 +320,7 @@ class coo_matrix(_data_matrix):
         from dia import dia_matrix
 
         ks = self.col - self.row  #the diagonal for each nonzero
-        diags = unique(ks)
+        diags = np.unique(ks)
 
         if len(diags) > 100:
             #probably undesired, should we do something?
@@ -324,15 +328,16 @@ class coo_matrix(_data_matrix):
             pass
 
         #initialize and fill in data array
-        data = zeros( (len(diags), self.col.max()+1), dtype=self.dtype)
-        data[ searchsorted(diags,ks), self.col ] = self.data
+        data = np.zeros( (len(diags), self.col.max()+1), dtype=self.dtype)
+        data[ np.searchsorted(diags,ks), self.col ] = self.data
 
-        return dia_matrix((data,diags),shape=self.shape)
+        return dia_matrix((data,diags), shape=self.shape)
 
     def todok(self):
+        from itertools import izip
         from dok import dok_matrix
 
-        dok = dok_matrix((self.shape),dtype=self.dtype)
+        dok = dok_matrix((self.shape), dtype=self.dtype)
 
         dok.update( izip(izip(self.row,self.col),self.data) )
 
@@ -358,12 +363,12 @@ class coo_matrix(_data_matrix):
 
     def _mul_vector(self, other):
         #output array
-        result = zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
+        result = np.zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
         coo_matvec(self.nnz, self.row, self.col, self.data, other, result)
         return result
 
     def _mul_dense_matrix(self, other):
-        return hstack( [ self._mul_vector(col).reshape(-1,1) for col in other.T ] )
+        return np.hstack( [ self._mul_vector(col).reshape(-1,1) for col in other.T ] )
 
 from sputils import _isinstance
 

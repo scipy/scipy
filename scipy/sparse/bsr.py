@@ -8,9 +8,6 @@ from warnings import warn
 
 import numpy as np
 
-#from numpy import zeros, intc, array, asarray, arange, diff, tile, rank, \
-#                  ravel, empty, empty_like
-
 from data import _data_matrix
 from compressed import _cs_matrix
 from base import isspmatrix, _formats
