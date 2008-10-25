@@ -693,6 +693,11 @@ class TestMedian(TestCase):
         assert_equal(stats.median(a2),2.5)
         assert_equal(stats.median(a3),3.5)
 
+    def test_axis(self):
+        a1 = np.array([[3,4,5], [10,-3,-5]])
+        assert_equal(stats.median(a1), np.array([6.5, 0.5, 0.]))
+        assert_equal(stats.median(a1, axis=-1), np.array([4., -3]))
+
 class TestMode(TestCase):
     def test_basic(self):
         data1 = [3,5,1,10,23,3,2,6,8,6,10,6]
