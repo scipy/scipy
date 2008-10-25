@@ -685,6 +685,14 @@ class TestMedian(TestCase):
         assert_almost_equal(stats.median(data1),2.5)
         assert_almost_equal(stats.median(data2),5)
 
+    def test_basic2(self):
+        a1 = [3,4,5,10,-3,-5,6]
+        a2 = [3,-6,-2,8,7,4,2,1]
+        a3 = [3.,4,5,10,-3,-5,-6,7.0]
+        assert_equal(stats.median(a1),4)
+        assert_equal(stats.median(a2),2.5)
+        assert_equal(stats.median(a3),3.5)
+
 class TestMode(TestCase):
     def test_basic(self):
         data1 = [3,5,1,10,23,3,2,6,8,6,10,6]
