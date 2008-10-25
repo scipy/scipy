@@ -100,7 +100,7 @@ def isshape(x):
         # Assume it's a tuple of matrix dimensions (M, N)
         (M, N) = x
         assert isintlike(M) and isintlike(N)   # raises TypeError unless integers
-        assert M > 0 and N > 0
+        #assert M > 0 and N > 0
     except (ValueError, TypeError, AssertionError):
         return False
     else:

@@ -16,22 +16,21 @@ from base import spmatrix, isspmatrix
 from sputils import getdtype,isshape,issequence,isscalarlike
 
 class lil_matrix(spmatrix):
-    """Row-based linked list matrix
+    """Row-based linked list sparse matrix
 
+    This is an efficient structure for constructing sparse 
+    matrices incrementally.
 
     This can be instantiated in several ways:
-        csc_matrix(D)
+        lil_matrix(D)
             with a dense matrix or rank-2 ndarray D
 
-        csc_matrix(S)
+        lil_matrix(S)
             with another sparse matrix S (equivalent to S.tocsc())
 
-        csc_matrix((M, N), [dtype])
+        lil_matrix((M, N), [dtype])
             to construct an empty matrix with shape (M, N)
             dtype is optional, defaulting to dtype='d'.
-
-        csc_matrix((data, ij), [shape=(M, N)])
-            where ``data`` and ``ij`` satisfy ``a[ij[0, k], ij[1, k]] = data[k]``
 
     Notes
     -----
@@ -60,40 +59,25 @@ class lil_matrix(spmatrix):
 
     """
 
-    def __init__(self, A=None, shape=None, dtype=None, copy=False):
-        """ Create a new list-of-lists sparse matrix.  An optional
-        argument A is accepted, which initializes the lil_matrix with it.
-        This can be a tuple of dimensions (M, N) or a dense array /
-        matrix to copy, or a sparse matrix.
-        """
+    def __init__(self, arg1, shape=None, dtype=None, copy=False):
         spmatrix.__init__(self)
-        self.dtype = getdtype(dtype, A, default=float)
+        self.dtype = getdtype(dtype, arg1, default=float)
 
         # First get the shape
-        if A is None:
-            if not isshape(shape):
-                raise TypeError("need a valid shape")
-            M, N = shape
-            self.shape = (M,N)
-            self.rows = numpy.empty((M,), dtype=object)
-            self.data = numpy.empty((M,), dtype=object)
-            for i in range(M):
-                self.rows[i] = []
-                self.data[i] = []
-        elif isspmatrix(A):
-            if isspmatrix_lil(A) and copy:
-                A = A.copy()
+        if isspmatrix(arg1):
+            if isspmatrix_lil(arg1) and copy:
+                A = arg1.copy()
             else:
-                A = A.tolil()
+                A = arg1.tolil()
             self.shape = A.shape
             self.dtype = A.dtype
             self.rows  = A.rows
             self.data  = A.data
-        elif isinstance(A,tuple):
-            if isshape(A):
+        elif isinstance(arg1,tuple):
+            if isshape(arg1):
                 if shape is not None:
                     raise ValueError('invalid use of shape parameter')
-                M, N = A
+                M, N = arg1
                 self.shape = (M,N)
                 self.rows = numpy.empty((M,), dtype=object)
                 self.data = numpy.empty((M,), dtype=object)
@@ -101,11 +85,11 @@ class lil_matrix(spmatrix):
                     self.rows[i] = []
                     self.data[i] = []
             else:
-                raise TypeError,'unrecognized lil_matrix constructor usage'
+                raise TypeError('unrecognized lil_matrix constructor usage')
         else:
             #assume A is dense
             try:
-                A = asmatrix(A)
+                A = asmatrix(arg1)
             except TypeError:
                 raise TypeError, "unsupported matrix type"
             else:
@@ -334,7 +318,7 @@ class lil_matrix(spmatrix):
     def _mul_scalar(self, other):
         if other == 0:
             # Multiply by zero: return the zero matrix
-            new = lil_matrix(shape=self.shape, dtype=self.dtype)
+            new = lil_matrix(self.shape, dtype=self.dtype)
         else:
             new = self.copy()
             # Multiply this scalar by every element.

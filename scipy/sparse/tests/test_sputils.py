@@ -47,10 +47,9 @@ class TestSparseUtils(TestCase):
         assert_equal(isshape( (1,2) ),True)
         assert_equal(isshape( (5,2) ),True)
 
-        assert_equal(isshape( (-1,4) ),False)
         assert_equal(isshape( (1.5,2) ),False)
-        assert_equal(isshape( (0,4) ),False)
         assert_equal(isshape( (2,2,2) ),False)
+        assert_equal(isshape( ([2],2) ),False)
 
     def test_issequence(self):
         assert_equal(issequence( (1,) ),True)

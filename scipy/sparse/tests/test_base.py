@@ -34,7 +34,6 @@ from scipy.sparse.linalg import splu
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
 
-#TODO check that invalid shape in constructor raises exception
 #TODO check that spmatrix( ... , copy=X ) is respected
 #TODO test prune
 #TODO test has_sorted_indices
@@ -44,6 +43,17 @@ class _TestCommon:
     def setUp(self):
         self.dat = matrix([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
         self.datsp = self.spmatrix(self.dat)
+    
+    def test_empty(self):
+        """create empty matrices"""
+        
+        assert_equal(self.spmatrix((3,3)).todense(), np.zeros((3,3)))
+        assert_equal(self.spmatrix((3,3)).nnz, 0)
+
+    def test_invalid_shapes(self):
+        assert_raises(ValueError, self.spmatrix, (-1,3) )
+        assert_raises(ValueError, self.spmatrix, (3,-1) )
+        assert_raises(ValueError, self.spmatrix, (-1,-1) )
 
     def test_repr(self):
         repr(self.datsp)
@@ -51,7 +61,7 @@ class _TestCommon:
     def test_str(self):
         str(self.datsp)
 
-    def test_empty(self):
+    def test_empty_arithmetic(self):
         """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
         """
         shape = (5, 5)
@@ -304,17 +314,11 @@ class _TestCommon:
         assert(isinstance( M * array([1,2,3]), ndarray))
         assert(isinstance( M * matrix([1,2,3]).T, matrix))
 
-
         #ensure exception is raised for improper dimensions
         bad_vecs = [array([1,2]), array([1,2,3,4]), array([[1],[2]]),
                     matrix([1,2,3]), matrix([[1],[2]])]
-        caught = 0
         for x in bad_vecs:
-            try:
-                y = M * x
-            except ValueError:
-                caught += 1
-        assert_equal(caught,len(bad_vecs))
+            assert_raises(ValueError, M.__mul__, x)
 
         # Should this be supported or not?!
         #flat = array([1,2,3])
@@ -1371,8 +1375,8 @@ class TestCOO(_TestCommon, TestCase):
     def test_constructor4(self):
         """from dense matrix"""
         mat = array([[0,1,0,0],
-                           [7,0,3,0],
-                           [0,4,0,0]])
+                     [7,0,3,0],
+                     [0,4,0,0]])
         coo = coo_matrix(mat)
         assert_array_equal(coo.todense(),mat)
 
@@ -1386,8 +1390,14 @@ class TestDIA(_TestCommon, _TestArithmetic, TestCase):
     spmatrix = dia_matrix
 
     def test_constructor1(self):
-        pass
-        #TODO add test
+        D = matrix([[1, 0, 3, 0],
+                    [1, 2, 0, 4],
+                    [0, 2, 3, 0],
+                    [0, 0, 3, 4]])
+        data    = np.array([[1,2,3,4]]).repeat(3,axis=0)
+        offsets = np.array([0,-1,2])
+        assert_equal(dia_matrix( (data,offsets), shape=(4,4)).todense(), D)
+
 
 
 class TestBSR(_TestCommon, _TestArithmetic, _TestInplaceArithmetic,
