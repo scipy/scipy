@@ -625,15 +625,6 @@ class TestMean(TestCase):
             A += val
         assert_almost_equal(stats.mean(a,axis=None),A/(5*3.0*5))
 
-class TestMedian(TestCase):
-    def test_basic(self):
-        a1 = [3,4,5,10,-3,-5,6]
-        a2 = [3,-6,-2,8,7,4,2,1]
-        a3 = [3.,4,5,10,-3,-5,-6,7.0]
-        assert_equal(stats.median(a1),4)
-        assert_equal(stats.median(a2),2.5)
-        assert_equal(stats.median(a3),3.5)
-
 class TestPercentile(TestCase):
     def setUp(self):
         self.a1 = [3,4,5,10,-3,-5,6]
