@@ -5,15 +5,12 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['lil_matrix','isspmatrix_lil']
 
-import copy
 from bisect import bisect_left
 
-import numpy
-from numpy import isscalar, asmatrix, asarray, intc, concatenate, array, \
-        cumsum, zeros, unravel_index
+import numpy as np
 
 from base import spmatrix, isspmatrix
-from sputils import getdtype,isshape,issequence,isscalarlike
+from sputils import getdtype, isshape, issequence, isscalarlike
 
 class lil_matrix(spmatrix):
     """Row-based linked list sparse matrix
@@ -79,8 +76,8 @@ class lil_matrix(spmatrix):
                     raise ValueError('invalid use of shape parameter')
                 M, N = arg1
                 self.shape = (M,N)
-                self.rows = numpy.empty((M,), dtype=object)
-                self.data = numpy.empty((M,), dtype=object)
+                self.rows = np.empty((M,), dtype=object)
+                self.data = np.empty((M,), dtype=object)
                 for i in range(M):
                     self.rows[i] = []
                     self.data[i] = []
@@ -89,9 +86,9 @@ class lil_matrix(spmatrix):
         else:
             #assume A is dense
             try:
-                A = asmatrix(arg1)
+                A = np.asmatrix(arg1)
             except TypeError:
-                raise TypeError, "unsupported matrix type"
+                raise TypeError('unsupported matrix type')
             else:
                 from csr import csr_matrix
                 A = csr_matrix(A).tolil()
@@ -161,7 +158,7 @@ class lil_matrix(spmatrix):
             j += self.shape[1]
 
         if j < 0 or j > self.shape[1]:
-            raise IndexError,'column index out of bounds'
+            raise IndexError('column index out of bounds')
 
         pos = bisect_left(row, j)
         if pos != len(data) and row[pos] == j:
@@ -194,10 +191,10 @@ class lil_matrix(spmatrix):
         try:
             i, j = index
         except (AssertionError, TypeError):
-            raise IndexError, "invalid index"
+            raise IndexError('invalid index')
 
-        if isscalar(i):
-            if isscalar(j):
+        if np.isscalar(i):
+            if np.isscalar(j):
                 return self._get1(i, j)
             if isinstance(j, slice):
                 j = self._slicetoseq(j, self.shape[1])
@@ -208,7 +205,7 @@ class lil_matrix(spmatrix):
         elif issequence(i) or isinstance(i, slice):
             if isinstance(i, slice):
                 i = self._slicetoseq(i, self.shape[0])
-            if isscalar(j):
+            if np.isscalar(j):
                 return self.__class__([[self._get1(ii, j)] for ii in i])
             if isinstance(j, slice):
                 j = self._slicetoseq(j, self.shape[1])
@@ -233,7 +230,7 @@ class lil_matrix(spmatrix):
             j += self.shape[1]
 
         if j < 0 or j >= self.shape[1]:
-            raise IndexError,'column index out of bounds'
+            raise IndexError('column index out of bounds')
 
         pos = bisect_left(row, j)
         if x != 0:
@@ -258,22 +255,22 @@ class lil_matrix(spmatrix):
         if issequence(j):
             if isinstance(x, spmatrix):
                 x = x.todense()
-            x = numpy.asarray(x).squeeze()
-            if isscalar(x) or x.size == 1:
+            x = np.asarray(x).squeeze()
+            if np.isscalar(x) or x.size == 1:
                 for jj in j:
                     self._insertat2(row, data, jj, x)
             else:
                 # x must be one D. maybe check these things out
                 for jj, xx in zip(j, x):
                     self._insertat2(row, data, jj, xx)
-        elif isscalar(j):
+        elif np.isscalar(j):
             self._insertat2(row, data, j, x)
         else:
-            raise ValueError, "invalid column value: %s" % str(j)
+            raise ValueError('invalid column value: %s' % str(j))
 
 
     def __setitem__(self, index, x):
-        if isscalar(x):
+        if np.isscalar(x):
             x = self.dtype.type(x)
         elif not isinstance(x, spmatrix):
             x = lil_matrix(x)
@@ -281,7 +278,7 @@ class lil_matrix(spmatrix):
         try:
             i, j = index
         except (ValueError, TypeError):
-            raise IndexError, "invalid index"
+            raise IndexError('invalid index')
 
         if isspmatrix(x):
             if (isinstance(i, slice) and (i == slice(None))) and \
@@ -292,12 +289,12 @@ class lil_matrix(spmatrix):
                 self.data = x.data
                 return
 
-        if isscalar(i):
+        if np.isscalar(i):
             row = self.rows[i]
             data = self.data[i]
             self._insertat3(row, data, j, x)
         elif issequence(i) and issequence(j):
-            if isscalar(x):
+            if np.isscalar(x):
                 for ii, jj in zip(i, j):
                     self._insertat(ii, jj, x)
             else:
@@ -306,14 +303,14 @@ class lil_matrix(spmatrix):
         elif isinstance(i, slice) or issequence(i):
             rows = self.rows[i]
             datas = self.data[i]
-            if isscalar(x):
+            if np.isscalar(x):
                 for row, data in zip(rows, datas):
                     self._insertat3(row, data, j, x)
             else:
                 for row, data, xx in zip(rows, datas, x):
                     self._insertat3(row, data, j, xx)
         else:
-            raise ValueError, "invalid index value: %s" % str((i, j))
+            raise ValueError('invalid index value: %s' % str((i, j)))
 
     def _mul_scalar(self, other):
         if other == 0:
@@ -322,16 +319,16 @@ class lil_matrix(spmatrix):
         else:
             new = self.copy()
             # Multiply this scalar by every element.
-            new.data = numpy.array([[val*other for val in rowvals] for
-                                    rowvals in new.data], dtype=object)
+            new.data = np.array([[val*other for val in rowvals] for
+                                  rowvals in new.data], dtype=object)
         return new
 
     def __truediv__(self, other):           # self / other
         if isscalarlike(other):
             new = self.copy()
             # Divide every element by this scalar
-            new.data = numpy.array([[val/other for val in rowvals] for
-                                    rowvals in new.data], dtype=object)
+            new.data = np.array([[val/other for val in rowvals] for
+                                  rowvals in new.data], dtype=object)
             return new
         else:
             return self.tocsr() / other
@@ -341,7 +338,7 @@ class lil_matrix(spmatrix):
 #        """Point-wise multiplication by another lil_matrix.
 #
 #        """
-#        if isscalar(other):
+#        if np.isscalar(other):
 #            return self.__mul__(other)
 #
 #        if isspmatrix_lil(other):
@@ -370,22 +367,23 @@ class lil_matrix(spmatrix):
 #                             "with another lil_matrix.")
 
     def copy(self):
+        from copy import deepcopy
         new = lil_matrix(self.shape, dtype=self.dtype)
-        new.data = copy.deepcopy(self.data)
-        new.rows = copy.deepcopy(self.rows)
+        new.data = deepcopy(self.data)
+        new.rows = deepcopy(self.rows)
         return new
 
     def reshape(self,shape):
-        new = lil_matrix(shape,dtype=self.dtype)
+        new = lil_matrix(shape, dtype=self.dtype)
         j_max = self.shape[1]
         for i,row in enumerate(self.rows):
             for col,j in enumerate(row):
-                new_r,new_c = unravel_index(i*j_max + j,shape)
+                new_r,new_c = np.unravel_index(i*j_max + j,shape)
                 new[new_r,new_c] = self[i,j]
         return new
 
     def __add__(self, other):
-        if isscalar(other) and other != 0:
+        if np.isscalar(other) and other != 0:
             raise ValueError("Refusing to destroy sparsity. "
                              "Use x.todense() + c instead.")
         else:
@@ -400,7 +398,7 @@ class lil_matrix(spmatrix):
 
 
     def toarray(self):
-        d = zeros(self.shape, dtype=self.dtype)
+        d = np.zeros(self.shape, dtype=self.dtype)
         for i, row in enumerate(self.rows):
             for pos, j in enumerate(row):
                 d[i, j] = self.data[i][pos]
@@ -419,20 +417,20 @@ class lil_matrix(spmatrix):
         """ Return Compressed Sparse Row format arrays for this matrix.
         """
 
-        indptr = asarray([len(x) for x in self.rows], dtype=intc)
-        indptr = concatenate( ( array([0],dtype=intc), cumsum(indptr) ) )
+        indptr = np.asarray([len(x) for x in self.rows], dtype=np.intc)
+        indptr = np.concatenate( (np.array([0], dtype=np.intc), np.cumsum(indptr)) )
 
         nnz = indptr[-1]
 
         indices = []
         for x in self.rows:
             indices.extend(x)
-        indices = asarray(indices,dtype=intc)
+        indices = np.asarray(indices, dtype=np.intc)
 
         data = []
         for x in self.data:
             data.extend(x)
-        data = asarray(data,dtype=self.dtype)
+        data = np.asarray(data, dtype=self.dtype)
 
         from csr import csr_matrix
         return csr_matrix((data, indices, indptr), shape=self.shape)
