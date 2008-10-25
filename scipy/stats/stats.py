@@ -489,10 +489,7 @@ Please note that:
     - numpy.median has a ddof argument to replace bias in a more general manner.
       scipy.stats.median(a, bias=True) can be replaced by numpy.median(x,
 axis=0, ddof=1).""", DeprecationWarning)
-    a, axis = _chk_asarray(a, axis)
-    if axis != 0:
-        a = np.rollaxis(a, axis, 0)
-    return np.median(a)
+    return np.median(a, axis)
 
 def mode(a, axis=0):
     """Returns an array of the modal (most common) value in the passed array.
