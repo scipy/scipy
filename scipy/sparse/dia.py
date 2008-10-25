@@ -164,11 +164,11 @@ class dia_matrix(_data_matrix):
 
     def tocsr(self):
         #this could be faster
-        return self.tocoo().tocsr(sum_duplicates=False)
+        return self.tocoo().tocsr()
 
     def tocsc(self):
         #this could be faster
-        return self.tocoo().tocsc(sum_duplicates=False)
+        return self.tocoo().tocsc()
 
     def tocoo(self):
         num_data = len(self.data)

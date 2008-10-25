@@ -233,11 +233,24 @@ class coo_matrix(_data_matrix):
         coo_todense(M, N, self.nnz, self.row, self.col, self.data, B.ravel() )
         return B
 
-    def tocsc(self,sum_duplicates=True):
+    def tocsc(self):
         """Return a copy of this matrix in Compressed Sparse Column format
 
-            By default sum_duplicates=True and any duplicate
-            matrix entries are added together.
+        Duplicate entries will be summed together.
+
+        Example
+        -------
+        >>> from numpy import array
+        >>> from scipy.sparse import coo_matrix
+        >>> row  = array([0,0,1,3,1,0,0])
+        >>> col  = array([0,2,1,3,1,0,0])
+        >>> data = array([1,1,1,1,1,1,1])
+        >>> A = coo_matrix( (data,(row,col)), shape=(4,4)).tocsc()
+        >>> A.todense()
+        matrix([[3, 0, 1, 0],
+                [0, 2, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 1]])
 
         """
         from csc import csc_matrix
@@ -253,15 +266,27 @@ class coo_matrix(_data_matrix):
                       indptr, indices, data)
 
             A = csc_matrix((data, indices, indptr), self.shape)
-            if sum_duplicates:
-                A.sum_duplicates()
+            A.sum_duplicates()
             return A
 
-    def tocsr(self,sum_duplicates=True):
+    def tocsr(self):
         """Return a copy of this matrix in Compressed Sparse Row format
 
-            By default sum_duplicates=True and any duplicate
-            matrix entries are added together.
+        Duplicate entries will be summed together.
+
+        Example
+        -------
+        >>> from numpy import array
+        >>> from scipy.sparse import coo_matrix
+        >>> row  = array([0,0,1,3,1,0,0])
+        >>> col  = array([0,2,1,3,1,0,0])
+        >>> data = array([1,1,1,1,1,1,1])
+        >>> A = coo_matrix( (data,(row,col)), shape=(4,4)).tocsr()
+        >>> A.todense()
+        matrix([[3, 0, 1, 0],
+                [0, 2, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 1]])
 
         """
         from csr import csr_matrix
@@ -277,8 +302,7 @@ class coo_matrix(_data_matrix):
                       indptr, indices, data)
 
             A = csr_matrix((data, indices, indptr), self.shape)
-            if sum_duplicates:
-                A.sum_duplicates()
+            A.sum_duplicates()
             return A
 
 
