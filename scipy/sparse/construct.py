@@ -9,9 +9,7 @@ __all__ = [ 'spdiags', 'eye', 'identity', 'kron', 'kronsum',
 
 from warnings import warn
 
-import numpy
-from numpy import ones, arange, intc, asarray, rank, zeros, \
-        cumsum, concatenate, empty
+import numpy as np
 
 from sputils import upcast
 
@@ -84,28 +82,28 @@ def identity(n, dtype='d', format=None):
     """
 
     if format in ['csr','csc']:
-        indptr  = arange(n+1, dtype=intc)
-        indices = arange(n, dtype=intc)
-        data    = ones(n, dtype=dtype)
+        indptr  = np.arange(n+1, dtype=np.intc)
+        indices = np.arange(n,   dtype=np.intc)
+        data    = np.ones(n,     dtype=dtype)
         cls = eval('%s_matrix' % format)
         return cls((data,indices,indptr),(n,n))
     elif format == 'coo':
-        row  = arange(n, dtype=intc)
-        col  = arange(n, dtype=intc)
-        data = ones(n, dtype=dtype)
+        row  = np.arange(n, dtype=np.intc)
+        col  = np.arange(n, dtype=np.intc)
+        data = np.ones(n, dtype=dtype)
         return coo_matrix((data,(row,col)),(n,n))
     elif format == 'dia':
-        data = ones(n, dtype=dtype)
+        data = np.ones(n, dtype=dtype)
         diags = [0]
-        return dia_matrix( (data,diags), shape=(n,n) )
+        return dia_matrix((data,diags), shape=(n,n))
     else:
-        return identity( n, dtype=dtype, format='csr').asformat(format)
+        return identity(n, dtype=dtype, format='csr').asformat(format)
 
 def eye(m, n, k=0, dtype='d', format=None):
     """eye(m, n) returns a sparse (m x n) matrix where the k-th diagonal
     is all ones and everything else is zeros.
     """
-    diags = ones((1, m), dtype=dtype)
+    diags = np.ones((1, m), dtype=dtype)
     return spdiags(diags, k, m, n).asformat(format)
 
 def kron(A, B, format=None):
@@ -148,7 +146,7 @@ def kron(A, B, format=None):
         #B is fairly dense, use BSR
         A = csr_matrix(A,copy=True)
 
-        output_shape = (A.shape[0]*B.shape[0],A.shape[1]*B.shape[1])
+        output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
 
         if A.nnz == 0 or B.nnz == 0:
             # kronecker product is the zero matrix
@@ -158,11 +156,11 @@ def kron(A, B, format=None):
         data = A.data.repeat(B.size).reshape(-1,B.shape[0],B.shape[1])
         data = data * B
 
-        return bsr_matrix((data,A.indices,A.indptr),shape=output_shape)
+        return bsr_matrix((data,A.indices,A.indptr), shape=output_shape)
     else:
         #use COO
         A = coo_matrix(A)
-        output_shape = (A.shape[0]*B.shape[0],A.shape[1]*B.shape[1])
+        output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
 
         if A.nnz == 0 or B.nnz == 0:
             # kronecker product is the zero matrix
@@ -231,7 +229,7 @@ def kronsum(A, B, format=None):
     return (L+R).asformat(format) #since L + R is not always same format
 
 
-def hstack( blocks, format=None, dtype=None ):
+def hstack(blocks, format=None, dtype=None):
     """Stack sparse matrices horizontally (column wise)
 
     Parameters
@@ -256,7 +254,7 @@ def hstack( blocks, format=None, dtype=None ):
     """
     return bmat([blocks], format=format, dtype=dtype)
 
-def vstack( blocks, format=None, dtype=None ):
+def vstack(blocks, format=None, dtype=None):
     """Stack sparse matrices vertically (row wise)
 
     Parameters
@@ -282,7 +280,7 @@ def vstack( blocks, format=None, dtype=None ):
     """
     return bmat([ [b] for b in blocks ], format=format, dtype=dtype)
 
-def bmat( blocks, format=None, dtype=None ):
+def bmat(blocks, format=None, dtype=None):
     """Build a sparse matrix from sparse sub-blocks
 
     Parameters
@@ -313,16 +311,16 @@ def bmat( blocks, format=None, dtype=None ):
 
     """
 
-    blocks = asarray(blocks, dtype='object')
+    blocks = np.asarray(blocks, dtype='object')
 
-    if rank(blocks) != 2:
+    if np.rank(blocks) != 2:
         raise ValueError('blocks must have rank 2')
 
     M,N = blocks.shape
 
-    block_mask   = zeros( blocks.shape, dtype='bool' )
-    brow_lengths = zeros( blocks.shape[0], dtype=int )
-    bcol_lengths = zeros( blocks.shape[1], dtype=int )
+    block_mask   = np.zeros(blocks.shape,    dtype=np.bool)
+    brow_lengths = np.zeros(blocks.shape[0], dtype=np.intc)
+    bcol_lengths = np.zeros(blocks.shape[1], dtype=np.intc)
 
     # convert everything to COO format
     for i in range(M):
@@ -355,12 +353,12 @@ def bmat( blocks, format=None, dtype=None ):
     if dtype is None:
         dtype = upcast( *tuple([A.dtype for A in blocks[block_mask]]) )
 
-    row_offsets = concatenate(([0],cumsum(brow_lengths)))
-    col_offsets = concatenate(([0],cumsum(bcol_lengths)))
+    row_offsets = np.concatenate(([0], np.cumsum(brow_lengths)))
+    col_offsets = np.concatenate(([0], np.cumsum(bcol_lengths)))
 
-    data = empty(nnz, dtype=dtype)
-    row  = empty(nnz, dtype=intc)
-    col  = empty(nnz, dtype=intc)
+    data = np.empty(nnz, dtype=dtype)
+    row  = np.empty(nnz, dtype=np.intc)
+    col  = np.empty(nnz, dtype=np.intc)
 
     nnz = 0
     for i in range(M):
@@ -376,8 +374,8 @@ def bmat( blocks, format=None, dtype=None ):
 
                 nnz += A.nnz
 
-    shape = (sum(brow_lengths),sum(bcol_lengths))
-    return coo_matrix( (data, (row, col)), shape=shape ).asformat(format)
+    shape = (np.sum(brow_lengths), np.sum(bcol_lengths))
+    return coo_matrix((data, (row, col)), shape=shape).asformat(format)
 
 
 
@@ -387,11 +385,9 @@ def bmat( blocks, format=None, dtype=None ):
 
 __all__ += [ 'speye','spidentity', 'spkron', 'lil_eye', 'lil_diags' ]
 
-from numpy import deprecate
-
-spkron      = deprecate(kron,     oldname='spkron',     newname='scipy.sparse.kron')
-speye       = deprecate(eye,      oldname='speye',      newname='scipy.sparse.eye')
-spidentity  = deprecate(identity, oldname='spidentity', newname='scipy.sparse.identity')
+spkron      = np.deprecate(kron,     oldname='spkron',     newname='scipy.sparse.kron')
+speye       = np.deprecate(eye,      oldname='speye',      newname='scipy.sparse.eye')
+spidentity  = np.deprecate(identity, oldname='spidentity', newname='scipy.sparse.identity')
 
 
 def lil_eye((r,c), k=0, dtype='d'):
@@ -413,13 +409,11 @@ def lil_eye((r,c), k=0, dtype='d'):
     warn("lil_eye is deprecated." \
             "use scipy.sparse.eye(r, c, k, format='lil') instead", \
             DeprecationWarning)
-    return eye(r,c,k,dtype=dtype,format='lil')
+    return eye(r, c, k, dtype=dtype, format='lil')
 
-from numpy import clip
-from itertools import izip
 
 #TODO remove this function
-def lil_diags(diags,offsets,(m,n),dtype='d'):
+def lil_diags(diags, offsets, (m,n), dtype='d'):
     """Generate a lil_matrix with the given diagonals.
 
     Parameters
@@ -449,7 +443,7 @@ def lil_diags(diags,offsets,(m,n),dtype='d'):
         raise ValueError("Number of diagonals provided should "
                          "agree with offsets.")
 
-    sort_indices = numpy.argsort(offsets_unsorted)
+    sort_indices = np.argsort(offsets_unsorted)
     diags = [diags_unsorted[k] for k in sort_indices]
     offsets = [offsets_unsorted[k] for k in sort_indices]
 
@@ -459,8 +453,10 @@ def lil_diags(diags,offsets,(m,n),dtype='d'):
                              "diagonal %s." % k)
 
     out = lil_matrix((m,n),dtype=dtype)
+    
+    from itertools import izip
     for k,diag in izip(offsets,diags):
-        for ix,c in enumerate(xrange(clip(k,0,n),clip(m+k,0,n))):
+        for ix,c in enumerate(xrange(np.clip(k,0,n),np.clip(m+k,0,n))):
             out.rows[c-k].append(c)
             out.data[c-k].append(diag[ix])
     return out
