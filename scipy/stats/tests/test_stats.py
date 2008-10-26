@@ -625,15 +625,6 @@ class TestMean(TestCase):
             A += val
         assert_almost_equal(stats.mean(a,axis=None),A/(5*3.0*5))
 
-class TestMedian(TestCase):
-    def test_basic(self):
-        a1 = [3,4,5,10,-3,-5,6]
-        a2 = [3,-6,-2,8,7,4,2,1]
-        a3 = [3.,4,5,10,-3,-5,-6,7.0]
-        assert_equal(stats.median(a1),4)
-        assert_equal(stats.median(a2),2.5)
-        assert_equal(stats.median(a3),3.5)
-
 class TestPercentile(TestCase):
     def setUp(self):
         self.a1 = [3,4,5,10,-3,-5,6]
@@ -693,6 +684,20 @@ class TestMedian(TestCase):
         data2 = [3,5,1,10,23,-10,3,-2,6,8,15]
         assert_almost_equal(stats.median(data1),2.5)
         assert_almost_equal(stats.median(data2),5)
+
+    def test_basic2(self):
+        a1 = [3,4,5,10,-3,-5,6]
+        a2 = [3,-6,-2,8,7,4,2,1]
+        a3 = [3.,4,5,10,-3,-5,-6,7.0]
+        assert_equal(stats.median(a1),4)
+        assert_equal(stats.median(a2),2.5)
+        assert_equal(stats.median(a3),3.5)
+
+    def test_axis(self):
+        """Regression test for #760."""
+        a1 = np.array([[3,4,5], [10,-3,-5]])
+        assert_equal(stats.median(a1), np.array([6.5, 0.5, 0.]))
+        assert_equal(stats.median(a1, axis=-1), np.array([4., -3]))
 
 class TestMode(TestCase):
     def test_basic(self):

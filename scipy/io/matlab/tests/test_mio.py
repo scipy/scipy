@@ -70,7 +70,7 @@ def _check_case(name, files, case):
             assert k in matdict, "Missing key at %s" % k_label
             _check_level(k_label, expected, matdict[k])
 
-# Round trip tests 
+# Round trip tests
 def _rt_check_case(name, expected, format):
     mat_stream = StringIO()
     savemat(mat_stream, expected, format=format)
@@ -155,7 +155,7 @@ case_table5_rt = [
      'expected': {'testsparsefloat': SP.csc_matrix(array([[-1+2j,0,2],[0,-3j,0]]))},
      },
     ]
-st = array([(u'Rats live on no evil star.', array([sqrt(2),exp(1),pi]), (1+1j)*array([sqrt(2),exp(1),pi]))], 
+st = array([(u'Rats live on no evil star.', array([sqrt(2),exp(1),pi]), (1+1j)*array([sqrt(2),exp(1),pi]))],
            dtype=[(n, object) for n in ['stringfield', 'doublefield', 'complexfield']])
 case_table5.append(
     {'name': 'struct',
@@ -253,7 +253,7 @@ def test_gzip_simple():
     assert_array_almost_equal(actual['x'].todense(),
                               expected['x'].todense())
 
-    
+
 def test_mat73():
     # Check any hdf5 files raise an error
     filenames = glob(

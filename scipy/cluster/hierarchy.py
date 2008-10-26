@@ -345,7 +345,7 @@ def centroid(y):
 
        Performs centroid/UPGMC linkage on the condensed distance
        matrix ``y``.  See ``linkage`` for more information on the return
-       structure and algorithm. 
+       structure and algorithm.
 
     2. Z = centroid(X)
 
@@ -427,7 +427,7 @@ def ward(y):
 
 
 def linkage(y, method='single', metric='euclidean'):
-    """ 
+    """
     Performs hierarchical/agglomerative clustering on the
     condensed distance matrix y. y must be a {n \choose 2} sized
     vector where n is the number of original observations paired
@@ -665,7 +665,7 @@ class cnode:
         The number of leaf nodes (original observations) belonging to
         the cluster node nd. If the target node is a leaf, 1 is
         returned.
-        
+
         :Returns:
 
            c : int
@@ -713,7 +713,7 @@ class cnode:
         the list.
 
         For example, the statement:
-        
+
            ids = root.preOrder(lambda x: x.id)
 
         returns a list of the node ids corresponding to the leaf nodes
@@ -730,7 +730,7 @@ class cnode:
 
         :Returns:
            - L : list
-             The pre-order traversal.                    
+             The pre-order traversal.
         """
 
         # Do a preorder traversal, caching the result. To avoid having to do
@@ -773,7 +773,7 @@ def totree(Z, rd=False):
     Converts a hierarchical clustering encoded in the matrix Z (by
     linkage) into an easy-to-use tree object. The reference r to the
     root cnode object is returned.
-    
+
     Each cnode object has a left, right, dist, id, and count
     attribute. The left and right attributes point to cnode objects
     that were combined to generate the cluster. If both are None then
@@ -885,12 +885,12 @@ def cophenet(*args, **kwargs):
          hierarchical clustering defined by the linkage matrix ``Z``
          of a set of :math:`$n$` observations in :math:`$m$`
          dimensions. ``Y`` is the condensed distance matrix from which
-         ``Z`` was generated. 
+         ``Z`` was generated.
 
     :Returns:
        - c : ndarray
          The cophentic correlation distance (if ``y`` is passed).
- 
+
        - d : ndarray
          The cophenetic distance matrix in condensed form. The
          :math:`$ij$`th entry is the cophenetic distance between
@@ -964,7 +964,7 @@ def inconsistent(Z, d=2):
            The :math:`$(n-1)$` by 4 matrix encoding the linkage
            (hierarchical clustering).  See ``linkage`` documentation
            for more information on its form.
-       
+
 
     :Returns:
        - R : ndarray

@@ -7,8 +7,7 @@ __all__ = ['csr_matrix', 'isspmatrix_csr']
 
 from warnings import warn
 
-from numpy import asarray, asmatrix, zeros, intc, empty, isscalar, array, \
-                  searchsorted, where, deprecate, arange, ones, ravel
+import numpy as np
 
 from sparsetools import csr_tocsc, csr_tobsr, csr_count_blocks, \
         get_csr_submatrix
@@ -91,13 +90,13 @@ class csr_matrix(_cs_matrix):
     def transpose(self, copy=False):
         from csc import csc_matrix
         M,N = self.shape
-        return csc_matrix((self.data,self.indices,self.indptr),(N,M),copy=copy)
+        return csc_matrix((self.data,self.indices,self.indptr), shape=(N,M), copy=copy)
 
-    @deprecate
+    @np.deprecate
     def rowcol(self, ind):
         #TODO remove after 0.7
         col = self.indices[ind]
-        row = searchsorted(self.indptr, ind+1)-1
+        row = np.searchsorted(self.indptr, ind+1)-1
         return (row, col)
 
 
@@ -105,7 +104,7 @@ class csr_matrix(_cs_matrix):
         from lil import lil_matrix
         lil = lil_matrix(self.shape,dtype=self.dtype)
 
-        self.sort_indices() #lil_matrix needs sorted rows
+        self.sort_indices() #lil_matrix needs sorted column indices
 
         ptr,ind,dat = self.indptr,self.indices,self.data
         rows, data  = lil.rows, lil.data
@@ -125,28 +124,30 @@ class csr_matrix(_cs_matrix):
             return self
 
     def tocsc(self):
-        indptr  = empty(self.shape[1] + 1, dtype=intc)
-        indices = empty(self.nnz, dtype=intc)
-        data    = empty(self.nnz, dtype=upcast(self.dtype))
+        indptr  = np.empty(self.shape[1] + 1, dtype=np.intc)
+        indices = np.empty(self.nnz, dtype=np.intc)
+        data    = np.empty(self.nnz, dtype=upcast(self.dtype))
 
         csr_tocsc(self.shape[0], self.shape[1], \
                   self.indptr, self.indices, self.data, \
                   indptr, indices, data)
 
         from csc import csc_matrix
-        A = csc_matrix((data, indices, indptr), self.shape)
+        A = csc_matrix((data, indices, indptr), shape=self.shape)
         A.has_sorted_indices = True
         return A
 
-    def tobsr(self,blocksize=None,copy=True):
+    def tobsr(self, blocksize=None, copy=True):
         from bsr import bsr_matrix
 
         if blocksize is None:
             from spfuncs import estimate_blocksize
             return self.tobsr(blocksize=estimate_blocksize(self))
+
         elif blocksize == (1,1):
             arg1 = (self.data.reshape(-1,1,1),self.indices,self.indptr)
-            return bsr_matrix( arg1, shape=self.shape, copy=copy )
+            return bsr_matrix(arg1, shape=self.shape, copy=copy )
+
         else:
             R,C = blocksize
             M,N = self.shape
@@ -156,14 +157,14 @@ class csr_matrix(_cs_matrix):
 
             blks = csr_count_blocks(M,N,R,C,self.indptr,self.indices)
 
-            indptr  = empty( M/R + 1,    dtype=intc )
-            indices = empty( blks,       dtype=intc )
-            data    = zeros( (blks,R,C), dtype=self.dtype)
+            indptr  = np.empty(M/R + 1,    dtype=np.intc)
+            indices = np.empty(blks,       dtype=np.intc)
+            data    = np.zeros((blks,R,C), dtype=self.dtype)
 
             csr_tobsr(M, N, R, C, self.indptr, self.indices, self.data, \
                     indptr, indices, data.ravel() )
 
-            return bsr_matrix( (data,indices,indptr), shape=self.shape )
+            return bsr_matrix((data,indices,indptr), shape=self.shape)
 
     # these functions are used by the parent class (_cs_matrix)
     # to remove redudancy between csc_matrix and csr_matrix
@@ -176,7 +177,7 @@ class csr_matrix(_cs_matrix):
     def __getitem__(self, key):
         def asindices(x):
             try:
-                x = asarray(x,dtype='intc')
+                x = np.asarray(x, dtype=np.intc)
             except:
                 raise IndexError('invalid index')
             else:
@@ -201,11 +202,11 @@ class csr_matrix(_cs_matrix):
                 indices = indices.copy()
                 indices[indices < 0] += N
 
-            indptr  = arange(len(indices) + 1, dtype='intc')
-            data    = ones(len(indices), dtype=self.dtype)
+            indptr  = np.arange(len(indices) + 1, dtype=np.intc)
+            data    = np.ones(len(indices), dtype=self.dtype)
             shape   = (len(indices),N)
 
-            return csr_matrix( (data,indices,indptr), shape=shape)
+            return csr_matrix((data,indices,indptr), shape=shape)
 
 
         if isinstance(key, tuple):
@@ -245,10 +246,10 @@ class csr_matrix(_cs_matrix):
                         val = []
                         for i,j in zip(row,col):
                             val.append(self._get_single_element(i,j))
-                        return asmatrix(val)
+                        return np.asmatrix(val)
 
                     elif len(row.shape) == 2:
-                        row = ravel(row)                    #[[[1],[2]],[1,2]]
+                        row = np.ravel(row)                   #[[[1],[2]],[1,2]]
                         P = extractor(row, self.shape[0])
                         return (P*self)[:,col]
 
@@ -276,7 +277,7 @@ class csr_matrix(_cs_matrix):
 
         start = self.indptr[row]
         end   = self.indptr[row+1]
-        indxs = where(col == self.indices[start:end])[0]
+        indxs = np.where(col == self.indices[start:end])[0]
 
         num_matches = len(indxs)
 
@@ -288,7 +289,7 @@ class csr_matrix(_cs_matrix):
         else:
             raise ValueError('nonzero entry (%d,%d) occurs more than once' % (row,col) )
 
-    def _get_row_slice(self, i, cslice ):
+    def _get_row_slice(self, i, cslice):
         """Returns a copy of row self[i, cslice]
         """
         if i < 0:
@@ -315,7 +316,7 @@ class csr_matrix(_cs_matrix):
 
         index  = self.indices[indices] - start
         data   = self.data[indices]
-        indptr = array([0, len(indices)])
+        indptr = np.array([0, len(indices)])
         return csr_matrix( (data, index, indptr), shape=(1, stop-start) )
 
     def _get_submatrix( self, row_slice, col_slice ):

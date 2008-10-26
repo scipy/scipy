@@ -400,7 +400,7 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=None, maxiter=None, xtype=None, M=None
                b or use xtype='f','d','F',or 'D'
     callback -- an optional user-supplied function to call after each
                 iteration.  It is called as callback(rk), where rk is the
-                the current relative residual 
+                the current relative residual
     """
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
@@ -442,7 +442,7 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=None, maxiter=None, xtype=None, M=None
             if resid_ready and callback is not None:
                 callback(resid)
                 resid_ready = False
-            
+
             break
         elif (ijob == 1):
             work[slice2] *= sclr2
@@ -452,7 +452,7 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=None, maxiter=None, xtype=None, M=None
             if not first_pass and old_ijob==3:
                 resid_ready = True
 
-            first_pass = False    
+            first_pass = False
         elif (ijob == 3):
             work[slice2] *= sclr2
             work[slice2] += sclr1*matvec(work[slice1])
@@ -466,7 +466,7 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=None, maxiter=None, xtype=None, M=None
                 info = -1
                 ftflag = False
             bnrm2, resid, info = stoptest(work[slice1], b, bnrm2, tol, info)
-        
+
         old_ijob = ijob
         ijob = 2
 

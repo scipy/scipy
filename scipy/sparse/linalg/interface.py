@@ -127,8 +127,14 @@ def aslinearoperator(A):
                               matmat=matmat, dtype=A.dtype)
 
     elif isspmatrix(A):
-        return LinearOperator(A.shape, A.matvec, rmatvec=A.rmatvec,
-                              matmat=A.dot, dtype=A.dtype)
+        def matvec(v):
+            return A * v
+        def rmatvec(v):
+            return A.conj().transpose() * v
+        def matmat(V):
+            return A * V
+        return LinearOperator(A.shape, matvec, rmatvec=rmatvec,
+                              matmat=matmat, dtype=A.dtype)
 
     else:
         if hasattr(A,'shape') and hasattr(A,'matvec'):

@@ -542,7 +542,7 @@ class rv_continuous(object):
         goodargs = argsreduce(cond, *((x,)+args))
         place(output,cond,self._sf(*goodargs))
         if output.ndim == 0:
-            return output[()]        
+            return output[()]
         return output
 
     def ppf(self,q,*args,**kwds):
@@ -573,7 +573,7 @@ class rv_continuous(object):
         scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
         place(output,cond,self._ppf(*goodargs)*scale + loc)
         if output.ndim == 0:
-            return output[()]        
+            return output[()]
         return output
 
     def isf(self,q,*args,**kwds):
@@ -3517,7 +3517,7 @@ class rv_discrete:
         goodargs = argsreduce(cond, *((k,)+args))
         place(output,cond,self._pmf(*goodargs))
         if output.ndim == 0:
-            return output[()]        
+            return output[()]
         return output
 
     def cdf(self, k, *args, **kwds):
@@ -3547,7 +3547,7 @@ class rv_discrete:
         goodargs = argsreduce(cond, *((k,)+args))
         place(output,cond,self._cdf(*goodargs))
         if output.ndim == 0:
-            return output[()]        
+            return output[()]
         return output
 
     def sf(self,k,*args,**kwds):
@@ -3577,7 +3577,7 @@ class rv_discrete:
         goodargs = argsreduce(cond, *((k,)+args))
         place(output,cond,self._sf(*goodargs))
         if output.ndim == 0:
-            return output[()]        
+            return output[()]
         return output
 
     def ppf(self,q,*args,**kwds):
@@ -3607,7 +3607,7 @@ class rv_discrete:
         loc, goodargs = goodargs[-1], goodargs[:-1]
         place(output,cond,self._ppf(*goodargs) + loc)
         if output.ndim == 0:
-            return output[()]        
+            return output[()]
         return output
 
     def isf(self,q,*args,**kwds):
@@ -3638,7 +3638,7 @@ class rv_discrete:
         loc, goodargs = goodargs[-1], goodargs[:-1]
         place(output,cond,self._ppf(*goodargs) + loc)
         if output.ndim == 0:
-            return output[()]        
+            return output[()]
         return output
 
     def stats(self, *args, **kwds):

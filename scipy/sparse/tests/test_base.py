@@ -34,7 +34,6 @@ from scipy.sparse.linalg import splu
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
 
-#TODO check that invalid shape in constructor raises exception
 #TODO check that spmatrix( ... , copy=X ) is respected
 #TODO test prune
 #TODO test has_sorted_indices
@@ -45,13 +44,24 @@ class _TestCommon:
         self.dat = matrix([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
         self.datsp = self.spmatrix(self.dat)
 
+    def test_empty(self):
+        """create empty matrices"""
+
+        assert_equal(self.spmatrix((3,3)).todense(), np.zeros((3,3)))
+        assert_equal(self.spmatrix((3,3)).nnz, 0)
+
+    def test_invalid_shapes(self):
+        assert_raises(ValueError, self.spmatrix, (-1,3) )
+        assert_raises(ValueError, self.spmatrix, (3,-1) )
+        assert_raises(ValueError, self.spmatrix, (-1,-1) )
+
     def test_repr(self):
         repr(self.datsp)
 
     def test_str(self):
         str(self.datsp)
 
-    def test_empty(self):
+    def test_empty_arithmetic(self):
         """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
         """
         shape = (5, 5)
@@ -304,17 +314,11 @@ class _TestCommon:
         assert(isinstance( M * array([1,2,3]), ndarray))
         assert(isinstance( M * matrix([1,2,3]).T, matrix))
 
-
         #ensure exception is raised for improper dimensions
         bad_vecs = [array([1,2]), array([1,2,3,4]), array([[1],[2]]),
                     matrix([1,2,3]), matrix([[1],[2]])]
-        caught = 0
         for x in bad_vecs:
-            try:
-                y = M * x
-            except ValueError:
-                caught += 1
-        assert_equal(caught,len(bad_vecs))
+            assert_raises(ValueError, M.__mul__, x)
 
         # Should this be supported or not?!
         #flat = array([1,2,3])
@@ -351,21 +355,18 @@ class _TestCommon:
         csp = bsp.tocsc()
         c = b
         assert_array_almost_equal((asp*csp).todense(), a*c)
-        assert_array_almost_equal((asp.matmat(csp)).todense(), a*c)
         assert_array_almost_equal( asp*c, a*c)
 
         assert_array_almost_equal( a*csp, a*c)
         assert_array_almost_equal( a2*csp, a*c)
         csp = bsp.tocsr()
         assert_array_almost_equal((asp*csp).todense(), a*c)
-        assert_array_almost_equal((asp.matmat(csp)).todense(), a*c)
         assert_array_almost_equal( asp*c, a*c)
 
         assert_array_almost_equal( a*csp, a*c)
         assert_array_almost_equal( a2*csp, a*c)
         csp = bsp.tocoo()
         assert_array_almost_equal((asp*csp).todense(), a*c)
-        assert_array_almost_equal((asp.matmat(csp)).todense(), a*c)
         assert_array_almost_equal( asp*c, a*c)
 
         assert_array_almost_equal( a*csp, a*c)
@@ -521,47 +522,6 @@ class _TestInplaceArithmetic:
         a /= 17.3
         assert_array_equal(self.dat/17.3,a.todense())
 
-
-class _TestMatvecOutput:
-    """test using the matvec() output parameter"""
-    def test_matvec_output(self):
-        pass  #Currently disabled
-
-#        #flat array
-#        x = array([1.25, -6.5, 0.125, -3.75],dtype='d')
-#        y = zeros(3,dtype='d')
-#
-#        self.datsp.matvec(x,y)
-#        assert_array_equal(self.datsp*x,y)
-#
-#        #column vector
-#        x = array([1.25, -6.5, 0.125, -3.75],dtype='d')
-#        x = x.reshape(4,1)
-#        y = zeros((3,1),dtype='d')
-#
-#        self.datsp.matvec(x,y)
-#        assert_array_equal(self.datsp*x,y)
-#
-#        # improper output type
-#        x = array([1.25, -6.5, 0.125, -3.75],dtype='d')
-#        y = zeros(3,dtype='i')
-#
-#        self.assertRaises( ValueError, self.datsp.matvec, x, y )
-#
-#        # improper output shape
-#        x = array([1.25, -6.5, 0.125, -3.75],dtype='d')
-#        y = zeros(2,dtype='d')
-#
-#        self.assertRaises( ValueError, self.datsp.matvec, x, y )
-#
-#        # proper upcast output type
-#        x = array([1.25, -6.5, 0.125, -3.75],dtype='complex64')
-#        x.imag = [1,2,3,4]
-#        y = zeros(3,dtype='complex128')
-#
-#        self.datsp.matvec(x,y)
-#        assert_array_equal(self.datsp*x,y)
-#        assert_equal((self.datsp*x).dtype,y.dtype)
 
 class _TestGetSet:
     def test_setelement(self):
@@ -889,7 +849,7 @@ class _TestArithmetic:
 
 
 class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
-        _TestInplaceArithmetic, _TestArithmetic, _TestMatvecOutput,
+        _TestInplaceArithmetic, _TestArithmetic,
         _TestHorizSlicing, _TestVertSlicing, _TestBothSlicing,
         _TestFancyIndexing, TestCase):
     spmatrix = csr_matrix
@@ -986,7 +946,7 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
 
 
 class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
-        _TestInplaceArithmetic, _TestArithmetic, _TestMatvecOutput,
+        _TestInplaceArithmetic, _TestArithmetic,
         _TestHorizSlicing, _TestVertSlicing, _TestBothSlicing,
         _TestFancyIndexing, TestCase):
     spmatrix = csc_matrix
@@ -1304,10 +1264,10 @@ class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
         assert_array_equal(C.A, D.A)
 
     def test_fancy_indexing(self):
-        M = arange(25).reshape(5,5) 
+        M = arange(25).reshape(5,5)
         A = lil_matrix( M )
 
-        assert_equal(A[array([1,2,3]),2:3].todense(), M[array([1,2,3]),2:3])   
+        assert_equal(A[array([1,2,3]),2:3].todense(), M[array([1,2,3]),2:3])
 
     def test_point_wise_multiply(self):
         l = lil_matrix((4,3))
@@ -1371,8 +1331,8 @@ class TestCOO(_TestCommon, TestCase):
     def test_constructor4(self):
         """from dense matrix"""
         mat = array([[0,1,0,0],
-                           [7,0,3,0],
-                           [0,4,0,0]])
+                     [7,0,3,0],
+                     [0,4,0,0]])
         coo = coo_matrix(mat)
         assert_array_equal(coo.todense(),mat)
 
@@ -1386,12 +1346,17 @@ class TestDIA(_TestCommon, _TestArithmetic, TestCase):
     spmatrix = dia_matrix
 
     def test_constructor1(self):
-        pass
-        #TODO add test
+        D = matrix([[1, 0, 3, 0],
+                    [1, 2, 0, 4],
+                    [0, 2, 3, 0],
+                    [0, 0, 3, 4]])
+        data    = np.array([[1,2,3,4]]).repeat(3,axis=0)
+        offsets = np.array([0,-1,2])
+        assert_equal(dia_matrix( (data,offsets), shape=(4,4)).todense(), D)
 
 
-class TestBSR(_TestCommon, _TestArithmetic, _TestInplaceArithmetic,
-        _TestMatvecOutput, TestCase):
+
+class TestBSR(_TestCommon, _TestArithmetic, _TestInplaceArithmetic, TestCase):
     spmatrix = bsr_matrix
 
     def test_constructor1(self):

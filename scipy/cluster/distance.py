@@ -954,7 +954,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
 
          d(u,v) = \sum_u {|u_i-v_i|}
                          {|u_i|+|v_i|}
-                         
+
 
     12. ``Y = pdist(X, 'braycurtis')``
 
@@ -1285,7 +1285,7 @@ def squareform(X, force="no", checks=True):
            it is known that ``X - X.T1`` is small and ``diag(X)`` is
            close to zero. These values are ignored any way so they do
            not disrupt the squareform transformation.
-       
+
 
     Calling Conventions
     -------------------
@@ -1692,7 +1692,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
          d(u,v) = \sum_u {|u_i-v_i|}
                          {|u_i|+|v_i|}
-                         
+
 
     12. ``Y = cdist(X, 'braycurtis')``
 

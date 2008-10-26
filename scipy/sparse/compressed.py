@@ -5,15 +5,13 @@ __all__ = []
 
 from warnings import warn
 
-from numpy import array, asarray, zeros, rank, intc, empty, isscalar, \
-                  empty_like, where, concatenate, deprecate, diff, multiply
+import numpy as np
 
 from base import spmatrix, isspmatrix, SparseEfficiencyWarning
 from data import _data_matrix
 import sparsetools
 from sputils import upcast, to_native, isdense, isshape, getdtype, \
         isscalarlike, isintlike
-
 
 
 class _cs_matrix(_data_matrix):
@@ -43,9 +41,9 @@ class _cs_matrix(_data_matrix):
                 # create empty matrix
                 self.shape = arg1   #spmatrix checks for errors here
                 M, N = self.shape
-                self.data    = zeros(0, getdtype(dtype, default=float))
-                self.indices = zeros(0, intc)
-                self.indptr  = zeros(self._swap((M,N))[0] + 1, dtype=intc)
+                self.data    = np.zeros(0, getdtype(dtype, default=float))
+                self.indices = np.zeros(0, np.intc)
+                self.indptr  = np.zeros(self._swap((M,N))[0] + 1, dtype=np.intc)
             else:
                 if len(arg1) == 2:
                     # (data, ij) format
@@ -55,9 +53,9 @@ class _cs_matrix(_data_matrix):
                 elif len(arg1) == 3:
                     # (data, indices, indptr) format
                     (data, indices, indptr) = arg1
-                    self.indices = array(indices, copy=copy)
-                    self.indptr  = array(indptr, copy=copy)
-                    self.data    = array(data, copy=copy, dtype=getdtype(dtype, data))
+                    self.indices = np.array(indices, copy=copy)
+                    self.indptr  = np.array(indptr, copy=copy)
+                    self.data    = np.array(data, copy=copy, dtype=getdtype(dtype, data))
                 else:
                     raise ValueError, "unrecognized %s_matrix constructor usage" %\
                             self.format
@@ -65,7 +63,7 @@ class _cs_matrix(_data_matrix):
         else:
             #must be dense
             try:
-                arg1 = asarray(arg1)
+                arg1 = np.asarray(arg1)
             except:
                 raise ValueError, "unrecognized %s_matrix constructor usage" % \
                         self.format
@@ -128,14 +126,13 @@ class _cs_matrix(_data_matrix):
                     % self.indices.dtype.name )
 
         # only support 32-bit ints for now
-        self.indptr  = asarray(self.indptr,dtype=intc)
-        self.indices = asarray(self.indices,dtype=intc)
+        self.indptr  = np.asarray(self.indptr,  dtype=np.intc)
+        self.indices = np.asarray(self.indices, dtype=np.intc)
         self.data    = to_native(self.data)
 
         # check array shapes
-        if (rank(self.data) != 1) or (rank(self.indices) != 1) or \
-           (rank(self.indptr) != 1):
-            raise ValueError,"data, indices, and indptr should be rank 1"
+        if np.rank(self.data) != 1 or np.rank(self.indices) != 1 or np.rank(self.indptr) != 1:
+            raise ValueError('data, indices, and indptr should be rank 1')
 
         # check index pointer
         if (len(self.indptr) != major_dim + 1 ):
@@ -164,7 +161,7 @@ class _cs_matrix(_data_matrix):
                 if self.indices.min() < 0:
                     raise ValueError, "%s index values must be >= 0" % \
                             minor_name
-                if diff(self.indptr).min() < 0:
+                if np.diff(self.indptr).min() < 0:
                     raise ValueError,'index pointer values must form a " \
                                         "non-decreasing sequence'
 
@@ -225,18 +222,6 @@ class _cs_matrix(_data_matrix):
             raise NotImplementedError
 
 
-    def __rmul__(self, other): # other * self
-        if isscalarlike(other):
-            return self.__mul__(other)
-        else:
-            # Don't use asarray unless we have to
-            try:
-                tr = other.transpose()
-            except AttributeError:
-                tr = asarray(other).transpose()
-            return (self.transpose() * tr).transpose()
-
-
     def __truediv__(self,other):
         if isscalarlike(other):
             return self * (1./other)
@@ -258,7 +243,7 @@ class _cs_matrix(_data_matrix):
             raise ValueError('inconsistent shapes')
 
         if isdense(other):
-            return multiply(self.todense(),other)
+            return np.multiply(self.todense(),other)
         else:
             other = self.__class__(other)
             return self._binopt(other,'_elmul_')
@@ -272,7 +257,7 @@ class _cs_matrix(_data_matrix):
         M,N = self.shape
 
         #output array
-        result = zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
+        result = np.zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
 
         # csr_matvec or csc_matvec
         fn = getattr(sparsetools,self.format + '_matvec')
@@ -285,7 +270,7 @@ class _cs_matrix(_data_matrix):
         M,N = self.shape
         n_vecs = other.shape[1] #number of column vectors
 
-        result = zeros( (M,n_vecs), dtype=upcast(self.dtype,other.dtype) )
+        result = np.zeros( (M,n_vecs), dtype=upcast(self.dtype,other.dtype) )
 
         # csr_matvecs or csc_matvecs
         fn = getattr(sparsetools,self.format + '_matvecs')
@@ -299,7 +284,7 @@ class _cs_matrix(_data_matrix):
         K2, N = other.shape
 
         major_axis = self._swap((M,N))[0]
-        indptr = empty( major_axis + 1, dtype=intc )
+        indptr = np.empty(major_axis + 1, dtype=np.intc)
 
         other = self.__class__(other) #convert to this format
         fn = getattr(sparsetools, self.format + '_matmat_pass1')
@@ -308,8 +293,8 @@ class _cs_matrix(_data_matrix):
                   indptr)
 
         nnz = indptr[-1]
-        indices = empty( nnz, dtype=intc)
-        data    = empty( nnz, dtype=upcast(self.dtype,other.dtype))
+        indices = np.empty(nnz, dtype=np.intc)
+        data    = np.empty(nnz, dtype=upcast(self.dtype,other.dtype))
 
         fn = getattr(sparsetools, self.format + '_matmat_pass2')
         fn( M, N, self.indptr, self.indices, self.data, \
@@ -318,125 +303,8 @@ class _cs_matrix(_data_matrix):
 
         return self.__class__((data,indices,indptr),shape=(M,N))
 
-    def matvec(self,other):
-        return self * other
 
-    def matmat(self,other):
-        return self * other
-
-    #def matmat(self, other):
-    #    if isspmatrix(other):
-    #        M, K1 = self.shape
-    #        K2, N = other.shape
-    #        if (K1 != K2):
-    #            raise ValueError, "shape mismatch error"
-
-    #        #return self._binopt(other,'mu',in_shape=(M,N),out_shape=(M,N))
-
-    #        major_axis = self._swap((M,N))[0]
-    #        indptr = empty( major_axis + 1, dtype=intc )
-
-    #        other = self.__class__(other) #convert to this format
-    #        fn = getattr(sparsetools, self.format + '_matmat_pass1')
-    #        fn( M, N, self.indptr, self.indices, \
-    #                  other.indptr, other.indices, \
-    #                  indptr)
-
-    #        nnz = indptr[-1]
-    #        indices = empty( nnz, dtype=intc)
-    #        data    = empty( nnz, dtype=upcast(self.dtype,other.dtype))
-
-    #        fn = getattr(sparsetools, self.format + '_matmat_pass2')
-    #        fn( M, N, self.indptr, self.indices, self.data, \
-    #                  other.indptr, other.indices, other.data, \
-    #                  indptr, indices, data)
-
-    #        return self.__class__((data,indices,indptr),shape=(M,N))
-
-
-    #    elif isdense(other):
-    #        # TODO make sparse * dense matrix multiplication more efficient
-    #
-    #        # matvec each column of other
-    #        result = hstack( [ self * col.reshape(-1,1) for col in asarray(other).T ] )
-    #        if isinstance(other, matrix):
-    #            result = asmatrix(result)
-    #        return result
-
-    #    else:
-    #        raise TypeError, "need a dense or sparse matrix"
-
-
-    #def matvec(self, other):
-    #    """Sparse matrix vector product (self * other)
-
-    #    'other' may be a rank 1 array of length N or a rank 2 array
-    #    or matrix with shape (N,1).
-
-    #    """
-    #    #If the optional 'output' parameter is defined, it will
-    #    #be used to store the result.  Otherwise, a new vector
-    #    #will be allocated.
-
-    #    if isdense(other):
-    #        M,N = self.shape
-
-    #        if other.shape != (N,) and other.shape != (N,1):
-    #            raise ValueError, "dimension mismatch"
-
-    #        # csrmux, cscmux
-    #        fn = getattr(sparsetools,self.format + '_matvec')
-
-    #        #output array
-    #        y = zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
-
-    #        #if output is None:
-    #        #    y = empty( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
-    #        #else:
-    #        #    if output.shape != (M,) and output.shape != (M,1):
-    #        #        raise ValueError, "output array has improper dimensions"
-    #        #    if not output.flags.c_contiguous:
-    #        #        raise ValueError, "output array must be contiguous"
-    #        #    if output.dtype != upcast(self.dtype,other.dtype):
-    #        #        raise ValueError, "output array has dtype=%s "\
-    #        #                "dtype=%s is required" % \
-    #        #                (output.dtype,upcast(self.dtype,other.dtype))
-    #        #    y = output
-
-    #        fn(self.shape[0], self.shape[1], \
-    #            self.indptr, self.indices, self.data, numpy.ravel(other), y)
-
-    #        if isinstance(other, matrix):
-    #            y = asmatrix(y)
-
-    #        if other.ndim == 2 and other.shape[1] == 1:
-    #            # If 'other' was an (nx1) column vector, reshape the result
-    #            y = y.reshape(-1,1)
-
-    #        return y
-
-    #    elif isspmatrix(other):
-    #        raise TypeError, "use matmat() for sparse * sparse"
-
-    #    else:
-    #        raise TypeError, "need a dense vector"
-
-    def rmatvec(self, other, conjugate=True):
-        """Multiplies the vector 'other' by the sparse matrix, returning a
-        dense vector as a result.
-
-        If 'conjugate' is True:
-            - returns A.transpose().conj() * other
-        Otherwise:
-            - returns A.transpose() * other.
-
-        """
-        if conjugate:
-            return self.transpose().conj().matvec( other )
-        else:
-            return self.transpose().matvec( other )
-
-    @deprecate
+    @np.deprecate
     def getdata(self, ind):
         return self.data[ind]
 
@@ -445,7 +313,7 @@ class _cs_matrix(_data_matrix):
         """
         #TODO support k-th diagonal
         fn = getattr(sparsetools, self.format + "_diagonal")
-        y = empty( min(self.shape), dtype=upcast(self.dtype) )
+        y = np.empty( min(self.shape), dtype=upcast(self.dtype) )
         fn(self.shape[0], self.shape[1], self.indptr, self.indices, self.data, y)
         return y
 
@@ -506,7 +374,7 @@ class _cs_matrix(_data_matrix):
 
         start = self.indptr[major_index]
         end   = self.indptr[major_index+1]
-        indxs = where(minor_index == self.indices[start:end])[0]
+        indxs = np.where(minor_index == self.indices[start:end])[0]
 
         num_matches = len(indxs)
 
@@ -539,7 +407,7 @@ class _cs_matrix(_data_matrix):
 
         index  = self.indices[indices] - start
         data   = self.data[indices]
-        indptr = array([0, len(indices)])
+        indptr = np.array([0, len(indices)])
         return self.__class__((data, index, indptr), shape=shape, \
                               dtype=self.dtype)
 
@@ -563,7 +431,7 @@ class _cs_matrix(_data_matrix):
 
                 return i0, i1
 
-            elif isscalar( sl ):
+            elif np.isscalar( sl ):
                 if sl < 0:
                     sl += num
 
@@ -612,7 +480,7 @@ class _cs_matrix(_data_matrix):
 
             start = self.indptr[major_index]
             end   = self.indptr[major_index+1]
-            indxs = where(minor_index == self.indices[start:end])[0]
+            indxs = np.where(minor_index == self.indices[start:end])[0]
 
             num_matches = len(indxs)
 
@@ -627,10 +495,10 @@ class _cs_matrix(_data_matrix):
                 newindx = self.indices[start:end].searchsorted(minor_index)
                 newindx += start
 
-                val = array([val],dtype=self.data.dtype)
-                minor_index = array([minor_index],dtype=self.indices.dtype)
-                self.data    = concatenate((self.data[:newindx],val,self.data[newindx:]))
-                self.indices = concatenate((self.indices[:newindx],minor_index,self.indices[newindx:]))
+                val = np.array([val],dtype=self.data.dtype)
+                minor_index = np.array([minor_index],dtype=self.indices.dtype)
+                self.data    = np.concatenate((self.data[:newindx],val,self.data[newindx:]))
+                self.indices = np.concatenate((self.indices[:newindx],minor_index,self.indices[newindx:]))
 
                 self.indptr[major_index+1:] += 1
 
@@ -670,7 +538,7 @@ class _cs_matrix(_data_matrix):
             data = data.copy()
             minor_indices = minor_indices.copy()
 
-        major_indices = empty(len(minor_indices),dtype=intc)
+        major_indices = np.empty(len(minor_indices), dtype=np.intc)
 
         sparsetools.expandptr(major_dim,self.indptr,major_indices)
 
@@ -814,9 +682,9 @@ class _cs_matrix(_data_matrix):
         fn = getattr(sparsetools, self.format + op + self.format)
 
         maxnnz = self.nnz + other.nnz
-        indptr  = empty_like(self.indptr)
-        indices = empty( maxnnz, dtype=intc )
-        data    = empty( maxnnz, dtype=upcast(self.dtype,other.dtype) )
+        indptr  = np.empty_like(self.indptr)
+        indices = np.empty(maxnnz, dtype=np.intc)
+        data    = np.empty(maxnnz, dtype=upcast(self.dtype,other.dtype))
 
         fn(in_shape[0], in_shape[1], \
                 self.indptr,  self.indices,  self.data,

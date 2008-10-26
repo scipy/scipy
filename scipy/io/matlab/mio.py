@@ -68,7 +68,7 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
         raise NotImplementedError('Please use PyTables for matlab v7.3 (HDF) files')
     else:
         raise TypeError('Did not recognize version %s' % mv)
-    
+
 def loadmat(file_name,  mdict=None, appendmat=True, basename='raw', **kwargs):
     ''' Load Matlab(tm) file
 
@@ -96,8 +96,8 @@ def loadmat(file_name,  mdict=None, appendmat=True, basename='raw', **kwargs):
                           (implies squeeze_me=False, chars_as_strings=False,
                           mat_dtype=True)
     struct_as_record    - whether to load matlab structs as numpy record arrays, or
-    			  as old-style numpy arrays with dtype=object.
-                          (warns if not set, and defaults to False.  non-recarrays 
+                          as old-style numpy arrays with dtype=object.
+                          (warns if not set, and defaults to False.  non-recarrays
                           cannot be exported via savemat.)
 
     v4 (Level 1.0), v6 and v7.1 matfiles are supported.
