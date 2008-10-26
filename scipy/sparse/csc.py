@@ -6,7 +6,8 @@ __all__ = ['csc_matrix', 'isspmatrix_csc']
 
 from warnings import warn
 
-from numpy import asarray, intc, empty, searchsorted, deprecate
+import numpy as np
+
 from sparsetools import csc_tocsr
 from sputils import upcast, isintlike
 
@@ -96,11 +97,11 @@ class csc_matrix(_cs_matrix):
         for r in xrange(self.shape[0]):
             yield csr[r,:]
 
-    @deprecate
+    @np.deprecate
     def rowcol(self, ind):
         #TODO remove after 0.7
         row = self.indices[ind]
-        col = searchsorted(self.indptr, ind+1)-1
+        col = np.searchsorted(self.indptr, ind+1) - 1
         return (row, col)
 
     def tocsc(self, copy=False):
@@ -110,16 +111,17 @@ class csc_matrix(_cs_matrix):
             return self
 
     def tocsr(self):
-        indptr  = empty(self.shape[0] + 1, dtype=intc)
-        indices = empty(self.nnz, dtype=intc)
-        data    = empty(self.nnz, dtype=upcast(self.dtype))
+        M,N = self.shape
+        indptr  = np.empty(M + 1,    dtype=np.intc)
+        indices = np.empty(self.nnz, dtype=np.intc)
+        data    = np.empty(self.nnz, dtype=upcast(self.dtype))
 
-        csc_tocsr(self.shape[0], self.shape[1], \
+        csc_tocsr(M, N, \
                  self.indptr, self.indices, self.data, \
                  indptr, indices, data)
 
         from csr import csr_matrix
-        A = csr_matrix((data, indices, indptr), self.shape)
+        A = csr_matrix((data, indices, indptr), shape=self.shape)
         A.has_sorted_indices = True
         return A
 
@@ -137,8 +139,8 @@ class csc_matrix(_cs_matrix):
                 if isintlike(col) or isinstance(col,slice):
                     return self.T[col,row].T
                 else:
-                    row = asarray(row, dtype='intc')
-                    col = asarray(col, dtype='intc')
+                    row = np.asarray(row, dtype=np.intc)
+                    col = np.asarray(col, dtype=np.intc)
                     if len(row.shape) == 1:
                         return self.T[col,row]
                     elif len(row.shape) == 2:
