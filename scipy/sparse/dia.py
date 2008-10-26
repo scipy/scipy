@@ -2,7 +2,7 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['dia_matrix','isspmatrix_dia']
+__all__ = ['dia_matrix', 'isspmatrix_dia']
 
 import numpy as np
 

@@ -8,9 +8,6 @@ from warnings import warn
 
 import numpy as np
 
-#from numpy import array, asarray, empty, intc, zeros, unique, searchsorted,\
-#                  atleast_2d, rank, deprecate, hstack
-
 from sparsetools import coo_tocsr, coo_todense, coo_matvec
 from base import isspmatrix
 from data import _data_matrix

@@ -5,9 +5,7 @@ __all__ = ['spmatrix', 'isspmatrix', 'issparse',
 
 from warnings import warn
 
-import numpy
-from numpy import asarray, asmatrix, asanyarray, ones, deprecate, ravel, \
-        matrix
+import numpy as np
 
 from sputils import isdense, isscalarlike, isintlike
 
@@ -100,7 +98,7 @@ class spmatrix(object):
             return self
         else:
             for fp_type in fp_types:
-                if self.dtype <= numpy.dtype(fp_type):
+                if self.dtype <= np.dtype(fp_type):
                     return self.astype(fp_type)
 
             raise TypeError,'cannot upcast [%s] to a floating \
@@ -137,15 +135,15 @@ class spmatrix(object):
             format = 'und'
         return format
 
-    @deprecate
+    @np.deprecate
     def rowcol(self, num):
         return (None, None)
 
-    @deprecate
+    @np.deprecate
     def getdata(self, num):
         return None
 
-    @deprecate
+    @np.deprecate
     def listprint(self, start, stop):
         """Provides a way to print over a single index.
         """
@@ -212,10 +210,12 @@ class spmatrix(object):
         else:
             return getattr(self,'to' + format)()
 
-    # default operations use the CSR format as a base
-    #   and operations return in csr format
-    #  thus, a new sparse matrix format just needs to define
-    #  a tocsr method
+    ###################################################################
+    #  NOTE: All arithmetic operations use csr_matrix by default.  
+    # Therefore a new sparse matrix format just needs to define a 
+    # .tocsr() method to provide arithmetic support.  Any of these
+    # methods can be overridden for efficiency.
+    ####################################################################
 
     def multiply(self, other):
         """Point-wise multiplication by another matrix
@@ -239,12 +239,33 @@ class spmatrix(object):
         return self.tocsr().__rsub__(other)
 
     # old __mul__ interfaces
-    def matvec(self, other):
+    @np.deprecate
+    def matvec(self,other):
         return self * other
-    def matmat(self, other):
+
+    @np.deprecate
+    def matmat(self,other):
         return self * other
+
+    @np.deprecate
     def dot(self, other):
         return self * other
+
+    @np.deprecate
+    def rmatvec(self, other, conjugate=True):
+        """Multiplies the vector 'other' by the sparse matrix, returning a
+        dense vector as a result.
+
+        If 'conjugate' is True:
+            - returns A.transpose().conj() * other
+        Otherwise:
+            - returns A.transpose() * other.
+
+        """
+        if conjugate:
+            return self.conj().transpose() * other
+        else:
+            return self.transpose() * other
 
     def __mul__(self, other):
         """interpret other and call one of the following
@@ -268,18 +289,18 @@ class spmatrix(object):
             other.shape
         except AttributeError:
             # If it's a list or whatever, treat it like a matrix
-            other = asanyarray(other)
+            other = np.asanyarray(other)
 
-        if isdense(other) and asarray(other).squeeze().ndim <= 1:
+        if isdense(other) and np.asarray(other).squeeze().ndim <= 1:
             ##
             # dense row or column vector
             if other.shape != (N,) and other.shape != (N,1):
                 raise ValueError('dimension mismatch')
 
-            result = self._mul_vector(ravel(other))
+            result = self._mul_vector(np.ravel(other))
 
-            if isinstance(other, matrix):
-                result = asmatrix(result)
+            if isinstance(other, np.matrix):
+                result = np.asmatrix(result)
 
             if other.ndim == 2 and other.shape[1] == 1:
                 # If 'other' was an (nx1) column vector, reshape the result
@@ -294,10 +315,10 @@ class spmatrix(object):
             if other.shape[0] != self.shape[1]:
                 raise ValueError('dimension mismatch')
 
-            result = self._mul_dense_matrix(asarray(other))
+            result = self._mul_dense_matrix(np.asarray(other))
 
-            if isinstance(other, matrix):
-                result = asmatrix(result)
+            if isinstance(other, np.matrix):
+                result = np.asmatrix(result)
 
             return result
         else:
@@ -316,8 +337,20 @@ class spmatrix(object):
     def _mul_sparse_matrix(self, other):
         return self.tocsr()._mul_sparse_matrix(other)
 
-    def __rmul__(self, other):
-        return self.tocsr().__rmul__(other)
+    def __rmul__(self, other): # other * self
+        if isscalarlike(other):
+            return self.__mul__(other)
+        else:
+            # Don't use asarray unless we have to
+            try:
+                tr = other.transpose()
+            except AttributeError:
+                tr = np.asarray(other).transpose()
+            return (self.transpose() * tr).transpose()
+
+    ####################
+    # Other Arithmetic #
+    ####################
 
     def __truediv__(self, other):
         if isscalarlike(other):
@@ -349,12 +382,12 @@ class spmatrix(object):
 
     def __pow__(self, other):
         if self.shape[0] != self.shape[1]:
-            raise TypeError,'matrix is not square'
+            raise TypeError('matrix is not square')
 
         if isintlike(other):
             other = int(other)
             if other < 0:
-                raise ValueError,'exponent must be >= 0'
+                raise ValueError('exponent must be >= 0')
 
             if other == 0:
                 from construct import identity
@@ -367,7 +400,7 @@ class spmatrix(object):
                     result = result*self
                 return result
         elif isscalarlike(other):
-            raise ValueError,'exponent must be an integer'
+            raise ValueError('exponent must be an integer')
         elif isspmatrix(other):
             warn('Using ** for elementwise multiplication is deprecated.'\
                     'Use .multiply() instead', DeprecationWarning)
@@ -460,36 +493,11 @@ class spmatrix(object):
         a[0, i] = 1
         return a * self
 
-
-    def rmatvec(self, other, conjugate=True):
-        """Multiplies the vector 'other' by the sparse matrix, returning a
-        dense vector as a result.
-
-        If 'conjugate' is True:
-            - returns A.transpose().conj() * other
-        Otherwise:
-            - returns A.transpose() * other.
-
-        """
-        return self.tocsr().rmatvec(other, conjugate=conjugate)
-
-    #def rmatmat(self, other, conjugate=True):
-    #    """ If 'conjugate' is True:
-    #        returns other * A.transpose().conj(),
-    #    where 'other' is a matrix.  Otherwise:
-    #        returns other * A.transpose().
-    #    """
-    #    other = csc_matrix(other)
-    #    if conjugate:
-    #        return other.matmat(self.transpose()).conj()
-    #    else:
-    #        return other.matmat(self.transpose())
-
     #def __array__(self):
     #    return self.toarray()
 
     def todense(self):
-        return asmatrix(self.toarray())
+        return np.asmatrix(self.toarray())
 
     def toarray(self):
         return self.tocoo().toarray()
@@ -522,13 +530,13 @@ class spmatrix(object):
         m, n = self.shape
         if axis == 0:
             # sum over columns
-            return asmatrix(ones((1, m), dtype=self.dtype)) * self
+            return np.asmatrix(np.ones((1, m), dtype=self.dtype)) * self
         elif axis == 1:
             # sum over rows
-            return self * asmatrix(ones((n, 1), dtype=self.dtype))
+            return self * np.asmatrix(np.ones((n, 1), dtype=self.dtype))
         elif axis is None:
             # sum over rows and columns
-            return ( self * asmatrix(ones((n, 1), dtype=self.dtype)) ).sum()
+            return ( self * np.asmatrix(np.ones((n, 1), dtype=self.dtype)) ).sum()
         else:
             raise ValueError, "axis out of bounds"
 

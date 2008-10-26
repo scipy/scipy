@@ -476,7 +476,7 @@ class dok_matrix(spmatrix, dict):
                     base[newkey] = self[key]
         return base, ext
 
-
+# TODO update these w/ new multiplication handlers
 #    def matvec(self, other):
 #        if isdense(other):
 #            if other.shape[0] != self.shape[1]:

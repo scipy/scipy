@@ -382,21 +382,6 @@ class lil_matrix(spmatrix):
                 new[new_r,new_c] = self[i,j]
         return new
 
-    def __add__(self, other):
-        if np.isscalar(other) and other != 0:
-            raise ValueError("Refusing to destroy sparsity. "
-                             "Use x.todense() + c instead.")
-        else:
-            return spmatrix.__add__(self, other)
-
-    def __rmul__(self, other):          # other * self
-        if isscalarlike(other):
-            # Multiplication by a scalar is symmetric
-            return self.__mul__(other)
-        else:
-            return spmatrix.__rmul__(self, other)
-
-
     def toarray(self):
         d = np.zeros(self.shape, dtype=self.dtype)
         for i, row in enumerate(self.rows):
