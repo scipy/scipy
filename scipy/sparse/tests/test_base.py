@@ -43,10 +43,10 @@ class _TestCommon:
     def setUp(self):
         self.dat = matrix([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
         self.datsp = self.spmatrix(self.dat)
-    
+
     def test_empty(self):
         """create empty matrices"""
-        
+
         assert_equal(self.spmatrix((3,3)).todense(), np.zeros((3,3)))
         assert_equal(self.spmatrix((3,3)).nnz, 0)
 
@@ -946,7 +946,7 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
 
 
 class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
-        _TestInplaceArithmetic, _TestArithmetic, 
+        _TestInplaceArithmetic, _TestArithmetic,
         _TestHorizSlicing, _TestVertSlicing, _TestBothSlicing,
         _TestFancyIndexing, TestCase):
     spmatrix = csc_matrix
@@ -1264,10 +1264,10 @@ class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
         assert_array_equal(C.A, D.A)
 
     def test_fancy_indexing(self):
-        M = arange(25).reshape(5,5) 
+        M = arange(25).reshape(5,5)
         A = lil_matrix( M )
 
-        assert_equal(A[array([1,2,3]),2:3].todense(), M[array([1,2,3]),2:3])   
+        assert_equal(A[array([1,2,3]),2:3].todense(), M[array([1,2,3]),2:3])
 
     def test_point_wise_multiply(self):
         l = lil_matrix((4,3))

@@ -119,20 +119,20 @@ def block_average_above(x, y, new_x):
     return new_y
 
 def block(x, y, new_x):
-        """ Essentially a step function.
-        
-            For each new_x[i], finds largest j such that
-            x[j] < new_x[j], and returns y[j].
-        """
-        # find index of values in x that preceed values in x
-        # This code is a little strange -- we really want a routine that
-        # returns the index of values where x[j] < x[index]
-        TINY = 1e-10
-        indices = np.searchsorted(x, new_x+TINY)-1
+    """ Essentially a step function.
+    
+        For each new_x[i], finds largest j such that
+        x[j] < new_x[j], and returns y[j].
+    """
+    # find index of values in x that preceed values in x
+    # This code is a little strange -- we really want a routine that
+    # returns the index of values where x[j] < x[index]
+    TINY = 1e-10
+    indices = np.searchsorted(x, new_x+TINY)-1
 
-        # If the value is at the front of the list, it'll have -1.
-        # In this case, we will use the first (0), element in the array.
-        # take requires the index array to be an Int
-        indices = np.atleast_1d(np.clip(indices, 0, np.Inf).astype(np.int))
-        new_y = np.take(y, indices, axis=-1)
-        return new_y
+    # If the value is at the front of the list, it'll have -1.
+    # In this case, we will use the first (0), element in the array.
+    # take requires the index array to be an Int
+    indices = np.atleast_1d(np.clip(indices, 0, np.Inf).astype(np.int))
+    new_y = np.take(y, indices, axis=-1)
+    return new_y

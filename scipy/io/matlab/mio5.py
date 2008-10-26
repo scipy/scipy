@@ -202,7 +202,7 @@ class Mat5ArrayReader(MatArrayReader):
             mod8 = byte_count % 8
             if mod8:
                 self.mat_stream.seek(8 - mod8, 1)
-            
+
         if mdtype in self.codecs: # encoded char data
             codec = self.codecs[mdtype]
             if not codec:
@@ -216,7 +216,7 @@ class Mat5ArrayReader(MatArrayReader):
                             buffer=raw_str)
             if copy:
                 el = el.copy()
-       
+
         return el
 
     def matrix_getter_factory(self):
@@ -428,7 +428,7 @@ class Mat5StructMatrixGetter(Mat5MatrixGetter):
         tupdims = tuple(self.header['dims'][::-1])
         length = np.product(tupdims)
         if self.struct_as_record:
-            result = np.empty(length, dtype=[(field_name, object) 
+            result = np.empty(length, dtype=[(field_name, object)
                                              for field_name in field_names])
             for i in range(length):
                 for field_name in field_names:
@@ -442,14 +442,14 @@ class Mat5StructMatrixGetter(Mat5MatrixGetter):
                 for name in field_names:
                     item.__dict__[name] = self.read_element()
                 result[i] = item
-        
+
         return result.reshape(tupdims).T
 
 class MatlabObject(object):
     ''' Class to contain read data from matlab objects '''
     def __init__(self, classname, field_names):
         self.__dict__['classname'] = classname
-        self.__dict__['mobj_recarray'] = np.empty((1,1), dtype=[(field_name, object) 
+        self.__dict__['mobj_recarray'] = np.empty((1,1), dtype=[(field_name, object)
                                             for field_name in field_names])
 
     def __getattr__(self, name):
@@ -464,7 +464,7 @@ class MatlabObject(object):
             self.__dict__['mobj_recarray'][0,0][name] = value
         else:
             self.__dict__[name] = value
-        
+
 
 class Mat5ObjectMatrixGetter(Mat5MatrixGetter):
     def get_array(self):
@@ -495,7 +495,7 @@ class Mat5FunctionMatrixGetter(Mat5CellMatrixGetter):
 class MatFile5Reader(MatFileReader):
     ''' Reader for Mat 5 mat files
     Adds the following attribute to base class
-    
+
     uint16_codec       - char codec to use for uint16 char arrays
                           (defaults to system default codec)
    '''
@@ -513,9 +513,9 @@ class MatFile5Reader(MatFileReader):
         '''
         mat_stream : file-like
                      object with file API, open for reading
-        byte_order : {None, string} 
+        byte_order : {None, string}
                       specification of byte order, one of:
-		      ('native', '=', 'little', '<', 'BIG', '>')
+                      ('native', '=', 'little', '<', 'BIG', '>')
         mat_dtype : {True, False} boolean
                      If True, return arrays in same dtype as loaded into matlab
                      otherwise return with dtype with which they were saved
@@ -527,7 +527,7 @@ class MatFile5Reader(MatFileReader):
                      If True, returns matrices as would be loaded by matlab
                      (implies squeeze_me=False, chars_as_strings=False
                      mat_dtype=True, struct_as_record=True)
-        struct_as_record : {False, True} boolean 
+        struct_as_record : {False, True} boolean
                      If True, return strutures as numpy records,
                      otherwise, return as custom object (for
                      compatibility with scipy 0.6)
@@ -766,7 +766,7 @@ class Mat5CompositeWriter(Mat5MatrixWriter):
     def __init__(self, file_stream, arr, name, is_global=False, unicode_strings=False):
         super(Mat5CompositeWriter, self).__init__(file_stream, arr, name, is_global)
         self.unicode_strings = unicode_strings
-        
+
 
 class Mat5CellWriter(Mat5CompositeWriter):
     def write(self):
@@ -797,12 +797,12 @@ class Mat5FunctionWriter(Mat5CompositeWriter):
 class Mat5StructWriter(Mat5CompositeWriter):
     def write(self):
         self.write_header(mclass=mxSTRUCT_CLASS)
-        
+
         # write fieldnames
         fieldnames = [f[0] for f in self.arr.dtype.descr]
         self.write_element(np.array([32], dtype='i4'))
         self.write_element(np.array(fieldnames, dtype='S32'), mdtype=miINT8)
-        
+
         A = np.atleast_2d(self.arr).flatten('F')
         MWG = Mat5WriterGetter(self.file_stream, self.unicode_strings)
         for el in A:
@@ -826,7 +826,7 @@ class Mat5ObjectWriter(Mat5CompositeWriter):
         fieldnames = [f[0] for f in self.arr.dtype.descr]
         self.write_element(np.array([32], dtype='i4'))
         self.write_element(np.array(fieldnames, dtype='S32'), mdtype=miINT8)
-        
+
         A = np.atleast_2d(self.arr).flatten('F')
         MWG = Mat5WriterGetter(self.file_stream, self.unicode_strings)
         for el in A:
@@ -835,7 +835,7 @@ class Mat5ObjectWriter(Mat5CompositeWriter):
                 MW.write()
         self.update_matrix_tag()
 
-    
+
 class Mat5WriterGetter(object):
     ''' Wraps stream and options, provides methods for getting Writer objects '''
     def __init__(self, stream, unicode_strings):
@@ -854,12 +854,12 @@ class Mat5WriterGetter(object):
         if spsparse:
             if spsparse.issparse(arr):
                 return Mat5SparseWriter(self.stream, arr, name, is_global)
-            
+
         if isinstance(arr, MatlabFunctionMatrix):
             return Mat5FunctionWriter(self.stream, arr, name, is_global, self.unicode_strings)
         if isinstance(arr, MatlabObject):
             return Mat5ObjectWriter(self.stream, arr, name, is_global, self.unicode_strings)
-        
+
         arr = np.array(arr)
         if arr.dtype.hasobject:
             if arr.dtype.fields == None:

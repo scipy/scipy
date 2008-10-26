@@ -15,7 +15,7 @@ from sputils import getdtype, isshape, issequence, isscalarlike
 class lil_matrix(spmatrix):
     """Row-based linked list sparse matrix
 
-    This is an efficient structure for constructing sparse 
+    This is an efficient structure for constructing sparse
     matrices incrementally.
 
     This can be instantiated in several ways:

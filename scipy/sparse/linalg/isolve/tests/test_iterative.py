@@ -61,7 +61,7 @@ class TestIterative(TestCase):
         #data[1,:] = -1
         #A = spdiags( data, [0,-1], 10, 10, format='csr')
         #self.cases.append( (A,False,True) )
-    
+
     def test_maxiter(self):
         """test whether maxiter is respected"""
 
@@ -76,7 +76,7 @@ class TestIterative(TestCase):
                 residuals.append( norm(b - A*x) )
 
             x, info = solver(A, b, x0=x0, tol=1e-8, maxiter=3, callback=callback)
-           
+
             assert(len(residuals) in [2,3])
 
             # TODO enforce this condition instead!
@@ -169,8 +169,8 @@ class TestQMR(TestCase):
 
 
 class TestGMRES(TestCase):
-    def test_callback(self):  
-        
+    def test_callback(self):
+
         def store_residual(r, rvec):
             rvec[rvec.nonzero()[0].max()+1] = r
 

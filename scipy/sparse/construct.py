@@ -453,7 +453,7 @@ def lil_diags(diags, offsets, (m,n), dtype='d'):
                              "diagonal %s." % k)
 
     out = lil_matrix((m,n),dtype=dtype)
-    
+
     from itertools import izip
     for k,diag in izip(offsets,diags):
         for ix,c in enumerate(xrange(np.clip(k,0,n),np.clip(m+k,0,n))):

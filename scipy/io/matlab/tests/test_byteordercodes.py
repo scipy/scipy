@@ -11,13 +11,13 @@ import scipy.io.matlab.byteordercodes as sibc
 def test_native():
     native_is_le = sys.byteorder == 'little'
     assert sibc.sys_is_le == native_is_le
-    
+
 def test_to_numpy():
     if sys.byteorder == 'little':
         assert sibc.to_numpy_code('native') == '<'
         assert sibc.to_numpy_code('swapped') == '>'
     else:
-        assert sibc.to_numpy_code('native') == '>' 
+        assert sibc.to_numpy_code('native') == '>'
         assert sibc.to_numpy_code('swapped') == '<'
     assert sibc.to_numpy_code('native') == sibc.to_numpy_code('=')
     assert sibc.to_numpy_code('big') == '>'
@@ -26,5 +26,3 @@ def test_to_numpy():
     for code in ('big', '>', 'b', 'B', 'be'):
         assert sibc.to_numpy_code(code) == '>'
     assert_raises(ValueError, sibc.to_numpy_code, 'silly string')
-   
-

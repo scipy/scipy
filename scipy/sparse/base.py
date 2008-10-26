@@ -211,8 +211,8 @@ class spmatrix(object):
             return getattr(self,'to' + format)()
 
     ###################################################################
-    #  NOTE: All arithmetic operations use csr_matrix by default.  
-    # Therefore a new sparse matrix format just needs to define a 
+    #  NOTE: All arithmetic operations use csr_matrix by default.
+    # Therefore a new sparse matrix format just needs to define a
     # .tocsr() method to provide arithmetic support.  Any of these
     # methods can be overridden for efficiency.
     ####################################################################

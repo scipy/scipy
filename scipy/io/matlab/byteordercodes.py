@@ -18,20 +18,20 @@ aliases = {'little': ('little', '<', 'l', 'le'),
            'swapped': ('swapped', 'S')}
 
 def to_numpy_code(code):
-    ''' Convert various order codings to numpy format 
+    ''' Convert various order codings to numpy format
     Parameters
     ----------
     code : {'little','big','l','b','le','be','<','>',
              'native','=',
              'swapped', 's'} string
           code is converted to lower case before parsing
-    
+
     Returns
     -------
     out_code : {'<','>'} string
-             where '<' is the numpy dtype code for little 
+             where '<' is the numpy dtype code for little
              endian, and '>' is the code for big endian
-    
+
 
     Examples
     --------
@@ -64,5 +64,3 @@ def to_numpy_code(code):
     else:
         raise ValueError(
             'We cannot handle byte order %s' % code)
-
-

@@ -29,7 +29,7 @@ def get_matfile_version(fileobj):
      #. 0,x -> version 4 format mat files
      #. 1,x -> version 5 format mat files
      #. 2,x -> version 7.3 format mat files (HDF format)
-     
+
     Parameters
     ----------
     fileobj : {file-like}
@@ -54,7 +54,7 @@ def get_matfile_version(fileobj):
     if 0 in mopt_bytes:
         fileobj.seek(0)
         return (0,0)
-    
+
     # For 5 format or 7.3 format we need to read an integer in the
     # header. Bytes 124 through 128 contain a version integer and an
     # endian test string
@@ -144,9 +144,9 @@ class MatFileReader(MatStreamAgent):
         '''
         mat_stream : file-like
                      object with file API, open for reading
-        byte_order : {None, string} 
+        byte_order : {None, string}
                       specification of byte order, one of:
-		      ('native', '=', 'little', '<', 'BIG', '>')
+                      ('native', '=', 'little', '<', 'BIG', '>')
         mat_dtype : {True, False} boolean
                      If True, return arrays in same dtype as loaded into matlab
                      otherwise return with dtype with which they were saved
@@ -158,7 +158,7 @@ class MatFileReader(MatStreamAgent):
                      If True, returns matrices as would be loaded by matlab
                      (implies squeeze_me=False, chars_as_strings=False
                      mat_dtype=True)
- 
+
         '''
         # Initialize stream
         self.mat_stream = mat_stream
@@ -234,7 +234,7 @@ class MatFileReader(MatStreamAgent):
 
     def matrix_getter_factory(self):
         assert False, 'Not implemented'
-    
+
     def file_header(self):
         return {}
 

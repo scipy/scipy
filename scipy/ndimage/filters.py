@@ -45,7 +45,7 @@ _origin_doc = """
 def moredoc(*args):
     def decorate(f):
         if f.__doc__ is not None:
-            for a in args: 
+            for a in args:
                 f.__doc__ += a
         return f
     return decorate
