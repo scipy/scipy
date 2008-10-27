@@ -224,12 +224,24 @@ class _TestCommon:
         dense_dot_dense = dot(dat, b)
         check2 = dot(self.datsp.toarray(), b)
         assert_array_equal(dense_dot_dense, check2)
+    
+    def test_astype(self):
+        D = array([[1.0 + 3j,       0,      0],
+                   [       0, 2.0 + 5,      0],
+                   [       0,       0,      0]])
+        S = self.spmatrix(D)
+
+        for x in supported_dtypes:
+            assert_equal(S.astype(x).dtype,     D.astype(x).dtype)  # correct type
+            assert_equal(S.astype(x).toarray(), D.astype(x))        # correct values
+            assert_equal(S.astype(x).format,    S.format)           # format preserved
 
     def test_asfptype(self):
         A = self.spmatrix( arange(6,dtype='int32').reshape(2,3) )
 
         assert_equal( A.dtype , 'int32' )
         assert_equal( A.asfptype().dtype, 'float64' )
+        assert_equal( A.asfptype().format, A.format )
         assert_equal( A.astype('int16').asfptype().dtype , 'float32' )
         assert_equal( A.astype('complex128').asfptype().dtype , 'complex128' )
 
@@ -814,21 +826,6 @@ class _TestArithmetic:
 
         self.Asp = self.spmatrix(self.A)
         self.Bsp = self.spmatrix(self.B)
-
-    def test_astype(self):
-        self.arith_init()
-
-        #check whether dtype and value is preserved in conversion
-        for x in supported_dtypes:
-            A = self.A.astype(x)
-            B = self.B.astype(x)
-
-            Asp = self.spmatrix(A)
-            Bsp = self.spmatrix(B)
-            assert_equal(Asp.dtype,A.dtype)
-            assert_equal(Bsp.dtype,B.dtype)
-            assert_array_equal(Asp.todense(),A)
-            assert_array_equal(Bsp.todense(),B)
 
     def test_add_sub(self):
         self.arith_init()
