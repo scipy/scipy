@@ -66,6 +66,10 @@ class lil_matrix(spmatrix):
                 A = arg1.copy()
             else:
                 A = arg1.tolil()
+
+            if dtype is not None:
+                A = A.astype(dtype)
+
             self.shape = A.shape
             self.dtype = A.dtype
             self.rows  = A.rows

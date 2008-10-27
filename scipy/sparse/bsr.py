@@ -156,17 +156,20 @@ class bsr_matrix(_cs_matrix):
                     M = len(self.indptr) - 1
                     N = self.indices.max() + 1
                 except:
-                    raise ValueError,'unable to infer matrix dimensions'
+                    raise ValueError('unable to infer matrix dimensions')
                 else:
                     R,C = self.blocksize
                     self.shape = (M*R,N*C)
 
         if self.shape is None:
             if shape is None:
-                #infer shape here
-                raise ValueError,'need to infer shape'
+                #TODO infer shape here
+                raise ValueError('need to infer shape')
             else:
                 self.shape = shape
+        
+        if dtype is not None:
+            self.data = self.data.astype(dtype)
 
         self.check_format(full_check=False)
 

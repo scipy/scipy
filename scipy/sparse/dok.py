@@ -59,6 +59,10 @@ class dok_matrix(spmatrix, dict):
                 arg1 = arg1.copy()
             else:
                 arg1 = arg1.todok()
+            
+            if dtype is not None:
+                arg1 = arg1.astype(dtype)
+
             self.update(arg1)
             self.shape = arg1.shape
             self.dtype = arg1.dtype

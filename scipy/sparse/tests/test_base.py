@@ -150,13 +150,13 @@ class _TestCommon:
 
     def test_from_array(self):
         A = array([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
-        assert_array_equal(self.spmatrix(A).todense(), A)
+        assert_array_equal(self.spmatrix(A).toarray(), A)
         
         A = array([[1.0 + 3j,       0,      0],
                    [       0, 2.0 + 5,      0],
                    [       0,       0,      0]])
-        assert_array_equal(self.spmatrix(A).todense(), A)
-        assert_array_equal(self.spmatrix(A, dtype='int16').todense(), A.astype('int16'))
+        assert_array_equal(self.spmatrix(A).toarray(), A)
+        assert_array_equal(self.spmatrix(A, dtype='int16').toarray(), A.astype('int16'))
 
     def test_from_matrix(self):
         A = matrix([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
@@ -165,8 +165,8 @@ class _TestCommon:
         A = matrix([[1.0 + 3j,       0,      0],
                     [       0, 2.0 + 5,      0],
                     [       0,       0,      0]])
-        assert_array_equal(self.spmatrix(A).todense(), A)
-        assert_array_equal(self.spmatrix(A, dtype='int16').todense(), A.astype('int16'))
+        assert_array_equal(self.spmatrix(A).toarray(), A)
+        assert_array_equal(self.spmatrix(A, dtype='int16').toarray(), A.astype('int16'))
 
     def test_from_list(self):
         A = [[1,0,0],[2,3,4],[0,5,0],[0,0,0]]
@@ -175,8 +175,26 @@ class _TestCommon:
         A = [[1.0 + 3j,       0,      0],
              [       0, 2.0 + 5,      0],
              [       0,       0,      0]]
-        assert_array_equal(self.spmatrix(A).todense(), array(A))
+        assert_array_equal(self.spmatrix(A).toarray(), array(A))
         assert_array_equal(self.spmatrix(A, dtype='int16').todense(), array(A).astype('int16'))
+
+    def test_from_sparse(self):
+        D = array([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
+        S = csr_matrix(D)
+        assert_array_equal(self.spmatrix(S).toarray(), D)
+        S = self.spmatrix(D)
+        assert_array_equal(self.spmatrix(S).toarray(), D)
+
+
+        D = array([[1.0 + 3j,       0,      0],
+                   [       0, 2.0 + 5,      0],
+                   [       0,       0,      0]])
+        S = csr_matrix(D)
+        assert_array_equal(self.spmatrix(S).toarray(), D)
+        assert_array_equal(self.spmatrix(S, dtype='int16').toarray(), D.astype('int16'))
+        S = self.spmatrix(D)
+        assert_array_equal(self.spmatrix(S).toarray(), D)
+        assert_array_equal(self.spmatrix(S, dtype='int16').toarray(), D.astype('int16'))
 
     #def test_array(self):
     #    """test array(A) where A is in sparse format"""

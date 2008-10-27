@@ -100,6 +100,9 @@ class dia_matrix(_data_matrix):
             self.shape   = A.shape
 
 
+        if dtype is not None:
+            self.data = self.data.astype(dtype)
+
         #check format
         if self.offsets.ndim != 1:
             raise ValueError('offsets array must have rank 1')

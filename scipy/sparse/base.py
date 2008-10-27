@@ -87,7 +87,7 @@ class spmatrix(object):
         raise NotImplementedError
 
     def astype(self, t):
-        return self.tocsr().astype(t)
+        return self.tocsr().astype(t).asformat(self.format)
 
     def asfptype(self):
         """Upcast matrix to a floating point format (if necessary)"""
