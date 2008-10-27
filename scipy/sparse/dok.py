@@ -72,7 +72,7 @@ class dok_matrix(spmatrix, dict):
                 raise TypeError('expected rank <=2 dense array or matrix')
 
             from coo import coo_matrix
-            self.update( coo_matrix(arg1).todok() )
+            self.update( coo_matrix(arg1, dtype=dtype).todok() )
             self.shape = arg1.shape
             self.dtype = arg1.dtype
 

@@ -3,10 +3,42 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['tril', 'triu']
+__all__ = ['find', 'tril', 'triu']
 
 
 from coo import coo_matrix
+
+def find(A):
+    """Return the indices and values of the nonzero elements of a matrix
+
+    Parameters
+    ----------
+    A : dense or sparse matrix
+        Matrix whose nonzero elements are desired.
+
+    Returns
+    -------
+    (I,J,V) : tuple of arrays
+        I,J, and V contain the row indices, column indices, and values
+        of the nonzero matrix entries.
+
+
+    Example
+    -------
+    >>> from scipy.sparse import csr_matrix
+    >>> A = csr_matrix([[7.0, 8.0, 0],[0, 0, 9.0]])
+    >>> find(A)
+    (array([0, 0, 1], dtype=int32), array([0, 1, 2], dtype=int32), array([ 7.,  8.,  9.]))
+    
+    """
+
+    A = coo_matrix(A).tocsr()  #sums duplicates
+    A.eliminate_zeros()        #removes explicit zeros
+    A = A.tocoo(copy=False)    #(cheaply) convert to COO
+
+    return A.row,A.col,A.data
+
+
 
 def tril(A, k=0, format=None):
     """Return the lower triangular portion of a matrix in sparse format

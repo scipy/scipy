@@ -172,6 +172,10 @@ class coo_matrix(_data_matrix):
                 self.row,self.col = (M != 0).nonzero()
                 self.data  = M[self.row,self.col]
 
+        if dtype is not None:
+            self.data = self.data.astype(dtype)
+
+
         self._check()
 
     def getnnz(self):

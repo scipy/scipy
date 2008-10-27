@@ -126,7 +126,7 @@ class bsr_matrix(_cs_matrix):
             elif len(arg1) == 2:
                 # (data,(row,col)) format
                 from coo import coo_matrix
-                self._set_self( coo_matrix(arg1).tobsr(blocksize=blocksize) )
+                self._set_self( coo_matrix(arg1, dtype=dtype).tobsr(blocksize=blocksize) )
 
             elif len(arg1) == 3:
                 # (data,indices,indptr) format
@@ -144,7 +144,7 @@ class bsr_matrix(_cs_matrix):
                 raise ValueError("unrecognized form for" \
                         " %s_matrix constructor" % self.format)
             from coo import coo_matrix
-            arg1 = coo_matrix(arg1).tobsr(blocksize=blocksize)
+            arg1 = coo_matrix(arg1, dtype=dtype).tobsr(blocksize=blocksize)
             self._set_self( arg1 )
 
         if shape is not None:

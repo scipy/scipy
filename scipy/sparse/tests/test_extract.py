@@ -26,6 +26,11 @@ class TestExtract(TestCase):
 
         self.cases = cases
 
+    def find(self):
+        for A in self.cases:
+            I,J,V = find(A)
+            assert_equal( A.toarray(), csr_matrix(((I,J),V), shape=A.shape) )
+
     def test_tril(self):
         for A in self.cases:
             B = A.toarray()

@@ -91,7 +91,7 @@ class lil_matrix(spmatrix):
                 raise TypeError('unsupported matrix type')
             else:
                 from csr import csr_matrix
-                A = csr_matrix(A).tolil()
+                A = csr_matrix(A, dtype=dtype).tolil()
 
                 self.shape = A.shape
                 self.dtype = A.dtype

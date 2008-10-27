@@ -94,7 +94,7 @@ class dia_matrix(_data_matrix):
                 raise ValueError("unrecognized form for" \
                         " %s_matrix constructor" % self.format)
             from coo import coo_matrix
-            A = coo_matrix(arg1).todia()
+            A = coo_matrix(arg1, dtype=dtype).todia()
             self.data    = A.data
             self.offsets = A.offsets
             self.shape   = A.shape

@@ -68,7 +68,7 @@ class _cs_matrix(_data_matrix):
                 raise ValueError, "unrecognized %s_matrix constructor usage" % \
                         self.format
             from coo import coo_matrix
-            self._set_self( self.__class__(coo_matrix(arg1)) )
+            self._set_self( self.__class__(coo_matrix(arg1, dtype=dtype)) )
 
         # Read matrix dimensions given, if any
         if shape is not None:
