@@ -37,7 +37,7 @@ def tril(A, k=0, format=None):
     Examples
     --------
     >>> from scipy.sparse import csr_matrix
-    >>> A = csr_matrix( [[1,2,0,0,3],[4,5,0,6,7],[0,0,8,9,0]] )
+    >>> A = csr_matrix( [[1,2,0,0,3],[4,5,0,6,7],[0,0,8,9,0]], dtype='int32' )
     >>> A.todense()
     matrix([[1, 2, 0, 0, 3],
             [4, 5, 0, 6, 7],
@@ -103,7 +103,7 @@ def triu(A, k=0, format=None):
     Examples
     --------
     >>> from scipy.sparse import csr_matrix
-    >>> A = csr_matrix( [[1,2,0,0,3],[4,5,0,6,7],[0,0,8,9,0]] )
+    >>> A = csr_matrix( [[1,2,0,0,3],[4,5,0,6,7],[0,0,8,9,0]], dtype='int32' )
     >>> A.todense()
     matrix([[1, 2, 0, 0, 3],
             [4, 5, 0, 6, 7],

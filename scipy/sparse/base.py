@@ -514,7 +514,7 @@ class spmatrix(object):
     def todia(self):
         return self.tocoo().todia()
 
-    def tobsr(self,blocksize=None):
+    def tobsr(self, blocksize=None):
         return self.tocsr().tobsr(blocksize=blocksize)
 
     def copy(self):
