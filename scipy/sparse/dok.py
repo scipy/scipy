@@ -7,10 +7,10 @@ __all__ = ['dok_matrix', 'isspmatrix_dok']
 import operator
 from itertools import izip
 
-from numpy import asarray, intc, isscalar
+import numpy as np
 
-from base import spmatrix,isspmatrix
-from sputils import isdense, getdtype, isshape, isintlike, isscalarlike
+from base import spmatrix, isspmatrix
+from sputils import isdense, getdtype, isshape, isintlike, isscalarlike, upcast
 
 class dok_matrix(spmatrix, dict):
     """Dictionary Of Keys based sparse matrix.
@@ -64,7 +64,7 @@ class dok_matrix(spmatrix, dict):
             self.dtype = arg1.dtype
         else: # Dense ctor
             try:
-                arg1 = asarray(arg1)
+                arg1 = np.asarray(arg1)
             except:
                 raise TypeError('invalid input format')
 
@@ -213,7 +213,7 @@ class dok_matrix(spmatrix, dict):
             if i < 0 or i >= self.shape[0] or j < 0 or j >= self.shape[1]:
                 raise IndexError, "index out of bounds"
 
-            if isscalar(value):
+            if np.isscalar(value):
                 if value==0:
                     del self[(i,j)]
                 else:
@@ -243,7 +243,7 @@ class dok_matrix(spmatrix, dict):
                     else:
                         raise NotImplementedError, "setting a 2-d slice of" \
                                 " a dok_matrix is not yet supported"
-                elif isscalar(value):
+                elif np.isscalar(value):
                     for element in seq:
                         self[element, j] = value
                 else:
@@ -282,7 +282,7 @@ class dok_matrix(spmatrix, dict):
                     else:
                         raise NotImplementedError, "setting a 2-d slice of" \
                                 " a dok_matrix is not yet supported"
-                elif isscalar(value):
+                elif np.isscalar(value):
                     for element in seq:
                         self[i, element] = value
                 else:
@@ -363,12 +363,27 @@ class dok_matrix(spmatrix, dict):
         return new
 
     def _mul_scalar(self, other):
-        new = dok_matrix(self.shape, dtype=self.dtype)
         # Multiply this scalar by every element.
+        new = dok_matrix(self.shape, dtype=self.dtype)
         for (key, val) in self.iteritems():
             new[key] = val * other
-        #new.dtype.char = self.dtype.char
         return new
+
+    def _mul_vector(self, other):
+        #matrix * vector
+        result = np.zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
+        for (i,j),v in self.iteritems():
+            result[i] += v * other[j]
+        return result
+    
+    def _mul_multivector(self, other):
+        #matrix * multivector
+        M,N = self.shape
+        n_vecs = other.shape[1] #number of column vectors
+        result = np.zeros( (M,n_vecs), dtype=upcast(self.dtype,other.dtype) )
+        for (i,j),v in self.iteritems():
+            result[i,:] += v * other[j,:]
+        return result
 
     def __imul__(self, other):
         if isscalarlike(other):
@@ -427,7 +442,6 @@ class dok_matrix(spmatrix, dict):
     def copy(self):
         new = dok_matrix(self.shape, dtype=self.dtype)
         new.update(self)
-        new.shape = self.shape
         return new
 
     def take(self, cols_or_rows, columns=1):
@@ -475,51 +489,16 @@ class dok_matrix(spmatrix, dict):
                     newkey = (key[0]-num, key[1])
                     base[newkey] = self[key]
         return base, ext
-
-# TODO update these w/ new multiplication handlers
-#    def matvec(self, other):
-#        if isdense(other):
-#            if other.shape[0] != self.shape[1]:
-#                raise ValueError, "dimensions do not match"
-#            new = [0] * self.shape[0]
-#            for key in self.keys():
-#                new[int(key[0])] += self[key] * other[int(key[1])]
-#            new = array(new)
-#            if isinstance(other, matrix):
-#                new = asmatrix(new)
-#                # Do we need to return the transpose?
-#                if other.shape[1] == 1:
-#                    new = new.T
-#            return new
-#        else:
-#            raise TypeError, "need a dense vector"
-#
-#    def rmatvec(self, other, conjugate=True):
-#        if isdense(other):
-#            if other.shape[-1] != self.shape[0]:
-#                raise ValueError, "dimensions do not match"
-#            new = [0] * self.shape[1]
-#            for key in self.keys():
-#                new[int(key[1])] += other[int(key[0])] * conj(self[key])
-#            new = array(new)
-#            if isinstance(other, matrix):
-#                new = asmatrix(new)
-#                # Do we need to return the transpose?
-#                if other.shape[1] == 1:
-#                    new = new.T
-#            return new
-#        else:
-#            raise TypeError, "need a dense vector"
-
+    
     def tocoo(self):
         """ Return a copy of this matrix in COOrdinate format"""
         from coo import coo_matrix
         if self.nnz == 0:
             return coo_matrix(self.shape, dtype=self.dtype)
         else:
-            data    = asarray(self.values(), dtype=self.dtype)
-            indices = asarray(self.keys(), dtype=intc).T
-            return coo_matrix((data,indices),shape=self.shape,dtype=self.dtype)
+            data    = np.asarray(self.values(), dtype=self.dtype)
+            indices = np.asarray(self.keys(), dtype=np.intc).T
+            return coo_matrix((data,indices), shape=self.shape, dtype=self.dtype)
 
     def todok(self,copy=False):
         if copy:

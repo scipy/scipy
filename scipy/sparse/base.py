@@ -272,8 +272,8 @@ class spmatrix(object):
 
         self._mul_scalar()
         self._mul_vector()
+        self._mul_multivector()
         self._mul_sparse_matrix()
-        self._mul_dense_matrix()
         """
 
         M,N = self.shape
@@ -310,12 +310,12 @@ class spmatrix(object):
 
         elif len(other.shape) == 2:
             ##
-            # dense 2D array or matrix
+            # dense 2D array or matrix ("multivector")
 
             if other.shape[0] != self.shape[1]:
                 raise ValueError('dimension mismatch')
 
-            result = self._mul_dense_matrix(np.asarray(other))
+            result = self._mul_multivector(np.asarray(other))
 
             if isinstance(other, np.matrix):
                 result = np.asmatrix(result)
@@ -331,8 +331,8 @@ class spmatrix(object):
     def _mul_vector(self, other):
         return self.tocsr()._mul_vector(other)
 
-    def _mul_dense_matrix(self, other):
-        return self.tocsr()._mul_dense_matrix(other)
+    def _mul_multivector(self, other):
+        return self.tocsr()._mul_multivector(other)
 
     def _mul_sparse_matrix(self, other):
         return self.tocsr()._mul_sparse_matrix(other)

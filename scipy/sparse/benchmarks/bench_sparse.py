@@ -130,6 +130,8 @@ class BenchmarkSparse(TestCase):
         matrices = []
         matrices.append(('Identity',   sparse.identity(10**4,format='dia')))
         matrices.append(('Identity',   sparse.identity(10**4,format='csr')))
+        matrices.append(('Poisson5pt', poisson2d(300,format='lil')))
+        matrices.append(('Poisson5pt', poisson2d(300,format='dok')))
         matrices.append(('Poisson5pt', poisson2d(300,format='dia')))
         matrices.append(('Poisson5pt', poisson2d(300,format='coo')))
         matrices.append(('Poisson5pt', poisson2d(300,format='csr')))

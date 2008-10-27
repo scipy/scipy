@@ -364,7 +364,7 @@ class coo_matrix(_data_matrix):
         coo_matvec(self.nnz, self.row, self.col, self.data, other, result)
         return result
 
-    def _mul_dense_matrix(self, other):
+    def _mul_multivector(self, other):
         return np.hstack( [ self._mul_vector(col).reshape(-1,1) for col in other.T ] )
 
 from sputils import _isinstance

@@ -152,7 +152,7 @@ class dia_matrix(_data_matrix):
 
         return y
 
-    def _mul_dense_matrix(self, other):
+    def _mul_multimatrix(self, other):
         return np.hstack( [ self._mul_vector(col).reshape(-1,1) for col in other.T ] )
 
     def todia(self,copy=False):

@@ -266,7 +266,7 @@ class _cs_matrix(_data_matrix):
         return result
 
 
-    def _mul_dense_matrix(self,other):
+    def _mul_multivector(self, other):
         M,N = self.shape
         n_vecs = other.shape[1] #number of column vectors
 
