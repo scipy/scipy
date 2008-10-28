@@ -68,7 +68,7 @@ class _cs_matrix(_data_matrix):
                 raise ValueError, "unrecognized %s_matrix constructor usage" % \
                         self.format
             from coo import coo_matrix
-            self._set_self( self.__class__(coo_matrix(arg1)) )
+            self._set_self( self.__class__(coo_matrix(arg1, dtype=dtype)) )
 
         # Read matrix dimensions given, if any
         if shape is not None:
@@ -83,6 +83,9 @@ class _cs_matrix(_data_matrix):
                     raise ValueError,'unable to infer matrix dimensions'
                 else:
                     self.shape = self._swap((major_dim,minor_dim))
+        
+        if dtype is not None:
+            self.data = self.data.astype(dtype)
 
         self.check_format(full_check=False)
 
@@ -266,7 +269,7 @@ class _cs_matrix(_data_matrix):
         return result
 
 
-    def _mul_dense_matrix(self,other):
+    def _mul_multivector(self, other):
         M,N = self.shape
         n_vecs = other.shape[1] #number of column vectors
 

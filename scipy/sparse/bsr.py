@@ -126,7 +126,7 @@ class bsr_matrix(_cs_matrix):
             elif len(arg1) == 2:
                 # (data,(row,col)) format
                 from coo import coo_matrix
-                self._set_self( coo_matrix(arg1).tobsr(blocksize=blocksize) )
+                self._set_self( coo_matrix(arg1, dtype=dtype).tobsr(blocksize=blocksize) )
 
             elif len(arg1) == 3:
                 # (data,indices,indptr) format
@@ -144,7 +144,7 @@ class bsr_matrix(_cs_matrix):
                 raise ValueError("unrecognized form for" \
                         " %s_matrix constructor" % self.format)
             from coo import coo_matrix
-            arg1 = coo_matrix(arg1).tobsr(blocksize=blocksize)
+            arg1 = coo_matrix(arg1, dtype=dtype).tobsr(blocksize=blocksize)
             self._set_self( arg1 )
 
         if shape is not None:
@@ -156,17 +156,20 @@ class bsr_matrix(_cs_matrix):
                     M = len(self.indptr) - 1
                     N = self.indices.max() + 1
                 except:
-                    raise ValueError,'unable to infer matrix dimensions'
+                    raise ValueError('unable to infer matrix dimensions')
                 else:
                     R,C = self.blocksize
                     self.shape = (M*R,N*C)
 
         if self.shape is None:
             if shape is None:
-                #infer shape here
-                raise ValueError,'need to infer shape'
+                #TODO infer shape here
+                raise ValueError('need to infer shape')
             else:
                 self.shape = shape
+        
+        if dtype is not None:
+            self.data = self.data.astype(dtype)
 
         self.check_format(full_check=False)
 
@@ -298,7 +301,7 @@ class bsr_matrix(_cs_matrix):
 
         return result
 
-    def _mul_dense_matrix(self,other):
+    def _mul_multivector(self,other):
         R,C = self.blocksize
         M,N = self.shape
         n_vecs = other.shape[1] #number of column vectors

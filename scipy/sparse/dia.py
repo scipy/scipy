@@ -94,11 +94,14 @@ class dia_matrix(_data_matrix):
                 raise ValueError("unrecognized form for" \
                         " %s_matrix constructor" % self.format)
             from coo import coo_matrix
-            A = coo_matrix(arg1).todia()
+            A = coo_matrix(arg1, dtype=dtype).todia()
             self.data    = A.data
             self.offsets = A.offsets
             self.shape   = A.shape
 
+
+        if dtype is not None:
+            self.data = self.data.astype(dtype)
 
         #check format
         if self.offsets.ndim != 1:
@@ -152,7 +155,7 @@ class dia_matrix(_data_matrix):
 
         return y
 
-    def _mul_dense_matrix(self, other):
+    def _mul_multimatrix(self, other):
         return np.hstack( [ self._mul_vector(col).reshape(-1,1) for col in other.T ] )
 
     def todia(self,copy=False):
