@@ -14,7 +14,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('fftpack')
 
     # Build optional backends
-    config.add_subpackage('backends')
+   # config.add_subpackage('backends')
 
     return config
 

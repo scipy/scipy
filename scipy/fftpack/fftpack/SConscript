@@ -7,11 +7,11 @@ from numscons import GetNumpyEnvironment
 from numscons import CheckF77Clib
 
 env = GetNumpyEnvironment(ARGUMENTS)
-env.Tool('numpyf2py')
+env.Tool('f2py')
 
-env.AppendUnique(CPPPATH = get_numpy_include_dirs())
-env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
-env.AppendUnique(CPPPATH = [pjoin(env['build_dir'], "src")])
+env.AppendUnique(CPPPATH = ['src'])
+# env.AppendUnique(CPPPATH = get_numpy_include_dirs())
+# env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 
 config = env.NumpyConfigure(custom_tests = {'CheckF77Clib' : CheckF77Clib})
 if not config.CheckF77Clib():
@@ -19,15 +19,14 @@ if not config.CheckF77Clib():
 config.Finish()
 
 # Build dfftpack
-src = env.NumpyGlob(pjoin('DFFTPACK', '*.f'))
-dfftpack = env.NumpyStaticExtLibrary('dfftpack', source = [str(s) for s in src])
+src = env.Glob(pjoin('DFFTPACK', '*.f'))
+dfftpack = env.DistutilsStaticExtLibrary('dfftpack', source = [str(s) for s in src])
 env.PrependUnique(LIBS = ['dfftpack'])
-env.PrependUnique(LIBPATH = env['build_dir'])
+env.PrependUnique(LIBPATH = '.')
 
 # Build the fftpack wrapper
 src = [pjoin("src/fftpack", i) for i in ['zfft.cxx','drfft.cxx', 'zfftnd.cxx']]
-src.append(env.NumpyFromFTemplate('fftpack.pyf', 'fftpack.pyf.src'))
-env.NumpyPythonExtension('_fftpack', src + ['src/zrfft.c'])
+env.NumpyPythonExtension('_fftpack', src + ['src/zrfft.c', 'fftpack.pyf'])
 
 # Build convolve
 src = ['src/fftpack/convolve.cxx',  'convolve.pyf']
