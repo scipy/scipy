@@ -216,5 +216,13 @@ class TestExpon(TestCase):
     def test_zero(self):
         assert_equal(stats.expon.pdf(0),1)
 
+class TestDocstring(TestCase):
+    def test_docstrings(self):
+        """See ticket #761"""
+        if stats.rayleigh.__doc__ is not None:
+            self.failUnless("rayleigh" in stats.rayleigh.__doc__.lower())
+        if stats.bernoulli.__doc__ is not None:
+            self.failUnless("bernoulli" in stats.bernoulli.__doc__.lower())
+
 if __name__ == "__main__":
     run_module_suite()
