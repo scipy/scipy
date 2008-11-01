@@ -25,42 +25,6 @@ void convolve_z(int n,double* inout,double* omega_real,double* omega_imag);
 extern int ispow2le2e30(int n);
 extern int ispow2le2e13(int n);
 
-#ifdef SCIPY_FFTWORK_H
-#define WITH_FFTWORK
-#include "fftwork/fast_header.h"
-#endif
-
-#ifdef SCIPY_DJBFFT_H
-#define WITH_DJBFFT
-#define complex8 complex_double
-#define COMPLEX8_H
-#include <fftfreq.h>
-#include <fftc8.h>
-#include <fftr8.h>
-#endif
-
-#ifdef SCIPY_MKL_H
-#define WITH_MKL
-#include <mkl_dfti.h>
-#endif
-
-#ifdef SCIPY_FFTW3_H
-#define WITH_FFTW3
-#include <fftw3.h>
-#endif
-
-#ifdef SCIPY_DFFTW_H
-#define WITH_FFTW
-#include <dfftw.h>
-#include <drfftw.h>
-#endif
-
-#ifdef SCIPY_FFTW_H
-#define WITH_FFTW
-#include <fftw.h>
-#include <rfftw.h>
-#endif
-
 #if defined(NO_APPEND_FORTRAN)
 #if defined(UPPERCASE_FORTRAN)
 #define F_FUNC(f,F) F
