@@ -224,5 +224,15 @@ class TestDocstring(TestCase):
         if stats.bernoulli.__doc__ is not None:
             self.failUnless("bernoulli" in stats.bernoulli.__doc__.lower())
 
+class TestEntropy(TestCase):
+    def test_entropy_positive(self):
+        """See ticket #497"""
+        pk = [0.5,0.2,0.3]
+        qk = [0.1,0.25,0.65]
+        eself = stats.entropy(pk,pk)
+        edouble = stats.entropy(pk,qk)
+        assert(0.0 == eself)
+        assert(edouble >= 0.0)
+
 if __name__ == "__main__":
     run_module_suite()

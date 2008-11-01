@@ -3180,10 +3180,10 @@ def entropy(pk,qk=None):
     """S = entropy(pk,qk=None)
 
     calculate the entropy of a distribution given the p_k values
-    S = -sum(pk * log(pk),axis=0)
+    S = -sum(pk * log(pk), axis=0)
 
     If qk is not None, then compute a relative entropy
-    S = -sum(pk * log(pk / qk),axis=0)
+    S = sum(pk * log(pk / qk), axis=0)
 
     Routine will normalize pk and qk if they don't sum to 1
     """
@@ -3200,7 +3200,7 @@ def entropy(pk,qk=None):
         #   too, the relative entropy is infinite.
         if any(take(pk,nonzero(qk==0.0),axis=0)!=0.0, 0):
             return inf
-        vec = where (pk == 0, 0.0, pk*log(pk / qk))
+        vec = where (pk == 0, 0.0, -pk*log(pk / qk))
     return -sum(vec,axis=0)
 
 
