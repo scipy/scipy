@@ -59,7 +59,10 @@ def vectorize1(func, args=(), vec_func=False):
             # call with first point to get output type
             y0 = func(x[0], *args)
             n = len(x)
-            output = empty((n,), dtype=y0.dtype)
+            if hasattr(y0, 'dtype'):
+                output = empty((n,), dtype=y0.dtype)
+            else:
+                output = empty((n,), dtype=type(y0))
             output[0] = y0
             for i in xrange(1, n):
                 output[i] = func(x[i], *args)
