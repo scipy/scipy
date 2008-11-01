@@ -42,7 +42,8 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from numpy import sqrt, log, asarray, newaxis, all, dot, float64, exp, eye
+from numpy import (sqrt, log, asarray, newaxis, all, dot, float64, exp, eye,
+                   isnan)
 from scipy import linalg
 
 class Rbf(object):
@@ -109,7 +110,9 @@ class Rbf(object):
         elif self.function.lower() == 'quintic':
             return r**5
         elif self.function.lower() == 'thin-plate':
-            return r**2 * log(r)
+            result = r**2 * log(r)
+            result[r == 0] = 0 # the spline is zero at zero
+            return result
         else:
             raise ValueError, 'Invalid basis function name'
 
