@@ -757,6 +757,8 @@ def skew(a, axis=0, bias=True):
             m3 = np.extract(can_correct, m3)
             nval = np.sqrt((n-1.0)*n)/(n-2.0)*m3/m2**1.5
             np.place(vals, can_correct, nval)
+    if vals.ndim == 0:
+        return vals.item()
     return vals
 
 def kurtosis(a, axis=0, fisher=True, bias=True):

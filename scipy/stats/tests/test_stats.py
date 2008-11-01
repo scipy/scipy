@@ -820,7 +820,8 @@ class TestMoments(TestCase):
 
     def test_skewness(self):
         """
-            sum((testmathworks-mean(testmathworks,axis=0))**3,axis=0)/((sqrt(var(testmathworks)*4/5))**3)/5
+        sum((testmathworks-mean(testmathworks,axis=0))**3,axis=0)/
+            ((sqrt(var(testmathworks)*4/5))**3)/5
         """
         y = stats.skew(self.testmathworks)
         assert_approx_equal(y,-0.29322304336607,10)
@@ -828,6 +829,13 @@ class TestMoments(TestCase):
         assert_approx_equal(y,-0.437111105023940,10)
         y = stats.skew(self.testcase)
         assert_approx_equal(y,0.0,10)
+
+    def test_skewness_scalar(self):
+        """
+        `skew` must return a scalar for 1-dim input
+        """
+        assert_equal(stats.skew(arange(10)), 0.0)
+
     def test_kurtosis(self):
         """
             sum((testcase-mean(testcase,axis=0))**4,axis=0)/((sqrt(var(testcase)*3/4))**4)/4
