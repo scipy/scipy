@@ -46,8 +46,52 @@ from numpy import sqrt, log, asarray, newaxis, all, dot, float64, exp, eye
 from scipy import linalg
 
 class Rbf(object):
-    """ A class for radial basis function approximation/interpolation of
-        n-dimensional scattered data.
+    """
+    Rbf(*args)
+    
+    A class for radial basis function approximation/interpolation of
+    n-dimensional scattered data.
+
+    Parameters
+    ----------
+    *args : arrays
+        x, y, z, ..., d, where x, y, z, ... are the coordinates of the nodes
+        and d is the array of values at the nodes
+    function : str, optional
+        The radial basis function, based on the radius, r, given by the norm
+        (defult is Euclidean distance); the default is 'multiquadric'::
+
+            'multiquadric': sqrt((r/self.epsilon)**2 + 1)
+            'inverse multiquadric': 1.0/sqrt((r/self.epsilon)**2 + 1)
+            'gaussian': exp(-(self.epsilon*r)**2)
+            'cubic': r**3
+            'quintic': r**5
+            'thin-plate': r**2 * log(r)
+
+    epsilon : float, optional
+        Adjustable constant for gaussian or multiquadrics functions
+        - defaults to approximate average distance between nodes (which is
+        a good start).
+    smooth : float, optional
+        Values greater than zero increase the smoothness of the
+        approximation.  0 is for interpolation (default), the function will
+        always go through the nodal points in this case.
+    norm : callable, optional
+        A function that returns the 'distance' between two points, with
+        inputs as arrays of positions (x, y, z, ...), and an output as an
+        array of distance.  E.g, the default::
+
+            def euclidean_norm(x1, x2):
+                return sqrt( ((x1 - x2)**2).sum(axis=0) )
+
+        which is called with x1=x1[ndims,newaxis,:] and
+        x2=x2[ndims,:,newaxis] such that the result is a symmetric, square
+        matrix of the distances between each point to each other point.
+
+    Examples
+    --------
+    >>> rbfi = Rbf(x, y, z, d)  # radial basis function interpolator instance
+    >>> di = rbfi(xi, yi, zi)   # interpolated values
     """
 
     def _euclidean_norm(self, x1, x2):
@@ -70,54 +114,6 @@ class Rbf(object):
             raise ValueError, 'Invalid basis function name'
 
     def __init__(self, *args, **kwargs):
-        """ Constructor for Rbf class.
-
-        Parameters
-        ----------
-        *args : arrays
-            x, y, z, ..., d, where x, y, z, ... are the coordinates of the nodes
-            and d is the array of values at the nodes
-        function : str, optional
-            The radial basis function, based on the radius, r, given by the norm
-            (defult is Euclidean distance); the default is 'multiquadratic'.
-
-            ::
-                'multiquadric': sqrt((self.epsilon*r)**2 + 1)
-                'inverse multiquadric': 1.0/sqrt((self.epsilon*r)**2 + 1)
-                'gaussian': exp(-(self.epsilon*r)**2)
-                'cubic': r**3
-                'quintic': r**5
-                'thin-plate': r**2 * log(r)
-        epsilon : float, optional
-            Adjustable constant for gaussian or multiquadrics functions
-            - defaults to approximate average distance between nodes (which is
-            a good start).
-        smooth : float, optional
-            Values greater than zero increase the smoothness of the
-            approximation.  0 is for interpolation (default), the function will
-            always go through the nodal points in this case.
-        norm : callable, optional
-            A function that returns the 'distance' between two points, with
-            inputs as arrays of positions (x, y, z, ...), and an output as an
-            array of distance.  E.g, the default::
-
-                def euclidean_norm(x1, x2):
-                    return sqrt( ((x1 - x2)**2).sum(axis=0) )
-
-            which is called with x1=x1[ndims,newaxis,:] and
-            x2=x2[ndims,:,newaxis] such that the result is a symetric, square
-            matrix of the distances between each point to each other point.
-
-        Returns
-        -------
-        rbf : Rbf
-            Interpolator object that returns interpolated values at new positions.
-
-        Examples
-        --------
-        >>> rbfi = Rbf(x, y, z, d)      # radial basis function interpolator instance
-        >>> di = rbfi(xi, yi, zi)       # interpolated values
-        """
         self.xi = asarray([asarray(a, dtype=float64).flatten() for a in args[:-1]])
         self.N = self.xi.shape[-1]
         self.di = asarray(args[-1], dtype=float64).flatten()
