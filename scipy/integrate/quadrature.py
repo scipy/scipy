@@ -48,6 +48,30 @@ def fixed_quad(func,a,b,args=(),n=5):
     return (b-a)/2.0*sum(w*func(y,*args),0), None
 
 def vectorize1(func, args=(), vec_func=False):
+    """Vectorize the call to a function.
+
+    This is an internal utility function used by `romberg` and
+    `quadrature` to create a vectorized version of a function.
+
+    If `vec_func` is True, the function `func` is assumed to take vector
+    arguments.
+
+    Parameters
+    ----------
+    func : callable
+        User defined function.
+    args : tuple
+        Extra arguments for the function.
+    vec_func : bool
+        True if the function func takes vector arguments.
+
+    Returns
+    -------
+    vfunc : callable
+        A function that will take a vector argument and return the
+        result.
+
+    """
     if vec_func:
         def vfunc(x):
             return func(x, *args)
