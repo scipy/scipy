@@ -65,6 +65,7 @@ class Rbf(object):
             'multiquadric': sqrt((r/self.epsilon)**2 + 1)
             'inverse multiquadric': 1.0/sqrt((r/self.epsilon)**2 + 1)
             'gaussian': exp(-(self.epsilon*r)**2)
+            'linear': r
             'cubic': r**3
             'quintic': r**5
             'thin-plate': r**2 * log(r)
@@ -105,6 +106,8 @@ class Rbf(object):
             return 1.0/sqrt((1.0/self.epsilon*r)**2 + 1)
         elif self.function.lower() == 'gaussian':
             return exp(-(self.epsilon*r)**2)
+        elif self.function.lower() == 'linear':
+            return r
         elif self.function.lower() == 'cubic':
             return r**3
         elif self.function.lower() == 'quintic':

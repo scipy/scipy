@@ -7,7 +7,7 @@ from numpy import linspace, sin, random, exp
 from scipy.interpolate.rbf import Rbf
 
 FUNCTIONS = ('multiquadric', 'inverse multiquadric', 'gaussian',
-             'cubic', 'quintic', 'thin-plate')
+             'cubic', 'quintic', 'thin-plate', 'linear')
 
 def check_rbf1d(function):
     x = linspace(0,10,9)
