@@ -52,7 +52,7 @@ Currently SciPy consists of the following files and directories:
   THANKS.txt
     SciPy developers and contributors. Please keep it up to date!!
 
-  DEVELOPERS.txt
+  README.txt
     SciPy structure (this document).
 
   setup.py
