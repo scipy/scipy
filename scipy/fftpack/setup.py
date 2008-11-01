@@ -12,7 +12,7 @@ def configuration(parent_package='',top_path=None):
     config.add_data_dir('benchmarks')
 
     config.add_library('dfftpack',
-                       sources=[join('dfftpack','*.f')])
+                       sources=[join('src/dfftpack','*.f')])
 
     sources = ['fftpack.pyf','src/zfft.c','src/drfft.c','src/zrfft.c',
                'src/zfftnd.c']
