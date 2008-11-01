@@ -22,9 +22,16 @@ help:
 	@echo "  latex     to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
 	@echo "  changes   to make an overview over all changed/added/deprecated items"
 	@echo "  linkcheck to check all external links for integrity"
+	@echo "  upload USER=...  to upload results to docs.scipy.org"
 
 clean:
 	-rm -rf build/* source/generated
+
+upload:
+	@test -e build/dist || { echo "make dist is required first"; exit 1; }
+	@test output-is-fine -nt build/dist || { \
+	    echo "Review the output in build/dist, and do 'touch output-is-fine' before uploading."; exit 1; }
+	rsync -r --delete-after -p build/dist/ $(USER)@docs.scipy.org:/home/docserver/www-root/doc/scipy/
 
 dist: html
 	test -d build/latex || make latex
@@ -37,6 +44,8 @@ dist: html
 	(cd build/html && zip -9qr ../dist/scipy-html.zip .)
 	cp build/latex/*.pdf build/dist
 	cd build/dist && tar czf ../dist.tar.gz *
+	chmod ug=rwX,o=rX -R build/dist
+	find build/dist -type d -print0 | xargs -0r chmod g+s
 
 generate: build/generate-stamp
 build/generate-stamp: $(wildcard source/*.rst) ext
