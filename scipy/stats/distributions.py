@@ -2875,7 +2875,7 @@ recipinvgauss = recipinvgauss_gen(a=0.0, name='recipinvgauss',
 
 Reciprocal inverse Gaussian
 
-recipinvgauss.pdf(x, mu) = 1/sqrt(2*pi*x**3) * exp(-(x-mu)**2/(2*x*mu**2))
+recipinvgauss.pdf(x, mu) = 1/sqrt(2*pi*x) * exp(-(1-mu*x)**2/(2*x*mu**2))
 for x >= 0.
 """
                                   )
