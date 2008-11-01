@@ -43,7 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 from numpy import (sqrt, log, asarray, newaxis, all, dot, float64, exp, eye,
-                   isnan)
+                   isnan, float_)
 from scipy import linalg
 
 class Rbf(object):
@@ -117,9 +117,10 @@ class Rbf(object):
             raise ValueError, 'Invalid basis function name'
 
     def __init__(self, *args, **kwargs):
-        self.xi = asarray([asarray(a, dtype=float64).flatten() for a in args[:-1]])
+        self.xi = asarray([asarray(a, dtype=float_).flatten()
+                           for a in args[:-1]])
         self.N = self.xi.shape[-1]
-        self.di = asarray(args[-1], dtype=float64).flatten()
+        self.di = asarray(args[-1]).flatten()
 
         assert [x.size==self.di.size for x in self.xi], \
                'All arrays must be equal length'
@@ -143,10 +144,11 @@ class Rbf(object):
         return self.norm(x1, x2)
 
     def __call__(self, *args):
+        args = [asarray(x) for x in args]
         assert all([x.shape == y.shape \
                     for x in args \
                     for y in args]), 'Array lengths must be equal'
         shp = args[0].shape
-        self.xa = asarray([a.flatten() for a in args], dtype=float64)
+        self.xa = asarray([a.flatten() for a in args], dtype=float_)
         r = self._call_norm(self.xa, self.xi)
         return dot(self._function(r), self.nodes).reshape(shp)

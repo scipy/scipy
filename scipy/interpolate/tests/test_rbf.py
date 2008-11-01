@@ -2,7 +2,7 @@
 # Created by John Travers, Robert Hetland, 2007
 """ Test functions for rbf module """
 
-from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_array_almost_equal, assert_almost_equal
 from numpy import linspace, sin, random, exp
 from scipy.interpolate.rbf import Rbf
 
@@ -15,11 +15,12 @@ def check_rbf1d(function):
     rbf = Rbf(x, y, function=function)
     yi = rbf(x)
     assert_array_almost_equal(y, yi)
+    assert_almost_equal(rbf(float(x[0])), y[0])
 
 def check_rbf2d(function):
     x = random.rand(50,1)*4-2
     y = random.rand(50,1)*4-2
-    z = x*exp(-x**2-y**2)
+    z = x*exp(-x**2-1j*y**2)
     rbf = Rbf(x, y, z, epsilon=2, function=function)
     zi = rbf(x, y)
     zi.shape = x.shape
