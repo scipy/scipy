@@ -3,13 +3,14 @@
 """ Test functions for rbf module """
 
 from numpy.testing import assert_array_almost_equal, assert_almost_equal
-from numpy import linspace, sin, random, exp
+from numpy import linspace, sin, random, exp, log10
 from scipy.interpolate.rbf import Rbf
 
 FUNCTIONS = ('multiquadric', 'inverse multiquadric', 'gaussian',
              'cubic', 'quintic', 'thin-plate', 'linear')
 
-def check_rbf1d(function):
+def check_rbf1d_interpolation(function):
+    """Check that the Rbf function interpolates throught the nodes (1D)"""
     x = linspace(0,10,9)
     y = sin(x)
     rbf = Rbf(x, y, function=function)
@@ -17,7 +18,8 @@ def check_rbf1d(function):
     assert_array_almost_equal(y, yi)
     assert_almost_equal(rbf(float(x[0])), y[0])
 
-def check_rbf2d(function):
+def check_rbf2d_interpolation(function):
+    """Check that the Rbf function interpolates throught the nodes (2D)"""
     x = random.rand(50,1)*4-2
     y = random.rand(50,1)*4-2
     z = x*exp(-x**2-1j*y**2)
@@ -26,7 +28,8 @@ def check_rbf2d(function):
     zi.shape = x.shape
     assert_array_almost_equal(z, zi)
 
-def check_rbf3d(function):
+def check_rbf3d_interpolation(function):
+    """Check that the Rbf function interpolates throught the nodes (3D)"""
     x = random.rand(50,1)*4-2
     y = random.rand(50,1)*4-2
     z = random.rand(50,1)*4-2
@@ -38,6 +41,35 @@ def check_rbf3d(function):
 
 def test_rbf_interpolation():
     for function in FUNCTIONS:
-        yield check_rbf1d, function
-        yield check_rbf2d, function
-        yield check_rbf3d, function
+        yield check_rbf1d_interpolation, function
+        yield check_rbf2d_interpolation, function
+        yield check_rbf3d_interpolation, function
+
+def check_rbf1d_regularity(function, atol):
+    """Check that the Rbf function approximates a smooth function well away
+    from the nodes."""
+    x = linspace(0, 10, 9)
+    y = sin(x)
+    rbf = Rbf(x, y, function=function)
+    xi = linspace(0, 10, 100)
+    yi = rbf(xi)
+    #import matplotlib.pyplot as plt
+    #plt.figure()
+    #plt.plot(x, y, 'o', xi, sin(xi), ':', xi, yi, '-')
+    #plt.title(function)
+    #plt.show()
+    assert_array_almost_equal(yi, sin(xi), decimal=-log10(atol),
+                              err_msg="abs-diff: %f" % abs(yi - sin(xi)).max())
+
+def test_rbf_regularity():
+    tolerances = {
+        'multiquadric': 0.05,
+        'inverse multiquadric': 0.01,
+        'gaussian': 0.01,
+        'cubic': 0.1,
+        'quintic': 0.1,
+        'thin-plate': 0.1,
+        'linear': 0.2
+    }
+    for function in FUNCTIONS:
+        yield check_rbf1d_regularity, function, tolerances.get(function, 1e-2)
