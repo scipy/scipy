@@ -1,4 +1,4 @@
-# Last Change: Thu Jun 12 07:00 PM 2008 J
+# Last Change: Sat Nov 01 11:00 PM 2008 J
 # vim:syntax=python
 
 import os
@@ -39,8 +39,8 @@ fenv = env.Clone()
 #=======================
 # Starting Configuration
 #=======================
-config = env.Configure(custom_tests = {'CheckCBLAS' : CheckCBLAS,
-                                       'CheckCLAPACK' : CheckCLAPACK})
+config = env.NumpyConfigure(custom_tests = {'CheckCBLAS' : CheckCBLAS,
+                                            'CheckCLAPACK' : CheckCLAPACK})
 
 #-------------------------
 # Checking cblas/clapack
@@ -67,9 +67,9 @@ write_info(env)
 #---------------------------
 # Checking F77 blas/lapack
 #---------------------------
-fconfig = fenv.Configure(custom_tests = {'CheckBLAS' : CheckF77BLAS,
-                         'CheckLAPACK' : CheckF77LAPACK,
-                         'CheckF77Clib' : CheckF77Clib})
+fconfig = fenv.NumpyConfigure(custom_tests = {'CheckBLAS' : CheckF77BLAS,
+                                              'CheckLAPACK' : CheckF77LAPACK,
+                                              'CheckF77Clib' : CheckF77Clib})
 
 if not fconfig.CheckF77Clib():
     raise RuntimeError("Could not check F/C runtime library for %s/%s, " \
