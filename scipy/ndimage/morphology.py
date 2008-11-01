@@ -499,7 +499,7 @@ def distance_transform_bf(input, metric = "euclidean", sampling = None,
     This function calculates the distance transform of the input, by
     replacing each background element (zero values), with its
     shortest distance to the foreground (any element non-zero). Three
-    types of distance metric are supported: 'euclidean', 'city_block'
+    types of distance metric are supported: 'euclidean', 'taxicab'
     and 'chessboard'.
 
     In addition to the distance transform, the feature transform can
@@ -517,7 +517,7 @@ def distance_transform_bf(input, metric = "euclidean", sampling = None,
     case of the euclidean distance transform.
 
     This function employs a slow brute force algorithm, see also the
-    function distance_transform_cdt for more efficient city_block and
+    function distance_transform_cdt for more efficient taxicab and
     chessboard algorithms.
 
     the distances and indices arguments can be used to give optional
@@ -536,7 +536,7 @@ def distance_transform_bf(input, metric = "euclidean", sampling = None,
     metric = metric.lower()
     if metric == 'euclidean':
         metric = 1
-    elif metric == 'cityblock':
+    elif metric in ['taxicab', 'cityblock', 'manhattan']:
         metric = 2
     elif metric == 'chessboard':
         metric = 3
@@ -598,18 +598,18 @@ def distance_transform_bf(input, metric = "euclidean", sampling = None,
     else:
         return None
 
-def distance_transform_cdt(input, structure = 'chessboard',
+def distance_transform_cdt(input, metric = 'chessboard',
                         return_distances = True, return_indices = False,
                         distances = None, indices = None):
     """Distance transform for chamfer type of transforms.
 
-    The structure determines the type of chamfering that is done. If
-    the structure is equal to 'cityblock' a structure is generated
+    The metric determines the type of chamfering that is done. If
+    the metric is equal to 'taxicab' a structure is generated
     using generate_binary_structure with a squared distance equal to
-    1. If the structure is equal to 'chessboard', a structure is
+    1. If the metric is equal to 'chessboard', a metric is
     generated using generate_binary_structure with a squared distance
     equal to the rank of the array. These choices correspond to the
-    common interpretations of the cityblock and the chessboard
+    common interpretations of the taxicab and the chessboard
     distance metrics in two dimensions.
 
     In addition to the distance transform, the feature transform can
@@ -629,22 +629,22 @@ def distance_transform_cdt(input, structure = 'chessboard',
     ft_inplace = isinstance(indices, numpy.ndarray)
     dt_inplace = isinstance(distances, numpy.ndarray)
     input = numpy.asarray(input)
-    if structure == 'cityblock':
+    if metric in ['taxicab', 'cityblock', 'manhattan']:
         rank = input.ndim
-        structure = generate_binary_structure(rank, 1)
-    elif structure == 'chessboard':
+        metric = generate_binary_structure(rank, 1)
+    elif metric == 'chessboard':
         rank = input.ndim
-        structure = generate_binary_structure(rank, rank)
+        metric = generate_binary_structure(rank, rank)
     else:
         try:
-            structure = numpy.asarray(structure)
+            metric = numpy.asarray(metric)
         except:
-            raise RuntimeError, 'invalid structure provided'
-        for s in structure.shape:
+            raise RuntimeError, 'invalid metric provided'
+        for s in metric.shape:
             if s != 3:
-                raise RuntimeError, 'structure sizes must be equal to 3'
-    if not structure.flags.contiguous:
-        structure = structure.copy()
+                raise RuntimeError, 'metric sizes must be equal to 3'
+    if not metric.flags.contiguous:
+        metric = metric.copy()
     if dt_inplace:
         if distances.dtype.type != numpy.int32:
             raise RuntimeError, 'distances must be of int32 type'
@@ -661,11 +661,11 @@ def distance_transform_cdt(input, structure = 'chessboard',
         ft.shape = dt.shape
     else:
         ft = None
-    _nd_image.distance_transform_op(structure, dt, ft)
+    _nd_image.distance_transform_op(metric, dt, ft)
     dt = dt[tuple([slice(None, None, -1)] * rank)]
     if return_indices:
         ft = ft[tuple([slice(None, None, -1)] * rank)]
-    _nd_image.distance_transform_op(structure, dt, ft)
+    _nd_image.distance_transform_op(metric, dt, ft)
     dt = dt[tuple([slice(None, None, -1)] * rank)]
     if return_indices:
         ft = ft[tuple([slice(None, None, -1)] * rank)]
