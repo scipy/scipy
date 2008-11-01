@@ -27,75 +27,13 @@ Run
 
 ::
 
-  python tests/test_basic.py -l 10
-  python tests/test_pseudo_diffs.py -l 10
-  python tests/test_helper.py -l 10
+  python -c "import scipy.fftpack; scipy.fftpack.test()"
 
 or from python
 
->>> import fftpack
->>> fftpack.test(10)
+>>> import scipy.fftpack
+>>> scipy.fftpack.test(10)
 
-
-Building with high-performance FFT libraries
-============================================
-
-fftpack uses optimal combination of FFT libraries for different
-jobs. Currently, Fortran FFTPACK, FFTW, and DJBFFT libraries are
-supported. The last two are optional and used only if
-scipy/distutils/system_info.py detects them. 
-If they are available, then the output of
-
-::
-
-  python scipy/distutils/system_info.py
-
-should show, for example
-
-::
-
-  dfftw_info:
-    FOUND:
-      libraries = ['drfftw', 'dfftw']
-      library_dirs = ['/path/to/lib']
-      define_macros = [('SCIPY_DFFTW_H', None)]
-      include_dirs = ['/path/to/include']
-
-  djbfft_info:
-    FOUND:
-      extra_objects = ['/path/to/lib/djbfft.a']
-      define_macros = [('SCIPY_DJBFFT_H', None)]
-      include_dirs = ['/path/to/include']
-
-Note that when using fftw libraries provided by a Linux distribution
-then fftw-dev (or fftw-devel or similar) must be installed as well, 
-otherwise system_info.py won't detect fftw libraries.
-
-DJBFFT library is fastest for power-of-two (<=8192) Fourier
-transforms. FFTW is superior for non-power-of-two transforms and
-multi-dimensional transforms.
-
-Building notes for FFTW_
-------------------------
-Follow the instructions in
-
-  http://www.fftw.org/doc/fftw_6.html
-
-Note that fftpack uses double-precision FFTW. So, if you build
-libfftw.a, then it is assumed that it contains double-precision code.
-
-.. _FFTW: http://www.fftw.org
-
-Building notes for DJBFFT_
---------------------------
-.. _DJBFFT: http://cr.yp.to/djbfft.html
-
-Follow the installation instructions in
-
-  http://cr.yp.to/djbfft/install.html
-
-If djbfft is installed under these instructions then scipy_distutils
-picks up it for fftpack automatically.
 
 Differences between fftpack and FFT from Numeric
 ================================================

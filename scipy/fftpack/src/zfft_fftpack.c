@@ -15,9 +15,6 @@ static void zfft_fftpack(complex_double * inout,
 	int i;
 	complex_double *ptr = inout;
 	double *wsave = NULL;
-	int j;
-	complex_double *ptrc = NULL;
-	unsigned int *f = NULL;
 
 	wsave = caches_zfftpack[get_cache_id_zfftpack(n)].wsave;
 
