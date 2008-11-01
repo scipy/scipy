@@ -78,7 +78,6 @@ def generate_binary_structure(rank, connectivity):
             return numpy.array(0, dtype = bool)
         else:
             return numpy.array(1, dtype = bool)
-    output = numpy.zeros([3] * rank, bool)
     output = numpy.fabs(numpy.indices([3] * rank) - 1)
     output = numpy.add.reduce(output, 0)
     return numpy.asarray(output <= connectivity, dtype = bool)
