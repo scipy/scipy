@@ -2,7 +2,7 @@
 """
 import sys
 from numpy.testing import *
-from scipy.fftpack import ifft, fft, fftn, irfft
+from scipy.fftpack import ifft, fft, fftn, irfft, rfft
 
 from numpy import arange, asarray, zeros, dot, exp, pi, double, cdouble
 import numpy.fft
