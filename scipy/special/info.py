@@ -123,7 +123,9 @@ Raw Statistical Functions (Friendly versions in scipy.stats)
 *  fdtri      -- Inverse of fdtrc
 *  gdtr       -- Integral from 0 to x of gamma pdf.
 *  gdtrc      -- Integral from x to infinity under gamma pdf.
-*  gdtri      -- Quantiles of gamma distribution
+*  gdtria     -- 
+*  gdtrib     -- 
+*  gdtrix     -- 
 *  nbdtr      -- Sum of terms 0 through k of the negative binomial pdf.
 *  nbdtrc     -- Sum of terms k+1 to infinity under negative binomial pdf.
 *  nbdtri     -- Inverse of nbdtr
@@ -131,7 +133,8 @@ Raw Statistical Functions (Friendly versions in scipy.stats)
 *  pdtrc      -- Sum of terms k+1 to infinity of the Poisson pdf.
 *  pdtri      -- Inverse of pdtr
 *  stdtr      -- Integral from -infinity to t of the Student-t pdf.
-*  stdtri     -- Inverse of stdtr (quantiles)
+*  stdtridf   --
+*  stdtrit    --
 *  chdtr      -- Integral from 0 to x of the Chi-square pdf.
 *  chdtrc     -- Integral from x to infnity of Chi-square pdf.
 *  chdtri     -- Inverse of chdtrc.
@@ -156,8 +159,6 @@ Gamma and Related Functions
 *  betaln       -- Log of the absolute value of the beta function.
 *  betainc      -- Incomplete beta integral.
 *  betaincinv   -- Inverse of betainc.
-*  betaincinva  -- Inverse (in first argument, a) of betainc
-*  betaincinvb  -- Inverse (in first argument, b) of betainc
 *  psi(digamma) -- Logarithmic derivative of the gamma function.
 *  rgamma       -- One divided by the gamma function.
 *  polygamma    -- Nth derivative of psi function.
