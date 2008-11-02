@@ -17,14 +17,17 @@ import numpy as np
 from scipy.misc import factorial
 
 _modedict = {'valid':0, 'same':1, 'full':2}
-_boundarydict = {'fill':0, 'pad':0, 'wrap':2, 'circular':2, 'symm':1, 'symmetric':1, 'reflect':4}
+
+_boundarydict = {'fill':0, 'pad':0, 'wrap':2, 'circular':2, 'symm':1,
+                 'symmetric':1, 'reflect':4}
 
 def _valfrommode(mode):
     try:
         val = _modedict[mode]
     except KeyError:
         if mode not in [0,1,2]:
-            raise ValueError, "Acceptable mode flags are 'valid' (0), 'same' (1), or 'full' (2)."
+            raise ValueError, "Acceptable mode flags are 'valid' (0)," \
+                  "'same' (1), or 'full' (2)."
         val = mode
     return val
 
@@ -33,7 +36,8 @@ def _bvalfromboundary(boundary):
         val = _boundarydict[boundary] << 2
     except KeyError:
         if val not in [0,1,2] :
-            raise ValueError, "Acceptable boundary flags are 'fill', 'wrap' (or 'circular'), \n  and 'symm' (or 'symmetric')."
+            raise ValueError, "Acceptable boundary flags are 'fill', 'wrap'" \
+                  " (or 'circular'), \n  and 'symm' (or 'symmetric')."
         val = boundary << 2
     return val
 
@@ -185,7 +189,8 @@ def order_filter(a, domain, rank):
     size = domain.shape
     for k in range(len(size)):
         if (size[k] % 2) != 1:
-            raise ValueError, "Each dimension of domain argument should have an odd number of elements."
+            raise ValueError, "Each dimension of domain argument " \
+                  "should have an odd number of elements."
     return sigtools._order_filterND(a, domain, rank)
 
 
@@ -692,7 +697,8 @@ def flattop(M,sym=1):
     a = [0.2156, 0.4160, 0.2781, 0.0836, 0.0069]
     n = arange(0,M)
     fac = n*2*pi/(M-1.0)
-    w = a[0] - a[1]*cos(fac) + a[2]*cos(2*fac) - a[3]*cos(3*fac) + a[4]*cos(4*fac)
+    w = a[0] - a[1]*cos(fac) + a[2]*cos(2*fac) - a[3]*cos(3*fac) + \
+        a[4]*cos(4*fac)
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -1339,17 +1345,19 @@ def resample(x,num,t=None,axis=0,window=None):
     """Resample to num samples using Fourier method along the given axis.
 
     The resampled signal starts at the same value of x but is sampled
-    with a spacing of len(x) / num * (spacing of x).  Because a Fourier method
-    is used, the signal is assumed periodic.
+    with a spacing of len(x) / num * (spacing of x).  Because a
+    Fourier method is used, the signal is assumed periodic.
 
-    Window controls a Fourier-domain window that tapers the Fourier spectrum
-    before zero-padding to aleviate ringing in the resampled values for
-    sampled signals you didn't intend to be interpreted as band-limited.
+    Window controls a Fourier-domain window that tapers the Fourier
+    spectrum before zero-padding to aleviate ringing in the resampled
+    values for sampled signals you didn't intend to be interpreted as
+    band-limited.
 
-    If window is a string then use the named window.  If window is a float, then
-    it represents a value of beta for a kaiser window.  If window is a tuple,
-    then the first component is a string representing the window, and the next
-    arguments are parameters for that window.
+    If window is a string then use the named window.  If window is a
+    float, then it represents a value of beta for a kaiser window.  If
+    window is a tuple, then the first component is a string
+    representing the window, and the next arguments are parameters for
+    that window.
 
     Possible windows are:
            'blackman'       ('black',   'blk')
@@ -1361,12 +1369,14 @@ def resample(x,num,t=None,axis=0,window=None):
            'general gauss'  ('general', 'ggs')  # requires two parameters
                                                       (power, width)
 
-    The first sample of the returned vector is the same as the first sample of the
-        input vector, the spacing between samples is changed from dx to
+    The first sample of the returned vector is the same as the first
+    sample of the input vector, the spacing between samples is changed
+    from dx to
+
         dx * len(x) / num
 
     If t is not None, then it represents the old sample positions, and the new
-       sample positions will be returned as well as the new samples.
+    sample positions will be returned as well as the new samples.
     """
     x = asarray(x)
     X = fft(x,axis=axis)
@@ -1420,14 +1430,16 @@ def detrend(data, axis=-1, type='linear', bp=0):
         N = dshape[axis]
         bp = sort(unique(r_[0,bp,N]))
         if any(bp > N):
-            raise ValueError, "Breakpoints must be less than length of data along given axis."
+            raise ValueError, "Breakpoints must be less than length " \
+                  "of data along given axis."
         Nreg = len(bp) - 1
         # Restructure data so that axis is along first dimension and
         #  all other dimensions are collapsed into second dimension
         rnk = len(dshape)
         if axis < 0: axis = axis + rnk
         newdims = r_[axis,0:axis,axis+1:rnk]
-        newdata = reshape(transpose(data,tuple(newdims)),(N,prod(dshape,axis=0)/N))
+        newdata = reshape(transpose(data, tuple(newdims)),
+                          (N, prod(dshape, axis=0)/N))
         newdata = newdata.copy()  # make sure we have a copy
         if newdata.dtype.char not in 'dfDF':
             newdata = newdata.astype(dtype)
@@ -1457,7 +1469,8 @@ def filtfilt(b,a,x):
 
     #x must be bigger than edge
     if x.size < edge:
-        raise ValueError, "Input vector needs to be bigger than 3 * max(len(a),len(b)."
+        raise ValueError, "Input vector needs to be bigger than " \
+              "3 * max(len(a),len(b)."
 
     if len(a) < ntaps:
         a=r_[a,zeros(len(b)-len(a))]
