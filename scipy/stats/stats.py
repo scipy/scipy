@@ -1720,8 +1720,8 @@ of scores a, given a population mean.
 Returns: t-value, two-tailed prob
 """
     a = asarray(a)
-    x = mean(a,None)
-    v = var(a,None)
+    x = np.mean(a)
+    v = np.var(a, ddof=1)
     n = len(a)
     df = n-1
     svar = ((n-1)*v) / float(df)
