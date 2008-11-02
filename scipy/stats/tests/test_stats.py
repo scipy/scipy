@@ -870,20 +870,34 @@ class TestThreshold(TestCase):
 class TestStudentTest(TestCase):
     X1 = np.array([-1, 0, 1])
     X2 = np.array([0, 1, 2])
-    T1 = 0
-    P1 = 1
-    T2 = 1.732051
-    P2 = 0.2254033
+    T1_0 = 0
+    P1_0 = 1
+    T1_1 = -1.732051
+    P1_1 = 0.2254033
+    T1_2 = -3.464102
+    P1_2 =  0.0741799
+    T2_0 = 1.732051
+    P2_0 = 0.2254033
     def test_onesample(self):
         t, p = stats.ttest_1samp(self.X1, 0)
 
-        assert_array_almost_equal(t, self.T1)
-        assert_array_almost_equal(p, self.P1)
+        assert_array_almost_equal(t, self.T1_0)
+        assert_array_almost_equal(p, self.P1_0)
 
         t, p = stats.ttest_1samp(self.X2, 0)
 
-        assert_array_almost_equal(t, self.T2)
-        assert_array_almost_equal(p, self.P2)
+        assert_array_almost_equal(t, self.T2_0)
+        assert_array_almost_equal(p, self.P2_0)
+
+        t, p = stats.ttest_1samp(self.X1, 1)
+
+        assert_array_almost_equal(t, self.T1_1)
+        assert_array_almost_equal(p, self.P1_1)
+
+        t, p = stats.ttest_1samp(self.X1, 2)
+
+        assert_array_almost_equal(t, self.T1_2)
+        assert_array_almost_equal(p, self.P1_2)
 
 if __name__ == "__main__":
     run_module_suite()
