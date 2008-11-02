@@ -359,6 +359,15 @@ class TestFftn(TestCase):
         assert_array_almost_equal (y,swapaxes(\
             fftn(swapaxes(large_x1,-1,-2)),-1,-2))
 
+    def test_shape_axes_argument2(self):
+        x = numpy.random.random((10, 5, 3, 7))
+        y = fftn(x, axes=(-1,), shape=(8,))
+        assert_array_almost_equal(y, fft(x, axis=-1, n=8))
+
+        x = numpy.random.random((10, 5, 3, 7))
+        y = fftn(x, axes=(-2,), shape=(4,))
+        assert_array_almost_equal(y, fft(x, axis=-2, n=8))
+
     def test_shape_argument_more(self):
         # Test that fftn raise a value error exception when s.shape is longer
         # than x.shape
@@ -369,7 +378,6 @@ class TestFftn(TestCase):
                                  "but should not have.")
         except ValueError:
             pass
-
 
 class TestIfftn(TestCase):
 
