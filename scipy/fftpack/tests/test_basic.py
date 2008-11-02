@@ -360,13 +360,20 @@ class TestFftn(TestCase):
             fftn(swapaxes(large_x1,-1,-2)),-1,-2))
 
     def test_shape_axes_argument2(self):
+        # Change shape of the last axis
         x = numpy.random.random((10, 5, 3, 7))
         y = fftn(x, axes=(-1,), shape=(8,))
         assert_array_almost_equal(y, fft(x, axis=-1, n=8))
 
+        # Change shape of an arbitrary axis which is not the last one
         x = numpy.random.random((10, 5, 3, 7))
         y = fftn(x, axes=(-2,), shape=(8,))
         assert_array_almost_equal(y, fft(x, axis=-2, n=8))
+
+        # Change shape of axes: cf #244, where shape and axes were mixed up
+        x = numpy.random.random((4,4,2))
+        y = fftn(x, axes=(-3,-2), shape=(8,8))
+        assert_array_almost_equal(y, numpy.fft.fftn(x, axes=(-3, -2), s=(8, 8)))
 
     def test_shape_argument_more(self):
         # Test that fftn raise a value error exception when s.shape is longer
