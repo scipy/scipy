@@ -866,5 +866,24 @@ class TestThreshold(TestCase):
         assert_array_equal(stats.threshold(a,2,4,0),
                            [0,2,3,4,0,0,0])
 
+# Hypothesis test tests
+class TestStudentTest(TestCase):
+    X1 = np.array([-1, 0, 1])
+    X2 = np.array([0, 1, 2])
+    T1 = 0
+    P1 = 1
+    T2 = 1.732051
+    P2 = 0.2254033
+    def test_onesample(self):
+        t, p = stats.ttest_1samp(self.X1, 0)
+
+        assert_array_almost_equal(t, self.T1)
+        assert_array_almost_equal(p, self.P1)
+
+        t, p = stats.ttest_1samp(self.X2, 0)
+
+        assert_array_almost_equal(t, self.T2)
+        assert_array_almost_equal(p, self.P2)
+
 if __name__ == "__main__":
     run_module_suite()
