@@ -1058,7 +1058,10 @@ def invres(r,p,k,tol=1e-3,rtype='avg'):
           -------- + ----------- + ... + -----------
           (s-p[i])  (s-p[i])**2          (s-p[i])**n
 
-    See also:  residue, poly, polyval, unique_roots
+    See Also
+    --------
+    residue, poly, polyval, unique_roots
+
     """
     extra = k
     p, indx = cmplx_sort(p)
@@ -1108,10 +1111,23 @@ def residue(b,a,tol=1e-3,rtype='avg'):
           -------- + ----------- + ... + -----------
           (s-p[i])  (s-p[i])**2          (s-p[i])**n
 
-    See also:  invres, poly, polyval, unique_roots
+    Returns
+    -------
+    r : ndarray
+        Residues
+    p : ndarray
+        Poles
+    k : ndarray
+        Coefficients of the direct polynomial term.
+
+    See Also
+    --------
+    invres, poly, polyval, unique_roots
+
     """
 
     b,a = map(asarray,(b,a))
+    rscale = a[0]
     k,b = polydiv(b,a)
     p = roots(a)
     r = p*0.0
@@ -1142,7 +1158,7 @@ def residue(b,a,tol=1e-3,rtype='avg'):
             r[indx+m-1] = polyval(bn,pout[n]) / polyval(an,pout[n]) \
                           / factorial(sig-m)
         indx += sig
-    return r, p, k
+    return r/rscale, p, k
 
 def residuez(b,a,tol=1e-3,rtype='avg'):
     """Compute partial-fraction expansion of b(z) / a(z).
