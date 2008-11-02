@@ -12,7 +12,7 @@ Run tests if fftpack is not installed:
 """
 
 from numpy.testing import *
-from scipy.fftpack import ifft,fft,fftn,ifftn,rfft,irfft
+from scipy.fftpack import ifft,fft,fftn,ifftn,rfft,irfft, fft2
 from scipy.fftpack import _fftpack as fftpack
 
 from numpy import arange, add, array, asarray, zeros, dot, exp, pi,\
@@ -230,6 +230,15 @@ class TestIrfft(TestCase):
             assert_array_almost_equal (irfft(rfft(x)),x)
             assert_array_almost_equal (rfft(irfft(x)),x)
 
+class Testfft2(TestCase):
+    def test_regression_244(self):
+        """fft returns wrong result with axes parameter."""
+        # fftn (and hence fft2) used to break when both axes and shape were
+        # used
+        x = numpy.ones((4,4,2))
+        y = fft2(x, shape=(8,8), axes=(-3,-2))
+        y_r = numpy.fft.fftn(x, s=(8, 8), axes=(-3,  -2))
+        assert_array_almost_equal(y, y_r)
 
 class TestFftn(TestCase):
 
