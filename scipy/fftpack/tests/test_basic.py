@@ -365,7 +365,7 @@ class TestFftn(TestCase):
         assert_array_almost_equal(y, fft(x, axis=-1, n=8))
 
         x = numpy.random.random((10, 5, 3, 7))
-        y = fftn(x, axes=(-2,), shape=(4,))
+        y = fftn(x, axes=(-2,), shape=(8,))
         assert_array_almost_equal(y, fft(x, axis=-2, n=8))
 
     def test_shape_argument_more(self):
