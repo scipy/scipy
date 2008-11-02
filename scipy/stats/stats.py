@@ -806,6 +806,10 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
             m4 = np.extract(can_correct, m4)
             nval = 1.0/(n-2)/(n-3)*((n*n-1.0)*m4/m2**2.0-3*(n-1)**2.0)
             np.place(vals, can_correct, nval+3.0)
+
+    if vals.ndim == 0:
+        vals = vals.item() # array scalar
+
     if fisher:
         return vals - 3
     else:

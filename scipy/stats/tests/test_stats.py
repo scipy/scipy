@@ -855,6 +855,9 @@ class TestMoments(TestCase):
         y = stats.kurtosis(self.testcase,0,0)
         assert_approx_equal(y,1.64)
 
+    def test_kurtosis_array_scalar(self):
+        assert_equal(type(stats.kurtosis([1,2,3])), float)
+
 class TestThreshold(TestCase):
     def test_basic(self):
         a = [-1,2,3,4,5,-1,-2]
