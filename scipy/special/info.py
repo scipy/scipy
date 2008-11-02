@@ -123,9 +123,9 @@ Raw Statistical Functions (Friendly versions in scipy.stats)
 *  fdtri      -- Inverse of fdtrc
 *  gdtr       -- Integral from 0 to x of gamma pdf.
 *  gdtrc      -- Integral from x to infinity under gamma pdf.
-*  gdtria     -- 
-*  gdtrib     -- 
-*  gdtrix     -- 
+*  gdtria     --
+*  gdtrib     --
+*  gdtrix     --
 *  nbdtr      -- Sum of terms 0 through k of the negative binomial pdf.
 *  nbdtrc     -- Sum of terms k+1 to infinity under negative binomial pdf.
 *  nbdtri     -- Inverse of nbdtr

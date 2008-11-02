@@ -241,7 +241,7 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
         raise ValueError("when given, axes and shape arguments "\
                          "have to be of the same length")
 
-    # No need to swap axes, array is in C order 
+    # No need to swap axes, array is in C order
     if noaxes:
         for i in axes:
             x = _fix_shape(x, s[i], i)

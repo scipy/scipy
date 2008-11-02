@@ -167,7 +167,7 @@ class bsr_matrix(_cs_matrix):
                 raise ValueError('need to infer shape')
             else:
                 self.shape = shape
-        
+
         if dtype is not None:
             self.data = self.data.astype(dtype)
 

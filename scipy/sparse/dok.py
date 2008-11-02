@@ -59,7 +59,7 @@ class dok_matrix(spmatrix, dict):
                 arg1 = arg1.copy()
             else:
                 arg1 = arg1.todok()
-            
+
             if dtype is not None:
                 arg1 = arg1.astype(dtype)
 
@@ -379,7 +379,7 @@ class dok_matrix(spmatrix, dict):
         for (i,j),v in self.iteritems():
             result[i] += v * other[j]
         return result
-    
+
     def _mul_multivector(self, other):
         #matrix * multivector
         M,N = self.shape
@@ -493,7 +493,7 @@ class dok_matrix(spmatrix, dict):
                     newkey = (key[0]-num, key[1])
                     base[newkey] = self[key]
         return base, ext
-    
+
     def tocoo(self):
         """ Return a copy of this matrix in COOrdinate format"""
         from coo import coo_matrix

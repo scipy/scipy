@@ -29,7 +29,7 @@ def find(A):
     >>> A = csr_matrix([[7.0, 8.0, 0],[0, 0, 9.0]])
     >>> find(A)
     (array([0, 0, 1], dtype=int32), array([0, 1, 2], dtype=int32), array([ 7.,  8.,  9.]))
-    
+
     """
 
     A = coo_matrix(A).tocsr()  #sums duplicates

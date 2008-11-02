@@ -49,7 +49,7 @@ from scipy import linalg
 class Rbf(object):
     """
     Rbf(*args)
-    
+
     A class for radial basis function approximation/interpolation of
     n-dimensional scattered data.
 

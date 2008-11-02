@@ -151,7 +151,7 @@ class _TestCommon:
     def test_from_array(self):
         A = array([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
         assert_array_equal(self.spmatrix(A).toarray(), A)
-        
+
         A = array([[1.0 + 3j,       0,      0],
                    [       0, 2.0 + 5,      0],
                    [       0,       0,      0]])
@@ -161,7 +161,7 @@ class _TestCommon:
     def test_from_matrix(self):
         A = matrix([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
         assert_array_equal(self.spmatrix(A).todense(), A)
-        
+
         A = matrix([[1.0 + 3j,       0,      0],
                     [       0, 2.0 + 5,      0],
                     [       0,       0,      0]])
@@ -171,7 +171,7 @@ class _TestCommon:
     def test_from_list(self):
         A = [[1,0,0],[2,3,4],[0,5,0],[0,0,0]]
         assert_array_equal(self.spmatrix(A).todense(), A)
-        
+
         A = [[1.0 + 3j,       0,      0],
              [       0, 2.0 + 5,      0],
              [       0,       0,      0]]
@@ -224,7 +224,7 @@ class _TestCommon:
         dense_dot_dense = dot(dat, b)
         check2 = dot(self.datsp.toarray(), b)
         assert_array_equal(dense_dot_dense, check2)
-    
+
     def test_astype(self):
         D = array([[1.0 + 3j,       0,      0],
                    [       0, 2.0 + 5,      0],

@@ -83,7 +83,7 @@ class _cs_matrix(_data_matrix):
                     raise ValueError,'unable to infer matrix dimensions'
                 else:
                     self.shape = self._swap((major_dim,minor_dim))
-        
+
         if dtype is not None:
             self.data = self.data.astype(dtype)
 
