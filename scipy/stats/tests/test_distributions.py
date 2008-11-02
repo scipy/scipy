@@ -83,6 +83,7 @@ class TestRandInt(TestCase):
         val = stats.randint.rvs(15,46)
         assert((val >= 15) & (val < 46))
         assert isinstance(val, numpy.ScalarType),`type(val)`
+        val = stats.randint(15,46).rvs(3)
         assert(val.dtype.char in typecodes['AllInteger'])
 
     def test_pdf(self):
@@ -105,6 +106,8 @@ class TestBinom(TestCase):
         assert(numpy.shape(vals) == (2, 50))
         assert(vals.dtype.char in typecodes['AllInteger'])
         val = stats.binom.rvs(10, 0.75)
+        assert(isinstance(val, int))
+        val = stats.binom(10, 0.75).rvs(3)
         assert(isinstance(val, numpy.ndarray))
         assert(val.dtype.char in typecodes['AllInteger'])
 
@@ -116,6 +119,8 @@ class TestBernoulli(TestCase):
         assert(numpy.shape(vals) == (2, 50))
         assert(vals.dtype.char in typecodes['AllInteger'])
         val = stats.bernoulli.rvs(0.75)
+        assert(isinstance(val, int))
+        val = stats.bernoulli(0.75).rvs(3)
         assert(isinstance(val, numpy.ndarray))
         assert(val.dtype.char in typecodes['AllInteger'])
 
@@ -126,6 +131,8 @@ class TestNBinom(TestCase):
         assert(numpy.shape(vals) == (2, 50))
         assert(vals.dtype.char in typecodes['AllInteger'])
         val = stats.nbinom.rvs(10, 0.75)
+        assert(isinstance(val, int))
+        val = stats.nbinom(10, 0.75).rvs(3)
         assert(isinstance(val, numpy.ndarray))
         assert(val.dtype.char in typecodes['AllInteger'])
 
@@ -136,6 +143,8 @@ class TestGeom(TestCase):
         assert(numpy.shape(vals) == (2, 50))
         assert(vals.dtype.char in typecodes['AllInteger'])
         val = stats.geom.rvs(0.75)
+        assert(isinstance(val, int))
+        val = stats.geom(0.75).rvs(3)
         assert(isinstance(val, numpy.ndarray))
         assert(val.dtype.char in typecodes['AllInteger'])
 
@@ -159,6 +168,8 @@ class TestHypergeom(TestCase):
         assert(numpy.shape(vals) == (2, 50))
         assert(vals.dtype.char in typecodes['AllInteger'])
         val = stats.hypergeom.rvs(20, 3, 10)
+        assert(isinstance(val, int))
+        val = stats.hypergeom(20, 3, 10).rvs(3)
         assert(isinstance(val, numpy.ndarray))
         assert(val.dtype.char in typecodes['AllInteger'])
 
@@ -169,6 +180,8 @@ class TestLogser(TestCase):
         assert(numpy.shape(vals) == (2, 50))
         assert(vals.dtype.char in typecodes['AllInteger'])
         val = stats.logser.rvs(0.75)
+        assert(isinstance(val, int))
+        val = stats.logser(0.75).rvs(3)
         assert(isinstance(val, numpy.ndarray))
         assert(val.dtype.char in typecodes['AllInteger'])
 
@@ -179,6 +192,8 @@ class TestPoisson(TestCase):
         assert(numpy.shape(vals) == (2, 50))
         assert(vals.dtype.char in typecodes['AllInteger'])
         val = stats.poisson.rvs(0.5)
+        assert(isinstance(val, int))
+        val = stats.poisson(0.5).rvs(3)
         assert(isinstance(val, numpy.ndarray))
         assert(val.dtype.char in typecodes['AllInteger'])
 
@@ -189,6 +204,8 @@ class TestZipf(TestCase):
         assert(numpy.shape(vals) == (2, 50))
         assert(vals.dtype.char in typecodes['AllInteger'])
         val = stats.zipf.rvs(1.5)
+        assert(isinstance(val, int))
+        val = stats.zipf(1.5).rvs(3)
         assert(isinstance(val, numpy.ndarray))
         assert(val.dtype.char in typecodes['AllInteger'])
 
@@ -198,6 +215,8 @@ class TestDLaplace(TestCase):
         assert(numpy.shape(vals) == (2, 50))
         assert(vals.dtype.char in typecodes['AllInteger'])
         val = stats.dlaplace.rvs(1.5)
+        assert(isinstance(val, int))
+        val = stats.dlaplace(1.5).rvs(3)
         assert(isinstance(val, numpy.ndarray))
         assert(val.dtype.char in typecodes['AllInteger'])
 
@@ -208,9 +227,13 @@ class TestRvDiscrete(TestCase):
         samples = 1000
         r = stats.rv_discrete(name='sample',values=(states,probability))
         x = r.rvs(size=samples)
+        assert(isinstance(x, numpy.ndarray))
 
         for s,p in zip(states,probability):
             assert abs(sum(x == s)/float(samples) - p) < 0.05
+
+        x = r.rvs()
+        assert(isinstance(x, int))
 
 class TestExpon(TestCase):
     def test_zero(self):
