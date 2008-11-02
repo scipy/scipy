@@ -226,41 +226,57 @@ def irfft(x, n=None, axis=-1, overwrite_x=0):
 def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
     """ Internal auxiliary function for fftnd, ifftnd."""
     if s is None:
-        s = x.shape
-    else:
-        s = tuple(s)
         if axes is None:
-            axes = range(len(s))
-        elif not len(axes) == len(s):
-            raise ValueError("when given, axes and shape arguments "\
-                             "have to be of the same length")
+            s = x.shape
+        else:
+            s = numpy.take(x.shape, axes)
 
-        if len(s) > len(x.shape):
-            raise ValueError("shape cannot be longer than x shape.")
-        for i in range(-len(s),0):
-            if x.shape[i]!=s[i]:
-                x = _fix_shape(x,s[i],i)
-
+    s = tuple(s)
     if axes is None:
+        noaxes = True
+        axes = range(-x.ndim, 0)
+    else:
+        noaxes = False
+    if len(axes) != len(s):
+        raise ValueError("when given, axes and shape arguments "\
+                         "have to be of the same length")
+
+    # No need to swap axes, array is in C order 
+    if noaxes:
+        for i in axes:
+            x = _fix_shape(x, s[i], i)
+        #print x.shape, s
         return work_function(x,s,direction,overwrite_x=overwrite_x)
 
-    #XXX: should we allow/check for repeated indices in axes?
-    # If allowed then using it has an effect of reducing the shape
-    # implicitly.
-    s = [x.shape[i] for i in axes]
-    s = [1]*(len(x.shape)-len(s)) + s
-    swaps = []
-    state = range(-len(s),0)
-    for i in range(-1,-len(axes)-1,-1):
-        j = state[axes[i]]
-        if i==j: continue
-        state[i],state[j]=state[j],state[i]
-        swaps.append((j,i))
-        x = swapaxes(x, j,i)
-    r = work_function(x,s,direction,overwrite_x=overwrite_x)
-    swaps.reverse()
-    for i,j in swaps:
-        r = swapaxes(r,i,j)
+    # We ordered axes, because the code below to push axes at the end of the
+    # array assumes axes argument is in ascending order.
+    id = numpy.argsort(axes)
+    axes = [axes[i] for i in id]
+    s = [s[i] for i in id]
+
+    # Swap the request axes, last first (i.e. First swap the axis which ends up
+    # at -1, then at -2, etc...), such as the request axes on which the
+    # operation is carried become the last ones
+    for i in range(1, len(axes)+1):
+        x = numpy.swapaxes(x, axes[-i], -i)
+
+    # We can now operate on the axes waxes, the p last axes (p = len(axes)), by
+    # fixing the shape of the input array to 1 for any axis the fft is not
+    # carried upon.
+    waxes = range(x.ndim - len(axes), x.ndim)
+    shape = numpy.ones(x.ndim)
+    shape[waxes] = s
+
+    for i in range(len(waxes)):
+        x = _fix_shape(x, s[i], waxes[i])
+
+    r = work_function(x, shape, direction, overwrite_x=overwrite_x)
+
+    # reswap in the reverse order (first axis first, etc...) to get original
+    # order
+    for i in range(len(axes), 0, -1):
+        r = numpy.swapaxes(r, -i, axes[-i])
+
     return r
 
 
