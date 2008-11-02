@@ -1,4 +1,4 @@
-# Last Change: Thu Jun 12 07:00 PM 2008 J
+# Last Change: Sun Nov 02 06:00 PM 2008 J
 # vim:syntax=python
 from os.path import join as pjoin
 
@@ -30,3 +30,6 @@ env.NumpyPythonExtension('futil', source = futil_src + ['futil.f'])
 
 # mvn extension
 env.NumpyPythonExtension('mvn', source = ['mvn.pyf', 'mvndst.f'])
+
+# vonmisses_cython extension
+env.NumpyPythonExtension('vonmises_cython', source = ['vonmises_cython.c'])
