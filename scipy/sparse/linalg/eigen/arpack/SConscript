@@ -21,7 +21,7 @@ st = config.CheckLAPACK(autoadd = 1)
 if not st:
     raise RuntimeError("no lapack found, necessary for arpack module")
 
-use_c_calling = IsAccelerate(env, "lapack") or IsVeclib(env, "lapack)
+use_c_calling = IsAccelerate(env, "lapack") or IsVeclib(env, "lapack")
 config.Finish()
 write_info(env)
 
@@ -43,9 +43,13 @@ arpack_src += [pjoin('ARPACK', 'UTIL', s) for s in [ "cmout.f", "cvout.f",
 "dmout.f", "dvout.f", "icnteq.f", "icopy.f", "iset.f", "iswap.f", "ivout.f",
 "second.f", "smout.f", "svout.f", "zmout.f", "zvout.f"]]
 
-if not use_c_calling:
-    arpack_src += [pjoin('ARPACK', 'LAPACK', s) for s in [ "clahqr.f", "dlahqr.f",
-    "slahqr.f", "zlahqr.f"]]
+if use_c_calling:
+    arpack_src += [pjoin('ARPACK', 'FWRAPPERS', 'veclib_cabi_f.f'),
+                   pjoin('ARPACK', 'FWRAPPERS', 'veclib_cabi_c.c')]
+else:
+    arpack_src += [pjoin('ARPACK', 'FWRAPPERS', 'dummy.f')]
+arpack_src += [pjoin('ARPACK', 'LAPACK', s) for s in [ "clahqr.f", "dlahqr.f",
+"slahqr.f", "zlahqr.f"]]
 
 src = [str(s) for s in arpack_src]
 
