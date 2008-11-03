@@ -239,6 +239,19 @@ class TestExpon(TestCase):
     def test_zero(self):
         assert_equal(stats.expon.pdf(0),1)
 
+class TestGenExpon(TestCase):
+    def test_pdf_unity_area(self):
+        from scipy.integrate import simps
+        # PDF should integrate to one
+        assert_almost_equal(simps(stats.genexpon.pdf(numpy.arange(0,10,0.01),
+                                                     0.5, 0.5, 2.0),
+                                  dx=0.01), 1, 1)
+
+    def test_cdf_bounds(self):
+        # CDF should always be positive
+        cdf = stats.genexpon.cdf(numpy.arange(0, 10, 0.01), 0.5, 0.5, 2.0)
+        assert(numpy.all((0 <= cdf) & (cdf <= 1)))
+
 class TestDocstring(TestCase):
     def test_docstrings(self):
         """See ticket #761"""

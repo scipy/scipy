@@ -1678,17 +1678,24 @@ for c != 0, and for x >= 0 for all c, and x < 1/abs(c) for c < 0.
 
 class genexpon_gen(rv_continuous):
     def _pdf(self, x, a, b, c):
-        return (a+b*(1-exp(-c*x)))*exp((a-b)*x+b*(1-exp(-c*x))/c)
+        return (a+b*(1-exp(-c*x)))*exp((-a-b)*x+b*(1-exp(-c*x))/c)
     def _cdf(self, x, a, b, c):
-        return 1.0-exp((a-b)*x + b*(1-exp(-c*x))/c)
+        return 1.0-exp((-a-b)*x + b*(1-exp(-c*x))/c)
 genexpon = genexpon_gen(a=0.0,name='genexpon',
                         longname='A generalized exponential',
                         shapes='a,b,c',extradoc="""
 
-Generalized exponential distribution
+Generalized exponential distribution (Ryu 1993)
 
-genexpon.pdf(x,a,b,c) = (a+b*(1-exp(-c*x))) * exp(a*x-b*x+b/c*(1-exp(-c*x)))
+f(x,a,b,c) = (a+b*(1-exp(-c*x))) * exp(-a*x-b*x+b/c*(1-exp(-c*x)))
 for x >= 0, a,b,c > 0.
+
+a, b, c are the first, second and third shape parameters.
+
+References
+----------
+"The Exponential Distribution: Theory, Methods and Applications",
+N. Balakrishnan, Asit P. Basu
 """
                         )
 
