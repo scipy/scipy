@@ -52,17 +52,17 @@ void fcn_callback(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
 
   if (*m != 1)
     {
-      int dim2[2];
+      npy_intp dim2[2];
       dim2[0] = *m;
       dim2[1] = *n;
-      pyXplusD = (PyArrayObject *) PyArray_FromDims(2, dim2, PyArray_DOUBLE);
+      pyXplusD = (PyArrayObject *) PyArray_SimpleNew(2, dim2, PyArray_DOUBLE);
       memcpy(pyXplusD->data, (void *)xplusd, (*m) * (*n) * sizeof(double));
     }
   else
     {
-      int dim1[1];
+      npy_intp dim1[1];
       dim1[0] = *n;
-      pyXplusD = (PyArrayObject *) PyArray_FromDims(1, dim1, PyArray_DOUBLE);
+      pyXplusD = (PyArrayObject *) PyArray_SimpleNew(1, dim1, PyArray_DOUBLE);
       memcpy(pyXplusD->data, (void *)xplusd, (*n) * sizeof(double));
     }
 
@@ -337,7 +337,7 @@ PyObject *gen_output(int n, int m, int np, int nq, int ldwe, int ld2we,
 
   PyObject *retobj;
 
-  int dim1[1], dim2[2];
+  npy_intp dim1[1], dim2[2];
 
   if (info == 50005) {
       /* fatal error in fcn call; return NULL to propogate the exception */
@@ -407,10 +407,10 @@ PyObject *gen_output(int n, int m, int np, int nq, int ldwe, int ld2we,
   wrk7--;
 
   dim1[0] = beta->dimensions[0];
-  sd_beta = (PyArrayObject *) PyArray_FromDims(1, dim1, PyArray_DOUBLE);
+  sd_beta = (PyArrayObject *) PyArray_SimpleNew(1, dim1, PyArray_DOUBLE);
   dim2[0] = beta->dimensions[0];
   dim2[1] = beta->dimensions[0];
-  cov_beta = (PyArrayObject *) PyArray_FromDims(2, dim2, PyArray_DOUBLE);
+  cov_beta = (PyArrayObject *) PyArray_SimpleNew(2, dim2, PyArray_DOUBLE);
 
   memcpy(sd_beta->data, (void *)((double *)(work->data) + sd),
          np * sizeof(double));
@@ -453,32 +453,32 @@ PyObject *gen_output(int n, int m, int np, int nq, int ldwe, int ld2we,
         {
           dim1[0] = n;
           deltaA =
-            (PyArrayObject *) PyArray_FromDims(1, dim1, PyArray_DOUBLE);
+            (PyArrayObject *) PyArray_SimpleNew(1, dim1, PyArray_DOUBLE);
           xplusA =
-            (PyArrayObject *) PyArray_FromDims(1, dim1, PyArray_DOUBLE);
+            (PyArrayObject *) PyArray_SimpleNew(1, dim1, PyArray_DOUBLE);
         }
       else
         {
           dim2[0] = m;
           dim2[1] = n;
           deltaA =
-            (PyArrayObject *) PyArray_FromDims(2, dim2, PyArray_DOUBLE);
+            (PyArrayObject *) PyArray_SimpleNew(2, dim2, PyArray_DOUBLE);
           xplusA =
-            (PyArrayObject *) PyArray_FromDims(2, dim2, PyArray_DOUBLE);
+            (PyArrayObject *) PyArray_SimpleNew(2, dim2, PyArray_DOUBLE);
         }
 
       if (nq == 1)
         {
           dim1[0] = n;
-          epsA = (PyArrayObject *) PyArray_FromDims(1, dim1, PyArray_DOUBLE);
-          fnA = (PyArrayObject *) PyArray_FromDims(1, dim1, PyArray_DOUBLE);
+          epsA = (PyArrayObject *) PyArray_SimpleNew(1, dim1, PyArray_DOUBLE);
+          fnA = (PyArrayObject *) PyArray_SimpleNew(1, dim1, PyArray_DOUBLE);
         }
       else
         {
           dim2[0] = nq;
           dim2[1] = n;
-          epsA = (PyArrayObject *) PyArray_FromDims(2, dim2, PyArray_DOUBLE);
-          fnA = (PyArrayObject *) PyArray_FromDims(2, dim2, PyArray_DOUBLE);
+          epsA = (PyArrayObject *) PyArray_SimpleNew(2, dim2, PyArray_DOUBLE);
+          fnA = (PyArrayObject *) PyArray_SimpleNew(2, dim2, PyArray_DOUBLE);
         }
 
       memcpy(deltaA->data, (void *)((double *)(work->data) + delta),
@@ -545,7 +545,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
   };
   int isodr = 1;
   PyObject *result;
-  int dim1[1], dim2[2], dim3[3];
+  npy_intp dim1[1], dim2[2], dim3[3];
   int implicit;                 /* flag for implicit model */
 
 
@@ -697,7 +697,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
       dim1[0] = 1;
 
       /* initialize y to a dummy array; never referenced */
-      y = (PyArrayObject *) PyArray_FromDims(1, dim1, PyArray_DOUBLE);
+      y = (PyArrayObject *) PyArray_SimpleNew(1, dim1, PyArray_DOUBLE);
 
       if ((x =
            (PyArrayObject *) PyArray_CopyFromObject(px, PyArray_DOUBLE, 1,
@@ -733,7 +733,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
     {
       ldwe = ld2we = 1;
       dim1[0] = n;
-      we = (PyArrayObject *) PyArray_FromDims(1, dim1, PyArray_DOUBLE);
+      we = (PyArrayObject *) PyArray_SimpleNew(1, dim1, PyArray_DOUBLE);
       ((double *)(we->data))[0] = -1.0;
     }
   else if (PyNumber_Check(pwe) && !PyArray_Check(pwe))
@@ -751,7 +751,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
       dim3[0] = nq;
       dim3[1] = 1;
       dim3[2] = 1;
-      we = (PyArrayObject *) PyArray_FromDims(3, dim3, PyArray_DOUBLE);
+      we = (PyArrayObject *) PyArray_SimpleNew(3, dim3, PyArray_DOUBLE);
       if (implicit)
         {
           ((double *)(we->data))[0] = val;
@@ -830,7 +830,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
       ldwd = ld2wd = 1;
 
       dim1[0] = m;
-      wd = (PyArrayObject *) PyArray_FromDims(1, dim1, PyArray_DOUBLE);
+      wd = (PyArrayObject *) PyArray_SimpleNew(1, dim1, PyArray_DOUBLE);
       ((double *)(wd->data))[0] = -1.0;
     }
   else if (PyNumber_Check(pwd) && !PyArray_Check(pwd))
@@ -848,7 +848,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
       dim3[0] = 1;
       dim3[1] = 1;
       dim3[2] = m;
-      wd = (PyArrayObject *) PyArray_FromDims(3, dim3, PyArray_DOUBLE);
+      wd = (PyArrayObject *) PyArray_SimpleNew(3, dim3, PyArray_DOUBLE);
       ((double *)(wd->data))[0] = -val;
       ldwd = ld2wd = 1;
     }
@@ -920,7 +920,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
   if (pifixb == NULL)
     {
       dim1[0] = np;
-      ifixb = (PyArrayObject *) PyArray_FromDims(1, dim1, PyArray_INT);
+      ifixb = (PyArrayObject *) PyArray_SimpleNew(1, dim1, PyArray_INT);
       *(int *)(ifixb->data) = -1;      /* set first element negative */
     }
   else
@@ -946,7 +946,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
     {
       dim2[0] = m;
       dim2[1] = 1;
-      ifixx = (PyArrayObject *) PyArray_FromDims(2, dim2, PyArray_INT);
+      ifixx = (PyArrayObject *) PyArray_SimpleNew(2, dim2, PyArray_INT);
       *(int *)(ifixx->data) = -1;      /* set first element negative */
       ldifx = 1;
     }
@@ -999,7 +999,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
   if (pstpb == NULL)
     {
       dim1[0] = np;
-      stpb = (PyArrayObject *) PyArray_FromDims(1, dim1, PyArray_DOUBLE);
+      stpb = (PyArrayObject *) PyArray_SimpleNew(1, dim1, PyArray_DOUBLE);
       *(double *)(stpb->data) = 0.0;
     }
   else                          /* pstpb is a sequence */
@@ -1018,7 +1018,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
     {
       dim2[0] = 1;
       dim2[1] = m;
-      stpd = (PyArrayObject *) PyArray_FromDims(2, dim2, PyArray_DOUBLE);
+      stpd = (PyArrayObject *) PyArray_SimpleNew(2, dim2, PyArray_DOUBLE);
       *(double *)(stpd->data) = 0.0;
       ldstpd = 1;
     }
@@ -1050,7 +1050,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
   if (psclb == NULL)
     {
       dim1[0] = np;
-      sclb = (PyArrayObject *) PyArray_FromDims(1, dim1, PyArray_DOUBLE);
+      sclb = (PyArrayObject *) PyArray_SimpleNew(1, dim1, PyArray_DOUBLE);
       *(double *)(sclb->data) = 0.0;
     }
   else                          /* psclb is a sequence */
@@ -1069,7 +1069,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
     {
       dim2[0] = 1;
       dim2[1] = n;
-      scld = (PyArrayObject *) PyArray_FromDims(2, dim2, PyArray_DOUBLE);
+      scld = (PyArrayObject *) PyArray_SimpleNew(2, dim2, PyArray_DOUBLE);
       *(double *)(scld->data) = 0.0;
       ldscld = 1;
     }
@@ -1163,7 +1163,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
     {
       /* initialize our own work array */
       dim1[0] = lwork;
-      work = (PyArrayObject *) PyArray_FromDims(1, dim1, PyArray_DOUBLE);
+      work = (PyArrayObject *) PyArray_SimpleNew(1, dim1, PyArray_DOUBLE);
     }                           /* work */
 
   if (piwork != NULL)
@@ -1185,7 +1185,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
     {
       /* initialize our own iwork array */
       dim1[0] = liwork;
-      iwork = (PyArrayObject *) PyArray_FromDims(1, dim1, PyArray_INT);
+      iwork = (PyArrayObject *) PyArray_SimpleNew(1, dim1, PyArray_INT);
     }                           /* iwork */
 
   /* check if what JOB requests can be done with what the user has 

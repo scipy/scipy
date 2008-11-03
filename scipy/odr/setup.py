@@ -28,6 +28,7 @@ def configuration(parent_package='', top_path=None):
         sources=sources,
         libraries=libraries,
         include_dirs=include_dirs,
+        depends=['odrpack.h'],
         **blas_info
     )
 
