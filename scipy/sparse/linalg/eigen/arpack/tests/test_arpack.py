@@ -148,11 +148,11 @@ class TestEigenComplexSymmetric(TestArpack):
                                       decimal=_ndigits[typ])
 
 
-#     def test_complex_symmetric_modes(self):
-#         k=2
-#         for typ in 'FD':
-#             for which in ['LM','SM','LR','SR']:
-#                 self.eval_evec(self.symmetric[0],typ,k,which)
+    def test_complex_symmetric_modes(self):
+        k=2
+        for typ in 'FD':
+            for which in ['LM','SM','LR','SR']:
+                self.eval_evec(self.symmetric[0],typ,k,which)
 
 
 
@@ -259,12 +259,12 @@ class TestEigenComplexNonSymmetric(TestArpack):
                                       decimal=_ndigits[typ])
 
 
-#     def test_complex_nonsymmetric_modes(self):
-#         k=2
-#         for typ in 'FD':
-#             for which in ['LI','LR','LM','SI','SR','SM']:
-#                 for m in self.nonsymmetric:
-#                     self.eval_evec(m,typ,k,which)
+    def test_complex_nonsymmetric_modes(self):
+        k=2
+        for typ in 'FD':
+            for which in ['LI','LR','LM','SI','SR','SM']:
+                for m in self.nonsymmetric:
+                      self.eval_evec(m,typ,k,which)
 
 
 
