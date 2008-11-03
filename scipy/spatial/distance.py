@@ -28,9 +28,9 @@ for computing the number of observations in a distance matrix.
 +------------------+-------------------------------------------------+
 |is_valid_dm       | checks for a valid distance matrix.             |
 +------------------+-------------------------------------------------+
-|is_valid_y        | checks for a valid condensed distance matrix.
+|is_valid_y        | checks for a valid condensed distance matrix.   |
 +------------------+-------------------------------------------------+
-|numobs_dm          # of observations in a distance matrix.
+|numobs_dm         | # of observations in a distance matrix.         |
 +------------------+-------------------------------------------------+
 
 Distance functions between two vectors ``u`` and ``v``. Computing
