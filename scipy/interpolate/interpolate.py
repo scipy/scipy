@@ -44,7 +44,48 @@ def lagrange(x, w):
 # !! found, get rid of it!
 
 class interp2d(object):
-    """ Interpolate over a 2D grid.
+    """
+    interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
+             fill_value=nan)
+    
+    Interpolate over a 2D grid.
+
+    Parameters
+    ----------
+    x : 1D array
+    y : 1D array
+        Arrays defining the coordinates of a 2D grid.  If the
+        points lie on a regular grid, x and y can simply specify
+        the rows and colums, i.e.
+
+        x = [0,1,2]  y = [0,1,2]
+
+        otherwise x and y must specify the full coordinates, i.e.
+
+        x = [0,1,2,0,1.5,2,0,1,2]  y = [0,1,2,0,1,2,0,1,2]
+
+        If x and y are 2-dimensional, they are flattened (allowing
+        the use of meshgrid, for example).
+
+    z : 1D array
+        The values of the interpolated function on the grid
+        points. If z is a 2-dimensional array, it is flattened.
+
+    kind : 'linear', 'cubic', 'quintic'
+        The kind of interpolation to use.
+    copy : bool
+        If True, then data is copied, otherwise only a reference is held.
+    bounds_error : bool
+        If True, when interoplated values are requested outside of the
+        domain of the input data, an error is raised.
+        If False, then fill_value is used.
+    fill_value : number
+        If provided, the value to use for points outside of the
+        interpolation domain. Defaults to NaN.
+
+    Raises
+    ------
+    ValueError when inputs are invalid.
 
     See Also
     --------
@@ -54,46 +95,6 @@ class interp2d(object):
 
     def __init__(self, x, y, z, kind='linear', copy=True, bounds_error=False,
         fill_value=np.nan):
-        """ Initialize a 2D interpolator.
-
-        Parameters
-        ----------
-        x : 1D array
-        y : 1D array
-            Arrays defining the coordinates of a 2D grid.  If the
-            points lie on a regular grid, x and y can simply specify
-            the rows and colums, i.e.
-
-            x = [0,1,2]  y = [0,1,2]
-
-            otherwise x and y must specify the full coordinates, i.e.
-
-            x = [0,1,2,0,1.5,2,0,1,2]  y = [0,1,2,0,1,2,0,1,2]
-
-            If x and y are 2-dimensional, they are flattened (allowing
-            the use of meshgrid, for example).
-
-        z : 1D array
-            The values of the interpolated function on the grid
-            points. If z is a 2-dimensional array, it is flattened.
-
-        kind : 'linear', 'cubic', 'quintic'
-            The kind of interpolation to use.
-        copy : bool
-            If True, then data is copied, otherwise only a reference is held.
-        bounds_error : bool
-            If True, when interoplated values are requested outside of the
-            domain of the input data, an error is raised.
-            If False, then fill_value is used.
-        fill_value : number
-            If provided, the value to use for points outside of the
-            interpolation domain. Defaults to NaN.
-
-        Raises
-        ------
-        ValueError when inputs are invalid.
-
-        """
         self.x, self.y, self.z = map(ravel, map(array, [x, y, z]))
         if not map(rank, [self.x, self.y, self.z]) == [1,1,1]:
             raise ValueError("One of the input arrays is not 1-d.")
