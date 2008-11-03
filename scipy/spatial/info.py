@@ -1,8 +1,12 @@
 """
-Distance Computation
-====================
+Spatial data structures and algorithms
+======================================
 
-    The distance module provides functions for computing distances between
-    pairs of vectors from a set of observation vectors.
+Nearest-neighbor queries:
+
+    KDTree      -- class for efficient nearest-neighbor queries
+    distance    -- module containing many different distance measures
 
 """
+
+postpone_import = 1
