@@ -147,6 +147,11 @@ References
 .. [Fis36] Fisher, RA "The use of multiple measurements in taxonomic
    problems." Annals of Eugenics, 7(2): 179-188. 1936
 
+Copyright Notice
+----------------
+
+Copyright (C) Damian Eads, 2007-2008. New BSD License.
+
 """
 
 _copyingtxt="""

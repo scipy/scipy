@@ -1517,26 +1517,26 @@ def is_valid_y(y, warning=False, throw=False, name=None):
         valid = False
     return valid
 
-def numobs_dm(D):
+def numobs_dm(d):
     """
     Returns the number of original observations that correspond to a
-    square, redudant distance matrix D.
+    square, redudant distance matrix ``D``.
 
     :Parameters:
-       D : ndarray
+       d : ndarray
            The target distance matrix.
 
     :Returns:
        The number of observations in the redundant distance matrix.
     """
-    D = np.asarray(D, order='c')
-    is_valid_dm(D, tol=np.inf, throw=True, name='D')
-    return D.shape[0]
+    d = np.asarray(d, order='c')
+    is_valid_dm(d, tol=np.inf, throw=True, name='d')
+    return d.shape[0]
 
 def numobs_y(Y):
     """
     Returns the number of original observations that correspond to a
-    condensed distance matrix Y.
+    condensed distance matrix ``Y``.
 
     :Parameters:
        Y : ndarray
@@ -1565,16 +1565,16 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
     A rectangular distance matrix Y is returned. For each :math:`$i$`
     and :math:`$j$`, the metric ``dist(u=XA[i], v=XB[j])`` is computed
-    and stored in the :math:`ij`th entry.
+    and stored in the :math:`$ij$`th entry.
 
 
     :Parameters:
        XA : ndarray
            An :math:`$m_A$` by :math:`$n$` array of :math:`$m_A$`
-           original observations in an n-dimensional space.
+           original observations in an :math:`$n$`-dimensional space.
        XB : ndarray
            An :math:`$m_B$` by :math:`$n$` array of :math:`$m_B$`
-           original observations in an n-dimensional space.
+           original observations in an :math:`$n$`-dimensional space.
        metric : string or function
            The distance metric to use. The distance function can
            be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
@@ -1609,7 +1609,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     2. ``Y = cdist(X, 'minkowski', p)``
 
        Computes the distances using the Minkowski distance
-       :math:`$||u-v||_p$` (p-norm) where :math:`$p \geq 1$`.
+       :math:`$||u-v||_p$` (:math:`$p$`-norm) where :math:`$p \geq 1$`.
 
     3. ``Y = cdist(X, 'cityblock')``
 
