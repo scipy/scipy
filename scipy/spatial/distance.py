@@ -1563,48 +1563,19 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     thrown if ``XA`` and ``XB`` do not have the same number of
     columns.
 
-    A rectangular distance matrix Y is returned. For each :math:`$i$`
+    A rectangular distance matrix ``Y`` is returned. For each :math:`$i$`
     and :math:`$j$`, the metric ``dist(u=XA[i], v=XB[j])`` is computed
     and stored in the :math:`$ij$`th entry.
-
-
-    :Parameters:
-       XA : ndarray
-           An :math:`$m_A$` by :math:`$n$` array of :math:`$m_A$`
-           original observations in an :math:`$n$`-dimensional space.
-       XB : ndarray
-           An :math:`$m_B$` by :math:`$n$` array of :math:`$m_B$`
-           original observations in an :math:`$n$`-dimensional space.
-       metric : string or function
-           The distance metric to use. The distance function can
-           be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
-           'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
-           'jaccard', 'kulsinski', 'mahalanobis', 'matching',
-           'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
-           'sokalmichener', 'sokalsneath', 'sqeuclidean', 'wminkowski',
-           'yule'.
-       w : ndarray
-           The weight vector (for weighted Minkowski).
-       p : double
-           The p-norm to apply (for Minkowski, weighted and unweighted)
-       V : ndarray
-           The variance vector (for standardized Euclidean).
-       VI : ndarray
-           The inverse of the covariance matrix (for Mahalanobis).
-
-
-    :Returns:
-       Y : ndarray
-           A :math:`$m_A$` by :math:`$m_B$` distance matrix.
 
     Calling Conventions
     -------------------
 
     1. ``Y = cdist(X, 'euclidean')``
 
-       Computes the distance between m points using Euclidean distance
-       (2-norm) as the distance metric between the points. The points
-       are arranged as m n-dimensional row vectors in the matrix X.
+       Computes the distance between :math:`$m$` points using
+       Euclidean distance (2-norm) as the distance metric between the
+       points. The points are arranged as :math:`$m$`
+       :math:`$n$`-dimensional row vectors in the matrix X.
 
     2. ``Y = cdist(X, 'minkowski', p)``
 
@@ -1781,6 +1752,34 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
          dm = cdist(X, 'sokalsneath')
 
+    :Parameters:
+       XA : ndarray
+           An :math:`$m_A$` by :math:`$n$` array of :math:`$m_A$`
+           original observations in an :math:`$n$`-dimensional space.
+       XB : ndarray
+           An :math:`$m_B$` by :math:`$n$` array of :math:`$m_B$`
+           original observations in an :math:`$n$`-dimensional space.
+       metric : string or function
+           The distance metric to use. The distance function can
+           be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
+           'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
+           'jaccard', 'kulsinski', 'mahalanobis', 'matching',
+           'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
+           'sokalmichener', 'sokalsneath', 'sqeuclidean', 'wminkowski',
+           'yule'.
+       w : ndarray
+           The weight vector (for weighted Minkowski).
+       p : double
+           The p-norm to apply (for Minkowski, weighted and unweighted)
+       V : ndarray
+           The variance vector (for standardized Euclidean).
+       VI : ndarray
+           The inverse of the covariance matrix (for Mahalanobis).
+
+
+    :Returns:
+       Y : ndarray
+           A :math:`$m_A$` by :math:`$m_B$` distance matrix.
        """
 
 

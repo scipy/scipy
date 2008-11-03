@@ -101,7 +101,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
          full_output=0, disp=1, retall=0, callback=None):
     """Minimize a function using the downhill simplex algorithm.
 
-    *Parameters*:
+    :Parameters:
 
       func : callable func(x,*args)
           The objective function to be minimized.
@@ -113,7 +113,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
           Called after each iteration, as callback(xk), where xk is the
           current parameter vector.
 
-    *Returns*: (xopt, {fopt, iter, funcalls, warnflag})
+    :Returns: (xopt, {fopt, iter, funcalls, warnflag})
 
       xopt : ndarray
           Parameter that minimizes function.
@@ -146,7 +146,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
       retall : bool
           Set to True to return list of solutions at each iteration.
 
-    *Notes*
+    :Notes:
 
         Uses a Nelder-Mead simplex algorithm to find the minimum of
         function of one or more variables.
@@ -406,7 +406,7 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
                 args=(), c1=1e-4, c2=0.9, amax=50):
     """Find alpha that satisfies strong Wolfe conditions.
 
-    *Parameters*:
+    :Parameters:
 
         f : callable f(x,*args)
             Objective function.
@@ -426,7 +426,7 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
         c2 : float
             Parameter for curvature condition rule.
 
-    *Returns*:
+    :Returns:
 
         alpha0 : float
             Alpha for which ``x_new = x0 + alpha * pk``.
@@ -435,7 +435,7 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
         gc : int
             Number of gradient evaluations made.
 
-    *Notes*
+    :Notes:
 
         Uses the line search algorithm to enforce strong Wolfe
         conditions.  See Wright and Nocedal, 'Numerical Optimization',
@@ -550,7 +550,7 @@ def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
     Uses the interpolation algorithm (Armiijo backtracking) as suggested by
     Wright and Nocedal in 'Numerical Optimization', 1999, pg. 56-57
 
-    *Returns*: (alpha, fc, gc)
+    :Returns: (alpha, fc, gc)
 
     """
 
@@ -627,7 +627,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
               retall=0, callback=None):
     """Minimize a function using the BFGS algorithm.
 
-    *Parameters*:
+    :Parameters:
 
       f : callable f(x,*args)
           Objective function to be minimized.
@@ -648,7 +648,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
           iteration.  Called as callback(xk), where xk is the
           current parameter vector.
 
-    *Returns*: (xopt, {fopt, gopt, Hopt, func_calls, grad_calls, warnflag}, <allvecs>)
+    :Returns: (xopt, {fopt, gopt, Hopt, func_calls, grad_calls, warnflag}, <allvecs>)
 
         xopt : ndarray
             Parameters which minimize f, i.e. f(xopt) == fopt.
@@ -679,7 +679,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         retall : bool
             Return a list of results at each iteration if True.
 
-    *Notes*
+    :Notes:
 
         Optimize the function, f, whose gradient is given by fprime
         using the quasi-Newton method of Broyden, Fletcher, Goldfarb,
@@ -801,7 +801,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
               maxiter=None, full_output=0, disp=1, retall=0, callback=None):
     """Minimize a function using a nonlinear conjugate gradient algorithm.
 
-    *Parameters*:
+    :Parameters:
         f : callable f(x,*args)
             Objective function to be minimized.
         x0 : ndarray
@@ -822,7 +822,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
             iteration.  Called as callback(xk), where xk is the
             current parameter vector.
 
-    *Returns*: (xopt, {fopt, func_calls, grad_calls, warnflag}, {allvecs})
+    :Returns: (xopt, {fopt, func_calls, grad_calls, warnflag}, {allvecs})
 
         xopt : ndarray
             Parameters which minimize f, i.e. f(xopt) == fopt.
@@ -850,7 +850,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
       retall : bool
         return a list of results at each iteration if True.
 
-    *Notes*
+    :Notes:
 
         Optimize the function, f, whose gradient is given by fprime
         using the nonlinear conjugate gradient algorithm of Polak and
@@ -955,7 +955,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
              callback=None):
     """Minimize a function using the Newton-CG method.
 
-    *Parameters*:
+    :Parameters:
 
         f : callable f(x,*args)
             Objective function to be minimized.
@@ -979,7 +979,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             each iteration.  Called as callback(xk), where xk is the
             current parameter vector.
 
-    *Returns*: (xopt, {fopt, fcalls, gcalls, hcalls, warnflag},{allvecs})
+    :Returns: (xopt, {fopt, fcalls, gcalls, hcalls, warnflag},{allvecs})
 
         xopt : ndarray
             Parameters which minimizer f, i.e. ``f(xopt) == fopt``.
@@ -1011,7 +1011,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         retall : bool
             If True, return a list of results at each iteration.
 
-    *Notes*
+    :Notes:
       1. scikits.openopt offers a unified syntax to call this and other solvers.
       2. Only one of `fhess_p` or `fhess` need to be given.  If `fhess`
       is provided, then `fhess_p` will be ignored.  If neither `fhess`
@@ -1132,7 +1132,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
               full_output=0, disp=1):
     """Bounded minimization for scalar functions.
 
-    *Parameters*:
+    :Parameters:
 
       func : callable f(x,*args)
           Objective function to be minimized (must accept and return scalars).
@@ -1154,7 +1154,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
               3 : print iteration results.
 
 
-    *Returns*: (xopt, {fval, ierr, numfunc})
+    :Returns: (xopt, {fval, ierr, numfunc})
 
       xopt : ndarray
           Parameters (over given interval) which minimize the
@@ -1168,7 +1168,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
         The number of function calls made.
 
 
-    *Notes*
+    :Notes:
 
         Finds a local minimizer of the scalar function `func` in the
         interval x1 < xopt < x2 using Brent's method.  (See `brent`
@@ -1429,7 +1429,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     return the minimum of the function isolated to a fractional precision of
     tol.
 
-    *Parameters*:
+    :Parameters:
 
         func : callable f(x,*args)
             Objective function.
@@ -1445,7 +1445,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
             If True, return all output args (xmin, fval, iter,
             funcalls).
 
-    *Returns*:
+    :Returns:
 
         xmin : ndarray
             Optimum point.
@@ -1477,7 +1477,7 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
     return the minimum of the function isolated to a fractional precision of
     tol.
 
-    *Parameters*:
+    :Parameters:
 
         func : callable func(x,*args)
             Objective function to minimize.
@@ -1494,7 +1494,7 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
         full_output : bool
             If True, return optional outputs.
 
-    *Notes*
+    :Notes:
 
         Uses analog of bisection method to decrease the bracketed
         interval.
@@ -1557,7 +1557,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     f(xa) > f(xb) < f(xc). It doesn't always mean that obtained
     solution will satisfy xa<=x<=xb
 
-    *Parameters*:
+    :Parameters:
 
         func : callable f(x,*args)
             Objective function to minimize.
@@ -1570,7 +1570,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
         maxiter : int
             Maximum number of iterations to perform.
 
-    *Returns*: xa, xb, xc, fa, fb, fc, funcalls
+    :Returns: xa, xb, xc, fa, fb, fc, funcalls
 
         xa, xb, xc : float
             Bracket.
@@ -1655,7 +1655,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
                 direc=None):
     """Minimize a function using modified Powell's method.
 
-    *Parameters*:
+    :Parameters:
 
       func : callable f(x,*args)
           Objective function to be minimized.
@@ -1670,7 +1670,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
       direc : ndarray
           Initial direction set.
 
-    *Returns*: (xopt, {fopt, xi, direc, iter, funcalls, warnflag}, {allvecs})
+    :Returns: (xopt, {fopt, xi, direc, iter, funcalls, warnflag}, {allvecs})
 
         xopt : ndarray
             Parameter which minimizes `func`.
@@ -1708,7 +1708,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
           If True, return a list of the solution at each iteration.
 
 
-    *Notes*
+    :Notes:
 
         Uses a modification of Powell's method to find the minimum of
         a function of N variables.
@@ -1825,9 +1825,9 @@ def _endprint(x, flag, fval, maxfun, xtol, disp):
 def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
     """Minimize a function over a given range by brute force.
 
-    *Parameters*:
+    :Parameters:
 
-        func : callable f(x,*args)
+        func : callable ``f(x,*args)``
             Objective function to be minimized.
         ranges : tuple
             Each element is a tuple of parameters or a slice object to
@@ -1839,7 +1839,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
         full_output : bool
             If True, return the evaluation grid.
 
-    *Returns*: (x0, fval, {grid, Jout})
+    :Returns: (x0, fval, {grid, Jout})
 
         x0 : ndarray
             Value of arguments to `func`, giving minimum over the grid.
@@ -1851,7 +1851,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
         Jout : ndarray
             Function values over grid:  ``Jout = func(*grid)``.
 
-    *Notes*
+    :Notes:
 
         Find the minimum of a function evaluated on a grid given by
         the tuple ranges.
