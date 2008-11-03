@@ -104,8 +104,8 @@
 *     ..
 *     .. External Functions ..
       REAL               CLANHS, SLAMCH
-      COMPLEX            CLADIV
-      EXTERNAL           CLANHS, SLAMCH, CLADIV
+      COMPLEX            WCLADIV
+      EXTERNAL           CLANHS, SLAMCH, WCLADIV
 *     ..
 *     .. External Subroutines ..
       EXTERNAL           CCOPY, CLARFG, CSCAL
@@ -221,7 +221,7 @@
                Y = SQRT( X*X+U )
                IF( REAL( X )*REAL( Y )+AIMAG( X )*AIMAG( Y ).LT.RZERO )
      $            Y = -Y
-               T = T - CLADIV( U, ( X+Y ) )
+               T = T - WCLADIV( U, ( X+Y ) )
             END IF
          END IF
 *

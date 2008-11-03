@@ -104,8 +104,8 @@
 *     ..
 *     .. External Functions ..
       DOUBLE PRECISION   ZLANHS, DLAMCH
-      COMPLEX*16         ZLADIV
-      EXTERNAL           ZLANHS, DLAMCH, ZLADIV
+      COMPLEX*16         WZLADIV
+      EXTERNAL           ZLANHS, DLAMCH, WZLADIV
 *     ..
 *     .. External Subroutines ..
       EXTERNAL           ZCOPY, ZLARFG, ZSCAL
@@ -221,7 +221,7 @@
                Y = SQRT( X*X+U )
                IF( DBLE( X )*DBLE( Y )+DIMAG( X )*DIMAG( Y ).LT.RZERO )
      $            Y = -Y
-               T = T - ZLADIV( U, ( X+Y ) )
+               T = T - WZLADIV( U, ( X+Y ) )
             END IF
          END IF
 *
