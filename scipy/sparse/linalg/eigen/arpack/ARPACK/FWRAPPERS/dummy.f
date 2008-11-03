@@ -1,9 +1,10 @@
       double complex function wzdotc(n, zx, incx, zy, incy)
-      double complex zx(*), zy(*), z, zdotc
+      double complex zx(*), zy(*), z
+      double complex zdotc
       integer n, incx, incy
       
-      zdotc(n, zx, incx, zy, incy, z)
-      wzdotc = zdotc
+      z = zdotc(n, zx, incx, zy, incy)
+      wzdotc = z
       
       end
       
@@ -11,8 +12,8 @@
       double complex zx(*), zy(*), z, zdotu
       integer n, incx, incy
       
-      zdotu(n, zx, incx, zy, incy, z)
-      wzdotu = zdotu
+      z = zdotu(n, zx, incx, zy, incy)
+      wzdotu = z
       
       return
       end
@@ -21,8 +22,8 @@
       complex cx(*), cy(*), c, cdotc
       integer n, incx, incy
       
-      cdotc(n, cx, incx, cy, incy, c)
-      wzdotc = zdotc
+      c = cdotc(n, cx, incx, cy, incy)
+      wcdotc = c
       
       return
       end
@@ -31,8 +32,8 @@
       complex cx(*), cy(*), c, cdotu
       integer n, incx, incy
       
-      cdotu(n, cx, incx, cy, incy, c)
-      wzdotu = zdotu
+      c = cdotu(n, cx, incx, cy, incy)
+      wcdotu = c
       
       return
       end
