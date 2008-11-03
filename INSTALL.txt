@@ -32,7 +32,7 @@ SciPy requires the following software installed:
 
 __ http://www.python.org
 
-2) NumPy__ 1.1.0 or newer
+2) NumPy__ 1.2.0 or newer
 
    Debian package: python-numpy
 
