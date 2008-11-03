@@ -71,7 +71,8 @@ void INSERT(int*,double*,int*,double*,int*,double*,double*,int*,double*,int*,int
 
 static char doc_bispev[] = " [z,ier] = _bispev(tx,ty,c,kx,ky,x,y,nux,nuy)";
 static PyObject *fitpack_bispev(PyObject *dummy, PyObject *args) {
-  int nx,ny,kx,ky,mx,my,lwrk,*iwrk,kwrk,ier,lwa,mxy,nux,nuy;
+  int nx,ny,kx,ky,mx,my,lwrk,*iwrk,kwrk,ier,lwa,nux,nuy;
+  npy_intp mxy;
   double *tx,*ty,*c,*x,*y,*z,*wrk,*wa = NULL;
   PyArrayObject *ap_x = NULL,*ap_y = NULL,*ap_z = NULL,*ap_tx = NULL,\
     *ap_ty = NULL,*ap_c = NULL;
@@ -96,7 +97,7 @@ static PyObject *fitpack_bispev(PyObject *dummy, PyObject *args) {
   mx = ap_x->dimensions[0];
   my = ap_y->dimensions[0];
   mxy = mx*my;
-  ap_z = (PyArrayObject *)PyArray_FromDims(1,&mxy,PyArray_DOUBLE);
+  ap_z = (PyArrayObject *)PyArray_SimpleNew(1,&mxy,PyArray_DOUBLE);
   z = (double *) ap_z->data;
   if (nux || nuy) 
     lwrk = mx*(kx+1-nux)+my*(ky+1-nuy)+(nx-kx-1)*(ny-ky-1);
@@ -135,8 +136,9 @@ static PyObject *fitpack_bispev(PyObject *dummy, PyObject *args) {
 
 static char doc_surfit[] = " [tx,ty,c,o] = _surfit(x,y,z,w,xb,xe,yb,ye,kx,ky,iopt,s,eps,tx,ty,nxest,nyest,wrk,lwrk1,lwrk2)";
 static PyObject *fitpack_surfit(PyObject *dummy, PyObject *args) {
-  int iopt,m,kx,ky,nxest,nyest,nx,ny,lwrk1,lwrk2,*iwrk,kwrk,ier,lwa,nxo,nyo,\
-    i,lc,lcest,nmax;
+  int iopt,m,kx,ky,nxest,nyest,lwrk1,lwrk2,*iwrk,kwrk,ier,lwa,nxo,nyo,\
+    i,lcest,nmax;
+  npy_intp nx, ny, lc;
   double *x,*y,*z,*w,xb,xe,yb,ye,s,*tx,*ty,*c,fp,*wrk1,*wrk2,*wa = NULL,eps;
   PyArrayObject *ap_x = NULL,*ap_y = NULL,*ap_z,*ap_w = NULL,\
     *ap_tx = NULL,*ap_ty = NULL,*ap_c = NULL;
@@ -209,19 +211,19 @@ static PyObject *fitpack_surfit(PyObject *dummy, PyObject *args) {
   lc = (nx-kx-1)*(ny-ky-1);
   Py_XDECREF(ap_tx);
   Py_XDECREF(ap_ty);
-  ap_tx = (PyArrayObject *)PyArray_FromDims(1,&nx,PyArray_DOUBLE);
-  ap_ty = (PyArrayObject *)PyArray_FromDims(1,&ny,PyArray_DOUBLE);
-  ap_c = (PyArrayObject *)PyArray_FromDims(1,&lc,PyArray_DOUBLE);
+  ap_tx = (PyArrayObject *)PyArray_SimpleNew(1,&nx,PyArray_DOUBLE);
+  ap_ty = (PyArrayObject *)PyArray_SimpleNew(1,&ny,PyArray_DOUBLE);
+  ap_c = (PyArrayObject *)PyArray_SimpleNew(1,&lc,PyArray_DOUBLE);
   if (ap_tx == NULL || ap_ty == NULL || ap_c == NULL) goto fail;
   if ((iopt==0)||(nx>nxo)||(ny>nyo)) {
     Py_XDECREF(ap_wrk);
-    ap_wrk = (PyArrayObject *)PyArray_FromDims(1,&lc,PyArray_DOUBLE);
+    ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1,&lc,PyArray_DOUBLE);
     if (ap_wrk == NULL) goto fail;
-    /*ap_iwrk = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_INT);*/
+    /*ap_iwrk = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_INT);*/
   }
   if(ap_wrk->dimensions[0]<lc) {
     Py_XDECREF(ap_wrk);
-    ap_wrk = (PyArrayObject *)PyArray_FromDims(1,&lc,PyArray_DOUBLE);
+    ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1,&lc,PyArray_DOUBLE);
     if (ap_wrk == NULL) goto fail;
   }
   memcpy(ap_tx->data,tx,nx*sizeof(double));
@@ -257,7 +259,8 @@ static PyObject *fitpack_surfit(PyObject *dummy, PyObject *args) {
 
 static char doc_parcur[] = " [t,c,o] = _parcur(x,w,u,ub,ue,k,iopt,ipar,s,t,nest,wrk,iwrk,per)";
 static PyObject *fitpack_parcur(PyObject *dummy, PyObject *args) {
-  int k,iopt,ipar,nest,*iwrk,idim,m,mx,n=0,no=0,nc,ier,lc,lwa,lwrk,i,per;
+  int k,iopt,ipar,nest,*iwrk,idim,m,mx,no=0,nc,ier,lwa,lwrk,i,per;
+  npy_intp n=0, lc;
   double *x,*w,*u,*c,*t,*wrk,*wa=NULL,ub,ue,fp,s;
   PyObject *x_py = NULL,*u_py = NULL,*w_py = NULL,*t_py = NULL;
   PyObject *wrk_py=NULL,*iwrk_py=NULL;
@@ -310,12 +313,12 @@ static PyObject *fitpack_parcur(PyObject *dummy, PyObject *args) {
   if (ier==10) goto fail;
   if (ier>0 && n==0) n=1;
   lc = (n-k-1)*idim;
-  ap_t = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_DOUBLE);
-  ap_c = (PyArrayObject *)PyArray_FromDims(1,&lc,PyArray_DOUBLE);
+  ap_t = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_DOUBLE);
+  ap_c = (PyArrayObject *)PyArray_SimpleNew(1,&lc,PyArray_DOUBLE);
   if (ap_t == NULL || ap_c == NULL) goto fail;
   if ((iopt==0)||(n>no)) {
-    ap_wrk = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_DOUBLE);
-    ap_iwrk = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_INT);
+    ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_DOUBLE);
+    ap_iwrk = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_INT);
     if (ap_wrk == NULL || ap_iwrk == NULL) goto fail;
   }
   memcpy(ap_t->data,t,n*sizeof(double));
@@ -340,7 +343,8 @@ static PyObject *fitpack_parcur(PyObject *dummy, PyObject *args) {
 
 static char doc_curfit[] = " [t,c,o] = _curfit(x,y,w,xb,xe,k,iopt,s,t,nest,wrk,iwrk,per)";
 static PyObject *fitpack_curfit(PyObject *dummy, PyObject *args) {
-  int iopt,m,k,nest,n,lwrk,*iwrk,ier,lwa,lc,no=0,per;
+  int iopt,m,k,nest,lwrk,*iwrk,ier,lwa,no=0,per;
+  npy_intp n, lc;
   double *x,*y,*w,xb,xe,s,*t,*c,fp,*wrk,*wa = NULL;
   PyArrayObject *ap_x = NULL,*ap_y = NULL,*ap_w = NULL,*ap_t = NULL,*ap_c = NULL;
   PyArrayObject *ap_wrk = NULL,*ap_iwrk = NULL;
@@ -389,16 +393,16 @@ static PyObject *fitpack_curfit(PyObject *dummy, PyObject *args) {
   }
   lc = n-k-1;
   if (!iopt) {
-	  ap_t = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_DOUBLE);
+	  ap_t = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_DOUBLE);
 	  if (ap_t == NULL) goto fail;
   }
-  ap_c = (PyArrayObject *)PyArray_FromDims(1,&lc,PyArray_DOUBLE);
+  ap_c = (PyArrayObject *)PyArray_SimpleNew(1,&lc,PyArray_DOUBLE);
   if (ap_c == NULL) goto fail;
   if ((iopt==0)||(n>no)) {
     Py_XDECREF(ap_wrk);
     Py_XDECREF(ap_iwrk);
-    ap_wrk = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_DOUBLE);
-    ap_iwrk = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_INT);
+    ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_DOUBLE);
+    ap_iwrk = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_INT);
     if (ap_wrk == NULL || ap_iwrk == NULL) goto fail;
   }
   memcpy(ap_t->data,t,n*sizeof(double));
@@ -423,7 +427,8 @@ static PyObject *fitpack_curfit(PyObject *dummy, PyObject *args) {
 
 static char doc_spl_[] = " [y,ier] = _spl_(x,nu,t,c,k )";
 static PyObject *fitpack_spl_(PyObject *dummy, PyObject *args) {
-  int n,nu,m,ier,k;
+  int n,nu,ier,k;
+  npy_intp m;
   double *x,*y,*t,*c,*wrk = NULL;
   PyArrayObject *ap_x = NULL,*ap_y = NULL,*ap_t = NULL,*ap_c = NULL;
   PyObject *x_py = NULL,*t_py = NULL,*c_py = NULL;
@@ -437,7 +442,7 @@ static PyObject *fitpack_spl_(PyObject *dummy, PyObject *args) {
   t = (double *) ap_t->data;
   c = (double *) ap_c->data;
   n = ap_t->dimensions[0];
-  ap_y = (PyArrayObject *)PyArray_FromDims(1,&m,PyArray_DOUBLE);
+  ap_y = (PyArrayObject *)PyArray_SimpleNew(1,&m,PyArray_DOUBLE);
   if (ap_y == NULL) goto fail;
   y = (double *) ap_y->data;
   if ((wrk = (double *)malloc(n*sizeof(double)))==NULL) {
@@ -463,7 +468,8 @@ static PyObject *fitpack_spl_(PyObject *dummy, PyObject *args) {
 
 static char doc_splint[] = " [aint,wrk] = _splint(t,c,k,a,b)";
 static PyObject *fitpack_splint(PyObject *dummy, PyObject *args) {
-  int n,k;
+  int k;
+  npy_intp n;
   double *t,*c,*wrk = NULL,a,b,aint;
   PyArrayObject *ap_t = NULL,*ap_c = NULL;
   PyArrayObject *ap_wrk = NULL;
@@ -475,7 +481,7 @@ static PyObject *fitpack_splint(PyObject *dummy, PyObject *args) {
   t = (double *) ap_t->data;
   c = (double *) ap_c->data;
   n = ap_t->dimensions[0];
-  ap_wrk = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_DOUBLE);
+  ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_DOUBLE);
   if (ap_wrk == NULL) goto fail;
   wrk = (double *) ap_wrk->data;
   aint = SPLINT(t,&n,c,&k,&a,&b,wrk);
@@ -490,7 +496,8 @@ static PyObject *fitpack_splint(PyObject *dummy, PyObject *args) {
 
 static char doc_sproot[] = " [z,ier] = _sproot(t,c,k,mest)";
 static PyObject *fitpack_sproot(PyObject *dummy, PyObject *args) {
-  int n,k,mest,ier,m;
+  int n,k,mest,ier;
+  npy_intp m;
   double *t,*c,*z=NULL;
   PyArrayObject *ap_t = NULL,*ap_c = NULL;
   PyArrayObject *ap_z = NULL;
@@ -508,7 +515,7 @@ static PyObject *fitpack_sproot(PyObject *dummy, PyObject *args) {
   }
   SPROOT(t,&n,c,z,&mest,&m,&ier);
   if (ier==10) m=0;
-  ap_z = (PyArrayObject *)PyArray_FromDims(1,&m,PyArray_DOUBLE);
+  ap_z = (PyArrayObject *)PyArray_SimpleNew(1,&m,PyArray_DOUBLE);
   if (ap_z == NULL) goto fail;
   memcpy(ap_z->data,z,m*sizeof(double));
   if (z) free(z);
@@ -524,7 +531,8 @@ static PyObject *fitpack_sproot(PyObject *dummy, PyObject *args) {
 
 static char doc_spalde[] = " [d,ier] = _spalde(t,c,k,x)";
 static PyObject *fitpack_spalde(PyObject *dummy, PyObject *args) {
-  int n,k,k1,ier;
+  int n,k,ier;
+  npy_intp k1;
   double *t,*c,*d=NULL,x;
   PyArrayObject *ap_t = NULL,*ap_c = NULL,*ap_d = NULL;
   PyObject *t_py = NULL,*c_py = NULL;
@@ -536,7 +544,7 @@ static PyObject *fitpack_spalde(PyObject *dummy, PyObject *args) {
   c = (double *) ap_c->data;
   n = ap_t->dimensions[0];
   k1=k+1;
-  ap_d = (PyArrayObject *)PyArray_FromDims(1,&k1,PyArray_DOUBLE);
+  ap_d = (PyArrayObject *)PyArray_SimpleNew(1,&k1,PyArray_DOUBLE);
   if (ap_d == NULL) goto fail;
   d = (double *) ap_d->data;
   SPALDE(t,&n,c,&k1,&x,d,&ier);
@@ -551,7 +559,8 @@ static PyObject *fitpack_spalde(PyObject *dummy, PyObject *args) {
 
 static char doc_insert[] = " [tt,cc,ier] = _insert(iopt,t,c,k,x,m)";
 static PyObject *fitpack_insert(PyObject *dummy, PyObject*args) {
-  int iopt, n, nn, k, nest, ier, m;
+  int iopt, n, nn, k, ier, m;
+  npy_intp nest;
   double x;
   double *t, *c, *tt, *cc;
   PyArrayObject *ap_t = NULL, *ap_c = NULL, *ap_tt = NULL, *ap_cc = NULL;
@@ -565,8 +574,8 @@ static PyObject *fitpack_insert(PyObject *dummy, PyObject*args) {
   c = (double *) ap_c->data;
   n = ap_t->dimensions[0];
   nest = n + m;
-  ap_tt = (PyArrayObject *)PyArray_FromDims(1,&nest,PyArray_DOUBLE);
-  ap_cc = (PyArrayObject *)PyArray_FromDims(1,&nest,PyArray_DOUBLE);
+  ap_tt = (PyArrayObject *)PyArray_SimpleNew(1,&nest,PyArray_DOUBLE);
+  ap_cc = (PyArrayObject *)PyArray_SimpleNew(1,&nest,PyArray_DOUBLE);
   if (ap_tt == NULL || ap_cc == NULL) goto fail;
   tt = (double *) ap_tt->data;
   cc = (double *) ap_cc->data;
@@ -660,6 +669,8 @@ _deBoor_D(double *t, double x, int k, int ell, int m, double *result) {
    The approximation interval is from xk[0] to xk[-1]
    Any xx outside that interval is set automatically to 0.0
  */
+
+
 static char doc_bspleval[] = "y = _bspleval(xx,xk,coef,k,{deriv (0)})\n"
     "\n"
     "The spline is defined by the approximation interval xk[0] to xk[-1],\n"

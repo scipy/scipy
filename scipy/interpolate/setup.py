@@ -14,6 +14,7 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_fitpack',
                          sources=['src/_fitpackmodule.c'],
                          libraries=['fitpack'],
+                         depends = ['src/__fitpack.h','src/multipack.h']
                         )
 
     config.add_extension('dfitpack',
