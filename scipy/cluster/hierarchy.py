@@ -188,7 +188,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import numpy as np
 import _hierarchy_wrap, types
-import distance
+import scipy.spatial.distance as distance
 
 _cpy_non_euclid_methods = {'single': 0, 'complete': 1, 'average': 2,
                            'weighted': 6}

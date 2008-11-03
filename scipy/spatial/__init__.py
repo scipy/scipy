@@ -4,9 +4,8 @@
 
 from info import __doc__
 
-__all__ = ['vq', 'hierarchy']
+__all__ = ['distance']
 
-import vq, hierarchy
-
+import distance
 from numpy.testing import Tester
 test = Tester().test

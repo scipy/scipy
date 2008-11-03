@@ -2,16 +2,8 @@
 SciPy --- A scientific computing package for Python
 ===================================================
 
-You can support the development of SciPy by purchasing documentation
-at
-
-  http://www.trelgol.com
-
-It is being distributed for a fee for a limited time to try and raise
-money for development.
-
-Documentation is also available in the docstrings.
-
+Documentation is available in the docstrings and
+online at http://docs.scipy.org.
 """
 
 __all__ = ['pkgload','test']

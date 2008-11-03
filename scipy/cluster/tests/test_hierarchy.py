@@ -39,7 +39,7 @@ import numpy as np
 from numpy.testing import *
 
 from scipy.cluster.hierarchy import linkage, from_mlab_linkage, numobs_linkage, inconsistent
-from scipy.cluster.distance import squareform, pdist, numobs_dm, numobs_y
+from scipy.spatial.distance import squareform, pdist, numobs_dm, numobs_y
 
 _tdist = np.array([[0,    662,  877,  255,  412,  996],
                    [662,  0,    295,  468,  268,  400],
@@ -72,8 +72,7 @@ _filenames = ["iris.txt",
               "inconsistent-weighted-tdist-depth-1.txt",
               "inconsistent-weighted-tdist-depth-2.txt",
               "inconsistent-weighted-tdist-depth-3.txt",
-              "inconsistent-weighted-tdist-depth-4.txt",
-              "random-bool-data.txt"]
+              "inconsistent-weighted-tdist-depth-4.txt"]
 
 def load_testing_files():
     for fn in _filenames:

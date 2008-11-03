@@ -38,8 +38,8 @@ import os.path
 
 import numpy as np
 from numpy.testing import *
-from scipy.cluster.distance import squareform, pdist, cdist, matching, \
-    jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule
+from scipy.spatial.distance import squareform, pdist, cdist, matching, \
+                                   jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule
 
 _filenames = ["iris.txt",
               "cdist-X1.txt",
