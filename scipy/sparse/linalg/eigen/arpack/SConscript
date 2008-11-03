@@ -2,7 +2,7 @@ from os.path import join as pjoin
 
 from numscons import GetNumpyEnvironment
 from numscons import CheckF77LAPACK, CheckF77Clib
-from numscons import write_info
+from numscons import write_info, IsAccelerate, IsVeclib
 
 env = GetNumpyEnvironment(ARGUMENTS)
 
@@ -21,6 +21,7 @@ st = config.CheckLAPACK(autoadd = 1)
 if not st:
     raise RuntimeError("no lapack found, necessary for arpack module")
 
+use_c_calling = IsAccelerate(env, "lapack") or IsVeclib(env, "lapack)
 config.Finish()
 write_info(env)
 
@@ -42,8 +43,9 @@ arpack_src += [pjoin('ARPACK', 'UTIL', s) for s in [ "cmout.f", "cvout.f",
 "dmout.f", "dvout.f", "icnteq.f", "icopy.f", "iset.f", "iswap.f", "ivout.f",
 "second.f", "smout.f", "svout.f", "zmout.f", "zvout.f"]]
 
-arpack_src += [pjoin('ARPACK', 'LAPACK', s) for s in [ "clahqr.f", "dlahqr.f",
-"slahqr.f", "zlahqr.f"]]
+if not use_c_calling:
+    arpack_src += [pjoin('ARPACK', 'LAPACK', s) for s in [ "clahqr.f", "dlahqr.f",
+    "slahqr.f", "zlahqr.f"]]
 
 src = [str(s) for s in arpack_src]
 
