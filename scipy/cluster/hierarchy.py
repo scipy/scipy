@@ -1600,7 +1600,7 @@ try:
                 axis.add_collection(colors_to_collections[color])
         # If there is a blue grouping (i.e., links above the color threshold),
         # it should go last.
-        if colors_to_collections.has_key('b'):
+        if 'b' in colors_to_collections:
             axis.add_collection(colors_to_collections['b'])
 
         if contraction_marks is not None:
