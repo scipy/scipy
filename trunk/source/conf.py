@@ -200,7 +200,7 @@ latex_use_modindex = False
 # -----------------------------------------------------------------------------
 intersphinx_mapping = {
         'http://docs.python.org/dev': None,
-        'http://www.elisanet.fi/ptvirtan/tmp/numpy-refguide': None,
+        'http://docs.scipy.org/doc/numpy': None,
 }
 
 
