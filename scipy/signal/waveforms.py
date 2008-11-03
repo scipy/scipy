@@ -177,7 +177,7 @@ def chirp(t,f0=0,t1=1,f1=100,method='linear',phi=0,qshape=None):
                 "For a logarithmic sweep, f1=%f must be larger than f0=%f."
                 % (f1, f0))
         beta = log10(f1-f0)/t1
-        phase_angle = 2*pi * (f0*t + pow(10,beta*t)/(beta*log(10)))
+        phase_angle = 2*pi * (f0*t + (pow(10,beta*t)-1)/(beta*log(10)))
     else:
         raise ValueError("method must be 'linear', 'quadratic', or "
             "'logarithmic' but a value of %r was given." % method)
