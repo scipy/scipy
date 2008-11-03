@@ -8,7 +8,7 @@ __all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
 
 from numpy import shape, sometrue, rank, array, transpose, searchsorted, \
                   ones, logical_or, atleast_1d, atleast_2d, meshgrid, ravel, \
-                  dot, poly1d
+                  dot, poly1d, asarray
 import numpy as np
 import scipy.special as spec
 import math
@@ -47,38 +47,35 @@ class interp2d(object):
     """
     interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
              fill_value=nan)
-    
+
     Interpolate over a 2D grid.
 
     Parameters
     ----------
-    x : 1D array
-    y : 1D array
+    x, y : 1D arrays
         Arrays defining the coordinates of a 2D grid.  If the
-        points lie on a regular grid, x and y can simply specify
-        the rows and colums, i.e.
+        points lie on a regular grid, `x` can specify the column coordinates
+        and `y` the row coordinates, e.g.::
 
-        x = [0,1,2]  y = [0,1,2]
+            x = [0,1,2];  y = [0,3,7]
 
-        otherwise x and y must specify the full coordinates, i.e.
+        otherwise x and y must specify the full coordinates, i.e.::
 
-        x = [0,1,2,0,1.5,2,0,1,2]  y = [0,1,2,0,1,2,0,1,2]
+            x = [0,1,2,0,1,2,0,1,2];  y = [0,0,0,3,3,3,7,7,7]
 
-        If x and y are 2-dimensional, they are flattened (allowing
-        the use of meshgrid, for example).
+        If `x` and `y` are multi-dimensional, they are flattened before use.
 
     z : 1D array
-        The values of the interpolated function on the grid
-        points. If z is a 2-dimensional array, it is flattened.
-
-    kind : 'linear', 'cubic', 'quintic'
+        The values of the interpolated function on the grid points. If
+        z is a multi-dimensional array, it is flattened before use.
+    kind : {'linear', 'cubic', 'quintic'}
         The kind of interpolation to use.
     copy : bool
         If True, then data is copied, otherwise only a reference is held.
     bounds_error : bool
-        If True, when interoplated values are requested outside of the
+        If True, when interpolated values are requested outside of the
         domain of the input data, an error is raised.
-        If False, then fill_value is used.
+        If False, then `fill_value` is used.
     fill_value : number
         If provided, the value to use for points outside of the
         interpolation domain. Defaults to NaN.
@@ -89,20 +86,20 @@ class interp2d(object):
 
     See Also
     --------
-    bisplrep, bisplev - spline interpolation based on FITPACK
-    BivariateSpline - a more recent wrapper of the FITPACK routines
+    bisplrep, bisplev : spline interpolation based on FITPACK
+    BivariateSpline : a more recent wrapper of the FITPACK routines
+
     """
 
     def __init__(self, x, y, z, kind='linear', copy=True, bounds_error=False,
-        fill_value=np.nan):
-        self.x, self.y, self.z = map(ravel, map(array, [x, y, z]))
-        if not map(rank, [self.x, self.y, self.z]) == [1,1,1]:
-            raise ValueError("One of the input arrays is not 1-d.")
-        if len(self.x) != len(self.y):
-            raise ValueError("x and y must have equal lengths")
+                 fill_value=np.nan):
+        self.x, self.y, self.z = map(ravel, map(asarray, [x, y, z]))
+        
         if len(self.z) == len(self.x) * len(self.y):
             self.x, self.y = meshgrid(x,y)
             self.x, self.y = map(ravel, [self.x, self.y])
+        if len(self.x) != len(self.y):
+            raise ValueError("x and y must have equal lengths")
         if len(self.z) != len(self.x):
             raise ValueError("Invalid length for input z")
 
@@ -116,21 +113,24 @@ class interp2d(object):
         self.tck = fitpack.bisplrep(self.x, self.y, self.z, kx=kx, ky=ky, s=0.)
 
     def __call__(self,x,y,dx=0,dy=0):
-        """ Interpolate the function.
+        """Interpolate the function.
 
         Parameters
         ----------
         x : 1D array
+            x-coordinates of the mesh on which to interpolate.
         y : 1D array
-            The points to interpolate.
+            y-coordinates of the mesh on which to interpolate.
         dx : int >= 0, < kx
+            Order of partial derivatives in x.
         dy : int >= 0, < ky
-            The order of partial derivatives in x and y, respectively.
+            Order of partial derivatives in y.
 
         Returns
         -------
         z : 2D array with shape (len(y), len(x))
             The interpolated values.
+        
         """
 
         x = atleast_1d(x)
