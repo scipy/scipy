@@ -5,15 +5,9 @@
  *
  * Copyright (C) 1997-2001 Todd Veldhuizen <tveldhui@oonumerics.org>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * This code was relicensed under the modified BSD license for use in SciPy
+ * by Todd Veldhuizen (see LICENSE.txt in the weave directory).
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
  *
  * Suggestions:          blitz-dev@oonumerics.org
  * Bugs:                 blitz-bugs@oonumerics.org
@@ -39,15 +33,9 @@ public:
 "/***************************************************************************\n"
 " * blitz/" << filename << "\t" << description << std::endl <<
 " *\n"
-" * This program is free software; you can redistribute it and/or\n"
-" * modify it under the terms of the GNU General Public License\n"
-" * as published by the Free Software Foundation; either version 2\n"
-" * of the License, or (at your option) any later version.\n"
+" * This code was relicensed under the modified BSD license for use in SciPy\n"
+" * by Todd Veldhuizen (see LICENSE.txt in the weave directory).\n"
 " *\n"
-" * This program is distributed in the hope that it will be useful,\n"
-" * but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
-" * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
-" * GNU General Public License for more details.\n"
 " *\n"
 " * Suggestions:          blitz-suggest@cybervision.com\n"
 " * Bugs:                 blitz-bugs@cybervision.com\n"
