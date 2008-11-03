@@ -21,17 +21,6 @@
 #    test_sph_jn
 #    test_sph_kn
 
-#With Py2.3:
-#!   test_sh_chebyt
-#!   test_pbdv_seq
-#F   test_sph_kn
-#F   test_sph_jn
-#F   test_sph_in
-#F   test_sph_jn
-#8   test_sh_chebyu
-#8   test_sh_jacobi
-#8   test_sh_legendre
-
 from numpy import array
 
 from numpy.testing import *

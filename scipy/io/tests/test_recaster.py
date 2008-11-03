@@ -3,11 +3,6 @@ from numpy.testing import *
 
 from scipy.io.recaster import sctype_attributes, Recaster, RecastError
 
-try:  # Python 2.3 support
-    from sets import Set as set
-except:
-    pass
-
 class TestRecaster(TestCase):
 
     def test_init(self):
