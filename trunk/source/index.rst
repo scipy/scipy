@@ -23,6 +23,7 @@ science, and engineering.
    signal
    sparse
    sparse.linalg
+   spatial
    special
    stats
    weave

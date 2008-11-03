@@ -1,6 +1,6 @@
 =====================================================
-Distance computations (:mod:`scipy.cluster.distance`)
+Distance computations (:mod:`scipy.spatial.distance`)
 =====================================================
 
-.. automodule:: scipy.cluster.distance
+.. automodule:: scipy.spatial.distance
    :members:
