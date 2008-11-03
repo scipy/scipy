@@ -754,8 +754,11 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
     bx,by=kx*v+ky+1,ky*u+kx+1
     b1,b2=bx,bx+v-ky
     if bx>by: b1,b2=by,by+u-kx
-    lwrk1=u*v*(2+b1+b2)+2*(u+v+km*(m+ne)+ne-kx-ky)+b2+1
-    lwrk2=u*v*(b2+1)+b2
+    try:
+        lwrk1=int32(u*v*(2+b1+b2)+2*(u+v+km*(m+ne)+ne-kx-ky)+b2+1)
+        lwrk2=int32(u*v*(b2+1)+b2)
+    except OverflowError:
+        raise OverflowError("Too many data points to interpolate")
     tx,ty,c,o = _fitpack._surfit(x,y,z,w,xb,xe,yb,ye,kx,ky,task,s,eps,
                                    tx,ty,nxest,nyest,wrk,lwrk1,lwrk2)
     _curfit_cache['tx']=tx
