@@ -143,7 +143,7 @@ c     slapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
 c     cgemv   Level 2 BLAS routine for matrix vector multiplication.
 c     caxpy   Level 1 BLAS that computes a vector triad.
 c     ccopy   Level 1 BLAS that copies one vector to another .
-c     cdotc   Level 1 BLAS that computes the scalar product of two vectors. 
+c     wcdotc   Level 1 BLAS that computes the scalar product of two vectors. 
 c     cscal   Level 1 BLAS that scales a vector.
 c     csscal  Level 1 BLAS that scales a complex vector by a real number. 
 c     scnrm2  Level 1 BLAS that computes the norm of a vector.
@@ -280,10 +280,10 @@ c     | External Functions |
 c     %--------------------%
 c
       Complex
-     &           cdotc 
+     &           wcdotc 
       Real            
      &           slamch,  scnrm2, clanhs, slapy2
-      external   cdotc, scnrm2, clanhs, slamch, slapy2
+      external   wcdotc, scnrm2, clanhs, slamch, slapy2
 c
 c     %---------------------%
 c     | Intrinsic Functions |
@@ -550,7 +550,7 @@ c        | Compute the B-norm of OP*v_{j}.     |
 c        %-------------------------------------%
 c
          if (bmat .eq. 'G') then  
-             cnorm = cdotc (n, resid, 1, workd(ipj), 1)
+             cnorm = wcdotc (n, resid, 1, workd(ipj), 1)
              wnorm = sqrt( slapy2(real(cnorm),aimag(cnorm)) )
          else if (bmat .eq. 'I') then
              wnorm = scnrm2(n, resid, 1)
@@ -622,7 +622,7 @@ c        | Compute the B-norm of r_{j}. |
 c        %------------------------------%
 c
          if (bmat .eq. 'G') then         
-            cnorm = cdotc (n, resid, 1, workd(ipj), 1)
+            cnorm = wcdotc (n, resid, 1, workd(ipj), 1)
             rnorm = sqrt( slapy2(real(cnorm),aimag(cnorm)) )
          else if (bmat .eq. 'I') then
             rnorm = scnrm2(n, resid, 1)
@@ -722,7 +722,7 @@ c        | Compute the B-norm of the corrected residual r_{j}. |
 c        %-----------------------------------------------------%
 c 
          if (bmat .eq. 'G') then         
-             cnorm  = cdotc (n, resid, 1, workd(ipj), 1)
+             cnorm  = wcdotc (n, resid, 1, workd(ipj), 1)
              rnorm1 = sqrt( slapy2(real(cnorm),aimag(cnorm)) )
          else if (bmat .eq. 'I') then
              rnorm1 = scnrm2(n, resid, 1)

@@ -94,7 +94,7 @@ c     cvout   ARPACK utility routine that prints vectors.
 c     clarnv  LAPACK routine for generating a random vector. 
 c     cgemv   Level 2 BLAS routine for matrix vector multiplication.
 c     ccopy   Level 1 BLAS that copies one vector to another.
-c     cdotc   Level 1 BLAS that computes the scalar product of two vectors.
+c     wcdotc   Level 1 BLAS that computes the scalar product of two vectors.
 c     scnrm2  Level 1 BLAS that computes the norm of a vector. 
 c
 c\Author
@@ -177,8 +177,8 @@ c
       Real 
      &           scnrm2, slapy2
       Complex
-     &           cdotc
-      external   cdotc, scnrm2, slapy2
+     &           wcdotc
+      external   wcdotc, scnrm2, slapy2
 c
 c     %-----------------%
 c     | Data Statements |
@@ -291,7 +291,7 @@ c
 c 
       first = .FALSE.
       if (bmat .eq. 'G') then
-          cnorm  = cdotc (n, resid, 1, workd, 1)
+          cnorm  = wcdotc (n, resid, 1, workd, 1)
           rnorm0 = sqrt(slapy2(real(cnorm),aimag(cnorm)))
       else if (bmat .eq. 'I') then
            rnorm0 = scnrm2(n, resid, 1)
@@ -348,7 +348,7 @@ c
       end if
 c 
       if (bmat .eq. 'G') then
-         cnorm = cdotc (n, resid, 1, workd, 1)
+         cnorm = wcdotc (n, resid, 1, workd, 1)
          rnorm = sqrt(slapy2(real(cnorm),aimag(cnorm)))
       else if (bmat .eq. 'I') then
          rnorm = scnrm2(n, resid, 1)

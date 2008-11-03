@@ -94,7 +94,7 @@ c     zvout   ARPACK utility routine that prints vectors.
 c     zlarnv  LAPACK routine for generating a random vector. 
 c     zgemv   Level 2 BLAS routine for matrix vector multiplication.
 c     zcopy   Level 1 BLAS that copies one vector to another.
-c     zdotc   Level 1 BLAS that computes the scalar product of two vectors.
+c     wzdotc   Level 1 BLAS that computes the scalar product of two vectors.
 c     dznrm2  Level 1 BLAS that computes the norm of a vector. 
 c
 c\Author
@@ -177,8 +177,8 @@ c
       Double precision 
      &           dznrm2, dlapy2
       Complex*16
-     &           zdotc
-      external   zdotc, dznrm2, dlapy2
+     &           wzdotc
+      external   wzdotc, dznrm2, dlapy2
 c
 c     %-----------------%
 c     | Data Statements |
@@ -291,7 +291,7 @@ c
 c 
       first = .FALSE.
       if (bmat .eq. 'G') then
-          cnorm  = zdotc (n, resid, 1, workd, 1)
+          cnorm  = wzdotc (n, resid, 1, workd, 1)
           rnorm0 = sqrt(dlapy2(dble(cnorm),dimag(cnorm)))
       else if (bmat .eq. 'I') then
            rnorm0 = dznrm2(n, resid, 1)
@@ -348,7 +348,7 @@ c
       end if
 c 
       if (bmat .eq. 'G') then
-         cnorm = zdotc (n, resid, 1, workd, 1)
+         cnorm = wzdotc (n, resid, 1, workd, 1)
          rnorm = sqrt(dlapy2(dble(cnorm),dimag(cnorm)))
       else if (bmat .eq. 'I') then
          rnorm = dznrm2(n, resid, 1)

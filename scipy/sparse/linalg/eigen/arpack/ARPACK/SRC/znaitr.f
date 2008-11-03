@@ -143,7 +143,7 @@ c     dlapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
 c     zgemv   Level 2 BLAS routine for matrix vector multiplication.
 c     zaxpy   Level 1 BLAS that computes a vector triad.
 c     zcopy   Level 1 BLAS that copies one vector to another .
-c     zdotc   Level 1 BLAS that computes the scalar product of two vectors. 
+c     wzdotc   Level 1 BLAS that computes the scalar product of two vectors. 
 c     zscal   Level 1 BLAS that scales a vector.
 c     zdscal  Level 1 BLAS that scales a complex vector by a real number. 
 c     dznrm2  Level 1 BLAS that computes the norm of a vector.
@@ -280,10 +280,10 @@ c     | External Functions |
 c     %--------------------%
 c
       Complex*16
-     &           zdotc 
+     &           wzdotc 
       Double precision            
      &           dlamch,  dznrm2, zlanhs, dlapy2
-      external   zdotc, dznrm2, zlanhs, dlamch, dlapy2
+      external   wzdotc, dznrm2, zlanhs, dlamch, dlapy2
 c
 c     %---------------------%
 c     | Intrinsic Functions |
@@ -550,7 +550,7 @@ c        | Compute the B-norm of OP*v_{j}.     |
 c        %-------------------------------------%
 c
          if (bmat .eq. 'G') then  
-             cnorm = zdotc (n, resid, 1, workd(ipj), 1)
+             cnorm = wzdotc (n, resid, 1, workd(ipj), 1)
              wnorm = sqrt( dlapy2(dble(cnorm),dimag(cnorm)) )
          else if (bmat .eq. 'I') then
              wnorm = dznrm2(n, resid, 1)
@@ -622,7 +622,7 @@ c        | Compute the B-norm of r_{j}. |
 c        %------------------------------%
 c
          if (bmat .eq. 'G') then         
-            cnorm = zdotc (n, resid, 1, workd(ipj), 1)
+            cnorm = wzdotc (n, resid, 1, workd(ipj), 1)
             rnorm = sqrt( dlapy2(dble(cnorm),dimag(cnorm)) )
          else if (bmat .eq. 'I') then
             rnorm = dznrm2(n, resid, 1)
@@ -722,7 +722,7 @@ c        | Compute the B-norm of the corrected residual r_{j}. |
 c        %-----------------------------------------------------%
 c 
          if (bmat .eq. 'G') then         
-             cnorm  = zdotc (n, resid, 1, workd(ipj), 1)
+             cnorm  = wzdotc (n, resid, 1, workd(ipj), 1)
              rnorm1 = sqrt( dlapy2(dble(cnorm),dimag(cnorm)) )
          else if (bmat .eq. 'I') then
              rnorm1 = dznrm2(n, resid, 1)
