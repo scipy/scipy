@@ -66,7 +66,6 @@
 #include <math.h>
 
 #include "hierarchy.h"
-#include "../../spatial/src/distance.h"
 
 static inline double euclidean_distance(const double *u, const double *v, int n) {
   int i = 0;
