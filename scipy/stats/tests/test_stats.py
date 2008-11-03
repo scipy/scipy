@@ -902,5 +902,12 @@ class TestStudentTest(TestCase):
         assert_array_almost_equal(t, self.T1_2)
         assert_array_almost_equal(p, self.P1_2)
 
+def test_scoreatpercentile():
+        assert_equal(stats.scoreatpercentile(range(10),50),4.5)
+        assert_equal(stats.scoreatpercentile(range(10),50,(2,7)),4.5)
+        assert_equal(stats.scoreatpercentile(range(100),50,(1,8)),4.5)
+        assert_equal(stats.scoreatpercentile(np.array([1, 10 ,100]),50,(10,100)), 55)
+        assert_equal(stats.scoreatpercentile(np.array([1, 10 ,100]),50,(1,10)), 5.5)
+
 if __name__ == "__main__":
     run_module_suite()

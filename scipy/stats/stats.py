@@ -1005,7 +1005,7 @@ def scoreatpercentile(a, per, limit=()):
     # behaviour at, for example, discontinuities.
     values = np.sort(a,axis=0)
     if limit:
-        values = values[(limit[0] < a) & (a < limit[1])]
+        values = values[(limit[0] <= values) & (values <= limit[1])]
 
     idx = per /100. * (values.shape[0] - 1)
     if (idx % 1 == 0):
