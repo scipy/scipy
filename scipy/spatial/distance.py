@@ -183,9 +183,9 @@ def minkowski(u, v, p):
 
     :Parameters:
        u : ndarray
-           An :math:`n`-dimensional vector.
+           An n-dimensional vector.
        v : ndarray
-           An :math:`n`-dimensional vector.
+           An n-dimensional vector.
        p : ndarray
            The norm of the difference :math:`${||u-v||}_p$`.
 
@@ -1565,10 +1565,9 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
     A rectangular distance matrix ``Y`` is returned. For each :math:`$i$`
     and :math:`$j$`, the metric ``dist(u=XA[i], v=XB[j])`` is computed
-    and stored in the :math:`$ij$`th entry.
+    and stored in the :math:`$ij$` th entry.
 
-    Calling Conventions
-    -------------------
+    The following are common calling conventions:
 
     1. ``Y = cdist(X, 'euclidean')``
 
