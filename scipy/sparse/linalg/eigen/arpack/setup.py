@@ -36,10 +36,10 @@ def configuration(parent_package='',top_path=None):
     arpack_sources.extend([join('ARPACK','LAPACK', '*.f')])
 
     if needs_veclib_wrapper(lapack_opt):
-        arpack_sources += [pjoin('ARPACK', 'FWRAPPERS', 'veclib_cabi_f.f'),
-                           pjoin('ARPACK', 'FWRAPPERS', 'veclib_cabi_c.c')]
+        arpack_sources += [join('ARPACK', 'FWRAPPERS', 'veclib_cabi_f.f'),
+                           join('ARPACK', 'FWRAPPERS', 'veclib_cabi_c.c')]
     else:
-        arpack_sources += [pjoin('ARPACK', 'FWRAPPERS', 'dummy.f')]
+        arpack_sources += [join('ARPACK', 'FWRAPPERS', 'dummy.f')]
 
     config.add_library('arpack', sources=arpack_sources,
                        include_dirs=[join('ARPACK', 'SRC')])
