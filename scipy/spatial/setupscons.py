@@ -14,7 +14,7 @@ def configuration(parent_package = '', top_path = None):
 if __name__ == '__main__':
     from numpy.distutils.core import setup
     setup(maintainer = "SciPy Developers",
-          author = "Anen Archibald",
+          author = "Anne Archibald",
           maintainer_email = "scipy-dev@scipy.org",
           description = "Spatial algorithms and data structures",
           url = "http://www.scipy.org",
