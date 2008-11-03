@@ -134,21 +134,36 @@ def gausspulse(t,fc=1000,bw=0.5,bwr=-6,tpr=-60,retquad=0,retenv=0):
     if retquad and retenv:
         return yI, yQ, yenv
 
-def chirp(t,f0=0,t1=1,f1=100,method='linear',phi=0,qshape=None):
+def chirp(t, f0=0, t1=1, f1=100, method='linear', phi=0, qshape=None):
     """Frequency-swept cosine generator.
 
-    Inputs:
+    Parameters
+    ----------
+    t : ndarray
+        Times at which to evaluate the waveform.
+    f0 : float or ndarray, optional
+        Frequency (in Hz) of the waveform at time 0.  If `f0` is an
+        ndarray, it specifies the frequency change as a polynomial in
+        `t` (see Notes below).
+    t1 : float, optional
+        Time at which `f1` is specified.
+    f1 : float, optional
+        Frequency (in Hz) of the waveform at time `t1`.
+    method : {'linear', 'quadratic', 'logarithmic'}, optional
+        Kind of frequency sweep.
+    phi : float
+        Phase offset, in degrees.
+    qshape : {'convex', 'concave'}
+        If method is 'quadratic', `qshape` specifies its shape.
 
-        t          --  array to evaluate waveform at
-        f0, f1, t1 --  frequency (in Hz) of waveform is f0 at t=0 and f1 at t=t1
-            Alternatively, if f0 is an array, then it forms the coefficients of
-            a polynomial (c.f. numpy.polval()) in t. The values in f1, t1,
-            method, and qshape are ignored.
-        method     --  linear, quadratic, or logarithmic frequency sweep
-        phi        --  optional phase in degrees
-        qshape     --  shape parameter for quadratic curve: concave or convex
+    Notes
+    -----
+    If `f0` is an array, it forms the coefficients of a polynomial in
+    `t` (see `numpy.polval`). The polynomial determines the waveform
+    frequency change in time.  In this case, the values of `f1`, `t1`,
+    `method`, and `qshape` are ignored.
+
     """
-
     # Convert to radians.
     phi *= pi / 180
     if size(f0) > 1:
