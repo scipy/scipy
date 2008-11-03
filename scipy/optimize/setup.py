@@ -10,7 +10,8 @@ def configuration(parent_package='',top_path=None):
     config.add_library('minpack',sources=[join('minpack','*f')])
     config.add_extension('_minpack',
                          sources=['_minpackmodule.c'],
-                         libraries=['minpack'])
+                         libraries=['minpack'],
+                         depends=["minpack.h","__minpack.h"])
 
     config.add_library('rootfind',
                        sources=[join('Zeros','*.c')],
@@ -28,7 +29,8 @@ def configuration(parent_package='',top_path=None):
 
     sources=['moduleTNC.c','tnc.c']
     config.add_extension('moduleTNC',
-                         sources=[join('tnc',x) for x in sources])
+                         sources=[join('tnc',x) for x in sources],
+                         depends=[join('tnc','tnc.h')])
 
     config.add_extension('_cobyla',
                          sources=[join('cobyla',x) for x in ['cobyla.pyf',

@@ -216,14 +216,15 @@ static PyObject *minpack_hybrd(PyObject *dummy, PyObject *args) {
   PyObject *fcn, *x0, *extra_args = NULL, *o_diag = NULL;
   int      full_output = 0, maxfev = -10, ml = -10, mu = -10;
   double   xtol = 1.49012e-8, epsfcn = 0.0, factor = 1.0e2;
-  int      n, mode = 2, nprint = 0, info, nfev, ldfjac, lr;
+  int      mode = 2, nprint = 0, info, nfev, ldfjac;
+  npy_intp n,lr;
   double   *x, *fvec, *diag, *fjac, *r, *qtf;
 
   PyArrayObject *ap_x = NULL, *ap_fvec = NULL;
   PyArrayObject *ap_fjac = NULL, *ap_r = NULL, *ap_qtf = NULL;
   PyArrayObject *ap_diag = NULL;
 
-  int      dims[2];
+  npy_intp dims[2];
   int      allocated = 0;
   double   *wa = NULL;
 
@@ -256,9 +257,9 @@ static PyObject *minpack_hybrd(PyObject *dummy, PyObject *args) {
   SET_DIAG(ap_diag,o_diag,mode);
 
   dims[0] = n; dims[1] = n;
-  ap_r = (PyArrayObject *)PyArray_FromDims(1,&lr,PyArray_DOUBLE);
-  ap_qtf = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_DOUBLE);
-  ap_fjac = (PyArrayObject *)PyArray_FromDims(2,dims,PyArray_DOUBLE);
+  ap_r = (PyArrayObject *)PyArray_SimpleNew(1,&lr,PyArray_DOUBLE);
+  ap_qtf = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_DOUBLE);
+  ap_fjac = (PyArrayObject *)PyArray_SimpleNew(2,dims,PyArray_DOUBLE);
 
   if (ap_r == NULL || ap_qtf == NULL || ap_fjac ==NULL) goto fail;
 
@@ -316,14 +317,15 @@ static PyObject *minpack_hybrj(PyObject *dummy, PyObject *args) {
   PyObject *fcn, *Dfun, *x0, *extra_args = NULL, *o_diag = NULL;
   int      full_output = 0, maxfev = -10, col_deriv = 1;
   double   xtol = 1.49012e-8, factor = 1.0e2;
-  int      n, mode = 2, nprint = 0, info, nfev, njev, ldfjac, lr;
+  int      mode = 2, nprint = 0, info, nfev, njev, ldfjac;
+  npy_intp n, lr;
   double   *x, *fvec, *diag, *fjac, *r, *qtf;
 
   PyArrayObject *ap_x = NULL, *ap_fvec = NULL;
   PyArrayObject *ap_fjac = NULL, *ap_r = NULL, *ap_qtf = NULL;
   PyArrayObject *ap_diag = NULL;
 
-  int      dims[2];
+  npy_intp dims[2];
   int      allocated = 0;
   double   *wa = NULL;
 
@@ -354,9 +356,9 @@ static PyObject *minpack_hybrj(PyObject *dummy, PyObject *args) {
   SET_DIAG(ap_diag,o_diag,mode);
 
   dims[0] = n; dims[1] = n;
-  ap_r = (PyArrayObject *)PyArray_FromDims(1,&lr,PyArray_DOUBLE);
-  ap_qtf = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_DOUBLE);
-  ap_fjac = (PyArrayObject *)PyArray_FromDims(2,dims,PyArray_DOUBLE);
+  ap_r = (PyArrayObject *)PyArray_SimpleNew(1,&lr,PyArray_DOUBLE);
+  ap_qtf = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_DOUBLE);
+  ap_fjac = (PyArrayObject *)PyArray_SimpleNew(2,dims,PyArray_DOUBLE);
 
   if (ap_r == NULL || ap_qtf == NULL || ap_fjac ==NULL) goto fail;
 
@@ -417,14 +419,15 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
   int      full_output = 0, maxfev = -10;
   double   xtol = 1.49012e-8, ftol = 1.49012e-8;
   double   gtol = 0.0, epsfcn = 0.0, factor = 1.0e2;
-  int      m, n, mode = 2, nprint = 0, info, nfev, ldfjac, *ipvt;
+  int      m, mode = 2, nprint = 0, info, nfev, ldfjac, *ipvt;
+  npy_intp n;
   double   *x, *fvec, *diag, *fjac, *qtf;
 
   PyArrayObject *ap_x = NULL, *ap_fvec = NULL;
   PyArrayObject *ap_fjac = NULL, *ap_ipvt = NULL, *ap_qtf = NULL;
   PyArrayObject *ap_diag = NULL;
 
-  int      dims[2];
+  npy_intp dims[2];
   int      allocated = 0;
   double   *wa = NULL;
 
@@ -452,9 +455,9 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
   m = (ap_fvec->nd > 0 ? ap_fvec->dimensions[0] : 1);
 
   dims[0] = n; dims[1] = m;
-  ap_ipvt = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_INT);
-  ap_qtf = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_DOUBLE);
-  ap_fjac = (PyArrayObject *)PyArray_FromDims(2,dims,PyArray_DOUBLE);
+  ap_ipvt = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_INT);
+  ap_qtf = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_DOUBLE);
+  ap_fjac = (PyArrayObject *)PyArray_SimpleNew(2,dims,PyArray_DOUBLE);
 
   if (ap_ipvt == NULL || ap_qtf == NULL || ap_fjac ==NULL) goto fail;
 
@@ -516,14 +519,15 @@ static PyObject *minpack_lmder(PyObject *dummy, PyObject *args) {
   int      full_output = 0, maxfev = -10, col_deriv = 1;
   double   xtol = 1.49012e-8, ftol = 1.49012e-8;
   double   gtol = 0.0, factor = 1.0e2;
-  int      m, n, mode = 2, nprint = 0, info, nfev, njev, ldfjac, *ipvt;
+  int      m, mode = 2, nprint = 0, info, nfev, njev, ldfjac, *ipvt;
+  npy_intp n;
   double   *x, *fvec, *diag, *fjac, *qtf;
 
   PyArrayObject *ap_x = NULL, *ap_fvec = NULL;
   PyArrayObject *ap_fjac = NULL, *ap_ipvt = NULL, *ap_qtf = NULL;
   PyArrayObject *ap_diag = NULL;
 
-  int      dims[2];
+  npy_intp dims[2];
   int      allocated = 0;
   double   *wa = NULL;
 
@@ -551,9 +555,9 @@ static PyObject *minpack_lmder(PyObject *dummy, PyObject *args) {
   m = (ap_fvec->nd > 0 ? ap_fvec->dimensions[0] : 1);
 
   dims[0] = n; dims[1] = m;
-  ap_ipvt = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_INT);
-  ap_qtf = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_DOUBLE);
-  ap_fjac = (PyArrayObject *)PyArray_FromDims(2,dims,PyArray_DOUBLE);
+  ap_ipvt = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_INT);
+  ap_qtf = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_DOUBLE);
+  ap_fjac = (PyArrayObject *)PyArray_SimpleNew(2,dims,PyArray_DOUBLE);
 
   if (ap_ipvt == NULL || ap_qtf == NULL || ap_fjac ==NULL) goto fail;
 
