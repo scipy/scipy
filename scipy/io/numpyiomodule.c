@@ -101,7 +101,7 @@ static PyObject *
   }
   /* Make a 1-D NumPy array of type read_type with n elements */ 
 
-  if ((arr = (PyArrayObject *)PyArray_FromDims(1,(int*)&n,out_type)) == NULL)
+  if ((arr = (PyArrayObject *)PyArray_SimpleNew(1,(npy_intp*)&n,out_type)) == NULL)
     return NULL;
 
   if (arr->descr->elsize == 0) {
@@ -423,7 +423,7 @@ static PyObject *
 
   out_size = (PyArray_SIZE(arr)/els_per_slice)*ceil ( (float) els_per_slice / 8);
 
-  if ((out = (PyArrayObject *)PyArray_FromDims(1,&out_size,PyArray_UBYTE))==NULL) {
+  if ((out = (PyArrayObject *)PyArray_SimpleNew(1,&out_size,PyArray_UBYTE))==NULL) {
       goto fail;
   }
   
@@ -469,7 +469,7 @@ static PyObject *
 
   out_size = els_per_slice * arrsize / ceil( (float) els_per_slice / 8);
 
-  if ((out = (PyArrayObject *)PyArray_FromDims(1,&out_size,out_type))==NULL)
+  if ((out = (PyArrayObject *)PyArray_SimpleNew(1,&out_size,out_type))==NULL)
       goto fail;
 
   if (out->descr->type_num > PyArray_LONG) {
