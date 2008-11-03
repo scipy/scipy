@@ -1,4 +1,4 @@
-# Last Change: Thu Jun 12 07:00 PM 2008 J
+# Last Change: Mon Nov 03 07:00 PM 2008 J
 # vim:syntax=python
 from os.path import join as pjoin, basename as pbasename
 import sys
@@ -30,16 +30,16 @@ def build_lib(name, ext, libname = None):
     env.DistutilsStaticExtLibrary(libname, source = src)
 
 # C libraries
-build_lib('c_misc', '.c')
-build_lib('cephes', '.c')
+build_lib('c_misc', '.c', 'sc_c_misc')
+build_lib('cephes', '.c', 'sc_cephes')
 
 # F libraries
 # XXX: handle no opt flags for mach
-build_lib('mach', '.f')
-build_lib('toms', '.f')
-build_lib('amos', '.f')
-build_lib('cdflib', '.f', 'cdf')
-build_lib('specfun', '.f', 'specfunlib')
+build_lib('mach', '.f', 'sc_mach')
+build_lib('toms', '.f', 'sc_toms')
+build_lib('amos', '.f', 'sc_amos')
+build_lib('cdflib', '.f', 'sc_cdf')
+build_lib('specfun', '.f', 'sc_specfunlib')
 
 env.AppendUnique(LIBPATH = ['.'])
 
@@ -49,10 +49,10 @@ src = ['_cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c', \
 
 env.NumpyPythonExtension('_cephes', 
                          source = src, 
-                         LIBS = ['amos', 'toms', 'c_misc', 'cephes', 'mach',\
-                                 'cdf', 'specfunlib']) 
+                         LIBS = ['sc_amos', 'sc_toms', 'sc_c_misc', 'sc_cephes', 'sc_mach',\
+                                 'sc_cdf', 'sc_specfunlib']) 
 
 # Specfun extension
-env.Prepend(LIBS = ['specfunlib'])
+env.Prepend(LIBS = ['sc_specfunlib'])
 env.NumpyPythonExtension('specfun', source = 'specfun.pyf',
                          F2PYOPTIONS = ["--no-wrap-functions"])
