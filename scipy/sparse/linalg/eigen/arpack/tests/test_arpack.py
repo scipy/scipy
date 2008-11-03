@@ -10,6 +10,11 @@ from numpy.testing import *
 from numpy import array, finfo, argsort, dot, round, conj, random
 from scipy.sparse.linalg.eigen.arpack import eigen_symmetric, eigen
 
+# Include platform only for skipping test of complex arpack routines
+# in OSX Accelerate Framework.  Once these tests are fixed, this
+# import should be removed.
+from sys import platform
+darwin_skip_msg='Complex number bug with Accelerate Framework, see ticket #725.'
 
 def assert_almost_equal_cc(actual,desired,decimal=7,err_msg='',verbose=True):
     # almost equal or complex conjugates almost equal
@@ -147,7 +152,7 @@ class TestEigenComplexSymmetric(TestArpack):
                                       eval[i]*evec[:,i],
                                       decimal=_ndigits[typ])
 
-
+    @dec.skipif(platform=='darwin', darwin_skip_msg)
     def test_complex_symmetric_modes(self):
         k=2
         for typ in 'FD':
@@ -259,6 +264,7 @@ class TestEigenComplexNonSymmetric(TestArpack):
                                       decimal=_ndigits[typ])
 
 
+    @dec.skipif(platform=='darwin', darwin_skip_msg)
     def test_complex_nonsymmetric_modes(self):
         k=2
         for typ in 'FD':
