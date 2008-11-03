@@ -83,7 +83,7 @@ the result tuple when the full_output argument is non-zero.
 
 #define SET_DIAG(ap_diag,o_diag,mode) { /* Set the diag vector from input */ \
   if (o_diag == NULL || o_diag == Py_None) { \
-    ap_diag = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_DOUBLE); \
+    ap_diag = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_DOUBLE); \
     if (ap_diag == NULL) goto fail; \
     diag = (double *)ap_diag -> data; \
     mode = 1; \
@@ -130,7 +130,7 @@ static PyArrayObject * my_make_numpy_array(PyObject *y0, int type, int mindim, i
   return new_array;
 }
 
-static PyObject *call_python_function(PyObject *func, int n, double *x, PyObject *args, int dim, PyObject *error_obj)
+static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyObject *args, int dim, PyObject *error_obj)
 {
   /*
     This is a generic function to call a python function that takes a 1-D
@@ -152,7 +152,7 @@ static PyObject *call_python_function(PyObject *func, int n, double *x, PyObject
   PyArrayObject *result_array = NULL;
 
   /* Build sequence argument from inputs */
-  sequence = (PyArrayObject *)PyArray_FromDimsAndData(1, &n, PyArray_DOUBLE, (char *)x);
+  sequence = (PyArrayObject *)PyArray_SimpleNewFromData(1, &n, PyArray_DOUBLE, (char *)x);
   if (sequence == NULL) PYERR2(error_obj,"Internal failure to make an array of doubles out of first\n                 argument to function call.");
 
   /* Build argument list */

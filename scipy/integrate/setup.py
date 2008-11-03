@@ -29,7 +29,8 @@ def configuration(parent_package='',top_path=None):
 
     config.add_extension('_quadpack',
                          sources=['_quadpackmodule.c'],
-                         libraries=['quadpack', 'linpack_lite', 'mach'])
+                         libraries=['quadpack', 'linpack_lite', 'mach'],
+                         depends=['quadpack.h','__quadpack.h'])
     # odepack
     libs = ['odepack','linpack_lite','mach']
 
@@ -44,6 +45,7 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_odepack',
                          sources=['_odepackmodule.c'],
                          libraries=libs,
+                         depends=['__odepack.h','multipack.h'],
                          **newblas)
 
     # vode

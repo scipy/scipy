@@ -120,11 +120,11 @@ int setup_extra_inputs(PyArrayObject **ap_rtol, PyObject *o_rtol, PyArrayObject 
 {
   int itol = 0;
   double tol=1.49012e-8;
-  int one = 1;
+  npy_intp one = 1;
 
   /* Setup tolerances */
   if (o_rtol == NULL) {
-    *ap_rtol = (PyArrayObject *)PyArray_FromDims(1,&one,PyArray_DOUBLE);
+    *ap_rtol = (PyArrayObject *)PyArray_SimpleNew(1, &one, PyArray_DOUBLE);
     if (*ap_rtol == NULL) PYERR2(odepack_error,"Error constructing relative tolerance.");
     *(double *)(*ap_rtol)->data = tol;                /* Default */
   }
@@ -139,7 +139,7 @@ int setup_extra_inputs(PyArrayObject **ap_rtol, PyObject *o_rtol, PyArrayObject 
   }
 
   if (o_atol == NULL) {
-    *ap_atol = (PyArrayObject *)PyArray_FromDims(1,&one,PyArray_DOUBLE);
+    *ap_atol = (PyArrayObject *)PyArray_SimpleNew(1,&one,PyArray_DOUBLE);
     if (*ap_atol == NULL) PYERR2(odepack_error,"Error constructing absolute tolerance");
     *(double *)(*ap_atol)->data = tol;
   }
@@ -211,8 +211,9 @@ static PyObject *odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdic
   PyArrayObject *ap_hu=NULL, *ap_tcur=NULL, *ap_tolsf=NULL, *ap_tsw=NULL;
   PyArrayObject *ap_nst=NULL, *ap_nfe=NULL, *ap_nje=NULL, *ap_nqu=NULL;
   PyArrayObject *ap_mused=NULL;
-  int      imxer=0, lenrw=0, leniw=0, out_sz=0, col_deriv = 0;
-  int      k, dims[2], ntimes, crit_ind=0;
+  int      imxer=0, lenrw=0, leniw=0, col_deriv = 0;
+  npy_intp out_sz=0,dims[2];
+  int      k, ntimes, crit_ind=0;
   int      allocated = 0, full_output = 0, numcrit=0;
   double   *yout, *yout_ptr, *tout_ptr, *tcrit;
   double   *wa;
@@ -258,7 +259,7 @@ static PyObject *odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdic
   t = tout[0];
 
   /* Setup array to hold the output evaluations*/
-  ap_yout= (PyArrayObject *)PyArray_FromDims(2,dims,PyArray_DOUBLE);
+  ap_yout= (PyArrayObject *)PyArray_SimpleNew(2,dims,PyArray_DOUBLE);
   if (ap_yout== NULL) goto fail;
   yout = (double *) ap_yout->data;
   /* Copy initial vector into first row of output */
@@ -296,15 +297,15 @@ static PyObject *odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdic
   /* If full output make some useful output arrays */
   if (full_output) {
     out_sz = ntimes-1;
-    ap_hu = (PyArrayObject *)PyArray_FromDims(1,&out_sz,PyArray_DOUBLE);
-    ap_tcur = (PyArrayObject *)PyArray_FromDims(1,&out_sz,PyArray_DOUBLE);
-    ap_tolsf = (PyArrayObject *)PyArray_FromDims(1,&out_sz,PyArray_DOUBLE);
-    ap_tsw = (PyArrayObject *)PyArray_FromDims(1,&out_sz,PyArray_DOUBLE);
-    ap_nst = (PyArrayObject *)PyArray_FromDims(1,&out_sz,PyArray_INT);
-    ap_nfe = (PyArrayObject *)PyArray_FromDims(1,&out_sz,PyArray_INT);
-    ap_nje = (PyArrayObject *)PyArray_FromDims(1,&out_sz,PyArray_INT);
-    ap_nqu = (PyArrayObject *)PyArray_FromDims(1,&out_sz,PyArray_INT);
-    ap_mused = (PyArrayObject *)PyArray_FromDims(1,&out_sz,PyArray_INT);
+    ap_hu = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,PyArray_DOUBLE);
+    ap_tcur = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,PyArray_DOUBLE);
+    ap_tolsf = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,PyArray_DOUBLE);
+    ap_tsw = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,PyArray_DOUBLE);
+    ap_nst = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,PyArray_INT);
+    ap_nfe = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,PyArray_INT);
+    ap_nje = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,PyArray_INT);
+    ap_nqu = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,PyArray_INT);
+    ap_mused = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,PyArray_INT);
     if (ap_hu == NULL || ap_tcur == NULL || ap_tolsf == NULL || ap_tsw == NULL || ap_nst == NULL || ap_nfe == NULL || ap_nje == NULL || ap_nqu == NULL || ap_mused == NULL) goto fail;
   }
 
