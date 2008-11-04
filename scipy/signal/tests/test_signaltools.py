@@ -3,9 +3,11 @@
 from numpy.testing import *
 
 import scipy.signal as signal
+from scipy.signal import lfilter
 
 
 from numpy import array, arange
+import numpy as np
 
 class TestConvolve(TestCase):
     def test_basic(self):
@@ -97,6 +99,22 @@ class TestChebWin:
 
         cheb_even = signal.chebwin(54, at=-40)
         assert_array_almost_equal(cheb_even, cheb_even_true, decimal=4)
+
+class TestLinearFilter(TestCase):
+    def test_rank1(self):
+        x = np.linspace(0, 5, 6)
+        b = np.array([1, -1])
+        a = np.array([0.5, -0.5])
+
+        # Test simple IIR
+        y_r = np.array([0, 2, 4, 6, 8, 10.])
+        assert_array_almost_equal(lfilter(b, a, x), y_r)
+
+        # Test simple FIR
+        b = np.array([1, 1])
+        a = np.array([1])
+        y_r = np.array([0, 1, 3, 5, 7, 9.])
+        assert_array_almost_equal(lfilter(b, a, x), y_r)
 
 if __name__ == "__main__":
     run_module_suite()
