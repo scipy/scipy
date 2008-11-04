@@ -1962,6 +1962,11 @@ static PyObject *sigtools_linear_filter(PyObject *dummy, PyObject *args) {
 
         /* fprintf(stderr, "Here.\n"); */
 
+        if (Vi != NULL) {
+                fprintf(stderr, "%s: Vs and Vf has %d and %d dims\n", __func__,
+                                arVi->nd, arVf->nd);
+
+        }
 	RawFilter(Vb, Va, x, y, vi, vf, basic_filter, thedim);
         /* fprintf(stderr, "Now, Here.\n");*/
 
@@ -2164,13 +2169,13 @@ static PyObject *sigtools_median2d(PyObject *dummy, PyObject *args)
 
 }
 
-
+#include "newsig.c"
 
 static struct PyMethodDef toolbox_module_methods[] = {
 	{"_correlateND", sigtools_correlateND, METH_VARARGS, doc_correlateND},
 	{"_convolve2d", sigtools_convolve2d, METH_VARARGS, doc_convolve2d},
 	{"_order_filterND", sigtools_order_filterND, METH_VARARGS, doc_order_filterND},
-	{"_linear_filter",sigtools_linear_filter, METH_VARARGS, doc_linear_filter},
+	{"_linear_filter",sigtools_linear_filter2, METH_VARARGS, doc_linear_filter},
 	{"_remez",sigtools_remez, METH_VARARGS, doc_remez},
 	{"_medfilt2d", sigtools_median2d, METH_VARARGS, doc_median2d},
 	{NULL,		NULL, 0}		/* sentinel */
