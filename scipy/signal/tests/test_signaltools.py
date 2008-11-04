@@ -168,8 +168,8 @@ class TestLinearFilter(TestCase):
         assert_array_almost_equal(zf, zf_r)
 
     # Disabled because it crashes lfilter for now
-    @dec.skipif(True, "Skipping lfilter test with initial condition along "\
-                      "axis 0: it segfaults ATM")
+    #@dec.skipif(True, "Skipping lfilter test with initial condition along "\
+    #                  "axis 0: it segfaults ATM")
     def test_rank2_init_cond_a0(self):
         # Test initial condition handling along axis 0
         shape = (4, 3)
@@ -179,13 +179,13 @@ class TestLinearFilter(TestCase):
         a = np.array([0.5, 0.5])
 
         y_r2_a0_0 = np.array([[1, 3, 5], [5, 3, 1], [1, 3, 5], [5 ,3 ,1]])
-        zf_r = np.array([-23, -23, -23])
+        zf_r = np.array([[-23, -23, -23]])
         y, zf = lfilter(b, a, x, axis = 0, zi = np.ones((1, 3)))
         assert_array_almost_equal(y_r2_a0_0, y)
         assert_array_almost_equal(zf, zf_r)
 
     # Disabled because it crashes lfilter for now
-    @dec.skipif(True, "Skipping rank > 2 test for lfilter because its segfaults ATM")
+    #@dec.skipif(True, "Skipping rank > 2 test for lfilter because its segfaults ATM")
     def test_rank3(self):
         shape = (4, 3, 2)
         x = np.linspace(0, np.prod(shape) - 1, np.prod(shape)).reshape(shape)
