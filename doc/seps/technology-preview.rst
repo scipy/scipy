@@ -27,6 +27,7 @@ scipy.preview
 =============
 
 The ``scipy.preview`` subpackage serves to main needs:
+
 #. A place to include code that breaks current APIs of code in ``scipy``
 #. A place to develop new packages, modules, classess, and functions
    that have got a stable API yet.
