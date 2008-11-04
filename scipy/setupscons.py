@@ -21,6 +21,7 @@ def configuration(parent_package='', top_path=None, setup_name='setupscons.py'):
     config.add_subpackage('optimize')
     config.add_subpackage('signal')
     config.add_subpackage('sparse')
+    config.add_subpackage('spatial')
     config.add_subpackage('special')
     config.add_subpackage('stats')
     config.add_subpackage('ndimage')
