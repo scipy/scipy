@@ -135,5 +135,21 @@ class TestLinearFilter(TestCase):
         assert_array_almost_equal(y, y_r)
         assert_array_almost_equal(zf, zf_r)
 
+    def test_rank2(self):
+        shape = (4, 3)
+        x = np.linspace(0, np.prod(shape) - 1, np.prod(shape)).reshape(shape)
+
+        b = np.array([1, -1])
+        a = np.array([0.5, 0.5])
+
+        y_r2_a0 = np.array([[0, 2, 4], [6, 4, 2], [0, 2, 4], [6 ,4 ,2]])
+        y_r2_a1 = np.array([[0, 2, 0], [6, -4, 6], [12, -10, 12],
+                            [18, -16, 18]])
+
+        y = lfilter(b, a, x, axis = 0)
+        assert_array_almost_equal(y_r2_a0, y)
+
+        y = lfilter(b, a, x, axis = 1)
+        assert_array_almost_equal(y_r2_a1, y)
 if __name__ == "__main__":
     run_module_suite()
