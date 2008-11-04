@@ -100,7 +100,6 @@ sigtools_linear_filter2(PyObject * dummy, PyObject * args)
 		}
 	}
 
-	//fprintf(stderr, "%s\n", __func__);
 	RawFilter2(arb, ara, arX, arVi, arVf, arY, theaxis, basic_filter);
 
 	Py_XDECREF(ara);
@@ -149,6 +148,12 @@ zfill(const PyArrayObject *x, intp nx, char* xzfilled, intp nxzfilled)
 
 /*
  * a and b assumed to be contiguous
+ *
+ * XXX: this code is very conservative, and could be considerably sped up for
+ * the usual cases (like contiguity).
+ *
+ * XXX: the code should be refactored (at least with/without initial
+ * condition), some code is wasteful here
  */
 static int
 RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
@@ -160,7 +165,7 @@ RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
 	intp nitx, i, nxl, nzfl, j;
 	intp na, nb, nal, nbl;
 	intp nfilt;
-	char *azfilled, *bzfilled, *zfzfilled;
+	char *azfilled, *bzfilled, *zfzfilled, *yoyo;
 
 	itx = (PyArrayIterObject *)PyArray_IterAllButAxis(
 		(PyObject *)x, &axis);
@@ -211,40 +216,21 @@ RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
         } else {
                 nzfl = 0;
         }
-#if 0
-        fprintf(stderr, "%s: a and b are %f and %f\n", __func__,
-((double*)azfilled)[0], ((double*)bzfilled)[0]);
-        fprintf(stderr, "%s: itx->size is %d\n", __func__, nitx);
-#endif
+
+        /* Iterate over the input array */
         for(i = 0; i < nitx; ++i) {
                 if (zi != NULL) {
-                        char* yoyo;
                         yoyo = itzi->dataptr;
                         /* Copy initial conditions zi in zfzfilled buffer */
                         for(j = 0; j < nfilt - 1; ++j) {
                                 memcpy(zfzfilled + j * nzfl, yoyo, nzfl);
-#if 0
-                                fprintf(stderr, "%s: Copying %f into zf: is %f\n",
-                                                __func__, ((double*)yoyo)[0],
-                                        ((double*)zfzfilled)[j]);
-#endif
                                 yoyo += itzi->strides[axis];
                         }
                         PyArray_ITER_NEXT(itzi);
-#if 0
-                        fprintf(stderr, "%s: FAILS\n", __func__);
-                        return -1;
-#endif
                 } else {
                         zfill(x, 0, zfzfilled, nfilt-1);
                 }
 
-#if 0
-                fprintf(stderr, "item %d is %f, next is %d bytes away, "\
-                                "filter %d items\n",
-                        i, ((double*)itx->dataptr)[0], itx->strides[axis],
-                        PyArray_DIM(x, axis));
-#endif
                 filter_func(bzfilled, azfilled,
                             itx->dataptr, ity->dataptr, zfzfilled,
                             nfilt, PyArray_DIM(x, axis), itx->strides[axis],
@@ -254,20 +240,14 @@ RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
 
                 /* Copy tmp buffer fo final values back into zf output array */
                 if (zi != NULL) {
-                        char *yoyo = itzf->dataptr;
+                        yoyo = itzf->dataptr;
                         for(j = 0; j < nfilt - 1; ++j) {
                                 memcpy(yoyo, zfzfilled + j * nzfl, nzfl);
-#if 0
-                                fprintf(stderr, "%s: Copying %f into zf output: is %f\n",
-                                                __func__, ((double*)zfzfilled)[j],
-                                        ((double*)yoyo)[0]);
-#endif
                                 yoyo += itzf->strides[axis];
                         }
                         PyArray_ITER_NEXT(itzf);
                 }
 	}
-	/* fprintf(stderr, "Now, Here.\n"); */
 
 	if (zi != NULL) {
                 Py_DECREF(itzf);
