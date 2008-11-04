@@ -151,5 +151,21 @@ class TestLinearFilter(TestCase):
 
         y = lfilter(b, a, x, axis = 1)
         assert_array_almost_equal(y_r2_a1, y)
+
+        # Test initial condition handling
+        y_r2_a0_1 = np.array([[1, 1, 1], [7, -5, 7], [13, -11, 13],
+                              [19, -17, 19]])
+        zf_r = np.array([-5, -17, -29, -41])[:, np.newaxis]
+        y, zf = lfilter(b, a, x, axis = 1, zi = np.ones((4, 1)))
+        assert_array_almost_equal(y_r2_a0_1, y)
+        assert_array_almost_equal(zf, zf_r)
+
+        # XXX: disabled because it segfaults ATM
+        #y_r2_a0_0 = np.array([[1, 3, 5], [5, 3, 1], [1, 3, 5], [5 ,3 ,1]])
+        #zf_r = np.array([-23, -23, -23])
+        #y, zf = lfilter(b, a, x, axis = 0, zi = np.ones((1, 3)))
+        #assert_array_almost_equal(y_r2_a0_0, y)
+        #assert_array_almost_equal(zf, zf_r)
+
 if __name__ == "__main__":
     run_module_suite()
