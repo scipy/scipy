@@ -15,8 +15,8 @@ sigtools_linear_filter2(PyObject * dummy, PyObject * args)
 	PyObject *b, *a, *X, *Vi;
 	PyArrayObject *arY, *arb, *ara, *arX, *arVi, *arVf;
 	int axis, typenum, theaxis;
-	char *ara_ptr, input_flag = 0;
-	intp na, nb;
+	char *ara_ptr, input_flag = 0, *azero;
+	intp na, nb, nal;
 	BasicFilterFunction *basic_filter;
 
         axis = -1;
@@ -80,15 +80,16 @@ sigtools_linear_filter2(PyObject * dummy, PyObject * args)
 	}
 
 	/* Skip over leading zeros in vector representing denominator (a) */
-	// XXX: TODO
-#if 0
+	/* XXX: handle this correctly */
+	azero = PyArray_Zero(ara);
 	ara_ptr = ara->data;
-	while (memcmp(ara_ptr, Va.zero, Va.elsize) == 0) {
-		ara_ptr += Va.elsize;
-		Va.data = ara_ptr;
-		Va.numels--;
+        nal = PyArray_ITEMSIZE(ara);
+	if (memcmp(ara_ptr, azero, nal) == 0) {
+		PyErr_SetString(PyExc_ValueError,
+				"BUG: filter coefficient a[0] == 0 not supported yet");
+                goto fail;
 	}
-#endif
+	PyDataMem_FREE(azero);
 
 	na = PyArray_SIZE(ara);
 	nb = PyArray_SIZE(arb);
