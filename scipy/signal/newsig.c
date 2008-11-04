@@ -12,11 +12,10 @@ RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
 static PyObject *
 sigtools_linear_filter2(PyObject * dummy, PyObject * args)
 {
-	PyObject       *b = NULL, *a = NULL, *X = NULL, *Vi = NULL;
-	PyArrayObject  *arY = NULL, *arb = NULL, *ara = NULL, *arX = NULL,
-	               *arVi = NULL, *arVf = NULL;
-	int             axis = -1, typenum, theaxis;
-	char           *ara_ptr, input_flag = 0;
+	PyObject *b, *a, *X, *Vi;
+	PyArrayObject *arY, *arb, *ara, *arX, *arVi, *arVf;
+	int axis = -1, typenum, theaxis;
+	char *ara_ptr, input_flag = 0;
 	intp na, nb;
 	BasicFilterFunction *basic_filter;
 
@@ -31,12 +30,7 @@ sigtools_linear_filter2(PyObject * dummy, PyObject * args)
 		typenum = PyArray_ObjectType(Vi, typenum);
 	}
 
-	arY = NULL;
-	arVf = NULL;
-	ara = NULL;
-	arb = NULL;
-	arX = NULL;
-	arVi = NULL;
+	arY = arVf = arVi = NULL;
 	ara = (PyArrayObject *) PyArray_ContiguousFromObject(a, typenum, 1, 1);
 	arb = (PyArrayObject *) PyArray_ContiguousFromObject(b, typenum, 1, 1);
 	arX = (PyArrayObject *) PyArray_FromObject(X, typenum, 0, 0);
