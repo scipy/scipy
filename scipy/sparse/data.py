@@ -53,11 +53,11 @@ class _data_matrix(spmatrix):
     def astype(self, t):
         return self._with_data(self.data.astype(t))
 
-    def conj(self, copy=False):
-        return self._with_data(self.data.conj(),copy=copy)
+    def conj(self):
+        return self._with_data(self.data.conj())
 
     def copy(self):
-        return self._with_data(self.data.copy(),copy=True)
+        return self._with_data(self.data.copy(), copy=True)
 
 
     ###########################
@@ -66,3 +66,5 @@ class _data_matrix(spmatrix):
 
     def _mul_scalar(self, other):
         return self._with_data(self.data * other)
+
+

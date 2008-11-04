@@ -432,7 +432,7 @@ class spmatrix(object):
         return self.tocsr().conj()
 
     def conjugate(self):
-        return self.tocsr().conj()
+        return self.conj()
 
     # Renamed conjtranspose() -> getH() for compatibility with dense matrices
     def getH(self):
