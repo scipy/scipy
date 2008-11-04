@@ -116,5 +116,24 @@ class TestLinearFilter(TestCase):
         y_r = np.array([0, 1, 3, 5, 7, 9.])
         assert_array_almost_equal(lfilter(b, a, x), y_r)
 
+        # Test IIR with initial conditions
+        b = np.array([1, 1])
+        a = np.array([1])
+        zi = np.array([1])
+        y_r = np.array([1, 1, 3, 5, 7, 9.])
+        zf_r = np.array([5])
+        y, zf = lfilter(b, a, x, zi=zi)
+        assert_array_almost_equal(y, y_r)
+        assert_array_almost_equal(zf, zf_r)
+
+        b = np.array([1, 1, 1])
+        a = np.array([1])
+        zi = np.array([1, 1])
+        y_r = np.array([1, 2, 3, 6, 9, 12.])
+        zf_r = np.array([9, 5])
+        y, zf = lfilter(b, a, x, zi=zi)
+        assert_array_almost_equal(y, y_r)
+        assert_array_almost_equal(zf, zf_r)
+
 if __name__ == "__main__":
     run_module_suite()
