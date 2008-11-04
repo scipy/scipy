@@ -104,7 +104,8 @@ def gausspulse(t,fc=1000,bw=0.5,bwr=-6,tpr=-60,retquad=0,retenv=0):
     if bw <= 0:
         raise ValueError, "Fractional bandwidth (bw=%.2f) must be > 0." % bw
     if bwr >= 0:
-        raise ValueError, "Reference level for bandwidth must be < 0 dB" % bwr
+        raise ValueError, "Reference level for bandwidth (bwr=%.2f) must " \
+              "be < 0 dB" % bwr
 
     # exp(-a t^2) <->  sqrt(pi/a) exp(-pi^2/a * f^2)  = g(f)
 
