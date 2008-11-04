@@ -36,6 +36,7 @@ sigtools_linear_filter2(PyObject * dummy, PyObject * args)
 	ara = (PyArrayObject *) PyArray_ContiguousFromObject(a, typenum, 1, 1);
 	arb = (PyArrayObject *) PyArray_ContiguousFromObject(b, typenum, 1, 1);
 	arX = (PyArrayObject *) PyArray_FromObject(X, typenum, 0, 0);
+        /* XXX: fix failure handling here */
 	if (ara == NULL || arb == NULL || arX == NULL) {
 		goto fail;
 	}
@@ -155,7 +156,7 @@ RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
 	   const PyArrayObject *zf, PyArrayObject *y, int axis,
 	   BasicFilterFunction *filter_func)
 {
-	PyArrayIterObject *itx, *ity;
+	PyArrayIterObject *itx, *ity, *itzi, *itzf;
 	intp nitx, i, nxl;
 	intp na, nb, nal, nbl;
 	intp nfilt;
