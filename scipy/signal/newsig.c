@@ -100,7 +100,7 @@ sigtools_linear_filter2(PyObject * dummy, PyObject * args)
 		}
 	}
 
-	fprintf(stderr, "%s\n", __func__);
+	//fprintf(stderr, "%s\n", __func__);
 	RawFilter2(arb, ara, arX, arVi, arVf, arY, theaxis, basic_filter);
 
 	Py_XDECREF(ara);
@@ -157,7 +157,7 @@ RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
 	   BasicFilterFunction *filter_func)
 {
 	PyArrayIterObject *itx, *ity, *itzi, *itzf;
-	intp nitx, i, nxl;
+	intp nitx, i, nxl, nzfl, j;
 	intp na, nb, nal, nbl;
 	intp nfilt;
 	char *azfilled, *bzfilled, *zfzfilled;
@@ -175,6 +175,20 @@ RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
 		fprintf(stderr, "FAIL\n");
 	}
 
+        if (zi != NULL) {
+                itzi = (PyArrayIterObject *)PyArray_IterAllButAxis(
+                        (PyObject *)zi, &axis);
+                if (itzi == NULL) {
+                        fprintf(stderr, "FAIL\n");
+                }
+
+                itzf = (PyArrayIterObject *)PyArray_IterAllButAxis(
+                        (PyObject *)zf, &axis);
+                if (itzf == NULL) {
+                        fprintf(stderr, "FAIL\n");
+                }
+        }
+
 	na = PyArray_SIZE(a);
 	nal = PyArray_ITEMSIZE(a);
 	nb = PyArray_SIZE(b);
@@ -191,45 +205,74 @@ RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
 	zfill(a, na, azfilled, nfilt);
 	zfill(b, nb, bzfilled, nfilt);
 
-	if (zi != NULL) {
-		fprintf(stderr, "%s: FAILS\n", __func__);
-		return -1;
-	} else {
-		zfill(x, 0, zfzfilled, nfilt-1);
-	}
-
-
+        /* XXX: Check that zf and zi have same type ? */
+        if (zf != NULL) {
+                nzfl = PyArray_ITEMSIZE(zf);
+        } else {
+                nzfl = 0;
+        }
 #if 0
-	fprintf(stderr, "%s: a and b are %f and %f\n", __func__,
+        fprintf(stderr, "%s: a and b are %f and %f\n", __func__,
 ((double*)azfilled)[0], ((double*)bzfilled)[0]);
-	//fprintf(stderr, "%s: itx->size is %d\n", __func__, xsize);
+        fprintf(stderr, "%s: itx->size is %d\n", __func__, nitx);
 #endif
-	for(i = 0; i < nitx-1; ++i) {
+        for(i = 0; i < nitx; ++i) {
+                if (zi != NULL) {
+                        char* yoyo;
+                        yoyo = itzi->dataptr;
+                        /* Copy initial conditions zi in zfzfilled buffer */
+                        for(j = 0; j < nfilt - 1; ++j) {
+                                memcpy(zfzfilled + j * nzfl, yoyo, nzfl);
 #if 0
-		fprintf(stderr, "item %d is %f, next is %d bytes away, "\
-				"filter %d items\n",
-			i, ((double*)itx->dataptr)[0], itx->strides[axis],
-			PyArray_DIM(x, axis));
+                                fprintf(stderr, "%s: Copying %f into zf: is %f\n",
+                                                __func__, ((double*)yoyo)[0],
+                                        ((double*)zfzfilled)[j]);
 #endif
-		filter_func(bzfilled, azfilled,
-			    itx->dataptr, ity->dataptr, zfzfilled,
-			    nfilt, PyArray_DIM(x, axis), itx->strides[axis],
-			    ity->strides[axis]);
-		PyArray_ITER_NEXT(itx);
-		PyArray_ITER_NEXT(ity);
+                                yoyo += itzi->strides[axis];
+                        }
+                        PyArray_ITER_NEXT(itzi);
+#if 0
+                        fprintf(stderr, "%s: FAILS\n", __func__);
+                        return -1;
+#endif
+                } else {
+                        zfill(x, 0, zfzfilled, nfilt-1);
+                }
 
-		if (zi != NULL) {
-			fprintf(stderr, "%s: FAIL\n", __func__);
-			return -1;
-		} else {
-			/* XXX: inefficient because of the malloc in there */
-			zfill(x, 0, zfzfilled, nfilt-1);
-		}
+#if 0
+                fprintf(stderr, "item %d is %f, next is %d bytes away, "\
+                                "filter %d items\n",
+                        i, ((double*)itx->dataptr)[0], itx->strides[axis],
+                        PyArray_DIM(x, axis));
+#endif
+                filter_func(bzfilled, azfilled,
+                            itx->dataptr, ity->dataptr, zfzfilled,
+                            nfilt, PyArray_DIM(x, axis), itx->strides[axis],
+                            ity->strides[axis]);
+                PyArray_ITER_NEXT(itx);
+                PyArray_ITER_NEXT(ity);
 
+                /* Copy tmp buffer fo final values back into zf output array */
+                if (zi != NULL) {
+                        char *yoyo = itzf->dataptr;
+                        for(j = 0; j < nfilt - 1; ++j) {
+                                memcpy(yoyo, zfzfilled + j * nzfl, nzfl);
+#if 0
+                                fprintf(stderr, "%s: Copying %f into zf output: is %f\n",
+                                                __func__, ((double*)zfzfilled)[j],
+                                        ((double*)yoyo)[0]);
+#endif
+                                yoyo += itzf->strides[axis];
+                        }
+                        PyArray_ITER_NEXT(itzf);
+                }
 	}
-	//RawFilter(Vb, Va, x, y, vi, vf, basic_filter, theaxis);
 	/* fprintf(stderr, "Now, Here.\n"); */
 
+	if (zi != NULL) {
+                Py_DECREF(itzf);
+                Py_DECREF(itzi);
+        }
 	Py_DECREF(ity);
 	Py_DECREF(itx);
 
