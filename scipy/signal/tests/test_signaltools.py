@@ -167,5 +167,20 @@ class TestLinearFilter(TestCase):
         #assert_array_almost_equal(y_r2_a0_0, y)
         #assert_array_almost_equal(zf, zf_r)
 
+    # Disabled because it crashes lfilter for now
+    @dec.skipif(True, "Skipping rank > 2 test for lfilter because its segfaults ATM")
+    def test_rank3(self):
+        shape = (4, 3, 2)
+        x = np.linspace(0, np.prod(shape) - 1, np.prod(shape)).reshape(shape)
+
+        b = np.array([1, -1])
+        a = np.array([0.5, 0.5])
+
+        # Test last axis
+        y = lfilter(b, a, x)
+        for i in range(x.shape[0]):
+            for j in range(x.shape[1]):
+                assert_array_almost_equal(y[i, j], lfilter(b, a, x[i, j]))
+
 if __name__ == "__main__":
     run_module_suite()
