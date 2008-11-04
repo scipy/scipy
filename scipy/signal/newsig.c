@@ -14,11 +14,13 @@ sigtools_linear_filter2(PyObject * dummy, PyObject * args)
 {
 	PyObject *b, *a, *X, *Vi;
 	PyArrayObject *arY, *arb, *ara, *arX, *arVi, *arVf;
-	int axis = -1, typenum, theaxis;
+	int axis, typenum, theaxis;
 	char *ara_ptr, input_flag = 0;
 	intp na, nb;
 	BasicFilterFunction *basic_filter;
 
+        axis = -1;
+        Vi = NULL;
 	if (!PyArg_ParseTuple(args, "OOO|iO", &b, &a, &X, &axis, &Vi)) {
 		return NULL;
 	}
