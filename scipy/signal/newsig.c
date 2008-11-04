@@ -1,8 +1,8 @@
 #include <Python.h>
 
-static int 
+static int
 RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
-	   const PyArrayObject *x, const PyArrayObject *zi, 
+	   const PyArrayObject *x, const PyArrayObject *zi,
 	   const PyArrayObject *zf, PyArrayObject *y, int axis,
 	   BasicFilterFunction *filter_func);
 
@@ -63,15 +63,15 @@ sigtools_linear_filter2(PyObject * dummy, PyObject * args)
 		input_flag = (PyArray_Size((PyObject *) arVi) > 0);
 	}
 
-	arY = (PyArrayObject *) PyArray_SimpleNew(arX->nd, 
+	arY = (PyArrayObject *) PyArray_SimpleNew(arX->nd,
 						  arX->dimensions, typenum);
 	if (arY == NULL) {
 		goto fail;
 	}
 
 	if (input_flag) {
-		arVf = (PyArrayObject *) PyArray_SimpleNew(arVi->nd, 
-							   arVi->dimensions, 
+		arVf = (PyArrayObject *) PyArray_SimpleNew(arVi->nd,
+							   arVi->dimensions,
 						           typenum);
 	}
 
@@ -155,7 +155,7 @@ zfill(const PyArrayObject *x, intp nx, char* xzfilled, intp nxzfilled)
  */
 static int
 RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
-	   const PyArrayObject *x, const PyArrayObject *zi, 
+	   const PyArrayObject *x, const PyArrayObject *zi,
 	   const PyArrayObject *zf, PyArrayObject *y, int axis,
 	   BasicFilterFunction *filter_func)
 {
@@ -210,12 +210,12 @@ RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
 	for(i = 0; i < nitx-1; ++i) {
 #if 0
 		fprintf(stderr, "item %d is %f, next is %d bytes away, "\
-				"filter %d items\n", 
+				"filter %d items\n",
 			i, ((double*)itx->dataptr)[0], itx->strides[axis],
 			PyArray_DIM(x, axis));
 #endif
-		filter_func(bzfilled, azfilled, 
-			    itx->dataptr, ity->dataptr, zfzfilled, 
+		filter_func(bzfilled, azfilled,
+			    itx->dataptr, ity->dataptr, zfzfilled,
 			    nfilt, PyArray_DIM(x, axis), itx->strides[axis],
 			    ity->strides[axis]);
 		PyArray_ITER_NEXT(itx);
