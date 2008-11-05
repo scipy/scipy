@@ -1,9 +1,10 @@
 #! /usr/bin/env python
 
 # David Cournapeau
-# Last Change: Tue Jun 24 04:00 PM 2008 J
+# Last Change: Wed Nov 05 07:00 PM 2008 J
 
 import os.path
+import warnings
 
 import numpy as np
 from numpy.testing import *
@@ -98,7 +99,12 @@ class TestKMean(TestCase):
                          [-2.31149087,-0.05160469]])
 
         res = kmeans(data, initk)
-        res = kmeans2(data, initk, missing = 'warn')
+        warnings.simplefilter('ignore', UserWarning)
+        try:
+            res = kmeans2(data, initk, missing = 'warn')
+        finally:
+            warnings.simplefilter('default', UserWarning)
+
         try :
             res = kmeans2(data, initk, missing = 'raise')
             raise AssertionError("Exception not raised ! Should not happen")
