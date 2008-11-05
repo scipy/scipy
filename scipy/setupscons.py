@@ -8,6 +8,7 @@ def configuration(parent_package='', top_path=None, setup_name='setupscons.py'):
     config = Configuration(pkgname, parent_package, top_path,
                            setup_name = 'setupscons.py')
     config.add_subpackage('cluster')
+    config.add_subpackage('constants')
     config.add_subpackage('fftpack')
     config.add_subpackage('integrate')
     config.add_subpackage('interpolate')
