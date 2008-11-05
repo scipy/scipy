@@ -2,6 +2,7 @@
 # Created by John Travers, Robert Hetland, 2007
 """ Test functions for rbf module """
 
+import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_almost_equal
 from numpy import linspace, sin, random, exp, log10
 from scipy.interpolate.rbf import Rbf
@@ -58,7 +59,7 @@ def check_rbf1d_regularity(function, atol):
     #plt.plot(x, y, 'o', xi, sin(xi), ':', xi, yi, '-')
     #plt.title(function)
     #plt.show()
-    assert_array_almost_equal(yi, sin(xi), decimal=-log10(atol),
+    assert_array_almost_equal(yi, sin(xi), decimal=-np.int(log10(atol)) - 1,
                               err_msg="abs-diff: %f" % abs(yi - sin(xi)).max())
 
 def test_rbf_regularity():
