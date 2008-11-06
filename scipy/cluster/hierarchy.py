@@ -1440,8 +1440,13 @@ def lvlist(Z):
 try:
 
     import matplotlib
-    import matplotlib.pylab
-    import matplotlib.patches
+    try:
+        import matplotlib.pylab
+        import matplotlib.patches
+    except RuntimeError, e:
+        # importing matplotlib.pylab can fail with a RuntimeError if installed
+        # but the graphic engine cannot be initialized (for example without X)
+        raise ImportError("Could not import matplotib (error was %s)" % str(e))
     #import matplotlib.collections
     _mpl = True
 
