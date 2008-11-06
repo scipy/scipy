@@ -1,7 +1,9 @@
+import warnings
+
 import numpy as np
 from numpy.testing import TestCase, assert_array_almost_equal
 
-from scipy.signal import tf2zpk
+from scipy.signal import tf2zpk, bessel, BadCoefficients
 
 class TestTf2zpk(TestCase):
     def test_simple(self):
@@ -19,3 +21,18 @@ class TestTf2zpk(TestCase):
         p.sort()
         assert_array_almost_equal(z, z_r)
         assert_array_almost_equal(p, p_r)
+
+    def test_bad_filter(self):
+        """Regression test for #651: better handling of badly conditionned
+        filter coefficients."""
+        b, a = bessel(20, 0.1)
+        warnings.simplefilter("error", BadCoefficients)
+        try:
+            try:
+                z, p, k = tf2zpk(b, a)
+                raise AssertionError("tf2zpk did not warn about bad "\
+                                     "coefficients")
+            except BadCoefficients:
+                pass
+        finally:
+            warnings.simplefilter("always", BadCoefficients)
