@@ -45,16 +45,22 @@ def freqs(b,a,worN=None,plot=None):
 
     Parameters
     ----------
-       b, a --- the numerator and denominator of a linear filter.
-       worN --- If None, then compute at 200 frequencies around the interesting
-                parts of the response curve (determined by pole-zero locations).
-                If a single integer, the compute at that many frequencies.
-                Otherwise, compute the response at frequencies given in worN.
+    b : ndarray
+        numerator of a linear filter
+    a : ndarray
+        numerator of a linear filter
+    worN : {None, int}, optional
+        If None, then compute at 200 frequencies around the interesting parts
+        of the response curve (determined by pole-zero locations).  If a single
+        integer, the compute at that many frequencies.  Otherwise, compute the
+        response at frequencies given in worN.
+
     Returns
     -------
-
-       w -- The frequencies at which h was computed.
-       h -- The frequency response.
+    w : ndarray
+        The frequencies at which h was computed.
+    h : ndarray
+        The frequency response.
     """
     if worN is None:
         w = findfreqs(b,a,200)
@@ -84,19 +90,25 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
 
     Parameters
     ----------
-       b, a --- the numerator and denominator of a linear filter.
-       worN --- If None, then compute at 512 frequencies around the unit circle.
-                If a single integer, the compute at that many frequencies.
-                Otherwise, compute the response at frequencies given in worN
-       whole -- Normally, frequencies are computed from 0 to pi (upper-half of
-                unit-circle.  If whole is non-zero compute frequencies from 0
-                to 2*pi.
+    b : ndarray
+        numerator of a linear filter
+    a : ndarray
+        numerator of a linear filter
+    worN : {None, int}, optional
+        If None, then compute at 200 frequencies around the interesting parts
+        of the response curve (determined by pole-zero locations).  If a single
+        integer, the compute at that many frequencies.  Otherwise, compute the
+        response at frequencies given in worN.
+    whole : {0,1}, optional
+        Normally, frequencies are computed from 0 to pi (upper-half of
+        unit-circle.  If whole is non-zero compute frequencies from 0 to 2*pi.
 
     Returns
     -------
-       w -- The frequencies at which h was computed.
-       h -- The frequency response.
-
+    w : ndarray
+        The frequencies at which h was computed.
+    h : ndarray
+        The frequency response.
     """
     b, a = map(atleast_1d, (b,a))
     if whole:
@@ -122,6 +134,22 @@ def tf2zpk(b,a):
     """Return zero, pole, gain (z,p,k) representation from a numerator,
     denominator representation of a linear filter.
 
+    Parameters
+    ----------
+    b : ndarray
+        numerator polynomial.
+    a : ndarray
+        numerator and denominator polynomials.
+
+    Returns
+    -------
+    z : ndarray
+        zeros of the transfer function.
+    p : ndarray
+        poles of the transfer function.
+    k : float
+        system gain.
+
     If some values of b are too close to 0, they are removed. In that case, a
     BadCoefficients warning is emitted.
     """
@@ -140,15 +168,22 @@ def zpk2tf(z,p,k):
 
     Parameters
     ----------
-
-    z, p --- sequences representing the zeros and poles.
-    k --- system gain.
+    z : ndarray
+        zeros of the transfer function.
+    p : ndarray
+        poles of the transfer function.
+    k : float
+        system gain.
 
     Returns
     -------
+    b : ndarray
+        numerator polynomial.
+    a : ndarray
+        numerator and denominator polynomials.
 
-    b, a --- numerator and denominator polynomials.
-
+    Note
+    ----
     If some values of b are too close to 0, they are removed. In that case, a
     BadCoefficients warning is emitted.
     """
