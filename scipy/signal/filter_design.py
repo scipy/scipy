@@ -124,6 +124,9 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
 def tf2zpk(b,a):
     """Return zero, pole, gain (z,p,k) representation from a numerator,
     denominator representation of a linear filter.
+
+    If some values of b are too close to 0, they are removed. In that case, a
+    BadCoefficients warning is emitted.
     """
     b,a = normalize(b,a)
     b = (b+0.0) / a[0]
@@ -146,6 +149,9 @@ def zpk2tf(z,p,k):
     Outputs: (b,a)
 
       b, a --- numerator and denominator polynomials.
+
+    If some values of b are too close to 0, they are removed. In that case, a
+    BadCoefficients warning is emitted.
     """
     z = atleast_1d(z)
     k = atleast_1d(k)
@@ -163,6 +169,9 @@ def zpk2tf(z,p,k):
 
 def normalize(b,a):
     """Normalize polynomial representation of a transfer function.
+
+    If values of b are too close to 0, they are removed. In that case, a
+    BadCoefficients warning is emitted.
     """
     b,a = map(atleast_1d,(b,a))
     if len(a.shape) != 1:
