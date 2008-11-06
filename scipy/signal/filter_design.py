@@ -2,6 +2,7 @@
 """
 
 import types
+import warnings
 
 import numpy
 from numpy import atleast_1d, poly, polyval, roots, real, asarray, allclose, \
@@ -11,6 +12,8 @@ from numpy import mintypecode
 from scipy import special, optimize
 from scipy.misc import comb
 
+class BadCoefficients(UserWarning):
+    pass
 
 abs = absolute
 
@@ -170,8 +173,11 @@ def normalize(b,a):
         b = asarray([b],b.dtype.char)
     while a[0] == 0.0 and len(a) > 1:
         a = a[1:]
-    while allclose(b[:,0], 0, rtol=1e-14) and (b.shape[-1] > 1):
-        b = b[:,1:]
+    if allclose(b[:,0], 0, rtol=1e-14):
+        warnings.warn("Badly conditionned filter coefficients (numerator): the "
+                      "results may be meaningless", BadCoefficients)
+        while allclose(b[:,0], 0, rtol=1e-14) and (b.shape[-1] > 1):
+            b = b[:,1:]
     if b.shape[0] == 1:
         b = b[0]
     outb = b * (1.0) / a[0]
@@ -1543,3 +1549,5 @@ def firwin(N, cutoff, width=None, window='hamming'):
     m = numpy.arange(0,N)
     h = win*special.sinc(cutoff*(m-alpha))
     return h / numpy.sum(h,axis=0)
+
+warnings.simplefilter("always", BadCoefficients)
