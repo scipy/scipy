@@ -54,7 +54,7 @@ _ytdist = squareform(_tdist)
 eo = {}
 
 _filenames = ["iris.txt",
-              "fclusterdata-X.txt",
+              "Q-X.txt",
               "fclusterdata-maxclusts-2.txt",
               "fclusterdata-maxclusts-3.txt",
               "fclusterdata-maxclusts-4.txt",
@@ -167,7 +167,7 @@ class TestLinkage(TestCase):
     ################### linkage on Q
     def test_linkage_single_q(self):
         "Tests linkage(Y, 'single') on the Q data set."
-        X = eo['fclusterdata-X']
+        X = eo['Q-X']
         Z = single(X)
         Zmlab = eo['linkage-Q-single']
         eps = 1e-06
@@ -177,7 +177,7 @@ class TestLinkage(TestCase):
 
     def test_linkage_complete_q(self):
         "Tests linkage(Y, 'complete') on the Q data set."
-        X = eo['fclusterdata-X']
+        X = eo['Q-X']
         Z = complete(X)
         Zmlab = eo['linkage-Q-complete']
         eps = 1e-07
@@ -187,7 +187,7 @@ class TestLinkage(TestCase):
 
     def test_linkage_centroid_q(self):
         "Tests linkage(Y, 'centroid') on the Q data set."
-        X = eo['fclusterdata-X']
+        X = eo['Q-X']
         Z = centroid(X)
         Zmlab = eo['linkage-Q-centroid']
         eps = 1e-07
@@ -197,7 +197,7 @@ class TestLinkage(TestCase):
 
     def test_linkage_weighted_q(self):
         "Tests linkage(Y, 'weighted') on the Q data set."
-        X = eo['fclusterdata-X']
+        X = eo['Q-X']
         Z = weighted(X)
         Zmlab = eo['linkage-Q-weighted']
         eps = 1e-07
@@ -304,28 +304,28 @@ class TestFcluster(TestCase):
     def test_fclusterdata_maxclusts_2(self):
         "Tests fclusterdata(X, criterion='maxclust', t=2) on a random 3-cluster data set."
         expectedT = eo['fclusterdata-maxclusts-2']
-        X = eo['fclusterdata-X']
+        X = eo['Q-X']
         T = fclusterdata(X, criterion='maxclust', t=2)
         self.failUnless(is_isomorphic(T, expectedT))
 
     def test_fclusterdata_maxclusts_3(self):
         "Tests fclusterdata(X, criterion='maxclust', t=3) on a random 3-cluster data set."
         expectedT = eo['fclusterdata-maxclusts-3']
-        X = eo['fclusterdata-X']
+        X = eo['Q-X']
         T = fclusterdata(X, criterion='maxclust', t=3)
         self.failUnless(is_isomorphic(T, expectedT))
 
     def test_fclusterdata_maxclusts_4(self):
         "Tests fclusterdata(X, criterion='maxclust', t=4) on a random 3-cluster data set."
         expectedT = eo['fclusterdata-maxclusts-4']
-        X = eo['fclusterdata-X']
+        X = eo['Q-X']
         T = fclusterdata(X, criterion='maxclust', t=4)
         self.failUnless(is_isomorphic(T, expectedT))
 
     def test_fcluster_maxclusts_2(self):
         "Tests fcluster(Z, criterion='maxclust', t=2) on a random 3-cluster data set."
         expectedT = eo['fclusterdata-maxclusts-2']
-        X = eo['fclusterdata-X']
+        X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(Y)
         T = fcluster(Z, criterion='maxclust', t=2)
@@ -334,7 +334,7 @@ class TestFcluster(TestCase):
     def test_fcluster_maxclusts_3(self):
         "Tests fcluster(Z, criterion='maxclust', t=3) on a random 3-cluster data set."
         expectedT = eo['fclusterdata-maxclusts-3']
-        X = eo['fclusterdata-X']
+        X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(Y)
         T = fcluster(Z, criterion='maxclust', t=3)
@@ -343,7 +343,7 @@ class TestFcluster(TestCase):
     def test_fcluster_maxclusts_4(self):
         "Tests fcluster(Z, criterion='maxclust', t=4) on a random 3-cluster data set."
         expectedT = eo['fclusterdata-maxclusts-4']
-        X = eo['fclusterdata-X']
+        X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(Y)
         T = fcluster(Z, criterion='maxclust', t=4)
