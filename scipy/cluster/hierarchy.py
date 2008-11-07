@@ -1033,7 +1033,7 @@ def from_mlab_linkage(Z):
        - ZS : ndarray
            A linkage matrix compatible with this library.
     """
-    Z = np.asarray(Z, order='c')
+    Z = np.asarray(Z, dtype=np.double, order='c')
     Zs = Z.shape
 
     # If it's empty, return it.
@@ -1047,16 +1047,13 @@ def from_mlab_linkage(Z):
     if Zs[0] == 0:
         return Z.copy()
 
-    Zpart = Z[:,0:2]
-    Zd = Z[:,2].reshape(Zs[0], 1)
-    if Zpart.min() != 1.0 and Zpart.max() != 2 * Zs[0]:
+    Zpart = Z.copy()
+    if Zpart[:, 0:2].min() != 1.0 and Zpart[:, 0:2].max() != 2 * Zs[0]:
         raise ValueError('The format of the indices is not 1..N');
-    CS = np.zeros((Zs[0], 1), dtype=np.double)
-    Zpart = Zpart - 1
-    _hierarchy_wrap.calculate_cluster_sizes_wrap(np.hstack([Zpart, \
-                                                             Zd]).copy(), \
-                                               CS, int(Zs[0]) + 1)
-    return np.hstack([Zpart, Zd, CS]).copy()
+    Zpart[:, 0:2] -= 1.0
+    CS = np.zeros((Zs[0],), dtype=np.double)
+    _hierarchy_wrap.calculate_cluster_sizes_wrap(Zpart, CS, int(Zs[0]) + 1)
+    return np.hstack([Zpart, CS.reshape(Zs[0], 1)])
 
 def to_mlab_linkage(Z):
     """

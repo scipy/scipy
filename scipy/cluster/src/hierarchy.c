@@ -1067,7 +1067,7 @@ void inconsistency_calculation_alt(const double *Z, double *R, int n, int d) {
 }
 
 void calculate_cluster_sizes(const double *Z, double *CS, int n) {
-  int i, j, k;
+  int i, j, k, q;
   const double *row;
   for (k = 0; k < n - 1; k++) {
     row = Z + (k * 3);
@@ -1075,21 +1075,23 @@ void calculate_cluster_sizes(const double *Z, double *CS, int n) {
     j = (int)row[CPY_LIN_RIGHT];
     /** If the left node is a non-singleton, add its count. */
     if (i >= n) {
-      CS[k] = CS[i - n];
+      q = i - n;
+      CS[k] += CS[q];
     }
     /** Otherwise just add 1 for the leaf. */
     else {
-      CS[k] = 1.0;
+      CS[k] += 1.0;
     }
     /** If the right node is a non-singleton, add its count. */
     if (j >= n) {
-      CS[k] = CS[k] + CS[j - n];
+      q = j - n;
+      CS[k] += CS[q];
     }
     /** Otherwise just add 1 for the leaf. */
     else {
-      CS[k] = CS[k] + 1.0;
+      CS[k] += 1.0;
     }
-    /**    CPY_DEBUG_MSG("i=%d, j=%d, CS[%d]=%d\n", i, j, n+k, (int)CS[k]);**/
+    CPY_DEBUG_MSG("i=%d, j=%d, CS[%d]=%d\n", i, j, k, (int)CS[k]);
   }
 }
 

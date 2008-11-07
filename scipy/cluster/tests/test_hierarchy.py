@@ -202,6 +202,20 @@ class TestFromMLabLinkage(TestCase):
         ZP = from_mlab_linkage(Z)
         return self.failUnless((ZP == expectedZP).all())
 
+    def test_from_mlab_linkage_multiple_rows(self):
+        "Testing from_mlab_linkage on linkage array with multiple rows."
+        Z = np.asarray([[3, 6, 138], [4, 5, 219],
+                        [1, 8, 255], [2, 9, 268], [7, 10, 295]])
+        expectedZS = np.array([[   2.,    5.,  138.,    2.],
+                               [   3.,    4.,  219.,    2.],
+                               [   0.,    7.,  255.,    3.],
+                               [   1.,    8.,  268.,    4.],
+                               [   6.,    9.,  295.,    6.]],
+                              dtype=np.double)
+        ZS = from_mlab_linkage(Z)
+        print expectedZS, ZS
+        self.failUnless((expectedZS == ZS).all())
+
 def help_single_inconsistent_depth(self, i):
     Y = squareform(_tdist)
     Z = linkage(Y, 'single')

@@ -122,7 +122,7 @@ extern PyObject *calculate_cluster_sizes_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   calculate_cluster_sizes((const double*)Z->data, (double*)CS_->data, n);
-  return Py_BuildValue("d", 0.0);
+  return Py_BuildValue("");
 }
 
 extern PyObject *get_max_dist_for_each_cluster_wrap(PyObject *self,

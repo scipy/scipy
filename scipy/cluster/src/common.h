@@ -60,7 +60,6 @@
                             ((double)((x)/(y))) ? ((x)/(y)) : ((x)/(y) + 1))
 #endif
 
-
 #ifdef CPY_DEBUG
 #define CPY_DEBUG_MSG(...) fprintf(stderr, __VA_ARGS__)
 #else
