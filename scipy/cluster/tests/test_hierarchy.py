@@ -38,7 +38,7 @@ import os.path
 import numpy as np
 from numpy.testing import *
 
-from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage, numobs_linkage, inconsistent, cophenet, from_mlab_linkage, fclusterdata, is_isomorphic
+from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage, numobs_linkage, inconsistent, cophenet, from_mlab_linkage, fclusterdata, fcluster, is_isomorphic
 from scipy.spatial.distance import squareform, pdist, numobs_dm, numobs_y
 
 _tdist = np.array([[0,    662,  877,  255,  412,  996],
@@ -253,24 +253,51 @@ class TestToMLabLinkage(TestCase):
 class TestFcluster(TestCase):
 
     def test_fclusterdata_maxclusts_2(self):
-        "Tests fclusterdata with 'maxclusts' criterion with maxclusts=2 with a random data set consisting of three clusters."
+        "Tests fclusterdata(X, criterion='maxclust', t=2) on a random 3-cluster data set."
         expectedT = eo['fclusterdata-maxclusts-2']
         X = eo['fclusterdata-X']
         T = fclusterdata(X, criterion='maxclust', t=2)
         self.failUnless(is_isomorphic(T, expectedT))
 
     def test_fclusterdata_maxclusts_3(self):
-        "Tests fclusterdata with 'maxclusts' criterion with maxclusts=3 with a random data set consisting of three clusters."
+        "Tests fclusterdata(X, criterion='maxclust', t=3) on a random 3-cluster data set."
         expectedT = eo['fclusterdata-maxclusts-3']
         X = eo['fclusterdata-X']
         T = fclusterdata(X, criterion='maxclust', t=3)
         self.failUnless(is_isomorphic(T, expectedT))
 
     def test_fclusterdata_maxclusts_4(self):
-        "Tests fclusterdata with 'maxclusts' criterion with maxclusts=4 with a random data set consisting of three clusters."
+        "Tests fclusterdata(X, criterion='maxclust', t=4) on a random 3-cluster data set."
         expectedT = eo['fclusterdata-maxclusts-4']
         X = eo['fclusterdata-X']
         T = fclusterdata(X, criterion='maxclust', t=4)
+        self.failUnless(is_isomorphic(T, expectedT))
+
+    def test_fcluster_maxclusts_2(self):
+        "Tests fcluster(Z, criterion='maxclust', t=2) on a random 3-cluster data set."
+        expectedT = eo['fclusterdata-maxclusts-2']
+        X = eo['fclusterdata-X']
+        Y = pdist(X)
+        Z = linkage(Y)
+        T = fcluster(Z, criterion='maxclust', t=2)
+        self.failUnless(is_isomorphic(T, expectedT))
+
+    def test_fcluster_maxclusts_3(self):
+        "Tests fcluster(Z, criterion='maxclust', t=3) on a random 3-cluster data set."
+        expectedT = eo['fclusterdata-maxclusts-3']
+        X = eo['fclusterdata-X']
+        Y = pdist(X)
+        Z = linkage(Y)
+        T = fcluster(Z, criterion='maxclust', t=3)
+        self.failUnless(is_isomorphic(T, expectedT))
+
+    def test_fcluster_maxclusts_4(self):
+        "Tests fcluster(Z, criterion='maxclust', t=4) on a random 3-cluster data set."
+        expectedT = eo['fclusterdata-maxclusts-4']
+        X = eo['fclusterdata-X']
+        Y = pdist(X)
+        Z = linkage(Y)
+        T = fcluster(Z, criterion='maxclust', t=4)
         self.failUnless(is_isomorphic(T, expectedT))
 
 def help_single_inconsistent_depth(self, i):
