@@ -55,9 +55,9 @@ eo = {}
 
 _filenames = ["iris.txt",
               "fclusterdata-X.txt",
-              "fclusterdata-maxclusts-1.txt",
               "fclusterdata-maxclusts-2.txt",
               "fclusterdata-maxclusts-3.txt",
+              "fclusterdata-maxclusts-4.txt",
               "linkage-single-tdist.txt",
               "linkage-complete-tdist.txt",
               "linkage-average-tdist.txt",
