@@ -1374,7 +1374,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     return T
 
 def fclusterdata(X, t, criterion='inconsistent', \
-                 distance='euclid', depth=2, method='single', R=None):
+                 metric='euclidean', depth=2, method='single', R=None):
     """
     T = fclusterdata(X, t)
 
@@ -1390,7 +1390,7 @@ def fclusterdata(X, t, criterion='inconsistent', \
       observation i belongs.
 
     T = fclusterdata(X, t, criterion='inconsistent', method='single',
-                    distance='euclid', depth=2, R=None)
+                    metric='euclid', depth=2, R=None)
 
       Clusters the original observations in the n by m data matrix X using
       the thresholding criterion, linkage method, and distance metric
@@ -1406,7 +1406,7 @@ def fclusterdata(X, t, criterion='inconsistent', \
         method:     the linkage method to use. See linkage for
                     descriptions.
 
-        distance:   the distance metric for calculating pairwise
+        metric:     the distance metric for calculating pairwise
                     distances. See distance.pdist for descriptions and
                     linkage to verify compatibility with the linkage
                     method.
@@ -1422,12 +1422,12 @@ def fclusterdata(X, t, criterion='inconsistent', \
 
     This function is similar to MATLAB(TM) clusterdata function.
     """
-    X = np.asarray(X, order='c')
+    X = np.asarray(X, order='c', dtype=np.double)
 
     if type(X) != np.ndarray or len(X.shape) != 2:
         raise TypeError('The observation matrix X must be an n by m numpy array.')
 
-    Y = distance.pdist(X, metric=distance)
+    Y = distance.pdist(X, metric=metric)
     Z = linkage(Y, method=method)
     if R is None:
         R = inconsistent(Z, d=depth)
