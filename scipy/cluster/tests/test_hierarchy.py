@@ -62,6 +62,12 @@ _filenames = ["iris.txt",
               "linkage-complete-tdist.txt",
               "linkage-average-tdist.txt",
               "linkage-weighted-tdist.txt",
+              "inconsistent-Q-single-1.txt",
+              "inconsistent-Q-single-2.txt",
+              "inconsistent-Q-single-3.txt",
+              "inconsistent-Q-single-4.txt",
+              "inconsistent-Q-single-5.txt",
+              "inconsistent-Q-single-6.txt",
               "inconsistent-complete-tdist-depth-1.txt",
               "inconsistent-complete-tdist-depth-2.txt",
               "inconsistent-complete-tdist-depth-3.txt",
@@ -207,10 +213,129 @@ class TestLinkage(TestCase):
 
 class TestInconsistent(TestCase):
 
-    def test_single_inconsistent_tdist(self):
-        "Testing inconsistency matrix calculation on a single linkage."
-        for i in xrange(0, 100):
-            yield help_single_inconsistent_depth, i
+    def test_single_inconsistent_tdist_1(self):
+        "Testing inconsistency matrix calculation (depth=1) on a single linkage."
+        Y = squareform(_tdist)
+        Z = linkage(Y, 'single')
+        R = inconsistent(Z, 1)
+        Rright = eo['inconsistent-single-tdist-depth-1']
+        eps = 1e-15
+        print np.abs(R - Rright).max()
+        self.failUnless(within_tol(R, Rright, eps))
+
+    def test_single_inconsistent_tdist_2(self):
+        "Testing inconsistency matrix calculation (depth=2) on a single linkage."
+        Y = squareform(_tdist)
+        Z = linkage(Y, 'single')
+        R = inconsistent(Z, 2)
+        Rright = eo['inconsistent-single-tdist-depth-2']
+        eps = 1e-05
+        print np.abs(R - Rright).max()
+        self.failUnless(within_tol(R, Rright, eps))
+
+    def test_single_inconsistent_tdist_3(self):
+        "Testing inconsistency matrix calculation (depth=3) on a single linkage."
+        Y = squareform(_tdist)
+        Z = linkage(Y, 'single')
+        R = inconsistent(Z, 3)
+        Rright = eo['inconsistent-single-tdist-depth-3']
+        eps = 1e-05
+        print np.abs(R - Rright).max()
+        self.failUnless(within_tol(R, Rright, eps))
+
+    def test_single_inconsistent_tdist_4(self):
+        "Testing inconsistency matrix calculation (depth=4) on a single linkage."
+        Y = squareform(_tdist)
+        Z = linkage(Y, 'single')
+        R = inconsistent(Z, 4)
+        Rright = eo['inconsistent-single-tdist-depth-4']
+        eps = 1e-05
+        print np.abs(R - Rright).max()
+        self.failUnless(within_tol(R, Rright, eps))
+
+    # with complete linkage...
+
+    def test_complete_inconsistent_tdist_1(self):
+        "Testing inconsistency matrix calculation (depth=1) on a complete linkage."
+        Y = squareform(_tdist)
+        Z = linkage(Y, 'complete')
+        R = inconsistent(Z, 1)
+        Rright = eo['inconsistent-complete-tdist-depth-1']
+        eps = 1e-15
+        print np.abs(R - Rright).max()
+        self.failUnless(within_tol(R, Rright, eps))
+
+    def test_complete_inconsistent_tdist_2(self):
+        "Testing inconsistency matrix calculation (depth=2) on a complete linkage."
+        Y = squareform(_tdist)
+        Z = linkage(Y, 'complete')
+        R = inconsistent(Z, 2)
+        Rright = eo['inconsistent-complete-tdist-depth-2']
+        eps = 1e-05
+        print np.abs(R - Rright).max()
+        self.failUnless(within_tol(R, Rright, eps))
+
+    def test_complete_inconsistent_tdist_3(self):
+        "Testing inconsistency matrix calculation (depth=3) on a complete linkage."
+        Y = squareform(_tdist)
+        Z = linkage(Y, 'complete')
+        R = inconsistent(Z, 3)
+        Rright = eo['inconsistent-complete-tdist-depth-3']
+        eps = 1e-05
+        print np.abs(R - Rright).max()
+        self.failUnless(within_tol(R, Rright, eps))
+
+    def test_complete_inconsistent_tdist_4(self):
+        "Testing inconsistency matrix calculation (depth=4) on a complete linkage."
+        Y = squareform(_tdist)
+        Z = linkage(Y, 'complete')
+        R = inconsistent(Z, 4)
+        Rright = eo['inconsistent-complete-tdist-depth-4']
+        eps = 1e-05
+        print np.abs(R - Rright).max()
+        self.failUnless(within_tol(R, Rright, eps))
+
+    # with single linkage and Q data set
+
+    def test_single_inconsistent_tdist_1(self):
+        "Testing inconsistency matrix calculation (depth=1) on a weighted linkage."
+        X = eo['Q-X']
+        Z = linkage(X, 'single', 'euclidean')
+        R = inconsistent(Z, 1)
+        Rright = eo['inconsistent-Q-single-1']
+        eps = 1e-06
+        print np.abs(R - Rright).max()
+        self.failUnless(within_tol(R, Rright, eps))
+
+    def test_single_inconsistent_tdist_2(self):
+        "Testing inconsistency matrix calculation (depth=2) on a weighted linkage."
+        X = eo['Q-X']
+        Z = linkage(X, 'single', 'euclidean')
+        R = inconsistent(Z, 2)
+        Rright = eo['inconsistent-Q-single-2']
+        eps = 1e-06
+        print np.abs(R - Rright).max()
+        self.failUnless(within_tol(R, Rright, eps))
+
+    def test_single_inconsistent_tdist_3(self):
+        "Testing inconsistency matrix calculation (depth=3) on a weighted linkage."
+        X = eo['Q-X']
+        Z = linkage(X, 'single', 'euclidean')
+        R = inconsistent(Z, 3)
+        Rright = eo['inconsistent-Q-single-3']
+        eps = 1e-05
+        print np.abs(R - Rright).max()
+        self.failUnless(within_tol(R, Rright, eps))
+
+    def test_single_inconsistent_tdist_4(self):
+        "Testing inconsistency matrix calculation (depth=4) on a weighted linkage."
+        X = eo['Q-X']
+        Z = linkage(X, 'single', 'euclidean')
+        R = inconsistent(Z, 4)
+        Rright = eo['inconsistent-Q-single-4']
+        eps = 1e-05
+        print np.abs(R - Rright).max()
+        self.failUnless(within_tol(R, Rright, eps))
 
 class TestCopheneticDistance(TestCase):
 
