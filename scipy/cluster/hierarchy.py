@@ -1071,10 +1071,16 @@ def to_mlab_linkage(Z):
            A linkage matrix compatible with MATLAB(TM)'s hierarchical
            clustering functions.
     """
-    Z = np.asarray(Z, order='c')
+    Z = np.asarray(Z, order='c', dtype=np.double)
+    Zs = Z.shape
+    if len(Zs) == 0 or (len(Zs) == 1 and Zs[0] == 0):
+        return Z.copy()
     is_valid_linkage(Z, throw=True, name='Z')
 
-    return np.hstack([Z[:,0:2] + 1, Z[:,2]])
+    ZP = Z[:, 0:3].copy()
+    ZP[:,0:2] += 1.0
+
+    return ZP
 
 def is_monotonic(Z):
     """

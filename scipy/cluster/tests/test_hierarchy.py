@@ -38,7 +38,7 @@ import os.path
 import numpy as np
 from numpy.testing import *
 
-from scipy.cluster.hierarchy import linkage, from_mlab_linkage, numobs_linkage, inconsistent, cophenet, from_mlab_linkage
+from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage, numobs_linkage, inconsistent, cophenet, from_mlab_linkage
 from scipy.spatial.distance import squareform, pdist, numobs_dm, numobs_y
 
 _tdist = np.array([[0,    662,  877,  255,  412,  996],
@@ -215,6 +215,37 @@ class TestFromMLabLinkage(TestCase):
         ZS = from_mlab_linkage(Z)
         print expectedZS, ZS
         self.failUnless((expectedZS == ZS).all())
+
+
+class TestToMLabLinkage(TestCase):
+
+    def test_to_mlab_linkage_empty(self):
+        "Testing to_mlab_linkage on empty linkage array."
+        X = np.asarray([])
+        R = to_mlab_linkage([])
+        self.failUnless((R == X).all())
+
+    def test_to_mlab_linkage_single_row(self):
+        "Testing to_mlab_linkage on linkage array with single row."
+        Z = np.asarray([[ 0.,  1.,  3.,  2.]])
+        expectedZP = np.asarray([[1,2,3]])
+        ZP = to_mlab_linkage(Z)
+        return self.failUnless((ZP == expectedZP).all())
+
+    def test_from_mlab_linkage_multiple_rows(self):
+        "Testing to_mlab_linkage on linkage array with multiple rows."
+        expectedZM = np.asarray([[3, 6, 138], [4, 5, 219],
+                        [1, 8, 255], [2, 9, 268], [7, 10, 295]])
+        Z = np.array([[   2.,    5.,  138.,    2.],
+                      [   3.,    4.,  219.,    2.],
+                      [   0.,    7.,  255.,    3.],
+                      [   1.,    8.,  268.,    4.],
+                      [   6.,    9.,  295.,    6.]],
+                     dtype=np.double)
+        ZM = to_mlab_linkage(Z)
+        print expectedZM, ZM
+        self.failUnless((expectedZM == ZM).all())
+
 
 def help_single_inconsistent_depth(self, i):
     Y = squareform(_tdist)
