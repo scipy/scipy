@@ -649,7 +649,7 @@ class ClusterNode:
         else:
             self.count = left.count + right.count
 
-    def getId(self):
+    def get_id(self):
         """
         The identifier of the target node. For :math:`$0 leq i < n$`,
         :math:`$i$` corresponds to original observation
@@ -665,7 +665,7 @@ class ClusterNode:
         """
         return self.id
 
-    def getCount(self):
+    def get_count(self):
         """
         The number of leaf nodes (original observations) belonging to
         the cluster node nd. If the target node is a leaf, 1 is
@@ -678,7 +678,7 @@ class ClusterNode:
         """
         return self.count
 
-    def getLeft(self):
+    def get_left(self):
         """
         Returns a reference to the left child tree object. If the node
         is a leaf, None is returned.
@@ -689,7 +689,7 @@ class ClusterNode:
         """
         return self.left
 
-    def getRight(self):
+    def get_right(self):
         """
         Returns a reference to the right child tree object. If the node
         is a leaf, None is returned.
@@ -700,7 +700,7 @@ class ClusterNode:
         """
         return self.right
 
-    def isLeaf(self):
+    def is_leaf(self):
         """
         Returns True iff the target node is a leaf.
 
@@ -710,7 +710,7 @@ class ClusterNode:
         """
         return self.left is None
 
-    def preOrder(self, func=(lambda x: x.id)):
+    def pre_order(self, func=(lambda x: x.id)):
         """
         Performs preorder traversal without recursive function calls.
         When a leaf node is first encountered, ``func`` is called with
@@ -719,7 +719,7 @@ class ClusterNode:
 
         For example, the statement:
 
-           ids = root.preOrder(lambda x: x.id)
+           ids = root.pre_order(lambda x: x.id)
 
         returns a list of the node ids corresponding to the leaf nodes
         of the tree as they appear from left to right.
@@ -751,7 +751,7 @@ class ClusterNode:
         while k >= 0:
             nd = curNode[k]
             ndid = nd.id
-            if nd.isLeaf():
+            if nd.is_leaf():
                 preorder.append(func(nd))
                 k = k - 1
             else:
@@ -2393,15 +2393,15 @@ def _leaders_test(Z, T):
     return tr
 
 def _leader_identify(tr, T):
-    if tr.isLeaf():
+    if tr.is_leaf():
         return T[tr.id]
     else:
-        left = tr.getLeft()
-        right = tr.getRight()
+        left = tr.get_left()
+        right = tr.get_right()
         lfid = _leader_identify(left, T)
         rfid = _leader_identify(right, T)
-        print 'ndid: %d lid: %d lfid: %d rid: %d rfid: %d' % (tr.getId(),
-                                                              left.getId(), lfid, right.getId(), rfid)
+        print 'ndid: %d lid: %d lfid: %d rid: %d rfid: %d' % (tr.get_id(),
+                                                              left.get_id(), lfid, right.get_id(), rfid)
         if lfid != rfid:
             if lfid != -1:
                 print 'leader: %d with tag %d' % (left.id, lfid)
@@ -2412,7 +2412,7 @@ def _leader_identify(tr, T):
             return lfid
 
 def _leaders_test_recurs_mark(tr, T):
-    if tr.isLeaf():
+    if tr.is_leaf():
         tr.asgn = T[tr.id]
     else:
         tr.asgn = -1
