@@ -38,7 +38,7 @@ import os.path
 import numpy as np
 from numpy.testing import *
 
-from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage, numobs_linkage, inconsistent, cophenet, from_mlab_linkage, fclusterdata, fcluster, is_isomorphic
+from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage, numobs_linkage, inconsistent, cophenet, from_mlab_linkage, fclusterdata, fcluster, is_isomorphic, single, complete, average, weighted, centroid, median, ward
 from scipy.spatial.distance import squareform, pdist, numobs_dm, numobs_y
 
 _tdist = np.array([[0,    662,  877,  255,  412,  996],
@@ -76,7 +76,15 @@ _filenames = ["iris.txt",
               "inconsistent-weighted-tdist-depth-1.txt",
               "inconsistent-weighted-tdist-depth-2.txt",
               "inconsistent-weighted-tdist-depth-3.txt",
-              "inconsistent-weighted-tdist-depth-4.txt"]
+              "inconsistent-weighted-tdist-depth-4.txt",
+              "linkage-Q-average.txt",
+              "linkage-Q-complete.txt",
+              "linkage-Q-single.txt",
+              "linkage-Q-weighted.txt",
+              "linkage-Q-centroid.txt",
+              "linkage-Q-median.txt",
+              "linkage-Q-ward.txt"
+              ]
 
 def load_testing_files():
     for fn in _filenames:
@@ -154,6 +162,47 @@ class TestLinkage(TestCase):
         eps = 1e-10
         expectedZ = from_mlab_linkage(Zmlab)
         #print Z, expectedZ, np.abs(Z - expectedZ).max()
+        self.failUnless(within_tol(Z, expectedZ, eps))
+
+    ################### linkage on Q
+    def test_linkage_single_q(self):
+        "Tests linkage(Y, 'single') on the Q data set."
+        X = eo['fclusterdata-X']
+        Z = single(X)
+        Zmlab = eo['linkage-Q-single']
+        eps = 1e-06
+        expectedZ = from_mlab_linkage(Zmlab)
+        print abs(Z-expectedZ).max()
+        self.failUnless(within_tol(Z, expectedZ, eps))
+
+    def test_linkage_complete_q(self):
+        "Tests linkage(Y, 'complete') on the Q data set."
+        X = eo['fclusterdata-X']
+        Z = complete(X)
+        Zmlab = eo['linkage-Q-complete']
+        eps = 1e-07
+        expectedZ = from_mlab_linkage(Zmlab)
+        print abs(Z-expectedZ).max()
+        self.failUnless(within_tol(Z, expectedZ, eps))
+
+    def test_linkage_centroid_q(self):
+        "Tests linkage(Y, 'centroid') on the Q data set."
+        X = eo['fclusterdata-X']
+        Z = centroid(X)
+        Zmlab = eo['linkage-Q-centroid']
+        eps = 1e-07
+        expectedZ = from_mlab_linkage(Zmlab)
+        print abs(Z-expectedZ).max()
+        self.failUnless(within_tol(Z, expectedZ, eps))
+
+    def test_linkage_weighted_q(self):
+        "Tests linkage(Y, 'weighted') on the Q data set."
+        X = eo['fclusterdata-X']
+        Z = weighted(X)
+        Zmlab = eo['linkage-Q-weighted']
+        eps = 1e-07
+        expectedZ = from_mlab_linkage(Zmlab)
+        print abs(Z-expectedZ).max()
         self.failUnless(within_tol(Z, expectedZ, eps))
 
 class TestInconsistent(TestCase):
