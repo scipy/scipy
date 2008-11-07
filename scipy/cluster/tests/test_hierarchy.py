@@ -38,7 +38,7 @@ import os.path
 import numpy as np
 from numpy.testing import *
 
-from scipy.cluster.hierarchy import linkage, from_mlab_linkage, numobs_linkage, inconsistent
+from scipy.cluster.hierarchy import linkage, from_mlab_linkage, numobs_linkage, inconsistent, cophenet
 from scipy.spatial.distance import squareform, pdist, numobs_dm, numobs_y
 
 _tdist = np.array([[0,    662,  877,  255,  412,  996],
@@ -155,8 +155,37 @@ class TestLinkage(TestCase):
 class TestInconsistent(TestCase):
 
     def test_single_inconsistent_tdist(self):
+        "Testing inconsistency matrix calculation on a single linkage."
         for i in xrange(0, 100):
             yield help_single_inconsistent_depth, i
+
+class TestCopheneticDistance(TestCase):
+
+    def test_linkage_cophenet_tdist_Z(self):
+        "Testing cophenet(Z) on tdist data set."
+        expectedM = np.array([268, 295, 255, 255, 295, 295, 268, 268, 295, 295, 295, 138, 219, 295, 295]);
+        Z = linkage(_ytdist, 'single')
+        M = cophenet(Z)
+        eps = 1e-10
+        self.failUnless(within_tol(M, expectedM, eps))
+
+    def test_linkage_cophenet_tdist_Z_Y(self):
+        "Testing cophenet(Z, Y) on tdist data set."
+        Z = linkage(_ytdist, 'single')
+        c = cophenet(Z, _ytdist)
+        expectedc = 0.639931296433393415057366837573
+        eps = 1e-10
+        self.failUnless(np.abs(c - expectedc) <= eps)
+
+    def test_linkage_cophenet_tdist_Z_Y_EL(self):
+        "Testing cophenet(Z, Y, []) on tdist data set."
+        Z = linkage(_ytdist, 'single')
+        (c, M) = cophenet(Z, _ytdist, [])
+        eps = 1e-10
+        expectedM = np.array([268, 295, 255, 255, 295, 295, 268, 268, 295, 295, 295, 138, 219, 295, 295]);
+        expectedc = 0.639931296433393415057366837573
+        self.failUnless(np.abs(c - expectedc) <= eps)
+        self.failUnless(within_tol(M, expectedM, eps))
 
 def help_single_inconsistent_depth(self, i):
     Y = squareform(_tdist)
