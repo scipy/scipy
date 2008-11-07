@@ -74,7 +74,7 @@ tree objects.
 +------------------+-------------------------------------------------+
 |*Function*        | *Description*                                   |
 +------------------+-------------------------------------------------+
-|cnode             |represents cluster nodes in a cluster hierarchy. |
+|ClusterNode       |represents cluster nodes in a cluster hierarchy. |
 +------------------+-------------------------------------------------+
 |lvlist            |a left-to-right traversal of the leaves.         |
 +------------------+-------------------------------------------------+
@@ -616,7 +616,7 @@ def linkage(y, method='single', metric='euclidean'):
                                               int(_cpy_euclid_methods[method]))
     return Z
 
-class cnode:
+class ClusterNode:
     """
     A tree node class for representing a cluster. Leaf nodes correspond
     to original observations, while non-leaf nodes correspond to
@@ -684,7 +684,7 @@ class cnode:
         is a leaf, None is returned.
 
         :Returns:
-           left : cnode
+           left : ClusterNode
                   The left child of the target node.
         """
         return self.left
@@ -695,7 +695,7 @@ class cnode:
         is a leaf, None is returned.
 
         :Returns:
-           right : cnode
+           right : ClusterNode
                   The left child of the target node.
         """
         return self.right
@@ -727,7 +727,7 @@ class cnode:
         :Parameters:
 
            - func : function
-             Applied to each leaf cnode object in the pre-order
+             Applied to each leaf ClusterNode object in the pre-order
              traversal. Given the i'th leaf node in the pre-order
              traversal ``n[i]``, the result of func(n[i]) is stored in
              L[i]. If not provided, the index of the original observation
@@ -770,19 +770,19 @@ class cnode:
 
         return preorder
 
-_cnode_bare = cnode(0)
-_cnode_type = type(cnode)
+_cnode_bare = ClusterNode(0)
+_cnode_type = type(ClusterNode)
 
 def totree(Z, rd=False):
     """
     Converts a hierarchical clustering encoded in the matrix Z (by
     linkage) into an easy-to-use tree object. The reference r to the
-    root cnode object is returned.
+    root ClusterNode object is returned.
 
-    Each cnode object has a left, right, dist, id, and count
-    attribute. The left and right attributes point to cnode objects
+    Each ClusterNode object has a left, right, dist, id, and count
+    attribute. The left and right attributes point to ClusterNode objects
     that were combined to generate the cluster. If both are None then
-    the cnode object is a leaf node, its count must be 1, and its
+    the ClusterNode object is a leaf node, its count must be 1, and its
     distance is meaningless but set to 0.
 
     :Parameters:
@@ -792,16 +792,16 @@ def totree(Z, rd=False):
           function documentation).
 
         r : bool
-          When ``False``, a reference to the root cnode object is
+          When ``False``, a reference to the root ClusterNode object is
           returned.  Otherwise, a tuple (r,d) is returned. ``r`` is a
           reference to the root node while ``d`` is a dictionary
-          mapping cluster ids to cnode references. If a cluster id is
+          mapping cluster ids to ClusterNode references. If a cluster id is
           less than n, then it corresponds to a singleton cluster
           (leaf node). See ``linkage`` for more information on the
           assignment of cluster ids to clusters.
 
     Note: This function is provided for the convenience of the library
-    user. cnodes are not used as input to any of the functions in this
+    user. ClusterNodes are not used as input to any of the functions in this
     library.
     """
 
@@ -833,7 +833,7 @@ def totree(Z, rd=False):
 
     # Create the nodes corresponding to the n original objects.
     for i in xrange(0, n):
-        d[i] = cnode(i)
+        d[i] = ClusterNode(i)
 
     nd = None
 
@@ -844,7 +844,7 @@ def totree(Z, rd=False):
             raise ValueError('Corrupt matrix Z. Index to derivative cluster is used before it is formed. See row %d, column 0' % fi)
         if fj > i + n:
             raise ValueError('Corrupt matrix Z. Index to derivative cluster is used before it is formed. See row %d, column 1' % fj)
-        nd = cnode(i + n, d[fi], d[fj],  Z[i, 2])
+        nd = ClusterNode(i + n, d[fi], d[fj],  Z[i, 2])
         #          ^ id   ^ left ^ right ^ dist
         if Z[i,3] != nd.count:
             raise ValueError('Corrupt matrix Z. The count Z[%d,3] is incorrect.' % i)
