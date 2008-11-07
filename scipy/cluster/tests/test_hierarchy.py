@@ -54,7 +54,10 @@ _ytdist = squareform(_tdist)
 eo = {}
 
 _filenames = ["iris.txt",
-              "mlab-random.txt",
+              "fclusterdata-X.txt",
+              "fclusterdata-maxclusts-1.txt",
+              "fclusterdata-maxclusts-2.txt",
+              "fclusterdata-maxclusts-3.txt",
               "linkage-single-tdist.txt",
               "linkage-complete-tdist.txt",
               "linkage-average-tdist.txt",
@@ -249,9 +252,11 @@ class TestToMLabLinkage(TestCase):
 
 class TestFcluster(TestCase):
 
-    def test_fcluster(self):
+    def test_fclusterdata_maxclusts_3(self):
         "Tests fclusterdata with 'maxclusts' criterion with maxclusts=3."
-
+        expectedT = eo['fclusterdata-maxclusts-3']
+        T = hi.fcluster(Z, criterion='maxclust', t=3)
+        self.failUnless((expectedT == T).all())
 
 def help_single_inconsistent_depth(self, i):
     Y = squareform(_tdist)
