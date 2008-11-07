@@ -297,7 +297,7 @@ class TestInconsistent(TestCase):
 
     # with single linkage and Q data set
 
-    def test_single_inconsistent_tdist_1(self):
+    def test_single_inconsistent_Q_1(self):
         "Testing inconsistency matrix calculation (depth=1, dataset=Q) with single linkage."
         X = eo['Q-X']
         Z = linkage(X, 'single', 'euclidean')
@@ -307,7 +307,7 @@ class TestInconsistent(TestCase):
         print np.abs(R - Rright).max()
         self.failUnless(within_tol(R, Rright, eps))
 
-    def test_single_inconsistent_tdist_2(self):
+    def test_single_inconsistent_Q_2(self):
         "Testing inconsistency matrix calculation (depth=2, dataset=Q) with single linkage."
         X = eo['Q-X']
         Z = linkage(X, 'single', 'euclidean')
@@ -317,7 +317,7 @@ class TestInconsistent(TestCase):
         print np.abs(R - Rright).max()
         self.failUnless(within_tol(R, Rright, eps))
 
-    def test_single_inconsistent_tdist_3(self):
+    def test_single_inconsistent_Q_3(self):
         "Testing inconsistency matrix calculation (depth=3, dataset=Q) with single linkage."
         X = eo['Q-X']
         Z = linkage(X, 'single', 'euclidean')
@@ -327,7 +327,7 @@ class TestInconsistent(TestCase):
         print np.abs(R - Rright).max()
         self.failUnless(within_tol(R, Rright, eps))
 
-    def test_single_inconsistent_tdist_4(self):
+    def test_single_inconsistent_Q_4(self):
         "Testing inconsistency matrix calculation (depth=4, dataset=Q) with single linkage."
         X = eo['Q-X']
         Z = linkage(X, 'single', 'euclidean')
