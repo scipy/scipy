@@ -38,7 +38,7 @@ import os.path
 import numpy as np
 from numpy.testing import *
 
-from scipy.cluster.hierarchy import linkage, from_mlab_linkage, numobs_linkage, inconsistent, cophenet
+from scipy.cluster.hierarchy import linkage, from_mlab_linkage, numobs_linkage, inconsistent, cophenet, from_mlab_linkage
 from scipy.spatial.distance import squareform, pdist, numobs_dm, numobs_y
 
 _tdist = np.array([[0,    662,  877,  255,  412,  996],
@@ -186,6 +186,21 @@ class TestCopheneticDistance(TestCase):
         expectedc = 0.639931296433393415057366837573
         self.failUnless(np.abs(c - expectedc) <= eps)
         self.failUnless(within_tol(M, expectedM, eps))
+
+class TestFromMLabLinkage(TestCase):
+
+    def test_from_mlab_linkage_empty(self):
+        "Testing from_mlab_linkage on empty linkage array."
+        X = np.asarray([])
+        R = from_mlab_linkage([])
+        self.failUnless((R == X).all())
+
+    def test_from_mlab_linkage_single_row(self):
+        "Testing from_mlab_linkage on linkage array with single row."
+        expectedZP = np.asarray([[ 0.,  1.,  3.,  2.]])
+        Z = [[1,2,3]]
+        ZP = from_mlab_linkage(Z)
+        return self.failUnless((ZP == expectedZP).all())
 
 def help_single_inconsistent_depth(self, i):
     Y = squareform(_tdist)

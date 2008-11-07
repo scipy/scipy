@@ -1035,6 +1035,18 @@ def from_mlab_linkage(Z):
     """
     Z = np.asarray(Z, order='c')
     Zs = Z.shape
+
+    # If it's empty, return it.
+    if len(Zs) == 0 or (len(Zs) == 1 and Zs[0] == 0):
+        return Z.copy()
+
+    if len(Zs) != 2:
+        raise ValueError("The linkage array must be rectangular.")
+
+    # If it contains no rows, return it.
+    if Zs[0] == 0:
+        return Z.copy()
+
     Zpart = Z[:,0:2]
     Zd = Z[:,2].reshape(Zs[0], 1)
     if Zpart.min() != 1.0 and Zpart.max() != 2 * Zs[0]:
