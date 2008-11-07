@@ -76,9 +76,9 @@ tree objects.
 +------------------+-------------------------------------------------+
 |ClusterNode       |represents cluster nodes in a cluster hierarchy. |
 +------------------+-------------------------------------------------+
-|lvlist            |a left-to-right traversal of the leaves.         |
+|leaves_list       |a left-to-right traversal of the leaves.         |
 +------------------+-------------------------------------------------+
-|totree            |represents a linkage matrix as a tree object.    |
+|to_tree           |represents a linkage matrix as a tree object.    |
 +------------------+-------------------------------------------------+
 
 These are predicates for checking the validity of linkage and
@@ -622,12 +622,12 @@ class ClusterNode:
     to original observations, while non-leaf nodes correspond to
     non-singleton clusters.
 
-    The totree function converts a matrix returned by the linkage
+    The to_tree function converts a matrix returned by the linkage
     function into an easy-to-use tree representation.
 
     :SeeAlso:
 
-       - totree: for converting a linkage matrix Z into a tree object.
+       - to_tree: for converting a linkage matrix Z into a tree object.
     """
 
     def __init__(self, id, left=None, right=None, dist=0, count=1):
@@ -773,7 +773,7 @@ class ClusterNode:
 _cnode_bare = ClusterNode(0)
 _cnode_type = type(ClusterNode)
 
-def totree(Z, rd=False):
+def to_tree(Z, rd=False):
     """
     Converts a hierarchical clustering encoded in the matrix Z (by
     linkage) into an easy-to-use tree object. The reference r to the
@@ -1436,9 +1436,9 @@ def fclusterdata(X, t, criterion='inconsistent', \
     T = fcluster(Z, criterion=criterion, depth=depth, R=R, t=t)
     return T
 
-def lvlist(Z):
+def leaves_list(Z):
     """
-    L = lvlist(Z):
+    L = leaves_list(Z):
 
       Returns a list of leaf node ids as they appear in the tree from
       left to right. Z is a linkage matrix.
@@ -2388,7 +2388,7 @@ def leaders(Z, T):
 # These are test functions to help me test the leaders function.
 
 def _leaders_test(Z, T):
-    tr = totree(Z)
+    tr = to_tree(Z)
     _leaders_test_recurs_mark(tr, T)
     return tr
 
