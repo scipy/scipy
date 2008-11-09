@@ -27,17 +27,13 @@ test_data_path = join(dirname(__file__), 'data')
 def mlarr(*args, **kwargs):
     ''' Return matlab-compatible 2D array'''
     arr = np.array(*args, **kwargs)
-    return np.atleast_2d(arr)
-
-def _get_fields(obj):
-    ''' Return field names that we will compare '''
-    
+    if arr.size:
+        return np.atleast_2d(arr)
+    # empty elements return as shape (0,0)
+    return arr.reshape((0,0))
 
 def _check_level(label, expected, actual):
-    """ Check one level of a potentially nested object / list """
-    # object array is returned from cell array in mat file
-    typex = type(expected)
-    typac = type(actual)
+    """ Check one level of a potentially nested array """
     if SP.issparse(expected): # allow different types of sparse matrices
         assert SP.issparse(actual)
         assert_array_almost_equal(actual.todense(),
@@ -46,6 +42,8 @@ def _check_level(label, expected, actual):
                                   decimal = 5)
         return
     # Check types are as expected
+    typex = type(expected)
+    typac = type(actual)
     assert typex is typac, \
            "Expected type %s, got %s at %s" % (typex, typac, label)
     # object, as container for matlab objects
@@ -62,25 +60,34 @@ def _check_level(label, expected, actual):
             level_label = "%s, property %s, " % (label, k)
             _check_level(level_label, ev, v)
         return
-    if not isinstance(expected, np.ndarray):
+    # A field in a record array may not be an ndarray
+    # A scalar from a record array will be type np.void
+    if not isinstance(expected, (np.void, np.ndarray)): 
         assert_equal(expected, actual)
         return
-    if expected.dtype.hasobject: # array of objects
-        assert len(expected) == len(actual), \
-               "Expected list length %d, got %d at %s" % (
-            len(expected),
-            len(actual),
-            label)
+    # This is an ndarray
+    assert_true(expected.shape == actual.shape,
+                msg='Expected shape %s, got %s at %s' % (expected.shape,
+                                                         actual.shape,
+                                                         label)
+                )
+    ex_dtype = expected.dtype
+    if ex_dtype.hasobject: # array of objects
         for i, ev in enumerate(expected):
             level_label = "%s, [%d], " % (label, i)
             _check_level(level_label, ev, actual[i])
         return
-    if expected.dtype.type in (
-                               np.unicode,
-                               np.object,
-                               np.unicode_):
+    if ex_dtype.fields: # probably recarray
+        for fn in ex_dtype.fields:
+            level_label = "%s, field %s, " % (label, fn)
+            _check_level(level_label,
+                         expected[fn], actual[fn])
+        return
+    if ex_dtype.type in (np.unicode, # string
+                         np.unicode_):
         assert_equal(actual, expected, err_msg=label)
         return
+    # Something numeric
     assert_array_almost_equal(actual, expected, err_msg=label, decimal=5)
 
 def _check_case(name, files, case):
@@ -144,27 +151,26 @@ case_table4.append(
     {'name': 'onechar',
      'expected': {'testonechar': array([u'r'])},
      })
+# Cell arrays stored as object arrays
+CA = mlarr([
+    [], # placeholder, object array constructor wierdness otherwise
+    mlarr(1),
+    mlarr([1,2]),
+    mlarr([1,2,3])], dtype=object).reshape(1,-1)
+CA[0,0] = array(
+    [u'This cell contains this string and 3 arrays of increasing length'])
 case_table5 = [
     {'name': 'cell',
-     'expected': {'testcell':
-                  mlarr([[
-    array(
-    [u'This cell contains this string and 3 arrays of increasing length']),
-    mlarr([[1]]),
-    mlarr([[1,2]]),
-    mlarr([[1,2,3]])
-    ]], dtype=object)}
-     }]
+     'expected': {'testcell': CA}}]
+CAE = mlarr([
+    mlarr(1),
+    mlarr(2),
+    mlarr([]),
+    mlarr([]),
+    mlarr(3)], dtype=object).reshape(1,-1)
 case_table5.append(
     {'name': 'emptycell',
-     'expected': {'testemptycell':
-                  mlarr([[
-    mlarr([[1]]),
-    mlarr([[2]]),
-    mlarr([[]]), # This not returning with correct shape
-    mlarr([[]]),
-    mlarr([[3]])]], dtype=object)}
-     })
+     'expected': {'testemptycell': CAE}})
 case_table5.append(
     {'name': 'stringarray',
      'expected': {'teststringarray': array(
@@ -214,7 +220,7 @@ case_table5.append(
 st2 = np.empty((1,1), dtype=[(n, object) for n in ['one', 'two']])
 st2[0,0]['one'] = mlarr(1)
 st2[0,0]['two'] = np.empty((1,1), dtype=[('three', object)])
-st2[0,0]['two'][0,0]['three'] = array(u'number 3')
+st2[0,0]['two'][0,0]['three'] = array([u'number 3'])
 case_table5.append(
     {'name': 'structnest',
      'expected': {'teststructnest': st2}
@@ -222,31 +228,31 @@ case_table5.append(
 a = np.empty((1,2), dtype=[(n, object) for n in ['one', 'two']])
 a[0,0]['one'] = mlarr(1)
 a[0,0]['two'] = mlarr(2)
-a[0,1]['one'] = array(u'number 1')
-a[0,1]['two'] = array(u'number 2')
+a[0,1]['one'] = array([u'number 1'])
+a[0,1]['two'] = array([u'number 2'])
 case_table5.append(
     {'name': 'structarr',
      'expected': {'teststructarr': a}
      })
-a = MatlabObject('inline',
+MO = MatlabObject('inline',
                  ['expr', 'inputExpr', 'args',
                   'isEmpty', 'numArgs', 'version'])
-a.expr = u'x'
-a.inputExpr = u' x = INLINE_INPUTS_{1};'
-a.args = u'x'
-a.isEmpty = mlarr(0)
-a.numArgs = mlarr(1)
-a.version = mlarr(1)
+MO.expr = u'x'
+MO.inputExpr = u' x = INLINE_INPUTS_{1};'
+MO.args = u'x'
+MO.isEmpty = mlarr(0)
+MO.numArgs = mlarr(1)
+MO.version = mlarr(1)
 case_table5.append(
     {'name': 'object',
-     'expected': {'testobject': a}
+     'expected': {'testobject': MO}
      })
 u_str = file(
     join(test_data_path, 'japanese_utf8.txt'),
     'rb').read().decode('utf-8')
 case_table5.append(
     {'name': 'unicode',
-    'expected': {'testunicode': array(u_str)}
+    'expected': {'testunicode': array([u_str])}
     })
 
 # generator for load tests
