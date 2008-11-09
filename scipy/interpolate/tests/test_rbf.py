@@ -4,7 +4,7 @@
 
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_almost_equal
-from numpy import linspace, sin, random, exp, log10
+from numpy import linspace, sin, random, exp, log10, allclose
 from scipy.interpolate.rbf import Rbf
 
 FUNCTIONS = ('multiquadric', 'inverse multiquadric', 'gaussian',
@@ -59,15 +59,15 @@ def check_rbf1d_regularity(function, atol):
     #plt.plot(x, y, 'o', xi, sin(xi), ':', xi, yi, '-')
     #plt.title(function)
     #plt.show()
-    assert_array_almost_equal(yi, sin(xi), decimal=-np.int(log10(atol)) - 1,
-                              err_msg="abs-diff: %f" % abs(yi - sin(xi)).max())
+    msg = "abs-diff: %f" % abs(yi - sin(xi)).max()
+    assert allclose(yi, sin(xi), atol=atol), msg
 
 def test_rbf_regularity():
     tolerances = {
         'multiquadric': 0.05,
-        'inverse multiquadric': 0.01,
+        'inverse multiquadric': 0.02,
         'gaussian': 0.01,
-        'cubic': 0.1,
+        'cubic': 0.15,
         'quintic': 0.1,
         'thin-plate': 0.1,
         'linear': 0.2
