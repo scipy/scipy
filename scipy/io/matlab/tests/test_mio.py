@@ -25,86 +25,15 @@ from scipy.io.matlab.mio5 import MatlabObject
 test_data_path = join(dirname(__file__), 'data')
 
 def mlarr(*args, **kwargs):
-    ''' Return matlab-compatible 2D array'''
+    ''' Convenience function to return matlab-compatible 2D array
+    Note that matlab writes empty shape as (0,0) - replicated here
+    '''
     arr = np.array(*args, **kwargs)
     if arr.size:
         return np.atleast_2d(arr)
     # empty elements return as shape (0,0)
     return arr.reshape((0,0))
 
-def _check_level(label, expected, actual):
-    """ Check one level of a potentially nested array """
-    if SP.issparse(expected): # allow different types of sparse matrices
-        assert SP.issparse(actual)
-        assert_array_almost_equal(actual.todense(),
-                                  expected.todense(),
-                                  err_msg = label,
-                                  decimal = 5)
-        return
-    # Check types are as expected
-    typex = type(expected)
-    typac = type(actual)
-    assert typex is typac, \
-           "Expected type %s, got %s at %s" % (typex, typac, label)
-    # object, as container for matlab objects
-    if isinstance(expected, MatlabObject):
-        ex_fields = dir(expected)
-        ac_fields = dir(actual)
-        for k in ex_fields:
-            if k.startswith('__') and k.endswith('__'):
-                continue
-            assert k in ac_fields, \
-                   "Missing expected property %s for %s" % (k, label)
-            ev = expected.__dict__[k]
-            v = actual.__dict__[k]
-            level_label = "%s, property %s, " % (label, k)
-            _check_level(level_label, ev, v)
-        return
-    # A field in a record array may not be an ndarray
-    # A scalar from a record array will be type np.void
-    if not isinstance(expected, (np.void, np.ndarray)): 
-        assert_equal(expected, actual)
-        return
-    # This is an ndarray
-    assert_true(expected.shape == actual.shape,
-                msg='Expected shape %s, got %s at %s' % (expected.shape,
-                                                         actual.shape,
-                                                         label)
-                )
-    ex_dtype = expected.dtype
-    if ex_dtype.hasobject: # array of objects
-        for i, ev in enumerate(expected):
-            level_label = "%s, [%d], " % (label, i)
-            _check_level(level_label, ev, actual[i])
-        return
-    if ex_dtype.fields: # probably recarray
-        for fn in ex_dtype.fields:
-            level_label = "%s, field %s, " % (label, fn)
-            _check_level(level_label,
-                         expected[fn], actual[fn])
-        return
-    if ex_dtype.type in (np.unicode, # string
-                         np.unicode_):
-        assert_equal(actual, expected, err_msg=label)
-        return
-    # Something numeric
-    assert_array_almost_equal(actual, expected, err_msg=label, decimal=5)
-
-def _check_case(name, files, case):
-    for file_name in files:
-        matdict = loadmat(file_name, struct_as_record=True)
-        label = "test %s; file %s" % (name, file_name)
-        for k, expected in case.items():
-            k_label = "%s, variable %s" % (label, k)
-            assert k in matdict, "Missing key at %s" % k_label
-            _check_level(k_label, expected, matdict[k])
-
-# Round trip tests
-def _rt_check_case(name, expected, format):
-    mat_stream = StringIO()
-    savemat(mat_stream, expected, format=format)
-    mat_stream.seek(0)
-    _check_case(name, [mat_stream], expected)
 
 # Define cases to test
 theta = np.pi/4*np.arange(9,dtype=float).reshape(1,9)
@@ -181,20 +110,6 @@ case_table5.append(
      'expected': {
     'test3dmatrix': np.transpose(np.reshape(range(1,25), (4,3,2)))}
      })
-case_table5_rt = [
-    {'name': '3dmatrix',
-     'expected': {
-    'test3dmatrix': np.transpose(np.reshape(range(1,25), (4,3,2)))}
-     },
-    {'name': 'sparsefloat',
-     'expected': {'testsparsefloat':
-                  SP.coo_matrix(array([[1,0,2],[0,-3.5,0]]))},
-     },
-    {'name': 'sparsecomplex',
-     'expected': {'testsparsefloat':
-                  SP.coo_matrix(array([[-1+2j,0,2],[0,-3j,0]]))},
-     },
-    ]
 st_sub_arr = array([np.sqrt(2),np.exp(1),np.pi]).reshape(1,3)
 dtype = [(n, object) for n in ['stringfield', 'doublefield', 'complexfield']]
 st1 = np.zeros((1,1), dtype)
@@ -254,6 +169,94 @@ case_table5.append(
     {'name': 'unicode',
     'expected': {'testunicode': array([u_str])}
     })
+# These should also have matlab load equivalents, but I can't get to matlab at the moment
+case_table5_rt = case_table5[:]
+case_table5_rt.append(
+    {'name': 'sparsefloat',
+     'expected': {'testsparsefloat':
+                  SP.coo_matrix(array([[1,0,2],[0,-3.5,0]]))},
+     })
+case_table5_rt.append(
+    {'name': 'sparsecomplex',
+     'expected': {'testsparsecomplex':
+                  SP.coo_matrix(array([[-1+2j,0,2],[0,-3j,0]]))},
+     })
+
+
+def _check_level(label, expected, actual):
+    """ Check one level of a potentially nested array """
+    if SP.issparse(expected): # allow different types of sparse matrices
+        assert SP.issparse(actual)
+        assert_array_almost_equal(actual.todense(),
+                                  expected.todense(),
+                                  err_msg = label,
+                                  decimal = 5)
+        return
+    # Check types are as expected
+    typex = type(expected)
+    typac = type(actual)
+    assert typex is typac, \
+           "Expected type %s, got %s at %s" % (typex, typac, label)
+    # object, as container for matlab objects
+    if isinstance(expected, MatlabObject):
+        ex_fields = dir(expected)
+        ac_fields = dir(actual)
+        for k in ex_fields:
+            if k.startswith('__') and k.endswith('__'):
+                continue
+            assert k in ac_fields, \
+                   "Missing expected property %s for %s" % (k, label)
+            ev = expected.__dict__[k]
+            v = actual.__dict__[k]
+            level_label = "%s, property %s, " % (label, k)
+            _check_level(level_label, ev, v)
+        return
+    # A field in a record array may not be an ndarray
+    # A scalar from a record array will be type np.void
+    if not isinstance(expected, (np.void, np.ndarray)): 
+        assert_equal(expected, actual)
+        return
+    # This is an ndarray
+    assert_true(expected.shape == actual.shape,
+                msg='Expected shape %s, got %s at %s' % (expected.shape,
+                                                         actual.shape,
+                                                         label)
+                )
+    ex_dtype = expected.dtype
+    if ex_dtype.hasobject: # array of objects
+        for i, ev in enumerate(expected):
+            level_label = "%s, [%d], " % (label, i)
+            _check_level(level_label, ev, actual[i])
+        return
+    if ex_dtype.fields: # probably recarray
+        for fn in ex_dtype.fields:
+            level_label = "%s, field %s, " % (label, fn)
+            _check_level(level_label,
+                         expected[fn], actual[fn])
+        return
+    if ex_dtype.type in (np.unicode, # string
+                         np.unicode_):
+        assert_equal(actual, expected, err_msg=label)
+        return
+    # Something numeric
+    assert_array_almost_equal(actual, expected, err_msg=label, decimal=5)
+
+def _load_check_case(name, files, case):
+    for file_name in files:
+        matdict = loadmat(file_name, struct_as_record=True)
+        label = "test %s; file %s" % (name, file_name)
+        for k, expected in case.items():
+            k_label = "%s, variable %s" % (label, k)
+            assert k in matdict, "Missing key at %s" % k_label
+            _check_level(k_label, expected, matdict[k])
+
+# Round trip tests
+def _rt_check_case(name, expected, format):
+    mat_stream = StringIO()
+    savemat(mat_stream, expected, format=format)
+    mat_stream.seek(0)
+    _load_check_case(name, [mat_stream], expected)
+
 
 # generator for load tests
 def test_load():
@@ -263,7 +266,7 @@ def test_load():
         filt = join(test_data_path, 'test%s_*.mat' % name)
         files = glob(filt)
         assert files, "No files for test %s using filter %s" % (name, filt)
-        yield _check_case, name, files, expected
+        yield _load_check_case, name, files, expected
 
 # generator for round trip tests
 def test_round_trip():

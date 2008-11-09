@@ -728,14 +728,22 @@ class Mat5MatrixWriter(MatStreamWriter):
                      is_global=False,
                      is_complex=False,
                      is_logical=False,
-                     nzmax=0):
+                     nzmax=0,
+                     shape=None):
         ''' Write header for given data options
         mclass      - mat5 matrix class
         is_global   - True if matrix is global
         is_complex  - True if matrix is complex
         is_logical  - True if matrix is logical
         nzmax        - max non zero elements for sparse arrays
+        shape : {None, tuple} optional
+            directly specify shape if this is not the same as for
+            self.arr
         '''
+        if shape is None:
+            shape = self.arr.shape
+            if len(shape) < 2:
+                shape = shape + (0,) * (len(shape)-2)
         self._mat_tag_pos = self.file_stream.tell()
         self.write_dtype(self.mat_tag)
         # write array flags (complex, global, logical, class, nzmax)
@@ -746,13 +754,7 @@ class Mat5MatrixWriter(MatStreamWriter):
         af['flags_class'] = mclass | flags << 8
         af['nzmax'] = nzmax
         self.write_dtype(af)
-        # write array shape
-        if self.arr.ndim < 2:
-            new_arr = np.atleast_2d(self.arr)
-            if type(new_arr) != type(self.arr):
-                raise ValueError("Array should be 2-dimensional.")
-            self.arr = new_arr
-        self.write_element(np.array(self.arr.shape, dtype='i4'))
+        self.write_element(np.array(shape, dtype='i4'))
         # write name
         self.write_element(np.array([ord(c) for c in self.name], 'i1'))
 
@@ -786,21 +788,32 @@ class Mat5NumericWriter(Mat5MatrixWriter):
             self.write_element(self.arr)
         self.update_matrix_tag()
 
+
 class Mat5CharWriter(Mat5MatrixWriter):
     codec='ascii'
     def write(self):
         self.arr_to_chars()
-        self.write_header(mclass=mxCHAR_CLASS)
+        # We have to write the shape directly, because we are going
+        # recode the characters, and the resulting stream of chars
+        # may have a different length
+        shape = self.arr.shape
+        self.write_header(mclass=mxCHAR_CLASS,shape=shape)
+        # We need to do our own transpose (not using the normal
+        # write routines that do this for us)
+        arr = self.arr.T.copy()
         if self.arr.dtype.kind == 'U':
             # Recode unicode using self.codec
-            n_chars = np.product(self.arr.shape)
+            n_chars = np.product(shape)
             st_arr = np.ndarray(shape=(),
                                 dtype=self.arr_dtype_number(n_chars),
-                                buffer=self.arr)
+                                buffer=arr)
             st = st_arr.item().encode(self.codec)
-            self.arr = np.ndarray(shape=(len(st)), dtype='u1', buffer=st)
-        self.write_element(self.arr,mdtype=miUTF8)
+            arr = np.ndarray(shape=(len(st),),
+                             dtype='u1',
+                             buffer=st)
+        self.write_element(arr, mdtype=miUTF8)
         self.update_matrix_tag()
+
 
 class Mat5UniCharWriter(Mat5CharWriter):
     codec='UTF8'
@@ -976,17 +989,20 @@ class MatFile5Writer(MatFileWriter):
                 continue
             is_global = name in self.global_vars
             self.writer_getter.rewind()
-            self.writer_getter.matrix_writer_factory(
+            mat_writer = self.writer_getter.matrix_writer_factory(
                 var,
                 name,
-                is_global,
-                ).write()
+                is_global)
+            mat_writer.write()
             stream = self.writer_getter.stream
+            bytes_written = stream.tell()
+            stream.seek(0)
+            out_str = stream.read(bytes_written)
             if self.do_compression:
-                str = zlib.compress(stream.getvalue(stream.tell()))
+                out_str = zlib.compress(out_str)
                 tag = np.empty((), mdtypes_template['tag_full'])
                 tag['mdtype'] = miCOMPRESSED
                 tag['byte_count'] = len(str)
-                self.file_stream.write(tag.tostring() + str)
+                self.file_stream.write(tag.tostring() + out_str)
             else:
-                self.file_stream.write(stream.getvalue(stream.tell()))
+                self.file_stream.write(out_str)
