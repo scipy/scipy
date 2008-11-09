@@ -24,26 +24,32 @@ from scipy.io.matlab.mio5 import MatlabObject
 
 test_data_path = join(dirname(__file__), 'data')
 
+def mlarr(*args, **kwargs):
+    ''' Return matlab-compatible 2D array'''
+    arr = np.array(*args, **kwargs)
+    return np.atleast_2d(arr)
+
+def _get_fields(obj):
+    ''' Return field names that we will compare '''
+    
+
 def _check_level(label, expected, actual):
     """ Check one level of a potentially nested object / list """
     # object array is returned from cell array in mat file
     typex = type(expected)
     typac = type(actual)
-    if isinstance(expected, np.ndarray) and expected.dtype.hasobject:
-        assert typex is typac, "Different types at %s" % label
-        assert len(expected) == len(actual), \
-               "Expected list length %d, got %d at %s" % (
-            len(expected),
-            len(actual),
-            label)
-        for i, ev in enumerate(expected):
-            level_label = "%s, [%d], " % (label, i)
-            _check_level(level_label, ev, actual[i])
+    if SP.issparse(expected): # allow different types of sparse matrices
+        assert SP.issparse(actual)
+        assert_array_almost_equal(actual.todense(),
+                                  expected.todense(),
+                                  err_msg = label,
+                                  decimal = 5)
         return
-    # object, as container for matlab structs and objects
-    elif isinstance(expected, MatlabObject):
-        assert isinstance(actual, typex), \
-               "Different types %s and %s at %s" % (typex, typac, label)
+    # Check types are as expected
+    assert typex is typac, \
+           "Expected type %s, got %s at %s" % (typex, typac, label)
+    # object, as container for matlab objects
+    if isinstance(expected, MatlabObject):
         ex_fields = dir(expected)
         ac_fields = dir(actual)
         for k in ex_fields:
@@ -56,27 +62,26 @@ def _check_level(label, expected, actual):
             level_label = "%s, property %s, " % (label, k)
             _check_level(level_label, ev, v)
         return
-    # hoping this is a single value, which might be an array
-    if SP.issparse(expected):
-        assert SP.issparse(actual), "Expected sparse at %s" % label
-        assert_array_almost_equal(actual.todense(),
-                                  expected.todense(),
-                                  err_msg = label,
-                                  decimal = 5)
-    elif isinstance(expected, np.ndarray) and \
-         expected.dtype.type not in (np.void,
-                                     np.unicode,
-                                     np.object,
-                                     np.unicode_):
-        if expected.shape: # allow scalar and 0d array comparisons
-            assert isinstance(actual, np.ndarray), \
-                   "Expected ndarray at %s" % label
-        assert_array_almost_equal(actual, expected, err_msg=label, decimal=5)
-    else:
-        assert isinstance(expected, typac), \
-               "Expected %s and actual %s do not match at %s" % \
-               (typex, typac, label)
+    if not isinstance(expected, np.ndarray):
+        assert_equal(expected, actual)
+        return
+    if expected.dtype.hasobject: # array of objects
+        assert len(expected) == len(actual), \
+               "Expected list length %d, got %d at %s" % (
+            len(expected),
+            len(actual),
+            label)
+        for i, ev in enumerate(expected):
+            level_label = "%s, [%d], " % (label, i)
+            _check_level(level_label, ev, actual[i])
+        return
+    if expected.dtype.type in (
+                               np.unicode,
+                               np.object,
+                               np.unicode_):
         assert_equal(actual, expected, err_msg=label)
+        return
+    assert_array_almost_equal(actual, expected, err_msg=label, decimal=5)
 
 def _check_case(name, files, case):
     for file_name in files:
@@ -118,13 +123,13 @@ case_table4.append(
      })
 case_table4.append(
     {'name': 'sparse',
-     'expected': {'testsparse': SP.csc_matrix(A)},
+     'expected': {'testsparse': SP.coo_matrix(A)},
      })
 B = A.astype(complex)
 B[0,0] += 1j
 case_table4.append(
     {'name': 'sparsecomplex',
-     'expected': {'testsparsecomplex': SP.csc_matrix(B)},
+     'expected': {'testsparsecomplex': SP.coo_matrix(B)},
      })
 case_table4.append(
     {'name': 'multi',
@@ -133,7 +138,7 @@ case_table4.append(
      })
 case_table4.append(
     {'name': 'minus',
-     'expected': {'testminus': array(-1)},
+     'expected': {'testminus': mlarr(-1)},
      })
 case_table4.append(
     {'name': 'onechar',
@@ -142,22 +147,23 @@ case_table4.append(
 case_table5 = [
     {'name': 'cell',
      'expected': {'testcell':
-                  array([[
-    array([u'This cell contains this string and 3 arrays of increasing length']),
-    array([[1]]),
-    array([[1,2]]),
-    array([[1,2,3]])
+                  mlarr([[
+    array(
+    [u'This cell contains this string and 3 arrays of increasing length']),
+    mlarr([[1]]),
+    mlarr([[1,2]]),
+    mlarr([[1,2,3]])
     ]], dtype=object)}
      }]
 case_table5.append(
     {'name': 'emptycell',
      'expected': {'testemptycell':
-                  array([[
-    array([[1]]),
-    array([[2]]),
-    array([[]]), # This not returning with correct shape
-    array([[]]),
-    array([[3]])]], dtype=object)}
+                  mlarr([[
+    mlarr([[1]]),
+    mlarr([[2]]),
+    mlarr([[]]), # This not returning with correct shape
+    mlarr([[]]),
+    mlarr([[3]])]], dtype=object)}
      })
 case_table5.append(
     {'name': 'stringarray',
@@ -175,46 +181,49 @@ case_table5_rt = [
     'test3dmatrix': np.transpose(np.reshape(range(1,25), (4,3,2)))}
      },
     {'name': 'sparsefloat',
-     'expected': {'testsparsefloat': SP.csc_matrix(array([[1,0,2],[0,-3.5,0]]))},
+     'expected': {'testsparsefloat':
+                  SP.coo_matrix(array([[1,0,2],[0,-3.5,0]]))},
      },
     {'name': 'sparsecomplex',
-     'expected': {'testsparsefloat': SP.csc_matrix(array([[-1+2j,0,2],[0,-3j,0]]))},
+     'expected': {'testsparsefloat':
+                  SP.coo_matrix(array([[-1+2j,0,2],[0,-3j,0]]))},
      },
     ]
-sr2 = np.sqrt(2)
+st_sub_arr = array([np.sqrt(2),np.exp(1),np.pi]).reshape(1,3)
 dtype = [(n, object) for n in ['stringfield', 'doublefield', 'complexfield']]
-st1 = array([
-    [(u'Rats live on no evil star.',
-      array([sr2,np.exp(1), np.pi]),
-      (1+1j)*array([sr2,np.exp(1), np.pi]))]
-    ], dtype=dtype)
+st1 = np.zeros((1,1), dtype)
+st1['stringfield'][0,0] = array([u'Rats live on no evil star.'])
+st1['doublefield'][0,0] = st_sub_arr
+st1['complexfield'][0,0] = st_sub_arr * (1 + 1j)
 case_table5.append(
     {'name': 'struct',
      'expected': {'teststruct': st1}
      })
-a = array([array(1),
-           array([array(2), array(3),
-                  array([array(4), array(5)],
-                        dtype=object)],
-                 dtype=object)],
-          dtype=object)
+CN = np.zeros((1,2), dtype=object)
+CN[0,0] = mlarr(1)
+CN[0,1] = np.zeros((1,3), dtype=object)
+CN[0,1][0,0] = mlarr(2, dtype=np.uint8)
+CN[0,1][0,1] = mlarr([[3]], dtype=np.uint8)
+CN[0,1][0,2] = np.zeros((1,2), dtype=object)
+CN[0,1][0,2][0,0] = mlarr(4, dtype=np.uint8)
+CN[0,1][0,2][0,1] = mlarr(5, dtype=np.uint8)
 case_table5.append(
     {'name': 'cellnest',
-     'expected': {'testcellnest': a},
+     'expected': {'testcellnest': CN},
      })
 st2 = np.empty((1,1), dtype=[(n, object) for n in ['one', 'two']])
-st2[0,0]['one'] = array(1)
+st2[0,0]['one'] = mlarr(1)
 st2[0,0]['two'] = np.empty((1,1), dtype=[('three', object)])
-st2[0,0]['two'][0,0]['three'] = u'number 3'
+st2[0,0]['two'][0,0]['three'] = array(u'number 3')
 case_table5.append(
     {'name': 'structnest',
      'expected': {'teststructnest': st2}
      })
-a = np.empty((2,1), dtype=[(n, object) for n in ['one', 'two']])
-a[0,0]['one'] = array(1)
-a[0,0]['two'] = array(2)
-a[1,0]['one'] = u'number 1'
-a[1,0]['two'] = u'number 2'
+a = np.empty((1,2), dtype=[(n, object) for n in ['one', 'two']])
+a[0,0]['one'] = mlarr(1)
+a[0,0]['two'] = mlarr(2)
+a[0,1]['one'] = array(u'number 1')
+a[0,1]['two'] = array(u'number 2')
 case_table5.append(
     {'name': 'structarr',
      'expected': {'teststructarr': a}
@@ -225,9 +234,9 @@ a = MatlabObject('inline',
 a.expr = u'x'
 a.inputExpr = u' x = INLINE_INPUTS_{1};'
 a.args = u'x'
-a.isEmpty = array(0)
-a.numArgs = array(1)
-a.version = array(1)
+a.isEmpty = mlarr(0)
+a.numArgs = mlarr(1)
+a.version = mlarr(1)
 case_table5.append(
     {'name': 'object',
      'expected': {'testobject': a}
