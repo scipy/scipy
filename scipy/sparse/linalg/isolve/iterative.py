@@ -84,6 +84,8 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=Non
         slice1 = slice(ndx1-1, ndx1-1+n)
         slice2 = slice(ndx2-1, ndx2-1+n)
         if (ijob == -1):
+            if callback is not None:
+                callback(x)
             break
         elif (ijob == 1):
             work[slice2] *= sclr2
@@ -172,6 +174,8 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback
         slice1 = slice(ndx1-1, ndx1-1+n)
         slice2 = slice(ndx2-1, ndx2-1+n)
         if (ijob == -1):
+            if callback is not None:
+                callback(x)
             break
         elif (ijob == 1):
             if matvec is None:
@@ -262,6 +266,8 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None)
         slice1 = slice(ndx1-1, ndx1-1+n)
         slice2 = slice(ndx2-1, ndx2-1+n)
         if (ijob == -1):
+            if callback is not None:
+                callback(x)
             break
         elif (ijob == 1):
             work[slice2] *= sclr2
@@ -346,6 +352,8 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None
         slice1 = slice(ndx1-1, ndx1-1+n)
         slice2 = slice(ndx2-1, ndx2-1+n)
         if (ijob == -1):
+            if callback is not None:
+                callback(x)
             break
         elif (ijob == 1):
             work[slice2] *= sclr2
@@ -559,6 +567,8 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
         slice1 = slice(ndx1-1, ndx1-1+n)
         slice2 = slice(ndx2-1, ndx2-1+n)
         if (ijob == -1):
+            if callback is not None:
+                callback(x)
             break
         elif (ijob == 1):
             work[slice2] *= sclr2
@@ -585,3 +595,4 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
         ijob = 2
 
     return postprocess(x), info
+

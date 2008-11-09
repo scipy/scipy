@@ -77,10 +77,7 @@ class TestIterative(TestCase):
 
             x, info = solver(A, b, x0=x0, tol=1e-8, maxiter=3, callback=callback)
 
-            assert(len(residuals) in [2,3])
-
-            # TODO enforce this condition instead!
-            #assert_equal(len(residuals), 2)
+            assert_equal(len(residuals), 3)
 
 
     def test_convergence(self):
