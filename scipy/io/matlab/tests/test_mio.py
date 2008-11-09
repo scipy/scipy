@@ -337,3 +337,7 @@ def test_warnings():
     savemat(StringIO(), {}, False, '5')
     yield assert_raises, FutureWarning, savemat, StringIO(), {}
     warnings.resetwarnings()
+
+def test_regression_653():
+    """Regression test for #653."""
+    savemat(StringIO(), {'d':{1:2}}, format='5')
