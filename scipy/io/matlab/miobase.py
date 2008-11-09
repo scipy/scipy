@@ -59,7 +59,7 @@ def filldoc(func):
 	matlab files.  In a future version of scipy, we will change
 	the default setting to True, and following versions may remove
 	this flag entirely.  For now, we set the default to False, for
-	backwards compatibility, but issue a deprecation warning.
+	backwards compatibility, but issue a warning.
 	Note that non-record arrays cannot be exported via savemat.''',
     'matstream_arg':
     '''mat_stream : file-like

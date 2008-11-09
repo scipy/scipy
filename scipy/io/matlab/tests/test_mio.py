@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-''' Nose test generators '''
+''' Nose test generators
+
+'''
 from os.path import join, dirname
 from glob import glob
 from StringIO import StringIO
@@ -19,7 +21,7 @@ import numpy as np
 from numpy import array
 import scipy.sparse as SP
 
-from scipy.io.matlab.mio import loadmat, savemat
+from scipy.io.matlab.mio import loadmat, savemat, find_mat_file
 from scipy.io.matlab.mio5 import MatlabObject
 
 test_data_path = join(dirname(__file__), 'data')
@@ -311,23 +313,27 @@ def test_mat73():
     for filename in filenames:
         assert_raises(NotImplementedError, loadmat, filename, struct_as_record=True)
 
-def test_warn_struct_record():
-    # Use buffer hack to test for deprecation warning
-    warn_buf = StringIO()
-    base_show = warnings.showwarning
-    def showwarn(*args):
-        base_show(*args, **{'file':warn_buf})
+
+def test_warnings():
     fname = join(test_data_path, 'testdouble_7.1_GLNX86.mat')
+    warnings.simplefilter('error')
+    # This should not generate a warning
+    mres = loadmat(fname, struct_as_record=True)
+    # This neither
+    mres = loadmat(fname, struct_as_record=False)
+    # This should
+    yield assert_raises, FutureWarning, loadmat, fname
+    # This too
+    yield assert_raises, FutureWarning, find_mat_file, fname
+    # we need kwargs for this one
     try:
-        warnings.showwarning = showwarn
-        # This should not generate a deprecation warning
-        mres = loadmat(fname, struct_as_record=True)
-        yield assert_true, warn_buf.tell() == 0
-        # This neither
-        mres = loadmat(fname, struct_as_record=False)
-        yield assert_true, warn_buf.tell() == 0
-        # This should
-        mres = loadmat(fname)
-        yield assert_true, warn_buf.tell() > 0
-    finally:
-        warnings.showwarning = base_show
+        mres = loadmat(fname, struct_as_record=False, basename='raw')
+    except DeprecationWarning:
+        pass
+    else:
+        assert False, 'Did not raise deprecation warning'
+    # Test warning for default format change
+    savemat(StringIO(), {}, False, '4')
+    savemat(StringIO(), {}, False, '5')
+    yield assert_raises, FutureWarning, savemat, StringIO(), {}
+    warnings.resetwarnings()

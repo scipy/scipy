@@ -596,7 +596,7 @@ class MatFile5Reader(MatFileReader):
         if struct_as_record is None:
             warnings.warn("Using struct_as_record default value (False)" +
                           " This will change to True in future versions", 
-                          DeprecationWarning, stacklevel=2)
+                          FutureWarning, stacklevel=2)
             struct_as_record = False
         self.codecs = {}
         # Missing inputs to array reader set later (processor func

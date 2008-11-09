@@ -22,6 +22,9 @@ def find_mat_file(file_name, appendmat=True):
         file name for mat file
     %(append_arg)s
     '''
+    warnings.warn('Searching for mat files on python system path will be ' +
+                  'removed in future versions of scipy',
+                   FutureWarning, stacklevel=2)
     if appendmat and file_name[-4:] == ".mat":
         file_name = file_name[:-4]
     if os.sep in file_name:
@@ -55,10 +58,13 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
     %(struct_arg)s
     """
     if isinstance(file_name, basestring):
-        full_name = find_mat_file(file_name, appendmat)
-        if full_name is None:
-            raise IOError, "%s not found on the path." % file_name
-        byte_stream = open(full_name, 'rb')
+        try:
+            byte_stream = open(file_name, 'rb')
+        except IOError:
+            full_name = find_mat_file(file_name, appendmat)
+            if full_name is None:
+                raise IOError, "%s not found on the path." % file_name
+            byte_stream = open(full_name, 'rb')
     else:
         try:
             file_name.read(0)
@@ -110,7 +116,7 @@ def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
     return mdict
 
 @filldoc
-def savemat(file_name, mdict, appendmat=True, format='4'):
+def savemat(file_name, mdict, appendmat=True, format=None):
     """Save a dictionary of names and arrays into the MATLAB-style .mat file.
 
     This saves the arrayobjects in the given dictionary to a matlab
@@ -126,6 +132,11 @@ def savemat(file_name, mdict, appendmat=True, format='4'):
         '4' for matlab 4 mat files, '5' for matlab 5 (up to matlab
         7.2)
     """
+    if format is None:
+        warnings.warn(
+            "Using default format '4'. Default will change to '5' in future versions of scipy",
+            FutureWarning, stacklevel=2)
+        format = '4'
     file_is_string = isinstance(file_name, basestring)
     if file_is_string:
         if appendmat and file_name[-4:] != ".mat":
