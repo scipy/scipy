@@ -6,13 +6,14 @@
 
 import sys
 import zlib
-from cStringIO import StringIO
+from StringIO import StringIO
 from copy import copy as pycopy
+import warnings
 
 import numpy as np
 
 from miobase import MatFileReader, MatArrayReader, MatMatrixGetter, \
-     MatFileWriter, MatStreamWriter, spsparse
+     MatFileWriter, MatStreamWriter, spsparse, filldoc
 
 miINT8 = 1
 miUINT8 = 2
@@ -160,6 +161,102 @@ mx_numbers = (
     mxINT64_CLASS,
     mxUINT64_CLASS,
     )
+
+
+class mat_struct(object):
+    ''' Placeholder for holding read data from structs
+
+    We will deprecate this method of holding struct information in a
+    future version of scipy, in favor of the recarray method (see
+    loadmat doctstring)
+    '''
+    pass
+
+
+class MatlabObject(object):
+    ''' Class to contain data read from matlab objects 
+
+    Contains classname, and record array for field names and values
+
+    Attribute access fetches and sets record array fields if present
+
+    '''
+    def __init__(self, classname, fields):
+        """ Initialize MatlabObject
+
+        Parameters
+        ----------
+	self : object
+	classname : string
+	    class name for matlab object
+	fields : {recarray, string list}
+            either a recarray or a list of field names
+
+        >>> import numpy as np
+        >>> arr = np.zeros((1,1),dtype=[('field1','i2'),('field2','i2')])
+        >>> obj = MatlabObject('myclass', arr)
+        >>> obj = MatlabObject('myclass', ['field1', 'field2'])
+
+        """
+        # Initialize to make field setting work with __setattr__
+        self.__dict__['_fields'] = []
+        self.classname = classname
+        try: # recarray
+            fdict = fields.dtype.fields
+        except AttributeError: # something else
+            fields = tuple(fields)
+        else: # recarray again
+            self._fields = fdict.keys()
+            self.mobj_recarray = fields
+            return
+        # something else again
+        self._fields = fields
+        dtype = [(field, object) for field in fields]
+        self.mobj_recarray = np.zeros((1,1), dtype)
+    
+    def __getattr__(self, name):
+        ''' get attributes from object
+
+        Get attribute if present, otherwise field from recarray
+        
+        >>> import numpy as np
+        >>> arr = np.zeros((1,1),dtype=[('field1','i2'),('field2','i2')])
+        >>> obj = MatlabObject('myclass', arr)
+        >>> obj.field1
+        array([[0]], dtype=int16)
+        >>> obj = MatlabObject('myclass', ['field1', 'field2'])
+        >>> obj.field1
+        array([[0]], dtype=object)
+        >>> obj.classname
+        'myclass'
+        '''
+        if name in self.__dict__:
+            return self.__dict__[name]
+        mobj_recarray = self.__dict__['mobj_recarray']
+        if name in self.__dict__['_fields']:
+            return mobj_recarray[name]
+        else:
+            raise AttributeError(
+                "no field named %s in MatlabObject" % name)
+
+    def __setattr__(self, name, value):
+        ''' set attributes in object
+
+        Set field value from recarray, if present, else attribute
+
+        >>> import numpy as np
+        >>> arr = np.zeros((1,1),dtype=[('field1','i2'),('field2','i2')])
+        >>> obj = MatlabObject('myclass', arr)
+        >>> obj.field1[0,0] = 1
+        >>> obj.strangename = 'test'
+        >>> obj.strangename
+        'test'
+        '''
+        if name in self._fields:
+            self.mobj_recarray[name] = value
+        else:
+            self.__dict__[name] = value
+
 
 class Mat5ArrayReader(MatArrayReader):
     ''' Class to get Mat5 arrays
@@ -411,10 +508,6 @@ class Mat5CellMatrixGetter(Mat5MatrixGetter):
     def get_item(self):
         return self.read_element()
 
-class mat_struct(object):
-    ''' Placeholder for holding read data from structs '''
-    pass
-
 class Mat5StructMatrixGetter(Mat5MatrixGetter):
     def __init__(self, array_reader, header):
         super(Mat5StructMatrixGetter, self).__init__(array_reader, header)
@@ -444,26 +537,6 @@ class Mat5StructMatrixGetter(Mat5MatrixGetter):
                 result[i] = item
 
         return result.reshape(tupdims).T
-
-class MatlabObject(object):
-    ''' Class to contain read data from matlab objects '''
-    def __init__(self, classname, field_names):
-        self.__dict__['classname'] = classname
-        self.__dict__['mobj_recarray'] = np.empty((1,1), dtype=[(field_name, object)
-                                            for field_name in field_names])
-
-    def __getattr__(self, name):
-        mobj_recarray = self.__dict__['mobj_recarray']
-        if name in mobj_recarray.dtype.fields:
-            return mobj_recarray[0,0][name]
-        else:
-            raise AttributeError, "no field named %s in MatlabObject"%(name)
-
-    def __setattr__(self, name, value):
-        if name in self.__dict__['mobj_recarray'].dtype.fields:
-            self.__dict__['mobj_recarray'][0,0][name] = value
-        else:
-            self.__dict__[name] = value
 
 
 class Mat5ObjectMatrixGetter(Mat5MatrixGetter):
@@ -499,7 +572,7 @@ class MatFile5Reader(MatFileReader):
     uint16_codec       - char codec to use for uint16 char arrays
                           (defaults to system default codec)
    '''
-
+    @filldoc
     def __init__(self,
                  mat_stream,
                  byte_order=None,
@@ -507,34 +580,24 @@ class MatFile5Reader(MatFileReader):
                  squeeze_me=False,
                  chars_as_strings=True,
                  matlab_compatible=False,
-                 struct_as_record=False,
+                 struct_as_record=None, # default False, for now
                  uint16_codec=None
                  ):
+        '''Initializer for matlab 5 file format reader
+        
+    %(matstream_arg)s
+    %(load_args)s
+    %(struct_arg)s
+    uint16_codec : {None, string}
+        Set codec to use for uint16 char arrays (e.g. 'utf-8').
+        Use system default codec if None
         '''
-        mat_stream : file-like
-                     object with file API, open for reading
-        byte_order : {None, string}
-                      specification of byte order, one of:
-                      ('native', '=', 'little', '<', 'BIG', '>')
-        mat_dtype : {True, False} boolean
-                     If True, return arrays in same dtype as loaded into matlab
-                     otherwise return with dtype with which they were saved
-        squeeze_me : {False, True} boolean
-                     If True, squeezes dimensions of size 1 from arrays
-        chars_as_strings : {True, False} boolean
-                     If True, convert char arrays to string arrays
-        matlab_compatible : {False, True} boolean
-                     If True, returns matrices as would be loaded by matlab
-                     (implies squeeze_me=False, chars_as_strings=False
-                     mat_dtype=True, struct_as_record=True)
-        struct_as_record : {False, True} boolean
-                     If True, return strutures as numpy records,
-                     otherwise, return as custom object (for
-                     compatibility with scipy 0.6)
-        uint16_codec : {None, string}
-                     Set codec to use for uint16 char arrays
-                     (e.g. 'utf-8').  Use system default codec if None
-        '''
+        # Deal with deprecations
+        if struct_as_record is None:
+            warnings.warn("Using struct_as_record default value (False)" +
+                          " This will change to True in future versions", 
+                          DeprecationWarning, stacklevel=2)
+            struct_as_record = False
         self.codecs = {}
         # Missing inputs to array reader set later (processor func
         # below, dtypes, codecs via our own set_dtype function, called

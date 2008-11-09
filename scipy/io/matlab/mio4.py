@@ -5,7 +5,7 @@ import sys
 import numpy as np
 
 from miobase import MatFileReader, MatArrayReader, MatMatrixGetter, \
-     MatFileWriter, MatStreamWriter, spsparse
+     MatFileWriter, MatStreamWriter, spsparse, filldoc
 
 SYS_LITTLE_ENDIAN = sys.byteorder == 'little'
 
@@ -186,7 +186,13 @@ class Mat4SparseGetter(Mat4MatrixGetter):
 
 class MatFile4Reader(MatFileReader):
     ''' Reader for Mat4 files '''
+    @filldoc
     def __init__(self, mat_stream, *args, **kwargs):
+        ''' Initialize matlab 4 file reader
+        
+    %(matstream_arg)s
+    %(load_args)s
+        '''
         self._array_reader = Mat4ArrayReader(
             mat_stream,
             None,

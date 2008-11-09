@@ -14,6 +14,60 @@ try:
 except ImportError:
     spsparse = None
 
+def filldoc(func):
+    ''' Decorator to put recurring doc elements into mio doc strings '''
+    doc_dict = \
+   {'file_arg':
+    '''file_name : string
+        Name of the mat file (do not need .mat extension if
+    	appendmat==True) If name not a full path name, search for the
+    	file on the sys.path list and use the first one found (the
+    	current directory is searched first).  Can also pass open
+    	file-like object''',
+    'append_arg':
+    '''appendmat : {True, False} optional
+        True to append the .mat extension to the end of the given
+	filename, if not already present''',
+    'basename_arg':
+    '''base_name : string, optional, unused
+        base name for unnamed variables.  The code no longer uses
+        this.  We deprecate for this version of scipy, and will remove
+        it in future versions''',
+    'load_args':
+    '''byte_order : {None, string}, optional
+    	None by default, implying byte order guessed from mat
+	file. Otherwise can be one of ('native', '=', 'little', '<',
+	'BIG', '>')
+    mat_dtype : {False, True} optional
+         If True, return arrays in same dtype as would be loaded into
+	 matlab (instead of the dtype with which they are saved)
+    squeeze_me : {False, True} optional
+         whether to squeeze unit matrix dimensions or not
+    chars_as_strings : {True, False} optional
+         whether to convert char arrays to string arrays
+    matlab_compatible : {False, True}
+         returns matrices as would be loaded by matlab (implies
+         squeeze_me=False, chars_as_strings=False, mat_dtype=True,
+         struct_as_record=True)''',
+    'struct_arg':
+    '''struct_as_record : {False, True} optional
+        Whether to load matlab structs as numpy record arrays, or as
+	old-style numpy arrays with dtype=object.  Setting this flag
+	to False replicates the behaviour of scipy version 0.6
+	(returning numpy object arrays).  The preferred setting is
+	True, because it allows easier round-trip load and save of
+	matlab files.  In a future version of scipy, we will change
+	the default setting to True, and following versions may remove
+	this flag entirely.  For now, we set the default to False, for
+	backwards compatibility, but issue a deprecation warning.
+	Note that non-record arrays cannot be exported via savemat.''',
+    'matstream_arg':
+    '''mat_stream : file-like
+        object with file API, open for reading'''}
+    func.__doc__ = func.__doc__ % doc_dict
+    return func
+
+
 def small_product(arr):
     ''' Faster than product for small arrays '''
     res = 1
@@ -84,7 +138,6 @@ it in future versions of scipy.  Please use the
 scipy.io.matlab.byteordercodes module instead.
 """)(ByteOrder)
 
-
 class MatStreamAgent(object):
     ''' Base object for readers / getters from mat file streams
 
@@ -133,32 +186,21 @@ class MatFileReader(MatStreamAgent):
     guess_byte_order        - guesses file byte order from file
     """
 
+    @filldoc
     def __init__(self, mat_stream,
                  byte_order=None,
                  mat_dtype=False,
                  squeeze_me=False,
                  chars_as_strings=True,
                  matlab_compatible=False,
-                 struct_as_record=False
+                 struct_as_record=None
                  ):
         '''
+        Initializer for mat file reader
+        
         mat_stream : file-like
-                     object with file API, open for reading
-        byte_order : {None, string}
-                      specification of byte order, one of:
-                      ('native', '=', 'little', '<', 'BIG', '>')
-        mat_dtype : {True, False} boolean
-                     If True, return arrays in same dtype as loaded into matlab
-                     otherwise return with dtype with which they were saved
-        squeeze_me : {False, True} boolean
-                     If True, squeezes dimensions of size 1 from arrays
-        chars_as_strings : {True, False} boolean
-                     If True, convert char arrays to string arrays
-        matlab_compatible : {False, True} boolean
-                     If True, returns matrices as would be loaded by matlab
-                     (implies squeeze_me=False, chars_as_strings=False
-                     mat_dtype=True)
-
+            object with file API, open for reading
+    %(load_args)s
         '''
         # Initialize stream
         self.mat_stream = mat_stream
