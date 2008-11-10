@@ -218,7 +218,7 @@ cdef class cKDTree:
             raise ValueError("leafsize must be at least 1")
         self.maxes = np.ascontiguousarray(np.amax(self.data,axis=0))
         self.mins = np.ascontiguousarray(np.amin(self.data,axis=0))
-        self.indices = np.ascontiguousarray(np.arange(self.n,dtype=np.int))
+        self.indices = np.ascontiguousarray(np.arange(self.n,dtype=np.int32))
 
         inner_data = self.data
         self.raw_data = <double*>inner_data.data
