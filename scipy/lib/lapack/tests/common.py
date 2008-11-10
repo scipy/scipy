@@ -29,35 +29,20 @@ if hasattr(clapack, 'empty_module') or (clapack == flapack):
 else:
     CLAPACK_IS_EMPTY = False
 
+funcs = ['ssygv', 'dsygv', 'ssygvd', 'dsygvd', 'ssyev', 'dsyev', 'ssyevr',
+         'dsyevr', 'sgehrd', 'dgehrd', 'sgebal', 'dgebal']
+
 if not FLAPACK_IS_EMPTY:
-    FUNCS_FLAPACK = {'ssygv' : flapack.ssygv,
-                     'dsygv': flapack.dsygv,
-                     'ssygvd' : flapack.ssygvd,
-                     'dsygvd' : flapack.dsygvd,
-                     'ssyev' : flapack.ssyev,
-                     'dsyev': flapack.dsyev,
-                     'ssyevr' : flapack.ssyevr,
-                     'dsyevr' : flapack.dsyevr,
-                     'sgehrd' : flapack.sgehrd,
-                     'dgehrd' : flapack.dgehrd,
-                     'sgebal' : flapack.sgebal,
-                     'dgebal': flapack.dgebal}
+    FUNCS_FLAPACK = {}
+    for f in funcs:
+        FUNCS_FLAPACK[f] = getattr(flapack, f)
 else:
     FUNCS_FLAPACK = None
 
 if not CLAPACK_IS_EMPTY:
-    FUNCS_CLAPACK = {'ssygv' : clapack.ssygv,
-                     'dsygv': clapack.dsygv,
-                     'ssygvd' : clapack.ssygvd,
-                     'dsygvd' : clapack.dsygvd,
-                     'ssyev' : clapack.ssyev,
-                     'dsyev': clapack.dsyev,
-                     'ssyevr' : clapack.ssyevr,
-                     'dsyevr' : clapack.dsyevr,
-                     'sgehrd' : flapack.sgehrd,
-                     'dgehrd' : flapack.dgehrd,
-                     'sgebal' : clapack.sgebal,
-                     'dgebal': clapack.dgebal}
+    FUNCS_CLAPACK = {}
+    for f in funcs:
+        FUNCS_CLAPACK[f] = getattr(clapack, f)
 else:
     FUNCS_CLAPACK = None
 
