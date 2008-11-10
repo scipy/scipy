@@ -1,4 +1,4 @@
-
+import numpy as np
 from numpy.testing import *
 from numpy import dot
 
@@ -34,7 +34,12 @@ class _test_ev(object):
 
     def check_syevr(self,sym='sy'):
         a = [[1,2,3],[2,2,3],[3,3,6]]
-        exact_w = [-0.6699243371851365,0.4876938861533345,9.182230451031804]
+        if self.lapack.prefix == 's':
+            exact_dtype = np.float32
+        else:
+            exact_dtype = np.float
+        exact_w = np.array([-0.6699243371851365, 0.4876938861533345,
+                            9.182230451031804], exact_dtype)
         f = getattr(self.lapack,sym+'evr')
         w,v,info = f(a)
         assert not info,`info`
@@ -56,7 +61,12 @@ class _test_ev(object):
 
     def check_syevr_irange(self,sym='sy',irange=[0,2]):
         a = [[1,2,3],[2,2,3],[3,3,6]]
-        exact_w = [-0.6699243371851365,0.4876938861533345,9.182230451031804]
+        if self.lapack.prefix == 's':
+            exact_dtype = np.float32
+        else:
+            exact_dtype = np.float
+        exact_w = np.array([-0.6699243371851365, 0.4876938861533345,
+                            9.182230451031804], exact_dtype)
         f = getattr(self.lapack,sym+'evr')
         w,v,info = f(a,irange=irange)
         assert not info,`info`
