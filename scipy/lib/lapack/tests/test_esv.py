@@ -108,7 +108,8 @@ class TestEsv(TestCase):
     def test_clapack_ssyev(self):
         self._test_base('ssyev', 'C')
 
-    @dec.skipif(CLAPACK_IS_EMPTY, "Clapack empty, skip clapack test")
+    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["dsyev"], 
+                "Clapack empty, skip clapack test")
     def test_clapack_dsyev(self):
         self._test_base('dsyev', 'C')
 
