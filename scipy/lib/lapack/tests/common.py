@@ -42,7 +42,10 @@ else:
 if not CLAPACK_IS_EMPTY:
     FUNCS_CLAPACK = {}
     for f in funcs:
-        FUNCS_CLAPACK[f] = getattr(clapack, f)
+        try:
+            FUNCS_CLAPACK[f] = getattr(clapack, f)
+        except AttributeError:
+            FUNCS_CLAPACK[f] = None
 else:
     FUNCS_CLAPACK = None
 
