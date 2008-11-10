@@ -295,7 +295,7 @@ class interp1d(object):
 
         Returns
         -------
-        y_new : number or array
+        y_new : ndarray
             Interpolated value(s) corresponding to x_new.
 
         """
@@ -323,10 +323,10 @@ class interp1d(object):
             # special case: x is a scalar
             if out_of_bounds:
                 if ny == 0:
-                    return self.fill_value
+                    return asarray(self.fill_value)
                 else:
                     y_new[...] = self.fill_value
-            return y_new
+            return asarray(y_new)
         elif self._kind == 'linear':
             y_new[..., out_of_bounds] = self.fill_value
             axes = range(ny - nx)

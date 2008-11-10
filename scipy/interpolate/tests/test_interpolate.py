@@ -186,12 +186,17 @@ class TestInterp1D(TestCase):
     def _nd_check(self, kind='linear'):
         """ Check the behavior when the inputs and outputs are multidimensional.
         """
+
         # Multidimensional input.
         interp10 = interp1d(self.x10, self.y10, kind=kind)
         assert_array_almost_equal(
             interp10(np.array([[3.4, 5.6], [2.4, 7.8]])),
             np.array([[3.4, 5.6], [2.4, 7.8]]),
         )
+
+        # Scalar input -> 0-dim scalar array output
+        self.failUnless(isinstance(interp10(1.2), np.ndarray))
+        assert_equal(interp10(1.2).shape, ())
 
         # Multidimensional outputs.
         interp210 = interp1d(self.x10, self.y210, kind=kind)
