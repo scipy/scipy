@@ -921,7 +921,36 @@ def slepian(M,width,sym=1):
 
 
 def hilbert(x, N=None):
-    """Return the hilbert transform of x of length N.
+    """Compute the analytic signal.
+
+    The transformation is done along the first axis.
+
+    Parameters
+    ----------
+    x : array-like
+        Signal data
+    N : int, optional
+        Number of Fourier components. Default: ``x.shape[0]``
+
+    Returns
+    -------
+    xa : ndarray, shape (N,) + x.shape[1:]
+        Analytic signal of `x`
+
+    Notes
+    -----
+    The analytic signal `x_a(t)` of `x(t)` is::
+
+        x_a = F^{-1}(F(x) 2U) = x + i y
+    
+    where ``F`` is the Fourier transform, ``U`` the unit step function,
+    and ``y`` the Hilbert transform of ``x``. [1]
+
+    References
+    ----------
+    .. [1] Wikipedia, "Analytic signal".
+           http://en.wikipedia.org/wiki/Analytic_signal
+
     """
     x = asarray(x)
     if N is None:
@@ -946,7 +975,12 @@ def hilbert(x, N=None):
     return x
 
 def hilbert2(x,N=None):
-    """Return the '2-D' hilbert transform of x of length N.
+    """Compute the '2-D' analytic signal of `x` of length `N`.
+
+    See also
+    --------
+    hilbert
+
     """
     x = asarray(x)
     x = asarray(x)
