@@ -158,11 +158,15 @@ class TestInterp1D(TestCase):
             bounds_error=False, kind=kind)
         assert_array_equal(
             extrap10(11.2),
-            np.array([self.fill_value]),
+            np.array(self.fill_value),
         )
         assert_array_equal(
             extrap10(-3.4),
-            np.array([self.fill_value]),
+            np.array(self.fill_value),
+        )
+        assert_array_equal(
+            extrap10([[[11.2], [-3.4], [12.6], [19.3]]]),
+            np.array(self.fill_value),
         )
         assert_array_equal(
             extrap10._check_bounds(np.array([-1.0, 0.0, 5.0, 9.0, 11.0])),
@@ -193,7 +197,7 @@ class TestInterp1D(TestCase):
         interp210 = interp1d(self.x10, self.y210, kind=kind)
         assert_array_almost_equal(
             interp210(1.5),
-            np.array([[1.5], [11.5]]),
+            np.array([1.5, 11.5]),
         )
         assert_array_almost_equal(
             interp210(np.array([1.5, 2.4])),
@@ -204,7 +208,7 @@ class TestInterp1D(TestCase):
         interp102 = interp1d(self.x10, self.y102, axis=0, kind=kind)
         assert_array_almost_equal(
             interp102(1.5),
-            np.array([[3.0, 4.0]]),
+            np.array([3.0, 4.0]),
         )
         assert_array_almost_equal(
             interp102(np.array([1.5, 2.4])),

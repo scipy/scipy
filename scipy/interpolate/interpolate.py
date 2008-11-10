@@ -286,7 +286,7 @@ class interp1d(object):
         return result.reshape(x_new.shape+result.shape[1:])
 
     def __call__(self, x_new):
-        """ Find linearly interpolated y_new = f(x_new).
+        """Find interpolated y_new = f(x_new).
 
         Parameters
         ----------
@@ -296,13 +296,14 @@ class interp1d(object):
         Returns
         -------
         y_new : number or array
-            Linearly interpolated value(s) corresponding to x_new.
+            Interpolated value(s) corresponding to x_new.
+
         """
 
         # 1. Handle values in x_new that are outside of x.  Throw error,
         #    or return a list of mask array indicating the outofbounds values.
         #    The behavior is set by the bounds_error variable.
-        x_new = atleast_1d(x_new)
+        x_new = asarray(x_new)
         out_of_bounds = self._check_bounds(x_new)
 
         y_new = self._call(x_new)
@@ -318,7 +319,15 @@ class interp1d(object):
         # and
         # 7. Rotate the values back to their proper place.
 
-        if self._kind == 'linear':
+        if nx == 0:
+            # special case: x is a scalar
+            if out_of_bounds:
+                if ny == 0:
+                    return self.fill_value
+                else:
+                    y_new[...] = self.fill_value
+            return y_new
+        elif self._kind == 'linear':
             y_new[..., out_of_bounds] = self.fill_value
             axes = range(ny - nx)
             axes[self.axis:self.axis] = range(ny - nx, ny)
@@ -330,7 +339,7 @@ class interp1d(object):
             return y_new.transpose(axes)
 
     def _check_bounds(self, x_new):
-        """ Check the inputs for being in the bounds of the interpolated data.
+        """Check the inputs for being in the bounds of the interpolated data.
 
         Parameters
         ----------
