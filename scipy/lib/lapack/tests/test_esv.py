@@ -104,7 +104,8 @@ class TestEsv(TestCase):
         self._test_syevr_ranges('dsyevr', 'F')
 
     # Clapack tests
-    @dec.skipif(CLAPACK_IS_EMPTY, "Clapack empty, skip clapack test")
+    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["ssyev"], 
+                "Clapack empty, skip clapack test")
     def test_clapack_ssyev(self):
         self._test_base('ssyev', 'C')
 
@@ -113,19 +114,23 @@ class TestEsv(TestCase):
     def test_clapack_dsyev(self):
         self._test_base('dsyev', 'C')
 
-    @dec.skipif(CLAPACK_IS_EMPTY, "Clapack empty, skip clapack test")
+    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["ssyevr"], 
+                "Clapack empty, skip clapack test")
     def test_clapack_ssyevr(self):
         self._test_base('ssyevr', 'C')
 
-    @dec.skipif(CLAPACK_IS_EMPTY, "Clapack empty, skip clapack test")
+    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["dsyevr"], 
+                "Clapack empty, skip clapack test")
     def test_clapack_dsyevr(self):
         self._test_base('dsyevr', 'C')
 
-    @dec.skipif(CLAPACK_IS_EMPTY, "Clapack empty, skip clapack test")
+    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["ssyevr"], 
+                "Clapack empty, skip clapack test")
     def test_clapack_ssyevr_ranges(self):
         self._test_syevr_ranges('ssyevr', 'C')
 
-    @dec.skipif(CLAPACK_IS_EMPTY, "Clapack empty, skip clapack test")
+    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["dsyevr"], 
+                "Clapack empty, skip clapack test")
     def test_clapack_dsyevr_ranges(self):
         self._test_syevr_ranges('dsyevr', 'C')
 
