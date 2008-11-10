@@ -103,7 +103,8 @@ def eye(m, n, k=0, dtype='d', format=None):
     """eye(m, n) returns a sparse (m x n) matrix where the k-th diagonal
     is all ones and everything else is zeros.
     """
-    diags = np.ones((1, m), dtype=dtype)
+    m,n = int(m),int(n)
+    diags = np.ones((1, min(m,n)), dtype=dtype)
     return spdiags(diags, k, m, n).asformat(format)
 
 def kron(A, B, format=None):
@@ -111,10 +112,10 @@ def kron(A, B, format=None):
 
     Parameters
     ----------
-    A
-        matrix
-    B
-        matrix
+    A : sparse or dense matrix
+        first matrix of the product
+    B : sparse or dense matrix
+        second matrix of the product
     format : string
         format of the result (e.g. "csr")
 

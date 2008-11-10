@@ -76,17 +76,12 @@ class TestConstructUtils(TestCase):
             assert_equal( I.toarray(), [[1,0,0],[0,1,0],[0,0,1]])
 
     def test_eye(self):
-        a = eye(2, 3 )
-        b = array([[1, 0, 0], [0, 1, 0]], dtype='d')
-        assert_array_equal(a.toarray(), b)
+        assert_equal(eye(1,1).toarray(), [[1]])
+        assert_equal(eye(2,3).toarray(), [[1,0,0],[0,1,0]])
+        assert_equal(eye(3,2).toarray(), [[1,0],[0,1],[0,0]])
+        assert_equal(eye(3,3).toarray(), [[1,0,0],[0,1,0],[0,0,1]])
 
-        a = eye(3, 2)
-        b = array([[1, 0], [0, 1], [0, 0]], dtype='d')
-        assert_array_equal( a.toarray(), b)
-
-        a = eye(3, 3)
-        b = array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d')
-        assert_array_equal(a.toarray(), b)
+        assert_equal(eye(3,3,dtype='int16').dtype, 'int16')
 
     def test_kron(self):
         cases = []
