@@ -428,28 +428,28 @@ class TestFcluster(TestCase):
 
     def test_fclusterdata_maxclusts_2(self):
         "Tests fclusterdata(X, criterion='maxclust', t=2) on a random 3-cluster data set."
-        expectedT = eo['fclusterdata-maxclusts-2']
+        expectedT = np.int_(eo['fclusterdata-maxclusts-2'])
         X = eo['Q-X']
         T = fclusterdata(X, criterion='maxclust', t=2)
         self.failUnless(is_isomorphic(T, expectedT))
 
     def test_fclusterdata_maxclusts_3(self):
         "Tests fclusterdata(X, criterion='maxclust', t=3) on a random 3-cluster data set."
-        expectedT = eo['fclusterdata-maxclusts-3']
+        expectedT = np.int_(eo['fclusterdata-maxclusts-3'])
         X = eo['Q-X']
         T = fclusterdata(X, criterion='maxclust', t=3)
         self.failUnless(is_isomorphic(T, expectedT))
 
     def test_fclusterdata_maxclusts_4(self):
         "Tests fclusterdata(X, criterion='maxclust', t=4) on a random 3-cluster data set."
-        expectedT = eo['fclusterdata-maxclusts-4']
+        expectedT = np.int_(eo['fclusterdata-maxclusts-4'])
         X = eo['Q-X']
         T = fclusterdata(X, criterion='maxclust', t=4)
         self.failUnless(is_isomorphic(T, expectedT))
 
     def test_fcluster_maxclusts_2(self):
         "Tests fcluster(Z, criterion='maxclust', t=2) on a random 3-cluster data set."
-        expectedT = eo['fclusterdata-maxclusts-2']
+        expectedT = np.int_(eo['fclusterdata-maxclusts-2'])
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(Y)
@@ -458,7 +458,7 @@ class TestFcluster(TestCase):
 
     def test_fcluster_maxclusts_3(self):
         "Tests fcluster(Z, criterion='maxclust', t=3) on a random 3-cluster data set."
-        expectedT = eo['fclusterdata-maxclusts-3']
+        expectedT = np.int_(eo['fclusterdata-maxclusts-3'])
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(Y)
@@ -467,7 +467,7 @@ class TestFcluster(TestCase):
 
     def test_fcluster_maxclusts_4(self):
         "Tests fcluster(Z, criterion='maxclust', t=4) on a random 3-cluster data set."
-        expectedT = eo['fclusterdata-maxclusts-4']
+        expectedT = np.int_(eo['fclusterdata-maxclusts-4'])
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(Y)
@@ -484,6 +484,7 @@ class TestLeaders(TestCase):
         T = fcluster(Z, criterion='maxclust', t=3)
         Lright = (np.array([53, 55, 56]), np.array([2, 3, 1]))
         L = leaders(Z, T)
+        print L, Lright, T
         self.failUnless((L[0] == Lright[0]).all() and (L[1] == Lright[1]).all())
 
 def help_single_inconsistent_depth(self, i):
