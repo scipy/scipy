@@ -2,42 +2,11 @@ import numpy as np
 from numpy.testing import TestCase, assert_array_almost_equal, dec, \
                           assert_equal
 
-from scipy.lib.lapack import flapack, clapack
+from common import FUNCS_TP, FLAPACK_IS_EMPTY, CLAPACK_IS_EMPTY, FUNCS_FLAPACK, \
+                   FUNCS_CLAPACK, PREC
 
 A = np.array([[1,2,3],[2,2,3],[3,3,6]])
 B = np.array([[10,-1,1],[-1,8,-2],[1,-2,6]])
-
-FUNCS_TP = {'ssygv' : np.float32, 
-         'dsygv': np.float,
-         'ssygvd' : np.float32,
-         'dsygvd' : np.float}
-
-# Test FLAPACK if not empty
-if hasattr(flapack, 'empty_module'):
-    FLAPACK_IS_EMPTY = True
-else:
-    FLAPACK_IS_EMPTY = False
-
-# Test CLAPACK if not empty and not the same as clapack
-if hasattr(clapack, 'empty_module') or (clapack == flapack):
-    CLAPACK_IS_EMPTY = True
-else:
-    CLAPACK_IS_EMPTY = False
-
-if not FLAPACK_IS_EMPTY:
-    FUNCS_FLAPACK = {'ssygv' : flapack.ssygv,
-                     'dsygv': flapack.dsygv,
-                     'ssygvd' : flapack.ssygvd,
-                     'dsygvd' : flapack.dsygvd}
-
-if not CLAPACK_IS_EMPTY:
-    FUNCS_CLAPACK = {'ssygv' : clapack.ssygv,
-                     'dsygv': clapack.dsygv,
-                     'ssygvd' : clapack.ssygvd,
-                     'dsygvd' : clapack.dsygvd}
-
-
-PREC = {np.float32: 5, np.float: 12}
 
 class TestSygv(TestCase):
     def _test_base(self, func, lang, itype):

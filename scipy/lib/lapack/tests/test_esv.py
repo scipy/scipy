@@ -2,42 +2,12 @@ import numpy as np
 from numpy.testing import TestCase, assert_array_almost_equal, dec, \
                           assert_equal
 
-from scipy.lib.lapack import flapack, clapack
+from common import FUNCS_TP, FLAPACK_IS_EMPTY, CLAPACK_IS_EMPTY, FUNCS_FLAPACK, \
+                   FUNCS_CLAPACK, PREC
 
 SYEV_ARG = np.array([[1,2,3],[2,2,3],[3,3,6]])
 SYEV_REF = np.array([-0.6699243371851365, 0.4876938861533345,
                      9.182230451031804])
-
-FUNCS_TP = {'ssyev' : np.float32, 
-         'dsyev': np.float,
-         'ssyevr' : np.float32,
-         'dsyevr' : np.float}
-
-# Test FLAPACK if not empty
-if hasattr(flapack, 'empty_module'):
-    FLAPACK_IS_EMPTY = True
-else:
-    FLAPACK_IS_EMPTY = False
-
-# Test CLAPACK if not empty and not the same as clapack
-if hasattr(clapack, 'empty_module') or (clapack == flapack):
-    CLAPACK_IS_EMPTY = True
-else:
-    CLAPACK_IS_EMPTY = False
-
-if not FLAPACK_IS_EMPTY:
-    FUNCS_FLAPACK = {'ssyev' : flapack.ssyev,
-                     'dsyev': flapack.dsyev,
-                     'ssyevr' : flapack.ssyevr,
-                     'dsyevr' : flapack.dsyevr}
-
-if not CLAPACK_IS_EMPTY:
-    FUNCS_CLAPACK = {'ssyev' : clapack.ssyev,
-                     'dsyev': clapack.dsyev,
-                     'ssyevr' : clapack.ssyevr,
-                     'dsyevr' : clapack.dsyevr}
-
-PREC = {np.float32: 5, np.float: 12}
 
 class TestEsv(TestCase):
     def _test_base(self, func, lang):
