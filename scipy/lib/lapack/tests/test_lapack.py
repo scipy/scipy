@@ -67,18 +67,22 @@ class TestLapack(TestCase):
     def test_dgehrd(self):
         self._test_gehrd_base('dgehrd', 'F')
 
-    @dec.skipif(CLAPACK_IS_EMPTY, "Clapack empty, skip clapack test")
+    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["sgebal"], 
+                "Clapack empty, skip flapack test")
     def test_clapack_sgebal(self):
         self._test_gebal_base('sgebal', 'C')
                 
-    @dec.skipif(CLAPACK_IS_EMPTY, "Clapack empty, skip clapack test")
+    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["dgebal"], 
+                "Clapack empty, skip flapack test")
     def test_clapack_dgebal(self):
         self._test_gebal_base('dgebal', 'C')
                 
-    @dec.skipif(CLAPACK_IS_EMPTY, "Clapack empty, skip clapack test")
+    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["sgehrd"], 
+                "Clapack empty, skip flapack test")
     def test_clapack_sgehrd(self):
         self._test_gehrd_base('sgehrd', 'C')
                 
-    @dec.skipif(CLAPACK_IS_EMPTY, "Clapack empty, skip clapack test")
+    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["dgehrd"], 
+                "Clapack empty, skip flapack test")
     def test_clapack_dgehrd(self):
         self._test_gehrd_base('dgehrd', 'C')
