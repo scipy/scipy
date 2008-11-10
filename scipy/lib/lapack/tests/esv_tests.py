@@ -43,9 +43,9 @@ class _test_ev(object):
         f = getattr(self.lapack,sym+'evr')
         w,v,info = f(a)
         assert not info,`info`
-        assert_array_almost_equal(w,exact_w)
+        assert_array_almost_equal(w,exact_w, decimal=self.decimal)
         for i in range(3):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i])
+            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i], decimal=self.decimal)
 
 ##    def check_heevr_complex(self):
 ##        a= [[1,2-2j,3+7j],[2+2j,2,3],[3-7j,3,5]]
@@ -73,9 +73,9 @@ class _test_ev(object):
         rslice = slice(irange[0],irange[1]+1)
         m = irange[1] - irange[0] + 1
         assert_equal(len(w),m)
-        assert_array_almost_equal(w,exact_w[rslice])
+        assert_array_almost_equal(w,exact_w[rslice], decimal=self.decimal)
         for i in range(m):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i])
+            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i], decimal=self.decimal)
 
     def check_syevr_irange_low(self): self.check_syevr_irange(irange=[0,1])
 
