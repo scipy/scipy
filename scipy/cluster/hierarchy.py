@@ -787,18 +787,22 @@ def to_tree(Z, rd=False):
 
     :Parameters:
 
-        Z : ndarray
-          The linkage matrix in proper form (see the ``linkage``
-          function documentation).
+       - Z : ndarray
+         The linkage matrix in proper form (see the ``linkage``
+         function documentation).
 
-        r : bool
-          When ``False``, a reference to the root ClusterNode object is
-          returned.  Otherwise, a tuple (r,d) is returned. ``r`` is a
-          reference to the root node while ``d`` is a dictionary
-          mapping cluster ids to ClusterNode references. If a cluster id is
-          less than n, then it corresponds to a singleton cluster
-          (leaf node). See ``linkage`` for more information on the
-          assignment of cluster ids to clusters.
+       - r : bool
+         When ``False``, a reference to the root ClusterNode object is
+         returned.  Otherwise, a tuple (r,d) is returned. ``r`` is a
+         reference to the root node while ``d`` is a dictionary
+         mapping cluster ids to ClusterNode references. If a cluster id is
+         less than n, then it corresponds to a singleton cluster
+         (leaf node). See ``linkage`` for more information on the
+         assignment of cluster ids to clusters.
+
+    :Returns:
+        - L : list
+          The pre-order traversal.
 
     Note: This function is provided for the convenience of the library
     user. ClusterNodes are not used as input to any of the functions in this
@@ -869,7 +873,7 @@ def _convert_to_double(X):
         X = X.copy()
     return X
 
-def cophenet(*args, **kwargs):
+def cophenet(*args):
     """
     Calculates the cophenetic distances between each observation in
     the hierarchical clustering defined by the linkage ``Z``.
@@ -892,7 +896,7 @@ def cophenet(*args, **kwargs):
          dimensions. ``Y`` is the condensed distance matrix from which
          ``Z`` was generated.
 
-    :Returns:
+    :Returns: (c, {d})
        - c : ndarray
          The cophentic correlation distance (if ``y`` is passed).
 
@@ -901,19 +905,6 @@ def cophenet(*args, **kwargs):
          :math:`$ij$`th entry is the cophenetic distance between
          original observations :math:`$i$` and :math:`$j$`.
 
-    Calling Conventions
-    -------------------
-
-      1. ``d = cophenet(Z)``
-         Returns just the cophentic distance matrix.
-
-      2. ``c = cophenet(Z, Y)``
-         Returns just the cophentic correlation coefficient.
-
-      3. ``(c, d) = cophenet(Z, Y, [])``
-         Returns a tuple, ``(c, d)`` where ``c`` is the cophenetic
-         correlation coefficient and ``d`` is the condensed cophentic
-         distance matrix (upper triangular form).
     """
     nargs = len(args)
 
@@ -1342,7 +1333,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
-    T = np.zeros((n,), dtype=np.int)
+    T = np.zeros((n,), dtype='i')
 
     # Since the C code does not support striding using strides.
     # The dimensions are used instead.
@@ -1446,7 +1437,7 @@ def leaves_list(Z):
     Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
     n = Z.shape[0] + 1
-    ML = np.zeros((n,), dtype=np.int)
+    ML = np.zeros((n,), dtype='i')
     [Z] = _copy_arrays_if_base_present([Z])
     _hierarchy_wrap.prelist_wrap(Z, ML, int(n))
     return ML
@@ -2368,7 +2359,7 @@ def leaders(Z, T):
     """
     Z = np.asarray(Z, order='c')
     T = np.asarray(T, order='c')
-    if type(T) != np.ndarray or T.dtype != np.int:
+    if type(T) != np.ndarray or T.dtype != 'i':
         raise TypeError('T must be a one-dimensional numpy array of integers.')
     is_valid_linkage(Z, throw=True, name='Z')
     if len(T) != Z.shape[0] + 1:
@@ -2376,8 +2367,8 @@ def leaders(Z, T):
 
     Cl = np.unique(T)
     kk = len(Cl)
-    L = np.zeros((kk,), dtype=np.int)
-    M = np.zeros((kk,), dtype=np.int)
+    L = np.zeros((kk,), dtype='i')
+    M = np.zeros((kk,), dtype='i')
     n = Z.shape[0] + 1
     [Z, T] = _copy_arrays_if_base_present([Z, T])
     s = _hierarchy_wrap.leaders_wrap(Z, T, L, M, int(kk), int(n))
