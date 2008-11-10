@@ -9,7 +9,13 @@ FUNCS_TP = {'ssygv' : np.float32,
          'ssyev' : np.float32, 
          'dsyev': np.float,
          'ssyevr' : np.float32,
-         'dsyevr' : np.float}
+         'dsyevr' : np.float,
+         'ssyevr' : np.float32,
+         'dsyevr' : np.float,
+         'sgehrd' : np.float32,
+         'dgehrd' : np.float,
+         'sgebal' : np.float32, 
+         'dgebal': np.float}
 
 # Test FLAPACK if not empty
 if hasattr(flapack, 'empty_module'):
@@ -31,7 +37,11 @@ if not FLAPACK_IS_EMPTY:
                      'ssyev' : flapack.ssyev,
                      'dsyev': flapack.dsyev,
                      'ssyevr' : flapack.ssyevr,
-                     'dsyevr' : flapack.dsyevr}
+                     'dsyevr' : flapack.dsyevr,
+                     'sgehrd' : flapack.sgehrd,
+                     'dgehrd' : flapack.dgehrd,
+                     'sgebal' : flapack.sgebal,
+                     'dgebal': flapack.dgebal}
 else:
     FUNCS_FLAPACK = None
 
@@ -43,7 +53,11 @@ if not CLAPACK_IS_EMPTY:
                      'ssyev' : clapack.ssyev,
                      'dsyev': clapack.dsyev,
                      'ssyevr' : clapack.ssyevr,
-                     'dsyevr' : clapack.dsyevr}
+                     'dsyevr' : clapack.dsyevr,
+                     'sgehrd' : flapack.sgehrd,
+                     'dgehrd' : flapack.dgehrd,
+                     'sgebal' : clapack.sgebal,
+                     'dgebal': clapack.dgebal}
 else:
     FUNCS_CLAPACK = None
 
