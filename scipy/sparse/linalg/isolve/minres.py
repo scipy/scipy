@@ -67,7 +67,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
     istop = 0;   itn   = 0;   Anorm = 0;    Acond = 0;
     rnorm = 0;   ynorm = 0;
 
-    xtype = A.dtype #TODO update
+    xtype = x.dtype
 
     eps = finfo(xtype).eps
 
@@ -273,7 +273,12 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         print last + ' Arnorm  =  %12.4e'                       %  (Arnorm,)
         print last + msg[istop+1]
 
-    return (postprocess(x),0)
+    if istop == 6:
+        info = maxiter
+    else:
+        info = 0
+
+    return (postprocess(x),info)
 
 
 if __name__ == '__main__':

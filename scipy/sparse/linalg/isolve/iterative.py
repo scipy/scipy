@@ -1,13 +1,4 @@
-## Automatically adapted for scipy Oct 18, 2005 by
-
-
-# Iterative methods using reverse-communication raw material
-#   These methods solve
-#   Ax = b  for x
-
-#   where A must have A.matvec(x,*args) defined
-#    or be a numeric array
-
+"""Iterative methods for solving linear systems"""
 
 __all__ = ['bicg','bicgstab','cg','cgs','gmres','qmr']
 
@@ -106,6 +97,10 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=Non
                 ftflag = False
             bnrm2, resid, info = stoptest(work[slice1], b, bnrm2, tol, info)
         ijob = 2
+    
+    if info > 0 and iter_ == maxiter and resid > tol:
+        #info isn't set appropriately otherwise
+        info = iter_
 
     return postprocess(x), info
 
@@ -197,6 +192,10 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback
                 ftflag = False
             bnrm2, resid, info = stoptest(work[slice1], b, bnrm2, tol, info)
         ijob = 2
+    
+    if info > 0 and iter_ == maxiter and resid > tol:
+        #info isn't set appropriately otherwise
+        info = iter_
 
     return postprocess(x), info
 
@@ -284,6 +283,11 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None)
             bnrm2, resid, info = stoptest(work[slice1], b, bnrm2, tol, info)
         ijob = 2
 
+
+    if info > 0 and iter_ == maxiter and resid > tol:
+        #info isn't set appropriately otherwise
+        info = iter_
+
     return postprocess(x), info
 
 
@@ -369,11 +373,15 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None
                 ftflag = False
             bnrm2, resid, info = stoptest(work[slice1], b, bnrm2, tol, info)
         ijob = 2
+    
+    if info > 0 and iter_ == maxiter and resid > tol:
+        #info isn't set appropriately otherwise
+        info = iter_
 
     return postprocess(x), info
 
 
-def gmres(A, b, x0=None, tol=1e-5, restrt=None, maxiter=None, xtype=None, M=None, callback=None):
+def gmres(A, b, x0=None, tol=1e-5, restrt=20, maxiter=None, xtype=None, M=None, callback=None):
     """Use Generalized Minimal RESidual iteration to solve A x = b
 
     Inputs:
@@ -397,7 +405,7 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=None, maxiter=None, xtype=None, M=None
 
     x0  -- (0) default starting guess.
     tol -- (1e-5) relative tolerance to achieve
-    restrt -- (n) When to restart (change this to get faster performance -- but
+    restrt -- (10) When to restart (change this to get faster performance -- but
                    may not converge).
     maxiter -- (10*n) maximum number of iterations
     xtype  --  The type of the result.  If None, then it will be
@@ -416,14 +424,14 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=None, maxiter=None, xtype=None, M=None
     if maxiter is None:
         maxiter = n*10
 
+    restrt = min(restrt, n)        
+
     matvec = A.matvec
     psolve = M.matvec
     ltr = _type_conv[x.dtype.char]
     revcom   = getattr(_iterative, ltr + 'gmresrevcom')
     stoptest = getattr(_iterative, ltr + 'stoptest2')
 
-    if restrt is None:
-        restrt = n
     resid = tol
     ndx1 = 1
     ndx2 = -1
@@ -480,6 +488,10 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=None, maxiter=None, xtype=None, M=None
 
         if iter_num > maxiter:
             break
+    
+    if info >= 0 and resid > tol:
+        #info isn't set appropriately otherwise
+        info = maxiter
 
     return postprocess(x), info
 
@@ -593,6 +605,10 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
                 ftflag = False
             bnrm2, resid, info = stoptest(work[slice1], b, bnrm2, tol, info)
         ijob = 2
+    
+    if info > 0 and iter_ == maxiter and resid > tol:
+        #info isn't set appropriately otherwise
+        info = iter_
 
     return postprocess(x), info
 

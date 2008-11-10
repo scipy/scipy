@@ -8,6 +8,7 @@ from numpy import zeros, ones, arange, array, abs, max
 from scipy.linalg import norm
 from scipy.sparse import spdiags, csr_matrix
 
+from scipy.sparse.linalg.interface import LinearOperator
 from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres
 
 #def callback(x):
@@ -66,6 +67,7 @@ class TestIterative(TestCase):
         """test whether maxiter is respected"""
 
         A = Poisson1D
+        tol = 1e-12
 
         for solver,req_sym,req_pos in self.solvers:
             b  = arange(A.shape[0], dtype=float)
@@ -75,10 +77,10 @@ class TestIterative(TestCase):
             def callback(x):
                 residuals.append( norm(b - A*x) )
 
-            x, info = solver(A, b, x0=x0, tol=1e-8, maxiter=3, callback=callback)
+            x, info = solver(A, b, x0=x0, tol=tol, maxiter=3, callback=callback)
 
             assert_equal(len(residuals), 3)
-
+            assert_equal(info, 3)
 
     def test_convergence(self):
         """test whether all methods converge"""
@@ -101,29 +103,40 @@ class TestIterative(TestCase):
                 assert( norm(b - A*x) < tol*norm(b) )
 
     def test_precond(self):
-        """test whether all methods accept a preconditioner"""
+        """test whether all methods accept a trivial preconditioner"""
 
         tol = 1e-8
+        
+        def identity(b,which=None):
+            """trivial preconditioner"""
+            return b
 
         for solver,req_sym,req_pos in self.solvers:
+
             for A,sym,pos in self.cases:
                 if req_sym and not sym: continue
                 if req_pos and not pos: continue
 
                 M,N = A.shape
-                D = spdiags( [abs(1.0/A.diagonal())], [0], M, N)
-                def precond(b,which=None):
-                    return D*b
-
-                A = A.copy()
-                A.psolve  = precond
-                A.rpsolve = precond
+                D = spdiags( [1.0/A.diagonal()], [0], M, N)
 
                 b  = arange(A.shape[0], dtype=float)
                 x0 = 0*b
 
-                x, info = solver(A, b, x0=x0, tol=tol)
+                precond = LinearOperator(A.shape, identity, rmatvec=identity)
 
+                if solver == qmr:
+                    x, info = solver(A, b, M1=precond, M2=precond, x0=x0, tol=tol)
+                else:
+                    x, info = solver(A, b, M=precond, x0=x0, tol=tol)
+                assert_equal(info,0)
+                assert( norm(b - A*x) < tol*norm(b) )
+                
+                A = A.copy()
+                A.psolve  = identity 
+                A.rpsolve = identity
+
+                x, info = solver(A, b, x0=x0, tol=tol)
                 assert_equal(info,0)
                 assert( norm(b - A*x) < tol*norm(b) )
 
