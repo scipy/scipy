@@ -1,6 +1,6 @@
 
 /* Copyright 1999 Travis Oliphant
-   Permision to copy and modified this file is granted under the LGPL.
+   Permision to copy and modified this file is granted under the revised BSD license.
    No warranty is expressed or IMPLIED
  
    Changes:  2004 converted to SuperLU_3.0 and added factor and solve routines for
