@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 ''' Nose test generators
 
+Need function load / save / roundtrip tests
+
 '''
 from os.path import join, dirname
 from glob import glob
@@ -9,6 +11,7 @@ from tempfile import mkdtemp
 import warnings
 import shutil
 import gzip
+import copy
 
 from numpy.testing import \
      assert_array_almost_equal, \
@@ -151,15 +154,17 @@ case_table5.append(
     {'name': 'structarr',
      'expected': {'teststructarr': a}
      })
-MO = MatlabObject('inline',
+ODT = np.dtype([(n, object) for n in
                  ['expr', 'inputExpr', 'args',
-                  'isEmpty', 'numArgs', 'version'])
-MO.expr = u'x'
-MO.inputExpr = u' x = INLINE_INPUTS_{1};'
-MO.args = u'x'
-MO.isEmpty = mlarr(0)
-MO.numArgs = mlarr(1)
-MO.version = mlarr(1)
+                  'isEmpty', 'numArgs', 'version']])
+MO = MatlabObject(np.zeros((1,1), dtype=ODT), 'inline')
+m0 = MO[0,0]
+m0['expr'] = array([u'x'])
+m0['inputExpr'] = array([u' x = INLINE_INPUTS_{1};'])
+m0['args'] = array([u'x'])
+m0['isEmpty'] = mlarr(0)
+m0['numArgs'] = mlarr(1)
+m0['version'] = mlarr(1)
 case_table5.append(
     {'name': 'object',
      'expected': {'testobject': MO}
@@ -171,7 +176,8 @@ case_table5.append(
     {'name': 'unicode',
     'expected': {'testunicode': array([u_str])}
     })
-# These should also have matlab load equivalents, but I can't get to matlab at the moment
+# These should also have matlab load equivalents,
+# but I can't get to matlab at the moment
 case_table5_rt = case_table5[:]
 case_table5_rt.append(
     {'name': 'sparsefloat',
@@ -183,7 +189,9 @@ case_table5_rt.append(
      'expected': {'testsparsecomplex':
                   SP.coo_matrix(array([[-1+2j,0,2],[0,-3j,0]]))},
      })
-
+case_table5_rt.append(
+    {'name': 'objectarray',
+     'expected': {'testobjectarray': np.repeat(MO, 2).reshape(1,2)}})
 
 def _check_level(label, expected, actual):
     """ Check one level of a potentially nested array """
@@ -199,26 +207,13 @@ def _check_level(label, expected, actual):
     typac = type(actual)
     assert typex is typac, \
            "Expected type %s, got %s at %s" % (typex, typac, label)
-    # object, as container for matlab objects
-    if isinstance(expected, MatlabObject):
-        ex_fields = dir(expected)
-        ac_fields = dir(actual)
-        for k in ex_fields:
-            if k.startswith('__') and k.endswith('__'):
-                continue
-            assert k in ac_fields, \
-                   "Missing expected property %s for %s" % (k, label)
-            ev = expected.__dict__[k]
-            v = actual.__dict__[k]
-            level_label = "%s, property %s, " % (label, k)
-            _check_level(level_label, ev, v)
-        return
     # A field in a record array may not be an ndarray
     # A scalar from a record array will be type np.void
-    if not isinstance(expected, (np.void, np.ndarray)): 
+    if not isinstance(expected,
+                      (np.void, np.ndarray, MatlabObject)): 
         assert_equal(expected, actual)
         return
-    # This is an ndarray
+    # This is an ndarray-like thing
     assert_true(expected.shape == actual.shape,
                 msg='Expected shape %s, got %s at %s' % (expected.shape,
                                                          actual.shape,
@@ -226,6 +221,8 @@ def _check_level(label, expected, actual):
                 )
     ex_dtype = expected.dtype
     if ex_dtype.hasobject: # array of objects
+        if isinstance(expected, MatlabObject):
+            assert_equal(expected.classname, actual.classname)
         for i, ev in enumerate(expected):
             level_label = "%s, [%d], " % (label, i)
             _check_level(level_label, ev, actual[i])
@@ -311,7 +308,10 @@ def test_mat73():
         join(test_data_path, 'testhdf5*.mat'))
     assert len(filenames)
     for filename in filenames:
-        assert_raises(NotImplementedError, loadmat, filename, struct_as_record=True)
+        assert_raises(NotImplementedError,
+                      loadmat,
+                      filename,
+                      struct_as_record=True)
 
 
 def test_warnings():
@@ -326,20 +326,16 @@ def test_warnings():
     # This too
     yield assert_raises, FutureWarning, find_mat_file, fname
     # we need kwargs for this one
-    try:
-        mres = loadmat(fname, struct_as_record=False, basename='raw')
-    except DeprecationWarning:
-        pass
-    else:
-        assert False, 'Did not raise deprecation warning'
+    yield (lambda a, k: assert_raises(*a, **k), 
+          (DeprecationWarning, loadmat, fname), 
+          {'struct_as_record':True, 'basename':'raw'})
     # Test warning for default format change
     savemat(StringIO(), {}, False, '4')
     savemat(StringIO(), {}, False, '5')
     yield assert_raises, FutureWarning, savemat, StringIO(), {}
     warnings.resetwarnings()
 
-@dec.knownfailureif(True, "Infinite recursion when writing a simple "\
-                          "dictionary to matlab file.")
+
 def test_regression_653():
     """Regression test for #653."""
-    savemat(StringIO(), {'d':{1:2}}, format='5')
+    assert_raises(TypeError, savemat, StringIO(), {'d':{1:2}}, format='5')
