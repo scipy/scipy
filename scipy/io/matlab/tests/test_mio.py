@@ -267,6 +267,7 @@ def test_load():
         assert files, "No files for test %s using filter %s" % (name, filt)
         yield _load_check_case, name, files, expected
 
+
 # generator for round trip tests
 def test_round_trip():
     for case in case_table4 + case_table5_rt:
@@ -274,6 +275,7 @@ def test_round_trip():
         expected = case['expected']
         format = case in case_table4 and '4' or '5'
         yield _rt_check_case, name, expected, format
+
 
 def test_gzip_simple():
     xdense = np.zeros((20,20))
@@ -329,13 +331,10 @@ def test_warnings():
     yield (lambda a, k: assert_raises(*a, **k), 
           (DeprecationWarning, loadmat, fname), 
           {'struct_as_record':True, 'basename':'raw'})
-    # Test warning for default format change
-    savemat(StringIO(), {}, False, '4')
-    savemat(StringIO(), {}, False, '5')
-    yield assert_raises, FutureWarning, savemat, StringIO(), {}
     warnings.resetwarnings()
 
 
 def test_regression_653():
     """Regression test for #653."""
     assert_raises(TypeError, savemat, StringIO(), {'d':{1:2}}, format='5')
+

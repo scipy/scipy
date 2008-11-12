@@ -116,7 +116,7 @@ def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
     return mdict
 
 @filldoc
-def savemat(file_name, mdict, appendmat=True, format=None):
+def savemat(file_name, mdict, appendmat=True, format='5'):
     """Save a dictionary of names and arrays into the MATLAB-style .mat file.
 
     This saves the arrayobjects in the given dictionary to a matlab
@@ -128,15 +128,10 @@ def savemat(file_name, mdict, appendmat=True, format=None):
     m_dict : dict
         dictionary from which to save matfile variables
     %(append_arg)s
-    format : {'4', '5'} string, optional
-        '4' for matlab 4 mat files, '5' for matlab 5 (up to matlab
-        7.2)
+    format : {'5', '4'} string, optional
+        '5' for matlab 5 (up to matlab 7.2)
+        '4' for matlab 4 mat files, 
     """
-    if format is None:
-        warnings.warn(
-            "Using default format '4'. Default will change to '5' in future versions of scipy",
-            FutureWarning, stacklevel=2)
-        format = '4'
     file_is_string = isinstance(file_name, basestring)
     if file_is_string:
         if appendmat and file_name[-4:] != ".mat":

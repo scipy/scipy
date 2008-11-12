@@ -8,12 +8,6 @@ import numpy as np
 
 import byteordercodes as boc
 
-# sparse module if available
-try:
-    import scipy.sparse as spsparse
-except ImportError:
-    spsparse = None
-
 def filldoc(func):
     ''' Decorator to put recurring doc elements into mio doc strings '''
     doc_dict = \

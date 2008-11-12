@@ -12,8 +12,10 @@ import warnings
 
 import numpy as np
 
+import scipy.sparse
+
 from miobase import MatFileReader, MatArrayReader, MatMatrixGetter, \
-     MatFileWriter, MatStreamWriter, spsparse, filldoc
+     MatFileWriter, MatStreamWriter, filldoc
 
 miINT8 = 1
 miUINT8 = 2
@@ -173,13 +175,8 @@ class mat_struct(object):
     pass
 
 
-class MatlabFunction(np.ndarray):
-    ''' class to signal this is a matlab function '''
-    def __new__(cls, input_array):
-        return np.asarray(input_array).view(cls)
-
-
 class MatlabObject(np.ndarray):
+    ''' ndarray Subclass to contain matlab object '''
     def __new__(cls, input_array, classname=None):
         # Input array is an already formed ndarray instance
         # We first cast to be our class type
@@ -194,6 +191,12 @@ class MatlabObject(np.ndarray):
         self.classname = getattr(obj, 'classname', None)
         # We do not need to return anything
 
+
+class MatlabFunction(np.ndarray):
+    ''' Subclass to signal this is a matlab function '''
+    def __new__(cls, input_array):
+        obj = np.asarray(input_array).view(cls)
+    
 
 class Mat5ArrayReader(MatArrayReader):
     ''' Class to get Mat5 arrays
@@ -412,11 +415,9 @@ class Mat5SparseMatrixGetter(Mat5MatrixGetter):
         nnz = indptr[-1]
         rowind = rowind[:nnz]
         data   = data[:nnz]
-        if spsparse:
-            return spsparse.csc_matrix((data,rowind,indptr), shape=(M,N))
-        else:
-            return ((M,N), data, rowind, indptr)
-
+        return scipy.sparse.csc_matrix(
+            (data,rowind,indptr),
+            shape=(M,N))
 
 class Mat5CharMatrixGetter(Mat5MatrixGetter):
     def get_raw_array(self):
@@ -850,9 +851,8 @@ class Mat5WriterGetter(object):
             whether variable will be global on load into matlab
         '''
         # First check if these are sparse
-        if spsparse:
-            if spsparse.issparse(arr):
-                return Mat5SparseWriter(self.stream, arr, name, is_global)
+        if scipy.sparse.issparse(arr):
+            return Mat5SparseWriter(self.stream, arr, name, is_global)
         # Next try and convert to an array
         narr = np.asanyarray(arr)
         if narr.dtype.type in (np.object, np.object_) and \

@@ -4,8 +4,11 @@ import sys
 
 import numpy as np
 
+import scipy.sparse
+
 from miobase import MatFileReader, MatArrayReader, MatMatrixGetter, \
-     MatFileWriter, MatStreamWriter, spsparse, filldoc
+     MatFileWriter, MatStreamWriter, filldoc
+
 
 SYS_LITTLE_ENDIAN = sys.byteorder == 'little'
 
@@ -179,9 +182,7 @@ class Mat4SparseGetter(Mat4MatrixGetter):
         else:
             V = np.ascontiguousarray(tmp[:,2],dtype='complex')
             V.imag = tmp[:,3]
-        if spsparse:
-            return spsparse.coo_matrix((V,(I,J)), dims)
-        return (dims, I, J, V)
+        return scipy.sparse.coo_matrix((V,(I,J)), dims)
 
 
 class MatFile4Reader(MatFileReader):
@@ -324,9 +325,8 @@ def matrix_writer_factory(stream, arr, name):
     arr         - array to write
     name        - name in matlab (TM) workspace
     '''
-    if spsparse:
-        if spsparse.issparse(arr):
-            return Mat4SparseWriter(stream, arr, name)
+    if scipy.sparse.issparse(arr):
+        return Mat4SparseWriter(stream, arr, name)
     arr = np.array(arr)
     dtt = arr.dtype.type
     if dtt is np.object_:
