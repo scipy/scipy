@@ -1260,7 +1260,7 @@ def Z_y_correspond(Z, Y):
     """
     Z = np.asarray(Z, order='c')
     Y = np.asarray(Y, order='c')
-    return numobs_y(Y) == numobs_linkage(Z)
+    return distance.numobs_y(Y) == numobs_linkage(Z)
 
 def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     """

@@ -32,6 +32,9 @@ for computing the number of observations in a distance matrix.
 +------------------+-------------------------------------------------+
 |numobs_dm         | # of observations in a distance matrix.         |
 +------------------+-------------------------------------------------+
+|numobs_y          | # of observations in a condensed distance       |
+|                  | matrix.                                         |
++------------------+-------------------------------------------------+
 
 Distance functions between two vectors ``u`` and ``v``. Computing
 distances over a large collection of vectors is inefficient for these
@@ -1550,7 +1553,12 @@ def numobs_y(Y):
     """
     Y = np.asarray(Y, order='c')
     is_valid_y(Y, throw=True, name='Y')
-    d = int(np.ceil(np.sqrt(Y.shape[0] * 2)))
+    k = Y.shape[0]
+    if k == 0:
+        raise ValueError("The number of observations cannot be determined on an empty distance matrix.")
+    d = int(np.ceil(np.sqrt(k * 2)))
+    if (d*(d-1)/2) != k:
+        raise ValueError("Invalid condensed distance matrix passed. Must be some k where k=(n choose 2) for some n >= 2.")
     return d
 
 

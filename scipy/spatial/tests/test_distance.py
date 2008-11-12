@@ -39,7 +39,8 @@ import os.path
 import numpy as np
 from numpy.testing import *
 from scipy.spatial.distance import squareform, pdist, cdist, matching, \
-                                   jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule
+                                   jaccard, dice, sokalsneath, rogerstanimoto, \
+                                   russellrao, yule, numobs_y
 
 _filenames = ["iris.txt",
               "cdist-X1.txt",
@@ -81,6 +82,7 @@ _ytdist = squareform(_tdist)
 eo = {}
 
 def load_testing_files():
+    "Loading test data files for the scipy.spatial.distance tests."
     for fn in _filenames:
         name = fn.replace(".txt", "").replace("-ml", "")
         fqfn = os.path.join(os.path.dirname(__file__), fn)
@@ -1372,6 +1374,7 @@ class TestSquareForm(TestCase):
         self.failUnless(rA.shape == (0,))
 
     def test_squareform_empty_vector(self):
+        "Tests squareform on an empty vector."
         v = np.zeros((0,))
         rv = squareform(np.array(v, dtype='double'))
         self.failUnless(rv.shape == (1,1))
@@ -1426,3 +1429,50 @@ class TestSquareForm(TestCase):
                     k += 1
                 else:
                     self.failUnless(A[i, j] == 0)
+
+class TestNumObsY(TestCase):
+
+    def test_num_obs_y_1(self):
+        "Tests numobs_y(y) on a condensed distance matrix over 1 observations. Expecting exception."
+        self.failUnlessRaises(ValueError, self.check_y, 1)
+
+    def test_num_obs_y_2(self):
+        "Tests numobs_y(y) on a condensed distance matrix over 2 observations."
+        self.failUnless(self.check_y(2))
+
+    def test_num_obs_y_3(self):
+        "Tests numobs_y(y) on a condensed distance matrix over 3 observations."
+        self.failUnless(self.check_y(3))
+
+    def test_num_obs_y_4(self):
+        "Tests numobs_y(y) on a condensed distance matrix over 4 observations."
+        self.failUnless(self.check_y(4))
+
+    def test_num_obs_y_5_10(self):
+        "Tests numobs_y(y) on a condensed distance matrix between 5 and 15 observations."
+        for i in xrange(5, 16):
+            self.minit(i)
+
+    def test_num_obs_y_2_100(self):
+        "Tests numobs_y(y) on 100 improper condensed distance matrices. Expecting exception."
+        a = set([])
+        for n in xrange(2, 16):
+            a.add(n*(n-1)/2)
+        print a
+        for i in xrange(5, 105):
+            if i not in a:
+                self.failUnlessRaises(ValueError, self.bad_y, i)
+
+    def minit(self, n):
+        self.failUnless(self.check_y(n))
+
+    def bad_y(self, n):
+        y = np.random.rand(n)
+        return numobs_y(y)
+
+    def check_y(self, n):
+        return numobs_y(self.make_y(n)) == n
+
+    def make_y(self, n):
+        return np.random.rand((n*(n-1)/2))
+
