@@ -1534,6 +1534,8 @@ def numobs_dm(d):
     """
     d = np.asarray(d, order='c')
     is_valid_dm(d, tol=np.inf, throw=True, name='d')
+    if d.shape[0] == 0:
+        raise ValueError("The number of observations cannot be determined on an empty distance matrix.")
     return d.shape[0]
 
 def numobs_y(Y):

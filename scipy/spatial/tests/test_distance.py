@@ -40,7 +40,7 @@ import numpy as np
 from numpy.testing import *
 from scipy.spatial.distance import squareform, pdist, cdist, matching, \
                                    jaccard, dice, sokalsneath, rogerstanimoto, \
-                                   russellrao, yule, numobs_y
+                                   russellrao, yule, numobs_y, numobs_dm
 
 _filenames = ["iris.txt",
               "cdist-X1.txt",
@@ -1432,28 +1432,28 @@ class TestSquareForm(TestCase):
 
 class TestNumObsY(TestCase):
 
-    def test_num_obs_y_1(self):
+    def test_numobs_y_1(self):
         "Tests numobs_y(y) on a condensed distance matrix over 1 observations. Expecting exception."
         self.failUnlessRaises(ValueError, self.check_y, 1)
 
-    def test_num_obs_y_2(self):
+    def test_numobs_y_2(self):
         "Tests numobs_y(y) on a condensed distance matrix over 2 observations."
         self.failUnless(self.check_y(2))
 
-    def test_num_obs_y_3(self):
+    def test_numobs_y_3(self):
         "Tests numobs_y(y) on a condensed distance matrix over 3 observations."
         self.failUnless(self.check_y(3))
 
-    def test_num_obs_y_4(self):
+    def test_numobs_y_4(self):
         "Tests numobs_y(y) on a condensed distance matrix over 4 observations."
         self.failUnless(self.check_y(4))
 
-    def test_num_obs_y_5_10(self):
+    def test_numobs_y_5_10(self):
         "Tests numobs_y(y) on a condensed distance matrix between 5 and 15 observations."
         for i in xrange(5, 16):
             self.minit(i)
 
-    def test_num_obs_y_2_100(self):
+    def test_numobs_y_2_100(self):
         "Tests numobs_y(y) on 100 improper condensed distance matrices. Expecting exception."
         a = set([])
         for n in xrange(2, 16):
@@ -1476,3 +1476,30 @@ class TestNumObsY(TestCase):
     def make_y(self, n):
         return np.random.rand((n*(n-1)/2))
 
+class TestNumObsDM(TestCase):
+
+    def test_numobs_dm_0(self):
+        "Tests numobs_dm(D) on a 0x0 distance matrix. Expecting exception."
+        self.failUnlessRaises(ValueError, self.check_D, 0)
+
+    def test_numobs_dm_1(self):
+        "Tests numobs_dm(D) on a 1x1 distance matrix."
+        self.failUnless(self.check_D(1))
+
+    def test_numobs_dm_2(self):
+        "Tests numobs_dm(D) on a 2x2 distance matrix."
+        self.failUnless(self.check_D(2))
+
+    def test_numobs_dm_3(self):
+        "Tests numobs_dm(D) on a 3x3 distance matrix."
+        self.failUnless(self.check_D(2))
+
+    def test_numobs_dm_4(self):
+        "Tests numobs_dm(D) on a 4x4 distance matrix."
+        self.failUnless(self.check_D(4))
+
+    def check_D(self, n):
+        return numobs_dm(self.make_D(n)) == n
+
+    def make_D(self, n):
+        return np.random.rand(n, n)
