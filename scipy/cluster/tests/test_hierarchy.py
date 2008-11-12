@@ -537,14 +537,35 @@ class TestIsIsomorphic(TestCase):
         for k in xrange(0, 3):
             self.help_is_isomorphic_randperm(1000, 5)
 
-    def help_is_isomorphic_randperm(self, nobs, nclusters):
+
+    def test_is_isomorphic_6A(self):
+        "Tests is_isomorphic on test case #5A (1000 observations, 2 random clusters, random permutation of the labeling, slightly nonisomorphic.) Run 3 times."
+        for k in xrange(0, 3):
+            self.help_is_isomorphic_randperm(1000, 2, True, 5)
+
+    def test_is_isomorphic_6B(self):
+        "Tests is_isomorphic on test case #5B (1000 observations, 3 random clusters, random permutation of the labeling, slightly nonisomorphic.) Run 3 times."
+        for k in xrange(0, 3):
+            self.help_is_isomorphic_randperm(1000, 3, True, 5)
+
+    def test_is_isomorphic_6C(self):
+        "Tests is_isomorphic on test case #5C (1000 observations, 5 random clusters, random permutation of the labeling, slightly non-isomorphic.) Run 3 times."
+        for k in xrange(0, 3):
+            self.help_is_isomorphic_randperm(1000, 5, True, 5)
+
+    def help_is_isomorphic_randperm(self, nobs, nclusters, noniso=False, nerrors=0):
         a = np.int_(np.random.rand(nobs) * nclusters)
         b = np.zeros(a.size, dtype=np.int_)
         q = {}        
         P = np.random.permutation(nclusters)
         for i in xrange(0, a.shape[0]):
             b[i] = P[a[i]]
-        self.failUnless(is_isomorphic(a, b) == True)
+        if noniso:
+            Q = np.random.permutation(nobs)
+            b[Q[0:nerrors]] += 1
+            b[Q[0:nerrors]] %= nclusters
+        self.failUnless(is_isomorphic(a, b) == (not noniso))
+        self.failUnless(is_isomorphic(b, a) == (not noniso))
 
 def help_single_inconsistent_depth(self, i):
     Y = squareform(_tdist)
