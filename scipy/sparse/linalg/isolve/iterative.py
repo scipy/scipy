@@ -10,41 +10,67 @@ from utils import make_system
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 
+
+# Part of the docstring common to all iterative solvers
+common_doc = \
+"""
+Parameters
+----------
+A : {sparse matrix, dense matrix, LinearOperator}
+    The N-by-N matrix of the linear system.
+b : {array, matrix}
+    Right hand side of the linear system. Has shape (N,) or (N,1).
+
+Optional Parameters
+-------------------
+x0  : {array, matrix}
+    Starting guess for the solution.
+tol : float
+    Relative tolerance to achieve before terminating.
+maxiter : integer
+    Maximum number of iterations.  Iteration will stop after maxiter
+    steps even if the specified tolerance has not been achieved.
+M : {sparse matrix, dense matrix, LinearOperator}
+    Preconditioner for A.  The preconditioner should approximate the 
+    inverse of A.  Effective preconditioning dramatically improves the
+    rate of convergence, which implies that fewer iterations are needed
+    to reach a given error tolerance.
+callback : function
+    User-supplied function to call after each iteration.  It is called
+    as callback(xk), where xk is the current solution vector.
+
+Outputs
+-------
+x : {array, matrix}
+    The converged solution.
+info : integer
+    Provides convergence information:
+        0  : successful exit
+        >0 : convergence to tolerance not achieved, number of iterations
+        <0 : illegal input or breakdown
+
+Deprecated Parameters
+----------------------
+xtype : {'f','d','F','D'}
+    The type of the result.  If None, then it will be determined from
+    A.dtype.char and b.  If A does not have a typecode method then it 
+    will compute A.matvec(x0) to get a typecode.   To save the extra 
+    computation when A does not have a typecode attribute use xtype=0 
+    for the same type as b or use xtype='f','d','F',or 'D'.
+    This parameter has been superceeded by LinearOperator.
+"""
+
+
+def set_docstring(header, footer):
+    def combine(fn):
+        fn.__doc__ = header + '\n' + common_doc + '\n' + footer
+        return fn
+    return combine
+
+
+
+@set_docstring('Use BIConjugate Gradient iteration to solve A x = b','')
 def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
-    """Use BIConjugate Gradient iteration to solve A x = b
-
-    Inputs:
-
-    A --   An array or an object with matvec(x) and rmatvec(x) methods
-           to represent A * x and A^H * x respectively.  May also have
-           psolve(b) and rpsolve(b) methods for representing solutions
-           to the preconditioning equations M * x = b and
-           M^H * x = b respectively.
-    b --   An n-length vector
-
-    Outputs:
-
-    x  --  The converged solution
-    info -- output result
-            0  : successful exit
-            >0 : convergence to tolerance not achieved, number of iterations
-            <0 : illegal input or breakdown
-
-    Optional Inputs:
-
-    x0  -- (0) default starting guess.
-    tol -- (1e-5) relative tolerance to achieve
-    maxiter -- (10*n) maximum number of iterations
-    xtype  --  The type of the result.  If None, then it will be
-               determined from A.dtype.char and b.  If A does not have a
-               typecode method then it will compute A.matvec(x0) to get a
-               typecode.   To save the extra computation when A does not
-               have a typecode attribute use xtype=0 for the same type as
-               b or use xtype='f','d','F',or 'D'
-    callback -- an optional user-supplied function to call after each
-                iteration.  It is called as callback(xk), where xk is the
-                current parameter vector.
-    """
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
     n = len(b)
@@ -104,41 +130,8 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=Non
 
     return postprocess(x), info
 
-
+@set_docstring('Use BIConjugate Gradient STABilized iteration to solve A x = b','')
 def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
-    """Use BIConjugate Gradient STABilized iteration to solve A x = b
-
-    Inputs:
-
-    A --   An array or an object with a matvec(x) method
-           to represent A * x.  May also have a psolve(b) methods for
-           representing solution to the preconditioning equation
-           M * x = b.
-    b --   An n-length vector
-
-    Outputs:
-
-    x  --  The converged solution
-    info -- output result
-            0  : successful exit
-            >0 : convergence to tolerance not achieved, number of iterations
-            <0 : illegal input or breakdown
-
-    Optional Inputs:
-
-    x0  -- (0) default starting guess.
-    tol -- (1e-5) relative tolerance to achieve
-    maxiter -- (10*n) maximum number of iterations
-    xtype  --  The type of the result.  If None, then it will be
-               determined from A.dtype.char and b.  If A does not have a
-               typecode method then it will compute A.matvec(x0) to get a
-               typecode.   To save the extra computation when A does not
-               have a typecode attribute use xtype=0 for the same type as
-               b or use xtype='f','d','F',or 'D'
-    callback -- an optional user-supplied function to call after each
-                iteration.  It is called as callback(xk), where xk is the
-                current parameter vector.
-    """
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
     n = len(b)
@@ -199,42 +192,8 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback
 
     return postprocess(x), info
 
-
+@set_docstring('Use Conjugate Gradient iteration to solve A x = b','')
 def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
-    """Use Conjugate Gradient iteration to solve A x = b (A^H = A)
-
-    Inputs:
-
-    A --   An array or an object with a matvec(x) method
-           to represent A * x.  May also have a psolve(b) methods for
-           representing solution to the preconditioning equation
-           M * x = b.
-    b --   An n-length vector
-
-
-    Outputs:
-
-    x  --  The converged solution
-    info -- output result
-            0  : successful exit
-            >0 : convergence to tolerance not achieved, number of iterations
-            <0 : illegal input or breakdown
-
-    Optional Inputs:
-
-    x0  -- (0) default starting guess.
-    tol -- (1e-5) relative tolerance to achieve
-    maxiter -- (10*n) maximum number of iterations
-    xtype  --  The type of the result.  If None, then it will be
-               determined from A.dtype.char and b.  If A does not have a
-               typecode method then it will compute A.matvec(x0) to get a
-               typecode.   To save the extra computation when A does not
-               have a typecode attribute use xtype=0 for the same type as
-               b or use xtype='f','d','F',or 'D'
-    callback -- an optional user-supplied function to call after each
-                iteration.  It is called as callback(xk), where xk is the
-                current parameter vector.
-    """
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
     n = len(b)
@@ -291,41 +250,8 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None)
     return postprocess(x), info
 
 
+@set_docstring('Use Conjugate Gradient Squared iteration to solve A x = b','')
 def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
-    """Use Conjugate Gradient Squared iteration to solve A x = b
-
-    Inputs:
-
-    A --   An array or an object with a matvec(x) method
-           to represent A * x.  May also have a psolve(b) methods for
-           representing solution to the preconditioning equation
-           M * x = b.
-    b --   An n-length vector
-
-
-    Outputs:
-
-    x  --  The converged solution
-    info -- output result
-            0  : successful exit
-            >0 : convergence to tolerance not achieved, number of iterations
-            <0 : illegal input or breakdown
-
-    Optional Inputs:
-
-    x0  -- (0) default starting guess.
-    tol -- (1e-5) relative tolerance to achieve
-    maxiter -- (10*n) maximum number of iterations
-    xtype  --  The type of the result.  If None, then it will be
-               determined from A.dtype.char and b.  If A does not have a
-               typecode method then it will compute A.matvec(x0) to get a
-               typecode.   To save the extra computation when A does not
-               have a typecode attribute use xtype=0 for the same type as
-               b or use xtype='f','d','F',or 'D'
-    callback -- an optional user-supplied function to call after each
-                iteration.  It is called as callback(xk), where xk is the
-                current parameter vector.
-    """
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
     n = len(b)
@@ -379,44 +305,63 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None
         info = iter_
 
     return postprocess(x), info
-
+    
 
 def gmres(A, b, x0=None, tol=1e-5, restrt=20, maxiter=None, xtype=None, M=None, callback=None):
     """Use Generalized Minimal RESidual iteration to solve A x = b
-
-    Inputs:
-
-    A --   An array or an object with a matvec(x) method
-           to represent A * x.  May also have a psolve(b) methods for
-           representing solution to the preconditioning equation
-           M * x = b.
-    b --   An n-length vector
-
-
-    Outputs:
-
-    x  --  The converged solution
-    info -- output result
+    
+    Parameters
+    ----------
+    A : {sparse matrix, dense matrix, LinearOperator}
+        The N-by-N matrix of the linear system.
+    b : {array, matrix}
+        Right hand side of the linear system. Has shape (N,) or (N,1).
+    
+    Optional Parameters
+    -------------------
+    x0  : {array, matrix}
+        Starting guess for the solution.
+    tol : float
+        Relative tolerance to achieve before terminating.
+    restrt : integer
+        Number of iterations between restarts. Larger values increase
+        iteration cost, but may be necessary for convergence.
+    maxiter : integer
+        Maximum number of iterations.  Iteration will stop after maxiter
+        steps even if the specified tolerance has not been achieved.
+    M : {sparse matrix, dense matrix, LinearOperator}
+        Preconditioner for A.  The preconditioner should approximate the 
+        inverse of A.  Effective preconditioning dramatically improves the
+        rate of convergence, which implies that fewer iterations are needed
+        to reach a given error tolerance.
+    callback : function
+        User-supplied function to call after each iteration.  It is called
+        as callback(rk), where rk is the current residual vector.
+    
+    Outputs
+    -------
+    x : {array, matrix}
+        The converged solution.
+    info : integer
+        Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
             <0 : illegal input or breakdown
-
-    Optional Inputs:
-
-    x0  -- (0) default starting guess.
-    tol -- (1e-5) relative tolerance to achieve
-    restrt -- (10) When to restart (change this to get faster performance -- but
-                   may not converge).
-    maxiter -- (10*n) maximum number of iterations
-    xtype  --  The type of the result.  If None, then it will be
-               determined from A.dtype.char and b.  If A does not have a
-               typecode method then it will compute A.matvec(x0) to get a
-               typecode.   To save the extra computation when A does not
-               have a typecode attribute use xtype=0 for the same type as
-               b or use xtype='f','d','F',or 'D'
-    callback -- an optional user-supplied function to call after each
-                iteration.  It is called as callback(rk), where rk is the
-                the current relative residual
+    
+    See Also
+    --------
+    LinearOperator
+    
+    Deprecated Parameters
+    ---------------------
+    xtype : {'f','d','F','D'}
+        The type of the result.  If None, then it will be determined from
+        A.dtype.char and b.  If A does not have a typecode method then it 
+        will compute A.matvec(x0) to get a typecode.   To save the extra 
+        computation when A does not have a typecode attribute use xtype=0 
+        for the same type as b or use xtype='f','d','F',or 'D'.
+        This parameter has been superceeded by LinearOperator.
+    
     """
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
@@ -499,38 +444,56 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=20, maxiter=None, xtype=None, M=None, 
 def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, callback=None):
     """Use Quasi-Minimal Residual iteration to solve A x = b
 
-    Inputs:
-
-    A --   An array or an object with matvec(x) and rmatvec(x) methods
-           to represent A * x and A^H * x respectively.  May also have
-           psolve(b,<which>) and rpsolve(b,<which>) methods for
-           representing solutions to the preconditioning equations
-           M * x = b and M^H * x = b respectively.   The <which> argument
-           may be given to specify 'left' or 'right' preconditioning.
-    b --   An n-length vector
-
-    Outputs:
-
-    x  --  The converged solution
-    info -- output result
+    Parameters
+    ----------
+    A : {sparse matrix, dense matrix, LinearOperator}
+        The N-by-N matrix of the linear system.
+    b : {array, matrix}
+        Right hand side of the linear system. Has shape (N,) or (N,1).
+    
+    Optional Parameters
+    -------------------
+    x0  : {array, matrix}
+        Starting guess for the solution.
+    tol : float
+        Relative tolerance to achieve before terminating.
+    maxiter : integer
+        Maximum number of iterations.  Iteration will stop after maxiter
+        steps even if the specified tolerance has not been achieved.
+    M1 : {sparse matrix, dense matrix, LinearOperator}
+        Left preconditioner for A.
+    M2 : {sparse matrix, dense matrix, LinearOperator}
+        Right preconditioner for A. Used together with the left
+        preconditioner M1.  The matrix M1*A*M2 should have better
+        conditioned than A alone.
+    callback : function
+        User-supplied function to call after each iteration.  It is called
+        as callback(xk), where xk is the current solution vector.
+    
+    Outputs
+    -------
+    x : {array, matrix}
+        The converged solution.
+    info : integer
+        Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
             <0 : illegal input or breakdown
-
-    Optional Inputs:
-
-    x0  -- (0) default starting guess.
-    tol -- (1e-5) relative tolerance to achieve
-    maxiter -- (10*n) maximum number of iterations
-    xtype  --  The type of the result.  If None, then it will be
-               determined from A.dtype.char and b.  If A does not have a
-               typecode method then it will compute A.matvec(x0) to get a
-               typecode.   To save the extra computation when A does not
-               have a typecode attribute use xtype=0 for the same type as
-               b or use xtype='f','d','F',or 'D'
-    callback -- an optional user-supplied function to call after each
-                iteration.  It is called as callback(xk), where xk is the
-                current parameter vector.
+    
+    See Also
+    --------
+    LinearOperator
+    
+    Deprecated Parameters
+    ---------------------
+    xtype : {'f','d','F','D'}
+        The type of the result.  If None, then it will be determined from
+        A.dtype.char and b.  If A does not have a typecode method then it 
+        will compute A.matvec(x0) to get a typecode.   To save the extra 
+        computation when A does not have a typecode attribute use xtype=0 
+        for the same type as b or use xtype='f','d','F',or 'D'.
+        This parameter has been superceeded by LinearOperator.
+    
     """
     A_ = A
     A,M,x,b,postprocess = make_system(A,None,x0,b,xtype)

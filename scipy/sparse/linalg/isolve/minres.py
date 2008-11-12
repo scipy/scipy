@@ -2,35 +2,40 @@ from numpy import sqrt, inner, finfo, zeros
 from numpy.linalg import norm
 
 from utils import make_system
+from iterative import set_docstring
 
 __all__ = ['minres']
 
+    
+header = \
+"""Use MINimum RESidual iteration to solve Ax=b
+
+MINRES minimizes norm(A*x - b) for the symmetric matrix A.  Unlike
+the Conjugate Gradient method, A can be indefinite or singular.
+
+If shift != 0 then the method solves (A - shift*I)x = b
+"""
+
+footer = \
+"""        
+Notes
+-----
+THIS FUNCTION IS EXPERIMENTAL AND SUBJECT TO CHANGE!
+
+References
+----------
+Solution of sparse indefinite systems of linear equations,
+    C. C. Paige and M. A. Saunders (1975),
+    SIAM J. Numer. Anal. 12(4), pp. 617-629.
+    http://www.stanford.edu/group/SOL/software/minres.html
+
+This file is a translation of the following MATLAB implementation:
+    http://www.stanford.edu/group/SOL/software/minres/matlab/
+"""
+
+@set_docstring(header,footer)
 def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
            M=None, callback=None, show=False, check=False):
-    """Use the Minimum Residual Method (MINRES) to solve Ax=b
-
-    MINRES minimizes norm(A*x - b) for the symmetric matrix A.  Unlike
-    the Conjugate Gradient method, A can be indefinite or singular.
-
-    If shift != 0 then the method solves (A - shift*I)x = b
-
-
-    Parameters
-    ==========
-        TODO
-
-    References
-    ==========
-
-        Solution of sparse indefinite systems of linear equations,
-            C. C. Paige and M. A. Saunders (1975),
-            SIAM J. Numer. Anal. 12(4), pp. 617-629.
-            http://www.stanford.edu/group/SOL/software/minres.html
-
-        This file is a translation of the following MATLAB implementation:
-            http://www.stanford.edu/group/SOL/software/minres/matlab/
-
-    """
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
     matvec = A.matvec
