@@ -479,6 +479,73 @@ class TestLeaders(TestCase):
         print L, Lright, T
         self.failUnless((L[0] == Lright[0]).all() and (L[1] == Lright[1]).all())
 
+class TestIsIsomorphic(TestCase):
+
+    def test_is_isomorphic_1(self):
+        "Tests is_isomorphic on test case #1 (one flat cluster, different labellings)"
+        a = [1, 1, 1]
+        b = [2, 2, 2]
+        self.failUnless(is_isomorphic(a, b) == True)
+        self.failUnless(is_isomorphic(b, a) == True)
+        
+    def test_is_isomorphic_2(self):
+        "Tests is_isomorphic on test case #2 (two flat clusters, different labelings)"
+        a = [1, 7, 1]
+        b = [2, 3, 2]
+        self.failUnless(is_isomorphic(a, b) == True)
+        self.failUnless(is_isomorphic(b, a) == True)
+
+    def test_is_isomorphic_3(self):
+        "Tests is_isomorphic on test case #3 (no flat clusters)"
+        a = []
+        b = []
+        self.failUnless(is_isomorphic(a, b) == True)
+
+    def test_is_isomorphic_4A(self):
+        "Tests is_isomorphic on test case #4A (3 flat clusters, different labelings, isomorphic)"
+        a = [1, 2, 3]
+        b = [1, 3, 2]
+        self.failUnless(is_isomorphic(a, b) == True)
+        self.failUnless(is_isomorphic(b, a) == True)
+
+    def test_is_isomorphic_4B(self):
+        "Tests is_isomorphic on test case #4B (3 flat clusters, different labelings, nonisomorphic)"
+        a = [1, 2, 3, 3]
+        b = [1, 3, 2, 3]
+        self.failUnless(is_isomorphic(a, b) == False)
+        self.failUnless(is_isomorphic(b, a) == False)
+
+    def test_is_isomorphic_4C(self):
+        "Tests is_isomorphic on test case #4C (3 flat clusters, different labelings, isomorphic)"
+        a = [7, 2, 3]
+        b = [6, 3, 2]
+        self.failUnless(is_isomorphic(a, b) == True)
+        self.failUnless(is_isomorphic(b, a) == True)
+
+    def test_is_isomorphic_5A(self):
+        "Tests is_isomorphic on test case #5A (1000 observations, 2 random clusters, random permutation of the labeling). Run 3 times."
+        for k in xrange(0, 3):
+            self.help_is_isomorphic_randperm(1000, 2)
+
+    def test_is_isomorphic_5B(self):
+        "Tests is_isomorphic on test case #5B (1000 observations, 3 random clusters, random permutation of the labeling). Run 3 times."
+        for k in xrange(0, 3):
+            self.help_is_isomorphic_randperm(1000, 3)
+
+    def test_is_isomorphic_5C(self):
+        "Tests is_isomorphic on test case #5C (1000 observations, 5 random clusters, random permutation of the labeling). Run 3 times."
+        for k in xrange(0, 3):
+            self.help_is_isomorphic_randperm(1000, 5)
+
+    def help_is_isomorphic_randperm(self, nobs, nclusters):
+        a = np.int_(np.random.rand(nobs) * nclusters)
+        b = np.zeros(a.size, dtype=np.int_)
+        q = {}        
+        P = np.random.permutation(nclusters)
+        for i in xrange(0, a.shape[0]):
+            b[i] = P[a[i]]
+        self.failUnless(is_isomorphic(a, b) == True)
+
 def help_single_inconsistent_depth(self, i):
     Y = squareform(_tdist)
     Z = linkage(Y, 'single')
