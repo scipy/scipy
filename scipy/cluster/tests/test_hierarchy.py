@@ -214,7 +214,7 @@ class TestLinkage(TestCase):
 class TestInconsistent(TestCase):
 
     def test_single_inconsistent_tdist_1(self):
-        "Testing inconsistency matrix calculation (depth=1) on a single linkage."
+        "Tests inconsistency matrix calculation (depth=1) on a single linkage."
         Y = squareform(_tdist)
         Z = linkage(Y, 'single')
         R = inconsistent(Z, 1)
@@ -224,7 +224,7 @@ class TestInconsistent(TestCase):
         self.failUnless(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_tdist_2(self):
-        "Testing inconsistency matrix calculation (depth=2) on a single linkage."
+        "Tests inconsistency matrix calculation (depth=2) on a single linkage."
         Y = squareform(_tdist)
         Z = linkage(Y, 'single')
         R = inconsistent(Z, 2)
@@ -234,7 +234,7 @@ class TestInconsistent(TestCase):
         self.failUnless(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_tdist_3(self):
-        "Testing inconsistency matrix calculation (depth=3) on a single linkage."
+        "Tests inconsistency matrix calculation (depth=3) on a single linkage."
         Y = squareform(_tdist)
         Z = linkage(Y, 'single')
         R = inconsistent(Z, 3)
@@ -244,7 +244,7 @@ class TestInconsistent(TestCase):
         self.failUnless(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_tdist_4(self):
-        "Testing inconsistency matrix calculation (depth=4) on a single linkage."
+        "Tests inconsistency matrix calculation (depth=4) on a single linkage."
         Y = squareform(_tdist)
         Z = linkage(Y, 'single')
         R = inconsistent(Z, 4)
@@ -256,7 +256,7 @@ class TestInconsistent(TestCase):
     # with complete linkage...
 
     def test_complete_inconsistent_tdist_1(self):
-        "Testing inconsistency matrix calculation (depth=1) on a complete linkage."
+        "Tests inconsistency matrix calculation (depth=1) on a complete linkage."
         Y = squareform(_tdist)
         Z = linkage(Y, 'complete')
         R = inconsistent(Z, 1)
@@ -266,7 +266,7 @@ class TestInconsistent(TestCase):
         self.failUnless(within_tol(R, Rright, eps))
 
     def test_complete_inconsistent_tdist_2(self):
-        "Testing inconsistency matrix calculation (depth=2) on a complete linkage."
+        "Tests inconsistency matrix calculation (depth=2) on a complete linkage."
         Y = squareform(_tdist)
         Z = linkage(Y, 'complete')
         R = inconsistent(Z, 2)
@@ -276,7 +276,7 @@ class TestInconsistent(TestCase):
         self.failUnless(within_tol(R, Rright, eps))
 
     def test_complete_inconsistent_tdist_3(self):
-        "Testing inconsistency matrix calculation (depth=3) on a complete linkage."
+        "Tests inconsistency matrix calculation (depth=3) on a complete linkage."
         Y = squareform(_tdist)
         Z = linkage(Y, 'complete')
         R = inconsistent(Z, 3)
@@ -286,7 +286,7 @@ class TestInconsistent(TestCase):
         self.failUnless(within_tol(R, Rright, eps))
 
     def test_complete_inconsistent_tdist_4(self):
-        "Testing inconsistency matrix calculation (depth=4) on a complete linkage."
+        "Tests inconsistency matrix calculation (depth=4) on a complete linkage."
         Y = squareform(_tdist)
         Z = linkage(Y, 'complete')
         R = inconsistent(Z, 4)
@@ -298,7 +298,7 @@ class TestInconsistent(TestCase):
     # with single linkage and Q data set
 
     def test_single_inconsistent_Q_1(self):
-        "Testing inconsistency matrix calculation (depth=1, dataset=Q) with single linkage."
+        "Tests inconsistency matrix calculation (depth=1, dataset=Q) with single linkage."
         X = eo['Q-X']
         Z = linkage(X, 'single', 'euclidean')
         R = inconsistent(Z, 1)
@@ -308,7 +308,7 @@ class TestInconsistent(TestCase):
         self.failUnless(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_Q_2(self):
-        "Testing inconsistency matrix calculation (depth=2, dataset=Q) with single linkage."
+        "Tests inconsistency matrix calculation (depth=2, dataset=Q) with single linkage."
         X = eo['Q-X']
         Z = linkage(X, 'single', 'euclidean')
         R = inconsistent(Z, 2)
@@ -318,7 +318,7 @@ class TestInconsistent(TestCase):
         self.failUnless(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_Q_3(self):
-        "Testing inconsistency matrix calculation (depth=3, dataset=Q) with single linkage."
+        "Tests inconsistency matrix calculation (depth=3, dataset=Q) with single linkage."
         X = eo['Q-X']
         Z = linkage(X, 'single', 'euclidean')
         R = inconsistent(Z, 3)
@@ -328,7 +328,7 @@ class TestInconsistent(TestCase):
         self.failUnless(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_Q_4(self):
-        "Testing inconsistency matrix calculation (depth=4, dataset=Q) with single linkage."
+        "Tests inconsistency matrix calculation (depth=4, dataset=Q) with single linkage."
         X = eo['Q-X']
         Z = linkage(X, 'single', 'euclidean')
         R = inconsistent(Z, 4)
@@ -340,7 +340,7 @@ class TestInconsistent(TestCase):
 class TestCopheneticDistance(TestCase):
 
     def test_linkage_cophenet_tdist_Z(self):
-        "Testing cophenet(Z) on tdist data set."
+        "Tests cophenet(Z) on tdist data set."
         expectedM = np.array([268, 295, 255, 255, 295, 295, 268, 268, 295, 295, 295, 138, 219, 295, 295]);
         Z = linkage(_ytdist, 'single')
         M = cophenet(Z)
@@ -348,7 +348,7 @@ class TestCopheneticDistance(TestCase):
         self.failUnless(within_tol(M, expectedM, eps))
 
     def test_linkage_cophenet_tdist_Z_Y(self):
-        "Testing cophenet(Z, Y) on tdist data set."
+        "Tests cophenet(Z, Y) on tdist data set."
         Z = linkage(_ytdist, 'single')
         (c, M) = cophenet(Z, _ytdist)
         expectedM = np.array([268, 295, 255, 255, 295, 295, 268, 268, 295, 295, 295, 138, 219, 295, 295]);
@@ -360,20 +360,20 @@ class TestCopheneticDistance(TestCase):
 class TestFromMLabLinkage(TestCase):
 
     def test_from_mlab_linkage_empty(self):
-        "Testing from_mlab_linkage on empty linkage array."
+        "Tests from_mlab_linkage on empty linkage array."
         X = np.asarray([])
         R = from_mlab_linkage([])
         self.failUnless((R == X).all())
 
     def test_from_mlab_linkage_single_row(self):
-        "Testing from_mlab_linkage on linkage array with single row."
+        "Tests from_mlab_linkage on linkage array with single row."
         expectedZP = np.asarray([[ 0.,  1.,  3.,  2.]])
         Z = [[1,2,3]]
         ZP = from_mlab_linkage(Z)
         return self.failUnless((ZP == expectedZP).all())
 
     def test_from_mlab_linkage_multiple_rows(self):
-        "Testing from_mlab_linkage on linkage array with multiple rows."
+        "Tests from_mlab_linkage on linkage array with multiple rows."
         Z = np.asarray([[3, 6, 138], [4, 5, 219],
                         [1, 8, 255], [2, 9, 268], [7, 10, 295]])
         expectedZS = np.array([[   2.,    5.,  138.,    2.],
@@ -390,20 +390,20 @@ class TestFromMLabLinkage(TestCase):
 class TestToMLabLinkage(TestCase):
 
     def test_to_mlab_linkage_empty(self):
-        "Testing to_mlab_linkage on empty linkage array."
+        "Tests to_mlab_linkage on empty linkage array."
         X = np.asarray([])
         R = to_mlab_linkage([])
         self.failUnless((R == X).all())
 
     def test_to_mlab_linkage_single_row(self):
-        "Testing to_mlab_linkage on linkage array with single row."
+        "Tests to_mlab_linkage on linkage array with single row."
         Z = np.asarray([[ 0.,  1.,  3.,  2.]])
         expectedZP = np.asarray([[1,2,3]])
         ZP = to_mlab_linkage(Z)
         return self.failUnless((ZP == expectedZP).all())
 
     def test_from_mlab_linkage_multiple_rows(self):
-        "Testing to_mlab_linkage on linkage array with multiple rows."
+        "Tests to_mlab_linkage on linkage array with multiple rows."
         expectedZM = np.asarray([[3, 6, 138], [4, 5, 219],
                         [1, 8, 255], [2, 9, 268], [7, 10, 295]])
         Z = np.array([[   2.,    5.,  138.,    2.],
