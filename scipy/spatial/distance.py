@@ -1414,11 +1414,6 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     D = np.asarray(D, order='c')
     valid = True
     try:
-        if type(D) != np.ndarray:
-            if name:
-                raise TypeError('\'%s\' passed as a distance matrix is not a numpy array.' % name)
-            else:
-                raise TypeError('Variable is not a numpy array.')
         s = D.shape
         if D.dtype != np.double:
             if name:
@@ -1438,7 +1433,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
                     raise ValueError('Distance matrix must be symmetric.')
             if not (D[xrange(0, s[0]), xrange(0, s[0])] == 0).all():
                 if name:
-                    raise ValueError('Distance matrix \'%s\' diagonal must be zero.' % name)
+                   raise ValueError('Distance matrix \'%s\' diagonal must be zero.' % name)
                 else:
                     raise ValueError('Distance matrix diagonal must be zero.')
         else:
@@ -1534,8 +1529,6 @@ def numobs_dm(d):
     """
     d = np.asarray(d, order='c')
     is_valid_dm(d, tol=np.inf, throw=True, name='d')
-    if d.shape[0] == 0:
-        raise ValueError("The number of observations cannot be determined on an empty distance matrix.")
     return d.shape[0]
 
 def numobs_y(Y):

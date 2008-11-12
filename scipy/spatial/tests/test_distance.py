@@ -40,7 +40,8 @@ import numpy as np
 from numpy.testing import *
 from scipy.spatial.distance import squareform, pdist, cdist, matching, \
                                    jaccard, dice, sokalsneath, rogerstanimoto, \
-                                   russellrao, yule, numobs_y, numobs_dm
+                                   russellrao, yule, numobs_y, numobs_dm, \
+                                   is_valid_dm
 
 _filenames = ["iris.txt",
               "cdist-X1.txt",
@@ -1480,7 +1481,7 @@ class TestNumObsDM(TestCase):
 
     def test_numobs_dm_0(self):
         "Tests numobs_dm(D) on a 0x0 distance matrix. Expecting exception."
-        self.failUnlessRaises(ValueError, self.check_D, 0)
+        self.failUnless(self.check_D(0))
 
     def test_numobs_dm_1(self):
         "Tests numobs_dm(D) on a 1x1 distance matrix."
@@ -1503,3 +1504,98 @@ class TestNumObsDM(TestCase):
 
     def make_D(self, n):
         return np.random.rand(n, n)
+
+def is_valid_dm_throw(D):
+    return is_valid_dm(D, throw=True)
+
+class TestIsValidDM(TestCase):
+
+    def test_is_valid_dm_int16_array_E(self):
+        "Tests is_valid_dm on an int16 array. Exception expected."
+        D = np.zeros((5, 5), dtype='i')
+        self.failUnlessRaises(TypeError, is_valid_dm_throw, (D))
+
+    def test_is_valid_dm_int16_array_F(self):
+        "Tests is_valid_dm on an int16 array. False expected."
+        D = np.zeros((5, 5), dtype='i')
+        self.failUnless(is_valid_dm(D) == False)
+
+    def test_is_valid_dm_improper_shape_1D_E(self):
+        "Tests is_valid_dm on a 1D array. Exception expected."
+        D = np.zeros((5,), dtype=np.double)
+        self.failUnlessRaises(ValueError, is_valid_dm_throw, (D))
+
+    def test_is_valid_dm_improper_shape_1D_F(self):
+        "Tests is_valid_dm on a 1D array. False expected."
+        D = np.zeros((5,), dtype=np.double)
+        self.failUnless(is_valid_dm(D) == False)
+
+    def test_is_valid_dm_improper_shape_3D_E(self):
+        "Tests is_valid_dm on a 3D array. Exception expected."
+        D = np.zeros((3,3,3), dtype=np.double)
+        self.failUnlessRaises(ValueError, is_valid_dm_throw, (D))
+
+    def test_is_valid_dm_improper_shape_3D_F(self):
+        "Tests is_valid_dm on a 3D array. False expected."
+        D = np.zeros((3,3,3), dtype=np.double)
+        self.failUnless(is_valid_dm(D) == False)
+
+    def test_is_valid_dm_nonzero_diagonal_E(self):
+        "Tests is_valid_dm on a distance matrix with a nonzero diagonal. Exception expected."
+        y = np.random.rand(10)
+        D = squareform(y)
+        for i in xrange(0, 5):
+            D[i, i] = 2.0
+        self.failUnlessRaises(ValueError, is_valid_dm_throw, (D))
+
+    def test_is_valid_dm_nonzero_diagonal_F(self):
+        "Tests is_valid_dm on a distance matrix with a nonzero diagonal. False expected."
+        y = np.random.rand(10)
+        D = squareform(y)
+        for i in xrange(0, 5):
+            D[i, i] = 2.0
+        self.failUnless(is_valid_dm(D) == False)
+
+    def test_is_valid_dm_assymetric_E(self):
+        "Tests is_valid_dm on an assymetric distance matrix. Exception expected."
+        y = np.random.rand(10)
+        D = squareform(y)
+        D[1,3] = D[3,1] + 1
+        self.failUnlessRaises(ValueError, is_valid_dm_throw, (D))
+
+    def test_is_valid_dm_assymetric_F(self):
+        "Tests is_valid_dm on an assymetric distance matrix. False expected."
+        y = np.random.rand(10)
+        D = squareform(y)
+        D[1,3] = D[3,1] + 1
+        self.failUnless(is_valid_dm(D) == False)
+
+    def test_is_valid_dm_correct_1_by_1(self):
+        "Tests is_valid_dm on a correct 1x1. True expected."
+        D = np.zeros((1,1), dtype=np.double)
+        self.failUnless(is_valid_dm(D) == True)
+
+    def test_is_valid_dm_correct_2_by_2(self):
+        "Tests is_valid_dm on a correct 2x2. True expected."
+        y = np.random.rand(1)
+        D = squareform(y)
+        self.failUnless(is_valid_dm(D) == True)
+
+    def test_is_valid_dm_correct_3_by_3(self):
+        "Tests is_valid_dm on a correct 3x3. True expected."
+        y = np.random.rand(3)
+        D = squareform(y)
+        self.failUnless(is_valid_dm(D) == True)
+
+    def test_is_valid_dm_correct_4_by_4(self):
+        "Tests is_valid_dm on a correct 4x4. True expected."
+        y = np.random.rand(6)
+        D = squareform(y)
+        self.failUnless(is_valid_dm(D) == True)
+
+    def test_is_valid_dm_correct_5_by_5(self):
+        "Tests is_valid_dm on a correct 5x5. True expected."
+        y = np.random.rand(10)
+        D = squareform(y)
+        self.failUnless(is_valid_dm(D) == True)
+
