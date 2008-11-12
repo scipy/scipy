@@ -974,7 +974,7 @@ def inconsistent(Z, d=2):
            ``R[i,3]`` is the inconsistency coefficient,
            .. math:
                \frac{\mathtt{Z[i,2]}-\mathtt{R[i,0]}}
-                    {R[i,2]}.
+                    {R[i,1]}.
 
     This function behaves similarly to the MATLAB(TM) inconsistent
     function.
