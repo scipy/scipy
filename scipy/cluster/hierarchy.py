@@ -873,21 +873,22 @@ def _convert_to_double(X):
         X = X.copy()
     return X
 
-def cophenet(*args):
+def cophenet(Z, Y=None):
     """
     Calculates the cophenetic distances between each observation in
     the hierarchical clustering defined by the linkage ``Z``.
 
-    Suppose :math:`$p$` and :math:`$q$` are original observations in
-    disjoint clusters :math:`$s$` and :math:`$t$`, respectively and
-    :math:`$s$` and :math:`$t$` are joined by a direct parent cluster
-    :math:`$u$`. The cophenetic distance between observations
-    :math:`$i$` and :math:`$j$` is simply the distance between
-    clusters :math:`$s$` and :math:`$t$`.
+    Suppose ``p`` and ``q`` are original observations in
+    disjoint clusters ``s`` and ``t``, respectively and
+    ``s`` and ``t`` are joined by a direct parent cluster
+    ``u``. The cophenetic distance between observations
+    ``i`` and ``j`` is simply the distance between
+    clusters ``s`` and ``t``.
 
     :Parameters:
        - Z : ndarray
-         The encoded linkage matrix on which to perform the calculation.
+         The hierarchical clustering encoded as an array
+         (see ``linkage`` function).
 
        - Y : ndarray (optional)
          Calculates the cophenetic correlation coefficient ``c`` of a
@@ -902,16 +903,11 @@ def cophenet(*args):
 
        - d : ndarray
          The cophenetic distance matrix in condensed form. The
-         :math:`$ij$`th entry is the cophenetic distance between
+         :math:`$ij$` th entry is the cophenetic distance between
          original observations :math:`$i$` and :math:`$j$`.
 
     """
-    nargs = len(args)
 
-    if nargs < 1:
-        raise ValueError('At least one argument must be passed to cophenet.')
-
-    Z = args[0]
     Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
     Zs = Z.shape
@@ -923,10 +919,9 @@ def cophenet(*args):
     Z = _convert_to_double(Z)
 
     _hierarchy_wrap.cophenetic_distances_wrap(Z, zz, int(n))
-    if nargs == 1:
+    if Y is None:
         return zz
 
-    Y = args[1]
     Y = np.asarray(Y, order='c')
     Ys = Y.shape
     distance.is_valid_y(Y, throw=True, name='Y')
@@ -941,11 +936,7 @@ def cophenet(*args):
     denomB = Zz ** 2
     c = numerator.sum() / np.sqrt((denomA.sum() * denomB.sum()))
     #print c, numerator.sum()
-    if nargs == 2:
-        return c
-
-    if nargs == 3:
-        return (c, zz)
+    return (c, zz)
 
 def inconsistent(Z, d=2):
     """
@@ -2308,7 +2299,7 @@ def maxinconsts(Z, R):
     n = Z.shape[0] + 1
     MI = np.zeros((n-1,))
     [Z, R] = _copy_arrays_if_base_present([Z, R])
-    _hierarchy_wrap.get_max_Rfield_for_each_hierarchy_wrap(Z, R, MI, int(n), 3)
+    _hierarchy_wrap.get_max_Rfield_for_each_cluster_wrap(Z, R, MI, int(n), 3)
     return MI
 
 def maxRstat(Z, R, i):
@@ -2332,7 +2323,7 @@ def maxRstat(Z, R, i):
     n = Z.shape[0] + 1
     MR = np.zeros((n-1,))
     [Z, R] = _copy_arrays_if_base_present([Z, R])
-    _hierarchy_wrap.get_max_Rfield_for_each_hierarchy_wrap(Z, R, MR, int(n), i)
+    _hierarchy_wrap.get_max_Rfield_for_each_cluster_wrap(Z, R, MR, int(n), i)
     return MR
 
 def leaders(Z, T):

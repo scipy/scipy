@@ -350,18 +350,10 @@ class TestCopheneticDistance(TestCase):
     def test_linkage_cophenet_tdist_Z_Y(self):
         "Testing cophenet(Z, Y) on tdist data set."
         Z = linkage(_ytdist, 'single')
-        c = cophenet(Z, _ytdist)
-        expectedc = 0.639931296433393415057366837573
-        eps = 1e-10
-        self.failUnless(np.abs(c - expectedc) <= eps)
-
-    def test_linkage_cophenet_tdist_Z_Y_EL(self):
-        "Testing cophenet(Z, Y, []) on tdist data set."
-        Z = linkage(_ytdist, 'single')
-        (c, M) = cophenet(Z, _ytdist, [])
-        eps = 1e-10
+        (c, M) = cophenet(Z, _ytdist)
         expectedM = np.array([268, 295, 255, 255, 295, 295, 268, 268, 295, 295, 295, 138, 219, 295, 295]);
         expectedc = 0.639931296433393415057366837573
+        eps = 1e-10
         self.failUnless(np.abs(c - expectedc) <= eps)
         self.failUnless(within_tol(M, expectedM, eps))
 
