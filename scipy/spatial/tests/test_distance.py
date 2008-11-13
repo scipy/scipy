@@ -1433,6 +1433,14 @@ class TestSquareForm(TestCase):
 
 class TestNumObsY(TestCase):
 
+    def test_numobs_y_multi_matrix(self):
+        "Tests numobs_y with observation matrices of multiple sizes."
+        for n in xrange(2, 10):
+            X = np.random.rand(n, 4)
+            Y = pdist(X)
+            #print A.shape, Y.shape, Yr.shape
+            self.failUnless(numobs_y(Y) == n)
+
     def test_numobs_y_1(self):
         "Tests numobs_y(y) on a condensed distance matrix over 1 observations. Expecting exception."
         self.failUnlessRaises(ValueError, self.check_y, 1)
@@ -1478,6 +1486,17 @@ class TestNumObsY(TestCase):
         return np.random.rand((n*(n-1)/2))
 
 class TestNumObsDM(TestCase):
+
+    ############## numobs_dm
+    def test_numobs_dm_multi_matrix(self):
+        "Tests numobs_dm with observation matrices of multiple sizes."
+        for n in xrange(1, 10):
+            X = np.random.rand(n, 4)
+            Y = pdist(X)
+            A = squareform(Y)
+            if verbose >= 3:
+                print A.shape, Y.shape
+            self.failUnless(numobs_dm(A) == n)
 
     def test_numobs_dm_0(self):
         "Tests numobs_dm(D) on a 0x0 distance matrix. Expecting exception."

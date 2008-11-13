@@ -99,7 +99,7 @@ flat cluster assignments.
 |correspond        |checks whether a condensed distance matrix       |
 |                  |corresponds with a linkage                       |
 +------------------+-------------------------------------------------+
-|numobs_linkage    |the number of observations corresponding to a    |
+|num_obs_linkage   |the number of observations corresponding to a    |
 |                  |linkage matrix.                                  |
 +------------------+-------------------------------------------------+
 
@@ -1223,7 +1223,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
         valid = False
     return valid
 
-def numobs_linkage(Z):
+def num_obs_linkage(Z):
     """
     Returns the number of original observations of the linkage matrix
     passed.
@@ -1268,7 +1268,7 @@ def correspond(Z, Y):
     distance.is_valid_y(Y, throw=True)
     Z = np.asarray(Z, order='c')
     Y = np.asarray(Y, order='c')
-    return distance.numobs_y(Y) == numobs_linkage(Z)
+    return distance.numobs_y(Y) == num_obs_linkage(Z)
 
 def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     """

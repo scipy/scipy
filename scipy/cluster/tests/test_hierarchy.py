@@ -38,7 +38,7 @@ import os.path
 import numpy as np
 from numpy.testing import *
 
-from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage, numobs_linkage, inconsistent, cophenet, from_mlab_linkage, fclusterdata, fcluster, is_isomorphic, single, complete, average, weighted, centroid, median, ward, leaders, numobs_linkage, correspond
+from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage, num_obs_linkage, inconsistent, cophenet, from_mlab_linkage, fclusterdata, fcluster, is_isomorphic, single, complete, average, weighted, centroid, median, ward, leaders, correspond
 from scipy.spatial.distance import squareform, pdist, numobs_dm, numobs_y
 
 _tdist = np.array([[0,    662,  877,  255,  412,  996],
@@ -104,34 +104,15 @@ load_testing_files()
 
 class TestNumObs(TestCase):
 
-    ############## numobs_dm
-    def test_numobs_dm_multi_matrix(self):
-        "Tests numobs_dm with observation matrices of multiple sizes."
-        for n in xrange(1, 10):
-            X = np.random.rand(n, 4)
-            Y = pdist(X)
-            A = squareform(Y)
-            if verbose >= 3:
-                print A.shape, Y.shape
-            self.failUnless(numobs_dm(A) == n)
-
-    def test_numobs_y_multi_matrix(self):
-        "Tests numobs_y with observation matrices of multiple sizes."
-        for n in xrange(2, 10):
-            X = np.random.rand(n, 4)
-            Y = pdist(X)
-            #print A.shape, Y.shape, Yr.shape
-            self.failUnless(numobs_y(Y) == n)
-
-    def test_numobs_linkage_multi_matrix(self):
-        "Tests numobs_linkage with observation matrices of multiple sizes."
+    def test_num_obs_linkage_multi_matrix(self):
+        "Tests num_obs_linkage with observation matrices of multiple sizes."
         for n in xrange(2, 10):
             X = np.random.rand(n, 4)
             Y = pdist(X)
             Z = linkage(Y)
             #print Z
             #print A.shape, Y.shape, Yr.shape
-            self.failUnless(numobs_linkage(Z) == n)
+            self.failUnless(num_obs_linkage(Z) == n)
 
 class TestLinkage(TestCase):
 
@@ -573,29 +554,29 @@ class TestIsIsomorphic(TestCase):
 
 class TestNumObsLinkage(TestCase):
 
-    def test_numobs_linkage_empty(self):
-        "Tests numobs_linkage(Z) with empty linkage."
+    def test_num_obs_linkage_empty(self):
+        "Tests num_obs_linkage(Z) with empty linkage."
         Z = np.zeros((0, 4), dtype=np.double)
-        self.failUnlessRaises(ValueError, numobs_linkage, Z)
+        self.failUnlessRaises(ValueError, num_obs_linkage, Z)
 
 
-    def test_numobs_linkage_1x4(self):
-        "Tests numobs_linkage(Z) on linkage over 2 observations."
+    def test_num_obs_linkage_1x4(self):
+        "Tests num_obs_linkage(Z) on linkage over 2 observations."
         Z = np.asarray([[0,   1, 3.0, 2]], dtype=np.double)
-        self.failUnless(numobs_linkage(Z) == 2)
+        self.failUnless(num_obs_linkage(Z) == 2)
 
-    def test_numobs_linkage_2x4(self):
-        "Tests numobs_linkage(Z) on linkage over 3 observations."
+    def test_num_obs_linkage_2x4(self):
+        "Tests num_obs_linkage(Z) on linkage over 3 observations."
         Z = np.asarray([[0,   1, 3.0, 2],
                         [3,   2, 4.0, 3]], dtype=np.double)
-        self.failUnless(numobs_linkage(Z) == 3)
+        self.failUnless(num_obs_linkage(Z) == 3)
 
-    def test_numobs_linkage_4_and_up(self):
-        "Tests numobs_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3)."
+    def test_num_obs_linkage_4_and_up(self):
+        "Tests num_obs_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3)."
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)/2)
             Z = linkage(y)
-            self.failUnless(numobs_linkage(Z) == i)
+            self.failUnless(num_obs_linkage(Z) == i)
 
 class TestCorrespond(TestCase):
 
