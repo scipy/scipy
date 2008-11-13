@@ -925,7 +925,7 @@ class alpha_gen(rv_continuous):
         return special.ndtr(a-1.0/x) / special.ndtr(a)
     def _ppf(self, q, a):
         return 1.0/arr(a-special.ndtri(q*special.ndtr(a)))
-    def _stats(self):
+    def _stats(self, a):
         return [inf]*2 + [nan]*2
 alpha = alpha_gen(a=0.0,name='alpha',shapes='a',extradoc="""
 
@@ -1461,7 +1461,7 @@ class foldcauchy_gen(rv_continuous):
         return 1.0/pi*(1.0/(1+(x-c)**2) + 1.0/(1+(x+c)**2))
     def _cdf(self, x, c):
         return 1.0/pi*(arctan(x-c) + arctan(x+c))
-    def _stats(self, x, c):
+    def _stats(self, c):
         return inf, inf, nan, nan
 foldcauchy = foldcauchy_gen(a=0.0, name='foldcauchy',
                             longname = "A folded Cauchy",
@@ -2769,7 +2769,8 @@ for 0 <= x <= 1, a > 0.
 
 class powerlognorm_gen(rv_continuous):
     def _pdf(self, x, c, s):
-        return c/(x*s)*norm.pdf(log(x)/s)
+        return c/(x*s)*norm.pdf(log(x)/s)*pow(norm.cdf(-log(x)/s),c*1.0-1.0)
+    
     def _cdf(self, x, c, s):
         return 1.0 - pow(norm.cdf(-log(x)/s),c*1.0)
     def _ppf(self, q, c, s):
@@ -2911,6 +2912,8 @@ for x > 0, b > 0.
 
 # FIXME: PPF does not work.
 class recipinvgauss_gen(rv_continuous):
+    def _rvs(self, mu): #added, taken from invnorm
+        return 1.0/mtrand.wald(mu, 1.0, size=self._size)
     def _pdf(self, x, mu):
         return 1.0/sqrt(2*pi*x)*exp(-(1-mu*x)**2.0 / (2*x*mu**2.0))
     def _cdf(self, x, mu):
@@ -2918,7 +2921,8 @@ class recipinvgauss_gen(rv_continuous):
         trm2 = 1.0/mu + x
         isqx = 1.0/sqrt(x)
         return 1.0-norm.cdf(isqx*trm1)-exp(2.0/mu)*norm.cdf(-isqx*trm2)
-recipinvgauss = recipinvgauss_gen(a=0.0, name='recipinvgauss',
+    # xb=50 or something large is necessary for stats to converge without exception
+recipinvgauss = recipinvgauss_gen(a=0.0, xb=50, name='recipinvgauss',    
                                   longname="A reciprocal inverse Gaussian",
                                   shapes="mu", extradoc="""
 
