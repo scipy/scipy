@@ -1,5 +1,4 @@
 """
-
 Function Reference
 ------------------
 
@@ -30,9 +29,9 @@ for computing the number of observations in a distance matrix.
 +------------------+-------------------------------------------------+
 |is_valid_y        | checks for a valid condensed distance matrix.   |
 +------------------+-------------------------------------------------+
-|numobs_dm         | # of observations in a distance matrix.         |
+|num_obs_dm        | # of observations in a distance matrix.         |
 +------------------+-------------------------------------------------+
-|numobs_y          | # of observations in a condensed distance       |
+|num_obs_y         | # of observations in a condensed distance       |
 |                  | matrix.                                         |
 +------------------+-------------------------------------------------+
 
@@ -1515,7 +1514,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
         valid = False
     return valid
 
-def numobs_dm(d):
+def num_obs_dm(d):
     """
     Returns the number of original observations that correspond to a
     square, redudant distance matrix ``D``.
@@ -1531,7 +1530,7 @@ def numobs_dm(d):
     is_valid_dm(d, tol=np.inf, throw=True, name='d')
     return d.shape[0]
 
-def numobs_y(Y):
+def num_obs_y(Y):
     """
     Returns the number of original observations that correspond to a
     condensed distance matrix ``Y``.

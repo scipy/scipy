@@ -590,7 +590,7 @@ def linkage(y, method='single', metric='euclidean'):
     s = y.shape
     if len(s) == 1:
         distance.is_valid_y(y, throw=True, name='y')
-        d = distance.numobs_y(y)
+        d = distance.num_obs_y(y)
         if method not in _cpy_non_euclid_methods.keys():
             raise ValueError("Valid methods when the raw observations are omitted are 'single', 'complete', 'weighted', and 'average'.")
         # Since the C code does not support striding using strides.
@@ -1268,7 +1268,7 @@ def correspond(Z, Y):
     distance.is_valid_y(Y, throw=True)
     Z = np.asarray(Z, order='c')
     Y = np.asarray(Y, order='c')
-    return distance.numobs_y(Y) == num_obs_linkage(Z)
+    return distance.num_obs_y(Y) == num_obs_linkage(Z)
 
 def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     """
