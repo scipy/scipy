@@ -1271,7 +1271,8 @@ class dgamma_gen(rv_continuous):
         return where(x>0,0.5+fac,0.5-fac)
     def _sf(self, x, a):
         fac = 0.5*special.gammainc(a,abs(x))
-        return where(x>0,0.5-0.5*fac,0.5+0.5*fac)
+        #return where(x>0,0.5-0.5*fac,0.5+0.5*fac)
+        return where(x>0,0.5-fac,0.5+fac)
     def _ppf(self, q, a):
         fac = special.gammainccinv(a,1-abs(2*q-1))
         return where(q>0.5, fac, -fac)
@@ -1301,7 +1302,7 @@ class dweibull_gen(rv_continuous):
     def _cdf(self, x, c):
         Cx1 = 0.5*exp(-abs(x)**c)
         return where(x > 0, 1-Cx1, Cx1)
-    def _ppf(self, q, c):
+    def _ppf_skip(self, q, c):
         fac = where(q<=0.5,2*q,2*q-1)
         fac = pow(arr(log(1.0/fac)),1.0/c)
         return where(q>0.5,fac,-fac)
@@ -2103,7 +2104,9 @@ for x > 0.
 class invweibull_gen(rv_continuous):
     def _pdf(self, x, c):
         xc1 = x**(-c-1.0)
-        xc2 = xc1*x
+        #xc2 = xc1*x
+        xc2 = x**(-c)
+        xc2 = exp(-xc2)
         return c*xc1*xc2
     def _cdf(self, x, c):
         xc1 = x**(-c)
@@ -2198,7 +2201,7 @@ laplace.pdf(x) = 1/2*exp(-abs(x))
 
 class levy_gen(rv_continuous):
     def _pdf(self, x):
-        return 1/sqrt(2*x)/x*exp(-1/(2*x))
+        return 1/sqrt(2*pi*x)/x*exp(-1/(2*x))
     def _cdf(self, x):
         return 2*(1-norm._cdf(1/sqrt(x)))
     def _ppf(self, q):
@@ -2222,7 +2225,7 @@ This is the same as the Levy-stable distribution with a=1/2 and b=1.
 class levy_l_gen(rv_continuous):
     def _pdf(self, x):
         ax = abs(x)
-        return 1/sqrt(2*ax)/ax*exp(-1/(2*ax))
+        return 1/sqrt(2*pi*ax)/ax*exp(-1/(2*ax))
     def _cdf(self, x):
         ax = abs(x)
         return 2*norm._cdf(1/sqrt(ax))-1
@@ -3145,7 +3148,7 @@ class vonmises_gen(rv_continuous):
         return exp(b*cos(x)) / (2*pi*special.i0(b))
     def _cdf(self, x, b):
         return vonmises_cython.von_mises_cdf(b,x)
-    def _stats(self, b):
+    def _stats_skip(self, b):
         return 0, None, 0, None
 vonmises = vonmises_gen(name='vonmises', longname="A Von Mises",
                         shapes="b", extradoc="""
