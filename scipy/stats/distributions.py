@@ -1019,7 +1019,8 @@ class betaprime_gen(rv_continuous):
         return (u1 / u2)
     def _pdf(self, x, a, b):
         return 1.0/special.beta(a,b)*x**(a-1.0)/(1+x)**(a+b)
-    def _cdf(self, x, a, b):
+    def _cdf_skip(self, x, a, b):
+        # remove for now: special.hyp2f1 is incorrect for large a
         x = where(x==1.0, 1.0-1e-6,x)
         return pow(x,a)*special.hyp2f1(a+b,a,1+a,-x)/a/special.beta(a,b)
     def _munp(self, n, a, b):
@@ -2528,7 +2529,7 @@ for x > 0.
 class ncf_gen(rv_continuous):
     def _rvs(self, dfn, dfd, nc):
         return mtrand.noncentral_f(dfn,dfd,nc,self._size)
-    def _pdf(self, x, dfn, dfd, nc):
+    def _pdf_skip(self, x, dfn, dfd, nc):
         n1,n2 = dfn, dfd
         term = -nc/2+nc*n1*x/(2*(n2+n1*x)) + gamln(n1/2.)+gamln(1+n2/2.)
         term -= gamln((n1+n2)/2.0)
@@ -2537,6 +2538,8 @@ class ncf_gen(rv_continuous):
         Px *= (n2+n1*x)**(-(n1+n2)/2)
         Px *= special.assoc_laguerre(-nc*n1*x/(2.0*(n2+n1*x)),n2/2,n1/2-1)
         Px /= special.beta(n1/2,n2/2)
+         #this function does not have a return
+         #   drop it for now, the generic function seems to work ok
     def _cdf(self, x, dfn, dfd, nc):
         return special.ncfdtr(dfn,dfd,nc,x)
     def _ppf(self, q, dfn, dfd, nc):
@@ -2813,7 +2816,8 @@ where phi is the normal pdf, and Phi is the normal cdf, and x > 0, c > 0.
 class rdist_gen(rv_continuous):
     def _pdf(self, x, c):
         return pow((1.0-x*x),c/2.0-1) / special.beta(0.5,c/2.0)
-    def _cdf(self, x, c):
+    def _cdf_skip(self, x, c):
+        #error inspecial.hyp2f1 for some values see tickets 758, 759
         return 0.5 + x/special.beta(0.5,c/2.0)* \
                special.hyp2f1(0.5,1.0-c/2.0,1.5,x*x)
     def _munp(self, n, c):
