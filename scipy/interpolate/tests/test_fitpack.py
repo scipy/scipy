@@ -36,6 +36,15 @@ class TestUnivariateSpline(TestCase):
         assert_almost_equal(lut.get_residual(),0.0)
         assert_array_almost_equal(lut([1,1.5,2]),[0,1,2])
 
+    def test_subclassing(self):
+        
+        class ZeroSpline(UnivariateSpline):
+            def __call__(self, x):
+                return 0*array(x)
+        
+        sp = ZeroSpline([1,2,3,4,5], [3,2,3,2,3], k=2)
+        assert_array_equal(sp([1.5, 2.5]), [0., 0.])
+
 class TestLSQBivariateSpline(TestCase):
     def test_linear_constant(self):
         x = [1,1,1,2,2,2,3,3,3]

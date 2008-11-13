@@ -103,18 +103,27 @@ class UnivariateSpline(object):
             pass
         elif ier==-1:
             # the spline returned is an interpolating spline
-            self.__class__ = InterpolatedUnivariateSpline
+            self._set_class(InterpolatedUnivariateSpline)
         elif ier==-2:
             # the spline returned is the weighted least-squares
             # polynomial of degree k. In this extreme case fp gives
             # the upper bound fp0 for the smoothing factor s.
-            self.__class__ = LSQUnivariateSpline
+            self._set_class(LSQUnivariateSpline)
         else:
             # error
             if ier==1:
-                self.__class__ = LSQUnivariateSpline
+                self._set_class(LSQUnivariateSpline)
             message = _curfit_messages.get(ier,'ier=%s' % (ier))
             warnings.warn(message)
+
+    def _set_class(self, cls):
+        self._spline_class = cls
+        if self.__class__ in (UnivariateSpline, InterpolatedUnivariateSpline,
+                              LSQUnivariateSpline):
+            self.__class__ = cls
+        else:
+            # It's an unknown subclass -- don't change class. cf. #660
+            pass
 
     def _reset_nest(self, data, nest=None):
         n = data[10]
