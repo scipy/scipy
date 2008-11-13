@@ -82,7 +82,8 @@ tree objects.
 +------------------+-------------------------------------------------+
 
 These are predicates for checking the validity of linkage and
-inconsistency matrices, both condensed and redundant.
+inconsistency matrices as well as for checking isomorphism of two
+flat cluster assignments.
 
 +------------------+-------------------------------------------------+
 |*Function*        | *Description*                                   |
@@ -97,6 +98,9 @@ inconsistency matrices, both condensed and redundant.
 +------------------+-------------------------------------------------+
 |Z_y_correspond    |checks for validity of distance matrix given a   |
 |                  |linkage.                                         |
++------------------+-------------------------------------------------+
+|numobs_linkage    |the number of observations corresponding to a    |
+|                  |linkage matrix.                                  |
 +------------------+-------------------------------------------------+
 
 
