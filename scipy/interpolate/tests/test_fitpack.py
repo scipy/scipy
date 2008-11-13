@@ -37,6 +37,7 @@ class TestUnivariateSpline(TestCase):
         assert_array_almost_equal(lut([1,1.5,2]),[0,1,2])
 
     def test_subclassing(self):
+        # See #731
         
         class ZeroSpline(UnivariateSpline):
             def __call__(self, x):

@@ -122,7 +122,7 @@ class UnivariateSpline(object):
                               LSQUnivariateSpline):
             self.__class__ = cls
         else:
-            # It's an unknown subclass -- don't change class. cf. #660
+            # It's an unknown subclass -- don't change class. cf. #731
             pass
 
     def _reset_nest(self, data, nest=None):
