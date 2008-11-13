@@ -64,6 +64,7 @@ distcont = [
     ['invweibull', (0.58847112119264788,)],
     ['johnsonsb', (4.3172675099141058, 3.1837781130785063)],
     ['johnsonsu', (2.554395574161155, 2.2482281679651965)],
+    ['ksone', (22,)],  # new added
     ['kstwobign', ()],
     ['laplace', ()],
     ['levy', ()],
@@ -168,9 +169,14 @@ def check_pdf(distfn, arg, msg):
     npt.assert_almost_equal(pdfv, cdfdiff,
                 decimal=DECIMAL, err_msg= msg + ' - cdf-pdf relationship')
 
+distmissing = ['wald', 'gausshyper', 'genexpon', 'rv_continuous',
+    'loglaplace', 'rdist', 'semicircular', 'invweibull', 'ksone',
+    'cosine', 'kstwobign', 'truncnorm', 'mielke', 'recipinvgauss', 'levy',
+    'johnsonsu', 'levy_l', 'powernorm', 'wrapcauchy',
+    'johnsonsb', 'truncexpon', 'rice', 'invnorm', 'invgamma',
+    'powerlognorm']
 
-
-def _est_all_distributions():
+def test_missing_distributions():
     #test from scipy.stats.tests
     for dist, args in distcont:
         distfunc = getattr(stats, dist)
