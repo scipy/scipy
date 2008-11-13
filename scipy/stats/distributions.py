@@ -4080,6 +4080,8 @@ Hypergeometric distribution
 # FIXME: Fails _cdfvec
 class logser_gen(rv_discrete):
     def _rvs(self, pr):
+        # looks wrong for pr>0.5, too few k=1
+        # trying to use generic is worse, no k=1 at all
         return mtrand.logseries(pr,size=self._size)
     def _argcheck(self, pr):
         return (pr > 0) & (pr < 1)
@@ -4238,7 +4240,7 @@ class randint_gen(rv_discrete):
         k = floor(x)
         return (k-min+1)*1.0/(max-min)
     def _ppf(self, q, min, max):
-        val = ceil(q*(max-min)+min)
+        val = ceil(q*(max-min)+min)-1
         return val
     def _stats(self, min, max):
         m2, m1 = arr(max), arr(min)
@@ -4324,8 +4326,13 @@ class dlaplace_gen(rv_discrete):
         const = 1.0/(1+exp(-a))
         cons2 = 1+exp(a)
         ind = q < const
-        return ceil(1.0/a*where(ind, log(q*cons2)-1, -log((1-q)*cons2)))
-    def _stats(self, a):
+        return ceil(where(ind, log(q*cons2)/a-1, -log((1-q)*cons2)/a))
+
+    def _stats_skip(self, a):
+        # variance mu2 does not aggree with sample variance,
+        #   nor with direct calculation using pmf
+        # remove for now because generic calculation works
+        #   except it does not show nice zeros for mean and skew(?) 
         ea = exp(-a)
         e2a = exp(-2*a)
         e3a = exp(-3*a)
