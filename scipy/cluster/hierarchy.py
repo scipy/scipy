@@ -1086,7 +1086,7 @@ def is_monotonic(Z):
     is_valid_linkage(Z, throw=True, name='Z')
 
     # We expect the i'th value to be greater than its successor.
-    return (Z[:-1,2]>=Z[1:,2]).all()
+    return (Z[1:,2]>=Z[:-1,2]).all()
 
 def is_valid_im(R, warning=False, throw=False, name=None):
     """
