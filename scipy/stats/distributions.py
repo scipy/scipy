@@ -105,7 +105,7 @@ class rv_frozen(object):
         self.args = args
         self.kwds = kwds
         self.dist = dist
-    def pdf(self,x):
+    def pdf(self,x):    #raises AttributeError in frozen discrete distribution
         return self.dist.pdf(x,*self.args,**self.kwds)
     def cdf(self,x):
         return self.dist.cdf(x,*self.args,**self.kwds)
@@ -119,8 +119,10 @@ class rv_frozen(object):
         return self.dist.rvs(*self.args,**kwds)
     def sf(self,x):
         return self.dist.sf(x,*self.args,**self.kwds)
-    def stats(self):
-        return self.dist.stats(*self.args,**self.kwds)
+    def stats(self,moments='mv'):
+        kwds = self.kwds
+        kwds.update({'moments':moments})
+        return self.dist.stats(*self.args,**kwds)
     def moment(self,n):
         return self.dist.moment(n,*self.args,**self.kwds)
     def entropy(self):
