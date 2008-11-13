@@ -39,7 +39,7 @@ import numpy as np
 from numpy.testing import *
 
 from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage, num_obs_linkage, inconsistent, cophenet, from_mlab_linkage, fclusterdata, fcluster, is_isomorphic, single, complete, average, weighted, centroid, median, ward, leaders, correspond
-from scipy.spatial.distance import squareform, pdist, numobs_dm, numobs_y
+from scipy.spatial.distance import squareform, pdist
 
 _tdist = np.array([[0,    662,  877,  255,  412,  996],
                    [662,  0,    295,  468,  268,  400],
@@ -101,18 +101,6 @@ def load_testing_files():
     #eo['pdist-boolean-inp'] = np.bool_(eo['pdist-boolean-inp'])
 
 load_testing_files()
-
-class TestNumObs(TestCase):
-
-    def test_num_obs_linkage_multi_matrix(self):
-        "Tests num_obs_linkage with observation matrices of multiple sizes."
-        for n in xrange(2, 10):
-            X = np.random.rand(n, 4)
-            Y = pdist(X)
-            Z = linkage(Y)
-            #print Z
-            #print A.shape, Y.shape, Yr.shape
-            self.failUnless(num_obs_linkage(Z) == n)
 
 class TestLinkage(TestCase):
 
@@ -598,7 +586,7 @@ class TestCorrespond(TestCase):
             self.failUnless(correspond(Z, y))
 
     def test_correspond_4_and_up(self):
-        "Tests correspond(Z, y) on linkage and CDMs over observation sets between sizes 4 and 15 (step size 3)."
+        "Tests correspond(Z, y) on linkage and CDMs over observation sets of different sizes. Correspondance should be false."
         for (i, j) in zip(range(2, 4), range(3, 5)) + zip(range(3, 5), range(2, 4)):
             y = np.random.rand(i*(i-1)/2)
             y2 = np.random.rand(j*(j-1)/2)
@@ -606,6 +594,26 @@ class TestCorrespond(TestCase):
             Z2 = linkage(y2)
             self.failUnless(correspond(Z, y2) == False)
             self.failUnless(correspond(Z2, y) == False)
+
+    def test_correspond_4_and_up_2(self):
+        "Tests correspond(Z, y) on linkage and CDMs over observation sets of different sizes. Correspondance should be false."
+        for (i, j) in zip(range(2, 7), range(16, 21)) + zip(range(2, 7), range(16, 21)):
+            y = np.random.rand(i*(i-1)/2)
+            y2 = np.random.rand(j*(j-1)/2)
+            Z = linkage(y)
+            Z2 = linkage(y2)
+            self.failUnless(correspond(Z, y2) == False)
+            self.failUnless(correspond(Z2, y) == False)
+
+    def test_num_obs_linkage_multi_matrix(self):
+        "Tests num_obs_linkage with observation matrices of multiple sizes."
+        for n in xrange(2, 10):
+            X = np.random.rand(n, 4)
+            Y = pdist(X)
+            Z = linkage(Y)
+            #print Z
+            #print A.shape, Y.shape, Yr.shape
+            self.failUnless(num_obs_linkage(Z) == n)
 
 def help_single_inconsistent_depth(self, i):
     Y = squareform(_tdist)
