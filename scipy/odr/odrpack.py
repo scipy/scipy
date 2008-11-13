@@ -873,9 +873,9 @@ class ODR(object):
         default value from class initialization is for all of these options set
         to 0.
 
-        _______________________________________________________________________
+        =========  =====  =====================================================
         Parameter  Value  Meaning
-        ---------  -----  -------
+        =========  =====  =====================================================
         fit_type     0    explicit ODR
                      1    implicit ODR
                      2    ordinary least-squares
@@ -898,7 +898,7 @@ class ODR(object):
 
         restart      0    fit is not a restart
                      1    fit is a restart
-        _______________________________________________________________________
+        =========  =====  =====================================================
 
         The permissible values are different from those given on pg. 31 of the
         ODRPACK User's Guide only in that one cannot specify numbers greater than the

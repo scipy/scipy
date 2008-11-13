@@ -1457,8 +1457,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
             Number of objective function evaluations made.
 
     Notes
-
-    ----------------------------
+    -----
 
     Uses inverse parabolic interpolation when possible to speed up convergence
     of golden section method.

@@ -435,46 +435,46 @@ def ward(y):
 
 
 def linkage(y, method='single', metric='euclidean'):
-    """
+    r"""
     Performs hierarchical/agglomerative clustering on the
-    condensed distance matrix y. y must be a {n \choose 2} sized
+    condensed distance matrix y. y must be a :math:`{n \choose 2}` sized
     vector where n is the number of original observations paired
     in the distance matrix. The behavior of this function is very
     similar to the MATLAB(TM) linkage function.
 
-    A 4 by :math:`$(n-1)$` matrix ``Z`` is returned. At the
-    :math:`$i$`th iteration, clusters with indices ``Z[i, 0]`` and
-    ``Z[i, 1]`` are combined to form cluster :math:`$n + i$`. A
-    cluster with an index less than :math:`$n$` corresponds to one of
-    the :math:`$n$` original observations. The distance between
+    A 4 by :math:`(n-1)` matrix ``Z`` is returned. At the
+    :math:`i`-th iteration, clusters with indices ``Z[i, 0]`` and
+    ``Z[i, 1]`` are combined to form cluster :math:`n + i`. A
+    cluster with an index less than :math:`n` corresponds to one of
+    the :math:`n` original observations. The distance between
     clusters ``Z[i, 0]`` and ``Z[i, 1]`` is given by ``Z[i, 2]``. The
     fourth value ``Z[i, 3]`` represents the number of original
     observations in the newly formed cluster.
 
     The following linkage methods are used to compute the distance
-    :math:`$d(s, t)$` between two clusters :math:`$s$` and
-    :math:`$t$`. The algorithm begins with a forest of clusters that
+    :math:`d(s, t)` between two clusters :math:`s` and
+    :math:`t`. The algorithm begins with a forest of clusters that
     have yet to be used in the hierarchy being formed. When two
-    clusters :math:`$s$` and :math:`$t$` from this forest are combined
-    into a single cluster :math:`$u$`, :math:`$s$` and :math:`$t$` are
-    removed from the forest, and :math:`$u$` is added to the
+    clusters :math:`s` and :math:`t` from this forest are combined
+    into a single cluster :math:`u`, :math:`s` and :math:`t` are
+    removed from the forest, and :math:`u` is added to the
     forest. When only one cluster remains in the forest, the algorithm
     stops, and this cluster becomes the root.
 
     A distance matrix is maintained at each iteration. The ``d[i,j]``
-    entry corresponds to the distance between cluster :math:`$i$` and
-    :math:`$j$` in the original forest.
+    entry corresponds to the distance between cluster :math:`i` and
+    :math:`j` in the original forest.
 
     At each iteration, the algorithm must update the distance matrix
     to reflect the distance of the newly formed cluster u with the
     remaining clusters in the forest.
 
-    Suppose there are :math:`$|u|$` original observations
-    :math:`$u[0], \ldots, u[|u|-1]$` in cluster :math:`$u$` and
-    :math:`$|v|$` original objects :math:`$v[0], \ldots, v[|v|-1]$` in
-    cluster :math:`$v$`. Recall :math:`$s$` and :math:`$t$` are
-    combined to form cluster :math:`$u$`. Let :math:`$v$` be any
-    remaining cluster in the forest that is not :math:`$u$`.
+    Suppose there are :math:`|u|` original observations
+    :math:`u[0], \ldots, u[|u|-1]` in cluster :math:`u` and
+    :math:`|v|` original objects :math:`v[0], \ldots, v[|v|-1]` in
+    cluster :math:`v`. Recall :math:`s` and :math:`t` are
+    combined to form cluster :math:`u`. Let :math:`v` be any
+    remaining cluster in the forest that is not :math:`u`.
 
     :Parameters:
        Q : ndarray
@@ -482,8 +482,8 @@ def linkage(y, method='single', metric='euclidean'):
            distance matrix is a flat array containing the upper
            triangular of the distance matrix. This is the form that
            ``pdist`` returns. Alternatively, a collection of
-           :math:`$m$` observation vectors in n dimensions may be passed as
-           a :math:`$m$` by :math:`$n$` array.
+           :math:`m` observation vectors in n dimensions may be passed as
+           a :math:`m` by :math:`n` array.
        method : string
            The linkage algorithm to use. See the ``Linkage Methods``
            section below for full descriptions.
@@ -495,15 +495,15 @@ def linkage(y, method='single', metric='euclidean'):
     ---------------
 
     The following are methods for calculating the distance between the
-    newly formed cluster :math:`$u$` and each :math:`$v$`.
+    newly formed cluster :math:`u` and each :math:`v`.
 
     * method=``single`` assigns
 
       .. math:
          d(u,v) = \min(dist(u[i],v[j]))
 
-      for all points :math:`$i$` in cluster :math:`$u$` and
-      :math:`$j$` in cluster :math:`$v$`. This is also known as the
+      for all points :math:`i` in cluster :math:`u` and
+      :math:`j` in cluster :math:`v`. This is also known as the
       Nearest Point Algorithm.
 
     * method=``complete`` assigns
@@ -511,8 +511,8 @@ def linkage(y, method='single', metric='euclidean'):
       .. math:
          d(u, v) = \max(dist(u[i],v[j]))
 
-      for all points :math:`$i$` in cluster u and :math:`$j$` in
-      cluster :math:`$v$`. This is also known by the Farthest Point
+      for all points :math:`i` in cluster u and :math:`j` in
+      cluster :math:`v`. This is also known by the Farthest Point
       Algorithm or Voor Hees Algorithm.
 
     * method=``average`` assigns
@@ -521,9 +521,9 @@ def linkage(y, method='single', metric='euclidean'):
          d(u,v) = \sum_{ij} \frac{d(u[i], v[j])}
                                  {(|u|*|v|)
 
-      for all points :math:`$i$` and :math:`$j$` where :math:`$|u|$`
-      and :math:`$|v|$` are the cardinalities of clusters :math:`$u$`
-      and :math:`$v$`, respectively. This is also called the UPGMA
+      for all points :math:`i` and :math:`j` where :math:`|u|`
+      and :math:`|v|` are the cardinalities of clusters :math:`u`
+      and :math:`v`, respectively. This is also called the UPGMA
       algorithm. This is called UPGMA.
 
     * method='weighted' assigns
@@ -540,24 +540,24 @@ def linkage(y, method='single', metric='euclidean'):
       .. math:
          dist(s,t) = euclid(c_s, c_t)
 
-      where :math:`$c_s$` and :math:`$c_t$` are the centroids of
-      clusters :math:`$s$` and :math:`$t$`, respectively. When two
-      clusters :math:`$s$` and :math:`$t$` are combined into a new
-      cluster :math:`$u$`, the new centroid is computed over all the
-      original objects in clusters :math:`$s$` and :math:`$t$`. The
+      where :math:`c_s` and :math:`c_t` are the centroids of
+      clusters :math:`s` and :math:`t`, respectively. When two
+      clusters :math:`s` and :math:`t` are combined into a new
+      cluster :math:`u`, the new centroid is computed over all the
+      original objects in clusters :math:`s` and :math:`t`. The
       distance then becomes the Euclidean distance between the
-      centroid of :math:`$u$` and the centroid of a remaining cluster
-      :math:`$v$` in the forest. This is also known as the UPGMC
+      centroid of :math:`u` and the centroid of a remaining cluster
+      :math:`v` in the forest. This is also known as the UPGMC
       algorithm.
 
     * method='median' assigns math:`$d(s,t)$` like the ``centroid``
       method. When two clusters s and t are combined into a new
-      cluster :math:`$u$`, the average of centroids s and t give the
-      new centroid :math:`$u$`. This is also known as the WPGMC
+      cluster :math:`u`, the average of centroids s and t give the
+      new centroid :math:`u`. This is also known as the WPGMC
       algorithm.
 
     * method='ward' uses the Ward variance minimization algorithm.
-      The new entry :math:`$d(u,v)$` is computed as follows,
+      The new entry :math:`d(u,v)` is computed as follows,
 
       .. math:
 
@@ -568,10 +568,10 @@ def linkage(y, method='single', metric='euclidean'):
                       + \frac{|v|}
                              {T}d(s,t)^2}
 
-      where :math:`$u$` is the newly joined cluster consisting of
-      clusters :math:`$s$` and :math:`$t$`, :math:`$v$` is an unused
-      cluster in the forest, :math:`$T=|v|+|s|+|t|$`, and
-      :math:`$|*|$` is the cardinality of its argument. This is also
+      where :math:`u` is the newly joined cluster consisting of
+      clusters :math:`s` and :math:`t`, :math:`v` is an unused
+      cluster in the forest, :math:`T=|v|+|s|+|t|`, and
+      :math:`|*|` is the cardinality of its argument. This is also
       known as the incremental algorithm.
 
    Warning
@@ -653,12 +653,12 @@ class ClusterNode:
             self.count = left.count + right.count
 
     def get_id(self):
-        """
-        The identifier of the target node. For :math:`$0 leq i < n$`,
-        :math:`$i$` corresponds to original observation
-        :math:`$i$`. For :math:`$n \leq i$` < :math:`$2n-1$`,
-        :math:`$i$` corresponds to non-singleton cluster formed at
-        iteration :math:`$i-n$`.
+        r"""
+        The identifier of the target node. For :math:`0 \leq i < n`,
+        :math:`i` corresponds to original observation
+        :math:`i`. For :math:`n \leq i` < :math:`2n-1`,
+        :math:`i` corresponds to non-singleton cluster formed at
+        iteration :math:`i-n`.
 
         :Returns:
 
@@ -896,7 +896,7 @@ def cophenet(Z, Y=None):
        - Y : ndarray (optional)
          Calculates the cophenetic correlation coefficient ``c`` of a
          hierarchical clustering defined by the linkage matrix ``Z``
-         of a set of :math:`$n$` observations in :math:`$m$`
+         of a set of :math:`n` observations in :math:`m`
          dimensions. ``Y`` is the condensed distance matrix from which
          ``Z`` was generated.
 
@@ -906,8 +906,8 @@ def cophenet(Z, Y=None):
 
        - d : ndarray
          The cophenetic distance matrix in condensed form. The
-         :math:`$ij$` th entry is the cophenetic distance between
-         original observations :math:`$i$` and :math:`$j$`.
+         :math:`ij` th entry is the cophenetic distance between
+         original observations :math:`i` and :math:`j`.
 
     """
 
@@ -942,7 +942,7 @@ def cophenet(Z, Y=None):
     return (c, zz)
 
 def inconsistent(Z, d=2):
-    """
+    r"""
     Calculates inconsistency statistics on a linkage.
 
     :Parameters:
@@ -951,17 +951,17 @@ def inconsistent(Z, d=2):
            non-singleton cluster
 
        - Z : ndarray
-           The :math:`$(n-1)$` by 4 matrix encoding the linkage
+           The :math:`(n-1)` by 4 matrix encoding the linkage
            (hierarchical clustering).  See ``linkage`` documentation
            for more information on its form.
 
 
     :Returns:
        - R : ndarray
-           A :math:`$(n-1)$` by 5 matrix where the ``i``'th row
+           A :math:`(n-1)` by 5 matrix where the ``i``'th row
            contains the link statistics for the non-singleton cluster
            ``i``. The link statistics are computed over the link
-           heights for links :math:`$d$` levels below the cluster
+           heights for links :math:`d` levels below the cluster
            ``i``. ``R[i,0]`` and ``R[i,1]`` are the mean and standard
            deviation of the link heights, respectively; ``R[i,2]`` is
            the number of links included in the calculation; and
@@ -1070,7 +1070,7 @@ def to_mlab_linkage(Z):
 def is_monotonic(Z):
     """
     Returns ``True`` if the linkage passed is monotonic. The linkage
-    is monotonic if for every cluster :math:`$s$` and :math:`$t$`
+    is monotonic if for every cluster :math:`s` and :math:`t`
     joined, the distance between them is no less than the distance
     between any previously joined clusters.
 
@@ -1092,9 +1092,9 @@ def is_valid_im(R, warning=False, throw=False, name=None):
     """
 
     Returns True if the inconsistency matrix passed is valid. It must
-    be a :math:`$n$` by 4 numpy array of doubles. The standard
+    be a :math:`n` by 4 numpy array of doubles. The standard
     deviations ``R[:,1]`` must be nonnegative. The link counts
-    ``R[:,2]`` must be positive and no greater than :math:`$n-1$`.
+    ``R[:,2]`` must be positive and no greater than :math:`n-1`.
 
     :Arguments:
          - R : ndarray
@@ -1153,13 +1153,13 @@ def is_valid_im(R, warning=False, throw=False, name=None):
     return valid
 
 def is_valid_linkage(Z, warning=False, throw=False, name=None):
-    """
+    r"""
     Checks the validity of a linkage matrix. A linkage matrix is valid
-    if it is a two dimensional nd-array (type double) with :math:`$n$`
+    if it is a two dimensional nd-array (type double) with :math:`n`
     rows and 4 columns.  The first two columns must contain indices
-    between 0 and :math:`$2n-1$`. For a given row ``i``,
-    :math:`$0 \leq \mathtt{Z[i,0]} \leq i+n-1$` and
-    :math:`$0 \leq Z[i,1] \leq i+n-1$` (i.e.  a cluster
+    between 0 and :math:`2n-1`. For a given row ``i``,
+    :math:`0 \leq \mathtt{Z[i,0]} \leq i+n-1` and
+    :math:`0 \leq Z[i,1] \leq i+n-1` (i.e.  a cluster
     cannot join another cluster unless the cluster being joined has
     been generated.)
 

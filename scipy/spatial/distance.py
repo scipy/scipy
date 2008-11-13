@@ -175,7 +175,7 @@ def _convert_to_double(X):
     return X
 
 def minkowski(u, v, p):
-    """
+    r"""
     Computes the Minkowski distance between two vectors ``u`` and ``v``,
     defined as
 
@@ -189,7 +189,7 @@ def minkowski(u, v, p):
        v : ndarray
            An n-dimensional vector.
        p : ndarray
-           The norm of the difference :math:`${||u-v||}_p$`.
+           The norm of the difference :math:`{||u-v||}_p`.
 
     :Returns:
        d : double
@@ -202,7 +202,7 @@ def minkowski(u, v, p):
     return (abs(u-v)**p).sum() ** (1.0 / p)
 
 def wminkowski(u, v, p, w):
-    """
+    r"""
     Computes the weighted Minkowski distance between two vectors ``u``
     and ``v``, defined as
 
@@ -216,7 +216,7 @@ def wminkowski(u, v, p, w):
        v : ndarray
            An :math:`n`-dimensional vector.
        p : ndarray
-           The norm of the difference :math:`${||u-v||}_p$`.
+           The norm of the difference :math:`{||u-v||}_p`.
        w : ndarray
            The weight vector.
 
@@ -279,7 +279,7 @@ def sqeuclidean(u, v):
     return ((u-v)*(u-v).T).sum()
 
 def cosine(u, v):
-    """
+    r"""
     Computes the Cosine distance between two n-vectors u and v, which
     is defined as
 
@@ -303,7 +303,7 @@ def cosine(u, v):
                    (np.sqrt(np.dot(u, u.T)) * np.sqrt(np.dot(v, v.T)))))
 
 def correlation(u, v):
-    """
+    r"""
     Computes the correlation distance between two n-vectors ``u`` and
     ``v``, which is defined as
 
@@ -312,7 +312,7 @@ def correlation(u, v):
        \frac{1 - (u - n{|u|}_1){(v - n{|v|}_1)}^T}
             {{|(u - n{|u|}_1)|}_2 {|(v - n{|v|}_1)|}^T}
 
-    where :math:`$|*|_1$` is the Manhattan norm and ``n`` is the
+    where :math:`|*|_1` is the Manhattan norm and ``n`` is the
     common dimensionality of the vectors.
 
     :Parameters:
@@ -334,7 +334,7 @@ def correlation(u, v):
                    * np.sqrt(np.dot(vm, vm))))
 
 def hamming(u, v):
-    """
+    r"""
     Computes the Hamming distance between two n-vectors ``u`` and
     ``v``, which is simply the proportion of disagreeing components in
     ``u`` and ``v``. If ``u`` and ``v`` are boolean vectors, the Hamming
@@ -344,9 +344,9 @@ def hamming(u, v):
 
        \frac{c_{01} + c_{10}}{n}
 
-    where :math:`$c_{ij}$` is the number of occurrences of
-    :math:`$\mathtt{u[k]}` = i$ and :math:`$\mathtt{v[k]} = j$` for
-    :math:`$k < n$`.
+    where :math:`c_{ij}` is the number of occurrences of
+    :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
+    :math:`k < n`.
 
     :Parameters:
        u : ndarray
@@ -372,9 +372,9 @@ def jaccard(u, v):
        \frac{c_{TF} + c_{FT}}
             {c_{TT} + c_{FT} + c_{TF}}
 
-    where :math:`$c_{ij}$` is the number of occurrences of
-    :math:`$\mathtt{u[k]}` = i$ and :math:`$\mathtt{v[k]} = j$` for
-    :math:`$k < n$`.
+    where :math:`c_{ij}` is the number of occurrences of
+    :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
+    :math:`k < n`.
 
     :Parameters:
        u : ndarray
@@ -402,9 +402,9 @@ def kulsinski(u, v):
        \frac{c_{TF} + c_{FT} - c_{TT} + n}
             {c_{FT} + c_{TF} + n}
 
-    where :math:`$c_{ij}$` is the number of occurrences of
-    :math:`$\mathtt{u[k]}` = i$ and :math:`$\mathtt{v[k]} = j$` for
-    :math:`$k < n$`.
+    where :math:`c_{ij}` is the number of occurrences of
+    :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
+    :math:`k < n`.
 
     :Parameters:
        u : ndarray
@@ -478,7 +478,7 @@ def mahalanobis(u, v, VI):
     .. math:
        (u-v)V^{-1}(u-v)^T
 
-    where ``VI`` is the inverse covariance matrix :math:`$V^{-1}$`.
+    where ``VI`` is the inverse covariance matrix :math:`V^{-1}`.
 
     :Parameters:
        u : ndarray
@@ -614,9 +614,9 @@ def yule(u, v):
          \frac{R}
          \frac{c_{TT} + c_{FF} + \frac{R}{2}}
 
-    where :math:`$c_{ij}$` is the number of occurrences of
-    :math:`$\mathtt{u[k]}` = i$ and :math:`$\mathtt{v[k]} = j$` for
-    :math:`$k < n$` and :math:`$R = 2.0 * (c_{TF} + c_{FT})$`.
+    where :math:`c_{ij}` is the number of occurrences of
+    :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
+    :math:`k < n` and :math:`R = 2.0 * (c_{TF} + c_{FT})`.
 
     :Parameters:
        u : ndarray
@@ -642,9 +642,9 @@ def matching(u, v):
 
        \frac{c_{TF} + c_{FT}}{n}
 
-    where :math:`$c_{ij}$` is the number of occurrences of
-    :math:`$\mathtt{u[k]}` = i$ and :math:`$\mathtt{v[k]} = j$` for
-    :math:`$k < n$`.
+    where :math:`c_{ij}` is the number of occurrences of
+    :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
+    :math:`k < n`.
 
     :Parameters:
        u : ndarray
@@ -671,9 +671,9 @@ def dice(u, v):
          \frac{c_{TF} + c_{FT}
               {2c_{TT} + c_{FT} + c_{TF}}
 
-    where :math:`$c_{ij}$` is the number of occurrences of
-    :math:`$\mathtt{u[k]}` = i$ and :math:`$\mathtt{v[k]} = j$` for
-    :math:`$k < n$`.
+    where :math:`c_{ij}` is the number of occurrences of
+    :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
+    :math:`k < n`.
 
     :Parameters:
        u : ndarray
@@ -703,9 +703,9 @@ def rogerstanimoto(u, v):
        \frac{R}
             {c_{TT} + c_{FF} + R}
 
-    where :math:`$c_{ij}$` is the number of occurrences of
-    :math:`$\mathtt{u[k]}` = i$ and :math:`$\mathtt{v[k]} = j$` for
-    :math:`$k < n$` and :math:`$R = 2(c_{TF} + c_{FT})$`.
+    where :math:`c_{ij}` is the number of occurrences of
+    :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
+    :math:`k < n` and :math:`R = 2(c_{TF} + c_{FT})`.
 
     :Parameters:
        u : ndarray
@@ -733,9 +733,9 @@ def russellrao(u, v):
       \frac{n - c_{TT}}
            {n}
 
-    where :math:`$c_{ij}$` is the number of occurrences of
-    :math:`$\mathtt{u[k]}` = i$ and :math:`$\mathtt{v[k]} = j$` for
-    :math:`$k < n$`.
+    where :math:`c_{ij}` is the number of occurrences of
+    :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
+    :math:`k < n`.
 
     :Parameters:
        u : ndarray
@@ -765,10 +765,10 @@ def sokalmichener(u, v):
        \frac{2R}
             {S + 2R}
 
-    where :math:`$c_{ij}$` is the number of occurrences of
-    :math:`$\mathtt{u[k]}` = i$ and :math:`$\mathtt{v[k]} = j$` for
-    :math:`$k < n$`, :math:`$R = 2 * (c_{TF} + c{FT})$` and
-    :math:`$S = c_{FF} + c_{TT}$`.
+    where :math:`c_{ij}` is the number of occurrences of
+    :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
+    :math:`k < n`, :math:`R = 2 * (c_{TF} + c{FT})` and
+    :math:`S = c_{FF} + c_{TT}`.
 
     :Parameters:
        u : ndarray
@@ -801,9 +801,9 @@ def sokalsneath(u, v):
        \frac{2R}
             {c_{TT} + 2R}
 
-    where :math:`$c_{ij}$` is the number of occurrences of
-    :math:`$\mathtt{u[k]}` = i$ and :math:`$\mathtt{v[k]} = j$` for
-    :math:`$k < n$` and :math:`$R = 2(c_{TF} + c{FT})$`.
+    where :math:`c_{ij}` is the number of occurrences of
+    :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
+    :math:`k < n` and :math:`R = 2(c_{TF} + c{FT})`.
 
     :Parameters:
        u : ndarray
@@ -829,7 +829,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
     """
     Computes the pairwise distances between m original observations in
     n-dimensional space. Returns a condensed distance matrix Y.  For
-    each :math:`$i$` and :math:`$j$` (where :math:`$i<j<n$), the
+    each :math:`i` and :math:`j` (where :math:`i<j<n`), the
     metric ``dist(u=X[i], v=X[j])`` is computed and stored in the
     :math:`ij`th entry.
 
@@ -873,7 +873,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
     2. ``Y = pdist(X, 'minkowski', p)``
 
        Computes the distances using the Minkowski distance
-       :math:`$||u-v||_p$` (p-norm) where :math:`$p \geq 1$`.
+       :math:`||u-v||_p` (p-norm) where :math:`p \geq 1`.
 
     3. ``Y = pdist(X, 'cityblock')``
 
@@ -918,8 +918,8 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
           \frac{1 - (u - n{|u|}_1){(v - n{|v|}_1)}^T}
                {{|(u - n{|u|}_1)|}_2 {|(v - n{|v|}_1)|}^T}
 
-       where :math:`$|*|_1$` is the Manhattan (or 1-norm) of its
-       argument, and :math:`$n$` is the common dimensionality of the
+       where :math:`|*|_1` is the Manhattan (or 1-norm) of its
+       argument, and :math:`n` is the common dimensionality of the
        vectors.
 
     8. ``Y = pdist(X, 'hamming')``
@@ -973,7 +973,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
 
        Computes the Mahalanobis distance between the points. The
        Mahalanobis distance between two points ``u`` and ``v`` is
-       :math:`$(u-v)(1/V)(u-v)^T$` where :math:`$(1/V)$` (the ``VI``
+       :math:`(u-v)(1/V)(u-v)^T` where :math:`(1/V)` (the ``VI``
        variable) is the inverse covariance. If ``VI`` is not None,
        ``VI`` will be used as the inverse covariance matrix.
 
@@ -1038,7 +1038,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
 
        would calculate the pair-wise distances between the vectors in
        X using the Python function sokalsneath. This would result in
-       sokalsneath being called :math:`${n \choose 2}$` times, which
+       sokalsneath being called :math:`{n \choose 2}` times, which
        is inefficient. Instead, the optimized C version is more
        efficient, and we call it using the following syntax.::
 
@@ -1295,7 +1295,7 @@ def squareform(X, force="no", checks=True):
     1. v = squareform(X)
 
        Given a square d by d symmetric distance matrix ``X``,
-       ``v=squareform(X)`` returns a :math:`$d*(d-1)/2$` (or
+       ``v=squareform(X)`` returns a :math:`d*(d-1)/2` (or
        `${n \choose 2}$`) sized vector v.
 
       v[{n \choose 2}-{n-i \choose 2} + (j-i-1)] is the distance
@@ -1389,8 +1389,8 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
            The candidate object to test for validity.
        tol : double
            The distance matrix should be symmetric. tol is the maximum
-           difference between the :math:`$ij$`th entry and the
-           :math:`$ji$`th entry for the distance metric to be
+           difference between the :math:`ij`th entry and the
+           :math:`ji`th entry for the distance metric to be
            considered symmetric.
        throw : bool
            An exception is thrown if the distance matrix passed is not
@@ -1459,7 +1459,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     Returns ``True`` if the variable ``y`` passed is a valid condensed
     distance matrix. Condensed distance matrices must be 1-dimensional
     numpy arrays containing doubles. Their length must be a binomial
-    coefficient :math:`${n \choose 2}$` for some positive integer n.
+    coefficient :math:`{n \choose 2}` for some positive integer n.
 
 
     :Parameters:
@@ -1559,29 +1559,29 @@ def num_obs_y(Y):
 def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     """
     Computes distance between each pair of observations between two
-    collections of vectors. ``XA`` is a :math:`$m_A$` by :math:`$n$`
-    array while ``XB`` is a :math:`$m_B$` by :math:`$n$` array. A
-    :math:`$m_A$` by :math:`$m_B$` array is returned. An exception is
+    collections of vectors. ``XA`` is a :math:`m_A` by :math:`n`
+    array while ``XB`` is a :math:`m_B` by :math:`n` array. A
+    :math:`m_A` by :math:`m_B` array is returned. An exception is
     thrown if ``XA`` and ``XB`` do not have the same number of
     columns.
 
-    A rectangular distance matrix ``Y`` is returned. For each :math:`$i$`
-    and :math:`$j$`, the metric ``dist(u=XA[i], v=XB[j])`` is computed
-    and stored in the :math:`$ij$` th entry.
+    A rectangular distance matrix ``Y`` is returned. For each :math:`i`
+    and :math:`j`, the metric ``dist(u=XA[i], v=XB[j])`` is computed
+    and stored in the :math:`ij` th entry.
 
     The following are common calling conventions:
 
     1. ``Y = cdist(X, 'euclidean')``
 
-       Computes the distance between :math:`$m$` points using
+       Computes the distance between :math:`m` points using
        Euclidean distance (2-norm) as the distance metric between the
-       points. The points are arranged as :math:`$m$`
-       :math:`$n$`-dimensional row vectors in the matrix X.
+       points. The points are arranged as :math:`m`
+       :math:`n`-dimensional row vectors in the matrix X.
 
     2. ``Y = cdist(X, 'minkowski', p)``
 
        Computes the distances using the Minkowski distance
-       :math:`$||u-v||_p$` (:math:`$p$`-norm) where :math:`$p \geq 1$`.
+       :math:`||u-v||_p` (:math:`p`-norm) where :math:`p \geq 1`.
 
     3. ``Y = cdist(X, 'cityblock')``
 
@@ -1626,8 +1626,8 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
           \frac{1 - (u - n{|u|}_1){(v - n{|v|}_1)}^T}
                {{|(u - n{|u|}_1)|}_2 {|(v - n{|v|}_1)|}^T}
 
-       where :math:`$|*|_1$` is the Manhattan (or 1-norm) of its
-       argument, and :math:`$n$` is the common dimensionality of the
+       where :math:`|*|_1` is the Manhattan (or 1-norm) of its
+       argument, and :math:`n` is the common dimensionality of the
        vectors.
 
     8. ``Y = cdist(X, 'hamming')``
@@ -1681,7 +1681,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        Computes the Mahalanobis distance between the points. The
        Mahalanobis distance between two points ``u`` and ``v`` is
-       :math:`$(u-v)(1/V)(u-v)^T$` where :math:`$(1/V)$` (the ``VI``
+       :math:`(u-v)(1/V)(u-v)^T` where :math:`(1/V)` (the ``VI``
        variable) is the inverse covariance. If ``VI`` is not None,
        ``VI`` will be used as the inverse covariance matrix.
 
@@ -1747,7 +1747,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        would calculate the pair-wise distances between the vectors in
        X using the Python function sokalsneath. This would result in
-       sokalsneath being called :math:`${n \choose 2}$` times, which
+       sokalsneath being called :math:`{n \choose 2}` times, which
        is inefficient. Instead, the optimized C version is more
        efficient, and we call it using the following syntax.::
 
@@ -1755,11 +1755,11 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
     :Parameters:
        XA : ndarray
-           An :math:`$m_A$` by :math:`$n$` array of :math:`$m_A$`
-           original observations in an :math:`$n$`-dimensional space.
+           An :math:`m_A` by :math:`n` array of :math:`m_A`
+           original observations in an :math:`n`-dimensional space.
        XB : ndarray
-           An :math:`$m_B$` by :math:`$n$` array of :math:`$m_B$`
-           original observations in an :math:`$n$`-dimensional space.
+           An :math:`m_B` by :math:`n` array of :math:`m_B`
+           original observations in an :math:`n`-dimensional space.
        metric : string or function
            The distance metric to use. The distance function can
            be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
@@ -1780,7 +1780,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
     :Returns:
        Y : ndarray
-           A :math:`$m_A$` by :math:`$m_B$` distance matrix.
+           A :math:`m_A` by :math:`m_B` distance matrix.
        """
 
 
