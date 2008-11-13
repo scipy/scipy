@@ -385,15 +385,23 @@ class rv_continuous(rv_generic):
         self._size = 1
         self.m = 0.0
         self.moment_type = momtype
-        self.vecfunc = sgf(self._ppf_single_call,otypes='d')
-        self.vecentropy = sgf(self._entropy,otypes='d')
-        self.veccdf = sgf(self._cdf_single_call,otypes='d')
+        
         self.expandarr = 1
-        cdf_signature = inspect.getargspec(self._cdf.im_func)
-        numargs1 = len(cdf_signature[0]) - 2
-        pdf_signature = inspect.getargspec(self._pdf.im_func)
-        numargs2 = len(pdf_signature[0]) - 2
-        self.numargs = max(numargs1, numargs2)
+        
+        if not hasattr(self,'numargs'):
+            #allows more general subclassing with *args
+            cdf_signature = inspect.getargspec(self._cdf.im_func)
+            numargs1 = len(cdf_signature[0]) - 2
+            pdf_signature = inspect.getargspec(self._pdf.im_func)
+            numargs2 = len(pdf_signature[0]) - 2
+            self.numargs = max(numargs1, numargs2)
+        #nin correction 
+        self.vecfunc = sgf(self._ppf_single_call,otypes='d')
+        self.vecfunc.nin = self.numargs + 1
+        self.vecentropy = sgf(self._entropy,otypes='d')
+        self.vecentropy.nin = self.numargs + 1
+        self.veccdf = sgf(self._cdf_single_call,otypes='d')
+        self.veccdf.nin = self.numargs+1
         self.shapes = shapes
         self.extradoc = extradoc
         if momtype == 0:
@@ -410,7 +418,8 @@ class rv_continuous(rv_generic):
         if self.__doc__ is None:
             self.__doc__ = rv_continuous.__doc__
         if self.__doc__ is not None:
-            self.__doc__ = self.__doc__.replace("A Generic",longname)
+            if longname is not None:
+                self.__doc__ = self.__doc__.replace("A Generic",longname)
             if name is not None:
                 self.__doc__ = self.__doc__.replace("generic",name)
             if shapes is None:
@@ -471,7 +480,7 @@ class rv_continuous(rv_generic):
         return self.vecfunc(q,*args)
 
     def _isf(self, q, *args):
-        return self.vecfunc(1.0-q,*args)
+        return self._ppf(1.0-q,*args) #use correct _ppf for subclasses
 
     # The actual cacluation functions (no basic checking need be done)
     #  If these are defined, the others won't be looked at.
@@ -539,8 +548,9 @@ class rv_continuous(rv_generic):
         output = zeros(shape(cond),'d')
         place(output,(1-cond0)*(cond1==cond1),self.badvalue)
         place(output,cond2,1.0)
-        goodargs = argsreduce(cond, *((x,)+args))
-        place(output,cond,self._cdf(*goodargs))
+        if any(cond):  #call only if at least 1 entry
+            goodargs = argsreduce(cond, *((x,)+args))
+            place(output,cond,self._cdf(*goodargs))
         if output.ndim == 0:
             return output[()]
         return output
@@ -600,9 +610,10 @@ class rv_continuous(rv_generic):
         output = valarray(shape(cond),value=self.a*scale + loc)
         place(output,(1-cond0)+(1-cond1)*(q!=0.0), self.badvalue)
         place(output,cond2,self.b*scale + loc)
-        goodargs = argsreduce(cond, *((q,)+args+(scale,loc)))
-        scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
-        place(output,cond,self._ppf(*goodargs)*scale + loc)
+        if any(cond):  #call only if at least 1 entry
+            goodargs = argsreduce(cond, *((q,)+args+(scale,loc)))
+            scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
+            place(output,cond,self._ppf(*goodargs)*scale + loc)
         if output.ndim == 0:
             return output[()]
         return output
@@ -631,9 +642,9 @@ class rv_continuous(rv_generic):
         output = valarray(shape(cond),value=self.b)
         place(output,(1-cond0)*(cond1==cond1), self.badvalue)
         place(output,cond2,self.a)
-        goodargs = argsreduce(cond, *((1.0-q,)+args+(scale,loc)))
+        goodargs = argsreduce(cond, *((q,)+args+(scale,loc)))  #PB replace 1-q by q
         scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
-        place(output,cond,self._ppf(*goodargs)*scale + loc)
+        place(output,cond,self._isf(*goodargs)*scale + loc) #PB use _isf instead of _ppf
         if output.ndim == 0:
             return output[()]
         return output
@@ -687,7 +698,7 @@ class rv_continuous(rv_generic):
         if g1 is None:
             mu3 = None
         else:
-            mu3 = g1*(mu2**1.5)
+            mu3 = g1*np.power(mu2,1.5) #(mu2**1.5) breaks down for nan and nin
         default = valarray(shape(cond), self.badvalue)
         output = []
 
@@ -763,8 +774,8 @@ class rv_continuous(rv_generic):
                 if mu is None: return self._munp(1,*args)
                 else: return mu
             elif (n==2):
-                if mu2 is None: return self._munp(2,*args)
-                else: return mu
+                if mu2 is None or mu is None: return self._munp(2,*args)
+                else: return mu2 + mu*mu
             elif (n==3):
                 if g1 is None or mu2 is None: return self._munp(3,*args)
                 else: return g1*(mu2**1.5)
