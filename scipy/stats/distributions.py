@@ -8,6 +8,8 @@ import scipy
 from scipy.misc import comb, derivative
 from scipy import special
 from scipy import optimize
+import scipy.integrate
+
 import inspect
 from numpy import alltrue, where, arange, put, putmask, \
      ravel, take, ones, sum, shape, product, repeat, reshape, \
@@ -17,6 +19,7 @@ from numpy import atleast_1d, polyval, angle, ceil, place, extract, \
      any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isnan, isinf, \
      power
 import numpy
+import numpy as np   
 import numpy.random as mtrand
 from numpy import flatnonzero as nonzero
 from scipy.special import gammaln as gamln
@@ -3421,7 +3424,7 @@ class rv_discrete(rv_generic):
         self.badvalue = badvalue
         self.a = a
         self.b = b
-        self.invcdf_a = a
+        self.invcdf_a = a   # what's the difference to self.a, .b
         self.invcdf_b = b
         self.name = name
         self.moment_tol = moment_tol
@@ -3457,17 +3460,30 @@ class rv_discrete(rv_generic):
                                                  self, rv_discrete)
             self.numargs=0
         else:
-            self._vecppf = new.instancemethod(sgf(_drv2_ppfsingle,otypes='d'),
-                                              self, rv_discrete)
-            self.generic_moment = new.instancemethod(sgf(_drv2_moment,
-                                                         otypes='d'),
-                                                     self, rv_discrete)
             cdf_signature = inspect.getargspec(self._cdf.im_func)
             numargs1 = len(cdf_signature[0]) - 2
             pmf_signature = inspect.getargspec(self._pmf.im_func)
             numargs2 = len(pmf_signature[0]) - 2
             self.numargs = max(numargs1, numargs2)
 
+            #nin correction needs to be after we know numargs
+            #correct nin for generic moment vectorization
+            self.vec_generic_moment = sgf(_drv2_moment, otypes='d')
+            self.vec_generic_moment.nin = self.numargs + 2
+            self.generic_moment = new.instancemethod(self.vec_generic_moment,
+                                                     self, rv_discrete)
+
+            #correct nin for ppf vectorization
+            _vppf = sgf(_drv2_ppfsingle,otypes='d')
+            _vppf.nin = self.numargs + 2 # +1 is for self
+            self._vecppf = new.instancemethod(_vppf,
+                                              self, rv_discrete)
+
+            
+
+        #now that self.numargs is defined, we can adjust nin
+        self._cdfvec.nin = self.numargs + 1
+        
         if longname is None:
             if name[0] in ['aeiouAEIOU']: hstr = "An "
             else: hstr = "A "
@@ -3523,7 +3539,7 @@ class rv_discrete(rv_generic):
         return None, None, None, None
 
     def _munp(self, n, *args):
-        return self.generic_moment(n)
+        return self.generic_moment(n, *args)
 
 
     def rvs(self, *args, **kwargs):
@@ -3582,8 +3598,10 @@ class rv_discrete(rv_generic):
         output = zeros(shape(cond),'d')
         place(output,(1-cond0)*(cond1==cond1),self.badvalue)
         place(output,cond2*(cond0==cond0), 1.0)
-        goodargs = argsreduce(cond, *((k,)+args))
-        place(output,cond,self._cdf(*goodargs))
+
+        if any(cond):
+            goodargs = argsreduce(cond, *((k,)+args))
+            place(output,cond,self._cdf(*goodargs))
         if output.ndim == 0:
             return output[()]
         return output
@@ -3638,12 +3656,15 @@ class rv_discrete(rv_generic):
         cond1 = (q > 0) & (q < 1)
         cond2 = (q==1) & cond0
         cond = cond0 & cond1
-        output = valarray(shape(cond),value=self.a-1)
-        place(output,(1-cond0)*(cond1==cond1), self.badvalue)
+        output = valarray(shape(cond),value=self.badvalue,typecode='d')
+        #output type 'd' to handle nin and inf
+        place(output,(q==0)*(cond==cond), self.a-1)
         place(output,cond2,self.b)
-        goodargs = argsreduce(cond, *((q,)+args+(loc,)))
-        loc, goodargs = goodargs[-1], goodargs[:-1]
-        place(output,cond,self._ppf(*goodargs) + loc)
+        if any(cond):
+            goodargs = argsreduce(cond, *((q,)+args+(loc,)))
+            loc, goodargs = goodargs[-1], goodargs[:-1]
+            place(output,cond,self._ppf(*goodargs) + loc)
+            
         if output.ndim == 0:
             return output[()]
         return output
@@ -3669,12 +3690,21 @@ class rv_discrete(rv_generic):
         cond1 = (q > 0) & (q < 1)
         cond2 = (q==1) & cond0
         cond = cond0 & cond1
-        output = valarray(shape(cond),value=self.b)
+        output = valarray(shape(cond),value=self.b,typecode='d')
+        #typecode 'd' to handle nin and inf
         place(output,(1-cond0)*(cond1==cond1), self.badvalue)
         place(output,cond2,self.a-1)
-        goodargs = argsreduce(cond, *((q,)+args+(loc,)))
-        loc, goodargs = goodargs[-1], goodargs[:-1]
-        place(output,cond,self._ppf(*goodargs) + loc)
+        
+
+        #same problem as with ppf
+
+        
+        # call place only if at least 1 valid argument
+        if any(cond):
+            goodargs = argsreduce(cond, *((q,)+args+(loc,)))
+            loc, goodargs = goodargs[-1], goodargs[:-1]
+            place(output,cond,self._isf(*goodargs) + loc) #PB same as ticket 766
+            
         if output.ndim == 0:
             return output[()]
         return output
@@ -3797,8 +3827,8 @@ class rv_discrete(rv_generic):
                 if mu is None: return self._munp(1,*args)
                 else: return mu
             elif (n==2):
-                if mu2 is None: return self._munp(2,*args)
-                else: return mu
+                if mu2 is None or mu is None: return self._munp(2,*args)
+                else: return mu2 + mu*mu
             elif (n==3):
                 if g1 is None or mu2 is None: return self._munp(3,*args)
                 else: return g1*(mu2**1.5)
