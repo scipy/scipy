@@ -38,7 +38,7 @@ import os.path
 import numpy as np
 from numpy.testing import *
 
-from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage, numobs_linkage, inconsistent, cophenet, from_mlab_linkage, fclusterdata, fcluster, is_isomorphic, single, complete, average, weighted, centroid, median, ward, leaders
+from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage, numobs_linkage, inconsistent, cophenet, from_mlab_linkage, fclusterdata, fcluster, is_isomorphic, single, complete, average, weighted, centroid, median, ward, leaders, numobs_linkage, correspond
 from scipy.spatial.distance import squareform, pdist, numobs_dm, numobs_y
 
 _tdist = np.array([[0,    662,  877,  255,  412,  996],
@@ -134,6 +134,11 @@ class TestNumObs(TestCase):
             self.failUnless(numobs_linkage(Z) == n)
 
 class TestLinkage(TestCase):
+
+    def test_linkage_empty_distance_matrix(self):
+        "Tests linkage(Y) where Y is a 0x4 linkage matrix. Exception expected."
+        y = np.zeros((0,))
+        self.failUnlessRaises(ValueError, linkage, y)
 
     ################### linkage
     def test_linkage_single_tdist(self):
@@ -537,7 +542,6 @@ class TestIsIsomorphic(TestCase):
         for k in xrange(0, 3):
             self.help_is_isomorphic_randperm(1000, 5)
 
-
     def test_is_isomorphic_6A(self):
         "Tests is_isomorphic on test case #5A (1000 observations, 2 random clusters, random permutation of the labeling, slightly nonisomorphic.) Run 3 times."
         for k in xrange(0, 3):
@@ -566,6 +570,61 @@ class TestIsIsomorphic(TestCase):
             b[Q[0:nerrors]] %= nclusters
         self.failUnless(is_isomorphic(a, b) == (not noniso))
         self.failUnless(is_isomorphic(b, a) == (not noniso))
+
+class TestNumObsLinkage(TestCase):
+
+    def test_numobs_linkage_empty(self):
+        "Tests numobs_linkage(Z) with empty linkage."
+        Z = np.zeros((0, 4), dtype=np.double)
+        self.failUnlessRaises(ValueError, numobs_linkage, Z)
+
+
+    def test_numobs_linkage_1x4(self):
+        "Tests numobs_linkage(Z) on linkage over 2 observations."
+        Z = np.asarray([[0,   1, 3.0, 2]], dtype=np.double)
+        self.failUnless(numobs_linkage(Z) == 2)
+
+    def test_numobs_linkage_2x4(self):
+        "Tests numobs_linkage(Z) on linkage over 3 observations."
+        Z = np.asarray([[0,   1, 3.0, 2],
+                        [3,   2, 4.0, 3]], dtype=np.double)
+        self.failUnless(numobs_linkage(Z) == 3)
+
+    def test_numobs_linkage_4_and_up(self):
+        "Tests numobs_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3)."
+        for i in xrange(4, 15, 3):
+            y = np.random.rand(i*(i-1)/2)
+            Z = linkage(y)
+            self.failUnless(numobs_linkage(Z) == i)
+
+class TestCorrespond(TestCase):
+
+    def test_correspond_empty(self):
+        "Tests correspond(Z, y) with empty linkage and condensed distance matrix."
+        y = np.zeros((0,))
+        Z = np.zeros((0,4))
+        self.failUnlessRaises(ValueError, correspond, Z, y)
+
+    def test_correspond_2_and_up(self):
+        "Tests correspond(Z, y) on linkage and CDMs over observation sets of different sizes."
+        for i in xrange(2, 4):
+            y = np.random.rand(i*(i-1)/2)
+            Z = linkage(y)
+            self.failUnless(correspond(Z, y))
+        for i in xrange(4, 15, 3):
+            y = np.random.rand(i*(i-1)/2)
+            Z = linkage(y)
+            self.failUnless(correspond(Z, y))
+
+    def test_correspond_4_and_up(self):
+        "Tests correspond(Z, y) on linkage and CDMs over observation sets between sizes 4 and 15 (step size 3)."
+        for (i, j) in zip(range(2, 4), range(3, 5)) + zip(range(3, 5), range(2, 4)):
+            y = np.random.rand(i*(i-1)/2)
+            y2 = np.random.rand(j*(j-1)/2)
+            Z = linkage(y)
+            Z2 = linkage(y2)
+            self.failUnless(correspond(Z, y2) == False)
+            self.failUnless(correspond(Z2, y) == False)
 
 def help_single_inconsistent_depth(self, i):
     Y = squareform(_tdist)

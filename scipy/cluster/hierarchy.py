@@ -96,8 +96,8 @@ flat cluster assignments.
 +------------------+-------------------------------------------------+
 |is_monotonic      |checks if a linkage is monotonic.                |
 +------------------+-------------------------------------------------+
-|Z_y_correspond    |checks for validity of distance matrix given a   |
-|                  |linkage.                                         |
+|correspond        |checks whether a condensed distance matrix       |
+|                  |corresponds with a linkage                       |
 +------------------+-------------------------------------------------+
 |numobs_linkage    |the number of observations corresponding to a    |
 |                  |linkage matrix.                                  |
@@ -590,7 +590,7 @@ def linkage(y, method='single', metric='euclidean'):
     s = y.shape
     if len(s) == 1:
         distance.is_valid_y(y, throw=True, name='y')
-        d = np.ceil(np.sqrt(s[0] * 2))
+        d = distance.numobs_y(y)
         if method not in _cpy_non_euclid_methods.keys():
             raise ValueError("Valid methods when the raw observations are omitted are 'single', 'complete', 'weighted', and 'average'.")
         # Since the C code does not support striding using strides.
@@ -1205,6 +1205,8 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
                 raise ValueError('Linkage matrix \'%s\' must have 4 columns.' % name)
             else:
                 raise ValueError('Linkage matrix must have 4 columns.')
+        if Z.shape[0] == 0:
+            raise ValueError('Linkage must be over at least one observation.')
         n = Z.shape[0]
         if n > 1:
             if ((Z[:,0] < 0).any() or
@@ -1238,7 +1240,7 @@ def numobs_linkage(Z):
     is_valid_linkage(Z, throw=True, name='Z')
     return (Z.shape[0] + 1)
 
-def Z_y_correspond(Z, Y):
+def correspond(Z, Y):
     """
     Checks if a linkage matrix Z and condensed distance matrix
     Y could possibly correspond to one another.
@@ -1262,6 +1264,8 @@ def Z_y_correspond(Z, Y):
             A boolean indicating whether the linkage matrix and distance
             matrix could possibly correspond to one another.
     """
+    is_valid_linkage(Z, throw=True)
+    distance.is_valid_y(Y, throw=True)
     Z = np.asarray(Z, order='c')
     Y = np.asarray(Y, order='c')
     return distance.numobs_y(Y) == numobs_linkage(Z)
