@@ -685,7 +685,6 @@ class TestIsMonotonic(TestCase):
         Z = linkage(X, 'single')
         self.failUnless(is_monotonic(Z) == True)
 
-
 def help_single_inconsistent_depth(self, i):
     Y = squareform(_tdist)
     Z = linkage(Y, 'single')

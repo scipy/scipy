@@ -1571,24 +1571,24 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
     The following are common calling conventions:
 
-    1. ``Y = cdist(X, 'euclidean')``
+    1. ``Y = cdist(XA, XB, 'euclidean')``
 
        Computes the distance between :math:`m` points using
        Euclidean distance (2-norm) as the distance metric between the
        points. The points are arranged as :math:`m`
        :math:`n`-dimensional row vectors in the matrix X.
 
-    2. ``Y = cdist(X, 'minkowski', p)``
+    2. ``Y = cdist(XA, XB, 'minkowski', p)``
 
        Computes the distances using the Minkowski distance
        :math:`||u-v||_p` (:math:`p`-norm) where :math:`p \geq 1`.
 
-    3. ``Y = cdist(X, 'cityblock')``
+    3. ``Y = cdist(XA, XB, 'cityblock')``
 
        Computes the city block or Manhattan distance between the
        points.
 
-    4. ``Y = cdist(X, 'seuclidean', V=None)``
+    4. ``Y = cdist(XA, XB, 'seuclidean', V=None)``
 
        Computes the standardized Euclidean distance. The standardized
        Euclidean distance between two n-vectors ``u`` and ``v`` is
@@ -1601,12 +1601,12 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
           the i'th components of the points. If not passed, it is
           automatically computed.
 
-    5. ``Y = cdist(X, 'sqeuclidean')``
+    5. ``Y = cdist(XA, XB, 'sqeuclidean')``
 
        Computes the squared Euclidean distance ||u-v||_2^2 between
        the vectors.
 
-    6. ``Y = cdist(X, 'cosine')``
+    6. ``Y = cdist(XA, XB, 'cosine')``
 
        Computes the cosine distance between vectors u and v,
 
@@ -1617,7 +1617,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        where |*|_2 is the 2 norm of its argument *.
 
-    7. ``Y = cdist(X, 'correlation')``
+    7. ``Y = cdist(XA, XB, 'correlation')``
 
        Computes the correlation distance between vectors u and v. This is
 
@@ -1630,21 +1630,21 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
        argument, and :math:`n` is the common dimensionality of the
        vectors.
 
-    8. ``Y = cdist(X, 'hamming')``
+    8. ``Y = cdist(XA, XB, 'hamming')``
 
        Computes the normalized Hamming distance, or the proportion of
        those vector elements between two n-vectors ``u`` and ``v``
        which disagree. To save memory, the matrix ``X`` can be of type
        boolean.
 
-    9. ``Y = cdist(X, 'jaccard')``
+    9. ``Y = cdist(XA, XB, 'jaccard')``
 
        Computes the Jaccard distance between the points. Given two
        vectors, ``u`` and ``v``, the Jaccard distance is the
        proportion of those elements ``u[i]`` and ``v[i]`` that
        disagree where at least one of them is non-zero.
 
-    10. ``Y = cdist(X, 'chebyshev')``
+    10. ``Y = cdist(XA, XB, 'chebyshev')``
 
        Computes the Chebyshev distance between the points. The
        Chebyshev distance between two n-vectors ``u`` and ``v`` is the
@@ -1655,7 +1655,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
           d(u,v) = max_i {|u_i-v_i|}.
 
-    11. ``Y = cdist(X, 'canberra')``
+    11. ``Y = cdist(XA, XB, 'canberra')``
 
        Computes the Canberra distance between the points. The
        Canberra distance between two points ``u`` and ``v`` is
@@ -1666,7 +1666,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                          {|u_i|+|v_i|}
 
 
-    12. ``Y = cdist(X, 'braycurtis')``
+    12. ``Y = cdist(XA, XB, 'braycurtis')``
 
        Computes the Bray-Curtis distance between the points. The
        Bray-Curtis distance between two points ``u`` and ``v`` is
@@ -1677,7 +1677,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
             d(u,v) = \frac{\sum_i {u_i-v_i}}
                           {\sum_i {u_i+v_i}}
 
-    13. ``Y = cdist(X, 'mahalanobis', VI=None)``
+    13. ``Y = cdist(XA, XB, 'mahalanobis', VI=None)``
 
        Computes the Mahalanobis distance between the points. The
        Mahalanobis distance between two points ``u`` and ``v`` is
@@ -1685,65 +1685,65 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
        variable) is the inverse covariance. If ``VI`` is not None,
        ``VI`` will be used as the inverse covariance matrix.
 
-    14. ``Y = cdist(X, 'yule')``
+    14. ``Y = cdist(XA, XB, 'yule')``
 
        Computes the Yule distance between each pair of boolean
        vectors. (see yule function documentation)
 
-    15. ``Y = cdist(X, 'matching')``
+    15. ``Y = cdist(XA, 'matching')``
 
        Computes the matching distance between each pair of boolean
        vectors. (see matching function documentation)
 
-    16. ``Y = cdist(X, 'dice')``
+    16. ``Y = cdist(XA, 'dice')``
 
        Computes the Dice distance between each pair of boolean
        vectors. (see dice function documentation)
 
-    17. ``Y = cdist(X, 'kulsinski')``
+    17. ``Y = cdist(XA, XB, 'kulsinski')``
 
        Computes the Kulsinski distance between each pair of
        boolean vectors. (see kulsinski function documentation)
 
-    18. ``Y = cdist(X, 'rogerstanimoto')``
+    18. ``Y = cdist(XA, XB, 'rogerstanimoto')``
 
        Computes the Rogers-Tanimoto distance between each pair of
        boolean vectors. (see rogerstanimoto function documentation)
 
-    19. ``Y = cdist(X, 'russellrao')``
+    19. ``Y = cdist(XA, XB, 'russellrao')``
 
        Computes the Russell-Rao distance between each pair of
        boolean vectors. (see russellrao function documentation)
 
-    20. ``Y = cdist(X, 'sokalmichener')``
+    20. ``Y = cdist(XA, XB, 'sokalmichener')``
 
        Computes the Sokal-Michener distance between each pair of
        boolean vectors. (see sokalmichener function documentation)
 
-    21. ``Y = cdist(X, 'sokalsneath')``
+    21. ``Y = cdist(XA, XB, 'sokalsneath')``
 
        Computes the Sokal-Sneath distance between the vectors. (see
        sokalsneath function documentation)
 
 
-    22. ``Y = cdist(X, 'wminkowski')``
+    22. ``Y = cdist(XA, XB, 'wminkowski')``
 
        Computes the weighted Minkowski distance between the
        vectors. (see sokalsneath function documentation)
 
-    23. ``Y = cdist(X, f)``
+    23. ``Y = cdist(XA, XB, f)``
 
        Computes the distance between all pairs of vectors in X
        using the user supplied 2-arity function f. For example,
        Euclidean distance between the vectors could be computed
        as follows::
 
-         dm = cdist(X, (lambda u, v: np.sqrt(((u-v)*(u-v).T).sum())))
+         dm = cdist(XA, XB, (lambda u, v: np.sqrt(((u-v)*(u-v).T).sum())))
 
        Note that you should avoid passing a reference to one of
        the distance functions defined in this library. For example,::
 
-         dm = cdist(X, sokalsneath)
+         dm = cdist(XA, XB, sokalsneath)
 
        would calculate the pair-wise distances between the vectors in
        X using the Python function sokalsneath. This would result in
@@ -1751,7 +1751,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
        is inefficient. Instead, the optimized C version is more
        efficient, and we call it using the following syntax.::
 
-         dm = cdist(X, 'sokalsneath')
+         dm = cdist(XA, XB, 'sokalsneath')
 
     :Parameters:
        XA : ndarray
@@ -1784,7 +1784,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
        """
 
 
-#         21. Y = cdist(X, 'test_Y')
+#         21. Y = cdist(XA, XB, 'test_Y')
 #
 #           Computes the distance between all pairs of vectors in X
 #           using the distance metric Y but with a more succint,
