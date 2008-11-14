@@ -1,10 +1,9 @@
-###############
-SciPy reference
-###############
+#####
+SciPy
+#####
 
 SciPy (pronounced "Sigh Pie") is open-source software for mathematics,
 science, and engineering.
-
 
 .. toctree::
    :maxdepth: 1
