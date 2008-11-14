@@ -31,12 +31,12 @@ distcont = [
     ['cosine', ()],
     ['dgamma', (1.1023326088288166,)],
     ['dweibull', (2.0685080649914673,)],
-    ['erlang', (4, 0.7341136511570574, 0.047510038926818488)],
+    ['erlang', (20,)],    #correction numargs = 1
     ['expon', ()],
     ['exponpow', (2.697119160358469,)],
     ['exponweib', (2.8923945291034436, 1.9505288745913174)],
     ['f', (29, 18)],
-    ['fatiguelife', (29, 18)],
+    ['fatiguelife', (29,)],   #correction numargs = 1
     ['fisk', (3.0857548622253179,)],
     ['foldcauchy', (4.7164673455831894,)],
     ['foldnorm', (1.9521253373555869,)],
@@ -105,6 +105,12 @@ distcont = [
     ['weibull_min', (1.7866166930421596,)],
     ['wrapcauchy', (0.031071279018614728,)]]
 
+# for testing only specific functions
+##distcont = [
+##    ['erlang', (20,)],    #correction numargs = 1
+##    ['fatiguelife', (29,)],   #correction numargs = 1
+##    ['loggamma', (0.41411931826052117,)]]
+
 
 def test_cont_basic():
     for distname, arg in distcont[:]:
@@ -117,11 +123,32 @@ def test_cont_basic():
         yield check_sample_meanvar_, distfn, arg, sm, sv, distname + \
               'sample mean test'
         yield check_sample_skew_kurt, distfn, arg, skurt, sskew, distname
+        yield check_moment, distfn, arg, distname
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
         yield check_pdf, distfn, arg, distname
         #yield check_oth, distfn, arg # is still missing
 
+
+
+def check_moment(distfn, arg, msg):
+    m,v = distfn.stats(*arg)
+    m1  = distfn.moment(1,*arg)
+    m2  = distfn.moment(2,*arg)
+    if m < np.inf:
+        npt.assert_almost_equal(m1, m, decimal=10, err_msg= msg + \
+                            ' - 1st moment')
+    else:
+        assert np.isinf(m1) or np.isnan(m1), \
+               msg + ' - 1st moment -infinite, m1=%s' % str(m1)
+        #np.isnan(m1) temporary special treatment for loggamma
+    if v < np.inf:
+        npt.assert_almost_equal(m2-m1*m1, v, decimal=10, err_msg= msg + \
+                            ' - 2ndt moment')
+    else:
+        assert np.isinf(m2) or np.isnan(m2), \
+               msg + ' - 2nd moment -infinite, m2=%s' % str(m2)
+        #np.isnan(m2) temporary special treatment for loggamma
 
 def check_sample_meanvar_(distfn, arg, sm, sv, msg):
     m,v = distfn.stats(*arg)
