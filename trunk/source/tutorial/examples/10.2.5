@@ -1,0 +1,17 @@
+c1,c2= 5.0,2.0
+i = r_[1:11]
+xi = 0.1*i
+yi = c1*exp(-xi)+c2*xi
+zi = yi + 0.05*max(yi)*randn(len(yi))
+
+A = c_[exp(-xi)[:,NewAxis],xi[:,NewAxis]]
+c,resid,rank,sigma = linalg.lstsq(A,zi)
+
+xi2 = r_[0.1:1.0:100j]
+yi2 = c[0]*exp(-xi2) + c[1]*xi2
+
+xplt.plot(xi,zi,'x',xi2,yi2)
+xplt.limits(0,1.1,3.0,5.5)
+xplt.xlabel('x_i')
+xplt.title('Data fitting with linalg.lstsq')
+xplt.eps('lstsq_fit')

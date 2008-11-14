@@ -1,0 +1,18 @@
+>>> x = arange(0,10)
+>>> y = exp(-x/3.0)
+>>> f = interpolate.linear_1d(x,y)
+>>> help(f)
+Instance of class:  linear_1d
+
+ <name>(x_new)
+
+Find linearly interpolated y_new = <name>(x_new).
+
+Inputs:        
+  x_new -- New independent variables.
+
+Outputs:
+  y_new -- Linearly interpolated values corresponding to x_new.
+
+>>> xnew = arange(0,9,0.1)
+>>> xplt.plot(x,y,'x',xnew,f(xnew),'.')

@@ -1,0 +1,16 @@
+>>> image = lena().astype(Float32)
+>>> derfilt = array([1.0,-2,1.0],Float32)
+>>> ck = signal.cspline2d(image,8.0)
+>>> deriv = signal.sepfir2d(ck, derfilt, [1]) + \
+>>>         signal.sepfir2d(ck, [1], derfilt)
+>>> 
+>>> ## Alternatively we could have done:
+>>> ## laplacian = array([[0,1,0],[1,-4,1],[0,1,0]],Float32)
+>>> ## deriv2 = signal.convolve2d(ck,laplacian,mode='same',boundary='symm')
+>>> 
+>>> xplt.imagesc(image[::-1]) # flip image so it looks right-side up.
+>>> xplt.title('Original image')
+>>> xplt.eps('lena_image')
+>>> xplt.imagesc(deriv[::-1])
+>>> xplt.title('Output of spline edge filter')
+>>> xplt.eps('lena_edge')
