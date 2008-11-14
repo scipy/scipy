@@ -31,7 +31,7 @@ upload:
 	@test -e build/dist || { echo "make dist is required first"; exit 1; }
 	@test output-is-fine -nt build/dist || { \
 	    echo "Review the output in build/dist, and do 'touch output-is-fine' before uploading."; exit 1; }
-	rsync -r --delete-after -p build/dist/ $(USER)@docs.scipy.org:/home/docserver/www-root/doc/scipy/
+	rsync -r -z --delete-after -p build/dist/ $(USER)@docs.scipy.org:/home/docserver/www-root/doc/scipy/
 
 dist: html
 	test -d build/latex || make latex
