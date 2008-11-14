@@ -640,11 +640,13 @@ class rv_continuous(rv_generic):
         cond2 = (q==1) & cond0
         cond = cond0 & cond1
         output = valarray(shape(cond),value=self.b)
-        place(output,(1-cond0)*(cond1==cond1), self.badvalue)
+        #place(output,(1-cond0)*(cond1==cond1), self.badvalue)
+        place(output,(1-cond0)*(cond1==cond1)+(1-cond1)*(q!=0.0), self.badvalue)
         place(output,cond2,self.a)
-        goodargs = argsreduce(cond, *((q,)+args+(scale,loc)))  #PB replace 1-q by q
-        scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
-        place(output,cond,self._isf(*goodargs)*scale + loc) #PB use _isf instead of _ppf
+        if any(cond):  #call only if at least 1 entry
+            goodargs = argsreduce(cond, *((q,)+args+(scale,loc)))  #PB replace 1-q by q
+            scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
+            place(output,cond,self._isf(*goodargs)*scale + loc) #PB use _isf instead of _ppf
         if output.ndim == 0:
             return output[()]
         return output
@@ -766,10 +768,10 @@ class rv_continuous(rv_generic):
         if (n > 0) and (n < 5):
             signature = inspect.getargspec(self._stats.im_func)
             if (signature[2] is not None) or ('moments' in signature[0]):
-                dict = {'moments':{1:'m',2:'v',3:'vs',4:'vk'}[n]}
+                mdict = {'moments':{1:'m',2:'v',3:'vs',4:'vk'}[n]}
             else:
-                dict = {}
-            mu, mu2, g1, g2 = self._stats(*args,**dict)
+                mdict = {}
+            mu, mu2, g1, g2 = self._stats(*args,**mdict)
             if (n==1):
                 if mu is None: return self._munp(1,*args)
                 else: return mu
