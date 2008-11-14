@@ -68,7 +68,7 @@ third argument). The second keyword argument of "scipy.info "defines the maximum
 passed as the argument to help than a list of the functions and
 classes defined in that module is printed. For example: 
 
-.. literalinclude:: examples/1.1
+.. literalinclude:: examples/1-1
 
 Another useful command is :func:`source`. When given a function
 written in Python as an argument, it prints out a listing of the
@@ -252,7 +252,7 @@ function however is to produce N, N-d arrays which provide coordinate
 arrays for an N-dimensional volume. The easiest way to understand this
 is with an example of its usage: 
 
-.. literalinclude:: examples/2.1
+.. literalinclude:: examples/2-1
 
 Having meshed arrays like this is sometimes very useful. However, it
 is not always needed just to evaluate some N-dimensional function over
@@ -292,7 +292,7 @@ polynomial. The polynomial object can then be manipulated in algebraic
 expressions, integrated, differentiated, and evaluated. It even prints
 like a polynomial:
 
-.. literalinclude:: examples/2.2
+.. literalinclude:: examples/2-2
 
 The other way to handle polynomials is as an array of coefficients
 with the first element of the array giving the coefficient of the
@@ -311,7 +311,7 @@ as other Numpy functions (*i.e.* the Universal functions, or
 ufuncs). For example, suppose you have a Python function named
 :obj:`addsubtract` defined as:
 
-.. literalinclude:: examples/3.1
+.. literalinclude:: examples/3-1
 
 which defines a function of two scalar variables and returns a scalar
 result. The class vectorize can be used to "vectorize "this function so that ::
@@ -321,7 +321,7 @@ result. The class vectorize can be used to "vectorize "this function so that ::
 returns a function which takes array arguments and returns an array
 result: 
 
-.. literalinclude:: examples/3.2
+.. literalinclude:: examples/3-2
 
 This particular function could have been written in vector form
 without the use of :obj:`vectorize` . But, what if the function you have written is the result of some
@@ -355,7 +355,7 @@ a list of conditions. Each element of the return array is taken from
 the array in a ``choicelist`` corresponding to the first condition in
 ``condlist`` that is true. For example 
 
-.. literalinclude:: examples/2.3
+.. literalinclude:: examples/2-3
 
 
 Common functions
@@ -416,7 +416,7 @@ The :mod:`scipy.integrate` sub-package provides several integration
 techniques including an ordinary differential equation integrator. An
 overview of the module is provided by the help command:
 
-.. literalinclude:: examples/4.1
+.. literalinclude:: examples/4-1
 
 
 General integration (integrate.quad)
@@ -435,7 +435,7 @@ the interval :math:`[0,4.5].`
 
 This could be computed using :obj:`quad`:
 
-.. literalinclude:: examples/4.2
+.. literalinclude:: examples/4-2
 
 The first argument to quad is a "callable "Python object ( *i.e* a function, method, or class instance). Notice the use of a lambda-
 function in this case as the argument. The next two arguments are the
@@ -473,7 +473,7 @@ is desired (and the fact that this integral can be computed as
 :obj:`special.expn` can be replicated by defining a new function
 :obj:`vec_expint` based on the routine :obj:`quad`:
 
-.. literalinclude:: examples/4.3
+.. literalinclude:: examples/4-3
 
 The function which is integrated can even use the quad argument
 (though the error bound may underestimate the error due to possible
@@ -484,7 +484,7 @@ numerical error in the integrand from the use of :obj:`quad` ). The integral in 
 
     \[ I_{n}=\int_{0}^{\infty}\int_{1}^{\infty}\frac{e^{-xt}}{t^{n}}\, dt\, dx=\frac{1}{n}.\]
 
-.. literalinclude:: examples/4.4
+.. literalinclude:: examples/4-4
 
 This last example shows that multiple integration can be handled using
 repeated calls to :func:`quad`. The mechanics of this for double and
@@ -496,7 +496,7 @@ all inner integrals are actually functions which can be constant
 functions. An example of using double integration to compute several
 values of :math:`I_{n}` is shown below:
 
-.. literalinclude:: examples/4.5
+.. literalinclude:: examples/4-5
 
 
 Gaussian quadrature (integrate.gauss_quadtol)
@@ -610,7 +610,7 @@ usage of the *Dfun* option which allows the user to specify a gradient
 (with respect to :math:`\mathbf{y}` ) of the function,
 :math:`\mathbf{f}\left(\mathbf{y},t\right)`.
 
-.. literalinclude:: examples/4.6
+.. literalinclude:: examples/4-6
 
 
 Optimization (optimize)
@@ -620,7 +620,7 @@ There are several classical optimization algorithms provided by SciPy
 in the :mod:`scipy.optimize` package. An overview of the module is
 available using :func:`help` (or :func:`pydoc.help`):
 
-.. literalinclude:: examples/5.1
+.. literalinclude:: examples/5-1
 
 The first four algorithms are unconstrained minimization algorithms
 (fmin: Nelder-Mead simplex, fmin_bfgs: BFGS, fmin_ncg: Newton
@@ -650,7 +650,7 @@ Rosenbrock function of :math:`N` variables:
 
 The minimum value of this function is 0 which is achieved when :math:`x_{i}=1.` This minimum can be found using the :obj:`fmin` routine as shown in the example below: 
 
-.. literalinclude:: examples/5.2
+.. literalinclude:: examples/5-2
 
 Another optimization algorithm that needs only function calls to find
 the minimum is Powell's method available as :func:`optimize.fmin_powell`. 
@@ -685,14 +685,14 @@ are
 A Python function which computes this gradient is constructed by the
 code-segment: 
 
-.. literalinclude:: examples/5.3
+.. literalinclude:: examples/5-3
 
 The calling signature for the BFGS minimization algorithm is similar
 to :obj:`fmin` with the addition of the *fprime* argument. An example
 usage of :obj:`fmin_bfgs` is shown in the following example which
 minimizes the Rosenbrock function.
 
-.. literalinclude:: examples/5.4
+.. literalinclude:: examples/5-4
 
 
 Newton-Conjugate-Gradient (optimize.fmin_ncg)
@@ -758,7 +758,7 @@ For example, the Hessian when :math:`N=5` is
 The code which computes this Hessian along with the code to minimize
 the function using :obj:`fmin_ncg` is shown in the following example: 
 
-.. literalinclude:: examples/5.5
+.. literalinclude:: examples/5-5
 
 
 
@@ -787,7 +787,7 @@ vector is not difficult to compute. If :math:`\mathbf{p}` is the arbitrary vecto
 
 Code which makes use of the *fhess_p* keyword to minimize the Rosenbrock function using :obj:`fmin_ncg` follows: 
 
-.. literalinclude:: examples/5.6
+.. literalinclude:: examples/5-6
 
 
 Least-square fitting (minimize.leastsq)
@@ -843,7 +843,7 @@ shown in Figure `1 <#fig-least-squares-fit>`__ .
 
 .. _`fig:least_squares_fit`:
 
-.. plot:: source/tutorial/examples/5.7
+.. plot:: source/tutorial/examples/5-7
    :include-source:
    :doctest-format:
    :align: center
@@ -892,7 +892,7 @@ fixed endpoints.
 For example, to find the minimum of :math:`J_{1}\left(x\right)` near :math:`x=5` , :obj:`fminbound` can be called using the interval :math:`\left[4,7\right]` as a constraint. The result is :math:`x_{\textrm{min}}=5.3314` : 
 
 
-.. literalinclude:: examples/5.8
+.. literalinclude:: examples/5-8
 
 
 
@@ -922,7 +922,7 @@ and the set of non-linear equations
 The results are :math:`x=-1.0299` and :math:`x_{0}=6.5041,\, x_{1}=0.9084` . 
 
 
-.. literalinclude:: examples/5.9
+.. literalinclude:: examples/5-9
 
 
 
@@ -972,7 +972,7 @@ it's use.
 
 .. _`fig:inter_1d`:
 
-.. plot:: source/tutorial/examples/6.1
+.. plot:: source/tutorial/examples/6-1
    :doctest-format:
    :include-source:
    :align: center
@@ -1012,7 +1012,7 @@ and the integral of the spline between any two points (
 :func:`interpolate.sproot`). These functions are demonstrated in the
 example that follows (see also Figure `3 <#fig-spline-1d>`__ ).
 
-.. plot:: source/tutorial/examples/6.2
+.. plot:: source/tutorial/examples/6-2
    :include-source:
    :doctest-format:
    :align: center
@@ -1059,7 +1059,7 @@ by the number of indexing objects passed in :obj:`mgrid`[].
 
 .. _`fig:2d_interp`:
 
-.. plot:: source/tutorial/examples/6.3
+.. plot:: source/tutorial/examples/6-3
    :doctest-format:
    :include-source:
    :align: center
@@ -1186,7 +1186,7 @@ filters and allows for choosing mirror-symmetric boundary conditions.
 
 .. _`fig:lena_edge_spline`:
 
-.. plot:: source/tutorial/examples/6.4
+.. plot:: source/tutorial/examples/6-4
    :doctest-format:
    :include-source:
    :align: center
@@ -1589,7 +1589,7 @@ then
 
 The following example demonstrates this computation in SciPy 
 
-.. literalinclude:: examples/10.2.1
+.. literalinclude:: examples/10-2-1
 
 Solving linear system
 ^^^^^^^^^^^^^^^^^^^^^
@@ -1617,7 +1617,7 @@ However, it is better to use the linalg.solve command which can be
 faster and more numerically stable. In this case it gives the same
 answer as shown in the following example: 
 
-.. literalinclude:: examples/10.2.2
+.. literalinclude:: examples/10-2-2
 
 Finding Determinant
 ^^^^^^^^^^^^^^^^^^^
@@ -1647,7 +1647,7 @@ is
 
 In SciPy this is computed as shown in this example: 
 
-.. literalinclude:: examples/10.2.3
+.. literalinclude:: examples/10-2-3
 
 Computing norms
 ^^^^^^^^^^^^^^^
@@ -1749,7 +1749,7 @@ generated using the model:
 
 where :math:`x_{i}=0.1i` for :math:`i=1\ldots10` , :math:`c_{1}=5` , and :math:`c_{2}=4.` Noise is added to :math:`y_{i}` and the coefficients :math:`c_{1}` and :math:`c_{2}` are estimated using linear least squares. 
 
-.. plot:: source/tutorial/examples/10.2.5
+.. plot:: source/tutorial/examples/10-2-5
    :include-source:
    :align: center
 
@@ -1877,7 +1877,7 @@ The eigenvectors corresponding to each eigenvalue can be found using
 the original equation. The eigenvectors associated with these
 eigenvalues can then be found. 
 
-.. literalinclude:: examples/10.3.1
+.. literalinclude:: examples/10-3-1
 
 Singular value decomposition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1894,7 +1894,7 @@ matrices are real and non-negative. In addtion, there are at most :math:`\min\le
 is the singular-value decomposition of :math:`\mathbf{A}.` Every matrix has a singular value decomposition. Sometimes, the
 singular values are called the spectrum of :math:`\mathbf{A}.` The command :obj:`linalg.svd` will return :math:`\mathbf{U}` , :math:`\mathbf{V}^{H}` , and :math:`\sigma_{i}` as an array of the singular values. To obtain the matrix :math:`\mathbf{\Sigma}` use :obj:`linalg.diagsvd`. The following example illustrates the use of :obj:`linalg.svd` . 
 
-.. literalinclude:: examples/10.3.2
+.. literalinclude:: examples/10-3-2
 
 .. [#] A hermition matrix :math:`\mathbf{D}` satisfies :math:`\mathbf{D}^{H}=\mathbf{D}.` 
 
@@ -1992,7 +1992,7 @@ especially useful in calculating functions of matrices.
 
 The following example illustrates the schur decomposition: 
 
-.. literalinclude:: examples/10.3.6
+.. literalinclude:: examples/10-3-6
 
 Matrix Functions
 ----------------
@@ -2117,7 +2117,7 @@ needs to accept complex numbers* as input in order to work with this
 algorithm. For example the following code computes the zeroth-order
 Bessel function applied to a matrix.
 
-.. literalinclude:: examples/10.4.4
+.. literalinclude:: examples/10-4-4
 
 Statistics
 ==========
