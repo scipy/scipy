@@ -20,8 +20,7 @@ Orthogonal distance regression (:mod:`scipy.odr`)
 
    .. automethod:: set_iprint
 
-   .. note:: XXX: Sphinx doesn't like "set_job" docstring; after it's fixed,
-      add "set_job" here.
+   .. automethod:: set_job
 
 .. autoclass:: Output
 

@@ -48,12 +48,8 @@ Scalar function minimizers
 
    fminbound  
    golden     
-   bracket    
-
-.. note:: 
-
-   XXX: Sphinx didn't like "brent" docstring; add it to the list after
-   it's fixed.
+   bracket
+   brent
 
 Root finding
 ============
