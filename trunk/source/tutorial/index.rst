@@ -2,7 +2,7 @@
 SciPy Tutorial
 ##############
 
-.. sectionauthor:: Travis E. Oliphant, Pauli Virtanen
+.. sectionauthor:: Travis E. Oliphant
 
 .. currentmodule:: scipy
 
