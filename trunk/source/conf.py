@@ -69,7 +69,7 @@ add_function_parentheses = False
 
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.
-#show_authors = False
+show_authors = True
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -231,3 +231,11 @@ coverage_c_regexes = {}
 coverage_ignore_c_items = {}
 
 
+#------------------------------------------------------------------------------
+# Plot
+#------------------------------------------------------------------------------
+plot_pre_code = """
+import numpy
+numpy.random.seed(123)
+"""
+plot_output_dir = '_static/plot_directive'

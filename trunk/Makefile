@@ -108,5 +108,5 @@ linkcheck: generate
 	@echo "Link check complete; look for any errors in the above output " \
 	      "or in build/linkcheck/output.txt."
 
-.PHONY: help clean upload dist generate ext html pickle web htmlhelp latex \
+.PHONY: help clean upload dist generate html pickle web htmlhelp latex \
 	coverage changes linkcheck

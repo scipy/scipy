@@ -841,15 +841,15 @@ appropriate starting position), the least-squares fit routine can be
 used to find the best-fit parameters :math:`\hat{A},\,\hat{k},\,\hat{\theta}` . This is shown in the following example and a plot of the results is
 shown in Figure `1 <#fig-least-squares-fit>`__ . 
 
+.. _`fig:least_squares_fit`:
+
 .. plot:: source/tutorial/examples/5.7
    :include-source:
    :doctest-format:
    :align: center
 
-.. **Figure 1**  Least-square fitting to noisy data using 
-.. :obj:`scipy.optimize.leastsq`
-..   
-.. .. _`fig:least_squares_fit`:
+.. XXX: **Figure 1**  Least-square fitting to noisy data using 
+.. XXX: :obj:`scipy.optimize.leastsq`
 
 
 Scalar function minimizers
@@ -963,23 +963,22 @@ The linear_1d class in scipy.interpolate is a convenient method to
 create a function based on fixed data points which can be evaluated
 anywhere within the domain defined by the given data using linear
 interpolation. An instance of this class is created by passing the 1-d
-vectors comprising the data. The instance of this class defines a *__call__* method and can therefore by treated like a function which interpolates
-between known data values to obtain unknown values (it even has a
-docstring for help). Behavior at the boundary can be specified at
-instantiation time. The following example demonstrates it's use. 
+vectors comprising the data. The instance of this class defines a
+*__call__* method and can therefore by treated like a function which
+interpolates between known data values to obtain unknown values (it
+even has a docstring for help). Behavior at the boundary can be
+specified at instantiation time. The following example demonstrates
+it's use.
 
+.. _`fig:inter_1d`:
 
-.. literalinclude:: examples/6.1
-Figure shows the result: 
-
-.. figure:: inter_1d.epsi
+.. plot:: source/tutorial/examples/6.1
+   :doctest-format:
+   :include-source:
    :align: center
 
-   **Figure 2**  One-dimensional interpolation using the class :obj:`interpolate.linear_1d` 
-   
-   .. _`fig:inter_1d`:
-
-
+.. **Figure 2**  One-dimensional interpolation using the 
+   class :obj:`interpolate.linear_1d` 
 
 
 Spline interpolation in 1-d (interpolate.splXXX)
@@ -1016,32 +1015,7 @@ example that follows (see also Figure `3 <#fig-spline-1d>`__ ).
 .. plot:: source/tutorial/examples/6.2
    :include-source:
    :doctest-format:
-
-
-.. figure:: interp_cubic.epsi
    :align: center
-
-   **Figure 3**  .. image: interp_cubic_der.epsi
-   
-   
-   
-   
-   .. image: interp_cubic_int.epsi
-   
-   
-   .. image: interp_cubic_param.epsi
-   
-   
-   
-   Examples of using cubic-spline interpolation. 
-   
-   .. _`fig:spline-1d`:
-
-
-
-
-.. literalinclude:: examples/6.2
-
 
 
 Two-dimensionsal spline representation (interpolate.bisplrep)
@@ -1082,27 +1056,16 @@ dimensional function as shown in the example that follows (See also
 Figure `4 <#fig-2d-interp>`__ ). This example uses the :obj:`mgrid` command in SciPy which is useful for defining a "mesh-grid "in many dimensions. (See also the :obj:`ogrid` command if the full-mesh is not needed). The number of output
 arguments and the number of dimensions of each argument is determined
 by the number of indexing objects passed in :obj:`mgrid`[]. 
-.. literalinclude:: examples/6.3
 
+.. _`fig:2d_interp`:
 
-
-
-
-
-.. figure:: 2d_func.epsi
+.. plot:: source/tutorial/examples/6.3
+   :doctest-format:
+   :include-source:
    :align: center
 
-   **Figure 4**  .. image: 2d_interp.epsi
-   
-   
-   
-   Example of two-dimensional spline interpolation. 
-   
-   .. _`fig:2d_interp`:
-
-
-
-
+.. XXX: **Figure 4**  
+.. XXX: Example of two-dimensional spline interpolation. 
 
 
 Signal Processing (signal)
@@ -1221,24 +1184,16 @@ samples from spline coefficients and is faster than
 :obj:`signal.convolve2d` which convolves arbitrary two-dimensional
 filters and allows for choosing mirror-symmetric boundary conditions.
 
+.. _`fig:lena_edge_spline`:
 
-.. literalinclude:: examples/6.4
-
-
-
-
-.. figure:: lena_image.epsi
+.. plot:: source/tutorial/examples/6.4
+   :doctest-format:
+   :include-source:
    :align: center
 
-   **Figure 5**  .. image: lena_edge.epsi
-   
-   
-   
-   Example of using smoothing splines to filter images. 
-   
-   .. _`fig:lena_edge_spline`:
-
-
+..   **Figure 5**  
+..   .. image: figs/lena_edge.pdf
+..   Example of using smoothing splines to filter images. 
 
 
 Filtering
@@ -1250,11 +1205,16 @@ array. There are different kinds of filters for different kinds of
 operations. There are two broad kinds of filtering operations: linear
 and non-linear. Linear filters can always be reduced to multiplication
 of the flattened Numpy array by an appropriate matrix resulting in
-another flattened Numpy array. Of course, this is not usually the
-best way to compute the filter as the matrices and vectors involved
-may be huge. For example filtering a :math:`512\times512` image with this method would require multiplication of a :math:`512^{2}x512^{2}` matrix with a :math:`512^{2}` vector. Just trying to store the :math:`512^{2}\times512^{2}` matrix using a standard Numpy array would require :math:`68,719,476,736` elements. At 4 bytes per element this would require :math:`256\textrm{GB}` of memory. In most applications most of the elements of this matrix
-are zero and a different method for computing the output of the filter
-is employed. 
+another flattened Numpy array. Of course, this is not usually the best
+way to compute the filter as the matrices and vectors involved may be
+huge. For example filtering a :math:`512\times512` image with this
+method would require multiplication of a :math:`512^{2}x512^{2}`
+matrix with a :math:`512^{2}` vector. Just trying to store the
+:math:`512^{2}\times512^{2}` matrix using a standard Numpy array would
+require :math:`68,719,476,736` elements. At 4 bytes per element this
+would require :math:`256\textrm{GB}` of memory. In most applications
+most of the elements of this matrix are zero and a different method
+for computing the output of the filter is employed.
 
 
 Convolution/Correlation
@@ -1628,9 +1588,8 @@ then
     \[ \mathbf{A^{-1}=\frac{1}{25}\left[\begin{array}{ccc} -37 & 9 & 22\\ 14 & 2 & -9\\ 4 & -3 & 1\end{array}\right]=\left[\begin{array}{ccc} -1.48 & 0.36 & 0.88\\ 0.56 & 0.08 & -0.36\\ 0.16 & -0.12 & 0.04\end{array}\right].}\]
 
 The following example demonstrates this computation in SciPy 
+
 .. literalinclude:: examples/10.2.1
-
-
 
 Solving linear system
 ^^^^^^^^^^^^^^^^^^^^^
@@ -1657,9 +1616,8 @@ We could find the solution vector using a matrix inverse:
 However, it is better to use the linalg.solve command which can be
 faster and more numerically stable. In this case it gives the same
 answer as shown in the following example: 
+
 .. literalinclude:: examples/10.2.2
-
-
 
 Finding Determinant
 ^^^^^^^^^^^^^^^^^^^
@@ -1689,10 +1647,7 @@ is
 
 In SciPy this is computed as shown in this example: 
 
-
 .. literalinclude:: examples/10.2.3
-
-
 
 Computing norms
 ^^^^^^^^^^^^^^^
@@ -1794,11 +1749,9 @@ generated using the model:
 
 where :math:`x_{i}=0.1i` for :math:`i=1\ldots10` , :math:`c_{1}=5` , and :math:`c_{2}=4.` Noise is added to :math:`y_{i}` and the coefficients :math:`c_{1}` and :math:`c_{2}` are estimated using linear least squares. 
 
-
-XXX: Unknown inset Box Frameless
-
-XXX: Unknown inset Box Frameless
-
+.. plot:: source/tutorial/examples/10.2.5
+   :include-source:
+   :align: center
 
 
 Generalized inverse
@@ -1924,10 +1877,7 @@ The eigenvectors corresponding to each eigenvalue can be found using
 the original equation. The eigenvectors associated with these
 eigenvalues can then be found. 
 
-
 .. literalinclude:: examples/10.3.1
-
-
 
 Singular value decomposition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1944,21 +1894,11 @@ matrices are real and non-negative. In addtion, there are at most :math:`\min\le
 is the singular-value decomposition of :math:`\mathbf{A}.` Every matrix has a singular value decomposition. Sometimes, the
 singular values are called the spectrum of :math:`\mathbf{A}.` The command :obj:`linalg.svd` will return :math:`\mathbf{U}` , :math:`\mathbf{V}^{H}` , and :math:`\sigma_{i}` as an array of the singular values. To obtain the matrix :math:`\mathbf{\Sigma}` use :obj:`linalg.diagsvd`. The following example illustrates the use of :obj:`linalg.svd` . 
 
-
 .. literalinclude:: examples/10.3.2
 
-
-
-
 .. [#] A hermition matrix :math:`\mathbf{D}` satisfies :math:`\mathbf{D}^{H}=\mathbf{D}.` 
-    
-    
-
-
 
 .. [#] A unitary matrix :math:`\mathbf{D}` satisfies :math:`\mathbf{D}^{H}\mathbf{D}=\mathbf{I}=\mathbf{D}\mathbf{D}^{H}` so that :math:`\mathbf{D}^{-1}=\mathbf{D}^{H}.` 
-    
-    
 
 
 LU decomposition
@@ -2052,10 +1992,7 @@ especially useful in calculating functions of matrices.
 
 The following example illustrates the schur decomposition: 
 
-
 .. literalinclude:: examples/10.3.6
-
-
 
 Matrix Functions
 ----------------
@@ -2180,9 +2117,7 @@ needs to accept complex numbers* as input in order to work with this
 algorithm. For example the following code computes the zeroth-order
 Bessel function applied to a matrix.
 
-
 .. literalinclude:: examples/10.4.4
-
 
 Statistics
 ==========
