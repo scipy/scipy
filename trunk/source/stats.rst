@@ -7,7 +7,7 @@ Statistical functions (:mod:`scipy.stats`)
 This module contains a large number of probability distributions as
 well as a growing library of statistical functions.
     
-Each included distribution is an instance of the class rv_continous:
+Each included continuous distribution is an instance of the class rv_continous:
 
 .. autosummary::
    :toctree: generated/
@@ -20,6 +20,18 @@ Each included distribution is an instance of the class rv_continous:
    rv_continuous.isf
    rv_continuous.stats
 
+Each discrete distribution is an instance of the class rv_discrete:
+
+.. autosummary::
+   :toctree: generated/
+
+   rv_discrete
+   rv_discrete.pmf
+   rv_discrete.cdf
+   rv_discrete.sf
+   rv_discrete.ppf
+   rv_discrete.isf
+   rv_discrete.stats
 
 Continuous distributions
 ========================
