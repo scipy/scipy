@@ -573,19 +573,33 @@ class _TestInplaceArithmetic:
 
 class _TestGetSet:
     def test_setelement(self):
-        a = self.spmatrix((3,4))
-        a[1,2] = 4.0
-        a[0,1] = 3
-        a[2,0] = 2.0
-        a[0,-1] = 8
-        a[-1,-2] = 7
-        assert_array_equal(a.todense(),[[0,3,0,8],[0,0,4,0],[2,0,7,0]])
+        A = self.spmatrix((3,4))
+        A[ 1, 2] = 4.0
+        A[ 0, 1] = 3
+        A[ 2, 0] = 2.0
+        A[ 0,-1] = 8
+        A[-1,-2] = 7
+        A[ 0, 1] = 5
+        assert_array_equal(A.todense(),[[0,5,0,8],[0,0,4,0],[2,0,7,0]])
+        
+        for ij in [(0,4),(-1,4),(3,0),(3,4),(3,-1)]:
+            assert_raises(IndexError, A.__setitem__, ij, 123.0)
 
     def test_getelement(self):
-        assert_equal(self.datsp[0,0],1)
-        assert_equal(self.datsp[0,1],0)
-        assert_equal(self.datsp[1,0],3)
-        assert_equal(self.datsp[2,1],2)
+        D = array([[1,0,0],
+                   [4,3,0],
+                   [0,2,0],
+                   [0,0,0]])
+        A = self.spmatrix(D)
+
+        M,N = D.shape
+
+        for i in range(-M, M):
+            for j in range(-N, N):
+                assert_equal(A[i,j], D[i,j])
+         
+        for ij in [(0,3),(-1,3),(4,0),(4,3),(4,-1)]:
+            assert_raises(IndexError, A.__getitem__, ij)
 
 class _TestSolve:
     def test_solve(self):

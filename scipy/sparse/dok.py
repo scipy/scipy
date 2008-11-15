@@ -95,12 +95,11 @@ class dok_matrix(spmatrix, dict):
             i, j = key
             assert isintlike(i) and isintlike(j)
         except (AssertionError, TypeError, ValueError):
-            raise IndexError, "index must be a pair of integers"
+            raise IndexError('index must be a pair of integers')
         try:
-            assert not (i < 0 or i >= self.shape[0] or j < 0 or
-                     j >= self.shape[1])
+            assert not (i < 0 or i >= self.shape[0] or j < 0 or j >= self.shape[1])
         except AssertionError:
-            raise IndexError, "index out of bounds"
+            raise IndexError('index out of bounds')
         return dict.get(self, key, default)
 
     def  __getitem__(self, key):
@@ -111,7 +110,7 @@ class dok_matrix(spmatrix, dict):
         try:
             i, j = key
         except (ValueError, TypeError):
-            raise TypeError, "index must be a pair of integers or slices"
+            raise TypeError('index must be a pair of integers or slices')
 
 
         # Bounds checking
@@ -119,16 +118,17 @@ class dok_matrix(spmatrix, dict):
             if i < 0:
                 i += self.shape[0]
             if i < 0 or i >= self.shape[0]:
-                raise IndexError, "index out of bounds"
+                raise IndexError('index out of bounds')
+
         if isintlike(j):
             if j < 0:
                 j += self.shape[1]
             if j < 0 or j >= self.shape[1]:
-                raise IndexError, "index out of bounds"
+                raise IndexError('index out of bounds')
 
         # First deal with the case where both i and j are integers
         if isintlike(i) and isintlike(j):
-            return dict.get(self, key, 0.)
+            return dict.get(self, (i,j), 0.)
         else:
             # Either i or j is a slice, sequence, or invalid.  If i is a slice
             # or sequence, unfold it first and call __getitem__ recursively.
@@ -141,7 +141,7 @@ class dok_matrix(spmatrix, dict):
             else:
                 # Make sure i is an integer. (But allow it to be a subclass of int).
                 if not isintlike(i):
-                    raise TypeError, "index must be a pair of integers or slices"
+                    raise TypeError('index must be a pair of integers or slices')
                 seq = None
             if seq is not None:
                 # i is a seq
@@ -151,7 +151,7 @@ class dok_matrix(spmatrix, dict):
                     last = seq[-1]
                     if first < 0 or first >= self.shape[0] or last < 0 \
                                  or last >= self.shape[0]:
-                        raise IndexError, "index out of bounds"
+                        raise IndexError('index out of bounds')
                     newshape = (last-first+1, 1)
                     new = dok_matrix(newshape)
                     # ** This uses linear time in the size m of dimension 0:

@@ -371,7 +371,7 @@ class _cs_matrix(_data_matrix):
         if (col < 0):
             col += N
         if not (0<=row<M) or not (0<=col<N):
-            raise IndexError, "index out of bounds"
+            raise IndexError("index out of bounds")
 
         major_index, minor_index = self._swap((row,col))
 
@@ -387,7 +387,7 @@ class _cs_matrix(_data_matrix):
         elif num_matches == 1:
             return self.data[start:end][indxs[0]]
         else:
-            raise ValueError,'nonzero entry (%d,%d) occurs more than once' % (row,col)
+            raise ValueError('nonzero entry (%d,%d) occurs more than once' % (row,col))
 
     def _get_slice(self, i, start, stop, stride, shape):
         """Returns a copy of the elements
@@ -493,15 +493,18 @@ class _cs_matrix(_data_matrix):
                         'lil_matrix is more efficient.' % self.format, \
                         SparseEfficiencyWarning)
 
-                self.sort_indices()
+                if self.has_sorted_indices:
+                    # preserve sorted order
+                    newindx = start + self.indices[start:end].searchsorted(minor_index)
+                else:
+                    newindx = start
 
-                newindx = self.indices[start:end].searchsorted(minor_index)
-                newindx += start
+                val         = np.array([val],         dtype=self.data.dtype)
+                minor_index = np.array([minor_index], dtype=self.indices.dtype)
 
-                val = np.array([val],dtype=self.data.dtype)
-                minor_index = np.array([minor_index],dtype=self.indices.dtype)
-                self.data    = np.concatenate((self.data[:newindx],val,self.data[newindx:]))
-                self.indices = np.concatenate((self.indices[:newindx],minor_index,self.indices[newindx:]))
+                self.data    = np.concatenate((self.data[:newindx],    val,         self.data[newindx:]))
+                self.indices = np.concatenate((self.indices[:newindx], minor_index, self.indices[newindx:]))
+                self.indptr  = self.indptr.copy()
 
                 self.indptr[major_index+1:] += 1
 

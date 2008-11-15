@@ -155,14 +155,19 @@ class lil_matrix(spmatrix):
         return new
 
     def _get1(self, i, j):
-        row = self.rows[i]
-        data = self.data[i]
+        
+        if i < 0:
+            i += self.shape[0]
+        if i < 0 or i >= self.shape[0]:
+            raise IndexError('row index out of bounds')
 
         if j < 0:
             j += self.shape[1]
-
-        if j < 0 or j > self.shape[1]:
+        if j < 0 or j >= self.shape[1]:
             raise IndexError('column index out of bounds')
+        
+        row  = self.rows[i]
+        data = self.data[i]
 
         pos = bisect_left(row, j)
         if pos != len(data) and row[pos] == j:
