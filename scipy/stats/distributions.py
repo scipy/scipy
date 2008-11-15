@@ -1489,7 +1489,8 @@ class foldcauchy_gen(rv_continuous):
         return 1.0/pi*(arctan(x-c) + arctan(x+c))
     def _stats(self, c):
         return inf, inf, nan, nan
-foldcauchy = foldcauchy_gen(a=0.0, name='foldcauchy',
+# setting xb=1000 allows to calculate ppf for up to q=0.9993
+foldcauchy = foldcauchy_gen(a=0.0, name='foldcauchy',xb=1000,
                             longname = "A folded Cauchy",
                             shapes='c',extradoc="""
 
