@@ -848,12 +848,16 @@ class rv_continuous(rv_generic):
     def entropy(self, *args, **kwds):
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        args = map(arr,args)
+        args = tuple(map(arr,args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc==loc)
         output = zeros(shape(cond0),'d')
         place(output,(1-cond0),self.badvalue)
         goodargs = argsreduce(cond0, *args)
-        place(output,cond0,self.vecentropy(*goodargs)+log(scale))
+        #I don't know when or why vecentropy got broken when numargs == 0
+        if self.numargs == 0:
+            place(output,cond0,self._entropy()+log(scale))
+        else:
+            place(output,cond0,self.vecentropy(*goodargs)+log(scale))
         return output
 
 _EULER = 0.577215664901532860606512090082402431042  # -special.psi(1)
