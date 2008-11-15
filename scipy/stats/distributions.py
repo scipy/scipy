@@ -843,7 +843,22 @@ class rv_continuous(rv_generic):
         def integ(x):
             val = self._pdf(x, *args)
             return val*log(val)
-        return -scipy.integrate.quad(integ,self.a,self.b)[0]
+        
+        entr = -scipy.integrate.quad(integ,self.a,self.b)[0]
+        if not np.isnan(entr):
+            return entr
+        else:  # try with different limits if integration problems
+            low,upp = self.ppf([0.001,0.999],*args)
+            if np.isinf(self.b):
+                upper = upp
+            else:
+                upper = self.b
+            if np.isinf(self.a):
+                lower = low
+            else:
+                lower = self.a
+            return -scipy.integrate.quad(integ,lower,upper)[0]
+            
 
     def entropy(self, *args, **kwds):
         loc,scale=map(kwds.get,['loc','scale'])
