@@ -48,6 +48,8 @@ class LinearOperator:
     <2x2 LinearOperator with unspecified dtype>
     >>> A.matvec( ones(2) )
     array([ 2.,  3.])
+    >>> A * ones(2)
+    array([ 2.,  3.])
 
     """
     def __init__( self, shape, matvec, rmatvec=None, matmat=None, dtype=None ):
@@ -78,6 +80,14 @@ class LinearOperator:
 
         if dtype is not None:
             self.dtype = numpy.dtype(dtype)
+
+    def __mul__(self,x):
+        x = numpy.asarray(x)
+
+        if numpy.rank(x.squeeze()) == 1:
+            return self.matvec(x)
+        else:
+            return self.matmat(x)
 
     def __repr__(self):
         M,N = self.shape
