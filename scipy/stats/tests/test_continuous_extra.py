@@ -24,9 +24,8 @@ def test_cont_extra():
         yield check_loc_scale, distfn, arg, distname + \
               ' loc, scale test'
         #entropy test checks only for isnan, currently 6 isnan
-        #
 ##        yield check_entropy, distfn, arg, distname + \
-##              ' loc, scale test'
+##              ' entropy nan test'
 
 
 def check_ppf_limits(distfn,arg,msg):

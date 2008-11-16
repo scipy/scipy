@@ -71,6 +71,7 @@ distcont = [
     ['levy_l', ()],
 #    ['levy_stable', (0.35667405469844993,
 #                     -0.67450531578494011)], #NotImplementedError
+    #           rvs not tested
     ['loggamma', (0.41411931826052117,)],
     ['logistic', ()],
     ['loglaplace', (3.2505926592051435,)],
@@ -89,6 +90,7 @@ distcont = [
     ['powernorm', (4.4453652254590779,)],
     ['rayleigh', ()],
     ['rdist', (3.8266985793976525,)],
+    ['rdist', (541.0,)],   # from ticket #758
     ['recipinvgauss', (0.63004267809369119,)],
     ['reciprocal', (0.0062309367010521255, 1.0062309367010522)],
     ['rice', (0.7749725210111873,)],

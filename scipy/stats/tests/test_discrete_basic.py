@@ -4,6 +4,8 @@ import nose
 
 from scipy import stats
 
+DECIMAL_meanvar = 0#1  # was 0
+
 distdiscrete = [
     ['bernoulli',(0.3,)],
     ['binom',    (5, 0.4)],
@@ -13,11 +15,15 @@ distdiscrete = [
     ['hypergeom',(30, 12, 6)],
     ['logser',   (0.6,)],
     ['nbinom',   (5, 0.5)],
+    ['nbinom',   (0.4, 0.4)], #from tickets: 583
     ['planck',   (0.51,)],   #4.1
     ['poisson',  (0.6,)],
     ['randint',  (7, 31)],
     ['zipf',     (4,)] ]   # arg=4 is ok,
                            # Zipf broken for arg = 2, e.g. weird .stats
+                           # looking closer, mean, var should be inf for arg=2
+
+
 
 def test_discrete_basic():
     for distname, arg in distdiscrete:
@@ -27,11 +33,16 @@ def test_discrete_basic():
         m,v = distfn.stats(*arg)
         #yield npt.assert_almost_equal(rvs.mean(), m, decimal=4,err_msg='mean')
         #yield npt.assert_almost_equal, rvs.mean(), m, 2, 'mean' # does not work
-        yield check_sample_mean, rvs.mean(), m, distname + 'sample mean test'
-        yield check_sample_mean, rvs.var(), v, distname + 'sample var test'
-        yield check_cdf_ppf, distfn, arg
-        yield check_pmf_cdf, distfn, arg
-        yield check_oth, distfn, arg
+        yield check_sample_meanvar, rvs.mean(), m, distname + 'sample mean test'
+        yield check_sample_meanvar, rvs.var(), v, distname + 'sample var test'
+        yield check_cdf_ppf, distfn, arg, distname
+        yield check_pmf_cdf, distfn, arg, distname
+        yield check_oth, distfn, arg, distname
+        skurt = stats.kurtosis(rvs)
+        sskew = stats.skew(rvs)
+        yield check_sample_skew_kurt, distfn, arg, skurt, sskew, distname
+        yield check_entropy, distfn, arg, distname + \
+              ' entropy nan test'
 
 def test_discrete_private():
     #testing private methods mostly for debugging
@@ -43,36 +54,36 @@ def test_discrete_private():
         m,v = distfn.stats(*arg)
 
         yield check_ppf_ppf, distfn, arg
-        yield check_cdf_ppf_private, distfn, arg
+        yield check_cdf_ppf_private, distfn, arg, distname
         yield check_generic_moment, distfn, arg, m, 1, 3   # last is decimal
         yield check_generic_moment, distfn, arg, v+m*m, 2, 3 # last is decimal
         yield check_moment_frozen, distfn, arg, m, 1, 3   # last is decimal
         yield check_moment_frozen, distfn, arg, v+m*m, 2, 3 # last is decimal
 
 
-def check_sample_mean(sm,m,msg):
-    if m < np.inf:
-        npt.assert_almost_equal(sm, m, decimal=0, err_msg=msg + \
+def check_sample_meanvar(sm,m,msg):
+    if not np.isinf(m):
+        npt.assert_almost_equal(sm, m, decimal=DECIMAL_meanvar, err_msg=msg + \
                                 ' - finite moment')
     else:
         assert sm > 10000, 'infinite moment, sm = ' + str(sm)
 
-def check_sample_var(sm,m):
-    npt.assert_almost_equal(sm, m, decimal=0, err_msg= 'var')
+def check_sample_var(sm,m,msg):
+    npt.assert_almost_equal(sm, m, decimal=DECIMAL_meanvar, err_msg= msg + 'var')
 
-def check_cdf_ppf(distfn,arg):
+def check_cdf_ppf(distfn,arg,msg):
     ppf05 = distfn.ppf(0.5,*arg)
     cdf05 = distfn.cdf(ppf05,*arg)
     npt.assert_almost_equal(distfn.ppf(cdf05-1e-6,*arg),ppf05,
-                            err_msg=str(distfn) + 'ppf-cdf-median')
-    assert (distfn.ppf(cdf05+1e-4,*arg)>ppf05), str(distfn) + 'ppf-cdf-next'
+                            err_msg=msg + 'ppf-cdf-median')
+    assert (distfn.ppf(cdf05+1e-4,*arg)>ppf05), msg + 'ppf-cdf-next'
 
-def check_cdf_ppf_private(distfn,arg):
+def check_cdf_ppf_private(distfn,arg,msg):
     ppf05 = distfn._ppf(0.5,*arg)
     cdf05 = distfn.cdf(ppf05,*arg)
     npt.assert_almost_equal(distfn._ppf(cdf05-1e-6,*arg),ppf05,
-                            err_msg=str(distfn) + 'ppf-cdf-median')
-    assert (distfn._ppf(cdf05+1e-4,*arg)>ppf05), str(distfn) + 'ppf-cdf-next'
+                            err_msg=msg + '_ppf-cdf-median ')
+    assert (distfn._ppf(cdf05+1e-4,*arg)>ppf05), msg + '_ppf-cdf-next'
 
 def check_ppf_ppf(distfn, arg):
     assert distfn.ppf(0.5,*arg) < np.inf
@@ -84,13 +95,13 @@ def check_ppf_ppf(distfn, arg):
     assert ppf_s[0] == ppfs[0]
     assert ppf_s[1] == ppfs[1]
 
-def check_pmf_cdf(distfn, arg):
+def check_pmf_cdf(distfn, arg, msg):
     startind = np.int(distfn._ppf(0.01,*arg)-1)
     index = range(startind,startind+10)
     cdfs = distfn.cdf(index,*arg)
     npt.assert_almost_equal(cdfs, distfn.pmf(index, *arg).cumsum() + \
                             cdfs[0] - distfn.pmf(index[0],*arg),
-                            decimal=4, err_msg='pmf-cdf')
+                            decimal=4, err_msg= msg + 'pmf-cdf')
 
 def check_generic_moment(distfn, arg, m, k, decim):
     npt.assert_almost_equal(distfn.generic_moment(k,*arg), m, decimal=decim,
@@ -100,7 +111,7 @@ def check_moment_frozen(distfn, arg, m, k, decim):
     npt.assert_almost_equal(distfn(*arg).moment(k), m, decimal=decim,
                             err_msg= str(distfn) + ' frozen moment test')
 
-def check_oth(distfn, arg):
+def check_oth(distfn, arg, msg):
     #checking other methods of distfn
     meanint = round(distfn.stats(*arg)[0]) # closest integer to mean
     npt.assert_almost_equal(distfn.sf(meanint, *arg), 1 - \
@@ -112,5 +123,17 @@ def check_oth(distfn, arg):
     npt.assert_equal(distfn.isf(0.5, *arg), distfn.ppf(0.5, *arg))
 
 
+def check_sample_skew_kurt(distfn, arg, sk, ss, msg):
+    k,s = distfn.stats(moment='ks',*arg)
+    check_sample_meanvar, sk, k, msg + 'sample skew test'
+    check_sample_meanvar, ss, s, msg + 'sample kurtosis test'
+
+
+def check_entropy(distfn,arg,msg):
+    ent = distfn.entropy(*arg)
+    #print 'Entropy =', ent
+    assert not np.isnan(ent), msg + 'test Entropy is nan'\
+
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    #nose.run(argv=['', __file__])
+    nose.runmodule(argv=[__file__,'-s'], exit=False)
