@@ -2,7 +2,7 @@
 Linear algebra routines
 =======================
 
- Linear Algebra Basics:
+Linear Algebra Basics::
 
    inv        --- Find the inverse of a square matrix
    solve      --- Solve a linear system of equations
@@ -14,7 +14,7 @@ Linear algebra routines
    pinv       --- Pseudo-inverse (Moore-Penrose) using lstsq
    pinv2      --- Pseudo-inverse using svd
 
- Eigenvalues and Decompositions:
+Eigenvalues and Decompositions::
 
    eig        --- Find the eigenvalues and vectors of a square matrix
    eigvals    --- Find the eigenvalues of a square matrix
@@ -36,7 +36,7 @@ Linear algebra routines
    rsf2csf    --- Real to complex schur form
    hessenberg --- Hessenberg form of a matrix
 
- matrix Functions:
+matrix Functions::
 
    expm       --- matrix exponential using Pade approx.
    expm2      --- matrix exponential using Eigenvalue decomp.
@@ -52,7 +52,7 @@ Linear algebra routines
    sqrtm      --- matrix square root
    funm       --- Evaluating an arbitrary matrix function.
 
- Iterative linear systems solutions
+Iterative linear systems solutions::
 
    cg         --- Conjugate gradient (symmetric systems only)
    cgs        --- Conjugate gradient squared

@@ -2,7 +2,7 @@
 Optimization Tools
 ==================
 
- A collection of general-purpose optimization routines.
+A collection of general-purpose optimization routines.::
 
    fmin        --  Nelder-Mead Simplex algorithm
                      (uses only function calls)
@@ -17,8 +17,7 @@ Optimization Tools
    leastsq     --  Minimize the sum of squares of M equations in
                      N unknowns given a starting estimate.
 
-
-  Constrained Optimizers (multivariate)
+Constrained Optimizers (multivariate)::
 
    fmin_l_bfgs_b -- Zhu, Byrd, and Nocedal's L-BFGS-B constrained optimizer
                       (if you use this please quote their papers -- see help)
@@ -28,27 +27,23 @@ Optimization Tools
 
    fmin_cobyla   -- Constrained Optimization BY Linear Approximation
 
-
-  Global Optimizers
+Global Optimizers::
 
    anneal      --  Simulated Annealing
    brute       --  Brute force searching optimizer
 
-
-  Scalar function minimizers
+Scalar function minimizers::
 
    fminbound   --  Bounded minimization of a scalar function.
    brent       --  1-D function minimization using Brent method.
    golden      --  1-D function minimization using Golden Section method
    bracket     --  Bracket a minimum (given two starting points)
 
-
- Also a collection of general-purpose root-finding routines.
+Also a collection of general-purpose root-finding routines::
 
    fsolve      --  Non-linear multi-variable equation solver.
 
-
-  Scalar function solvers
+Scalar function solvers::
 
    brentq      --  quadratic interpolation Brent method
    brenth      --  Brent method (modified by Harris with hyperbolic
@@ -59,7 +54,7 @@ Optimization Tools
 
    fixed_point --  Single-variable fixed-point solver.
 
- A collection of general-purpose nonlinear multidimensional solvers.
+A collection of general-purpose nonlinear multidimensional solvers::
 
    broyden1            --  Broyden's first method - is a quasi-Newton-Raphson
                            method for updating an approximate Jacobian and then
@@ -83,7 +78,7 @@ Optimization Tools
    anderson2           --  the Anderson method, the same as anderson, but
                            formulated differently
 
- Utility Functions
+Utility Functions::
 
    line_search --  Return a step that satisfies the strong Wolfe conditions.
    check_grad  --  Check the supplied derivative using finite difference

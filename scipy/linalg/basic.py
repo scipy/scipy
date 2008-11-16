@@ -400,14 +400,14 @@ def norm(x, ord=None):
         ord    norm for matrices             norm for vectors
         =====  ============================  ==========================
         None   Frobenius norm                2-norm
-        'fro'  Frobenius norm                -
+        'fro'  Frobenius norm                --
         inf    max(sum(abs(x), axis=1))      max(abs(x))
         -inf   min(sum(abs(x), axis=1))      min(abs(x))
         1      max(sum(abs(x), axis=0))      as below
         -1     min(sum(abs(x), axis=0))      as below
         2      2-norm (largest sing. value)  as below
         -2     smallest singular value       as below
-        other  -                             sum(abs(x)**ord)**(1./ord)
+        other  --                            sum(abs(x)**ord)**(1./ord)
         =====  ============================  ==========================
 
     Returns
