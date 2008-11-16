@@ -1,9 +1,9 @@
->>> from integrate import quad, Inf
+>>> from scipy.integrate import quad
 >>> def integrand(t,n,x):
-        return exp(-x*t) / t**n
+...     return exp(-x*t) / t**n
 
 >>> def expint(n,x): 
-        return quad(integrand, 1, Inf, args=(n, x))[0]
+...     return quad(integrand, 1, Inf, args=(n, x))[0]
 
 >>> vec_expint = vectorize(expint)
 

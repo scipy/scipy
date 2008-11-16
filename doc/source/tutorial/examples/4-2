@@ -3,7 +3,7 @@
 (1.1178179380783249, 7.8663172481899801e-09)
 
 >>> I = sqrt(2/pi)*(18.0/27*sqrt(2)*cos(4.5)-4.0/27*sqrt(2)*sin(4.5)+
-    sqrt(2*pi)*special.fresnl(3/sqrt(pi))[0])
+    sqrt(2*pi)*special.fresnel(3/sqrt(pi))[0])
 >>> print I
 1.117817938088701
 

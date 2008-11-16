@@ -1,4 +1,4 @@
->>> result = quad(lambda x: expint(3, x), 0, Inf)
+>>> result = quad(lambda x: expint(3, x), 0, inf)
 >>> print result
 (0.33333333324560266, 2.8548934485373678e-09)  
 

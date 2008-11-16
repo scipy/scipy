@@ -1,37 +1,55 @@
 >>> info(optimize.fmin)
  fmin(func, x0, args=(), xtol=0.0001, ftol=0.0001, maxiter=None, maxfun=None,
-      full_output=0, printmessg=1)
+      full_output=0, disp=1, retall=0, callback=None)
 
-Minimize a function using the simplex algorithm.
+Minimize a function using the downhill simplex algorithm.
 
-Description:
+:Parameters:
 
-  Uses a Nelder-Mead simplex algorithm to find the minimum of function
-  of one or more variables.
+  func : callable func(x,*args)
+      The objective function to be minimized.
+  x0 : ndarray
+      Initial guess.
+  args : tuple
+      Extra arguments passed to func, i.e. ``f(x,*args)``.
+  callback : callable
+      Called after each iteration, as callback(xk), where xk is the
+      current parameter vector.
 
-Inputs:
+:Returns: (xopt, {fopt, iter, funcalls, warnflag})
 
-  func -- the Python function or method to be minimized.
-  x0 -- the initial guess.
-  args -- extra arguments for func.
-  xtol -- relative tolerance
+  xopt : ndarray
+      Parameter that minimizes function.
+  fopt : float
+      Value of function at minimum: ``fopt = func(xopt)``.
+  iter : int
+      Number of iterations performed.
+  funcalls : int
+      Number of function calls made.
+  warnflag : int
+      1 : Maximum number of function evaluations made.
+      2 : Maximum number of iterations reached.
+  allvecs : list
+      Solution at each iteration.
 
-Outputs: (xopt, {fopt, warnflag})
+*Other Parameters*:
 
-  xopt -- minimizer of function
+  xtol : float
+      Relative error in xopt acceptable for convergence.
+  ftol : number
+      Relative error in func(xopt) acceptable for convergence.
+  maxiter : int
+      Maximum number of iterations to perform.
+  maxfun : number
+      Maximum number of function evaluations to make.
+  full_output : bool
+      Set to True if fval and warnflag outputs are desired.
+  disp : bool
+      Set to True to print convergence messages.
+  retall : bool
+      Set to True to return list of solutions at each iteration.
 
-  fopt -- value of function at minimum: fopt = func(xopt)
-  warnflag -- Integer warning flag:
-              1 : 'Maximum number of function evaluations.'
-              2 : 'Maximum number of iterations.'
+:Notes:
 
-Additional Inputs:
-
-  xtol -- acceptable relative error in xopt for convergence.
-  ftol -- acceptable relative error in func(xopt) for convergence.
-  maxiter -- the maximum number of iterations to perform.
-  maxfun -- the maximum number of function evaluations.
-  full_output -- non-zero if fval and warnflag outputs are desired.
-  printmessg -- non-zero to print convergence messages.
-  
-  
+    Uses a Nelder-Mead simplex algorithm to find the minimum of
+    function of one or more variables.

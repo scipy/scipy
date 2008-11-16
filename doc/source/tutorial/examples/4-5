@@ -1,7 +1,6 @@
->>> from __future__ import nested_scopes
->>> from integrate import quad, dblquad, Inf
+>>> from scipy.integrate import quad, dblquad
 >>> def I(n):
-    return dblquad(lambda t, x: exp(-x*t)/t**n, 0, Inf, lambda x: 1, lambda x: Inf) 
+...     return dblquad(lambda t, x: exp(-x*t)/t**n, 0, Inf, lambda x: 1, lambda x: Inf) 
 
 >>> print I(4)
 (0.25000000000435768, 1.0518245707751597e-09)

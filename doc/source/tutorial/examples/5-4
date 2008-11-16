@@ -4,8 +4,8 @@
 >>> xopt = fmin_bfgs(rosen, x0, fprime=rosen_der)
 Optimization terminated successfully.
          Current function value: 0.000000
-         Iterations: 109
-         Function evaluations: 262
-         Gradient evaluations: 110
+         Iterations: 53
+         Function evaluations: 65
+         Gradient evaluations: 65
 >>> print xopt
-[ 1.  1.  1.  1.  1.]                                                                       
+[ 1.  1.  1.  1.  1.]

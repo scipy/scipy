@@ -6,11 +6,11 @@
         out.append(x[1]*x[0] - x[1] - 5)
         return out
 
->>> from optimize import fsolve
+>>> from scipy.optimize import fsolve
 >>> x0 = fsolve(func, 0.3)
 >>> print x0
 -1.02986652932
 
 >>> x02 = fsolve(func2, [1, 1])
 >>> print x02
-[ 6.5041  0.9084]
+[ 6.50409711  0.90841421]

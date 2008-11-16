@@ -40,10 +40,14 @@ package. Some general Python facility is also assumed such as could be
 acquired by working through the Tutorial in the Python distribution.
 For further introductory help the user is directed to the Numpy
 documentation. Throughout this tutorial it is assumed that the user
-has imported all of the names defined in the SciPy namespace using the
-command
+has imported all of the names defined in the SciPy top-level namespace
+using the command
 
     >>> from scipy import *
+
+Scipy sub-packages need to be imported separately, for example
+
+    >>> from scipy import linalg, optimize
 
 General Help
 ------------
@@ -226,7 +230,15 @@ construct arrays from the interactive session with Python. Suppose,
 for example that one wants to construct an array that begins with 3
 followed by 5 zeros and then contains 10 numbers spanning the range -1
 to 1 (inclusive on both ends). Before SciPy, you would need to enter
-something like the following ``>>> concatenate(([3],[0]*5,arange(-1,1.002,2/9.0))`` . With the :obj:`r_` command one can enter this as ``>>> r_[3,[0]*5,-1:1:10j]`` which can ease typing and make for more readable code. Notice how
+something like the following
+
+    >>> concatenate(([3],[0]*5,arange(-1,1.002,2/9.0)))
+
+With the :obj:`r_` command one can enter this as 
+
+    >>> r_[3,[0]*5,-1:1:10j]
+
+which can ease typing and make for more readable code. Notice how
 objects are concatenated, and the slicing syntax is (ab)used to
 construct ranges. The other term that deserves a little explanation is
 the use of the complex number 10j as the step size in the slicing
@@ -239,29 +251,33 @@ ability to quickly construct complicated vectors in a very readable
 fashion. When the number of points is specified in this way, the end-
 point is inclusive. 
 
-The "r "stands for row concatenation because if the objects between commas are
-2 dimensional arrays, they are stacked by rows (and thus must have
-commensurate columns). There is an equivalent command :obj:`c_` that stacks 2d arrays by columns but works identically to :obj:`r_` for 1d arrays. 
+The "r" stands for row concatenation because if the objects between
+commas are 2 dimensional arrays, they are stacked by rows (and thus
+must have commensurate columns). There is an equivalent command
+:obj:`c_` that stacks 2d arrays by columns but works identically to
+:obj:`r_` for 1d arrays.
 
 Another very useful class instance which makes use of extended slicing
-notation is the function :obj:`mgrid` . In the simplest case, this function can be used to construct 1d
-ranges as a convenient substitute for arange. It also allows the use
-of complex-numbers in the step-size to indicate the number of points
-to place between the (inclusive) end-points. The real purpose of this
-function however is to produce N, N-d arrays which provide coordinate
-arrays for an N-dimensional volume. The easiest way to understand this
-is with an example of its usage: 
+notation is the function :obj:`mgrid`. In the simplest case, this
+function can be used to construct 1d ranges as a convenient substitute
+for arange. It also allows the use of complex-numbers in the step-size
+to indicate the number of points to place between the (inclusive)
+end-points. The real purpose of this function however is to produce N,
+N-d arrays which provide coordinate arrays for an N-dimensional
+volume. The easiest way to understand this is with an example of its
+usage:
 
 .. literalinclude:: examples/2-1
 
 Having meshed arrays like this is sometimes very useful. However, it
 is not always needed just to evaluate some N-dimensional function over
-a grid due to the array-broadcasting rules of Numpy and SciPy. If
-this is the only purpose for generating a meshgrid, you should instead
-use the function :obj:`ogrid` which generates an "open "grid using NewAxis judiciously to create N, N-d arrays where only one-
-dimension in each array has length greater than 1. This will save
-memory and create the same result if the only purpose for the meshgrid
-is to generate sample points for evaluation of an N-d function. 
+a grid due to the array-broadcasting rules of Numpy and SciPy. If this
+is the only purpose for generating a meshgrid, you should instead use
+the function :obj:`ogrid` which generates an "open "grid using NewAxis
+judiciously to create N, N-d arrays where only one dimension in each
+array has length greater than 1. This will save memory and create the
+same result if the only purpose for the meshgrid is to generate sample
+points for evaluation of an N-d function.
 
 
 Shape manipulation
@@ -270,8 +286,9 @@ Shape manipulation
 In this category of functions are routines for squeezing out length-
 one dimensions from N-dimensional arrays, ensuring that an array is at
 least 1-, 2-, or 3-dimensional, and stacking (concatenating) arrays by
-rows, columns, and "pages "(in the third dimension). Routines for splitting arrays (roughly the
-opposite of stacking arrays) are also available. 
+rows, columns, and "pages "(in the third dimension). Routines for
+splitting arrays (roughly the opposite of stacking arrays) are also
+available.
 
 
 Matrix manipulations
@@ -311,7 +328,11 @@ as other Numpy functions (*i.e.* the Universal functions, or
 ufuncs). For example, suppose you have a Python function named
 :obj:`addsubtract` defined as:
 
-.. literalinclude:: examples/3-1
+    >>> def addsubtract(a,b):
+    ...    if a > b:
+    ...        return a - b
+    ...    else:
+    ...        return a + b
 
 which defines a function of two scalar variables and returns a scalar
 result. The class vectorize can be used to "vectorize "this function so that ::
@@ -321,7 +342,8 @@ result. The class vectorize can be used to "vectorize "this function so that ::
 returns a function which takes array arguments and returns an array
 result: 
 
-.. literalinclude:: examples/3-2
+    >>> vec_addsubtract([0,3,6,9],[1,3,5,7])
+    array([1, 6, 1, 2])
 
 This particular function could have been written in vector form
 without the use of :obj:`vectorize` . But, what if the function you have written is the result of some
@@ -337,7 +359,8 @@ most of the other functions that are also in MLab that comes with the
 Numpy package. The reason for duplicating these functions is to
 allow SciPy to potentially alter their original interface and make it
 easier for users to know how to get access to functions
-``>>> from scipy import \*.`` 
+
+    >>> from scipy import *
 
 New functions which should be mentioned are :obj:`mod(x,y)` which can
 replace ``x % y`` when it is desired that the result take the sign of
@@ -400,7 +423,7 @@ array arguments and return array results following the same
 broadcasting rules as other math functions in Numerical Python. Many
 of these functions also accept complex-numbers as input. For a
 complete list of the available functions with a one-line description
-type ``>>>info(special).`` Each function also has it's own
+type ``>>> info(special).`` Each function also has it's own
 documentation accessible using help.  If you don't see a function you
 need, consider writing it and contributing it to the library. You can
 write the function in either C, Fortran, or Python. Look in the source
@@ -785,7 +808,8 @@ vector is not difficult to compute. If :math:`\mathbf{p}` is the arbitrary vecto
 
     \[ \mathbf{H}\left(\mathbf{x}\right)\mathbf{p}=\left[\begin{array}{c} \left(1200x_{0}^{2}-400x_{1}+2\right)p_{0}-400x_{0}p_{1}\\ \vdots\\ -400x_{i-1}p_{i-1}+\left(202+1200x_{i}^{2}-400x_{i+1}\right)p_{i}-400x_{i}p_{i+1}\\ \vdots\\ -400x_{N-2}p_{N-2}+200p_{N-1}\end{array}\right].\]
 
-Code which makes use of the *fhess_p* keyword to minimize the Rosenbrock function using :obj:`fmin_ncg` follows: 
+Code which makes use of the *fhess_p* keyword to minimize the
+Rosenbrock function using :obj:`fmin_ncg` follows:
 
 .. literalinclude:: examples/5-6
 
@@ -1595,11 +1619,11 @@ Solving linear system
 ^^^^^^^^^^^^^^^^^^^^^
 
 Solving linear systems of equations is straightforward using the scipy
-command :obj:`linalg.solve`. This command expects an input matrix and a right-hand-side vector. The
-solution vector is then computed. An option for entering a symmetrix
-matrix is offered which can speed up the processing when applicable.
-As an example, suppose it is desired to solve the following
-simultaneous equations: 
+command :obj:`linalg.solve`. This command expects an input matrix and
+a right-hand-side vector. The solution vector is then computed. An
+option for entering a symmetrix matrix is offered which can speed up
+the processing when applicable.  As an example, suppose it is desired
+to solve the following simultaneous equations:
 
 .. math::
    :nowrap:
@@ -1614,8 +1638,8 @@ We could find the solution vector using a matrix inverse:
     \[ \left[\begin{array}{c} x\\ y\\ z\end{array}\right]=\left[\begin{array}{ccc} 1 & 3 & 5\\ 2 & 5 & 1\\ 2 & 3 & 8\end{array}\right]^{-1}\left[\begin{array}{c} 10\\ 8\\ 3\end{array}\right]=\frac{1}{25}\left[\begin{array}{c} -232\\ 129\\ 19\end{array}\right]=\left[\begin{array}{c} -9.28\\ 5.16\\ 0.76\end{array}\right].\]
 
 However, it is better to use the linalg.solve command which can be
-faster and more numerically stable. In this case it gives the same
-answer as shown in the following example: 
+faster and more numerically stable. In this case it however gives the
+same answer as shown in the following example:
 
 .. literalinclude:: examples/10-2-2
 
