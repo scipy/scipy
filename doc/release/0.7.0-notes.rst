@@ -14,7 +14,7 @@ Sparse Matrices
 
 * added support for integer dtypes such ``int8``, ``uint32``, etc.
 * new class ``dia_matrix`` : the sparse DIAgonal format
-* new class ``bsr_matrix`` : sparse Block CSR format
+* new class ``bsr_matrix`` : the Block CSR format
 * new sparse matrix construction functions
 
  * ``sparse.kron`` : sparse Kronecker product
@@ -25,7 +25,7 @@ Sparse Matrices
 * extraction of submatrices and nonzero values
 
  * ``sparse.tril`` : extract lower triangle
- * ``sparse.kron`` : extract upper triangle
+ * ``sparse.triu`` : extract upper triangle
  * ``sparse.find`` : nonzero values and their indices
 
 * ``csr_matrix`` and ``csc_matrix`` now support slicing and fancy indexing
@@ -34,9 +34,11 @@ Sparse Matrices
 
 * conversions among all sparse formats are now possible
 
- * all formats have member functions such as ``.tocsr()`` and ``.tolil()``
+ * using member functions such as ``.tocsr()`` and ``.tolil()``
+ * using the ``.asformat()`` member function, e.g. ``A.asformat('csr')``
+ * using constructors ``A = lil_matrix([[1,2]]); B = csr_matrix(A)``
 
-* sparse constructors now accept dense matrices and other sparse formats
+* all sparse constructors now accept dense matrices and lists of lists
 
  * e.g. ``A = csr_matrix( rand(3,3) )`` and ``B = lil_matrix( [[1,2],[3,4]] )``
 
