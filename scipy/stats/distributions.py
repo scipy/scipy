@@ -4011,7 +4011,8 @@ class nbinom_gen(rv_discrete):
     def _cdf(self, x, n, pr):
         k = floor(x)
         return special.betainc(n, k+1, pr)
-    def _sf(self, x, n, pr):
+    def _sf_skip(self, x, n, pr):
+        #skip because special.nbdtrc doesn't work for 0<n<1
         k = floor(x)
         return special.nbdtrc(k,n,pr)
     def _ppf(self, q, n, pr):
