@@ -1,0 +1,10 @@
+>>> from numpy import *
+>>> from scipy import interpolate
+
+>>> x = arange(0,10)
+>>> y = exp(-x/3.0)
+>>> f = interpolate.interp1d(x, y)
+
+>>> xnew = arange(0,9,0.1)
+>>> import matplotlib.pyplot as plt
+>>> plt.plot(x,y,'o',xnew,f(xnew),'-')
