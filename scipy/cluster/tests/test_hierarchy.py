@@ -461,7 +461,7 @@ class TestIsIsomorphic(TestCase):
         b = [2, 2, 2]
         self.failUnless(is_isomorphic(a, b) == True)
         self.failUnless(is_isomorphic(b, a) == True)
-        
+
     def test_is_isomorphic_2(self):
         "Tests is_isomorphic on test case #2 (two flat clusters, different labelings)"
         a = [1, 7, 1]
@@ -529,7 +529,7 @@ class TestIsIsomorphic(TestCase):
     def help_is_isomorphic_randperm(self, nobs, nclusters, noniso=False, nerrors=0):
         a = np.int_(np.random.rand(nobs) * nclusters)
         b = np.zeros(a.size, dtype=np.int_)
-        q = {}        
+        q = {}
         P = np.random.permutation(nclusters)
         for i in xrange(0, a.shape[0]):
             b[i] = P[a[i]]
@@ -699,4 +699,3 @@ def within_tol(a, b, tol):
 
 if __name__ == "__main__":
     run_module_suite()
-

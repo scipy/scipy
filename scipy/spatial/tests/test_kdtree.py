@@ -13,7 +13,7 @@ class ConsistencyTests:
         assert_almost_equal(d**2,np.sum((x-self.data[i])**2))
         eps = 1e-8
         assert np.all(np.sum((self.data-x[np.newaxis,:])**2,axis=1)>d**2-eps)
-        
+
     def test_m_nearest(self):
         x = self.x
         m = self.m
@@ -73,7 +73,7 @@ class ConsistencyTests:
         d, i = self.kdtree.query(x, k, eps=eps)
         assert np.all(d<=d_real*(1+eps))
 
-    
+
 class test_random(ConsistencyTests):
     def setUp(self):
         self.n = 100
@@ -279,7 +279,7 @@ def test_random_ball_vectorized():
     n = 20
     m = 5
     T = KDTree(np.random.randn(n,m))
-    
+
     r = T.query_ball_point(np.random.randn(2,3,m),1)
     assert_equal(r.shape,(2,3))
     assert isinstance(r[0,0],list)
@@ -368,7 +368,7 @@ class test_count_neighbors:
         m = 2
         self.T1 = KDTree(np.random.randn(n,m),leafsize=2)
         self.T2 = KDTree(np.random.randn(n,m),leafsize=2)
-        
+
     def test_one_radius(self):
         r = 0.2
         assert_equal(self.T1.count_neighbors(self.T2, r),

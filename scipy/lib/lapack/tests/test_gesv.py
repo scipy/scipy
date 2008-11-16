@@ -31,7 +31,7 @@ class TestSygv(TestCase):
                 assert_array_almost_equal(np.dot(a,np.dot(b,v[:,i])), w[i]*v[:,i],
                                           decimal=PREC[tp])
             elif itype == 3:
-                assert_array_almost_equal(np.dot(b,np.dot(a,v[:,i])), 
+                assert_array_almost_equal(np.dot(b,np.dot(a,v[:,i])),
                                           w[i]*v[:,i], decimal=PREC[tp] - 1)
             else:
                 raise ValueError, `itype`
@@ -60,32 +60,32 @@ class TestSygv(TestCase):
     def test_dsygv_3(self):
         self._test_base('dsygv', 'F', 3)
 
-    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["ssygv"], 
+    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["ssygv"],
                 "Clapack empty, skip flapack test")
     def test_clapack_ssygv_1(self):
         self._test_base('ssygv', 'C', 1)
 
-    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["ssygv"], 
+    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["ssygv"],
                 "Clapack empty, skip flapack test")
     def test_clapack_ssygv_2(self):
         self._test_base('ssygv', 'C', 2)
 
-    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["ssygv"], 
+    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["ssygv"],
                 "Clapack empty, skip flapack test")
     def test_clapack_ssygv_3(self):
         self._test_base('ssygv', 'C', 3)
 
-    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["dsygv"], 
+    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["dsygv"],
                 "Clapack empty, skip flapack test")
     def test_clapack_dsygv_1(self):
         self._test_base('dsygv', 'C', 1)
 
-    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["dsygv"], 
+    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["dsygv"],
                 "Clapack empty, skip flapack test")
     def test_clapack_dsygv_2(self):
         self._test_base('dsygv', 'C', 2)
 
-    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["dsygv"], 
+    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["dsygv"],
                 "Clapack empty, skip flapack test")
     def test_clapack_dsygv_3(self):
         self._test_base('dsygv', 'C', 3)

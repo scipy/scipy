@@ -210,7 +210,7 @@ def _check_level(label, expected, actual):
     # A field in a record array may not be an ndarray
     # A scalar from a record array will be type np.void
     if not isinstance(expected,
-                      (np.void, np.ndarray, MatlabObject)): 
+                      (np.void, np.ndarray, MatlabObject)):
         assert_equal(expected, actual)
         return
     # This is an ndarray-like thing
@@ -328,8 +328,8 @@ def test_warnings():
     # This too
     yield assert_raises, FutureWarning, find_mat_file, fname
     # we need kwargs for this one
-    yield (lambda a, k: assert_raises(*a, **k), 
-          (DeprecationWarning, loadmat, fname), 
+    yield (lambda a, k: assert_raises(*a, **k),
+          (DeprecationWarning, loadmat, fname),
           {'struct_as_record':True, 'basename':'raw'})
     warnings.resetwarnings()
 
@@ -337,4 +337,3 @@ def test_warnings():
 def test_regression_653():
     """Regression test for #653."""
     assert_raises(TypeError, savemat, StringIO(), {'d':{1:2}}, format='5')
-

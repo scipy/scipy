@@ -41,12 +41,12 @@ def assert_dtype_equal(act, des):
         act = act.dtype
     else:
         act = dtype(act)
-        
+
     if isinstance(des, ndarray):
         des = des.dtype
     else:
         des = dtype(des)
-        
+
     assert act == des, 'dtype mismatch: "%s" (should be "%s") '%(act, des)
 
 # XXX: This function should not be defined here, but somewhere in
@@ -59,10 +59,10 @@ def hermitian(x):
 #      scipy.linalg namespace
 def symrand(dim_or_eigv, dtype="d"):
     """Return a random symmetric (Hermitian) matrix.
-    
+
     If 'dim_or_eigv' is an integer N, return a NxN matrix, with eigenvalues
         uniformly distributed on (0.1,1].
-        
+
     If 'dim_or_eigv' is  1-D real array 'a', return a matrix whose
                       eigenvalues are sort(a).
     """
@@ -75,7 +75,7 @@ def symrand(dim_or_eigv, dtype="d"):
         d = dim_or_eigv
     else:
         raise TypeError("input type not supported.")
-    
+
     v = random_rot(dim, dtype=dtype)
     h = dot(dot(hermitian(v), diag(d)), v)
     # to avoid roundoff errors, symmetrize the matrix (again)
@@ -99,7 +99,7 @@ def random_rot(dim, dtype='d'):
         D[n-1] = sign(x[0])
         x[0] -= D[n-1]*sqrt((x*x).sum())
         # Householder transformation
-        
+
         Hx = eye(dim-n+1, dtype=dtype) - 2.*outer(x, x)/(x*x).sum()
         mat = eye(dim, dtype=dtype)
         mat[n-1:,n-1:] = Hx
@@ -514,7 +514,7 @@ class TestEigH(TestCase):
         self.eigenproblem_standard(DIM, 'f', False, False)
         self.eigenproblem_standard(DIM, 'f', False, True)
         self.eigenproblem_standard(DIM, 'f', True, True)
-    
+
     def test_eigh_complex_standard(self):
         self.eigenproblem_standard(DIM, 'D', False, False)
         self.eigenproblem_standard(DIM, 'D', False, True)
@@ -523,7 +523,7 @@ class TestEigH(TestCase):
         self.eigenproblem_standard(DIM, 'F', False, True)
         self.eigenproblem_standard(DIM, 'F', True, True)
 
-    
+
 class TestLU(TestCase):
 
     def __init__(self, *args, **kw):

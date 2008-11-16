@@ -19,7 +19,7 @@ from numpy import atleast_1d, polyval, angle, ceil, place, extract, \
      any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isnan, isinf, \
      power
 import numpy
-import numpy as np   
+import numpy as np
 import numpy.random as mtrand
 from numpy import flatnonzero as nonzero
 from scipy.special import gammaln as gamln
@@ -385,9 +385,9 @@ class rv_continuous(rv_generic):
         self._size = 1
         self.m = 0.0
         self.moment_type = momtype
-        
+
         self.expandarr = 1
-        
+
         if not hasattr(self,'numargs'):
             #allows more general subclassing with *args
             cdf_signature = inspect.getargspec(self._cdf.im_func)
@@ -395,7 +395,7 @@ class rv_continuous(rv_generic):
             pdf_signature = inspect.getargspec(self._pdf.im_func)
             numargs2 = len(pdf_signature[0]) - 2
             self.numargs = max(numargs1, numargs2)
-        #nin correction 
+        #nin correction
         self.vecfunc = sgf(self._ppf_single_call,otypes='d')
         self.vecfunc.nin = self.numargs + 1
         self.vecentropy = sgf(self._entropy,otypes='d')
@@ -843,7 +843,7 @@ class rv_continuous(rv_generic):
         def integ(x):
             val = self._pdf(x, *args)
             return val*log(val)
-        
+
         entr = -scipy.integrate.quad(integ,self.a,self.b)[0]
         if not np.isnan(entr):
             return entr
@@ -858,7 +858,7 @@ class rv_continuous(rv_generic):
             else:
                 lower = self.a
             return -scipy.integrate.quad(integ,lower,upper)[0]
-            
+
 
     def entropy(self, *args, **kwds):
         loc,scale=map(kwds.get,['loc','scale'])
@@ -2804,7 +2804,7 @@ for 0 <= x <= 1, a > 0.
 class powerlognorm_gen(rv_continuous):
     def _pdf(self, x, c, s):
         return c/(x*s)*norm.pdf(log(x)/s)*pow(norm.cdf(-log(x)/s),c*1.0-1.0)
-    
+
     def _cdf(self, x, c, s):
         return 1.0 - pow(norm.cdf(-log(x)/s),c*1.0)
     def _ppf(self, q, c, s):
@@ -2957,7 +2957,7 @@ class recipinvgauss_gen(rv_continuous):
         isqx = 1.0/sqrt(x)
         return 1.0-norm.cdf(isqx*trm1)-exp(2.0/mu)*norm.cdf(-isqx*trm2)
     # xb=50 or something large is necessary for stats to converge without exception
-recipinvgauss = recipinvgauss_gen(a=0.0, xb=50, name='recipinvgauss',    
+recipinvgauss = recipinvgauss_gen(a=0.0, xb=50, name='recipinvgauss',
                                   longname="A reciprocal inverse Gaussian",
                                   shapes="mu", extradoc="""
 
@@ -3329,19 +3329,19 @@ def _drv2_moment(self, n, *args):
     #pos = self.a
     pos = max(0, self.a)
     count = 0
-    #handle cases with infinite support 
+    #handle cases with infinite support
     ulimit = max(1000, (min(self.b,1000) + max(self.a,-1000))/2.0 )
     llimit = min(-1000, (min(self.b,1000) + max(self.a,-1000))/2.0 )
-    
+
     while (pos <= self.b) and ((pos <= ulimit) or \
                                (diff > self.moment_tol)):
-        diff = pos**n * self.pmf(pos,*args) 
+        diff = pos**n * self.pmf(pos,*args)
         # use pmf because _pmf does not check support in randint
         #     and there might be problems ? with correct self.a, self.b at this stage
         tot += diff
         pos += self.inc
         count += 1
-        
+
     if self.a < 0: #handle case when self.a = -inf
         diff = 1e100
         pos = -self.inc
@@ -3384,11 +3384,11 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
     #testcase: return wrong number at lower index
     #python -c "from scipy.stats import zipf;print zipf.ppf(0.01,2)" wrong
     #python -c "from scipy.stats import zipf;print zipf.ppf([0.01,0.61,0.77,0.83],2)"
-    #python -c "from scipy.stats import logser;print logser.ppf([0.1,0.66, 0.86,0.93],0.6)"            
+    #python -c "from scipy.stats import logser;print logser.ppf([0.1,0.66, 0.86,0.93],0.6)"
             if qa > q:
                 return a
             else:
-                return b     
+                return b
         c = int((a+b)/2.0)
         qc = self._cdf(c, *args)
         if (qc < q):
@@ -3529,11 +3529,11 @@ class rv_discrete(rv_generic):
             self._vecppf = new.instancemethod(_vppf,
                                               self, rv_discrete)
 
-            
+
 
         #now that self.numargs is defined, we can adjust nin
         self._cdfvec.nin = self.numargs + 1
-        
+
         if longname is None:
             if name[0] in ['aeiouAEIOU']: hstr = "An "
             else: hstr = "A "
@@ -3714,7 +3714,7 @@ class rv_discrete(rv_generic):
             goodargs = argsreduce(cond, *((q,)+args+(loc,)))
             loc, goodargs = goodargs[-1], goodargs[:-1]
             place(output,cond,self._ppf(*goodargs) + loc)
-            
+
         if output.ndim == 0:
             return output[()]
         return output
@@ -3744,17 +3744,17 @@ class rv_discrete(rv_generic):
         #typecode 'd' to handle nin and inf
         place(output,(1-cond0)*(cond1==cond1), self.badvalue)
         place(output,cond2,self.a-1)
-        
+
 
         #same problem as with ppf
 
-        
+
         # call place only if at least 1 valid argument
         if any(cond):
             goodargs = argsreduce(cond, *((q,)+args+(loc,)))
             loc, goodargs = goodargs[-1], goodargs[:-1]
             place(output,cond,self._isf(*goodargs) + loc) #PB same as ticket 766
-            
+
         if output.ndim == 0:
             return output[()]
         return output
@@ -4382,7 +4382,7 @@ class dlaplace_gen(rv_discrete):
         # variance mu2 does not aggree with sample variance,
         #   nor with direct calculation using pmf
         # remove for now because generic calculation works
-        #   except it does not show nice zeros for mean and skew(?) 
+        #   except it does not show nice zeros for mean and skew(?)
         ea = exp(-a)
         e2a = exp(-2*a)
         e3a = exp(-3*a)

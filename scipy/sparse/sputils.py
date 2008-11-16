@@ -106,7 +106,7 @@ def isshape(x):
             if np.rank(M) == 0 and np.rank(N) == 0:
                 return True
         return False
-        
+
 
 def issequence(t):
     return isinstance(t, (list, tuple))\

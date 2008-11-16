@@ -6,7 +6,7 @@ import scipy.sparse
 
 def minkowski_distance_p(x,y,p=2):
     """Compute the pth power of the L**p distance between x and y
-    
+
     For efficiency, this function computes the L**p distance but does
     not extract the pth root. If p is 1 or infinity, this is equal to
     the actual L**p distance.
@@ -45,10 +45,10 @@ class Rectangle(object):
     def volume(self):
         """Total volume."""
         return np.prod(self.maxes-self.mins)
-    
+
     def split(self, d, split):
         """Produce two hyperrectangles by splitting along axis d.
-        
+
         In general, if you need to compute maximum and minimum
         distances to the children, it can be done more efficiently
         by updating the maximum and minimum distances to the parent.
@@ -83,24 +83,24 @@ class KDTree(object):
 
     This class provides an index into a set of k-dimensional points
     which can be used to rapidly look up the nearest neighbors of any
-    point. 
+    point.
 
-    The algorithm used is described in Maneewongvatana and Mount 1999. 
+    The algorithm used is described in Maneewongvatana and Mount 1999.
     The general idea is that the kd-tree is a binary trie, each of whose
     nodes represents an axis-aligned hyperrectangle. Each node specifies
     an axis and splits the set of points based on whether their coordinate
-    along that axis is greater than or less than a particular value. 
+    along that axis is greater than or less than a particular value.
 
-    During construction, the axis and splitting point are chosen by the 
+    During construction, the axis and splitting point are chosen by the
     "sliding midpoint" rule, which ensures that the cells do not all
-    become long and thin. 
+    become long and thin.
 
-    The tree can be queried for the r closest neighbors of any given point 
-    (optionally returning only those within some maximum distance of the 
-    point). It can also be queried, with a substantial gain in efficiency, 
+    The tree can be queried for the r closest neighbors of any given point
+    (optionally returning only those within some maximum distance of the
+    point). It can also be queried, with a substantial gain in efficiency,
     for the r approximate closest neighbors.
 
-    For large dimensions (20 is already large) do not expect this to run 
+    For large dimensions (20 is already large) do not expect this to run
     significantly faster than brute force. High-dimensional nearest-neighbor
     queries are a substantial open problem in computer science.
 
@@ -146,7 +146,7 @@ class KDTree(object):
             self.less = less
             self.greater = greater
             self.children = less.children+greater.children
-    
+
     def __build(self, idx, maxes, mins):
         if len(idx)<=self.leafsize:
             return KDTree.leafnode(idx)
@@ -186,12 +186,12 @@ class KDTree(object):
             lessmaxes[d] = split
             greatermins = np.copy(mins)
             greatermins[d] = split
-            return KDTree.innernode(d, split, 
+            return KDTree.innernode(d, split,
                     self.__build(idx[less_idx],lessmaxes,mins),
                     self.__build(idx[greater_idx],maxes,greatermins))
 
     def __query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf):
-        
+
         side_distances = np.maximum(0,np.maximum(x-self.maxes,self.mins-x))
         if p!=np.inf:
             side_distances**=p
@@ -205,7 +205,7 @@ class KDTree(object):
         #  distances between the nearest side of the cell and the target
         #  the head node of the cell
         q = [(min_distance,
-              tuple(side_distances),                   
+              tuple(side_distances),
               self.tree)]
         # priority queue for the nearest neighbors
         # furthest known neighbor first
@@ -237,7 +237,7 @@ class KDTree(object):
                             distance_upper_bound = -neighbors[0][0]
             else:
                 # we don't push cells that are too far onto the queue at all,
-                # but since the distance_upper_bound decreases, we might get 
+                # but since the distance_upper_bound decreases, we might get
                 # here even if the cell's too far
                 if min_distance>distance_upper_bound*epsfac:
                     # since this is the nearest cell, we're done, bail out
@@ -283,11 +283,11 @@ class KDTree(object):
         k : integer
             The number of nearest neighbors to return.
         eps : nonnegative float
-            Return approximate nearest neighbors; the kth returned value 
-            is guaranteed to be no further than (1+eps) times the 
+            Return approximate nearest neighbors; the kth returned value
+            is guaranteed to be no further than (1+eps) times the
             distance to the real kth nearest neighbor.
         p : float, 1<=p<=infinity
-            Which Minkowski p-norm to use. 
+            Which Minkowski p-norm to use.
             1 is the sum-of-absolute-values "Manhattan" distance
             2 is the usual Euclidean distance
             infinity is the maximum-coordinate-difference distance
@@ -299,14 +299,14 @@ class KDTree(object):
 
         Returns:
         ========
-        
+
         d : array of floats
-            The distances to the nearest neighbors. 
-            If x has shape tuple+(self.m,), then d has shape tuple if 
-            k is one, or tuple+(k,) if k is larger than one.  Missing 
-            neighbors are indicated with infinite distances.  If k is None, 
-            then d is an object array of shape tuple, containing lists 
-            of distances. In either case the hits are sorted by distance 
+            The distances to the nearest neighbors.
+            If x has shape tuple+(self.m,), then d has shape tuple if
+            k is one, or tuple+(k,) if k is larger than one.  Missing
+            neighbors are indicated with infinite distances.  If k is None,
+            then d is an object array of shape tuple, containing lists
+            of distances. In either case the hits are sorted by distance
             (nearest first).
         i : array of integers
             The locations of the neighbors in self.data. i is the same
@@ -386,7 +386,7 @@ class KDTree(object):
                 return traverse_checking(node.less, less)+traverse_checking(node.greater, greater)
         def traverse_no_checking(node):
             if isinstance(node, KDTree.leafnode):
-                
+
                 return node.idx.tolist()
             else:
                 return traverse_no_checking(node.less)+traverse_no_checking(node.greater)
@@ -450,7 +450,7 @@ class KDTree(object):
             Approximate search. Branches of the tree are not explored
             if their nearest points are further than r/(1+eps), and branches
             are added in bulk if their furthest points are nearer than r*(1+eps).
-        
+
         Returns
         =======
 
@@ -501,7 +501,7 @@ class KDTree(object):
                           other.tree, Rectangle(other.maxes, other.mins))
         return results
 
-        
+
     def count_neighbors(self, other, r, p=2.):
         """Count how many nearby pairs can be formed.
 
@@ -527,7 +527,7 @@ class KDTree(object):
 
         result : integer or one-dimensional array of integers
             The number of pairs. Note that this is internally stored in a numpy int,
-            and so may overflow if very large (two billion). 
+            and so may overflow if very large (two billion).
         """
 
         def traverse(node1, rect1, node2, rect2, idx):
@@ -577,7 +577,7 @@ class KDTree(object):
             return result
         else:
             raise ValueError("r must be either a single value or a one-dimensional array of values")
-        
+
     def sparse_distance_matrix(self, other, max_distance, p=2.):
         """Compute a sparse distance matrix
 

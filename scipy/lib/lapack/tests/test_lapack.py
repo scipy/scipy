@@ -40,7 +40,7 @@ class TestLapack(TestCase):
         a = np.array([[-149, -50,-154],
              [ 537, 180, 546],
              [ -27,  -9, -25]]).astype(tp)
-        
+
         if lang == 'C':
             f = FUNCS_CLAPACK[func]
         elif lang == 'F':
@@ -54,35 +54,35 @@ class TestLapack(TestCase):
     @dec.skipif(FLAPACK_IS_EMPTY, "Flapack empty, skip flapack test")
     def test_sgebal(self):
         self._test_gebal_base('sgebal', 'F')
-                
+
     @dec.skipif(FLAPACK_IS_EMPTY, "Flapack empty, skip flapack test")
     def test_dgebal(self):
         self._test_gebal_base('dgebal', 'F')
-                
+
     @dec.skipif(FLAPACK_IS_EMPTY, "Flapack empty, skip clapack test")
     def test_sgehrd(self):
         self._test_gehrd_base('sgehrd', 'F')
-                
+
     @dec.skipif(FLAPACK_IS_EMPTY, "Flapack empty, skip clapack test")
     def test_dgehrd(self):
         self._test_gehrd_base('dgehrd', 'F')
 
-    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["sgebal"], 
+    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["sgebal"],
                 "Clapack empty, skip flapack test")
     def test_clapack_sgebal(self):
         self._test_gebal_base('sgebal', 'C')
-                
-    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["dgebal"], 
+
+    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["dgebal"],
                 "Clapack empty, skip flapack test")
     def test_clapack_dgebal(self):
         self._test_gebal_base('dgebal', 'C')
-                
-    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["sgehrd"], 
+
+    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["sgehrd"],
                 "Clapack empty, skip flapack test")
     def test_clapack_sgehrd(self):
         self._test_gehrd_base('sgehrd', 'C')
-                
-    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["dgehrd"], 
+
+    @dec.skipif(CLAPACK_IS_EMPTY or not FUNCS_CLAPACK["dgehrd"],
                 "Clapack empty, skip flapack test")
     def test_clapack_dgehrd(self):
         self._test_gehrd_base('dgehrd', 'C')

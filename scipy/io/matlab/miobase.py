@@ -14,14 +14,14 @@ def filldoc(func):
    {'file_arg':
     '''file_name : string
         Name of the mat file (do not need .mat extension if
-    	appendmat==True) If name not a full path name, search for the
-    	file on the sys.path list and use the first one found (the
-    	current directory is searched first).  Can also pass open
-    	file-like object''',
+        appendmat==True) If name not a full path name, search for the
+        file on the sys.path list and use the first one found (the
+        current directory is searched first).  Can also pass open
+        file-like object''',
     'append_arg':
     '''appendmat : {True, False} optional
         True to append the .mat extension to the end of the given
-	filename, if not already present''',
+        filename, if not already present''',
     'basename_arg':
     '''base_name : string, optional, unused
         base name for unnamed variables.  The code no longer uses
@@ -29,12 +29,12 @@ def filldoc(func):
         it in future versions''',
     'load_args':
     '''byte_order : {None, string}, optional
-    	None by default, implying byte order guessed from mat
-	file. Otherwise can be one of ('native', '=', 'little', '<',
-	'BIG', '>')
+        None by default, implying byte order guessed from mat
+        file. Otherwise can be one of ('native', '=', 'little', '<',
+        'BIG', '>')
     mat_dtype : {False, True} optional
          If True, return arrays in same dtype as would be loaded into
-	 matlab (instead of the dtype with which they are saved)
+         matlab (instead of the dtype with which they are saved)
     squeeze_me : {False, True} optional
          whether to squeeze unit matrix dimensions or not
     chars_as_strings : {True, False} optional
@@ -46,15 +46,15 @@ def filldoc(func):
     'struct_arg':
     '''struct_as_record : {False, True} optional
         Whether to load matlab structs as numpy record arrays, or as
-	old-style numpy arrays with dtype=object.  Setting this flag
-	to False replicates the behaviour of scipy version 0.6
-	(returning numpy object arrays).  The preferred setting is
-	True, because it allows easier round-trip load and save of
-	matlab files.  In a future version of scipy, we will change
-	the default setting to True, and following versions may remove
-	this flag entirely.  For now, we set the default to False, for
-	backwards compatibility, but issue a warning.
-	Note that non-record arrays cannot be exported via savemat.''',
+        old-style numpy arrays with dtype=object.  Setting this flag
+        to False replicates the behaviour of scipy version 0.6
+        (returning numpy object arrays).  The preferred setting is
+        True, because it allows easier round-trip load and save of
+        matlab files.  In a future version of scipy, we will change
+        the default setting to True, and following versions may remove
+        this flag entirely.  For now, we set the default to False, for
+        backwards compatibility, but issue a warning.
+        Note that non-record arrays cannot be exported via savemat.''',
     'matstream_arg':
     '''mat_stream : file-like
         object with file API, open for reading'''}
@@ -191,7 +191,7 @@ class MatFileReader(MatStreamAgent):
                  ):
         '''
         Initializer for mat file reader
-        
+
         mat_stream : file-like
             object with file API, open for reading
     %(load_args)s

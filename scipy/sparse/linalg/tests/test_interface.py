@@ -44,7 +44,7 @@ class TestInterface(TestCase):
 
             assert_equal(A.matvec(array([1,2,3])),       [14,32])
             assert_equal(A.matvec(array([[1],[2],[3]])), [[14],[32]])
-            
+
             assert_equal(A * array([1,2,3]),       [14,32])
             assert_equal(A * array([[1],[2],[3]]), [[14],[32]])
 
@@ -52,7 +52,7 @@ class TestInterface(TestCase):
             assert_equal(A.rmatvec(array([[1],[2]])), [[9],[12],[15]])
 
             assert_equal(A.matmat(array([[1,4],[2,5],[3,6]])), [[14,32],[32,77]] )
-            
+
             assert_equal(A * array([[1,4],[2,5],[3,6]]), [[14,32],[32,77]] )
 
             if hasattr(M,'dtype'):

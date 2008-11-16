@@ -51,8 +51,8 @@ def find_mat_file(file_name, appendmat=True):
 def mat_reader_factory(file_name, appendmat=True, **kwargs):
     """Create reader for matlab .mat format files
 
-    %(file_arg)s                          
-    %(append_arg)s                          
+    %(file_arg)s
+    %(append_arg)s
     %(basename_arg)s
     %(load_args)s
     %(struct_arg)s
@@ -91,14 +91,14 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
 def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
     ''' Load Matlab(tm) file
 
-    %(file_arg)s                          
+    %(file_arg)s
     m_dict : dict, optional
         dictionary in which to insert matfile variables
-    %(append_arg)s                          
+    %(append_arg)s
     %(basename_arg)s
     %(load_args)s
     %(struct_arg)s
-    
+
     Notes
     -----
     v4 (Level 1.0), v6 and v7 to 7.2 matfiles are supported.
@@ -124,13 +124,13 @@ def savemat(file_name, mdict, appendmat=True, format='5'):
 
     file_name : {string, file-like object}
         Name of the mat file (do not need .mat extension if
-    	appendmat==True) Can also pass open file-like object
+        appendmat==True) Can also pass open file-like object
     m_dict : dict
         dictionary from which to save matfile variables
     %(append_arg)s
     format : {'5', '4'} string, optional
         '5' for matlab 5 (up to matlab 7.2)
-        '4' for matlab 4 mat files, 
+        '4' for matlab 4 mat files,
     """
     file_is_string = isinstance(file_name, basestring)
     if file_is_string:

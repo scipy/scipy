@@ -942,7 +942,7 @@ def hilbert(x, N=None):
     The analytic signal `x_a(t)` of `x(t)` is::
 
         x_a = F^{-1}(F(x) 2U) = x + i y
-    
+
     where ``F`` is the Fourier transform, ``U`` the unit step function,
     and ``y`` the Hilbert transform of ``x``. [1]
 

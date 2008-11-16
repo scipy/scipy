@@ -2,11 +2,11 @@ import numpy as np
 
 from scipy.lib.lapack import flapack, clapack
 
-FUNCS_TP = {'ssygv' : np.float32, 
+FUNCS_TP = {'ssygv' : np.float32,
          'dsygv': np.float,
          'ssygvd' : np.float32,
          'dsygvd' : np.float,
-         'ssyev' : np.float32, 
+         'ssyev' : np.float32,
          'dsyev': np.float,
          'ssyevr' : np.float32,
          'dsyevr' : np.float,
@@ -14,7 +14,7 @@ FUNCS_TP = {'ssygv' : np.float32,
          'dsyevr' : np.float,
          'sgehrd' : np.float32,
          'dgehrd' : np.float,
-         'sgebal' : np.float32, 
+         'sgebal' : np.float32,
          'dgebal': np.float}
 
 # Test FLAPACK if not empty
@@ -50,4 +50,3 @@ else:
     FUNCS_CLAPACK = None
 
 PREC = {np.float32: 5, np.float: 12}
-

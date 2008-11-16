@@ -6,7 +6,7 @@ from iterative import set_docstring
 
 __all__ = ['minres']
 
-    
+
 header = \
 """Use MINimum RESidual iteration to solve Ax=b
 
@@ -17,7 +17,7 @@ If shift != 0 then the method solves (A - shift*I)x = b
 """
 
 footer = \
-"""        
+"""
 Notes
 -----
 THIS FUNCTION IS EXPERIMENTAL AND SUBJECT TO CHANGE!

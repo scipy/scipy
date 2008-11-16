@@ -190,7 +190,7 @@ class MatFile4Reader(MatFileReader):
     @filldoc
     def __init__(self, mat_stream, *args, **kwargs):
         ''' Initialize matlab 4 file reader
-        
+
     %(matstream_arg)s
     %(load_args)s
         '''

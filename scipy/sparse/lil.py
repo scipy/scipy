@@ -155,7 +155,7 @@ class lil_matrix(spmatrix):
         return new
 
     def _get1(self, i, j):
-        
+
         if i < 0:
             i += self.shape[0]
         if i < 0 or i >= self.shape[0]:
@@ -165,7 +165,7 @@ class lil_matrix(spmatrix):
             j += self.shape[1]
         if j < 0 or j >= self.shape[1]:
             raise IndexError('column index out of bounds')
-        
+
         row  = self.rows[i]
         data = self.data[i]
 

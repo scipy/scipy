@@ -14,7 +14,7 @@ class TestInterp2D(TestCase):
 
         v,u = ogrid[0:2:24j, 0:pi:25j]
         assert_almost_equal(I(u.ravel(), v.ravel()), sin(u+0.5*v), decimal=2)
-        
+
     def test_interp2d_meshgrid_input(self):
         # Ticket #703
         x = linspace(0, 2, 16)

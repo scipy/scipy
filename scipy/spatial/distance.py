@@ -1432,7 +1432,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
                     raise ValueError('Distance matrix must be symmetric.')
             if not (D[xrange(0, s[0]), xrange(0, s[0])] == 0).all():
                 if name:
-                   raise ValueError('Distance matrix \'%s\' diagonal must be zero.' % name)
+                    raise ValueError('Distance matrix \'%s\' diagonal must be zero.' % name)
                 else:
                     raise ValueError('Distance matrix diagonal must be zero.')
         else:

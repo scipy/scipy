@@ -196,7 +196,7 @@ class MatlabFunction(np.ndarray):
     ''' Subclass to signal this is a matlab function '''
     def __new__(cls, input_array):
         obj = np.asarray(input_array).view(cls)
-    
+
 
 class Mat5ArrayReader(MatArrayReader):
     ''' Class to get Mat5 arrays
@@ -516,7 +516,7 @@ class MatFile5Reader(MatFileReader):
                  uint16_codec=None
                  ):
         '''Initializer for matlab 5 file format reader
-        
+
     %(matstream_arg)s
     %(load_args)s
     %(struct_arg)s
@@ -527,7 +527,7 @@ class MatFile5Reader(MatFileReader):
         # Deal with deprecations
         if struct_as_record is None:
             warnings.warn("Using struct_as_record default value (False)" +
-                          " This will change to True in future versions", 
+                          " This will change to True in future versions",
                           FutureWarning, stacklevel=2)
             struct_as_record = False
         self.codecs = {}
@@ -629,7 +629,7 @@ class Mat5MatrixWriter(MatStreamWriter):
         super(Mat5MatrixWriter, self).__init__(file_stream, arr, name)
         self.is_global = is_global
         self.unicode_strings = unicode_strings
-        
+
     def write_dtype(self, arr):
         self.file_stream.write(arr.tostring())
 

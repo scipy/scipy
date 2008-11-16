@@ -191,7 +191,7 @@ def get_scipy_version(src_root):
 
 def get_svn_version(chdir):
     out = subprocess.Popen(['svn', 'info'],
-                           stdout = subprocess.PIPE, 
+                           stdout = subprocess.PIPE,
                            cwd = chdir).communicate()[0]
     r = re.compile('Revision: ([0-9]+)')
     svnver = None
@@ -321,7 +321,7 @@ Look at the build log (%s).""" % (cmd, str(e), build_log)
 
 def raw_build_nsis(pyver):
     bdir = bootstrap_dir(options.pyver)
-    st = subprocess.call(['makensis', 'scipy-superinstaller.nsi'], 
+    st = subprocess.call(['makensis', 'scipy-superinstaller.nsi'],
                          cwd=bdir)
     if st:
         raise RuntimeError("Error while executing makensis command")

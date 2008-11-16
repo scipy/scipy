@@ -14,18 +14,18 @@ def nearest(x, y, new_x):
         and returns corresponding y.
     """
     shifted_x = np.concatenate(( np.array([x[0]-1]) , x[0:-1] ))
-    
+
     midpoints_of_x = atleast_1d_and_contiguous( .5*(x + shifted_x) )
     new_x = atleast_1d_and_contiguous(new_x)
-    
+
     TINY = 1e-10
     indices = np.searchsorted(midpoints_of_x, new_x+TINY)-1
     indices = np.atleast_1d(np.clip(indices, 0, np.Inf).astype(np.int))
     new_y = np.take(y, indices, axis=-1)
-    
+
     return new_y
-    
-    
+
+
 
 def linear(x, y, new_x):
     """ Linearly interpolates values in new_x based on the values in x and y
@@ -80,7 +80,7 @@ def logarithmic(x, y, new_x):
         _interpolate.loginterp_dddd(x, y, new_x, new_y)
 
     return new_y
-    
+
 def block_average_above(x, y, new_x):
     """ Linearly interpolates values in new_x based on the values in x and y
 
@@ -102,10 +102,10 @@ def block_average_above(x, y, new_x):
     if len(y.shape) == 2:
         new_y = np.zeros((y.shape[0], len(new_x)), np.float64)
         for i in range(len(new_y)):
-            bad_index = _interpolate.block_averave_above_dddd(x, y[i], 
+            bad_index = _interpolate.block_averave_above_dddd(x, y[i],
                                                             new_x, new_y[i])
             if bad_index is not None:
-                break                                                
+                break
     else:
         new_y = np.zeros(len(new_x), np.float64)
         bad_index = _interpolate.block_average_above_dddd(x, y, new_x, new_y)
@@ -115,12 +115,12 @@ def block_average_above(x, y, new_x):
               "is out of the x range (%f, %f)" % \
               (bad_index, new_x[bad_index], x[0], x[-1])
         raise ValueError, msg
-              
+
     return new_y
 
 def block(x, y, new_x):
     """ Essentially a step function.
-    
+
         For each new_x[i], finds largest j such that
         x[j] < new_x[j], and returns y[j].
     """

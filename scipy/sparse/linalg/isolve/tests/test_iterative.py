@@ -106,7 +106,7 @@ class TestIterative(TestCase):
         """test whether all methods accept a trivial preconditioner"""
 
         tol = 1e-8
-        
+
         def identity(b,which=None):
             """trivial preconditioner"""
             return b
@@ -131,9 +131,9 @@ class TestIterative(TestCase):
                     x, info = solver(A, b, M=precond, x0=x0, tol=tol)
                 assert_equal(info,0)
                 assert( norm(b - A*x) < tol*norm(b) )
-                
+
                 A = A.copy()
-                A.psolve  = identity 
+                A.psolve  = identity
                 A.rpsolve = identity
 
                 x, info = solver(A, b, x0=x0, tol=tol)

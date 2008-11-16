@@ -31,7 +31,7 @@ maxiter : integer
     Maximum number of iterations.  Iteration will stop after maxiter
     steps even if the specified tolerance has not been achieved.
 M : {sparse matrix, dense matrix, LinearOperator}
-    Preconditioner for A.  The preconditioner should approximate the 
+    Preconditioner for A.  The preconditioner should approximate the
     inverse of A.  Effective preconditioning dramatically improves the
     rate of convergence, which implies that fewer iterations are needed
     to reach a given error tolerance.
@@ -53,9 +53,9 @@ Deprecated Parameters
 ----------------------
 xtype : {'f','d','F','D'}
     The type of the result.  If None, then it will be determined from
-    A.dtype.char and b.  If A does not have a typecode method then it 
-    will compute A.matvec(x0) to get a typecode.   To save the extra 
-    computation when A does not have a typecode attribute use xtype=0 
+    A.dtype.char and b.  If A does not have a typecode method then it
+    will compute A.matvec(x0) to get a typecode.   To save the extra
+    computation when A does not have a typecode attribute use xtype=0
     for the same type as b or use xtype='f','d','F',or 'D'.
     This parameter has been superceeded by LinearOperator.
 """
@@ -123,7 +123,7 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=Non
                 ftflag = False
             bnrm2, resid, info = stoptest(work[slice1], b, bnrm2, tol, info)
         ijob = 2
-    
+
     if info > 0 and iter_ == maxiter and resid > tol:
         #info isn't set appropriately otherwise
         info = iter_
@@ -185,7 +185,7 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback
                 ftflag = False
             bnrm2, resid, info = stoptest(work[slice1], b, bnrm2, tol, info)
         ijob = 2
-    
+
     if info > 0 and iter_ == maxiter and resid > tol:
         #info isn't set appropriately otherwise
         info = iter_
@@ -299,24 +299,24 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None
                 ftflag = False
             bnrm2, resid, info = stoptest(work[slice1], b, bnrm2, tol, info)
         ijob = 2
-    
+
     if info > 0 and iter_ == maxiter and resid > tol:
         #info isn't set appropriately otherwise
         info = iter_
 
     return postprocess(x), info
-    
+
 
 def gmres(A, b, x0=None, tol=1e-5, restrt=20, maxiter=None, xtype=None, M=None, callback=None):
     """Use Generalized Minimal RESidual iteration to solve A x = b
-    
+
     Parameters
     ----------
     A : {sparse matrix, dense matrix, LinearOperator}
         The N-by-N matrix of the linear system.
     b : {array, matrix}
         Right hand side of the linear system. Has shape (N,) or (N,1).
-    
+
     Optional Parameters
     -------------------
     x0  : {array, matrix}
@@ -330,14 +330,14 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=20, maxiter=None, xtype=None, M=None, 
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse matrix, dense matrix, LinearOperator}
-        Preconditioner for A.  The preconditioner should approximate the 
+        Preconditioner for A.  The preconditioner should approximate the
         inverse of A.  Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
         to reach a given error tolerance.
     callback : function
         User-supplied function to call after each iteration.  It is called
         as callback(rk), where rk is the current residual vector.
-    
+
     Outputs
     -------
     x : {array, matrix}
@@ -347,21 +347,21 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=20, maxiter=None, xtype=None, M=None, 
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
             <0 : illegal input or breakdown
-    
+
     See Also
     --------
     LinearOperator
-    
+
     Deprecated Parameters
     ---------------------
     xtype : {'f','d','F','D'}
         The type of the result.  If None, then it will be determined from
-        A.dtype.char and b.  If A does not have a typecode method then it 
-        will compute A.matvec(x0) to get a typecode.   To save the extra 
-        computation when A does not have a typecode attribute use xtype=0 
+        A.dtype.char and b.  If A does not have a typecode method then it
+        will compute A.matvec(x0) to get a typecode.   To save the extra
+        computation when A does not have a typecode attribute use xtype=0
         for the same type as b or use xtype='f','d','F',or 'D'.
         This parameter has been superceeded by LinearOperator.
-    
+
     """
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
@@ -369,7 +369,7 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=20, maxiter=None, xtype=None, M=None, 
     if maxiter is None:
         maxiter = n*10
 
-    restrt = min(restrt, n)        
+    restrt = min(restrt, n)
 
     matvec = A.matvec
     psolve = M.matvec
@@ -433,7 +433,7 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=20, maxiter=None, xtype=None, M=None, 
 
         if iter_num > maxiter:
             break
-    
+
     if info >= 0 and resid > tol:
         #info isn't set appropriately otherwise
         info = maxiter
@@ -450,7 +450,7 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
         The N-by-N matrix of the linear system.
     b : {array, matrix}
         Right hand side of the linear system. Has shape (N,) or (N,1).
-    
+
     Optional Parameters
     -------------------
     x0  : {array, matrix}
@@ -469,7 +469,7 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
     callback : function
         User-supplied function to call after each iteration.  It is called
         as callback(xk), where xk is the current solution vector.
-    
+
     Outputs
     -------
     x : {array, matrix}
@@ -479,21 +479,21 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
             <0 : illegal input or breakdown
-    
+
     See Also
     --------
     LinearOperator
-    
+
     Deprecated Parameters
     ---------------------
     xtype : {'f','d','F','D'}
         The type of the result.  If None, then it will be determined from
-        A.dtype.char and b.  If A does not have a typecode method then it 
-        will compute A.matvec(x0) to get a typecode.   To save the extra 
-        computation when A does not have a typecode attribute use xtype=0 
+        A.dtype.char and b.  If A does not have a typecode method then it
+        will compute A.matvec(x0) to get a typecode.   To save the extra
+        computation when A does not have a typecode attribute use xtype=0
         for the same type as b or use xtype='f','d','F',or 'D'.
         This parameter has been superceeded by LinearOperator.
-    
+
     """
     A_ = A
     A,M,x,b,postprocess = make_system(A,None,x0,b,xtype)
@@ -568,10 +568,9 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
                 ftflag = False
             bnrm2, resid, info = stoptest(work[slice1], b, bnrm2, tol, info)
         ijob = 2
-    
+
     if info > 0 and iter_ == maxiter and resid > tol:
         #info isn't set appropriately otherwise
         info = iter_
 
     return postprocess(x), info
-

@@ -38,11 +38,11 @@ class TestUnivariateSpline(TestCase):
 
     def test_subclassing(self):
         # See #731
-        
+
         class ZeroSpline(UnivariateSpline):
             def __call__(self, x):
                 return 0*array(x)
-        
+
         sp = ZeroSpline([1,2,3,4,5], [3,2,3,2,3], k=2)
         assert_array_equal(sp([1.5, 2.5]), [0., 0.])
 

@@ -94,7 +94,7 @@ class interp2d(object):
     def __init__(self, x, y, z, kind='linear', copy=True, bounds_error=False,
                  fill_value=np.nan):
         self.x, self.y, self.z = map(ravel, map(asarray, [x, y, z]))
-        
+
         if len(self.z) == len(self.x) * len(self.y):
             self.x, self.y = meshgrid(x,y)
             self.x, self.y = map(ravel, [self.x, self.y])
@@ -130,7 +130,7 @@ class interp2d(object):
         -------
         z : 2D array with shape (len(y), len(x))
             The interpolated values.
-        
+
         """
 
         x = atleast_1d(x)

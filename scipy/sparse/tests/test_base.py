@@ -581,7 +581,7 @@ class _TestGetSet:
         A[-1,-2] = 7
         A[ 0, 1] = 5
         assert_array_equal(A.todense(),[[0,5,0,8],[0,0,4,0],[2,0,7,0]])
-        
+
         for ij in [(0,4),(-1,4),(3,0),(3,4),(3,-1)]:
             assert_raises(IndexError, A.__setitem__, ij, 123.0)
 
@@ -597,7 +597,7 @@ class _TestGetSet:
         for i in range(-M, M):
             for j in range(-N, N):
                 assert_equal(A[i,j], D[i,j])
-         
+
         for ij in [(0,3),(-1,3),(4,0),(4,3),(4,-1)]:
             assert_raises(IndexError, A.__getitem__, ij)
 
