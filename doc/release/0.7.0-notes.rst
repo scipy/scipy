@@ -121,6 +121,13 @@ New Radial Basis Function module
 
 http://scipy.org/scipy/scipy/browser/trunk/scipy/interpolate/rbf.py
 
+New complex ODE integrator
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``scipy.integrate.ode`` now contains a wrapper for the ZVODE
+complex-valued ordinary differential equation solver
+(by Peter N. Brown, Alan C. Hindmarsh, and George D. Byrne).
+
 Major documentation improvements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
