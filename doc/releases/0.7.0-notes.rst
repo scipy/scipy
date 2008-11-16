@@ -16,23 +16,35 @@ Sparse Matrices
 * new class ``dia_matrix`` : the sparse DIAgonal format
 * new class ``bsr_matrix`` : sparse Block CSR format
 * new sparse matrix construction functions
+
  * ``sparse.kron`` : sparse Kronecker product
  * ``sparse.bmat`` : sparse version of ``numpy.bmat``
  * ``sparse.vstack`` : sparse version of ``numpy.vstack``
  * ``sparse.hstack`` : sparse version of ``numpy.hstack``
+
 * extraction of submatrices and nonzero values
+
  * ``sparse.tril`` : extract lower triangle
  * ``sparse.kron`` : extract upper triangle
  * ``sparse.find`` : nonzero values and their indices
+
 * ``csr_matrix`` and ``csc_matrix`` now support slicing and fancy indexing
+
  * e.g. ``A[1:3, 4:7]`` and ``A[[3,2,6,8],:]``
+
 * conversions among all sparse formats are now possible
+
  * all formats have member functions such as ``.tocsr()`` and ``.tolil()``
+
 * sparse constructors now accept dense matrices and other sparse formats
+
  * e.g. ``A = csr_matrix( rand(3,3) )`` and ``B = lil_matrix( [[1,2],[3,4]] )``
+
 * efficiency improvements to:
+
  * format conversions
  * sparse matrix arithmetic
+
 * numerous bugfixes
 
 SciPy IO
