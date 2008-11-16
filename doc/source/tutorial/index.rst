@@ -980,10 +980,10 @@ FORTRAN library FITPACK and provides functions for 1- and
 2-dimensional (smoothed) cubic-spline interpolation. 
 
 
-Linear 1-d interpolation (interpolate.linear_1d)
-------------------------------------------------
+Linear 1-d interpolation (interpolate.interp1d)
+-----------------------------------------------
 
-The linear_1d class in scipy.interpolate is a convenient method to
+The interp1d class in scipy.interpolate is a convenient method to
 create a function based on fixed data points which can be evaluated
 anywhere within the domain defined by the given data using linear
 interpolation. An instance of this class is created by passing the 1-d
@@ -1002,7 +1002,7 @@ it's use.
    :align: center
 
 .. **Figure 2**  One-dimensional interpolation using the 
-   class :obj:`interpolate.linear_1d` 
+   class :obj:`interpolate.interp1d` 
 
 
 Spline interpolation in 1-d (interpolate.splXXX)
@@ -1042,8 +1042,8 @@ example that follows (see also Figure `3 <#fig-spline-1d>`__ ).
    :align: center
 
 
-Two-dimensionsal spline representation (interpolate.bisplrep)
--------------------------------------------------------------
+Two-dimensional spline representation (interpolate.bisplrep)
+------------------------------------------------------------
 
 For (smooth) spline-fitting to a two dimensional surface, the function
 :obj:`interpolate.bisplrep` is available. This function takes as
