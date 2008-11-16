@@ -150,7 +150,7 @@ Running Tests
 ~~~~~~~~~~~~~
 
 We are moving away from having our own testing framework and are
-adopting `nose <http://code.google.com/p/python-nose/>`.
+adopting `nose <http://code.google.com/p/python-nose/>`__.
 
 Building SciPy
 ~~~~~~~~~~~~~~
