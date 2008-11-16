@@ -133,6 +133,19 @@ Major documentation improvements
 
 TODO
 
+Bug fixes in the interpolation package
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The shape of return values from ``scipy.interpolate.interp1d`` used
+to be incorrect if interpolated data had more than 2 dimensions and
+the axis keyword was set to a non-default value. This is fixed in 0.7.0:
+
+    http://projects.scipy.org/scipy/scipy/ticket/289
+    http://projects.scipy.org/scipy/scipy/ticket/660
+
+Users of ``scipy.interpolate.interp1d`` may need to revise their code
+if it relies on the incorrect behavior.
+
 Running Tests
 ~~~~~~~~~~~~~
 
