@@ -1756,7 +1756,9 @@ class genextreme_gen(rv_continuous):
         ex2 = 1-c*x
         pex2 = pow(ex2,1.0/c)
         p2 = exp(-pex2)*pex2/ex2
-        return p2
+        limit = where(c == 1.0, 1.0, 0.0)
+        return where(c*x == 1.0, limit, p2)
+        #return p2
     def _cdf(self, x, c):
         return exp(-pow(1-c*x,1.0/c))
     def _ppf(self, q, c):
