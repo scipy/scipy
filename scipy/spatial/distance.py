@@ -208,7 +208,7 @@ def wminkowski(u, v, p, w):
 
     .. math::
 
-       \sum {(w_i*|u_i - v_i|)^p})^(1/p).
+       \left(\sum {(w_i*|u_i - v_i|\right)^p}^(1/p).
 
     :Parameters:
        u : ndarray
@@ -285,7 +285,8 @@ def cosine(u, v):
 
       .. math::
 
-         \frac{1-uv^T}/\frac{||u||_2 ||v||_2}.
+         \frac{1-uv^T}
+              {||u||_2 ||v||_2}.
 
     :Parameters:
        u : ndarray
@@ -309,11 +310,11 @@ def correlation(u, v):
 
     .. math::
 
-       \frac{1 - (u - n{|u|}_1){(v - n{|v|}_1)}^T}
-            {{|(u - n{|u|}_1)|}_2 {|(v - n{|v|}_1)|}^T}
+       \frac{1 - (u - \bar{u}){(v - \bar{v})}^T}
+            {{||(u - \bar{u})||}_2 {||(v - \bar{v})||}_2^T}
 
-    where :math:`|*|_1` is the Manhattan norm and ``n`` is the
-    common dimensionality of the vectors.
+    where :math:`\bar{u}` is the mean of a vectors elements and ``n``
+    is the common dimensionality of ``u`` and ``v``.
 
     :Parameters:
        u : ndarray
@@ -668,7 +669,7 @@ def dice(u, v):
 
     .. math:
 
-         \frac{c_{TF} + c_{FT}
+         \frac{c_{TF} + c_{FT}}
               {2c_{TT} + c_{FT} + c_{TF}}
 
     where :math:`c_{ij}` is the number of occurrences of
@@ -767,7 +768,7 @@ def sokalmichener(u, v):
 
     where :math:`c_{ij}` is the number of occurrences of
     :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
-    :math:`k < n`, :math:`R = 2 * (c_{TF} + c{FT})` and
+    :math:`k < n`, :math:`R = 2 * (c_{TF} + c_{FT})` and
     :math:`S = c_{FF} + c_{TT}`.
 
     :Parameters:
@@ -803,7 +804,7 @@ def sokalsneath(u, v):
 
     where :math:`c_{ij}` is the number of occurrences of
     :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
-    :math:`k < n` and :math:`R = 2(c_{TF} + c{FT})`.
+    :math:`k < n` and :math:`R = 2(c_{TF} + c_{FT})`.
 
     :Parameters:
        u : ndarray
@@ -915,12 +916,10 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
 
        .. math:
 
-          \frac{1 - (u - n{|u|}_1){(v - n{|v|}_1)}^T}
-               {{|(u - n{|u|}_1)|}_2 {|(v - n{|v|}_1)|}^T}
+          \frac{1 - (u - \bar{u})(v - \bar{v})^T}
+               {{|(u - \bar{u})|}{|(v - \bar{v})|}^T}
 
-       where :math:`|*|_1` is the Manhattan (or 1-norm) of its
-       argument, and :math:`n` is the common dimensionality of the
-       vectors.
+       where :math:`\bar{v}` is the mean of the elements of vector v.
 
     8. ``Y = pdist(X, 'hamming')``
 
@@ -1558,12 +1557,12 @@ def num_obs_y(Y):
 
 def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     """
-    Computes distance between each pair of observations between two
-    collections of vectors. ``XA`` is a :math:`m_A` by :math:`n`
-    array while ``XB`` is a :math:`m_B` by :math:`n` array. A
-    :math:`m_A` by :math:`m_B` array is returned. An exception is
-    thrown if ``XA`` and ``XB`` do not have the same number of
-    columns.
+    Computes distance between each pair of observation vectors in the
+    Cartesian product of two collections of vectors. ``XA`` is a
+    :math:`m_A` by :math:`n` array while ``XB`` is a :math:`m_B` by
+    :math:`n` array. A :math:`m_A` by :math:`m_B` array is
+    returned. An exception is thrown if ``XA`` and ``XB`` do not have
+    the same number of columns.
 
     A rectangular distance matrix ``Y`` is returned. For each :math:`i`
     and :math:`j`, the metric ``dist(u=XA[i], v=XB[j])`` is computed
