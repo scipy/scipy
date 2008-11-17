@@ -1747,22 +1747,67 @@ N. Balakrishnan, Asit P. Basu
 ##  This version does not accept c==0
 ##  Use gumbel_r for c==0
 
+# new version by Per Brodtkorb, see ticket:767
+# also works for c==0, special case is gumbel_r
+# increased precision for small c
+
 class genextreme_gen(rv_continuous):
     def _argcheck(self, c):
         self.b = where(c > 0, 1.0 / c, inf)
         self.a = where(c < 0, 1.0 / c, -inf)
-        return (c!=0)
+        return True #(c!=0)
     def _pdf(self, x, c):
-        ex2 = 1-c*x
-        pex2 = pow(ex2,1.0/c)
-        p2 = exp(-pex2)*pex2/ex2
-        limit = where(c == 1.0, 1.0, 0.0)
-        return where(c*x == 1.0, limit, p2)
-        #return p2
+        ##        ex2 = 1-c*x
+        ##        pex2 = pow(ex2,1.0/c)
+        ##        p2 = exp(-pex2)*pex2/ex2
+        ##        return p2
+        cx = c*x
+        logex2 = where(c==0,0.0,np.log1p(-cx))
+        logpex2 = where(c==0,-x,logex2/c)
+        pex2 = exp(logpex2)
+        # % Handle special cases
+        logpdf = where((cx==1) | (cx==-inf),-inf,-pex2+logpex2-logex2)
+        putmask(logpdf,(c==1) & (x==1),0.0) # logpdf(c==1 & x==1) = 0; % 0^0 situation
+
+        return exp(logpdf)
+
+
     def _cdf(self, x, c):
-        return exp(-pow(1-c*x,1.0/c))
+        #return exp(-pow(1-c*x,1.0/c))
+        loglogcdf = where(c==0,-x,np.log1p(-c*x)/c)
+        return exp(-exp(loglogcdf))
+
     def _ppf(self, q, c):
-        return 1.0/c*(1-(-log(q))**c)
+        #return 1.0/c*(1.-(-log(q))**c)
+        logq = log(q);
+        x = -log(-logq)
+        # _rvs requires that _ppf allows vectorized q
+        return where((q==q)*(c==0),x,-np.expm1(-c*x)/c)
+    def _stats(self,c):
+
+        g = lambda n : gam(n*c+1)
+        g1 = g(1)
+        g2 = g(2)
+        g3 = g(3);
+        g4 = g(4)
+        g2mg12 = where(abs(c)<1e-7,(c*pi)**2.0/6.0,g2-g1**2.0)
+        gam2k = where(abs(c)<1e-7,pi**2.0/6.0, np.expm1(gamln(2.0*c+1.0)-2*gamln(c+1.0))/c**2.0);
+        eps = 1e-14
+        gamk = where(abs(c)<eps,-_EULER,np.expm1(gamln(c+1))/c)
+
+        m = where(c<-1.0,nan,-gamk)
+        v = where(c<-0.5,nan,g1**2.0*gam2k)
+
+        #% skewness
+        sk1 = where(c<-1./3,nan,np.sign(c)*(-g3+(g2+2*g2mg12)*g1)/((g2mg12)**(3./2.)));
+        sk = where(abs(c)<=eps**0.29,12*sqrt(6)*_ZETA3/pi**3,sk1)
+
+        #% The kurtosis is:
+        ku1 = where(c<-1./4,nan,(g4+(-4*g3+3*(g2+g2mg12)*g1)*g1)/((g2mg12)**2))
+        ku = where(abs(c)<=(eps)**0.23,12.0/5.0,ku1-3.0)
+        return m,v,sk,ku
+
+
     def _munp(self, n, c):
         k = arange(0,n+1)
         vals = 1.0/c**n * sum(comb(n,k) * (-1)**k * special.gamma(c*k + 1),axis=0)
@@ -1773,6 +1818,7 @@ genextreme = genextreme_gen(name='genextreme',
 
 Generalized extreme value (see gumbel_r for c=0)
 
+genextreme.pdf(x,c) = exp(-exp(-x))*exp(-x) for c==0
 genextreme.pdf(x,c) = exp(-(1-c*x)**(1/c))*(1-c*x)**(1/c-1)
 for x <= 1/c, c > 0
 """
