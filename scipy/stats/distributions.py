@@ -1755,7 +1755,7 @@ class genextreme_gen(rv_continuous):
     def _argcheck(self, c):
         self.b = where(c > 0, 1.0 / c, inf)
         self.a = where(c < 0, 1.0 / c, -inf)
-        return True #(c!=0)
+        return (c==c) #True #(c!=0)
     def _pdf(self, x, c):
         ##        ex2 = 1-c*x
         ##        pex2 = pow(ex2,1.0/c)
