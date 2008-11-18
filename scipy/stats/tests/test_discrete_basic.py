@@ -44,7 +44,7 @@ def test_discrete_basic():
         yield check_entropy, distfn, arg, distname + \
               ' entropy nan test'
 
-def test_discrete_private():
+def _est_discrete_private():
     #testing private methods mostly for debugging
     #   some tests might fail by design,
     #   e.g. incorrect definition of distfn.a and distfn.b

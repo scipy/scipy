@@ -113,6 +113,12 @@ distcont = [
 ##    ['fatiguelife', (29,)],   #correction numargs = 1
 ##    ['loggamma', (0.41411931826052117,)]]
 
+# for testing ticket:767
+##distcont = [
+##    ['genextreme', (3.3184017469423535,)],
+##    ['genextreme', (0.01,)],
+##    ['genextreme', (0.00001,)]
+##    ]
 
 def test_cont_basic():
     for distname, arg in distcont[:]:
@@ -122,10 +128,11 @@ def test_cont_basic():
         sv = rvs.var()
         skurt = stats.kurtosis(rvs)
         sskew = stats.skew(rvs)
-        yield check_sample_meanvar_, distfn, arg, sm, sv, distname + \
+        m,v = distfn.stats(*arg)
+        yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, distname + \
               'sample mean test'
         yield check_sample_skew_kurt, distfn, arg, skurt, sskew, distname
-        yield check_moment, distfn, arg, distname
+        yield check_moment, distfn, arg, m, v, distname
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
         yield check_pdf, distfn, arg, distname
@@ -133,27 +140,25 @@ def test_cont_basic():
 
 
 
-def check_moment(distfn, arg, msg):
-    m,v = distfn.stats(*arg)
+def check_moment(distfn, arg, m, v, msg):
     m1  = distfn.moment(1,*arg)
     m2  = distfn.moment(2,*arg)
     if not np.isinf(m):
         npt.assert_almost_equal(m1, m, decimal=10, err_msg= msg + \
                             ' - 1st moment')
-    else:
-        assert np.isinf(m1) or np.isnan(m1), \
+    else:                     # or np.isnan(m1), 
+        assert np.isinf(m1), \
                msg + ' - 1st moment -infinite, m1=%s' % str(m1)
         #np.isnan(m1) temporary special treatment for loggamma
     if not np.isinf(v):
         npt.assert_almost_equal(m2-m1*m1, v, decimal=10, err_msg= msg + \
                             ' - 2ndt moment')
-    else:
-        assert np.isinf(m2) or np.isnan(m2), \
+    else:                     #or np.isnan(m2), 
+        assert np.isinf(m2), \
                msg + ' - 2nd moment -infinite, m2=%s' % str(m2)
         #np.isnan(m2) temporary special treatment for loggamma
 
-def check_sample_meanvar_(distfn, arg, sm, sv, msg):
-    m,v = distfn.stats(*arg)
+def check_sample_meanvar_(distfn, arg, m, v, sm, sv, msg):
     check_sample_meanvar, sm, m, msg + 'sample mean test'
     check_sample_meanvar, sv, v, msg + 'sample var test'
 
@@ -167,7 +172,7 @@ def check_sample_meanvar(sm,m,msg):
         npt.assert_almost_equal(sm, m, decimal=DECIMAL, err_msg= msg + \
                                 ' - finite moment')
     else:
-        assert sm > 10000, 'infinite moment, sm = ' + str(sm)
+        assert abs(sm) > 10000, 'infinite moment, sm = ' + str(sm)
 
 def check_cdf_ppf(distfn,arg,msg):
     npt.assert_almost_equal(distfn.cdf(distfn.ppf([0.001,0.5,0.990], *arg), *arg),
@@ -184,6 +189,7 @@ def check_sf_isf(distfn,arg,msg):
                             ' - cdf-sf relationship')
 
 def check_pdf(distfn, arg, msg):
+    # compares pdf at median with numerical derivative of cdf
     median = distfn.ppf(0.5, *arg)
     eps = 1e-6
     pdfv = distfn.pdf(median, *arg)
@@ -193,7 +199,8 @@ def check_pdf(distfn, arg, msg):
         pdfv = distfn.pdf(median, *arg)
     cdfdiff = (distfn.cdf(median + eps, *arg) -
                distfn.cdf(median - eps, *arg))/eps/2.0
-    #replace with better diff and better test (more points)
+    #replace with better diff and better test (more points),
+    #actually, this works pretty well
     npt.assert_almost_equal(pdfv, cdfdiff,
                 decimal=DECIMAL, err_msg= msg + ' - cdf-pdf relationship')
 
@@ -204,9 +211,11 @@ distmissing = ['wald', 'gausshyper', 'genexpon', 'rv_continuous',
     'johnsonsb', 'truncexpon', 'rice', 'invnorm', 'invgamma',
     'powerlognorm']
 
+distmiss = [[dist,args] for dist,args in distcont if dist in distmissing]
+
 def test_missing_distributions():
-    #test from scipy.stats.tests
-    for dist, args in distcont:
+    # K-S test of distributions missing in test_distributions.py
+    for dist, args in distmiss:
         distfunc = getattr(stats, dist)
         alpha = 0.01
         yield check_distribution, dist, args, alpha
@@ -221,5 +230,6 @@ def check_distribution(dist, args, alpha):
                "; alpha = " + str(alpha) + "\nargs = " + str(args)
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    #nose.run(argv=['', __file__])
+    nose.runmodule(argv=[__file__,'-s'], exit=False)
 
