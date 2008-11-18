@@ -1762,8 +1762,9 @@ class genextreme_gen(rv_continuous):
         ##        p2 = exp(-pex2)*pex2/ex2
         ##        return p2
         cx = c*x
-        logex2 = where(c==0,0.0,np.log1p(-cx))
-        logpex2 = where(c==0,-x,logex2/c)
+        # Note: fit method requires that _pdf accepts vector x
+        logex2 = where((x==x)*(c==0),0.0,np.log1p(-cx))
+        logpex2 = where((x==x)*(c==0),-x,logex2/c)
         pex2 = exp(logpex2)
         # % Handle special cases
         logpdf = where((cx==1) | (cx==-inf),-inf,-pex2+logpex2-logex2)
