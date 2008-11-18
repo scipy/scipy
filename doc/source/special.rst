@@ -9,13 +9,13 @@ broadcasting and automatic array-looping rules. Exceptions are noted.
 
 Error handling
 ==============
-    
+
 Errors are handled by returning nans, or other appropriate values.
 Some of the special function routines will print an error message
 when an error occurs.  By default this printing
 is disabled.  To enable such messages use errprint(1)
 To disable such messages use errprint(0).
-    
+
 Example:
     >>> print scipy.special.bdtr(-1,10,0.3)
     >>> scipy.special.errprint(1)
@@ -26,10 +26,10 @@ Example:
 
    errprint
    errstate
-    
+
 Available functions
 ===================
-    
+
 Airy functions
 --------------
 
@@ -44,62 +44,62 @@ Airy functions
 
 Elliptic Functions and Integrals
 --------------------------------
-    
+
 .. autosummary::
    :toctree: generated/
 
-   ellipj   
-   ellipk   
+   ellipj
+   ellipk
    ellipkinc
-   ellipe   
+   ellipe
    ellipeinc
-    
+
 Bessel Functions
 ----------------
-    
+
 .. autosummary::
    :toctree: generated/
 
-   jn      
-   jv      
-   jve     
-   yn      
-   yv      
-   yve     
-   kn      
-   kv      
-   kve     
-   iv      
-   ive     
-   hankel1 
+   jn
+   jv
+   jve
+   yn
+   yv
+   yve
+   kn
+   kv
+   kve
+   iv
+   ive
+   hankel1
    hankel1e
-   hankel2 
+   hankel2
    hankel2e
 
 The following is not an universal function:
-   
+
 .. autosummary::
    :toctree: generated/
 
-   lmbda      
+   lmbda
 
 Zeros of Bessel Functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These are not universal functions:
-   
+
 .. autosummary::
    :toctree: generated/
 
    jnjnp_zeros
-   jnyn_zeros 
-   jn_zeros   
-   jnp_zeros  
-   yn_zeros   
-   ynp_zeros  
-   y0_zeros   
-   y1_zeros   
-   y1p_zeros  
+   jnyn_zeros
+   jn_zeros
+   jnp_zeros
+   yn_zeros
+   ynp_zeros
+   y0_zeros
+   y1_zeros
+   y1p_zeros
 
 Faster versions of common Bessel Functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -107,18 +107,18 @@ Faster versions of common Bessel Functions
 .. autosummary::
    :toctree: generated/
 
-   j0      
-   j1      
-   y0      
-   y1      
-   i0      
-   i0e     
-   i1      
-   i1e     
-   k0      
-   k0e     
-   k1      
-   k1e     
+   j0
+   j1
+   y0
+   y1
+   i0
+   i0e
+   i1
+   i1e
+   k0
+   k0e
+   k1
+   k1e
 
 Integrals of Bessel Functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -126,10 +126,10 @@ Integrals of Bessel Functions
 .. autosummary::
    :toctree: generated/
 
-   itj0y0    
-   it2j0y0   
-   iti0k0    
-   it2i0k0   
+   itj0y0
+   it2j0y0
+   iti0k0
+   it2i0k0
    besselpoly
 
 Derivatives of Bessel Functions
@@ -138,33 +138,33 @@ Derivatives of Bessel Functions
 .. autosummary::
    :toctree: generated/
 
-   jvp    
-   yvp    
-   kvp    
-   ivp    
-   h1vp   
-   h2vp   
+   jvp
+   yvp
+   kvp
+   ivp
+   h1vp
+   h2vp
 
 Spherical Bessel Functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These are not universal functions:
-   
+
 .. autosummary::
    :toctree: generated/
 
-   sph_jn  
-   sph_yn  
+   sph_jn
+   sph_yn
    sph_jnyn
-   sph_in  
-   sph_kn  
+   sph_in
+   sph_kn
    sph_inkn
 
 Ricatti-Bessel Functions
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 These are not universal functions:
-   
+
 .. autosummary::
    :toctree: generated/
 
@@ -179,8 +179,8 @@ Struve Functions
 
    struve
    modstruve
-   itstruve0   
-   it2struve0  
+   itstruve0
+   it2struve0
    itmodstruve0
 
 
@@ -192,38 +192,38 @@ Raw Statistical Functions
 .. autosummary::
    :toctree: generated/
 
-   bdtr      
-   bdtrc     
-   bdtri     
-   btdtr     
-   btdtri    
-   fdtr      
-   fdtrc     
-   fdtri     
-   gdtr      
-   gdtrc     
+   bdtr
+   bdtrc
+   bdtri
+   btdtr
+   btdtri
+   fdtr
+   fdtrc
+   fdtri
+   gdtr
+   gdtrc
    gdtria
    gdtrib
    gdtrix
-   nbdtr     
-   nbdtrc    
-   nbdtri    
-   pdtr      
-   pdtrc     
-   pdtri     
-   stdtr     
+   nbdtr
+   nbdtrc
+   nbdtri
+   pdtr
+   pdtrc
+   pdtri
+   stdtr
    stdtridf
    stdtrit
-   chdtr     
-   chdtrc    
-   chdtri    
-   ndtr      
-   ndtri     
-   smirnov   
-   smirnovi  
+   chdtr
+   chdtrc
+   chdtri
+   ndtr
+   ndtri
+   smirnov
+   smirnovi
    kolmogorov
-   kolmogi   
-   tklmbda   
+   kolmogi
+   tklmbda
 
 Gamma and Related Functions
 ---------------------------
@@ -231,19 +231,19 @@ Gamma and Related Functions
 .. autosummary::
    :toctree: generated/
 
-   gamma       
-   gammaln     
-   gammainc    
-   gammaincinv 
-   gammaincc   
+   gamma
+   gammaln
+   gammainc
+   gammaincinv
+   gammaincc
    gammainccinv
-   beta        
-   betaln      
-   betainc     
-   betaincinv  
+   beta
+   betaln
+   betainc
+   betaincinv
    psi
-   rgamma      
-   polygamma   
+   rgamma
+   polygamma
 
 
 Error Function and Fresnel Integrals
@@ -252,18 +252,18 @@ Error Function and Fresnel Integrals
 .. autosummary::
    :toctree: generated/
 
-   erf          
-   erfc         
-   erfinv       
-   erfcinv      
-   erf_zeros    
-   fresnel      
+   erf
+   erfc
+   erfinv
+   erfcinv
+   erf_zeros
+   fresnel
    fresnel_zeros
-   modfresnelp  
-   modfresnelm  
+   modfresnelp
+   modfresnelm
 
 These are not universal functions:
-   
+
 .. autosummary::
    :toctree: generated/
 
@@ -276,18 +276,18 @@ Legendre Functions
 .. autosummary::
    :toctree: generated/
 
-   lpmv    
+   lpmv
    sph_harm
 
 These are not universal functions:
-   
+
 .. autosummary::
    :toctree: generated/
 
-   lpn     
-   lqn     
-   lpmn    
-   lqmn    
+   lpn
+   lqn
+   lpmn
+   lqmn
 
 Orthogonal polynomials
 ----------------------
@@ -305,20 +305,20 @@ in the final column
    :toctree: generated/
 
    legendre
-   chebyt     
-   chebyu     
-   chebyc     
-   chebys     
-   jacobi     
-   laguerre   
+   chebyt
+   chebyu
+   chebyc
+   chebys
+   jacobi
+   laguerre
    genlaguerre
-   hermite    
+   hermite
    hermitenorm
-   gegenbauer 
+   gegenbauer
    sh_legendre
-   sh_chebyt  
-   sh_chebyu  
-   sh_jacobi  
+   sh_chebyt
+   sh_chebyu
+   sh_jacobi
 
 Hypergeometric Functions
 ------------------------
@@ -326,13 +326,13 @@ Hypergeometric Functions
 .. autosummary::
    :toctree: generated/
 
-   hyp2f1  
-   hyp1f1  
-   hyperu  
-   hyp0f1  
-   hyp2f0  
-   hyp1f2  
-   hyp3f0  
+   hyp2f1
+   hyp1f1
+   hyperu
+   hyp0f1
+   hyp2f0
+   hyp1f2
+   hyp3f0
 
 
 Parabolic Cylinder Functions
@@ -341,12 +341,12 @@ Parabolic Cylinder Functions
 .. autosummary::
    :toctree: generated/
 
-   pbdv    
-   pbvv    
+   pbdv
+   pbvv
    pbwa
 
 These are not universal functions:
-   
+
 .. autosummary::
    :toctree: generated/
 
@@ -360,24 +360,24 @@ Mathieu and Related Functions
 .. autosummary::
    :toctree: generated/
 
-   mathieu_a      
-   mathieu_b      
+   mathieu_a
+   mathieu_b
 
 These are not universal functions:
-   
+
 .. autosummary::
    :toctree: generated/
 
    mathieu_even_coef
-   mathieu_odd_coef 
+   mathieu_odd_coef
 
 The following return both function and first derivative:
 
 .. autosummary::
    :toctree: generated/
 
-   mathieu_cem    
-   mathieu_sem    
+   mathieu_cem
+   mathieu_sem
    mathieu_modcem1
    mathieu_modcem2
    mathieu_modsem1
@@ -389,14 +389,14 @@ Spheroidal Wave Functions
 .. autosummary::
    :toctree: generated/
 
-   pro_ang1  
-   pro_rad1  
-   pro_rad2  
-   obl_ang1  
-   obl_rad1  
-   obl_rad2  
-   pro_cv    
-   obl_cv    
+   pro_ang1
+   pro_rad1
+   pro_rad2
+   obl_ang1
+   obl_rad1
+   obl_rad2
+   pro_cv
+   obl_cv
    pro_cv_seq
    obl_cv_seq
 
@@ -418,30 +418,30 @@ Kelvin Functions
 .. autosummary::
    :toctree: generated/
 
-   kelvin      
+   kelvin
    kelvin_zeros
-   ber         
-   bei         
-   berp        
-   beip        
-   ker         
-   kei         
-   kerp        
-   keip        
+   ber
+   bei
+   berp
+   beip
+   ker
+   kei
+   kerp
+   keip
 
 These are not universal functions:
-   
+
 .. autosummary::
    :toctree: generated/
 
-   ber_zeros   
-   bei_zeros   
-   berp_zeros  
-   beip_zeros  
-   ker_zeros   
-   kei_zeros   
-   kerp_zeros  
-   keip_zeros  
+   ber_zeros
+   bei_zeros
+   berp_zeros
+   beip_zeros
+   ker_zeros
+   kei_zeros
+   kerp_zeros
+   keip_zeros
 
 Other Special Functions
 -----------------------
@@ -449,16 +449,16 @@ Other Special Functions
 .. autosummary::
    :toctree: generated/
 
-   expn        
-   exp1        
+   expn
+   exp1
    expi
-   wofz        
-   dawsn       
-   shichi      
-   sici        
-   spence      
-   zeta        
-   zetac       
+   wofz
+   dawsn
+   shichi
+   sici
+   spence
+   zeta
+   zetac
 
 Convenience Functions
 ---------------------
@@ -466,15 +466,15 @@ Convenience Functions
 .. autosummary::
    :toctree: generated/
 
-   cbrt    
-   exp10   
-   exp2    
-   radian  
-   cosdg   
-   sindg   
-   tandg   
-   cotdg   
-   log1p   
-   expm1   
-   cosm1   
+   cbrt
+   exp10
+   exp2
+   radian
+   cosdg
+   sindg
+   tandg
+   cotdg
+   log1p
+   expm1
+   cosm1
    round

@@ -13,12 +13,12 @@ General-purpose
 .. autosummary::
    :toctree: generated/
 
-   fmin       
+   fmin
    fmin_powell
-   fmin_cg    
-   fmin_bfgs  
-   fmin_ncg   
-   leastsq    
+   fmin_cg
+   fmin_bfgs
+   fmin_ncg
+   leastsq
 
 
 Constrained (multivariate)
@@ -28,8 +28,8 @@ Constrained (multivariate)
    :toctree: generated/
 
    fmin_l_bfgs_b
-   fmin_tnc     
-   fmin_cobyla  
+   fmin_tnc
+   fmin_cobyla
 
 Global
 ------
@@ -37,8 +37,8 @@ Global
 .. autosummary::
    :toctree: generated/
 
-   anneal     
-   brute      
+   anneal
+   brute
 
 Scalar function minimizers
 --------------------------
@@ -46,18 +46,18 @@ Scalar function minimizers
 .. autosummary::
    :toctree: generated/
 
-   fminbound  
-   golden     
+   fminbound
+   golden
    bracket
    brent
 
 Root finding
 ============
-   
+
 .. autosummary::
    :toctree: generated/
 
-   fsolve     
+   fsolve
 
 Scalar function solvers
 -----------------------
@@ -65,14 +65,14 @@ Scalar function solvers
 .. autosummary::
    :toctree: generated/
 
-   brentq     
-   brenth     
-   ridder     
-   bisect     
+   brentq
+   brenth
+   ridder
+   bisect
    newton
 
 Fixed point finding:
-   
+
 .. autosummary::
    :toctree: generated/
 
@@ -84,12 +84,12 @@ General-purpose nonlinear (multidimensional)
 .. autosummary::
    :toctree: generated/
 
-   broyden1           
-   broyden2           
-   broyden3           
+   broyden1
+   broyden2
+   broyden3
    broyden_generalized
-   anderson           
-   anderson2          
+   anderson
+   anderson2
 
 Utility Functions
 =================
@@ -98,4 +98,4 @@ Utility Functions
    :toctree: generated/
 
    line_search
-   check_grad 
+   check_grad

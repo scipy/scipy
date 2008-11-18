@@ -47,7 +47,7 @@ Models
    bigmodel.settestsamples
    bigmodel.stochapprox
    bigmodel.test
-   
+
 .. autoclass:: conditionalmodel
 
 .. autosummary::

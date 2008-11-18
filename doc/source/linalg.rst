@@ -10,15 +10,15 @@ Basics
 .. autosummary::
    :toctree: generated/
 
-   inv       
-   solve     
+   inv
+   solve
    solve_banded
    solveh_banded
-   det       
-   norm      
-   lstsq     
-   pinv      
-   pinv2     
+   det
+   norm
+   lstsq
+   pinv
+   pinv2
 
 Eigenvalues and Decompositions
 ==============================
@@ -26,24 +26,24 @@ Eigenvalues and Decompositions
 .. autosummary::
    :toctree: generated/
 
-   eig       
-   eigvals   
+   eig
+   eigvals
    eig_banded
    eigvals_banded
-   lu        
-   lu_factor 
-   lu_solve  
-   svd       
-   svdvals   
-   diagsvd   
-   orth      
-   cholesky  
-   cholesky_banded  
+   lu
+   lu_factor
+   lu_solve
+   svd
+   svdvals
+   diagsvd
+   orth
+   cholesky
+   cholesky_banded
    cho_factor
-   cho_solve 
-   qr        
-   schur     
-   rsf2csf   
+   cho_solve
+   qr
+   schur
+   rsf2csf
    hessenberg
 
 Matrix Functions
@@ -52,19 +52,19 @@ Matrix Functions
 .. autosummary::
    :toctree: generated/
 
-   expm      
-   expm2     
-   expm3     
-   logm      
-   cosm      
-   sinm      
-   tanm      
-   coshm     
-   sinhm     
-   tanhm     
-   signm     
-   sqrtm     
-   funm      
+   expm
+   expm2
+   expm3
+   logm
+   cosm
+   sinm
+   tanm
+   coshm
+   sinhm
+   tanhm
+   signm
+   sqrtm
+   funm
 
 Iterative linear systems solutions
 ==================================
@@ -72,10 +72,10 @@ Iterative linear systems solutions
 .. autosummary::
    :toctree: generated/
 
-   cg        
-   cgs       
-   qmr       
-   gmres     
-   bicg      
-   bicgstab  
+   cg
+   cgs
+   qmr
+   gmres
+   bicg
+   bicgstab
 

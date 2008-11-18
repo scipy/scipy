@@ -10,12 +10,12 @@ Convolution
 .. autosummary::
    :toctree: generated/
 
-   convolve     
-   correlate    
-   fftconvolve  
-   convolve2d   
-   correlate2d  
-   sepfir2d     
+   convolve
+   correlate
+   fftconvolve
+   convolve2d
+   correlate2d
+   sepfir2d
 
 B-splines
 =========
@@ -23,12 +23,12 @@ B-splines
 .. autosummary::
    :toctree: generated/
 
-   bspline      
-   gauss_spline 
-   cspline1d    
-   qspline1d    
-   cspline2d    
-   qspline2d    
+   bspline
+   gauss_spline
+   cspline1d
+   qspline1d
+   cspline2d
+   qspline2d
    spline_filter
 
 Filtering
@@ -37,22 +37,22 @@ Filtering
 .. autosummary::
    :toctree: generated/
 
-   order_filter 
-   medfilt      
-   medfilt2     
-   wiener       
+   order_filter
+   medfilt
+   medfilt2
+   wiener
 
-   symiirorder1 
-   symiirorder2 
-   lfilter      
+   symiirorder1
+   symiirorder2
+   lfilter
 
-   deconvolve   
+   deconvolve
 
-   hilbert      
-   get_window   
+   hilbert
+   get_window
 
-   detrend      
-   resample     
+   detrend
+   resample
 
 Filter design
 =============
@@ -60,17 +60,17 @@ Filter design
 .. autosummary::
    :toctree: generated/
 
-   remez        
-   firwin       
-   iirdesign    
-   iirfilter    
-   freqs        
-   freqz        
+   remez
+   firwin
+   iirdesign
+   iirfilter
+   freqs
+   freqz
 
-   unique_roots 
-   residue      
-   residuez     
-   invres       
+   unique_roots
+   residue
+   residuez
+   invres
 
 Matlab-style IIR filter design
 ==============================
@@ -94,10 +94,10 @@ Linear Systems
 .. autosummary::
    :toctree: generated/
 
-   lti    
-   lsim   
+   lti
+   lsim
    impulse
-   step   
+   step
 
 LTI Reresentations
 ==================
@@ -107,8 +107,8 @@ LTI Reresentations
 
    tf2zpk
    zpk2tf
-   tf2ss 
-   ss2tf 
+   tf2ss
+   ss2tf
    zpk2ss
    ss2zpk
 
@@ -118,10 +118,10 @@ Waveforms
 .. autosummary::
    :toctree: generated/
 
-   sawtooth  
-   square    
+   sawtooth
+   square
    gausspulse
-   chirp     
+   chirp
 
 Window functions
 ================
@@ -129,22 +129,22 @@ Window functions
 .. autosummary::
    :toctree: generated/
 
-   boxcar          
-   triang          
-   parzen          
-   bohman          
-   blackman        
-   blackmanharris  
-   nuttall         
-   flattop         
-   bartlett        
-   hann            
-   barthann        
-   hamming         
-   kaiser          
-   gaussian        
+   boxcar
+   triang
+   parzen
+   bohman
+   blackman
+   blackmanharris
+   nuttall
+   flattop
+   bartlett
+   hann
+   barthann
+   hamming
+   kaiser
+   gaussian
    general_gaussian
-   slepian         
+   slepian
 
 Wavelets
 ========
@@ -152,6 +152,6 @@ Wavelets
 .. autosummary::
    :toctree: generated/
 
-   daub   
-   qmf    
+   daub
+   qmf
    cascade
