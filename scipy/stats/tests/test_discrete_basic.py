@@ -44,6 +44,14 @@ def test_discrete_basic():
         yield check_entropy, distfn, arg, distname + \
               ' entropy nan test'
 
+def test_discrete_extra():
+    for distname, arg in distdiscrete:
+        distfn = getattr(stats,distname)
+        yield check_ppf_limits, distfn, arg, distname + \
+              ' ppf limit test'
+        yield check_isf_limits, distfn, arg, distname + \
+              ' isf limit test'
+
 def _est_discrete_private():
     #testing private methods mostly for debugging
     #   some tests might fail by design,
@@ -122,6 +130,35 @@ def check_oth(distfn, arg, msg):
     assert distfn.cdf(median_sf + 1, *arg) > 0.5
     npt.assert_equal(distfn.isf(0.5, *arg), distfn.ppf(0.5, *arg))
 
+#next 3 functions copied from test_continous_extra
+#    adjusted
+    
+def check_ppf_limits(distfn,arg,msg):
+    below,low,upp,above = distfn.ppf([-1,0,1,2], *arg)
+    #print distfn.name, distfn.a, low, distfn.b, upp
+    #print distfn.name,below,low,upp,above
+    assert_equal_inf_nan(distfn.a-1,low, msg + 'ppf lower bound')
+    assert_equal_inf_nan(distfn.b,upp, msg + 'ppf upper bound')
+    assert np.isnan(below), msg + 'ppf out of bounds - below'
+    assert np.isnan(above), msg + 'ppf out of bounds - above'
+
+def check_isf_limits(distfn,arg,msg):
+    below,low,upp,above = distfn.isf([-1,0,1,2], *arg)
+    #print distfn.name, distfn.a, low, distfn.b, upp
+    #print distfn.name,below,low,upp,above
+    assert_equal_inf_nan(distfn.a-1,upp, msg + 'isf lower bound')
+    assert_equal_inf_nan(distfn.b,low, msg + 'isf upper bound')
+    assert np.isnan(below), msg + 'isf out of bounds - below'
+    assert np.isnan(above), msg + 'isf out of bounds - above'
+
+def assert_equal_inf_nan(v1,v2,msg):
+    assert not np.isnan(v1)
+    if not np.isinf(v1):
+        npt.assert_almost_equal(v1, v2, decimal=10, err_msg = msg + \
+                                   ' - finite')
+    else:
+        assert np.isinf(v2) or np.isnan(v2), \
+               msg + ' - infinite, v2=%s' % str(v2)
 
 def check_sample_skew_kurt(distfn, arg, sk, ss, msg):
     k,s = distfn.stats(moment='ks',*arg)

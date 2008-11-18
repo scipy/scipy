@@ -1754,8 +1754,8 @@ N. Balakrishnan, Asit P. Basu
 class genextreme_gen(rv_continuous):
     def _argcheck(self, c):
         self.b = where(c > 0, 1.0 / c, inf)
-        self.a = where(c < 0, 1.0 / c, -inf)
-        return (c==c) #True #(c!=0)
+        self.a = where(c < 0, 1.0 / c, -inf)       
+        return (c==c) #True #(c!=0) #see ticket:793
     def _pdf(self, x, c):
         ##        ex2 = 1-c*x
         ##        pex2 = pow(ex2,1.0/c)
@@ -3789,14 +3789,18 @@ class rv_discrete(rv_generic):
         cond1 = (q > 0) & (q < 1)
         cond2 = (q==1) & cond0
         cond = cond0 & cond1
-        output = valarray(shape(cond),value=self.b,typecode='d')
-        #typecode 'd' to handle nin and inf
-        place(output,(1-cond0)*(cond1==cond1), self.badvalue)
-        place(output,cond2,self.a-1)
-
+        #old:
+##        output = valarray(shape(cond),value=self.b,typecode='d')
+##        #typecode 'd' to handle nin and inf
+##        place(output,(1-cond0)*(cond1==cond1), self.badvalue)
+##        place(output,cond2,self.a-1)
 
         #same problem as with ppf
-
+        # copied from ppf and changed
+        output = valarray(shape(cond),value=self.badvalue,typecode='d')
+        #output type 'd' to handle nin and inf
+        place(output,(q==0)*(cond==cond), self.b)
+        place(output,cond2,self.a-1)
 
         # call place only if at least 1 valid argument
         if any(cond):
