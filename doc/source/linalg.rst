@@ -28,6 +28,8 @@ Eigenvalues and Decompositions
 
    eig
    eigvals
+   eigh
+   eigvalsh
    eig_banded
    eigvals_banded
    lu
