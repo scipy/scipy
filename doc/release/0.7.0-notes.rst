@@ -133,6 +133,16 @@ New complex ODE integrator
 complex-valued ordinary differential equation solver
 (by Peter N. Brown, Alan C. Hindmarsh, and George D. Byrne).
 
+New generalized symmetric and hermitian eigenvalue problem solver
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``scipy.linalg.eigh`` now contains wrappers for more LAPACK 
+symmetric and hermitian eigenvalue problem solvers. Users
+can now solve generalized problems, select just a range of 
+eigenvalues, and choose to use a faster algorithm at the expense
+of increased memory usage. The signature of the ``scipy.linalg.eigh``
+changed accordingly. 
+
 Major documentation improvements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
