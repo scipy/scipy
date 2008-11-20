@@ -181,7 +181,7 @@ def minkowski(u, v, p):
 
     .. math::
 
-       {||u-v||}_p = (\sum {|u_i - v_i|^p})^(1/p).
+       {||u-v||}_p = (\sum{|u_i - v_i|^p})^{1/p}.
 
     :Parameters:
        u : ndarray
@@ -208,7 +208,7 @@ def wminkowski(u, v, p, w):
 
     .. math::
 
-       \left(\sum {(w_i*|u_i - v_i|\right)^p}^(1/p).
+       \left(\sum{(w_i |u_i - v_i|^p)}\right)^{1/p}.
 
     :Parameters:
        u : ndarray
