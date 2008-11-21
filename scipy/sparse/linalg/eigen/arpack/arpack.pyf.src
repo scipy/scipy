@@ -1,0 +1,207 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module _arpack ! in 
+    <_rd=real,double precision>
+    <_cd=complex,double complex>
+    interface  ! in :_arpack
+        subroutine <s,d>saupd(ido,bmat,n,which,nev,tol,resid,ncv,v,ldv,iparam,ipntr,workd,workl,lworkl,info) ! in :_arpack:src/ssaupd.f
+            integer intent(in,out):: ido
+            character*1 :: bmat
+            integer optional,check(len(resid)>=n),depend(resid) :: n=len(resid)
+            character*2 :: which
+            integer :: nev
+            <_rd> :: tol
+            <_rd> dimension(n),intent(in,out) :: resid
+            integer optional,check(shape(v,1)==ncv),depend(v) :: ncv=shape(v,1)
+            <_rd> dimension(ldv,ncv),intent(in,out) :: v
+            integer optional,check(shape(v,0)==ldv),depend(v) :: ldv=shape(v,0)
+            integer dimension(11),intent(in,out) :: iparam
+            integer dimension(11),intent(in,out) :: ipntr
+            <_rd> dimension(3 * n),depend(n),intent(inout) :: workd
+            <_rd> dimension(lworkl),intent(inout) :: workl
+            integer optional,check(len(workl)>=lworkl),depend(workl) :: lworkl=len(workl)
+            integer intent(in,out):: info
+        end subroutine <s,d>saupd
+
+        subroutine <s,d>seupd(rvec,howmny,select,d,z,ldz,sigma,bmat,n,which,nev,tol,resid,ncv,v,ldv,iparam,ipntr,workd,workl,lworkl,info) ! in :_arpack:src/sseupd.f
+            logical :: rvec
+            character :: howmny
+            logical dimension(ncv) :: select
+            <_rd> dimension(nev),intent(out),depend(nev) :: d
+            <_rd> dimension(n,nev),intent(out),depend(nev) :: z
+            integer optional,check(shape(z,0)==ldz),depend(z) :: ldz=shape(z,0)
+            <_rd> :: sigma
+            character :: bmat
+            integer optional,check(len(resid)>=n),depend(resid) :: n=len(resid)
+            character*2 :: which
+            integer :: nev 
+            <_rd> :: tol
+            <_rd> dimension(n) :: resid
+            integer optional,check(len(select)>=ncv),depend(select) :: ncv=len(select)
+            <_rd> dimension(ldv,ncv),depend(ncv) :: v
+            integer optional,check(shape(v,0)==ldv),depend(v) :: ldv=shape(v,0)
+            integer dimension(7) :: iparam
+            integer dimension(11) :: ipntr
+            <_rd> dimension(2 * n),depend(n) :: workd
+            <_rd> dimension(lworkl) :: workl
+            integer optional,check(len(workl)>=lworkl),depend(workl) :: lworkl=len(workl)
+            integer intent(in,out):: info
+        end subroutine <s,d>seupd
+
+        subroutine <s,d>naupd(ido,bmat,n,which,nev,tol,resid,ncv,v,ldv,iparam,ipntr,workd,workl,lworkl,info) ! in :_arpack:src/snaupd.f
+            integer intent(in,out):: ido
+            character*1 :: bmat
+            integer optional,check(len(resid)>=n),depend(resid) :: n=len(resid)
+            character*2 :: which
+            integer :: nev
+            <_rd> :: tol
+            <_rd> dimension(n),intent(in,out) :: resid
+            integer optional,check(shape(v,1)==ncv),depend(v) :: ncv=shape(v,1)
+            <_rd> dimension(ldv,ncv),intent(in,out) :: v
+            integer optional,check(shape(v,0)==ldv),depend(v) :: ldv=shape(v,0)
+            integer dimension(11),intent(in,out) :: iparam
+            integer dimension(14),intent(in,out) :: ipntr
+            <_rd> dimension(3 * n),depend(n),intent(inout) :: workd
+            <_rd> dimension(lworkl),intent(inout) :: workl
+            integer optional,check(len(workl)>=lworkl),depend(workl) :: lworkl=len(workl)
+            integer intent(in,out):: info
+        end subroutine <s,d>naupd
+
+        subroutine <s,d>neupd(rvec,howmny,select,dr,di,z,ldz,sigmar,sigmai,workev,bmat,n,which,nev,tol,resid,ncv,v,ldv,iparam,ipntr,workd,workl,lworkl,info) ! in ARPACK/SRC/sneupd.f
+            logical :: rvec
+            character :: howmny
+            logical dimension(ncv) :: select
+            <_rd> dimension(nev + 1),depend(nev),intent(out) :: dr
+            <_rd> dimension(nev + 1),depend(nev),intent(out) :: di
+            <_rd> dimension(n,nev+1),depend(n,nev),intent(out) :: z
+            integer optional,check(shape(z,0)==ldz),depend(z) :: ldz=shape(z,0)
+            <_rd> :: sigmar
+            <_rd> :: sigmai
+            <_rd> dimension(3 * ncv),depend(ncv) :: workev
+            character :: bmat
+            integer optional,check(len(resid)>=n),depend(resid) :: n=len(resid)
+            character*2 :: which
+            integer :: nev
+            <_rd> :: tol
+            <_rd> dimension(n) :: resid
+            integer optional,check(len(select)>=ncv),depend(select) :: ncv=len(select)
+            <_rd> dimension(n,ncv),depend(n,ncv) :: v
+            integer optional,check(shape(v,0)==ldv),depend(v) :: ldv=shape(v,0)
+            integer dimension(11) :: iparam
+            integer dimension(14) :: ipntr
+            <_rd> dimension(3 * n),depend(n):: workd
+            <_rd> dimension(lworkl) :: workl
+            integer optional,check(len(workl)>=lworkl),depend(workl) :: lworkl=len(workl)
+            integer intent(in,out):: info
+        end subroutine <s,d>neupd
+
+        subroutine <c,z>naupd(ido,bmat,n,which,nev,tol,resid,ncv,v,ldv,iparam,ipntr,workd,workl,lworkl,rwork,info) ! in :_arpack:src/snaupd.f
+            integer intent(in,out):: ido
+            character*1 :: bmat
+            integer optional,check(len(resid)>=n),depend(resid) :: n=len(resid)
+            character*2 :: which
+            integer :: nev
+            <_rd> :: tol
+            <_cd> dimension(n),intent(in,out) :: resid
+            integer optional,check(shape(v,1)==ncv),depend(v) :: ncv=shape(v,1)
+            <_cd> dimension(ldv,ncv),intent(in,out) :: v
+            integer optional,check(shape(v,0)==ldv),depend(v) :: ldv=shape(v,0)
+            integer dimension(11),intent(in,out) :: iparam
+            integer dimension(14),intent(in,out) :: ipntr
+            <_cd> dimension(3 * n),depend(n),intent(inout) :: workd
+            <_cd> dimension(lworkl),intent(inout) :: workl
+            integer optional,check(len(workl)>=lworkl),depend(workl) :: lworkl=len(workl)
+            <_rd> dimension(ncv),depend(ncv),intent(inout) :: rwork
+            integer intent(in,out):: info
+        end subroutine <c,z>naupd
+
+        subroutine <c,z>neupd(rvec,howmny,select,d,z,ldz,sigma,workev,bmat,n,which,nev,tol,resid,ncv,v,ldv,iparam,ipntr,workd,workl,lworkl,rwork,info) ! in :_arpack:src/sneupd.f
+            logical :: rvec
+            character :: howmny
+            logical dimension(ncv) :: select
+            <_cd> dimension(nev),depend(nev),intent(out) :: d
+            <_cd> dimension(n,nev), depend(nev),intent(out) :: z
+            integer optional,check(shape(z,0)==ldz),depend(z) :: ldz=shape(z,0)
+            <_cd> :: sigma
+            <_cd> dimension(3 * ncv),depend(ncv) :: workev
+            character :: bmat
+            integer optional,check(len(resid)>=n),depend(resid) :: n=len(resid)
+            character*2 :: which
+            integer :: nev 
+            <_rd> :: tol
+            <_cd> dimension(n) :: resid
+            integer optional,check(len(select)>=ncv),depend(select) :: ncv=len(select)
+            <_cd> dimension(ldv,ncv),depend(ncv) :: v
+            integer optional,check(shape(v,0)==ldv),depend(v) :: ldv=shape(v,0)
+            integer dimension(11) :: iparam
+            integer dimension(14) :: ipntr
+            <_cd> dimension(3 * n),depend(n) :: workd
+            <_cd> dimension(lworkl) :: workl
+            integer optional,check(len(workl)>=lworkl),depend(workl) :: lworkl=len(workl)
+            <_rd> dimension(ncv),depend(ncv) :: rwork
+            integer intent(in,out):: info
+        end subroutine <c,z>neupd
+            integer :: logfil
+            integer :: ndigit
+            integer :: mgetv0
+            integer :: msaupd
+            integer :: msaup2
+            integer :: msaitr
+            integer :: mseigt
+            integer :: msapps
+            integer :: msgets
+            integer :: mseupd
+            integer :: mnaupd
+            integer :: mnaup2
+            integer :: mnaitr
+            integer :: mneigh
+            integer :: mnapps
+            integer :: mngets
+            integer :: mneupd
+            integer :: mcaupd
+            integer :: mcaup2
+            integer :: mcaitr
+            integer :: mceigh
+            integer :: mcapps
+            integer :: mcgets
+            integer :: mceupd
+            integer :: nopx
+            integer :: nbx
+            integer :: nrorth
+            integer :: nitref
+            integer :: nrstrt
+            real :: tsaupd
+            real :: tsaup2
+            real :: tsaitr
+            real :: tseigt
+            real :: tsgets
+            real :: tsapps
+            real :: tsconv
+            real :: tnaupd
+            real :: tnaup2
+            real :: tnaitr
+            real :: tneigh
+            real :: tngets
+            real :: tnapps
+            real :: tnconv
+            real :: tcaupd
+            real :: tcaup2
+            real :: tcaitr
+            real :: tceigh
+            real :: tcgets
+            real :: tcapps
+            real :: tcconv
+            real :: tmvopx
+            real :: tmvbx
+            real :: tgetv0
+            real :: titref
+            real :: trvec
+            common /debug/ logfil,ndigit,mgetv0,msaupd,msaup2,msaitr,mseigt,msapps,msgets,mseupd,mnaupd,mnaup2,mnaitr,mneigh,mnapps,mngets,mneupd,mcaupd,mcaup2,mcaitr,mceigh,mcapps,mcgets,mceupd
+            common /timing/ nopx,nbx,nrorth,nitref,nrstrt,tsaupd,tsaup2,tsaitr,tseigt,tsgets,tsapps,tsconv,tnaupd,tnaup2,tnaitr,tneigh,tngets,tnapps,tnconv,tcaupd,tcaup2,tcaitr,tceigh,tcgets,tcapps,tcconv,tmvopx,tmvbx,tgetv0,titref,trvec
+
+    end interface 
+end python module _arpack
+
+! This file was auto-generated with f2py (version:2_3198).
+! See http://cens.ioc.ee/projects/f2py2e/

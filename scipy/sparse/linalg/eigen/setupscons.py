@@ -5,6 +5,7 @@ def configuration(parent_package='',top_path=None):
 
     config = Configuration('eigen',parent_package,top_path, setup_name = 'setupscons.py')
 
+    config.add_subpackage(('arpack'))
     config.add_subpackage(('lobpcg'))
 
     return config
