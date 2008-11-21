@@ -50,6 +50,7 @@ class TestInterp1D(TestCase):
         interp1d(self.x10, self.y10, kind='slinear')
         interp1d(self.x10, self.y10, kind='quadratic')
         interp1d(self.x10, self.y10, kind='zero')
+        interp1d(self.x10, self.y10, kind='nearest')
         interp1d(self.x10, self.y10, kind=0)
         interp1d(self.x10, self.y10, kind=1)
         interp1d(self.x10, self.y10, kind=2)
@@ -150,6 +151,24 @@ class TestInterp1D(TestCase):
             np.array([2.4, 5.6, 6.0]),
         )
 
+    def test_nearest(self):
+        """Check the actual implementation of nearest-neighbour interpolation.
+        """
+
+        interp10 = interp1d(self.x10, self.y10, kind='nearest')
+        assert_array_almost_equal(
+            interp10(self.x10),
+            self.y10,
+        )
+        assert_array_almost_equal(
+            interp10(1.2),
+            np.array(1.),
+        )
+        assert_array_almost_equal(
+            interp10([2.4, 5.6, 6.0]),
+            np.array([2., 6., 6.]),
+        )
+
     def _bounds_check(self, kind='linear'):
         """ Test that our handling of out-of-bounds input is correct.
         """
@@ -180,18 +199,19 @@ class TestInterp1D(TestCase):
         raises_bounds_error([0.0, 5.0, 9.0])
 
     def test_bounds(self):
-        for kind in ('linear', 'cubic'):
+        for kind in ('linear', 'cubic', 'nearest',
+                     'slinear', 'zero', 'quadratic'):
             self._bounds_check(kind=kind)
 
-    def _nd_check(self, kind='linear'):
+    def _nd_check_interp(self, kind='linear'):
         """ Check the behavior when the inputs and outputs are multidimensional.
         """
 
         # Multidimensional input.
         interp10 = interp1d(self.x10, self.y10, kind=kind)
         assert_array_almost_equal(
-            interp10(np.array([[3.4, 5.6], [2.4, 7.8]])),
-            np.array([[3.4, 5.6], [2.4, 7.8]]),
+            interp10(np.array([[3., 5.], [2., 7.]])),
+            np.array([[3., 5.], [2., 7.]]),
         )
 
         # Scalar input -> 0-dim scalar array output
@@ -201,55 +221,57 @@ class TestInterp1D(TestCase):
         # Multidimensional outputs.
         interp210 = interp1d(self.x10, self.y210, kind=kind)
         assert_array_almost_equal(
-            interp210(1.5),
-            np.array([1.5, 11.5]),
+            interp210(1.),
+            np.array([1., 11.]),
         )
         assert_array_almost_equal(
-            interp210(np.array([1.5, 2.4])),
-            np.array([[1.5, 2.4],
-                      [11.5, 12.4]]),
+            interp210(np.array([1., 2.])),
+            np.array([[1., 2.],
+                      [11., 12.]]),
         )
 
         interp102 = interp1d(self.x10, self.y102, axis=0, kind=kind)
         assert_array_almost_equal(
-            interp102(1.5),
-            np.array([3.0, 4.0]),
+            interp102(1.),
+            np.array([2.0, 3.0]),
         )
         assert_array_almost_equal(
-            interp102(np.array([1.5, 2.4])),
-            np.array([[3.0, 4.0],
-                      [4.8, 5.8]]),
+            interp102(np.array([1., 3.])),
+            np.array([[2., 3.],
+                      [6., 7.]]),
         )
 
         # Both at the same time!
-        x_new = np.array([[3.4, 5.6], [2.4, 7.8]])
+        x_new = np.array([[3., 5.], [2., 7.]])
         assert_array_almost_equal(
             interp210(x_new),
-            np.array([[[3.4, 5.6], [2.4, 7.8]],
-                      [[13.4, 15.6], [12.4, 17.8]]]),
+            np.array([[[3., 5.], [2., 7.]],
+                      [[13., 15.], [12., 17.]]]),
         )
         assert_array_almost_equal(
             interp102(x_new),
-            np.array([[[6.8, 7.8], [11.2, 12.2]],
-                      [[4.8, 5.8], [15.6, 16.6]]]),
+            np.array([[[6., 7.], [10., 11.]],
+                      [[4., 5.], [14., 15.]]]),
         )
 
-        # Check large ndim output
+    def _nd_check_shape(self, kind='linear'):
+        # Check large ndim output shape
         a = [4, 5, 6, 7]
         y = np.arange(np.prod(a)).reshape(*a)
         for n, s in enumerate(a):
             x = np.arange(s)
             z = interp1d(x, y, axis=n, kind=kind)
-            assert_array_almost_equal(z(x), y)
+            assert_array_almost_equal(z(x), y, err_msg=kind)
 
             x2 = np.arange(2*3*1).reshape((2,3,1)) / 12.
             b = list(a)
             b[n:n+1] = [2,3,1]
-            assert_array_almost_equal(z(x2).shape, b)
+            assert_array_almost_equal(z(x2).shape, b, err_msg=kind)
 
     def test_nd(self):
-        for kind in ('linear', 'cubic'):
-            self._nd_check(kind=kind)
+        for kind in ('linear', 'cubic', 'slinear', 'quadratic', 'nearest'):
+            self._nd_check_interp(kind=kind)
+            self._nd_check_shape(kind=kind)
 
 class TestLagrange(TestCase):
 
