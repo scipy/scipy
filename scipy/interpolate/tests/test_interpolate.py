@@ -23,7 +23,7 @@ class TestInterp2D(TestCase):
         I = interp2d(x, y, z)
         assert_almost_equal(I(1.0, 2.0), sin(2.0), decimal=2)
 
-class TestInterp1D(TestCase):
+class TestInterp1D(object):
 
     def setUp(self):
         self.x10 = np.arange(10.)
@@ -57,22 +57,22 @@ class TestInterp1D(TestCase):
         interp1d(self.x10, self.y10, kind=3)
 
         # x array must be 1D.
-        self.assertRaises(ValueError, interp1d, self.x25, self.y10)
+        assert_raises(ValueError, interp1d, self.x25, self.y10)
 
         # y array cannot be a scalar.
-        self.assertRaises(ValueError, interp1d, self.x10, np.array(0))
+        assert_raises(ValueError, interp1d, self.x10, np.array(0))
 
         # Check for x and y arrays having the same length.
-        self.assertRaises(ValueError, interp1d, self.x10, self.y2)
-        self.assertRaises(ValueError, interp1d, self.x2, self.y10)
-        self.assertRaises(ValueError, interp1d, self.x10, self.y102)
+        assert_raises(ValueError, interp1d, self.x10, self.y2)
+        assert_raises(ValueError, interp1d, self.x2, self.y10)
+        assert_raises(ValueError, interp1d, self.x10, self.y102)
         interp1d(self.x10, self.y210)
         interp1d(self.x10, self.y102, axis=0)
 
         # Check for x and y having at least 1 element.
-        self.assertRaises(ValueError, interp1d, self.x1, self.y10)
-        self.assertRaises(ValueError, interp1d, self.x10, self.y1)
-        self.assertRaises(ValueError, interp1d, self.x1, self.y1)
+        assert_raises(ValueError, interp1d, self.x1, self.y10)
+        assert_raises(ValueError, interp1d, self.x10, self.y1)
+        assert_raises(ValueError, interp1d, self.x1, self.y1)
 
 
     def test_init(self):
@@ -80,24 +80,24 @@ class TestInterp1D(TestCase):
         constructor.
         """
 
-        self.assert_(interp1d(self.x10, self.y10).copy)
-        self.assert_(not interp1d(self.x10, self.y10, copy=False).copy)
-        self.assert_(interp1d(self.x10, self.y10).bounds_error)
-        self.assert_(not interp1d(self.x10, self.y10, bounds_error=False).bounds_error)
-        self.assert_(np.isnan(interp1d(self.x10, self.y10).fill_value))
-        self.assertEqual(
+        assert interp1d(self.x10, self.y10).copy
+        assert not interp1d(self.x10, self.y10, copy=False).copy
+        assert interp1d(self.x10, self.y10).bounds_error
+        assert not interp1d(self.x10, self.y10, bounds_error=False).bounds_error
+        assert np.isnan(interp1d(self.x10, self.y10).fill_value)
+        assert_equal(
             interp1d(self.x10, self.y10, fill_value=3.0).fill_value,
             3.0,
         )
-        self.assertEqual(
+        assert_equal(
             interp1d(self.x10, self.y10).axis,
             0,
         )
-        self.assertEqual(
+        assert_equal(
             interp1d(self.x10, self.y210).axis,
             1,
         )
-        self.assertEqual(
+        assert_equal(
             interp1d(self.x10, self.y102, axis=0).axis,
             0,
         )
@@ -169,6 +169,16 @@ class TestInterp1D(TestCase):
             np.array([2., 6., 6.]),
         )
 
+    @dec.knownfailureif(True, "zero-order splines fail for the last point")
+    def test_zero(self):
+        """Check the actual implementation of zero-order spline interpolation.
+        """
+        interp10 = interp1d(self.x10, self.y10, kind='zero')
+        assert_array_almost_equal(interp10(self.x10), self.y10)
+        assert_array_almost_equal(interp10(1.2), np.array(1.))
+        assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
+                                  np.array([2., 6., 6.]))
+
     def _bounds_check(self, kind='linear'):
         """ Test that our handling of out-of-bounds input is correct.
         """
@@ -194,17 +204,17 @@ class TestInterp1D(TestCase):
 
         raises_bounds_error = interp1d(self.x10, self.y10, bounds_error=True,
                                        kind=kind)
-        self.assertRaises(ValueError, raises_bounds_error, -1.0)
-        self.assertRaises(ValueError, raises_bounds_error, 11.0)
+        assert_raises(ValueError, raises_bounds_error, -1.0)
+        assert_raises(ValueError, raises_bounds_error, 11.0)
         raises_bounds_error([0.0, 5.0, 9.0])
 
     def test_bounds(self):
         for kind in ('linear', 'cubic', 'nearest',
                      'slinear', 'zero', 'quadratic'):
-            self._bounds_check(kind=kind)
+            yield self._bounds_check, kind
 
     def _nd_check_interp(self, kind='linear'):
-        """ Check the behavior when the inputs and outputs are multidimensional.
+        """Check the behavior when the inputs and outputs are multidimensional.
         """
 
         # Multidimensional input.
@@ -215,7 +225,7 @@ class TestInterp1D(TestCase):
         )
 
         # Scalar input -> 0-dim scalar array output
-        self.failUnless(isinstance(interp10(1.2), np.ndarray))
+        assert isinstance(interp10(1.2), np.ndarray)
         assert_equal(interp10(1.2).shape, ())
 
         # Multidimensional outputs.
@@ -270,8 +280,16 @@ class TestInterp1D(TestCase):
 
     def test_nd(self):
         for kind in ('linear', 'cubic', 'slinear', 'quadratic', 'nearest'):
-            self._nd_check_interp(kind=kind)
-            self._nd_check_shape(kind=kind)
+            yield self._nd_check_interp, kind
+            yield self._nd_check_shape, kind
+
+    @dec.knownfailureif(True, "zero-order splines fail for the last point")
+    def test_nd_zero_spline(self):
+        # zero-order splines don't get the last point right,
+        # see test_zero above
+        #yield self._nd_check_interp, 'zero'
+        #yield self._nd_check_interp, 'zero'
+        pass
 
 class TestLagrange(TestCase):
 
