@@ -96,6 +96,7 @@ def make_system(A, M, x0, b, xtype=None):
                 raise ValueError, "xtype must be 'f', 'd', 'F', or 'D'"
 
     b = asarray(b,dtype=xtype) #make b the same type as x
+    b = b.ravel()
 
     if x0 is None:
         x = zeros(N, dtype=xtype)
