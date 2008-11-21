@@ -216,6 +216,10 @@ class interp1d(object):
         if y.ndim == 0:
             raise ValueError("the y array must have at least one dimension.")
 
+        # Force-cast y to a floating-point type, if it's not yet one
+        if not isinstance(y.dtype.type, np.inexact):
+            y = y.astype(np.float_)
+
         # Normalize the axis to ensure that it is positive.
         self.axis = axis % len(y.shape)
         self._kind = kind

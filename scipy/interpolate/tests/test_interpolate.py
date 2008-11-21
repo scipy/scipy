@@ -208,10 +208,19 @@ class TestInterp1D(object):
         assert_raises(ValueError, raises_bounds_error, 11.0)
         raises_bounds_error([0.0, 5.0, 9.0])
 
+    def _bounds_check_int_nan_fill(self, kind='linear'):
+        x = np.arange(10).astype(np.int_)
+        y = np.arange(10).astype(np.int_)
+        c = interp1d(x, y, kind=kind, fill_value=np.nan, bounds_error=False)
+        yi = c(x - 1)
+        assert np.isnan(yi[0])
+        assert_array_almost_equal(yi, np.r_[np.nan, y[:-1]])
+
     def test_bounds(self):
         for kind in ('linear', 'cubic', 'nearest',
                      'slinear', 'zero', 'quadratic'):
             yield self._bounds_check, kind
+            yield self._bounds_check_int_nan_fill, kind
 
     def _nd_check_interp(self, kind='linear'):
         """Check the behavior when the inputs and outputs are multidimensional.
