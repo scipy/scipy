@@ -8,7 +8,7 @@ __all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
 
 from numpy import shape, sometrue, rank, array, transpose, searchsorted, \
                   ones, logical_or, atleast_1d, atleast_2d, meshgrid, ravel, \
-                  dot, poly1d, asarray
+                  dot, poly1d, asarray, intp
 import numpy as np
 import scipy.special as spec
 import math
@@ -198,14 +198,14 @@ class interp1d(object):
         self.bounds_error = bounds_error
         self.fill_value = fill_value
 
-        if kind in ['zero', 'slinear', 'quadratic', 'cubic', 'nearest']:
+        if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
             order = {'nearest':0, 'zero':0,'slinear':1,
                      'quadratic':2, 'cubic':3}[kind]
             kind = 'spline'
         elif isinstance(kind, int):
             order = kind
             kind = 'spline'
-        elif kind != 'linear':
+        elif kind not in ('linear', 'nearest'):
             raise NotImplementedError("%s is unsupported: Use fitpack "\
                                       "routines for other types." % kind)
         x = array(x, copy=self.copy)
@@ -220,7 +220,7 @@ class interp1d(object):
         self.axis = axis % len(y.shape)
         self._kind = kind
 
-        if kind == 'linear':
+        if kind in ('linear', 'nearest'):
             # Make a "view" of the y array that is rotated to the interpolation
             # axis.
             axes = range(y.ndim)
@@ -229,7 +229,11 @@ class interp1d(object):
             oriented_y = y.transpose(axes)
             minval = 2
             len_y = oriented_y.shape[-1]
-            self._call = self._call_linear
+            if kind == 'linear':
+                self._call = self._call_linear
+            elif kind == 'nearest':
+                self.x_bds = (x[1:] + x[:-1]) / 2.0
+                self._call = self._call_nearest
         else:
             axes = range(y.ndim)
             del axes[self.axis]
@@ -242,10 +246,10 @@ class interp1d(object):
 
         len_x = len(x)
         if len_x != len_y:
-            raise ValueError("x and y arrays must be equal in length along"
-            "interpolation axis.")
+            raise ValueError("x and y arrays must be equal in length along "
+                             "interpolation axis.")
         if len_x < minval:
-            raise ValueError("x and y arrays must have at " \
+            raise ValueError("x and y arrays must have at "
                              "least %d entries" % minval)
         self.x = x
         self.y = oriented_y
@@ -277,6 +281,23 @@ class interp1d(object):
 
         # 5. Calculate the actual value for each entry in x_new.
         y_new = slope*(x_new-x_lo) + y_lo
+
+        return y_new
+
+    def _call_nearest(self, x_new):
+        """ Find nearest neighbour interpolated y_new = f(x_new)."""
+
+        # 2. Find where in the averaged data the values to interpolate
+        #    would be inserted.
+        #    Note: use side='left' (right) to searchsorted() to define the
+        #    halfway point to be nearest to the left (right) neighbour
+        x_new_indices = searchsorted(self.x_bds, x_new, side='left')
+
+        # 3. Clip x_new_indices so that they are within the range of x indices.
+        x_new_indices = x_new_indices.clip(0,  len(self.x)-1).astype(intp)
+
+        # 4. Calculate the actual value for each entry in x_new.
+        y_new = self.y[..., x_new_indices]
 
         return y_new
 
@@ -327,7 +348,7 @@ class interp1d(object):
                 else:
                     y_new[...] = self.fill_value
             return asarray(y_new)
-        elif self._kind == 'linear':
+        elif self._kind in ('linear', 'nearest'):
             y_new[..., out_of_bounds] = self.fill_value
             axes = range(ny - nx)
             axes[self.axis:self.axis] = range(ny - nx, ny)
