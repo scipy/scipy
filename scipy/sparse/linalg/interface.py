@@ -121,13 +121,19 @@ class LinearOperator:
             raise ValueError('dimension mismatch')
 
         y = self._matvec(x)
-
-        if x.ndim == 2:
-            # If 'x' is a column vector, reshape the result
-            y = y.reshape(-1,1)
-
+        
         if isinstance(x, np.matrix):
             y = np.asmatrix(y)
+        else:
+            y = np.asarray(y)
+
+        if x.ndim == 1:
+            y = y.reshape(M)
+        elif x.ndim == 2:
+            y = y.reshape(M,1)
+        else:
+            raise ValueError('invalid shape returned by user-defined matvec()')
+
 
         return y
 

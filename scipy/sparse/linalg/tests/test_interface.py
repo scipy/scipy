@@ -10,35 +10,45 @@ from scipy.sparse.linalg.interface import *
 
 
 class TestLinearOperator(TestCase):
+    def setUp(self):
+        self.matvecs = []
+
+        # these matvecs do not preserve type or shape
+        def matvec1(x):
+            return np.array([ 1*x[0] + 2*x[1] + 3*x[2],
+                              4*x[0] + 5*x[1] + 6*x[2]])
+        def matvec2(x):
+            return np.matrix(matvec1(x).reshape(2,1))
+
+        self.matvecs.append(matvec1)
+        self.matvecs.append(matvec2)
+
     def test_matvec(self):
-        def matvec(x):
-            # note, this matvec does not preserve type or shape
-            y = np.array([ 1*x[0] + 2*x[1] + 3*x[2],
-                           4*x[0] + 5*x[1] + 6*x[2]])
-            return y
 
-        A = LinearOperator((2,3), matvec)
-
-        assert_equal(A.matvec(np.array([1,2,3])),       [14,32])
-        assert_equal(A.matvec(np.array([[1],[2],[3]])), [[14],[32]])
-        assert_equal(A * np.array([1,2,3]),             [14,32])
-        assert_equal(A * np.array([[1],[2],[3]]),       [[14],[32]])
+        for matvec in self.matvecs:
+            A = LinearOperator((2,3), matvec)
+    
+            assert_equal(A.matvec(np.array([1,2,3])),       [14,32])
+            assert_equal(A.matvec(np.array([[1],[2],[3]])), [[14],[32]])
+            assert_equal(A * np.array([1,2,3]),             [14,32])
+            assert_equal(A * np.array([[1],[2],[3]]),       [[14],[32]])
+            
+            assert_equal(A.matvec(np.matrix([[1],[2],[3]])), [[14],[32]])
+            assert_equal(A * np.matrix([[1],[2],[3]]),       [[14],[32]])
+    
+            assert( isinstance(A.matvec(np.array([1,2,3])),       np.ndarray) )
+            assert( isinstance(A.matvec(np.array([[1],[2],[3]])), np.ndarray) )
+            assert( isinstance(A * np.array([1,2,3]),             np.ndarray) )
+            assert( isinstance(A * np.array([[1],[2],[3]]),       np.ndarray) )
+    
+            assert( isinstance(A.matvec(np.matrix([[1],[2],[3]])), np.ndarray) )
+            assert( isinstance(A * np.matrix([[1],[2],[3]]),       np.ndarray) )
+    
+            assert_raises(ValueError, A.matvec, np.array([1,2]))
+            assert_raises(ValueError, A.matvec, np.array([1,2,3,4]))
+            assert_raises(ValueError, A.matvec, np.array([[1],[2]]))
+            assert_raises(ValueError, A.matvec, np.array([[1],[2],[3],[4]]))
         
-        assert_equal(A.matvec(np.matrix([[1],[2],[3]])), [[14],[32]])
-        assert_equal(A * np.matrix([[1],[2],[3]]),       [[14],[32]])
-
-        assert( isinstance(A.matvec(np.array([1,2,3])),       np.ndarray) )
-        assert( isinstance(A.matvec(np.array([[1],[2],[3]])), np.ndarray) )
-        assert( isinstance(A * np.array([1,2,3]),             np.ndarray) )
-        assert( isinstance(A * np.array([[1],[2],[3]]),       np.ndarray) )
-
-        assert( isinstance(A.matvec(np.matrix([[1],[2],[3]])), np.ndarray) )
-        assert( isinstance(A * np.matrix([[1],[2],[3]]),       np.ndarray) )
-
-        assert_raises(ValueError, A.matvec, np.array([1,2]))
-        assert_raises(ValueError, A.matvec, np.array([1,2,3,4]))
-        assert_raises(ValueError, A.matvec, np.array([[1],[2]]))
-        assert_raises(ValueError, A.matvec, np.array([[1],[2],[3],[4]]))
 
 
 class TestAsLinearOperator(TestCase):
