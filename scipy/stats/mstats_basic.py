@@ -13,6 +13,7 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['argstoarray',
            'betai',
+           'cov',  # from np.ma
            'chisquare','count_tied_groups',
            'describe',
            'f_oneway','f_value_wilks_lambda','find_repeats','friedmanchisquare',
@@ -47,11 +48,12 @@ import itertools
 import warnings
 
 
-import scipy.stats as stats
+#import scipy.stats as stats
+import stats
 import scipy.special as special
 import scipy.misc as misc
-import scipy.stats.futil as futil
-
+#import scipy.stats.futil as futil
+import futil
 
 genmissingvaldoc = """
 Notes

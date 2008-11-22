@@ -10,7 +10,7 @@ __author__ = "Pierre GF Gerard-Marchant"
 __docformat__ = "restructuredtext en"
 
 
-__all__ = ['compare_median_ms',
+__all__ = ['compare_medians_ms',
            'hdquantiles', 'hdmedian', 'hdquantiles_sd',
            'idealfourths',
            'median_cihs','mjci','mquantiles_cimj',
@@ -23,7 +23,7 @@ from numpy import float_, int_, ndarray
 import numpy.ma as ma
 from numpy.ma import MaskedArray
 
-import scipy.stats.mstats as mstats
+import mstats_basic as mstats
 
 from scipy.stats.distributions import norm, beta, t, binom
 

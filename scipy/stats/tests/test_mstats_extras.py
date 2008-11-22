@@ -11,7 +11,7 @@ import numpy as np
 import numpy.ma as ma
 
 import scipy.stats.mstats as ms
-import scipy.stats.mmorestats as mms
+#import scipy.stats.mmorestats as mms
 
 from numpy.testing import *
 
@@ -25,29 +25,29 @@ class TestMisc(TestCase):
         "Tests the Marits-Jarrett estimator"
         data = ma.array([ 77, 87, 88,114,151,210,219,246,253,262,
                           296,299,306,376,428,515,666,1310,2611])
-        assert_almost_equal(mms.mjci(data),[55.76819,45.84028,198.87875],5)
+        assert_almost_equal(ms.mjci(data),[55.76819,45.84028,198.87875],5)
     #
     def test_trimmedmeanci(self):
         "Tests the confidence intervals of the trimmed mean."
         data = ma.array([545,555,558,572,575,576,578,580,
                          594,605,635,651,653,661,666])
         assert_almost_equal(ms.trimmed_mean(data,0.2), 596.2, 1)
-        assert_equal(np.round(mms.trimmed_mean_ci(data,(0.2,0.2)),1),
+        assert_equal(np.round(ms.trimmed_mean_ci(data,(0.2,0.2)),1),
                      [561.8, 630.6])
     #
     def test_idealfourths(self):
         "Tests ideal-fourths"
         test = np.arange(100)
-        assert_almost_equal(np.asarray(mms.idealfourths(test)),
+        assert_almost_equal(np.asarray(ms.idealfourths(test)),
                             [24.416667,74.583333],6)
         test_2D = test.repeat(3).reshape(-1,3)
-        assert_almost_equal(mms.idealfourths(test_2D, axis=0),
+        assert_almost_equal(ms.idealfourths(test_2D, axis=0),
                             [[24.416667,24.416667,24.416667],
                              [74.583333,74.583333,74.583333]],6)
-        assert_almost_equal(mms.idealfourths(test_2D, axis=1),
+        assert_almost_equal(ms.idealfourths(test_2D, axis=1),
                             test.repeat(2).reshape(-1,2))
         test = [0,0]
-        _result = mms.idealfourths(test)
+        _result = ms.idealfourths(test)
         assert(np.isnan(_result).all())
 
 #..............................................................................
@@ -78,22 +78,22 @@ class TestQuantiles(TestCase):
             0.827928620,0.480283781,0.594514455,0.213641488,0.024194386,
             0.536668589,0.699497811,0.892804071,0.093835427,0.731107772]
         #
-        assert_almost_equal(mms.hdquantiles(data,[0., 1.]),
+        assert_almost_equal(ms.hdquantiles(data,[0., 1.]),
                             [0.006514031, 0.995309248])
-        hdq = mms.hdquantiles(data,[0.25, 0.5, 0.75])
+        hdq = ms.hdquantiles(data,[0.25, 0.5, 0.75])
         assert_almost_equal(hdq, [0.253210762, 0.512847491, 0.762232442,])
-        hdq = mms.hdquantiles_sd(data,[0.25, 0.5, 0.75])
+        hdq = ms.hdquantiles_sd(data,[0.25, 0.5, 0.75])
         assert_almost_equal(hdq, [0.03786954, 0.03805389, 0.03800152,], 4)
         #
         data = np.array(data).reshape(10,10)
-        hdq = mms.hdquantiles(data,[0.25,0.5,0.75],axis=0)
-        assert_almost_equal(hdq[:,0], mms.hdquantiles(data[:,0],[0.25,0.5,0.75]))
-        assert_almost_equal(hdq[:,-1], mms.hdquantiles(data[:,-1],[0.25,0.5,0.75]))
-        hdq = mms.hdquantiles(data,[0.25,0.5,0.75],axis=0,var=True)
+        hdq = ms.hdquantiles(data,[0.25,0.5,0.75],axis=0)
+        assert_almost_equal(hdq[:,0], ms.hdquantiles(data[:,0],[0.25,0.5,0.75]))
+        assert_almost_equal(hdq[:,-1], ms.hdquantiles(data[:,-1],[0.25,0.5,0.75]))
+        hdq = ms.hdquantiles(data,[0.25,0.5,0.75],axis=0,var=True)
         assert_almost_equal(hdq[...,0],
-                            mms.hdquantiles(data[:,0],[0.25,0.5,0.75],var=True))
+                            ms.hdquantiles(data[:,0],[0.25,0.5,0.75],var=True))
         assert_almost_equal(hdq[...,-1],
-                            mms.hdquantiles(data[:,-1],[0.25,0.5,0.75], var=True))
+                            ms.hdquantiles(data[:,-1],[0.25,0.5,0.75], var=True))
 
 
 ###############################################################################
