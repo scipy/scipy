@@ -331,6 +331,20 @@ def centroid(y):
     Performs centroid/UPGMC linkage. See ``linkage`` for more
     information on the return structure and algorithm.
 
+    The following are common calling conventions:
+
+    1. Z = centroid(y)
+
+       Performs centroid/UPGMC linkage on the condensed distance
+       matrix ``y``.  See ``linkage`` for more information on the return
+       structure and algorithm.
+
+    2. Z = centroid(X)
+
+       Performs centroid/UPGMC linkage on the observation matrix ``X``
+       using Euclidean distance as the distance metric. See ``linkage``
+       for more information on the return structure and algorithm.
+
     :Parameters:
         Q : ndarray
             A condensed or redundant distance matrix. A condensed
@@ -346,21 +360,6 @@ def centroid(y):
             the ``linkage`` function documentation for more information
             on its structure.
 
-    Calling Conventions
-    -------------------
-
-    1. Z = centroid(y)
-
-       Performs centroid/UPGMC linkage on the condensed distance
-       matrix ``y``.  See ``linkage`` for more information on the return
-       structure and algorithm.
-
-    2. Z = centroid(X)
-
-       Performs centroid/UPGMC linkage on the observation matrix ``X``
-       using Euclidean distance as the distance metric. See ``linkage``
-       for more information on the return structure and algorithm.
-
     :SeeAlso:
        - linkage: for advanced creation of hierarchical clusterings.
     """
@@ -371,17 +370,7 @@ def median(y):
     Performs median/WPGMC linkage. See ``linkage`` for more
     information on the return structure and algorithm.
 
-    :Parameters:
-        Q : ndarray
-            A condensed or redundant distance matrix. A condensed
-            distance matrix is a flat array containing the upper
-            triangular of the distance matrix. This is the form that
-            ``pdist`` returns. Alternatively, a collection of
-            m observation vectors in n dimensions may be passed as
-            a m by n array.
-
-    Calling Conventions
-    -------------------
+    The following are common calling conventions:
 
     1. Z = median(y)
 
@@ -395,6 +384,19 @@ def median(y):
        using Euclidean distance as the distance metric. See linkage
        for more information on the return structure and algorithm.
 
+    :Parameters:
+        Q : ndarray
+            A condensed or redundant distance matrix. A condensed
+            distance matrix is a flat array containing the upper
+            triangular of the distance matrix. This is the form that
+            ``pdist`` returns. Alternatively, a collection of
+            m observation vectors in n dimensions may be passed as
+            a m by n array.
+
+    :Returns:
+       - Z : ndarray
+           The hierarchical clustering encoded as a linkage matrix.
+
     :SeeAlso:
        - linkage: for advanced creation of hierarchical clusterings.
     """
@@ -406,17 +408,7 @@ def ward(y):
     matrix. See linkage for more information on the return structure
     and algorithm.
 
-    :Parameters:
-        Q : ndarray
-            A condensed or redundant distance matrix. A condensed
-            distance matrix is a flat array containing the upper
-            triangular of the distance matrix. This is the form that
-            ``pdist`` returns. Alternatively, a collection of
-            m observation vectors in n dimensions may be passed as
-            a m by n array.
-
-    Calling Conventions
-    -------------------
+    The following are common calling conventions:
 
     1. Z = ward(y)
        Performs Ward's linkage on the condensed distance matrix Z. See
@@ -427,6 +419,19 @@ def ward(y):
        Performs Ward's linkage on the observation matrix X using
        Euclidean distance as the distance metric. See linkage for more
        information on the return structure and algorithm.
+
+    :Parameters:
+        Q : ndarray
+            A condensed or redundant distance matrix. A condensed
+            distance matrix is a flat array containing the upper
+            triangular of the distance matrix. This is the form that
+            ``pdist`` returns. Alternatively, a collection of
+            m observation vectors in n dimensions may be passed as
+            a m by n array.
+
+    :Returns:
+       - Z : ndarray
+           The hierarchical clustering encoded as a linkage matrix.
 
     :SeeAlso:
        - linkage: for advanced creation of hierarchical clusterings.
@@ -476,111 +481,109 @@ def linkage(y, method='single', metric='euclidean'):
     combined to form cluster :math:`u`. Let :math:`v` be any
     remaining cluster in the forest that is not :math:`u`.
 
+    The following are methods for calculating the distance between the
+    newly formed cluster :math:`u` and each :math:`v`.
+
+     * method=``single`` assigns
+
+       .. math::
+          d(u,v) = \min(dist(u[i],v[j]))
+
+       for all points :math:`i` in cluster :math:`u` and
+       :math:`j` in cluster :math:`v`. This is also known as the
+       Nearest Point Algorithm.
+
+     * method=``complete`` assigns
+
+       .. math::
+          d(u, v) = \max(dist(u[i],v[j]))
+
+       for all points :math:`i` in cluster u and :math:`j` in
+       cluster :math:`v`. This is also known by the Farthest Point
+       Algorithm or Voor Hees Algorithm.
+
+     * method=``average`` assigns
+
+       .. math::
+          d(u,v) = \sum_{ij} \frac{d(u[i], v[j])}
+                                  {(|u|*|v|)
+
+       for all points :math:`i` and :math:`j` where :math:`|u|`
+       and :math:`|v|` are the cardinalities of clusters :math:`u`
+       and :math:`v`, respectively. This is also called the UPGMA
+       algorithm. This is called UPGMA.
+
+     * method='weighted' assigns
+
+       .. math::
+          d(u,v) = (dist(s,v) + dist(t,v))/2
+
+       where cluster u was formed with cluster s and t and v
+       is a remaining cluster in the forest. (also called WPGMA)
+
+     * method='centroid' assigns
+
+       .. math::
+          dist(s,t) = euclid(c_s, c_t)
+
+       where :math:`c_s` and :math:`c_t` are the centroids of
+       clusters :math:`s` and :math:`t`, respectively. When two
+       clusters :math:`s` and :math:`t` are combined into a new
+       cluster :math:`u`, the new centroid is computed over all the
+       original objects in clusters :math:`s` and :math:`t`. The
+       distance then becomes the Euclidean distance between the
+       centroid of :math:`u` and the centroid of a remaining cluster
+       :math:`v` in the forest. This is also known as the UPGMC
+       algorithm.
+
+     * method='median' assigns math:`$d(s,t)$` like the ``centroid``
+       method. When two clusters s and t are combined into a new
+       cluster :math:`u`, the average of centroids s and t give the
+       new centroid :math:`u`. This is also known as the WPGMC
+       algorithm.
+
+     * method='ward' uses the Ward variance minimization algorithm.
+       The new entry :math:`d(u,v)` is computed as follows,
+
+       .. math::
+
+          d(u,v) = \sqrt{\frac{|v|+|s|}
+                              {T}d(v,s)^2
+                       + \frac{|v|+|t|}
+                              {T}d(v,t)^2
+                       + \frac{|v|}
+                              {T}d(s,t)^2}
+
+       where :math:`u` is the newly joined cluster consisting of
+       clusters :math:`s` and :math:`t`, :math:`v` is an unused
+       cluster in the forest, :math:`T=|v|+|s|+|t|`, and
+       :math:`|*|` is the cardinality of its argument. This is also
+       known as the incremental algorithm.
+
+    Warning: When the minimum distance pair in the forest is chosen, there may
+    be two or more pairs with the same minimum distance. This
+    implementation may chose a different minimum than the MATLAB(TM)
+    version.
+
     :Parameters:
-       Q : ndarray
+       - Q : ndarray
            A condensed or redundant distance matrix. A condensed
            distance matrix is a flat array containing the upper
            triangular of the distance matrix. This is the form that
            ``pdist`` returns. Alternatively, a collection of
            :math:`m` observation vectors in n dimensions may be passed as
            a :math:`m` by :math:`n` array.
-       method : string
+       - method : string
            The linkage algorithm to use. See the ``Linkage Methods``
            section below for full descriptions.
-       metric : string
+       - metric : string
            The distance metric to use. See the ``distance.pdist``
            function for a list of valid distance metrics.
 
-    Linkage Methods
-    ---------------
+   :Returns:
 
-    The following are methods for calculating the distance between the
-    newly formed cluster :math:`u` and each :math:`v`.
-
-    * method=``single`` assigns
-
-      .. math:
-         d(u,v) = \min(dist(u[i],v[j]))
-
-      for all points :math:`i` in cluster :math:`u` and
-      :math:`j` in cluster :math:`v`. This is also known as the
-      Nearest Point Algorithm.
-
-    * method=``complete`` assigns
-
-      .. math:
-         d(u, v) = \max(dist(u[i],v[j]))
-
-      for all points :math:`i` in cluster u and :math:`j` in
-      cluster :math:`v`. This is also known by the Farthest Point
-      Algorithm or Voor Hees Algorithm.
-
-    * method=``average`` assigns
-
-      .. math:
-         d(u,v) = \sum_{ij} \frac{d(u[i], v[j])}
-                                 {(|u|*|v|)
-
-      for all points :math:`i` and :math:`j` where :math:`|u|`
-      and :math:`|v|` are the cardinalities of clusters :math:`u`
-      and :math:`v`, respectively. This is also called the UPGMA
-      algorithm. This is called UPGMA.
-
-    * method='weighted' assigns
-
-      .. math:
-         d(u,v) = (dist(s,v) + dist(t,v))/2
-
-      where cluster u was formed with cluster s and t and v
-      is a remaining cluster in the forest. (also called WPGMA)
-
-
-    * method='centroid' assigns
-
-      .. math:
-         dist(s,t) = euclid(c_s, c_t)
-
-      where :math:`c_s` and :math:`c_t` are the centroids of
-      clusters :math:`s` and :math:`t`, respectively. When two
-      clusters :math:`s` and :math:`t` are combined into a new
-      cluster :math:`u`, the new centroid is computed over all the
-      original objects in clusters :math:`s` and :math:`t`. The
-      distance then becomes the Euclidean distance between the
-      centroid of :math:`u` and the centroid of a remaining cluster
-      :math:`v` in the forest. This is also known as the UPGMC
-      algorithm.
-
-    * method='median' assigns math:`$d(s,t)$` like the ``centroid``
-      method. When two clusters s and t are combined into a new
-      cluster :math:`u`, the average of centroids s and t give the
-      new centroid :math:`u`. This is also known as the WPGMC
-      algorithm.
-
-    * method='ward' uses the Ward variance minimization algorithm.
-      The new entry :math:`d(u,v)` is computed as follows,
-
-      .. math:
-
-         d(u,v) = \sqrt{\frac{|v|+|s|}
-                             {T}d(v,s)^2
-                      + \frac{|v|+|t|}
-                             {T}d(v,t)^2
-                      + \frac{|v|}
-                             {T}d(s,t)^2}
-
-      where :math:`u` is the newly joined cluster consisting of
-      clusters :math:`s` and :math:`t`, :math:`v` is an unused
-      cluster in the forest, :math:`T=|v|+|s|+|t|`, and
-      :math:`|*|` is the cardinality of its argument. This is also
-      known as the incremental algorithm.
-
-   Warning
-   -------
-
-   When the minimum distance pair in the forest is chosen, there may
-   be two or more pairs with the same minimum distance. This
-   implementation may chose a different minimum than the MATLAB(TM)
-   version.
+       - Z : ndarray
+           The hierarchical clustering encoded as a linkage matrix.
    """
     if not isinstance(method, str):
         raise TypeError("Argument 'method' must be a string.")
@@ -788,6 +791,10 @@ def to_tree(Z, rd=False):
     the ClusterNode object is a leaf node, its count must be 1, and its
     distance is meaningless but set to 0.
 
+    Note: This function is provided for the convenience of the library
+    user. ClusterNodes are not used as input to any of the functions in this
+    library.
+
     :Parameters:
 
        - Z : ndarray
@@ -807,9 +814,6 @@ def to_tree(Z, rd=False):
         - L : list
           The pre-order traversal.
 
-    Note: This function is provided for the convenience of the library
-    user. ClusterNodes are not used as input to any of the functions in this
-    library.
     """
 
     Z = np.asarray(Z, order='c')
@@ -945,6 +949,9 @@ def inconsistent(Z, d=2):
     r"""
     Calculates inconsistency statistics on a linkage.
 
+    Note: This function behaves similarly to the MATLAB(TM)
+    inconsistent function.
+
     :Parameters:
        - d : int
            The number of links up to ``d`` levels below each
@@ -971,9 +978,6 @@ def inconsistent(Z, d=2):
            
                \frac{\mathtt{Z[i,2]}-\mathtt{R[i,0]}}
                     {R[i,1]}.
-
-    This function behaves similarly to the MATLAB(TM) inconsistent
-    function.
     """
     Z = np.asarray(Z, order='c')
 

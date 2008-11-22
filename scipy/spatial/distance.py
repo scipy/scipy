@@ -283,10 +283,10 @@ def cosine(u, v):
     Computes the Cosine distance between two n-vectors u and v, which
     is defined as
 
-      .. math::
+    .. math::
 
-         \frac{1-uv^T}
-              {||u||_2 ||v||_2}.
+       \frac{1-uv^T}
+            {||u||_2 ||v||_2}.
 
     :Parameters:
        u : ndarray
@@ -341,7 +341,7 @@ def hamming(u, v):
     ``u`` and ``v``. If ``u`` and ``v`` are boolean vectors, the Hamming
     distance is
 
-    .. math:
+    .. math::
 
        \frac{c_{01} + c_{10}}{n}
 
@@ -398,7 +398,7 @@ def kulsinski(u, v):
     Computes the Kulsinski dissimilarity between two boolean n-vectors
     u and v, which is defined as
 
-    .. math:
+    .. math::
 
        \frac{c_{TF} + c_{FT} - c_{TT} + n}
             {c_{FT} + c_{TF} + n}
@@ -453,7 +453,7 @@ def cityblock(u, v):
     Computes the Manhattan distance between two n-vectors u and v,
     which is defined as
 
-    .. math:
+    .. math::
 
        \sum_i {u_i-v_i}.
 
@@ -476,7 +476,8 @@ def mahalanobis(u, v, VI):
     Computes the Mahalanobis distance between two n-vectors ``u`` and ``v``,
     which is defiend as
 
-    .. math:
+    .. math::
+
        (u-v)V^{-1}(u-v)^T
 
     where ``VI`` is the inverse covariance matrix :math:`V^{-1}`.
@@ -501,7 +502,8 @@ def chebyshev(u, v):
     Computes the Chebyshev distance between two n-vectors u and v,
     which is defined as
 
-    .. math:
+    .. math::
+
        \max_i {|u_i-v_i|}.
 
     :Parameters:
@@ -523,7 +525,7 @@ def braycurtis(u, v):
     Computes the Bray-Curtis distance between two n-vectors ``u`` and
     ``v``, which is defined as
 
-    .. math:
+    .. math::
 
        \sum{|u_i-v_i|} / \sum{|u_i+v_i|}.
 
@@ -546,7 +548,7 @@ def canberra(u, v):
     Computes the Canberra distance between two n-vectors u and v,
     which is defined as
 
-    .. math:
+    .. math::
 
        \frac{\sum_i {|u_i-v_i|}}
             {\sum_i {|u_i|+|v_i|}}.
@@ -610,7 +612,7 @@ def yule(u, v):
     which is defined as
 
 
-    .. math:
+    .. math::
 
          \frac{R}
          \frac{c_{TT} + c_{FF} + \frac{R}{2}}
@@ -639,7 +641,7 @@ def matching(u, v):
     Computes the Matching dissimilarity between two boolean n-vectors
     u and v, which is defined as
 
-    .. math:
+    .. math::
 
        \frac{c_{TF} + c_{FT}}{n}
 
@@ -667,7 +669,7 @@ def dice(u, v):
     Computes the Dice dissimilarity between two boolean n-vectors
     ``u`` and ``v``, which is
 
-    .. math:
+    .. math::
 
          \frac{c_{TF} + c_{FT}}
               {2c_{TT} + c_{FT} + c_{TF}}
@@ -700,7 +702,7 @@ def rogerstanimoto(u, v):
     Computes the Rogers-Tanimoto dissimilarity between two boolean
     n-vectors ``u`` and ``v``, which is defined as
 
-    .. math:
+    .. math::
        \frac{R}
             {c_{TT} + c_{FF} + R}
 
@@ -729,7 +731,7 @@ def russellrao(u, v):
     Computes the Russell-Rao dissimilarity between two boolean n-vectors
     ``u`` and ``v``, which is defined as
 
-    .. math:
+    .. math::
 
       \frac{n - c_{TT}}
            {n}
@@ -761,7 +763,7 @@ def sokalmichener(u, v):
     Computes the Sokal-Michener dissimilarity between two boolean vectors
     ``u`` and ``v``, which is defined as
 
-    .. math:
+    .. math::
 
        \frac{2R}
             {S + 2R}
@@ -797,7 +799,7 @@ def sokalsneath(u, v):
     Computes the Sokal-Sneath dissimilarity between two boolean vectors
     ``u`` and ``v``,
 
-    .. math:
+    .. math::
 
        \frac{2R}
             {c_{TT} + 2R}
@@ -838,32 +840,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
     this entry or to convert the condensed distance matrix to a
     redundant square matrix.
 
-    :Parameters:
-       X : ndarray
-           An m by n array of m original observations in an
-           n-dimensional space.
-       metric : string or function
-           The distance metric to use. The distance function can
-           be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
-           'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
-           'jaccard', 'kulsinski', 'mahalanobis', 'matching',
-           'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
-           'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'.
-       w : ndarray
-           The weight vector (for weighted Minkowski).
-       p : double
-           The p-norm to apply (for Minkowski, weighted and unweighted)
-       V : ndarray
-           The variance vector (for standardized Euclidean).
-       VI : ndarray
-           The inverse of the covariance matrix (for Mahalanobis).
-
-    :Returns:
-       Y : ndarray
-           A condensed distance matrix.
-
-    Calling Conventions
-    -------------------
+    The following are common calling conventions.
 
     1. ``Y = pdist(X, 'euclidean')``
 
@@ -886,9 +863,9 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
        Computes the standardized Euclidean distance. The standardized
        Euclidean distance between two n-vectors ``u`` and ``v`` is
 
-       .. math:
+       .. math::
 
-          sqrt(\sum {(u_i-v_i)^2 / V[x_i]}).
+          \sqrt{\sum {(u_i-v_i)^2 / V[x_i]}}.
 
        V is the variance vector; V[i] is the variance computed over all
           the i'th components of the points. If not passed, it is
@@ -903,7 +880,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
 
        Computes the cosine distance between vectors u and v,
 
-       .. math:
+       .. math::
 
           \frac{1 - uv^T}
                {{|u|}_2 {|v|}_2}
@@ -914,7 +891,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
 
        Computes the correlation distance between vectors u and v. This is
 
-       .. math:
+       .. math::
 
           \frac{1 - (u - \bar{u})(v - \bar{v})^T}
                {{|(u - \bar{u})|}{|(v - \bar{v})|}^T}
@@ -942,7 +919,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
        maximum norm-1 distance between their respective elements. More
        precisely, the distance is given by
 
-       .. math:
+       .. math::
 
           d(u,v) = max_i {|u_i-v_i|}.
 
@@ -951,7 +928,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
        Computes the Canberra distance between the points. The
        Canberra distance between two points ``u`` and ``v`` is
 
-       .. math:
+       .. math::
 
          d(u,v) = \sum_u {|u_i-v_i|}
                          {|u_i|+|v_i|}
@@ -963,7 +940,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
        Bray-Curtis distance between two points ``u`` and ``v`` is
 
 
-       .. math:
+       .. math::
 
             d(u,v) = \frac{\sum_i {u_i-v_i}}
                           {\sum_i {u_i+v_i}}
@@ -1042,6 +1019,31 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
        efficient, and we call it using the following syntax.::
 
          dm = pdist(X, 'sokalsneath')
+
+    :Parameters:
+       X : ndarray
+           An m by n array of m original observations in an
+           n-dimensional space.
+       metric : string or function
+           The distance metric to use. The distance function can
+           be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
+           'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
+           'jaccard', 'kulsinski', 'mahalanobis', 'matching',
+           'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
+           'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'.
+       w : ndarray
+           The weight vector (for weighted Minkowski).
+       p : double
+           The p-norm to apply (for Minkowski, weighted and unweighted)
+       V : ndarray
+           The variance vector (for standardized Euclidean).
+       VI : ndarray
+           The inverse of the covariance matrix (for Mahalanobis).
+
+    :Returns:
+       Y : ndarray
+           A condensed distance matrix.
+
 
        """
 
@@ -1592,9 +1594,9 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
        Computes the standardized Euclidean distance. The standardized
        Euclidean distance between two n-vectors ``u`` and ``v`` is
 
-       .. math:
+       .. math::
 
-          sqrt(\sum {(u_i-v_i)^2 / V[x_i]}).
+          \sqrt{\sum {(u_i-v_i)^2 / V[x_i]}}.
 
        V is the variance vector; V[i] is the variance computed over all
           the i'th components of the points. If not passed, it is
@@ -1609,7 +1611,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        Computes the cosine distance between vectors u and v,
 
-       .. math:
+       .. math::
 
           \frac{1 - uv^T}
                {{|u|}_2 {|v|}_2}
@@ -1620,7 +1622,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        Computes the correlation distance between vectors u and v. This is
 
-       .. math:
+       .. math::
 
           \frac{1 - (u - n{|u|}_1){(v - n{|v|}_1)}^T}
                {{|(u - n{|u|}_1)|}_2 {|(v - n{|v|}_1)|}^T}
@@ -1650,7 +1652,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
        maximum norm-1 distance between their respective elements. More
        precisely, the distance is given by
 
-       .. math:
+       .. math::
 
           d(u,v) = max_i {|u_i-v_i|}.
 
@@ -1659,7 +1661,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
        Computes the Canberra distance between the points. The
        Canberra distance between two points ``u`` and ``v`` is
 
-       .. math:
+       .. math::
 
          d(u,v) = \sum_u {|u_i-v_i|}
                          {|u_i|+|v_i|}
@@ -1671,7 +1673,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
        Bray-Curtis distance between two points ``u`` and ``v`` is
 
 
-       .. math:
+       .. math::
 
             d(u,v) = \frac{\sum_i {u_i-v_i}}
                           {\sum_i {u_i+v_i}}
