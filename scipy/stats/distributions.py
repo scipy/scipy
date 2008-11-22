@@ -14,7 +14,7 @@ import inspect
 from numpy import alltrue, where, arange, put, putmask, \
      ravel, take, ones, sum, shape, product, repeat, reshape, \
      zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
-     arctan, tanh, ndarray, cos, cosh, sinh, newaxis, array
+     arctan, tanh, ndarray, cos, cosh, sinh, newaxis, array, log1p, expm1
 from numpy import atleast_1d, polyval, angle, ceil, place, extract, \
      any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isnan, isinf, \
      power
@@ -48,6 +48,8 @@ __all__ = [
            'binom', 'bernoulli', 'nbinom', 'geom', 'hypergeom', 'logser',
            'poisson', 'planck', 'boltzmann', 'randint', 'zipf', 'dlaplace',
           ]
+
+floatinfo = numpy.finfo(float)
 
 errp = special.errprint
 arr = asarray
@@ -1744,7 +1746,7 @@ N. Balakrishnan, Asit P. Basu
 
 ## Generalized Extreme Value
 ##  c=0 is just gumbel distribution.
-##  This version does not accept c==0
+##  This version does now accept c==0
 ##  Use gumbel_r for c==0
 
 # new version by Per Brodtkorb, see ticket:767
@@ -1753,18 +1755,23 @@ N. Balakrishnan, Asit P. Basu
 
 class genextreme_gen(rv_continuous):
     def _argcheck(self, c):
-        self.b = where(c > 0, 1.0 / c, inf)
-        self.a = where(c < 0, 1.0 / c, -inf)       
-        return (c==c) #True #(c!=0) #see ticket:793
+        min = np.minimum
+        max = np.maximum
+        sml = floatinfo.machar.xmin
+        #self.b = where(c > 0, 1.0 / c,inf)
+        #self.a = where(c < 0, 1.0 / c, -inf)
+        self.b = where(c > 0, 1.0 / max(c, sml),inf)
+        self.a = where(c < 0, 1.0 / min(c,-sml), -inf)
+        return where(abs(c)==inf, 0, 1) #True #(c!=0)
     def _pdf(self, x, c):
         ##        ex2 = 1-c*x
         ##        pex2 = pow(ex2,1.0/c)
         ##        p2 = exp(-pex2)*pex2/ex2
         ##        return p2
         cx = c*x
-        # Note: fit method requires that _pdf accepts vector x
-        logex2 = where((x==x)*(c==0),0.0,np.log1p(-cx))
-        logpex2 = where((x==x)*(c==0),-x,logex2/c)
+
+        logex2 = where((c==0)*(x==x),0.0,log1p(-cx))
+        logpex2 = where((c==0)*(x==x),-x,logex2/c)
         pex2 = exp(logpex2)
         # % Handle special cases
         logpdf = where((cx==1) | (cx==-inf),-inf,-pex2+logpex2-logex2)
@@ -1775,15 +1782,13 @@ class genextreme_gen(rv_continuous):
 
     def _cdf(self, x, c):
         #return exp(-pow(1-c*x,1.0/c))
-        loglogcdf = where(c==0,-x,np.log1p(-c*x)/c)
+        loglogcdf = where((c==0)*(x==x),-x,log1p(-c*x)/c)
         return exp(-exp(loglogcdf))
 
     def _ppf(self, q, c):
         #return 1.0/c*(1.-(-log(q))**c)
-        logq = log(q);
-        x = -log(-logq)
-        # _rvs requires that _ppf allows vectorized q
-        return where((q==q)*(c==0),x,-np.expm1(-c*x)/c)
+        x = -log(-log(q))
+        return where((c==0)*(x==x),x,-expm1(-c*x)/c)
     def _stats(self,c):
 
         g = lambda n : gam(n*c+1)
@@ -1792,9 +1797,9 @@ class genextreme_gen(rv_continuous):
         g3 = g(3);
         g4 = g(4)
         g2mg12 = where(abs(c)<1e-7,(c*pi)**2.0/6.0,g2-g1**2.0)
-        gam2k = where(abs(c)<1e-7,pi**2.0/6.0, np.expm1(gamln(2.0*c+1.0)-2*gamln(c+1.0))/c**2.0);
+        gam2k = where(abs(c)<1e-7,pi**2.0/6.0, expm1(gamln(2.0*c+1.0)-2*gamln(c+1.0))/c**2.0);
         eps = 1e-14
-        gamk = where(abs(c)<eps,-_EULER,np.expm1(gamln(c+1))/c)
+        gamk = where(abs(c)<eps,-_EULER,expm1(gamln(c+1))/c)
 
         m = where(c<-1.0,nan,-gamk)
         v = where(c<-0.5,nan,g1**2.0*gam2k)

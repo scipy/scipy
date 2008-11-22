@@ -117,7 +117,9 @@ distcont = [
 ##distcont = [
 ##    ['genextreme', (3.3184017469423535,)],
 ##    ['genextreme', (0.01,)],
-##    ['genextreme', (0.00001,)]
+##    ['genextreme', (0.00001,)],
+##    ['genextreme', (0.0,)],
+##    ['genextreme', (-0.01,)]
 ##    ]
 
 def test_cont_basic():
