@@ -1470,7 +1470,6 @@ def leaves_list(Z):
     a linkage matrix.
 
     :Arguments:
-
         - Z : ndarray
             The hierarchical clustering encoded as a matrix. See
             ``linkage`` for more information.
@@ -2287,7 +2286,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode, \
     return ( ((uiva + uivb) / 2), uwa+uwb, h, max_dist)
 
 def is_isomorphic(T1, T2):
-    """
+    r"""
 
       Determines if two different cluster assignments ``T1`` and
       ``T2`` are equivalent.
@@ -2302,7 +2301,6 @@ def is_isomorphic(T1, T2):
             ids.
 
        :Returns:
-
           - b : boolean
             Whether the flat cluster assignments ``T1`` and ``T2`` are
             equivalent.
@@ -2336,17 +2334,24 @@ def is_isomorphic(T1, T2):
     return True
 
 def maxdists(Z):
-    """
+    r"""
     MD = maxdists(Z)
 
-      MD is a (n-1)-sized numpy array of doubles; MD[i] represents the
-      maximum distance between any cluster (including singletons) below
-      and including the node with index i. More specifically,
-      MD[i] = Z[Q(i)-n, 2].max() where Q(i) is the set of all node indices
-      below and including node i.
+      Returns the maximum distance between any cluster for each
+      non-singleton cluster.
 
-      Note that when Z[:,2] is monotonic, Z[:,2] and MD should not differ.
-      See linkage for more information on this issue.
+    :Arguments:
+        - Z : ndarray
+            The hierarchical clustering encoded as a matrix. See
+            ``linkage`` for more information.
+
+    :Returns:
+        - MD : ndarray
+          A ``(n-1)`` sized numpy array of doubles; ``MD[i]`` represents
+          the maximum distance between any cluster (including
+          singletons) below and including the node with index i. More
+          specifically, ``MD[i] = Z[Q(i)-n, 2].max()`` where ``Q(i)`` is the
+          set of all node indices below and including node i.
     """
     Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
@@ -2358,13 +2363,21 @@ def maxdists(Z):
     return MD
 
 def maxinconsts(Z, R):
-    """
-    MI = maxinconsts(Z, R)
+    r"""
+    Returns the maximum inconsistency coefficient for each
+    non-singleton cluster and its descendents.
 
-      Calculates the maximum inconsistency coefficient for each node
-      and its descendents. Z is a valid linkage matrix and R is a valid
-      inconsistency matrix. MI is a monotonic (n-1)-sized numpy array of
-      doubles.
+    :Arguments:
+        - Z : ndarray
+            The hierarchical clustering encoded as a matrix. See
+            ``linkage`` for more information.
+
+        - R : ndarray
+            The inconsistency matrix.
+
+    :Returns:
+        - MI : ndarray
+            A monotonic ``(n-1)``-sized numpy array of doubles.
     """
     Z = np.asarray(Z, order='c')
     R = np.asarray(R, order='c')
@@ -2378,13 +2391,29 @@ def maxinconsts(Z, R):
     return MI
 
 def maxRstat(Z, R, i):
-    """
-    MR = maxRstat(Z, R, i)
+    r"""
+    Returns the maximum statistic for each non-singleton cluster and
+    its descendents.
 
-    Calculates the maximum statistic for the i'th column of the
-    inconsistency matrix R for each non-singleton cluster node. MR[j]
-    is the maximum over R[Q(j)-n, i] where Q(j) the set of all node ids
-    corresponding to nodes below and including j.
+    :Arguments:
+        - Z : ndarray
+            The hierarchical clustering encoded as a matrix. See
+            ``linkage`` for more information.
+
+        - R : ndarray
+            The inconsistency matrix.
+
+        - i : int
+            The column of ``R`` to use as the statistic.
+
+    :Returns:
+
+       - MR : ndarray
+         Calculates the maximum statistic for the i'th column of the
+         inconsistency matrix ``R`` for each non-singleton cluster
+         node. ``MR[j]`` is the maximum over ``R[Q(j)-n, i]`` where
+         ``Q(j)`` the set of all node ids corresponding to nodes below
+         and including ``j``.
     """
     Z = np.asarray(Z, order='c')
     R = np.asarray(R, order='c')
@@ -2402,26 +2431,58 @@ def maxRstat(Z, R, i):
     return MR
 
 def leaders(Z, T):
-    """
+    r"""
     (L, M) = leaders(Z, T):
 
-    For each flat cluster j of the k flat clusters represented in the
-    n-sized flat cluster assignment vector T, this function finds the
-    lowest cluster node i in the linkage tree Z such that:
+    Returns the root nodes in a hierarchical clustering corresponding
+    to a cut defined by a flat cluster assignment vector ``T``. See
+    the ``fcluster`` function for more information on the format of ``T``.
 
-      * leaf descendents belong only to flat cluster j (i.e. T[p]==j
-        for all p in S(i) where S(i) is the set of leaf ids of leaf
-        nodes descendent with cluster node i)
+    For each flat cluster :math:`j` of the :math:`k` flat clusters
+    represented in the n-sized flat cluster assignment vector ``T``,
+    this function finds the lowest cluster node :math:`i` in the linkage
+    tree Z such that:
 
-      * there does not exist a leaf that is not descendent with i
-        that also belongs to cluster j (i.e. T[q]!=j for all q not in S(i)).
-        If this condition is violated, T is not a valid cluster assignment
-        vector, and an exception will be thrown.
+      * leaf descendents belong only to flat cluster j
+        (i.e. ``T[p]==j`` for all :math:`p` in :math:`S(i)` where
+        :math:`S(i)` is the set of leaf ids of leaf nodes descendent
+        with cluster node :math:`i`)
 
-    Two k-sized numpy vectors are returned, L and M. L[j]=i is the linkage
-    cluster node id that is the leader of flat cluster with id M[j]. If
-    i < n, i corresponds to an original observation, otherwise it
-    corresponds to a non-singleton cluster.
+      * there does not exist a leaf that is not descendent with
+        :math:`i` that also belongs to cluster :math:`j`
+        (i.e. ``T[q]!=j`` for all :math:`q` not in :math:`S(i)`).  If
+        this condition is violated, ``T`` is not a valid cluster
+        assignment vector, and an exception will be thrown.
+
+
+    :Arguments:
+        - Z : ndarray
+            The hierarchical clustering encoded as a matrix. See
+            ``linkage`` for more information.
+
+        - T : ndarray
+            The flat cluster assignment vector.
+
+    :Returns: (L, M)
+
+         - L : ndarray
+            The leader linkage node id's stored as a k-element 1D
+            array where :math:`k` is the number of flat clusters found
+            in ``T``.
+
+            ``L[j]=i`` is the linkage cluster node id that is the
+            leader of flat cluster with id M[j].  If ``i < n``, ``i``
+            corresponds to an original observation, otherwise it
+            corresponds to a non-singleton cluster.
+
+            For example: if ``L[3]=2`` and ``M[3]=8``, the flat cluster with
+            id 8's leader is linkage node 2.
+
+         - M : ndarray
+            The leader linkage node id's stored as a k-element 1D
+            array where :math:`k` is the number of flat clusters found
+            in ``T``. This allows the set of flat cluster ids to be
+            any arbitrary set of :math:`k` integers.
     """
     Z = np.asarray(Z, order='c')
     T = np.asarray(T, order='c')
