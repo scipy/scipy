@@ -1274,60 +1274,80 @@ def correspond(Z, Y):
 
 def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     """
+    Forms flat clusters from the hierarchical clustering defined by
+    the linkage matrix ``Z``. The threshold ``t`` is a required parameter.
 
-    T = fcluster(Z, t, criterion, depth=2, R=None, monocrit=None):
+    :Arguments:
 
-      Forms flat clusters from the hierarchical clustering defined by
-      the linkage matrix Z. The threshold t is a required parameter.
+        - Z : ndarray
+          The hierarchical clustering encoded with the matrix returned
+          by the ``linkage`` function.
 
-      T is a vector of length n; T[i] is the flat cluster number to which
-      original observation i belongs.
+        - t : double
+          The threshold to apply when forming flat clusters.
 
-      The criterion parameter can be any of the following values,
+        - criterion : string (optional)
+          The criterion to use in forming flat clusters. This can
+          be any of the following values:
 
-        * 'inconsistent': If a cluster node and all its decendents have an
-        inconsistent value less than or equal to c then all its leaf
-        descendents belong to the same flat cluster. When no non-singleton
-        cluster meets this criterion, every node is assigned to its
-        own cluster. The depth parameter is the maximum depth to perform
-        the inconsistency calculation; it has no meaning for the other
-        criteria.
+              * 'inconsistent': If a cluster node and all its
+              decendents have an inconsistent value less than or equal
+              to ``t`` then all its leaf descendents belong to the
+              same flat cluster. When no non-singleton cluster meets
+              this criterion, every node is assigned to its own
+              cluster. (Default)
 
-        * 'distance': Forms flat clusters so that the original
-        observations in each flat cluster have no greater a cophenetic
-        distance than t.
+              * 'distance': Forms flat clusters so that the original
+              observations in each flat cluster have no greater a
+              cophenetic distance than ``t``.
 
-        * 'maxclust': Finds a minimum threshold r so that the cophenetic
-        distance between any two original observations in the same flat
-        cluster is no more than r and no more than t flat clusters are
-        formed.
+              * 'maxclust': Finds a minimum threshold ``r`` so that
+              the cophenetic distance between any two original
+              observations in the same flat cluster is no more than
+              ``r`` and no more than ``t`` flat clusters are formed.
 
-        * 'monocrit': Forms a flat cluster from a cluster node c with
-        index i when monocrit[j] <= t. monocrit must be monotonic.
+              * 'monocrit': Forms a flat cluster from a cluster node c
+              with index i when ``monocrit[j] <= t``.
 
-        monocrit is a (n-1) numpy vector of doubles; monocrit[i] is
-        the criterion upon which non-singleton i is thresholded. The
-        monocrit vector must be monotonic, i.e. given a node c with
-        index i, for all node indices j corresponding to nodes below c,
-        monocrit[i] >= monocrit[j].
+              For example, to threshold on the maximum mean distance
+              as computed in the inconsistency matrix R with a
+              threshold of 0.8 do::
 
-        For example, to threshold on the maximum mean distance as computed
-        in the inconsistency matrix R with a threshold of 0.8 do
+                MR = maxRstat(Z, R, 3)
+                cluster(Z, t=0.8, criterion='monocrit', monocrit=MR)
 
-          MR = maxRstat(Z, R, 3)
-          cluster(Z, t=0.8, criterion='monocrit', monocrit=MR)
+              * 'maxclust_monocrit': Forms a flat cluster from a
+              non-singleton cluster node ``c`` when ``monocrit[i] <=
+              r`` for all cluster indices ``i`` below and including
+              ``c``. ``r`` is minimized such that no more than ``t``
+              flat clusters are formed. monocrit must be
+              monotonic. For example, to minimize the threshold t on
+              maximum inconsistency values so that no more than 3 flat
+              clusters are formed, do:
 
-        * 'maxclust_monocrit': Forms a flat cluster from a non-singleton
-        cluster node c when monocrit[i] <= r for all cluster indices i below
-        and including c. r is minimized such that no more than t flat clusters
-        are formed. monocrit must be monotonic.
+                MI = maxinconsts(Z, R)
+                cluster(Z, t=3, criterion='maxclust_monocrit', monocrit=MI)
 
-        For example, to minimize the threshold t on maximum inconsistency
-        values so that no more than 3 flat clusters are formed, do:
+         - depth : int (optional)
+           The maximum depth to perform the inconsistency calculation.
+           It has no meaning for the other criteria. (default=2)
 
-          MI = maxinconsts(Z, R)
-          cluster(Z, t=3, criterion='maxclust_monocrit', monocrit=MI)
+         - R : ndarray (optional)
+           The inconsistency matrix to use for the 'inconsistent'
+           criterion. This matrix is computed if not provided.
 
+         - monocrit : ndarray (optional)
+           A ``(n-1)`` numpy vector of doubles. ``monocrit[i]`` is the
+           statistics upon which non-singleton ``i`` is thresholded. The
+           monocrit vector must be monotonic, i.e. given a node ``c`` with
+           index ``i``, for all node indices j corresponding to nodes
+           below ``c``, ``monocrit[i] >= monocrit[j]``.
+
+    :Returns:
+
+        - T : ndarray
+            A vector of length ``n``. ``T[i]`` is the flat cluster number to
+            which original observation ``i`` belongs.
     """
     Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
@@ -1367,49 +1387,65 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
 def fclusterdata(X, t, criterion='inconsistent', \
                  metric='euclidean', depth=2, method='single', R=None):
     """
-    T = fclusterdata(X, t)
+    ``T = fclusterdata(X, t)``
 
-      Clusters the original observations in the n by m data matrix X
-      (n observations in m dimensions), using the euclidean distance
-      metric to calculate distances between original observations,
-      performs hierarchical clustering using the single linkage
-      algorithm, and forms flat clusters using the inconsistency
-      method with t as the cut-off threshold.
+    Clusters the original observations in the ``n`` by ``m`` data
+    matrix ``X`` (``n`` observations in ``m`` dimensions), using the
+    euclidean distance metric to calculate distances between original
+    observations, performs hierarchical clustering using the single
+    linkage algorithm, and forms flat clusters using the inconsistency
+    method with t as the cut-off threshold.
 
-      A one-dimensional numpy array T of length n is returned. T[i]
-      is the index of the flat cluster to which the original
-      observation i belongs.
+    A one-dimensional numpy array ``T`` of length ``n`` is
+    returned. ``T[i]`` is the index of the flat cluster to which the
+    original observation ``i`` belongs.
 
-    T = fclusterdata(X, t, criterion='inconsistent', method='single',
-                    metric='euclid', depth=2, R=None)
+    :Arguments:
 
-      Clusters the original observations in the n by m data matrix X using
-      the thresholding criterion, linkage method, and distance metric
-      specified.
+        - Z : ndarray
+          The hierarchical clustering encoded with the matrix returned
+          by the ``linkage`` function.
 
-      Named parameters are described below.
+        - t : double
+          The threshold to apply when forming flat clusters.
 
-        criterion:  specifies the criterion for forming flat clusters.
-                    Valid values are 'inconsistent', 'distance', or
-                    'maxclust' cluster formation algorithms. See
-                    cluster for descriptions.
 
-        method:     the linkage method to use. See linkage for
-                    descriptions.
+        - criterion : string
+          Specifies the criterion for forming flat clusters.  Valid
+          values are 'inconsistent', 'distance', or 'maxclust' cluster
+          formation algorithms. See ``fcluster`` for descriptions.
 
-        metric:     the distance metric for calculating pairwise
-                    distances. See distance.pdist for descriptions and
-                    linkage to verify compatibility with the linkage
-                    method.
+        - method : string
+          The linkage method to use (single, complete, average,
+          weighted, median centroid, ward). See ``linkage`` for more
+          information.
 
-        t:          the cut-off threshold for the cluster function or
-                    the maximum number of clusters (criterion='maxclust').
+        - metric : string
+          The distance metric for calculating pairwise distances. See
+          distance.pdist for descriptions and linkage to verify
+          compatibility with the linkage method.
 
-        depth:      the maximum depth for the inconsistency calculation.
-                    See inconsistent for more information.
+        - t : double
+          The cut-off threshold for the cluster function or the
+          maximum number of clusters (criterion='maxclust').
 
-        R:          the inconsistency matrix. It will be computed if
-                    necessary if it is not passed.
+        - depth : int
+          The maximum depth for the inconsistency calculation. See
+          ``inconsistent`` for more information.
+
+        - R : ndarray
+          The inconsistency matrix. It will be computed if necessary
+          if it is not passed.
+
+
+    :Returns:
+
+        - T : ndarray
+            A vector of length ``n``. ``T[i]`` is the flat cluster number to
+            which original observation ``i`` belongs.
+
+    Notes
+    -----
 
     This function is similar to MATLAB(TM) clusterdata function.
     """
@@ -1429,10 +1465,19 @@ def fclusterdata(X, t, criterion='inconsistent', \
 
 def leaves_list(Z):
     """
-    L = leaves_list(Z):
+    Returns a list of leaf node ids (corresponding to observation
+    vector index) as they appear in the tree from left to right. Z is
+    a linkage matrix.
 
-      Returns a list of leaf node ids as they appear in the tree from
-      left to right. Z is a linkage matrix.
+    :Arguments:
+
+        - Z : ndarray
+            The hierarchical clustering encoded as a matrix. See
+            ``linkage`` for more information.
+
+    :Returns:
+        - L : ndarray
+            The list of leaf node ids.
     """
     Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
@@ -1651,10 +1696,14 @@ _link_line_colors=['g', 'r', 'c', 'm', 'y', 'k']
 
 def set_link_color_palette(palette):
     """
-    set_link_color_palette(palette):
-
     Changes the list of matplotlib color codes to use when coloring
     links with the dendrogram colorthreshold feature.
+
+    :Arguments:
+        - palette : A list of matplotlib color codes. The order of
+        the color codes is the order in which the colors are cycled
+        through when color thresholding in the dendrogram.
+
     """
 
     if type(palette) not in (types.ListType, types.TupleType):
@@ -2239,8 +2288,25 @@ def _dendrogram_calculate_info(Z, p, truncate_mode, \
 
 def is_isomorphic(T1, T2):
     """
-      Returns True iff two different cluster assignments T1 and T2 are
-      equivalent. T1 and T2 must be arrays of the same size.
+
+      Determines if two different cluster assignments ``T1`` and
+      ``T2`` are equivalent.
+
+      :Arguments:
+          - T1 : ndarray
+            An assignment of singleton cluster ids to flat cluster
+            ids.
+
+          - T2 : ndarray
+            An assignment of singleton cluster ids to flat cluster
+            ids.
+
+       :Returns:
+
+          - b : boolean
+            Whether the flat cluster assignments ``T1`` and ``T2`` are
+            equivalent.
+
     """
     T1 = np.asarray(T1, order='c')
     T2 = np.asarray(T2, order='c')
