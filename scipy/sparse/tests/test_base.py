@@ -26,12 +26,12 @@ from numpy.testing import *
 import scipy.sparse as sparse
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix, \
-        eye, SparseEfficiencyWarning
+        eye, isspmatrix, SparseEfficiencyWarning
 from scipy.sparse.sputils import supported_dtypes
 from scipy.sparse.linalg import splu
 
 
-warnings.simplefilter('ignore',SparseEfficiencyWarning)
+warnings.simplefilter('ignore', SparseEfficiencyWarning)
 
 
 #TODO check that spmatrix( ... , copy=X ) is respected
@@ -347,6 +347,16 @@ class _TestCommon:
         assert_array_almost_equal([1,2,3,4]*M, dot([1,2,3,4], M.toarray()))
         row = matrix([[1,2,3,4]])
         assert_array_almost_equal(row*M, row*M.todense())
+    
+    def test_small_multiplication(self):
+        """test that A*x works for x with shape () (1,) and (1,1)
+        """
+        A = self.spmatrix([[1],[2],[3]])
+
+        assert(isspmatrix(A * array(1)))
+        assert_equal((A * array(1)).todense(), [[1],[2],[3]])
+        assert_equal(A * array([1]), array([1,2,3]))
+        assert_equal(A * array([[1]]), array([[1],[2],[3]]))
 
     def test_matvec(self):
         M = self.spmatrix(matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))

@@ -291,8 +291,9 @@ class spmatrix(object):
             # If it's a list or whatever, treat it like a matrix
             other = np.asanyarray(other)
 
-        if isdense(other) and np.asarray(other).squeeze().ndim <= 1:
-            ##
+        other = np.asanyarray(other)
+    
+        if other.ndim == 1 or other.ndim == 2 and other.shape[1] == 1:
             # dense row or column vector
             if other.shape != (N,) and other.shape != (N,1):
                 raise ValueError('dimension mismatch')
@@ -308,7 +309,7 @@ class spmatrix(object):
 
             return result
 
-        elif len(other.shape) == 2:
+        elif other.ndim == 2:
             ##
             # dense 2D array or matrix ("multivector")
 

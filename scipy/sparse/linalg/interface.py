@@ -1,5 +1,4 @@
-import numpy
-from numpy import matrix, ndarray, asarray, dot, atleast_2d, hstack
+import numpy as np
 from scipy.sparse.sputils import isshape
 from scipy.sparse import isspmatrix
 
@@ -20,13 +19,12 @@ class LinearOperator:
     shape : tuple
         Matrix dimensions (M,N)
     matvec : callable f(v)
-        Returns returns A * v
+        Returns returns A * v.
 
     Optional Parameters
     -------------------
     rmatvec : callable f(v)
-        Returns A^H * v, where A^H represents the Hermitian
-        (conjugate) transpose of A.
+        Returns A^H * v, where A^H is the conjugate transpose of A.
     matmat : callable f(V)
         Returns A * V, where V is a dense matrix with dimensions (N,K).
     dtype : dtype
@@ -35,6 +33,12 @@ class LinearOperator:
     See Also
     --------
     aslinearoperator : Construct LinearOperators
+
+    Notes
+    -----
+    The user-defined matvec() function must properly handle the case
+    where v has shape (N,) as well as the (N,1) case.  The shape of
+    the return type is handled internally by LinearOperator.
 
     Examples
     --------
@@ -52,7 +56,7 @@ class LinearOperator:
     array([ 2.,  3.])
 
     """
-    def __init__( self, shape, matvec, rmatvec=None, matmat=None, dtype=None ):
+    def __init__(self, shape, matvec, rmatvec=None, matmat=None, dtype=None):
 
         shape = tuple(shape)
 
@@ -60,7 +64,7 @@ class LinearOperator:
             raise ValueError('invalid shape')
 
         self.shape  = shape
-        self.matvec = matvec
+        self._matvec = matvec
 
         if rmatvec is None:
             def rmatvec(v):
@@ -69,25 +73,117 @@ class LinearOperator:
         else:
             self.rmatvec = rmatvec
 
-        if matmat is None:
+        if matmat is not None:
             # matvec each column of V
-            def matmat(V):
-                V = asarray(V)
-                return hstack( [ matvec(col.reshape(-1,1)) for col in V.T ] )
-            self.matmat = matmat
-        else:
-            self.matmat = matmat
+            self._matmat = matmat
 
         if dtype is not None:
-            self.dtype = numpy.dtype(dtype)
+            self.dtype = np.dtype(dtype)
+
+
+    def _matmat(self, X):
+        """Default matrix-matrix multiplication handler.  Falls back on
+        the user-defined matvec() routine, which is always provided.
+        """
+        
+        return np.hstack( [ self.matvec(col.reshape(-1,1)) for col in X.T ] )
+
+
+    def matvec(self, x):
+        """Matrix-vector multiplication
+
+        Performs the operation y=A*x where A is an MxN linear 
+        operator and x is a column vector or rank-1 array.
+
+        Parameters
+        ----------
+        x : {matrix, ndarray}
+            An array with shape (N,) or (N,1).
+
+        Returns
+        -------
+        y : {matrix, ndarray}
+            A matrix or ndarray with shape (M,) or (M,1) depending 
+            on the type and shape of the x argument.
+
+        Notes
+        -----
+        This matvec wraps the user-specified matvec routine to ensure that
+        y has the correct shape and type.
+
+        """
+
+        x = np.asanyarray(x)
+        
+        M,N = self.shape
+            
+        if x.shape != (N,) and x.shape != (N,1):
+            raise ValueError('dimension mismatch')
+
+        y = self._matvec(x)
+
+        if x.ndim == 2:
+            # If 'x' is a column vector, reshape the result
+            y = y.reshape(-1,1)
+
+        if isinstance(x, np.matrix):
+            y = np.asmatrix(y)
+
+        return y
+
+
+    def matmat(self, X):
+        """Matrix-matrix multiplication
+
+        Performs the operation y=A*X where A is an MxN linear 
+        operator and X dense N*K matrix or ndarray.
+
+        Parameters
+        ----------
+        X : {matrix, ndarray}
+            An array with shape (N,K).
+
+        Returns
+        -------
+        Y : {matrix, ndarray}
+            A matrix or ndarray with shape (M,K) depending on
+            the type of the X argument.
+
+        Notes
+        -----
+        This matmat wraps any user-specified matmat routine to ensure that
+        y has the correct type.
+
+        """
+
+        X = np.asanyarray(X)
+        
+        if X.ndim != 2:
+            raise ValueError('expected rank-2 ndarray or matrix')
+        
+        M,N = self.shape
+
+        if X.shape[0] != N:
+            raise ValueError('dimension mismatch')
+
+        Y = self._matmat(X)
+
+        if isinstance(Y, np.matrix):
+            Y = np.asmatrix(Y)
+
+        return Y
+        
 
     def __mul__(self,x):
-        x = numpy.asarray(x)
+        x = np.asarray(x)
 
-        if numpy.rank(x.squeeze()) == 1:
+        if x.ndim == 1 or x.ndim == 2 and x.shape[1] == 1:
             return self.matvec(x)
-        else:
+        elif x.ndim == 2:
             return self.matmat(x)
+        else:
+            raise ValueError('expected rank-1 or rank-2 array or matrix')
+
 
     def __repr__(self):
         M,N = self.shape
@@ -121,18 +217,18 @@ def aslinearoperator(A):
     if isinstance(A, LinearOperator):
         return A
 
-    elif isinstance(A, ndarray) or isinstance(A, matrix):
-        if len(A.shape) > 2:
+    elif isinstance(A, np.ndarray) or isinstance(A, np.matrix):
+        if A.ndim > 2:
             raise ValueError('array must have rank <= 2')
 
-        A = atleast_2d(asarray(A))
+        A = np.atleast_2d(np.asarray(A))
 
         def matvec(v):
-            return dot(A, v)
+            return np.dot(A, v)
         def rmatvec(v):
-            return dot(A.conj().transpose(), v)
+            return np.dot(A.conj().transpose(), v)
         def matmat(V):
-            return dot(A, V)
+            return np.dot(A, V)
         return LinearOperator(A.shape, matvec, rmatvec=rmatvec,
                               matmat=matmat, dtype=A.dtype)
 
@@ -147,13 +243,13 @@ def aslinearoperator(A):
                               matmat=matmat, dtype=A.dtype)
 
     else:
-        if hasattr(A,'shape') and hasattr(A,'matvec'):
+        if hasattr(A, 'shape') and hasattr(A, 'matvec'):
             rmatvec = None
             dtype = None
 
-            if hasattr(A,'rmatvec'):
+            if hasattr(A, 'rmatvec'):
                 rmatvec = A.rmatvec
-            if hasattr(A,'dtype'):
+            if hasattr(A, 'dtype'):
                 dtype = A.dtype
             return LinearOperator(A.shape, A.matvec,
                                   rmatvec=rmatvec, dtype=dtype)
