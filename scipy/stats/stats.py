@@ -1014,20 +1014,49 @@ def scoreatpercentile(a, per, limit=()):
         return _interpolate(values[int(idx)], values[int(idx) + 1], idx % 1)
 
 
-def percentileofscore(a, score, histbins=10, defaultlimits=None):
-    # fixme: Again with the histogramming. This probably should be replaced by
-    # an empirical CDF approach.
+def percentileofscore(a, score):
     """
-Note: result of this function depends on the values used to histogram
-the data(!).
-
-Returns: percentile-position of score (0-100) relative to a
-"""
-    h, lrl, binsize, extras = histogram(a,histbins,defaultlimits)
-    cumhist = np.cumsum(h*1, axis=0)
-    i = int((score - lrl)/float(binsize))
-    pct = (cumhist[i-1]+((score-(lrl+binsize*i))/float(binsize))*h[i])/float(len(a)) * 100
+    Percentile of a score. 
+    
+    The percentile of a score is the proportion of the values in a given array equal to or
+    smaller than the score. 
+    
+    Parameters
+    -----------
+    a: ndarray
+       
+    score: float or int. 
+     
+    Returns
+    -------
+    pct: float (0-100), the percentile of score relative to a
+    
+    Examples
+    --------
+    >>> percentileofscore([20,80,100],80) 
+    66.666666666666657
+    >>>percentileofscore([20,80,100],99)
+    66.666666666666657
+    >>>percentileofscore([20,80,100],100)
+    100.0
+    >>>percentileofscore([20,80,100],1)
+    0.0
+        
+    """
+    l=len(a)
+    a = np.array(a)
+    if not(any(a == score)):
+        a = np.append(a,score)
+        a_len = np.array(range(len(a)))
+    else:
+        a_len = np.array(range(len(a))) + 1.0
+         
+    a = np.sort(a)
+    idx = [a == score]
+    pct = (np.mean(a_len[idx])/(l))*100.0
+              
     return pct
+
 
 
 def histogram2(a, bins):
