@@ -699,7 +699,7 @@ class ClusterNode:
 
         :Returns:
            right : ClusterNode
-                  The left child of the target node.
+                   The left child of the target node.
         """
         return self.right
 
@@ -1696,7 +1696,7 @@ _link_line_colors=['g', 'r', 'c', 'm', 'y', 'k']
 def set_link_color_palette(palette):
     """
     Changes the list of matplotlib color codes to use when coloring
-    links with the dendrogram colorthreshold feature.
+    links with the dendrogram color_threshold feature.
 
     :Arguments:
         - palette : A list of matplotlib color codes. The order of
@@ -1716,205 +1716,224 @@ def set_link_color_palette(palette):
         _link_line_colors.remove(i)
     _link_line_colors.extend(list(palette))
 
-def dendrogram(Z, p=30, truncate_mode=None, colorthreshold=None,
+def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
                get_leaves=True, orientation='top', labels=None,
                count_sort=False, distance_sort=False, show_leaf_counts=True,
                no_plot=False, no_labels=False, color_list=None,
                leaf_font_size=None, leaf_rotation=None, leaf_label_func=None,
                no_leaves=False, show_contracted=False,
                link_color_func=None):
-    """
-    R = dendrogram(Z)
+    r"""
+    Plots the hiearchical clustering defined by the linkage Z as a
+    dendrogram. The dendrogram illustrates how each cluster is
+    composed by drawing a U-shaped link between a non-singleton
+    cluster and its children. The height of the top of the U-link is
+    the distance between its children clusters. It is also the
+    cophenetic distance between original observations in the two
+    children clusters. It is expected that the distances in Z[:,2] be
+    monotonic, otherwise crossings appear in the dendrogram.
 
-      Plots the hiearchical clustering defined by the linkage Z as a
-      dendrogram. The dendrogram illustrates how each cluster is
-      composed by drawing a U-shaped link between a non-singleton
-      cluster and its children. The height of the top of the U-link
-      is the distance between its children clusters. It is also the
-      cophenetic distance between original observations in the
-      two children clusters. It is expected that the distances in
-      Z[:,2] be monotonic, otherwise crossings appear in the
-      dendrogram.
+    :Arguments:
 
-      R is a dictionary of the data structures computed to render the
-      dendrogram. Its keys are:
+      - Z : ndarray
+        The linkage matrix encoding the hierarchical clustering to
+        render as a dendrogram. See the ``linkage`` function for more
+        information on the format of ``Z``.
 
-         'icoords': a list of lists [I1, I2, ..., Ip] where Ik is a
-         list of 4 independent variable coordinates corresponding to
-         the line that represents the k'th link painted.
+      - truncate_mode : string
+        The dendrogram can be hard to read when the original
+        observation matrix from which the linkage is derived is
+        large. Truncation is used to condense the dendrogram. There
+        are several modes:
 
-         'dcoords': a list of lists [I2, I2, ..., Ip] where Ik is a
-         list of 4 independent variable coordinates corresponding to
-         the line that represents the k'th link painted.
+           * None/'none': no truncation is performed (Default)
 
-         'ivl': a list of labels corresponding to the leaf nodes
+           * 'lastp': the last ``p`` non-singleton formed in the linkage
+           are the only non-leaf nodes in the linkage; they correspond
+           to to rows ``Z[n-p-2:end]`` in ``Z``. All other
+           non-singleton clusters are contracted into leaf nodes.
 
-    R = dendrogram(..., truncate_mode, p)
+           * 'mlab': This corresponds to MATLAB(TM) behavior. (not
+           implemented yet)
 
-      The dendrogram can be hard to read when the original observation
-      matrix from which the linkage is derived is large. Truncation
-      is used to condense the dendrogram. There are several modes:
+           * 'level'/'mtica': no more than ``p`` levels of the
+           dendrogram tree are displayed. This corresponds to
+           Mathematica(TM) behavior.
 
-       * None/'none': no truncation is performed
+       - p : int
+         The ``p`` parameter for ``truncate_mode``.
+`
+       - color_threshold : double
+         For brevity, let :math:`t` be the ``color_threshold``.
+         Colors all the descendent links below a cluster node
+         :math:`k` the same color if :math:`k` is the first node below
+         the cut threshold :math:`t`. All links connecting nodes with
+         distances greater than or equal to the threshold are colored
+         blue. If :math:`t` is less than or equal to zero, all nodes
+         are colored blue. If ``color_threshold`` is ``None`` or
+         'default', corresponding with MATLAB(TM) behavior, the
+         threshold is set to ``0.7*max(Z[:,2])``.
 
-       * 'lastp': the last p non-singleton formed in the linkage are
-       the only non-leaf nodes in the linkage; they correspond to
-       to rows Z[n-p-2:end] in Z. All other non-singleton clusters
-       are contracted into leaf nodes.
+       - get_leaves : bool
+         Includes a list ``R['leaves']=H`` in the result
+         dictionary. For each :math:`i`, ``H[i] == j``, cluster node
+         :math:`j` appears in the :math:`i` th position in the
+         left-to-right traversal of the leaves, where :math:`j < 2n-1`
+         and :math:`i < n`.
 
-       * 'mlab': This corresponds to MATLAB(TM) behavior. (not implemented yet)
+       - orientation : string
+         The direction to plot the dendrogram, which can be any
+         of the following strings
 
-       * 'level'/'mtica': no more than p levels of the dendrogram tree
-       are displayed. This corresponds to Mathematica(TM) behavior.
+           * 'top': plots the root at the top, and plot descendent
+           links going downwards. (default).
 
-    R = dendrogram(..., colorthreshold=t)
+           * 'bottom': plots the root at the bottom, and plot descendent
+           links going upwards.
 
-      Colors all the descendent links below a cluster node k the same color
-      if k is the first node below the cut threshold t. All links connecting
-      nodes with distances greater than or equal to the threshold are
-      colored blue. If t is less than or equal to zero, all nodes
-      are colored blue. If t is None or 'default', corresponding with
-      MATLAB(TM) behavior, the threshold is set to 0.7*max(Z[:,2]).
+           * 'left': plots the root at the left, and plot descendent
+           links going right.
 
-    R = dendrogram(..., get_leaves=True)
+           * 'right': plots the root at the right, and plot descendent
+           links going left.
 
-      Includes a list R['leaves']=H in the result dictionary. For each i,
-      H[i] == j, cluster node j appears in the i'th position in the
-      left-to-right traversal of the leaves, where j < 2n-1 and i < n.
+       - labels : ndarray
+         By default ``labels`` is ``None`` so the index of the
+         original observation is used to label the leaf nodes.
 
-    R = dendrogram(..., orientation)
+         Otherwise, this is an :math:`n` -sized list (or tuple). The
+         ``labels[i]`` value is the text to put under the :math:`i` th
+         leaf node only if it corresponds to an original observation
+         and not a non-singleton cluster.
 
-      Plots the dendrogram in a particular direction. The orientation
-      parameter can be any of:
+       - count_sort : string/bool
+         For each node n, the order (visually, from left-to-right) n's
+         two descendent links are plotted is determined by this
+         parameter, which can be any of the following values:
 
-        * 'top': plots the root at the top, and plot descendent
-          links going downwards. (default).
+            * False: nothing is done.
 
-        * 'bottom': plots the root at the bottom, and plot descendent
-          links going upwards.
+            * 'ascending'/True: the child with the minimum number of
+            original objects in its cluster is plotted first.
 
-        * 'left': plots the root at the left, and plot descendent
-          links going right.
+            * 'descendent': the child with the maximum number of
+            original objects in its cluster is plotted first.
 
-        * 'right': plots the root at the right, and plot descendent
-          links going left.
+         Note ``distance_sort`` and ``count_sort`` cannot both be
+         ``True``.
 
-    R = dendrogram(..., labels=None)
+       - distance_sort : string/bool
+         For each node n, the order (visually, from left-to-right) n's
+         two descendent links are plotted is determined by this
+         parameter, which can be any of the following values:
 
-        The labels parameter is a n-sized list (or tuple). The labels[i]
-        value is the text to put under the i'th leaf node only if it
-        corresponds to an original observation and not a non-singleton
-        cluster.
+            * False: nothing is done.
 
-        When labels=None, the index of the original observation is used
-        used.
+            * 'ascending'/True: the child with the minimum distance
+            between its direct descendents is plotted first.
 
-    R = dendrogram(..., count_sort)
+            * 'descending': the child with the maximum distance
+            between its direct descendents is plotted first.
 
-        When plotting a cluster node and its directly descendent links,
-        the order the two descendent links and their descendents are
-        plotted is determined by the count_sort parameter. Valid values
-        of count_sort are:
+         Note ``distance_sort`` and ``count_sort`` cannot both be
+         ``True``.
 
-          * False: nothing is done.
+       - show_leaf_counts : bool
 
-          * 'ascending'/True: the child with the minimum number of
-          original objects in its cluster is plotted first.
+         When ``True``, leaf nodes representing :math:`k>1` original
+         observation are labeled with the number of observations they
+         contain in parentheses.
 
-          * 'descendent': the child with the maximum number of
-          original objects in its cluster is plotted first.
+       - no_plot : bool
+         When ``True``, the final rendering is not performed. This is
+         useful if only the data structures computed for the rendering
+         are needed or if matplotlib is not available.
 
-    R = dendrogram(..., distance_sort)
+       - no_labels : bool
+         When ``True``, no labels appear next to the leaf nodes in the
+         rendering of the dendrogram.
 
-        When plotting a cluster node and its directly descendent links,
-        the order the two descendent links and their descendents are
-        plotted is determined by the distance_sort parameter. Valid
-        values of count_sort are:
+       - leaf_label_rotation : double
 
-          * False: nothing is done.
+         Specifies the angle (in degrees) to rotate the leaf
+         labels. When unspecified, the rotation based on the number of
+         nodes in the dendrogram. (Default=0)
 
-          * 'ascending'/True: the child with the minimum distance
-          between its direct descendents is plotted first.
+       - leaf_font_size : int
+         Specifies the font size (in points) of the leaf labels. When
+         unspecified, the size based on the number of nodes in the
+         dendrogram.
 
-          * 'descending': the child with the maximum distance
-          between its direct descendents is plotted first.
+       - leaf_label_func : lambda or function
 
-        Note that either count_sort or distance_sort must be False.
+         When leaf_label_func is a callable function, for each
+         leaf with cluster index :math:`k < 2n-1`. The function
+         is expected to return a string with the label for the
+         leaf.
 
-    R = dendrogram(..., show_leaf_counts)
+         Indices :math:`k < n` correspond to original observations
+         while indices :math:`k \geq n` correspond to non-singleton
+         clusters.
 
-        When show_leaf_counts=True, leaf nodes representing k>1
-        original observation are labeled with the number of observations
-        they contain in parentheses.
+         For example, to label singletons with their node id and
+         non-singletons with their id, count, and inconsistency
+         coefficient, simply do::
 
-    R = dendrogram(..., no_plot)
+           # First define the leaf label function.
+           def llf(id):
+               if id < n:
+                   return str(id)
+               else:
+                   return '[%d %d %1.2f]' % (id, count, R[n-id,3])
 
-        When no_plot=True, the final rendering is not performed. This is
-        useful if only the data structures computed for the rendering
-        are needed or if matplotlib is not available.
+           # The text for the leaf nodes is going to be big so force
+           # a rotation of 90 degrees.
+           dendrogram(Z, leaf_label_func=llf, leaf_rotation=90)
 
-    R = dendrogram(..., no_labels)
+       - show_contracted : bool
+         When ``True`` the heights of non-singleton nodes contracted
+         into a leaf node are plotted as crosses along the link
+         connecting that leaf node.  This really is only useful when
+         truncation is used (see ``truncate_mode`` parameter).
 
-        When no_labels=True, no labels appear next to the leaf nodes in
-        the rendering of the dendrogram.
+       - link_color_func : lambda/function When a callable function,
+         link_color_function is called with each non-singleton id
+         corresponding to each U-shaped link it will paint. The
+         function is expected to return the color to paint the link,
+         encoded as a matplotlib color string code.
 
-    R = dendrogram(..., leaf_label_rotation):
+         For example::
 
-        Specifies the angle to which the leaf labels are rotated. When
-        unspecified, the rotation based on the number of nodes in the
-        dendrogram.
+           dendrogram(Z, link_color_func=lambda k: colors[k])
 
-    R = dendrogram(..., leaf_font_size):
+         colors the direct links below each untruncated non-singleton node
+         ``k`` using ``colors[k]``.
 
-        Specifies the font size in points of the leaf labels. When
-        unspecified, the size  based on the number of nodes
-        in the dendrogram.
+    :Returns:
 
+       - R : dict
+         A dictionary of data structures computed to render the
+         dendrogram. Its has the following keys:
 
-    R = dendrogram(..., leaf_label_func)
+           - 'icoords': a list of lists ``[I1, I2, ..., Ip]`` where
+           ``Ik`` is a list of 4 independent variable coordinates
+           corresponding to the line that represents the k'th link
+           painted.
 
-        When a callable function is passed, leaf_label_func is passed
-        cluster index k, and returns a string with the label for the
-        leaf.
+           - 'dcoords': a list of lists ``[I2, I2, ..., Ip]`` where
+           ``Ik`` is a list of 4 independent variable coordinates
+           corresponding to the line that represents the k'th link
+           painted.
 
-        Indices k < n correspond to original observations while indices
-        k >= n correspond to non-singleton clusters.
+           - 'ivl': a list of labels corresponding to the leaf nodes.
 
-        For example, to label singletons with their node id and
-        non-singletons with their id, count, and inconsistency coefficient,
-        we simply do
-
-          # First define the leaf label function.
-          llf = lambda id:
-                   if id < n:
-                      return str(id)
-                   else:
-                      return '[%d %d %1.2f]' % (id, count, R[n-id,3])
-
-          # The text for the leaf nodes is going to be big so force
-          # a rotation of 90 degrees.
-          dendrogram(Z, leaf_label_func=llf, leaf_rotation=90)
-
-    R = dendrogram(..., show_contracted=True)
-
-        The heights of non-singleton nodes contracted into a leaf node
-        are plotted as crosses along the link connecting that leaf node.
-        This feature is only useful when truncation is used.
-
-    R = dendrogram(..., link_color_func)
-
-        When a link is painted, the function link_color_function is
-        called with the non-singleton id. This function is
-        expected to return a matplotlib color string, which represents
-        the color to paint the link.
-
-        For example:
-
-          dendrogram(Z, link_color_func=lambda k: colors[k])
-
-        colors the direct links below each untruncated non-singleton node
-        k using colors[k].
-
+           - 'leaves': for each i, ``H[i] == j``, cluster node
+           :math:`j` appears in the :math:`i` th position in the
+           left-to-right traversal of the leaves, where :math:`j < 2n-1`
+           and :math:`i < n`. If :math:`j` is less than :math:`n`, the
+           :math:`i` th leaf node corresponds to an original
+           observation.  Otherwise, it corresponds to a non-singleton
+           cluster.
     """
 
     # Features under consideration.
@@ -1959,9 +1978,9 @@ def dendrogram(Z, p=30, truncate_mode=None, colorthreshold=None,
         ivl=None
     else:
         ivl=[]
-    if colorthreshold is None or \
-       (type(colorthreshold) == types.StringType and colorthreshold=='default'):
-        colorthreshold = max(Z[:,2])*0.7
+    if color_threshold is None or \
+       (type(color_threshold) == types.StringType and color_threshold=='default'):
+        color_threshold = max(Z[:,2])*0.7
     R={'icoord':icoord_list, 'dcoord':dcoord_list, 'ivl':ivl, 'leaves':lvs,
        'color_list':color_list}
     props = {'cbt': False, 'cc':0}
@@ -1971,7 +1990,7 @@ def dendrogram(Z, p=30, truncate_mode=None, colorthreshold=None,
         contraction_marks = None
     _dendrogram_calculate_info(Z=Z, p=p,
                                truncate_mode=truncate_mode, \
-                               colorthreshold=colorthreshold, \
+                               color_threshold=color_threshold, \
                                get_leaves=get_leaves, \
                                orientation=orientation, \
                                labels=labels, \
@@ -2045,7 +2064,7 @@ def _append_contraction_marks_sub(Z, iv, i, n, contraction_marks):
 
 
 def _dendrogram_calculate_info(Z, p, truncate_mode, \
-                               colorthreshold=np.inf, get_leaves=True, \
+                               color_threshold=np.inf, get_leaves=True, \
                                orientation='top', labels=None, \
                                count_sort=False, distance_sort=False, \
                                show_leaf_counts=False, i=-1, iv=0.0, \
@@ -2220,7 +2239,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode, \
     (uiva, uwa, uah, uamd) = \
           _dendrogram_calculate_info(Z=Z, p=p, \
                                      truncate_mode=truncate_mode, \
-                                     colorthreshold=colorthreshold, \
+                                     color_threshold=color_threshold, \
                                      get_leaves=get_leaves, \
                                      orientation=orientation, \
                                      labels=labels, \
@@ -2238,7 +2257,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode, \
                                      link_color_func=link_color_func)
 
     h = Z[i-n, 2]
-    if h >= colorthreshold or colorthreshold <= 0:
+    if h >= color_threshold or color_threshold <= 0:
         c = 'b'
 
         if currently_below_threshold[0]:
@@ -2251,7 +2270,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode, \
     (uivb, uwb, ubh, ubmd) = \
           _dendrogram_calculate_info(Z=Z, p=p, \
                                      truncate_mode=truncate_mode, \
-                                     colorthreshold=colorthreshold, \
+                                     color_threshold=color_threshold, \
                                      get_leaves=get_leaves, \
                                      orientation=orientation, \
                                      labels=labels, \
