@@ -984,39 +984,13 @@ def test_friedmanchisquare():
           array([4.9,7.6,5.5,2.8,8.4]),
           array([8.8,8.9,8.1,3.3,9.1])]
 
-    # Hollander & Wolfe (1973), p. 140ff.
-    # from R help file
-    xR = array( [5.40, 5.50, 5.55,
-                 5.85, 5.70, 5.75,
-                 5.20, 5.60, 5.50,
-                 5.55, 5.50, 5.40,
-                 5.90, 5.85, 5.70,
-                 5.45, 5.55, 5.60,
-                 5.40, 5.40, 5.35,
-                 5.45, 5.50, 5.35,
-                 5.25, 5.15, 5.00,
-                 5.85, 5.80, 5.70,
-                 5.25, 5.20, 5.10,
-                 5.65, 5.55, 5.45,
-                 5.60, 5.35, 5.45,
-                 5.05, 5.00, 4.95,
-                 5.50, 5.50, 5.40,
-                 5.45, 5.55, 5.50,
-                 5.55, 5.55, 5.35,
-                 5.45, 5.50, 5.55,
-                 5.50, 5.45, 5.25,
-                 5.65, 5.60, 5.40,
-                 5.70, 5.65, 5.55,
-                 6.30, 6.30, 6.25])
-    xR = xR.reshape((len(xR)/3.0,3)).T
 
-    #assert_array_almost_equal(stats.friedmanchisquare(xR[0],xR[1],xR[2]),(11.1429, 0.003805),3)
     assert_array_almost_equal(stats.friedmanchisquare(x1[0],x1[1],x1[2],x1[3]),(10.2283464566929, 0.0167215803284414))
     assert_array_almost_equal(stats.friedmanchisquare(x2[0],x2[1],x2[2],x2[3]),(18.9428571428571, 0.000280938375189499))
     assert_array_almost_equal(stats.friedmanchisquare(x3[0],x3[1],x3[2],x3[3]),(10.68, 0.0135882729582176))
     np.testing.assert_raises(ValueError, stats.friedmanchisquare,x3[0],x3[1])
 
-    assert_array_almost_equal(stats.mstats.friedmanchisquare(xR[0],xR[1],xR[2]),(11.1429, 0.003805),4)
+    # test using mstats
     assert_array_almost_equal(stats.mstats.friedmanchisquare(x1[0],x1[1],x1[2],x1[3]),(10.2283464566929, 0.0167215803284414))
     # the following fails
     #assert_array_almost_equal(stats.mstats.friedmanchisquare(x2[0],x2[1],x2[2],x2[3]),(18.9428571428571, 0.000280938375189499))
