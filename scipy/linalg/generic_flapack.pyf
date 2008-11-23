@@ -1459,7 +1459,7 @@ subroutine cheevr(jobz,range,uplo,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,isuppz,wo
     complex intent(out),dimension(n,m),depend(n,m) :: z
     integer intent(hide),check(shape(z,0)==ldz),depend(n,z) :: ldz=n
     integer intent(hide),dimension(2*m) :: isuppz
-    integer intent(in),depend(n) :: lwork=2*n
+    integer intent(in),depend(n) :: lwork=18*n
     complex  intent(hide),dimension(lwork) :: work
     integer intent(hide),depend(n) :: lrwork=24*n
     real  intent(hide),dimension(lrwork) :: rwork
@@ -1489,7 +1489,7 @@ subroutine zheevr(jobz,range,uplo,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,isuppz,wo
     complex*16 intent(out),dimension(n,m),depend(n,m) :: z
     integer intent(hide),check(shape(z,0)==ldz),depend(n,z) :: ldz=n
     integer intent(hide),dimension(2*m) :: isuppz
-    integer intent(in),depend(n) :: lwork=2*n
+    integer intent(in),depend(n) :: lwork=18*n
     complex*16  intent(hide),dimension(lwork) :: work
     integer intent(hide),depend(n) :: lrwork=24*n
     double precision  intent(hide),dimension(lrwork) :: rwork
@@ -1550,7 +1550,7 @@ subroutine chegv(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,rwork,info)
     complex intent(in,copy),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     real intent(out),dimension(n),depend(n) :: w
-    integer intent(hide) :: lwork=2*n-1
+    integer intent(hide) :: lwork=18*n-1
     complex intent(hide),dimension(lwork) :: work
     real intent(hide),dimension(3*n-2) :: rwork
     integer intent(out) :: info
@@ -1570,7 +1570,7 @@ subroutine zhegv(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,rwork,info)
     complex*16 intent(in,copy),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     double precision intent(out),dimension(n),depend(n) :: w
-    integer intent(hide) :: lwork=2*n-1
+    integer intent(hide) :: lwork=18*n-1
     complex*16 intent(hide),dimension(lwork) :: work
     double precision intent(hide),dimension(3*n-2) :: rwork
     integer intent(out) :: info
@@ -1752,7 +1752,7 @@ subroutine chegvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,m,w,z,l
     real intent(out),dimension(n),depend(n) :: w
     complex intent(out),dimension(n,m),depend(n,m) :: z
     integer intent(hide),check(shape(z,0)==ldz),depend(n,z) :: ldz=n
-    integer intent(in),depend(n) :: lwork=2*n
+    integer intent(in),depend(n) :: lwork=18*n-1
     complex intent(hide),dimension(lwork),depend(n,lwork) :: work
     real intent(hide),dimension(7*n) :: rwork
     integer intent(hide),dimension(5*n) :: iwork
@@ -1783,7 +1783,7 @@ subroutine zhegvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,m,w,z,l
     double precision intent(out),dimension(n),depend(n) :: w
     complex*16 intent(out),dimension(n,m),depend(n,m) :: z
     integer intent(hide),check(shape(z,0)==ldz),depend(n,z) :: ldz=n
-    integer intent(in),depend(n) :: lwork=2*n
+    integer intent(in),depend(n) :: lwork=18*n-1
     complex*16 intent(hide),dimension(lwork),depend(n,lwork) :: work
     double precision intent(hide),dimension(7*n) :: rwork
     integer intent(hide),dimension(5*n) :: iwork
