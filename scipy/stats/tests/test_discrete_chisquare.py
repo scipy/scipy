@@ -27,7 +27,7 @@ def check_discrete_chisquare(distname, arg, alpha = 0.01):
     '''
 
     # define parameters for test
-    n=50000
+    n=2000
     nsupp = 20
     wsupp = 1.0/nsupp
 
