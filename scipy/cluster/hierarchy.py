@@ -973,9 +973,9 @@ def inconsistent(Z, d=2):
            deviation of the link heights, respectively; ``R[i,2]`` is
            the number of links included in the calculation; and
            ``R[i,3]`` is the inconsistency coefficient,
-           
+
            .. math::
-           
+
                \frac{\mathtt{Z[i,2]}-\mathtt{R[i,0]}}
                     {R[i,1]}.
     """

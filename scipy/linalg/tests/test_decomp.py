@@ -515,7 +515,7 @@ def _complex_symrand(dim, dtype):
     # add antisymmetric matrix as imag part
     a = a1 +1j*(triu(a2)-tril(a2))
     return a.astype(dtype)
-  
+
 def eigenhproblem_standard(desc, dim, dtype,
                            overwrite, lower, turbo,
                            eigvals):
@@ -524,7 +524,7 @@ def eigenhproblem_standard(desc, dim, dtype,
         a = _complex_symrand(dim, dtype)
     else:
         a = symrand(dim).astype(dtype)
-    
+
     if overwrite:
         a_c = a.copy()
     else:
@@ -559,7 +559,7 @@ def eigenhproblem_general(desc, dim, dtype,
     assert_array_almost_equal(diag1_, w, DIGITS[dtype])
     diag2_ = diag(dot(z.T.conj(), dot(b_c, z))).real
     assert_array_almost_equal(diag2_, ones(diag2_.shape[0]), DIGITS[dtype])
-    
+
 def test_eigh_integer():
     a = array([[1,2],[2,7]])
     b = array([[3,1],[1,5]])

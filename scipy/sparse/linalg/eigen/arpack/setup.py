@@ -3,7 +3,7 @@ import re
 from os.path import join
 
 def needs_veclib_wrapper(info):
-    """Returns true if needs special veclib wrapper.""" 
+    """Returns true if needs special veclib wrapper."""
     import re
     r_accel = re.compile("Accelerate")
     r_vec = re.compile("vecLib")

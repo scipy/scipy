@@ -347,7 +347,7 @@ class _TestCommon:
         assert_array_almost_equal([1,2,3,4]*M, dot([1,2,3,4], M.toarray()))
         row = matrix([[1,2,3,4]])
         assert_array_almost_equal(row*M, row*M.todense())
-    
+
     def test_small_multiplication(self):
         """test that A*x works for x with shape () (1,) and (1,1)
         """

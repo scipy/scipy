@@ -292,7 +292,7 @@ class spmatrix(object):
             other = np.asanyarray(other)
 
         other = np.asanyarray(other)
-    
+
         if other.ndim == 1 or other.ndim == 2 and other.shape[1] == 1:
             # dense row or column vector
             if other.shape != (N,) and other.shape != (N,1):

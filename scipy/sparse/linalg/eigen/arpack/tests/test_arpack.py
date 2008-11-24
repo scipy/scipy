@@ -261,7 +261,7 @@ class TestEigenComplexNonSymmetric(TestArpack):
         for typ in 'FD':
             for which in ['LI','LR','LM','SI','SR','SM']:
                 for m in self.nonsymmetric:
-                      self.eval_evec(m,typ,k,which)
+                    self.eval_evec(m,typ,k,which)
 
 if __name__ == "__main__":
     run_module_suite()

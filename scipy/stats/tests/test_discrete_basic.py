@@ -132,7 +132,7 @@ def check_oth(distfn, arg, msg):
 
 #next 3 functions copied from test_continous_extra
 #    adjusted
-    
+
 def check_ppf_limits(distfn,arg,msg):
     below,low,upp,above = distfn.ppf([-1,0,1,2], *arg)
     #print distfn.name, distfn.a, low, distfn.b, upp

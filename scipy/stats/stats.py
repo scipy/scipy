@@ -1034,7 +1034,7 @@ def percentileofscore(a, score, kind = 'rank' ):
     "mean": is the average score between "weak" and "strict" and is used in
         testing
         see: http://en.wikipedia.org/wiki/Percentile_rank
-    
+
 
     Parameters
     ----------
@@ -1063,13 +1063,13 @@ def percentileofscore(a, score, kind = 'rank' ):
 
     >>> percentileofscore([1,2,3,4,5,6,7,8,9,10],4) #default kind = 'rank
     40.0
-    >>> percentileofscore([1,2,3,4,5,6,7,8,9,10],4,kind = 'mean') 
+    >>> percentileofscore([1,2,3,4,5,6,7,8,9,10],4,kind = 'mean')
     35.0
     >>> percentileofscore([1,2,3,4,5,6,7,8,9,10],4,kind = 'strict')
     30.0
     >>> percentileofscore([1,2,3,4,5,6,7,8,9,10],4,kind = 'weak')
     40.0
-    
+
     # multiple - 2
     >>> percentileofscore([1,2,3,4,4,5,6,7,8,9],4)
     45.0
@@ -1079,8 +1079,8 @@ def percentileofscore(a, score, kind = 'rank' ):
     30.0
     >>> percentileofscore([1,2,3,4,4,5,6,7,8,9],4,kind = 'weak')
     50.0
-    
-    
+
+
     # multiple - 3
     >>> percentileofscore([1,2,3,4,4,4,5,6,7,8],4)
     50.0
@@ -1090,7 +1090,7 @@ def percentileofscore(a, score, kind = 'rank' ):
     30.0
     >>> percentileofscore([1,2,3,4,4,4,5,6,7,8],4,kind = 'weak')
     60.0
-    
+
     # missing
     >>> percentileofscore([1,2,3,5,6,7,8,9,10,11],4)
     30.0
@@ -1143,7 +1143,7 @@ def percentileofscore(a, score, kind = 'rank' ):
     90.0
     >>> percentileofscore([ 10,20,30,50,60,70,80,90,100,110],110,kind = 'weak')
     100.0
-    
+
 
 
     #out of bounds
@@ -1154,7 +1154,7 @@ def percentileofscore(a, score, kind = 'rank' ):
 
 '''
 
-    
+
     a=np.array(a)
     n = len(a)
 
@@ -1164,12 +1164,12 @@ def percentileofscore(a, score, kind = 'rank' ):
             a_len = np.array(range(len(a)))
         else:
             a_len = np.array(range(len(a))) + 1.0
-             
+
         a = np.sort(a)
         idx = [a == score]
-        pct = (np.mean(a_len[idx])/(n))*100.0             
+        pct = (np.mean(a_len[idx])/(n))*100.0
         return pct
-    
+
     elif kind == 'strict':
         return sum(a<score)/float(n)*100
     elif kind == 'weak':
@@ -2145,7 +2145,7 @@ def friedmanchisquare(*args):
     probability value.
 
     This function uses Chisquared aproximation of Friedman Chisquared
-    distribution. This is exact only if n > 10 and factor levels > 6. 
+    distribution. This is exact only if n > 10 and factor levels > 6.
 
     Returns: friedman chi-square statistic, associated p-valueIt assumes 3 or more repeated measures.  Only 3
     """
@@ -2155,7 +2155,7 @@ def friedmanchisquare(*args):
     n = len(args[0])
     for i in range(1,k):
         if len(args[i]) <> n:
-           raise ValueError, 'Unequal N in friedmanchisquare.  Aborting.'
+            raise ValueError, 'Unequal N in friedmanchisquare.  Aborting.'
     if n < 10 and k < 6:
         print 'Warning: friedmanchisquare test using Chisquared aproximation'
 
@@ -2172,7 +2172,7 @@ def friedmanchisquare(*args):
         for t in repnum:
             ties += t*(t*t-1)
     c = 1 - ties / float(k*(k*k-1)*n)
-    
+
     ssbn = pysum(pysum(data)**2)
     chisq = ( 12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1) ) / c
     return chisq, chisqprob(chisq,k-1)

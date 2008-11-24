@@ -85,14 +85,14 @@ class LinearOperator:
         """Default matrix-matrix multiplication handler.  Falls back on
         the user-defined matvec() routine, which is always provided.
         """
-        
+
         return np.hstack( [ self.matvec(col.reshape(-1,1)) for col in X.T ] )
 
 
     def matvec(self, x):
         """Matrix-vector multiplication
 
-        Performs the operation y=A*x where A is an MxN linear 
+        Performs the operation y=A*x where A is an MxN linear
         operator and x is a column vector or rank-1 array.
 
         Parameters
@@ -103,7 +103,7 @@ class LinearOperator:
         Returns
         -------
         y : {matrix, ndarray}
-            A matrix or ndarray with shape (M,) or (M,1) depending 
+            A matrix or ndarray with shape (M,) or (M,1) depending
             on the type and shape of the x argument.
 
         Notes
@@ -114,14 +114,14 @@ class LinearOperator:
         """
 
         x = np.asanyarray(x)
-        
+
         M,N = self.shape
-            
+
         if x.shape != (N,) and x.shape != (N,1):
             raise ValueError('dimension mismatch')
 
         y = self._matvec(x)
-        
+
         if isinstance(x, np.matrix):
             y = np.asmatrix(y)
         else:
@@ -141,7 +141,7 @@ class LinearOperator:
     def matmat(self, X):
         """Matrix-matrix multiplication
 
-        Performs the operation y=A*X where A is an MxN linear 
+        Performs the operation y=A*X where A is an MxN linear
         operator and X dense N*K matrix or ndarray.
 
         Parameters
@@ -163,10 +163,10 @@ class LinearOperator:
         """
 
         X = np.asanyarray(X)
-        
+
         if X.ndim != 2:
             raise ValueError('expected rank-2 ndarray or matrix')
-        
+
         M,N = self.shape
 
         if X.shape[0] != N:
@@ -178,7 +178,7 @@ class LinearOperator:
             Y = np.asmatrix(Y)
 
         return Y
-        
+
 
     def __mul__(self,x):
         x = np.asarray(x)

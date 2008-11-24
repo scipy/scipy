@@ -4,7 +4,7 @@
 from numpy.testing import *
 
 import numpy as np
-import scipy.sparse as sparse 
+import scipy.sparse as sparse
 
 from scipy.sparse.linalg.interface import *
 
@@ -27,28 +27,28 @@ class TestLinearOperator(TestCase):
 
         for matvec in self.matvecs:
             A = LinearOperator((2,3), matvec)
-    
+
             assert_equal(A.matvec(np.array([1,2,3])),       [14,32])
             assert_equal(A.matvec(np.array([[1],[2],[3]])), [[14],[32]])
             assert_equal(A * np.array([1,2,3]),             [14,32])
             assert_equal(A * np.array([[1],[2],[3]]),       [[14],[32]])
-            
+
             assert_equal(A.matvec(np.matrix([[1],[2],[3]])), [[14],[32]])
             assert_equal(A * np.matrix([[1],[2],[3]]),       [[14],[32]])
-    
+
             assert( isinstance(A.matvec(np.array([1,2,3])),       np.ndarray) )
             assert( isinstance(A.matvec(np.array([[1],[2],[3]])), np.ndarray) )
             assert( isinstance(A * np.array([1,2,3]),             np.ndarray) )
             assert( isinstance(A * np.array([[1],[2],[3]]),       np.ndarray) )
-    
+
             assert( isinstance(A.matvec(np.matrix([[1],[2],[3]])), np.ndarray) )
             assert( isinstance(A * np.matrix([[1],[2],[3]]),       np.ndarray) )
-    
+
             assert_raises(ValueError, A.matvec, np.array([1,2]))
             assert_raises(ValueError, A.matvec, np.array([1,2,3,4]))
             assert_raises(ValueError, A.matvec, np.array([[1],[2]]))
             assert_raises(ValueError, A.matvec, np.array([[1],[2],[3],[4]]))
-        
+
 
 
 class TestAsLinearOperator(TestCase):
@@ -102,4 +102,3 @@ class TestAsLinearOperator(TestCase):
 
             if hasattr(M,'dtype'):
                 assert_equal(A.dtype, M.dtype)
-

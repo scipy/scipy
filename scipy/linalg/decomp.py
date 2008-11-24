@@ -207,7 +207,7 @@ def eig(a,b=None, left=False, right=True, overwrite_a=False, overwrite_b=False):
 def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
          overwrite_b=False, turbo=True, eigvals=None, type=1):
     """Solve an ordinary or generalized eigenvalue problem for a complex
-    Hermitian or real symmetric matrix. 
+    Hermitian or real symmetric matrix.
 
     Find eigenvalues w and optionally eigenvectors v of matrix a, where
     b is positive definite::
@@ -262,8 +262,8 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         type 2:        inv(v).conj() a  inv(v) = w
         type = 1 or 2:      v.conj() b      v  = I
         type = 3     :      v.conj() inv(b) v  = I
-        
-    Raises LinAlgError if eigenvalue computation does not converge, 
+
+    Raises LinAlgError if eigenvalue computation does not converge,
     an error occurred, or b matrix is not definite positive. Note that
     if input matrices are not symmetric or hermitian, no error is reported
     but results will be wrong.
@@ -296,7 +296,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
             cplx = cplx or False
     else:
         b1 = None
-        
+
     # Set job for fortran routines
     _job = (eigvals_only and 'N') or 'V'
 
@@ -321,17 +321,17 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         pfx = 'he'
     else:
         pfx = 'sy'
-        
+
     #  Standard Eigenvalue Problem
     #  Use '*evr' routines
     # FIXME: implement calculation of optimal lwork
     #        for all lapack routines
     if b1 is None:
         (evr,) = get_lapack_funcs((pfx+'evr',), (a1,))
-	if eigvals is None:
+        if eigvals is None:
             w, v, info = evr(a1, uplo=uplo, jobz=_job, range="A", il=1,
                              iu=a1.shape[0], overwrite_a=overwrite_a)
-        else: 
+        else:
             (lo, hi)= eigvals
             w_tot, v, info = evr(a1, uplo=uplo, jobz=_job, range="I",
                                  il=lo, iu=hi, overwrite_a=overwrite_a)
@@ -367,7 +367,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
             return w
         else:
             return w, v
-        
+
     elif info < 0:
         raise LinAlgError("illegal value in %i-th argument of internal"
                           " fortran routine." % (-info))
@@ -579,7 +579,7 @@ def eigvals(a,b=None,overwrite_a=0):
 def eigvalsh(a, b=None, lower=True, overwrite_a=False,
              overwrite_b=False, turbo=True, eigvals=None, type=1):
     """Solve an ordinary or generalized eigenvalue problem for a complex
-    Hermitian or real symmetric matrix. 
+    Hermitian or real symmetric matrix.
 
     Find eigenvalues w of matrix a, where b is positive definite::
 
@@ -622,7 +622,7 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
         The N (1<=N<=M) selected eigenvalues, in ascending order, each
         repeated according to its multiplicity.
 
-    Raises LinAlgError if eigenvalue computation does not converge, 
+    Raises LinAlgError if eigenvalue computation does not converge,
     an error occurred, or b matrix is not definite positive. Note that
     if input matrices are not symmetric or hermitian, no error is reported
     but results will be wrong.
@@ -636,7 +636,7 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
     """
     return eigh(a, b=b, lower=lower, eigvals_only=True,
                 overwrite_a=overwrite_a, overwrite_b=overwrite_b,
-                turbo=turbo, eigvals=eigvals, type=type) 
+                turbo=turbo, eigvals=eigvals, type=type)
 
 def eigvals_banded(a_band,lower=0,overwrite_a_band=0,
                    select='a', select_range=None):
