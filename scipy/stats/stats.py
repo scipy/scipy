@@ -1159,7 +1159,7 @@ def percentileofscore(a, score, kind = 'rank' ):
     n = len(a)
 
     if kind == 'rank':
-        if not(any(a == score)):
+        if not(np.any(a == score)):
             a = np.append(a,score)
             a_len = np.array(range(len(a)))
         else:
