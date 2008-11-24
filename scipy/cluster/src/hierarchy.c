@@ -841,7 +841,6 @@ void linkage_alt(double *dm, double *Z, double *X,
 
     /** Rows i+1 to j-1 lose one unit of space, so we move them up. */
     /** Rows j to np-1 lose no space. We do nothing to them. */
-
     /**    memcpy(rows[0], buf, sizeof(double) * rowsize[0] - k);*/
 
     for (i = 0; i < mini; i++) {
@@ -1418,7 +1417,8 @@ void get_max_dist_for_each_cluster(const double *Z, double *max_dists, int n) {
       max_dist = CPY_MAX(max_dist, max_dists[rid-n]);
     }
     max_dists[ndid-n] = max_dist;
-    CPY_DEBUG_MSG("i=%d maxdist[i]=%5.5f verif=%5.5f\n", ndid-n, max_dist, max_dists[ndid-n]);
+    CPY_DEBUG_MSG("i=%d maxdist[i]=%5.5f verif=%5.5f\n",
+		  ndid-n, max_dist, max_dists[ndid-n]);
     k--;
   }
   free(curNode);

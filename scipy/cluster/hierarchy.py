@@ -1212,7 +1212,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
             else:
                 raise ValueError('Linkage matrix must have 4 columns.')
         if Z.shape[0] == 0:
-            raise ValueError('Linkage must be over at least one observation.')
+            raise ValueError('Linkage must be computed on at least two observations.')
         n = Z.shape[0]
         if n > 1:
             if ((Z[:,0] < 0).any() or
@@ -2376,13 +2376,13 @@ def maxdists(Z):
           specifically, ``MD[i] = Z[Q(i)-n, 2].max()`` where ``Q(i)`` is the
           set of all node indices below and including node i.
     """
-    Z = np.asarray(Z, order='c')
+    Z = np.asarray(Z, order='c', dtype=np.double)
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
     MD = np.zeros((n-1,))
     [Z] = _copy_arrays_if_base_present([Z])
-    _hierarchy_wrap.get_max_dist_for_each_hierarchy_wrap(Z, MD, int(n))
+    _hierarchy_wrap.get_max_dist_for_each_cluster_wrap(Z, MD, int(n))
     return MD
 
 def maxinconsts(Z, R):
