@@ -1241,11 +1241,11 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
                 raise ValueError('Linkage \'%s\' uses the same cluster more than once.' % name)
             else:
                 raise ValueError('Linkage uses the same cluster more than once.')
-        if _check_hierarchy_not_all_clusters_used(Z):
-            if name:
-                raise ValueError('Linkage \'%s\' does not use all clusters.' % name)
-            else:
-                raise ValueError('Linkage does not use all clusters.')
+#         if _check_hierarchy_not_all_clusters_used(Z):
+#             if name:
+#                 raise ValueError('Linkage \'%s\' does not use all clusters.' % name)
+#             else:
+#                 raise ValueError('Linkage does not use all clusters.')
     except Exception, e:
         if throw:
             raise
