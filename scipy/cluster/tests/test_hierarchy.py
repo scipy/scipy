@@ -734,8 +734,8 @@ class TestLeavesList(TestCase):
         node = to_tree(Z)
         self.failUnless((leaves_list(Z) == [0, 1]).all())
 
-    def test_leaves_list_1x4(self):
-        "Tests leaves_list(Z) on a 1x4 linkage."
+    def test_leaves_list_2x4(self):
+        "Tests leaves_list(Z) on a 2x4 linkage."
         Z = np.asarray([[0,   1, 3.0, 2],
                         [3,   2, 4.0, 3]], dtype=np.double)
         node = to_tree(Z)
