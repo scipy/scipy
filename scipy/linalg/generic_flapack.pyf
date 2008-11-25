@@ -1015,8 +1015,8 @@ subroutine <tchar=c,z>ggev(compute_vl,compute_vr,n,a,b,alpha,beta,vl,ldvl,vr,ldv
     <type_in>  depend(ldvr,n), dimension(ldvr,n),intent(out) :: vr
     integer intent(hide),depend(n,compute_vr) :: ldvr=(compute_vr?n:1)
     
-    integer optional,intent(in),depend(n,compute_vl,compute_vr) :: lwork=8*n
-    check((lwork==-1) || (lwork>=MAX(1,8*n))) :: lwork
+    integer optional,intent(in),depend(n,compute_vl,compute_vr) :: lwork=2*n
+    check((lwork==-1) || (lwork>=MAX(1,2*n))) :: lwork
     <type_in> intent(out), dimension(MAX(lwork,1)), depend(lwork) :: work
     <rtype_in> intent(hide), dimension(8*n), depend(n) :: rwork
 
