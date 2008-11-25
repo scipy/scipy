@@ -827,21 +827,6 @@ def to_tree(Z, rd=False):
     # Create a list full of None's to store the node objects
     d = [None] * (n*2-1)
 
-    # If we encounter a cluster being combined more than once, the matrix
-    # must be corrupt.
-    if len(np.unique(Z[:, 0:2].reshape((2 * (n - 1),)))) != 2 * (n - 1):
-        raise ValueError('Corrupt matrix Z. Some clusters are more than once.')
-    # If a cluster index is out of bounds, report an error.
-    if (Z[:, 0:2] >= 2 * n - 1).any():
-        raise ValueError('Corrupt matrix Z. Some cluster indices (first and second) are out of bounds.')
-    if (Z[:, 0:2] < 0).any():
-        raise ValueError('Corrupt matrix Z. Some cluster indices (first and second columns) are negative.')
-    if (Z[:, 2] < 0).any():
-        raise ValueError('Corrupt matrix Z. Some distances (third column) are negative.')
-
-    if (Z[:, 3] < 0).any():
-        raise ValueError('Some counts (fourth column) are negative.')
-
     # Create the nodes corresponding to the n original objects.
     for i in xrange(0, n):
         d[i] = ClusterNode(i)
