@@ -78,6 +78,7 @@ def check_discrete_chisquare(distname, arg, alpha = 0.01):
     assert (pval > alpha), 'chisquare - test for %s' \
            'at arg = %s with pval = %s' % (distname,str(arg),str(pval))
 
+@dec.slow
 def test_discrete_rvs_cdf():
     distdiscrete = [
         ['bernoulli',(0.3,)],

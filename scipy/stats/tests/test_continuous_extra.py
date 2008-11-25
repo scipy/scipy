@@ -16,6 +16,7 @@ from test_continuous_basic import distcont
 
 DECIMAL = 5
 
+@npt.dec.slow
 def test_cont_extra():
     for distname, arg in distcont[:]:
         distfn = getattr(stats, distname)
@@ -27,6 +28,7 @@ def test_cont_extra():
         yield check_loc_scale, distfn, arg, distname + \
               ' loc, scale test'
 
+@npt.dec.slow
 def _est_cont_skip():
     for distname, arg in distcont:
         distfn = getattr(stats, distname)        

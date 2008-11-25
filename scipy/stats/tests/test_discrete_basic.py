@@ -24,7 +24,7 @@ distdiscrete = [
                            # looking closer, mean, var should be inf for arg=2
 
 
-
+@npt.dec.slow
 def test_discrete_basic():
     for distname, arg in distdiscrete:
         distfn = getattr(stats,distname)
@@ -41,9 +41,8 @@ def test_discrete_basic():
         skurt = stats.kurtosis(rvs)
         sskew = stats.skew(rvs)
         yield check_sample_skew_kurt, distfn, arg, skurt, sskew, distname
-        yield check_entropy, distfn, arg, distname + \
-              ' entropy nan test'
-
+        
+@npt.dec.slow
 def test_discrete_extra():
     for distname, arg in distdiscrete:
         distfn = getattr(stats,distname)
@@ -51,7 +50,10 @@ def test_discrete_extra():
               ' ppf limit test'
         yield check_isf_limits, distfn, arg, distname + \
               ' isf limit test'
+        yield check_entropy, distfn, arg, distname + \
+              ' entropy nan test'
 
+@npt.dec.slow
 def _est_discrete_private():
     #testing private methods mostly for debugging
     #   some tests might fail by design,

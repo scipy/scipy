@@ -44,7 +44,7 @@ distcont = [
     ['frechet_r', (1.8928171603534227,)],
     ['gamma', (1.9932305483800778,)],
     ['gausshyper', (13.763771604130699, 3.1189636648681431,
-                    2.5145980350183019, 5.1811649903971615)],
+                    2.5145980350183019, 5.1811649903971615)],  #veryslow
     ['genexpon', (9.1325976465418908, 16.231956600590632, 3.2819552690843983)],
     ['genextreme', (3.3184017469423535,)],
     ['gengamma', (4.4162385429431925, 3.1193091679242761)],
@@ -89,8 +89,8 @@ distcont = [
     ['powerlognorm', (2.1413923530064087, 0.44639540782048337)],
     ['powernorm', (4.4453652254590779,)],
     ['rayleigh', ()],
-    ['rdist', (3.8266985793976525,)],
-    ['rdist', (541.0,)],   # from ticket #758
+    ['rdist', (3.8266985793976525,)],  #veryslow
+    ['rdist', (541.0,)],   # from ticket #758    #veryslow
     ['recipinvgauss', (0.63004267809369119,)],
     ['reciprocal', (0.0062309367010521255, 1.0062309367010522)],
     ['rice', (0.7749725210111873,)],
@@ -122,6 +122,7 @@ distcont = [
 ##    ['genextreme', (-0.01,)]
 ##    ]
 
+@npt.dec.slow
 def test_cont_basic():
     for distname, arg in distcont[:]:
         distfn = getattr(stats, distname)
@@ -215,6 +216,7 @@ distmissing = ['wald', 'gausshyper', 'genexpon', 'rv_continuous',
 
 distmiss = [[dist,args] for dist,args in distcont if dist in distmissing]
 
+@npt.dec.slow
 def test_missing_distributions():
     # K-S test of distributions missing in test_distributions.py
     for dist, args in distmiss:
