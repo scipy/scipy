@@ -547,23 +547,27 @@ class TestIsValidLinkage(TestCase):
         Z = np.asarray([[0,   1, 3.0, 2],
                         [3,   2, 4.0, 3]], dtype=np.int)
         self.failUnless(is_valid_linkage(Z) == False)
+        self.failUnlessRaises(TypeError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_5_columns(self):
         "Tests is_valid_linkage(Z) with 5 columns."
         Z = np.asarray([[0,   1, 3.0, 2, 5],
                         [3,   2, 4.0, 3, 3]], dtype=np.double)
         self.failUnless(is_valid_linkage(Z) == False)
+        self.failUnlessRaises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_3_columns(self):
         "Tests is_valid_linkage(Z) with 3 columns."
         Z = np.asarray([[0,   1, 3.0],
                         [3,   2, 4.0]], dtype=np.double)
         self.failUnless(is_valid_linkage(Z) == False)
+        self.failUnlessRaises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_empty(self):
         "Tests is_valid_linkage(Z) with empty linkage."
         Z = np.zeros((0, 4), dtype=np.double)
         self.failUnless(is_valid_linkage(Z) == False)
+        self.failUnlessRaises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_1x4(self):
         "Tests is_valid_linkage(Z) on linkage over 2 observations."
@@ -575,6 +579,35 @@ class TestIsValidLinkage(TestCase):
         Z = np.asarray([[0,   1, 3.0, 2],
                         [3,   2, 4.0, 3]], dtype=np.double)
         self.failUnless(is_valid_linkage(Z) == True)
+
+    def test_is_valid_linkage_2x4_before1(self):
+        "Tests is_valid_linkage(Z) on linkage over 3 observations with clusters used before they're formed (case 1)."
+        Z = np.asarray([[0,   4, 3.0, 2],
+                        [2,   3, 4.0, 3]], dtype=np.double)
+        self.failUnless(is_valid_linkage(Z) == False)
+        self.failUnlessRaises(ValueError, is_valid_linkage, Z, throw=True)
+
+
+    def test_is_valid_linkage_2x4_before2(self):
+        "Tests is_valid_linkage(Z) on linkage over 3 observations with clusters used before they're formed (case 1)."
+        Z = np.asarray([[0,   1, 3.0, 2],
+                        [2,   5, 4.0, 3]], dtype=np.double)
+        self.failUnless(is_valid_linkage(Z) == False)
+        self.failUnlessRaises(ValueError, is_valid_linkage, Z, throw=True)
+
+    def test_is_valid_linkage_2x4_twice1(self):
+        "Tests is_valid_linkage(Z) on linkage over 3 observations with clusters used twice (case 1)."
+        Z = np.asarray([[0,   1, 3.0, 2],
+                        [3,   3, 4.0, 3]], dtype=np.double)
+        self.failUnless(is_valid_linkage(Z) == False)
+        self.failUnlessRaises(ValueError, is_valid_linkage, Z, throw=True)
+
+    def test_is_valid_linkage_2x4_twice2(self):
+        "Tests is_valid_linkage(Z) on linkage over 3 observations with clusters used twice (case 1)."
+        Z = np.asarray([[0,   1, 3.0, 2],
+                        [0,   1, 4.0, 3]], dtype=np.double)
+        self.failUnless(is_valid_linkage(Z) == False)
+        self.failUnlessRaises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_4_and_up(self):
         "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3)."
@@ -590,6 +623,7 @@ class TestIsValidLinkage(TestCase):
             Z = linkage(y)            
             Z[int(i/2),0] = -2
             self.failUnless(is_valid_linkage(Z) == False)
+            self.failUnlessRaises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_4_and_up_neg_index_right(self):
         "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative indices (right)."
@@ -598,6 +632,7 @@ class TestIsValidLinkage(TestCase):
             Z = linkage(y)            
             Z[int(i/2),1] = -2
             self.failUnless(is_valid_linkage(Z) == False)
+            self.failUnlessRaises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_4_and_up_neg_dist(self):
         "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative distances."
@@ -606,6 +641,7 @@ class TestIsValidLinkage(TestCase):
             Z = linkage(y)            
             Z[int(i/2),2] = -0.5
             self.failUnless(is_valid_linkage(Z) == False)
+            self.failUnlessRaises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_4_and_up_neg_counts(self):
         "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative counts."
@@ -614,6 +650,7 @@ class TestIsValidLinkage(TestCase):
             Z = linkage(y)            
             Z[int(i/2),3] = -2
             self.failUnless(is_valid_linkage(Z) == False)
+            self.failUnlessRaises(ValueError, is_valid_linkage, Z, throw=True)
 
 class TestNumObsLinkage(TestCase):
 
@@ -718,28 +755,28 @@ class TestIsMonotonic(TestCase):
         "Tests is_monotonic(Z) on 3x4 linkage. Expecting True."
         Z = np.asarray([[0, 1, 0.3, 2],
                         [2, 3, 0.4, 2],
-                        [3, 4, 0.6, 4]], dtype=np.double)
+                        [4, 5, 0.6, 4]], dtype=np.double)
         self.failUnless(is_monotonic(Z) == True)
 
     def test_is_monotonic_3x4_F1(self):
         "Tests is_monotonic(Z) on 3x4 linkage (case 1). Expecting False."
         Z = np.asarray([[0, 1, 0.3, 2],
                         [2, 3, 0.2, 2],
-                        [3, 4, 0.6, 4]], dtype=np.double)
+                        [4, 5, 0.6, 4]], dtype=np.double)
         self.failUnless(is_monotonic(Z) == False)
 
     def test_is_monotonic_3x4_F2(self):
         "Tests is_monotonic(Z) on 3x4 linkage (case 2). Expecting False."
         Z = np.asarray([[0, 1, 0.8, 2],
                         [2, 3, 0.4, 2],
-                        [3, 4, 0.6, 4]], dtype=np.double)
+                        [4, 5, 0.6, 4]], dtype=np.double)
         self.failUnless(is_monotonic(Z) == False)
 
     def test_is_monotonic_3x4_F3(self):
         "Tests is_monotonic(Z) on 3x4 linkage (case 3). Expecting False"
         Z = np.asarray([[0, 1, 0.3, 2],
                         [2, 3, 0.4, 2],
-                        [3, 4, 0.2, 4]], dtype=np.double)
+                        [4, 5, 0.2, 4]], dtype=np.double)
         self.failUnless(is_monotonic(Z) == False)
 
     def test_is_monotonic_tdist_linkage(self):

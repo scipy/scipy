@@ -1231,6 +1231,21 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
                     raise ValueError('Linkage \'%s\' contains negative counts.' % name)
                 else:
                     raise ValueError('Linkage contains negative counts.')
+        if _check_hierarchy_uses_cluster_before_formed(Z):
+            if name:
+                raise ValueError('Linkage \'%s\' uses non-singleton cluster before its formed.' % name)
+            else:
+                raise ValueError('Linkage uses non-singleton cluster before its formed.')
+        if _check_hierarchy_uses_cluster_more_than_once(Z):
+            if name:
+                raise ValueError('Linkage \'%s\' uses the same cluster more than once.' % name)
+            else:
+                raise ValueError('Linkage uses the same cluster more than once.')
+        if _check_hierarchy_not_all_clusters_used(Z):
+            if name:
+                raise ValueError('Linkage \'%s\' does not use all clusters.' % name)
+            else:
+                raise ValueError('Linkage does not use all clusters.')
     except Exception, e:
         if throw:
             raise
@@ -1238,6 +1253,32 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
             _warning(str(e))
         valid = False
     return valid
+
+def _check_hierarchy_uses_cluster_before_formed(Z):
+    n = Z.shape[0] + 1
+    for i in xrange(0, n - 1):
+        if Z[i, 0] >= n + i or Z[i, 1] >= n + i:
+            return True
+    return False
+
+def _check_hierarchy_uses_cluster_more_than_once(Z):
+    n = Z.shape[0] + 1
+    chosen = set([])
+    for i in xrange(0, n - 1):
+        if (Z[i, 0] in chosen) or (Z[i, 1] in chosen) or Z[i, 0] == Z[i, 1]:
+            return True
+        chosen.add(Z[i, 0])
+        chosen.add(Z[i, 1])
+    return False
+
+def _check_hierarchy_not_all_clusters_used(Z):
+    n = Z.shape[0] + 1
+    chosen = set([])
+    for i in xrange(0, n - 1):
+        chosen.add(int(Z[i, 0]))
+        chosen.add(int(Z[i, 1]))
+    must_chosen = set(range(0, 2 * n - 2))
+    return len(must_chosen.difference(chosen)) > 0
 
 def num_obs_linkage(Z):
     """
