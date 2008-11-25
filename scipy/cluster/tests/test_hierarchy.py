@@ -38,7 +38,7 @@ import os.path
 import numpy as np
 from numpy.testing import *
 
-from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage, num_obs_linkage, inconsistent, cophenet, from_mlab_linkage, fclusterdata, fcluster, is_isomorphic, single, complete, average, weighted, centroid, median, ward, leaders, correspond, is_monotonic, maxdists, maxinconsts, maxRstat
+from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage, num_obs_linkage, inconsistent, cophenet, from_mlab_linkage, fclusterdata, fcluster, is_isomorphic, single, complete, average, weighted, centroid, median, ward, leaders, correspond, is_monotonic, maxdists, maxinconsts, maxRstat, is_valid_linkage
 from scipy.spatial.distance import squareform, pdist
 
 _tdist = np.array([[0,    662,  877,  255,  412,  996],
@@ -539,6 +539,81 @@ class TestIsIsomorphic(TestCase):
             b[Q[0:nerrors]] %= nclusters
         self.failUnless(is_isomorphic(a, b) == (not noniso))
         self.failUnless(is_isomorphic(b, a) == (not noniso))
+
+class TestIsValidLinkage(TestCase):
+
+    def test_is_valid_linkage_int_type(self):
+        "Tests is_valid_linkage(Z) with integer type."
+        Z = np.asarray([[0,   1, 3.0, 2],
+                        [3,   2, 4.0, 3]], dtype=np.int)
+        self.failUnless(is_valid_linkage(Z) == False)
+
+    def test_is_valid_linkage_5_columns(self):
+        "Tests is_valid_linkage(Z) with 5 columns."
+        Z = np.asarray([[0,   1, 3.0, 2, 5],
+                        [3,   2, 4.0, 3, 3]], dtype=np.double)
+        self.failUnless(is_valid_linkage(Z) == False)
+
+    def test_is_valid_linkage_3_columns(self):
+        "Tests is_valid_linkage(Z) with 3 columns."
+        Z = np.asarray([[0,   1, 3.0],
+                        [3,   2, 4.0]], dtype=np.double)
+        self.failUnless(is_valid_linkage(Z) == False)
+
+    def test_is_valid_linkage_empty(self):
+        "Tests is_valid_linkage(Z) with empty linkage."
+        Z = np.zeros((0, 4), dtype=np.double)
+        self.failUnless(is_valid_linkage(Z) == False)
+
+    def test_is_valid_linkage_1x4(self):
+        "Tests is_valid_linkage(Z) on linkage over 2 observations."
+        Z = np.asarray([[0,   1, 3.0, 2]], dtype=np.double)
+        self.failUnless(is_valid_linkage(Z) == True)
+
+    def test_is_valid_linkage_2x4(self):
+        "Tests is_valid_linkage(Z) on linkage over 3 observations."
+        Z = np.asarray([[0,   1, 3.0, 2],
+                        [3,   2, 4.0, 3]], dtype=np.double)
+        self.failUnless(is_valid_linkage(Z) == True)
+
+    def test_is_valid_linkage_4_and_up(self):
+        "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3)."
+        for i in xrange(4, 15, 3):
+            y = np.random.rand(i*(i-1)/2)
+            Z = linkage(y)
+            self.failUnless(is_valid_linkage(Z) == True)
+
+    def test_is_valid_linkage_4_and_up_neg_index_left(self):
+        "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative indices (left)."
+        for i in xrange(4, 15, 3):
+            y = np.random.rand(i*(i-1)/2)
+            Z = linkage(y)            
+            Z[int(i/2),0] = -2
+            self.failUnless(is_valid_linkage(Z) == False)
+
+    def test_is_valid_linkage_4_and_up_neg_index_right(self):
+        "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative indices (right)."
+        for i in xrange(4, 15, 3):
+            y = np.random.rand(i*(i-1)/2)
+            Z = linkage(y)            
+            Z[int(i/2),1] = -2
+            self.failUnless(is_valid_linkage(Z) == False)
+
+    def test_is_valid_linkage_4_and_up_neg_dist(self):
+        "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative distances."
+        for i in xrange(4, 15, 3):
+            y = np.random.rand(i*(i-1)/2)
+            Z = linkage(y)            
+            Z[int(i/2),2] = -0.5
+            self.failUnless(is_valid_linkage(Z) == False)
+
+    def test_is_valid_linkage_4_and_up_neg_counts(self):
+        "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative counts."
+        for i in xrange(4, 15, 3):
+            y = np.random.rand(i*(i-1)/2)
+            Z = linkage(y)            
+            Z[int(i/2),3] = -2
+            self.failUnless(is_valid_linkage(Z) == False)
 
 class TestNumObsLinkage(TestCase):
 

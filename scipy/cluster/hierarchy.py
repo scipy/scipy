@@ -1198,9 +1198,9 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
                 raise TypeError('Variable is not a valid array.')
         if Z.dtype != np.double:
             if name:
-                raise TypeError('Linkage matrix \'%s\' must contain doubles (double).' % name)
+                raise TypeError('Linkage matrix \'%s\' must contain doubles.' % name)
             else:
-                raise TypeError('Linkage matrix must contain doubles (double).')
+                raise TypeError('Linkage matrix must contain doubles.')
         if len(Z.shape) != 2:
             if name:
                 raise ValueError('Linkage matrix \'%s\' must have shape=2 (i.e. be two-dimensional).' % name)
@@ -1221,6 +1221,16 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
                     raise ValueError('Linkage \'%s\' contains negative indices.' % name)
                 else:
                     raise ValueError('Linkage contains negative indices.')
+            if (Z[:, 2] < 0).any():
+                if name:
+                    raise ValueError('Linkage \'%s\' contains negative distances.' % name)
+                else:
+                    raise ValueError('Linkage contains negative distances.')
+            if (Z[:, 3] < 0).any():
+                if name:
+                    raise ValueError('Linkage \'%s\' contains negative counts.' % name)
+                else:
+                    raise ValueError('Linkage contains negative counts.')
     except Exception, e:
         if throw:
             raise
