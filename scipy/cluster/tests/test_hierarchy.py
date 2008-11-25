@@ -38,7 +38,7 @@ import os.path
 import numpy as np
 from numpy.testing import *
 
-from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage, num_obs_linkage, inconsistent, cophenet, from_mlab_linkage, fclusterdata, fcluster, is_isomorphic, single, complete, average, weighted, centroid, median, ward, leaders, correspond, is_monotonic, maxdists, maxinconsts, maxRstat, is_valid_linkage
+from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage, num_obs_linkage, inconsistent, cophenet, from_mlab_linkage, fclusterdata, fcluster, is_isomorphic, single, complete, average, weighted, centroid, median, ward, leaders, correspond, is_monotonic, maxdists, maxinconsts, maxRstat, is_valid_linkage, is_valid_im, to_tree, leaves_list
 from scipy.spatial.distance import squareform, pdist
 
 _tdist = np.array([[0,    662,  877,  255,  412,  996],
@@ -580,35 +580,6 @@ class TestIsValidLinkage(TestCase):
                         [3,   2, 4.0, 3]], dtype=np.double)
         self.failUnless(is_valid_linkage(Z) == True)
 
-    def test_is_valid_linkage_2x4_before1(self):
-        "Tests is_valid_linkage(Z) on linkage over 3 observations with clusters used before they're formed (case 1)."
-        Z = np.asarray([[0,   4, 3.0, 2],
-                        [2,   3, 4.0, 3]], dtype=np.double)
-        self.failUnless(is_valid_linkage(Z) == False)
-        self.failUnlessRaises(ValueError, is_valid_linkage, Z, throw=True)
-
-
-    def test_is_valid_linkage_2x4_before2(self):
-        "Tests is_valid_linkage(Z) on linkage over 3 observations with clusters used before they're formed (case 1)."
-        Z = np.asarray([[0,   1, 3.0, 2],
-                        [2,   5, 4.0, 3]], dtype=np.double)
-        self.failUnless(is_valid_linkage(Z) == False)
-        self.failUnlessRaises(ValueError, is_valid_linkage, Z, throw=True)
-
-    def test_is_valid_linkage_2x4_twice1(self):
-        "Tests is_valid_linkage(Z) on linkage over 3 observations with clusters used twice (case 1)."
-        Z = np.asarray([[0,   1, 3.0, 2],
-                        [3,   3, 4.0, 3]], dtype=np.double)
-        self.failUnless(is_valid_linkage(Z) == False)
-        self.failUnlessRaises(ValueError, is_valid_linkage, Z, throw=True)
-
-    def test_is_valid_linkage_2x4_twice2(self):
-        "Tests is_valid_linkage(Z) on linkage over 3 observations with clusters used twice (case 1)."
-        Z = np.asarray([[0,   1, 3.0, 2],
-                        [0,   1, 4.0, 3]], dtype=np.double)
-        self.failUnless(is_valid_linkage(Z) == False)
-        self.failUnlessRaises(ValueError, is_valid_linkage, Z, throw=True)
-
     def test_is_valid_linkage_4_and_up(self):
         "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3)."
         for i in xrange(4, 15, 3):
@@ -652,6 +623,84 @@ class TestIsValidLinkage(TestCase):
             self.failUnless(is_valid_linkage(Z) == False)
             self.failUnlessRaises(ValueError, is_valid_linkage, Z, throw=True)
 
+class TestIsValidInconsistent(TestCase):
+
+    def test_is_valid_im_int_type(self):
+        "Tests is_valid_im(R) with integer type."
+        R = np.asarray([[0,   1, 3.0, 2],
+                        [3,   2, 4.0, 3]], dtype=np.int)
+        self.failUnless(is_valid_im(R) == False)
+        self.failUnlessRaises(TypeError, is_valid_im, R, throw=True)
+
+    def test_is_valid_im_5_columns(self):
+        "Tests is_valid_im(R) with 5 columns."
+        R = np.asarray([[0,   1, 3.0, 2, 5],
+                        [3,   2, 4.0, 3, 3]], dtype=np.double)
+        self.failUnless(is_valid_im(R) == False)
+        self.failUnlessRaises(ValueError, is_valid_im, R, throw=True)
+
+    def test_is_valid_im_3_columns(self):
+        "Tests is_valid_im(R) with 3 columns."
+        R = np.asarray([[0,   1, 3.0],
+                        [3,   2, 4.0]], dtype=np.double)
+        self.failUnless(is_valid_im(R) == False)
+        self.failUnlessRaises(ValueError, is_valid_im, R, throw=True)
+
+    def test_is_valid_im_empty(self):
+        "Tests is_valid_im(R) with empty inconsistency matrix."
+        R = np.zeros((0, 4), dtype=np.double)
+        self.failUnless(is_valid_im(R) == False)
+        self.failUnlessRaises(ValueError, is_valid_im, R, throw=True)
+
+    def test_is_valid_im_1x4(self):
+        "Tests is_valid_im(R) on im over 2 observations."
+        R = np.asarray([[0,   1, 3.0, 2]], dtype=np.double)
+        self.failUnless(is_valid_im(R) == True)
+
+    def test_is_valid_im_2x4(self):
+        "Tests is_valid_im(R) on im over 3 observations."
+        R = np.asarray([[0,   1, 3.0, 2],
+                        [3,   2, 4.0, 3]], dtype=np.double)
+        self.failUnless(is_valid_im(R) == True)
+
+    def test_is_valid_im_4_and_up(self):
+        "Tests is_valid_im(R) on im on observation sets between sizes 4 and 15 (step size 3)."
+        for i in xrange(4, 15, 3):
+            y = np.random.rand(i*(i-1)/2)
+            Z = linkage(y)
+            R = inconsistent(Z)
+            self.failUnless(is_valid_im(R) == True)
+
+    def test_is_valid_im_4_and_up_neg_index_left(self):
+        "Tests is_valid_im(R) on im on observation sets between sizes 4 and 15 (step size 3) with negative link height means."
+        for i in xrange(4, 15, 3):
+            y = np.random.rand(i*(i-1)/2)
+            Z = linkage(y)
+            R = inconsistent(Z) 
+            R[int(i/2),0] = -2.0
+            self.failUnless(is_valid_im(R) == False)
+            self.failUnlessRaises(ValueError, is_valid_im, R, throw=True)
+
+    def test_is_valid_im_4_and_up_neg_index_right(self):
+        "Tests is_valid_im(R) on im on observation sets between sizes 4 and 15 (step size 3) with negative link height standard deviations."
+        for i in xrange(4, 15, 3):
+            y = np.random.rand(i*(i-1)/2)
+            Z = linkage(y)
+            R = inconsistent(Z)            
+            R[int(i/2),1] = -2.0
+            self.failUnless(is_valid_im(R) == False)
+            self.failUnlessRaises(ValueError, is_valid_im, R, throw=True)
+
+    def test_is_valid_im_4_and_up_neg_dist(self):
+        "Tests is_valid_im(R) on im on observation sets between sizes 4 and 15 (step size 3) with negative link counts."
+        for i in xrange(4, 15, 3):
+            y = np.random.rand(i*(i-1)/2)
+            Z = linkage(y)
+            R = inconsistent(Z)            
+            R[int(i/2),2] = -0.5
+            self.failUnless(is_valid_im(R) == False)
+            self.failUnlessRaises(ValueError, is_valid_im, R, throw=True)
+
 class TestNumObsLinkage(TestCase):
 
     def test_num_obs_linkage_empty(self):
@@ -677,6 +726,56 @@ class TestNumObsLinkage(TestCase):
             y = np.random.rand(i*(i-1)/2)
             Z = linkage(y)
             self.failUnless(num_obs_linkage(Z) == i)
+
+class TestLeavesList(TestCase):
+
+    def test_leaves_list_iris_single(self):
+        "Tests leaves_list(Z) on the Iris data set using single linkage."
+        X = eo['iris']
+        Y = pdist(X)
+        Z = linkage(X, 'single')
+        node = to_tree(Z)
+        self.failUnless((node.pre_order() == leaves_list(Z)).all())
+
+    def test_leaves_list_iris_complete(self):
+        "Tests leaves_list(Z) on the Iris data set using complete linkage."
+        X = eo['iris']
+        Y = pdist(X)
+        Z = linkage(X, 'complete')
+        node = to_tree(Z)
+        self.failUnless((node.pre_order() == leaves_list(Z)).all())
+
+    def test_leaves_list_iris_centroid(self):
+        "Tests leaves_list(Z) on the Iris data set using centroid linkage."
+        X = eo['iris']
+        Y = pdist(X)
+        Z = linkage(X, 'centroid')
+        node = to_tree(Z)
+        self.failUnless((node.pre_order() == leaves_list(Z)).all())
+
+    def test_leaves_list_iris_median(self):
+        "Tests leaves_list(Z) on the Iris data set using median linkage."
+        X = eo['iris']
+        Y = pdist(X)
+        Z = linkage(X, 'median')
+        node = to_tree(Z)
+        self.failUnless((node.pre_order() == leaves_list(Z)).all())
+
+    def test_leaves_list_iris_ward(self):
+        "Tests leaves_list(Z) on the Iris data set using ward linkage."
+        X = eo['iris']
+        Y = pdist(X)
+        Z = linkage(X, 'ward')
+        node = to_tree(Z)
+        self.failUnless((node.pre_order() == leaves_list(Z)).all())
+
+    def test_leaves_list_iris_average(self):
+        "Tests leaves_list(Z) on the Iris data set using average linkage."
+        X = eo['iris']
+        Y = pdist(X)
+        Z = linkage(X, 'average')
+        node = to_tree(Z)
+        self.failUnless((node.pre_order() == leaves_list(Z)).all())
 
 class TestCorrespond(TestCase):
 

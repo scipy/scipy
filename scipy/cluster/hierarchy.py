@@ -1150,6 +1150,21 @@ def is_valid_im(R, warning=False, throw=False, name=None):
                 raise ValueError('Inconsistency matrix \'%s\' must have at least one row.' % name)
             else:
                 raise ValueError('Inconsistency matrix must have at least one row.')
+        if (R[:, 0] < 0).any():
+            if name:
+                raise ValueError('Inconsistency matrix \'%s\' contains negative link height means.' % name)
+            else:
+                raise ValueError('Inconsistency matrix contains negative link height means.')
+        if (R[:, 1] < 0).any():
+            if name:
+                raise ValueError('Inconsistency matrix \'%s\' contains negative link height standard deviations.' % name)
+            else:
+                raise ValueError('Inconsistency matrix contains negative link height standard deviations.')
+        if (R[:, 2] < 0).any():
+            if name:
+                raise ValueError('Inconsistency matrix \'%s\' contains negative link counts.' % name)
+            else:
+                raise ValueError('Inconsistency matrix contains negative link counts.')
     except Exception, e:
         if throw:
             raise
@@ -1164,10 +1179,10 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
     if it is a two dimensional nd-array (type double) with :math:`n`
     rows and 4 columns.  The first two columns must contain indices
     between 0 and :math:`2n-1`. For a given row ``i``,
-    :math:`0 \leq \mathtt{Z[i,0]} \leq i+n-1` and
-    :math:`0 \leq Z[i,1] \leq i+n-1` (i.e.  a cluster
-    cannot join another cluster unless the cluster being joined has
-    been generated.)
+    :math:`0 \leq \mathtt{Z[i,0]} \leq i+n-1`
+    and :math:`0 \leq Z[i,1] \leq i+n-1`
+    (i.e. a cluster cannot join another cluster unless the cluster
+    being joined has been generated.)
 
     :Arguments:
 
