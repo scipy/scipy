@@ -708,7 +708,6 @@ class TestNumObsLinkage(TestCase):
         Z = np.zeros((0, 4), dtype=np.double)
         self.failUnlessRaises(ValueError, num_obs_linkage, Z)
 
-
     def test_num_obs_linkage_1x4(self):
         "Tests num_obs_linkage(Z) on linkage over 2 observations."
         Z = np.asarray([[0,   1, 3.0, 2]], dtype=np.double)
@@ -728,6 +727,19 @@ class TestNumObsLinkage(TestCase):
             self.failUnless(num_obs_linkage(Z) == i)
 
 class TestLeavesList(TestCase):
+
+    def test_leaves_list_1x4(self):
+        "Tests leaves_list(Z) on a 1x4 linkage."
+        Z = np.asarray([[0,   1, 3.0, 2]], dtype=np.double)
+        node = to_tree(Z)
+        self.failUnless((leaves_list(Z) == [0, 1]).all())
+
+    def test_leaves_list_1x4(self):
+        "Tests leaves_list(Z) on a 1x4 linkage."
+        Z = np.asarray([[0,   1, 3.0, 2],
+                        [3,   2, 4.0, 3]], dtype=np.double)
+        node = to_tree(Z)
+        self.failUnless((leaves_list(Z) == [0, 1, 2]).all())
 
     def test_leaves_list_iris_single(self):
         "Tests leaves_list(Z) on the Iris data set using single linkage."
