@@ -2408,6 +2408,8 @@ def maxinconsts(Z, R):
     is_valid_im(R, throw=True, name='R')
 
     n = Z.shape[0] + 1
+    if Z.shape[0] != R.shape[0]:
+        raise ValueError("The inconsistency matrix and linkage matrix each have a different number of rows.")
     MI = np.zeros((n-1,))
     [Z, R] = _copy_arrays_if_base_present([Z, R])
     _hierarchy_wrap.get_max_Rfield_for_each_cluster_wrap(Z, R, MI, int(n), 3)
@@ -2445,7 +2447,10 @@ def maxRstat(Z, R, i):
     if type(i) is not types.IntType:
         raise TypeError('The third argument must be an integer.')
     if i < 0 or i > 3:
-        return ValueError('i must be an integer between 0 and 3 inclusive.')
+        raise ValueError('i must be an integer between 0 and 3 inclusive.')
+
+    if Z.shape[0] != R.shape[0]:
+        raise ValueError("The inconsistency matrix and linkage matrix each have a different number of rows.")
 
     n = Z.shape[0] + 1
     MR = np.zeros((n-1,))

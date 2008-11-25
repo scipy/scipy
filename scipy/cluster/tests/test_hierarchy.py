@@ -38,7 +38,7 @@ import os.path
 import numpy as np
 from numpy.testing import *
 
-from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage, num_obs_linkage, inconsistent, cophenet, from_mlab_linkage, fclusterdata, fcluster, is_isomorphic, single, complete, average, weighted, centroid, median, ward, leaders, correspond, is_monotonic, maxdists
+from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage, num_obs_linkage, inconsistent, cophenet, from_mlab_linkage, fclusterdata, fcluster, is_isomorphic, single, complete, average, weighted, centroid, median, ward, leaders, correspond, is_monotonic, maxdists, maxinconsts, maxRstat
 from scipy.spatial.distance import squareform, pdist
 
 _tdist = np.array([[0,    662,  877,  255,  412,  996],
@@ -738,8 +738,6 @@ class TestMaxDists(TestCase):
         MD = maxdists(Z)
         eps = 1e-15
         expectedMD = calculate_maximum_distances(Z)
-        print np.abs(expectedMD - MD)
-        print is_monotonic(Z)
         self.failUnless(within_tol(MD, expectedMD, eps))
 
     def test_maxdists_Q_linkage_median(self):
@@ -750,8 +748,408 @@ class TestMaxDists(TestCase):
         MD = maxdists(Z)
         eps = 1e-15
         expectedMD = calculate_maximum_distances(Z)
-        print np.abs(expectedMD - MD).max()
-        print is_monotonic(Z)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+class TestMaxInconsts(TestCase):
+
+    def test_maxinconsts_empty_linkage(self):
+        "Tests maxinconsts(Z, R) on empty linkage. Expecting exception."
+        Z = np.zeros((0, 4), dtype=np.double)
+        R = np.zeros((0, 4), dtype=np.double)
+        self.failUnlessRaises(ValueError, maxinconsts, Z, R)
+
+    def test_maxinconsts_difrow_linkage(self):
+        "Tests maxinconsts(Z, R) on linkage and inconsistency matrices with different numbers of clusters. Expecting exception."
+        Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
+        R = np.random.rand(2, 4)
+        self.failUnlessRaises(ValueError, maxinconsts, Z, R)
+
+    def test_maxinconsts_one_cluster_linkage(self):
+        "Tests maxinconsts(Z, R) on linkage with one cluster."
+        Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
+        R = np.asarray([[0, 0, 0, 0.3]], dtype=np.double)
+        MD = maxinconsts(Z, R)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxinconsts_Q_linkage_single(self):
+        "Tests maxinconsts(Z, R) on the Q data set using single linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'single')
+        R = inconsistent(Z)
+        MD = maxinconsts(Z, R)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxinconsts_Q_linkage_complete(self):
+        "Tests maxinconsts(Z, R) on the Q data set using complete linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'complete')
+        R = inconsistent(Z)
+        MD = maxinconsts(Z, R)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxinconsts_Q_linkage_ward(self):
+        "Tests maxinconsts(Z, R) on the Q data set using Ward linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'ward')
+        R = inconsistent(Z)
+        MD = maxinconsts(Z, R)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxinconsts_Q_linkage_centroid(self):
+        "Tests maxinconsts(Z, R) on the Q data set using centroid linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'centroid')
+        R = inconsistent(Z)
+        MD = maxinconsts(Z, R)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxinconsts_Q_linkage_median(self):
+        "Tests maxinconsts(Z, R) on the Q data set using median linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'median')
+        R = inconsistent(Z)
+        MD = maxinconsts(Z, R)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+class TestMaxRStat(TestCase):
+
+    def test_maxRstat_float_index(self):
+        "Tests maxRstat(Z, R, 3.3). Expecting exception."
+        Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
+        R = np.asarray([[0, 0, 0, 0.3]], dtype=np.double)
+        self.failUnlessRaises(TypeError, maxRstat, Z, R, 3.3)
+
+    def test_maxRstat_neg_index(self):
+        "Tests maxRstat(Z, R, -1). Expecting exception."
+        Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
+        R = np.asarray([[0, 0, 0, 0.3]], dtype=np.double)
+        self.failUnlessRaises(ValueError, maxRstat, Z, R, -1)
+
+    def test_maxRstat_oob_pos_index(self):
+        "Tests maxRstat(Z, R, 4). Expecting exception."
+        Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
+        R = np.asarray([[0, 0, 0, 0.3]], dtype=np.double)
+        self.failUnlessRaises(ValueError, maxRstat, Z, R, 4)
+
+    def test_maxRstat_0_empty_linkage(self):
+        "Tests maxRstat(Z, R, 0) on empty linkage. Expecting exception."
+        Z = np.zeros((0, 4), dtype=np.double)
+        R = np.zeros((0, 4), dtype=np.double)
+        self.failUnlessRaises(ValueError, maxRstat, Z, R, 0)
+
+    def test_maxRstat_0_difrow_linkage(self):
+        "Tests maxRstat(Z, R, 0) on linkage and inconsistency matrices with different numbers of clusters. Expecting exception."
+        Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
+        R = np.random.rand(2, 4)
+        self.failUnlessRaises(ValueError, maxRstat, Z, R, 0)
+
+    def test_maxRstat_0_one_cluster_linkage(self):
+        "Tests maxRstat(Z, R, 0) on linkage with one cluster."
+        Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
+        R = np.asarray([[0, 0, 0, 0.3]], dtype=np.double)
+        MD = maxRstat(Z, R, 0)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 0)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_0_Q_linkage_single(self):
+        "Tests maxRstat(Z, R, 0) on the Q data set using single linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'single')
+        R = inconsistent(Z)
+        MD = maxRstat(Z, R, 0)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 0)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_0_Q_linkage_complete(self):
+        "Tests maxRstat(Z, R, 0) on the Q data set using complete linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'complete')
+        R = inconsistent(Z)
+        MD = maxRstat(Z, R, 0)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 0)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_0_Q_linkage_ward(self):
+        "Tests maxRstat(Z, R, 0) on the Q data set using Ward linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'ward')
+        R = inconsistent(Z)
+        MD = maxRstat(Z, R, 0)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 0)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_0_Q_linkage_centroid(self):
+        "Tests maxRstat(Z, R, 0) on the Q data set using centroid linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'centroid')
+        R = inconsistent(Z)
+        MD = maxRstat(Z, R, 0)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 0)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_0_Q_linkage_median(self):
+        "Tests maxRstat(Z, R, 0) on the Q data set using median linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'median')
+        R = inconsistent(Z)
+        MD = maxRstat(Z, R, 0)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 0)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_1_empty_linkage(self):
+        "Tests maxRstat(Z, R, 1) on empty linkage. Expecting exception."
+        Z = np.zeros((0, 4), dtype=np.double)
+        R = np.zeros((0, 4), dtype=np.double)
+        self.failUnlessRaises(ValueError, maxRstat, Z, R, 0)
+
+    def test_maxRstat_1_difrow_linkage(self):
+        "Tests maxRstat(Z, R, 1) on linkage and inconsistency matrices with different numbers of clusters. Expecting exception."
+        Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
+        R = np.random.rand(2, 4)
+        self.failUnlessRaises(ValueError, maxRstat, Z, R, 0)
+
+    def test_maxRstat_1_one_cluster_linkage(self):
+        "Tests maxRstat(Z, R, 1) on linkage with one cluster."
+        Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
+        R = np.asarray([[0, 0, 0, 0.3]], dtype=np.double)
+        MD = maxRstat(Z, R, 1)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 1)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_1_Q_linkage_single(self):
+        "Tests maxRstat(Z, R, 1) on the Q data set using single linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'single')
+        R = inconsistent(Z)
+        MD = maxRstat(Z, R, 1)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 1)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_1_Q_linkage_complete(self):
+        "Tests maxRstat(Z, R, 1) on the Q data set using complete linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'complete')
+        R = inconsistent(Z)
+        MD = maxRstat(Z, R, 1)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 1)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_1_Q_linkage_ward(self):
+        "Tests maxRstat(Z, R, 1) on the Q data set using Ward linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'ward')
+        R = inconsistent(Z)
+        MD = maxRstat(Z, R, 1)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 1)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_1_Q_linkage_centroid(self):
+        "Tests maxRstat(Z, R, 1) on the Q data set using centroid linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'centroid')
+        R = inconsistent(Z)
+        MD = maxRstat(Z, R, 1)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 1)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_1_Q_linkage_median(self):
+        "Tests maxRstat(Z, R, 1) on the Q data set using median linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'median')
+        R = inconsistent(Z)
+        MD = maxRstat(Z, R, 1)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 1)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_2_empty_linkage(self):
+        "Tests maxRstat(Z, R, 2) on empty linkage. Expecting exception."
+        Z = np.zeros((0, 4), dtype=np.double)
+        R = np.zeros((0, 4), dtype=np.double)
+        self.failUnlessRaises(ValueError, maxRstat, Z, R, 2)
+
+    def test_maxRstat_2_difrow_linkage(self):
+        "Tests maxRstat(Z, R, 2) on linkage and inconsistency matrices with different numbers of clusters. Expecting exception."
+        Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
+        R = np.random.rand(2, 4)
+        self.failUnlessRaises(ValueError, maxRstat, Z, R, 2)
+
+    def test_maxRstat_2_one_cluster_linkage(self):
+        "Tests maxRstat(Z, R, 2) on linkage with one cluster."
+        Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
+        R = np.asarray([[0, 0, 0, 0.3]], dtype=np.double)
+        MD = maxRstat(Z, R, 2)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 2)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_2_Q_linkage_single(self):
+        "Tests maxRstat(Z, R, 2) on the Q data set using single linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'single')
+        R = inconsistent(Z)
+        MD = maxRstat(Z, R, 2)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 2)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_2_Q_linkage_complete(self):
+        "Tests maxRstat(Z, R, 2) on the Q data set using complete linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'complete')
+        R = inconsistent(Z)
+        MD = maxRstat(Z, R, 2)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 2)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_2_Q_linkage_ward(self):
+        "Tests maxRstat(Z, R, 2) on the Q data set using Ward linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'ward')
+        R = inconsistent(Z)
+        MD = maxRstat(Z, R, 2)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 2)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_2_Q_linkage_centroid(self):
+        "Tests maxRstat(Z, R, 2) on the Q data set using centroid linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'centroid')
+        R = inconsistent(Z)
+        MD = maxRstat(Z, R, 2)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 2)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_2_Q_linkage_median(self):
+        "Tests maxRstat(Z, R, 2) on the Q data set using median linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'median')
+        R = inconsistent(Z)
+        MD = maxRstat(Z, R, 2)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 2)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_3_empty_linkage(self):
+        "Tests maxRstat(Z, R, 3) on empty linkage. Expecting exception."
+        Z = np.zeros((0, 4), dtype=np.double)
+        R = np.zeros((0, 4), dtype=np.double)
+        self.failUnlessRaises(ValueError, maxRstat, Z, R, 3)
+
+    def test_maxRstat_3_difrow_linkage(self):
+        "Tests maxRstat(Z, R, 3) on linkage and inconsistency matrices with different numbers of clusters. Expecting exception."
+        Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
+        R = np.random.rand(2, 4)
+        self.failUnlessRaises(ValueError, maxRstat, Z, R, 3)
+
+    def test_maxRstat_3_one_cluster_linkage(self):
+        "Tests maxRstat(Z, R, 3) on linkage with one cluster."
+        Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
+        R = np.asarray([[0, 0, 0, 0.3]], dtype=np.double)
+        MD = maxRstat(Z, R, 3)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 3)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_3_Q_linkage_single(self):
+        "Tests maxRstat(Z, R, 3) on the Q data set using single linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'single')
+        R = inconsistent(Z)
+        MD = maxRstat(Z, R, 3)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 3)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_3_Q_linkage_complete(self):
+        "Tests maxRstat(Z, R, 3) on the Q data set using complete linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'complete')
+        R = inconsistent(Z)
+        MD = maxRstat(Z, R, 3)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 3)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_3_Q_linkage_ward(self):
+        "Tests maxRstat(Z, R, 3) on the Q data set using Ward linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'ward')
+        R = inconsistent(Z)
+        MD = maxRstat(Z, R, 3)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 3)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_3_Q_linkage_centroid(self):
+        "Tests maxRstat(Z, R, 3) on the Q data set using centroid linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'centroid')
+        R = inconsistent(Z)
+        MD = maxRstat(Z, R, 3)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 3)
+        self.failUnless(within_tol(MD, expectedMD, eps))
+
+    def test_maxRstat_3_Q_linkage_median(self):
+        "Tests maxRstat(Z, R, 3) on the Q data set using median linkage."
+        X = eo['Q-X']
+        Y = pdist(X)
+        Z = linkage(X, 'median')
+        R = inconsistent(Z)
+        MD = maxRstat(Z, R, 3)
+        eps = 1e-15
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 3)
         self.failUnless(within_tol(MD, expectedMD, eps))
 
 def calculate_maximum_distances(Z):
@@ -761,30 +1159,31 @@ def calculate_maximum_distances(Z):
     q = np.zeros((3,))
     for i in xrange(0, n - 1):
         q[:] = 0.0
-        L = Z[i, 0]
-        R = Z[i, 1]
-        if L >= n:
-            q[0] = B[L - n]
-        if R >= n:
-            q[1] = B[R - n]
+        left = Z[i, 0]
+        right = Z[i, 1]
+        if left >= n:
+            q[0] = B[left - n]
+        if right >= n:
+            q[1] = B[right - n]
         q[2] = Z[i, 2]
         B[i] = q.max()
     return B
 
-def calculate_maximum_inconsistent(Z, R):
+def calculate_maximum_inconsistencies(Z, R, k=3):
     "Used for testing correctness of maxinconsts. Very slow."
     n = Z.shape[0] + 1
     B = np.zeros((n-1,))
     q = np.zeros((3,))
+    print R.shape
     for i in xrange(0, n - 1):
         q[:] = 0.0
-        L = Z[i, 0]
-        R = Z[i, 1]
-        if L >= n:
-            q[0] = B[L - n]
-        if R >= n:
-            q[1] = B[R - n]
-        q[2] = R[i, 2]
+        left = Z[i, 0]
+        right = Z[i, 1]
+        if left >= n:
+            q[0] = B[left - n]
+        if right >= n:
+            q[1] = B[right - n]
+        q[2] = R[i, k]
         B[i] = q.max()
     return B
 
