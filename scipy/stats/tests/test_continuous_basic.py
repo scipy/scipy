@@ -122,10 +122,23 @@ distcont = [
 ##    ['genextreme', (-0.01,)]
 ##    ]
 
+distmissing = ['wald', 'gausshyper', 'genexpon', 'rv_continuous',
+    'loglaplace', 'rdist', 'semicircular', 'invweibull', 'ksone',
+    'cosine', 'kstwobign', 'truncnorm', 'mielke', 'recipinvgauss', 'levy',
+    'johnsonsu', 'levy_l', 'powernorm', 'wrapcauchy',
+    'johnsonsb', 'truncexpon', 'rice', 'invnorm', 'invgamma',
+    'powerlognorm']
+
+distmiss = [[dist,args] for dist,args in distcont if dist in distmissing]
+distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
+            'vonmises', 'rice', 'mielke', 'semicircular', 'cosine']
+
+
 @npt.dec.slow
 def test_cont_basic():
     for distname, arg in distcont[:]:
         distfn = getattr(stats, distname)
+        np.random.seed(765456)
         rvs = distfn.rvs(size=1000,*arg)
         sm = rvs.mean()
         sv = rvs.var()
@@ -140,6 +153,9 @@ def test_cont_basic():
         yield check_sf_isf, distfn, arg, distname
         yield check_pdf, distfn, arg, distname
         #yield check_oth, distfn, arg # is still missing
+        if distname in distmissing:
+            alpha = 0.01
+            yield check_distribution_rvs, dist, args, alpha, rvs
 
 
 
@@ -207,17 +223,10 @@ def check_pdf(distfn, arg, msg):
     npt.assert_almost_equal(pdfv, cdfdiff,
                 decimal=DECIMAL, err_msg= msg + ' - cdf-pdf relationship')
 
-distmissing = ['wald', 'gausshyper', 'genexpon', 'rv_continuous',
-    'loglaplace', 'rdist', 'semicircular', 'invweibull', 'ksone',
-    'cosine', 'kstwobign', 'truncnorm', 'mielke', 'recipinvgauss', 'levy',
-    'johnsonsu', 'levy_l', 'powernorm', 'wrapcauchy',
-    'johnsonsb', 'truncexpon', 'rice', 'invnorm', 'invgamma',
-    'powerlognorm']
 
-distmiss = [[dist,args] for dist,args in distcont if dist in distmissing]
 
 @npt.dec.slow
-def test_missing_distributions():
+def _est_missing_distributions_old():
     # K-S test of distributions missing in test_distributions.py
     for dist, args in distmiss:
         distfunc = getattr(stats, dist)
@@ -228,6 +237,15 @@ def test_missing_distributions():
 def check_distribution(dist, args, alpha):
     #test from scipy.stats.tests
     D,pval = stats.kstest(dist,'', args=args, N=1000)
+    if (pval < alpha):
+        D,pval = stats.kstest(dist,'',args=args, N=1000)
+        assert (pval > alpha), "D = " + str(D) + "; pval = " + str(pval) + \
+               "; alpha = " + str(alpha) + "\nargs = " + str(args)
+
+def check_distribution_rvs(dist, args, alpha, rvs):
+    #test from scipy.stats.tests
+    #this version reuses existing random variables
+    D,pval = stats.kstest(rvs, dist, args=args, N=1000)
     if (pval < alpha):
         D,pval = stats.kstest(dist,'',args=args, N=1000)
         assert (pval > alpha), "D = " + str(D) + "; pval = " + str(pval) + \
