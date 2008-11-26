@@ -12,7 +12,7 @@ from numpy import polyadd, polymul, polydiv, polysub, \
      ravel, size, less_equal, sum, r_, iscomplexobj, take, \
      argsort, allclose, expand_dims, unique, prod, sort, reshape, \
      transpose, dot, any, mean, cosh, arccosh, \
-     arccos, concatenate
+     arccos, concatenate, flipud
 import numpy as np
 from scipy.misc import factorial
 
@@ -1508,6 +1508,33 @@ def detrend(data, axis=-1, type='linear', bp=0):
         olddims = vals[:axis] + [0] + vals[axis:]
         ret = transpose(ret,tuple(olddims))
         return ret
+
+def lfilter_zi(b,a):
+    #compute the zi state from the filter parameters. see [Gust96].
+
+    #Based on:
+    # [Gust96] Fredrik Gustafsson, Determining the initial states in
+    #          forward-backward filtering, IEEE Transactions on
+    #          Signal Processing, pp. 988--992, April 1996, 
+    #          Volume 44, Issue 4
+
+    n=max(len(a),len(b))
+    
+    zin = (np.eye(n-1) - np.hstack((-a[1:n,newaxis],
+                                    np.vstack((np.eye(n-2),zeros(n-2))))))
+
+    zid=  b[1:n] - a[1:n]*b[0]
+
+    zi_matrix=linalg.inv(zin)*(np.matrix(zid).transpose())
+    zi_return=[]
+
+    #convert the result into a regular array (not a matrix)
+    for i in range(len(zi_matrix)):
+      zi_return.append(float(zi_matrix[i][0]))
+
+    return array(zi_return)
+   
+
 
 def filtfilt(b,a,x):
     # FIXME:  For now only accepting 1d arrays
