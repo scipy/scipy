@@ -24,23 +24,29 @@ distdiscrete = [
                            # looking closer, mean, var should be inf for arg=2
 
 
-@npt.dec.slow
+#@npt.dec.slow
 def test_discrete_basic():
     for distname, arg in distdiscrete:
         distfn = getattr(stats,distname)
         #assert stats.dlaplace.rvs(0.8) != None
-        rvs = distfn.rvs(size=10000,*arg)
+        np.random.seed(9765456)
+        rvs = distfn.rvs(size=2000,*arg)
         m,v = distfn.stats(*arg)
         #yield npt.assert_almost_equal(rvs.mean(), m, decimal=4,err_msg='mean')
         #yield npt.assert_almost_equal, rvs.mean(), m, 2, 'mean' # does not work
-        yield check_sample_meanvar, rvs.mean(), m, distname + 'sample mean test'
-        yield check_sample_meanvar, rvs.var(), v, distname + 'sample var test'
-        yield check_cdf_ppf, distfn, arg, distname
-        yield check_pmf_cdf, distfn, arg, distname
-        yield check_oth, distfn, arg, distname
+        yield check_sample_meanvar, rvs.mean(), m, distname + ' sample mean test'
+        yield check_sample_meanvar, rvs.var(), v, distname + ' sample var test'
+        yield check_cdf_ppf, distfn, arg, distname + ' cdf_ppf'
+        yield check_pmf_cdf, distfn, arg, distname + ' pmf_cdf'
+        yield check_oth, distfn, arg, distname + ' oth'
         skurt = stats.kurtosis(rvs)
         sskew = stats.skew(rvs)
-        yield check_sample_skew_kurt, distfn, arg, skurt, sskew, distname
+        yield check_sample_skew_kurt, distfn, arg, skurt, sskew, \
+                      distname + ' skew_kurt'
+        if not distname in ['logser']:  #known failure
+            alpha = 0.01
+            yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
+                          distname + ' chisquare'
         
 @npt.dec.slow
 def test_discrete_extra():
@@ -53,8 +59,8 @@ def test_discrete_extra():
         yield check_entropy, distfn, arg, distname + \
               ' entropy nan test'
 
-@npt.dec.slow
-def _est_discrete_private():
+@npt.dec.skipif(True)
+def test_discrete_private():
     #testing private methods mostly for debugging
     #   some tests might fail by design,
     #   e.g. incorrect definition of distfn.a and distfn.b
@@ -172,6 +178,77 @@ def check_entropy(distfn,arg,msg):
     ent = distfn.entropy(*arg)
     #print 'Entropy =', ent
     assert not np.isnan(ent), msg + 'test Entropy is nan'\
+
+
+
+def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
+    '''perform chisquare test for random sample of a discrete distribution
+
+    Parameters
+    ----------
+    distname : string
+        name of distribution function
+    arg : sequence
+        parameters of distribution
+    alpha : float
+        significance level, threshold for p-value
+
+    Returns
+    -------
+    result : bool
+        0 if test passes, 1 if test fails
+
+    uses global variable debug for printing results
+    '''
+
+    # define parameters for test
+##    n=2000
+    n = len(rvs)
+    nsupp = 20
+    wsupp = 1.0/nsupp
+
+##    distfn = getattr(stats, distname)
+##    np.random.seed(9765456)
+##    rvs = distfn.rvs(size=n,*arg)
+
+    # construct intervals with minimum mass 1/nsupp
+    # intervalls are left-half-open as in a cdf difference
+    distsupport = xrange(max(distfn.a, -1000), min(distfn.b, 1000) + 1)
+    last = 0
+    distsupp = [max(distfn.a, -1000)]
+    distmass = []
+    for ii in distsupport:
+        current = distfn.cdf(ii,*arg)
+        if  current - last >= wsupp-1e-14:
+            distsupp.append(ii)
+            distmass.append(current - last)
+            last = current
+            if current > (1-wsupp):
+                break
+    if distsupp[-1]  < distfn.b:
+        distsupp.append(distfn.b)
+        distmass.append(1-last)
+    distsupp = np.array(distsupp)
+    distmass = np.array(distmass)
+
+    # convert intervals to right-half-open as required by histogram
+    histsupp = distsupp+1e-8
+    histsupp[0] = distfn.a
+
+    # find sample frequencies and perform chisquare test
+    freq,hsupp = np.histogram(rvs,histsupp,new=True)
+    cdfs = distfn.cdf(distsupp,*arg)
+    (chis,pval) = stats.chisquare(np.array(freq),n*distmass)
+
+    assert (pval > alpha), 'chisquare - test for %s' \
+           'at arg = %s with pval = %s' % (msg,str(arg),str(pval))
+
+
+
+
+
+
+
 
 if __name__ == "__main__":
     #nose.run(argv=['', __file__])
