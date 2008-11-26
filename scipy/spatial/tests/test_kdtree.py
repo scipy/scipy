@@ -413,7 +413,7 @@ def test_distance_matrix():
     assert_equal(ds.shape, (m,n))
     for i in range(m):
         for j in range(n):
-            assert_equal(distance(xs[i],ys[j]),ds[i,j])
+            assert_almost_equal(distance(xs[i],ys[j]),ds[i,j])
 def test_distance_matrix_looping():
     m = 10
     n = 11
