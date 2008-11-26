@@ -131,12 +131,15 @@ distmissing = ['wald', 'gausshyper', 'genexpon', 'rv_continuous',
 
 distmiss = [[dist,args] for dist,args in distcont if dist in distmissing]
 distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
-            'vonmises', 'rice', 'mielke', 'semicircular', 'cosine']
+            'vonmises', 'rice', 'mielke', 'semicircular', 'cosine', 'invweibull',
+            'powerlognorm', 'johnsonsu', 'kstwobign']
+#distslow are sorted by speed (very slow to slow)
 
 
-@npt.dec.slow
+
 def test_cont_basic():
     for distname, arg in distcont[:]:
+        if distname in distslow: continue
         distfn = getattr(stats, distname)
         np.random.seed(765456)
         rvs = distfn.rvs(size=1000,*arg)
@@ -156,6 +159,33 @@ def test_cont_basic():
         if distname in distmissing:
             alpha = 0.01
             yield check_distribution_rvs, dist, args, alpha, rvs
+
+
+@npt.dec.slow
+def test_cont_basic_slow():
+    # same as above for slow distributions
+    for distname, arg in distcont[:]:
+        if distname not in distslow: continue
+        distfn = getattr(stats, distname)
+        np.random.seed(765456)
+        rvs = distfn.rvs(size=1000,*arg)
+        sm = rvs.mean()
+        sv = rvs.var()
+        skurt = stats.kurtosis(rvs)
+        sskew = stats.skew(rvs)
+        m,v = distfn.stats(*arg)
+        yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, distname + \
+              'sample mean test'
+        yield check_sample_skew_kurt, distfn, arg, skurt, sskew, distname
+        yield check_moment, distfn, arg, m, v, distname
+        yield check_cdf_ppf, distfn, arg, distname
+        yield check_sf_isf, distfn, arg, distname
+        yield check_pdf, distfn, arg, distname
+        #yield check_oth, distfn, arg # is still missing
+        if distname in distmissing:
+            alpha = 0.01
+            yield check_distribution_rvs, dist, args, alpha, rvs
+
 
 
 
