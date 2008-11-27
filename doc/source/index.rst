@@ -9,6 +9,7 @@ science, and engineering.
    :maxdepth: 1
 
    tutorial/index
+   release
 
 Reference
 ---------
