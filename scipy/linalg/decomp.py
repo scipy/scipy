@@ -1172,8 +1172,8 @@ def qr(a, overwrite_a=0, lwork=None, econ=None, mode='qr'):
     if econ is None:
         econ = False
     else:
-        warn("qr econ argument will be removed after scipy 0.7."
-             "The economy transform will then be available through"
+        warn("qr econ argument will be removed after scipy 0.7. "
+             "The economy transform will then be available through "
              "the mode='economic' argument.", DeprecationWarning)
     
     a1 = asarray_chkfinite(a)
