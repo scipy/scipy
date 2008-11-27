@@ -1112,7 +1112,7 @@ def cho_solve(clow, b):
         raise TypeError, msg
     return b
 
-def qr(a,overwrite_a=0,lwork=None,econ=False,mode='qr'):
+def qr(a, overwrite_a=0, lwork=None, econ=None, mode='qr'):
     """Compute QR decomposition of a matrix.
 
     Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
@@ -1129,7 +1129,8 @@ def qr(a,overwrite_a=0,lwork=None,econ=False,mode='qr'):
         is computed.
     econ : boolean
         Whether to compute the economy-size QR decomposition, making shapes
-        of Q and R (M, K) and (K, N) instead of (M,M) and (M,N). K=min(M,N)
+        of Q and R (M, K) and (K, N) instead of (M,M) and (M,N). K=min(M,N).
+        Default is False.
     mode : {'qr', 'r'}
         Determines what information is to be returned: either both Q and R
         or only R.
@@ -1168,9 +1169,13 @@ def qr(a,overwrite_a=0,lwork=None,econ=False,mode='qr'):
     ((9, 6), (6, 6))
 
     """
-    warn("""\
-qr econ argument will be removed after scipy 0.7. The economy transform will
-then be available through the mode='economic' argument.""", DeprecationWarning)
+    if econ is None:
+        econ = False
+    else:
+        warn("qr econ argument will be removed after scipy 0.7."
+             "The economy transform will then be available through"
+             "the mode='economic' argument.", DeprecationWarning)
+    
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2:
         raise ValueError("expected 2D array")
