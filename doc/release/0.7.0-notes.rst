@@ -146,7 +146,16 @@ changed accordingly.
 Major documentation improvements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-TODO
+Scipy documentation is now more accessible than previously; you can
+view a HTML reference manual online at http://docs.scipy.org/ or
+download it as a PDF file. An updated tutorial is also available, and
+it shows how to use several essential parts of Scipy.
+
+Nevertheless, more effort is still needed on the documentation front.
+Luckily, contributing to Scipy documentation is now easier than
+before: if you find that a part of it requires improvements, and want
+to help us out, please register a user name in our web-based
+documentation editor at http://docs.scipy.org/ and correct the issues.
 
 Bug fixes in the interpolation package
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -155,8 +164,8 @@ The shape of return values from ``scipy.interpolate.interp1d`` used
 to be incorrect if interpolated data had more than 2 dimensions and
 the axis keyword was set to a non-default value. This is fixed in 0.7.0:
 
-    http://projects.scipy.org/scipy/scipy/ticket/289
-    http://projects.scipy.org/scipy/scipy/ticket/660
+  - http://projects.scipy.org/scipy/scipy/ticket/289
+  - http://projects.scipy.org/scipy/scipy/ticket/660
 
 Users of ``scipy.interpolate.interp1d`` may need to revise their code
 if it relies on the incorrect behavior.
