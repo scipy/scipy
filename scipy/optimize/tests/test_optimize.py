@@ -147,7 +147,21 @@ class TestOptimize(TestCase):
         assert max((err1,err2,err3,err4)) < 1e-6
 
 
-
+    def test_fminbound(self):
+        """Test fminbound
+        """
+        x = optimize.fminbound(lambda x: (x - 1.5)**2 - 0.8, 0, 1)
+        assert abs(x - 1) < 1e-5
+        x = optimize.fminbound(lambda x: (x - 1.5)**2 - 0.8, 1, 5)
+        assert abs(x - 1.5) < 1e-6
+        x = optimize.fminbound(lambda x: (x - 1.5)**2 - 0.8,
+                               numpy.array([1]), numpy.array([5]))
+        assert abs(x - 1.5) < 1e-6
+        assert_raises(ValueError,
+                optimize.fminbound, lambda x: (x - 1.5)**2 - 0.8, 5, 1)
+        assert_raises(ValueError,
+                optimize.fminbound, lambda x: (x - 1.5)**2 - 0.8,
+                      np.zeros(2), 1)
 
 class TestTnc(TestCase):
     """TNC non-linear optimization.

@@ -1136,7 +1136,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
 
       func : callable f(x,*args)
           Objective function to be minimized (must accept and return scalars).
-      x1, x2 : ndarray
+      x1, x2 : float or array scalar
           The optimization bounds.
       args : tuple
           Extra arguments passed to function.
@@ -1176,6 +1176,12 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
 
 
     """
+    # Test bounds are of correct form
+    x1 = atleast_1d(x1)
+    x2 = atleast_1d(x2)
+    if len(x1) != 1 or len(x2) != 1:
+        raise ValueError, "Optimisation bounds must be scalars" \
+                " or length 1 arrays"
     if x1 > x2:
         raise ValueError, "The lower bound exceeds the upper bound."
 
