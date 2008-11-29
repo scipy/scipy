@@ -37,9 +37,9 @@ if __doc__:
     __doc__ += """
 Contents
 --------
+SciPy imports all the functions from the NumPy namespace, and in
+addition provides:"""
 
-  numpy name space
-"""
 del _num
 # Remove the linalg imported from numpy so that the scipy.linalg package can be
 # imported.
@@ -62,19 +62,6 @@ SCIPY_IMPORT_VERBOSE = int(_os.environ.get('SCIPY_IMPORT_VERBOSE','-1'))
 del _os
 pkgload = PackageLoader()
 pkgload(verbose=SCIPY_IMPORT_VERBOSE,postpone=True)
-
-# Remove subpackage names from __all__ such that they are not imported via
-# "from scipy import *". This works around a numpy bug present in < 1.2.
-subpackages = """cluster constants fftpack integrate interpolate io lib linalg
-linsolve maxentropy misc ndimage odr optimize signal sparse special
-splinalg stats stsci weave""".split()
-for name in subpackages:
-    try:
-        __all__.remove(name)
-    except ValueError:
-        pass
-
-del name, subpackages
 
 if __doc__:
     __doc__ += """
