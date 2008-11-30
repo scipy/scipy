@@ -506,7 +506,7 @@ def linkage(y, method='single', metric='euclidean'):
 
        .. math::
           d(u,v) = \sum_{ij} \frac{d(u[i], v[j])}
-                                  {(|u|*|v|)
+                                  {(|u|*|v|)}
 
        for all points :math:`i` and :math:`j` where :math:`|u|`
        and :math:`|v|` are the cardinalities of clusters :math:`u`

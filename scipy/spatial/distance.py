@@ -449,7 +449,7 @@ def seuclidean(u, v, V):
     return np.sqrt(((u-v)**2 / V).sum())
 
 def cityblock(u, v):
-    """
+    r"""
     Computes the Manhattan distance between two n-vectors u and v,
     which is defined as
 
@@ -472,7 +472,7 @@ def cityblock(u, v):
     return abs(u-v).sum()
 
 def mahalanobis(u, v, VI):
-    """
+    r"""
     Computes the Mahalanobis distance between two n-vectors ``u`` and ``v``,
     which is defiend as
 
@@ -498,7 +498,7 @@ def mahalanobis(u, v, VI):
     return np.sqrt(np.dot(np.dot((u-v),VI),(u-v).T).sum())
 
 def chebyshev(u, v):
-    """
+    r"""
     Computes the Chebyshev distance between two n-vectors u and v,
     which is defined as
 
@@ -521,7 +521,7 @@ def chebyshev(u, v):
     return max(abs(u-v))
 
 def braycurtis(u, v):
-    """
+    r"""
     Computes the Bray-Curtis distance between two n-vectors ``u`` and
     ``v``, which is defined as
 
@@ -544,7 +544,7 @@ def braycurtis(u, v):
     return abs(u-v).sum() / abs(u+v).sum()
 
 def canberra(u, v):
-    """
+    r"""
     Computes the Canberra distance between two n-vectors u and v,
     which is defined as
 
@@ -607,15 +607,14 @@ def _nbool_correspond_ft_tf(u, v):
     return (nft, ntf)
 
 def yule(u, v):
-    """
+    r"""
     Computes the Yule dissimilarity between two boolean n-vectors u and v,
     which is defined as
 
 
     .. math::
 
-         \frac{R}
-         \frac{c_{TT} + c_{FF} + \frac{R}{2}}
+         \frac{R}{c_{TT} + c_{FF} + \frac{R}{2}}
 
     where :math:`c_{ij}` is the number of occurrences of
     :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
@@ -637,7 +636,7 @@ def yule(u, v):
     return float(2.0 * ntf * nft) / float(ntt * nff + ntf * nft)
 
 def matching(u, v):
-    """
+    r"""
     Computes the Matching dissimilarity between two boolean n-vectors
     u and v, which is defined as
 
@@ -665,7 +664,7 @@ def matching(u, v):
     return float(nft + ntf) / float(len(u))
 
 def dice(u, v):
-    """
+    r"""
     Computes the Dice dissimilarity between two boolean n-vectors
     ``u`` and ``v``, which is
 
@@ -698,7 +697,7 @@ def dice(u, v):
     return float(ntf + nft) / float(2.0 * ntt + ntf + nft)
 
 def rogerstanimoto(u, v):
-    """
+    r"""
     Computes the Rogers-Tanimoto dissimilarity between two boolean
     n-vectors ``u`` and ``v``, which is defined as
 
@@ -727,7 +726,7 @@ def rogerstanimoto(u, v):
     return float(2.0 * (ntf + nft)) / float(ntt + nff + (2.0 * (ntf + nft)))
 
 def russellrao(u, v):
-    """
+    r"""
     Computes the Russell-Rao dissimilarity between two boolean n-vectors
     ``u`` and ``v``, which is defined as
 
@@ -759,7 +758,7 @@ def russellrao(u, v):
     return float(len(u) - ntt) / float(len(u))
 
 def sokalmichener(u, v):
-    """
+    r"""
     Computes the Sokal-Michener dissimilarity between two boolean vectors
     ``u`` and ``v``, which is defined as
 
@@ -795,7 +794,7 @@ def sokalmichener(u, v):
     return float(2.0 * (ntf + nft))/float(ntt + nff + 2.0 * (ntf + nft))
 
 def sokalsneath(u, v):
-    """
+    r"""
     Computes the Sokal-Sneath dissimilarity between two boolean vectors
     ``u`` and ``v``,
 
@@ -829,7 +828,7 @@ def sokalsneath(u, v):
 
 
 def pdist(X, metric='euclidean', p=2, V=None, VI=None):
-    """
+    r"""
     Computes the pairwise distances between m original observations in
     n-dimensional space. Returns a condensed distance matrix Y.  For
     each :math:`i` and :math:`j` (where :math:`i<j<n`), the
@@ -1263,7 +1262,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
     return dm
 
 def squareform(X, force="no", checks=True):
-    """
+    r"""
     Converts a vector-form distance vector to a square-form distance
     matrix, and vice-versa.
 
@@ -1456,7 +1455,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     return valid
 
 def is_valid_y(y, warning=False, throw=False, name=None):
-    """
+    r"""
     Returns ``True`` if the variable ``y`` passed is a valid condensed
     distance matrix. Condensed distance matrices must be 1-dimensional
     numpy arrays containing doubles. Their length must be a binomial
@@ -1558,7 +1557,7 @@ def num_obs_y(Y):
 
 
 def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
-    """
+    r"""
     Computes distance between each pair of observation vectors in the
     Cartesian product of two collections of vectors. ``XA`` is a
     :math:`m_A` by :math:`n` array while ``XB`` is a :math:`m_B` by
@@ -1782,7 +1781,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     :Returns:
        Y : ndarray
            A :math:`m_A` by :math:`m_B` distance matrix.
-       """
+    """
 
 
 #         21. Y = cdist(XA, XB, 'test_Y')
