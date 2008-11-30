@@ -477,10 +477,6 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
     
   RESTORE_FUNC();
 
-  if (info == 0) {
-    printf("%d %d %d %f %f %f %d %f",n, m, ldfjac, ftol, xtol, gtol, maxfev, factor);
-  }
-
   if (info < 0) goto fail;           /* Python error */
 
   free(wa);
