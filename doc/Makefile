@@ -48,14 +48,11 @@ dist: html
 	find build/dist -type d -print0 | xargs -0r chmod g+s
 
 generate: build/generate-stamp
-build/generate-stamp: $(wildcard source/*.rst) ext
+build/generate-stamp: $(wildcard source/*.rst)
 	mkdir -p build
-	./ext/autosummary_generate.py source/*.rst \
+	./sphinxext/autosummary_generate.py source/*.rst \
 		-p dump.xml -o source/generated 
 	touch build/generate-stamp
-
-ext:
-	svn co http://sphinx.googlecode.com/svn/contrib/trunk/numpyext ext
 
 html: generate
 	mkdir -p build/html build/doctrees
