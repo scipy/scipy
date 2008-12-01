@@ -702,7 +702,7 @@ class rv_continuous(rv_generic):
         if g1 is None:
             mu3 = None
         else:
-            mu3 = g1*np.power(mu2,1.5) #(mu2**1.5) breaks down for nan and nin
+            mu3 = g1*np.power(mu2,1.5) #(mu2**1.5) breaks down for nan and inf
         default = valarray(shape(cond), self.badvalue)
         output = []
 
@@ -1985,8 +1985,8 @@ class gumbel_l_gen(rv_continuous):
     def _ppf(self, q):
         return log(-log(1-q))
     def _stats(self):
-        return _EULER, pi*pi/6.0, \
-               12*sqrt(6)/pi**3 * _ZETA3, 12.0/5
+        return -_EULER, pi*pi/6.0, \
+               -12*sqrt(6)/pi**3 * _ZETA3, 12.0/5
     def _entropy(self):
         return 1.0608407169541684911
 gumbel_l = gumbel_l_gen(name='gumbel_l',longname="A left-skewed Gumbel",
@@ -2931,7 +2931,7 @@ class rayleigh_gen(rv_continuous):
         return sqrt(-2*log(1-q))
     def _stats(self):
         val = 4-pi
-        return pi/2, val/2, 2*(pi-3)*sqrt(pi)/val**1.5, \
+        return np.sqrt(pi/2), val/2, 2*(pi-3)*sqrt(pi)/val**1.5, \
                6*pi/val-16/val**2
     def _entropy(self):
         return _EULER/2.0 + 1 - 0.5*log(2)
@@ -3092,7 +3092,16 @@ class truncexpon_gen(rv_continuous):
     def _ppf(self, q, b):
         return -log(1-q+q*exp(-b))
     def _munp(self, n, b):
-        return gam(n+1)-special.gammainc(1+n,b)
+        #wrong answer with formula, same as in continuous.pdf     
+        #return gam(n+1)-special.gammainc(1+n,b)
+        if n == 1:
+            return (1-(b+1)*np.exp(-b))/(1-np.exp(-b))
+        elif n == 2:
+            return 2*(1-0.5*(b*b+2*b+2)*np.exp(-b))/(1-np.exp(-b))
+        else:
+            #return generic for higher moments
+            #return rv_continuous._mom1_sc(self,n, b)
+            return self._mom1_sc(n, b)
     def _entropy(self, b):
         eB = exp(b)
         return log(eB-1)+(1+eB*(b-1.0))/(1.0-eB)
@@ -3126,7 +3135,7 @@ class truncnorm_gen(rv_continuous):
         nA, nB = self.na, self.nb
         d = nB - nA
         pA, pB = norm._pdf(a), norm._pdf(b)
-        mu = (pB - pA) / d
+        mu = (pA - pB) / d   #correction sign
         mu2 = 1 + (a*pA - b*pB) / d - mu*mu
         return mu, mu2, None, None
 truncnorm = truncnorm_gen(name='truncnorm', longname="A truncated normal",
