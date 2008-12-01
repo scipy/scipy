@@ -766,6 +766,17 @@ class rv_continuous(rv_generic):
             return tuple(output)
 
     def moment(self, n, *args):
+        """n'th non-central moment of distribution
+
+        Parameters:
+        -----------
+        n: int, n>=1
+    
+        *args:
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+
+        """
         if (floor(n) != n):
             raise ValueError, "Moment must be an integer."
         if (n < 0): raise ValueError, "Moment must be positive."
@@ -781,14 +792,22 @@ class rv_continuous(rv_generic):
                 if mu is None: return self._munp(1,*args)
                 else: return mu
             elif (n==2):
-                if mu2 is None or mu is None: return self._munp(2,*args)
+                if mu2 is None or mu is None:
+                    return self._munp(2,*args)
                 else: return mu2 + mu*mu
             elif (n==3):
-                if g1 is None or mu2 is None: return self._munp(3,*args)
-                else: return g1*(mu2**1.5)
+                if g1 is None or mu2 is None:
+                    return self._munp(3,*args)
+                else:
+                    mu3 = g1*(mu2**1.5) # 3rd central moment
+                    return mu3+3*mu*mu2+mu**3 # 3rd non-central moment
             else: # (n==4)
-                if g2 is None or mu2 is None: return self._munp(4,*args)
-                else: return (g2+3.0)*(mu2**2.0)
+                if g2 is None or mu2 is None:
+                    return self._munp(4,*args)
+                else:
+                    mu4 = (g2+3.0)*(mu2**2.0) # 4th central moment
+                    mu3 = g1*(mu2**1.5) # 3rd central moment
+                    return mu4+4*mu*mu3+6*mu*mu*mu2+mu**4
         else:
             return self._munp(n,*args)
 
@@ -3929,6 +3948,18 @@ class rv_discrete(rv_generic):
             return tuple(output)
 
     def moment(self, n, *args, **kwds):   # Non-central moments in standard form.
+        """n'th non-central moment of the distribution
+
+
+        Parameters:
+        -----------
+        n: int, n>=1
+    
+        *args:
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+
+        """
         if (floor(n) != n):
             raise ValueError, "Moment must be an integer."
         if (n < 0): raise ValueError, "Moment must be positive."
@@ -3947,11 +3978,18 @@ class rv_discrete(rv_generic):
                 if mu2 is None or mu is None: return self._munp(2,*args)
                 else: return mu2 + mu*mu
             elif (n==3):
-                if g1 is None or mu2 is None: return self._munp(3,*args)
-                else: return g1*(mu2**1.5)
+                if (g1 is None) or (mu2 is None) or (mu is None):
+                    return self._munp(3,*args)
+                else:
+                    mu3 = g1*(mu2**1.5) # 3rd central moment
+                    return mu3+3*mu*mu2+mu**3 # 3rd non-central moment
             else: # (n==4)
-                if g2 is None or mu2 is None: return self._munp(4,*args)
-                else: return (g2+3.0)*(mu2**2.0)
+                if (g2 is None) or (g1 is None) or (mu is None) or (mu2 is None):
+                    return self._munp(4,*args)
+                else:
+                    mu4 = (g2+3.0)*(mu2**2.0) # 4th central moment
+                    mu3 = g1*(mu2**1.5) # 3rd central moment
+                    return mu4+4*mu*mu3+6*mu*mu*mu2+mu**4
         else:
             return self._munp(n,*args)
 
