@@ -244,12 +244,6 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
            'at arg = %s with pval = %s' % (msg,str(arg),str(pval))
 
 
-
-
-
-
-
-
 if __name__ == "__main__":
     #nose.run(argv=['', __file__])
     nose.runmodule(argv=[__file__,'-s'], exit=False)
