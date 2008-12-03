@@ -25,7 +25,7 @@ help:
 	@echo "  upload USER=...  to upload results to docs.scipy.org"
 
 clean:
-	-rm -rf build/* source/generated
+	-rm -rf build/* source/generated source/_static/plot_directive
 
 upload:
 	@test -e build/dist || { echo "make dist is required first"; exit 1; }

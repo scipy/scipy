@@ -267,7 +267,26 @@ N-d arrays which provide coordinate arrays for an N-dimensional
 volume. The easiest way to understand this is with an example of its
 usage:
 
-.. literalinclude:: examples/2-1
+    >>> mgrid[0:5,0:5]
+    array([[[0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1],
+            [2, 2, 2, 2, 2],
+            [3, 3, 3, 3, 3],
+            [4, 4, 4, 4, 4]],
+           [[0, 1, 2, 3, 4],
+            [0, 1, 2, 3, 4],
+            [0, 1, 2, 3, 4],
+            [0, 1, 2, 3, 4],
+            [0, 1, 2, 3, 4]]])  
+    >>> mgrid[0:5:4j,0:5:4j]
+    array([[[ 0.    ,  0.    ,  0.    ,  0.    ],
+            [ 1.6667,  1.6667,  1.6667,  1.6667],
+            [ 3.3333,  3.3333,  3.3333,  3.3333],
+            [ 5.    ,  5.    ,  5.    ,  5.    ]],
+           [[ 0.    ,  1.6667,  3.3333,  5.    ],
+            [ 0.    ,  1.6667,  3.3333,  5.    ],
+            [ 0.    ,  1.6667,  3.3333,  5.    ],
+            [ 0.    ,  1.6667,  3.3333,  5.    ]]])
 
 Having meshed arrays like this is sometimes very useful. However, it
 is not always needed just to evaluate some N-dimensional function over
@@ -309,7 +328,20 @@ polynomial. The polynomial object can then be manipulated in algebraic
 expressions, integrated, differentiated, and evaluated. It even prints
 like a polynomial:
 
-.. literalinclude:: examples/2-2
+    >>> p = poly1d([3,4,5])
+    >>> print p
+       2
+    3 x + 4 x + 5
+    >>> print p*p
+       4      3      2
+    9 x + 24 x + 46 x + 40 x + 25
+    >>> print p.integ(k=6)
+     3     2
+    x + 2 x + 5 x + 6
+    >>> print p.deriv()
+    6 x + 4
+    >>> p([4,5])
+    array([ 69, 100])
 
 The other way to handle polynomials is as an array of coefficients
 with the first element of the array giving the coefficient of the
@@ -378,7 +410,11 @@ a list of conditions. Each element of the return array is taken from
 the array in a ``choicelist`` corresponding to the first condition in
 ``condlist`` that is true. For example
 
-.. literalinclude:: examples/2-3
+    >>> x = r_[-2:3]
+    >>> x
+    array([-2, -1,  0,  1,  2])
+    >>> select([x > 3, x >= 0],[0,x+2])
+    array([0, 0, 2, 3, 4])
 
 
 Common functions
@@ -458,7 +494,17 @@ the interval :math:`[0,4.5].`
 
 This could be computed using :obj:`quad`:
 
-.. literalinclude:: examples/4-2
+    >>> result = integrate.quad(lambda x: special.jv(2.5,x), 0, 4.5)
+    >>> print result
+    (1.1178179380783249, 7.8663172481899801e-09)
+    
+    >>> I = sqrt(2/pi)*(18.0/27*sqrt(2)*cos(4.5)-4.0/27*sqrt(2)*sin(4.5)+
+        sqrt(2*pi)*special.fresnel(3/sqrt(pi))[0])
+    >>> print I
+    1.117817938088701
+    
+    >>> print abs(result[0]-I)
+    1.03761443881e-11
 
 The first argument to quad is a "callable "Python object ( *i.e* a function, method, or class instance). Notice the use of a lambda-
 function in this case as the argument. The next two arguments are the
@@ -496,7 +542,19 @@ is desired (and the fact that this integral can be computed as
 :obj:`special.expn` can be replicated by defining a new function
 :obj:`vec_expint` based on the routine :obj:`quad`:
 
-.. literalinclude:: examples/4-3
+    >>> from scipy.integrate import quad
+    >>> def integrand(t,n,x):
+    ...     return exp(-x*t) / t**n
+    
+    >>> def expint(n,x): 
+    ...     return quad(integrand, 1, Inf, args=(n, x))[0]
+    
+    >>> vec_expint = vectorize(expint)
+    
+    >>> vec_expint(3,arange(1.0,4.0,0.5))
+    array([ 0.1097,  0.0567,  0.0301,  0.0163,  0.0089,  0.0049])
+    >>> special.expn(3,arange(1.0,4.0,0.5))
+    array([ 0.1097,  0.0567,  0.0301,  0.0163,  0.0089,  0.0049])
 
 The function which is integrated can even use the quad argument
 (though the error bound may underestimate the error due to possible
@@ -507,8 +565,17 @@ numerical error in the integrand from the use of :obj:`quad` ). The integral in 
 
     \[ I_{n}=\int_{0}^{\infty}\int_{1}^{\infty}\frac{e^{-xt}}{t^{n}}\, dt\, dx=\frac{1}{n}.\]
 
-.. literalinclude:: examples/4-4
-
+    >>> result = quad(lambda x: expint(3, x), 0, inf)
+    >>> print result
+    (0.33333333324560266, 2.8548934485373678e-09)  
+    
+    >>> I3 = 1.0/3.0
+    >>> print I3
+    0.333333333333   
+    
+    >>> print I3 - result[0]
+    8.77306560731e-11     
+    
 This last example shows that multiple integration can be handled using
 repeated calls to :func:`quad`. The mechanics of this for double and
 triple integration have been wrapped up into the functions
@@ -519,7 +586,16 @@ all inner integrals are actually functions which can be constant
 functions. An example of using double integration to compute several
 values of :math:`I_{n}` is shown below:
 
-.. literalinclude:: examples/4-5
+    >>> from scipy.integrate import quad, dblquad
+    >>> def I(n):
+    ...     return dblquad(lambda t, x: exp(-x*t)/t**n, 0, Inf, lambda x: 1, lambda x: Inf) 
+    
+    >>> print I(4)
+    (0.25000000000435768, 1.0518245707751597e-09)
+    >>> print I(3)
+    (0.33333333325010883, 2.8604069919261191e-09) 
+    >>> print I(2)
+    (0.49999999999857514, 1.8855523253868967e-09)
 
 
 Gaussian quadrature (integrate.gauss_quadtol)
@@ -633,7 +709,31 @@ usage of the *Dfun* option which allows the user to specify a gradient
 (with respect to :math:`\mathbf{y}` ) of the function,
 :math:`\mathbf{f}\left(\mathbf{y},t\right)`.
 
-.. literalinclude:: examples/4-6
+    >>> from scipy.integrate import odeint
+    >>> from scipy.special import gamma, airy
+    >>> y1_0 = 1.0/3**(2.0/3.0)/gamma(2.0/3.0)
+    >>> y0_0 = -1.0/3**(1.0/3.0)/gamma(1.0/3.0)
+    >>> y0 = [y0_0, y1_0]
+    >>> def func(y, t):
+    ...     return [t*y[1],y[0]]
+    
+    >>> def gradient(y,t):
+    ...     return [[0,t],[1,0]]
+    
+    >>> x = arange(0,4.0, 0.01)
+    >>> t = x
+    >>> ychk = airy(x)[0]
+    >>> y = odeint(func, y0, t)
+    >>> y2 = odeint(func, y0, t, Dfun=gradient)
+    
+    >>> print ychk[:36:6]
+    [ 0.355028  0.339511  0.324068  0.308763  0.293658  0.278806]
+    
+    >>> print y[:36:6,1]
+    [ 0.355028  0.339511  0.324067  0.308763  0.293658  0.278806]
+    
+    >>> print y2[:36:6,1]
+    [ 0.355028  0.339511  0.324067  0.308763  0.293658  0.278806]
 
 
 Optimization (optimize)
@@ -673,7 +773,20 @@ Rosenbrock function of :math:`N` variables:
 
 The minimum value of this function is 0 which is achieved when :math:`x_{i}=1.` This minimum can be found using the :obj:`fmin` routine as shown in the example below:
 
-.. literalinclude:: examples/5-2
+    >>> from scipy.optimize import fmin
+    >>> def rosen(x):
+    ...     """The Rosenbrock function"""
+    ...     return sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
+    
+    >>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
+    >>> xopt = fmin(rosen, x0, xtol=1e-8)
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 339
+             Function evaluations: 571
+    
+    >>> print xopt
+    [ 1.  1.  1.  1.  1.]
 
 Another optimization algorithm that needs only function calls to find
 the minimum is Powell's method available as :func:`optimize.fmin_powell`.
@@ -708,14 +821,32 @@ are
 A Python function which computes this gradient is constructed by the
 code-segment:
 
-.. literalinclude:: examples/5-3
-
+    >>> def rosen_der(x):
+    ...     xm = x[1:-1]
+    ...     xm_m1 = x[:-2]
+    ...     xm_p1 = x[2:]
+    ...     der = zeros_like(x)
+    ...     der[1:-1] = 200*(xm-xm_m1**2) - 400*(xm_p1 - xm**2)*xm - 2*(1-xm)
+    ...     der[0] = -400*x[0]*(x[1]-x[0]**2) - 2*(1-x[0])
+    ...     der[-1] = 200*(x[-1]-x[-2]**2)
+    ...     return der
+    
 The calling signature for the BFGS minimization algorithm is similar
 to :obj:`fmin` with the addition of the *fprime* argument. An example
 usage of :obj:`fmin_bfgs` is shown in the following example which
 minimizes the Rosenbrock function.
 
-.. literalinclude:: examples/5-4
+    >>> from scipy.optimize import fmin_bfgs
+    
+    >>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
+    >>> xopt = fmin_bfgs(rosen, x0, fprime=rosen_der)
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 53
+             Function evaluations: 65
+             Gradient evaluations: 65
+    >>> print xopt
+    [ 1.  1.  1.  1.  1.]
 
 
 Newton-Conjugate-Gradient (optimize.fmin_ncg)
@@ -781,8 +912,27 @@ For example, the Hessian when :math:`N=5` is
 The code which computes this Hessian along with the code to minimize
 the function using :obj:`fmin_ncg` is shown in the following example:
 
-.. literalinclude:: examples/5-5
-
+    >>> from scipy.optimize import fmin_ncg
+    >>> def rosen_hess(x):
+    ...     x = asarray(x)
+    ...     H = diag(-400*x[:-1],1) - diag(400*x[:-1],-1)
+    ...     diagonal = zeros_like(x)
+    ...     diagonal[0] = 1200*x[0]-400*x[1]+2
+    ...     diagonal[-1] = 200
+    ...     diagonal[1:-1] = 202 + 1200*x[1:-1]**2 - 400*x[2:]
+    ...     H = H + diag(diagonal)
+    ...     return H
+    
+    >>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
+    >>> xopt = fmin_ncg(rosen, x0, rosen_der, fhess=rosen_hess, avextol=1e-8)
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 23
+             Function evaluations: 26
+             Gradient evaluations: 23
+             Hessian evaluations: 23
+    >>> print xopt
+    [ 1.  1.  1.  1.  1.]
 
 
 Hessian product example:
@@ -811,7 +961,26 @@ vector is not difficult to compute. If :math:`\mathbf{p}` is the arbitrary vecto
 Code which makes use of the *fhess_p* keyword to minimize the
 Rosenbrock function using :obj:`fmin_ncg` follows:
 
-.. literalinclude:: examples/5-6
+    >>> from scipy.optimize import fmin_ncg
+    >>> def rosen_hess_p(x,p):
+    ...     x = asarray(x)
+    ...     Hp = zeros_like(x)
+    ...     Hp[0] = (1200*x[0]**2 - 400*x[1] + 2)*p[0] - 400*x[0]*p[1]
+    ...     Hp[1:-1] = -400*x[:-2]*p[:-2]+(202+1200*x[1:-1]**2-400*x[2:])*p[1:-1] \
+    ...                -400*x[1:-1]*p[2:]
+    ...     Hp[-1] = -400*x[-2]*p[-2] + 200*p[-1]
+    ...     return Hp
+    
+    >>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
+    >>> xopt = fmin_ncg(rosen, x0, rosen_der, fhess_p=rosen_hess_p, avextol=1e-8)
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 22
+             Function evaluations: 25
+             Gradient evaluations: 22
+             Hessian evaluations: 54
+    >>> print xopt
+    [ 1.  1.  1.  1.  1.]
 
 
 Least-square fitting (minimize.leastsq)
@@ -862,18 +1031,45 @@ where the parameters :math:`A,` :math:`k` , and :math:`\theta` are unknown. The 
 
 By defining a function to compute the residuals and (selecting an
 appropriate starting position), the least-squares fit routine can be
-used to find the best-fit parameters :math:`\hat{A},\,\hat{k},\,\hat{\theta}` . This is shown in the following example and a plot of the results is
-shown in Figure `1 <#fig-least-squares-fit>`__ .
+used to find the best-fit parameters :math:`\hat{A},\,\hat{k},\,\hat{\theta}`.
+This is shown in the following example:
 
-.. _`fig:least_squares_fit`:
+.. plot::
 
-.. plot:: source/tutorial/examples/5-7
-   :include-source:
-   :doctest-format:
-   :align: center
+   >>> from numpy import *
+   >>> x = arange(0,6e-2,6e-2/30)
+   >>> A,k,theta = 10, 1.0/3e-2, pi/6
+   >>> y_true = A*sin(2*pi*k*x+theta)
+   >>> y_meas = y_true + 2*random.randn(len(x))
 
-.. XXX: **Figure 1**  Least-square fitting to noisy data using
-.. XXX: :obj:`scipy.optimize.leastsq`
+   >>> def residuals(p, y, x):
+   ...     A,k,theta = p
+   ...     err = y-A*sin(2*pi*k*x+theta)
+   ...     return err
+
+   >>> def peval(x, p):
+   ...     return p[0]*sin(2*pi*p[1]*x+p[2])
+
+   >>> p0 = [8, 1/2.3e-2, pi/3]
+   >>> print array(p0)
+   [  8.      43.4783   1.0472]
+
+   >>> from scipy.optimize import leastsq
+   >>> plsq = leastsq(residuals, p0, args=(y_meas, x))
+   >>> print plsq[0]
+   [ 10.9437  33.3605   0.5834]
+
+   >>> print array([A, k, theta])
+   [ 10.      33.3333   0.5236]
+
+   >>> import matplotlib.pyplot as plt
+   >>> plt.plot(x,peval(x,plsq[0]),x,y_meas,'o',x,y_true)
+   >>> plt.title('Least-squares fit to noisy data')
+   >>> plt.legend(['Fit', 'Noisy', 'True'])
+   >>> plt.show()
+
+..   :caption: Least-square fitting to noisy data using 
+..             :obj:`scipy.optimize.leastsq`
 
 
 Scalar function minimizers
@@ -915,9 +1111,11 @@ fixed endpoints.
 
 For example, to find the minimum of :math:`J_{1}\left(x\right)` near :math:`x=5` , :obj:`fminbound` can be called using the interval :math:`\left[4,7\right]` as a constraint. The result is :math:`x_{\textrm{min}}=5.3314` :
 
-
-.. literalinclude:: examples/5-8
-
+    >>> from scipy.special import j1
+    >>> from scipy.optimize import fminbound
+    >>> xmin = fminbound(j1, 4, 7)
+    >>> print xmin
+    5.33144184241
 
 
 Root finding
@@ -945,9 +1143,23 @@ and the set of non-linear equations
 
 The results are :math:`x=-1.0299` and :math:`x_{0}=6.5041,\, x_{1}=0.9084` .
 
-
-.. literalinclude:: examples/5-9
-
+    >>> def func(x):
+    ...     return x + 2*cos(x)
+    
+    >>> def func2(x):
+    ...     out = [x[0]*cos(x[1]) - 4]
+    ...     out.append(x[1]*x[0] - x[1] - 5)
+    ...     return out
+    
+    >>> from scipy.optimize import fsolve
+    >>> x0 = fsolve(func, 0.3)
+    >>> print x0
+    -1.02986652932
+    
+    >>> x02 = fsolve(func2, [1, 1])
+    >>> print x02
+    [ 6.50409711  0.90841421]
+    
 
 
 Scalar function root finding
@@ -994,15 +1206,21 @@ even has a docstring for help). Behavior at the boundary can be
 specified at instantiation time. The following example demonstrates
 it's use.
 
-.. _`fig:inter_1d`:
+.. plot::
 
-.. plot:: source/tutorial/examples/6-1
-   :doctest-format:
-   :include-source:
-   :align: center
+   >>> from numpy import *
+   >>> from scipy import interpolate
 
-.. **Figure 2**  One-dimensional interpolation using the
-   class :obj:`interpolate.interp1d`
+   >>> x = arange(0,10)
+   >>> y = exp(-x/3.0)
+   >>> f = interpolate.interp1d(x, y)
+
+   >>> xnew = arange(0,9,0.1)
+   >>> import matplotlib.pyplot as plt
+   >>> plt.plot(x,y,'o',xnew,f(xnew),'-')
+
+..   :caption: One-dimensional interpolation using the
+..             class :obj:`interpolate.interp1d`
 
 
 Spline interpolation in 1-d (interpolate.splXXX)
@@ -1014,17 +1232,32 @@ evaluated at the desired points. In order to find the spline
 representation, there are two different was to represent a curve and
 obtain (smoothing) spline coefficients: directly and parametrically.
 The direct method finds the spline representation of a curve in a two-
-dimensional plane using the function :obj:`interpolate.splrep`. The first two arguments are the only ones required, and these provide
-the :math:`x` and :math:`y` components of the curve. The normal output is a 3-tuple, :math:`\left(t,c,k\right)` , containing the knot-points, :math:`t` , the coefficients :math:`c` and the order :math:`k` of the spline. The default spline order is cubic, but this can be
-changed with the input keyword, *k.*
+dimensional plane using the function :obj:`interpolate.splrep`. The
+first two arguments are the only ones required, and these provide the
+:math:`x` and :math:`y` components of the curve. The normal output is
+a 3-tuple, :math:`\left(t,c,k\right)` , containing the knot-points,
+:math:`t` , the coefficients :math:`c` and the order :math:`k` of the
+spline. The default spline order is cubic, but this can be changed
+with the input keyword, *k.*
 
-For curves in :math:`N` -dimensional space the function :obj:`interpolate.splprep` allows defining the curve parametrically. For this function only 1
-input argument is required. This input is a list of :math:`N` -arrays representing the curve in :math:`N` -dimensional space. The length of each array is the number of curve
-points, and each array provides one component of the :math:`N` -dimensional data point. The parameter variable is given with the
-keword argument, *u,* which defaults to an equally-spaced monotonic sequence between :math:`0` and :math:`1` . The default output consists of two objects: a 3-tuple, :math:`\left(t,c,k\right)` , containing the spline representation and the parameter variable :math:`u.`
+For curves in :math:`N` -dimensional space the function
+:obj:`interpolate.splprep` allows defining the curve
+parametrically. For this function only 1 input argument is
+required. This input is a list of :math:`N` -arrays representing the
+curve in :math:`N` -dimensional space. The length of each array is the
+number of curve points, and each array provides one component of the
+:math:`N` -dimensional data point. The parameter variable is given
+with the keword argument, *u,* which defaults to an equally-spaced
+monotonic sequence between :math:`0` and :math:`1` . The default
+output consists of two objects: a 3-tuple, :math:`\left(t,c,k\right)`
+, containing the spline representation and the parameter variable
+:math:`u.`
 
-The keyword argument, *s* , is used to specify the amount of smoothing to perform during the
-spline fit. The default value of :math:`s` is :math:`s=m-\sqrt{2m}` where :math:`m` is the number of data-points being fit. Therefore, **if no smoothing is desired a value of** :math:`\mathbf{s}=0` **should be passed to the routines.**
+The keyword argument, *s* , is used to specify the amount of smoothing
+to perform during the spline fit. The default value of :math:`s` is
+:math:`s=m-\sqrt{2m}` where :math:`m` is the number of data-points
+being fit. Therefore, **if no smoothing is desired a value of**
+:math:`\mathbf{s}=0` **should be passed to the routines.**
 
 Once the spline representation of the data has been determined,
 functions are available for evaluating the spline
@@ -1034,12 +1267,76 @@ and the integral of the spline between any two points (
 :func:`interpolate.splint`). In addition, for cubic splines ( :math:`k=3`
 ) with 8 or more knots, the roots of the spline can be estimated (
 :func:`interpolate.sproot`). These functions are demonstrated in the
-example that follows (see also Figure `3 <#fig-spline-1d>`__ ).
+example that follows.
 
-.. plot:: source/tutorial/examples/6-2
-   :include-source:
-   :doctest-format:
-   :align: center
+.. plot::
+
+   >>> from numpy import *
+   >>> import matplotlib.pyplot as plt
+   >>> from scipy import interpolate
+
+   Cubic-spline
+
+   >>> x = arange(0,2*pi+pi/4,2*pi/8)
+   >>> y = sin(x)
+   >>> tck = interpolate.splrep(x,y,s=0)
+   >>> xnew = arange(0,2*pi,pi/50)
+   >>> ynew = interpolate.splev(xnew,tck,der=0)
+
+   >>> plt.figure()
+   >>> plt.plot(x,y,'x',xnew,ynew,xnew,sin(xnew),x,y,'b')
+   >>> plt.legend(['Linear','Cubic Spline', 'True'])
+   >>> plt.axis([-0.05,6.33,-1.05,1.05])
+   >>> plt.title('Cubic-spline interpolation')
+   >>> plt.show()
+
+   Derivative of spline
+
+   >>> yder = interpolate.splev(xnew,tck,der=1)
+   >>> plt.figure()
+   >>> plt.plot(xnew,yder,xnew,cos(xnew),'--')
+   >>> plt.legend(['Cubic Spline', 'True'])
+   >>> plt.axis([-0.05,6.33,-1.05,1.05])
+   >>> plt.title('Derivative estimation from spline')
+   >>> plt.show()
+
+   Integral of spline
+
+   >>> def integ(x,tck,constant=-1):
+   >>>     x = atleast_1d(x)
+   >>>     out = zeros(x.shape, dtype=x.dtype)
+   >>>     for n in xrange(len(out)):
+   >>>         out[n] = interpolate.splint(0,x[n],tck)
+   >>>     out += constant
+   >>>     return out
+   >>>
+   >>> yint = integ(xnew,tck)
+   >>> plt.figure()
+   >>> plt.plot(xnew,yint,xnew,-cos(xnew),'--')
+   >>> plt.legend(['Cubic Spline', 'True'])
+   >>> plt.axis([-0.05,6.33,-1.05,1.05])
+   >>> plt.title('Integral estimation from spline')
+   >>> plt.show()
+
+   Roots of spline
+
+   >>> print interpolate.sproot(tck)
+   [ 0.      3.1416]
+
+   Parametric spline
+
+   >>> t = arange(0,1.1,.1)
+   >>> x = sin(2*pi*t)
+   >>> y = cos(2*pi*t)
+   >>> tck,u = interpolate.splprep([x,y],s=0)
+   >>> unew = arange(0,1.01,0.01)
+   >>> out = interpolate.splev(unew,tck)
+   >>> plt.figure()
+   >>> plt.plot(x,y,'x',out[0],out[1],sin(2*pi*unew),cos(2*pi*unew),x,y,'b')
+   >>> plt.legend(['Linear','Cubic Spline', 'True'])
+   >>> plt.axis([-1.05,1.05,-1.05,1.05])
+   >>> plt.title('Spline of parametrically-defined curve')
+   >>> plt.show()
 
 
 Two-dimensional spline representation (interpolate.bisplrep)
@@ -1083,13 +1380,36 @@ by the number of indexing objects passed in :obj:`mgrid`[].
 
 .. _`fig:2d_interp`:
 
-.. plot:: source/tutorial/examples/6-3
-   :doctest-format:
-   :include-source:
-   :align: center
+.. plot::
 
-.. XXX: **Figure 4**
-.. XXX: Example of two-dimensional spline interpolation.
+   >>> from numpy import *
+   >>> from scipy import interpolate
+   >>> import matplotlib.pyplot as plt
+
+   Define function over sparse 20x20 grid
+
+   >>> x,y = mgrid[-1:1:20j,-1:1:20j]
+   >>> z = (x+y)*exp(-6.0*(x*x+y*y))
+
+   >>> plt.figure()
+   >>> plt.pcolor(x,y,z)
+   >>> plt.colorbar()
+   >>> plt.title("Sparsely sampled function.")
+   >>> plt.show()
+
+   Interpolate function over new 70x70 grid
+
+   >>> xnew,ynew = mgrid[-1:1:70j,-1:1:70j]
+   >>> tck = interpolate.bisplrep(x,y,z,s=0)
+   >>> znew = interpolate.bisplev(xnew[:,0],ynew[0,:],tck)
+
+   >>> plt.figure()
+   >>> plt.pcolor(xnew,ynew,znew)
+   >>> plt.colorbar()
+   >>> plt.title("Interpolated function.")
+   >>> plt.show()
+
+..   :caption: Example of two-dimensional spline interpolation.
 
 
 Signal Processing (signal)
@@ -1210,14 +1530,36 @@ filters and allows for choosing mirror-symmetric boundary conditions.
 
 .. _`fig:lena_edge_spline`:
 
-.. plot:: source/tutorial/examples/6-4
-   :doctest-format:
-   :include-source:
-   :align: center
+.. plot::
 
-..   **Figure 5**
-..   .. image: figs/lena_edge.pdf
-..   Example of using smoothing splines to filter images.
+   >>> from numpy import *
+   >>> from scipy import signal, misc
+   >>> import matplotlib.pyplot as plt
+
+   >>> image = misc.lena().astype(float32)
+   >>> derfilt = array([1.0,-2,1.0],float32)
+   >>> ck = signal.cspline2d(image,8.0)
+   >>> deriv = signal.sepfir2d(ck, derfilt, [1]) + \
+   >>>         signal.sepfir2d(ck, [1], derfilt)
+
+   Alternatively we could have done::
+
+       laplacian = array([[0,1,0],[1,-4,1],[0,1,0]],float32)
+       deriv2 = signal.convolve2d(ck,laplacian,mode='same',boundary='symm')
+
+   >>> plt.figure()
+   >>> plt.imshow(image)
+   >>> plt.gray()
+   >>> plt.title('Original image')
+   >>> plt.show()
+
+   >>> plt.figure()
+   >>> plt.imshow(deriv)
+   >>> plt.gray()
+   >>> plt.title('Output of spline edge filter')
+   >>> plt.show()
+
+..   :caption: Example of using smoothing splines to filter images.
 
 
 Filtering
@@ -1613,8 +1955,21 @@ then
 
 The following example demonstrates this computation in SciPy
 
-.. literalinclude:: examples/10-2-1
-
+    >>> A = mat('[1 3 5; 2 5 1; 2 3 8]')
+    >>> A
+    matrix([[1, 3, 5],
+            [2, 5, 1],
+            [2, 3, 8]])
+    >>> A.I
+    matrix([[-1.48,  0.36,  0.88],
+            [ 0.56,  0.08, -0.36],
+            [ 0.16, -0.12,  0.04]])
+    >>> from scipy import linalg
+    >>> linalg.inv(A)
+    array([[-1.48,  0.36,  0.88],
+           [ 0.56,  0.08, -0.36],
+           [ 0.16, -0.12,  0.04]])
+    
 Solving linear system
 ^^^^^^^^^^^^^^^^^^^^^
 
@@ -1641,7 +1996,17 @@ However, it is better to use the linalg.solve command which can be
 faster and more numerically stable. In this case it however gives the
 same answer as shown in the following example:
 
-.. literalinclude:: examples/10-2-2
+    >>> A = mat('[1 3 5; 2 5 1; 2 3 8]')
+    >>> b = mat('[10;8;3]')
+    >>> A.I*b
+    matrix([[-9.28],
+            [ 5.16],
+            [ 0.76]])
+    >>> linalg.solve(A,b)
+    array([[-9.28],
+           [ 5.16],
+           [ 0.76]])
+
 
 Finding Determinant
 ^^^^^^^^^^^^^^^^^^^
@@ -1671,7 +2036,10 @@ is
 
 In SciPy this is computed as shown in this example:
 
-.. literalinclude:: examples/10-2-3
+    >>> A = mat('[1 3 5; 2 5 1; 2 3 8]')
+    >>> linalg.det(A)
+    -25.000000000000004
+
 
 Computing norms
 ^^^^^^^^^^^^^^^
@@ -1773,10 +2141,31 @@ generated using the model:
 
 where :math:`x_{i}=0.1i` for :math:`i=1\ldots10` , :math:`c_{1}=5` , and :math:`c_{2}=4.` Noise is added to :math:`y_{i}` and the coefficients :math:`c_{1}` and :math:`c_{2}` are estimated using linear least squares.
 
-.. plot:: source/tutorial/examples/10-2-5
-   :include-source:
-   :align: center
+.. plot::
 
+   >>> from numpy import *
+   >>> from scipy import linalg
+   >>> import matplotlib.pyplot as plt
+
+   >>> c1,c2= 5.0,2.0
+   >>> i = r_[1:11]
+   >>> xi = 0.1*i
+   >>> yi = c1*exp(-xi)+c2*xi
+   >>> zi = yi + 0.05*max(yi)*random.randn(len(yi))
+
+   >>> A = c_[exp(-xi)[:,newaxis],xi[:,newaxis]]
+   >>> c,resid,rank,sigma = linalg.lstsq(A,zi)
+
+   >>> xi2 = r_[0.1:1.0:100j]
+   >>> yi2 = c[0]*exp(-xi2) + c[1]*xi2
+
+   >>> plt.plot(xi,zi,'x',xi2,yi2)
+   >>> plt.axis([0,1.1,3.0,5.5])
+   >>> plt.xlabel('$x_i$')
+   >>> plt.title('Data fitting with linalg.lstsq')
+   >>> plt.show()
+
+..   :caption: Example of linear least-squares fit
 
 Generalized inverse
 ^^^^^^^^^^^^^^^^^^^
@@ -1901,7 +2290,26 @@ The eigenvectors corresponding to each eigenvalue can be found using
 the original equation. The eigenvectors associated with these
 eigenvalues can then be found.
 
-.. literalinclude:: examples/10-3-1
+    >>> from scipy import linalg
+    >>> A = mat('[1 5 2; 2 4 1; 3 6 2]')
+    >>> la,v = linalg.eig(A)
+    >>> l1,l2,l3 = la
+    >>> print l1, l2, l3
+    (7.95791620491+0j) (-1.25766470568+0j) (0.299748500767+0j)
+    
+    >>> print v[:,0]
+    [-0.5297175  -0.44941741 -0.71932146]
+    >>> print v[:,1]
+    [-0.90730751  0.28662547  0.30763439]
+    >>> print v[:,2]
+    [ 0.28380519 -0.39012063  0.87593408]
+    >>> print sum(abs(v**2),axis=0)
+    [ 1.  1.  1.]
+    
+    >>> v1 = mat(v[:,0]).T
+    >>> print max(ravel(abs(A*v1-l1*v1)))
+    8.881784197e-16
+
 
 Singular value decomposition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1918,7 +2326,28 @@ matrices are real and non-negative. In addtion, there are at most :math:`\min\le
 is the singular-value decomposition of :math:`\mathbf{A}.` Every matrix has a singular value decomposition. Sometimes, the
 singular values are called the spectrum of :math:`\mathbf{A}.` The command :obj:`linalg.svd` will return :math:`\mathbf{U}` , :math:`\mathbf{V}^{H}` , and :math:`\sigma_{i}` as an array of the singular values. To obtain the matrix :math:`\mathbf{\Sigma}` use :obj:`linalg.diagsvd`. The following example illustrates the use of :obj:`linalg.svd` .
 
-.. literalinclude:: examples/10-3-2
+    >>> A = mat('[1 3 2; 1 2 3]')
+    >>> M,N = A.shape
+    >>> U,s,Vh = linalg.svd(A)
+    >>> Sig = mat(linalg.diagsvd(s,M,N))
+    >>> U, Vh = mat(U), mat(Vh)
+    >>> print U
+    [[-0.70710678 -0.70710678]
+     [-0.70710678  0.70710678]]
+    >>> print Sig
+    [[ 5.19615242  0.          0.        ]
+     [ 0.          1.          0.        ]]
+    >>> print Vh
+    [[ -2.72165527e-01  -6.80413817e-01  -6.80413817e-01]
+     [ -6.18652536e-16  -7.07106781e-01   7.07106781e-01]
+     [ -9.62250449e-01   1.92450090e-01   1.92450090e-01]]
+    
+    >>> print A
+    [[1 3 2]
+     [1 2 3]]
+    >>> print U*Sig*Vh
+    [[ 1.  3.  2.]
+     [ 1.  2.  3.]]
 
 .. [#] A hermition matrix :math:`\mathbf{D}` satisfies :math:`\mathbf{D}^{H}=\mathbf{D}.`
 
@@ -2016,7 +2445,43 @@ especially useful in calculating functions of matrices.
 
 The following example illustrates the schur decomposition:
 
-.. literalinclude:: examples/10-3-6
+    >>> from scipy import linalg
+    >>> A = mat('[1 3 2; 1 4 5; 2 3 6]')
+    >>> T,Z = linalg.schur(A)
+    >>> T1,Z1 = linalg.schur(A,'complex')
+    >>> T2,Z2 = linalg.rsf2csf(T,Z)
+    >>> print T
+    [[ 9.90012467  1.78947961 -0.65498528]
+     [ 0.          0.54993766 -1.57754789]
+     [ 0.          0.51260928  0.54993766]]
+    >>> print T2
+    [[ 9.90012467 +0.00000000e+00j -0.32436598 +1.55463542e+00j
+      -0.88619748 +5.69027615e-01j]
+     [ 0.00000000 +0.00000000e+00j  0.54993766 +8.99258408e-01j
+       1.06493862 +1.37016050e-17j]
+     [ 0.00000000 +0.00000000e+00j  0.00000000 +0.00000000e+00j
+       0.54993766 -8.99258408e-01j]]
+    >>> print abs(T1-T2) # different
+    [[  1.24357637e-14   2.09205364e+00   6.56028192e-01]
+     [  0.00000000e+00   4.00296604e-16   1.83223097e+00]
+     [  0.00000000e+00   0.00000000e+00   4.57756680e-16]]
+    >>> print abs(Z1-Z2) # different
+    [[ 0.06833781  1.10591375  0.23662249]
+     [ 0.11857169  0.5585604   0.29617525]
+     [ 0.12624999  0.75656818  0.22975038]]
+    >>> T,Z,T1,Z1,T2,Z2 = map(mat,(T,Z,T1,Z1,T2,Z2))
+    >>> print abs(A-Z*T*Z.H) # same
+    [[  1.11022302e-16   4.44089210e-16   4.44089210e-16]
+     [  4.44089210e-16   1.33226763e-15   8.88178420e-16]
+     [  8.88178420e-16   4.44089210e-16   2.66453526e-15]]
+    >>> print abs(A-Z1*T1*Z1.H) # same
+    [[  1.00043248e-15   2.22301403e-15   5.55749485e-15]
+     [  2.88899660e-15   8.44927041e-15   9.77322008e-15]
+     [  3.11291538e-15   1.15463228e-14   1.15464861e-14]]
+    >>> print abs(A-Z2*T2*Z2.H) # same
+    [[  3.34058710e-16   8.88611201e-16   4.18773089e-18]
+     [  1.48694940e-16   8.95109973e-16   8.92966151e-16]
+     [  1.33228956e-15   1.33582317e-15   3.55373104e-15]]
 
 Matrix Functions
 ----------------
@@ -2141,7 +2606,24 @@ needs to accept complex numbers* as input in order to work with this
 algorithm. For example the following code computes the zeroth-order
 Bessel function applied to a matrix.
 
-.. literalinclude:: examples/10-4-4
+    >>> from scipy import special, random, linalg
+    >>> A = random.rand(3,3)
+    >>> B = linalg.funm(A,lambda x: special.jv(0,real(x)))
+    >>> print A
+    [[ 0.72578091  0.34105276  0.79570345]
+     [ 0.65767207  0.73855618  0.541453  ]
+     [ 0.78397086  0.68043507  0.4837898 ]]
+    >>> print B
+    [[ 0.72599893 -0.20545711 -0.22721101]
+     [-0.27426769  0.77255139 -0.23422637]
+     [-0.27612103 -0.21754832  0.7556849 ]]
+    >>> print linalg.eigvals(A)
+    [ 1.91262611+0.j  0.21846476+0.j -0.18296399+0.j]
+    >>> print special.jv(0, linalg.eigvals(A))
+    [ 0.27448286+0.j  0.98810383+0.j  0.99164854+0.j]
+    >>> print linalg.eigvals(B)
+    [ 0.27448286+0.j  0.98810383+0.j  0.99164854+0.j]
+
 
 Statistics
 ==========

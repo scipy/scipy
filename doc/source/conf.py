@@ -239,3 +239,5 @@ import numpy
 numpy.random.seed(123)
 """
 plot_output_dir = '_static/plot_directive'
+plot_include_source = True
+
