@@ -40,7 +40,7 @@ dist: html
 	mkdir -p build/dist
 	cp -r build/html build/dist/reference
 	touch build/dist/index.html
-	perl -pi -e 's#^\s*(<li><a href=".*?">SciPy.*?Reference Guide.*?&raquo;</li>)$$#<li><a href="/">Numpy and Scipy Documentation</a> &raquo;</li> $$1#;' build/dist/*.html build/dist/*/*.html build/dist/*/*/*.html
+	perl -pi -e 's#^\s*(<li><a href=".*?">SciPy.*?Reference Guide.*?&raquo;</li>)\s*$$#<li><a href="/">Numpy and Scipy Documentation</a> &raquo;</li> $$1#;' build/dist/*.html build/dist/*/*.html build/dist/*/*/*.html
 	(cd build/html && zip -9qr ../dist/scipy-html.zip .)
 	cp build/latex/*.pdf build/dist
 	cd build/dist && tar czf ../dist.tar.gz *

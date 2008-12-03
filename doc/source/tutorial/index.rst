@@ -6,11 +6,6 @@ SciPy Tutorial
 
 .. currentmodule:: scipy
 
-.. warning::
-
-   This is adapted from the old Scipy tutorial, and it is being revised.
-   Parts of it are still out-of-date.
-
 
 Introduction
 ============
@@ -52,8 +47,13 @@ Scipy sub-packages need to be imported separately, for example
 General Help
 ------------
 
-Python provides the facility of documentation strings. The functions
-and classes available in SciPy use this method for on-line
+Scipy and Numpy have HTML and PDF versions of their documentation
+available at http://docs.scipy.org/, which currently details nearly
+all available functionality. However, this documentation is still
+work-in-progress, and some parts may be incomplete or sparse.
+
+Python also provides the facility of documentation strings. The
+functions and classes available in SciPy use this method for on-line
 documentation. There are two methods for reading these messages and
 getting help. Python provides the command :func:`help` in the pydoc
 module. Entering this command with no arguments (i.e. ``>>> help`` )
@@ -68,9 +68,10 @@ running the interactive session within. A scipy-specific help system
 is also available under the command scipy.info. The signature and
 documentation string for the object passed to the help command are
 printed to standard output (or to a writeable object passed as the
-third argument). The second keyword argument of "scipy.info "defines the maximum width of the line for printing. If a module is
-passed as the argument to help than a list of the functions and
-classes defined in that module is printed. For example:
+third argument). The second keyword argument of "scipy.info" defines
+the maximum width of the line for printing. If a module is passed as
+the argument to help than a list of the functions and classes defined
+in that module is printed. For example:
 
 .. literalinclude:: examples/1-1
 
@@ -86,86 +87,61 @@ SciPy Organization
 ------------------
 
 SciPy is organized into subpackages covering different scientific
-computing domains. Many common functions which several subpackages
-rely are in :mod:`numpy`. This allows for the possibility of
-separately distributing the subpackages of scipy as long as Numpy is
-provided as well.
+computing domains. These are summarized in the following table:
 
-Two other packages are installed at the higher-level: scipy_distutils
-and weave. These two packages while distributed with main scipy
-package could see use independently of scipy and so are treated as
-separate packages and described elsewhere.
+.. currentmodule:: scipy
 
-The remaining subpackages are summarized in the following table (a *
-denotes an optional sub-package that requires additional libraries to
-function or is not available on all platforms).
-
-
-===========  =====================================================================
-Subpackage   Description
-===========  =====================================================================
-cluster      Clustering algorithms
-cow          Cluster of Workstations code for parallel programming
-fftpack      FFT based on fftpack -- default
-fftw*        FFT based on fftw --- requires FFTW libraries (is this still needed?)
-ga           Genetic algorithms
-gplt*        Plotting --- requires gnuplot
-integrate    Integration
-interpolate  Interpolation
-io           Input and Output
-linalg       Linear algebra
-optimize     Optimization and root-finding routines
-plt*         Plotting --- requires wxPython
-signal       Signal processing
-special      Special functions
-stats        Statistical distributions and functions
-xplt         Plotting with gist
-===========  =====================================================================
-
-
+==================  =====================================================================
+Subpackage          Description
+==================  =====================================================================
+:mod:`cluster`      Clustering algorithms
+:mod:`constants`    Physical and mathematical constants
+:mod:`fftpack`      Fast Fourier Transform routines
+:mod:`integrate`    Integration and ordinary differential equation solvers
+:mod:`interpolate`  Interpolation and smoothing splines
+:mod:`io`           Input and Output
+:mod:`linalg`       Linear algebra
+:mod:`maxentropy`   Maximum entropy methods
+:mod:`ndimage`      N-dimensional image processing
+:mod:`odr`          Orthogonal distance regression
+:mod:`optimize`     Optimization and root-finding routines
+:mod:`signal`       Signal processing
+:mod:`sparse`       Sparse matrices and associated routines
+:mod:`spatial`      Spatial data structures and algorithms
+:mod:`special`      Special functions
+:mod:`stats`        Statistical distributions and functions
+:mod:`weave`        C/C++ integration
+==================  =====================================================================
 
 Because of their ubiquitousness, some of the functions in these
 subpackages are also made available in the scipy namespace to ease
 their use in interactive sessions and programs. In addition, many
-convenience functions are located in :mod:`numpy` and the in the
+basic array functions from :mod:`numpy` are also available at the
 top-level of the :mod:`scipy` package. Before looking at the
 sub-packages individually, we will first look at some of these common
 functions.
 
 
-Basic functions in Numpy and top-level scipy
-============================================
+Basic functions in Numpy (and top-level scipy)
+==============================================
+
+.. currentmodule:: numpy
 
 Interaction with Numpy
 ------------------------
 
-To begin with, all of the Numpy functions have been subsumed into
-the scipy namespace so that all of those functions are available
+To begin with, all of the Numpy functions have been subsumed into the
+:mod:`scipy` namespace so that all of those functions are available
 without additionally importing Numpy. In addition, the universal
 functions (addition, subtraction, division) have been altered to not
-raise exceptions if floating-point errors are encountered,
-instead NaN's and Inf's are returned in the arrays. To assist in
-detection of these events new universal functions (isnan, isfinite,
-isinf) have been added.
-
-In addition, the comparision operators have been changed to allow
-comparisons and logical operations of complex numbers (only the real
-part is compared). Also, with the new universal functions in SciPy,
-the logical operations (except logical_XXX functions) all return
-arrays of unsigned bytes (8-bits per element instead of the old
-32-bits, or even 64-bits) per element [#]_ .
-
-In an effort to get a consistency for default arguments, some of the
-default arguments have changed from Numpy. The idea is for you to use
-scipy as a base package instead of Numpy anyway.
+raise exceptions if floating-point errors are encountered; instead,
+NaN's and Inf's are returned in the arrays. To assist in detection of
+these events, several functions (:func:`isnan`, :func:`isfinite`,
+:func:`isinf`) are available.
 
 Finally, some of the basic functions like log, sqrt, and inverse trig
 functions have been modified to return complex numbers instead of
 NaN's where appropriate (*i.e.* ``scipy.sqrt(-1)`` returns ``1j``).
-
-.. [#] Be careful when treating logical expressions as integers as the 8-bit
-    integers may silently overflow at 256.
-
 
 
 Top-level scipy routines
@@ -173,26 +149,29 @@ Top-level scipy routines
 
 The purpose of the top level of scipy is to collect general-purpose
 routines that the other sub-packages can use and to provide a simple
-replacement for Numpy. Anytime you might think to import Numpy,
-you can import scipy_base instead and remove yourself from direct
-dependence on Numpy. These routines are divided into several files
-for organizational purposes, but they are all available under the
-scipy_base namespace (and the scipy namespace). There are routines for
-type handling and type checking, shape and matrix manipulation,
-polynomial processing, and other useful functions. Rather than giving
-a detailed description of each of these functions (which is available
-using the :func:`help`, :func:`info` and :func:`source` commands),
-this tutorial will discuss some of the more useful commands which
-require a little introduction to use to their full potential.
+replacement for Numpy. Anytime you might think to import Numpy, you
+can import scipy instead and remove yourself from direct dependence on
+Numpy. These routines are divided into several files for
+organizational purposes, but they are all available under the numpy
+namespace (and the scipy namespace). There are routines for type
+handling and type checking, shape and matrix manipulation, polynomial
+processing, and other useful functions. Rather than giving a detailed
+description of each of these functions (which is available in the
+Numpy Reference Guide or by using the :func:`help`, :func:`info` and
+:func:`source` commands), this tutorial will discuss some of the more
+useful commands which require a little introduction to use to their
+full potential.
 
 
 Type handling
 ^^^^^^^^^^^^^
 
-Note the difference between :func:`iscomplex` ( :func:`isreal` ) and :func:`iscomplexobj` ( :func:`isrealobj` ). The former command is array based and returns byte arrays of ones
-and zeros providing the result of the element-wise test. The latter
-command is object based and returns a scalar describing the result of
-the test on the entire object.
+Note the difference between :func:`iscomplex` (:func:`isreal`) and
+:func:`iscomplexobj` (:func:`isrealobj`). The former command is
+array based and returns byte arrays of ones and zeros providing the
+result of the element-wise test. The latter command is object based
+and returns a scalar describing the result of the test on the entire
+object.
 
 Often it is required to get just the real and/or imaginary part of a
 complex number. While complex numbers and arrays have attributes that
@@ -213,9 +192,8 @@ enough that it has been given a convenient interface in SciPy through
 the use of the :obj:`cast` dictionary. The dictionary is keyed by the
 type it is desired to cast to and the dictionary stores functions to
 perform the casting. Thus, ``>>> a = cast['f'](d)`` returns an array
-of float32 from d. This function is also useful as an easy way to get
-a scalar of a certain type: ``>>> fpi = cast['f'](pi)`` although this
-should not be needed if you use alter_numeric().
+of :class:`float32` from *d*. This function is also useful as an easy
+way to get a scalar of a certain type: ``>>> fpi = cast['f'](pi)``.
 
 
 Index Tricks
@@ -223,7 +201,8 @@ Index Tricks
 
 Thre are some class instances that make special use of the slicing
 functionality to provide efficient means for array construction. This
-part will discuss the operation of :obj:`mgrid` , :obj:`ogrid` , :obj:`r_` , and :obj:`c_` for quickly constructing arrays.
+part will discuss the operation of :obj:`mgrid` , :obj:`ogrid` ,
+:obj:`r_` , and :obj:`c_` for quickly constructing arrays.
 
 One familiar with Matlab may complain that it is difficult to
 construct arrays from the interactive session with Python. Suppose,
@@ -310,19 +289,11 @@ splitting arrays (roughly the opposite of stacking arrays) are also
 available.
 
 
-Matrix manipulations
-^^^^^^^^^^^^^^^^^^^^
-
-These are functions specifically suited for 2-dimensional arrays that
-were part of MLab in the Numpy distribution, but have been placed in
-scipy_base for completeness so that users are not importing Numpy.
-
-
 Polynomials
 ^^^^^^^^^^^
 
 There are two (interchangeable) ways to deal with 1-d polynomials in
-SciPy. The first is to use the :class:`poly1d` class in Numpy. This
+SciPy. The first is to use the :class:`poly1d` class from Numpy. This
 class accepts coefficients or polynomial roots to initialize a
 polynomial. The polynomial object can then be manipulated in algebraic
 expressions, integrated, differentiated, and evaluated. It even prints
@@ -353,9 +324,9 @@ represented as sequences of coefficients.
 Vectorizing functions (vectorize)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-One of the features that SciPy provides is a class :obj:`vectorize` to
+One of the features that NumPy provides is a class :obj:`vectorize` to
 convert an ordinary Python function which accepts scalars and returns
-scalars into a "vectorized-function "with the same broadcasting rules
+scalars into a "vectorized-function" with the same broadcasting rules
 as other Numpy functions (*i.e.* the Universal functions, or
 ufuncs). For example, suppose you have a Python function named
 :obj:`addsubtract` defined as:
@@ -387,20 +358,21 @@ Other useful functions
 ^^^^^^^^^^^^^^^^^^^^^^
 
 There are several other functions in the scipy_base package including
-most of the other functions that are also in MLab that comes with the
-Numpy package. The reason for duplicating these functions is to
-allow SciPy to potentially alter their original interface and make it
-easier for users to know how to get access to functions
+most of the other functions that are also in the Numpy package. The
+reason for duplicating these functions is to allow SciPy to
+potentially alter their original interface and make it easier for
+users to know how to get access to functions
 
     >>> from scipy import *
 
-New functions which should be mentioned are :obj:`mod(x,y)` which can
+Functions which should be mentioned are :obj:`mod(x,y)` which can
 replace ``x % y`` when it is desired that the result take the sign of
 *y* instead of *x* . Also included is :obj:`fix` which always rounds
 to the nearest integer towards zero. For doing phase processing, the
 functions :func:`angle`, and :obj:`unwrap` are also useful. Also, the
 :obj:`linspace` and :obj:`logspace` functions return equally spaced samples
-in a linear or log scale.  Finally, mention should be made of the new
+in a linear or log scale.  Finally, it's useful to be aware of the indexing
+capabilities of Numpy.mention should be made of the new
 function :obj:`select` which extends the functionality of :obj:`where` to
 include multiple conditions and multiple choices. The calling
 convention is ``select(condlist,choicelist,default=0).`` :obj:`select` is
@@ -435,16 +407,21 @@ variables and memory consumption--upper bounded). Another function
 returns a common image used in image processing: :obj:`lena`.
 
 Finally, two functions are provided that are useful for approximating
-derivatives of functions using discrete-differences. The function :obj:`central_diff_weights` returns weighting coefficients for an equally-spaced :math:`N` -point approximation to the derivative of order :math:`o.` These weights must be multiplied by the function corresponding to
-these points and the results added to obtain the derivative
-approximation. This function is intended for use when only samples of
-the function are avaiable. When the function is an object that can be
-handed to a routine and evaluated, the function :obj:`derivative` can be used to automatically evaluate the object at the correct points
-to obtain an N-point approximation to the :math:`o^{\textrm{th}}` -derivative at a given point.
+derivatives of functions using discrete-differences. The function
+:obj:`central_diff_weights` returns weighting coefficients for an
+equally-spaced :math:`N`-point approximation to the derivative of
+order *o*. These weights must be multiplied by the function
+corresponding to these points and the results added to obtain the
+derivative approximation. This function is intended for use when only
+samples of the function are avaiable. When the function is an object
+that can be handed to a routine and evaluated, the function
+:obj:`derivative` can be used to automatically evaluate the object at
+the correct points to obtain an N-point approximation to the *o*-th
+derivative at a given point.
 
 
-Special functions (special)
-===========================
+Special functions (:mod:`scipy.special`)
+========================================
 
 .. currentmodule:: scipy.special
 
@@ -459,15 +436,15 @@ array arguments and return array results following the same
 broadcasting rules as other math functions in Numerical Python. Many
 of these functions also accept complex-numbers as input. For a
 complete list of the available functions with a one-line description
-type ``>>> info(special).`` Each function also has it's own
+type ``>>> help(special).`` Each function also has it's own
 documentation accessible using help.  If you don't see a function you
 need, consider writing it and contributing it to the library. You can
 write the function in either C, Fortran, or Python. Look in the source
 code of the library for examples of each of these kind of functions.
 
 
-Integration (integrate)
-=======================
+Integration (:mod:`scipy.integrate`)
+====================================
 
 .. currentmodule:: scipy.integrate
 
@@ -478,8 +455,8 @@ overview of the module is provided by the help command:
 .. literalinclude:: examples/4-1
 
 
-General integration (integrate.quad)
-------------------------------------
+General integration (:func:`quad`)
+----------------------------------
 
 The function :obj:`quad` is provided to integrate a function of one
 variable between two points. The points can be :math:`\pm\infty`
@@ -506,7 +483,8 @@ This could be computed using :obj:`quad`:
     >>> print abs(result[0]-I)
     1.03761443881e-11
 
-The first argument to quad is a "callable "Python object ( *i.e* a function, method, or class instance). Notice the use of a lambda-
+The first argument to quad is a "callable" Python object (*i.e* a
+function, method, or class instance). Notice the use of a lambda-
 function in this case as the argument. The next two arguments are the
 limits of integration. The return value is a tuple, with the first
 element holding the estimated value of the integral and the second
@@ -610,42 +588,49 @@ tolerance supplied by the user. These functions both use the module
 :mod:`special.orthogonal` which can calculate the roots and quadrature
 weights of a large variety of orthogonal polynomials (the polynomials
 themselves are available as special functions returning instances of
-the polynomial class --- e.g. ``special.legendre`` ).
+the polynomial class --- e.g. :obj:`special.legendre <scipy.special.legendre>`).
 
 
 Integrating using samples
 -------------------------
 
-There are three functions for computing integrals given only samples: :obj:`trapz` , :obj:`simps` , and :obj:`romb` . The first two functions use Newton-Coates formulas of order 1 and 2
-respectively to perform integration. These two functions can handle,
+There are three functions for computing integrals given only samples:
+:obj:`trapz` , :obj:`simps`, and :obj:`romb` . The first two
+functions use Newton-Coates formulas of order 1 and 2 respectively to
+perform integration. These two functions can handle,
 non-equally-spaced samples. The trapezoidal rule approximates the
 function as a straight line between adjacent points, while Simpson's
 rule approximates the function between three adjacent points as a
 parabola.
 
 If the samples are equally-spaced and the number of samples available
-is :math:`2^{k}+1` for some integer :math:`k` , then Romberg integration can be used to obtain high-precision
-estimates of the integral using the available samples. Romberg
-integration uses the trapezoid rule at step-sizes related by a power
-of two and then performs Richardson extrapolation on these estimates
-to approximate the integral with a higher-degree of accuracy. (A
-different interface to Romberg integration useful when the function
-can be provided is also available as :func:`integrate.romberg`).
+is :math:`2^{k}+1` for some integer :math:`k`, then Romberg
+integration can be used to obtain high-precision estimates of the
+integral using the available samples. Romberg integration uses the
+trapezoid rule at step-sizes related by a power of two and then
+performs Richardson extrapolation on these estimates to approximate
+the integral with a higher-degree of accuracy. (A different interface
+to Romberg integration useful when the function can be provided is
+also available as :func:`romberg`).
 
 
-Ordinary differential equations (integrate.odeint)
---------------------------------------------------
+Ordinary differential equations (:func:`odeint`)
+------------------------------------------------
 
 Integrating a set of ordinary differential equations (ODEs) given
-initial conditions is another useful example. The function :obj:`odeint` is available in SciPy for integrating a first-order vector
-differential equation:
+initial conditions is another useful example. The function
+:obj:`odeint` is available in SciPy for integrating a first-order
+vector differential equation:
 
 .. math::
    :nowrap:
 
     \[ \frac{d\mathbf{y}}{dt}=\mathbf{f}\left(\mathbf{y},t\right),\]
 
-given initial conditions :math:`\mathbf{y}\left(0\right)=y_{0},` where :math:`\mathbf{y}` is a length :math:`N` vector and :math:`\mathbf{f}` is a mapping from :math:`\mathcal{R}^{N}` to :math:`\mathcal{R}^{N}.` A higher-order ordinary differential equation can always be reduced to
+given initial conditions :math:`\mathbf{y}\left(0\right)=y_{0}`, where
+:math:`\mathbf{y}` is a length :math:`N` vector and :math:`\mathbf{f}`
+is a mapping from :math:`\mathcal{R}^{N}` to :math:`\mathcal{R}^{N}.`
+A higher-order ordinary differential equation can always be reduced to
 a differential equation of this type by introducing intermediate
 derivatives into the :math:`\mathbf{y}` vector.
 
@@ -665,9 +650,11 @@ boundary conditions is the Airy function
 
     \[ w=\textrm{Ai}\left(z\right),\]
 
-which gives a means to check the integrator using :func:`special.airy`.
+which gives a means to check the integrator using :func:`special.airy <scipy.special.airy>`.
 
-First, convert this ODE into standard form by setting :math:`\mathbf{y}=\left[\frac{dw}{dz},w\right]` and :math:`t=z.` Thus, the differential equation becomes
+First, convert this ODE into standard form by setting
+:math:`\mathbf{y}=\left[\frac{dw}{dz},w\right]` and :math:`t=z`. Thus,
+the differential equation becomes
 
 .. math::
    :nowrap:
@@ -681,9 +668,9 @@ In other words,
 
     \[ \mathbf{f}\left(\mathbf{y},t\right)=\mathbf{A}\left(t\right)\mathbf{y}.\]
 
-
-
-As an interesting reminder, if :math:`\mathbf{A}\left(t\right)` commutes with :math:`\int_{0}^{t}\mathbf{A}\left(\tau\right)\, d\tau` under matrix multiplication, then this linear differential equation
+As an interesting reminder, if :math:`\mathbf{A}\left(t\right)`
+commutes with :math:`\int_{0}^{t}\mathbf{A}\left(\tau\right)\, d\tau`
+under matrix multiplication, then this linear differential equation
 has an exact solution using the matrix exponential:
 
 .. math::
@@ -739,6 +726,8 @@ usage of the *Dfun* option which allows the user to specify a gradient
 Optimization (optimize)
 =======================
 
+.. currentmodule:: scipy.optimize
+
 There are several classical optimization algorithms provided by SciPy
 in the :mod:`scipy.optimize` package. An overview of the module is
 available using :func:`help` (or :func:`pydoc.help`):
@@ -746,17 +735,16 @@ available using :func:`help` (or :func:`pydoc.help`):
 .. literalinclude:: examples/5-1
 
 The first four algorithms are unconstrained minimization algorithms
-(fmin: Nelder-Mead simplex, fmin_bfgs: BFGS, fmin_ncg: Newton
-Conjugate Gradient, and leastsq: Levenburg-Marquardt). The fourth
-algorithm only works for functions of a single variable but allows
-minimization over a specified interval. The last algorithm actually
-finds the roots of a general function of possibly many variables. It
-is included in the optimization package because at the (non-boundary)
-extreme points of a function, the gradient is equal to zero.
+(:func:`fmin`: Nelder-Mead simplex, :func:`fmin_bfgs`: BFGS,
+:func:`fmin_ncg`: Newton Conjugate Gradient, and :func:`leastsq`:
+Levenburg-Marquardt). The last algorithm actually finds the roots of a
+general function of possibly many variables. It is included in the
+optimization package because at the (non-boundary) extreme points of a
+function, the gradient is equal to zero.
 
 
-Nelder-Mead Simplex algorithm (optimize.fmin)
----------------------------------------------
+Nelder-Mead Simplex algorithm (:func:`fmin`)
+--------------------------------------------
 
 The simplex algorithm is probably the simplest way to minimize a
 fairly well-behaved function. The simplex algorithm requires only
@@ -789,11 +777,11 @@ The minimum value of this function is 0 which is achieved when :math:`x_{i}=1.` 
     [ 1.  1.  1.  1.  1.]
 
 Another optimization algorithm that needs only function calls to find
-the minimum is Powell's method available as :func:`optimize.fmin_powell`.
+the minimum is Powell's method available as :func:`fmin_powell`.
 
 
-Broyden-Fletcher-Goldfarb-Shanno algorithm (optimize.fmin_bfgs)
----------------------------------------------------------------
+Broyden-Fletcher-Goldfarb-Shanno algorithm (:func:`fmin_bfgs`)
+--------------------------------------------------------------
 
 In order to converge more quickly to the solution, this routine uses
 the gradient of the objective function. If the gradient is not given
@@ -849,8 +837,8 @@ minimizes the Rosenbrock function.
     [ 1.  1.  1.  1.  1.]
 
 
-Newton-Conjugate-Gradient (optimize.fmin_ncg)
----------------------------------------------
+Newton-Conjugate-Gradient (:func:`fmin_ncg`)
+--------------------------------------------
 
 The method which requires the fewest function calls and is therefore
 often the fastest method to minimize functions of many variables is
@@ -983,16 +971,20 @@ Rosenbrock function using :obj:`fmin_ncg` follows:
     [ 1.  1.  1.  1.  1.]
 
 
-Least-square fitting (minimize.leastsq)
----------------------------------------
+Least-square fitting (:func:`leastsq`)
+--------------------------------------
 
 All of the previously-explained minimization procedures can be used to
 solve a least-squares problem provided the appropriate objective
 function is constructed. For example, suppose it is desired to fit a
-set of data :math:`\left\{ \mathbf{x}_{i},\mathbf{y}_{i}\right\} ` to a known model, :math:`\mathbf{y}=\mathbf{f}\left(\mathbf{x},\mathbf{p}\right)` where :math:`\mathbf{p}` is a vector of parameters for the model that need to be found. A
-common method for determining which parameter vector gives the best
-fit to the data is to minimize the sum of squares of the residuals.
-The residual is usually defined for each observed data-point as
+set of data :math:`\left\{\mathbf{x}_{i}, \mathbf{y}_{i}\right\}`
+to a known model, 
+:math:`\mathbf{y}=\mathbf{f}\left(\mathbf{x},\mathbf{p}\right)` 
+where :math:`\mathbf{p}` is a vector of parameters for the model that
+need to be found. A common method for determining which parameter
+vector gives the best fit to the data is to minimize the sum of squares
+of the residuals. The residual is usually defined for each observed
+data-point as
 
 .. math::
    :nowrap:
@@ -1009,8 +1001,12 @@ algorithms to obtain a least-squares fit is.
 
 
 
-The :obj:`leastsq` algorithm performs this squaring and summing of the residuals
-automatically. It takes as an input argument the vector function :math:`\mathbf{e}\left(\mathbf{p}\right)` and returns the value of :math:`\mathbf{p}` which minimizes :math:`J\left(\mathbf{p}\right)=\mathbf{e}^{T}\mathbf{e}` directly. The user is also encouraged to provide the Jacobian matrix
+The :obj:`leastsq` algorithm performs this squaring and summing of the
+residuals automatically. It takes as an input argument the vector
+function :math:`\mathbf{e}\left(\mathbf{p}\right)` and returns the
+value of :math:`\mathbf{p}` which minimizes
+:math:`J\left(\mathbf{p}\right)=\mathbf{e}^{T}\mathbf{e}`
+directly. The user is also encouraged to provide the Jacobian matrix
 of the function (with derivatives down the columns or across the
 rows). If the Jacobian is not provided, it is estimated.
 
@@ -1081,8 +1077,8 @@ output). In these circumstances, other optimization techniques have
 been developed that can work faster.
 
 
-Unconstrained minimization (optimize.brent)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Unconstrained minimization (:func:`brent`)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 There are actually two methods that can be used to minimize a scalar
 function (:obj:`brent` and :func:`golden`), but :obj:`golden` is
@@ -1098,16 +1094,16 @@ not provided 0 and 1 will be used (this may not be the right choice
 for your function and result in an unexpected minimum being returned).
 
 
-Bounded minimization (optimize.fminbound)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Bounded minimization (:func:`fminbound`)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Thus far all of the minimization routines described have been
 unconstrained minimization routines. Very often, however, there are
 constraints that can be placed on the solution space before
-minimization occurs. The :obj:`fminbound` function is an example of a constrained minimization procedure that
-provides a rudimentary interval constraint for scalar functions. The
-interval constraint allows the minimization to occur only between two
-fixed endpoints.
+minimization occurs. The :obj:`fminbound` function is an example of a
+constrained minimization procedure that provides a rudimentary
+interval constraint for scalar functions. The interval constraint
+allows the minimization to occur only between two fixed endpoints.
 
 For example, to find the minimum of :math:`J_{1}\left(x\right)` near :math:`x=5` , :obj:`fminbound` can be called using the interval :math:`\left[4,7\right]` as a constraint. The result is :math:`x_{\textrm{min}}=5.3314` :
 
@@ -1125,9 +1121,11 @@ Root finding
 Sets of equations
 ^^^^^^^^^^^^^^^^^
 
-To find the roots of a polynomial, the command :obj:`roots` is useful. To find a root of a set of non-linear equations, the
-command :obj:`optimize.fsolve` is needed. For example, the following example finds the roots of the
-single-variable transcendental equation
+To find the roots of a polynomial, the command :obj:`roots
+<scipy.roots>` is useful. To find a root of a set of non-linear
+equations, the command :obj:`fsolve` is needed. For example, the
+following example finds the roots of the single-variable
+transcendental equation
 
 .. math::
    :nowrap:
@@ -1168,8 +1166,9 @@ Scalar function root finding
 If one has a single-variable equation, there are four different root
 finder algorithms that can be tried. Each of these root finding
 algorithms requires the endpoints of an interval where a root is
-suspected (because the function changes signs). In general :obj:`brentq` is the best choice, but the other methods may be useful in certain
-circumstances or for academic purposes.
+suspected (because the function changes signs). In general
+:obj:`brentq` is the best choice, but the other methods may be useful
+in certain circumstances or for academic purposes.
 
 
 Fixed-point solving
@@ -1178,12 +1177,19 @@ Fixed-point solving
 A problem closely related to finding the zeros of a function is the
 problem of finding a fixed-point of a function. A fixed point of a
 function is the point at which evaluation of the function returns the
-point: :math:`g\left(x\right)=x.` Clearly the fixed point of :math:`g` is the root of :math:`f\left(x\right)=g\left(x\right)-x.` Equivalently, the root of :math:`f` is the fixed_point of :math:`g\left(x\right)=f\left(x\right)+x.` The routine :obj:`fixed_point` provides a simple iterative method using Aitkens sequence acceleration
-to estimate the fixed point of :math:`g` given a starting point.
+point: :math:`g\left(x\right)=x.` Clearly the fixed point of :math:`g`
+is the root of :math:`f\left(x\right)=g\left(x\right)-x.`
+Equivalently, the root of :math:`f` is the fixed_point of
+:math:`g\left(x\right)=f\left(x\right)+x.` The routine
+:obj:`fixed_point` provides a simple iterative method using Aitkens
+sequence acceleration to estimate the fixed point of :math:`g` given a
+starting point.
 
 
-Interpolation (interpolate)
-===========================
+Interpolation (:mod:`scipy.interpolate`)
+========================================
+
+.. currentmodule:: scipy.interpolate
 
 There are two general interpolation facilities available in SciPy. The
 first facility is an interpolation class which performs linear
@@ -1192,19 +1198,19 @@ FORTRAN library FITPACK and provides functions for 1- and
 2-dimensional (smoothed) cubic-spline interpolation.
 
 
-Linear 1-d interpolation (interpolate.interp1d)
------------------------------------------------
+Linear 1-d interpolation (:class:`interp1d`)
+--------------------------------------------
 
 The interp1d class in scipy.interpolate is a convenient method to
 create a function based on fixed data points which can be evaluated
 anywhere within the domain defined by the given data using linear
 interpolation. An instance of this class is created by passing the 1-d
 vectors comprising the data. The instance of this class defines a
-*__call__* method and can therefore by treated like a function which
-interpolates between known data values to obtain unknown values (it
-even has a docstring for help). Behavior at the boundary can be
-specified at instantiation time. The following example demonstrates
-it's use.
+:meth:`__call__ <interp1d.__call__>` method and can therefore by
+treated like a function which interpolates between known data values
+to obtain unknown values (it also has a docstring for help). Behavior
+at the boundary can be specified at instantiation time. The following
+example demonstrates it's use.
 
 .. plot::
 
@@ -1232,7 +1238,7 @@ evaluated at the desired points. In order to find the spline
 representation, there are two different was to represent a curve and
 obtain (smoothing) spline coefficients: directly and parametrically.
 The direct method finds the spline representation of a curve in a two-
-dimensional plane using the function :obj:`interpolate.splrep`. The
+dimensional plane using the function :obj:`splrep`. The
 first two arguments are the only ones required, and these provide the
 :math:`x` and :math:`y` components of the curve. The normal output is
 a 3-tuple, :math:`\left(t,c,k\right)` , containing the knot-points,
@@ -1241,7 +1247,7 @@ spline. The default spline order is cubic, but this can be changed
 with the input keyword, *k.*
 
 For curves in :math:`N` -dimensional space the function
-:obj:`interpolate.splprep` allows defining the curve
+:obj:`splprep` allows defining the curve
 parametrically. For this function only 1 input argument is
 required. This input is a list of :math:`N` -arrays representing the
 curve in :math:`N` -dimensional space. The length of each array is the
@@ -1261,12 +1267,12 @@ being fit. Therefore, **if no smoothing is desired a value of**
 
 Once the spline representation of the data has been determined,
 functions are available for evaluating the spline
-(:func:`interpolate.splev`) and its derivatives
-(:func:`interpolate.splev`, :func:`interpolate.splade`) at any point
+(:func:`splev`) and its derivatives
+(:func:`splev`, :func:`splade`) at any point
 and the integral of the spline between any two points (
-:func:`interpolate.splint`). In addition, for cubic splines ( :math:`k=3`
+:func:`splint`). In addition, for cubic splines ( :math:`k=3`
 ) with 8 or more knots, the roots of the spline can be estimated (
-:func:`interpolate.sproot`). These functions are demonstrated in the
+:func:`sproot`). These functions are demonstrated in the
 example that follows.
 
 .. plot::
@@ -1339,31 +1345,31 @@ example that follows.
    >>> plt.show()
 
 
-Two-dimensional spline representation (interpolate.bisplrep)
-------------------------------------------------------------
+Two-dimensional spline representation (:func:`bisplrep`)
+--------------------------------------------------------
 
 For (smooth) spline-fitting to a two dimensional surface, the function
-:obj:`interpolate.bisplrep` is available. This function takes as
-required inputs the **1-D** arrays *x*, *y*, and *z* which represent
-points on the surface :math:`z=f\left(x,y\right).` The default output
-is a list :math:`\left[tx,ty,c,kx,ky\right]` whose entries represent
+:func:`bisplrep` is available. This function takes as required inputs
+the **1-D** arrays *x*, *y*, and *z* which represent points on the
+surface :math:`z=f\left(x,y\right).` The default output is a list
+:math:`\left[tx,ty,c,kx,ky\right]` whose entries represent
 respectively, the components of the knot positions, the coefficients
 of the spline, and the order of the spline in each coordinate. It is
 convenient to hold this list in a single object, *tck,* so that it can
-be passed easily to the function :obj:`interpolate.bisplev`. The
+be passed easily to the function :obj:`bisplev`. The
 keyword, *s* , can be used to change the amount of smoothing performed
 on the data while determining the appropriate spline. The default
 value is :math:`s=m-\sqrt{2m}` where :math:`m` is the number of data
 points in the *x, y,* and *z* vectors. As a result, if no smoothing is
 desired, then :math:`s=0` should be passed to
-:obj:`interpolate.bisplrep` .
+:obj:`bisplrep` .
 
 To evaluate the two-dimensional spline and it's partial derivatives
 (up to the order of the spline), the function
-:obj:`interpolate.bisplev` is required. This function takes as the
+:obj:`bisplev` is required. This function takes as the
 first two arguments **two 1-D arrays** whose cross-product specifies
 the domain over which to evaluate the spline. The third argument is
-the *tck* list returned from :obj:`interpolate.bisplrep`. If desired,
+the *tck* list returned from :obj:`bisplrep`. If desired,
 the fourth and fifth arguments provide the orders of the partial
 derivative in the :math:`x` and :math:`y` direction respectively.
 
@@ -1373,12 +1379,13 @@ used is not amenable to large numbers of input points. The signal
 processing toolbox contains more appropriate algorithms for finding
 the spline representation of an image. The two dimensional
 interpolation commands are intended for use when interpolating a two
-dimensional function as shown in the example that follows (See also
-Figure `4 <#fig-2d-interp>`__ ). This example uses the :obj:`mgrid` command in SciPy which is useful for defining a "mesh-grid "in many dimensions. (See also the :obj:`ogrid` command if the full-mesh is not needed). The number of output
-arguments and the number of dimensions of each argument is determined
-by the number of indexing objects passed in :obj:`mgrid`[].
-
-.. _`fig:2d_interp`:
+dimensional function as shown in the example that follows. This
+example uses the :obj:`mgrid <numpy.mgrid>` command in SciPy which is
+useful for defining a "mesh-grid "in many dimensions. (See also the
+:obj:`ogrid <numpy.ogrid>` command if the full-mesh is not
+needed). The number of output arguments and the number of dimensions
+of each argument is determined by the number of indexing objects
+passed in :obj:`mgrid <numpy.mgrid>`[].
 
 .. plot::
 
@@ -1528,8 +1535,6 @@ samples from spline coefficients and is faster than
 :obj:`signal.convolve2d` which convolves arbitrary two-dimensional
 filters and allows for choosing mirror-symmetric boundary conditions.
 
-.. _`fig:lena_edge_spline`:
-
 .. plot::
 
    >>> from numpy import *
@@ -1602,7 +1607,11 @@ Let :math:`x\left[n\right]` define a one-dimensional signal indexed by the integ
 
 This equation can only be implemented directly if we limit the
 sequences to finite support sequences that can be stored in a
-computer, choose :math:`n=0` to be the starting point of both sequences, let :math:`K+1` be that value for which :math:`y\left[n\right]=0` for all :math:`n>K+1` and :math:`M+1` be that value for which :math:`x\left[n\right]=0` for all :math:`n>M+1` , then the discrete convolution expression is
+computer, choose :math:`n=0` to be the starting point of both
+sequences, let :math:`K+1` be that value for which
+:math:`y\left[n\right]=0` for all :math:`n>K+1` and :math:`M+1` be
+that value for which :math:`x\left[n\right]=0` for all :math:`n>M+1` ,
+then the discrete convolution expression is
 
 .. math::
    :nowrap:
@@ -1618,12 +1627,25 @@ For convenience assume :math:`K\geq M.` Then, more explicitly the output of this
 
 Thus, the full discrete convolution of two finite sequences of lengths :math:`K+1` and :math:`M+1` respectively results in a finite sequence of length :math:`K+M+1=\left(K+1\right)+\left(M+1\right)-1.`
 
-One dimensional convolution is implemented in SciPy with the function ``signal.convolve`` . This function takes as inputs the signals :math:`x,` :math:`h` , and an optional flag and returns the signal :math:`y.` The optional flag allows for specification of which part of the output
-signal to return. The default value of 'full' returns the entire
-signal. If the flag has a value of 'same' then only the middle :math:`K` values are returned starting at :math:`y\left[\left\lfloor \frac{M-1}{2}\right\rfloor \right]` so that the output has the same length as the largest input. If the
-flag has a value of 'valid' then only the middle :math:`K-M+1=\left(K+1\right)-\left(M+1\right)+1` output values are returned where :math:`z` depends on all of the values of the smallest input from :math:`h\left[0\right]` to :math:`h\left[M\right].` In other words only the values :math:`y\left[M\right]` to :math:`y\left[K\right]` inclusive are returned.
+One dimensional convolution is implemented in SciPy with the function
+``signal.convolve`` . This function takes as inputs the signals
+:math:`x,` :math:`h` , and an optional flag and returns the signal
+:math:`y.` The optional flag allows for specification of which part of
+the output signal to return. The default value of 'full' returns the
+entire signal. If the flag has a value of 'same' then only the middle
+:math:`K` values are returned starting at :math:`y\left[\left\lfloor
+\frac{M-1}{2}\right\rfloor \right]` so that the output has the same
+length as the largest input. If the flag has a value of 'valid' then
+only the middle :math:`K-M+1=\left(K+1\right)-\left(M+1\right)+1`
+output values are returned where :math:`z` depends on all of the
+values of the smallest input from :math:`h\left[0\right]` to
+:math:`h\left[M\right].` In other words only the values
+:math:`y\left[M\right]` to :math:`y\left[K\right]` inclusive are
+returned.
 
-This same function ``signal.convolve`` can actually take :math:`N` -dimensional arrays as inputs and will return the :math:`N` -dimensional convolution of the two arrays. The same input flags are
+This same function ``signal.convolve`` can actually take :math:`N`
+-dimensional arrays as inputs and will return the :math:`N`
+-dimensional convolution of the two arrays. The same input flags are
 available for that case as well.
 
 Correlation is very similar to convolution except for the minus sign
@@ -1650,19 +1672,29 @@ Assuming again that :math:`K\geq M` this is
 
 
 
-The SciPy function ``signal.correlate`` implements this operation. Equivalent flags are available for this
-operation to return the full :math:`K+M+1` length sequence ('full') or a sequence with the same size as the
-largest sequence starting at :math:`w\left[-K+\left\lfloor \frac{M-1}{2}\right\rfloor \right]` ('same') or a sequence where the values depend on all the values of
-the smallest sequence ('valid'). This final option returns the :math:`K-M+1` values :math:`w\left[M-K\right]` to :math:`w\left[0\right]` inclusive.
+The SciPy function ``signal.correlate`` implements this
+operation. Equivalent flags are available for this operation to return
+the full :math:`K+M+1` length sequence ('full') or a sequence with the
+same size as the largest sequence starting at
+:math:`w\left[-K+\left\lfloor \frac{M-1}{2}\right\rfloor \right]`
+('same') or a sequence where the values depend on all the values of
+the smallest sequence ('valid'). This final option returns the
+:math:`K-M+1` values :math:`w\left[M-K\right]` to
+:math:`w\left[0\right]` inclusive.
 
-The function :obj:`signal.correlate` can also take arbitrary :math:`N` -dimensional arrays as input and return the :math:`N` -dimensional convolution of the two arrays on output.
+The function :obj:`signal.correlate` can also take arbitrary :math:`N`
+-dimensional arrays as input and return the :math:`N` -dimensional
+convolution of the two arrays on output.
 
-When :math:`N=2,` :obj:`signal.correlate` and/or :obj:`signal.convolve` can be used to construct arbitrary image filters to perform actions
-such as blurring, enhancing, and edge-detection for an image.
+When :math:`N=2,` :obj:`signal.correlate` and/or
+:obj:`signal.convolve` can be used to construct arbitrary image
+filters to perform actions such as blurring, enhancing, and
+edge-detection for an image.
 
 Convolution is mainly used for filtering when one of the signals is
-much smaller than the other ( :math:`K\gg M` ), otherwise linear filtering is more easily accomplished in the
-frequency domain (see Fourier Transforms).
+much smaller than the other ( :math:`K\gg M` ), otherwise linear
+filtering is more easily accomplished in the frequency domain (see
+Fourier Transforms).
 
 
 Difference-equation filtering
@@ -1676,9 +1708,15 @@ convolution filters) are filters described by the difference equation
 
     \[ \sum_{k=0}^{N}a_{k}y\left[n-k\right]=\sum_{k=0}^{M}b_{k}x\left[n-k\right]\]
 
-where :math:`x\left[n\right]` is the input sequence and :math:`y\left[n\right]` is the output sequence. If we assume initial rest so that :math:`y\left[n\right]=0` for :math:`n<0` , then this kind of filter can be implemented using convolution.
-However, the convolution filter sequence :math:`h\left[n\right]` could be infinite if :math:`a_{k}\neq0` for :math:`k\geq1.` In addition, this general class of linear filter allows initial
-conditions to be placed on :math:`y\left[n\right]` for :math:`n<0` resulting in a filter that cannot be expressed using convolution.
+where :math:`x\left[n\right]` is the input sequence and
+:math:`y\left[n\right]` is the output sequence. If we assume initial
+rest so that :math:`y\left[n\right]=0` for :math:`n<0` , then this
+kind of filter can be implemented using convolution.  However, the
+convolution filter sequence :math:`h\left[n\right]` could be infinite
+if :math:`a_{k}\neq0` for :math:`k\geq1.` In addition, this general
+class of linear filter allows initial conditions to be placed on
+:math:`y\left[n\right]` for :math:`n<0` resulting in a filter that
+cannot be expressed using convolution.
 
 The difference equation filter can be thought of as finding :math:`y\left[n\right]` recursively in terms of it's previous values
 
@@ -1687,28 +1725,46 @@ The difference equation filter can be thought of as finding :math:`y\left[n\righ
 
     \[ a_{0}y\left[n\right]=-a_{1}y\left[n-1\right]-\cdots-a_{N}y\left[n-N\right]+\cdots+b_{0}x\left[n\right]+\cdots+b_{M}x\left[n-M\right].\]
 
-Often :math:`a_{0}=1` is chosen for normalization. The implementation in SciPy of this
-general difference equation filter is a little more complicated then
-would be implied by the previous equation. It is implemented so that
-only one signal needs to be delayed. The actual implementation
-equations are (assuming :math:`a_{0}=1` ).
+Often :math:`a_{0}=1` is chosen for normalization. The implementation
+in SciPy of this general difference equation filter is a little more
+complicated then would be implied by the previous equation. It is
+implemented so that only one signal needs to be delayed. The actual
+implementation equations are (assuming :math:`a_{0}=1` ).
 
 .. math::
    :nowrap:
 
     \begin{eqnarray*} y\left[n\right] & = & b_{0}x\left[n\right]+z_{0}\left[n-1\right]\\ z_{0}\left[n\right] & = & b_{1}x\left[n\right]+z_{1}\left[n-1\right]-a_{1}y\left[n\right]\\ z_{1}\left[n\right] & = & b_{2}x\left[n\right]+z_{2}\left[n-1\right]-a_{2}y\left[n\right]\\ \vdots & \vdots & \vdots\\ z_{K-2}\left[n\right] & = & b_{K-1}x\left[n\right]+z_{K-1}\left[n-1\right]-a_{K-1}y\left[n\right]\\ z_{K-1}\left[n\right] & = & b_{K}x\left[n\right]-a_{K}y\left[n\right],\end{eqnarray*}
 
-where :math:`K=\max\left(N,M\right).` Note that :math:`b_{K}=0` if :math:`K>M` and :math:`a_{K}=0` if :math:`K>N.` In this way, the output at time :math:`n` depends only on the input at time :math:`n` and the value of :math:`z_{0}` at the previous time. This can always be calculated as long as the :math:`K` values :math:`z_{0}\left[n-1\right]\ldots z_{K-1}\left[n-1\right]` are computed and stored at each time step.
+where :math:`K=\max\left(N,M\right).` Note that :math:`b_{K}=0` if
+:math:`K>M` and :math:`a_{K}=0` if :math:`K>N.` In this way, the
+output at time :math:`n` depends only on the input at time :math:`n`
+and the value of :math:`z_{0}` at the previous time. This can always
+be calculated as long as the :math:`K` values
+:math:`z_{0}\left[n-1\right]\ldots z_{K-1}\left[n-1\right]` are
+computed and stored at each time step.
 
-The difference-equation filter is called using the command :obj:`signal.lfilter` in SciPy. This command takes as inputs the vector :math:`b,` the vector, :math:`a,` a signal :math:`x` and returns the vector :math:`y` (the same length as :math:`x` ) computed using the equation given above. If :math:`x` is :math:`N` -dimensional, then the filter is computed along the axis provided. If,
-desired, initial conditions providing the values of :math:`z_{0}\left[-1\right]` to :math:`z_{K-1}\left[-1\right]` can be provided or else it will be assumed that they are all zero. If
-initial conditions are provided, then the final conditions on the
-intermediate variables are also returned. These could be used, for
-example, to restart the calculation in the same state.
+The difference-equation filter is called using the command
+:obj:`signal.lfilter` in SciPy. This command takes as inputs the
+vector :math:`b,` the vector, :math:`a,` a signal :math:`x` and
+returns the vector :math:`y` (the same length as :math:`x` ) computed
+using the equation given above. If :math:`x` is :math:`N`
+-dimensional, then the filter is computed along the axis provided. If,
+desired, initial conditions providing the values of
+:math:`z_{0}\left[-1\right]` to :math:`z_{K-1}\left[-1\right]` can be
+provided or else it will be assumed that they are all zero. If initial
+conditions are provided, then the final conditions on the intermediate
+variables are also returned. These could be used, for example, to
+restart the calculation in the same state.
 
 Sometimes it is more convenient to express the initial conditions in
-terms of the signals :math:`x\left[n\right]` and :math:`y\left[n\right].` In other words, perhaps you have the values of :math:`x\left[-M\right]` to :math:`x\left[-1\right]` and the values of :math:`y\left[-N\right]` to :math:`y\left[-1\right]` and would like to determine what values of :math:`z_{m}\left[-1\right]` should be delivered as initial conditions to the difference-equation
-filter. It is not difficult to show that for :math:`0\leq m<K,`
+terms of the signals :math:`x\left[n\right]` and
+:math:`y\left[n\right].` In other words, perhaps you have the values
+of :math:`x\left[-M\right]` to :math:`x\left[-1\right]` and the values
+of :math:`y\left[-N\right]` to :math:`y\left[-1\right]` and would like
+to determine what values of :math:`z_{m}\left[-1\right]` should be
+delivered as initial conditions to the difference-equation filter. It
+is not difficult to show that for :math:`0\leq m<K,`
 
 .. math::
    :nowrap:
@@ -1736,8 +1792,9 @@ The sample median is the middle array value in a sorted list of
 neighborhood values. If there are an even number of elements in the
 neighborhood, then the average of the middle two values is used as the
 median. A general purpose median filter that works on N-dimensional
-arrays is :obj:`signal.medfilt` . A specialized version that works only for two-dimensional arrays is
-available as :obj:`signal.medfilt2d` .
+arrays is :obj:`signal.medfilt` . A specialized version that works
+only for two-dimensional arrays is available as
+:obj:`signal.medfilt2d` .
 
 
 Order Filter
@@ -1773,16 +1830,22 @@ Let :math:`x` be the input signal, then the output is
 
     \[ y=\left\{ \begin{array}{cc} \frac{\sigma^{2}}{\sigma_{x}^{2}}m_{x}+\left(1-\frac{\sigma^{2}}{\sigma_{x}^{2}}\right)x & \sigma_{x}^{2}\geq\sigma^{2},\\ m_{x} & \sigma_{x}^{2}<\sigma^{2}.\end{array}\right.\]
 
-Where :math:`m_{x}` is the local estimate of the mean and :math:`\sigma_{x}^{2}` is the local estimate of the variance. The window for these estimates
-is an optional input parameter (default is :math:`3\times3` ). The parameter :math:`\sigma^{2}` is a threshold noise parameter. If :math:`\sigma` is not given then it is estimated as the average of the local
-variances.
+Where :math:`m_{x}` is the local estimate of the mean and
+:math:`\sigma_{x}^{2}` is the local estimate of the variance. The
+window for these estimates is an optional input parameter (default is
+:math:`3\times3` ). The parameter :math:`\sigma^{2}` is a threshold
+noise parameter. If :math:`\sigma` is not given then it is estimated
+as the average of the local variances.
 
 
 Hilbert filter
 """"""""""""""
 
 The Hilbert transform constructs the complex-valued analytic signal
-from a real signal. For example if :math:`x=\cos\omega n` then :math:`y=\textrm{hilbert}\left(x\right)` would return (except near the edges) :math:`y=\exp\left(j\omega n\right).` In the frequency domain, the hilbert transform performs
+from a real signal. For example if :math:`x=\cos\omega n` then
+:math:`y=\textrm{hilbert}\left(x\right)` would return (except near the
+edges) :math:`y=\exp\left(j\omega n\right).` In the frequency domain,
+the hilbert transform performs
 
 .. math::
    :nowrap:
@@ -1791,117 +1854,119 @@ from a real signal. For example if :math:`x=\cos\omega n` then :math:`y=\textrm{
 
 where :math:`H` is 2 for positive frequencies, :math:`0` for negative frequencies and :math:`1` for zero-frequencies.
 
-
-Detrend
-"""""""
-
-
-Filter design
--------------
-
-
-Finite-impulse response design
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-Inifinite-impulse response design
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-Analog filter frequency response
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-Digital filter frequency response
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-Linear Time-Invariant Systems
------------------------------
-
-
-LTI Object
-^^^^^^^^^^
-
-
-Continuous-Time Simulation
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-Step response
-^^^^^^^^^^^^^
-
-
-Impulse response
-^^^^^^^^^^^^^^^^
-
-
-Input/Output
-============
-
-
-Binary
-------
-
-
-Arbitrary binary input and output (fopen)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-Read and write Matlab .mat files
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-Saving workspace
-^^^^^^^^^^^^^^^^
-
-
-Text-file
----------
-
-
-Read text-files (read_array)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-Write a text-file (write_array)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-Fourier Transforms
-==================
-
-
-One-dimensional
----------------
-
-
-Two-dimensional
----------------
-
-
-N-dimensional
--------------
-
-
-Shifting
---------
-
-
-Sample frequencies
-------------------
-
-
-Hilbert transform
------------------
-
-
-Tilbert transform
------------------
-
+.. XXX: TODO
+..
+.. Detrend
+.. """""""
+.. 
+.. Filter design
+.. -------------
+.. 
+.. 
+.. Finite-impulse response design
+.. ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. 
+.. 
+.. Inifinite-impulse response design
+.. ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. 
+.. 
+.. Analog filter frequency response
+.. ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. 
+.. 
+.. Digital filter frequency response
+.. ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. 
+.. 
+.. Linear Time-Invariant Systems
+.. -----------------------------
+.. 
+.. 
+.. LTI Object
+.. ^^^^^^^^^^
+.. 
+.. 
+.. Continuous-Time Simulation
+.. ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. 
+.. 
+.. Step response
+.. ^^^^^^^^^^^^^
+.. 
+.. 
+.. Impulse response
+.. ^^^^^^^^^^^^^^^^
+.. 
+.. 
+.. Input/Output
+.. ============
+.. 
+.. 
+.. Binary
+.. ------
+.. 
+.. 
+.. Arbitrary binary input and output (fopen)
+.. ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. 
+.. 
+.. Read and write Matlab .mat files
+.. ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. 
+.. 
+.. Saving workspace
+.. ^^^^^^^^^^^^^^^^
+.. 
+.. 
+.. Text-file
+.. ---------
+.. 
+.. 
+.. Read text-files (read_array)
+.. ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. 
+.. 
+.. Write a text-file (write_array)
+.. ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. 
+.. 
+.. Fourier Transforms
+.. ==================
+.. 
+.. 
+.. One-dimensional
+.. ---------------
+.. 
+.. 
+.. Two-dimensional
+.. ---------------
+.. 
+.. 
+.. N-dimensional
+.. -------------
+.. 
+.. 
+.. Shifting
+.. --------
+.. 
+.. 
+.. Sample frequencies
+.. ------------------
+.. 
+.. 
+.. Hilbert transform
+.. -----------------
+.. 
+.. 
+.. Tilbert transform
+.. -----------------
+.. 
 
 Linear Algebra
 ==============
+
+.. currentmodule: scipy
 
 When SciPy is built using the optimized ATLAS LAPACK and BLAS
 libraries, it has very fast linear algebra capabilities. If you dig
@@ -1921,13 +1986,13 @@ Matrix Class
 ------------
 
 The matrix class is initialized with the SciPy command :obj:`mat`
-which is just convenient short-hand for :class:`matrix`. If
-you are going to be doing a lot of matrix-math, it is convenient to
-convert arrays into matrices using this command. One convencience of
-using the mat command is that you can enter two-dimensional matrices
-using MATLAB-like syntax with commas or spaces separating columns and
-semicolons separting rows as long as the matrix is placed in a string
-passed to :obj:`mat` .
+which is just convenient short-hand for :class:`matrix
+<numpy.matrix>`. If you are going to be doing a lot of matrix-math, it
+is convenient to convert arrays into matrices using this command. One
+advantage of using the :func:`mat` command is that you can enter
+two-dimensional matrices using MATLAB-like syntax with commas or
+spaces separating columns and semicolons separting rows as long as the
+matrix is placed in a string passed to :obj:`mat` .
 
 
 Basic routines
@@ -1937,9 +2002,13 @@ Basic routines
 Finding Inverse
 ^^^^^^^^^^^^^^^
 
-The inverse of a matrix :math:`\mathbf{A}` is the matrix :math:`\mathbf{B}` such that :math:`\mathbf{AB}=\mathbf{I}` where :math:`\mathbf{I}` is the identity matrix consisting of ones down the main diagonal.
-Usually :math:`\mathbf{B}` is denoted :math:`\mathbf{B}=\mathbf{A}^{-1}` . In SciPy, the matrix inverse of the Numpy array, A, is obtained
-using :obj:`linalg.inv` ``(A)`` , or using ``A.I`` if ``A`` is a Matrix. For example, let
+The inverse of a matrix :math:`\mathbf{A}` is the matrix
+:math:`\mathbf{B}` such that :math:`\mathbf{AB}=\mathbf{I}` where
+:math:`\mathbf{I}` is the identity matrix consisting of ones down the
+main diagonal.  Usually :math:`\mathbf{B}` is denoted
+:math:`\mathbf{B}=\mathbf{A}^{-1}` . In SciPy, the matrix inverse of
+the Numpy array, A, is obtained using :obj:`linalg.inv` ``(A)`` , or
+using ``A.I`` if ``A`` is a Matrix. For example, let
 
 .. math::
    :nowrap:
@@ -2011,7 +2080,13 @@ same answer as shown in the following example:
 Finding Determinant
 ^^^^^^^^^^^^^^^^^^^
 
-The determinant of a square matrix :math:`\mathbf{A}` is often denoted :math:`\left|\mathbf{A}\right|` and is a quantity often used in linear algebra. Suppose :math:`a_{ij}` are the elements of the matrix :math:`\mathbf{A}` and let :math:`M_{ij}=\left|\mathbf{A}_{ij}\right|` be the determinant of the matrix left by removing the :math:`i^{\textrm{th}}` row and :math:`j^{\textrm{th}}` column from :math:`\mathbf{A}` . Then for any row :math:`i,`
+The determinant of a square matrix :math:`\mathbf{A}` is often denoted
+:math:`\left|\mathbf{A}\right|` and is a quantity often used in linear
+algebra. Suppose :math:`a_{ij}` are the elements of the matrix
+:math:`\mathbf{A}` and let :math:`M_{ij}=\left|\mathbf{A}_{ij}\right|`
+be the determinant of the matrix left by removing the
+:math:`i^{\textrm{th}}` row and :math:`j^{\textrm{th}}` column from
+:math:`\mathbf{A}` . Then for any row :math:`i,`
 
 .. math::
    :nowrap:
@@ -2046,9 +2121,10 @@ Computing norms
 
 Matrix and vector norms can also be computed with SciPy. A wide range
 of norm definitions are available using different parameters to the
-order argument of :obj:`linalg.norm` . This function takes a rank-1 (vectors) or a rank-2 (matrices) array
-and an optional order argument (default is 2). Based on these inputs a
-vector or matrix norm of the requested order is computed.
+order argument of :obj:`linalg.norm` . This function takes a rank-1
+(vectors) or a rank-2 (matrices) array and an optional order argument
+(default is 2). Based on these inputs a vector or matrix norm of the
+requested order is computed.
 
 For vector *x* , the order parameter can be any real number including
 ``inf`` or ``-inf``. The computed norm is
@@ -2076,15 +2152,18 @@ Solving linear least-squares problems and pseudo-inverses
 Linear least-squares problems occur in many branches of applied
 mathematics. In this problem a set of linear scaling coefficients is
 sought that allow a model to fit data. In particular it is assumed
-that data :math:`y_{i}` is related to data :math:`\mathbf{x}_{i}` through a set of coefficients :math:`c_{j}` and model functions :math:`f_{j}\left(\mathbf{x}_{i}\right)` via the model
+that data :math:`y_{i}` is related to data :math:`\mathbf{x}_{i}`
+through a set of coefficients :math:`c_{j}` and model functions
+:math:`f_{j}\left(\mathbf{x}_{i}\right)` via the model
 
 .. math::
    :nowrap:
 
     \[ y_{i}=\sum_{j}c_{j}f_{j}\left(\mathbf{x}_{i}\right)+\epsilon_{i}\]
 
-where :math:`\epsilon_{i}` represents uncertainty in the data. The strategy of least squares is
-to pick the coefficients :math:`c_{j}` to minimize
+where :math:`\epsilon_{i}` represents uncertainty in the data. The
+strategy of least squares is to pick the coefficients :math:`c_{j}` to
+minimize
 
 .. math::
    :nowrap:
@@ -2121,25 +2200,35 @@ When :math:`\mathbf{A^{H}A}` is invertible, then
 
     \[ \mathbf{c}=\left(\mathbf{A}^{H}\mathbf{A}\right)^{-1}\mathbf{A}^{H}\mathbf{y}=\mathbf{A}^{\dagger}\mathbf{y}\]
 
-where :math:`\mathbf{A}^{\dagger}` is called the pseudo-inverse of :math:`\mathbf{A}.` Notice that using this definition of :math:`\mathbf{A}` the model can be written
+where :math:`\mathbf{A}^{\dagger}` is called the pseudo-inverse of
+:math:`\mathbf{A}.` Notice that using this definition of
+:math:`\mathbf{A}` the model can be written
 
 .. math::
    :nowrap:
 
     \[ \mathbf{y}=\mathbf{Ac}+\boldsymbol{\epsilon}.\]
 
-The command :obj:`linalg.lstsq` will solve the linear least squares problem for :math:`\mathbf{c}` given :math:`\mathbf{A}` and :math:`\mathbf{y}` . In addition :obj:`linalg.pinv` or :obj:`linalg.pinv2` (uses a different method based on singular value decomposition) will
-find :math:`\mathbf{A}^{\dagger}` given :math:`\mathbf{A}.`
+The command :obj:`linalg.lstsq` will solve the linear least squares
+problem for :math:`\mathbf{c}` given :math:`\mathbf{A}` and
+:math:`\mathbf{y}` . In addition :obj:`linalg.pinv` or
+:obj:`linalg.pinv2` (uses a different method based on singular value
+decomposition) will find :math:`\mathbf{A}^{\dagger}` given
+:math:`\mathbf{A}.`
 
-The following example and figure demonstrate the use of :obj:`linalg.lstsq` and :obj:`linalg.pinv` for solving a data-fitting problem. The data shown below were
-generated using the model:
+The following example and figure demonstrate the use of
+:obj:`linalg.lstsq` and :obj:`linalg.pinv` for solving a data-fitting
+problem. The data shown below were generated using the model:
 
 .. math::
    :nowrap:
 
     \[ y_{i}=c_{1}e^{-x_{i}}+c_{2}x_{i}\]
 
-where :math:`x_{i}=0.1i` for :math:`i=1\ldots10` , :math:`c_{1}=5` , and :math:`c_{2}=4.` Noise is added to :math:`y_{i}` and the coefficients :math:`c_{1}` and :math:`c_{2}` are estimated using linear least squares.
+where :math:`x_{i}=0.1i` for :math:`i=1\ldots10` , :math:`c_{1}=5` ,
+and :math:`c_{2}=4.` Noise is added to :math:`y_{i}` and the
+coefficients :math:`c_{1}` and :math:`c_{2}` are estimated using
+linear least squares.
 
 .. plot::
 
@@ -2170,9 +2259,12 @@ where :math:`x_{i}=0.1i` for :math:`i=1\ldots10` , :math:`c_{1}=5` , and :math:`
 Generalized inverse
 ^^^^^^^^^^^^^^^^^^^
 
-The generalized inverse is calculated using the command :obj:`linalg.pinv` or :obj:`linalg.pinv2`. These two commands differ in how they compute the generalized inverse.
-The first uses the linalg.lstsq algorithm while the second uses
-singular value decomposition. Let :math:`\mathbf{A}` be an :math:`M\times N` matrix, then if :math:`M>N` the generalized inverse is
+The generalized inverse is calculated using the command
+:obj:`linalg.pinv` or :obj:`linalg.pinv2`. These two commands differ
+in how they compute the generalized inverse.  The first uses the
+linalg.lstsq algorithm while the second uses singular value
+decomposition. Let :math:`\mathbf{A}` be an :math:`M\times N` matrix,
+then if :math:`M>N` the generalized inverse is
 
 .. math::
    :nowrap:
@@ -2208,25 +2300,26 @@ Eigenvalues and eigenvectors
 
 The eigenvalue-eigenvector problem is one of the most commonly
 employed linear algebra operations. In one popular form, the
-eigenvalue-eigenvector problem is to find for some square matrix :math:`\mathbf{A}` scalars :math:`\lambda` and corresponding vectors :math:`\mathbf{v}` such that
+eigenvalue-eigenvector problem is to find for some square matrix
+:math:`\mathbf{A}` scalars :math:`\lambda` and corresponding vectors
+:math:`\mathbf{v}` such that
 
 .. math::
    :nowrap:
 
     \[ \mathbf{Av}=\lambda\mathbf{v}.\]
 
-For an :math:`N\times N` matrix, there are :math:`N` (not necessarily distinct) eigenvalues --- roots of the
-(characteristic) polynomial
+For an :math:`N\times N` matrix, there are :math:`N` (not necessarily
+distinct) eigenvalues --- roots of the (characteristic) polynomial
 
 .. math::
    :nowrap:
 
     \[ \left|\mathbf{A}-\lambda\mathbf{I}\right|=0.\]
 
-
-
-The eigenvectors, :math:`\mathbf{v}` , are also sometimes called right eigenvectors to distinguish them
-from another set of left eigenvectors that satisfy
+The eigenvectors, :math:`\mathbf{v}` , are also sometimes called right
+eigenvectors to distinguish them from another set of left eigenvectors
+that satisfy
 
 .. math::
    :nowrap:
@@ -2240,7 +2333,10 @@ or
 
     \[ \mathbf{A}^{H}\mathbf{v}_{L}=\lambda^{*}\mathbf{v}_{L}.\]
 
-With it's default optional arguments, the command :obj:`linalg.eig` returns :math:`\lambda` and :math:`\mathbf{v}.` However, it can also return :math:`\mathbf{v}_{L}` and just :math:`\lambda` by itself ( :obj:`linalg.eigvals` returns just :math:`\lambda` as well).
+With it's default optional arguments, the command :obj:`linalg.eig`
+returns :math:`\lambda` and :math:`\mathbf{v}.` However, it can also
+return :math:`\mathbf{v}_{L}` and just :math:`\lambda` by itself (
+:obj:`linalg.eigvals` returns just :math:`\lambda` as well).
 
 In addtion, :obj:`linalg.eig` can also solve the more general eigenvalue problem
 
@@ -2249,20 +2345,25 @@ In addtion, :obj:`linalg.eig` can also solve the more general eigenvalue problem
 
     \begin{eqnarray*} \mathbf{Av} & = & \lambda\mathbf{Bv}\\ \mathbf{A}^{H}\mathbf{v}_{L} & = & \lambda^{*}\mathbf{B}^{H}\mathbf{v}_{L}\end{eqnarray*}
 
-for square matrices :math:`\mathbf{A}` and :math:`\mathbf{B}.` The standard eigenvalue problem is an example of the general
-eigenvalue problem for :math:`\mathbf{B}=\mathbf{I}.` When a generalized eigenvalue problem can be solved, then it provides
-a decomposition of :math:`\mathbf{A}` as
+for square matrices :math:`\mathbf{A}` and :math:`\mathbf{B}.` The
+standard eigenvalue problem is an example of the general eigenvalue
+problem for :math:`\mathbf{B}=\mathbf{I}.` When a generalized
+eigenvalue problem can be solved, then it provides a decomposition of
+:math:`\mathbf{A}` as
 
 .. math::
    :nowrap:
 
     \[ \mathbf{A}=\mathbf{BV}\boldsymbol{\Lambda}\mathbf{V}^{-1}\]
 
-where :math:`\mathbf{V}` is the collection of eigenvectors into columns and :math:`\boldsymbol{\Lambda}` is a diagonal matrix of eigenvalues.
+where :math:`\mathbf{V}` is the collection of eigenvectors into
+columns and :math:`\boldsymbol{\Lambda}` is a diagonal matrix of
+eigenvalues.
 
 By definition, eigenvectors are only defined up to a constant scale
 factor. In SciPy, the scaling factor for the eigenvectors is chosen so
-that :math:`\left\Vert \mathbf{v}\right\Vert ^{2}=\sum_{i}v_{i}^{2}=1.`
+that :math:`\left\Vert \mathbf{v}\right\Vert
+^{2}=\sum_{i}v_{i}^{2}=1.`
 
 As an example, consider finding the eigenvalues and eigenvectors of
 the matrix
@@ -2315,16 +2416,39 @@ Singular value decomposition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Singular Value Decompostion (SVD) can be thought of as an extension of
-the eigenvalue problem to matrices that are not square. Let :math:`\mathbf{A}` be an :math:`M\times N` matrix with :math:`M` and :math:`N` arbitrary. The matrices :math:`\mathbf{A}^{H}\mathbf{A}` and :math:`\mathbf{A}\mathbf{A}^{H}` are square hermitian matrices [#]_ of size :math:`N\times N` and :math:`M\times M` respectively. It is known that the eigenvalues of square hermitian
-matrices are real and non-negative. In addtion, there are at most :math:`\min\left(M,N\right)` identical non-zero eigenvalues of :math:`\mathbf{A}^{H}\mathbf{A}` and :math:`\mathbf{A}\mathbf{A}^{H}.` Define these positive eigenvalues as :math:`\sigma_{i}^{2}.` The square-root of these are called singular values of :math:`\mathbf{A}.` The eigenvectors of :math:`\mathbf{A}^{H}\mathbf{A}` are collected by columns into an :math:`N\times N` unitary [#]_ matrix :math:`\mathbf{V}` while the eigenvectors of :math:`\mathbf{A}\mathbf{A}^{H}` are collected by columns in the unitary matrix :math:`\mathbf{U}` , the singular values are collected in an :math:`M\times N` zero matrix :math:`\mathbf{\boldsymbol{\Sigma}}` with main diagonal entries set to the singular values. Then
+the eigenvalue problem to matrices that are not square. Let
+:math:`\mathbf{A}` be an :math:`M\times N` matrix with :math:`M` and
+:math:`N` arbitrary. The matrices :math:`\mathbf{A}^{H}\mathbf{A}` and
+:math:`\mathbf{A}\mathbf{A}^{H}` are square hermitian matrices [#]_ of
+size :math:`N\times N` and :math:`M\times M` respectively. It is known
+that the eigenvalues of square hermitian matrices are real and
+non-negative. In addtion, there are at most
+:math:`\min\left(M,N\right)` identical non-zero eigenvalues of
+:math:`\mathbf{A}^{H}\mathbf{A}` and :math:`\mathbf{A}\mathbf{A}^{H}.`
+Define these positive eigenvalues as :math:`\sigma_{i}^{2}.` The
+square-root of these are called singular values of :math:`\mathbf{A}.`
+The eigenvectors of :math:`\mathbf{A}^{H}\mathbf{A}` are collected by
+columns into an :math:`N\times N` unitary [#]_ matrix
+:math:`\mathbf{V}` while the eigenvectors of
+:math:`\mathbf{A}\mathbf{A}^{H}` are collected by columns in the
+unitary matrix :math:`\mathbf{U}` , the singular values are collected
+in an :math:`M\times N` zero matrix
+:math:`\mathbf{\boldsymbol{\Sigma}}` with main diagonal entries set to
+the singular values. Then
 
 .. math::
    :nowrap:
 
     \[ \mathbf{A=U}\boldsymbol{\Sigma}\mathbf{V}^{H}\]
 
-is the singular-value decomposition of :math:`\mathbf{A}.` Every matrix has a singular value decomposition. Sometimes, the
-singular values are called the spectrum of :math:`\mathbf{A}.` The command :obj:`linalg.svd` will return :math:`\mathbf{U}` , :math:`\mathbf{V}^{H}` , and :math:`\sigma_{i}` as an array of the singular values. To obtain the matrix :math:`\mathbf{\Sigma}` use :obj:`linalg.diagsvd`. The following example illustrates the use of :obj:`linalg.svd` .
+is the singular-value decomposition of :math:`\mathbf{A}.` Every
+matrix has a singular value decomposition. Sometimes, the singular
+values are called the spectrum of :math:`\mathbf{A}.` The command
+:obj:`linalg.svd` will return :math:`\mathbf{U}` ,
+:math:`\mathbf{V}^{H}` , and :math:`\sigma_{i}` as an array of the
+singular values. To obtain the matrix :math:`\mathbf{\Sigma}` use
+:obj:`linalg.diagsvd`. The following example illustrates the use of
+:obj:`linalg.svd` .
 
     >>> A = mat('[1 3 2; 1 2 3]')
     >>> M,N = A.shape
@@ -2349,7 +2473,7 @@ singular values are called the spectrum of :math:`\mathbf{A}.` The command :obj:
     [[ 1.  3.  2.]
      [ 1.  2.  3.]]
 
-.. [#] A hermition matrix :math:`\mathbf{D}` satisfies :math:`\mathbf{D}^{H}=\mathbf{D}.`
+.. [#] A hermitian matrix :math:`\mathbf{D}` satisfies :math:`\mathbf{D}^{H}=\mathbf{D}.`
 
 .. [#] A unitary matrix :math:`\mathbf{D}` satisfies :math:`\mathbf{D}^{H}\mathbf{D}=\mathbf{I}=\mathbf{D}\mathbf{D}^{H}` so that :math:`\mathbf{D}^{-1}=\mathbf{D}^{H}.`
 
@@ -2364,8 +2488,12 @@ The LU decompostion finds a representation for the :math:`M\times N` matrix :mat
 
     \[ \mathbf{A}=\mathbf{PLU}\]
 
-where :math:`\mathbf{P}` is an :math:`M\times M` permutation matrix (a permutation of the rows of the identity matrix), :math:`\mathbf{L}` is in :math:`M\times K` lower triangular or trapezoidal matrix ( :math:`K=\min\left(M,N\right)` ) with unit-diagonal, and :math:`\mathbf{U}` is an upper triangular or trapezoidal matrix. The SciPy command for
-this decomposition is :obj:`linalg.lu` .
+where :math:`\mathbf{P}` is an :math:`M\times M` permutation matrix (a
+permutation of the rows of the identity matrix), :math:`\mathbf{L}` is
+in :math:`M\times K` lower triangular or trapezoidal matrix (
+:math:`K=\min\left(M,N\right)` ) with unit-diagonal, and
+:math:`\mathbf{U}` is an upper triangular or trapezoidal matrix. The
+SciPy command for this decomposition is :obj:`linalg.lu` .
 
 Such a decomposition is often useful for solving many simultaneous
 equations where the left-hand-side does not change but the right hand
@@ -2383,32 +2511,48 @@ for many different :math:`\mathbf{b}_{i}` . The LU decomposition allows this to 
 
     \[ \mathbf{PLUx}_{i}=\mathbf{b}_{i}.\]
 
-Because :math:`\mathbf{L}` is lower-triangular, the equation can be solved for :math:`\mathbf{U}\mathbf{x}_{i}` and finally :math:`\mathbf{x}_{i}` very rapidly using forward- and back-substitution. An initial time
-spent factoring :math:`\mathbf{A}` allows for very rapid solution of similar systems of equations in the
+Because :math:`\mathbf{L}` is lower-triangular, the equation can be
+solved for :math:`\mathbf{U}\mathbf{x}_{i}` and finally
+:math:`\mathbf{x}_{i}` very rapidly using forward- and
+back-substitution. An initial time spent factoring :math:`\mathbf{A}`
+allows for very rapid solution of similar systems of equations in the
 future. If the intent for performing LU decomposition is for solving
-linear systems then the command :obj:`linalg.lu_factor` should be used followed by repeated applications of the command :obj:`linalg.lu_solve` to solve the system for each new right-hand-side.
+linear systems then the command :obj:`linalg.lu_factor` should be used
+followed by repeated applications of the command
+:obj:`linalg.lu_solve` to solve the system for each new
+right-hand-side.
 
 
 Cholesky decomposition
 ^^^^^^^^^^^^^^^^^^^^^^
 
 Cholesky decomposition is a special case of LU decomposition
-applicable to Hermitian positive definite matrices. When :math:`\mathbf{A}=\mathbf{A}^{H}` and :math:`\mathbf{x}^{H}\mathbf{Ax}\geq0` for all :math:`\mathbf{x}` , then decompositions of :math:`\mathbf{A}` can be found so that
+applicable to Hermitian positive definite matrices. When
+:math:`\mathbf{A}=\mathbf{A}^{H}` and
+:math:`\mathbf{x}^{H}\mathbf{Ax}\geq0` for all :math:`\mathbf{x}` ,
+then decompositions of :math:`\mathbf{A}` can be found so that
 
 .. math::
    :nowrap:
 
     \begin{eqnarray*} \mathbf{A} & = & \mathbf{U}^{H}\mathbf{U}\\ \mathbf{A} & = & \mathbf{L}\mathbf{L}^{H}\end{eqnarray*}
 
-where :math:`\mathbf{L}` is lower-triangular and :math:`\mathbf{U}` is upper triangular. Notice that :math:`\mathbf{L}=\mathbf{U}^{H}.` The command :obj:`linagl.cholesky` computes the cholesky factorization. For using cholesky factorization
-to solve systems of equations there are also :obj:`linalg.cho_factor` and :obj:`linalg.cho_solve` routines that work similarly to their LU decomposition counterparts.
+where :math:`\mathbf{L}` is lower-triangular and :math:`\mathbf{U}` is
+upper triangular. Notice that :math:`\mathbf{L}=\mathbf{U}^{H}.` The
+command :obj:`linagl.cholesky` computes the cholesky
+factorization. For using cholesky factorization to solve systems of
+equations there are also :obj:`linalg.cho_factor` and
+:obj:`linalg.cho_solve` routines that work similarly to their LU
+decomposition counterparts.
 
 
 QR decomposition
 ^^^^^^^^^^^^^^^^
 
 The QR decomposition (sometimes called a polar decomposition) works
-for any :math:`M\times N` array and finds an :math:`M\times M` unitary matrix :math:`\mathbf{Q}` and an :math:`M\times N` upper-trapezoidal matrix :math:`\mathbf{R}` such that
+for any :math:`M\times N` array and finds an :math:`M\times M` unitary
+matrix :math:`\mathbf{Q}` and an :math:`M\times N` upper-trapezoidal
+matrix :math:`\mathbf{R}` such that
 
 .. math::
    :nowrap:
@@ -2422,26 +2566,37 @@ Notice that if the SVD of :math:`\mathbf{A}` is known then the QR decomposition 
 
     \[ \mathbf{A}=\mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^{H}=\mathbf{QR}\]
 
-implies that :math:`\mathbf{Q}=\mathbf{U}` and :math:`\mathbf{R}=\boldsymbol{\Sigma}\mathbf{V}^{H}.` Note, however, that in SciPy independent algorithms are used to find
-QR and SVD decompositions. The command for QR decomposition is :obj:`linalg.qr` .
+implies that :math:`\mathbf{Q}=\mathbf{U}` and
+:math:`\mathbf{R}=\boldsymbol{\Sigma}\mathbf{V}^{H}.` Note, however,
+that in SciPy independent algorithms are used to find QR and SVD
+decompositions. The command for QR decomposition is :obj:`linalg.qr` .
 
 
 Schur decomposition
 ^^^^^^^^^^^^^^^^^^^
 
-For a square :math:`N\times N` matrix, :math:`\mathbf{A}` , the Schur decomposition finds (not-necessarily unique) matrices :math:`\mathbf{T}` and :math:`\mathbf{Z}` such that
+For a square :math:`N\times N` matrix, :math:`\mathbf{A}` , the Schur
+decomposition finds (not-necessarily unique) matrices
+:math:`\mathbf{T}` and :math:`\mathbf{Z}` such that
 
 .. math::
    :nowrap:
 
     \[ \mathbf{A}=\mathbf{ZT}\mathbf{Z}^{H}\]
 
-where :math:`\mathbf{Z}` is a unitary matrix and :math:`\mathbf{T}` is either upper-triangular or quasi-upper triangular depending on
-whether or not a real schur form or complex schur form is requested.
-For a real schur form both :math:`\mathbf{T}` and :math:`\mathbf{Z}` are real-valued when :math:`\mathbf{A}` is real-valued. When :math:`\mathbf{A}` is a real-valued matrix the real schur form is only quasi-upper
-triangular because :math:`2\times2` blocks extrude from the main diagonal corresponding to any complex-
-valued eigenvalues. The command :obj:`linalg.schur` finds the Schur decomposition while the command :obj:`linalg.rsf2csf` converts :math:`\mathbf{T}` and :math:`\mathbf{Z}` from a real Schur form to a complex Schur form. The Schur form is
-especially useful in calculating functions of matrices.
+where :math:`\mathbf{Z}` is a unitary matrix and :math:`\mathbf{T}` is
+either upper-triangular or quasi-upper triangular depending on whether
+or not a real schur form or complex schur form is requested.  For a
+real schur form both :math:`\mathbf{T}` and :math:`\mathbf{Z}` are
+real-valued when :math:`\mathbf{A}` is real-valued. When
+:math:`\mathbf{A}` is a real-valued matrix the real schur form is only
+quasi-upper triangular because :math:`2\times2` blocks extrude from
+the main diagonal corresponding to any complex- valued
+eigenvalues. The command :obj:`linalg.schur` finds the Schur
+decomposition while the command :obj:`linalg.rsf2csf` converts
+:math:`\mathbf{T}` and :math:`\mathbf{Z}` from a real Schur form to a
+complex Schur form. The Schur form is especially useful in calculating
+functions of matrices.
 
 The following example illustrates the schur decomposition:
 
@@ -2537,7 +2692,8 @@ and note that
 where the matrix exponential of the diagonal matrix :math:`\boldsymbol{\Lambda}` is just the exponential of its elements. This method is implemented in :obj:`linalg.expm2` .
 
 The preferred method for implementing the matrix exponential is to use
-scaling and a Padé approximation for :math:`e^{x}` . This algorithm is implemented as :obj:`linalg.expm` .
+scaling and a Padé approximation for :math:`e^{x}` . This algorithm is
+implemented as :obj:`linalg.expm` .
 
 The inverse of the matrix exponential is the matrix logarithm defined
 as the inverse of the matrix exponential.
@@ -2583,14 +2739,17 @@ and so the matrix tangent is defined as
 Hyperbolic trigonometric functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The hyperbolic trigonemetric functions :math:`\sinh` , :math:`\cosh` , and :math:`\tanh` can also be defined for matrices using the familiar definitions:
+The hyperbolic trigonemetric functions :math:`\sinh` , :math:`\cosh` ,
+and :math:`\tanh` can also be defined for matrices using the familiar
+definitions:
 
 .. math::
    :nowrap:
 
     \begin{eqnarray*} \sinh\left(\mathbf{A}\right) & = & \frac{e^{\mathbf{A}}-e^{-\mathbf{A}}}{2}\\ \cosh\left(\mathbf{A}\right) & = & \frac{e^{\mathbf{A}}+e^{-\mathbf{A}}}{2}\\ \tanh\left(\mathbf{A}\right) & = & \left[\cosh\left(\mathbf{A}\right)\right]^{-1}\sinh\left(\mathbf{A}\right).\end{eqnarray*}
 
-These matrix functions can be found using :obj:`linalg.sinhm` , :obj:`linalg.coshm` , and :obj:`linalg.tanhm` .
+These matrix functions can be found using :obj:`linalg.sinhm`,
+:obj:`linalg.coshm` , and :obj:`linalg.tanhm`.
 
 
 Arbitrary function
@@ -2608,7 +2767,7 @@ Bessel function applied to a matrix.
 
     >>> from scipy import special, random, linalg
     >>> A = random.rand(3,3)
-    >>> B = linalg.funm(A,lambda x: special.jv(0,real(x)))
+    >>> B = linalg.funm(A,lambda x: special.jv(0,x))
     >>> print A
     [[ 0.72578091  0.34105276  0.79570345]
      [ 0.65767207  0.73855618  0.541453  ]
@@ -2623,6 +2782,9 @@ Bessel function applied to a matrix.
     [ 0.27448286+0.j  0.98810383+0.j  0.99164854+0.j]
     >>> print linalg.eigvals(B)
     [ 0.27448286+0.j  0.98810383+0.j  0.99164854+0.j]
+
+Note how, by virtue of how matrix analytic functions are defined,
+the Bessel function has acted on the matrix eigenvalues.
 
 
 Statistics
@@ -2647,32 +2809,34 @@ package. A detailed description of each of them is also located in the
 files continuous.lyx and discrete.lyx in the stats sub-directories.
 
 
-Interfacing with Python Imaging Library
-=======================================
-
-If you have the Python Imaging Library installed, SciPy provides some
-convenient functions that make use of it's facilities particularly for
-reading, writing, displaying, and rotating images. In SciPy an image
-is always a two- or three-dimensional array. Gray-scale, and colormap
-images are always two-dimensional arrays while RGB images are three-
-dimensional with the third dimension specifying the channel.
-
-Commands available include
-
-- fromimage --- convert a PIL image to a Numpy array
-
-- toimage --- convert Numpy array to PIL image
-
-- imsave --- save Numpy array to an image file
-
-- imread --- read an image file into a Numpy array
-
-- imrotate --- rotate an image (a Numpy array) counter-clockwise
-
-- imresize --- resize an image using the PIL
-
-- imshow --- external viewer of a Numpy array (using PIL)
-
-- imfilter --- fast, simple built-in filters provided by PIL
-
-- radon --- simple radon transform based on imrotate
+.. XXX: is this up-to-date?
+..
+.. Interfacing with Python Imaging Library
+.. =======================================
+.. 
+.. If you have the Python Imaging Library installed, SciPy provides some
+.. convenient functions that make use of it's facilities particularly for
+.. reading, writing, displaying, and rotating images. In SciPy an image
+.. is always a two- or three-dimensional array. Gray-scale, and colormap
+.. images are always two-dimensional arrays while RGB images are three-
+.. dimensional with the third dimension specifying the channel.
+.. 
+.. Commands available include
+.. 
+.. - fromimage --- convert a PIL image to a Numpy array
+.. 
+.. - toimage --- convert Numpy array to PIL image
+.. 
+.. - imsave --- save Numpy array to an image file
+.. 
+.. - imread --- read an image file into a Numpy array
+.. 
+.. - imrotate --- rotate an image (a Numpy array) counter-clockwise
+.. 
+.. - imresize --- resize an image using the PIL
+.. 
+.. - imshow --- external viewer of a Numpy array (using PIL)
+.. 
+.. - imfilter --- fast, simple built-in filters provided by PIL
+.. 
+.. - radon --- simple radon transform based on imrotate
