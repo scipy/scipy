@@ -15,10 +15,6 @@ except ImportError:
 
 isUmfpack = hasattr( umfpack, 'UMFPACK_OK' )
 
-if isUmfpack and noScikit:
-    warn( 'scipy.sparse.linalg.dsolve.umfpack will be removed,'
-          ' install scikits.umfpack instead', DeprecationWarning )
-
 useUmfpack = True
 
 
@@ -77,6 +73,9 @@ def spsolve(A, b, permc_spec=2):
 
 
     if isUmfpack and useUmfpack:
+        if noScikit:
+            warn( 'scipy.sparse.linalg.dsolve.umfpack will be removed,'\
+                    ' install scikits.umfpack instead', DeprecationWarning )
         if A.dtype.char not in 'dD':
             raise ValueError, "convert matrix data to double, please, using"\
                   " .astype(), or set linsolve.useUmfpack = False"
@@ -139,6 +138,10 @@ def factorized( A ):
       x2 = solve( rhs2 ) # Uses again the LU factors.
     """
     if isUmfpack and useUmfpack:
+        if noScikit:
+            warn( 'scipy.sparse.linalg.dsolve.umfpack will be removed,'\
+                    ' install scikits.umfpack instead', DeprecationWarning )
+
         if not isspmatrix_csc(A):
             A = csc_matrix(A)
             warn('splu requires CSC matrix format', SparseEfficiencyWarning)
