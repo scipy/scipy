@@ -199,6 +199,10 @@ import scipy.special as special
 import scipy.linalg as linalg
 import numpy as np
 
+#import scipy.stats  #is this a circular import ?
+from morestats import find_repeats #is only reference to scipy.stats
+import distributions
+
 # Local imports.
 import _support
 
@@ -1993,6 +1997,8 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'unequal', mode='approx'):
     Examples
     --------
 
+    >>> from scipy import stats
+    >>> import numpy as np
     >>> x = np.linspace(-15,15,9)
     >>> kstest(x,'norm')
     (0.44435602715924361, 0.038850142705171065)
@@ -2262,7 +2268,7 @@ def friedmanchisquare(*args):
     # Handle ties
     ties = 0
     for i in range(len(data)):
-        replist, repnum = scipy.stats.find_repeats(array(data[i]))
+        replist, repnum = find_repeats(array(data[i]))
         for t in repnum:
             ties += t*(t*t-1)
     c = 1 - ties / float(k*(k*k-1)*n)
