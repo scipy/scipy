@@ -3,6 +3,11 @@
 
 !include "MUI2.nsh"
 
+; Include FileFunc for command line parsing options
+!include "FileFunc.nsh"
+!insertmacro GetParameters
+!insertmacro GetOptions
+
 SetCompress off ; Useful to disable compression under development
 ;SetCompressor /Solid LZMA ; Useful to disable compression under development
 
@@ -46,6 +51,34 @@ InstallDir "$TEMP"
 Var HasSSE2
 Var HasSSE3
 Var CPUSSE
+Var option_arch
+
+Function .onInit
+        ; Get parameters
+        var /GLOBAL cmdLineParams
+        Push $R0
+
+        ${GetParameters} $cmdLineParams
+
+        ; XXX; How to get a console output help ? GUI seems useless when using
+        ; command line help...
+        ; ; /? param (help)
+        ; ClearErrors
+        ; ${GetOptions} $cmdLineParams '/?' $R0
+        ; IfErrors +3 0
+        ; MessageBox MB_OK "list all command line options here!"
+        ; Abort
+
+        Pop $R0
+
+        ; Initialise options
+        StrCpy $option_arch 'native'
+
+        ; Parse Parameters
+        Push $R0
+        Call parseParameters
+        Pop $R0
+FunctionEnd
 
 Section "Core" SecCore
 
@@ -89,6 +122,18 @@ Section "Core" SecCore
 
         ClearErrors
 
+        ${Switch} $option_arch
+                ${Case} "native"
+                DetailPrint '"arch value: $option_arch  - native install"'
+                ${Break}
+                ${Case} "nosse"
+                DetailPrint '"arch value: $option_arch  - no-sse install"'
+                ${Break}
+                ${Default}
+                DetailPrint '"No option_arch value - native install, do not override detection"'
+                ${Break}
+        ${EndSwitch}
+
         ; Install files conditionaly on detected cpu
         ${Switch} $CPUSSE
                 ${Case} "3"
@@ -119,3 +164,10 @@ Section "Core" SecCore
         done:
 
 SectionEnd
+
+Function parseParameters
+    ; /arch option
+    ${GetOptions} $cmdLineParams '/arch' $R0
+    IfErrors +2 0
+    StrCpy $option_arch $R0
+FunctionEnd
