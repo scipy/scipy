@@ -1884,7 +1884,8 @@ Returns: t-value, two-tailed prob
     df = n-1
     svar = ((n-1)*v) / float(df)
     t = (x-popmean)/np.sqrt(svar*(1.0/n))
-    prob = betai(0.5*df,0.5,df/(df+t*t))
+    #prob = betai(0.5*df,0.5,df/(df+t*t))
+    prob = distributions.t.sf(np.abs(t),df)*2  #use np.abs to get upper tail
 
     return t,prob
 
@@ -1895,6 +1896,43 @@ def ttest_ind(a, b, axis=0):
     array first), or an integer (the axis over which to operate on a and b).
 
     Returns: t-value, two-tailed p-value
+
+    This is a two-sided test for the null hypothesis that 2 independent samples
+    have identical average (expected) values. 
+
+    Description:
+    ------------
+    
+    We can use this test, if we observe two independent samples from
+    the same or different population, e.g. exam scores of boys and
+    girls or of two ethnic groups. The test measures whether the
+    average (expected) value differs significantly across samples. If
+    we observe a larger p-value, for example >0.5 or 0.1 then we
+    cannot reject the null hypothesis of identical average scores. If
+    the test statistic is larger (in absolute terms than critical
+    value or, equivalently, if the p-value is smaller than the
+    threshold, 1%,5% or 10%, then we reject the null hypothesis equal
+    averages.
+
+    see: http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
+
+    Examples:
+    ---------
+
+    (note: after changes difference in 13th decimal)
+
+    >>> np.random.seed(12345678) #fix seed to get the same result
+
+    test with sample with identical means
+    >>> rvs1 = stats.norm.rvs(loc=5,scale=10,size=500)
+    >>> rvs2 = stats.norm.rvs(loc=5,scale=10,size=500)
+    >>> stats.ttest_ind(rvs1,rvs2)
+    (array(0.26833823296239279), 0.78849443369561645)
+
+    test with sample with different means
+    >>> rvs3 = stats.norm.rvs(loc=8,scale=10,size=500)
+    >>> stats.ttest_ind(rvs1,rvs3)
+    (array(-5.0434013458585092), 5.4302979475463849e-007)
     """
     a, b, axis = _chk2_asarray(a, b, axis)
     x1 = mean(a,axis)
@@ -1908,7 +1946,8 @@ def ttest_ind(a, b, axis=0):
     zerodivproblem = svar == 0
     t = (x1-x2)/np.sqrt(svar*(1.0/n1 + 1.0/n2))  # N-D COMPUTATION HERE!!!!!!
     t = np.where(zerodivproblem, 1.0, t)           # replace NaN t-values with 1.0
-    probs = betai(0.5*df,0.5,float(df)/(df+t*t))
+    #probs = betai(0.5*df,0.5,float(df)/(df+t*t))
+    probs = distributions.t.sf(np.abs(t),df)*2
 
     if not np.isscalar(t):
         probs = probs.reshape(t.shape)
@@ -1923,6 +1962,41 @@ def ttest_rel(a,b,axis=None):
     first), or an integer (the axis over which to operate on a and b).
 
     Returns: t-value, two-tailed p-value
+    
+    Description:
+    ============
+
+    This is a two-sided test for the null hypothesis that 2 repeated samples
+    have identical average values. 
+
+    Examples for the use are scores of a student in different exams,
+    or repeated sampling from the same units. The test measures
+    whether the average score differs significantly across samples
+    (e.g. exams). If we observe a larger p-value, for example >0.5 or
+    0.1 then we cannot reject the null hypothesis of identical average
+    scores. If the test statistic is larger (in absolute terms than
+    critical value or, equivalently, if the p-value is smaller than
+    the threshold, 1%,5% or 10%, then we reject the null hypothesis
+    equal averages.
+
+    see: http://en.wikipedia.org/wiki/T-test#Dependent_t-test
+  
+    Examples:
+    =========
+
+    (note: after changes difference in 13th decimal)
+
+    >>> np.random.seed(12345678) #fix seed to get the same result
+    >>> rvs1 = stats.norm.rvs(loc=5,scale=10,size=500)
+    >>> rvs2 = stats.norm.rvs(loc=5,scale=10,size=500) + \
+                            stats.norm.rvs(scale=0.2,size=500)
+    >>> stats.ttest_rel(rvs1,rvs2)
+    (array(0.24101764965300965), 0.80964043445809664)
+    >>> rvs3 = stats.norm.rvs(loc=8,scale=10,size=500) + \
+                            stats.norm.rvs(scale=0.2,size=500)
+    >>> stats.ttest_rel(rvs1,rvs3)
+    (array(-3.9995108708727929), 7.308240219165646e-005)
+
     """
     a, b, axis = _chk2_asarray(a, b, axis)
     if len(a)!=len(b):
@@ -1935,12 +2009,14 @@ def ttest_rel(a,b,axis=None):
     df = float(n-1)
     d = (a-b).astype('d')
 
+    #denom is just var(d)/df
     denom = np.sqrt((n*np.add.reduce(d*d,axis) - np.add.reduce(d,axis)**2) /df)
     zerodivproblem = denom == 0
     t = np.add.reduce(d, axis) / denom      # N-D COMPUTATION HERE!!!!!!
     t = np.where(zerodivproblem, 1.0, t)    # replace NaN t-values with 1.0
     t = np.where(zerodivproblem, 1.0, t)    # replace NaN t-values with 1.0
-    probs = betai(0.5*df,0.5,float(df)/(df+t*t))
+    #probs = betai(0.5*df,0.5,float(df)/(df+t*t))
+    probs = distributions.t.sf(np.abs(t),df)*2
     if not np.isscalar(t):
         probs = np.reshape(probs, t.shape)
     if not np.isscalar(probs) and len(probs) == 1:
@@ -1948,8 +2024,8 @@ def ttest_rel(a,b,axis=None):
     return t, probs
 
 
-import scipy.stats
-import distributions
+#import scipy.stats
+#import distributions
 def kstest(rvs, cdf, args=(), N=20, alternative = 'unequal', mode='approx'):
     """Return the D-value and the p-value for a Kolmogorov-Smirnov test
 
