@@ -136,8 +136,7 @@ Section "Core" SecCore
                 DetailPrint '"sse3 install (arch value: $option_arch)"'
                 ${Break}
                 ${Default}
-                MessageBox MB_OK "option /arch $option_arch not understood: "
-                                 "only native, nosse, sse2 and sse3 are valid."
+                MessageBox MB_OK "option /arch $option_arch not understood: only native, nosse, sse2 and sse3 are valid."
                 Abort
                 ${Break}
         ${EndSwitch}
