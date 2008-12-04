@@ -2094,39 +2094,71 @@ def chisquare(f_obs, f_exp=None):
 
 
 def ks_2samp(data1, data2):
-    """ Computes the Kolmogorov-Smirnof statistic on 2 samples.  Modified
-    from Numerical Recipies in C, page 493.  Returns KS D-value, prob.  Not
-    ufunc- like.
+    """ Computes the Kolmogorov-Smirnof statistic on 2 samples.
 
+    data1, data2: array_like, 1-dim
+        samples assumed to be drawn from a continuous distribution,
+        sample sizes can be different
+    
     Returns: KS D-value, p-value
+
+    Description:
+    ------------
+
+    Tests whether 2 samples are drawn from the same distribution. Note
+    that, like the one-sample K-S test the distribution is assumed to be
+    continuous.
+    
+    This is the two-sided test, one-sided tests are not implemented.
+    The test uses the two-sided asymptotic Kolmogorov-Smirnov distribution.
+
+    If the K-S statistic is small or the p-value is high, then we cannot
+    reject the hypothesis that the two distributions of the two samples
+    are the same
+
+    Examples:
+    ---------
+
+    >>> np.random.seed(12345678);
+
+    >>> n1 = 200  # size of first sample
+    >>> n2 = 300  # size of second sample
+
+    # different distribution
+    we can reject the null hypothesis since the pvalue is below 1%
+    >>> rvs1 = stats.norm.rvs(size=n1,loc=0.,scale=1);
+    >>> rvs2 = stats.norm.rvs(size=n2,loc=0.5,scale=1.5)
+    >>> ks_2samp_new(rvs1,rvs2)
+    (0.17333333333333334, 0.0012436147919875644)
+
+    slightly different distribution
+    we cannot reject the null hypothesis since the pvalue is high, 43.8%
+    >>> rvs3 = stats.norm.rvs(size=n2,loc=0.01,scale=1.0)
+    >>> ks_2samp_new(rvs1,rvs3)
+    (0.078333333333333255, 0.4379740175003739)
+
+    identical distribution
+    we cannot reject the null hypothesis since the pvalue is high, 65%
+    >>> rvs4 = stats.norm.rvs(size=n2,loc=0.0,scale=1.0)
+    >>> ks_2samp_new(rvs1,rvs4)
+    (0.066666666666666652, 0.64576306820960394)
+    
     """
     data1, data2 = map(asarray, (data1, data2))
-    j1 = 0    # zeros(data1.shape[1:]) TRIED TO MAKE THIS UFUNC-LIKE
-    j2 = 0    # zeros(data2.shape[1:])
-    fn1 = 0.0 # zeros(data1.shape[1:],float)
-    fn2 = 0.0 # zeros(data2.shape[1:],float)
     n1 = data1.shape[0]
     n2 = data2.shape[0]
-    en1 = n1*1
-    en2 = n2*1
-    d = zeros(data1.shape[1:])
-    data1 = np.sort(data1,0)
-    data2 = np.sort(data2,0)
-    while j1 < n1 and j2 < n2:
-        d1=data1[j1]
-        d2=data2[j2]
-        if d1 <= d2:
-            fn1 = (j1)/float(en1)
-            j1 = j1 + 1
-        if d2 <= d1:
-            fn2 = (j2)/float(en2)
-            j2 = j2 + 1
-        dt = (fn2-fn1)
-        if abs(dt) > abs(d):
-            d = dt
+    n1 = len(data1)
+    n2 = len(data2)
+    data1 = np.sort(data1)
+    data2 = np.sort(data2)
+    data_all = np.concatenate([data1,data2])
+    cdf1 = np.searchsorted(data1,data_all,side='right')/(1.0*n1)
+    cdf2 = (np.searchsorted(data2,data_all,side='right'))/(1.0*n2)
+    d = np.max(np.absolute(cdf1-cdf2))
+    #Note: d absolute not signed distance
+    en = np.sqrt(n1*n2/float(n1+n2))
     try:
-        en = np.sqrt(en1*en2/float(en1+en2))
-        prob = ksprob((en+0.12+0.11/en)*np.fabs(d))
+        prob = ksprob((en+0.12+0.11/en)*d)
     except:
         prob = 1.0
     return d, prob
