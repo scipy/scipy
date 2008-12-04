@@ -124,13 +124,21 @@ Section "Core" SecCore
 
         ${Switch} $option_arch
                 ${Case} "native"
-                DetailPrint '"arch value: $option_arch  - native install"'
+                DetailPrint '"native install (arch value: $option_arch)"'
                 ${Break}
                 ${Case} "nosse"
-                DetailPrint '"arch value: $option_arch  - no-sse install"'
+                DetailPrint '"nosse install (arch value: $option_arch)"'
+                ${Break}
+                ${Case} "sse2"
+                DetailPrint '"sse2 install (arch value: $option_arch)"'
+                ${Break}
+                ${Case} "sse3"
+                DetailPrint '"sse3 install (arch value: $option_arch)"'
                 ${Break}
                 ${Default}
-                DetailPrint '"No option_arch value - native install, do not override detection"'
+                MessageBox MB_OK "option /arch $option_arch not understood: "
+                                 "only native, nosse, sse2 and sse3 are valid."
+                Abort
                 ${Break}
         ${EndSwitch}
 
