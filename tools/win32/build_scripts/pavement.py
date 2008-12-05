@@ -274,7 +274,29 @@ def raw_clean_bootstrap(pyver):
 
 def raw_build_sdist(cwd):
     cmd = ["python", "setup.py", "sdist", "--format=zip"]
-    st = subprocess.call(cmd, cwd=cwd)
+
+    build_log = "sdist.log"
+    f = open(build_log, 'w')
+    try:
+        try:
+            st = subprocess.call(cmd, #shell = True,
+                            stderr = subprocess.STDOUT, stdout = f,
+                            cwd=cwd)
+            if st:
+                raise RuntimeError("The cmd failed with status %d" % st)
+        finally:
+            f.close()
+    except (subprocess.CalledProcessError, RuntimeError), e:
+        print e
+        msg = """
+There was an error while executing the following command:
+
+    %s
+
+Error was : %s
+
+Look at the log (%s).""" % (cmd, str(e), build_log)
+        raise Exception(msg)
 
 def raw_bootstrap(pyver, src_dir):
     bdir = bootstrap_dir(pyver)
