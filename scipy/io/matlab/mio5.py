@@ -1,4 +1,10 @@
 ''' Classes for read / write of matlab (TM) 5 files
+
+The matfile specification last found here:
+
+http://www.mathworks.com/access/helpdesk/help/pdf_doc/matlab/matfile_format.pdf
+
+(as of December 5 2008)
 '''
 
 # Small fragments of current code adapted from matfile.py by Heiko
@@ -170,7 +176,7 @@ class mat_struct(object):
 
     We will deprecate this method of holding struct information in a
     future version of scipy, in favor of the recarray method (see
-    loadmat doctstring)
+    loadmat docstring)
     '''
     pass
 
@@ -808,9 +814,14 @@ class Mat5StructWriter(Mat5MatrixWriter):
     def write_fields(self):
         # write fieldnames
         fieldnames = [f[0] for f in self.arr.dtype.descr]
-        self.write_element(np.array([32], dtype='i4'))
-        self.write_element(np.array(fieldnames, dtype='S32'),
-                           mdtype=miINT8)
+        length = max([len(fieldname) for fieldname in fieldnames])+1
+        if length > 32:
+            raise ValueError(
+                "Field names are restricted to 64 characters in Matlab")
+        self.write_element(np.array([length], dtype='i4'))
+        self.write_element(
+            np.array(fieldnames, dtype='S%d'%(length)),
+            mdtype=miINT8)
         A = np.atleast_2d(self.arr).flatten('F')
         MWG = Mat5WriterGetter(self.file_stream,
                                self.unicode_strings)

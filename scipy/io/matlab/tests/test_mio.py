@@ -337,3 +337,16 @@ def test_warnings():
 def test_regression_653():
     """Regression test for #653."""
     assert_raises(TypeError, savemat, StringIO(), {'d':{1:2}}, format='5')
+
+def test_structname_len():
+    # Test limit for length of field names in structs
+    lim = 31
+    fldname = 'a' * lim
+    st1 = np.zeros((1,1), dtype=[(fldname, object)])
+    mat_stream = StringIO()
+    savemat(StringIO(), {'longstruct': st1}, format='5')
+    fldname = 'a' * (lim+1)
+    st1 = np.zeros((1,1), dtype=[(fldname, object)])
+    assert_raises(ValueError, savemat, StringIO(), 
+                  {'longstruct': st1}, format='5')
+    

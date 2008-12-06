@@ -150,7 +150,7 @@ def savemat(file_name, mdict, appendmat=True, format='5'):
     elif format == '5':
         MW = MatFile5Writer(file_stream, unicode_strings=True)
     else:
-        raise ValueError, 'Format should be 4 or 5'
+        raise ValueError("Format should be '4' or '5'")
     MW.put_variables(mdict)
     if file_is_string:
         file_stream.close()
