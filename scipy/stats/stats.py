@@ -1900,8 +1900,8 @@ def ttest_ind(a, b, axis=0):
     This is a two-sided test for the null hypothesis that 2 independent samples
     have identical average (expected) values. 
 
-    Description:
-    ------------
+    Description
+    -----------
     
     We can use this test, if we observe two independent samples from
     the same or different population, e.g. exam scores of boys and
@@ -1916,23 +1916,27 @@ def ttest_ind(a, b, axis=0):
 
     see: http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
 
-    Examples:
-    ---------
+    Examples
+    --------
 
-    (note: after changes difference in 13th decimal)
+    >>> from scipy import stats
+    >>> import numpy as np
 
-    >>> np.random.seed(12345678) #fix seed to get the same result
+        #fix seed to get the same result
+    >>> np.random.seed(12345678)
 
-    test with sample with identical means
+        # test with sample with identical means
     >>> rvs1 = stats.norm.rvs(loc=5,scale=10,size=500)
     >>> rvs2 = stats.norm.rvs(loc=5,scale=10,size=500)
     >>> stats.ttest_ind(rvs1,rvs2)
-    (array(0.26833823296239279), 0.78849443369561645)
+    (array(0.26833823296239279), 0.78849443369564765)
 
-    test with sample with different means
+
+        # test with sample with different means
     >>> rvs3 = stats.norm.rvs(loc=8,scale=10,size=500)
     >>> stats.ttest_ind(rvs1,rvs3)
-    (array(-5.0434013458585092), 5.4302979475463849e-007)
+    (array(-5.0434013458585092), 5.4302979468623391e-007)
+
     """
     a, b, axis = _chk2_asarray(a, b, axis)
     x1 = mean(a,axis)
@@ -1963,8 +1967,8 @@ def ttest_rel(a,b,axis=None):
 
     Returns: t-value, two-tailed p-value
     
-    Description:
-    ============
+    Description
+    -----------
 
     This is a two-sided test for the null hypothesis that 2 repeated samples
     have identical average values. 
@@ -1981,21 +1985,25 @@ def ttest_rel(a,b,axis=None):
 
     see: http://en.wikipedia.org/wiki/T-test#Dependent_t-test
   
-    Examples:
-    =========
+    Examples
+    --------
 
     (note: after changes difference in 13th decimal)
 
-    >>> np.random.seed(12345678) #fix seed to get the same result
+    >>> from scipy import stats
+    >>> import numpy as np
+
+    #fix random seed to get the same result
+    >>> np.random.seed(12345678)
     >>> rvs1 = stats.norm.rvs(loc=5,scale=10,size=500)
     >>> rvs2 = stats.norm.rvs(loc=5,scale=10,size=500) + \
                             stats.norm.rvs(scale=0.2,size=500)
     >>> stats.ttest_rel(rvs1,rvs2)
-    (array(0.24101764965300965), 0.80964043445809664)
+    (array(0.24101764965300965), 0.80964043445811562)
     >>> rvs3 = stats.norm.rvs(loc=8,scale=10,size=500) + \
                             stats.norm.rvs(scale=0.2,size=500)
     >>> stats.ttest_rel(rvs1,rvs3)
-    (array(-3.9995108708727929), 7.308240219165646e-005)
+    (array(-3.9995108708727929), 7.3082402191726459e-005)
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
@@ -2075,10 +2083,13 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'unequal', mode='approx'):
 
     >>> from scipy import stats
     >>> import numpy as np
+    >>> from scipy.stats import kstest
+
     >>> x = np.linspace(-15,15,9)
     >>> kstest(x,'norm')
     (0.44435602715924361, 0.038850142705171065)
 
+    # fix random seed to get the same result
     >>> np.random.seed(987654321)
     >>> kstest('norm','',N=100)
     (0.058352892479417884, 0.88531190944151261)
@@ -2105,12 +2116,24 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'unequal', mode='approx'):
 
     testing t distributed random variables against normal distribution
     ------------------------------------------------------------------
+
+    With 100 degrees of freedom the t distribution looks close to the normal
+    distribution, and the kstest does not reject the hypothesis that the sample
+    came from the normal distribution
+    
     >>> np.random.seed(987654321)
     >>> stats.kstest(stats.t.rvs(100,size=100),'norm')
-    (0.062018929165471248, 0.44505373063343567)
+    (0.072018929165471257, 0.67630062862479168)
+    
+
+    With 3 degrees of freedom the t distribution looks sufficiently different
+    from the normal distribution, that we can reject the hypothesis that the
+    sample came from the normal distribution at a alpha=10% level
+    
     >>> np.random.seed(987654321)
     >>> stats.kstest(stats.t.rvs(3,size=100),'norm')
-    (0.12101689575982888, 0.049143106661937996)
+    (0.131016895759829, 0.058826222555312224)
+
     """
     if isinstance(rvs, basestring):
         #cdf = getattr(stats, rvs).cdf
@@ -2195,6 +2218,11 @@ def ks_2samp(data1, data2):
     Examples:
     ---------
 
+    >>> from scipy import stats
+    >>> import numpy as np
+    >>> from scipy.stats import ks_2samp
+    
+    # fix random seed to get the same result
     >>> np.random.seed(12345678);
 
     >>> n1 = 200  # size of first sample
@@ -2204,21 +2232,22 @@ def ks_2samp(data1, data2):
     we can reject the null hypothesis since the pvalue is below 1%
     >>> rvs1 = stats.norm.rvs(size=n1,loc=0.,scale=1);
     >>> rvs2 = stats.norm.rvs(size=n2,loc=0.5,scale=1.5)
-    >>> ks_2samp_new(rvs1,rvs2)
-    (0.17333333333333334, 0.0012436147919875644)
+    >>> ks_2samp(rvs1,rvs2)
+    (0.20833333333333337, 4.6674975515806989e-005)
 
     slightly different distribution
-    we cannot reject the null hypothesis since the pvalue is high, 43.8%
+    we cannot reject the null hypothesis at a 10% or lower alpha since
+    the pvalue at 0.144 is higher than 10%
     >>> rvs3 = stats.norm.rvs(size=n2,loc=0.01,scale=1.0)
-    >>> ks_2samp_new(rvs1,rvs3)
-    (0.078333333333333255, 0.4379740175003739)
+    >>> ks_2samp(rvs1,rvs3)
+    (0.10333333333333333, 0.14498781825751686)
 
     identical distribution
-    we cannot reject the null hypothesis since the pvalue is high, 65%
+    we cannot reject the null hypothesis since the pvalue is high, 41%
     >>> rvs4 = stats.norm.rvs(size=n2,loc=0.0,scale=1.0)
-    >>> ks_2samp_new(rvs1,rvs4)
-    (0.066666666666666652, 0.64576306820960394)
-    
+    >>> ks_2samp(rvs1,rvs4)
+    (0.07999999999999996, 0.41126949729859719)
+   
     """
     data1, data2 = map(asarray, (data1, data2))
     n1 = data1.shape[0]
