@@ -63,6 +63,11 @@ changes including:
 * the Matlab (TM) file readers/writers have a number of improvements:
 
  * default version 5
+ * v5 writers for structures, cell arrays, and objects
+ * v5 readers/writers for function handles and 64-bit integers
+ * new struct_as_record keyword argument to ``loadmat``, which loads
+   struct arrays in matlab as record arrays in numpy
+ * string arrays have ``dtype='U...'`` instead of ``dtype=object``
 
 New Hierarchical Clustering module
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
