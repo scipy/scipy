@@ -86,7 +86,7 @@ html_style = 'scipy.css'
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-html_title = "%s v%s Manual (DRAFT)" % (project, version)
+html_title = "%s v%s Reference Guide (DRAFT)" % (project, version)
 
 # The name of an image file (within the static path) to place at the top of
 # the sidebar.
@@ -152,7 +152,7 @@ pngmath_use_preview = True
 # (source start file, target name, title, author, document class [howto/manual]).
 _stdauthor = 'Written by the SciPy community'
 latex_documents = [
-  ('index', 'scipy.tex', 'SciPy Guide', _stdauthor, 'manual'),
+  ('index', 'scipy-ref.tex', 'SciPy Reference Guide', _stdauthor, 'manual'),
 #  ('user/index', 'scipy-user.tex', 'SciPy User Guide',
 #   _stdauthor, 'manual'),
 ]

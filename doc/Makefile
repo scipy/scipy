@@ -38,11 +38,12 @@ dist: html
 	-make -C build/latex all-pdf
 	-test -d build/htmlhelp || make htmlhelp-build
 	-rm -rf build/dist
-	cp -r build/html build/dist
+	mkdir -p build/dist
+	cp -r build/html build/dist/reference
 	touch build/dist/index.html
-	perl -pi -e 's#^\s*(<li><a href=".*?">SciPy.*?Manual.*?&raquo;</li>)\s*$$#<li><a href="/">Numpy and Scipy Documentation</a> &raquo;</li> $$1#;' build/dist/*.html build/dist/*/*.html build/dist/*/*/*.html
+	perl -pi -e 's#^\s*(<li><a href=".*?">SciPy.*?Reference Guide.*?&raquo;</li>)\s*$$#<li><a href="/">Numpy and Scipy Documentation</a> &raquo;</li> $$1#;' build/dist/*.html build/dist/*/*.html build/dist/*/*/*.html
 	(cd build/html && zip -9qr ../dist/scipy-html.zip .)
-	cp build/latex/scipy.pdf build/dist
+	cp build/latex/scipy*.pdf build/dist
 	-cp build/htmlhelp/scipy.chm build/dist
 	cd build/dist && tar czf ../dist.tar.gz *
 	chmod ug=rwX,o=rX -R build/dist
