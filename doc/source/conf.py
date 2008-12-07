@@ -69,7 +69,7 @@ add_function_parentheses = False
 
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.
-show_authors = True
+show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -86,7 +86,7 @@ html_style = 'scipy.css'
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-html_title = "%s v%s Reference Guide (DRAFT)" % (project, version)
+html_title = "%s v%s Manual (DRAFT)" % (project, version)
 
 # The name of an image file (within the static path) to place at the top of
 # the sidebar.
@@ -132,7 +132,7 @@ html_use_modindex = True
 html_file_suffix = '.html'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'NumPydoc'
+htmlhelp_basename = 'scipy'
 
 # Pngmath should try to align formulas properly
 pngmath_use_preview = True
@@ -152,8 +152,7 @@ pngmath_use_preview = True
 # (source start file, target name, title, author, document class [howto/manual]).
 _stdauthor = 'Written by the SciPy community'
 latex_documents = [
-  ('index', 'scipy-ref.tex', 'SciPy Reference Guide',
-   _stdauthor, 'manual'),
+  ('index', 'scipy.tex', 'SciPy Guide', _stdauthor, 'manual'),
 #  ('user/index', 'scipy-user.tex', 'SciPy User Guide',
 #   _stdauthor, 'manual'),
 ]

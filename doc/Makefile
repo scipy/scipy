@@ -36,13 +36,14 @@ upload:
 dist: html
 	test -d build/latex || make latex
 	-make -C build/latex all-pdf
+	-test -d build/htmlhelp || make htmlhelp-build
 	-rm -rf build/dist
-	mkdir -p build/dist
-	cp -r build/html build/dist/reference
+	cp -r build/html build/dist
 	touch build/dist/index.html
-	perl -pi -e 's#^\s*(<li><a href=".*?">SciPy.*?Reference Guide.*?&raquo;</li>)\s*$$#<li><a href="/">Numpy and Scipy Documentation</a> &raquo;</li> $$1#;' build/dist/*.html build/dist/*/*.html build/dist/*/*/*.html
+	perl -pi -e 's#^\s*(<li><a href=".*?">SciPy.*?Manual.*?&raquo;</li>)\s*$$#<li><a href="/">Numpy and Scipy Documentation</a> &raquo;</li> $$1#;' build/dist/*.html build/dist/*/*.html build/dist/*/*/*.html
 	(cd build/html && zip -9qr ../dist/scipy-html.zip .)
-	cp build/latex/*.pdf build/dist
+	cp build/latex/scipy.pdf build/dist
+	-cp build/htmlhelp/scipy.chm build/dist
 	cd build/dist && tar czf ../dist.tar.gz *
 	chmod ug=rwX,o=rX -R build/dist
 	find build/dist -type d -print0 | xargs -0r chmod g+s
@@ -78,10 +79,15 @@ htmlhelp: generate
 	@echo "Build finished; now you can run HTML Help Workshop with the" \
 	      ".hhp project file in build/htmlhelp."
 
+htmlhelp-build: htmlhelp build/htmlhelp/scipy.chm
+%.chm: %.hhp
+	-hhc.exe $^
+
 latex: generate
 	mkdir -p build/latex build/doctrees
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) build/latex
 	python postprocess.py tex build/latex/*.tex
+	perl -pi -e 's/\t(latex.*|pdflatex) (.*)/\t-$$1 -interaction batchmode $$2/' build/latex/Makefile
 	@echo
 	@echo "Build finished; the LaTeX files are in build/latex."
 	@echo "Run \`make all-pdf' or \`make all-ps' in that directory to" \
@@ -106,4 +112,4 @@ linkcheck: generate
 	      "or in build/linkcheck/output.txt."
 
 .PHONY: help clean upload dist generate html pickle web htmlhelp latex \
-	coverage changes linkcheck
+	coverage changes linkcheck htmlhelp-build
