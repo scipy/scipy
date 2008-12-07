@@ -143,7 +143,8 @@ def geometric_transform(input, mapping, output_shape = None,
 
 def map_coordinates(input, coordinates, output_type = None, output = None,
                 order = 3, mode = 'constant', cval = 0.0, prefilter = True):
-    """Apply an arbritrary coordinate transformation.
+    """
+    Map the input array to new coordinates by interpolation.
 
     The array of coordinates is used to find, for each point in the output,
     the corresponding coordinates in the input. The value of the input at
@@ -153,31 +154,70 @@ def map_coordinates(input, coordinates, output_type = None, output = None,
     The shape of the output is derived from that of the coordinate
     array by dropping the first axis. The values of the array along
     the first axis are the coordinates in the input array at which the
-    output value is found.  For example, if the input has dimensions
-    (100,200,3), then the shape of coordinates will be (3,100,200,3),
-    where coordinates[:,1,2,3] specify the input coordinate at which
-    output[1,2,3] is found.
+    output value is found.
 
-    Points outside the boundaries of the input are filled according to
-    the given mode ('constant', 'nearest', 'reflect' or 'wrap'). The
-    parameter prefilter determines if the input is pre-filtered before
-    interpolation (necessary for spline interpolation of order >
-    1). If False it is assumed that the input is already filtered.
+    Parameters
+    ----------
+    input : ndarray
+            The input array
+    coordinates : array_like
+                  The coordinates at which `input` is evaluated.
+    output_type : deprecated
+                  Use `output` instead.
+    output : dtype, optional
+             If the output has to have a certain type, specify the dtype.
+             The default behavior is for the output to have the same type
+             as `input`.
+    order : int, optional
+            The order of the spline interpolation, default is 3.
+            The order has to be in the range 0-5.
+    mode : str, optional
+           Points outside the boundaries of the input are filled according
+           to the given mode ('constant', 'nearest', 'reflect' or 'wrap').
+           Default is 'constant'.
+    cval : scalar, optional
+           Value used for points outside the boundaries of the input if
+           `mode='constant`. Default is 0.0
+    prefilter : bool, optional
+                The parameter prefilter determines if the input is
+                pre-filtered with `spline_filter`_ before interpolation
+                (necessary for spline interpolation of order > 1).
+                If False, it is assumed that the input is already filtered.
 
-    Example
+    Returns
     -------
-    >>> a = arange(12.).reshape((4,3))
-    >>> print a
-    [[  0.   1.   2.]
-     [  3.   4.   5.]
-     [  6.   7.   8.]
-     [  9.  10.  11.]]
-    >>> output = map_coordinates(a,[[0.5, 2], [0.5, 1]],order=1)
-    >>> print output
-    [ 2. 7.]
+    return_value : ndarray
+                   The result of transforming the input. The shape of the
+                   output is derived from that of `coordinates` by dropping
+                   the first axis.
 
-    Here, the interpolated value of a[0.5,0.5] gives output[0], while
-    a[2,1] is output[1].
+
+    See Also
+    --------
+    spline_filter, geometric_transform, scipy.interpolate
+
+    Examples
+    --------
+    >>> import scipy.ndimage
+    >>> a = np.arange(12.).reshape((4,3))
+    >>> print a
+    array([[  0.,   1.,   2.],
+           [  3.,   4.,   5.],
+           [  6.,   7.,   8.],
+           [  9.,  10.,  11.]])
+    >>> sp.ndimage.map_coordinates(a, [[0.5, 2], [0.5, 1]], order=1)
+    [ 2.  7.]
+
+    Above, the interpolated value of a[0.5, 0.5] gives output[0], while
+    a[2, 1] is output[1].
+
+    >>> inds = np.array([[0.5, 2], [0.5, 4]])
+    >>> sp.ndimage.map_coordinates(a, inds, order=1, cval=-33.3)
+    array([  2. , -33.3])
+    >>> sp.ndimage.map_coordinates(a, inds, order=1, mode='nearest')
+    array([ 2.,  8.])
+    >>> sp.ndimage.map_coordinates(a, inds, order=1, cval=0, output=bool)
+    array([ True, False], dtype=bool
 
     """
     if order < 0 or order > 5:
