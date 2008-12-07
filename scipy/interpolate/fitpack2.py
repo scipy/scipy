@@ -362,6 +362,16 @@ class BivariateSpline(object):
             return z
         raise NotImplementedError
 
+    def ev(self, xi, yi):
+        """
+        Evaluate spline at points (x[i], y[i]), i=0,...,len(x)-1
+        """
+        tx,ty,c = self.tck[:3]
+        kx,ky = self.degrees
+        zi,ier = dfitpack.bispeu(tx,ty,c,kx,ky,xi,yi)
+        assert ier==0, 'Invalid input: ier='+`ier`
+        return zi
+
     def integral(self, xa, xb, ya, yb):
         """
         Evaluate the integral of the spline over area [xa,xb] x [ya,yb].
