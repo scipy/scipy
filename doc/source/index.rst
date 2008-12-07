@@ -6,9 +6,13 @@ SciPy (pronounced "Sigh Pie") is open-source software for mathematics,
 science, and engineering.
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    tutorial/index
+
+.. toctree::
+   :maxdepth: 1
+
    release
 
 Reference
