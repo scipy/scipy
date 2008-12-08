@@ -347,6 +347,5 @@ def test_structname_len():
     savemat(StringIO(), {'longstruct': st1}, format='5')
     fldname = 'a' * (lim+1)
     st1 = np.zeros((1,1), dtype=[(fldname, object)])
-    assert_raises(ValueError, savemat, StringIO(), 
+    assert_raises(ValueError, savemat, StringIO(),
                   {'longstruct': st1}, format='5')
-    

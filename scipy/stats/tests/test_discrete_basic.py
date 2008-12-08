@@ -47,7 +47,7 @@ def test_discrete_basic():
             alpha = 0.01
             yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
                           distname + ' chisquare'
-        
+
 @npt.dec.slow
 def test_discrete_extra():
     for distname, arg in distdiscrete:

@@ -155,12 +155,12 @@ class TestRectBivariateSpline(TestCase):
         y = array([1,2,3,4,5])
         z = array([[1,2,1,2,1],[1,2,1,2,1],[1,2,3,2,1],[1,2,2,2,1],[1,2,1,2,1]])
         lut = RectBivariateSpline(x,y,z)
-        
+
         xi = [1, 2.3, 5.3, 0.5, 3.3, 1.2, 3]
         yi = [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]
         zi = lut.ev(xi, yi)
         zi2 = array([lut(xp, yp)[0,0] for xp, yp in zip(xi, yi)])
-        
+
         assert_almost_equal(zi, zi2)
 
 if __name__ == "__main__":

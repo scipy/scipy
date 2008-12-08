@@ -772,7 +772,7 @@ class rv_continuous(rv_generic):
         Parameters:
         -----------
         n: int, n>=1
-    
+
         *args:
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
@@ -3112,7 +3112,7 @@ class truncexpon_gen(rv_continuous):
     def _ppf(self, q, b):
         return -log(1-q+q*exp(-b))
     def _munp(self, n, b):
-        #wrong answer with formula, same as in continuous.pdf     
+        #wrong answer with formula, same as in continuous.pdf
         #return gam(n+1)-special.gammainc(1+n,b)
         if n == 1:
             return (1-(b+1)*np.exp(-b))/(1-np.exp(-b))
@@ -3955,7 +3955,7 @@ class rv_discrete(rv_generic):
         Parameters:
         -----------
         n: int, n>=1
-    
+
         *args:
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)

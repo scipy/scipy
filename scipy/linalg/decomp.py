@@ -1175,7 +1175,7 @@ def qr(a, overwrite_a=0, lwork=None, econ=None, mode='qr'):
         warn("qr econ argument will be removed after scipy 0.7. "
              "The economy transform will then be available through "
              "the mode='economic' argument.", DeprecationWarning)
-    
+
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2:
         raise ValueError("expected 2D array")

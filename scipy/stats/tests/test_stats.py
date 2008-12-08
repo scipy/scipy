@@ -999,7 +999,7 @@ def test_friedmanchisquare():
 
 def test_kstest():
     #from numpy.testing import assert_almost_equal
-    
+
     # comparing with values from R
     x = np.linspace(-1,1,9)
     D,p = stats.kstest(x,'norm')
@@ -1052,7 +1052,7 @@ def test_ks_2samp():
     assert_almost_equal(
         np.array(stats.ks_2samp(np.linspace(1,100,100),
                               np.linspace(1,100,110)+20-0.1)),
-        np.array((0.20818181818181825, 0.017981441789762638)))    
+        np.array((0.20818181818181825, 0.017981441789762638)))
 
 if __name__ == "__main__":
     run_module_suite()

@@ -591,7 +591,7 @@ class TestIsValidLinkage(TestCase):
         "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative indices (left)."
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)/2)
-            Z = linkage(y)            
+            Z = linkage(y)
             Z[int(i/2),0] = -2
             self.failUnless(is_valid_linkage(Z) == False)
             self.failUnlessRaises(ValueError, is_valid_linkage, Z, throw=True)
@@ -600,7 +600,7 @@ class TestIsValidLinkage(TestCase):
         "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative indices (right)."
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)/2)
-            Z = linkage(y)            
+            Z = linkage(y)
             Z[int(i/2),1] = -2
             self.failUnless(is_valid_linkage(Z) == False)
             self.failUnlessRaises(ValueError, is_valid_linkage, Z, throw=True)
@@ -609,7 +609,7 @@ class TestIsValidLinkage(TestCase):
         "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative distances."
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)/2)
-            Z = linkage(y)            
+            Z = linkage(y)
             Z[int(i/2),2] = -0.5
             self.failUnless(is_valid_linkage(Z) == False)
             self.failUnlessRaises(ValueError, is_valid_linkage, Z, throw=True)
@@ -618,7 +618,7 @@ class TestIsValidLinkage(TestCase):
         "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative counts."
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)/2)
-            Z = linkage(y)            
+            Z = linkage(y)
             Z[int(i/2),3] = -2
             self.failUnless(is_valid_linkage(Z) == False)
             self.failUnlessRaises(ValueError, is_valid_linkage, Z, throw=True)
@@ -676,7 +676,7 @@ class TestIsValidInconsistent(TestCase):
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)/2)
             Z = linkage(y)
-            R = inconsistent(Z) 
+            R = inconsistent(Z)
             R[int(i/2),0] = -2.0
             self.failUnless(is_valid_im(R) == False)
             self.failUnlessRaises(ValueError, is_valid_im, R, throw=True)
@@ -686,7 +686,7 @@ class TestIsValidInconsistent(TestCase):
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)/2)
             Z = linkage(y)
-            R = inconsistent(Z)            
+            R = inconsistent(Z)
             R[int(i/2),1] = -2.0
             self.failUnless(is_valid_im(R) == False)
             self.failUnlessRaises(ValueError, is_valid_im, R, throw=True)
@@ -696,7 +696,7 @@ class TestIsValidInconsistent(TestCase):
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)/2)
             Z = linkage(y)
-            R = inconsistent(Z)            
+            R = inconsistent(Z)
             R[int(i/2),2] = -0.5
             self.failUnless(is_valid_im(R) == False)
             self.failUnlessRaises(ValueError, is_valid_im, R, throw=True)

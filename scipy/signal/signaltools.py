@@ -1515,11 +1515,11 @@ def lfilter_zi(b,a):
     #Based on:
     # [Gust96] Fredrik Gustafsson, Determining the initial states in
     #          forward-backward filtering, IEEE Transactions on
-    #          Signal Processing, pp. 988--992, April 1996, 
+    #          Signal Processing, pp. 988--992, April 1996,
     #          Volume 44, Issue 4
 
     n=max(len(a),len(b))
-    
+
     zin = (np.eye(n-1) - np.hstack((-a[1:n,newaxis],
                                     np.vstack((np.eye(n-2),zeros(n-2))))))
 
@@ -1530,10 +1530,10 @@ def lfilter_zi(b,a):
 
     #convert the result into a regular array (not a matrix)
     for i in range(len(zi_matrix)):
-      zi_return.append(float(zi_matrix[i][0]))
+        zi_return.append(float(zi_matrix[i][0]))
 
     return array(zi_return)
-   
+
 
 
 def filtfilt(b,a,x):

@@ -1898,11 +1898,11 @@ def ttest_ind(a, b, axis=0):
     Returns: t-value, two-tailed p-value
 
     This is a two-sided test for the null hypothesis that 2 independent samples
-    have identical average (expected) values. 
+    have identical average (expected) values.
 
     Description
     -----------
-    
+
     We can use this test, if we observe two independent samples from
     the same or different population, e.g. exam scores of boys and
     girls or of two ethnic groups. The test measures whether the
@@ -1966,12 +1966,12 @@ def ttest_rel(a,b,axis=None):
     first), or an integer (the axis over which to operate on a and b).
 
     Returns: t-value, two-tailed p-value
-    
+
     Description
     -----------
 
     This is a two-sided test for the null hypothesis that 2 repeated samples
-    have identical average values. 
+    have identical average values.
 
     Examples for the use are scores of a student in different exams,
     or repeated sampling from the same units. The test measures
@@ -1984,7 +1984,7 @@ def ttest_rel(a,b,axis=None):
     equal averages.
 
     see: http://en.wikipedia.org/wiki/T-test#Dependent_t-test
-  
+
     Examples
     --------
 
@@ -2071,7 +2071,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'unequal', mode='approx'):
         defines distribution used for calculating p-value
         'approx' : use approximation to exact distribution of test statistic
         'asymp' : use asymptotic distribution of test statistic
-    
+
 
     Returns
     -------
@@ -2103,8 +2103,8 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'unequal', mode='approx'):
     ---------------------------------------------
     >>> np.random.seed(987654321)
     >>> # shift distribution to larger values, so that cdf_dgp(x)< norm.cdf(x)
-    >>> x = stats.norm.rvs(loc=0.2, size=100) 
-    >>> kstest(x,'norm', alternative = 'smaller') 
+    >>> x = stats.norm.rvs(loc=0.2, size=100)
+    >>> kstest(x,'norm', alternative = 'smaller')
     (0.12464329735846891, 0.040989164077641749)
     >>> # reject equal distribution against alternative hypothesis: smaller
     >>> kstest(x,'norm', alternative = 'larger')
@@ -2112,7 +2112,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'unequal', mode='approx'):
     >>> # don't reject equal distribution against alternative hypothesis: larger
     >>> kstest(x,'norm', mode='asymp')
     (0.12464329735846891, 0.08944488871182088)
-    
+
 
     testing t distributed random variables against normal distribution
     ------------------------------------------------------------------
@@ -2120,16 +2120,16 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'unequal', mode='approx'):
     With 100 degrees of freedom the t distribution looks close to the normal
     distribution, and the kstest does not reject the hypothesis that the sample
     came from the normal distribution
-    
+
     >>> np.random.seed(987654321)
     >>> stats.kstest(stats.t.rvs(100,size=100),'norm')
     (0.072018929165471257, 0.67630062862479168)
-    
+
 
     With 3 degrees of freedom the t distribution looks sufficiently different
     from the normal distribution, that we can reject the hypothesis that the
     sample came from the normal distribution at a alpha=10% level
-    
+
     >>> np.random.seed(987654321)
     >>> stats.kstest(stats.t.rvs(3,size=100),'norm')
     (0.131016895759829, 0.058826222555312224)
@@ -2139,11 +2139,11 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'unequal', mode='approx'):
         #cdf = getattr(stats, rvs).cdf
         if (not cdf) or (cdf == rvs):
             cdf = getattr(distributions, rvs).cdf
-            rvs = getattr(distributions, rvs).rvs       
+            rvs = getattr(distributions, rvs).rvs
         else:
             raise AttributeError, 'if rvs is string, cdf has to be the same distribution'
-        
-        
+
+
     if isinstance(cdf, basestring):
         cdf = getattr(distributions, cdf).cdf
     if callable(rvs):
@@ -2153,21 +2153,21 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'unequal', mode='approx'):
         vals = np.sort(rvs)
         N = len(vals)
     cdfvals = cdf(vals, *args)
-    
+
     if alternative in ['unequal', 'larger']:
         Dplus = (np.arange(1.0, N+1)/N - cdfvals).max()
         if alternative == 'larger':
             return Dplus, distributions.ksone.sf(Dplus,N)
-            
+
     if alternative in ['unequal', 'smaller']:
         Dmin = (cdfvals - np.arange(0.0, N)/N).max()
         if alternative == 'smaller':
             return Dmin, distributions.ksone.sf(Dmin,N)
-        
+
     if alternative == 'unequal':
         D = np.max([Dplus,Dmin])
         if mode == 'asymp':
-             return D, distributions.kstwobign.sf(D*np.sqrt(N))
+            return D, distributions.kstwobign.sf(D*np.sqrt(N))
         if mode == 'approx':
             pval_two = distributions.kstwobign.sf(D*np.sqrt(N))
             if N > 2666 or pval_two > 0.80 - N*0.3/1000.0 :
@@ -2198,7 +2198,7 @@ def ks_2samp(data1, data2):
     data1, data2: array_like, 1-dim
         samples assumed to be drawn from a continuous distribution,
         sample sizes can be different
-    
+
     Returns: KS D-value, p-value
 
     Description:
@@ -2207,7 +2207,7 @@ def ks_2samp(data1, data2):
     Tests whether 2 samples are drawn from the same distribution. Note
     that, like the one-sample K-S test the distribution is assumed to be
     continuous.
-    
+
     This is the two-sided test, one-sided tests are not implemented.
     The test uses the two-sided asymptotic Kolmogorov-Smirnov distribution.
 
@@ -2221,7 +2221,7 @@ def ks_2samp(data1, data2):
     >>> from scipy import stats
     >>> import numpy as np
     >>> from scipy.stats import ks_2samp
-    
+
     # fix random seed to get the same result
     >>> np.random.seed(12345678);
 
@@ -2247,7 +2247,7 @@ def ks_2samp(data1, data2):
     >>> rvs4 = stats.norm.rvs(size=n2,loc=0.0,scale=1.0)
     >>> ks_2samp(rvs1,rvs4)
     (0.07999999999999996, 0.41126949729859719)
-   
+
     """
     data1, data2 = map(asarray, (data1, data2))
     n1 = data1.shape[0]

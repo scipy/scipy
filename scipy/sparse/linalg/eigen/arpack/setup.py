@@ -43,11 +43,11 @@ def configuration(parent_package='',top_path=None):
 
     config.add_library('arpack', sources=arpack_sources,
                        include_dirs=[join('ARPACK', 'SRC')],
-                       depends = [join('ARPACK', 'FWRAPPERS', 
+                       depends = [join('ARPACK', 'FWRAPPERS',
                                        'veclib_cabi_f.f'),
                                   join('ARPACK', 'FWRAPPERS',
                                        'veclib_cabi_c.c'),
-                                  join('ARPACK', 'FWRAPPERS', 
+                                  join('ARPACK', 'FWRAPPERS',
                                         'dummy.f')])
 
 
