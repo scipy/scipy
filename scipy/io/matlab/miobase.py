@@ -57,7 +57,13 @@ def filldoc(func):
         Note that non-record arrays cannot be exported via savemat.''',
     'matstream_arg':
     '''mat_stream : file-like
-        object with file API, open for reading'''}
+        object with file API, open for reading''',
+    'long_fields':
+    '''long_field_names : boolean, optional, default=False
+        False - maximum field name length in a structure is 31 characters
+                which is the documented maximum length
+        True  - maximum field name length in a structure is 63 characters
+                which works for Matlab 7.6'''}
     func.__doc__ = func.__doc__ % doc_dict
     return func
 

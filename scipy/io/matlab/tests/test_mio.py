@@ -338,6 +338,7 @@ def test_regression_653():
     """Regression test for #653."""
     assert_raises(TypeError, savemat, StringIO(), {'d':{1:2}}, format='5')
 
+
 def test_structname_len():
     # Test limit for length of field names in structs
     lim = 31
@@ -349,3 +350,23 @@ def test_structname_len():
     st1 = np.zeros((1,1), dtype=[(fldname, object)])
     assert_raises(ValueError, savemat, StringIO(),
                   {'longstruct': st1}, format='5')
+
+
+def test_4_and_long_field_names_incompatible():
+    # Long field names option not supported in 4
+    my_struct = np.zeros((1,1),dtype=[('my_fieldname',object)])
+    assert_raises(ValueError, savemat, StringIO(),
+                  {'my_struct':my_struct}, format='4', long_field_names=True)
+
+
+def test_long_field_names():
+    # Test limit for length of field names in structs
+    lim = 63
+    fldname = 'a' * lim
+    st1 = np.zeros((1,1), dtype=[(fldname, object)])
+    mat_stream = StringIO()
+    savemat(StringIO(), {'longstruct': st1}, format='5',long_field_names=True)
+    fldname = 'a' * (lim+1)
+    st1 = np.zeros((1,1), dtype=[(fldname, object)])
+    assert_raises(ValueError, savemat, StringIO(),
+                  {'longstruct': st1}, format='5',long_field_names=True)

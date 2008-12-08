@@ -116,7 +116,7 @@ def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
     return mdict
 
 @filldoc
-def savemat(file_name, mdict, appendmat=True, format='5'):
+def savemat(file_name, mdict, appendmat=True, format='5', long_field_names=False):
     """Save a dictionary of names and arrays into the MATLAB-style .mat file.
 
     This saves the arrayobjects in the given dictionary to a matlab
@@ -130,7 +130,8 @@ def savemat(file_name, mdict, appendmat=True, format='5'):
     %(append_arg)s
     format : {'5', '4'} string, optional
         '5' for matlab 5 (up to matlab 7.2)
-        '4' for matlab 4 mat files,
+        '4' for matlab 4 mat files
+    %(long_fields)s
     """
     file_is_string = isinstance(file_name, basestring)
     if file_is_string:
@@ -146,9 +147,13 @@ def savemat(file_name, mdict, appendmat=True, format='5'):
         file_stream = file_name
 
     if format == '4':
+        if long_field_names:
+            raise ValueError("Long field names are not available for version 4 files")
         MW = MatFile4Writer(file_stream)
     elif format == '5':
-        MW = MatFile5Writer(file_stream, unicode_strings=True)
+        MW = MatFile5Writer(file_stream,
+                            unicode_strings=True,
+                            long_field_names=long_field_names)
     else:
         raise ValueError("Format should be '4' or '5'")
     MW.put_variables(mdict)

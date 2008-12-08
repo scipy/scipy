@@ -631,10 +631,12 @@ class Mat5MatrixWriter(MatStreamWriter):
                  arr,
                  name,
                  is_global=False,
-                 unicode_strings=False):
+                 unicode_strings=False,
+                 long_field_names=False):
         super(Mat5MatrixWriter, self).__init__(file_stream, arr, name)
         self.is_global = is_global
         self.unicode_strings = unicode_strings
+        self.long_field_names = long_field_names
 
     def write_dtype(self, arr):
         self.file_stream.write(arr.tostring())
@@ -815,9 +817,10 @@ class Mat5StructWriter(Mat5MatrixWriter):
         # write fieldnames
         fieldnames = [f[0] for f in self.arr.dtype.descr]
         length = max([len(fieldname) for fieldname in fieldnames])+1
-        if length > 32:
+        max_length = (self.long_field_names and 64) or 32
+        if length > max_length:
             raise ValueError(
-                "Field names are restricted to 64 characters in Matlab")
+                "Field names are restricted to %d characters in Matlab"%(max_length-1))
         self.write_element(np.array([length], dtype='i4'))
         self.write_element(
             np.array(fieldnames, dtype='S%d'%(length)),
@@ -842,9 +845,10 @@ class Mat5ObjectWriter(Mat5StructWriter):
 
 class Mat5WriterGetter(object):
     ''' Wraps stream and options, provides methods for getting Writer objects '''
-    def __init__(self, stream, unicode_strings):
+    def __init__(self, stream, unicode_strings, long_field_names=False):
         self.stream = stream
         self.unicode_strings = unicode_strings
+        self.long_field_names = long_field_names
 
     def rewind(self):
         self.stream.seek(0)
@@ -871,7 +875,12 @@ class Mat5WriterGetter(object):
             # No interesting conversion possible
             raise TypeError('Could not convert %s (type %s) to array'
                             % (arr, type(arr)))
-        args = (self.stream, narr, name, is_global, self.unicode_strings)
+        args = (self.stream, 
+                narr, 
+                name, 
+                is_global, 
+                self.unicode_strings, 
+                self.long_field_names)
         if isinstance(narr, MatlabFunction):
             return Mat5FunctionWriter(*args)
         if isinstance(narr, MatlabObject):
@@ -895,7 +904,8 @@ class MatFile5Writer(MatFileWriter):
     def __init__(self, file_stream,
                  do_compression=False,
                  unicode_strings=False,
-                 global_vars=None):
+                 global_vars=None,
+                 long_field_names=False):
         super(MatFile5Writer, self).__init__(file_stream)
         self.do_compression = do_compression
         if global_vars:
@@ -904,7 +914,8 @@ class MatFile5Writer(MatFileWriter):
             self.global_vars = []
         self.writer_getter = Mat5WriterGetter(
             StringIO(),
-            unicode_strings)
+            unicode_strings,
+            long_field_names)
         # write header
         import os, time
         hdr =  np.zeros((), mdtypes_template['file_header'])
@@ -922,6 +933,15 @@ class MatFile5Writer(MatFileWriter):
                                set_unicode_strings,
                                None,
                                'get/set unicode strings property')
+
+    def get_long_field_names(self):
+        return self.write_getter.long_field_names
+    def set_long_field_names(self, long_field_names):
+        self.writer_getter.long_field_names = long_field_names
+    long_field_names = property(get_long_field_names,
+                                set_long_field_names,
+                                None,
+                                'enable writing 32-63 character field names for Matlab 7.6+')
 
     def put_variables(self, mdict):
         for name, var in mdict.items():
