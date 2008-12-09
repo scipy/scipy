@@ -175,6 +175,31 @@ the axis keyword was set to a non-default value. This is fixed in 0.7.0:
 Users of ``scipy.interpolate.interp1d`` may need to revise their code
 if it relies on the incorrect behavior.
 
+Bug fixes in the stats package
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Statistical functions for masked arrays have been added and are accessible 
+through scipy.stats.mstats. The functions are similar to their counterparts 
+in scipy.stats but they have not yet been verified for identical interfaces
+and algorithms.
+
+Several bugs were fixed for statistical functions, of those, kstest and percentileofscore
+gained new keyword arguments.
+
+Added deprecation warning for mean, median, var, std, cov and corrcoef. These functions 
+should be replaced by their numpy counterparts. Note, however, that some of the default 
+options differ between the scipy.stats and numpy versions of these functions.
+
+Numerous bug fixes to stats.distributions: all generic methods work now correctly, several
+methods in individual distributions were corrected. However, a few issues remain with 
+higher moments (skew, kurtosis) and entropy. The maximum likelihood estimator, fit, does not
+work out-of-the-box for some distributions, in some cases, starting values have to be 
+carefully chosen, in other cases, the generic implementation of the maximum likelihood 
+method might not be the numerically appropriate estimation method.
+
+We expect more bugfixes, increases in numerical precision and enhancements in the next 
+release of scipy.
+
 Running Tests
 ~~~~~~~~~~~~~
 
