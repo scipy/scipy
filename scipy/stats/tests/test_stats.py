@@ -1019,9 +1019,9 @@ def test_kstest():
     assert_almost_equal( p, 0.089444888711820769, 15)
     assert_almost_equal( np.array(stats.kstest(x, 'norm', mode='asymp')),
                 np.array((0.12464329735846891, 0.089444888711820769)), 15)
-    assert_almost_equal( np.array(stats.kstest(x,'norm', alternative = 'smaller')),
+    assert_almost_equal( np.array(stats.kstest(x,'norm', alternative = 'less')),
                 np.array((0.12464329735846891, 0.040989164077641749)), 15)
-    assert_almost_equal( np.array(stats.kstest(x,'norm', alternative = 'larger')),
+    assert_almost_equal( np.array(stats.kstest(x,'norm', alternative = 'greater')),
                 np.array((0.0072115233216310994, 0.98531158590396228)), 14)
 
     #missing: no test that uses *args

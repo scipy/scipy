@@ -2034,16 +2034,16 @@ def ttest_rel(a,b,axis=None):
 
 #import scipy.stats
 #import distributions
-def kstest(rvs, cdf, args=(), N=20, alternative = 'unequal', mode='approx'):
+def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**kwds):
     """Return the D-value and the p-value for a Kolmogorov-Smirnov test
 
 
     This performs a test of the distribution of random variables G(x) against
     a given distribution F(x). Under the null hypothesis the two distributions
     are identical, G(x)=F(x). The alternative hypothesis can be either
-    'unequal' (default), 'smaller' or 'larger'. In the two one-sided test,
+    'two_sided' (default), 'less' or 'greater'. In the two one-sided test,
     the alternative is that the empirical cumulative distribution function,
-    of the random variable is "smaller" or "larger" then the cumulative
+    of the random variable is "less" or "greater" then the cumulative
     distribution function of the hypothesis F(x), G(x)<=F(x), resp. G(x)>=F(x).
 
     If the p-value is greater than the significance level (say 5%), then we
@@ -2065,7 +2065,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'unequal', mode='approx'):
 
     args : distribution parameters used if rvs or cdf are strings
     N : sample size if rvs is string or callable
-    alternative : 'unequal' (default), 'smaller' or 'larger'
+    alternative : 'two_sided' (default), 'less' or 'greater'
         defines the alternative hypothesis (see explanation)
     mode : 'approx' (default) or 'asymp'
         defines distribution used for calculating p-value
@@ -2103,13 +2103,13 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'unequal', mode='approx'):
     ---------------------------------------------
     >>> np.random.seed(987654321)
     >>> # shift distribution to larger values, so that cdf_dgp(x)< norm.cdf(x)
-    >>> x = stats.norm.rvs(loc=0.2, size=100)
-    >>> kstest(x,'norm', alternative = 'smaller')
+    >>> x = stats.norm.rvs(loc=0.2, size=100) 
+    >>> kstest(x,'norm', alternative = 'less') 
     (0.12464329735846891, 0.040989164077641749)
-    >>> # reject equal distribution against alternative hypothesis: smaller
-    >>> kstest(x,'norm', alternative = 'larger')
+    >>> # reject equal distribution against alternative hypothesis: less
+    >>> kstest(x,'norm', alternative = 'greater')
     (0.0072115233216311081, 0.98531158590396395)
-    >>> # don't reject equal distribution against alternative hypothesis: larger
+    >>> # don't reject equal distribution against alternative hypothesis: greater
     >>> kstest(x,'norm', mode='asymp')
     (0.12464329735846891, 0.08944488871182088)
 
@@ -2154,17 +2154,17 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'unequal', mode='approx'):
         N = len(vals)
     cdfvals = cdf(vals, *args)
 
-    if alternative in ['unequal', 'larger']:
+    if alternative in ['two_sided', 'greater']:
         Dplus = (np.arange(1.0, N+1)/N - cdfvals).max()
-        if alternative == 'larger':
+        if alternative == 'greater':
             return Dplus, distributions.ksone.sf(Dplus,N)
 
-    if alternative in ['unequal', 'smaller']:
+    if alternative in ['two_sided', 'less']:
         Dmin = (cdfvals - np.arange(0.0, N)/N).max()
-        if alternative == 'smaller':
+        if alternative == 'less':
             return Dmin, distributions.ksone.sf(Dmin,N)
 
-    if alternative == 'unequal':
+    if alternative == 'two_sided':
         D = np.max([Dplus,Dmin])
         if mode == 'asymp':
             return D, distributions.kstwobign.sf(D*np.sqrt(N))
