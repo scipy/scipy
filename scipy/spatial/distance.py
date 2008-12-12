@@ -370,8 +370,8 @@ def jaccard(u, v):
 
     .. math::
 
-       \frac{c_{TF} + c_{FT}}
-            {c_{TT} + c_{FT} + c_{TF}}
+         \frac{c_{TF} + c_{FT}}
+              {c_{TT} + c_{FT} + c_{TF}}
 
     where :math:`c_{ij}` is the number of occurrences of
     :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
@@ -400,8 +400,8 @@ def kulsinski(u, v):
 
     .. math::
 
-       \frac{c_{TF} + c_{FT} - c_{TT} + n}
-            {c_{FT} + c_{TF} + n}
+         \frac{c_{TF} + c_{FT} - c_{TT} + n}
+              {c_{FT} + c_{TF} + n}
 
     where :math:`c_{ij}` is the number of occurrences of
     :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
@@ -455,7 +455,7 @@ def cityblock(u, v):
 
     .. math::
 
-       \sum_i {u_i-v_i}.
+       \sum_i {(u_i-v_i)}.
 
     :Parameters:
        u : ndarray
@@ -872,7 +872,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
 
     5. ``Y = pdist(X, 'sqeuclidean')``
 
-       Computes the squared Euclidean distance ||u-v||_2^2 between
+       Computes the squared Euclidean distance :math:`||u-v||_2^2` between
        the vectors.
 
     6. ``Y = pdist(X, 'cosine')``
@@ -920,7 +920,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
 
        .. math::
 
-          d(u,v) = max_i {|u_i-v_i|}.
+          d(u,v) = \max_i {|u_i-v_i|}.
 
     11. ``Y = pdist(X, 'canberra')``
 
@@ -929,8 +929,8 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
 
        .. math::
 
-         d(u,v) = \sum_u {|u_i-v_i|}
-                         {|u_i|+|v_i|}
+         d(u,v) = \sum_u \frac{|u_i-v_i|}
+                              {(|u_i|+|v_i|)}
 
 
     12. ``Y = pdist(X, 'braycurtis')``
@@ -1043,8 +1043,11 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
        Y : ndarray
            A condensed distance matrix.
 
+    :SeeAlso:
 
-       """
+       squareform : converts between condensed distance matrices and
+                    square distance matrices.
+    """
 
 
 #         21. Y = pdist(X, 'test_Y')
@@ -1603,7 +1606,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
     5. ``Y = cdist(XA, XB, 'sqeuclidean')``
 
-       Computes the squared Euclidean distance ||u-v||_2^2 between
+       Computes the squared Euclidean distance :math:`||u-v||_2^2` between
        the vectors.
 
     6. ``Y = cdist(XA, XB, 'cosine')``
@@ -1615,7 +1618,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
           \frac{1 - uv^T}
                {{|u|}_2 {|v|}_2}
 
-       where |*|_2 is the 2 norm of its argument *.
+       where :math:`|*|_2` is the 2-norm of its argument *.
 
     7. ``Y = cdist(XA, XB, 'correlation')``
 
@@ -1653,7 +1656,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-          d(u,v) = max_i {|u_i-v_i|}.
+          d(u,v) = \max_i {|u_i-v_i|}.
 
     11. ``Y = cdist(XA, XB, 'canberra')``
 
@@ -1662,8 +1665,8 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-         d(u,v) = \sum_u {|u_i-v_i|}
-                         {|u_i|+|v_i|}
+         d(u,v) = \sum_u \frac{|u_i-v_i|}
+                              {(|u_i|+|v_i|)}
 
 
     12. ``Y = cdist(XA, XB, 'braycurtis')``
@@ -1674,8 +1677,8 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-            d(u,v) = \frac{\sum_i {u_i-v_i}}
-                          {\sum_i {u_i+v_i}}
+            d(u,v) = \frac{\sum_i (u_i-v_i)}
+                          {\sum_i (u_i+v_i)}
 
     13. ``Y = cdist(XA, XB, 'mahalanobis', VI=None)``
 
@@ -1687,38 +1690,38 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
     14. ``Y = cdist(XA, XB, 'yule')``
 
-       Computes the Yule distance between each pair of boolean
+       Computes the Yule distance between the boolean
        vectors. (see yule function documentation)
 
-    15. ``Y = cdist(XA, 'matching')``
+    15. ``Y = cdist(XA, XB, 'matching')``
 
-       Computes the matching distance between each pair of boolean
+       Computes the matching distance between the boolean
        vectors. (see matching function documentation)
 
-    16. ``Y = cdist(XA, 'dice')``
+    16. ``Y = cdist(XA, XB, 'dice')``
 
-       Computes the Dice distance between each pair of boolean
-       vectors. (see dice function documentation)
+       Computes the Dice distance between the boolean vectors. (see
+       dice function documentation)
 
     17. ``Y = cdist(XA, XB, 'kulsinski')``
 
-       Computes the Kulsinski distance between each pair of
-       boolean vectors. (see kulsinski function documentation)
+       Computes the Kulsinski distance between the boolean
+       vectors. (see kulsinski function documentation)
 
     18. ``Y = cdist(XA, XB, 'rogerstanimoto')``
 
-       Computes the Rogers-Tanimoto distance between each pair of
-       boolean vectors. (see rogerstanimoto function documentation)
+       Computes the Rogers-Tanimoto distance between the boolean
+       vectors. (see rogerstanimoto function documentation)
 
     19. ``Y = cdist(XA, XB, 'russellrao')``
 
-       Computes the Russell-Rao distance between each pair of
-       boolean vectors. (see russellrao function documentation)
+       Computes the Russell-Rao distance between the boolean
+       vectors. (see russellrao function documentation)
 
     20. ``Y = cdist(XA, XB, 'sokalmichener')``
 
-       Computes the Sokal-Michener distance between each pair of
-       boolean vectors. (see sokalmichener function documentation)
+       Computes the Sokal-Michener distance between the boolean
+       vectors. (see sokalmichener function documentation)
 
     21. ``Y = cdist(XA, XB, 'sokalsneath')``
 
