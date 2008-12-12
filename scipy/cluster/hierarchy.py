@@ -333,13 +333,13 @@ def centroid(y):
 
     The following are common calling conventions:
 
-    1. Z = centroid(y)
+    1. ``Z = centroid(y)``
 
        Performs centroid/UPGMC linkage on the condensed distance
        matrix ``y``.  See ``linkage`` for more information on the return
        structure and algorithm.
 
-    2. Z = centroid(X)
+    2. ``Z = centroid(X)``
 
        Performs centroid/UPGMC linkage on the observation matrix ``X``
        using Euclidean distance as the distance metric. See ``linkage``
@@ -372,13 +372,13 @@ def median(y):
 
     The following are common calling conventions:
 
-    1. Z = median(y)
+    1. ``Z = median(y)``
 
        Performs median/WPGMC linkage on the condensed distance matrix
        ``y``.  See ``linkage`` for more information on the return
        structure and algorithm.
 
-    2. Z = median(X)
+    2. ``Z = median(X)``
 
        Performs median/WPGMC linkage on the observation matrix ``X``
        using Euclidean distance as the distance metric. See linkage
@@ -410,13 +410,13 @@ def ward(y):
 
     The following are common calling conventions:
 
-    1. Z = ward(y)
-       Performs Ward's linkage on the condensed distance matrix Z. See
+    1. ``Z = ward(y)``
+       Performs Ward's linkage on the condensed distance matrix ``Z``. See
        linkage for more information on the return structure and
        algorithm.
 
-    2. Z = ward(X)
-       Performs Ward's linkage on the observation matrix X using
+    2. ``Z = ward(X)``
+       Performs Ward's linkage on the observation matrix ``X`` using
        Euclidean distance as the distance metric. See linkage for more
        information on the return structure and algorithm.
 
@@ -484,7 +484,7 @@ def linkage(y, method='single', metric='euclidean'):
     The following are methods for calculating the distance between the
     newly formed cluster :math:`u` and each :math:`v`.
 
-     * method=``single`` assigns
+     * method='single' assigns
 
        .. math::
           d(u,v) = \min(dist(u[i],v[j]))
@@ -493,7 +493,7 @@ def linkage(y, method='single', metric='euclidean'):
        :math:`j` in cluster :math:`v`. This is also known as the
        Nearest Point Algorithm.
 
-     * method=``complete`` assigns
+     * method='complete' assigns
 
        .. math::
           d(u, v) = \max(dist(u[i],v[j]))
@@ -502,7 +502,7 @@ def linkage(y, method='single', metric='euclidean'):
        cluster :math:`v`. This is also known by the Farthest Point
        Algorithm or Voor Hees Algorithm.
 
-     * method=``average`` assigns
+     * method='average' assigns
 
        .. math::
           d(u,v) = \sum_{ij} \frac{d(u[i], v[j])}
@@ -524,7 +524,7 @@ def linkage(y, method='single', metric='euclidean'):
      * method='centroid' assigns
 
        .. math::
-          dist(s,t) = euclid(c_s, c_t)
+          dist(s,t) = ||c_s-c_t||_2
 
        where :math:`c_s` and :math:`c_t` are the centroids of
        clusters :math:`s` and :math:`t`, respectively. When two
@@ -536,11 +536,11 @@ def linkage(y, method='single', metric='euclidean'):
        :math:`v` in the forest. This is also known as the UPGMC
        algorithm.
 
-     * method='median' assigns math:`$d(s,t)$` like the ``centroid``
-       method. When two clusters s and t are combined into a new
-       cluster :math:`u`, the average of centroids s and t give the
-       new centroid :math:`u`. This is also known as the WPGMC
-       algorithm.
+     * method='median' assigns math:`d(s,t)` like the ``centroid``
+       method. When two clusters :math:`s` and :math:`t` are combined
+       into a new cluster :math:`u`, the average of centroids s and t
+       give the new centroid :math:`u`. This is also known as the
+       WPGMC algorithm.
 
      * method='ward' uses the Ward variance minimization algorithm.
        The new entry :math:`d(u,v)` is computed as follows,
@@ -633,7 +633,7 @@ class ClusterNode:
 
     :SeeAlso:
 
-       - to_tree: for converting a linkage matrix Z into a tree object.
+       - to_tree: for converting a linkage matrix ``Z`` into a tree object.
     """
 
     def __init__(self, id, left=None, right=None, dist=0, count=1):
@@ -781,7 +781,7 @@ _cnode_type = type(ClusterNode)
 
 def to_tree(Z, rd=False):
     """
-    Converts a hierarchical clustering encoded in the matrix Z (by
+    Converts a hierarchical clustering encoded in the matrix ``Z`` (by
     linkage) into an easy-to-use tree object. The reference r to the
     root ClusterNode object is returned.
 
@@ -1299,8 +1299,8 @@ def num_obs_linkage(Z):
 
 def correspond(Z, Y):
     """
-    Checks if a linkage matrix Z and condensed distance matrix
-    Y could possibly correspond to one another.
+    Checks if a linkage matrix ``Z`` and condensed distance matrix
+    ``Y`` could possibly correspond to one another.
 
     They must have the same number of original observations for
     the check to succeed.
@@ -1464,7 +1464,6 @@ def fclusterdata(X, t, criterion='inconsistent', \
         - t : double
           The threshold to apply when forming flat clusters.
 
-
         - criterion : string
           Specifies the criterion for forming flat clusters.  Valid
           values are 'inconsistent', 'distance', or 'maxclust' cluster
@@ -1496,8 +1495,8 @@ def fclusterdata(X, t, criterion='inconsistent', \
     :Returns:
 
         - T : ndarray
-            A vector of length ``n``. ``T[i]`` is the flat cluster number to
-            which original observation ``i`` belongs.
+          A vector of length ``n``. ``T[i]`` is the flat cluster number to
+          which original observation ``i`` belongs.
 
     Notes
     -----
