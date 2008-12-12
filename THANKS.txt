@@ -31,8 +31,11 @@ Travis Vaught       -- initial work on stats module clean up
 Jeff Whitaker       -- Mac OS X support
 David Cournapeau    -- bug-fixes, refactor of fftpack and cluster, numscons build.
 Damian Eads         -- hierarchical clustering, dendrogram plotting,
-                       distance functions, vq documentation
-
+                       distance functions in spatial package, vq documentation
+Anne Archibald      -- kd-trees and nearest neighbor in scipy.spatial
+Pauli Virtanen      -- Sphinx documentation generation, interpolation,
+                       and scipy.nonlin.optimize rewrite.
+Josef Pktd          -- major improvements to scipy.stats and its test suite
 
 Testing:
 
