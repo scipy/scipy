@@ -129,12 +129,24 @@ features -- like float32 support -- more easily.
 New Constants package
 ~~~~~~~~~~~~~~~~~~~~~
 
-Collection of physical constants and conversion factors.
+``scipy.constants`` provides a collection of physical constants and
+conversion factors.  These constants are taken from CODATA Recommended
+Values of the Fundamental Physical Constants: 2002. They may be found
+at physics.nist.gov/constants. The values are stored in the dictionary
+physical_constants as a tuple containing the value, the units, and
+the relative precision, in that order. All constants are in SI units
+unless otherwise stated.  Several helper functions are provided.
+
+The list is not meant to be comprehensive, but just a convenient list
+for everyday use.
 
 New Radial Basis Function module
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-http://scipy.org/scipy/scipy/browser/trunk/scipy/interpolate/rbf.py
+``scipy.interpolate`` now contains a Radial Basis Function module.
+Radial basis functions can be used for smoothing/interpolating scattered
+data in n-dimensions, but should be used with caution for extrapolation
+outside of the observed data range.
 
 New complex ODE integrator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
