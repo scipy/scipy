@@ -48,7 +48,15 @@ def docformat(docstring, docdict=None):
 def filldoc(docdict):
     ''' Return docstring decorator using docdict variable dictionary
 
+    Parameters
+    ----------
+    docdict : dictionary
+        dictionary containing name, docstring fragment pairs
 
+    Returns
+    -------
+    decfunc : function
+        decorator that applies dictionary to input function docstring
     '''
     def decorate(f):
         f.__doc__ = docformat(f.__doc__, docdict)
