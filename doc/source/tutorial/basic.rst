@@ -5,6 +5,8 @@ Basic functions in Numpy (and top-level scipy)
 
 .. currentmodule:: numpy
 
+.. contents::
+
 Interaction with Numpy
 ------------------------
 
@@ -14,12 +16,12 @@ without additionally importing Numpy. In addition, the universal
 functions (addition, subtraction, division) have been altered to not
 raise exceptions if floating-point errors are encountered; instead,
 NaN's and Inf's are returned in the arrays. To assist in detection of
-these events, several functions (:func:`isnan`, :func:`isfinite`,
-:func:`isinf`) are available.
+these events, several functions (:func:`sp.isnan`, :func:`sp.isfinite`,
+:func:`sp.isinf`) are available.
 
 Finally, some of the basic functions like log, sqrt, and inverse trig
 functions have been modified to return complex numbers instead of
-NaN's where appropriate (*i.e.* ``scipy.sqrt(-1)`` returns ``1j``).
+NaN's where appropriate (*i.e.* ``sp.sqrt(-1)`` returns ``1j``).
 
 
 Top-level scipy routines
@@ -44,8 +46,8 @@ full potential.
 Type handling
 ^^^^^^^^^^^^^
 
-Note the difference between :func:`iscomplex` (:func:`isreal`) and
-:func:`iscomplexobj` (:func:`isrealobj`). The former command is
+Note the difference between :func:`sp.iscomplex`/:func:`sp.isreal` and
+:func:`sp.iscomplexobj`/:func:`sp.isrealobj`. The former command is
 array based and returns byte arrays of ones and zeros providing the
 result of the element-wise test. The latter command is object based
 and returns a scalar describing the result of the test on the entire
@@ -55,32 +57,34 @@ Often it is required to get just the real and/or imaginary part of a
 complex number. While complex numbers and arrays have attributes that
 return those values, if one is not sure whether or not the object will
 be complex-valued, it is better to use the functional forms
-:func:`real` and :func:`imag` . These functions succeed for anything
+:func:`sp.real` and :func:`sp.imag` . These functions succeed for anything
 that can be turned into a Numpy array. Consider also the function
-:func:`real_if_close` which transforms a complex-valued number with
+:func:`sp.real_if_close` which transforms a complex-valued number with
 tiny imaginary part into a real number.
 
 Occasionally the need to check whether or not a number is a scalar
 (Python (long)int, Python float, Python complex, or rank-0 array)
 occurs in coding. This functionality is provided in the convenient
-function :func:`isscalar` which returns a 1 or a 0.
+function :func:`sp.isscalar` which returns a 1 or a 0.
 
 Finally, ensuring that objects are a certain Numpy type occurs often
 enough that it has been given a convenient interface in SciPy through
-the use of the :obj:`cast` dictionary. The dictionary is keyed by the
+the use of the :obj:`sp.cast` dictionary. The dictionary is keyed by the
 type it is desired to cast to and the dictionary stores functions to
-perform the casting. Thus, ``>>> a = cast['f'](d)`` returns an array
-of :class:`float32` from *d*. This function is also useful as an easy
-way to get a scalar of a certain type: ``>>> fpi = cast['f'](pi)``.
+perform the casting. Thus, ``sp.cast['f'](d)`` returns an array
+of :class:`sp.float32` from *d*. This function is also useful as an easy
+way to get a scalar of a certain type::
 
+    >>> sp.cast['f'](sp.pi)
+    array(3.1415927410125732, dtype=float32)
 
 Index Tricks
 ^^^^^^^^^^^^
 
-Thre are some class instances that make special use of the slicing
+There are some class instances that make special use of the slicing
 functionality to provide efficient means for array construction. This
-part will discuss the operation of :obj:`mgrid` , :obj:`ogrid` ,
-:obj:`r_` , and :obj:`c_` for quickly constructing arrays.
+part will discuss the operation of :obj:`sp.mgrid` , :obj:`sp.ogrid` ,
+:obj:`sp.r_` , and :obj:`sp.c_` for quickly constructing arrays.
 
 One familiar with Matlab may complain that it is difficult to
 construct arrays from the interactive session with Python. Suppose,
