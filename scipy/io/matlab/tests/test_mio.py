@@ -25,7 +25,8 @@ from numpy import array
 import scipy.sparse as SP
 
 from scipy.io.matlab.mio import loadmat, savemat, find_mat_file
-from scipy.io.matlab.mio5 import MatlabObject, MatFile5Writer
+from scipy.io.matlab.mio5 import MatlabObject, MatFile5Writer, \
+     Mat5NumericWriter
 
 test_data_path = join(dirname(__file__), 'data')
 
@@ -405,6 +406,7 @@ def test_cell_with_one_thing_in_it():
     mat_stream = StringIO()
     savemat(StringIO(), {'x': cells}, format='5')
 
+
 def test_writer_properties():
     # Tests getting, setting of properties of matrix writer
     mfw = MatFile5Writer(StringIO())
@@ -417,3 +419,19 @@ def test_writer_properties():
     yield assert_equal, mfw.long_field_names, False
     mfw.long_field_names = True
     yield assert_equal, mfw.long_field_names, True
+
+
+def test_use_small_element():
+    # Test whether we're using small data element or not
+    sio = StringIO()
+    # First check size for no sde for name
+    writer = Mat5NumericWriter(sio, np.zeros(10), 'aaaaa').write()
+    w_sz = sio.len
+    # Check small name results in largish difference in size
+    sio.truncate(0)
+    writer = Mat5NumericWriter(sio, np.zeros(10), 'aaaa').write()
+    yield assert_true, w_sz - sio.len > 4
+    # Whereas increasing name size makes less difference
+    sio.truncate(0)
+    writer = Mat5NumericWriter(sio, np.zeros(10), 'aaaaaa').write()
+    yield assert_true, sio.len - w_sz < 4
