@@ -1,3 +1,6 @@
+''' Utilities to allow inserting docstring fragments for common
+parameters into function and method docstrings'''
+
 import sys
 
 def docformat(docstring, docdict=None):

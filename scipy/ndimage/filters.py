@@ -72,9 +72,6 @@ _origin_doc = \
 """origin : scalar, optional
 The ``origin`` parameter controls the placement of the filter. Default 0"""
 _extra_arguments_doc = \
-"""extra_arguments : sequence
-    Sequence of extra positional arguments to pass to passed function"""
-_extra_arguments_doc = \
 """extra_arguments : sequence, optional
     Sequence of extra positional arguments to pass to passed function"""
 _extra_keywords_doc = \
@@ -179,6 +176,8 @@ def gaussian_filter1d(input, sigma, axis = -1, order = 0, output = None,
     %(mode)s
     %(cval)s
     """
+    if order not in range(4):
+        raise ValueError('Order outside 0..3 not implemented')
     sd = float(sigma)
     # make the length of the filter equal to 4 times the standard
     # deviations:
@@ -257,6 +256,8 @@ def gaussian_filter(input, sigma, order = 0, output = None,
     input = numpy.asarray(input)
     output, return_value = _ni_support._get_output(output, input)
     orders = _ni_support._normalize_sequence(order, input.ndim)
+    if not set(orders).issubset(set(range(4))):
+        raise ValueError('Order outside 0..4 not implemented')
     sigmas = _ni_support._normalize_sequence(sigma, input.ndim)
     axes = range(input.ndim)
     axes = [(axes[ii], sigmas[ii], orders[ii])
