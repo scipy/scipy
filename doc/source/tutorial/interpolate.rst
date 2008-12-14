@@ -235,14 +235,14 @@ passed in :obj:`mgrid <numpy.mgrid>`.
 ..   :caption: Example of two-dimensional spline interpolation.
 
 Using radial basis functions for smoothing/interpolation
-========================================================
+---------------------------------------------------------
 
 Radial basis functions can be used for smoothing/interpolating scattered
 data in n-dimensions, but should be used with caution for extrapolation
 outside of the observed data range.
 
 1-d Example
------------
+^^^^^^^^^^^
 
 This example compares the usage of the Rbf and UnivariateSpline classes
 from the scipy.interpolate module.
@@ -282,7 +282,7 @@ from the scipy.interpolate module.
 ..   :caption: Example of one-dimensional RBF interpolation.
 
 2-d Example
------------
+^^^^^^^^^^^
 
 This example shows how to interpolate scattered 2d data.
 
