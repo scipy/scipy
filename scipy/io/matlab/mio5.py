@@ -622,10 +622,10 @@ class MatFile5Reader(MatFileReader):
 
 
 class Mat5MatrixWriter(MatStreamWriter):
-
+    ''' Generic matlab matrix writing class '''
     mat_tag = np.zeros((), mdtypes_template['tag_full'])
     mat_tag['mdtype'] = miMATRIX
-
+    default_mclass = None # default class for header writing
     def __init__(self,
                  file_stream,
                  arr,
@@ -670,7 +670,7 @@ class Mat5MatrixWriter(MatStreamWriter):
         # pad to next 64-bit boundary
         self.write_bytes(np.zeros((padding,),'u1'))
 
-    def write_header(self, mclass,
+    def write_header(self, mclass=None,
                      is_global=False,
                      is_complex=False,
                      is_logical=False,
@@ -686,6 +686,8 @@ class Mat5MatrixWriter(MatStreamWriter):
             directly specify shape if this is not the same as for
             self.arr
         '''
+        if mclass is None:
+            mclass = self.default_mclass
         if shape is None:
             shape = self.arr.shape
             if len(shape) < 2:
@@ -712,10 +714,18 @@ class Mat5MatrixWriter(MatStreamWriter):
         self.file_stream.seek(curr_pos)
 
     def write(self):
-        assert False, 'Not implemented'
+        raise NotImplementedError
+
+    def make_writer_getter(self):
+        ''' Make writer getter for this stream '''
+        return Mat5WriterGetter(self.file_stream,
+                                self.unicode_strings,
+                                self.long_field_names)
+
 
 
 class Mat5NumericWriter(Mat5MatrixWriter):
+    default_mclass = None # can be any numeric type
     def write(self):
         imagf = self.arr.dtype.kind == 'c'
         try:
@@ -737,13 +747,14 @@ class Mat5NumericWriter(Mat5MatrixWriter):
 
 class Mat5CharWriter(Mat5MatrixWriter):
     codec='ascii'
+    default_mclass = mxCHAR_CLASS
     def write(self):
         self.arr_to_chars()
         # We have to write the shape directly, because we are going
         # recode the characters, and the resulting stream of chars
         # may have a different length
         shape = self.arr.shape
-        self.write_header(mclass=mxCHAR_CLASS,shape=shape)
+        self.write_header(shape=shape)
         # We need to do our own transpose (not using the normal
         # write routines that do this for us)
         arr = self.arr.T.copy()
@@ -766,6 +777,7 @@ class Mat5UniCharWriter(Mat5CharWriter):
 
 
 class Mat5SparseWriter(Mat5MatrixWriter):
+    default_mclass = mxSPARSE_CLASS
     def write(self):
         ''' Sparse matrices are 2D
         '''
@@ -773,8 +785,7 @@ class Mat5SparseWriter(Mat5MatrixWriter):
         A.sort_indices()     # MATLAB expects sorted row indices
         is_complex = (A.dtype.kind == 'c')
         nz = A.nnz
-        self.write_header(mclass=mxSPARSE_CLASS,
-                          is_complex=is_complex,
+        self.write_header(is_complex=is_complex,
                           nzmax=nz)
         self.write_element(A.indices.astype('i4'))
         self.write_element(A.indptr.astype('i4'))
@@ -785,49 +796,51 @@ class Mat5SparseWriter(Mat5MatrixWriter):
 
 
 class Mat5CellWriter(Mat5MatrixWriter):
+    default_mclass = mxCELL_CLASS
     def write(self):
-        self.write_header(mclass=mxCELL_CLASS)
+        self.write_header()
+        self._write_items()
+        
+    def _write_items(self):
         # loop over data, column major
         A = np.atleast_2d(self.arr).flatten('F')
-        MWG = Mat5WriterGetter(self.file_stream, self.unicode_strings)
+        MWG = self.make_writer_getter()
         for el in A:
             MW = MWG.matrix_writer_factory(el, '')
             MW.write()
         self.update_matrix_tag()
 
 
-class Mat5FunctionWriter(Mat5MatrixWriter):
-    def write(self):
-        self.write_header(mclass=mxFUNCTION_CLASS)
-        # loop over data, column major
-        A = np.atleast_2d(self.arr).flatten('F')
-        MWG = Mat5WriterGetter(self.file_stream, self.unicode_strings)
-        for el in A:
-            MW = MWG.matrix_writer_factory(el, '')
-            MW.write()
-        self.update_matrix_tag()
+class Mat5FunctionWriter(Mat5CellWriter):
+    ''' class to write matlab functions
+
+    Only differs from cell writing in mx class in header '''
+    default_mclass = mxFUNCTION_CLASS
 
 
-class Mat5StructWriter(Mat5MatrixWriter):
-    def write(self):
-        self.write_header(mclass=mxSTRUCT_CLASS)
-        self.write_fields()
+class Mat5StructWriter(Mat5CellWriter):
+    ''' class to write matlab structs
 
-    def write_fields(self):
+    Differs from cell writing class in writing field names,
+    and in mx class
+    '''
+    default_mclass = mxSTRUCT_CLASS
+
+    def _write_items(self):
         # write fieldnames
         fieldnames = [f[0] for f in self.arr.dtype.descr]
         length = max([len(fieldname) for fieldname in fieldnames])+1
         max_length = (self.long_field_names and 64) or 32
         if length > max_length:
             raise ValueError(
-                "Field names are restricted to %d characters in Matlab"%(max_length-1))
+                "Field names are restricted to %d characters"
+                 % (max_length-1))
         self.write_element(np.array([length], dtype='i4'))
         self.write_element(
             np.array(fieldnames, dtype='S%d'%(length)),
             mdtype=miINT8)
         A = np.atleast_2d(self.arr).flatten('F')
-        MWG = Mat5WriterGetter(self.file_stream,
-                               self.unicode_strings)
+        MWG = self.make_writer_getter()
         for el in A:
             for f in fieldnames:
                 MW = MWG.matrix_writer_factory(el[f], '')
@@ -836,11 +849,17 @@ class Mat5StructWriter(Mat5MatrixWriter):
 
 
 class Mat5ObjectWriter(Mat5StructWriter):
+    ''' class to write matlab objects
+
+    Same as writing structs, except different mx class, and extra
+    classname element after header
+    '''
+    default_mclass = mxOBJECT_CLASS
     def write(self):
-        self.write_header(mclass=mxOBJECT_CLASS)
+        self.write_header()
         self.write_element(np.array(self.arr.classname, dtype='S'),
                            mdtype=miINT8)
-        self.write_fields()
+        self._write_items()
 
 
 class Mat5WriterGetter(object):
@@ -871,7 +890,7 @@ class Mat5WriterGetter(object):
         # Next try and convert to an array
         narr = np.asanyarray(arr)
         if narr.dtype.type in (np.object, np.object_) and \
-           narr.size == 1 and narr == arr:
+           narr.shape == () and narr == arr:
             # No interesting conversion possible
             raise TypeError('Could not convert %s (type %s) to array'
                             % (arr, type(arr)))
@@ -926,7 +945,7 @@ class MatFile5Writer(MatFileWriter):
         file_stream.write(hdr.tostring())
 
     def get_unicode_strings(self):
-        return self.write_getter.unicode_strings
+        return self.writer_getter.unicode_strings
     def set_unicode_strings(self, unicode_strings):
         self.writer_getter.unicode_strings = unicode_strings
     unicode_strings = property(get_unicode_strings,
@@ -935,7 +954,7 @@ class MatFile5Writer(MatFileWriter):
                                'get/set unicode strings property')
 
     def get_long_field_names(self):
-        return self.write_getter.long_field_names
+        return self.writer_getter.long_field_names
     def set_long_field_names(self, long_field_names):
         self.writer_getter.long_field_names = long_field_names
     long_field_names = property(get_long_field_names,

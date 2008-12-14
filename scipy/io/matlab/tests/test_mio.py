@@ -25,7 +25,7 @@ from numpy import array
 import scipy.sparse as SP
 
 from scipy.io.matlab.mio import loadmat, savemat, find_mat_file
-from scipy.io.matlab.mio5 import MatlabObject
+from scipy.io.matlab.mio5 import MatlabObject, MatFile5Writer
 
 test_data_path = join(dirname(__file__), 'data')
 
@@ -196,7 +196,7 @@ case_table5_rt.append(
 def _check_level(label, expected, actual):
     """ Check one level of a potentially nested array """
     if SP.issparse(expected): # allow different types of sparse matrices
-        assert SP.issparse(actual)
+        assert_true(SP.issparse(actual))
         assert_array_almost_equal(actual.todense(),
                                   expected.todense(),
                                   err_msg = label,
@@ -205,8 +205,8 @@ def _check_level(label, expected, actual):
     # Check types are as expected
     typex = type(expected)
     typac = type(actual)
-    assert typex is typac, \
-           "Expected type %s, got %s at %s" % (typex, typac, label)
+    assert_true(typex is typac, \
+           "Expected type %s, got %s at %s" % (typex, typac, label))
     # A field in a record array may not be an ndarray
     # A scalar from a record array will be type np.void
     if not isinstance(expected,
@@ -246,7 +246,7 @@ def _load_check_case(name, files, case):
         label = "test %s; file %s" % (name, file_name)
         for k, expected in case.items():
             k_label = "%s, variable %s" % (label, k)
-            assert k in matdict, "Missing key at %s" % k_label
+            assert_true(k in matdict, "Missing key at %s" % k_label)
             _check_level(k_label, expected, matdict[k])
 
 # Round trip tests
@@ -264,7 +264,8 @@ def test_load():
         expected = case['expected']
         filt = join(test_data_path, 'test%s_*.mat' % name)
         files = glob(filt)
-        assert files, "No files for test %s using filter %s" % (name, filt)
+        assert_true(len(files) > 0,
+                    "No files for test %s using filter %s" % (name, filt))
         yield _load_check_case, name, files, expected
 
 
@@ -308,7 +309,7 @@ def test_mat73():
     # Check any hdf5 files raise an error
     filenames = glob(
         join(test_data_path, 'testhdf5*.mat'))
-    assert len(filenames)
+    assert_true(len(filenames)>0)
     for filename in filenames:
         assert_raises(NotImplementedError,
                       loadmat,
@@ -370,3 +371,49 @@ def test_long_field_names():
     st1 = np.zeros((1,1), dtype=[(fldname, object)])
     assert_raises(ValueError, savemat, StringIO(),
                   {'longstruct': st1}, format='5',long_field_names=True)
+
+
+def test_long_field_names_in_struct():
+    # Regression test - long_field_names was erased if you passed a struct
+    # within a struct
+    lim = 63
+    fldname = 'a' * lim
+    cell = np.ndarray((1,2),dtype=object)
+    st1 = np.zeros((1,1), dtype=[(fldname, object)])
+    cell[0,0]=st1
+    cell[0,1]=st1
+    mat_stream = StringIO()
+    savemat(StringIO(), {'longstruct': cell}, format='5',long_field_names=True)
+    #
+    # Check to make sure it fails with long field names off
+    #
+    assert_raises(ValueError, savemat, StringIO(),
+                  {'longstruct': cell}, format='5', long_field_names=False)
+
+def test_cell_with_one_thing_in_it():
+    # Regression test - make a cell array that's 1 x 2 and put two
+    # strings in it.  It works. Make a cell array that's 1 x 1 and put
+    # a string in it. It should work but, in the old days, it didn't.
+    cells = np.ndarray((1,2),dtype=object)
+    cells[0,0]='Hello'
+    cells[0,1]='World'
+    mat_stream = StringIO()
+    savemat(StringIO(), {'x': cells}, format='5')
+
+    cells = np.ndarray((1,1),dtype=object)
+    cells[0,0]='Hello, world'
+    mat_stream = StringIO()
+    savemat(StringIO(), {'x': cells}, format='5')
+
+def test_writer_properties():
+    # Tests getting, setting of properties of matrix writer
+    mfw = MatFile5Writer(StringIO())
+    yield assert_equal, mfw.global_vars, []
+    mfw.global_vars = ['avar']
+    yield assert_equal, mfw.global_vars, ['avar']
+    yield assert_equal, mfw.unicode_strings, False
+    mfw.unicode_strings = True
+    yield assert_equal, mfw.unicode_strings, True
+    yield assert_equal, mfw.long_field_names, False
+    mfw.long_field_names = True
+    yield assert_equal, mfw.long_field_names, True
