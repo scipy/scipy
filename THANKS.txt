@@ -33,8 +33,7 @@ David Cournapeau    -- bug-fixes, refactor of fftpack and cluster, numscons buil
 Damian Eads         -- hierarchical clustering, dendrogram plotting,
                        distance functions in spatial package, vq documentation
 Anne Archibald      -- kd-trees and nearest neighbor in scipy.spatial
-Pauli Virtanen      -- Sphinx documentation generation, interpolation,
-                       and scipy.nonlin.optimize rewrite.
+Pauli Virtanen      -- Sphinx documentation generation, interpolation bugfixes.
 Josef Pktd          -- major improvements to scipy.stats and its test suite
 
 Testing:
