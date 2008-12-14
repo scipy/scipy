@@ -199,7 +199,7 @@ useful for defining a "mesh-grid "in many dimensions. (See also the
 :obj:`ogrid <numpy.ogrid>` command if the full-mesh is not
 needed). The number of output arguments and the number of dimensions
 of each argument is determined by the number of indexing objects
-passed in :obj:`mgrid <numpy.mgrid>`[].
+passed in :obj:`mgrid <numpy.mgrid>`.
 
 .. plot::
 
