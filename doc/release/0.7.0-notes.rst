@@ -220,8 +220,18 @@ release of scipy.
 Running Tests
 ~~~~~~~~~~~~~
 
-We are moving away from having our own testing framework and are
-adopting `nose <http://code.google.com/p/python-nose/>`__.
+NumPy 1.2 introduced a new testing framework based on `nose 
+<http://code.google.com/p/python-nose/>`__.  Starting with this release SciPy now
+uses the new NumPy test framework as well.  To take advantage of the new testing framework
+requires nose version 0.10 or later.  One major advantage of the new framework is that
+it greatly reduces the difficulty of writing unit tests, which has all ready paid off given
+the rapid increase in tests.  To run the full test suite::
+
+    >>> import scipy
+    >>> scipy.test('full')
+
+For more information, please see `The NumPy/SciPy Testing Guide
+<http://projects.scipy.org/scipy/numpy/wiki/TestingGuidelines>`__.
 
 Building SciPy
 ~~~~~~~~~~~~~~
