@@ -29,14 +29,15 @@ def docformat(docstring, docdict=None):
         return docstring
     if docdict is None:
         docdict = {}
+    if not docdict:
+        return docstring
     lines = docstring.expandtabs().splitlines()
-    # Find the minimum indent of the main docstring, after last line
-    indentno = sys.maxint
-    for line in lines[1:]:
-        stripped = line.lstrip()
-        if stripped:
-            indentno = min(indentno, len(line) - len(stripped))
-    indent = ' ' * indentno
+    # Find the minimum indent of the main docstring, after first line
+    if len(lines) < 2:
+        icount = 0
+    else:
+        icount = indentcount_lines(lines[1:])
+    indent = ' ' * icount
     # Insert this indent to dictionary docstrings
     indented = {}
     for name, dstr in docdict.items():
@@ -48,21 +49,54 @@ def docformat(docstring, docdict=None):
     return docstring % indented
 
 
-def filldoc(docdict):
+def indentcount_lines(lines):
+    ''' Minumum indent for all lines in line list '''
+    indentno = sys.maxint
+    for line in lines:
+        stripped = line.lstrip()
+        if stripped:
+            indentno = min(indentno, len(line) - len(stripped))
+    if indentno == sys.maxint:
+        return 0
+    return indentno
+
+
+def filldoc(docdict, unindent_params=True):
     ''' Return docstring decorator using docdict variable dictionary
 
     Parameters
     ----------
     docdict : dictionary
         dictionary containing name, docstring fragment pairs
-
+    unindent_params : {False, True}, boolean, optional
+        If True, strip common indentation from all parameters in
+        docdict
+    
     Returns
     -------
     decfunc : function
         decorator that applies dictionary to input function docstring
     '''
+    if unindent_params:
+        docdict = unindent_dict(docdict)
     def decorate(f):
         f.__doc__ = docformat(f.__doc__, docdict)
         return f
     return decorate
 
+
+def unindent_dict(docdict):
+    ''' Unindent all strings in a docdict '''
+    can_dict = {}
+    for name, dstr in docdict.items():
+        can_dict[name] = unindent_string(dstr)
+    return can_dict
+
+
+def unindent_string(docstring):
+    ''' Set docstring to minimum indent for all lines, including first '''
+    lines = docstring.expandtabs().splitlines()
+    icount = indentcount_lines(lines)
+    if icount == 0:
+        return docstring
+    return '\n'.join([line[icount:] for line in lines])

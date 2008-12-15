@@ -8,6 +8,7 @@ from nose.tools import assert_true
 
 import scipy.ndimage as sndi
 
+
 def test_ticket_701():
     # Test generic filter sizes
     arr = np.arange(4).reshape((2,2))
@@ -16,6 +17,7 @@ def test_ticket_701():
     # The following raises an error unless ticket 701 is fixed
     res2 = sndi.generic_filter(arr, func, size=1)
     assert_equal(res, res2)
+
 
 def test_orders_gauss():
     # Check order inputs to Gaussians
