@@ -16,14 +16,20 @@ def docformat(docstring, docdict=None):
         dictionary with keys that match the dict formatting strings
         and values that are docstring fragments to be inserted.  The
         indentation of the inserted docstrings is set to match the
-        indentation of the ``docstring``.  The string values in the
-        docdict are assumed to have no indent in the first line, and
-        only indent relative to the first line for following lines.
+        minimum indentation of the ``docstring``.  The string values
+        in the docdict are assumed to have no indent in the first
+        line, and only indent relative to the first line for following
+        lines.
 
     Returns
     -------
     outstring : string
-        string with any formatted strings inserted
+        string with requested ``docdict`` strings inserted
+
+    Examples
+    --------
+    >>> docformat(' Test string with %(value)s', {'value':'inserted value'})
+    ' Test string with inserted value'
     '''
     if not docstring:
         return docstring
@@ -50,7 +56,20 @@ def docformat(docstring, docdict=None):
 
 
 def indentcount_lines(lines):
-    ''' Minumum indent for all lines in line list '''
+    ''' Minumum indent for all lines in line list
+
+    >>> lines = [' one', '  two', '   three']
+    >>> indentcount_lines(lines)
+    1
+    >>> lines = []
+    >>> indentcount_lines(lines)
+    0
+    >>> lines = [' one']
+    >>> indentcount_lines(lines)
+    1
+    >>> indentcount_lines(['    '])
+    0
+    '''
     indentno = sys.maxint
     for line in lines:
         stripped = line.lstrip()
@@ -76,6 +95,7 @@ def filldoc(docdict, unindent_params=True):
     -------
     decfunc : function
         decorator that applies dictionary to input function docstring
+
     '''
     if unindent_params:
         docdict = unindent_dict(docdict)
@@ -94,7 +114,11 @@ def unindent_dict(docdict):
 
 
 def unindent_string(docstring):
-    ''' Set docstring to minimum indent for all lines, including first '''
+    ''' Set docstring to minimum indent for all lines, including first
+
+    >>> unindent_string(' two')
+    'two'
+    '''
     lines = docstring.expandtabs().splitlines()
     icount = indentcount_lines(lines)
     if icount == 0:
