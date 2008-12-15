@@ -7,25 +7,25 @@
 /*
 
   At the top of the loop the situation is the following:
-  
+
     1. the root is bracketed between xa and xb
     2. xa is the most recent estimate
     3. xp is the previous estimate
     4. |fp| < |fb|
-        
-  The order of xa and xp doesn't matter, but assume xp < xb. Then xa lies to 
+
+  The order of xa and xp doesn't matter, but assume xp < xb. Then xa lies to
   the right of xp and the assumption is that xa is increasing towards the root.
   In this situation we will attempt quadratic extrapolation as long as the
   condition
 
-  *  |fa| < |fp| < |fb| 
-  
+  *  |fa| < |fp| < |fb|
+
   is satisfied. That is, the function value is decreasing as we go along.
   Note the 4 above implies that the right inequlity already holds.
 
-  The first check is that xa is still to the left of the root. If not, xb is 
+  The first check is that xa is still to the left of the root. If not, xb is
   replaced by xp and the interval reverses, with xb < xa. In this situation
-  we will try linear interpolation. That this has happened is signaled by the 
+  we will try linear interpolation. That this has happened is signaled by the
   equality xb == xp;
 
   The second check is that |fa| < |fb|. If this is not the case, we swap
@@ -40,7 +40,7 @@ brentq(callback_type f, double xa, double xb, double xtol, double rtol, int iter
     double xblk = 0.0, fpre, fcur, fblk = 0.0, spre = 0.0, scur = 0.0, sbis, tol;
     double stry, dpre, dblk;
     int i;
-    
+
     fpre = (*f)(xpre, params);
     fcur = (*f)(xcur, params);
     params->funcalls = 2;
@@ -59,14 +59,14 @@ brentq(callback_type f, double xa, double xb, double xtol, double rtol, int iter
             xpre = xcur; xcur = xblk; xblk = xpre;
             fpre = fcur; fcur = fblk; fblk = fpre;
         }
-        
+
         tol = xtol + rtol*fabs(xcur);
         sbis = (xblk - xcur)/2;
         if (fcur == 0 || fabs(sbis) < tol)
             return xcur;
-    
+
         if (fabs(spre) > tol && fabs(fcur) < fabs(fpre)) {
-            if (xpre == xblk) { 
+            if (xpre == xblk) {
                 /* interpolate */
                 stry = -fcur*(xcur - xpre)/(fcur - fpre);
             }
@@ -85,19 +85,19 @@ brentq(callback_type f, double xa, double xb, double xtol, double rtol, int iter
                 spre = sbis; scur = sbis;
             }
         }
-        else { 
+        else {
             /* bisect */
             spre = sbis; scur = sbis;
         }
-        
+
         xpre = xcur; fpre = fcur;
         if (fabs(scur) > tol)
             xcur += scur;
-        else 
+        else
             xcur += (sbis > 0 ? tol : -tol);
-        
+
         fcur = (*f)(xcur, params);
-        params->funcalls++;        
+        params->funcalls++;
     }
     ERROR(params,CONVERR, xcur);
 }
