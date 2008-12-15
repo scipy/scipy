@@ -16,10 +16,9 @@ def docformat(docstring, docdict=None):
         dictionary with keys that match the dict formatting strings
         and values that are docstring fragments to be inserted.  The
         indentation of the inserted docstrings is set to match the
-        minimum indentation of the ``docstring``.  The string values
-        in the docdict are assumed to have no indent in the first
-        line, and only indent relative to the first line for following
-        lines.
+        minimum indentation of the ``docstring`` by adding this
+        indentation to all lines of the inserted string, except the
+        first
 
     Returns
     -------
@@ -30,6 +29,11 @@ def docformat(docstring, docdict=None):
     --------
     >>> docformat(' Test string with %(value)s', {'value':'inserted value'})
     ' Test string with inserted value'
+    >>> docstring = 'First line\\n    Second line\\n    %(value)s'
+    >>> inserted_string = "indented\\nstring"
+    >>> docdict = {'value': inserted_string}
+    >>> docformat(docstring, docdict)
+    'First line\\n    Second line\\n    indented\\n    string'
     '''
     if not docstring:
         return docstring
@@ -118,6 +122,8 @@ def unindent_string(docstring):
 
     >>> unindent_string(' two')
     'two'
+    >>> unindent_string('  two\\n   three')
+    'two\\n three'
     '''
     lines = docstring.expandtabs().splitlines()
     icount = indentcount_lines(lines)
