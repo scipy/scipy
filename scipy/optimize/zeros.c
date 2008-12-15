@@ -10,7 +10,7 @@
 typedef struct {
     int funcalls;
     int iterations;
-    int error_num; 
+    int error_num;
     PyObject *function;
     PyObject *args;
     jmp_buf env;
@@ -28,7 +28,7 @@ typedef struct {
 
 static double scipy_zeros_rtol=0;
 
-double 
+double
 scipy_zeros_functions_func(double x, void *params)
 {
     scipy_zeros_parameters *myparams = params;
@@ -37,14 +37,14 @@ scipy_zeros_functions_func(double x, void *params)
 
     args = myparams->args;
     f = myparams->function;
-    PyTuple_SetItem(args,0,Py_BuildValue("d",x));
+    PyTuple_SetItem(args, 0, Py_BuildValue("d",x));
     retval=PyObject_CallObject(f,args);
-    if (retval==NULL) {
+    if (retval == NULL) {
         longjmp(myparams->env, 1);
     }
     val = PyFloat_AsDouble(retval);
     Py_XDECREF(retval);
-    return val;    
+    return val;
 }
 
 /*
@@ -53,68 +53,87 @@ scipy_zeros_functions_func(double x, void *params)
 
 static PyObject *
 call_solver(solver_type solver, PyObject *self, PyObject *args)
-{    
+{
     double a,b,xtol,zero;
     int iter,i, len, fulloutput, disp=1, flag=0;
     scipy_zeros_parameters params;
     jmp_buf env;
-    PyObject *f,*xargs,*item,*fargs=NULL;
+    PyObject *f, *xargs, *item, *fargs=NULL;
 
-    if (!PyArg_ParseTuple(args,"OdddiOi|i",&f,&a,&b,&xtol,&iter,&xargs,&fulloutput,&disp)) 
+    if (!PyArg_ParseTuple(args, "OdddiOi|i",
+                &f, &a, &b, &xtol, &iter, &xargs, &fulloutput, &disp))
         {
-            PyErr_SetString(PyExc_RuntimeError,"Unable to parse arguments");
+            PyErr_SetString(PyExc_RuntimeError, "Unable to parse arguments");
             return NULL;
         }
     if (xtol < 0) {
-        PyErr_SetString(PyExc_ValueError,"xtol must be >= 0");
+        PyErr_SetString(PyExc_ValueError, "xtol must be >= 0");
         return NULL;
     }
     if (iter < 0) {
-        PyErr_SetString(PyExc_ValueError,"maxiter should be > 0");
+        PyErr_SetString(PyExc_ValueError, "maxiter should be > 0");
         return NULL;
     }
-    
+
     len = PyTuple_Size(xargs);
-    fargs = PyTuple_New(len + 1);  /* room for the double
-                                      as the first argument */
+    /* Make room for the double as first argument */
+    fargs = PyTuple_New(len + 1);
     if (fargs == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,"Failed to allocate argument tuple");
+        PyErr_SetString(PyExc_RuntimeError,
+                "Failed to allocate argument tuple");
         return NULL;
     }
 
     for (i = 0; i < len; i++) {
         item = PyTuple_GetItem(xargs, i);
-        if (item == NULL) { Py_DECREF(fargs); return NULL;}
+        if (item == NULL) {
+            Py_DECREF(fargs);
+            return NULL;
+        }
         Py_INCREF(item);
-        PyTuple_SET_ITEM(fargs,i+1,item);
+        PyTuple_SET_ITEM(fargs, i+1, item);
     }
 
     params.function = f;
     params.args = fargs;
 
-    if (!setjmp(env)) {  /* direct return */
-        memcpy(params.env,env,sizeof(jmp_buf));
+    if (!setjmp(env)) {
+        /* direct return */
+        memcpy(params.env, env, sizeof(jmp_buf));
         params.error_num = 0;
-        zero = solver(scipy_zeros_functions_func,a,b,xtol,scipy_zeros_rtol,iter, (default_parameters*)&params);    
+        zero = solver(scipy_zeros_functions_func, a, b,
+                xtol, scipy_zeros_rtol, iter, (default_parameters*)&params);
         Py_DECREF(fargs);
         if (params.error_num != 0) {
             if (params.error_num == SIGNERR) {
-                PyErr_SetString(PyExc_ValueError,"f(a) and f(b) must have different signs");
+                PyErr_SetString(PyExc_ValueError,
+                        "f(a) and f(b) must have different signs");
                 return NULL;
             }
             if (params.error_num == CONVERR) {
                 if (disp) {
-                    fprintf(stderr, "Warning: failed to converge after %d iterations.\n", params.iterations);
+                    char msg[100];
+                    PyOS_snprintf(msg, sizeof(msg),
+                            "Failed to converge after %d iterations.",
+                            params.iterations);
+                    PyErr_SetString(PyExc_RuntimeError, msg);
                     flag = 1;
+                    return NULL;
                 }
             }
         }
-        if (fulloutput) return Py_BuildValue("diii",zero,params.funcalls,params.iterations,flag);
-        else return Py_BuildValue("d",zero);
+        if (fulloutput) {
+            return Py_BuildValue("diii",
+                    zero, params.funcalls, params.iterations, flag);
+        }
+        else {
+            return Py_BuildValue("d", zero);
+        }
     }
-    else {  /* error return from Python function */
+    else {
+        /* error return from Python function */
         Py_DECREF(fargs);
-        return NULL;        
+        return NULL;
     }
 }
 
@@ -150,7 +169,7 @@ _brentq(PyObject *self, PyObject *args)
  * Standard Python module inteface
  */
 
-static PyMethodDef 
+static PyMethodDef
 Zerosmethods[] = {
 	{"_bisect", _bisect, METH_VARARGS, "a"},
 	{"_ridder", _ridder, METH_VARARGS, "a"},
