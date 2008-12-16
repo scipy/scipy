@@ -217,7 +217,7 @@ class interp1d(object):
             raise ValueError("the y array must have at least one dimension.")
 
         # Force-cast y to a floating-point type, if it's not yet one
-        if not isinstance(y.dtype.type, np.inexact):
+        if not issubclass(y.dtype.type, np.inexact):
             y = y.astype(np.float_)
 
         # Normalize the axis to ensure that it is positive.
@@ -247,6 +247,9 @@ class interp1d(object):
             len_y = oriented_y.shape[0]
             self._call = self._call_spline
             self._spline = splmake(x,oriented_y,order=order)
+
+            if issubclass(y.dtype.type, np.complexfloating):
+                raise ValueError("Input data must be real for spline interpolation")
 
         len_x = len(x)
         if len_x != len_y:

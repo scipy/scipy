@@ -292,6 +292,35 @@ class TestInterp1D(object):
             yield self._nd_check_interp, kind
             yield self._nd_check_shape, kind
 
+    def _check_complex(self, dtype=np.complex_, kind='linear', fail=False):
+        x = np.arange(10).astype(np.int_)
+        y = np.arange(10).astype(np.int_) * (1 + 2j)
+        y = y.astype(dtype)
+        if fail:
+            assert_raises(ValueError, interp1d, x, y, kind=kind)
+        else:
+            c = interp1d(x, y, kind=kind)
+            assert_array_almost_equal(y[:-1], c(x)[:-1])
+        assert (y.dtype == dtype) or not issubclass(y.dtype.type, np.inexact)
+
+    def test_complex(self):
+        for kind in ('linear', 'nearest'):
+            yield self._check_complex, np.complex64, kind
+            yield self._check_complex, np.complex128, kind
+            yield self._check_complex, np.float32, kind
+            yield self._check_complex, np.float64, kind
+
+        # The spline methods can't handle complex values, because the code
+        # for _fitpack.bispleval is written in C and is not type-agnostic.
+        #
+        # Check that a ValueError is raised if one attempts to interpolate
+        # complex data using these routines.
+        for kind in ('cubic', 'slinear', 'quadratic', 'zero'):
+            yield self._check_complex, np.complex64, kind, True
+            yield self._check_complex, np.complex128, kind, True
+            yield self._check_complex, np.float32, kind
+            yield self._check_complex, np.float64, kind
+
     @dec.knownfailureif(True, "zero-order splines fail for the last point")
     def test_nd_zero_spline(self):
         # zero-order splines don't get the last point right,
