@@ -37,12 +37,20 @@ Louis Luangkesorn for providing multiple tests for the stats module.
 Jochen Kupper for the zoom feature in the now-deprecated plt plotting module
 Tiffany Kamm for working on the community web-site.
 Mark Koudritsky for maintaining the web-site
-Andrew Straw for setting up the new Wiki at scipy.org
+Andrew Straw for help with the web-page, documentation, packaging and
+    testing.
+Stefan van der Walt for numerous bug-fixes, testing and documentation.
+Jarrod Millman for release management, community coordination, and code
+    clean up.
+Pierre Gerard-Marchant for statistical masked array functionality.
+Alan McIntyre for updating SciPy tests to use the new NumPy test framework.
+
 
 Institutions
 ------------
 
-Enthought -- for providing resources and finances for development of SciPy.
-Brigham Young University -- for providing resources for students to work on SciPy.
-Agilent -- which gave a genereous donation for support of SciPy.
+Enthought for providing resources and finances for development of SciPy.
+Brigham Young University for providing resources for students to work on SciPy.
+Agilent which gave a genereous donation for support of SciPy.
+UC Berkeley for providing travel money and hosting numerous sprints.
 
