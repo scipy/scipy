@@ -44,7 +44,12 @@ Jarrod Millman for release management, community coordination, and code
     clean up.
 Pierre Gerard-Marchant for statistical masked array functionality.
 Alan McIntyre for updating SciPy tests to use the new NumPy test framework.
-
+Matthew Brett for work on the Matlab file IO, bug-fixes, and improvements
+    to the testing framework.
+Gary Strangman for the scipy.stats package.
+Tiziano Zito for generalized symmetric and hermitian eigenvalue problem
+    solver.
+Chris Burns for bug-fixes.
 
 Institutions
 ------------
