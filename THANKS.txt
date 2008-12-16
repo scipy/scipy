@@ -11,48 +11,36 @@ been left off, please email the "SciPy Developers List" <scipy-dev@scipy.org>.
 
 Please add names as needed so that we can keep up with all the contributors. 
 
-Kumar Appaiah       -- Dolph Chebyshev window
-Nathan Bell         -- sparsetools, help with scipy.sparse and scipy.splinalg
-Robert Cimrman      -- UMFpack wrapper for sparse matrix module
-David M. Cooke      -- improvements to system_info, and LBFGSB wrapper
-Aric Hagberg        -- ARPACK wrappers, help with splinalg.eigen
-Chuck Harris        -- Zeros package in optimize (1d root-finding algorithms)
-Prabhu Ramachandran -- improvements to gui_thread
-Robert Kern         -- improvements to stats and bug-fixes
-Jean-Sebastien Roy  -- fmin_tnc code which he adapted from Stephen Nash's 
-                       original Fortran
-Ed Schofield        -- Maximum entropy and Monte Carlo modules, help with
-                       sparse matrix module
-Travis Vaught       -- initial work on stats module clean up
-Jeff Whitaker       -- Mac OS X support
-David Cournapeau    -- bug-fixes, refactor of fftpack and cluster, numscons build.
-Damian Eads         -- hierarchical clustering, dendrogram plotting,
-                       distance functions in spatial package, vq documentation
-Anne Archibald      -- kd-trees and nearest neighbor in scipy.spatial
-Pauli Virtanen      -- Sphinx documentation generation, interpolation bugfixes.
-Josef Perktold      -- major improvements to scipy.stats and its test suite
-
-Testing:
-
+Kumar Appaiah for Dolph Chebyshev window
+Nathan Bell for sparsetools, help with scipy.sparse and scipy.splinalg
+Robert Cimrman for UMFpack wrapper for sparse matrix module
+David M. Cooke for improvements to system_info, and LBFGSB wrapper
+Aric Hagberg for ARPACK wrappers, help with splinalg.eigen
+Chuck Harris for Zeros package in optimize (1d root-finding algorithms)
+Prabhu Ramachandran for improvements to gui_thread
+Robert Kern for improvements to stats and bug-fixes
+Jean-Sebastien Roy for fmin_tnc code which he adapted from Stephen Nash's 
+    original Fortran
+Ed Schofield for Maximum entropy and Monte Carlo modules, help with
+    sparse matrix module
+Travis Vaught for numerous contributions to annual conference and community
+    web-site and the initial work on stats module clean up
+Jeff Whitaker for Mac OS X support
+David Cournapeau for bug-fixes, refactor of fftpack and cluster, numscons build.
+Damian Eads for hierarchical clustering, dendrogram plotting,
+    distance functions in spatial package, vq documentation
+Anne Archibald for kd-trees and nearest neighbor in scipy.spatial
+Pauli Virtanen for Sphinx documentation generation, interpolation bugfixes.
+Josef Perktold for major improvements to scipy.stats and its test suite
 David Morrill for getting the scoreboard test system up and running.
 Louis Luangkesorn for providing multiple tests for the stats module.
+Jochen Kupper for the zoom feature in the now-deprecated plt plotting module
+Tiffany Kamm for working on the community web-site.
+Mark Koudritsky for maintaining the web-site
+Andrew Straw for setting up the new Wiki at scipy.org
 
-
-Others:
-
-Others who have contributed in the past include:
-
-Jochen Kupper -- the zoom feature in the now-deprecated plt plotting module
-
-
-Website Development:
-
-Travis Vaught, Tiffany Kamm, and Eric Jones -- for building the community web-site.
-Travis Vaught, Mark Koudritsky -- for maintaining the web-site
-Andrew Straw -- for setting up the new Wiki at scipy.org
-
-
-Institutions:
+Institutions
+------------
 
 Enthought -- for providing resources and finances for development of SciPy.
 Brigham Young University -- for providing resources for students to work on SciPy.
