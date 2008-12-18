@@ -16,7 +16,7 @@ class TestNNLS(TestCase):
         a=arange(25.0).reshape(-1,5)
         x=arange(5.0)
         y=dot(a,x)
-        x, res= nnls.nnls(a,y)
+        x, res= nnls(a,y)
         assert res<1e-7
         assert norm(dot(a,x)-y)<1e-7
 
