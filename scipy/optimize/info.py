@@ -27,6 +27,9 @@ Constrained Optimizers (multivariate)::
 
    fmin_cobyla   -- Constrained Optimization BY Linear Approximation
 
+   nnls          -- Solve linear least squares problem with non-negativity
+                      constraint
+
 Global Optimizers::
 
    anneal      --  Simulated Annealing

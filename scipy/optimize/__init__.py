@@ -14,6 +14,7 @@ from cobyla import fmin_cobyla
 from nonlin import broyden1, broyden2, broyden3, broyden_generalized, \
     anderson, anderson2
 from slsqp import fmin_slsqp
+from nnls import nnls
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
 from numpy.testing import Tester
