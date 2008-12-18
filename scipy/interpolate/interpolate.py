@@ -248,9 +248,6 @@ class interp1d(object):
             self._call = self._call_spline
             self._spline = splmake(x,oriented_y,order=order)
 
-            if issubclass(y.dtype.type, np.complexfloating):
-                raise ValueError("Input data must be real for spline interpolation")
-
         len_x = len(x)
         if len_x != len_y:
             raise ValueError("x and y arrays must be equal in length along "
@@ -765,10 +762,14 @@ def spleval((xj,cvals,k),xnew,deriv=0):
     oldshape = np.shape(xnew)
     xx = np.ravel(xnew)
     sh = cvals.shape[1:]
-    res = np.empty(xx.shape + sh)
+    res = np.empty(xx.shape + sh, dtype=cvals.dtype)
     for index in np.ndindex(*sh):
         sl = (slice(None),)+index
-        res[sl] = _fitpack._bspleval(xx,xj,cvals[sl],k,deriv)
+        if issubclass(cvals.dtype.type, np.complexfloating):
+            res[sl].real = _fitpack._bspleval(xx,xj,cvals.real[sl],k,deriv)
+            res[sl].imag = _fitpack._bspleval(xx,xj,cvals.imag[sl],k,deriv)
+        else:
+            res[sl] = _fitpack._bspleval(xx,xj,cvals[sl],k,deriv)
     res.shape = oldshape + sh
     return res
 
