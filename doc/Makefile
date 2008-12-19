@@ -44,7 +44,7 @@ dist: html
 	perl -pi -e 's#^\s*(<li><a href=".*?">SciPy.*?Reference Guide.*?&raquo;</li>)\s*$$#<li><a href="/">Numpy and Scipy Documentation</a> &raquo;</li> $$1#;' build/dist/*.html build/dist/*/*.html build/dist/*/*/*.html
 	(cd build/html && zip -9qr ../dist/scipy-html.zip .)
 	cp build/latex/scipy*.pdf build/dist
-	-cp build/htmlhelp/scipy.chm build/dist
+	-zip build/dist/scipy-chm.zip build/htmlhelp/scipy.chm
 	cd build/dist && tar czf ../dist.tar.gz *
 	chmod ug=rwX,o=rX -R build/dist
 	find build/dist -type d -print0 | xargs -0r chmod g+s
