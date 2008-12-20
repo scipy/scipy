@@ -1950,7 +1950,6 @@ def ttest_ind(a, b, axis=0):
     zerodivproblem = svar == 0
     t = (x1-x2)/np.sqrt(svar*(1.0/n1 + 1.0/n2))  # N-D COMPUTATION HERE!!!!!!
     t = np.where(zerodivproblem, 1.0, t)           # replace NaN t-values with 1.0
-    #probs = betai(0.5*df,0.5,float(df)/(df+t*t))
     probs = distributions.t.sf(np.abs(t),df)*2
 
     if not np.isscalar(t):
@@ -2017,13 +2016,11 @@ def ttest_rel(a,b,axis=None):
     df = float(n-1)
     d = (a-b).astype('d')
 
-    #denom is just var(d)/df
-    denom = np.sqrt((n*np.add.reduce(d*d,axis) - np.add.reduce(d,axis)**2) /df)
+    #denom is just sqrt(var(d)/df)
+    denom = np.sqrt(np.var(d,axis,ddof=1)/float(n))
     zerodivproblem = denom == 0
-    t = np.add.reduce(d, axis) / denom      # N-D COMPUTATION HERE!!!!!!
+    t = np.mean(d, axis) / denom
     t = np.where(zerodivproblem, 1.0, t)    # replace NaN t-values with 1.0
-    t = np.where(zerodivproblem, 1.0, t)    # replace NaN t-values with 1.0
-    #probs = betai(0.5*df,0.5,float(df)/(df+t*t))
     probs = distributions.t.sf(np.abs(t),df)*2
     if not np.isscalar(t):
         probs = np.reshape(probs, t.shape)

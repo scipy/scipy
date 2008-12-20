@@ -1054,5 +1054,24 @@ def test_ks_2samp():
                               np.linspace(1,100,110)+20-0.1)),
         np.array((0.20818181818181825, 0.017981441789762638)))
 
+def test_ttest_rel():
+    #regression test
+    tr,pr = 0.81248591389165692, 0.41846234511362157
+    tpr = ([tr,-tr],[pr,pr])
+
+    rvs1 = np.linspace(1,100,100)
+    rvs2 = np.linspace(1.01,99.989,100)
+    rvs1_2D = np.array([np.linspace(1,100,100), np.linspace(1.01,99.989,100)])
+    rvs2_2D = np.array([np.linspace(1.01,99.989,100), np.linspace(1,100,100)])
+
+    t,p = stats.ttest_rel(rvs1, rvs2, axis=0)
+    assert_array_almost_equal([t,p],(tr,pr))
+    t,p = stats.ttest_rel(rvs1_2D.T, rvs2_2D.T, axis=0)
+    assert_array_almost_equal([t,p],tpr)
+    t,p = stats.ttest_rel(rvs1_2D, rvs2_2D, axis=1)
+    assert_array_almost_equal([t,p],tpr)
+
+
+
 if __name__ == "__main__":
     run_module_suite()
