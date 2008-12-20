@@ -16,4 +16,4 @@ SciPy Tutorial
    signal
    linalg
    stats
-
+   ndimage

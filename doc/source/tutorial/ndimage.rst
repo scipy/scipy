@@ -1,5 +1,5 @@
 Multi-dimensional image processing (:mod:`ndimage`)
-=========================================================
+===================================================
 
 .. moduleauthor:: Peter Verveer <verveer@users.sourceforge.net>
 
@@ -326,8 +326,8 @@ construct the Laplace filter:
     {derivative2(input, axis, output, mode, cval, \*extra_arguments, \*\*extra_keywords)}
 
     It should calculate the second derivative along the dimension
-    *axis*. If *output* is not {None} it should use that for the output
-    and return {None}, otherwise it should return the result. *mode*,
+    *axis*. If *output* is not None it should use that for the output
+    and return None, otherwise it should return the result. *mode*,
     *cval* have the usual meaning.
 
     The *extra_arguments* and *extra_keywords* arguments can be used
@@ -409,8 +409,8 @@ function that calculated the gradient magnitude of an array:
     {derivative(input, axis, output, mode, cval, \*extra_arguments, \*\*extra_keywords)}
 
     It should calculate the derivative along the dimension *axis*. If
-    *output* is not {None} it should use that for the output and return
-    {None}, otherwise it should return the result. *mode*, *cval* have
+    *output* is not None it should use that for the output and return
+    None, otherwise it should return the result. *mode*, *cval* have
     the usual meaning.
 
     The *extra_arguments* and *extra_keywords* arguments can be used
@@ -596,9 +596,9 @@ also be written in C and passed using a CObject (see
 
 
 These functions iterate over the lines or elements starting at the
-last axis, i.e. the last index changest the fastest. This order of
-iteration is garantueed for the case that it is important to adapt
-the filter dependening on spatial location. Here is an example of
+last axis, i.e. the last index changes the fastest. This order of
+iteration is guaranteed for the case that it is important to adapt
+the filter depending on spatial location. Here is an example of
 using a class that implements the filter and keeps track of the
 current coordinates while iterating. It performs the same filter
 operation as described above for :func:`generic_filter`, but
@@ -747,7 +747,7 @@ splines of an order larger than 1 requires a pre- filtering step.
 The interpolation functions described in section
 :ref:`ndimage-interpolation` apply pre-filtering by calling
 :func:`spline_filter`, but they can be instructed not to do this by
-setting the *prefilter* keyword equal to {False}. This is useful if
+setting the *prefilter* keyword equal to False. This is useful if
 more than one interpolation operation is done on the same array. In
 this case it is more efficient to do the pre-filtering only once
 and use a prefiltered array as the input of the interpolation
@@ -1002,7 +1002,7 @@ that is dilated a number of times with itself:
     dilations must be achieved with the iterated structure. The adapted
     origin is simply obtained by multiplying with the number of
     iterations. For convenience the :func:`iterate_structure` also returns
-    the adapted origin if the *origin* parameter is not {None}:
+    the adapted origin if the *origin* parameter is not None:
 
     ::
 
@@ -1058,7 +1058,7 @@ for convenience:
     logical *not* of the input with the second structure, followed by
     the logical *and* of these two erosions. The origin parameters
     control the placement of the structuring elements as described in
-    section :ref:`ndimage-filter-functions`. If {origin2} equals {None} it
+    section :ref:`ndimage-filter-functions`. If {origin2} equals None it
     is set equal to the {origin1} parameter. If the first structuring
     element is not provided, a structuring element with connectivity
     equal to one is generated using :func:`generate_binary_structure`, if
@@ -1464,7 +1464,7 @@ smallest sub-array that fully contains the object:
     :func:`find_objects` returns slices for all objects, unless the
     *max_label* parameter is larger then zero, in which case only the
     first *max_label* objects are returned. If an index is missing in
-    the *label* array, {None} is return instead of a slice. For
+    the *label* array, None is return instead of a slice. For
     example:
 
     ::
@@ -1524,7 +1524,7 @@ the second object in our example we give a list of labels:
 
 The measurement functions described below all support the *index*
 parameter to indicate which object(s) should be measured. The
-default value of *index* is {None}. This indicates that all
+default value of *index* is None. This indicates that all
 elements where the label is larger than zero should be treated as a
 single object and measured. Thus, in this case the *labels* array
 is treated as a mask defined by the elements that are larger than
@@ -1536,70 +1536,70 @@ number, or as a tuple of lists, if *index* is a sequence.
 
     The :func:`sum` function calculates the sum of the elements of the object
     with label(s) given by *index*, using the *labels* array for the
-    object labels. If *index* is {None}, all elements with a non-zero
-    label value are treated as a single object. If *label* is {None},
+    object labels. If *index* is None, all elements with a non-zero
+    label value are treated as a single object. If *label* is None,
     all elements of *input* are used in the calculation.
 
 
     The :func:`mean` function calculates the mean of the elements of the
     object with label(s) given by *index*, using the *labels* array for
-    the object labels. If *index* is {None}, all elements with a
+    the object labels. If *index* is None, all elements with a
     non-zero label value are treated as a single object. If *label* is
-    {None}, all elements of *input* are used in the calculation.
+    None, all elements of *input* are used in the calculation.
 
 
     The :func:`variance` function calculates the variance of the elements of
     the object with label(s) given by *index*, using the *labels* array
-    for the object labels. If *index* is {None}, all elements with a
+    for the object labels. If *index* is None, all elements with a
     non-zero label value are treated as a single object. If *label* is
-    {None}, all elements of *input* are used in the calculation.
+    None, all elements of *input* are used in the calculation.
 
 
     The :func:`standard_deviation` function calculates the standard
     deviation of the elements of the object with label(s) given by
     *index*, using the *labels* array for the object labels. If *index*
-    is {None}, all elements with a non-zero label value are treated as
-    a single object. If *label* is {None}, all elements of *input* are
+    is None, all elements with a non-zero label value are treated as
+    a single object. If *label* is None, all elements of *input* are
     used in the calculation.
 
 
     The :func:`minimum` function calculates the minimum of the elements of
     the object with label(s) given by *index*, using the *labels* array
-    for the object labels. If *index* is {None}, all elements with a
+    for the object labels. If *index* is None, all elements with a
     non-zero label value are treated as a single object. If *label* is
-    {None}, all elements of *input* are used in the calculation.
+    None, all elements of *input* are used in the calculation.
 
 
     The :func:`maximum` function calculates the maximum of the elements of
     the object with label(s) given by *index*, using the *labels* array
-    for the object labels. If *index* is {None}, all elements with a
+    for the object labels. If *index* is None, all elements with a
     non-zero label value are treated as a single object. If *label* is
-    {None}, all elements of *input* are used in the calculation.
+    None, all elements of *input* are used in the calculation.
 
 
     The :func:`minimum_position` function calculates the position of the
     minimum of the elements of the object with label(s) given by
     *index*, using the *labels* array for the object labels. If *index*
-    is {None}, all elements with a non-zero label value are treated as
-    a single object. If *label* is {None}, all elements of *input* are
+    is None, all elements with a non-zero label value are treated as
+    a single object. If *label* is None, all elements of *input* are
     used in the calculation.
 
 
     The :func:`maximum_position` function calculates the position of the
     maximum of the elements of the object with label(s) given by
     *index*, using the *labels* array for the object labels. If *index*
-    is {None}, all elements with a non-zero label value are treated as
-    a single object. If *label* is {None}, all elements of *input* are
+    is None, all elements with a non-zero label value are treated as
+    a single object. If *label* is None, all elements of *input* are
     used in the calculation.
 
 
     The :func:`extrema` function calculates the minimum, the maximum, and
     their positions, of the elements of the object with label(s) given
     by *index*, using the *labels* array for the object labels. If
-    *index* is {None}, all elements with a non-zero label value are
-    treated as a single object. If *label* is {None}, all elements of
+    *index* is None, all elements with a non-zero label value are
+    treated as a single object. If *label* is None, all elements of
     *input* are used in the calculation. The result is a tuple giving
-    the minimum, the maximum, the position of the mininum and the
+    the minimum, the maximum, the position of the minimum and the
     postition of the maximum. The result is the same as a tuple formed
     by the results of the functions *minimum*, *maximum*,
     *minimum_position*, and *maximum_position* that are described
@@ -1608,17 +1608,17 @@ number, or as a tuple of lists, if *index* is a sequence.
 
     The :func:`center_of_mass` function calculates the center of mass of
     the of the object with label(s) given by *index*, using the
-    *labels* array for the object labels. If *index* is {None}, all
+    *labels* array for the object labels. If *index* is None, all
     elements with a non-zero label value are treated as a single
-    object. If *label* is {None}, all elements of *input* are used in
+    object. If *label* is None, all elements of *input* are used in
     the calculation.
 
 
     The :func:`histogram` function calculates a histogram of the of the
     object with label(s) given by *index*, using the *labels* array for
-    the object labels. If *index* is {None}, all elements with a
+    the object labels. If *index* is None, all elements with a
     non-zero label value are treated as a single object. If *label* is
-    {None}, all elements of *input* are used in the calculation.
+    None, all elements of *input* are used in the calculation.
     Histograms are defined by their minimum (*min*), maximum (*max*)
     and the number of bins (*bins*). They are returned as
     one-dimensional arrays of type Int32.
