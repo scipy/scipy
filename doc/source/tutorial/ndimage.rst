@@ -14,7 +14,7 @@ Image processing and analysis are generally seen as operations on
 two-dimensional arrays of values. There are however a number of
 fields where images of higher dimensionality must be analyzed. Good
 examples of these are medical imaging and biological imaging.
-:mod:`numarray` is suited very well for this type of applications due
+:mod:`numpy` is suited very well for this type of applications due
 its inherent multi-dimensional nature. The :mod:`scipy.ndimage`
 packages provides a number of general image processing and analysis
 functions that are designed to operate with arrays of arbitrary
@@ -41,7 +41,7 @@ however, the *output* argument is used, the type of the result is
 equal to the type of the specified output argument. If no output
 argument is given, it is still possible to specify what the result
 of the output should be. This is done by simply assigning the
-desired numarray type object to the output argument. For example:
+desired `numpy` type object to the output argument. For example:
 
 ::
 
@@ -50,7 +50,7 @@ desired numarray type object to the output argument. For example:
     >>> print correlate(arange(10), [1, 2.5], output = Float64)
     [  0.    2.5   6.    9.5  13.   16.5  20.   23.5  27.   30.5]
 
-{In previous versions of :mod:`scipy.ndimage`, some functions accepted the *output_type* argument to achieve the same effect. This argument is still supported, but its use will generate an deprecation warning. In a future version all instances of this argument will be removed. The preferred way to specify an output type, is by using the *output* argument, either by specifying an output array of the desired type, or by specifying the type of the output that is to be returned.}
+.. note:: In previous versions of :mod:`scipy.ndimage`, some functions accepted the *output_type* argument to achieve the same effect. This argument is still supported, but its use will generate an deprecation warning. In a future version all instances of this argument will be removed. The preferred way to specify an output type, is by using the *output* argument, either by specifying an output array of the desired type, or by specifying the type of the output that is to be returned.
 
 .. _ndimage-filter-functions:
 
@@ -143,51 +143,40 @@ currently supported:
 The "constant" mode is special since it needs an additional
 parameter to specify the constant value that should be used.
 
-{The easiest way to implement such boundary conditions would be to 
-copy the data to a larger array and extend the data at the borders 
-according to the boundary conditions. For large arrays and large filter 
-kernels, this would be very memory consuming, and the functions described 
-below therefore use a different approach that does not require allocating 
-large temporary buffers.}
+.. note:: The easiest way to implement such boundary conditions would be to copy the data to a larger array and extend the data at the borders according to the boundary conditions. For large arrays and large filter kernels, this would be very memory consuming, and the functions described below therefore use a different approach that does not require allocating large temporary buffers.
 
 Correlation and convolution
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    The :obj:`correlate1d` function calculates a one-dimensional correlation
+    The :func:`correlate1d` function calculates a one-dimensional correlation
     along the given axis. The lines of the array along the given axis
     are correlated with the given *weights*. The *weights* parameter
     must be a one-dimensional sequences of numbers.
 
 
-    The function :obj:`correlate` implements multi-dimensional correlation
+    The function :func:`correlate` implements multi-dimensional correlation
     of the input array with a given kernel.
 
 
-    The :obj:`convolve1d` function calculates a one-dimensional convolution
+    The :func:`convolve1d` function calculates a one-dimensional convolution
     along the given axis. The lines of the array along the given axis
     are convoluted with the given *weights*. The *weights* parameter
     must be a one-dimensional sequences of numbers.
 
-    {A convolution is essentially a correlation after mirroring the 
-    kernel. As a result, the *origin* parameter behaves differently than
-    in the case of a correlation: the result is shifted in the opposite 
-    directions.}
+    .. note:: A convolution is essentially a correlation after mirroring the kernel. As a result, the *origin* parameter behaves differently than in the case of a correlation: the result is shifted in the opposite directions.
 
-    The function :obj:`convolve` implements multi-dimensional convolution of
+    The function :func:`convolve` implements multi-dimensional convolution of
     the input array with a given kernel.
 
-    {A convolution is essentially a correlation after mirroring the 
-    kernel. As a result, the *origin* parameter behaves differently than 
-    in the case of a correlation: the results is shifted in the opposite 
-    direction.}
+    .. note:: A convolution is essentially a correlation after mirroring the kernel. As a result, the *origin* parameter behaves differently than in the case of a correlation: the results is shifted in the opposite direction.
 
 .. _ndimage-filter-functions-smoothing:
 
 Smoothing filters
------------------
+^^^^^^^^^^^^^^^^^
 
 
-    The :obj:`gaussian_filter1d` function implements a one-dimensional
+    The :func:`gaussian_filter1d` function implements a one-dimensional
     Gaussian filter. The standard-deviation of the Gaussian filter is
     passed through the parameter *sigma*. Setting *order* = 0 corresponds
     to convolution with a Gaussian kernel. An order of 1, 2, or 3
@@ -196,7 +185,7 @@ Smoothing filters
     implemented.
 
 
-    The :obj:`gaussian_filter` function implements a multi-dimensional
+    The :func:`gaussian_filter` function implements a multi-dimensional
     Gaussian filter. The standard-deviations of the Gaussian filter
     along each axis are passed through the parameter *sigma* as a
     sequence or numbers. If *sigma* is not a sequence but a single
@@ -209,45 +198,34 @@ Smoothing filters
     number, to specify the same order for all axes, or a sequence of
     numbers to specify a different order for each axis.
 
-    {The multi-dimensional filter is implemented as a sequence of
-    one-dimensional Gaussian filters. The intermediate arrays are stored in 
-    the same data type as the output.  Therefore, for output types with a 
-    lower precision, the results may be imprecise because intermediate 
-    results may be stored with insufficient precision. This can be 
-    prevented by specifying a more precise output type.}
+    .. note:: The multi-dimensional filter is implemented as a sequence of one-dimensional Gaussian filters. The intermediate arrays are stored in  the same data type as the output.  Therefore, for output types with a lower precision, the results may be imprecise because intermediate results may be stored with insufficient precision. This can be prevented by specifying a more precise output type.
 
 
-    The :obj:`uniform_filter1d` function calculates a one-dimensional
+    The :func:`uniform_filter1d` function calculates a one-dimensional
     uniform filter of the given *size* along the given axis.
 
 
-    The :obj:`uniform_filter` implements a multi-dimensional uniform
+    The :func:`uniform_filter` implements a multi-dimensional uniform
     filter. The sizes of the uniform filter are given for each axis as
     a sequence of integers by the *size* parameter. If *size* is not a
     sequence, but a single number, the sizes along all axis are assumed
     to be equal.
 
-    {The multi-dimensional filter is implemented as a sequence of
-    one-dimensional uniform filters. The intermediate arrays are stored in 
-    the same data type as the output. Therefore, for output types with a 
-    lower precision, the results may be imprecise because intermediate 
-    results may be stored with insufficient precision. This can be 
-    prevented by specifying a
-    more precise output type.}
+    .. note:: The multi-dimensional filter is implemented as a sequence of one-dimensional uniform filters. The intermediate arrays are stored in the same data type as the output. Therefore, for output types with a lower precision, the results may be imprecise because intermediate results may be stored with insufficient precision. This can be prevented by specifying a more precise output type.
 
 
 Filters based on order statistics
----------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    The :obj:`minimum_filter1d` function calculates a one-dimensional
+    The :func:`minimum_filter1d` function calculates a one-dimensional
     minimum filter of given *size* along the given axis.
 
 
-    The :obj:`maximum_filter1d` function calculates a one-dimensional
+    The :func:`maximum_filter1d` function calculates a one-dimensional
     maximum filter of given *size* along the given axis.
 
 
-    The :obj:`minimum_filter` function calculates a multi-dimensional
+    The :func:`minimum_filter` function calculates a multi-dimensional
     minimum filter. Either the sizes of a rectangular kernel or the
     footprint of the kernel must be provided. The *size* parameter, if
     provided, must be a sequence of sizes or a single number in which
@@ -256,7 +234,7 @@ Filters based on order statistics
     shape of the kernel by its non-zero elements.
 
 
-    The :obj:`maximum_filter` function calculates a multi-dimensional
+    The :func:`maximum_filter` function calculates a multi-dimensional
     maximum filter. Either the sizes of a rectangular kernel or the
     footprint of the kernel must be provided. The *size* parameter, if
     provided, must be a sequence of sizes or a single number in which
@@ -265,7 +243,7 @@ Filters based on order statistics
     shape of the kernel by its non-zero elements.
 
 
-    The :obj:`rank_filter` function calculates a multi-dimensional rank
+    The :func:`rank_filter` function calculates a multi-dimensional rank
     filter. The *rank* may be less then zero, i.e., *rank* = -1 indicates
     the largest element. Either the sizes of a rectangular kernel or
     the footprint of the kernel must be provided. The *size* parameter,
@@ -275,7 +253,7 @@ Filters based on order statistics
     the shape of the kernel by its non-zero elements.
 
 
-    The :obj:`percentile_filter` function calculates a multi-dimensional
+    The :func:`percentile_filter` function calculates a multi-dimensional
     percentile filter. The *percentile* may be less then zero, i.e.,
     *percentile* = -20 equals *percentile* = 80. Either the sizes of a
     rectangular kernel or the footprint of the kernel must be provided.
@@ -286,7 +264,7 @@ Filters based on order statistics
     elements.
 
 
-    The :obj:`median_filter` function calculates a multi-dimensional median
+    The :func:`median_filter` function calculates a multi-dimensional median
     filter. Either the sizes of a rectangular kernel or the footprint
     of the kernel must be provided. The *size* parameter, if provided,
     must be a sequence of sizes or a single number in which case the
@@ -296,19 +274,19 @@ Filters based on order statistics
 
 
 Derivatives
------------
+^^^^^^^^^^^
 
 Derivative filters can be constructed in several ways. The function
-:func:`gaussian_filter1d` described in section 
+:func:`gaussian_filter1d` described in  
 :ref:`ndimage-filter-functions-smoothing` can be used to calculate
 derivatives along a given axis using the *order* parameter. Other
 derivative filters are the Prewitt and Sobel filters:
 
-    The :obj:`prewitt` function calculates a derivative along the given
+    The :func:`prewitt` function calculates a derivative along the given
     axis.
 
 
-    The :obj:`sobel` function calculates a derivative along the given
+    The :func:`sobel` function calculates a derivative along the given
     axis.
 
 
@@ -319,7 +297,7 @@ we provide a general function that takes a function argument to
 calculate the second derivative along a given direction and to
 construct the Laplace filter:
 
-    The function :obj:`generic_laplace` calculates a laplace filter using
+    The function :func:`generic_laplace` calculates a laplace filter using
     the function passed through :func:`derivative2` to calculate second
     derivatives. The function :func:`derivative2` should have the following
     signature:
@@ -388,12 +366,12 @@ The following two functions are implemented using
 :func:`generic_laplace` by providing appropriate functions for the
 second derivative function:
 
-    The function :obj:`laplace` calculates the Laplace using discrete
+    The function :func:`laplace` calculates the Laplace using discrete
     differentiation for the second derivative (i.e. convolution with
-    {[1, -2, 1]}).
+    :obj:`[1, -2, 1]`).
 
 
-    The function :obj:`gaussian_laplace` calculates the Laplace using
+    The function :func:`gaussian_laplace` calculates the Laplace using
     :func:`gaussian_filter` to calculate the second derivatives. The
     standard-deviations of the Gaussian filter along each axis are
     passed through the parameter *sigma* as a sequence or numbers. If
@@ -406,9 +384,9 @@ the squares of the gradients in all directions. Similar to the
 generic Laplace function there is a :func:`generic_gradient_magnitude`
 function that calculated the gradient magnitude of an array:
 
-    The function :obj:`generic_gradient_magnitude` calculates a gradient
+    The function :func:`generic_gradient_magnitude` calculates a gradient
     magnitude using the function passed through :func:`derivative` to
-    calculate first derivatives. The function :obj:`derivative` should have
+    calculate first derivatives. The function :func:`derivative` should have
     the following signature:
 
     ::
@@ -442,12 +420,12 @@ function that calculated the gradient magnitude of an array:
     the *extra_arguments* and *extra_keywords* arguments.
 
 
-The :obj:`sobel` and :func:`prewitt` functions fit the required signature and
+The :func:`sobel` and :func:`prewitt` functions fit the required signature and
 can therefore directly be used with :func:`generic_gradient_magnitude`.
 The following function implements the gradient magnitude using
 Gaussian derivatives:
 
-    The function :obj:`gaussian_gradient_magnitude` calculates the
+    The function :func:`gaussian_gradient_magnitude` calculates the
     gradient magnitude using :func:`gaussian_filter` to calculate the first
     derivatives. The standard-deviations of the Gaussian filter along
     each axis are passed through the parameter *sigma* as a sequence or
@@ -458,7 +436,7 @@ Gaussian derivatives:
 .. _ndimage-genericfilters:
 
 Generic filter functions
-------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 To implement filter functions, generic functions can be used that accept a 
 callable object that implements the filtering operation. The iteration over the 
@@ -466,16 +444,16 @@ input and output arrays is handled by these generic functions, along with such
 details as the implementation of the boundary conditions. Only a
 callable object implementing a callback function that does the
 actual filtering work must be provided. The callback function can
-also be written in C and passed using a CObject (see
+also be written in C and passed using a :ctype:`PyCObject` (see
 :ref:`ndimage-ccallbacks` for more information).
 
-    The :obj:`generic_filter1d` function implements a generic
+    The :func:`generic_filter1d` function implements a generic
     one-dimensional filter function, where the actual filtering
     operation must be supplied as a python function (or other callable
-    object). The :obj:`generic_filter1d` function iterates over the lines
+    object). The :func:`generic_filter1d` function iterates over the lines
     of an array and calls :func:`function` at each line. The arguments that
     are passed to :func:`function` are one-dimensional arrays of the
-    {tFloat64} type. The first contains the values of the current line.
+    :ctype:`tFloat64` type. The first contains the values of the current line.
     It is extended at the beginning end the end, according to the
     *filter_size* and *origin* arguments. The second array should be
     modified in-place to provide the output values of the line. For
@@ -533,12 +511,12 @@ also be written in C and passed using a CObject (see
          [51 56 62 65]]
 
 
-    The :obj:`generic_filter` function implements a generic filter
+    The :func:`generic_filter` function implements a generic filter
     function, where the actual filtering operation must be supplied as
-    a python function (or other callable object). The :obj:`generic_filter`
+    a python function (or other callable object). The :func:`generic_filter`
     function iterates over the array and calls :func:`function` at each
     element. The argument of :func:`function` is a one-dimensional array of
-    the {tFloat64} type, that contains the values around the current
+    the :ctype:`tFloat64` type, that contains the values around the current
     element that are within the footprint of the filter. The function
     should return a single value that can be converted to a double
     precision number. For example consider a correlation:
@@ -698,12 +676,12 @@ this:
      [51 56 62 65]]
 
 Fourier domain filters
-----------------------
+^^^^^^^^^^^^^^^^^^^^^^
 
 The functions described in this section perform filtering
 operations in the Fourier domain. Thus, the input array of such a
 function should be compatible with an inverse Fourier transform
-function, such as the functions from the {scipy.fft} module. We
+function, such as the functions from the :mod:`numpy.fft` module. We
 therefore have to deal with arrays that may be the result of a real
 or a complex Fourier transform. In the case of a real Fourier
 transform only half of the of the symmetric complex transform is
@@ -716,31 +694,30 @@ assumed that the input array was the result of a complex Fourier
 transform. The parameter *axis* can be used to indicate along which
 axis the real transform was executed.
 
-    The :obj:`fourier_shift` function multiplies the input array with the
+    The :func:`fourier_shift` function multiplies the input array with the
     multi-dimensional Fourier transform of a shift operation for the
     given shift. The *shift* parameter is a sequences of shifts for
     each dimension, or a single value for all dimensions.
 
 
-    The :obj:`fourier_gaussian` function multiplies the input array with
+    The :func:`fourier_gaussian` function multiplies the input array with
     the multi-dimensional Fourier transform of a Gaussian filter with
     given standard-deviations *sigma*. The *sigma* parameter is a
     sequences of values for each dimension, or a single value for all
     dimensions.
 
 
-    The :obj:`fourier_uniform` function multiplies the input array with the
+    The :func:`fourier_uniform` function multiplies the input array with the
     multi-dimensional Fourier transform of a uniform filter with given
     sizes *size*. The *size* parameter is a sequences of values for
     each dimension, or a single value for all dimensions.
 
 
-    The :obj:`fourier_ellipsoid` function multiplies the input array with
+    The :func:`fourier_ellipsoid` function multiplies the input array with
     the multi-dimensional Fourier transform of a elliptically shaped
     filter with given sizes *size*. The *size* parameter is a sequences
     of values for each dimension, or a single value for all dimensions.
-    {This function is
-    only implemented for dimensions 1, 2, and 3.}
+    This function is only implemented for dimensions 1, 2, and 3.
 
 
 .. _ndimage-interpolation:
@@ -755,7 +732,12 @@ This section describes various interpolation functions that are
 based on B-spline theory. A good introduction to B-splines can be
 found in: M. Unser, "Splines: A Perfect Fit for Signal and Image
 Processing," IEEE Signal Processing Magazine, vol. 16, no. 6, pp.
-22-38, November 1999. {Spline pre-filters} Interpolation using
+22-38, November 1999. 
+
+Spline pre-filters
+^^^^^^^^^^^^^^^^^^
+
+Interpolation using
 splines of an order larger than 1 requires a pre- filtering step.
 The interpolation functions described in section
 :ref:`ndimage-interpolation` apply pre-filtering by calling
@@ -767,37 +749,32 @@ and use a prefiltered array as the input of the interpolation
 functions. The following two functions implement the
 pre-filtering:
 
-    The :obj:`spline_filter1d` function calculates a one-dimensional spline
+    The :func:`spline_filter1d` function calculates a one-dimensional spline
     filter along the given axis. An output array can optionally be
     provided. The order of the spline must be larger then 1 and less
     than 6.
 
 
-    The :obj:`spline_filter` function calculates a multi-dimensional spline
+    The :func:`spline_filter` function calculates a multi-dimensional spline
     filter.
 
-    {The multi-dimensional filter is implemented as a sequence of
-    one-dimensional spline filters. The intermediate arrays are stored in 
-    the same data type as the output. Therefore, if an output 
-    with a limited precision is requested, the results may be imprecise 
-    because intermediate results may be stored with insufficient precision. 
-    This can be prevented by specifying a output type of high precision.}
+    .. note:: The multi-dimensional filter is implemented as a sequence of one-dimensional spline filters. The intermediate arrays are stored in the same data type as the output. Therefore, if an output with a limited precision is requested, the results may be imprecise because intermediate results may be stored with insufficient precision. This can be prevented by specifying a output type of high precision.
 
 
 Interpolation functions
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Following functions all employ spline interpolation to effect some type of 
 geometric transformation of the input array. This requires a mapping of the 
 output coordinates to the input coordinates, and therefore the possibility 
 arises that input values outside the boundaries are needed. This problem is
-solved in the same way as described in section :ref:`ndimage-filter-functions` 
+solved in the same way as described in :ref:`ndimage-filter-functions` 
 for the multi-dimensional filter functions. Therefore these functions all 
 support a *mode* parameter that determines how the boundaries are handled, and 
-a *cval* parameter that gives a constant value in case that the {'constant'}
+a *cval* parameter that gives a constant value in case that the 'constant'
 mode is used.
 
-    The :obj:`geometric_transform` function applies an arbitrary geometric
+    The :func:`geometric_transform` function applies an arbitrary geometric
     transform to the input. The given *mapping* function is called at
     each point in the output to find the corresponding coordinates in
     the input. *mapping* must be a callable object that accepts a tuple
@@ -848,17 +825,17 @@ mode is used.
          [ 0.      4.8125  6.1875]
          [ 0.      8.2625  9.6375]]  
 
-    {The mapping function can also be written in C and passed using a CObject. See :ref:`ndimage-ccallbacks` for more information.}
+    .. note:: The mapping function can also be written in C and passed using a :ctype:`PyCObject`. See :ref:`ndimage-ccallbacks` for more information.
 
 
-    The function :obj:`map_coordinates` applies an arbitrary coordinate
+    The function :func:`map_coordinates` applies an arbitrary coordinate
     transformation using the given array of coordinates. The shape of
     the output is derived from that of the coordinate array by dropping
     the first axis. The parameter *coordinates* is used to find for
     each point in the output the corresponding coordinates in the
     input. The values of *coordinates* along the first axis are the
     coordinates in the input array at which the output value is found.
-    (See also the numarray *coordinates* function.) Since the
+    (See also the numarray `coordinates` function.) Since the
     coordinates may be non- integer coordinates, the value of the input
     at these coordinates is determined by spline interpolation of the
     requested order. Here is an example that interpolates a 2D array at
@@ -876,7 +853,7 @@ mode is used.
         [ 1.3625  7.    ]
 
 
-    The :obj:`affine_transform` function applies an affine transformation
+    The :func:`affine_transform` function applies an affine transformation
     to the input array. The given transformation *matrix* and *offset*
     are used to find for each point in the output the corresponding
     coordinates in the input. The value of the input at the calculated
@@ -890,27 +867,36 @@ mode is used.
     shape and type.
 
 
-    The :obj:`shift` function returns a shifted version of the input, using
+    The :func:`shift` function returns a shifted version of the input, using
     spline interpolation of the requested *order*.
 
 
-    The :obj:`zoom` function returns a rescaled version of the input, using
+    The :func:`zoom` function returns a rescaled version of the input, using
     spline interpolation of the requested *order*.
 
 
-    The :obj:`rotate` function returns the input array rotated in the plane
+    The :func:`rotate` function returns the input array rotated in the plane
     defined by the two axes given by the parameter *axes*, using spline
     interpolation of the requested *order*. The angle must be given in
     degrees. If *reshape* is true, then the size of the output array is
     adapted to contain the rotated input.
 
 
+.. _ndimage-morphology:
+
+Morphology
+----------
+
 .. _ndimage-binary-morphology:
 
 Binary morphology
------------------
+^^^^^^^^^^^^^^^^^
 
-    The :obj:`generate_binary_structure` functions generates a binary
+.. currentmodule:: scipy.ndimage.morphology
+
+Binary morphology (need something to put here).
+
+    The :func:`generate_binary_structure` functions generates a binary
     structuring element for use in binary morphology operations. The
     *rank* of the structure must be provided. The size of the structure
     that is returned is equal to three in each direction. The value of
@@ -934,10 +920,10 @@ Binary morphology
 Most binary morphology functions can be expressed in terms of the
 basic operations erosion and dilation:
 
-    The :obj:`binary_erosion` function implements binary erosion of arrays
+    The :func:`binary_erosion` function implements binary erosion of arrays
     of arbitrary rank with the given structuring element. The origin
     parameter controls the placement of the structuring element as
-    described in section :ref:`ndimage-filter-functions`. If no
+    described in :ref:`ndimage-filter-functions`. If no
     structuring element is provided, an element with connectivity equal
     to one is generated using :func:`generate_binary_structure`. The
     *border_value* parameter gives the value of the array outside
@@ -948,10 +934,10 @@ basic operations erosion and dilation:
     are modified at each iteration.
 
 
-    The :obj:`binary_dilation` function implements binary dilation of
+    The :func:`binary_dilation` function implements binary dilation of
     arrays of arbitrary rank with the given structuring element. The
     origin parameter controls the placement of the structuring element
-    as described in section :ref:`ndimage-filter-functions`. If no
+    as described in :ref:`ndimage-filter-functions`. If no
     structuring element is provided, an element with connectivity equal
     to one is generated using :func:`generate_binary_structure`. The
     *border_value* parameter gives the value of the array outside
@@ -981,7 +967,7 @@ basic operations erosion and dilation:
          [0 0 0 0 0]]
 
 
-The :obj:`binary_erosion` and :func:`binary_dilation` functions both have an
+The :func:`binary_erosion` and :func:`binary_dilation` functions both have an
 *iterations* parameter which allows the erosion or dilation to be
 repeated a number of times. Repeating an erosion or a dilation with
 a given structure *n* times is equivalent to an erosion or a
@@ -989,7 +975,7 @@ dilation with a structure that is *n-1* times dilated with itself.
 A function is provided that allows the calculation of a structure
 that is dilated a number of times with itself:
 
-    The :obj:`iterate_structure` function returns a structure by dilation
+    The :func:`iterate_structure` function returns a structure by dilation
     of the input structure *iteration* - 1 times with itself. For
     instance:
 
@@ -1029,47 +1015,47 @@ Other morphology operations can be defined in terms of erosion and
 d dilation. Following functions provide a few of these operations
 for convenience:
 
-    The :obj:`binary_opening` function implements binary opening of arrays
+    The :func:`binary_opening` function implements binary opening of arrays
     of arbitrary rank with the given structuring element. Binary
     opening is equivalent to a binary erosion followed by a binary
     dilation with the same structuring element. The origin parameter
     controls the placement of the structuring element as described in
-    section :ref:`ndimage-filter-functions`. If no structuring element is
+    :ref:`ndimage-filter-functions`. If no structuring element is
     provided, an element with connectivity equal to one is generated
     using :func:`generate_binary_structure`. The *iterations* parameter
     gives the number of erosions that is performed followed by the same
     number of dilations.
 
 
-    The :obj:`binary_closing` function implements binary closing of arrays
+    The :func:`binary_closing` function implements binary closing of arrays
     of arbitrary rank with the given structuring element. Binary
     closing is equivalent to a binary dilation followed by a binary
     erosion with the same structuring element. The origin parameter
     controls the placement of the structuring element as described in
-    section :ref:`ndimage-filter-functions`. If no structuring element is
+    :ref:`ndimage-filter-functions`. If no structuring element is
     provided, an element with connectivity equal to one is generated
     using :func:`generate_binary_structure`. The *iterations* parameter
     gives the number of dilations that is performed followed by the
     same number of erosions.
 
 
-    The :obj:`binary_fill_holes` function is used to close holes in
+    The :func:`binary_fill_holes` function is used to close holes in
     objects in a binary image, where the structure defines the
     connectivity of the holes. The origin parameter controls the
-    placement of the structuring element as described in section
+    placement of the structuring element as described in 
     :ref:`ndimage-filter-functions`. If no structuring element is
     provided, an element with connectivity equal to one is generated
     using :func:`generate_binary_structure`.
 
 
-    The :obj:`binary_hit_or_miss` function implements a binary
+    The :func:`binary_hit_or_miss` function implements a binary
     hit-or-miss transform of arrays of arbitrary rank with the given
     structuring elements. The hit-or-miss transform is calculated by
     erosion of the input with the first structure, erosion of the
     logical *not* of the input with the second structure, followed by
     the logical *and* of these two erosions. The origin parameters
     control the placement of the structuring elements as described in
-    section :ref:`ndimage-filter-functions`. If *origin2* equals None it
+    :ref:`ndimage-filter-functions`. If *origin2* equals None it
     is set equal to the *origin1* parameter. If the first structuring
     element is not provided, a structuring element with connectivity
     equal to one is generated using :func:`generate_binary_structure`, if
@@ -1080,13 +1066,15 @@ for convenience:
 .. _ndimage-grey-morphology:
 
 Grey-scale morphology
----------------------
+^^^^^^^^^^^^^^^^^^^^^
+
+.. currentmodule:: scipy.ndimage.morphology
 
 Grey-scale morphology operations are the equivalents of binary
 morphology operations that operate on arrays with arbitrary values.
 Below we describe the grey-scale equivalents of erosion, dilation,
 opening and closing. These operations are implemented in a similar
-fashion as the filters described in section
+fashion as the filters described in 
 :ref:`ndimage-filter-functions`, and we refer to this section for the
 description of filter kernels and footprints, and the handling of
 array borders. The grey-scale morphology operations optionally take
@@ -1109,45 +1097,45 @@ elements.
 Similar to binary erosion and dilation there are operations for
 grey-scale erosion and dilation:
 
-    The :obj:`grey_erosion` function calculates a multi-dimensional grey-
+    The :func:`grey_erosion` function calculates a multi-dimensional grey-
     scale erosion.
 
 
-    The :obj:`grey_dilation` function calculates a multi-dimensional grey-
+    The :func:`grey_dilation` function calculates a multi-dimensional grey-
     scale dilation.
 
 
 Grey-scale opening and closing operations can be defined similar to
 their binary counterparts:
 
-    The :obj:`grey_opening` function implements grey-scale opening of
+    The :func:`grey_opening` function implements grey-scale opening of
     arrays of arbitrary rank. Grey-scale opening is equivalent to a
     grey-scale erosion followed by a grey-scale dilation.
 
 
-    The :obj:`grey_closing` function implements grey-scale closing of
+    The :func:`grey_closing` function implements grey-scale closing of
     arrays of arbitrary rank. Grey-scale opening is equivalent to a
     grey-scale dilation followed by a grey-scale erosion.
 
 
-    The :obj:`morphological_gradient` function implements a grey-scale
+    The :func:`morphological_gradient` function implements a grey-scale
     morphological gradient of arrays of arbitrary rank. The grey-scale
     morphological gradient is equal to the difference of a grey-scale
     dilation and a grey-scale erosion.
 
 
-    The :obj:`morphological_laplace` function implements a grey-scale
+    The :func:`morphological_laplace` function implements a grey-scale
     morphological laplace of arrays of arbitrary rank. The grey-scale
     morphological laplace is equal to the sum of a grey-scale dilation
     and a grey-scale erosion minus twice the input.
 
 
-    The :obj:`white_tophat` function implements a white top-hat filter of
+    The :func:`white_tophat` function implements a white top-hat filter of
     arrays of arbitrary rank. The white top-hat is equal to the
     difference of the input and a grey-scale opening.
 
 
-    The :obj:`black_tophat` function implements a black top-hat filter of
+    The :func:`black_tophat` function implements a black top-hat filter of
     arrays of arbitrary rank. The black top-hat is equal to the
     difference of the a grey-scale closing and the input.
 
@@ -1165,7 +1153,7 @@ the background. The following functions implement distance
 transforms for three different distance metrics: Euclidean, City
 Block, and Chessboard distances.
 
-    The function :obj:`distance_transform_cdt` uses a chamfer type
+    The function :func:`distance_transform_cdt` uses a chamfer type
     algorithm to calculate the distance transform of the input, by
     replacing each object element (defined by values larger than zero)
     with the shortest distance to the background (all non-object
@@ -1187,7 +1175,7 @@ Block, and Chessboard distances.
 
     The *distances* and *indices* arguments can be used to give
     optional output arrays that must be of the correct size and type
-    (both {Int32}).
+    (both :ctype:`Int32`).
 
     The basics of the algorithm used to implement this function is
     described in: G. Borgefors, "Distance transformations in arbitrary
@@ -1195,7 +1183,7 @@ Block, and Chessboard distances.
     27:321-345, 1984.
 
 
-    The function :obj:`distance_transform_edt` calculates the exact
+    The function :func:`distance_transform_edt` calculates the exact
     euclidean distance transform of the input, by replacing each object
     element (defined by values larger than zero) with the shortest
     euclidean distance to the background (all non-object elements).
@@ -1214,7 +1202,7 @@ Block, and Chessboard distances.
 
     The *distances* and *indices* arguments can be used to give
     optional output arrays that must be of the correct size and type
-    ({Float64} and {Int32}).
+    (:ctype:`Float64` and :ctype:`Int32`).
 
     The algorithm used to implement this function is described in: C.
     R. Maurer, Jr., R. Qi, and V. Raghavan, "A linear time algorithm
@@ -1222,7 +1210,7 @@ Block, and Chessboard distances.
     in arbitrary dimensions. IEEE Trans. PAMI 25, 265-270, 2003.
 
 
-    The function :obj:`distance_transform_bf` uses a brute-force algorithm
+    The function :func:`distance_transform_bf` uses a brute-force algorithm
     to calculate the distance transform of the input, by replacing each
     object element (defined by values larger than zero) with the
     shortest distance to the background (all non-object elements). The
@@ -1244,13 +1232,9 @@ Block, and Chessboard distances.
 
     The *distances* and *indices* arguments can be used to give
     optional output arrays that must be of the correct size and type
-    ({Float64} and {Int32}).
+    (:ctype:`Float64` and :ctype:`Int32`).
 
-    {This function uses a slow brute-force algorithm, the function
-    :func:`distance_transform_cdt` can be used to more efficiently 
-    calculate cityblock and chessboard distance transforms. The function
-    :func:`distance_transform_edt` can be used to more efficiently 
-    calculate the exact euclidean distance transform.}
+    .. note:: This function uses a slow brute-force algorithm, the function :func:`distance_transform_cdt` can be used to more efficiently calculate cityblock and chessboard distance transforms. The function :func:`distance_transform_edt` can be used to more efficiently calculate the exact euclidean distance transform.
 
 
 Segmentation and labeling
@@ -1273,10 +1257,10 @@ thresholding, which is easily done with :mod:`numpy` functions:
      [0 0 0 0 1 0]]
 
 The result is a binary image, in which the individual objects still
-need to be identified and labeled. The function :obj:`label` generates
+need to be identified and labeled. The function :func:`label` generates
 an array where each object is assigned a unique number:
 
-    The :obj:`label` function generates an array where the objects in the
+    The :func:`label` function generates an array where the objects in the
     input are labeled with an integer index. It returns a tuple
     consisting of the array of object labels and the number of objects
     found, unless the *output* parameter is given, in which case only
@@ -1310,7 +1294,8 @@ an array where each object is assigned a unique number:
          [0 0 0 0 1 0]]
 
     If no structuring element is provided, one is generated by calling
-    *generate_binary_structure* (see section :ref:`ndimage-binary-morphology`)
+    :func:`generate_binary_structure` (see 
+    :ref:`ndimage-binary-morphology`)
     using a connectivity of one (which in 2D is the 4-connected
     structure of the first example). The input can be of any type, any
     value not equal to zero is taken to be part of an object. This is
@@ -1329,20 +1314,19 @@ an array where each object is assigned a unique number:
         >>> print label(l)[0]
         [1 0 0 0 2]
 
-    {The structuring element used by :func:`label` is assumed to be
-    symmetric.}
+    .. note:: The structuring element used by :func:`label` is assumed to be symmetric.
 
 
 There is a large number of other approaches for segmentation, for
 instance from an estimation of the borders of the objects that can
 be obtained for instance by derivative filters. One such an
-approach is watershed segmentation. The function :obj:`watershed_ift`
+approach is watershed segmentation. The function :func:`watershed_ift`
 generates an array where each object is assigned a unique label,
 from an array that localizes the object borders, generated for
 instance by a gradient magnitude filter. It uses an array
 containing initial markers for the objects:
 
-    The :obj:`watershed_ift` function applies a watershed from markers
+    The :func:`watershed_ift` function applies a watershed from markers
     algorithm, using an Iterative Forest Transform, as described in: P.
     Felkel, R. Wegenkittl, and M. Bruckschwaiger, "Implementation and
     Complexity of the Watershed-from-Markers Algorithm Computed as a
@@ -1428,7 +1412,7 @@ containing initial markers for the objects:
 
     The connectivity of the objects is defined by a structuring
     element. If no structuring element is provided, one is generated by
-    calling :func:`generate_binary_structure` (see section
+    calling :func:`generate_binary_structure` (see
     :ref:`ndimage-binary-morphology`) using a connectivity of one 
     (which in 2D is a 4-connected structure.) For example, using 
     an 8-connected structure with the last example yields a different object:
@@ -1445,8 +1429,7 @@ containing initial markers for the objects:
          [-1  2  2  2  2  2 -1]
          [-1 -1 -1 -1 -1 -1 -1]]
 
-    {The implementation of :func:`watershed_ift` limits the data types 
-    of the input to \\constant{UInt8} and \\constant{UInt16}.}
+    .. note:: The implementation of :func:`watershed_ift` limits the data types of the input to :ctype:`UInt8` and :ctype:`UInt16`.
 
 
 .. _ndimage-object-measurements:
@@ -1457,11 +1440,11 @@ Object measurements
 .. currentmodule:: scipy.ndimage.measurements
 
 Given an array of labeled objects, the properties of the individual
-objects can be measured. The :obj:`find_objects` function can be used
+objects can be measured. The :func:`find_objects` function can be used
 to generate a list of slices that for each object, give the
 smallest sub-array that fully contains the object:
 
-    The :obj:`find_objects` function finds all objects in a labeled array and
+    The :func:`find_objects` function finds all objects in a labeled array and
     returns a list of slices that correspond to the smallest regions in
     the array that contains the object. For instance:
 
@@ -1551,28 +1534,28 @@ a list of the results is returned. Functions that return more than
 one result, return their result as a tuple if *index* is a single
 number, or as a tuple of lists, if *index* is a sequence.
 
-    The :obj:`sum` function calculates the sum of the elements of the object
+    The :func:`sum` function calculates the sum of the elements of the object
     with label(s) given by *index*, using the *labels* array for the
     object labels. If *index* is None, all elements with a non-zero
     label value are treated as a single object. If *label* is None,
     all elements of *input* are used in the calculation.
 
 
-    The :obj:`mean` function calculates the mean of the elements of the
+    The :func:`mean` function calculates the mean of the elements of the
     object with label(s) given by *index*, using the *labels* array for
     the object labels. If *index* is None, all elements with a
     non-zero label value are treated as a single object. If *label* is
     None, all elements of *input* are used in the calculation.
 
 
-    The :obj:`variance` function calculates the variance of the elements of
+    The :func:`variance` function calculates the variance of the elements of
     the object with label(s) given by *index*, using the *labels* array
     for the object labels. If *index* is None, all elements with a
     non-zero label value are treated as a single object. If *label* is
     None, all elements of *input* are used in the calculation.
 
 
-    The :obj:`standard_deviation` function calculates the standard
+    The :func:`standard_deviation` function calculates the standard
     deviation of the elements of the object with label(s) given by
     *index*, using the *labels* array for the object labels. If *index*
     is None, all elements with a non-zero label value are treated as
@@ -1580,21 +1563,21 @@ number, or as a tuple of lists, if *index* is a sequence.
     used in the calculation.
 
 
-    The :obj:`minimum` function calculates the minimum of the elements of
+    The :func:`minimum` function calculates the minimum of the elements of
     the object with label(s) given by *index*, using the *labels* array
     for the object labels. If *index* is None, all elements with a
     non-zero label value are treated as a single object. If *label* is
     None, all elements of *input* are used in the calculation.
 
 
-    The :obj:`maximum` function calculates the maximum of the elements of
+    The :func:`maximum` function calculates the maximum of the elements of
     the object with label(s) given by *index*, using the *labels* array
     for the object labels. If *index* is None, all elements with a
     non-zero label value are treated as a single object. If *label* is
     None, all elements of *input* are used in the calculation.
 
 
-    The :obj:`minimum_position` function calculates the position of the
+    The :func:`minimum_position` function calculates the position of the
     minimum of the elements of the object with label(s) given by
     *index*, using the *labels* array for the object labels. If *index*
     is None, all elements with a non-zero label value are treated as
@@ -1602,7 +1585,7 @@ number, or as a tuple of lists, if *index* is a sequence.
     used in the calculation.
 
 
-    The :obj:`maximum_position` function calculates the position of the
+    The :func:`maximum_position` function calculates the position of the
     maximum of the elements of the object with label(s) given by
     *index*, using the *labels* array for the object labels. If *index*
     is None, all elements with a non-zero label value are treated as
@@ -1610,7 +1593,7 @@ number, or as a tuple of lists, if *index* is a sequence.
     used in the calculation.
 
 
-    The :obj:`extrema` function calculates the minimum, the maximum, and
+    The :func:`extrema` function calculates the minimum, the maximum, and
     their positions, of the elements of the object with label(s) given
     by *index*, using the *labels* array for the object labels. If
     *index* is None, all elements with a non-zero label value are
@@ -1623,7 +1606,7 @@ number, or as a tuple of lists, if *index* is a sequence.
     above.
 
 
-    The :obj:`center_of_mass` function calculates the center of mass of
+    The :func:`center_of_mass` function calculates the center of mass of
     the of the object with label(s) given by *index*, using the
     *labels* array for the object labels. If *index* is None, all
     elements with a non-zero label value are treated as a single
@@ -1631,14 +1614,14 @@ number, or as a tuple of lists, if *index* is a sequence.
     the calculation.
 
 
-    The :obj:`histogram` function calculates a histogram of the of the
+    The :func:`histogram` function calculates a histogram of the of the
     object with label(s) given by *index*, using the *labels* array for
     the object labels. If *index* is None, all elements with a
     non-zero label value are treated as a single object. If *label* is
     None, all elements of *input* are used in the calculation.
     Histograms are defined by their minimum (*min*), maximum (*max*)
     and the number of bins (*bins*). They are returned as
-    one-dimensional arrays of type Int32.
+    one-dimensional arrays of type :ctype:`Int32`.
 
 
 .. _ndimage-ccallbacks:
@@ -1646,11 +1629,15 @@ number, or as a tuple of lists, if *index* is a sequence.
 Extending :mod:`ndimage` in C
 -----------------------------
 
-A few functions in the :mod:`scipy.ndimage` take a call-back argument. This can be a python function, but also a CObject containing a pointer to a C function. To use this feature, you must write your own C extension that defines the function, and define a python function that
-returns a CObject containing a pointer to this function.
+.. highlight:: c
+
+A few functions in the :mod:`scipy.ndimage` take a call-back 
+argument. This can be a python function, but also a :ctype:`PyCObject`
+containing a pointer to a C function. To use this feature, you must 
+write your own C extension that defines the function, and define a Python function that returns a :ctype:`PyCObject` containing a pointer to this function.
 
 An example of a function that supports this is
-:func:`geometric_transform` (see section :ref:`ndimage-interpolation`).
+:func:`geometric_transform` (see :ref:`ndimage-interpolation`).
 You can pass it a python callable object that defines a mapping
 from all output coordinates to corresponding coordinates in the
 input array. This mapping function can also be a C function, which
@@ -1688,7 +1675,7 @@ occur.
 
 A pointer to this function and a pointer to the shift value must be
 passed to :func:`geometric_transform`. Both are passed by a single
-CObject which is created by the following python extension
+:ctype:`PyCObject` which is created by the following python extension
 function:
 
 ::
@@ -1712,10 +1699,10 @@ function:
 
 The value of the shift is obtained and then assigned to a
 dynamically allocated memory location. Both this data pointer and
-the function pointer are then wrapped in a CObject, which is
+the function pointer are then wrapped in a :ctype:`PyCObject`, which is
 returned. Additionally, a pointer to a destructor function is
 given, that will free the memory we allocated for the shift value
-when the CObject is destroyed. This destructor is very simple:
+when the :ctype:`PyCObject` is destroyed. This destructor is very simple:
 
 ::
 
@@ -1726,7 +1713,7 @@ when the CObject is destroyed. This destructor is very simple:
         free(cdata);
     }
 
-To use these functions, an extension module is build:
+To use these functions, an extension module is built:
 
 ::
 
@@ -1743,6 +1730,8 @@ To use these functions, an extension module is build:
 
 This extension can then be used in Python, for example:
 
+.. highlight:: python
+
 ::
 
     >>> import example
@@ -1754,7 +1743,7 @@ This extension can then be used in Python, for example:
      [ 0.      4.8125  6.1875]
      [ 0.      8.2625  9.6375]]
 
-C Callback functions for use with :mod:`ndimage` functions must all
+C callback functions for use with :mod:`ndimage` functions must all
 be written according to this scheme. The next section lists the
 :mod:`ndimage` functions that acccept a C callback function and
 gives the prototype of the callback function.
@@ -1767,18 +1756,18 @@ described here. Obviously, the prototype of the function that is
 provided to these functions must match exactly that what they
 expect. Therefore we give here the prototypes of the callback
 functions. All these callback functions accept a void
-*callback_data* pointer that must be wrapped in a CObject using
-the Python {PyCObject_FromVoidPtrAndDesc} function, which can also
+*callback_data* pointer that must be wrapped in a :ctype:`PyCObject` using
+the Python :cfunc:`PyCObject_FromVoidPtrAndDesc` function, which can also
 accept a pointer to a destructor function to free any memory
 allocated for *callback_data*. If *callback_data* is not needed,
-{PyCObject_FromVoidPtr} may be used instead. The callback
+:cfunc:`PyCObject_FromVoidPtr` may be used instead. The callback
 functions must return an integer error status that is equal to zero
 if something went wrong, or 1 otherwise. If an error occurs, you
 should normally set the python error status with an informative
 message before returning, otherwise, a default error message is set
 by the calling function.
 
-The function :func:`generic_filter` (see section
+The function :func:`generic_filter` (see
 :ref:`ndimage-genericfilters`) accepts a callback function with the
 following prototype:
 
@@ -1790,7 +1779,7 @@ following prototype:
     calculated valued should be returned in the *return_value*
     argument.
 
-The function :func:`generic_filter1d` (see section
+The function :func:`generic_filter1d` (see
 :ref:`ndimage-genericfilters`) accepts a callback function with the
 following prototype:
 
@@ -1804,7 +1793,7 @@ following prototype:
     in the array passed through *output_line*. The length of the
     output line is passed through *output_length*.
 
-The function :func:`geometric_transform` (see section
+The function :func:`geometric_transform` (see
 :ref:`ndimage-interpolation`) expects a function with the following
 prototype:
 
