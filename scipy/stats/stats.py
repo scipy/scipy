@@ -1870,23 +1870,33 @@ def linregress(*args):
 #####  INFERENTIAL STATISTICS  #####
 #####################################
 
-def ttest_1samp(a, popmean):
+def ttest_1samp(a, popmean, axis=0):
     """
 Calculates the t-obtained for the independent samples T-test on ONE group
 of scores a, given a population mean.
 
 Returns: t-value, two-tailed prob
 """
-    a = asarray(a)
-    x = np.mean(a)
-    v = np.var(a, ddof=1)
-    n = len(a)
-    df = n-1
-    svar = ((n-1)*v) / float(df)
-    t = (x-popmean)/np.sqrt(svar*(1.0/n))
-    #prob = betai(0.5*df,0.5,df/(df+t*t))
-    prob = distributions.t.sf(np.abs(t),df)*2  #use np.abs to get upper tail
 
+
+    a, axis = _chk_asarray(a, axis)
+    n = a.shape[axis]
+    df=n-1
+
+    d = np.mean(a,axis) - popmean
+    v = np.var(a, axis, ddof=1)
+    
+    t = d / np.sqrt(v/float(n))
+    t = np.where((d==0)*(v==0), 1.0, t) #define t=0/0 = 1, identical mean, var
+    prob = distributions.t.sf(np.abs(t),df)*2  #use np.abs to get upper tail
+    #distributions.t.sf currently does not propagate nans
+    #this can be dropped, if distributions.t.sf propagates nans
+    #if this is removed, then prob = prob[()] needs to be removed
+    prob = np.where(np.isnan(t), np.nan, prob)  
+
+    if t.ndim == 0:
+        t = t[()]
+        prob = prob[()]
     return t,prob
 
 
@@ -1928,38 +1938,44 @@ def ttest_ind(a, b, axis=0):
         # test with sample with identical means
     >>> rvs1 = stats.norm.rvs(loc=5,scale=10,size=500)
     >>> rvs2 = stats.norm.rvs(loc=5,scale=10,size=500)
-    >>> stats.ttest_ind(rvs1,rvs2)
-    (array(0.26833823296239279), 0.78849443369564765)
+    >>> ttest_ind(rvs1,rvs2)
+    (0.26833823296239279, 0.78849443369564765)
 
 
         # test with sample with different means
     >>> rvs3 = stats.norm.rvs(loc=8,scale=10,size=500)
-    >>> stats.ttest_ind(rvs1,rvs3)
-    (array(-5.0434013458585092), 5.4302979468623391e-007)
+    >>> ttest_ind(rvs1,rvs3)
+    (-5.0434013458585092, 5.4302979468623391e-007)
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
-    x1 = mean(a,axis)
-    x2 = mean(b,axis)
-    v1 = var(a,axis)
-    v2 = var(b,axis)
+
+    v1 = np.var(a,axis,ddof = 1)
+    v2 = np.var(b,axis,ddof = 1)
     n1 = a.shape[axis]
     n2 = b.shape[axis]
     df = n1+n2-2
+
+    d = mean(a,axis) - mean(b,axis)
     svar = ((n1-1)*v1+(n2-1)*v2) / float(df)
-    zerodivproblem = svar == 0
-    t = (x1-x2)/np.sqrt(svar*(1.0/n1 + 1.0/n2))  # N-D COMPUTATION HERE!!!!!!
-    t = np.where(zerodivproblem, 1.0, t)           # replace NaN t-values with 1.0
-    probs = distributions.t.sf(np.abs(t),df)*2
 
-    if not np.isscalar(t):
-        probs = probs.reshape(t.shape)
-    if not np.isscalar(probs) and len(probs) == 1:
-        probs = probs[0]
-    return t, probs
+    t = d/np.sqrt(svar*(1.0/n1 + 1.0/n2))
+    t = np.where((d==0)*(svar==0), 1.0, t) #define t=0/0 = 0, identical means
+    prob = distributions.t.sf(np.abs(t),df)*2#use np.abs to get upper tail
+    
+    #distributions.t.sf currently does not propagate nans
+    #this can be dropped, if distributions.t.sf propagates nans
+    #if this is removed, then prob = prob[()] needs to be removed
+    prob = np.where(np.isnan(t), np.nan, prob)
+
+    if t.ndim == 0:
+        t = t[()]
+        prob = prob[()]
+        
+    return t, prob
 
 
-def ttest_rel(a,b,axis=None):
+def ttest_rel(a,b,axis=0):
     """Calculates the t-obtained T-test on TWO RELATED samples of scores, a
     and b.  From Numerical Recipies, p.483. Axis can equal None (ravel array
     first), or an integer (the axis over which to operate on a and b).
@@ -1987,8 +2003,6 @@ def ttest_rel(a,b,axis=None):
     Examples
     --------
 
-    (note: after changes difference in 13th decimal)
-
     >>> from scipy import stats
     >>> import numpy as np
 
@@ -1998,35 +2012,40 @@ def ttest_rel(a,b,axis=None):
     >>> rvs2 = stats.norm.rvs(loc=5,scale=10,size=500) + \
                             stats.norm.rvs(scale=0.2,size=500)
     >>> stats.ttest_rel(rvs1,rvs2)
-    (array(0.24101764965300965), 0.80964043445811562)
+    (0.24101764965300962, 0.80964043445811562)
     >>> rvs3 = stats.norm.rvs(loc=8,scale=10,size=500) + \
                             stats.norm.rvs(scale=0.2,size=500)
     >>> stats.ttest_rel(rvs1,rvs3)
-    (array(-3.9995108708727929), 7.3082402191726459e-005)
+    (-3.9995108708727933, 7.3082402191726459e-005)
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
-    if len(a)!=len(b):
+    if a.shape[axis] != b.shape[axis]:
         raise ValueError, 'unequal length arrays'
-    x1 = mean(a,axis)
-    x2 = mean(b,axis)
-    v1 = var(a,axis)
-    v2 = var(b,axis)
     n = a.shape[axis]
     df = float(n-1)
-    d = (a-b).astype('d')
 
-    #denom is just sqrt(var(d)/df)
-    denom = np.sqrt(np.var(d,axis,ddof=1)/float(n))
-    zerodivproblem = denom == 0
-    t = np.mean(d, axis) / denom
-    t = np.where(zerodivproblem, 1.0, t)    # replace NaN t-values with 1.0
-    probs = distributions.t.sf(np.abs(t),df)*2
-    if not np.isscalar(t):
-        probs = np.reshape(probs, t.shape)
-    if not np.isscalar(probs) and len(probs) == 1:
-        probs = probs[0]
-    return t, probs
+    d = (a-b).astype('d')
+    v = np.var(d,axis,ddof=1)
+    dm = np.mean(d, axis)
+    
+    t = dm / np.sqrt(v/float(n))
+    t = np.where((dm==0)*(v==0), 1.0, t) #define t=0/0 = 1, zero mean and var 
+    prob = distributions.t.sf(np.abs(t),df)*2 #use np.abs to get upper tail
+    #distributions.t.sf currently does not propagate nans
+    #this can be dropped, if distributions.t.sf propagates nans
+    #if this is removed, then prob = prob[()] needs to be removed
+    prob = np.where(np.isnan(t), np.nan, prob)
+    
+##    if not np.isscalar(t):
+##        probs = np.reshape(probs, t.shape) # this should be redundant
+##    if not np.isscalar(prob) and len(prob) == 1:
+##        prob = prob[0]
+    if t.ndim == 0:
+        t = t[()]
+        prob = prob[()]
+
+    return t, prob
 
 
 #import scipy.stats
