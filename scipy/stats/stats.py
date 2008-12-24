@@ -925,6 +925,9 @@ def kurtosistest(a, axis=0):
     term2 = np.where(denom < 0, term1, np.power((1-2.0/A)/denom,1/3.0))
     Z = ( term1 - term2 ) / np.sqrt(2/(9.0*A))
     Z = np.where(denom == 99, 0, Z)
+    if Z.ndim == 0:
+        Z = Z[()]
+    #JPNote: p-value sometimes larger than 1
     return Z, (1.0-zprob(Z))*2
 
 
