@@ -251,21 +251,16 @@ def probplot(x, sparams=(), dist='norm', fit=1, plot=None):
         # perform a linear fit.
         slope, intercept, r, prob, sterrest = stats.linregress(osm,osr)
     if plot is not None:
-        try:
-            import scipy.xplt as xplt
-            xplt.limits()
-        except: pass
         plot.plot(osm, osr, 'o', osm, slope*osm + intercept)
         plot.title('Probability Plot')
         plot.xlabel('Order Statistic Medians')
         plot.ylabel('Ordered Values')
-        try: plot.expand_limits(5)
-        except: pass
+
         xmin,xmax= amin(osm),amax(osm)
         ymin,ymax= amin(x),amax(x)
-        pos = xmin+0.70*(xmax-xmin), ymin+0.01*(ymax-ymin)
-        try: plot.addtext("r^2^=%1.4f" % r, xy=pos,tosys=1)
-        except: pass
+        posx,posy = xmin+0.70*(xmax-xmin), ymin+0.01*(ymax-ymin)
+        #plot.addtext("r^2^=%1.4f" % r, xy=pos,tosys=1)
+        plot.text(posx,posy, "r^2=%1.4f" % r)
     if fit:
         return (osm, osr), (slope, intercept, r)
     else:
@@ -326,16 +321,10 @@ def ppcc_plot(x,a,b,dist='tukeylambda', plot=None, N=80):
         ppcc[k] = r2[-1]
         k += 1
     if plot is not None:
-        try:
-            import scipy.xplt as xplt
-            xplt.limits()
-        except: pass
         plot.plot(svals, ppcc, 'x')
         plot.title('(%s) PPCC Plot' % dist)
-        plot.xlabel('Prob Plot Corr. Coef.',deltay=-0.01)
-        plot.ylabel('Shape Values',deltax=-0.01)
-        try: plot.expand_limits(5)
-        except: pass
+        plot.xlabel('Prob Plot Corr. Coef.')#,deltay=-0.01)
+        plot.ylabel('Shape Values')#,deltax=-0.01)
     return svals, ppcc
 
 def boxcox_llf(lmb, data):
@@ -395,7 +384,7 @@ def boxcox(x,lmbda=None,alpha=None):
     def tempfunc(lmb, data):  # function to minimize
         return -boxcox_llf(lmb,data)
     lmax = optimize.brent(tempfunc, brack=(-2.0,2.0),args=(x,))
-    y, lmax = boxcox(x, lmax)
+    y = boxcox(x, lmax)
     if alpha is None:
         return y, lmax
     # Otherwise find confidence interval
@@ -429,20 +418,16 @@ def boxcox_normplot(x,la,lb,plot=None,N=80):
     ppcc = svals*0.0
     k = 0
     for sval in svals:
-        r1,r2 = probplot(x,dist='norm',fit=1)
+        #JP: this doesn't use sval, creates constant ppcc, and horizontal line
+        z = boxcox(x,sval)  #JP: this was missing
+        r1,r2 = probplot(z,dist='norm',fit=1)
         ppcc[k] = r2[-1]
         k +=1
     if plot is not None:
-        try:
-            import scipy.xplt as xplt
-            xplt.limits()
-        except: pass
         plot.plot(svals, ppcc, 'x')
         plot.title('Box-Cox Normality Plot')
-        plot.xlabel('Prob Plot Corr. Coef.',deltay=-0.01)
-        plot.ylabel('Transformation parameter',deltax=-0.01)
-        try: plot.expand_limits(5)
-        except: pass
+        plot.xlabel('Prob Plot Corr. Coef.')
+        plot.ylabel('Transformation parameter')
     return svals, ppcc
 
 def shapiro(x,a=None,reta=0):
@@ -957,7 +942,9 @@ def oneway(*args,**kwds):
 
 def wilcoxon(x,y=None):
     """
-Calculates the Wilcoxon signed-rank test for the null hypothesis that two samples come from the same distribution. A non-parametric T-test. (need N > 20)
+Calculates the Wilcoxon signed-rank test for the null hypothesis that two
+samples come from the same distribution. A non-parametric T-test.
+(need N > 20)
 
 Returns: t-statistic, two-tailed p-value
 """
