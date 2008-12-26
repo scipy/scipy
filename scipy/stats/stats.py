@@ -1874,11 +1874,29 @@ def linregress(*args):
 #####################################
 
 def ttest_1samp(a, popmean, axis=0):
-    """
-Calculates the t-obtained for the independent samples T-test on ONE group
-of scores a, given a population mean.
+    """Calculates the T-test for the mean of ONE group of scores `a`.
 
-Returns: t-value, two-tailed prob
+    This is a two-sided test for the null hypothesis that the expected value
+    (mean) of a sample of independent observations is equal to the given
+    population mean, `popmean`.
+
+    Parameters
+    ----------
+    a : array_like
+        sample observation
+    popmean : float or array_like
+        expected value in null hypothesis, if array_like than it must have the
+        same shape as `a` excluding the axis dimension
+    axis : int, optional, (default axis=0)
+        Axis can equal None (ravel array first), or an integer (the axis
+        over which to operate on a).
+
+    Returns
+    -------
+    t : float or array
+        t-statistic
+    prob : float or array
+        two-tailed p-value
 """
 
 
@@ -1904,30 +1922,45 @@ Returns: t-value, two-tailed prob
 
 
 def ttest_ind(a, b, axis=0):
-    """Calculates the t-obtained T-test on TWO INDEPENDENT samples of scores
-    a, and b.  From Numerical Recipies, p.483. Axis can equal None (ravel
-    array first), or an integer (the axis over which to operate on a and b).
-
-    Returns: t-value, two-tailed p-value
+    """Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
 
     This is a two-sided test for the null hypothesis that 2 independent samples
     have identical average (expected) values.
 
-    Description
-    -----------
+    Parameters
+    ----------
+    a, b : sequence of ndarrays
+        The arrays must have the same shape, except in the dimension
+        corresponding to `axis` (the first, by default).
+    axis : int, optional
+        Axis can equal None (ravel array first), or an integer (the axis
+        over which to operate on a and b).
+
+    Returns
+    -------
+    t : float or array
+        t-statistic
+    prob : float or array
+        two-tailed p-value
+
+
+    Notes
+    -----
 
     We can use this test, if we observe two independent samples from
     the same or different population, e.g. exam scores of boys and
     girls or of two ethnic groups. The test measures whether the
     average (expected) value differs significantly across samples. If
-    we observe a larger p-value, for example >0.5 or 0.1 then we
-    cannot reject the null hypothesis of identical average scores. If
-    the test statistic is larger (in absolute terms than critical
-    value or, equivalently, if the p-value is smaller than the
-    threshold, 1%,5% or 10%, then we reject the null hypothesis equal
-    averages.
+    we observe a large p-value, for example larger than 0.05 or 0.1,
+    then we cannot reject the null hypothesis of identical average scores.
+    If the p-value is smaller than the threshold, e.g. 1%, 5% or 10%,
+    then we reject the null hypothesis of equal averages.
 
-    see: http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
+    References
+    ----------
+
+       http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
+
 
     Examples
     --------
@@ -1941,13 +1974,13 @@ def ttest_ind(a, b, axis=0):
         # test with sample with identical means
     >>> rvs1 = stats.norm.rvs(loc=5,scale=10,size=500)
     >>> rvs2 = stats.norm.rvs(loc=5,scale=10,size=500)
-    >>> ttest_ind(rvs1,rvs2)
+    >>> stats.ttest_ind(rvs1,rvs2)
     (0.26833823296239279, 0.78849443369564765)
 
 
         # test with sample with different means
     >>> rvs3 = stats.norm.rvs(loc=8,scale=10,size=500)
-    >>> ttest_ind(rvs1,rvs3)
+    >>> stats.ttest_ind(rvs1,rvs3)
     (-5.0434013458585092, 5.4302979468623391e-007)
 
     """
@@ -1979,29 +2012,44 @@ def ttest_ind(a, b, axis=0):
 
 
 def ttest_rel(a,b,axis=0):
-    """Calculates the t-obtained T-test on TWO RELATED samples of scores, a
-    and b.  From Numerical Recipies, p.483. Axis can equal None (ravel array
-    first), or an integer (the axis over which to operate on a and b).
+    """Calculates the T-test on TWO RELATED samples of scores, a and b.
 
-    Returns: t-value, two-tailed p-value
+    This is a two-sided test for the null hypothesis that 2 related or
+    repeated samples have identical average (expected) values.
 
-    Description
-    -----------
+    Parameters
+    ----------
+    a, b : sequence of ndarrays
+        The arrays must have the same shape.
+    axis : int, optional, (default axis=0)
+        Axis can equal None (ravel array first), or an integer (the axis
+        over which to operate on a and b).
 
-    This is a two-sided test for the null hypothesis that 2 repeated samples
-    have identical average values.
+    Returns
+    -------
+    t : float or array
+        t-statistic
+    prob : float or array
+        two-tailed p-value
 
-    Examples for the use are scores of a student in different exams,
-    or repeated sampling from the same units. The test measures
-    whether the average score differs significantly across samples
-    (e.g. exams). If we observe a larger p-value, for example >0.5 or
-    0.1 then we cannot reject the null hypothesis of identical average
-    scores. If the test statistic is larger (in absolute terms than
-    critical value or, equivalently, if the p-value is smaller than
-    the threshold, 1%,5% or 10%, then we reject the null hypothesis
-    equal averages.
 
-    see: http://en.wikipedia.org/wiki/T-test#Dependent_t-test
+    Notes
+    -----
+
+    Examples for the use are scores of the same set of student in
+    different exams, or repeated sampling from the same units. The
+    test measures whether the average score differs significantly
+    across samples (e.g. exams). If we observe a large p-value, for
+    example greater than 0.5 or 0.1 then we cannot reject the null
+    hypothesis of identical average scores. If the p-value is smaller
+    than the threshold, e.g. 1%, 5% or 10%, then we reject the null
+    hypothesis of equal averages. Small p-values are associated with
+    large t-statistics.
+
+   References
+   ----------
+
+       http://en.wikipedia.org/wiki/T-test#Dependent_t-test
 
     Examples
     --------
@@ -2056,24 +2104,17 @@ def ttest_rel(a,b,axis=0):
 def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**kwds):
     """Return the D-value and the p-value for a Kolmogorov-Smirnov test
 
-
-    This performs a test of the distribution of random variables G(x) against
-    a given distribution F(x). Under the null hypothesis the two distributions
-    are identical, G(x)=F(x). The alternative hypothesis can be either
-    'two_sided' (default), 'less' or 'greater'. In the two one-sided test,
-    the alternative is that the empirical cumulative distribution function,
-    of the random variable is "less" or "greater" then the cumulative
-    distribution function of the hypothesis F(x), G(x)<=F(x), resp. G(x)>=F(x).
-
-    If the p-value is greater than the significance level (say 5%), then we
-    cannot reject the hypothesis that the data come from the given
-    distribution.
+    This performs a test of the distribution G(x) of an observed
+    random variable against a given distribution F(x). Under the null
+    hypothesis the two distributions are identical, G(x)=F(x). The
+    alternative hypothesis can be either 'two_sided' (default), 'less'
+    or 'greater'. The KS test is only valid for continuous distributions.
 
     Parameters
     ----------
     rvs : string or array or callable
         string: name of a distribution in scipy.stats
-        array: random variables
+        array: 1-D observations of random variables
         callable: function to generate random variables,
                 requires keyword argument  size
     cdf : string or callable
@@ -2082,20 +2123,36 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
             or be the same as rvs
         callable: function to evaluate cdf
 
-    args : distribution parameters used if rvs or cdf are strings
-    N : sample size if rvs is string or callable
+    args : tuple, sequence
+        distribution parameters, used if rvs or cdf are strings
+    N : int
+        sample size if rvs is string or callable
     alternative : 'two_sided' (default), 'less' or 'greater'
         defines the alternative hypothesis (see explanation)
     mode : 'approx' (default) or 'asymp'
-        defines distribution used for calculating p-value
+        defines the distribution used for calculating p-value
         'approx' : use approximation to exact distribution of test statistic
         'asymp' : use asymptotic distribution of test statistic
 
 
     Returns
     -------
-    D: test statistic either D, D+ or D-
-    p-value
+    D : float
+        KS test statistic, either D, D+ or D-
+    p-value :  float
+        one-tailed or two-tailed p-value
+
+    Notes
+    -----
+
+    In the two one-sided test, the alternative is that the empirical
+    cumulative distribution function of the random variable is "less"
+    or "greater" then the cumulative distribution function F(x) of the
+    hypothesis, G(x)<=F(x), resp. G(x)>=F(x).
+
+    If the p-value is greater than the significance level (say 5%), then we
+    cannot reject the hypothesis that the data come from the given
+    distribution.
 
     Examples
     --------
@@ -2214,25 +2271,37 @@ def chisquare(f_obs, f_exp=None):
 def ks_2samp(data1, data2):
     """ Computes the Kolmogorov-Smirnof statistic on 2 samples.
 
-    data1, data2: array_like, 1-dim
-        samples assumed to be drawn from a continuous distribution,
-        sample sizes can be different
+    This is a two-sided test for the null hypothesis that 2 independent samples
+    are drawn from the same continuous distribution.
 
-    Returns: KS D-value, p-value
+    Parameters
+    ----------
+    a, b : sequence of 1-D ndarrays
+        two arrays of sample observations assumed to be drawn from a continuous
+        distribution, sample sizes can be different
 
-    Description:
-    ------------
 
-    Tests whether 2 samples are drawn from the same distribution. Note
-    that, like the one-sample K-S test the distribution is assumed to be
-    continuous.
+    Returns
+    -------
+    D : float
+        KS statistic
+    p-value : float
+        two-tailed p-value
+
+
+    Notes
+    -----
+
+    This tests whether 2 samples are drawn from the same distribution. Note
+    that, like in the case of the one-sample K-S test, the distribution is
+    assumed to be continuous.
 
     This is the two-sided test, one-sided tests are not implemented.
     The test uses the two-sided asymptotic Kolmogorov-Smirnov distribution.
 
     If the K-S statistic is small or the p-value is high, then we cannot
-    reject the hypothesis that the two distributions of the two samples
-    are the same
+    reject the hypothesis that the distributions of the two samples
+    are the same.
 
     Examples:
     ---------
