@@ -99,13 +99,15 @@ def identity(n, dtype='d', format=None):
     else:
         return identity(n, dtype=dtype, format='csr').asformat(format)
 
+
 def eye(m, n, k=0, dtype='d', format=None):
     """eye(m, n) returns a sparse (m x n) matrix where the k-th diagonal
     is all ones and everything else is zeros.
     """
     m,n = int(m),int(n)
-    diags = np.ones((1, min(m,n)), dtype=dtype)
+    diags = np.ones((1, min(m + k, n)), dtype=dtype)
     return spdiags(diags, k, m, n).asformat(format)
+
 
 def kron(A, B, format=None):
     """kronecker product of sparse matrices A and B
