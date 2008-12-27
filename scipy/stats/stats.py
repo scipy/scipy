@@ -1897,6 +1897,37 @@ def ttest_1samp(a, popmean, axis=0):
         t-statistic
     prob : float or array
         two-tailed p-value
+
+    Examples
+    --------
+
+    >>> from scipy import stats
+    >>> import numpy as np
+    
+    >>> #fix seed to get the same result
+    >>> np.random.seed(7654567)
+    >>> rvs = stats.norm.rvs(loc=5,scale=10,size=(50,2))
+
+    test if mean of random sample is equal to true mean, and different mean.
+    We reject the null hypothesis in the second case and don't reject it in
+    the first case
+
+    >>> stats.ttest_1samp(rvs,5.0)
+    (array([-0.68014479, -0.04323899]), array([ 0.49961383,  0.96568674]))
+    >>> stats.ttest_1samp(rvs,0.0)
+    (array([ 2.77025808,  4.11038784]), array([ 0.00789095,  0.00014999]))
+
+    examples using axis and non-scalar dimension for population mean
+
+    >>> stats.ttest_1samp(rvs,[5.0,0.0])
+    (array([-0.68014479,  4.11038784]), array([  4.99613833e-01,   1.49986458e-04]))
+    >>> stats.ttest_1samp(rvs.T,[5.0,0.0],axis=1)
+    (array([-0.68014479,  4.11038784]), array([  4.99613833e-01,   1.49986458e-04]))
+    >>> stats.ttest_1samp(rvs,[[5.0],[0.0]])
+    (array([[-0.68014479, -0.04323899],
+           [ 2.77025808,  4.11038784]]), array([[  4.99613833e-01,   9.65686743e-01],
+           [  7.89094663e-03,   1.49986458e-04]]))
+
 """
 
 
@@ -1968,17 +1999,19 @@ def ttest_ind(a, b, axis=0):
     >>> from scipy import stats
     >>> import numpy as np
 
-        #fix seed to get the same result
+    >>> #fix seed to get the same result
     >>> np.random.seed(12345678)
 
-        # test with sample with identical means
+    test with sample with identical means
+    
     >>> rvs1 = stats.norm.rvs(loc=5,scale=10,size=500)
     >>> rvs2 = stats.norm.rvs(loc=5,scale=10,size=500)
     >>> stats.ttest_ind(rvs1,rvs2)
     (0.26833823296239279, 0.78849443369564765)
 
 
-        # test with sample with different means
+    test with sample with different means
+    
     >>> rvs3 = stats.norm.rvs(loc=8,scale=10,size=500)
     >>> stats.ttest_ind(rvs1,rvs3)
     (-5.0434013458585092, 5.4302979468623391e-007)
@@ -2057,7 +2090,7 @@ def ttest_rel(a,b,axis=0):
     >>> from scipy import stats
     >>> import numpy as np
 
-    #fix random seed to get the same result
+    >>> #fix random seed to get the same result
     >>> np.random.seed(12345678)
     >>> rvs1 = stats.norm.rvs(loc=5,scale=10,size=500)
     >>> rvs2 = stats.norm.rvs(loc=5,scale=10,size=500) + \
@@ -2114,13 +2147,17 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
     ----------
     rvs : string or array or callable
         string: name of a distribution in scipy.stats
+
         array: 1-D observations of random variables
+
         callable: function to generate random variables,
-                requires keyword argument  size
+                requires keyword argument `size`
+
     cdf : string or callable
         string: name of a distribution in scipy.stats
-            if rvs is a string then cdf can evaluate to False
-            or be the same as rvs
+        if rvs is a string then cdf can evaluate to False
+        or be the same as rvs
+
         callable: function to evaluate cdf
 
     args : tuple, sequence
@@ -2131,7 +2168,9 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
         defines the alternative hypothesis (see explanation)
     mode : 'approx' (default) or 'asymp'
         defines the distribution used for calculating p-value
+
         'approx' : use approximation to exact distribution of test statistic
+
         'asymp' : use asymptotic distribution of test statistic
 
 
@@ -2165,33 +2204,33 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
     >>> kstest(x,'norm')
     (0.44435602715924361, 0.038850142705171065)
 
-    # fix random seed to get the same result
+    >>> #fix random seed to get the same result
     >>> np.random.seed(987654321)
     >>> kstest('norm','',N=100)
     (0.058352892479417884, 0.88531190944151261)
 
     is equivalent to this
+
     >>> np.random.seed(987654321)
     >>> kstest(stats.norm.rvs(size=100),'norm')
     (0.058352892479417884, 0.88531190944151261)
 
-    test against one-sided alternative hypothesis
-    ---------------------------------------------
+    **test against one-sided alternative hypothesis**
+
     >>> np.random.seed(987654321)
-    >>> # shift distribution to larger values, so that cdf_dgp(x)< norm.cdf(x)
+    >>> #shift distribution to larger values, so that cdf_dgp(x)< norm.cdf(x)
     >>> x = stats.norm.rvs(loc=0.2, size=100) 
     >>> kstest(x,'norm', alternative = 'less') 
     (0.12464329735846891, 0.040989164077641749)
-    >>> # reject equal distribution against alternative hypothesis: less
+    >>> #reject equal distribution against alternative hypothesis: less
     >>> kstest(x,'norm', alternative = 'greater')
     (0.0072115233216311081, 0.98531158590396395)
-    >>> # don't reject equal distribution against alternative hypothesis: greater
+    >>> #don't reject equal distribution against alternative hypothesis: greater
     >>> kstest(x,'norm', mode='asymp')
     (0.12464329735846891, 0.08944488871182088)
 
 
-    testing t distributed random variables against normal distribution
-    ------------------------------------------------------------------
+    **testing t distributed random variables against normal distribution**
 
     With 100 degrees of freedom the t distribution looks close to the normal
     distribution, and the kstest does not reject the hypothesis that the sample
@@ -2200,7 +2239,6 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
     >>> np.random.seed(987654321)
     >>> stats.kstest(stats.t.rvs(100,size=100),'norm')
     (0.072018929165471257, 0.67630062862479168)
-
 
     With 3 degrees of freedom the t distribution looks sufficiently different
     from the normal distribution, that we can reject the hypothesis that the
@@ -2310,14 +2348,15 @@ def ks_2samp(data1, data2):
     >>> import numpy as np
     >>> from scipy.stats import ks_2samp
 
-    # fix random seed to get the same result
+    >>> #fix random seed to get the same result
     >>> np.random.seed(12345678);
 
     >>> n1 = 200  # size of first sample
     >>> n2 = 300  # size of second sample
 
-    # different distribution
+    different distribution
     we can reject the null hypothesis since the pvalue is below 1%
+
     >>> rvs1 = stats.norm.rvs(size=n1,loc=0.,scale=1);
     >>> rvs2 = stats.norm.rvs(size=n2,loc=0.5,scale=1.5)
     >>> ks_2samp(rvs1,rvs2)
@@ -2326,12 +2365,14 @@ def ks_2samp(data1, data2):
     slightly different distribution
     we cannot reject the null hypothesis at a 10% or lower alpha since
     the pvalue at 0.144 is higher than 10%
+
     >>> rvs3 = stats.norm.rvs(size=n2,loc=0.01,scale=1.0)
     >>> ks_2samp(rvs1,rvs3)
     (0.10333333333333333, 0.14498781825751686)
 
     identical distribution
     we cannot reject the null hypothesis since the pvalue is high, 41%
+
     >>> rvs4 = stats.norm.rvs(size=n2,loc=0.0,scale=1.0)
     >>> ks_2samp(rvs1,rvs4)
     (0.07999999999999996, 0.41126949729859719)
