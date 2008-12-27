@@ -50,6 +50,7 @@ Gary Strangman for the scipy.stats package.
 Tiziano Zito for generalized symmetric and hermitian eigenvalue problem
     solver.
 Chris Burns for bug-fixes.
+Per Brodtkorb for improvements to stats distributions
 
 Institutions
 ------------
