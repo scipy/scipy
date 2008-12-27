@@ -446,6 +446,12 @@ class _TestCommon:
         assert_array_almost_equal(B.todense(), A.todense() * A.T.todense())
         assert_array_almost_equal(B.todense(), A.todense() * A.todense().T)
 
+
+        # check dimension mismatch  2x2 times 3x2
+        A = self.spmatrix( [[1,2],[3,4]] )
+        B = self.spmatrix( [[1,2],[3,4],[5,6]] )
+        assert_raises(ValueError, A.__mul__, B)
+
     def test_matmat_dense(self):
         a = matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]])
         asp = self.spmatrix(a)

@@ -283,6 +283,8 @@ class spmatrix(object):
             return self._mul_scalar(other)
 
         if issparse(other):
+            if self.shape[1] != other.shape[0]:
+                raise ValueError('dimension mismatch')
             return self._mul_sparse_matrix(other)
 
         try:
