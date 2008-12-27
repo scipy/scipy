@@ -105,7 +105,7 @@ def eye(m, n, k=0, dtype='d', format=None):
     is all ones and everything else is zeros.
     """
     m,n = int(m),int(n)
-    diags = np.ones((1, min(m + k, n)), dtype=dtype)
+    diags = np.ones((1, max(0, min(m + k, n))), dtype=dtype)
     return spdiags(diags, k, m, n).asformat(format)
 
 

@@ -83,15 +83,10 @@ class TestConstructUtils(TestCase):
 
         assert_equal(eye(3,3,dtype='int16').dtype, 'int16')
 
-        assert_equal(eye(3, 4, -4).toarray(), np.eye(3, 4, -4))
-        assert_equal(eye(3, 4, -3).toarray(), np.eye(3, 4, -3))
-        assert_equal(eye(3, 4, -2).toarray(), np.eye(3, 4, -2))
-        assert_equal(eye(3, 4, -1).toarray(), np.eye(3, 4, -1))
-        assert_equal(eye(3, 4,  0).toarray(), np.eye(3, 4,  0))
-        assert_equal(eye(3, 4,  1).toarray(), np.eye(3, 4,  1))
-        assert_equal(eye(3, 4,  2).toarray(), np.eye(3, 4,  2))
-        assert_equal(eye(3, 4,  3).toarray(), np.eye(3, 4,  3))
-        assert_equal(eye(3, 4,  4).toarray(), np.eye(3, 4,  4))
+        for m in [3, 5]:
+            for n in [3, 5]:
+                for k in range(-5,6):
+                    assert_equal(eye(m, n, k=k).toarray(), np.eye(m, n, k=k))
 
     def test_kron(self):
         cases = []
