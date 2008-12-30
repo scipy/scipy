@@ -141,9 +141,9 @@ def ridder(f, a, b, args=(),
     -----
     Uses [Ridders1979]_ method to find a zero of the function `f` between the
     arguments `a` and `b`. Ridders' method is faster than bisection, but not
-    generaly as fast as the brent rountines. [Ridders1979]_ provides the
+    generally as fast as the Brent rountines. [Ridders1979]_ provides the
     classic description and source of the algorithm. A description can also be
-    found in may be found in any recent edition of Numerical Recipes.
+    found in any recent edition of Numerical Recipes.
 
     The routine used here diverges slightly from standard presentations in
     order to be a bit more careful of tolerance.
@@ -180,7 +180,7 @@ def brentq(f, a, b, args=(),
     claims convergence is guaranteed for functions computable within [a,b].
 
     [Brent1973]_ provides the classic description of the algorithm.  Another
-    description is in any recent edition of Numerical Recipes, including
+    description can be found in a recent edition of Numerical Recipes, including
     [PressEtal1992]_.  Another description is at
     http://mathworld.wolfram.com/BrentsMethod.html.  It should be easy to
     understand the algorithm just by reading our code.  Our code diverges a bit
