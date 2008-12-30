@@ -886,7 +886,7 @@ def skewtest(a, axis=0):
     alpha = math.sqrt(2.0/(W2-1))
     y = np.where(y==0, 1, y)
     Z = delta*np.log(y/alpha + np.sqrt((y/alpha)**2+1))
-    return Z, (1.0 - zprob(Z))*2
+    return Z, (1.0 - zprob(np.abs(Z)))*2
 
 
 def kurtosistest(a, axis=0):
@@ -928,7 +928,8 @@ def kurtosistest(a, axis=0):
     if Z.ndim == 0:
         Z = Z[()]
     #JPNote: p-value sometimes larger than 1
-    return Z, (1.0-zprob(Z))*2
+    #zprob uses upper tail, so Z needs to be positive
+    return Z, (1.0-zprob(np.abs(Z)))*2
 
 
 def normaltest(a, axis=0):
