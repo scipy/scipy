@@ -13,7 +13,7 @@ requires Python 2.4 or 2.5.  This release also requires NumPy 1.2.0
 or greater.
 
 Python 2.6 and 3.0
-~~~~~~~~~~~~~~~~~~
+------------------
 
 Python 3.0 is not supported at all:  it requires NumPy to be ported to
 Python 3.0, which is a massive effort, since a lot of C code has to be
@@ -25,11 +25,8 @@ related to the compilation process.  The upcoming 1.3 version of NumPy will fix
 those.  Then, because of some Python 2.6 bugs, ``f2py`` does not work on Python
 2.6; the fixes will also be in the upcoming NumPy 1.3.
 
-Changes
--------
-
 Sparse Matrices
-~~~~~~~~~~~~~~~
+---------------
 
 * added support for integer dtypes such ``int8``, ``uint32``, etc.
 * new class ``dia_matrix`` : the sparse DIAgonal format
@@ -69,7 +66,7 @@ Sparse Matrices
 * numerous bugfixes
 
 Reworking of IO package
-~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------
 
 The IO code in both NumPy and SciPy is undergoing a major reworking. NumPy
 will be where basic code for reading and writing NumPy arrays is located,
@@ -89,7 +86,7 @@ changes including:
  * string arrays have ``dtype='U...'`` instead of ``dtype=object``
 
 New Hierarchical Clustering module
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------
 
 This module adds new hierarchical clustering functionality to the
 ``scipy.cluster`` package. The function interfaces are similar to the
@@ -113,7 +110,7 @@ function plots hierarchical clusterings as a dendrogram using
 matplotlib.
 
 New Spatial package
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 Collection of spatial algorithms and data structures useful for spatial
 statistics and clustering applications. Includes fast compiled code for
@@ -139,14 +136,14 @@ form, only the upper triangular is stored. ``squareform`` converts
 distance matrices between square and condensed forms.
 
 Reworked fftpack package
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 FFTW2, FFTW3, MKL and DJBFFT wrappers have been removed. Only (NETLIB)
 fftpack remains. By focusing on one backend, we hope to add new
 features -- like float32 support -- more easily.
 
 New Constants package
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
 
 ``scipy.constants`` provides a collection of physical constants and
 conversion factors.  These constants are taken from CODATA Recommended
@@ -160,7 +157,7 @@ The list is not meant to be comprehensive, but just a convenient list
 for everyday use.
 
 New Radial Basis Function module
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------
 
 ``scipy.interpolate`` now contains a Radial Basis Function module.
 Radial basis functions can be used for smoothing/interpolating scattered
@@ -168,14 +165,14 @@ data in n-dimensions, but should be used with caution for extrapolation
 outside of the observed data range.
 
 New complex ODE integrator
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
 
 ``scipy.integrate.ode`` now contains a wrapper for the ZVODE
 complex-valued ordinary differential equation solver
 (by Peter N. Brown, Alan C. Hindmarsh, and George D. Byrne).
 
 New generalized symmetric and hermitian eigenvalue problem solver
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------------------------------------------
 
 ``scipy.linalg.eigh`` now contains wrappers for more LAPACK 
 symmetric and hermitian eigenvalue problem solvers. Users
@@ -185,7 +182,7 @@ of increased memory usage. The signature of the ``scipy.linalg.eigh``
 changed accordingly. 
 
 Major documentation improvements
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------
 
 Scipy documentation is now more accessible than previously; you can
 view a HTML reference manual online at http://docs.scipy.org/ or
@@ -199,7 +196,7 @@ to help us out, please register a user name in our web-based
 documentation editor at http://docs.scipy.org/ and correct the issues.
 
 Bug fixes in the interpolation package
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------
 
 The shape of return values from ``scipy.interpolate.interp1d`` used
 to be incorrect if interpolated data had more than 2 dimensions and
@@ -212,7 +209,7 @@ Users of ``scipy.interpolate.interp1d`` may need to revise their code
 if it relies on the incorrect behavior.
 
 Statistics package
-~~~~~~~~~~~~~~~~~~
+------------------
 
 Statistical functions for masked arrays have been added and are accessible 
 through scipy.stats.mstats. The functions are similar to their counterparts 
@@ -237,7 +234,7 @@ We expect more bugfixes, increases in numerical precision and enhancements in th
 release of scipy.
 
 Running Tests
-~~~~~~~~~~~~~
+-------------
 
 NumPy 1.2 introduced a new testing framework based on `nose 
 <http://code.google.com/p/python-nose/>`__.  Starting with this release SciPy now
@@ -253,13 +250,13 @@ For more information, please see `The NumPy/SciPy Testing Guide
 <http://projects.scipy.org/scipy/numpy/wiki/TestingGuidelines>`__.
 
 Building SciPy
-~~~~~~~~~~~~~~
+--------------
 
 Support for NumScons has been added. NumScons is a tentative new
 build system for NumPy/SciPy, using scons at its core.
 
 Sandbox Removed
-~~~~~~~~~~~~~~~
+---------------
 
 While porting SciPy to NumPy in 2005, several packages and modules were moved into
 ``scipy.sandbox``.  The sandbox was a staging ground for packages that were undergoing
