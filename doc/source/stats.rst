@@ -143,6 +143,9 @@ Discrete distributions
 Statistical functions
 =====================
 
+Several of these functions have a similar version in scipy.stats.mstats
+which work for masked arrays.
+
 .. autosummary::
    :toctree: generated/
 
@@ -261,6 +264,13 @@ Plot-tests
    ppcc_max
    ppcc_plot
 
+Univariate and multivariate kernel density estimation (:mod:`scipy.stats.kde`)
+==============================================================================
+
+.. autosummary::
+   :toctree: generated/
+
+   gaussian_kde
 
 For many more stat related functions install the software R and the
 interface package rpy.

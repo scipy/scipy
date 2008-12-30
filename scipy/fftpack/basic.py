@@ -55,31 +55,53 @@ def _raw_fft(x, n, axis, direction, overwrite_x, work_function):
 
 
 def fft(x, n=None, axis=-1, overwrite_x=0):
-    """ fft(x, n=None, axis=-1, overwrite_x=0) -> y
-
+    """
     Return discrete Fourier transform of arbitrary type sequence x.
 
-    The returned complex array contains
-      [y(0),y(1),..,y(n/2-1),y(-n/2),...,y(-1)]        if n is even
-      [y(0),y(1),..,y((n-1)/2),y(-(n-1)/2),...,y(-1)]  if n is odd
-    where
-      y(j) = sum[k=0..n-1] x[k] * exp(-sqrt(-1)*j*k* 2*pi/n)
-      j = 0..n-1
-    Note that y(-j) = y(n-j).
-
-    Optional input:
-      n
-        Defines the length of the Fourier transform. If n is not
-        specified then n=x.shape[axis] is set. If n<x.shape[axis],
+    Parameters
+    ----------
+    x : array-like
+        array to fourier transform.
+    n : int, optional
+        Length of the Fourier transform. If n<x.shape[axis],
         x is truncated. If n>x.shape[axis], x is zero-padded.
-      axis
-        The transform is applied along the given axis of the input
-        array (or the newly constructed array if n argument was used).
-      overwrite_x
-        If set to true, the contents of x can be destroyed.
+        (Default n=x.shape[axis]).
+    axis : int, optional
+        Axis along which the fft's are computed. (default=-1)
+    overwrite_x : bool, optional
+        If True the contents of x can be destroyed. (default=False)
 
-    Notes:
-      y == fft(ifft(y)) within numerical accuracy.
+    Returns
+    -------
+    z : complex ndarray
+        with the elements:
+            [y(0),y(1),..,y(n/2-1),y(-n/2),...,y(-1)]        if n is even
+            [y(0),y(1),..,y((n-1)/2),y(-(n-1)/2),...,y(-1)]  if n is odd
+        where
+            y(j) = sum[k=0..n-1] x[k] * exp(-sqrt(-1)*j*k* 2*pi/n), j = 0..n-1
+        Note that y(-j) = y(n-j).
+
+    See Also
+    --------
+    ifft : Inverse FFT
+    rfft : FFT of a real sequence
+
+    Notes
+    -----
+    The packing of the result is "standard": If A = fft(a, n), then A[0]
+    contains the zero-frequency term, A[1:n/2+1] contains the
+    positive-frequency terms, and A[n/2+1:] contains the negative-frequency
+    terms, in order of decreasingly negative frequency. So for an 8-point
+    transform, the frequencies of the result are [ 0, 1, 2, 3, 4, -3, -2, -1].
+
+    This is most efficient for n a power of two.
+
+    Examples
+    --------
+    >>> x = np.arange(5)
+    >>> np.all(np.abs(x-fft(ifft(x))<1.e-15) #within numerical accuracy.
+    True
+
     """
     tmp = asarray(x)
     if istype(tmp, numpy.complex128):

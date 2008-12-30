@@ -39,6 +39,20 @@ Multivariate interpolation
    InterpolatedUnivariateSpline
    LSQUnivariateSpline
 
+The above univariate spline classes have the following methods:
+
+.. autosummary::
+   :toctree: generated/
+
+   UnivariateSpline.__call__
+   UnivariateSpline.derivatives
+   UnivariateSpline.integral
+   UnivariateSpline.roots
+   UnivariateSpline.get_coeffs
+   UnivariateSpline.get_knots
+   UnivariateSpline.get_residual
+   UnivariateSpline.set_smoothing_factor
+
 Low-level interface to FITPACK functions:
 
 .. autosummary::

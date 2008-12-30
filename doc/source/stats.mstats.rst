@@ -14,69 +14,68 @@ is a relatively new package, some API changes are still possible.
 .. autosummary::
    :toctree: generated/
 
-
-argstoarray
-betai
-chisquare
-count_tied_groups
-describe
-f_oneway
-f_value_wilks_lambda
-find_repeats
-friedmanchisquare
-gmean
-hmean
-kendalltau
-kendalltau_seasonal
-kruskalwallis
-kruskalwallis
-ks_twosamp
-ks_twosamp
-kurtosis
-kurtosistest
-linregress
-mannwhitneyu
-plotting_positions
-mode
-moment
-mquantiles
-msign
-normaltest
-obrientransform
-pearsonr
-plotting_positions
-pointbiserialr
-rankdata
-samplestd
-samplevar
-scoreatpercentile
-sem
-signaltonoise
-skew
-skewtest
-spearmanr
-std
-stderr
-theilslopes
-threshold
-tmax
-tmean
-tmin
-trim
-trima
-trimboth
-trimmed_stde
-trimr
-trimtail
-tsem
-ttest_onesamp
-ttest_ind
-ttest_onesamp
-ttest_rel
-tvar
-var
-variation
-winsorize
-z
-zmap
-zs
+   argstoarray
+   betai
+   chisquare
+   count_tied_groups
+   describe
+   f_oneway
+   f_value_wilks_lambda
+   find_repeats
+   friedmanchisquare
+   gmean
+   hmean
+   kendalltau
+   kendalltau_seasonal
+   kruskalwallis
+   kruskalwallis
+   ks_twosamp
+   ks_twosamp
+   kurtosis
+   kurtosistest
+   linregress
+   mannwhitneyu
+   plotting_positions
+   mode
+   moment
+   mquantiles
+   msign
+   normaltest
+   obrientransform
+   pearsonr
+   plotting_positions
+   pointbiserialr
+   rankdata
+   samplestd
+   samplevar
+   scoreatpercentile
+   sem
+   signaltonoise
+   skew
+   skewtest
+   spearmanr
+   std
+   stderr
+   theilslopes
+   threshold
+   tmax
+   tmean
+   tmin
+   trim
+   trima
+   trimboth
+   trimmed_stde
+   trimr
+   trimtail
+   tsem
+   ttest_onesamp
+   ttest_ind
+   ttest_onesamp
+   ttest_rel
+   tvar
+   var
+   variation
+   winsorize
+   z
+   zmap
+   zs

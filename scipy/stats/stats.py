@@ -2136,7 +2136,8 @@ def ttest_rel(a,b,axis=0):
 #import scipy.stats
 #import distributions
 def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**kwds):
-    """Return the D-value and the p-value for a Kolmogorov-Smirnov test
+    """
+    Return the D-value and the p-value for a Kolmogorov-Smirnov test
 
     This performs a test of the distribution G(x) of an observed
     random variable against a given distribution F(x). Under the null
@@ -2151,14 +2152,12 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
 
         array: 1-D observations of random variables
 
-        callable: function to generate random variables,
-                requires keyword argument `size`
+        callable: function to generate random variables, requires keyword
+        argument `size`
 
     cdf : string or callable
-        string: name of a distribution in scipy.stats
-        if rvs is a string then cdf can evaluate to False
-        or be the same as rvs
-
+        string: name of a distribution in scipy.stats, if rvs is a string then
+        cdf can evaluate to `False` or be the same as rvs
         callable: function to evaluate cdf
 
     args : tuple, sequence
@@ -2167,6 +2166,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
         sample size if rvs is string or callable
     alternative : 'two_sided' (default), 'less' or 'greater'
         defines the alternative hypothesis (see explanation)
+
     mode : 'approx' (default) or 'asymp'
         defines the distribution used for calculating p-value
 
@@ -2205,8 +2205,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
     >>> kstest(x,'norm')
     (0.44435602715924361, 0.038850142705171065)
 
-    >>> #fix random seed to get the same result
-    >>> np.random.seed(987654321)
+    >>> np.random.seed(987654321) # set random seed to get the same result
     >>> kstest('norm','',N=100)
     (0.058352892479417884, 0.88531190944151261)
 
@@ -2216,22 +2215,28 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
     >>> kstest(stats.norm.rvs(size=100),'norm')
     (0.058352892479417884, 0.88531190944151261)
 
-    **test against one-sided alternative hypothesis**
+    Test against one-sided alternative hypothesis:
 
     >>> np.random.seed(987654321)
-    >>> #shift distribution to larger values, so that cdf_dgp(x)< norm.cdf(x)
-    >>> x = stats.norm.rvs(loc=0.2, size=100) 
-    >>> kstest(x,'norm', alternative = 'less') 
+
+    Shift distribution to larger values, so that cdf_dgp(x)< norm.cdf(x):
+
+    >>> x = stats.norm.rvs(loc=0.2, size=100)
+    >>> kstest(x,'norm', alternative = 'less')
     (0.12464329735846891, 0.040989164077641749)
-    >>> #reject equal distribution against alternative hypothesis: less
+
+    Reject equal distribution against alternative hypothesis: less
+
     >>> kstest(x,'norm', alternative = 'greater')
     (0.0072115233216311081, 0.98531158590396395)
-    >>> #don't reject equal distribution against alternative hypothesis: greater
+
+    Don't reject equal distribution against alternative hypothesis: greater
+
     >>> kstest(x,'norm', mode='asymp')
     (0.12464329735846891, 0.08944488871182088)
 
 
-    **testing t distributed random variables against normal distribution**
+    Testing t distributed random variables against normal distribution:
 
     With 100 degrees of freedom the t distribution looks close to the normal
     distribution, and the kstest does not reject the hypothesis that the sample

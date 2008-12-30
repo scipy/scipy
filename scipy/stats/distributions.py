@@ -275,18 +275,26 @@ class rv_generic(object):
     # These are actually called, and should not be overwritten if you
     # want to keep error checking.
     def rvs(self,*args,**kwds):
-        """Random variates of given type.
+        """
+        Random variates of given type.
 
-        *args
-        =====
-        The shape parameter(s) for the distribution (see docstring of the
-           instance object for more information)
+        Parameters
+        ----------
+        arg1, arg2, arg3,... : array-like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array-like, optional
+            location parameter (default=0)
+        scale : array-like, optional
+            scale parameter (default=1)
+        size : int or tuple of ints, optional
+            defining number of random variates (default=1)
 
-        **kwds
-        ======
-        size  - number of random variates (default=1)
-        loc   - location parameter (default=0)
-        scale - scale parameter (default=1)
+        Returns
+        -------
+        rvs : array-like
+            random variates of given `size`
+
         """
         kwd_names = ['loc', 'scale', 'size', 'discrete']
         loc, scale, size, discrete = map(kwds.get, kwd_names,
@@ -322,18 +330,17 @@ class rv_generic(object):
 
 
 class rv_continuous(rv_generic):
-    """A Generic continuous random variable.
+    """
+    A Generic continuous random variable.
 
-    Continuous random variables are defined from a standard form chosen
-    for simplicity of representation.  The standard form may require
-    some shape parameters to complete its specification.  The distributions
-    also take optional location and scale parameters using loc= and scale=
-    keywords (defaults: loc=0, scale=1)
+    Continuous random variables are defined from a standard form and may
+    require some shape parameters to complete its specification.  Any
+    optional keyword parameters can be passed to the methods of the RV
+    object as given below:
 
-    These shape, scale, and location parameters can be passed to any of the
-    methods of the RV object such as the following:
-
-    generic.rvs(<shape(s)>,loc=0,scale=1)
+    Methods
+    -------
+    generic.rvs(<shape(s)>,loc=0,scale=1,size=1)
         - random variates
 
     generic.pdf(x,<shape(s)>,loc=0,scale=1)
@@ -352,18 +359,60 @@ class rv_continuous(rv_generic):
         - inverse survival function (inverse of sf)
 
     generic.stats(<shape(s)>,loc=0,scale=1,moments='mv')
-        - mean('m',axis=0), variance('v'), skew('s'), and/or kurtosis('k')
+        - mean('m'), variance('v'), skew('s'), and/or kurtosis('k')
 
     generic.entropy(<shape(s)>,loc=0,scale=1)
         - (differential) entropy of the RV.
 
-    Alternatively, the object may be called (as a function) to fix
-       the shape, location, and scale parameters returning a
-       "frozen" continuous RV object:
+    generic.fit(data,<shape(s)>,loc=0,scale=1)
+        - Parameter estimates for generic data
 
-    myrv = generic(<shape(s)>,loc=0,scale=1)
-        - frozen RV object with the same methods but holding the
-            given shape, location, and scale fixed
+    Alternatively, the object may be called (as a function) to fix the shape,
+    location, and scale parameters returning a "frozen" continuous RV object:
+
+    rv = generic(<shape(s)>,loc=0,scale=1)
+        - frozen RV object with the same methods but holding the given shape, location, and scale fixed
+
+    Parameters
+    ----------
+    x : array-like
+        quantiles
+    q : array-like
+        lower or upper tail probability
+    <shape(s)> : array-like
+        shape parameters
+    loc : array-like, optional
+        location parameter (default=0)
+    scale : array-like, optional
+        scale parameter (default=1)
+    size : int or tuple of ints, optional
+        shape of random variates (default computed from input arguments )
+    moments : string, optional
+        composed of letters ['mvsk'] specifying which moments to compute where
+        'm' = mean, 'v' = variance, 's' = (Fisher's) skew and
+        'k' = (Fisher's) kurtosis. (default='mv')
+
+    Examples
+    --------
+    >>> import matplotlib.pyplot as plt
+    >>> numargs = generic.numargs
+    >>> [ <shape(s)> ] = [0.9,]*numargs
+    >>> rv = generic(<shape(s)>)
+
+    Display frozen pdf
+
+    >>> x = np.linspace(0,np.minimum(rv.dist.b,3))
+    >>> h=plt.plot(x,rv.pdf(x))
+
+    Check accuracy of cdf and ppf
+
+    >>> prb = generic.cdf(x,<shape(s)>)
+    >>> h=plt.semilogy(np.abs(x-generic.ppf(prb,c))+1e-20)
+
+    Random number generation
+
+    >>> R = generic.rvs(<shape(s)>,size=100)
+
     """
     def __init__(self, momtype=1, a=None, b=None, xa=-10.0, xb=10.0,
                  xtol=1e-14, badvalue=None, name=None, longname=None,
@@ -496,17 +545,26 @@ class rv_continuous(rv_generic):
         return self.generic_moment(n,*args)
 
     def pdf(self,x,*args,**kwds):
-        """Probability density function at x of the given RV.
+        """
+        Probability density function at x of the given RV.
 
-        *args
-        =====
-        The shape parameter(s) for the distribution (see docstring of the
-           instance object for more information)
+        Parameters
+        ----------
+        x : array-like
+            quantiles
+        arg1, arg2, arg3,... : array-like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array-like, optional
+            location parameter (default=0)
+        scale : array-like, optional
+            scale parameter (default=1)
 
-        **kwds
-        ======
-        loc   - location parameter (default=0)
-        scale - scale parameter (default=1)
+        Returns
+        -------
+        pdf : array-like
+            Probability density function evaluated at x
+
         """
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
@@ -526,17 +584,26 @@ class rv_continuous(rv_generic):
         return output
 
     def cdf(self,x,*args,**kwds):
-        """Cumulative distribution function at x of the given RV.
+        """
+        Cumulative distribution function at x of the given RV.
 
-        *args
-        =====
-        The shape parameter(s) for the distribution (see docstring of the
-           instance object for more information)
+        Parameters
+        ----------
+        x : array-like
+            quantiles
+        arg1, arg2, arg3,... : array-like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array-like, optional
+            location parameter (default=0)
+        scale : array-like, optional
+            scale parameter (default=1)
 
-        **kwds
-        ======
-        loc   - location parameter (default=0)
-        scale - scale parameter (default=1)
+        Returns
+        -------
+        cdf : array-like
+            Cumulative distribution function evaluated at x
+
         """
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
@@ -558,17 +625,26 @@ class rv_continuous(rv_generic):
         return output
 
     def sf(self,x,*args,**kwds):
-        """Survival function (1-cdf) at x of the given RV.
+        """
+        Survival function (1-cdf) at x of the given RV.
 
-        *args
-        =====
-        The shape parameter(s) for the distribution (see docstring of the
-           instance object for more information)
+        Parameters
+        ----------
+        x : array-like
+            quantiles
+        arg1, arg2, arg3,... : array-like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array-like, optional
+            location parameter (default=0)
+        scale : array-like, optional
+            scale parameter (default=1)
 
-        **kwds
-        ======
-        loc   - location parameter (default=0)
-        scale - scale parameter (default=1)
+        Returns
+        -------
+        sf : array-like
+            Survival function evaluated at x
+
         """
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
@@ -589,17 +665,26 @@ class rv_continuous(rv_generic):
         return output
 
     def ppf(self,q,*args,**kwds):
-        """Percent point function (inverse of cdf) at q of the given RV.
+        """
+        Percent point function (inverse of cdf) at q of the given RV.
 
-        *args
-        =====
-        The shape parameter(s) for the distribution (see docstring of the
-           instance object for more information)
+        Parameters
+        ----------
+        q : array-like
+            lower tail probability
+        arg1, arg2, arg3,... : array-like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array-like, optional
+            location parameter (default=0)
+        scale : array-like, optional
+            scale parameter (default=1)
 
-        **kwds
-        ======
-        loc   - location parameter (default=0)
-        scale - scale parameter (default=1)
+        Returns
+        -------
+        x : array-like
+            quantile corresponding to the lower tail probability q.
+
         """
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
@@ -621,17 +706,26 @@ class rv_continuous(rv_generic):
         return output
 
     def isf(self,q,*args,**kwds):
-        """Inverse survival function at q of the given RV.
+        """
+        Inverse survival function at q of the given RV.
 
-        *args
-        =====
-        The shape parameter(s) for the distribution (see docstring of the
-           instance object for more information)
+        Parameters
+        ----------
+        q : array-like
+            upper tail probability
+        arg1, arg2, arg3,... : array-like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array-like, optional
+            location parameter (default=0)
+        scale : array-like, optional
+            scale parameter (default=1)
 
-        **kwds
-        ======
-        loc   - location parameter (default=0)
-        scale - scale parameter (default=1)
+        Returns
+        -------
+        x : array-like
+            quantile corresponding to the upper tail probability q.
+
         """
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
@@ -654,23 +748,32 @@ class rv_continuous(rv_generic):
         return output
 
     def stats(self,*args,**kwds):
-        """Some statistics of the given RV
+        """
+        Some statistics of the given RV
 
-        *args
-        =====
-        The shape parameter(s) for the distribution (see docstring of the
-           instance object for more information)
+        Parameters
+        ----------
+        arg1, arg2, arg3,... : array-like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array-like, optional
+            location parameter (default=0)
+        scale : array-like, optional
+            scale parameter (default=1)
 
-        **kwds
-        ======
-        loc     - location parameter (default=0)
-        scale   - scale parameter (default=1)
-        moments - a string composed of letters ['mvsk'] specifying
-                   which moments to compute (default='mv')
-                   'm' = mean,
-                   'v' = variance,
-                   's' = (Fisher's) skew,
-                   'k' = (Fisher's) kurtosis.
+        moments : string, optional
+            composed of letters ['mvsk'] defining which moments to compute:
+            'm' = mean,
+            'v' = variance,
+            's' = (Fisher's) skew,
+            'k' = (Fisher's) kurtosis.
+            (default='mv')
+
+        Returns
+        -------
+        stats : sequence
+            of requested moments.
+
         """
         loc,scale,moments=map(kwds.get,['loc','scale','moments'])
 
@@ -767,13 +870,15 @@ class rv_continuous(rv_generic):
             return tuple(output)
 
     def moment(self, n, *args):
-        """n'th non-central moment of distribution
+        """
+        n'th order non-central moment of distribution
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         n: int, n>=1
+            order of moment
 
-        *args:
+        arg1, arg2, arg3,... : array-like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
 
@@ -883,6 +988,21 @@ class rv_continuous(rv_generic):
 
 
     def entropy(self, *args, **kwds):
+        """
+        Differential entropy of the RV.
+
+
+        Parameters
+        ----------
+        arg1, arg2, arg3,... : array-like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array-like, optional
+            location parameter (default=0)
+        scale : array-like, optional
+            scale parameter (default=1)
+
+        """
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
         args = tuple(map(arr,args))
@@ -3501,15 +3621,16 @@ def make_dict(keys, values):
 #  x_k, p(x_k) lists in initialization
 
 class rv_discrete(rv_generic):
-    """A generic discrete random variable.
+    """
+    A Generic discrete random variable.
 
-    Discrete random variables are defined from a standard form.
-    The standard form may require some other parameters to complete
-    its specification.  The distribution methods also take an optional location
-    parameter using loc= keyword.  The default is loc=0.  The calling form
-    of the methods follow:
+    Discrete random variables are defined from a standard form and may require
+    some shape parameters to complete its specification. Any optional keyword
+    parameters can be passed to the methods of the RV object as given below:
 
-    generic.rvs(<shape(s)>,loc=0)
+    Methods
+    -------
+    generic.rvs(<shape(s)>,loc=0,size=1)
         - random variates
 
     generic.pmf(x,<shape(s)>,loc=0)
@@ -3534,17 +3655,40 @@ class rv_discrete(rv_generic):
         - entropy of the RV
 
     Alternatively, the object may be called (as a function) to fix
-       the shape and location parameters returning a
-       "frozen" discrete RV object:
+    the shape and location parameters returning a
+    "frozen" discrete RV object:
 
     myrv = generic(<shape(s)>,loc=0)
-        - frozen RV object with the same methods but holding the
-            given shape and location fixed.
+        - frozen RV object with the same methods but holding the given shape and location fixed.
 
     You can construct an aribtrary discrete rv where P{X=xk} = pk
     by passing to the rv_discrete initialization method (through the values=
     keyword) a tuple of sequences (xk,pk) which describes only those values of
     X (xk) that occur with nonzero probability (pk).
+
+    Examples:
+    ---------
+        >>> import matplotlib.pyplot as plt
+        >>> numargs = generic.numargs
+        >>> [ <shape(s)> ] = ['Replace with resonable value',]*numargs
+
+    Display frozen pmf:
+        >>> rv = generic(<shape(s)>)
+        >>> x = np.arange(0,np.min(rv.dist.b,3)+1)
+        >>> h = plt.plot(x,rv.pmf(x))
+
+    Check accuracy of cdf and ppf:
+        >>> prb = generic.cdf(x,<shape(s)>)
+        >>> h = plt.semilogy(np.abs(x-generic.ppf(prb,<shape(s)>))+1e-20)
+
+    Random number generation:
+        >>> R = generic.rvs(<shape(s)>,size=100)
+
+    Custom made discrete distribution:
+        >>> vals = [arange(7),(0.1,0.2,0.3,0.1,0.1,0.1,0.1)]
+        >>> custm = rv_discrete(name='custm',values=vals)
+        >>> h = plt.plot(vals[0],custm.pmf(vals[0]))
+
     """
     def __init__(self, a=0, b=inf, name=None, badvalue=None,
                  moment_tol=1e-8,values=None,inc=1,longname=None,
@@ -3676,20 +3820,48 @@ class rv_discrete(rv_generic):
 
 
     def rvs(self, *args, **kwargs):
+        """
+        Random variates of given type.
+
+        Parameters
+        ----------
+        arg1, arg2, arg3,... : array-like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array-like, optional
+            location parameter (default=0)
+        size : int or tuple of ints, optional
+            defining number of random variates (default=1)
+
+        Returns
+        -------
+        rvs : array-like
+            random variates of given `size`
+
+        """
         kwargs['discrete'] = True
         return rv_generic.rvs(self, *args, **kwargs)
 
     def pmf(self, k,*args, **kwds):
-        """Probability mass function at k of the given RV.
+        """
+        Probability mass function at k of the given RV.
 
-        *args
-        =====
-        The shape parameter(s) for the distribution (see docstring of the
-           instance object for more information)
 
-        **kwds
-        ======
-        loc   - location parameter (default=0)
+        Parameters
+        ----------
+        k : array-like
+            quantiles
+        arg1, arg2, arg3,... : array-like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array-like, optional
+            location parameter (default=0)
+
+        Returns
+        -------
+        pmf : array-like
+            Probability mass function evaluated at k
+
         """
         loc = kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
@@ -3708,16 +3880,24 @@ class rv_discrete(rv_generic):
         return output
 
     def cdf(self, k, *args, **kwds):
-        """Cumulative distribution function at k of the given RV
+        """
+        Cumulative distribution function at k of the given RV
 
-        *args
-        =====
-        The shape parameter(s) for the distribution (see docstring of the
-           instance object for more information)
+        Parameters
+        ----------
+        k : array-like, int
+            quantiles
+        arg1, arg2, arg3,... : array-like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array-like, optional
+            location parameter (default=0)
 
-        **kwds
-        ======
-        loc   - location parameter (default=0)
+        Returns
+        -------
+        cdf : array-like
+            Cumulative distribution function evaluated at k
+
         """
         loc = kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
@@ -3740,16 +3920,24 @@ class rv_discrete(rv_generic):
         return output
 
     def sf(self,k,*args,**kwds):
-        """Survival function (1-cdf) at k of the given RV
+        """
+        Survival function (1-cdf) at k of the given RV
 
-        *args
-        =====
-        The shape parameter(s) for the distribution (see docstring of the
-           instance object for more information)
+        Parameters
+        ----------
+        k : array-like
+            quantiles
+        arg1, arg2, arg3,... : array-like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array-like, optional
+            location parameter (default=0)
 
-        **kwds
-        ======
-        loc   - location parameter (default=0)
+        Returns
+        -------
+        sf : array-like
+            Survival function evaluated at k
+
         """
         loc= kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
@@ -3770,16 +3958,24 @@ class rv_discrete(rv_generic):
         return output
 
     def ppf(self,q,*args,**kwds):
-        """Percent point function (inverse of cdf) at q of the given RV
+        """
+        Percent point function (inverse of cdf) at q of the given RV
 
-        *args
-        =====
-        The shape parameter(s) for the distribution (see docstring of the
-           instance object for more information)
+        Parameters
+        ----------
+        q : array-like
+            lower tail probability
+        arg1, arg2, arg3,... : array-like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array-like, optional
+            location parameter (default=0)
 
-        **kwds
-        ======
-        loc   - location parameter (default=0)
+        Returns
+        -------
+        k : array-like
+            quantile corresponding to the lower tail probability, q.
+
         """
         loc = kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
@@ -3803,16 +3999,24 @@ class rv_discrete(rv_generic):
         return output
 
     def isf(self,q,*args,**kwds):
-        """Inverse survival function (1-sf) at q of the given RV
+        """
+        Inverse survival function (1-sf) at q of the given RV
 
-        *args
-        =====
-        The shape parameter(s) for the distribution (see docstring of the
-           instance object for more information)
+        Parameters
+        ----------
+        q : array-like
+            upper tail probability
+        arg1, arg2, arg3,... : array-like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array-like, optional
+            location parameter (default=0)
 
-        **kwds
-        ======
-        loc   - location parameter (default=0)
+        Returns
+        -------
+        k : array-like
+            quantile corresponding to the upper tail probability, q.
+
         """
 
         loc = kwds.get('loc')
@@ -3847,22 +4051,29 @@ class rv_discrete(rv_generic):
         return output
 
     def stats(self, *args, **kwds):
-        """Some statistics of the given discrete RV
+        """
+        Some statistics of the given discrete RV
 
-        *args
-        =====
-        The shape parameter(s) for the distribution (see docstring of the
-           instance object for more information)
+        Parameters
+        ----------
+        arg1, arg2, arg3,... : array-like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array-like, optional
+            location parameter (default=0)
+        moments : string, optional
+            composed of letters ['mvsk'] defining which moments to compute:
+            'm' = mean,
+            'v' = variance,
+            's' = (Fisher's) skew,
+            'k' = (Fisher's) kurtosis.
+            (default='mv')
 
-        **kwds
-        ======
-        loc     - location parameter (default=0)
-        moments - a string composed of letters ['mvsk'] specifying
-                   which moments to compute (default='mv')
-                   'm' = mean,
-                   'v' = variance,
-                   's' = (Fisher's) skew,
-                   'k' = (Fisher's) kurtosis.
+        Returns
+        -------
+        stats : sequence
+            of requested moments.
+
         """
         loc,moments=map(kwds.get,['loc','moments'])
         N = len(args)
@@ -3949,14 +4160,14 @@ class rv_discrete(rv_generic):
             return tuple(output)
 
     def moment(self, n, *args, **kwds):   # Non-central moments in standard form.
-        """n'th non-central moment of the distribution
+        """
+        n'th non-central moment of the distribution
 
-
-        Parameters:
-        -----------
+        Parameters
+        ----------
         n: int, n>=1
-
-        *args:
+            order of moment
+        arg1, arg2, arg3,...: array-like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
 

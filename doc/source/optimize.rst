@@ -30,6 +30,7 @@ Constrained (multivariate)
    fmin_l_bfgs_b
    fmin_tnc
    fmin_cobyla
+   nnls
 
 Global
 ------

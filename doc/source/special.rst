@@ -299,7 +299,17 @@ The class also has an attribute 'weights' which return the roots,
 weights, and total weights for the appropriate form of Gaussian
 quadrature.  These are returned in an n x 3 array with roots in
 the first column, weights in the second column, and total weights
-in the final column
+in the final column.
+
+.. warning::
+
+   Evaluating large-order polynomials using these functions can be
+   numerically unstable.
+
+   The reason is that the functions below return polynomials as
+   `numpy.poly1d` objects, which represent the polynomial in terms
+   of their coefficients, and this can result to loss of precision
+   when the polynomial terms are summed.
 
 .. autosummary::
    :toctree: generated/
