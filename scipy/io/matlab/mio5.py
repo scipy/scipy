@@ -12,6 +12,7 @@ http://www.mathworks.com/access/helpdesk/help/pdf_doc/matlab/matfile_format.pdf
 
 import sys
 import zlib
+from gzipstreams import GzipInputStream
 from StringIO import StringIO
 from copy import copy as pycopy
 import warnings
@@ -322,14 +323,12 @@ class Mat5ArrayReader(MatArrayReader):
 class Mat5ZArrayReader(Mat5ArrayReader):
     ''' Getter for compressed arrays
 
-    Reads and uncompresses gzipped stream on init, providing wrapper
+    Sets up reader for gzipped stream on init, providing wrapper
     for this new sub-stream.
     '''
     def __init__(self, array_reader, byte_count):
-        '''Reads and uncompresses gzipped stream'''
-        data = array_reader.mat_stream.read(byte_count)
         super(Mat5ZArrayReader, self).__init__(
-            StringIO(zlib.decompress(data)),
+            GzipInputStream(array_reader.mat_stream, byte_count),
             array_reader.dtypes,
             array_reader.processor_func,
             array_reader.codecs,

@@ -308,12 +308,13 @@ class MatFileReader(MatStreamAgent):
                 # Convert char array to string or array of strings
                 dims = arr.shape
                 if len(dims) >= 2: # return array of strings
-                    dtt = self.order_code + 'U'
                     n_dims = dims[:-1]
+                    last_dim = dims[-1]
                     str_arr = arr.reshape(
                         (small_product(n_dims),
-                         dims[-1]))
-                    arr = np.empty(n_dims, dtype='U%d' % dims[-1])
+                         last_dim))
+                    dtstr = 'U%d' % (last_dim and last_dim or 1)
+                    arr = np.empty(n_dims, dtype=dtstr)
                     for i in range(0, n_dims[-1]):
                         arr[...,i] = self.chars_to_str(str_arr[i])
                 else: # return string
