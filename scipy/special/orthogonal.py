@@ -34,8 +34,9 @@ assume:
 P_0(x) = 1
 P_-1(x) == 0
 
-See Numerical Recipies in C, page 156 and
-Abramowitz and Stegun p. 774, 782
+For a more detailed discussion see Numerical Recipies in C (p. 156) and
+Abramowitz and Stegun (p. 774, 782); while our implementation differs, the
+algorithm and formulas are similar.
 
 Functions:
 
