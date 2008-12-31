@@ -17,4 +17,4 @@ def test_zoom_output_shape():
     ndimage.zoom(x, 2, output=np.zeros((6,8)))
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    run_module_suite()
