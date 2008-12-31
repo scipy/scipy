@@ -33,6 +33,14 @@ Each discrete distribution is an instance of the class rv_discrete:
    rv_discrete.isf
    rv_discrete.stats
 
+
+Masked statistics functions
+===========================
+
+.. toctree::
+
+   stats.mstats
+
 Continuous distributions
 ========================
 
