@@ -904,7 +904,7 @@ class Mat5WriterGetter(object):
         if isinstance(narr, MatlabObject):
             return Mat5ObjectWriter(*args)
         if narr.dtype.hasobject: # cell or struct array
-            if narr.dtype.fields == None:
+            if narr.dtype.fields is None:
                 return Mat5CellWriter(*args)
             else:
                 return Mat5StructWriter(*args)
