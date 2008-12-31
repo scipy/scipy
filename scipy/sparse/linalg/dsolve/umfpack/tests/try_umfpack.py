@@ -88,7 +88,7 @@ def readMatrix( matrixName, options ):
     print 'format:', options.format
 
     print 'reading...'
-    if fileName[-3:] == '.gz':
+    if fileName.endswith('.gz'):
         fd = gzip.open( fileName )
     else:
         fd = open( fileName )

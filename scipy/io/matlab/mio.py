@@ -25,7 +25,7 @@ def find_mat_file(file_name, appendmat=True):
     warnings.warn('Searching for mat files on python system path will be ' +
                   'removed in future versions of scipy',
                    FutureWarning, stacklevel=2)
-    if appendmat and file_name[-4:] == ".mat":
+    if appendmat and file_name.endswith(".mat"):
         file_name = file_name[:-4]
     if os.sep in file_name:
         full_name = file_name
