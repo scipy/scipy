@@ -75,7 +75,14 @@ while SciPy will house file readers and writers for various data formats
 NumPy 1.1.0 and will take place over many release.  SciPy 0.7.0 has several
 changes including:
 
-* many of the functions in scipy.io have been deprecated
+* Several functions in ``scipy.io`` have been deprecated and will be removed
+  in the 0.8.0 release including ``npfile``, ``save``, ``load``, ``create_module``,
+  ``create_shelf``, ``objload``, ``objsave``, ``fopen``, ``read_array``,
+  ``write_array``, ``fread``, ``fwrite``, ``bswap``, ``packbits``, ``unpackbits``,
+  and ``convert_objectarray``.  Some of these functions have been replaced by
+  NumPy's raw reading and writing capabilities, memory-mapping capabilities,
+  or array methods.  Others have been moved from SciPy to NumPy, since basic
+  array reading and writing capability is now handled by NumPy.
 * the Matlab (TM) file readers/writers have a number of improvements:
 
  * default version 5
