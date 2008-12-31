@@ -249,11 +249,21 @@ the rapid increase in tests.  To run the full test suite::
 For more information, please see `The NumPy/SciPy Testing Guide
 <http://projects.scipy.org/scipy/numpy/wiki/TestingGuidelines>`__.
 
+We have also greatly improved our test coverage.  There were just over 2,000 unit tests in
+the 0.6.0 release; this release nearly doubles that number with just under 4,000 unit tests.
+
 Building SciPy
 --------------
 
 Support for NumScons has been added. NumScons is a tentative new
-build system for NumPy/SciPy, using scons at its core.
+build system for NumPy/SciPy, using `SCons <http://www.scons.org/>`__ at its core.
+
+SCons is a next-generation build system meant to replace the venerable ``Make`` with
+the integrated functionality of ``autoconf``/``automake`` and ``ccache``.  Scons is
+written in Python and its configuration files are Python scripts.  NumScons is meant
+to replace NumPy's custom version of ``distutils`` providing more advanced functionality
+such as autoconf, improved fortran support, more tools, and support for
+``numpy.distutils``/``scons`` cooperation.
 
 Sandbox Removed
 ---------------
