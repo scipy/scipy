@@ -184,10 +184,16 @@ changed accordingly.
 Major documentation improvements
 --------------------------------
 
-Scipy documentation is now more accessible than previously; you can
-view a HTML reference manual online at http://docs.scipy.org/ or
-download it as a PDF file. An updated tutorial is also available, and
-it shows how to use several essential parts of Scipy.
+SciPy documentation is greatly improved; you can
+view a HTML reference manual `online <http://docs.scipy.org/>`__ or
+download it as a PDF file. The new reference guide was built using
+the popular `Sphinx tool <http://sphinx.pocoo.org/>`__.
+
+This release also includes an updated tutorial, which hadn't been
+available since SciPy was ported to NumPy in 2005.  While not
+comprehensive, the tutorial shows how to use several essential
+parts of Scipy.  It also includes the ``ndimage`` documentation
+from the ``numarray`` manual.
 
 Nevertheless, more effort is still needed on the documentation front.
 Luckily, contributing to Scipy documentation is now easier than
