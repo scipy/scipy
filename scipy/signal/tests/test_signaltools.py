@@ -38,7 +38,7 @@ class TestMedFilt(TestCase):
              [ 3, 33, 53, 67,  1, 78, 74, 55, 12, 83],
              [ 7, 11, 46, 70, 60, 47, 24, 43, 61, 26],
              [32, 61, 88,  7, 39,  4, 92, 64, 45, 61]]
-        
+
         d = signal.medfilt(f, [7, 3])
         e = signal.medfilt2d(np.array(f, np.float), [7, 3])
         assert_array_equal(d, [[ 0, 50, 50, 50, 42, 15, 15, 18, 27,  0],

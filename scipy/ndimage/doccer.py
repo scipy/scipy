@@ -94,7 +94,7 @@ def filldoc(docdict, unindent_params=True):
     unindent_params : {False, True}, boolean, optional
         If True, strip common indentation from all parameters in
         docdict
-    
+
     Returns
     -------
     decfunc : function

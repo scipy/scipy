@@ -1088,18 +1088,18 @@ def test_ttest_rel():
     t,p = stats.ttest_rel([0,0,0],[1,1,1])
     assert_equal((np.abs(t),p), (np.inf, 0))
     assert_equal(stats.ttest_rel([0,0,0], [0,0,0]), (1.0, 0.42264973081037427))
-    
+
     #check that nan in input array result in nan output
     anan = np.array([[1,np.nan],[-1,1]])
     assert_equal(stats.ttest_ind(anan, np.zeros((2,2))),([0, np.nan], [1,np.nan]))
-    
-    
+
+
 def test_ttest_ind():
     #regression test
     tr = 1.0912746897927283
     pr = 0.27647818616351882
     tpr = ([tr,-tr],[pr,pr])
-    
+
     rvs2 = np.linspace(1,100,100)
     rvs1 = np.linspace(5,105,100)
     rvs1_2D = np.array([rvs1, rvs2])
@@ -1133,15 +1133,15 @@ def test_ttest_ind():
     #check that nan in input array result in nan output
     anan = np.array([[1,np.nan],[-1,1]])
     assert_equal(stats.ttest_ind(anan, np.zeros((2,2))),([0, np.nan], [1,np.nan]))
-    
 
-   
+
+
 
 def test_ttest_1samp_new():
     n1, n2, n3 = (10,15,20)
     rvn1 = stats.norm.rvs(loc=5,scale=10,size=(n1,n2,n3))
     rvn2 = stats.norm.rvs(loc=5,scale=10,size=(n1,n2,n3))
-    
+
     #check multidimensional array and correct axis handling
     #deterministic rvn1 and rvn2 would be better as in test_ttest_rel
     t1,p1 = stats.ttest_1samp(rvn1[:,:,:], np.ones((n2,n3)),axis=0)

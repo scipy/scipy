@@ -62,7 +62,7 @@ def test_docformat():
     # affect subsequent indent of inserted parameter
     yield assert_equal, formatted, """Single line doc Another test
    with some indent"""
-    
+
 
 def test_decorator():
     # with unindentation of parameters

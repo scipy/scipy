@@ -89,7 +89,7 @@ docdict = {
     'extra_arguments':_extra_arguments_doc,
     'extra_keywords':_extra_keywords_doc,
     }
-    
+
 docfiller = doccer.filldoc(docdict)
 
 @docfiller
@@ -99,7 +99,7 @@ def correlate1d(input, weights, axis = -1, output = None, mode = "reflect",
 
     The lines of the array along the given axis are correlated with the
     given weights.
-    
+
     Parameters
     ----------
     %(input)s
@@ -921,7 +921,7 @@ def generic_filter1d(input, function, filter_size, axis = -1,
     %(cval)s
     %(origin)s
     %(extra_arguments)s
-    %(extra_keywords)s    
+    %(extra_keywords)s
     """
     if extra_keywords is None:
         extra_keywords = {}
@@ -962,7 +962,7 @@ def generic_filter(input, function, size = None, footprint = None,
     %(cval)s
     %(origin)s
     %(extra_arguments)s
-    %(extra_keywords)s    
+    %(extra_keywords)s
     """
     if extra_keywords is None:
         extra_keywords = {}

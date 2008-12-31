@@ -799,7 +799,7 @@ class Mat5CellWriter(Mat5MatrixWriter):
     def write(self):
         self.write_header()
         self._write_items()
-        
+
     def _write_items(self):
         # loop over data, column major
         A = np.atleast_2d(self.arr).flatten('F')
@@ -893,11 +893,11 @@ class Mat5WriterGetter(object):
             # No interesting conversion possible
             raise TypeError('Could not convert %s (type %s) to array'
                             % (arr, type(arr)))
-        args = (self.stream, 
-                narr, 
-                name, 
-                is_global, 
-                self.unicode_strings, 
+        args = (self.stream,
+                narr,
+                name,
+                is_global,
+                self.unicode_strings,
                 self.long_field_names)
         if isinstance(narr, MatlabFunction):
             return Mat5FunctionWriter(*args)

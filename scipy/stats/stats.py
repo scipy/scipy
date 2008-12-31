@@ -1904,7 +1904,7 @@ def ttest_1samp(a, popmean, axis=0):
 
     >>> from scipy import stats
     >>> import numpy as np
-    
+
     >>> #fix seed to get the same result
     >>> np.random.seed(7654567)
     >>> rvs = stats.norm.rvs(loc=5,scale=10,size=(50,2))
@@ -1938,14 +1938,14 @@ def ttest_1samp(a, popmean, axis=0):
 
     d = np.mean(a,axis) - popmean
     v = np.var(a, axis, ddof=1)
-    
+
     t = d / np.sqrt(v/float(n))
     t = np.where((d==0)*(v==0), 1.0, t) #define t=0/0 = 1, identical mean, var
     prob = distributions.t.sf(np.abs(t),df)*2  #use np.abs to get upper tail
     #distributions.t.sf currently does not propagate nans
     #this can be dropped, if distributions.t.sf propagates nans
     #if this is removed, then prob = prob[()] needs to be removed
-    prob = np.where(np.isnan(t), np.nan, prob)  
+    prob = np.where(np.isnan(t), np.nan, prob)
 
     if t.ndim == 0:
         t = t[()]
@@ -2004,7 +2004,7 @@ def ttest_ind(a, b, axis=0):
     >>> np.random.seed(12345678)
 
     test with sample with identical means
-    
+
     >>> rvs1 = stats.norm.rvs(loc=5,scale=10,size=500)
     >>> rvs2 = stats.norm.rvs(loc=5,scale=10,size=500)
     >>> stats.ttest_ind(rvs1,rvs2)
@@ -2012,7 +2012,7 @@ def ttest_ind(a, b, axis=0):
 
 
     test with sample with different means
-    
+
     >>> rvs3 = stats.norm.rvs(loc=8,scale=10,size=500)
     >>> stats.ttest_ind(rvs1,rvs3)
     (-5.0434013458585092, 5.4302979468623391e-007)
@@ -2032,7 +2032,7 @@ def ttest_ind(a, b, axis=0):
     t = d/np.sqrt(svar*(1.0/n1 + 1.0/n2))
     t = np.where((d==0)*(svar==0), 1.0, t) #define t=0/0 = 0, identical means
     prob = distributions.t.sf(np.abs(t),df)*2#use np.abs to get upper tail
-    
+
     #distributions.t.sf currently does not propagate nans
     #this can be dropped, if distributions.t.sf propagates nans
     #if this is removed, then prob = prob[()] needs to be removed
@@ -2041,7 +2041,7 @@ def ttest_ind(a, b, axis=0):
     if t.ndim == 0:
         t = t[()]
         prob = prob[()]
-        
+
     return t, prob
 
 
@@ -2113,15 +2113,15 @@ def ttest_rel(a,b,axis=0):
     d = (a-b).astype('d')
     v = np.var(d,axis,ddof=1)
     dm = np.mean(d, axis)
-    
+
     t = dm / np.sqrt(v/float(n))
-    t = np.where((dm==0)*(v==0), 1.0, t) #define t=0/0 = 1, zero mean and var 
+    t = np.where((dm==0)*(v==0), 1.0, t) #define t=0/0 = 1, zero mean and var
     prob = distributions.t.sf(np.abs(t),df)*2 #use np.abs to get upper tail
     #distributions.t.sf currently does not propagate nans
     #this can be dropped, if distributions.t.sf propagates nans
     #if this is removed, then prob = prob[()] needs to be removed
     prob = np.where(np.isnan(t), np.nan, prob)
-    
+
 ##    if not np.isscalar(t):
 ##        probs = np.reshape(probs, t.shape) # this should be redundant
 ##    if not np.isscalar(prob) and len(prob) == 1:

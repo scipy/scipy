@@ -61,9 +61,9 @@ class GzipInputStream(object):
     ''
     >>> ZF.tell()
     6
-    >>> 
+    >>>
     '''
-    
+
     blocksize = 16384 # 16K
     def __init__(self, fileobj, length=None):
         ''' Initialize GzipInputStream
@@ -164,7 +164,7 @@ class GzipInputStream(object):
         -------
         data : string
             string containing read data
-            
+
         '''
         self.__fill(bytes)
         if bytes == -1:
@@ -217,4 +217,3 @@ class GzipInputStream(object):
                 break
             lines.append(s)
         return lines
-
