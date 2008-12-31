@@ -25,6 +25,7 @@ from numpy import flatnonzero as nonzero
 from scipy.special import gammaln as gamln
 from copy import copy
 import vonmises_cython
+import textwrap
 
 __all__ = [
            'rv_continuous',
@@ -394,6 +395,7 @@ class rv_continuous(rv_generic):
 
     Examples
     --------
+
     >>> import matplotlib.pyplot as plt
     >>> numargs = generic.numargs
     >>> [ <shape(s)> ] = [0.9,]*numargs
@@ -469,6 +471,7 @@ class rv_continuous(rv_generic):
         if self.__doc__ is None:
             self.__doc__ = rv_continuous.__doc__
         if self.__doc__ is not None:
+            self.__doc__ = textwrap.dedent(self.__doc__)
             if longname is not None:
                 self.__doc__ = self.__doc__.replace("A Generic",longname)
             if name is not None:
@@ -478,7 +481,7 @@ class rv_continuous(rv_generic):
             else:
                 self.__doc__ = self.__doc__.replace("<shape(s)>",shapes)
             if extradoc is not None:
-                self.__doc__ = self.__doc__ + extradoc
+                self.__doc__ += textwrap.dedent(extradoc)
 
     def _ppf_to_solve(self, x, q,*args):
         return apply(self.cdf, (x, )+args)-q
@@ -3666,28 +3669,33 @@ class rv_discrete(rv_generic):
     keyword) a tuple of sequences (xk,pk) which describes only those values of
     X (xk) that occur with nonzero probability (pk).
 
-    Examples:
-    ---------
-        >>> import matplotlib.pyplot as plt
-        >>> numargs = generic.numargs
-        >>> [ <shape(s)> ] = ['Replace with resonable value',]*numargs
+    Examples
+    --------
+
+    >>> import matplotlib.pyplot as plt
+    >>> numargs = generic.numargs
+    >>> [ <shape(s)> ] = ['Replace with resonable value',]*numargs
 
     Display frozen pmf:
-        >>> rv = generic(<shape(s)>)
-        >>> x = np.arange(0,np.min(rv.dist.b,3)+1)
-        >>> h = plt.plot(x,rv.pmf(x))
+
+    >>> rv = generic(<shape(s)>)
+    >>> x = np.arange(0,np.min(rv.dist.b,3)+1)
+    >>> h = plt.plot(x,rv.pmf(x))
 
     Check accuracy of cdf and ppf:
-        >>> prb = generic.cdf(x,<shape(s)>)
-        >>> h = plt.semilogy(np.abs(x-generic.ppf(prb,<shape(s)>))+1e-20)
+
+    >>> prb = generic.cdf(x,<shape(s)>)
+    >>> h = plt.semilogy(np.abs(x-generic.ppf(prb,<shape(s)>))+1e-20)
 
     Random number generation:
-        >>> R = generic.rvs(<shape(s)>,size=100)
+
+    >>> R = generic.rvs(<shape(s)>,size=100)
 
     Custom made discrete distribution:
-        >>> vals = [arange(7),(0.1,0.2,0.3,0.1,0.1,0.1,0.1)]
-        >>> custm = rv_discrete(name='custm',values=vals)
-        >>> h = plt.plot(vals[0],custm.pmf(vals[0]))
+
+    >>> vals = [arange(7),(0.1,0.2,0.3,0.1,0.1,0.1,0.1)]
+    >>> custm = rv_discrete(name='custm',values=vals)
+    >>> h = plt.plot(vals[0],custm.pmf(vals[0]))
 
     """
     def __init__(self, a=0, b=inf, name=None, badvalue=None,
@@ -3768,6 +3776,7 @@ class rv_discrete(rv_generic):
         if self.__doc__ is None:
             self.__doc__ = rv_discrete.__doc__
         if self.__doc__ is not None:
+            self.__doc__ = textwrap.dedent(self.__doc__)
             self.__doc__ = self.__doc__.replace("A Generic",longname)
             if name is not None:
                 self.__doc__ = self.__doc__.replace("generic",name)
@@ -3778,7 +3787,7 @@ class rv_discrete(rv_generic):
             ind = self.__doc__.find("You can construct an arbitrary")
             self.__doc__ = self.__doc__[:ind].strip()
             if extradoc is not None:
-                self.__doc__ = self.__doc__ + extradoc
+                self.__doc__ += textwrap.dedent(extradoc)
 
     def _rvs(self, *args):
         return self._ppf(mtrand.random_sample(self._size),*args)
