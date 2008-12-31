@@ -53,30 +53,21 @@ class GzipInputStream(object):
     'A hand'
     >>> ZF.tell()
     6
-    >>> F = StringIO(compress(S))
-    >>> ZF = GzipInputStream(F, 6) # with length
-    >>> ZF.read()
-    'A hand'
-    >>> ZF.read()
-    ''
-    >>> ZF.tell()
-    6
-    >>>
     '''
 
     blocksize = 16384 # 16K
-    def __init__(self, fileobj, length=None):
+    def __init__(self, fileobj, zipped_length=None):
         ''' Initialize GzipInputStream
 
         Parameters
         ----------
         fileobj : file-like object
             Object only need implement ``read`` method
-        length : None or int, optional
-            Uncompressed length of input stream in bytes
+        zipped_length : None or int, optional
+            Compressed length of input stream in bytes
         '''
         self.fileobj = fileobj
-        self.length=length
+        self.zipped_length=zipped_length
         self.exhausted = False
         self.unzipped_pos = 0
         self.data = ""
@@ -95,23 +86,20 @@ class GzipInputStream(object):
         read_to_end = bytes == -1
         n_to_fetch = self.blocksize
         while read_to_end or len(self.data) < bytes:
-            if self.length: # do not read beyond specified length
-                n_to_fetch = min(self.length-self._bytes_read,
+            if self.zipped_length: # do not read beyond specified length
+                n_to_fetch = min(self.zipped_length-self._bytes_read,
                                  self.blocksize)
                 if n_to_fetch == 0:
                     self.exhausted = True
                     break
             data = self.fileobj.read(n_to_fetch)
+            self._bytes_read += len(data)
             if data:
-                self.__add_data(self._unzipper.decompress(data))
+                self.data += self._unzipper.decompress(data)
             if len(data) < n_to_fetch: # hit end of file
-                self.__add_data(self._unzipper.flush())
+                self.data += self._unzipper.flush()
                 self.exhausted = True
                 break
-
-    def __add_data(self, data):
-        self.data += data
-        self._bytes_read += len(data)
 
     def seek(self, offset, whence=0):
         ''' Set position in uncompressed stream
@@ -157,7 +145,7 @@ class GzipInputStream(object):
             If *bytes* is a positive integer, read this many bytes
             from file. If *bytes* == -1 (the default), read all bytes
             to the end of file, where the end of the file is detected
-            by running out of read data, or by the ``length``
+            by running out of read data, or by the ``zipped_length``
             attribute.
 
         Returns
