@@ -4,9 +4,23 @@ SciPy 0.7.0 Release Notes
 
 .. contents::
 
-This stable release comes almost one year after the 0.6.0 release
+This new minor release comes almost one year after the 0.6.0 release
 and contains many new features, numerous bug-fixes, improved test
-coverage, and better documentation.
+coverage, and better documentation.  There have been a number of
+deprecations and API changes in this release, which are documented
+below.  While NumPy is an extremely stable, production-ready package,
+SciPy is still under rapid development.  Every effort is made to ensure
+that our code is as stable and bug-free as possible (e.g., this release
+almost doubles the number of unit tests compared to 0.6.0).  However, as
+we work toward the first stable, production-ready release (1.0.0), we
+will be adding new modules and packages and we reserve the right to modify
+SciPy's API and move code around to make the overall code organization
+as intuitive as possible for new users.
+
+All users are encouraged to upgrade to this release as there are a large
+number of bug-fixes and optimizations.  Moreover, our development attention
+will now shift to bug-fix releases on the 0.7.x branch and new feature on
+the development trunk.
 
 Please note that unlike previous versions of SciPy, this release
 requires Python 2.4 or 2.5.  This release also requires NumPy 1.2.0
