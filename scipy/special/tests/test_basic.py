@@ -128,6 +128,11 @@ class TestCephes(TestCase):
         cephes.expi(1)
     def test_expn(self):
         cephes.expn(1,1)
+    def test_exp1_reg(self):
+        # Regression for #834
+        a = cephes.exp1(-complex(19.9999990))
+        b = cephes.exp1(-complex(19.9999991))
+        assert_array_almost_equal(a.imag, b.imag)
 
     def test_exp10(self):
         assert_approx_equal(cephes.exp10(2),100.0)
