@@ -9016,7 +9016,7 @@ C       Output:  CE1 --- E1(z)
 C       ====================================================
 C
         IMPLICIT COMPLEX*16 (C,Z)
-        IMPLICIT DOUBLE PRECISION (D-H,O-Y)
+        IMPLICIT DOUBLE PRECISION (A,D-H,O-Y)
         PI=3.141592653589793D0
         EL=0.5772156649015328D0
         X=DBLE(Z)
