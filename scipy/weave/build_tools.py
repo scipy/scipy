@@ -23,6 +23,7 @@ import time
 import tempfile
 import exceptions
 import commands
+import subprocess
 
 import platform_info
 
@@ -341,11 +342,11 @@ def gcc_exists(name = 'gcc'):
         Does this return correct value on win98???
     """
     result = 0
-    cmd = '%s -v' % name
+    cmd = [str(name), '-v']
     try:
-        w,r=os.popen4(cmd)
-        w.close()
-        str_result = r.read()
+        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT, close_fds=True)
+        str_result = p.stdout.read()
         #print str_result
         if 'Reading specs' in str_result:
             result = 1
@@ -362,9 +363,9 @@ def msvc_exists():
     """
     result = 0
     try:
-        w,r=os.popen4('cl')
-        w.close()
-        str_result = r.read()
+        p = subprocess.Popen(['cl'], shell=True, stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT, close_fds=True)
+        str_result = p.stdout.read()
         #print str_result
         if 'Microsoft' in str_result:
             result = 1
@@ -379,9 +380,9 @@ def msvc_exists():
 if os.name == 'nt':
     def run_command(command):
         """ not sure how to get exit status on nt. """
-        in_pipe,out_pipe = os.popen4(command)
-        in_pipe.close()
-        text = out_pipe.read()
+        p = subprocess.Popen(['cl'], shell=True, stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT, close_fds=True)
+        text = p.stdout.read()
         return 0, text
 else:
     run_command = commands.getstatusoutput
@@ -457,9 +458,9 @@ if sys.platform == 'win32':
             # get_versions methods regex
             if self.gcc_version is None:
                 import re
-                out = os.popen('gcc' + ' -dumpversion','r')
-                out_string = out.read()
-                out.close()
+                p = subprocess.Popen(['gcc', ' -dumpversion']. shell=True,
+                        stdout=subprocess.PIPE, close_fds=True)
+                out_string = p.stdout.read()
                 result = re.search('(\d+\.\d+)',out_string)
                 if result:
                     self.gcc_version = StrictVersion(result.group(1))

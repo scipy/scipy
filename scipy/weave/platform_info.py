@@ -5,7 +5,7 @@
     multiple platforms share the same file system.
 """
 
-import os, sys
+import os, sys, subprocess
 
 import distutils
 from distutils.sysconfig import customize_compiler
@@ -169,9 +169,9 @@ def gcc_exists(name = 'gcc'):
     result = 0
     cmd = '%s -v' % name
     try:
-        w,r=os.popen4(cmd)
-        w.close()
-        str_result = r.read()
+        p = subprocess.Popen([str(name), '-v'], shell=True, close_fds=True,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        str_result = p.stdout.read()
         if 'Reading specs' in str_result:
             result = 1
     except:
@@ -187,9 +187,9 @@ def msvc_exists():
     """
     result = 0
     try:
-        w,r=os.popen4('cl')
-        w.close()
-        str_result = r.read()
+        p = subprocess.Popen(['cl'], shell=True, close_fds=True,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        str_result = p.stdout.read()
         if 'Microsoft' in str_result:
             result = 1
     except:
