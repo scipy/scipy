@@ -88,8 +88,7 @@ def compiler_exe_path(exe_name):
     return exe_path
 
 def check_sum(file):
-
-    import md5
+    import scipy.weave.md5_load as md5
     try:
         f = open(file,'r')
         bytes = f.read(-1)

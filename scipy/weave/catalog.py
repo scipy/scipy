@@ -86,7 +86,7 @@ def expr_to_filename(expr):
         Something that was a little more human readable would be
         nice, but the computer doesn't seem to care.
     """
-    import md5
+    import scipy.weave.md5_load as md5
     base = 'sc_'
     return base + md5.new(expr).hexdigest()
 
