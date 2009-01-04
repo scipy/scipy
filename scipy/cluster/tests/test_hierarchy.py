@@ -152,7 +152,7 @@ class TestLinkage(TestCase):
         Zmlab = eo['linkage-Q-single']
         eps = 1e-06
         expectedZ = from_mlab_linkage(Zmlab)
-        print abs(Z-expectedZ).max()
+        #print abs(Z-expectedZ).max()
         self.failUnless(within_tol(Z, expectedZ, eps))
 
     def test_linkage_complete_q(self):
@@ -162,7 +162,7 @@ class TestLinkage(TestCase):
         Zmlab = eo['linkage-Q-complete']
         eps = 1e-07
         expectedZ = from_mlab_linkage(Zmlab)
-        print abs(Z-expectedZ).max()
+        #print abs(Z-expectedZ).max()
         self.failUnless(within_tol(Z, expectedZ, eps))
 
     def test_linkage_centroid_q(self):
@@ -172,7 +172,7 @@ class TestLinkage(TestCase):
         Zmlab = eo['linkage-Q-centroid']
         eps = 1e-07
         expectedZ = from_mlab_linkage(Zmlab)
-        print abs(Z-expectedZ).max()
+        #print abs(Z-expectedZ).max()
         self.failUnless(within_tol(Z, expectedZ, eps))
 
     def test_linkage_weighted_q(self):
@@ -182,7 +182,7 @@ class TestLinkage(TestCase):
         Zmlab = eo['linkage-Q-weighted']
         eps = 1e-07
         expectedZ = from_mlab_linkage(Zmlab)
-        print abs(Z-expectedZ).max()
+        #print abs(Z-expectedZ).max()
         self.failUnless(within_tol(Z, expectedZ, eps))
 
 class TestInconsistent(TestCase):
@@ -194,7 +194,7 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 1)
         Rright = eo['inconsistent-single-tdist-depth-1']
         eps = 1e-15
-        print np.abs(R - Rright).max()
+        #print np.abs(R - Rright).max()
         self.failUnless(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_tdist_2(self):
@@ -204,7 +204,7 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 2)
         Rright = eo['inconsistent-single-tdist-depth-2']
         eps = 1e-05
-        print np.abs(R - Rright).max()
+        #print np.abs(R - Rright).max()
         self.failUnless(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_tdist_3(self):
@@ -214,7 +214,7 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 3)
         Rright = eo['inconsistent-single-tdist-depth-3']
         eps = 1e-05
-        print np.abs(R - Rright).max()
+        #print np.abs(R - Rright).max()
         self.failUnless(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_tdist_4(self):
@@ -224,7 +224,7 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 4)
         Rright = eo['inconsistent-single-tdist-depth-4']
         eps = 1e-05
-        print np.abs(R - Rright).max()
+        #print np.abs(R - Rright).max()
         self.failUnless(within_tol(R, Rright, eps))
 
     # with complete linkage...
@@ -236,7 +236,7 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 1)
         Rright = eo['inconsistent-complete-tdist-depth-1']
         eps = 1e-15
-        print np.abs(R - Rright).max()
+        #print np.abs(R - Rright).max()
         self.failUnless(within_tol(R, Rright, eps))
 
     def test_complete_inconsistent_tdist_2(self):
@@ -246,7 +246,7 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 2)
         Rright = eo['inconsistent-complete-tdist-depth-2']
         eps = 1e-05
-        print np.abs(R - Rright).max()
+        #print np.abs(R - Rright).max()
         self.failUnless(within_tol(R, Rright, eps))
 
     def test_complete_inconsistent_tdist_3(self):
@@ -256,7 +256,7 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 3)
         Rright = eo['inconsistent-complete-tdist-depth-3']
         eps = 1e-05
-        print np.abs(R - Rright).max()
+        #print np.abs(R - Rright).max()
         self.failUnless(within_tol(R, Rright, eps))
 
     def test_complete_inconsistent_tdist_4(self):
@@ -266,7 +266,7 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 4)
         Rright = eo['inconsistent-complete-tdist-depth-4']
         eps = 1e-05
-        print np.abs(R - Rright).max()
+        #print np.abs(R - Rright).max()
         self.failUnless(within_tol(R, Rright, eps))
 
     # with single linkage and Q data set
@@ -278,7 +278,7 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 1)
         Rright = eo['inconsistent-Q-single-1']
         eps = 1e-06
-        print np.abs(R - Rright).max()
+        #print np.abs(R - Rright).max()
         self.failUnless(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_Q_2(self):
@@ -288,7 +288,7 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 2)
         Rright = eo['inconsistent-Q-single-2']
         eps = 1e-06
-        print np.abs(R - Rright).max()
+        #print np.abs(R - Rright).max()
         self.failUnless(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_Q_3(self):
@@ -298,7 +298,7 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 3)
         Rright = eo['inconsistent-Q-single-3']
         eps = 1e-05
-        print np.abs(R - Rright).max()
+        #print np.abs(R - Rright).max()
         self.failUnless(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_Q_4(self):
@@ -308,7 +308,7 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 4)
         Rright = eo['inconsistent-Q-single-4']
         eps = 1e-05
-        print np.abs(R - Rright).max()
+        #print np.abs(R - Rright).max()
         self.failUnless(within_tol(R, Rright, eps))
 
 class TestCopheneticDistance(TestCase):
@@ -357,7 +357,7 @@ class TestFromMLabLinkage(TestCase):
                                [   6.,    9.,  295.,    6.]],
                               dtype=np.double)
         ZS = from_mlab_linkage(Z)
-        print expectedZS, ZS
+        #print expectedZS, ZS
         self.failUnless((expectedZS == ZS).all())
 
 
@@ -387,7 +387,7 @@ class TestToMLabLinkage(TestCase):
                       [   6.,    9.,  295.,    6.]],
                      dtype=np.double)
         ZM = to_mlab_linkage(Z)
-        print expectedZM, ZM
+        #print expectedZM, ZM
         self.failUnless((expectedZM == ZM).all())
 
 class TestFcluster(TestCase):
@@ -450,7 +450,7 @@ class TestLeaders(TestCase):
         T = fcluster(Z, criterion='maxclust', t=3)
         Lright = (np.array([53, 55, 56]), np.array([2, 3, 1]))
         L = leaders(Z, T)
-        print L, Lright, T
+        #print L, Lright, T
         self.failUnless((L[0] == Lright[0]).all() and (L[1] == Lright[1]).all())
 
 class TestIsIsomorphic(TestCase):
@@ -1397,7 +1397,7 @@ def calculate_maximum_inconsistencies(Z, R, k=3):
     n = Z.shape[0] + 1
     B = np.zeros((n-1,))
     q = np.zeros((3,))
-    print R.shape
+    #print R.shape
     for i in xrange(0, n - 1):
         q[:] = 0.0
         left = Z[i, 0]

@@ -6,21 +6,21 @@ def python_vq(all_data,code_book):
     t1 = time.time()
     codes1,dist1 = vq.vq(all_data,code_book)
     t2 = time.time()
-    print 'fast (double):', t2 - t1
-    print '  first codes:', codes1[:5]
-    print '  first dist:', dist1[:5]
-    print '  last codes:', codes1[-5:]
-    print '  last dist:', dist1[-5:]
+    #print 'fast (double):', t2 - t1
+    #print '  first codes:', codes1[:5]
+    #print '  first dist:', dist1[:5]
+    #print '  last codes:', codes1[-5:]
+    #print '  last dist:', dist1[-5:]
     float_obs = all_data.astype(np.float32)
     float_code = code_book.astype(np.float32)
     t1 = time.time()
     codes1,dist1 = vq.vq(float_obs,float_code)
     t2 = time.time()
-    print 'fast (float):', t2 - t1
-    print '  first codes:', codes1[:5]
-    print '  first dist:', dist1[:5]
-    print '  last codes:', codes1[-5:]
-    print '  last dist:', dist1[-5:]
+    #print 'fast (float):', t2 - t1
+    #print '  first codes:', codes1[:5]
+    #print '  first dist:', dist1[:5]
+    #print '  last codes:', codes1[-5:]
+    #print '  last dist:', dist1[-5:]
 
     return codes1,dist1
 
