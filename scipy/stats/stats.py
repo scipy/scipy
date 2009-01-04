@@ -1091,7 +1091,7 @@ def percentileofscore(a, score, kind='rank'):
     60.0
 
     '''
-    a=np.array(a)
+    a = np.array(a)
     n = len(a)
 
     if kind == 'rank':
