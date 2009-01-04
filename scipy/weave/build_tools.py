@@ -458,7 +458,7 @@ if sys.platform == 'win32':
             # get_versions methods regex
             if self.gcc_version is None:
                 import re
-                p = subprocess.Popen(['gcc', ' -dumpversion']. shell=True,
+                p = subprocess.Popen(['gcc', ' -dumpversion'], shell=True,
                         stdout=subprocess.PIPE, close_fds=True)
                 out_string = p.stdout.read()
                 result = re.search('(\d+\.\d+)',out_string)
