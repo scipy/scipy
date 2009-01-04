@@ -1025,165 +1025,93 @@ def scoreatpercentile(a, per, limit=()):
         return _interpolate(values[int(idx)], values[int(idx) + 1], idx % 1)
 
 
-def percentileofscore(a, score, kind = 'rank' ):
+def percentileofscore(a, score, kind='rank'):
     '''
-    The percentile rank of a score relative to a list of scores a.
+    The percentile rank of a score relative to a list of scores.
 
-    A percentileofscore of for example 80% means that 80% of the scores in a
-    are below the given score. In the case of gaps or ties, the exact
-    definition depends on the optional kind:
-
-    "rank": average percentage ranking of score
-    "weak": This kind corresponds to the definition of a cumulative
-        distribution function, and means that 80% have a score lower
-        or equal to the given score
-    "strict": A percentileofscore of 80% means that 80% have a strictly
-        lower score
-    "mean": is the average score between "weak" and "strict" and is used in
-        testing
-        see: http://en.wikipedia.org/wiki/Percentile_rank
-
+    A `percentileofscore` of, for example, 80% means that 80% of the
+    scores in `a` are below the given score. In the case of gaps or
+    ties, the exact definition depends on the optional keyword, `kind`.
 
     Parameters
     ----------
     a: array like
-        list or array of scores to which score is compared
+        Array of scores to which `score` is compared.
     score: int or float
-        score that is compared with elements in a
-    kind: kind/type of percentile
-        'rank' (default): average percentile ranks of score
-        'weak': percent of elements in a smaller or equal to score
-        'strict': percent of elements in a strictly smaller than to score
-        'mean': average score between 'weak' and 'strict'
+        Score that is compared to the elements in `a`.
+    kind: {'rank', 'weak', 'strict', 'mean'}, optional
+        This optional parameter specifies the interpretation of the
+        resulting score:
+
+        - "rank": Average percentage ranking of score.  In case of
+                  multiple matches, average the percentage rankings of
+                  all matching scores.
+        - "weak": This kind corresponds to the definition of a cumulative
+                  distribution function.  A percentileofscore of 80%
+                  means that 80% of values are less than or equal
+                  to the provided score.
+        - "strict": Similar to "weak", except that only values that are
+                    strictly less than the given score are counted.
+        - "mean": The average of the "weak" and "strict" scores, often used in
+                  testing.  See
+
+                  http://en.wikipedia.org/wiki/Percentile_rank
 
     Returns
     -------
-    float: percentile-position of score (0-100) relative to a
+    pcos : float
+        Percentile-position of score (0-100) relative to `a`.
 
-    >>> percentileofscore([20,80,100],80)
-    66.666666666666657
-    >>> percentileofscore([20,80,100],80,kind='mean')
-    50.0
-    >>> percentileofscore([20,80,100],80,kind='strict')
-    33.333333333333329
-    >>> percentileofscore([20,80,100],80,kind='weak')
-    66.666666666666657
+    Examples
+    --------
+    Three-quarters of the given values lie below a given score:
 
-    >>> percentileofscore([1,2,3,4,5,6,7,8,9,10],4) #default kind = 'rank
+    >>> percentileofscore([1, 2, 3, 4], 3)
+    75.0
+
+    With multiple matches, note how the scores of the two matches, 0.6
+    and 0.8 respectively, are averaged:
+
+    >>> percentileofscore([1, 2, 3, 3, 4], 3)
+    70.0
+
+    Only 2/5 values are strictly less than 3:
+
+    >>> percentileofscore([1, 2, 3, 3, 4], 3, kind='strict')
     40.0
-    >>> percentileofscore([1,2,3,4,5,6,7,8,9,10],4,kind = 'mean')
-    35.0
-    >>> percentileofscore([1,2,3,4,5,6,7,8,9,10],4,kind = 'strict')
-    30.0
-    >>> percentileofscore([1,2,3,4,5,6,7,8,9,10],4,kind = 'weak')
-    40.0
 
-    # multiple - 2
-    >>> percentileofscore([1,2,3,4,4,5,6,7,8,9],4)
-    45.0
-    >>> percentileofscore([1,2,3,4,4,5,6,7,8,9],4,kind = 'mean')
-    40.0
-    >>> percentileofscore([1,2,3,4,4,5,6,7,8,9],4,kind = 'strict')
-    30.0
-    >>> percentileofscore([1,2,3,4,4,5,6,7,8,9],4,kind = 'weak')
-    50.0
+    But 4/5 values are less than or equal to 3:
 
+    >>> percentileofscore([1, 2, 3, 3, 4], 3, kind='weak')
+    80.0
 
-    # multiple - 3
-    >>> percentileofscore([1,2,3,4,4,4,5,6,7,8],4)
-    50.0
-    >>> percentileofscore([1,2,3,4,4,4,5,6,7,8],4,kind = 'mean')
-    45.0
-    >>> percentileofscore([1,2,3,4,4,4,5,6,7,8],4,kind = 'strict')
-    30.0
-    >>> percentileofscore([1,2,3,4,4,4,5,6,7,8],4,kind = 'weak')
+    The average between the weak and the strict scores is
+
+    >>> percentileofscore([1, 2, 3, 3, 4], 3, kind='mean')
     60.0
 
-    # missing
-    >>> percentileofscore([1,2,3,5,6,7,8,9,10,11],4)
-    30.0
-    >>> percentileofscore([1,2,3,5,6,7,8,9,10,11],4,kind = 'mean')
-    30.0
-    >>> percentileofscore([1,2,3,5,6,7,8,9,10,11],4,kind = 'strict')
-    30.0
-    >>> percentileofscore([1,2,3,5,6,7,8,9,10,11],4,kind = 'weak')
-    30.0
-
-    #larger numbers
-    >>> percentileofscore([10,20,30,40,50,60,70,80,90,100],40)
-    40.0
-    >>> percentileofscore([10,20,30,40,50,60,70,80,90,100],40,kind = 'mean')
-    35.0
-    >>> percentileofscore([10,20,30,40,50,60,70,80,90,100],40,kind = 'strict')
-    30.0
-    >>> percentileofscore([10,20,30,40,50,60,70,80,90,100],40,kind = 'weak')
-    40.0
-    >>> percentileofscore([10,20,30,40,40,40,50,60,70,80],40,kind = 'mean')
-    45.0
-    >>> percentileofscore([10,20,30,40,40,40,50,60,70,80],40,kind = 'strict')
-    30.0
-    >>> percentileofscore([10,20,30,40,40,40,50,60,70,80],40,kind = 'weak')
-    60.0
-    >>> percentileofscore([ 10,20,30,50,60,70,80,90,100,110],40,kind = 'rank')
-    30.0
-    >>> percentileofscore([ 10,20,30,50,60,70,80,90,100,110],40,kind = 'mean')
-    30.0
-    >>> percentileofscore([ 10,20,30,50,60,70,80,90,100,110],40,kind = 'strict')
-    30.0
-    >>> percentileofscore([ 10,20,30,50,60,70,80,90,100,110],40,kind = 'weak')
-    30.0
-
-    #boundaries
-    >>> percentileofscore([ 10,20,30,50,60,70,80,90,100,110],10)
-    10.0
-    >>> percentileofscore([ 10,20,30,50,60,70,80,90,100,110],10,kind = 'mean')
-    5.0
-    >>> percentileofscore([ 10,20,30,50,60,70,80,90,100,110],10,kind = 'strict')
-    0.0
-    >>> percentileofscore([ 10,20,30,50,60,70,80,90,100,110],10,kind = 'weak')
-    10.0
-
-    >>> percentileofscore([ 10,20,30,50,60,70,80,90,100,110],110)
-    100.0
-    >>> percentileofscore([ 10,20,30,50,60,70,80,90,100,110],110,kind = 'mean')
-    95.0
-    >>> percentileofscore([ 10,20,30,50,60,70,80,90,100,110],110,kind = 'strict')
-    90.0
-    >>> percentileofscore([ 10,20,30,50,60,70,80,90,100,110],110,kind = 'weak')
-    100.0
-
-
-
-    #out of bounds
-    >>> percentileofscore([ 10,20,30,50,60,70,80,90,100,110],200)
-    100.0
-    >>> percentileofscore([ 10,20,30,50,60,70,80,90,100,110],0)
-    0.0
-
-'''
-
-
+    '''
     a=np.array(a)
     n = len(a)
 
     if kind == 'rank':
         if not(np.any(a == score)):
-            a = np.append(a,score)
+            a = np.append(a, score)
             a_len = np.array(range(len(a)))
         else:
             a_len = np.array(range(len(a))) + 1.0
 
         a = np.sort(a)
         idx = [a == score]
-        pct = (np.mean(a_len[idx])/(n))*100.0
+        pct = (np.mean(a_len[idx]) / n) * 100.0
         return pct
 
     elif kind == 'strict':
-        return sum(a<score)/float(n)*100
+        return sum(a < score) / float(n) * 100
     elif kind == 'weak':
-        return sum(a<=score)/float(n)*100
+        return sum(a <= score) / float(n) * 100
     elif kind == 'mean':
-        return (sum(a<score) + sum(a<=score))*50/float(n)
+        return (sum(a < score) + sum(a <= score)) * 50 / float(n)
     else:
         raise ValueError, "kind can only be 'rank', 'strict', 'weak' or 'mean'"
 
