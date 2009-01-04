@@ -20,7 +20,7 @@ class TestAstToBlitzExpr(TestCase):
         actual = blitz_tools.ast_to_blitz_expr(ast_list)
         actual = remove_whitespace(actual)
         desired = remove_whitespace(desired)
-        print_assert_equal(expr,actual,desired)
+        assert_equal(expr,actual,desired)
 
     def test_simple_expr(self):
         """convert simple expr to blitz

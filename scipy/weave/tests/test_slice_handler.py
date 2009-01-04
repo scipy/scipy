@@ -9,7 +9,7 @@ class TestBuildSliceAtom(TestCase):
         pos = slice_vars['pos']
         ast_list = slice_handler.build_slice_atom(slice_vars,pos)
         actual = ast_to_string(ast_list)
-        print_assert_equal('',actual,desired)
+        assert_equal('',actual,desired)
     def test_exclusive_end(self):
         slice_vars = {'begin':'1', 'end':'2', 'step':'_stp',
                       'single_index':'_index','pos':0}
@@ -24,7 +24,7 @@ class TestSlice(TestCase):
         found, data = find_first_pattern(ast_tuple,indexed_array_pattern)
         subscript = data['subscript_list'][1] #[0] is symbol, [1] is the supscript
         actual = slice_handler.slice_ast_to_dict(subscript)
-        print_assert_equal(suite_string,actual,desired)
+        assert_equal(suite_string,actual,desired)
 
     def test_empty_2_slice(self):
         """match slice from a[:]"""
@@ -126,7 +126,7 @@ class TestTransformSlices(TestCase):
         # but differently formatted string will compare equally
         actual = replace_whitespace(actual)
         desired = replace_whitespace(desired)
-        print_assert_equal(suite_string,actual,desired)
+        assert_equal(suite_string,actual,desired)
 
     def test_simple_expr(self):
         """transform a[:] to slice notation"""
