@@ -1,4 +1,4 @@
-# Last Change: Thu Jun 12 07:00 PM 2008 J
+# Last Change: Sun Jan 04 07:00 PM 2009 J
 # vim:syntax=python
 
 import os
@@ -43,7 +43,7 @@ write_info(env)
 minpack_src = [pjoin("minpack", s) for s in ["chkder.f", "dogleg.f",
 "dpmpar.f", "enorm.f", "fdjac1.f", "fdjac2.f", "hybrd.f", "hybrd1.f",
 "hybrj.f", "hybrj1.f", "lmder.f", "lmder1.f", "lmdif.f", "lmdif1.f", "lmpar.f",
-"lmstr.f", "lmstr1.f", "minpack.txt", "qform.f", "qrfac.f", "qrsolv.f",
+"lmstr.f", "lmstr1.f", "qform.f", "qrfac.f", "qrsolv.f",
 "r1mpyq.f", "r1updt.f", "rwupdt.f"]]
 env.DistutilsStaticExtLibrary('minpack', source = minpack_src)
 
