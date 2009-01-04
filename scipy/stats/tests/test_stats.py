@@ -903,58 +903,100 @@ class TestStudentTest(TestCase):
         assert_array_almost_equal(p, self.P1_2)
 
 def test_scoreatpercentile():
-    assert_equal(stats.scoreatpercentile(range(10),50),4.5)
-    assert_equal(stats.scoreatpercentile(range(10),50,(2,7)),4.5)
-    assert_equal(stats.scoreatpercentile(range(100),50,(1,8)),4.5)
-    assert_equal(stats.scoreatpercentile(np.array([1, 10 ,100]),50,(10,100)), 55)
-    assert_equal(stats.scoreatpercentile(np.array([1, 10 ,100]),50,(1,10)), 5.5)
+    assert_equal(stats.scoreatpercentile(range(10), 50), 4.5)
+    assert_equal(stats.scoreatpercentile(range(10), 50, (2,7)), 4.5)
+    assert_equal(stats.scoreatpercentile(range(100), 50, (1,8)), 4.5)
+
+    assert_equal(stats.scoreatpercentile(np.array([1, 10 ,100]),
+                                         50, (10,100)),
+                 55)
+    assert_equal(stats.scoreatpercentile(np.array([1, 10 ,100]),
+                                         50, (1,10)),
+                 5.5)
 
 def test_percentileofscore():
-    assert_equal(stats.percentileofscore([1,2,3,4,5,6,7,8,9,10],4),40.0)
-    assert_equal(stats.percentileofscore([1,2,3,4,5,6,7,8,9,10],4,kind = 'mean'),35.0)
-    assert_equal(stats.percentileofscore([1,2,3,4,5,6,7,8,9,10],4,kind = 'strict'),30.0)
-    assert_equal(stats.percentileofscore([1,2,3,4,5,6,7,8,9,10],4,kind = 'weak'),40.0)
-    # multiple - 2
-    assert_equal(stats.percentileofscore([1,2,3,4,4,5,6,7,8,9],4,kind = 'rank'),45.0)
-    assert_equal(stats.percentileofscore([1,2,3,4,4,5,6,7,8,9],4,kind = 'strict'),30.0)
-    assert_equal(stats.percentileofscore([1,2,3,4,4,5,6,7,8,9],4,kind = 'weak'),50.0)
-    assert_equal(stats.percentileofscore([1,2,3,4,4,5,6,7,8,9],4,kind = 'mean'),40.0)
-    # multiple - 3
-    assert_equal(stats.percentileofscore([1,2,3,4,4,4,5,6,7,8],4),50.0)
-    assert_equal(stats.percentileofscore([1,2,3,4,4,4,5,6,7,8],4,kind = 'rank'),50.0)
-    assert_equal(stats.percentileofscore([1,2,3,4,4,4,5,6,7,8],4,kind = 'mean'),45.0)
-    assert_equal(stats.percentileofscore([1,2,3,4,4,4,5,6,7,8],4,kind = 'strict'),30.0)
-    assert_equal(stats.percentileofscore([1,2,3,4,4,4,5,6,7,8],4,kind = 'weak'),60.0)
-    # missing
-    assert_equal(stats.percentileofscore([1,2,3,5,6,7,8,9,10,11],4,kind = 'rank'),30.0)
-    assert_equal(stats.percentileofscore([1,2,3,5,6,7,8,9,10,11],4,kind = 'mean'),30.0)
-    assert_equal(stats.percentileofscore([1,2,3,5,6,7,8,9,10,11],4,kind = 'strict'),30.0)
-    assert_equal(stats.percentileofscore([1,2,3,5,6,7,8,9,10,11],4,kind = 'weak'),30.0)
-    #larger numbers
-    assert_equal(stats.percentileofscore([10,20,30,40,50,60,70,80,90,100],40,kind = 'mean'),35.0)
-    assert_equal(stats.percentileofscore([10,20,30,40,50,60,70,80,90,100],40,kind = 'strict'),30.0)
-    assert_equal(stats.percentileofscore([10,20,30,40,50,60,70,80,90,100],40,kind = 'weak'),40.0)
-    assert_equal(stats.percentileofscore([10,20,30,40,40,40,50,60,70,80],40,kind = 'mean'),45.0)
-    assert_equal(stats.percentileofscore([10,20,30,40,40,40,50,60,70,80],40,kind = 'strict'),30.0)
-    assert_equal(stats.percentileofscore([10,20,30,40,40,40,50,60,70,80],40,kind = 'weak'),60.0)
-    assert_equal(stats.percentileofscore([ 10,20,30,50,60,70,80,90,100,110],40,kind = 'rank'),30.0)
-    assert_equal(stats.percentileofscore([ 10,20,30,50,60,70,80,90,100,110],40,kind = 'mean'),30.0)
-    assert_equal(stats.percentileofscore([ 10,20,30,50,60,70,80,90,100,110],40,kind = 'strict'),30.0)
-    assert_equal(stats.percentileofscore([ 10,20,30,50,60,70,80,90,100,110],40,kind = 'weak'),30.0)
-    #boundaries
-    assert_equal(stats.percentileofscore([ 10,20,30,50,60,70,80,90,100,110],10,kind = 'rank'),10.0)
-    assert_equal(stats.percentileofscore([ 10,20,30,50,60,70,80,90,100,110],10,kind = 'mean'),5.0)
-    assert_equal(stats.percentileofscore([ 10,20,30,50,60,70,80,90,100,110],10,kind = 'strict'),0.0)
-    assert_equal(stats.percentileofscore([ 10,20,30,50,60,70,80,90,100,110],10,kind = 'weak'),10.0)
-    assert_equal(stats.percentileofscore([ 10,20,30,50,60,70,80,90,100,110],110),100.0)
-    assert_equal(stats.percentileofscore([ 10,20,30,50,60,70,80,90,100,110],110,kind = 'mean'),95.0)
-    assert_equal(stats.percentileofscore([ 10,20,30,50,60,70,80,90,100,110],110,kind = 'strict'),90.0)
-    assert_equal(stats.percentileofscore([ 10,20,30,50,60,70,80,90,100,110],110,kind = 'weak'),100.0)
-    #out of bounds
-    assert_equal(stats.percentileofscore([ 10,20,30,50,60,70,80,90,100,110],200,kind = 'rank'),100.0)
-    assert_equal(stats.percentileofscore([ 10,20,30,50,60,70,80,90,100,110],200,kind = 'mean'),100.0)
-    assert_equal(stats.percentileofscore([ 10,20,30,50,60,70,80,90,100,110],0,kind = 'mean'),0.0)
+    pcos = stats.percentileofscore
 
+    assert_equal(pcos([1,2,3,4,5,6,7,8,9,10],4), 40.0)
+
+    for (kind, result) in [('mean', 35.0),
+                           ('strict', 30.0),
+                           ('weak', 40.0)]:
+        yield assert_equal, pcos(np.arange(10) + 1,
+                                                    4, kind=kind), \
+                                                    result
+
+    # multiple - 2
+    for (kind, result) in [('rank', 45.0),
+                           ('strict', 30.0),
+                           ('weak', 50.0),
+                           ('mean', 40.0)]:
+        yield assert_equal, pcos([1,2,3,4,4,5,6,7,8,9],
+                                                    4, kind=kind), \
+                                                    result
+
+    # multiple - 3
+    assert_equal(pcos([1,2,3,4,4,4,5,6,7,8], 4), 50.0)
+    for (kind, result) in [('rank', 50.0),
+                           ('mean', 45.0),
+                           ('strict', 30.0),
+                           ('weak', 60.0)]:
+
+        yield assert_equal, pcos([1,2,3,4,4,4,5,6,7,8],
+                                                    4, kind=kind), \
+                                                    result
+
+    # missing
+    for kind in ('rank', 'mean', 'strict', 'weak'):
+        yield assert_equal, pcos([1,2,3,5,6,7,8,9,10,11],
+                                                    4, kind=kind), \
+                                                    30
+
+    #larger numbers
+    for (kind, result) in [('mean', 35.0),
+                           ('strict', 30.0),
+                           ('weak', 40.0)]:
+        yield assert_equal, \
+              pcos([10, 20, 30, 40, 50, 60, 70, 80, 90, 100], 40,
+                   kind=kind), result
+
+    for (kind, result) in [('mean', 45.0),
+                           ('strict', 30.0),
+                           ('weak', 60.0)]:
+        yield assert_equal, \
+              pcos([10, 20, 30, 40, 40, 40, 50, 60, 70, 80],
+                   40, kind=kind), result
+
+
+    for kind in ('rank', 'mean', 'strict', 'weak'):
+        yield assert_equal, \
+              pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
+                   40, kind=kind), 30.0
+
+    #boundaries
+    for (kind, result) in [('rank', 10.0),
+                           ('mean', 5.0),
+                           ('strict', 0.0),
+                           ('weak', 10.0)]:
+        yield assert_equal, \
+              pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
+                   10, kind=kind), result
+
+    for (kind, result) in [('rank', 100.0),
+                           ('mean', 95.0),
+                           ('strict', 90.0),
+                           ('weak', 100.0)]:
+        yield assert_equal, \
+              pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
+                   110, kind=kind), result
+
+    #out of bounds
+    for (kind, score, result) in [('rank', 200, 100.0),
+                                  ('mean', 200, 100.0),
+                                  ('mean', 0, 0.0)]:
+        yield assert_equal, \
+              pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
+                   score, kind=kind), result
 
 
 def test_friedmanchisquare():
