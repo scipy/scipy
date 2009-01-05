@@ -9,36 +9,37 @@ Since then many people have contributed to SciPy, both in code development,
 suggestions, and financial support.  Below is a partial list.  If you've
 been left off, please email the "SciPy Developers List" <scipy-dev@scipy.org>.
 
-Please add names as needed so that we can keep up with all the contributors. 
+Please add names as needed so that we can keep up with all the contributors.
 
-Kumar Appaiah for Dolph Chebyshev window
-Nathan Bell for sparsetools, help with scipy.sparse and scipy.splinalg
-Robert Cimrman for UMFpack wrapper for sparse matrix module
-David M. Cooke for improvements to system_info, and LBFGSB wrapper
-Aric Hagberg for ARPACK wrappers, help with splinalg.eigen
-Chuck Harris for Zeros package in optimize (1d root-finding algorithms)
-Prabhu Ramachandran for improvements to gui_thread
-Robert Kern for improvements to stats and bug-fixes
-Jean-Sebastien Roy for fmin_tnc code which he adapted from Stephen Nash's 
-    original Fortran
+Kumar Appaiah for Dolph Chebyshev window.
+Nathan Bell for sparsetools, help with scipy.sparse and scipy.splinalg.
+Robert Cimrman for UMFpack wrapper for sparse matrix module.
+David M. Cooke for improvements to system_info, and LBFGSB wrapper.
+Aric Hagberg for ARPACK wrappers, help with splinalg.eigen.
+Chuck Harris for Zeros package in optimize (1d root-finding algorithms).
+Prabhu Ramachandran for improvements to gui_thread.
+Robert Kern for improvements to stats and bug-fixes.
+Jean-Sebastien Roy for fmin_tnc code which he adapted from Stephen Nash's
+    original Fortran.
 Ed Schofield for Maximum entropy and Monte Carlo modules, help with
-    sparse matrix module
+    sparse matrix module.
 Travis Vaught for numerous contributions to annual conference and community
-    web-site and the initial work on stats module clean up
-Jeff Whitaker for Mac OS X support
+    web-site and the initial work on stats module clean up.
+Jeff Whitaker for Mac OS X support.
 David Cournapeau for bug-fixes, refactor of fftpack and cluster, numscons build.
 Damian Eads for hierarchical clustering, dendrogram plotting,
-    distance functions in spatial package, vq documentation
-Anne Archibald for kd-trees and nearest neighbor in scipy.spatial
-Pauli Virtanen for Sphinx documentation generation, interpolation bugfixes.
-Josef Perktold for major improvements to scipy.stats and its test suite
+    distance functions in spatial package, vq documentation.
+Anne Archibald for kd-trees and nearest neighbor in scipy.spatial.
+Pauli Virtanen for Sphinx documentation generation, online documentation
+    framework and interpolation bugfixes.
+Josef Perktold for major improvements to scipy.stats and its test suite.
 David Morrill for getting the scoreboard test system up and running.
 Louis Luangkesorn for providing multiple tests for the stats module.
-Jochen Kupper for the zoom feature in the now-deprecated plt plotting module
+Jochen Kupper for the zoom feature in the now-deprecated plt plotting module.
 Tiffany Kamm for working on the community web-site.
-Mark Koudritsky for maintaining the web-site
-Andrew Straw for help with the web-page, documentation, packaging and
-    testing.
+Mark Koudritsky for maintaining the web-site.
+Andrew Straw for help with the web-page, documentation, packaging,
+    testing and work on the linalg module.
 Stefan van der Walt for numerous bug-fixes, testing and documentation.
 Jarrod Millman for release management, community coordination, and code
     clean up.
@@ -50,7 +51,11 @@ Gary Strangman for the scipy.stats package.
 Tiziano Zito for generalized symmetric and hermitian eigenvalue problem
     solver.
 Chris Burns for bug-fixes.
-Per Brodtkorb for improvements to stats distributions
+Per Brodtkorb for improvements to stats distributions.
+Neilen Marais for testing and bug-fixing in the ARPACK wrappers.
+Johannes Loehnert and Bart Vandereycken for fixes in the linalg
+    module.
+
 
 Institutions
 ------------
@@ -59,4 +64,5 @@ Enthought for providing resources and finances for development of SciPy.
 Brigham Young University for providing resources for students to work on SciPy.
 Agilent which gave a genereous donation for support of SciPy.
 UC Berkeley for providing travel money and hosting numerous sprints.
-
+The University of Stellenbosch for funding the development of
+    the SciKits portal.
