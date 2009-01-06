@@ -1,4 +1,4 @@
-#!/usr/bin/env pytho n
+#!/usr/bin/env python
 """ Test functions for the sparse.linalg.eigen.lobpcg module
 """
 
