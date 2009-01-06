@@ -132,8 +132,7 @@ class TestAssignVariableTypes(TestCase):
         cd = c_spec.int_converter()
         cd.name, cd.var_type = 'c', types.IntType
         desired = [ad,bd,cd]
-        expr = ""
-        assert_equal(expr,actual,desired)
+        assert_equal(actual,desired)
 
 if __name__ == "__main__":
     nose.run(argv=['', __file__])

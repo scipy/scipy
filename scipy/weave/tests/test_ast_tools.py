@@ -11,7 +11,7 @@ class TestHarvestVariables(TestCase):
         import parser
         ast_list = parser.suite(expr).tolist()
         actual = ast_tools.harvest_variables(ast_list)
-        assert_equal(expr,actual,desired)
+        assert_equal(actual,desired,expr)
 
     def test_simple_expr(self):
         """convert simple expr to blitz
