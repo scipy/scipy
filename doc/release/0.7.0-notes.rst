@@ -36,8 +36,7 @@ ported.  It will happen, but not anytime soon.
 The main issue with 2.6 support is NumPy.  On UNIX (including Mac OS X), NumPy
 1.2.1 mostly works, with a few caveats.  On Windows, there are some problems
 related to the compilation process.  The upcoming 1.3 version of NumPy will fix
-those.  Then, because of some Python 2.6 bugs, ``f2py`` does not work on Python
-2.6; the fixes will also be in the upcoming NumPy 1.3.
+those.
 
 Sparse Matrices
 ---------------
