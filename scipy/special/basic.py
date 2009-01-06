@@ -529,9 +529,11 @@ def lqmn(m,n,z):
         raise ValueError, "z must be scalar."
     m = int(m)
     n = int(n)
-    if (m*n == 0):
-        mm = max(1,m)
-        nn = max(1,n)
+
+    # Ensure neither m nor n == 0
+    mm = max(1,m)
+    nn = max(1,n)
+
     if iscomplex(z):
         q,qd = specfun.clqmn(mm,nn,z)
     else:

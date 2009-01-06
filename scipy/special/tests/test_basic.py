@@ -1739,6 +1739,15 @@ class TestLegendreFunctions(TestCase):
         assert_array_almost_equal(lqmnf[0][0],lqf[0],4)
         assert_array_almost_equal(lqmnf[1][0],lqf[1],4)
 
+    def test_lqmn_shape(self):
+        a, b = lqmn(4, 4, 1.1)
+        assert_equal(a.shape, (5, 5))
+        assert_equal(b.shape, (5, 5))
+
+        a, b = lqmn(4, 0, 1.1)
+        assert_equal(a.shape, (5, 1))
+        assert_equal(b.shape, (5, 1))
+
     def test_lqn(self):
         lqf = lqn(2,.5)
         assert_array_almost_equal(lqf,(array([ 0.5493, -0.7253, -0.8187]),
