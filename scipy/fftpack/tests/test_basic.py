@@ -145,6 +145,10 @@ class TestSingleFFT(_TestFFTBase):
         self.cdt = np.complex64
         self.rdt = np.float32
 
+    @dec.skipif(True, "Single precision real input not implemented yet")
+    def test_n_argument_real(self):
+        pass
+
 class _TestIFFTBase(TestCase):
     def test_definition(self):
         x = np.array([1,2,3,4+1j,1,2,3,4+2j], self.cdt)
@@ -156,12 +160,15 @@ class _TestIFFTBase(TestCase):
 
         x = np.array([1,2,3,4+0j,5], self.cdt)
         assert_array_almost_equal(ifft(x),direct_idft(x))
+
+    def test_definition_real(self):
         x = np.array([1,2,3,4,1,2,3,4], self.rdt)
         y = ifft(x)
         self.failUnless(y.dtype == self.cdt,
                 "Output dtype is %s, expected %s" % (y.dtype, self.cdt))
         y1 = direct_idft(x)
         assert_array_almost_equal(y,y1)
+
         x = np.array([1,2,3,4,5], dtype=self.rdt)
         self.failUnless(y.dtype == self.cdt,
                 "Output dtype is %s, expected %s" % (y.dtype, self.cdt))
@@ -211,6 +218,14 @@ class TestSingleIFFT(_TestIFFTBase):
     def setUp(self):
         self.cdt = np.complex64
         self.rdt = np.float32
+
+    @dec.skipif(True, "Single precision real input not implemented yet")
+    def test_random_real(self):
+        pass
+
+    @dec.skipif(True, "Single precision real input not implemented yet")
+    def test_definition_real(self):
+        pass
 
 
 class TestRfft(TestCase):
