@@ -17,6 +17,7 @@ from scipy.fftpack import _fftpack as fftpack
 
 from numpy import arange, add, array, asarray, zeros, dot, exp, pi,\
      swapaxes, double, cdouble
+import numpy as np
 import numpy.fft
 
 from numpy.random import rand
@@ -88,28 +89,37 @@ def direct_irdft(x):
             x1[0] = x[0]
     return direct_idft(x1).real
 
-class TestFft(TestCase):
+class _TestFFTBase(TestCase):
+    def setUp(self):
+        self.cdt = None
+        self.rdt = None
 
     def test_definition(self):
-        x = [1,2,3,4+1j,1,2,3,4+2j]
+        x = np.array([1,2,3,4+1j,1,2,3,4+2j], dtype = self.cdt)
         y = fft(x)
+        self.failUnless(y.dtype == self.cdt,
+                "Output dtype is %s, expected %s" % (y.dtype, self.cdt))
         y1 = direct_dft(x)
         assert_array_almost_equal(y,y1)
-        x = [1,2,3,4+0j,5]
+        x = np.array([1,2,3,4+0j,5], dtype = self.cdt)
         assert_array_almost_equal(fft(x),direct_dft(x))
 
     def test_n_argument_real(self):
-        x1 = [1,2,3,4]
-        x2 =  [1,2,3,4]
+        x1 = np.array([1,2,3,4], dtype=self.rdt)
+        x2 = np.array([1,2,3,4], dtype=self.rdt)
         y = fft([x1,x2],n=4)
+        self.failUnless(y.dtype == self.cdt,
+                "Output dtype is %s, expected %s" % (y.dtype, self.cdt))
         assert_equal(y.shape,(2,4))
         assert_array_almost_equal(y[0],direct_dft(x1))
         assert_array_almost_equal(y[1],direct_dft(x2))
 
     def _test_n_argument_complex(self):
-        x1 = [1,2,3,4+1j]
-        x2 =  [1,2,3,4+1j]
+        x1 = np.array([1,2,3,4+1j], dtype=self.cdt)
+        x2 = np.array([1,2,3,4+1j], dtype=self.cdt)
         y = fft([x1,x2],n=4)
+        self.failUnless(y.dtype == self.cdt,
+                "Output dtype is %s, expected %s" % (y.dtype, self.cdt))
         assert_equal(y.shape,(2,4))
         assert_array_almost_equal(y[0],direct_dft(x1))
         assert_array_almost_equal(y[1],direct_dft(x2))
@@ -124,6 +134,16 @@ class TestFft(TestCase):
             y = fftpack.zrfft(x)
             assert_array_almost_equal(y,y2)
 
+
+class TestDoubleFFT(_TestFFTBase):
+    def setUp(self):
+        self.cdt = np.cdouble
+        self.rdt = np.double
+
+class TestSingleFFT(_TestFFTBase):
+    def setUp(self):
+        self.cdt = np.complex64
+        self.rdt = np.float32
 
 class TestIfft(TestCase):
 
