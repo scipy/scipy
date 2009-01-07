@@ -232,7 +232,7 @@ class _TestRFFTBase(TestCase):
 
     def test_definition(self):
         for t in [[1, 2, 3, 4, 1, 2, 3, 4], [1, 2, 3, 4, 1, 2, 3, 4, 5]]:
-            x = np.array([1,2,3,4,1,2,3,4], dtype=self.rdt)
+            x = np.array(t, dtype=self.rdt)
             y = rfft(x)
             y1 = direct_rdft(x)
             assert_array_almost_equal(y,y1)
