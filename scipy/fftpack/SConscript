@@ -14,7 +14,15 @@ src = [pjoin("src/dfftpack", i) for i in [ "dcosqb.f", "dcosqf.f", "dcosqi.f",
 "dsinti.f", "zfftb.f", "zfftb1.f", "zfftf.f", "zfftf1.f", "zffti.f",
 "zffti1.f"]]
 dfftpack = env.DistutilsStaticExtLibrary('dfftpack', source = [str(s) for s in src])
-env.PrependUnique(LIBS = ['dfftpack'])
+
+# Build fftpack (single prec)
+src = [pjoin("src/fftpack", i) for i in [ 'cfftb.f', 'cfftb1.f', 'cfftf.f',
+'cfftf1.f', 'cffti.f', 'cffti1.f', 'cosqb.f', 'cosqf.f', 'cosqi.f', 'cost.f',
+'costi.f', 'rfftb.f', 'rfftb1.f', 'rfftf.f', 'rfftf1.f', 'rffti.f',
+'rffti1.f', 'sinqb.f', 'sinqf.f', 'sinqi.f', 'sint.f', 'sint1.f', 'sinti.f']]
+fftpack = env.DistutilsStaticExtLibrary('fftpack', source = [str(s) for s in src])
+
+env.PrependUnique(LIBS = ['fftpack', 'dfftpack'])
 env.PrependUnique(LIBPATH = ['.'])
 
 # Build _fftpack
