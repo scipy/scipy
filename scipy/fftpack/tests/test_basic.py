@@ -236,8 +236,8 @@ class _TestRFFTBase(TestCase):
             y = rfft(x)
             y1 = direct_rdft(x)
             assert_array_almost_equal(y,y1)
-            self.failUnless(y1.dtype == self.rdt,
-                    "Output dtype is %s, expected %s" % (y1.dtype, self.rdt))
+            self.failUnless(y.dtype == self.rdt,
+                    "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
 
     def test_djbfft(self):
         from numpy.fft import fft as numpy_fft
@@ -273,10 +273,10 @@ class _TestIRFFTBase(TestCase):
         x2_1 = [1,2+3j,4+1j,2+3j,4+5j,4-5j,2-3j,4-1j,2-3j]
 
         def _test(x, xr):
-            y = irfft(x)
+            y = irfft(np.array(x, dtype=self.rdt))
             y1 = direct_irdft(x)
-            self.failUnless(y1.dtype == self.rdt,
-                    "Output dtype is %s, expected %s" % (y1.dtype, self.rdt))
+            self.failUnless(y.dtype == self.rdt,
+                    "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
             assert_array_almost_equal(y,y1, decimal=self.ndec)
             assert_array_almost_equal(y,ifft(xr), decimal=self.ndec)
 
