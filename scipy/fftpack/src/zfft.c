@@ -18,7 +18,18 @@ void zfft(complex_double *inout, int n, \
         int direction, int howmany, int normalize)\
 {\
         zfft_##name(inout, n, direction, howmany, normalize);\
+}\
+void destroy_cfft_cache(void)\
+{\
+        destroy_c##name##_caches();\
+}\
+\
+void cfft(complex_float *inout, int n, \
+        int direction, int howmany, int normalize)\
+{\
+        cfft_##name(inout, n, direction, howmany, normalize);\
 }
 
 #include "zfft_fftpack.c"
+#include "cfft_fftpack.c"
 GEN_PUBLIC_API(fftpack)
