@@ -18,7 +18,19 @@ void drfft(double *inout, int n, \
         int direction, int howmany, int normalize)\
 {\
         drfft_##name(inout, n, direction, howmany, normalize);\
+}\
+void destroy_rfft_cache(void)\
+{\
+        destroy_r##name##_caches();\
+}\
+\
+void rfft(float *inout, int n, \
+        int direction, int howmany, int normalize)\
+{\
+        rfft_##name(inout, n, direction, howmany, normalize);\
 }
 
+
 #include "drfft_fftpack.c"
+#include "rfft_fftpack.c"
 GEN_PUBLIC_API(fftpack)
