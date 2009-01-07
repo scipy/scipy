@@ -109,9 +109,9 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
                                       hasattr(x,'__array__'))
         work_function = fftpack.zfft
     elif istype(tmp, numpy.complex64):
-        raise NotImplementedError
-    elif istype(tmp, numpy.float32):
-        raise NotImplementedError
+        overwrite_x = overwrite_x or (tmp is not x and not \
+                                      hasattr(x,'__array__'))
+        work_function = fftpack.cfft
     else:
         overwrite_x = 1
         work_function = fftpack.zrfft
@@ -149,7 +149,9 @@ def ifft(x, n=None, axis=-1, overwrite_x=0):
                                       hasattr(x,'__array__'))
         work_function = fftpack.zfft
     elif istype(tmp, numpy.complex64):
-        raise NotImplementedError
+        overwrite_x = overwrite_x or (tmp is not x and not \
+                                      hasattr(x,'__array__'))
+        work_function = fftpack.cfft
     else:
         overwrite_x = 1
         work_function = fftpack.zrfft
