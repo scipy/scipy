@@ -275,10 +275,10 @@ class _TestIRFFTBase(TestCase):
         def _test(x, xr):
             y = irfft(x)
             y1 = direct_irdft(x)
-            self.failUnless(y1.dtype == self.cdt,
-                    "Output dtype is %s, expected %s" % (y1.dtype, self.cdt))
-            assert_array_almost_equal(y,y1)
-            assert_array_almost_equal(y,ifft(xr))
+            self.failUnless(y1.dtype == self.rdt,
+                    "Output dtype is %s, expected %s" % (y1.dtype, self.rdt))
+            assert_array_almost_equal(y,y1, decimal=self.ndec)
+            assert_array_almost_equal(y,ifft(xr), decimal=self.ndec)
 
         _test(x1, x1_1)
         _test(x2, x2_1)
@@ -310,15 +310,19 @@ class _TestIRFFTBase(TestCase):
             assert_array_almost_equal (y1,x)
             assert_array_almost_equal (y2,x)
 
+# self.ndec is bogus; we should have a assert_array_approx_equal for number of
+# significant digits
 class TestIRFFTDouble(_TestIRFFTBase):
     def setUp(self):
         self.cdt = np.cdouble
         self.rdt = np.double
+        self.ndec = 14
 
 class TestIRFFTSingle(_TestIRFFTBase):
     def setUp(self):
         self.cdt = np.complex64
         self.rdt = np.float32
+        self.ndec = 7
 
 class Testfft2(TestCase):
     def test_regression_244(self):
