@@ -228,17 +228,16 @@ class TestSingleIFFT(_TestIFFTBase):
         pass
 
 
-class TestRfft(TestCase):
+class _TestRFFTBase(TestCase):
 
     def test_definition(self):
-        x = [1,2,3,4,1,2,3,4]
-        y = rfft(x)
-        y1 = direct_rdft(x)
-        assert_array_almost_equal(y,y1)
-        x = [1,2,3,4,1,2,3,4,5]
-        y = rfft(x)
-        y1 = direct_rdft(x)
-        assert_array_almost_equal(y,y1)
+        for t in [[1, 2, 3, 4, 1, 2, 3, 4], [1, 2, 3, 4, 1, 2, 3, 4, 5]]:
+            x = np.array([1,2,3,4,1,2,3,4], dtype=self.rdt)
+            y = rfft(x)
+            y1 = direct_rdft(x)
+            assert_array_almost_equal(y,y1)
+            self.failUnless(y1.dtype == self.rdt,
+                    "Output dtype is %s, expected %s" % (y1.dtype, self.rdt))
 
     def test_djbfft(self):
         from numpy.fft import fft as numpy_fft
@@ -255,6 +254,15 @@ class TestRfft(TestCase):
             y = fftpack.drfft(x)
             assert_array_almost_equal(y,y1)
 
+class TestRFFTDouble(_TestRFFTBase):
+    def setUp(self):
+        self.cdt = np.cdouble
+        self.rdt = np.double
+
+class TestRFFTSingle(_TestRFFTBase):
+    def setUp(self):
+        self.cdt = np.complex64
+        self.rdt = np.float32
 
 class TestIrfft(TestCase):
 
