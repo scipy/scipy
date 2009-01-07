@@ -145,10 +145,6 @@ class TestSingleFFT(_TestFFTBase):
         self.cdt = np.complex64
         self.rdt = np.float32
 
-    #@dec.skipif(True, "Single precision real input not implemented yet")
-    #def test_n_argument_real(self):
-    #    pass
-
 class _TestIFFTBase(TestCase):
     def test_definition(self):
         x = np.array([1,2,3,4+1j,1,2,3,4+2j], self.cdt)
@@ -218,15 +214,6 @@ class TestSingleIFFT(_TestIFFTBase):
     def setUp(self):
         self.cdt = np.complex64
         self.rdt = np.float32
-
-    #@dec.skipif(True, "Single precision real input not implemented yet")
-    #def test_random_real(self):
-    #    pass
-
-    #@dec.skipif(True, "Single precision real input not implemented yet")
-    #def test_definition_real(self):
-    #    pass
-
 
 class _TestRFFTBase(TestCase):
 
