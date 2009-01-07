@@ -14,6 +14,9 @@ def configuration(parent_package='',top_path=None):
     config.add_library('dfftpack',
                        sources=[join('src/dfftpack','*.f')])
 
+    config.add_library('fftpack',
+                       sources=[join('src/fftpack','*.f')])
+
     sources = ['fftpack.pyf','src/zfft.c','src/drfft.c','src/zrfft.c',
                'src/zfftnd.c']
 
