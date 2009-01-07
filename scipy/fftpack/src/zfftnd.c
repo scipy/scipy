@@ -5,32 +5,32 @@
  */
 #include "fftpack.h"
 
-GEN_CACHE(zfftnd_fftpack, (int n, int rank)
+GEN_CACHE(zfftnd, (int n, int rank)
 	  , complex_double * ptr; int *iptr; int rank;
-	  , ((caches_zfftnd_fftpack[i].n == n)
-	     && (caches_zfftnd_fftpack[i].rank == rank))
-	  , caches_zfftnd_fftpack[id].n = n;
-	  caches_zfftnd_fftpack[id].ptr =
+	  , ((caches_zfftnd[i].n == n)
+	     && (caches_zfftnd[i].rank == rank))
+	  , caches_zfftnd[id].n = n;
+	  caches_zfftnd[id].ptr =
 	  (complex_double *) malloc(2 * sizeof(double) * n);
-	  caches_zfftnd_fftpack[id].iptr =
+	  caches_zfftnd[id].iptr =
 	  (int *) malloc(4 * rank * sizeof(int));
 	  ,
-	  free(caches_zfftnd_fftpack[id].ptr);
-	  free(caches_zfftnd_fftpack[id].iptr);
+	  free(caches_zfftnd[id].ptr);
+	  free(caches_zfftnd[id].iptr);
 	  , 10)
 
-GEN_CACHE(cfftnd_fftpack, (int n, int rank)
+GEN_CACHE(cfftnd, (int n, int rank)
 	  , complex_float * ptr; int *iptr; int rank;
-	  , ((caches_cfftnd_fftpack[i].n == n)
-	     && (caches_cfftnd_fftpack[i].rank == rank))
-	  , caches_cfftnd_fftpack[id].n = n;
-	  caches_cfftnd_fftpack[id].ptr =
+	  , ((caches_cfftnd[i].n == n)
+	     && (caches_cfftnd[i].rank == rank))
+	  , caches_cfftnd[id].n = n;
+	  caches_cfftnd[id].ptr =
 	  (complex_float *) malloc(2 * sizeof(float) * n);
-	  caches_cfftnd_fftpack[id].iptr =
+	  caches_cfftnd[id].iptr =
 	  (int *) malloc(4 * rank * sizeof(int));
 	  ,
-	  free(caches_cfftnd_fftpack[id].ptr);
-	  free(caches_cfftnd_fftpack[id].iptr);
+	  free(caches_cfftnd[id].ptr);
+	  free(caches_cfftnd[id].iptr);
 	  , 10)
 
 static
@@ -127,7 +127,7 @@ extern void cfft(complex_float * inout,
 extern void zfft(complex_double * inout,
 		 int n, int direction, int howmany, int normalize);
 
-extern void zfftnd_fftpack(complex_double * inout, int rank,
+extern void zfftnd(complex_double * inout, int rank,
 			   int *dims, int direction, int howmany,
 			   int normalize)
 {
@@ -145,9 +145,9 @@ extern void zfftnd_fftpack(complex_double * inout, int rank,
     zfft(ptr, dims[rank - 1], direction, howmany * sz / dims[rank - 1],
 	 normalize);
 
-    i = get_cache_id_zfftnd_fftpack(sz, rank);
-    tmp = caches_zfftnd_fftpack[i].ptr;
-    itmp = caches_zfftnd_fftpack[i].iptr;
+    i = get_cache_id_zfftnd(sz, rank);
+    tmp = caches_zfftnd[i].ptr;
+    itmp = caches_zfftnd[i].iptr;
 
     itmp[rank - 1] = 1;
     for (i = 2; i <= rank; ++i) {
@@ -170,7 +170,7 @@ extern void zfftnd_fftpack(complex_double * inout, int rank,
 
 }
 
-extern void cfftnd_fftpack(complex_float * inout, int rank,
+extern void cfftnd(complex_float * inout, int rank,
 			   int *dims, int direction, int howmany,
 			   int normalize)
 {
@@ -188,9 +188,9 @@ extern void cfftnd_fftpack(complex_float * inout, int rank,
     cfft(ptr, dims[rank - 1], direction, howmany * sz / dims[rank - 1],
 	 normalize);
 
-    i = get_cache_id_cfftnd_fftpack(sz, rank);
-    tmp = caches_cfftnd_fftpack[i].ptr;
-    itmp = caches_cfftnd_fftpack[i].iptr;
+    i = get_cache_id_cfftnd(sz, rank);
+    tmp = caches_cfftnd[i].ptr;
+    itmp = caches_cfftnd[i].iptr;
 
     itmp[rank - 1] = 1;
     for (i = 2; i <= rank; ++i) {

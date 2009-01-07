@@ -73,7 +73,7 @@ static int get_cache_id_##name CACHEARG { \
   last_cache_id_##name = id;\
   return id;\
 }\
-static void destroy_##name##_caches(void) {\
+void destroy_##name##_cache(void) {\
   int id;\
   for (id=0;id<nof_in_cache_##name;++id) {\
     FREE \

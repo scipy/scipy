@@ -24,7 +24,7 @@ GEN_CACHE(dfftpack, (int n)
 
 extern void destroy_convolve_cache(void)
 {
-    destroy_dfftpack_caches();
+    destroy_dfftpack_cache();
 }
 
 /**************** convolve **********************/

@@ -14,31 +14,31 @@ extern void F_FUNC(rfftb, RFFTB) (int *, float *, float *);
 extern void F_FUNC(rffti, RFFTI) (int *, float *);
 
 
-GEN_CACHE(drfftpack, (int n)
+GEN_CACHE(drfft, (int n)
 	  , double *wsave;
-	  , (caches_drfftpack[i].n == n)
-	  , caches_drfftpack[id].wsave =
+	  , (caches_drfft[i].n == n)
+	  , caches_drfft[id].wsave =
 	  (double *) malloc(sizeof(double) * (2 * n + 15));
-	  F_FUNC(dffti, DFFTI) (&n, caches_drfftpack[id].wsave);
-	  , free(caches_drfftpack[id].wsave);
+	  F_FUNC(dffti, DFFTI) (&n, caches_drfft[id].wsave);
+	  , free(caches_drfft[id].wsave);
 	  , 10)
 
-GEN_CACHE(rfftpack, (int n)
+GEN_CACHE(rfft, (int n)
 	  , float *wsave;
-	  , (caches_rfftpack[i].n == n)
-	  , caches_rfftpack[id].wsave =
+	  , (caches_rfft[i].n == n)
+	  , caches_rfft[id].wsave =
 	  (float *) malloc(sizeof(float) * (2 * n + 15));
-	  F_FUNC(rffti, RFFTI) (&n, caches_rfftpack[id].wsave);
-	  , free(caches_rfftpack[id].wsave);
+	  F_FUNC(rffti, RFFTI) (&n, caches_rfft[id].wsave);
+	  , free(caches_rfft[id].wsave);
 	  , 10)
 
-void drfft_fftpack(double *inout, int n, int direction, int howmany,
+void drfft(double *inout, int n, int direction, int howmany,
 			  int normalize)
 {
     int i;
     double *ptr = inout;
     double *wsave = NULL;
-    wsave = caches_drfftpack[get_cache_id_drfftpack(n)].wsave;
+    wsave = caches_drfft[get_cache_id_drfft(n)].wsave;
 
 
     switch (direction) {
@@ -67,13 +67,13 @@ void drfft_fftpack(double *inout, int n, int direction, int howmany,
     }
 }
 
-void rfft_fftpack(float *inout, int n, int direction, int howmany,
+void rfft(float *inout, int n, int direction, int howmany,
 			 int normalize)
 {
     int i;
     float *ptr = inout;
     float *wsave = NULL;
-    wsave = caches_rfftpack[get_cache_id_rfftpack(n)].wsave;
+    wsave = caches_rfft[get_cache_id_rfft(n)].wsave;
 
 
     switch (direction) {
