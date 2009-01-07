@@ -145,20 +145,26 @@ class TestSingleFFT(_TestFFTBase):
         self.cdt = np.complex64
         self.rdt = np.float32
 
-class TestIfft(TestCase):
-
+class _TestIFFTBase(TestCase):
     def test_definition(self):
-        x = [1,2,3,4+1j,1,2,3,4+2j]
+        x = np.array([1,2,3,4+1j,1,2,3,4+2j], self.cdt)
         y = ifft(x)
         y1 = direct_idft(x)
+        self.failUnless(y.dtype == self.cdt,
+                "Output dtype is %s, expected %s" % (y.dtype, self.cdt))
         assert_array_almost_equal(y,y1)
-        x = [1,2,3,4+0j,5]
+
+        x = np.array([1,2,3,4+0j,5], self.cdt)
         assert_array_almost_equal(ifft(x),direct_idft(x))
-        x = [1,2,3,4,1,2,3,4]
+        x = np.array([1,2,3,4,1,2,3,4], self.rdt)
         y = ifft(x)
+        self.failUnless(y.dtype == self.cdt,
+                "Output dtype is %s, expected %s" % (y.dtype, self.cdt))
         y1 = direct_idft(x)
         assert_array_almost_equal(y,y1)
-        x = [1,2,3,4,5]
+        x = np.array([1,2,3,4,5], dtype=self.rdt)
+        self.failUnless(y.dtype == self.cdt,
+                "Output dtype is %s, expected %s" % (y.dtype, self.cdt))
         assert_array_almost_equal(ifft(x),direct_idft(x))
 
     def test_djbfft(self):
@@ -173,16 +179,38 @@ class TestIfft(TestCase):
 
     def test_random_complex(self):
         for size in [1,51,111,100,200,64,128,256,1024]:
-            x = random([size]).astype(cdouble)
-            x = random([size]).astype(cdouble) +1j*x
-            assert_array_almost_equal (ifft(fft(x)),x)
-            assert_array_almost_equal (fft(ifft(x)),x)
+            x = random([size]).astype(self.cdt)
+            x = random([size]).astype(self.cdt) +1j*x
+            y1 = ifft(fft(x))
+            y2 = fft(ifft(x))
+            self.failUnless(y1.dtype == self.cdt,
+                    "Output dtype is %s, expected %s" % (y1.dtype, self.cdt))
+            self.failUnless(y2.dtype == self.cdt,
+                    "Output dtype is %s, expected %s" % (y2.dtype, self.cdt))
+            assert_array_almost_equal (y1, x)
+            assert_array_almost_equal (y2, x)
 
     def test_random_real(self):
         for size in [1,51,111,100,200,64,128,256,1024]:
-            x = random([size]).astype(double)
-            assert_array_almost_equal (ifft(fft(x)),x)
-            assert_array_almost_equal (fft(ifft(x)),x)
+            x = random([size]).astype(self.rdt)
+            y1 = ifft(fft(x))
+            y2 = fft(ifft(x))
+            self.failUnless(y1.dtype == self.cdt,
+                    "Output dtype is %s, expected %s" % (y1.dtype, self.cdt))
+            self.failUnless(y2.dtype == self.cdt,
+                    "Output dtype is %s, expected %s" % (y2.dtype, self.cdt))
+            assert_array_almost_equal (y1, x)
+            assert_array_almost_equal (y2, x)
+
+class TestDoubleIFFT(_TestIFFTBase):
+    def setUp(self):
+        self.cdt = np.cdouble
+        self.rdt = np.double
+
+class TestSingleIFFT(_TestIFFTBase):
+    def setUp(self):
+        self.cdt = np.complex64
+        self.rdt = np.float32
 
 
 class TestRfft(TestCase):
