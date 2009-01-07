@@ -178,28 +178,35 @@ def default_dir():
 
     # Use a cached value for fast return if possible
     if hasattr(default_dir,"cached_path") and \
-       os.path.exists(default_dir.cached_path):
+       os.path.exists(default_dir.cached_path) and \
+       os.access(default_dir.cached_path, os.W_OK):
         return default_dir.cached_path
 
     python_name = "python%d%d_compiled" % tuple(sys.version_info[:2])
+    path_candidates = []
     if sys.platform != 'win32':
         try:
-            path = os.path.join(os.environ['HOME'],'.' + python_name)
+            path_candidates.append(os.path.join(os.environ['HOME'],
+                                                '.' + python_name))
         except KeyError:
-            temp_dir = `os.getuid()` + '_' + python_name
-            path = os.path.join(tempfile.gettempdir(),temp_dir)
+            pass
 
-        # add a subdirectory for the OS.
-        # It might be better to do this at a different location so that
-        # it wasn't only the default directory that gets this behavior.
-        #path = os.path.join(path,sys.platform)
+        temp_dir = `os.getuid()` + '_' + python_name
+        path_candidates.append(os.path.join(tempfile.gettempdir(), temp_dir))
     else:
-        path = os.path.join(tempfile.gettempdir(),"%s"%whoami(),python_name)
+        path_candiates.append(os.path.join(tempfile.gettempdir(),
+                                           "%s" % whoami(), python_name))
 
-    if not os.path.exists(path):
-        create_dir(path)
-        os.chmod(path,0700) # make it only accessible by this user.
-    if not is_writable(path):
+    writable = False
+    for path in path_candidates:
+        if not os.path.exists(path):
+            create_dir(path)
+            os.chmod(path, 0700) # make it only accessible by this user.
+        if is_writable(path):
+            writable = True
+            break
+
+    if not writable:
         print 'warning: default directory is not write accessible.'
         print 'default:', path
 
@@ -373,11 +380,7 @@ class catalog(object):
         paths = []
         if 'PYTHONCOMPILED' in os.environ:
             path_string = os.environ['PYTHONCOMPILED']
-            if sys.platform == 'win32':
-                #probably should also look in registry
-                paths = path_string.split(';')
-            else:
-                paths = path_string.split(':')
+            paths = path_string.split(os.path.pathsep)
         return paths
 
     def build_search_order(self):
