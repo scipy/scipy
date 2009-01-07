@@ -183,7 +183,7 @@ def inline(code,arg_names=[],local_dict = None, global_dict = None,
                       On Unix, it'll probably use the same compiler that was
                       used when compiling Python. Cygwin's behavior should be
                       similar.
-        verbose --    optional. 0,1, or 2. defualt 0.  Speficies how much
+        verbose --    optional. 0,1, or 2. default 0.  Speficies how much
                       much information is printed during the compile phase
                       of inlining code.  0 is silent (except on windows with
                       msvc where it still prints some garbage). 1 informs
@@ -451,7 +451,8 @@ def compile_function(code,arg_names,local_dict,global_dict,
 
     # it's nice to let the users know when anything gets compiled, as the
     # slowdown is very noticeable.
-    print '<weave: compiling>'
+    if verbose > 0:
+        print '<weave: compiling>'
 
     # compile code in correct location, with the given compiler and verbosity
     # setting.  All input keywords are passed through to distutils
