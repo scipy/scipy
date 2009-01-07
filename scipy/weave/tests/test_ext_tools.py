@@ -33,6 +33,9 @@ class TestExtModule(TestCase):
         import module_multi_function
         module_multi_function.test()
         module_multi_function.test2()
+
+    @dec.knownfailureif(sys.platform == 'win32',
+                      "this crashes python (segfault) on windows with mingw")
     @dec.slow
     def test_with_include(self):
         # decalaring variables
