@@ -34,9 +34,8 @@ assume:
 P_0(x) = 1
 P_-1(x) == 0
 
-For a more detailed discussion see Numerical Recipies in C (p. 156) and
-Abramowitz and Stegun (p. 774, 782); while our implementation differs, the
-algorithm and formulas are similar.
+For the mathematical background, see [golub.welsch-1969-mathcomp]_ and
+[abramowitz.stegun-1965]_.
 
 Functions:
 
@@ -56,6 +55,17 @@ Functions:
   p_roots                -- Legendre
   ps_roots               -- Shifted Legendre
   l_roots                -- Laguerre
+
+
+.. [golub.welsch-1969-mathcomp]
+   Golub, Gene H, and John H Welsch. 1969. Calculation of Gauss
+   Quadrature Rules. *Mathematics of Computation* 23, 221-230+s1--s10.
+
+.. [abramowitz.stegun-1965]
+   Abramowitz, Milton, and Irene A Stegun. (1965) *Handbook of
+   Mathematical Functions: with Formulas, Graphs, and Mathematical
+   Tables*. Gaithersburg, MD: National Bureau of Standards.
+   http://www.math.sfu.ca/~cbm/aands/
 """
 
 # Scipy imports.
