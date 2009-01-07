@@ -201,7 +201,10 @@ def rfft(x, n=None, axis=-1, overwrite_x=0):
     tmp = asarray(x)
     if not numpy.isrealobj(tmp):
         raise TypeError,"1st argument must be real sequence"
-    work_function = fftpack.drfft
+    if istype(tmp, numpy.float32):
+        work_function = fftpack.rfft
+    else:
+        work_function = fftpack.drfft
     return _raw_fft(tmp,n,axis,1,overwrite_x,work_function)
 
 
@@ -245,7 +248,10 @@ def irfft(x, n=None, axis=-1, overwrite_x=0):
     tmp = asarray(x)
     if not numpy.isrealobj(tmp):
         raise TypeError,"1st argument must be real sequence"
-    work_function = fftpack.drfft
+    if istype(tmp, numpy.float32):
+        work_function = fftpack.rfft
+    else:
+        work_function = fftpack.drfft
     return _raw_fft(tmp,n,axis,-1,overwrite_x,work_function)
 
 
