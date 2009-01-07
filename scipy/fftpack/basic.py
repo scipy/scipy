@@ -110,6 +110,8 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
         work_function = fftpack.zfft
     elif istype(tmp, numpy.complex64):
         raise NotImplementedError
+    elif istype(tmp, numpy.float32):
+        raise NotImplementedError
     else:
         overwrite_x = 1
         work_function = fftpack.zrfft
