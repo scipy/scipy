@@ -145,9 +145,9 @@ class TestSingleFFT(_TestFFTBase):
         self.cdt = np.complex64
         self.rdt = np.float32
 
-    @dec.skipif(True, "Single precision real input not implemented yet")
-    def test_n_argument_real(self):
-        pass
+    #@dec.skipif(True, "Single precision real input not implemented yet")
+    #def test_n_argument_real(self):
+    #    pass
 
 class _TestIFFTBase(TestCase):
     def test_definition(self):
@@ -219,13 +219,13 @@ class TestSingleIFFT(_TestIFFTBase):
         self.cdt = np.complex64
         self.rdt = np.float32
 
-    @dec.skipif(True, "Single precision real input not implemented yet")
-    def test_random_real(self):
-        pass
+    #@dec.skipif(True, "Single precision real input not implemented yet")
+    #def test_random_real(self):
+    #    pass
 
-    @dec.skipif(True, "Single precision real input not implemented yet")
-    def test_definition_real(self):
-        pass
+    #@dec.skipif(True, "Single precision real input not implemented yet")
+    #def test_definition_real(self):
+    #    pass
 
 
 class _TestRFFTBase(TestCase):

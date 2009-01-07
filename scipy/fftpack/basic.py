@@ -117,7 +117,10 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
         work_function = fftpack.cfft
     else:
         overwrite_x = 1
-        work_function = fftpack.zrfft
+        if istype(tmp, numpy.float32):
+            work_function = fftpack.crfft
+        else:
+            work_function = fftpack.zrfft
 
     #return _raw_fft(tmp,n,axis,1,overwrite_x,work_function)
     if n is None:
@@ -157,7 +160,10 @@ def ifft(x, n=None, axis=-1, overwrite_x=0):
         work_function = fftpack.cfft
     else:
         overwrite_x = 1
-        work_function = fftpack.zrfft
+        if istype(tmp, numpy.float32):
+            work_function = fftpack.crfft
+        else:
+            work_function = fftpack.zrfft
 
     #return _raw_fft(tmp,n,axis,-1,overwrite_x,work_function)
     if n is None:
