@@ -22,7 +22,7 @@ def configuration(parent_package='',top_path=None):
 
     config.add_extension('_fftpack',
         sources=sources,
-        libraries=['dfftpack'],
+        libraries=['dfftpack', 'fftpack'],
         depends=['src/zfft_fftpack.c', 'src/drfft_fftpack.c',
                  'src/zfftnd_fftpack.c'])
 
