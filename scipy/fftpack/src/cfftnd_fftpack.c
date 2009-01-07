@@ -21,21 +21,7 @@ GEN_CACHE(cfftnd_fftpack, (int n, int rank)
 	  , 10)
 
 static
-/*inline : disabled because MSVC6.0 fails to compile it. */
-int next_comb(int *ia, int *da, int m)
-{
-    while (m >= 0 && ia[m] == da[m]) {
-        ia[m--] = 0;
-    }
-    if (m < 0) {
-        return 0;
-    }
-    ia[m]++;
-    return 1;
-}
-
-static
-void flatten(complex_float * dest, complex_float * src,
+void sflatten(complex_float * dest, complex_float * src,
 	     int rank, int strides_axis, int dims_axis, int unflat,
 	     int *tmp)
 {
@@ -109,9 +95,9 @@ extern void cfftnd_fftpack(complex_float * inout, int rank,
                     *(itmp + 2 * rank + j++) = dims[k] - 1;
                 }
             }
-            flatten(tmp, ptr, rank, itmp[axis], dims[axis], 0, itmp);
+            sflatten(tmp, ptr, rank, itmp[axis], dims[axis], 0, itmp);
             cfft(tmp, dims[axis], direction, sz / dims[axis], normalize);
-            flatten(ptr, tmp, rank, itmp[axis], dims[axis], 1, itmp);
+            sflatten(ptr, tmp, rank, itmp[axis], dims[axis], 1, itmp);
         }
     }
 
