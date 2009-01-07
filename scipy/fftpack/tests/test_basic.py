@@ -264,21 +264,24 @@ class TestRFFTSingle(_TestRFFTBase):
         self.cdt = np.complex64
         self.rdt = np.float32
 
-class TestIrfft(TestCase):
+class _TestIRFFTBase(TestCase):
 
     def test_definition(self):
-        x = [1,2,3,4,1,2,3,4]
-        x1 = [1,2+3j,4+1j,2+3j,4,2-3j,4-1j,2-3j]
-        y = irfft(x)
-        y1 = direct_irdft(x)
-        assert_array_almost_equal(y,y1)
-        assert_array_almost_equal(y,ifft(x1))
-        x = [1,2,3,4,1,2,3,4,5]
-        x1 = [1,2+3j,4+1j,2+3j,4+5j,4-5j,2-3j,4-1j,2-3j]
-        y = irfft(x)
-        y1 = direct_irdft(x)
-        assert_array_almost_equal(y,y1)
-        assert_array_almost_equal(y,ifft(x1))
+        x1 = [1,2,3,4,1,2,3,4]
+        x1_1 = [1,2+3j,4+1j,2+3j,4,2-3j,4-1j,2-3j]
+        x2= [1,2,3,4,1,2,3,4,5]
+        x2_1 = [1,2+3j,4+1j,2+3j,4+5j,4-5j,2-3j,4-1j,2-3j]
+
+        def _test(x, xr):
+            y = irfft(x)
+            y1 = direct_irdft(x)
+            self.failUnless(y1.dtype == self.cdt,
+                    "Output dtype is %s, expected %s" % (y1.dtype, self.cdt))
+            assert_array_almost_equal(y,y1)
+            assert_array_almost_equal(y,ifft(xr))
+
+        _test(x1, x1_1)
+        _test(x2, x2_1)
 
     def test_djbfft(self):
         from numpy.fft import ifft as numpy_ifft
@@ -297,9 +300,25 @@ class TestIrfft(TestCase):
 
     def test_random_real(self):
         for size in [1,51,111,100,200,64,128,256,1024]:
-            x = random([size]).astype(double)
-            assert_array_almost_equal (irfft(rfft(x)),x)
-            assert_array_almost_equal (rfft(irfft(x)),x)
+            x = random([size]).astype(self.rdt)
+            y1 = irfft(rfft(x))
+            y2 = rfft(irfft(x))
+            self.failUnless(y1.dtype == self.rdt,
+                    "Output dtype is %s, expected %s" % (y1.dtype, self.rdt))
+            self.failUnless(y2.dtype == self.rdt,
+                    "Output dtype is %s, expected %s" % (y2.dtype, self.rdt))
+            assert_array_almost_equal (y1,x)
+            assert_array_almost_equal (y2,x)
+
+class TestIRFFTDouble(_TestIRFFTBase):
+    def setUp(self):
+        self.cdt = np.cdouble
+        self.rdt = np.double
+
+class TestIRFFTSingle(_TestIRFFTBase):
+    def setUp(self):
+        self.cdt = np.complex64
+        self.rdt = np.float32
 
 class Testfft2(TestCase):
     def test_regression_244(self):
