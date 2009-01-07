@@ -16,6 +16,9 @@ import atexit
 atexit.register(fftpack.destroy_zfft_cache)
 atexit.register(fftpack.destroy_zfftnd_cache)
 atexit.register(fftpack.destroy_drfft_cache)
+atexit.register(fftpack.destroy_cfft_cache)
+atexit.register(fftpack.destroy_cfftnd_cache)
+atexit.register(fftpack.destroy_rfft_cache)
 del atexit
 
 def istype(arr, typeclass):
