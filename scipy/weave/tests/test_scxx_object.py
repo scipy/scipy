@@ -77,14 +77,6 @@ class TestObjectPrint(TestCase):
     # Check the object print protocol.
     #------------------------------------------------------------------------
     @dec.slow
-    def test_stdout(self):
-        code = """
-               py::object val = "how now brown cow";
-               val.print(stdout);
-               """
-        res = inline_tools.inline(code)
-        # visual check on this one.
-    @dec.slow
     def test_stringio(self):
         import cStringIO
         file_imposter = cStringIO.StringIO()
