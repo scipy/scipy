@@ -41,6 +41,16 @@ except ImportError:
     pass
 
 #----------------------------------------------------------------------------
+# Add VTK support
+#----------------------------------------------------------------------------
+
+try:
+    import vtk_spec
+    default.insert(0,vtk_spec.vtk_converter())
+except IndexError:
+    pass
+
+#----------------------------------------------------------------------------
 # Add "sentinal" catchall converter
 #
 # if everything else fails, this one is the last hope (it always works)
