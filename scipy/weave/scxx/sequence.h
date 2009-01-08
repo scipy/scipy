@@ -90,11 +90,11 @@ public:
     object val = value;
     return count(val);
   };
-  int count(char* value) const {
+  int count(const char* value) const {
     object val = value;
     return count(val);
   };
-  int count(std::string& value) const {
+  int count(const std::string& value) const {
     object val = value.c_str();
     return count(val);
   };
