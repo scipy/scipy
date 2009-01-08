@@ -372,9 +372,15 @@ def msvc_exists():
     except:
         #assume we're ok if devstudio exists
         import distutils.msvccompiler
-        version = distutils.msvccompiler.get_build_version()
-        if version:
+        try:
+            cc = distutils.msvccompiler.MSVCCompiler()
+	    cc.initialize()
+            p = subprocess.Popen([cc.cc])
             result = 1
+        except distutils.errors.DistutilsPlatformError:
+            pass
+        except WindowsError:
+            pass
     return result
 
 if os.name == 'nt':
