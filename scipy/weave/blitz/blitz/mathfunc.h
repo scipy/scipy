@@ -12,6 +12,8 @@
  #include <blitz/prettyprint.h>
 #endif
 
+#include <cstdlib>
+
 BZ_NAMESPACE(blitz)
 
 // abs(P_numtype1)    Absolute value
