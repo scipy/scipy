@@ -372,7 +372,7 @@ def msvc_exists():
     except:
         #assume we're ok if devstudio exists
         import distutils.msvccompiler
-        version = distutils.msvccompiler.get_devstudio_version()
+        version = distutils.msvccompiler.get_build_version()
         if version:
             result = 1
     return result
