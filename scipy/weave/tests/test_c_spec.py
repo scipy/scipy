@@ -254,9 +254,9 @@ class FileConverter(TestCase):
         # not sure I like Py::String as default -- might move to std::sting
         # or just plain char*
         code = """
-               char* _file_name = (char*) file_name.c_str();
-               FILE* file = fopen(_file_name,"w");
-               return_val = file_to_py(file,_file_name,"w");
+               const char* _file_name = file_name.c_str();
+               FILE* file = fopen(_file_name, "w");
+               return_val = file_to_py(file, _file_name, "w");
                """
         file = inline_tools.inline(code,['file_name'], compiler=self.compiler,
                                    force=1)

@@ -266,9 +266,12 @@ class file_converter(common_base_converter):
     def c_to_py_code(self):
         # !! Need to dedent returned code.
         code = """
-               PyObject* file_to_py(FILE* file, char* name, char* mode)
+               PyObject* file_to_py(FILE* file, const char* name,
+                                    const char* mode)
                {
-                   return (PyObject*) PyFile_FromFile(file, name, mode, fclose);
+                   return (PyObject*) PyFile_FromFile(file,
+                     const_cast<char*>(name),
+                     const_cast<char*>(mode), fclose);
                }
                """
         return code

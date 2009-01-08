@@ -47,7 +47,8 @@ class ext_function_from_specs(object):
         arg_string_list = self.arg_specs.variable_as_strings() + ['"local_dict"']
         arg_strings = ','.join(arg_string_list)
         if arg_strings: arg_strings += ','
-        declare_kwlist = 'static char *kwlist[] = {%s NULL};\n' % arg_strings
+        declare_kwlist = 'static const char *kwlist[] = {%s NULL};\n' % \
+                         arg_strings
 
         py_objects = ', '.join(self.arg_specs.py_pointers())
         init_flags = ', '.join(self.arg_specs.init_flags())
@@ -74,7 +75,8 @@ class ext_function_from_specs(object):
 
         format = "O"* len(self.arg_specs) + "|O" + ':' + self.name
         parse_tuple =  'if(!PyArg_ParseTupleAndKeywords(args,' \
-                             'kywds,"%s",kwlist,%s))\n' % (format,ref_string)
+                             'kywds,"%s",const_cast<char**>(kwlist),%s))\n' % \
+                             (format,ref_string)
         parse_tuple += '   return NULL;\n'
 
         return   declare_return + declare_kwlist + declare_py_objects  \
