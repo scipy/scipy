@@ -1289,23 +1289,14 @@ Returns the estimated population variance of the values in the passed
 array (i.e., N-1).  Axis can equal None (ravel array first), or an
 integer (the axis over which to operate).
 """
-    warnings.warn("""\
+    raise DeprecationWarning("""\
 scipy.stats.var is deprecated; please update your code to use numpy.var.
 Please note that:
     - numpy.var axis argument defaults to None, not 0
     - numpy.var has a ddof argument to replace bias in a more general manner.
       scipy.stats.var(a, bias=True) can be replaced by numpy.var(x,
       axis=0, ddof=0), scipy.stats.var(a, bias=False) by var(x, axis=0,
-      ddof=1).""", DeprecationWarning)
-    a, axis = _chk_asarray(a, axis)
-    mn = np.expand_dims(np.mean(a,axis),axis)
-    deviations = a - mn
-    n = a.shape[axis]
-    vals = sum(abs(deviations)**2,axis)/(n-1.0)
-    if bias:
-        return vals * (n-1.0)/n
-    else:
-        return vals
+      ddof=1).""")
 
 def std(a, axis=0, bias=False):
     """
@@ -1320,8 +1311,7 @@ Please note that:
     - numpy.std has a ddof argument to replace bias in a more general manner.
       scipy.stats.std(a, bias=True) can be replaced by numpy.std(x,
       axis=0, ddof=0), scipy.stats.std(a, bias=False) by numpy.std(x, axis=0,
-      ddof=1).""", DeprecationWarning)
-    return np.sqrt(var(a,axis,bias))
+      ddof=1).""")
 
 
 def stderr(a, axis=0):

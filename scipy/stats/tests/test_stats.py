@@ -721,7 +721,9 @@ class TestVariability(TestCase):
         var(testcase) = 1.666666667 """
         #y = stats.var(self.shoes[0])
         #assert_approx_equal(y,6.009)
-        y = stats.var(self.testcase)
+        y = np.var(self.testcase)
+        assert_approx_equal(y,1.25)
+        y = np.var(self.testcase, ddof=1)
         assert_approx_equal(y,1.666666667)
 
     def test_samplevar(self):

@@ -667,7 +667,7 @@ def bartlett(*args):
     ssq = zeros(k,'d')
     for j in range(k):
         Ni[j] = len(args[j])
-        ssq[j] = stats.var(args[j])
+        ssq[j] = np.var(args[j], ddof=1)
     Ntot = sum(Ni,axis=0)
     spsq = sum((Ni-1)*ssq,axis=0)/(1.0*(Ntot-k))
     numer = (Ntot*1.0-k)*log(spsq) - sum((Ni-1.0)*log(ssq),axis=0)
