@@ -373,9 +373,13 @@ def msvc_exists():
         #assume we're ok if devstudio exists
         import distutils.msvccompiler
         try:
-            distutils.msvccompiler.MSVCCompiler().initialize
+            cc = distutils.msvccompiler.MSVCCompiler()
+            cc.initialize()
+            p = subprocess.Popen([cc.cc])
             result = 1
         except distutils.errors.DistutilsPlatformError:
+            pass
+        except WindowsError:
             pass
     return result
 
