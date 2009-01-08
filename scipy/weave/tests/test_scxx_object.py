@@ -115,36 +115,36 @@ class TestObjectCast(TestCase):
     def test_int_cast(self):
         code = """
                py::object val = 1;
-               int raw_val = val;
+               int raw_val __attribute__ ((unused)) = val;
                """
         inline_tools.inline(code)
     @dec.slow
     def test_double_cast(self):
         code = """
                py::object val = 1.0;
-               double raw_val = val;
+               double raw_val __attribute__ ((unused)) = val;
                """
         inline_tools.inline(code)
     @dec.slow
     def test_float_cast(self):
         code = """
                py::object val = 1.0;
-               float raw_val = val;
+               float raw_val __attribute__ ((unused)) = val;
                """
         inline_tools.inline(code)
     @dec.slow
     def test_complex_cast(self):
         code = """
-               std::complex<double> num = std::complex<double>(1.0,1.0);
+               std::complex<double> num = std::complex<double>(1.0, 1.0);
                py::object val = num;
-               std::complex<double> raw_val = val;
+               std::complex<double> raw_val __attribute__ ((unused)) = val;
                """
         inline_tools.inline(code)
     @dec.slow
     def test_string_cast(self):
         code = """
                py::object val = "hello";
-               std::string raw_val = val;
+               std::string raw_val __attribute__ ((unused)) = val;
                """
         inline_tools.inline(code)
 
