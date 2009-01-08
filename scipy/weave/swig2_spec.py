@@ -2,13 +2,12 @@
 This module allows one to use SWIG2 (SWIG version >= 1.3) wrapped
 objects from Weave.  SWIG-1.3 wraps objects differently from SWIG-1.1.
 
-The code here is based on wx_spec.py.  However, this module is more
-like a template for any SWIG2 wrapped converter.  To wrap any special
-code that uses SWIG the user simply needs to override the defaults in
-the swig2_converter class.  These special circumstances arise when one
-has wrapped code that uses C++ namespaces.  However, for most
-straightforward SWIG wrappers this converter should work fine out of
-the box.
+This module is a template for a SWIG2 wrapped converter.  To wrap any
+special code that uses SWIG the user simply needs to override the
+defaults in the swig2_converter class.  These special circumstances
+arise when one has wrapped code that uses C++ namespaces.  However,
+for most straightforward SWIG wrappers this converter should work fine
+out of the box.
 
 Newer versions of SWIG (>=1.3.22) represent the wrapped object using a
 PyCObject and also a PySwigObject (>=1.3.24).  This code supports all
