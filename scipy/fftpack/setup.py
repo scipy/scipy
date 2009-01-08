@@ -22,8 +22,7 @@ def configuration(parent_package='',top_path=None):
 
     config.add_extension('_fftpack',
         sources=sources,
-        libraries=['dfftpack', 'fftpack'],
-        depends=[])
+        libraries=['dfftpack', 'fftpack'])
 
     config.add_extension('convolve',
         sources=['convolve.pyf','src/convolve.c'],
