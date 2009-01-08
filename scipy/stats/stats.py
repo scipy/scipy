@@ -1300,7 +1300,8 @@ Please note that:
     - numpy.var axis argument defaults to None, not 0
     - numpy.var has a ddof argument to replace bias in a more general manner.
       scipy.stats.var(a, bias=True) can be replaced by numpy.var(x,
-axis=0, ddof=1).""", DeprecationWarning)
+      axis=0, ddof=0), scipy.stats.var(a, bias=False) by var(x, axis=0,
+      ddof=1).""", DeprecationWarning)
     a, axis = _chk_asarray(a, axis)
     mn = np.expand_dims(mean(a,axis),axis)
     deviations = a - mn
@@ -1323,7 +1324,8 @@ Please note that:
     - numpy.std axis argument defaults to None, not 0
     - numpy.std has a ddof argument to replace bias in a more general manner.
       scipy.stats.std(a, bias=True) can be replaced by numpy.std(x,
-axis=0, ddof=1).""", DeprecationWarning)
+      axis=0, ddof=0), scipy.stats.std(a, bias=False) by numpy.std(x, axis=0,
+      ddof=1).""", DeprecationWarning)
     return np.sqrt(var(a,axis,bias))
 
 
