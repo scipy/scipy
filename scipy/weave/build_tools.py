@@ -355,7 +355,7 @@ def gcc_exists(name = 'gcc'):
         # the path variable. and will occasionlly mess things up
         # so much that gcc is lost in the path. (Occurs in test
         # scripts)
-        result = not os.system(cmd)
+        result = not os.system(" ".join(cmd))
     return result
 
 def msvc_exists():
@@ -372,7 +372,7 @@ def msvc_exists():
     except:
         #assume we're ok if devstudio exists
         import distutils.msvccompiler
-        version = distutils.msvccompiler.get_devstudio_version()
+        version = distutils.msvccompiler.get_build_version()
         if version:
             result = 1
     return result
