@@ -81,9 +81,11 @@ class inline_ext_function(ext_tools.ext_function):
 
         try_code =    'try                              \n' \
                       '{                                \n' \
-                      '    PyObject* raw_locals = py_to_raw_dict('       \
+                      '    PyObject* raw_locals __attribute__ ((unused));\n' \
+                      '    raw_locals = py_to_raw_dict('       \
                                              'py__locals,"_locals");\n'  \
-                      '    PyObject* raw_globals = py_to_raw_dict('      \
+                      '    PyObject* raw_globals __attribute__ ((unused));\n' \
+                      '    raw_globals = py_to_raw_dict('      \
                                           'py__globals,"_globals");\n' + \
                       '    /* argument conversion code */     \n' + \
                            decl_code                               + \
