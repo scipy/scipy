@@ -332,7 +332,7 @@ def boxcox_llf(lmb, data):
     """
     N = len(data)
     y = boxcox(data,lmb)
-    my = stats.mean(y)
+    my = np.mean(y, axis=0)
     f = (lmb-1)*sum(log(data),axis=0)
     f -= N/2.0*log(sum((y-my)**2.0/N,axis=0))
     return f
@@ -499,7 +499,7 @@ def anderson(x,dist='norm'):
     if not dist in ['norm','expon','gumbel','extreme1','logistic']:
         raise ValueError, "Invalid distribution."
     y = sort(x)
-    xbar = stats.mean(x)
+    xbar = np.mean(x, axis=0)
     N = len(y)
     if dist == 'norm':
         s = stats.std(x)
@@ -721,7 +721,7 @@ def levene(*args,**kwds):
     if center == 'median':
         func = stats.median
     elif center == 'mean':
-        func = stats.mean
+        func = lambda x: np.mean(x, axis=0)
     else:
         func = stats.trim_mean
     for j in range(k):
@@ -737,7 +737,7 @@ def levene(*args,**kwds):
     Zbari = zeros(k,'d')
     Zbar = 0.0
     for i in range(k):
-        Zbari[i] = stats.mean(Zij[i])
+        Zbari[i] = np.mean(Zij[i], axis=0)
         Zbar += Zbari[i]*Ni[i]
     Zbar /= Ntot
 
@@ -843,7 +843,7 @@ def fligner(*args,**kwds):
     if center == 'median':
         func = stats.median
     elif center == 'mean':
-        func = stats.mean
+        func = lambda x: np.mean(x, axis=0)
     else:
         func = stats.trim_mean
 
@@ -862,7 +862,7 @@ def fligner(*args,**kwds):
 
     # compute Aibar
     Aibar = _apply_func(a,g,sum) / Ni
-    anbar = stats.mean(a)
+    anbar = stats.mean(a, axis=0)
     varsq = stats.var(a)
 
     Xsq = sum(Ni*(asarray(Aibar)-anbar)**2.0,axis=0)/varsq
@@ -921,8 +921,8 @@ def oneway(*args,**kwds):
         evar = 0
 
     Ni = array([len(args[i]) for i in range(k)])
-    Mi = array([stats.mean(args[i]) for i in range(k)])
-    Vi = array([stats.var(args[i]) for i in range(k)])
+    Mi = array([np.mean(args[i], axis=0) for i in range(k)])
+    Vi = array([np.var(args[i]) for i in range(k)])
     Wi = Ni / Vi
     swi = sum(Wi,axis=0)
     N = sum(Ni,axis=0)
@@ -1068,7 +1068,7 @@ def circmean(samples, high=2*pi, low=0):
     """Compute the circular mean for samples assumed to be in the range [low to high]
     """
     ang = (samples - low)*2*pi / (high-low)
-    res = angle(stats.mean(exp(1j*ang)))
+    res = angle(np.mean(exp(1j*ang), axis=0))
     if (res < 0):
         res = res + 2*pi
     return res*(high-low)/2.0/pi + low
@@ -1077,7 +1077,7 @@ def circvar(samples, high=2*pi, low=0):
     """Compute the circular variance for samples assumed to be in the range [low to high]
     """
     ang = (samples - low)*2*pi / (high-low)
-    res = stats.mean(exp(1j*ang))
+    res = np.mean(exp(1j*ang), axis=0)
     V = 1-abs(res)
     return ((high-low)/2.0/pi)**2 * V
 
@@ -1085,7 +1085,7 @@ def circstd(samples, high=2*pi, low=0):
     """Compute the circular standard deviation for samples assumed to be in the range [low to high]
     """
     ang = (samples - low)*2*pi / (high-low)
-    res = stats.mean(exp(1j*ang))
+    res = np.mean(exp(1j*ang), axis=0)
     V = 1-abs(res)
     return ((high-low)/2.0/pi) * sqrt(V)
 

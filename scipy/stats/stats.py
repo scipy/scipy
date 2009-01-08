@@ -394,8 +394,6 @@ def hmean(a, axis=0, zero_sub=0):
     return size / np.sum(1.0/a, axis)
 
 def mean(a, axis=0):
-    # fixme: This seems to be redundant with numpy.mean(,axis=0) or even
-    # the ndarray.mean() method.
     """Returns the arithmetic mean of m along the given dimension.
 
     That is: (x1 + x2 + .. + xn) / n
@@ -411,15 +409,13 @@ def mean(a, axis=0):
     all values in the array if axis=None. The return value will have a floating
     point dtype even if the input data are integers.
     """
-    warnings.warn("""\
+    raise DeprecationWarning("""\
 scipy.stats.mean is deprecated; please update your code to use numpy.mean.
 Please note that:
     - numpy.mean axis argument defaults to None, not 0
     - numpy.mean has a ddof argument to replace bias in a more general manner.
       scipy.stats.mean(a, bias=True) can be replaced by numpy.mean(x,
-axis=0, ddof=1).""", DeprecationWarning)
-    a, axis = _chk_asarray(a, axis)
-    return a.mean(axis)
+axis=0, ddof=1).""")
 
 def cmedian(a, numbins=1000):
     # fixme: numpy.median() always seems to be a better choice.
@@ -1261,7 +1257,7 @@ array (i.e., using N).  Axis can equal None (ravel array first),
 an integer (the axis over which to operate)
 """
     a, axis = _chk_asarray(a, axis)
-    mn = np.expand_dims(mean(a, axis), axis)
+    mn = np.expand_dims(np.mean(a, axis), axis)
     deviations = a - mn
     n = a.shape[axis]
     svar = ss(deviations,axis) / float(n)
@@ -1284,7 +1280,7 @@ first), an integer (the axis over which to operate).
 Returns: array containing the value of (mean/stdev) along axis,
          or 0 when stdev=0
 """
-    m = mean(instack,axis)
+    m = np.mean(instack,axis)
     sd = samplestd(instack,axis)
     return np.where(sd == 0, 0, m/sd)
 
@@ -1303,7 +1299,7 @@ Please note that:
       axis=0, ddof=0), scipy.stats.var(a, bias=False) by var(x, axis=0,
       ddof=1).""", DeprecationWarning)
     a, axis = _chk_asarray(a, axis)
-    mn = np.expand_dims(mean(a,axis),axis)
+    mn = np.expand_dims(np.mean(a,axis),axis)
     deviations = a - mn
     n = a.shape[axis]
     vals = sum(abs(deviations)**2,axis)/(n-1.0)
@@ -1358,7 +1354,7 @@ that score came.  Not appropriate for population calculations, nor for
 arrays > 1D.
 
 """
-    z = (score-mean(a,None)) / samplestd(a)
+    z = (score-np.mean(a,None)) / samplestd(a)
     return z
 
 
@@ -1368,7 +1364,7 @@ Returns a 1D array of z-scores, one for each score in the passed array,
 computed relative to the passed array.
 
 """
-    mu = mean(a,None)
+    mu = np.mean(a,None)
     sigma = samplestd(a)
     return (array(a)-mu)/sigma
 
@@ -1780,8 +1776,8 @@ def linregress(*args):
         x = asarray(args[0])
         y = asarray(args[1])
     n = len(x)
-    xmean = mean(x,None)
-    ymean = mean(y,None)
+    xmean = np.mean(x,None)
+    ymean = np.mean(y,None)
     xm,ym = x-xmean, y-ymean
     r_num = np.add.reduce(xm*ym)
     r_den = np.sqrt(ss(xm)*ss(ym))
@@ -1956,7 +1952,7 @@ def ttest_ind(a, b, axis=0):
     n2 = b.shape[axis]
     df = n1+n2-2
 
-    d = mean(a,axis) - mean(b,axis)
+    d = np.mean(a,axis) - np.mean(b,axis)
     svar = ((n1-1)*v1+(n2-1)*v2) / float(df)
 
     t = d/np.sqrt(svar*(1.0/n1 + 1.0/n2))

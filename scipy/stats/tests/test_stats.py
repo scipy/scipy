@@ -105,7 +105,7 @@ class TestBasicStats(TestCase):
     """
 
     def test_meanX(self):
-        y = stats.mean(X)
+        y = np.mean(X)
         assert_almost_equal(y, 5.0)
 
     def test_stdX(self):
@@ -125,7 +125,7 @@ class TestBasicStats(TestCase):
         assert_almost_equal(y, 2.1602468994692865)
 
     def test_meanZERO(self):
-        y = stats.mean(ZERO)
+        y = np.mean(ZERO)
         assert_almost_equal(y, 0.0)
 
     def test_stdZERO(self):
@@ -134,7 +134,7 @@ class TestBasicStats(TestCase):
 
 ##    Really need to write these tests to handle missing values properly
 ##    def test_meanMISS(self):
-##        y = stats.mean(MISS)
+##        y = np.mean(MISS)
 ##        assert_almost_equal(y, 0.0)
 ##
 ##    def test_stdMISS(self):
@@ -142,7 +142,7 @@ class TestBasicStats(TestCase):
 ##        assert_almost_equal(y, 0.0)
 
     def test_meanBIG(self):
-        y = stats.mean(BIG)
+        y = np.mean(BIG)
 
         assert_almost_equal(y, 99999995.00)
 
@@ -151,7 +151,7 @@ class TestBasicStats(TestCase):
         assert_almost_equal(y, 2.738612788)
 
     def test_meanLITTLE(self):
-        y = stats.mean(LITTLE)
+        y = np.mean(LITTLE)
         assert_approx_equal(y, 0.999999950)
 
     def test_stdLITTLE(self):
@@ -159,7 +159,7 @@ class TestBasicStats(TestCase):
         assert_approx_equal(y, 2.738612788e-8)
 
     def test_meanHUGE(self):
-        y = stats.mean(HUGE)
+        y = np.mean(HUGE)
         assert_approx_equal(y, 5.00000e+12)
 
     def test_stdHUGE(self):
@@ -167,7 +167,7 @@ class TestBasicStats(TestCase):
         assert_approx_equal(y, 2.738612788e12)
 
     def test_meanTINY(self):
-        y = stats.mean(TINY)
+        y = np.mean(TINY)
         assert_almost_equal(y, 0.0)
 
     def test_stdTINY(self):
@@ -175,7 +175,7 @@ class TestBasicStats(TestCase):
         assert_almost_equal(y, 0.0)
 
     def test_meanROUND(self):
-        y = stats.mean(ROUND)
+        y = np.mean(ROUND)
         assert_approx_equal(y, 4.500000000)
 
     def test_stdROUND(self):
@@ -595,11 +595,11 @@ class TestMean(TestCase):
         mn1 = 0.0
         for el in a:
             mn1 += el / float(Na)
-        assert_almost_equal(stats.mean(a),mn1,11)
+        assert_almost_equal(np.mean(a),mn1,11)
         mn2 = 0.0
         for el in af:
             mn2 += el / float(Naf)
-        assert_almost_equal(stats.mean(af),mn2,11)
+        assert_almost_equal(np.mean(af),mn2,11)
 
     def test_2d(self):
         a = [[1.0, 2.0, 3.0],
@@ -610,20 +610,19 @@ class TestMean(TestCase):
         mn1 = zeros(N2, dtype=float)
         for k in range(N1):
             mn1 += A[k,:] / N1
-        assert_almost_equal(stats.mean(a, axis=0), mn1, decimal=13)
-        assert_almost_equal(stats.mean(a), mn1, decimal=13)
+        assert_almost_equal(np.mean(a, axis=0), mn1, decimal=13)
         mn2 = zeros(N1, dtype=float)
         for k in range(N2):
             mn2 += A[:,k]
         mn2 /= N2
-        assert_almost_equal(stats.mean(a, axis=1), mn2, decimal=13)
+        assert_almost_equal(np.mean(a, axis=1), mn2, decimal=13)
 
     def test_ravel(self):
         a = rand(5,3,5)
         A = 0
         for val in ravel(a):
             A += val
-        assert_almost_equal(stats.mean(a,axis=None),A/(5*3.0*5))
+        assert_almost_equal(np.mean(a,axis=None),A/(5*3.0*5))
 
 class TestPercentile(TestCase):
     def setUp(self):
@@ -773,7 +772,7 @@ class TestVariability(TestCase):
         not in R, so used
         (10-mean(testcase,axis=0))/sqrt(var(testcase)*3/4)
         """
-        y = stats.z(self.testcase,stats.mean(self.testcase))
+        y = stats.z(self.testcase,np.mean(self.testcase, axis=0))
         assert_almost_equal(y,0.0)
 
     def test_zs(self):
