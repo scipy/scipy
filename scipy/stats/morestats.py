@@ -719,7 +719,7 @@ def levene(*args,**kwds):
         raise ValueError, "Keyword argument <center> must be 'mean', 'median'"\
               + "or 'trimmed'."
     if center == 'median':
-        func = stats.median
+        func = lambda x: np.median(x, axis=0)
     elif center == 'mean':
         func = lambda x: np.mean(x, axis=0)
     else:
@@ -841,7 +841,7 @@ def fligner(*args,**kwds):
         raise ValueError, "Keyword argument <center> must be 'mean', 'median'"\
               + "or 'trimmed'."
     if center == 'median':
-        func = stats.median
+        func = lambda x: np.median(x, axis=0)
     elif center == 'mean':
         func = lambda x: np.mean(x, axis=0)
     else:

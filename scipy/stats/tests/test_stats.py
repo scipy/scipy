@@ -228,12 +228,12 @@ class TestNanFunc(TestCase):
     def test_nanmedian_none(self):
         """Check nanmedian when no values are nan."""
         m = stats.nanmedian(self.X)
-        assert_approx_equal(m, stats.median(self.X))
+        assert_approx_equal(m, np.median(self.X))
 
     def test_nanmedian_some(self):
         """Check nanmedian when some values only are nan."""
         m = stats.nanmedian(self.Xsome)
-        assert_approx_equal(m, stats.median(self.Xsomet))
+        assert_approx_equal(m, np.median(self.Xsomet))
 
     def test_nanmedian_all(self):
         """Check nanmedian when all values are nan."""
@@ -631,9 +631,9 @@ class TestPercentile(TestCase):
         self.a3 = [3.,4,5,10,-3,-5,-6,7.0]
 
     def test_median(self):
-        assert_equal(stats.median(self.a1), 4)
-        assert_equal(stats.median(self.a2), 2.5)
-        assert_equal(stats.median(self.a3), 3.5)
+        assert_equal(np.median(self.a1), 4)
+        assert_equal(np.median(self.a2), 2.5)
+        assert_equal(np.median(self.a3), 3.5)
 
     def test_percentile(self):
         x = arange(8) * 0.5
@@ -681,22 +681,23 @@ class TestMedian(TestCase):
     def test_basic(self):
         data1 = [1,3,5,2,3,1,19,-10,2,4.0]
         data2 = [3,5,1,10,23,-10,3,-2,6,8,15]
-        assert_almost_equal(stats.median(data1),2.5)
-        assert_almost_equal(stats.median(data2),5)
+        assert_almost_equal(np.median(data1),2.5)
+        assert_almost_equal(np.median(data2),5)
 
     def test_basic2(self):
         a1 = [3,4,5,10,-3,-5,6]
         a2 = [3,-6,-2,8,7,4,2,1]
         a3 = [3.,4,5,10,-3,-5,-6,7.0]
-        assert_equal(stats.median(a1),4)
-        assert_equal(stats.median(a2),2.5)
-        assert_equal(stats.median(a3),3.5)
+        assert_equal(np.median(a1),4)
+        assert_equal(np.median(a2),2.5)
+        assert_equal(np.median(a3),3.5)
 
     def test_axis(self):
         """Regression test for #760."""
         a1 = np.array([[3,4,5], [10,-3,-5]])
-        assert_equal(stats.median(a1), np.array([6.5, 0.5, 0.]))
-        assert_equal(stats.median(a1, axis=-1), np.array([4., -3]))
+        assert_equal(np.median(a1), 3.5)
+        assert_equal(np.median(a1, axis=0), np.array([6.5, 0.5, 0.]))
+        assert_equal(np.median(a1, axis=-1), np.array([4., -3]))
 
 class TestMode(TestCase):
     def test_basic(self):

@@ -330,7 +330,7 @@ def _nanmedian(arr1d):  # This only works on 1d arrays
     x = np.sort(np.compress(cond,arr1d,axis=-1))
     if x.size == 0:
         return np.nan
-    return median(x)
+    return np.median(x)
 
 def nanmedian(x, axis=0):
     """ Compute the median along the given axis ignoring nan values
@@ -485,14 +485,13 @@ def median(a, axis=0):
     The median of each remaining axis, or of all of the values in the array
     if axis is None.
     """
-    warnings.warn("""\
+    raise DeprecationWarning("""\
 scipy.stats.median is deprecated; please update your code to use numpy.median.
 Please note that:
     - numpy.median axis argument defaults to None, not 0
     - numpy.median has a ddof argument to replace bias in a more general manner.
       scipy.stats.median(a, bias=True) can be replaced by numpy.median(x,
-axis=0, ddof=1).""", DeprecationWarning)
-    return np.median(a, axis)
+axis=0, ddof=1).""")
 
 def mode(a, axis=0):
     """Returns an array of the modal (most common) value in the passed array.
