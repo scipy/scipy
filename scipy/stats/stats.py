@@ -1304,7 +1304,7 @@ Returns the estimated population standard deviation of the values in
 the passed array (i.e., N-1).  Axis can equal None (ravel array
 first), or an integer (the axis over which to operate).
 """
-    warnings.warn("""\
+    raise DeprecationWarning("""\
 scipy.stats.std is deprecated; please update your code to use numpy.std.
 Please note that:
     - numpy.std axis argument defaults to None, not 0
@@ -1321,7 +1321,7 @@ passed array (i.e., N-1).  Axis can equal None (ravel array
 first), or an integer (the axis over which to operate).
 """
     a, axis = _chk_asarray(a, axis)
-    return std(a,axis) / float(np.sqrt(a.shape[axis]))
+    return np.std(a,axis,ddof=1) / float(np.sqrt(a.shape[axis]))
 
 
 def sem(a, axis=0):

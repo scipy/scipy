@@ -502,7 +502,7 @@ def anderson(x,dist='norm'):
     xbar = np.mean(x, axis=0)
     N = len(y)
     if dist == 'norm':
-        s = stats.std(x)
+        s = np.std(x, ddof=1, axis=0)
         w = (y-xbar)/s
         z = distributions.norm.cdf(w)
         sig = array([15,10,5,2.5,1])
@@ -520,7 +520,7 @@ def anderson(x,dist='norm'):
             val = [sum(1.0/(1+tmp2),axis=0)-0.5*N,
                    sum(tmp*(1.0-tmp2)/(1+tmp2),axis=0)+N]
             return array(val)
-        sol0=array([xbar,stats.std(x)])
+        sol0=array([xbar,np.std(x, ddof=1, axis=0)])
         sol = optimize.fsolve(rootfunc,sol0,args=(x,N),xtol=1e-5)
         w = (y-sol[0])/sol[1]
         z = distributions.logistic.cdf(w)

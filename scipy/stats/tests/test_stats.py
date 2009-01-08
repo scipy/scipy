@@ -109,7 +109,7 @@ class TestBasicStats(TestCase):
         assert_almost_equal(y, 5.0)
 
     def test_stdX(self):
-        y = stats.std(X)
+        y = np.std(X, ddof=1)
         assert_almost_equal(y, 2.738612788)
 
     def test_tmeanX(self):
@@ -129,7 +129,7 @@ class TestBasicStats(TestCase):
         assert_almost_equal(y, 0.0)
 
     def test_stdZERO(self):
-        y = stats.std(ZERO)
+        y = np.std(ZERO, ddof=1)
         assert_almost_equal(y, 0.0)
 
 ##    Really need to write these tests to handle missing values properly
@@ -147,7 +147,7 @@ class TestBasicStats(TestCase):
         assert_almost_equal(y, 99999995.00)
 
     def test_stdBIG(self):
-        y = stats.std(BIG)
+        y = np.std(BIG, ddof=1)
         assert_almost_equal(y, 2.738612788)
 
     def test_meanLITTLE(self):
@@ -155,7 +155,7 @@ class TestBasicStats(TestCase):
         assert_approx_equal(y, 0.999999950)
 
     def test_stdLITTLE(self):
-        y = stats.std(LITTLE)
+        y = np.std(LITTLE, ddof=1)
         assert_approx_equal(y, 2.738612788e-8)
 
     def test_meanHUGE(self):
@@ -163,7 +163,7 @@ class TestBasicStats(TestCase):
         assert_approx_equal(y, 5.00000e+12)
 
     def test_stdHUGE(self):
-        y = stats.std(HUGE)
+        y = np.std(HUGE, ddof=1)
         assert_approx_equal(y, 2.738612788e12)
 
     def test_meanTINY(self):
@@ -171,7 +171,7 @@ class TestBasicStats(TestCase):
         assert_almost_equal(y, 0.0)
 
     def test_stdTINY(self):
-        y = stats.std(TINY)
+        y = np.std(TINY, ddof=1)
         assert_almost_equal(y, 0.0)
 
     def test_meanROUND(self):
@@ -179,7 +179,7 @@ class TestBasicStats(TestCase):
         assert_approx_equal(y, 4.500000000)
 
     def test_stdROUND(self):
-        y = stats.std(ROUND)
+        y = np.std(ROUND, ddof=1)
         assert_approx_equal(y, 2.738612788)
 
 class TestNanFunc(TestCase):
@@ -213,12 +213,12 @@ class TestNanFunc(TestCase):
     def test_nanstd_none(self):
         """Check nanstd when no values are nan."""
         s = stats.nanstd(self.X)
-        assert_approx_equal(s, stats.std(self.X))
+        assert_approx_equal(s, np.std(self.X, ddof=1))
 
     def test_nanstd_some(self):
         """Check nanstd when some values only are nan."""
         s = stats.nanstd(self.Xsome)
-        assert_approx_equal(s, stats.std(self.Xsomet))
+        assert_approx_equal(s, np.std(self.Xsomet, ddof=1))
 
     def test_nanstd_all(self):
         """Check nanstd when all values are nan."""
@@ -655,8 +655,8 @@ class TestStd(TestCase):
     def test_basic(self):
         a = [3,4,5,10,-3,-5,6]
         b = [3,4,5,10,-3,-5,-6]
-        assert_almost_equal(stats.std(a),5.2098807225172772,11)
-        assert_almost_equal(stats.std(b),5.9281411203561225,11)
+        assert_almost_equal(np.std(a, ddof=1),5.2098807225172772,11)
+        assert_almost_equal(np.std(b, ddof=1),5.9281411203561225,11)
 
     def test_2d(self):
         a = [[1.0, 2.0, 3.0],
@@ -665,9 +665,8 @@ class TestStd(TestCase):
         b1 = array((3.7859388972001824, 5.2915026221291814,
                     2.0816659994661335))
         b2 = array((1.0,2.0,2.64575131106))
-        assert_array_almost_equal(stats.std(a),b1,11)
-        assert_array_almost_equal(stats.std(a,axis=0),b1,11)
-        assert_array_almost_equal(stats.std(a,axis=1),b2,11)
+        assert_array_almost_equal(np.std(a,ddof=1,axis=0),b1,11)
+        assert_array_almost_equal(np.std(a,ddof=1,axis=1),b2,11)
 
 
 class TestCMedian(TestCase):
@@ -713,7 +712,7 @@ class TestVariability(TestCase):
     """
     testcase = [1,2,3,4]
     def test_std(self):
-        y = stats.std(self.testcase)
+        y = np.std(self.testcase, ddof=1)
         assert_approx_equal(y,1.290994449)
 
     def test_var(self):
