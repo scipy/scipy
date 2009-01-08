@@ -27,7 +27,6 @@ static blitz::Array<T,N> convert_to_blitz(PyArrayObject* arr_obj,const char* nam
 {
     blitz::TinyVector<int,N> shape(0);
     blitz::TinyVector<int,N> strides(0);
-    int stride_acc = 1;
     //for (int i = N-1; i >=0; i--)
     for (int i = 0; i < N; i++)
     {
@@ -45,7 +44,6 @@ static blitz::Array<T,N> py_to_blitz(PyArrayObject* arr_obj,const char* name)
 
     blitz::TinyVector<int,N> shape(0);
     blitz::TinyVector<int,N> strides(0);
-    int stride_acc = 1;
     //for (int i = N-1; i >=0; i--)
     for (int i = 0; i < N; i++)
     {
