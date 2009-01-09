@@ -21,21 +21,25 @@ class TestInline(TestCase):
         result = inline_tools.inline(code,['a'])
         assert(result == 4)
 
-        try:
-            a = 1
-            result = inline_tools.inline(code,['a'])
-            assert(1) # should've thrown a ValueError
-        except ValueError:
-            pass
+## Unfortunately, it is not always possible to catch distutils compiler
+## errors, since SystemExit is used.  Until that is fixed, these tests
+## cannot be run in the same process as the test suite.
 
-        from distutils.errors import DistutilsError, CompileError
-        try:
-            a = 'string'
-            result = inline_tools.inline(code,['a'])
-            assert(1) # should've gotten an error
-        except:
-            # ?CompileError is the error reported, but catching it doesn't work
-            pass
+##         try:
+##             a = 1
+##             result = inline_tools.inline(code,['a'])
+##             assert(1) # should've thrown a ValueError
+##         except ValueError:
+##             pass
+
+##         from distutils.errors import DistutilsError, CompileError
+##         try:
+##             a = 'string'
+##             result = inline_tools.inline(code,['a'])
+##             assert(1) # should've gotten an error
+##         except:
+##             # ?CompileError is the error reported, but catching it doesn't work
+##             pass
 
 if __name__ == "__main__":
     nose.run(argv=['', __file__])
