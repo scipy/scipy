@@ -374,7 +374,7 @@ def msvc_exists():
         import distutils.msvccompiler
         try:
             cc = distutils.msvccompiler.MSVCCompiler()
-	    cc.initialize()
+            cc.initialize()
             p = subprocess.Popen([cc.cc])
             result = 1
         except distutils.errors.DistutilsPlatformError:
