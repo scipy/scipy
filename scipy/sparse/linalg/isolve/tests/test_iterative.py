@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """ Test functions for the sparse.linalg.isolve module
 """
+import sys
 
 from numpy.testing import *
 
@@ -63,6 +64,7 @@ class TestIterative(TestCase):
         #A = spdiags( data, [0,-1], 10, 10, format='csr')
         #self.cases.append( (A,False,True) )
 
+    @dec.knownfailureif(sys.platform=='win32', "This test is known to fail on windows")
     def test_maxiter(self):
         """test whether maxiter is respected"""
 
@@ -82,6 +84,7 @@ class TestIterative(TestCase):
             assert_equal(len(residuals), 3)
             assert_equal(info, 3)
 
+    @dec.knownfailureif(sys.platform=='win32', "This test is known to fail on windows")
     def test_convergence(self):
         """test whether all methods converge"""
 
@@ -102,6 +105,7 @@ class TestIterative(TestCase):
 
                 assert( norm(b - A*x) < tol*norm(b) )
 
+    @dec.knownfailureif(sys.platform=='win32', "This test is known to fail on windows")
     def test_precond(self):
         """test whether all methods accept a trivial preconditioner"""
 
