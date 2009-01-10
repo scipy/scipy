@@ -87,8 +87,8 @@ class Rbf(object):
                 return sqrt( ((x1 - x2)**2).sum(axis=0) )
 
         which is called with x1=x1[ndims,newaxis,:] and
-        x2=x2[ndims,:,newaxis] such that the result is a symmetric, square
-        matrix of the distances between each point to each other point.
+        x2=x2[ndims,:,newaxis] such that the result is a matrix of the distances
+        from each point in x1 to each point in x2.
 
     Examples
     --------
