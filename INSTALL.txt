@@ -1,6 +1,3 @@
-.. -*- rest -*-
-.. NB! Keep this document a valid restructured document.
-
 Building and installing SciPy
 +++++++++++++++++++++++++++++
 
@@ -240,6 +237,11 @@ To run the full test suite use
 
    >>> scipy.test('full')
 
+Please note that you must have version 0.10 or later of the 'nose' test
+framework installed in order to run the tests.  More information about nose is
+available here:
+
+http://somethingaboutorange.com/mrl/projects/nose/
 
 COMPILER NOTES
 ==============
