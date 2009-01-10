@@ -317,3 +317,15 @@ well and was starting to create confusion, so ``scipy.sandbox`` was removed.
 Most of the code was moved into ``scipy``, some code was made into a
 ``scikit``, and the remaining code was just deleted as the functionality had
 been replaced by other code.
+
+Known problems
+--------------
+
+Here are known problems with scipy 0.7.0:
+
+* weave test failures on windows: those are known, and are being worked
+  on.
+* weave test failure with gcc 4.3 (std::labs): this is a gcc 4.3 bug. A
+  workaround is to add #include <cstdlib> in
+  scipy/weave/blitz/blitz/funcs.h (line 27). You can make the change in
+  the installed scipy (in site-packages).
