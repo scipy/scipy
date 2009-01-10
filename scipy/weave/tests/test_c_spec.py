@@ -740,4 +740,5 @@ def remove_file(name):
 #         if _n[:7]=='TestGcc': exec 'del '+_n
 #
 if __name__ == "__main__":
+    import nose
     nose.run(argv=['', __file__])

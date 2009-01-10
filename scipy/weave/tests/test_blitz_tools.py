@@ -178,4 +178,5 @@ class TestBlitz(TestCase):
         self.generic_2d(expr,complex128)
 
 if __name__ == "__main__":
+    import nose
     nose.run(argv=['', __file__])
