@@ -26,6 +26,7 @@ class TestDictConstruct(TestCase):
 
 
 class TestDictHasKey(TestCase):
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_obj(self):
         class Foo:
@@ -38,6 +39,7 @@ class TestDictHasKey(TestCase):
                """
         res = inline_tools.inline(code,['a','key'])
         assert res
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_int(self):
         a = {}
@@ -47,6 +49,7 @@ class TestDictHasKey(TestCase):
                """
         res = inline_tools.inline(code,['a'])
         assert res
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_double(self):
         a = {}
@@ -56,6 +59,7 @@ class TestDictHasKey(TestCase):
                """
         res = inline_tools.inline(code,['a'])
         assert res
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_complex(self):
         a = {}
@@ -67,6 +71,7 @@ class TestDictHasKey(TestCase):
         res = inline_tools.inline(code,['a','key'])
         assert res
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_string(self):
         a = {}
@@ -76,6 +81,7 @@ class TestDictHasKey(TestCase):
                """
         res = inline_tools.inline(code,['a'])
         assert res
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_std_string(self):
         a = {}
@@ -86,6 +92,7 @@ class TestDictHasKey(TestCase):
                """
         res = inline_tools.inline(code,['a','key_name'])
         assert res
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_string_fail(self):
         a = {}
@@ -105,6 +112,7 @@ class TestDictGetItemOp(TestCase):
         res = inline_tools.inline(code,args)
         assert res == a['b']
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_char(self):
         self.generic_get('return_val = a["b"];')
@@ -119,11 +127,13 @@ class TestDictGetItemOp(TestCase):
         except KeyError:
             pass
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_string(self):
         self.generic_get('return_val = a[std::string("b")];')
 
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_obj(self):
         code = """
@@ -177,22 +187,27 @@ class TestDictSetOperator(TestCase):
         assert before == after
         assert before_overwritten == after_overwritten
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_new_int_int(self):
         key,val = 1234,12345
         self.generic_new(key,val)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_new_double_int(self):
         key,val = 1234.,12345
         self.generic_new(key,val)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_new_std_string_int(self):
         key,val = "hello",12345
         self.generic_new(key,val)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_new_complex_int(self):
         key,val = 1+1j,12345
         self.generic_new(key,val)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_new_obj_int(self):
         class Foo:
@@ -200,22 +215,27 @@ class TestDictSetOperator(TestCase):
         key,val = Foo(),12345
         self.generic_new(key,val)
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_overwrite_int_int(self):
         key,val = 1234,12345
         self.generic_overwrite(key,val)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_overwrite_double_int(self):
         key,val = 1234.,12345
         self.generic_overwrite(key,val)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_overwrite_std_string_int(self):
         key,val = "hello",12345
         self.generic_overwrite(key,val)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_overwrite_complex_int(self):
         key,val = 1+1j,12345
         self.generic_overwrite(key,val)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_overwrite_obj_int(self):
         class Foo:
@@ -239,22 +259,27 @@ class TestDictDel(TestCase):
         after = sys.getrefcount(a), sys.getrefcount(key)
         assert before[0] == after[0]
         assert before[1] == after[1] + 1
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_int(self):
         key = 1234
         self.generic(key)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_double(self):
         key = 1234.
         self.generic(key)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_std_string(self):
         key = "hello"
         self.generic(key)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_complex(self):
         key = 1+1j
         self.generic(key)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_obj(self):
         class Foo:
@@ -263,30 +288,35 @@ class TestDictDel(TestCase):
         self.generic(key)
 
 class TestDictOthers(TestCase):
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_clear(self):
         a = {}
         a["hello"] = 1
         inline_tools.inline("a.clear();",['a'])
         assert not a
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_items(self):
         a = {}
         a["hello"] = 1
         items = inline_tools.inline("return_val = a.items();",['a'])
         assert items == a.items()
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_values(self):
         a = {}
         a["hello"] = 1
         values = inline_tools.inline("return_val = a.values();",['a'])
         assert values == a.values()
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_keys(self):
         a = {}
         a["hello"] = 1
         keys = inline_tools.inline("return_val = a.keys();",['a'])
         assert keys == a.keys()
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_update(self):
         a,b = {},{}
@@ -296,4 +326,4 @@ class TestDictOthers(TestCase):
         assert a == b
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()
