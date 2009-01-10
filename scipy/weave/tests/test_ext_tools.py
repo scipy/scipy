@@ -139,4 +139,5 @@ class TestAssignVariableTypes(TestCase):
         assert_equal(actual,desired)
 
 if __name__ == "__main__":
+    import nose
     nose.run(argv=['', __file__])

@@ -365,4 +365,5 @@ class TestExpressions(TestCase):
 
 
 if __name__ == "__main__":
+    import nose
     run_module_suite()

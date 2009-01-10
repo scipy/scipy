@@ -328,4 +328,5 @@ class TestCatalog(TestCase):
 
 
 if __name__ == '__main__':
+    import nose
     nose.run(argv=['', __file__])

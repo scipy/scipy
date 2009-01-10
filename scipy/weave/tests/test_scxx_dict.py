@@ -326,4 +326,5 @@ class TestDictOthers(TestCase):
         assert a == b
 
 if __name__ == "__main__":
-    run_module_suite()
+    import nose
+    nose.run(argv=['', __file__])
