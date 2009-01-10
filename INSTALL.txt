@@ -4,12 +4,6 @@
 Building and installing SciPy
 +++++++++++++++++++++++++++++
 
-:Authors: Pearu Peterson <pearu@cens.ioc.ee>
-:Modified by: Ed Schofield <edschofield@gmail.com>
-:Last changed: $Date$
-:Revision: $Revision$
-:Discussions to: scipy-user@scipy.org
-
 See http://www.scipy.org/scipy/scipy/wiki/GetCode
 for updates of this document.
 
@@ -240,12 +234,11 @@ TESTING
 To test SciPy after installation (highly recommended), execute in Python
 
    >>> import scipy
-   >>> scipy.test(level=1)
+   >>> scipy.test()
 
-where the test level can be varied from 1 to 10. To get detailed
-messages about what tests are being executed, use
+To run the full test suite use
 
-   >>> scipy.test(level=1, verbosity=2)
+   >>> scipy.test('full')
 
 
 COMPILER NOTES

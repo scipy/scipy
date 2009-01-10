@@ -1,27 +1,18 @@
-.. -*- rest -*-
-
 =================================================
 Developing SciPy
 =================================================
 
-:Author: Pearu Peterson <pearu@cens.ioc.ee>
-:Modified by: Ed Schofield <edschofield@gmail.com>
-:Modified by: Jarrod Millman <millman AT berkeley.edu>
-:Last changed: $Date$
-:Revision: $Revision$
-:Discussions to: scipy-dev@scipy.org
-
 .. Contents::
 
 
-What is SciPY?
+What is SciPy?
 --------------
 
 SciPy (pronounced "Sigh Pie") is open-source software for mathematics,
 science, and engineering.  It includes modules for statistics, optimization,
 integration, linear algebra, Fourier transforms, signal and image processing,
-genetic algorithms, ODE solvers, and more.  It is also the name of a very
-popular conference on scientific programming with Python.
+ODE solvers, and more.  It is also the name of a very popular conference on
+scientific programming with Python.
 
 The SciPy library depends on NumPy, which provides convenient and fast
 N-dimensional array manipulation. The SciPy library is built to work with
@@ -105,57 +96,8 @@ For details, read:
 Documentation
 -------------
 
-This is an important feature where SciPy is currently lacking. A few
-SciPy modules have some documentation but they use different formats
-and are mostly out of date.  We could use some help with this.
-
-Currently there are
-
-* A SciPy tutorial by Travis E. Oliphant.  This is maintained using LyX. 
-  The main advantage of this approach is that one can use mathematical
-  formulas in documentation.
-
-* I (Pearu) have used reStructuredText formated .txt files to document
-  various bits of software. This is mainly because ``docutils`` might
-  become a standard tool to document Python modules. The disadvantage
-  is that it does not support mathematical formulas (though, we might
-  add this feature ourself using e.g. LaTeX syntax).
-
-* Various text files with almost no formatting and mostly badly out
-  dated.
-
-* Documentation strings of Python functions, classes, and modules.
-  Some SciPy modules are well-documented in this sense, others are very
-  poorly documented. Another issue is that there is no consensus on how
-  to format documentation strings, mainly because we haven't decided
-  which tool to use to generate, for instance, HTML pages of
-  documentation strings.
-
-So, we need unique rules for documenting SciPy modules. Here are some
-requirements that documentation tools should satsify:
-
-* Easy to use. This is important to lower the threshold of developers
-  to use the same documentation utilities.
-
-* In general, all functions that are visible to SciPy end-users, must
-  have well-maintained documentation strings.
-
-* Support for mathematical formulas. Since SciPy is a tool for
-  scientific work, it is hard to avoid formulas to describe how its
-  modules are good for. So, documentation tools should support LaTeX.
-
-* Documentation of a feature should be closely related to its
-  interface and implementation. This is important for keeping
-  documentation up to date. One option would be to maintain
-  documentation in source files (and have a tool that extracts
-  documentation from sources). The main disadvantage with that is the
-  lack of convenience writing documentation as the editor would be in
-  different mode (e.g. Python mode) from the mode suitable for
-  documentation.
-
-* Differentiation of implementation (e.g. from scanning sources) and
-  concept (e.g. tutorial, users guide, manual) based docs.
-  
+The documentation site is here
+    http://docs.scipy.org
 
 Web sites
 ---------
