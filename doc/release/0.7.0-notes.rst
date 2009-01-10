@@ -52,6 +52,72 @@ Python 3.0, which is a massive effort, since a lot of C code has to be
 ported.  We are still considering how to make the transition to 3.0, but we
 currently don't have any timeline or roadmap for this transition.
 
+Major documentation improvements
+--------------------------------
+
+SciPy documentation is greatly improved; you can
+view a HTML reference manual `online <http://docs.scipy.org/>`__ or
+download it as a PDF file. The new reference guide was built using
+the popular `Sphinx tool <http://sphinx.pocoo.org/>`__.
+
+This release also includes an updated tutorial, which hadn't been
+available since SciPy was ported to NumPy in 2005.  While not
+comprehensive, the tutorial shows how to use several essential
+parts of Scipy.  It also includes the ``ndimage`` documentation
+from the ``numarray`` manual.
+
+Nevertheless, more effort is still needed on the documentation front.
+Luckily, contributing to Scipy documentation is now easier than
+before: if you find that a part of it requires improvements, and want
+to help us out, please register a user name in our web-based
+documentation editor at http://docs.scipy.org/ and correct the issues.
+
+Running Tests
+-------------
+
+NumPy 1.2 introduced a new testing framework based on `nose 
+<http://code.google.com/p/python-nose/>`__.  Starting with this release SciPy
+now uses the new NumPy test framework as well.  To take advantage of the new
+testing framework requires ``nose`` version 0.10 or later.  One major advantage
+of the new framework is that it greatly reduces the difficulty of writing unit
+tests, which has all ready paid off given the rapid increase in tests.  To run
+the full test suite::
+
+    >>> import scipy
+    >>> scipy.test('full')
+
+For more information, please see `The NumPy/SciPy Testing Guide
+<http://projects.scipy.org/scipy/numpy/wiki/TestingGuidelines>`__.
+
+We have also greatly improved our test coverage.  There were just over 2,000 unit
+tests in the 0.6.0 release; this release nearly doubles that number with just over
+4,000 unit tests.
+
+Building SciPy
+--------------
+
+Support for NumScons has been added. NumScons is a tentative new
+build system for NumPy/SciPy, using `SCons <http://www.scons.org/>`__ at its core.
+
+SCons is a next-generation build system meant to replace the venerable ``Make``
+with the integrated functionality of ``autoconf``/``automake`` and ``ccache``.
+Scons is written in Python and its configuration files are Python scripts.
+NumScons is meant to replace NumPy's custom version of ``distutils`` providing
+more advanced functionality such as ``autoconf``, improved fortran support,
+more tools, and support for ``numpy.distutils``/``scons`` cooperation.
+
+Sandbox Removed
+---------------
+
+While porting SciPy to NumPy in 2005, several packages and modules were
+moved into ``scipy.sandbox``.  The sandbox was a staging ground for packages
+that were undergoing rapid development and whose APIs were in flux.  It was
+also a place where broken code could live.  The sandbox has served its purpose
+well and was starting to create confusion, so ``scipy.sandbox`` was removed.
+Most of the code was moved into ``scipy``, some code was made into a
+``scikit``, and the remaining code was just deleted as the functionality had
+been replaced by other code.
+
 Sparse Matrices
 ---------------
 
@@ -89,6 +155,33 @@ example:
 
 Numerous efficiency improvements to format conversions and sparse matrix
 arithmetic.  Finally, this release contains numerous bugfixes.
+
+Statistics package
+------------------
+
+Statistical functions for masked arrays have been added and are accessible 
+through ``scipy.stats.mstats``. The functions are similar to their counterparts 
+in ``scipy.stats`` but they have not yet been verified for identical interfaces
+and algorithms.
+
+Several bugs were fixed for statistical functions, of those, ``kstest`` and
+``percentileofscore`` gained new keyword arguments.
+
+Added deprecation warning for ``mean``, ``median``, ``var``, ``std``,
+``cov``, and ``corrcoef``. These functions should be replaced by their
+numpy counterparts.  Note, however, that some of the default options differ
+between the ``scipy.stats`` and numpy versions of these functions.
+
+Numerous bug fixes to ``stats.distributions``: all generic methods now work
+correctly, several methods in individual distributions were corrected. However,
+a few issues remain with higher moments (``skew``, ``kurtosis``) and entropy.
+The maximum likelihood estimator, ``fit``, does not work out-of-the-box for
+some distributions, in some cases, starting values have to be 
+carefully chosen, in other cases, the generic implementation of the maximum
+likelihood method might not be the numerically appropriate estimation method.
+
+We expect more bugfixes, increases in numerical precision and enhancements in
+the next release of scipy.
 
 Reworking of IO package
 -----------------------
@@ -209,26 +302,6 @@ eigenvalues, and choose to use a faster algorithm at the expense
 of increased memory usage. The signature of the ``scipy.linalg.eigh``
 changed accordingly. 
 
-Major documentation improvements
---------------------------------
-
-SciPy documentation is greatly improved; you can
-view a HTML reference manual `online <http://docs.scipy.org/>`__ or
-download it as a PDF file. The new reference guide was built using
-the popular `Sphinx tool <http://sphinx.pocoo.org/>`__.
-
-This release also includes an updated tutorial, which hadn't been
-available since SciPy was ported to NumPy in 2005.  While not
-comprehensive, the tutorial shows how to use several essential
-parts of Scipy.  It also includes the ``ndimage`` documentation
-from the ``numarray`` manual.
-
-Nevertheless, more effort is still needed on the documentation front.
-Luckily, contributing to Scipy documentation is now easier than
-before: if you find that a part of it requires improvements, and want
-to help us out, please register a user name in our web-based
-documentation editor at http://docs.scipy.org/ and correct the issues.
-
 Bug fixes in the interpolation package
 --------------------------------------
 
@@ -238,85 +311,12 @@ the axis keyword was set to a non-default value. This has been fixed.
 Users of ``scipy.interpolate.interp1d`` may need to revise their code
 if it relies on the incorrect behavior.
 
-Statistics package
-------------------
-
-Statistical functions for masked arrays have been added and are accessible 
-through ``scipy.stats.mstats``. The functions are similar to their counterparts 
-in ``scipy.stats`` but they have not yet been verified for identical interfaces
-and algorithms.
-
-Several bugs were fixed for statistical functions, of those, ``kstest`` and
-``percentileofscore`` gained new keyword arguments.
-
-Added deprecation warning for ``mean``, ``median``, ``var``, ``std``,
-``cov``, and ``corrcoef``. These functions should be replaced by their
-numpy counterparts.  Note, however, that some of the default options differ
-between the ``scipy.stats`` and numpy versions of these functions.
-
-Numerous bug fixes to ``stats.distributions``: all generic methods now work
-correctly, several methods in individual distributions were corrected. However,
-a few issues remain with higher moments (``skew``, ``kurtosis``) and entropy.
-The maximum likelihood estimator, ``fit``, does not work out-of-the-box for
-some distributions, in some cases, starting values have to be 
-carefully chosen, in other cases, the generic implementation of the maximum
-likelihood method might not be the numerically appropriate estimation method.
-
-We expect more bugfixes, increases in numerical precision and enhancements in
-the next release of scipy.
-
-Running Tests
--------------
-
-NumPy 1.2 introduced a new testing framework based on `nose 
-<http://code.google.com/p/python-nose/>`__.  Starting with this release SciPy
-now uses the new NumPy test framework as well.  To take advantage of the new
-testing framework requires ``nose`` version 0.10 or later.  One major advantage
-of the new framework is that it greatly reduces the difficulty of writing unit
-tests, which has all ready paid off given the rapid increase in tests.  To run
-the full test suite::
-
-    >>> import scipy
-    >>> scipy.test('full')
-
-For more information, please see `The NumPy/SciPy Testing Guide
-<http://projects.scipy.org/scipy/numpy/wiki/TestingGuidelines>`__.
-
-We have also greatly improved our test coverage.  There were just over 2,000 unit
-tests in the 0.6.0 release; this release nearly doubles that number with just over
-4,000 unit tests.
-
-Building SciPy
---------------
-
-Support for NumScons has been added. NumScons is a tentative new
-build system for NumPy/SciPy, using `SCons <http://www.scons.org/>`__ at its core.
-
-SCons is a next-generation build system meant to replace the venerable ``Make``
-with the integrated functionality of ``autoconf``/``automake`` and ``ccache``.
-Scons is written in Python and its configuration files are Python scripts.
-NumScons is meant to replace NumPy's custom version of ``distutils`` providing
-more advanced functionality such as ``autoconf``, improved fortran support,
-more tools, and support for ``numpy.distutils``/``scons`` cooperation.
-
 Weave clean up
 --------------
 
 There were numerous improvements to ``scipy.weave``.  ``blitz++`` was
 relicensed by the author to be compatible with the SciPy license.
 ``wx_spec.py`` was removed.
-
-Sandbox Removed
----------------
-
-While porting SciPy to NumPy in 2005, several packages and modules were
-moved into ``scipy.sandbox``.  The sandbox was a staging ground for packages
-that were undergoing rapid development and whose APIs were in flux.  It was
-also a place where broken code could live.  The sandbox has served its purpose
-well and was starting to create confusion, so ``scipy.sandbox`` was removed.
-Most of the code was moved into ``scipy``, some code was made into a
-``scikit``, and the remaining code was just deleted as the functionality had
-been replaced by other code.
 
 Known problems
 --------------
