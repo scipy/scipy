@@ -1467,7 +1467,6 @@ class TestNumObsY(TestCase):
         a = set([])
         for n in xrange(2, 16):
             a.add(n*(n-1)/2)
-        print a
         for i in xrange(5, 105):
             if i not in a:
                 self.failUnlessRaises(ValueError, self.bad_y, i)
@@ -1678,7 +1677,6 @@ class TestIsValidY(TestCase):
         a = set([])
         for n in xrange(2, 16):
             a.add(n*(n-1)/2)
-        print a
         for i in xrange(5, 105):
             if i not in a:
                 self.failUnlessRaises(ValueError, self.bad_y, i)
