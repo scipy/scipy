@@ -15,7 +15,6 @@ def configuration(parent_package='', top_path=None, setup_name='setupscons.py'):
     config.add_subpackage('io')
     config.add_subpackage('lib')
     config.add_subpackage('linalg')
-    config.add_subpackage('linsolve')
     config.add_subpackage('maxentropy')
     config.add_subpackage('misc')
     config.add_subpackage('odr')
