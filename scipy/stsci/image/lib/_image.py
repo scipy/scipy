@@ -1,6 +1,6 @@
 import numpy as np
-import convolve
-import convolve._correlate as _correlate
+from scipy.stsci import convolve
+from scipy.stsci.convolve import _correlate
 
 def _translate(a, dx, dy, output=None, mode="nearest", cval=0.0):
     """_translate does positive sub-pixel shifts using bilinear interpolation."""

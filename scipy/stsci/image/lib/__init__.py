@@ -1,6 +1,6 @@
 import sys
-from _image import *
-from combine import *
+from scipy.stsci.image._image import *
+from scipy.stsci.image.combine import *
 
 __version__ = '2.0'
 
