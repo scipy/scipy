@@ -933,7 +933,7 @@ class TestObjectSetItemOpKey(TestCase):
         assert_equal(sys.getrefcount(key),4) # should be 3
         assert_equal(sys.getrefcount(a[key]),2)
         assert_equal(a[key],123.0)
-    @dec.knownfailureif(sys.platform=='win32')
+    @dec.knownfailureif(True)
     @dec.slow
     def test_set_complex(self):
         a = UserDict()
