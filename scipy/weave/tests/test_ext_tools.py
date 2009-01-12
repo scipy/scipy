@@ -15,12 +15,14 @@ print 'building extensions here:', build_dir
 
 class TestExtModule(TestCase):
     #should really do some testing of where modules end up
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_simple(self):
         """ Simplest possible module """
         mod = ext_tools.ext_module('simple_ext_module')
         mod.compile(location = build_dir)
         import simple_ext_module
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_multi_functions(self):
         mod = ext_tools.ext_module('module_multi_function')
@@ -59,6 +61,7 @@ class TestExtModule(TestCase):
         import ext_module_with_include
         ext_module_with_include.test(a)
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_string_and_int(self):
         # decalaring variables
@@ -76,6 +79,7 @@ class TestExtModule(TestCase):
         c = ext_string_and_int.test(a,b)
         assert(c == len(b))
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_return_tuple(self):
         # decalaring variables
@@ -100,6 +104,7 @@ class TestExtModule(TestCase):
 
 class TestExtFunction(TestCase):
     #should really do some testing of where modules end up
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_simple(self):
         """ Simplest possible function """

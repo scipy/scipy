@@ -1,3 +1,5 @@
+import sys
+
 from numpy import *
 from numpy.testing import *
 
@@ -8,6 +10,7 @@ class TestInline(TestCase):
 
          I'd like to benchmark these things somehow.
     """
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_exceptions(self):
         a = 3
