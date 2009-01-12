@@ -96,7 +96,7 @@ class TestObjectPrint(TestCase):
         assert_equal(file_imposter.getvalue(),"'how now brown cow'")
 
 ##    @dec.knownfailureif(sys.platform=='win32')
-    @dec.slow
+##    @dec.slow
 ##    def test_failure(self):
 ##        code = """
 ##               FILE* file = 0;
