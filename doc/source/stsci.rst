@@ -2,12 +2,12 @@
 Image Array Manipulation and Convolution (:mod:`scipy.stsci`)
 =============================================================
 
-.. module:: scipy.stci
+.. module:: scipy.stsci
 
 Image Array manipulation Functions (:mod:`scipy.stsci.image`)
 =============================================================
 
-.. module:: scipy.stci.image
+.. module:: scipy.stsci.image
 
 .. autosummary::
    :toctree: generated/
@@ -23,7 +23,7 @@ Image Array manipulation Functions (:mod:`scipy.stsci.image`)
 Image Array Convolution Functions (:mod:`scipy.stsci.convolve`)
 ===============================================================
 
-.. module:: scipy.stci.convolve
+.. module:: scipy.stsci.convolve
 
 .. autosummary::
    :toctree: generated/

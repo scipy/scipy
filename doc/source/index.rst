@@ -39,4 +39,5 @@ Reference
    spatial
    special
    stats
+   stsci
    weave
