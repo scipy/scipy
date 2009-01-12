@@ -131,6 +131,7 @@ class TestBlitz(TestCase):
     #    """ result = a + b"""
     #    expr = "result = a + b"
     #    self.generic_2d(expr)
+    @dec.knownfailureif(True)
     @dec.slow
     def test_5point_avg_2d_float(self):
         """ result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]
@@ -140,6 +141,7 @@ class TestBlitz(TestCase):
                                   "+ b[1:-1,2:] + b[1:-1,:-2]) / 5."
         self.generic_2d(expr,float32)
 
+    @dec.knownfailureif(True)
     @dec.slow
     def test_5point_avg_2d_double(self):
         """ result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]
@@ -168,6 +170,7 @@ class TestBlitz(TestCase):
                                   "+ b[1:-1,2:] + b[1:-1,:-2]) / 5."
         self.generic_2d(expr,complex64)
 
+    @dec.knownfailureif(True)
     @dec.slow
     def test_5point_avg_2d_complex_double(self):
         """ result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]
