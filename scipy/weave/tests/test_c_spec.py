@@ -49,22 +49,27 @@ def remove_whitespace(in_str):
 
 class IntConverter(TestCase):
     compiler = ''
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_string(self):
         s = c_spec.int_converter()
         assert( not s.type_match('string') )
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_int(self):
         s = c_spec.int_converter()
         assert(s.type_match(5))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_float(self):
         s = c_spec.int_converter()
         assert(not s.type_match(5.))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_complex(self):
         s = c_spec.int_converter()
         assert(not s.type_match(5.+1j))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_var_in(self):
         mod_name = 'int_var_in' + self.compiler
@@ -89,6 +94,7 @@ class IntConverter(TestCase):
         except TypeError:
             pass
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_int_return(self):
         mod_name = sys._getframe().f_code.co_name + self.compiler
@@ -110,22 +116,27 @@ class IntConverter(TestCase):
 
 class FloatConverter(TestCase):
     compiler = ''
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_string(self):
         s = c_spec.float_converter()
         assert( not s.type_match('string'))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_int(self):
         s = c_spec.float_converter()
         assert(not s.type_match(5))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_float(self):
         s = c_spec.float_converter()
         assert(s.type_match(5.))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_complex(self):
         s = c_spec.float_converter()
         assert(not s.type_match(5.+1j))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_float_var_in(self):
         mod_name = sys._getframe().f_code.co_name + self.compiler
@@ -151,6 +162,7 @@ class FloatConverter(TestCase):
             pass
 
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_float_return(self):
         mod_name = sys._getframe().f_code.co_name + self.compiler
@@ -171,22 +183,27 @@ class FloatConverter(TestCase):
 
 class ComplexConverter(TestCase):
     compiler = ''
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_string(self):
         s = c_spec.complex_converter()
         assert( not s.type_match('string') )
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_int(self):
         s = c_spec.complex_converter()
         assert(not s.type_match(5))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_float(self):
         s = c_spec.complex_converter()
         assert(not s.type_match(5.))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_complex(self):
         s = c_spec.complex_converter()
         assert(s.type_match(5.+1j))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_complex_var_in(self):
         mod_name = sys._getframe().f_code.co_name + self.compiler
@@ -211,6 +228,7 @@ class ComplexConverter(TestCase):
         except TypeError:
             pass
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_complex_return(self):
         mod_name = sys._getframe().f_code.co_name + self.compiler
@@ -235,6 +253,7 @@ class ComplexConverter(TestCase):
 
 class FileConverter(TestCase):
     compiler = ''
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_py_to_file(self):
         import tempfile
@@ -247,6 +266,7 @@ class FileConverter(TestCase):
         file.close()
         file = open(file_name,'r')
         assert(file.read() == "hello bob")
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_file_to_py(self):
         import tempfile
@@ -278,6 +298,7 @@ class InstanceConverter(TestCase):
 
 class CallableConverter(TestCase):
     compiler=''
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_call_function(self):
         import string
@@ -299,18 +320,22 @@ class CallableConverter(TestCase):
 
 class SequenceConverter(TestCase):
     compiler = ''
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_convert_to_dict(self):
         d = {}
         inline_tools.inline("",['d'],compiler=self.compiler,force=1)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_convert_to_list(self):
         l = []
         inline_tools.inline("",['l'],compiler=self.compiler,force=1)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_convert_to_string(self):
         s = 'hello'
         inline_tools.inline("",['s'],compiler=self.compiler,force=1)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_convert_to_tuple(self):
         t = ()
@@ -318,22 +343,27 @@ class SequenceConverter(TestCase):
 
 class StringConverter(TestCase):
     compiler = ''
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_string(self):
         s = c_spec.string_converter()
         assert( s.type_match('string') )
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_int(self):
         s = c_spec.string_converter()
         assert(not s.type_match(5))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_float(self):
         s = c_spec.string_converter()
         assert(not s.type_match(5.))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_complex(self):
         s = c_spec.string_converter()
         assert(not s.type_match(5.+1j))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_var_in(self):
         mod_name = 'string_var_in'+self.compiler
@@ -359,6 +389,7 @@ class StringConverter(TestCase):
         except TypeError:
             pass
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_return(self):
         mod_name = 'string_return'+self.compiler
@@ -379,16 +410,19 @@ class StringConverter(TestCase):
 
 class ListConverter(TestCase):
     compiler = ''
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_bad(self):
         s = c_spec.list_converter()
         objs = [{},(),'',1,1.,1+1j]
         for i in objs:
             assert( not s.type_match(i) )
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_good(self):
         s = c_spec.list_converter()
         assert(s.type_match([]))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_var_in(self):
         mod_name = 'list_var_in'+self.compiler
@@ -413,6 +447,7 @@ class ListConverter(TestCase):
         except TypeError:
             pass
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_return(self):
         mod_name = 'list_return'+self.compiler
@@ -432,6 +467,7 @@ class ListConverter(TestCase):
         c = test(b)
         assert( c == ['hello'])
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_speed(self):
         mod_name = 'list_speed'+self.compiler
@@ -495,16 +531,19 @@ class ListConverter(TestCase):
 
 class TupleConverter(TestCase):
     compiler = ''
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_bad(self):
         s = c_spec.tuple_converter()
         objs = [{},[],'',1,1.,1+1j]
         for i in objs:
             assert( not s.type_match(i) )
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_good(self):
         s = c_spec.tuple_converter()
         assert(s.type_match((1,)))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_var_in(self):
         mod_name = 'tuple_var_in'+self.compiler
@@ -529,6 +568,7 @@ class TupleConverter(TestCase):
         except TypeError:
             pass
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_return(self):
         mod_name = 'tuple_return'+self.compiler
@@ -560,16 +600,19 @@ class DictConverter(TestCase):
     # so that it can run on its own.
     compiler=''
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_bad(self):
         s = c_spec.dict_converter()
         objs = [[],(),'',1,1.,1+1j]
         for i in objs:
             assert( not s.type_match(i) )
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_good(self):
         s = c_spec.dict_converter()
         assert(s.type_match({}))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_var_in(self):
         mod_name = 'dict_var_in'+self.compiler
@@ -594,6 +637,7 @@ class DictConverter(TestCase):
         except TypeError:
             pass
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_return(self):
         mod_name = 'dict_return'+self.compiler

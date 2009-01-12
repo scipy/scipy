@@ -21,6 +21,7 @@ from scipy.weave import inline_tools
 class _TestSequenceBase(TestCase):
     seq_type = None
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_conversion(self):
         a = self.seq_type([1])
@@ -34,6 +35,7 @@ class _TestSequenceBase(TestCase):
         #print '2nd,3rd:', before, after
         assert(after == before)
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_in(self):
         """ Test the "in" method for lists.  We'll assume
@@ -87,6 +89,7 @@ class _TestSequenceBase(TestCase):
         res = inline_tools.inline(code,['a'])
         assert res == 0
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_count(self):
         """ Test the "count" method for lists.  We'll assume
@@ -122,6 +125,7 @@ class _TestSequenceBase(TestCase):
         res = inline_tools.inline(code,['a'])
         assert res == 1
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_access_speed(self):
         N = 1000000
@@ -153,6 +157,7 @@ class _TestSequenceBase(TestCase):
         print 'weave:', t2 - t1
 
 # Fails
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_access_set_speed(self):
         N = 1000000
@@ -184,6 +189,7 @@ class _TestSequenceBase(TestCase):
 class TestTuple(_TestSequenceBase):
     seq_type = tuple
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_set_item_operator_equal_fail(self):
         # Tuples should only allow setting of variables
@@ -193,6 +199,7 @@ class TestTuple(_TestSequenceBase):
             inline_tools.inline("a[1] = 1234;",['a'])
         except TypeError:
             pass
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_set_item_operator_equal(self):
         code = """
@@ -207,6 +214,7 @@ class TestTuple(_TestSequenceBase):
         # returned value should only have a single refcount
         assert sys.getrefcount(a) == 2
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_set_item_index_error(self):
         code = """
@@ -219,6 +227,7 @@ class TestTuple(_TestSequenceBase):
             assert 0
         except IndexError:
             pass
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_get_item_operator_index_error(self):
         code = """
@@ -233,6 +242,7 @@ class TestTuple(_TestSequenceBase):
 
 class TestList(_TestSequenceBase):
     seq_type = list
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_append_passed_item(self):
         a = []
@@ -251,6 +261,7 @@ class TestList(_TestSequenceBase):
         after2 = sys.getrefcount(item)
         assert after1 == before1
         assert after2 == before2
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_append(self):
         a = []
@@ -286,6 +297,7 @@ class TestList(_TestSequenceBase):
 
         after1 = sys.getrefcount(a)
         assert after1 == before1
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_insert(self):
         a = [1,2,3]
@@ -326,6 +338,7 @@ class TestList(_TestSequenceBase):
         after1 = sys.getrefcount(a)
         assert after1 == before1
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_set_item_operator_equal(self):
         a = self.seq_type([1,2,3])
@@ -359,6 +372,7 @@ class TestList(_TestSequenceBase):
 
         after1 = sys.getrefcount(a)
         assert after1 == before1
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_set_item_operator_equal_created(self):
         code = """
@@ -372,6 +386,7 @@ class TestList(_TestSequenceBase):
         assert a == [1,2,3]
         # returned value should only have a single refcount
         assert sys.getrefcount(a) == 2
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_set_item_index_error(self):
         code = """
@@ -383,6 +398,7 @@ class TestList(_TestSequenceBase):
             assert 0
         except IndexError:
             pass
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_get_item_index_error(self):
         code = """
@@ -395,6 +411,7 @@ class TestList(_TestSequenceBase):
         except IndexError:
             pass
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_string_add_speed(self):
         N = 1000000
@@ -422,6 +439,7 @@ class TestList(_TestSequenceBase):
         t2 = time.time()
         print 'weave:', t2 - t1
         assert b == desired
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_int_add_speed(self):
         N = 1000000
