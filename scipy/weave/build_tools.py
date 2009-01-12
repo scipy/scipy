@@ -344,8 +344,8 @@ def gcc_exists(name = 'gcc'):
     result = 0
     cmd = [str(name), '-v']
     try:
-        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT, close_fds=True)
+        p = subprocess.Popen(cmd, True, stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT)
         str_result = p.stdout.read()
         #print str_result
         if 'Reading specs' in str_result:
@@ -364,7 +364,7 @@ def msvc_exists():
     result = 0
     try:
         p = subprocess.Popen(['cl'], shell=True, stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT, close_fds=True)
+                stderr=subprocess.STDOUT)
         str_result = p.stdout.read()
         #print str_result
         if 'Microsoft' in str_result:
@@ -387,7 +387,7 @@ if os.name == 'nt':
     def run_command(command):
         """ not sure how to get exit status on nt. """
         p = subprocess.Popen(['cl'], shell=True, stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT, close_fds=True)
+                stderr=subprocess.STDOUT)
         text = p.stdout.read()
         return 0, text
 else:
@@ -465,7 +465,7 @@ if sys.platform == 'win32':
             if self.gcc_version is None:
                 import re
                 p = subprocess.Popen(['gcc', ' -dumpversion'], shell=True,
-                        stdout=subprocess.PIPE, close_fds=True)
+                        stdout=subprocess.PIPE)
                 out_string = p.stdout.read()
                 result = re.search('(\d+\.\d+)',out_string)
                 if result:
