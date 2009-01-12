@@ -13,6 +13,7 @@ class TestObjectConstruct(TestCase):
     # Check that construction from basic types is allowed and have correct
     # reference counts
     #------------------------------------------------------------------------
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_int(self):
         # strange int value used to try and make sure refcount is 2.
@@ -23,6 +24,7 @@ class TestObjectConstruct(TestCase):
         res = inline_tools.inline(code)
         assert_equal(sys.getrefcount(res),2)
         assert_equal(res,1001)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_float(self):
         code = """
@@ -32,6 +34,7 @@ class TestObjectConstruct(TestCase):
         res = inline_tools.inline(code)
         assert_equal(sys.getrefcount(res),2)
         assert_equal(res,1.0)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_double(self):
         code = """
@@ -41,6 +44,7 @@ class TestObjectConstruct(TestCase):
         res = inline_tools.inline(code)
         assert_equal(sys.getrefcount(res),2)
         assert_equal(res,1.0)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_complex(self):
         code = """
@@ -51,6 +55,7 @@ class TestObjectConstruct(TestCase):
         res = inline_tools.inline(code)
         assert_equal(sys.getrefcount(res),2)
         assert_equal(res,1.0+1.0j)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_string(self):
         code = """
@@ -61,6 +66,7 @@ class TestObjectConstruct(TestCase):
         assert_equal(sys.getrefcount(res),2)
         assert_equal(res,"hello")
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_std_string(self):
         code = """
@@ -76,6 +82,7 @@ class TestObjectPrint(TestCase):
     #------------------------------------------------------------------------
     # Check the object print protocol.
     #------------------------------------------------------------------------
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_stringio(self):
         import cStringIO
@@ -88,7 +95,8 @@ class TestObjectPrint(TestCase):
         print file_imposter.getvalue()
         assert_equal(file_imposter.getvalue(),"'how now brown cow'")
 
-##    @dec.slow
+##    @dec.knownfailureif(sys.platform=='win32')
+    @dec.slow
 ##    def test_failure(self):
 ##        code = """
 ##               FILE* file = 0;
@@ -103,6 +111,7 @@ class TestObjectPrint(TestCase):
 
 
 class TestObjectCast(TestCase):
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_int_cast(self):
         code = """
@@ -110,6 +119,7 @@ class TestObjectCast(TestCase):
                int raw_val = val;
                """
         inline_tools.inline(code)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_double_cast(self):
         code = """
@@ -117,6 +127,7 @@ class TestObjectCast(TestCase):
                double raw_val = val;
                """
         inline_tools.inline(code)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_float_cast(self):
         code = """
@@ -124,6 +135,7 @@ class TestObjectCast(TestCase):
                float raw_val = val;
                """
         inline_tools.inline(code)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_complex_cast(self):
         code = """
@@ -132,6 +144,7 @@ class TestObjectCast(TestCase):
                std::complex<double> raw_val = val;
                """
         inline_tools.inline(code)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_string_cast(self):
         code = """
@@ -154,6 +167,7 @@ class Foo:
 #        return "b"
 
 class TestObjectHasattr(TestCase):
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_string(self):
         a = Foo()
@@ -163,6 +177,7 @@ class TestObjectHasattr(TestCase):
                """
         res = inline_tools.inline(code,['a'])
         assert res
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_std_string(self):
         a = Foo()
@@ -173,6 +188,7 @@ class TestObjectHasattr(TestCase):
                """
         res = inline_tools.inline(code,['a','attr_name'])
         assert res
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_string_fail(self):
         a = Foo()
@@ -182,6 +198,7 @@ class TestObjectHasattr(TestCase):
                """
         res = inline_tools.inline(code,['a'])
         assert not res
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_inline(self):
         """ THIS NEEDS TO MOVE TO THE INLINE TEST SUITE
@@ -204,6 +221,7 @@ class TestObjectHasattr(TestCase):
             print 'before, after, after2:', before, after, after2
             pass
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_func(self):
         a = Foo()
@@ -227,10 +245,12 @@ class TestObjectAttr(TestCase):
         after = sys.getrefcount(a.b)
         assert_equal(after,before)
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_char(self):
         self.generic_attr('return_val = a.attr("b");')
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_char_fail(self):
         try:
@@ -238,10 +258,12 @@ class TestObjectAttr(TestCase):
         except AttributeError:
             pass
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_string(self):
         self.generic_attr('return_val = a.attr(std::string("b"));')
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_string_fail(self):
         try:
@@ -249,6 +271,7 @@ class TestObjectAttr(TestCase):
         except AttributeError:
             pass
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_obj(self):
         code = """
@@ -257,6 +280,7 @@ class TestObjectAttr(TestCase):
                """
         self.generic_attr(code,['a'])
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_obj_fail(self):
         try:
@@ -268,6 +292,7 @@ class TestObjectAttr(TestCase):
         except AttributeError:
             pass
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_attr_call(self):
         a = Foo()
@@ -294,18 +319,23 @@ class TestObjectSetAttr(TestCase):
         res = inline_tools.inline(code,args)
         assert_equal(a.b,desired)
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_existing_char(self):
         self.generic_existing('a.set_attr("b","hello");',"hello")
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_new_char(self):
         self.generic_new('a.set_attr("b","hello");',"hello")
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_existing_string(self):
         self.generic_existing('a.set_attr("b",std::string("hello"));',"hello")
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_new_string(self):
         self.generic_new('a.set_attr("b",std::string("hello"));',"hello")
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_existing_object(self):
         code = """
@@ -313,6 +343,7 @@ class TestObjectSetAttr(TestCase):
                a.set_attr("b",obj);
                """
         self.generic_existing(code,"hello")
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_new_object(self):
         code = """
@@ -320,6 +351,7 @@ class TestObjectSetAttr(TestCase):
                a.set_attr("b",obj);
                """
         self.generic_new(code,"hello")
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_new_fail(self):
         try:
@@ -331,12 +363,15 @@ class TestObjectSetAttr(TestCase):
         except:
             pass
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_existing_int(self):
         self.generic_existing('a.set_attr("b",1);',1)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_existing_double(self):
         self.generic_existing('a.set_attr("b",1.0);',1.0)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_existing_complex(self):
         code = """
@@ -344,9 +379,11 @@ class TestObjectSetAttr(TestCase):
                a.set_attr("b",obj);
                """
         self.generic_existing(code,1+1j)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_existing_char1(self):
         self.generic_existing('a.set_attr("b","hello");',"hello")
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_existing_string1(self):
         code = """
@@ -363,9 +400,11 @@ class TestObjectDel(TestCase):
         res = inline_tools.inline(code,args)
         assert not hasattr(a,"b")
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_char(self):
         self.generic('a.del("b");')
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_string(self):
         code = """
@@ -373,6 +412,7 @@ class TestObjectDel(TestCase):
                a.del(name);
                """
         self.generic(code)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_object(self):
         code = """
@@ -382,11 +422,13 @@ class TestObjectDel(TestCase):
         self.generic(code)
 
 class TestObjectCmp(TestCase):
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_equal(self):
         a,b = 1,1
         res = inline_tools.inline('return_val = (a == b);',['a','b'])
         assert_equal(res,(a == b))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_equal_objects(self):
         class Foo:
@@ -397,56 +439,67 @@ class TestObjectCmp(TestCase):
         a,b = Foo(1),Foo(2)
         res = inline_tools.inline('return_val = (a == b);',['a','b'])
         assert_equal(res,(a == b))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_lt(self):
         a,b = 1,2
         res = inline_tools.inline('return_val = (a < b);',['a','b'])
         assert_equal(res,(a < b))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_gt(self):
         a,b = 1,2
         res = inline_tools.inline('return_val = (a > b);',['a','b'])
         assert_equal(res,(a > b))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_gte(self):
         a,b = 1,2
         res = inline_tools.inline('return_val = (a >= b);',['a','b'])
         assert_equal(res,(a >= b))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_lte(self):
         a,b = 1,2
         res = inline_tools.inline('return_val = (a <= b);',['a','b'])
         assert_equal(res,(a <= b))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_not_equal(self):
         a,b = 1,2
         res = inline_tools.inline('return_val = (a != b);',['a','b'])
         assert_equal(res,(a != b))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_int(self):
         a = 1
         res = inline_tools.inline('return_val = (a == 1);',['a'])
         assert_equal(res,(a == 1))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_int2(self):
         a = 1
         res = inline_tools.inline('return_val = (1 == a);',['a'])
         assert_equal(res,(a == 1))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_unsigned_long(self):
         a = 1
         res = inline_tools.inline('return_val = (a == (unsigned long)1);',['a'])
         assert_equal(res,(a == 1))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_double(self):
         a = 1
         res = inline_tools.inline('return_val = (a == 1.0);',['a'])
         assert_equal(res,(a == 1.0))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_char(self):
         a = "hello"
         res = inline_tools.inline('return_val = (a == "hello");',['a'])
         assert_equal(res,(a == "hello"))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_std_string(self):
         a = "hello"
@@ -458,6 +511,7 @@ class TestObjectCmp(TestCase):
         assert_equal(res,(a == "hello"))
 
 class TestObjectRepr(TestCase):
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_repr(self):
         class Foo:
@@ -475,6 +529,7 @@ class TestObjectRepr(TestCase):
         assert_equal(res,"repr return")
 
 class TestObjectStr(TestCase):
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_str(self):
         class Foo:
@@ -494,6 +549,7 @@ class TestObjectStr(TestCase):
 
 class TestObjectUnicode(TestCase):
     # This ain't going to win awards for test of the year...
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_unicode(self):
         class Foo:
@@ -511,6 +567,7 @@ class TestObjectUnicode(TestCase):
         assert_equal(res,"unicode")
 
 class TestObjectIsCallable(TestCase):
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_true(self):
         class Foo:
@@ -519,6 +576,7 @@ class TestObjectIsCallable(TestCase):
         a= Foo()
         res = inline_tools.inline('return_val = a.is_callable();',['a'])
         assert res
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_false(self):
         class Foo:
@@ -528,6 +586,7 @@ class TestObjectIsCallable(TestCase):
         assert not res
 
 class TestObjectCall(TestCase):
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_noargs(self):
         def Foo():
@@ -535,6 +594,7 @@ class TestObjectCall(TestCase):
         res = inline_tools.inline('return_val = Foo.call();',['Foo'])
         assert_equal(res,(1,2,3))
         assert_equal(sys.getrefcount(res),3) # should be 2?
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_args(self):
         def Foo(val1,val2):
@@ -548,6 +608,7 @@ class TestObjectCall(TestCase):
         res = inline_tools.inline(code,['Foo'])
         assert_equal(res,(1,"hello"))
         assert_equal(sys.getrefcount(res),2)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_args_kw(self):
         def Foo(val1,val2,val3=1):
@@ -563,6 +624,7 @@ class TestObjectCall(TestCase):
         res = inline_tools.inline(code,['Foo'])
         assert_equal(res,(1,"hello",3))
         assert_equal(sys.getrefcount(res),2)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_noargs_with_args(self):
         # calling a function that does take args with args
@@ -588,6 +650,7 @@ class TestObjectCall(TestCase):
         assert_equal(second,third)
 
 class TestObjectMcall(TestCase):
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_noargs(self):
         a = Foo()
@@ -599,6 +662,7 @@ class TestObjectMcall(TestCase):
         assert_equal(res,"bar results")
         second = sys.getrefcount(res)
         assert_equal(first,second)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_args(self):
         a = Foo()
@@ -611,6 +675,7 @@ class TestObjectMcall(TestCase):
         res = inline_tools.inline(code,['a'])
         assert_equal(res,(1,"hello"))
         assert_equal(sys.getrefcount(res),2)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_args_kw(self):
         a = Foo()
@@ -625,6 +690,7 @@ class TestObjectMcall(TestCase):
         res = inline_tools.inline(code,['a'])
         assert_equal(res,(1,"hello",3))
         assert_equal(sys.getrefcount(res),2)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_std_noargs(self):
         a = Foo()
@@ -637,6 +703,7 @@ class TestObjectMcall(TestCase):
         assert_equal(res,"bar results")
         second = sys.getrefcount(res)
         assert_equal(first,second)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_std_args(self):
         a = Foo()
@@ -650,6 +717,7 @@ class TestObjectMcall(TestCase):
         res = inline_tools.inline(code,['a','method'])
         assert_equal(res,(1,"hello"))
         assert_equal(sys.getrefcount(res),2)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_std_args_kw(self):
         a = Foo()
@@ -665,6 +733,7 @@ class TestObjectMcall(TestCase):
         res = inline_tools.inline(code,['a','method'])
         assert_equal(res,(1,"hello",3))
         assert_equal(sys.getrefcount(res),2)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_noargs_with_args(self):
         # calling a function that does take args with args
@@ -689,6 +758,7 @@ class TestObjectMcall(TestCase):
         assert_equal(second,third)
 
 class TestObjectHash(TestCase):
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_hash(self):
         class Foo:
@@ -700,6 +770,7 @@ class TestObjectHash(TestCase):
         assert_equal(res,123)
 
 class TestObjectIsTrue(TestCase):
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_true(self):
         class Foo:
@@ -707,6 +778,7 @@ class TestObjectIsTrue(TestCase):
         a= Foo()
         res = inline_tools.inline('return_val = a.is_true();',['a'])
         assert_equal(res,1)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_false(self):
         a= None
@@ -714,6 +786,7 @@ class TestObjectIsTrue(TestCase):
         assert_equal(res,0)
 
 class TestObjectType(TestCase):
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type(self):
         class Foo:
@@ -723,6 +796,7 @@ class TestObjectType(TestCase):
         assert_equal(res,type(a))
 
 class TestObjectSize(TestCase):
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_size(self):
         class Foo:
@@ -731,6 +805,7 @@ class TestObjectSize(TestCase):
         a= Foo()
         res = inline_tools.inline('return_val = a.size();',['a'])
         assert_equal(res,len(a))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_len(self):
         class Foo:
@@ -739,6 +814,7 @@ class TestObjectSize(TestCase):
         a= Foo()
         res = inline_tools.inline('return_val = a.len();',['a'])
         assert_equal(res,len(a))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_length(self):
         class Foo:
@@ -750,6 +826,7 @@ class TestObjectSize(TestCase):
 
 from UserList import UserList
 class TestObjectSetItemOpIndex(TestCase):
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_list_refcount(self):
         a = UserList([1,2,3])
@@ -758,30 +835,35 @@ class TestObjectSetItemOpIndex(TestCase):
         before1 = sys.getrefcount(a)
         after1 = sys.getrefcount(a)
         assert_equal(after1,before1)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_set_int(self):
         a = UserList([1,2,3])
         inline_tools.inline("a[1] = 1234;",['a'])
         assert_equal(sys.getrefcount(a[1]),2)
         assert_equal(a[1],1234)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_set_double(self):
         a = UserList([1,2,3])
         inline_tools.inline("a[1] = 123.0;",['a'])
         assert_equal(sys.getrefcount(a[1]),2)
         assert_equal(a[1],123.0)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_set_char(self):
         a = UserList([1,2,3])
         inline_tools.inline('a[1] = "bubba";',['a'])
         assert_equal(sys.getrefcount(a[1]),2)
         assert_equal(a[1],'bubba')
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_set_string(self):
         a = UserList([1,2,3])
         inline_tools.inline('a[1] = std::string("sissy");',['a'])
         assert_equal(sys.getrefcount(a[1]),2)
         assert_equal(a[1],'sissy')
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_set_string(self):
         a = UserList([1,2,3])
@@ -791,6 +873,7 @@ class TestObjectSetItemOpIndex(TestCase):
 
 from UserDict import UserDict
 class TestObjectSetItemOpKey(TestCase):
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_key_refcount(self):
         a = UserDict()
@@ -826,6 +909,7 @@ class TestObjectSetItemOpKey(TestCase):
         assert_equal(val[0] + 1, val[1])
         assert_equal(val[1], val[2])
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_set_double_exists(self):
         a = UserDict()
@@ -840,6 +924,7 @@ class TestObjectSetItemOpKey(TestCase):
         assert_equal(sys.getrefcount(key),5)
         assert_equal(sys.getrefcount(a[key]),2)
         assert_equal(a[key],123.0)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_set_double_new(self):
         a = UserDict()
@@ -848,6 +933,7 @@ class TestObjectSetItemOpKey(TestCase):
         assert_equal(sys.getrefcount(key),4) # should be 3
         assert_equal(sys.getrefcount(a[key]),2)
         assert_equal(a[key],123.0)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_set_complex(self):
         a = UserDict()
@@ -856,6 +942,7 @@ class TestObjectSetItemOpKey(TestCase):
         assert_equal(sys.getrefcount(key),4) # should be 3
         assert_equal(sys.getrefcount(a[key]),2)
         assert_equal(a[key],1234)
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_set_char(self):
         a = UserDict()
@@ -863,6 +950,7 @@ class TestObjectSetItemOpKey(TestCase):
         assert_equal(sys.getrefcount(a["hello"]),2)
         assert_equal(a["hello"],123.0)
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_set_class(self):
         a = UserDict()
@@ -882,6 +970,7 @@ class TestObjectSetItemOpKey(TestCase):
         assert_equal(sys.getrefcount(key),4)
         assert_equal(sys.getrefcount(a[key]),2)
         assert_equal(a[key],'bubba')
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_set_from_member(self):
         a = UserDict()
