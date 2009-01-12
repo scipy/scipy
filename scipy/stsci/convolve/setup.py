@@ -14,6 +14,7 @@ def configuration(parent_package='',top_path=None):
                          sources=["src/_lineshapemodule.c"],
                          define_macros = [('NUMPY', '1')],
                          include_dirs = [numpy.get_numarray_include()])
+    config.add_data_dir('tests')
     return config
 
 if __name__ == "__main__":
