@@ -38,19 +38,24 @@ class NumpyComplexScalarConverter(TestCase):
     def setUp(self):
         self.converter = numpy_complex_scalar_converter()
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_string(self):
         assert( not self.converter.type_match('string') )
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_int(self):
         assert( not self.converter.type_match(5))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_float(self):
         assert( not self.converter.type_match(5.))
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_type_match_complex128(self):
         assert(self.converter.type_match(numpy.complex128(5.+1j)))
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_complex_var_in(self):
         mod_name = sys._getframe().f_code.co_name + self.compiler
@@ -75,6 +80,7 @@ class NumpyComplexScalarConverter(TestCase):
         except TypeError:
             pass
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_complex_return(self):
         mod_name = sys._getframe().f_code.co_name + self.compiler
@@ -93,6 +99,7 @@ class NumpyComplexScalarConverter(TestCase):
         c = test(b)
         assert( c == 3.+3j)
 
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_inline(self):
         a = numpy.complex128(1+1j)

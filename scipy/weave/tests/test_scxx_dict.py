@@ -13,6 +13,7 @@ class TestDictConstruct(TestCase):
     # Check that construction from basic types is allowed and have correct
     # reference counts
     #------------------------------------------------------------------------
+    @dec.knownfailureif(sys.platform=='win32')
     @dec.slow
     def test_empty(self):
         # strange int value used to try and make sure refcount is 2.
