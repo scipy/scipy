@@ -1,4 +1,4 @@
-# Last Change: Sat Nov 01 10:00 PM 2008 J
+# Last Change: Sat Jan 10 05:00 PM 2009 J
 # vim:syntax=python
 from os.path import join as pjoin
 
@@ -26,7 +26,8 @@ env.PrependUnique(LIBS = ['fftpack', 'dfftpack'])
 env.PrependUnique(LIBPATH = ['.'])
 
 # Build _fftpack
-src = ['src/zfft.c','src/drfft.c','src/zrfft.c', 'src/zfftnd.c', 'fftpack.pyf']
+src = ['src/zfft.c','src/drfft.c','src/zrfft.c', 'src/zfftnd.c', 'src/dct.c',
+    'fftpack.pyf']
 env.NumpyPythonExtension('_fftpack', src)
 
 # Build convolve
