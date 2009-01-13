@@ -520,19 +520,31 @@ def correlate(input, weights, output = None, mode = 'reflect', cval = 0.0,
 @docfiller
 def convolve(input, weights, output = None, mode = 'reflect', cval = 0.0,
              origin = 0):
-    """Multi-dimensional convolution.
+    """
+    Multi-dimensional convolution.
 
     The array is convolved with the given kernel.
 
     Parameters
     ----------
-    %(input)s
+    input : array-like
+        input array to filter
     weights : ndarray
         array of weights, same number of dimensions as input
-    %(output)s
-    %(mode)s
-    %(cval)s
-    %(origin)s
+    output : array, optional
+        The ``output`` parameter passes an array in which to store the
+        filter output.
+    mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
+        The ``mode`` parameter determines how the array borders are
+        handled, where ``cval`` is the value when mode is equal to
+        'constant'. Default is 'reflect'
+    cval : scalar, optional
+        Value to fill past edges of input if ``mode`` is 'constant'. Default
+        is 0.0
+    origin : scalar, optional
+        The ``origin`` parameter controls the placement of the filter.
+        Default 0
+
     """
     return _correlate_or_convolve(input, weights, output, mode, cval,
                                   origin, True)
@@ -859,16 +871,40 @@ def rank_filter(input, rank, size = None, footprint = None, output = None,
 @docfiller
 def median_filter(input, size = None, footprint = None, output = None,
       mode = "reflect", cval = 0.0, origin = 0):
-    """Calculates a multi-dimensional median filter.
+    """
+    Calculates a multi-dimensional median filter.
 
     Parameters
     ----------
-    %(input)s
-    %(size_foot)s
-    %(output)s
-    %(mode)s
-    %(cval)s
-    %(origin)s
+    input : array-like
+        input array to filter
+    size : scalar or tuple, optional
+        See footprint, below
+    footprint : array, optional
+        Either ``size`` or ``footprint`` must be defined.  ``size`` gives
+        the shape that is taken from the input array, at every element
+        position, to define the input to the filter function.
+        ``footprint`` is a boolean array that specifies (implicitly) a
+        shape, but also which of the elements within this shape will get
+        passed to the filter function.  Thus ``size=(n,m)`` is equivalent
+        to ``footprint=np.ones((n,m))``.  We adjust ``size`` to the number
+        of dimensions of the input array, so that, if the input array is
+        shape (10,10,10), and ``size`` is 2, then the actual size used is
+        (2,2,2).
+    output : array, optional
+        The ``output`` parameter passes an array in which to store the
+        filter output.
+    mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
+        The ``mode`` parameter determines how the array borders are
+        handled, where ``cval`` is the value when mode is equal to
+        'constant'. Default is 'reflect'
+    cval : scalar, optional
+        Value to fill past edges of input if ``mode`` is 'constant'. Default
+        is 0.0
+    origin : scalar, optional
+        The ``origin`` parameter controls the placement of the filter.
+        Default 0
+
     """
     return _rank_filter(input, 0, size, footprint, output, mode, cval,
                         origin, 'median')
