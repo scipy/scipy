@@ -1,8 +1,3 @@
-#!/usr/bin/env python
-#
-# Author:  Travis Oliphant 2000
-# Updated Sep. 2003 (fixed bugs --- tested to be accurate)
-
 """
 A collection of functions to find the weights and abscissas for
 Gaussian Quadrature.
@@ -14,30 +9,44 @@ corresponding weighting function over the interval.
 
 Many recursion relations for orthogonal polynomials are given:
 
-a1n f_n+1 (x) = (a2n + a3n x ) f_n (x) - a4n f_n-1 (x)
+.. math::
+
+    a1n f_{n+1} (x) = (a2n + a3n x ) f_n (x) - a4n f_{n-1} (x)
 
 The recursion relation of interest is
 
-P_n+1 (x) = (x - A_n) P_n (x) - B_n P_n-1 (x)
+.. math::
 
-where P has a different normalization than f.
+    P_{n+1} (x) = (x - A_n) P_n (x) - B_n P_{n-1} (x)
+
+where :math:`P` has a different normalization than :math:`f`.
 
 The coefficients can be found as:
 
-A_n = -a2n / a3n
+.. math::
 
-B_n = ( a4n / a3n sqrt(h_n-1 / h_n))**2
+    A_n = -a2n / a3n
+    \\qquad
+    B_n = ( a4n / a3n \\sqrt{h_n-1 / h_n})^2
 
-     where
-             h_n = int_a^b w(x) f_n(x)^2
+where
+
+.. math::
+
+    h_n = \\int_a^b w(x) f_n(x)^2
+
 assume:
-P_0(x) = 1
-P_-1(x) == 0
+
+.. math::
+
+    P_0 (x) = 1
+    \\qquad
+    P_{-1} (x) == 0
 
 For the mathematical background, see [golub.welsch-1969-mathcomp]_ and
 [abramowitz.stegun-1965]_.
 
-Functions:
+Functions::
 
   gen_roots_and_weights  -- Generic roots and weights.
   j_roots                -- Jacobi
@@ -66,7 +75,11 @@ Functions:
    Mathematical Functions: with Formulas, Graphs, and Mathematical
    Tables*. Gaithersburg, MD: National Bureau of Standards.
    http://www.math.sfu.ca/~cbm/aands/
+
 """
+#
+# Author:  Travis Oliphant 2000
+# Updated Sep. 2003 (fixed bugs --- tested to be accurate)
 
 # Scipy imports.
 import numpy as np
