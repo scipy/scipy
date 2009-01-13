@@ -7,7 +7,7 @@ from numpy.testing import assert_array_almost_equal
 
 from scipy.io import loadmat
 
-TDATA = loadmat(join(dirname(__file__), 'test.mat'), 
+TDATA = loadmat(join(dirname(__file__), 'test.mat'),
                 squeeze_me=True,  struct_as_record=True, mat_dtype=True)
 X = [TDATA['x%d' % i] for i in range(8)]
 Y = [TDATA['y%d' % i] for i in range(8)]
@@ -17,12 +17,12 @@ def direct_fft_dct(x, matlab=False):
 
     The DCT type II is defined as (matlab=False):
 
-        \forall u \in 0...N-1, 
+        \forall u \in 0...N-1,
         dct(u) = 2 * sum_{i=0}^{N-1}{f(i)cos((i + 0.5)\pi u/N}
 
     Or (matlab=True)
 
-        \forall u \in 0...N-1, 
+        \forall u \in 0...N-1,
         dct(u) = a(u) sum_{i=0}^{N-1}{f(i)cos((i + 0.5)\pi u/N}
 
     Where a(0) = sqrt(1/N), a(u) = sqrt(2/N) for u > 0
@@ -44,7 +44,7 @@ def direct_fft_dct(x, matlab=False):
 
 def direct_dct(x):
     """Direct implementation (O(n^2)) of dct II.
-    
+
     dct(u) = 2 * sum_{i=0}^{N-1}{f(i)cos((i + 0.5)\pi u/N}
 
     Note that it is not 'normalized'
@@ -61,12 +61,12 @@ def fdct(x):
     """Compute a 'Fast' Discrete Cosine Transform, type II, using a N point fft
     instead of a direct 4n point DFT
 
-        \forall u \in 0...N-1, 
+        \forall u \in 0...N-1,
         dct(u) = sum_{i=0}^{N-1}{f(i)cos((i + 0.5)\pi u/N}
 
     See 'A Fast Cosine Transform in One and Two Dimensions', by J. Makhoul, in
     IEEE Transactions on acoustics, speech and signal processing.
-    
+
     Note that it is not 'normalized'
     """
     x = np.asarray(x)
