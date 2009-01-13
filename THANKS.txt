@@ -26,7 +26,9 @@ Ed Schofield for Maximum entropy and Monte Carlo modules, help with
 Travis Vaught for numerous contributions to annual conference and community
     web-site and the initial work on stats module clean up.
 Jeff Whitaker for Mac OS X support.
-David Cournapeau for bug-fixes, refactor of fftpack and cluster, numscons build.
+David Cournapeau for bug-fixes, refactoring of fftpack and cluster,
+    implementing the numscons build, building Windows binaries and
+    adding single precision FFT.
 Damian Eads for hierarchical clustering, dendrogram plotting,
     distance functions in spatial package, vq documentation.
 Anne Archibald for kd-trees and nearest neighbor in scipy.spatial.
@@ -55,6 +57,12 @@ Per Brodtkorb for improvements to stats distributions.
 Neilen Marais for testing and bug-fixing in the ARPACK wrappers.
 Johannes Loehnert and Bart Vandereycken for fixes in the linalg
     module.
+David Huard for improvements to the interpolation interface.
+David Warde-Farley for converting the ndimage docs to ReST.
+Uwe Schmitt for wrapping non-negative least-squares.
+Ondrej Certik for Debian packaging.
+Paul Ivanov for porting Numeric-style C code to the new NumPy API.
+Ariel Rokem for contributions on percentileofscore fixes and tests.
 
 
 Institutions
