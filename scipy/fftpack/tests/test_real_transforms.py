@@ -8,19 +8,26 @@ from numpy.testing import assert_array_almost_equal
 from scipy.io import loadmat
 
 TDATA = loadmat(join(dirname(__file__), 'test.mat'), 
-                squeeze_me=True,  struct_as_record=True)
+                squeeze_me=True,  struct_as_record=True, mat_dtype=True)
 X = [TDATA['x%d' % i] for i in range(8)]
 Y = [TDATA['y%d' % i] for i in range(8)]
 
-def direct_dct(x):
+def direct_fft_dct(x, matlab=False):
     """Compute a Discrete Cosine Transform, type II.
 
-    The DCT type II is defined as:
+    The DCT type II is defined as (matlab=False):
 
         \forall u \in 0...N-1, 
-        dct(u) = a(u) sum_{i=0}^{N-1}{f(i)cos((i + 0.5)\pi u}
+        dct(u) = 2 * sum_{i=0}^{N-1}{f(i)cos((i + 0.5)\pi u/N}
 
-    Where a(0) = sqrt(1/(4N)), a(u) = sqrt(1/(2N)) for u > 0
+    Or (matlab=True)
+
+        \forall u \in 0...N-1, 
+        dct(u) = a(u) sum_{i=0}^{N-1}{f(i)cos((i + 0.5)\pi u/N}
+
+    Where a(0) = sqrt(1/N), a(u) = sqrt(2/N) for u > 0
+
+    This is the exact same formula as Matlab.
     """
     x = np.asarray(x)
     if not np.isrealobj(x):
@@ -30,13 +37,74 @@ def direct_dct(x):
     y[1:2*n:2] = x
     y[2*n+1::2] = x[-1::-1]
     y = np.real(numfft(y))[:n]
-    y[0] *= np.sqrt(.25 / n)
-    y[1:] *= np.sqrt(.5 / n)
+    if matlab:
+        y[0] *= np.sqrt(.25 / n)
+        y[1:] *= np.sqrt(.5 / n)
     return y
 
-def test_ref():
+def direct_dct(x):
+    """Direct implementation (O(n^2)) of dct II.
+    
+    dct(u) = 2 * sum_{i=0}^{N-1}{f(i)cos((i + 0.5)\pi u/N}
+
+    Note that it is not 'normalized'
+    """
+    n = x.size
+    a = np.empty((n, n), dtype = x.dtype)
+    for i in xrange(n):
+        for j in xrange(n):
+            a[i, j] = x[j] * np.cos(np.pi * (0.5 + j) * i / n)
+
+    return 2 * a.sum(axis = 1)
+
+def fdct(x):
+    """Compute a 'Fast' Discrete Cosine Transform, type II, using a N point fft
+    instead of a direct 4n point DFT
+
+        \forall u \in 0...N-1, 
+        dct(u) = sum_{i=0}^{N-1}{f(i)cos((i + 0.5)\pi u/N}
+
+    See 'A Fast Cosine Transform in One and Two Dimensions', by J. Makhoul, in
+    IEEE Transactions on acoustics, speech and signal processing.
+    
+    Note that it is not 'normalized'
+    """
+    x = np.asarray(x)
+    n = x.size
+    v = np.empty(x.size, x.dtype)
+    if (n/2) * 2  == n:
+        iseven = True
+    else:
+        iseven = False
+    cut = (n-1)/2 + 1
+    v[:cut] = x[::2]
+    if iseven:
+        v[cut:] = x[-1:0:-2]
+    else:
+        v[cut:] = x[-2::-2]
+    t = 2 *  numfft(v) *  np.exp(-1j * np.pi * 0.5 / n * np.linspace(0, n-1, n))
+    v[:n/2+1] = np.real(t)[:n/2+1]
+    if iseven:
+        v[n/2+1:] = -np.imag(t)[n/2-1:0:-1]
+    else:
+        v[n/2+1:] = -np.imag(t)[n/2:0:-1]
+    return v
+
+def test_refs():
     for i in range(len(X)):
-        assert_array_almost_equal(direct_dct(X[i]), Y[i])
+        assert_array_almost_equal(direct_fft_dct(X[i], matlab=True), Y[i])
+        assert_array_almost_equal(direct_fft_dct(X[i], matlab=False), direct_dct(X[i]))
+
+    for i in range(len(X)):
+        x = X[i]
+        y = direct_fft_dct(x, matlab=True)
+        y[0] *= np.sqrt(x.size*4)
+        y[1:] *= np.sqrt(x.size*2)
+        assert_array_almost_equal(y, direct_dct(x))
+
+def test_fdct():
+    for i in range(len(X)):
+        assert_array_almost_equal(direct_dct(X[i]), fdct(X[i]))
 
 if __name__ == "__main__":
     np.testing.run_module_suite()
