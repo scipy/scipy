@@ -12,7 +12,7 @@ TDATA = loadmat(join(dirname(__file__), 'test.mat'),
 X = [TDATA['x%d' % i] for i in range(8)]
 Y = [TDATA['y%d' % i] for i in range(8)]
 
-def direct_fft_dct(x, matlab=False):
+def direct_fft_dct2(x, matlab=False):
     """Compute a Discrete Cosine Transform, type II.
 
     The DCT type II is defined as (matlab=False):
@@ -42,7 +42,7 @@ def direct_fft_dct(x, matlab=False):
         y[1:] *= np.sqrt(.5 / n)
     return y
 
-def direct_dct(x):
+def direct_dct2(x):
     """Direct implementation (O(n^2)) of dct II.
 
     dct(u) = 2 * sum_{i=0}^{N-1}{f(i)cos((i + 0.5)\pi u/N}
@@ -57,7 +57,7 @@ def direct_dct(x):
 
     return 2 * a.sum(axis = 1)
 
-def fdct(x):
+def fdct2(x):
     """Compute a 'Fast' Discrete Cosine Transform, type II, using a N point fft
     instead of a direct 4n point DFT
 
@@ -92,19 +92,19 @@ def fdct(x):
 
 def test_refs():
     for i in range(len(X)):
-        assert_array_almost_equal(direct_fft_dct(X[i], matlab=True), Y[i])
-        assert_array_almost_equal(direct_fft_dct(X[i], matlab=False), direct_dct(X[i]))
+        assert_array_almost_equal(direct_fft_dct2(X[i], matlab=True), Y[i])
+        assert_array_almost_equal(direct_fft_dct2(X[i], matlab=False), direct_dct2(X[i]))
 
     for i in range(len(X)):
         x = X[i]
-        y = direct_fft_dct(x, matlab=True)
+        y = direct_fft_dct2(x, matlab=True)
         y[0] *= np.sqrt(x.size*4)
         y[1:] *= np.sqrt(x.size*2)
-        assert_array_almost_equal(y, direct_dct(x))
+        assert_array_almost_equal(y, direct_dct2(x))
 
-def test_fdct():
+def test_fdct2():
     for i in range(len(X)):
-        assert_array_almost_equal(direct_dct(X[i]), fdct(X[i]))
+        assert_array_almost_equal(direct_dct2(X[i]), fdct2(X[i]))
 
 if __name__ == "__main__":
     np.testing.run_module_suite()
