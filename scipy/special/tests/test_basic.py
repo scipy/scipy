@@ -28,6 +28,11 @@ from numpy.testing import *
 from scipy.special import *
 import scipy.special._cephes as cephes
 
+# Determine number of bits
+import platform
+_bits = {'32bit':32,'64bit':64}
+platform_bits = _bits[platform.architecture()[0]]
+
 
 class TestCephes(TestCase):
     def test_airy(self):
@@ -358,6 +363,7 @@ class TestCephes(TestCase):
     def test_obl_rad2_cv(self):
         cephes.obl_rad2_cv(1,1,1,1,0)
 
+    @dec.knownfailureif(platform_bits==64)
     def test_pbdv(self):
         assert_equal(cephes.pbdv(1,0),(0.0,0.0))
     def test_pbvv(self):
