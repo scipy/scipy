@@ -31,6 +31,13 @@ def dct1(x, n=None):
 def dct2(x, n=None):
     """
     Return Discrete Cosine Transform (type II) of arbitrary type sequence x.
+    There are several definitions, we use the following:
+
+                  N-1
+        y[k] = 2* sum x[n]*cos(pi*k*(2n+1)/(2*N)), 0 <= k < N.
+                  n=0
+
+    In particular, we do not normalize it by the number of points of the DCT N.
 
     Parameters
     ----------
@@ -42,6 +49,14 @@ def dct2(x, n=None):
     Returns
     -------
     y : real ndarray
+
+    References
+    ----------
+
+    http://en.wikipedia.org/wiki/Discrete_cosine_transform
+
+    'A Fast Cosine Transform in One and Two Dimensions', by J. Makhoul, in IEEE
+    Transactions on acoustics, speech and signal processing.
     """
     return _dct(x, 2, n)
 
