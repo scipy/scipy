@@ -11,7 +11,7 @@ import atexit
 atexit.register(_fftpack.destroy_dct1_cache)
 atexit.register(_fftpack.destroy_dct2_cache)
 
-def dct1(x, n=None):
+def dct1(x, n=None, axis=-1):
     """
     Return Discrete Cosine Transform (type I) of arbitrary type sequence x.
 
@@ -21,14 +21,16 @@ def dct1(x, n=None):
         input array.
     n : int, optional
         Length of the transform.
+    axis : int, optional
+        axis over which to compute the transform.
 
     Returns
     -------
     y : real ndarray
     """
-    return _dct(x, 1, n)
+    return _dct(x, 1, n, axis)
 
-def dct2(x, n=None):
+def dct2(x, n=None, axis=-1):
     """
     Return Discrete Cosine Transform (type II) of arbitrary type sequence x.
     There are several definitions, we use the following:
@@ -45,6 +47,8 @@ def dct2(x, n=None):
         input array.
     n : int, optional
         Length of the transform.
+    axis : int, optional
+        axis over which to compute the transform.
 
     Returns
     -------
@@ -58,7 +62,7 @@ def dct2(x, n=None):
     'A Fast Cosine Transform in One and Two Dimensions', by J. Makhoul, in IEEE
     Transactions on acoustics, speech and signal processing.
     """
-    return _dct(x, 2, n)
+    return _dct(x, 2, n, axis)
 
 def _dct(x, type, n=None, axis=-1, overwrite_x=0):
     """
@@ -98,9 +102,9 @@ def _dct(x, type, n=None, axis=-1, overwrite_x=0):
 
     if axis == -1 or axis == len(tmp.shape) - 1:
         return f(tmp, n, 0, overwrite_x)
-    else:
-        raise NotImplementedError("Axis arg not yet implemented")
+    #else:
+    #    raise NotImplementedError("Axis arg not yet implemented")
 
-    #tmp = swapaxes(tmp, axis, -1)
-    #tmp = work_function(tmp,n,1,0,overwrite_x)
-    #return swapaxes(tmp, axis, -1)
+    tmp = np.swapaxes(tmp, axis, -1)
+    tmp = f(tmp, n, 0, overwrite_x)
+    return np.swapaxes(tmp, axis, -1)

@@ -122,6 +122,19 @@ class _TestDCTIIBase(TestCase):
                     "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
             assert_array_almost_equal(y, yr)
 
+    def test_axis(self):
+        nt = 2
+        for i in [7, 8, 9, 16, 32, 64]:
+            x = np.random.randn(nt, i)
+            y = dct2(x)
+            for j in range(nt):
+                assert_array_almost_equal(y[j], dct2(x[j]))
+
+            x = x.T
+            y = dct2(x, axis=0)
+            for j in range(nt):
+                assert_array_almost_equal(y[:,j], dct2(x[:,j]))
+
 class TestDCTIIDouble(_TestDCTIIBase):
     def setUp(self):
         self.rdt = np.double
