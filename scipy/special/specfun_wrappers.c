@@ -212,27 +212,40 @@ Py_complex cerf_wrap(Py_complex z) {
 
 double struve_wrap(double v, double x) {
   double out;
+  double rem;
   int flag=0;
 
-  if ((v<-8.0) || (v>12.5)) {
-    return cephes_struve(v, x);  /* from cephes */
+  if (x < 0) {
+      rem = fmod(v, 2.0);
+      if (rem == 0) {
+          x = -x;
+          flag = 1;
+      } else if (rem == 1 || rem == -1) {
+          x = -x;
+          flag = 0;
+      } else {
+          /* non-integer v and x < 0 => complex-valued */
+          return NAN;
+      }
   }
-  if (v==0.0) {
-    if (x < 0) {x = -x; flag=1;}
+
+  if ((v<-8.0) || (v>12.5)) {
+    out = cephes_struve(v, x);  /* from cephes */
+  }
+  else if (v==0.0) {
     F_FUNC(stvh0,STVH0)(&x,&out);
     CONVINF(out);
-    if (flag) out = -out;
-    return out;
   }
-  if (v==1.0) {
-    if (x < 0) x=-x;
+  else if (v==1.0) {
     F_FUNC(stvh1,STVH1)(&x,&out);
     CONVINF(out);
-    return out;
   }
-  F_FUNC(stvhv,STVHV)(&v,&x,&out);
-  CONVINF(out);
-  return out;  
+  else {
+    F_FUNC(stvhv,STVHV)(&v,&x,&out);
+    CONVINF(out);
+  }
+  if (flag) out = -out;
+  return out;
 }
 
 double modstruve_wrap(double v, double x) {

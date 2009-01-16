@@ -2014,7 +2014,7 @@ class TestStruve(object):
 
     def test_vs_series(self):
         """Check Struve function versus its power series"""
-        for v in [-10, -7.99, -3.4, -1, 0, 1, 3.4, 12.49, 16]:
+        for v in [-20, -10, -7.99, -3.4, -1, 0, 1, 3.4, 12.49, 16]:
             for z in [1, 10, 19, 21, 30]:
                 value, err = self._series(v, z)
                 assert allclose(struve(v, z), value, atol=err), (v, z)
@@ -2023,6 +2023,14 @@ class TestStruve(object):
         assert_almost_equal(struve(-7.99, 21), 0.0467547614113, decimal=8)
         assert_almost_equal(struve(-8.01, 21), 0.0398716951023, decimal=9)
         assert_almost_equal(struve(-3.0, 200), 0.0142134427432, decimal=13)
+        assert_almost_equal(struve(-8.0, -41), 0.0192469727846, decimal=9)
+        assert_equal(struve(-12, -41), -struve(-12, 41))
+        assert_equal(struve(+12, -41), -struve(+12, 41))
+        assert_equal(struve(-11, -41), +struve(-11, 41))
+        assert_equal(struve(+11, -41), +struve(+11, 41))
+
+        assert isnan(struve(-7.1, -1))
+        assert isnan(struve(-10.1, -1))
 
     def test_regression_679(self):
         """Regression test for #679"""
