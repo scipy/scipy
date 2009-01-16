@@ -24,7 +24,6 @@
 from numpy import array
 
 from numpy.testing import *
-
 from scipy.special import *
 import scipy.special._cephes as cephes
 
@@ -2004,6 +2003,32 @@ class TestSpherical(TestCase):
         assert_almost_equal(sy2,-4.9003329,5)
         sy3 = sph_yn(1,.2)[1][1]
         assert_almost_equal(sy3,sphpy,4) #compare correct derivative val. (correct =-system val).
+
+class TestStruve(object):
+    def _series(self, v, z, n=100):
+        """Compute Struve function & error estimate from its power series."""
+        k = arange(0, n)
+        r = (-1)**k * (.5*z)**(2*k+v+1)/gamma(k+1.5)/gamma(k+v+1.5)
+        err = abs(r).max() * finfo(float_).eps * n
+        return r.sum(), err
+
+    def test_vs_series(self):
+        """Check Struve function versus its power series"""
+        for v in [-10, -7.99, -3.4, -1, 0, 1, 3.4, 12.49, 16]:
+            for z in [1, 10, 19, 21, 30]:
+                value, err = self._series(v, z)
+                assert allclose(struve(v, z), value, atol=err), (v, z)
+
+    def test_some_values(self):
+        assert_almost_equal(struve(-7.99, 21), 0.0467547614113, decimal=8)
+        assert_almost_equal(struve(-8.01, 21), 0.0398716951023, decimal=9)
+        assert_almost_equal(struve(-3.0, 200), 0.0142134427432, decimal=13)
+
+    def test_regression_679(self):
+        """Regression test for #679"""
+        assert_almost_equal(struve(-1.0, 20 - 1e-8), struve(-1.0, 20 + 1e-8))
+        assert_almost_equal(struve(-2.0, 20 - 1e-8), struve(-2.0, 20 + 1e-8))
+        assert_almost_equal(struve(-4.3, 20 - 1e-8), struve(-4.3, 20 + 1e-8))
 
 if __name__ == "__main__":
     run_module_suite()
