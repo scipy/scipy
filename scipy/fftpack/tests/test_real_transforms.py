@@ -3,9 +3,10 @@ from os.path import join, dirname
 
 import numpy as np
 from numpy.fft import fft as numfft
-from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_array_almost_equal, TestCase
 
 from scipy.io import loadmat
+from scipy.fftpack.realtransforms import dct1, dct2
 
 TDATA = loadmat(join(dirname(__file__), 'test.mat'),
                 squeeze_me=True,  struct_as_record=True, mat_dtype=True)
@@ -50,10 +51,12 @@ def direct_dct2(x):
     Note that it is not 'normalized'
     """
     n = x.size
-    a = np.empty((n, n), dtype = x.dtype)
-    for i in xrange(n):
-        for j in xrange(n):
-            a[i, j] = x[j] * np.cos(np.pi * (0.5 + j) * i / n)
+    #a = np.empty((n, n), dtype = x.dtype)
+    #for i in xrange(n):
+    #    for j in xrange(n):
+    #        a[i, j] = x[j] * np.cos(np.pi * (0.5 + j) * i / n)
+    grd = np.outer(np.linspace(0, n - 1, n),  np.linspace(0.5, 0.5 + n - 1, n))
+    a = np.cos(np.pi / n * grd) * x
 
     return 2 * a.sum(axis = 1)
 
@@ -105,6 +108,27 @@ def test_refs():
 def test_fdct2():
     for i in range(len(X)):
         assert_array_almost_equal(direct_dct2(X[i]), fdct2(X[i]))
+
+class _TestDCTIIBase(TestCase):
+    def setUp(self):
+        self.rdt = None
+
+    def test_definition(self):
+        for i in range(len(X)):
+            x = np.array(X[i], dtype=self.rdt)
+            yr = direct_dct2(x)
+            y = dct2(x)
+            self.failUnless(y.dtype == self.rdt,
+                    "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
+            assert_array_almost_equal(y, yr)
+
+class TestDCTIIDouble(_TestDCTIIBase):
+    def setUp(self):
+        self.rdt = np.double
+
+class TestDCTIIFloat(_TestDCTIIBase):
+    def setUp(self):
+        self.rdt = np.double
 
 if __name__ == "__main__":
     np.testing.run_module_suite()
