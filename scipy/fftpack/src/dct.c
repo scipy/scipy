@@ -41,7 +41,7 @@ void dct1(double * inout, int n, int howmany, int normalize)
         }
 
 	if (normalize) {
-                fprintf(stderr, "dct1: normalize not yet supported=%d\n", 
+                fprintf(stderr, "dct1: normalize not yet supported=%d\n",
                                 normalize);
 	} else {
                 ptr = inout;
@@ -65,7 +65,12 @@ void dct2(double * inout, int n, int howmany, int normalize)
         }
 
 	if (normalize) {
-                fprintf(stderr, "dct2: normalize not yet supported=%d\n", 
+                fprintf(stderr, "dct2: normalize not yet supported=%d\n",
                                 normalize);
-	}
+	} else {
+                ptr = inout;
+                for (i = n * howmany - 1; i >= 0; --i, ++ptr) {
+                        *((double *) (ptr)) *= 0.5;
+                }
+        }
 }
