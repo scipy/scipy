@@ -30,7 +30,7 @@ def dct1(x, n=None, axis=-1):
     """
     return _dct(x, 1, n, axis)
 
-def dct2(x, n=None, axis=-1):
+def dct2(x, n=None, axis=-1, norm=None):
     """
     Return Discrete Cosine Transform (type II) of arbitrary type sequence x.
     There are several definitions, we use the following:
@@ -62,9 +62,9 @@ def dct2(x, n=None, axis=-1):
     'A Fast Cosine Transform in One and Two Dimensions', by J. Makhoul, in IEEE
     Transactions on acoustics, speech and signal processing.
     """
-    return _dct(x, 2, n, axis)
+    return _dct(x, 2, n, axis, normalize=norm)
 
-def _dct(x, type, n=None, axis=-1, overwrite_x=0):
+def _dct(x, type, n=None, axis=-1, overwrite_x=0, normalize=None):
     """
     Return Discrete Cosine Transform of arbitrary type sequence x.
 
@@ -100,11 +100,19 @@ def _dct(x, type, n=None, axis=-1, overwrite_x=0):
     else:
         raise ValueError("Type %d not understood" % type)
 
+    if normalize:
+        if normalize == "ortho":
+            nm = 1
+        else:
+            raise ValueError("Unknown normalize mode %s" % normalize)
+    else:
+        nm = 0
+
     if axis == -1 or axis == len(tmp.shape) - 1:
-        return f(tmp, n, 0, overwrite_x)
+        return f(tmp, n, nm, overwrite_x)
     #else:
     #    raise NotImplementedError("Axis arg not yet implemented")
 
     tmp = np.swapaxes(tmp, axis, -1)
-    tmp = f(tmp, n, 0, overwrite_x)
+    tmp = f(tmp, n, nm, overwrite_x)
     return np.swapaxes(tmp, axis, -1)
