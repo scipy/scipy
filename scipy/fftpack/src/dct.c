@@ -64,22 +64,22 @@ void dct1(double * inout, int n, int howmany, int normalize)
 
 	wsave = caches_dct1[get_cache_id_dct1(n)].wsave;
 
-        for (i = 0; i < howmany; ++i, ptr += n) {
-                dcost_(&n, (double*)(ptr), wsave);
-        }
+    for (i = 0; i < howmany; ++i, ptr += n) {
+        dcost_(&n, (double*)(ptr), wsave);
+    }
 
 	if (normalize) {
-                fprintf(stderr, "dct1: normalize not yet supported=%d\n",
-                                normalize);
-	} else {
-                ptr = inout;
-		/* 0.5 coeff comes from fftpack defining DCT as
-		 * 4 * sum(cos(something)), whereas most definition 
-		 * use 2 */
-                for (i = n * howmany - 1; i >= 0; --i, ++ptr) {
-                        *((double *) (ptr)) *= 0.5;
-                }
+        fprintf(stderr, "dct1: normalize not yet supported=%d\n",
+                normalize);
+    } else {
+        ptr = inout;
+        /* 0.5 coeff comes from fftpack defining DCT as
+         * 4 * sum(cos(something)), whereas most definition 
+         * use 2 */
+        for (i = n * howmany - 1; i >= 0; --i, ++ptr) {
+            *((double *) (ptr)) *= 0.5;
         }
+    }
 }
 
 void dct2(double * inout, int n, int howmany, int normalize)
@@ -91,39 +91,39 @@ void dct2(double * inout, int n, int howmany, int normalize)
 
 	wsave = caches_dct2[get_cache_id_dct2(n)].wsave;
 
-        for (i = 0; i < howmany; ++i, ptr += n) {
-                dcosqb_(&n, (double *) (ptr), wsave);
+    for (i = 0; i < howmany; ++i, ptr += n) {
+        dcosqb_(&n, (double *) (ptr), wsave);
 
-        }
+    }
 
-	switch (normalize) {
-	case DCT_NORMALIZE_NO:
-        ptr = inout;
-		/* 0.5 coeff comes from fftpack defining DCT as
-		 * 4 * sum(cos(something)), whereas most definition 
-		 * use 2 */
-        for (i = n * howmany - 1; i >= 0; --i, ++ptr) {
-            *((double *) (ptr)) *= 0.5;
-        }
-		break;
-	case DCT_NORMALIZE_ORTHONORMAL:
-        ptr = inout;
-		/* 0.5 coeff comes from fftpack defining DCT as
-		 * 4 * sum(cos(something)), whereas most definition 
-		 * use 2 */
-		n1 = 0.25 * sqrt(1./n);
-		n2 = 0.25 * sqrt(2./n);
-        for (i = 0; i < howmany; ++i, ptr+=n) {
-            ptr[0] *= n1;
-            for (j = 1; j < n; ++j) {
-                ptr[j] *= n2;
+    switch (normalize) {
+        case DCT_NORMALIZE_NO:
+            ptr = inout;
+            /* 0.5 coeff comes from fftpack defining DCT as
+             * 4 * sum(cos(something)), whereas most definition 
+             * use 2 */
+            for (i = n * howmany - 1; i >= 0; --i, ++ptr) {
+                *((double *) (ptr)) *= 0.5;
             }
-        } 
-		break;
-	default:
-        fprintf(stderr, "dct2: normalize not yet supported=%d\n",
-                        normalize);
-		break;
+            break;
+        case DCT_NORMALIZE_ORTHONORMAL:
+            ptr = inout;
+            /* 0.5 coeff comes from fftpack defining DCT as
+             * 4 * sum(cos(something)), whereas most definition 
+             * use 2 */
+            n1 = 0.25 * sqrt(1./n);
+            n2 = 0.25 * sqrt(2./n);
+            for (i = 0; i < howmany; ++i, ptr+=n) {
+                ptr[0] *= n1;
+                for (j = 1; j < n; ++j) {
+                    ptr[j] *= n2;
+                }
+            } 
+            break;
+        default:
+            fprintf(stderr, "dct2: normalize not yet supported=%d\n",
+                    normalize);
+            break;
     }
 }
 
@@ -135,22 +135,22 @@ void fdct1(float * inout, int n, int howmany, int normalize)
 
 	wsave = caches_fdct1[get_cache_id_fdct1(n)].wsave;
 
-        for (i = 0; i < howmany; ++i, ptr += n) {
-                cost_(&n, (float*)(ptr), wsave);
-        }
+    for (i = 0; i < howmany; ++i, ptr += n) {
+        cost_(&n, (float*)(ptr), wsave);
+    }
 
-	if (normalize) {
-                fprintf(stderr, "dct1: normalize not yet supported=%d\n",
-                                normalize);
-	} else {
-                ptr = inout;
-		/* 0.5 coeff comes from fftpack defining DCT as
-		 * 4 * sum(cos(something)), whereas most definition 
-		 * use 2 */
-                for (i = n * howmany - 1; i >= 0; --i, ++ptr) {
-                        *((float *) (ptr)) *= 0.5;
-                }
+    if (normalize) {
+        fprintf(stderr, "dct1: normalize not yet supported=%d\n",
+                normalize);
+    } else {
+        ptr = inout;
+        /* 0.5 coeff comes from fftpack defining DCT as
+         * 4 * sum(cos(something)), whereas most definition 
+         * use 2 */
+        for (i = n * howmany - 1; i >= 0; --i, ++ptr) {
+            *((float *) (ptr)) *= 0.5;
         }
+    }
 }
 
 void fdct2(float * inout, int n, int howmany, int normalize)
@@ -162,38 +162,38 @@ void fdct2(float * inout, int n, int howmany, int normalize)
 
 	wsave = caches_fdct2[get_cache_id_fdct2(n)].wsave;
 
-        for (i = 0; i < howmany; ++i, ptr += n) {
-                cosqb_(&n, (float *) (ptr), wsave);
+    for (i = 0; i < howmany; ++i, ptr += n) {
+        cosqb_(&n, (float *) (ptr), wsave);
 
-        }
+    }
 
-	switch (normalize) {
-	case DCT_NORMALIZE_NO:
-        ptr = inout;
-		/* 0.5 coeff comes from fftpack defining DCT as
-		 * 4 * sum(cos(something)), whereas most definition 
-		 * use 2 */
-        for (i = n * howmany - 1; i >= 0; --i, ++ptr) {
-            *((float *) (ptr)) *= 0.5;
-        }
-		break;
-	case DCT_NORMALIZE_ORTHONORMAL:
-        ptr = inout;
-		/* 0.5 coeff comes from fftpack defining DCT as
-		 * 4 * sum(cos(something)), whereas most definition 
-		 * use 2 */
-		n1 = 0.25 * sqrt(1./n);
-		n2 = 0.25 * sqrt(2./n);
-        for (i = 0; i < howmany; ++i, ptr+=n) {
-            ptr[0] *= n1;
-            for (j = 1; j < n; ++j) {
-                ptr[j] *= n2;
+    switch (normalize) {
+        case DCT_NORMALIZE_NO:
+            ptr = inout;
+            /* 0.5 coeff comes from fftpack defining DCT as
+             * 4 * sum(cos(something)), whereas most definition 
+             * use 2 */
+            for (i = n * howmany - 1; i >= 0; --i, ++ptr) {
+                *((float *) (ptr)) *= 0.5;
             }
-        } 
-		break;
-	default:
-        fprintf(stderr, "dct2: normalize not yet supported=%d\n",
-                        normalize);
-		break;
+            break;
+        case DCT_NORMALIZE_ORTHONORMAL:
+            ptr = inout;
+            /* 0.5 coeff comes from fftpack defining DCT as
+             * 4 * sum(cos(something)), whereas most definition 
+             * use 2 */
+            n1 = 0.25 * sqrt(1./n);
+            n2 = 0.25 * sqrt(2./n);
+            for (i = 0; i < howmany; ++i, ptr+=n) {
+                ptr[0] *= n1;
+                for (j = 1; j < n; ++j) {
+                    ptr[j] *= n2;
+                }
+            } 
+            break;
+        default:
+            fprintf(stderr, "dct2: normalize not yet supported=%d\n",
+                    normalize);
+            break;
     }
 }
