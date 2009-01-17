@@ -1,5 +1,5 @@
-version = '0.7.0'
-release=False
+version = '0.7.0rc1'
+release=True
 
 if not release:
     import os
