@@ -3,8 +3,14 @@
   Double complex FFT and IFFT.
   Author: Pearu Peterson, August 2002
  */
+#include <math.h>
 
 #include "fftpack.h"
+
+enum normalize {
+	DCT_NORMALIZE_NO = 0,
+	DCT_NORMALIZE_ORTHONORMAL = 1
+};
 
 extern void F_FUNC(dcosti,DCOSTI)(int*,double*);
 extern void F_FUNC(dcost,DCOST)(int*,double*,double*);
@@ -45,6 +51,9 @@ void dct1(double * inout, int n, int howmany, int normalize)
                                 normalize);
 	} else {
                 ptr = inout;
+		/* 0.5 coeff comes from fftpack defining DCT as
+		 * 4 * sum(cos(something)), whereas most definition 
+		 * use 2 */
                 for (i = n * howmany - 1; i >= 0; --i, ++ptr) {
                         *((double *) (ptr)) *= 0.5;
                 }
@@ -53,9 +62,10 @@ void dct1(double * inout, int n, int howmany, int normalize)
 
 void dct2(double * inout, int n, int howmany, int normalize)
 {
-	int i;
+	int i, j;
 	double *ptr = inout;
 	double *wsave = NULL;
+	double n1, n2;
 
 	wsave = caches_dct2[get_cache_id_dct2(n)].wsave;
 
@@ -64,13 +74,33 @@ void dct2(double * inout, int n, int howmany, int normalize)
 
         }
 
-	if (normalize) {
-                fprintf(stderr, "dct2: normalize not yet supported=%d\n",
-                                normalize);
-	} else {
-                ptr = inout;
-                for (i = n * howmany - 1; i >= 0; --i, ++ptr) {
-                        *((double *) (ptr)) *= 0.5;
-                }
+	switch (normalize) {
+	case DCT_NORMALIZE_NO:
+        ptr = inout;
+		/* 0.5 coeff comes from fftpack defining DCT as
+		 * 4 * sum(cos(something)), whereas most definition 
+		 * use 2 */
+        for (i = n * howmany - 1; i >= 0; --i, ++ptr) {
+            *((double *) (ptr)) *= 0.5;
         }
+		break;
+	case DCT_NORMALIZE_ORTHONORMAL:
+        ptr = inout;
+		/* 0.5 coeff comes from fftpack defining DCT as
+		 * 4 * sum(cos(something)), whereas most definition 
+		 * use 2 */
+		n1 = 0.25 * sqrt(1./n);
+		n2 = 0.25 * sqrt(2./n);
+        for (i = 0; i < howmany; ++i, ptr+=n) {
+            ptr[0] *= n1;
+            for (j = 1; j < n; ++j) {
+                ptr[j] *= n2;
+            }
+        } 
+		break;
+	default:
+        fprintf(stderr, "dct2: normalize not yet supported=%d\n",
+                        normalize);
+		break;
+    }
 }
