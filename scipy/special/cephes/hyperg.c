@@ -104,7 +104,6 @@ if( pcanc < 1.0e-15 )
 
 asum = hy1f1a( a, b, x, &acanc );
 
-
 /* Pick the result with less estimated error */
 
 if( acanc < pcanc )
@@ -157,7 +156,11 @@ while( t > MACHEP )
 	if( an == 0 )			/* a singularity		*/
 		return( sum );
 	if( n > 200 )
-		goto pdone;
+                {
+                /* did not converge: estimate 100% error */
+                *err = 1.0;
+                return sum;
+                }
 	u = x * ( an / (bn * n) );
 
 	/* check for blowup */
