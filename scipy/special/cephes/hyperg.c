@@ -95,14 +95,21 @@ if( fabs(temp) < 0.001 * fabs(a) )
 	return( exp(x) * hyperg( temp, b, -x )  );
 
 
-psum = hy1f1p( a, b, x, &pcanc );
-if( pcanc < 1.0e-15 )
-	goto done;
-
-
-/* try asymptotic series */
-
-asum = hy1f1a( a, b, x, &acanc );
+/* Try power & asymptotic series, starting from the one that is likely OK */
+if (fabs(x) < 10 + fabs(a) + fabs(b))
+        {
+        psum = hy1f1p( a, b, x, &pcanc );
+        if( pcanc < 1.0e-15 )
+ 	        goto done;
+        asum = hy1f1a( a, b, x, &acanc );
+        }
+else
+        {
+        psum = hy1f1a( a, b, x, &pcanc );
+        if( pcanc < 1.0e-15 )
+ 	        goto done;
+        asum = hy1f1p( a, b, x, &acanc );
+        }
 
 /* Pick the result with less estimated error */
 
@@ -129,7 +136,7 @@ static double hy1f1p( a, b, x, err )
 double a, b, x;
 double *err;
 {
-double n, a0, sum, t, u, temp;
+double n, a0, sum, t, u, temp, maxn;
 double an, bn, maxt;
 double y, c, sumc;
 
@@ -145,6 +152,7 @@ t = 1.0;
 maxt = 0.0;
 *err = 1.0;
 
+maxn = 200.0 + 2*fabs(a) + 2*fabs(b);
 
 while( t > MACHEP )
 	{
@@ -155,11 +163,11 @@ while( t > MACHEP )
 		}
 	if( an == 0 )			/* a singularity		*/
 		return( sum );
-	if( n > 200 )
+	if( n > maxn )
                 {
-                /* did not converge: estimate 100% error */
-                *err = 1.0;
-                return sum;
+                /* too many terms; take the last one as error estimate */
+                c = fabs(c) + fabs(t)*50.0;
+		goto pdone;
                 }
 	u = x * ( an / (bn * n) );
 
@@ -192,6 +200,11 @@ if (sum != 0.0) {
 	*err = fabs(c / sum);
 } else {
 	*err = fabs(c);
+}
+
+if (*err != *err) {
+        /* nan */
+        *err = 1.0;
 }
 
 return( sum );
@@ -261,7 +274,6 @@ else
 
 acanc = fabs(err1) + fabs(err2);
 
-
 if( b < 0 )
 	{
 	temp = gamma(b);
@@ -272,6 +284,10 @@ if( b < 0 )
 
 if( asum != 0.0 )
 	acanc /= fabs(asum);
+
+if( asum*2 == asum )
+        /* infinity */
+        acanc = 0;
 
 acanc *= 30.0;	/* fudge factor, since error of asymptotic formula
 		 * often seems this much larger than advertised */
@@ -321,8 +337,8 @@ do
 	t = fabs(a0);
 
 	/* terminating condition for asymptotic series */
-	if( t > tlast )
-		goto ndone;
+	if( t < tlast && t < MACHEP*fabs(sum) )
+                goto ndone;
 
 	tlast = t;
 	sum += alast;	/* the sum is one term behind */
@@ -372,7 +388,6 @@ default:
 
 /* estimate error due to roundoff, cancellation, and nonconvergence */
 *err = MACHEP * (n + maxt)  +  fabs ( a0 );
-
 
 done:
 sum += alast;

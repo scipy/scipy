@@ -69,7 +69,7 @@ double iv( v, x )
 double v, x;
 {
 int sign;
-double t, ax;
+double t, ax, res;
 
 /* If v is a negative integer, invoke symmetry */
 t = floor(v);
@@ -112,5 +112,8 @@ ax = fabs(x);
 t = v * log( 0.5 * ax )  -  x;
 t = sign * exp(t) / gamma( v + 1.0 );
 ax = v + 0.5;
-return( t * hyperg( ax,  2.0 * ax,  2.0 * x ) );
+res = hyperg( ax,  2.0 * ax,  2.0 * x );
+if (res*2 == res)
+    return sign*res / gamma( v + 1.0 ); /* inf */
+return( t * res );
 }

@@ -1591,9 +1591,15 @@ class TestBessel(TestCase):
 
 class TestBesselI(object):
 
+    def _lggamma(self, q):
+        res = zeros_like(q)
+        res[q>=2] = gammaln(q[q>=2])
+        res[q<2] = log(gamma(q[q<2]))
+        return res
+
     def _series(self, v, z, n=200):
         k = arange(0, n).astype(float_)
-        r = (v+2*k)*log(.5*z) - log(gamma(k+1)) - log(gamma(v+k+1))
+        r = (v+2*k)*log(.5*z) - self._lggamma(k+1) - self._lggamma(v+k+1)
         r[isnan(r)] = inf
         r = exp(r)
         err = abs(r).max() * finfo(float_).eps * n + abs(r[-1])*10
@@ -1614,6 +1620,15 @@ class TestBesselI(object):
             for z in [1., 10., 200.5, -1+2j]:
                 value, err = self._series(v, z)
                 assert_tol_equal(iv(v, z), value, atol=err, err_msg=(v, z))
+
+    def test_cephes_vs_specfun(self):
+        for v in [-120, -20., -10., -1., 0., 1., 12.49, 120.]:
+            for z in [1., 10., 200.5, 400., 600.5, 700.6]:
+                c1, c2 = iv(v, z), iv(v,z+0j)
+                if np.isinf(c1):
+                    assert np.abs(c2) >= 1e150
+                else:
+                    assert_tol_equal(c1, c2, err_msg=(v, z), rtol=1e-11)
 
     def test_i0(self):
         values = [[0.0, 1.0],
