@@ -122,6 +122,16 @@ class _TestDCTIIBase(TestCase):
                     "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
             assert_array_almost_equal(y, yr)
 
+    def test_definition_ortho(self):
+        """Test orthornomal mode."""
+        for i in range(len(X)):
+            x = np.array(X[i], dtype=self.rdt)
+            yr = direct_fft_dct2(x, matlab=True)
+            y = dct2(x, norm="ortho")
+            self.failUnless(y.dtype == self.rdt,
+                    "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
+            assert_array_almost_equal(y, yr)
+
     def test_axis(self):
         nt = 2
         for i in [7, 8, 9, 16, 32, 64]:
