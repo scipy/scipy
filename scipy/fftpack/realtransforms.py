@@ -13,7 +13,7 @@ atexit.register(_fftpack.destroy_ddct2_cache)
 
 def dct1(x, n=None, axis=-1):
     """
-    Return Discrete Cosine Transform (type I) of arbitrary type sequence x.
+    Return the Discrete Cosine Transform (type I) of arbitrary type sequence x.
 
     Parameters
     ----------
@@ -32,14 +32,12 @@ def dct1(x, n=None, axis=-1):
 
 def dct2(x, n=None, axis=-1, norm=None):
     """
-    Return Discrete Cosine Transform (type II) of arbitrary type sequence x.
-    There are several definitions, we use the following:
+    Return the Discrete Cosine Transform (type II) of an arbitrary type
+    sequence x.
 
-                  N-1
-        y[k] = 2* sum x[n]*cos(pi*k*(2n+1)/(2*N)), 0 <= k < N.
-                  n=0
-
-    In particular, we do not normalize it by the number of points of the DCT N.
+    This is the most commonly used DCT, and corresponds to what is called 'the'
+    DCT; in particular, dct2(x, norm='ortho) gives the same result as Matlab
+    dct function
 
     Parameters
     ----------
@@ -53,6 +51,21 @@ def dct2(x, n=None, axis=-1, norm=None):
     Returns
     -------
     y : real ndarray
+
+    Notes
+    -----
+    There are several definitions, we use the following (for norm=None):
+
+                  N-1
+        y[k] = 2* sum x[n]*cos(pi*k*(2n+1)/(2*N)), 0 <= k < N.
+                  n=0
+
+    If norm='ortho', y[k] is multiplied by a scaling factor f:
+
+        f = sqrt(1/(4*N)) if k = 0
+        f = sqrt(1/(2*N)) otherwise
+
+    Which makes the corresponding matrix of coefficients orthonormal (OO' = Id).
 
     References
     ----------
@@ -93,6 +106,8 @@ def dct3(x, n=None, axis=-1, norm=None):
     -----
     The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up
     to a factor 2*N.
+
+    This is also called 'the' inverse DCT (IDCT).
     
     Examples
     --------
