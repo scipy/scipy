@@ -6,7 +6,7 @@ from numpy.fft import fft as numfft
 from numpy.testing import assert_array_almost_equal, TestCase
 
 from scipy.io import loadmat
-from scipy.fftpack.realtransforms import dct1, dct2
+from scipy.fftpack.realtransforms import dct1, dct2, dct3
 
 TDATA = loadmat(join(dirname(__file__), 'test.mat'),
                 squeeze_me=True,  struct_as_record=True, mat_dtype=True)
@@ -150,6 +150,35 @@ class TestDCTIIDouble(_TestDCTIIBase):
         self.rdt = np.double
 
 class TestDCTIIFloat(_TestDCTIIBase):
+    def setUp(self):
+        self.rdt = np.double
+
+class _TestDCTIIIBase(TestCase):
+    def setUp(self):
+        self.rdt = None
+
+    def test_definition(self):
+        for i in range(len(X)):
+            x = np.array(X[i], dtype=self.rdt)
+            y = dct3(x)
+            self.failUnless(y.dtype == self.rdt,
+                    "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
+            assert_array_almost_equal(dct2(y) / (2*x.size), x)
+
+    def test_axis(self):
+        nt = 2
+        for i in [7, 8, 9, 16, 32, 64]:
+            x = np.random.randn(nt, i)
+            y = dct3(x)
+            for j in range(nt):
+                assert_array_almost_equal(y[j], dct3(x[j]))
+
+            x = x.T
+            y = dct3(x, axis=0)
+            for j in range(nt):
+                assert_array_almost_equal(y[:,j], dct3(x[:,j]))
+
+class TestDCTIIIDouble(_TestDCTIIIBase):
     def setUp(self):
         self.rdt = np.double
 

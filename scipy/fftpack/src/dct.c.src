@@ -111,4 +111,26 @@ void @pref@dct2(@type@ * inout, int n, int howmany, int normalize)
     }
 }
 
+void @pref@dct3(@type@ * inout, int n, int howmany, int normalize)
+{
+    int i;
+    @type@ *ptr = inout;
+    @type@ *wsave = NULL;
+
+    wsave = caches_@pref@dct2[get_cache_id_@pref@dct2(n)].wsave;
+
+    for (i = 0; i < howmany; ++i, ptr += n) {
+        @pref@cosqf_(&n, ptr, wsave);
+
+    }
+
+    switch (normalize) {
+        case DCT_NORMALIZE_NO:
+            break;
+        default:
+            fprintf(stderr, "dct3: normalize not yet supported=%d\n",
+                    normalize);
+            break;
+    }
+}
 /**end repeat**/
