@@ -112,6 +112,7 @@ def test_fdct2():
 class _TestDCTIIBase(TestCase):
     def setUp(self):
         self.rdt = None
+        self.dec = 14
 
     def test_definition(self):
         for i in range(len(X)):
@@ -120,7 +121,7 @@ class _TestDCTIIBase(TestCase):
             y = dct2(x)
             self.failUnless(y.dtype == self.rdt,
                     "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
-            assert_array_almost_equal(y, yr)
+            assert_array_almost_equal(y, yr, decimal=self.dec)
 
     def test_definition_ortho(self):
         """Test orthornomal mode."""
@@ -130,7 +131,7 @@ class _TestDCTIIBase(TestCase):
             y = dct2(x, norm="ortho")
             self.failUnless(y.dtype == self.rdt,
                     "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
-            assert_array_almost_equal(y, yr)
+            assert_array_almost_equal(y, yr, decimal=self.dec)
 
     def test_axis(self):
         nt = 2
@@ -138,24 +139,27 @@ class _TestDCTIIBase(TestCase):
             x = np.random.randn(nt, i)
             y = dct2(x)
             for j in range(nt):
-                assert_array_almost_equal(y[j], dct2(x[j]))
+                assert_array_almost_equal(y[j], dct2(x[j]), decimal=self.dec)
 
             x = x.T
             y = dct2(x, axis=0)
             for j in range(nt):
-                assert_array_almost_equal(y[:,j], dct2(x[:,j]))
+                assert_array_almost_equal(y[:,j], dct2(x[:,j]), decimal=self.dec)
 
 class TestDCTIIDouble(_TestDCTIIBase):
     def setUp(self):
         self.rdt = np.double
+        self.dec = 10
 
 class TestDCTIIFloat(_TestDCTIIBase):
     def setUp(self):
-        self.rdt = np.double
+        self.rdt = np.float32
+        self.dec = 5
 
 class _TestDCTIIIBase(TestCase):
     def setUp(self):
         self.rdt = None
+        self.dec = 14
 
     def test_definition(self):
         for i in range(len(X)):
@@ -163,7 +167,8 @@ class _TestDCTIIIBase(TestCase):
             y = dct3(x)
             self.failUnless(y.dtype == self.rdt,
                     "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
-            assert_array_almost_equal(dct2(y) / (2*x.size), x)
+            assert_array_almost_equal(dct2(y) / (2*x.size), x,
+                    decimal=self.dec)
 
     def test_definition_ortho(self):
         """Test orthornomal mode."""
@@ -173,7 +178,7 @@ class _TestDCTIIIBase(TestCase):
             xi = dct3(y, norm="ortho")
             self.failUnless(xi.dtype == self.rdt,
                     "Output dtype is %s, expected %s" % (xi.dtype, self.rdt))
-            assert_array_almost_equal(xi, x)
+            assert_array_almost_equal(xi, x, decimal=self.dec)
 
     def test_axis(self):
         nt = 2
@@ -181,16 +186,23 @@ class _TestDCTIIIBase(TestCase):
             x = np.random.randn(nt, i)
             y = dct3(x)
             for j in range(nt):
-                assert_array_almost_equal(y[j], dct3(x[j]))
+                assert_array_almost_equal(y[j], dct3(x[j]), decimal=self.dec)
 
             x = x.T
             y = dct3(x, axis=0)
             for j in range(nt):
-                assert_array_almost_equal(y[:,j], dct3(x[:,j]))
+                assert_array_almost_equal(y[:,j], dct3(x[:,j]),
+                        decimal=self.dec)
 
 class TestDCTIIIDouble(_TestDCTIIIBase):
     def setUp(self):
         self.rdt = np.double
+        self.dec = 14
+
+class TestDCTIIIFloat(_TestDCTIIIBase):
+    def setUp(self):
+        self.rdt = np.float32
+        self.dec = 5
 
 if __name__ == "__main__":
     np.testing.run_module_suite()
