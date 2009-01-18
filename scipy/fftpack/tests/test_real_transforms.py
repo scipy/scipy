@@ -165,6 +165,16 @@ class _TestDCTIIIBase(TestCase):
                     "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
             assert_array_almost_equal(dct2(y) / (2*x.size), x)
 
+    def test_definition_ortho(self):
+        """Test orthornomal mode."""
+        for i in range(len(X)):
+            x = np.array(X[i], dtype=self.rdt)
+            y = dct2(x, norm='ortho')
+            xi = dct3(y, norm="ortho")
+            self.failUnless(xi.dtype == self.rdt,
+                    "Output dtype is %s, expected %s" % (xi.dtype, self.rdt))
+            assert_array_almost_equal(xi, x)
+
     def test_axis(self):
         nt = 2
         for i in [7, 8, 9, 16, 32, 64]:
