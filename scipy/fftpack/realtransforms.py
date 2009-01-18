@@ -47,6 +47,8 @@ def dct2(x, n=None, axis=-1, norm=None):
         Length of the transform.
     axis : int, optional
         axis over which to compute the transform.
+    norm : {None, 'ortho'}
+        normalization mode (see Notes).
 
     Returns
     -------
@@ -92,6 +94,8 @@ def dct3(x, n=None, axis=-1, norm=None):
         Length of the transform.
     axis : int, optional
         axis over which to compute the transform.
+    norm : {None, 'ortho'}
+        normalization mode (see Notes).
 
     Returns
     -------
