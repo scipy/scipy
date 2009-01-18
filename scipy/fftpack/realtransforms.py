@@ -36,7 +36,7 @@ def dct2(x, n=None, axis=-1, norm=None):
     sequence x.
 
     This is the most commonly used DCT, and corresponds to what is called 'the'
-    DCT; in particular, dct2(x, norm='ortho) gives the same result as Matlab
+    DCT; in particular, dct2(x, norm='ortho') gives the same result as Matlab
     dct function
 
     Parameters
@@ -81,14 +81,9 @@ def dct3(x, n=None, axis=-1, norm=None):
     """
     Return Discrete Cosine Transform (type III) of arbitrary type sequence x.
 
-    There are several definitions, we use the following:
-
-                          N-1
-        y[k] = x[0] + 2 * sum x[n]*cos(pi*(k+0.5)*n/N), 0 <= k < N.
-                          n=0
-
-    The DCT-III is the inverse of DCT-II up to a scaling factor.
-
+    This is also called 'the' inverse DCT (IDCT) - dct3(x, norm='ortho') is
+    exactly the same as the idct function of Matlab.
+    
     Parameters
     ----------
     x : array-like
@@ -104,11 +99,22 @@ def dct3(x, n=None, axis=-1, norm=None):
 
     Notes
     -----
-    The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up
-    to a factor 2*N.
+    There are several definitions, we use the following (norm=None):
 
-    This is also called 'the' inverse DCT (IDCT).
-    
+                          N-1
+        y[k] = x[0] + 2 * sum x[n]*cos(pi*(k+0.5)*n/N), 0 <= k < N.
+                          n=0
+
+    Or (norm='ortho'), for 0 <= k < N:
+
+                                            N-1
+        y[k] = x[0] / sqrt(N) + sqrt(1/N) * sum x[n]*cos(pi*(k+0.5)*n/N)
+                                            n=0
+
+    The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up
+    to a factor 2*N. The orthonormalized DCT-III is exactly the inverse of the
+    orthonormalized DCT-II.
+
     Examples
     --------
     >>> x = np.linspace(0, 9, 10)
