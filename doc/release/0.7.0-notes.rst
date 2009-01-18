@@ -219,6 +219,8 @@ The Matlab (TM) file readers/writers have a number of improvements:
 * new struct_as_record keyword argument to ``loadmat``, which loads
   struct arrays in matlab as record arrays in numpy
 * string arrays have ``dtype='U...'`` instead of ``dtype=object``
+* ``loadmat`` no longer squeezes singleton dimensions, i.e.
+  ``squeeze_me=False`` by default
 
 New Hierarchical Clustering module
 ----------------------------------
