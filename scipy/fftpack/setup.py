@@ -18,11 +18,12 @@ def configuration(parent_package='',top_path=None):
                        sources=[join('src/fftpack','*.f')])
 
     sources = ['fftpack.pyf','src/zfft.c','src/drfft.c','src/zrfft.c',
-               'src/zfftnd.c', 'src/dct.c']
+               'src/zfftnd.c', 'src/dct.c.src']
 
     config.add_extension('_fftpack',
         sources=sources,
-        libraries=['dfftpack', 'fftpack'])
+        libraries=['dfftpack', 'fftpack'],
+        include_dirs=['src'])
 
     config.add_extension('convolve',
         sources=['convolve.pyf','src/convolve.c'],

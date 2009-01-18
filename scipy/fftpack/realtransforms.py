@@ -8,8 +8,8 @@ import numpy as np
 from scipy.fftpack import _fftpack
 
 import atexit
-atexit.register(_fftpack.destroy_dct1_cache)
-atexit.register(_fftpack.destroy_dct2_cache)
+atexit.register(_fftpack.destroy_ddct1_cache)
+atexit.register(_fftpack.destroy_ddct2_cache)
 
 def dct1(x, n=None, axis=-1):
     """
@@ -94,9 +94,9 @@ def _dct(x, type, n=None, axis=-1, overwrite_x=0, normalize=None):
         raise NotImplemented("Padding/truncating not yet implemented")
 
     if type == 1:
-        f = _fftpack.dct1
+        f = _fftpack.ddct1
     elif type == 2:
-        f = _fftpack.dct2
+        f = _fftpack.ddct2
     else:
         raise ValueError("Type %d not understood" % type)
 
