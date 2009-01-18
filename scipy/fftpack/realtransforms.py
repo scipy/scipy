@@ -155,14 +155,26 @@ def _dct(x, type, n=None, axis=-1, overwrite_x=0, normalize=None):
     else:
         raise NotImplemented("Padding/truncating not yet implemented")
 
-    if type == 1:
-        f = _fftpack.ddct1
-    elif type == 2:
-        f = _fftpack.ddct2
-    elif type == 3:
-        f = _fftpack.ddct3
+    if tmp.dtype == np.double:
+        if type == 1:
+            f = _fftpack.ddct1
+        elif type == 2:
+            f = _fftpack.ddct2
+        elif type == 3:
+            f = _fftpack.ddct3
+        else:
+            raise ValueError("Type %d not understood" % type)
+    elif tmp.dtype == np.float32:
+        if type == 1:
+            f = _fftpack.dct1
+        elif type == 2:
+            f = _fftpack.dct2
+        elif type == 3:
+            f = _fftpack.dct3
+        else:
+            raise ValueError("Type %d not understood" % type)
     else:
-        raise ValueError("Type %d not understood" % type)
+        raise ValueError("dtype %s not supported" % tmp.dtype)
 
     if normalize:
         if normalize == "ortho":
