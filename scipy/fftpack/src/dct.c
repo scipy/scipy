@@ -74,7 +74,7 @@ void dct1(double * inout, int n, int howmany, int normalize)
     } else {
         ptr = inout;
         /* 0.5 coeff comes from fftpack defining DCT as
-         * 4 * sum(cos(something)), whereas most definition 
+         * 4 * sum(cos(something)), whereas most definition
          * use 2 */
         for (i = n * howmany - 1; i >= 0; --i, ++ptr) {
             *((double *) (ptr)) *= 0.5;
@@ -100,7 +100,7 @@ void dct2(double * inout, int n, int howmany, int normalize)
         case DCT_NORMALIZE_NO:
             ptr = inout;
             /* 0.5 coeff comes from fftpack defining DCT as
-             * 4 * sum(cos(something)), whereas most definition 
+             * 4 * sum(cos(something)), whereas most definition
              * use 2 */
             for (i = n * howmany - 1; i >= 0; --i, ++ptr) {
                 *((double *) (ptr)) *= 0.5;
@@ -109,7 +109,7 @@ void dct2(double * inout, int n, int howmany, int normalize)
         case DCT_NORMALIZE_ORTHONORMAL:
             ptr = inout;
             /* 0.5 coeff comes from fftpack defining DCT as
-             * 4 * sum(cos(something)), whereas most definition 
+             * 4 * sum(cos(something)), whereas most definition
              * use 2 */
             n1 = 0.25 * sqrt(1./n);
             n2 = 0.25 * sqrt(2./n);
@@ -118,7 +118,7 @@ void dct2(double * inout, int n, int howmany, int normalize)
                 for (j = 1; j < n; ++j) {
                     ptr[j] *= n2;
                 }
-            } 
+            }
             break;
         default:
             fprintf(stderr, "dct2: normalize not yet supported=%d\n",
@@ -145,7 +145,7 @@ void fdct1(float * inout, int n, int howmany, int normalize)
     } else {
         ptr = inout;
         /* 0.5 coeff comes from fftpack defining DCT as
-         * 4 * sum(cos(something)), whereas most definition 
+         * 4 * sum(cos(something)), whereas most definition
          * use 2 */
         for (i = n * howmany - 1; i >= 0; --i, ++ptr) {
             *((float *) (ptr)) *= 0.5;
@@ -171,7 +171,7 @@ void fdct2(float * inout, int n, int howmany, int normalize)
         case DCT_NORMALIZE_NO:
             ptr = inout;
             /* 0.5 coeff comes from fftpack defining DCT as
-             * 4 * sum(cos(something)), whereas most definition 
+             * 4 * sum(cos(something)), whereas most definition
              * use 2 */
             for (i = n * howmany - 1; i >= 0; --i, ++ptr) {
                 *((float *) (ptr)) *= 0.5;
@@ -180,7 +180,7 @@ void fdct2(float * inout, int n, int howmany, int normalize)
         case DCT_NORMALIZE_ORTHONORMAL:
             ptr = inout;
             /* 0.5 coeff comes from fftpack defining DCT as
-             * 4 * sum(cos(something)), whereas most definition 
+             * 4 * sum(cos(something)), whereas most definition
              * use 2 */
             n1 = 0.25 * sqrt(1./n);
             n2 = 0.25 * sqrt(2./n);
@@ -189,7 +189,7 @@ void fdct2(float * inout, int n, int howmany, int normalize)
                 for (j = 1; j < n; ++j) {
                     ptr[j] *= n2;
                 }
-            } 
+            }
             break;
         default:
             fprintf(stderr, "dct2: normalize not yet supported=%d\n",
