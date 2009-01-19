@@ -1399,6 +1399,16 @@ class TestBessel(TestCase):
                                               13.32369,
                                               16.47063]),4)
 
+    def test_jn_zeros_large(self):
+        jn0 = jn_zeros(0, 300)
+        assert_tol_equal(jn0[260-1], 816.02884495068867280, rtol=1e-13)
+        assert_tol_equal(jn0[280-1], 878.86068707124422606, rtol=1e-13)
+        assert_tol_equal(jn0[300-1], 941.69253065317954064, rtol=1e-13)
+        jn10 = jn_zeros(10, 300)
+        assert_tol_equal(jn10[260-1], 831.67668514305631151, rtol=1e-13)
+        assert_tol_equal(jn10[280-1], 894.51275095371316931, rtol=1e-13)
+        assert_tol_equal(jn10[300-1], 957.34826370866539775, rtol=1e-13)
+
     def test_jnjnp_zeros(self):
         pass
         #jnjp = jnjnp(3)
