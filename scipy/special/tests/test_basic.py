@@ -1399,15 +1399,37 @@ class TestBessel(TestCase):
                                               13.32369,
                                               16.47063]),4)
 
-    def test_jn_zeros_large(self):
+        jn102 = jn_zeros(102,5)
+        assert_tol_equal(jn102, array([110.89174935992040343,
+                                       117.83464175788308398,
+                                       123.70194191713507279,
+                                       129.02417238949092824,
+                                       134.00114761868422559]), rtol=1e-13)
+        
+        jn301 = jn_zeros(301,5)
+        assert_tol_equal(jn301, array([313.59097866698830153,
+                                       323.21549776096288280,
+                                       331.22338738656748796,
+                                       338.39676338872084500,
+                                       345.03284233056064157]), rtol=1e-13)
+
+    def test_jn_zeros_slow(self):
         jn0 = jn_zeros(0, 300)
         assert_tol_equal(jn0[260-1], 816.02884495068867280, rtol=1e-13)
         assert_tol_equal(jn0[280-1], 878.86068707124422606, rtol=1e-13)
         assert_tol_equal(jn0[300-1], 941.69253065317954064, rtol=1e-13)
+        
         jn10 = jn_zeros(10, 300)
         assert_tol_equal(jn10[260-1], 831.67668514305631151, rtol=1e-13)
         assert_tol_equal(jn10[280-1], 894.51275095371316931, rtol=1e-13)
         assert_tol_equal(jn10[300-1], 957.34826370866539775, rtol=1e-13)
+
+        jn3010 = jn_zeros(3010,5)
+        assert_tol_equal(jn3010, array([3036.86590780927,
+                                        3057.06598526482,
+                                        3073.66360690272,
+                                        3088.37736494778,
+                                        3101.86438139042]), rtol=1e-8)
 
     def test_jnjnp_zeros(self):
         pass
@@ -1423,6 +1445,8 @@ class TestBessel(TestCase):
                                                 8.53632,
                                                 11.70600,
                                                 14.86359]),4)
+        jnp = jnp_zeros(443,5)
+        assert_tol_equal(jvp(443, jnp), 0, atol=1e-15)
 
     def test_jnyn_zeros(self):
         jnz = jnyn_zeros(1,5)
@@ -1445,7 +1469,7 @@ class TestBessel(TestCase):
                                                 6.94150,
                                                 10.12340,
                                                 13.28576,
-                                                16.44006])),4)
+                                                16.44006])),5)
 
     def test_jvp(self):
         jvprim = jvp(2,2)
@@ -1568,10 +1592,16 @@ class TestBessel(TestCase):
     def test_yn_zeros(self):
         an = yn_zeros(4,2)
         assert_array_almost_equal(an,array([ 5.64515,  9.36162]),5)
+        an = yn_zeros(443,5)
+        assert_tol_equal(an, [450.13573091578090314, 463.05692376675001542, 
+                              472.80651546418663566, 481.27353184725625838,
+                              488.98055964441374646], rtol=1e-19)
 
     def test_ynp_zeros(self):
         ao = ynp_zeros(0,2)
         assert_array_almost_equal(ao,array([ 2.19714133, 5.42968104]),6)
+        ao = ynp_zeros(443,5)
+        assert_tol_equal(yvp(443, ao), 0, atol=1e-15)
 
     def test_yn(self):
         yn2n = yn(1,.2)

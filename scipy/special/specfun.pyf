@@ -410,7 +410,7 @@ python module specfun ! in
         ! rswfo
         ! ch12n
         subroutine jyzo(n,nt,rj0,rj1,ry0,ry1) ! in :specfun:specfun.f
-            integer intent(in), check(abs(n)<=101) :: n
+            integer intent(in), check(n>=0) :: n
             integer intent(in), check(nt>0) :: nt
             double precision intent(out),dimension(nt),depend(nt) :: rj0
             double precision intent(out),dimension(nt),depend(nt) :: rj1

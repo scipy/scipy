@@ -81,7 +81,7 @@ def jnyn_zeros(n,nt):
         raise ValueError, "Arguments must be integers."
     if (nt <=0):
         raise ValueError, "nt > 0"
-    return specfun.jyzo(n,nt)
+    return specfun.jyzo(abs(n),nt)
 
 def jn_zeros(n,nt):
     """Compute nt zeros of the Bessel function Jn(x).
