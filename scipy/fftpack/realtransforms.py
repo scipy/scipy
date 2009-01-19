@@ -2,7 +2,7 @@
 Real spectrum tranforms (DCT, DST, MDCT)
 """
 
-__all__ = ['dct']
+__all__ = ['dct', 'idct']
 
 import numpy as np
 from scipy.fftpack import _fftpack
