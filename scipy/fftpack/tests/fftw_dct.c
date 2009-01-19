@@ -3,6 +3,29 @@
 
 #include <fftw3.h>
 
+#ifdef DCT_TEST_USE_SINGLE
+typedef float float_prec;
+#define PF "%.7f"
+#define FFTW_PLAN fftwf_plan
+#define FFTW_MALLOC fftwf_malloc
+#define FFTW_FREE fftwf_free
+#define FFTW_PLAN_CREATE fftwf_plan_r2r_1d
+#define FFTW_EXECUTE fftwf_execute
+#define FFTW_DESTROY_PLAN fftwf_destroy_plan
+#define FFTW_CLEANUP fftwf_cleanup
+#else
+typedef double float_prec;
+#define PF "%.18f"
+#define FFTW_PLAN fftw_plan
+#define FFTW_MALLOC fftw_malloc
+#define FFTW_FREE fftw_free
+#define FFTW_PLAN_CREATE fftw_plan_r2r_1d
+#define FFTW_EXECUTE fftw_execute
+#define FFTW_DESTROY_PLAN fftw_destroy_plan
+#define FFTW_CLEANUP fftw_cleanup
+#endif
+
+
 enum type {
         DCT_I = 1,
         DCT_II = 2,
@@ -12,16 +35,16 @@ enum type {
 
 int gen(int type, int sz)
 {
-        double *a, *b;
-        fftw_plan p;
+        float_prec *a, *b;
+        FFTW_PLAN p;
         int i, tp;
 
-        a = fftw_malloc(sizeof(*a) * sz);
+        a = FFTW_MALLOC(sizeof(*a) * sz);
         if (a == NULL) {
                 fprintf(stderr, "failure\n");
                 exit(EXIT_FAILURE);
         }
-        b = fftw_malloc(sizeof(*b) * sz);
+        b = FFTW_MALLOC(sizeof(*b) * sz);
         if (b == NULL) {
                 fprintf(stderr, "failure\n");
                 exit(EXIT_FAILURE);
@@ -49,15 +72,15 @@ int gen(int type, int sz)
                         exit(EXIT_FAILURE);
         }
 
-        p = fftw_plan_r2r_1d(sz, a, b, tp, FFTW_ESTIMATE);
-        fftw_execute(p);
-        fftw_destroy_plan(p);
+        p = FFTW_PLAN_CREATE(sz, a, b, tp, FFTW_ESTIMATE);
+        FFTW_EXECUTE(p);
+        FFTW_DESTROY_PLAN(p);
 
         for(i=0; i < sz; ++i) {
-                printf("%f\n", b[i]);
+                printf(PF"\n", b[i]);
         }
-        fftw_free(b);
-        fftw_free(a);
+        FFTW_FREE(b);
+        FFTW_FREE(a);
 
         return 0;
 }
@@ -74,7 +97,7 @@ int main(int argc, char* argv[])
         n = atoi(argv[2]);
 
         gen(tp, n);
-        fftw_cleanup();
+        FFTW_CLEANUP();
 
         return 0;
 }
