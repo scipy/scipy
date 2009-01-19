@@ -10,6 +10,8 @@ from scipy.fftpack import _fftpack
 import atexit
 atexit.register(_fftpack.destroy_ddct1_cache)
 atexit.register(_fftpack.destroy_ddct2_cache)
+atexit.register(_fftpack.destroy_dct1_cache)
+atexit.register(_fftpack.destroy_dct2_cache)
 
 def dct(x, type=2, n=None, axis=-1, norm=None):
     """
