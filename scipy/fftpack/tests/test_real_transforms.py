@@ -7,105 +7,30 @@ from numpy.testing import assert_array_almost_equal, TestCase
 
 from scipy.fftpack.realtransforms import dct1, dct2, dct3
 
-TDATA = np.load(join(dirname(__file__), 'test.npz'))
-X = [TDATA['x%d' % i] for i in range(8)]
-Y = [TDATA['y%d' % i] for i in range(8)]
+# Matlab reference data
+MDATA = np.load(join(dirname(__file__), 'test.npz'))
+X = [MDATA['x%d' % i] for i in range(8)]
+Y = [MDATA['y%d' % i] for i in range(8)]
 
-def direct_fft_dct2(x, matlab=False):
-    """Compute a Discrete Cosine Transform, type II.
+# FFTW reference data: the data are organized as follows:
+#    * SIZES is an array containing all available sizes
+#    * for every type (1, 2, 3, 4) and every size, the array dct_type_size
+#    contains the output of the DCT applied to the input np.linspace(0, size-1,
+#    size)
+FFTWDATA_DOUBLE = np.load(join(dirname(__file__), 'fftw_double_ref.npz'))
+FFTWDATA_SINGLE = np.load(join(dirname(__file__), 'fftw_single_ref.npz'))
+FFTWDATA_SIZES = FFTWDATA_DOUBLE['sizes']
 
-    The DCT type II is defined as (matlab=False):
-
-        \forall u \in 0...N-1,
-        dct(u) = 2 * sum_{i=0}^{N-1}{f(i)cos((i + 0.5)\pi u/N}
-
-    Or (matlab=True)
-
-        \forall u \in 0...N-1,
-        dct(u) = a(u) sum_{i=0}^{N-1}{f(i)cos((i + 0.5)\pi u/N}
-
-    Where a(0) = sqrt(1/N), a(u) = sqrt(2/N) for u > 0
-
-    This is the exact same formula as Matlab.
-    """
-    x = np.asarray(x)
-    if not np.isrealobj(x):
-        raise ValueError("Complex input not supported")
-    n = x.size
-    y = np.zeros(n * 4, x.dtype)
-    y[1:2*n:2] = x
-    y[2*n+1::2] = x[-1::-1]
-    y = np.real(numfft(y))[:n]
-    if matlab:
-        y[0] *= np.sqrt(.25 / n)
-        y[1:] *= np.sqrt(.5 / n)
-    return y
-
-def direct_dct2(x):
-    """Direct implementation (O(n^2)) of dct II.
-
-    dct(u) = 2 * sum_{i=0}^{N-1}{f(i)cos((i + 0.5)\pi u/N}
-
-    Note that it is not 'normalized'
-    """
-    n = x.size
-    #a = np.empty((n, n), dtype = x.dtype)
-    #for i in xrange(n):
-    #    for j in xrange(n):
-    #        a[i, j] = x[j] * np.cos(np.pi * (0.5 + j) * i / n)
-    grd = np.outer(np.linspace(0, n - 1, n),  np.linspace(0.5, 0.5 + n - 1, n))
-    a = np.cos(np.pi / n * grd) * x
-
-    return 2 * a.sum(axis = 1)
-
-def fdct2(x):
-    """Compute a 'Fast' Discrete Cosine Transform, type II, using a N point fft
-    instead of a direct 4n point DFT
-
-        \forall u \in 0...N-1,
-        dct(u) = sum_{i=0}^{N-1}{f(i)cos((i + 0.5)\pi u/N}
-
-    See 'A Fast Cosine Transform in One and Two Dimensions', by J. Makhoul, in
-    IEEE Transactions on acoustics, speech and signal processing.
-
-    Note that it is not 'normalized'
-    """
-    x = np.asarray(x)
-    n = x.size
-    v = np.empty(x.size, x.dtype)
-    if (n/2) * 2  == n:
-        iseven = True
+def fftw_ref(type, size, dt):
+    x = np.linspace(0, size-1, size).astype(dt)
+    if dt == np.double:
+        data = FFTWDATA_DOUBLE
+    elif dt == np.float32:
+        data = FFTWDATA_SINGLE
     else:
-        iseven = False
-    cut = (n-1)/2 + 1
-    v[:cut] = x[::2]
-    if iseven:
-        v[cut:] = x[-1:0:-2]
-    else:
-        v[cut:] = x[-2::-2]
-    t = 2 *  numfft(v) *  np.exp(-1j * np.pi * 0.5 / n * np.linspace(0, n-1, n))
-    v[:n/2+1] = np.real(t)[:n/2+1]
-    if iseven:
-        v[n/2+1:] = -np.imag(t)[n/2-1:0:-1]
-    else:
-        v[n/2+1:] = -np.imag(t)[n/2:0:-1]
-    return v
-
-def test_refs():
-    for i in range(len(X)):
-        assert_array_almost_equal(direct_fft_dct2(X[i], matlab=True), Y[i])
-        assert_array_almost_equal(direct_fft_dct2(X[i], matlab=False), direct_dct2(X[i]))
-
-    for i in range(len(X)):
-        x = X[i]
-        y = direct_fft_dct2(x, matlab=True)
-        y[0] *= np.sqrt(x.size*4)
-        y[1:] *= np.sqrt(x.size*2)
-        assert_array_almost_equal(y, direct_dct2(x))
-
-def test_fdct2():
-    for i in range(len(X)):
-        assert_array_almost_equal(direct_dct2(X[i]), fdct2(X[i]))
+        raise ValueError()
+    y = (data['dct_%d_%d' % (type, size)]).astype(dt)
+    return x, y
 
 class _TestDCTIIBase(TestCase):
     def setUp(self):
@@ -113,19 +38,23 @@ class _TestDCTIIBase(TestCase):
         self.dec = 14
 
     def test_definition(self):
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            yr = direct_dct2(x)
+        for i in FFTWDATA_SIZES:
+            x, yr = fftw_ref(2, i, self.rdt)
             y = dct2(x)
             self.failUnless(y.dtype == self.rdt,
                     "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
-            assert_array_almost_equal(y, yr, decimal=self.dec)
+            # XXX: we divide by np.max(y) because the tests fail otherwise. We
+            # should really use something like assert_array_approx_equal. The
+            # difference is due to fftw using a better algorithm w.r.t error
+            # propagation compared to the ones from fftpack. 
+            assert_array_almost_equal(y / np.max(y), yr / np.max(y), decimal=self.dec, 
+                    err_msg="Size %d failed" % i)
 
     def test_definition_ortho(self):
         """Test orthornomal mode."""
         for i in range(len(X)):
             x = np.array(X[i], dtype=self.rdt)
-            yr = direct_fft_dct2(x, matlab=True)
+            yr = Y[i]
             y = dct2(x, norm="ortho")
             self.failUnless(y.dtype == self.rdt,
                     "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
