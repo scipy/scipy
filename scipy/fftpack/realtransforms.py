@@ -2,7 +2,7 @@
 Real spectrum tranforms (DCT, DST, MDCT)
 """
 
-__all__ = ['dct1', 'dct2']
+__all__ = ['dct']
 
 import numpy as np
 from scipy.fftpack import _fftpack
@@ -11,38 +11,16 @@ import atexit
 atexit.register(_fftpack.destroy_ddct1_cache)
 atexit.register(_fftpack.destroy_ddct2_cache)
 
-def dct1(x, n=None, axis=-1, norm=None):
+def dct(x, type=2, n=None, axis=-1, norm=None):
     """
-    Return the Discrete Cosine Transform (type I) of arbitrary type sequence x.
+    Return the Discrete Cosine Transform of arbitrary type sequence x.
 
     Parameters
     ----------
     x : array-like
         input array.
-    n : int, optional
-        Length of the transform.
-    axis : int, optional
-        axis over which to compute the transform.
-
-    Returns
-    -------
-    y : real ndarray
-    """
-    return _dct(x, 1, n, axis, normalize=norm)
-
-def dct2(x, n=None, axis=-1, norm=None):
-    """
-    Return the Discrete Cosine Transform (type II) of an arbitrary type
-    sequence x.
-
-    This is the most commonly used DCT, and corresponds to what is called 'the'
-    DCT; in particular, dct2(x, norm='ortho') gives the same result as Matlab
-    dct function
-
-    Parameters
-    ----------
-    x : array-like
-        input array.
+    type : {1, 2, 3}
+        type of the DCT (see Notes).
     n : int, optional
         Length of the transform.
     axis : int, optional
@@ -56,7 +34,28 @@ def dct2(x, n=None, axis=-1, norm=None):
 
     Notes
     -----
-    There are several definitions, we use the following (for norm=None):
+    For a single dimension array x, dct(x, norm='ortho') is equal to matlab
+    dct(x).
+
+    There are theoretically 8 types of the DCT, only the first 3 types are
+    implemented in scipy. 'The' DCT generally refers to DCT type 2, and 'the'
+    Inverse DCT generally refers to DCT type 3.
+
+    type I
+    ~~~~~~
+    There are several definitions of the DCT-I; we use the following (for
+    norm=None):
+
+    for 0 <= k < N,
+
+                                           N-1
+        y[k] = x[0] + (-1)**k x[N-1] + 2 * sum x[n]*cos(pi*k*n/(N-1))
+                                           n=0
+
+    type II
+    ~~~~~~~
+    There are several definitions of the DCT-II; we use the following (for
+    norm=None):
 
                   N-1
         y[k] = 2* sum x[n]*cos(pi*k*(2n+1)/(2*N)), 0 <= k < N.
@@ -69,40 +68,8 @@ def dct2(x, n=None, axis=-1, norm=None):
 
     Which makes the corresponding matrix of coefficients orthonormal (OO' = Id).
 
-    References
-    ----------
-
-    http://en.wikipedia.org/wiki/Discrete_cosine_transform
-
-    'A Fast Cosine Transform in One and Two Dimensions', by J. Makhoul, in IEEE
-    Transactions on acoustics, speech and signal processing.
-    """
-    return _dct(x, 2, n, axis, normalize=norm)
-
-def dct3(x, n=None, axis=-1, norm=None):
-    """
-    Return Discrete Cosine Transform (type III) of arbitrary type sequence x.
-
-    This is also called 'the' inverse DCT (IDCT) - dct3(x, norm='ortho') is
-    exactly the same as the idct function of Matlab.
-    
-    Parameters
-    ----------
-    x : array-like
-        input array.
-    n : int, optional
-        Length of the transform.
-    axis : int, optional
-        axis over which to compute the transform.
-    norm : {None, 'ortho'}
-        normalization mode (see Notes).
-
-    Returns
-    -------
-    y : real ndarray
-
-    Notes
-    -----
+    type III
+    ~~~~~~~~
     There are several definitions, we use the following (norm=None):
 
                           N-1
@@ -119,12 +86,60 @@ def dct3(x, n=None, axis=-1, norm=None):
     to a factor 2*N. The orthonormalized DCT-III is exactly the inverse of the
     orthonormalized DCT-II.
 
-    Examples
-    --------
-    >>> x = np.linspace(0, 9, 10)
-    >>> np.testing.assert_array_almost_equal(dct3(dct2(x)) / 20, x)
+    References
+    ----------
+
+    http://en.wikipedia.org/wiki/Discrete_cosine_transform
+
+    'A Fast Cosine Transform in One and Two Dimensions', by J. Makhoul, in IEEE
+    Transactions on acoustics, speech and signal processing.
     """
-    return _dct(x, 3, n, axis, normalize=norm)
+    if type == 1 and norm is not None:
+        raise NotImplementedError(
+              "Orthonormalization not yet supported for DCT-I")
+    return _dct(x, type, n, axis, normalize=norm)
+
+def idct(x, type=2, n=None, axis=-1, norm=None):
+    """
+    Return the Inverse Discrete Cosine Transform of arbitrary type sequence x.
+
+    Parameters
+    ----------
+    x : array-like
+        input array.
+    type : {1, 2, 3}
+        type of the IDCT (see Notes).
+    n : int, optional
+        Length of the transform.
+    axis : int, optional
+        axis over which to compute the transform.
+    norm : {None, 'ortho'}
+        normalization mode (see Notes).
+
+    Returns
+    -------
+    y : real ndarray
+
+    Notes
+    -----
+    For a single dimension array x, idct(x, norm='ortho') is equal to matlab
+    idct(x)
+
+    'The' IDCT is the IDCT of type 2, which is the same as DCT of type 3.
+
+    IDCT of type 1 is the DCT of type 1, IDCT of type 2 is the DCT of type 3,
+    and IDCT of type 3 is the DCT of type 2.
+
+    See Also
+    --------
+    dct
+    """
+    if type == 1 and norm is not None:
+        raise NotImplementedError(
+              "Orthonormalization not yet supported for IDCT-I")
+    # Inverse/forward type table
+    _TP = {1:1, 2:3, 3:2}
+    return _dct(x, _TP[type], n, axis, normalize=norm)
 
 def _dct(x, type, n=None, axis=-1, overwrite_x=0, normalize=None):
     """
