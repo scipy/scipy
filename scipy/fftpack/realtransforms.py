@@ -11,7 +11,7 @@ import atexit
 atexit.register(_fftpack.destroy_ddct1_cache)
 atexit.register(_fftpack.destroy_ddct2_cache)
 
-def dct1(x, n=None, axis=-1):
+def dct1(x, n=None, axis=-1, norm=None):
     """
     Return the Discrete Cosine Transform (type I) of arbitrary type sequence x.
 
@@ -28,7 +28,7 @@ def dct1(x, n=None, axis=-1):
     -------
     y : real ndarray
     """
-    return _dct(x, 1, n, axis)
+    return _dct(x, 1, n, axis, normalize=norm)
 
 def dct2(x, n=None, axis=-1, norm=None):
     """
