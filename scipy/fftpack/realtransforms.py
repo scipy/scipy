@@ -199,6 +199,9 @@ def _dct(x, type, n=None, axis=-1, overwrite_x=0, normalize=None):
     else:
         nm = 0
 
+    if type == 1 and n < 2:
+        raise ValueError("DCT-I is not defined for size < 2")
+
     if axis == -1 or axis == len(tmp.shape) - 1:
         return f(tmp, n, nm, overwrite_x)
     #else:
