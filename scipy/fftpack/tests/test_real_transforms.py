@@ -5,11 +5,9 @@ import numpy as np
 from numpy.fft import fft as numfft
 from numpy.testing import assert_array_almost_equal, TestCase
 
-from scipy.io import loadmat
 from scipy.fftpack.realtransforms import dct1, dct2, dct3
 
-TDATA = loadmat(join(dirname(__file__), 'test.mat'),
-                squeeze_me=True,  struct_as_record=True, mat_dtype=True)
+TDATA = np.load(join(dirname(__file__), 'test.npz'))
 X = [TDATA['x%d' % i] for i in range(8)]
 Y = [TDATA['y%d' % i] for i in range(8)]
 
