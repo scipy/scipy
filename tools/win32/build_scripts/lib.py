@@ -32,6 +32,9 @@ def get_scipy_version(src_root):
     version, rc, isdev = parse_verstring(fid.readlines())
 
     verstr = ".".join([str(i) for i in version])
+    if rc > 0:
+        verstr += "rc%d" % rc
+
     if isdev:
         verstr += ".dev"
         verstr += get_svn_version(src_root)
