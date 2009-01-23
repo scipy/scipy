@@ -1629,17 +1629,29 @@ class TestBessel(TestCase):
         yvp1 = yvp(2,.2)
         assert_array_almost_equal(yvp1,yvpr,10)
 
-class TestBesselI(object):
+class TestBesselJ(object):
 
-    def _lggamma(self, q):
-        res = zeros_like(q)
-        res[q>=2] = gammaln(q[q>=2])
-        res[q<2] = log(gamma(q[q<2]))
-        return res
+    def test_cephes_vs_specfun(self):
+        for v in [-120, -20., -10., -1., 0., 1., 12.49, 120., 301]:
+            for z in [1., 10., 200.5, 400., 600.5, 700.6, 1300, 10000]:
+                c1, c2, c3 = jv(v, z), jv(v,z+0j), jn(int(v), z)
+                if np.isinf(c1):
+                    assert np.abs(c2) >= 1e150
+                else:
+                    assert_tol_equal(c1, c2, err_msg=(v, z), rtol=1e-11)
+                    if v == int(v):
+                        assert_tol_equal(c2, c3, err_msg=(v, z), rtol=1e-11)
+
+    def test_ticket_623(self):
+        assert_tol_equal(jv(3, 4), 0.43017147387562193)
+        assert_tol_equal(jv(301, 1300), 0.0183487151115275)
+        assert_tol_equal(jv(301, 1296.0682), -0.0224174325312048)
+
+class TestBesselI(object):
 
     def _series(self, v, z, n=200):
         k = arange(0, n).astype(float_)
-        r = (v+2*k)*log(.5*z) - self._lggamma(k+1) - self._lggamma(v+k+1)
+        r = (v+2*k)*log(.5*z) - gammaln(k+1) - gammaln(v+k+1)
         r[isnan(r)] = inf
         r = exp(r)
         err = abs(r).max() * finfo(float_).eps * n + abs(r[-1])*10
