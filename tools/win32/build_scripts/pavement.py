@@ -5,6 +5,8 @@ from shutil import rmtree, move as shmove
 import re
 from zipfile import ZipFile
 
+from lib import get_svn_version, get_scipy_version
+
 BUILD_MSI = False
 SRC_ROOT = normpath(pjoin(os.getcwd(), os.pardir, os.pardir, os.pardir))
 BUILD_ROOT = os.getcwd()
@@ -156,54 +158,6 @@ def prepare_nsis_script(bdir, pyver, numver):
 
 def bootstrap_dir(pyver):
     return pjoin(BUILD_ROOT, "bootstrap-%s" % pyver)
-
-def get_scipy_version(src_root):
-    version_file = pjoin(src_root, "scipy", "version.py")
-    if not pexists(version_file):
-        raise IOError("file %s not found" % version_file)
-
-    fid = open(version_file, "r")
-    vregex = re.compile("version\s*=\s*'(\d+)\.(\d+)\.(\d+)'")
-    isrelregex = re.compile("release\s*=\s*True")
-    isdevregex = re.compile("release\s*=\s*False")
-    isdev = None
-    version = None
-    for line in fid.readlines():
-        m = vregex.match(line)
-        if m:
-            version = [int(i) for i in m.groups()]
-        if isrelregex.match(line):
-            if isdev is None:
-                isdev = False
-            else:
-                raise RuntimeError("isdev already set ?")
-        if isdevregex.match(line):
-            if isdev is None:
-                isdev = True
-            else:
-                raise RuntimeError("isdev already set ?")
-
-    verstr = ".".join([str(i) for i in version])
-    if isdev:
-        verstr += ".dev"
-        verstr += get_svn_version(src_root)
-    return verstr
-
-def get_svn_version(chdir):
-    out = subprocess.Popen(['svn', 'info'],
-                           stdout = subprocess.PIPE,
-                           cwd = chdir).communicate()[0]
-    r = re.compile('Revision: ([0-9]+)')
-    svnver = None
-    for line in out.split('\n'):
-        m = r.match(line)
-        if m:
-            svnver = m.group(1)
-
-    if not svnver:
-        raise ValueError("Error while parsing svn version ?")
-
-    return svnver
 
 def get_python_exec(ver):
     """Return the executable of python for the given version."""
