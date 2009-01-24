@@ -50,9 +50,12 @@ def dct(x, type=2, n=None, axis=-1, norm=None):
 
     for 0 <= k < N,
 
-                                           N-1
+                                           N-2
         y[k] = x[0] + (-1)**k x[N-1] + 2 * sum x[n]*cos(pi*k*n/(N-1))
-                                           n=0
+                                           n=1
+
+    Only None is supported as normalization mode for DCT-I. Note also that the
+    DCT-I is only supported for input size > 1
 
     type II
     ~~~~~~~
@@ -76,13 +79,13 @@ def dct(x, type=2, n=None, axis=-1, norm=None):
 
                           N-1
         y[k] = x[0] + 2 * sum x[n]*cos(pi*(k+0.5)*n/N), 0 <= k < N.
-                          n=0
+                          n=1
 
     Or (norm='ortho'), for 0 <= k < N:
 
                                             N-1
         y[k] = x[0] / sqrt(N) + sqrt(1/N) * sum x[n]*cos(pi*(k+0.5)*n/N)
-                                            n=0
+                                            n=1
 
     The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up
     to a factor 2*N. The orthonormalized DCT-III is exactly the inverse of the
