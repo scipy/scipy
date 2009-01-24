@@ -43,3 +43,13 @@ Major documentation improvements
 --------------------------------
 
 SciPy documentation is greatly improved.
+
+New features of the fftpack package
+-----------------------------------
+
+New realtransforms have been added, namely dct and idct for Discrete Cosine
+Transform; type I, II and III are available, for both single and double
+precision.
+
+fft functions can now handle single precision inputs as well: fft(x) will
+return a single precision array if x is single precision.
