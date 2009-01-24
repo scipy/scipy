@@ -16,6 +16,8 @@ for k in ['fft', 'ifft', 'fftn', 'ifftn', 'fft2', 'ifft2']:
     register_func(k, eval(k))
 del k, register_func
 
+from realtransforms import *
+__all__.extend(['dct', 'idct'])
 
 from numpy.testing import Tester
 test = Tester().test
