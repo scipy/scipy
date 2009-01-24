@@ -1631,12 +1631,14 @@ class TestBessel(TestCase):
 
 class TestBesselJ(object):
 
-    def test_cephes_vs_specfun(self):
-        for v in [-120, -20., -10., -1., 0., 1., 12.49, 120., 301]:
+    def test_cephes_vs_amos(self):
+        for v in [-120, -100.3, -20., -10., -1., 0., 1., 12.49, 120., 301]:
             for z in [1., 10., 200.5, 400., 600.5, 700.6, 1300, 10000]:
                 c1, c2, c3 = jv(v, z), jv(v,z+0j), jn(int(v), z)
                 if np.isinf(c1):
                     assert np.abs(c2) >= 1e150
+                elif np.isnan(c1):
+                    assert np.abs(c2.imag) > 1e-10
                 else:
                     assert_tol_equal(c1, c2, err_msg=(v, z), rtol=1e-11)
                     if v == int(v):
@@ -1646,6 +1648,31 @@ class TestBesselJ(object):
         assert_tol_equal(jv(3, 4), 0.43017147387562193)
         assert_tol_equal(jv(301, 1300), 0.0183487151115275)
         assert_tol_equal(jv(301, 1296.0682), -0.0224174325312048)
+
+    def test_ticket_853(self):
+        # cephes
+        assert_tol_equal(jv(-1,   1   ), -0.4400505857449335)
+        assert_tol_equal(jv(-2,   1   ), 0.1149034849319005)
+        assert_tol_equal(yv(-1,   1   ), 0.7812128213002887)
+        assert_tol_equal(yv(-2,   1   ), -1.650682606816255)
+        assert_tol_equal(jv(-0.5, 1   ), 0.43109886801837607952)
+        assert_tol_equal(yv(-0.5, 1   ), 0.6713967071418031)
+        # amos
+        assert_tol_equal(jv(-1,   1+0j), -0.4400505857449335)
+        assert_tol_equal(jv(-2,   1+0j), 0.1149034849319005)
+        assert_tol_equal(yv(-1,   1+0j), 0.7812128213002887)
+        assert_tol_equal(yv(-2,   1+0j), -1.650682606816255)
+        assert_tol_equal(jv(-0.5, 1+0j), 0.43109886801837607952)
+        assert_tol_equal(jv(-0.5, 1+1j), 0.2628946385649065-0.827050182040562j)
+        assert_tol_equal(yv(-0.5, 1+0j), 0.6713967071418031)
+        assert_tol_equal(yv(-0.5, 1+1j), 0.967901282890131+0.0602046062142816j)
+
+        assert_tol_equal(jve(-0.5,1+0j), jv(-0.5, 1+0j))
+        assert_tol_equal(yve(-0.5,1+0j), yv(-0.5, 1+0j))
+
+        assert_tol_equal(hankel1(-0.5, 1+1j), jv(-0.5, 1+1j) + 1j*yv(-0.5,1+1j))
+        assert_tol_equal(hankel2(-0.5, 1+1j), jv(-0.5, 1+1j) - 1j*yv(-0.5,1+1j))
+
 
 class TestBesselI(object):
 

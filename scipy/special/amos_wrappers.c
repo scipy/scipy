@@ -73,6 +73,35 @@ rotate(Py_complex z, double v)
     return w;
 }
 
+static Py_complex
+rotate_jy(Py_complex j, Py_complex y, double v)
+{
+    Py_complex w;
+    double c = cos(v * M_PI);
+    double s = sin(v * M_PI);
+    w.real = j.real * c - y.real * s;
+    w.imag = j.imag * c - y.imag * s;
+    return w;
+}
+
+static int
+reflect_jy(Py_complex *jy, double v)
+{
+    /* NB: Y_v may be huge near negative integers -- so handle exact
+     *     integers carefully
+     */
+    int i;
+    if (v != floor(v))
+        return 0;
+    
+    i = v - 16384.0 * floor(v / 16384.0);
+    if (i & 1) {
+        jy->real = -jy->real;
+        jy->imag = -jy->imag;
+    }
+    return 1;
+}
+
 int cairy_wrap(Py_complex z, Py_complex *ai, Py_complex *aip, Py_complex *bi, Py_complex *bip) {
   int id = 0;
   int ierr = 0;
@@ -144,18 +173,22 @@ Py_complex cbesj_wrap( double v, Py_complex z) {
   int kode = 1;
   int nz, ierr;
   int sign = 1;
-  Py_complex cy;
+  Py_complex cy_j, cy_y, cwork;
 
   if (v < 0) {
     v = -v;
     sign = -1;
   }
-  F_FUNC(zbesj,ZBESJ)(CADDR(z), &v,  &kode, &n, CADDR(cy), &nz, &ierr);
+  F_FUNC(zbesj,ZBESJ)(CADDR(z), &v,  &kode, &n, CADDR(cy_j), &nz, &ierr);
   DO_MTHERR("jv:");
   if (sign == -1) {
-    cy = rotate(cy, v);
+    if (!reflect_jy(&cy_j, v)) {
+      F_FUNC(zbesy,ZBESY)(CADDR(z), &v,  &kode, &n, CADDR(cy_y), &nz, CADDR(cwork), &ierr);
+      DO_MTHERR("jv(yv):");
+      cy_j = rotate_jy(cy_j, cy_y, v);
+    }
   }
-  return cy;
+  return cy_j;
 }
 
 Py_complex cbesj_wrap_e( double v, Py_complex z) {
@@ -163,18 +196,22 @@ Py_complex cbesj_wrap_e( double v, Py_complex z) {
   int kode = 2;
   int nz, ierr;
   int sign = 1;
-  Py_complex cy;
+  Py_complex cy_j, cy_y, cwork;
 
   if (v < 0) {
     v = -v;
     sign = -1;
   }
-  F_FUNC(zbesj,ZBESJ)(CADDR(z), &v, &kode, &n, CADDR(cy), &nz, &ierr);
+  F_FUNC(zbesj,ZBESJ)(CADDR(z), &v, &kode, &n, CADDR(cy_j), &nz, &ierr);
   DO_MTHERR("jve:");
   if (sign == -1) {
-    cy = rotate(cy, v);
+    if (!reflect_jy(&cy_j, v)) {
+      F_FUNC(zbesy,ZBESY)(CADDR(z), &v,  &kode, &n, CADDR(cy_y), &nz, CADDR(cwork), &ierr);
+      DO_MTHERR("jve(yve):");
+      cy_j = rotate_jy(cy_j, cy_y, v);
+    }
   }
-  return cy;
+  return cy_j;
 }
 
   
@@ -183,19 +220,23 @@ Py_complex cbesy_wrap( double v, Py_complex z) {
   int kode = 1;
   int nz, ierr;
   int sign = 1;
-  Py_complex cy, cwork;
+  Py_complex cy_y, cy_j, cwork;
 
   if (v < 0) {
     v = -v;
     sign = -1;
   }
-  F_FUNC(zbesy,ZBESY)(CADDR(z), &v,  &kode, &n, CADDR(cy), &nz, CADDR(cwork), &ierr);
+  F_FUNC(zbesy,ZBESY)(CADDR(z), &v,  &kode, &n, CADDR(cy_y), &nz, CADDR(cwork), &ierr);
 
   DO_MTHERR("yv:");
   if (sign == -1) {
-    cy = rotate(cy, v);
+    if (!reflect_jy(&cy_y, v)) {
+      F_FUNC(zbesj,ZBESJ)(CADDR(z), &v,  &kode, &n, CADDR(cy_j), &nz, &ierr);
+      DO_MTHERR("yv(jv):");
+      cy_y = rotate_jy(cy_y, cy_j, -v);
+    }
   }
-  return cy;
+  return cy_y;
 }
 
 Py_complex cbesy_wrap_e( double v, Py_complex z) {
@@ -203,18 +244,22 @@ Py_complex cbesy_wrap_e( double v, Py_complex z) {
   int kode = 2;
   int nz, ierr;
   int sign = 1;
-  Py_complex cy, cwork;
+  Py_complex cy_y, cy_j, cwork;
 
   if (v < 0) {
     v = -v;
     sign = -1;
   }
-  F_FUNC(zbesy,ZBESY)(CADDR(z), &v, &kode, &n, CADDR(cy), &nz, CADDR(cwork), &ierr);
+  F_FUNC(zbesy,ZBESY)(CADDR(z), &v, &kode, &n, CADDR(cy_y), &nz, CADDR(cwork), &ierr);
   DO_MTHERR("yve:");
   if (sign == -1) {
-    cy = rotate(cy, v);
+    if (!reflect_jy(&cy_y, v)) {
+      F_FUNC(zbesj,ZBESJ)(CADDR(z), &v,  &kode, &n, CADDR(cy_j), &nz, &ierr);
+      DO_MTHERR("yv(jv):");
+      cy_y = rotate_jy(cy_y, cy_j, -v);
+    }
   }
-  return cy;
+  return cy_y;
 }
 
   
