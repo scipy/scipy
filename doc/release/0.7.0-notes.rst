@@ -160,6 +160,9 @@ For example:
 
 * ``A = csr_matrix( rand(3,3) )`` and ``B = lil_matrix( [[1,2],[3,4]] )``
 
+The handling of diagonals in the ``spdiags`` function has been changed.
+It now agrees with the MATLAB(TM) function of the same name.
+  
 Numerous efficiency improvements to format conversions and sparse
 matrix arithmetic have been made.  Finally, this release contains
 numerous bugfixes.
