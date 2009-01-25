@@ -1650,25 +1650,45 @@ class TestBesselJ(object):
         assert_tol_equal(jv(301, 1296.0682), -0.0224174325312048)
 
     def test_ticket_853(self):
+        """Negative-order Bessels"""
         # cephes
         assert_tol_equal(jv(-1,   1   ), -0.4400505857449335)
         assert_tol_equal(jv(-2,   1   ), 0.1149034849319005)
         assert_tol_equal(yv(-1,   1   ), 0.7812128213002887)
         assert_tol_equal(yv(-2,   1   ), -1.650682606816255)
+        assert_tol_equal(iv(-1,   1   ), 0.5651591039924851)
+        assert_tol_equal(iv(-2,   1   ), 0.1357476697670383)
+        assert_tol_equal(kv(-1,   1   ), 0.6019072301972347)
+        assert_tol_equal(kv(-2,   1   ), 1.624838898635178)
         assert_tol_equal(jv(-0.5, 1   ), 0.43109886801837607952)
         assert_tol_equal(yv(-0.5, 1   ), 0.6713967071418031)
+        assert_tol_equal(iv(-0.5, 1   ), 1.231200214592967)
+        assert_tol_equal(kv(-0.5, 1   ), 0.4610685044478945)
         # amos
         assert_tol_equal(jv(-1,   1+0j), -0.4400505857449335)
         assert_tol_equal(jv(-2,   1+0j), 0.1149034849319005)
         assert_tol_equal(yv(-1,   1+0j), 0.7812128213002887)
         assert_tol_equal(yv(-2,   1+0j), -1.650682606816255)
+
+        assert_tol_equal(iv(-1,   1+0j), 0.5651591039924851)
+        assert_tol_equal(iv(-2,   1+0j), 0.1357476697670383)
+        assert_tol_equal(kv(-1,   1+0j), 0.6019072301972347)
+        assert_tol_equal(kv(-2,   1+0j), 1.624838898635178)
+        
         assert_tol_equal(jv(-0.5, 1+0j), 0.43109886801837607952)
         assert_tol_equal(jv(-0.5, 1+1j), 0.2628946385649065-0.827050182040562j)
         assert_tol_equal(yv(-0.5, 1+0j), 0.6713967071418031)
         assert_tol_equal(yv(-0.5, 1+1j), 0.967901282890131+0.0602046062142816j)
+        
+        assert_tol_equal(iv(-0.5, 1+0j), 1.231200214592967)
+        assert_tol_equal(iv(-0.5, 1+1j), 0.77070737376928+0.39891821043561j)
+        assert_tol_equal(kv(-0.5, 1+0j), 0.4610685044478945)
+        assert_tol_equal(kv(-0.5, 1+1j), 0.06868578341999-0.38157825981268j)
 
-        assert_tol_equal(jve(-0.5,1+0j), jv(-0.5, 1+0j))
-        assert_tol_equal(yve(-0.5,1+0j), yv(-0.5, 1+0j))
+        assert_tol_equal(jve(-0.5,1+0.3j), jv(-0.5, 1+0.3j)*exp(-0.3))
+        assert_tol_equal(yve(-0.5,1+0.3j), yv(-0.5, 1+0.3j)*exp(-0.3))
+        assert_tol_equal(ive(-0.5,0.3+1j), iv(-0.5, 0.3+1j)*exp(-0.3))
+        assert_tol_equal(kve(-0.5,0.3+1j), kv(-0.5, 0.3+1j)*exp(0.3+1j))
 
         assert_tol_equal(hankel1(-0.5, 1+1j), jv(-0.5, 1+1j) + 1j*yv(-0.5,1+1j))
         assert_tol_equal(hankel2(-0.5, 1+1j), jv(-0.5, 1+1j) - 1j*yv(-0.5,1+1j))
