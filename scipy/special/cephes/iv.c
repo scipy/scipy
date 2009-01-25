@@ -63,7 +63,7 @@ extern double floor ( double );
 #else
 double hyperg(), exp(), gamma(), log(), fabs(), floor();
 #endif
-extern double MACHEP, MAXNUM;
+extern double MACHEP, MAXNUM, NAN;
 
 double iv( v, x )
 double v, x;
@@ -88,7 +88,7 @@ if( x < 0.0 )
 	if( t != v )
 		{
 		mtherr( "iv", DOMAIN );
-		return( 0.0 );
+		return( NAN );
 		}
 	if( v != 2.0 * floor(v/2.0) )
 		sign = -1;

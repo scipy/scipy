@@ -1629,20 +1629,31 @@ class TestBessel(TestCase):
         yvp1 = yvp(2,.2)
         assert_array_almost_equal(yvp1,yvpr,10)
 
-class TestBesselJ(object):
-
-    def test_cephes_vs_amos(self):
+    def check_cephes_vs_amos(self, f1, f2, rtol=1e-11, atol=0):
         for v in [-120, -100.3, -20., -10., -1., 0., 1., 12.49, 120., 301]:
-            for z in [1., 10., 200.5, 400., 600.5, 700.6, 1300, 10000]:
-                c1, c2, c3 = jv(v, z), jv(v,z+0j), jn(int(v), z)
+            for z in [-1300, -11, -10, -1, 1., 10., 200.5, 401., 600.5, 700.6,
+                      1300, 10003]:
+                c1, c2, c3 = f1(v, z), f1(v,z+0j), f2(int(v), z)
                 if np.isinf(c1):
-                    assert np.abs(c2) >= 1e150
+                    assert np.abs(c2) >= 1e150, (v, z)
                 elif np.isnan(c1):
-                    assert np.abs(c2.imag) > 1e-10
+                    assert c2.imag != 0, (v, z)
                 else:
-                    assert_tol_equal(c1, c2, err_msg=(v, z), rtol=1e-11)
+                    assert_tol_equal(c1, c2, err_msg=(v, z), rtol=rtol, atol=atol)
                     if v == int(v):
-                        assert_tol_equal(c2, c3, err_msg=(v, z), rtol=1e-11)
+                        assert_tol_equal(c3, c2, err_msg=(v, z), rtol=rtol, atol=atol)
+
+    def test_jv_cephes_vs_amos(self):
+        self.check_cephes_vs_amos(jv, jn, rtol=1e-10, atol=1e-305)
+
+    def test_yv_cephes_vs_amos(self):
+        self.check_cephes_vs_amos(yv, yn, rtol=1e-11, atol=1e-305)
+
+    def test_iv_cephes_vs_amos(self):
+        self.check_cephes_vs_amos(iv, iv, rtol=1e-8, atol=1e-305)
+
+    def test_kv_cephes_vs_amos(self):
+        self.check_cephes_vs_amos(kv, kn, rtol=1e-9, atol=1e-305)
 
     def test_ticket_623(self):
         assert_tol_equal(jv(3, 4), 0.43017147387562193)
@@ -1693,10 +1704,24 @@ class TestBesselJ(object):
         assert_tol_equal(hankel1(-0.5, 1+1j), jv(-0.5, 1+1j) + 1j*yv(-0.5,1+1j))
         assert_tol_equal(hankel2(-0.5, 1+1j), jv(-0.5, 1+1j) - 1j*yv(-0.5,1+1j))
 
+    def test_ticket_854(self):
+        """Real-valued Bessel domains"""
+        assert isnan(jv(0.5, -1))
+        assert isnan(iv(0.5, -1))
+        assert isnan(yv(0.5, -1))
+        assert isnan(yv(1, -1))
+        assert isnan(kv(0.5, -1))
+        assert isnan(kv(1, -1))
+        assert isnan(jve(0.5, -1))
+        assert isnan(ive(0.5, -1))
+        assert isnan(yve(0.5, -1))
+        assert isnan(yve(1, -1))
+        assert isnan(kve(0.5, -1))
+        assert isnan(kve(1, -1))
+        assert isnan(airye(-1)[0:2]).all(), airye(-1)
+        assert not isnan(airye(-1)[2:4]).any(), airye(-1)
 
-class TestBesselI(object):
-
-    def _series(self, v, z, n=200):
+    def iv_series(self, v, z, n=200):
         k = arange(0, n).astype(float_)
         r = (v+2*k)*log(.5*z) - gammaln(k+1) - gammaln(v+k+1)
         r[isnan(r)] = inf
@@ -1706,28 +1731,19 @@ class TestBesselI(object):
 
     def test_i0_series(self):
         for z in [1., 10., 200.5]:
-            value, err = self._series(0, z)
+            value, err = self.iv_series(0, z)
             assert_tol_equal(i0(z), value, atol=err, err_msg=z)
 
     def test_i1_series(self):
             for z in [1., 10., 200.5]:
-                value, err = self._series(1, z)
+                value, err = self.iv_series(1, z)
                 assert_tol_equal(i1(z), value, atol=err, err_msg=z)
 
     def test_iv_series(self):
         for v in [-20., -10., -1., 0., 1., 12.49, 120.]:
             for z in [1., 10., 200.5, -1+2j]:
-                value, err = self._series(v, z)
+                value, err = self.iv_series(v, z)
                 assert_tol_equal(iv(v, z), value, atol=err, err_msg=(v, z))
-
-    def test_cephes_vs_specfun(self):
-        for v in [-120, -20., -10., -1., 0., 1., 12.49, 120.]:
-            for z in [1., 10., 200.5, 400., 600.5, 700.6]:
-                c1, c2 = iv(v, z), iv(v,z+0j)
-                if np.isinf(c1):
-                    assert np.abs(c2) >= 1e150
-                else:
-                    assert_tol_equal(c1, c2, err_msg=(v, z), rtol=1e-11)
 
     def test_i0(self):
         values = [[0.0, 1.0],
