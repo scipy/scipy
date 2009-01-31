@@ -1054,7 +1054,7 @@ void scipy_special_raise_warning(char *fmt, ...)
     va_end(ap);
 
     NPY_ALLOW_C_API
-    PyErr_WarnEx(scipy_special_SpecialFunctionWarning, msg, 1);
+    PyErr_Warn(scipy_special_SpecialFunctionWarning, msg);
     NPY_DISABLE_C_API
 }
 
