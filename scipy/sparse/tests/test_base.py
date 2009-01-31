@@ -984,7 +984,6 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
         csr = csr_matrix((data, indices, indptr))
         assert_array_equal(csr.shape,(3,6))
 
-
     def test_sort_indices(self):
         data    = arange( 5 )
         indices = array( [7, 2, 1, 5, 4] )
@@ -1005,6 +1004,18 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
         assert_array_equal(asp.nnz, 3)
         assert_array_equal(asp.data,[1, 2, 3])
         assert_array_equal(asp.todense(),bsp.todense())
+
+    def test_unsorted_arithmetic(self):
+        data    = arange( 5 )
+        indices = array( [7, 2, 1, 5, 4] )
+        indptr  = array( [0, 3, 5] )
+        asp = csr_matrix( (data, indices, indptr), shape=(2,10) )
+        data    = arange( 6 )
+        indices = array( [8, 1, 5, 7, 2, 4] )
+        indptr  = array( [0, 2, 6] )
+        bsp = csr_matrix( (data, indices, indptr), shape=(2,10) )
+        assert_equal((asp + bsp).todense(), asp.todense() + bsp.todense())
+
 
 
 
@@ -1079,6 +1090,16 @@ class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
         assert_array_equal(asp.indices,[1, 2, 7, 4, 5])
         assert_array_equal(asp.todense(),bsp.todense())
 
+    def test_unsorted_arithmetic(self):
+        data    = arange( 5 )
+        indices = array( [7, 2, 1, 5, 4] )
+        indptr  = array( [0, 3, 5] )
+        asp = csc_matrix( (data, indices, indptr), shape=(10,2) )
+        data    = arange( 6 )
+        indices = array( [8, 1, 5, 7, 2, 4] )
+        indptr  = array( [0, 2, 6] )
+        bsp = csc_matrix( (data, indices, indptr), shape=(10,2) )
+        assert_equal((asp + bsp).todense(), asp.todense() + bsp.todense())
 
 class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
     spmatrix = dok_matrix

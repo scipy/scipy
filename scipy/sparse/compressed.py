@@ -672,27 +672,19 @@ class _cs_matrix(_data_matrix):
             return self.__class__((data,self.indices,self.indptr), \
                                    shape=self.shape,dtype=data.dtype)
 
-    def _binopt(self, other, op, in_shape=None, out_shape=None):
+    def _binopt(self, other, op):
         """apply the binary operation fn to two sparse matrices"""
         other = self.__class__(other)
 
-        if in_shape is None:
-            in_shape = self.shape
-        if out_shape is None:
-            out_shape = self.shape
-
-        self.sort_indices()
-        other.sort_indices()
-
-        # e.g. csr_plus_csr, csr_mat_mat, etc.
+        # e.g. csr_plus_csr, csr_minus_csr, etc.
         fn = getattr(sparsetools, self.format + op + self.format)
 
-        maxnnz = self.nnz + other.nnz
+        maxnnz  = self.nnz + other.nnz
         indptr  = np.empty_like(self.indptr)
         indices = np.empty(maxnnz, dtype=np.intc)
         data    = np.empty(maxnnz, dtype=upcast(self.dtype,other.dtype))
 
-        fn(in_shape[0], in_shape[1], \
+        fn(self.shape[0], self.shape[1], \
                 self.indptr,  self.indices,  self.data,
                 other.indptr, other.indices, other.data,
                 indptr, indices, data)
@@ -705,6 +697,6 @@ class _cs_matrix(_data_matrix):
             indices = indices.copy()
             data    = data.copy()
 
-        A = self.__class__((data, indices, indptr), shape=out_shape)
-        A.has_sorted_indices = True
+        A = self.__class__((data, indices, indptr), shape=self.shape)
+
         return A

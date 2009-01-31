@@ -620,28 +620,11 @@ void csr_matmat_pass2(const I n_row,
 }
 
 
-
-
-
 /*
- * Compute C = A (bin_op) B for CSR matrices A,B
+ * Compute C = A (binary_op) B for CSR matrices A,B where the column 
+ * indices with the rows of A and B are not known to be sorted.
  *
- *   bin_op(x,y) - binary operator to apply elementwise
- *
- *   
- * Input Arguments:
- *   I    n_row       - number of rows in A (and B)
- *   I    n_col       - number of columns in A (and B)
- *   I    Ap[n_row+1] - row pointer
- *   I    Aj[nnz(A)]  - column indices
- *   T    Ax[nnz(A)]  - nonzeros
- *   I    Bp[?]       - row pointer
- *   I    Bj[nnz(B)]  - column indices
- *   T    Bx[nnz(B)]  - nonzeros
- * Output Arguments:
- *   I    Cp[n_row+1] - row pointer
- *   I    Cj[nnz(C)]  - column indices
- *   T    Cx[nnz(C)]  - nonzeros
+ * Refer to csr_binop_csr() for additional information
  *   
  * Note:
  *   Output arrays Cp, Cj, and Cx must be preallocated
@@ -649,28 +632,121 @@ void csr_matmat_pass2(const I n_row,
  *          nnz(C) <= nnz(A) + nnz(B)
  *
  * Note: 
- *   Input:  A and B column indices are assumed to be in sorted order 
- *   Output: C column indices are assumed to be in sorted order
+ *   Input:  A and B column indices are not assumed to be in sorted order 
+ *   Output: C column indices are not generally in sorted order
  *           Cx will not contain any zero entries
  *
  */
-template <class I, class T, class bin_op>
-void csr_binop_csr(const I n_row,
-                   const I n_col, 
-                   const I Ap[], 
-                   const I Aj[], 
-                   const T Ax[],
-                   const I Bp[],
-                   const I Bj[],
-                   const T Bx[],
-                         I Cp[],
-                         I Cj[],
-                         T Cx[],
-                   const bin_op& op)
+template <class I, class T, class binary_op>
+void csr_binop_csr_unsorted(const I n_row,
+                            const I n_col, 
+                            const I Ap[], 
+                            const I Aj[], 
+                            const T Ax[],
+                            const I Bp[],
+                            const I Bj[],
+                            const T Bx[],
+                                  I Cp[],
+                                  I Cj[],
+                                  T Cx[],
+                            const binary_op& op)
+{
+    //Method that works for unsorted indices
+
+    std::vector<I>  next(n_col,-1);
+    std::vector<T> A_row(n_col, 0);
+    std::vector<T> B_row(n_col, 0);
+
+    I nnz = 0;
+    
+    for(I i = 0; i < n_row; i++){
+        Cp[i] = nnz;
+
+        I head   = -2;
+        I length =  0;
+    
+        //add a row of A to A_row
+        I i_start = Ap[i];
+        I i_end   = Ap[i+1];
+        for(I jj = i_start; jj < i_end; jj++){
+            I j = Aj[jj];
+    
+            A_row[j] += Ax[jj];
+    
+            if(next[j] == -1){
+                next[j] = head;                       
+                head = j;
+                length++;
+            }
+        }
+    
+        //add a row of B to B_row
+        i_start = Bp[i];
+        i_end   = Bp[i+1];
+        for(I jj = i_start; jj < i_end; jj++){
+            I j = Bj[jj];
+    
+            B_row[j] += Bx[jj];
+    
+            if(next[j] == -1){
+                next[j] = head;                       
+                head = j;
+                length++;
+            }
+        }
+    
+   
+        // scan through columns where A or B has 
+        // contributed a non-zero entry
+        for(I jj = 0; jj < length; jj++){
+            T result = op(A_row[head], B_row[head]);
+    
+            if(result != 0){
+                Cj[nnz] = head;
+                Cx[nnz] = result;
+                nnz++;
+            }
+    
+            I temp = head;               
+            head = next[head];
+    
+            next[temp]  = -1;
+            A_row[temp] =  0;                             
+            B_row[temp] =  0;
+        }
+    }
+
+    Cp[n_row] = nnz;
+}
+
+
+/*
+ * Compute C = A (binary_op) B for CSR matrices A,B where the column 
+ * indices with the rows of A and B are known to be sorted.
+ *
+ * Refer to csr_binop_csr() for additional information
+ *
+ * Note: 
+ *   Input:  A and B column indices are assumed to be in sorted order 
+ *   Output: C column indices will be in sorted order
+ *           Cx will not contain any zero entries
+ *
+ */
+template <class I, class T, class binary_op>
+void csr_binop_csr_sorted(const I n_row,
+                          const I n_col, 
+                          const I Ap[], 
+                          const I Aj[], 
+                          const T Ax[],
+                          const I Bp[],
+                          const I Bj[],
+                          const T Bx[],
+                                I Cp[],
+                                I Cj[],
+                                T Cx[],
+                          const binary_op& op)
 {
     //Method that works for sorted indices
-    // assert( csr_has_sorted_indices(n_row,Ap,Aj) );
-    // assert( csr_has_sorted_indices(n_row,Bp,Bj) );
 
     Cp[0] = 0;
     I nnz = 0;
@@ -737,6 +813,60 @@ void csr_binop_csr(const I n_row,
         Cp[i+1] = nnz;
     }
 }
+
+
+/*
+ * Compute C = A (binary_op) B for CSR matrices A,B where the column 
+ * indices with the rows of A and B are known to be sorted.
+ *
+ *   binary_op(x,y) - binary operator to apply elementwise
+ *
+ * Input Arguments:
+ *   I    n_row       - number of rows in A (and B)
+ *   I    n_col       - number of columns in A (and B)
+ *   I    Ap[n_row+1] - row pointer
+ *   I    Aj[nnz(A)]  - column indices
+ *   T    Ax[nnz(A)]  - nonzeros
+ *   I    Bp[n_row+1] - row pointer
+ *   I    Bj[nnz(B)]  - column indices
+ *   T    Bx[nnz(B)]  - nonzeros
+ * Output Arguments:
+ *   I    Cp[n_row+1] - row pointer
+ *   I    Cj[nnz(C)]  - column indices
+ *   T    Cx[nnz(C)]  - nonzeros
+ *   
+ * Note:
+ *   Output arrays Cp, Cj, and Cx must be preallocated
+ *   If nnz(C) is not known a priori, a conservative bound is:
+ *          nnz(C) <= nnz(A) + nnz(B)
+ *
+ * Note: 
+ *   Input:  A and B column indices are not assumed to be in sorted order.
+ *   Output: C column indices will be in sorted if both A and B have sorted indices.
+ *           Cx will not contain any zero entries
+ *
+ */
+template <class I, class T, class binary_op>
+void csr_binop_csr(const I n_row,
+                   const I n_col, 
+                   const I Ap[], 
+                   const I Aj[], 
+                   const T Ax[],
+                   const I Bp[],
+                   const I Bj[],
+                   const T Bx[],
+                         I Cp[],
+                         I Cj[],
+                         T Cx[],
+                   const binary_op& op)
+{
+    if (csr_has_sorted_indices(n_row,Ap,Aj) && csr_has_sorted_indices(n_row,Bp,Bj))
+        csr_binop_csr_sorted(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
+    else
+        csr_binop_csr_unsorted(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
+}
+
+
 
 /* element-wise binary operations*/
 template <class I, class T>
