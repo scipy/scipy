@@ -330,21 +330,123 @@ bool is_nonzero_block(const T block[], const I blocksize){
 
 
 
+/*
+ * Compute C = A (binary_op) B for BSR matrices that are not
+ * necessarily canonical BSR format.  Specifically, this method
+ * works even when the input matrices have duplicate and/or
+ * unsorted column indices within a given row.
+ *
+ * Refer to bsr_binop_bsr() for additional information
+ *   
+ * Note:
+ *   Output arrays Cp, Cj, and Cx must be preallocated
+ *   If nnz(C) is not known a priori, a conservative bound is:
+ *          nnz(C) <= nnz(A) + nnz(B)
+ *
+ * Note: 
+ *   Input:  A and B column indices are not assumed to be in sorted order 
+ *   Output: C column indices are not generally in sorted order
+ *           C will not contain any duplicate entries or explicit zeros.
+ *
+ */
 template <class I, class T, class bin_op>
-void bsr_binop_bsr(const I n_brow, const I n_bcol, 
-                   const I R,      const I C, 
-                   const I Ap[],   const I Aj[],    const T Ax[],
-                   const I Bp[],   const I Bj[],    const T Bx[],
-                         I Cp[],         I Cj[],          T Cx[],
-                   const bin_op& op)
+void bsr_binop_bsr_general(const I n_brow, const I n_bcol,
+                           const I R,      const I C,
+                           const I Ap[],  const I Aj[],  const T Ax[],
+                           const I Bp[],  const I Bj[],  const T Bx[],
+                                 I Cp[],        I Cj[],        T Cx[],
+                           const bin_op& op)
 {
-    assert( R > 0 && C > 0);
-    
-    if( R == 1 && C == 1 ){
-        csr_binop_csr(n_brow, n_bcol, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op); //use CSR for 1x1 blocksize 
-        return;
-    }
+    //Method that works for duplicate and/or unsorted indices
+    const I RC = R*C;
 
+    Cp[0] = 0;
+    I nnz = 0;
+
+    std::vector<I>  next(n_bcol,     -1);
+    std::vector<T> A_row(n_bcol * RC, 0);   // this approach can be problematic for large R
+    std::vector<T> B_row(n_bcol * RC, 0);
+
+    for(I i = 0; i < n_brow; i++){
+        I head   = -2;
+        I length =  0;
+
+        //add a row of A to A_row
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+            I j = Aj[jj];
+
+            for(I n = 0; n < RC; n++)
+                A_row[RC*j + n] += Ax[RC*jj + n];
+
+            if(next[j] == -1){
+                next[j] = head;                       
+                head = j;
+                length++;
+            }
+        }
+
+        //add a row of B to B_row
+        for(I jj = Bp[i]; jj < Bp[i+1]; jj++){
+            I j = Bj[jj];
+
+            for(I n = 0; n < RC; n++)
+                B_row[RC*j + n] += Bx[RC*jj + n];
+
+            if(next[j] == -1){
+                next[j] = head;                       
+                head = j;
+                length++;
+            }
+        }
+
+
+        for(I jj = 0; jj < length; jj++){
+            // compute op(block_A, block_B)
+            for(I n = 0; n < RC; n++)
+                Cx[RC * nnz + n] = op(A_row[RC*head + n], B_row[RC*head + n]);
+
+            // advance counter if block is nonzero
+            if( is_nonzero_block(Cx + (RC * nnz), RC) )
+                Cj[nnz++] = head;
+
+            // clear block_A and block_B values
+            for(I n = 0; n < RC; n++){
+                A_row[RC*head + n] = 0;
+                B_row[RC*head + n] = 0;
+            }
+
+            I temp = head;               
+            head = next[head];
+            next[temp] = -1;
+        }
+        
+        Cp[i + 1] = nnz;
+    }
+}
+
+
+/*
+ * Compute C = A (binary_op) B for BSR matrices that are in the 
+ * canonical BSR format.  Specifically, this method requires that
+ * the rows of the input matrices are free of duplicate column indices
+ * and that the column indices are in sorted order.
+ *
+ * Refer to bsr_binop_bsr() for additional information
+ *
+ * Note: 
+ *   Input:  A and B column indices are assumed to be in sorted order 
+ *   Output: C column indices will be in sorted order
+ *           Cx will not contain any zero entries
+ *
+ */
+template <class I, class T, class bin_op>
+void bsr_binop_bsr_canonical(const I n_brow, const I n_bcol, 
+                             const I R,      const I C, 
+                             const I Ap[],  const I Aj[],  const T Ax[],
+                             const I Bp[],  const I Bj[],  const T Bx[],
+                                   I Cp[],        I Cj[],        T Cx[],
+                             const bin_op& op)
+{
     const I RC = R*C;
     T * result = Cx;
 
@@ -364,7 +466,7 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
 
             if(A_j == B_j){
                 for(I n = 0; n < RC; n++){
-                    result[n] = op(Ax[RC*A_pos + n],Bx[RC*B_pos + n]);
+                    result[n] = op(Ax[RC*A_pos + n], Bx[RC*B_pos + n]);
                 }
 
                 if( is_nonzero_block(result,RC) ){
@@ -377,7 +479,7 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
                 B_pos++;
             } else if (A_j < B_j) {
                 for(I n = 0; n < RC; n++){
-                    result[n] = op(Ax[RC*A_pos + n],0);
+                    result[n] = op(Ax[RC*A_pos + n], 0);
                 }
 
                 if(is_nonzero_block(result,RC)){
@@ -390,7 +492,7 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
             } else {
                 //B_j < A_j
                 for(I n = 0; n < RC; n++){
-                    result[n] = op(0,Bx[RC*B_pos + n]);
+                    result[n] = op(0, Bx[RC*B_pos + n]);
                 }
                 if(is_nonzero_block(result,RC)){
                     Cj[nnz] = B_j;
@@ -405,10 +507,10 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
         //tail
         while(A_pos < A_end){
             for(I n = 0; n < RC; n++){
-                result[n] = op(Ax[RC*A_pos + n],0);
+                result[n] = op(Ax[RC*A_pos + n], 0);
             }
 
-            if(is_nonzero_block(result,RC)){
+            if(is_nonzero_block(result, RC)){
                 Cj[nnz] = Aj[A_pos];
                 result += RC;
                 nnz++;
@@ -421,7 +523,7 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
                 result[n] = op(0,Bx[RC*B_pos + n]);
             }
 
-            if(is_nonzero_block(result,RC)){
+            if(is_nonzero_block(result, RC)){
                 Cj[nnz] = Bj[B_pos];
                 result += RC;
                 nnz++;
@@ -431,6 +533,62 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
         }
 
         Cp[i+1] = nnz;
+    }
+}
+
+
+/*
+ * Compute C = A (binary_op) B for CSR matrices A,B where the column 
+ * indices with the rows of A and B are known to be sorted.
+ *
+ *   binary_op(x,y) - binary operator to apply elementwise
+ *
+ * Input Arguments:
+ *   I    n_row       - number of rows in A (and B)
+ *   I    n_col       - number of columns in A (and B)
+ *   I    Ap[n_row+1] - row pointer
+ *   I    Aj[nnz(A)]  - column indices
+ *   T    Ax[nnz(A)]  - nonzeros
+ *   I    Bp[n_row+1] - row pointer
+ *   I    Bj[nnz(B)]  - column indices
+ *   T    Bx[nnz(B)]  - nonzeros
+ * Output Arguments:
+ *   I    Cp[n_row+1] - row pointer
+ *   I    Cj[nnz(C)]  - column indices
+ *   T    Cx[nnz(C)]  - nonzeros
+ *   
+ * Note:
+ *   Output arrays Cp, Cj, and Cx must be preallocated
+ *   If nnz(C) is not known a priori, a conservative bound is:
+ *          nnz(C) <= nnz(A) + nnz(B)
+ *
+ * Note: 
+ *   Input:  A and B column indices are not assumed to be in sorted order.
+ *   Output: C column indices will be in sorted if both A and B have sorted indices.
+ *           Cx will not contain any zero entries
+ *
+ */
+template <class I, class T, class bin_op>
+void bsr_binop_bsr(const I n_brow, const I n_bcol, 
+                   const I R,     const I C, 
+                   const I Ap[],  const I Aj[],  const T Ax[],
+                   const I Bp[],  const I Bj[],  const T Bx[],
+                         I Cp[],        I Cj[],        T Cx[],
+                   const bin_op& op)
+{
+    assert( R > 0 && C > 0);
+    
+    if( R == 1 && C == 1 ){
+        //use CSR for 1x1 blocksize
+        csr_binop_csr(n_brow, n_bcol, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
+    }
+    else if ( csr_has_canonical_format(n_brow, Ap, Aj) && csr_has_canonical_format(n_brow, Bp, Bj) ){
+        // prefer faster implementation
+        bsr_binop_bsr_canonical(n_brow, n_bcol, R, C, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
+    }
+    else {
+        // slower fallback method
+        bsr_binop_bsr_general(n_brow, n_bcol, R, C, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
     }
 }
 
@@ -529,6 +687,8 @@ void bsr_matvec(const I n_brow,
         }
     }
 }
+
+
 /*
  * Compute Y += A*X for BSR matrix A and dense block vectors X,Y
  *

@@ -490,15 +490,10 @@ class bsr_matrix(_cs_matrix):
     # utility functions
     def _binopt(self, other, op, in_shape=None, out_shape=None):
         """apply the binary operation fn to two sparse matrices"""
-        other = self.__class__(other,blocksize=self.blocksize)
 
-        if in_shape is None:
-            in_shape = self.shape
-        if out_shape is None:
-            out_shape = self.shape
-
-        self.sort_indices()
-        other.sort_indices()
+        # ideally we'd take the GCDs of the blocksize dimensions
+        # and explode self and other to match
+        other = self.__class__(other, blocksize=self.blocksize)
 
         # e.g. bsr_plus_bsr, etc.
         fn = getattr(sparsetools, self.format + op + self.format)
@@ -510,7 +505,7 @@ class bsr_matrix(_cs_matrix):
         indices = np.empty(max_bnnz, dtype=np.intc)
         data    = np.empty(R*C*max_bnnz, dtype=upcast(self.dtype,other.dtype))
 
-        fn(in_shape[0]/R, in_shape[1]/C, R, C, \
+        fn(self.shape[0]/R, self.shape[1]/C, R, C,
                 self.indptr,  self.indices,  np.ravel(self.data),
                 other.indptr, other.indices, np.ravel(other.data),
                 indptr,       indices,       data)
@@ -525,7 +520,7 @@ class bsr_matrix(_cs_matrix):
 
         data = data.reshape(-1,R,C)
 
-        return self.__class__((data, indices, indptr), shape=out_shape)
+        return self.__class__((data, indices, indptr), shape=self.shape)
 
     # needed by _data_matrix
     def _with_data(self,data,copy=True):

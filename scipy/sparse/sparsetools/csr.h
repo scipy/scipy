@@ -83,6 +83,7 @@ void expandptr(const I n_row,
     }
 }
 
+
 /*
  * Scale the rows of a CSR matrix *in place*
  *
@@ -103,6 +104,7 @@ void csr_scale_rows(const I n_row,
         }
     }
 }
+
 
 /*
  * Scale the columns of a CSR matrix *in place*
@@ -189,7 +191,6 @@ I csr_count_blocks(const I n_row,
  *
  * 
  */
-
 template <class I, class T>
 void csr_tobsr(const I n_row,
 	           const I n_col, 
@@ -243,15 +244,13 @@ void csr_tobsr(const I n_row,
 }
 
 
-
 /*
- * Sort CSR column indices inplace
+ * Determine whether the CSR column indices are in sorted order.
  *
  * Input Arguments:
  *   I  n_row           - number of rows in A
  *   I  Ap[n_row+1]     - row pointer
  *   I  Aj[nnz(A)]      - column indices
- *   T  Ax[nnz(A)]      - nonzeros 
  *
  */
 template <class I>
@@ -268,11 +267,54 @@ bool csr_has_sorted_indices(const I n_row,
   }
   return true;
 }
+
+
+
+/*
+ * Determine whether the matrix structure is canonical CSR.
+ * Canonical CSR implies that column indices within each row
+ * are (1) sorted and (2) unique.  Matrices that meet these 
+ * conditions facilitate faster matrix computations.
+ *
+ * Input Arguments:
+ *   I  n_row           - number of rows in A
+ *   I  Ap[n_row+1]     - row pointer
+ *   I  Aj[nnz(A)]      - column indices
+ *
+ */
+template <class I>
+bool csr_has_canonical_format(const I n_row, 
+                              const I Ap[],
+                              const I Aj[])
+{
+    for(I i = 0; i < n_row; i++){
+        if (Ap[i] > Ap[i+1])
+            return false;
+        for(I jj = Ap[i] + 1; jj < Ap[i+1]; jj++){
+            if( !(Aj[jj-1] < Aj[jj]) ){
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+
 template< class T1, class T2 >
 bool kv_pair_less(const std::pair<T1,T2>& x, const std::pair<T1,T2>& y){
     return x.first < y.first;
 }
 
+/*
+ * Sort CSR column indices inplace
+ *
+ * Input Arguments:
+ *   I  n_row           - number of rows in A
+ *   I  Ap[n_row+1]     - row pointer
+ *   I  Aj[nnz(A)]      - column indices
+ *   T  Ax[nnz(A)]      - nonzeros 
+ *
+ */
 template<class I, class T>
 void csr_sort_indices(const I n_row,
                       const I Ap[], 
@@ -486,52 +528,8 @@ void csr_matmat_pass1(const I n_row,
                       const I Bj[],
                             I Cp[])
 {
-//    // method that uses O(1) temp storage
-//    const I hash_size = 1 << 5;
-//    I vals[hash_size];
-//    I mask[hash_size];
-//
-//    std::set<I> spill;    
-//    
-//    for(I i = 0; i < hash_size; i++){
-//        vals[i] = -1;
-//        mask[i] = -1;
-//    }
-//
-//    Cp[0] = 0;
-//
-//    I slow_inserts = 0;
-//    I total_inserts = 0;
-//    I nnz = 0;
-//    for(I i = 0; i < n_row; i++){
-//        spill.clear();
-//        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
-//            I j = Aj[jj];
-//            for(I kk = Bp[j]; kk < Bp[j+1]; kk++){
-//                I k = Bj[kk];
-//                // I hash = k & (hash_size - 1);
-//                I hash = ((I)2654435761 * k) & (hash_size -1 );
-//                total_inserts++;
-//                if(mask[hash] != i){
-//                    mask[hash] = i;                        
-//                    vals[hash] = k;
-//                    nnz++;
-//                } else {
-//                    if (vals[hash] != k){
-//                        slow_inserts++;
-//                        spill.insert(k);
-//                    }
-//                }
-//            }
-//        }       
-//        nnz += spill.size();
-//        Cp[i+1] = nnz;
-//    }
-//
-//    std::cout << "slow fraction " << ((float) slow_inserts)/ ((float) total_inserts) << std::endl;
-
     // method that uses O(n) temp storage
-    std::vector<I> mask(n_col,-1);
+    std::vector<I> mask(n_col, -1);
     Cp[0] = 0;
 
     I nnz = 0;
@@ -594,7 +592,7 @@ void csr_matmat_pass2(const I n_row,
 
                 if(next[k] == -1){
                     next[k] = head;                        
-                    head = k;
+                    head  = k;
                     length++;
                 }
             }
@@ -621,8 +619,10 @@ void csr_matmat_pass2(const I n_row,
 
 
 /*
- * Compute C = A (binary_op) B for CSR matrices A,B where the column 
- * indices with the rows of A and B are not known to be sorted.
+ * Compute C = A (binary_op) B for CSR matrices that are not
+ * necessarily canonical CSR format.  Specifically, this method
+ * works even when the input matrices have duplicate and/or
+ * unsorted column indices within a given row.
  *
  * Refer to csr_binop_csr() for additional information
  *   
@@ -634,34 +634,26 @@ void csr_matmat_pass2(const I n_row,
  * Note: 
  *   Input:  A and B column indices are not assumed to be in sorted order 
  *   Output: C column indices are not generally in sorted order
- *           Cx will not contain any zero entries
+ *           C will not contain any duplicate entries or explicit zeros.
  *
  */
 template <class I, class T, class binary_op>
-void csr_binop_csr_unsorted(const I n_row,
-                            const I n_col, 
-                            const I Ap[], 
-                            const I Aj[], 
-                            const T Ax[],
-                            const I Bp[],
-                            const I Bj[],
-                            const T Bx[],
-                                  I Cp[],
-                                  I Cj[],
-                                  T Cx[],
-                            const binary_op& op)
+void csr_binop_csr_general(const I n_row, const I n_col, 
+                           const I Ap[], const I Aj[], const T Ax[],
+                           const I Bp[], const I Bj[], const T Bx[],
+                                 I Cp[],       I Cj[],       T Cx[],
+                           const binary_op& op)
 {
-    //Method that works for unsorted indices
+    //Method that works for duplicate and/or unsorted indices
 
     std::vector<I>  next(n_col,-1);
     std::vector<T> A_row(n_col, 0);
     std::vector<T> B_row(n_col, 0);
 
     I nnz = 0;
+    Cp[0] = 0;
     
     for(I i = 0; i < n_row; i++){
-        Cp[i] = nnz;
-
         I head   = -2;
         I length =  0;
     
@@ -714,15 +706,18 @@ void csr_binop_csr_unsorted(const I n_row,
             A_row[temp] =  0;                             
             B_row[temp] =  0;
         }
-    }
 
-    Cp[n_row] = nnz;
+        Cp[i + 1] = nnz;
+    }
 }
 
 
+
 /*
- * Compute C = A (binary_op) B for CSR matrices A,B where the column 
- * indices with the rows of A and B are known to be sorted.
+ * Compute C = A (binary_op) B for CSR matrices that are in the 
+ * canonical CSR format.  Specifically, this method requires that
+ * the rows of the input matrices are free of duplicate column indices
+ * and that the column indices are in sorted order.
  *
  * Refer to csr_binop_csr() for additional information
  *
@@ -733,20 +728,13 @@ void csr_binop_csr_unsorted(const I n_row,
  *
  */
 template <class I, class T, class binary_op>
-void csr_binop_csr_sorted(const I n_row,
-                          const I n_col, 
-                          const I Ap[], 
-                          const I Aj[], 
-                          const T Ax[],
-                          const I Bp[],
-                          const I Bj[],
-                          const T Bx[],
-                                I Cp[],
-                                I Cj[],
-                                T Cx[],
-                          const binary_op& op)
+void csr_binop_csr_canonical(const I n_row, const I n_col, 
+                             const I Ap[], const I Aj[], const T Ax[],
+                             const I Bp[], const I Bj[], const T Bx[],
+                                   I Cp[],       I Cj[],       T Cx[],
+                             const binary_op& op)
 {
-    //Method that works for sorted indices
+    //Method that works for canonical CSR matrices 
 
     Cp[0] = 0;
     I nnz = 0;
@@ -810,6 +798,7 @@ void csr_binop_csr_sorted(const I n_row,
             }
             B_pos++;
         }
+
         Cp[i+1] = nnz;
     }
 }
@@ -860,10 +849,10 @@ void csr_binop_csr(const I n_row,
                          T Cx[],
                    const binary_op& op)
 {
-    if (csr_has_sorted_indices(n_row,Ap,Aj) && csr_has_sorted_indices(n_row,Bp,Bj))
-        csr_binop_csr_sorted(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
+    if (csr_has_canonical_format(n_row,Ap,Aj) && csr_has_canonical_format(n_row,Bp,Bj))
+        csr_binop_csr_canonical(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
     else
-        csr_binop_csr_unsorted(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
+        csr_binop_csr_general(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
 }
 
 

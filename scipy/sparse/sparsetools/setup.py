@@ -8,7 +8,8 @@ def configuration(parent_package='',top_path=None):
 
     for fmt in ['csr','csc','coo','bsr','dia']:
         sources = [ fmt + '_wrap.cxx' ]
-        config.add_extension('_' + fmt, sources=sources)
+        depends = [ fmt + '.h' ]
+        config.add_extension('_' + fmt, sources=sources, depends=depends)
 
     return config
 

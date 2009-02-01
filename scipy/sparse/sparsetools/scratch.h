@@ -329,3 +329,63 @@ void bsr_binop_bsr_fixed(const I n_brow, const I n_bcol,
     }
 }
 
+
+/*
+ * Pass 1 computes CSR row pointer for the matrix product C = A * B
+ *
+ */
+template <class I>
+void csr_matmat_pass1(const I n_row,
+                      const I n_col, 
+                      const I Ap[], 
+                      const I Aj[], 
+                      const I Bp[],
+                      const I Bj[],
+                            I Cp[])
+{
+    // method that uses O(1) temp storage
+    const I hash_size = 1 << 5;
+    I vals[hash_size];
+    I mask[hash_size];
+
+    std::set<I> spill;    
+    
+    for(I i = 0; i < hash_size; i++){
+        vals[i] = -1;
+        mask[i] = -1;
+    }
+
+    Cp[0] = 0;
+
+    I slow_inserts = 0;
+    I total_inserts = 0;
+    I nnz = 0;
+    for(I i = 0; i < n_row; i++){
+        spill.clear();
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+            I j = Aj[jj];
+            for(I kk = Bp[j]; kk < Bp[j+1]; kk++){
+                I k = Bj[kk];
+                // I hash = k & (hash_size - 1);
+                I hash = ((I)2654435761 * k) & (hash_size -1 );
+                total_inserts++;
+                if(mask[hash] != i){
+                    mask[hash] = i;                        
+                    vals[hash] = k;
+                    nnz++;
+                } else {
+                    if (vals[hash] != k){
+                        slow_inserts++;
+                        spill.insert(k);
+                    }
+                }
+            }
+        }       
+        nnz += spill.size();
+        Cp[i+1] = nnz;
+    }
+
+    std::cout << "slow fraction " << ((float) slow_inserts)/ ((float) total_inserts) << std::endl;
+}
+
+
