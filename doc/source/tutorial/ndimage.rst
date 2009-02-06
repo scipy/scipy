@@ -133,7 +133,6 @@ name of the boundary condition. Following boundary conditions are
 currently supported:
 
  ==========   ====================================   ====================
- ------------------------------------------------------------------------
  "nearest"    Use the value at the boundary          [1 2 3]->[1 1 2 3 3]
  "wrap"       Periodically replicate the array       [1 2 3]->[3 1 2 3 1]
  "reflect"    Reflect the array at the boundary      [1 2 3]->[1 1 2 3 3]
