@@ -156,7 +156,7 @@ if __name__ == '__main__':
         for k, d in data.items():
             fid = open('data/%s.txt' % k, 'w')
             for line in d:
-                fid.write("%s,\n" % ",".join(line))
+                fid.write("%s\n" % "\t".join(line))
 
     #    for items in data:
     #        assert len(items) == len(funcs)
