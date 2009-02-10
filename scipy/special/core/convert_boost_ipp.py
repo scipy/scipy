@@ -8,7 +8,7 @@ from scipy.special import gamma, gammaln, digamma, erf, erfc, expi, expn
 
 CXX_COMMENT = re.compile(r'^\s+//')
 DATA_REGEX = re.compile(r'^\s+/*\{*\s*SC_')
-ITEM_REGEX = re.compile(r'SC_\(([-\d\.e]+)\)')
+ITEM_REGEX = re.compile(r'SC_\((?:BOOST_MATH_SMALL_CONSTANT\()?([-\d\.e]+)\)+')
 HEADER_REGEX = re.compile(
 r'const boost::array\<boost::array\<T, (\d+)\>, (\d+)\> ([a-zA-Z_\d]+)')
 
@@ -156,7 +156,7 @@ if __name__ == '__main__':
         for k, d in data.items():
             fid = open('data/%s.txt' % k, 'w')
             for line in d:
-                fid.write("%s\n" % "\t".join(line))
+                fid.write("%s\t\n" % "\t".join(line))
 
     #    for items in data:
     #        assert len(items) == len(funcs)
