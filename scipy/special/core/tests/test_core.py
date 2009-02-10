@@ -4,24 +4,46 @@ import numpy as np
 from numpy.testing import *
 from scipy.special import (
     arccosh, arcsinh, arctanh, erf, erfc, log1p, expm1, 
-    jn, jv, yn, yv, iv, kv, kn, gamma, gammaln,
+    jn, jv, yn, yv, iv, kv, kn, gamma, gammaln, digamma, beta, cbrt,
+    ellipe, ellipeinc, ellipk, ellipj, erfinv, erfcinv, exp1, expi, expn,
+    zeta,
 )
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+
+
+def ellipk_(k):
+    return ellipk(k*k)
+def ellipe_(k):
+    return ellipe(k*k)
+def ellipeinc_(f, k):
+    return ellipeinc(f, k*k)
+def ellipj_(k):
+    return ellipj(k*k)
+def zeta_(x):
+    return zeta(x, 1.)
 
 def test_all():
 
     TESTS = [
         Data(arccosh, 'acosh_data.txt', 0, 1),
-
-        Data(arccosh, 'acosh_data.txt', 0, 1),
         Data(arcsinh, 'asinh_data.txt', 0, 1),
         Data(arctanh, 'atanh_data.txt', 0, 1),
-        Data(gamma, 'gamma_data.txt', 0, 1),
-        Data(gammaln, 'gamma_data.txt', 0, 2, rtol=5e-11),
 
-        #assoc_legendre_p.txt
-        #Data(erf, 'erf_inv_data.txt', 0, 1),
+        Data(beta, 'beta_exp_data.txt', (0,1), 2),
+        Data(beta, 'beta_med_data.txt', (0,1), 2, rtol=1e-12),
+        Data(beta, 'beta_small_data.txt', (0,1), 2),
+
+        Data(cbrt, 'cbrt_data.txt', 1, 0),
+
+        Data(digamma, 'digamma_data.txt', 0, 1),
+        Data(digamma, 'digamma_neg_data.txt', 0, 1, rtol=1e-13),
+        Data(digamma, 'digamma_root_data.txt', 0, 1, rtol=1e-12),
+        Data(digamma, 'digamma_small_data.txt', 0, 1),
+
+        Data(ellipk_, 'ellint_k_data.txt', 0, 1),
+        Data(ellipe_, 'ellint_e_data.txt', 0, 1),
+        Data(ellipeinc_, 'ellint_e2_data.txt', (0,1), 2),
 
         Data(erf, 'erf_data.txt', 0, 1),
         Data(erfc, 'erf_data.txt', 0, 2),
@@ -30,6 +52,20 @@ def test_all():
         Data(erf, 'erf_small_data.txt', 0, 1),
         Data(erfc, 'erf_small_data.txt', 0, 2),
 
+        Data(erfinv, 'erf_inv_data.txt', 0, 1),
+        Data(erfcinv, 'erfc_inv_data.txt', 0, 1),
+        #Data(erfcinv, 'erfc_inv_big_data.txt', 0, 1),
+
+        Data(exp1, 'expint_1_data.txt', 1, 2),
+        Data(expi, 'expinti_data.txt', 0, 1),
+        Data(expi, 'expinti_data_double.txt', 0, 1),
+
+        Data(expn, 'expint_small_data.txt', (0,1), 2),
+        Data(expn, 'expint_data.txt', (0,1), 2),
+
+        Data(gamma, 'gamma_data.txt', 0, 1),
+        Data(gammaln, 'gamma_data.txt', 0, 2, rtol=5e-11),
+        
         Data(log1p, 'log1p_expm1_data.txt', 0, 1),
         Data(expm1, 'log1p_expm1_data.txt', 0, 2),
 
@@ -46,6 +82,67 @@ def test_all():
         Data(yn, 'bessel_y01_data.txt', (0,1), 2, rtol=1e-12),
         Data(yn, 'bessel_yn_data.txt', (0,1), 2, rtol=1e-12),
         Data(yv, 'bessel_yv_data.txt', (0,1), 2, rtol=1e-12),
+
+        Data(zeta_, 'zeta_data.txt', 0, 1),
+        Data(zeta_, 'zeta_neg_data.txt', 0, 1),
+        Data(zeta_, 'zeta_1_up_data.txt', 0, 1),
+        Data(zeta_, 'zeta_1_below_data.txt', 0, 1),
+
+        # -- not used yet:
+        # assoc_legendre_p.txt
+        # beta_exp_data.txt
+        # beta_med_data.txt
+        # beta_small_data.txt
+        # binomial_data.txt
+        # binomial_large_data.txt
+        # binomial_quantile_data.txt
+        # ellint_f_data.txt
+        # ellint_pi2_data.txt
+        # ellint_pi3_data.txt
+        # ellint_pi3_large_data.txt
+        # ellint_rc_data.txt
+        # ellint_rd_data.txt
+        # ellint_rf_data.txt
+        # ellint_rj_data.txt
+        # expinti_data_long.txt
+        # factorials.txt
+        # gamma_inv_big_data.txt
+        # gamma_inv_data.txt
+        # gamma_inv_small_data.txt
+        # gammap1m1_data.txt
+        # hermite.txt
+        # ibeta_data.txt
+        # ibeta_int_data.txt
+        # ibeta_inv_data.txt
+        # ibeta_inva_data.txt
+        # ibeta_large_data.txt
+        # ibeta_small_data.txt
+        # igamma_big_data.txt
+        # igamma_int_data.txt
+        # igamma_inva_data.txt
+        # igamma_med_data.txt
+        # igamma_small_data.txt
+        # laguerre2.txt
+        # laguerre3.txt
+        # legendre_p.txt
+        # legendre_p_large.txt
+        # ncbeta.txt
+        # ncbeta_big.txt
+        # nccs.txt
+        # near_0.txt
+        # near_1.txt
+        # near_2.txt
+        # near_m10.txt
+        # near_m55.txt
+        # negative_binomial_quantile_data.txt
+        # poisson_quantile_data.txt
+        # sph_bessel_data.txt
+        # sph_neumann_data.txt
+        # spherical_harmonic.txt
+        # tgamma_delta_ratio_data.txt
+        # tgamma_delta_ratio_int.txt
+        # tgamma_delta_ratio_int2.txt
+        # tgamma_ratio_data.txt
     ]
 
     for test in TESTS:
