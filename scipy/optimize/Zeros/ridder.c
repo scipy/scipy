@@ -29,7 +29,7 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol, int iter
         dn = SIGN(fb - fa)*dm*fm/sqrt(fm*fm - fa*fb);
         xn = xm - SIGN(dn)*DMIN(fabs(dn),fabs(dm) - .5*tol);
         fn = (*f)(xn,params);
-        params->funcalls++;
+        params->funcalls += 2;
         if (fn*fm < 0.0) {
             xa = xn; fa = fn; xb = xm; fb = fm;
         }

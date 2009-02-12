@@ -48,14 +48,12 @@ brenth(callback_type f, double xa, double xb, double xtol, double rtol, int iter
     if (fcur == 0) return xcur;
     params->iterations = 0;
     for(i = 0; i < iter; i++) {
-
         params->iterations++;
-
-            if (fpre*fcur < 0) {
-                xblk = xpre;
-                fblk = fpre;
-                spre = scur = xcur - xpre;
-            }
+        if (fpre*fcur < 0) {
+            xblk = xpre;
+            fblk = fpre;
+            spre = scur = xcur - xpre;
+        }
         if (fabs(fblk) < fabs(fcur)) {
             xpre = xcur; xcur = xblk; xblk = xpre;
             fpre = fcur; fcur = fblk; fblk = fpre;
