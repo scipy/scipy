@@ -6,7 +6,7 @@ from numpy import atleast_1d, dot, take, triu, shape, eye, \
 
 error = _minpack.error
 
-__all__ = ['fsolve', 'leastsq', 'newton', 'fixed_point','bisection']
+__all__ = ['fsolve', 'leastsq', 'newton', 'fixed_point','bisection', 'curve_fit']
 
 def check_func(thefunc, x0, args, numinputs, output_shape=None):
     res = atleast_1d(thefunc(*((x0[:numinputs],)+args)))
@@ -317,6 +317,83 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
     else:
         return (retval[0], info)
 
+def _general_function(params, xdata, ydata, function):
+    return function(xdata, *params) - ydata
+
+def _weighted_general_function(params, xdata, ydata, function, weights):
+    return weights * (function(xdata, *params) - ydata)
+
+def curve_fit(f, xdata, ydata, p0=None, sigma=None):
+    """Use non-linear least squares to fit a function, f, to data.
+
+    Parameters
+    ----------
+    f : callable
+        The model function, f(x, *params).  It must take the independent
+        variable as the first argument and the parameters to fit as 
+        separate remaining arguments.
+    xdata : N-length sequence
+        The independent variable where the data is measured.
+    ydata : N-length sequence
+        The dependent data --- nominally f(xdata, *params)
+    p0 : None, scalar, or M-length sequence
+        Initial guess for the parameters.  If None, then the initial
+        values will all be 1 (if the number of parameters for the function
+        can be determined using introspection, otherwise a ValueError is raised). 
+    sigma : None or N-length sequence
+        If not None, it represents the standard-deviation of ydata.  This
+        vector, if given, will be used as weights in the least-squares problem. 
+
+    Returns
+    -------
+    popt : array
+        Optimal values for the parameters so that the sum of the squared error of
+        f(xdata, *popt) - ydata is minimized
+    pcov : 2d array
+        The estimated covariance of popt.  The diagonals provide the variance of
+        the parameter estimate. 
+
+    Notes
+    -----
+    The algorithm uses the Levenburg-Marquardt algorithm (scipy.optimize.leastsq)
+    under the hood. 
+
+    Example
+    -------
+    import numpy as np
+    from scipy.optimize import curve_fit
+    def func(x, a, b, c):
+        return a*exp(-b*x) + c
+
+    x = np.linspace(0,4,50)
+    y = func(x, 2.5, 1.3, 0.5)
+    yn = y + 0.2*np.random.normal(size=len(x))
+    
+    popt, pcov = curve_fit(func, x, yn)
+    """
+    if p0 is None or isscalar(p0):
+        # determine number of parameters by inspecting the function
+        import inspect
+        args, varargs, varkw, defaults = inspect.getargspec(f)
+        if len(args) < 2:
+            raise ValueError, "p0 not given as a sequence and inspection"\
+                " cannot determine the number of fit parameters"
+        if p0 is None:
+            p0 = 1.0
+        p0 = [p0]*(len(args)-1)
+
+    args = (xdata, ydata, f)
+    if sigma is None:
+        func = _general_function
+    else:
+        func = _weighted_general_function
+        args += (1.0/asarray(sigma),)
+    popt, pcov, infodict, mesg, ier = leastsq(func, p0, args=args, full_output=1)
+    
+    if ier != 1:
+        raise RuntimeError, "Optimal parameters not found: " + mesg
+        
+    return popt, pcov
 
 def check_gradient(fcn,Dfcn,x0,args=(),col_deriv=0):
     """Perform a simple check on the gradient for correctness.
