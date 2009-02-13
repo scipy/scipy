@@ -262,7 +262,7 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
 
       fixed_point -- scalar and vector fixed-point finder
 
-      curve_fit -- find parameters for a 1-d curve-fitting problem. 
+      curve_fit -- find parameters for a curve-fitting problem. 
 
     """
     x0 = array(x0,ndmin=1)
@@ -331,13 +331,16 @@ def _weighted_general_function(params, xdata, ydata, function, weights):
 def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
     """Use non-linear least squares to fit a function, f, to data.
 
+    Assumes ydata = f(xdata,*params) + eps
+
     Parameters
     ----------
     f : callable
         The model function, f(x, *params).  It must take the independent
         variable as the first argument and the parameters to fit as 
         separate remaining arguments.
-    xdata : N-length sequence
+    xdata : An N-length sequence or an (k,N)-shaped array
+        for functions with k predictors. 
         The independent variable where the data is measured.
     ydata : N-length sequence
         The dependent data --- nominally f(xdata, *params)
@@ -399,8 +402,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
     if ier != 1:
         raise RuntimeError, "Optimal parameters not found: " + mesg
 
-    if (len(xdata) > len(p0)):
-        s_sq = (func(popt, *args)**2).sum()/(len(xdata)-len(p0))
+    if (len(ydata) > len(p0)):
+        s_sq = (func(popt, *args)**2).sum()/(len(ydata)-len(p0))
         if sigma is not None:
             s_sq /= (args[-1]**2).sum()
         pcov = pcov * s_sq
