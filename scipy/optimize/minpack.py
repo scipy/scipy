@@ -191,9 +191,12 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
          unsuccessful call.
 
     cov_x -- uses the fjac and ipvt optional outputs to construct an
-             estimate of the covariance matrix of the solution.
+             estimate of the jacobian around the solution.
              None if a singular matrix encountered (indicates
-             infinite covariance in some direction).
+             very flat curvature in some direction).  This
+             matrix must be multiplied by the residual standard
+             deviation to get the covariance of the parameter 
+             estimates --- see curve_fit.
     infodict -- a dictionary of optional outputs with the keys:
                 'nfev' : the number of function calls
                 'fvec' : the function evaluated at the output
@@ -259,6 +262,8 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
 
       fixed_point -- scalar and vector fixed-point finder
 
+      curve_fit -- find parameters for a 1-d curve-fitting problem. 
+
     """
     x0 = array(x0,ndmin=1)
     n = len(x0)
@@ -323,7 +328,7 @@ def _general_function(params, xdata, ydata, function):
 def _weighted_general_function(params, xdata, ydata, function, weights):
     return weights * (function(xdata, *params) - ydata)
 
-def curve_fit(f, xdata, ydata, p0=None, sigma=None):
+def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
     """Use non-linear least squares to fit a function, f, to data.
 
     Parameters
@@ -350,13 +355,14 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None):
         Optimal values for the parameters so that the sum of the squared error of
         f(xdata, *popt) - ydata is minimized
     pcov : 2d array
-        A covariance matrix shouwing the curvature of the sum-of-squares 
-        residual near the returned solution.  Returned directly from the call
-        to scipy.optimize.leastsq.
+        A covariance matrix providing an estimate of the covariance matrix of
+        the parameter estimates.   This may not be accurate when sigma 
+        is given. 
 
     Notes
     -----
     The algorithm uses the Levenburg-Marquardt algorithm: scipy.optimize.leastsq
+    Additional keyword arguments are passed directly to that algorithm. 
 
     Example
     -------
@@ -388,10 +394,18 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None):
     else:
         func = _weighted_general_function
         args += (1.0/asarray(sigma),)
-    popt, pcov, infodict, mesg, ier = leastsq(func, p0, args=args, full_output=1)
+    popt, pcov, infodict, mesg, ier = leastsq(func, p0, args=args, full_output=1, **kw)
     
     if ier != 1:
         raise RuntimeError, "Optimal parameters not found: " + mesg
+
+    if (len(xdata) > len(p0)):
+        s_sq = (func(popt, *args)**2).sum()/(len(xdata)-len(p0))
+        if sigma is not None:
+            s_sq /= args[-1].sum()
+        pcov = pcov * s_sq
+    else:
+        pcov = None
         
     return popt, pcov
 
