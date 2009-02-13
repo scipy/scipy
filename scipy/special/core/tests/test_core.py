@@ -2,12 +2,10 @@ import os
 
 import numpy as np
 from numpy.testing import *
-from scipy.special import (
-    arccosh, arcsinh, arctanh, erf, erfc, log1p, expm1, 
-    jn, jv, yn, yv, iv, kv, kn, gamma, gammaln, digamma, beta, cbrt,
-    ellipe, ellipeinc, ellipk, ellipj, erfinv, erfcinv, exp1, expi, expn,
-    zeta,
-)
+from scipy.special import arccosh, arcsinh, arctanh, erf, erfc, log1p, expm1, \
+    jn, jv, yn, yv, iv, kv, kn, gamma, gammaln, digamma, beta, cbrt, \
+    ellipe, ellipeinc, ellipk, ellipj, erfinv, erfcinv, exp1, expi, expn, \
+    zeta
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
