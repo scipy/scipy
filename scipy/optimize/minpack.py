@@ -2,7 +2,7 @@ import _minpack
 
 from numpy import atleast_1d, dot, take, triu, shape, eye, \
                   transpose, zeros, product, greater, array, \
-                  all, where, isscalar, asarray
+                  all, where, isscalar, asarray, inf
 
 error = _minpack.error
 
@@ -397,18 +397,19 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
     else:
         func = _weighted_general_function
         args += (1.0/asarray(sigma),)
-    popt, pcov, infodict, mesg, ier = leastsq(func, p0, args=args, full_output=1, **kw)
+    popt, pcov, infodict, mesg, ier = leastsq(func, p0, args=args, 
+                                              full_output=1, **kw)
     
     if ier != 1:
         raise RuntimeError, "Optimal parameters not found: " + mesg
 
-    if (len(ydata) > len(p0)):
+    if (len(ydata) > len(p0)) and pcov is not None:
         s_sq = (func(popt, *args)**2).sum()/(len(ydata)-len(p0))
         if sigma is not None:
             s_sq /= (args[-1]**2).sum()
         pcov = pcov * s_sq
     else:
-        pcov = None
+        pcov = inf
         
     return popt, pcov
 
