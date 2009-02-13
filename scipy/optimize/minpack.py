@@ -342,7 +342,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None):
         can be determined using introspection, otherwise a ValueError is raised). 
     sigma : None or N-length sequence
         If not None, it represents the standard-deviation of ydata.  This
-        vector, if given, will be used as weights in the least-squares problem. 
+        vector, if given, will be used to weight the least-squares problem. 
 
     Returns
     -------
@@ -350,13 +350,13 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None):
         Optimal values for the parameters so that the sum of the squared error of
         f(xdata, *popt) - ydata is minimized
     pcov : 2d array
-        The estimated covariance of popt.  The diagonals provide the variance of
-        the parameter estimate. 
+        A covariance matrix shouwing the curvature of the sum-of-squares 
+        residual near the returned solution.  Returned directly from the call
+        to scipy.optimize.leastsq.
 
     Notes
     -----
-    The algorithm uses the Levenburg-Marquardt algorithm (scipy.optimize.leastsq)
-    under the hood. 
+    The algorithm uses the Levenburg-Marquardt algorithm: scipy.optimize.leastsq
 
     Example
     -------
