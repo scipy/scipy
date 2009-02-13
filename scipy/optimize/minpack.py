@@ -402,7 +402,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
     if (len(xdata) > len(p0)):
         s_sq = (func(popt, *args)**2).sum()/(len(xdata)-len(p0))
         if sigma is not None:
-            s_sq /= args[-1].sum()
+            s_sq /= (args[-1]**2).sum()
         pcov = pcov * s_sq
     else:
         pcov = None
