@@ -194,7 +194,7 @@ def default_dir():
         temp_dir = `os.getuid()` + '_' + python_name
         path_candidates.append(os.path.join(tempfile.gettempdir(), temp_dir))
     else:
-        path_candiates.append(os.path.join(tempfile.gettempdir(),
+        path_candidates.append(os.path.join(tempfile.gettempdir(),
                                            "%s" % whoami(), python_name))
 
     writable = False
