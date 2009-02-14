@@ -1534,15 +1534,13 @@ def lfilter_zi(b,a):
 
     return array(zi_return)
 
-
-
 def filtfilt(b,a,x):
     # FIXME:  For now only accepting 1d arrays
     ntaps=max(len(a),len(b))
     edge=ntaps*3
 
     if x.ndim != 1:
-        raise ValueError, "Filiflit is only accepting 1 dimension arrays."
+        raise ValueError, "filtflit only accepts 1-d arrays."
 
     #x must be bigger than edge
     if x.size < edge:
@@ -1555,7 +1553,7 @@ def filtfilt(b,a,x):
     if len(b) < ntaps:
         b=r_[b,zeros(len(a)-len(b))]
 
-    zi=lfilter_zi(b,a)
+    zi=lfiltir_zi(b,a)
 
     #Grow the signal to have edges for stabilizing
     #the filter with inverted replicas of the signal
@@ -1568,3 +1566,54 @@ def filtfilt(b,a,x):
     (y,zf)=lfilter(b,a,flipud(y),-1,zi*y[-1])
 
     return flipud(y[edge-1:-edge+1])
+
+
+from scipy.signal.filter_design import cheby1, firwin
+
+def decimate(x, q, n=None, ftype='iir', axis=-1):
+    """downsample the signal x by an integer factor q, using an order n filter
+
+    By default an order 8 Chebyshev type I filter is used or a 30 point FIR
+    filter with hamming window if ftype is 'fir'.
+
+    Parameters
+    ----------
+    x : N-d array
+      the signal to be downsampled
+    q : int
+      the downsampling factor
+    n : int or None
+      the order of the filter (1 less than the length for 'fir')
+    ftype : {'iir' or 'fir'}
+      the type of the lowpass filter
+    axis : int
+      the axis along which to decimate
+
+    Returns
+    -------
+    y : N-d array
+      the down-sampled signal
+
+    See also:  resample
+    """
+    
+    if not isinstance(q, int):
+        raise TypeError, "q must be an integer"
+
+    if n is None:
+        if ftype == 'fir':
+            n = 30
+        else:
+            n = 8
+    
+    if ftype == 'fir':
+        b = firwin(n+1, 1./q, window='hamming')
+        a = 1.
+    else:
+        b, a = cheby1(n, 0.05, 0.8/q)
+        
+    y = lfilter(b, a, x, axis=axis)
+
+    sl = [None]*y.ndim
+    sl[axis] = slice(None, None, q)    
+    return y[sl]

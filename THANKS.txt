@@ -34,7 +34,8 @@ Damian Eads for hierarchical clustering, dendrogram plotting,
 Anne Archibald for kd-trees and nearest neighbor in scipy.spatial.
 Pauli Virtanen for Sphinx documentation generation, online documentation
     framework and interpolation bugfixes.
-Josef Perktold for major improvements to scipy.stats and its test suite.
+Josef Perktold for major improvements to scipy.stats and its test suite and 
+              fixes and tests to optimize.curve_fit and leastsq.
 David Morrill for getting the scoreboard test system up and running.
 Louis Luangkesorn for providing multiple tests for the stats module.
 Jochen Kupper for the zoom feature in the now-deprecated plt plotting module.
