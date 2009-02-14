@@ -359,8 +359,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
         f(xdata, *popt) - ydata is minimized
     pcov : 2d array
         A covariance matrix providing an estimate of the covariance matrix of
-        the parameter estimates.   This may not be accurate when sigma 
-        is given. 
+        the parameter estimates.   
+       
 
     Notes
     -----
@@ -405,8 +405,6 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
 
     if (len(ydata) > len(p0)) and pcov is not None:
         s_sq = (func(popt, *args)**2).sum()/(len(ydata)-len(p0))
-        if sigma is not None:
-            s_sq /= (args[-1]**2).sum()
         pcov = pcov * s_sq
     else:
         pcov = inf
