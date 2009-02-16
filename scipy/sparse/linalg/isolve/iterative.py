@@ -166,8 +166,6 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback
                 callback(x)
             break
         elif (ijob == 1):
-            if matvec is None:
-                matvec = get_matvec(A)
             work[slice2] *= sclr2
             work[slice2] += sclr1*matvec(work[slice1])
         elif (ijob == 2):
@@ -175,8 +173,6 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback
                 psolve = get_psolve(A)
             work[slice1] = psolve(work[slice2])
         elif (ijob == 3):
-            if matvec is None:
-                matvec = get_matvec(A)
             work[slice2] *= sclr2
             work[slice2] += sclr1*matvec(x)
         elif (ijob == 4):
