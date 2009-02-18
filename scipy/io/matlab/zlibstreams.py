@@ -33,20 +33,20 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 from zlib import decompressobj
 
 
-class GzipInputStream(object):
+class ZlibInputStream(object):
     ''' Fileobject to wrap zlib compressed stream for reading
 
     >>> from StringIO import StringIO
     >>> from zlib import compress
     >>> S = 'A handy module for reading compressed streams'
     >>> F = StringIO(compress(S))
-    >>> ZF = GzipInputStream(F)
+    >>> ZF = ZlibInputStream(F)
     >>> ZF.read()
     'A handy module for reading compressed streams'
     >>> ZF.tell() == len(S)
     True
     >>> F = StringIO(compress(S))
-    >>> ZF = GzipInputStream(F)
+    >>> ZF = ZlibInputStream(F)
     >>> ZF.tell()
     0
     >>> ZF.read(6)
@@ -55,9 +55,10 @@ class GzipInputStream(object):
     6
     '''
 
-    blocksize = 16384 # 16K
+    default_blocksize = 16384 # 16K
+    
     def __init__(self, fileobj, zipped_length=None):
-        ''' Initialize GzipInputStream
+        ''' Initialize ZlibInputStream
 
         Parameters
         ----------
@@ -72,7 +73,44 @@ class GzipInputStream(object):
         self.unzipped_pos = 0
         self.data = ""
         self._unzipper = decompressobj()
-        self._bytes_read = 0
+        # number of zlib compressed bytes read
+        self._z_bytes_read = 0 
+        self._blocksize_iterator = self._block_size_generator()
+        
+    def _block_size_generator(self):
+        ''' Generator to give block sizes for reading
+
+        >>> from StringIO import StringIO
+        >>> from zlib import compress
+        >>> s = 'A handy module\\nfor reading\\ncompressed streams'
+        >>> zs = compress(s)
+        >>> fobj = StringIO(zs)
+        >>> # If length not set, always return default block size
+        >>> zis = ZlibInputStream(fobj)
+        >>> gen = zis._block_size_generator()
+        >>> gen.next() == zis.default_blocksize
+        True
+        >>> gen.next() == zis.default_blocksize
+        True
+        >>> # if length is set, return min of remaining length,
+        >>> # and default block size
+        >>> zis = ZlibInputStream(fobj, len(zs))
+        >>> gen = zis._block_size_generator()
+        >>> gen.next() == len(zs)
+        True
+        >>> zis = ZlibInputStream(fobj, len(zs))
+        >>> gen = zis._block_size_generator()
+        >>> zis.default_blocksize = 5
+        >>> gen.next()
+        5
+        '''
+        if self.zipped_length:
+            while True:
+                yield min(self.zipped_length-self._z_bytes_read,
+                          self.default_blocksize)
+        else:
+            while True:
+                yield self.default_blocksize
 
     def __fill(self, bytes):
         ''' Fill self.data with at least *bytes* number of bytes
@@ -84,22 +122,28 @@ class GzipInputStream(object):
             return
         # read until we have enough bytes in the buffer
         read_to_end = bytes == -1
-        n_to_fetch = self.blocksize
-        while read_to_end or len(self.data) < bytes:
-            if self.zipped_length: # do not read beyond specified length
-                n_to_fetch = min(self.zipped_length-self._bytes_read,
-                                 self.blocksize)
-                if n_to_fetch == 0:
-                    self.exhausted = True
-                    break
-            data = self.fileobj.read(n_to_fetch)
-            self._bytes_read += len(data)
-            if data:
-                self.data += self._unzipper.decompress(data)
-            if len(data) < n_to_fetch: # hit end of file
-                self.data += self._unzipper.flush()
+
+        # store data chunks in a list until the end so that we avoid the
+        # quadratic behavior of continuously extending a string
+        data_chunks = [self.data]
+        bytes_to_fill = bytes - len(self.data)
+
+        while read_to_end or bytes_to_fill > 0:
+            z_n_to_fetch = self._blocksize_iterator.next()
+            if z_n_to_fetch == 0:
                 self.exhausted = True
                 break
+            raw = self.fileobj.read(z_n_to_fetch)
+            self._z_bytes_read += len(raw)
+            if raw:
+                decompressed = self._unzipper.decompress(raw)
+                data_chunks.append(decompressed)
+                bytes_to_fill -= len(decompressed)
+            if len(raw) < z_n_to_fetch: # hit end of file
+                data_chunks.append(self._unzipper.flush())
+                self.exhausted = True
+                break
+        self.data = ''.join(data_chunks)
 
     def seek(self, offset, whence=0):
         ''' Set position in uncompressed stream
@@ -129,7 +173,7 @@ class GzipInputStream(object):
         # skip forward, in blocks
         while position > self.unzipped_pos:
             if not self.read(min(position - self.unzipped_pos,
-                                 self.blocksize)):
+                                 self.default_blocksize)):
                 break
 
     def tell(self):
@@ -173,7 +217,7 @@ class GzipInputStream(object):
         >>> from zlib import compress
         >>> S = 'A handy module\\nfor reading\\ncompressed streams'
         >>> F = StringIO(compress(S))
-        >>> ZF = GzipInputStream(F)
+        >>> ZF = ZlibInputStream(F)
         >>> ZF.readline()
         'A handy module\\n'
         >>> ZF.readline()
@@ -193,7 +237,7 @@ class GzipInputStream(object):
         >>> from zlib import compress
         >>> S = 'A handy module\\nfor reading\\ncompressed streams'
         >>> F = StringIO(compress(S))
-        >>> ZF = GzipInputStream(F)
+        >>> ZF = ZlibInputStream(F)
         >>> ZF.readlines()
         ['A handy module\\n', 'for reading\\n', 'compressed streams']
         >>>
@@ -205,3 +249,25 @@ class GzipInputStream(object):
                 break
             lines.append(s)
         return lines
+
+
+class TwoShotZlibInputStream(ZlibInputStream):
+    ''' Class to do one small and a second final read
+    of a zlib compressed input stream
+    '''
+    default_blocksize = 512 # bytes - first read
+
+    def _block_size_generator(self):
+        ''' Generator to give block sizes for reading
+	'''
+	if self.zipped_length:
+            # do not read beyond specified length
+            yield min(self.zipped_length, self.default_blocksize)
+            yield self.zipped_length - self._z_bytes_read
+            yield 0
+	else:
+            while True:
+                yield self.default_blocksize
+
+
+	

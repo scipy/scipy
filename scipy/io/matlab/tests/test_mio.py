@@ -177,6 +177,7 @@ case_table5.append(
     {'name': 'unicode',
     'expected': {'testunicode': array([u_str])}
     })
+
 # These should also have matlab load equivalents,
 # but I can't get to matlab at the moment
 case_table5_rt = case_table5[:]
@@ -193,7 +194,12 @@ case_table5_rt.append(
 case_table5_rt.append(
     {'name': 'objectarray',
      'expected': {'testobjectarray': np.repeat(MO, 2).reshape(1,2)}})
-
+''' This test fails - exclude for now
+case_table5_rt.append(
+    {'name': 'scalarobject',
+    'expected': {'testscalarobject': mlarr(array([1], dtype=object))}
+    })
+'''
 def _check_level(label, expected, actual):
     """ Check one level of a potentially nested array """
     if SP.issparse(expected): # allow different types of sparse matrices

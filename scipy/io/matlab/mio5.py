@@ -12,7 +12,7 @@ http://www.mathworks.com/access/helpdesk/help/pdf_doc/matlab/matfile_format.pdf
 
 import sys
 import zlib
-from gzipstreams import GzipInputStream
+from zlibstreams import TwoShotZlibInputStream
 from StringIO import StringIO
 from copy import copy as pycopy
 import warnings
@@ -328,7 +328,8 @@ class Mat5ZArrayReader(Mat5ArrayReader):
     '''
     def __init__(self, array_reader, byte_count):
         super(Mat5ZArrayReader, self).__init__(
-            GzipInputStream(array_reader.mat_stream, byte_count),
+            TwoShotZlibInputStream(array_reader.mat_stream,
+                                   byte_count),
             array_reader.dtypes,
             array_reader.processor_func,
             array_reader.codecs,
@@ -424,6 +425,7 @@ class Mat5SparseMatrixGetter(Mat5MatrixGetter):
             (data,rowind,indptr),
             shape=(M,N))
 
+
 class Mat5CharMatrixGetter(Mat5MatrixGetter):
     def get_raw_array(self):
         res = self.read_element()
@@ -490,7 +492,7 @@ class Mat5StructMatrixGetter(Mat5MatrixGetter):
 
 class Mat5ObjectMatrixGetter(Mat5StructMatrixGetter):
     def get_raw_array(self):
-        '''Matlab ojects are essentially structs, with an extra field, the classname.'''
+        '''Matlab objects are like structs, with an extra classname field'''
         classname = self.read_element().tostring()
         result = super(Mat5ObjectMatrixGetter, self).get_raw_array()
         return MatlabObject(result, classname)
@@ -498,7 +500,7 @@ class Mat5ObjectMatrixGetter(Mat5StructMatrixGetter):
 
 class Mat5FunctionMatrixGetter(Mat5CellMatrixGetter):
     def get_raw_array(self):
-        result = super(Mat5ObjectMatrixGetter, self).get_raw_array()
+        result = super(Mat5FunctionMatrixGetter, self).get_raw_array()
         return MatlabFunction(result)
 
 
@@ -641,7 +643,7 @@ class Mat5MatrixWriter(MatStreamWriter):
         self.file_stream.write(arr.tostring())
 
     def write_element(self, arr, mdtype=None):
-        # write tag, data
+        ''' write tag and data '''
         if mdtype is None:
             mdtype = np_to_mtypes[arr.dtype.str[1:]]
         byte_count = arr.size*arr.itemsize
@@ -720,7 +722,6 @@ class Mat5MatrixWriter(MatStreamWriter):
         return Mat5WriterGetter(self.file_stream,
                                 self.unicode_strings,
                                 self.long_field_names)
-
 
 
 class Mat5NumericWriter(Mat5MatrixWriter):
