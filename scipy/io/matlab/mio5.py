@@ -303,6 +303,7 @@ class Mat5ArrayReader(MatArrayReader):
         header['nzmax'] = af['nzmax']
         header['dims'] = self.read_element()
         header['name'] = self.read_element().tostring()
+        # maybe a dictionary mapping here as a dispatch table
         if mc in mx_numbers:
             return Mat5NumericMatrixGetter(self, header)
         if mc == mxSPARSE_CLASS:
@@ -325,6 +326,21 @@ class Mat5ZArrayReader(Mat5ArrayReader):
 
     Sets up reader for gzipped stream on init, providing wrapper
     for this new sub-stream.
+
+    Note that we use a zlib stream reader to return the data from the
+    zlib compressed stream.
+
+    In our case, we want this reader (under the hood) to do one small
+    read of the stream to get enough data to check the variable name,
+    because we may want to skip this variable - for which we need to
+    check the name.  If we need to read the rest of the data (not
+    skipping), then (under the hood) the steam reader decompresses the
+    whole of the rest of the stream ready for returning here to
+    construct the array.  This avoids the overhead of reading the
+    stream in small chunks - the default behavior of our zlib stream
+    reader.
+
+    This is why we use TwoShotZlibInputStream below.
     '''
     def __init__(self, array_reader, byte_count):
         super(Mat5ZArrayReader, self).__init__(
