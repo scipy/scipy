@@ -1535,6 +1535,7 @@ def lfilter_zi(b,a):
     return array(zi_return)
 
 def filtfilt(b,a,x):
+    b, a, x = map(asarray, [b, a, x])
     # FIXME:  For now only accepting 1d arrays
     ntaps=max(len(a),len(b))
     edge=ntaps*3
