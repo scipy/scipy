@@ -1540,7 +1540,7 @@ def filtfilt(b,a,x):
     edge=ntaps*3
 
     if x.ndim != 1:
-        raise ValueError, "filtflit only accepts 1-d arrays."
+        raise ValueError, "filtfilt only accepts 1-d arrays."
 
     #x must be bigger than edge
     if x.size < edge:
@@ -1553,7 +1553,7 @@ def filtfilt(b,a,x):
     if len(b) < ntaps:
         b=r_[b,zeros(len(a)-len(b))]
 
-    zi=lfiltir_zi(b,a)
+    zi = lfilter_zi(b,a)
 
     #Grow the signal to have edges for stabilizing
     #the filter with inverted replicas of the signal
