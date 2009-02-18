@@ -1596,7 +1596,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1):
 
     See also:  resample
     """
-    
+
     if not isinstance(q, int):
         raise TypeError, "q must be an integer"
 
@@ -1605,15 +1605,15 @@ def decimate(x, q, n=None, ftype='iir', axis=-1):
             n = 30
         else:
             n = 8
-    
+
     if ftype == 'fir':
         b = firwin(n+1, 1./q, window='hamming')
         a = 1.
     else:
         b, a = cheby1(n, 0.05, 0.8/q)
-        
+
     y = lfilter(b, a, x, axis=axis)
 
     sl = [None]*y.ndim
-    sl[axis] = slice(None, None, q)    
+    sl[axis] = slice(None, None, q)
     return y[sl]
