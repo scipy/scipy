@@ -1,10 +1,16 @@
 import numpy
 import struct
 
+_big_endian = False
+
 # assumes file pointer is immediately
 #  after the 'fmt ' id
 def _read_fmt_chunk(fid):
-    res = struct.unpack('ihHIIHH',fid.read(20))
+    if _big_endian:
+        fmt = '>'
+    else:
+        fmt = '<'
+    res = struct.unpack(fmt+'ihHIIHH',fid.read(20))
     size, comp, noc, rate, sbytes, ba, bits = res
     if (comp != 1 or size > 16):
         print "Warning:  unfamiliar format bytes..."
@@ -15,25 +21,43 @@ def _read_fmt_chunk(fid):
 # assumes file pointer is immediately
 #   after the 'data' id
 def _read_data_chunk(fid, noc, bits):
-    size = struct.unpack('i',fid.read(4))[0]
+    if _big_endian:
+        fmt = '>i'
+    else:
+        fmt = '<i'
+    size = struct.unpack(fmt,fid.read(4))[0]
     if bits == 8:
         data = numpy.fromfile(fid, dtype=numpy.ubyte, count=size)
         if noc > 1:
             data = data.reshape(-1,noc)
     else:
         bytes = bits//8
-        dtype = 'i%d' % bytes
+        if _big_endian:
+            dtype = '>i%d' % bytes
+        else:
+            dtype = '<i%d' % bytes
         data = numpy.fromfile(fid, dtype=dtype, count=size//bytes)
         if noc > 1:
             data = data.reshape(-1,noc)
     return data
 
 def _read_riff_chunk(fid):
+    global _big_endian
     str1 = fid.read(4)
-    fsize = struct.unpack('I', fid.read(4))[0] + 8
-    str2 = fid.read(4)
-    if (str1 != 'RIFF' or str2 != 'WAVE'):
+    if str1 == 'RIFX':
+        _big_endian = True
+    elif str1 != 'RIFF':
         raise ValueError, "Not a WAV file."
+    if _big_endian:
+        fmt = '>I'
+    else:
+        fmt = '<I'
+    fsize = struct.unpack(fmt, fid.read(4))[0] + 8
+    str2 = fid.read(4)
+    if (str2 != 'WAVE'):
+        raise ValueError, "Not a WAV file."
+    if str1 == 'RIFX':
+        _big_endian = True
     return fsize
 
 # open a wave-file
@@ -96,14 +120,17 @@ def write(filename, rate, data):
     bits = data.dtype.itemsize * 8
     sbytes = rate*(bits / 8)*noc
     ba = noc * (bits / 8)
-    fid.write(struct.pack('ihHIIHH', 16, 1, noc, rate, sbytes, ba, bits))
+    fid.write(struct.pack('<ihHIIHH', 16, 1, noc, rate, sbytes, ba, bits))
     # data chunk
     fid.write('data')
-    fid.write(struct.pack('i', data.nbytes))
+    fid.write(struct.pack('<i', data.nbytes))
+    import sys
+    if data.dtype.byteorder == '>' or (data.dtype.byteorder == '=' and sys.byteorder == 'big'):
+        data = data.byteswap()
     data.tofile(fid)
     # Determine file size and place it in correct
     #  position at start of the file.
     size = fid.tell()
     fid.seek(4)
-    fid.write(struct.pack('i', size-8))
+    fid.write(struct.pack('<i', size-8))
     fid.close()
