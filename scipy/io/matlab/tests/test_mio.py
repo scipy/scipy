@@ -11,12 +11,11 @@ from tempfile import mkdtemp
 import warnings
 import shutil
 import gzip
-import copy
 
 from numpy.testing import \
      assert_array_almost_equal, \
      assert_equal, \
-     assert_raises, dec
+     assert_raises
 
 from nose.tools import assert_true
 
@@ -197,7 +196,6 @@ case_table5_rt.append(
     'expected': {'testscalarobject': mlarr(1, dtype=object)}
     })
 '''
-
 def types_compatible(var1, var2):
     ''' Check if types are same or compatible
     
@@ -260,6 +258,7 @@ def _check_level(label, expected, actual):
     # Something numeric
     assert_array_almost_equal(actual, expected, err_msg=label, decimal=5)
 
+
 def _load_check_case(name, files, case):
     for file_name in files:
         matdict = loadmat(file_name, struct_as_record=True)
@@ -268,6 +267,7 @@ def _load_check_case(name, files, case):
             k_label = "%s, variable %s" % (label, k)
             assert_true(k in matdict, "Missing key at %s" % k_label)
             _check_level(k_label, expected, matdict[k])
+
 
 # Round trip tests
 def _rt_check_case(name, expected, format):
@@ -409,6 +409,7 @@ def test_long_field_names_in_struct():
     #
     assert_raises(ValueError, savemat, StringIO(),
                   {'longstruct': cell}, format='5', long_field_names=False)
+
 
 def test_cell_with_one_thing_in_it():
     # Regression test - make a cell array that's 1 x 2 and put two
