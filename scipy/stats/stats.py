@@ -1232,17 +1232,17 @@ Returns: transformed data for use in an ANOVA
     for i in range(k):
         nargs.append(args[i].astype(float))
         n[i] = float(len(nargs[i]))
-        v[i] = var(nargs[i])
-        m[i] = mean(nargs[i],None)
+        v[i] = np.var(nargs[i], ddof=1)
+        m[i] = np.mean(nargs[i])
     for j in range(k):
-        for i in range(n[j]):
+        for i in range(n[j]):  # raises warning because n[j] is float
             t1 = (n[j]-1.5)*n[j]*(nargs[j][i]-m[j])**2
             t2 = 0.5*v[j]*(n[j]-1.0)
             t3 = (n[j]-1.0)*(n[j]-2.0)
             nargs[j][i] = (t1-t2) / float(t3)
     check = 1
     for j in range(k):
-        if v[j] - mean(nargs[j],None) > TINY:
+        if v[j] - np.mean(nargs[j]) > TINY:
             check = 0
     if check != 1:
         raise ValueError, 'Lack of convergence in obrientransform.'

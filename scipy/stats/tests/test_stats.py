@@ -1238,6 +1238,15 @@ def test_describe():
     assert_equal(v, vc)
     assert_array_almost_equal(sk, skc, decimal=13) #not sure about precision
     assert_array_almost_equal(kurt, kurtc, decimal=13)
+    
+def test_obrientransform():
+    #this is a regression test to check np.var replacement
+    #I didn't separately verigy the numbers
+    x1 = np.arange(5)
+    result = np.array(
+      [[  5.41666667,   1.04166667,  -0.41666667,   1.04166667,  5.41666667],
+       [ 21.66666667,   4.16666667,  -1.66666667,   4.16666667, 21.66666667]])
+    assert_array_almost_equal(stats.obrientransform(x1, 2*x1), result, decimal=8)
 
 
 
