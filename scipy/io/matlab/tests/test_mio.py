@@ -13,6 +13,7 @@ import shutil
 import gzip
 
 from numpy.testing import \
+     assert_array_equal, \
      assert_array_almost_equal, \
      assert_equal, \
      assert_raises
@@ -196,6 +197,8 @@ case_table5_rt.append(
     'expected': {'testscalarobject': mlarr(1, dtype=object)}
     })
 '''
+
+
 def types_compatible(var1, var2):
     ''' Check if types are same or compatible
     
@@ -455,3 +458,22 @@ def test_use_small_element():
     sio.truncate(0)
     writer = Mat5NumericWriter(sio, np.zeros(10), 'aaaaaa').write()
     yield assert_true, sio.len - w_sz < 4
+
+
+def test_save_dict():
+    # Test that dict can be saved (as recarray), loaded as matstruct
+    d = {'a':1, 'b':2}
+    stream = StringIO()
+    savemat(stream, {'dict':d})
+    stream.seek(0)
+    vals = loadmat(stream)
+
+
+def test_1d_shape():
+    # Current behavior is 1D -> column vector
+    arr = np.arange(5)
+    stream = StringIO()
+    savemat(stream, {'oned':arr})
+    stream.seek(0)
+    vals = loadmat(stream)
+    assert_equal(vals['oned'].shape, (5,1))

@@ -879,12 +879,85 @@ class Mat5ObjectWriter(Mat5StructWriter):
 class Mat5WriterGetter(object):
     ''' Wraps stream and options, provides methods for getting Writer objects '''
     def __init__(self, stream, unicode_strings, long_field_names=False):
+        ''' Initialize writer getter
+
+        Parameters
+        ----------
+        stream : fileobj
+           object to which to write
+        unicode_strings : bool
+           If True, write unicode strings
+        long_field_names : bool, optional
+           If True, allow writing of long field names (127 bytes)
+        '''
         self.stream = stream
         self.unicode_strings = unicode_strings
         self.long_field_names = long_field_names
 
     def rewind(self):
         self.stream.seek(0)
+
+    def to_writeable(self, source):
+        ''' Convert input object ``source`` to something we can write
+
+        Parameters
+        ----------
+        source : object
+
+        Returns
+        -------
+        arr : ndarray
+
+        Examples
+        --------
+        >>> from StringIO import StringIO
+        >>> mwg = Mat5WriterGetter(StringIO(), True)
+        >>> mwg.to_writeable(np.array([1])) # pass through ndarrays
+        array([1])
+        >>> expected = np.array([(1, 2)], dtype=[('a', '|O8'), ('b', '|O8')])
+        >>> np.all(mwg.to_writeable({'a':1,'b':2}) == expected)
+        True
+        >>> class klass(object): pass
+        >>> c = klass
+        >>> c.a = 1
+        >>> c.b = 2
+        >>> np.all(mwg.to_writeable({'a':1,'b':2}) == expected)
+        True
+        >>> mwg.to_writeable([])
+        array([], dtype=float64)
+        >>> mwg.to_writeable(())
+        array([], dtype=float64)
+        >>> mwg.to_writeable(None)
+
+        >>> mwg.to_writeable('a string').dtype
+        dtype('|S8')
+        >>> mwg.to_writeable(1)
+        array(1)
+        >>> mwg.to_writeable([1])
+        array([1])
+        >>> mwg.to_writeable([1])
+        array([1])
+        >>> mwg.to_writeable(object()) # not convertable
+
+        '''
+        if isinstance(source, np.ndarray):
+            return source
+        if source is None:
+            return None
+        # Objects that have dicts
+        if hasattr(source, '__dict__'):
+            source = source.__dict__
+        # Mappings or object dicts
+        if hasattr(source, 'keys'):
+            dtype = [(k,object) for k in source]
+            return np.array( [tuple(source.itervalues())] ,dtype)
+        # Next try and convert to an array
+        narr = np.asanyarray(source)
+        if narr.dtype.type in (np.object, np.object_) and \
+           narr.shape == () and narr == source:
+            # No interesting conversion possible
+            return None
+        return narr
 
     def matrix_writer_factory(self, arr, name, is_global=False):
         ''' Factory function to return matrix writer given variable to write
@@ -901,11 +974,9 @@ class Mat5WriterGetter(object):
         # First check if these are sparse
         if scipy.sparse.issparse(arr):
             return Mat5SparseWriter(self.stream, arr, name, is_global)
-        # Next try and convert to an array
-        narr = np.asanyarray(arr)
-        if narr.dtype.type in (np.object, np.object_) and \
-           narr.shape == () and narr == arr:
-            # No interesting conversion possible
+        # Try to convert things that aren't arrays
+        narr = self.to_writeable(arr)
+        if narr is None:
             raise TypeError('Could not convert %s (type %s) to array'
                             % (arr, type(arr)))
         args = (self.stream,
