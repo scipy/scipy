@@ -111,6 +111,7 @@ class TestFindRepeats(TestCase):
         assert_array_equal(nums,[3,3,2,2])
 
 def test_fligner():
+    #this is a regression test for replacing np.var
     x1=np.arange(5)
     assert_array_equal(stats.fligner(x1,x1**2),
                        (3.2282229927203558, 0.072379187848207877))
