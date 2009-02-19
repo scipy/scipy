@@ -125,6 +125,60 @@ def get_matfile_version(fileobj):
         raise ValueError('Unknown mat file type, version %s' % ret)
 
 
+def matdims(arr):
+    ''' Determine equivalent matlab dimensions for given array 
+    
+    Parameters
+    ----------
+    arr : ndarray
+
+    Returns
+    -------
+    dims : shape as matlab expects
+
+    Examples
+    --------
+    >>> matdims(np.array(1)) # numpy scalar
+    (1, 1)
+    >>> matdims(np.array([1])) # 1d array, 1 element
+    (1, 1)
+    >>> matdims(np.array([1,2])) # 1d array, 2 elements
+    (2, 1)
+    >>> matdims(np.array([[2],[3]])) # 2d array, column vector
+    (2, 1)
+    >>> matdims(np.array([[2,3]])) # 2d array, row vector
+    (1, 2)
+    >>> matdims(np.array([[[2,3]]])) # 3d array, rowish vector
+    (1, 1, 2)
+    >>> matdims(np.array([])) # empty 1d array
+    (0, 0)
+    >>> matdims(np.array([[]])) # empty 2d
+    (0, 0)
+    >>> matdims(np.array([[[]]])) # empty 3d
+    (0, 0, 0)
+
+    Notes
+    -----
+    We had to decide what shape a 1 dimensional array would be.
+    ``np.atleast_2d thinks it is a row vector.  The default for a
+    vector in matlab (e.g. ``>> 1:12``) is a row vector. 
+
+    Versions of scipy up to and including 0.7 have resulted
+    (accidentally) in 1d arrays being read as column vectors.  For the
+    moment, we maintain the same tradition here.
+    '''
+    if arr.size == 0: # empty
+        return (0,) * np.max([arr.ndim, 2])
+    shape = arr.shape
+    if shape == (): # scalar
+        return (1,1)
+    if len(shape) == 1: 
+        # 1d array -> column vector. This is what matlab gives from
+        # shape 1,0 if passed in a mat file - the behavior up to and
+        # including scipy 0.7
+        return shape + (1,)
+    return shape
+
 class ByteOrder(object):
     ''' Namespace for byte ordering '''
     little_endian = boc.sys_is_le

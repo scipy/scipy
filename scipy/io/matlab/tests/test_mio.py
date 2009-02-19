@@ -24,6 +24,7 @@ import numpy as np
 from numpy import array
 import scipy.sparse as SP
 
+from scipy.io.matlab.miobase import matdims
 from scipy.io.matlab.mio import loadmat, savemat, find_mat_file
 from scipy.io.matlab.mio5 import MatlabObject, MatFile5Writer, \
      Mat5NumericWriter
@@ -32,14 +33,10 @@ test_data_path = join(dirname(__file__), 'data')
 
 def mlarr(*args, **kwargs):
     ''' Convenience function to return matlab-compatible 2D array
-    Note that matlab writes empty shape as (0,0) - replicated here
     '''
     arr = np.array(*args, **kwargs)
-    if arr.size:
-        return np.atleast_2d(arr)
-    # empty elements return as shape (0,0)
-    return arr.reshape((0,0))
-
+    arr.shape = matdims(arr)
+    return arr
 
 # Define cases to test
 theta = np.pi/4*np.arange(9,dtype=float).reshape(1,9)
@@ -87,22 +84,22 @@ case_table4.append(
      'expected': {'testonechar': array([u'r'])},
      })
 # Cell arrays stored as object arrays
-CA = mlarr([
-    [], # placeholder, object array constructor wierdness otherwise
-    mlarr(1),
-    mlarr([1,2]),
-    mlarr([1,2,3])], dtype=object).reshape(1,-1)
+CA = mlarr(( # tuple for object array creation
+        [],
+        mlarr([1]),
+        mlarr([[1,2]]),
+        mlarr([[1,2,3]])), dtype=object).reshape(1,-1)
 CA[0,0] = array(
     [u'This cell contains this string and 3 arrays of increasing length'])
 case_table5 = [
     {'name': 'cell',
      'expected': {'testcell': CA}}]
-CAE = mlarr([
+CAE = mlarr(( # tuple for object array creation
     mlarr(1),
     mlarr(2),
     mlarr([]),
     mlarr([]),
-    mlarr(3)], dtype=object).reshape(1,-1)
+    mlarr(3)), dtype=object).reshape(1,-1)
 case_table5.append(
     {'name': 'emptycell',
      'expected': {'testemptycell': CAE}})
@@ -194,12 +191,29 @@ case_table5_rt.append(
 case_table5_rt.append(
     {'name': 'objectarray',
      'expected': {'testobjectarray': np.repeat(MO, 2).reshape(1,2)}})
-''' This test fails - exclude for now
+''' Test fails;  consider also savemat('A', {'A':np.array(1, dtype=object)})
 case_table5_rt.append(
     {'name': 'scalarobject',
-    'expected': {'testscalarobject': mlarr(array([1], dtype=object))}
+    'expected': {'testscalarobject': mlarr(1, dtype=object)}
     })
 '''
+
+def types_compatible(var1, var2):
+    ''' Check if types are same or compatible
+    
+    0d numpy scalars are compatible with bare python scalars
+    '''
+    type1 = type(var1)
+    type2 = type(var2)
+    if type1 is type2:
+        return True
+    if type1 is np.ndarray and var1.shape == ():
+        return type(var1.item()) is type2
+    if type2 is np.ndarray and var2.shape == ():
+        return type(var2.item()) is type1
+    return False
+
+
 def _check_level(label, expected, actual):
     """ Check one level of a potentially nested array """
     if SP.issparse(expected): # allow different types of sparse matrices
@@ -210,10 +224,9 @@ def _check_level(label, expected, actual):
                                   decimal = 5)
         return
     # Check types are as expected
-    typex = type(expected)
-    typac = type(actual)
-    assert_true(typex is typac, \
-           "Expected type %s, got %s at %s" % (typex, typac, label))
+    assert_true(types_compatible(expected, actual), \
+           "Expected type %s, got %s at %s" % 
+                (type(expected), type(actual), label))
     # A field in a record array may not be an ndarray
     # A scalar from a record array will be type np.void
     if not isinstance(expected,

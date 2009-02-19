@@ -22,7 +22,7 @@ import numpy as np
 import scipy.sparse
 
 from miobase import MatFileReader, MatArrayReader, MatMatrixGetter, \
-     MatFileWriter, MatStreamWriter, filldoc
+     MatFileWriter, MatStreamWriter, filldoc, matdims
 
 miINT8 = 1
 miUINT8 = 2
@@ -706,9 +706,7 @@ class Mat5MatrixWriter(MatStreamWriter):
         if mclass is None:
             mclass = self.default_mclass
         if shape is None:
-            shape = self.arr.shape
-            if len(shape) < 2:
-                shape = shape + (0,) * (len(shape)-2)
+            shape = matdims(self.arr)
         self._mat_tag_pos = self.file_stream.tell()
         self.write_dtype(self.mat_tag)
         # write array flags (complex, global, logical, class, nzmax)
