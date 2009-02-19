@@ -862,8 +862,8 @@ def fligner(*args,**kwds):
 
     # compute Aibar
     Aibar = _apply_func(a,g,sum) / Ni
-    anbar = stats.mean(a, axis=0)
-    varsq = stats.var(a)
+    anbar = np.mean(a, axis=0)
+    varsq = np.var(a,axis=0, ddof=1)
 
     Xsq = sum(Ni*(asarray(Aibar)-anbar)**2.0,axis=0)/varsq
 
