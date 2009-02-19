@@ -836,9 +836,10 @@ def describe(a, axis=0):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    mm = (np.minimum.reduce(a), np.maximum.reduce(a))
-    m = mean(a, axis)
-    v = var(a, axis)
+    #mm = (np.minimum.reduce(a), np.maximum.reduce(a))
+    mm = (np.min(a, axis=axis), np.max(a, axis=axis))
+    m = np.mean(a, axis=axis)
+    v = np.var(a, axis=axis, ddof=1)
     sk = skew(a, axis)
     kurt = kurtosis(a, axis)
     return n, mm, m, v, sk, kurt
