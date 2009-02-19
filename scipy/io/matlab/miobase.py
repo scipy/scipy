@@ -125,12 +125,13 @@ def get_matfile_version(fileobj):
         raise ValueError('Unknown mat file type, version %s' % ret)
 
 
-def matdims(arr):
+def matdims(arr, oned_as='column'):
     ''' Determine equivalent matlab dimensions for given array 
     
     Parameters
     ----------
     arr : ndarray
+    oned_as : {'column', 'row'} string, optional
 
     Returns
     -------
@@ -157,27 +158,43 @@ def matdims(arr):
     >>> matdims(np.array([[[]]])) # empty 3d
     (0, 0, 0)
 
+    Optional argument flips 1d shape behavior
+
+    >>> matdims(np.array([1,2]), 'row') # 1d array, 2 elements
+    (1, 2)
+
+    The argument has to make sense though
+
+    >>> matdims(np.array([1,2]), 'bizarre')
+    Traceback (most recent call last):
+       ...
+    ValueError: 1D option "bizarre" is strange
+
     Notes
     -----
-    We had to decide what shape a 1 dimensional array would be.
-    ``np.atleast_2d thinks it is a row vector.  The default for a
-    vector in matlab (e.g. ``>> 1:12``) is a row vector. 
+    We had to decide what shape a 1 dimensional array would be by
+    default.  ``np.atleast_2d`` thinks it is a row vector.  The
+    default for a vector in matlab (e.g. ``>> 1:12``) is a row vector.
 
-    Versions of scipy up to and including 0.7 have resulted
-    (accidentally) in 1d arrays being read as column vectors.  For the
-    moment, we maintain the same tradition here.
+    Versions of scipy up to and including 0.7 resulted (accidentally)
+    in 1d arrays being read as column vectors.  For the moment, we
+    maintain the same tradition here.
     '''
     if arr.size == 0: # empty
         return (0,) * np.max([arr.ndim, 2])
     shape = arr.shape
     if shape == (): # scalar
         return (1,1)
-    if len(shape) == 1: 
-        # 1d array -> column vector. This is what matlab gives from
-        # shape 1,0 if passed in a mat file - the behavior up to and
-        # including scipy 0.7
-        return shape + (1,)
+    if len(shape) == 1: # 1D
+        if oned_as == 'column':
+            return shape + (1,)
+        elif oned_as == 'row':
+            return (1,) + shape
+        else:
+            raise ValueError('1D option "%s" is strange'
+                             % oned_as)
     return shape
+
 
 class ByteOrder(object):
     ''' Namespace for byte ordering '''
