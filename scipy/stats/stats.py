@@ -592,7 +592,7 @@ def tmean(a, limits=None, inclusive=(True, True)):
 
     # No trimming.
     if limits is None:
-        return mean(a,None)
+        return np.mean(a,None)
 
     am = mask_to_limits(a.ravel(), limits, inclusive)
     return am.mean()
@@ -1365,7 +1365,7 @@ array passed to compare (e.g., [time,x,y]).  Assumes collapsing over dim 0
 of the compare array.
 
 """
-    mns = mean(compare,axis)
+    mns = np.mean(compare,axis)
     sstd = samplestd(compare,0)
     return (scores - mns) / sstd
 
@@ -1437,7 +1437,7 @@ def trim_mean(a, proportiontocut):
     upper tails.
     """
     newa = trimboth(np.sort(a),proportiontocut)
-    return mean(newa,axis=0)
+    return np.mean(newa,axis=0)
 
 
 
@@ -1481,8 +1481,8 @@ Please note that:
     N = m.shape[0]
     if (y.shape[0] != N):
         raise ValueError, "x and y must have the same number of observations."
-    m = m - mean(m,axis=0)
-    y = y - mean(y,axis=0)
+    m = m - np.mean(m,axis=0)
+    y = y - np.mean(y,axis=0)
     if bias:
         fact = N*1.0
     else:
