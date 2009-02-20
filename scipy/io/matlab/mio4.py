@@ -320,7 +320,7 @@ class Mat4SparseWriter(Mat4MatrixWriter):
         self.write_bytes(ijv)
 
 
-def matrix_writer_factory(stream, arr, name, oned_as):
+def matrix_writer_factory(stream, arr, name, oned_as='row'):
     ''' Factory function to return matrix writer given variable to write
     stream      - file or file-like stream to write to
     arr         - array to write
@@ -344,12 +344,8 @@ class MatFile4Writer(MatFileWriter):
     ''' Class for writing matlab 4 format files '''
     def __init__(self, file_stream, oned_as=None):
         self.file_stream = file_stream
-        # deal with deprecations
         if oned_as is None:
-            warnings.warn("Using oned_as default value ('column')" +
-                          " This will change to 'row' in future versions",
-                          FutureWarning, stacklevel=2)
-            oned_as = 'column'
+            oned_as = 'row'
         self.oned_as = oned_as
 
     def put_variables(self, mdict):

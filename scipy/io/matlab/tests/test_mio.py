@@ -470,14 +470,20 @@ def test_save_dict():
 
 
 def test_1d_shape():
+    # Current 5 behavior is 1D -> column vector
+    arr = np.arange(5)
+    stream = StringIO()
+    savemat(stream, {'oned':arr}, format='5')
+    vals = loadmat(stream)
+    yield assert_equal, vals['oned'].shape, (5,1)
+    # Current 4 behavior is 1D -> row vector
+    arr = np.arange(5)
+    stream = StringIO()
+    savemat(stream, {'oned':arr}, format='4')
+    vals = loadmat(stream)
+    yield assert_equal, vals['oned'].shape, (1, 5)
     for format in ('4', '5'):
-        # Current behavior is 1D -> column vector
-        arr = np.arange(5)
-        stream = StringIO()
-        savemat(stream, {'oned':arr}, format=format)
-        vals = loadmat(stream)
-        yield assert_equal, vals['oned'].shape, (5,1)
-        # which is the same as 'column' for oned_as
+        # can be explicitly 'column' for oned_as
         stream = StringIO()
         savemat(stream, {'oned':arr}, 
                 format=format,
