@@ -100,6 +100,12 @@ CAE = mlarr(( # tuple for object array creation
     mlarr([]),
     mlarr([]),
     mlarr(3)), dtype=object).reshape(1,-1)
+objarr = np.empty((1,1),dtype=object)
+objarr[0,0] = mlarr(1)
+case_table5.append(
+    {'name': 'scalarcell',
+     'expected': {'testscalarcell': objarr}
+     })
 case_table5.append(
     {'name': 'emptycell',
      'expected': {'testemptycell': CAE}})
@@ -174,29 +180,27 @@ case_table5.append(
     {'name': 'unicode',
     'expected': {'testunicode': array([u_str])}
     })
+case_table5.append(
+    {'name': 'sparse',
+     'expected': {'testsparse': SP.coo_matrix(A)},
+     })
+case_table5.append(
+    {'name': 'sparsecomplex',
+     'expected': {'testsparsecomplex': SP.coo_matrix(B)},
+     })
+'''
+case_table5.append(
+    {'name': 'func',
+     'expected': {'testfunc': 0},
+     })
+'''
 
 # These should also have matlab load equivalents,
-# but I can't get to matlab at the moment
 case_table5_rt = case_table5[:]
-case_table5_rt.append(
-    {'name': 'sparsefloat',
-     'expected': {'testsparsefloat':
-                  SP.coo_matrix(array([[1,0,2],[0,-3.5,0]]))},
-     })
-case_table5_rt.append(
-    {'name': 'sparsecomplex',
-     'expected': {'testsparsecomplex':
-                  SP.coo_matrix(array([[-1+2j,0,2],[0,-3j,0]]))},
-     })
+# Inline functions can't be concatenated in matlab
 case_table5_rt.append(
     {'name': 'objectarray',
      'expected': {'testobjectarray': np.repeat(MO, 2).reshape(1,2)}})
-objarr = np.empty((1,1),dtype=object)
-objarr[0,0] = mlarr(1)
-case_table5_rt.append(
-    {'name': 'scalarobject',
-     'expected': {'testscalarobject': objarr}
-     })
 
 
 def types_compatible(var1, var2):
