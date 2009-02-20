@@ -8,18 +8,18 @@ import os
 import sys
 import warnings
 
-from miobase import get_matfile_version, filldoc
+from miobase import get_matfile_version, docfiller
 from mio4 import MatFile4Reader, MatFile4Writer
 from mio5 import MatFile5Reader, MatFile5Writer
 
 __all__ = ['find_mat_file', 'mat_reader_factory', 'loadmat', 'savemat']
 
-@filldoc
+@docfiller
 def find_mat_file(file_name, appendmat=True):
     ''' Try to find .mat file on system path
 
     file_name : string
-        file name for mat file
+       file name for mat file
     %(append_arg)s
     '''
     warnings.warn('Searching for mat files on python system path will be ' +
@@ -47,7 +47,7 @@ def find_mat_file(file_name, appendmat=True):
                 pass
     return full_name
 
-@filldoc
+@docfiller
 def mat_reader_factory(file_name, appendmat=True, **kwargs):
     """Create reader for matlab .mat format files
 
@@ -87,7 +87,7 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
     else:
         raise TypeError('Did not recognize version %s' % mv)
 
-@filldoc
+@docfiller
 def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
     ''' Load Matlab(tm) file
 
@@ -115,8 +115,13 @@ def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
         mdict = matfile_dict
     return mdict
 
-@filldoc
-def savemat(file_name, mdict, appendmat=True, format='5', long_field_names=False):
+@docfiller
+def savemat(file_name, mdict, 
+            appendmat=True, 
+            format='5', 
+            long_field_names=False,
+            do_compression=False,
+            oned_as=None):
     """Save a dictionary of names and arrays into the MATLAB-style .mat file.
 
     This saves the arrayobjects in the given dictionary to a matlab
@@ -132,6 +137,8 @@ def savemat(file_name, mdict, appendmat=True, format='5', long_field_names=False
         '5' for matlab 5 (up to matlab 7.2)
         '4' for matlab 4 mat files
     %(long_fields)s
+    %(do_compression)s
+    %(oned_as)s
     """
     file_is_string = isinstance(file_name, basestring)
     if file_is_string:
@@ -152,8 +159,10 @@ def savemat(file_name, mdict, appendmat=True, format='5', long_field_names=False
         MW = MatFile4Writer(file_stream)
     elif format == '5':
         MW = MatFile5Writer(file_stream,
+                            do_compression=do_compression,
                             unicode_strings=True,
-                            long_field_names=long_field_names)
+                            long_field_names=long_field_names,
+                            oned_as=oned_as)
     else:
         raise ValueError("Format should be '4' or '5'")
     MW.put_variables(mdict)

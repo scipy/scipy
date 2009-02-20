@@ -7,7 +7,7 @@ import numpy as np
 import scipy.sparse
 
 from miobase import MatFileReader, MatArrayReader, MatMatrixGetter, \
-     MatFileWriter, MatStreamWriter, filldoc
+     MatFileWriter, MatStreamWriter, docfiller
 
 
 SYS_LITTLE_ENDIAN = sys.byteorder == 'little'
@@ -187,7 +187,7 @@ class Mat4SparseGetter(Mat4MatrixGetter):
 
 class MatFile4Reader(MatFileReader):
     ''' Reader for Mat4 files '''
-    @filldoc
+    @docfiller
     def __init__(self, mat_stream, *args, **kwargs):
         ''' Initialize matlab 4 file reader
 
@@ -340,6 +340,9 @@ def matrix_writer_factory(stream, arr, name):
 
 
 class MatFile4Writer(MatFileWriter):
+    ''' Class for writing matlab 4 format files '''
+    def __init__(self, file_stream):
+        self.file_stream = file_stream
 
     def put_variables(self, mdict):
         for name, var in mdict.items():

@@ -10,6 +10,8 @@ http://www.mathworks.com/access/helpdesk/help/pdf_doc/matlab/matfile_format.pdf
 # Small fragments of current code adapted from matfile.py by Heiko
 # Henkelmann
 
+import os
+import time
 import sys
 import zlib
 from zlibstreams import TwoShotZlibInputStream
@@ -22,7 +24,7 @@ import numpy as np
 import scipy.sparse
 
 from miobase import MatFileReader, MatArrayReader, MatMatrixGetter, \
-     MatFileWriter, MatStreamWriter, filldoc, matdims
+     MatFileWriter, MatStreamWriter, docfiller, matdims
 
 miINT8 = 1
 miUINT8 = 2
@@ -527,7 +529,7 @@ class MatFile5Reader(MatFileReader):
     uint16_codec       - char codec to use for uint16 char arrays
                           (defaults to system default codec)
    '''
-    @filldoc
+    @docfiller
     def __init__(self,
                  mat_stream,
                  byte_order=None,
@@ -649,11 +651,13 @@ class Mat5MatrixWriter(MatStreamWriter):
                  name,
                  is_global=False,
                  unicode_strings=False,
-                 long_field_names=False):
+                 long_field_names=False,
+                 oned_as='column'):
         super(Mat5MatrixWriter, self).__init__(file_stream, arr, name)
         self.is_global = is_global
         self.unicode_strings = unicode_strings
         self.long_field_names = long_field_names
+        self.oned_as = oned_as
 
     def write_dtype(self, arr):
         self.file_stream.write(arr.tostring())
@@ -706,7 +710,7 @@ class Mat5MatrixWriter(MatStreamWriter):
         if mclass is None:
             mclass = self.default_mclass
         if shape is None:
-            shape = matdims(self.arr)
+            shape = matdims(self.arr, self.oned_as)
         self._mat_tag_pos = self.file_stream.tell()
         self.write_dtype(self.mat_tag)
         # write array flags (complex, global, logical, class, nzmax)
@@ -733,9 +737,9 @@ class Mat5MatrixWriter(MatStreamWriter):
 
     def make_writer_getter(self):
         ''' Make writer getter for this stream '''
-        return Mat5WriterGetter(self.file_stream,
-                                self.unicode_strings,
-                                self.long_field_names)
+        return Mat5WriterGetter(self.unicode_strings,
+                                self.long_field_names,
+                                self.oned_as)
 
 
 class Mat5NumericWriter(Mat5MatrixWriter):
@@ -820,7 +824,7 @@ class Mat5CellWriter(Mat5MatrixWriter):
         A = np.atleast_2d(self.arr).flatten('F')
         MWG = self.make_writer_getter()
         for el in A:
-            MW = MWG.matrix_writer_factory(el, '')
+            MW = MWG.matrix_writer_factory(self.file_stream, el)
             MW.write()
         self.update_matrix_tag()
 
@@ -857,7 +861,7 @@ class Mat5StructWriter(Mat5CellWriter):
         MWG = self.make_writer_getter()
         for el in A:
             for f in fieldnames:
-                MW = MWG.matrix_writer_factory(el[f], '')
+                MW = MWG.matrix_writer_factory(self.file_stream, el[f])
                 MW.write()
         self.update_matrix_tag()
 
@@ -877,25 +881,24 @@ class Mat5ObjectWriter(Mat5StructWriter):
 
 
 class Mat5WriterGetter(object):
-    ''' Wraps stream and options, provides methods for getting Writer objects '''
-    def __init__(self, stream, unicode_strings, long_field_names=False):
+    ''' Wraps options, provides methods for getting Writer objects '''
+    @docfiller
+    def __init__(self, 
+                 unicode_strings=True, 
+                 long_field_names=False,
+                 oned_as='column'):
         ''' Initialize writer getter
 
         Parameters
         ----------
-        stream : fileobj
-           object to which to write
         unicode_strings : bool
            If True, write unicode strings
-        long_field_names : bool, optional
-           If True, allow writing of long field names (127 bytes)
+        %(long_fields)s
+        %(oned_as)s
         '''
-        self.stream = stream
         self.unicode_strings = unicode_strings
         self.long_field_names = long_field_names
-
-    def rewind(self):
-        self.stream.seek(0)
+        self.oned_as = oned_as
 
     def to_writeable(self, source):
         ''' Convert input object ``source`` to something we can write
@@ -910,12 +913,17 @@ class Mat5WriterGetter(object):
 
         Examples
         --------
-        >>> from StringIO import StringIO
-        >>> mwg = Mat5WriterGetter(StringIO(), True)
+        >>> mwg = Mat5WriterGetter()
         >>> mwg.to_writeable(np.array([1])) # pass through ndarrays
         array([1])
         >>> expected = np.array([(1, 2)], dtype=[('a', '|O8'), ('b', '|O8')])
         >>> np.all(mwg.to_writeable({'a':1,'b':2}) == expected)
+        True
+        >>> np.all(mwg.to_writeable({'a':1,'b':2, '_c':3}) == expected)
+        True
+        >>> np.all(mwg.to_writeable({'a':1,'b':2, 100:3}) == expected)
+        True
+        >>> np.all(mwg.to_writeable({'a':1,'b':2, '99':3}) == expected)
         True
         >>> class klass(object): pass
         >>> c = klass
@@ -949,8 +957,18 @@ class Mat5WriterGetter(object):
             source = source.__dict__
         # Mappings or object dicts
         if hasattr(source, 'keys'):
-            dtype = [(k,object) for k in source]
-            return np.array( [tuple(source.itervalues())] ,dtype)
+            dtype = []
+            values = []
+            for field, value in source.items():
+                if (isinstance(field, basestring) and 
+                    not field.startswith('_') and
+                    not field[0] in '0123456789'):
+                    dtype.append((field,object))
+                    values.append(value)
+            if dtype:
+                return np.array( [tuple(values)] ,dtype)
+            else:
+                return None
         # Next try and convert to an array
         narr = np.asanyarray(source)
         if narr.dtype.type in (np.object, np.object_) and \
@@ -959,32 +977,40 @@ class Mat5WriterGetter(object):
             return None
         return narr
 
-    def matrix_writer_factory(self, arr, name, is_global=False):
+    def matrix_writer_factory(self, stream, arr, name='', is_global=False):
         ''' Factory function to return matrix writer given variable to write
 
         Parameters
         ----------
+        stream : fileobj
+            stream to write to
         arr : array-like
             array-like object to create writer for
         name : string
             name as it will appear in matlab workspace
+            default is empty string
         is_global : {False, True} optional
             whether variable will be global on load into matlab
+
+        Returns
+        -------
+        writer : matrix writer object
         '''
         # First check if these are sparse
         if scipy.sparse.issparse(arr):
-            return Mat5SparseWriter(self.stream, arr, name, is_global)
+            return Mat5SparseWriter(stream, arr, name, is_global)
         # Try to convert things that aren't arrays
         narr = self.to_writeable(arr)
         if narr is None:
             raise TypeError('Could not convert %s (type %s) to array'
                             % (arr, type(arr)))
-        args = (self.stream,
+        args = (stream,
                 narr,
                 name,
                 is_global,
                 self.unicode_strings,
-                self.long_field_names)
+                self.long_field_names,
+                self.oned_as)
         if isinstance(narr, MatlabFunction):
             return Mat5FunctionWriter(*args)
         if isinstance(narr, MatlabObject):
@@ -1005,28 +1031,48 @@ class Mat5WriterGetter(object):
 
 class MatFile5Writer(MatFileWriter):
     ''' Class for writing mat5 files '''
+    @docfiller
     def __init__(self, file_stream,
                  do_compression=False,
                  unicode_strings=False,
                  global_vars=None,
-                 long_field_names=False):
+                 long_field_names=False,
+                 oned_as=None):
+        ''' Initialize writer for matlab 5 format files 
+
+        Parameters
+        ----------
+        %(do_compression)s
+        %(unicode_strings)s
+        global_vars : None or sequence of strings, optional
+            Names of variables to be marked as global for matlab
+        %(long_fields)s
+        %(oned_as)s
+        '''
         super(MatFile5Writer, self).__init__(file_stream)
         self.do_compression = do_compression
         if global_vars:
             self.global_vars = global_vars
         else:
             self.global_vars = []
+        # deal with deprecations
+        if oned_as is None:
+            warnings.warn("Using oned_as default value ('column')" +
+                          " This will change to 'row' in future versions",
+                          FutureWarning, stacklevel=2)
+            oned_as = 'column'
         self.writer_getter = Mat5WriterGetter(
-            StringIO(),
             unicode_strings,
-            long_field_names)
+            long_field_names,
+            oned_as)
         # write header
-        import os, time
         hdr =  np.zeros((), mdtypes_template['file_header'])
-        hdr['description']='MATLAB 5.0 MAT-file Platform: %s, Created on: %s' % (
-                            os.name,time.asctime())
+        hdr['description']='MATLAB 5.0 MAT-file Platform: %s, Created on: %s' \
+            % (os.name,time.asctime())
         hdr['version']= 0x0100
-        hdr['endian_test']=np.ndarray(shape=(),dtype='S2',buffer=np.uint16(0x4d49))
+        hdr['endian_test']=np.ndarray(shape=(),
+                                      dtype='S2',
+                                      buffer=np.uint16(0x4d49))
         file_stream.write(hdr.tostring())
 
     def get_unicode_strings(self):
@@ -1045,28 +1091,40 @@ class MatFile5Writer(MatFileWriter):
     long_field_names = property(get_long_field_names,
                                 set_long_field_names,
                                 None,
-                                'enable writing 32-63 character field names for Matlab 7.6+')
+                                'enable writing 32-63 character field '
+                                'names for Matlab 7.6+')
+
+    def get_oned_as(self):
+        return self.writer_getter.oned_as
+    def set_oned_as(self, oned_as):
+        self.writer_getter.oned_as = oned_as
+    oned_as = property(get_oned_as,
+                       set_oned_as,
+                       None,
+                       'get/set oned_as property')
 
     def put_variables(self, mdict):
         for name, var in mdict.items():
             if name[0] == '_':
                 continue
             is_global = name in self.global_vars
-            self.writer_getter.rewind()
-            mat_writer = self.writer_getter.matrix_writer_factory(
-                var,
-                name,
-                is_global)
-            mat_writer.write()
-            stream = self.writer_getter.stream
-            bytes_written = stream.tell()
-            stream.seek(0)
-            out_str = stream.read(bytes_written)
             if self.do_compression:
-                out_str = zlib.compress(out_str)
+                stream = StringIO()
+                mat_writer = self.writer_getter.matrix_writer_factory(
+                    stream,
+                    var,
+                    name,
+                    is_global)
+                mat_writer.write()
+                out_str = zlib.compress(stream.getvalue())
                 tag = np.empty((), mdtypes_template['tag_full'])
                 tag['mdtype'] = miCOMPRESSED
-                tag['byte_count'] = len(str)
+                tag['byte_count'] = len(out_str)
                 self.file_stream.write(tag.tostring() + out_str)
-            else:
-                self.file_stream.write(out_str)
+            else: # not compressing
+                mat_writer = self.writer_getter.matrix_writer_factory(
+                    self.file_stream,
+                    var,
+                    name,
+                    is_global)
+                mat_writer.write()

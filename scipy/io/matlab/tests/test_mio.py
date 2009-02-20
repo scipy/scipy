@@ -474,6 +474,31 @@ def test_1d_shape():
     arr = np.arange(5)
     stream = StringIO()
     savemat(stream, {'oned':arr})
-    stream.seek(0)
     vals = loadmat(stream)
-    assert_equal(vals['oned'].shape, (5,1))
+    yield assert_equal, vals['oned'].shape, (5,1)
+    # which is the same as 'column' for oned_as
+    stream = StringIO()
+    savemat(stream, {'oned':arr}, oned_as='column')
+    vals = loadmat(stream)
+    yield assert_equal, vals['oned'].shape, (5,1)
+    # but different from 'row'
+    stream = StringIO()
+    savemat(stream, {'oned':arr}, oned_as='row')
+    vals = loadmat(stream)
+    yield assert_equal, vals['oned'].shape, (1,5)
+
+
+def test_compression():
+    arr = np.zeros(100).reshape((5,20))
+    arr[2,10] = 1
+    stream = StringIO()
+    savemat(stream, {'arr':arr})
+    raw_len = len(stream.getvalue())
+    vals = loadmat(stream)
+    yield assert_array_equal, vals['arr'], arr
+    stream = StringIO()
+    savemat(stream, {'arr':arr}, do_compression=True)
+    compressed_len = len(stream.getvalue())
+    vals = loadmat(stream)
+    yield assert_array_equal, vals['arr'], arr
+    yield assert_true, raw_len>compressed_len
