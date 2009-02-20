@@ -1,13 +1,14 @@
 ''' Classes for read / write of matlab (TM) 4 files
 '''
 import sys
+import warnings
 
 import numpy as np
 
 import scipy.sparse
 
 from miobase import MatFileReader, MatArrayReader, MatMatrixGetter, \
-     MatFileWriter, MatStreamWriter, docfiller
+     MatFileWriter, MatStreamWriter, docfiller, matdims
 
 
 SYS_LITTLE_ENDIAN = sys.byteorder == 'little'
@@ -244,8 +245,8 @@ class Mat4MatrixWriter(MatStreamWriter):
         self.write_string(self.name + '\0')
 
     def arr_to_2d(self):
-        self.arr = np.atleast_2d(self.arr)
-        dims = self.arr.shape
+        dims = matdims(self.arr, self.oned_as)
+        self.arr.shape = dims
         if len(dims) > 2:
             self.arr = self.arr.reshape(-1,dims[-1])
 
@@ -319,14 +320,14 @@ class Mat4SparseWriter(Mat4MatrixWriter):
         self.write_bytes(ijv)
 
 
-def matrix_writer_factory(stream, arr, name):
+def matrix_writer_factory(stream, arr, name, oned_as):
     ''' Factory function to return matrix writer given variable to write
     stream      - file or file-like stream to write to
     arr         - array to write
     name        - name in matlab (TM) workspace
     '''
     if scipy.sparse.issparse(arr):
-        return Mat4SparseWriter(stream, arr, name)
+        return Mat4SparseWriter(stream, arr, name, oned_as)
     arr = np.array(arr)
     dtt = arr.dtype.type
     if dtt is np.object_:
@@ -334,16 +335,26 @@ def matrix_writer_factory(stream, arr, name):
     elif dtt is np.void:
         raise TypeError, 'Cannot save void type arrays'
     elif dtt in (np.unicode_, np.string_):
-        return Mat4CharWriter(stream, arr, name)
+        return Mat4CharWriter(stream, arr, name, oned_as)
     else:
-        return Mat4NumericWriter(stream, arr, name)
+        return Mat4NumericWriter(stream, arr, name, oned_as)
 
 
 class MatFile4Writer(MatFileWriter):
     ''' Class for writing matlab 4 format files '''
-    def __init__(self, file_stream):
+    def __init__(self, file_stream, oned_as=None):
         self.file_stream = file_stream
+        # deal with deprecations
+        if oned_as is None:
+            warnings.warn("Using oned_as default value ('column')" +
+                          " This will change to 'row' in future versions",
+                          FutureWarning, stacklevel=2)
+            oned_as = 'column'
+        self.oned_as = oned_as
 
     def put_variables(self, mdict):
         for name, var in mdict.items():
-            matrix_writer_factory(self.file_stream, var, name).write()
+            matrix_writer_factory(self.file_stream, 
+                                  var, 
+                                  name, 
+                                  self.oned_as).write()

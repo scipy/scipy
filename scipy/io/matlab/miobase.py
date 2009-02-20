@@ -513,13 +513,14 @@ class MatArrayReader(MatStreamAgent):
 
 class MatStreamWriter(object):
     ''' Base object for writing to mat files '''
-    def __init__(self, file_stream, arr, name):
+    def __init__(self, file_stream, arr, name, oned_as):
         self.file_stream = file_stream
         self.arr = arr
         dt = self.arr.dtype
         if not dt.isnative:
             self.arr = self.arr.astype(dt.newbyteorder('='))
         self.name = name
+        self.oned_as = oned_as
 
     def rewind(self):
         self.file_stream.seek(0)

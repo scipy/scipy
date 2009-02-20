@@ -470,23 +470,28 @@ def test_save_dict():
 
 
 def test_1d_shape():
-    # Current behavior is 1D -> column vector
-    arr = np.arange(5)
-    stream = StringIO()
-    savemat(stream, {'oned':arr})
-    vals = loadmat(stream)
-    yield assert_equal, vals['oned'].shape, (5,1)
-    # which is the same as 'column' for oned_as
-    stream = StringIO()
-    savemat(stream, {'oned':arr}, oned_as='column')
-    vals = loadmat(stream)
-    yield assert_equal, vals['oned'].shape, (5,1)
-    # but different from 'row'
-    stream = StringIO()
-    savemat(stream, {'oned':arr}, oned_as='row')
-    vals = loadmat(stream)
-    yield assert_equal, vals['oned'].shape, (1,5)
-
+    for format in ('4', '5'):
+        # Current behavior is 1D -> column vector
+        arr = np.arange(5)
+        stream = StringIO()
+        savemat(stream, {'oned':arr}, format=format)
+        vals = loadmat(stream)
+        yield assert_equal, vals['oned'].shape, (5,1)
+        # which is the same as 'column' for oned_as
+        stream = StringIO()
+        savemat(stream, {'oned':arr}, 
+                format=format,
+                oned_as='column')
+        vals = loadmat(stream)
+        yield assert_equal, vals['oned'].shape, (5,1)
+        # but different from 'row'
+        stream = StringIO()
+        savemat(stream, {'oned':arr}, 
+                format=format,
+                oned_as='row')
+        vals = loadmat(stream)
+        yield assert_equal, vals['oned'].shape, (1,5)
+    
 
 def test_compression():
     arr = np.zeros(100).reshape((5,20))

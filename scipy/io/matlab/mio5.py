@@ -653,7 +653,10 @@ class Mat5MatrixWriter(MatStreamWriter):
                  unicode_strings=False,
                  long_field_names=False,
                  oned_as='column'):
-        super(Mat5MatrixWriter, self).__init__(file_stream, arr, name)
+        super(Mat5MatrixWriter, self).__init__(file_stream, 
+                                               arr, 
+                                               name,
+                                               oned_as)
         self.is_global = is_global
         self.unicode_strings = unicode_strings
         self.long_field_names = long_field_names

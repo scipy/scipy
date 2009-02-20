@@ -156,7 +156,7 @@ def savemat(file_name, mdict,
     if format == '4':
         if long_field_names:
             raise ValueError("Long field names are not available for version 4 files")
-        MW = MatFile4Writer(file_stream)
+        MW = MatFile4Writer(file_stream, oned_as)
     elif format == '5':
         MW = MatFile5Writer(file_stream,
                             do_compression=do_compression,
