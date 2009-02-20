@@ -191,12 +191,12 @@ case_table5_rt.append(
 case_table5_rt.append(
     {'name': 'objectarray',
      'expected': {'testobjectarray': np.repeat(MO, 2).reshape(1,2)}})
-''' Test fails;  consider also savemat('A', {'A':np.array(1, dtype=object)})
+objarr = np.empty((1,1),dtype=object)
+objarr[0,0] = mlarr(1)
 case_table5_rt.append(
     {'name': 'scalarobject',
-    'expected': {'testscalarobject': mlarr(1, dtype=object)}
-    })
-'''
+     'expected': {'testscalarobject': objarr}
+     })
 
 
 def types_compatible(var1, var2):
@@ -513,3 +513,19 @@ def test_compression():
     vals = loadmat(stream)
     yield assert_array_equal, vals['arr'], arr
     yield assert_true, raw_len>compressed_len
+    # Concatenate, test later
+    arr2 = arr.copy()
+    arr2[0,0] = 1
+    stream = StringIO()
+    savemat(stream, {'arr':arr, 'arr2':arr2}, do_compression=False)
+    vals = loadmat(stream)
+    yield assert_array_equal, vals['arr2'], arr2
+    stream = StringIO()
+    savemat(stream, {'arr':arr, 'arr2':arr2}, do_compression=True)
+    vals = loadmat(stream)
+    yield assert_array_equal, vals['arr2'], arr2
+    
+
+def test_single_object():
+    stream = StringIO()
+    savemat(stream, {'A':np.array(1, dtype=object)})
