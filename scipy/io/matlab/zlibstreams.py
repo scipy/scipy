@@ -122,13 +122,14 @@ class ZlibInputStream(object):
             return
         # read until we have enough bytes in the buffer
         read_to_end = bytes == -1
-
+        
+        bytes_to_fill = bytes - len(self.data)
+        if not (bytes_to_fill or read_to_end):
+            return
         # store data chunks in a list until the end so that we avoid the
         # quadratic behavior of continuously extending a string
         data_chunks = [self.data]
-        bytes_to_fill = bytes - len(self.data)
-
-        while read_to_end or bytes_to_fill > 0:
+        while bytes_to_fill > 0 or read_to_end:
             z_n_to_fetch = self._blocksize_iterator.next()
             if z_n_to_fetch == 0:
                 self.exhausted = True
@@ -198,11 +199,13 @@ class ZlibInputStream(object):
             string containing read data
 
         '''
-        self.__fill(bytes)
         if bytes == -1:
+            self.__fill(bytes)
             data = self.data
             self.data = ""
         else:
+            if len(self.data) < bytes:
+                self.__fill(bytes)
             data = self.data[:bytes]
             self.data = self.data[bytes:]
         self.unzipped_pos += len(data)

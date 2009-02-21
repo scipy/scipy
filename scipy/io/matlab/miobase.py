@@ -10,6 +10,7 @@ from scipy.ndimage import doccer
 
 import byteordercodes as boc
 
+class MatReadError(Exception): pass
 
 doc_dict = \
     {'file_arg':
@@ -136,6 +137,7 @@ def get_matfile_version(fileobj):
     else:
         raise ValueError('Unknown mat file type, version %s' % ret)
 
+class MatReadError(Exception): pass
 
 def matdims(arr, oned_as='column'):
     ''' Determine equivalent matlab dimensions for given array 
@@ -412,7 +414,7 @@ class MatFileReader(MatStreamAgent):
                 arr = np.squeeze(arr)
                 if not arr.size:
                     arr = np.array([])
-                elif not arr.shape: # 0d coverted to scalar
+                elif not arr.shape and arr.dtype.isbuiltin: # 0d coverted to scalar
                     arr = arr.item()
             return arr
         return func
@@ -442,7 +444,11 @@ class MatFileReader(MatStreamAgent):
             if variable_names and name not in variable_names:
                 getter.to_next()
                 continue
-            res = getter.get_array()
+            try:
+                res = getter.get_array()
+            except MatReadError, err:
+                res = "Read error: %s" % err
+                getter.to_next()
             mdict[name] = res
             if getter.is_global:
                 mdict['__globals__'].append(name)

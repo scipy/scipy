@@ -188,16 +188,14 @@ case_table5.append(
     {'name': 'sparsecomplex',
      'expected': {'testsparsecomplex': SP.coo_matrix(B)},
      })
-'''
+# We cannot read matlab functions for the moment
 case_table5.append(
     {'name': 'func',
-     'expected': {'testfunc': 0},
+     'expected': {'testfunc': 'Read error: Cannot read matlab functions'},
      })
-'''
 
-# These should also have matlab load equivalents,
-case_table5_rt = case_table5[:]
-# Inline functions can't be concatenated in matlab
+case_table5_rt = case_table5[:-1] # not the function read write
+# Inline functions can't be concatenated in matlab, so RT only
 case_table5_rt.append(
     {'name': 'objectarray',
      'expected': {'testobjectarray': np.repeat(MO, 2).reshape(1,2)}})

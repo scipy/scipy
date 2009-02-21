@@ -24,7 +24,8 @@ import numpy as np
 import scipy.sparse
 
 from miobase import MatFileReader, MatArrayReader, MatMatrixGetter, \
-     MatFileWriter, MatStreamWriter, docfiller, matdims
+     MatFileWriter, MatStreamWriter, docfiller, matdims, \
+     MatReadError
 
 miINT8 = 1
 miUINT8 = 2
@@ -65,8 +66,30 @@ mxINT64_CLASS = 14
 mxUINT64_CLASS = 15
 mxFUNCTION_CLASS = 16
 # Not doing anything with these at the moment.
-mxOPAQUE_CLASS = 17
+mxOPAQUE_CLASS = 17 # This appears to be a function workspace
+# https://www-old.cae.wisc.edu/pipermail/octave-maintainers/2007-May/002824.html
 mxOBJECT_CLASS_FROM_MATRIX_H = 18
+
+mxmap = { # Sometimes good for debug prints
+    mxCELL_CLASS: 'mxCELL_CLASS',
+    mxSTRUCT_CLASS: 'mxSTRUCT_CLASS',
+    mxOBJECT_CLASS: 'mxOBJECT_CLASS',
+    mxCHAR_CLASS: 'mxCHAR_CLASS',
+    mxSPARSE_CLASS: 'mxSPARSE_CLASS',
+    mxDOUBLE_CLASS: 'mxDOUBLE_CLASS',
+    mxSINGLE_CLASS: 'mxSINGLE_CLASS',
+    mxINT8_CLASS: 'mxINT8_CLASS',
+    mxUINT8_CLASS: 'mxUINT8_CLASS',
+    mxINT16_CLASS: 'mxINT16_CLASS',
+    mxUINT16_CLASS: 'mxUINT16_CLASS',
+    mxINT32_CLASS: 'mxINT32_CLASS',
+    mxUINT32_CLASS: 'mxUINT32_CLASS',
+    mxINT64_CLASS: 'mxINT64_CLASS',
+    mxUINT64_CLASS: 'mxUINT64_CLASS',
+    mxFUNCTION_CLASS: 'mxFUNCTION_CLASS',
+    mxOPAQUE_CLASS: 'mxOPAQUE_CLASS',
+    mxOBJECT_CLASS_FROM_MATRIX_H: 'mxOBJECT_CLASS_FROM_MATRIX_H',
+}
 
 mdtypes_template = {
     miINT8: 'i1',
@@ -319,7 +342,7 @@ class Mat5ArrayReader(MatArrayReader):
         if mc == mxOBJECT_CLASS:
             return Mat5ObjectMatrixGetter(self, header)
         if mc == mxFUNCTION_CLASS:
-            return Mat5FunctionMatrixGetter(self, header)
+            return Mat5FunctionGetter(self, header)
         raise TypeError, 'No reader for class code %s' % mc
 
 
@@ -329,25 +352,11 @@ class Mat5ZArrayReader(Mat5ArrayReader):
     Sets up reader for gzipped stream on init, providing wrapper
     for this new sub-stream.
 
-    Note that we use a zlib stream reader to return the data from the
-    zlib compressed stream.
-
-    In our case, we want this reader (under the hood) to do one small
-    read of the stream to get enough data to check the variable name,
-    because we may want to skip this variable - for which we need to
-    check the name.  If we need to read the rest of the data (not
-    skipping), then (under the hood) the steam reader decompresses the
-    whole of the rest of the stream ready for returning here to
-    construct the array.  This avoids the overhead of reading the
-    stream in small chunks - the default behavior of our zlib stream
-    reader.
-
-    This is why we use TwoShotZlibInputStream below.
     '''
     def __init__(self, array_reader, byte_count):
+        instr = array_reader.mat_stream.read(byte_count)
         super(Mat5ZArrayReader, self).__init__(
-            TwoShotZlibInputStream(array_reader.mat_stream,
-                                   byte_count),
+            StringIO(zlib.decompress(instr)),
             array_reader.dtypes,
             array_reader.processor_func,
             array_reader.codecs,
@@ -516,10 +525,9 @@ class Mat5ObjectMatrixGetter(Mat5StructMatrixGetter):
         return MatlabObject(result, classname)
 
 
-class Mat5FunctionMatrixGetter(Mat5CellMatrixGetter):
+class Mat5FunctionGetter(Mat5ObjectMatrixGetter):
     def get_raw_array(self):
-        result = super(Mat5FunctionMatrixGetter, self).get_raw_array()
-        return MatlabFunction(result)
+        raise MatReadError('Cannot read matlab functions')
 
 
 class MatFile5Reader(MatFileReader):
