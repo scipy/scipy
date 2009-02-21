@@ -403,6 +403,9 @@ class test_sparse_distance_matrix:
         for ((i,j),d) in M.items():
             assert j in r[i]
 
+    def test_zero_distance(self):
+        M = self.T1.sparse_distance_matrix(self.T1, self.r) # raises an exception for bug 859
+
 def test_distance_matrix():
     m = 10
     n = 11

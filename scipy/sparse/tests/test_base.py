@@ -548,8 +548,18 @@ class _TestCommon:
         assert_equal(toself(copy=False).todense(), A.todense())
 
 
-        #TODO how can we check whether the data is copied?
-        pass
+        # check whether the data is copied?
+        # TODO: deal with non-indexable types somehow
+        B = A.copy()
+        try:
+            B[0,0] += 1
+            assert B[0,0]!=A[0,0]
+        except NotImplementedError:
+            # not all sparse matrices can be indexed
+            pass
+        except TypeError:
+            # not all sparse matrices can be indexed
+            pass
 
     # Eventually we'd like to allow matrix products between dense
     # and sparse matrices using the normal dot() function:
@@ -590,6 +600,7 @@ class _TestInplaceArithmetic:
 class _TestGetSet:
     def test_setelement(self):
         A = self.spmatrix((3,4))
+        A[ 0, 0] = 0 # bug 859
         A[ 1, 2] = 4.0
         A[ 0, 1] = 3
         A[ 2, 0] = 2.0
