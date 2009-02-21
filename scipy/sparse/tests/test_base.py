@@ -600,7 +600,7 @@ class _TestInplaceArithmetic:
 class _TestGetSet:
     def test_setelement(self):
         A = self.spmatrix((3,4))
-        A[ 0, 0] = 0 # bug 859
+        A[ 0, 0] = 0 # bug 870
         A[ 1, 2] = 4.0
         A[ 0, 1] = 3
         A[ 2, 0] = 2.0
