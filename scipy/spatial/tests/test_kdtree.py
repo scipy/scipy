@@ -149,7 +149,7 @@ class test_vectorization:
         self.kdtree = KDTree(self.data)
 
     def test_single_query(self):
-        d, i = self.kdtree.query([0,0,0])
+        d, i = self.kdtree.query(np.array([0,0,0]))
         assert isinstance(d,float)
         assert isinstance(i,int)
 
@@ -161,7 +161,7 @@ class test_vectorization:
     def test_single_query_multiple_neighbors(self):
         s = 23
         kk = self.kdtree.n+s
-        d, i = self.kdtree.query([0,0,0],k=kk)
+        d, i = self.kdtree.query(np.array([0,0,0]),k=kk)
         assert_equal(np.shape(d),(kk,))
         assert_equal(np.shape(i),(kk,))
         assert np.all(~np.isfinite(d[-s:]))
@@ -196,7 +196,7 @@ class test_vectorization_compiled:
                               [1,0,1],
                               [1,1,0],
                               [1,1,1]])
-        self.kdtree = KDTree(self.data)
+        self.kdtree = cKDTree(self.data)
 
     def test_single_query(self):
         d, i = self.kdtree.query([0,0,0])
@@ -207,6 +207,13 @@ class test_vectorization_compiled:
         d, i = self.kdtree.query(np.zeros((2,4,3)))
         assert_equal(np.shape(d),(2,4))
         assert_equal(np.shape(i),(2,4))
+
+    def test_vectorized_query_noncontiguous_values(self):
+        qs = np.random.randn(3,1000).T
+        ds, i_s = self.kdtree.query(qs)
+        for q, d, i in zip(qs,ds,i_s):
+            assert_equal(self.kdtree.query(q),(d,i))
+
 
     def test_single_query_multiple_neighbors(self):
         s = 23

@@ -568,6 +568,7 @@ cdef class cKDTree:
         retshape = np.shape(x)[:-1]
         n = np.prod(retshape)
         xx = np.reshape(x,(n,self.m))
+        xx = np.ascontiguousarray(xx)
         dd = np.empty((n,k),dtype=np.float)
         dd.fill(infinity)
         ii = np.empty((n,k),dtype='i')
