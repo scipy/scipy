@@ -14,7 +14,7 @@ import os
 import time
 import sys
 import zlib
-from zlibstreams import TwoShotZlibInputStream
+from zlibstreams import StubbyZlibInputStream
 from StringIO import StringIO
 from copy import copy as pycopy
 import warnings
@@ -23,6 +23,7 @@ import numpy as np
 
 import scipy.sparse
 
+import byteordercodes
 from miobase import MatFileReader, MatArrayReader, MatMatrixGetter, \
      MatFileWriter, MatStreamWriter, docfiller, matdims, \
      MatReadError
@@ -230,6 +231,13 @@ class MatlabFunction(np.ndarray):
         obj = np.asarray(input_array).view(cls)
 
 
+class MatlabBinaryBlock(object):
+    ''' Class to contain matlab unreadable blocks '''
+    def __init__(self, binaryblock, endian):
+        self.binaryblock = binaryblock
+        self.endian = endian
+
+
 class Mat5ArrayReader(MatArrayReader):
     ''' Class to get Mat5 arrays
 
@@ -326,6 +334,20 @@ class Mat5ArrayReader(MatArrayReader):
         header['is_global'] = flags_class >> 10 & 1
         header['is_complex'] = flags_class >> 11 & 1
         header['nzmax'] = af['nzmax']
+        ''' Here I am playing with a binary block read of
+        untranslatable data. I am not using this at the moment because
+        reading it has the side effect of making opposite ending mat
+        files unwritable on the round trip.
+        
+        if mc == mxFUNCTION_CLASS:
+            # we can't read these, and want to keep track of the byte
+            # count - so we need to avoid the following unpredictable
+            # length element reads
+            return Mat5BinaryBlockGetter(self,
+                                         header,
+                                         af,
+                                         byte_count)
+        '''
         header['dims'] = self.read_element()
         header['name'] = self.read_element().tostring()
         # maybe a dictionary mapping here as a dispatch table
@@ -354,9 +376,9 @@ class Mat5ZArrayReader(Mat5ArrayReader):
 
     '''
     def __init__(self, array_reader, byte_count):
-        instr = array_reader.mat_stream.read(byte_count)
         super(Mat5ZArrayReader, self).__init__(
-            StringIO(zlib.decompress(instr)),
+            StubbyZlibInputStream(array_reader.mat_stream,
+                            byte_count),
             array_reader.dtypes,
             array_reader.processor_func,
             array_reader.codecs,
@@ -387,7 +409,6 @@ class Mat5EmptyMatrixGetter(Mat5MatrixGetter):
     def __init__(self, array_reader):
         self.array_reader = array_reader
         self.mat_stream = array_reader.mat_stream
-        self.data_position = self.mat_stream.tell()
         self.header = {}
         self.name = ''
         self.is_global = False
@@ -526,10 +547,50 @@ class Mat5ObjectMatrixGetter(Mat5StructMatrixGetter):
 
 
 class Mat5FunctionGetter(Mat5ObjectMatrixGetter):
-    def get_raw_array(self):
-        raise MatReadError('Cannot read matlab functions')
+    ''' Class to provide warning and message string for unreadable
+    matlab function data
+    '''
+    
+    def get_raw_array(self): raise MatReadError('Cannot read matlab functions')
 
 
+class Mat5BinaryBlockGetter(object):
+    ''' Class to read in unreadable binary blocks
+
+    This class could be used to read in matlab functions
+    '''
+
+    def __init__(self,
+                 array_reader,
+                 header,
+                 array_flags,
+                 byte_count):
+        self.array_reader = array_reader
+        self.header = header
+        self.array_flags = array_flags
+        arr_str = array_flags.tostring()
+        self.binaryblock = array_reader.mat_stream.read(
+            byte_count-len(array_flags.tostring()))
+        stream = StringIO(self.binaryblock)
+        reader = Mat5ArrayReader(
+            stream,
+            array_reader.dtypes,
+            lambda x : None,
+            array_reader.codecs,
+            array_reader.class_dtypes,
+            False)
+        self.header['dims'] = reader.read_element()
+        self.header['name'] = reader.read_element().tostring()
+        self.name = self.header['name']
+        self.is_global = header['is_global']
+
+    def get_array(self):
+        dt = self.array_reader.dtypes[miINT32]
+        endian = byteordercodes.to_numpy_code(dt.byteorder)
+        data = self.array_flags.tostring() + self.binaryblock
+        return MatlabBinaryBlock(data, endian)
+
+               
 class MatFile5Reader(MatFileReader):
     ''' Reader for Mat 5 mat files
     Adds the following attribute to base class
@@ -840,12 +901,12 @@ class Mat5CellWriter(Mat5MatrixWriter):
         self.update_matrix_tag()
 
 
-class Mat5FunctionWriter(Mat5CellWriter):
-    ''' class to write matlab functions
-
-    Only differs from cell writing in mx class in header '''
-    default_mclass = mxFUNCTION_CLASS
-
+class Mat5BinaryBlockWriter(Mat5MatrixWriter):
+    ''' class to write untranslatable binary blocks '''
+    def write(self):
+        # check endian
+        # write binary block as is
+        pass
 
 class Mat5StructWriter(Mat5CellWriter):
     ''' class to write matlab structs
@@ -1022,8 +1083,8 @@ class Mat5WriterGetter(object):
                 self.unicode_strings,
                 self.long_field_names,
                 self.oned_as)
-        if isinstance(narr, MatlabFunction):
-            return Mat5FunctionWriter(*args)
+        if isinstance(narr, MatlabBinaryBlock):
+            return Mat5BinaryBlockWriter(*args)
         if isinstance(narr, MatlabObject):
             return Mat5ObjectWriter(*args)
         if narr.dtype.hasobject: # cell or struct array

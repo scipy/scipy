@@ -3,6 +3,7 @@
 """
 Base classes for matlab (TM) file stream reading
 """
+import warnings
 
 import numpy as np
 
@@ -447,6 +448,10 @@ class MatFileReader(MatStreamAgent):
             try:
                 res = getter.get_array()
             except MatReadError, err:
+                warnings.warn(
+                    'Unreadable variable "%s", because "%s"' % \
+                    (name, err),
+                    Warning, stacklevel=2)
                 res = "Read error: %s" % err
                 getter.to_next()
             mdict[name] = res
