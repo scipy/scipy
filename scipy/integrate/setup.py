@@ -18,6 +18,8 @@ def configuration(parent_package='',top_path=None):
                        sources=[join('quadpack','*.f')])
     config.add_library('odepack',
                        sources=[join('odepack','*.f')])
+    config.add_library('dop',
+                       sources=[join('dop','*.f')])
     # should we try to weed through files and replace with calls to
     # LAPACK routines?
     # Yes, someday...
@@ -33,6 +35,7 @@ def configuration(parent_package='',top_path=None):
                          depends=['quadpack.h','__quadpack.h'])
     # odepack
     libs = ['odepack','linpack_lite','mach']
+    
 
     # Remove libraries key from blas_opt
     if 'libraries' in blas_opt:    # key doesn't exist on OS X ...
@@ -53,6 +56,11 @@ def configuration(parent_package='',top_path=None):
                          sources=['vode.pyf'],
                          libraries=libs,
                          **newblas)
+
+    # dop
+    config.add_extension('dop',
+                         sources=['dop.pyf'],
+                         libraries=['dop'])
 
     config.add_data_dir('tests')
     return config

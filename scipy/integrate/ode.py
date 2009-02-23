@@ -1,4 +1,4 @@
-# Authors: Pearu Peterson, Pauli Virtanen
+# Authors: Pearu Peterson, Pauli Virtanen, John Travers
 """
 First-order ODE integrators
 
@@ -97,6 +97,58 @@ as the "vode" solver.
     failures, and for this problem one should instead use DVODE on the
     equivalent real system (in the real and imaginary parts of y).
 
+dopri5
+~~~~~~
+
+    Numerical solution of a system of first order
+    ordinary differential equations  y'=f(x,y).
+    this is an explicit runge-kutta method of order (4)5  
+    due to Dormand & Prince (with stepsize control and
+    dense output).
+
+    Authors: E. Hairer and G. Wanner
+             Universite de Geneve, Dept. de Mathematiques
+             CH-1211 Geneve 24, Switzerland 
+             e-mail:  ernst.hairer@math.unige.ch
+                      gerhard.wanner@math.unige.ch
+     
+    This code is described in: 
+          E. Hairer, S.P. Norsett and G. Wanner, Solving Ordinary
+          Differential Equations i. Nonstiff Problems. 2nd edition.
+          Springer Series in Computational Mathematics,
+          Springer-Verlag (1993)               
+
+This integrator accepts the following parameters in set_integrator()
+method of the ode class:
+
+- atol : float or sequence
+  absolute tolerance for solution
+- rtol : float or sequence
+  relative tolerance for solution
+- nsteps : int
+  Maximum number of (internally defined) steps allowed during one
+  call to the solver.
+- first_step : float
+- max_step : float
+- safety : float
+  Safety factor on new step selection (default 0.9)
+- ifactor : float
+- dfactor : float
+  Maximum factor to increase/decrease step sixe by in one step
+- beta : float
+  Beta parameter for stabilised step size control.
+
+dop853
+~~~~~~
+
+    Numerical solution of a system of first 0rder
+    ordinary differential equations  y'=f(x,y).
+    this is an explicit runge-kutta method of order 8(5,3)  
+    due to Dormand & Prince (with stepsize control and
+    dense output).
+
+    Options and references the same as dopri5.
+
 """
 
 if __doc__:
@@ -153,6 +205,7 @@ import warnings
 from numpy import asarray, array, zeros, int32, isscalar
 
 import vode as _vode
+import dop as _dop
 
 #------------------------------------------------------------------------------
 # User interface
@@ -564,3 +617,110 @@ class zvode(vode):
 
 if zvode.runner is not None:
     IntegratorBase.integrator_classes.append(zvode)
+
+class dopri5(IntegratorBase):
+
+    runner = getattr(_dop,'dopri5',None)
+
+    messages = { 1 : 'computation successful',
+                 2 : 'comput. successful (interrupted by solout)',
+                -1 : 'input is not consistent',
+                -2 : 'larger nmax is needed',
+                -3 : 'step size becomes too small',
+                -4 : 'problem is probably stiff (interrupted)',
+               }
+
+    def __init__(self,
+                 rtol=1e-6,atol=1e-12,
+                 nsteps = 500,
+                 max_step = 0.0,
+                 first_step = 0.0, # determined by solver
+                 safety = 0.9,
+                 ifactor = 10.0,
+                 dfactor = 0.2,
+                 beta = 0.0,
+                 method = None
+                 ):
+        self.rtol = rtol
+        self.atol = atol
+        self.nsteps = nsteps
+        self.max_step = max_step
+        self.first_step = first_step
+        self.safety = safety
+        self.ifactor = ifactor
+        self.dfactor = dfactor
+        self.beta = beta
+        self.success = 1
+
+    def reset(self,n,has_jac):
+        work = zeros((8*n+21,), float)
+        work[1] = self.safety
+        work[2] = self.dfactor
+        work[3] = self.ifactor
+        work[4] = self.beta
+        work[5] = self.max_step
+        work[6] = self.first_step
+        self.work = work
+        iwork = zeros((21,), int32)
+        iwork[0] = self.nsteps
+        self.iwork = iwork
+        self.call_args = [self.rtol,self.atol,self._solout,self.work,self.iwork]
+        self.success = 1
+
+    def run(self,f,jac,y0,t0,t1,f_params,jac_params):
+        x,y,iwork,idid = self.runner(*((f,t0,y0,t1) + tuple(self.call_args)))
+        if idid < 0:
+            print 'dopri5:',self.messages.get(idid,'Unexpected idid=%s'%idid)
+            self.success = 0
+        return y,x
+        
+    def _solout(self, *args):
+        # dummy solout function
+        pass
+
+if dopri5.runner:
+    IntegratorBase.integrator_classes.append(dopri5)
+
+class dop853(dopri5):
+
+    runner = getattr(_dop,'dop853',None)
+
+    def __init__(self,
+                 rtol=1e-6,atol=1e-12,
+                 nsteps = 500,
+                 max_step = 0.0,
+                 first_step = 0.0, # determined by solver
+                 safety = 0.9,
+                 ifactor = 6.0,
+                 dfactor = 0.3,
+                 beta = 0.0,
+                 method = None
+                 ):
+        self.rtol = rtol
+        self.atol = atol
+        self.nsteps = nsteps
+        self.max_step = max_step
+        self.first_step = first_step
+        self.safety = safety
+        self.ifactor = ifactor
+        self.dfactor = dfactor
+        self.beta = beta
+        self.success = 1
+
+    def reset(self,n,has_jac):
+        work = zeros((11*n+21,), float)
+        work[1] = self.safety
+        work[2] = self.dfactor
+        work[3] = self.ifactor
+        work[4] = self.beta
+        work[5] = self.max_step
+        work[6] = self.first_step
+        self.work = work
+        iwork = zeros((21,), int32)
+        iwork[0] = self.nsteps
+        self.iwork = iwork
+        self.call_args = [self.rtol,self.atol,self._solout,self.work,self.iwork]
+        self.success = 1
+
+if dop853.runner:
+    IntegratorBase.integrator_classes.append(dop853)

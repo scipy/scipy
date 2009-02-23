@@ -69,6 +69,22 @@ class TestOde(TestCase):
                 self._do_problem(problem, 'zvode', 'adams')
             self._do_problem(problem, 'zvode', 'bdf')
 
+    def test_dopri5(self):
+        """Check the dopri5 solver"""
+        for problem_cls in PROBLEMS:
+            problem = problem_cls()
+            if problem.cmplx: continue
+            if problem.stiff: continue
+            self._do_problem(problem, 'dopri5')
+            
+    def test_dop853(self):
+        """Check the dop853 solver"""
+        for problem_cls in PROBLEMS:
+            problem = problem_cls()
+            if problem.cmplx: continue
+            if problem.stiff: continue
+            self._do_problem(problem, 'dop853')
+
 #------------------------------------------------------------------------------
 # Test problems
 #------------------------------------------------------------------------------
