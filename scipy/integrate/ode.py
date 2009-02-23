@@ -147,8 +147,12 @@ __all__ = ['ode']
 __version__ = "$Id$"
 __docformat__ = "restructuredtext en"
 
+import re
+import warnings
+
 from numpy import asarray, array, zeros, int32, isscalar
-import re, sys
+
+import vode as _vode
 
 #------------------------------------------------------------------------------
 # User interface
@@ -232,13 +236,15 @@ The integration:
         ----------
         name : str
             Name of the integrator
-        integrator_params
+        integrator_params :
             Additional parameters for the integrator.
         """
         integrator = find_integrator(name)
         if integrator is None:
-            print 'No integrator name match with %s or is not available.'\
-                  %(`name`)
+            # FIXME: this really should be raise an exception. Will that break
+            # any code?
+            warnings.warn('No integrator name match with %r or is not '
+                'available.' % name)
         else:
             self._integrator = integrator(**integrator_params)
             if not len(self.y):
@@ -262,8 +268,10 @@ The integration:
 
     def successful(self):
         """Check if integration was successful."""
-        try: self._integrator
-        except AttributeError: self.set_integrator('')
+        try:
+            self._integrator
+        except AttributeError:
+            self.set_integrator('')
         return self._integrator.success==1
 
     def set_f_params(self,*args):
@@ -284,7 +292,7 @@ def find_integrator(name):
     for cl in IntegratorBase.integrator_classes:
         if re.match(name,cl.__name__,re.I):
             return cl
-    return
+    return None
 
 class IntegratorBase(object):
 
@@ -322,11 +330,7 @@ class IntegratorBase(object):
     #XXX: __str__ method for getting visual state of the integrator
 
 class vode(IntegratorBase):
-    try:
-        import vode as _vode
-    except ImportError:
-        print sys.exc_value
-        _vode = None
+
     runner = getattr(_vode,'dvode',None)
 
     messages = {-1:'Excess work done on this call. (Perhaps wrong MF.)',
@@ -353,9 +357,12 @@ class vode(IntegratorBase):
                  first_step = 0.0, # determined by solver
                  ):
 
-        if re.match(method,r'adams',re.I): self.meth = 1
-        elif re.match(method,r'bdf',re.I): self.meth = 2
-        else: raise ValueError,'Unknown integration method %s'%(method)
+        if re.match(method,r'adams',re.I):
+            self.meth = 1
+        elif re.match(method,r'bdf',re.I):
+            self.meth = 2
+        else:
+            raise ValueError('Unknown integration method %s' % method)
         self.with_jacobian = with_jacobian
         self.rtol = rtol
         self.atol = atol
@@ -409,7 +416,7 @@ class vode(IntegratorBase):
         elif mf in [24,25]:
             lrw = 22 + 11*n + (3*self.ml+2*self.mu)*n
         else:
-            raise ValueError,'Unexpected mf=%s'%(mf)
+            raise ValueError('Unexpected mf=%s' % mf)
         if miter in [0,3]:
             liw = 30
         else:
@@ -434,7 +441,7 @@ class vode(IntegratorBase):
     def run(self,*args):
         y1,t,istate = self.runner(*(args[:5]+tuple(self.call_args)+args[5:]))
         if istate <0:
-            print 'vode:',self.messages.get(istate,'Unexpected istate=%s'%istate)
+            warnings.warn('vode: ' + self.messages.get(istate,'Unexpected istate=%s'%istate))
             self.success = 0
         else:
             self.call_args[3] = 2 # upgrade istate from 1 to 2
@@ -454,16 +461,11 @@ class vode(IntegratorBase):
         self.call_args[2] = itask
         return r
 
-if vode.runner:
+if vode.runner is not None:
     IntegratorBase.integrator_classes.append(vode)
 
 
 class zvode(vode):
-    try:
-        import vode as _vode
-    except ImportError:
-        print sys.exc_value
-        _vode = None
     runner = getattr(_vode,'zvode',None)
 
     supports_run_relax = 1
@@ -553,12 +555,12 @@ class zvode(vode):
     def run(self,*args):
         y1,t,istate = self.runner(*(args[:5]+tuple(self.call_args)+args[5:]))
         if istate < 0:
-            print 'zvode:', self.messages.get(istate,
-                                              'Unexpected istate=%s'%istate)
+            warnings.warn('zvode: ' + 
+                self.messages.get(istate, 'Unexpected istate=%s'%istate))
             self.success = 0
         else:
             self.call_args[3] = 2 # upgrade istate from 1 to 2
         return y1, t
 
-if zvode.runner:
+if zvode.runner is not None:
     IntegratorBase.integrator_classes.append(zvode)
