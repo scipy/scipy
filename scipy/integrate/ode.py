@@ -621,6 +621,7 @@ if zvode.runner is not None:
 class dopri5(IntegratorBase):
 
     runner = getattr(_dop,'dopri5',None)
+    name = 'dopri5'
 
     messages = { 1 : 'computation successful',
                  2 : 'comput. successful (interrupted by solout)',
@@ -670,7 +671,8 @@ class dopri5(IntegratorBase):
     def run(self,f,jac,y0,t0,t1,f_params,jac_params):
         x,y,iwork,idid = self.runner(*((f,t0,y0,t1) + tuple(self.call_args)))
         if idid < 0:
-            print 'dopri5:',self.messages.get(idid,'Unexpected idid=%s'%idid)
+            warnings.warn(self.name + ': ' + 
+                self.messages.get(idi, 'Unexpected idid=%s'%idid))
             self.success = 0
         return y,x
         
@@ -678,12 +680,13 @@ class dopri5(IntegratorBase):
         # dummy solout function
         pass
 
-if dopri5.runner:
+if dopri5.runner is not None:
     IntegratorBase.integrator_classes.append(dopri5)
 
 class dop853(dopri5):
 
     runner = getattr(_dop,'dop853',None)
+    name = 'dop853'
 
     def __init__(self,
                  rtol=1e-6,atol=1e-12,
@@ -722,5 +725,5 @@ class dop853(dopri5):
         self.call_args = [self.rtol,self.atol,self._solout,self.work,self.iwork]
         self.success = 1
 
-if dop853.runner:
+if dop853.runner is not None:
     IntegratorBase.integrator_classes.append(dop853)
