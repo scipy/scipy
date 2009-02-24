@@ -489,7 +489,18 @@ class TestRegression(TestCase):
         y += np.sin(np.linspace(0, 20, 100))
 
         res = stats.linregress(x, y)
-        assert_almost_equal(res[4], 4.3609875083149268e-3)
+        assert_almost_equal(res[4], 2.3957814497838803e-3) #4.3609875083149268e-3)
+
+    def test_linregress(self):
+        '''compared with multivariate ols with pinv'''
+        x = np.arange(11)
+        y = np.arange(5,16)
+        y[[(1),(-2)]] -= 1
+        y[[(0),(-1)]] += 1
+
+        res = (1.0, 5.0, 0.98229948625750, 7.45259691e-008, 0.063564172616372733)
+        assert_array_almost_equal(stats.linregress(x,y),res,decimal=14)
+
 
 # Utility
 
