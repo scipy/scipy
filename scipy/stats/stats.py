@@ -1768,9 +1768,11 @@ def linregress(*args):
     n = len(x)
     xmean = np.mean(x,None)
     ymean = np.mean(y,None)
-    xm,ym = x-xmean, y-ymean
-    r_num = np.add.reduce(xm*ym)
-    r_den = np.sqrt(ss(xm)*ss(ym))
+
+    # average sum of squares:
+    ssxm, ssxym, ssyxm, ssym = np.cov(x, y, bias=1).flat
+    r_num = ssxym
+    r_den = np.sqrt(ssxm*ssym)
     if r_den == 0.0:
         r = 0.0
     else:
@@ -1779,10 +1781,10 @@ def linregress(*args):
     #z = 0.5*log((1.0+r+TINY)/(1.0-r+TINY))
     df = n-2
     t = r*np.sqrt(df/((1.0-r+TINY)*(1.0+r+TINY)))
-    prob = betai(0.5*df,0.5,df/(df+t*t))
-    slope = r_num / ss(xm)
+    prob = distributions.t.sf(np.abs(t),df)*2
+    slope = r_num / ssxm
     intercept = ymean - slope*xmean
-    sterrest = np.sqrt((1-r*r)*ss(ym) / ss(xm) / df)
+    sterrest = np.sqrt((1-r*r)*ssym / ssxm / df)
     return slope, intercept, r, prob, sterrest
 
 
