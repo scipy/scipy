@@ -29,6 +29,13 @@ methods::
     y1 = integrator.integrate(t1,step=0,relax=0)
     flag = integrator.successful()
 
+class complex_ode
+-----------------
+
+This class has the same generic interface as ode, except it can handle complex
+f, y and Jacobians by transparently translating them into the equivalent
+real valued system. It supports the real valued solvers (i.e not zvode) and is
+an alternative to ode with the zvode solver, sometimes performing better. 
 """
 
 integrator_info = \
@@ -195,14 +202,14 @@ if __doc__:
 # if myodeint.runner:
 #     IntegratorBase.integrator_classes.append(myodeint)
 
-__all__ = ['ode']
+__all__ = ['ode', 'complex_ode']
 __version__ = "$Id$"
 __docformat__ = "restructuredtext en"
 
 import re
 import warnings
 
-from numpy import asarray, array, zeros, int32, isscalar
+from numpy import asarray, array, zeros, int32, isscalar, real, imag
 
 import vode as _vode
 import dop as _dop
@@ -336,6 +343,72 @@ The integration:
         """Set extra parameters for user-supplied function jac."""
         self.jac_params = args
         return self
+
+class complex_ode(ode):
+    """ A wrapper of ode for complex systems. """
+
+    def __init__(self, f, jac=None):
+        """
+        Define equation y' = f(y,t), where y and f can be complex.
+
+        Parameters
+        ----------
+        f : f(t, y, *f_args)
+            Rhs of the equation. t is a scalar, y.shape == (n,).
+            f_args is set by calling set_f_params(*args)
+        jac : jac(t, y, *jac_args)
+            Jacobian of the rhs, jac[i,j] = d f[i] / d y[j]
+            jac_args is set by calling set_f_params(*args)
+        """
+        self.cf = f
+        self.cjac = jac
+        if jac is not None:
+            ode.__init__(self, self._wrap, self._wrap_jac)
+        else:
+            ode.__init__(self, self._wrap, None)
+            
+    def _wrap(self, t, y, *f_args):
+        f = self.cf(*((t, y[::2] + 1j*y[1::2]) + f_args))
+        self.tmp[::2] = real(f)
+        self.tmp[1::2] = imag(f)
+        return self.tmp
+        
+    def _wrap_jac(self, t, y, *jac_args):
+        jac = self.cjac(*((t, y[::2] + 1j*y[1::2]) + jac_args))
+        self.jac_tmp[1::2,1::2] = self.jac_tmp[::2,::2] = real(jac)
+        self.jac_tmp[1::2,::2] = imag(jac)
+        self.jac_tmp[::2,1::2] = -self.jac_tmp[1::2,::2]
+        return self.jac_tmp
+
+    def set_integrator(self, name, **integrator_params):
+        """
+        Set integrator by name.
+
+        Parameters
+        ----------
+        name : str
+            Name of the integrator
+        integrator_params :
+            Additional parameters for the integrator.
+        """
+        if name == 'zvode':
+            raise ValueError("zvode should be used with ode, not zode")
+        return ode.set_integrator(self, name, **integrator_params)
+
+    def set_initial_value(self, y, t=0.0):
+        """Set initial conditions y(t) = y."""
+        y = asarray(y)
+        self.tmp = zeros(y.size*2, 'float')
+        self.tmp[::2] = real(y)
+        self.tmp[1::2] = imag(y)
+        if self.cjac is not None:
+            self.jac_tmp = zeros((y.size*2, y.size*2), 'float')
+        return ode.set_initial_value(self, self.tmp, t)
+
+    def integrate(self, t, step=0, relax=0):
+        """Find y=y(t), set y as an initial condition, and return y."""
+        y = ode.integrate(self, t, step, relax)
+        return y[::2] + 1j*y[1::2]
 
 #------------------------------------------------------------------------------
 # ODE integrators

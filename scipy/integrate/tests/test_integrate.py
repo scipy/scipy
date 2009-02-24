@@ -1,4 +1,4 @@
-# Authors: Nils Wagner, Ed Schofield, Pauli Virtanen
+# Authors: Nils Wagner, Ed Schofield, Pauli Virtanen, John Travers
 """
 Tests for numerical integration.
 """
@@ -8,7 +8,7 @@ from numpy import arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp, \
                   allclose
 
 from numpy.testing import *
-from scipy.integrate import odeint, ode
+from scipy.integrate import odeint, ode, complex_ode
 
 #------------------------------------------------------------------------------
 # Test ODE integrators
@@ -75,6 +75,7 @@ class TestOde(TestCase):
             problem = problem_cls()
             if problem.cmplx: continue
             if problem.stiff: continue
+            if hasattr(problem, 'jac'): continue
             self._do_problem(problem, 'dopri5')
             
     def test_dop853(self):
@@ -83,6 +84,54 @@ class TestOde(TestCase):
             problem = problem_cls()
             if problem.cmplx: continue
             if problem.stiff: continue
+            if hasattr(problem, 'jac'): continue
+            self._do_problem(problem, 'dop853')
+
+class TestComplexOde(TestCase):
+    """
+    Check integrate.complex_ode
+    """
+    def _do_problem(self, problem, integrator, method='adams'):
+
+        # ode has callback arguments in different order than odeint
+        f = lambda t, z: problem.f(z, t)
+        jac = None
+        if hasattr(problem, 'jac'):
+            jac = lambda t, z: problem.jac(z, t)
+        ig = complex_ode(f, jac)
+        ig.set_integrator(integrator,
+                          atol=problem.atol/10,
+                          rtol=problem.rtol/10,
+                          method=method)
+        ig.set_initial_value(problem.z0, t=0.0)
+        z = ig.integrate(problem.stop_t)
+
+        assert ig.successful(), (problem, method)
+        assert problem.verify(array([z]), problem.stop_t), (problem, method)
+
+    def test_vode(self):
+        """Check the vode solver"""
+        for problem_cls in PROBLEMS:
+            problem = problem_cls()
+            if not problem.stiff:
+                self._do_problem(problem, 'vode', 'adams')
+            else:
+                self._do_problem(problem, 'vode', 'bdf')
+
+    def test_dopri5(self):
+        """Check the dopri5 solver"""
+        for problem_cls in PROBLEMS:
+            problem = problem_cls()
+            if problem.stiff: continue
+            if hasattr(problem, 'jac'): continue
+            self._do_problem(problem, 'dopri5')
+            
+    def test_dop853(self):
+        """Check the dop853 solver"""
+        for problem_cls in PROBLEMS:
+            problem = problem_cls()
+            if problem.stiff: continue
+            if hasattr(problem, 'jac'): continue
             self._do_problem(problem, 'dop853')
 
 #------------------------------------------------------------------------------
