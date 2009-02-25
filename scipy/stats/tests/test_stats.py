@@ -1249,7 +1249,16 @@ def test_describe():
     assert_equal(v, vc)
     assert_array_almost_equal(sk, skc, decimal=13) #not sure about precision
     assert_array_almost_equal(kurt, kurtc, decimal=13)
-    
+
+def test_normalitytests():
+    # numbers verified with R: dagoTest in package fBasics
+    st_normal, st_skew, st_kurt = (3.92371918, 1.98078826, -0.01403734)
+    pv_normal, pv_skew, pv_kurt = (0.14059673, 0.04761502,  0.98880019)
+    x = np.array((-2,-1,0,1,2,3)*4)**2
+    yield assert_array_almost_equal, stats.normaltest(x), (st_normal, pv_normal)
+    yield assert_array_almost_equal, stats.skewtest(x), (st_skew, pv_skew)
+    yield assert_array_almost_equal, stats.kurtosistest(x), (st_kurt, pv_kurt)
+
 def test_obrientransform():
     #this is a regression test to check np.var replacement
     #I didn't separately verigy the numbers
