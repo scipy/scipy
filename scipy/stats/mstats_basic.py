@@ -1501,7 +1501,7 @@ median along the given axis. masked values are discarded.
     """
     def _stdemed_1D(data):
         data = np.sort(data.compressed())
-        n = len(sorted)
+        n = len(data)
         z = 2.5758293035489004
         k = int(np.round((n+1)/2. - z * np.sqrt(n/4.),0))
         return ((data[n-k] - data[k-1])/(2.*z))
