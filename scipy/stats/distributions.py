@@ -1526,7 +1526,11 @@ class expon_gen(rv_continuous):
     def _pdf(self, x):
         return exp(-x)
     def _cdf(self, x):
-        return 1.0-exp(-x)
+        return -expm1(-x)
+    def _sf(self,x):
+        return exp(-x)
+    def _isf(self,q):
+        return -log(q)
     def _ppf(self, q):
         return -log(1.0-q)
     def _stats(self):
@@ -1576,7 +1580,12 @@ class exponpow_gen(rv_continuous):
         return exp(1)*b*xbm1 * exp(xb - exp(xb))
     def _cdf(self, x, b):
         xb = arr(x**b)
-        return 1.0-exp(1-exp(xb))
+        return -expm1(-expm1(xb))
+    def _sf(self, x, b):
+        xb = arr(x**b)
+        return exp(-expm1(xb))
+    def _isf(self, x, b):
+        return (log1p(-log(x)))**(1./b)
     def _ppf(self, q, b):
         return pow(log(1.0-log(1.0-q)), 1.0/b)
 exponpow = exponpow_gen(a=0.0,name='exponpow',longname="An exponential power",
