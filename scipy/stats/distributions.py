@@ -1533,8 +1533,6 @@ class expon_gen(rv_continuous):
         return exp(-x)
     def _isf(self,q):
         return -log(q)
-    def _ppf(self, q):
-        return -log(1.0-q)
     def _stats(self):
         return 1.0, 1.0, 2.0, 6.0
     def _entropy(self):
