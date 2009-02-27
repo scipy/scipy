@@ -1041,6 +1041,8 @@ General Kolmogorov-Smirnov one-sided test.
 class kstwobign_gen(rv_continuous):
     def _cdf(self,x):
         return 1.0-special.kolmogorov(x)
+    def _sf(self,x):
+        return special.kolmogorov(x)
     def _ppf(self,q):
         return special.kolmogi(1.0-q)
 kstwobign = kstwobign_gen(a=0.0,name='kstwobign', longname='Kolmogorov-Smirnov two-sided (for large N)', extradoc="""
@@ -1070,6 +1072,8 @@ class norm_gen(rv_continuous):
         return _norm_cdf(x)
     def _ppf(self,q):
         return _norm_ppf(q)
+    def _isf(self,q):
+        return -_norm_ppf(q)
     def _stats(self):
         return 0.0, 1.0, 0.0, 0.0
     def _entropy(self):
