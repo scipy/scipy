@@ -473,34 +473,36 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
     if n < 2:
         return (np.nan, np.nan)
     #
-    rx = ma.masked_equal(rankdata(x, use_missing=use_missing),0)
-    ry = ma.masked_equal(rankdata(y, use_missing=use_missing),0)
+    rx = ma.masked_equal(rankdata(x, use_missing=use_missing), 0)
+    ry = ma.masked_equal(rankdata(y, use_missing=use_missing), 0)
     idx = rx.argsort()
     (rx, ry) = (rx[idx], ry[idx])
-    C = np.sum((((ry[i+1:]>ry[i])*(rx[i+1:]>rx[i])).filled(0).sum()
-                for i in range(len(ry)-1)))
-    D = np.sum((((ry[i+1:]<ry[i])*(rx[i+1:]>rx[i])).filled(0).sum()
-                for i in range(len(ry)-1)))
+    C = np.sum([((ry[i+1:]>ry[i]) * (rx[i+1:]>rx[i])).filled(0).sum()
+                for i in range(len(ry)-1)], dtype=float)
+    D = np.sum([((ry[i+1:]<ry[i])*(rx[i+1:]>rx[i])).filled(0).sum()
+                for i in range(len(ry)-1)], dtype=float)
     if use_ties:
         xties = count_tied_groups(x)
         yties = count_tied_groups(y)
-        corr_x = np.sum(v*k*(k-1) for (k,v) in xties.iteritems())
-        corr_y = np.sum(v*k*(k-1) for (k,v) in yties.iteritems())
-        denom = ma.sqrt((n*(n-1)-corr_x) * (n*(n-1)-corr_y)) / 2.
+        corr_x = np.sum([v*k*(k-1) for (k,v) in xties.iteritems()], dtype=float)
+        corr_y = np.sum([v*k*(k-1) for (k,v) in yties.iteritems()], dtype=float)
+        denom = ma.sqrt((n*(n-1)-corr_x)/2. * (n*(n-1)-corr_y)/2.)
     else:
         denom = n*(n-1)/2.
     tau = (C-D) / denom
     #
     var_s = n*(n-1)*(2*n+5)
     if use_ties:
-        var_s -= np.sum(v*k*(k-1)*(2*k+5) for (k,v) in xties.iteritems())
-        var_s -= np.sum(v*k*(k-1)*(2*k+5) for (k,v) in yties.iteritems())
-        v1 = np.sum(v*k*(k-1) for (k,v) in xties.iteritems()) * \
-             np.sum(v*k*(k-1) for (k,v) in yties.iteritems())
+        var_s -= np.sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in xties.iteritems())
+        var_s -= np.sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in yties.iteritems())
+        v1 = np.sum([v*k*(k-1) for (k, v) in xties.iteritems()], dtype=float) *\
+             np.sum([v*k*(k-1) for (k, v) in yties.iteritems()], dtype=float)
         v1 /= 2.*n*(n-1)
         if n > 2:
-            v2 = np.sum(v*k*(k-1)*(k-2) for (k,v) in xties.iteritems()) * \
-                 np.sum(v*k*(k-1)*(k-2) for (k,v) in yties.iteritems())
+            v2 = np.sum([v*k*(k-1)*(k-2) for (k,v) in xties.iteritems()],
+                        dtype=float) * \
+                 np.sum([v*k*(k-1)*(k-2) for (k,v) in yties.iteritems()],
+                        dtype=float)
             v2 /= 9.*n*(n-1)*(n-2)
         else:
             v2 = 0
@@ -510,7 +512,7 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
     var_s += (v1 + v2)
     z = (C-D)/np.sqrt(var_s)
     prob = special.erfc(abs(z)/np.sqrt(2))
-    return (tau,prob)
+    return (tau, prob)
 
 
 def kendalltau_seasonal(x):
@@ -532,7 +534,7 @@ Parameters
     n_tot = x.count()
     ties = count_tied_groups(x.compressed())
     corr_ties =  np.sum(v*k*(k-1) for (k,v) in ties.iteritems())
-    denom_tot = ma.sqrt(n_tot*(n_tot-1)*(n_tot*(n_tot-1)-corr_ties))/2.
+    denom_tot = ma.sqrt(1.*n_tot*(n_tot-1)*(n_tot*(n_tot-1)-corr_ties))/2.
     #
     R = rankdata(x, axis=0, use_missing=True)
     K = ma.empty((m,m), dtype=int)
