@@ -30,7 +30,7 @@ General
 Documentation
 -------------
 
-See http://projects.scipy.org/scipy/numpy/wiki/CodingStyleGuidelines
+See http://projects.scipy.org/numpy/wiki/CodingStyleGuidelines
 
 * use new docstring format
 

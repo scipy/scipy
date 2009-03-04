@@ -90,7 +90,7 @@ follow the following conventions:
 
 For details, read:
 
-  http://projects.scipy.org/scipy/numpy/wiki/DistutilsDoc
+  http://projects.scipy.org/numpy/wiki/DistutilsDoc
 
 
 Documentation
@@ -106,7 +106,7 @@ The user's site is here
     http://www.scipy.org/
 
 The developer's site is here
-    http://projects.scipy.org/scipy/scipy/wiki
+    http://projects.scipy.org/scipy/wiki
 
 
 Mailing Lists
@@ -120,10 +120,10 @@ Bug reports
 -----------
 
 To search for bugs, please use the NIPY Bug Tracker at
-    http://projects.scipy.org/scipy/scipy/query
+    http://projects.scipy.org/scipy/query
 
 To report a bug, please use the NIPY Bug Tracker at
-    http://projects.scipy.org/scipy/scipy/newticket
+    http://projects.scipy.org/scipy/newticket
 
 
 License information
