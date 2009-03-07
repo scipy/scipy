@@ -25,21 +25,24 @@ gammainc(double x, double params[2])
 double
 gammaincinv(double a, double y)
 {
+    double lo = 0.0, hi;
+    double flo = -y, fhi = 0.25 - y;
+    double params[2];
+    double best_x, best_f;
+    fsolve_result_t r;
+
     if (a <= 0.0 || y <= 0.0 || y > 0.25) {
         return cephes_igami(a, 1-y);
     }
 
+    params[0] = a;
+    params[1] = y;
+    hi = cephes_igami(a, 0.75);
     /* I found Newton to be unreliable. Also, after we generate a small
        interval by bisection above, false position will do a large step
        from an interval of width ~1e-4 to ~1e-14 in one step (a=10, x=0.05,
        but similiar for other values).
      */
-
-    double lo = 0.0, hi = cephes_igami(a, 0.75);
-    double flo = -y, fhi = 0.25 - y;
-    double params[2] = {a, y};
-    double best_x, best_f;
-    fsolve_result_t r;
 
     r = false_position(&lo, &flo, &hi, &fhi,
                        (objective_function)gammainc, params,
