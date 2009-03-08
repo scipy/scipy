@@ -49,7 +49,7 @@ clean:
 INSTALL_DIR = $(CURDIR)/build/inst-dist/
 INSTALL_PPH = $(INSTALL_DIR)/lib/python$(PYVER)/site-packages:$(INSTALL_DIR)/local/lib/python$(PYVER)/site-packages:$(INSTALL_DIR)/lib/python$(PYVER)/dist-packages:$(INSTALL_DIR)/local/lib/python$(PYVER)/dist-packages
 
-DIST_VARS=PYTHON="PYTHONPATH=$(INSTALL_PPH) python$(PYVER)" SPHINXBUILD="LANG=C PYTHONPATH=$(INSTALL_PPH) python$(PYVER) `which sphinx-build`"
+DIST_VARS=PYTHON="PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH python$(PYVER)" SPHINXBUILD="LANG=C PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH python$(PYVER) `which sphinx-build`"
 
 UPLOAD_TARGET = $(USER)@docs.scipy.org:/home/docserver/www-root/doc/scipy/
 
@@ -95,7 +95,7 @@ dist-build:
 #------------------------------------------------------------------------------
 
 generate: build/generate-stamp
-build/generate-stamp: $(wildcard source/reference/*.rst)
+build/generate-stamp: $(wildcard source/*.rst)
 	mkdir -p build
 	$(PYTHON) \
 		./sphinxext/autosummary_generate.py source/*.rst \
