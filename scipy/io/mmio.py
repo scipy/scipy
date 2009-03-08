@@ -387,6 +387,10 @@ class MMFile (object):
 
         elif format == self.FORMAT_COORDINATE:
             # Read sparse COOrdinate format
+            
+            if entries == 0:
+                # empty matrix
+                return coo_matrix((rows, cols), dtype=dtype)
 
             try:
                 # fromfile works for normal files

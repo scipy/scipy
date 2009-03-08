@@ -258,6 +258,18 @@ class TestMMIOCoordinate(TestCase):
         b = mmread(fn).todense()
         assert_array_almost_equal(a,b)
 
+    def test_empty_write_read(self):
+        #http://projects.scipy.org/scipy/ticket/883
+
+        b = scipy.sparse.coo_matrix((10,10))
+        fn = mktemp()
+        mmwrite(fn,b)
+
+        assert_equal(mminfo(fn),(10,10,0,'coordinate','real','general'))
+        a = b.todense()
+        b = mmread(fn).todense()
+        assert_array_almost_equal(a,b)
+
 
     def test_real_write_read(self):
         I = array([0, 0, 1, 2, 3, 3, 3, 4])
