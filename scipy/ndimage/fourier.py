@@ -58,7 +58,7 @@ def _get_output_fourier_complex(output, input):
         if input.dtype.type in [numpy.complex64, numpy.complex128]:
             output = numpy.zeros(input.shape, dtype = input.dtype)
         else:
-            output = numpy.zeros(input.shape, dtype = numpy.Complex64)
+            output = numpy.zeros(input.shape, dtype = numpy.complex128)
         return_value = output
     elif type(output) is types.TypeType:
         if output not in [numpy.complex64, numpy.complex128]:
