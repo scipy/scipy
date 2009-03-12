@@ -16,27 +16,25 @@ from numpyio import packbits, unpackbits, bswap, fread, fwrite, \
      convert_objectarray
 
 fread = deprecate_with_doc("""
-scipy.io.fread is can be replaced with raw reading capabilities of NumPy
-including fromfile as well as memory-mapping capabilities.
+scipy.io.fread is can be replaced with NumPy I/O routines such as
+np.load, np.fromfile as well as NumPy's memory-mapping capabilities.
 """)(fread)
 
 fwrite = deprecate_with_doc("""
-scipy.io.fwrite can be replaced with raw writing capabilities of
-NumPy.  Also, remember that files can be directly memory-mapped into NumPy
-arrays which is often a better way of reading especially large files.
-
-Look at the tofile methods as well as save and savez for writing arrays into
-easily transported files of data.
+scipy.io.fwrite can be replaced with NumPy I/O routines such as np.save,
+np.savez and x.tofile.  Also, files can be directly memory-mapped into NumPy
+arrays which is often a better way of reading large files.
 """)(fwrite)
 
 bswap = deprecate_with_doc("""
-scipy.io.bswap is easily replaced with the byteswap method on an array.
+scipy.io.bswap can be replaced with the byteswap method on an array.
 out = scipy.io.bswap(arr) --> out = arr.byteswap(True)
 """)(bswap)
 
 packbits = deprecate_with_doc("""
 The functionality of scipy.io.packbits is now available as numpy.packbits
-The calling convention is a bit different as the 2-d case is not specialized.
+The calling convention is a bit different, as the 2-d case is no
+longer specialized.
 
 However, you can simulate scipy.packbits by raveling the last 2 dimensions
 of the array and calling numpy.packbits with an axis=-1 keyword:
@@ -53,7 +51,7 @@ def scipy_packbits(inp):
 
 unpackbits = deprecate_with_doc("""
 The functionality of scipy.io.unpackbits is now available in numpy.unpackbits
-The calling convention is different however as the 2-d case is no longer
+The calling convention is different, however, as the 2-d case is no longer
 specialized.
 
 Thus, the scipy.unpackbits behavior must be simulated using numpy.unpackbits.

@@ -224,9 +224,9 @@ class npfile(object):
         return arr.copy()
 
 npfile = np.deprecate_with_doc("""
-You can achieve the same effect as using npfile, using ndarray.tofile
-and numpy.fromfile.
+You can achieve the same effect as using npfile using numpy.save and
+numpy.load.
 
-Even better you can use memory-mapped arrays and data-types to map out a
+You can use memory-mapped arrays and data-types to map out a
 file format for direct manipulation in NumPy.
 """)(npfile)
