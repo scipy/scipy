@@ -1,17 +1,25 @@
-#LyX 1.4.3 created this file. For more info see http://www.lyx.org/
-\lyxformat 245
+#LyX 1.5.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 276
 \begin_document
 \begin_header
 \textclass article
 \language english
 \inputencoding auto
-\fontscheme default
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
 \graphics default
 \paperfontsize default
 \spacing single
 \papersize default
 \use_geometry true
 \use_amsmath 2
+\use_esint 0
 \cite_engine basic
 \use_bibtopic false
 \paperorientation portrait
@@ -28,7 +36,8 @@
 \papersides 1
 \paperpagestyle default
 \tracking_changes false
-\output_changes true
+\output_changes false
+\author "" 
 \end_header
 
 \begin_body
@@ -782,9 +791,9 @@ e.g.
 \begin_inset Formula $L$
 \end_inset
 
- 
+
 \emph default
-and 
+ and 
 \begin_inset Formula $S$
 \end_inset
 
@@ -873,11 +882,11 @@ l_{\mathbf{x}}\left(L,S;\boldsymbol{\theta}\right) & = & N\log S-\sum_{i=1}^{N}\
 \begin_inset Formula $\mu_{2}$
 \end_inset
 
- are assumed known as the mean and variance of the
+ are assumed known as the mean and variance of the 
 \series bold
- untransformed 
+untransformed
 \series default
-distribution (when 
+ distribution (when 
 \begin_inset Formula $L=0$
 \end_inset
 
@@ -1950,7 +1959,7 @@ G\left(q;\nu_{1},\nu_{2}\right) & = & \left[\frac{\nu_{2}}{I^{-1}\left(\nu_{1}/2
 \end_layout
 
 \begin_layout Section
-Fréchet (ExtremeLB, Extreme Value II, Weibull minimum)
+FrÃ©chet (ExtremeLB, Extreme Value II, Weibull minimum)
 \end_layout
 
 \begin_layout Standard
@@ -2008,7 +2017,7 @@ h\left[X\right]=-\frac{\gamma}{c}-\log\left(c\right)+\gamma+1\]
 \end_layout
 
 \begin_layout Section
-Fréchet (left-skewed, Extreme Value Type III, Weibull maximum)
+FrÃ©chet (left-skewed, Extreme Value Type III, Weibull maximum)
 \end_layout
 
 \begin_layout Standard
@@ -3163,11 +3172,7 @@ two-parameter
 \begin_inset Formula $\mu_{2}$
 \end_inset
 
- where
-\bar under
- 
-\bar default
-
+ where 
 \begin_inset Formula $\mu_{2}$
 \end_inset
 
@@ -3390,11 +3395,11 @@ h\left[X\right] & = & \log\left(2e\right)\\
 \end_layout
 
 \begin_layout Section
-Left-skewed Lévy
+Left-skewed LÃ©vy
 \end_layout
 
 \begin_layout Standard
-Special case of Lévy-stable distribution with 
+Special case of LÃ©vy-stable distribution with 
 \begin_inset Formula $\alpha=\frac{1}{2}$
 \end_inset
 
@@ -3419,11 +3424,11 @@ No moments.
 \end_layout
 
 \begin_layout Section
-Lévy
+LÃ©vy
 \end_layout
 
 \begin_layout Standard
-A special case of Lévy-stable distributions with 
+A special case of LÃ©vy-stable distributions with 
 \begin_inset Formula $\alpha=\frac{1}{2}$
 \end_inset
 
@@ -4250,7 +4255,23 @@ F\left(x;c\right) & = & \frac{1}{2}+\frac{x}{B\left(\frac{1}{2},\frac{c}{2}\righ
 
 \end_inset
 
+ The R-distribution with parameter 
+\begin_inset Formula $n$
+\end_inset
 
+ is the distribution of the correlation coefficient of a random sample of
+ size 
+\begin_inset Formula $n$
+\end_inset
+
+ drawn from a bivariate normal distribution with 
+\begin_inset Formula $\rho=0.$
+\end_inset
+
+ The mean of the standard distribution is always zero and as the sample
+ size grows, the distribution's mass concentrates more closely about this
+ mean.
+ 
 \end_layout
 
 \begin_layout Section
