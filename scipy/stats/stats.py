@@ -1235,7 +1235,7 @@ Returns: transformed data for use in an ANOVA
         v[i] = np.var(nargs[i], ddof=1)
         m[i] = np.mean(nargs[i])
     for j in range(k):
-        for i in range(n[j]):  # raises warning because n[j] is float
+        for i in range(int(n[j])):
             t1 = (n[j]-1.5)*n[j]*(nargs[j][i]-m[j])**2
             t2 = 0.5*v[j]*(n[j]-1.0)
             t3 = (n[j]-1.0)*(n[j]-2.0)
