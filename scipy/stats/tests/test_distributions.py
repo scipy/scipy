@@ -8,6 +8,7 @@ from numpy.testing import *
 import numpy
 from numpy import typecodes, array
 import scipy.stats as stats
+from scipy.stats.distributions import argsreduce
 
 def kolmogorov_check(diststr,args=(),N=20,significance=0.01):
     qtest = stats.ksoneisf(significance,N)
@@ -278,6 +279,22 @@ class TestEntropy(TestCase):
         edouble = stats.entropy(pk,qk)
         assert(0.0 == eself)
         assert(edouble >= 0.0)
+
+def TestArgsreduce():
+    a = array([1,3,2,1,2,3,3])
+    b,c = argsreduce(a > 1, a, 2)
+
+    assert_array_equal(b, [3,2,2,3,3])
+    assert_array_equal(c, [2,2,2,2,2])
+
+    b,c = argsreduce(2 > 1, a, 2)
+    assert_array_equal(b, a[0])
+    assert_array_equal(c, [2])
+
+    b,c = argsreduce(a > 0, a, 2)
+    assert_array_equal(b, a)
+    assert_array_equal(c, [2] * numpy.size(a))
+
 
 if __name__ == "__main__":
     run_module_suite()
