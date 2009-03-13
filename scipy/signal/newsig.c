@@ -53,11 +53,20 @@ sigtools_linear_filter2(PyObject * dummy, PyObject * args)
 	}
 
 	if (Vi != NULL) {
+                Py_ssize_t nvi;
 		arVi = (PyArrayObject *) PyArray_FromObject(Vi, typenum,
 							    arX->nd, arX->nd);
 		if (arVi == NULL)
 			goto fail;
-		input_flag = (PyArray_Size((PyObject *) arVi) > 0);
+
+                nvi = PyArray_Size((PyObject *) arVi);
+                if (nvi > 0) {
+                        input_flag = 1;
+                } else {
+                        input_flag = 0;
+                        Py_DECREF(arVi);
+                        arVi = NULL;
+                }
 	}
 
 	arY = (PyArrayObject *) PyArray_SimpleNew(arX->nd,

@@ -220,5 +220,23 @@ class TestLinearFilter(TestCase):
             for j in range(x.shape[1]):
                 assert_array_almost_equal(y[i, j], lfilter(b, a, x[i, j]))
 
+    def test_empty_zi(self):
+        """Regression test for #880: empty array for zi crashes."""
+        a = np.ones(1)
+        b = np.ones(1)
+        x = np.arange(5)
+        zi = np.ones(0)
+        lfilter(b, a, x, zi=zi)
+
+class TestFiltFilt:
+    def test_basic(self):
+        out = signal.filtfilt([1,2,3], [1,2,3], np.arange(12))
+        assert_equal(out, arange(12))
+
+class TestDecimate:
+    def test_basic(self):
+        x = np.arange(6)
+        assert_array_equal(signal.decimate(x, 2, n=1).round(), x[::2])
+
 if __name__ == "__main__":
     run_module_suite()
