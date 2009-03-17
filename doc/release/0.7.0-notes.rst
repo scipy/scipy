@@ -325,8 +325,9 @@ Bug fixes in the interpolation package
 The shape of return values from ``scipy.interpolate.interp1d`` used to
 be incorrect, if interpolated data had more than 2 dimensions and the
 axis keyword was set to a non-default value. This has been fixed.
-Users of ``scipy.interpolate.interp1d`` may need to revise their code
-if it relies on the incorrect behavior.
+Moreover, ``interp1d`` returns now a scalar (0D-array) if the input
+is a scalar. Users of ``scipy.interpolate.interp1d`` may need to
+revise their code if it relies on the previous behavior.
 
 Weave clean up
 --------------
