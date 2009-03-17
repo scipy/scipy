@@ -51,6 +51,7 @@ from quadrature import *
 from odepack import *
 from quadpack import *
 from _ode import *
+from doubleexp import *
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
 from numpy.testing import Tester
