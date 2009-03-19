@@ -6,6 +6,12 @@ def de_integrate(f, a, b, target_error=1e-10, full_output=False):
 
     if full_output is true, returns (value, estimated error, number of
     evaluations).
+    
+    This implementation is based on John D. Cook's implementation,
+    used by permission, and translated by Thouis Jones.
+    See:
+    See: http://www.johndcook.com/double_exponential_integration.html
+    http://www.codeproject.com/KB/recipes/FastNumericalIntegration.aspx
     '''
     
     # linear change of variables from (a,b) to (-1, 1)
