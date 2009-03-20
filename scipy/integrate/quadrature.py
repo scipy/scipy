@@ -60,8 +60,9 @@ def fixed_quad(func,a,b,args=(),n=5):
 def vectorize1(func, args=(), vec_func=False):
     """Vectorize the call to a function.
 
-    This is an internal utility function used by `romberg` and
-    `quadrature` to create a vectorized version of a function.
+    This is an internal utility function used by `romberg`,
+    `quadrature`, and `quad_de` (in doubleexp.py) to create a
+    vectorized version of a function.
 
     If `vec_func` is True, the function `func` is assumed to take vector
     arguments.
