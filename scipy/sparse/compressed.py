@@ -486,6 +486,12 @@ class _cs_matrix(_data_matrix):
             indxs = np.where(minor_index == self.indices[start:end])[0]
 
             num_matches = len(indxs)
+    
+            
+            if not np.isscalar(val):
+                raise ValueError('setting an array element with a sequence')
+
+            val = self.dtype.type(val) 
 
             if num_matches == 0:
                 #entry not already present
