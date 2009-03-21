@@ -60,8 +60,9 @@ def multigammaln(a, d):
     \Gamma_d(a) = \int_{A>0}{e^{-tr(A)\cdot{|A|}^{a - (m+1)/2}dA}}
 
     with the condition a > (d-1)/2, and A>0 being the set of all the positive
-    definite matrices of dimension s. Note that a is a scalar: the integration
-    is multivariate, the argument is not.
+    definite matrices of dimension s. Note that a is a scalar: the integrand
+    only is multivariate, the argument is not (the function is defined over a
+    subset of the real set).
 
     This can be proven to be equal to the much friendler equation:
 
