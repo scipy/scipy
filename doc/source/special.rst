@@ -244,6 +244,7 @@ Gamma and Related Functions
    psi
    rgamma
    polygamma
+   multigammaln
 
 
 Error Function and Fresnel Integrals
