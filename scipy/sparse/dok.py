@@ -223,7 +223,8 @@ class dok_matrix(spmatrix, dict):
                 else:
                     dict.__setitem__(self, (i,j), self.dtype.type(value))
             else:
-                raise TypeError, "cannot set matrix element to a non-scalar"
+                raise ValueError('setting an array element with a sequence')
+
         else:
             # Either i or j is a slice, sequence, or invalid.  If i is a slice
             # or sequence, unfold it first and call __setitem__ recursively.

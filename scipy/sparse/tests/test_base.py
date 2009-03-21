@@ -611,6 +611,12 @@ class _TestGetSet:
 
         for ij in [(0,4),(-1,4),(3,0),(3,4),(3,-1)]:
             assert_raises(IndexError, A.__setitem__, ij, 123.0)
+        
+        for v in [[1,2,3], array([1,2,3])]:
+            assert_raises(ValueError, A.__setitem__, (0,0), v)
+        
+        for v in [3j]:
+            assert_raises(TypeError, A.__setitem__, (0,0), v)
 
     def test_getelement(self):
         D = array([[1,0,0],
@@ -1198,11 +1204,11 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
         # The next 6 commands should raise exceptions
         try:
             A[0,0] = range(100)
-        except TypeError:
+        except ValueError:
             caught += 1
         try:
             A[0,0] = arange(100)
-        except TypeError:
+        except ValueError:
             caught += 1
         try:
             A[0,:] = range(100)
