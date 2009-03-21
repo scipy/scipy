@@ -240,6 +240,15 @@ class lil_matrix(spmatrix):
 
         if j < 0 or j >= self.shape[1]:
             raise IndexError('column index out of bounds')
+            
+        
+        if not np.isscalar(x):
+            raise ValueError('setting an array element with a sequence')
+
+        try:
+            x = self.dtype.type(x)
+        except:
+            raise TypeError('Unable to convert value (%s) to dtype [%s]' % (x,self.dtype.name))
 
         pos = bisect_left(row, j)
         if x != 0:
