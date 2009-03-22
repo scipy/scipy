@@ -6,10 +6,22 @@ __all__ = ["quad_de"]
 
 def quad_de(func, a, b, args=(), tol=1e-10, vec_func=True):
     """
-    Integrate function over an integral using double exponential quadrature.
+    Integrate a function over an interval using double exponential
+    quadrature.
 
-    XXX: explain briefly what the double-exponential quadrature is,
-    XXX: referring to the references [DE], [FN]
+    Double exponential quadrature (AKA double exponential integration
+    and tanh-sinh quadrature [TS]) is an integration method introduced
+    by Takahashi and Mori in 1974 [TM].  The method applies a change
+    of variables to map the integration limits to [-inf, inf], with a
+    doubly exponential falloff in either direction, then uses
+    quadrature with uniform intervals to compute the integral.
+
+    This method is well-suited to integrating analytic functions,
+    particularly those with a singularity at one or both endpoints.
+    It should not be used with functions with discontinuities.  
+
+    If quad_de() encounters a singularity (+/-infinity or NaN) within
+    the integration limits, it will raise a ValueError.
 
     Parameters
     ----------
@@ -23,32 +35,37 @@ def quad_de(func, a, b, args=(), tol=1e-10, vec_func=True):
         Desired absolute error tolerance.
     vec_func : bool, optional
         Whether the function is vectorized.
-
+    
     Returns
     -------
     val : float
         Estimated value of the integral
     err : float
         Estimated error
-
+    
     Raises
     ------
     ValueError
         If the function returns non-finite values.
-
+    
     See Also
     --------
     quad
-
+    
     Notes
     -----
-    This is based on John D. Cook's implementation, used with permission.
-
+    This is based on John D. Cook's implementation [FN, DE], used with
+    permission.
+    
     References
     ----------
     .. [DE] http://www.johndcook.com/double_exponential_integration.html
     .. [FN] http://www.codeproject.com/KB/recipes/FastNumericalIntegration.aspx
-
+    .. [TH] http://en.wikipedia.org/wiki/Tanh-sinh_quadrature
+    .. [TM] Double exponential formulas for numerical integration, 
+            Hidetosi Takahasi and Masatake Mori 
+            Publ. Res. Inst. Math. Sci. Volume 9, Number 3 (1973), 721-741.  
+            http://dx.doi.org/10.2977%2Fprims%2F1195192451 
     """
 
     # vectorize func, and fold in args
