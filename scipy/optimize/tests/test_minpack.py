@@ -1,11 +1,7 @@
 """
 Unit tests for optimization routines from minpack.py.
 """
-# Authors:
-#
-#   Andrew Straw (April 2008)
-#   Yosef Meller (March 2009)
-#
+
 from numpy.testing import *
 import numpy as np
 from numpy import array, float64
@@ -24,25 +20,26 @@ class TestFSolve(TestCase):
         Where Q_i is the flow rate in pipe i and P_i the pressure in that pipe.
         Pressure is modeled as a P=kQ**2 where k is a valve coefficient and
         Q is the flow rate.
-        
+
         Parameters
         ----------
-        flow_rates: float
-            a 1D array of n flow rates [kg/s]
+        flow_rates : float
+            A 1D array of n flow rates [kg/s].
         k : float
-            a 1D array of n valve coefficients [1/kg m]
+            A 1D array of n valve coefficients [1/kg m].
         Qtot : float
-            a scalar, the total input flow rate [kg/s].
-            
+            A scalar, the total input flow rate [kg/s].
+
         Returns
         -------
         F : float
-            a 1D array, F[i] == f_i.
+            A 1D array, F[i] == f_i.
+
         """
-        P = k*flow_rates**2
+        P = k * flow_rates**2
         F = np.hstack((P[1:] - P[0], flow_rates.sum() - Qtot))
         return F
-    
+
     def pressure_network_jacobian(self, flow_rates, Qtot, k):
         """Return the jacobian of the equation system F(flow_rates)
         computed by `pressure_network` with respect to
@@ -56,18 +53,18 @@ class TestFSolve(TestCase):
             and *f_i* and *Q_i* are described in the doc for `pressure_network`
         """
         n = len(flow_rates)
-        pdiff = np.diag(flow_rates[1:]*2*k[1:] - 2*flow_rates[0]*k[0])
-        
-        jac = np.empty((n,n))
-        jac[:n-1,:n-1] = pdiff
-        jac[:n-1,n-1]  = 0
-        jac[n-1,:]     = np.ones(n)
-        
+        pdiff = np.diag(flow_rates[1:] * 2 * k[1:] - 2 * flow_rates[0] * k[0])
+
+        jac = np.empty((n, n))
+        jac[:n-1, :n-1] = pdiff
+        jac[:n-1, n-1] = 0
+        jac[n-1, :] = np.ones(n)
+
         return jac
-        
+
     def test_pressure_network_no_gradient(self):
         """fsolve without gradient, equal pipes -> equal flows"""
-        k = np.ones(4)*0.5
+        k = np.ones(4) * 0.5
         Qtot = 4
         initial_guess = array([2., 0., 2., 0.])
         final_flows = optimize.fsolve(
@@ -76,11 +73,11 @@ class TestFSolve(TestCase):
 
     def test_pressure_network_with_gradient(self):
         """fsolve with gradient, equal pipes -> equal flows"""
-        k = np.ones(4)*0.5
+        k = np.ones(4) * 0.5
         Qtot = 4
         initial_guess = array([2., 0., 2., 0.])
         final_flows = optimize.fsolve(
-            self.pressure_network, initial_guess, args=(Qtot, k), 
+            self.pressure_network, initial_guess, args=(Qtot, k),
             fprime=self.pressure_network_jacobian)
         assert_array_almost_equal(final_flows, np.ones(4))
 
