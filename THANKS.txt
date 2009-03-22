@@ -64,7 +64,7 @@ Uwe Schmitt for wrapping non-negative least-squares.
 Ondrej Certik for Debian packaging.
 Paul Ivanov for porting Numeric-style C code to the new NumPy API.
 Ariel Rokem for contributions on percentileofscore fixes and tests.
-
+Yosef Meller for tests in the optimization module.
 
 Institutions
 ------------
