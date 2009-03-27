@@ -2322,14 +2322,35 @@ def ks_2samp(data1, data2):
     return d, prob
 
 
-def mannwhitneyu(x, y):
-    """Calculates a Mann-Whitney U statistic on the provided scores and
-    returns the result.  Use only when the n in each condition is < 20 and
-    you have 2 independent samples of ranks.  REMEMBER: Mann-Whitney U is
+def mannwhitneyu(x, y, use_continuity=True):
+    """Computes the Mann-Whitney rank test on samples x and y.
+
+
+    Parameters
+    ----------
+        x : array_like 1d
+        y : array_like 1d 
+        use_continuity : {True, False} optional, default True
+            Whether a continuity correction (1/2.) should be taken into account.
+
+    Returns
+    -------
+        u : float
+            The Mann-Whitney statistics
+        prob : float
+            one-sided p-value assuming a asymptotic normal distribution.
+
+    Notes
+    -----
+    Use only when the number of observation in each sample is > 20 and
+    you have 2 independent samples of ranks. Mann-Whitney U is
     significant if the u-obtained is LESS THAN or equal to the critical
     value of U.
 
-    Returns: u-statistic, one-tailed p-value (i.e., p(z(U)))
+    This test corrects for ties and by default uses a continuity correction.
+    The reported p-value is for a one-sided hypothesis, to get the two-sided
+    p-value multiply the returned p-value by 2.
+ 
     """
     x = asarray(x)
     y = asarray(y)
@@ -2342,12 +2363,18 @@ def mannwhitneyu(x, y):
     u2 = n1*n2 - u1                            # remainder is U for y
     bigu = max(u1,u2)
     smallu = min(u1,u2)
-    T = np.sqrt(tiecorrect(ranked))  # correction factor for tied scores
+    #T = np.sqrt(tiecorrect(ranked))  # correction factor for tied scores
+    T = tiecorrect(ranked)
     if T == 0:
         raise ValueError, 'All numbers are identical in amannwhitneyu'
     sd = np.sqrt(T*n1*n2*(n1+n2+1)/12.0)
-    z = abs((bigu-n1*n2/2.0) / sd)  # normal approximation for prob calc
-    return smallu, 1.0 - zprob(z)
+    
+    if use_continuity:
+        # normal approximation for prob calc with continuity correction
+        z = abs((bigu-0.5-n1*n2/2.0) / sd)  
+    else:
+        z = abs((bigu-n1*n2/2.0) / sd)  # normal approximation for prob calc
+    return smallu, distributions.norm.sf(z)*2  #(1.0 - zprob(z))*2
 
 
 def tiecorrect(rankvals):
