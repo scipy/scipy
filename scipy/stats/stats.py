@@ -2374,7 +2374,7 @@ def mannwhitneyu(x, y, use_continuity=True):
         z = abs((bigu-0.5-n1*n2/2.0) / sd)  
     else:
         z = abs((bigu-n1*n2/2.0) / sd)  # normal approximation for prob calc
-    return smallu, distributions.norm.sf(z)*2  #(1.0 - zprob(z))*2
+    return smallu, distributions.norm.sf(z)  #(1.0 - zprob(z))
 
 
 def tiecorrect(rankvals):
