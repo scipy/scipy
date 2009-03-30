@@ -1666,6 +1666,28 @@ class TestBessel(TestCase):
     def test_iv_cephes_vs_amos(self):
         self.check_cephes_vs_amos(iv, iv, rtol=1e-12, atol=1e-305)
 
+    @dec.slow
+    def test_iv_cephes_vs_amos_mass_test(self):
+        N = 1000000
+        np.random.seed(1)
+        v = np.random.pareto(0.5, N) * (-1)**np.random.randint(2, size=N)
+        x = np.random.pareto(0.2, N) * (-1)**np.random.randint(2, size=N)
+
+        imsk = (np.random.randint(8, size=N) == 0)
+        v[imsk] = v.astype(int)
+
+        c1 = iv(v, x)
+        c2 = iv(v, x+0j)
+
+        dc = abs(c1/c2 - 1)
+        dc[np.isnan(dc)] = 0
+
+        k = np.argmax(dc)
+
+        # Most error apparently comes from AMOS and not our implementation;
+        # there are some problems near integer orders there
+        assert dc[k] < 1e-9, (iv(v[k], x[k]), iv(v[k], x[k]+0j))
+
     def test_kv_cephes_vs_amos(self):
         #self.check_cephes_vs_amos(kv, kn, rtol=1e-9, atol=1e-305)
         self.check_cephes_vs_amos(kv, kv, rtol=1e-9, atol=1e-305)
