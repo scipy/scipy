@@ -61,6 +61,8 @@ Copyright 1984, 1995 by Stephen L. Moshier
 
 #include "mconf.h"
 
+double EULER  = 0.577215664901532860606512090082402;        /* Euler constant */
+
 #ifdef UNK
 #if 1
 double MACHEP =  1.11022302462515654042E-16;   /* 2**-53 */
