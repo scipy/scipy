@@ -336,8 +336,11 @@ do
 	a0 *= u;
 	t = fabs(a0);
 
-	/* terminating condition for asymptotic series */
-	if( t < tlast && t < MACHEP*fabs(sum) )
+	/* terminating condition for asymptotic series:
+         * the series is divergent (if a or b is not a negative integer),
+         * but its leading part can be used as an asymptotic expansion
+         */
+        if( t > tlast )
                 goto ndone;
 
 	tlast = t;
