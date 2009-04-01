@@ -39,11 +39,13 @@ def process_html(fn, lines):
 
 def process_tex(lines):
     """
-    Remove unnecessary section titles from the LaTeX file.
+    Remove unnecessary section titles from the LaTeX file,
+    and convert UTF-8 non-breaking spaces to Latex nbsps.
 
     """
     new_lines = []
     for line in lines:
+        line = unicode(line, 'utf-8').replace(u"\00a0", u"~").encode('utf-8')
         if re.match(r'^\\(section|subsection|subsubsection|paragraph|subparagraph){(numpy|scipy)\.', line):
             pass # skip!
         else:
