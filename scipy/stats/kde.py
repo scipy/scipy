@@ -24,6 +24,7 @@ import warnings
 from scipy import linalg, special
 from numpy import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
      ravel, power, atleast_1d, squeeze, sum, transpose
+import numpy as np
 from numpy.random import randint, multivariate_normal
 
 # Local imports.
@@ -207,8 +208,8 @@ class gaussian_kde(object):
         normalized_low = ravel((low - self.dataset)/stdev)
         normalized_high = ravel((high - self.dataset)/stdev)
 
-        value = stats.mean(special.ndtr(normalized_high) -
-                           special.ndtr(normalized_low))
+        value = np.mean(special.ndtr(normalized_high) -
+                     special.ndtr(normalized_low))
         return value
 
 
@@ -329,7 +330,7 @@ class gaussian_kde(object):
         covariance_factor
         """
         self.factor = self.covariance_factor()
-        self.covariance = atleast_2d(stats.cov(self.dataset, rowvar=1) *
+        self.covariance = atleast_2d(np.cov(self.dataset, rowvar=1, bias=False) *
             self.factor * self.factor)
         self.inv_cov = linalg.inv(self.covariance)
         self._norm_factor = sqrt(linalg.det(2*pi*self.covariance)) * self.n
