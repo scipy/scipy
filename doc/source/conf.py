@@ -168,6 +168,7 @@ latex_documents = [
 # Additional stuff for the LaTeX preamble.
 latex_preamble = r'''
 \usepackage{amsmath}
+\DeclareUnicodeCharacter{00A0}{\nobreakspace}
 
 % In the parameters section, place a newline after the Parameters
 % header
@@ -239,3 +240,5 @@ numpy.random.seed(123)
 """
 plot_output_dir = '_static/plot_directive'
 plot_include_source = True
+plot_formats = ['png', 'pdf']
+

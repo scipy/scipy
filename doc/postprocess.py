@@ -45,7 +45,6 @@ def process_tex(lines):
     """
     new_lines = []
     for line in lines:
-        line = unicode(line, 'utf-8').replace(u"\00a0", u"~").encode('utf-8')
         if re.match(r'^\\(section|subsection|subsubsection|paragraph|subparagraph){(numpy|scipy)\.', line):
             pass # skip!
         else:
