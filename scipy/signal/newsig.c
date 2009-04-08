@@ -14,7 +14,7 @@ sigtools_linear_filter2(PyObject * dummy, PyObject * args)
 {
 	PyObject *b, *a, *X, *Vi;
 	PyArrayObject *arY, *arb, *ara, *arX, *arVi, *arVf;
-	int axis, typenum, theaxis;
+	int axis, typenum, theaxis, st;
 	char *ara_ptr, input_flag = 0, *azero;
 	intp na, nb, nal;
 	BasicFilterFunction *basic_filter;
@@ -110,7 +110,10 @@ sigtools_linear_filter2(PyObject * dummy, PyObject * args)
 		}
 	}
 
-	RawFilter2(arb, ara, arX, arVi, arVf, arY, theaxis, basic_filter);
+	st = RawFilter2(arb, ara, arX, arVi, arVf, arY, theaxis, basic_filter);
+	if (st) {
+		goto fail;
+	}
 
 	Py_XDECREF(ara);
 	Py_XDECREF(arb);
