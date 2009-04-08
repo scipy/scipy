@@ -1,4 +1,4 @@
-# Last Change: Thu Jun 12 07:00 PM 2008 J
+# Last Change: Wed Apr 08 05:00 PM 2009 J
 # vim:syntax=python
 from os.path import join as pjoin
 import warnings
@@ -68,3 +68,6 @@ odenv.NumpyPythonExtension('_odepack', source = '_odepackmodule.c')
 
 # Build vode
 odenv.NumpyPythonExtension('vode', source = 'vode.pyf')
+
+# Dop extension
+odenv.NumpyPythonExtension('dop', source='dop.pyf', libraries=['dop'])
