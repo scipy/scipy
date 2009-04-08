@@ -1,16 +1,18 @@
 #include <Python.h>
 
 static int
-RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
+RawFilter(const PyArrayObject *b, const PyArrayObject *a,
 	   const PyArrayObject *x, const PyArrayObject *zi,
 	   const PyArrayObject *zf, PyArrayObject *y, int axis,
 	   BasicFilterFunction *filter_func);
 
+static char doc_linear_filter[] = "(y,Vf) = _linear_filter(b,a,X,Dim=-1,Vi=None)  implemented using Direct Form II transposed flow diagram. If Vi is not given, Vf is not returned.";
+ 
 /*
  * XXX: Error checking not done yet
  */
 static PyObject *
-sigtools_linear_filter2(PyObject * dummy, PyObject * args)
+sigtools_linear_filter(PyObject * dummy, PyObject * args)
 {
 	PyObject *b, *a, *X, *Vi;
 	PyArrayObject *arY, *arb, *ara, *arX, *arVi, *arVf;
@@ -110,7 +112,7 @@ sigtools_linear_filter2(PyObject * dummy, PyObject * args)
 		}
 	}
 
-	st = RawFilter2(arb, ara, arX, arVi, arVf, arY, theaxis, basic_filter);
+	st = RawFilter(arb, ara, arX, arVi, arVf, arY, theaxis, basic_filter);
 	if (st) {
 		goto fail;
 	}
@@ -170,7 +172,7 @@ zfill(const PyArrayObject *x, intp nx, char* xzfilled, intp nxzfilled)
  * condition), some code is wasteful here
  */
 static int
-RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
+RawFilter(const PyArrayObject *b, const PyArrayObject *a,
 	   const PyArrayObject *x, const PyArrayObject *zi,
 	   const PyArrayObject *zf, PyArrayObject *y, int axis,
 	   BasicFilterFunction *filter_func)
