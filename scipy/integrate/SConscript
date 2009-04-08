@@ -1,4 +1,4 @@
-# Last Change: Wed Apr 08 05:00 PM 2009 J
+# Last Change: Wed Apr 08 11:00 PM 2009 J
 # vim:syntax=python
 from os.path import join as pjoin
 import warnings
@@ -39,6 +39,10 @@ src = [pjoin("quadpack", s) for s in ["dqag.f", "dqage.f", "dqagi.f",
 "dqwgts.f"]]
 quadpack = env.DistutilsStaticExtLibrary('quadpack', source = src)
 
+
+src = [pjoin('dop', f) for f in ['dop853.f', 'dopri5.f']]
+env.DistutilsStaticExtLibrary('dop', source=src)
+
 # Build odepack
 src = [pjoin("odepack", s) for s in [ "adjlr.f", "aigbt.f", "ainvg.f",
 "blkdta000.f", "bnorm.f", "cdrv.f", "cfode.f", "cntnzu.f", "ddasrt.f",
@@ -70,4 +74,6 @@ odenv.NumpyPythonExtension('_odepack', source = '_odepackmodule.c')
 odenv.NumpyPythonExtension('vode', source = 'vode.pyf')
 
 # Dop extension
-odenv.NumpyPythonExtension('dop', source='dop.pyf', libraries=['dop'])
+dopenv = env.Clone()
+dopenv.Prepend(LIBS=['dop'])
+dopenv.NumpyPythonExtension('dop', source='dop.pyf')
