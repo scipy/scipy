@@ -145,7 +145,8 @@ zfill(const PyArrayObject *x, intp nx, char* xzfilled, intp nxzfilled)
 
 	nxl = PyArray_ITEMSIZE(x);
 
-	xzero = PyArray_Zero(x);
+	/* PyArray_Zero does not take const pointer, hence the cast */
+	xzero = PyArray_Zero((PyArrayObject*)x);
 
 	if (nx > 0) {
 		memcpy(xzfilled, x->data, nx * nxl);
