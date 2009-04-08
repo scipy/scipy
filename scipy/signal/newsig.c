@@ -212,10 +212,19 @@ RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
 	nfilt = na > nb ? na : nb;
 
 	azfilled = malloc(nal * nfilt);
+	if (azfilled == NULL) {
+		fprintf(stderr, "FIXME, newsig: FAIL\n");
+	}
 	bzfilled = malloc(nbl * nfilt);
+	if (bzfilled == NULL) {
+		fprintf(stderr, "FIXME, newsig: FAIL\n");
+	}
 
 	nxl = PyArray_ITEMSIZE(x);
 	zfzfilled = malloc(nxl * (nfilt-1) );
+	if (zfzfilled == NULL) {
+		fprintf(stderr, "FIXME, newsig: FAIL\n");
+	}
 
 	zfill(a, na, azfilled, nfilt);
 	zfill(b, nb, bzfilled, nfilt);
@@ -258,6 +267,11 @@ RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
                         PyArray_ITER_NEXT(itzf);
                 }
 	}
+
+	/* Free up allocated memory */
+	free(zfzfilled);
+	free(bzfilled);
+	free(azfilled);
 
 	if (zi != NULL) {
                 Py_DECREF(itzf);
