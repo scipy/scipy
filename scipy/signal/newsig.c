@@ -180,27 +180,35 @@ RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
 	itx = (PyArrayIterObject *)PyArray_IterAllButAxis(
 		(PyObject *)x, &axis);
 	if (itx == NULL) {
-		fprintf(stderr, "FAIL\n");
+		PyErr_SetString(PyExc_MemoryError,
+				"Could not create itx");
+		goto fail;
 	}
 	nitx = itx->size;
 
 	ity = (PyArrayIterObject *)PyArray_IterAllButAxis(
 		(PyObject *)y, &axis);
 	if (ity == NULL) {
-		fprintf(stderr, "FAIL\n");
+		PyErr_SetString(PyExc_MemoryError,
+				"Could not create ity");
+		goto clean_itx;
 	}
 
         if (zi != NULL) {
                 itzi = (PyArrayIterObject *)PyArray_IterAllButAxis(
                         (PyObject *)zi, &axis);
                 if (itzi == NULL) {
-                        fprintf(stderr, "FAIL\n");
+			PyErr_SetString(PyExc_MemoryError,
+					"Could not create itzi");
+			goto clean_ity;
                 }
 
                 itzf = (PyArrayIterObject *)PyArray_IterAllButAxis(
                         (PyObject *)zf, &axis);
                 if (itzf == NULL) {
-                        fprintf(stderr, "FAIL\n");
+			PyErr_SetString(PyExc_MemoryError,
+					"Could not create itzf");
+			goto clean_itzi;
                 }
         }
 
@@ -213,17 +221,23 @@ RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
 
 	azfilled = malloc(nal * nfilt);
 	if (azfilled == NULL) {
-		fprintf(stderr, "FIXME, newsig: FAIL\n");
+		PyErr_SetString(PyExc_MemoryError,
+				"Could not create azfilled");
+		goto clean_itzf;
 	}
 	bzfilled = malloc(nbl * nfilt);
 	if (bzfilled == NULL) {
-		fprintf(stderr, "FIXME, newsig: FAIL\n");
+		PyErr_SetString(PyExc_MemoryError,
+				"Could not create bzfilled");
+		goto clean_azfilled;
 	}
 
 	nxl = PyArray_ITEMSIZE(x);
 	zfzfilled = malloc(nxl * (nfilt-1) );
 	if (zfzfilled == NULL) {
-		fprintf(stderr, "FIXME, newsig: FAIL\n");
+		PyErr_SetString(PyExc_MemoryError,
+				"Could not create zfzfilled");
+		goto clean_bzfilled;
 	}
 
 	zfill(a, na, azfilled, nfilt);
@@ -281,4 +295,23 @@ RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
 	Py_DECREF(itx);
 
 	return 0;
+
+clean_bzfilled:
+	free(bzfilled);
+clean_azfilled:
+	free(azfilled);
+clean_itzf:
+	if (zf != NULL) {
+		Py_DECREF(itzf);
+	}
+clean_itzi:
+	if (zi != NULL) {
+		Py_DECREF(itzi);
+	}
+clean_ity:
+	Py_DECREF(ity);
+clean_itx:
+	Py_DECREF(itx);
+fail:
+	return -1;
 }
