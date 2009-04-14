@@ -6,174 +6,101 @@ for updates of this document.
 
 .. Contents::
 
+INTRODUCTION
+============
+
+It is *strongly* recommended that you use the binary packages on your platform
+if they are available, in particular on Windows and Mac OS X. You should not
+attempt to build SciPy if you are not familiar with compiling softwares from
+sources.
+
 PREREQUISITES
 =============
 
-SciPy requires the following software installed:
+SciPy requires the following software installed for your platform:
 
 1) Python__ 2.4.x or newer
 
-   Debian packages: python python-dev
-
-   Make sure that the Python package distutils is installed before
-   continuing. For example, in Debian GNU/Linux, distutils is included
-   in the python-dev package.
-
-   Python must also be compiled with the zlib module enabled.
-
 __ http://www.python.org
 
-2) NumPy__ 1.2.0 or newer
-
-   Debian package: python-numpy
+2) NumPy__ 1.3.0 or newer
 
 __ http://www.numpy.org/
 
-3) Complete LAPACK__ library (see NOTES 1, 2, 3)
+Windows
+-------
 
-   Debian/Ubuntu packages (g77): atlas3-base atlas3-base-dev
+Compilers
+~~~~~~~~~
 
-   Various SciPy packages do linear algebra computations using the LAPACK
-   routines. SciPy's setup.py scripts can use number of different LAPACK
-   library setups, including optimized LAPACK libraries such as ATLAS__ or
-   the Accelerate/vecLib framework on OS X. The notes below give
-   more information on how to prepare the build environment so that
-   SciPy's setup.py scripts can use whatever LAPACK library setup one has.
+It is recommended to use the mingw__ compilers on Windows: you will need gcc
+(C), g++ (C++) and g77 (Fortran) compilers.
 
-__ http://www.netlib.org/lapack/
+__ http://www.mingw.org
+
+Blas/Lapack
+~~~~~~~~~~~
+
+Blas/Lapack are core routines for linear algebra (vector/matrix operations).
+You should use ATLAS__ with a full LAPACK, or simple BLAS/LAPACK built with g77
+from netlib__ sources. Building those libraries on windows may be difficult, as
+they assume a unix-style environment. Please use the binaries if you don't feel
+comfortable with cygwin, make and similar tools.
+
 __ http://math-atlas.sourceforge.net/
+__ http://www.netlib.org/lapack/
 
+Mac OS X
+--------
 
+Compilers
+~~~~~~~~~
 
-OPTIONAL PACKAGES
-=================
+It is recommended to use gcc. gcc is available for free when installing
+Xcode__, the developer toolsuite on Mac OS X. You also need a fortran compiler,
+which is not included with Xcode: you should use gfortran from this page:
 
-The following software is optional, but SciPy can use these if present
-for extra functionality:
+__ http://r.research.att.com/tools/
 
-1) C, C++, Fortran 77 compilers (see COMPILER NOTES)
+Please do NOT use gfortran from hpc.sourceforge.net, it is known to generate
+buggy scipy binaries.
 
-   To build SciPy or any other extension modules for Python, you'll need
-   a C compiler. Scipy also requires a C++ compiler.
-   
-   Various SciPy modules use Fortran 77 libraries, so you'll need also
-   at least a Fortran 77 compiler installed. 
-   
-   gcc__ 3.x compilers are recommended.  gcc 2.95 and 4.0.x also work on
-   some platforms, but may be more problematic (see COMPILER NOTES).
+__Xcode: http://developer.apple.com/TOOLS/xcode
 
-   Debian packages: gcc g++ g77
+Blas/Lapack
+~~~~~~~~~~~
 
-__ http://gcc.gnu.org/
+Mac OS X includes the Accelerate framework: it should be detected without any
+intervention when building SciPy.
 
-
-2) FFTW__ x (see Lib/fftpack/NOTES.txt)
-
-   FFTW 2.1.x and 3.x work.
-
-   Debian packages: fftw2 fftw-dev fftw3 fftw3-dev
-
-__ http://www.fftw.org/
-
-
-
-NOTES
+Linux
 -----
 
-1) To use ATLAS, version 3.2.1 or newer and a *complete* LAPACK library
-   are required.  See
+Most common distributions include all the dependencies. Here are some
+instructions for the most common ones:
 
-     http://math-atlas.sourceforge.net/errata.html#completelp
+Ubuntu >= 8.10
+~~~~~~~~~~~~~~
 
-   for instructions. Please be aware than building your own atlas is
-   error-prone, and should be avoided as much as possible if you don't want to
-   spend time on build issues. Use the blas/lapack packaged by your
-   distribution on Linux; on Mac Os X, you should use the vecLib/Accelerate
-   framework, which are available when installing the apple development tools.
+You can get all the dependencies as follows::
 
-   Below follows basic steps for building ATLAS+LAPACK from scratch.
-   In case of trouble, consult the documentation of the corresponding
-   software.
+        sudo apt-get install python python-dev libatlas3-base-dev gcc gfortran g++
 
-   * Get and unpack http://www.netlib.org/lapack/lapack.tgz
-     to ``/path/to/src/``.
+Ubuntu < 8.10, Debian
+~~~~~~~~~~~~~~~~~~~~~
 
-   * Copy proper ``/path/to/src/LAPACK/INSTALL/make.inc.?????``
-     to ``/path/to/src/LAPACK/make.inc``.
+You can get all the dependencies as follows::
 
-   * Build LAPACK::
+        sudo apt-get install python python-dev atlas3-base-dev gcc g77 g++
 
-       cd /path/to/src/LAPACK
-       make lapacklib    # On 400MHz PII it takes about 15min. 
+OpenSuse >= 10
+~~~~~~~~~~~~~~
 
-     that will create lapack_LINUX.a when using
-     INSTALL/make.inc.LINUX, for example.
-     If using Intel Fortran Compiler, see additional notes below.
+RHEL 
+~~~~
 
-   * Get the latest stable ATLAS sources from
-     http://math-atlas.sourceforge.net/
-     and unpack to ``/path/to/src/``.
-
-   * Build ATLAS::
-
-       cd /path/to/src/ATLAS
-       make                          # Number of questions will be asked
-       make install arch=Linux_PII   # This takes about 45min.
-
-     where arch may vary (see the output of the previous command).
-
-   * Make optimized LAPACK library::
-
-       cd /path/to/src/ATLAS/lib/Linux_PII/
-       mkdir tmp; cd tmp
-       ar x ../liblapack.a
-       cp /path/to/src/LAPACK/lapack_LINUX.a ../liblapack.a
-       ar r ../liblapack.a *.o
-       cd ..; rm -rf tmp
-
-   * Move all ``lib*.a`` files from ``/path/to/src/ATLAS/lib/Linux_PII/``,
-     say, to ``/usr/local/lib/atlas/``.
-     Also copying ``/path/to/src/ATLAS/include/{cblas.h,clapack.h}`` to
-     ``/usr/local/lib/atlas/`` might be a good idea.
-
-   * Define environment variable ATLAS that contains path to the directory
-     where you moved the atlas libraries. For example, in bash run::
-
-       export ATLAS=/usr/local/lib/atlas
-
-2) If you are willing to sacrifice the performance (by factor of 5 to 15
-   for large problems) of the linalg module then it is possible to build
-   SciPy without ATLAS. For that you'll need either Fortran LAPACK/BLAS
-   libraries installed in your system or Fortran LAPACK/BLAS sources to be
-   accessible by SciPy setup scripts (use ``LAPACK_SRC``/``BLAS_SRC``
-   environment variables to indicate the location of the corresponding
-   source directories).  More details of how to do this are on the SciPy
-   Wiki, at:
-
-     http://www.scipy.org/Installing_SciPy/BuildingGeneral
-
-3) Users of Debian (and derivatives like Ubuntu) can use the following
-   deb packages::
-
-     atlas2-headers
-
-   and
-
-     atlas2-base atlas2-base-dev
-     or
-     atlas2-sse atlas2-sse-dev
-     or
-     atlas2-sse2 atlas2-sse2-dev
-     or
-     atlas2-3dnow atlas2-3dnow-dev
-
-   It is not necessary to install blas or lapack libraries in addition.
-
- 4) Compiler flags customization (FFLAGS, CFLAGS, etc...). If you customize
- CFLAGS and other related flags from the command line or the shell environment,
- beware that is does not have the standard behavior of appending options.
- Instead, it overrides the options. As such, you have to give all options in the
- flag for the build to be successful.
+Fedora Core 
+~~~~~~~~~~~
 
 GETTING SCIPY
 =============
@@ -191,7 +118,7 @@ Use the command::
 
 Before building and installing from SVN, remove the old installation
 (e.g. in /usr/lib/python2.4/site-packages/scipy or
-$HOME/lib/python2.4/site-packages/scipy).  Then type:
+$HOME/lib/python2.4/site-packages/scipy).  Then type::
 
   cd scipy
   rm -rf build
@@ -205,7 +132,10 @@ INSTALLATION
 First make sure that all SciPy prerequisites are installed and working
 properly.  Then be sure to remove any old SciPy installations (e.g.
 /usr/lib/python2.4/site-packages/scipy or $HOME/lib/python2.4/
-site-packages/scipy).
+site-packages/scipy). On windows, if you installed scipy previously from a
+binary, use the remove facility from the add/remove softwares panel, or remote
+the scipy directory by hand if you installed from sources (e.g.
+C:\Python24\Lib\site-packages\scipy for python 2.4).
 
 From tarballs
 -------------
@@ -216,14 +146,15 @@ directory, and run
   python setup.py install
 
 This may take several minutes to an hour depending on the speed of your
-computer.  This may require root privileges.  To install to a
-user-specific location instead, run
+computer.  To install to a user-specific location instead, run::
 
   python setup.py install --prefix=$MYDIR
 
 where $MYDIR is, for example, $HOME or $HOME/usr.
 
-
+        ** Note 1: On Unix, you should avoid installing in /usr, but rather in
+        /usr/local or somewhere else. /usr is generally 'owned' by your package
+        manager, and you may overwrite a packaged scipy this way.
 
 TESTING
 =======
@@ -239,9 +170,9 @@ To run the full test suite use
 
 Please note that you must have version 0.10 or later of the 'nose' test
 framework installed in order to run the tests.  More information about nose is
-available here:
+available on the website__.
 
-http://somethingaboutorange.com/mrl/projects/nose/
+__ http://somethingaboutorange.com/mrl/projects/nose/
 
 COMPILER NOTES
 ==============
@@ -352,21 +283,6 @@ To fix: follow the instructions in
 
   to create a complete liblapack.a. Then copy liblapack.a to the same
   location where libatlas.a is installed and retry with scipy build.
-
-Using ATLAS 3.2.1
------------------
-If import clapack fails with the following error
-::
-  
-  ImportError: .../clapack.so : undefined symbol: clapack_sgetri
-
-then you most probably have ATLAS 3.2.1 but linalg module was built
-for newer versions of ATLAS.
-Fix:
-
-  1) Remove Lib/linalg/clapack.pyf
-
-  2) Rebuild/reinstall scipy.
 
 Using non-GNU Fortran Compiler
 ------------------------------
