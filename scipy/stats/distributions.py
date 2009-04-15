@@ -3072,7 +3072,7 @@ where phi is the normal pdf, and Phi is the normal cdf, and x > 0, c > 0.
 # FIXME: PPF does not work.
 class rdist_gen(rv_continuous):
     def _pdf(self, x, c):
-        return pow((1.0-x*x),c/2.0-1) / special.beta(0.5,c/2.0)
+        return np.power((1.0-x*x),c/2.0-1) / special.beta(0.5,c/2.0)
     def _cdf_skip(self, x, c):
         #error inspecial.hyp2f1 for some values see tickets 758, 759
         return 0.5 + x/special.beta(0.5,c/2.0)* \
