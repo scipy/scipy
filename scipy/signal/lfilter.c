@@ -182,6 +182,7 @@ RawFilter(const PyArrayObject *b, const PyArrayObject *a,
 	intp na, nb, nal, nbl;
 	intp nfilt;
 	char *azfilled, *bzfilled, *zfzfilled, *yoyo;
+	PyArray_CopySwapFunc *copyswap = x->descr->f->copyswap;
 
 	itx = (PyArrayIterObject *)PyArray_IterAllButAxis(
 		(PyObject *)x, &axis);
@@ -245,6 +246,12 @@ RawFilter(const PyArrayObject *b, const PyArrayObject *a,
 				"Could not create zfzfilled");
 		goto clean_bzfilled;
 	}
+	/* Initialize zfzilled to 0, so that we can use Py_XINCREF/Py_XDECREF
+	 * on it for object arrays (necessary for copyswap to work correctly).
+	 * Stricly speaking, it is not needed for fundamental types (as values
+	 * are copied instead of pointers, without refcounts), but oh well...
+	 */
+	memset(zfzfilled, 0, nxl * (nfilt-1));
 
 	zfill(a, na, azfilled, nfilt);
 	zfill(b, nb, bzfilled, nfilt);
@@ -262,7 +269,7 @@ RawFilter(const PyArrayObject *b, const PyArrayObject *a,
                         yoyo = itzi->dataptr;
                         /* Copy initial conditions zi in zfzfilled buffer */
                         for(j = 0; j < nfilt - 1; ++j) {
-                                memcpy(zfzfilled + j * nzfl, yoyo, nzfl);
+                                copyswap(zfzfilled + j * nzfl, yoyo, 0, NULL);
                                 yoyo += itzi->strides[axis];
                         }
                         PyArray_ITER_NEXT(itzi);
@@ -281,7 +288,7 @@ RawFilter(const PyArrayObject *b, const PyArrayObject *a,
                 if (zi != NULL) {
                         yoyo = itzf->dataptr;
                         for(j = 0; j < nfilt - 1; ++j) {
-                                memcpy(yoyo, zfzfilled + j * nzfl, nzfl);
+                                copyswap(yoyo, zfzfilled + j * nzfl, 0, NULL);
                                 yoyo += itzf->strides[axis];
                         }
                         PyArray_ITER_NEXT(itzf);
