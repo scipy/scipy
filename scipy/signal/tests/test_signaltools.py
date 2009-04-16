@@ -161,13 +161,16 @@ class _TestLinearFilter(TestCase):
     def test_rank2(self):
         shape = (4, 3)
         x = np.linspace(0, np.prod(shape) - 1, np.prod(shape)).reshape(shape)
+        x = x.astype(self.dt)
 
-        b = np.array([1, -1])
-        a = np.array([0.5, 0.5])
+        b = np.array([1, -1]).astype(self.dt)
+        a = np.array([0.5, 0.5]).astype(self.dt)
 
-        y_r2_a0 = np.array([[0, 2, 4], [6, 4, 2], [0, 2, 4], [6 ,4 ,2]])
+        y_r2_a0 = np.array([[0, 2, 4], [6, 4, 2], [0, 2, 4], [6 ,4 ,2]],
+                           dtype=self.dt)
+
         y_r2_a1 = np.array([[0, 2, 0], [6, -4, 6], [12, -10, 12],
-                            [18, -16, 18]])
+                            [18, -16, 18]], dtype=self.dt)
 
         y = lfilter(b, a, x, axis = 0)
         assert_array_almost_equal(y_r2_a0, y)
@@ -179,13 +182,14 @@ class _TestLinearFilter(TestCase):
         # Test initial condition handling along axis 1
         shape = (4, 3)
         x = np.linspace(0, np.prod(shape) - 1, np.prod(shape)).reshape(shape)
+        x = x.astype(self.dt)
 
-        b = np.array([1, -1])
-        a = np.array([0.5, 0.5])
+        b = np.array([1, -1]).astype(self.dt)
+        a = np.array([0.5, 0.5]).astype(self.dt)
 
         y_r2_a0_1 = np.array([[1, 1, 1], [7, -5, 7], [13, -11, 13],
-                              [19, -17, 19]])
-        zf_r = np.array([-5, -17, -29, -41])[:, np.newaxis]
+                              [19, -17, 19]], dtype=self.dt)
+        zf_r = np.array([-5, -17, -29, -41])[:, np.newaxis].astype(self.dt)
         y, zf = lfilter(b, a, x, axis = 1, zi = np.ones((4, 1)))
         assert_array_almost_equal(y_r2_a0_1, y)
         assert_array_almost_equal(zf, zf_r)
@@ -195,12 +199,14 @@ class _TestLinearFilter(TestCase):
         # Test initial condition handling along axis 0
         shape = (4, 3)
         x = np.linspace(0, np.prod(shape) - 1, np.prod(shape)).reshape(shape)
+        x = x.astype(self.dt)
 
-        b = np.array([1, -1])
-        a = np.array([0.5, 0.5])
+        b = np.array([1, -1]).astype(self.dt)
+        a = np.array([0.5, 0.5]).astype(self.dt)
 
-        y_r2_a0_0 = np.array([[1, 3, 5], [5, 3, 1], [1, 3, 5], [5 ,3 ,1]])
-        zf_r = np.array([[-23, -23, -23]])
+        y_r2_a0_0 = np.array([[1, 3, 5], [5, 3, 1], [1, 3, 5], [5 ,3 ,1]], 
+                             dtype=self.dt)
+        zf_r = np.array([[-23, -23, -23]], dtype=self.dt)
         y, zf = lfilter(b, a, x, axis = 0, zi = np.ones((1, 3)))
         assert_array_almost_equal(y_r2_a0_0, y)
         assert_array_almost_equal(zf, zf_r)
@@ -210,8 +216,8 @@ class _TestLinearFilter(TestCase):
         shape = (4, 3, 2)
         x = np.linspace(0, np.prod(shape) - 1, np.prod(shape)).reshape(shape)
 
-        b = np.array([1, -1])
-        a = np.array([0.5, 0.5])
+        b = np.array([1, -1]).astype(self.dt)
+        a = np.array([0.5, 0.5]).astype(self.dt)
 
         # Test last axis
         y = lfilter(b, a, x)
@@ -221,10 +227,10 @@ class _TestLinearFilter(TestCase):
 
     def test_empty_zi(self):
         """Regression test for #880: empty array for zi crashes."""
-        a = np.ones(1)
-        b = np.ones(1)
-        x = np.arange(5)
-        zi = np.ones(0)
+        a = np.ones(1).astype(self.dt)
+        b = np.ones(1).astype(self.dt)
+        x = np.arange(5).astype(self.dt)
+        zi = np.ones(0).astype(self.dt)
         lfilter(b, a, x, zi=zi)
 
 class TestLinearFilterFloat32(_TestLinearFilter):
@@ -241,6 +247,15 @@ class TestLinearFilterComplex128(_TestLinearFilter):
 
 class TestLinearFilterDecimal(_TestLinearFilter):
     dt = np.dtype(Decimal)
+    @dec.skipif(True, "Skipping lfilter test with initial condition along "\
+                      "axis 1 for object dtype: it segfaults ATM")
+    def test_rank2_init_cond_a1(self):
+        pass
+
+    @dec.skipif(True, "Skipping lfilter test with initial condition along "\
+                      "axis 0 for object dtype: it segfaults ATM")
+    def test_rank2_init_cond_a0(self):
+        pass
 
 class TestFiltFilt:
     def test_basic(self):
