@@ -367,7 +367,7 @@ class TestCephes(TestCase):
         cephes.obl_rad2_cv(1,1,1,1,0)
 
     def test_pbdv(self):
-        assert_equal(cephes.pbdv(1,0),(0.0,0.0))
+        assert_equal(cephes.pbdv(1,0),(0.0,1.0))
     def test_pbvv(self):
         cephes.pbvv(1,0)
     def test_pbwa(self):
@@ -2007,6 +2007,35 @@ class TestParabolicCylinder(TestCase):
         pbn = pbdn_seq(1,.1)
         pbv = pbdv_seq(1,.1)
         assert_array_almost_equal(pbv,(real(pbn[0]),real(pbn[1])),4)
+
+    def test_pbdv_points(self):
+        # simple case
+        eta = np.linspace(-10, 10, 5)
+        z = 2**(eta/2)*np.sqrt(np.pi)/gamma(.5-.5*eta)
+        assert_tol_equal(pbdv(eta, 0.)[0], z, rtol=1e-14, atol=1e-14)
+
+        # some points
+        assert_tol_equal(pbdv(10.34, 20.44)[0], 1.3731383034455e-32, rtol=1e-12)
+        assert_tol_equal(pbdv(-9.53, 3.44)[0], 3.166735001119246e-8, rtol=1e-12)
+
+    def test_pbdv_gradient(self):
+        x = np.linspace(-4, 4, 8)[:,None]
+        eta = np.linspace(-10, 10, 5)[None,:]
+
+        p = pbdv(eta, x)
+        eps = 1e-7 + 1e-7*abs(x)
+        dp = (pbdv(eta, x + eps)[0] - pbdv(eta, x - eps)[0]) / eps / 2.
+        assert_tol_equal(p[1], dp, rtol=1e-6, atol=1e-6)
+        
+    def test_pbvv_gradient(self):
+        x = np.linspace(-4, 4, 8)[:,None]
+        eta = np.linspace(-10, 10, 5)[None,:]
+
+        p = pbvv(eta, x)
+        eps = 1e-7 + 1e-7*abs(x)
+        dp = (pbvv(eta, x + eps)[0] - pbvv(eta, x - eps)[0]) / eps / 2.
+        assert_tol_equal(p[1], dp, rtol=1e-6, atol=1e-6)
+        
 
 class TestPolygamma(TestCase):
     # from Table 6.2 (pg. 271) of A&S

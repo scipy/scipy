@@ -25,7 +25,8 @@ from numpy import array
 import scipy.sparse as SP
 
 from scipy.io.matlab.miobase import matdims
-from scipy.io.matlab.mio import loadmat, savemat, find_mat_file
+from scipy.io.matlab.mio import loadmat, savemat, find_mat_file, \
+     mat_reader_factory
 from scipy.io.matlab.mio5 import MatlabObject, MatFile5Writer, \
      Mat5NumericWriter
 
@@ -531,3 +532,31 @@ def test_compression():
 def test_single_object():
     stream = StringIO()
     savemat(stream, {'A':np.array(1, dtype=object)})
+
+def test_skip_variable():
+    # Test skipping over the first of two variables in a MAT file
+    # using mat_reader_factory and put_variables to read them in.
+    #
+    # This is a regression test of a problem that's caused by
+    # using the compressed file reader seek instead of the raw file
+    # I/O seek when skipping over a compressed chunk.
+    #
+    # The problem arises when the chunk is large: this file has
+    # a 256x256 array of random (uncompressible) doubles.
+    #
+    filename = join(test_data_path,'test_skip_variable.mat')
+    #
+    # Prove that it loads with loadmat
+    #
+    d = loadmat(filename, struct_as_record=True)
+    yield assert_true, d.has_key('first')
+    yield assert_true, d.has_key('second')
+    #
+    # Make the factory
+    #
+    factory = mat_reader_factory(filename, struct_as_record=True)
+    #
+    # This is where the factory breaks with an error in MatMatrixGetter.to_next
+    #
+    d = factory.get_variables('second')
+    yield assert_true, d.has_key('second')
