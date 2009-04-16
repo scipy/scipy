@@ -1,4 +1,5 @@
 #this program corresponds to special.py
+from decimal import Decimal
 
 from numpy.testing import *
 
@@ -121,37 +122,38 @@ class TestChebWin:
         cheb_even = signal.chebwin(54, at=-40)
         assert_array_almost_equal(cheb_even, cheb_even_true, decimal=4)
 
-class TestLinearFilter(TestCase):
+class _TestLinearFilter(TestCase):
+    dt = None
     def test_rank1(self):
-        x = np.linspace(0, 5, 6)
-        b = np.array([1, -1])
-        a = np.array([0.5, -0.5])
+        x = np.linspace(0, 5, 6).astype(self.dt)
+        b = np.array([1, -1]).astype(self.dt)
+        a = np.array([0.5, -0.5]).astype(self.dt)
 
         # Test simple IIR
-        y_r = np.array([0, 2, 4, 6, 8, 10.])
+        y_r = np.array([0, 2, 4, 6, 8, 10.]).astype(self.dt)
         assert_array_almost_equal(lfilter(b, a, x), y_r)
 
         # Test simple FIR
-        b = np.array([1, 1])
-        a = np.array([1])
-        y_r = np.array([0, 1, 3, 5, 7, 9.])
+        b = np.array([1, 1]).astype(self.dt)
+        a = np.array([1]).astype(self.dt)
+        y_r = np.array([0, 1, 3, 5, 7, 9.]).astype(self.dt)
         assert_array_almost_equal(lfilter(b, a, x), y_r)
 
         # Test IIR with initial conditions
-        b = np.array([1, 1])
-        a = np.array([1])
-        zi = np.array([1])
-        y_r = np.array([1, 1, 3, 5, 7, 9.])
-        zf_r = np.array([5])
+        b = np.array([1, 1]).astype(self.dt)
+        a = np.array([1]).astype(self.dt)
+        zi = np.array([1]).astype(self.dt)
+        y_r = np.array([1, 1, 3, 5, 7, 9.]).astype(self.dt)
+        zf_r = np.array([5]).astype(self.dt)
         y, zf = lfilter(b, a, x, zi=zi)
         assert_array_almost_equal(y, y_r)
         assert_array_almost_equal(zf, zf_r)
 
-        b = np.array([1, 1, 1])
-        a = np.array([1])
-        zi = np.array([1, 1])
-        y_r = np.array([1, 2, 3, 6, 9, 12.])
-        zf_r = np.array([9, 5])
+        b = np.array([1, 1, 1]).astype(self.dt)
+        a = np.array([1]).astype(self.dt)
+        zi = np.array([1, 1]).astype(self.dt)
+        y_r = np.array([1, 2, 3, 6, 9, 12.]).astype(self.dt)
+        zf_r = np.array([9, 5]).astype(self.dt)
         y, zf = lfilter(b, a, x, zi=zi)
         assert_array_almost_equal(y, y_r)
         assert_array_almost_equal(zf, zf_r)
@@ -224,6 +226,21 @@ class TestLinearFilter(TestCase):
         x = np.arange(5)
         zi = np.ones(0)
         lfilter(b, a, x, zi=zi)
+
+class TestLinearFilterFloat32(_TestLinearFilter):
+    dt = np.float32
+
+class TestLinearFilterFloat64(_TestLinearFilter):
+    dt = np.float64
+
+class TestLinearFilterComplex64(_TestLinearFilter):
+    dt = np.complex64
+
+class TestLinearFilterComplex128(_TestLinearFilter):
+    dt = np.complex128
+
+class TestLinearFilterDecimal(_TestLinearFilter):
+    dt = np.dtype(Decimal)
 
 class TestFiltFilt:
     def test_basic(self):
