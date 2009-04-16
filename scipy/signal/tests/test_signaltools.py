@@ -247,15 +247,6 @@ class TestLinearFilterComplex128(_TestLinearFilter):
 
 class TestLinearFilterDecimal(_TestLinearFilter):
     dt = np.dtype(Decimal)
-    @dec.skipif(True, "Skipping lfilter test with initial condition along "\
-                      "axis 1 for object dtype: it segfaults ATM")
-    def test_rank2_init_cond_a1(self):
-        pass
-
-    @dec.skipif(True, "Skipping lfilter test with initial condition along "\
-                      "axis 0 for object dtype: it segfaults ATM")
-    def test_rank2_init_cond_a0(self):
-        pass
 
 class TestFiltFilt:
     def test_basic(self):
