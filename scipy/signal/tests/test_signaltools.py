@@ -194,7 +194,6 @@ class _TestLinearFilter(TestCase):
         assert_array_almost_equal(y_r2_a0_1, y)
         assert_array_almost_equal(zf, zf_r)
 
-    # Disabled because it crashes lfilter for now
     def test_rank2_init_cond_a0(self):
         # Test initial condition handling along axis 0
         shape = (4, 3)
@@ -211,7 +210,6 @@ class _TestLinearFilter(TestCase):
         assert_array_almost_equal(y_r2_a0_0, y)
         assert_array_almost_equal(zf, zf_r)
 
-    # Disabled because it crashes lfilter for now
     def test_rank3(self):
         shape = (4, 3, 2)
         x = np.linspace(0, np.prod(shape) - 1, np.prod(shape)).reshape(shape)
