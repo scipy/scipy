@@ -245,6 +245,12 @@ RawFilter(const PyArrayObject *b, const PyArrayObject *a,
 				"Could not create zfzfilled");
 		goto clean_bzfilled;
 	}
+	/* Initialize zfzilled to 0, so that we can use Py_XINCREF/Py_XDECREF
+	 * on it for object arrays (necessary for copyswap to work correctly).
+	 * Stricly speaking, it is not needed for fundamental types (as values
+	 * are copied instead of pointers, without refcounts), but oh well...
+	 */
+	memset(zfzfilled, 0, nxl * (nfilt-1));
 
 	zfill(a, na, azfilled, nfilt);
 	zfill(b, nb, bzfilled, nfilt);
