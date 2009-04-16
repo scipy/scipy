@@ -1,20 +1,22 @@
 #include <Python.h>
 
 static int
-RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
+RawFilter(const PyArrayObject *b, const PyArrayObject *a,
 	   const PyArrayObject *x, const PyArrayObject *zi,
 	   const PyArrayObject *zf, PyArrayObject *y, int axis,
 	   BasicFilterFunction *filter_func);
 
+static char doc_linear_filter[] = "(y,Vf) = _linear_filter(b,a,X,Dim=-1,Vi=None)  implemented using Direct Form II transposed flow diagram. If Vi is not given, Vf is not returned.";
+ 
 /*
  * XXX: Error checking not done yet
  */
 static PyObject *
-sigtools_linear_filter2(PyObject * dummy, PyObject * args)
+sigtools_linear_filter(PyObject * dummy, PyObject * args)
 {
 	PyObject *b, *a, *X, *Vi;
 	PyArrayObject *arY, *arb, *ara, *arX, *arVi, *arVf;
-	int axis, typenum, theaxis;
+	int axis, typenum, theaxis, st;
 	char *ara_ptr, input_flag = 0, *azero;
 	intp na, nb, nal;
 	BasicFilterFunction *basic_filter;
@@ -110,7 +112,10 @@ sigtools_linear_filter2(PyObject * dummy, PyObject * args)
 		}
 	}
 
-	RawFilter2(arb, ara, arX, arVi, arVf, arY, theaxis, basic_filter);
+	st = RawFilter(arb, ara, arX, arVi, arVf, arY, theaxis, basic_filter);
+	if (st) {
+		goto fail;
+	}
 
 	Py_XDECREF(ara);
 	Py_XDECREF(arb);
@@ -142,7 +147,8 @@ zfill(const PyArrayObject *x, intp nx, char* xzfilled, intp nxzfilled)
 
 	nxl = PyArray_ITEMSIZE(x);
 
-	xzero = PyArray_Zero(x);
+	/* PyArray_Zero does not take const pointer, hence the cast */
+	xzero = PyArray_Zero((PyArrayObject*)x);
 
 	if (nx > 0) {
 		memcpy(xzfilled, x->data, nx * nxl);
@@ -166,7 +172,7 @@ zfill(const PyArrayObject *x, intp nx, char* xzfilled, intp nxzfilled)
  * condition), some code is wasteful here
  */
 static int
-RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
+RawFilter(const PyArrayObject *b, const PyArrayObject *a,
 	   const PyArrayObject *x, const PyArrayObject *zi,
 	   const PyArrayObject *zf, PyArrayObject *y, int axis,
 	   BasicFilterFunction *filter_func)
@@ -180,27 +186,35 @@ RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
 	itx = (PyArrayIterObject *)PyArray_IterAllButAxis(
 		(PyObject *)x, &axis);
 	if (itx == NULL) {
-		fprintf(stderr, "FAIL\n");
+		PyErr_SetString(PyExc_MemoryError,
+				"Could not create itx");
+		goto fail;
 	}
 	nitx = itx->size;
 
 	ity = (PyArrayIterObject *)PyArray_IterAllButAxis(
 		(PyObject *)y, &axis);
 	if (ity == NULL) {
-		fprintf(stderr, "FAIL\n");
+		PyErr_SetString(PyExc_MemoryError,
+				"Could not create ity");
+		goto clean_itx;
 	}
 
         if (zi != NULL) {
                 itzi = (PyArrayIterObject *)PyArray_IterAllButAxis(
                         (PyObject *)zi, &axis);
                 if (itzi == NULL) {
-                        fprintf(stderr, "FAIL\n");
+			PyErr_SetString(PyExc_MemoryError,
+					"Could not create itzi");
+			goto clean_ity;
                 }
 
                 itzf = (PyArrayIterObject *)PyArray_IterAllButAxis(
                         (PyObject *)zf, &axis);
                 if (itzf == NULL) {
-                        fprintf(stderr, "FAIL\n");
+			PyErr_SetString(PyExc_MemoryError,
+					"Could not create itzf");
+			goto clean_itzi;
                 }
         }
 
@@ -212,10 +226,25 @@ RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
 	nfilt = na > nb ? na : nb;
 
 	azfilled = malloc(nal * nfilt);
+	if (azfilled == NULL) {
+		PyErr_SetString(PyExc_MemoryError,
+				"Could not create azfilled");
+		goto clean_itzf;
+	}
 	bzfilled = malloc(nbl * nfilt);
+	if (bzfilled == NULL) {
+		PyErr_SetString(PyExc_MemoryError,
+				"Could not create bzfilled");
+		goto clean_azfilled;
+	}
 
 	nxl = PyArray_ITEMSIZE(x);
 	zfzfilled = malloc(nxl * (nfilt-1) );
+	if (zfzfilled == NULL) {
+		PyErr_SetString(PyExc_MemoryError,
+				"Could not create zfzfilled");
+		goto clean_bzfilled;
+	}
 
 	zfill(a, na, azfilled, nfilt);
 	zfill(b, nb, bzfilled, nfilt);
@@ -259,6 +288,11 @@ RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
                 }
 	}
 
+	/* Free up allocated memory */
+	free(zfzfilled);
+	free(bzfilled);
+	free(azfilled);
+
 	if (zi != NULL) {
                 Py_DECREF(itzf);
                 Py_DECREF(itzi);
@@ -267,4 +301,23 @@ RawFilter2(const PyArrayObject *b, const PyArrayObject *a,
 	Py_DECREF(itx);
 
 	return 0;
+
+clean_bzfilled:
+	free(bzfilled);
+clean_azfilled:
+	free(azfilled);
+clean_itzf:
+	if (zf != NULL) {
+		Py_DECREF(itzf);
+	}
+clean_itzi:
+	if (zi != NULL) {
+		Py_DECREF(itzi);
+	}
+clean_ity:
+	Py_DECREF(ity);
+clean_itx:
+	Py_DECREF(itx);
+fail:
+	return -1;
 }
