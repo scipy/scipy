@@ -182,6 +182,7 @@ RawFilter(const PyArrayObject *b, const PyArrayObject *a,
 	intp na, nb, nal, nbl;
 	intp nfilt;
 	char *azfilled, *bzfilled, *zfzfilled, *yoyo;
+	PyArray_CopySwapFunc *copyswap = x->descr->f->copyswap;
 
 	itx = (PyArrayIterObject *)PyArray_IterAllButAxis(
 		(PyObject *)x, &axis);
@@ -268,7 +269,7 @@ RawFilter(const PyArrayObject *b, const PyArrayObject *a,
                         yoyo = itzi->dataptr;
                         /* Copy initial conditions zi in zfzfilled buffer */
                         for(j = 0; j < nfilt - 1; ++j) {
-                                memcpy(zfzfilled + j * nzfl, yoyo, nzfl);
+                                copyswap(zfzfilled + j * nzfl, yoyo, 0, NULL);
                                 yoyo += itzi->strides[axis];
                         }
                         PyArray_ITER_NEXT(itzi);
@@ -287,7 +288,7 @@ RawFilter(const PyArrayObject *b, const PyArrayObject *a,
                 if (zi != NULL) {
                         yoyo = itzf->dataptr;
                         for(j = 0; j < nfilt - 1; ++j) {
-                                memcpy(yoyo, zfzfilled + j * nzfl, nzfl);
+                                copyswap(yoyo, zfzfilled + j * nzfl, 0, NULL);
                                 yoyo += itzf->strides[axis];
                         }
                         PyArray_ITER_NEXT(itzf);
