@@ -229,7 +229,10 @@ class _TestLinearFilter(TestCase):
         b = np.ones(1).astype(self.dt)
         x = np.arange(5).astype(self.dt)
         zi = np.ones(0).astype(self.dt)
-        lfilter(b, a, x, zi=zi)
+        y, zf = lfilter(b, a, x, zi=zi)
+        assert_array_almost_equal(y, x)
+        self.failUnless(zf.dtype == self.dt)
+        self.failUnless(zf.size == 0)
 
 class TestLinearFilterFloat32(_TestLinearFilter):
     dt = np.float32
