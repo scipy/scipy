@@ -80,7 +80,7 @@ int i;
 
 /* Check for special cases */
 
-if( m < 0.0 || m > 1.0 )
+if( m < 0.0 || m > 1.0  || isnan(m))
 	{
 	mtherr( "ellpj", DOMAIN );
 	*sn = NAN;
