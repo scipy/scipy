@@ -5,7 +5,7 @@
 #define FP_CMP_WITH_BISECT_NITER    4
 #define FP_CMP_WITH_BISECT_WIDTH    4.0
 
-static inline double
+static double
 max(double a, double b)
 {
     return (a > b ? a : b);
