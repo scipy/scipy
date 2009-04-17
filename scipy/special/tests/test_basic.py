@@ -868,6 +868,10 @@ class TestTandg(TestCase):
         assert_almost_equal(tandg(-315), 1.0, 14)
 
 class TestEllip(TestCase):
+    def test_ellipj_nan(self):
+        """Regression test for #885."""
+        ellipj(0.5, np.nan)
+
     def test_ellipj(self):
         el = ellipj(0.2,0)
         rel = [sin(0.2),cos(0.2),1.0,0.20]
