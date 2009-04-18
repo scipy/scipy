@@ -132,11 +132,16 @@ fail:
 	return NULL;
 }
 
+/*
+ * Copy the first nxzfilled items of x into xzfilled , and fill the rest with
+ * 0s
+ */
 static int
 zfill(const PyArrayObject *x, intp nx, char* xzfilled, intp nxzfilled)
 {
 	char *xzero;
 	intp i, nxl;
+	PyArray_CopySwapFunc *copyswap = x->descr->f->copyswap;
 
 	nxl = PyArray_ITEMSIZE(x);
 
@@ -144,10 +149,12 @@ zfill(const PyArrayObject *x, intp nx, char* xzfilled, intp nxzfilled)
 	xzero = PyArray_Zero((PyArrayObject*)x);
 
 	if (nx > 0) {
-		memcpy(xzfilled, x->data, nx * nxl);
+                for(i = 0; i < nx; ++i) {
+                        copyswap(xzfilled + i * nxl, x->data + i * nxl, 0, NULL);
+                }
 	}
 	for(i = nx; i < nxzfilled; ++i) {
-		memcpy(xzfilled + i * nxl, xzero, nxl);
+                copyswap(xzfilled + i * nxl, xzero, 0, NULL);
 	}
 
 	PyDataMem_FREE(xzero);
@@ -239,11 +246,14 @@ RawFilter(const PyArrayObject *b, const PyArrayObject *a,
 				"Could not create zfzfilled");
 		goto clean_bzfilled;
 	}
-	/* Initialize zfzilled to 0, so that we can use Py_XINCREF/Py_XDECREF
-	 * on it for object arrays (necessary for copyswap to work correctly).
-	 * Stricly speaking, it is not needed for fundamental types (as values
-	 * are copied instead of pointers, without refcounts), but oh well...
+        /* Initialize zero filled buffers to 0, so that we can use
+         * Py_XINCREF/Py_XDECREF on it for object arrays (necessary for
+         * copyswap to work correctly). Stricly speaking, it is not needed for
+         * fundamental types (as values are copied instead of pointers, without
+         * refcounts), but oh well...
 	 */
+	memset(azfilled, 0, nal * nfilt);
+	memset(bzfilled, 0, nbl * nfilt);
 	memset(zfzfilled, 0, nxl * (nfilt-1));
 
 	zfill(a, na, azfilled, nfilt);
