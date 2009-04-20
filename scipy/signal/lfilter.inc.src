@@ -1,3 +1,7 @@
+/*
+ * vim:syntax=c
+ * vim:sw=4
+ */
 #include <Python.h>
 
 static void FLOAT_filt(char *b, char *a, char *x, char *y, char *Z,
@@ -38,7 +42,9 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
 	  BasicFilterFunction * filter_func);
 
 static char doc_linear_filter[] =
-    "(y,Vf) = _linear_filter(b,a,X,Dim=-1,Vi=None)  implemented using Direct Form II transposed flow diagram. If Vi is not given, Vf is not returned.";
+    "(y,Vf) = _linear_filter(b,a,X,Dim=-1,Vi=None)  " \
+    "implemented using Direct Form II transposed flow " \
+    "diagram. If Vi is not given, Vf is not returned.";
 
 /*
  * XXX: Error checking not done yet
