@@ -1225,14 +1225,6 @@ static void Py_copy_info(Generic_Array *gen, PyArrayObject *py_arr) {
 	return;
 }
 
-static void Py_copy_info_vec(Generic_Vector *gen, PyArrayObject *py_arr) {
-        gen->data = py_arr->data;
-	gen->elsize = py_arr->descr->elsize;
-	gen->numels = PyArray_Size((PyObject *)py_arr);
-	gen->zero = PyArray_Zero(py_arr);
-	return;
-}
-
 /******************************************/
 
 static char doc_correlateND[] = "out = _correlateND(a,kernel,mode) \n\n   mode = 0 - 'valid', 1 - 'same', \n  2 - 'full' (default)";
@@ -1639,7 +1631,7 @@ static struct PyMethodDef toolbox_module_methods[] = {
 	{"_linear_filter",sigtools_linear_filter, METH_VARARGS, doc_linear_filter},
 	{"_remez",sigtools_remez, METH_VARARGS, doc_remez},
 	{"_medfilt2d", sigtools_median2d, METH_VARARGS, doc_median2d},
-	{NULL,		NULL, 0}		/* sentinel */
+	{NULL, NULL, 0, NULL}		/* sentinel */
 };
 
 /* Initialization function for the module (*must* be called initsigtools) */
