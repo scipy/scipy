@@ -62,7 +62,7 @@ static char doc_cspline2d[] = "cspline2d(input {, lambda, precision}) -> ck\n"
 "    symmetric boundary conditions.\n";
 
  
-static PyObject *cspline2d(PyObject *dummy, PyObject *args)
+static PyObject *cspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 {
   PyObject *image=NULL;
   PyArrayObject *a_image=NULL, *ck=NULL;
@@ -119,7 +119,7 @@ static char doc_qspline2d[] = "qspline2d(input {, lambda, precision}) -> qk\n"
 "    the precision used when computing the infinite sum needed to apply mirror-\n"
 "    symmetric boundary conditions.\n";
  
-static PyObject *qspline2d(PyObject *dummy, PyObject *args)
+static PyObject *qspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 {
   PyObject *image=NULL;
   PyArrayObject *a_image=NULL, *ck=NULL;
@@ -177,7 +177,7 @@ static char doc_FIRsepsym2d[] = " sepfir2d(input, hrow, hcol) -> output\n"
 "    assumed.  This function can be used to find an image given its B-spline\n"
 "    representation.";
  
-static PyObject *FIRsepsym2d(PyObject *dummy, PyObject *args)
+static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 {
   PyObject *image=NULL, *hrow=NULL, *hcol=NULL;
   PyArrayObject *a_image=NULL, *a_hrow=NULL, *a_hcol=NULL, *out=NULL;
@@ -284,7 +284,7 @@ static char doc_IIRsymorder1[] = " symiirorder1(input, c0, z1 {, precision}) -> 
 "\n"
 "    output -- filtered signal.";
 
-static PyObject *IIRsymorder1(PyObject *dummy, PyObject *args)
+static PyObject *IIRsymorder1(PyObject *NPY_UNUSED(dummy), PyObject *args)
 {
   PyObject *sig=NULL;
   PyArrayObject *a_sig=NULL, *out=NULL;
@@ -404,7 +404,7 @@ static char doc_IIRsymorder2[] = " symiirorder2(input, r, omega {, precision}) -
 "\n"
 "    output -- filtered signal.\n";
  
-static PyObject *IIRsymorder2(PyObject *dummy, PyObject *args)
+static PyObject *IIRsymorder2(PyObject *NPY_UNUSED(dummy), PyObject *args)
 {
   PyObject *sig=NULL;
   PyArrayObject *a_sig=NULL, *out=NULL;
