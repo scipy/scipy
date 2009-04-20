@@ -5,26 +5,26 @@
 #include <Python.h>
 
 static void FLOAT_filt(char *b, char *a, char *x, char *y, char *Z,
-		       intp len_b, uintp len_x, intp stride_X,
-		       intp stride_Y);
+                       intp len_b, uintp len_x, intp stride_X,
+                       intp stride_Y);
 static void DOUBLE_filt(char *b, char *a, char *x, char *y, char *Z,
-			intp len_b, uintp len_x, intp stride_X,
-			intp stride_Y);
+                        intp len_b, uintp len_x, intp stride_X,
+                        intp stride_Y);
 static void EXTENDED_filt(char *b, char *a, char *x, char *y, char *Z,
-			intp len_b, uintp len_x, intp stride_X,
-			intp stride_Y);
+                        intp len_b, uintp len_x, intp stride_X,
+                        intp stride_Y);
 static void CFLOAT_filt(char *b, char *a, char *x, char *y, char *Z,
-			intp len_b, uintp len_x, intp stride_X,
-			intp stride_Y);
+                        intp len_b, uintp len_x, intp stride_X,
+                        intp stride_Y);
 static void CDOUBLE_filt(char *b, char *a, char *x, char *y, char *Z,
-			 intp len_b, uintp len_x, intp stride_X,
-			 intp stride_Y);
+                         intp len_b, uintp len_x, intp stride_X,
+                         intp stride_Y);
 static void CEXTENDED_filt(char *b, char *a, char *x, char *y, char *Z,
-			 intp len_b, uintp len_x, intp stride_X,
-			 intp stride_Y);
+                         intp len_b, uintp len_x, intp stride_X,
+                         intp stride_Y);
 static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
-			intp len_b, uintp len_x, intp stride_X,
-			intp stride_Y);
+                        intp len_b, uintp len_x, intp stride_X,
+                        intp stride_Y);
 
 static BasicFilterFunction *BasicFilterFunctions[] =
     { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
@@ -37,9 +37,9 @@ static BasicFilterFunction *BasicFilterFunctions[] =
 
 static int
 RawFilter(const PyArrayObject * b, const PyArrayObject * a,
-	  const PyArrayObject * x, const PyArrayObject * zi,
-	  const PyArrayObject * zf, PyArrayObject * y, int axis,
-	  BasicFilterFunction * filter_func);
+          const PyArrayObject * x, const PyArrayObject * zi,
+          const PyArrayObject * zf, PyArrayObject * y, int axis,
+          BasicFilterFunction * filter_func);
 
 static char doc_linear_filter[] =
     "(y,Vf) = _linear_filter(b,a,X,Dim=-1,Vi=None)  " \
@@ -61,14 +61,14 @@ static PyObject *sigtools_linear_filter(PyObject * dummy, PyObject * args)
     axis = -1;
     Vi = NULL;
     if (!PyArg_ParseTuple(args, "OOO|iO", &b, &a, &X, &axis, &Vi)) {
-	return NULL;
+        return NULL;
     }
 
     typenum = PyArray_ObjectType(b, 0);
     typenum = PyArray_ObjectType(a, typenum);
     typenum = PyArray_ObjectType(X, typenum);
     if (Vi != NULL) {
-	typenum = PyArray_ObjectType(Vi, typenum);
+        typenum = PyArray_ObjectType(Vi, typenum);
     }
 
     arY = arVf = arVi = NULL;
@@ -77,46 +77,46 @@ static PyObject *sigtools_linear_filter(PyObject * dummy, PyObject * args)
     arX = (PyArrayObject *) PyArray_FromObject(X, typenum, 0, 0);
     /* XXX: fix failure handling here */
     if (ara == NULL || arb == NULL || arX == NULL) {
-	goto fail;
+        goto fail;
     }
 
     if (axis < -arX->nd || axis > arX->nd - 1) {
-	PyErr_SetString(PyExc_ValueError, "selected axis is out of range");
-	goto fail;
+        PyErr_SetString(PyExc_ValueError, "selected axis is out of range");
+        goto fail;
     }
     if (axis < 0) {
-	theaxis = arX->nd + axis;
+        theaxis = arX->nd + axis;
     } else {
-	theaxis = axis;
+        theaxis = axis;
     }
 
     if (Vi != NULL) {
-	Py_ssize_t nvi;
-	arVi = (PyArrayObject *) PyArray_FromObject(Vi, typenum,
-						    arX->nd, arX->nd);
-	if (arVi == NULL)
-	    goto fail;
+        Py_ssize_t nvi;
+        arVi = (PyArrayObject *) PyArray_FromObject(Vi, typenum,
+                                                    arX->nd, arX->nd);
+        if (arVi == NULL)
+            goto fail;
 
-	input_flag = 1;
+        input_flag = 1;
     }
 
     arY = (PyArrayObject *) PyArray_SimpleNew(arX->nd,
-					      arX->dimensions, typenum);
+                                              arX->dimensions, typenum);
     if (arY == NULL) {
-	goto fail;
+        goto fail;
     }
 
     if (input_flag) {
-	arVf = (PyArrayObject *) PyArray_SimpleNew(arVi->nd,
-						   arVi->dimensions,
-						   typenum);
+        arVf = (PyArrayObject *) PyArray_SimpleNew(arVi->nd,
+                                                   arVi->dimensions,
+                                                   typenum);
     }
 
     basic_filter = BasicFilterFunctions[(int) (arX->descr->type_num)];
     if (basic_filter == NULL) {
-	PyErr_SetString(PyExc_ValueError,
-			"linear_filter not available for this type");
-	goto fail;
+        PyErr_SetString(PyExc_ValueError,
+                        "linear_filter not available for this type");
+        goto fail;
     }
 
     /* Skip over leading zeros in vector representing denominator (a) */
@@ -125,25 +125,25 @@ static PyObject *sigtools_linear_filter(PyObject * dummy, PyObject * args)
     ara_ptr = ara->data;
     nal = PyArray_ITEMSIZE(ara);
     if (memcmp(ara_ptr, azero, nal) == 0) {
-	PyErr_SetString(PyExc_ValueError,
-			"BUG: filter coefficient a[0] == 0 not supported yet");
-	goto fail;
+        PyErr_SetString(PyExc_ValueError,
+                        "BUG: filter coefficient a[0] == 0 not supported yet");
+        goto fail;
     }
     PyDataMem_FREE(azero);
 
     na = PyArray_SIZE(ara);
     nb = PyArray_SIZE(arb);
     if (input_flag) {
-	if (arVi->dimensions[theaxis] != (na > nb ? na : nb) - 1) {
-	    PyErr_SetString(PyExc_ValueError,
-			    "The number of initial conditions must be max([len(a),len(b)]) - 1");
-	    goto fail;
-	}
+        if (arVi->dimensions[theaxis] != (na > nb ? na : nb) - 1) {
+            PyErr_SetString(PyExc_ValueError,
+                            "The number of initial conditions must be max([len(a),len(b)]) - 1");
+            goto fail;
+        }
     }
 
     st = RawFilter(arb, ara, arX, arVi, arVf, arY, theaxis, basic_filter);
     if (st) {
-	goto fail;
+        goto fail;
     }
 
     Py_XDECREF(ara);
@@ -152,9 +152,9 @@ static PyObject *sigtools_linear_filter(PyObject * dummy, PyObject * args)
     Py_XDECREF(arVi);
 
     if (!input_flag) {
-	return PyArray_Return(arY);
+        return PyArray_Return(arY);
     } else {
-	return Py_BuildValue("(NN)", arY, arVf);
+        return Py_BuildValue("(NN)", arY, arVf);
     }
 
 
@@ -185,12 +185,12 @@ zfill(const PyArrayObject * x, intp nx, char *xzfilled, intp nxzfilled)
     xzero = PyArray_Zero((PyArrayObject *) x);
 
     if (nx > 0) {
-	for (i = 0; i < nx; ++i) {
-	    copyswap(xzfilled + i * nxl, x->data + i * nxl, 0, NULL);
-	}
+        for (i = 0; i < nx; ++i) {
+            copyswap(xzfilled + i * nxl, x->data + i * nxl, 0, NULL);
+        }
     }
     for (i = nx; i < nxzfilled; ++i) {
-	copyswap(xzfilled + i * nxl, xzero, 0, NULL);
+        copyswap(xzfilled + i * nxl, xzero, 0, NULL);
     }
 
     PyDataMem_FREE(xzero);
@@ -209,9 +209,9 @@ zfill(const PyArrayObject * x, intp nx, char *xzfilled, intp nxzfilled)
  */
 static int
 RawFilter(const PyArrayObject * b, const PyArrayObject * a,
-	  const PyArrayObject * x, const PyArrayObject * zi,
-	  const PyArrayObject * zf, PyArrayObject * y, int axis,
-	  BasicFilterFunction * filter_func)
+          const PyArrayObject * x, const PyArrayObject * zi,
+          const PyArrayObject * zf, PyArrayObject * y, int axis,
+          BasicFilterFunction * filter_func)
 {
     PyArrayIterObject *itx, *ity, *itzi, *itzf;
     intp nitx, i, nxl, nzfl, j;
@@ -221,34 +221,34 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
     PyArray_CopySwapFunc *copyswap = x->descr->f->copyswap;
 
     itx = (PyArrayIterObject *) PyArray_IterAllButAxis((PyObject *) x,
-						       &axis);
+                                                       &axis);
     if (itx == NULL) {
-	PyErr_SetString(PyExc_MemoryError, "Could not create itx");
-	goto fail;
+        PyErr_SetString(PyExc_MemoryError, "Could not create itx");
+        goto fail;
     }
     nitx = itx->size;
 
     ity = (PyArrayIterObject *) PyArray_IterAllButAxis((PyObject *) y,
-						       &axis);
+                                                       &axis);
     if (ity == NULL) {
-	PyErr_SetString(PyExc_MemoryError, "Could not create ity");
-	goto clean_itx;
+        PyErr_SetString(PyExc_MemoryError, "Could not create ity");
+        goto clean_itx;
     }
 
     if (zi != NULL) {
-	itzi = (PyArrayIterObject *) PyArray_IterAllButAxis((PyObject *)
-							    zi, &axis);
-	if (itzi == NULL) {
-	    PyErr_SetString(PyExc_MemoryError, "Could not create itzi");
-	    goto clean_ity;
-	}
+        itzi = (PyArrayIterObject *) PyArray_IterAllButAxis((PyObject *)
+                                                            zi, &axis);
+        if (itzi == NULL) {
+            PyErr_SetString(PyExc_MemoryError, "Could not create itzi");
+            goto clean_ity;
+        }
 
-	itzf = (PyArrayIterObject *) PyArray_IterAllButAxis((PyObject *)
-							    zf, &axis);
-	if (itzf == NULL) {
-	    PyErr_SetString(PyExc_MemoryError, "Could not create itzf");
-	    goto clean_itzi;
-	}
+        itzf = (PyArrayIterObject *) PyArray_IterAllButAxis((PyObject *)
+                                                            zf, &axis);
+        if (itzf == NULL) {
+            PyErr_SetString(PyExc_MemoryError, "Could not create itzf");
+            goto clean_itzi;
+        }
     }
 
     na = PyArray_SIZE(a);
@@ -260,20 +260,20 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
 
     azfilled = malloc(nal * nfilt);
     if (azfilled == NULL) {
-	PyErr_SetString(PyExc_MemoryError, "Could not create azfilled");
-	goto clean_itzf;
+        PyErr_SetString(PyExc_MemoryError, "Could not create azfilled");
+        goto clean_itzf;
     }
     bzfilled = malloc(nbl * nfilt);
     if (bzfilled == NULL) {
-	PyErr_SetString(PyExc_MemoryError, "Could not create bzfilled");
-	goto clean_azfilled;
+        PyErr_SetString(PyExc_MemoryError, "Could not create bzfilled");
+        goto clean_azfilled;
     }
 
     nxl = PyArray_ITEMSIZE(x);
     zfzfilled = malloc(nxl * (nfilt - 1));
     if (zfzfilled == NULL) {
-	PyErr_SetString(PyExc_MemoryError, "Could not create zfzfilled");
-	goto clean_bzfilled;
+        PyErr_SetString(PyExc_MemoryError, "Could not create zfzfilled");
+        goto clean_bzfilled;
     }
     /* Initialize zero filled buffers to 0, so that we can use
      * Py_XINCREF/Py_XDECREF on it for object arrays (necessary for
@@ -290,41 +290,41 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
 
     /* XXX: Check that zf and zi have same type ? */
     if (zf != NULL) {
-	nzfl = PyArray_ITEMSIZE(zf);
+        nzfl = PyArray_ITEMSIZE(zf);
     } else {
-	nzfl = 0;
+        nzfl = 0;
     }
 
     /* Iterate over the input array */
     for (i = 0; i < nitx; ++i) {
-	if (zi != NULL) {
-	    yoyo = itzi->dataptr;
-	    /* Copy initial conditions zi in zfzfilled buffer */
-	    for (j = 0; j < nfilt - 1; ++j) {
-		copyswap(zfzfilled + j * nzfl, yoyo, 0, NULL);
-		yoyo += itzi->strides[axis];
-	    }
-	    PyArray_ITER_NEXT(itzi);
-	} else {
-	    zfill(x, 0, zfzfilled, nfilt - 1);
-	}
+        if (zi != NULL) {
+            yoyo = itzi->dataptr;
+            /* Copy initial conditions zi in zfzfilled buffer */
+            for (j = 0; j < nfilt - 1; ++j) {
+                copyswap(zfzfilled + j * nzfl, yoyo, 0, NULL);
+                yoyo += itzi->strides[axis];
+            }
+            PyArray_ITER_NEXT(itzi);
+        } else {
+            zfill(x, 0, zfzfilled, nfilt - 1);
+        }
 
-	filter_func(bzfilled, azfilled,
-		    itx->dataptr, ity->dataptr, zfzfilled,
-		    nfilt, PyArray_DIM(x, axis), itx->strides[axis],
-		    ity->strides[axis]);
-	PyArray_ITER_NEXT(itx);
-	PyArray_ITER_NEXT(ity);
+        filter_func(bzfilled, azfilled,
+                    itx->dataptr, ity->dataptr, zfzfilled,
+                    nfilt, PyArray_DIM(x, axis), itx->strides[axis],
+                    ity->strides[axis]);
+        PyArray_ITER_NEXT(itx);
+        PyArray_ITER_NEXT(ity);
 
-	/* Copy tmp buffer fo final values back into zf output array */
-	if (zi != NULL) {
-	    yoyo = itzf->dataptr;
-	    for (j = 0; j < nfilt - 1; ++j) {
-		copyswap(yoyo, zfzfilled + j * nzfl, 0, NULL);
-		yoyo += itzf->strides[axis];
-	    }
-	    PyArray_ITER_NEXT(itzf);
-	}
+        /* Copy tmp buffer fo final values back into zf output array */
+        if (zi != NULL) {
+            yoyo = itzf->dataptr;
+            for (j = 0; j < nfilt - 1; ++j) {
+                copyswap(yoyo, zfzfilled + j * nzfl, 0, NULL);
+                yoyo += itzf->strides[axis];
+            }
+            PyArray_ITER_NEXT(itzf);
+        }
     }
 
     /* Free up allocated memory */
@@ -333,8 +333,8 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
     free(azfilled);
 
     if (zi != NULL) {
-	Py_DECREF(itzf);
-	Py_DECREF(itzi);
+        Py_DECREF(itzf);
+        Py_DECREF(itzi);
     }
     Py_DECREF(ity);
     Py_DECREF(itx);
@@ -347,11 +347,11 @@ clean_azfilled:
     free(azfilled);
 clean_itzf:
     if (zf != NULL) {
-	Py_DECREF(itzf);
+        Py_DECREF(itzf);
     }
 clean_itzi:
     if (zi != NULL) {
-	Py_DECREF(itzi);
+        Py_DECREF(itzi);
     }
 clean_ity:
     Py_DECREF(ity);
@@ -371,8 +371,8 @@ fail:
  * #NAME = FLOAT, DOUBLE, EXTENDED#
  */
 static void @NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
-		       intp len_b, uintp len_x, intp stride_X,
-		       intp stride_Y)
+                       intp len_b, uintp len_x, intp stride_X,
+                       intp stride_Y)
 {
     char *ptr_x = x, *ptr_y = y;
     @type@ *ptr_Z, *ptr_b;
@@ -382,37 +382,37 @@ static void @NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
     int k, n;
 
     for (k = 0; k < len_x; k++) {
-	ptr_b = (@type@ *) b;	/* Reset a and b pointers */
-	ptr_a = (@type@ *) a;
-	xn = (@type@ *) ptr_x;
-	yn = (@type@ *) ptr_y;
-	if (len_b > 1) {
-	    ptr_Z = ((@type@ *) Z);
-	    *yn = *ptr_Z + *ptr_b / a0 * *xn;	/* Calculate first delay (output) */
-	    ptr_b++;
-	    ptr_a++;
-	    /* Fill in middle delays */
-	    for (n = 0; n < len_b - 2; n++) {
-		*ptr_Z =
-		    ptr_Z[1] + *xn * (*ptr_b / a0) - *yn * (*ptr_a / a0);
-		ptr_b++;
-		ptr_a++;
-		ptr_Z++;
-	    }
-	    /* Calculate last delay */
-	    *ptr_Z = *xn * (*ptr_b / a0) - *yn * (*ptr_a / a0);
-	} else {
-	    *yn = *xn * (*ptr_b / a0);
-	}
+        ptr_b = (@type@ *) b;   /* Reset a and b pointers */
+        ptr_a = (@type@ *) a;
+        xn = (@type@ *) ptr_x;
+        yn = (@type@ *) ptr_y;
+        if (len_b > 1) {
+            ptr_Z = ((@type@ *) Z);
+            *yn = *ptr_Z + *ptr_b / a0 * *xn;   /* Calculate first delay (output) */
+            ptr_b++;
+            ptr_a++;
+            /* Fill in middle delays */
+            for (n = 0; n < len_b - 2; n++) {
+                *ptr_Z =
+                    ptr_Z[1] + *xn * (*ptr_b / a0) - *yn * (*ptr_a / a0);
+                ptr_b++;
+                ptr_a++;
+                ptr_Z++;
+            }
+            /* Calculate last delay */
+            *ptr_Z = *xn * (*ptr_b / a0) - *yn * (*ptr_a / a0);
+        } else {
+            *yn = *xn * (*ptr_b / a0);
+        }
 
-	ptr_y += stride_Y;	/* Move to next input/output point */
-	ptr_x += stride_X;
+        ptr_y += stride_Y;      /* Move to next input/output point */
+        ptr_x += stride_X;
     }
 }
 
 static void C@NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
-			intp len_b, uintp len_x, intp stride_X,
-			intp stride_Y)
+                        intp len_b, uintp len_x, intp stride_X,
+                        intp stride_Y)
 {
     char *ptr_x = x, *ptr_y = y;
     @type@ *ptr_Z, *ptr_b;
@@ -425,62 +425,62 @@ static void C@NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
 
     a0_mag = a0r * a0r + a0i * a0i;
     for (k = 0; k < len_x; k++) {
-	ptr_b = (@type@ *) b;	/* Reset a and b pointers */
-	ptr_a = (@type@ *) a;
-	xn = (@type@ *) ptr_x;
-	yn = (@type@ *) ptr_y;
-	if (len_b > 1) {
-	    ptr_Z = ((@type@ *) Z);
-	    tmpr = ptr_b[0] * a0r + ptr_b[1] * a0i;
-	    tmpi = ptr_b[1] * a0r - ptr_b[0] * a0i;
-	    /* Calculate first delay (output) */
-	    yn[0] = ptr_Z[0] + (tmpr * xn[0] - tmpi * xn[1]) / a0_mag;
-	    yn[1] = ptr_Z[1] + (tmpi * xn[0] + tmpr * xn[1]) / a0_mag;
-	    ptr_b += 2;
-	    ptr_a += 2;
-	    /* Fill in middle delays */
-	    for (n = 0; n < len_b - 2; n++) {
-		tmpr = ptr_b[0] * a0r + ptr_b[1] * a0i;
-		tmpi = ptr_b[1] * a0r - ptr_b[0] * a0i;
-		ptr_Z[0] =
-		    ptr_Z[2] + (tmpr * xn[0] - tmpi * xn[1]) / a0_mag;
-		ptr_Z[1] =
-		    ptr_Z[3] + (tmpi * xn[0] + tmpr * xn[1]) / a0_mag;
-		tmpr = ptr_a[0] * a0r + ptr_a[1] * a0i;
-		tmpi = ptr_a[1] * a0r - ptr_a[0] * a0i;
-		ptr_Z[0] -= (tmpr * yn[0] - tmpi * yn[1]) / a0_mag;
-		ptr_Z[1] -= (tmpi * yn[0] + tmpr * yn[1]) / a0_mag;
-		ptr_b += 2;
-		ptr_a += 2;
-		ptr_Z += 2;
-	    }
-	    /* Calculate last delay */
+        ptr_b = (@type@ *) b;   /* Reset a and b pointers */
+        ptr_a = (@type@ *) a;
+        xn = (@type@ *) ptr_x;
+        yn = (@type@ *) ptr_y;
+        if (len_b > 1) {
+            ptr_Z = ((@type@ *) Z);
+            tmpr = ptr_b[0] * a0r + ptr_b[1] * a0i;
+            tmpi = ptr_b[1] * a0r - ptr_b[0] * a0i;
+            /* Calculate first delay (output) */
+            yn[0] = ptr_Z[0] + (tmpr * xn[0] - tmpi * xn[1]) / a0_mag;
+            yn[1] = ptr_Z[1] + (tmpi * xn[0] + tmpr * xn[1]) / a0_mag;
+            ptr_b += 2;
+            ptr_a += 2;
+            /* Fill in middle delays */
+            for (n = 0; n < len_b - 2; n++) {
+                tmpr = ptr_b[0] * a0r + ptr_b[1] * a0i;
+                tmpi = ptr_b[1] * a0r - ptr_b[0] * a0i;
+                ptr_Z[0] =
+                    ptr_Z[2] + (tmpr * xn[0] - tmpi * xn[1]) / a0_mag;
+                ptr_Z[1] =
+                    ptr_Z[3] + (tmpi * xn[0] + tmpr * xn[1]) / a0_mag;
+                tmpr = ptr_a[0] * a0r + ptr_a[1] * a0i;
+                tmpi = ptr_a[1] * a0r - ptr_a[0] * a0i;
+                ptr_Z[0] -= (tmpr * yn[0] - tmpi * yn[1]) / a0_mag;
+                ptr_Z[1] -= (tmpi * yn[0] + tmpr * yn[1]) / a0_mag;
+                ptr_b += 2;
+                ptr_a += 2;
+                ptr_Z += 2;
+            }
+            /* Calculate last delay */
 
-	    tmpr = ptr_b[0] * a0r + ptr_b[1] * a0i;
-	    tmpi = ptr_b[1] * a0r - ptr_b[0] * a0i;
-	    ptr_Z[0] = (tmpr * xn[0] - tmpi * xn[1]) / a0_mag;
-	    ptr_Z[1] = (tmpi * xn[0] + tmpr * xn[1]) / a0_mag;
-	    tmpr = ptr_a[0] * a0r + ptr_a[1] * a0i;
-	    tmpi = ptr_a[1] * a0r - ptr_a[0] * a0i;
-	    ptr_Z[0] -= (tmpr * yn[0] - tmpi * yn[1]) / a0_mag;
-	    ptr_Z[1] -= (tmpi * yn[0] + tmpr * yn[1]) / a0_mag;
-	} else {
-	    tmpr = ptr_b[0] * a0r + ptr_b[1] * a0i;
-	    tmpi = ptr_b[1] * a0r - ptr_b[0] * a0i;
-	    yn[0] = (tmpr * xn[0] - tmpi * xn[1]) / a0_mag;
-	    yn[1] = (tmpi * xn[0] + tmpr * xn[1]) / a0_mag;
-	}
+            tmpr = ptr_b[0] * a0r + ptr_b[1] * a0i;
+            tmpi = ptr_b[1] * a0r - ptr_b[0] * a0i;
+            ptr_Z[0] = (tmpr * xn[0] - tmpi * xn[1]) / a0_mag;
+            ptr_Z[1] = (tmpi * xn[0] + tmpr * xn[1]) / a0_mag;
+            tmpr = ptr_a[0] * a0r + ptr_a[1] * a0i;
+            tmpi = ptr_a[1] * a0r - ptr_a[0] * a0i;
+            ptr_Z[0] -= (tmpr * yn[0] - tmpi * yn[1]) / a0_mag;
+            ptr_Z[1] -= (tmpi * yn[0] + tmpr * yn[1]) / a0_mag;
+        } else {
+            tmpr = ptr_b[0] * a0r + ptr_b[1] * a0i;
+            tmpi = ptr_b[1] * a0r - ptr_b[0] * a0i;
+            yn[0] = (tmpr * xn[0] - tmpi * xn[1]) / a0_mag;
+            yn[1] = (tmpi * xn[0] + tmpr * xn[1]) / a0_mag;
+        }
 
-	ptr_y += stride_Y;	/* Move to next input/output point */
-	ptr_x += stride_X;
+        ptr_y += stride_Y;      /* Move to next input/output point */
+        ptr_x += stride_X;
 
     }
 }
 /**end repeat**/
 
 static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
-			intp len_b, uintp len_x, intp stride_X,
-			intp stride_Y)
+                        intp len_b, uintp len_x, intp stride_X,
+                        intp stride_Y)
 {
     char *ptr_x = x, *ptr_y = y;
     PyObject **ptr_Z, **ptr_b;
@@ -492,60 +492,60 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
 
     /* My reference counting might not be right */
     for (k = 0; k < len_x; k++) {
-	ptr_b = (PyObject **) b;	/* Reset a and b pointers */
-	ptr_a = (PyObject **) a;
-	xn = (PyObject **) ptr_x;
-	yn = (PyObject **) ptr_y;
-	if (len_b > 1) {
-	    ptr_Z = ((PyObject **) Z);
-	    /* Calculate first delay (output) */
-	    tmp1 = PyNumber_Multiply(*ptr_b, *xn);
-	    tmp2 = PyNumber_Divide(tmp1, *a0);
-	    tmp3 = PyNumber_Add(tmp2, *ptr_Z);
-	    Py_XDECREF(*yn);
-	    *yn = tmp3;
-	    Py_DECREF(tmp1);
-	    Py_DECREF(tmp2);
-	    ptr_b++;
-	    ptr_a++;
+        ptr_b = (PyObject **) b;        /* Reset a and b pointers */
+        ptr_a = (PyObject **) a;
+        xn = (PyObject **) ptr_x;
+        yn = (PyObject **) ptr_y;
+        if (len_b > 1) {
+            ptr_Z = ((PyObject **) Z);
+            /* Calculate first delay (output) */
+            tmp1 = PyNumber_Multiply(*ptr_b, *xn);
+            tmp2 = PyNumber_Divide(tmp1, *a0);
+            tmp3 = PyNumber_Add(tmp2, *ptr_Z);
+            Py_XDECREF(*yn);
+            *yn = tmp3;
+            Py_DECREF(tmp1);
+            Py_DECREF(tmp2);
+            ptr_b++;
+            ptr_a++;
 
-	    /* Fill in middle delays */
-	    for (n = 0; n < len_b - 2; n++) {
-		tmp1 = PyNumber_Multiply(*xn, *ptr_b);
-		tmp2 = PyNumber_Divide(tmp1, *a0);
-		tmp3 = PyNumber_Add(tmp2, ptr_Z[1]);
-		Py_DECREF(tmp1);
-		Py_DECREF(tmp2);
-		tmp1 = PyNumber_Multiply(*yn, *ptr_a);
-		tmp2 = PyNumber_Divide(tmp1, *a0);
-		Py_DECREF(tmp1);
-		Py_XDECREF(*ptr_Z);
-		*ptr_Z = PyNumber_Subtract(tmp3, tmp2);
-		Py_DECREF(tmp2);
-		Py_DECREF(tmp3);
-		ptr_b++;
-		ptr_a++;
-		ptr_Z++;
-	    }
-	    /* Calculate last delay */
-	    tmp1 = PyNumber_Multiply(*xn, *ptr_b);
-	    tmp3 = PyNumber_Divide(tmp1, *a0);
-	    Py_DECREF(tmp1);
-	    tmp1 = PyNumber_Multiply(*yn, *ptr_a);
-	    tmp2 = PyNumber_Divide(tmp1, *a0);
-	    Py_DECREF(tmp1);
-	    Py_XDECREF(*ptr_Z);
-	    *ptr_Z = PyNumber_Subtract(tmp3, tmp2);
-	    Py_DECREF(tmp2);
-	    Py_DECREF(tmp3);
-	} else {
-	    tmp1 = PyNumber_Multiply(*xn, *ptr_b);
-	    Py_XDECREF(*yn);
-	    *yn = PyNumber_Divide(tmp1, *a0);
-	    Py_DECREF(tmp1);
-	}
+            /* Fill in middle delays */
+            for (n = 0; n < len_b - 2; n++) {
+                tmp1 = PyNumber_Multiply(*xn, *ptr_b);
+                tmp2 = PyNumber_Divide(tmp1, *a0);
+                tmp3 = PyNumber_Add(tmp2, ptr_Z[1]);
+                Py_DECREF(tmp1);
+                Py_DECREF(tmp2);
+                tmp1 = PyNumber_Multiply(*yn, *ptr_a);
+                tmp2 = PyNumber_Divide(tmp1, *a0);
+                Py_DECREF(tmp1);
+                Py_XDECREF(*ptr_Z);
+                *ptr_Z = PyNumber_Subtract(tmp3, tmp2);
+                Py_DECREF(tmp2);
+                Py_DECREF(tmp3);
+                ptr_b++;
+                ptr_a++;
+                ptr_Z++;
+            }
+            /* Calculate last delay */
+            tmp1 = PyNumber_Multiply(*xn, *ptr_b);
+            tmp3 = PyNumber_Divide(tmp1, *a0);
+            Py_DECREF(tmp1);
+            tmp1 = PyNumber_Multiply(*yn, *ptr_a);
+            tmp2 = PyNumber_Divide(tmp1, *a0);
+            Py_DECREF(tmp1);
+            Py_XDECREF(*ptr_Z);
+            *ptr_Z = PyNumber_Subtract(tmp3, tmp2);
+            Py_DECREF(tmp2);
+            Py_DECREF(tmp3);
+        } else {
+            tmp1 = PyNumber_Multiply(*xn, *ptr_b);
+            Py_XDECREF(*yn);
+            *yn = PyNumber_Divide(tmp1, *a0);
+            Py_DECREF(tmp1);
+        }
 
-	ptr_y += stride_Y;	/* Move to next input/output point */
-	ptr_x += stride_X;
+        ptr_y += stride_Y;      /* Move to next input/output point */
+        ptr_x += stride_X;
     }
 }
