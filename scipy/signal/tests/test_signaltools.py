@@ -240,11 +240,17 @@ class TestLinearFilterFloat32(_TestLinearFilter):
 class TestLinearFilterFloat64(_TestLinearFilter):
     dt = np.float64
 
+class TestLinearFilterFloatExtended(_TestLinearFilter):
+    dt = np.longdouble
+
 class TestLinearFilterComplex64(_TestLinearFilter):
     dt = np.complex64
 
 class TestLinearFilterComplex128(_TestLinearFilter):
     dt = np.complex128
+
+class TestLinearFilterComplexxxiExtended28(_TestLinearFilter):
+    dt = np.longcomplex
 
 class TestLinearFilterDecimal(_TestLinearFilter):
     dt = np.dtype(Decimal)
