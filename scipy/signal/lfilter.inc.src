@@ -354,24 +354,28 @@ fail:
  *   dimension of an N-D array.                                  *
  *****************************************************************/
 
-static void FLOAT_filt(char *b, char *a, char *x, char *y, char *Z,
+/**begin repeat
+ * #type = float, double#
+ * #NAME = FLOAT, DOUBLE#
+ */
+static void @NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
 		       intp len_b, uintp len_x, intp stride_X,
 		       intp stride_Y)
 {
     char *ptr_x = x, *ptr_y = y;
-    float *ptr_Z, *ptr_b;
-    float *ptr_a;
-    float *xn, *yn;
-    const float a0 = *((float *) a);
+    @type@ *ptr_Z, *ptr_b;
+    @type@ *ptr_a;
+    @type@ *xn, *yn;
+    const @type@ a0 = *((@type@ *) a);
     int k, n;
 
     for (k = 0; k < len_x; k++) {
-	ptr_b = (float *) b;	/* Reset a and b pointers */
-	ptr_a = (float *) a;
-	xn = (float *) ptr_x;
-	yn = (float *) ptr_y;
+	ptr_b = (@type@ *) b;	/* Reset a and b pointers */
+	ptr_a = (@type@ *) a;
+	xn = (@type@ *) ptr_x;
+	yn = (@type@ *) ptr_y;
 	if (len_b > 1) {
-	    ptr_Z = ((float *) Z);
+	    ptr_Z = ((@type@ *) Z);
 	    *yn = *ptr_Z + *ptr_b / a0 * *xn;	/* Calculate first delay (output) */
 	    ptr_b++;
 	    ptr_a++;
@@ -394,70 +398,27 @@ static void FLOAT_filt(char *b, char *a, char *x, char *y, char *Z,
     }
 }
 
-
-static void DOUBLE_filt(char *b, char *a, char *x, char *y, char *Z,
+static void C@NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
 			intp len_b, uintp len_x, intp stride_X,
 			intp stride_Y)
 {
     char *ptr_x = x, *ptr_y = y;
-    double *ptr_Z, *ptr_b;
-    double *ptr_a;
-    double *xn, *yn;
-    double a0;
-    int k, n;
-
-    a0 = *((double *) a);
-    for (k = 0; k < len_x; k++) {
-	ptr_b = (double *) b;	/* Reset a and b pointers */
-	ptr_a = (double *) a;
-	xn = (double *) ptr_x;
-	yn = (double *) ptr_y;
-	if (len_b > 1) {
-	    ptr_Z = ((double *) Z);
-	    *yn = *ptr_Z + *ptr_b / a0 * *xn;	/* Calculate first delay (output) */
-	    ptr_b++;
-	    ptr_a++;
-	    /* Fill in middle delays */
-	    for (n = 0; n < len_b - 2; n++) {
-		*ptr_Z =
-		    ptr_Z[1] + *xn * (*ptr_b / a0) - *yn * (*ptr_a / a0);
-		ptr_b++;
-		ptr_a++;
-		ptr_Z++;
-	    }
-	    /* Calculate last delay */
-	    *ptr_Z = *xn * (*ptr_b / a0) - *yn * (*ptr_a / a0);
-	} else {
-	    *yn = *xn * (*ptr_b / a0);
-	}
-
-	ptr_y += stride_Y;	/* Move to next input/output point */
-	ptr_x += stride_X;
-    }
-}
-
-
-static void CFLOAT_filt(char *b, char *a, char *x, char *y, char *Z,
-			intp len_b, uintp len_x, intp stride_X,
-			intp stride_Y)
-{
-    char *ptr_x = x, *ptr_y = y;
-    float *ptr_Z, *ptr_b;
-    float *ptr_a;
-    float *xn, *yn;
-    float a0r = ((float *) a)[0];
-    float a0i = ((float *) a)[1];
-    float a0_mag, tmpr, tmpi;
+    @type@ *ptr_Z, *ptr_b;
+    @type@ *ptr_a;
+    @type@ *xn, *yn;
+    @type@ a0r = ((@type@ *) a)[0];
+    @type@ a0i = ((@type@ *) a)[1];
+    @type@ a0_mag, tmpr, tmpi;
     int k, n;
 
     a0_mag = a0r * a0r + a0i * a0i;
     for (k = 0; k < len_x; k++) {
-	ptr_b = (float *) b;	/* Reset a and b pointers */
-	ptr_a = (float *) a;
-	xn = (float *) ptr_x;
-	yn = (float *) ptr_y;
+	ptr_b = (@type@ *) b;	/* Reset a and b pointers */
+	ptr_a = (@type@ *) a;
+	xn = (@type@ *) ptr_x;
+	yn = (@type@ *) ptr_y;
 	if (len_b > 1) {
-	    ptr_Z = ((float *) Z);
+	    ptr_Z = ((@type@ *) Z);
 	    tmpr = ptr_b[0] * a0r + ptr_b[1] * a0i;
 	    tmpi = ptr_b[1] * a0r - ptr_b[0] * a0i;
 	    /* Calculate first delay (output) */
@@ -503,71 +464,7 @@ static void CFLOAT_filt(char *b, char *a, char *x, char *y, char *Z,
 
     }
 }
-
-
-static void CDOUBLE_filt(char *b, char *a, char *x, char *y, char *Z,
-			 intp len_b, uintp len_x, intp stride_X,
-			 intp stride_Y)
-{
-    char *ptr_x = x, *ptr_y = y;
-    double *ptr_Z, *ptr_b;
-    double *ptr_a;
-    double *xn, *yn;
-    double a0r = ((double *) a)[0];
-    double a0i = ((double *) a)[1];
-    double a0_mag, tmpr, tmpi;
-    int k, n;
-
-    a0_mag = a0r * a0r + a0i * a0i;
-    for (k = 0; k < len_x; k++) {
-	ptr_b = (double *) b;	/* Reset a and b pointers */
-	ptr_a = (double *) a;
-	xn = (double *) ptr_x;
-	yn = (double *) ptr_y;
-	if (len_b > 1) {
-	    ptr_Z = ((double *) Z);
-	    tmpr = ptr_b[0] * a0r + ptr_b[1] * a0i;
-	    tmpi = ptr_b[1] * a0r - ptr_b[0] * a0i;
-	    /* Calculate first delay (output) */
-	    yn[0] = ptr_Z[0] + (tmpr * xn[0] - tmpi * xn[1]) / a0_mag;
-	    yn[1] = ptr_Z[1] + (tmpi * xn[0] + tmpr * xn[1]) / a0_mag;
-	    ptr_b += 2;
-	    ptr_a += 2;
-	    /* Fill in middle delays */
-	    for (n = 0; n < len_b - 2; n++) {
-		tmpr = ptr_b[0] * a0r + ptr_b[1] * a0i;
-		tmpi = ptr_b[1] * a0r - ptr_b[0] * a0i;
-		ptr_Z[0] =
-		    ptr_Z[2] + (tmpr * xn[0] - tmpi * xn[1]) / a0_mag;
-		ptr_Z[1] =
-		    ptr_Z[3] + (tmpi * xn[0] + tmpr * xn[1]) / a0_mag;
-		tmpr = ptr_a[0] * a0r + ptr_a[1] * a0i;
-		tmpi = ptr_a[1] * a0r - ptr_a[0] * a0i;
-		ptr_Z[0] -= (tmpr * yn[0] - tmpi * yn[1]) / a0_mag;
-		ptr_Z[1] -= (tmpi * yn[0] + tmpr * yn[1]) / a0_mag;
-		ptr_b += 2;
-		ptr_a += 2;
-		ptr_Z += 2;
-	    }
-	    /* Calculate last delay */
-	    tmpr = ptr_b[0] * a0r + ptr_b[1] * a0i;
-	    tmpi = ptr_b[1] * a0r - ptr_b[0] * a0i;
-	    ptr_Z[0] = (tmpr * xn[0] - tmpi * xn[1]) / a0_mag;
-	    ptr_Z[1] = (tmpi * xn[0] + tmpr * xn[1]) / a0_mag;
-	    tmpr = ptr_a[0] * a0r + ptr_a[1] * a0i;
-	    tmpi = ptr_a[1] * a0r - ptr_a[0] * a0i;
-	    ptr_Z[0] -= (tmpr * yn[0] - tmpi * yn[1]) / a0_mag;
-	    ptr_Z[1] -= (tmpi * yn[0] + tmpr * yn[1]) / a0_mag;
-	} else {
-	    tmpr = ptr_b[0] * a0r + ptr_b[1] * a0i;
-	    tmpi = ptr_b[1] * a0r - ptr_b[0] * a0i;
-	    yn[0] = (tmpr * xn[0] - tmpi * xn[1]) / a0_mag;
-	    yn[1] = (tmpi * xn[0] + tmpr * xn[1]) / a0_mag;
-	}
-	ptr_y += stride_Y;	/* Move to next input/output point */
-	ptr_x += stride_X;
-    }
-}
+/**end repeat**/
 
 static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
 			intp len_b, uintp len_x, intp stride_X,
