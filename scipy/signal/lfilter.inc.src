@@ -91,7 +91,6 @@ static PyObject *sigtools_linear_filter(PyObject * dummy, PyObject * args)
     }
 
     if (Vi != NULL) {
-        Py_ssize_t nvi;
         arVi = (PyArrayObject *) PyArray_FromObject(Vi, typenum,
                                                     arX->nd, arX->nd);
         if (arVi == NULL)
