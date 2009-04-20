@@ -49,7 +49,8 @@ static char doc_linear_filter[] =
 /*
  * XXX: Error checking not done yet
  */
-static PyObject *sigtools_linear_filter(PyObject * dummy, PyObject * args)
+static PyObject*
+sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * args)
 {
     PyObject *b, *a, *X, *Vi;
     PyArrayObject *arY, *arb, *ara, *arX, *arVi, *arVf;
@@ -378,7 +379,8 @@ static void @NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
     @type@ *ptr_a;
     @type@ *xn, *yn;
     const @type@ a0 = *((@type@ *) a);
-    int k, n;
+    intp n;
+    uintp k;
 
     for (k = 0; k < len_x; k++) {
         ptr_b = (@type@ *) b;   /* Reset a and b pointers */
@@ -420,7 +422,8 @@ static void C@NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
     @type@ a0r = ((@type@ *) a)[0];
     @type@ a0i = ((@type@ *) a)[1];
     @type@ a0_mag, tmpr, tmpi;
-    int k, n;
+    intp n;
+    uintp k;
 
     a0_mag = a0r * a0r + a0i * a0i;
     for (k = 0; k < len_x; k++) {
@@ -487,7 +490,8 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
     PyObject **xn, **yn;
     PyObject **a0 = (PyObject **) a;
     PyObject *tmp1, *tmp2, *tmp3;
-    int k, n;
+    intp n;
+    uintp k;
 
     /* My reference counting might not be right */
     for (k = 0; k < len_x; k++) {
