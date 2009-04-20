@@ -9,8 +9,8 @@ def configuration(parent_package='',top_path=None):
 
     config.add_extension('sigtools',
                          sources=['sigtoolsmodule.c',
-                                  'firfilter.c','medianfilter.c'],
-                         depends = ['sigtools.h', 'lfilter.c']
+                                  'firfilter.c','medianfilter.c', 'lfilter.inc.src'],
+                         depends = ['sigtools.h']
     )
 
     config.add_extension('spline',

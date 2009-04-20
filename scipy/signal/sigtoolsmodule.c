@@ -1890,7 +1890,7 @@ static PyObject *sigtools_median2d(PyObject *dummy, PyObject *args)
 
 }
 
-#include "lfilter.c"
+#include "lfilter.inc"
 
 static struct PyMethodDef toolbox_module_methods[] = {
 	{"_correlateND", sigtools_correlateND, METH_VARARGS, doc_correlateND},
