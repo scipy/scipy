@@ -126,7 +126,8 @@ static int increment(intp *ret_ind, int nd, intp *max_ind) {
  */
 
 #define MAKE_MultAdd(NTYPE, ctype) \
-static void NTYPE ## _MultAdd(char *ip1, intp is1, char *ip2, intp is2, char *op, \
+static void NTYPE ## _MultAdd(char *ip1, intp NPY_UNUSED(is1), \
+                          char *ip2, intp NPY_UNUSED(is2), char *op, \
 			  intp *dims1, intp *dims2, int ndims, intp nels2, int check, \
 			  intp *loop_ind, intp *temp_ind, uintp *offset) \
 {									\
@@ -172,7 +173,8 @@ MAKE_MultAdd(DOUBLE, double)
 MAKE_MultAdd(LONGDOUBLE, longdouble)
 
 #define MAKE_CMultAdd(NTYPE, ctype) \
-static void NTYPE ## _MultAdd(char *ip1, intp is1, char *ip2, intp is2, char *op, \
+static void NTYPE ## _MultAdd(char *ip1, intp NPY_UNUSED(is1), char *ip2, \
+                              intp NPY_UNUSED(is2), char *op, \
 			      intp *dims1, intp *dims2, int ndims, intp nels2, int check, \
 			      intp *loop_ind, intp *temp_ind, uintp *offset) \
 { \
@@ -1229,7 +1231,7 @@ static void Py_copy_info(Generic_Array *gen, PyArrayObject *py_arr) {
 
 static char doc_correlateND[] = "out = _correlateND(a,kernel,mode) \n\n   mode = 0 - 'valid', 1 - 'same', \n  2 - 'full' (default)";
 
-static PyObject *sigtools_correlateND(PyObject *dummy, PyObject *args) {
+static PyObject *sigtools_correlateND(PyObject *NPY_UNUSED(dummy), PyObject *args) {
 	PyObject *kernel, *a0;
 	PyArrayObject *ap1, *ap2, *ret;
 	Generic_Array in1, in2, out;
@@ -1326,7 +1328,7 @@ static char doc_convolve2d[] = "out = _convolve2d(in1, in2, flip, mode, boundary
 
 extern int pylab_convolve_2d(char*,intp*,char*,intp*,char*,intp*,intp*,intp*,int,char*);
 
-static PyObject *sigtools_convolve2d(PyObject *dummy, PyObject *args) {
+static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args) {
 
     PyObject *in1=NULL, *in2=NULL, *fill_value=NULL;
     int mode=2, boundary=0, typenum, flag, flip=1, ret;
@@ -1451,7 +1453,7 @@ fail:
 
 static char doc_order_filterND[] = "out = _order_filterND(a,domain,order)";
 
-static PyObject *sigtools_order_filterND(PyObject *dummy, PyObject *args) {
+static PyObject *sigtools_order_filterND(PyObject *NPY_UNUSED(dummy), PyObject *args) {
 	PyObject *domain, *a0;
 	int order=0;
 	
@@ -1464,7 +1466,7 @@ static PyObject *sigtools_order_filterND(PyObject *dummy, PyObject *args) {
 
 static char doc_remez[] = "h = _remez(numtaps, bands, des, weight, type, Hz, maxiter, grid_density) \n  returns the optimal (in the Chebyshev/minimax sense) FIR filter impulse \n  response given a set of band edges, the desired response on those bands,\n  and the weight given to the error in those bands.  Bands is a monotonic\n   vector with band edges given in frequency domain where Hz is the sampling\n   frequency.";
  
-static PyObject *sigtools_remez(PyObject *dummy, PyObject *args) {
+static PyObject *sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args) {
         PyObject *bands, *des, *weight;
         int k, numtaps, numbands, type = BANDPASS, err; 
 	PyArrayObject *a_bands=NULL, *a_des=NULL, *a_weight=NULL;
@@ -1564,7 +1566,7 @@ extern void f_medfilt2(float*,float*,intp*,intp*);
 extern void d_medfilt2(double*,double*,intp*,intp*);
 extern void b_medfilt2(unsigned char*,unsigned char*,intp*,intp*);
 
-static PyObject *sigtools_median2d(PyObject *dummy, PyObject *args)
+static PyObject *sigtools_median2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 {
     PyObject *image=NULL, *size=NULL;
     int typenum;
