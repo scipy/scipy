@@ -465,7 +465,7 @@ static struct PyMethodDef toolbox_module_methods[] = {
     {"sepfir2d", FIRsepsym2d, METH_VARARGS, doc_FIRsepsym2d},
     {"symiirorder1", IIRsymorder1, METH_VARARGS, doc_IIRsymorder1},
     {"symiirorder2", IIRsymorder2, METH_VARARGS, doc_IIRsymorder2}, 
-    {NULL,		NULL, 0}		/* sentinel */
+    {NULL, NULL, 0, NULL}		/* sentinel */
 };
 
 /* Initialization function for the module (*must* be called initXXXXX) */
