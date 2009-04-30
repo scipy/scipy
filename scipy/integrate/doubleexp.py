@@ -105,6 +105,7 @@ def quad_de(func, a, b, args=(), tol=1e-10, vec_func=True):
             raise_bad_value(level)
 
         if current_delta == 0.0:
+            error_estimate = 0.0
             break
 
         if level == 1:
