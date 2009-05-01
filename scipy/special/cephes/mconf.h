@@ -102,8 +102,12 @@ typedef struct
 
 /* This is kind of improper, as the byte-order of floats may not
  * be the same as the byte-order of ints. However, it works.
+ *
+ * SciPy note: we bypass this detection and set UNK to 1 to prevent Endianess
+ * issues.
  */
 
+/*
 #include <pyconfig.h>
 #ifdef WORDS_BIGENDIAN
 # define MIEEE 1
@@ -112,6 +116,7 @@ typedef struct
 # define IBMPC 1
 # define BIGENDIAN 0
 #endif
+*/
 
 /* UNKnown arithmetic, invokes coefficients given in
  * normal decimal format.  Beware of range boundary
@@ -119,7 +124,12 @@ typedef struct
  * roundoff problems in pow.c:
  * (Sun SPARCstation)
  */
-/* #define UNK 1 */
+
+/* SciPy note: by defining UNK, we prevent the compiler from
+ * casting integers to floating point numbers.  If the Endianness
+ * is detected incorrectly, this causes problems on some platforms.
+ */
+#define UNK 1
 
 /* Define this `volatile' if your compiler thinks
  * that floating point arithmetic obeys the associative
