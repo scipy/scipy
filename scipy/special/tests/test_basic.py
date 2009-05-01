@@ -340,7 +340,9 @@ class TestCephes(TestCase):
         cephes.nctdtrit(.1,0.2,.5)
 
     def test_ndtr(self):
-        assert_equal(cephes.ndtr(0),0.5)
+        assert_equal(cephes.ndtr(0), 0.5)
+        assert_almost_equal(cephes.ndtr(1), 0.84134474606)
+
     def test_ndtri(self):
         assert_equal(cephes.ndtri(0.5),0.0)
     def test_nrdtrimn(self):
