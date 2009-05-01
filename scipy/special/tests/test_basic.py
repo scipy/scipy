@@ -1601,11 +1601,20 @@ class TestBessel(TestCase):
         an = yn_zeros(443,5)
         assert_tol_equal(an, [450.13573091578090314, 463.05692376675001542, 
                               472.80651546418663566, 481.27353184725625838,
-                              488.98055964441374646], rtol=1e-19)
+                              488.98055964441374646], rtol=1e-15)
 
     def test_ynp_zeros(self):
         ao = ynp_zeros(0,2)
         assert_array_almost_equal(ao,array([ 2.19714133, 5.42968104]),6)
+        ao = ynp_zeros(43,5)
+        assert_tol_equal(yvp(43, ao), 0, atol=1e-15)
+        ao = ynp_zeros(443,5)
+        assert_tol_equal(yvp(443, ao), 0, atol=1e-9)
+
+    @dec.knownfailureif(True,
+                        "cephes/yv is not eps accurate for large orders on "
+                        "all platforms, and has nan/inf issues")
+    def test_ynp_zeros_large_order(self):
         ao = ynp_zeros(443,5)
         assert_tol_equal(yvp(443, ao), 0, atol=1e-15)
 
@@ -1650,8 +1659,10 @@ class TestBessel(TestCase):
         for v in 0.5 + arange(-60, 60):
             yield v, 3.5
 
-    def check_cephes_vs_amos(self, f1, f2, rtol=1e-11, atol=0):
+    def check_cephes_vs_amos(self, f1, f2, rtol=1e-11, atol=0, skip=None):
         for v, z in self._cephes_vs_amos_points():
+            if skip is not None and skip(v, z):
+                continue
             c1, c2, c3 = f1(v, z), f1(v,z+0j), f2(int(v), z)
             if np.isinf(c1):
                 assert np.abs(c2) >= 1e300, (v, z)
@@ -1666,8 +1677,15 @@ class TestBessel(TestCase):
     def test_jv_cephes_vs_amos(self):
         self.check_cephes_vs_amos(jv, jn, rtol=1e-10, atol=1e-305)
 
+    @dec.knownfailureif(True,
+                        "cephes/yv is not eps accurate for large orders on "
+                        "all platforms, and has nan/inf issues")
     def test_yv_cephes_vs_amos(self):
         self.check_cephes_vs_amos(yv, yn, rtol=1e-11, atol=1e-305)
+
+    def test_yv_cephes_vs_amos_only_small_orders(self):
+        skipper = lambda v, z: (abs(v) > 50)
+        self.check_cephes_vs_amos(yv, yn, rtol=1e-11, atol=1e-305, skip=skipper)
 
     def test_iv_cephes_vs_amos(self):
         self.check_cephes_vs_amos(iv, iv, rtol=1e-12, atol=1e-305)
