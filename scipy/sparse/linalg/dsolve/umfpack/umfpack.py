@@ -268,6 +268,11 @@ class UmfpackContext( Struct ):
 
         maxCond .. if extimated condition number is greater than maxCond,
                    a warning is printed (default: 1e12)"""
+        if _um is None:
+            raise ImportError('Scipy was built without UMFPACK support. ' 
+                              'You need to install the UMFPACK library and ' 
+                              'header files before building scipy.')
+
         self.maxCond = 1e12
         Struct.__init__( self, **kwargs )
 
