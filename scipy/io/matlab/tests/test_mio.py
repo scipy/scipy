@@ -560,3 +560,22 @@ def test_skip_variable():
     #
     d = factory.get_variables('second')
     yield assert_true, d.has_key('second')
+
+
+def test_empty_struct():
+    # ticket 885
+    filename = join(test_data_path,'test_empty_struct.mat')
+    # before ticket fix, this would crash with ValueError, empty data
+    # type
+    d = loadmat(filename, struct_as_record=True)
+    a = d['a']
+    yield assert_equal, a.shape, (1,1)
+    yield assert_equal, a.dtype, np.dtype(np.object)
+    yield assert_true, a[0,0] is None
+    stream = StringIO()
+    arr = np.array((), dtype='U')
+    # before ticket fix, this used to give data type not understood
+    savemat(stream, {'arr':arr})
+    d = loadmat(stream)
+    a2 = d['arr']
+    yield assert_array_equal, a2, arr

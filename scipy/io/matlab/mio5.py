@@ -14,8 +14,8 @@ import os
 import time
 import sys
 import zlib
-from zlibstreams import StubbyZlibInputStream
 from StringIO import StringIO
+from cStringIO import StringIO as cStringIO
 from copy import copy as pycopy
 import warnings
 
@@ -377,8 +377,8 @@ class Mat5ZArrayReader(Mat5ArrayReader):
     '''
     def __init__(self, array_reader, byte_count):
         super(Mat5ZArrayReader, self).__init__(
-            StubbyZlibInputStream(array_reader.mat_stream,
-                            byte_count),
+            cStringIO(zlib.decompress(
+                        array_reader.mat_stream.read(byte_count))),
             array_reader.dtypes,
             array_reader.processor_func,
             array_reader.codecs,
@@ -521,8 +521,13 @@ class Mat5StructMatrixGetter(Mat5MatrixGetter):
         tupdims = tuple(self.header['dims'][::-1])
         length = np.product(tupdims)
         if self.struct_as_record:
-            result = np.empty(length, dtype=[(field_name, object)
-                                             for field_name in field_names])
+            if not len(field_names):
+                # If there are no field names, there is no dtype
+                # representation we can use, falling back to empty
+                # object
+                return np.empty(tupdims, dtype=object).T
+            dtype = [(field_name, object) for field_name in field_names]
+            result = np.empty(length, dtype=dtype)
             for i in range(length):
                 for field_name in field_names:
                     result[i][field_name] = self.read_element()
@@ -848,7 +853,7 @@ class Mat5CharWriter(Mat5MatrixWriter):
         # We need to do our own transpose (not using the normal
         # write routines that do this for us)
         arr = self.arr.T.copy()
-        if self.arr.dtype.kind == 'U':
+        if self.arr.dtype.kind == 'U' and arr.size:
             # Recode unicode using self.codec
             n_chars = np.product(shape)
             st_arr = np.ndarray(shape=(),
@@ -1019,6 +1024,17 @@ class Mat5WriterGetter(object):
         array([1])
         >>> mwg.to_writeable(object()) # not convertable
 
+        dict keys with legal characters are convertible
+
+        >>> mwg.to_writeable({'a':1})['a']
+        array([1], dtype=object)
+
+        but not with illegal characters
+
+        >>> mwg.to_writeable({'1':1}) is None
+        True
+        >>> mwg.to_writeable({'_a':1}) is None
+        True
         '''
         if isinstance(source, np.ndarray):
             return source
@@ -1026,15 +1042,15 @@ class Mat5WriterGetter(object):
             return None
         # Objects that have dicts
         if hasattr(source, '__dict__'):
-            source = source.__dict__
+            source = dict((key, value) for key, value in source.__dict__.items()
+                          if not key.startwith('_'))
         # Mappings or object dicts
         if hasattr(source, 'keys'):
             dtype = []
             values = []
             for field, value in source.items():
                 if (isinstance(field, basestring) and 
-                    not field.startswith('_') and
-                    not field[0] in '0123456789'):
+                    not field[0] in '_0123456789'):
                     dtype.append((field,object))
                     values.append(value)
             if dtype:

@@ -30,7 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 '''
 
-from StringIO import StringIO
+from cStringIO import StringIO
 from zlib import decompressobj
 
 
@@ -105,6 +105,7 @@ class ZlibInputStream(object):
         self.exhausted = False
         self.unzipped_pos = 0
         self.data = StringIO()
+        self._data_left = 0
         self._unzipper = decompressobj()
         # number of zlib compressed bytes read
         self._z_bytes_read = 0 
@@ -163,9 +164,12 @@ class ZlibInputStream(object):
             return
         # read until we have enough bytes in the buffer
         read_to_end = bytes == -1
-        s_data = StringIO(self.data.read())
-        s_data.seek(0, 2) # seek to end
-        while read_to_end or (bytes - s_data.pos) > 0:
+        # Make new StringIO object - low cost.  Note we can't pass in
+        # the string to the constructor, because the cStringIO
+        # StringIO returns a read-only object in that case
+        s_data = StringIO()
+        s_data.write(self.data.read())
+        while read_to_end or (bytes - s_data.tell()) > 0:
             z_n_to_fetch = self._blocksize_iterator.next()
             if z_n_to_fetch == 0:
                 self.exhausted = True
@@ -178,6 +182,7 @@ class ZlibInputStream(object):
                 s_data.write(self._unzipper.flush())
                 self.exhausted = True
                 break
+        self._data_left = s_data.tell()
         s_data.seek(0)
         self.data = s_data
         
@@ -234,11 +239,12 @@ class ZlibInputStream(object):
             string containing read data
 
         '''
-        if (bytes == -1 or
-            (self.data.len-self.data.pos) < bytes):
+        if bytes == -1 or self._data_left < bytes:
             self.__fill(bytes)
         data = self.data.read(bytes)
-        self.unzipped_pos += len(data)
+        n = len(data)
+        self._data_left -= n
+        self.unzipped_pos += n
         return data
     
     def readline(self):
