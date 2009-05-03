@@ -46,7 +46,13 @@ def get_blas_funcs(names,arrays=(),debug=0):
     for name in names:
         if name=='ger' and dtypechar in 'FD':
             name = 'gerc'
+        elif name in ('dotc', 'dotu') and dtypechar in 'fd':
+            name = 'dot'
         func_name = required_prefix + name
+        if name == 'nrm2' and dtypechar == 'D':
+            func_name = 'dznrm2'
+        elif name == 'nrm2' and dtypechar == 'F':
+            func_name = 'scnrm2'
         func = getattr(m1,func_name,None)
         if func is None:
             func = getattr(m2,func_name)
