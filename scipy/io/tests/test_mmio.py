@@ -243,7 +243,7 @@ class TestMMIOCoordinate(TestCase):
         b = mmread(fn).todense()
         assert_array_almost_equal(a,b)
 
-    def test_read_symmetric(self):
+    def test_read_symmetric_pattern(self):
         """read a symmetric pattern matrix"""
         fn = mktemp()
         f = open(fn,'w')
