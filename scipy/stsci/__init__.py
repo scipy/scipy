@@ -1,5 +1,5 @@
-import convolve
-import image
+from scipy.stsci import convolve
+from scipy.stsci import image
 
 __all__ = ['convolve','image']
 
