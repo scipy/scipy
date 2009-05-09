@@ -3,8 +3,7 @@ import numpy
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
-    config = Configuration('convolve',parent_package,top_path,
-                           package_path='lib')
+    config = Configuration('convolve',parent_package,top_path)
 
     config.add_extension('_correlate',
                          sources=["src/_correlatemodule.c"],
