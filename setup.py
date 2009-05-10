@@ -20,6 +20,9 @@ DOCLINES = __doc__.split("\n")
 
 import os
 import sys
+import warnings
+import subprocess
+import re
 
 CLASSIFIERS = """\
 Development Status :: 4 - Beta
@@ -37,11 +40,70 @@ Operating System :: MacOS
 
 """
 
+MAJOR               = 0
+MINOR               = 8
+MICRO               = 0
+ISRELEASED          = False
+VERSION             = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
+
 # BEFORE importing distutils, remove MANIFEST. distutils doesn't properly
 # update it when the contents of directories change.
 if os.path.exists('MANIFEST'): os.remove('MANIFEST')
 
 os.environ['NO_SCIPY_IMPORT']='SciPy/setup.py'
+
+# Return the svn version as a string, raise a ValueError otherwise
+def svn_version():
+    try:
+        out = subprocess.Popen(['svn', 'info'], stdout=subprocess.PIPE,
+                env={'LC_ALL': 'C'}).communicate()[0]
+    except OSError:
+        warnings.warn(" --- Could not run svn info --- ")
+        return ""
+
+    r = re.compile('Revision: ([0-9]+)')
+    svnver = None
+    for line in out.split('\n'):
+        m = r.match(line)
+        if m:
+            svnver = m.group(1)
+
+    if not svnver:
+        raise ValueError("Error while parsing svn version ?")
+    return svnver
+
+FULLVERSION = VERSION
+if not ISRELEASED:
+    FULLVERSION += '.dev'
+    # If in git or something, bypass the svn rev
+    if os.path.exists('.svn'):
+        FULLVERSION += svn_version()
+
+def write_version_py(filename='scipy/version.py'):
+    cnt = """\
+# THIS FILE IS GENERATED FROM SCIPY SETUP.PY
+short_version='%(version)s'
+version='%(version)s'
+release=%(isrelease)s
+
+if not release:
+    version += '.dev'
+    import os
+    svn_version_file = os.path.join(os.path.dirname(__file__),
+                                    '__svn_version__.py')
+    if os.path.isfile(svn_version_file):
+        import imp
+        svn = imp.load_module('scipy.__svn_version__',
+                              open(svn_version_file),
+                              svn_version_file,
+                              ('.py','U',1))
+        version += svn.version
+"""
+    a = open(filename, 'w')
+    try:
+        a.write(cnt % {'version': VERSION, 'isrelease': str(ISRELEASED)})
+    finally:
+        a.close()
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -54,7 +116,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('scipy')
     config.add_data_files(('scipy','*.txt'))
 
-    config.get_version('scipy/version.py') # sets config.version
+    config.get_version('scipy/version.py')
 
     return config
 
@@ -68,6 +130,10 @@ def setup_package():
     os.chdir(local_path)
     sys.path.insert(0,local_path)
     sys.path.insert(0,os.path.join(local_path,'scipy')) # to retrive version
+
+    # Rewrite the version file everytime
+    if os.path.exists('scipy/version.py'): os.remove('scipy/version.py')
+    write_version_py()
 
     try:
         setup(
