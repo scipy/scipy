@@ -20,7 +20,7 @@
 #    test_sph_in
 #    test_sph_jn
 #    test_sph_kn
-
+import numpy as np
 from numpy import array
 
 from numpy.testing import *
