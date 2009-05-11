@@ -299,7 +299,7 @@ def prepare_nsis_script(pyver, numver):
     if not os.path.exists(SUPERPACK_BUILD):
         os.makedirs(SUPERPACK_BUILD)
 
-    tpl = os.path.join('tools/win32build/nsis_scripts', 'scipy-superinstaller.nsi.in')
+    tpl = os.path.join('tools/win32/build_scripts/nsis_scripts', 'scipy-superinstaller.nsi.in')
     source = open(tpl, 'r')
     target = open(os.path.join(SUPERPACK_BUILD, 'scipy-superinstaller.nsi'), 'w')
 
