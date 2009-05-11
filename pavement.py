@@ -251,9 +251,9 @@ def sdist():
 #------------------
 # Wine-based builds
 #------------------
-SSE3_CFG = {'BLAS': r'C:\local\lib\yop\sse3', 'LAPACK': r'C:\local\lib\yop\sse3'}
-SSE2_CFG = {'BLAS': r'C:\local\lib\yop\sse2', 'LAPACK': r'C:\local\lib\yop\sse2'}
-NOSSE_CFG = {'BLAS': r'C:\local\lib\yop\nosse', 'LAPACK': r'C:\local\lib\yop\nosse'}
+SSE3_CFG = {'BLAS': 'None', 'LAPACK': 'None', 'ATLAS': r'C:\local\lib\yop\sse3'}
+SSE2_CFG = {'BLAS': 'None', 'LAPACK': 'None', 'ATLAS': r'C:\local\lib\yop\sse2'}
+NOSSE_CFG = {'ATLAS': 'None', 'BLAS': r'C:\local\lib\yop\nosse', 'LAPACK': r'C:\local\lib\yop\nosse'}
 
 SITECFG = {"sse2" : SSE2_CFG, "sse3" : SSE3_CFG, "nosse" : NOSSE_CFG}
 
