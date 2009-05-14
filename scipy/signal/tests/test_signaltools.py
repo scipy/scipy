@@ -249,15 +249,5 @@ class TestLinearFilterComplex128(_TestLinearFilter):
 class TestLinearFilterDecimal(_TestLinearFilter):
     dt = np.dtype(Decimal)
 
-class TestFiltFilt:
-    def test_basic(self):
-        out = signal.filtfilt([1,2,3], [1,2,3], np.arange(12))
-        assert_equal(out, arange(12))
-
-class TestDecimate:
-    def test_basic(self):
-        x = np.arange(6)
-        assert_array_equal(signal.decimate(x, 2, n=1).round(), x[::2])
-
 if __name__ == "__main__":
     run_module_suite()
