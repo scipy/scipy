@@ -11,12 +11,12 @@ from tempfile import mkdtemp
 import warnings
 import shutil
 import gzip
-import copy
 
 from numpy.testing import \
+     assert_array_equal, \
      assert_array_almost_equal, \
      assert_equal, \
-     assert_raises, dec
+     assert_raises
 
 from nose.tools import assert_true
 
@@ -24,7 +24,9 @@ import numpy as np
 from numpy import array
 import scipy.sparse as SP
 
-from scipy.io.matlab.mio import loadmat, savemat, find_mat_file
+from scipy.io.matlab.miobase import matdims
+from scipy.io.matlab.mio import loadmat, savemat, find_mat_file, \
+     mat_reader_factory
 from scipy.io.matlab.mio5 import MatlabObject, MatFile5Writer, \
      Mat5NumericWriter
 
@@ -32,14 +34,10 @@ test_data_path = join(dirname(__file__), 'data')
 
 def mlarr(*args, **kwargs):
     ''' Convenience function to return matlab-compatible 2D array
-    Note that matlab writes empty shape as (0,0) - replicated here
     '''
     arr = np.array(*args, **kwargs)
-    if arr.size:
-        return np.atleast_2d(arr)
-    # empty elements return as shape (0,0)
-    return arr.reshape((0,0))
-
+    arr.shape = matdims(arr)
+    return arr
 
 # Define cases to test
 theta = np.pi/4*np.arange(9,dtype=float).reshape(1,9)
@@ -87,22 +85,28 @@ case_table4.append(
      'expected': {'testonechar': array([u'r'])},
      })
 # Cell arrays stored as object arrays
-CA = mlarr([
-    [], # placeholder, object array constructor wierdness otherwise
-    mlarr(1),
-    mlarr([1,2]),
-    mlarr([1,2,3])], dtype=object).reshape(1,-1)
+CA = mlarr(( # tuple for object array creation
+        [],
+        mlarr([1]),
+        mlarr([[1,2]]),
+        mlarr([[1,2,3]])), dtype=object).reshape(1,-1)
 CA[0,0] = array(
     [u'This cell contains this string and 3 arrays of increasing length'])
 case_table5 = [
     {'name': 'cell',
      'expected': {'testcell': CA}}]
-CAE = mlarr([
+CAE = mlarr(( # tuple for object array creation
     mlarr(1),
     mlarr(2),
     mlarr([]),
     mlarr([]),
-    mlarr(3)], dtype=object).reshape(1,-1)
+    mlarr(3)), dtype=object).reshape(1,-1)
+objarr = np.empty((1,1),dtype=object)
+objarr[0,0] = mlarr(1)
+case_table5.append(
+    {'name': 'scalarcell',
+     'expected': {'testscalarcell': objarr}
+     })
 case_table5.append(
     {'name': 'emptycell',
      'expected': {'testemptycell': CAE}})
@@ -177,22 +181,42 @@ case_table5.append(
     {'name': 'unicode',
     'expected': {'testunicode': array([u_str])}
     })
-# These should also have matlab load equivalents,
-# but I can't get to matlab at the moment
-case_table5_rt = case_table5[:]
-case_table5_rt.append(
-    {'name': 'sparsefloat',
-     'expected': {'testsparsefloat':
-                  SP.coo_matrix(array([[1,0,2],[0,-3.5,0]]))},
+case_table5.append(
+    {'name': 'sparse',
+     'expected': {'testsparse': SP.coo_matrix(A)},
      })
-case_table5_rt.append(
+case_table5.append(
     {'name': 'sparsecomplex',
-     'expected': {'testsparsecomplex':
-                  SP.coo_matrix(array([[-1+2j,0,2],[0,-3j,0]]))},
+     'expected': {'testsparsecomplex': SP.coo_matrix(B)},
      })
+# We cannot read matlab functions for the moment
+case_table5.append(
+    {'name': 'func',
+     'expected': {'testfunc': 'Read error: Cannot read matlab functions'},
+     })
+
+case_table5_rt = case_table5[:-1] # not the function read write
+# Inline functions can't be concatenated in matlab, so RT only
 case_table5_rt.append(
     {'name': 'objectarray',
      'expected': {'testobjectarray': np.repeat(MO, 2).reshape(1,2)}})
+
+
+def types_compatible(var1, var2):
+    ''' Check if types are same or compatible
+    
+    0d numpy scalars are compatible with bare python scalars
+    '''
+    type1 = type(var1)
+    type2 = type(var2)
+    if type1 is type2:
+        return True
+    if type1 is np.ndarray and var1.shape == ():
+        return type(var1.item()) is type2
+    if type2 is np.ndarray and var2.shape == ():
+        return type(var2.item()) is type1
+    return False
+
 
 def _check_level(label, expected, actual):
     """ Check one level of a potentially nested array """
@@ -204,10 +228,9 @@ def _check_level(label, expected, actual):
                                   decimal = 5)
         return
     # Check types are as expected
-    typex = type(expected)
-    typac = type(actual)
-    assert_true(typex is typac, \
-           "Expected type %s, got %s at %s" % (typex, typac, label))
+    assert_true(types_compatible(expected, actual), \
+           "Expected type %s, got %s at %s" % 
+                (type(expected), type(actual), label))
     # A field in a record array may not be an ndarray
     # A scalar from a record array will be type np.void
     if not isinstance(expected,
@@ -241,6 +264,7 @@ def _check_level(label, expected, actual):
     # Something numeric
     assert_array_almost_equal(actual, expected, err_msg=label, decimal=5)
 
+
 def _load_check_case(name, files, case):
     for file_name in files:
         matdict = loadmat(file_name, struct_as_record=True)
@@ -249,6 +273,7 @@ def _load_check_case(name, files, case):
             k_label = "%s, variable %s" % (label, k)
             assert_true(k in matdict, "Missing key at %s" % k_label)
             _check_level(k_label, expected, matdict[k])
+
 
 # Round trip tests
 def _rt_check_case(name, expected, format):
@@ -391,6 +416,7 @@ def test_long_field_names_in_struct():
     assert_raises(ValueError, savemat, StringIO(),
                   {'longstruct': cell}, format='5', long_field_names=False)
 
+
 def test_cell_with_one_thing_in_it():
     # Regression test - make a cell array that's 1 x 2 and put two
     # strings in it.  It works. Make a cell array that's 1 x 1 and put
@@ -435,3 +461,121 @@ def test_use_small_element():
     sio.truncate(0)
     writer = Mat5NumericWriter(sio, np.zeros(10), 'aaaaaa').write()
     yield assert_true, sio.len - w_sz < 4
+
+
+def test_save_dict():
+    # Test that dict can be saved (as recarray), loaded as matstruct
+    d = {'a':1, 'b':2}
+    stream = StringIO()
+    savemat(stream, {'dict':d})
+    stream.seek(0)
+    vals = loadmat(stream)
+
+
+def test_1d_shape():
+    # Current 5 behavior is 1D -> column vector
+    arr = np.arange(5)
+    stream = StringIO()
+    savemat(stream, {'oned':arr}, format='5')
+    vals = loadmat(stream)
+    yield assert_equal, vals['oned'].shape, (5,1)
+    # Current 4 behavior is 1D -> row vector
+    arr = np.arange(5)
+    stream = StringIO()
+    savemat(stream, {'oned':arr}, format='4')
+    vals = loadmat(stream)
+    yield assert_equal, vals['oned'].shape, (1, 5)
+    for format in ('4', '5'):
+        # can be explicitly 'column' for oned_as
+        stream = StringIO()
+        savemat(stream, {'oned':arr}, 
+                format=format,
+                oned_as='column')
+        vals = loadmat(stream)
+        yield assert_equal, vals['oned'].shape, (5,1)
+        # but different from 'row'
+        stream = StringIO()
+        savemat(stream, {'oned':arr}, 
+                format=format,
+                oned_as='row')
+        vals = loadmat(stream)
+        yield assert_equal, vals['oned'].shape, (1,5)
+    
+
+def test_compression():
+    arr = np.zeros(100).reshape((5,20))
+    arr[2,10] = 1
+    stream = StringIO()
+    savemat(stream, {'arr':arr})
+    raw_len = len(stream.getvalue())
+    vals = loadmat(stream)
+    yield assert_array_equal, vals['arr'], arr
+    stream = StringIO()
+    savemat(stream, {'arr':arr}, do_compression=True)
+    compressed_len = len(stream.getvalue())
+    vals = loadmat(stream)
+    yield assert_array_equal, vals['arr'], arr
+    yield assert_true, raw_len>compressed_len
+    # Concatenate, test later
+    arr2 = arr.copy()
+    arr2[0,0] = 1
+    stream = StringIO()
+    savemat(stream, {'arr':arr, 'arr2':arr2}, do_compression=False)
+    vals = loadmat(stream)
+    yield assert_array_equal, vals['arr2'], arr2
+    stream = StringIO()
+    savemat(stream, {'arr':arr, 'arr2':arr2}, do_compression=True)
+    vals = loadmat(stream)
+    yield assert_array_equal, vals['arr2'], arr2
+    
+
+def test_single_object():
+    stream = StringIO()
+    savemat(stream, {'A':np.array(1, dtype=object)})
+
+def test_skip_variable():
+    # Test skipping over the first of two variables in a MAT file
+    # using mat_reader_factory and put_variables to read them in.
+    #
+    # This is a regression test of a problem that's caused by
+    # using the compressed file reader seek instead of the raw file
+    # I/O seek when skipping over a compressed chunk.
+    #
+    # The problem arises when the chunk is large: this file has
+    # a 256x256 array of random (uncompressible) doubles.
+    #
+    filename = join(test_data_path,'test_skip_variable.mat')
+    #
+    # Prove that it loads with loadmat
+    #
+    d = loadmat(filename, struct_as_record=True)
+    yield assert_true, d.has_key('first')
+    yield assert_true, d.has_key('second')
+    #
+    # Make the factory
+    #
+    factory = mat_reader_factory(filename, struct_as_record=True)
+    #
+    # This is where the factory breaks with an error in MatMatrixGetter.to_next
+    #
+    d = factory.get_variables('second')
+    yield assert_true, d.has_key('second')
+
+
+def test_empty_struct():
+    # ticket 885
+    filename = join(test_data_path,'test_empty_struct.mat')
+    # before ticket fix, this would crash with ValueError, empty data
+    # type
+    d = loadmat(filename, struct_as_record=True)
+    a = d['a']
+    yield assert_equal, a.shape, (1,1)
+    yield assert_equal, a.dtype, np.dtype(np.object)
+    yield assert_true, a[0,0] is None
+    stream = StringIO()
+    arr = np.array((), dtype='U')
+    # before ticket fix, this used to give data type not understood
+    savemat(stream, {'arr':arr})
+    d = loadmat(stream)
+    a2 = d['arr']
+    yield assert_array_equal, a2, arr

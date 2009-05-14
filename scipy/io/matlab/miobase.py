@@ -3,69 +3,82 @@
 """
 Base classes for matlab (TM) file stream reading
 """
+import warnings
 
 import numpy as np
 
+from scipy.ndimage import doccer
+
 import byteordercodes as boc
 
-def filldoc(func):
-    ''' Decorator to put recurring doc elements into mio doc strings '''
-    doc_dict = \
-   {'file_arg':
-    '''file_name : string
-        Name of the mat file (do not need .mat extension if
-        appendmat==True) If name not a full path name, search for the
-        file on the sys.path list and use the first one found (the
-        current directory is searched first).  Can also pass open
-        file-like object''',
-    'append_arg':
-    '''appendmat : {True, False} optional
-        True to append the .mat extension to the end of the given
-        filename, if not already present''',
-    'basename_arg':
-    '''base_name : string, optional, unused
-        base name for unnamed variables.  The code no longer uses
-        this.  We deprecate for this version of scipy, and will remove
-        it in future versions''',
-    'load_args':
-    '''byte_order : {None, string}, optional
-        None by default, implying byte order guessed from mat
-        file. Otherwise can be one of ('native', '=', 'little', '<',
-        'BIG', '>')
-    mat_dtype : {False, True} optional
-         If True, return arrays in same dtype as would be loaded into
-         matlab (instead of the dtype with which they are saved)
-    squeeze_me : {False, True} optional
-         whether to squeeze unit matrix dimensions or not
-    chars_as_strings : {True, False} optional
-         whether to convert char arrays to string arrays
-    matlab_compatible : {False, True}
-         returns matrices as would be loaded by matlab (implies
-         squeeze_me=False, chars_as_strings=False, mat_dtype=True,
-         struct_as_record=True)''',
-    'struct_arg':
-    '''struct_as_record : {False, True} optional
-        Whether to load matlab structs as numpy record arrays, or as
-        old-style numpy arrays with dtype=object.  Setting this flag
-        to False replicates the behaviour of scipy version 0.6
-        (returning numpy object arrays).  The preferred setting is
-        True, because it allows easier round-trip load and save of
-        matlab files.  In a future version of scipy, we will change
-        the default setting to True, and following versions may remove
-        this flag entirely.  For now, we set the default to False, for
-        backwards compatibility, but issue a warning.
-        Note that non-record arrays cannot be exported via savemat.''',
-    'matstream_arg':
-    '''mat_stream : file-like
-        object with file API, open for reading''',
-    'long_fields':
-    '''long_field_names : boolean, optional, default=False
-        False - maximum field name length in a structure is 31 characters
-                which is the documented maximum length
-        True  - maximum field name length in a structure is 63 characters
-                which works for Matlab 7.6'''}
-    func.__doc__ = func.__doc__ % doc_dict
-    return func
+class MatReadError(Exception): pass
+
+doc_dict = \
+    {'file_arg':
+         '''file_name : string
+   Name of the mat file (do not need .mat extension if
+   appendmat==True) If name not a full path name, search for the
+   file on the sys.path list and use the first one found (the
+   current directory is searched first).  Can also pass open
+   file-like object''',
+     'append_arg':
+         '''appendmat : {True, False} optional
+   True to append the .mat extension to the end of the given
+   filename, if not already present''',
+     'basename_arg':
+         '''base_name : string, optional, unused
+   base name for unnamed variables.  The code no longer uses
+   this.  We deprecate for this version of scipy, and will remove
+   it in future versions''',
+     'load_args':
+         '''byte_order : {None, string}, optional
+   None by default, implying byte order guessed from mat
+   file. Otherwise can be one of ('native', '=', 'little', '<',
+   'BIG', '>')
+mat_dtype : {False, True} optional
+   If True, return arrays in same dtype as would be loaded into
+   matlab (instead of the dtype with which they are saved)
+squeeze_me : {False, True} optional
+   whether to squeeze unit matrix dimensions or not
+chars_as_strings : {True, False} optional
+   whether to convert char arrays to string arrays
+matlab_compatible : {False, True}
+   returns matrices as would be loaded by matlab (implies
+   squeeze_me=False, chars_as_strings=False, mat_dtype=True,
+   struct_as_record=True)''',
+     'struct_arg':
+         '''struct_as_record : {False, True} optional
+   Whether to load matlab structs as numpy record arrays, or as
+   old-style numpy arrays with dtype=object.  Setting this flag to
+   False replicates the behaviour of scipy version 0.6 (returning
+   numpy object arrays).  The preferred setting is True, because it
+   allows easier round-trip load and save of matlab files.  In a
+   future version of scipy, we will change the default setting to
+   True, and following versions may remove this flag entirely.  For
+   now, we set the default to False, for backwards compatibility, but
+   issue a warning.  Note that non-record arrays cannot be exported
+   via savemat.''',
+     'matstream_arg':
+         '''mat_stream : file-like
+   object with file API, open for reading''',
+     'long_fields':
+         '''long_field_names : boolean, optional, default=False
+   * False - maximum field name length in a structure is 31 characters
+     which is the documented maximum length
+   * True - maximum field name length in a structure is 63 characters
+     which works for Matlab 7.6''',
+     'do_compression':
+         '''do_compression : {False, True} bool, optional
+   Whether to compress matrices on write. Default is False''',
+     'oned_as':
+         '''oned_as : {'column', 'row'} string, optional
+   If 'column', write 1D numpy arrays as column vectors
+   If 'row', write 1D numpy arrays as row vectors''',
+     'unicode_strings':
+         '''unicode_strings : {True, False} boolean, optional
+   If True, write strings as Unicode, else matlab usual encoding'''}
+
+docfiller = doccer.filldoc(doc_dict)
 
 
 def small_product(arr):
@@ -74,6 +87,7 @@ def small_product(arr):
     for e in arr:
         res *= e
     return res
+
 
 def get_matfile_version(fileobj):
     ''' Return major, minor tuple depending on apparent mat file type
@@ -124,6 +138,78 @@ def get_matfile_version(fileobj):
     else:
         raise ValueError('Unknown mat file type, version %s' % ret)
 
+class MatReadError(Exception): pass
+
+def matdims(arr, oned_as='column'):
+    ''' Determine equivalent matlab dimensions for given array 
+    
+    Parameters
+    ----------
+    arr : ndarray
+    oned_as : {'column', 'row'} string, optional
+
+    Returns
+    -------
+    dims : shape as matlab expects
+
+    Examples
+    --------
+    >>> matdims(np.array(1)) # numpy scalar
+    (1, 1)
+    >>> matdims(np.array([1])) # 1d array, 1 element
+    (1, 1)
+    >>> matdims(np.array([1,2])) # 1d array, 2 elements
+    (2, 1)
+    >>> matdims(np.array([[2],[3]])) # 2d array, column vector
+    (2, 1)
+    >>> matdims(np.array([[2,3]])) # 2d array, row vector
+    (1, 2)
+    >>> matdims(np.array([[[2,3]]])) # 3d array, rowish vector
+    (1, 1, 2)
+    >>> matdims(np.array([])) # empty 1d array
+    (0, 0)
+    >>> matdims(np.array([[]])) # empty 2d
+    (0, 0)
+    >>> matdims(np.array([[[]]])) # empty 3d
+    (0, 0, 0)
+
+    Optional argument flips 1d shape behavior
+
+    >>> matdims(np.array([1,2]), 'row') # 1d array, 2 elements
+    (1, 2)
+
+    The argument has to make sense though
+
+    >>> matdims(np.array([1,2]), 'bizarre')
+    Traceback (most recent call last):
+       ...
+    ValueError: 1D option "bizarre" is strange
+
+    Notes
+    -----
+    We had to decide what shape a 1 dimensional array would be by
+    default.  ``np.atleast_2d`` thinks it is a row vector.  The
+    default for a vector in matlab (e.g. ``>> 1:12``) is a row vector.
+
+    Versions of scipy up to and including 0.7 resulted (accidentally)
+    in 1d arrays being read as column vectors.  For the moment, we
+    maintain the same tradition here.
+    '''
+    if arr.size == 0: # empty
+        return (0,) * np.max([arr.ndim, 2])
+    shape = arr.shape
+    if shape == (): # scalar
+        return (1,1)
+    if len(shape) == 1: # 1D
+        if oned_as == 'column':
+            return shape + (1,)
+        elif oned_as == 'row':
+            return (1,) + shape
+        else:
+            raise ValueError('1D option "%s" is strange'
+                             % oned_as)
+    return shape
+
 
 class ByteOrder(object):
     ''' Namespace for byte ordering '''
@@ -137,6 +223,7 @@ We no longer use the ByteOrder class, and deprecate it; we will remove
 it in future versions of scipy.  Please use the
 scipy.io.matlab.byteordercodes module instead.
 """)(ByteOrder)
+
 
 class MatStreamAgent(object):
     ''' Base object for readers / getters from mat file streams
@@ -186,7 +273,7 @@ class MatFileReader(MatStreamAgent):
     guess_byte_order        - guesses file byte order from file
     """
 
-    @filldoc
+    @docfiller
     def __init__(self, mat_stream,
                  byte_order=None,
                  mat_dtype=False,
@@ -328,7 +415,7 @@ class MatFileReader(MatStreamAgent):
                 arr = np.squeeze(arr)
                 if not arr.size:
                     arr = np.array([])
-                elif not arr.shape: # 0d coverted to scalar
+                elif not arr.shape and arr.dtype.isbuiltin: # 0d coverted to scalar
                     arr = arr.item()
             return arr
         return func
@@ -358,7 +445,15 @@ class MatFileReader(MatStreamAgent):
             if variable_names and name not in variable_names:
                 getter.to_next()
                 continue
-            res = getter.get_array()
+            try:
+                res = getter.get_array()
+            except MatReadError, err:
+                warnings.warn(
+                    'Unreadable variable "%s", because "%s"' % \
+                    (name, err),
+                    Warning, stacklevel=2)
+                res = "Read error: %s" % err
+                getter.to_next()
             mdict[name] = res
             if getter.is_global:
                 mdict['__globals__'].append(name)
@@ -429,13 +524,17 @@ class MatArrayReader(MatStreamAgent):
 
 class MatStreamWriter(object):
     ''' Base object for writing to mat files '''
-    def __init__(self, file_stream, arr, name):
+    def __init__(self, file_stream, arr, name, oned_as):
         self.file_stream = file_stream
         self.arr = arr
         dt = self.arr.dtype
         if not dt.isnative:
             self.arr = self.arr.astype(dt.newbyteorder('='))
         self.name = name
+        self.oned_as = oned_as
+
+    def rewind(self):
+        self.file_stream.seek(0)
 
     def arr_dtype_number(self, num):
         ''' Return dtype for given number of items per element'''

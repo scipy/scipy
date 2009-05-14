@@ -59,6 +59,9 @@ save_matfile('testcell', ...
 	  {['This cell contains this string and 3 arrays of increasing' ...
 	    ' length'], 1., 1.:2., 1.:3.});
 
+% scalar cell
+save_matfile('testscalarcell', {1})
+
 % Empty cells in two cell matrices
 save_matfile('testemptycell', {1, 2, [], [], 3});
 
@@ -80,7 +83,7 @@ save_matfile('teststructarr', [struct('one', 1, 'two', 2) ...
 save_matfile('testobject', inline('x'))
 
 % array of matlab objects
-%save_matfile('testobjarr', [inline('x') inline('y')])
+%save_matfile('testobjarr', [inline('x') inline('x')])
 
 % unicode test
 if str2num(mlv) > 7  % function added 7.0.1
@@ -90,7 +93,8 @@ if str2num(mlv) > 7  % function added 7.0.1
   save_matfile('testunicode', native2unicode(from_japan, 'utf-8'));
 end
   
-% sparse float
-
-
-% sparse complex
+% func
+if str2num(mlv) > 7  % function pointers added recently
+  func = @afunc;
+  save_matfile('testfunc', func);
+end
