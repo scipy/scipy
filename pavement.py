@@ -60,7 +60,7 @@ except ImportError, e:
 import paver
 import paver.doctools
 import paver.path
-from paver.easy import options, Bunch, task, needs, dry, sh, call_task
+from paver.easy import options, Bunch, task, needs, dry, sh, call_task, cmdopts
 
 sys.path.insert(0, os.path.dirname(__file__))
 try:
@@ -346,10 +346,11 @@ def bdist_superpack(options):
     shutil.copy(source, target)
 
 @task
-@needs('clean', 'bdist_wininst')
+@cmdopts([('python_version=', 'p', 'Python version to build the installer against')])
 def bdist_wininst_simple():
     """Simple wininst-based installer."""
-    _bdist_wininst(pyver=options.wininst.pyver)
+    call_task("clean")
+    _bdist_wininst(options.bdist_wininst_simple.python_version, SITECFG['nosse'])
 
 def _bdist_wininst(pyver, cfg_env=WINE_SITE_CFG):
     subprocess.call(WINE_PYS[pyver] + ['setup.py', 'build', '-c', 'mingw32', 'bdist_wininst'], env=cfg_env)
