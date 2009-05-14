@@ -1,7 +1,6 @@
 ''' Classes for read / write of matlab (TM) 4 files
 '''
 import sys
-import warnings
 
 import numpy as np
 

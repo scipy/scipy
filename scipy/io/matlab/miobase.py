@@ -136,9 +136,12 @@ def get_matfile_version(fileobj):
     if maj_val in (1, 2):
         return ret
     else:
-        raise ValueError('Unknown mat file type, version %s' % ret)
+        raise ValueError('Unknown mat file type, version %s, %s'
+                         % ret)
+
 
 class MatReadError(Exception): pass
+
 
 def matdims(arr, oned_as='column'):
     ''' Determine equivalent matlab dimensions for given array 

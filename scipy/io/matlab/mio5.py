@@ -555,8 +555,8 @@ class Mat5FunctionGetter(Mat5ObjectMatrixGetter):
     ''' Class to provide warning and message string for unreadable
     matlab function data
     '''
-    
-    def get_raw_array(self): raise MatReadError('Cannot read matlab functions')
+    def get_raw_array(self):
+        raise MatReadError('Cannot read matlab functions')
 
 
 class Mat5BinaryBlockGetter(object):
