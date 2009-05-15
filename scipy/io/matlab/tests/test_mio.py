@@ -533,6 +533,7 @@ def test_single_object():
     stream = StringIO()
     savemat(stream, {'A':np.array(1, dtype=object)})
 
+
 def test_skip_variable():
     # Test skipping over the first of two variables in a MAT file
     # using mat_reader_factory and put_variables to read them in.
@@ -592,6 +593,10 @@ def test_recarray():
     arr[1]['f2'] = 'not perl'
     stream = StringIO()
     savemat(stream, {'arr': arr})
+    d = loadmat(stream, struct_as_record=False)
+    a20 = d['arr'][0,0]
+    yield assert_equal, a20.f1, 0.5
+    yield assert_equal, a20.f2, 'python'
     d = loadmat(stream, struct_as_record=True)
     a20 = d['arr'][0,0]
     yield assert_equal, a20['f1'], 0.5
@@ -603,3 +608,20 @@ def test_recarray():
     yield assert_equal, a21['f1'], 99
     yield assert_equal, a21['f2'], 'not perl'
           
+
+def test_save_object():
+    class C(object): pass
+    c = C()
+    c.field1 = 1
+    c.field2 = 'a string'
+    stream = StringIO()
+    savemat(stream, {'c': c})
+    d = loadmat(stream, struct_as_record=False)
+    c2 = d['c'][0,0]
+    yield assert_equal, c2.field1, 1
+    yield assert_equal, c2.field2, 'a string'
+    d = loadmat(stream, struct_as_record=True)
+    c2 = d['c'][0,0]
+    yield assert_equal, c2['field1'], 1
+    yield assert_equal, c2['field2'], 'a string'
+

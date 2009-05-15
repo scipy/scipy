@@ -1043,7 +1043,7 @@ class Mat5WriterGetter(object):
         # Objects that have dicts
         if hasattr(source, '__dict__'):
             source = dict((key, value) for key, value in source.__dict__.items()
-                          if not key.startwith('_'))
+                          if not key.startswith('_'))
         # Mappings or object dicts
         if hasattr(source, 'keys'):
             dtype = []
