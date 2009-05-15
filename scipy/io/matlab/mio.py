@@ -91,6 +91,8 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
 def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
     ''' Load Matlab(tm) file
 
+    Parameters
+    ----------
     %(file_arg)s
     m_dict : dict, optional
         dictionary in which to insert matfile variables
@@ -98,6 +100,12 @@ def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
     %(basename_arg)s
     %(load_args)s
     %(struct_arg)s
+
+    Returns
+    -------
+    mat_dict : dict
+       dictionary with variable names as keys, and loaded matrices as
+       values
 
     Notes
     -----
@@ -127,6 +135,8 @@ def savemat(file_name, mdict,
     This saves the arrayobjects in the given dictionary to a matlab
     style .mat file.
 
+    Parameters
+    ----------
     file_name : {string, file-like object}
         Name of the mat file (do not need .mat extension if
         appendmat==True) Can also pass open file-like object

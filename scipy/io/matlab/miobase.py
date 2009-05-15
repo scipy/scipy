@@ -56,8 +56,7 @@ matlab_compatible : {False, True}
    future version of scipy, we will change the default setting to
    True, and following versions may remove this flag entirely.  For
    now, we set the default to False, for backwards compatibility, but
-   issue a warning.  Note that non-record arrays cannot be exported
-   via savemat.''',
+   issue a warning.''',
      'matstream_arg':
          '''mat_stream : file-like
    object with file API, open for reading''',
