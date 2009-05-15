@@ -579,3 +579,27 @@ def test_empty_struct():
     d = loadmat(stream)
     a2 = d['arr']
     yield assert_array_equal, a2, arr
+
+
+def test_recarray():
+    # check roundtrip of structured array
+    dt = [('f1', 'f8'),
+          ('f2', 'S10')]
+    arr = np.zeros((2,), dtype=dt)
+    arr[0]['f1'] = 0.5
+    arr[0]['f2'] = 'python'
+    arr[1]['f1'] = 99
+    arr[1]['f2'] = 'not perl'
+    stream = StringIO()
+    savemat(stream, {'arr': arr})
+    d = loadmat(stream, struct_as_record=True)
+    a20 = d['arr'][0,0]
+    yield assert_equal, a20['f1'], 0.5
+    yield assert_equal, a20['f2'], 'python'
+    # structs always come back as object types
+    yield assert_equal, a20.dtype, np.dtype([('f1', 'O'),
+                                             ('f2', 'O')])
+    a21 = d['arr'].flat[1]
+    yield assert_equal, a21['f1'], 99
+    yield assert_equal, a21['f2'], 'not perl'
+          

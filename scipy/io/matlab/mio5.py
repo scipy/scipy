@@ -1103,11 +1103,10 @@ class Mat5WriterGetter(object):
             return Mat5BinaryBlockWriter(*args)
         if isinstance(narr, MatlabObject):
             return Mat5ObjectWriter(*args)
-        if narr.dtype.hasobject: # cell or struct array
-            if narr.dtype.fields is None:
-                return Mat5CellWriter(*args)
-            else:
-                return Mat5StructWriter(*args)
+        if narr.dtype.fields: # struct array
+            return Mat5StructWriter(*args)
+        if narr.dtype.hasobject: # cell array
+            return Mat5CellWriter(*args)
         if narr.dtype.kind in ('U', 'S'):
             if self.unicode_strings:
                 return Mat5UniCharWriter(*args)
