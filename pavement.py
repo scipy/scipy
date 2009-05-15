@@ -284,7 +284,10 @@ def bdist_wininst_arch(pyver, arch, scratch=True):
 
     if not os.path.exists(SUPERPACK_BINDIR):
         os.makedirs(SUPERPACK_BINDIR)
-    _bdist_wininst(pyver, SITECFG[arch])
+    env = os.environ.copy()
+    for k, v in SITECFG[arch].items():
+        env[k] = v
+    _bdist_wininst(pyver, env)
     source = os.path.join('dist', wininst_name(pyver))
     target = os.path.join(SUPERPACK_BINDIR, internal_wininst_name(arch))
     if os.path.exists(target):
