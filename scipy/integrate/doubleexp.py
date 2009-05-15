@@ -91,9 +91,8 @@ def quad_de(func, a, b, args=(), tol=1e-10, vec_func=True):
     if not isfinite(integral):
         raise_bad_value(0)
     current_delta = inf
-    num_levels = len(_abscissas)
 
-    for level in range(1, num_levels):
+    for level in range(1, len(_abscissas)):
         new_contribution = contribution_at_level(level)
 
         previous_delta = current_delta

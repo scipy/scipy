@@ -19,5 +19,10 @@ class TestDE(TestCase):
             return (1-x)**5 * x**(-1.0/3)
         assert_de(quad_de(f, 0, 1, tol=1e-10)[0], 2187.0/5236, tol=1e-10)
 
+    def test_constant(self):
+        def f(x):
+            return 2
+        assert_de(quad_de(f, 0, 1, tol=1e-10)[0], 2, tol=1e-10)
+
 if __name__ == "__main__":
     run_module_suite()
