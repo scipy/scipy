@@ -85,7 +85,7 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
     elif mjv == 2:
         raise NotImplementedError('Please use HDF reader for matlab v7.3 files')
     else:
-        raise TypeError('Did not recognize version %s' % mv)
+        raise TypeError('Did not recognize version %s' % mjv)
 
 @docfiller
 def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
