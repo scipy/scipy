@@ -54,9 +54,11 @@ os.environ['NO_SCIPY_IMPORT']='SciPy/setup.py'
 
 # Return the svn version as a string, raise a ValueError otherwise
 def svn_version():
+    env = os.environ.copy()
+    env['LC_ALL'] = 'C'
     try:
         out = subprocess.Popen(['svn', 'info'], stdout=subprocess.PIPE,
-                env={'LC_ALL': 'C'}).communicate()[0]
+                env=env).communicate()[0]
     except OSError:
         warnings.warn(" --- Could not run svn info --- ")
         return ""
