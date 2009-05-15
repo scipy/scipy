@@ -1,22 +1,23 @@
 #!/usr/bin/env python
 """Tests for parsing full arff files."""
 import os
+from os.path import join as pjoin
 
 import numpy as np
 
-from numpy.testing import *
+from numpy.testing import TestCase, assert_array_almost_equal
 
 from scipy.io.arff.arffread import loadarff
 
-data_path = os.path.join(os.path.dirname(__file__), 'data')
+data_path = pjoin(os.path.dirname(__file__), 'data')
 
-test4 = os.path.join(data_path, 'test4.arff')
-test5 = os.path.join(data_path, 'test5.arff')
+test4 = pjoin(data_path, 'test4.arff')
+test5 = pjoin(data_path, 'test5.arff')
 expect4_data = [(0.1, 0.2, 0.3, 0.4, 'class1'),
         (-0.1, -0.2, -0.3, -0.4, 'class2'),
         (1, 2, 3, 4, 'class3')]
 
-missing = os.path.join(data_path, 'missing.arff')
+missing = pjoin(data_path, 'missing.arff')
 expect_missing_raw = np.array([[1, 5], [2, 4], [np.nan, np.nan]])
 expect_missing = np.empty(3, [('yop', np.float), ('yap', np.float)])
 expect_missing['yop'] = expect_missing_raw[:, 0]
@@ -43,5 +44,5 @@ class MissingDataTest(TestCase):
         for i in ['yop', 'yap']:
             assert_array_almost_equal(data[i], expect_missing[i])
 
-if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+
+

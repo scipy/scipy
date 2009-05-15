@@ -39,7 +39,7 @@ r_attribute = re.compile(r'^@[Aa][Tt][Tt][Rr][Ii][Bb][Uu][Tt][Ee]\s*(..*$)')
 
 # To get attributes name enclosed with ''
 r_comattrval = re.compile(r"'(..+)'\s+(..+$)")
-# To get attributes name enclosed with '', possibly spread accross multilines
+# To get attributes name enclosed with '', possibly spread across multilines
 r_mcomattrval = re.compile(r"'([..\n]+)'\s+(..+$)")
 # To get normal attributes
 r_wcomattrval = re.compile(r"(\S+)\s+(..+$)")
@@ -83,6 +83,7 @@ def get_nominal(attribute):
     """If attribute is nominal, returns a list of the values"""
     return attribute.split(',')
 
+
 def read_data_list(ofile):
     """Read each line of the iterable and put it in a list."""
     data = [ofile.next()]
@@ -90,6 +91,7 @@ def read_data_list(ofile):
         raise ValueError("This looks like a sparse ARFF: not supported yet")
     data.extend([i for i in ofile])
     return data
+
 
 def get_ndata(ofile):
     """Read the whole file to get number of data attributes."""
@@ -101,25 +103,56 @@ def get_ndata(ofile):
         loc += 1
     return loc
 
+
 def maxnomlen(atrv):
-    """Given a string contening a nominal type definition, returns the string
-    len of the biggest component.
+    """Given a string containing a nominal type definition, returns the
+    string len of the biggest component.
 
     A nominal type is defined as seomthing framed between brace ({}).
 
-    Example: maxnomlen("{floup, bouga, fl, ratata}") returns 6 (the size of
-    ratata, the longest nominal value)."""
+    Parameters
+    ----------
+    atrv : str
+       Nominal type definition
+
+    Returns
+    -------
+    slen : int
+       length of longest component
+    
+    Examples
+    --------
+    maxnomlen("{floup, bouga, fl, ratata}") returns 6 (the size of
+    ratata, the longest nominal value).
+
+    >>> maxnomlen("{floup, bouga, fl, ratata}")
+    6
+    """
     nomtp = get_nom_val(atrv)
     return max(len(i) for i in nomtp)
 
+
 def get_nom_val(atrv):
-    """Given a string contening a nominal type, returns a tuple of the possible
-    values.
+    """Given a string containing a nominal type, returns a tuple of the
+    possible values.
 
-    A nominal type is defined as something framed between brace ({}).
+    A nominal type is defined as something framed between braces ({}).
 
-    Example: get_nom_val("{floup, bouga, fl, ratata}") returns ("floup",
-    "bouga", "fl", "ratata")."""
+    Parameters
+    ----------
+    atrv : str
+       Nominal type definition
+
+    Returns
+    -------
+    poss_vals : tuple
+       possible values
+
+    Examples
+    --------
+    >>> get_nom_val("{floup, bouga, fl, ratata}")
+    ('floup', 'bouga', 'fl', 'ratata')
+    """
     r_nominal = re.compile('{(..+)}')
     m = r_nominal.match(atrv)
     if m:
@@ -127,11 +160,13 @@ def get_nom_val(atrv):
     else:
         raise ValueError("This does not look like a nominal string")
 
+
 def go_data(ofile):
     """Skip header.
 
     the first next() call of the returned iterator will be the @data line"""
     return itertools.dropwhile(lambda x : not r_datameta.match(x), ofile)
+
 
 #----------------
 # Parsing header
@@ -141,28 +176,42 @@ def tokenize_attribute(iterable, attribute):
 
     Given a raw string attribute, try to get the name and type of the
     attribute. Constraints:
-        - The first line must start with @attribute (case insensitive, and
-          space like characters begore @attribute are allowed)
-        - Works also if the attribute is spread on multilines.
-        - Works if empty lines or comments are in between
+    
+    * The first line must start with @attribute (case insensitive, and
+      space like characters before @attribute are allowed)
+    * Works also if the attribute is spread on multilines.
+    * Works if empty lines or comments are in between
 
-    :Parameters:
-        attribute : str
-            the attribute string.
+    Parameters
+    ----------
+    attribute : str
+       the attribute string.
 
-    :Returns:
-        name : str
-            name of the attribute
-        value : str
-            value of the attribute
-        next : str
-            next line to be parsed
+    Returns
+    -------
+    name : str
+       name of the attribute
+    value : str
+       value of the attribute
+    next : str
+       next line to be parsed
 
-    Example:
-        - if attribute is a string defined in python as r"floupi real", will
-          return floupi as name, and real as value.
-        - if attribute is r"'floupi 2' real", will return 'floupi 2' as name,
-          and real as value. """
+    Examples
+    --------
+    If attribute is a string defined in python as r"floupi real", will
+    return floupi as name, and real as value.
+
+    >>> iterable = iter([0] * 10) # dummy iterator
+    >>> tokenize_attribute(iterable, r"@attribute floupi real")
+    ('floupi', 'real', 0)
+     
+    If attribute is r"'floupi 2' real", will return 'floupi 2' as name,
+    and real as value.
+
+    >>> tokenize_attribute(iterable, r"  @attribute 'floupi 2' real   ")
+    ('floupi 2', 'real', 0)
+
+    """
     sattr = attribute.strip()
     mattr = r_attribute.match(sattr)
     if mattr:
@@ -186,6 +235,7 @@ def tokenize_attribute(iterable, attribute):
         raise ValueError("relational attributes not supported yet")
     return name, type, next
 
+
 def tokenize_multilines(iterable, val):
     """Can tokenize an attribute spread over several lines."""
     # If one line does not match, read all the following lines up to next
@@ -205,6 +255,7 @@ def tokenize_multilines(iterable, val):
         raise ValueError("Cannot parse attribute names spread over multi "\
                         "lines yet")
 
+
 def tokenize_single_comma(val):
     # XXX we match twice the same string (here and at the caller level). It is
     # stupid, but it is easier for now...
@@ -219,6 +270,7 @@ def tokenize_single_comma(val):
         raise ValueError("Error while tokenizing single %s" % val)
     return name, type
 
+
 def tokenize_single_wcomma(val):
     # XXX we match twice the same string (here and at the caller level). It is
     # stupid, but it is easier for now...
@@ -232,6 +284,7 @@ def tokenize_single_wcomma(val):
     else:
         raise ValueError("Error while tokenizing single %s" % val)
     return name, type
+
 
 def read_header(ofile):
     """Read the header of the iterable ofile."""
@@ -263,16 +316,38 @@ def read_header(ofile):
 
     return relation, attributes
 
+
 #--------------------
 # Parsing actual data
 #--------------------
 def safe_float(x):
     """given a string x, convert it to a float. If the stripped string is a ?,
-    return a Nan (missing value)."""
+    return a Nan (missing value).
+
+    Parameters
+    ----------
+    x : str
+       string to convert
+
+    Returns
+    -------
+    f : float
+       where float can be nan
+
+    Examples
+    --------
+    >>> safe_float('1')
+    1.0
+    >>> safe_float('1\\n')
+    1.0
+    >>> safe_float('?\\n')
+    nan
+    """
     if x.strip() == '?':
         return np.nan
     else:
         return np.float(x)
+
 
 def safe_nominal(value, pvalue):
     svalue = value.strip()
@@ -283,41 +358,61 @@ def safe_nominal(value, pvalue):
     else:
         raise ValueError("%s value not in %s" % (str(svalue), str(pvalue)))
 
+
 def get_delim(line):
     """Given a string representing a line of data, check whether the
-    delimiter is ',' or space."""
-    l = line.split(',')
-    if len(l) > 1:
-        return ','
-    else:
-        l = line.split(' ')
-        if len(l) > 1:
-            return ' '
-        else:
-            raise ValueError("delimiter not understood: " + line)
+    delimiter is ',' or space.
 
-class MetaData:
+    Parameters
+    ----------
+    line : str
+       line of data
+
+    Returns
+    -------
+    delim : {',', ' '}
+
+    Examples
+    --------
+    >>> get_delim(',')
+    ','
+    >>> get_delim(' ')
+    ' '
+    >>> get_delim(', ')
+    ','
+    >>> get_delim('x')
+    Traceback (most recent call last):
+       ...
+    ValueError: delimiter not understood: x
+    """
+    if ',' in line:
+        return ','
+    if ' ' in line:
+        return ' '
+    raise ValueError("delimiter not understood: " + line)
+
+
+class MetaData(object):
     """Small container to keep useful informations on a ARFF dataset.
 
     Knows about attributes names and types.
 
-    :Example:
+    Example
+    -------
+    data, meta = loadarff('iris.arff')
+    # This will print the attributes names of the iris.arff dataset
+    for i in meta:
+        print i
+    # This works too
+    meta.names()
+    # Getting attribute type
+    types = meta.types()
 
-        data, meta = loadarff('iris.arff')
-        # This will print the attributes names of the iris.arff dataset
-        for i in meta:
-            print i
-        # This works too
-        meta.names()
-        # Getting attribute type
-        types = meta.types()
-
-    :Note:
-
-        Also maintains the list of attributes in order, i.e. doing for i in
-        meta, where meta is an instance of MetaData, will return the different
-        attribute names in the order they were defined.
-
+    Notes
+    -----
+    Also maintains the list of attributes in order, i.e. doing for i in
+    meta, where meta is an instance of MetaData, will return the
+    different attribute names in the order they were defined.
     """
     def __init__(self, rel, attr):
         self.name = rel
@@ -357,31 +452,34 @@ class MetaData:
         """Return the list of attribute types."""
         return [v[0] for v in self._attributes.values()]
 
+
 def loadarff(filename):
     """Read an arff file.
 
-    :Args:
+    Parameters
+    ----------
+    filename : str
+       the name of the file
 
-        filename: str
-            the name of the file
+    Returns
+    -------
+    data : record array
+       the data of the arff file. Each record corresponds to one attribute.
+    meta : MetaData
+       this contains information about the arff file, like type and
+       names of attributes, the relation (name of the dataset), etc...
 
-    :Returns:
+    Notes
+    -----
 
-        data: record array
-            the data of the arff file. Each record corresponds to one attribute.
-        meta: MetaData
-            this contains informations about the arff file, like type and names
-            of attributes, the relation (name of the dataset), etc...
+    This function should be able to read most arff files. Not
+    implemented functionalities include:
 
-    :Note:
+    * date type attributes
+    * string type attributes
 
-        This function should be able to read most arff files. Not implemented
-        functionalities include:
-            - date type attributes
-            - string type attributes
-
-        It can read files with numeric and nominal attributes.
-        It can read files with sparse data (? in the file).
+    It can read files with numeric and nominal attributes.  It can read
+    files with sparse data (? in the file).
     """
     ofile = open(filename)
 
@@ -491,12 +589,14 @@ def loadarff(filename):
     data = np.fromiter(a, descr)
     return data, meta
 
+
 #-----
 # Misc
 #-----
 def basic_stats(data):
     nbfac = data.size * 1. / (data.size - 1)
     return np.nanmin(data), np.nanmax(data), np.mean(data), np.std(data) * nbfac
+
 
 def print_attribute(name, tp, data):
     type = tp[0]
@@ -511,12 +611,17 @@ def print_attribute(name, tp, data):
         msg += "}"
         print msg
 
+
 def test_weka(filename):
     data, meta = loadarff(filename)
     print len(data.dtype)
     print data.size
     for i in meta:
         print_attribute(i,meta[i],data[i])
+
+# make sure nose does not find this as a test
+test_weka.__test__ = False
+        
 
 def floupi(filename):
     data, meta = loadarff(filename)
@@ -533,6 +638,7 @@ def floupi(filename):
         #            (i, min, max, mean, std)
         #else:
         #    print "\tinstance %s is non numeric" % i
+
 
 if __name__ == '__main__':
     #import glob
