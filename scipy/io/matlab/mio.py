@@ -18,9 +18,16 @@ __all__ = ['find_mat_file', 'mat_reader_factory', 'loadmat', 'savemat']
 def find_mat_file(file_name, appendmat=True):
     ''' Try to find .mat file on system path
 
+    Parameters
+    ----------
     file_name : string
        file name for mat file
     %(append_arg)s
+
+    Returns
+    -------
+    full_name : string
+       possibly modified name after path search
     '''
     warnings.warn('Searching for mat files on python system path will be ' +
                   'removed in future versions of scipy',
@@ -51,11 +58,19 @@ def find_mat_file(file_name, appendmat=True):
 def mat_reader_factory(file_name, appendmat=True, **kwargs):
     """Create reader for matlab .mat format files
 
+    Parameters
+    ----------
     %(file_arg)s
     %(append_arg)s
     %(basename_arg)s
     %(load_args)s
     %(struct_arg)s
+
+    Returns
+    -------
+    matreader : MatFileReader object
+       Initialized instance of MatFileReader class matching the mat file
+       type detected in `filename`.
     """
     if isinstance(file_name, basestring):
         try:
