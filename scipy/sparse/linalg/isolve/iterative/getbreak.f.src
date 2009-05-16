@@ -9,7 +9,7 @@
       <rt> EPS, <sdsd=s,d,s,d>LAMCH
 *
       EPS = <sdsd>LAMCH('EPS')
-      GETBREAK = EPS**2
+      <sdsd>GETBREAK = EPS**2
 *
       RETURN
 *
