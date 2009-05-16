@@ -4,17 +4,10 @@ from quadrature import vectorize1
 
 __all__ = ["quad_de"]
 
-def quad_de(func, a, b, args=(), tol=1e-10, vec_func=True):
+def quad_de(func, a, b, args=(), tol=1e-10, vec_func=True, max_level=None):
     """
     Integrate a function over an interval using double exponential
     quadrature.
-
-    Double exponential quadrature (AKA double exponential integration
-    and tanh-sinh quadrature [TS]) is an integration method introduced
-    by Takahashi and Mori in 1974 [TM].  The method applies a change
-    of variables to map the integration limits to [-inf, inf], with a
-    doubly exponential falloff in either direction, then uses
-    quadrature with uniform intervals to compute the integral.
 
     This method is well-suited to integrating analytic functions,
     particularly those with a singularity at one or both endpoints.
@@ -28,35 +21,44 @@ def quad_de(func, a, b, args=(), tol=1e-10, vec_func=True):
     func : function
         The integrand
     a : float
-        Lower integration limit
+        Lower integration limit. Must be finite.
     b : float
-        Upper integration limit
+        Upper integration limit. Must be finite.
     tol : float, optional
         Desired absolute error tolerance.
     vec_func : bool, optional
         Whether the function is vectorized.
-    
+    max_level : int, optional
+        Maximum number of subdivisions.
+
     Returns
     -------
     val : float
         Estimated value of the integral
     err : float
         Estimated error
-    
+
     Raises
     ------
     ValueError
         If the function returns non-finite values.
-    
+
     See Also
     --------
     quad
-    
+
     Notes
     -----
+    Double exponential quadrature (AKA double exponential integration
+    and tanh-sinh quadrature [TS]) is an integration method introduced
+    by Takahashi and Mori in 1974 [TM].  The method applies a change
+    of variables to map the integration limits to [-inf, inf], with a
+    doubly exponential falloff in either direction, then uses
+    quadrature with uniform intervals to compute the integral.
+
     This is based on John D. Cook's implementation [FN, DE], used with
     permission.
-    
+
     References
     ----------
     .. [DE] http://www.johndcook.com/double_exponential_integration.html
@@ -92,7 +94,12 @@ def quad_de(func, a, b, args=(), tol=1e-10, vec_func=True):
         raise_bad_value(0)
     current_delta = inf
 
-    for level in range(1, len(_abscissas)):
+    if max_level is None:
+        max_level = inf
+
+    error_estimate = inf
+
+    for level in range(1, min(len(_abscissas), max_level)):
         new_contribution = contribution_at_level(level)
 
         previous_delta = current_delta
