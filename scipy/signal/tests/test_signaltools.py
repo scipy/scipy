@@ -10,6 +10,20 @@ from scipy.signal import lfilter
 from numpy import array, arange
 import numpy as np
 
+# Use this to test for object arrays filtering - numpy 1.2
+# assert_array_almost_equal does not handle object arrays
+def assert_array_almost_equal(x, y, decimal=6, err_msg='', verbose=True):
+    from numpy.core import around, number, float_
+    from numpy.lib import issubdtype
+    from numpy.testing.utils import assert_array_compare
+    def compare(x, y):
+        z = abs(x-y)
+        if not issubdtype(z.dtype, number):
+            z = z.astype(float_) # handle object arrays
+        return around(z, decimal) <= 10.0**(-decimal)
+    assert_array_compare(compare, x, y, err_msg=err_msg, verbose=verbose,
+                         header='Arrays are not almost equal')
+
 class TestConvolve(TestCase):
     def test_basic(self):
         a = [3,4,5,6,5,4]
