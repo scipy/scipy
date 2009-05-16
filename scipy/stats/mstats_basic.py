@@ -103,7 +103,8 @@ def argstoarray(*args):
     """
     if len(args) == 1 and not isinstance(args[0], ndarray):
         output = ma.asarray(args[0])
-        assert(output.ndim == 2, "The input should be 2D!")
+        if output.ndim != 2:
+            raise ValueError("The input should be 2D")
     else:
         n = len(args)
         m = max([len(k) for k in args])
