@@ -31,12 +31,12 @@ class TestDE(TestCase):
         num_levels = len(scipy.integrate.doubleexp._abscissas)
 
         res = []
-        N = []
+        N = [0]
         for level in xrange(num_levels):
             res.append(quad_de(f, a, b, max_level=level, tol=1e-99)[0])
-            N.append(len(scipy.integrate.doubleexp._abscissas[level]))
+            N.append(N[-1] + len(scipy.integrate.doubleexp._abscissas[level]))
         res = np.array(res)
-        N = np.array(N)
+        N = np.array(N[1:])
         if exact is None:
             exact = res[-1]
         err = abs(res - exact)
@@ -56,7 +56,7 @@ class TestDE(TestCase):
 
         # check convergence
         j = (N >= err_a)
-        assert np.all(err[j] <= expected[j])
+        assert np.all(err[j] <= expected[j]), (N[j], err[j])
 
     def test_convergence_fig6(self):
         # Compare convergence against Fig. 6 in [TM];
