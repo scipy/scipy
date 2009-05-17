@@ -1041,6 +1041,8 @@ General Kolmogorov-Smirnov one-sided test.
 class kstwobign_gen(rv_continuous):
     def _cdf(self,x):
         return 1.0-special.kolmogorov(x)
+    def _sf(self,x):
+        return special.kolmogorov(x)
     def _ppf(self,q):
         return special.kolmogi(1.0-q)
 kstwobign = kstwobign_gen(a=0.0,name='kstwobign', longname='Kolmogorov-Smirnov two-sided (for large N)', extradoc="""
@@ -1070,6 +1072,8 @@ class norm_gen(rv_continuous):
         return _norm_cdf(x)
     def _ppf(self,q):
         return _norm_ppf(q)
+    def _isf(self,q):
+        return -_norm_ppf(q)
     def _stats(self):
         return 0.0, 1.0, 0.0, 0.0
     def _entropy(self):
@@ -1526,9 +1530,13 @@ class expon_gen(rv_continuous):
     def _pdf(self, x):
         return exp(-x)
     def _cdf(self, x):
-        return 1.0-exp(-x)
+        return -expm1(-x)
     def _ppf(self, q):
-        return -log(1.0-q)
+        return -log1p(-q)
+    def _sf(self,x):
+        return exp(-x)
+    def _isf(self,q):
+        return -log(q)
     def _stats(self):
         return 1.0, 1.0, 2.0, 6.0
     def _entropy(self):
@@ -1552,10 +1560,10 @@ class exponweib_gen(rv_continuous):
         exc = exp(-x**c)
         return a*c*(1-exc)**arr(a-1) * exc * x**arr(c-1)
     def _cdf(self, x, a, c):
-        exc = exp(-x**c)
-        return arr((1-exc)**a)
+        exm1c = -expm1(-x**c)
+        return arr((exm1c)**a)
     def _ppf(self, q, a, c):
-        return (-log(1-q**(1.0/a)))**arr(1.0/c)
+        return (-log1p(-q**(1.0/a)))**arr(1.0/c)
 exponweib = exponweib_gen(a=0.0,name='exponweib',
                           longname="An exponentiated Weibull",
                           shapes="a,c",extradoc="""
@@ -1576,9 +1584,14 @@ class exponpow_gen(rv_continuous):
         return exp(1)*b*xbm1 * exp(xb - exp(xb))
     def _cdf(self, x, b):
         xb = arr(x**b)
-        return 1.0-exp(1-exp(xb))
+        return -expm1(-expm1(xb))
+    def _sf(self, x, b):
+        xb = arr(x**b)
+        return exp(-expm1(xb))
+    def _isf(self, x, b):
+        return (log1p(-log(x)))**(1./b)
     def _ppf(self, q, b):
-        return pow(log(1.0-log(1.0-q)), 1.0/b)
+        return pow(log1p(-log1p(-q)), 1.0/b)
 exponpow = exponpow_gen(a=0.0,name='exponpow',longname="An exponential power",
                         shapes='b',extradoc="""
 
@@ -1733,9 +1746,9 @@ class frechet_r_gen(rv_continuous):
     def _pdf(self, x, c):
         return c*pow(x,c-1)*exp(-pow(x,c))
     def _cdf(self, x, c):
-        return 1-exp(-pow(x,c))
+        return -expm1(-pow(x,c))
     def _ppf(self, q, c):
-        return pow(-log(1-q),1.0/c)
+        return pow(-log1p(-q),1.0/c)
     def _munp(self, n, c):
         return special.gamma(1.0+n*1.0/c)
     def _entropy(self, c):
@@ -1866,9 +1879,9 @@ for c != 0, and for x >= 0 for all c, and x < 1/abs(c) for c < 0.
 
 class genexpon_gen(rv_continuous):
     def _pdf(self, x, a, b, c):
-        return (a+b*(1-exp(-c*x)))*exp((-a-b)*x+b*(1-exp(-c*x))/c)
+        return (a+b*(-expm1(-c*x)))*exp((-a-b)*x+b*(-expm1(-c*x))/c)
     def _cdf(self, x, a, b, c):
-        return 1.0-exp((-a-b)*x + b*(1-exp(-c*x))/c)
+        return -expm1((-a-b)*x + b*(-expm1(-c*x))/c)
 genexpon = genexpon_gen(a=0.0,name='genexpon',
                         longname='A generalized exponential',
                         shapes='a,b,c',extradoc="""
@@ -3043,7 +3056,7 @@ where phi is the normal pdf, and Phi is the normal cdf, and x > 0, c > 0.
 # FIXME: PPF does not work.
 class rdist_gen(rv_continuous):
     def _pdf(self, x, c):
-        return pow((1.0-x*x),c/2.0-1) / special.beta(0.5,c/2.0)
+        return np.power((1.0-x*x),c/2.0-1) / special.beta(0.5,c/2.0)
     def _cdf_skip(self, x, c):
         #error inspecial.hyp2f1 for some values see tickets 758, 759
         return 0.5 + x/special.beta(0.5,c/2.0)* \
@@ -3238,9 +3251,9 @@ class truncexpon_gen(rv_continuous):
         #wrong answer with formula, same as in continuous.pdf
         #return gam(n+1)-special.gammainc(1+n,b)
         if n == 1:
-            return (1-(b+1)*np.exp(-b))/(1-np.exp(-b))
+            return (1-(b+1)*exp(-b))/(-expm1(-b))
         elif n == 2:
-            return 2*(1-0.5*(b*b+2*b+2)*np.exp(-b))/(1-np.exp(-b))
+            return 2*(1-0.5*(b*b+2*b+2)*exp(-b))/(-expm1(-b))
         else:
             #return generic for higher moments
             #return rv_continuous._mom1_sc(self,n, b)
@@ -4542,11 +4555,11 @@ class planck_gen(rv_discrete):
         k = floor(x)
         return 1-exp(-lambda_*(k+1))
     def _ppf(self, q, lambda_):
-        val = ceil(-1.0/lambda_ * log(1-q)-1)
+        val = ceil(-1.0/lambda_ * log1p(-q)-1)
         return val
     def _stats(self, lambda_):
         mu = 1/(exp(lambda_)-1)
-        var = exp(-lambda_)/(1-exp(-lambda_))**2
+        var = exp(-lambda_)/(expm1(-lambda_))**2
         g1 = 2*cosh(lambda_/2.0)
         g2 = 4+2*cosh(lambda_)
         return mu, var, g1, g2

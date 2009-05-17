@@ -238,6 +238,10 @@ class TestRvDiscrete(TestCase):
 class TestExpon(TestCase):
     def test_zero(self):
         assert_equal(stats.expon.pdf(0),1)
+        
+    def test_tail(self):  # Regression test for ticket 807
+        assert_equal(stats.expon.cdf(1e-18),  1e-18)
+        assert_equal(stats.expon.isf(stats.expon.sf(40)),  40)
 
 class TestGenExpon(TestCase):
     def test_pdf_unity_area(self):
@@ -251,6 +255,11 @@ class TestGenExpon(TestCase):
         # CDF should always be positive
         cdf = stats.genexpon.cdf(numpy.arange(0, 10, 0.01), 0.5, 0.5, 2.0)
         assert(numpy.all((0 <= cdf) & (cdf <= 1)))
+        
+class TestExponpow(TestCase):
+    def test_tail(self):
+        assert_almost_equal(stats.exponpow.cdf(1e-10,  2.),  1e-20)
+        assert_almost_equal(stats.exponpow.isf(stats.exponpow.sf(5, .8), .8),  5)
 
 class TestDocstring(TestCase):
     def test_docstrings(self):
