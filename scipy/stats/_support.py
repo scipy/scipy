@@ -174,9 +174,48 @@ def collapse(a, keepcols, collapsecols, stderr=0, ns=0, cfcn=None):
     Returns: unique 'conditions' specified by the contents of columns specified
     by keepcols, abutted with the mean(s,axis=0) of column(s) specified by
     collapsecols
+
+    Examples
+    --------
+
+    import numpy as np
+    from scipy import stats
+
+    xx = np.array([[ 0.,  0.,  1.],
+           [ 1.,  1.,  1.],
+           [ 2.,  2.,  1.],
+           [ 0.,  3.,  1.],
+           [ 1.,  4.,  1.],
+           [ 2.,  5.,  1.],
+           [ 0.,  6.,  1.],
+           [ 1.,  7.,  1.],
+           [ 2.,  8.,  1.],
+           [ 0.,  9.,  1.]])
+
+    >>> stats._support.collapse(xx, (0), (1,2), stderr=0, ns=0, cfcn=None)
+    array([[ 0. ,  4.5,  1. ],
+           [ 0. ,  4.5,  1. ],
+           [ 1. ,  4. ,  1. ],
+           [ 1. ,  4. ,  1. ],
+           [ 2. ,  5. ,  1. ],
+           [ 2. ,  5. ,  1. ]])
+    >>> stats._support.collapse(xx, (0), (1,2), stderr=1, ns=1, cfcn=None)
+    array([[ 0.        ,  4.5       ,  1.93649167,  4.        ,  1.        ,
+             0.        ,  4.        ],
+           [ 0.        ,  4.5       ,  1.93649167,  4.        ,  1.        ,
+             0.        ,  4.        ],
+           [ 1.        ,  4.        ,  1.73205081,  3.        ,  1.        ,
+             0.        ,  3.        ],
+           [ 1.        ,  4.        ,  1.73205081,  3.        ,  1.        ,
+             0.        ,  3.        ],
+           [ 2.        ,  5.        ,  1.73205081,  3.        ,  1.        ,
+             0.        ,  3.        ],
+           [ 2.        ,  5.        ,  1.73205081,  3.        ,  1.        ,
+             0.        ,  3.        ]])
+
     """
     if cfcn is None:
-        cfcn = stats.mean
+        cfcn = lambda(x): np.mean(x, axis=0)
     a = asarray(a)
     if keepcols == []:
         avgcol = colex(a,collapsecols)
@@ -186,7 +225,7 @@ def collapse(a, keepcols, collapsecols, stderr=0, ns=0, cfcn=None):
         if type(keepcols) not in [ListType,TupleType,np.ndarray]:
             keepcols = [keepcols]
         values = colex(a,keepcols)   # so that "item" can be appended (below)
-        uniques = unique(values)  # get a LIST, so .sort keeps rows intact
+        uniques = unique(values).tolist()  # get a LIST, so .sort keeps rows intact
         uniques.sort()
         newlist = []
         for item in uniques:
