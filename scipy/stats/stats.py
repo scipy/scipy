@@ -1240,7 +1240,7 @@ Returns: transformed data for use in an ANOVA
         v[i] = var(nargs[i])
         m[i] = mean(nargs[i],None)
     for j in range(k):
-        for i in range(n[j]):
+        for i in range(int(n[j])):
             t1 = (n[j]-1.5)*n[j]*(nargs[j][i]-m[j])**2
             t2 = 0.5*v[j]*(n[j]-1.0)
             t3 = (n[j]-1.0)*(n[j]-2.0)
