@@ -110,5 +110,17 @@ class TestFindRepeats(TestCase):
         assert_array_equal(res,[1,2,3,4])
         assert_array_equal(nums,[3,3,2,2])
 
+def test_fligner():
+    #numbers from R: fligner.test in package stats
+    x1=np.arange(5)
+    assert_array_almost_equal(stats.fligner(x1,x1**2),
+                       (3.2282229927203536, 0.072379187848207877), 11)
+
+def test_mood():
+    #numbers from R: mood.test in package stats
+    x1=np.arange(5)
+    assert_array_almost_equal(stats.mood(x1,x1**2),
+            (-1.3830857299399906, 0.16663858066771478), 11)
+
 if __name__ == "__main__":
     run_module_suite()
