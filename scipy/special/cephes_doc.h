@@ -11,7 +11,16 @@
 #define berp_doc "y=berp(x) returns the derivative of the Kelvin function ber x"
 #define besselpoly_doc "y=besselpoly(a,lam,nu) returns the value of the integral:\nintegral(x**lam * jv(nu,2*a*x),x=0..1)."
 #define beta_doc "y=beta(a,b) returns gamma(a) * gamma(b) / gamma(a+b)"
-#define betainc_doc "y=betainc(a,b,x) returns the incomplete beta integral of the\narguments, evaluated from zero to x: gamma(a+b) / (gamma(a)*gamma(b))\n* integral(t**(a-1) (1-t)**(b-1), t=0..x)."
+#define betainc_doc "y=betainc(a,b,x) returns the incomplete beta integral of the\n" \
+                "arguments, evaluated from zero to x: \n\n" \
+                "gamma(a+b) / (gamma(a)*gamma(b)) * integral(t**(a-1) (1-t)**(b-1), t=0..x).\n" \
+                "\n" \
+                "Note\n" \
+                "----\n" \
+                "The incomplete beta is also sometimes defined without the terms\n" \
+                "in gamma, in which case the above definition is the so-called regularized\n" \
+                "incomplete beta. Under this definition, you can get the incomplete beta by\n" \
+                "multiplying the result of the scipy function by beta(a, b)."
 #define betaincinv_doc "x=betaincinv(a,b,y) returns x such that betainc(a,b,x) = y."
 #define betaln_doc "y=betaln(a,b) returns the natural logarithm of the absolute value of\nbeta: ln(|beta(x)|)."
 #define btdtr_doc "y=btdtr(a,b,x) returns the area from zero to x under the beta\ndensity function: gamma(a+b)/(gamma(a)*gamma(b)))*integral(t**(a-1)\n(1-t)**(b-1), t=0..x).  SEE ALSO betainc"
