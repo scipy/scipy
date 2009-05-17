@@ -489,7 +489,18 @@ class TestRegression(TestCase):
         y += np.sin(np.linspace(0, 20, 100))
 
         res = stats.linregress(x, y)
-        assert_almost_equal(res[4], 4.3609875083149268e-3)
+        assert_almost_equal(res[4], 2.3957814497838803e-3) #4.3609875083149268e-3)
+
+    def test_linregress(self):
+        '''compared with multivariate ols with pinv'''
+        x = np.arange(11)
+        y = np.arange(5,16)
+        y[[(1),(-2)]] -= 1
+        y[[(0),(-1)]] += 1
+
+        res = (1.0, 5.0, 0.98229948625750, 7.45259691e-008, 0.063564172616372733)
+        assert_array_almost_equal(stats.linregress(x,y),res,decimal=14)
+
 
 # Utility
 
@@ -1215,6 +1226,94 @@ def test_ttest_1samp_new():
     #check that nan in input array result in nan output
     anan = np.array([[1,np.nan],[-1,1]])
     assert_equal(stats.ttest_1samp(anan, 0),([0, np.nan], [1,np.nan]))
+
+def test_describe():
+    x = np.vstack((np.ones((3,4)),2*np.ones((2,4))))
+    nc, mmc = (5, ([ 1.,  1.,  1.,  1.], [ 2.,  2.,  2.,  2.]))
+    mc = np.array([ 1.4,  1.4,  1.4,  1.4])
+    vc = np.array([ 0.3,  0.3,  0.3,  0.3])
+    skc = [0.40824829046386357]*4
+    kurtc = [-1.833333333333333]*4
+    n, mm, m, v, sk, kurt = stats.describe(x)
+    assert_equal(n, nc)
+    assert_equal(mm, mmc)
+    assert_equal(m, mc)
+    assert_equal(v, vc)
+    assert_array_almost_equal(sk, skc, decimal=13) #not sure about precision
+    assert_array_almost_equal(kurt, kurtc, decimal=13)
+    n, mm, m, v, sk, kurt = stats.describe(x.T, axis=1)
+    assert_equal(n, nc)
+    assert_equal(mm, mmc)
+    assert_equal(m, mc)
+    assert_equal(v, vc)
+    assert_array_almost_equal(sk, skc, decimal=13) #not sure about precision
+    assert_array_almost_equal(kurt, kurtc, decimal=13)
+
+def test_normalitytests():
+    # numbers verified with R: dagoTest in package fBasics
+    st_normal, st_skew, st_kurt = (3.92371918, 1.98078826, -0.01403734)
+    pv_normal, pv_skew, pv_kurt = (0.14059673, 0.04761502,  0.98880019)
+    x = np.array((-2,-1,0,1,2,3)*4)**2
+    yield assert_array_almost_equal, stats.normaltest(x), (st_normal, pv_normal)
+    yield assert_array_almost_equal, stats.skewtest(x), (st_skew, pv_skew)
+    yield assert_array_almost_equal, stats.kurtosistest(x), (st_kurt, pv_kurt)
+
+
+def mannwhitneyu():
+    x = np.array([ 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 2., 1., 1., 2., 1., 1.,
+        2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 3., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1.])
+
+    y = np.array([ 1., 1., 1., 1., 1., 1., 1., 2., 1., 2., 1., 1., 1.,
+        1., 2., 1., 1., 1., 2., 1., 1., 1., 1., 1., 2., 1., 1., 3., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 2., 1., 1., 1., 1.,
+        1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 2., 1., 1., 1., 1., 1., 2., 2., 1., 1., 2., 1., 1., 2.,
+        1., 2., 1., 1., 1., 1., 2., 2., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 2., 2., 2., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 2., 1., 1., 2., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 2., 1., 1., 1., 1., 1.,
+        1.])
+    #p-value verified with matlab and R to 5 significant digits
+    assert_array_almost_equal(stats.stats.mannwhitneyu(x,y),
+                    (16980.5, 2.8214327656317373e-005), decimal=12)
+
+
+
+def test_pointbiserial():
+    # copied from mstats tests removing nans
+    x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
+         0,0,0,0,1]
+    y = [14.8,13.8,12.4,10.1,7.1,6.1,5.8,4.6,4.3,3.5,3.3,3.2,3.0,
+         2.8,2.8,2.5,2.4,2.3,2.1,1.7,1.7,1.5,1.3,1.3,1.2,1.2,1.1,
+         0.8,0.7,0.6,0.5,0.2,0.2,0.1]
+    assert_almost_equal(stats.pointbiserialr(x, y)[0], 0.36149, 5)
+
+
+def test_obrientransform():
+    #this is a regression test to check np.var replacement
+    #I didn't separately verigy the numbers
+    x1 = np.arange(5)
+    result = np.array(
+      [[  5.41666667,   1.04166667,  -0.41666667,   1.04166667,  5.41666667],
+       [ 21.66666667,   4.16666667,  -1.66666667,   4.16666667, 21.66666667]])
+    assert_array_almost_equal(stats.obrientransform(x1, 2*x1), result, decimal=8)
+
+
 
 
 
