@@ -9,7 +9,7 @@ from scipy.linalg import norm
 from scipy.sparse import spdiags, csr_matrix
 
 from scipy.sparse.linalg.interface import LinearOperator
-from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres
+from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres
 
 #def callback(x):
 #    global A, b
@@ -42,6 +42,7 @@ class TestIterative(TestCase):
         self.solvers.append( (gmres,    False, False) )
         self.solvers.append( (qmr,      False, False) )
         self.solvers.append( (minres,   True,  False) )
+        self.solvers.append( (lgmres,   False, False) )
 
         # list of tuples (A, symmetric, positive_definite )
         self.cases = []
