@@ -72,4 +72,5 @@ class TestLGMRES(TestCase):
         assert allclose(x1, x0, rtol=1e-14)
 
 if __name__ == "__main__":
+    import nose
     nose.run(argv=['', __file__])
