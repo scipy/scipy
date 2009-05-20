@@ -5,11 +5,9 @@
 
 __usage__ = """
 Build linalg:
-  python setup_blas.py build
+  python setup.py build
 Run tests if scipy is installed:
-  python -c 'import scipy;scipy.lib.blas.test(<level>)'
-Run tests if blas is not installed:
-  python tests/test_blas.py [<level>]
+  python -c 'import scipy;scipy.lib.blas.test()'
 """
 
 import math
@@ -198,28 +196,6 @@ class TestBLAS(TestCase):
         b = array([[1],[1],[1]])
         gemm, = get_blas_funcs(('gemm',),(a,b))
         assert_array_almost_equal(gemm(1,a,b),[[3]],15)
-
-    def test_fblas(self):
-        if hasattr(fblas,'empty_module'):
-            print """
-****************************************************************
-WARNING: fblas module is empty.
------------
-See scipy/INSTALL.txt for troubleshooting.
-****************************************************************
-"""
-    def test_cblas(self):
-        if hasattr(cblas,'empty_module'):
-            print """
-****************************************************************
-WARNING: cblas module is empty
------------
-See scipy/INSTALL.txt for troubleshooting.
-Notes:
-* If atlas library is not found by numpy/distutils/system_info.py,
-  then scipy uses fblas instead of cblas.
-****************************************************************
-"""
 
 if __name__ == "__main__":
     run_module_suite()
