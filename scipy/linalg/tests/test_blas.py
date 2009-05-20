@@ -5,11 +5,9 @@
 
 __usage__ = """
 Build linalg:
-  python setup_linalg.py build
+  python setup.py build
 Run tests if scipy is installed:
-  python -c 'import scipy;scipy.linalg.test(<level>)'
-Run tests if linalg is not installed:
-  python tests/test_blas.py [<level>]
+  python -c 'import scipy;scipy.linalg.test()'
 """
 
 import math
@@ -183,30 +181,6 @@ class TestFBLAS3Simple(TestCase):
             if f is None: continue
             assert_array_almost_equal(f(3j,[3-4j],[-4]),[[-48-36j]])
             assert_array_almost_equal(f(3j,[3-4j],[-4],3,[5j]),[-48-21j])
-
-class TestBLAS(TestCase):
-
-    def test_fblas(self):
-        if hasattr(fblas,'empty_module'):
-            print """
-****************************************************************
-WARNING: fblas module is empty.
------------
-See scipy/INSTALL.txt for troubleshooting.
-****************************************************************
-"""
-    def test_cblas(self):
-        if hasattr(cblas,'empty_module'):
-            print """
-****************************************************************
-WARNING: cblas module is empty
------------
-See scipy/INSTALL.txt for troubleshooting.
-Notes:
-* If atlas library is not found by numpy/distutils/system_info.py,
-  then scipy uses fblas instead of cblas.
-****************************************************************
-"""
 
 if __name__ == "__main__":
     run_module_suite()
