@@ -4,7 +4,7 @@ from decimal import Decimal
 from numpy.testing import *
 
 import scipy.signal as signal
-from scipy.signal import lfilter
+from scipy.signal import lfilter, correlate
 
 
 from numpy import array, arange
@@ -254,6 +254,121 @@ class TestLinearFilterComplexxxiExtended28(_TestLinearFilter):
 
 class TestLinearFilterDecimal(_TestLinearFilter):
     dt = np.dtype(Decimal)
+
+class _TestCorrelateReal(TestCase):
+    dt = None
+    def test_rank1(self):
+        a = np.linspace(0, 3, 4).astype(self.dt)
+        b = np.linspace(1, 2, 2).astype(self.dt)
+
+        y_r = np.array([0, 2, 5, 8, 3]).astype(self.dt)
+
+        y = correlate(a, b, 'valid')
+        assert_array_almost_equal(y, y_r[1:4])
+        self.failUnless(y.dtype == self.dt)
+
+        y = correlate(a, b, 'same')
+        assert_array_almost_equal(y, y_r[:-1])
+        self.failUnless(y.dtype == self.dt)
+
+        y = correlate(a, b, 'full')
+        assert_array_almost_equal(y, y_r)
+        self.failUnless(y.dtype == self.dt)
+
+    def test_rank3(self):
+        a = np.linspace(0, 23, 24).reshape(2, 3, 4).astype(self.dt)
+        b = np.linspace(0, 39, 40).reshape(2, 4, 5).astype(self.dt)
+
+        y_r = array([[[    0.,    23.,    68.,   134.,   220.,   191.,   144.,    80.],
+                [  115.,   267.,   454.,   674.,   830.,   661.,   465.,   244.],
+                [  325.,   692.,  1098.,  1540.,  1750.,  1350.,   923.,   472.],
+                [  610.,  1247.,  1908.,  2590.,  2800.,  2115.,  1418.,   712.],
+                [  435.,   879.,  1330.,  1786.,  1910.,  1429.,   949.,   472.],
+                [  225.,   450.,   674.,   896.,   950.,   704.,   463.,   228.]],
+
+                [[  460.,   934.,  1420.,  1916.,  2040.,  1534.,  1024.,   512.],
+                [ 1010.,  2030.,  3056.,  4084.,  4300.,  3206.,  2122.,  1052.],
+                [ 1610.,  3208.,  4788.,  6344.,  6620.,  4896.,  3214.,  1580.],
+                [ 2000.,  3958.,  5868.,  7724.,  8000.,  5886.,  3844.,  1880.],
+                [ 1250.,  2454.,  3608.,  4708.,  4860.,  3542.,  2290.,  1108.],
+                [  570.,  1108.,  1612.,  2080.,  2140.,  1540.,   982.,   468.]],
+
+                [[  220.,   431.,   632.,   822.,   860.,   623.,   400.,   192.],
+                [  415.,   803.,  1162.,  1490.,  1550.,  1105.,   697.,   328.],
+                [  565.,  1076.,  1530.,  1924.,  1990.,  1386.,   851.,   388.],
+                [  670.,  1271.,  1800.,  2254.,  2320.,  1611.,   986.,   448.],
+                [  335.,   615.,   838.,  1002.,  1030.,   673.,   381.,   156.],
+                [  105.,   178.,   218.,   224.,   230.,   116.,    39., 0.]]],
+                dtype=self.dt)
+
+        y = correlate(a, b, "valid")
+        assert_array_almost_equal(y, y_r[1:2,2:4,3:5])
+        self.failUnless(y.dtype == self.dt)
+
+        y = correlate(a, b, "same")
+        assert_array_almost_equal(y, y_r[:2,1:5,1:6])
+        self.failUnless(y.dtype == self.dt)
+
+        y = correlate(a, b)
+        assert_array_almost_equal(y, y_r)
+        self.failUnless(y.dtype == self.dt)
+
+class TestCorrelateDouble(_TestCorrelateReal):
+    dt = np.float64
+
+class TestCorrelateSingle(_TestCorrelateReal):
+    dt = np.float32
+
+class TestCorrelateExtended(_TestCorrelateReal):
+    dt = np.longdouble
+
+class TestCorrelateObject(_TestCorrelateReal):
+    dt = Decimal
+
+class _TestCorrelateComplex(TestCase):
+    dt = None
+    def test_rank1(self):
+        a = np.random.randn(10).astype(self.dt)
+        a += 1j * np.random.randn(10).astype(self.dt)
+        b = np.random.randn(8).astype(self.dt)
+        b += 1j * np.random.randn(8).astype(self.dt)
+
+        y_r = (correlate(a.real, b.real) - correlate(a.imag, b.imag)).astype(self.dt)
+        y_r += 1j * (correlate(a.real, b.imag) + correlate(a.imag, b.real))
+
+        y = correlate(a, b, 'valid')
+        assert_array_almost_equal(y, y_r[7:10])
+        self.failUnless(y.dtype == self.dt)
+
+        y = correlate(a, b, 'same')
+        assert_array_almost_equal(y, y_r[3:-4])
+        self.failUnless(y.dtype == self.dt)
+
+        y = correlate(a, b, 'full')
+        assert_array_almost_equal(y, y_r)
+        self.failUnless(y.dtype == self.dt)
+
+    def test_rank3(self):
+        a = np.random.randn(10, 8, 6).astype(self.dt)
+        a += 1j * np.random.randn(10, 8, 6).astype(self.dt)
+        b = np.random.randn(8, 6, 4).astype(self.dt)
+        b += 1j * np.random.randn(8, 6, 4).astype(self.dt)
+
+        y_r = (correlate(a.real, b.real) - correlate(a.imag, b.imag)).astype(self.dt)
+        y_r += 1j * (correlate(a.real, b.imag) + correlate(a.imag, b.real))
+
+        y = correlate(a, b, 'full')
+        assert_array_almost_equal(y, y_r, decimal=4)
+        self.failUnless(y.dtype == self.dt)
+
+class TestCorrelateComplexSingle(_TestCorrelateComplex):
+    dt = np.complex64
+
+class TestCorrelateComplexDouble(_TestCorrelateComplex):
+    dt = np.complex128
+
+class TestCorrelateComplexExtended(_TestCorrelateComplex):
+    dt = np.longcomplex
 
 class TestFiltFilt:
     def test_basic(self):
