@@ -909,15 +909,31 @@ def kron(a,b):
 def block_diag(*arrs):
     """Create a diagonal matrix from the provided arrays.
 
+    Given the inputs `A`, `B` and `C`, the output will have these
+    arrays arranged on the diagonal::
+
+        [[A, 0, 0],
+         [0, B, 0],
+         [0, 0, C]]
+
+    If all the input arrays are square, the output is known as a
+    block diagonal matrix.
+
     Parameters
     ----------
-    a, b, c, ... : ndarray
+    A, B, C, ... : 2-D ndarray
         Input arrays.
 
     Returns
     -------
     D : ndarray
-        Array with a, b, c, ... on the diagonal.
+        Array with `A`, `B`, `C`, ... on the diagonal.  `D` has the
+        same dtype as `A`.
+
+    References
+    ----------
+    .. [1] Wikipedia, "Block matrix",
+           http://en.wikipedia.org/wiki/Block_diagonal_matrix
 
     Examples
     --------
@@ -936,7 +952,7 @@ def block_diag(*arrs):
     """
     arrs = [asarray(a) for a in arrs]
     shapes = numpy.array([a.shape for a in arrs])
-    out = zeros(sum(shapes, axis=0))
+    out = zeros(sum(shapes, axis=0), dtype=arrs[0].dtype)
 
     r, c = 0, 0
     for i, (rr, cc) in enumerate(shapes):

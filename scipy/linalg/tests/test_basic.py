@@ -399,15 +399,22 @@ class TestHankel(TestCase):
         y = hankel([1,2,3],[3,4,5])
         assert_array_equal(y,[[1,2,3],[2,3,4],[3,4,5]])
 
-def test_block_diag():
-    x = block_diag(eye(2), [[1,2], [3,4], [5,6]], [[1, 2, 3]])
-    assert all(x == [[1, 0, 0, 0, 0, 0, 0],
-                     [0, 1, 0, 0, 0, 0, 0],
-                     [0, 0, 1, 2, 0, 0, 0],
-                     [0, 0, 3, 4, 0, 0, 0],
-                     [0, 0, 5, 6, 0, 0, 0],
-                     [0, 0, 0, 0, 1, 2, 3]])
+class TestBlockDiag:
+    def test_basic(self):
+        x = block_diag(eye(2), [[1,2], [3,4], [5,6]], [[1, 2, 3]])
+        assert all(x == [[1, 0, 0, 0, 0, 0, 0],
+                         [0, 1, 0, 0, 0, 0, 0],
+                         [0, 0, 1, 2, 0, 0, 0],
+                         [0, 0, 3, 4, 0, 0, 0],
+                         [0, 0, 5, 6, 0, 0, 0],
+                         [0, 0, 0, 0, 1, 2, 3]])
 
+    def test_dtype(self):
+        x = block_diag([[1.5]])
+        assert_equal(x.dtype, float)
+
+        x = block_diag([[True]])
+        assert_equal(x.dtype, bool)
 
 class TestPinv(TestCase):
 
