@@ -8,7 +8,7 @@
 # w/ additions by Travis Oliphant, March 2002
 
 __all__ = ['solve','inv','det','lstsq','norm','pinv','pinv2',
-           'tri','tril','triu','toeplitz','hankel','lu_solve',
+           'tri','tril','triu','toeplitz','hankel','block_diag','lu_solve',
            'cho_solve','solve_banded','LinAlgError','kron',
            'all_mat', 'cholesky_banded', 'solveh_banded']
 
@@ -905,3 +905,43 @@ def kron(a,b):
     o = outer(a,b)
     o=o.reshape(a.shape + b.shape)
     return concatenate(concatenate(o, axis=1), axis=1)
+
+def block_diag(*arrs):
+    """Create a diagonal matrix from the provided arrays.
+
+    Parameters
+    ----------
+    a, b, c, ... : ndarray
+        Input arrays.
+
+    Returns
+    -------
+    D : ndarray
+        Array with a, b, c, ... on the diagonal.
+
+    Examples
+    --------
+    >>> A = [[1, 0],
+    ...      [0, 1]]
+    >>> B = [[3, 4, 5],
+    ...      [6, 7, 8]]
+    >>> C = [[7]]
+    >>> print block_diag(A, B, C)
+    [[ 1.  0.  0.  0.  0.  0.]
+     [ 0.  1.  0.  0.  0.  0.]
+     [ 0.  0.  3.  4.  5.  0.]
+     [ 0.  0.  6.  7.  8.  0.]
+     [ 0.  0.  0.  0.  0.  7.]]
+
+    """
+    arrs = [asarray(a) for a in arrs]
+    shapes = numpy.array([a.shape for a in arrs])
+    out = zeros(sum(shapes, axis=0))
+
+    r, c = 0, 0
+    for i, (rr, cc) in enumerate(shapes):
+        out[r:r + rr, c:c + cc] = arrs[i]
+        r += rr
+        c += cc
+    return out
+
