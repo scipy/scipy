@@ -34,6 +34,7 @@ from fourier import *
 from interpolation import *
 from measurements import *
 from morphology import *
+from io import *
 
 from info import __doc__
 __version__ = '2.0'
