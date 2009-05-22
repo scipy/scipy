@@ -12665,6 +12665,7 @@ C                arbitrary order v
 C       Input :  v  --- Order of Hv(x)  ( -8.0 ≤ v ≤ 12.5 )
 C                x  --- Argument of Hv(x) ( x ≥ 0 )
 C       Output:  HV --- Hv(x)
+C       Note: numerically unstable away from the above range for `v`
 C       Routine called: GAMMA2 to compute the gamma function
 C       =====================================================
 C
@@ -12685,6 +12686,7 @@ C
         QU0=0.0D0
         PU0=0.0D0
         IF (X.LE.20.0D0) THEN
+C          Power series for Hv (Abramowitz & Stegun 12.1.3)
            V0=V+1.5D0
            CALL GAMMA2(V0,GA)
            S=2.0D0/(DSQRT(PI)*GA)
@@ -12701,6 +12703,7 @@ C
 10         CONTINUE
 15         HV=(0.5D0*X)**(V+1.0D0)*S
         ELSE
+C          Asymptotic large |z| expansion for Hv - Yv  (Abm & Stg 12.1.29)
            SA=(0.5D0*X)**(V-1.0)/PI
            V0=V+0.5D0
            CALL GAMMA2(V0,GA)
@@ -12715,6 +12718,8 @@ C
               S=S+R1*GA/GB
 20         CONTINUE
            S0=SA*S
+
+C          Compute Y_(|v|-N)   (Abm & Stg 9.2.6)
            U=DABS(V)
            N=INT(U)
            U0=U-N
@@ -12745,6 +12750,8 @@ C
            SR=DSQRT(2.0D0/(PI*X))
            BY0=SR*(PU0*DSIN(T0)+QU0*DCOS(T0))
            BY1=SR*(PU1*DSIN(T1)+QU1*DCOS(T1))
+
+C          Compute Y_|v|   (Abm & Stg 9.1.27)
            BF0=BY0
            BF1=BY1
            DO 40 K=2,N
@@ -12754,6 +12761,37 @@ C
            IF (N.EQ.0) BYV=BY0
            IF (N.EQ.1) BYV=BY1
            IF (N.GT.1) BYV=BF
+
+C          Compute Y_v  (handle the case v < 0 appropriately)
+           IF (V .LT. 0) THEN
+              IF (U0 .EQ. 0) THEN
+C                Use symmetry (Abm & Stg 9.1.5)
+                 BYV=(-1)**N*BYV
+              ELSE
+C                Use relation between Yv & Jv (Abm & Stg 9.1.6)
+
+C                Compute J_(|v|-N) (Abm & Stg 9.2.5)
+                 BJ0=SR*(PU0*DCOS(T0)-QU0*DSIN(T0))
+                 BJ1=SR*(PU1*DCOS(T1)-QU1*DSIN(T1))
+C                Forward recurrence for J_|v| (Abm & Stg 9.1.27)
+C                It's OK for the limited range -8.0 ≤ v ≤ 12.5, 
+C                since x >= 20 here; but would be unstable for v <~ -20
+                 BF0=BJ0
+                 BF1=BJ1
+                 DO 50 K=2,N
+                    BF=2.0D0*(K-1.0+U0)/X*BF1-BF0
+                    BF0=BF1
+50                  BF1=BF
+                 IF (N.EQ.0) BJV=BJ0
+                 IF (N.EQ.1) BJV=BJ1
+                 IF (N.GT.1) BJV=BF
+
+C                Compute Y_v    (Abm & Stg 9.1.6)
+                 BYV = DCOS(V*PI)*BYV + DSIN(-V*PI)*BJV
+              END IF
+           END IF
+
+C          Compute H_v
            HV=BYV+S0
         ENDIF
         RETURN
@@ -12762,4 +12800,3 @@ C
 
 
 C       **********************************
-
