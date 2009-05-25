@@ -5,8 +5,8 @@ def imread(fname, flatten=False):
 
     Parameters
     ----------
-    im : PIL image
-        Input image.
+    fname : string
+        Image file name, e.g. ``test.jpg``.
     flatten : bool
         If true, convert the output to grey-scale.
 
@@ -18,7 +18,14 @@ def imread(fname, flatten=False):
         RGB-image MxNx3 and an RGBA-image MxNx4.
 
     """
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError:
+        raise ImportError("Could not import the Python Imaging Library (PIL)"
+                          " required to load image files.  Please refer to"
+                          " http://pypi.python.org/pypi/PIL/ for installation"
+                          " instructions.")
+
     im = Image.open(fname)
     if flatten:
         im = im.convert('F')
