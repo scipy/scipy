@@ -98,15 +98,6 @@ double jv(double n, double x)
     double k, q, t, y, an;
     int i, sign, nint;
 
-    /* The recursion used when n = 3 and x = 4 in recur gives 
-       the wrong answer.   
-       
-       Simple fix for now:
-     */
-    if ((n==3) && (x == 4)) {
-       return 0.43017147387562193;
-    }
-
     nint = 0;			/* Flag for integer n */
     sign = 1;			/* Flag for sign inversion */
     an = fabs(n);
@@ -265,8 +256,29 @@ static double recur(double *n, double x, double *newn, int cancel)
     double k, ans, qk, xk, yk, r, t, kf;
     static double big = BIG;
     int nflag, ctr;
+    int miniter, maxiter;
 
-/* continued fraction for Jn(x)/Jn-1(x)  */
+/* Continued fraction for Jn(x)/Jn-1(x)
+ * AMS 9.1.73
+ *
+ *    x       -x^2      -x^2
+ * ------  ---------  ---------   ...
+ * 2 n +   2(n+1) +   2(n+2) +
+ *
+ * Compute it with the simplest possible algorithm.
+ *
+ * This continued fraction starts to converge when (|n| + m) > |x|.
+ * Hence, at least |x|-|n| iterations are necessary before convergence is
+ * achieved. There is a hard limit set below, m <= 30000, which is chosen
+ * so that no branch in `jv` requires more iterations to converge.
+ * The exact maximum number is (500/3.6)^2 - 500 ~ 19000
+ */
+
+    maxiter = 22000;
+    miniter = fabs(x) - fabs(*n);
+    if (miniter < 1)
+        miniter = 1;
+
     if (*n < 0.0)
 	nflag = 1;
     else
@@ -284,7 +296,7 @@ static double recur(double *n, double x, double *newn, int cancel)
     qkm1 = *n + *n;
     xk = -x * x;
     yk = qkm1;
-    ans = 1.0;
+    ans = 0.0; /* ans=0.0 ensures that t=1.0 in the first iteration */
     ctr = 0;
     do {
 	yk += 2.0;
@@ -294,23 +306,28 @@ static double recur(double *n, double x, double *newn, int cancel)
 	pkm1 = pk;
 	qkm2 = qkm1;
 	qkm1 = qk;
-	if (qk != 0)
+
+	/* check convergence */
+	if (qk != 0 && ctr > miniter)
 	    r = pk / qk;
 	else
 	    r = 0.0;
+
 	if (r != 0) {
 	    t = fabs((ans - r) / r);
 	    ans = r;
-	} else
+	} else {
 	    t = 1.0;
+	}
 
-	if (++ctr > 1000) {
+	if (++ctr > maxiter) {
 	    mtherr("jv", UNDERFLOW);
 	    goto done;
 	}
 	if (t < MACHEP)
 	    goto done;
 
+	/* renormalize coefficients */
 	if (fabs(pk) > big) {
 	    pkm2 /= big;
 	    pkm1 /= big;
@@ -321,6 +338,8 @@ static double recur(double *n, double x, double *newn, int cancel)
     while (t > MACHEP);
 
   done:
+    if (ans == 0)
+        ans = 1.0;
 
 #if CEPHES_DEBUG
     printf("%.6e\n", ans);
