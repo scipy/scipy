@@ -1863,54 +1863,23 @@ C                FJN ---  Jn"(x)
 C                BYN ---  Yn(x)
 C                DYN ---  Yn'(x)
 C                FYN ---  Yn"(x)
+C       Routines called:
+C                JYNBH to compute Jn and Yn
 C       ===========================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        DIMENSION BJ(102),BY(102)
-        DO 10 NT=1,900
-           MT=INT(0.5*LOG10(6.28*NT)-NT*LOG10(1.36*DABS(X)/NT))
-           IF (MT.GT.20) GO TO 15
-10      CONTINUE
-15      M=NT
-        BS=0.0D0
-        F0=0.0D0
-        F1=1.0D-35
-        SU=0.0D0
-        F=0.0D0
-        DO 20 K=M,0,-1
-           F=2.0D0*(K+1.0D0)*F1/X-F0
-           IF (K.LE.N+1) BJ(K+1)=F
-           IF (K.EQ.2*INT(K/2)) THEN
-              BS=BS+2.0D0*F
-              IF (K.NE.0) SU=SU+(-1)**(K/2)*F/K
-           ENDIF
-           F0=F1
-20         F1=F
-        DO 25 K=0,N+1
-25         BJ(K+1)=BJ(K+1)/(BS-F)
-        BJN=BJ(N+1)
-        EC=0.5772156649015329D0
-        E0=0.3183098861837907D0
-        S1=2.0D0*E0*(DLOG(X/2.0D0)+EC)*BJ(1)
-        F0=S1-8.0D0*E0*SU/(BS-F)
-        F1=(BJ(2)*F0-2.0D0*E0/X)/BJ(1)
-        BY(1)=F0
-        BY(2)=F1
-        DO 30 K=2,N+1
-           F=2.0D0*(K-1.0D0)*F1/X-F0
-           BY(K+1)=F
-           F0=F1
-30         F1=F
-        BYN=BY(N+1)
-        DJN=-BJ(N+2)+N*BJ(N+1)/X
-        DYN=-BY(N+2)+N*BY(N+1)/X
+        DIMENSION BJ(2),BY(2)
+        CALL JYNBH(N+1,N,X,NM,BJ,BY)
+C       Compute derivatives by differentiation formulas
+        BJN=BJ(1)
+        BYN=BY(1)
+        DJN=-BJ(2)+N*BJ(1)/X
+        DYN=-BY(2)+N*BY(1)/X
         FJN=(N*N/(X*X)-1.0D0)*BJN-DJN/X
         FYN=(N*N/(X*X)-1.0D0)*BYN-DYN/X
         RETURN
         END
 
-
- 
 
 C       **********************************
 
@@ -4253,27 +4222,61 @@ C                BY(n) --- Yn(x)
 C                DY(n) --- Yn'(x)
 C                NM --- Highest order computed
 C       Routines called:
+C                JYNBH to calculate the Jn and Yn
+C       =====================================================
+C
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION BJ(0:N),DJ(0:N),BY(0:N),DY(0:N)
+        CALL JYNBH(N,0,X,NM,BJ,BY)
+C       Compute derivatives by differentiation formulas
+        IF (X.LT.1.0D-100) THEN
+           DO 10 K=0,N
+              DJ(K) = 0.0D0
+ 10           DY(K) = 1.0D+300
+           DJ(1)=0.5D0
+        ELSE   
+           DJ(0)=-BJ(1)
+           DO 40 K=1,NM
+ 40           DJ(K)=BJ(K-1)-K/X*BJ(K)
+           DY(0)=-BY(1)
+           DO 50 K=1,NM
+ 50           DY(K)=BY(K-1)-K*BY(K)/X
+        END IF
+        RETURN
+        END
+
+
+C       **********************************
+
+        SUBROUTINE JYNBH(N,NMIN,X,NM,BJ,BY)
+C
+C       =====================================================
+C       Purpose: Compute Bessel functions Jn(x), Yn(x)
+C       Input :  x --- Argument of Jn(x) and Yn(x) ( x ≥ 0 )
+C                n --- Highest order of Jn(x) and Yn(x) computed  ( n ≥ 0 )
+C                nmin -- Lowest order computed  ( nmin ≥ 0 )
+C       Output:  BJ(n-NMIN) --- Jn(x)   ; if indexing starts at 0
+C                BY(n-NMIN) --- Yn(x)   ; if indexing starts at 0
+C                NM --- Highest order computed
+C       Routines called:
 C                MSTA1 and MSTA2 to calculate the starting 
 C                point for backward recurrence
 C       =====================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        DIMENSION BJ(0:N),DJ(0:N),BY(0:N),DY(0:N),
-     &            A(4),B(4),A1(4),B1(4)
+        DIMENSION BJ(0:N-NMIN),BY(0:N-NMIN),A(4),B(4),A1(4),B1(4)
         PI=3.141592653589793D0
         R2P=.63661977236758D0
         NM=N
         IF (X.LT.1.0D-100) THEN
-           DO 10 K=0,N
-              BJ(K)=0.0D0
-              DJ(K)=0.0D0
-              BY(K)=-1.0D+300
-10            DY(K)=1.0D+300
-           BJ(0)=1.0D0
-           DJ(1)=0.5D0
+           DO 10 K=NMIN,N
+              BJ(K-NMIN)=0.0D0
+10            BY(K-NMIN)=-1.0D+300
+           IF (NMIN.EQ.0) BJ(0)=1.0D0
            RETURN
         ENDIF
         IF (X.LE.300.0.OR.N.GT.INT(0.9*X)) THEN
+C          Backward recurrence for Jn
            IF (N.EQ.0) NM=1
            M=MSTA1(X,200)
            IF (M.LT.NM) THEN
@@ -4289,7 +4292,7 @@ C
            F=0.0D0
            DO 15 K=M,0,-1
               F=2.0D0*(K+1.0D0)/X*F1-F2
-              IF (K.LE.NM) BJ(K)=F
+              IF (K.LE.NM .AND. K.GE.NMIN) BJ(K-NMIN)=F
               IF (K.EQ.2*INT(K/2).AND.K.NE.0) THEN
                  BS=BS+2.0D0*F
                  SU=SU+(-1)**(K/2)*F/K
@@ -4299,14 +4302,19 @@ C
               F2=F1
 15            F1=F
            S0=BS+F
-           DO 20 K=0,NM
-20            BJ(K)=BJ(K)/S0
+           DO 20 K=NMIN,NM
+20            BJ(K-NMIN)=BJ(K-NMIN)/S0
+C          Estimates for Yn at start of recurrence
+           BJ0 = F1 / S0
+           BJ1 = F2 / S0
            EC=DLOG(X/2.0D0)+0.5772156649015329D0
-           BY0=R2P*(EC*BJ(0)-4.0D0*SU/S0)
-           BY(0)=BY0
-           BY1=R2P*((EC-1.0D0)*BJ(1)-BJ(0)/X-4.0D0*SV/S0)
-           BY(1)=BY1
+           BY0=R2P*(EC*BJ0-4.0D0*SU/S0)
+           BY1=R2P*((EC-1.0D0)*BJ1-BJ0/X-4.0D0*SV/S0)
+           IF (0.GE.NMIN) BY(0-NMIN)=BY0
+           IF (1.GE.NMIN) BY(1-NMIN)=BY1
+           KY=2
         ELSE
+C          Hankel expansion
            DATA A/-.7031250000000000D-01,.1121520996093750D+00,
      &            -.5725014209747314D+00,.6074042001273483D+01/
            DATA B/ .7324218750000000D-01,-.2271080017089844D+00,
@@ -4324,8 +4332,8 @@ C
            CU=DSQRT(R2P/X)
            BJ0=CU*(P0*DCOS(T1)-Q0*DSIN(T1))
            BY0=CU*(P0*DSIN(T1)+Q0*DCOS(T1))
-           BJ(0)=BJ0
-           BY(0)=BY0
+           IF (0.GE.NMIN) BJ(0-NMIN)=BJ0
+           IF (0.GE.NMIN) BY(0-NMIN)=BY0
            T2=X-0.75D0*PI
            P1=1.0D0
            Q1=0.375D0/X
@@ -4334,25 +4342,21 @@ C
 30            Q1=Q1+B1(K)*X**(-2*K-1)
            BJ1=CU*(P1*DCOS(T2)-Q1*DSIN(T2))
            BY1=CU*(P1*DSIN(T2)+Q1*DCOS(T2))
-           BJ(1)=BJ1
-           BY(1)=BY1
+           IF (1.GE.NMIN) BJ(1-NMIN)=BJ1
+           IF (1.GE.NMIN) BY(1-NMIN)=BY1
            DO 35 K=2,NM
               BJK=2.0D0*(K-1.0D0)/X*BJ1-BJ0
-              BJ(K)=BJK
+              IF (K.GE.NMIN) BJ(K-NMIN)=BJK
               BJ0=BJ1
 35            BJ1=BJK
+           KY=2
         ENDIF
-        DJ(0)=-BJ(1)
-        DO 40 K=1,NM
-40         DJ(K)=BJ(K-1)-K/X*BJ(K)
-        DO 45 K=2,NM
+C       Forward recurrence for Yn
+        DO 45 K=KY,NM
            BYK=2.0D0*(K-1.0D0)*BY1/X-BY0
-           BY(K)=BYK
+           IF (K.GE.NMIN) BY(K-NMIN)=BYK
            BY0=BY1
 45         BY1=BYK
-        DY(0)=-BY(1)
-        DO 50 K=1,NM
-50         DY(K)=BY(K-1)-K*BY(K)/X
         RETURN
         END
 
@@ -10416,20 +10420,27 @@ C       ======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         DIMENSION RJ0(NT),RJ1(NT),RY0(NT),RY1(NT)
+        PI=3.141592653589793D0
+C       -- Newton method for j_{N,L}
+C       1) initial guess for j_{N,1}
         IF (N.LE.20) THEN
            X=2.82141+1.15859*N
         ELSE
+C          Abr & Stg (9.5.14)
            X=N+1.85576*N**0.33333+1.03315/N**0.33333
         ENDIF
         L=0
+C       2) iterate
 10      X0=X
         CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
         X=X-BJN/DJN
-        IF (DABS(X-X0).GT.1.0D-9) GO TO 10
+        IF (DABS(X-X0).GT.1.0D-11) GO TO 10
+C       3) initial guess for j_{N,L+1}
         L=L+1
         RJ0(L)=X
-        X=X+3.1416+(0.0972+0.0679*N-0.000354*N**2)/L
+        X=X+PI+(0.0972+0.0679*N-0.000354*N**2)/L
         IF (L.LT.NT) GO TO 10
+C       -- Newton method for j_{N,L}'
         IF (N.LE.20) THEN
            X=0.961587+1.07703*N
         ELSE
@@ -10440,38 +10451,40 @@ C
 15      X0=X
         CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
         X=X-DJN/FJN
-        IF (DABS(X-X0).GT.1.0D-9) GO TO 15
+        IF (DABS(X-X0).GT.1.0D-11) GO TO 15
         L=L+1
         RJ1(L)=X
-        X=X+3.1416+(0.4955+0.0915*N-0.000435*N**2)/L
+        X=X+PI+(0.4955+0.0915*N-0.000435*N**2)/L
         IF (L.LT.NT) GO TO 15
         IF (N.LE.20) THEN
            X=1.19477+1.08933*N
         ELSE
            X=N+0.93158*N**0.33333+0.26035/N**0.33333
         ENDIF           
+C       -- Newton method for y_{N,L}
         L=0
 20      X0=X
         CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
         X=X-BYN/DYN
-        IF (DABS(X-X0).GT.1.0D-9) GO TO 20
+        IF (DABS(X-X0).GT.1.0D-11) GO TO 20
         L=L+1
         RY0(L)=X
-        X=X+3.1416+(0.312+0.0852*N-0.000403*N**2)/L
+        X=X+PI+(0.312+0.0852*N-0.000403*N**2)/L
         IF (L.LT.NT) GO TO 20
         IF (N.LE.20) THEN
            X=2.67257+1.16099*N
         ELSE
            X=N+1.8211*N**0.33333+0.94001/N**0.33333
         ENDIF  
+C       -- Newton method for y_{N,L}'
         L=0
 25      X0=X
         CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
         X=X-DYN/FYN
-        IF (DABS(X-X0).GT.1.0D-9) GO TO 25
+        IF (DABS(X-X0).GT.1.0D-11) GO TO 25
         L=L+1
         RY1(L)=X
-        X=X+3.1416+(0.197+0.0643*N-0.000286*N**2)/L 
+        X=X+PI+(0.197+0.0643*N-0.000286*N**2)/L 
         IF (L.LT.NT) GO TO 25
         RETURN
         END
