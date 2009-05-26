@@ -373,7 +373,7 @@ class TestCephes(TestCase):
 
     @dec.knownfailureif(platform_bits==64)
     def test_pbdv(self):
-        assert_equal(cephes.pbdv(1,0),(0.0,0.0))
+        assert_equal(cephes.pbdv(1,0),(0.0,1.0))
     def test_pbvv(self):
         cephes.pbvv(1,0)
     def test_pbwa(self):
