@@ -90,7 +90,7 @@ double exp(), log(), sin(), cos(), acos(), pow(), gamma(), lgam();
 static double recur(), jvs(), hankel(), jnx(), jnt();
 #endif
 
-extern double MAXNUM, MACHEP, MINLOG, MAXLOG;
+extern double MAXNUM, MACHEP, MINLOG, MAXLOG, INFINITY, NAN;
 #define BIG  1.44115188075855872E+17
 
 double jv(double n, double x)
@@ -123,7 +123,7 @@ double jv(double n, double x)
 
     if ((x < 0.0) && (y != an)) {
 	mtherr("Jv", DOMAIN);
-	y = 0.0;
+	y = NAN;
 	goto done;
     }
 
@@ -231,7 +231,7 @@ rlarger:
         */
 	if (n < 0.0) {
 	    mtherr("Jv", TLOSS);
-	    y = 0.0;
+	    y = NAN;
 	    goto done;
 	}
 	t = x / n;

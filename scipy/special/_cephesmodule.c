@@ -30,14 +30,12 @@ static PyUFuncGenericFunction cephes1rc_functions[] = { NULL, NULL, NULL, NULL};
 static PyUFuncGenericFunction cephes1_2_functions[] = { NULL, NULL, NULL, NULL,};
 static PyUFuncGenericFunction cephes1_2c_functions[] = { NULL, NULL,};
 static PyUFuncGenericFunction cephes1c_4_functions[] = { NULL, NULL, NULL, NULL };
-static PyUFuncGenericFunction cephes1cp_4_functions[] = { NULL, NULL, NULL, NULL};
 static PyUFuncGenericFunction cephes1cpb_4_functions[] = { NULL, NULL,};
 static PyUFuncGenericFunction cephes2_functions[] = { NULL, NULL, };
 static PyUFuncGenericFunction cephes2_2_functions[] = { NULL, NULL, };
 static PyUFuncGenericFunction cephes2_4_functions[] = { NULL, NULL, };
 static PyUFuncGenericFunction cephes2a_functions[] = { NULL, NULL, };
 static PyUFuncGenericFunction cephes2c_functions[] = { NULL, NULL, NULL, NULL };
-static PyUFuncGenericFunction cephes2cp_functions[] = { NULL, NULL, NULL, NULL, };
 static PyUFuncGenericFunction cephes2cpp_functions[] = { NULL, NULL, };
 static PyUFuncGenericFunction cephes3_functions[] = { NULL, NULL, NULL, NULL};
 static PyUFuncGenericFunction cephes3a_functions[] = { NULL, NULL, };
@@ -50,7 +48,7 @@ static PyUFuncGenericFunction cephes5_2_functions[] = { NULL, NULL, };
 static PyUFuncGenericFunction cephes1c_functions[] = { NULL, NULL, };
 
 static void * airy_data[] = { (void *)airy, (void *)airy, (void *)cairy_wrap, (void *)cairy_wrap,};
-static void * airye_data[] = { (void *)cairy_wrap_e, (void *)cairy_wrap_e, (void *)cairy_wrap_e, (void *)cairy_wrap_e, };
+static void * airye_data[] = { (void *)cairy_wrap_e_real, (void *)cairy_wrap_e_real, (void *)cairy_wrap_e, (void *)cairy_wrap_e, };
 static void * itairy_data[] = { (void *)itairy_wrap, (void *)itairy_wrap, };
 
 static void * kelvin_data[] = { (void *)kelvin_wrap, (void *)kelvin_wrap,};
@@ -148,22 +146,22 @@ static void * gammaincinv_data[] = { (void *)gammaincinv,
                                      (void *)gammaincinv, };
 
 static void * iv_data[] = { (void *)iv, (void *)iv, (void *)cbesi_wrap, (void *)cbesi_wrap,};
-static void * ive_data[] = { (void *)cbesi_wrap_e, (void *)cbesi_wrap_e, (void *)cbesi_wrap_e, (void *)cbesi_wrap_e, };
+static void * ive_data[] = { (void *)cbesi_wrap_e_real, (void *)cbesi_wrap_e_real, (void *)cbesi_wrap_e, (void *)cbesi_wrap_e, };
 static void * j0_data[] = { (void *)j0,  (void *)j0,  };
 static void * y0_data[] = { (void *)y0, (void *)y0, };
 static void * j1_data[] = { (void *)j1,  (void *)j1,  };
 static void * y1_data[] = { (void *)y1, (void *)y1, };
 static void * jv_data[] = { (void *)jv, (void *)jv, (void *)cbesj_wrap, (void *)cbesj_wrap,};
-static void * jve_data[] = { (void *)cbesj_wrap_e, (void *)cbesj_wrap_e, (void *)cbesj_wrap_e, (void *)cbesj_wrap_e, };
+static void * jve_data[] = { (void *)cbesj_wrap_e_real, (void *)cbesj_wrap_e_real, (void *)cbesj_wrap_e, (void *)cbesj_wrap_e, };
 static void * yv_data[] = { (void *)yv, (void *)yv, (void *)cbesy_wrap, (void *)cbesy_wrap,};
-static void * yve_data[] = { (void *)cbesy_wrap_e, (void *)cbesy_wrap_e, (void *)cbesy_wrap_e, (void *)cbesy_wrap_e, };
+static void * yve_data[] = { (void *)cbesy_wrap_e_real, (void *)cbesy_wrap_e_real, (void *)cbesy_wrap_e, (void *)cbesy_wrap_e, };
 
 static void * k0_data[] = { (void *)k0, (void *)k0, };
 static void * k0e_data[] = { (void *)k0e, (void *)k0e, };
 static void * k1_data[] = { (void *)k1, (void *)k1, };
 static void * k1e_data[] = { (void *)k1e, (void *)k1e, };
-static void * kv_data[] = { (void *)cbesk_wrap, (void *)cbesk_wrap, (void *)cbesk_wrap, (void *)cbesk_wrap,};
-static void * kve_data[] = { (void *)cbesk_wrap_e, (void *)cbesk_wrap_e, (void *)cbesk_wrap_e, (void *)cbesk_wrap_e,};
+static void * kv_data[] = { (void *)cbesk_wrap_real, (void *)cbesk_wrap_real, (void *)cbesk_wrap, (void *)cbesk_wrap,};
+static void * kve_data[] = { (void *)cbesk_wrap_e_real, (void *)cbesk_wrap_e_real, (void *)cbesk_wrap_e, (void *)cbesk_wrap_e,};
 static void * hankel1_data[] = { (void *)cbesh_wrap1, (void *)cbesh_wrap1,};
 static void * hankel1e_data[] = { (void *)cbesh_wrap1_e, (void *)cbesh_wrap1_e,};
 static void * hankel2_data[] = { (void *)cbesh_wrap2, (void *)cbesh_wrap2,};
@@ -356,10 +354,6 @@ static void Cephes_InitOperators(PyObject *dictionary) {
         cephes1c_4_functions[1] = PyUFunc_d_dddd;
         cephes1c_4_functions[2] = PyUFunc_F_FFFF_As_D_DDDD;
         cephes1c_4_functions[3] = PyUFunc_D_DDDD;
-        cephes1cp_4_functions[0] = PyUFunc_f_ffff_As_D_DDDD;
-        cephes1cp_4_functions[1] = PyUFunc_d_dddd_As_D_DDDD;
-        cephes1cp_4_functions[2] = PyUFunc_F_FFFF_As_D_DDDD;
-        cephes1cp_4_functions[3] = PyUFunc_D_DDDD;
         cephes1cpb_4_functions[0] = PyUFunc_f_FFFF_As_d_DDDD;
         cephes1cpb_4_functions[1] = PyUFunc_d_DDDD;
         cephes2_functions[0] = PyUFunc_ff_f_As_dd_d;
@@ -372,10 +366,6 @@ static void Cephes_InitOperators(PyObject *dictionary) {
         cephes2c_functions[1] = PyUFunc_dd_d;
         cephes2c_functions[2] = PyUFunc_fF_F_As_dD_D;
         cephes2c_functions[3] = PyUFunc_dD_D;
-        cephes2cp_functions[0] = PyUFunc_ff_f_As_dD_D;
-        cephes2cp_functions[1] = PyUFunc_dd_d_As_dD_D;
-        cephes2cp_functions[2] = PyUFunc_fF_F_As_dD_D;
-        cephes2cp_functions[3] = PyUFunc_dD_D;
         cephes2cpp_functions[0] = PyUFunc_fF_F_As_dD_D;
         cephes2cpp_functions[1] = PyUFunc_dD_D;
         cephes2_4_functions[0] = PyUFunc_ff_ffff_As_dd_dddd;
@@ -555,7 +545,7 @@ static void Cephes_InitOperators(PyObject *dictionary) {
         f = PyUFunc_FromFuncAndData(cephes2c_functions, iv_data, cephes_3c_types, 4, 2, 1, PyUFunc_None, "iv", iv_doc, 0);
 	PyDict_SetItemString(dictionary, "iv", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2cp_functions, ive_data, cephes_3c_types, 4, 2, 1, PyUFunc_None, "ive", ive_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes2c_functions, ive_data, cephes_3c_types, 4, 2, 1, PyUFunc_None, "ive", ive_doc, 0);
 	PyDict_SetItemString(dictionary, "ive", f);
 	Py_DECREF(f);
 
@@ -614,7 +604,7 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	Py_DECREF(f);
 
 
-	f = PyUFunc_FromFuncAndData(cephes1cp_4_functions, airye_data, cephes_5c_types, 4, 1, 4, PyUFunc_None, "airye", airye_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes1c_4_functions, airye_data, cephes_5c_types, 4, 1, 4, PyUFunc_None, "airye", airye_doc, 0);
 	PyDict_SetItemString(dictionary, "airye", f);
 	Py_DECREF(f);
 
@@ -662,13 +652,13 @@ static void Cephes_InitOperators(PyObject *dictionary) {
            accurate. So we alias jv to jn */
         PyDict_SetItemString(dictionary, "jn", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2cp_functions, jve_data, cephes_3c_types, 4, 2, 1, PyUFunc_None, "jve", jve_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes2c_functions, jve_data, cephes_3c_types, 4, 2, 1, PyUFunc_None, "jve", jve_doc, 0);
 	PyDict_SetItemString(dictionary, "jve", f);
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes2c_functions, yv_data, cephes_3c_types, 4, 2, 1, PyUFunc_None, "yv", yv_doc, 0);
 	PyDict_SetItemString(dictionary, "yv", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2cp_functions, yve_data, cephes_3c_types, 4, 2, 1, PyUFunc_None, "yve", yve_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes2c_functions, yve_data, cephes_3c_types, 4, 2, 1, PyUFunc_None, "yve", yve_doc, 0);
 	PyDict_SetItemString(dictionary, "yve", f);
 	Py_DECREF(f);
 
@@ -685,10 +675,10 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	f = PyUFunc_FromFuncAndData(cephes1_functions, k1e_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "k1e", k1e_doc, 0);
 	PyDict_SetItemString(dictionary, "k1e", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2cp_functions, kv_data, cephes_3c_types, 4, 2, 1, PyUFunc_None, "kv", kv_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes2c_functions, kv_data, cephes_3c_types, 4, 2, 1, PyUFunc_None, "kv", kv_doc, 0);
 	PyDict_SetItemString(dictionary, "kv", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2cp_functions, kve_data, cephes_3c_types, 4, 2, 1, PyUFunc_None, "kve", kve_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes2c_functions, kve_data, cephes_3c_types, 4, 2, 1, PyUFunc_None, "kve", kve_doc, 0);
 	PyDict_SetItemString(dictionary, "kve", f);
 	Py_DECREF(f);
 
@@ -1064,7 +1054,7 @@ void scipy_special_raise_warning(char *fmt, ...)
     va_end(ap);
 
     NPY_ALLOW_C_API
-    PyErr_WarnEx(scipy_special_SpecialFunctionWarning, msg, 2);
+    PyErr_WarnEx(scipy_special_SpecialFunctionWarning, msg, 1);
     NPY_DISABLE_C_API
 }
 
