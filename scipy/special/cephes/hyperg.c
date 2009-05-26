@@ -82,7 +82,7 @@ static double hy1f1p();
 static double hy1f1a();
 double hyperg();
 #endif
-extern double MAXNUM, MACHEP;
+extern double MAXNUM, MACHEP, NAN, INFINITY;
 
 double hyperg( a, b, x)
 double a, b, x;
@@ -203,8 +203,8 @@ if (sum != 0.0) {
 }
 
 if (*err != *err) {
-        /* nan */
-        *err = 1.0;
+	/* nan */
+	*err = 1.0;
 }
 
 return( sum );
@@ -285,7 +285,11 @@ if( b < 0 )
 if( asum != 0.0 )
 	acanc /= fabs(asum);
 
-if( asum*2 == asum )
+if (acanc != acanc)
+	/* nan */
+	acanc = 1.0;
+
+if (asum == INFINITY || asum == -INFINITY)
         /* infinity */
         acanc = 0;
 
