@@ -102,6 +102,24 @@ reflect_jy(Py_complex *jy, double v)
     return 1;
 }
 
+static int
+reflect_i(Py_complex *ik, double v)
+{
+    if (v != floor(v))
+        return 0;
+    return 1; /* I is symmetric for integer v */
+}
+
+static Py_complex
+rotate_i(Py_complex i, Py_complex k, double v)
+{
+    Py_complex w;
+    double s = sin(v * M_PI)*(2.0/M_PI);
+    w.real = i.real + s*k.real;
+    w.imag = i.imag + s*k.imag;
+    return w;
+}
+
 int cairy_wrap(Py_complex z, Py_complex *ai, Py_complex *aip, Py_complex *bi, Py_complex *bip) {
   int id = 0;
   int ierr = 0;
@@ -142,28 +160,57 @@ int cairy_wrap_e(Py_complex z, Py_complex *ai, Py_complex *aip, Py_complex *bi, 
 Py_complex cbesi_wrap( double v, Py_complex z) {
   int n = 1;
   int kode = 1;
+  int sign = 1;
   int nz, ierr;
-  Py_complex cy;
+  Py_complex cy, cy_k;
 
   if (v < 0) {
     v = -v;
+    sign = -1;
   }
   F_FUNC(zbesi,ZBESI)(CADDR(z), &v,  &kode, &n, CADDR(cy), &nz, &ierr);
   DO_MTHERR("iv:");
+
+  if (sign == -1) {
+    if (!reflect_i(&cy, v)) {
+      F_FUNC(zbesk,ZBESK)(CADDR(z), &v,  &kode, &n, CADDR(cy_k), &nz, &ierr);
+      DO_MTHERR("iv(kv):");
+      cy = rotate_i(cy, cy_k, v);
+    }
+  }
+      
   return cy;
 }
 
 Py_complex cbesi_wrap_e( double v, Py_complex z) {
   int n = 1;
   int kode = 2;
+  int sign = 1;
   int nz, ierr;
-  Py_complex cy;
+  Py_complex cy, cy_k;
 
   if (v < 0) {
     v = -v;
+    sign = -1;
   }
   F_FUNC(zbesi,ZBESI)(CADDR(z), &v,  &kode, &n, CADDR(cy), &nz, &ierr);
   DO_MTHERR("ive:");
+
+  if (sign == -1) {
+    if (!reflect_i(&cy, v)) {
+      F_FUNC(zbesk,ZBESK)(CADDR(z), &v,  &kode, &n, CADDR(cy_k), &nz, &ierr);
+      DO_MTHERR("ive(kv):");
+      /* adjust scaling to match zbesi */
+      cy_k = rotate(cy_k, -z.imag/M_PI);
+      if (z.real > 0) {
+          cy_k.real *= exp(-2*z.real);
+          cy_k.imag *= exp(-2*z.real);
+      }
+      /* v -> -v */
+      cy = rotate_i(cy, cy_k, v);
+    }
+  }
+
   return cy;
 }
 
@@ -181,6 +228,7 @@ Py_complex cbesj_wrap( double v, Py_complex z) {
   }
   F_FUNC(zbesj,ZBESJ)(CADDR(z), &v,  &kode, &n, CADDR(cy_j), &nz, &ierr);
   DO_MTHERR("jv:");
+
   if (sign == -1) {
     if (!reflect_jy(&cy_j, v)) {
       F_FUNC(zbesy,ZBESY)(CADDR(z), &v,  &kode, &n, CADDR(cy_y), &nz, CADDR(cwork), &ierr);
@@ -270,6 +318,7 @@ Py_complex cbesk_wrap( double v, Py_complex z) {
   Py_complex cy;
 
   if (v < 0) {
+    /* K_v == K_{-v} even for non-integer v */
     v = -v;
   }
   F_FUNC(zbesk,ZBESK)(CADDR(z), &v,  &kode, &n, CADDR(cy), &nz, &ierr);
@@ -284,6 +333,7 @@ Py_complex cbesk_wrap_e( double v, Py_complex z) {
   Py_complex cy;
 
   if (v < 0) {
+    /* K_v == K_{-v} even for non-integer v */
     v = -v;
   }
   F_FUNC(zbesk,ZBESK)(CADDR(z), &v, &kode, &n, CADDR(cy), &nz, &ierr);
