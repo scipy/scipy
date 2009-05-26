@@ -6,6 +6,7 @@
  *  Copyright 1999  Travis E. Oliphant
  * Revisions 2002 (added functions from cdflib)
  */
+#include <stdarg.h>
 
 #include "Python.h"
 #include "numpy/arrayobject.h"
@@ -1050,6 +1051,23 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 
 }
 
+static PyObject *scipy_special_SpecialFunctionWarning = NULL;
+
+void scipy_special_raise_warning(char *fmt, ...)
+{
+    NPY_ALLOW_C_API_DEF
+    char msg[1024];
+    va_list ap;
+
+    va_start(ap, fmt);
+    PyOS_vsnprintf(msg, 1024, fmt, ap);
+    va_end(ap);
+
+    NPY_ALLOW_C_API
+    PyErr_WarnEx(scipy_special_SpecialFunctionWarning, msg, 2);
+    NPY_DISABLE_C_API
+}
+
 static char errprint_doc[] = \
 "errprint({flag}) sets the error printing flag for special functions\n" \
 "    (from the cephesmodule). The output is the previous state.\n" \
@@ -1101,6 +1119,14 @@ PyMODINIT_FUNC init_cephes(void) {
 
   /* Load the cephes operators into the array module's namespace */
   Cephes_InitOperators(d);
+
+  /* Register and add the warning type object */
+  scipy_special_SpecialFunctionWarning = PyErr_NewException(
+      "scipy.special._cephes.SpecialFunctionWarning",
+      PyExc_RuntimeWarning,
+      NULL);
+  PyModule_AddObject(m, "SpecialFunctionWarning",
+                     scipy_special_SpecialFunctionWarning);
 
   /* Check for errors */
   if (PyErr_Occurred())

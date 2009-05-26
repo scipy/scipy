@@ -57,6 +57,7 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 #include <stdio.h>
 #include "mconf.h"
 
+void scipy_special_raise_warning(char *fmt, ...);
 int scipy_special_print_error_messages = 0;
 
 int merror = 0;
@@ -66,42 +67,39 @@ int merror = 0;
  * in mconf.h.
  */
 static char *ermsg[8] = {
-"unknown",      /* error code 0 */
-"domain",       /* error code 1 */
-"singularity",  /* et seq.      */
-"overflow",
-"underflow",
-"total loss of precision",
-"partial loss of precision",
-"too many iterations"
+    "unknown",			/* error code 0 */
+    "domain",			/* error code 1 */
+    "singularity",		/* et seq.      */
+    "overflow",
+    "underflow",
+    "total loss of precision",
+    "partial loss of precision",
+    "too many iterations"
 };
 
 
-int mtherr( name, code )
-char *name;
-int code;
+int mtherr(char *name, int code)
 {
+    /* Display string passed by calling program,
+     * which is supposed to be the name of the
+     * function in which the error occurred:
+     */
 
-/* Display string passed by calling program,
- * which is supposed to be the name of the
- * function in which the error occurred:
- */
+    /* Set global error message word */
+    merror = code;
 
-/* Set global error message word */
-merror = code;
-
-/* Display error message defined
- * by the code argument.
- */
-if( (code <= 0) || (code >= 8) )
+    /* Display error message defined
+     * by the code argument.
+     */
+    if ((code <= 0) || (code >= 8))
 	code = 0;
-if (scipy_special_print_error_messages) {
-        printf( "\n%s ", name );
-        printf( "%s error\n", ermsg[code] );
-}
 
-/* Return to calling
- * program
- */
-return( 0 );
+    if (scipy_special_print_error_messages) {
+        scipy_special_raise_warning("%s: %s error", name, ermsg[code]);
+    }
+
+    /* Return to calling
+     * program
+     */
+    return (0);
 }
