@@ -28,11 +28,6 @@ from scipy.special import *
 import scipy.special._cephes as cephes
 import numpy as np
 
-# Determine number of bits
-import platform
-_bits = {'32bit':32,'64bit':64}
-platform_bits = _bits[platform.architecture()[0]]
-
 def assert_tol_equal(a, b, rtol=1e-7, atol=0, err_msg='', verbose=True):
     """Assert that `a` and `b` are equal to tolerance ``atol + rtol*abs(b)``"""
     def compare(x, y):
@@ -371,7 +366,6 @@ class TestCephes(TestCase):
     def test_obl_rad2_cv(self):
         cephes.obl_rad2_cv(1,1,1,1,0)
 
-    @dec.knownfailureif(platform_bits==64)
     def test_pbdv(self):
         assert_equal(cephes.pbdv(1,0),(0.0,1.0))
     def test_pbvv(self):
