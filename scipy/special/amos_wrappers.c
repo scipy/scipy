@@ -211,6 +211,20 @@ Py_complex cbesi_wrap( double v, Py_complex z) {
   }
   F_FUNC(zbesi,ZBESI)(CADDR(z), &v,  &kode, &n, CADDR(cy), &nz, &ierr);
   DO_MTHERR("iv:", &cy);
+  if (ierr == 2) {
+    /* overflow */
+    if (z.imag == 0 && (z.real >= 0 || v == floor(v))) {
+        if (z.real < 0 && v/2 != floor(v/2))
+            cy.real = -INFINITY;
+        else
+            cy.real = INFINITY;
+        cy.imag = 0;
+    } else {
+        cy = cbesi_wrap_e(v*sign, z);
+        cy.real *= INFINITY;
+        cy.imag *= INFINITY;
+    }
+  }
 
   if (sign == -1) {
     if (!reflect_i(&cy, v)) {
@@ -280,6 +294,12 @@ Py_complex cbesj_wrap( double v, Py_complex z) {
   }
   F_FUNC(zbesj,ZBESJ)(CADDR(z), &v,  &kode, &n, CADDR(cy_j), &nz, &ierr);
   DO_MTHERR("jv:", &cy_j);
+  if (ierr == 2) {
+    /* overflow */
+    cy_j = cbesj_wrap_e(v, z);
+    cy_j.real *= INFINITY;
+    cy_j.imag *= INFINITY;
+  }
 
   if (sign == -1) {
     if (!reflect_jy(&cy_j, v)) {
@@ -338,8 +358,15 @@ Py_complex cbesy_wrap( double v, Py_complex z) {
     sign = -1;
   }
   F_FUNC(zbesy,ZBESY)(CADDR(z), &v,  &kode, &n, CADDR(cy_y), &nz, CADDR(cwork), &ierr);
-
   DO_MTHERR("yv:", &cy_y);
+  if (ierr == 2) {
+    if (z.real >= 0 && z.imag == 0) {
+      /* overflow */
+      cy_y.real = INFINITY;
+      cy_y.imag = 0;
+    }
+  }
+
   if (sign == -1) {
     if (!reflect_jy(&cy_y, v)) {
       F_FUNC(zbesj,ZBESJ)(CADDR(z), &v,  &kode, &n, CADDR(cy_j), &nz, &ierr);
@@ -363,6 +390,14 @@ Py_complex cbesy_wrap_e( double v, Py_complex z) {
   }
   F_FUNC(zbesy,ZBESY)(CADDR(z), &v, &kode, &n, CADDR(cy_y), &nz, CADDR(cwork), &ierr);
   DO_MTHERR("yve:", &cy_y);
+  if (ierr == 2) {
+    if (z.real >= 0 && z.imag == 0) {
+      /* overflow */
+      cy_y.real = INFINITY;
+      cy_y.imag = 0;
+    }
+  }
+
   if (sign == -1) {
     if (!reflect_jy(&cy_y, v)) {
       F_FUNC(zbesj,ZBESJ)(CADDR(z), &v,  &kode, &n, CADDR(cy_j), &nz, &ierr);
@@ -397,6 +432,14 @@ Py_complex cbesk_wrap( double v, Py_complex z) {
   }
   F_FUNC(zbesk,ZBESK)(CADDR(z), &v,  &kode, &n, CADDR(cy), &nz, &ierr);
   DO_MTHERR("kv:", &cy);
+  if (ierr == 2) {
+    if (z.real >= 0 && z.imag == 0) {
+      /* overflow */
+      cy.real = INFINITY;
+      cy.imag = 0;
+    }
+  }
+
   return cy;
 }
 
@@ -412,6 +455,14 @@ Py_complex cbesk_wrap_e( double v, Py_complex z) {
   }
   F_FUNC(zbesk,ZBESK)(CADDR(z), &v, &kode, &n, CADDR(cy), &nz, &ierr);
   DO_MTHERR("kve:", &cy);
+  if (ierr == 2) {
+    if (z.real >= 0 && z.imag == 0) {
+      /* overflow */
+      cy.real = INFINITY;
+      cy.imag = 0;
+    }
+  }
+
   return cy;
 }
   
