@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Last Change: Mon Jul 23 09:00 PM 2007 J
+# Last Change: Sat Mar 21 02:00 PM 2009 J
 
 # Copyright (c) 2001, 2002 Enthought, Inc.
 #
@@ -40,19 +40,20 @@ def multigammaln(a, d):
     """returns the log of multivariate gamma, also sometimes called the
     generalized gamma.
 
-    :Parameters:
-        a : ndarray
-            the multivariate gamma is computed for each item of a
-        d : int
-            the dimension of the space of integration.
+    Parameters
+    ----------
+    a : ndarray
+        the multivariate gamma is computed for each item of a
+    d : int
+        the dimension of the space of integration.
 
-    :Returns:
-        res : ndarray
-            the values of the log multivariate gamma at the given points a.
+    Returns
+    -------
+    res : ndarray
+        the values of the log multivariate gamma at the given points a.
 
     Note
     ----
-
     The formal definition of the multivariate gamma of dimension d for a real a
     is :
 
@@ -66,8 +67,9 @@ def multigammaln(a, d):
 
     \Gamma_d(a) = \pi^{d(d-1)/4}\prod_{i=1}^{d}{\Gamma(a - (i-1)/2)}.
 
+    Notes
+    -----
     Reference:
-    ----------
 
     R. J. Muirhead, Aspects of multivariate statistical theory (Wiley Series in
     probability and mathematical statistics). """
