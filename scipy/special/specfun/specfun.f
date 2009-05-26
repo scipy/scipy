@@ -10408,7 +10408,7 @@ C
 C       ======================================================
 C       Purpose: Compute the zeros of Bessel functions Jn(x),
 C                Yn(x), and their derivatives
-C       Input :  n  --- Order of Bessel functions ( n ≤ 101 )
+C       Input :  n  --- Order of Bessel functions  (n >= 0)
 C                NT --- Number of zeros (roots)
 C       Output:  RJ0(L) --- L-th zero of Jn(x),  L=1,2,...,NT
 C                RJ1(L) --- L-th zero of Jn'(x), L=1,2,...,NT
@@ -10431,14 +10431,23 @@ C          Abr & Stg (9.5.14)
         ENDIF
         L=0
 C       2) iterate
+        XGUESS=X
 10      X0=X
         CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
         X=X-BJN/DJN
+        IF (X-X0.LT.-1) X=X0-1
+        IF (X-X0.GT.1) X=X0+1
         IF (DABS(X-X0).GT.1.0D-11) GO TO 10
 C       3) initial guess for j_{N,L+1}
+        IF (L.GE.1 .AND. X.LE.RJ0(L)+0.5) THEN
+           X=XGUESS+PI
+           XGUESS=X
+           GO TO 10
+        END IF
         L=L+1
         RJ0(L)=X
-        X=X+PI+(0.0972+0.0679*N-0.000354*N**2)/L
+C       XXX: should have a better initial guess for large N ~> 100 here
+        X=X+PI+MAX((0.0972+0.0679*N-0.000354*N**2)/L, 0d0)
         IF (L.LT.NT) GO TO 10
 C       -- Newton method for j_{N,L}'
         IF (N.LE.20) THEN
@@ -10448,43 +10457,68 @@ C       -- Newton method for j_{N,L}'
         ENDIF
         IF (N.EQ.0) X=3.8317
         L=0
+        XGUESS=X
 15      X0=X
         CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
         X=X-DJN/FJN
+        IF (X-X0.LT.-1) X=X0-1
+        IF (X-X0.GT.1) X=X0+1
         IF (DABS(X-X0).GT.1.0D-11) GO TO 15
+        IF (L.GE.1 .AND. X.LE.RJ1(L)+0.5) THEN
+           X=XGUESS+PI
+           XGUESS=X
+           GO TO 15
+        END IF
         L=L+1
         RJ1(L)=X
-        X=X+PI+(0.4955+0.0915*N-0.000435*N**2)/L
+C       XXX: should have a better initial guess for large N ~> 100 here
+        X=X+PI+MAX((0.4955+0.0915*N-0.000435*N**2)/L,0d0)
         IF (L.LT.NT) GO TO 15
+C       -- Newton method for y_{N,L}
         IF (N.LE.20) THEN
            X=1.19477+1.08933*N
         ELSE
            X=N+0.93158*N**0.33333+0.26035/N**0.33333
         ENDIF           
-C       -- Newton method for y_{N,L}
         L=0
+        XGUESS=X
 20      X0=X
         CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
         X=X-BYN/DYN
+        IF (X-X0.LT.-1) X=X0-1
+        IF (X-X0.GT.1) X=X0+1
         IF (DABS(X-X0).GT.1.0D-11) GO TO 20
+        IF (L.GE.1 .AND. X.LE.RY0(L)+0.5) THEN
+           X=XGUESS+PI
+           XGUESS=X
+           GO TO 20
+        END IF
         L=L+1
         RY0(L)=X
-        X=X+PI+(0.312+0.0852*N-0.000403*N**2)/L
+C       XXX: should have a better initial guess for large N ~> 100 here
+        X=X+PI+MAX((0.312+0.0852*N-0.000403*N**2)/L,0d0)
         IF (L.LT.NT) GO TO 20
+C       -- Newton method for y_{N,L}'
         IF (N.LE.20) THEN
            X=2.67257+1.16099*N
         ELSE
            X=N+1.8211*N**0.33333+0.94001/N**0.33333
         ENDIF  
-C       -- Newton method for y_{N,L}'
         L=0
+        XGUESS=X
 25      X0=X
         CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
         X=X-DYN/FYN
         IF (DABS(X-X0).GT.1.0D-11) GO TO 25
+        IF (L.GE.1 .AND. X.LE.RY1(L)+0.5) THEN
+           X=XGUESS+PI
+           XGUESS=X
+           GO TO 25
+        END IF
         L=L+1
         RY1(L)=X
-        X=X+PI+(0.197+0.0643*N-0.000286*N**2)/L 
+C       XXX: should have a better initial guess for large N ~> 100 here
+        X=X+PI+MAX((0.197+0.0643*N-0.000286*N**2)/L,0d0)
         IF (L.LT.NT) GO TO 25
         RETURN
         END
