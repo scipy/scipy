@@ -41,6 +41,12 @@ def min(m,axis=0):
     m = asarray(m)
     return numpy.minimum.reduce(m,axis)
 
+def is_array_scalar(x):
+    """Test whether `x` is either a scalar or an array scalar.
+
+    """
+    return len(atleast_1d(x) == 1)
+
 abs = absolute
 import __builtin__
 pymin = __builtin__.min
@@ -1177,13 +1183,12 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
 
     """
     # Test bounds are of correct form
-    x1 = atleast_1d(x1)
-    x2 = atleast_1d(x2)
-    if len(x1) != 1 or len(x2) != 1:
-        raise ValueError, "Optimisation bounds must be scalars" \
-                " or length 1 arrays"
+
+    if not (is_array_scalar(x1) and is_array_scalar(x2)):
+        raise ValueError("Optimisation bounds must be scalars"
+                         " or array scalars.")
     if x1 > x2:
-        raise ValueError, "The lower bound exceeds the upper bound."
+        raise ValueError("The lower bound exceeds the upper bound.")
 
     flag = 0
     header = ' Func-count     x          f(x)          Procedure'

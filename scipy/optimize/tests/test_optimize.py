@@ -160,9 +160,16 @@ class TestOptimize(TestCase):
         assert abs(x - 1.5) < 1e-6
         assert_raises(ValueError,
                 optimize.fminbound, lambda x: (x - 1.5)**2 - 0.8, 5, 1)
+
+    def test_fminbound_scalar(self):
         assert_raises(ValueError,
-                optimize.fminbound, lambda x: (x - 1.5)**2 - 0.8,
+                      optimize.fminbound, lambda x: (x - 1.5)**2 - 0.8,
                       np.zeros(2), 1)
+
+        assert_almost_equal(
+            optimize.fminbound(lambda x: (x - 1.5)**2 - 0.8, 1, np.array(5)),
+            1.5)
+
 
 class TestTnc(TestCase):
     """TNC non-linear optimization.
