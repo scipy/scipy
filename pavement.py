@@ -308,7 +308,7 @@ def prepare_nsis_script(pyver, numver):
 
     installer_name = superpack_name(pyver, numver)
     cnt = "".join(source.readlines())
-    cnt = cnt.replace('@NUMPY_INSTALLER_NAME@', installer_name)
+    cnt = cnt.replace('@SCIPY_INSTALLER_NAME@', installer_name)
     for arch in ['nosse', 'sse2', 'sse3']:
         cnt = cnt.replace('@%s_BINARY@' % arch.upper(),
                           internal_wininst_name(arch))
