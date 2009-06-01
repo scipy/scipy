@@ -465,7 +465,10 @@ def write_array(fileobject, arr, separator=" ", linesep='\n',
 
       file -- The open file (if keep_open is non-zero)
     """
-    file = get_open_file(fileobject, mode='wa')
+    # XXX: What to when appending to files ? 'wa' does not do what one might
+    # expect, and opening a file twice to create it first is not easily doable
+    # with get_open_file ?
+    file = get_open_file(fileobject, mode='w')
     rank = numpy.rank(arr)
     if rank > 2:
         raise ValueError, "Can-only write up to 2-D arrays."
