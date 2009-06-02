@@ -589,10 +589,21 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
     {
       PYERR(PyExc_TypeError, "initbeta must be a sequence");
     }
-  if (!PySequence_Check(py) && !PyInt_Check(py))
+  if (!PySequence_Check(py))
     {
-      PYERR(PyExc_TypeError,
-            "y must be a sequence or integer (if model is implicit)");
+      /* Checking whether py is an int 
+       *
+       * XXX: PyInt_Check for np.int32 instances does not work on python 2.6 -
+       * we should fix this in numpy, workaround by trying to cast to an int
+       * for now */
+      long val;
+
+      PyErr_Clear();
+      val = PyInt_AsLong(py);
+      if (val == -1 && PyErr_Occurred()) {
+        PYERR(PyExc_TypeError,
+              "y must be a sequence or integer (if model is implicit)");
+      }
     }
   if (!PySequence_Check(px))
     {
