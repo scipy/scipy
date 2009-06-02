@@ -234,8 +234,7 @@ def _chk_asarray(a, axis):
         a = np.ravel(a)
         outaxis = 0
     else:
-        if not isinstance(a,np.ndarray):
-            a = np.asarray(a)
+        a = np.asarray(a)
         outaxis = axis
     return a, outaxis
 
@@ -245,10 +244,8 @@ def _chk2_asarray(a, b, axis):
         b = np.ravel(b)
         outaxis = 0
     else:
-        if not isinstance(a,np.ndarray):
-            a = np.asarray(a)
-        if not isinstance(b,np.ndarray):
-            b = np.asarray(b)
+        a = np.asarray(a)
+        b = np.asarray(b)
         outaxis = axis
     return a, b, outaxis
 
