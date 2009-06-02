@@ -70,8 +70,10 @@ finally:
     sys.path.pop(0)
 
 # Wine config for win32 builds
-WINE_SITE_CFG = ""
-if sys.platform == "darwin":
+if sys.platform == "win32":
+    WINE_PY25 = [r"C:\Python25\python.exe"]
+    WINE_PY26 = [r"C:\Python26\python26.exe"]
+elif sys.platform == "darwin":
     WINE_PY25 = ["/Applications/Darwine/Wine.bundle/Contents/bin/wine",
                  "/Users/david/.wine/drive_c/Python25/python.exe"]
     WINE_PY26 = ["/Applications/Darwine/Wine.bundle/Contents/bin/wine",
@@ -353,10 +355,21 @@ def bdist_superpack(options):
 def bdist_wininst_simple():
     """Simple wininst-based installer."""
     call_task("clean")
-    _bdist_wininst(options.bdist_wininst_simple.python_version, SITECFG['nosse'])
+    env = os.environ.copy()
+    for k, v in SITECFG['nosse'].items():
+        env[k] = v
+    _bdist_wininst(options.bdist_wininst_simple.python_version, env)
 
-def _bdist_wininst(pyver, cfg_env=WINE_SITE_CFG):
-    subprocess.call(WINE_PYS[pyver] + ['setup.py', 'build', '-c', 'mingw32', 'bdist_wininst'], env=cfg_env)
+def _bdist_wininst(pyver, cfg_env):
+    log = open('build.log', 'w')
+    try:
+        ret = subprocess.call(WINE_PYS[pyver] + ['setup.py', 'build', '-c', 'mingw32', 'bdist_wininst'],
+                env=cfg_env, stdout=log, stderr=subprocess.STDOUT)
+    finally:
+        log.close()
+
+    if ret:
+        raise RuntimeError("Error while building windows installer, see build.log")
 
 #-------------------
 # Mac OS X installer
