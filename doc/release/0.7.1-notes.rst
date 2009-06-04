@@ -9,13 +9,36 @@ SciPy 0.7.1 is a bug-fix release with no new features compared to 0.7.0.
 scipy.io
 ========
 
+Bugs fixed:
+
+- Several fixes in Matlab file IO
+
+scipy.odr
+=========
+
+Bugs fixed:
+
+- Work around a failure with Python 2.6
+
 scipy.signal
 ============
 
 Memory leak in lfilter have been fixed, as well as support for array object
 
+Bugs fixed:
+
+- #880, #925: lfilter fixes
+- #871: bicgstab fails on Win32
+
+
 scipy.sparse
 ============
+
+Bugs fixed:
+
+- #883: scipy.io.mmread with scipy.sparse.lil_matrix broken
+- lil_matrix and csc_matrix reject now unexpected sequences,
+  cf. http://thread.gmane.org/gmane.comp.python.scientific.user/19996
 
 scipy.special
 =============
@@ -40,6 +63,13 @@ Also, when ``scipy.special.errprint(1)`` has been enabled, warning
 messages are now issued as Python warnings instead of printing them to
 stderr.
 
+
+scipy.stats
+===========
+
+- linregress, mannwhitneyu, describe: errors fixed
+- kstwobign, norm, expon, exponweib, exponpow, frechet, genexpon, rdist,
+  truncexpon, planck: improvements to numerical accuracy in distributions
 
 Windows binaries for python 2.6
 ===============================
