@@ -6,6 +6,9 @@ SciPy 0.7.1 Release Notes
 
 SciPy 0.7.1 is a bug-fix release with no new features compared to 0.7.0.
 
+scipy.io
+========
+
 scipy.signal
 ============
 
@@ -14,8 +17,28 @@ Memory leak in lfilter have been fixed, as well as support for array object
 scipy.sparse
 ============
 
-scipy.io
-========
+scipy.special
+=============
+
+Several bugs of varying severity were fixed in the special functions:
+
+- #503, #640: iv: several bugs fixed by using a new more robust implementation
+- #623: jv: fix errors at large arguments
+- #679: struve: fix wrong output for v < 0
+- #803: pbdv produces invalid output
+- #804: lqmn: fix crashes on some input
+- #823: betainc: fix documentation
+- #834: exp1 strange behavior near negative integer values
+- #852: jn_zeros: more accurate results for large s, also in jnp/yn/ynp_zeros
+- #853: jv, yv, iv: invalid results for non-integer v < 0, complex x
+- #854: jv, yv, iv, kv: return nan more consistently when out-of-domain
+- #927: ellipj: fix segfault on Windows
+- ive, jve, yve, kv, kve: with real-valued input, return nan for out-of-domain
+  instead of returning only the real part of the result.
+
+Also, when ``scipy.special.errprint(1)`` has been enabled, warning
+messages are now issued as Python warnings instead of printing them to
+stderr.
 
 
 Windows binaries for python 2.6
