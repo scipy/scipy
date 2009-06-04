@@ -22,7 +22,7 @@ scipy.special
 
 Several bugs of varying severity were fixed in the special functions:
 
-- #503, #640: iv: several bugs fixed by using a new more robust implementation
+- #503, #640: iv: problems at large arguments fixed by new implementation
 - #623: jv: fix errors at large arguments
 - #679: struve: fix wrong output for v < 0
 - #803: pbdv produces invalid output
