@@ -80,5 +80,6 @@ numpy 1.3.0 or above.
 Universal build for scipy
 =========================
 
-Mac OS X binary installer is now a universal build. It requires numpy 1.3.0 or
-above.
+Mac OS X binary installer is now a universal build. The python 2.5 version of
+scipy requires numpy 1.2.0 or above., the python 2.6 version requires numpy
+1.3.0.
