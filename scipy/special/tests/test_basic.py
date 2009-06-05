@@ -871,7 +871,7 @@ class TestTandg(TestCase):
 
 class TestEllip(TestCase):
     def test_ellipj_nan(self):
-        """Regression test for #885."""
+        """Regression test for #912."""
         ellipj(0.5, np.nan)
 
     def test_ellipj(self):
