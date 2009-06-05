@@ -125,6 +125,22 @@ options(sphinx=Bunch(builddir="build", sourcedir="source", docroot='doc'),
         packages_to_install=["sphinx==0.6.1"]),
         wininst=Bunch(pyver="2.5", scratch=True))
 
+def parse_numpy_version(pyexec):
+    cmd = [pyexec, "-c", "'import numpy; print numpy.version.version'"]
+
+    # Execute in shell because launching python from python does not work
+    # (hangs)
+    p = subprocess.Popen(" ".join(cmd), stdout=subprocess.PIPE, shell=True)
+    out = p.communicate()[0]
+    if p.returncode:
+        raise RuntimeError("Command %s failed" % " ".join(cmd))
+
+    a = re.compile("^([0-9]+)\.([0-9]+)\.([0-9]+)")
+    if a:
+        return tuple([int(i) for i in a.match(out).groups()[:3]])
+    else:
+        raise ValueError("Could not parse version (%s)" % out)
+
 # Bootstrap stuff
 @task
 def bootstrap():
