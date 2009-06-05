@@ -69,6 +69,9 @@ try:
 finally:
     sys.path.pop(0)
 
+# Default python version
+PYVER="2.5"
+
 # Wine config for win32 builds
 if sys.platform == "win32":
     WINE_PY25 = [r"C:\Python25\python.exe"]
@@ -86,8 +89,8 @@ SUPERPACK_BUILD = 'build-superpack'
 SUPERPACK_BINDIR = os.path.join(SUPERPACK_BUILD, 'binaries')
 
 # XXX: fix this in a sane way
-MPKG_PYTHON = {"25": "/Library/Frameworks/Python.framework/Versions/2.5/bin/python",
-        "26": "/Library/Frameworks/Python.framework/Versions/2.6/bin/python"}
+MPKG_PYTHON = {"2.5": "/Library/Frameworks/Python.framework/Versions/2.5/bin/python",
+        "2.6": "/Library/Frameworks/Python.framework/Versions/2.6/bin/python"}
 # Full path to the *static* gfortran runtime
 LIBGFORTRAN_A_PATH = "/usr/local/lib/libgfortran.a"
 
@@ -405,13 +408,18 @@ def prepare_static_gfortran_runtime(d):
     shutil.copy(LIBGFORTRAN_A_PATH, d)
 
 @task
+@cmdopts([('python_version=', 'p', 'Python version to build the installer against')])
 def bdist_mpkg():
     call_task("clean")
+
+    try:
+        pyver = options.bdist_mpkg.python_version
+    except AttributeError:
+        pyver = PYVER
 
     prepare_static_gfortran_runtime("build")
     ldflags = "-undefined dynamic_lookup -bundle -arch i386 -arch ppc -Wl,-search_paths_first"
     ldflags += " -L%s" % os.path.join(os.path.dirname(__file__), "build")
-    pyver = "".join([str(i) for i in sys.version_info[:2]])
     sh("LDFLAGS='%s' %s setupegg.py bdist_mpkg" % (ldflags, MPKG_PYTHON[pyver]))
 
 @task
