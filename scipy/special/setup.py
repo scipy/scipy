@@ -4,6 +4,7 @@ import os
 import sys
 from os.path import join
 from distutils.sysconfig import get_python_inc
+from numpy.distutils.misc_util import get_numpy_include_dirs
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -18,7 +19,7 @@ def configuration(parent_package='',top_path=None):
     # C libraries
     config.add_library('sc_c_misc',sources=[join('c_misc','*.c')])
     config.add_library('sc_cephes',sources=[join('cephes','*.c')],
-                       include_dirs=[get_python_inc()],
+                       include_dirs=[get_python_inc(), get_numpy_include_dirs()],
                        macros=define_macros)
 
     # Fortran libraries

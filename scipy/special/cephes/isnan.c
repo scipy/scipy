@@ -58,183 +58,73 @@
 Cephes Math Library Release 2.3:  March, 1995
 Copyright 1984, 1995 by Stephen L. Moshier
 */
-
+#include <Python.h>
+#include <numpy/ndarrayobject.h>
 
 #include "mconf.h"
 
-#ifdef UNK
-#undef UNK
-#if BIGENDIAN
-#define MIEEE 1
-#else
-#define IBMPC 1
-#endif
-#endif
+/* XXX: horrible hacks, but those cephes macros are buggy and just plain ugly anywa.
+ * We should use npy_* macros instead once npy_math can be used reliably by
+ * packages outside numpy
+ */
+#undef isnan
+#undef signbit
+#undef isfinite
 
-#ifdef ANSIPROT
-extern int signbit ( double x );
-extern int cephes_isnan ( double x );
-extern int isfinite ( double x );
-#endif
-
-/* Return 1 if the sign bit of x is 1, else 0.  */
-
-int signbit(x)
-double x;
-{
-union
-	{
-	double d;
-	short s[4];
-	int i[2];
-	} u;
-
-u.d = x;
-
-if( sizeof(int) == 4 )
-	{
-#ifdef IBMPC
-	return( u.i[1] < 0 );
-#endif
-#ifdef DEC
-	return( u.s[3] < 0 );
-#endif
-#ifdef MIEEE
-	return( u.i[0] < 0 );
-#endif
-	}
-else
-	{
-#ifdef IBMPC
-	return( u.s[3] < 0 );
-#endif
-#ifdef DEC
-	return( u.s[3] < 0 );
-#endif
-#ifdef MIEEE
-	return( u.s[0] < 0 );
-#endif
-	}
-}
-
-
-/* Return 1 if x is a number that is Not a Number, else return 0.  */
+#define isnan(x) ((x) != (x))
 
 int cephes_isnan(double x)
 {
-#ifdef NANS
-union
-	{
-	double d;
-	unsigned short s[4];
-	unsigned int i[2];
-	} u;
-
-u.d = x;
-
-if( sizeof(int) == 4 )
-	{
-#ifdef IBMPC
-	if( ((u.i[1] & 0x7ff00000) == 0x7ff00000)
-	    && (((u.i[1] & 0x000fffff) != 0) || (u.i[0] != 0)))
-		return 1;
-#endif
-#ifdef DEC
-	if( (u.s[1] & 0x7fff) == 0)
-		{
-		if( (u.s[2] | u.s[1] | u.s[0]) != 0 )
-			return(1);
-		}
-#endif
-#ifdef MIEEE
-	if( ((u.i[0] & 0x7ff00000) == 0x7ff00000)
-	    && (((u.i[0] & 0x000fffff) != 0) || (u.i[1] != 0)))
-		return 1;
-#endif
-	return(0);
-	}
-else
-	{ /* size int not 4 */
-#ifdef IBMPC
-	if( (u.s[3] & 0x7ff0) == 0x7ff0)
-		{
-		if( ((u.s[3] & 0x000f) | u.s[2] | u.s[1] | u.s[0]) != 0 )
-			return(1);
-		}
-#endif
-#ifdef DEC
-	if( (u.s[3] & 0x7fff) == 0)
-		{
-		if( (u.s[2] | u.s[1] | u.s[0]) != 0 )
-			return(1);
-		}
-#endif
-#ifdef MIEEE
-	if( (u.s[0] & 0x7ff0) == 0x7ff0)
-		{
-		if( ((u.s[0] & 0x000f) | u.s[1] | u.s[2] | u.s[3]) != 0 )
-			return(1);
-		}
-#endif
-	return(0);
-	} /* size int not 4 */
-
-#else
-/* No NANS.  */
-return(0);
-#endif
+	return isnan(x);
 }
 
-
-/* Return 1 if x is not infinite and is not a NaN.  */
-
-int isfinite(x)
-double x;
+int isfinite(double x)
 {
-#ifdef INFINITIES
-union
-	{
-	double d;
-	unsigned short s[4];
-	unsigned int i[2];
-	} u;
+	return !isnan((x) + (-x));
+}
 
-u.d = x;
+static int isbigendian(void)
+{
+    const union {
+        npy_uint32 i;
+        char c[4];
+    } bint = {0x01020304};
 
-if( sizeof(int) == 4 )
-	{
-#ifdef IBMPC
-	if( (u.i[1] & 0x7ff00000) != 0x7ff00000)
-		return 1;
-#endif
-#ifdef DEC
-	if( (u.s[3] & 0x7fff) != 0)
-		return 1;
-#endif
-#ifdef MIEEE
-	if( (u.i[0] & 0x7ff00000) != 0x7ff00000)
-		return 1;
-#endif
-	return(0);
-	}
-else
-	{
-#ifdef IBMPC
-	if( (u.s[3] & 0x7ff0) != 0x7ff0)
-		return 1;
-#endif
-#ifdef DEC
-	if( (u.s[3] & 0x7fff) != 0)
-		return 1;
-#endif
-#ifdef MIEEE
-	if( (u.s[0] & 0x7ff0) != 0x7ff0)
-		return 1;
-#endif
-	return(0);
-	}
-#else
-/* No INFINITY.  */
-return(1);
-#endif
+    if (bint.c[0] == 1) {
+        return 1;
+    }
+    return 0;
+}
+
+int signbit(double x)
+{
+    union
+    {
+        double d;
+        short s[4];
+        int i[2];
+    } u;
+
+    u.d = x;
+
+    /*
+     * Tuis is stupid, we test for endianness every time, but that the easiest
+     * way I can see without using platform checks - for scipy 0.8.0, we should
+     * use npy_math
+     */
+#if SIZEOF_INT == 4
+    if (isbigendian()) {
+	return u.i[1] < 0;
+    } else {
+	return u.i[0] < 0;
+    }
+
+#else  /* SIZEOF_INT != 4 */
+
+    if (isbigendian()) {
+	return u.s[3] < 0;
+    } else {
+	return u.s[0] < 0;
+    }
+#endif  /* SIZEOF_INT */
 }

@@ -1,7 +1,8 @@
-# Last Change: Mon Nov 03 07:00 PM 2008 J
+
 # vim:syntax=python
 from os.path import join as pjoin, basename as pbasename
 import sys
+from numpy.distutils.misc_util import get_numpy_include_dirs
 
 from numscons import GetNumpyEnvironment
 from numscons import CheckF77Clib
@@ -21,6 +22,7 @@ if not config.CheckF77Clib():
 config.Finish()
 
 env.AppendUnique(CPPPATH = env["PYEXTCPPPATH"]) 
+env.AppendUnique(CPPPATH = get_numpy_include_dirs())
 def build_lib(name, ext, libname = None):
     """ext should be .f or .c"""
     if not libname:
