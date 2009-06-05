@@ -126,7 +126,11 @@ options(sphinx=Bunch(builddir="build", sourcedir="source", docroot='doc'),
         wininst=Bunch(pyver="2.5", scratch=True))
 
 def parse_numpy_version(pyexec):
-    cmd = [pyexec, "-c", "'import numpy; print numpy.version.version'"]
+    if isinstance(pyexec, str):
+        cmd = [pyexec, "-c", "'import numpy; print numpy.version.version'"]
+    else:
+        # sequence for pyexec
+        cmd = pyexec + ["-c", "'import numpy; print numpy.version.version'"]
 
     # Execute in shell because launching python from python does not work
     # (hangs)
@@ -359,14 +363,21 @@ def bdist_superpack(options):
     subprocess.check_call(['makensis', 'scipy-superinstaller.nsi'],
             cwd=SUPERPACK_BUILD)
 
+    pyver = options.wininst.pyver
+
+    numver = parse_numpy_version(WINE_PYS[pyver])
+    numverstr = ".".join(["%i" % i for i in numver])
+    if pyver == "2.5" and not numver[:2] == (1, 2):
+        raise valueerror("scipy 0.7.x should be built against numpy 1.2.x for python 2.5 (detected %s)" % numverstr)
+    elif pyver == "2.6" and not numver[:2] == (1, 3):
+        raise valueerror("scipy 0.7.x should be built against numpy 1.3.x for python 2.6 (detected %s)" % numverstr)
+
     # Copy the superpack into installers dir
     if not os.path.exists(INSTALLERS_DIR):
         os.makedirs(INSTALLERS_DIR)
 
-    source = os.path.join(SUPERPACK_BUILD,
-                superpack_name(options.wininst.pyver, FULLVERSION))
-    target = os.path.join(INSTALLERS_DIR,
-                superpack_name(options.wininst.pyver, FULLVERSION))
+    source = os.path.join(SUPERPACK_BUILD, superpack_name(pyver, FULLVERSION))
+    target = os.path.join(INSTALLERS_DIR, superpack_name(pyver, FULLVERSION))
     shutil.copy(source, target)
 
 @task
