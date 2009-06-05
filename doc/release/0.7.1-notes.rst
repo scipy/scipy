@@ -56,6 +56,7 @@ Several bugs of varying severity were fixed in the special functions:
 - #853: jv, yv, iv: invalid results for non-integer v < 0, complex x
 - #854: jv, yv, iv, kv: return nan more consistently when out-of-domain
 - #927: ellipj: fix segfault on Windows
+- #946: ellpj: fix segfault on Mac OS X/python 2.6 combination.
 - ive, jve, yve, kv, kve: with real-valued input, return nan for out-of-domain
   instead of returning only the real part of the result.
 
