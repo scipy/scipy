@@ -74,12 +74,14 @@ scipy.stats
 Windows binaries for python 2.6
 ===============================
 
-python 2.6 binaries for windows are now included. All 0.7.1 binaries requires
-numpy 1.3.0 or above.
+python 2.6 binaries for windows are now included. The binary for python 2.5
+requires numpy 1.2.0 or above, and and the one for python 2.6 requires numpy
+1.3.0 or above.
 
 Universal build for scipy
 =========================
 
-Mac OS X binary installer is now a universal build. The python 2.5 version of
-scipy requires numpy 1.2.0 or above., the python 2.6 version requires numpy
-1.3.0.
+Mac OS X binary installer is now a proper universal build, and does not depend
+on gfortran anymore (libgfortran is statically linked). The python 2.5 version
+of scipy requires numpy 1.2.0 or above, the python 2.6 version requires numpy
+1.3.0 or above.
