@@ -71,6 +71,7 @@ finally:
 
 # Default python version
 PYVER="2.5"
+DMG_DIR = "dmg-source"
 
 # Wine config for win32 builds
 if sys.platform == "win32":
@@ -172,7 +173,7 @@ def clean_bootstrap():
 @needs('clean', 'clean_bootstrap')
 def nuke():
     """Remove everything: build dir, installers, bootstrap dirs, etc..."""
-    d = [SUPERPACK_BUILD, INSTALLERS_DIR]
+    d = [SUPERPACK_BUILD, INSTALLERS_DIR, DMG_DIR]
     for i in d:
         paver.path.path(i).rmtree()
 
@@ -415,15 +416,14 @@ def macosx_version():
         if m:
             return m.groups()
 
-def mpkg_name():
+def mpkg_name(pyver):
     maj, min = macosx_version()[:2]
-    pyver = ".".join([str(i) for i in sys.version_info[:2]])
     return "scipy-%s-py%s-macosx%s.%s.mpkg" % \
             (FULLVERSION, pyver, maj, min)
 
-def dmg_name():
+def dmg_name(pyver):
     #maj, min = macosx_version()[:2]
-    pyver = ".".join([str(i) for i in sys.version_info[:2]])
+    #pyver = ".".join([str(i) for i in sys.version_info[:2]])
     #return "scipy-%s-py%s-macosx%s.%s.dmg" % \
     #        (FULLVERSION, pyver, maj, min)
     return "scipy-%s-py%s-python.org.dmg" % \
@@ -444,6 +444,9 @@ def bdist_mpkg():
     except AttributeError:
         pyver = PYVER
 
+    _build_mpkg(pyver)
+
+def _build_mpkg(pyver):
     numver = parse_numpy_version(MPKG_PYTHON[pyver])
     numverstr = ".".join(["%i" % i for i in numver])
     if pyver == "2.5" and not numver[:2] == (1, 2):
@@ -500,12 +503,37 @@ def dmg():
     subprocess.check_call(cmd, cwd="scipy-macosx-installer")
 
 @task
+@cmdopts([('python_version=', 'p', 'Python version to build the installer against')])
 def simple_dmg():
+    try:
+        pyver = options.simple_dmg.python_version
+    except AttributeError:
+        pyver = PYVER
+
+    src_dir = DMG_DIR
+
+    # Clean the source dir
+    if os.path.exists(src_dir):
+        shutil.rmtree(src_dir)
+    os.makedirs(src_dir)
+
+    # Build the mpkg
+    clean()
+    _build_mpkg(pyver)
+
     # Build the dmg
-    image_name = dmg_name()
+    shutil.copytree(os.path.join("dist", mpkg_name(pyver)),
+                    os.path.join(src_dir, mpkg_name(pyver)))
+    _create_dmg(pyver, src_dir, "Scipy Universal %s" % FULLVERSION)
+
+def _create_dmg(pyver, src_dir, volname=None):
+    # Build the dmg
+    image_name = dmg_name(pyver)
     image = paver.path.path(image_name)
     image.remove()
-    cmd = ["hdiutil", "create", image_name, "-srcdir", str("dist")]
+    cmd = ["hdiutil", "create", image_name, "-srcdir", src_dir]
+    if volname:
+        cmd.extend(["-volname", "'%s'" % volname])
     sh(" ".join(cmd))
 
 @task
