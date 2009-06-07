@@ -4297,7 +4297,7 @@ C          Backward recurrence for Jn
                  BS=BS+2.0D0*F
                  SU=SU+(-1)**(K/2)*F/K
               ELSE IF (K.GT.1) THEN
-                 SV=SV+(-1)**(K/2)*K/(K*K-1.0)*F
+                 SV=SV+(-1)**(K/2)*K/(K*K-1.0D0)*F
               ENDIF
               F2=F1
 15            F1=F
