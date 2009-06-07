@@ -507,6 +507,7 @@ def simple_dmg():
     os.makedirs(src_dir)
 
     # Build the mpkg
+    clean()
     _build_mpkg(pyver)
 
     # Build the dmg
