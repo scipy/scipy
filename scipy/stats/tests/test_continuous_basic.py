@@ -23,7 +23,7 @@ TODO:
 """
 
 #currently not used
-DECIMAL = 0 # specify the precision of the tests
+DECIMAL = 5 # specify the precision of the tests  # increased from 0 to 5
 DECIMAL_kurt = 0
 
 distcont = [
@@ -285,7 +285,7 @@ def check_sample_meanvar(sm,m,msg):
 ##        assert abs(sm) > 10000, 'infinite moment, sm = ' + str(sm)
 
 def check_cdf_ppf(distfn,arg,msg):
-    npt.assert_almost_equal(distfn.cdf(distfn.ppf([0.001,0.5,0.990], *arg), *arg),
+    npt.assert_almost_equal(distfn.cdf(distfn.ppf([0.001,0.5,0.999], *arg), *arg),
                             [0.001,0.5,0.999], decimal=DECIMAL, err_msg= msg + \
                             ' - cdf-ppf roundtrip')
 
