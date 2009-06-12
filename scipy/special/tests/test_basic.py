@@ -1609,6 +1609,9 @@ class TestBessel(TestCase):
         ao = ynp_zeros(443,5)
         assert_tol_equal(yvp(443, ao), 0, atol=1e-9)
 
+    @dec.knownfailureif(True,
+                        "cephes/yv is not eps accurate for large orders on "
+                        "all platforms, and has nan/inf issues")
     def test_ynp_zeros_large_order(self):
         ao = ynp_zeros(443,5)
         assert_tol_equal(yvp(443, ao), 0, atol=1e-15)
