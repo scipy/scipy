@@ -1593,7 +1593,6 @@ class TestBessel(TestCase):
         y1p = y1p_zeros(1,complex=1)
         assert_array_almost_equal(y1p,(array([ 0.5768+0.904j]), array([-0.7635+0.5892j])),3)
 
-    @dec.knownfailureif(True, "Estimation of yn derivative is unstable")
     def test_yn_zeros(self):
         an = yn_zeros(4,2)
         assert_array_almost_equal(an,array([ 5.64515,  9.36162]),5)
@@ -1602,7 +1601,6 @@ class TestBessel(TestCase):
                               472.80651546418663566, 481.27353184725625838,
                               488.98055964441374646], rtol=1e-15)
 
-    @dec.knownfailureif(True, "Estimation of yn derivative is unstable")
     def test_ynp_zeros(self):
         ao = ynp_zeros(0,2)
         assert_array_almost_equal(ao,array([ 2.19714133, 5.42968104]),6)
@@ -1611,9 +1609,6 @@ class TestBessel(TestCase):
         ao = ynp_zeros(443,5)
         assert_tol_equal(yvp(443, ao), 0, atol=1e-9)
 
-    @dec.knownfailureif(True,
-                        "cephes/yv is not eps accurate for large orders on "
-                        "all platforms, and has nan/inf issues")
     def test_ynp_zeros_large_order(self):
         ao = ynp_zeros(443,5)
         assert_tol_equal(yvp(443, ao), 0, atol=1e-15)
