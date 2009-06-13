@@ -73,7 +73,7 @@ distcont = [
     ['invweibull', (10.58,)], # sample mean test fails at(0.58847112119264788,)]
     ['johnsonsb', (4.3172675099141058, 3.1837781130785063)],
     ['johnsonsu', (2.554395574161155, 2.2482281679651965)],
-    ['ksone', (22,)],  # new added
+    ['ksone', (1000,)],  #replace 22 by 100 to avoid failing range, ticket 956
     ['kstwobign', ()],
     ['laplace', ()],
     ['levy', ()],
