@@ -168,7 +168,7 @@ def gcc_exists(name = 'gcc'):
     result = 0
     cmd = '%s -v' % name
     try:
-        p = subprocess.Popen([str(name), '-v'], shell=True, close_fds=True,
+        p = subprocess.Popen([str(name), '-v'], shell=True,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         str_result = p.stdout.read()
         if 'Reading specs' in str_result:
@@ -186,7 +186,7 @@ def msvc_exists():
     """
     result = 0
     try:
-        p = subprocess.Popen(['cl'], shell=True, close_fds=True,
+        p = subprocess.Popen(['cl'], shell=True,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         str_result = p.stdout.read()
         if 'Microsoft' in str_result:
