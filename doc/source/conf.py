@@ -5,7 +5,7 @@ import sys, os
 # If your extensions are in another directory, add it here. If the directory
 # is relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
-sys.path.append(os.path.abspath('../sphinxext'))
+sys.path.insert(0, os.path.abspath('../sphinxext'))
 
 # Check Sphinx version
 import sphinx
@@ -20,8 +20,14 @@ if sphinx.__version__ < "0.5":
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.pngmath', 'numpydoc',
-              'phantom_import', 'autosummary', 'sphinx.ext.intersphinx',
-              'sphinx.ext.coverage', 'only_directives', 'plot_directive']
+              'sphinx.ext.intersphinx', 'sphinx.ext.coverage', 'plot_directive']
+
+if sphinx.__version__ >= "0.7":
+    extensions.append('sphinx.ext.autosummary')
+else:
+    extensions.append('autosummary')
+    extensions.append('only_directives')
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -215,6 +221,14 @@ phantom_import_file = 'dump.xml'
 #numpydoc_edit_link = '`Edit </pydocweb/doc/%(full_name)s/>`__'
 
 # -----------------------------------------------------------------------------
+# Autosummary
+# -----------------------------------------------------------------------------
+
+if sphinx.__version__ >= "0.7": 
+    import glob
+    autosummary_generate = glob.glob("*.rst")
+
+# -----------------------------------------------------------------------------
 # Coverage checker
 # -----------------------------------------------------------------------------
 coverage_ignore_modules = r"""
@@ -235,10 +249,29 @@ coverage_ignore_c_items = {}
 # Plot
 #------------------------------------------------------------------------------
 plot_pre_code = """
-import numpy
-numpy.random.seed(123)
+import numpy as np
+import scipy as sp
+np.random.seed(123)
 """
-plot_output_dir = '_static/plot_directive'
 plot_include_source = True
-plot_formats = ['png', 'pdf']
+plot_formats = [('png', 100), 'pdf']
 
+import math
+phi = (math.sqrt(5) + 1)/2
+
+import matplotlib
+matplotlib.rcParams.update({
+    'font.size': 8,
+    'axes.titlesize': 8,
+    'axes.labelsize': 8,
+    'xtick.labelsize': 8,
+    'ytick.labelsize': 8,
+    'legend.fontsize': 8,
+    'figure.figsize': (3*phi, 3),
+    'figure.subplot.bottom': 0.2,
+    'figure.subplot.left': 0.2,
+    'figure.subplot.right': 0.9,
+    'figure.subplot.top': 0.85,
+    'figure.subplot.wspace': 0.4,
+    'text.usetex': False,
+})

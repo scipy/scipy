@@ -52,16 +52,30 @@ if iopt=-1:
                     }
 
 class UnivariateSpline(object):
-    """ Univariate spline s(x) of degree k on the interval
+    """Univariate spline s(x) of degree k on the interval
     [xb,xe] calculated from a given set of data points
     (x,y).
 
     Can include least-squares fitting.
 
-    See also:
+    See Also
+    --------
+    splrep, splev, sproot, spint, spalde
+        An older wrapping of FITPACK
+    BivariateSpline
+        A similar class for bivariate spline interpolation
 
-    splrep, splev, sproot, spint, spalde - an older wrapping of FITPACK
-    BivariateSpline - a similar class for bivariate spline interpolation
+    Methods
+    -------
+    __call__
+    get_knots
+    get_coeffs
+    get_residual
+    integral
+    derivatives
+    roots
+    set_smoothing_factor
+
     """
 
     def __init__(self, x, y, w=None, bbox = [None]*2, k=3, s=None):
