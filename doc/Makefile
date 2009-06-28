@@ -101,8 +101,8 @@ build/generate-stamp: $(wildcard source/*.rst)
 	mkdir -p build
 ifeq ($(NEED_AUTOSUMMARY),1)
 	$(PYTHON) \
-		./sphinxext/autosummary_generate.py source/reference/*.rst \
-		-p dump.xml -o source/reference/generated 
+		./sphinxext/autosummary_generate.py source/*.rst \
+		-p dump.xml -o source/generated 
 endif
 	touch build/generate-stamp
 
