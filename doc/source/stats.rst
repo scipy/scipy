@@ -219,7 +219,6 @@ which work for masked arrays.
    :toctree: generated/
 
    f_oneway
-   paired
    pearsonr
    spearmanr
    pointbiserialr
@@ -235,7 +234,7 @@ which work for masked arrays.
    kstest
    chisquare
    ks_2samp
-   meanwhitneyu
+   mannwhitneyu
    tiecorrect
    ranksums
    wilcoxon
