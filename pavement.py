@@ -127,7 +127,7 @@ options(sphinx=Bunch(builddir="build", sourcedir="source", docroot='doc'),
         wininst=Bunch(pyver="2.5", scratch=True))
 
 def parse_numpy_version(pyexec):
-    cmd = [pyexec, "-c", "'import numpy; print numpy.version.version'"]
+    cmd = [pyexec, "-c", '"import numpy; print numpy.version.version"']
 
     # Execute in shell because launching python from python does not work
     # (hangs)
