@@ -126,14 +126,14 @@ static int _imp_correlate_nd_@fsuf@@fsuf2@(PyArrayNeighborhoodIterObject *curx,
 
     for(i = 0; i < curx->size; ++i) {
         acc = 0;
-        PyArrayNeighborhoodIter_Reset(curneighx);
+        PyArrayNeighborhoodIter_ResetConstant(curneighx);
         for(j = 0; j < curneighx->size; ++j) {
             acc += *((@type@*)(curneighx->dataptr)) * *((@type@*)(ity->dataptr));
 
-            PyArrayNeighborhoodIter_Next@func@(curneighx);
+            PyArrayNeighborhoodIter_NextConstant@func@(curneighx);
             PyArray_ITER_NEXT(ity);
         }
-        PyArrayNeighborhoodIter_Next@func@(curx);
+        PyArrayNeighborhoodIter_NextConstant@func@(curx);
 
         *((@type@*)(itz->dataptr)) = acc;
         PyArray_ITER_NEXT(itz);
@@ -167,17 +167,17 @@ static int _imp_correlate_nd_c@fsuf@@fsuf2@(PyArrayNeighborhoodIterObject *curx,
     for(i = 0; i < curx->size; ++i) {
         racc = 0;
         iacc = 0;
-        PyArrayNeighborhoodIter_Reset(curneighx);
+        PyArrayNeighborhoodIter_ResetConstant(curneighx);
         for(j = 0; j < curneighx->size; ++j) {
             ptr1 = ((@type@*)(curneighx->dataptr));
             ptr2 = ((@type@*)(ity->dataptr));
             racc += ptr1[0] * ptr2[0] + ptr1[1] * ptr2[1];
             iacc += ptr1[1] * ptr2[0] - ptr1[0] * ptr2[1];
 
-            PyArrayNeighborhoodIter_Next@func@(curneighx);
+            PyArrayNeighborhoodIter_NextConstant@func@(curneighx);
             PyArray_ITER_NEXT(ity);
         }
-        PyArrayNeighborhoodIter_Next@func@(curx);
+        PyArrayNeighborhoodIter_NextConstant@func@(curx);
 
         ((@type@*)(itz->dataptr))[0] = racc;
         ((@type@*)(itz->dataptr))[1] = iacc;
@@ -204,7 +204,7 @@ static int _imp_correlate_nd_object(PyArrayNeighborhoodIterObject *curx,
     zero = PyArray_Zero(curx->ao);
 
     for(i = 0; i < curx->size; ++i) {
-        PyArrayNeighborhoodIter_Reset(curneighx);
+        PyArrayNeighborhoodIter_ResetConstant(curneighx);
         copyswap(itz->dataptr, zero, 0, NULL);
 
         for(j = 0; j < curneighx->size; ++j) {
@@ -222,11 +222,11 @@ static int _imp_correlate_nd_object(PyArrayNeighborhoodIterObject *curx,
             Py_DECREF(*((PyObject**)itz->dataptr));
             *((PyObject**)itz->dataptr) = tmp2;
 
-            PyArrayNeighborhoodIter_Next(curneighx);
+            PyArrayNeighborhoodIter_NextConstant(curneighx);
             PyArray_ITER_NEXT(ity);
         }
 
-        PyArrayNeighborhoodIter_Next(curx);
+        PyArrayNeighborhoodIter_NextConstant(curx);
 
         PyArray_ITER_NEXT(itz);
 
@@ -283,7 +283,8 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
             return -1;
     }
 
-    curx = (PyArrayNeighborhoodIterObject*)PyArray_NeighborhoodIterNew(itx, bounds);
+    curx = (PyArrayNeighborhoodIterObject*)PyArray_NeighborhoodIterNew(itx,
+            bounds, NPY_NEIGHBORHOOD_ITER_ZERO_PADDING, NULL);
     if (curx == NULL) {
         PyErr_SetString(PyExc_SystemError, "Could not create curx ?");
         return -1;
@@ -297,7 +298,7 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
     }
 
     curneighx = (PyArrayNeighborhoodIterObject*)PyArray_NeighborhoodIterNew(
-            (PyArrayIterObject*)curx, bounds);
+            (PyArrayIterObject*)curx, bounds, NPY_NEIGHBORHOOD_ITER_ZERO_PADDING, NULL);
     if (curneighx == NULL) {
         goto clean_curx;
     }
