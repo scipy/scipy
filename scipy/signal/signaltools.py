@@ -84,7 +84,7 @@ def correlate(in1, in2, mode='full'):
     else:
         ps = [i + j - 1 for i, j in zip(in1.shape, in2.shape)]
         # zero pad input
-        in1p = np.zeros(ps, in1.dtype)
+        in1zpadded = np.zeros(ps, in1.dtype)
         sc = [slice(0, i) for i in in1.shape]
         in1zpadded[sc] = in1.copy()
 
