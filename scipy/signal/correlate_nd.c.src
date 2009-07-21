@@ -88,8 +88,6 @@ scipy_signal_sigtools_correlateND(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
     st = _correlate_nd_imp(itx, ity, itz, typenum, mode);
     if (st) {
-        PyErr_SetString(PyExc_ValueError,
-                "Unknown error while computing correlation");
         goto clean_ity;
     }
 
@@ -305,6 +303,7 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
 
     curx = PyArray_NeighborhoodIterNew(itx, bounds);
     if (curx == NULL) {
+        PyErr_SetString(PyExc_SystemError, "Could not create curx ?");
         return -1;
     }
     curxbase = (PyArrayIterObject*)curx;
