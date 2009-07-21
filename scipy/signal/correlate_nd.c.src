@@ -120,8 +120,10 @@ clean_ax:
  */
 
 /**begin repeat
- * #fsuf = ubyte, byte, ushort, short, uint, int, ulong, long, ulonglong, longlong, float, double, longdouble#
- * #type = ubyte, byte, ushort, short, uint, int, ulong, long, ulonglong, longlong, float, double, npy_longdouble#
+ * #fsuf = ubyte, byte, ushort, short, uint, int, ulong, long, ulonglong,
+ *         longlong, float, double, longdouble#
+ * #type = ubyte, byte, ushort, short, uint, int, ulong, long, ulonglong,
+ *         longlong, float, double, npy_longdouble#
  */
 
 /**begin repeat1
@@ -322,8 +324,10 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
 
     switch(typenum) {
 /**begin repeat
- * #TYPE = UBYTE, BYTE, USHORT, SHORT, UINT, INT, ULONG, LONG, ULONGLONG, LONGLONG, FLOAT, DOUBLE, LONGDOUBLE, CFLOAT, CDOUBLE, CLONGDOUBLE#
- * #type = ubyte, byte, ushort, short, uint, int, ulong, long, ulonglong, longlong, float, double, longdouble, cfloat, cdouble, clongdouble#
+ * #TYPE = UBYTE, BYTE, USHORT, SHORT, UINT, INT, ULONG, LONG, ULONGLONG,
+ *         LONGLONG, FLOAT, DOUBLE, LONGDOUBLE, CFLOAT, CDOUBLE, CLONGDOUBLE#
+ * #type = ubyte, byte, ushort, short, uint, int, ulong, long, ulonglong,
+ *         longlong, float, double, longdouble, cfloat, cdouble, clongdouble#
  */
         case PyArray_@TYPE@:
             if (itx->ao->nd ==2) {
@@ -333,6 +337,7 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
             }
             break;
 /**end repeat**/
+
         /* The object array case does not worth being optimized, since most of
            the cost is numerical operations, not iterators moving in this case ? */
         case PyArray_OBJECT:
