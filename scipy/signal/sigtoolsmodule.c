@@ -4,6 +4,9 @@ Copyright 2005 Travis Oliphant
 Permission to use, copy, modify, and distribute this software without fee
 is granted under the SciPy License.
 */
+#include <Python.h>
+#define PY_ARRAY_UNIQUE_SYMBOL _scipy_signal_ARRAY_API
+#include <numpy/noprefix.h>
 
 #include "sigtools.h"
 #include <setjmp.h>
@@ -1624,7 +1627,10 @@ static PyObject *sigtools_median2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
 }
 
-#include "lfilter.inc"
+static char doc_linear_filter[] =
+    "(y,Vf) = _linear_filter(b,a,X,Dim=-1,Vi=None)  " \
+    "implemented using Direct Form II transposed flow " \
+    "diagram. If Vi is not given, Vf is not returned.";
 
 static struct PyMethodDef toolbox_module_methods[] = {
 	{"_correlateND", sigtools_correlateND, METH_VARARGS, doc_correlateND},

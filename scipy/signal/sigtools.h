@@ -49,7 +49,8 @@ typedef struct {
 
 typedef void (MultAddFunction) (char *, intp, char *, intp, char *, intp *, intp *, int, intp, int, intp *, intp *, uintp *);
 
-typedef void (BasicFilterFunction) (char *, char *,  char *, char *, char *, intp, uintp, intp, intp);
+PyObject*
+sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * args);
 
 /*
 static int index_out_of_bounds(int *, int *, int );

@@ -3,6 +3,11 @@
  * vim:sw=4
  */
 #include <Python.h>
+#define PY_ARRAY_UNIQUE_SYMBOL _scipy_signal_ARRAY_API
+#define NO_IMPORT_ARRAY
+#include <numpy/noprefix.h>
+
+#include "sigtools.h"
 
 static void FLOAT_filt(char *b, char *a, char *x, char *y, char *Z,
                        intp len_b, uintp len_x, intp stride_X,
@@ -26,6 +31,8 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
                         intp len_b, uintp len_x, intp stride_X,
                         intp stride_Y);
 
+typedef void (BasicFilterFunction) (char *, char *,  char *, char *, char *, intp, uintp, intp, intp);
+
 static BasicFilterFunction *BasicFilterFunctions[] =
     { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
     FLOAT_filt, DOUBLE_filt, EXTENDED_filt,
@@ -41,15 +48,10 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
           const PyArrayObject * zf, PyArrayObject * y, int axis,
           BasicFilterFunction * filter_func);
 
-static char doc_linear_filter[] =
-    "(y,Vf) = _linear_filter(b,a,X,Dim=-1,Vi=None)  " \
-    "implemented using Direct Form II transposed flow " \
-    "diagram. If Vi is not given, Vf is not returned.";
-
 /*
  * XXX: Error checking not done yet
  */
-static PyObject*
+PyObject*
 sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * args)
 {
     PyObject *b, *a, *X, *Vi;

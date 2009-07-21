@@ -6,9 +6,9 @@ from numscons import GetNumpyEnvironment
 
 env = GetNumpyEnvironment(ARGUMENTS)
 
-env.FromCTemplate("lfilter.inc.src")
+src = env.FromCTemplate("lfilter.c.src")
 env.NumpyPythonExtension('sigtools', 
-                         source = ['sigtoolsmodule.c',\
+                         source = src + ['sigtoolsmodule.c',\
                                    'firfilter.c', \
                                    'medianfilter.c'])
 
