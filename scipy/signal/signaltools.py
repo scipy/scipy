@@ -137,28 +137,28 @@ def fftconvolve(in1, in2, mode="full"):
 def convolve(in1, in2, mode='full'):
     """Convolve two N-dimensional arrays.
 
-  Description:
+    Convolve in1 and in2 with output size determined by mode.
 
-     Convolve in1 and in2 with output size determined by mode.
+    Arguments
+    ---------
+    in1: array
+        first input.
+    in2: array
+        second input. Should have the same number of dimensions as in1.
+    mode: str {'valid', 'same', 'full'}
+        a string indicating the size of the output:
+            - 'valid': the output consists only of those elements that do not
+            rely on the zero-padding.
+            - 'same': the output is the same size as the largest input centered
+              with respect to the 'full' output.
+            - 'full': the output is the full discrete linear cross-correlation
+              of the inputs. (Default)
 
-  Inputs:
-
-    in1 -- an N-dimensional array.
-    in2 -- an array with the same number of dimensions as in1.
-    mode -- a flag indicating the size of the output
-            'valid'  (0): The output consists only of those elements that
-                            are computed by scaling the larger array with all
-                            the values of the smaller array.
-            'same'   (1): The output is the same size as the largest input
-                            centered with respect to the 'full' output.
-            'full'   (2): The output is the full discrete linear convolution
-                            of the inputs. (Default)
-
-  Outputs:  (out,)
-
-    out -- an N-dimensional array containing a subset of the discrete linear
-           convolution of in1 with in2.
-
+    Returns
+    -------
+    out: array
+        an N-dimensional array containing a subset of the discrete linear
+        cross-correlation of in1 with in2.
     """
     volume = asarray(in1)
     kernel = asarray(in2)
