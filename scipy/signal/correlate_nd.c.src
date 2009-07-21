@@ -299,7 +299,7 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
             }
             break;
         default:
-            printf("NE ? %s\n", __FILE__);
+            PyErr_BadInternalCall();
             return -1;
     }
 
