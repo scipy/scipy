@@ -1,3 +1,6 @@
+#ifndef _SCIPY_PRIVATE_SIGNAL_SIGTOOLS_H_
+#define _SCIPY_PRIVATE_SIGNAL_SIGTOOLS_H_
+
 #include "Python.h"
 #include "numpy/noprefix.h"
 
@@ -55,3 +58,5 @@ static int increment(int *, int, int *);
 static void convolveND(Generic_Array *, Generic_Array *, Generic_Array *, MultAddFunction *, int);
 static void RawFilter(Generic_Vector, Generic_Vector, Generic_Array, Generic_Array, Generic_Array *, Generic_Array *, BasicFilterFunction *, int);
 */
+
+#endif
