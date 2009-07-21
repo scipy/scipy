@@ -18,6 +18,13 @@ class TestConvolve(TestCase):
         c = signal.convolve(a,b)
         assert_array_equal(c,array([3,10,22,28,32,32,23,12]))
 
+    def test_complex(self):
+        x = array([1+1j, 2+1j, 3+1j])
+        y = array([1+1j, 2+1j])
+        z = signal.convolve(x, y)
+        assert_array_equal(z, array([2j, 2+6j, 5+8j, 5+5j]))
+
+
 class TestFFTConvolve(TestCase):
     def test_real(self):
         x = array([1,2,3])
@@ -343,9 +350,9 @@ class _TestCorrelateComplex(TestCase):
         b = np.random.randn(8).astype(self.dt)
         b += 1j * np.random.randn(8).astype(self.dt)
 
-        y_r = (correlate(a.real, b.real, mode=mode) -
+        y_r = (correlate(a.real, b.real, mode=mode) +
                correlate(a.imag, b.imag, mode=mode)).astype(self.dt)
-        y_r += 1j * (correlate(a.real, b.imag, mode=mode) +
+        y_r += 1j * (-correlate(a.real, b.imag, mode=mode) +
                 correlate(a.imag, b.real, mode=mode))
         return a, b, y_r
 
@@ -373,8 +380,8 @@ class _TestCorrelateComplex(TestCase):
         b = np.random.randn(8, 6, 4).astype(self.dt)
         b += 1j * np.random.randn(8, 6, 4).astype(self.dt)
 
-        y_r = (correlate(a.real, b.real) - correlate(a.imag, b.imag)).astype(self.dt)
-        y_r += 1j * (correlate(a.real, b.imag) + correlate(a.imag, b.real))
+        y_r = (correlate(a.real, b.real) + correlate(a.imag, b.imag)).astype(self.dt)
+        y_r += 1j * (- correlate(a.real, b.imag) + correlate(a.imag, b.real))
 
         y = correlate(a, b, 'full')
         assert_array_almost_equal(y, y_r, decimal=4)

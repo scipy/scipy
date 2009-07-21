@@ -171,8 +171,8 @@ static int _imp_correlate_nd_c@fsuf@@fsuf2@(PyArrayNeighborhoodIterObject *curx,
         for(j = 0; j < curneighx->size; ++j) {
             ptr1 = ((@type@*)(curneighx->dataptr));
             ptr2 = ((@type@*)(ity->dataptr));
-            racc += ptr1[0] * ptr2[0] - ptr1[1] * ptr2[1];
-            iacc += ptr1[1] * ptr2[0] + ptr1[0] * ptr2[1];
+            racc += ptr1[0] * ptr2[0] + ptr1[1] * ptr2[1];
+            iacc += ptr1[1] * ptr2[0] - ptr1[0] * ptr2[1];
 
             PyArrayNeighborhoodIter_Next@func@(curneighx);
             PyArray_ITER_NEXT(ity);

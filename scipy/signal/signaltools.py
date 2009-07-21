@@ -165,7 +165,10 @@ def convolve(in1, in2, mode='full'):
 
     slice_obj = [slice(None,None,-1)]*len(kernel.shape)
 
-    return correlate(volume, kernel[slice_obj], mode)
+    if np.iscomplexobj(kernel):
+        return correlate(volume, kernel[slice_obj].conj(), mode)
+    else:
+        return correlate(volume, kernel[slice_obj], mode)
 
 def order_filter(a, domain, rank):
     """Perform an order filter on an N-dimensional array.
