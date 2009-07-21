@@ -358,7 +358,6 @@ class _TestCorrelateComplex(TestCase):
     def test_rank1_same(self):
         a, b, y_r = self._setup_rank1('same')
         y = correlate(a, b, 'same')
-        print y, y_r
         assert_array_almost_equal(y, y_r)
         self.failUnless(y.dtype == self.dt)
 

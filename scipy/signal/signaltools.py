@@ -67,20 +67,40 @@ def correlate(in1, in2, mode='full'):
            cross-correlation of in1 with in2.
 
     """
-    # Code is faster if kernel is smallest array.
-    volume = asarray(in1)
-    kernel = asarray(in2)
-    if rank(volume) == rank(kernel) == 0:
-        return volume*kernel
-    if (product(kernel.shape,axis=0) > product(volume.shape,axis=0)):
-        temp = kernel
-        kernel = volume
-        volume = temp
-        del temp
-
     val = _valfrommode(mode)
 
-    return sigtools._correlateND(volume, kernel, val)
+    if mode == 'full':
+        ps = [i + j - 1 for i, j in zip(in1.shape, in2.shape)]
+        out = np.empty(ps, in1.dtype)
+
+        # zero pad input
+        in1p = np.zeros(ps, in1.dtype)
+        sc = [slice(0, i) for i in in1.shape]
+        in1p[sc] = in1.copy()
+        return sigtools._correlateND(in1p, in2, out, val)
+    elif mode == 'same':
+        ps = [i + j - 1 for i, j in zip(in1.shape, in2.shape)]
+
+        # zero pad input
+        in1p = np.zeros(ps, in1.dtype)
+        sc = [slice(0, i) for i in in1.shape]
+        in1p[sc] = in1.copy()
+
+        out = np.empty(in1.shape, in1.dtype)
+
+        return sigtools._correlateND(in1p, in2, out, val)
+    elif mode == 'valid':
+        ps = [i - j + 1 for i, j in zip(in1.shape, in2.shape)]
+        out = np.empty(ps, in1.dtype)
+        for i in range(len(ps)):
+            if ps[i] <= 0:
+                raise ValueError("Dimension of x(%d) < y(%d) " \
+                                 "not compatible with valid mode" % \
+                                 (x.shape[i], y.shape[i]))
+
+        return sigtools._correlateND(in1, in2, out, val)
+    else:
+        raise ValueError("not supported yet")
 
 def _centered(arr, newsize):
     # Return the center newsize portion of the array.
