@@ -349,9 +349,9 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
 
     return 0;
 
-clean_curx:
-    Py_DECREF((PyArrayIterObject*)curx);
 clean_curneighx:
     Py_DECREF((PyArrayIterObject*)curneighx);
+clean_curx:
+    Py_DECREF((PyArrayIterObject*)curx);
     return -1;
 }
