@@ -73,19 +73,6 @@ scipy_signal_sigtools_correlateND(PyObject *NPY_UNUSED(dummy), PyObject *args)
         goto clean_ity;
     }
 
-    switch(mode) {
-    case CORR_MODE_VALID:
-        break;
-    case CORR_MODE_SAME:
-        break;
-    case CORR_MODE_FULL:
-        break;
-    default:
-        PyErr_SetString(PyExc_ValueError,
-                "mode must be 0 (valid), 1 (same), or 2 (full)");
-        goto clean_itz;
-    }
-
     st = _correlate_nd_imp(itx, ity, itz, typenum, mode);
     if (st) {
         goto clean_ity;
