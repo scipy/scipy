@@ -242,7 +242,7 @@ static int increment(intp *ret_ind, int nd, intp *max_ind) {
     return incr;
 }
 
-PyObject *sigtools_correlateND(PyObject *NPY_UNUSED(dummy), PyObject *args) {
+PyObject *scipy_signal_sigtools_correlateND(PyObject *NPY_UNUSED(dummy), PyObject *args) {
 	PyObject *kernel, *a0;
 	PyArrayObject *ap1, *ap2, *ret;
 	Generic_Array in1, in2, out;

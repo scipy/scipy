@@ -1303,10 +1303,10 @@ static char doc_linear_filter[] =
     "diagram. If Vi is not given, Vf is not returned.";
 
 static struct PyMethodDef toolbox_module_methods[] = {
-	{"_correlateND", sigtools_correlateND, METH_VARARGS, doc_correlateND},
+	{"_correlateND", scipy_signal_sigtools_correlateND, METH_VARARGS, doc_correlateND},
 	{"_convolve2d", sigtools_convolve2d, METH_VARARGS, doc_convolve2d},
 	{"_order_filterND", sigtools_order_filterND, METH_VARARGS, doc_order_filterND},
-	{"_linear_filter",sigtools_linear_filter, METH_VARARGS, doc_linear_filter},
+	{"_linear_filter", scipy_signal_sigtools_linear_filter, METH_VARARGS, doc_linear_filter},
 	{"_remez",sigtools_remez, METH_VARARGS, doc_remez},
 	{"_medfilt2d", sigtools_median2d, METH_VARARGS, doc_median2d},
 	{NULL, NULL, 0, NULL}		/* sentinel */

@@ -52,7 +52,7 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
  * XXX: Error checking not done yet
  */
 PyObject*
-sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * args)
+scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * args)
 {
     PyObject *b, *a, *X, *Vi;
     PyArrayObject *arY, *arb, *ara, *arX, *arVi, *arVf;

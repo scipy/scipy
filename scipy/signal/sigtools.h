@@ -50,10 +50,10 @@ typedef struct {
 typedef void (MultAddFunction) (char *, intp, char *, intp, char *, intp *, intp *, int, intp, int, intp *, intp *, uintp *);
 
 PyObject*
-sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * args);
+scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * args);
 
-PyObject
-*sigtools_correlateND(PyObject *NPY_UNUSED(dummy), PyObject *args);
+PyObject*
+scipy_signal_sigtools_correlateND(PyObject *NPY_UNUSED(dummy), PyObject *args);
 
 /*
 static int index_out_of_bounds(int *, int *, int );
