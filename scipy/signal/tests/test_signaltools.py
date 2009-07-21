@@ -1,5 +1,6 @@
 #this program corresponds to special.py
 from decimal import Decimal
+import types
 
 from numpy.testing import *
 
@@ -257,93 +258,112 @@ class TestLinearFilterDecimal(_TestLinearFilter):
 
 class _TestCorrelateReal(TestCase):
     dt = None
-    def test_rank1(self):
+    def _setup_rank1(self):
         a = np.linspace(0, 3, 4).astype(self.dt)
         b = np.linspace(1, 2, 2).astype(self.dt)
 
         y_r = np.array([0, 2, 5, 8, 3]).astype(self.dt)
+        return a, b, y_r
 
+    def test_rank1_valid(self):
+        a, b, y_r = self._setup_rank1()
         y = correlate(a, b, 'valid')
         assert_array_almost_equal(y, y_r[1:4])
         self.failUnless(y.dtype == self.dt)
 
+    def test_rank1_same(self):
+        a, b, y_r = self._setup_rank1()
         y = correlate(a, b, 'same')
         assert_array_almost_equal(y, y_r[:-1])
         self.failUnless(y.dtype == self.dt)
 
+    def test_rank1_full(self):
+        a, b, y_r = self._setup_rank1()
         y = correlate(a, b, 'full')
         assert_array_almost_equal(y, y_r)
         self.failUnless(y.dtype == self.dt)
 
-    def test_rank3(self):
-        a = np.linspace(0, 23, 24).reshape(2, 3, 4).astype(self.dt)
-        b = np.linspace(0, 39, 40).reshape(2, 4, 5).astype(self.dt)
+    def _setup_rank3(self):
+        a = np.linspace(0, 39, 40).reshape((2, 4, 5), order='F').astype(self.dt)
+        b = np.linspace(0, 23, 24).reshape((2, 3, 4), order='F').astype(self.dt)
 
-        y_r = array([[[    0.,    23.,    68.,   134.,   220.,   191.,   144.,    80.],
-                [  115.,   267.,   454.,   674.,   830.,   661.,   465.,   244.],
-                [  325.,   692.,  1098.,  1540.,  1750.,  1350.,   923.,   472.],
-                [  610.,  1247.,  1908.,  2590.,  2800.,  2115.,  1418.,   712.],
-                [  435.,   879.,  1330.,  1786.,  1910.,  1429.,   949.,   472.],
-                [  225.,   450.,   674.,   896.,   950.,   704.,   463.,   228.]],
+        y_r = array([[[    0.,   184.,   504.,   912.,  1360.,   888.,   472.,   160.,],
+            [   46.,   432.,  1062.,  1840.,  2672.,  1698.,   864.,   266.,],
+            [  134.,   736.,  1662.,  2768.,  3920.,  2418.,  1168.,   314.,],
+            [  260.,   952.,  1932.,  3056.,  4208.,  2580.,  1240.,   332.,] ,
+            [  202.,   664.,  1290.,  1984.,  2688.,  1590.,   712.,   150.,] ,
+            [  114.,   344.,   642.,   960.,  1280.,   726.,   296.,    38.,]],
 
-                [[  460.,   934.,  1420.,  1916.,  2040.,  1534.,  1024.,   512.],
-                [ 1010.,  2030.,  3056.,  4084.,  4300.,  3206.,  2122.,  1052.],
-                [ 1610.,  3208.,  4788.,  6344.,  6620.,  4896.,  3214.,  1580.],
-                [ 2000.,  3958.,  5868.,  7724.,  8000.,  5886.,  3844.,  1880.],
-                [ 1250.,  2454.,  3608.,  4708.,  4860.,  3542.,  2290.,  1108.],
-                [  570.,  1108.,  1612.,  2080.,  2140.,  1540.,   982.,   468.]],
+            [[   23.,   400.,  1035.,  1832.,  2696.,  1737.,   904.,   293.,],
+             [  134.,   920.,  2166.,  3680.,  5280.,  3306.,  1640.,   474.,],
+             [  325.,  1544.,  3369.,  5512.,  7720.,  4683.,  2192.,   535.,],
+             [  571.,  1964.,  3891.,  6064.,  8272.,  4989.,  2324.,   565.,],
+             [  434.,  1360.,  2586.,  3920.,  5264.,  3054.,  1312.,   230.,],
+             [  241.,   700.,  1281.,  1888.,  2496.,  1383.,   532.,    39.,]],
 
-                [[  220.,   431.,   632.,   822.,   860.,   623.,   400.,   192.],
-                [  415.,   803.,  1162.,  1490.,  1550.,  1105.,   697.,   328.],
-                [  565.,  1076.,  1530.,  1924.,  1990.,  1386.,   851.,   388.],
-                [  670.,  1271.,  1800.,  2254.,  2320.,  1611.,   986.,   448.],
-                [  335.,   615.,   838.,  1002.,  1030.,   673.,   381.,   156.],
-                [  105.,   178.,   218.,   224.,   230.,   116.,    39., 0.]]],
-                dtype=self.dt)
+            [[   22.,   214.,   528.,   916.,  1332.,   846.,   430.,   132.,],
+             [   86.,   484.,  1098.,  1832.,  2600.,  1602.,   772.,   206.,],
+             [  188.,   802.,  1698.,  2732.,  3788.,  2256.,  1018.,   218.,],
+             [  308.,  1006.,  1950.,  2996.,  4052.,  2400.,  1078.,   230.,],
+             [  230.,   692.,  1290.,  1928.,  2568.,  1458.,   596.,    78.,],
+             [  126.,   354.,   636.,   924.,  1212.,   654.,   234.,     0.,]]],
+            dtype=self.dt)
 
+        return a, b, y_r
+
+    def test_rank3_valid(self):
+        a, b, y_r = self._setup_rank3()
         y = correlate(a, b, "valid")
         assert_array_almost_equal(y, y_r[1:2,2:4,3:5])
         self.failUnless(y.dtype == self.dt)
 
+    def test_rank3_same(self):
+        a, b, y_r = self._setup_rank3()
         y = correlate(a, b, "same")
-        assert_array_almost_equal(y, y_r[:2,1:5,1:6])
+        assert_array_almost_equal(y, y_r[0:-1,1:-1,1:-2])
         self.failUnless(y.dtype == self.dt)
 
+    def test_rank3_all(self):
+        a, b, y_r = self._setup_rank3()
         y = correlate(a, b)
         assert_array_almost_equal(y, y_r)
         self.failUnless(y.dtype == self.dt)
 
-class TestCorrelateDouble(_TestCorrelateReal):
-    dt = np.float64
-
-class TestCorrelateSingle(_TestCorrelateReal):
-    dt = np.float32
-
-class TestCorrelateExtended(_TestCorrelateReal):
-    dt = np.longdouble
-
-class TestCorrelateObject(_TestCorrelateReal):
-    dt = Decimal
+for i in [np.ubyte, np.byte, np.ushort, np.short, np.uint, np.int,
+        np.ulonglong, np.ulonglong, np.float32, np.float64, np.longdouble,
+        Decimal]:
+    name = "TestCorrelate%s" % i.__name__.title()
+    globals()[name] = types.ClassType(name, (_TestCorrelateReal,), {"dt": i})
 
 class _TestCorrelateComplex(TestCase):
     dt = None
-    def test_rank1(self):
+    def _setup_rank1(self, mode):
         a = np.random.randn(10).astype(self.dt)
         a += 1j * np.random.randn(10).astype(self.dt)
         b = np.random.randn(8).astype(self.dt)
         b += 1j * np.random.randn(8).astype(self.dt)
 
-        y_r = (correlate(a.real, b.real) - correlate(a.imag, b.imag)).astype(self.dt)
-        y_r += 1j * (correlate(a.real, b.imag) + correlate(a.imag, b.real))
+        y_r = (correlate(a.real, b.real, mode=mode) -
+               correlate(a.imag, b.imag, mode=mode)).astype(self.dt)
+        y_r += 1j * (correlate(a.real, b.imag, mode=mode) +
+                correlate(a.imag, b.real, mode=mode))
+        return a, b, y_r
 
+    def test_rank1_valid(self):
+        a, b, y_r = self._setup_rank1('valid')
         y = correlate(a, b, 'valid')
-        assert_array_almost_equal(y, y_r[7:10])
+        assert_array_almost_equal(y, y_r)
         self.failUnless(y.dtype == self.dt)
 
+    def test_rank1_same(self):
+        a, b, y_r = self._setup_rank1('same')
         y = correlate(a, b, 'same')
-        assert_array_almost_equal(y, y_r[3:-4])
+        print y, y_r
+        assert_array_almost_equal(y, y_r)
         self.failUnless(y.dtype == self.dt)
 
+    def test_rank1_full(self):
+        a, b, y_r = self._setup_rank1('full')
         y = correlate(a, b, 'full')
         assert_array_almost_equal(y, y_r)
         self.failUnless(y.dtype == self.dt)
@@ -361,14 +381,9 @@ class _TestCorrelateComplex(TestCase):
         assert_array_almost_equal(y, y_r, decimal=4)
         self.failUnless(y.dtype == self.dt)
 
-class TestCorrelateComplexSingle(_TestCorrelateComplex):
-    dt = np.complex64
-
-class TestCorrelateComplexDouble(_TestCorrelateComplex):
-    dt = np.complex128
-
-class TestCorrelateComplexExtended(_TestCorrelateComplex):
-    dt = np.longcomplex
+for i in [np.csingle, np.cdouble, np.clongdouble]:
+    name = "TestCorrelate%s" % i.__name__.title()
+    globals()[name] = types.ClassType(name, (_TestCorrelateComplex,), {"dt": i})
 
 class TestFiltFilt:
     def test_basic(self):
