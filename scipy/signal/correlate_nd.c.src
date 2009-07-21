@@ -15,10 +15,6 @@ enum {
     CORR_MODE_FULL
 };
 
-static int
-_correlate_nd(PyArrayObject* x, PyArrayObject *y, PyArrayObject *z,
-              int typenum, int mode);
-
 static int _correlate_nd_imp(PyArrayIterObject* x, PyArrayIterObject *y,
         PyArrayIterObject *z, int typenum, int mode);
 
@@ -27,6 +23,7 @@ scipy_signal_sigtools_correlateND(PyObject *NPY_UNUSED(dummy), PyObject *args)
 {
     PyObject *x, *y, *out;
     PyArrayObject *ax, *ay, *aout;
+    PyArrayIterObject *itx, *ity, *itz;
     int mode, typenum, st;
 
     if (!PyArg_ParseTuple(args, "OOOi", &x, &y, &out, &mode)) {
@@ -63,6 +60,19 @@ scipy_signal_sigtools_correlateND(PyObject *NPY_UNUSED(dummy), PyObject *args)
         goto clean_aout;
     }
 
+    itx = (PyArrayIterObject*)PyArray_IterNew((PyObject*)ax);
+    if (itx == NULL) {
+        goto clean_aout;
+    }
+    ity = (PyArrayIterObject*)PyArray_IterNew((PyObject*)ay);
+    if (ity == NULL) {
+        goto clean_itx;
+    }
+    itz = (PyArrayIterObject*)PyArray_IterNew((PyObject*)aout);
+    if (itz == NULL) {
+        goto clean_ity;
+    }
+
     switch(mode) {
     case CORR_MODE_VALID:
         break;
@@ -73,18 +83,31 @@ scipy_signal_sigtools_correlateND(PyObject *NPY_UNUSED(dummy), PyObject *args)
     default:
         PyErr_SetString(PyExc_ValueError,
                 "mode must be 0 (valid), 1 (same), or 2 (full)");
-        goto clean_aout;
+        goto clean_itz;
     }
 
-    st = _correlate_nd(ax, ay, aout, typenum, mode);
+    st = _correlate_nd_imp(itx, ity, itz, typenum, mode);
     if (st) {
-        goto clean_aout;
+        PyErr_SetString(PyExc_ValueError,
+                "Unknown error while computing correlation");
+        goto clean_ity;
     }
+
+    Py_DECREF(itz);
+    Py_DECREF(ity);
+    Py_DECREF(itx);
 
     Py_DECREF(ax);
     Py_DECREF(ay);
+
     return PyArray_Return(aout);
 
+clean_itz:
+    Py_DECREF(itz);
+clean_ity:
+    Py_DECREF(ity);
+clean_itx:
+    Py_DECREF(itx);
 clean_aout:
     Py_DECREF(aout);
 clean_ay:
@@ -218,47 +241,6 @@ static int _imp_correlate_nd_object(PyArrayNeighborhoodIterObject *curx,
     PyDataMem_FREE(zero);
 
     return 0;
-}
-
-/* XXX: this func is useless */
-static int _correlate_nd(PyArrayObject* x, PyArrayObject *y, PyArrayObject *z,
-        int typenum, int mode)
-{
-    PyArrayIterObject *itx, *ity, *itz;
-    int st;
-
-    itx = (PyArrayIterObject*)PyArray_IterNew(x);
-    if (itx == NULL) {
-        return -1;
-    }
-    ity = (PyArrayIterObject*)PyArray_IterNew(y);
-    if (ity == NULL) {
-        goto clean_itx;
-    }
-    itz = (PyArrayIterObject*)PyArray_IterNew(z);
-    if (itz == NULL) {
-        goto clean_ity;
-    }
-
-    st = _correlate_nd_imp(itx, ity, itz, typenum, mode);
-
-    if (st) {
-        goto clean_itz;
-    }
-
-    Py_DECREF(itz);
-    Py_DECREF(ity);
-    Py_DECREF(itx);
-
-    return 0;
-
-clean_itz:
-    Py_DECREF(itz);
-clean_ity:
-    Py_DECREF(ity);
-clean_itx:
-    Py_DECREF(itx);
-    return -1;
 }
 
 static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
