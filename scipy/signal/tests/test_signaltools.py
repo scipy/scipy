@@ -266,6 +266,7 @@ class TestLinearFilterDecimal(_TestLinearFilter):
 class _TestCorrelateReal(TestCase):
     dt = None
     def _setup_rank1(self):
+        # a.size should be greated than b.size for the tests
         a = np.linspace(0, 3, 4).astype(self.dt)
         b = np.linspace(1, 2, 2).astype(self.dt)
 
@@ -274,19 +275,40 @@ class _TestCorrelateReal(TestCase):
 
     def test_rank1_valid(self):
         a, b, y_r = self._setup_rank1()
-        y = correlate(a, b, 'valid')
+        y = correlate(a, b, 'valid', old_behavior=False)
         assert_array_almost_equal(y, y_r[1:4])
         self.failUnless(y.dtype == self.dt)
 
     def test_rank1_same(self):
         a, b, y_r = self._setup_rank1()
-        y = correlate(a, b, 'same')
+        y = correlate(a, b, 'same', old_behavior=False)
         assert_array_almost_equal(y, y_r[:-1])
         self.failUnless(y.dtype == self.dt)
 
     def test_rank1_full(self):
         a, b, y_r = self._setup_rank1()
-        y = correlate(a, b, 'full')
+        y = correlate(a, b, 'full', old_behavior=False)
+        assert_array_almost_equal(y, y_r)
+        self.failUnless(y.dtype == self.dt)
+
+    def test_rank1_valid_old(self):
+        # This test assume a.size > b.size
+        a, b, y_r = self._setup_rank1()
+        y = correlate(b, a, 'valid')
+        assert_array_almost_equal(y, y_r[1:4])
+        self.failUnless(y.dtype == self.dt)
+
+    def test_rank1_same_old(self):
+        # This test assume a.size > b.size
+        a, b, y_r = self._setup_rank1()
+        y = correlate(b, a, 'same')
+        assert_array_almost_equal(y, y_r[:-1])
+        self.failUnless(y.dtype == self.dt)
+
+    def test_rank1_full_old(self):
+        # This test assume a.size > b.size
+        a, b, y_r = self._setup_rank1()
+        y = correlate(b, a, 'full')
         assert_array_almost_equal(y, y_r)
         self.failUnless(y.dtype == self.dt)
 
@@ -320,19 +342,37 @@ class _TestCorrelateReal(TestCase):
 
     def test_rank3_valid(self):
         a, b, y_r = self._setup_rank3()
-        y = correlate(a, b, "valid")
+        y = correlate(a, b, "valid", old_behavior=False)
         assert_array_almost_equal(y, y_r[1:2,2:4,3:5])
         self.failUnless(y.dtype == self.dt)
 
     def test_rank3_same(self):
         a, b, y_r = self._setup_rank3()
-        y = correlate(a, b, "same")
+        y = correlate(a, b, "same", old_behavior=False)
         assert_array_almost_equal(y, y_r[0:-1,1:-1,1:-2])
         self.failUnless(y.dtype == self.dt)
 
     def test_rank3_all(self):
         a, b, y_r = self._setup_rank3()
-        y = correlate(a, b)
+        y = correlate(a, b, old_behavior=False)
+        assert_array_almost_equal(y, y_r)
+        self.failUnless(y.dtype == self.dt)
+
+    def test_rank3_valid_old(self):
+        a, b, y_r = self._setup_rank3()
+        y = correlate(b, a, "valid")
+        assert_array_almost_equal(y, y_r[1:2,2:4,3:5])
+        self.failUnless(y.dtype == self.dt)
+
+    def test_rank3_same_old(self):
+        a, b, y_r = self._setup_rank3()
+        y = correlate(b, a, "same")
+        assert_array_almost_equal(y, y_r[0:-1,1:-1,1:-2])
+        self.failUnless(y.dtype == self.dt)
+
+    def test_rank3_all_old(self):
+        a, b, y_r = self._setup_rank3()
+        y = correlate(b, a)
         assert_array_almost_equal(y, y_r)
         self.failUnless(y.dtype == self.dt)
 
@@ -350,27 +390,27 @@ class _TestCorrelateComplex(TestCase):
         b = np.random.randn(8).astype(self.dt)
         b += 1j * np.random.randn(8).astype(self.dt)
 
-        y_r = (correlate(a.real, b.real, mode=mode) +
-               correlate(a.imag, b.imag, mode=mode)).astype(self.dt)
-        y_r += 1j * (-correlate(a.real, b.imag, mode=mode) +
-                correlate(a.imag, b.real, mode=mode))
+        y_r = (correlate(a.real, b.real, mode=mode, old_behavior=False) +
+               correlate(a.imag, b.imag, mode=mode, old_behavior=False)).astype(self.dt)
+        y_r += 1j * (-correlate(a.real, b.imag, mode=mode, old_behavior=False) +
+                correlate(a.imag, b.real, mode=mode, old_behavior=False))
         return a, b, y_r
 
     def test_rank1_valid(self):
         a, b, y_r = self._setup_rank1('valid')
-        y = correlate(a, b, 'valid')
+        y = correlate(a, b, 'valid', old_behavior=False)
         assert_array_almost_equal(y, y_r)
         self.failUnless(y.dtype == self.dt)
 
     def test_rank1_same(self):
         a, b, y_r = self._setup_rank1('same')
-        y = correlate(a, b, 'same')
+        y = correlate(a, b, 'same', old_behavior=False)
         assert_array_almost_equal(y, y_r)
         self.failUnless(y.dtype == self.dt)
 
     def test_rank1_full(self):
         a, b, y_r = self._setup_rank1('full')
-        y = correlate(a, b, 'full')
+        y = correlate(a, b, 'full', old_behavior=False)
         assert_array_almost_equal(y, y_r)
         self.failUnless(y.dtype == self.dt)
 
@@ -380,10 +420,45 @@ class _TestCorrelateComplex(TestCase):
         b = np.random.randn(8, 6, 4).astype(self.dt)
         b += 1j * np.random.randn(8, 6, 4).astype(self.dt)
 
-        y_r = (correlate(a.real, b.real) + correlate(a.imag, b.imag)).astype(self.dt)
-        y_r += 1j * (- correlate(a.real, b.imag) + correlate(a.imag, b.real))
+        y_r = (correlate(a.real, b.real, old_behavior=False)
+                + correlate(a.imag, b.imag, old_behavior=False)).astype(self.dt)
+        y_r += 1j * (-correlate(a.real, b.imag, old_behavior=False) +
+                correlate(a.imag, b.real, old_behavior=False))
 
-        y = correlate(a, b, 'full')
+        y = correlate(a, b, 'full', old_behavior=False)
+        assert_array_almost_equal(y, y_r, decimal=4)
+        self.failUnless(y.dtype == self.dt)
+
+    def test_rank1_valid_old(self):
+        a, b, y_r = self._setup_rank1('valid')
+        y = correlate(b, a.conj(), 'valid')
+        assert_array_almost_equal(y, y_r)
+        self.failUnless(y.dtype == self.dt)
+
+    def test_rank1_same_old(self):
+        a, b, y_r = self._setup_rank1('same')
+        y = correlate(b, a.conj(), 'same')
+        assert_array_almost_equal(y, y_r)
+        self.failUnless(y.dtype == self.dt)
+
+    def test_rank1_full_old(self):
+        a, b, y_r = self._setup_rank1('full')
+        y = correlate(b, a.conj(), 'full')
+        assert_array_almost_equal(y, y_r)
+        self.failUnless(y.dtype == self.dt)
+
+    def test_rank3_old(self):
+        a = np.random.randn(10, 8, 6).astype(self.dt)
+        a += 1j * np.random.randn(10, 8, 6).astype(self.dt)
+        b = np.random.randn(8, 6, 4).astype(self.dt)
+        b += 1j * np.random.randn(8, 6, 4).astype(self.dt)
+
+        y_r = (correlate(a.real, b.real, old_behavior=False)
+                + correlate(a.imag, b.imag, old_behavior=False)).astype(self.dt)
+        y_r += 1j * (-correlate(a.real, b.imag, old_behavior=False) +
+                correlate(a.imag, b.real, old_behavior=False))
+
+        y = correlate(b, a.conj(), 'full')
         assert_array_almost_equal(y, y_r, decimal=4)
         self.failUnless(y.dtype == self.dt)
 

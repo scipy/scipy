@@ -2,6 +2,8 @@
 # 1999 -- 2002
 
 import types
+import warnings
+
 import sigtools
 from scipy import special, linalg
 from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2, fftn, ifftn
@@ -42,7 +44,7 @@ def _bvalfromboundary(boundary):
     return val
 
 
-def correlate(in1, in2, mode='full'):
+def correlate(in1, in2, mode='full', old_behavior=True):
     """Cross-correlate two N-dimensional arrays.
 
     Cross-correlate in1 and in2 with the output size determined by the mode
@@ -62,14 +64,37 @@ def correlate(in1, in2, mode='full'):
               with respect to the 'full' output.
             - 'full': the output is the full discrete linear cross-correlation
               of the inputs. (Default)
+    old_behavior: bool
+        If True (default), the old behavior of correlate is implemented:
+            - if in1.size < in2.size, in1 and in2 are swapped (correlate(in1,
+              in2) == correlate(in2, in1))
+            - For complex inputs, the conjugate is not taken for in2
+        If False, the new, conventional definition of correlate is implemented.
 
     Returns
     -------
     out: array
         an N-dimensional array containing a subset of the discrete linear
         cross-correlation of in1 with in2.
+
+    Note
+    ----
+    The correlation z of two arrays x and y of rank d is defined as
+
+      z[...,k,...] = sum[..., i_l, ...] 
+            x[..., i_l,...] * conj(y[..., i_l + k,...])
     """
     val = _valfrommode(mode)
+
+    if old_behavior:
+        warnings.warn(DeprecationWarning("""\
+old_behavior for correlation is deprecated: it is still the default for 0.8, but it will default to False for 0.9, and will disappear for 0.10"""))
+        if np.iscomplexobj(in2):
+            in2 = in2.conjugate()
+        if in1.size < in2.size:
+            swp = in2
+            in2 = in1
+            in1 = swp
 
     if mode == 'valid':
         ps = [i - j + 1 for i, j in zip(in1.shape, in2.shape)]
@@ -80,7 +105,7 @@ def correlate(in1, in2, mode='full'):
                                  "not compatible with valid mode" % \
                                  (x.shape[i], y.shape[i]))
 
-        return sigtools._correlateND(in1, in2, out, val)
+        z = sigtools._correlateND(in1, in2, out, val)
     else:
         ps = [i + j - 1 for i, j in zip(in1.shape, in2.shape)]
         # zero pad input
@@ -90,13 +115,15 @@ def correlate(in1, in2, mode='full'):
 
         if mode == 'full':
             out = np.empty(ps, in1.dtype)
-            return sigtools._correlateND(in1zpadded, in2, out, val)
+            z = sigtools._correlateND(in1zpadded, in2, out, val)
         elif mode == 'same':
             out = np.empty(in1.shape, in1.dtype)
 
-            return sigtools._correlateND(in1zpadded, in2, out, val)
+            z = sigtools._correlateND(in1zpadded, in2, out, val)
         else:
             raise ValueError("Uknown mode %s" % mode)
+
+    return z
 
 def _centered(arr, newsize):
     # Return the center newsize portion of the array.
@@ -166,7 +193,7 @@ def convolve(in1, in2, mode='full'):
     slice_obj = [slice(None,None,-1)]*len(kernel.shape)
 
     if np.iscomplexobj(kernel):
-        return correlate(volume, kernel[slice_obj].conj(), mode)
+        return correlate(volume, kernel[slice_obj].conj(), mode, old_behavior=False)
     else:
         return correlate(volume, kernel[slice_obj], mode)
 
