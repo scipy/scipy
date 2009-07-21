@@ -271,10 +271,10 @@ def wiener(im,mysize=None,noise=None):
     mysize = asarray(mysize);
 
     # Estimate the local mean
-    lMean = correlate(im,ones(mysize),1) / product(mysize,axis=0)
+    lMean = correlate(im,ones(mysize), 'same') / product(mysize,axis=0)
 
     # Estimate the local variance
-    lVar = correlate(im**2,ones(mysize),1) / product(mysize,axis=0) - lMean**2
+    lVar = correlate(im**2,ones(mysize), 'same') / product(mysize,axis=0) - lMean**2
 
     # Estimate the noise power if needed.
     if noise==None:
