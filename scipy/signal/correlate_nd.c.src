@@ -283,7 +283,7 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
             return -1;
     }
 
-    curx = PyArray_NeighborhoodIterNew(itx, bounds);
+    curx = (PyArrayNeighborhoodIterObject*)PyArray_NeighborhoodIterNew(itx, bounds);
     if (curx == NULL) {
         PyErr_SetString(PyExc_SystemError, "Could not create curx ?");
         return -1;
@@ -296,7 +296,8 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
         bounds[2*i+1] = 0;
     }
 
-    curneighx = PyArray_NeighborhoodIterNew((PyArrayIterObject*)curx, bounds);
+    curneighx = (PyArrayNeighborhoodIterObject*)PyArray_NeighborhoodIterNew(
+            (PyArrayIterObject*)curx, bounds);
     if (curneighx == NULL) {
         goto clean_curx;
     }
