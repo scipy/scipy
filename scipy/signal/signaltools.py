@@ -195,7 +195,7 @@ def convolve(in1, in2, mode='full'):
     if np.iscomplexobj(kernel):
         return correlate(volume, kernel[slice_obj].conj(), mode, old_behavior=False)
     else:
-        return correlate(volume, kernel[slice_obj], mode)
+        return correlate(volume, kernel[slice_obj], mode, old_behavior=False)
 
 def order_filter(a, domain, rank):
     """Perform an order filter on an N-dimensional array.
@@ -301,10 +301,10 @@ def wiener(im,mysize=None,noise=None):
     mysize = asarray(mysize);
 
     # Estimate the local mean
-    lMean = correlate(im,ones(mysize), 'same') / product(mysize,axis=0)
+    lMean = correlate(im,ones(mysize), 'same', old_behavior=False) / product(mysize,axis=0)
 
     # Estimate the local variance
-    lVar = correlate(im**2,ones(mysize), 'same') / product(mysize,axis=0) - lMean**2
+    lVar = correlate(im**2,ones(mysize), 'same', old_behavior=False) / product(mysize,axis=0) - lMean**2
 
     # Estimate the noise power if needed.
     if noise==None:
