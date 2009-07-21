@@ -291,6 +291,7 @@ class _TestCorrelateReal(TestCase):
         assert_array_almost_equal(y, y_r)
         self.failUnless(y.dtype == self.dt)
 
+    @dec.deprecated()
     def test_rank1_valid_old(self):
         # This test assume a.size > b.size
         a, b, y_r = self._setup_rank1()
@@ -298,6 +299,7 @@ class _TestCorrelateReal(TestCase):
         assert_array_almost_equal(y, y_r[1:4])
         self.failUnless(y.dtype == self.dt)
 
+    @dec.deprecated()
     def test_rank1_same_old(self):
         # This test assume a.size > b.size
         a, b, y_r = self._setup_rank1()
@@ -305,6 +307,7 @@ class _TestCorrelateReal(TestCase):
         assert_array_almost_equal(y, y_r[:-1])
         self.failUnless(y.dtype == self.dt)
 
+    @dec.deprecated()
     def test_rank1_full_old(self):
         # This test assume a.size > b.size
         a, b, y_r = self._setup_rank1()
@@ -358,18 +361,21 @@ class _TestCorrelateReal(TestCase):
         assert_array_almost_equal(y, y_r)
         self.failUnless(y.dtype == self.dt)
 
+    @dec.deprecated()
     def test_rank3_valid_old(self):
         a, b, y_r = self._setup_rank3()
         y = correlate(b, a, "valid")
         assert_array_almost_equal(y, y_r[1:2,2:4,3:5])
         self.failUnless(y.dtype == self.dt)
 
+    @dec.deprecated()
     def test_rank3_same_old(self):
         a, b, y_r = self._setup_rank3()
         y = correlate(b, a, "same")
         assert_array_almost_equal(y, y_r[0:-1,1:-1,1:-2])
         self.failUnless(y.dtype == self.dt)
 
+    @dec.deprecated()
     def test_rank3_all_old(self):
         a, b, y_r = self._setup_rank3()
         y = correlate(b, a)
@@ -429,24 +435,28 @@ class _TestCorrelateComplex(TestCase):
         assert_array_almost_equal(y, y_r, decimal=4)
         self.failUnless(y.dtype == self.dt)
 
+    @dec.deprecated()
     def test_rank1_valid_old(self):
         a, b, y_r = self._setup_rank1('valid')
         y = correlate(b, a.conj(), 'valid')
         assert_array_almost_equal(y, y_r)
         self.failUnless(y.dtype == self.dt)
 
+    @dec.deprecated()
     def test_rank1_same_old(self):
         a, b, y_r = self._setup_rank1('same')
         y = correlate(b, a.conj(), 'same')
         assert_array_almost_equal(y, y_r)
         self.failUnless(y.dtype == self.dt)
 
+    @dec.deprecated()
     def test_rank1_full_old(self):
         a, b, y_r = self._setup_rank1('full')
         y = correlate(b, a.conj(), 'full')
         assert_array_almost_equal(y, y_r)
         self.failUnless(y.dtype == self.dt)
 
+    @dec.deprecated()
     def test_rank3_old(self):
         a = np.random.randn(10, 8, 6).astype(self.dt)
         a += 1j * np.random.randn(10, 8, 6).astype(self.dt)
