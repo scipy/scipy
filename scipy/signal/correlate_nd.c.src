@@ -1,0 +1,422 @@
+/*
+ * vim:syntax=c
+ * vim:sw=4
+ */
+#include <Python.h>
+#define PY_ARRAY_UNIQUE_SYMBOL _scipy_signal_ARRAY_API
+#define NO_IMPORT_ARRAY
+#include <numpy/noprefix.h>
+
+#include "sigtools.h"
+
+static void correlateND(Generic_Array *ap1, Generic_Array *ap2, Generic_Array *ret, MultAddFunction *multiply_and_add_ND, int mode);
+
+static int index_out_of_bounds(intp *indices, intp *max_indices, int ndims);
+static int increment(intp *ret_ind, int nd, intp *max_ind);
+
+/*
+ All of these MultAdd functions loop over all the elements of the smallest
+ array, incrementing an array of indices into the large N-D array at
+ the same time.  The
+ bounds for the other array are checked and if valid the product is
+ added to the running sum.  If invalid bounds are found nothing is
+ done (zero is added).  This has the effect of zero padding the array
+ to handle edges.
+ */
+
+#define MAKE_MultAdd(NTYPE, ctype) \
+static void NTYPE ## _MultAdd(char *ip1, intp NPY_UNUSED(is1), \
+                          char *ip2, intp NPY_UNUSED(is2), char *op, \
+			  intp *dims1, intp *dims2, int ndims, intp nels2, int check, \
+			  intp *loop_ind, intp *temp_ind, uintp *offset) \
+{									\
+  ctype tmp=(ctype)0.0;  intp i;					\
+  int k, incr = 1;							\
+  ctype *ptr1 = (ctype *)ip1, *ptr2 = (ctype *)ip2;			\
+\
+  i = nels2;					\
+\
+  temp_ind[ndims-1]--; \
+  while (i--) {  \
+    /* Adjust index array and move ptr1 to right place */ \
+    k = ndims - 1; \
+    while(--incr) { \
+      temp_ind[k] -= dims2[k] - 1;   /* Return to start for these dimensions */ \
+      k--; \
+    } \
+    ptr1 += offset[k];               /* Precomputed offset array */ \
+    temp_ind[k]++; \
+\
+    if (!(check && index_out_of_bounds(temp_ind,dims1,ndims))) {  \
+      tmp += (*ptr1) * (*ptr2);  \
+    } \
+    incr = increment(loop_ind, ndims, dims2);  /* Returns number of N-D indices incremented. */ \
+    ptr2++; \
+    \
+  }						\
+*((ctype *)op) = tmp;				\
+}
+
+MAKE_MultAdd(UBYTE, ubyte)
+MAKE_MultAdd(BYTE, byte)
+MAKE_MultAdd(USHORT, ushort)
+MAKE_MultAdd(SHORT, short)
+MAKE_MultAdd(UINT, uint)
+MAKE_MultAdd(INT, int)
+MAKE_MultAdd(ULONG, ulong)
+MAKE_MultAdd(LONG, long)
+MAKE_MultAdd(ULONGLONG, ulonglong)
+MAKE_MultAdd(LONGLONG, longlong)
+MAKE_MultAdd(FLOAT, float)
+MAKE_MultAdd(DOUBLE, double)
+MAKE_MultAdd(LONGDOUBLE, longdouble)
+
+#define MAKE_CMultAdd(NTYPE, ctype) \
+static void NTYPE ## _MultAdd(char *ip1, intp NPY_UNUSED(is1), char *ip2, \
+                              intp NPY_UNUSED(is2), char *op, \
+			      intp *dims1, intp *dims2, int ndims, intp nels2, int check, \
+			      intp *loop_ind, intp *temp_ind, uintp *offset) \
+{ \
+  ctype tmpr= 0.0, tmpi = 0.0; intp i; \
+  int k, incr = 1;				    \
+  ctype *ptr1 = (ctype *)ip1, *ptr2 = (ctype *)ip2; \
+ \
+  i = nels2; \
+\
+  temp_ind[ndims-1]--; \
+  while (i--) {  \
+    /* Adjust index array and move ptr1 to right place */ \
+    k = ndims - 1; \
+    while(--incr) { \
+      temp_ind[k] -= dims2[k] - 1;   /* Return to start for these dimensions */ \
+      k--; \
+    } \
+    ptr1 += 2*offset[k];               /* Precomputed offset array */ \
+    temp_ind[k]++; \
+\
+    if (!(check && index_out_of_bounds(temp_ind,dims1,ndims))) {  \
+      tmpr += ptr1[0] * ptr2[0] - ptr1[1] * ptr2[1];  \
+      tmpi += ptr1[1] * ptr2[0] + ptr1[0] * ptr2[1];  \
+    }  \
+    incr = increment(loop_ind, ndims, dims2);  \
+    /* Returns number of N-D indices incremented. */	\
+    ptr2 += 2; \
+\
+  } \
+  ((ctype *)op)[0] = tmpr; ((ctype *)op)[1] = tmpi; \
+} 
+
+MAKE_CMultAdd(CFLOAT, float)
+MAKE_CMultAdd(CDOUBLE, double)
+MAKE_CMultAdd(CLONGDOUBLE, longdouble)
+
+static void OBJECT_MultAdd(char *ip1, intp is1, char *ip2, intp is2, char *op, intp *dims1, intp *dims2, int ndims, intp nels2, int check, intp *loop_ind, intp *temp_ind, uintp *offset) { 
+  int i, k, first_time = 1, incr = 1; 
+  PyObject *tmp1=NULL, *tmp2=NULL, *tmp=NULL;
+
+  i = nels2;
+
+  temp_ind[ndims-1]--;
+  while (i--) { 
+    /* Adjust index array and move ptr1 to right place */
+    k = ndims - 1;
+    while(--incr) {
+      temp_ind[k] -= dims2[k] - 1;   /* Return to start for these dimensions */
+      k--;
+    }
+    ip1 += offset[k]*is1;           /* Precomputed offset array */
+    temp_ind[k]++;
+
+    if (!(check && index_out_of_bounds(temp_ind,dims1,ndims))) { 
+      tmp1 = PyNumber_Multiply(*((PyObject **)ip1),*((PyObject **)ip2));
+      if (first_time) {
+	tmp = tmp1;
+	first_time = 0;
+      } else {
+	tmp2 = PyNumber_Add(tmp, tmp1);
+	Py_XDECREF(tmp);
+	tmp = tmp2;
+	Py_XDECREF(tmp1);
+      }
+    } 
+    incr = increment(loop_ind, ndims, dims2); 
+    ip2 += is2; 
+  }
+  Py_XDECREF(*((PyObject **)op));
+  *((PyObject **)op) = tmp; 
+}
+
+static MultAddFunction *MultiplyAddFunctions[] = 
+  {NULL, BYTE_MultAdd, UBYTE_MultAdd, SHORT_MultAdd,
+   USHORT_MultAdd,INT_MultAdd, UINT_MultAdd, LONG_MultAdd,
+   ULONG_MultAdd, LONGLONG_MultAdd, ULONGLONG_MultAdd,
+   FLOAT_MultAdd, DOUBLE_MultAdd, LONGDOUBLE_MultAdd,
+   CFLOAT_MultAdd, CDOUBLE_MultAdd, CLONGDOUBLE_MultAdd,
+   OBJECT_MultAdd, NULL, NULL, NULL};
+
+/* Copy data from PyArray to Generic header for use in C routines */
+static void Py_copy_info(Generic_Array *gen, PyArrayObject *py_arr) {
+        gen->data = py_arr->data;
+	gen->nd = py_arr->nd;
+	gen->dimensions = py_arr->dimensions;
+	gen->elsize = py_arr->descr->elsize;
+	gen->strides = py_arr->strides;
+	gen->zero = PyArray_Zero(py_arr);
+	return;
+}
+
+/*
+ * XXX: compute_offset, index_out_of_bounds and increment are copied in
+ * sigtoolsmodule.c as well. Remove them here before 0.8.0 release
+ */
+
+/* Some core routines are written
+in a portable way so that they could be used in other applications.  The 
+order filtering, however uses python-specific constructs in its guts 
+and is therefore Python dependent.  This could be changed in a 
+straightforward way but I haven't done it for lack of time.*/
+
+static int index_out_of_bounds(intp *indices, intp *max_indices, int ndims) {
+  int bad_index = 0, k = 0;
+
+  while (!bad_index && (k++ < ndims)) {
+    bad_index = ((*(indices) >= *(max_indices++)) || (*(indices) < 0));
+    indices++;
+  }
+  return bad_index;
+}
+
+/* This maybe could be redone with stride information so it could be 
+ * called with non-contiguous arrays:  I think offsets is related to 
+ * the difference between the strides.  I'm not sure about init_offset 
+ * just yet.  I think it needs to be calculated because of mode_dep
+ * but probably with dim1 being the size of the "original, unsliced" array
+ */
+
+static intp compute_offsets (uintp *offsets, intp *offsets2, intp *dim1, intp *dim2, intp *dim3, intp *mode_dep, int nd) {
+  int k,i;
+  intp init_offset = 0;
+
+  for (k = 0; k < nd - 1; k++) 
+    {
+      init_offset += mode_dep[k];
+      init_offset *= dim1[k+1];
+    }
+  init_offset += mode_dep[k] - 2;
+  
+  k = nd;
+  while(k--) {
+    offsets[k] = 0;
+    offsets2[k] = 0;
+    for (i = k + 1; i < nd - 1; i++) {
+      offsets[k] += dim1[i] - dim2[i];
+      offsets[k] *= dim1[i+1];
+
+      offsets2[k] += dim1[i] - dim3[i];
+      offsets2[k] *= dim1[i+1];
+    }
+
+    if (k < nd - 1) {
+      offsets[k] += dim1[i] - dim2[i];
+      offsets2[k] += dim1[i] - dim3[i];
+    }
+    offsets[k] += 1;
+    offsets2[k] += 1;
+  }
+  return init_offset;
+}
+
+/* increment by 1 the index into an N-D array, doing the necessary
+   carrying when the index reaches the dimension along that axis */ 
+static int increment(intp *ret_ind, int nd, intp *max_ind) {    
+    int k, incr = 1;
+    
+    k = nd - 1;
+    if (++ret_ind[k] >= max_ind[k]) {
+      while (k >= 0 && (ret_ind[k] >= max_ind[k]-1)) {
+	incr++;
+	ret_ind[k--] = 0;
+      }
+      if (k >= 0) ret_ind[k]++;
+    }
+    return incr;
+}
+
+PyObject *sigtools_correlateND(PyObject *NPY_UNUSED(dummy), PyObject *args) {
+	PyObject *kernel, *a0;
+	PyArrayObject *ap1, *ap2, *ret;
+	Generic_Array in1, in2, out;
+	intp *ret_dimens;
+	int mode=2, n1, n2, i, typenum;
+	MultAddFunction *multiply_and_add_ND;
+	
+	if (!PyArg_ParseTuple(args, "OO|i", &a0, &kernel, &mode)) return NULL;
+
+	typenum = PyArray_ObjectType(a0, 0);  
+	typenum = PyArray_ObjectType(kernel, typenum);
+	
+	ret = NULL;
+	ap1 = (PyArrayObject *)PyArray_ContiguousFromObject(a0, typenum, 0, 0);
+	if (ap1 == NULL) return NULL;
+	ap2 = (PyArrayObject *)PyArray_ContiguousFromObject(kernel, typenum, 0, 0);
+	if (ap2 == NULL) goto fail;
+
+	if (ap1->nd != ap2->nd) {
+	  PyErr_SetString(PyExc_ValueError, "Arrays must have the same number of dimensions.");
+	  goto fail;
+	}
+
+        if (ap1->nd == 0) {  /* Zero-dimensional arrays */
+          PyErr_SetString(PyExc_ValueError, "Cannot convolve zero-dimensional arrays.");
+          goto fail;
+        }
+	
+	n1 = PyArray_Size((PyObject *)ap1);
+	n2 = PyArray_Size((PyObject *)ap2);
+
+	/* Swap if first argument is not the largest */
+	if (n1 < n2) { ret = ap1; ap1 = ap2; ap2 = ret; ret = NULL; }
+	ret_dimens = malloc(ap1->nd*sizeof(intp));
+	switch(mode) {
+	case 0:
+	        for (i = 0; i < ap1->nd; i++) { 
+		  ret_dimens[i] = ap1->dimensions[i] - ap2->dimensions[i] + 1;
+		  if (ret_dimens[i] < 0) {
+		    PyErr_SetString(PyExc_ValueError, "no part of the output is valid, use option 1 (same) or 2 (full) for third argument");
+		    goto fail;
+		  }
+		}
+		break;
+	case 1:
+	        for (i = 0; i < ap1->nd; i++) { ret_dimens[i] = ap1->dimensions[i];}
+		break;
+	case 2:
+	        for (i = 0; i < ap1->nd; i++) { ret_dimens[i] = ap1->dimensions[i] + ap2->dimensions[i] - 1;}
+		break;
+	default: 
+	        PyErr_SetString(PyExc_ValueError, 
+			    "mode must be 0 (valid), 1 (same), or 2 (full)");
+		goto fail;
+	}
+	
+	ret = (PyArrayObject *)PyArray_SimpleNew(ap1->nd, ret_dimens, typenum);
+	free(ret_dimens);
+	if (ret == NULL) goto fail;
+	
+	multiply_and_add_ND = MultiplyAddFunctions[(int)(ret->descr->type_num)];
+	if (multiply_and_add_ND == NULL) {
+		PyErr_SetString(PyExc_ValueError, 
+			"correlateND not available for this type");
+		goto fail;
+	}
+
+	/* copy header information to generic structures */
+	Py_copy_info(&in1, ap1);
+	Py_copy_info(&in2, ap2);
+	Py_copy_info(&out, ret);
+       
+	correlateND(&in1, &in2, &out, multiply_and_add_ND, mode);
+
+	PyDataMem_FREE(in1.zero);
+	PyDataMem_FREE(in2.zero);
+	PyDataMem_FREE(out.zero);
+
+	Py_DECREF(ap1);
+	Py_DECREF(ap2);
+	return PyArray_Return(ret);
+
+fail:
+	Py_XDECREF(ap1);
+	Py_XDECREF(ap2);
+	Py_XDECREF(ret);
+	return NULL;	
+}
+
+static void correlateND(Generic_Array *ap1, Generic_Array *ap2, Generic_Array *ret, MultAddFunction *multiply_and_add_ND, int mode) {
+  intp *a_ind, *b_ind, *temp_ind, *check_ind, *mode_dep;
+  uintp *offsets, offset1;
+  intp *offsets2;
+  int i, k, check, incr = 1;
+  int bytes_in_array, num_els_ret, num_els_ap2;
+  intp is1, is2, os;
+  char *ip1, *ip2, *op, *ap1_ptr;
+  intp *ret_ind;
+
+  num_els_ret = 1;
+  for (i = 0; i < ret->nd; i++) num_els_ret *= ret->dimensions[i];
+  num_els_ap2 = 1;
+  for (i = 0; i < ret->nd; i++) num_els_ap2 *= ap2->dimensions[i];
+  bytes_in_array = ap1->nd * sizeof(intp);
+  mode_dep = (intp *)malloc(bytes_in_array);
+  switch(mode) {
+  case 0:
+    for (i = 0; i < ap1->nd; i++) mode_dep[i] = 0;
+    break;
+  case 1:
+    for (i = 0; i < ap1->nd; i++) mode_dep[i] = -((ap2->dimensions[i]) >> 1);
+    break;
+  case 2:
+    for (i = 0; i < ap1->nd; i++) mode_dep[i] = 1 - ap2->dimensions[i];
+  }
+  
+  is1 = ap1->elsize; is2 = ap2->elsize;
+  op = ret->data; os = ret->elsize;
+  ip1 = ap1->data; ip2 = ap2->data;
+  op = ret->data;
+  
+  b_ind = (intp *)malloc(bytes_in_array);  /* loop variables */
+  memset(b_ind,0,bytes_in_array);
+  a_ind = (intp *)malloc(bytes_in_array);
+  ret_ind = (intp *)malloc(bytes_in_array);
+  memset(ret_ind,0,bytes_in_array);
+  temp_ind = (intp *)malloc(bytes_in_array);
+  check_ind = (intp *)malloc(bytes_in_array);
+  offsets = (uintp *)malloc(ap1->nd*sizeof(uintp));
+  offsets2 = (intp *)malloc(ap1->nd*sizeof(intp));
+  offset1 = compute_offsets(offsets,offsets2,ap1->dimensions,ap2->dimensions,ret->dimensions,mode_dep,ap1->nd);
+  /* The convolution proceeds by looping through the output array
+     and for each value summing all contributions from the summed
+     element-by-element product of the two input arrays.  Index
+     counters are used for book-keeping in the area so that we 
+     can tell where we are in all of the arrays and be sure that 
+     we are not trying to access areas outside the arrays definition.
+     
+     The inner loop is implemented separately but equivalently for each
+     datatype. The outer loop is similar in structure and form to
+     to the inner loop.
+  */
+  /* Need to keep track of a ptr to place in big (first) input
+     array where we start the multiplication (we pass over it in the
+     inner loop (and not dereferenced) 
+     if it is pointing outside dataspace)
+  */
+  /* Calculate it once and the just move it around appropriately */
+  ap1_ptr = ip1 + offset1*is1;
+  for (k=0; k < ap1->nd; k++) {a_ind[k] = mode_dep[k]; check_ind[k] = ap1->dimensions[k] - ap2->dimensions[k] - mode_dep[k] - 1;}
+  a_ind[ap1->nd-1]--;
+  i = num_els_ret;
+  while (i--) {
+    k = ap1->nd - 1;
+    while(--incr) {
+      a_ind[k] -= ret->dimensions[k] - 1;   /* Return to start */
+      k--;
+    }
+    ap1_ptr += offsets2[k]*is1;
+    a_ind[k]++;
+    memcpy(temp_ind, a_ind, bytes_in_array);
+    
+    check = 0; k = -1;
+    while(!check && (++k < ap1->nd))
+      check = check || (ret_ind[k] < -mode_dep[k]) || (ret_ind[k] > check_ind[k]);
+    
+    multiply_and_add_ND(ap1_ptr,is1,ip2,is2,op,ap1->dimensions,ap2->dimensions,ap1->nd,num_els_ap2,check,b_ind,temp_ind,offsets);
+    
+    incr = increment(ret_ind,ret->nd,ret->dimensions); /* increment index counter */
+    op += os;   /* increment to next output index */
+    
+  }
+  free(b_ind); free(a_ind); free(ret_ind);
+  free(offsets); free(offsets2); free(temp_ind);
+  free(check_ind); free(mode_dep);
+}
+

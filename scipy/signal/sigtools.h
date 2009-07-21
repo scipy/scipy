@@ -52,6 +52,9 @@ typedef void (MultAddFunction) (char *, intp, char *, intp, char *, intp *, intp
 PyObject*
 sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * args);
 
+PyObject
+*sigtools_correlateND(PyObject *NPY_UNUSED(dummy), PyObject *args);
+
 /*
 static int index_out_of_bounds(int *, int *, int );
 static long compute_offsets (unsigned long *, long *, int *, int *, int *, int *, int);
