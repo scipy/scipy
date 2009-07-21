@@ -69,27 +69,7 @@ def correlate(in1, in2, mode='full'):
     """
     val = _valfrommode(mode)
 
-    if mode == 'full':
-        ps = [i + j - 1 for i, j in zip(in1.shape, in2.shape)]
-        out = np.empty(ps, in1.dtype)
-
-        # zero pad input
-        in1p = np.zeros(ps, in1.dtype)
-        sc = [slice(0, i) for i in in1.shape]
-        in1p[sc] = in1.copy()
-        return sigtools._correlateND(in1p, in2, out, val)
-    elif mode == 'same':
-        ps = [i + j - 1 for i, j in zip(in1.shape, in2.shape)]
-
-        # zero pad input
-        in1p = np.zeros(ps, in1.dtype)
-        sc = [slice(0, i) for i in in1.shape]
-        in1p[sc] = in1.copy()
-
-        out = np.empty(in1.shape, in1.dtype)
-
-        return sigtools._correlateND(in1p, in2, out, val)
-    elif mode == 'valid':
+    if mode == 'valid':
         ps = [i - j + 1 for i, j in zip(in1.shape, in2.shape)]
         out = np.empty(ps, in1.dtype)
         for i in range(len(ps)):
@@ -100,7 +80,21 @@ def correlate(in1, in2, mode='full'):
 
         return sigtools._correlateND(in1, in2, out, val)
     else:
-        raise ValueError("not supported yet")
+        ps = [i + j - 1 for i, j in zip(in1.shape, in2.shape)]
+        # zero pad input
+        in1p = np.zeros(ps, in1.dtype)
+        sc = [slice(0, i) for i in in1.shape]
+        in1zpadded[sc] = in1.copy()
+
+        if mode == 'full':
+            out = np.empty(ps, in1.dtype)
+            return sigtools._correlateND(in1zpadded, in2, out, val)
+        elif mode == 'same':
+            out = np.empty(in1.shape, in1.dtype)
+
+            return sigtools._correlateND(in1zpadded, in2, out, val)
+        else:
+            raise ValueError("Uknown mode %s" % mode)
 
 def _centered(arr, newsize):
     # Return the center newsize portion of the array.
