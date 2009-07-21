@@ -29,7 +29,7 @@ scipy_signal_sigtools_correlateND(PyObject *NPY_UNUSED(dummy), PyObject *args)
     PyArrayObject *ax, *ay, *aout;
     int mode, typenum, st;
 
-    if (!PyArg_ParseTuple(args, "OOO|i", &x, &y, &out, &mode)) {
+    if (!PyArg_ParseTuple(args, "OOOi", &x, &y, &out, &mode)) {
         return NULL;
     }
 
