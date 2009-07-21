@@ -162,18 +162,10 @@ def convolve(in1, in2, mode='full'):
     """
     volume = asarray(in1)
     kernel = asarray(in2)
-    if rank(volume) == rank(kernel) == 0:
-        return volume*kernel
-    if (product(kernel.shape,axis=0) > product(volume.shape,axis=0)):
-        temp = kernel
-        kernel = volume
-        volume = temp
-        del temp
 
     slice_obj = [slice(None,None,-1)]*len(kernel.shape)
-    val = _valfrommode(mode)
 
-    return sigtools._correlateND(volume,kernel[slice_obj],val)
+    return correlate(volume, kernel[slice_obj], mode)
 
 def order_filter(a, domain, rank):
     """Perform an order filter on an N-dimensional array.
