@@ -340,8 +340,7 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
             _imp_correlate_nd_object(curx, curneighx, ity, itz);
             break;
         default:
-            PyErr_SetString(PyExc_ValueError,
-                    "Only double supported for now");
+            PyErr_SetString(PyExc_ValueError, "Unsupported type");
             goto clean_curneighx;
     }
 
