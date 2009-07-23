@@ -1581,46 +1581,88 @@ normaltest.__doc__ = stats.normaltest.__doc__
 #####--------------------------------------------------------------------------
 
 
-def mquantiles(data, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
+def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
                limit=()):
-    """Computes empirical quantiles for a *1xN* data array.
-Samples quantile are defined by:
-*Q(p) = (1-g).x[i] +g.x[i+1]*
-where *x[j]* is the jth order statistic,
-with *i = (floor(n*p+m))*, *m=alpha+p*(1-alpha-beta)* and *g = n*p + m - i)*.
+    """
+    Computes empirical quantiles for a data array.
 
-Typical values of (alpha,beta) are:
+    Samples quantile are defined by :math:`Q(p) = (1-g).x[i] +g.x[i+1]`,
+    where :math:`x[j]` is the *j*th order statistic, and
+    `i = (floor(n*p+m))`, `m=alpha+p*(1-alpha-beta)` and `g = n*p + m - i`.
 
-    - (0,1)    : *p(k) = k/n* : linear interpolation of cdf (R, type 4)
-    - (.5,.5)  : *p(k) = (k+1/2.)/n* : piecewise linear function (R, type 5)
-    - (0,0)    : *p(k) = k/(n+1)* : (R type 6)
-    - (1,1)    : *p(k) = (k-1)/(n-1)*. In this case, p(k) = mode[F(x[k])].
-      That's R default (R type 7)
-    - (1/3,1/3): *p(k) = (k-1/3)/(n+1/3)*. Then p(k) ~ median[F(x[k])].
-      The resulting quantile estimates are approximately median-unbiased
-      regardless of the distribution of x. (R type 8)
-    - (3/8,3/8): *p(k) = (k-3/8)/(n+1/4)*. Blom.
-      The resulting quantile estimates are approximately unbiased
-      if x is normally distributed (R type 9)
-    - (.4,.4)  : approximately quantile unbiased (Cunnane)
-    - (.35,.35): APL, used with PWM
+    Typical values of (alpha,beta) are:
+        - (0,1)    : *p(k) = k/n* : linear interpolation of cdf (R, type 4)
+        - (.5,.5)  : *p(k) = (k+1/2.)/n* : piecewise linear function (R, type 5)
+        - (0,0)    : *p(k) = k/(n+1)* : (R type 6)
+        - (1,1)    : *p(k) = (k-1)/(n-1)*. In this case, p(k) = mode[F(x[k])].
+          That's R default (R type 7)
+        - (1/3,1/3): *p(k) = (k-1/3)/(n+1/3)*. Then p(k) ~ median[F(x[k])].
+          The resulting quantile estimates are approximately median-unbiased
+          regardless of the distribution of x. (R type 8)
+        - (3/8,3/8): *p(k) = (k-3/8)/(n+1/4)*. Blom.
+          The resulting quantile estimates are approximately unbiased
+          if x is normally distributed (R type 9)
+        - (.4,.4)  : approximately quantile unbiased (Cunnane)
+        - (.35,.35): APL, used with PWM
 
-Parameters
-----------
-    x : sequence
+    Parameters
+    ----------
+    a : array-like
         Input data, as a sequence or array of dimension at most 2.
-    prob : sequence
+    prob : array-like, optional
         List of quantiles to compute.
-    alpha : {0.4, float} optional
+    alpha : {0.4, float}, optional
         Plotting positions parameter.
-    beta : {0.4, float} optional
+    beta : {0.4, float}, optional
         Plotting positions parameter.
     axis : {None, int} optional
         Axis along which to perform the trimming.
         If None, the input array is first flattened.
     limit : tuple
-        Tuple of (lower, upper) values. Values of a outside this closed interval
-        are ignored.
+        Tuple of (lower, upper) values.
+        Values of `a` outside this closed interval are ignored.
+
+    Returns 
+    ------- 
+    quants : {MaskedArray} 
+        An array containing the calculated quantiles.
+
+    Examples 
+    -------- 
+    >>> from scipy.stats.mstats import mquantiles 
+    >>> a = np.array([6., 47., 49., 15., 42., 41., 7., 39., 43., 40., 36.]) 
+    >>> mquantiles(a) 
+    array([ 19.2,  40. ,  42.8]) 
+
+    Using a 2D array, specifying axis and limit. 
+
+    >>> data = np.array([[   6.,    7.,    1.], 
+                         [  47.,   15.,    2.], 
+                         [  49.,   36.,    3.], 
+                         [  15.,   39.,    4.], 
+                         [  42.,   40., -999.], 
+                         [  41.,   41., -999.], 
+                         [   7., -999., -999.], 
+                         [  39., -999., -999.], 
+                         [  43., -999., -999.], 
+                         [  40., -999., -999.], 
+                         [  36., -999., -999.]]) 
+    >>> mquantiles(data, axis=0, limit=(0, 50)) 
+    array([[ 19.2 ,  14.6 ,   1.45], 
+           [ 40.  ,  37.5 ,   2.5 ], 
+           [ 42.8 ,  40.05,   3.55]]) 
+
+     >>> data[:,2] = -999. 
+     >>> mquantiles(data, axis=0, limit=(0, 50)) 
+     masked_array(data = 
+      [[19.2 14.6 --] 
+      [40.0 37.5 --] 
+      [42.8 40.05 --]], 
+                  mask = 
+      [[False False  True] 
+       [False False  True] 
+       [False False  True]], 
+            fill_value = 1e+20) 
     """
     def _quantiles1D(data,m,p):
         x = np.sort(data.compressed())
@@ -1635,18 +1677,20 @@ Parameters
         return (1.-gamma)*x[(k-1).tolist()] + gamma*x[k.tolist()]
 
     # Initialization & checks ---------
-    data = ma.array(data, copy=False)
+    data = ma.array(a, copy=False)
+    if data.ndim > 2:
+        raise TypeError("Array should be 2D at most !")
+    #
     if limit:
         condition = (limit[0]<data) & (data<limit[1])
-        data[condition.filled(True)] = masked
+        data[~condition.filled(True)] = masked
+    #
     p = np.array(prob, copy=False, ndmin=1)
     m = alphap + p*(1.-alphap-betap)
     # Computes quantiles along axis (or globally)
     if (axis is None):
         return _quantiles1D(data, m, p)
-    else:
-        assert data.ndim <= 2, "Array should be 2D at most !"
-        return ma.apply_along_axis(_quantiles1D, axis, data, m, p)
+    return ma.apply_along_axis(_quantiles1D, axis, data, m, p)
 
 
 def scoreatpercentile(data, per, limit=(), alphap=.4, betap=.4):
