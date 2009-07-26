@@ -97,24 +97,6 @@ typedef struct
 
 /* Type of computer arithmetic */
 
-/* This is kind of improper, as the byte-order of floats may not
- * be the same as the byte-order of ints. However, it works.
- *
- * SciPy note: we bypass this detection and set UNK to 1 to prevent Endianess
- * issues.
- */
-
-/*
-#include <pyconfig.h>
-#ifdef WORDS_BIGENDIAN
-# define MIEEE 1
-# define BIGENDIAN 1
-#else
-# define IBMPC 1
-# define BIGENDIAN 0
-#endif
-*/
-
 /* UNKnown arithmetic, invokes coefficients given in
  * normal decimal format.  Beware of range boundary
  * problems (MACHEP, MAXLOG, etc. in const.c) and
