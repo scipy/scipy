@@ -4,7 +4,7 @@ import os
 import sys
 from os.path import join
 from distutils.sysconfig import get_python_inc
-from numpy.distutils.misc_util import get_numpy_include_dirs, get_npymath_info
+from numpy.distutils.misc_util import get_numpy_include_dirs, get_info
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -42,7 +42,7 @@ def configuration(parent_package='',top_path=None):
                                   "c_misc/misc.h", "cephes_doc.h",
                                   "cephes/mconf.h", "cephes/cephes_names.h"],
                          define_macros = define_macros,
-                         extra_info=get_npymath_info()
+                         extra_info=get_info("npymath")
                          )
 
     # Extension specfun
