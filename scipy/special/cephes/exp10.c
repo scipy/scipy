@@ -157,7 +157,7 @@ static double MAXL10 = 308.2547155599167;
 
 #ifndef ANSIPROT
 double floor(), ldexp(), polevl(), p1evl();
-int isnan(), isfinite();
+int npy_isnan(), npy_isfinite();
 #endif
 extern double MAXNUM;
 
@@ -167,7 +167,7 @@ double px, xx;
 short n;
 
 #ifdef NPY_NANS
-if( isnan(x) )
+if( npy_isnan(x) )
 	return(x);
 #endif
 if( x > MAXL10 )

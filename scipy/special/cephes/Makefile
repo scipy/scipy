@@ -11,7 +11,7 @@ btdtr.o cbrt.o chbevl.o chdtr.o const.o \
 dawsn.o ellie.o ellik.o ellpe.o ellpj.o ellpk.o \
 exp10.o exp2.o expn.o fabs.o fdtr.o \
 fresnl.o gamma.o gdtr.o hyp2f1.o hyperg.o i0.o i1.o igami.o \
-incbet.o incbi.o igam.o isnan.o iv.o j0.o j1.o jn.o jv.o k0.o k1.o \
+incbet.o incbi.o igam.o iv.o j0.o j1.o jn.o jv.o k0.o k1.o \
 kn.o kolmogorov.o nbdtr.o ndtr.o ndtri.o pdtr.o \
 polevl.o polmisc.o polyn.o psi.o rgamma.o round.o \
 shichi.o sici.o sindg.o spence.o stdtr.o struve.o \

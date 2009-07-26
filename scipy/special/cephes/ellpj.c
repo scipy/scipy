@@ -80,7 +80,7 @@ int i;
 
 /* Check for special cases */
 
-if( m < 0.0 || m > 1.0  || isnan(m))
+if( m < 0.0 || m > 1.0  || npy_isnan(m))
 	{
 	mtherr( "ellpj", DOMAIN );
 	*sn = NPY_NAN;

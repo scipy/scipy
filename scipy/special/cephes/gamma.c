@@ -314,21 +314,9 @@ double p, q, z;
 int i;
 
 sgngam = 1;
-#ifdef NPY_NANS
-if( isnan(x) )
-	return(x);
-#endif
-#ifdef INFINITIES
-#ifdef NPY_NANS
-if( x == NPY_INFINITY )
-	return(x);
-if( x == -NPY_INFINITY )
-	return(x);
-#else
-if( !npy_isfinite(x) )
-	return(x);
-#endif
-#endif
+if (!npy_isfinite(x)) {
+        return x;
+}
 q = fabs(x);
 
 if( q > 33.0 )
@@ -338,13 +326,9 @@ if( q > 33.0 )
 		p = floor(q);
 		if( p == q )
 			{
-#ifdef NANS
 gamnan:
 			mtherr( "Gamma", OVERFLOW );
 			return (MAXNUM);
-#else
-			goto goverf;
-#endif
 			}
 		i = p;
 		if( (i & 1) == 0 )
@@ -358,13 +342,7 @@ gamnan:
 		z = q * sin( PI * z );
 		if( z == 0.0 )
 			{
-#ifdef INFINITIES
 			return( sgngam * NPY_INFINITY);
-#else
-goverf:
-			mtherr( "Gamma", OVERFLOW );
-			return( sgngam * MAXNUM);
-#endif
 			}
 		z = fabs(z);
 		z = PI/(z * stirf(q) );
@@ -410,16 +388,7 @@ return( z * p / q );
 small:
 if( x == 0.0 )
 	{
-#ifdef INFINITIES
-#ifdef NPY_NANS
 	  goto gamnan;
-#else
-	  return( NPY_INFINITY );
-#endif
-#else
-	mtherr( "Gamma", SING );
-	return( MAXNUM );
-#endif
 	}
 else
 	return( z/((1.0 + 0.5772156649015329 * x) * x) );
@@ -567,12 +536,12 @@ int i;
 
 sgngam = 1;
 #ifdef NPY_NANS
-if( isnan(x) )
+if( npy_isnan(x) )
 	return(x);
 #endif
 
 #ifdef INFINITIES
-if( !isfinite(x) )
+if( !npy_isfinite(x) )
 	return(NPY_INFINITY);
 #endif
 

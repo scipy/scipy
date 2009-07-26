@@ -70,10 +70,6 @@ Copyright 1984, 1987, 1989, 1995 by Stephen L. Moshier
 
 #include "cephes_names.h"
 
-/* Temporary workaround while removing the whole IEEE macros insanity in cephes */
-#undef NAN
-#define NAN NPY_NAN
-
 /* Constant definitions for math error conditions
  */
 
@@ -166,13 +162,6 @@ typedef struct
 #define INFINITIES 1
 #ifdef NOINFINITIES
 #undef INFINITIES
-#endif
-
-/* Define to ask for support of numbers that are Not-a-Number,
-   else undefine.  This may automatically define INFINITIES in some files. */
-#define NANS 1
-#ifdef NONANS
-#undef NANS
 #endif
 
 /* Define to distinguish between -0.0 and +0.0.  */

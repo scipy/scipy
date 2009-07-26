@@ -12,19 +12,13 @@
 #include "Python.h"
 #include <numpy/npy_math.h>
 
-#undef NAN
-#undef INFINITY
-
-#define NAN NPY_NAN
-#define INFINITY NPY_INFINITY
-
 extern double PI;
 
 #define REAL(z) (z).real
 #define IMAG(z) (z).imag
 #define ABSQ(z) (z).real*(z).real + (z).imag*(z).imag;
-#define ZCONVINF(z) if (REAL((z))==1.0e300) REAL((z))=INFINITY; if (REAL((z))==-1.0e300) REAL((z))=-INFINITY
-#define CONVINF(x) if ((x)==1.0e300) (x)=INFINITY; if ((x)==-1.0e300) (x)=-INFINITY
+#define ZCONVINF(z) if (REAL((z))==1.0e300) REAL((z))=NPY_INFINITY; if (REAL((z))==-1.0e300) REAL((z))=-NPY_INFINITY
+#define CONVINF(x) if ((x)==1.0e300) (x)=NPY_INFINITY; if ((x)==-1.0e300) (x)=-NPY_INFINITY
 #define ABS(x) ((x)<0 ? -(x) : (x))
 
 Py_complex cgamma_wrap( Py_complex z);
