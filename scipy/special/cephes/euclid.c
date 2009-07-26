@@ -27,14 +27,11 @@
  
 
 #include "mconf.h"
-#ifndef ANSIPROT
-double fabs(), floor(), euclid();
-#else
-double euclid( double *, double * );
-#endif
 
 extern double MACHEP;
 #define BIG (1.0/MACHEP)
+
+double euclid(double* num, double* den );
 
 typedef struct
 	{
@@ -43,12 +40,10 @@ typedef struct
 	} fract;
 
 /* Add fractions. */
-#ifdef ANSIPROT
 static void radd(fract*,fract*,fract*);
 static void rsub(fract*,fract*,fract*);
 static void rmul(fract*,fract*,fract*);
 static void rdiv(fract*,fract*,fract*);
-#endif
 
 void radd( f1, f2, f3 )
 fract *f1, *f2, *f3;

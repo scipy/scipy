@@ -444,18 +444,6 @@ static unsigned short DZ2[] = {0x4048,0x9bf6,0x6072,0xa432};
 #define Z2 (*(double *)DZ2)
 #endif
 
-#ifdef ANSIPROT
-extern double polevl ( double, void *, int );
-extern double p1evl ( double, void *, int );
-extern double log ( double );
-extern double sin ( double );
-extern double cos ( double );
-extern double sqrt ( double );
-double j1 ( double );
-#else
-double polevl(), p1evl(), log(), sin(), cos(), sqrt();
-double j1();
-#endif
 extern double TWOOPI, THPIO4, SQ2OPI;
 
 double j1(x)

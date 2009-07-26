@@ -6,11 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "mconf.h"
-#ifndef ANSIPROT
-double atan2(), sqrt(), fabs(), sin(), cos();
-void polclr(), polmov(), polsbt(), poladd(), polsub(), polmul();
-int poldiv();
-#endif
 
 /* Highest degree of polynomial to be handled
    by the polyn.c subroutine package.  */
@@ -261,9 +256,6 @@ polcos( x, y, nn )
   double a, sc;
   double *w, *c;
   int i;
-#ifndef ANSIPROT
-  double sin(), cos();
-#endif
 
   if (nn > N)
     {

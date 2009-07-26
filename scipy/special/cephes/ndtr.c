@@ -380,11 +380,6 @@ static unsigned short U[] = {
 #define UTHRESH 37.519379347
 #endif
 
-#ifndef ANSIPROT
-double polevl(), p1evl(), exp(), log(), fabs();
-double erf(), erfc();
-#endif
-
 double ndtr(double a)
 {
 double x, y, z;

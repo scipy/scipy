@@ -137,9 +137,6 @@ static unsigned short R[] = {
 
 static char name[] = "rgamma";
 
-#ifndef ANSIPROT
-double chbevl(), exp(), log(), sin(), lgam();
-#endif
 extern double PI, MAXLOG, MAXNUM;
 
 

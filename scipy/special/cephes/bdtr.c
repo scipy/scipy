@@ -147,9 +147,6 @@ Copyright 1984, 1987, 1995 by Stephen L. Moshier
 */
 
 #include "mconf.h"
-#ifndef ANSIPROT
-double incbet(), incbi(), pow(), log1p(), expm1();
-#endif
 
 double bdtrc( k, n, p )
 int k, n;

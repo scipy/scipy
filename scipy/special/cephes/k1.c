@@ -276,15 +276,6 @@ static unsigned short B[] = {
 };
 #endif
 
-#ifdef ANSIPROT
-extern double chbevl ( double, void *, int );
-extern double exp ( double );
-extern double i1 ( double );
-extern double log ( double );
-extern double sqrt ( double );
-#else
-double chbevl(), exp(), i1(), log(), sqrt();
-#endif
 extern double PI;
 extern double MINLOG;
 

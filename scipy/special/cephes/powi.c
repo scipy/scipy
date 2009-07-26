@@ -44,9 +44,6 @@ Copyright 1984, 1995 by Stephen L. Moshier
 */
 
 #include "mconf.h"
-#ifndef ANSIPROT
-double log(), frexp();
-#endif
 extern double NEGZERO, MAXNUM, MAXLOG, MINLOG, LOGE2;
 
 double powi( x, nn )

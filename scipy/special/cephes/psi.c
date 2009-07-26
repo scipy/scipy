@@ -108,14 +108,6 @@ static unsigned short A[] = {
 
 #define EUL 0.57721566490153286061
 
-#ifdef ANSIPROT
-extern double floor ( double );
-extern double log ( double );
-extern double tan ( double );
-extern double polevl ( double, void *, int );
-#else
-double floor(), log(), tan(), polevl();
-#endif
 extern double PI, MAXNUM;
 
 

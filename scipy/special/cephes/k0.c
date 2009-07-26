@@ -273,15 +273,6 @@ static unsigned short B[] = {
 #endif
 
 /*							k0.c	*/
-#ifdef ANSIPROT 
-extern double chbevl ( double, void *, int );
-extern double exp ( double );
-extern double i0 ( double );
-extern double log ( double );
-extern double sqrt ( double );
-#else
-double chbevl(), exp(), i0(), log(), sqrt();
-#endif
 extern double PI;
 
 double k0(x)

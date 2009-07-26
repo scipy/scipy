@@ -68,17 +68,13 @@ Copyright 1984, 1995 by Stephen L. Moshier
 #endif
 
 extern double MACHEP, MINLOG, MAXLOG;
-#ifdef ANSIPROT
-static double incbcf(double, double, double);
-static double incbd(double, double, double);
-static double pseries(double, double, double);
-#else
-double Gamma(), lgam(), exp(), log(), pow(), fabs();
-static double incbcf(), incbd(), pseries();
-#endif
 
 static double big = 4.503599627370496e15;
 static double biginv =  2.22044604925031308085e-16;
+
+static double incbcf(double a, double b, double x );
+static double incbd(double a, double b, double x );
+static double pseries(double a, double b, double x);
 
 double incbet( aa, bb, xx )
 double aa, bb, xx;

@@ -63,10 +63,6 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 */
 
 #include "mconf.h"
-#ifndef ANSIPROT
-double sqrt(), fabs(), sin(), cos(), asin(), tanh();
-double sinh(), cosh(), atan(), exp();
-#endif
 extern double PIO2, MACHEP;
 
 int ellpj( u, m, sn, cn, dn, ph )

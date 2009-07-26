@@ -53,13 +53,6 @@ Copyright 1984, 1987, 2000 by Stephen L. Moshier
 */
 
 #include "mconf.h"
-#ifdef ANSIPROT
-extern double y0 ( double );
-extern double y1 ( double );
-extern double log ( double );
-#else
-double y0(), y1(), log();
-#endif
 extern double MAXNUM, MAXLOG;
 
 double yn( n, x )

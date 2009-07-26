@@ -342,9 +342,6 @@ static unsigned short CD[20] = {
 };
 #endif
 
-#ifndef ANSIPROT
-double chbevl(), sqrt(), fabs(), polevl(), p1evl();
-#endif
 extern double PI, MACHEP;
 
 double dawsn( xx )

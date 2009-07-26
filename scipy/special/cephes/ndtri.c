@@ -361,10 +361,6 @@ static unsigned short Q2[32] = {
 };
 #endif
 
-#ifndef ANSIPROT
-double polevl(), p1evl(), log(), sqrt();
-#endif
-
 double ndtri(y0)
 double y0;
 {

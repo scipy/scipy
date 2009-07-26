@@ -151,9 +151,6 @@ Copyright 1984, 1987, 1995 by Stephen L. Moshier
 */
 
 #include "mconf.h"
-#ifndef ANSIPROT
-double incbet(), incbi();
-#endif
 
 double nbdtrc( k, n, p )
 int k, n;

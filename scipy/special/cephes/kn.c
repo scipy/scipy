@@ -81,14 +81,6 @@ asymptotically, where
 
 #define EUL 5.772156649015328606065e-1
 #define MAXFAC 31
-#ifdef ANSIPROT
-extern double fabs ( double );
-extern double exp ( double );
-extern double log ( double );
-extern double sqrt ( double );
-#else
-double fabs(), exp(), log(), sqrt();
-#endif
 extern double MACHEP, MAXNUM, MAXLOG, PI;
 
 double kn( nn, x )

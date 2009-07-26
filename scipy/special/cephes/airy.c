@@ -822,19 +822,6 @@ static unsigned short APGD[40] = {
 };
 #endif
 
-#ifdef ANSIPROT
-extern double fabs ( double );
-extern double exp ( double );
-extern double sqrt ( double );
-extern double polevl ( double, void *, int );
-extern double p1evl ( double, void *, int );
-extern double sin ( double );
-extern double cos ( double );
-#else
-double fabs(), exp(), sqrt();
-double polevl(), p1evl(), sin(), cos();
-#endif
-
 int airy( x, ai, aip, bi, bip )
 double x, *ai, *aip, *bi, *bip;
 {

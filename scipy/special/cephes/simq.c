@@ -48,10 +48,7 @@
 /*							simq	2 */
 
 #include <stdio.h>
-#define ANSIPROT
-#ifdef ANSIPROT
 int simq(double [], double [], double [], int, int, int [] );
-#endif
 
 #define fabs(x) ((x) < 0 ? -(x) : (x))
 

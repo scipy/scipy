@@ -66,23 +66,10 @@ Copyright 1984, 1987, 1988, 2000 by Stephen L. Moshier
 
 #include "mconf.h"
 
-#ifdef ANSIPROT
-extern double exp ( double );
-extern double log ( double );
-extern double gamma ( double );
-extern double lgam ( double );
-extern double fabs ( double );
-double hyp2f0 ( double, double, double, int, double * );
-static double hy1f1p(double, double, double, double *);
-static double hy1f1a(double, double, double, double *);
-double hyperg (double, double, double);
-#else
-double exp(), log(), gamma(), lgam(), fabs(), hyp2f0();
-static double hy1f1p();
-static double hy1f1a();
-double hyperg();
-#endif
 extern double MAXNUM, MACHEP;
+
+static double hy1f1p(double a, double b, double x, double *acanc );
+static double hy1f1a(double a, double b, double x, double *acanc );
 
 double hyperg( a, b, x)
 double a, b, x;

@@ -50,9 +50,6 @@
  * Direct inquiries to 30 Frost Street, Cambridge, MA 02140 */
 
 #include "mconf.h"
-#ifndef ANSIPROT
-double pow(), Gamma(), log(), exp(), fabs();
-#endif
 #define EUL 0.57721566490153286060
 #define BIG  1.44115188075855872E+17
 extern double MAXNUM, MACHEP, MAXLOG;

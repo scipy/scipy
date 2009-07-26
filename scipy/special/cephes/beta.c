@@ -64,9 +64,6 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 #define MAXGAM 171.624376956302725
 #endif
 
-#ifndef ANSIPROT
-double fabs(), Gamma(), lgam(), exp(), log(), floor();
-#endif
 extern double MAXLOG, MAXNUM;
 extern int sgngam;
 

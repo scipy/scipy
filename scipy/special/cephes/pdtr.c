@@ -126,9 +126,6 @@ Copyright 1984, 1987, 1995 by Stephen L. Moshier
 */
 
 #include "mconf.h"
-#ifndef ANSIPROT
-double igam(), igamc(), igami();
-#endif
 
 double pdtrc( k, m )
 int k;

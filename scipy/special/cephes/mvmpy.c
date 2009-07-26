@@ -31,11 +31,6 @@
  */
 
 
-#define ANSIPROT
-#ifdef ANSIPROT
-void mvmpy( int, int, double*, double*, double* );
-#endif
-
 void
 mvmpy( r, c, A, V, Y )
 int r, c;

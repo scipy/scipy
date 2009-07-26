@@ -37,9 +37,6 @@ static double LQ[] = {
 
 #define SQRTH 0.70710678118654752440
 #define SQRT2 1.41421356237309504880
-#ifndef ANSIPROT
-double log(), polevl(), p1evl(), exp(), cos();
-#endif
 
 double log1p(double x)
 {

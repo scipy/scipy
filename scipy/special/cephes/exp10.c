@@ -155,9 +155,6 @@ static unsigned short L102B[] = {0x3ed3,0x509f,0x79fe,0xf312,};
 static double MAXL10 = 308.2547155599167;
 #endif
 
-#ifndef ANSIPROT
-double floor(), ldexp(), polevl(), p1evl();
-#endif
 extern double MAXNUM;
 
 double exp10(double x)

@@ -446,9 +446,6 @@ static unsigned short gd[44] = {
 };
 #endif
 
-#ifndef ANSIPROT
-double fabs(), cos(), sin(), polevl(), p1evl();
-#endif
 extern double PI, PIO2, MACHEP;
 
 int fresnl( xxa, ssa, cca )

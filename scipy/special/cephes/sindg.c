@@ -174,13 +174,6 @@ static unsigned short P1[] = {
 static double lossth = 1.0e14;
 #endif
 
-#ifndef ANSIPROT
-double polevl(), floor(), ldexp();
-#else
-extern double polevl (double, void *, int);
-extern double floor(double);
-extern double ldexp(double,int);
-#endif
 extern double PIO4;
 
 double sindg(x)

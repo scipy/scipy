@@ -500,9 +500,6 @@ static unsigned short C2[] = {
 
 /* Sine and cosine integrals */
 
-#ifndef ANSIPROT
-double log(), exp(), fabs(), chbevl();
-#endif
 #define EUL 0.57721566490153286061
 extern double MACHEP, MAXNUM, PIO2;
 

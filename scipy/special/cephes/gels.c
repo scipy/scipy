@@ -63,13 +63,7 @@ C
 C     ..................................................................
 C
 */
-#define ANSIPROT
-#ifndef ANSIPROT
-double fabs();
-#else
-extern double fabs(double);
-int gels( double [], double [], int, double, double [] );
-#endif
+#include "protos.h"
 
 int
 gels( A, R, M, EPS, AUX )

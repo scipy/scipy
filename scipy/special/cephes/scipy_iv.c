@@ -69,15 +69,6 @@
 
 #include <stdlib.h>
 #include "mconf.h"
-#ifdef ANSIPROT
-extern double exp(double);
-extern double gamma(double);
-extern double log(double);
-extern double fabs(double);
-extern double floor(double);
-#else
-double exp(), gamma(), log(), fabs(), floor();
-#endif
 extern double MACHEP, MAXNUM, PI, EULER;
 
 static double iv_asymptotic(double v, double x);

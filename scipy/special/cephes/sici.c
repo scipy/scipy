@@ -575,9 +575,6 @@ static unsigned short GD8[] = {
 };
 #endif
 
-#ifndef ANSIPROT
-double log(), sin(), cos(), polevl(), p1evl();
-#endif
 #define EUL 0.57721566490153286061
 extern double MAXNUM, PIO2, MACHEP;
 

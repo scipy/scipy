@@ -494,10 +494,6 @@ static unsigned short S[20] = {
 /*
  * Riemann zeta function, minus one
  */
-#ifndef ANSIPROT
-double sin(), floor(), Gamma(), pow(), exp();
-double polevl(), p1evl();
-#endif
 extern double MACHEP;
 
 double zetac(x)

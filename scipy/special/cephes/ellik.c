@@ -55,9 +55,6 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 /*	Incomplete elliptic integral of first kind	*/
 
 #include "mconf.h"
-#ifndef ANSIPROT
-double sqrt(), fabs(), log(), tan(), atan(), floor(), ellpk();
-#endif
 extern double PI, PIO2, MACHEP, MAXNUM;
 
 double ellik( phi, m )

@@ -118,9 +118,6 @@ static unsigned short Q[] = {
 #define MINL2 -1022.0
 #endif
 
-#ifndef ANSIPROT
-double polevl(), p1evl(), floor(), ldexp();
-#endif
 extern double MAXNUM;
 
 double exp2(double x)

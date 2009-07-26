@@ -27,10 +27,7 @@
  */
 
 
-#define ANSIPROT
-#ifdef ANSIPROT
 void mtransp( int,double*,double* );
-#endif
 
 void
 mtransp( n, A, T )

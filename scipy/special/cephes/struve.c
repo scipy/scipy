@@ -36,24 +36,6 @@ Copyright 1984, 1987, 1989, 2000 by Stephen L. Moshier
 */
 #include "mconf.h"
 #define DEBUG 0
-#ifdef ANSIPROT
-extern double gamma ( double );
-extern double pow ( double, double );
-extern double sqrt ( double );
-extern double yn ( int, double );
-extern double jv ( double, double );
-extern double fabs ( double );
-extern double floor ( double );
-extern double sin ( double );
-extern double cos ( double );
-double yv ( double, double );
-double onef2 (double, double, double, double, double * );
-double threef0 (double, double, double, double, double * );
-#else
-double gamma(), pow(), sqrt(), yn(), yv(), jv(), fabs(), floor();
-double sin(), cos();
-double onef2(), threef0();
-#endif
 static double stop = 1.37e-17;
 extern double MACHEP;
 

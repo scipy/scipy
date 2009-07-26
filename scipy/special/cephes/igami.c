@@ -52,9 +52,6 @@ Copyright 1984, 1987, 1995 by Stephen L. Moshier
 #include <stdio.h>
 
 extern double MACHEP, MAXNUM, MAXLOG, MINLOG;
-#ifndef ANSIPROT
-double igamc(), ndtri(), exp(), fabs(), log(), sqrt(), lgam();
-#endif
 
 double igami( a, y0 )
 double a, y0;

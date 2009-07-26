@@ -29,11 +29,7 @@
  *
  */
 
-
-#define ANSIPROT
-#ifdef ANSIPROT
-void mmmpy( int,int,double*,double*,double* );
-#endif
+#include "protos.h"
 
 void
 mmmpy( r, c, A, B, Y )

@@ -52,14 +52,6 @@ Copyright 1984, 1987, 1995 by Stephen L. Moshier
 
 #include "mconf.h"
 
-#define ANSIPROT
-#ifndef ANSIPROT
-double incbet();
-#else
-extern double incbet ( double aa, double bb, double xx );
-double btdtr( double,double,double );
-#endif
-
 double btdtr( a, b, x )
 double a, b, x;
 {

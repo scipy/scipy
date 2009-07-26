@@ -84,9 +84,6 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 */
 
 #include "mconf.h"
-#ifndef ANSIPROT
-double lgam(), exp(), log(), fabs(), igam(), igamc();
-#endif
 
 extern double MACHEP, MAXLOG;
 static double big = 4.503599627370496e15;

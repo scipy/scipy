@@ -178,10 +178,6 @@ static unsigned short Q[] = {
 };
 #endif
 
-#ifndef ANSIPROT
-double polevl(), log();
-#endif
-
 double ellpe(x)
 double x;
 {

@@ -60,38 +60,14 @@ Copyright 1984, 1987, 1989, 1992, 2000 by Stephen L. Moshier
 #define MAXGAM 171.624376956302725
 #endif
 
-#ifdef ANSIPROT
-extern int airy(double, double *, double *, double *, double *);
-extern double fabs(double);
-extern double floor(double);
-extern double frexp(double, int *);
-extern double polevl(double, void *, int);
-extern double j0(double);
-extern double j1(double);
-extern double sqrt(double);
-extern double cbrt(double);
-extern double exp(double);
-extern double log(double);
-extern double sin(double);
-extern double cos(double);
-extern double acos(double);
-extern double pow(double, double);
-extern double gamma(double);
-extern double lgam(double);
-static double recur(double *, double, double *, int);
-static double jvs(double, double);
-static double hankel(double, double);
-static double jnx(double, double);
-static double jnt(double, double);
-#else
-int airy();
-double fabs(), floor(), frexp(), polevl(), j0(), j1(), sqrt(), cbrt();
-double exp(), log(), sin(), cos(), acos(), pow(), gamma(), lgam();
-static double recur(), jvs(), hankel(), jnx(), jnt();
-#endif
-
 extern double MAXNUM, MACHEP, MINLOG, MAXLOG;
 #define BIG  1.44115188075855872E+17
+
+static double jvs(double n, double x);
+static double hankel(double n, double x);
+static double recur(double *n, double x, double *newn, int cancel);
+static double jnx(double n, double x);
+static double jnt(double n, double x);
 
 double jv(double n, double x)
 {

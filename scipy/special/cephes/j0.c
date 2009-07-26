@@ -458,18 +458,6 @@ static unsigned short RQ[32] = {
 };
 #endif
 
-#ifdef ANSIPROT
-extern double polevl ( double, void *, int );
-extern double p1evl ( double, void *, int );
-extern double log ( double );
-extern double sin ( double );
-extern double cos ( double );
-extern double sqrt ( double );
-double j0 ( double );
-#else
-double polevl(), p1evl(), log(), sin(), cos(), sqrt();
-double j0();
-#endif
 extern double TWOOPI, SQ2OPI, PIO4;
 
 double j0(x)

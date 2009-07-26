@@ -149,9 +149,6 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 */
 
 #include "mconf.h"
-#ifndef ANSIPROT
-double igamc(), igam(), igami();
-#endif
 
 double chdtrc(df,x)
 double df, x;

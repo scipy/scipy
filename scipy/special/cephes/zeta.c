@@ -61,9 +61,6 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 */
 
 #include "mconf.h"
-#ifndef ANSIPROT
-double fabs(), pow(), floor();
-#endif
 extern double MAXNUM, MACHEP;
 
 /* Expansion coefficients

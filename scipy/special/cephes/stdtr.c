@@ -87,9 +87,6 @@ Copyright 1984, 1987, 1995 by Stephen L. Moshier
 #include "mconf.h"
 
 extern double PI, MACHEP, MAXNUM;
-#ifndef ANSIPROT
-double sqrt(), atan(), incbet(), incbi(), fabs();
-#endif
 
 double stdtr( k, t )
 int k;

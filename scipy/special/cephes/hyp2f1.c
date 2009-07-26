@@ -92,24 +92,10 @@ Copyright 1984, 1987, 1992, 2000 by Stephen L. Moshier
 
 #define ETHRESH 1.0e-12
 
-#ifdef ANSIPROT
-extern double fabs ( double );
-extern double pow ( double, double );
-extern double round ( double );
-extern double gamma ( double );
-extern double log ( double );
-extern double exp ( double );
-extern double psi ( double );
-static double hyt2f1(double, double, double, double, double *);
-static double hys2f1(double, double, double, double, double *);
-double hyp2f1(double, double, double, double);
-#else
-double fabs(), pow(), round(), gamma(), log(), exp(), psi();
-static double hyt2f1();
-static double hys2f1();
-double hyp2f1();
-#endif
 extern double MAXNUM, MACHEP;
+
+static double hyt2f1(double a, double b, double c, double x, double* loss);
+static double hys2f1(double a, double b, double c, double x, double* loss);
 
 double hyp2f1( a, b, c, x )
 double a, b, c, x;

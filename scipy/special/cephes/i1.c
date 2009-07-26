@@ -350,14 +350,6 @@ static unsigned short B[] = {
 #endif
 
 /*							i1.c	*/
-#ifdef ANSIPROT
-extern double chbevl ( double, void *, int );
-extern double exp ( double );
-extern double sqrt ( double );
-extern double fabs ( double );
-#else
-double chbevl(), exp(), sqrt(), fabs();
-#endif
 
 double i1(x)
 double x;

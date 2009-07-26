@@ -270,11 +270,7 @@ static unsigned short SQT[4] = {
 int sgngam = 0;
 extern int sgngam;
 extern double MAXLOG, MAXNUM, PI;
-#ifndef ANSIPROT
-double pow(), log(), exp(), sin(), polevl(), p1evl(), floor(), fabs();
-#else
 static double stirf(double);
-#endif
 
 /* Gamma function computed by Stirling's formula.
  * The polynomial STIR is valid for 33 <= x <= 172.

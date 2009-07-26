@@ -69,6 +69,7 @@ Copyright 1984, 1987, 1989, 1995 by Stephen L. Moshier
 #include <numpy/npy_math.h>
 
 #include "cephes_names.h"
+#include "protos.h"
 
 /* Constant definitions for math error conditions
  */
@@ -84,13 +85,6 @@ Copyright 1984, 1987, 1989, 1995 by Stephen L. Moshier
 
 #define EDOM		33
 #define ERANGE		34
-
-/* Complex numeral.  */
-typedef struct
-	{
-	double r;
-	double i;
-	} cmplx;
 
 /* Long double complex numeral.  */
 /*
@@ -164,14 +158,6 @@ typedef struct
 /* Define 1 for ANSI C atan2() function
    See atan.c and clog.c. */
 #define ANSIC 1
-
-/* Get ANSI function prototypes, if you want them. */
-#if defined(__STDC__) || defined(_MSC_EXTENSIONS)
-#define ANSIPROT
-#include "protos.h"
-#else
-int mtherr();
-#endif
 
 /* Variable for error reporting.  See mtherr.c.  */
 extern int merror;
