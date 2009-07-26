@@ -2,7 +2,7 @@
 # vim:syntax=python
 from os.path import join as pjoin, basename as pbasename
 import sys
-from numpy.distutils.misc_util import get_numpy_include_dirs
+from numpy.distutils.misc_util import get_numpy_include_dirs, get_npymath_info
 
 from numscons import GetNumpyEnvironment
 from numscons import CheckF77Clib
@@ -43,7 +43,7 @@ build_lib('amos', '.f', 'sc_amos')
 build_lib('cdflib', '.f', 'sc_cdf')
 build_lib('specfun', '.f', 'sc_specfunlib')
 
-env.AppendUnique(LIBPATH = ['.'])
+env.AppendUnique(LIBPATH = ['.'] + get_npymath_info()['library_dirs'])
 
 # Cephes extension
 src = ['_cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c', \
@@ -52,7 +52,8 @@ src = ['_cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c', \
 env.NumpyPythonExtension('_cephes', 
                          source = src, 
                          LIBS = ['sc_amos', 'sc_toms', 'sc_c_misc', 'sc_cephes', 'sc_mach',\
-                                 'sc_cdf', 'sc_specfunlib']) 
+                                 'sc_cdf', 'sc_specfunlib'] 
+                                + get_npymath_info()['libraries']) 
 
 # Specfun extension
 env.Prepend(LIBS = ['sc_specfunlib'])
