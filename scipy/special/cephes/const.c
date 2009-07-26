@@ -39,7 +39,6 @@
  * The global symbols for mathematical constants are
  * PI     =  3.14159265358979323846           pi
  * PIO2   =  1.57079632679489661923           pi/2
- * PIO4   =  7.85398163397448309616E-1        pi/4
  * SQRT2  =  1.41421356237309504880           sqrt(2)
  * SQRTH  =  7.07106781186547524401E-1        sqrt(2)/2
  * LOG2E  =  1.4426950408889634073599         1/log(2)
@@ -81,7 +80,6 @@ double MINLOG = -7.08396418532264106224E2;     /* log 2**-1022 */
 double MAXNUM =  1.79769313486231570815E308;    /* 2**1024*(1-MACHEP) */
 double PI     =  3.14159265358979323846;       /* pi */
 double PIO2   =  1.57079632679489661923;       /* pi/2 */
-double PIO4   =  7.85398163397448309616E-1;    /* pi/4 */
 double SQRT2  =  1.41421356237309504880;       /* sqrt(2) */
 double SQRTH  =  7.07106781186547524401E-1;    /* sqrt(2)/2 */
 double LOG2E  =  1.4426950408889634073599;     /* 1/log(2) */
@@ -117,7 +115,6 @@ unsigned short MINLOG[4] = {0xbcd2,0xdd7a,0x232b,0xc086};
 unsigned short MAXNUM[4] = {0xffff,0xffff,0xffff,0x7fef};
 unsigned short PI[4]     = {0x2d18,0x5444,0x21fb,0x4009};
 unsigned short PIO2[4]   = {0x2d18,0x5444,0x21fb,0x3ff9};
-unsigned short PIO4[4]   = {0x2d18,0x5444,0x21fb,0x3fe9};
 unsigned short SQRT2[4]  = {0x3bcd,0x667f,0xa09e,0x3ff6};
 unsigned short SQRTH[4]  = {0x3bcd,0x667f,0xa09e,0x3fe6};
 unsigned short LOG2E[4]  = {0x82fe,0x652b,0x1547,0x3ff7};
@@ -153,7 +150,6 @@ unsigned short MINLOG[4] = {0xc086,0x232b,0xdd7a,0xbcd2};
 unsigned short MAXNUM[4] = {0x7fef,0xffff,0xffff,0xffff};
 unsigned short PI[4]     = {0x4009,0x21fb,0x5444,0x2d18};
 unsigned short PIO2[4]   = {0x3ff9,0x21fb,0x5444,0x2d18};
-unsigned short PIO4[4]   = {0x3fe9,0x21fb,0x5444,0x2d18};
 unsigned short SQRT2[4]  = {0x3ff6,0xa09e,0x667f,0x3bcd};
 unsigned short SQRTH[4]  = {0x3fe6,0xa09e,0x667f,0x3bcd};
 unsigned short LOG2E[4]  = {0x3ff7,0x1547,0x652b,0x82fe};
@@ -181,7 +177,6 @@ unsigned short MINLOG[4] = {0141661,071027,0173721,0147572,};
 unsigned short MAXNUM[4] = {077777,0177777,0177777,0177777,};
 unsigned short PI[4]     = {040511,007732,0121041,064302,};
 unsigned short PIO2[4]   = {040311,007732,0121041,064302,};
-unsigned short PIO4[4]   = {040111,007732,0121041,064302,};
 unsigned short SQRT2[4]  = {040265,002363,031771,0157145,};
 unsigned short SQRTH[4]  = {040065,002363,031771,0157144,};
 unsigned short LOG2E[4]  = {040270,0125073,024534,013761,};
@@ -206,7 +201,6 @@ extern unsigned short MINLOG[];
 extern unsigned short MAXNUM[];
 extern unsigned short PI[];
 extern unsigned short PIO2[];
-extern unsigned short PIO4[];
 extern unsigned short SQRT2[];
 extern unsigned short SQRTH[];
 extern unsigned short LOG2E[];

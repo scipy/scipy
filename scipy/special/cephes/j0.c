@@ -458,7 +458,7 @@ static unsigned short RQ[32] = {
 };
 #endif
 
-extern double TWOOPI, SQ2OPI, PIO4;
+extern double TWOOPI, SQ2OPI;
 
 double j0(x)
 double x;
@@ -483,7 +483,7 @@ w = 5.0/x;
 q = 25.0/(x*x);
 p = polevl( q, PP, 6)/polevl( q, PQ, 6 );
 q = polevl( q, QP, 7)/p1evl( q, QQ, 7 );
-xn = x - PIO4;
+xn = x - NPY_PI_4;
 p = p * cos(xn) - w * q * sin(xn);
 return( p * SQ2OPI / sqrt(x) );
 }
@@ -498,7 +498,7 @@ return( p * SQ2OPI / sqrt(x) );
  */
 
 /*
-#define PIO4 .78539816339744830962
+#define NPY_PI_4 .78539816339744830962
 #define SQ2OPI .79788456080286535588
 */
 
@@ -526,7 +526,7 @@ w = 5.0/x;
 z = 25.0 / (x * x);
 p = polevl( z, PP, 6)/polevl( z, PQ, 6 );
 q = polevl( z, QP, 7)/p1evl( z, QQ, 7 );
-xn = x - PIO4;
+xn = x - NPY_PI_4;
 p = p * sin(xn) + w * q * cos(xn);
 return( p * SQ2OPI / sqrt(x) );
 }

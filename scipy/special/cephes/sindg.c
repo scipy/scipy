@@ -174,8 +174,6 @@ static unsigned short P1[] = {
 static double lossth = 1.0e14;
 #endif
 
-extern double PIO4;
-
 double sindg(x)
 double x;
 {
@@ -196,7 +194,7 @@ if( x > lossth )
 	return(0.0);
 	}
 
-y = floor( x/45.0 ); /* integer part of x/PIO4 */
+y = floor( x/45.0 ); /* integer part of x/NPY_PI_4 */
 
 /* strip high bits of integer part to prevent integer overflow */
 z = ldexp( y, -4 );
