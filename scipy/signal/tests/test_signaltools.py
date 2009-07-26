@@ -5,66 +5,111 @@ import types
 from numpy.testing import *
 
 import scipy.signal as signal
-from scipy.signal import lfilter, correlate
+from scipy.signal import lfilter, correlate, convolve, convolve2d
 
 
 from numpy import array, arange
 import numpy as np
 
-class TestConvolve(TestCase):
+class _TestConvolve(TestCase):
     def test_basic(self):
         a = [3,4,5,6,5,4]
         b = [1,2,3]
-        c = signal.convolve(a,b)
+        c = convolve(a,b, old_behavior=self.old_behavior)
         assert_array_equal(c,array([3,10,22,28,32,32,23,12]))
 
     def test_complex(self):
         x = array([1+1j, 2+1j, 3+1j])
         y = array([1+1j, 2+1j])
-        z = signal.convolve(x, y)
+        z = convolve(x, y,old_behavior=self.old_behavior)
         assert_array_equal(z, array([2j, 2+6j, 5+8j, 5+5j]))
 
     def test_zero_order(self):
         a = 1289
         b = 4567
-        c = signal.convolve(a,b)
+        c = convolve(a,b,old_behavior=self.old_behavior)
         assert_array_equal(c,a*b)
 
     def test_2d_arrays(self):
         a = [[1,2,3],[3,4,5]]
         b = [[2,3,4],[4,5,6]]
-        c = signal.convolve(a,b)
+        c = convolve(a,b,old_behavior=self.old_behavior)
         d = array(  [[2 ,7 ,16,17,12],\
                      [10,30,62,58,38],\
                      [12,31,58,49,30]])
-        e = signal.convolve2d(a,b)
         assert_array_equal(c,d)
-        assert_array_equal(e,d)
-
-
-    def test_same_mode(self):
-        a = [1,2,3,3,1,2]
-        b = [1,4,3,4,5,6,7,4,3,2,1,1,3]
-        c = signal.convolve(a,b,'same')
-        d = array([14,25,35,43,57,61,63,57,45,36,25,20,17])
-        assert_array_equal(c,d)
-        #for the 2d function
-        e = [[1,2,3],[3,4,5]]
-        f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
-        g = signal.convolve2d(e,f,'same')
-        h = array([[ 7,16,22,28, 34, 40, 37],\
-                   [30,62,80,98,116,134,114]])
-        assert_array_equal(g,h)
 
     def test_valid_mode(self):
         a = [1,2,3,6,5,3]
         b = [2,3,4,5,3,4,2,2,1]
-        c = signal.convolve(a,b,'valid')
+        c = convolve(a,b,'valid',old_behavior=self.old_behavior)
         assert_array_equal(c,array([70,78,73,65]))
-        #2d function
-        e = [[1,2,3],[3,4,5]]
-        f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
-        g = signal.convolve2d(e,f,'valid')
+
+class OldTestConvolve(_TestConvolve):
+    old_behavior = True
+    @dec.deprecated()
+    def test_basic(self):
+        _TestConvolve.test_basic(self)
+
+    @dec.deprecated()
+    def test_complex(self):
+        _TestConvolve.test_complex(self)
+
+    @dec.deprecated()
+    def test_2d_arrays(self):
+        _TestConvolve.test_2d_arrays(self)
+
+    @dec.deprecated()
+    def test_same_mode(self):
+        _TestConvolve.test_same_mode(self)
+
+    @dec.deprecated()
+    def test_valid_mode(self):
+        a = [1,2,3,6,5,3]
+        b = [2,3,4,5,3,4,2,2,1]
+        c = convolve(a,b,'valid',old_behavior=self.old_behavior)
+        assert_array_equal(c,array([70,78,73,65]))
+
+    @dec.deprecated()
+    def test_same_mode(self):
+        a = [1,2,3,3,1,2]
+        b = [1,4,3,4,5,6,7,4,3,2,1,1,3]
+        c = convolve(a,b,'same',old_behavior=self.old_behavior)
+        d = array([14,25,35,43,57,61,63,57,45,36,25,20,17])
+        assert_array_equal(c,d)
+
+class TestConvolve(_TestConvolve):
+    old_behavior = False
+    def test_valid_mode(self):
+        # 'valid' mode if b.size > a.size does not make sense with the new
+        # behavior
+        a = [1,2,3,6,5,3]
+        b = [2,3,4,5,3,4,2,2,1]
+        def _test():
+            convolve(a,b,'valid',old_behavior=self.old_behavior)
+        self.failUnlessRaises(ValueError, _test)
+
+    def test_same_mode(self):
+        a = [1,2,3,3,1,2]
+        b = [1,4,3,4,5,6,7,4,3,2,1,1,3]
+        c = convolve(a,b,'same',old_behavior=self.old_behavior)
+        d = array([57,61,63,57,45,36])
+        assert_array_equal(c,d)
+
+class _TestConvolve2d(TestCase):
+    def test_2d_arrays(self):
+        a = [[1,2,3],[3,4,5]]
+        b = [[2,3,4],[4,5,6]]
+        d = array(  [[2 ,7 ,16,17,12],\
+                     [10,30,62,58,38],\
+                     [12,31,58,49,30]])
+        e = convolve2d(a,b,old_behavior=self.old_behavior)
+        assert_array_equal(e,d)
+
+    def test_valid_mode(self):
+        e = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
+        f = [[1,2,3],[3,4,5]]
+        g = convolve2d(e,f,'valid',old_behavior=self.old_behavior)
         h = array([[62,80,98,116,134]])
         assert_array_equal(g,h)
 
@@ -72,7 +117,7 @@ class TestConvolve(TestCase):
         a = [[1,2,3],[3,4,5]]
         b = [[2,3,4],[4,5,6]]
         fillval = 1
-        c = signal.convolve2d(a,b,'full','fill',fillval)
+        c = convolve2d(a,b,'full','fill',fillval,old_behavior=self.old_behavior)
         d = array([[24,26,31,34,32],\
                    [28,40,62,64,52],\
                    [32,46,67,62,48]])
@@ -81,7 +126,7 @@ class TestConvolve(TestCase):
     def test_wrap_boundary(self):
         a = [[1,2,3],[3,4,5]]
         b = [[2,3,4],[4,5,6]]
-        c = signal.convolve2d(a,b,'full','wrap')
+        c = convolve2d(a,b,'full','wrap',old_behavior=self.old_behavior)
         d = array([[80,80,74,80,80],\
                    [68,68,62,68,68],\
                    [80,80,74,80,80]])
@@ -90,10 +135,69 @@ class TestConvolve(TestCase):
     def test_sym_boundary(self):
         a = [[1,2,3],[3,4,5]]
         b = [[2,3,4],[4,5,6]]
-        c = signal.convolve2d(a,b,'full','symm')
+        c = convolve2d(a,b,'full','symm',old_behavior=self.old_behavior)
         d = array([[34,30,44, 62, 66],\
                    [52,48,62, 80, 84],\
                    [82,78,92,110,114]])
+
+class OldTestConvolve2d(_TestConvolve2d):
+    old_behavior = True
+    @dec.deprecated()
+    def test_2d_arrays(self):
+        _TestConvolve2d.test_2d_arrays(self)
+
+    @dec.deprecated()
+    def test_same_mode(self):
+        e = [[1,2,3],[3,4,5]]
+        f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
+        g = convolve2d(e,f,'same',old_behavior=self.old_behavior)
+        h = array([[ 7,16,22,28, 34, 40, 37],\
+                   [30,62,80,98,116,134,114]])
+        assert_array_equal(g,h)
+
+    @dec.deprecated()
+    def test_valid_mode(self):
+        _TestConvolve2d.test_valid_mode(self)
+
+    @dec.deprecated()
+    def test_fillvalue(self):
+        _TestConvolve2d.test_fillvalue(self)
+
+    @dec.deprecated()
+    def test_wrap_boundary(self):
+        _TestConvolve2d.test_wrap_boundary(self)
+
+    @dec.deprecated()
+    def test_sym_boundary(self):
+        _TestConvolve2d.test_sym_boundary(self)
+
+    @dec.deprecated()
+    def test_valid_mode2(self):
+        # Test when in2.size > in1.size: old behavior is to do so that
+        # convolve2d(in2, in1) == convolve2d(in1, in2)
+        e = [[1,2,3],[3,4,5]]
+        f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
+        g = convolve2d(e,f,'valid',old_behavior=self.old_behavior)
+        h = array([[62,80,98,116,134]])
+        assert_array_equal(g,h)
+
+class TestConvolve2d(_TestConvolve2d):
+    old_behavior = False
+    def test_same_mode(self):
+        e = [[1,2,3],[3,4,5]]
+        f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
+        g = convolve2d(e,f,'same',old_behavior=self.old_behavior)
+        h = array([[80,98,116],\
+                   [70,82,94]])
+        assert_array_equal(g,h)
+
+    def test_valid_mode2(self):
+        # Test when in2.size > in1.size
+        e = [[1,2,3],[3,4,5]]
+        f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
+        def _test():
+            convolve2d(e,f,'valid',old_behavior=self.old_behavior)
+        self.failUnlessRaises(ValueError, _test)
 
 class TestFFTConvolve(TestCase):
     def test_real(self):
