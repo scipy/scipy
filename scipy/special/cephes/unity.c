@@ -78,7 +78,6 @@ if (!npy_isfinite(x)) {
         if (npy_isnan(x)) {
                 return x;
         } else if (x > 0) {
-                x > 0;
                 return x;
         } else {
                 return -1.0;
