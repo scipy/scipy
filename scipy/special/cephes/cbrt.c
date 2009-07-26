@@ -58,14 +58,8 @@ double cbrt(double x)
 int e, rem, sign;
 double z;
 
-#ifdef NPY_NANS
-if( npy_isnan(x) )
-  return x;
-#endif
-#ifdef INFINITIES
 if( !npy_isfinite(x) )
   return x;
-#endif
 if( x == 0 )
 	return( x );
 if( x > 0 )

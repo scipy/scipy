@@ -284,11 +284,7 @@ static double stirf(double x)
 double y, w, v;
 
 if (x >= MAXGAM) {
-#ifdef INFINITIES
 	return (NPY_INFINITY);
-#else
-	return (MAXNUM);
-#endif
 }
 w = 1.0/x;
 w = 1.0 + w * polevl( w, STIR, 4 );
@@ -535,15 +531,9 @@ double p, q, u, w, z;
 int i;
 
 sgngam = 1;
-#ifdef NPY_NANS
-if( npy_isnan(x) )
-	return(x);
-#endif
 
-#ifdef INFINITIES
 if( !npy_isfinite(x) )
-	return(NPY_INFINITY);
-#endif
+        return x;
 
 if( x < -34.0 )
 	{
@@ -553,12 +543,8 @@ if( x < -34.0 )
 	if( p == q )
 		{
 lgsing:
-#ifdef INFINITIES
 		mtherr( "lgam", SING );
 		return (NPY_INFINITY);
-#else
-		goto loverf;
-#endif
 		}
 	i = p;
 	if( (i & 1) == 0 )
@@ -615,13 +601,7 @@ if( x < 13.0 )
 
 if( x > MAXLGM )
 	{
-#ifdef INFINITIES
 	return( sgngam * NPY_INFINITY );
-#else
-loverf:
-	mtherr( "lgam", OVERFLOW );
-	return( sgngam * MAXNUM );
-#endif
 	}
 
 q = ( x - 0.5 ) * log(x) - x + LS2PI;

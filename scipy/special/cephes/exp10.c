@@ -157,7 +157,6 @@ static double MAXL10 = 308.2547155599167;
 
 #ifndef ANSIPROT
 double floor(), ldexp(), polevl(), p1evl();
-int npy_isnan(), npy_isfinite();
 #endif
 extern double MAXNUM;
 
@@ -166,18 +165,11 @@ double exp10(double x)
 double px, xx;
 short n;
 
-#ifdef NPY_NANS
 if( npy_isnan(x) )
 	return(x);
-#endif
 if( x > MAXL10 )
 	{
-#ifdef INFINITIES
 	return( NPY_INFINITY );
-#else
-	mtherr( "exp10", OVERFLOW );
-	return( MAXNUM );
-#endif
 	}
 
 if( x < -MAXL10 )	/* Would like to use MINLOG but can't */

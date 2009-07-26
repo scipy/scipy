@@ -158,12 +158,6 @@ typedef struct
 /* Define to support tiny denormal numbers, else undefine. */
 #define DENORMAL 1
 
-/* Define to ask for infinity support, else undefine. */
-#define INFINITIES 1
-#ifdef NOINFINITIES
-#undef INFINITIES
-#endif
-
 /* Define to distinguish between -0.0 and +0.0.  */
 #define MINUSZERO 1
 

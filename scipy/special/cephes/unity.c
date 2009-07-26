@@ -77,16 +77,17 @@ double expm1(double x)
 {
 double r, xx;
 
-#ifdef NANS
-if( npy_isnan(x) )
-	return(x);
-#endif
-#ifdef INFINITIES
-if( !npy_isfinite(x) && x > 0)
-	return(x);
-if( !npy_isfinite(x) && x < 0)
-	return(-1.0);
-#endif
+if (!npy_isfinite(x)) {
+        if (npy_isnan(x)) {
+                return x;
+        } else if (x > 0) {
+                x > 0;
+                return x;
+        } else {
+                return -1.0;
+        }
+
+}
 if( (x < -0.5) || (x > 0.5) )
 	return( exp(x) - 1.0 );
 xx = x * x;
