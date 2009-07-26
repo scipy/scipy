@@ -23,6 +23,18 @@ _modedict = {'valid':0, 'same':1, 'full':2}
 _boundarydict = {'fill':0, 'pad':0, 'wrap':2, 'circular':2, 'symm':1,
                  'symmetric':1, 'reflect':4}
 
+_SWAP_INPUTS_DEPRECATION_MSG = """\
+Current default behavior of convolve and correlate functions is deprecated.
+
+Convolve and corelate currently swap their arguments if the second argument
+has dimensions larger than the first one, and the mode is relative to the input
+with the largest dimension. The new behavior is to never swap the inputs, which
+is what most people expects, and is how correlation is usually defined.
+
+You can control the behavior with the old_behavior flag - the flag will
+disappear in scipy 0.9.0, and the functions will then implement the new
+behavior only."""
+
 def _valfrommode(mode):
     try:
         val = _modedict[mode]
@@ -87,8 +99,7 @@ def correlate(in1, in2, mode='full', old_behavior=True):
     val = _valfrommode(mode)
 
     if old_behavior:
-        warnings.warn(DeprecationWarning("""\
-old_behavior for correlation is deprecated: it is still the default for 0.8, but it will default to False for 0.9, and will disappear for 0.10"""))
+        warnings.warn(DeprecationWarning(_SWAP_INPUTS_DEPRECATION_MSG))
         if np.iscomplexobj(in2):
             in2 = in2.conjugate()
         if in1.size < in2.size:
@@ -161,7 +172,7 @@ def fftconvolve(in1, in2, mode="full"):
         return _centered(ret,abs(s2-s1)+1)
 
 
-def convolve(in1, in2, mode='full'):
+def convolve(in1, in2, mode='full', old_behavior=True):
     """Convolve two N-dimensional arrays.
 
     Convolve in1 and in2 with output size determined by mode.
@@ -190,12 +201,33 @@ def convolve(in1, in2, mode='full'):
     volume = asarray(in1)
     kernel = asarray(in2)
 
+    if rank(volume) == rank(kernel) == 0:
+        return volume*kernel
+    elif not volume.ndim == kernel.ndim:
+        raise ValueError("in1 and in2 should have the same rank")
+
     slice_obj = [slice(None,None,-1)]*len(kernel.shape)
 
-    if np.iscomplexobj(kernel):
-        return correlate(volume, kernel[slice_obj].conj(), mode, old_behavior=False)
+    if old_behavior:
+        warnings.warn(DeprecationWarning(_SWAP_INPUTS_DEPRECATION_MSG))
+        if (product(kernel.shape,axis=0) > product(volume.shape,axis=0)):
+            temp = kernel
+            kernel = volume
+            volume = temp
+            del temp
+
+        return correlate(volume, kernel[slice_obj], mode, old_behavior=True)
     else:
-        return correlate(volume, kernel[slice_obj], mode, old_behavior=False)
+        if mode == 'valid':
+            for d1, d2 in zip(volume.shape, kernel.shape):
+                if not d1 >= d2:
+                    raise ValueError(
+                        "in1 should have at least as many items as in2 in " \
+                        "every dimension for valid mode.")
+        if np.iscomplexobj(kernel):
+            return correlate(volume, kernel[slice_obj].conj(), mode, old_behavior=False)
+        else:
+            return correlate(volume, kernel[slice_obj], mode, old_behavior=False)
 
 def order_filter(a, domain, rank):
     """Perform an order filter on an N-dimensional array.
@@ -318,7 +350,7 @@ def wiener(im,mysize=None,noise=None):
     return out
 
 
-def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
+def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0, old_behavior=True):
     """Convolve two 2-dimensional arrays.
 
   Description:
@@ -349,12 +381,30 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
            convolution of in1 with in2.
 
     """
+    if old_behavior:
+        warnings.warn(DeprecationWarning(_SWAP_INPUTS_DEPRECATION_MSG))
+
+    if old_behavior:
+        warnings.warn(DeprecationWarning(_SWAP_INPUTS_DEPRECATION_MSG))
+        if (product(np.shape(in2),axis=0) > product(np.shape(in1),axis=0)):
+            temp = in1
+            in1 = in2
+            in2 = temp
+            del temp
+    else:
+        if mode == 'valid':
+            for d1, d2 in zip(np.shape(in1), np.shape(in2)):
+                if not d1 >= d2:
+                    raise ValueError(
+                        "in1 should have at least as many items as in2 in " \
+                        "every dimension for valid mode.")
+
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
 
     return sigtools._convolve2d(in1,in2,1,val,bval,fillvalue)
 
-def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
+def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0, old_behavior=True):
     """Cross-correlate two 2-dimensional arrays.
 
   Description:
@@ -385,6 +435,8 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
            cross-correlation of in1 with in2.
 
     """
+    if old_behavior:
+        warnings.warn(DeprecationWarning(_SWAP_INPUTS_DEPRECATION_MSG))
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
 

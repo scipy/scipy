@@ -181,23 +181,23 @@ class OldTestConvolve2d(_TestConvolve2d):
         h = array([[62,80,98,116,134]])
         assert_array_equal(g,h)
 
-class TestConvolve2d(_TestConvolve2d):
-    old_behavior = False
-    def test_same_mode(self):
-        e = [[1,2,3],[3,4,5]]
-        f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
-        g = convolve2d(e,f,'same',old_behavior=self.old_behavior)
-        h = array([[80,98,116],\
-                   [70,82,94]])
-        assert_array_equal(g,h)
-
-    def test_valid_mode2(self):
-        # Test when in2.size > in1.size
-        e = [[1,2,3],[3,4,5]]
-        f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
-        def _test():
-            convolve2d(e,f,'valid',old_behavior=self.old_behavior)
-        self.failUnlessRaises(ValueError, _test)
+#class TestConvolve2d(_TestConvolve2d):
+#    old_behavior = False
+#    def test_same_mode(self):
+#        e = [[1,2,3],[3,4,5]]
+#        f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
+#        g = convolve2d(e,f,'same',old_behavior=self.old_behavior)
+#        h = array([[80,98,116],\
+#                   [70,82,94]])
+#        assert_array_equal(g,h)
+#
+#    def test_valid_mode2(self):
+#        # Test when in2.size > in1.size
+#        e = [[1,2,3],[3,4,5]]
+#        f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
+#        def _test():
+#            convolve2d(e,f,'valid',old_behavior=self.old_behavior)
+#        self.failUnlessRaises(ValueError, _test)
 
 class TestFFTConvolve(TestCase):
     def test_real(self):
