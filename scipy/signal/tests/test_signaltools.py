@@ -24,6 +24,76 @@ class TestConvolve(TestCase):
         z = signal.convolve(x, y)
         assert_array_equal(z, array([2j, 2+6j, 5+8j, 5+5j]))
 
+    def test_zero_order(self):
+        a = 1289
+        b = 4567
+        c = signal.convolve(a,b)
+        assert_array_equal(c,a*b)
+
+    def test_2d_arrays(self):
+        a = [[1,2,3],[3,4,5]]
+        b = [[2,3,4],[4,5,6]]
+        c = signal.convolve(a,b)
+        d = array(  [[2 ,7 ,16,17,12],\
+                     [10,30,62,58,38],\
+                     [12,31,58,49,30]])
+        e = signal.convolve2d(a,b)
+        assert_array_equal(c,d)
+        assert_array_equal(e,d)
+
+
+    def test_same_mode(self):
+        a = [1,2,3,3,1,2]
+        b = [1,4,3,4,5,6,7,4,3,2,1,1,3]
+        c = signal.convolve(a,b,'same')
+        d = array([14,25,35,43,57,61,63,57,45,36,25,20,17])
+        assert_array_equal(c,d)
+        #for the 2d function
+        e = [[1,2,3],[3,4,5]]
+        f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
+        g = signal.convolve2d(e,f,'same')
+        h = array([[ 7,16,22,28, 34, 40, 37],\
+                   [30,62,80,98,116,134,114]])
+        assert_array_equal(g,h)
+
+    def test_valid_mode(self):
+        a = [1,2,3,6,5,3]
+        b = [2,3,4,5,3,4,2,2,1]
+        c = signal.convolve(a,b,'valid')
+        assert_array_equal(c,array([70,78,73,65]))
+        #2d function
+        e = [[1,2,3],[3,4,5]]
+        f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
+        g = signal.convolve2d(e,f,'valid')
+        h = array([[62,80,98,116,134]])
+        assert_array_equal(g,h)
+
+    def test_fillvalue(self):
+        a = [[1,2,3],[3,4,5]]
+        b = [[2,3,4],[4,5,6]]
+        fillval = 1
+        c = signal.convolve2d(a,b,'full','fill',fillval)
+        d = array([[24,26,31,34,32],\
+                   [28,40,62,64,52],\
+                   [32,46,67,62,48]])
+        assert_array_equal(c,d)
+
+    def test_wrap_boundary(self):
+        a = [[1,2,3],[3,4,5]]
+        b = [[2,3,4],[4,5,6]]
+        c = signal.convolve2d(a,b,'full','wrap')
+        d = array([[80,80,74,80,80],\
+                   [68,68,62,68,68],\
+                   [80,80,74,80,80]])
+        assert_array_equal(c,d)
+
+    def test_sym_boundary(self):
+        a = [[1,2,3],[3,4,5]]
+        b = [[2,3,4],[4,5,6]]
+        c = signal.convolve2d(a,b,'full','symm')
+        d = array([[34,30,44, 62, 66],\
+                   [52,48,62, 80, 84],\
+                   [82,78,92,110,114]])
 
 class TestFFTConvolve(TestCase):
     def test_real(self):
@@ -34,6 +104,42 @@ class TestFFTConvolve(TestCase):
         x = array([1+1j,2+2j,3+3j])
         assert_array_almost_equal(signal.fftconvolve(x,x),
                                   [0+2.0j, 0+8j, 0+20j, 0+24j, 0+18j])
+                                
+    def test_2d_real_same(self):
+        a = array([[1,2,3],[4,5,6]])
+        assert_array_almost_equal(signal.fftconvolve(a,a),\
+                                                array([[1,4,10,12,9],\
+                                                       [8,26,56,54,36],\
+                                                       [16,40,73,60,36]]))
+    
+    def test_2d_complex_same(self):
+        a = array([[1+2j,3+4j,5+6j],[2+1j,4+3j,6+5j]])
+        c = signal.fftconvolve(a,a)
+        d = array([[-3+4j,-10+20j,-21+56j,-18+76j,-11+60j],\
+                   [10j,44j,118j,156j,122j],\
+                   [3+4j,10+20j,21+56j,18+76j,11+60j]])
+        assert_array_almost_equal(c,d)
+        
+    def test_real_same_mode(self):
+        a = array([1,2,3])
+        b = array([3,3,5,6,8,7,9,0,1])
+        c = signal.fftconvolve(a,b,'same')
+        d = array([9.,20.,25.,35.,41.,47.,39.,28.,2.])
+        assert_array_almost_equal(c,d)
+        
+    def test_real_valid_mode(self):
+        a = array([3,2,1])
+        b = array([3,3,5,6,8,7,9,0,1])
+        c = signal.fftconvolve(a,b,'valid')
+        d = array([24.,31.,41.,43.,49.,25.,12.])
+        assert_array_almost_equal(c,d)
+        
+    def test_zero_order(self):
+        a = array([4967])
+        b = array([3920])
+        c = signal.fftconvolve(a,b)
+        d = a*b
+        assert_equal(c,d)
 
 class TestMedFilt(TestCase):
     def test_basic(self):
