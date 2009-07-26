@@ -44,12 +44,41 @@ Major documentation improvements
 
 SciPy documentation is greatly improved.
 
-New features of the fftpack package
------------------------------------
+Deprecated features
+===================
+
+Swapping inputs for correlation functions (scipy.signal)
+--------------------------------------------------------
+
+Concern correlate, correlate2d, convolve and convolve2d. If the second input is
+larger than the first input, the inputs are swapped before calling the
+underlying computation routine. This behavior is deprecated, and will be
+removed in scipy 0.9.0.
+
+New features
+============
+
+DCT support (scipy.fftpack)
+---------------------------
 
 New realtransforms have been added, namely dct and idct for Discrete Cosine
 Transform; type I, II and III are available, for both single and double
 precision.
 
+Single precision support for fft functions (scipy.fftpack)
+----------------------------------------------------------
+
 fft functions can now handle single precision inputs as well: fft(x) will
 return a single precision array if x is single precision.
+
+correlation functions now implements the usual definition (scipy.signal)
+------------------------------------------------------------------------
+
+The outputs should now correspond to their matlab and R counterparts, and do
+what most people expect if the old_behavior=False argument is passed:
+
+    * correlate, convolve and their 2d counterparts do not swap their inputs
+      depending on their relative shape anymore.
+    * correlation functions now conjugate their second argument while computing
+      the slided sum-products, which correspond to the usual definition of
+      correlation
