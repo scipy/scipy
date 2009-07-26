@@ -65,7 +65,14 @@ Copyright 1984, 1987, 1989, 1995 by Stephen L. Moshier
 #ifndef CEPHES_MCONF_H
 #define CEPHES_MCONF_H
 
+#include <Python.h>
+#include <numpy/npy_math.h>
+
 #include "cephes_names.h"
+
+/* Temporary workaround while removing the whole IEEE macros insanity in cephes */
+#undef NAN
+#define NAN NPY_NAN
 
 /* Constant definitions for math error conditions
  */

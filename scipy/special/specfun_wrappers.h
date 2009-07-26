@@ -10,12 +10,14 @@
 #ifndef _SPEC_WRAPPERS_H
 #define _SPEC_WRAPPERS_H
 #include "Python.h"
+#include <numpy/npy_math.h>
 
 #undef NAN
 #undef INFINITY
 
-extern double NAN;
-extern double INFINITY;
+#define NAN NPY_NAN
+#define INFINITY NPY_INFINITY
+
 extern double PI;
 
 #define REAL(z) (z).real

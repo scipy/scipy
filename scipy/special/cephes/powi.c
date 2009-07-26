@@ -46,9 +46,8 @@ Copyright 1984, 1995 by Stephen L. Moshier
 #include "mconf.h"
 #ifndef ANSIPROT
 double log(), frexp();
-int signbit();
 #endif
-extern double NEGZERO, INFINITY, MAXNUM, MAXLOG, MINLOG, LOGE2;
+extern double NEGZERO, MAXNUM, MAXLOG, MINLOG, LOGE2;
 
 double powi( x, nn )
 double x;
@@ -63,7 +62,7 @@ if( x == 0.0 )
 	if( nn == 0 )
 		return( 1.0 );
 	else if( nn < 0 )
-	    return( INFINITY );
+	    return( NPY_INFINITY );
 	else
 	  {
 	    if( nn & 1 )
@@ -121,7 +120,7 @@ else
 if( s > MAXLOG )
 	{
 	mtherr( "powi", OVERFLOW );
-	y = INFINITY;
+	y = NPY_INFINITY;
 	goto done;
 	}
 

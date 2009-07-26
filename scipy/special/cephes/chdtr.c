@@ -153,8 +153,6 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 double igamc(), igam(), igami();
 #endif
 
-extern double NAN;
-
 double chdtrc(df,x)
 double df, x;
 {
@@ -163,7 +161,7 @@ if (x < 0.0) return 1.0;   /* modified by T. Oliphant */
 if (df < 1.0) 
 	{
 	mtherr( "chdtrc", DOMAIN );
-	return(NAN);
+	return(NPY_NAN);
 	}
 return( igamc( df/2.0, x/2.0 ) );
 }
@@ -177,7 +175,7 @@ double df, x;
 if( (x < 0.0) || (df < 1.0) )
 	{
 	mtherr( "chdtr", DOMAIN );
-	return(NAN);
+	return(NPY_NAN);
 	}
 return( igam( df/2.0, x/2.0 ) );
 }
@@ -192,7 +190,7 @@ double x;
 if( (y < 0.0) || (y > 1.0) || (df < 1.0) )
 	{
 	mtherr( "chdtri", DOMAIN );
-	return(NAN);
+	return(NPY_NAN);
 	}
 
 x = igami( 0.5 * df, y );

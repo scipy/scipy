@@ -147,7 +147,7 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 
 #include "mconf.h"
 
-extern double SQRTH, NAN;
+extern double SQRTH;
 extern double MAXLOG;
 
 #ifdef UNK
@@ -391,7 +391,7 @@ double x, y, z;
 
 if (isnan(a)) {
   mtherr("ndtr", DOMAIN);
-  return (NAN);
+  return (NPY_NAN);
 }
 
 x = a * SQRTH;
@@ -418,7 +418,7 @@ double p,q,x,y,z;
 
 if (isnan(a)) {
   mtherr("erfc", DOMAIN);
-  return (NAN);
+  return (NPY_NAN);
 }
 
 if( a < 0.0 )
@@ -472,7 +472,7 @@ double y, z;
 
 if (isnan(x)) {
   mtherr("erf", DOMAIN);
-  return (NAN);
+  return (NPY_NAN);
 }
 
 if( fabs(x) > 1.0 )

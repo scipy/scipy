@@ -130,8 +130,6 @@ Copyright 1984, 1987, 1995 by Stephen L. Moshier
 double igam(), igamc(), igami();
 #endif
 
-extern double NAN;
-
 double pdtrc( k, m )
 int k;
 double m;
@@ -141,7 +139,7 @@ double v;
 if( (k < 0) || (m <= 0.0) )
 	{
 	mtherr( "pdtrc", DOMAIN );
-	return( NAN );
+	return( NPY_NAN );
 	}
 v = k+1;
 return( igam( v, m ) );
@@ -158,7 +156,7 @@ double v;
 if( (k < 0) || (m <= 0.0) )
 	{
 	mtherr( "pdtr", DOMAIN );
-	return( NAN );
+	return( NPY_NAN );
 	}
 v = k+1;
 return( igamc( v, m ) );
@@ -174,7 +172,7 @@ double v;
 if( (k < 0) || (y < 0.0) || (y >= 1.0) )
 	{
 	mtherr( "pdtri", DOMAIN );
-	return( NAN );
+	return( NPY_NAN );
 	}
 v = k+1;
 v = igami( v, y );

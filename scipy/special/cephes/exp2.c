@@ -122,9 +122,6 @@ static unsigned short Q[] = {
 double polevl(), p1evl(), floor(), ldexp();
 int isnan(), isfinite();
 #endif
-#ifdef INFINITIES
-extern double INFINITY;
-#endif
 extern double MAXNUM;
 
 double exp2(double x)
@@ -132,14 +129,14 @@ double exp2(double x)
 double px, xx;
 short n;
 
-#ifdef NANS
+#ifdef NPY_NANS
 if( isnan(x) )
 	return(x);
 #endif
 if( x > MAXL2)
 	{
 #ifdef INFINITIES
-	return( INFINITY );
+	return( NPY_INFINITY );
 #else
 	mtherr( "exp2", OVERFLOW );
 	return( MAXNUM );

@@ -51,9 +51,6 @@ static double CBRT4I = 0.62996052494743658238361;
 
 #ifndef ANSIPROT
 double frexp(), ldexp();
-int isnan(), isfinite();
-#else
-extern int isfinite ( double x );
 #endif
 
 double cbrt(double x)
@@ -61,12 +58,12 @@ double cbrt(double x)
 int e, rem, sign;
 double z;
 
-#ifdef NANS
-if( isnan(x) )
+#ifdef NPY_NANS
+if( npy_isnan(x) )
   return x;
 #endif
 #ifdef INFINITIES
-if( !isfinite(x) )
+if( !npy_isfinite(x) )
   return x;
 #endif
 if( x == 0 )

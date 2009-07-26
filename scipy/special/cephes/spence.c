@@ -143,7 +143,7 @@ static unsigned short B[32] = {
 #ifndef ANSIPROT
 double fabs(), log(), polevl();
 #endif
-extern double PI, MACHEP, NAN;
+extern double PI, MACHEP;
 
 double spence(x)
 double x;
@@ -154,7 +154,7 @@ int flag;
 if( x < 0.0 )
 	{
 	mtherr( "spence", DOMAIN );
-	return(NAN);
+	return(NPY_NAN);
 	}
 
 if( x == 1.0 )

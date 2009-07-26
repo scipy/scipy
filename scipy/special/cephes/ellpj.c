@@ -67,7 +67,7 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 double sqrt(), fabs(), sin(), cos(), asin(), tanh();
 double sinh(), cosh(), atan(), exp();
 #endif
-extern double PIO2, MACHEP, NAN;
+extern double PIO2, MACHEP;
 
 int ellpj( u, m, sn, cn, dn, ph )
 double u, m;
@@ -83,10 +83,10 @@ int i;
 if( m < 0.0 || m > 1.0  || isnan(m))
 	{
 	mtherr( "ellpj", DOMAIN );
-	*sn = NAN;
-	*cn = NAN;
-	*ph = NAN;
-	*dn = NAN;
+	*sn = NPY_NAN;
+	*cn = NPY_NAN;
+	*ph = NPY_NAN;
+	*dn = NPY_NAN;
 	return(-1);
 	}
 if( m < 1.0e-9 )

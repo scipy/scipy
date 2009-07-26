@@ -151,8 +151,6 @@ Copyright 1984, 1987, 1995 by Stephen L. Moshier
 double incbet(), incbi(), pow(), log1p(), expm1();
 #endif
 
-extern double NAN;
-
 double bdtrc( k, n, p )
 int k, n;
 double p;
@@ -168,7 +166,7 @@ if( n < k )
 	{
 domerr:
 	mtherr( "bdtrc", DOMAIN );
-	return( NAN);
+	return( NPY_NAN);
 	}
 
 if( k == n )
@@ -203,7 +201,7 @@ if( (k < 0) || (n < k) )
 	{
 domerr:
 	mtherr( "bdtr", DOMAIN );
-	return( NAN );
+	return( NPY_NAN );
 	}
 
 if( k == n )
@@ -235,7 +233,7 @@ if( (k < 0) || (n <= k) )
 	{
 domerr:
 	mtherr( "bdtri", DOMAIN );
-	return( NAN );
+	return( NPY_NAN );
 	}
 
 dn = n - k;

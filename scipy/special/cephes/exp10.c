@@ -160,23 +160,20 @@ double floor(), ldexp(), polevl(), p1evl();
 int isnan(), isfinite();
 #endif
 extern double MAXNUM;
-#ifdef INFINITIES
-extern double INFINITY;
-#endif
 
 double exp10(double x)
 {
 double px, xx;
 short n;
 
-#ifdef NANS
+#ifdef NPY_NANS
 if( isnan(x) )
 	return(x);
 #endif
 if( x > MAXL10 )
 	{
 #ifdef INFINITIES
-	return( INFINITY );
+	return( NPY_INFINITY );
 #else
 	mtherr( "exp10", OVERFLOW );
 	return( MAXNUM );

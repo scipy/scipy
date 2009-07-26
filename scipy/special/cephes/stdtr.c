@@ -86,7 +86,7 @@ Copyright 1984, 1987, 1995 by Stephen L. Moshier
 
 #include "mconf.h"
 
-extern double PI, MACHEP, MAXNUM, NAN;
+extern double PI, MACHEP, MAXNUM;
 #ifndef ANSIPROT
 double sqrt(), atan(), incbet(), incbi(), fabs();
 #endif
@@ -101,7 +101,7 @@ int j;
 if( k <= 0 )
 	{
 	mtherr( "stdtr", DOMAIN );
-	return(NAN);
+	return(NPY_NAN);
 	}
 
 if( t == 0 )
@@ -188,7 +188,7 @@ int rflg;
 if( k <= 0 || p <= 0.0 || p >= 1.0 )
 	{
 	mtherr( "stdtri", DOMAIN );
-	return(NAN);
+	return(NPY_NAN);
 	}
 
 rk = k;

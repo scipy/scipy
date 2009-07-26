@@ -102,8 +102,6 @@ double igam(), igamc();
 double gdtri(double,double,double);
 #endif
 
-extern double NAN;
-
 double gdtr( a, b, x )
 double a, b, x;
 {
@@ -111,7 +109,7 @@ double a, b, x;
 if( x < 0.0 )
 	{
 	mtherr( "gdtr", DOMAIN );
-	return( NAN );
+	return( NPY_NAN );
 	}
 return(  igam( b, a * x )  );
 }
@@ -124,7 +122,7 @@ double a, b, x;
 if( x < 0.0 )
 	{
 	mtherr( "gdtrc", DOMAIN );
-	return( NAN );
+	return( NPY_NAN );
 	}
 return(  igamc( b, a * x )  );
 }
@@ -137,7 +135,7 @@ double a, b, y;
 if ((y < 0.0) || (y > 1.0) || (a <= 0.0) || (b < 0.0))
   {
     mtherr("gdtri", DOMAIN);
-    return( NAN );
+    return( NPY_NAN );
   }
 
 return ( igami (b, 1.0-y) / a);

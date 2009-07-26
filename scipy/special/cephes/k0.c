@@ -283,7 +283,6 @@ extern double sqrt ( double );
 double chbevl(), exp(), i0(), log(), sqrt();
 #endif
 extern double PI;
-extern double INFINITY, NAN;
 
 double k0(x)
 double x;
@@ -292,10 +291,10 @@ double y, z;
 
 if (x == 0.0) {
 	mtherr("k0", SING);
-	return INFINITY;
+	return NPY_INFINITY;
 } else if (x < 0.0) {
 	mtherr("k0", DOMAIN);
-	return NAN;
+	return NPY_NAN;
 }
 
 if( x <= 2.0 )
@@ -319,10 +318,10 @@ double y;
 
 if (x == 0.0) {
 	mtherr("k0e", SING);
-	return INFINITY;
+	return NPY_INFINITY;
 } else if (x < 0.0) {
 	mtherr( "k0e", DOMAIN );
-	return NAN;
+	return NPY_NAN;
 }
 
 if( x <= 2.0 )

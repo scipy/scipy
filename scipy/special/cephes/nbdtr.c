@@ -155,8 +155,6 @@ Copyright 1984, 1987, 1995 by Stephen L. Moshier
 double incbet(), incbi();
 #endif
 
-extern double NAN;
-
 double nbdtrc( k, n, p )
 int k, n;
 double p;
@@ -169,7 +167,7 @@ if( k < 0 )
 	{
 domerr:
 	mtherr( "nbdtr", DOMAIN );
-	return( NAN );
+	return( NPY_NAN );
 	}
 
 dk = k+1;
@@ -191,7 +189,7 @@ if( k < 0 )
 	{
 domerr:
 	mtherr( "nbdtr", DOMAIN );
-	return( NAN );
+	return( NPY_NAN );
 	}
 dk = k+1;
 dn = n;
@@ -212,7 +210,7 @@ if( k < 0 )
 	{
 domerr:
 	mtherr( "nbdtri", DOMAIN );
-	return( NAN );
+	return( NPY_NAN );
 	}
 dk = k+1;
 dn = n;

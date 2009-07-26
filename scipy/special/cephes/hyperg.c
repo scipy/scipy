@@ -82,7 +82,7 @@ static double hy1f1p();
 static double hy1f1a();
 double hyperg();
 #endif
-extern double MAXNUM, MACHEP, NAN, INFINITY;
+extern double MAXNUM, MACHEP;
 
 double hyperg( a, b, x)
 double a, b, x;
@@ -289,7 +289,7 @@ if (acanc != acanc)
 	/* nan */
 	acanc = 1.0;
 
-if (asum == INFINITY || asum == -INFINITY)
+if (asum == NPY_INFINITY || asum == -NPY_INFINITY)
         /* infinity */
         acanc = 0;
 

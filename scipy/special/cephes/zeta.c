@@ -64,7 +64,7 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 #ifndef ANSIPROT
 double fabs(), pow(), floor();
 #endif
-extern double MAXNUM, MACHEP, NAN;
+extern double MAXNUM, MACHEP;
 
 /* Expansion coefficients
  * for Euler-Maclaurin summation formula
@@ -101,7 +101,7 @@ if( x < 1.0 )
 	{
 domerr:
 	mtherr( "zeta", DOMAIN );
-	return(NAN);
+	return(NPY_NAN);
 	}
 
 if( q <= 0.0 )

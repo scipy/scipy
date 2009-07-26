@@ -78,7 +78,7 @@ extern double floor(double);
 #else
 double exp(), gamma(), log(), fabs(), floor();
 #endif
-extern double MACHEP, MAXNUM, NAN, PI, INFINITY, EULER;
+extern double MACHEP, MAXNUM, PI, EULER;
 
 static double iv_asymptotic(double v, double x);
 void ikv_asymptotic_uniform(double v, double x, double *i, double *k);
@@ -102,7 +102,7 @@ double iv(double v, double x)
     if (x < 0.0) {
 	if (t != v) {
 	    mtherr("iv", DOMAIN);
-	    return (NAN);
+	    return (NPY_NAN);
 	}
 	if (v != 2.0 * floor(v / 2.0)) {
 	    sign = -1;
@@ -152,7 +152,7 @@ static double iv_asymptotic(double v, double x)
 
     prefactor = exp(x) / sqrt(2 * PI * x);
 
-    if (prefactor == INFINITY) {
+    if (prefactor == NPY_INFINITY) {
 	return prefactor;
     }
 
@@ -556,8 +556,8 @@ void ikv_temme(double v, double x, double *I, double *K)
     u = v - n;			/* -1/2 <= u < 1/2 */
 
     if (x < 0) {
-        if (I != NULL) *I = NAN;
-        if (K != NULL) *K = NAN;
+        if (I != NULL) *I = NPY_NAN;
+        if (K != NULL) *K = NPY_NAN;
 	mtherr("ikv_temme", DOMAIN);
 	return;
     }
@@ -565,16 +565,16 @@ void ikv_temme(double v, double x, double *I, double *K)
 	Iv = (v == 0) ? 1 : 0;
 	if (kind & need_k) {
 	    mtherr("ikv_temme", OVERFLOW);
-	    Kv = INFINITY;
+	    Kv = NPY_INFINITY;
 	}
         else {
-	    Kv = NAN;		/* any value will do */
+	    Kv = NPY_NAN;		/* any value will do */
 	}
 
 	if (reflect && (kind & need_i)) {
 	    double z = (u + n % 2);
-	    Iv = sin(PI * z) == 0 ? Iv : INFINITY;
-	    if (Iv == INFINITY || Iv == -INFINITY) {
+	    Iv = sin(PI * z) == 0 ? Iv : NPY_INFINITY;
+	    if (Iv == NPY_INFINITY || Iv == -NPY_INFINITY) {
 		mtherr("ikv_temme", OVERFLOW);
             }
 	}
@@ -625,7 +625,7 @@ void ikv_temme(double v, double x, double *I, double *K)
 	}
     }
     else {
-	Iv = NAN;		/* any value will do */
+	Iv = NPY_NAN;		/* any value will do */
     }
 
     if (reflect) {

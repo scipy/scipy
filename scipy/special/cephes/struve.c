@@ -55,7 +55,7 @@ double sin(), cos();
 double onef2(), threef0();
 #endif
 static double stop = 1.37e-17;
-extern double MACHEP, INFINITY;
+extern double MACHEP;
 
 double onef2( a, b, c, x, err )
 double a, b, c, x;
@@ -224,8 +224,8 @@ if (x == 0.0) {
     if (v > -1) {
         return 0.0;
     } else if (v < -1) {
-        if ((int)(floor(0.5-v)-1) % 2) return -INFINITY;
-        else return INFINITY;
+        if ((int)(floor(0.5-v)-1) % 2) return -NPY_INFINITY;
+        else return NPY_INFINITY;
     } else {
         return 2.0/PI;
     }

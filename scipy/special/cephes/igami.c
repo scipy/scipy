@@ -51,7 +51,7 @@ Copyright 1984, 1987, 1995 by Stephen L. Moshier
 #include "mconf.h"
 #include <stdio.h>
 
-extern double MACHEP, MAXNUM, MAXLOG, MINLOG, NAN;
+extern double MACHEP, MAXNUM, MAXLOG, MINLOG;
 #ifndef ANSIPROT
 double igamc(), ndtri(), exp(), fabs(), log(), sqrt(), lgam();
 #endif
@@ -71,7 +71,7 @@ dithresh = 5.0 * MACHEP;
 
 if ((y0<0.0) || (y0>1.0) || (a<=0)) {
    mtherr("igami", DOMAIN);
-   return(NAN);
+   return(NPY_NAN);
 }
 
 if (y0==0.0) {

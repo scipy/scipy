@@ -485,8 +485,6 @@ return( p * SQ2OPI / sqrt(x) );
 }
 
 
-extern double INFINITY, NAN;
-
 double y1(x)
 double x;
 {
@@ -496,10 +494,10 @@ if( x <= 5.0 )
 	{
 	if (x == 0.0) {
 		mtherr("y1", SING);
-		return -INFINITY;
+		return -NPY_INFINITY;
 	} else if (x <= 0.0) {
 		mtherr("y1", DOMAIN);
-		return NAN;
+		return NPY_NAN;
 	}
 	z = x * x;
 	w = x * (polevl( z, YP, 5 ) / p1evl( z, YQ, 8 ));

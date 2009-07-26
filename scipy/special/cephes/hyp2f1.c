@@ -109,7 +109,7 @@ static double hyt2f1();
 static double hys2f1();
 double hyp2f1();
 #endif
-extern double MAXNUM, MACHEP, NAN;
+extern double MAXNUM, MACHEP;
 
 double hyp2f1( a, b, c, x )
 double a, b, c, x;

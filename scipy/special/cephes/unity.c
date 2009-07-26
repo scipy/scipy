@@ -10,12 +10,6 @@
  */
 
 #include "mconf.h"
-#ifdef INFINITIES
-extern double INFINITY;
-#endif
-#ifndef ANSIPROT
-int isnan(), isfinite();
-#endif
 /* log1p(x) = log(1 + x)  */
 
 /* Coefficients for log(1+x) = x - x**2/2 + x**3 P(x)/Q(x)
@@ -84,13 +78,13 @@ double expm1(double x)
 double r, xx;
 
 #ifdef NANS
-if( isnan(x) )
+if( npy_isnan(x) )
 	return(x);
 #endif
 #ifdef INFINITIES
-if( x == INFINITY )
-	return(INFINITY);
-if( x == -INFINITY )
+if( !npy_isfinite(x) && x > 0)
+	return(x);
+if( !npy_isfinite(x) && x < 0)
 	return(-1.0);
 #endif
 if( (x < -0.5) || (x > 0.5) )
