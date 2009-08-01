@@ -4372,8 +4372,9 @@ class nbinom_gen(rv_discrete):
         return special.nbdtrc(k,n,pr)
     def _ppf(self, q, n, pr):
         vals = ceil(special.nbdtrik(q,n,pr))
-        vals1 = vals-1
-        temp = special.nbdtr(vals1,n,pr)
+        #temp = special.nbdtr(vals1,n,pr)
+        vals1 = (vals-1).clip(0.0, np.inf) #is this necessary
+        temp = self._cdf(vals1,n,pr)
         return where(temp >= q, vals1, vals)
     def _stats(self, n, pr):
         Q = 1.0 / pr
@@ -4571,7 +4572,10 @@ class planck_gen(rv_discrete):
         k = floor(x)
         return 1-exp(-lambda_*(k+1))
     def _ppf(self, q, lambda_):
-        val = ceil(-1.0/lambda_ * log1p(-q)-1)
+        vals = ceil(-1.0/lambda_ * log1p(-q)-1)
+        vals1 = (vals-1).clip(self.a, np.inf) #is this necessary
+        temp = self._cdf(vals1, lambda_)
+        return where(temp >= q, vals1, vals)        
         return val
     def _stats(self, lambda_):
         mu = 1/(exp(lambda_)-1)
@@ -4603,8 +4607,11 @@ class boltzmann_gen(rv_discrete):
         return (1-exp(-lambda_*(k+1)))/(1-exp(-lambda_*N))
     def _ppf(self, q, lambda_, N):
         qnew = q*(1-exp(-lambda_*N))
-        val = ceil(-1.0/lambda_ * log(1-qnew)-1)
-        return val
+        vals = ceil(-1.0/lambda_ * log(1-qnew)-1)
+        vals1 = (vals-1).clip(0.0, np.inf) #is this necessary
+        temp = self._cdf(vals1, lambda_, N)
+        return where(temp >= q, vals1, vals)
+        #return val
     def _stats(self, lambda_, N):
         z = exp(-lambda_)
         zN = exp(-lambda_*N)
@@ -4646,8 +4653,11 @@ class randint_gen(rv_discrete):
         k = floor(x)
         return (k-min+1)*1.0/(max-min)
     def _ppf(self, q, min, max):
-        val = ceil(q*(max-min)+min)-1
-        return val
+        vals = ceil(q*(max-min)+min)-1
+        vals1 = (vals-1).clip(min, max) #is this necessary
+        temp = self._cdf(vals1, min, max)
+        return where(temp >= q, vals1, vals)
+        #return val
     def _stats(self, min, max):
         m2, m1 = arr(max), arr(min)
         mu = (m2 + m1 - 1.0) / 2
@@ -4732,7 +4742,10 @@ class dlaplace_gen(rv_discrete):
         const = 1.0/(1+exp(-a))
         cons2 = 1+exp(a)
         ind = q < const
-        return ceil(where(ind, log(q*cons2)/a-1, -log((1-q)*cons2)/a))
+        vals = ceil(where(ind, log(q*cons2)/a-1, -log((1-q)*cons2)/a))
+        vals1 = (vals-1) #.clip(0.0, np.inf) #is this necessary
+        temp = self._cdf(vals1, a)
+        return where(temp >= q, vals1, vals)
 
     def _stats_skip(self, a):
         # variance mu2 does not aggree with sample variance,

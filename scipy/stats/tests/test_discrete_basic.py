@@ -33,12 +33,14 @@ def test_discrete_basic():
         #assert stats.dlaplace.rvs(0.8) is not None
         np.random.seed(9765456)
         rvs = distfn.rvs(size=2000,*arg)
+        supp = np.unique(rvs)
         m,v = distfn.stats(*arg)
         #yield npt.assert_almost_equal(rvs.mean(), m, decimal=4,err_msg='mean')
         #yield npt.assert_almost_equal, rvs.mean(), m, 2, 'mean' # does not work
         yield check_sample_meanvar, rvs.mean(), m, distname + ' sample mean test'
         yield check_sample_meanvar, rvs.var(), v, distname + ' sample var test'
         yield check_cdf_ppf, distfn, arg, distname + ' cdf_ppf'
+        yield check_cdf_ppf2, distfn, arg, supp, distname + ' cdf_ppf'
         yield check_pmf_cdf, distfn, arg, distname + ' pmf_cdf'
         yield check_oth, distfn, arg, distname + ' oth'
         skurt = stats.kurtosis(rvs)
@@ -95,6 +97,14 @@ def check_cdf_ppf(distfn,arg,msg):
     npt.assert_almost_equal(distfn.ppf(cdf05-1e-6,*arg),ppf05,
                             err_msg=msg + 'ppf-cdf-median')
     assert (distfn.ppf(cdf05+1e-4,*arg)>ppf05), msg + 'ppf-cdf-next'
+
+def check_cdf_ppf2(distfn,arg,supp,msg):
+    npt.assert_array_equal(distfn.ppf(distfn.cdf(supp,*arg),*arg),
+                           supp, msg + '-roundtrip')
+    npt.assert_array_equal(distfn.ppf(distfn.cdf(supp,*arg)-1e-8,*arg),
+                           supp, msg + '-roundtrip')
+    # -1e-8 could cause an error if pmf < 1e-8
+
 
 def check_cdf_ppf_private(distfn,arg,msg):
     ppf05 = distfn._ppf(0.5,*arg)
