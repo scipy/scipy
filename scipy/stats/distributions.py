@@ -4372,8 +4372,7 @@ class nbinom_gen(rv_discrete):
         return special.nbdtrc(k,n,pr)
     def _ppf(self, q, n, pr):
         vals = ceil(special.nbdtrik(q,n,pr))
-        #temp = special.nbdtr(vals1,n,pr)
-        vals1 = (vals-1).clip(0.0, np.inf) #is this necessary
+        vals1 = (vals-1).clip(0.0, np.inf)
         temp = self._cdf(vals1,n,pr)
         return where(temp >= q, vals1, vals)
     def _stats(self, n, pr):
@@ -4573,10 +4572,9 @@ class planck_gen(rv_discrete):
         return 1-exp(-lambda_*(k+1))
     def _ppf(self, q, lambda_):
         vals = ceil(-1.0/lambda_ * log1p(-q)-1)
-        vals1 = (vals-1).clip(self.a, np.inf) #is this necessary
+        vals1 = (vals-1).clip(self.a, np.inf)
         temp = self._cdf(vals1, lambda_)
         return where(temp >= q, vals1, vals)        
-        return val
     def _stats(self, lambda_):
         mu = 1/(exp(lambda_)-1)
         var = exp(-lambda_)/(expm1(-lambda_))**2
@@ -4608,10 +4606,9 @@ class boltzmann_gen(rv_discrete):
     def _ppf(self, q, lambda_, N):
         qnew = q*(1-exp(-lambda_*N))
         vals = ceil(-1.0/lambda_ * log(1-qnew)-1)
-        vals1 = (vals-1).clip(0.0, np.inf) #is this necessary
+        vals1 = (vals-1).clip(0.0, np.inf)
         temp = self._cdf(vals1, lambda_, N)
         return where(temp >= q, vals1, vals)
-        #return val
     def _stats(self, lambda_, N):
         z = exp(-lambda_)
         zN = exp(-lambda_*N)
@@ -4654,10 +4651,9 @@ class randint_gen(rv_discrete):
         return (k-min+1)*1.0/(max-min)
     def _ppf(self, q, min, max):
         vals = ceil(q*(max-min)+min)-1
-        vals1 = (vals-1).clip(min, max) #is this necessary
+        vals1 = (vals-1).clip(min, max)
         temp = self._cdf(vals1, min, max)
         return where(temp >= q, vals1, vals)
-        #return val
     def _stats(self, min, max):
         m2, m1 = arr(max), arr(min)
         mu = (m2 + m1 - 1.0) / 2
@@ -4743,7 +4739,7 @@ class dlaplace_gen(rv_discrete):
         cons2 = 1+exp(a)
         ind = q < const
         vals = ceil(where(ind, log(q*cons2)/a-1, -log((1-q)*cons2)/a))
-        vals1 = (vals-1) #.clip(0.0, np.inf) #is this necessary
+        vals1 = (vals-1)
         temp = self._cdf(vals1, a)
         return where(temp >= q, vals1, vals)
 
