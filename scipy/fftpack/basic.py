@@ -82,7 +82,7 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
             [y(0),y(1),..,y((n-1)/2),y(-(n-1)/2),...,y(-1)]  if n is odd
         where
             y(j) = sum[k=0..n-1] x[k] * exp(-sqrt(-1)*j*k* 2*pi/n), j = 0..n-1
-        Note that y(-j) = y(n-j).
+        Note that y(-j) = y(n-j).conjugate().
 
     See Also
     --------
@@ -191,7 +191,7 @@ def rfft(x, n=None, axis=-1, overwrite_x=0):
     where
       y(j) = sum[k=0..n-1] x[k] * exp(-sqrt(-1)*j*k* 2*pi/n)
       j = 0..n-1
-    Note that y(-j) = y(n-j).
+    Note that y(-j) = y(n-j).conjugate().
 
     Optional input:
       n
@@ -333,7 +333,7 @@ def fftn(x, shape=None, axes=None, overwrite_x=0):
          x[k_1,..,k_d] * prod[i=1..d] exp(-sqrt(-1)*2*pi/n_i * j_i * k_i)
 
     where d = len(x.shape) and n = x.shape.
-    Note that y[..., -j_i, ...] = y[..., n_i-j_i, ...].
+    Note that y[..., -j_i, ...] = y[..., n_i-j_i, ...].conjugate().
 
     Optional input:
       shape
