@@ -113,11 +113,7 @@ clean_ax:
  *         longlong, float, double, npy_longdouble#
  */
 
-/**begin repeat1
- * #func = , 2D#
- * #fsuf2 = , _2d#
- */
-static int _imp_correlate_nd_@fsuf@@fsuf2@(PyArrayNeighborhoodIterObject *curx,
+static int _imp_correlate_nd_@fsuf@(PyArrayNeighborhoodIterObject *curx,
         PyArrayNeighborhoodIterObject *curneighx, PyArrayIterObject *ity,
         PyArrayIterObject *itz)
 {
@@ -126,14 +122,14 @@ static int _imp_correlate_nd_@fsuf@@fsuf2@(PyArrayNeighborhoodIterObject *curx,
 
     for(i = 0; i < curx->size; ++i) {
         acc = 0;
-        PyArrayNeighborhoodIter_ResetConstant(curneighx);
+        PyArrayNeighborhoodIter_Reset(curneighx);
         for(j = 0; j < curneighx->size; ++j) {
             acc += *((@type@*)(curneighx->dataptr)) * *((@type@*)(ity->dataptr));
 
-            PyArrayNeighborhoodIter_NextConstant@func@(curneighx);
+            PyArrayNeighborhoodIter_Next(curneighx);
             PyArray_ITER_NEXT(ity);
         }
-        PyArrayNeighborhoodIter_NextConstant@func@(curx);
+        PyArrayNeighborhoodIter_Next(curx);
 
         *((@type@*)(itz->dataptr)) = acc;
         PyArray_ITER_NEXT(itz);
@@ -143,7 +139,6 @@ static int _imp_correlate_nd_@fsuf@@fsuf2@(PyArrayNeighborhoodIterObject *curx,
 
     return 0;
 }
-/**end repeat1**/
 
 /**end repeat**/
 
@@ -152,11 +147,7 @@ static int _imp_correlate_nd_@fsuf@@fsuf2@(PyArrayNeighborhoodIterObject *curx,
  * #type = float, double, npy_longdouble#
  */
 
-/**begin repeat1
- * #func = , 2D#
- * #fsuf2 = , _2d#
- */
-static int _imp_correlate_nd_c@fsuf@@fsuf2@(PyArrayNeighborhoodIterObject *curx,
+static int _imp_correlate_nd_c@fsuf@(PyArrayNeighborhoodIterObject *curx,
         PyArrayNeighborhoodIterObject *curneighx, PyArrayIterObject *ity,
         PyArrayIterObject *itz)
 {
@@ -167,17 +158,17 @@ static int _imp_correlate_nd_c@fsuf@@fsuf2@(PyArrayNeighborhoodIterObject *curx,
     for(i = 0; i < curx->size; ++i) {
         racc = 0;
         iacc = 0;
-        PyArrayNeighborhoodIter_ResetConstant(curneighx);
+        PyArrayNeighborhoodIter_Reset(curneighx);
         for(j = 0; j < curneighx->size; ++j) {
             ptr1 = ((@type@*)(curneighx->dataptr));
             ptr2 = ((@type@*)(ity->dataptr));
             racc += ptr1[0] * ptr2[0] + ptr1[1] * ptr2[1];
             iacc += ptr1[1] * ptr2[0] - ptr1[0] * ptr2[1];
 
-            PyArrayNeighborhoodIter_NextConstant@func@(curneighx);
+            PyArrayNeighborhoodIter_Next(curneighx);
             PyArray_ITER_NEXT(ity);
         }
-        PyArrayNeighborhoodIter_NextConstant@func@(curx);
+        PyArrayNeighborhoodIter_Next(curx);
 
         ((@type@*)(itz->dataptr))[0] = racc;
         ((@type@*)(itz->dataptr))[1] = iacc;
@@ -188,7 +179,6 @@ static int _imp_correlate_nd_c@fsuf@@fsuf2@(PyArrayNeighborhoodIterObject *curx,
 
     return 0;
 }
-/**end repeat1**/
 
 /**end repeat**/
 
@@ -204,7 +194,7 @@ static int _imp_correlate_nd_object(PyArrayNeighborhoodIterObject *curx,
     zero = PyArray_Zero(curx->ao);
 
     for(i = 0; i < curx->size; ++i) {
-        PyArrayNeighborhoodIter_ResetConstant(curneighx);
+        PyArrayNeighborhoodIter_Reset(curneighx);
         copyswap(itz->dataptr, zero, 0, NULL);
 
         for(j = 0; j < curneighx->size; ++j) {
@@ -222,11 +212,11 @@ static int _imp_correlate_nd_object(PyArrayNeighborhoodIterObject *curx,
             Py_DECREF(*((PyObject**)itz->dataptr));
             *((PyObject**)itz->dataptr) = tmp2;
 
-            PyArrayNeighborhoodIter_NextConstant(curneighx);
+            PyArrayNeighborhoodIter_Next(curneighx);
             PyArray_ITER_NEXT(ity);
         }
 
-        PyArrayNeighborhoodIter_NextConstant(curx);
+        PyArrayNeighborhoodIter_Next(curx);
 
         PyArray_ITER_NEXT(itz);
 
@@ -311,11 +301,7 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
  *         longlong, float, double, longdouble, cfloat, cdouble, clongdouble#
  */
         case PyArray_@TYPE@:
-            if (itx->ao->nd ==2) {
-                _imp_correlate_nd_@type@_2d(curx, curneighx, ity, itz);
-            } else {
-                _imp_correlate_nd_@type@(curx, curneighx, ity, itz);
-            }
+            _imp_correlate_nd_@type@(curx, curneighx, ity, itz);
             break;
 /**end repeat**/
 
