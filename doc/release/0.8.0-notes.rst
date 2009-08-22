@@ -82,3 +82,8 @@ what most people expect if the old_behavior=False argument is passed:
     * correlation functions now conjugate their second argument while computing
       the slided sum-products, which correspond to the usual definition of
       correlation
+
+Removed features
+================
+
+scipy.stsci: the package was removed
