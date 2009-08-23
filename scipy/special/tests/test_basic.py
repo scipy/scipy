@@ -348,7 +348,8 @@ class TestCephes(TestCase):
     def test_nrdtrimn(self):
         assert_approx_equal(cephes.nrdtrimn(0.5,1,1),1.0)
     def test_nrdtrisd(self):
-        assert_equal(cephes.nrdtrisd(0.5,0.5,0.5),0.0)
+        assert_tol_equal(cephes.nrdtrisd(0.5,0.5,0.5), 0.0,
+                         atol=0, rtol=0)
 
     def test_obl_ang1(self):
         cephes.obl_ang1(1,1,1,0)
