@@ -33,14 +33,6 @@ Each discrete distribution is an instance of the class rv_discrete:
    rv_discrete.isf
    rv_discrete.stats
 
-
-Masked statistics functions
-===========================
-
-.. toctree::
-
-   stats.mstats
-
 Continuous distributions
 ========================
 
@@ -270,6 +262,15 @@ Plot-tests
    probplot
    ppcc_max
    ppcc_plot
+
+
+Masked statistics functions
+===========================
+
+.. toctree::
+
+   stats.mstats
+
 
 Univariate and multivariate kernel density estimation (:mod:`scipy.stats.kde`)
 ==============================================================================
