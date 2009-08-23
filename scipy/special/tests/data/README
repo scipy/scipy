@@ -1,0 +1,6 @@
+This directory contains numerical data for testing special functions.
+The data is in version control as text files, but it is distributed as
+compressed NPZ files which are also checked in.
+
+To rebuild the npz files, use ../../utils/makenpz.py on the directories.
+

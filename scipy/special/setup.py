@@ -52,7 +52,9 @@ def configuration(parent_package='',top_path=None):
                          define_macros=[],
                          libraries=['sc_specfun'])
 
-    config.add_data_dir('tests')
+    config.add_data_files('tests/*.py')
+    config.add_data_files('tests/data/README')
+    config.add_data_files('tests/data/*.npz')
 
     return config
 

@@ -16,3 +16,4 @@ include doc/Makefile doc/postprocess.py
 recursive-include doc/release *
 recursive-include doc/source *
 recursive-include doc/sphinxext *
+prune scipy/special/tests/data/boost
