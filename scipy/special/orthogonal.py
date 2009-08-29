@@ -431,8 +431,6 @@ def chebyt(n,monic=0):
     p = orthopoly1d(x,w,hn,kn,wfunc,(-1,1),monic)
     return p
 
-    return jacobi(n,-0.5,-0.5,monic=monic)
-
 # Chebyshev of the second kind
 #    U_n(x) = (n+1)! sqrt(pi) / (2*_gam(n+3./2)) * P^(1/2,1/2)_n(x)
 def u_roots(n,mu=0):
