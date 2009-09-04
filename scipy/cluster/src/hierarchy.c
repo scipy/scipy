@@ -67,7 +67,7 @@
 
 #include "hierarchy.h"
 
-static inline double euclidean_distance(const double *u, const double *v, int n) {
+static NPY_INLINE double euclidean_distance(const double *u, const double *v, int n) {
   int i = 0;
   double s = 0.0, d;
   for (i = 0; i < n; i++) {
@@ -897,7 +897,7 @@ void cpy_to_tree(const double *Z, cnode **tnodes, int n) {
   }
 }
 
-inline void set_dist_entry(double *d, double val, int i, int j, int n) {
+NPY_INLINE void set_dist_entry(double *d, double val, int i, int j, int n) {
   if (i < j) {
     *(d + (NCHOOSE2(n)-NCHOOSE2(n - i)) + j) = val;
   }

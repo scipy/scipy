@@ -39,7 +39,7 @@
 #include "common.h"
 #include "distance.h"
 
-static inline double euclidean_distance(const double *u, const double *v, int n) {
+static NPY_INLINE double euclidean_distance(const double *u, const double *v, int n) {
   int i = 0;
   double s = 0.0, d;
   for (i = 0; i < n; i++) {
@@ -49,7 +49,7 @@ static inline double euclidean_distance(const double *u, const double *v, int n)
   return sqrt(s);
 }
 
-static inline double ess_distance(const double *u, const double *v, int n) {
+static NPY_INLINE double ess_distance(const double *u, const double *v, int n) {
   int i = 0;
   double s = 0.0, d;
   for (i = 0; i < n; i++) {
@@ -59,7 +59,7 @@ static inline double ess_distance(const double *u, const double *v, int n) {
   return s;
 }
 
-static inline double chebyshev_distance(const double *u, const double *v, int n) {
+static NPY_INLINE double chebyshev_distance(const double *u, const double *v, int n) {
   int i = 0;
   double d, maxv = 0.0;
   for (i = 0; i < n; i++) {
@@ -71,7 +71,7 @@ static inline double chebyshev_distance(const double *u, const double *v, int n)
   return maxv;
 }
 
-static inline double canberra_distance(const double *u, const double *v, int n) {
+static NPY_INLINE double canberra_distance(const double *u, const double *v, int n) {
   int i;
   double snum = 0.0, sdenom_u = 0.0, sdenom_v = 0.0;
   for (i = 0; i < n; i++) {
@@ -82,7 +82,7 @@ static inline double canberra_distance(const double *u, const double *v, int n) 
   return snum / (sdenom_u + sdenom_v);
 }
 
-static inline double bray_curtis_distance(const double *u, const double *v, int n) {
+static NPY_INLINE double bray_curtis_distance(const double *u, const double *v, int n) {
   int i;
   double s1 = 0.0, s2 = 0.0;
   for (i = 0; i < n; i++) {
@@ -92,7 +92,7 @@ static inline double bray_curtis_distance(const double *u, const double *v, int 
   return s1 / s2;
 }
 
-static inline double mahalanobis_distance(const double *u, const double *v,
+static NPY_INLINE double mahalanobis_distance(const double *u, const double *v,
 			    const double *covinv, double *dimbuf1,
 			    double *dimbuf2, int n) {
   int i, j;
@@ -125,7 +125,7 @@ double hamming_distance(const double *u, const double *v, int n) {
   return s / (double)n;
 }
 
-static inline double hamming_distance_bool(const char *u, const char *v, int n) {
+static NPY_INLINE double hamming_distance_bool(const char *u, const char *v, int n) {
   int i = 0;
   double s = 0.0;
   for (i = 0; i < n; i++) {
@@ -134,7 +134,7 @@ static inline double hamming_distance_bool(const char *u, const char *v, int n) 
   return s / (double)n;
 }
 
-static inline double yule_distance_bool(const char *u, const char *v, int n) {
+static NPY_INLINE double yule_distance_bool(const char *u, const char *v, int n) {
   int i = 0;
   int ntt = 0, nff = 0, nft = 0, ntf = 0;
   for (i = 0; i < n; i++) {
@@ -146,7 +146,7 @@ static inline double yule_distance_bool(const char *u, const char *v, int n) {
   return (2.0 * ntf * nft) / (double)(ntt * nff + ntf * nft);  
 }
 
-static inline double matching_distance_bool(const char *u, const char *v, int n) {
+static NPY_INLINE double matching_distance_bool(const char *u, const char *v, int n) {
   int i = 0;
   int nft = 0, ntf = 0;
   for (i = 0; i < n; i++) {
@@ -156,7 +156,7 @@ static inline double matching_distance_bool(const char *u, const char *v, int n)
   return (double)(ntf + nft) / (double)(n);
 }
 
-static inline double dice_distance_bool(const char *u, const char *v, int n) {
+static NPY_INLINE double dice_distance_bool(const char *u, const char *v, int n) {
   int i = 0;
   int ntt = 0, nft = 0, ntf = 0;
   for (i = 0; i < n; i++) {
@@ -168,7 +168,7 @@ static inline double dice_distance_bool(const char *u, const char *v, int n) {
 }
 
 
-static inline double rogerstanimoto_distance_bool(const char *u, const char *v, int n) {
+static NPY_INLINE double rogerstanimoto_distance_bool(const char *u, const char *v, int n) {
   int i = 0;
   int ntt = 0, nff = 0, nft = 0, ntf = 0;
   for (i = 0; i < n; i++) {
@@ -180,7 +180,7 @@ static inline double rogerstanimoto_distance_bool(const char *u, const char *v, 
   return (2.0 * (ntf + nft)) / ((double)ntt + nff + (2.0 * (ntf + nft)));
 }
 
-static inline double russellrao_distance_bool(const char *u, const char *v, int n) {
+static NPY_INLINE double russellrao_distance_bool(const char *u, const char *v, int n) {
   int i = 0;
   /**  int nff = 0, nft = 0, ntf = 0;**/
   int ntt = 0;
@@ -194,7 +194,7 @@ static inline double russellrao_distance_bool(const char *u, const char *v, int 
   return (double) (n - ntt) / (double) n;
 }
 
-static inline double kulsinski_distance_bool(const char *u, const char *v, int n) {
+static NPY_INLINE double kulsinski_distance_bool(const char *u, const char *v, int n) {
   int _i = 0;
   int ntt = 0, nft = 0, ntf = 0, nff = 0;
   for (_i = 0; _i < n; _i++) {
@@ -206,7 +206,7 @@ static inline double kulsinski_distance_bool(const char *u, const char *v, int n
   return ((double)(ntf + nft - ntt + n)) / ((double)(ntf + nft + n));
 }
 
-static inline double sokalsneath_distance_bool(const char *u, const char *v, int n) {
+static NPY_INLINE double sokalsneath_distance_bool(const char *u, const char *v, int n) {
   int _i = 0;
   int ntt = 0, nft = 0, ntf = 0;
   for (_i = 0; _i < n; _i++) {
@@ -217,7 +217,7 @@ static inline double sokalsneath_distance_bool(const char *u, const char *v, int
   return (2.0 * (ntf + nft))/(2.0 * (ntf + nft) + ntt);
 }
 
-static inline double sokalmichener_distance_bool(const char *u, const char *v, int n) {
+static NPY_INLINE double sokalmichener_distance_bool(const char *u, const char *v, int n) {
   int _i = 0;
   int ntt = 0, nft = 0, ntf = 0, nff = 0;
   for (_i = 0; _i < n; _i++) {
@@ -229,7 +229,7 @@ static inline double sokalmichener_distance_bool(const char *u, const char *v, i
   return (2.0 * (ntf + nft))/(2.0 * (ntf + nft) + ntt + nff);
 }
 
-static inline double jaccard_distance(const double *u, const double *v, int n) {
+static NPY_INLINE double jaccard_distance(const double *u, const double *v, int n) {
   int i = 0;
   double denom = 0.0, num = 0.0;
   for (i = 0; i < n; i++) {
@@ -239,7 +239,7 @@ static inline double jaccard_distance(const double *u, const double *v, int n) {
   return num / denom;
 }
 
-static inline double jaccard_distance_bool(const char *u, const char *v, int n) {
+static NPY_INLINE double jaccard_distance_bool(const char *u, const char *v, int n) {
   int i = 0;
   double num = 0.0, denom = 0.0;
   for (i = 0; i < n; i++) {
@@ -249,7 +249,7 @@ static inline double jaccard_distance_bool(const char *u, const char *v, int n) 
   return num / denom;
 }
 
-static inline double dot_product(const double *u, const double *v, int n) {
+static NPY_INLINE double dot_product(const double *u, const double *v, int n) {
   int i;
   double s = 0.0;
   for (i = 0; i < n; i++) {
@@ -258,12 +258,12 @@ static inline double dot_product(const double *u, const double *v, int n) {
   return s;
 }
 
-static inline double cosine_distance(const double *u, const double *v, int n,
+static NPY_INLINE double cosine_distance(const double *u, const double *v, int n,
 		       const double nu, const double nv) {
   return 1.0 - (dot_product(u, v, n) / (nu * nv));
 }
 
-static inline double seuclidean_distance(const double *var,
+static NPY_INLINE double seuclidean_distance(const double *var,
 			   const double *u, const double *v, int n) {
   int i = 0;
   double s = 0.0, d;
@@ -274,7 +274,7 @@ static inline double seuclidean_distance(const double *var,
   return sqrt(s);
 }
 
-static inline double city_block_distance(const double *u, const double *v, int n) {
+static NPY_INLINE double city_block_distance(const double *u, const double *v, int n) {
   int i = 0;
   double s = 0.0, d;
   for (i = 0; i < n; i++) {
