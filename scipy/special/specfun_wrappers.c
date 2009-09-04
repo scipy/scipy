@@ -119,7 +119,7 @@ Py_complex chyp2f1_wrap( double a, double b, double c, Py_complex z) {
   l0 = ((c == floor(c)) && (c < 0));
   l1 = ((fabs(1-REAL(z)) < 1e-15) && (IMAG(z) == 0) && (c-a-b <= 0));
   if (l0 || l1) {
-    REAL(outz) = INFINITY;
+    REAL(outz) = NPY_INFINITY;
     IMAG(outz) = 0.0;
     return outz;
   }
@@ -132,7 +132,7 @@ Py_complex chyp1f1_wrap(double a, double b, Py_complex z) {
 
   F_FUNC(cchg,CCHG)(&a, &b, &z, &outz);
   if (REAL(outz) == 1e300) {
-    REAL(outz) = INFINITY;
+    REAL(outz) = NPY_INFINITY;
   }
   return outz;
 }
@@ -143,7 +143,7 @@ double hypU_wrap(double a, double b, double x) {
   int md; /* method code --- not returned */
 
   F_FUNC(chgu,CHGU)(&a, &b, &x, &out, &md);
-  if (out == 1e300) out = INFINITY;
+  if (out == 1e300) out = NPY_INFINITY;
   return out;
   
 }
@@ -153,7 +153,7 @@ double hyp1f1_wrap(double a, double b, double x) {
  
    F_FUNC(chgm,CHGM)(&a, &b, &x, &outy);
    if (outy == 1e300) {
-     outy = INFINITY;
+     outy = NPY_INFINITY;
    }
    return outy;
 }
@@ -225,7 +225,7 @@ double struve_wrap(double v, double x) {
           flag = 0;
       } else {
           /* non-integer v and x < 0 => complex-valued */
-          return NAN;
+          return NPY_NAN;
       }
   }
 
@@ -252,7 +252,7 @@ double modstruve_wrap(double v, double x) {
   double out;
   int flag=0;
 
-  if ((x < 0) & (floor(v)!=v)) return NAN;
+  if ((x < 0) & (floor(v)!=v)) return NPY_NAN;
   if (v==0.0) {
     if (x < 0) {x = -x; flag=1;}
     F_FUNC(stvl0,STVl0)(&x,&out);
@@ -332,7 +332,7 @@ double ker_wrap(double x)
 {
   Py_complex Be, Ke, Bep, Kep;
 
-  if (x<0) return NAN;
+  if (x<0) return NPY_NAN;
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
   ZCONVINF(Ke);
   return REAL(Ke);  
@@ -342,7 +342,7 @@ double kei_wrap(double x)
 {
   Py_complex Be, Ke, Bep, Kep;
 
-  if (x<0) return NAN;
+  if (x<0) return NPY_NAN;
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
   ZCONVINF(Ke);
   return IMAG(Ke);  
@@ -376,7 +376,7 @@ double kerp_wrap(double x)
 {
   Py_complex Be, Ke, Bep, Kep;
 
-  if (x<0) return NAN;
+  if (x<0) return NPY_NAN;
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
   ZCONVINF(Kep);
   return REAL(Kep);  
@@ -386,7 +386,7 @@ double keip_wrap(double x)
 {
   Py_complex Be, Ke, Bep, Kep;
 
-  if (x<0) return NAN;
+  if (x<0) return NPY_NAN;
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
   ZCONVINF(Kep);
   return IMAG(Kep);  
@@ -405,10 +405,10 @@ int kelvin_wrap(double x, Py_complex *Be, Py_complex *Ke, Py_complex *Bep, Py_co
   if (flag) {
     REAL(*Bep) = -REAL(*Bep);
     IMAG(*Bep) = -IMAG(*Bep);
-    REAL(*Ke) = NAN;
-    IMAG(*Ke) = NAN;
-    REAL(*Kep) = NAN;
-    IMAG(*Kep) = NAN;    
+    REAL(*Ke) = NPY_NAN;
+    IMAG(*Ke) = NPY_NAN;
+    REAL(*Kep) = NPY_NAN;
+    IMAG(*Kep) = NPY_NAN;    
   }    
   return 0;
 }
@@ -426,7 +426,7 @@ int it1j0y0_wrap(double x, double *j0int, double *y0int)
   F_FUNC(itjya, ITJYA)(&x, j0int, y0int);
   if (flag) {
     *j0int = -(*j0int);
-    *y0int = NAN;    /* domain error */
+    *y0int = NPY_NAN;    /* domain error */
   }
   return 0;
 }
@@ -441,7 +441,7 @@ int it2j0y0_wrap(double x, double *j0int, double *y0int)
   if (x < 0) {x=-x; flag=1;}
   F_FUNC(ittjya, ITTJYA)(&x, j0int, y0int);
   if (flag) {
-    *y0int = NAN;  /* domain error */
+    *y0int = NPY_NAN;  /* domain error */
   }
   return 0;
 }
@@ -456,7 +456,7 @@ int it1i0k0_wrap(double x, double *i0int, double *k0int)
   F_FUNC(itika, ITIKA)(&x, i0int, k0int);
   if (flag) {
     *i0int = -(*i0int);
-    *k0int = NAN;    /* domain error */
+    *k0int = NPY_NAN;    /* domain error */
   }
   return 0;
 }
@@ -468,7 +468,7 @@ int it2i0k0_wrap(double x, double *i0int, double *k0int)
   if (x < 0) {x=-x; flag=1;}
   F_FUNC(ittika, ITTIKA)(&x, i0int, k0int);
   if (flag) {
-    *k0int = NAN;  /* domain error */
+    *k0int = NPY_NAN;  /* domain error */
   }
   return 0;
 }
@@ -491,7 +491,7 @@ double cem_cva_wrap(double m, double q) {
   double out;
 
   if ((m < 0) || (m != floor(m))) 
-    return NAN;
+    return NPY_NAN;
   int_m = (int )m;
   if (int_m % 2) kd=2;
   F_FUNC(cva2,CVA2)(&kd, &int_m, &q, &out);
@@ -503,7 +503,7 @@ double sem_cva_wrap(double m, double q) {
   double out;
 
   if ((m < 1) || (m != floor(m))) 
-    return NAN;
+    return NPY_NAN;
   int_m = (int )m;
   if (int_m % 2) kd=3;
   F_FUNC(cva2,CVA2)(&kd, &int_m, &q, &out);
@@ -515,8 +515,8 @@ int cem_wrap(double m, double q, double x, double *csf, double *csd)
 {
   int int_m, kf=1;
   if ((m < 1) || (m != floor(m)) || (q<0)) {
-    *csf = NAN;
-    *csd = NAN;
+    *csf = NPY_NAN;
+    *csd = NPY_NAN;
   }
   int_m = (int )m;
   F_FUNC(mtu0,MTU0)(&kf,&int_m, &q, &x, csf, csd);
@@ -527,8 +527,8 @@ int sem_wrap(double m, double q, double x, double *csf, double *csd)
 {
   int int_m, kf=2;
   if ((m < 1) || (m != floor(m)) || (q<0)) {
-    *csf = NAN;
-    *csd = NAN;
+    *csf = NPY_NAN;
+    *csd = NPY_NAN;
   }
   int_m = (int )m;
   F_FUNC(mtu0,MTU0)(&kf,&int_m, &q, &x, csf, csd);
@@ -542,8 +542,8 @@ int mcm1_wrap(double m, double q, double x, double *f1r, double *d1r)
   double f2r, d2r;
 
   if ((m < 1) || (m != floor(m)) || (q<0)) {
-    *f1r = NAN;
-    *d1r = NAN;
+    *f1r = NPY_NAN;
+    *d1r = NPY_NAN;
   }
   int_m = (int )m;
   F_FUNC(mtu12,MTU12)(&kf,&kc,&int_m, &q, &x, f1r, d1r, &f2r, &d2r);
@@ -556,8 +556,8 @@ int msm1_wrap(double m, double q, double x, double *f1r, double *d1r)
   double f2r, d2r;
 
   if ((m < 1) || (m != floor(m)) || (q<0)) {
-    *f1r = NAN;
-    *d1r = NAN;
+    *f1r = NPY_NAN;
+    *d1r = NPY_NAN;
   }
   int_m = (int )m;
   F_FUNC(mtu12,MTU12)(&kf,&kc,&int_m, &q, &x, f1r, d1r, &f2r, &d2r);
@@ -570,8 +570,8 @@ int mcm2_wrap(double m, double q, double x, double *f2r, double *d2r)
   double f1r, d1r;
 
   if ((m < 1) || (m != floor(m)) || (q<0)) {
-    *f2r = NAN;
-    *d2r = NAN;
+    *f2r = NPY_NAN;
+    *d2r = NPY_NAN;
   }
   int_m = (int )m;
   F_FUNC(mtu12,MTU12)(&kf,&kc,&int_m, &q, &x, &f1r, &d1r, f2r, d2r);
@@ -584,8 +584,8 @@ int msm2_wrap(double m, double q, double x, double *f2r, double *d2r)
   double f1r, d1r;
 
   if ((m < 1) || (m != floor(m)) || (q<0)) {
-    *f2r = NAN;
-    *d2r = NAN;
+    *f2r = NPY_NAN;
+    *d2r = NPY_NAN;
   }
   int_m = (int )m;
   F_FUNC(mtu12,MTU12)(&kf,&kc,&int_m, &q, &x, &f1r, &d1r, f2r, d2r);
@@ -597,7 +597,7 @@ double pmv_wrap(double m, double v, double x){
   int int_m;
   double out;
 
-  if (m != floor(m)) return NAN;
+  if (m != floor(m)) return NPY_NAN;
   int_m = (int ) m;
   F_FUNC(lpmv,LPMV)(&v, &int_m, &x, &out);
   return out;
@@ -635,8 +635,8 @@ int pbdv_wrap(double v, double x, double *pdf, double *pdd) {
   dv = (double *)PyMem_Malloc(sizeof(double)*2*num);
   if (dv==NULL) {
     printf("Warning: Memory allocation error.\n"); 
-    *pdf = NAN;
-    *pdd = NAN;
+    *pdf = NPY_NAN;
+    *pdd = NPY_NAN;
     return -1;
   }
   dp = dv + num;
@@ -655,8 +655,8 @@ int pbvv_wrap(double v, double x, double *pvf, double *pvd) {
   vv = (double *)PyMem_Malloc(sizeof(double)*2*num);
   if (vv==NULL) {
     printf("Warning: Memory allocation error.\n"); 
-    *pvf = NAN;
-    *pvd = NAN;
+    *pvf = NPY_NAN;
+    *pvd = NPY_NAN;
     return -1;
   }
   vp = vv + num;
@@ -672,14 +672,14 @@ double prolate_segv_wrap(double m, double n, double c)
   double cv, *eg;
 
   if ((m<0) || (n<m) || (m!=floor(m)) || (n!=floor(n)) || ((n-m)>198)) {
-    return NAN;
+    return NPY_NAN;
   }
   int_m = (int) m;
   int_n = (int) n;
   eg = (double *)PyMem_Malloc(sizeof(double)*(n-m+2));
   if (eg==NULL) {
     printf("Warning: Memory allocation error.\n"); 
-    return NAN;
+    return NPY_NAN;
   }
   F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
   PyMem_Free(eg);
@@ -693,14 +693,14 @@ double oblate_segv_wrap(double m, double n, double c)
   double cv, *eg;
 
   if ((m<0) || (n<m) || (m!=floor(m)) || (n!=floor(n)) || ((n-m)>198)) {
-    return NAN;
+    return NPY_NAN;
   }
   int_m = (int) m;
   int_n = (int) n;
   eg = (double *)PyMem_Malloc(sizeof(double)*(n-m+2));
   if (eg==NULL) {
     printf("Warning: Memory allocation error.\n"); 
-    return NAN;
+    return NPY_NAN;
   }
   F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
   PyMem_Free(eg);
@@ -716,16 +716,16 @@ double prolate_aswfa_nocv_wrap(double m, double n, double c, double x, double *s
 
   if ((x >=1) || (x <=-1) || (m<0) || (n<m) || \
       (m!=floor(m)) || (n!=floor(n)) || ((n-m)>198)) {
-    *s1d = NAN;
-    return NAN;
+    *s1d = NPY_NAN;
+    return NPY_NAN;
   }
   int_m = (int )m;
   int_n = (int )n;
   eg = (double *)PyMem_Malloc(sizeof(double)*(n-m+2));
   if (eg==NULL) {
     printf("Warning: Memory allocation error.\n"); 
-    *s1d = NAN;
-    return NAN;
+    *s1d = NPY_NAN;
+    return NPY_NAN;
   }
   F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
   F_FUNC(aswfa,ASWFA)(&int_m,&int_n,&c,&x,&kd,&cv,&s1f,s1d);
@@ -742,16 +742,16 @@ double oblate_aswfa_nocv_wrap(double m, double n, double c, double x, double *s1
 
   if ((x >=1) || (x <=-1) || (m<0) || (n<m) || \
       (m!=floor(m)) || (n!=floor(n)) || ((n-m)>198)) {
-    *s1d = NAN;
-    return NAN;
+    *s1d = NPY_NAN;
+    return NPY_NAN;
   }
   int_m = (int )m;
   int_n = (int )n;
   eg = (double *)PyMem_Malloc(sizeof(double)*(n-m+2));
   if (eg==NULL) {
     printf("Warning: Memory allocation error.\n"); 
-    *s1d = NAN;
-    return NAN;
+    *s1d = NPY_NAN;
+    return NPY_NAN;
   }
   F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
   F_FUNC(aswfa,ASWFA)(&int_m,&int_n,&c,&x,&kd,&cv,&s1f,s1d);
@@ -767,8 +767,8 @@ int prolate_aswfa_wrap(double m, double n, double c, double cv, double x, double
 
   if ((x >=1) || (x <=-1) || (m<0) || (n<m) || \
       (m!=floor(m)) || (n!=floor(n))) {
-    *s1f = NAN;
-    *s1d = NAN;
+    *s1f = NPY_NAN;
+    *s1d = NPY_NAN;
     return 0;
   }
   int_m = (int )m;
@@ -785,8 +785,8 @@ int oblate_aswfa_wrap(double m, double n, double c, double cv, double x, double 
 
   if ((x >=1) || (x <=-1) || (m<0) || (n<m) || \
       (m!=floor(m)) || (n!=floor(n))) {
-    *s1f = NAN;
-    *s1d = NAN;
+    *s1f = NPY_NAN;
+    *s1d = NPY_NAN;
     return 0;
   }
   int_m = (int )m;
@@ -804,16 +804,16 @@ double prolate_radial1_nocv_wrap(double m, double n, double c, double x, double 
 
   if ((x <=1.0) || (m<0) || (n<m) || \
      (m!=floor(m)) || (n!=floor(n)) || ((n-m)>198)) {
-    *r1d = NAN;
-    return NAN;
+    *r1d = NPY_NAN;
+    return NPY_NAN;
   }
   int_m = (int )m;
   int_n = (int )n;
   eg = (double *)PyMem_Malloc(sizeof(double)*(n-m+2));
   if (eg==NULL) {
     printf("Warning: Memory allocation error.\n"); 
-    *r1d = NAN;
-    return NAN;
+    *r1d = NPY_NAN;
+    return NPY_NAN;
   }
   F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
   F_FUNC(rswfp,RSWFP)(&int_m,&int_n,&c,&x,&cv,&kf,&r1f,r1d,&r2f,&r2d);
@@ -829,16 +829,16 @@ double prolate_radial2_nocv_wrap(double m, double n, double c, double x, double 
 
   if ((x <=1.0) || (m<0) || (n<m) || \
      (m!=floor(m)) || (n!=floor(n)) || ((n-m)>198)) {
-    *r2d = NAN;
-    return NAN;
+    *r2d = NPY_NAN;
+    return NPY_NAN;
   }
   int_m = (int )m;
   int_n = (int )n;
   eg = (double *)PyMem_Malloc(sizeof(double)*(n-m+2));
   if (eg==NULL) {
     printf("Warning: Memory allocation error.\n"); 
-    *r2d = NAN;
-    return NAN;
+    *r2d = NPY_NAN;
+    return NPY_NAN;
   }
   F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
   F_FUNC(rswfp,RSWFP)(&int_m,&int_n,&c,&x,&cv,&kf,&r1f,&r1d,&r2f,r2d);
@@ -854,8 +854,8 @@ int prolate_radial1_wrap(double m, double n, double c, double cv, double x, doub
 
   if ((x <= 1.0) || (m<0) || (n<m) || \
      (m!=floor(m)) || (n!=floor(n))) {
-    *r1f = NAN;
-    *r1d = NAN;
+    *r1f = NPY_NAN;
+    *r1d = NPY_NAN;
     return 0;
   }
   int_m = (int )m;
@@ -872,8 +872,8 @@ int prolate_radial2_wrap(double m, double n, double c, double cv, double x, doub
 
   if ((x <= 1.0) || (m<0) || (n<m) || \
      (m!=floor(m)) || (n!=floor(n))) {
-    *r2f = NAN;
-    *r2d = NAN;
+    *r2f = NPY_NAN;
+    *r2d = NPY_NAN;
     return 0;
   }
   int_m = (int )m;
@@ -890,16 +890,16 @@ double oblate_radial1_nocv_wrap(double m, double n, double c, double x, double *
 
   if ((x < 0.0) || (m<0) || (n<m) || \
      (m!=floor(m)) || (n!=floor(n)) || ((n-m)>198)) {
-    *r1d = NAN;
-    return NAN;
+    *r1d = NPY_NAN;
+    return NPY_NAN;
   }
   int_m = (int )m;
   int_n = (int )n;
   eg = (double *)PyMem_Malloc(sizeof(double)*(n-m+2));
   if (eg==NULL) {
     printf("Warning: Memory allocation error.\n"); 
-    *r1d = NAN;
-    return NAN;
+    *r1d = NPY_NAN;
+    return NPY_NAN;
   }
   F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
   F_FUNC(rswfo,RSWFO)(&int_m,&int_n,&c,&x,&cv,&kf,&r1f,r1d,&r2f,&r2d);
@@ -915,16 +915,16 @@ double oblate_radial2_nocv_wrap(double m, double n, double c, double x, double *
 
   if ((x < 0.0) || (m<0) || (n<m) || \
      (m!=floor(m)) || (n!=floor(n)) || ((n-m)>198)) {
-    *r2d = NAN;
-    return NAN;
+    *r2d = NPY_NAN;
+    return NPY_NAN;
   }
   int_m = (int )m;
   int_n = (int )n;
   eg = (double *)PyMem_Malloc(sizeof(double)*(n-m+2));
   if (eg==NULL) {
     printf("Warning: Memory allocation error.\n"); 
-    *r2d = NAN;
-    return NAN;
+    *r2d = NPY_NAN;
+    return NPY_NAN;
   }
   F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
   F_FUNC(rswfo,RSWFO)(&int_m,&int_n,&c,&x,&cv,&kf,&r1f,&r1d,&r2f,r2d);
@@ -940,8 +940,8 @@ int oblate_radial1_wrap(double m, double n, double c, double cv, double x, doubl
 
   if ((x <0.0) || (m<0) || (n<m) || \
      (m!=floor(m)) || (n!=floor(n))) {
-    *r1f = NAN;
-    *r1d = NAN;
+    *r1f = NPY_NAN;
+    *r1d = NPY_NAN;
     return 0;
   }
   int_m = (int )m;
@@ -958,8 +958,8 @@ int oblate_radial2_wrap(double m, double n, double c, double cv, double x, doubl
 
   if ((x <0.0) || (m<0) || (n<m) || \
      (m!=floor(m)) || (n!=floor(n))) {
-    *r2f = NAN;
-    *r2d = NAN;
+    *r2f = NPY_NAN;
+    *r2d = NPY_NAN;
     return 0;
   }
   int_m = (int )m;
