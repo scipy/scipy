@@ -79,21 +79,24 @@ class inline_ext_function(ext_tools.ext_function):
         function_code = indent(self.code_block,4)
         #local_dict_code = indent(self.arg_local_dict_code(),4)
 
-        try_code =    'try                              \n' \
-                      '{                                \n' \
-                      '    PyObject* raw_locals __attribute__ ((unused));\n' \
-                      '    raw_locals = py_to_raw_dict('       \
-                                             'py__locals,"_locals");\n'  \
-                      '    PyObject* raw_globals __attribute__ ((unused));\n' \
-                      '    raw_globals = py_to_raw_dict('      \
-                                          'py__globals,"_globals");\n' + \
-                      '    /* argument conversion code */     \n' + \
-                           decl_code                               + \
-                      '    /* inline code */                   \n' + \
-                           function_code                           + \
-                      '    /*I would like to fill in changed    '   \
-                              'locals and globals here...*/   \n'   \
-                      '\n}                                       \n'
+        try_code = \
+            '    try                              \n' \
+            '    {                                \n' \
+            '#if defined(__GNUC__) || defined(__ICC)\n' \
+            '        PyObject* raw_locals __attribute__ ((unused));\n' \
+            '        PyObject* raw_globals __attribute__ ((unused));\n' \
+            '#else\n' \
+            '        PyObject* raw_locals;\n' \
+            '        PyObject* raw_globals;\n' \
+            '#endif\n' \
+            '        raw_locals = py_to_raw_dict(py__locals,"_locals");\n'  \
+            '        raw_globals = py_to_raw_dict(py__globals,"_globals");\n' \
+            '        /* argument conversion code */     \n' \
+                     + decl_code  + \
+            '        /* inline code */                   \n' \
+                     + function_code + \
+            '        /*I would like to fill in changed locals and globals here...*/   \n'   \
+            '    }\n'
         catch_code =  "catch(...)                        \n"   \
                       "{                                 \n" + \
                       "    return_val =  py::object();   \n"   \
@@ -110,7 +113,7 @@ class inline_ext_function(ext_tools.ext_function):
 
         all_code = self.function_declaration_code()         + \
                        indent(self.parse_tuple_code(),4)    + \
-                       indent(try_code,4)                   + \
+                       try_code                             + \
                        indent(catch_code,4)                 + \
                        return_code
 
