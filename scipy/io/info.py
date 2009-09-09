@@ -14,6 +14,8 @@ Data input and output
      mminfo   -- query matrix info from Matrix Market formatted file
      mmread   -- read matrix from Matrix Market formatted file
      mmwrite  -- write matrix to Matrix Market formatted file
+     wavfile  -- module to read / write wav files using numpy arrays
+     arrf     -- read files in Arff format
 
 """
 postpone_import = 1

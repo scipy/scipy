@@ -9,9 +9,9 @@ modules is that it doesn't require the code to be linked to the NetCDF
 libraries as the other modules do.
 
 The code is based on the `NetCDF file format specification
-<http://www.unidata.ucar.edu/software/netcdf/guide_15.html>`_. A NetCDF
-file is a self-describing binary format, with a header followed by
-data. The header contains metadata describing dimensions, variables
+<http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html>`_. A
+NetCDF file is a self-describing binary format, with a header followed
+by data. The header contains metadata describing dimensions, variables
 and the position of the data in the file, so access can be done in an
 efficient manner without loading unnecessary data into memory. We use
 the ``mmap`` module to create Numpy arrays mapped to the data on disk,
@@ -81,6 +81,7 @@ __all__ = ['netcdf_file', 'netcdf_variable']
 from operator import mul
 from mmap import mmap, ACCESS_READ
 
+import numpy as np
 from numpy import fromstring, ndarray, dtype, empty, array, asarray
 from numpy import little_endian as LITTLE_ENDIAN
 
@@ -131,19 +132,41 @@ class netcdf_file(object):
     attribute of the ``netcdf_file`` object.
 
     """
-    def __init__(self, filename, mode='r', mmap=True, version=1):
-        if hasattr(filename, 'seek'):
+    def __init__(self, filename, mode='r', mmap=None, version=1):
+        ''' Initialize netcdf_file from fileobj (string or file-like)
+
+        Parameters
+        ----------
+        filename : string or file-like
+           string -> filename
+        mode : {'r', 'w'}, optional
+           read-write mode, default is 'r'
+        mmap : None or bool, optional
+           Whether to mmap `filename` when reading.  Default is True
+           when `filename` is a file name, False when `filename` is a
+           file-like object
+        version : {1, 2}, optional
+           version of netcdf to read / write, where 1 means *Classic
+           format* and 2 means *64-bit offset format*.  Default is 1.  See
+           http://www.unidata.ucar.edu/software/netcdf/docs/netcdf/Which-Format.html#Which-Format
+        '''
+        if hasattr(filename, 'seek'): # file-like
             self.fp = filename
             self.filename = 'None'
-            self.use_mmap = False
-        else:
+            if mmap is None:
+                mmap = False
+            elif mmap and not hasattr(filename, 'fileno'):
+                raise ValueError('Cannot use file object for mmap')
+        else: # maybe it's a string
             self.filename = filename
             self.fp = open(self.filename, '%sb' % mode)
-            self.use_mmap = mmap
-
+            if mmap is None:
+                mmap  = True
+        self.use_mmap = mmap
         self.version_byte = version
 
-        assert mode in 'rw', "Mode must be either 'r' or 'w'."
+        if not mode in 'rw':
+            raise ValueError("Mode must be either 'r' or 'w'.")
         self.mode = mode
 
         self.dimensions = {}
@@ -155,7 +178,7 @@ class netcdf_file(object):
 
         self._attributes = {}
 
-        if mode is 'r':
+        if mode == 'r':
             self._read()
 
     def __setattr__(self, attr, value):
@@ -376,7 +399,9 @@ class netcdf_file(object):
     def _read(self):
         # Check magic bytes and version
         magic = self.fp.read(3)
-        assert magic == 'CDF', "Error: %s is not a valid NetCDF 3 file" % self.filename
+        if not magic == 'CDF':
+            raise TypeError("Error: %s is not a valid NetCDF 3 file" %
+                            self.filename)
         self.__dict__['version_byte'] = fromstring(self.fp.read(1), '>b')[0]
 
         # Read file headers and set data.
@@ -423,9 +448,26 @@ class netcdf_file(object):
         rec_vars = []
         count = self._unpack_int()
         for var in range(count):
-            name, dimensions, shape, attributes, typecode, size, dtype_, begin_, vsize = self._read_var()
-            if shape and shape[0] is None:
+            (name, dimensions, shape, attributes,
+             typecode, size, dtype_, begin_, vsize) = self._read_var()
+            # http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html
+            # Note that vsize is the product of the dimension lengths
+            # (omitting the record dimension) and the number of bytes
+            # per value (determined from the type), increased to the
+            # next multiple of 4, for each variable. If a record
+            # variable, this is the amount of space per record. The
+            # netCDF "record size" is calculated as the sum of the
+            # vsize's of all the record variables.
+            #
+            # The vsize field is actually redundant, because its value
+            # may be computed from other information in the header. The
+            # 32-bit vsize field is not large enough to contain the size
+            # of variables that require more than 2^32 - 4 bytes, so
+            # 2^32 - 1 is used in the vsize field for such variables.
+            if shape and shape[0] is None: # record variable
                 rec_vars.append(name)
+                # The netCDF "record size" is calculated as the sum of
+                # the vsize's of all the record variables.
                 self.__dict__['_recsize'] += vsize
                 if begin == 0: begin = begin_
                 dtypes['names'].append(name)
@@ -441,15 +483,17 @@ class netcdf_file(object):
 
                 # Data will be set later.
                 data = None
-            else:
+            else: # not a record variable
+                # Calculate size to avoid problems with vsize (above)
+                a_size = reduce(mul, shape, 1) * size
                 if self.use_mmap:
-                    mm = mmap(self.fp.fileno(), begin_+vsize, access=ACCESS_READ)
+                    mm = mmap(self.fp.fileno(), begin_+a_size, access=ACCESS_READ)
                     data = ndarray.__new__(ndarray, shape, dtype=dtype_,
                             buffer=mm, offset=begin_, order=0)
                 else:
                     pos = self.fp.tell()
                     self.fp.seek(begin_)
-                    data = fromstring(self.fp.read(vsize), dtype=dtype_)
+                    data = fromstring(self.fp.read(a_size), dtype=dtype_)
                     data.shape = shape
                     self.fp.seek(pos)
 
