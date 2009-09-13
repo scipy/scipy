@@ -53,9 +53,9 @@ arpack_src += [pjoin('ARPACK', 'LAPACK', s) for s in [ "clahqr.f", "dlahqr.f",
 
 src = [str(s) for s in arpack_src]
 
-env.AppendUnique(CPPPATH = pjoin('ARPACK', 'SRC'))
-env.AppendUnique(F77PATH = pjoin('ARPACK', 'SRC'))
-env.AppendUnique(LIBPATH = '.')
+env.AppendUnique(CPPPATH = [pjoin('ARPACK', 'SRC')])
+env.AppendUnique(F77PATH = [pjoin('ARPACK', 'SRC')])
+env.AppendUnique(LIBPATH = ['.'])
 arpack_lib = env.DistutilsStaticExtLibrary('arpack', source = src)
 
 # Build _arpack extension
