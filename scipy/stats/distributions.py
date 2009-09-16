@@ -1086,6 +1086,8 @@ class norm_gen(rv_continuous):
         return _norm_pdf(x)
     def _cdf(self,x):
         return _norm_cdf(x)
+    def _sf(self, x):
+        return _norm_cdf(-x)
     def _ppf(self,q):
         return _norm_ppf(q)
     def _isf(self,q):
@@ -2843,6 +2845,8 @@ class t_gen(rv_continuous):
         return Px
     def _cdf(self, x, df):
         return special.stdtr(df, x)
+    def _sf(self, x, df):
+        return special.stdtr(df, -x) 
     def _ppf(self, q, df):
         return special.stdtrit(df, q)
     def _stats(self, df):
