@@ -634,7 +634,7 @@ def ansari(x,y):
         else:  # N even
             varAB = m*n*(16*fac-N*(N+2)**2)/(16.0 * N * (N-1))
     z = (AB - mnAB)/sqrt(varAB)
-    pval = (1-distributions.norm.cdf(abs(z)))*2.0
+    pval = distributions.norm.sf(abs(z)) * 2.0
     return AB, pval
 
 def bartlett(*args):
@@ -895,8 +895,15 @@ def mood(x,y):
     mnM = n*(N*N-1.0)/12
     varM = m*n*(N+1.0)*(N+2)*(N-2)/180
     z = (M-mnM)/sqrt(varM)
-    p = distributions.norm.cdf(z)
-    pval = 2*min(p,1-p)
+    
+    # Numerically better than p = norm.cdf(x); p = min(p, 1 - p)
+    if z > 0:
+        pval = distributions.norm.sf(z)
+    else:
+        pval = distributions.norm.cdf(z)
+    
+    # Account for two-sidedness
+    pval *= 2.
     return z, pval
 
 
@@ -974,7 +981,7 @@ Returns: t-statistic, two-tailed p-value
         V = se*se - corr
         se = sqrt((count*V - T*T)/(count-1.0))
     z = (T - mn)/se
-    prob = 2*(1.0 -stats.zprob(abs(z)))
+    prob = 2 * distributions.norm.sf(abs(z))
     return T, prob
 
 def _hermnorm(N):
