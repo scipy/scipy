@@ -156,6 +156,7 @@ void dist_average(cinfo *info, int mini, int minj, int np, int n) {
   int i, xi, xn;
   cnode *rn = info->nodes + inds[mini];
   cnode *sn = info->nodes + inds[minj];
+  cnode *xnd;
   bit = buf;
   rc = (double)rn->n;
   sc = (double)sn->n;
@@ -166,7 +167,7 @@ void dist_average(cinfo *info, int mini, int minj, int np, int n) {
     drx = *(rows[i] + mini - i - 1);
     dsx = *(rows[i] + minj - i - 1);
     xi = inds[i];
-    cnode *xnd = info->nodes + xi;
+    xnd = info->nodes + xi;
     xn = xnd->n;
     mply = (double)1.0 / (((double)xn) * rscnt);
     *bit = mply * ((drx * (rc * xn)) + (dsx * (sc * xn)));
@@ -175,7 +176,7 @@ void dist_average(cinfo *info, int mini, int minj, int np, int n) {
     drx = *(rows[mini] + i - mini - 1);
     dsx = *(rows[i] + minj - i - 1);
     xi = inds[i];
-    cnode *xnd = info->nodes + xi;
+    xnd = info->nodes + xi;
     xn = xnd->n;
     mply = (double)1.0 / (((double)xn) * rscnt);
     *bit = mply * ((drx * (rc * xn)) + (dsx * (sc * xn)));
@@ -184,7 +185,7 @@ void dist_average(cinfo *info, int mini, int minj, int np, int n) {
     drx = *(rows[mini] + i - mini - 1);
     dsx = *(rows[minj] + i - minj - 1);
     xi = inds[i];
-    cnode *xnd = info->nodes + xi;
+    xnd = info->nodes + xi;
     xn = xnd->n;
     mply = (double)1.0 / (((double)xn) * rscnt);
     *bit = mply * ((drx * (rc * xn)) + (dsx * (sc * xn)));
@@ -255,6 +256,7 @@ void dist_ward(cinfo *info, int mini, int minj, int np, int n) {
   int i, m, xi, rind, sind;
   double drx, dsx, rf, sf, xf, xn, rn, sn, drsSq;
   cnode *newNode;
+  cnode *xnd;
 
   rind = inds[mini];
   sind = inds[minj];
@@ -272,7 +274,7 @@ void dist_ward(cinfo *info, int mini, int minj, int np, int n) {
     drx = *(rows[i] + mini - i - 1);
     dsx = *(rows[i] + minj - i - 1);
     xi = inds[i];
-    cnode *xnd = info->nodes + xi;
+    xnd = info->nodes + xi;
     xn = xnd->n;
     rf = (rn + xn) / (rn + sn + xn);
     sf = (sn + xn) / (rn + sn + xn);
@@ -286,7 +288,7 @@ void dist_ward(cinfo *info, int mini, int minj, int np, int n) {
     drx = *(rows[mini] + i - mini - 1);
     dsx = *(rows[i] + minj - i - 1);
     xi = inds[i];
-    cnode *xnd = info->nodes + xi;
+    xnd = info->nodes + xi;
     xn = xnd->n;
     rf = (rn + xn) / (rn + sn + xn);
     sf = (sn + xn) / (rn + sn + xn);
@@ -299,7 +301,7 @@ void dist_ward(cinfo *info, int mini, int minj, int np, int n) {
     drx = *(rows[mini] + i - mini - 1);
     dsx = *(rows[minj] + i - minj - 1);
     xi = inds[i];
-    cnode *xnd = info->nodes + xi;
+    xnd = info->nodes + xi;
     xn = xnd->n;
     rf = (rn + xn) / (rn + sn + xn);
     sf = (sn + xn) / (rn + sn + xn);
