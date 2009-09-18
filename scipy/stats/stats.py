@@ -882,8 +882,7 @@ def skewtest(a, axis=0):
     alpha = math.sqrt(2.0/(W2-1))
     y = np.where(y==0, 1, y)
     Z = delta*np.log(y/alpha + np.sqrt((y/alpha)**2+1))
-    return Z, (1.0 - zprob(np.abs(Z)))*2
-
+    return Z, 2 * distributions.norm.sf(np.abs(Z))
 
 def kurtosistest(a, axis=0):
     """Tests whether a dataset has normal kurtosis (i.e.,
@@ -925,7 +924,7 @@ def kurtosistest(a, axis=0):
         Z = Z[()]
     #JPNote: p-value sometimes larger than 1
     #zprob uses upper tail, so Z needs to be positive
-    return Z, (1.0-zprob(np.abs(Z)))*2
+    return Z, 2 * distributions.norm.sf(np.abs(Z))
 
 
 def normaltest(a, axis=0):
@@ -1703,7 +1702,8 @@ def pointbiserialr(x, y):
     y0m = y0.mean()
     y1m = y1.mean()
 
-    rpb = (y1m - y0m)*np.sqrt(phat * (1-phat)) / y.std()
+    # phat - phat**2 is more stable than phat*(1-phat)
+    rpb = (y1m - y0m) * np.sqrt(phat - phat**2) / y.std()
 
     df = n-2
     # fixme: see comment about TINY in pearsonr()
@@ -2417,7 +2417,7 @@ def ranksums(x, y):
     s = np.sum(x,axis=0)
     expected = n1*(n1+n2+1) / 2.0
     z = (s - expected) / np.sqrt(n1*n2*(n1+n2+1)/12.0)
-    prob = 2*(1.0 -zprob(abs(z)))
+    prob = 2 * distributions.norm.sf(abs(z))
     return z, prob
 
 
