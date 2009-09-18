@@ -2850,7 +2850,7 @@ class t_gen(rv_continuous):
     def _ppf(self, q, df):
         return special.stdtrit(df, q)
     def _isf(self, q, df):
-        return -special.stdrit(df, q)
+        return -special.stdtrit(df, q)
     def _stats(self, df):
         mu2 = where(df > 2, df / (df-2.0), inf)
         g1 = where(df > 3, 0.0, nan)
