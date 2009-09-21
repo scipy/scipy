@@ -24,35 +24,56 @@
 /* python files: (to be imported to Multipack.py)
    fitpack.py
  */
-#if defined(NO_APPEND_FORTRAN)
-#define CURFIT curfit
-#define PERCUR percur
-#define SPALDE spalde
-#define SPLDER splder
-#define SPLEV splev
-#define SPLINT splint
-#define SPROOT sproot
-#define PARCUR parcur
-#define CLOCUR clocur
-#define SURFIT surfit
-#define BISPEV bispev
-#define PARDER parder
-#define INSERT insert
+#if defined(UPPERCASE_FORTRAN)
+	#if defined(NO_APPEND_FORTRAN)
+	/* nothing to do */
+	#else
+		#define CURFIT CURFIT_
+		#define PERCUR PERCUR_
+		#define SPALDE SPALDE_
+		#define SPLDER SPLDER_
+		#define SPLEV  SPLEV_
+		#define SPLINT SPLINT_
+		#define SPROOT SPROOT_
+		#define PARCUR PARCUR_
+		#define CLOCUR CLOCUR_
+		#define SURFIT SURFIT_
+		#define BISPEV BISPEV_
+		#define PARDER PARDER_
+		#define INSERT INSERT_
+	#endif
 #else
-#define CURFIT curfit_
-#define PERCUR percur_
-#define SPALDE spalde_
-#define SPLDER splder_
-#define SPLEV splev_
-#define SPLINT splint_
-#define SPROOT sproot_
-#define PARCUR parcur_
-#define CLOCUR clocur_
-#define SURFIT surfit_
-#define BISPEV bispev_
-#define PARDER parder_
-#define INSERT insert_
+	#if defined(NO_APPEND_FORTRAN)
+		#define CURFIT curfit
+		#define PERCUR percur
+		#define SPALDE spalde
+		#define SPLDER splder
+		#define SPLEV splev
+		#define SPLINT splint
+		#define SPROOT sproot
+		#define PARCUR parcur
+		#define CLOCUR clocur
+		#define SURFIT surfit
+		#define BISPEV bispev
+		#define PARDER parder
+		#define INSERT insert
+	#else
+		#define CURFIT curfit_
+		#define PERCUR percur_
+		#define SPALDE spalde_
+		#define SPLDER splder_
+		#define SPLEV splev_
+		#define SPLINT splint_
+		#define SPROOT sproot_
+		#define PARCUR parcur_
+		#define CLOCUR clocur_
+		#define SURFIT surfit_
+		#define BISPEV bispev_
+		#define PARDER parder_
+		#define INSERT insert_
+	#endif
 #endif
+
 void CURFIT(int*,int*,double*,double*,double*,double*,double*,int*,double*,int*,int*,double*,double*,double*,double*,int*,int*,int*);
 void PERCUR(int*,int*,double*,double*,double*,int*,double*,int*,int*,double*,double*,double*,double*,int*,int*,int*);
 void SPALDE(double*,int*,double*,int*,double*,double*,int*);

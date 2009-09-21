@@ -10,6 +10,7 @@ env.Tool('f2py')
 config = env.NumpyConfigure(custom_tests = {'CheckF77Clib' : CheckF77Clib})
 if not config.CheckF77Clib():
     raise Exception("Could not check F77 runtime, needed for interpolate")
+config.CheckF77Mangling()
 config.Finish()
 
 # Build fitpack
