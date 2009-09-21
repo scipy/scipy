@@ -19,12 +19,24 @@
 */
 
 #if defined(NO_APPEND_FORTRAN)
+#if defined(UPPERCASE_FORTRAN)
+/* nothing to do in that case */
+#else
 #define CHKDER chkder
 #define HYBRD  hybrd
 #define HYBRJ  hybrj
 #define LMDIF  lmdif
 #define LMDER  lmder
 #define LMSTR  lmstr
+#endif
+#else
+#if defined(UPPERCASE_FORTRAN)
+#define CHKDER CHKDER_
+#define HYBRD  HYBRD_
+#define HYBRJ  HYBRJ_
+#define LMDIF  LMDIF_
+#define LMDER  LMDER_
+#define LMSTR  LMSTR_
 #else
 #define CHKDER chkder_
 #define HYBRD  hybrd_
@@ -32,6 +44,7 @@
 #define LMDIF  lmdif_
 #define LMDER  lmder_
 #define LMSTR  lmstr_
+#endif
 #endif
 
 extern void CHKDER(int*,int*,double*,double*,double*,int*,double*,double*,int*,double*);
