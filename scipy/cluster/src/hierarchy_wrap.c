@@ -373,7 +373,7 @@ static PyMethodDef _hierarchyWrapMethods[] = {
   {NULL, NULL}     /* Sentinel - marks the end of this structure */
 };
 
-void init_hierarchy_wrap(void)  {
+PyMODINIT_FUNC init_hierarchy_wrap(void)  {
   (void) Py_InitModule("_hierarchy_wrap", _hierarchyWrapMethods);
   import_array();  // Must be present for NumPy.  Called first after above line.
 }

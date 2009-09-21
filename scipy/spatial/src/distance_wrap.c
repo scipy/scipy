@@ -1132,7 +1132,7 @@ static PyMethodDef _distanceWrapMethods[] = {
   {NULL, NULL}     /* Sentinel - marks the end of this structure */
 };
 
-void init_distance_wrap(void)  {
+PyMODINIT_FUNC init_distance_wrap(void)  {
   (void) Py_InitModule("_distance_wrap", _distanceWrapMethods);
   import_array();  // Must be present for NumPy.  Called first after above line.
 }
