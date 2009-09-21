@@ -41,14 +41,13 @@ void zfft(complex_double * inout, int n, int direction, int howmany,
 	switch (direction) {
 	case 1:
 		for (i = 0; i < howmany; ++i, ptr += n) {
-			zfftf_(&n, (double *) (ptr), wsave);
-
+			F_FUNC(zfftf,ZFFTF)(&n, (double *) (ptr), wsave);
 		}
 		break;
 
 	case -1:
 		for (i = 0; i < howmany; ++i, ptr += n) {
-			zfftb_(&n, (double *) (ptr), wsave);
+			F_FUNC(zfftb,ZFFTB)(&n, (double *) (ptr), wsave);
 		}
 		break;
 	default:
@@ -76,14 +75,14 @@ void cfft(complex_float * inout, int n, int direction, int howmany,
 	switch (direction) {
 	case 1:
 		for (i = 0; i < howmany; ++i, ptr += n) {
-			cfftf_(&n, (float *) (ptr), wsave);
+			F_FUNC(cfftf, CFFTF)(&n, (float *) (ptr), wsave);
 
 		}
 		break;
 
 	case -1:
 		for (i = 0; i < howmany; ++i, ptr += n) {
-			cfftb_(&n, (float *) (ptr), wsave);
+			F_FUNC(cfftb, CFFTB)(&n, (float *) (ptr), wsave);
 		}
 		break;
 	default:

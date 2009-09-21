@@ -49,7 +49,7 @@ void @pref@dct1(@type@ * inout, int n, int howmany, int normalize)
     wsave = caches_@pref@dct1[get_cache_id_@pref@dct1(n)].wsave;
 
     for (i = 0; i < howmany; ++i, ptr += n) {
-        @pref@cost_(&n, ptr, wsave);
+        F_FUNC(@pref@cost, @PREF@COST)(&n, ptr, wsave);
     }
 
     switch (normalize) {
@@ -85,7 +85,7 @@ void @pref@dct2(@type@ * inout, int n, int howmany, int normalize)
     wsave = caches_@pref@dct2[get_cache_id_@pref@dct2(n)].wsave;
 
     for (i = 0; i < howmany; ++i, ptr += n) {
-        @pref@cosqb_(&n, ptr, wsave);
+        F_FUNC(@pref@cosqb, @PREF@COSQB)(&n, ptr, wsave);
 
     }
 
@@ -150,7 +150,7 @@ void @pref@dct3(@type@ * inout, int n, int howmany, int normalize)
 
     ptr = inout;
     for (i = 0; i < howmany; ++i, ptr += n) {
-        @pref@cosqf_(&n, ptr, wsave);
+        F_FUNC(@pref@cosqf, @PREF@COSQF)(&n, ptr, wsave);
 
     }
 

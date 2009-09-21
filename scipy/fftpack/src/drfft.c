@@ -44,13 +44,13 @@ void drfft(double *inout, int n, int direction, int howmany,
     switch (direction) {
         case 1:
         for (i = 0; i < howmany; ++i, ptr += n) {
-            dfftf_(&n, ptr, wsave);
+            F_FUNC(dfftf,DFFTF)(&n, ptr, wsave);
         }
         break;
 
     case -1:
         for (i = 0; i < howmany; ++i, ptr += n) {
-            dfftb_(&n, ptr, wsave);
+            F_FUNC(dfftb,DFFTB)(&n, ptr, wsave);
         }
         break;
 
@@ -79,13 +79,13 @@ void rfft(float *inout, int n, int direction, int howmany,
     switch (direction) {
         case 1:
         for (i = 0; i < howmany; ++i, ptr += n) {
-            rfftf_(&n, ptr, wsave);
+            F_FUNC(rfftf,RFFTF)(&n, ptr, wsave);
         }
         break;
 
     case -1:
         for (i = 0; i < howmany; ++i, ptr += n) {
-            rfftb_(&n, ptr, wsave);
+            F_FUNC(rfftb,RFFTB)(&n, ptr, wsave);
         }
         break;
 
