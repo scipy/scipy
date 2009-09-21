@@ -35,8 +35,6 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 
 #include "mconf.h"
 
-extern double floor(double);
-
 double round(double x)
 {
 double y, r;
