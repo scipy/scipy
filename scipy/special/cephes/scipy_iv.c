@@ -347,6 +347,9 @@ static int temme_ik_series(double v, double x, double *K, double *K1)
     double f, h, p, q, coef, sum, sum1, tolerance;
     double a, b, c, d, sigma, gamma1, gamma2;
     unsigned long k;
+    double gp;
+    double gm;
+
 
     /*
      * |x| <= 2, Temme series converge rapidly
@@ -355,8 +358,8 @@ static int temme_ik_series(double v, double x, double *K, double *K1)
     BOOST_ASSERT(fabs(x) <= 2);
     BOOST_ASSERT(fabs(v) <= 0.5f);
 
-    double gp = gamma(v + 1) - 1;
-    double gm = gamma(-v + 1) - 1;
+    gp = gamma(v + 1) - 1;
+    gm = gamma(-v + 1) - 1;
 
     a = log(x / 2);
     b = exp(v * a);
