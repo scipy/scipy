@@ -25,14 +25,14 @@ void convolve_z(int n,double* inout,double* omega_real,double* omega_imag);
 extern int ispow2le2e30(int n);
 extern int ispow2le2e13(int n);
 
-#if defined(NO_APPEND_FORTRAN)
-#if defined(UPPERCASE_FORTRAN)
+#if defined(NO_APPEND_FORTRAN) || defined(F77_NO_APPEND_FORTRAN)
+#if defined(UPPERCASE_FORTRAN) || defined(F77_UPPERCASE_FORTRAN)
 #define F_FUNC(f,F) F
 #else
 #define F_FUNC(f,F) f
 #endif
 #else
-#if defined(UPPERCASE_FORTRAN)
+#if defined(UPPERCASE_FORTRAN) || defined(F77_UPPERCASE_FORTRAN)
 #define F_FUNC(f,F) F##_
 #else
 #define F_FUNC(f,F) f##_
