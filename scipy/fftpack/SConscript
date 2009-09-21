@@ -7,6 +7,10 @@ from numscons import GetNumpyEnvironment
 env = GetNumpyEnvironment(ARGUMENTS)
 env.Tool('f2py')
 
+config = env.NumpyConfigure()
+config.CheckF77Mangling()
+config.Finish()
+
 # Build dfftpack
 src = [pjoin("src/dfftpack", i) for i in [ "dcosqb.f", "dcosqf.f", "dcosqi.f",
 "dcost.f", "dcosti.f", "dfftb.f", "dfftb1.f", "dfftf.f", "dfftf1.f", "dffti.f",
