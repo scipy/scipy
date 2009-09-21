@@ -20,21 +20,35 @@
  */
 
 #if defined(NO_APPEND_FORTRAN)
-#define DQAGSE dqagse
-#define DQAGIE dqagie
-#define DQAGPE dqagpe
-#define DQAWOE dqawoe
-#define DQAWFE dqawfe
-#define DQAWSE dqawse
-#define DQAWCE dqawce
+	#if defined(UPPERCASE_FORTRAN)
+	/* nothing to do here */
+	#else
+		#define DQAGSE dqagse
+		#define DQAGIE dqagie
+		#define DQAGPE dqagpe
+		#define DQAWOE dqawoe
+		#define DQAWFE dqawfe
+		#define DQAWSE dqawse
+		#define DQAWCE dqawce
+	#endif
 #else
-#define DQAGSE dqagse_
-#define DQAGIE dqagie_
-#define DQAGPE dqagpe_
-#define DQAWOE dqawoe_
-#define DQAWFE dqawfe_
-#define DQAWSE dqawse_
-#define DQAWCE dqawce_
+	#if defined(UPPERCASE_FORTRAN)
+		#define DQAGSE DQAGSE_
+		#define DQAGIE DQAGIE_
+		#define DQAGPE DQAGPE_
+		#define DQAWOE DQAWOE_
+		#define DQAWFE DQAWFE_
+		#define DQAWSE DQAWSE_
+		#define DQAWCE DQAWCE_
+	#else
+		#define DQAGSE dqagse_
+		#define DQAGIE dqagie_
+		#define DQAGPE dqagpe_
+		#define DQAWOE dqawoe_
+		#define DQAWFE dqawfe_
+		#define DQAWSE dqawse_
+		#define DQAWCE dqawce_
+	#endif
 #endif
 
 void DQAGSE();

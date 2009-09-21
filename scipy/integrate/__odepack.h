@@ -14,10 +14,18 @@
  */
 
 
-#if defined(NO_APPEND_FORTRAN)
-#define LSODA  lsoda
+#if defined(UPPERCASE_FORTRAN)
+	#if defined(NO_APPEND_FORTRAN)
+		/* nothing to do here */
+	#else
+		#define LSODA  LSODA_
+	#endif
 #else
-#define LSODA  lsoda_
+	#if defined(NO_APPEND_FORTRAN)
+		#define LSODA  lsoda
+	#else
+		#define LSODA  lsoda_
+	#endif
 #endif
 
 void LSODA();
