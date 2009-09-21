@@ -255,14 +255,14 @@ double modstruve_wrap(double v, double x) {
   if ((x < 0) & (floor(v)!=v)) return NPY_NAN;
   if (v==0.0) {
     if (x < 0) {x = -x; flag=1;}
-    F_FUNC(stvl0,STVl0)(&x,&out);
+    F_FUNC(stvl0,STVL0)(&x,&out);
     CONVINF(out);
     if (flag) out = -out;
     return out;
   }
   if (v==1.0) {
     if (x < 0) x=-x;
-    F_FUNC(stvl1,STVl1)(&x,&out);
+    F_FUNC(stvl1,STVL1)(&x,&out);
     CONVINF(out);
     return out;
   }
@@ -270,7 +270,7 @@ double modstruve_wrap(double v, double x) {
     x = -x;
     flag = 1;
   }
-  F_FUNC(stvlv,STVlV)(&v,&x,&out);
+  F_FUNC(stvlv,STVLV)(&v,&x,&out);
   CONVINF(out);
   if (flag && (!((int)floor(v) % 2))) out = -out;
   return out;  
