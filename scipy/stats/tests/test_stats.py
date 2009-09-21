@@ -1141,7 +1141,7 @@ def test_ttest_rel():
     #test zero division problem
     t,p = stats.ttest_rel([0,0,0],[1,1,1])
     assert_equal((np.abs(t),p), (np.inf, 0))
-    assert_equal(stats.ttest_rel([0,0,0], [0,0,0]), (1.0, 0.42264973081037421))
+    assert_almost_equal(stats.ttest_rel([0,0,0], [0,0,0]), (1.0, 0.42264973081037421))
 
     #check that nan in input array result in nan output
     anan = np.array([[1,np.nan],[-1,1]])
@@ -1182,7 +1182,7 @@ def test_ttest_ind():
     #test zero division problem
     t,p = stats.ttest_ind([0,0,0],[1,1,1])
     assert_equal((np.abs(t),p), (np.inf, 0))
-    assert_equal(stats.ttest_ind([0,0,0], [0,0,0]), (1.0, 0.37390096630005898))
+    assert_almost_equal(stats.ttest_ind([0,0,0], [0,0,0]), (1.0, 0.37390096630005898))
 
     #check that nan in input array result in nan output
     anan = np.array([[1,np.nan],[-1,1]])
@@ -1222,7 +1222,7 @@ def test_ttest_1samp_new():
     #test zero division problem
     t,p = stats.ttest_1samp([0,0,0], 1)
     assert_equal((np.abs(t),p), (np.inf, 0))
-    assert_equal(stats.ttest_1samp([0,0,0], 0), (1.0, 0.42264973081037421))
+    assert_almost_equal(stats.ttest_1samp([0,0,0], 0), (1.0, 0.42264973081037421))
 
     #check that nan in input array result in nan output
     anan = np.array([[1,np.nan],[-1,1]])
