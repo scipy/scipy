@@ -76,4 +76,4 @@ odenv.NumpyPythonExtension('vode', source = 'vode.pyf')
 # Dop extension
 dopenv = env.Clone()
 dopenv.Prepend(LIBS=['dop'])
-dopenv.NumpyPythonExtension('dop', source='dop.pyf')
+dopenv.NumpyPythonExtension('_dop', source='dop.pyf')

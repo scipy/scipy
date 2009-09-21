@@ -27,7 +27,7 @@ python module __user__routines
     end interface
 end python module __user__routines
 
-python module dop
+python module _dop
     interface
        subroutine dopri5(n,fcn,x,y,xend,rtol,atol,itol,solout,iout,work,lwork,iwork,liwork,rpar,ipar,idid)
          use __user__routines

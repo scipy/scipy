@@ -212,7 +212,7 @@ import warnings
 from numpy import asarray, array, zeros, int32, isscalar, real, imag
 
 import vode as _vode
-import dop as _dop
+import _dop
 
 #------------------------------------------------------------------------------
 # User interface
