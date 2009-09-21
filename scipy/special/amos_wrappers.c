@@ -64,8 +64,8 @@ int ierr_to_mtherr( int nz, int ierr) {
 
 void set_nan_if_no_computation_done(Py_complex *v, int ierr) {
   if (v != NULL && (ierr == 1 || ierr == 2 || ierr == 4 || ierr == 5)) {
-    v->real = NAN;
-    v->imag = NAN;
+    v->real = NPY_NAN;
+    v->imag = NPY_NAN;
   }
 }
 
@@ -174,7 +174,7 @@ int cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip
   cz.imag = 0;
 
   if (z < 0) {
-      *ai = NAN;
+      *ai = NPY_NAN;
   } else {
       F_FUNC(zairy,ZAIRY)(CADDR(cz), &id, &kode, CADDR(cai), &nz, &ierr);
       DO_MTHERR("airye:", &cai);
@@ -186,7 +186,7 @@ int cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip
   
   id = 1;
   if (z < 0) {
-      *aip = NAN;
+      *aip = NPY_NAN;
   } else {
       F_FUNC(zairy,ZAIRY)(CADDR(cz), &id, &kode, CADDR(caip), &nz, &ierr);
       DO_MTHERR("airye:", &caip);
@@ -215,14 +215,14 @@ Py_complex cbesi_wrap( double v, Py_complex z) {
     /* overflow */
     if (z.imag == 0 && (z.real >= 0 || v == floor(v))) {
         if (z.real < 0 && v/2 != floor(v/2))
-            cy.real = -INFINITY;
+            cy.real = -NPY_INFINITY;
         else
-            cy.real = INFINITY;
+            cy.real = NPY_INFINITY;
         cy.imag = 0;
     } else {
         cy = cbesi_wrap_e(v*sign, z);
-        cy.real *= INFINITY;
-        cy.imag *= INFINITY;
+        cy.real *= NPY_INFINITY;
+        cy.imag *= NPY_INFINITY;
     }
   }
 
@@ -272,7 +272,7 @@ Py_complex cbesi_wrap_e( double v, Py_complex z) {
 double cbesi_wrap_e_real(double v, double z) {
   Py_complex cy, w;
   if (v != floor(v) && z < 0) {
-    return NAN;
+    return NPY_NAN;
   } else {
     w.real = z;
     w.imag = 0;
@@ -297,8 +297,8 @@ Py_complex cbesj_wrap( double v, Py_complex z) {
   if (ierr == 2) {
     /* overflow */
     cy_j = cbesj_wrap_e(v, z);
-    cy_j.real *= INFINITY;
-    cy_j.imag *= INFINITY;
+    cy_j.real *= NPY_INFINITY;
+    cy_j.imag *= NPY_INFINITY;
   }
 
   if (sign == -1) {
@@ -337,7 +337,7 @@ Py_complex cbesj_wrap_e( double v, Py_complex z) {
 double cbesj_wrap_e_real(double v, double z) {
   Py_complex cy, w;
   if (v != floor(v) && z < 0) {
-    return NAN;
+    return NPY_NAN;
   } else {
     w.real = z;
     w.imag = 0;
@@ -362,7 +362,7 @@ Py_complex cbesy_wrap( double v, Py_complex z) {
   if (ierr == 2) {
     if (z.real >= 0 && z.imag == 0) {
       /* overflow */
-      cy_y.real = INFINITY;
+      cy_y.real = NPY_INFINITY;
       cy_y.imag = 0;
     }
   }
@@ -393,7 +393,7 @@ Py_complex cbesy_wrap_e( double v, Py_complex z) {
   if (ierr == 2) {
     if (z.real >= 0 && z.imag == 0) {
       /* overflow */
-      cy_y.real = INFINITY;
+      cy_y.real = NPY_INFINITY;
       cy_y.imag = 0;
     }
   }
@@ -411,7 +411,7 @@ Py_complex cbesy_wrap_e( double v, Py_complex z) {
 double cbesy_wrap_e_real(double v, double z) {
   Py_complex cy, w;
   if (z < 0) {
-    return NAN;
+    return NPY_NAN;
   } else {
     w.real = z;
     w.imag = 0;
@@ -435,7 +435,7 @@ Py_complex cbesk_wrap( double v, Py_complex z) {
   if (ierr == 2) {
     if (z.real >= 0 && z.imag == 0) {
       /* overflow */
-      cy.real = INFINITY;
+      cy.real = NPY_INFINITY;
       cy.imag = 0;
     }
   }
@@ -458,7 +458,7 @@ Py_complex cbesk_wrap_e( double v, Py_complex z) {
   if (ierr == 2) {
     if (z.real >= 0 && z.imag == 0) {
       /* overflow */
-      cy.real = INFINITY;
+      cy.real = NPY_INFINITY;
       cy.imag = 0;
     }
   }
@@ -469,7 +469,7 @@ Py_complex cbesk_wrap_e( double v, Py_complex z) {
 double cbesk_wrap_real( double v, double z) {
   Py_complex cy, w;
   if (z < 0) {
-    return NAN;
+    return NPY_NAN;
   } else {
     w.real = z;
     w.imag = 0;
@@ -481,7 +481,7 @@ double cbesk_wrap_real( double v, double z) {
 double cbesk_wrap_e_real( double v, double z) {
   Py_complex cy, w;
   if (z < 0) {
-    return NAN;
+    return NPY_NAN;
   } else {
     w.real = z;
     w.imag = 0;

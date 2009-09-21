@@ -12,6 +12,8 @@
 #include "cephes/mconf.h"
 #endif
 
+#include <numpy/npy_math.h>
+
 extern double cdfbet3_wrap(double p, double x, double b);
 extern double cdfbet4_wrap(double p, double x, double a);
 

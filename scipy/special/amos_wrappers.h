@@ -10,13 +10,7 @@
 #include "Python.h"
 #include "cephes/mconf.h"
 
-#ifndef NAN
-extern double NAN;
-#endif
-
-#ifndef INFINITY
-extern double INFINITY;
-#endif
+#include <numpy/npy_math.h>
 
 #define DO_MTHERR(name, varp)                         \
     do {                                              \
