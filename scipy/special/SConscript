@@ -19,6 +19,7 @@ if sys.platform=='win32':
 config = env.NumpyConfigure(custom_tests = {'CheckF77Clib' : CheckF77Clib})
 if not config.CheckF77Clib():
     raise RuntimeError("Could not get C/F77 runtime information")
+config.CheckF77Mangling()
 config.Finish()
 
 env.AppendUnique(CPPPATH = env["PYEXTCPPPATH"]) 
