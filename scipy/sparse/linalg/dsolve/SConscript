@@ -4,6 +4,7 @@ import sys
 from numscons import GetNumpyEnvironment
 from numscons import CheckF77LAPACK
 from numscons import write_info
+from numscons.core.misc import built_with_mstools, built_with_gnu_f77
 
 env = GetNumpyEnvironment(ARGUMENTS)
 
@@ -42,7 +43,7 @@ superlu_src = [pjoin('SuperLU', 'SRC', s) for s in [ "ccolumn_bmod.c",
 "dpanel_bmod.c", "dpanel_dfs.c", "dpivotL.c", "dpivotgrowth.c", "dpruneL.c",
 "dreadhb.c", "dsnode_bmod.c", "dsnode_dfs.c", "dsp_blas2.c", "dsp_blas3.c",
 "dutil.c", "dzsum1.c", "get_perm_c.c", "heap_relax_snode.c", "icmax1.c",
-"izmax1.c", "lsame.c", "memory.c", "mmd.c", "relax_snode.c", "scolumn_bmod.c",
+"izmax1.c", "memory.c", "mmd.c", "relax_snode.c", "scolumn_bmod.c",
 "scolumn_dfs.c", "scomplex.c", "scopy_to_ucol.c", "scsum1.c", "sgscon.c",
 "sgsequ.c", "sgsrfs.c", "sgssv.c", "sgssvx.c", "sgstrf.c", "sgstrs.c",
 "slacon.c", "slamch.c", "slangs.c", "slaqgs.c", "smemory.c", "sp_coletree.c",
@@ -54,6 +55,11 @@ superlu_src = [pjoin('SuperLU', 'SRC', s) for s in [ "ccolumn_bmod.c",
 "zlacon.c", "zlangs.c", "zlaqgs.c", "zmemory.c", "zpanel_bmod.c",
 "zpanel_dfs.c", "zpivotL.c", "zpivotgrowth.c", "zpruneL.c", "zreadhb.c",
 "zsnode_bmod.c", "zsnode_dfs.c", "zsp_blas2.c", "zsp_blas3.c", "zutil.c"]]
+
+# XXX: we should detect whether lsame is already defined in BLAS/LAPACK. Here,
+# when using MSVC + MKL, lsame is already in MKL
+if not (built_with_mstools(env) and (not built_with_gnu_f77(env))):
+    superlu_src.append(pjoin("SuperLU", "SRC", "lsame.c"))
 superlu = superlu_env.DistutilsStaticExtLibrary('superlu_src', source = superlu_src)
 
 # Build python extensions
