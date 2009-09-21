@@ -67,7 +67,7 @@ class TestConstructUtils(TestCase):
         assert_equal(identity(2).toarray(), [[1,0],[0,1]])
 
         I = identity(3, dtype='int8', format='dia')
-        assert_equal( I.dtype, 'int8' )
+        assert_equal( I.dtype, np.dtype('int8') )
         assert_equal( I.format, 'dia' )
 
         for fmt in sparse_formats:
@@ -81,7 +81,7 @@ class TestConstructUtils(TestCase):
         assert_equal(eye(3,2).toarray(), [[1,0],[0,1],[0,0]])
         assert_equal(eye(3,3).toarray(), [[1,0,0],[0,1,0],[0,0,1]])
 
-        assert_equal(eye(3,3,dtype='int16').dtype, 'int16')
+        assert_equal(eye(3,3,dtype='int16').dtype, np.dtype('int16'))
 
         for m in [3, 5]:
             for n in [3, 5]:
