@@ -58,7 +58,7 @@ def configuration(parent_package='',top_path=None):
                          **newblas)
 
     # dop
-    config.add_extension('dop',
+    config.add_extension('_dop',
                          sources=['dop.pyf'],
                          libraries=['dop'])
 
