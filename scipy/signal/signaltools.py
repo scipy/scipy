@@ -6,7 +6,8 @@ import warnings
 
 import sigtools
 from scipy import special, linalg
-from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2, fftn, ifftn
+from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2, fftn, \
+     ifftn, fftfreq
 from numpy import polyadd, polymul, polydiv, polysub, \
      roots, poly, polyval, polyder, cast, asarray, isscalar, atleast_1d, \
      ones, sin, linspace, real, extract, real_if_close, zeros, array, arange, \
@@ -14,7 +15,7 @@ from numpy import polyadd, polymul, polydiv, polysub, \
      ravel, size, less_equal, sum, r_, iscomplexobj, take, \
      argsort, allclose, expand_dims, unique, prod, sort, reshape, \
      transpose, dot, any, mean, cosh, arccosh, \
-     arccos, concatenate, flipud
+     arccos, concatenate, flipud, ndarray
 import numpy as np
 from scipy.misc import factorial
 
@@ -1432,7 +1433,8 @@ def get_window(window,Nx,fftbins=1):
         elif isinstance(window, types.StringType):
             if window in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
                         'general gaussian', 'general_gaussian',
-                        'general gauss', 'general_gauss', 'ggs']:
+                        'general gauss', 'general_gauss', 'ggs',
+                        'slepian', 'optimal', 'slep', 'dss']:
                 raise ValueError, "That window needs a parameter -- pass a tuple"
             else:
                 winstr = window
@@ -1489,25 +1491,40 @@ def resample(x,num,t=None,axis=0,window=None):
     Fourier method is used, the signal is assumed periodic.
 
     Window controls a Fourier-domain window that tapers the Fourier
-    spectrum before zero-padding to aleviate ringing in the resampled
+    spectrum before zero-padding to alleviate ringing in the resampled
     values for sampled signals you didn't intend to be interpreted as
     band-limited.
+
+    If window is a function, then it is called with a vector of inputs
+    indicating the frequency bins (i.e. fftfreq(x.shape[axis]) )
+
+    If window is an array of the same length as x.shape[axis] it is
+    assumed to be the window to be applied directly in the Fourier
+    domain (with dc and low-frequency first).
 
     If window is a string then use the named window.  If window is a
     float, then it represents a value of beta for a kaiser window.  If
     window is a tuple, then the first component is a string
     representing the window, and the next arguments are parameters for
-    that window.
-
+    that window.  
+    
     Possible windows are:
-           'blackman'       ('black',   'blk')
-           'hamming'        ('hamm',    'ham')
-           'bartlett'       ('bart',    'brt')
-           'hanning'        ('hann',    'han')
-           'kaiser'         ('ksr')             # requires parameter (beta)
-           'gaussian'       ('gauss',   'gss')  # requires parameter (std.)
-           'general gauss'  ('general', 'ggs')  # requires two parameters
-                                                      (power, width)
+           'flattop'        -- 'flat', 'flt'
+           'boxcar'         -- 'ones', 'box'
+           'triang'         -- 'traing', 'tri'
+           'parzen'         -- 'parz', 'par'
+           'bohman'         -- 'bman', 'bmn'
+           'blackmanharris' -- 'blackharr', 'bkh'
+           'nuttall',       -- 'nutl', 'nut'
+           'barthann'       -- 'brthan', 'bth'
+           'blackman'       -- 'black',   'blk'
+           'hamming'        -- 'hamm',    'ham'
+           'bartlett'       -- 'bart',    'brt'
+           'hanning'        -- 'hann',    'han'
+           ('kaiser', beta)                 -- 'ksr'
+           ('gaussian', std)                -- 'gauss',   'gss' 
+           ('general gauss', power, width)  -- 'general', 'ggs'
+           ('slepian', width)               -- 'slep', 'optimal', 'dss'
 
     The first sample of the returned vector is the same as the first
     sample of the input vector, the spacing between samples is changed
@@ -1522,10 +1539,15 @@ def resample(x,num,t=None,axis=0,window=None):
     X = fft(x,axis=axis)
     Nx = x.shape[axis]
     if window is not None:
-        W = ifftshift(get_window(window,Nx))
+        if callable(window):
+            W = window(fftfreq(Nx))
+        elif isinstance(window, ndarray) and window.shape == (Nx,):
+            W = window
+        else:
+            W = ifftshift(get_window(window,Nx))
         newshape = ones(len(x.shape))
         newshape[axis] = len(W)
-        W=W.reshape(newshape)
+        W.shape = newshape
         X = X*W
     sl = [slice(None)]*len(x.shape)
     newshape = list(x.shape)
