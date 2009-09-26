@@ -114,14 +114,14 @@ extern PyObject *linkage_euclid_wrap(PyObject *self, PyObject *args) {
 
 extern PyObject *calculate_cluster_sizes_wrap(PyObject *self, PyObject *args) {
   int n;
-  PyArrayObject *Z, *CS_;
+  PyArrayObject *Z, *cs_;
   if (!PyArg_ParseTuple(args, "O!O!i",
 			&PyArray_Type, &Z,
-			&PyArray_Type, &CS_,
+			&PyArray_Type, &cs_,
 			&n)) {
     return 0;
   }
-  calculate_cluster_sizes((const double*)Z->data, (double*)CS_->data, n);
+  calculate_cluster_sizes((const double*)Z->data, (double*)cs_->data, n);
   return Py_BuildValue("");
 }
 
