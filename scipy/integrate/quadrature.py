@@ -7,6 +7,7 @@ from scipy.special import gammaln
 from numpy import sum, ones, add, diff, isinf, isscalar, \
      asarray, real, trapz, arange, empty
 import numpy as np
+import math
 
 def fixed_quad(func,a,b,args=(),n=5):
     """Compute a definite integral using fixed-order Gaussian quadrature.
