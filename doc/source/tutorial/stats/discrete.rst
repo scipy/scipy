@@ -1,5 +1,6 @@
 .. _discrete-random-variables:
 
+
 ==================================
 Discrete Statistical Distributions
 ==================================
@@ -7,8 +8,8 @@ Discrete Statistical Distributions
 Discrete random variables take on only a countable number of values.
 The commonly used distributions are included in SciPy and described in
 this document. Each discrete distribution can take one extra integer
-parameter: :math:`L.` The relationship between the general distribution and the standard one
-is
+parameter: :math:`L.` The relationship between the general distribution
+:math:`p` and the standard distribution :math:`p_{0}` is
 
 .. math::
    :nowrap:
@@ -157,7 +158,7 @@ Central moments are computed similarly :math:`\mu=\mu_{1}^{\prime}`
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} \mu_{m}=E\left[\left(X-\mu\right)^{2}\right] & = & \sum_{k}\left(x_{k}-\mu\right)^{m}p\left(x_{k}\right)\\  & = & \sum_{k=0}^{m}\left(-1\right)^{m-k}\left(\begin{array}{c} m\\ k\end{array}\right)\mu^{m-k}\mu_{k}^{\prime}\end{eqnarray*}
+    \begin{eqnarray*} \mu_{m}=E\left[\left(X-\mu\right)^{m}\right] & = & \sum_{k}\left(x_{k}-\mu\right)^{m}p\left(x_{k}\right)\\  & = & \sum_{k=0}^{m}\left(-1\right)^{m-k}\left(\begin{array}{c} m\\ k\end{array}\right)\mu^{m-k}\mu_{k}^{\prime}\end{eqnarray*}
 
 The mean is the first moment
 

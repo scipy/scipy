@@ -19,6 +19,12 @@ Basics
    lstsq
    pinv
    pinv2
+   kron
+   hankel
+   toeplitz
+   tri
+   tril
+   triu
 
 Eigenvalues and Decompositions
 ==============================
@@ -71,6 +77,8 @@ Matrix Functions
 Iterative linear systems solutions
 ==================================
 
+These functions are deprecated - use scipy.sparse.linalg instead
+
 .. autosummary::
    :toctree: generated/
 
@@ -80,4 +88,3 @@ Iterative linear systems solutions
    gmres
    bicg
    bicgstab
-

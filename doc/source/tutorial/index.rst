@@ -17,3 +17,5 @@ SciPy Tutorial
    linalg
    stats
    ndimage
+   io
+   weave

@@ -58,33 +58,33 @@ parameters to each method call or by freezing the parameters for the instance
 of the distribution. As an example, we can get the median of the distribution by using
 the percent point function, ppf, which is the inverse of the cdf:
 
-    >>> print stats.nct.ppf(0.5,10,2.5)
+    >>> print stats.nct.ppf(0.5, 10, 2.5)
     2.56880722561
-    >>> my_nct = stats.nct(10,2.5)
+    >>> my_nct = stats.nct(10, 2.5)
     >>> print my_nct.ppf(0.5)
     2.56880722561
 
-`help(stats.nct)` prints the complete docstring of the distribution. Instead
-we can print just some basic information:
+``help(stats.nct)`` prints the complete docstring of the distribution. Instead
+we can print just some basic information::
 
     >>> print stats.nct.extradoc #contains the distribution specific docs
-    <BLANKLINE>
-    <BLANKLINE>
     Non-central Student T distribution
-    <BLANKLINE>
+
                                      df**(df/2) * gamma(df+1)
     nct.pdf(x,df,nc) = --------------------------------------------------
                        2**df*exp(nc**2/2)*(df+x**2)**(df/2) * gamma(df/2)
     for df > 0, nc > 0.
 
 
-    >>> print 'number of arguments: %d, shape parameters: %s'% (stats.nct.numargs, stats.nct.shapes)
+    >>> print 'number of arguments: %d, shape parameters: %s'% (stats.nct.numargs,
+    ...                                                         stats.nct.shapes)
     number of arguments: 2, shape parameters: df,nc
-    >>> print 'bounds of distribution lower: %s, upper: %s' % (stats.nct.a, stats.nct.b)
+    >>> print 'bounds of distribution lower: %s, upper: %s' % (stats.nct.a,
+    ...                                                        stats.nct.b)
     bounds of distribution lower: -1.#INF, upper: 1.#INF
 
 We can list all methods and properties of the distribution with
-`dir(stats.nct)`. Some of the methods are private methods, that are
+``dir(stats.nct)``. Some of the methods are private methods, that are
 not named as such, i.e. no leading underscore, for example veccdf or
 xa and xb are for internal calculation. The main methods we can see
 when we list the methods of the frozen distribution:
@@ -119,7 +119,7 @@ All continuous distributions take `loc` and `scale` as keyword
 parameters to adjust the location and scale of the distribution,
 e.g. for the standard normal distribution location is the mean and
 scale is the standard deviation. The standardized distribution for a
-random variable x is obtained through (x - loc)/scale.
+random variable `x` is obtained through ``(x - loc) / scale``.
 
 Discrete distribution have most of the same basic methods, however
 pdf is replaced the probability mass function `pmf`, no estimation
@@ -128,27 +128,27 @@ keyword parameter. The location parameter, keyword `loc` can be used
 to shift the distribution.
 
 The basic methods, pdf, cdf, sf, ppf, and isf are vectorized with
-`np.vectorize`, and the usual numpy broadcasting is applied. For
+``np.vectorize``, and the usual numpy broadcasting is applied. For
 example, we can calculate the critical values for the upper tail of
 the t distribution for different probabilites and degrees of freedom.
 
-    >>> stats.t.isf([0.1,0.05,0.01],[[10],[11]])
+    >>> stats.t.isf([0.1, 0.05, 0.01], [[10], [11]])
     array([[ 1.37218364,  1.81246112,  2.76376946],
            [ 1.36343032,  1.79588482,  2.71807918]])
 
 Here, the first row are the critical values for 10 degrees of freedom and the second row
 is for 11 d.o.f., i.e. this is the same as
 
-    >>> stats.t.isf([0.1,0.05,0.01],10)
+    >>> stats.t.isf([0.1, 0.05, 0.01], 10)
     array([ 1.37218364,  1.81246112,  2.76376946])
-    >>> stats.t.isf([0.1,0.05,0.01],11)
+    >>> stats.t.isf([0.1, 0.05, 0.01], 11)
     array([ 1.36343032,  1.79588482,  2.71807918])
 
 If both, probabilities and degrees of freedom have the same array shape, then element
 wise matching is used. As an example, we can obtain the 10% tail for 10 d.o.f., the 5% tail
 for 11 d.o.f. and the 1% tail for 12 d.o.f. by
 
-    >>> stats.t.isf([0.1,0.05,0.01],[10,11,12])
+    >>> stats.t.isf([0.1, 0.05, 0.01], [10, 11, 12])
     array([ 1.37218364,  1.79588482,  2.68099799])
 
 
@@ -168,7 +168,7 @@ methods are used if the distribution does not specify any explicit
 calculation. To define a distribution, only one of pdf or cdf is
 necessary, all other methods can be derived using numeric integration
 and root finding. These indirect methods can be very slow. As an
-example, `rgh=stats.gausshyper.rvs(0.5,2,2,2,size=100)` creates
+example, ``rgh = stats.gausshyper.rvs(0.5, 2, 2, 2, size=100)`` creates
 random variables in a very indirect way and takes about 19 seconds
 for 100 random variables on my computer, while one million random
 variables from the standard normal or from the t distribution take
@@ -196,7 +196,6 @@ together with the statistical tests.
 
 
 
-
 Example: discrete distribution rv_discrete
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -206,23 +205,23 @@ centered around the integers.
 
 
     >>> npoints = 20 # number of integer support points of the distribution minus 1
-    >>> npointsh = npoints/2
+    >>> npointsh = npoints / 2
     >>> npointsf = float(npoints)
-    >>> nbound = 4 #bounds for the truncated normal
-    >>> normbound = (1+1/npointsf)*nbound #actual bounds of truncated normal
-    >>> grid = np.arange(-npointsh,npointsh+2,1) #integer grid
-    >>> gridlimitsnorm = (grid-0.5) / npointsh * nbound #bin limits for the truncnorm
+    >>> nbound = 4 # bounds for the truncated normal
+    >>> normbound = (1+1/npointsf) * nbound # actual bounds of truncated normal
+    >>> grid = np.arange(-npointsh, npointsh+2, 1) # integer grid
+    >>> gridlimitsnorm = (grid-0.5) / npointsh * nbound # bin limits for the truncnorm
     >>> gridlimits = grid - 0.5
     >>> grid = grid[:-1]
     >>> probs = np.diff(stats.truncnorm.cdf(gridlimitsnorm, -normbound, normbound))
     >>> gridint = grid
-    >>> normdiscrete = stats.rv_discrete(values = (gridint,np.round(probs,decimals=7)),
-    ...                        name='normdiscrete')
+    >>> normdiscrete = stats.rv_discrete(values = (gridint,
+    ...              np.round(probs, decimals=7)), name='normdiscrete')
 
 From the docstring of rv_discrete:
  "You can construct an aribtrary discrete rv where P{X=xk} = pk by
  passing to the rv_discrete initialization method (through the values=
- keyword) a tuple of sequences (xk,pk) which describes only those
+ keyword) a tuple of sequences (xk, pk) which describes only those
  values of X (xk) that occur with nonzero probability (pk)."
 
 There are some requirements for this distribution to work. The
@@ -243,11 +242,11 @@ discrete distributions.
 **Generate a random sample and compare observed frequencies with probabilities**
 
     >>> n_sample = 500
-    >>> np.random.seed(87655678) #fix the seed for replicability
+    >>> np.random.seed(87655678) # fix the seed for replicability
     >>> rvs = normdiscrete.rvs(size=n_sample)
-    >>> rvsnd=rvs
-    >>> f,l = np.histogram(rvs,bins=gridlimits)
-    >>> sfreq = np.vstack([gridint,f,probs*n_sample]).T
+    >>> rvsnd = rvs
+    >>> f, l = np.histogram(rvs, bins=gridlimits)
+    >>> sfreq = np.vstack([gridint, f, probs*n_sample]).T
     >>> print sfreq
     [[ -1.00000000e+01   0.00000000e+00   2.95019349e-02]
      [ -9.00000000e+00   0.00000000e+00   1.32294142e-01]
@@ -275,7 +274,7 @@ discrete distributions.
 .. plot:: examples/normdiscr_plot1.py
    :align: center
    :include-source: 0
-  
+
 
 .. plot:: examples/normdiscr_plot2.py
    :align: center
@@ -292,15 +291,13 @@ enough observations.
 
     >>> f2 = np.hstack([f[:5].sum(), f[5:-5], f[-5:].sum()])
     >>> p2 = np.hstack([probs[:5].sum(), probs[5:-5], probs[-5:].sum()])
-    >>> ch2, pval = stats.chisquare(f2,p2*n_sample)
+    >>> ch2, pval = stats.chisquare(f2, p2*n_sample)
 
     >>> print 'chisquare for normdiscrete: chi2 = %6.3f pvalue = %6.4f' % (ch2, pval)
     chisquare for normdiscrete: chi2 = 12.466 pvalue = 0.4090
 
 The pvalue in this case is high, so we can be quite confident that
 our random sample was actually generated by the distribution.
-
-
 
 
 
@@ -312,7 +309,7 @@ we get identical results to look at. As an example we take a sample from
 the Student t distribution:
 
     >>> np.random.seed(282629734)
-    >>> x = stats.t.rvs(10,size=1000)
+    >>> x = stats.t.rvs(10, size=1000)
 
 Here, we set the required shape parameter of the t distribution, which
 in statistics corresponds to the degrees of freedom, to 10. Using size=100 means
@@ -325,24 +322,25 @@ Descriptive Statistics
 
 `x` is a numpy array, and we have direct access to all array methods, e.g.
 
-    >>> print x.max(), x.min()  #equivalent to np.max(x), np.min(x)
+    >>> print x.max(), x.min()  # equivalent to np.max(x), np.min(x)
     5.26327732981 -3.78975572422
-    >>> print x.mean(), x.var() #equivalent to np.mean(x), np.var(x)
+    >>> print x.mean(), x.var() # equivalent to np.mean(x), np.var(x)
     0.0140610663985 1.28899386208
 
 
 How do the some sample properties compare to their theoretical counterparts?
 
-    >>> m,v,s,k = stats.t.stats(10,moments =  'mvsk')
-    >>> n,(smin,smax),sm,sv,ss,sk = stats.describe(x)
+    >>> m, v, s, k = stats.t.stats(10, moments='mvsk')
+    >>> n, (smin, smax), sm, sv, ss, sk = stats.describe(x)
 
     >>> print 'distribution:',
     distribution:
-    >>> print 'mean = %6.4f, variance = %6.4f, skew = %6.4f, kurtosis = %6.4f'% (m,v,s,k)
+    >>> sstr = 'mean = %6.4f, variance = %6.4f, skew = %6.4f, kurtosis = %6.4f'
+    >>> print sstr %(m, v, s ,k)
     mean = 0.0000, variance = 1.2500, skew = 0.0000, kurtosis = 1.0000
     >>> print 'sample:      ',
     sample:
-    >>> print 'mean = %6.4f, variance = %6.4f, skew = %6.4f, kurtosis = %6.4f'% (sm,sv,ss,sk)
+    >>> print sstr %(sm, sv, ss, sk)
     mean = 0.0141, variance = 1.2903, skew = 0.2165, kurtosis = 1.0556
 
 Note: stats.describe uses the unbiased estimator for the variance, while
@@ -373,13 +371,13 @@ and so it does:
 
     >>> tt = (sm-m)/np.sqrt(sv/float(n))  # t-statistic for mean
     >>> pval = stats.t.sf(np.abs(tt), n-1)*2  # two-sided pvalue = Prob(abs(t)>tt)
-    >>> print 't-statistic = %6.3f pvalue = %6.4f' %  (tt, pval)
+    >>> print 't-statistic = %6.3f pvalue = %6.4f' % (tt, pval)
     t-statistic =  0.391 pvalue = 0.6955
 
 The Kolmogorov-Smirnov test can be used to test the hypothesis that
 the sample comes from the standard t-distribution
 
-    >>> print 'KS-statistic D = %6.3f pvalue = %6.4f' % stats.kstest(x,'t',(10,))
+    >>> print 'KS-statistic D = %6.3f pvalue = %6.4f' % stats.kstest(x, 't', (10,))
     KS-statistic D =  0.016 pvalue = 0.9606
 
 Again the p-value is high enough that we cannot reject the
@@ -399,7 +397,8 @@ against the normal distribution, then the p-value is again large enough
 that we cannot reject the hypothesis that the sample came form the
 normal distribution.
 
-    >>> print 'KS-statistic D = %6.3f pvalue = %6.4f' % stats.kstest((x-x.mean())/x.std(),'norm')
+    >>> d, pval = stats.kstest((x-x.mean())/x.std(), 'norm')
+    >>> print 'KS-statistic D = %6.3f pvalue = %6.4f' % (d, pval)
     KS-statistic D =  0.032 pvalue = 0.2402
 
 Note: The Kolmogorov-Smirnov test assumes that we test against a
@@ -416,15 +415,15 @@ the percent point function ppf, which is the inverse of the cdf
 function, to obtain the critical values, or, more directly, we can use
 the inverse of the survival function
 
-    >>> crit01, crit05, crit10 = stats.t.ppf([1-0.01,1-0.05,1-0.10],10)
+    >>> crit01, crit05, crit10 = stats.t.ppf([1-0.01, 1-0.05, 1-0.10], 10)
     >>> print 'critical values from ppf at 1%%, 5%% and 10%% %8.4f %8.4f %8.4f'% (crit01, crit05, crit10)
     critical values from ppf at 1%, 5% and 10%   2.7638   1.8125   1.3722
     >>> print 'critical values from isf at 1%%, 5%% and 10%% %8.4f %8.4f %8.4f'% tuple(stats.t.isf([0.01,0.05,0.10],10))
     critical values from isf at 1%, 5% and 10%   2.7638   1.8125   1.3722
 
-    >>> freq01 = np.sum(x>crit01)/float(n)*100
-    >>> freq05 = np.sum(x>crit05)/float(n)*100
-    >>> freq10 = np.sum(x>crit10)/float(n)*100
+    >>> freq01 = np.sum(x>crit01) / float(n) * 100
+    >>> freq05 = np.sum(x>crit05) / float(n) * 100
+    >>> freq10 = np.sum(x>crit10) / float(n) * 100
     >>> print 'sample %%-frequency at 1%%, 5%% and 10%% tail %8.4f %8.4f %8.4f'% (freq01, freq05, freq10)
     sample %-frequency at 1%, 5% and 10% tail   1.4000   5.8000  10.5000
 
@@ -434,7 +433,7 @@ We can briefly check a larger sample to see if we get a closer match. In this
 case the empirical frequency is quite close to the theoretical probability,
 but if we repeat this several times the fluctuations are still pretty large.
 
-    >>> freq05l = np.sum(stats.t.rvs(10,size=10000)>crit05)/10000.0*100
+    >>> freq05l = np.sum(stats.t.rvs(10, size=10000) > crit05) / 10000.0 * 100
     >>> print 'larger sample %%-frequency at 5%% tail %8.4f'% freq05l
     larger sample %-frequency at 5% tail   4.8000
 
@@ -449,17 +448,17 @@ The chisquare test can be used to test, whether for a finite number of bins,
 the observed frequencies differ significantly from the probabilites of the
 hypothesized distribution.
 
-    >>> quantiles = [0.0,0.01,0.05,0.1,1-0.10,1-0.05,1-0.01,1.0]
-    >>> crit = stats.t.ppf(quantiles,10)
+    >>> quantiles = [0.0, 0.01, 0.05, 0.1, 1-0.10, 1-0.05, 1-0.01, 1.0]
+    >>> crit = stats.t.ppf(quantiles, 10)
     >>> print crit
     [       -Inf -2.76376946 -1.81246112 -1.37218364  1.37218364  1.81246112
       2.76376946         Inf]
     >>> n_sample = x.size
-    >>> freqcount = np.histogram(x,bins = crit)[0]
+    >>> freqcount = np.histogram(x, bins=crit)[0]
     >>> tprob = np.diff(quantiles)
     >>> nprob = np.diff(stats.norm.cdf(crit))
-    >>> tch, tpval = stats.chisquare(freqcount,tprob*n_sample)
-    >>> nch, npval = stats.chisquare(freqcount,nprob*n_sample)
+    >>> tch, tpval = stats.chisquare(freqcount, tprob*n_sample)
+    >>> nch, npval = stats.chisquare(freqcount, nprob*n_sample)
     >>> print 'chisquare for t:      chi2 = %6.3f pvalue = %6.4f' % (tch, tpval)
     chisquare for t:      chi2 =  2.300 pvalue = 0.8901
     >>> print 'chisquare for normal: chi2 = %6.3f pvalue = %6.4f' % (nch, npval)
@@ -474,12 +473,12 @@ The fit method of the distributions can be used to estimate the parameters
 of the distribution, and the test is repeated using probabilites of the
 estimated distribution.
 
-    >>> tdof,tloc,tscale = stats.t.fit(x)
-    >>> nloc,nscale = stats.norm.fit(x)
-    >>> tprob = np.diff(stats.t.cdf(crit,tdof,loc=tloc,scale=tscale))
-    >>> nprob = np.diff(stats.norm.cdf(crit,loc=nloc,scale=nscale))
-    >>> tch, tpval = stats.chisquare(freqcount,tprob*n_sample)
-    >>> nch, npval = stats.chisquare(freqcount,nprob*n_sample)
+    >>> tdof, tloc, tscale = stats.t.fit(x)
+    >>> nloc, nscale = stats.norm.fit(x)
+    >>> tprob = np.diff(stats.t.cdf(crit, tdof, loc=tloc, scale=tscale))
+    >>> nprob = np.diff(stats.norm.cdf(crit, loc=nloc, scale=nscale))
+    >>> tch, tpval = stats.chisquare(freqcount, tprob*n_sample)
+    >>> nch, npval = stats.chisquare(freqcount, nprob*n_sample)
     >>> print 'chisquare for t:      chi2 = %6.3f pvalue = %6.4f' % (tch, tpval)
     chisquare for t:      chi2 =  1.577 pvalue = 0.9542
     >>> print 'chisquare for normal: chi2 = %6.3f pvalue = %6.4f' % (nch, npval)
@@ -524,7 +523,7 @@ exactly the same results if we test the standardized sample:
 Because normality is rejected so strongly, we can check whether the
 normaltest gives reasonable results for other cases:
 
-    >>> print 'normaltest teststat = %6.3f pvalue = %6.4f' % stats.normaltest(stats.t.rvs(10,size=100))
+    >>> print 'normaltest teststat = %6.3f pvalue = %6.4f' % stats.normaltest(stats.t.rvs(10, size=100))
     normaltest teststat =  4.698 pvalue = 0.0955
     >>> print 'normaltest teststat = %6.3f pvalue = %6.4f' % stats.normaltest(stats.norm.rvs(size=1000))
     normaltest teststat =  0.613 pvalue = 0.7361
@@ -547,18 +546,18 @@ samples have the same statistical properties.
 Comparing means
 ^^^^^^^^^^^^^^^
 
-test with sample with identical means
+Test with sample with identical means:
 
-    >>> rvs1 = stats.norm.rvs(loc=5,scale=10,size=500)
-    >>> rvs2 = stats.norm.rvs(loc=5,scale=10,size=500)
-    >>> stats.ttest_ind(rvs1,rvs2)
+    >>> rvs1 = stats.norm.rvs(loc=5, scale=10, size=500)
+    >>> rvs2 = stats.norm.rvs(loc=5, scale=10, size=500)
+    >>> stats.ttest_ind(rvs1, rvs2)
     (-0.54890361750888583, 0.5831943748663857)
 
 
-test with sample with different means
+Test with sample with different means:
 
-    >>> rvs3 = stats.norm.rvs(loc=8,scale=10,size=500)
-    >>> stats.ttest_ind(rvs1,rvs3)
+    >>> rvs3 = stats.norm.rvs(loc=8, scale=10, size=500)
+    >>> stats.ttest_ind(rvs1, rvs3)
     (-4.5334142901750321, 6.507128186505895e-006)
 
 
@@ -566,16 +565,14 @@ test with sample with different means
 Kolmogorov-Smirnov test for two samples ks_2samp
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
 For the example where both samples are drawn from the same distribution,
 we cannot reject the null hypothesis since the pvalue is high
 
-
-    >>> stats.ks_2samp(rvs1,rvs2)
+    >>> stats.ks_2samp(rvs1, rvs2)
     (0.025999999999999995, 0.99541195173064878)
 
 In the second example, with different location, i.e. means, we can
 reject the null hypothesis since the pvalue is below 1%
 
-    >>> stats.ks_2samp(rvs1,rvs3)
+    >>> stats.ks_2samp(rvs1, rvs3)
     (0.11399999999999999, 0.0027132103661283141)

@@ -30,6 +30,7 @@ Constrained (multivariate)
    fmin_l_bfgs_b
    fmin_tnc
    fmin_cobyla
+   fmin_slsqp
    nnls
 
 Global
@@ -51,6 +52,14 @@ Scalar function minimizers
    golden
    bracket
    brent
+
+Fitting
+=======
+
+.. autosummary::
+   :toctree: generated/
+
+   curve_fit
 
 Root finding
 ============

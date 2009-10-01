@@ -41,6 +41,7 @@ Multivariate interpolation
 
 The above univariate spline classes have the following methods:
 
+
 .. autosummary::
    :toctree: generated/
 
@@ -52,6 +53,7 @@ The above univariate spline classes have the following methods:
    UnivariateSpline.get_knots
    UnivariateSpline.get_residual
    UnivariateSpline.set_smoothing_factor
+
 
 Low-level interface to FITPACK functions:
 

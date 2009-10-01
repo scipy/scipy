@@ -52,9 +52,9 @@ computing domains. These are summarized in the following table:
 
 .. currentmodule:: scipy
 
-==================  =====================================================================
+==================  ======================================================
 Subpackage          Description
-==================  =====================================================================
+==================  ======================================================
 :mod:`cluster`      Clustering algorithms
 :mod:`constants`    Physical and mathematical constants
 :mod:`fftpack`      Fast Fourier Transform routines
@@ -72,7 +72,7 @@ Subpackage          Description
 :mod:`special`      Special functions
 :mod:`stats`        Statistical distributions and functions
 :mod:`weave`        C/C++ integration
-==================  =====================================================================
+==================  ======================================================
 
 Scipy sub-packages need to be imported separately, for example::
 
@@ -92,10 +92,10 @@ Finding Documentation
 Scipy and Numpy have HTML and PDF versions of their documentation
 available at http://docs.scipy.org/, which currently details nearly
 all available functionality. However, this documentation is still
-work-in-progress, and some parts may be incomplete or sparse.  As
+work-in-progress, and some parts may be incomplete or sparse. As
 we are a volunteer organization and depend on the community for
-growth, your participation--everything from providing feedback to 
-improving the documentation and code--is welcome and actively
+growth, your participation - everything from providing feedback to
+improving the documentation and code - is welcome and actively
 encouraged.
 
 Python also provides the facility of documentation strings. The
@@ -127,4 +127,3 @@ source code for that function. This can be helpful in learning about
 an algorithm or understanding exactly what a function is doing with
 its arguments. Also don't forget about the Python command ``dir``
 which can be used to look at the namespace of a module or package.
-

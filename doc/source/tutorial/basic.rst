@@ -138,7 +138,7 @@ usage:
             [0, 1, 2, 3, 4],
             [0, 1, 2, 3, 4],
             [0, 1, 2, 3, 4],
-            [0, 1, 2, 3, 4]]])  
+            [0, 1, 2, 3, 4]]])
     >>> mgrid[0:5:4j,0:5:4j]
     array([[[ 0.    ,  0.    ,  0.    ,  0.    ],
             [ 1.6667,  1.6667,  1.6667,  1.6667],
@@ -254,7 +254,7 @@ to the nearest integer towards zero. For doing phase processing, the
 functions :func:`angle`, and :obj:`unwrap` are also useful. Also, the
 :obj:`linspace` and :obj:`logspace` functions return equally spaced samples
 in a linear or log scale.  Finally, it's useful to be aware of the indexing
-capabilities of Numpy.mention should be made of the new
+capabilities of Numpy. Mention should be made of the new
 function :obj:`select` which extends the functionality of :obj:`where` to
 include multiple conditions and multiple choices. The calling
 convention is ``select(condlist,choicelist,default=0).`` :obj:`select` is

@@ -39,12 +39,13 @@ Filtering
 
    order_filter
    medfilt
-   medfilt2
+   medfilt2d
    wiener
 
    symiirorder1
    symiirorder2
    lfilter
+   lfiltic
 
    deconvolve
 

@@ -42,14 +42,14 @@ The minimum value of this function is 0 which is achieved when :math:`x_{i}=1.` 
     >>> def rosen(x):
     ...     """The Rosenbrock function"""
     ...     return sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
-    
+
     >>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
     >>> xopt = fmin(rosen, x0, xtol=1e-8)
     Optimization terminated successfully.
              Current function value: 0.000000
              Iterations: 339
              Function evaluations: 571
-    
+
     >>> print xopt
     [ 1.  1.  1.  1.  1.]
 
@@ -95,14 +95,14 @@ code-segment:
     ...     der[0] = -400*x[0]*(x[1]-x[0]**2) - 2*(1-x[0])
     ...     der[-1] = 200*(x[-1]-x[-2]**2)
     ...     return der
-    
+
 The calling signature for the BFGS minimization algorithm is similar
 to :obj:`fmin` with the addition of the *fprime* argument. An example
 usage of :obj:`fmin_bfgs` is shown in the following example which
 minimizes the Rosenbrock function.
 
     >>> from scipy.optimize import fmin_bfgs
-    
+
     >>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
     >>> xopt = fmin_bfgs(rosen, x0, fprime=rosen_der)
     Optimization terminated successfully.
@@ -187,7 +187,7 @@ the function using :obj:`fmin_ncg` is shown in the following example:
     ...     diagonal[1:-1] = 202 + 1200*x[1:-1]**2 - 400*x[2:]
     ...     H = H + diag(diagonal)
     ...     return H
-    
+
     >>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
     >>> xopt = fmin_ncg(rosen, x0, rosen_der, fhess=rosen_hess, avextol=1e-8)
     Optimization terminated successfully.
@@ -235,7 +235,7 @@ Rosenbrock function using :obj:`fmin_ncg` follows:
     ...                -400*x[1:-1]*p[2:]
     ...     Hp[-1] = -400*x[-2]*p[-2] + 200*p[-1]
     ...     return Hp
-    
+
     >>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
     >>> xopt = fmin_ncg(rosen, x0, rosen_der, fhess_p=rosen_hess_p, avextol=1e-8)
     Optimization terminated successfully.
@@ -255,8 +255,8 @@ All of the previously-explained minimization procedures can be used to
 solve a least-squares problem provided the appropriate objective
 function is constructed. For example, suppose it is desired to fit a
 set of data :math:`\left\{\mathbf{x}_{i}, \mathbf{y}_{i}\right\}`
-to a known model, 
-:math:`\mathbf{y}=\mathbf{f}\left(\mathbf{x},\mathbf{p}\right)` 
+to a known model,
+:math:`\mathbf{y}=\mathbf{f}\left(\mathbf{x},\mathbf{p}\right)`
 where :math:`\mathbf{p}` is a vector of parameters for the model that
 need to be found. A common method for determining which parameter
 vector gives the best fit to the data is to minimize the sum of squares
@@ -341,8 +341,182 @@ This is shown in the following example:
    >>> plt.legend(['Fit', 'Noisy', 'True'])
    >>> plt.show()
 
-..   :caption: Least-square fitting to noisy data using 
+..   :caption: Least-square fitting to noisy data using
 ..             :obj:`scipy.optimize.leastsq`
+
+
+.. _tutorial-sqlsp:
+
+Sequential Least-square fitting with constraints (:func:`fmin_slsqp`)
+---------------------------------------------------------------------
+
+This module implements the Sequential Least SQuares Programming optimization algorithm (SLSQP).
+
+.. math::
+   :nowrap:
+
+     \begin{eqnarray*} \min F(x) \\ \text{subject to } & C_j(X) =  0  ,  &j = 1,...,\text{MEQ}\\
+            & C_j(x) \geq 0  ,  &j = \text{MEQ}+1,...,M\\
+           &  XL  \leq x \leq XU , &I = 1,...,N. \end{eqnarray*}
+
+The following script shows examples for how constraints can be specified.
+
+::
+
+    """
+    This script tests fmin_slsqp using Example 14.4 from Numerical Methods for
+    Engineers by Steven Chapra and Raymond Canale.  This example maximizes the
+    function f(x) = 2*x*y + 2*x - x**2 - 2*y**2, which has a maximum at x=2,y=1.
+    """
+
+    from scipy.optimize import fmin_slsqp
+    from numpy import array, asfarray, finfo,ones, sqrt, zeros
+
+
+    def testfunc(d,*args):
+        """
+        Arguments:
+        d     - A list of two elements, where d[0] represents x and
+                d[1] represents y in the following equation.
+        sign - A multiplier for f.  Since we want to optimize it, and the scipy
+               optimizers can only minimize functions, we need to multiply it by
+               -1 to achieve the desired solution
+        Returns:
+        2*x*y + 2*x - x**2 - 2*y**2
+
+        """
+        try:
+            sign = args[0]
+        except:
+            sign = 1.0
+        x = d[0]
+        y = d[1]
+        return sign*(2*x*y + 2*x - x**2 - 2*y**2)
+
+    def testfunc_deriv(d,*args):
+        """ This is the derivative of testfunc, returning a numpy array
+        representing df/dx and df/dy
+
+        """
+        try:
+            sign = args[0]
+        except:
+            sign = 1.0
+        x = d[0]
+        y = d[1]
+        dfdx = sign*(-2*x + 2*y + 2)
+        dfdy = sign*(2*x - 4*y)
+        return array([ dfdx, dfdy ],float)
+
+
+    from time import time
+
+    print '\n\n'
+
+    print "Unbounded optimization. Derivatives approximated."
+    t0 = time()
+    x = fmin_slsqp(testfunc, [-1.0,1.0], args=(-1.0,), iprint=2, full_output=1)
+    print "Elapsed time:", 1000*(time()-t0), "ms"
+    print "Results",x
+    print "\n\n"
+
+    print "Unbounded optimization.  Derivatives provided."
+    t0 = time()
+    x = fmin_slsqp(testfunc, [-1.0,1.0], args=(-1.0,), iprint=2, full_output=1)
+    print "Elapsed time:", 1000*(time()-t0), "ms"
+    print "Results",x
+    print "\n\n"
+
+    print "Bound optimization.  Derivatives approximated."
+    t0 = time()
+    x = fmin_slsqp(testfunc, [-1.0,1.0], args=(-1.0,),
+                   eqcons=[lambda x, y: x[0]-x[1] ], iprint=2, full_output=1)
+    print "Elapsed time:", 1000*(time()-t0), "ms"
+    print "Results",x
+    print "\n\n"
+
+    print "Bound optimization (equality constraints).  Derivatives provided."
+    t0 = time()
+    x = fmin_slsqp(testfunc, [-1.0,1.0], fprime=testfunc_deriv, args=(-1.0,),
+                   eqcons=[lambda x, y: x[0]-x[1] ], iprint=2, full_output=1)
+    print "Elapsed time:", 1000*(time()-t0), "ms"
+    print "Results",x
+    print "\n\n"
+
+    print "Bound optimization (equality and inequality constraints)."
+    print "Derivatives provided."
+
+    t0 = time()
+    x = fmin_slsqp(testfunc,[-1.0,1.0], fprime=testfunc_deriv, args=(-1.0,),
+                   eqcons=[lambda x, y: x[0]-x[1] ],
+                   ieqcons=[lambda x, y: x[0]-.5], iprint=2, full_output=1)
+    print "Elapsed time:", 1000*(time()-t0), "ms"
+    print "Results",x
+    print "\n\n"
+
+
+    def test_eqcons(d,*args):
+        try:
+            sign = args[0]
+        except:
+            sign = 1.0
+        x = d[0]
+        y = d[1]
+        return array([ x**3-y ])
+
+
+    def test_ieqcons(d,*args):
+        try:
+            sign = args[0]
+        except:
+            sign = 1.0
+        x = d[0]
+        y = d[1]
+        return array([ y-1 ])
+
+    print "Bound optimization (equality and inequality constraints)."
+    print "Derivatives provided via functions."
+    t0 = time()
+    x = fmin_slsqp(testfunc, [-1.0,1.0], fprime=testfunc_deriv, args=(-1.0,),
+                   f_eqcons=test_eqcons, f_ieqcons=test_ieqcons,
+                   iprint=2, full_output=1)
+    print "Elapsed time:", 1000*(time()-t0), "ms"
+    print "Results",x
+    print "\n\n"
+
+
+    def test_fprime_eqcons(d,*args):
+        try:
+            sign = args[0]
+        except:
+            sign = 1.0
+        x = d[0]
+        y = d[1]
+        return array([ 3.0*(x**2.0), -1.0 ])
+
+
+    def test_fprime_ieqcons(d,*args):
+        try:
+            sign = args[0]
+        except:
+            sign = 1.0
+        x = d[0]
+        y = d[1]
+        return array([ 0.0, 1.0 ])
+
+    print "Bound optimization (equality and inequality constraints)."
+    print "Derivatives provided via functions."
+    print "Constraint jacobians provided via functions"
+    t0 = time()
+    x = fmin_slsqp(testfunc,[-1.0,1.0], fprime=testfunc_deriv, args=(-1.0,),
+                   f_eqcons=test_eqcons, f_ieqcons=test_ieqcons,
+                   fprime_eqcons=test_fprime_eqcons,
+                   fprime_ieqcons=test_fprime_ieqcons, iprint=2, full_output=1)
+    print "Elapsed time:", 1000*(time()-t0), "ms"
+    print "Results",x
+    print "\n\n"
+
+
 
 
 Scalar function minimizers
@@ -420,21 +594,21 @@ The results are :math:`x=-1.0299` and :math:`x_{0}=6.5041,\, x_{1}=0.9084` .
 
     >>> def func(x):
     ...     return x + 2*cos(x)
-    
+
     >>> def func2(x):
     ...     out = [x[0]*cos(x[1]) - 4]
     ...     out.append(x[1]*x[0] - x[1] - 5)
     ...     return out
-    
+
     >>> from scipy.optimize import fsolve
     >>> x0 = fsolve(func, 0.3)
     >>> print x0
     -1.02986652932
-    
+
     >>> x02 = fsolve(func2, [1, 1])
     >>> print x02
     [ 6.50409711  0.90841421]
-    
+
 
 
 Scalar function root finding
@@ -461,4 +635,3 @@ Equivalently, the root of :math:`f` is the fixed_point of
 :obj:`fixed_point` provides a simple iterative method using Aitkens
 sequence acceleration to estimate the fixed point of :math:`g` given a
 starting point.
-
