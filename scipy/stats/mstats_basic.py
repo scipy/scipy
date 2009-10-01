@@ -145,30 +145,32 @@ Returns
 
 
 def count_tied_groups(x, use_missing=False):
-    """Counts the number of tied values in x, and returns a dictionary
-    (nb of ties: nb of groups).
+    """
+    Counts the number of tied values in x, and returns a dictionary
+        (nb of ties: nb of groups).
 
-Parameters
-----------
+    Parameters
+    ----------
     x : sequence
         Sequence of data on which to counts the ties
     use_missing : boolean
         Whether to consider missing values as tied.
 
-Example
--------
-    >>>z = [0, 0, 0, 2, 2, 2, 3, 3, 4, 5, 6]
-    >>>count_tied_groups(z)
-    >>>{2:1, 3:2}
-    >>># The ties were 0 (3x), 2 (3x) and 3 (2x)
-    >>>z = ma.array([0, 0, 1, 2, 2, 2, 3, 3, 4, 5, 6])
-    >>>count_tied_groups(z)
-    >>>{2:2, 3:1}
-    >>># The ties were 0 (2x), 2 (3x) and 3 (2x)
-    >>>z[[1,-1]] = masked
-    >>>count_tied_groups(z)
-    >>>{2:2, 3:1}
-    >>># The ties were 2 (3x), 3 (2x) and masked (2x)
+    Examples
+    --------
+    >>> z = [0, 0, 0, 2, 2, 2, 3, 3, 4, 5, 6]
+    >>> count_tied_groups(z)
+    >>> {2:1, 3:2}
+    >>> # The ties were 0 (3x), 2 (3x) and 3 (2x)
+    >>> z = ma.array([0, 0, 1, 2, 2, 2, 3, 3, 4, 5, 6])
+    >>> count_tied_groups(z)
+    >>> {2:2, 3:1}
+    >>> # The ties were 0 (2x), 2 (3x) and 3 (2x)
+    >>> z[[1,-1]] = masked
+    >>> count_tied_groups(z, use_missing=True)
+    >>> {2:2, 3:1}
+    >>> # The ties were 2 (3x), 3 (2x) and masked (2x)
+
     """
     nmasked = ma.getmask(x).sum()
     # We need the copy as find_repeats will overwrite the initial data
@@ -1592,7 +1594,8 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
 
     Typical values of (alpha,beta) are:
         - (0,1)    : *p(k) = k/n* : linear interpolation of cdf (R, type 4)
-        - (.5,.5)  : *p(k) = (k+1/2.)/n* : piecewise linear function (R, type 5)
+        - (.5,.5)  : *p(k) = (k+1/2.)/n* : piecewise linear
+          function (R, type 5)
         - (0,0)    : *p(k) = k/(n+1)* : (R type 6)
         - (1,1)    : *p(k) = (k-1)/(n-1)*. In this case, p(k) = mode[F(x[k])].
           That's R default (R type 7)
@@ -1611,58 +1614,59 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
         Input data, as a sequence or array of dimension at most 2.
     prob : array-like, optional
         List of quantiles to compute.
-    alpha : {0.4, float}, optional
-        Plotting positions parameter.
-    beta : {0.4, float}, optional
-        Plotting positions parameter.
-    axis : {None, int} optional
+    alpha : float, optional
+        Plotting positions parameter, default is 0.4.
+    beta : float, optional
+        Plotting positions parameter, default is 0.4.
+    axis : int, optional
         Axis along which to perform the trimming.
-        If None, the input array is first flattened.
+        If None (default), the input array is first flattened.
     limit : tuple
         Tuple of (lower, upper) values.
         Values of `a` outside this closed interval are ignored.
 
-    Returns 
-    ------- 
-    quants : {MaskedArray} 
+    Returns
+    -------
+    quants : MaskedArray
         An array containing the calculated quantiles.
 
-    Examples 
-    -------- 
-    >>> from scipy.stats.mstats import mquantiles 
-    >>> a = np.array([6., 47., 49., 15., 42., 41., 7., 39., 43., 40., 36.]) 
-    >>> mquantiles(a) 
-    array([ 19.2,  40. ,  42.8]) 
+    Examples
+    --------
+    >>> from scipy.stats.mstats import mquantiles
+    >>> a = np.array([6., 47., 49., 15., 42., 41., 7., 39., 43., 40., 36.])
+    >>> mquantiles(a)
+    array([ 19.2,  40. ,  42.8])
 
-    Using a 2D array, specifying axis and limit. 
+    Using a 2D array, specifying axis and limit.
 
-    >>> data = np.array([[   6.,    7.,    1.], 
-                         [  47.,   15.,    2.], 
-                         [  49.,   36.,    3.], 
-                         [  15.,   39.,    4.], 
-                         [  42.,   40., -999.], 
-                         [  41.,   41., -999.], 
-                         [   7., -999., -999.], 
-                         [  39., -999., -999.], 
-                         [  43., -999., -999.], 
-                         [  40., -999., -999.], 
-                         [  36., -999., -999.]]) 
-    >>> mquantiles(data, axis=0, limit=(0, 50)) 
-    array([[ 19.2 ,  14.6 ,   1.45], 
-           [ 40.  ,  37.5 ,   2.5 ], 
-           [ 42.8 ,  40.05,   3.55]]) 
+    >>> data = np.array([[   6.,    7.,    1.],
+                         [  47.,   15.,    2.],
+                         [  49.,   36.,    3.],
+                         [  15.,   39.,    4.],
+                         [  42.,   40., -999.],
+                         [  41.,   41., -999.],
+                         [   7., -999., -999.],
+                         [  39., -999., -999.],
+                         [  43., -999., -999.],
+                         [  40., -999., -999.],
+                         [  36., -999., -999.]])
+    >>> mquantiles(data, axis=0, limit=(0, 50))
+    array([[ 19.2 ,  14.6 ,   1.45],
+           [ 40.  ,  37.5 ,   2.5 ],
+           [ 42.8 ,  40.05,   3.55]])
 
-     >>> data[:,2] = -999. 
-     >>> mquantiles(data, axis=0, limit=(0, 50)) 
-     masked_array(data = 
-      [[19.2 14.6 --] 
-      [40.0 37.5 --] 
-      [42.8 40.05 --]], 
-                  mask = 
-      [[False False  True] 
-       [False False  True] 
-       [False False  True]], 
-            fill_value = 1e+20) 
+    >>> data[:, 2] = -999.
+    >>> mquantiles(data, axis=0, limit=(0, 50))
+    masked_array(data =
+     [[19.2 14.6 --]
+     [40.0 37.5 --]
+     [42.8 40.05 --]],
+                 mask =
+     [[False False  True]
+      [False False  True]
+      [False False  True]],
+           fill_value = 1e+20)
+
     """
     def _quantiles1D(data,m,p):
         x = np.sort(data.compressed())

@@ -36,15 +36,13 @@ __all__ = ['gaussian_kde',
 
 
 class gaussian_kde(object):
-    """ Representation of a kernel-density estimate using Gaussian kernels.
+    """
+    Representation of a kernel-density estimate using Gaussian kernels.
 
-    Parameters
+
+
+    Attributes
     ----------
-    dataset : (# of dims, # of data)-array
-        datapoints to estimate from
-
-    Members
-    -------
     d : int
         number of dimensions
     n : int
@@ -65,13 +63,19 @@ class gaussian_kde(object):
     kde.integrate_kde(other_kde) : float
         integrate two kernel density estimates multiplied together
 
-   Internal Methods
-   ----------------
+    Internal Methods
+    ----------------
     kde.covariance_factor() : float
         computes the coefficient that multiplies the data covariance matrix to
         obtain the kernel covariance matrix. Set this method to
         kde.scotts_factor or kde.silverman_factor (or subclass to provide your
         own). The default is scotts_factor.
+
+    Parameters
+    ----------
+    dataset : (# of dims, # of data)-array
+        datapoints to estimate from
+
     """
 
     def __init__(self, dataset):

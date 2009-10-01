@@ -79,14 +79,15 @@ class Rectangle(object):
 
 
 class KDTree(object):
-    """kd-tree for quick nearest-neighbor lookup
+    """
+    kd-tree for quick nearest-neighbor lookup
 
     This class provides an index into a set of k-dimensional points
     which can be used to rapidly look up the nearest neighbors of any
     point.
 
     The algorithm used is described in Maneewongvatana and Mount 1999.
-    The general idea is that the kd-tree is a binary trie, each of whose
+    The general idea is that the kd-tree is a binary tree, each of whose
     nodes represents an axis-aligned hyperrectangle. Each node specifies
     an axis and splits the set of points based on whether their coordinate
     along that axis is greater than or less than a particular value.
@@ -108,6 +109,7 @@ class KDTree(object):
     and with other kd-trees. These do use a reasonably efficient algorithm,
     but the kd-tree is not necessarily the best data structure for this
     sort of calculation.
+
     """
 
     def __init__(self, data, leafsize=10):
@@ -273,10 +275,11 @@ class KDTree(object):
             return sorted([((-d)**(1./p),i) for (d,i) in neighbors])
 
     def query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf):
-        """query the kd-tree for nearest neighbors
+        """
+        query the kd-tree for nearest neighbors
 
-        Parameters:
-        ===========
+        Parameters
+        ----------
 
         x : array-like, last dimension self.m
             An array of points to query.
@@ -297,8 +300,8 @@ class KDTree(object):
             queries, it may help to supply the distance to the nearest neighbor
             of the most recent point.
 
-        Returns:
-        ========
+        Returns
+        -------
 
         d : array of floats
             The distances to the nearest neighbors.
@@ -311,6 +314,48 @@ class KDTree(object):
         i : array of integers
             The locations of the neighbors in self.data. i is the same
             shape as d.
+
+        Examples
+        --------
+
+        >>> from scipy.spatial import KDTree
+        >>> x, y = np.mgrid[0:5, 2:8]
+        >>> tree = KDTree(zip(x.ravel(), y.ravel()))
+        >>> tree.data
+        array([[0, 2],
+               [0, 3],
+               [0, 4],
+               [0, 5],
+               [0, 6],
+               [0, 7],
+               [1, 2],
+               [1, 3],
+               [1, 4],
+               [1, 5],
+               [1, 6],
+               [1, 7],
+               [2, 2],
+               [2, 3],
+               [2, 4],
+               [2, 5],
+               [2, 6],
+               [2, 7],
+               [3, 2],
+               [3, 3],
+               [3, 4],
+               [3, 5],
+               [3, 6],
+               [3, 7],
+               [4, 2],
+               [4, 3],
+               [4, 4],
+               [4, 5],
+               [4, 6],
+               [4, 7]])
+        >>> pts = np.array([[0, 0], [2.1, 2.9]])
+        >>> tree.query(pts)
+        (array([ 2.        ,  0.14142136]), array([ 0, 13]))
+
         """
         x = np.asarray(x)
         if np.shape(x)[-1] != self.m:

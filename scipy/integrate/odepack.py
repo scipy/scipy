@@ -21,7 +21,8 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
            ml=None, mu=None, rtol=None, atol=None, tcrit=None, h0=0.0,
            hmax=0.0, hmin=0.0, ixpr=0, mxstep=0, mxhnil=0, mxordn=12,
            mxords=5, printmessg=0):
-    """Integrate a system of ordinary differential equations.
+    """
+    Integrate a system of ordinary differential equations.
 
     Solve a system of ordinary differential equations using lsoda from the
     FORTRAN library odepack.
@@ -95,15 +96,14 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         For the banded case, Dfun should return a matrix whose
         columns contain the non-zero bands (starting with the
         lowest diagonal).  Thus, the return matrix from Dfun should
-        have shape len(y0) * (ml + mu + 1) when ml >=0 or mu >=0
+        have shape ``len(y0) * (ml + mu + 1) when ml >=0 or mu >=0``
     rtol, atol : float
         The input parameters rtol and atol determine the error
         control performed by the solver.  The solver will control the
         vector, e, of estimated local errors in y, according to an
-        inequality of the form::
-            max-norm of (e / ewt) <= 1
-        where ewt is a vector of positive error weights computed as::
-            ewt = rtol * abs(y) + atol
+        inequality of the form ``max-norm of (e / ewt) <= 1``,
+        where ewt is a vector of positive error weights computed as:
+        ``ewt = rtol * abs(y) + atol``
         rtol and atol can be either vectors the same length as y or scalars.
     tcrit : array
         Vector of critical points (e.g. singularities) where integration

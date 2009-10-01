@@ -246,11 +246,12 @@ Parameters
 
 #..............................................................................
 def mquantiles_cimj(data, prob=[0.25,0.50,0.75], alpha=0.05, axis=None):
-    """Computes the alpha confidence interval for the selected quantiles of the
-data, with Maritz-Jarrett estimators.
+    """
+    Computes the alpha confidence interval for the selected quantiles of the
+    data, with Maritz-Jarrett estimators.
 
-Parameters
-----------
+    Parameters
+    ----------
     data: ndarray
         Data array.
     prob: sequence
@@ -258,7 +259,9 @@ Parameters
     alpha : float
         Confidence level of the intervals.
     axis : integer
-        Axis along which to compute the quantiles. If None, use a flattened array.
+        Axis along which to compute the quantiles.
+        If None, use a flattened array.
+
     """
     alpha = min(alpha, 1-alpha)
     z = norm.ppf(1-alpha/2.)

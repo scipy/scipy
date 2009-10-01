@@ -439,25 +439,84 @@ def _printresmat(function, interval, resmat):
 
 def romberg(function, a, b, args=(), tol=1.48E-8, show=False,
             divmax=10, vec_func=False):
-    """Romberg integration of a callable function or method.
+    """
+    Romberg integration of a callable function or method.
 
-    Returns the integral of |function| (a function of one variable)
-    over |interval| (a sequence of length two containing the lower and
-    upper limit of the integration interval), calculated using
-    Romberg integration up to the specified |accuracy|. If |show| is 1,
-    the triangular array of the intermediate results will be printed.
-    If |vec_func| is True (default is False), then |function| is
+    Returns the integral of `function` (a function of one variable)
+    over the interval (`a`, `b`).
+
+    If `show` is 1, the triangular array of the intermediate results
+    will be printed.  If `vec_func` is True (default is False), then `function` is
     assumed to support vector arguments.
 
-    See also:
+    Parameters
+    ----------
+    function : callable
+        Function to be integrated.
+    a : float
+        Lower limit of integration.
+    b : float
+        Upper limit of integration.
 
-      quad - adaptive quadrature using QUADPACK
-      quadrature - adaptive Gaussian quadrature
-      fixed_quad - fixed-order Gaussian quadrature
-      dblquad, tplquad - double and triple integrals
-      romb, simps, trapz - integrators for sampled data
-      cumtrapz - cumulative integration for sampled data
-      ode, odeint - ODE integrators
+    Returns
+    --------
+    results  : float
+        Result of the integration.
+
+    Other Parameters
+    ----------------
+    args : tuple, optional
+        Extra arguments to pass to function. Each element of `args` will
+        be passed as a single argument to `func`. Default is to pass no
+        extra arguments.
+    tol : float, optional
+        The desired tolerance. Default is 1.48e-8.
+    show : bool, optional
+        Whether to print the results. Default is False.
+    divmax : int, optional
+        ?? Default is 10.
+    vec_func : bool, optional
+        Whether `func` handles arrays as arguments (i.e whether it is a
+        "vector" function). Default is False.
+
+    See Also
+    --------
+    fixed_quad : Fixed-order Gaussian quadrature.
+    quad : Adaptive quadrature using QUADPACK.
+    dblquad, tplquad : Double and triple integrals.
+    romb, simps, trapz : Integrators for sampled data.
+    cumtrapz : Cumulative integration for sampled data.
+    ode, odeint : ODE integrators.
+
+    References
+    ----------
+    .. [1] 'Romberg's method' http://en.wikipedia.org/wiki/Romberg%27s_method
+
+    Examples
+    --------
+    Integrate a gaussian from 0,1 and compare to the error function.
+
+    >>> from scipy.special import erf
+    >>> gaussian = lambda x: 1/sqrt(pi)* exp(-x**2)
+    >>> result = romberg(gaussian,0,1,show=True)
+    Romberg integration of <function vfunc at 0x82d3924> from [0, 1]
+
+    ::
+
+       Steps  StepSize  Results
+           1  1.000000  0.385872
+           2  0.500000  0.412631  0.421551
+           4  0.333333  0.419184  0.421368  0.421356
+           8  0.250000  0.420810  0.421352  0.421350  0.421350
+          16  0.200000  0.421215  0.421350  0.421350  0.421350  0.421350
+          32  0.166667  0.421317  0.421350  0.421350  0.421350  0.421350  0.421350
+
+    The final result is 0.421350396475 after 33 function evaluations.
+    0.42135039647475386
+
+    >>> print 2*result,erf(1)
+    0.84270079295 0.84270079295
+
     """
     if isinf(a) or isinf(b):
         raise ValueError("Romberg integration only available for finite limits.")

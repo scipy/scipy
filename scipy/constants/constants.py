@@ -171,35 +171,227 @@ kgf = kilogram_force = g # * 1 kg
 #functions for conversions that are not linear
 
 def C2K(C):
-    """Convert Celcius to Kelvin"""
+    """
+    Convert Celsius to Kelvin
+
+    Parameters
+    ----------
+    C : float-like scalar or array-like
+        Celsius temperature(s) to be converted
+
+    Returns
+    -------
+    K : float or a numpy array of floats, corresponding to type of Parameters
+        Equivalent Kelvin temperature(s)
+
+    Notes
+    -----
+    Computes `K = C +` `zero_Celsius` where `zero_Celsius` = 273.15, i.e.,
+    (the absolute value of) temperature "absolute zero" as measured in Celsius.
+
+    Examples
+    --------
+    >>> from scipy.constants.constants import C2K
+    >>> C2K(np.array([-40, 40.0]))
+    array([ 233.15,  313.15])
+
+    """
     return C + zero_Celsius
 
 def K2C(K):
-    """Convert Kelvin to Celcius"""
+    """
+    Convert Kelvin to Celsius
+
+    Parameters
+    ----------
+    K : float-like scalar or array-like
+        Kelvin temperature(s) to be converted
+
+    Returns
+    -------
+    C : float or a numpy array of floats, corresponding to type of Parameters
+        Equivalent Celsius temperature(s)
+
+    Notes
+    -----
+    Computes `C = K -` `zero_Celsius` where `zero_Celsius` = 273.15, i.e.,
+    (the absolute value of) temperature "absolute zero" as measured in Celsius.
+
+    Examples
+    --------
+    >>> from scipy.constants.constants import K2C
+    >>> K2C(np.array([233.15, 313.15]))
+    array([-40.,  40.])
+
+    """
     return K - zero_Celsius
 
 def F2C(F):
-    """Convert Fahrenheit to Celcius"""
+    """
+    Convert Fahrenheit to Celsius
+
+    Parameters
+    ----------
+    F : float-like scalar or array-like
+        Fahrenheit temperature(s) to be converted
+
+    Returns
+    -------
+    C : float or a numpy array of floats, corresponding to type of Parameters
+        Equivalent Celsius temperature(s)
+
+    Notes
+    -----
+    Computes `C = (F - 32) / 1.8`
+
+    Examples
+    --------
+    >>> from scipy.constants.constants import F2C
+    >>> F2C(np.array([-40, 40.0]))
+    array([-40.        ,   4.44444444])
+
+    """
     return (F - 32) / 1.8
 
 def C2F(C):
-    """Convert Celcius to Fahrenheit"""
+    """
+    Convert Celsius to Fahrenheit
+
+    Parameters
+    ----------
+    C : float-like scalar or array-like
+        Celsius temperature(s) to be converted
+
+    Returns
+    -------
+    F : float or a numpy array of floats, corresponding to type of Parameters
+        Equivalent Fahrenheit temperature(s)
+
+    Notes
+    -----
+    Computes `F = 1.8 * C + 32`
+
+    Examples
+    --------
+    >>> from scipy.constants.constants import C2F
+    >>> C2F(np.array([-40, 40.0]))
+    array([ -40.,  104.])
+
+    """
     return 1.8 * C + 32
 
 def F2K(F):
-    """Convert Fahrenheit to Kelvin"""
+    """
+    Convert Fahrenheit to Kelvin
+
+    Parameters
+    ----------
+    F : float-like scalar or array-like
+        Fahrenheit temperature(s) to be converted
+
+    Returns
+    -------
+    K : float or a numpy array of floats, corresponding to type of Parameters
+        Equivalent Kelvin temperature(s)
+
+    Notes
+    -----
+    Computes `K = (F - 32)/1.8 +` `zero_Celsius` where `zero_Celsius` =
+    273.15, i.e., (the absolute value of) temperature "absolute zero" as
+    measured in Celsius.
+
+    Examples
+    --------
+    >>> from scipy.constants.constants import F2K
+    >>> F2K(np.array([-40, 104]))
+    array([ 233.15,  313.15])
+
+    """
     return C2K(F2C(F))
 
 def K2F(K):
-    """Convert Kelvin to Fahrenheit"""
+    """
+    Convert Kelvin to Fahrenheit
+
+    Parameters
+    ----------
+    K : float-like scalar or array-like
+        Kelvin temperature(s) to be converted
+
+    Returns
+    -------
+    F : float or a numpy array of floats, corresponding to type of Parameters
+        Equivalent Fahrenheit temperature(s)
+
+    Notes
+    -----
+    Computes `F = 1.8 * (K -` `zero_Celsius` `) + 32` where `zero_Celsius` =
+    273.15, i.e., (the absolute value of) temperature "absolute zero" as
+    measured in Celsius.
+
+    Examples
+    --------
+    >>> from scipy.constants.constants import K2F
+    >>> K2F(np.array([233.15,  313.15]))
+    array([ -40.,  104.])
+
+    """
     return C2F(K2C(K))
 
 #optics
 
 def lambda2nu(lambda_):
-    """Convert wavelength to optical frequency"""
+    """
+    Convert wavelength to optical frequency
+
+    Parameters
+    ----------
+    lambda : float-like scalar or array-like
+        Wavelength(s) to be converted
+
+    Returns
+    -------
+    nu : float or a numpy array of floats, corresponding to type of Parameters
+        Equivalent optical frequency(ies)
+
+    Notes
+    -----
+    Computes :math:`\\nu = c / \\lambda` where `c` = 299792458.0, i.e., the
+    (vacuum) speed of light in meters/second.
+
+    Examples
+    --------
+    >>> from scipy.constants.constants import lambda2nu
+    >>> lambda2nu(np.array((1, speed_of_light)))
+    array([  2.99792458e+08,   1.00000000e+00])
+
+    """
     return c / lambda_
 
 def nu2lambda(nu):
-    """Convert optical frequency to wavelength"""
+    """
+    Convert optical frequency to wavelength.
+
+    Parameters
+    ----------
+    nu : float-like scalar or array-like
+        Optical frequency(ies) to be converted
+
+    Returns
+    -------
+    lambda : float or a numpy array of floats, corresp. to type of Parameters
+        Equivalent wavelength(s)
+
+    Notes
+    -----
+    Computes :math:`\\lambda = c / \\nu` where `c` = 299792458.0, i.e., the
+    (vacuum) speed of light in meters/second.
+
+    Examples
+    --------
+    >>> from scipy.constants.constants import nu2lambda
+    >>> nu2lambda(np.array((1, speed_of_light)))
+    array([  2.99792458e+08,   1.00000000e+00])
+
+    """
     return c / nu

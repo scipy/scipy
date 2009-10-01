@@ -17,7 +17,8 @@ from sputils import upcast, isintlike
 from compressed import _cs_matrix
 
 class csr_matrix(_cs_matrix):
-    """Compressed Sparse Row matrix
+    """
+    Compressed Sparse Row matrix
 
     This can be instantiated in several ways:
         csr_matrix(D)
@@ -31,7 +32,8 @@ class csr_matrix(_cs_matrix):
             dtype is optional, defaulting to dtype='d'.
 
         csr_matrix((data, ij), [shape=(M, N)])
-            where ``data`` and ``ij`` satisfy ``a[ij[0, k], ij[1, k]] = data[k]``
+            where ``data`` and ``ij`` satisfy the relationship
+            ``a[ij[0, k], ij[1, k]] = data[k]``
 
         csr_matrix((data, indices, indptr), [shape=(M, N)])
             is the standard CSR representation where the column indices for

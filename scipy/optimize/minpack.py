@@ -20,91 +20,104 @@ def check_func(thefunc, x0, args, numinputs, output_shape=None):
 
 
 def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8,maxfev=0,band=None,epsfcn=0.0,factor=100,diag=None, warning=True):
-    """Find the roots of a function.
+    """
+    Find the roots of a function.
 
-  Description:
+    Return the roots of the (non-linear) equations defined by func(x)=0 given a
+    starting estimate.
 
-    Return the roots of the (non-linear) equations defined by
-    func(x)=0 given a starting estimate.
+    Parameters
+    ----------
 
-  Inputs:
+    func
+        A Python function or method which takes at least one (possibly vector)
+        argument.
+    x0
+        The starting estimate for the roots of func(x)=0.
+    args
+        Any extra arguments to func are placed in this tuple.
+    fprime
+        A function or method to compute the Jacobian of func with derivatives
+        across the rows. If this is None, the Jacobian will be estimated.
+    full_output
+        Non-zero to return the optional outputs.
+    col_deriv
+        Non-zero to specify that the Jacobian function computes derivatives down
+        the columns (faster, because there is no transpose operation).
+    warning
+        True to print a warning message when the call is unsuccessful; False to
+        suppress the warning message.
 
-    func -- A Python function or method which takes at least one
-            (possibly vector) argument.
-    x0 -- The starting estimate for the roots of func(x)=0.
-    args -- Any extra arguments to func are placed in this tuple.
-    fprime -- A function or method to compute the Jacobian of func with
-            derivatives across the rows. If this is None, the
-            Jacobian will be estimated.
-    full_output -- non-zero to return the optional outputs.
-    col_deriv -- non-zero to specify that the Jacobian function
-                 computes derivatives down the columns (faster, because
-                 there is no transpose operation).
-    warning -- True to print a warning message when the call is
-                unsuccessful; False to suppress the warning message.
-  Outputs: (x, {infodict, ier, mesg})
+    Returns
+    -------
+    x
+        The solution (or the result of the last iteration for an unsuccessful call.
+    infodict
+        A dictionary of optional outputs with the keys:
 
-    x -- the solution (or the result of the last iteration for an
-         unsuccessful call.
+        * 'nfev': number of function calls
+        * 'njev': number of Jacobian calls
+        * 'fvec': function evaluated at the output
+        * 'fjac': the orthogonal matrix, q, produced by the QR factorization of
+          the final approximate Jacobian matrix, stored column wise
+        * 'r': upper triangular matrix produced by QR factorization of same
+          matrix
+        * 'qtf': the vector (transpose(q) * fvec)
 
-    infodict -- a dictionary of optional outputs with the keys:
-                'nfev' : the number of function calls
-                'njev' : the number of jacobian calls
-                'fvec' : the function evaluated at the output
-                'fjac' : the orthogonal matrix, q, produced by the
-                         QR factorization of the final approximate
-                         Jacobian matrix, stored column wise.
-                'r'    : upper triangular matrix produced by QR
-                         factorization of same matrix.
-                'qtf'  : the vector (transpose(q) * fvec).
-    ier -- an integer flag.  If it is equal to 1 the solution was
-           found.  If it is not equal to 1, the solution was not
-           found and the following message gives more information.
-    mesg -- a string message giving information about the cause of
-            failure.
+    ier
+        An integer flag.  If it is 1, the solution was found.  If it is 1, the solution was
+        not found and the following message gives more information.
+    mesg
+        A string message giving information about the cause of failure.
 
-  Extended Inputs:
+    Other Parameters
+    ----------------
 
-   xtol -- The calculation will terminate if the relative error
-           between two consecutive iterates is at most xtol.
-   maxfev -- The maximum number of calls to the function. If zero,
-             then 100*(N+1) is the maximum where N is the number
-             of elements in x0.
-   band -- If set to a two-sequence containing the number of sub-
-           and superdiagonals within the band of the Jacobi matrix,
-           the Jacobi matrix is considered banded (only for fprime=None).
-   epsfcn -- A suitable step length for the forward-difference
-             approximation of the Jacobian (for fprime=None). If
-             epsfcn is less than the machine precision, it is assumed
-             that the relative errors in the functions are of
-             the order of the machine precision.
-   factor -- A parameter determining the initial step bound
-             (factor * || diag * x||). Should be in interval (0.1,100).
-   diag -- A sequency of N positive entries that serve as a
-           scale factors for the variables.
+    xtol
+        The calculation will terminate if the relative error between two
+        consecutive iterates is at most `xtol`.
+    maxfev
+        The maximum number of calls to the function. If zero, then 100*(N+1) is
+        the maximum where N is the number of elements in x0.
+    band
+        If set to a two-sequence containing the number of sub- and super-diagonals
+        within the band of the Jacobi matrix, the Jacobi matrix is considered
+        banded (only for fprime=None).
+    epsfcn
+        A suitable step length for the forward-difference approximation of the
+        Jacobian (for fprime=None). If `epsfcn` is less than the machine
+        precision, it is assumed that the relative errors in the functions are of
+        the order of the machine precision.
+    factor
+        A parameter determining the initial step bound (`factor` * || `diag` * x||).
+        Should be in the interval (0.1,100).
+    diag
+        A sequency of N positive entries that serve as a scale factors for the
+        variables.
 
-  Remarks:
+    Notes
+    -----
 
     "fsolve" is a wrapper around MINPACK's hybrd and hybrj algorithms.
 
-  See also:
+    See Also
+    --------
 
-      scikits.openopt, which offers a unified syntax to call this and other solvers
+    scikits.openopt : offers a unified syntax to call this and other solvers
 
-      fmin, fmin_powell, fmin_cg,
-             fmin_bfgs, fmin_ncg -- multivariate local optimizers
-      leastsq -- nonlinear least squares minimizer
+    fmin, fmin_powell, fmin_cg, fmin_bfgs, fmin_ncg : multivariate local optimizers
 
-      fmin_l_bfgs_b, fmin_tnc,
-             fmin_cobyla -- constrained multivariate optimizers
+    leastsq : nonlinear least squares minimizer
 
-      anneal, brute -- global optimizers
+    fmin_l_bfgs_b, fmin_tnc, fmin_cobyla : constrained multivariate optimizers
 
-      fminbound, brent, golden, bracket -- local scalar minimizers
+    anneal, brute : global optimizers
 
-      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+    fminbound, brent, golden, bracket : local scalar minimizers
 
-      fixed_point -- scalar and vector fixed-point finder
+    brentq, brenth, ridder, bisect, newton : one-dimensional root-finding
+
+    fixed_point : scalar and vector fixed-point finder
 
     """
     x0 = array(x0,ndmin=1)
@@ -329,56 +342,61 @@ def _weighted_general_function(params, xdata, ydata, function, weights):
     return weights * (function(xdata, *params) - ydata)
 
 def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
-    """Use non-linear least squares to fit a function, f, to data.
+    """
+    Use non-linear least squares to fit a function, f, to data.
 
-    Assumes ydata = f(xdata,*params) + eps
+    Assumes ``ydata = f(xdata, *params) + eps``
 
     Parameters
     ----------
     f : callable
-        The model function, f(x, *params).  It must take the independent
-        variable as the first argument and the parameters to fit as 
+        The model function, f(x, ...).  It must take the independent
+        variable as the first argument and the parameters to fit as
         separate remaining arguments.
     xdata : An N-length sequence or an (k,N)-shaped array
-        for functions with k predictors. 
+        for functions with k predictors.
         The independent variable where the data is measured.
     ydata : N-length sequence
-        The dependent data --- nominally f(xdata, *params)
+        The dependent data --- nominally f(xdata, ...)
     p0 : None, scalar, or M-length sequence
         Initial guess for the parameters.  If None, then the initial
         values will all be 1 (if the number of parameters for the function
-        can be determined using introspection, otherwise a ValueError is raised). 
+        can be determined using introspection, otherwise a ValueError
+        is raised).
     sigma : None or N-length sequence
-        If not None, it represents the standard-deviation of ydata.  This
-        vector, if given, will be used to weight the least-squares problem. 
+        If not None, it represents the standard-deviation of ydata.
+        This vector, if given, will be used as weights in the
+        least-squares problem.
+
 
     Returns
     -------
     popt : array
-        Optimal values for the parameters so that the sum of the squared error of
-        f(xdata, *popt) - ydata is minimized
+        Optimal values for the parameters so that the sum of the squared error
+        of ``f(xdata, *popt) - ydata`` is minimized
     pcov : 2d array
-        A covariance matrix providing an estimate of the covariance matrix of
-        the parameter estimates.   
-       
+        The estimated covariance of popt.  The diagonals provide the variance
+        of the parameter estimate.
 
     Notes
     -----
-    The algorithm uses the Levenburg-Marquardt algorithm: scipy.optimize.leastsq
-    Additional keyword arguments are passed directly to that algorithm. 
+    The algorithm uses the Levenburg-Marquardt algorithm:
+    scipy.optimize.leastsq. Additional keyword arguments are passed directly
+    to that algorithm.
 
-    Example
-    -------
-    import numpy as np
-    from scipy.optimize import curve_fit
-    def func(x, a, b, c):
-        return a*exp(-b*x) + c
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.optimize import curve_fit
+    >>> def func(x, a, b, c):
+    ...     return a*np.exp(-b*x) + c
 
-    x = np.linspace(0,4,50)
-    y = func(x, 2.5, 1.3, 0.5)
-    yn = y + 0.2*np.random.normal(size=len(x))
-    
-    popt, pcov = curve_fit(func, x, yn)
+    >>> x = np.linspace(0,4,50)
+    >>> y = func(x, 2.5, 1.3, 0.5)
+    >>> yn = y + 0.2*np.random.normal(size=len(x))
+
+    >>> popt, pcov = curve_fit(func, x, yn)
+
     """
     if p0 is None or isscalar(p0):
         # determine number of parameters by inspecting the function

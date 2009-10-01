@@ -359,19 +359,109 @@ for line in txt.split('\n'):
     physical_constants[name] = (val, units, uncert)
 
 def value(key) :
-    """value indexed by key"""
+    """
+    Value in physical_constants indexed by key
+
+    Parameters
+    ----------
+    key : Python string or unicode
+        Key in dictionary `physical_constants`
+
+    Returns
+    -------
+    value : float
+        Value in `physical_constants` corresponding to `key`
+
+    See Also
+    --------
+    codata : Contains the description of `physical_constants`, which, as a
+        dictionary literal object, does not itself possess a docstring.
+
+    Examples
+    --------
+    >>> from scipy.constants import codata
+    >>> codata.value('elementary charge')
+    1.60217653e-019
+
+    """
     return physical_constants[key][0]
 
 def unit(key) :
-    """unit indexed by key"""
+    """
+    Unit in physical_constants indexed by key
+
+    Parameters
+    ----------
+    key : Python string or unicode
+        Key in dictionary `physical_constants`
+
+    Returns
+    -------
+    unit : Python string
+        Unit in `physical_constants` corresponding to `key`
+
+    See Also
+    --------
+    codata : Contains the description of `physical_constants`, which, as a
+        dictionary literal object, does not itself possess a docstring.
+
+    Examples
+    --------
+    >>> from scipy.constants import codata
+    >>> codata.unit(u'proton mass')
+    'kg'
+
+    """
     return physical_constants[key][1]
 
 def precision(key) :
-    """relative precision indexed by key"""
+    """
+    Relative precision in physical_constants indexed by key
+
+    Parameters
+    ----------
+    key : Python string or unicode
+        Key in dictionary `physical_constants`
+
+    Returns
+    -------
+    prec : float
+        Relative precision in `physical_constants` corresponding to `key`
+
+    See Also
+    --------
+    codata : Contains the description of `physical_constants`, which, as a
+        dictionary literal object, does not itself possess a docstring.
+
+    Examples
+    --------
+    >>> from scipy.constants import codata
+    >>> codata.precision(u'proton mass')
+    1.7338050694080732e-007
+
+    """
     return physical_constants[key][2] / physical_constants[key][0]
 
 def find(sub) :
-    """list all keys containing the string sub"""
+    """
+    Return list of codata.physical_constant keys containing a given string
+
+    Parameters
+    ----------
+    sub : str or unicode
+        Sub-string to search keys for
+
+    Returns
+    -------
+    keys : list
+        List of keys containing `sub`
+
+    See Also
+    --------
+    codata : Contains the description of `physical_constants`, which, as a
+        dictionary literal object, does not itself possess a docstring.
+
+    """
     l_sub = string.lower(sub)
     result = []
     for key in physical_constants :

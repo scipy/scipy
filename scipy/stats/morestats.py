@@ -431,20 +431,41 @@ def boxcox_normplot(x,la,lb,plot=None,N=80):
     return svals, ppcc
 
 def shapiro(x,a=None,reta=0):
-    """Shapiro and Wilk test for normality.
+    """
+    Perform the Shapiro-Wilk test for normality.
 
-    Given random variates x, compute the W statistic and its p-value
-    for a normality test.
+    The Shapiro-Wilk test tests the null hypothesis that the
+    data was drawn from a normal distribution.
 
-    If p-value is high, one cannot reject the null hypothesis of normality
-    with this test.  P-value is probability that the W statistic is
-    as low as it is if the samples are actually from a normal distribution.
+    Parameters
+    ----------
+    x : array_like
+        array of sample data
+    a : array_like, optional
+        array of internal parameters used in the calculation.  If these
+        are not given, they will be computed internally.  If x has length
+        n, then a must have length n/2.
+    reta : {True, False}
+        whether or not to return the internally computed a values.  The
+        default is False.
 
-    Output:  W statistic and its p-value
+    Returns
+    -------
+    W : float
+        The test statistic
+    p-value : float
+        The p-value for the hypothesis test
+    a : array_like, optional
+        If `reta` is True, then these are the internally computed "a"
+        values that may be passed into this function on future calls.
 
-              if reta is nonzero then also return the computed "a" values
-                 as the third output.  If these are known for a given size
-                 they can be given as input instead of computed internally.
+    See Also
+    --------
+    anderson : The Anderson-Darling test for normality
+
+    References
+    ----------
+    .. [1] http://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
 
     """
     N = len(x)
@@ -480,21 +501,70 @@ _Avals_gumbel = array([0.474, 0.637, 0.757, 0.877, 1.038])
 #             Vol. 66, Issue 3, Dec. 1979, pp 591-595.
 _Avals_logistic = array([0.426, 0.563, 0.660, 0.769, 0.906, 1.010])
 def anderson(x,dist='norm'):
-    """Anderson and Darling test for normal, exponential, or Gumbel
-    (Extreme Value Type I) distribution.
+    """
+    Anderson-Darling test for data coming from a particular distribution
 
-    Given samples x, return A2, the Anderson-Darling statistic,
-    the significance levels in percentages, and the corresponding
-    critical values.
+    The Anderson-Darling test is a modification of the Kolmogorov-
+    Smirnov test kstest_ for the null hypothesis that a sample is
+    drawn from a population that follows a particular distribution.
+    For the Anderson-Darling test, the critical values depend on
+    which distribution is being tested against.  This function works
+    for normal, exponential, logistic, or Gumbel (Extreme Value
+    Type I) distributions.
 
-    Critical values provided are for the following significance levels
-    norm/expon:   15%, 10%, 5%, 2.5%, 1%
-    Gumbel:       25%, 10%, 5%, 2.5%, 1%
-    logistic:     25%, 10%, 5%, 2.5%, 1%, 0.5%
+    Parameters
+    ----------
+    x : array_like
+        array of sample data
+    dist : {'norm','expon','logistic','gumbel','extreme1'}, optional
+        the type of distribution to test against.  The default is 'norm'
+        and 'extreme1' is a synonym for 'gumbel'
 
-    If A2 is larger than these critical values then for that significance
-    level, the hypothesis that the data come from a normal (exponential)
-    can be rejected.
+    Returns
+    -------
+    A2 : float
+        The Anderson-Darling test statistic
+    critical : list
+        The critical values for this distribution
+    sig : list
+        The significance levels for the corresponding critical values
+        in percents.  The function returns critical values for a
+        differing set of significance levels depending on the
+        distribution that is being tested against.
+
+    Notes
+    -----
+    Critical values provided are for the following significance levels:
+
+    normal/exponenential
+        15%, 10%, 5%, 2.5%, 1%
+    logistic
+        25%, 10%, 5%, 2.5%, 1%, 0.5%
+    Gumbel
+        25%, 10%, 5%, 2.5%, 1%
+
+    If A2 is larger than these critical values then for the corresponding
+    significance level, the null hypothesis that the data come from the
+    chosen distribution can be rejected.
+
+    References
+    ----------
+    .. [1] http://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
+    .. [2] Stephens, M. A. (1974). EDF Statistics for Goodness of Fit and
+           Some Comparisons, Journal of the American Statistical Association,
+           Vol. 69, pp. 730-737.
+    .. [3] Stephens, M. A. (1976). Asymptotic Results for Goodness-of-Fit
+           Statistics with Unknown Parameters, Annals of Statistics, Vol. 4,
+           pp. 357-369.
+    .. [4] Stephens, M. A. (1977). Goodness of Fit for the Extreme Value
+           Distribution, Biometrika, Vol. 64, pp. 583-588.
+    .. [5] Stephens, M. A. (1977). Goodness of Fit with Special Reference
+           to Tests for Exponentiality , Technical Report No. 262,
+           Department of Statistics, Stanford University, Stanford, CA.
+    .. [6] Stephens, M. A. (1979). Tests of Fit for the Logistic Distribution
+           Based on the Empirical Distribution Function, Biometrika, Vol. 66,
+           pp. 591-595.
+
     """
     if not dist in ['norm','expon','gumbel','extreme1','logistic']:
         raise ValueError, "Invalid distribution."
@@ -574,15 +644,39 @@ def _find_repeats(arr):
     return replist, repnum
 
 def ansari(x,y):
-    """Determine if the scale parameter for two distributions with equal
-    medians is the same using the Ansari-Bradley statistic.
+    """
+    Perform the Ansari-Bradley test for equal scale parameters
 
-    Specifically, compute the AB statistic and the probability of error
-    that the null hypothesis is true but rejected with the computed
-    statistic as the critical value.
+    The Ansari-Bradley test is a non-parametric test for the equality
+    of the scale parameter of the distributions from which two
+    samples were drawn.
 
-    One can reject the null hypothesis that the ratio of variances is 1 if
-    returned probability of error is small (say < 0.05)
+    Parameters
+    ----------
+    x, y : array_like
+        arrays of sample data
+
+    Returns
+    -------
+    p-value : float
+        The p-value of the hypothesis test
+
+    See Also
+    --------
+    fligner : A non-parametric test for the equality of k variances
+    mood : A non-parametric test for the equality of two scale parameters
+
+    Notes
+    -----
+    The p-value given is exact when the sample sizes are both less than
+    55 and there are no ties, otherwise a normal approximation for the
+    p-value is used.
+
+    References
+    ----------
+    .. [1] Sprent, Peter and N.C. Smeeton.  Applied nonparametric statistical
+           methods.  3rd ed. Chapman and Hall/CRC. 2001.  Section 5.8.2.
+
     """
     x,y = asarray(x),asarray(y)
     n = len(x)
@@ -638,27 +732,34 @@ def ansari(x,y):
     return AB, pval
 
 def bartlett(*args):
-    """Perform Bartlett test with the null hypothesis that all input samples
-    have equal variances.
+    """
+    Perform Bartlett's test for equal variances
 
-    Inputs are sample vectors:  bartlett(x,y,z,...)
+    Bartlett's test tests the null hypothesis that all input samples
+    are from populations with equal variances.  For samples
+    from significantly non-normal populations, Levene's test
+    `levene`_ is more robust.
 
-    Outputs: (T, pval)
+    Parameters
+    ----------
+    sample1, sample2,... : array_like
+        arrays of sample data.  May be different lengths.
 
-         T    -- the Test statistic
-         pval -- significance level if null is rejected with this value of T
-                 (prob. that null is true but rejected with this p-value.)
+    Returns
+    -------
+    T : float
+        the test statistic
+    p-value : float
+        the p-value of the test
 
-    Sensitive to departures from normality.  The Levene test is
-    an alternative that is less sensitive to departures from
-    normality.
+    References
+    ----------
 
-    References:
+    .. [1]  http://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
 
-      http://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
+    .. [2]  Snedecor, George W. and Cochran, William G. (1989), Statistical
+              Methods, Eighth Edition, Iowa State University Press.
 
-      Snedecor, George W. and Cochran, William G. (1989), Statistical
-        Methods, Eighth Edition, Iowa State University Press.
     """
     k = len(args)
     if k < 2:
@@ -678,33 +779,50 @@ def bartlett(*args):
 
 
 def levene(*args,**kwds):
-    """Perform Levene test with the null hypothesis that all input samples
-    have equal variances.
+    """
+    Perform Levene test for equal variances
 
-    Inputs are sample vectors:  bartlett(x,y,z,...)
+    The Levene test tests the null hypothesis that all input samples
+    are from populations with equal variances.  Levene's test is an
+    alternative to Bartlett's test `bartlett`_ in the case where
+    there are significant deviations from normality.
 
-    One keyword input, center, can be used with values
-        center = 'mean', center='median' (default), center='trimmed'
+    Parameters
+    ----------
+    sample1, sample2, ... : array_like
+        The sample data, possibly with different lengths
+    center : {'mean', 'median', 'trimmed'}, optional
+        Which function of the data to use in the test.  The default
+        is 'median'.
 
-    center='median' is recommended for skewed (non-normal) distributions
-    center='mean' is recommended for symmetric, moderate-tailed, dist.
-    center='trimmed' is recommended for heavy-tailed distributions.
+    Returns
+    -------
+    W : float
+        the test statistic
+    p-value : float
+        the p-value for the test
 
-    Outputs: (W, pval)
+    Notes
+    -----
+    Three variations of Levene's test are possible.  The possibilities
+    and their recommended usages are:
 
-         W    -- the Test statistic
-         pval -- significance level if null is rejected with this value of W
-                 (prob. that null is true but rejected with this p-value.)
+    'median'
+       Recommended for skewed (non-normal) distributions
+    'mean'
+       Recommended for symmetric, moderate-tailed distributions
+    'trimmed'
+       Recommended for heavy-tailed distributions
 
-    References:
+    References
+    ----------
+    .. [1]  http://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
+    .. [2]   Levene, H. (1960). In Contributions to Probability and Statistics:
+               Essays in Honor of Harold Hotelling, I. Olkin et al. eds.,
+               Stanford University Press, pp. 278-292.
+    .. [3]  Brown, M. B. and Forsythe, A. B. (1974), Journal of the American
+              Statistical Association, 69, 364-367
 
-       http://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
-
-       Levene, H. (1960). In Contributions to Probability and Statistics:
-         Essays in Honor of Harold Hotelling, I. Olkin et al. eds.,
-         Stanford University Press, pp. 278-292.
-       Brown, M. B. and Forsythe, A. B. (1974), Journal of the American
-         Statistical Association, 69, 364-367
     """
     k = len(args)
     if k < 2:
@@ -756,18 +874,34 @@ def levene(*args,**kwds):
 
 @setastest(False)
 def binom_test(x,n=None,p=0.5):
-    """An exact (two-sided) test of the null hypothesis that the
-    probability of success in a Bernoulli experiment is p.
+    """
+    Perform a test that the probability of success is p.
 
-    Inputs:
+    This is an exact, two-sided test of the null hypothesis
+    that the probability of success in a Bernoulli experiment
+    is `p`.
 
-       x -- Number of successes (or a vector of length 2 giving the
-              number of successes and number of failures respectively)
-       n -- Number of trials (ignored if x has length 2)
-       p -- Hypothesized probability of success
+    Parameters
+    ----------
+    x : integer or array_like
+        the number of successes, or if x has length 2, it is the
+        number of successes and the number of failures.
+    n : integer
+        the number of trials.  This is ignored if x gives both the
+        number of successes and failures
+    p : float, optional
+        The hypothesized probability of success.  0 <= p <= 1. The
+        default value is p = 0.5
 
-    Returns pval -- Probability that null test is rejected for this set
-                    of x and n even though it is true.
+    Returns
+    -------
+    p-value : float
+        The p-value of the hypothesis test
+
+    References
+    ----------
+    .. [1] http://en.wikipedia.org/wiki/Binomial_test
+
     """
     x = atleast_1d(x).astype(np.integer)
     if len(x) == 2:
@@ -808,27 +942,45 @@ def _apply_func(x,g,func):
     return asarray(output)
 
 def fligner(*args,**kwds):
-    """Perform Levene test with the null hypothesis that all input samples
-    have equal variances.
+    """
+    Perform Fligner's test for equal variances
 
-    Inputs are sample vectors:  bartlett(x,y,z,...)
+    Fligner's test tests the null hypothesis that all input samples
+    are from populations with equal variances.  Fligner's test is
+    non-parametric in contrast to Bartlett's test bartlett_ and
+    Levene's test levene_.
 
-    One keyword input, center, can be used with values
-        center = 'mean', center='median' (default), center='trimmed'
+    Parameters
+    ----------
+    sample1, sample2, ... : array_like
+        arrays of sample data.  Need not be the same length
+    center : {'mean', 'median', 'trimmed'}, optional
+        keyword argument controlling which function of the data
+        is used in computing the test statistic.  The default
+        is 'median'.
 
-    Outputs: (Xsq, pval)
+    Returns
+    -------
+    Xsq : float
+        the test statistic
+    p-value : float
+        the p-value for the hypothesis test
 
-         Xsq  -- the Test statistic
-         pval -- significance level if null is rejected with this value of X
-                 (prob. that null is true but rejected with this p-value.)
+    Notes
+    -----
+    As with Levene's test there are three variants
+    of Fligner's test that differ by the measure of central
+    tendency used in the test.  See levene_ for more information.
 
-    References:
+    References
+    ----------
 
-       http://www.stat.psu.edu/~bgl/center/tr/TR993.ps
+    .. [1] http://www.stat.psu.edu/~bgl/center/tr/TR993.ps
 
-       Fligner, M.A. and Killeen, T.J. (1976). Distribution-free two-sample
-       tests for scale. 'Journal of the American Statistical Association.'
-       71(353), 210-213.
+    .. [2] Fligner, M.A. and Killeen, T.J. (1976). Distribution-free two-sample
+           tests for scale. 'Journal of the American Statistical Association.'
+           71(353), 210-213.
+
     """
     k = len(args)
     if k < 2:
@@ -872,15 +1024,36 @@ def fligner(*args,**kwds):
 
 
 def mood(x,y):
-    """Determine if the scale parameter for two distributions with equal
-    medians is the same using a Mood test.
+    """
+    Perform Mood's test for equal scale parameters
 
-    Specifically, compute the z statistic and the probability of error
-    that the null hypothesis is true but rejected with the computed
-    statistic as the critical value.
+    Mood's two-sample test for scale parameters is a non-parametric
+    test for the null hypothesis that two samples are drawn from the
+    same distribution with the same scale parameter.
 
-    One can reject the null hypothesis that the ratio of scale parameters is
-    1 if the returned probability of error is small (say < 0.05)
+    Parameters
+    ----------
+    x, y : array_like
+        arrays of sample data
+
+    Returns
+    -------
+    p-value : float
+        The p-value for the hypothesis test
+
+    See Also
+    --------
+    fligner : A non-parametric test for the equality of k variances
+    ansari : A non-parametric test for the equality of 2 variances
+    bartlett : A parametric test for equality of k variances in normal samples
+    levene : A parametric test for equality of k variances
+
+    Notes
+    -----
+    The data are assumed to be drawn from probability distributions f(x) and
+    f(x/s)/s respectively, for some probability density function f.  The
+    null hypothesis is that s = 1.
+
     """
     n = len(x)
     m = len(y)
@@ -949,12 +1122,40 @@ def oneway(*args,**kwds):
 
 def wilcoxon(x,y=None):
     """
-Calculates the Wilcoxon signed-rank test for the null hypothesis that two
-samples come from the same distribution. A non-parametric T-test.
-(need N > 20)
+    Calculate the Wilcoxon signed-rank test
 
-Returns: t-statistic, two-tailed p-value
-"""
+    The Wilcoxon signed-rank test tests the null hypothesis that two
+    related samples come from the same distribution. It is a a
+    non-parametric version of the paired T-test.
+
+    Parameters
+    ----------
+    x : array_like
+        The first set of measurements
+    y : array_like, optional, default None
+        The second set of measurements.  If y is not given, then the x array
+        is considered to be the differences between the two sets of
+        measurements.
+
+    Returns
+    -------
+    z-statistic : float
+        The test statistic under the large-sample approximation that the
+        signed-rank statistic is normally distributed.
+    p-value : float
+        The two-sided p-value for the test
+
+    Notes
+    -----
+    Because the normal approximation is used for the calculations, the
+    samples used should be large.  A typical rule is to require that
+    n > 20.
+
+    References
+    ----------
+    .. [1] http://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test
+
+    """
     if y is None:
         d = x
     else:

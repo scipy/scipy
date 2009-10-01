@@ -394,12 +394,16 @@ def ifftn(x, shape=None, axes=None, overwrite_x=0):
 
 
 def fft2(x, shape=None, axes=(-2,-1), overwrite_x=0):
-    """ fft2(x, shape=None, axes=(-2,-1), overwrite_x=0) -> y
+    """
+    2-D discrete Fourier transform.
 
-    Return two-dimensional discrete Fourier transform of
-    arbitrary type sequence x.
+    Return the two-dimensional discrete Fourier transform of the 2-D argument
+    `x`.
 
-    See fftn.__doc__ for more information.
+    See Also
+    --------
+    fftn : for detailed information.
+
     """
     return fftn(x,shape,axes,overwrite_x)
 

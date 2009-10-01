@@ -77,7 +77,8 @@ def freqs(b,a,worN=None,plot=None):
     return w, h
 
 def freqz(b, a=1, worN=None, whole=0, plot=None):
-    """Compute frequency response of a digital filter.
+    """
+    Compute frequency response of a digital filter.
 
     Given the numerator (b) and denominator (a) of a digital filter compute
     its frequency response.
@@ -95,10 +96,9 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
     a : ndarray
         numerator of a linear filter
     worN : {None, int}, optional
-        If None, then compute at 200 frequencies around the interesting parts
-        of the response curve (determined by pole-zero locations).  If a single
-        integer, the compute at that many frequencies.  Otherwise, compute the
-        response at frequencies given in worN.
+        If None, then compute at 512 frequencies around the unit circle.
+        If a single integer, the compute at that many frequencies.
+        Otherwise, compute the response at frequencies given in worN
     whole : {0,1}, optional
         Normally, frequencies are computed from 0 to pi (upper-half of
         unit-circle.  If whole is non-zero compute frequencies from 0 to 2*pi.
@@ -109,6 +109,7 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
         The frequencies at which h was computed.
     h : ndarray
         The frequency response.
+
     """
     b, a = map(atleast_1d, (b,a))
     if whole:
@@ -1551,7 +1552,8 @@ def kaiserord(ripple, width):
     return ceil(N), beta
 
 def firwin(N, cutoff, width=None, window='hamming'):
-    """FIR Filter Design using windowed ideal filter method.
+    """
+    FIR Filter Design using windowed ideal filter method.
 
     Parameters
     ----------
@@ -1562,11 +1564,13 @@ def firwin(N, cutoff, width=None, window='hamming'):
     width  -- if width is not None, then assume it is the approximate width of
               the transition region (normalized so that 1 corresonds to pi)
               for use in kaiser FIR filter design.
-    window -- desired window to use.
+    window -- desired window to use. See get_window for a list
+              of windows and required parameters.
 
     Returns
     -------
     h      -- coefficients of length N fir filter.
+
     """
 
     from signaltools import get_window

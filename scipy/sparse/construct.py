@@ -21,7 +21,8 @@ from lil import lil_matrix
 from dia import dia_matrix
 
 def spdiags(data, diags, m, n, format=None):
-    """Return a sparse matrix from diagonals.
+    """
+    Return a sparse matrix from diagonals.
 
     Parameters
     ----------
@@ -39,10 +40,10 @@ def spdiags(data, diags, m, n, format=None):
 
     See Also
     --------
-    The dia_matrix class which implements the DIAgonal format.
+    dia_matrix : the sparse DIAgonal format.
 
-    Example
-    -------
+    Examples
+    --------
     >>> data = array([[1,2,3,4],[1,2,3,4],[1,2,3,4]])
     >>> diags = array([0,-1,2])
     >>> spdiags(data, diags, 4, 4).todense()
@@ -233,7 +234,8 @@ def kronsum(A, B, format=None):
 
 
 def hstack(blocks, format=None, dtype=None):
-    """Stack sparse matrices horizontally (column wise)
+    """
+    Stack sparse matrices horizontally (column wise)
 
     Parameters
     ----------
@@ -244,8 +246,12 @@ def hstack(blocks, format=None, dtype=None):
         by default an appropriate sparse matrix format is returned.
         This choice is subject to change.
 
-    Example
-    -------
+    See Also
+    --------
+    vstack : stack sparse matrices vertically (row wise)
+
+    Examples
+    --------
     >>> from scipy.sparse import coo_matrix, vstack
     >>> A = coo_matrix([[1,2],[3,4]])
     >>> B = coo_matrix([[5],[6]])
@@ -253,12 +259,12 @@ def hstack(blocks, format=None, dtype=None):
     matrix([[1, 2, 5],
             [3, 4, 6]])
 
-
     """
     return bmat([blocks], format=format, dtype=dtype)
 
 def vstack(blocks, format=None, dtype=None):
-    """Stack sparse matrices vertically (row wise)
+    """
+    Stack sparse matrices vertically (row wise)
 
     Parameters
     ----------
@@ -269,8 +275,12 @@ def vstack(blocks, format=None, dtype=None):
         by default an appropriate sparse matrix format is returned.
         This choice is subject to change.
 
-    Example
-    -------
+    See Also
+    --------
+    hstack : stack sparse matrices horizontally (column wise)
+
+    Examples
+    --------
     >>> from scipy.sparse import coo_matrix, vstack
     >>> A = coo_matrix([[1,2],[3,4]])
     >>> B = coo_matrix([[5,6]])
@@ -279,12 +289,12 @@ def vstack(blocks, format=None, dtype=None):
             [3, 4],
             [5, 6]])
 
-
     """
     return bmat([ [b] for b in blocks ], format=format, dtype=dtype)
 
 def bmat(blocks, format=None, dtype=None):
-    """Build a sparse matrix from sparse sub-blocks
+    """
+    Build a sparse matrix from sparse sub-blocks
 
     Parameters
     ----------
@@ -295,8 +305,8 @@ def bmat(blocks, format=None, dtype=None):
         by default an appropriate sparse matrix format is returned.
         This choice is subject to change.
 
-    Example
-    -------
+    Examples
+    --------
     >>> from scipy.sparse import coo_matrix, bmat
     >>> A = coo_matrix([[1,2],[3,4]])
     >>> B = coo_matrix([[5],[6]])
@@ -310,7 +320,6 @@ def bmat(blocks, format=None, dtype=None):
     matrix([[1, 2, 0],
             [3, 4, 0],
             [0, 0, 7]])
-
 
     """
 
@@ -417,7 +426,8 @@ def lil_eye((r,c), k=0, dtype='d'):
 
 #TODO remove this function
 def lil_diags(diags, offsets, (m,n), dtype='d'):
-    """Generate a lil_matrix with the given diagonals.
+    """
+    Generate a lil_matrix with the given diagonals.
 
     Parameters
     ----------
@@ -431,8 +441,8 @@ def lil_diags(diags, offsets, (m,n), dtype='d'):
     dtype : dtype
         output data-type.
 
-    Example
-    -------
+    Examples
+    --------
 
     >>> lil_diags([[1,2,3],[4,5],[6]],[0,1,2],(3,3)).todense()
     matrix([[ 1.,  4.,  6.],

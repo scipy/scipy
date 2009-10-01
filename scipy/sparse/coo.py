@@ -14,7 +14,8 @@ from data import _data_matrix
 from sputils import upcast, to_native, isshape, getdtype
 
 class coo_matrix(_data_matrix):
-    """A sparse matrix in COOrdinate format.
+    """
+    A sparse matrix in COOrdinate format.
 
     Also known as the 'ijv' or 'triplet' format.
 
@@ -52,10 +53,7 @@ class coo_matrix(_data_matrix):
             + arithmetic operations
             + slicing
 
-
     Intended Usage
-    --------------
-
         - COO is a fast format for constructing sparse matrices
         - Once a matrix has been constructed, convert to CSR or
           CSC format for fast arithmetic and matrix vector operations

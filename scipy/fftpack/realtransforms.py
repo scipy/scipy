@@ -36,8 +36,8 @@ def dct(x, type=2, n=None, axis=-1, norm=None):
 
     Notes
     -----
-    For a single dimension array x, dct(x, norm='ortho') is equal to matlab
-    dct(x).
+    For a single dimension array ``x``, ``dct(x, norm='ortho')`` is equal to
+    matlab ``dct(x)``.
 
     There are theoretically 8 types of the DCT, only the first 3 types are
     implemented in scipy. 'The' DCT generally refers to DCT type 2, and 'the'
@@ -45,50 +45,56 @@ def dct(x, type=2, n=None, axis=-1, norm=None):
 
     type I
     ~~~~~~
-    There are several definitions of the DCT-I; we use the following (for
-    norm=None):
+    There are several definitions of the DCT-I; we use the following
+    (for ``norm=None``):
 
-    for 0 <= k < N,
-
-                                           N-2
-        y[k] = x[0] + (-1)**k x[N-1] + 2 * sum x[n]*cos(pi*k*n/(N-1))
-                                           n=1
+    .. math::
+        y_k = x_0 + (-1)^k x_{N-1} + 2\\sum_{n=1}^{N-2} x_n
+        \\cos\\left({\\pi nk\\over N-1}\\right),
+        \\qquad 0 \\le k < N.
 
     Only None is supported as normalization mode for DCT-I. Note also that the
     DCT-I is only supported for input size > 1
 
     type II
     ~~~~~~~
-    There are several definitions of the DCT-II; we use the following (for
-    norm=None):
+    There are several definitions of the DCT-II; we use the following
+    (for ``norm=None``):
 
-                  N-1
-        y[k] = 2* sum x[n]*cos(pi*k*(2n+1)/(2*N)), 0 <= k < N.
-                  n=0
+    .. math::
+        y_k = 2 \\sum_{n=0}^{N-1} x_n
+        \\cos\\left({\\pi(2n+1)k\\over 2N}\\right)
+        \\qquad 0 \\le k < N.
 
-    If norm='ortho', y[k] is multiplied by a scaling factor f:
+    If ``norm='ortho'``, :math:`y_k` is multiplied by a scaling factor `f`:
 
-        f = sqrt(1/(4*N)) if k = 0
-        f = sqrt(1/(2*N)) otherwise
+    .. math::
+        f = \\begin{cases} \\sqrt{1/(4N)}, & \\text{if $k = 0$} \\\\
+    \t\t\\sqrt{1/(2N)}, & \\text{otherwise} \\end{cases}
 
-    Which makes the corresponding matrix of coefficients orthonormal (OO' = Id).
+    Which makes the corresponding matrix of coefficients orthonormal
+    (`OO' = Id`).
 
     type III
     ~~~~~~~~
-    There are several definitions, we use the following (norm=None):
 
-                          N-1
-        y[k] = x[0] + 2 * sum x[n]*cos(pi*(k+0.5)*n/N), 0 <= k < N.
-                          n=1
+    There are several definitions, we use the following
+    (for ``norm=None``):
 
-    Or (norm='ortho'), for 0 <= k < N:
+    .. math::
+        y_k = x_0 + 2 \\sum_{n=1}^{N-1} x_n
+        \\cos\\left({\\pi n(2k+1) \\over 2N}\\right)
+        \\qquad 0 \\le k < N,
 
-                                            N-1
-        y[k] = x[0] / sqrt(N) + sqrt(1/N) * sum x[n]*cos(pi*(k+0.5)*n/N)
-                                            n=1
+    or, for ``norm='ortho'``:
+
+    .. math::
+        y_k = {x_0\\over\\sqrt{N}} + {1\\over\\sqrt{N}} \\sum_{n=1}^{N-1}
+        x_n \\cos\\left({\\pi n(2k+1) \\over 2N}\\right)
+        \\qquad 0 \\le k < N.
 
     The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up
-    to a factor 2*N. The orthonormalized DCT-III is exactly the inverse of the
+    to a factor `2N`. The orthonormalized DCT-III is exactly the inverse of the
     orthonormalized DCT-II.
 
     References
@@ -96,8 +102,10 @@ def dct(x, type=2, n=None, axis=-1, norm=None):
 
     http://en.wikipedia.org/wiki/Discrete_cosine_transform
 
-    'A Fast Cosine Transform in One and Two Dimensions', by J. Makhoul, in IEEE
-    Transactions on acoustics, speech and signal processing.
+    'A Fast Cosine Transform in One and Two Dimensions', by J. Makhoul, `IEEE
+    Transactions on acoustics, speech and signal processing` vol. 28(1),
+    pp. 27-34, http://dx.doi.org/10.1109/TASSP.1980.1163351 (1980).
+
     """
     if type == 1 and norm is not None:
         raise NotImplementedError(

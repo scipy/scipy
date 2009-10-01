@@ -56,86 +56,95 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
     Python interface function for the SLSQP Optimization subroutine
     originally implemented by Dieter Kraft.
 
-    *Parameters*:
-        func : callable f(x,*args)
-            Objective function.
-        x0 : ndarray of float
-            Initial guess for the independent variable(s).
-        eqcons : list
-            A list of functions of length n such that
-            eqcons[j](x0,*args) == 0.0 in a successfully optimized
-            problem.
-        f_eqcons : callable f(x,*args)
-            Returns an array in which each element must equal 0.0 in a
-            successfully optimized problem.  If f_eqcons is specified,
-            eqcons is ignored.
-        ieqcons : list
-            A list of functions of length n such that
-            ieqcons[j](x0,*args) >= 0.0 in a successfully optimized
-            problem.
-        f_ieqcons : callable f(x0,*args)
-            Returns an array in which each element must be greater or
-            equal to 0.0 in a successfully optimized problem.  If
-            f_ieqcons is specified, ieqcons is ignored.
-        bounds : list
-            A list of tuples specifying the lower and upper bound
-            for each independent variable [(xl0, xu0),(xl1, xu1),...]
-        fprime : callable f(x,*args)
-            A function that evaluates the partial derivatives of func.
-        fprime_eqcons : callable f(x,*args)
-            A function of the form f(x, *args) that returns the m by n
-            array of equality constraint normals.  If not provided,
-            the normals will be approximated. The array returned by
-            fprime_eqcons should be sized as ( len(eqcons), len(x0) ).
-        fprime_ieqcons : callable f(x,*args)
-            A function of the form f(x, *args) that returns the m by n
-            array of inequality constraint normals.  If not provided,
-            the normals will be approximated. The array returned by
-            fprime_ieqcons should be sized as ( len(ieqcons), len(x0) ).
-        args : sequence
-            Additional arguments passed to func and fprime.
-        iter : int
-            The maximum number of iterations.
-        acc : float
-            Requested accuracy.
-        iprint : int
-            The verbosity of fmin_slsqp:
-              iprint <= 0 : Silent operation
-              iprint == 1 : Print summary upon completion (default)
-              iprint >= 2 : Print status of each iterate and summary
-        full_output : bool
-            If False, return only the minimizer of func (default).
-            Otherwise, output final objective function and summary
-            information.
-        epsilon : float
-            The step size for finite-difference derivative estimates.
+    Parameters
+    ----------
+    func : callable f(x,*args)
+        Objective function.
+    x0 : ndarray of float
+        Initial guess for the independent variable(s).
+    eqcons : list
+        A list of functions of length n such that
+        eqcons[j](x0,*args) == 0.0 in a successfully optimized
+        problem.
+    f_eqcons : callable f(x,*args)
+        Returns an array in which each element must equal 0.0 in a
+        successfully optimized problem.  If f_eqcons is specified,
+        eqcons is ignored.
+    ieqcons : list
+        A list of functions of length n such that
+        ieqcons[j](x0,*args) >= 0.0 in a successfully optimized
+        problem.
+    f_ieqcons : callable f(x0,*args)
+        Returns an array in which each element must be greater or
+        equal to 0.0 in a successfully optimized problem.  If
+        f_ieqcons is specified, ieqcons is ignored.
+    bounds : list
+        A list of tuples specifying the lower and upper bound
+        for each independent variable [(xl0, xu0),(xl1, xu1),...]
+    fprime : callable `f(x,*args)`
+        A function that evaluates the partial derivatives of func.
+    fprime_eqcons : callable `f(x,*args)`
+        A function of the form `f(x, *args)` that returns the m by n
+        array of equality constraint normals.  If not provided,
+        the normals will be approximated. The array returned by
+        fprime_eqcons should be sized as ( len(eqcons), len(x0) ).
+    fprime_ieqcons : callable `f(x,*args)`
+        A function of the form `f(x, *args)` that returns the m by n
+        array of inequality constraint normals.  If not provided,
+        the normals will be approximated. The array returned by
+        fprime_ieqcons should be sized as ( len(ieqcons), len(x0) ).
+    args : sequence
+        Additional arguments passed to func and fprime.
+    iter : int
+        The maximum number of iterations.
+    acc : float
+        Requested accuracy.
+    iprint : int
+        The verbosity of fmin_slsqp :
 
-    *Returns*: ( x, { fx, its, imode, smode })
-        x : ndarray of float
-            The final minimizer of func.
-        fx : ndarray of float
-            The final value of the objective function.
-        its : int
-            The number of iterations.
-        imode : int
-            The exit mode from the optimizer (see below).
-        smode : string
-            Message describing the exit mode from the optimizer.
+        * iprint <= 0 : Silent operation
+        * iprint == 1 : Print summary upon completion (default)
+        * iprint >= 2 : Print status of each iterate and summary
+    full_output : bool
+        If False, return only the minimizer of func (default).
+        Otherwise, output final objective function and summary
+        information.
+    epsilon : float
+        The step size for finite-difference derivative estimates.
 
-    *Notes*
+    Returns
+    -------
+    x : ndarray of float
+        The final minimizer of func.
+    fx : ndarray of float, if full_output is true
+        The final value of the objective function.
+    its : int, if full_output is true
+        The number of iterations.
+    imode : int, if full_output is true
+        The exit mode from the optimizer (see below).
+    smode : string, if full_output is true
+        Message describing the exit mode from the optimizer.
 
-        Exit modes are defined as follows:
-            -1 : Gradient evaluation required (g & a)
-             0 : Optimization terminated successfully.
-             1 : Function evaluation required (f & c)
-             2 : More equality constraints than independent variables
-             3 : More than 3*n iterations in LSQ subproblem
-             4 : Inequality constraints incompatible
-             5 : Singular matrix E in LSQ subproblem
-             6 : Singular matrix C in LSQ subproblem
-             7 : Rank-deficient equality constraint subproblem HFTI
-             8 : Positive directional derivative for linesearch
-             9 : Iteration limit exceeded
+    Notes
+    -----
+    Exit modes are defined as follows ::
+
+        -1 : Gradient evaluation required (g & a)
+         0 : Optimization terminated successfully.
+         1 : Function evaluation required (f & c)
+         2 : More equality constraints than independent variables
+         3 : More than 3*n iterations in LSQ subproblem
+         4 : Inequality constraints incompatible
+         5 : Singular matrix E in LSQ subproblem
+         6 : Singular matrix C in LSQ subproblem
+         7 : Rank-deficient equality constraint subproblem HFTI
+         8 : Positive directional derivative for linesearch
+         9 : Iteration limit exceeded
+
+    Examples
+    --------
+
+    for examples see :ref:`in the tutorial <tutorial-sqlsp>`
 
     """
 

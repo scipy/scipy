@@ -15,7 +15,8 @@ from compressed import _cs_matrix
 
 
 class csc_matrix(_cs_matrix):
-    """Compressed Sparse Column matrix
+    """
+    Compressed Sparse Column matrix
 
     This can be instantiated in several ways:
         csc_matrix(D)
@@ -29,14 +30,16 @@ class csc_matrix(_cs_matrix):
             dtype is optional, defaulting to dtype='d'.
 
         csc_matrix((data, ij), [shape=(M, N)])
-            where ``data`` and ``ij`` satisfy ``a[ij[0, k], ij[1, k]] = data[k]``
+            where ``data`` and ``ij`` satisfy the relationship
+            ``a[ij[0, k], ij[1, k]] = data[k]``
 
         csc_matrix((data, indices, indptr), [shape=(M, N)])
             is the standard CSC representation where the row indices for
-            column i are stored in ``indices[indptr[i]:indices[i+1]]`` and their
-            corresponding values are stored in ``data[indptr[i]:indptr[i+1]]``.
-            If the shape parameter is not supplied, the matrix dimensions
-            are inferred from the index arrays.
+            column i are stored in ``indices[indptr[i]:indices[i+1]]``
+            and their corresponding values are stored in
+            ``data[indptr[i]:indptr[i+1]]``.  If the shape parameter is
+            not supplied, the matrix dimensions are inferred from
+            the index arrays.
 
     Notes
     -----
@@ -46,7 +49,6 @@ class csc_matrix(_cs_matrix):
         - fast matrix vector products (CSR, BSR may be faster)
 
     Disadvantages of the CSC format
-    -------------------------------
       - slow row slicing operations (consider CSR)
       - changes to the sparsity structure are expensive (consider LIL or DOK)
 

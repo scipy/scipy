@@ -307,25 +307,26 @@ def medfilt(volume,kernel_size=None):
 
 
 def wiener(im,mysize=None,noise=None):
-    """Perform a Wiener filter on an N-dimensional array.
+    """
+    Perform a Wiener filter on an N-dimensional array.
 
-  Description:
+    Description:
 
-    Apply a Wiener filter to the N-dimensional array in.
+      Apply a Wiener filter to the N-dimensional array in.
 
-  Inputs:
+    Inputs:
 
-    in -- an N-dimensional array.
-    kernel_size -- A scalar or an N-length list giving the size of the
-                   median filter window in each dimension.  Elements of
-                   kernel_size should be odd.  If kernel_size is a scalar,
-                   then this scalar is used as the size in each dimension.
-    noise -- The noise-power to use.  If None, then noise is estimated as
-             the average of the local variance of the input.
+      in -- an N-dimensional array.
+      kernel_size -- A scalar or an N-length list giving the size of the
+                     Wiener filter window in each dimension.  Elements of
+                     kernel_size should be odd.  If kernel_size is a scalar,
+                     then this scalar is used as the size in each dimension.
+      noise -- The noise-power to use.  If None, then noise is estimated as
+               the average of the local variance of the input.
 
-  Outputs: (out,)
+    Outputs: (out,)
 
-    out -- Wiener filtered result with the same shape as in.
+      out -- Wiener filtered result with the same shape as in.
 
     """
     im = asarray(im)
@@ -524,61 +525,70 @@ def remez(numtaps, bands, desired, weight=None, Hz=1, type='bandpass',
                            maxiter, grid_density)
 
 def lfilter(b, a, x, axis=-1, zi=None):
-    """Filter data along one-dimension with an IIR or FIR filter.
-
-  Description
+    """
+    Filter data along one-dimension with an IIR or FIR filter.
 
     Filter a data sequence, x, using a digital filter.  This works for many
     fundamental data types (including Object type).  The filter is a direct
     form II transposed implementation of the standard difference equation
-    (see "Algorithm").
+    (see Notes).
 
-  Inputs:
+    Parameters
+    ----------
+    b : array_like
+        The numerator coefficient vector in a 1-D sequence.
+    a : array_like
+        The denominator coefficient vector in a 1-D sequence.  If a[0]
+        is not 1, then both a and b are normalized by a[0].
+    x : array_like
+        An N-dimensional input array.
+    axis : int
+        The axis of the input data array along which to apply the
+        linear filter. The filter is applied to each subarray along
+        this axis (*Default* = -1)
+    zi : array_like (optional)
+        Initial conditions for the filter delays.  It is a vector
+        (or array of vectors for an N-dimensional input) of length
+        max(len(a),len(b))-1.  If zi=None or is not given then initial
+        rest is assumed.  SEE signal.lfiltic for more information.
 
-    b -- The numerator coefficient vector in a 1-D sequence.
-    a -- The denominator coefficient vector in a 1-D sequence.  If a[0]
-         is not 1, then both a and b are normalized by a[0].
-    x -- An N-dimensional input array.
-    axis -- The axis of the input data array along which to apply the
-            linear filter. The filter is applied to each subarray along
-            this axis (*Default* = -1)
-    zi -- Initial conditions for the filter delays.  It is a vector
-          (or array of vectors for an N-dimensional input) of length
-          max(len(a),len(b)).  If zi=None or is not given then initial
-          rest is assumed.  SEE signal.lfiltic for more information.
+    Returns
+    -------
+    y : array
+        The output of the digital filter.
+    zf : array (optional)
+        If zi is None, this is not returned, otherwise, zf holds the
+        final filter delay values.
 
-  Outputs: (y, {zf})
-
-    y -- The output of the digital filter.
-    zf -- If zi is None, this is not returned, otherwise, zf holds the
-          final filter delay values.
-
-  Algorithm:
-
+    Notes
+    -----
     The filter function is implemented as a direct II transposed structure.
     This means that the filter implements
 
-    a[0]*y[n] = b[0]*x[n] + b[1]*x[n-1] + ... + b[nb]*x[n-nb]
-                          - a[1]*y[n-1] - ... - a[na]*y[n-na]
+    ::
 
-    using the following difference equations:
+       a[0]*y[n] = b[0]*x[n] + b[1]*x[n-1] + ... + b[nb]*x[n-nb]
+                               - a[1]*y[n-1] - ... - a[na]*y[n-na]
 
-    y[m] = b[0]*x[m] + z[0,m-1]
-    z[0,m] = b[1]*x[m] + z[1,m-1] - a[1]*y[m]
-    ...
-    z[n-3,m] = b[n-2]*x[m] + z[n-2,m-1] - a[n-2]*y[m]
-    z[n-2,m] = b[n-1]*x[m] - a[n-1]*y[m]
+    using the following difference equations::
+
+         y[m] = b[0]*x[m] + z[0,m-1]
+         z[0,m] = b[1]*x[m] + z[1,m-1] - a[1]*y[m]
+         ...
+         z[n-3,m] = b[n-2]*x[m] + z[n-2,m-1] - a[n-2]*y[m]
+         z[n-2,m] = b[n-1]*x[m] - a[n-1]*y[m]
 
     where m is the output sample number and n=max(len(a),len(b)) is the
     model order.
 
     The rational transfer function describing this filter in the
-    z-transform domain is
-                                -1               -nb
-                    b[0] + b[1]z  + ... + b[nb] z
-            Y(z) = ---------------------------------- X(z)
-                                -1               -na
-                    a[0] + a[1]z  + ... + a[na] z
+    z-transform domain is::
+
+                             -1               -nb
+                 b[0] + b[1]z  + ... + b[nb] z
+         Y(z) = ---------------------------------- X(z)
+                             -1               -na
+                 a[0] + a[1]z  + ... + a[na] z
 
     """
     if isscalar(a):
@@ -589,23 +599,26 @@ def lfilter(b, a, x, axis=-1, zi=None):
         return sigtools._linear_filter(b, a, x, axis, zi)
 
 def lfiltic(b,a,y,x=None):
-    """Given a linear filter (b,a) and initial conditions on the output y
+    """
+    Construct initial conditions for lfilter
+
+    Given a linear filter (b,a) and initial conditions on the output y
     and the input x, return the inital conditions on the state vector zi
     which is used by lfilter to generate the output given the input.
 
     If M=len(b)-1 and N=len(a)-1.  Then, the initial conditions are given
-    in the vectors x and y as
+    in the vectors x and y as::
 
-    x = {x[-1],x[-2],...,x[-M]}
-    y = {y[-1],y[-2],...,y[-N]}
+     x = {x[-1],x[-2],...,x[-M]}
+     y = {y[-1],y[-2],...,y[-N]}
 
     If x is not given, its inital conditions are assumed zero.
     If either vector is too short, then zeros are added
-      to achieve the proper length.
+    to achieve the proper length.
 
-    The output vector zi contains
+    The output vector zi contains::
 
-    zi = {z_0[-1], z_1[-1], ..., z_K-1[-1]}  where K=max(M,N).
+     zi = {z_0[-1], z_1[-1], ..., z_K-1[-1]}  where K=max(M,N).
 
     """
     N = size(a)-1

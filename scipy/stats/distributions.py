@@ -411,7 +411,6 @@ class rv_continuous(rv_generic):
 
     Examples
     --------
-
     >>> import matplotlib.pyplot as plt
     >>> numargs = generic.numargs
     >>> [ <shape(s)> ] = [0.9,]*numargs
@@ -425,7 +424,7 @@ class rv_continuous(rv_generic):
     Check accuracy of cdf and ppf
 
     >>> prb = generic.cdf(x,<shape(s)>)
-    >>> h=plt.semilogy(np.abs(x-generic.ppf(prb,c))+1e-20)
+    >>> h=plt.semilogy(np.abs(x-generic.ppf(prb,<shape(s)>))+1e-20)
 
     Random number generation
 

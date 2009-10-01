@@ -564,24 +564,30 @@ def mask_to_limits(a, limits, inclusive):
     return am
 
 def tmean(a, limits=None, inclusive=(True, True)):
-    """Returns the arithmetic mean of all values in an array, ignoring values
-    strictly outside given limits.
+    """
+    Compute the trimmed mean
+
+    This function finds the arithmetic mean of given values, ignoring values
+    outside the given `limits`.
 
     Parameters
     ----------
-    a : array
-    limits : None or (lower limit, upper limit)
+    a : array_like
+        array of values
+    limits : None or (lower limit, upper limit), optional
         Values in the input array less than the lower limit or greater than the
-        upper limit will be masked out. When limits is None, then all values are
+        upper limit will be ignored. When limits is None, then all values are
         used. Either of the limit values in the tuple can also be None
-        representing a half-open interval.
-    inclusive : (bool, bool)
+        representing a half-open interval.  The default value is None.
+    inclusive : (bool, bool), optional
         A tuple consisting of the (lower flag, upper flag).  These flags
-        determine whether values exactly equal to lower or upper are allowed.
+        determine whether values exactly equal to the lower or upper limits
+        are included.  The default value is (True, True).
 
     Returns
     -------
-    A float.
+    tmean : float
+
     """
     a = asarray(a)
 
@@ -604,12 +610,30 @@ def masked_var(am):
     return s / n
 
 def tvar(a, limits=None, inclusive=(1,1)):
-    """Returns the sample variance of values in an array, (i.e., using
-    N-1), ignoring values strictly outside the sequence passed to
-    'limits'.  Note: either limit in the sequence, or the value of
-    limits itself, can be set to None.  The inclusive list/tuple
-    determines whether the lower and upper limiting bounds
-    (respectively) are open/exclusive (0) or closed/inclusive (1).
+    """
+    Compute the trimmed variance
+
+    This function computes the sample variance of an array of values,
+    while ignoring values which are outside of given `limits`.
+
+    Parameters
+    ----------
+    a : array_like
+        array of values
+    limits : None or (lower limit, upper limit), optional
+        Values in the input array less than the lower limit or greater than the
+        upper limit will be ignored. When limits is None, then all values are
+        used. Either of the limit values in the tuple can also be None
+        representing a half-open interval.  The default value is None.
+    inclusive : (bool, bool), optional
+        A tuple consisting of the (lower flag, upper flag).  These flags
+        determine whether values exactly equal to the lower or upper limits
+        are included.  The default value is (True, True).
+
+    Returns
+    -------
+    tvar : float
+
     """
     a = asarray(a)
     a = a.astype(float).ravel()
@@ -620,42 +644,122 @@ def tvar(a, limits=None, inclusive=(1,1)):
     return masked_var(am)
 
 def tmin(a, lowerlimit=None, axis=0, inclusive=True):
-    """Returns the minimum value of a, along axis, including only values
-    less than (or equal to, if inclusive is True) lowerlimit.  If the
-    limit is set to None, all values in the array are used.
+    """
+    Compute the trimmed minimum
+
+    This function finds the miminum value of an array `a` along the
+    specified axis, but only considering values greater than a specified
+    lower limit.
+
+    Parameters
+    ----------
+    a : array_like
+        array of values
+    lowerlimit : None or float, optional
+        Values in the input array less than the given limit will be ignored.
+        When lowerlimit is None, then all values are used. The default value
+        is None.
+    axis : None or int, optional
+        Operate along this axis.  None means to use the flattened array and
+        the default is zero
+    inclusive : {True, False}, optional
+        This flag determines whether values exactly equal to the lower limit
+        are included.  The default value is True.
+
+    Returns
+    -------
+    tmin: float
+
     """
     a, axis = _chk_asarray(a, axis)
     am = mask_to_limits(a, (lowerlimit, None), (inclusive, False))
     return ma.minimum.reduce(am, axis)
 
 def tmax(a, upperlimit, axis=0, inclusive=True):
-    """Returns the maximum value of a, along axis, including only values
-    greater than (or equal to, if inclusive is True) upperlimit.  If the limit
-    is set to None, a limit larger than the max value in the array is
-    used.
+    """
+    Compute the trimmed maximum
+
+    This function computes the maximum value of an array along a given axis,
+    while ignoring values larger than a specified upper limit.
+
+    Parameters
+    ----------
+    a : array_like
+        array of values
+    upperlimit : None or float, optional
+        Values in the input array greater than the given limit will be ignored.
+        When upperlimit is None, then all values are used. The default value
+        is None.
+    axis : None or int, optional
+        Operate along this axis.  None means to use the flattened array and
+        the default is zero.
+    inclusive : {True, False}, optional
+        This flag determines whether values exactly equal to the upper limit
+        are included.  The default value is True.
+
+    Returns
+    -------
+    tmax : float
+
     """
     a, axis = _chk_asarray(a, axis)
     am = mask_to_limits(a, (None, upperlimit), (False, inclusive))
     return ma.maximum.reduce(am, axis)
 
 def tstd(a, limits=None, inclusive=(1,1)):
-    """Returns the standard deviation of all values in an array,
-    ignoring values strictly outside the sequence passed to 'limits'.
-    Note: either limit in the sequence, or the value of limits itself,
-    can be set to None.  The inclusive list/tuple determines whether the
-    lower and upper limiting bounds (respectively) are open/exclusive
-    (0) or closed/inclusive (1).
+    """
+    Compute the trimmed sample standard deviation
+
+    This function finds the sample standard deviation of given values,
+    ignoring values outside the given `limits`.
+
+    Parameters
+    ----------
+    a : array_like
+        array of values
+    limits : None or (lower limit, upper limit), optional
+        Values in the input array less than the lower limit or greater than the
+        upper limit will be ignored. When limits is None, then all values are
+        used. Either of the limit values in the tuple can also be None
+        representing a half-open interval.  The default value is None.
+    inclusive : (bool, bool), optional
+        A tuple consisting of the (lower flag, upper flag).  These flags
+        determine whether values exactly equal to the lower or upper limits
+        are included.  The default value is (True, True).
+
+    Returns
+    -------
+    tstd : float
+
     """
     return np.sqrt(tvar(a,limits,inclusive))
 
 
 def tsem(a, limits=None, inclusive=(True,True)):
-    """Returns the standard error of the mean for the values in an array,
-    (i.e., using N for the denominator), ignoring values strictly outside
-    the sequence passed to 'limits'.   Note: either limit in the
-    sequence, or the value of limits itself, can be set to None.  The
-    inclusive list/tuple determines whether the lower and upper limiting
-    bounds (respectively) are open/exclusive (0) or closed/inclusive (1).
+    """
+    Compute the trimmed standard error of the mean
+
+    This function finds the standard error of the mean for given
+    values, ignoring values outside the given `limits`.
+
+    Parameters
+    ----------
+    a : array_like
+        array of values
+    limits : None or (lower limit, upper limit), optional
+        Values in the input array less than the lower limit or greater than the
+        upper limit will be ignored. When limits is None, then all values are
+        used. Either of the limit values in the tuple can also be None
+        representing a half-open interval.  The default value is None.
+    inclusive : (bool, bool), optional
+        A tuple consisting of the (lower flag, upper flag).  These flags
+        determine whether values exactly equal to the lower or upper limits
+        are included.  The default value is (True, True).
+
+    Returns
+    -------
+    tsem : float
+
     """
     a = np.asarray(a).ravel()
     if limits is None:
@@ -849,10 +953,12 @@ def describe(a, axis=0):
 #####################################
 
 def skewtest(a, axis=0):
-    """Tests whether the skew is significantly different from a normal
-    distribution.
+    """
+    Tests whether the skew is different from the normal distribution.
 
-    The size of the dataset should be >= 8.
+    This function tests the null hypothesis that the skewness of
+    the population that the sample was drawn from is the same
+    as that of a corresponding normal distribution.
 
     Parameters
     ----------
@@ -861,9 +967,13 @@ def skewtest(a, axis=0):
 
     Returns
     -------
-    (Z-score,
-     2-tail Z-probability,
-    )
+    p-value : float
+        a 2-sided p-value for the hypothesis test
+
+    Notes
+    -----
+    The sample size should be at least 8.
+
     """
     a, axis = _chk_asarray(a, axis)
     if axis is None:
@@ -885,21 +995,30 @@ def skewtest(a, axis=0):
     return Z, 2 * distributions.norm.sf(np.abs(Z))
 
 def kurtosistest(a, axis=0):
-    """Tests whether a dataset has normal kurtosis (i.e.,
-    kurtosis=3(n-1)/(n+1)).
+    """
+    Tests whether a dataset has normal kurtosis
 
-    Valid only for n>20.
+    This function tests the null hypothesis that the kurtosis
+    of the population from which the sample was drawn is that
+    of the normal distribution: kurtosis=3(n-1)/(n+1).
 
     Parameters
     ----------
     a : array
+        array of the sample data
     axis : int or None
+        the axis to operate along, or None to work on the whole array.
+        The default is the first axis.
 
     Returns
     -------
-    (Z-score,
-     2-tail Z-probability)
-    The Z-score is set to 0 for bad entries.
+    p-value : float
+        The 2-sided p-value for the hypothesis test
+
+    Notes
+    -----
+    Valid only for n>20.  The Z-score is set to 0 for bad entries.
+
     """
     a, axis = _chk_asarray(a, axis)
     n = float(a.shape[axis])
@@ -928,7 +1047,14 @@ def kurtosistest(a, axis=0):
 
 
 def normaltest(a, axis=0):
-    """Tests whether skew and/or kurtosis of dataset differs from normal curve.
+    """
+    Tests whether a sample differs from a normal distribution
+
+    This function tests the null hypothesis that a sample comes
+    from a normal distribution.  It is based on D'Agostino and
+    Pearson's [1]_, [2]_ test that combines skew and kurtosis to
+    produce an omnibus test of normality.
+
 
     Parameters
     ----------
@@ -937,17 +1063,17 @@ def normaltest(a, axis=0):
 
     Returns
     -------
-    (Chi^2 score,
-     2-tail probability)
+    p-value : float
+       A 2-sided chi squared probability for the hypothesis test
 
-    Based on the D'Agostino and Pearson's test that combines skew and
-    kurtosis to produce an omnibus test of normality.
+    References
+    ----------
+    .. [1] D'Agostino, R. B. and Pearson, E. S. (1971), "An Omnibus Test of
+           Normality for Moderate and Large Sample Size,"
+           Biometrika, 58, 341-348
 
-    D'Agostino, R. B. and Pearson, E. S. (1971), "An Omnibus Test of
-    Normality for Moderate and Large Sample Size," Biometrika, 58, 341-348
-
-    D'Agostino, R. B. and Pearson, E. S. (1973), "Testing for departures from
-    Normality," Biometrika, 60, 613-622
+    .. [2] D'Agostino, R. B. and Pearson, E. S. (1973), "Testing for
+           departures from Normality," Biometrika, 60, 613-622
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -1516,13 +1642,49 @@ Please note that:
 
 def f_oneway(*args):
     """
-Performs a 1-way ANOVA, returning an F-value and probability given
-any number of groups.  From Heiman, pp.394-7.
+    Performs a 1-way ANOVA.
 
-Usage:   f_oneway (*args)    where *args is 2 or more arrays, one per
-                                  treatment group
-Returns: f-value, probability
-"""
+    The on-way ANOVA tests the null hypothesis that 2 or more groups have
+    the same population mean.  The test is applied to samples from two or
+    more groups, possibly with differing sizes.
+
+    Parameters
+    ----------
+    sample1, sample2, ... : array_like
+        The sample measurements should be given as arguments.
+
+    Returns
+    -------
+    F-value : float
+        The computed F-value of the test
+    p-value : float
+        The associated p-value from the F-distribution
+
+    Notes
+    -----
+    The ANOVA test has important assumptions that must be satisfied in order
+    for the associated p-value to be valid.
+
+    1. The samples are independent
+    2. Each sample is from a normally distributed population
+    3. The population standard deviations of the groups are all equal.  This
+       property is known as homocedasticity.
+
+    If these assumptions are not true for a given set of data, it may still be
+    possible to use the Kruskal-Wallis H-test (`stats.kruskal`_) although with
+    some loss of power
+
+    The algorithm is from Heiman[2], pp.394-7.
+
+
+    References
+    ----------
+    .. [1] Lowry, Richard.  "Concepts and Applications of Inferential
+           Statistics". Chapter 14. http://faculty.vassar.edu/lowry/ch14pt1.html
+
+    .. [2] Heiman, G.W.  Research Methods in Statistics. 2002.
+
+    """
     na = len(args)            # ANOVA on 'na' groups, each in it's own array
     tmp = map(np.array,args)
     alldata = np.concatenate(args)
@@ -1600,7 +1762,8 @@ def pearsonr(x, y):
 
 
 def spearmanr(x, y):
-    """Calculates a Spearman rank-order correlation coefficient and the p-value
+    """
+    Calculates a Spearman rank-order correlation coefficient and the p-value
     to test for non-correlation.
 
     The Spearman correlation is a nonparametric measure of the linear
@@ -1620,17 +1783,22 @@ def spearmanr(x, y):
     Parameters
     ----------
     x : 1D array
-    y : 1D array the same length as x
-        The lengths of both arrays must be > 2.
+        Must have length > 2
+    y : 1D array
+        Must have the same length as x.
 
     Returns
     -------
-    (Spearman correlation coefficient,
-     2-tailed p-value)
+    r : float
+        The Spearman correlation coefficient
+    p-value : float
+        The two-sided p-value for a hypothesis test whose null hypothesis is
+        that the two sets of data are uncorrelated.
 
     References
     ----------
     [CRCProbStat2000] section 14.7
+
     """
     x = np.asanyarray(x)
     y = np.asanyarray(y)
@@ -1714,10 +1882,29 @@ def pointbiserialr(x, y):
 
 
 def kendalltau(x, y):
-    """Calculates Kendall's tau, a correlation measure for ordinal data, and an
-    associated p-value.
+    """
+    Calculates Kendall's tau, a correlation measure for ordinal data
 
-    Returns: Kendall's tau, two-tailed p-value
+    Kendall's tau is a measure of the correspondence between two rankings.
+    Values close to 1 indicate strong agreement, values close to -1 indicate
+    strong disagreement.  This is the tau-b version of Kendall's tau which
+    accounts for ties.
+
+    Parameters
+    ----------
+    x : array_like
+        array of rankings
+    y : array_like
+        second array of rankings, must be the same length as x
+
+    Returns
+    -------
+    Kendall's tau : float
+       The tau statistic
+    p-value : float
+       The two-sided p-value for a hypothesis test whose null hypothesis is
+       an absence of association, tau = 0.
+
     """
     n1 = 0
     n2 = 0
@@ -1747,11 +1934,31 @@ def kendalltau(x, y):
 
 
 def linregress(*args):
-    """Calculates a regression line on two arrays, x and y, corresponding to
-    x,y pairs.  If a single 2D array is passed, linregress finds dim with 2
-    levels and splits data into x,y pairs along that dim.
+    """
+    Calculate a regression line
 
-    Returns: slope, intercept, r, two-tailed prob, stderr-of-the-estimate
+    This computes a least-squares regression for two sets of measurements.
+
+    Parameters
+    ----------
+    x, y : array_like
+        two sets of measurements.  Both arrays should have the same length.
+        If only x is given, then it must be a two-dimensional array where one
+        dimension has length 2.  The two sets of measurements are then found
+        by splitting the array along the length-2 dimension.
+
+    Returns
+    -------
+    slope : float
+        slope of the regression line
+    intercept : float
+        intercept of the regression line
+    p-value : float
+        two-sided p-value for a hypothesis test whose null hypothesis is
+        that the slope is zero.
+    stderr : float
+        Standard error of the estimate
+
     """
     TINY = 1.0e-20
     if len(args) == 1:  # more than 1D array?
@@ -1964,7 +2171,8 @@ def ttest_ind(a, b, axis=0):
 
 
 def ttest_rel(a,b,axis=0):
-    """Calculates the T-test on TWO RELATED samples of scores, a and b.
+    """
+    Calculates the T-test on TWO RELATED samples of scores, a and b.
 
     This is a two-sided test for the null hypothesis that 2 related or
     repeated samples have identical average (expected) values.
@@ -1984,40 +2192,35 @@ def ttest_rel(a,b,axis=0):
     prob : float or array
         two-tailed p-value
 
-
     Notes
     -----
-
     Examples for the use are scores of the same set of student in
     different exams, or repeated sampling from the same units. The
     test measures whether the average score differs significantly
     across samples (e.g. exams). If we observe a large p-value, for
-    example greater than 0.5 or 0.1 then we cannot reject the null
+    example greater than 0.05 or 0.1 then we cannot reject the null
     hypothesis of identical average scores. If the p-value is smaller
     than the threshold, e.g. 1%, 5% or 10%, then we reject the null
     hypothesis of equal averages. Small p-values are associated with
     large t-statistics.
 
-   References
-   ----------
+    References
+    ----------
 
-       http://en.wikipedia.org/wiki/T-test#Dependent_t-test
+        http://en.wikipedia.org/wiki/T-test#Dependent_t-test
 
     Examples
     --------
 
     >>> from scipy import stats
-    >>> import numpy as np
-
-    >>> #fix random seed to get the same result
-    >>> np.random.seed(12345678)
+    >>> np.random.seed(12345678) # fix random seed to get same numbers
     >>> rvs1 = stats.norm.rvs(loc=5,scale=10,size=500)
-    >>> rvs2 = stats.norm.rvs(loc=5,scale=10,size=500) + \
-                            stats.norm.rvs(scale=0.2,size=500)
+    >>> rvs2 = (stats.norm.rvs(loc=5,scale=10,size=500) +
+    ...         stats.norm.rvs(scale=0.2,size=500))
     >>> stats.ttest_rel(rvs1,rvs2)
     (0.24101764965300962, 0.80964043445811562)
-    >>> rvs3 = stats.norm.rvs(loc=8,scale=10,size=500) + \
-                            stats.norm.rvs(scale=0.2,size=500)
+    >>> rvs3 = (stats.norm.rvs(loc=8,scale=10,size=500) +
+    ...         stats.norm.rvs(scale=0.2,size=500))
     >>> stats.ttest_rel(rvs1,rvs3)
     (-3.9995108708727933, 7.3082402191726459e-005)
 
@@ -2055,7 +2258,7 @@ def ttest_rel(a,b,axis=0):
 #import distributions
 def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**kwds):
     """
-    Return the D-value and the p-value for a Kolmogorov-Smirnov test
+    Perform the Kolmogorov-Smirnov test for goodness of fit
 
     This performs a test of the distribution G(x) of an observed
     random variable against a given distribution F(x). Under the null
@@ -2103,14 +2306,10 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
     Notes
     -----
 
-    In the two one-sided test, the alternative is that the empirical
+    In the one-sided test, the alternative is that the empirical
     cumulative distribution function of the random variable is "less"
-    or "greater" then the cumulative distribution function F(x) of the
+    or "greater" than the cumulative distribution function F(x) of the
     hypothesis, G(x)<=F(x), resp. G(x)>=F(x).
-
-    If the p-value is greater than the significance level (say 5%), then we
-    cannot reject the hypothesis that the data come from the given
-    distribution.
 
     Examples
     --------
@@ -2214,11 +2413,39 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
                 return D, distributions.ksone.sf(D,N)*2
 
 def chisquare(f_obs, f_exp=None):
-    """ Calculates a one-way chi square for array of observed frequencies
-    and returns the result.  If no expected frequencies are given, the total
-    N is assumed to be equally distributed across all groups.
+    """
+    Calculates a one-way chi square test.
 
-    Returns: chisquare-statistic, associated p-value
+    The chi square test tests the null hypothesis that the categorical data
+    has the given frequencies.
+
+    Parameters
+    ----------
+    f_obs : array
+        observed frequencies in each category
+    f_exp : array, optional
+        expected frequencies in each category.  By default the categories are
+        assumed to be equally likely.
+
+    Returns
+    -------
+    chisquare statistic : float
+        The chisquare test statistic
+    p : float
+        The p-value of the test.
+
+    Notes
+    -----
+    This test is invalid when the observed or expected frequencies in each
+    category are too small.  A typical rule is that all of the observed
+    and expected frequencies should be at least 5.
+
+    References
+    ----------
+
+    .. [1] Lowry, Richard.  "Concepts and Applications of Inferential
+           Statistics". Chapter 8. http://faculty.vassar.edu/lowry/ch8pt1.html
+
     """
 
     f_obs = asarray(f_obs)
@@ -2231,7 +2458,8 @@ def chisquare(f_obs, f_exp=None):
 
 
 def ks_2samp(data1, data2):
-    """ Computes the Kolmogorov-Smirnof statistic on 2 samples.
+    """
+    Computes the Kolmogorov-Smirnof statistic on 2 samples.
 
     This is a two-sided test for the null hypothesis that 2 independent samples
     are drawn from the same continuous distribution.
@@ -2265,8 +2493,8 @@ def ks_2samp(data1, data2):
     reject the hypothesis that the distributions of the two samples
     are the same.
 
-    Examples:
-    ---------
+    Examples
+    --------
 
     >>> from scipy import stats
     >>> import numpy as np
@@ -2323,22 +2551,23 @@ def ks_2samp(data1, data2):
 
 
 def mannwhitneyu(x, y, use_continuity=True):
-    """Computes the Mann-Whitney rank test on samples x and y.
-
+    """
+    Computes the Mann-Whitney rank test on samples x and y.
 
     Parameters
     ----------
-        x : array_like 1d
-        y : array_like 1d 
-        use_continuity : {True, False} optional, default True
-            Whether a continuity correction (1/2.) should be taken into account.
+    x, y : array_like
+        Array of samples, should be one-dimensional.
+    use_continuity : bool, optional
+            Whether a continuity correction (1/2.) should be taken into
+            account. Default is True.
 
     Returns
     -------
-        u : float
-            The Mann-Whitney statistics
-        prob : float
-            one-sided p-value assuming a asymptotic normal distribution.
+    u : float
+        The Mann-Whitney statistics.
+    prob : float
+        One-sided p-value assuming a asymptotic normal distribution.
 
     Notes
     -----
@@ -2350,7 +2579,7 @@ def mannwhitneyu(x, y, use_continuity=True):
     This test corrects for ties and by default uses a continuity correction.
     The reported p-value is for a one-sided hypothesis, to get the two-sided
     p-value multiply the returned p-value by 2.
- 
+
     """
     x = asarray(x)
     y = asarray(y)
@@ -2402,10 +2631,36 @@ def tiecorrect(rankvals):
 
 
 def ranksums(x, y):
-    """Calculates the rank sums statistic on the provided scores and
-    returns the result.
+    """
+    Compute the Wilcoxon rank-sum statistic for two samples.
 
-    Returns: z-statistic, two-tailed p-value
+    The Wilcoxon rank-sum test tests the null hypothesis that two sets
+    of measurements are drawn from the same distribution.  The alternative
+    hypothesis is that values in one sample are more likely to be
+    larger than the values in the other sample.
+
+    This test should be used to compare two samples from continuous
+    distributions.  It does not handle ties between measurements
+    in x and y.  For tie-handling and an optional continuity correction
+    see `stats.mannwhitneyu`_
+
+    Parameters
+    ----------
+    x,y : array_like
+        The data from the two samples
+
+    Returns
+    -------
+    z-statistic : float
+        The test statistic under the large-sample approximation that the
+        rank sum statistic is normally distributed
+    p-value : float
+        The two-sided p-value of the test
+
+    References
+    ----------
+    .. [1] http://en.wikipedia.org/wiki/Wilcoxon_rank-sum_test
+
     """
     x,y = map(np.asarray, (x, y))
     n1 = len(x)
@@ -2423,12 +2678,40 @@ def ranksums(x, y):
 
 
 def kruskal(*args):
-    """The Kruskal-Wallis H-test is a non-parametric ANOVA for 2 or more
-    groups, requiring at least 5 subjects in each group.  This function
-    calculates the Kruskal-Wallis H and associated p-value for 2 or more
-    independent samples.
+    """
+    Compute the Kruskal-Wallis H-test for independent samples
 
-    Returns: H-statistic (corrected for ties), associated p-value
+    The Kruskal-Wallis H-test tests the null hypothesis that the population
+    median of all of the groups are equal.  It is a non-parametric version of
+    ANOVA.  The test works on 2 or more independent samples, which may have
+    different sizes.  Note that rejecting the null hypothesis does not
+    indicate which of the groups differs.  Post-hoc comparisons between
+    groups are required to determine which groups are different.
+
+    Parameters
+    ----------
+    sample1, sample2, ... : array_like
+       Two or more arrays with the sample measurements can be given as
+       arguments.
+
+    Returns
+    -------
+    H-statistic : float
+       The Kruskal-Wallis H statistic, corrected for ties
+    p-value : float
+       The p-value for the test using the assumption that H has a chi
+       square distribution
+
+    Notes
+    -----
+    Due to the assumption that H has a chi square distribution, the number
+    of samples in each group must not be too small.  A typical rule is
+    that each sample must have at least 5 measurements.
+
+    References
+    ----------
+    .. [1] http://en.wikipedia.org/wiki/Kruskal-Wallis_one-way_analysis_of_variance
+
     """
     assert len(args) >= 2, "Need at least 2 groups in stats.kruskal()"
     n = map(len,args)
@@ -2456,15 +2739,40 @@ def kruskal(*args):
 
 
 def friedmanchisquare(*args):
-    """Friedman Chi-Square is a non-parametric, one-way within-subjects
-    ANOVA.  This function calculates the Friedman Chi-square test for
-    repeated measures and returns the result, along with the associated
-    probability value.
+    """
+    Computes the Friedman test for repeated measurements
 
-    This function uses Chisquared aproximation of Friedman Chisquared
-    distribution. This is exact only if n > 10 and factor levels > 6.
+    The Friedman test tests the null hypothesis that repeated measurements of
+    the same individuals have the same distribution.  It is often used
+    to test for consistency among measurements obtained in different ways.
+    For example, if two measurement techniques are used on the same set of
+    individuals, the Friedman test can be used to determine if the two
+    measurement techniques are consistent.
 
-    Returns: friedman chi-square statistic, associated p-valueIt assumes 3 or more repeated measures.  Only 3
+    Parameters
+    ----------
+    measurements1, measurements2, measurements3... : array_like
+        Arrays of measurements.  All of the arrays must have the same number
+        of elements.  At least 3 sets of measurements must be given.
+
+    Returns
+    -------
+    friedman chi-square statistic : float
+        the test statistic, correcting for ties
+    p-value : float
+        the associated p-value assuming that the test statistic has a chi
+        squared distribution
+
+    Notes
+    -----
+    Due to the assumption that the test statistic has a chi squared
+    distribution, the p-vale is only reliable for n > 10 and more than
+    6 repeated measurements.
+
+    References
+    ----------
+    .. [1] http://en.wikipedia.org/wiki/Friedman_test
+
     """
     k = len(args)
     if k < 3:
@@ -2604,11 +2912,29 @@ def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
     return n_um / d_en
 
 def f_value(ER, EF, dfR, dfF):
-    """Returns an F-statistic given the following:
-        ER  = error associated with the null hypothesis (the Restricted model)
-        EF  = error associated with the alternate hypothesis (the Full model)
-        dfR = degrees of freedom the Restricted model
-        dfF = degrees of freedom associated with the Restricted model
+    """
+    Returns an F-statistic for a restricted vs. unrestricted model.
+
+    Parameters
+    ----------
+    ER : float
+         `ER` is the sum of squared residuals for the restricted model
+          or null hypothesis
+
+    EF : float
+         `EF` is the sum of squared residuals for the unrestricted model
+          or alternate hypothesis
+
+    dfR : int
+          `dfR` is the degrees of freedom in the restricted model
+
+    dfF : int
+          `dfF` is the degrees of freedom in the unrestricted model
+
+    Returns
+    -------
+    F-statistic : float
+
     """
     return ((ER-EF)/float(dfR-dfF) / (EF/float(dfF)))
 

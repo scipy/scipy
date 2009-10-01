@@ -1,9 +1,76 @@
-"""\
-SciPy --- A scientific computing package for Python
-===================================================
+"""
+SciPy: A scientific computing package for Python
+================================================
 
 Documentation is available in the docstrings and
 online at http://docs.scipy.org.
+
+Contents
+--------
+SciPy imports all the functions from the NumPy namespace, and in
+addition provides:
+
+Subpackages
+-----------
+::
+
+ odr                          --- Orthogonal Distance Regression [*]
+ misc                         --- Various utilities that don't have
+                                  another home.
+ cluster                      --- Vector Quantization / Kmeans [*]
+ fftpack                      --- Discrete Fourier Transform algorithms
+                                  [*]
+ io                           --- Data input and output [*]
+ sparse.linalg.eigen.lobpcg   --- Locally Optimal Block Preconditioned
+                                  Conjugate Gradient Method (LOBPCG) [*]
+ special                      --- Airy Functions [*]
+ lib.blas                     --- Wrappers to BLAS library [*]
+ sparse.linalg.eigen          --- Sparse Eigenvalue Solvers [*]
+ stats                        --- Statistical Functions [*]
+ lib                          --- Python wrappers to external libraries
+                                  [*]
+ lib.lapack                   --- Wrappers to LAPACK library [*]
+ maxentropy                   --- Routines for fitting maximum entropy
+                                  models [*]
+ integrate                    --- Integration routines [*]
+ ndimage                      --- n-dimensional image package [*]
+ linalg                       --- Linear algebra routines [*]
+ spatial                      --- Spatial data structures and algorithms
+                                  [*]
+ interpolate                  --- Interpolation Tools [*]
+ sparse.linalg                --- Sparse Linear Algebra [*]
+ sparse.linalg.dsolve.umfpack --- :Interface to the UMFPACK library: [*]
+ sparse.linalg.dsolve         --- Linear Solvers [*]
+ optimize                     --- Optimization Tools [*]
+ sparse.linalg.eigen.arpack   --- Eigenvalue solver using iterative
+                                  methods. [*]
+ signal                       --- Signal Processing Tools [*]
+ sparse                       --- Sparse Matrices [*]
+
+ [*] - using a package requires explicit import
+
+Global symbols from subpackages
+-------------------------------
+::
+
+ misc                  --> info, factorial, factorial2, factorialk,
+                           comb, who, lena, central_diff_weights,
+                           derivative, pade, source
+ fftpack               --> fft, fftn, fft2, ifft, ifft2, ifftn,
+                           fftshift, ifftshift, fftfreq
+ stats                 --> find_repeats
+ linalg.dsolve.umfpack --> UmfpackContext
+
+Utility tools
+-------------
+::
+
+ test              --- Run scipy unittests
+ show_config       --- Show scipy build configuration
+ show_numpy_config --- Show numpy build configuration
+ __version__       --- Scipy version string
+ __numpy_version__ --- Numpy version string
+
 """
 
 __all__ = ['pkgload','test']

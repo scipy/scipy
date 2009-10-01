@@ -36,14 +36,107 @@ import _nd_image
 import morphology
 
 def label(input, structure = None, output = None):
-    """Label an array of objects.
+    """
+    Label features in an array.
 
-    The structure that defines the object connections must be
-    symmetric.  If no structuring element is provided an element is
-    generated with a squared connectivity equal to one. This function
-    returns a tuple consisting of the array of labels and the number
-    of objects found. If an output array is provided only the number of
-    objects found is returned.
+    Parameters
+    ----------
+
+    input : array_like
+        An array-like object to be labeled.  Any non-zero values in `input` are
+        counted as features and zero values are considered the background.
+
+
+    structure : array_like, optional
+        A structuring element that defines feature connections.
+
+        `structure` must be symmetric.  If no structuring element is provided,
+        one is automatically generated with a squared connectivity equal to
+        one.
+
+        That is, for a 2D `input` array, the default structuring element is::
+
+            [[0,1,0],
+             [1,1,1],
+             [0,1,0]]
+
+
+    output : (None, data-type, array_like), optional
+        If `output` is a data type, it specifies the type of the resulting
+        labeled feature array
+
+        If `output` is an array-like object, then `output` will be updated
+        with the labeled features from this function
+
+    Returns
+    -------
+    labeled_array : array_like
+        An array-like object where each unique feature has a unique value
+
+    num_features : int
+
+
+    If `output` is None or a data type, this function returns a tuple,
+    (`labeled_array`, `num_features`).
+
+    If `output` is an array, then it will be updated with values in
+    `labeled_array` and only `num_features` will be returned by this function.
+
+
+    See Also
+    --------
+    find_objects : generate a list of slices for the labeled features (or
+                   objects); useful for finding features' position or
+                   dimensions
+
+    Examples
+    --------
+
+    Create an image with some features, then label it using the default
+    (cross-shaped) structuring element:
+
+    >>> a = array([[0,0,1,1,0,0],
+    ...            [0,0,0,1,0,0],
+    ...            [1,1,0,0,1,0],
+    ...            [0,0,0,1,0,0]])
+    >>> labeled_array, num_features = label(a)
+
+    Each of the 4 features are labeled with a different integer:
+
+    >>> print num_features
+    4
+    >>> print labeled_array
+    array([[0, 0, 1, 1, 0, 0],
+           [0, 0, 0, 1, 0, 0],
+           [2, 2, 0, 0, 3, 0],
+           [0, 0, 0, 4, 0, 0]])
+
+    Generate a structuring element that will consider features connected even
+    if they touch diagonally:
+
+    >>> s = generate_binary_structure(2,2)
+
+    or,
+
+    >>> s = [[1,1,1],
+             [1,1,1],
+             [1,1,1]]
+
+    Label the image using the new structuring element:
+
+    >>> labeled_array, num_features = label(a, structure=s)
+
+    Show the 2 labeled features (note that features 1, 3, and 4 from above are
+    now considered a single feature):
+
+    >>> print num_features
+    2
+    >>> print labeled_array
+    array([[0, 0, 1, 1, 0, 0],
+           [0, 0, 0, 1, 0, 0],
+           [2, 2, 0, 0, 1, 0],
+           [0, 0, 0, 1, 0, 0]])
+
     """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
