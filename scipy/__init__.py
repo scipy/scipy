@@ -100,13 +100,6 @@ __all__ += ['oldnumeric']+_num.__all__
 
 __all__ += ['randn', 'rand', 'fft', 'ifft']
 
-if __doc__:
-    __doc__ += """
-Contents
---------
-SciPy imports all the functions from the NumPy namespace, and in
-addition provides:"""
-
 del _num
 # Remove the linalg imported from numpy so that the scipy.linalg package can be
 # imported.
@@ -122,7 +115,7 @@ except ImportError, e:
     raise ImportError(msg)
 from version import version as __version__
 
-# Load scipy packages, their global_symbols, set up __doc__ string.
+# Load scipy packages and their global_symbols
 from numpy._import_tools import PackageLoader
 import os as _os
 SCIPY_IMPORT_VERBOSE = int(_os.environ.get('SCIPY_IMPORT_VERBOSE','-1'))
@@ -130,33 +123,6 @@ del _os
 pkgload = PackageLoader()
 pkgload(verbose=SCIPY_IMPORT_VERBOSE,postpone=True)
 
-if __doc__:
-    __doc__ += """
-
-Available subpackages
----------------------
-"""
-if __doc__:
-    __doc__ += pkgload.get_pkgdocs()
-
 from numpy.testing import Tester
 test = Tester().test
 bench = Tester().bench
-if __doc__:
-    __doc__ += """
-
-Utility tools
--------------
-
-  test        --- Run scipy unittests
-  pkgload     --- Load scipy packages
-  show_config --- Show scipy build configuration
-  show_numpy_config --- Show numpy build configuration
-  __version__ --- Scipy version string
-  __numpy_version__ --- Numpy version string
-
-Environment variables
----------------------
-
-  SCIPY_IMPORT_VERBOSE --- pkgload verbose flag, default is 0.
-"""
