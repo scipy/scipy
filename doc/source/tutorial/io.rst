@@ -1,0 +1,375 @@
+File IO (:mod:`scipy.io`)
+=========================
+
+.. sectionauthor:: Matthew Brett
+
+.. currentmodule:: scipy.io
+
+.. seealso:: :ref:`numpy-reference.routines.io` (in numpy)
+
+Matlab files
+------------
+
+.. autosummary::
+   :toctree: generated/
+
+   loadmat
+   savemat
+
+Getting started:
+
+   >>> import scipy.io as sio
+
+If you are using IPython, try tab completing on ``sio``.  You'll find::
+
+   sio.loadmat
+   sio.savemat
+
+These are the high-level functions you will most likely use.  You'll also find::
+
+   sio.matlab
+
+This is the package from which ``loadmat`` and ``savemat`` are imported.
+Within ``sio.matlab``, you will find the ``mio`` module - containing
+the machinery that ``loadmat`` and ``savemat`` use.  From time to time
+you may find yourself re-using this machinery.
+
+How do I start?
+```````````````
+
+You may have a ``.mat`` file that you want to read into Scipy.  Or, you
+want to pass some variables from Scipy / Numpy into Matlab.
+
+To save us using a Matlab license, let's start in Octave_.  Octave has
+Matlab-compatible save / load functions.  Start Octave (``octave`` at
+the command line for me):
+
+.. sourcecode:: octave
+
+  octave:1> a = 1:12
+  a =
+
+     1   2   3   4   5   6   7   8   9  10  11  12
+
+  octave:2> a = reshape(a, [1 3 4])
+  a =
+
+  ans(:,:,1) =
+
+     1   2   3
+
+  ans(:,:,2) =
+
+     4   5   6
+
+  ans(:,:,3) =
+
+     7   8   9
+
+  ans(:,:,4) =
+
+     10   11   12
+
+
+
+  octave:3> save -6 octave_a.mat a % Matlab 6 compatible
+  octave:4> ls octave_a.mat
+  octave_a.mat
+
+Now, to Python:
+
+  >>> mat_contents = sio.loadmat('octave_a.mat')
+  /home/mb312/usr/local/lib/python2.5/site-packages/scipy/io/Matlab/mio.py:84: FutureWarning: Using struct_as_record default value (False) This will change to True in future versions
+    return MatFile5Reader(byte_stream, **kwargs)
+  >>> print mat_contents
+  {'a': array([[[  1.,   4.,   7.,  10.],
+          [  2.,   5.,   8.,  11.],
+          [  3.,   6.,   9.,  12.]]]), '__version__': '1.0', '__header__': 'MATLAB 5.0 MAT-file, written by Octave 3.0.1, 2009-05-14 22:21:44 UTC', '__globals__': []}
+  >>> oct_a = mat_contents['a']
+  >>> print oct_a
+  [[[  1.   4.   7.  10.]
+    [  2.   5.   8.  11.]
+    [  3.   6.   9.  12.]]]
+  >>> print oct_a.shape
+  (1, 3, 4)
+
+We'll get to the deprecation warning in a second.  Now let's try the
+other way round:
+
+   >>> import numpy as np
+   >>> vect = np.arange(10)
+   >>> print vect.shape
+   (10,)
+   >>> sio.savemat('np_vector.mat', {'vect':vect})
+   /home/mb312/usr/local/lib/python2.5/site-packages/scipy/io/Matlab/mio.py:165: FutureWarning: Using oned_as default value ('column') This will change to 'row' in future versions
+     oned_as=oned_as)
+
+Then back to Octave:
+
+.. sourcecode:: octave
+
+   octave:5> load np_vector.mat
+   octave:6> vect
+   vect =
+
+     0
+     1
+     2
+     3
+     4
+     5
+     6
+     7
+     8
+     9
+
+   octave:7> size(vect)
+   ans =
+
+      10    1
+
+Note the deprecation warning.  The ``oned_as`` keyword determines the way in
+which one-dimensional vectors are stored.  In the future, this will default
+to ``row`` instead of ``column``:
+
+   >>> sio.savemat('np_vector.mat', {'vect':vect}, oned_as='row')
+
+We can load this in Octave or Matlab:
+
+.. sourcecode:: octave
+
+   octave:8> load np_vector.mat
+   octave:9> vect
+   vect =
+
+     0  1  2  3  4  5  6  7  8  9
+
+   octave:10> size(vect)
+   ans =
+
+       1   10
+
+
+Matlab structs
+``````````````
+
+Matlab structs are a little bit like Python dicts, except the field
+names must be strings.  Any Matlab object can be a value of a field.  As
+for all objects in Matlab, structs are in fact arrays of structs, where
+a single struct is an array of shape (1, 1).
+
+.. sourcecode:: octave
+
+   octave:11> my_struct = struct('field1', 1, 'field2', 2)
+   my_struct =
+   {
+     field1 =  1
+     field2 =  2
+   }
+
+   octave:12> save -6 octave_struct.mat my_struct
+
+We can load this in Python:
+
+   >>> mat_contents = sio.loadmat('octave_struct.mat')
+   >>> print mat_contents
+   {'my_struct': array([[<scipy.io.matlab.mio5.mat_struct object at 0x26421d0>]], dtype=object), '__version__': '1.0', '__header__': 'MATLAB 5.0 MAT-file, written by Octave 3.0.1, 2009-05-14 22:40:04 UTC', '__globals__': []}
+   >>> oct_struct = mat_contents['my_struct']
+   >>> print oct_struct.shape
+   (1, 1)
+   >>> val = oct_struct[0,0]
+   >>> print val
+   <scipy.io.Matlab.mio5.mat_struct object at 0x2ade950>
+   >>> print val.field1
+   [[ 1.]]
+   >>> print val.field2
+   [[ 2.]]
+
+In this version of Scipy (0.7.1), Matlab structs come back as custom
+objects, called ``mat_struct``, with attributes named for the fields in
+the structure.  Note also:
+
+   >>> val = oct_struct[0,0]
+
+and:
+
+.. sourcecode:: octave
+
+  octave:13> size(my_struct)
+  ans =
+
+     1   1
+
+So, in Matlab, the struct array must be at least 2D, and we replicate
+that when we read into Scipy.  If you want all length 1 dimensions
+squeezed out, try this:
+
+   >>> mat_contents = sio.loadmat('octave_struct.mat', squeeze_me=True)
+   >>> oct_struct = mat_contents['my_struct']
+   >>> oct_struct.shape # but no - it's a scalar
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   AttributeError: 'mat_struct' object has no attribute 'shape'
+   >>> print oct_struct
+   <scipy.io.Matlab.mio5.mat_struct object at 0x2aded90>
+   >>> print oct_struct.field1
+   1.0
+
+Saving struct arrays can be done in various ways.  One simple method is
+to use dicts:
+
+   >>> a_dict = {'field1': 0.5, 'field2': 'a string'}
+   >>> sio.savemat('saved_struct.mat', {'a_dict': a_dict})
+
+loaded as:
+
+.. sourcecode:: octave
+
+   octave:21> load saved_struct
+   octave:22> a_dict
+   a_dict =
+   {
+     field2 = a string
+     field1 =  0.50000
+   }
+
+Further up, you'll remember this deprecation warning::
+
+  >>> mat_contents = sio.loadmat('octave_a.mat')
+  /home/mb312/usr/local/lib/python2.5/site-packages/scipy/io/Matlab/mio.py:84: FutureWarning: Using struct_as_record default value (False) This will change to True in future versions
+    return MatFile5Reader(byte_stream, **kwargs)
+
+The way that the reader returns struct arrays will soon change.  Like this:
+
+   >>> mat_contents = sio.loadmat('octave_struct.mat', struct_as_record=True)
+   >>> oct_struct = mat_contents['my_struct']
+   >>> val = oct_struct[0,0]
+   >>> print val
+   ([[1.0]], [[2.0]])
+   >>> print val.dtype
+   [('field1', '|O8'), ('field2', '|O8')]
+
+You can also save structs back again to Matlab (or Octave in our case)
+like this:
+
+   >>> dt = [('f1', 'f8'), ('f2', 'S10')]
+   >>> arr = np.zeros((2,), dtype=dt)
+   >>> print arr
+   [(0.0, '') (0.0, '')]
+   >>> arr[0]['f1'] = 0.5
+   >>> arr[0]['f2'] = 'python'
+   >>> arr[1]['f1'] = 99
+   >>> arr[1]['f2'] = 'not perl'
+   >>> sio.savemat('np_struct_arr.mat', {'arr': arr})
+
+Matlab cell arrays
+``````````````````
+
+Cell arrays in Matlab are rather like python lists, in the sense that
+the elements in the arrays can contain any type of Matlab object.  In
+fact they are most similar to numpy object arrays, and that is how we
+load them into numpy.
+
+.. sourcecode:: octave
+
+   octave:14> my_cells = {1, [2, 3]}
+   my_cells =
+
+   {
+     [1,1] =  1
+     [1,2] =
+
+        2   3
+
+   }
+
+   octave:15> save -6 octave_cells.mat my_cells
+
+Back to Python:
+
+   >>> mat_contents = sio.loadmat('octave_cells.mat')
+   >>> oct_cells = mat_contents['my_cells']
+   >>> print oct_cells.dtype
+   object
+   >>> val = oct_cells[0,0]
+   >>> print val
+   [[ 1.]]
+   >>> print val.dtype
+   float64
+
+Saving to a Matlab cell array just involves making a numpy object array:
+
+   >>> obj_arr = np.zeros((2,), dtype=np.object)
+   >>> obj_arr[0] = 1
+   >>> obj_arr[1] = 'a string'
+   >>> print obj_arr
+   [1 a string]
+   >>> sio.savemat('np_cells.mat', {'obj_arr':obj_arr})
+
+.. sourcecode:: octave
+
+   octave:16> load np_cells.mat
+   octave:17> obj_arr
+   obj_arr =
+
+   {
+     [1,1] = 1
+     [2,1] = a string
+   }
+
+
+Matrix Market files
+-------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   mminfo
+   mmread
+   mmwrite
+
+Other
+-----
+
+.. autosummary::
+   :toctree: generated/
+
+   save_as_module
+
+Wav sound files (:mod:`scipy.io.wavfile`)
+-----------------------------------------
+
+.. module:: scipy.io.wavfile
+
+.. autosummary::
+   :toctree: generated/
+
+   read
+   write
+
+Arff files (:mod:`scipy.io.arff`)
+---------------------------------
+
+.. automodule:: scipy.io.arff
+
+.. autosummary::
+   :toctree: generated/
+
+   loadarff
+
+Netcdf (:mod:`scipy.io.netcdf`)
+-------------------------------
+
+.. module:: scipy.io.netcdf
+
+.. autosummary::
+   :toctree: generated/
+
+   netcdf_file
+
+Allows reading of  NetCDF files (version of pupynere_ package)
+
+
+.. _pupynere: http://pypi.python.org/pypi/pupynere/
+.. _octave: http://www.gnu.org/software/octave
+.. _matlab: http://www.mathworks.com/
