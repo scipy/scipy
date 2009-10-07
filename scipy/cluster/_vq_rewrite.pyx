@@ -14,96 +14,77 @@ cdef extern from "math.h":
     float sqrtf(float num)
     double sqrt(double num)
 
-cdef double rbig = 1e100
+#cdef double rbig = 1e100
 
 # Python/NumPy types
-DTYPE_FLOAT64 = np.float64
-DTYPE_FLOAT32 = np.float32
+FLOAT64 = np.float64
+FLOAT32 = np.float32
+INT32 = np.int32
 
 # C types
-ctypedef np.double_t float64_t
-ctypedef np.float_t float_t
+ctypedef np.float64_t FLOAT64_t
+ctypedef np.float32_t FLOAT32_t
+ctypedef np.int32_t INT32_t
 
-cdef int float_vq_obs(float *obs,       # FIXME: should be ndarray
-                      float *code_book, # FIXME: should be ndarray
-                      int Ncodes,
-                      int Nfeatures,
-                      int *code,
-                      float *lowest_dist):
+def float_tvq(np.ndarray[FLOAT32_t, ndim=2] obs, 
+                   np.ndarray[FLOAT32_t, ndim=2] code_book,
+                   np.ndarray[INT32_t, ndim=1] codes,
+                   np.ndarray[FLOAT32_t, ndim=1] low_dist):
     """
-    Quantize a single observation 'obs' to its nearest codebook 
+    Quantize Nobs observations to their nearest codebook 
     entry (single-precision version).
     """
+    # Temporary variables
     cdef float dist, diff
-    cdef int i, j, k
-    for i in range(Ncodes):
-        dist = 0
-        for j in range(Nfeatures):
-            diff = code_book[k] - obs[j]
-            dist += diff * diff
-            k += 1
-        dist = sqrtf(dist)
-        if dist < lowest_dist[0]:
-            code[0] = i
-            lowest_dist[0] = dist
-    return 0
+    cdef int obs_index, code_index, feature
+    
+    # Loop limits
+    cdef int ncodes = code_book.shape[0]
+    cdef int nfeat = code_book.shape[1]
+    cdef int nobs = obs.shape[0]
+    
+    for obs_index in range(nobs):
+        
+        low_dist[obs_index] = np.inf
 
-cdef int double_vq_obs(double *obs,       # FIXME: should be ndarray
-                       double *code_book, # FIXME: should be ndarray
-                       int Ncodes, 
-                       int Nfeatures,
-                       int *code,
-                       double *lowest_dist):
-    """
-    Quantize a single observation 'obs' to its nearest codebook 
-    entry (double-precision version).
-    """
-    cdef double dist, diff
-    cdef int i, j, k
-    k = 0
-    lowest_dist[0] = rbig 
-    for i in range(Ncodes):
-        dist = 0
-        for j in range(Nfeatures):
-            diff = code_book[k] - obs[j]
-            dist += diff * diff
-            k += 1
-        dist = sqrt(dist)
-        if dist < lowest_dist[0]:
-            code[0]= i
-            lowest_dist[0] = dist
-    return 0
+        for code_index in range(ncodes):
+            dist = 0
+            
+            # Distance between code_book[code_index] and obs[obs_index]
+            for feature in range(nfeat):
+                diff = code_book[code_index, feature] - obs[obs_index, feature]
+                dist += diff * diff
+            dist = sqrtf(dist)
+            
+            # Replace the code assignment and record distance if necessary
+            if dist < low_dist[obs_index]:
+                codes[obs_index] = code_index
+                low_dist[obs_index] = dist
 
-cdef int float_tvq(float *obs,        # FIXME: should be ndarray
-                   float *code_book,  # FIXME: should be ndarray
-                   int Nobs, int Ncodes, int Nfeatures,
-                   int *codes,        # FIXME: should be ndarray
-                   float *lowest_dist # FIXME: should be ndarray
-                  ):
+def vq(np.ndarray obs, np.ndarray codes):
     """
-    Quantize Nobs observations to their nearest codebook 
-    entry (single-precision version).
+    Testing    
     """
-    cdef int i
-    for i in range(Nobs):
-        float_vq_obs(&(obs[i * Nfeatures]), code_book,
-                     Ncodes, Nfeatures, &(codes[i]),
-                     &(lowest_dist[i]))
+    cdef np.npy_intp n_obs, n_codes, n_features
+    cdef np.ndarray outcodes, outdists
+    obs = np.atleast_2d(np.ascontiguousarray(obs))
+    codes = np.atleast_2d(np.ascontiguousarray(codes))
 
-cdef int double_tvq(double *obs,        # FIXME: should be ndarray
-                    double *code_book,  # FIXME: should be ndarray
-                    int Nobs, int Ncodes, int Nfeatures,
-                    int *codes,         # FIXME: should be ndarray
-                    double *lowest_dist # FIXME: should be ndarray
-                   ):
-    """
-    Quantize Nobs observations to their nearest codebook 
-    entry (double-precision version).
-    """
-    cdef int i
-    for i in range(Nobs):
-        double_vq_obs(&(obs[i * Nfeatures]), 
-                      code_book, Ncodes, Nfeatures,  
-                      &(codes[i]), &(lowest_dist[i]))
-    return 0
+    if obs.ndim > 2 or codes.ndim > 2:
+        raise ValueError("rank > 2 for arguments not supported")
+    
+    if obs.dtype != codes.dtype:
+        raise ValueError("obs and codes must be of same dtype")
+    
+    if obs.shape[1] != codes.shape[1]:
+        raise ValueError("obs and codes should have same number of " + \
+                         "features (columns)")
 
+    nobs = obs.shape[0]
+    outcodes = np.zeros((nobs,), dtype=np.int32)
+    outdists = np.zeros((nobs,), dtype=obs.dtype)
+    
+    if obs.dtype == np.float32:
+        float_tvq(obs, codes, outcodes, outdists)
+
+    return outcodes, outdists
