@@ -10,6 +10,8 @@ Translated to Cython by David Warde-Farley, October 2009.
 import numpy as np
 cimport numpy as np
 
+cimport cython
+
 cdef extern from "math.h":
     float sqrtf(float num)
     double sqrt(double num)
@@ -26,6 +28,8 @@ ctypedef np.float64_t FLOAT64_t
 ctypedef np.float32_t FLOAT32_t
 ctypedef np.int32_t INT32_t
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 def float_tvq(np.ndarray[FLOAT32_t, ndim=2] obs, 
                    np.ndarray[FLOAT32_t, ndim=2] code_book,
                    np.ndarray[INT32_t, ndim=1] codes,
