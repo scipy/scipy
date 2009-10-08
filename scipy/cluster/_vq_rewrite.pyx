@@ -10,9 +10,6 @@ Translated to Cython by David Warde-Farley, October 2009.
 import numpy as np
 cimport numpy as np
 
-cimport cython
-
-
 cdef extern from "Python.h":
     ctypedef int Py_intptr_t
 
@@ -22,19 +19,11 @@ cdef extern from "math.h":
 
 cdef extern from "numpy/arrayobject.h":
     ctypedef Py_intptr_t npy_intp
-    cdef npy_intp PyArray_TYPE(object arr)
-    cdef npy_intp PyArray_DIM(object arr, int n)
-    cdef npy_intp PyArray_NDIM(object arr)
 
 cdef extern from "numpy/npy_math.h":
     cdef enum:
         NPY_INFINITY
     
-# Python/NumPy types
-float64 = np.float64
-float32 = np.float32
-int32 = np.int32
-
 # C types
 ctypedef np.float64_t float64_t
 ctypedef np.float32_t float32_t
@@ -56,19 +45,23 @@ cdef int float_tvq(float32_t *obs, float32_t *code_book,
     # both arrays so that we don't have to always do index * nfeat.
     cdef int codebook_pos
     cdef float32_t *current_obs 
+    
     for obs_index in range(nobs):
         codebook_pos = 0
         low_dist[obs_index] = NPY_INFINITY
         for code_index in range(ncodes):
             dist = 0
+            
             # Distance between code_book[code_index] and obs[obs_index]
             for feature in range(nfeat):
+                
                 # Use current_obs pointer and codebook_pos to minimize
                 # pointer arithmetic necessary (i.e. no multiplications)
                 current_obs = &(obs[offset])
                 diff = code_book[codebook_pos] - current_obs[feature]
                 dist += diff * diff
                 codebook_pos += 1
+            
             dist = sqrtf(dist)
             
             # Replace the code assignment and record distance if necessary
@@ -78,6 +71,7 @@ cdef int float_tvq(float32_t *obs, float32_t *code_book,
         
         # Update the offset of the current observation
         offset += nfeat
+    
     return 0
 
 def vq(np.ndarray obs, np.ndarray codes):
@@ -86,9 +80,11 @@ def vq(np.ndarray obs, np.ndarray codes):
     """
     cdef np.npy_intp nobs, ncodes, nfeat, nfeat_codes
     cdef np.ndarray outcodes, outdists
+    
+    # Ensure the arrays are contiguous
     obs = np.ascontiguousarray(obs)
     codes = np.ascontiguousarray(codes)
-
+    
     if obs.ndim == 2:
         nobs = obs.shape[0]
         nfeat = obs.shape[1]
@@ -102,15 +98,18 @@ def vq(np.ndarray obs, np.ndarray codes):
         ncodes = codes.shape[0]
         nfeat_codes = codes.shape[1]
     elif obs.ndim == 1:
+        # Treat one dimensional arrays as row vectors.
         nfeat_codes = codes.shape[0]
         ncodes = 1
     else:
         raise ValueError('codes must have 0 < codes.ndim <= 2')
-
+    
+    # Ensure the two arrays have the same number of features (columns).
     if nfeat_codes != nfeat:
         raise ValueError('obs and codes must have same # of ' + \
                          'features (columns)')
     
+    # TODO: Accept output arrays as keyword arguments.
     outcodes = np.empty((nobs,), dtype=np.int32)
     outdists = np.empty((nobs,), dtype=obs.dtype)
     
