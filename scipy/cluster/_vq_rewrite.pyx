@@ -10,15 +10,14 @@ Translated to Cython by David Warde-Farley, October 2009.
 import numpy as np
 cimport numpy as np
 
-cdef extern from "Python.h":
-    ctypedef int Py_intptr_t
-
 cdef extern from "math.h":
     float sqrtf(float num)
     double sqrt(double num)
 
 cdef extern from "numpy/arrayobject.h":
-    ctypedef Py_intptr_t npy_intp
+    object PyArray_EMPTY(int, int *, int, int)
+    cdef enum:
+        PyArray_INTP
 
 cdef extern from "numpy/npy_math.h":
     cdef enum:
@@ -29,9 +28,12 @@ ctypedef np.float64_t float64_t
 ctypedef np.float32_t float32_t
 ctypedef np.int32_t int32_t
 
-cdef int float_tvq(float32_t *obs, float32_t *code_book,
+# Initialize the NumPy C API
+np.import_array()
+
+cdef void float_tvq(float32_t *obs, float32_t *code_book,
                    int ncodes, int nfeat, int nobs,
-                   int32_t *codes, float32_t *low_dist):
+                   np.npy_intp *codes, float32_t *low_dist):
     """
     Quantize Nobs observations to their nearest codebook 
     entry (single-precision version).
@@ -71,35 +73,35 @@ cdef int float_tvq(float32_t *obs, float32_t *code_book,
         
         # Update the offset of the current observation
         offset += nfeat
-    
-    return 0
 
 def vq(np.ndarray obs, np.ndarray codes):
     """
     Vector quantization ndarray wrapper.
     """
     cdef np.npy_intp nobs, ncodes, nfeat, nfeat_codes
+    cdef np.ndarray obs_a, codes_a
     cdef np.ndarray outcodes, outdists
-    
-    # Ensure the arrays are contiguous
-    obs = np.ascontiguousarray(obs)
-    codes = np.ascontiguousarray(codes)
-    
-    if obs.ndim == 2:
-        nobs = obs.shape[0]
-        nfeat = obs.shape[1]
-    elif obs.ndim == 1:
-        nfeat = obs.shape[0]
+    cdef int flags = np.NPY_CONTIGUOUS | np.NPY_NOTSWAPPED | np.NPY_ALIGNED
+
+    # Ensure the arrays are contiguous - done in C to minimize overhead.
+    obs_a = np.PyArray_FROM_OF(obs, flags)
+    codes_a = np.PyArray_FROM_OF(codes, flags)
+     
+    if obs_a.ndim == 2:
+        nobs = obs_a.shape[0]
+        nfeat = obs_a.shape[1]
+    elif obs_a.ndim == 1:
+        nfeat = obs_a.shape[0]
         nobs = 1
     else:
         raise ValueError('obs must have 0 < obs.ndim <= 2')
     
-    if codes.ndim == 2:
-        ncodes = codes.shape[0]
-        nfeat_codes = codes.shape[1]
-    elif obs.ndim == 1:
+    if codes_a.ndim == 2:
+        ncodes = codes_a.shape[0]
+        nfeat_codes = codes_a.shape[1]
+    elif codes.ndim == 1:
         # Treat one dimensional arrays as row vectors.
-        nfeat_codes = codes.shape[0]
+        nfeat_codes = codes_a.shape[0]
         ncodes = 1
     else:
         raise ValueError('codes must have 0 < codes.ndim <= 2')
@@ -109,14 +111,18 @@ def vq(np.ndarray obs, np.ndarray codes):
         raise ValueError('obs and codes must have same # of ' + \
                          'features (columns)')
     
-    # TODO: Accept output arrays as keyword arguments.
-    outcodes = np.empty((nobs,), dtype=np.int32)
+    # We create this with the C API so that we can be sure that
+    # the resulting array has elements big enough to store indices
+    # on that platform. Hence, PyArray_INTP.
+    outcodes = PyArray_EMPTY(1, &nobs, PyArray_INTP, 0)
+    
+    # This we just want to match the dtype of the input, so np.empty is fine.
     outdists = np.empty((nobs,), dtype=obs.dtype)
     
     if obs.dtype == np.float32:
-        float_tvq(<float32_t *>obs.data, <float32_t *>codes.data, 
-                  ncodes, nfeat, nobs, <int32_t *>outcodes.data, 
+        float_tvq(<float32_t *>obs_a.data, <float32_t *>codes_a.data, 
+                  ncodes, nfeat, nobs, <np.npy_intp *>outcodes.data, 
                   <float32_t *>outdists.data)
-     
+    
     return outcodes, outdists
 
