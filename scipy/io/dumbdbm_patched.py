@@ -77,6 +77,9 @@ class _Database(object):
         f.close()
         return dat
 
+    def __contains__(self, key):
+        return key in self._index
+
     def _addval(self, val):
         f = _open(self._datfile, 'rb+')
         f.seek(0, 2)
