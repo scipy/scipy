@@ -21,6 +21,7 @@ class CheckKrogh(TestCase):
     def test_scalar(self):
         P = KroghInterpolator(self.xs,self.ys)
         assert_almost_equal(self.true_poly(7),P(7))
+        assert_almost_equal(self.true_poly(np.array(7)), P(np.array(7)))
 
     def test_derivatives(self):
         P = KroghInterpolator(self.xs,self.ys)
@@ -75,6 +76,7 @@ class CheckKrogh(TestCase):
     def test_shapes_scalarvalue(self):
         P = KroghInterpolator(self.xs,self.ys)
         assert_array_equal(np.shape(P(0)), ())
+        assert_array_equal(np.shape(P(np.array(0))), ())
         assert_array_equal(np.shape(P([0])), (1,))
         assert_array_equal(np.shape(P([0,1])), (2,))
 
@@ -82,6 +84,7 @@ class CheckKrogh(TestCase):
         P = KroghInterpolator(self.xs,self.ys)
         n = P.n
         assert_array_equal(np.shape(P.derivatives(0)), (n,))
+        assert_array_equal(np.shape(P.derivatives(np.array(0))), (n,))
         assert_array_equal(np.shape(P.derivatives([0])), (n,1))
         assert_array_equal(np.shape(P.derivatives([0,1])), (n,2))
 
@@ -132,6 +135,7 @@ class CheckBarycentric(TestCase):
     def test_scalar(self):
         P = BarycentricInterpolator(self.xs,self.ys)
         assert_almost_equal(self.true_poly(7),P(7))
+        assert_almost_equal(self.true_poly(np.array(7)),P(np.array(7)))
 
     def test_delayed(self):
         P = BarycentricInterpolator(self.xs)
@@ -155,6 +159,7 @@ class CheckBarycentric(TestCase):
     def test_shapes_scalarvalue(self):
         P = BarycentricInterpolator(self.xs,self.ys)
         assert_array_equal(np.shape(P(0)), ())
+        assert_array_equal(np.shape(P(np.array(0))), ())
         assert_array_equal(np.shape(P([0])), (1,))
         assert_array_equal(np.shape(P([0,1])), (2,))
 
@@ -189,6 +194,9 @@ class CheckPiecewise(TestCase):
         P = PiecewisePolynomial(self.xi,self.yi,3)
         assert_almost_equal(P(self.test_xs[0]),self.spline_ys[0])
         assert_almost_equal(P.derivative(self.test_xs[0],1),self.spline_yps[0])
+        assert_almost_equal(P(np.array(self.test_xs[0])),self.spline_ys[0])
+        assert_almost_equal(P.derivative(np.array(self.test_xs[0]),1),
+                            self.spline_yps[0])
     def test_derivative(self):
         P = PiecewisePolynomial(self.xi,self.yi,3)
         assert_almost_equal(P.derivative(self.test_xs,1),self.spline_yps)
@@ -220,6 +228,7 @@ class CheckPiecewise(TestCase):
     def test_shapes_scalarvalue(self):
         P = PiecewisePolynomial(self.xi,self.yi,4)
         assert_array_equal(np.shape(P(0)), ())
+        assert_array_equal(np.shape(P(np.array(0))), ())
         assert_array_equal(np.shape(P([0])), (1,))
         assert_array_equal(np.shape(P([0,1])), (2,))
 
@@ -227,6 +236,7 @@ class CheckPiecewise(TestCase):
         P = PiecewisePolynomial(self.xi,self.yi,4)
         n = 4
         assert_array_equal(np.shape(P.derivative(0,1)), ())
+        assert_array_equal(np.shape(P.derivative(np.array(0),1)), ())
         assert_array_equal(np.shape(P.derivative([0],1)), (1,))
         assert_array_equal(np.shape(P.derivative([0,1],1)), (2,))
 

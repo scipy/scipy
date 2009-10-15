@@ -97,7 +97,7 @@ class KroghInterpolator(object):
             whether the interpolator is vector-valued or scalar-valued.
             If x is a vector, returns a vector of values.
         """
-        if np.isscalar(x):
+        if _isscalar(x):
             scalar = True
             m = 1
         else:
@@ -155,7 +155,7 @@ class KroghInterpolator(object):
                [2.0,2.0],
                [3.0,3.0]])
         """
-        if np.isscalar(x):
+        if _isscalar(x):
             scalar = True
             m = 1
         else:
@@ -283,7 +283,7 @@ def krogh_interpolate(xi,yi,x,der=0):
     P = KroghInterpolator(xi, yi)
     if der==0:
         return P(x)
-    elif np.isscalar(der):
+    elif _isscalar(der):
         return P.derivative(x,der=der)
     else:
         return P.derivatives(x,der=np.amax(der)+1)[der]
@@ -492,7 +492,7 @@ class BarycentricInterpolator(object):
         weights, that is, it constructs an intermediate array of size
         N by M, where N is the degree of the polynomial.
         """
-        scalar = np.isscalar(x)
+        scalar = _isscalar(x)
         x = np.atleast_1d(x)
         c = np.subtract.outer(x,self.xi)
         z = c==0
@@ -707,7 +707,7 @@ class PiecewisePolynomial(object):
         """
 
         for i in xrange(len(xi)):
-            if orders is None or np.isscalar(orders):
+            if orders is None or _isscalar(orders):
                 self.append(xi[i],yi[i],orders)
             else:
                 self.append(xi[i],yi[i],orders[i])
@@ -723,7 +723,7 @@ class PiecewisePolynomial(object):
         -------
         y : scalar or array-like of length R or length N or N by R
         """
-        if np.isscalar(x):
+        if _isscalar(x):
             pos = np.clip(np.searchsorted(self.xi, x) - 1, 0, self.n-2)
             y = self.polynomials[pos](x)
         else:
@@ -773,7 +773,7 @@ class PiecewisePolynomial(object):
         y : array-like of shape der by R or der by N or der by N by R
 
         """
-        if np.isscalar(x):
+        if _isscalar(x):
             pos = np.clip(np.searchsorted(self.xi, x) - 1, 0, self.n-2)
             y = self.polynomials[pos].derivatives(x,der=der)
         else:
@@ -827,7 +827,11 @@ def piecewise_polynomial_interpolate(xi,yi,x,orders=None,der=0):
     P = PiecewisePolynomial(xi, yi, orders)
     if der==0:
         return P(x)
-    elif np.isscalar(der):
+    elif _isscalar(der):
         return P.derivative(x,der=der)
     else:
         return P.derivatives(x,der=np.amax(der)+1)[der]
+
+def _isscalar(x):
+    """Check whether x is if a scalar type, or 0-dim"""
+    return np.isscalar(x) or hasattr(x, 'shape') and x.shape == ()
