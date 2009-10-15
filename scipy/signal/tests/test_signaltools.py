@@ -245,6 +245,14 @@ class TestFFTConvolve(TestCase):
         d = a*b
         assert_equal(c,d)
 
+    def test_random_data(self):
+        np.random.seed(1234)
+        a = np.random.rand(1233) + 1j*np.random.rand(1233)
+        b = np.random.rand(1321) + 1j*np.random.rand(1321)
+        c = signal.fftconvolve(a, b, 'full')
+        d = np.convolve(a, b, 'full')
+        assert np.allclose(c, d, rtol=1e-10)
+
 class TestMedFilt(TestCase):
     def test_basic(self):
         f = [[50, 50, 50, 50, 50, 92, 18, 27, 65, 46],
