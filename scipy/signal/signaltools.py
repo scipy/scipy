@@ -1102,7 +1102,6 @@ def hilbert2(x,N=None):
     if iscomplexobj(x):
         print "Warning: imaginary part of x ignored."
         x = real(x)
-    print N
     Xf = fft2(x,N,axes=(0,1))
     h1 = zeros(N[0],'d')
     h2 = zeros(N[1],'d')
