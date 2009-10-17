@@ -39,14 +39,33 @@ class KroghInterpolator(object):
             known x-coordinates
         yi : array-like, N by R
             known y-coordinates, interpreted as vectors of length R,
-            or scalars if R=1
+            or scalars if R=1. When an xi occurs two or more times in
+            a row, the corresponding yi's represent derivative values.
 
-        Example
-        -------
+        Examples
+        --------
         To produce a polynomial that is zero at 0 and 1 and has
         derivative 2 at 0, call
 
         >>> KroghInterpolator([0,0,1],[0,2,0])
+
+        This constructs the quadratic 2*X**2-2*X. The derivative condition
+        is indicated by the repeated zero in the xi array; the corresponding
+        yi values are 0, the function value, and 2, the derivative value.
+
+        For another example, given xi, yi, and a derivative ypi for each 
+        point, appropriate arrays can be constructed as:
+
+        >>> xi_k, yi_k = np.repeat(xi, 2), np.ravel(np.dstack((yi,ypi)))
+        >>> KroghInterpolator(xi_k, yi_k)
+
+        To produce a vector-valued polynomial, supply a higher-dimensional
+        array for yi:
+
+        >>> KroghInterpolator([0,1],[[2,3],[4,5]])
+
+        This constructs a linear polynomial giving (2,3) at 0 and (4,5) at 1.
+
         """
         self.xi = np.asarray(xi)
         self.yi = np.asarray(yi)
