@@ -2412,7 +2412,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
             else:
                 return D, distributions.ksone.sf(D,N)*2
 
-def chisquare(f_obs, f_exp=None):
+def chisquare(f_obs, f_exp=None, ddof=0):
     """
     Calculates a one-way chi square test.
 
@@ -2426,6 +2426,8 @@ def chisquare(f_obs, f_exp=None):
     f_exp : array, optional
         expected frequencies in each category.  By default the categories are
         assumed to be equally likely.
+    ddof : int, optional
+        adjustment to the degrees of freedom for the p-value
 
     Returns
     -------
@@ -2439,6 +2441,13 @@ def chisquare(f_obs, f_exp=None):
     This test is invalid when the observed or expected frequencies in each
     category are too small.  A typical rule is that all of the observed
     and expected frequencies should be at least 5.
+    The default degrees of freedom, k-1, are for the case when no parameters
+    of the distribution are estimated. If p parameters are estimated by
+    efficient maximum likelihood then the correct degrees of freedom are
+    k-1-p. If the parameters are estimated in a different way, then then
+    the dof can be between k-1-p and k-1. However, it is also possible that
+    the asymptotic distributions is not a chisquare, in which case this
+    test is notappropriate.
 
     References
     ----------
@@ -2454,7 +2463,7 @@ def chisquare(f_obs, f_exp=None):
         f_exp = array([np.sum(f_obs,axis=0)/float(k)] * len(f_obs),float)
     f_exp = f_exp.astype(float)
     chisq = np.add.reduce((f_obs-f_exp)**2 / f_exp)
-    return chisq, chisqprob(chisq, k-1)
+    return chisq, chisqprob(chisq, k-1-ddof)
 
 
 def ks_2samp(data1, data2):
