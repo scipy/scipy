@@ -921,12 +921,12 @@ def binom_test(x,n=None,p=0.5):
     d = distributions.binom.pmf(x,n,p)
     rerr = 1+1e-7
     if (x < p*n):
-        i = arange(x+1,n+1)
-        y = sum(distributions.binom.pmf(i,n,p) <= d*rerr,axis=0)
+        i = np.arange(np.ceil(p*n),n+1)
+        y = np.sum(distributions.binom.pmf(i,n,p) <= d*rerr,axis=0)
         pval = distributions.binom.cdf(x,n,p) + distributions.binom.sf(n-y,n,p)
     else:
-        i = arange(0,x)
-        y = sum(distributions.binom.pmf(i,n,p) <= d*rerr,axis=0)
+        i = np.arange(np.floor(p*n))
+        y = np.sum(distributions.binom.pmf(i,n,p) <= d*rerr,axis=0)
         pval = distributions.binom.cdf(y-1,n,p) + distributions.binom.sf(x-1,n,p)
 
     return min(1.0,pval)
