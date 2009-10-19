@@ -3025,7 +3025,7 @@ powerlaw = powerlaw_gen(a=0.0, b=1.0, name="powerlaw",
 
 Power-function distribution
 
-powerlaw.pdf(x,a) = a**x**(a-1)
+powerlaw.pdf(x,a) = a*x**(a-1)
 for 0 <= x <= 1, a > 0.
 """
                         )
@@ -4294,6 +4294,11 @@ class binom_gen(rv_discrete):
     def _argcheck(self, n, pr):
         self.b = n
         return (n>=0) & (pr >= 0) & (pr <= 1)
+    def _pmf(self, x, n, pr):
+        k = floor(x)
+        combiln = (special.gammaln(n+1) - (special.gammaln(k+1) +
+                                           special.gammaln(n-k+1)))
+        return np.exp(combiln + k*np.log(pr) + (n-k)*np.log(1-pr))
     def _cdf(self, x, n, pr):
         k = floor(x)
         vals = special.bdtr(k,n,pr)
@@ -4336,6 +4341,8 @@ class bernoulli_gen(binom_gen):
         return binom_gen._rvs(self, 1, pr)
     def _argcheck(self, pr):
         return (pr >=0 ) & (pr <= 1)
+    def _pmf(self, x, pr):
+        return binom_gen._pmf(self, x, 1, pr)    
     def _cdf(self, x, pr):
         return binom_gen._cdf(self, x, 1, pr)
     def _sf(self, x, pr):
