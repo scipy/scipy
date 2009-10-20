@@ -45,14 +45,14 @@ def test_all():
         Data(digamma, 'digamma_data_ipp-digamma_data', 0j, 1),
         Data(digamma, 'digamma_neg_data_ipp-digamma_neg_data', 0, 1, rtol=1e-13),
         Data(digamma, 'digamma_neg_data_ipp-digamma_neg_data', 0j, 1, rtol=1e-13),
-        Data(digamma, 'digamma_root_data_ipp-digamma_root_data', 0, 1, rtol=1e-12),
-        Data(digamma, 'digamma_root_data_ipp-digamma_root_data', 0j, 1, rtol=1e-12),
+        Data(digamma, 'digamma_root_data_ipp-digamma_root_data', 0, 1, rtol=1e-11),
+        Data(digamma, 'digamma_root_data_ipp-digamma_root_data', 0j, 1, rtol=1e-11),
         Data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0, 1),
         Data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0j, 1),
 
         Data(ellipk_, 'ellint_k_data_ipp-ellint_k_data', 0, 1),
         Data(ellipe_, 'ellint_e_data_ipp-ellint_e_data', 0, 1),
-        Data(ellipeinc_, 'ellint_e2_data_ipp-ellint_e2_data', (0,1), 2),
+        Data(ellipeinc_, 'ellint_e2_data_ipp-ellint_e2_data', (0,1), 2, rtol=1e-14),
 
         Data(erf, 'erf_data_ipp-erf_data', 0, 1),
         Data(erf, 'erf_data_ipp-erf_data', 0j, 1, rtol=1e-14),
@@ -69,14 +69,14 @@ def test_all():
         #Data(erfcinv, 'erfc_inv_big_data_ipp-erfc_inv_big_data', 0, 1),
 
         Data(exp1, 'expint_1_data_ipp-expint_1_data', 1, 2),
-        Data(exp1, 'expint_1_data_ipp-expint_1_data', 1j, 2, rtol=2e-9),
+        Data(exp1, 'expint_1_data_ipp-expint_1_data', 1j, 2, rtol=5e-9),
         Data(expi, 'expinti_data_ipp-expinti_data', 0, 1, rtol=1e-13,
              param_filter=(lambda x: x>0)),
         Data(expi, 'expinti_data_double_ipp-expinti_data_double', 0, 1,
              param_filter=(lambda x: x>0)),
 
         Data(expn, 'expint_small_data_ipp-expint_small_data', (0,1), 2),
-        Data(expn, 'expint_data_ipp-expint_data', (0,1), 2),
+        Data(expn, 'expint_data_ipp-expint_data', (0,1), 2, rtol=1e-14),
 
         Data(gamma, 'test_gamma_data_ipp-near_0', 0, 1),
         Data(gamma, 'test_gamma_data_ipp-near_1', 0, 1),
@@ -90,7 +90,7 @@ def test_all():
         Data(gamma, 'test_gamma_data_ipp-near_m55', 0j, 1, rtol=2e-9),
         Data(gammaln, 'test_gamma_data_ipp-near_0', 0, 2, rtol=5e-11),
         Data(gammaln, 'test_gamma_data_ipp-near_1', 0, 2, rtol=5e-11),
-        Data(gammaln, 'test_gamma_data_ipp-near_2', 0, 2, rtol=5e-11),
+        Data(gammaln, 'test_gamma_data_ipp-near_2', 0, 2, rtol=2e-10),
         Data(gammaln, 'test_gamma_data_ipp-near_m10', 0, 2, rtol=5e-11),
         Data(gammaln, 'test_gamma_data_ipp-near_m55', 0, 2, rtol=5e-11),
 
@@ -205,19 +205,25 @@ class Data(object):
     Parameters
     ----------
     func : function
+        Function to test
     filename : str
+        Input file name
     param_columns : int or tuple of ints
         Columns indices in which the parameters to `func` lie.
         Can be imaginary integers to indicate that the parameter
         should be cast to complex.
     result_columns : int or tuple of ints
         Column indices for expected results from `func`.
-    rtol : float
-        Required relative tolerance
-    atol : float
-        Required absolute tolerance
-    param_filter : function, or tuple of functions/Nones
+    rtol : float, optional
+        Required relative tolerance. Default is 5*eps.
+    atol : float, optional
+        Required absolute tolerance. Default is 5*tiny.
+    param_filter : function, or tuple of functions/Nones, optional
         Filter functions to exclude some parameter ranges.
+        If omitted, no filtering is done.
+    knownfailure : str, optional
+        Known failure error message to raise when the test is run.
+        If omitted, no exception is raised.
 
     """
 
