@@ -261,7 +261,7 @@ class Data(object):
             cls._datasets = {}
             for ds in DATASETS:
                 cls._datasets.update(np.load(ds))
-        return cls._datasets[dataname].astype(dtype)
+        return cls._datasets[dataname]
 
     def check(self, data=None, dtype=None):
         """Check the special function against the data."""
