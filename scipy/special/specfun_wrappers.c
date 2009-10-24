@@ -203,6 +203,14 @@ double expi_wrap(double x) {
   return out;
 }
 
+Py_complex cexpi_wrap(Py_complex z) {
+  Py_complex outz;
+
+  F_FUNC(eixz,EIXZ)(&z, &outz);
+  ZCONVINF(outz);
+  return outz;
+}
+
 Py_complex cerf_wrap(Py_complex z) {
   Py_complex outz;
   

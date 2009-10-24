@@ -5541,6 +5541,23 @@ C          Asymptotic expansion (the series is not convergent)
 
 C       **********************************
 
+        SUBROUTINE EIXZ(Z,CEI)
+C
+C       ============================================
+C       Purpose: Compute exponential integral Ei(x)
+C       Input :  x  --- Complex argument of Ei(x)
+C       Output:  EI --- Ei(x)
+C       ============================================
+C
+        IMPLICIT NONE
+        DOUBLE COMPLEX Z, CEI
+        CALL E1Z(-Z, CEI)
+        CEI = -CEI + (CDLOG(Z) - CDLOG(1D0/Z))/2D0 - CDLOG(-Z)
+        RETURN
+        END
+
+C       **********************************
+
         SUBROUTINE E1XB(X,E1)
 C
 C       ============================================

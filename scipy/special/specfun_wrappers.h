@@ -31,8 +31,9 @@ double hyp1f1_wrap( double a, double b, double x);
 double hypU_wrap(double a, double b, double x);
 double exp1_wrap(double x);
 double expi_wrap(double x);
-Py_complex cexp1_wrap( Py_complex z);
-Py_complex cerf_wrap( Py_complex z);
+Py_complex cexp1_wrap(Py_complex z);
+Py_complex cexpi_wrap(Py_complex z);
+Py_complex cerf_wrap(Py_complex z);
 int itairy_wrap(double x, double *apt, double *bpt, double *ant, double *bnt);
 
 double struve_wrap(double v, double x);

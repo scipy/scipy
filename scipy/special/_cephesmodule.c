@@ -64,7 +64,7 @@ static void * keip_data[] = { (void *)keip_wrap, (void *)keip_wrap,};
 static void * ellpj_data[] = { (void *)ellpj, (void *)ellpj,};
 
 static void * exp1_data[] = { (void *)exp1_wrap, (void *)exp1_wrap, (void *)cexp1_wrap, (void *)cexp1_wrap,};
-static void * expi_data[] = { (void *)expi_wrap, (void *)expi_wrap,};
+static void * expi_data[] = { (void *)expi_wrap, (void *)expi_wrap, (void *)cexpi_wrap, (void *)cexpi_wrap,};
 static void * expn_data[] = { (void *)expn, (void *)expn, };
 static void * kn_data[] = { (void *)kn, (void *)kn, };
 
@@ -559,7 +559,7 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	f = PyUFunc_FromFuncAndData(cephes1rc_functions, exp1_data, cephes_1rc_types, 4, 1, 1, PyUFunc_None, "exp1", exp1_doc, 0);
 	PyDict_SetItemString(dictionary, "exp1", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes1_functions, expi_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "expi", expi_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes1rc_functions, expi_data, cephes_1rc_types, 4, 1, 1, PyUFunc_None, "expi", expi_doc, 0);
 	PyDict_SetItemString(dictionary, "expi", f);
 	Py_DECREF(f);
 

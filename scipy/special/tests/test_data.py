@@ -10,7 +10,9 @@ from scipy.special import (
 )
 from numpy.testing.noseclasses import KnownFailureTest
 
-DATASETS = os.path.join(os.path.dirname(__file__), "data", "boost.npz")
+DATASETS = [
+    os.path.join(os.path.dirname(__file__), "data", "boost.npz")
+]
 
 def ellipk_(k):
     return ellipk(k*k)
@@ -28,10 +30,10 @@ def test_all():
     TESTS = [
         Data(arccosh, 'acosh_data_ipp-acosh_data', 0, 1),
         Data(arccosh, 'acosh_data_ipp-acosh_data', 0j, 1, rtol=5e-14),
-        
+
         Data(arcsinh, 'asinh_data_ipp-asinh_data', 0, 1, rtol=1e-11),
         Data(arcsinh, 'asinh_data_ipp-asinh_data', 0j, 1, rtol=1e-11),
-        
+
         Data(arctanh, 'atanh_data_ipp-atanh_data', 0, 1, rtol=1e-13),
         Data(arctanh, 'atanh_data_ipp-atanh_data', 0j, 1, rtol=1e-13),
 
@@ -104,7 +106,7 @@ def test_all():
         Data(jn, 'bessel_j_int_data_ipp-bessel_j_int_data', (0,1j), 2, rtol=1e-12),
         Data(jn, 'bessel_j_large_data_ipp-bessel_j_large_data', (0,1), 2, rtol=6e-11),
         Data(jn, 'bessel_j_large_data_ipp-bessel_j_large_data', (0,1j), 2, rtol=6e-11),
-        
+
         Data(jv, 'bessel_j_int_data_ipp-bessel_j_int_data', (0,1), 2, rtol=1e-12),
         Data(jv, 'bessel_j_int_data_ipp-bessel_j_int_data', (0,1j), 2, rtol=1e-12),
         Data(jv, 'bessel_j_data_ipp-bessel_j_data', (0,1), 2, rtol=1e-12),
@@ -252,19 +254,27 @@ class Data(object):
         return rtol, atol
 
     @classmethod
-    def load_data(cls, dataname, dtype):
+    def load_data(cls, dataname):
+        if isinstance(dataname, np.ndarray):
+            return dataname
         if not hasattr(cls, '_datasets'):
-            cls._datasets = np.load(DATASETS)
-        return cls._datasets[dataname]
+            cls._datasets = {}
+            for ds in DATASETS:
+                cls._datasets.update(np.load(ds))
+        return cls._datasets[dataname].astype(dtype)
 
-    def check(self, data=None, dtype=np.double):
+    def check(self, data=None, dtype=None):
         """Check the special function against the data."""
 
         if self.knownfailure:
             raise KnownFailureTest(self.knownfailure)
 
         if data is None:
-            data = Data.load_data(self.dataname, dtype)
+            data = Data.load_data(self.dataname)
+        if dtype is None:
+            dtype = data.dtype
+        else:
+            data = data.astype(dtype)
 
         rtol, atol = self.get_tolerances(dtype)
 
