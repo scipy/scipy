@@ -1321,8 +1321,16 @@ def squareform(X, force="no", checks=True):
 
     s = X.shape
 
+    if force.lower() == 'tomatrix':
+        if len(s) != 1:
+            raise ValueError("Forcing 'tomatrix' but input X is not a distance vector.")
+    elif force.lower() == 'tovector':
+        if len(s) != 2:
+            raise ValueError("Forcing 'tovector' but input X is not a distance matrix.")
+
+
     # X = squareform(v)
-    if len(s) == 1 and force != 'tomatrix':
+    if len(s) == 1:
         if X.shape[0] == 0:
             return np.zeros((1,1), dtype=np.double)
 
@@ -1348,16 +1356,11 @@ def squareform(X, force="no", checks=True):
         # Return the distance matrix.
         M = M + M.transpose()
         return M
-    elif len(s) != 1 and force.lower() == 'tomatrix':
-        raise ValueError("Forcing 'tomatrix' but input X is not a distance vector.")
-    elif len(s) == 2 and force.lower() != 'tovector':
+    elif len(s) == 2:
         if s[0] != s[1]:
             raise ValueError('The matrix argument must be square.')
         if checks:
-            if np.sum(np.sum(X == X.transpose())) != np.product(X.shape):
-                raise ValueError('The distance matrix array must be symmetrical.')
-            if (X.diagonal() != 0).any():
-                raise ValueError('The distance matrix array must have zeros along the diagonal.')
+            is_valid_dm(X, throw=True, name='X')
 
         # One-side of the dimensions is set here.
         d = s[0]
@@ -1375,8 +1378,6 @@ def squareform(X, force="no", checks=True):
         # Convert the vector to squareform.
         _distance_wrap.to_vector_from_squareform_wrap(X, v)
         return v
-    elif len(s) != 2 and force.lower() == 'tomatrix':
-        raise ValueError("Forcing 'tomatrix' but input X is not a distance vector.")
     else:
         raise ValueError('The first argument must be one or two dimensional array. A %d-dimensional array is not permitted' % len(s))
 
