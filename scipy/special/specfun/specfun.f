@@ -5507,13 +5507,17 @@ C
 C       ============================================
 C       Purpose: Compute exponential integral Ei(x)
 C       Input :  x  --- Argument of Ei(x)
-C       Output:  EI --- Ei(x) ( x > 0 )
+C       Output:  EI --- Ei(x)
 C       ============================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         IF (X.EQ.0.0) THEN
            EI=-1.0D+300
-        ELSE IF (X.LE.40.0) THEN
+        ELSE IF (X .LT. 0) THEN
+           CALL E1XB(-X, EI)
+           EI = -EI
+        ELSE IF (DABS(X).LE.40.0) THEN
+C          Power series around x=0
            EI=1.0D0
            R=1.0D0
            DO 15 K=1,100
@@ -5524,6 +5528,7 @@ C
 20         GA=0.5772156649015328D0
            EI=GA+DLOG(X)+X*EI
         ELSE
+C          Asymptotic expansion (the series is not convergent)
            EI=1.0D0
            R=1.0D0
            DO 25 K=1,20

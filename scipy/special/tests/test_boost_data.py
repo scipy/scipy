@@ -70,10 +70,8 @@ def test_all():
 
         Data(exp1, 'expint_1_data_ipp-expint_1_data', 1, 2),
         Data(exp1, 'expint_1_data_ipp-expint_1_data', 1j, 2, rtol=5e-9),
-        Data(expi, 'expinti_data_ipp-expinti_data', 0, 1, rtol=1e-13,
-             param_filter=(lambda x: x>0)),
-        Data(expi, 'expinti_data_double_ipp-expinti_data_double', 0, 1,
-             param_filter=(lambda x: x>0)),
+        Data(expi, 'expinti_data_ipp-expinti_data', 0, 1, rtol=1e-13),
+        Data(expi, 'expinti_data_double_ipp-expinti_data_double', 0, 1),
 
         Data(expn, 'expint_small_data_ipp-expint_small_data', (0,1), 2),
         Data(expn, 'expint_data_ipp-expint_data', (0,1), 2, rtol=1e-14),
