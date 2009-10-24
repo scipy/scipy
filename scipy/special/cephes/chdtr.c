@@ -155,11 +155,6 @@ double df, x;
 {
 
 if (x < 0.0) return 1.0;   /* modified by T. Oliphant */
-if (df < 1.0) 
-	{
-	mtherr( "chdtrc", DOMAIN );
-	return(NPY_NAN);
-	}
 return( igamc( df/2.0, x/2.0 ) );
 }
 
@@ -169,7 +164,7 @@ double chdtr(df,x)
 double df, x;
 {
 
-if( (x < 0.0) || (df < 1.0) )
+if( (x < 0.0))  /* || (df < 1.0) ) */
 	{
 	mtherr( "chdtr", DOMAIN );
 	return(NPY_NAN);
@@ -184,7 +179,7 @@ double df, y;
 {
 double x;
 
-if( (y < 0.0) || (y > 1.0) || (df < 1.0) )
+if( (y < 0.0) || (y > 1.0)) /* || (df < 1.0) ) */
 	{
 	mtherr( "chdtri", DOMAIN );
 	return(NPY_NAN);

@@ -2302,5 +2302,15 @@ class TestStruve(object):
         assert_tol_equal(struve(-2.0, 20 - 1e-8), struve(-2.0, 20 + 1e-8))
         assert_tol_equal(struve(-4.3, 20 - 1e-8), struve(-4.3, 20 + 1e-8))
 
+def test_chi2_smalldf():
+    assert_almost_equal(chdtr(0.6,3), 0.957890536704110)
+
+def test_chi2c_smalldf():
+    assert_almost_equal(chdtrc(0.6,3), 1-0.957890536704110)
+
+def test_chi2_inv_smalldf():
+    assert_almost_equal(chdtri(0.6,1-0.957890536704110), 3)
+
+
 if __name__ == "__main__":
     run_module_suite()
