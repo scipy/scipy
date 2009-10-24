@@ -1,3 +1,5 @@
+__all__ = ['imread']
+
 from numpy import array
 
 def imread(fname, flatten=False):
