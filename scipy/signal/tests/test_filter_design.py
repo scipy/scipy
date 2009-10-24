@@ -25,14 +25,14 @@ class TestTf2zpk(TestCase):
     def test_bad_filter(self):
         """Regression test for #651: better handling of badly conditionned
         filter coefficients."""
-        b, a = bessel(20, 0.1)
         warnings.simplefilter("error", BadCoefficients)
         try:
-            try:
-                z, p, k = tf2zpk(b, a)
-                raise AssertionError("tf2zpk did not warn about bad "\
-                                     "coefficients")
-            except BadCoefficients:
-                pass
+            b, a = bessel(20, 0.1)
+            z, p, k = tf2zpk(b, a)
+            raise AssertionError("tf2zpk did not warn about bad "\
+                                 "coefficients")
+        except BadCoefficients:
+            pass
         finally:
             warnings.simplefilter("always", BadCoefficients)
+

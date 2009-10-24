@@ -217,15 +217,15 @@ def normalize(b,a):
         b = asarray([b],b.dtype.char)
     while a[0] == 0.0 and len(a) > 1:
         a = a[1:]
-    if allclose(b[:,0], 0, rtol=1e-14):
-        warnings.warn("Badly conditionned filter coefficients (numerator): the "
-                      "results may be meaningless", BadCoefficients)
-        while allclose(b[:,0], 0, rtol=1e-14) and (b.shape[-1] > 1):
-            b = b[:,1:]
-    if b.shape[0] == 1:
-        b = b[0]
     outb = b * (1.0) / a[0]
     outa = a * (1.0) / a[0]
+    if allclose(outb[:,0], 0, rtol=1e-14):
+        warnings.warn("Badly conditionned filter coefficients (numerator): the "
+                      "results may be meaningless", BadCoefficients)
+        while allclose(outb[:,0], 0, rtol=1e-14) and (outb.shape[-1] > 1):
+            outb = outb[:,1:]
+    if outb.shape[0] == 1:
+        outb = outb[0]
     return outb, outa
 
 
