@@ -1,0 +1,12 @@
+*.pyc
+*.swp
+*.pyd
+*.so
+/build
+/dist
+/scipy.egg-info
+/site.cfg
+
+/doc/frontpage/build
+/doc/source/generated
+
