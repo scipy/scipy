@@ -101,7 +101,7 @@ load_testing_files()
 
 class TestCdist(TestCase):
     """
-    Test suite for the pdist function.
+    Test suite for the cdist function.
     """
 
     def test_cdist_euclidean_random(self):
@@ -115,7 +115,19 @@ class TestCdist(TestCase):
         if verbose > 2:
             print (Y1-Y2).max()
         self.failUnless(within_tol(Y1, Y2, eps))
-
+        
+    def test_cdist_euclidean_random_unicode(self):
+        "Tests cdist(X, u'euclidean') using unicode metric string"
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        Y1 = cdist(X1, X2, u'euclidean')
+        Y2 = cdist(X1, X2, u'test_euclidean')
+        if verbose > 2:
+            print (Y1-Y2).max()
+        self.failUnless(within_tol(Y1, Y2, eps))
+        
     def test_cdist_sqeuclidean_random(self):
         "Tests cdist(X, 'sqeuclidean') on random data."
         eps = 1e-07
@@ -129,7 +141,7 @@ class TestCdist(TestCase):
         self.failUnless(within_tol(Y1, Y2, eps))
 
     def test_cdist_cityblock_random(self):
-        "Tests cdist(X, 'sqeuclidean') on random data."
+        "Tests cdist(X, 'cityblock') on random data."
         eps = 1e-07
         # Get the data: the input matrix and the right output.
         X1 = eo['cdist-X1']
@@ -473,7 +485,17 @@ class TestPdist(TestCase):
 
         Y_test1 = pdist(X, 'euclidean')
         self.failUnless(within_tol(Y_test1, Y_right, eps))
+        
+    def test_pdist_euclidean_random(self):
+        "Tests pdist(X, 'euclidean') with unicode metric string"
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-euclidean']
 
+        Y_test1 = pdist(X, u'euclidean')
+        self.failUnless(within_tol(Y_test1, Y_right, eps))
+        
     def test_pdist_euclidean_random_float32(self):
         "Tests pdist(X, 'euclidean') on random data (float32)."
         eps = 1e-07

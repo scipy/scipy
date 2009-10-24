@@ -1075,8 +1075,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
     n = s[1]
     dm = np.zeros((m * (m - 1) / 2,), dtype=np.double)
 
-    mtype = type(metric)
-    if mtype is types.FunctionType:
+    if callable(metric):
         k = 0
         if metric == minkowski:
             for i in xrange(0, m - 1):
@@ -1104,7 +1103,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
                     dm[k] = metric(X[i, :], X[j, :])
                     k = k + 1
 
-    elif mtype is types.StringType:
+    elif isinstance(metric,basestring):
         mstr = metric.lower()
 
         #if X.dtype != np.double and \
@@ -1820,8 +1819,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     n = s[1]
     dm = np.zeros((mA, mB), dtype=np.double)
 
-    mtype = type(metric)
-    if mtype is types.FunctionType:
+    if callable(metric):
         if metric == minkowski:
             for i in xrange(0, mA):
                 for j in xrange(0, mB):
@@ -1842,7 +1840,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
             for i in xrange(0, mA):
                 for j in xrange(0, mB):
                     dm[i, j] = metric(XA[i, :], XB[j, :])
-    elif mtype is types.StringType:
+    elif isinstance(metric,basestring):
         mstr = metric.lower()
 
         #if XA.dtype != np.double and \
