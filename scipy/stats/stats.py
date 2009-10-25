@@ -1929,7 +1929,7 @@ def kendalltau(x, y):
     tau = iss / np.sqrt(float(n1*n2))
     svar = (4.0*len(x)+10.0) / (9.0*len(x)*(len(x)-1))
     z = tau / np.sqrt(svar)
-    prob = erfc(abs(z)/1.4142136)
+    prob = special.erfc(abs(z)/1.4142136)
     return tau, prob
 
 
