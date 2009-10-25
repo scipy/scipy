@@ -103,6 +103,7 @@ double a, b, c, x;
     double d, d1, d2, e;
     double p, q, r, s, y, ax;
     double ia, ib, ic, id, err;
+    double t1;
     int i, aid;
     int neg_int_a = 0, neg_int_b = 0;
     int neg_int_ca_or_cb = 0;
@@ -163,16 +164,11 @@ double a, b, c, x;
     if (neg_int_a || neg_int_b) /* function is a polynomial */
         goto hypok;
 
-    if (x < -1.0) {
-        double t1;
-        t1 = fabs(b - a);
-        if (fabs(t1 - round(t1)) < EPS) {
-            /* this transformation has a pole for b-a= +-integer,
-               so we average around it.
-             */
-            return 0.5 * (hyp2f1(a, b * (1 + 1e-9), c, x) +
-                          hyp2f1(a, b * (1 - 1e-9), c, x));
-        }
+    t1 = fabs(b - a);
+    if (x < -2.0 && fabs(t1 - round(t1)) > EPS) {
+        /* This transform has a pole for b-a integer, and
+         * may produce large cancellation errors for |1/x| close 1
+         */
         p = hyp2f1(a, 1 - c + a, 1 - b + a, 1.0 / x);
         q = hyp2f1(b, 1 - c + b, 1 - a + b, 1.0 / x);
         p *= pow(-x, -a);
@@ -181,6 +177,12 @@ double a, b, c, x;
         s = t1 * gamma(b - a) / (gamma(b) * gamma(c - a));
         y = t1 * gamma(a - b) / (gamma(a) * gamma(c - b));
         return s * p + y * q;
+    } else if (x < -1.0) {
+        if (fabs(a) < fabs(b)) {
+            return pow(s, -a) * hyp2f1(a, c-b, c, x/(x-1));
+        } else {
+            return pow(s, -b) * hyp2f1(b, c-a, c, x/(x-1));
+        }
     }
 
     if (ax > 1.0)               /* series diverges  */
