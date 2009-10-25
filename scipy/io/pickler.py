@@ -1,8 +1,8 @@
 import cPickle
 
-from numpy import deprecate_with_doc
+from numpy import deprecate
 
-@deprecate_with_doc("""
+@deprecate(message="""
 Just use cPickle.dump directly or numpy.savez
 """)
 def objsave(file, allglobals, *args):
@@ -24,7 +24,7 @@ def objsave(file, allglobals, *args):
     cPickle.dump(savedict,fid,1)
     fid.close()
 
-@deprecate_with_doc("""
+@deprecate(message="""
 Just use cPickle.load or numpy.load.
 """)
 def objload(file, allglobals):

@@ -397,9 +397,10 @@ def bmat(blocks, format=None, dtype=None):
 
 __all__ += [ 'speye','spidentity', 'spkron', 'lil_eye', 'lil_diags' ]
 
-spkron      = np.deprecate(kron,     oldname='spkron',     newname='scipy.sparse.kron')
-speye       = np.deprecate(eye,      oldname='speye',      newname='scipy.sparse.eye')
-spidentity  = np.deprecate(identity, oldname='spidentity', newname='scipy.sparse.identity')
+spkron = np.deprecate(kron, old_name='spkron', new_name='scipy.sparse.kron')
+speye = np.deprecate(eye, old_name='speye', new_name='scipy.sparse.eye')
+spidentity = np.deprecate(identity, old_name='spidentity',
+                                    new_name='scipy.sparse.identity')
 
 
 def lil_eye((r,c), k=0, dtype='d'):

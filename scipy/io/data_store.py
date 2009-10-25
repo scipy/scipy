@@ -23,7 +23,7 @@ __all__ = ['save_as_module',
 import dumb_shelve
 import os
 
-from numpy import deprecate_with_doc, deprecate
+from numpy import deprecate
 
 def _load(module):
     """ Load data into module from a shelf with
@@ -40,12 +40,12 @@ def _load(module):
 #       print i, 'loaded...'
 #   print 'done'
 
-load = deprecate_with_doc("""
+load = deprecate(_load, message="""
 This is an internal function used with scipy.io.save_as_module
 
 If you are saving arrays into a module, you should think about using
 HDF5 or .npz files instead.
-""")(_load)
+""")
 
 
 def _create_module(file_name):
@@ -59,12 +59,12 @@ def _create_module(file_name):
         f.write('data_store._load(%s)' % module_name)
         f.close()
 
-create_module = deprecate_with_doc("""
+create_module = deprecate(_create_module, message="""
 This is an internal function used with scipy.io.save_as_module
 
 If you are saving arrays into a module, you should think about
 using HDF5 or .npz files instead.
-""")(_create_module)
+""")
 
 def _create_shelf(file_name,data):
     """Use this to write the data to a new file
@@ -77,12 +77,12 @@ def _create_shelf(file_name,data):
 #   print 'done'
     f.close()
 
-create_shelf = deprecate_with_doc("""
+create_shelf = deprecate(_create_shelf, message="""
 This is an internal function used with scipy.io.save_as_module
 
 If you are saving arrays into a module, you should think about using
 HDF5 or .npz files instead.
-""")(_create_shelf)
+""")
 
 
 def save_as_module(file_name=None,data=None):
@@ -92,4 +92,4 @@ def save_as_module(file_name=None,data=None):
     _create_module(file_name)
     _create_shelf(file_name,data)
 
-save = deprecate(save_as_module, 'save', 'save_as_module')
+save = deprecate(save_as_module, old_name='save', new_name='save_as_module')

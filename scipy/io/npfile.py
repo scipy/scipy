@@ -223,10 +223,10 @@ class npfile(object):
             return arr.byteswap()
         return arr.copy()
 
-npfile = np.deprecate_with_doc("""
+npfile = np.deprecate(npfile, message="""
 You can achieve the same effect as using npfile using numpy.save and
 numpy.load.
 
 You can use memory-mapped arrays and data-types to map out a
 file format for direct manipulation in NumPy.
-""")(npfile)
+""")

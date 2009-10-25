@@ -19,7 +19,7 @@ import types
 import numpy
 
 from numpy import array, take, concatenate, asarray, real, imag, \
-  deprecate_with_doc
+                  deprecate
 # Sadly, this module is still written with typecodes in mind.
 from numpy.oldnumeric import Float
 
@@ -312,7 +312,7 @@ def convert_to_equal_lists(cols, atype):
     return cols, atype
 
 
-@deprecate_with_doc("""
+@deprecate(message="""
 The functionality of read_array is in numpy.loadtxt which allows the same
 functionality using different syntax.
 """)
@@ -443,8 +443,7 @@ def str_array(arr, precision=5,col_sep=' ',row_sep="\n",ss=0):
     return row_sep.join(thestr)
 
 
-@deprecate_with_doc("""
-
+@deprecate(message="""
 This function is replaced by numpy.savetxt which allows the same functionality
 through a different syntax.
 """)

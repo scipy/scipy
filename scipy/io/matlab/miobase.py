@@ -220,11 +220,11 @@ class ByteOrder(object):
     swapped_code = boc.swapped_code
     to_numpy_code = boc.to_numpy_code
 
-ByteOrder = np.deprecate_with_doc("""
+ByteOrder = np.deprecate(ByteOrder, message="""
 We no longer use the ByteOrder class, and deprecate it; we will remove
 it in future versions of scipy.  Please use the
 scipy.io.matlab.byteordercodes module instead.
-""")(ByteOrder)
+""")
 
 
 class MatStreamAgent(object):
