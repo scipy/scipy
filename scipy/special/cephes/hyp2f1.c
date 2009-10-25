@@ -118,11 +118,7 @@ double a, b, c, x;
     }
 
     d = c - a - b;
-    if (d <= -1) {
-        return pow(s, d) * hyp2f1(c - a, c - b, c, x);
-    }
-    if (d <= 0 && x == 1)
-        goto hypdiv;
+    id = round(d);
 
     if (a <= 0 && fabs(a - ia) < EPS) { /* a is a negative integer */
         neg_int_a = 1;
@@ -131,6 +127,12 @@ double a, b, c, x;
     if (b <= 0 && fabs(b - ib) < EPS) { /* b is a negative integer */
         neg_int_b = 1;
     }
+
+    if (d <= -1 && !(fabs(d-id) > EPS && s < 0) && !(neg_int_a || neg_int_b)) {
+        return pow(s, d) * hyp2f1(c - a, c - b, c, x);
+    }
+    if (d <= 0 && x == 1)
+        goto hypdiv;
 
     if (ax < 1.0 || x == -1.0) {
         /* 2F1(a,b;b;x) = (1-x)**(-a) */
@@ -301,7 +303,7 @@ double *loss;
 
     err = 0.0;
     s = 1.0 - x;
-    if (x < -0.5) {
+    if (x < -0.5 && !(neg_int_a || neg_int_b)) {
         if (b > a)
             y = pow(s, -a) * hys2f1(a, c - b, c, -x / s, &err);
 
