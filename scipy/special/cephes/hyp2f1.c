@@ -92,7 +92,7 @@
 
 #define ETHRESH 1.0e-12
 
-extern double MAXNUM, MACHEP;
+extern double MACHEP;
 
 static double hyt2f1(double a, double b, double c, double x, double *loss);
 static double hys2f1(double a, double b, double c, double x, double *loss);
@@ -267,7 +267,7 @@ double a, b, c, x;
 /* The alarm exit */
   hypdiv:
     mtherr("hyp2f1", OVERFLOW);
-    return (MAXNUM);
+    return NPY_INFINITY;
 }
 
 
@@ -448,7 +448,7 @@ double *loss;                   /* estimates loss of significance */
     do {
         if (fabs(h) < EPS) {
             *loss = 1.0;
-            return (MAXNUM);
+            return NPY_INFINITY;
         }
         m = k + 1.0;
         u = u * ((f + k) * (g + k) * x / ((h + k) * m));
