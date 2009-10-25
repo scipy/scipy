@@ -2817,7 +2817,8 @@ def friedmanchisquare(*args):
 #####################################
 
 zprob = special.ndtr
-erfc = special.erfc
+erfc = np.lib.deprecate(special.erfc, old_name="scipy.stats.erfc",
+                                      new_name="scipy.special.erfc")
 
 def chisqprob(chisq, df):
     """Returns the (1-tail) probability value associated with the provided
