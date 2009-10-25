@@ -72,6 +72,12 @@ def get_lapack_funcs(names, arrays=()):
                          #     and may cause incorrect results.
                          #     See test_basic.test_solve.check_20Feb04_bug.
 
+    for a in arrays:
+        a = numpy.asarray(a)
+        if a.flags['F_CONTIGUOUS'] and a.flags.aligned:
+            a = numpy.array(a, copy=True, order='F')
+            assert a.flags.aligned
+
     required_prefix, dtype, isfortran = find_best_lapack_type(arrays)
     # Default lookup:
     if isfortran:

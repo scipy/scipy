@@ -14,6 +14,7 @@ Run tests if linalg is not installed:
   python tests/test_decomp.py
 """
 
+import numpy as np
 from numpy.testing import *
 
 from scipy.linalg import eig,eigvals,lu,svd,svdvals,cholesky,qr, \
@@ -1051,6 +1052,18 @@ class TestDataNotShared(TestCase):
         assert_equal(_datanotshared(M,L),True)
         assert_equal(_datanotshared(M,M2),True)
         assert_equal(_datanotshared(A,M2),True)
+
+
+def test_aligned_mem():
+    # Allocate 804 bytes of memory (allocated on boundary)
+    a = arange(804, dtype=np.uint8)
+
+    # Create an array with boundary offset 4
+    z = np.frombuffer(a.data, offset=4, count=100, dtype=float)
+    z.shape = 10, 10
+
+    eig(z, overwrite_a=True)
+    eig(z.T, overwrite_a=True)
 
 
 if __name__ == "__main__":
