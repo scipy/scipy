@@ -64,8 +64,8 @@ def pause():
     raw_input()
 
 def save( ar, fileName ):
-    from scipy.io import write_array
-    write_array( fileName, ar, precision = 8 )
+    from numpy import savetxt
+    savetxt( fileName, ar, precision = 8 )
 
 ##
 # 21.05.2007, c
