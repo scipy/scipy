@@ -429,7 +429,7 @@ def _printresmat(function, interval, resmat):
     print ''
     print '%6s %9s %9s' % ('Steps', 'StepSize', 'Results')
     for i in range(len(resmat)):
-        print '%6d %9f' % (2**i, (interval[1]-interval[0])/(i+1.0)),
+        print '%6d %9f' % (2**i, (interval[1]-interval[0])/(2.**i)),
         for j in range(i+1):
             print '%9f' % (resmat[i][j]),
         print ''
@@ -497,22 +497,21 @@ def romberg(function, a, b, args=(), tol=1.48E-8, show=False,
     Integrate a gaussian from 0,1 and compare to the error function.
 
     >>> from scipy.special import erf
-    >>> gaussian = lambda x: 1/sqrt(pi)* exp(-x**2)
-    >>> result = romberg(gaussian,0,1,show=True)
-    Romberg integration of <function vfunc at 0x82d3924> from [0, 1]
+    >>> gaussian = lambda x: 1/np.sqrt(np.pi) * np.exp(-x**2)
+    >>> result = romberg(gaussian, 0, 1, show=True)
+    Romberg integration of <function vfunc at 0x101eceaa0> from [0, 1]
 
     ::
 
        Steps  StepSize  Results
            1  1.000000  0.385872
            2  0.500000  0.412631  0.421551
-           4  0.333333  0.419184  0.421368  0.421356
-           8  0.250000  0.420810  0.421352  0.421350  0.421350
-          16  0.200000  0.421215  0.421350  0.421350  0.421350  0.421350
-          32  0.166667  0.421317  0.421350  0.421350  0.421350  0.421350  0.421350
+           4  0.250000  0.419184  0.421368  0.421356
+           8  0.125000  0.420810  0.421352  0.421350  0.421350
+          16  0.062500  0.421215  0.421350  0.421350  0.421350  0.421350
+          32  0.031250  0.421317  0.421350  0.421350  0.421350  0.421350  0.421350
 
     The final result is 0.421350396475 after 33 function evaluations.
-    0.42135039647475386
 
     >>> print 2*result,erf(1)
     0.84270079295 0.84270079295
