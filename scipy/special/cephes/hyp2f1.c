@@ -67,7 +67,7 @@
  * Copyright 1984, 1987, 1992, 2000 by Stephen L. Moshier
  */
 
-
+#include <stdlib.h>
 #include "mconf.h"
 
 #ifdef DEC
@@ -96,6 +96,7 @@ extern double MACHEP;
 
 static double hyt2f1(double a, double b, double c, double x, double *loss);
 static double hys2f1(double a, double b, double c, double x, double *loss);
+static double hyp2f1ra(double a, double b, double c, double x, double* loss);
 
 double hyp2f1(a, b, c, x)
 double a, b, c, x;
@@ -120,6 +121,10 @@ double a, b, c, x;
 
     d = c - a - b;
     id = round(d);
+
+    if ((a == 0 || b == 0) && c != 0) {
+        return 1.0;
+    }
 
     if (a <= 0 && fabs(a - ia) < EPS) { /* a is a negative integer */
         neg_int_a = 1;
@@ -318,7 +323,7 @@ double *loss;
     d = c - a - b;
     id = round(d);              /* nearest integer to d */
 
-    if (x > 0.9) {
+    if (x > 0.9 && !(neg_int_a || neg_int_b)) {
         if (fabs(d - id) > EPS) {
             /* test for integer c-a-b */
             /* Try the power series first */
@@ -340,7 +345,7 @@ double *loss;
 
             y *= gamma(c);
             goto done;
-        } else if (!neg_int_a && !neg_int_b) {
+        } else {
             /* Psi function expansion, AMS55 #15.3.10, #15.3.11, #15.3.12
              *
              * Although AMS55 does not explicitly state it, this expansion fails
@@ -438,8 +443,41 @@ static double hys2f1(a, b, c, x, loss)
 double a, b, c, x;
 double *loss;                   /* estimates loss of significance */
 {
-    double f, g, h, k, m, s, u, umax;
+    double f, g, h, k, m, s, u, umax, t;
     int i;
+    int ia, ib, intflag;
+
+    ia = round(a);
+    ib = round(b);
+
+    if (fabs(b) > fabs(a)) {
+        /* Ensure that |a| > |b| ... */
+        f = b;
+        b = a;
+        a = f;
+    }
+
+    if (fabs(a-ia) < EPS && ia <= 0 && fabs(a) < fabs(b)) {
+        /* .. except when `a` is a smaller negative integer */
+        f = b;
+        b = a;
+        a = f;
+    }
+
+    if (fabs(b-ib) < EPS && ib <= 0 && fabs(b) < fabs(a)) {
+        /* .. or `b` is a smaller negative integer */
+        f = b;
+        b = a;
+        a = f;
+    }
+
+    if (fabs(a) > fabs(c) + 1 && fabs(c-a) > 2 && fabs(a) > 2) {
+        /* |a| >> |c| implies that large cancellation error is to be expected.
+         *
+         * We try to reduce it with the recurrence relations
+         */
+        return hyp2f1ra(a, b, c, x, loss);
+    }
 
     i = 0;
     umax = 0.0;
@@ -472,4 +510,62 @@ double *loss;                   /* estimates loss of significance */
     *loss = (MACHEP * umax) / fabs(s) + (MACHEP * i);
 
     return (s);
+}
+
+
+/*
+ * Evaluate hypergeometric function by two-term recurrence in `a`.
+ *
+ * This avoids some of the loss of precision in the strongly alternating
+ * hypergeometric series, and can be used to reduce the `a` and `b` parameters
+ * to smaller values.
+ *
+ * AMS55 #15.2.10
+ */
+static double hyp2f1ra(double a, double b, double c, double x,
+                       double* loss)
+{
+    double f2, f1, f0;
+    int n, m, da;
+    double t, err;
+
+    /* Don't cross c or zero */
+    if (a < 0 && c < 0 || a >= 0 && c >= 0) {
+        da = round(a - c);
+    } else {
+        da = round(a);
+    }
+    t = a - da;
+
+    *loss = 0;
+
+    assert(da != 0);
+
+    if (da < 0) {
+        /* Recurse down */
+        f2 = 0;
+        f1 = hys2f1(t, b, c, x, &err); *loss += err;
+        f0 = hys2f1(t-1, b, c, x, &err); *loss += err;
+        t -= 1;
+        for (n = 1; n < -da; ++n) {
+            f2 = f1;
+            f1 = f0;
+            f0 = -(2*t-c-t*x+b*x)/(c-t)*f1 - t*(x-1)/(c-t)*f2;
+            t -= 1;
+        }
+    } else {
+        /* Recurse up */
+        f2 = 0;
+        f1 = hys2f1(t, b, c, x, &err); *loss += err;
+        f0 = hys2f1(t+1, b, c, x, &err); *loss += err;
+        t += 1;
+        for (n = 1; n < da; ++n) {
+            f2 = f1;
+            f1 = f0;
+            f0 = -((2*t-c-t*x+b*x)*f1 + (c-t)*f2)/(t*(x-1));
+            t += 1;
+        }
+    }
+
+    return f0;
 }
