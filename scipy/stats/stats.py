@@ -1266,49 +1266,70 @@ def histogram2(a, bins):
     return n[ 1:]-n[:-1]
 
 
-
-
-def histogram(a, numbins=10, defaultlimits=None, printextras=True):
-    # fixme: use numpy.histogram() to implement
+def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False):
     """
-Returns (i) an array of histogram bin counts, (ii) the smallest value
-of the histogram binning, and (iii) the bin width (the last 2 are not
-necessarily integers).  Default number of bins is 10.  Defaultlimits
-can be None (the routine picks bins spanning all the numbers in the
-a) or a 2-sequence (lowerlimit, upperlimit).  Returns all of the
-following: array of bin values, lowerreallimit, binsize, extrapoints.
+    Separates the range into several bins and returns the number of instances of a
+    in each bin. This histogram is based on numpy's histogram but has a larger
+    range by default if defaultlimits is not set.
 
-Returns: (array of bin counts, bin-minimum, min-width, #-points-outside-range)
-"""
+    Parameters
+    ----------
+    a: array like
+        Array of scores which will be put into bins.
+    numbins: integer, optional
+        The number of bins to use for the histogram. Default is 10.
+    defaultlimits: tuple (lower, upper), optional
+        The lower and upper values for the range of the histogram.
+        If no value is given, a range slightly larger then the range of the values
+        in a is used. Specifically (a.min() - s, a.max() + s),
+            where s is (1/2)(a.max() - a.min()) / (numbins - 1)
+    weights: array like, same length as a, optional
+        The weights for each value in a. Default is None, which gives each value a
+        weight of 1.0
+    printextras: boolean, optional
+        If True, the number of extra points is printed to standard output. Default is False
+
+    Returns
+    -------
+    histogram: array
+        Number of points (or sum of weights) in each bin
+    low_range: float
+        Lowest value of histogram, the lower limit of the first bin.
+    binsize: float
+        The size of the bins (all bins have the same size).
+    extrapoints: integer
+        The number of points outside the range of the histogram
+
+    See Also
+    --------
+    numpy.histogram
+    """
     a = np.ravel(a)               # flatten any >1D arrays
-    if (defaultlimits is not None):
-        lowerreallimit = defaultlimits[0]
-        upperreallimit = defaultlimits[1]
-        binsize = (upperreallimit-lowerreallimit) / float(numbins)
-    else:
-        Min = a.min()
-        Max = a.max()
-        estbinwidth = float(Max - Min)/float(numbins - 1)
-        binsize = (Max-Min+estbinwidth)/float(numbins)
-        lowerreallimit = Min - binsize/2.0  #lower real limit,1st bin
-    bins = zeros(numbins)
-    extrapoints = 0
-    for num in a:
-        try:
-            if (num-lowerreallimit) < 0:
-                extrapoints += 1
-            else:
-                bintoincrement = int((num-lowerreallimit) / float(binsize))
-                bins[bintoincrement] = bins[bintoincrement] + 1
-        except:                           # point outside lower/upper limits
-            extrapoints += 1
+    if defaultlimits is None:
+        # no range given, so use values in a
+        data_min = a.min()
+        data_max = a.max()
+        # Have bins extend past min and max values slightly
+        s = (data_max - data_min) / (2. * (numbins - 1.))
+        defaultlimits = (data_min - s, data_max + s)
+    # use numpy's histogram method to compute bins
+    hist, bin_edges = np.histogram(a, bins=numbins, range=defaultlimits,
+                                   weights=weights, new=True)
+    # hist are not always floats, convert to keep with old output
+    hist = np.array(hist, dtype=float)
+    # fixed width for bins is assumed, as numpy's histogram gives
+    # fixed width bins for int values for 'bins'
+    binsize = bin_edges[1] - bin_edges[0]
+    # calculate number of extra points
+    extrapoints = len([v for v in a
+                       if defaultlimits[0] > v or v > defaultlimits[1]])
     if extrapoints > 0 and printextras:
         # fixme: warnings.warn()
         print '\nPoints outside given histogram range =',extrapoints
-    return (bins, lowerreallimit, binsize, extrapoints)
+    return (hist, defaultlimits[0], binsize, extrapoints) 
 
 
-def cumfreq(a, numbins=10, defaultreallimits=None):
+def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """
 Returns a cumulative frequency histogram, using the histogram function.
 Defaultreallimits can be None (use all data), or a 2-sequence containing
@@ -1316,12 +1337,12 @@ lower and upper limits on values to include.
 
 Returns: array of cumfreq bin values, lowerreallimit, binsize, extrapoints
 """
-    h,l,b,e = histogram(a,numbins,defaultreallimits)
+    h,l,b,e = histogram(a, numbins, defaultreallimits, weights=weights)
     cumhist = np.cumsum(h*1, axis=0)
     return cumhist,l,b,e
 
 
-def relfreq(a, numbins=10, defaultreallimits=None):
+def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """
 Returns a relative frequency histogram, using the histogram function.
 Defaultreallimits can be None (use all data), or a 2-sequence containing
@@ -1329,7 +1350,7 @@ lower and upper limits on values to include.
 
 Returns: array of cumfreq bin values, lowerreallimit, binsize, extrapoints
 """
-    h,l,b,e = histogram(a,numbins,defaultreallimits)
+    h,l,b,e = histogram(a,numbins,defaultreallimits, weights=weights)
     h = array(h/float(a.shape[0]))
     return h,l,b,e
 
@@ -1393,7 +1414,6 @@ def samplevar(a, axis=0):
     n = a.shape[axis]
     svar = ss(deviations,axis) / float(n)
     return svar
-
 
 def samplestd(a, axis=0):
     """Returns the sample standard deviation of the values in the passed
