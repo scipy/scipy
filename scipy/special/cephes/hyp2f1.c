@@ -447,9 +447,6 @@ double *loss;                   /* estimates loss of significance */
     int i;
     int ia, ib, intflag;
 
-    ia = round(a);
-    ib = round(b);
-
     if (fabs(b) > fabs(a)) {
         /* Ensure that |a| > |b| ... */
         f = b;
@@ -457,15 +454,11 @@ double *loss;                   /* estimates loss of significance */
         a = f;
     }
 
-    if (fabs(a-ia) < EPS && ia <= 0 && fabs(a) < fabs(b)) {
-        /* .. except when `a` is a smaller negative integer */
-        f = b;
-        b = a;
-        a = f;
-    }
+    ia = round(a);
+    ib = round(b);
 
     if (fabs(b-ib) < EPS && ib <= 0 && fabs(b) < fabs(a)) {
-        /* .. or `b` is a smaller negative integer */
+        /* .. except when `b` is a smaller negative integer */
         f = b;
         b = a;
         a = f;
