@@ -1375,12 +1375,18 @@ Returns: transformed data for use in an ANOVA
         return array(nargs)
 
 
+@np.lib.deprecate(message="""
+scipy.stats.samplevar is deprecated; please update your code to use
+numpy.var.
+
+Please note that `numpy.var` axis argument defaults to None, not 0.
+""")
 def samplevar(a, axis=0):
     """
-Returns the sample standard deviation of the values in the passed
-array (i.e., using N).  Axis can equal None (ravel array first),
-an integer (the axis over which to operate)
-"""
+    Returns the sample standard deviation of the values in the passed
+    array (i.e., using N).  Axis can equal None (ravel array first),
+    an integer (the axis over which to operate)
+    """
     a, axis = _chk_asarray(a, axis)
     mn = np.expand_dims(np.mean(a, axis), axis)
     deviations = a - mn
