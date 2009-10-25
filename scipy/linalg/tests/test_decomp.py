@@ -1055,11 +1055,24 @@ class TestDataNotShared(TestCase):
 
 
 def test_aligned_mem():
+    """Check linalg works with non-aligned memory"""
     # Allocate 804 bytes of memory (allocated on boundary)
     a = arange(804, dtype=np.uint8)
 
     # Create an array with boundary offset 4
     z = np.frombuffer(a.data, offset=4, count=100, dtype=float)
+    z.shape = 10, 10
+
+    eig(z, overwrite_a=True)
+    eig(z.T, overwrite_a=True)
+
+def test_aligned_mem_complex():
+    """Check that complex objects don't need to be completely aligned"""
+    # Allocate 1608 bytes of memory (allocated on boundary)
+    a = zeros(1608, dtype=np.uint8)
+
+    # Create an array with boundary offset 8
+    z = np.frombuffer(a.data, offset=8, count=100, dtype=complex)
     z.shape = 10, 10
 
     eig(z, overwrite_a=True)

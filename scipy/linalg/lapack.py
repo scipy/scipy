@@ -72,13 +72,14 @@ def get_lapack_funcs(names, arrays=()):
                          #     and may cause incorrect results.
                          #     See test_basic.test_solve.check_20Feb04_bug.
 
-    for (i,a) in enumerate(arrays):
+    for a in arrays:
         a = numpy.asarray(a)
-        if a.flags['F_CONTIGUOUS'] and not a.flags.aligned:
-            a = numpy.array(a, copy=True, order='F')
-            assert a.flags.aligned
-            arrays[i] = a
-
+        if numpy.iscomplexobj(a):
+            f = 2
+        else:
+            f = 1
+        if a.flags.f_contiguous and a.ctypes.data % (a.dtype.itemsize//f) != 0:
+            raise ValueError("Non-aligned array cannot be passed to LAPACK without copying")
     required_prefix, dtype, isfortran = find_best_lapack_type(arrays)
     # Default lookup:
     if isfortran:
@@ -113,6 +114,8 @@ def get_lapack_funcs(names, arrays=()):
         func.dtype = dtype
         funcs.append(func)
     return tuple(funcs)
+
+
 
 _colmajor_func_template = '''\
 def %(func_name)s(*args,**kws):
