@@ -289,6 +289,19 @@ double p, q, r, s, t, y, d, err, err1;
 double ax, id, d1, d2, e, y1;
 int i, aid;
 
+int ia, ib, neg_int_a = 0, neg_int_b = 0;
+
+ia = round(a);
+ib = round(b);
+
+if (a <= 0 && fabs(a-ia) < EPS ) {	/* a is a negative integer */
+    neg_int_a = 1;
+}
+
+if (b <= 0 && fabs(b-ib) < EPS ) {	/* b is a negative integer */
+    neg_int_b = 1;
+}
+
 err = 0.0;
 s = 1.0 - x;
 if( x < -0.5 )
@@ -329,9 +342,15 @@ if( fabs(d-id) > EPS ) /* test for integer c-a-b */
 	y *= gamma(c);
 	goto done;
 	}
-else
+else if (!neg_int_a && !neg_int_b)
 	{
-/* Psi function expansion, AMS55 #15.3.10, #15.3.11, #15.3.12 */
+/* Psi function expansion, AMS55 #15.3.10, #15.3.11, #15.3.12
+ *
+ * Although AMS55 does not explicitly state it, this expansion fails for
+ * negative integer a or b, since the psi and Gamma functions involved
+ * have poles.
+ */
+
 	if( id >= 0.0 )
 		{
 		e = d;

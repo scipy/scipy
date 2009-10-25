@@ -1320,6 +1320,11 @@ class TestHyper(TestCase):
                   # and some others
                   # ticket #424
                   [1.5, -0.5, 1.0, -10.0, 4.1300097765277476484],
+                  # negative integer a or b, with c-a-b integer and x > 0.9
+                  [-2,3,1,0.95,0.715],
+                  [2,-3,1,0.95,-0.007],
+                  [-6,3,1,0.95,0.0000810625],
+                  [2,-5,1,0.95,-0.000029375],
                   ]
         for i, (a, b, c, x, v) in enumerate(values):
             cv = hyp2f1(a, b, c, x)
