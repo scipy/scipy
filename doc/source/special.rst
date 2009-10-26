@@ -293,24 +293,33 @@ These are not universal functions:
 Orthogonal polynomials
 ----------------------
 
-These functions all return a polynomial class which can then be
-evaluated: ``vals = chebyt(n)(x)``.
+The following functions evaluate values of orthogonal polynomials:
 
-The class also has an attribute 'weights' which return the roots,
-weights, and total weights for the appropriate form of Gaussian
-quadrature.  These are returned in an n x 3 array with roots in
-the first column, weights in the second column, and total weights
-in the final column.
+.. autosummary::
+   :toctree: generated/
 
-.. warning::
+   eval_legendre
+   eval_chebyt
+   eval_chebyu
+   eval_chebyc
+   eval_chebys
+   eval_jacobi
+   eval_laguerre
+   eval_genlaguerre
+   eval_hermite
+   eval_hermitenorm
+   eval_gegenbauer
+   eval_sh_legendre
+   eval_sh_chebyt
+   eval_sh_chebyu
+   eval_sh_jacobi
 
-   Evaluating large-order polynomials using these functions can be
-   numerically unstable.
-
-   The reason is that the functions below return polynomials as
-   `numpy.poly1d` objects, which represent the polynomial in terms
-   of their coefficients, and this can result to loss of precision
-   when the polynomial terms are summed.
+The functions below, in turn, return :ref:`orthopoly1d` objects, which
+functions similarly as :ref:`numpy.poly1d`.  The :ref:`orthopoly1d`
+class also has an attribute ``weights`` which returns the roots, weights,
+and total weights for the appropriate form of Gaussian quadrature.
+These are returned in an ``n x 3`` array with roots in the first column,
+weights in the second column, and total weights in the final column.
 
 .. autosummary::
    :toctree: generated/
@@ -330,6 +339,17 @@ in the final column.
    sh_chebyt
    sh_chebyu
    sh_jacobi
+
+.. warning::
+
+   Large-order polynomials obtained from these functions
+   are numerically unstable.
+
+   ``orthopoly1d`` objects are converted to ``poly1d``, when doing
+   arithmetic.  ``numpy.poly1d`` works in power basis and cannot
+   represent high-order polynomials accurately, which can cause
+   significant inaccuracy.
+
 
 Hypergeometric Functions
 ------------------------

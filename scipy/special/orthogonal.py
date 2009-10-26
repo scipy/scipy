@@ -90,6 +90,15 @@ from numpy.dual import eig
 import _cephes as cephes
 _gam = cephes.gamma
 
+__all__ = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',
+           'jacobi', 'laguerre', 'genlaguerre', 'hermite', 'hermitenorm',
+           'gegenbauer', 'sh_legendre', 'sh_chebyt', 'sh_chebyu', 'sh_jacobi',
+           'eval_legendre', 'eval_chebyt', 'eval_chebyu', 'eval_chebyc',
+           'eval_chebys', 'eval_jacobi', 'eval_laguerre', 'eval_genlaguerre',
+           'eval_hermite', 'eval_hermitenorm', 'eval_gegenbauer',
+           'eval_sh_legendre', 'eval_sh_chebyt', 'eval_sh_chebyu',
+           'eval_sh_jacobi', 'poch', 'binom']
+
 def poch(z,m):
     """Pochhammer symbol (z)_m = (z)(z+1)....(z+m-1) = gamma(z+m)/gamma(z)"""
     return _gam(z+m) / _gam(z)
@@ -602,3 +611,12 @@ def sh_legendre(n,monic=0):
     kn = _gam(2*n+1)/_gam(n+1)**2
     p = orthopoly1d(x,w,hn,kn,wfunc,limits=(0,1),monic=monic)
     return p
+
+#------------------------------------------------------------------------------
+# Vectorized functions for evaluation
+#------------------------------------------------------------------------------
+from orthogonal_eval import \
+     binom, eval_jacobi, eval_sh_jacobi, eval_gegenbauer, eval_chebyt, \
+     eval_chebyu, eval_chebys, eval_chebyc, eval_sh_chebyt, eval_sh_chebyu, \
+     eval_legendre, eval_sh_legendre, eval_genlaguerre, eval_laguerre, \
+     eval_hermite, eval_hermitenorm

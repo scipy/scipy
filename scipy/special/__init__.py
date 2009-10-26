@@ -8,9 +8,7 @@ from info import __doc__, __docformat__
 from basic import *
 import specfun
 import orthogonal
-from orthogonal import legendre, chebyt, chebyu, chebyc, chebys, \
-     jacobi, laguerre, genlaguerre, hermite, hermitenorm, gegenbauer, \
-     sh_legendre, sh_chebyt, sh_chebyu, sh_jacobi, poch
+from orthogonal import *
 from spfun_stats import multigammaln
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
