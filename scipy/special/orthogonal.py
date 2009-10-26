@@ -104,7 +104,7 @@ def poch(z,m):
     return _gam(z+m) / _gam(z)
 
 class orthopoly1d(np.poly1d):
-    def __init__(self, roots, weights=None, hn=1.0, kn=1.0, wfunc=None, limits=None, monic=0):
+    def __init__(self, roots, weights=None, hn=1.0, kn=1.0, wfunc=None, limits=None, monic=0,eval_func=None):
         np.poly1d.__init__(self, roots, r=1)
         equiv_weights = [weights[k] / wfunc(roots[k]) for k in range(len(roots))]
         self.__dict__['weights'] = np.array(zip(roots,weights,equiv_weights))
@@ -112,11 +112,29 @@ class orthopoly1d(np.poly1d):
         self.__dict__['limits'] = limits
         mu = sqrt(hn)
         if monic:
+            evf = eval_func
+            eval_func = lambda x: evf(x)/kn
             mu = mu / abs(kn)
             kn = 1.0
         self.__dict__['normcoef'] = mu
         self.__dict__['coeffs'] *= kn
 
+        # Note: eval_func will be discarded on arithmetic
+        self.__dict__['_eval_func'] = eval_func
+
+    def __call__(self, v):
+        if self._eval_func and (isinstance(v, np.ndarray) or np.isscalar(v)):
+            return self._eval_func(v)
+        else:
+            return np.poly1d.__call__(self, v)
+
+    def _scale(self, p):
+        if p == 1.0:
+            return
+        self.__dict__['coeffs'] *= p
+        evf = self.__dict__['_eval_func']
+        self.__dict__['_eval_func'] = lambda x: evf(x) * p
+        self.__dict__['normcoef'] *= p
 
 def gen_roots_and_weights(n,an_func,sqrt_bn_func,mu):
     """[x,w] = gen_roots_and_weights(n,an_func,sqrt_bn_func,mu)
@@ -181,14 +199,16 @@ def jacobi(n,alpha,beta,monic=0):
     assert(n>=0), "n must be nonnegative"
     wfunc = lambda x: (1-x)**alpha * (1+x)**beta
     if n==0:
-        return orthopoly1d([],[],1.0,1.0,wfunc,(-1,1),monic)
+        return orthopoly1d([],[],1.0,1.0,wfunc,(-1,1),monic,
+                           lambda x: eval_jacobi(n,alpha,beta,x))
     x,w,mu = j_roots(n,alpha,beta,mu=1)
     ab1 = alpha+beta+1.0
     hn = 2**ab1/(2*n+ab1)*_gam(n+alpha+1)
     hn *= _gam(n+beta+1.0) / _gam(n+1) / _gam(n+ab1)
     kn = _gam(2*n+ab1)/2.0**n / _gam(n+1) / _gam(n+ab1)
     # here kn = coefficient on x^n term
-    p = orthopoly1d(x,w,hn,kn,wfunc,(-1,1),monic)
+    p = orthopoly1d(x,w,hn,kn,wfunc,(-1,1),monic,
+                    lambda x: eval_jacobi(n,alpha,beta,x))
     return p
 
 # Jacobi Polynomials shifted         G_n(p,q,x)
@@ -286,7 +306,8 @@ def genlaguerre(n,alpha,monic=0):
     if n==0: x,w = [],[]
     hn = _gam(n+alpha+1)/_gam(n+1)
     kn = (-1)**n / _gam(n+1)
-    p = orthopoly1d(x,w,hn,kn,wfunc,(0,inf),monic)
+    p = orthopoly1d(x,w,hn,kn,wfunc,(0,inf),monic,
+                    lambda x: eval_genlaguerre(n,alpha,x))
     return p
 
 # Laguerre                      L_n(x)
@@ -310,7 +331,8 @@ def laguerre(n,monic=0):
     if n==0: x,w = [],[]
     hn = 1.0
     kn = (-1)**n / _gam(n+1)
-    p = orthopoly1d(x,w,hn,kn,lambda x: exp(-x),(0,inf),monic)
+    p = orthopoly1d(x,w,hn,kn,lambda x: exp(-x),(0,inf),monic,
+                    lambda x: eval_laguerre(n,x))
     return p
 
 
@@ -344,7 +366,8 @@ def hermite(n,monic=0):
     if n==0: x,w = [],[]
     hn = 2**n * _gam(n+1)*sqrt(pi)
     kn = 2**n
-    p = orthopoly1d(x,w,hn,kn,wfunc,(-inf,inf),monic)
+    p = orthopoly1d(x,w,hn,kn,wfunc,(-inf,inf),monic,
+                    lambda x: eval_hermite(n,x))
     return p
 
 # Hermite  2                         He_n(x)
@@ -377,7 +400,8 @@ def hermitenorm(n,monic=0):
     if n==0: x,w = [],[]
     hn = sqrt(2*pi)*_gam(n+1)
     kn = 1.0
-    p = orthopoly1d(x,w,hn,kn,wfunc=wfunc,limits=(-inf,inf),monic=monic)
+    p = orthopoly1d(x,w,hn,kn,wfunc=wfunc,limits=(-inf,inf),monic=monic,
+                    eval_func=eval_hermitenorm)
     return p
 
 ## The remainder of the polynomials can be derived from the ones above.
@@ -402,7 +426,8 @@ def gegenbauer(n,alpha,monic=0):
         return base
     #  Abrahmowitz and Stegan 22.5.20
     factor = _gam(2*alpha+n)*_gam(alpha+0.5) / _gam(2*alpha) / _gam(alpha+0.5+n)
-    return base * factor
+    base._scale(factor)
+    return base
 
 # Chebyshev of the first kind: T_n(x)  = n! sqrt(pi) / _gam(n+1./2)* P^(-1/2,-1/2)_n(x)
 #  Computed anew.
@@ -432,12 +457,14 @@ def chebyt(n,monic=0):
     assert(n>=0), "n must be nonnegative"
     wfunc = lambda x: 1.0/sqrt(1-x*x)
     if n==0:
-        return orthopoly1d([],[],pi,1.0,wfunc,(-1,1),monic)
+        return orthopoly1d([],[],pi,1.0,wfunc,(-1,1),monic,
+                           lambda x: eval_chebyt(n,x))
     n1 = n
     x,w,mu = t_roots(n1,mu=1)
     hn = pi/2
     kn = 2**(n-1)
-    p = orthopoly1d(x,w,hn,kn,wfunc,(-1,1),monic)
+    p = orthopoly1d(x,w,hn,kn,wfunc,(-1,1),monic,
+                    lambda x: eval_chebyt(n,x))
     return p
 
 # Chebyshev of the second kind
@@ -459,7 +486,8 @@ def chebyu(n,monic=0):
     if monic:
         return base
     factor = sqrt(pi)/2.0*_gam(n+2) / _gam(n+1.5)
-    return base * factor
+    base._scale(factor)
+    return base
 
 # Chebyshev of the first kind        C_n(x)
 def c_roots(n,mu=0):
@@ -489,7 +517,7 @@ def chebyc(n,monic=0):
     kn = 1.0
     p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: 1.0/sqrt(1-x*x/4.0),limits=(-2,2),monic=monic)
     if not monic:
-        p = p * 2.0/p(2)
+        p._scale(2.0/p(2))
     return p
 
 # Chebyshev of the second kind       S_n(x)
@@ -518,9 +546,11 @@ def chebys(n,monic=0):
     if n==0: x,w = [],[]
     hn = pi
     kn = 1.0
-    p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: sqrt(1-x*x/4.0),limits=(-2,2),monic=monic)
+    p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: sqrt(1-x*x/4.0),limits=(-2,2),monic=monic,
+                    eval_func=lambda x: eval_chebys(n,x))
     if not monic:
-        p = p * (n+1.0)/p(2)
+        factor = (n+1.0)/p(2)
+        p._scale(factor)
     return p
 
 # Shifted Chebyshev of the first kind     T^*_n(x)
@@ -538,12 +568,14 @@ def sh_chebyt(n,monic=0):
     Orthogonal over [0,1] with weight function (x-x**2)**(-1/2).
     """
     base = sh_jacobi(n,0.0,0.5,monic=monic)
-    if monic: return base
+    if monic:
+        return base
     if n > 0:
         factor = 4**n / 2.0
     else:
         factor = 1.0
-    return base * factor
+    base._scale(factor)
+    return base
 
 
 # Shifted Chebyshev of the second kind    U^*_n(x)
@@ -563,7 +595,8 @@ def sh_chebyu(n,monic=0):
     base = sh_jacobi(n,2.0,1.5,monic=monic)
     if monic: return base
     factor = 4**n
-    return base * factor
+    base._scale(factor)
+    return base
 
 # Legendre
 def p_roots(n,mu=0):
@@ -586,7 +619,8 @@ def legendre(n,monic=0):
     if n==0: x,w = [],[]
     hn = 2.0/(2*n+1)
     kn = _gam(2*n+1)/_gam(n+1)**2 / 2.0**n
-    p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: 1.0,limits=(-1,1),monic=monic)
+    p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: 1.0,limits=(-1,1),monic=monic,
+                    eval_func=lambda x: eval_legendre(n,x))
     return p
 
 # Shifted Legendre              P^*_n(x)
@@ -605,11 +639,13 @@ def sh_legendre(n,monic=0):
     """
     assert(n>=0), "n must be nonnegative"
     wfunc = lambda x: 0.0*x + 1.0
-    if n==0: return orthopoly1d([],[],1.0,1.0,wfunc,(0,1),monic)
+    if n==0: return orthopoly1d([],[],1.0,1.0,wfunc,(0,1),monic,
+                                lambda x: eval_sh_legendre(n,x))
     x,w,mu0 = ps_roots(n,mu=1)
     hn = 1.0/(2*n+1.0)
     kn = _gam(2*n+1)/_gam(n+1)**2
-    p = orthopoly1d(x,w,hn,kn,wfunc,limits=(0,1),monic=monic)
+    p = orthopoly1d(x,w,hn,kn,wfunc,limits=(0,1),monic=monic,
+                    eval_func=lambda x: eval_sh_legendre(n,x))
     return p
 
 #------------------------------------------------------------------------------
