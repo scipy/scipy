@@ -8,6 +8,7 @@ from numpy import *
 from _cephes import *
 import types
 import specfun
+import orthogonal
 
 def sinc(x):
     """Returns sin(pi*x)/(pi*x) at all points of array x.
@@ -410,9 +411,7 @@ def hyp0f1(v,z):
     return where(z==0,1.0,num/ asarray(den))
 
 def assoc_laguerre(x,n,k=0.0):
-    gam = gamma
-    fac = gam(k+1+n)/gam(k+1)/gam(n+1)
-    return fac*hyp1f1(-n,k+1,x)
+    return orthogonal.eval_genlaguerre(n, k, x)
 
 digamma = psi
 
