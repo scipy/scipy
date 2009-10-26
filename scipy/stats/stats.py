@@ -122,8 +122,12 @@ SUPPORT FUNCTIONS:  ss
 
 References
 ----------
-[CRCProbStat2000] Zwillinger, D. and Kokoska, S. _CRC Standard Probablity and
-Statistics Tables and Formulae_. Chapman & Hall: New York. 2000.
+[CRCProbStat2000]_
+
+.. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
+   Probablity and Statistics Tables and Formulae. Chapman & Hall: New
+   York. 2000.
+
 """
 ## CHANGE LOG:
 ## ===========
@@ -442,7 +446,12 @@ def cmedian(a, numbins=1000):
 
     References
     ----------
-    [CRCProbStat2000] Section 2.2.6
+    [CRCProbStat2000]_ Section 2.2.6
+
+    .. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
+       Probablity and Statistics Tables and Formulae. Chapman & Hall: New
+       York. 2000.
+
     """
     a = np.ravel(a)
     n = float(len(a))
@@ -819,7 +828,12 @@ def variation(a, axis=0):
 
     References
     ----------
-    [CRCProbStat2000] section 2.2.20
+    [CRCProbStat2000]_ Section 2.2.20
+
+    .. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
+       Probablity and Statistics Tables and Formulae. Chapman & Hall: New
+       York. 2000.
+
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
@@ -848,7 +862,12 @@ def skew(a, axis=0, bias=True):
 
     References
     ----------
-    [CRCProbStat2000] section 2.2.24.1
+    [CRCProbStat2000]_ Section 2.2.24.1
+
+    .. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
+       Probablity and Statistics Tables and Formulae. Chapman & Hall: New
+       York. 2000.
+
     """
     a, axis = _chk_asarray(a,axis)
     n = a.shape[axis]
@@ -897,7 +916,12 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
 
     References
     ----------
-    [CRCProbStat2000] section 2.2.25
+    [CRCProbStat2000]_ Section  2.2.25
+
+    .. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
+       Probablity and Statistics Tables and Formulae. Chapman & Hall: New
+       York. 2000.
+
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
@@ -1823,7 +1847,11 @@ def spearmanr(x, y):
 
     References
     ----------
-    [CRCProbStat2000] section 14.7
+    [CRCProbStat2000]_ Section  14.7
+
+    .. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
+       Probablity and Statistics Tables and Formulae. Chapman & Hall: New
+       York. 2000.
 
     """
     x = np.asanyarray(x)
