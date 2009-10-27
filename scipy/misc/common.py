@@ -38,16 +38,36 @@ def factorial(n,exact=0):
         return where(n>=0,vals,0)
 
 
-def factorial2(n,exact=0):
-    """n!! = special.gamma(n/2+1)*2**((m+1)/2)/sqrt(pi)  n odd
-           = 2**(n) * n!                                 n even
+def factorial2(n, exact=False):
+    """Double factorial.
 
-    If exact==0, then floating point precision is used, otherwise
-    exact long integer is computed.
+    This is the factorial with every second value is skipped, i.e.,
+    ``7!! = 7 * 5 * 3 * 1``.  It can be approximated numerically as::
 
-    Notes:
-      - Array argument accepted only for exact=0 case.
-      - If n<0, the return value is 0.
+      n!! = special.gamma(n/2+1)*2**((m+1)/2)/sqrt(pi)  n odd
+          = 2**(n/2) * (n/2)!                           n even
+
+    Parameters
+    ----------
+    n : int, array-like
+        Calculate ``n!!``.  Arrays are only supported with `exact` set
+        to False.  If ``n < 0``, the return value is 0.
+    exact : bool, optional
+        The result can be approximated rapidly using the gamma-formula
+        above (default).  If `exact` is set to True, calculate the
+        answer exactly using integer arithmetic.
+
+    Returns
+    -------
+    nff : float or int
+        Double factorial of `n`, as an int or a float depending on
+        `exact`.
+
+    References
+    ----------
+    .. [1] Wikipedia, "Double Factorial",
+           http://en.wikipedia.org/wiki/Factorial#Double_factorial
+
     """
     if exact:
         if n < -1:
