@@ -50,7 +50,7 @@ env.MergeFlags(math_info.libs())
 env.AppendUnique(LIBPATH = ['.'])
 
 # orthogonal_eval extension
-env.NumpyPythonExtension('specfun', source = 'orthogonal_eval.c')
+env.NumpyPythonExtension('orthogonal_eval', source = 'orthogonal_eval.c')
 
 # Cephes extension
 src = ['_cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c', \
