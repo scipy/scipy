@@ -15,14 +15,14 @@ cdef extern from "math.h":
     double sqrt(double num)
 
 cdef extern from "numpy/arrayobject.h":
-    object PyArray_EMPTY(int, int *, int, int)
+    object PyArray_EMPTY(int, np.npy_intp*, int, int)
     cdef enum:
         PyArray_INTP
 
 cdef extern from "numpy/npy_math.h":
     cdef enum:
         NPY_INFINITY
-    
+
 # C types
 ctypedef np.float64_t float64_t
 ctypedef np.float32_t float32_t
@@ -41,7 +41,7 @@ cdef void float_tvq(float32_t *obs, float32_t *code_book,
     # Temporary variables
     cdef float32_t dist, diff
     cdef int32_t obs_index, code_index, feature
-    cdef int32_t offset = 0 
+    cdef int32_t offset = 0
     
     # Index and pointer to keep track of the current position in 
     # both arrays so that we don't have to always do index * nfeat.
