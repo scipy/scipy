@@ -63,7 +63,7 @@ def test_hyp2f1_strange_points():
 
     Data(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
 
-@mpmath_check('0.12')
+@mpmath_check('0.13')
 def test_hyp2f1_real_some_points():
     pts = [
         (1,2,3,0),
