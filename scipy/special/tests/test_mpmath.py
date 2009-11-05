@@ -97,7 +97,7 @@ def test_hyp2f1_some_points_2():
 
     Data(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
 
-@mpmath_check('0.12')
+@mpmath_check('0.13')
 def test_hyp2f1_real_some():
     dataset = []
     for a in [-10, -5, -1.8, 1.8, 5, 10]:
