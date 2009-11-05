@@ -72,8 +72,8 @@
 extern double MACHEP, MAXNUM, PI, EULER;
 
 static double iv_asymptotic(double v, double x);
-void ikv_asymptotic_uniform(double v, double x, double *i, double *k);
-void ikv_temme(double v, double x, double *I, double *K);
+void ikv_asymptotic_uniform(double v, double x, double *Iv, double *Kv);
+void ikv_temme(double v, double x, double *Iv, double *Kv);
 
 double iv(double v, double x)
 {
@@ -523,7 +523,7 @@ enum {
  * Compute I(v, x) and K(v, x) simultaneously by Temme's method, see
  * Temme, Journal of Computational Physics, vol 19, 324 (1975)
  */
-void ikv_temme(double v, double x, double *I, double *K)
+void ikv_temme(double v, double x, double *Iv_p, double *Kv_p)
 {
     /* Kv1 = K_(v+1), fv = I_(v+1) / I_v */
     /* Ku1 = K_(u+1), fu = I_(u+1) / I_u */
@@ -534,10 +534,10 @@ void ikv_temme(double v, double x, double *I, double *K)
     int kind;
 
     kind = 0;
-    if (I != NULL) {
+    if (Iv_p != NULL) {
 	kind |= need_i;
     }
-    if (K != NULL) {
+    if (Kv_p != NULL) {
 	kind |= need_k;
     }
 
@@ -550,8 +550,8 @@ void ikv_temme(double v, double x, double *I, double *K)
     u = v - n;			/* -1/2 <= u < 1/2 */
 
     if (x < 0) {
-        if (I != NULL) *I = NPY_NAN;
-        if (K != NULL) *K = NPY_NAN;
+        if (Iv_p != NULL) *Iv_p = NPY_NAN;
+        if (Kv_p != NULL) *Kv_p = NPY_NAN;
 	mtherr("ikv_temme", DOMAIN);
 	return;
     }
@@ -573,11 +573,11 @@ void ikv_temme(double v, double x, double *I, double *K)
             }
 	}
 
-	if (I != NULL) {
-            *I = Iv;
+	if (Iv_p != NULL) {
+            *Iv_p = Iv;
         }
-	if (K != NULL) {
-            *K = Kv;
+	if (Kv_p != NULL) {
+            *Kv_p = Kv;
         }
 	return;
     }
@@ -624,18 +624,18 @@ void ikv_temme(double v, double x, double *I, double *K)
 
     if (reflect) {
 	double z = (u + n % 2);
-	if (I != NULL) {
-            *I = Iv + (2 / PI) * sin(PI * z) * Kv;	/* reflection formula */
+	if (Iv_p != NULL) {
+            *Iv_p = Iv + (2 / PI) * sin(PI * z) * Kv;	/* reflection formula */
         }
-	if (K != NULL) {
-            *K = Kv;
+	if (Kv_p != NULL) {
+            *Kv_p = Kv;
         }
     } else {
-	if (I != NULL) {
-            *I = Iv;
+	if (Iv_p != NULL) {
+            *Iv_p = Iv;
         }
-	if (K != NULL) {
-            *K = Kv;
+	if (Kv_p != NULL) {
+            *Kv_p = Kv;
         }
     }
     return;
