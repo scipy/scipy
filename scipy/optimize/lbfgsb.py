@@ -132,7 +132,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
         fminbound, brent, golden, bracket -- local scalar minimizers
 
-        fsolve -- n-dimenstional root-finding
+        fsolve -- n-dimensional root-finding
 
         brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
 

@@ -84,7 +84,7 @@ def bisect(f, a, b, args=(),
     --------
         brentq, brenth, bisect, newton : one-dimensional root-finding
         fixed_point : scalar fixed-point finder
-        fsolve -- n-dimenstional root-finding
+        fsolve -- n-dimensional root-finding
 
     """
     if type(args) != type(()) :
@@ -233,7 +233,7 @@ def brentq(f, a, b, args=(),
       `anneal`, `brute`
     local scalar minimizers
       `fminbound`, `brent`, `golden`, `bracket`
-    n-dimenstional root-finding
+    n-dimensional root-finding
       `fsolve`
     one-dimensional root-finding
       `brentq`, `brenth`, `ridder`, `bisect`, `newton`
@@ -323,7 +323,7 @@ def brenth(f, a, b, args=(),
 
       fminbound, brent, golden, bracket -- local scalar minimizers
 
-      fsolve -- n-dimenstional root-finding
+      fsolve -- n-dimensional root-finding
 
       brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
 

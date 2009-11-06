@@ -211,7 +211,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
 
       fminbound, brent, golden, bracket -- local scalar minimizers
 
-      fsolve -- n-dimenstional root-finding
+      fsolve -- n-dimensional root-finding
 
       brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
 

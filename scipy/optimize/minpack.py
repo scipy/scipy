@@ -208,7 +208,7 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
              None if a singular matrix encountered (indicates
              very flat curvature in some direction).  This
              matrix must be multiplied by the residual standard
-             deviation to get the covariance of the parameter 
+             deviation to get the covariance of the parameter
              estimates --- see curve_fit.
     infodict -- a dictionary of optional outputs with the keys:
                 'nfev' : the number of function calls
@@ -269,13 +269,13 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
 
       fminbound, brent, golden, bracket -- local scalar minimizers
 
-      fsolve -- n-dimenstional root-finding
+      fsolve -- n-dimensional root-finding
 
       brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
 
       fixed_point -- scalar and vector fixed-point finder
 
-      curve_fit -- find parameters for a curve-fitting problem. 
+      curve_fit -- find parameters for a curve-fitting problem.
 
     """
     x0 = array(x0,ndmin=1)
@@ -415,9 +415,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
     else:
         func = _weighted_general_function
         args += (1.0/asarray(sigma),)
-    popt, pcov, infodict, mesg, ier = leastsq(func, p0, args=args, 
+    popt, pcov, infodict, mesg, ier = leastsq(func, p0, args=args,
                                               full_output=1, **kw)
-    
+
     if ier != 1:
         raise RuntimeError, "Optimal parameters not found: " + mesg
 
@@ -426,7 +426,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
         pcov = pcov * s_sq
     else:
         pcov = inf
-        
+
     return popt, pcov
 
 def check_gradient(fcn,Dfcn,x0,args=(),col_deriv=0):
@@ -459,7 +459,7 @@ def check_gradient(fcn,Dfcn,x0,args=(),col_deriv=0):
     return (good,err)
 
 
-# Netwon-Raphson method
+# Newton-Raphson method
 def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
     """Given a function of a single variable and a starting point,
     find a nearby zero using Newton-Raphson.
@@ -480,7 +480,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
 
       fminbound, brent, golden, bracket -- local scalar minimizers
 
-      fsolve -- n-dimenstional root-finding
+      fsolve -- n-dimensional root-finding
 
       brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
 
@@ -556,7 +556,7 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
 
       fminbound, brent, golden, bracket -- local scalar minimizers
 
-      fsolve -- n-dimenstional root-finding
+      fsolve -- n-dimensional root-finding
 
       brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
 
@@ -610,7 +610,7 @@ def bisection(func, a, b, args=(), xtol=1e-10, maxiter=400):
 
       fminbound, brent, golden, bracket -- local scalar minimizers
 
-      fsolve -- n-dimenstional root-finding
+      fsolve -- n-dimensional root-finding
 
       brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
 

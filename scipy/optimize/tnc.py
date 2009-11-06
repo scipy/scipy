@@ -178,7 +178,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
 
       - fminbound, brent, golden, bracket : local scalar minimizers
 
-      - fsolve : n-dimenstional root-finding
+      - fsolve : n-dimensional root-finding
 
       - brentq, brenth, ridder, bisect, newton : one-dimensional root-finding
 
