@@ -26,7 +26,7 @@ import numpy.linalg as linalg
 from numpy.testing import *
 
 from scipy.linalg import solve,inv,det,lstsq, toeplitz, hankel, tri, triu, \
-     tril, pinv, pinv2, solve_banded, block_diag
+     tril, pinv, pinv2, solve_banded, block_diag, norm
 
 
 def random(size):
@@ -442,6 +442,11 @@ class TestPinv(TestCase):
         a_pinv = pinv(a)
         a_pinv2 = pinv2(a)
         assert_array_almost_equal(a_pinv,a_pinv2)
+
+class TestNorm(object):
+    def test_zero_norm(self):
+        assert_equal(norm([1,0,3], 0), 2)
+        assert_equal(norm([1,2,3], 0), 3)
 
 if __name__ == "__main__":
     run_module_suite()

@@ -23,6 +23,7 @@ from numpy import matrix as Matrix
 from numpy.linalg import LinAlgError
 from scipy.linalg import calc_lwork
 
+import decomp
 
 def lu_solve((lu, piv), b, trans=0, overwrite_b=0):
     """Solve an equation system, a x = b, given the LU factorization of a
@@ -385,79 +386,12 @@ def inv(a, overwrite_a=0):
     return inv_a
 
 
-## matrix and Vector norm
-import decomp
-def norm(x, ord=None):
-    """Matrix or vector norm.
+### Norm
 
-    Parameters
-    ----------
-    x : array, shape (M,) or (M, N)
-    ord : number, or {None, 1, -1, 2, -2, inf, -inf, 'fro'}
-        Order of the norm:
-
-        =====  ============================  ==========================
-        ord    norm for matrices             norm for vectors
-        =====  ============================  ==========================
-        None   Frobenius norm                2-norm
-        'fro'  Frobenius norm                --
-        inf    max(sum(abs(x), axis=1))      max(abs(x))
-        -inf   min(sum(abs(x), axis=1))      min(abs(x))
-        1      max(sum(abs(x), axis=0))      as below
-        -1     min(sum(abs(x), axis=0))      as below
-        2      2-norm (largest sing. value)  as below
-        -2     smallest singular value       as below
-        other  --                            sum(abs(x)**ord)**(1./ord)
-        =====  ============================  ==========================
-
-    Returns
-    -------
-    n : float
-        Norm of the matrix or vector
-
-    Notes
-    -----
-    For values ord < 0, the result is, strictly speaking, not a
-    mathematical 'norm', but it may still be useful for numerical
-    purposes.
-
-    """
-    x = asarray_chkfinite(x)
-    if ord is None: # check the default case first and handle it immediately
-        return sqrt(add.reduce(real((conjugate(x)*x).ravel())))
-
-    nd = len(x.shape)
-    Inf = numpy.Inf
-    if nd == 1:
-        if ord == Inf:
-            return numpy.amax(abs(x))
-        elif ord == -Inf:
-            return numpy.amin(abs(x))
-        elif ord == 1:
-            return numpy.sum(abs(x),axis=0) # special case for speedup
-        elif ord == 2:
-            return sqrt(numpy.sum(real((conjugate(x)*x)),axis=0)) # special case for speedup
-        else:
-            return numpy.sum(abs(x)**ord,axis=0)**(1.0/ord)
-    elif nd == 2:
-        if ord == 2:
-            return numpy.amax(decomp.svd(x,compute_uv=0))
-        elif ord == -2:
-            return numpy.amin(decomp.svd(x,compute_uv=0))
-        elif ord == 1:
-            return numpy.amax(numpy.sum(abs(x),axis=0))
-        elif ord == Inf:
-            return numpy.amax(numpy.sum(abs(x),axis=1))
-        elif ord == -1:
-            return numpy.amin(numpy.sum(abs(x),axis=0))
-        elif ord == -Inf:
-            return numpy.amin(numpy.sum(abs(x),axis=1))
-        elif ord in ['fro','f']:
-            return sqrt(add.reduce(real((conjugate(x)*x).ravel())))
-        else:
-            raise ValueError, "Invalid norm order for matrices."
-    else:
-        raise ValueError, "Improper number of dimensions to norm."
+def norm(a, ord=None):
+    # Differs from numpy only in non-finite handling
+    return numpy.linalg.norm(asarray_chkfinite(a), ord=ord)
+norm.__doc__ = numpy.linalg.norm.__doc__
 
 ### Determinant
 
