@@ -80,6 +80,8 @@ def test_hyp2f1_real_some_points():
         (3./2,-0.5,3,0.99),
         (2,2.5,-3.25,0.999),
         (-8, 18.016500331508873, 10.805295997850628, 0.90875647507000001),
+        (-10,900,-10.5,0.99),
+        (-10,900,10.5,0.99),
     ]
     dataset = [p + (float(mpmath.hyp2f1(*p)),) for p in pts]
     dataset = np.array(dataset, dtype=np.float_)
@@ -92,6 +94,9 @@ def test_hyp2f1_some_points_2():
     # was fixed in their SVN since then
     pts = [
         (112, 51./10, -9./10, -0.99999),
+        ## Mpmath currently (0.13) fails also for these:
+        #(10,-900,10.5,0.99),
+        #(10,-900,-10.5,0.99),
     ]
     dataset = [p + (float(mpmath.hyp2f1(*p)),) for p in pts]
     dataset = np.array(dataset, dtype=np.float_)

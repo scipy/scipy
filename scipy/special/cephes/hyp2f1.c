@@ -445,7 +445,7 @@ double *loss;                   /* estimates loss of significance */
 {
     double f, g, h, k, m, s, u, umax, t;
     int i;
-    int ia, ib, intflag;
+    int ia, ib, intflag = 0;
 
     if (fabs(b) > fabs(a)) {
         /* Ensure that |a| > |b| ... */
@@ -462,9 +462,10 @@ double *loss;                   /* estimates loss of significance */
         f = b;
         b = a;
         a = f;
+        intflag = 1;
     }
 
-    if (fabs(a) > fabs(c) + 1 && fabs(c-a) > 2 && fabs(a) > 2) {
+    if ((fabs(a) > fabs(c) + 1 || intflag) && fabs(c-a) > 2 && fabs(a) > 2) {
         /* |a| >> |c| implies that large cancellation error is to be expected.
          *
          * We try to reduce it with the recurrence relations
@@ -523,7 +524,7 @@ static double hyp2f1ra(double a, double b, double c, double x,
     double t, err;
 
     /* Don't cross c or zero */
-    if (a < 0 && c < 0 || a >= 0 && c >= 0) {
+    if ((c < 0 && a <= c) || (c >= 0 && a >= c)) {
         da = round(a - c);
     } else {
         da = round(a);
