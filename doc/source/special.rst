@@ -488,6 +488,7 @@ Other Special Functions
    shichi
    sici
    spence
+   lambertw
    zeta
    zetac
 

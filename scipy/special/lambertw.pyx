@@ -185,6 +185,8 @@ _lambertw = PyUFunc_FromFuncAndData(_loop_funcs, the_func_to_apply,
 
 def lambertw(z, k=0, tol=1e-8):
     r"""
+    lambertw(z, k=0, tol=1e-8)
+
     Lambert W function.
 
     The Lambert W function `W(z)` is defined as the inverse function
