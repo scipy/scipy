@@ -10,6 +10,7 @@ import specfun
 import orthogonal
 from orthogonal import *
 from spfun_stats import multigammaln
+from lambertw import lambertw
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
 

@@ -52,6 +52,9 @@ env.AppendUnique(LIBPATH = ['.'])
 # orthogonal_eval extension
 env.NumpyPythonExtension('orthogonal_eval', source = 'orthogonal_eval.c')
 
+# lambertw extension
+env.NumpyPythonExtension('lambertw', source = 'lambertw.c')
+
 # Cephes extension
 src = ['_cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c', \
        'toms_wrappers.c','cdf_wrappers.c','ufunc_extras.c']

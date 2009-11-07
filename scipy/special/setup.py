@@ -58,6 +58,12 @@ def configuration(parent_package='',top_path=None):
                          define_macros=[],
                          extra_info=get_info("npymath"))
 
+    # Extension lambertw
+    config.add_extension('lambertw',
+                         sources=['lambertw.c'],
+                         define_macros=[],
+                         extra_info=get_info("npymath"))
+
     config.add_data_files('tests/*.py')
     config.add_data_files('tests/data/README')
     config.add_data_files('tests/data/*.npz')
