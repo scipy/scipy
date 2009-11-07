@@ -79,6 +79,7 @@ def test_hyp2f1_real_some_points():
         (2,3,5,0.99),
         (3./2,-0.5,3,0.99),
         (2,2.5,-3.25,0.999),
+        (-8, 18.016500331508873, 10.805295997850628, 0.90875647507000001),
     ]
     dataset = [p + (float(mpmath.hyp2f1(*p)),) for p in pts]
     dataset = np.array(dataset, dtype=np.float_)
