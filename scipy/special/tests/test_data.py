@@ -6,7 +6,7 @@ from scipy.special import (
     arccosh, arcsinh, arctanh, erf, erfc, log1p, expm1, 
     jn, jv, yn, yv, iv, kv, kn, gamma, gammaln, digamma, beta, cbrt,
     ellipe, ellipeinc, ellipk, ellipj, erfinv, erfcinv, exp1, expi, expn,
-    zeta,
+    zeta, gammaincinv,
 )
 from numpy.testing.noseclasses import KnownFailureTest
 
@@ -134,6 +134,13 @@ def test_all():
         Data(zeta_, 'zeta_1_up_data_ipp-zeta_1_up_data', 0, 1, param_filter=(lambda s: s > 1)),
         Data(zeta_, 'zeta_1_below_data_ipp-zeta_1_below_data', 0, 1, param_filter=(lambda s: s > 1)),
 
+        Data(gammaincinv, 'gamma_inv_data_ipp-gamma_inv_data', (0,1), 2,
+             rtol=1e-12),
+        Data(gammaincinv, 'gamma_inv_big_data_ipp-gamma_inv_big_data',
+             (0,1), 2, rtol=5e-12),
+        Data(gammaincinv, 'gamma_inv_small_data_ipp-gamma_inv_small_data',
+             (0,1), 2),
+
         # -- not used yet:
         # assoc_legendre_p.txt
         # binomial_data.txt
@@ -149,9 +156,6 @@ def test_all():
         # ellint_rj_data.txt
         # expinti_data_long.txt
         # factorials.txt
-        # gamma_inv_big_data.txt
-        # gamma_inv_data.txt
-        # gamma_inv_small_data.txt
         # gammap1m1_data.txt
         # hermite.txt
         # ibeta_data.txt
