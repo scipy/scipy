@@ -991,6 +991,7 @@ class TestGamma(TestCase):
         gcinv = gammaincinv(.5,.5)
         assert_almost_equal(gccinv,gcinv,8)
 
+    @with_special_errors
     def test_gammaincinv(self):
         y = gammaincinv(.4,.4)
         x = gammainc(.4,y)
@@ -1002,6 +1003,7 @@ class TestGamma(TestCase):
         x = gammaincinv(50, 8.20754777388471303050299243573393e-18)
         assert_almost_equal(11.0, x, decimal=10)
 
+    @with_special_errors
     def test_975(self):
         # Regression test for ticket #975 -- switch point in algorithm
         # check that things work OK at the point, immediately next floats

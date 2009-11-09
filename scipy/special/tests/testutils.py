@@ -6,7 +6,15 @@ from numpy.testing.noseclasses import KnownFailureTest
 
 import scipy.special as sc
 
+#------------------------------------------------------------------------------
+# Enable convergence and loss of precision warnings -- turn off one by one
+#------------------------------------------------------------------------------
+
 def with_special_errors(func):
+    """
+    Enable special function errors (such as underflow, overflow,
+    loss of precision, etc.)
+    """
     def wrapper(*a, **kw):
         old_filters = list(getattr(warnings, 'filters', []))
         old_errprint = sc.errprint(1)
@@ -16,6 +24,13 @@ def with_special_errors(func):
         finally:
             sc.errprint(old_errprint)
             setattr(warnings, 'filters', old_filters)
+    wrapper.__name__ = func.__name__
+    wrapper.__doc__ = func.__doc__
+    return wrapper
+
+#------------------------------------------------------------------------------
+# Comparing function values at many data points at once, with helpful
+#------------------------------------------------------------------------------
 
 def assert_tol_equal(a, b, rtol=1e-7, atol=0, err_msg='', verbose=True):
     """Assert that `a` and `b` are equal to tolerance ``atol + rtol*abs(b)``"""
@@ -26,6 +41,9 @@ def assert_tol_equal(a, b, rtol=1e-7, atol=0, err_msg='', verbose=True):
     np.testing.utils.assert_array_compare(compare, a, b, err_msg=str(err_msg),
                                           verbose=verbose, header=header)
 
+#------------------------------------------------------------------------------
+# Comparing function values at many data points at once, with helpful
+# error reports
 #------------------------------------------------------------------------------
 
 class FuncData(object):
