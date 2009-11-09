@@ -4,6 +4,8 @@
 #undef fabs
 #include "misc.h"
 
+void scipy_special_raise_warning(char *fmt, ...);
+
 /*
   Inverse of the (regularised) incomplete Gamma integral.
 
@@ -31,9 +33,13 @@ gammaincinv(double a, double y)
     double best_x, best_f;
     fsolve_result_t r;
 
-    if (a <= 0.0 || y <= 0.0 || y > 0.25) {
+    if (a <= 0.0 || y <= 0.0 || y >= 0.25) {
         return cephes_igami(a, 1-y);
     }
+
+    /* Note: start position value must be fhi != 0, otherwise fsolve
+     *       terminates with an error.
+     */
 
     params[0] = a;
     params[1] = y;
@@ -46,9 +52,12 @@ gammaincinv(double a, double y)
 
     r = false_position(&lo, &flo, &hi, &fhi,
                        (objective_function)gammainc, params,
-                       MACHEP, MACHEP, 1e-2*a,
+                       2*MACHEP, 2*MACHEP, 1e-2*a,
                        &best_x, &best_f);
-    if (r == FSOLVE_NOT_BRACKET) {
+    if (!(r == FSOLVE_CONVERGED || r == FSOLVE_EXACT)) {
+        scipy_special_raise_warning(
+            "gammaincinv: failed to converge at (a, y) = (%.20g, %.20g): %d\n",
+            a, y, r);
         best_x = 0.0;
     }
     return best_x;

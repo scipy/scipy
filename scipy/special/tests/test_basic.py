@@ -1002,6 +1002,18 @@ class TestGamma(TestCase):
         x = gammaincinv(50, 8.20754777388471303050299243573393e-18)
         assert_almost_equal(11.0, x, decimal=10)
 
+    def test_975(self):
+        # Regression test for ticket #975 -- switch point in algorithm
+        # check that things work OK at the point, immediately next floats
+        # around it, and a bit further away
+        pts = [0.25,
+               np.nextafter(0.25, 0), 0.25 - 1e-12,
+               np.nextafter(0.25, 1), 0.25 + 1e-12]
+        for xp in pts:
+            y = gammaincinv(.4, xp)
+            x = gammainc(0.4, y)
+            assert_tol_equal(x, xp, rtol=1e-12)
+
     def test_rgamma(self):
         rgam = rgamma(8)
         rlgam = 1/gamma(8)
