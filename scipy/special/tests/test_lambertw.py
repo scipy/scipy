@@ -10,7 +10,7 @@ from numpy.testing import *
 from scipy.special import lambertw
 from numpy import nan, inf, pi, e, isnan, log, r_, array, complex_
 
-from test_data import Data
+from testutils import *
 
 def test_values():
     assert isnan(lambertw(nan))
@@ -77,7 +77,7 @@ def test_values():
 
     def w(x, y):
         return lambertw(x, y.real.astype(int))
-    Data(w, data, (0,1), 2, rtol=1e-10, atol=1e-13).check()
+    FuncData(w, data, (0,1), 2, rtol=1e-10, atol=1e-13).check()
 
 def test_ufunc():
     assert_array_almost_equal(

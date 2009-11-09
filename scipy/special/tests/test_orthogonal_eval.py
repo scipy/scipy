@@ -3,7 +3,8 @@ import numpy as np
 from numpy import array, sqrt
 from scipy.special.orthogonal import *
 from scipy.special import gamma
-from test_data import Data
+
+from testutils import *
 
 def test_eval_chebyt():
     n = np.arange(0, 10000, 7)
@@ -44,7 +45,8 @@ class TestPolys(object):
             p = (p[0].astype(int),) + p[1:]
             return func(*p)
 
-        ds = Data(polyfunc, dataset, range(len(param_ranges)+2), -1, rtol=rtol)
+        ds = FuncData(polyfunc, dataset, range(len(param_ranges)+2), -1,
+                      rtol=rtol)
         ds.check()
 
     def test_jacobi(self):

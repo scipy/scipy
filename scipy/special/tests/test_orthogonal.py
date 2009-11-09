@@ -4,7 +4,7 @@ from numpy import array, sqrt
 from scipy.special.orthogonal import *
 from scipy.special import gamma
 
-from test_data import Data
+from testutils import *
 
 
 class TestCheby(TestCase):

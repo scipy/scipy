@@ -4,8 +4,9 @@ Test Scipy functions versus mpmath, if available.
 """
 import numpy as np
 from numpy.testing import *
-from test_data import Data
 import scipy.special as sc
+
+from testutils import *
 
 try:
     import mpmath
@@ -43,7 +44,7 @@ def test_expi_complex():
             dataset.append((z, mpmath.ei(z)))
     dataset = np.array(dataset, dtype=np.complex_)
 
-    Data(sc.expi, dataset, 0, 1).check()
+    FuncData(sc.expi, dataset, 0, 1).check()
 
 
 #------------------------------------------------------------------------------
@@ -61,7 +62,7 @@ def test_hyp2f1_strange_points():
     dataset = [p + (float(mpmath.hyp2f1(*p)),) for p in pts]
     dataset = np.array(dataset, dtype=np.float_)
 
-    Data(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
+    FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
 
 @mpmath_check('0.13')
 def test_hyp2f1_real_some_points():
@@ -86,7 +87,7 @@ def test_hyp2f1_real_some_points():
     dataset = [p + (float(mpmath.hyp2f1(*p)),) for p in pts]
     dataset = np.array(dataset, dtype=np.float_)
 
-    Data(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
+    FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
 
 @mpmath_check('0.14')
 def test_hyp2f1_some_points_2():
@@ -101,7 +102,7 @@ def test_hyp2f1_some_points_2():
     dataset = [p + (float(mpmath.hyp2f1(*p)),) for p in pts]
     dataset = np.array(dataset, dtype=np.float_)
 
-    Data(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
+    FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
 
 @mpmath_check('0.13')
 def test_hyp2f1_real_some():
@@ -116,7 +117,7 @@ def test_hyp2f1_real_some():
                         continue
                     dataset.append((a, b, c, z, v))
     dataset = np.array(dataset, dtype=np.float_)
-    Data(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-9).check()
+    FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-9).check()
 
 @mpmath_check('0.12')
 @dec.slow
@@ -143,4 +144,4 @@ def test_hyp2f1_real_random():
                 ds[2] = abs(ds[:2]).max()
         ds[4] = float(mpmath.hyp2f1(*tuple(ds[:4])))
 
-    Data(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-9).check()
+    FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-9).check()
