@@ -37,8 +37,8 @@ gammaincinv(double a, double y)
         return cephes_igami(a, 1-y);
     }
 
-    /* Note: start position value must be fhi != 0, otherwise fsolve
-     *       terminates with an error.
+    /* Note: flo and fhi must have different signs (and be != 0),
+     *       otherwise fsolve terminates with an error.
      */
 
     params[0] = a;
