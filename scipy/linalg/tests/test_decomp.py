@@ -1121,21 +1121,24 @@ def test_lapack_misaligned():
     S.shape = 10, 10
     v = np.ones(3,dtype=float)
     for (func, args, kwargs) in [
-            #(eig,(S,),dict(overwrite_a=True)),
-            #(eigvals,(S,),dict(overwrite_a=True)),
-            #(lu,(S,),dict(overwrite_a=True)),
-            #(svd,(M,),dict(overwrite_a=True)), # no crash
-            #(svd,(R,),dict(overwrite_a=True)), # no crash
-            (svd,(S,),dict(overwrite_a=True)), # crash
-            #(svdvals,(S,),dict(overwrite_a=True)),
-            #(cholesky,(M,),dict(overwrite_a=True)),
-            #(qr,(S,),dict(overwrite_a=True)),
-            #(schur,(S,),dict(overwrite_a=True)),
+            #(eig,(S,),dict(overwrite_a=True)), # crash
+            (eigvals,(S,),dict(overwrite_a=True)), # no crash
+            (lu,(S,),dict(overwrite_a=True)), # no crash
+            (lu_factor,(S,),dict(overwrite_a=True)), # no crash
+            (svd,(M,),dict(overwrite_a=True)), # no crash
+            (svd,(R,),dict(overwrite_a=True)), # no crash
+            #(svd,(S,),dict(overwrite_a=True)), # crash
+            #(diagsvd,(S,),dict(overwrite_a=True)), # crash
+            #(svdvals,(S,),dict(overwrite_a=True)), #crash
+            (cholesky,(M,),dict(overwrite_a=True)), # no crash
+            #(qr,(S,),dict(overwrite_a=True)), # crash
+            #(rq,(S,),dict(overwrite_a=True)), # crash
+            #(hessenberg,(S,),dict(overwrite_a=True)), # crash
+            #(schur,(S,),dict(overwrite_a=True)), # crash
             ]:
         yield check_lapack_misaligned, func, args, kwargs
-#eig,eigvals,lu,svd,svdvals,cholesky,qr, \
-#schur,rsf2csf, lu_solve,lu_factor,solve,diagsvd,hessenberg,rq, \
-#eig_banded, eigvals_banded, eigh
+# not properly tested
+# cholesky, rsf2csf, lu_solve, solve, eig_banded, eigvals_banded, eigh
 
 def test_svd_crash():
     return
