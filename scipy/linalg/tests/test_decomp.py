@@ -1064,7 +1064,6 @@ def test_aligned_mem_float():
     z.shape = 10, 10
 
     eig(z, overwrite_a=True)
-    # This does not trigger a segfault, but is caught anyway.
     eig(z.T, overwrite_a=True)
      
 
@@ -1078,9 +1077,7 @@ def test_aligned_mem():
     z.shape = 10, 10
 
     eig(z, overwrite_a=True) 
-    # This triggers a segfault if not caught
-    #eig(z.T, overwrite_a=True)
-    eig(z.copy().T, overwrite_a=True)
+    eig(z.T, overwrite_a=True)
 
 def test_aligned_mem_complex():
     """Check that complex objects don't need to be completely aligned"""
@@ -1119,33 +1116,30 @@ def test_lapack_misaligned():
     S = np.arange(20000,dtype=np.uint8)
     S = np.frombuffer(S.data, offset=4, count=100, dtype=np.float)
     S.shape = 10, 10
+    b = np.ones(10)
     v = np.ones(3,dtype=float)
+    LU, piv = lu_factor(S)
     for (func, args, kwargs) in [
-            #(eig,(S,),dict(overwrite_a=True)), # crash
+            (eig,(S,),dict(overwrite_a=True)), # crash
             (eigvals,(S,),dict(overwrite_a=True)), # no crash
             (lu,(S,),dict(overwrite_a=True)), # no crash
             (lu_factor,(S,),dict(overwrite_a=True)), # no crash
+            (lu_solve,((LU,piv),b),dict(overwrite_b=True)), 
+            (solve,(S,b),dict(overwrite_a=True,overwrite_b=True)), 
             (svd,(M,),dict(overwrite_a=True)), # no crash
             (svd,(R,),dict(overwrite_a=True)), # no crash
-            #(svd,(S,),dict(overwrite_a=True)), # crash
-            #(diagsvd,(S,),dict(overwrite_a=True)), # crash
-            #(svdvals,(S,),dict(overwrite_a=True)), #crash
+            (svd,(S,),dict(overwrite_a=True)), # crash
+            (svdvals,(S,),dict()), # no crash
+            (svdvals,(S,),dict(overwrite_a=True)), #crash
             (cholesky,(M,),dict(overwrite_a=True)), # no crash
-            #(qr,(S,),dict(overwrite_a=True)), # crash
-            #(rq,(S,),dict(overwrite_a=True)), # crash
-            #(hessenberg,(S,),dict(overwrite_a=True)), # crash
-            #(schur,(S,),dict(overwrite_a=True)), # crash
+            (qr,(S,),dict(overwrite_a=True)), # crash
+            (rq,(S,),dict(overwrite_a=True)), # crash
+            (hessenberg,(S,),dict(overwrite_a=True)), # crash
+            (schur,(S,),dict(overwrite_a=True)), # crash
             ]:
         yield check_lapack_misaligned, func, args, kwargs
 # not properly tested
-# cholesky, rsf2csf, lu_solve, solve, eig_banded, eigvals_banded, eigh
-
-def test_svd_crash():
-    return
-    S = np.arange(0,804,dtype=np.uint8)
-    S = np.frombuffer(S.data, offset=4, count=100, dtype=np.float)
-    S.shape = 10, 10
-    svd(S.T,overwrite_a=True)
+# cholesky, rsf2csf, lu_solve, solve, eig_banded, eigvals_banded, eigh, diagsvd
 
 if __name__ == "__main__":
     run_module_suite()

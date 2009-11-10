@@ -173,7 +173,7 @@ interface
      callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,a,&n,tau,work,&lwork,&info); }
      callprotoargument int*,int*,int*,<type_in_c>*,int*,<type_in_c>*,<type_in_c>*,int*,int*
      integer intent(hide),depend(a) :: n = shape(a,0)
-     <type_in> dimension(n,n),intent(in,out,copy,out=ht),check(shape(a,0)==shape(a,1)) :: a
+     <type_in> dimension(n,n),intent(in,out,copy,out=ht,aligned8),check(shape(a,0)==shape(a,1)) :: a
      integer intent(in),optional :: lo = 0
      integer intent(in),optional,depend(n) :: hi = n-1
      <type_in> dimension(n-1),intent(out),depend(n) :: tau
@@ -306,7 +306,7 @@ interface
    integer intent(hide),depend(m,n):: minmn = MIN(m,n)
    integer intent(hide),depend(compute_uv,minmn) :: du = (compute_uv?m:1)
    integer intent(hide),depend(compute_uv,n) :: dvt = (compute_uv?n:1)
-   <type_in> dimension(m,n),intent(in,copy) :: a
+   <type_in> dimension(m,n),intent(in,copy,aligned8) :: a
    <type_in> dimension(minmn),intent(out),depend(minmn) :: s
    <type_in> dimension(du,du),intent(out),depend(du) :: u
    <type_in> dimension(dvt,dvt),intent(out),depend(dvt) :: vt
@@ -431,7 +431,7 @@ interface
 
      integer intent(hide),depend(a):: m = shape(a,0)
      integer intent(hide),depend(a):: n = shape(a,1)
-     <type_in> dimension(m,n),intent(in,out,copy,out=qr) :: a
+     <type_in> dimension(m,n),intent(in,out,copy,out=qr,aligned8) :: a
      <type_in> dimension(MIN(m,n)),intent(out) :: tau
 
      integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=3*n
@@ -450,7 +450,7 @@ interface
 
      integer intent(hide),depend(a):: m = shape(a,0)
      integer intent(hide),depend(a):: n = shape(a,1)
-     <type_in> dimension(m,n),intent(in,out,copy,out=qr) :: a
+     <type_in> dimension(m,n),intent(in,out,copy,out=qr,aligned8) :: a
      <type_in> dimension(MIN(m,n)),intent(out) :: tau
 
      integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=3*n
@@ -939,7 +939,7 @@ interface
     integer optional,intent(in),check(sort_t==0||sort_t==1) :: sort_t = 0
     external <tchar>select
     integer intent(hide),depend(a) :: n = shape(a,1)
-    <type_in> intent(in,out,copy,out=t),check(shape(a,0)==shape(a,1)),dimension(n,n) :: a
+    <type_in> intent(in,out,copy,out=t,aligned8),check(shape(a,0)==shape(a,1)),dimension(n,n) :: a
     integer intent(hide),depend(a) :: nrows=shape(a,0)
     integer intent(out) :: sdim=0
     <type_in> intent(out),dimension(n) :: wr
