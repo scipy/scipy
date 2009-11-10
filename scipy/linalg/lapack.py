@@ -73,6 +73,7 @@ def get_lapack_funcs(names, arrays=()):
                          #     See test_basic.test_solve.check_20Feb04_bug.
 
     for a in arrays:
+        break
         a = numpy.asarray(a)
         if numpy.iscomplexobj(a):
             f = 2

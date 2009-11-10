@@ -513,7 +513,7 @@ interface
      check(compute_vr==1||compute_vr==0) compute_vr
 
      integer intent(hide),depend(a) :: n = shape(a,0)
-     <type_in>  dimension(n,n),intent(in,copy) :: a
+     <type_in>  dimension(n,n),intent(in,copy,aligned8) :: a
      check(shape(a,0)==shape(a,1)) :: a
 
      <type_in>  dimension(n),intent(out),depend(n) :: wr

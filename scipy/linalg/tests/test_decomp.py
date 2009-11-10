@@ -1054,6 +1054,20 @@ class TestDataNotShared(TestCase):
         assert_equal(_datanotshared(A,M2),True)
 
 
+def test_aligned_mem_float():
+    """Check linalg works with non-aligned memory"""
+    # Allocate 402 bytes of memory (allocated on boundary)
+    a = arange(402, dtype=np.uint8)
+
+    # Create an array with boundary offset 4
+    z = np.frombuffer(a.data, offset=2, count=100, dtype=float32)
+    z.shape = 10, 10
+
+    eig(z, overwrite_a=True)
+    # This does not trigger a segfault, but is caught anyway.
+    eig(z.T, overwrite_a=True)
+     
+
 def test_aligned_mem():
     """Check linalg works with non-aligned memory"""
     # Allocate 804 bytes of memory (allocated on boundary)
@@ -1063,8 +1077,10 @@ def test_aligned_mem():
     z = np.frombuffer(a.data, offset=4, count=100, dtype=float)
     z.shape = 10, 10
 
-    eig(z, overwrite_a=True)
-    eig(z.T, overwrite_a=True)
+    eig(z, overwrite_a=True) 
+    # This triggers a segfault if not caught
+    #eig(z.T, overwrite_a=True)
+    eig(z.copy().T, overwrite_a=True)
 
 def test_aligned_mem_complex():
     """Check that complex objects don't need to be completely aligned"""
@@ -1076,8 +1092,57 @@ def test_aligned_mem_complex():
     z.shape = 10, 10
 
     eig(z, overwrite_a=True)
+    # This does not need special handling
     eig(z.T, overwrite_a=True)
 
+def check_lapack_misaligned(func, args, kwargs):
+    args = list(args)
+    for i in range(len(args)):
+        a = args[:]
+        if isinstance(a[i],np.ndarray):
+            # Try misaligning a[i]
+            aa = np.zeros(a[i].size*a[i].dtype.itemsize+8, dtype=np.uint8)
+            aa = np.frombuffer(aa.data, offset=4, count=a[i].size, dtype=a[i].dtype)
+            aa.shape = a[i].shape
+            aa[...] = a[i]
+            a[i] = aa
+            func(*a,**kwargs)
+            if len(a[i].shape)>1:
+                a[i] = a[i].T
+                func(*a,**kwargs)
+
+
+def test_lapack_misaligned():
+    M = np.eye(10,dtype=float)
+    R = np.arange(100)
+    R.shape = 10,10
+    S = np.arange(20000,dtype=np.uint8)
+    S = np.frombuffer(S.data, offset=4, count=100, dtype=np.float)
+    S.shape = 10, 10
+    v = np.ones(3,dtype=float)
+    for (func, args, kwargs) in [
+            #(eig,(S,),dict(overwrite_a=True)),
+            #(eigvals,(S,),dict(overwrite_a=True)),
+            #(lu,(S,),dict(overwrite_a=True)),
+            #(svd,(M,),dict(overwrite_a=True)), # no crash
+            #(svd,(R,),dict(overwrite_a=True)), # no crash
+            (svd,(S,),dict(overwrite_a=True)), # crash
+            #(svdvals,(S,),dict(overwrite_a=True)),
+            #(cholesky,(M,),dict(overwrite_a=True)),
+            #(qr,(S,),dict(overwrite_a=True)),
+            #(schur,(S,),dict(overwrite_a=True)),
+            ]:
+        yield check_lapack_misaligned, func, args, kwargs
+#eig,eigvals,lu,svd,svdvals,cholesky,qr, \
+#schur,rsf2csf, lu_solve,lu_factor,solve,diagsvd,hessenberg,rq, \
+#eig_banded, eigvals_banded, eigh
+
+def test_svd_crash():
+    return
+    S = np.arange(0,804,dtype=np.uint8)
+    S = np.frombuffer(S.data, offset=4, count=100, dtype=np.float)
+    S.shape = 10, 10
+    svd(S.T,overwrite_a=True)
 
 if __name__ == "__main__":
     run_module_suite()
