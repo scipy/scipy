@@ -1391,7 +1391,7 @@ subroutine ssyevr(jobz,range,uplo,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,isuppz,wo
     character intent(in) :: range='A'
     character intent(in) :: uplo='L'
     integer intent(hide) :: n=shape(a,0)
-    real intent(in,copy),dimension(n,n) :: a
+    real intent(in,copy,aligned8),dimension(n,n) :: a
     integer intent(hide),depend(n,a) :: lda=n
     real intent(hide) :: vl=0
     real intent(hide) :: vu=1
@@ -1419,7 +1419,7 @@ subroutine dsyevr(jobz,range,uplo,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,isuppz,wo
     character intent(in) :: range='A'
     character intent(in) :: uplo='L'
     integer intent(hide) :: n=shape(a,0)
-    double precision intent(in,copy),dimension(n,n) :: a
+    double precision intent(in,copy,aligned8),dimension(n,n) :: a
     integer intent(hide),depend(n,a) :: lda=n
     double precision intent(hide) :: vl=0
     double precision intent(hide) :: vu=1
@@ -1447,7 +1447,7 @@ subroutine cheevr(jobz,range,uplo,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,isuppz,wo
     character intent(in) :: range='A'
     character intent(in) :: uplo='L'
     integer intent(hide) :: n=shape(a,0)
-    complex intent(in,copy),dimension(n,n) :: a
+    complex intent(in,copy,aligned8),dimension(n,n) :: a
     integer intent(hide),depend(n,a) :: lda=n
     real intent(hide) :: vl=0
     real intent(hide) :: vu=1
@@ -1477,7 +1477,7 @@ subroutine zheevr(jobz,range,uplo,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,isuppz,wo
     character intent(in) :: range='A'
     character intent(in) :: uplo='L'
     integer intent(hide) :: n=shape(a,0)
-    complex*16 intent(in,copy),dimension(n,n) :: a
+    complex*16 intent(in,copy,aligned8),dimension(n,n) :: a
     integer intent(hide),depend(n,a) :: lda=n
     double precision intent(hide) :: vl=0
     double precision intent(hide) :: vu=1
@@ -1507,9 +1507,9 @@ subroutine ssygv(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,info)
     character intent(in) :: jobz='V'
     character intent(in) :: uplo='L'
     integer intent(hide) :: n=shape(a,0)
-    real intent(in,copy,out),dimension(n,n) :: a
+    real intent(in,copy,out,aligned8),dimension(n,n) :: a
     integer intent(hide),depend(n,a) :: lda=n
-    real intent(in,copy),dimension(n,n) :: b
+    real intent(in,copy,aligned8),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     real intent(out),dimension(n),depend(n) :: w
     integer intent(hide) :: lwork=3*n-1
@@ -1526,9 +1526,9 @@ subroutine dsygv(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,info)
     character intent(in) :: jobz='V'
     character intent(in) :: uplo='L'
     integer intent(hide) :: n=shape(a,0)
-    double precision intent(in,copy,out),dimension(n,n) :: a
+    double precision intent(in,copy,out,aligned8),dimension(n,n) :: a
     integer intent(hide),depend(n,a) :: lda=n
-    double precision intent(in,copy),dimension(n,n) :: b
+    double precision intent(in,copy,aligned8),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     double precision intent(out),dimension(n),depend(n) :: w
     integer intent(hide) :: lwork=3*n-1
@@ -1545,9 +1545,9 @@ subroutine chegv(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,rwork,info)
     character intent(in) :: jobz='V'
     character intent(in) :: uplo='L'
     integer intent(hide) :: n=shape(a,0)
-    complex intent(in,copy,out),dimension(n,n) :: a
+    complex intent(in,copy,out,aligned8),dimension(n,n) :: a
     integer intent(hide),depend(n,a) :: lda=n
-    complex intent(in,copy),dimension(n,n) :: b
+    complex intent(in,copy,aligned8),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     real intent(out),dimension(n),depend(n) :: w
     integer intent(hide) :: lwork=18*n-1
@@ -1565,9 +1565,9 @@ subroutine zhegv(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,rwork,info)
     character intent(in) :: jobz='V'
     character intent(in) :: uplo='L'
     integer intent(hide) :: n=shape(a,0)
-    complex*16 intent(in,copy,out),dimension(n,n) :: a
+    complex*16 intent(in,copy,out,aligned8),dimension(n,n) :: a
     integer intent(hide),depend(n,a) :: lda=n
-    complex*16 intent(in,copy),dimension(n,n) :: b
+    complex*16 intent(in,copy,aligned8),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     double precision intent(out),dimension(n),depend(n) :: w
     integer intent(hide) :: lwork=18*n-1
@@ -1588,9 +1588,9 @@ subroutine ssygvd(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,iwork,liwork,info)
     character intent(in) :: jobz='V'
     character intent(in) :: uplo='L'
     integer intent(hide) :: n=shape(a,0)
-    real intent(in,copy,out),dimension(n,n) :: a
+    real intent(in,copy,out,aligned8),dimension(n,n) :: a
     integer intent(hide),depend(n,a) :: lda=n
-    real intent(in,copy),dimension(n,n) :: b
+    real intent(in,copy,aligned8),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     real intent(out),dimension(n),depend(n) :: w
     integer intent(in),depend(n) :: lwork=1+6*n+2*n*n
@@ -1609,9 +1609,9 @@ subroutine dsygvd(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,iwork,liwork,info)
     character intent(in) :: jobz='V'
     character intent(in) :: uplo='L'
     integer intent(hide) :: n=shape(a,0)
-    double precision intent(in,copy,out),dimension(n,n) :: a
+    double precision intent(in,copy,out,aligned8),dimension(n,n) :: a
     integer intent(hide),depend(n,a) :: lda=n
-    double precision intent(in,copy),dimension(n,n) :: b
+    double precision intent(in,copy,aligned8),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     double precision intent(out),dimension(n),depend(n) :: w
     integer intent(in),depend(n) :: lwork=1+6*n+2*n*n
@@ -1630,9 +1630,9 @@ subroutine chegvd(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,rwork,lrwork,iwork,
     character intent(in) :: jobz='V'
     character intent(in) :: uplo='L'
     integer intent(hide) :: n=shape(a,0)
-    complex intent(in,copy,out),dimension(n,n) :: a
+    complex intent(in,copy,out,aligned8),dimension(n,n) :: a
     integer intent(hide),depend(n,a) :: lda=n
-    complex intent(in,copy),dimension(n,n) :: b
+    complex intent(in,copy,aligned8),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     real intent(out),dimension(n),depend(n) :: w
     integer intent(in),depend(n) :: lwork=2*n+n*n
@@ -1653,9 +1653,9 @@ subroutine zhegvd(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,rwork,lrwork,iwork,
     character intent(in) :: jobz='V'
     character intent(in) :: uplo='L'
     integer intent(hide) :: n=shape(a,0)
-    complex*16 intent(in,copy,out),dimension(n,n) :: a
+    complex*16 intent(in,copy,out,aligned8),dimension(n,n) :: a
     integer intent(hide),depend(n,a) :: lda=n
-    complex*16 intent(in,copy),dimension(n,n) :: b
+    complex*16 intent(in,copy,aligned8),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     double precision intent(out),dimension(n),depend(n) :: w
     integer intent(in),depend(n) :: lwork=2*n+n*n
@@ -1679,9 +1679,9 @@ subroutine ssygvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,m,w,z,l
     character intent(hide) :: range='I'
     character intent(in) :: uplo='L'
     integer intent(hide) :: n=shape(a,0)
-    real intent(in,copy),dimension(n,n) :: a
+    real intent(in,copy,aligned8),dimension(n,n) :: a
     integer intent(hide),depend(n,a) :: lda=n
-    real intent(in,copy),dimension(n,n) :: b
+    real intent(in,copy,aligned8),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     real intent(hide) :: vl=0.
     real intent(hide) :: vu=0.
@@ -1709,9 +1709,9 @@ subroutine dsygvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,m,w,z,l
     character intent(hide) :: range='I'
     character intent(in) :: uplo='L'
     integer intent(hide) :: n=shape(a,0)
-    double precision intent(in,copy),dimension(n,n) :: a
+    double precision intent(in,copy,aligned8),dimension(n,n) :: a
     integer intent(hide),depend(n,a) :: lda=n
-    double precision intent(in,copy),dimension(n,n) :: b
+    double precision intent(in,copy,aligned8),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     double precision intent(hide) :: vl=0.
     double precision intent(hide) :: vu=0.
@@ -1739,9 +1739,9 @@ subroutine chegvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,m,w,z,l
     character intent(hide) :: range='I'
     character intent(in) :: uplo='L'
     integer intent(hide) :: n=shape(a,0)
-    complex intent(in,copy),dimension(n,n) :: a
+    complex intent(in,copy,aligned8),dimension(n,n) :: a
     integer intent(hide),depend(n,a) :: lda=n
-    complex intent(in,copy),dimension(n,n) :: b
+    complex intent(in,copy,aligned8),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     real intent(hide) :: vl=0.
     real intent(hide) :: vu=0.
@@ -1770,9 +1770,9 @@ subroutine zhegvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,m,w,z,l
     character intent(hide) :: range='I'
     character intent(in) :: uplo='L'
     integer intent(hide) :: n=shape(a,0)
-    complex*16 intent(in,copy),dimension(n,n) :: a
+    complex*16 intent(in,copy,aligned8),dimension(n,n) :: a
     integer intent(hide),depend(n,a) :: lda=n
-    complex*16 intent(in,copy),dimension(n,n) :: b
+    complex*16 intent(in,copy,aligned8),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     double precision intent(hide) :: vl=0.
     double precision intent(hide) :: vu=0.
