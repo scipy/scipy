@@ -8,14 +8,45 @@ import numpy as np
 cimport numpy as cnp
 
 cdef extern from "Python.h":
+    void *PyCObject_Import(char *, char *) except NULL
+    ctypedef struct PyTypeObject:
+        pass
+    ctypedef struct PyObject:
+        pass
     ctypedef struct FILE
-    FILE* PyFile_AsFile(object)
-    size_t fread (void *ptr, size_t size, size_t n, FILE* file)
+    FILE *PyFile_AsFile(object)
+    size_t fread (void *ptr, size_t size, size_t n, FILE* fptr)
+    int fseek (FILE * fptr, long int offset, int whence)
 
 
 cdef extern from "fileobject.h":
     ctypedef class __builtin__.file [object PyFileObject]:
         pass
+
+
+cdef extern from "cStringIO.h":
+    struct PycStringIO_CAPI:
+        int (*cread)(object Input, char ** bufptr, Py_ssize_t n)
+        int (*creadline)(object Input, char ** bufptr)
+        int (*cwrite)(object Output, char * out_str, Py_ssize_t n)
+        object (*cgetvalue)(object Input)
+        object (*NewOutput)(int size)
+        PyObject *(*NewInput)(object in_str)
+        PyTypeObject *InputType, *OutputType
+    cdef PycStringIO_CAPI* PycStringIO
+    bint PycStringIO_InputCheck(object O)
+    bint PycStringIO_OutputCheck(object O)
+
+
+# initialize cStringIO
+PycStringIO = <PycStringIO_CAPI*>PyCObject_Import("cStringIO", "cStringIO_CAPI")
+
+
+cdef enum FileType:
+    generic
+    real_file
+    cstringio
+
 
 cdef int miDOUBLE = 9
 cdef int miMATRIX = 14
@@ -34,13 +65,14 @@ cdef cnp.uint32_t byteswap_u4(cnp.uint32_t u4):
            ((u4 << 8) & 0xff0000U) |
            ((u4 >> 8 & 0xff00u)) |
            (u4 >> 24))
-        
+
 
 cdef class CReader:
     cdef public int is_swapped, little_endian
     cdef int stream_type
     cdef object mat_stream, dtypes, codecs, current_getter
     cdef FILE* _file
+    cdef object sreader
     
     def __new__(self, preader):
         self.mat_stream = preader.mat_stream
@@ -54,12 +86,13 @@ cdef class CReader:
             self.little_endian = not sys_is_le
         else:
             self.little_endian = sys_is_le
-        self.stream_type = 0
+        self.stream_type = generic
         if isinstance(self.mat_stream, file):
+            self.stream_type = real_file
             self._file = PyFile_AsFile(self.mat_stream)
-            self.stream_type = 1
-
-    def read_element(self, copy=True):
+        
+            
+    def read_element(self, int copy=True):
         cdef cnp.uint16_t mdtype_sde, byte_count_sde
         cdef cnp.uint32_t mdtype, byte_count
         cdef int mod8
@@ -93,7 +126,7 @@ cdef class CReader:
         # second ``mdtype``.  If the *file* is little-endian then the
         # first four bytes are two little-endian uint16 values, first
         # ``mdtype`` and second ``byte_count``.   
-        if self.stream_type == 1: # really a file object
+        if self.stream_type == real_file: # really a file object
             fread(tag_bytes, 8, 1, self._file)
             tag_ptr = <char *>tag_bytes
         else: # use python interface to get data
