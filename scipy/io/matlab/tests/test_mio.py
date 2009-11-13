@@ -24,7 +24,7 @@ import numpy as np
 from numpy import array
 import scipy.sparse as SP
 
-from scipy.io.matlab.miobase import matdims
+from scipy.io.matlab.miobase import matdims, MatFileReader
 from scipy.io.matlab.mio import loadmat, savemat, find_mat_file, \
      mat_reader_factory
 from scipy.io.matlab.mio5 import MatlabObject, MatFile5Writer, \
@@ -625,3 +625,8 @@ def test_save_object():
     yield assert_equal, c2['field1'], 1
     yield assert_equal, c2['field2'], 'a string'
 
+
+def test_order_code_ro():
+    str_io = StringIO()
+    mfr = MatFileReader(str_io)
+    yield assert_raises, AttributeError, mfr.__setattr__, 'order_code', '>'

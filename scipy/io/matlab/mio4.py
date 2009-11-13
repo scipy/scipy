@@ -201,8 +201,6 @@ class MatFile4Reader(MatFileReader):
             )
         super(MatFile4Reader, self).__init__(mat_stream, *args, **kwargs)
         self._array_reader.processor_func = self.processor_func
-
-    def set_dtypes(self):
         self.dtypes = self.convert_dtypes(mdtypes_template)
         self._array_reader.dtypes = self.dtypes
 

@@ -80,6 +80,29 @@ matlab_compatible : {False, True}
 docfiller = doccer.filldoc(doc_dict)
 
 
+def convert_dtypes(dtype_template, order_code):
+    ''' Convert dtypes in mapping to given order
+
+    Parameters
+    ----------
+    dtype_template : mapping
+       mapping with values returning numpy dtype from ``np.dtype(val)``
+    order_code : str
+       an order code suitable for using in ``dtype.newbyteorder()``
+
+    Returns
+    -------
+    dtypes : mapping
+       mapping where values have been replaced by
+       ``np.dtype(val).newbyteorder(order_code)``
+       
+    '''
+    dtypes = dtype_template.copy()
+    for k in dtypes:
+        dtypes[k] = np.dtype(dtypes[k]).newbyteorder(order_code)
+    return dtypes
+
+
 def small_product(arr):
     ''' Faster than product for small arrays '''
     res = 1
@@ -270,7 +293,6 @@ class MatFileReader(MatStreamAgent):
     To make this class functional, you will need to override the
     following methods:
 
-    set_dtypes              - sets data types defs from byte order
     matrix_getter_factory   - gives object to fetch next matrix from stream
     guess_byte_order        - guesses file byte order from file
     """
@@ -296,7 +318,7 @@ class MatFileReader(MatStreamAgent):
         self.dtypes = {}
         if not byte_order:
             byte_order = self.guess_byte_order()
-        self.order_code = byte_order # sets dtypes and other things too
+        self._order_code = byte_order
         if matlab_compatible:
             self.set_matlab_compatible()
         else:
@@ -343,25 +365,15 @@ class MatFileReader(MatStreamAgent):
                                 'get/set chars_as_strings property')
 
     def get_order_code(self):
+        'Read only order code property'
         return self._order_code
-    def set_order_code(self, order_code):
-        order_code = boc.to_numpy_code(order_code)
-        self._order_code = order_code
-        self.set_dtypes()
     order_code = property(get_order_code,
-                          set_order_code,
                           None,
-                          'get/set order code')
-
-    def set_dtypes(self):
-        ''' Set dtype endianness. In this case we have no dtypes '''
-        pass
+                          None,
+                          'get order code')
 
     def convert_dtypes(self, dtype_template):
-        dtypes = dtype_template.copy()
-        for k in dtypes:
-            dtypes[k] = np.dtype(dtypes[k]).newbyteorder(self.order_code)
-        return dtypes
+        return convert_dtypes(dtype_template, self.order_code)
 
     def matrix_getter_factory(self):
         assert False, 'Not implemented'

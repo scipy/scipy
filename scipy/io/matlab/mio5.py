@@ -14,7 +14,6 @@ import os
 import time
 import sys
 import zlib
-from StringIO import StringIO
 from cStringIO import StringIO as cStringIO
 from copy import copy as pycopy
 import warnings
@@ -23,11 +22,14 @@ import numpy as np
 
 import scipy.sparse
 
-import byteordercodes
+from byteordercodes import to_numpy_code
 from miobase import MatFileReader, MatArrayReader, MatMatrixGetter, \
      MatFileWriter, MatStreamWriter, docfiller, matdims, \
      MatReadError
 
+from mio5_utils import CReader
+
+     
 miINT8 = 1
 miUINT8 = 2
 miINT16 = 3
@@ -252,56 +254,16 @@ class Mat5ArrayReader(MatArrayReader):
                  codecs,
                  class_dtypes,
                  struct_as_record):
-        super(Mat5ArrayReader, self).__init__(mat_stream,
-                                              dtypes,
-                                              processor_func)
+        self.mat_stream = mat_stream
+        self.dtypes = dtypes
+        self.processor_func = processor_func
         self.codecs = codecs
         self.class_dtypes = class_dtypes
         self.struct_as_record = struct_as_record
-
-    def read_element(self, copy=True):
-        raw_tag = self.mat_stream.read(8)
-        tag = np.ndarray(shape=(),
-                         dtype=self.dtypes['tag_full'],
-                         buffer=raw_tag)
-        mdtype = tag['mdtype'].item()
-        # Byte count if this is small data element
-        byte_count = mdtype >> 16
-        if byte_count: # small data element format
-            if byte_count > 4:
-                raise ValueError, 'Too many bytes for sde format'
-            mdtype = mdtype & 0xFFFF
-            if mdtype == miMATRIX:
-                raise TypeError('Cannot have matrix in SDE format')
-            raw_str = raw_tag[4:byte_count+4]
-        else: # regular element
-            byte_count = tag['byte_count'].item()
-            # Deal with miMATRIX type (cannot pass byte string)
-            if mdtype == miMATRIX:
-                return self.current_getter(byte_count).get_array()
-            # All other types can be read from string
-            raw_str = self.mat_stream.read(byte_count)
-            # Seek to next 64-bit boundary
-            mod8 = byte_count % 8
-            if mod8:
-                self.mat_stream.seek(8 - mod8, 1)
-
-        if mdtype in self.codecs: # encoded char data
-            codec = self.codecs[mdtype]
-            if not codec:
-                raise TypeError, 'Do not support encoding %d' % mdtype
-            el = raw_str.decode(codec)
-        else: # numeric data
-            dt = self.dtypes[mdtype]
-            el_count = byte_count // dt.itemsize
-            el = np.ndarray(shape=(el_count,),
-                            dtype=dt,
-                            buffer=raw_str)
-            if copy:
-                el = el.copy()
-
-        return el
-
+        self._c_reader = CReader(self)
+        # set element reader function
+        self.read_element = self._c_reader.read_element
+        
     def matrix_getter_factory(self):
         ''' Returns reader for next matrix at top level '''
         tag = self.read_dtype(self.dtypes['tag_full'])
@@ -576,7 +538,7 @@ class Mat5BinaryBlockGetter(object):
         arr_str = array_flags.tostring()
         self.binaryblock = array_reader.mat_stream.read(
             byte_count-len(array_flags.tostring()))
-        stream = StringIO(self.binaryblock)
+        stream = cStringIO(self.binaryblock)
         reader = Mat5ArrayReader(
             stream,
             array_reader.dtypes,
@@ -591,7 +553,7 @@ class Mat5BinaryBlockGetter(object):
 
     def get_array(self):
         dt = self.array_reader.dtypes[miINT32]
-        endian = byteordercodes.to_numpy_code(dt.byteorder)
+        endian = to_numpy_code(dt.byteorder)
         data = self.array_flags.tostring() + self.binaryblock
         return MatlabBinaryBlock(data, endian)
 
@@ -629,18 +591,6 @@ class MatFile5Reader(MatFileReader):
                           " This will change to True in future versions",
                           FutureWarning, stacklevel=2)
             struct_as_record = False
-        self.codecs = {}
-        # Missing inputs to array reader set later (processor func
-        # below, dtypes, codecs via our own set_dtype function, called
-        # from parent __init__)
-        self._array_reader = Mat5ArrayReader(
-            mat_stream,
-            None,
-            None,
-            None,
-            None,
-            struct_as_record
-            )
         super(MatFile5Reader, self).__init__(
             mat_stream,
             byte_order,
@@ -649,7 +599,30 @@ class MatFile5Reader(MatFileReader):
             chars_as_strings,
             matlab_compatible,
             )
-        self._array_reader.processor_func = self.processor_func
+        # Set dtypes and codecs
+        self.dtypes = self.convert_dtypes(mdtypes_template)
+        self.class_dtypes = self.convert_dtypes(mclass_dtypes_template)
+        codecs = {}
+        postfix = self.order_code == '<' and '_le' or '_be'
+        for k, v in codecs_template.items():
+            codec = v['codec']
+            try:
+                " ".encode(codec)
+            except LookupError:
+                codecs[k] = None
+                continue
+            if v['width'] > 1:
+                codec += postfix
+            codecs[k] = codec
+        self.codecs = codecs.copy()
+        self._array_reader = Mat5ArrayReader(
+            mat_stream,
+            dtypes=self.dtypes,
+            processor_func=self.processor_func,
+            codecs = codecs.copy(),
+            class_dtypes = self.class_dtypes,
+            struct_as_record = struct_as_record
+            )
         self.uint16_codec = uint16_codec
 
     def get_uint16_codec(self):
@@ -667,30 +640,6 @@ class MatFile5Reader(MatFileReader):
                             set_uint16_codec,
                             None,
                             'get/set uint16_codec')
-
-    def set_dtypes(self):
-        ''' Set dtypes and codecs '''
-        self.dtypes = self.convert_dtypes(mdtypes_template)
-        self.class_dtypes = self.convert_dtypes(mclass_dtypes_template)
-        codecs = {}
-        postfix = self.order_code == '<' and '_le' or '_be'
-        for k, v in codecs_template.items():
-            codec = v['codec']
-            try:
-                " ".encode(codec)
-            except LookupError:
-                codecs[k] = None
-                continue
-            if v['width'] > 1:
-                codec += postfix
-            codecs[k] = codec
-        self.codecs.update(codecs)
-        self.update_array_reader()
-
-    def update_array_reader(self):
-        self._array_reader.codecs = self.codecs
-        self._array_reader.dtypes = self.dtypes
-        self._array_reader.class_dtypes = self.class_dtypes
 
     def matrix_getter_factory(self):
         return self._array_reader.matrix_getter_factory()
@@ -1196,7 +1145,7 @@ class MatFile5Writer(MatFileWriter):
                 continue
             is_global = name in self.global_vars
             if self.do_compression:
-                stream = StringIO()
+                stream = cStringIO()
                 mat_writer = self.writer_getter.matrix_writer_factory(
                     stream,
                     var,
