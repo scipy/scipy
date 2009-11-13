@@ -24,11 +24,12 @@ import numpy as np
 from numpy import array
 import scipy.sparse as SP
 
+import scipy.io.matlab.byteordercodes as boc
 from scipy.io.matlab.miobase import matdims, MatFileReader
 from scipy.io.matlab.mio import loadmat, savemat, find_mat_file, \
      mat_reader_factory
 from scipy.io.matlab.mio5 import MatlabObject, MatFile5Writer, \
-     Mat5NumericWriter
+     Mat5NumericWriter, MatFile5Reader
 
 test_data_path = join(dirname(__file__), 'data')
 
@@ -200,7 +201,9 @@ case_table5_rt = case_table5[:-1] # not the function read write
 case_table5_rt.append(
     {'name': 'objectarray',
      'expected': {'testobjectarray': np.repeat(MO, 2).reshape(1,2)}})
-
+# XXXXXXXX
+case_table5 = []
+case_table5_rt = []
 
 def types_compatible(var1, var2):
     ''' Check if types are same or compatible
@@ -626,7 +629,37 @@ def test_save_object():
     yield assert_equal, c2['field2'], 'a string'
 
 
-def test_order_code_ro():
+def test_params_ro():
     str_io = StringIO()
     mfr = MatFileReader(str_io)
-    yield assert_raises, AttributeError, mfr.__setattr__, 'order_code', '>'
+    yield assert_raises, AttributeError, mfr.__setattr__, 'byte_order', '>'
+    yield assert_raises, AttributeError, mfr.__setattr__, 'mat_dtype', True
+    yield assert_raises, AttributeError, mfr.__setattr__, 'squeeze_me', True
+    yield assert_raises, AttributeError, mfr.__setattr__, 'chars_as_strings', True
+    yield assert_raises, AttributeError, mfr.__setattr__, 'struct_as_record', True
+
+
+def test_read_opts():
+    arr = np.arange(6).reshape(1,6)
+    stream = StringIO()
+    savemat(stream, {'a': arr})
+    rdr = MatFile5Reader(stream)
+    back_dict = rdr.get_variables()
+    rarr = back_dict['a']
+    yield assert_array_equal, rarr, arr
+    rdr = MatFile5Reader(stream, squeeze_me=True)
+    yield assert_array_equal, rdr.get_variables()['a'], arr.reshape((6,))
+    rdr = MatFile5Reader(stream, byte_order=boc.native_code)
+    yield assert_array_equal, rdr.get_variables()['a'], arr
+    # inverted byte code leads to error on read because of swapped
+    # header etc
+    rdr = MatFile5Reader(stream, byte_order=boc.swapped_code)
+    yield assert_raises, Exception, rdr.get_variables
+    arr = np.array(['a string'])
+    stream.truncate(0)
+    savemat(stream, {'a': arr})
+    rdr = MatFile5Reader(stream)
+    yield assert_array_equal, rdr.get_variables()['a'], arr
+    rdr = MatFile5Reader(stream, chars_as_strings=False)
+    carr = np.atleast_2d(np.array(list(arr.item()), dtype='U1'))
+    yield assert_array_equal, rdr.get_variables()['a'], carr

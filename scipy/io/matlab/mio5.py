@@ -515,12 +515,13 @@ class MatFile5Reader(MatFileReader):
             squeeze_me,
             chars_as_strings,
             matlab_compatible,
+            struct_as_record
             )
         # Set dtypes and codecs
         self.dtypes = self.convert_dtypes(mdtypes_template)
         self.class_dtypes = self.convert_dtypes(mclass_dtypes_template)
         codecs = {}
-        postfix = self.order_code == '<' and '_le' or '_be'
+        postfix = self.byte_order == '<' and '_le' or '_be'
         for k, v in codecs_template.items():
             codec = v['codec']
             try:
