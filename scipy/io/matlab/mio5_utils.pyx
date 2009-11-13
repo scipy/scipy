@@ -22,30 +22,6 @@ cimport mio_utils as cmio_utils
 import scipy.io.matlab.mio5_params as mio5p
 import scipy.sparse
 
-cdef extern from "stdlib.h" nogil:
-    void *malloc(size_t size)
-    void *memcpy(void *str1, void *str2, size_t n)
-    void free(void *ptr)
-
-cdef extern from "workaround.h":
-     void PyArray_Set_BASE(cnp.ndarray arr, object obj)
-     cnp.ndarray PyArray_PyANewFromDescr(cnp.dtype descr,
-                                         int nd,
-                                         cnp.npy_intp *dims,
-                                         void * data,
-                                         object parent)                 \
-
-cdef extern from "numpy/arrayobject.h":
-    cnp.ndarray PyArray_SimpleNewFromData(int nd,
-                                          cnp.npy_intp* dims,
-                                          int typenum,
-                                          void* data)
-    cnp.ndarray PyArray_NewFromDescr(type, dtype, int,
-                                     cnp.npy_intp *,
-                                     cnp.npy_intp *,
-                                     void *, int, object)
-
-    void import_array()
 
 cdef:
     int miDOUBLE = mio5p.miDOUBLE
@@ -72,9 +48,6 @@ cdef:
     int mxOBJECT_CLASS = mio5p.mxOBJECT_CLASS
     int mxFUNCTION_CLASS = mio5p.mxFUNCTION_CLASS
 
-
-# Initialize numpy
-import_array()
 
 sys_is_le = sys.byteorder == 'little'
 native_code = sys_is_le and '<' or '>'
@@ -220,24 +193,21 @@ cdef class VarReader5:
     def read_element(self, int copy=True):
         cdef cnp.uint32_t mdtype, byte_count
         cdef int mod8
-        cdef char tag_data[4]
         cdef char* data_ptr
         cdef int tag_res
-        cdef streams.Memholder mh
         cdef cnp.dtype dt
+        cdef object data
         cdef cnp.npy_intp dims[1]
-        tag_res = self.cread_tag(&mdtype, &byte_count, tag_data)
+        data = streams.pyalloc_v(4, <void **>&data_ptr)
+        tag_res = self.cread_tag(&mdtype, &byte_count, data_ptr)
         if tag_res == 1: # full format
             if mdtype == miMATRIX:
                 raise TypeError('Not expecting matrix here')
-            mh = self.cstream.read_alloc(byte_count)
-            data_ptr = <char *>mh.ptr
+            data = self.cstream.read_string(byte_count, <void **>&data_ptr, copy)
             # Seek to next 64-bit boundary
             mod8 = byte_count % 8
             if mod8:
                 self.cstream.seek(8 - mod8, 1)
-        else: # SDE format
-            data_ptr = tag_data
         if mdtype in self.codecs: # encoded char data
             codec = self.codecs[mdtype]
             if not codec:
@@ -247,7 +217,6 @@ cdef class VarReader5:
         else: # numeric data
             dt = self.dtypes[mdtype]
             dims[0] = byte_count / dt.itemsize
-            data = data_ptr[:byte_count]
             el = np.ndarray(shape=(dims[0],),
                             dtype=dt,
                             buffer=data)

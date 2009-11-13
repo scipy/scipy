@@ -1,6 +1,7 @@
 # -*- python -*- or near enough
 
-cimport python_string
+from python_string cimport PyString_FromStringAndSize, \
+    PyString_AS_STRING, PyString_Size
 
 cdef extern from "stdlib.h" nogil:
     void *malloc(size_t size)
@@ -18,7 +19,6 @@ cdef extern from "Python.h":
     size_t fread (void *ptr, size_t size, size_t n, FILE* fptr)
     int fseek (FILE * fptr, long int offset, int whence)
     long int ftell (FILE *stream)
-    object PyCObject_FromVoidPtr(void *, void (*)(void*))
 
 cdef extern from "fileobject.h":
     ctypedef class __builtin__.file [object PyFileObject]:
@@ -42,11 +42,11 @@ cdef extern from "cStringIO.h":
 PycString_IMPORT
 
 
-cdef class Memholder:
-    ''' Object to hold memory pointer, and dealloc on delete '''
-    def __dealloc__(self):
-       if self.ptr !=NULL:
-           free(self.ptr)
+# Function to allocate, wrap memory via Python string creation
+cdef inline object pyalloc_v(Py_ssize_t n, void **pp):
+    cdef object ob = PyString_FromStringAndSize(NULL, n)
+    pp[0] = <void*> PyString_AS_STRING(ob)
+    return ob
 
 
 cdef class GenericStream:
@@ -69,26 +69,24 @@ cdef class GenericStream:
         '''
         cdef char* d_ptr
         data = self.fobj.read(n)
-        if python_string.PyString_Size(data) != n:
+        if PyString_Size(data) != n:
             raise IOError('could not read bytes')
             return -1
         d_ptr = data
         memcpy(buf, d_ptr, n)
         return 0
 
-    cdef Memholder read_alloc(self, size_t n):
+    cdef object read_string(self, size_t n, void **pp, int copy=True):
         ''' Make new memory, wrap with object '''
-        cdef Memholder mh = Memholder()
-        cdef char *d_ptr
         data = self.fobj.read(n)
-        if python_string.PyString_Size(data) != n:
+        if PyString_Size(data) != n:
             raise IOError('could not read bytes')
-        d_ptr = data
-        mh.ptr = malloc(n)
-        if mh.ptr == NULL:
-            raise MemoryError('Could not allocate memory')
-        memcpy(mh.ptr, d_ptr, n)
-        return mh
+        if copy != True:
+           pp[0] = <void*> PyString_AS_STRING(data)
+           return data
+        cdef object d_copy = pyalloc_v(n, pp)
+        memcpy(pp[0], PyString_AS_STRING(data), n)
+        return d_copy
 
 
 cdef class cStringStream(GenericStream):
@@ -113,19 +111,22 @@ cdef class cStringStream(GenericStream):
         memcpy(buf, <void *>d_ptr, n)
         return 0
 
-    cdef Memholder read_alloc(self, size_t n):
+    cdef object read_string(self, size_t n, void **pp, int copy=True):
         ''' Make new memory, wrap with object '''
-        cdef Memholder mh = Memholder()
-        cdef char *d_ptr
-        cdef size_t n_red
-        n_red = StringIO_cread(self.fobj, &d_ptr, n)
+        cdef:
+            char *d_ptr
+            object obj
+        cdef size_t n_red = StringIO_cread(self.fobj, &d_ptr, n)
         if n_red != n:
             raise IOError('could not read bytes')
-        mh.ptr = malloc(n)
-        if mh.ptr == NULL:
-            raise MemoryError('Could not allocate memory')
-        memcpy(mh.ptr, d_ptr, n)
-        return mh
+        if copy != True:
+           obj = PyString_FromStringAndSize(d_ptr, n)
+           pp[0] = <void *>d_ptr
+           return obj
+        obj = pyalloc_v(n, pp)
+        memcpy(pp[0], d_ptr, n)
+        return obj
+
    
 cdef class FileStream(GenericStream):
     cdef FILE* file
@@ -148,7 +149,7 @@ cdef class FileStream(GenericStream):
            
            * 0 - from beginning of file (`offset` should be >=0)
            * 1 - from current file position
-           * 2 - from end of file (`offset nearly always <=0)
+           * 2 - from end of file (`offset` nearly always <=0)
 
         Returns
         -------
@@ -175,18 +176,13 @@ cdef class FileStream(GenericStream):
             return -1
         return 0
 
-    cdef Memholder read_alloc(self, size_t n):
+    cdef object read_string(self, size_t n, void **pp, int copy=True):
         ''' Make new memory, wrap with object '''
-        cdef Memholder mh = Memholder()
-        cdef char *d_ptr
-        cdef size_t n_red
-        mh.ptr = malloc(n)
-        if mh.ptr == NULL:
-            raise MemoryError('Could not allocate memory')
-        n_red = fread(mh.ptr, 1, n, self.file)
+        cdef object obj = pyalloc_v(n, pp)
+        cdef size_t n_red = fread(pp[0], 1, n, self.file)
         if n_red != n:
             raise IOError('could not read bytes')
-        return mh
+        return obj
 
 
 def _read_into(GenericStream st, size_t n):
@@ -198,15 +194,13 @@ def _read_into(GenericStream st, size_t n):
     return my_str
 
 
-def _read_alloc(GenericStream st, size_t n):
+def _read_string(GenericStream st, size_t n):
     # for testing only.  Use st.read instead
-    cdef Memholder obj
-    cdef char **pp
     cdef char *d_ptr
-    obj = st.read_alloc(n)
+    cdef object obj = st.read_string(n, <void **>&d_ptr, True)
     my_str = 'A' * n
-    d_ptr = my_str
-    memcpy(d_ptr, obj.ptr, n)
+    cdef char *mys_ptr = my_str
+    memcpy(mys_ptr, d_ptr, n)
     return my_str
 
     

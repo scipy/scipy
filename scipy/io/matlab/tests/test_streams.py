@@ -17,7 +17,7 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 
 from scipy.io.matlab.streams import make_stream, \
     GenericStream, cStringStream, FileStream, \
-    _read_into, _read_alloc
+    _read_into, _read_string
 
 
 def setup():
@@ -82,8 +82,8 @@ def test_read():
         yield assert_raises, IOError, _read_into, st, 2
         # read alloc
         st.seek(0)
-        res = _read_alloc(st, 4)
+        res = _read_string(st, 4)
         yield assert_equal, res, 'a\x00st'
-        res = _read_alloc(st, 4)
+        res = _read_string(st, 4)
         yield assert_equal, res, 'ring'
-        yield assert_raises, IOError, _read_alloc, st, 2
+        yield assert_raises, IOError, _read_string, st, 2
