@@ -546,6 +546,103 @@ class KDTree(object):
                           other.tree, Rectangle(other.maxes, other.mins))
         return results
 
+    def query_pairs(self, r, p=2., eps=0):
+        """Find all pairs of points whose distance is at most r
+
+        Parameters
+        ==========
+
+        r : positive float
+            The maximum distance
+        p : float 1<=p<=infinity
+            Which Minkowski norm to use
+        eps : nonnegative float
+            Approximate search. Branches of the tree are not explored
+            if their nearest points are further than r/(1+eps), and branches
+            are added in bulk if their furthest points are nearer than r*(1+eps).
+
+        Returns
+        =======
+
+        results : set
+            set of pairs (i,j), i<j, for which the corresponing positions are
+            close.
+
+        """
+        results = set()
+        visited = set()
+        def test_set_visited(node1, node2):
+            i, j = sorted((id(node1),id(node2)))
+            if (i,j) in visited:
+                return True
+            else:
+                visited.add((i,j))
+                return False
+        def traverse_checking(node1, rect1, node2, rect2):
+            if test_set_visited(node1, node2):
+                return
+
+            if id(node2)<id(node1):
+                # This node pair will be visited in the other order
+                #return
+                pass
+            if rect1.min_distance_rectangle(rect2, p)>r/(1.+eps):
+                return
+            elif rect1.max_distance_rectangle(rect2, p)<r*(1.+eps):
+                traverse_no_checking(node1.less, node2)
+                traverse_no_checking(node1.greater, node2)
+            elif isinstance(node1, KDTree.leafnode):
+                if isinstance(node2, KDTree.leafnode):
+                    d = self.data[node2.idx]
+                    for i in node1.idx:
+                        for j in node2.idx[minkowski_distance(d,self.data[i],p)<=r]:
+                            if i<j:
+                                results.add((i,j))
+                            elif j<i:
+                                results.add((j,i))
+                else:
+                    less, greater = rect2.split(node2.split_dim, node2.split)
+                    traverse_checking(node1,rect1,node2.less,less)
+                    traverse_checking(node1,rect1,node2.greater,greater)
+            elif isinstance(node2, KDTree.leafnode):
+                less, greater = rect1.split(node1.split_dim, node1.split)
+                traverse_checking(node1.less,less,node2,rect2)
+                traverse_checking(node1.greater,greater,node2,rect2)
+            else:
+                less1, greater1 = rect1.split(node1.split_dim, node1.split)
+                less2, greater2 = rect2.split(node2.split_dim, node2.split)
+                traverse_checking(node1.less,less1,node2.less,less2)
+                traverse_checking(node1.less,less1,node2.greater,greater2)
+                traverse_checking(node1.greater,greater1,node2.less,less2)
+                traverse_checking(node1.greater,greater1,node2.greater,greater2)
+
+        def traverse_no_checking(node1, node2):
+            if test_set_visited(node1, node2):
+                return
+
+            if id(node2)<id(node1):
+                # This node pair will be visited in the other order
+                #return
+                pass
+            if isinstance(node1, KDTree.leafnode):
+                if isinstance(node2, KDTree.leafnode):
+                    for i in node1.idx:
+                        for j in node2.idx:
+                            if i<j:
+                                results.add((i,j))
+                            elif j<i:
+                                results.add((j,i))
+                else:
+                    traverse_no_checking(node1, node2.less)
+                    traverse_no_checking(node1, node2.greater)
+            else:
+                traverse_no_checking(node1.less, node2)
+                traverse_no_checking(node1.greater, node2)
+
+        traverse_checking(self.tree, Rectangle(self.maxes, self.mins),
+                          self.tree, Rectangle(self.maxes, self.mins))
+        return results
+
 
     def count_neighbors(self, other, r, p=2.):
         """Count how many nearby pairs can be formed.

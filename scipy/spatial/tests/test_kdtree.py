@@ -434,5 +434,33 @@ def test_distance_matrix_looping():
     dsl = distance_matrix(xs,ys,threshold=1)
     assert_equal(ds,dsl)
 
+def check_onetree_query(T,d):
+    r = T.query_ball_tree(T, d)
+    s = set()
+    for i, l in enumerate(r):
+        for j in l:
+            if i<j:
+                s.add((i,j))
+
+    assert s == T.query_pairs(d)
+
+def test_onetree_query():
+    np.random.seed(0)
+    n = 100
+    k = 4
+    points = np.random.randn(n,k)
+    T = KDTree(points)
+    yield check_onetree_query, T, 0.1
+
+    points = np.random.randn(3*n,k)
+    points[:n] *= 0.001
+    points[n:2*n] += 2
+    T = KDTree(points)
+    yield check_onetree_query, T, 0.1
+    yield check_onetree_query, T, 0.001
+    yield check_onetree_query, T, 0.00001
+    yield check_onetree_query, T, 1e-6
+
+
 if __name__=="__main__":
     run_module_suite()
