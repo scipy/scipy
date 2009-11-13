@@ -1,4 +1,4 @@
-''' Cython mio5 routines (-*- python -*- like)
+''' Cython mio5 utility routines (-*- python -*- like)
 
 '''
 
@@ -9,98 +9,111 @@ from copy import copy as pycopy
 import numpy as np
 cimport numpy as cnp
 
+# Constant from numpy - max number of array dimensions
+DEF _MAT_MAXDIMS = 32
+
+# Max length of matlab variable names - in fact its 63 at the moment
+DEF _MAT_MAX_NAME_LEN = 128
+
+cimport streams
 import scipy.io.matlab.miobase as miob
-import scipy.io.matlab.mio5 as mio5
+from scipy.io.matlab.mio_utils import FileReadOpts, process_element
+cimport mio_utils as cmio_utils
+import scipy.io.matlab.mio5_params as mio5p
 import scipy.sparse
 
-cdef extern from "Python.h":
-    void *PyCObject_Import(char *, char *) except NULL
-    ctypedef struct PyTypeObject:
-        pass
-    ctypedef struct PyObject:
-        pass
-    ctypedef struct FILE
-    FILE *PyFile_AsFile(object)
-    size_t fread (void *ptr, size_t size, size_t n, FILE* fptr)
-    int fseek (FILE * fptr, long int offset, int whence)
-    long int ftell (FILE *stream)
+cdef extern from "stdlib.h" nogil:
+    void *malloc(size_t size)
+    void *memcpy(void *str1, void *str2, size_t n)
+    void free(void *ptr)
+
+cdef extern from "workaround.h":
+     void PyArray_Set_BASE(cnp.ndarray arr, object obj)
+     cnp.ndarray PyArray_PyANewFromDescr(cnp.dtype descr,
+                                         int nd,
+                                         cnp.npy_intp *dims,
+                                         void * data,
+                                         object parent)                 \
+
+cdef extern from "numpy/arrayobject.h":
+    cnp.ndarray PyArray_SimpleNewFromData(int nd,
+                                          cnp.npy_intp* dims,
+                                          int typenum,
+                                          void* data)
+    cnp.ndarray PyArray_NewFromDescr(type, dtype, int,
+                                     cnp.npy_intp *,
+                                     cnp.npy_intp *,
+                                     void *, int, object)
+
+    void import_array()
+
+cdef:
+    int miDOUBLE = mio5p.miDOUBLE
+    int miINT32 = mio5p.miINT32
+    int miINT8 = mio5p.miINT8
+    int miMATRIX = mio5p.miMATRIX
+    int miCOMPRESSED = mio5p.miCOMPRESSED
+    # Numeric matrix classes
+    int mxDOUBLE_CLASS = mio5p.mxDOUBLE_CLASS
+    int mxSINGLE_CLASS = mio5p.mxSINGLE_CLASS
+    int mxINT8_CLASS = mio5p.mxINT8_CLASS
+    int mxUINT8_CLASS = mio5p.mxUINT8_CLASS
+    int mxINT16_CLASS = mio5p.mxINT16_CLASS
+    int mxUINT16_CLASS = mio5p.mxUINT16_CLASS
+    int mxINT32_CLASS = mio5p.mxINT32_CLASS
+    int mxUINT32_CLASS = mio5p.mxUINT32_CLASS
+    int mxINT64_CLASS = mio5p.mxINT64_CLASS
+    int mxUINT64_CLASS = mio5p.mxUINT64_CLASS
+    # other matrix classes
+    int mxSPARSE_CLASS = mio5p.mxSPARSE_CLASS
+    int mxCHAR_CLASS = mio5p.mxCHAR_CLASS
+    int mxCELL_CLASS = mio5p.mxCELL_CLASS
+    int mxSTRUCT_CLASS = mio5p.mxSTRUCT_CLASS
+    int mxOBJECT_CLASS = mio5p.mxOBJECT_CLASS
+    int mxFUNCTION_CLASS = mio5p.mxFUNCTION_CLASS
 
 
-cdef extern from "fileobject.h":
-    ctypedef class __builtin__.file [object PyFileObject]:
-        pass
-
-cdef extern from "cStringIO.h":
-    struct PycStringIO_CAPI:
-        int (*cread)(object Input, char ** bufptr, Py_ssize_t n)
-        int (*creadline)(object Input, char ** bufptr)
-        int (*cwrite)(object Output, char * out_str, Py_ssize_t n)
-        object (*cgetvalue)(object Input)
-        object (*NewOutput)(int size)
-        PyObject *(*NewInput)(object in_str)
-        PyTypeObject *InputType, *OutputType
-    cdef PycStringIO_CAPI* PycStringIO
-    bint PycStringIO_InputCheck(object O)
-    bint PycStringIO_OutputCheck(object O)
-       
-# initialize cStringIO
-PycStringIO = <PycStringIO_CAPI*>PyCObject_Import("cStringIO", "cStringIO_CAPI")
-
-
-cdef enum FileType:
-    generic
-    real_file
-    cstringio
-
-
-cdef int miDOUBLE = mio5.miDOUBLE
-cdef int miINT32 = mio5.miINT32
-cdef int miINT8 = mio5.miINT8
-cdef int miMATRIX = mio5.miMATRIX
-cdef int miCOMPRESSED = mio5.miCOMPRESSED
+# Initialize numpy
+import_array()
 
 sys_is_le = sys.byteorder == 'little'
 native_code = sys_is_le and '<' or '>'
 swapped_code = sys_is_le and '>' or '<'
 
 
-def bsu4(u4): # for testing
-    return byteswap_u4(u4)
-    
-            
-cdef cnp.uint32_t byteswap_u4(cnp.uint32_t u4):
+cpdef cnp.uint32_t byteswap_u4(cnp.uint32_t u4):
     return ((u4 << 24) |
            ((u4 << 8) & 0xff0000U) |
            ((u4 >> 8 & 0xff00u)) |
            (u4 >> 24))
 
 
-cdef size_t cproduct(tup):
-    cdef size_t res = 1
-    cdef int i
-    for i in range(len(tup)):
-        res *= tup[i]
-    return res
-           
-
-cdef class ElementHeader:
-    cdef public object name
+cdef class VarHeader5:
+    cdef char name_ptr[_MAT_MAX_NAME_LEN]
+    cdef int name_len
     cdef int mclass
     cdef object dims
+    cdef cnp.int32_t dims_ptr[_MAT_MAXDIMS]
+    cdef int n_dims
     cdef int is_complex
     cdef int is_logical
     cdef public int is_global
     cdef size_t nzmax
 
+    property name:
+        def __get__(self):
+            return self.name_ptr[:self.name_len]
 
-cdef class CReader:
+
+
+cdef class VarReader5:
     cdef public int is_swapped, little_endian
     cdef readonly object mat_stream
-    cdef readonly int stream_type
-    cdef object dtypes, class_dtypes, codecs
+    cdef object dtypes, class_dtypes, codecs, uint16_codec
     cdef int struct_as_record
-    cdef FILE* _file
     cdef object preader
+    cdef cmio_utils.FileReadOpts read_opts
+    cdef streams.GenericStream cstream
     
     def __new__(self, preader):
         self.preader = preader
@@ -108,34 +121,27 @@ cdef class CReader:
         self.class_dtypes = preader.class_dtypes
         self.codecs = preader.codecs
         self.struct_as_record = preader.struct_as_record
-        # infer endianness from double dtype
-        f8_code = self.dtypes[miDOUBLE].byteorder
-        self.is_swapped = f8_code == swapped_code
+        self.uint16_codec = preader.uint16_codec
+        self.is_swapped = preader.byte_order == swapped_code
         if self.is_swapped:
             self.little_endian = not sys_is_le
         else:
             self.little_endian = sys_is_le
         self.set_stream(preader.mat_stream)
+        self.read_opts = FileReadOpts(
+            preader.chars_as_strings,
+            preader.mat_dtype,
+            preader.squeeze_me)
         
     def set_stream(self, fobj):
         self.mat_stream = fobj
-        if isinstance(fobj, file):
-            self.stream_type = real_file
-            self._file = PyFile_AsFile(fobj)
-        elif PycStringIO_InputCheck(fobj) or PycStringIO_OutputCheck(fobj):
-            self.stream_type = cstringio
-        else:
-            self.stream_type = generic
-
+        self.cstream = streams.make_stream(fobj)
+        
     def read_tag(self):
         cdef cnp.uint32_t mdtype, byte_count
         cdef char tag_data[4]
         cdef int tag_res
         tag_res = self.cread_tag(&mdtype, &byte_count, tag_data)
-        if tag_res < 1:
-            if tag_res == -2:
-                raise IOError('Error in SDE format data')
-            raise IOError('Error reading data from stream')
         if tag_res == 2: # sde format
             pdata = tag_data
         else:
@@ -145,7 +151,7 @@ cdef class CReader:
     cdef int cread_tag(self,
                      cnp.uint32_t *mdtype_ptr,
                      cnp.uint32_t *byte_count_ptr,
-                     char *data_ptr):
+                     char *data_ptr) except -1:
         ''' Read tag mdtype and byte_count
 
         Does necessary swapping and takes account of SDE formats
@@ -153,12 +159,12 @@ cdef class CReader:
         Data may be returned in data_ptr, if this was an SDE
 
         Returns 1 for success, full format; 2 for success, SDE format; -1
-        for failed data read; -2 for error detected in SDE processing
+        if error arises
         '''
         cdef cnp.uint16_t mdtype_sde, byte_count_sde
-        cdef cnp.uint32_t mdtype, byte_count
+        cdef cnp.uint32_t mdtype
         cdef cnp.uint32_t* u4_ptr = <cnp.uint32_t*>data_ptr
-        cdef int read_ret
+        cdef cnp.uint32_t u4s[2]
         # First read 8 bytes.  The 8 bytes can be in one of two formats.
         # For the first - standard format - the 8 bytes are two uint32
         # values, of which the first is the integer code for the matlab
@@ -184,28 +190,29 @@ cdef class CReader:
         # tag are two big-endian uint16 values, first ``byte_count`` and
         # second ``mdtype``.  If the *file* is little-endian then the
         # first four bytes are two little-endian uint16 values, first
-        # ``mdtype`` and second ``byte_count``.   
-        read_ret = self.get_2_u4s(&mdtype, &byte_count)
-        if read_ret == -1:
-            return -1 # 
+        # ``mdtype`` and second ``byte_count``.
+        self.cstream.read_into(<void *>u4s, 8)
         if self.is_swapped:
-            mdtype = byteswap_u4(mdtype)
+            mdtype = byteswap_u4(u4s[0])
+        else:
+            mdtype = u4s[0]
         # The most significant two bytes of a U4 *mdtype* will always be
         # 0, if they are not, this must be SDE format
         byte_count_sde = mdtype >> 16
         if byte_count_sde: # small data element format
             mdtype_sde = mdtype & 0xffff
-            if byte_count_sde > 4 or mdtype_sde == miMATRIX:
-                return -2
-            u4_ptr[0] = byte_count
+            if byte_count_sde > 4:
+                raise ValueError('Error in SDE format data')
+                return -1
+            u4_ptr[0] = u4s[1]
             mdtype_ptr[0] = mdtype_sde
             byte_count_ptr[0] = byte_count_sde
             return 2
         # regular element
         if self.is_swapped:
-            byte_count_ptr[0] = byteswap_u4(byte_count)
+            byte_count_ptr[0] = byteswap_u4(u4s[1])
         else:
-            byte_count_ptr[0] = byte_count
+            byte_count_ptr[0] = u4s[1]
         mdtype_ptr[0] = mdtype
         u4_ptr[0] = 0
         return 1
@@ -216,21 +223,19 @@ cdef class CReader:
         cdef char tag_data[4]
         cdef char* data_ptr
         cdef int tag_res
+        cdef streams.Memholder mh
+        cdef cnp.dtype dt
+        cdef cnp.npy_intp dims[1]
         tag_res = self.cread_tag(&mdtype, &byte_count, tag_data)
-        if tag_res < 1:
-            if tag_res == -2:
-                raise IOError('Error in SDE format data')
-            raise IOError('Error reading data from stream')
         if tag_res == 1: # full format
             if mdtype == miMATRIX:
                 raise TypeError('Not expecting matrix here')
-            # All other types can be read from string
-            data = self.mat_stream.read(byte_count)
-            data_ptr = data
+            mh = self.cstream.read_alloc(byte_count)
+            data_ptr = <char *>mh.ptr
             # Seek to next 64-bit boundary
             mod8 = byte_count % 8
             if mod8:
-                self.move_forward(8 - mod8)
+                self.cstream.seek(8 - mod8, 1)
         else: # SDE format
             data_ptr = tag_data
         if mdtype in self.codecs: # encoded char data
@@ -241,281 +246,254 @@ cdef class CReader:
             el = tmp.decode(codec)
         else: # numeric data
             dt = self.dtypes[mdtype]
-            el_count = byte_count // dt.itemsize
-            el = np.ndarray(shape=(el_count,),
+            dims[0] = byte_count / dt.itemsize
+            data = data_ptr[:byte_count]
+            el = np.ndarray(shape=(dims[0],),
                             dtype=dt,
-                            buffer=data_ptr[:byte_count])
-            if copy:
-                el = el.copy()
+                            buffer=data)
         return el
 
-    def read_dims(self):
-        ''' Read array dimensions as list '''
+    cdef int read_dims_into(self, cnp.int32_t *dims) except -1:
+        ''' Read array dimensions into memory '''
         cdef cnp.uint32_t mdtype, byte_count
-        cdef cnp.int32_t* dims_ptr
-        cdef cnp.int32_t dim
-        cdef int n_dims, i
+        cdef int n_dims
         cdef int mod8
-        cdef char tag_data[4], *data_ptr
-        cdef int tag_res
-        tag_res = self.cread_tag(&mdtype, &byte_count, tag_data)
-        if tag_res < 1:
-            if tag_res == -2:
-                raise IOError('Error in SDE format data')
-            raise IOError('Error reading data from stream')
+        cdef int i, res
+        res = self.cread_tag(&mdtype, &byte_count, <char *>dims)
         if mdtype != miINT32:
             raise TypeError('Expecting miINT32 as data type')
-        if tag_res == 1: # full format
-            # All other types can be read from string
-            data = self.mat_stream.read(byte_count)
-            data_ptr = data
-            dims_ptr = <cnp.int32_t *>data_ptr
+            return -1
+        if res == 1: # full format
+            res = self.cstream.read_into(<void *>dims, byte_count)
             # Seek to next 64-bit boundary
             mod8 = byte_count % 8
             if mod8:
-                self.move_forward(8 - mod8)
-        else: # SDE format
-            dims_ptr = <cnp.int32_t *>tag_data
+                self.cstream.seek(8 - mod8, 1)
         n_dims = byte_count / 4
-        dims = []
-        for i in range(n_dims):
-            dim = dims_ptr[i]
-            if self.is_swapped:
-                dim = byteswap_u4(dim)
-            dims.append(dim)
-        return dims
+        if self.is_swapped:
+            for i in range(n_dims):
+                dims[i] = byteswap_u4(dims[i])
+        return n_dims
     
-    def read_name(self):
-        ''' Read matrix name as python string '''
+    cdef cnp.uint32_t read_name_into(self, char *name_ptr):
+        ''' Read matrix name into provided memory '''
         cdef cnp.uint32_t mdtype, byte_count
+        cdef int name_len
         cdef int mod8
-        cdef char tag_data[4], *data_ptr
-        cdef int tag_res
-        tag_res = self.cread_tag(&mdtype, &byte_count, tag_data)
-        if tag_res < 1:
-            if tag_res == -2:
-                raise IOError('Error in SDE format data')
-            raise IOError('Error reading data from stream')
+        cdef int res
+        res = self.cread_tag(&mdtype, &byte_count, name_ptr)
         if mdtype != miINT8:
             raise TypeError('Expecting miINT8 as data type')
-        if tag_res == 1: # full format
-            # All other types can be read from string
-            data = self.mat_stream.read(byte_count)
-            data_ptr = data
+        if res == 1: # full format
+            res = self.cstream.read_into(<void *>name_ptr, byte_count)
             # Seek to next 64-bit boundary
             mod8 = byte_count % 8
             if mod8:
-                self.move_forward(8 - mod8)
-        else: # SDE format
-            data_ptr = tag_data
-        return data_ptr[:byte_count]
-
-    cdef int get_2_u4s(self, cnp.uint32_t* v1, cnp.uint32_t* v2):
-        ''' Get 2 as-yet unswapped uint32 values from stream '''
-        cdef char* tag_ptr
-        cdef char tag_bytes[8]
-        cdef cnp.uint32_t* u4_ptr
-        cdef size_t n_red
-        if self.stream_type == real_file: # really a file object
-            n_red = fread(tag_bytes, 1, 8, self._file)
-            if n_red < 8:
-                return -1
-            tag_ptr = <char *>tag_bytes
-        elif self.stream_type == cstringio:
-            n_red = PycStringIO.cread(self.mat_stream, &tag_ptr, 8)
-            if n_red < 8:
-                return -1
-        else:# use python interface to get data
-            # python variable needed to hold bytes
-            tag = self.mat_stream.read(8)
-            tag_ptr = tag
-            if len(tag) < 8:
-                return -1
-        u4_ptr = <cnp.uint32_t *>tag_ptr
-        v1[0] = u4_ptr[0]
-        v2[0] = u4_ptr[1]
-        return 1
-
-    cdef void move_forward(self, size_t n):
-        ''' Move forward in stream n bytes '''
-        cdef char* ptr
-        if self.stream_type == real_file: # really a file object
-            fseek(self._file, n, 1)
-        elif self.stream_type == cstringio:
-            PycStringIO.cread(self.mat_stream, &ptr, n)
-        else:# use python interface
-            self.mat_stream.seek(n, 1)
-
-    cdef size_t tell(self):
-        if self.stream_type == real_file: # really a file object
-            return ftell(self._file)
-        else:# use python interface
-            self.mat_stream.tell()
+                self.cstream.seek(8 - mod8, 1)
+        return byte_count
 
     def read_full_tag(self):
         cdef cnp.uint32_t mdtype, byte_count
-        cdef size_t next_pos
-        read_ret = self.get_2_u4s(&mdtype, &byte_count)
-        if self.is_swapped:
-            mdtype = byteswap_u4(mdtype)
-            byte_count = byteswap_u4(byte_count)
+        self.cread_full_tag(&mdtype, &byte_count)
         return mdtype, byte_count
 
-    def read_header(self):
+    cdef void cread_full_tag(self,
+                        cnp.uint32_t* mdtype,
+                        cnp.uint32_t* byte_count):
+        cdef cnp.uint32_t u4s[2]
+        self.cstream.read_into(<void *>u4s, 8)
+        if self.is_swapped:
+            mdtype[0] = byteswap_u4(u4s[0])
+            byte_count[0] = byteswap_u4(u4s[1])
+        else:
+            mdtype[0] = u4s[0]
+            byte_count[0] = u4s[1]
+
+    cpdef VarHeader5 read_header(self):
         ''' Return matrix header for current stream position
 
         Returns matrix headers at top level and sub levels
-        '''
-        return self.cread_header()
-        
-    cdef ElementHeader cread_header(self):
-        ''' Return matrix header for current stream position
-
-        Returns matrix headers at top level and sub levels
-
-        C callable version
         '''
         cdef:
+            cdef cnp.uint32_t u4s[2]
             cnp.uint32_t af_mdtype, af_byte_count
             cnp.uint32_t flags_class, nzmax
             cnp.uint16_t mc
-            int ret
-            ElementHeader header
+            int ret, i
+            VarHeader5 header
         # Read and discard mdtype and byte_count
-        ret = self.get_2_u4s(&af_mdtype, &af_byte_count)
-        if ret < 0:
-            raise IOError('Cannot read from stream')
+        self.cstream.read_into(<void *>u4s, 8)
         # get array flags and nzmax
-        ret = self.get_2_u4s(&flags_class, &nzmax)
-        if ret < 0:
-            raise IOError('Cannot read from stream')
+        self.cstream.read_into(<void *>u4s, 8)
         if self.is_swapped:
-            flags_class = byteswap_u4(flags_class)
-            nzmax = byteswap_u4(nzmax)
-        header = ElementHeader()
+            flags_class = byteswap_u4(u4s[0])
+            nzmax = byteswap_u4(u4s[1])
+        else:
+            flags_class = u4s[0]
+            nzmax = u4s[1]
+        header = VarHeader5()
         mc = flags_class & 0xFF
+        # Might want to detect unreadable mclasses (such as functions)
+        # here and divert to something that preserves the binary data.
+        # For now we bail later in read_array_mdtype, via
+        # read_mi_matrix, giving a MatReadError
         header.mclass = mc
         header.is_logical = flags_class >> 9 & 1
         header.is_global = flags_class >> 10 & 1
         header.is_complex = flags_class >> 11 & 1
         header.nzmax = nzmax
-        header.dims = self.read_dims()
-        header.name = self.read_name()
+        header.n_dims = self.read_dims_into(header.dims_ptr)
+        # convert dims to list
+        header.dims = []
+        for i in range(header.n_dims):
+            header.dims.append(header.dims_ptr[i])
+        header.name_len = self.read_name_into(header.name_ptr)
         return header
 
-    def array_from_header(self, ElementHeader header):
+    def array_from_header(self, VarHeader5 header):
         ''' Only called at the top level '''
         arr, mat_dtype = self.read_array_mdtype(header)
-        return miob.process_element(arr, self.preader, mat_dtype)
+        if header.mclass == mxSPARSE_CLASS:
+            # no current processing makes sense for sparse
+            return arr
+        return process_element(arr, self.read_opts, mat_dtype)
 
     cdef cnp.ndarray read_mi_matrix(self):
+        ''' Read header with matrix at sub-levels '''
         cdef:
-            ElementHeader header
+            VarHeader5 header
             cnp.uint32_t mdtype, byte_count
             cnp.ndarray arr
-        mdtype, byte_count = self.read_full_tag()
-        if mdtype != mio5.miMATRIX:
+        # read full tag
+        self.cread_full_tag(&mdtype, &byte_count)
+        if mdtype != miMATRIX:
             raise TypeError('Expecting matrix here')
         if byte_count == 0: # empty matrix
             mat_dtype = 'f8'
             arr = np.array([[]])
         else:
-            header = self.cread_header()
+            header = self.read_header()
             arr, mat_dtype = self.read_array_mdtype(header)
-        return miob.process_element(arr, self.preader, mat_dtype)
+        if header.mclass == mxSPARSE_CLASS:
+            # no current processing makes sense for sparse
+            return arr
+        return process_element(arr, self.read_opts, mat_dtype)
 
-    def read_array_mdtype(self, ElementHeader header):
+    cpdef read_array_mdtype(self, VarHeader5 header):
         cdef:
             int mc
-            size_t length
         mc = header.mclass
         mat_dtype = None
-        if mc in mio5.mx_numbers: # numeric
+        if (mc == mxDOUBLE_CLASS
+            or mc == mxSINGLE_CLASS
+            or mc == mxINT8_CLASS
+            or mc == mxUINT8_CLASS
+            or mc == mxINT16_CLASS
+            or mc == mxUINT16_CLASS
+            or mc == mxINT32_CLASS
+            or mc == mxUINT32_CLASS
+            or mc == mxINT64_CLASS
+            or mc == mxUINT64_CLASS): # numeric matrix
             if header.is_logical:
                 mat_dtype = np.dtype('bool')
             else:
                 mat_dtype = self.class_dtypes[mc]
-            if header.is_complex:
-                # avoid array copy to save memory
-                res = self.read_element(copy=False)
-                res_j = self.read_element(copy=False)
-                res = res + (res_j * 1j)
-            else:
-                res = self.read_element()
-            arr = np.ndarray(shape=header.dims,
-                              dtype=res.dtype,
-                              buffer=res,
-                              order='F')
-        elif mc == mio5.mxSPARSE_CLASS:
-            rowind = self.read_element()
-            indptr = self.read_element()
-            if header.is_complex:
-                # avoid array copy to save memory
-                data   = self.read_element(copy=False)
-                data_j = self.read_element(copy=False)
-                data = data + (data_j * 1j)
-            else:
-                data = self.read_element()
-            ''' From the matlab (TM) API documentation, last found here:
-            http://www.mathworks.com/access/helpdesk/help/techdoc/matlab_external/
-            rowind are simply the row indices for all the (nnz) non-zero
-            entries in the sparse array.  rowind has nzmax entries, so
-            may well have more entries than nnz, the actual number of
-            non-zero entries, but rowind[nnz:] can be discarded and
-            should be 0. indptr has length (number of columns + 1), and
-            is such that, if D = diff(colind), D[j] gives the number of
-            non-zero entries in column j. Because rowind values are
-            stored in column order, this gives the column corresponding
-            to each rowind
-            '''
-            M,N = header.dims
-            indptr = indptr[:N+1]
-            nnz = indptr[-1]
-            rowind = rowind[:nnz]
-            data   = data[:nnz]
-            arr = scipy.sparse.csc_matrix(
-                (data,rowind,indptr),
-                shape=(M,N))
-        elif mc == mio5.mxCHAR_CLASS:
-            res = self.read_element()
-            # Convert non-string types to unicode
-            if isinstance(res, np.ndarray):
-                if res.dtype.type == np.uint16:
-                    codec = mio5.miUINT16_codec
-                    if self.codecs['uint16_len'] == 1:
-                        res = res.astype(np.uint8)
-                elif res.dtype.type in (np.uint8, np.int8):
-                    codec = 'ascii'
-                else:
-                    raise TypeError, 'Did not expect type %s' % res.dtype
-                res = res.tostring().decode(codec)
-            arr = np.ndarray(shape=header.dims,
-                             dtype=np.dtype('U1'),
-                             buffer=np.array(res),
-                             order='F').copy()
-        elif mc == mio5.mxCELL_CLASS:
+            arr = self._read_numeric(header)
+        elif mc == mxSPARSE_CLASS:
+            arr = self._read_sparse(header)
+        elif mc == mxCHAR_CLASS:
+            arr = self._read_char(header)
+        elif mc == mxCELL_CLASS:
             arr = self._read_cells(header)
-        elif mc == mio5.mxSTRUCT_CLASS:
+        elif mc == mxSTRUCT_CLASS:
             arr = self._read_struct(header)
-        elif mc == mio5.mxOBJECT_CLASS: # like structs, but with classname
+        elif mc == mxOBJECT_CLASS: # like structs, but with classname
             classname = self.read_element().tostring()
             arr = self._read_struct(header)
-            arr = mio5.MatlabObject(arr, classname)
-        elif mc == mio5.mxFUNCTION_CLASS:
-            raise mio5.MatReadError('Cannot read matlab functions')
+            arr = mio5p.MatlabObject(arr, classname)
+        elif mc == mxFUNCTION_CLASS:
+            raise miob.MatReadError('Cannot read matlab functions')
         return arr, mat_dtype
 
-    def _read_cells(self, ElementHeader header):
-        cdef cnp.ndarray[object, ndim=1] result
+    cdef cnp.ndarray _read_numeric(self, VarHeader5 header):
+        cdef:
+            cnp.ndarray res, res_j
+        if header.is_complex:
+            # avoid array copy to save memory
+            res = self.read_element(copy=False)
+            res_j = self.read_element(copy=False)
+            res = res + (res_j * 1j)
+        else:
+            res = self.read_element()
+        return np.ndarray(shape=header.dims,
+                          dtype=res.dtype,
+                          buffer=res,
+                          order='F')
+
+    cdef object _read_sparse(self, VarHeader5 header):
+        cdef cnp.ndarray rowind, indptr, data, data_j
+        cdef size_t M, N, nnz
+        rowind = self.read_element()
+        indptr = self.read_element()
+        if header.is_complex:
+            # avoid array copy to save memory
+            data   = self.read_element(copy=False)
+            data_j = self.read_element(copy=False)
+            data = data + (data_j * 1j)
+        else:
+            data = self.read_element()
+        ''' From the matlab (TM) API documentation, last found here:
+        http://www.mathworks.com/access/helpdesk/help/techdoc/matlab_external/
+        rowind are simply the row indices for all the (nnz) non-zero
+        entries in the sparse array.  rowind has nzmax entries, so
+        may well have more entries than nnz, the actual number of
+        non-zero entries, but rowind[nnz:] can be discarded and
+        should be 0. indptr has length (number of columns + 1), and
+        is such that, if D = diff(colind), D[j] gives the number of
+        non-zero entries in column j. Because rowind values are
+        stored in column order, this gives the column corresponding
+        to each rowind
+        '''
+        M,N = header.dims
+        indptr = indptr[:N+1]
+        nnz = indptr[-1]
+        rowind = rowind[:nnz]
+        data   = data[:nnz]
+        return scipy.sparse.csc_matrix(
+            (data,rowind,indptr),
+            shape=(M,N))
+                
+    cdef cnp.ndarray _read_char(self, VarHeader5 header):
+        res = self.read_element()
+        # Convert non-string types to unicode
+        if isinstance(res, np.ndarray):
+            if res.dtype.type == np.uint16:
+                codec = self.uint16_codec
+                if self.codecs['uint16_len'] == 1:
+                    res = res.astype(np.uint8)
+            elif res.dtype.type in (np.uint8, np.int8):
+                codec = 'ascii'
+            else:
+                raise TypeError, 'Did not expect type %s' % res.dtype
+            res = res.tostring().decode(codec)
+        return np.ndarray(shape=header.dims,
+                          dtype=np.dtype('U1'),
+                          buffer=np.array(res),
+                          order='F').copy()
+                             
+    cdef cnp.ndarray _read_cells(self, VarHeader5 header):
+        cdef:
+            size_t length, i
+            cnp.ndarray[object, ndim=1] result
         # Account for fortran indexing of cells
         tupdims = tuple(header.dims[::-1])
-        length = cproduct(tupdims)
+        length = cmio_utils.cproduct(tupdims)
         result = np.empty(length, dtype=object)
         for i in range(length):
             result[i] = self.read_mi_matrix()
         return result.reshape(tupdims).T
         
-    def _read_struct(self, ElementHeader header):
+    cdef cnp.ndarray _read_struct(self, VarHeader5 header):
         cdef:
             int namelength, length, i, j, n_names
             cnp.ndarray[object, ndim=1] result
@@ -527,7 +505,7 @@ cdef class CReader:
             name = names[i:i+namelength].tostring().strip('\x00')
             field_names.append(name)
         tupdims = tuple(header.dims[::-1])
-        length = cproduct(tupdims)
+        length = cmio_utils.cproduct(tupdims)
         if self.struct_as_record: # to record arrays
             if not len(field_names):
                 # If there are no field names, there is no dtype
@@ -541,7 +519,7 @@ cdef class CReader:
                     rec_res[i][field_name] = self.read_mi_matrix()
             return rec_res.reshape(tupdims).T
         # Backward compatibility with previous format
-        obj_template = mio5.mat_struct()
+        obj_template = mio5p.mat_struct()
         obj_template._fieldnames = field_names
         result = np.empty(length, dtype=object)
         for i in range(length):

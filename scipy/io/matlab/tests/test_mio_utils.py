@@ -9,15 +9,15 @@ from nose.tools import assert_true, assert_false, \
 
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 
-from scipy.io.matlab.mio_utils import small_product, process_element, \
+from scipy.io.matlab.mio_utils import cproduct, process_element, \
     FileReadOpts, chars_to_strings
 
 
-def test_small_product():
-    yield assert_equal, small_product(()), 1
-    yield assert_equal, small_product((1,)), 1
-    yield assert_equal, small_product((1,3)), 3
-    yield assert_equal, small_product([1,3]), 3
+def test_cproduct():
+    yield assert_equal, cproduct(()), 1
+    yield assert_equal, cproduct((1,)), 1
+    yield assert_equal, cproduct((1,3)), 3
+    yield assert_equal, cproduct([1,3]), 3
 
 
 def test_process_element():

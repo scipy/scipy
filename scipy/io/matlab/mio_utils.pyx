@@ -7,11 +7,7 @@ cimport numpy as cnp
 from mio_utils cimport FileReadOpts
 
 
-def small_product(tup):
-    return cproduct(tup)
-
-
-cdef size_t cproduct(tup):
+cpdef size_t cproduct(tup):
     cdef size_t res = 1
     cdef int i
     for i in range(len(tup)):
@@ -29,13 +25,13 @@ cdef class FileReadOpts:
         self.squeeze_me = squeeze_me
         
 
-def process_element(cnp.ndarray arr,
+cpdef cnp.ndarray process_element(cnp.ndarray arr,
                     FileReadOpts file_read_opts,
                     object mat_dtype):
     cdef:
         int i
     if file_read_opts.chars_as_strings and arr.dtype.kind == 'U':
-        arr = cchars_to_strings(arr)
+        arr = chars_to_strings(arr)
     if file_read_opts.mat_dtype:
         # Apply options to replicate matlab datatype on load
         if mat_dtype is not None:
@@ -50,7 +46,7 @@ def process_element(cnp.ndarray arr,
     return arr
 
 
-def chars_to_strings(arr):
+cpdef cnp.ndarray chars_to_strings(cnp.ndarray arr):
     ''' Convert final axis of char array to strings
 
     Python version, for testing
@@ -66,11 +62,6 @@ def chars_to_strings(arr):
        dtype of 'UN' where N is the length of the last dimension of
        ``arr``
     '''
-    return cchars_to_strings(arr)
-
-
-cdef cchars_to_strings(cnp.ndarray arr):
-    # Convert char array to string or array of strings
     arr_np = arr
     dims = arr_np.shape
     last_dim = dims[-1]

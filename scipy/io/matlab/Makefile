@@ -15,6 +15,7 @@ clean:
 	-rm -rf build *.so
 
 ext: clean
+	cython streams.pyx
 	cython mio5_utils.pyx
 	cython mio_utils.pyx
 	python setup.py build_ext --inplace

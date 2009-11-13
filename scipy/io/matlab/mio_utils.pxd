@@ -1,6 +1,6 @@
 # Defines for mio_utils -*- python -*- like
 
-cdef size_t cproduct(tup)
+cpdef size_t cproduct(tup)
 
 cdef class FileReadOpts:
     cdef:

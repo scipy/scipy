@@ -15,81 +15,29 @@ import time
 import sys
 import zlib
 from cStringIO import StringIO
-from copy import copy as pycopy
 import warnings
 
 import numpy as np
 
 import scipy.sparse
 
-from byteordercodes import to_numpy_code
 from miobase import MatFileReader, \
      MatFileWriter, MatStreamWriter, docfiller, matdims, \
-     MatReadError, read_dtype, convert_dtypes, process_element
+     read_dtype, convert_dtypes
 
-miINT8 = 1
-miUINT8 = 2
-miINT16 = 3
-miUINT16 = 4
-miINT32 = 5
-miUINT32 = 6
-miSINGLE = 7
-miDOUBLE = 9
-miINT64 = 12
-miUINT64 = 13
-miMATRIX = 14
-miCOMPRESSED = 15
-miUTF8 = 16
-miUTF16 = 17
-miUTF32 = 18
+# Reader object for matlab 5 format variables
+from mio5_utils import VarReader5
 
-mxCELL_CLASS = 1
-mxSTRUCT_CLASS = 2
-# The March 2008 edition of "Matlab 7 MAT-File Format" says that
-# mxOBJECT_CLASS = 3, whereas matrix.h says that mxLOGICAL = 3.
-# Matlab 2008a appears to save logicals as type 9, so we assume that
-# the document is correct.  See type 18, below.
-mxOBJECT_CLASS = 3
-mxCHAR_CLASS = 4
-mxSPARSE_CLASS = 5
-mxDOUBLE_CLASS = 6
-mxSINGLE_CLASS = 7
-mxINT8_CLASS = 8
-mxUINT8_CLASS = 9
-mxINT16_CLASS = 10
-mxUINT16_CLASS = 11
-mxINT32_CLASS = 12
-mxUINT32_CLASS = 13
-# The following are not in the March 2008 edition of "Matlab 7
-# MAT-File Format," but were guessed from matrix.h.
-mxINT64_CLASS = 14
-mxUINT64_CLASS = 15
-mxFUNCTION_CLASS = 16
-# Not doing anything with these at the moment.
-mxOPAQUE_CLASS = 17 # This appears to be a function workspace
-# https://www-old.cae.wisc.edu/pipermail/octave-maintainers/2007-May/002824.html
-mxOBJECT_CLASS_FROM_MATRIX_H = 18
+# Constants and helper objects
+from mio5_params import MatlabObject, \
+    miINT8, miUINT8, miINT16, miUINT16, miINT32, miUINT32, \
+    miSINGLE, miDOUBLE, miINT64, miUINT64, miMATRIX, \
+    miCOMPRESSED, miUTF8, miUTF16, miUTF32, \
+    mxCELL_CLASS, mxSTRUCT_CLASS, mxOBJECT_CLASS, mxCHAR_CLASS, \
+    mxSPARSE_CLASS, mxDOUBLE_CLASS, mxSINGLE_CLASS, mxINT8_CLASS, \
+    mxUINT8_CLASS, mxINT16_CLASS, mxUINT16_CLASS, mxINT32_CLASS, \
+    mxUINT32_CLASS, mxINT64_CLASS, mxUINT64_CLASS
 
-mxmap = { # Sometimes good for debug prints
-    mxCELL_CLASS: 'mxCELL_CLASS',
-    mxSTRUCT_CLASS: 'mxSTRUCT_CLASS',
-    mxOBJECT_CLASS: 'mxOBJECT_CLASS',
-    mxCHAR_CLASS: 'mxCHAR_CLASS',
-    mxSPARSE_CLASS: 'mxSPARSE_CLASS',
-    mxDOUBLE_CLASS: 'mxDOUBLE_CLASS',
-    mxSINGLE_CLASS: 'mxSINGLE_CLASS',
-    mxINT8_CLASS: 'mxINT8_CLASS',
-    mxUINT8_CLASS: 'mxUINT8_CLASS',
-    mxINT16_CLASS: 'mxINT16_CLASS',
-    mxUINT16_CLASS: 'mxUINT16_CLASS',
-    mxINT32_CLASS: 'mxINT32_CLASS',
-    mxUINT32_CLASS: 'mxUINT32_CLASS',
-    mxINT64_CLASS: 'mxINT64_CLASS',
-    mxUINT64_CLASS: 'mxUINT64_CLASS',
-    mxFUNCTION_CLASS: 'mxFUNCTION_CLASS',
-    mxOPAQUE_CLASS: 'mxOPAQUE_CLASS',
-    mxOBJECT_CLASS_FROM_MATRIX_H: 'mxOBJECT_CLASS_FROM_MATRIX_H',
-}
 
 mdtypes_template = {
     miINT8: 'i1',
@@ -181,21 +129,6 @@ codecs_template = {
     miUTF32: {'codec': 'utf_32','width': 4},
     }
 
-miUINT16_codec = sys.getdefaultencoding()
-
-mx_numbers = (
-    mxDOUBLE_CLASS,
-    mxSINGLE_CLASS,
-    mxINT8_CLASS,
-    mxUINT8_CLASS,
-    mxINT16_CLASS,
-    mxUINT16_CLASS,
-    mxINT32_CLASS,
-    mxUINT32_CLASS,
-    mxINT64_CLASS,
-    mxUINT64_CLASS,
-    )
-
 
 def convert_codecs(template, byte_order):
     ''' Convert codec template mapping to byte order
@@ -230,46 +163,26 @@ def convert_codecs(template, byte_order):
     return codecs.copy()
 
 
-class mat_struct(object):
-    ''' Placeholder for holding read data from structs
-
-    We deprecate this method of holding struct information, and will
-    soon remove it, in favor of the recarray method (see loadmat
-    docstring)
-    '''
-    pass
-
-
-class MatlabObject(np.ndarray):
-    ''' ndarray Subclass to contain matlab object '''
-    def __new__(cls, input_array, classname=None):
-        # Input array is an already formed ndarray instance
-        # We first cast to be our class type
-        obj = np.asarray(input_array).view(cls)
-        # add the new attribute to the created instance
-        obj.classname = classname
-        # Finally, we must return the newly created object:
-        return obj
-
-    def __array_finalize__(self,obj):
-        # reset the attribute from passed original object
-        self.classname = getattr(obj, 'classname', None)
-        # We do not need to return anything
-
-
-class MatlabFunction(np.ndarray):
-    ''' Subclass to signal this is a matlab function '''
-    def __new__(cls, input_array):
-        obj = np.asarray(input_array).view(cls)
-
-
 class MatFile5Reader(MatFileReader):
     ''' Reader for Mat 5 mat files
     Adds the following attribute to base class
+    
+    uint16_codec - char codec to use for uint16 char arrays
+        (defaults to system default codec)
 
-    uint16_codec       - char codec to use for uint16 char arrays
-                          (defaults to system default codec)
-   '''
+    Uses variable reader that has the following stardard interface (see
+    abstract class in ``miobase``::
+    
+       __init__(self, file_reader)
+       read_header(self)
+       array_from_header(self)
+
+    and added interface::
+
+       set_stream(self, stream)
+       read_full_tag(self)
+       
+    '''
     @docfiller
     def __init__(self,
                  mat_stream,
@@ -305,10 +218,14 @@ class MatFile5Reader(MatFileReader):
             matlab_compatible,
             struct_as_record
             )
-        # Set dtypes and codecs
+        # Set uint16 codec
         if not uint16_codec:
             uint16_codec = sys.getdefaultencoding()
         self.uint16_codec = uint16_codec
+        # placeholders for dtypes, codecs - see initialize_read
+        self.dtypes = None
+        self.class_dtypes = None
+        self.codecs = None
         # placeholders for readers - see initialize_read method
         self._file_reader = None
         self._matrix_reader = None
@@ -345,14 +262,12 @@ class MatFile5Reader(MatFileReader):
         self.codecs['uint16_len'] = len("  ".encode(uint16_codec)) \
                                - len(" ".encode(uint16_codec))
         self.codecs['uint16_codec'] = uint16_codec
-        # make and initialize readers
-        from mio5_utils import CReader
         # reader for top level stream.  We need this extra top-level
         # reader because we use the matrix_reader object to contain
         # compressed matrices (so they have their own stream)
-        self._file_reader = CReader(self)
+        self._file_reader = VarReader5(self)
         # reader for matrix streams 
-        self._matrix_reader = CReader(self)
+        self._matrix_reader = VarReader5(self)
 
     def read_var_header(self):
         ''' Read header, return header, next position
