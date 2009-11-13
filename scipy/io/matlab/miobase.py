@@ -84,25 +84,26 @@ docfiller = doccer.filldoc(doc_dict)
  Note on architecture
 ======================
 
-There are two set of parameters relevant for reading files.  The first
-are *file read parameters* - containing options that are common for
-reading the whole file, and therefore every variable within that
+There are three sets of parameters relevant for reading files.  The
+first are *file read parameters* - containing options that are common
+for reading the whole file, and therefore every variable within that
 file. At the moment these are:
 
+* mat_stream
 * dtypes (derived from order code)
 * processor_func
-* oned_as
 * byte_order
-* main_stream
 * struct_as_record (matlab 5 files)
 * class_dtypes (derived from order code, matlab 5 files)
 * codecs (matlab 5 files)
 * uint16_codec (matlab 5 files)
 
-The other set of parameters are those that apply only the the current
+Another set of parameters are those that apply only the the current
 variable being read - *variable read parameters*:
 
-* header
+* header related variables (different for v4 and v5 mat files)
+* is_complex
+* mclass
 * var_stream
 * next_position
 
@@ -111,6 +112,8 @@ parameters*.  An element is, for example, one element in a Matlab cell
 array.  At the moment these are:
 
 * mat_dtype
+* dims
+*
 
 The file-reading object contains the *file read parameters*.  There is
 also a variable-reading object that contains the *file read parameters*
@@ -498,22 +501,21 @@ class MatFileReader(object):
         mdict = self.file_header()
         mdict['__globals__'] = []
         while not self.end_of_stream():
-            reader = self.get_reader()
-            name = reader.name
+            name, next_position, is_global = self.get_var_params()
             if variable_names and name not in variable_names:
-                self.mat_stream.seek(var_params.next_position)
+                self.mat_stream.seek(next_position)
                 continue
             try:
-                res = self.get_variable(reader)
+                res = self.get_variable()
             except MatReadError, err:
                 warnings.warn(
                     'Unreadable variable "%s", because "%s"' % \
                     (name, err),
                     Warning, stacklevel=2)
                 res = "Read error: %s" % err
-            self.mat_stream.seek(reader.next_position)
+            self.mat_stream.seek(next_position)
             mdict[name] = res
-            if reader.is_global:
+            if is_global:
                 mdict['__globals__'].append(name)
             if variable_names:
                 variable_names.remove(name)
@@ -527,73 +529,11 @@ class MatFileReader(object):
         self.mat_stream.seek(curpos-1)
         return len(b) == 0
 
-    def get_reader(self):
+    def get_var_params(self):
         raise NotImplementedError
 
-    def get_variable(self, reader):
+    def get_variable(self):
         raise NotImplementedError
-
-
-class MatMatrixGetter(object):
-    """ Base class for matrix getters
-
-    Getters do store state of what they are reading on initialization,
-    and therefore need to be initialized before each read.  They are
-    one-shot objects.
-
-    The getter stores the:
-       mat_stream (file-like)
-          stream from which to read data
-       array_reader (object for reading arrays from the stream)
-          used to (base)
-             contain reference to 'processor_func'
-             pass in mat_stream
-             pass in dtypes
-          used to (mio4)
-             mat_stream used for read_array
-             dtypes not used
-          mio5 also:
-             pass reference to class_dtypes, codecs
-             provide read_element implementation
-             provide struct_as_record read flag to struct getter
-       dtypes (little- or big-endian versions of matlab dtypes)
-       header (information about the current matrix being read)
-       name (from the header - name of matrix being read)
-
-    Also has:
-       next_position (position for next matrix at base level)
-
-    Does:
-       get_array (just a shell to call get_raw_array, and run processor
-       func)
-       get_raw_array (actual work for array reading)
-       to_next (move to ``next_position`` above)
-       
-    Parameters
-    ----------
-    array_reader : array reading object
-       Containing stream, dtypes.
-    header : mapping
-       header dictionary for matrix being read
-    """
-
-    def __init__(self, array_reader, header):
-        self.mat_stream = array_reader.mat_stream
-        self.array_reader = array_reader
-        self.dtypes = array_reader.dtypes
-        self.header = header
-        self.name = header['name']
-
-    def get_array(self):
-        ''' Gets an array from matrix, and applies any necessary processing '''
-        arr = self.get_raw_array()
-        return self.array_reader.processor_func(arr, self)
-
-    def get_raw_array(self):
-        assert False, 'Not implemented'
-
-    def to_next(self):
-        self.mat_stream.seek(self.next_position)
 
 
 class MatStreamWriter(object):

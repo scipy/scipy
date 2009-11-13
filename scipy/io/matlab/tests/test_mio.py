@@ -201,9 +201,7 @@ case_table5_rt = case_table5[:-1] # not the function read write
 case_table5_rt.append(
     {'name': 'objectarray',
      'expected': {'testobjectarray': np.repeat(MO, 2).reshape(1,2)}})
-# XXXXXXXX
-case_table5 = []
-case_table5_rt = []
+
 
 def types_compatible(var1, var2):
     ''' Check if types are same or compatible

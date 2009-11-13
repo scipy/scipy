@@ -14,7 +14,7 @@ import os
 import time
 import sys
 import zlib
-from cStringIO import StringIO as cStringIO
+from cStringIO import StringIO
 from copy import copy as pycopy
 import warnings
 
@@ -23,9 +23,9 @@ import numpy as np
 import scipy.sparse
 
 from byteordercodes import to_numpy_code
-from miobase import MatFileReader, MatArrayReader, MatMatrixGetter, \
+from miobase import MatFileReader, \
      MatFileWriter, MatStreamWriter, docfiller, matdims, \
-     MatReadError
+     MatReadError, read_dtype, convert_dtypes
 
 miINT8 = 1
 miUINT8 = 2
@@ -197,12 +197,45 @@ mx_numbers = (
     )
 
 
+def convert_codecs(template, byte_order):
+    ''' Convert codec template mapping to byte order
+
+    Set codecs not on this system to None
+
+    Parameters
+    ----------
+    template : mapping
+       key, value are respectively codec name, and root name for codec
+       (without byte order suffix)
+    byte_order : {'<', '>'}
+       code for little or big endian
+
+    Returns
+    -------
+    codecs : dict
+       key, value are name, codec (as in .encode(codec))
+    '''
+    codecs = {}
+    postfix = byte_order == '<' and '_le' or '_be'
+    for k, v in template.items():
+        codec = v['codec']
+        try:
+            " ".encode(codec)
+        except LookupError:
+            codecs[k] = None
+            continue
+        if v['width'] > 1:
+            codec += postfix
+        codecs[k] = codec
+    return codecs.copy()
+
+
 class mat_struct(object):
     ''' Placeholder for holding read data from structs
 
-    We will deprecate this method of holding struct information in a
-    future version of scipy, in favor of the recarray method (see
-    loadmat docstring)
+    We deprecate this method of holding struct information, and will
+    soon remove it, in favor of the recarray method (see loadmat
+    docstring)
     '''
     pass
 
@@ -230,251 +263,6 @@ class MatlabFunction(np.ndarray):
         obj = np.asarray(input_array).view(cls)
 
 
-class MatlabBinaryBlock(object):
-    ''' Class to contain matlab unreadable blocks '''
-    def __init__(self, binaryblock, endian):
-        self.binaryblock = binaryblock
-        self.endian = endian
-
-
-class Mat5ArrayReader(MatArrayReader):
-    ''' Class to get Mat5 arrays
-
-    Provides element reader functions, header reader, matrix reader
-    factory function.
-
-    Will move to mio5_utils as own type, in due course
-    '''
-    def __init__(self,
-                 mat_stream,
-                 dtypes,
-                 processor_func,
-                 codecs,
-                 class_dtypes,
-                 struct_as_record):
-        self.mat_stream = mat_stream
-        self.dtypes = dtypes
-        self.processor_func = processor_func
-        self.codecs = codecs
-        self.class_dtypes = class_dtypes
-        self.struct_as_record = struct_as_record
-        from mio5_utils import CReader
-        self._c_reader = CReader(self)
-        # set element reader function
-        self.read_element = self._c_reader.read_element
-        self.matrix_getter_factory = self._c_reader.matrix_getter_factory
-
-
-class Mat5MatrixGetter(MatMatrixGetter):
-    ''' Base class for getting Mat5 matrices
-
-    Gets current read information from passed array_reader
-    '''
-
-    def __init__(self, array_reader, header):
-        super(Mat5MatrixGetter, self).__init__(array_reader, header)
-        self.class_dtypes = array_reader.class_dtypes
-        self.codecs = array_reader.codecs
-        self.is_global = header['is_global']
-        self.mat_dtype = None
-
-    def read_element(self, *args, **kwargs):
-        return self.array_reader.read_element(*args, **kwargs)
-
-
-class Mat5EmptyMatrixGetter(Mat5MatrixGetter):
-    ''' Dummy class to return empty array for empty matrix
-    '''
-    def __init__(self, array_reader):
-        self.array_reader = array_reader
-        self.mat_stream = array_reader.mat_stream
-        self.header = {}
-        self.name = ''
-        self.is_global = False
-        self.mat_dtype = 'f8'
-
-    def get_raw_array(self):
-        return np.array([[]])
-
-
-class Mat5NumericMatrixGetter(Mat5MatrixGetter):
-
-    def __init__(self, array_reader, header):
-        super(Mat5NumericMatrixGetter, self).__init__(array_reader, header)
-        if header['is_logical']:
-            self.mat_dtype = np.dtype('bool')
-        else:
-            self.mat_dtype = self.class_dtypes[header['mclass']]
-
-    def get_raw_array(self):
-        if self.header['is_complex']:
-            # avoid array copy to save memory
-            res = self.read_element(copy=False)
-            res_j = self.read_element(copy=False)
-            res = res + (res_j * 1j)
-        else:
-            res = self.read_element()
-        return np.ndarray(shape=self.header['dims'],
-                          dtype=res.dtype,
-                          buffer=res,
-                          order='F')
-
-
-class Mat5SparseMatrixGetter(Mat5MatrixGetter):
-    def get_raw_array(self):
-        rowind = self.read_element()
-        indptr = self.read_element()
-        if self.header['is_complex']:
-            # avoid array copy to save memory
-            data   = self.read_element(copy=False)
-            data_j = self.read_element(copy=False)
-            data = data + (data_j * 1j)
-        else:
-            data = self.read_element()
-        ''' From the matlab (TM) API documentation, last found here:
-        http://www.mathworks.com/access/helpdesk/help/techdoc/matlab_external/
-        rowind are simply the row indices for all the (nnz) non-zero
-        entries in the sparse array.  rowind has nzmax entries, so
-        may well have more entries than nnz, the actual number
-        of non-zero entries, but rowind[nnz:] can be discarded
-        and should be 0. indptr has length (number of columns + 1),
-        and is such that, if D = diff(colind), D[j] gives the number
-        of non-zero entries in column j. Because rowind values are
-        stored in column order, this gives the column corresponding to
-        each rowind
-        '''
-        M,N = self.header['dims']
-        indptr = indptr[:N+1]
-        nnz = indptr[-1]
-        rowind = rowind[:nnz]
-        data   = data[:nnz]
-        return scipy.sparse.csc_matrix(
-            (data,rowind,indptr),
-            shape=(M,N))
-
-
-class Mat5CharMatrixGetter(Mat5MatrixGetter):
-    def get_raw_array(self):
-        res = self.read_element()
-        # Convert non-string types to unicode
-        if isinstance(res, np.ndarray):
-            if res.dtype.type == np.uint16:
-                codec = miUINT16_codec
-                if self.codecs['uint16_len'] == 1:
-                    res = res.astype(np.uint8)
-            elif res.dtype.type in (np.uint8, np.int8):
-                codec = 'ascii'
-            else:
-                raise TypeError, 'Did not expect type %s' % res.dtype
-            res = res.tostring().decode(codec)
-        return np.ndarray(shape=self.header['dims'],
-                          dtype=np.dtype('U1'),
-                          buffer=np.array(res),
-                          order='F').copy()
-
-
-class Mat5CellMatrixGetter(Mat5MatrixGetter):
-    def get_raw_array(self):
-        # Account for fortran indexing of cells
-        tupdims = tuple(self.header['dims'][::-1])
-        length = np.product(tupdims)
-        result = np.empty(length, dtype=object)
-        for i in range(length):
-            result[i] = self.get_item()
-        return result.reshape(tupdims).T
-
-    def get_item(self):
-        return self.read_element()
-
-
-class Mat5StructMatrixGetter(Mat5MatrixGetter):
-    def __init__(self, array_reader, header):
-        super(Mat5StructMatrixGetter, self).__init__(array_reader, header)
-        self.struct_as_record = array_reader.struct_as_record
-
-    def get_raw_array(self):
-        namelength = self.read_element()[0]
-        names = self.read_element()
-        field_names = [names[i:i+namelength].tostring().strip('\x00')
-                       for i in xrange(0,len(names),namelength)]
-        tupdims = tuple(self.header['dims'][::-1])
-        length = np.product(tupdims)
-        if self.struct_as_record:
-            if not len(field_names):
-                # If there are no field names, there is no dtype
-                # representation we can use, falling back to empty
-                # object
-                return np.empty(tupdims, dtype=object).T
-            dtype = [(field_name, object) for field_name in field_names]
-            result = np.empty(length, dtype=dtype)
-            for i in range(length):
-                for field_name in field_names:
-                    result[i][field_name] = self.read_element()
-        else: # Backward compatibility with previous format
-            self.obj_template = mat_struct()
-            self.obj_template._fieldnames = field_names
-            result = np.empty(length, dtype=object)
-            for i in range(length):
-                item = pycopy(self.obj_template)
-                for name in field_names:
-                    item.__dict__[name] = self.read_element()
-                result[i] = item
-        return result.reshape(tupdims).T
-
-
-class Mat5ObjectMatrixGetter(Mat5StructMatrixGetter):
-    def get_raw_array(self):
-        '''Matlab objects are like structs, with an extra classname field'''
-        classname = self.read_element().tostring()
-        result = super(Mat5ObjectMatrixGetter, self).get_raw_array()
-        return MatlabObject(result, classname)
-
-
-class Mat5FunctionGetter(Mat5ObjectMatrixGetter):
-    ''' Class to provide warning and message string for unreadable
-    matlab function data
-    '''
-    def get_raw_array(self):
-        raise MatReadError('Cannot read matlab functions')
-
-
-class Mat5BinaryBlockGetter(object):
-    ''' Class to read in unreadable binary blocks
-
-    This class could be used to read in matlab functions
-    '''
-
-    def __init__(self,
-                 array_reader,
-                 header,
-                 array_flags,
-                 byte_count):
-        self.array_reader = array_reader
-        self.header = header
-        self.array_flags = array_flags
-        arr_str = array_flags.tostring()
-        self.binaryblock = array_reader.mat_stream.read(
-            byte_count-len(array_flags.tostring()))
-        stream = cStringIO(self.binaryblock)
-        reader = Mat5ArrayReader(
-            stream,
-            array_reader.dtypes,
-            lambda x : None,
-            array_reader.codecs,
-            array_reader.class_dtypes,
-            False)
-        self.header['dims'] = reader.read_element()
-        self.header['name'] = reader.read_element().tostring()
-        self.name = self.header['name']
-        self.is_global = header['is_global']
-
-    def get_array(self):
-        dt = self.array_reader.dtypes[miINT32]
-        endian = to_numpy_code(dt.byteorder)
-        data = self.array_flags.tostring() + self.binaryblock
-        return MatlabBinaryBlock(data, endian)
-
-               
 class MatFile5Reader(MatFileReader):
     ''' Reader for Mat 5 mat files
     Adds the following attribute to base class
@@ -518,49 +306,31 @@ class MatFile5Reader(MatFileReader):
             struct_as_record
             )
         # Set dtypes and codecs
-        self.dtypes = self.convert_dtypes(mdtypes_template)
-        self.class_dtypes = self.convert_dtypes(mclass_dtypes_template)
-        codecs = {}
-        postfix = self.byte_order == '<' and '_le' or '_be'
-        for k, v in codecs_template.items():
-            codec = v['codec']
-            try:
-                " ".encode(codec)
-            except LookupError:
-                codecs[k] = None
-                continue
-            if v['width'] > 1:
-                codec += postfix
-            codecs[k] = codec
-        self.codecs = codecs.copy()
-        self._array_reader = Mat5ArrayReader(
-            mat_stream,
-            dtypes=self.dtypes,
-            processor_func=self.processor_func,
-            codecs = codecs.copy(),
-            class_dtypes = self.class_dtypes,
-            struct_as_record = struct_as_record
-            )
-        self.uint16_codec = uint16_codec
-
-    def get_uint16_codec(self):
-        return self._uint16_codec
-    def set_uint16_codec(self, uint16_codec):
+        self.dtypes = convert_dtypes(mdtypes_template, self.byte_order)
+        self.class_dtypes = convert_dtypes(mclass_dtypes_template,
+                                           self.byte_order)
+        self.codecs = convert_codecs(codecs_template, self.byte_order)
         if not uint16_codec:
             uint16_codec = sys.getdefaultencoding()
         # Set length of miUINT16 char encoding
         self.codecs['uint16_len'] = len("  ".encode(uint16_codec)) \
                                - len(" ".encode(uint16_codec))
         self.codecs['uint16_codec'] = uint16_codec
-        self._array_reader.codecs = self.codecs
         self._uint16_codec = uint16_codec
-    uint16_codec = property(get_uint16_codec,
-                            set_uint16_codec,
-                            None,
-                            'get/set uint16_codec')
+        from mio5_utils import CReader
+        # reader for top level stream.  We need this extra top-level
+        # reader because we use the matrix_reader object to contain
+        # compressed matrices (so they have their own stream)
+        self._file_reader = CReader(self)
+        # reader for matrix streams 
+        self._matrix_reader = CReader(self)
 
-    def matrix_getter_factory(self):
-        return self._array_reader.matrix_getter_factory()
+    def get_uint16_codec(self):
+        return self._uint16_codec
+    uint16_codec = property(get_uint16_codec,
+                            None,
+                            None,
+                            'get uint16_codec')
 
     def guess_byte_order(self):
         ''' Guess byte order.
@@ -573,14 +343,38 @@ class MatFile5Reader(MatFileReader):
     def file_header(self):
         ''' Read in mat 5 file header '''
         hdict = {}
-        hdr = self.read_dtype(self.dtypes['file_header'])
+        hdr = read_dtype(self.mat_stream, self.dtypes['file_header'])
         hdict['__header__'] = hdr['description'].item().strip(' \t\n\000')
         v_major = hdr['version'] >> 8
         v_minor = hdr['version'] & 0xFF
         hdict['__version__'] = '%d.%d' % (v_major, v_minor)
         return hdict
 
-
+    def get_var_params(self):
+        ''' Read header, return name, pos, is_global, set reader '''
+        mdtype, byte_count = self._file_reader.read_full_tag()
+        assert byte_count > 0
+        next_pos = self.mat_stream.tell() + byte_count
+        if mdtype == miCOMPRESSED:
+            stream = StringIO(
+                zlib.decompress(self.mat_stream.read(byte_count)))
+        elif not mdtype == miMATRIX:
+            raise TypeError, \
+                'Expecting miMATRIX type here, got %d' %  mdtype
+        else:
+            stream = self.mat_stream
+        self._matrix_reader.set_stream(stream)
+        # read header
+        header = self._matrix_reader.read_header()
+        # store header so variable read can continue
+        self._current_header = header
+        return header.name, next_pos, header.is_global
+            
+    def get_variable(self):
+        reader = self._matrix_reader
+        return reader.get_mi_matrix(self._current_header)
+    
+    
 class Mat5MatrixWriter(MatStreamWriter):
     ''' Generic matlab matrix writing class '''
     mat_tag = np.zeros((), mdtypes_template['tag_full'])
@@ -1063,7 +857,7 @@ class MatFile5Writer(MatFileWriter):
                 continue
             is_global = name in self.global_vars
             if self.do_compression:
-                stream = cStringIO()
+                stream = StringIO()
                 mat_writer = self.writer_getter.matrix_writer_factory(
                     stream,
                     var,

@@ -73,9 +73,12 @@ def test_read_element():
     # make reader-like thing
     class R(): pass
     r = R()
-    r.mat_stream = StringIO()
+    str_io = StringIO()
+    r.mat_stream = str_io
     r.dtypes = None
     r.codecs = {}
+    r.class_dtypes = None
+    r.struct_as_record = True
     # check simplest of tags
     for base_dt, val, mdtype in (
         ('u2', 30, mio5.miUINT16),
@@ -90,11 +93,11 @@ def test_read_element():
                 dt = np.dtype(base_dt).newbyteorder(byte_code)
                 a = _make_tag(dt, val, mdtype, sde_f)
                 a_str = a.tostring()
-                _write_stream(r.mat_stream, a_str)
+                _write_stream(str_io, a_str)
                 el = c_reader.read_element()
                 yield assert_equal, el, val
                 # two sequential reads
-                _write_stream(r.mat_stream, a_str, a_str)
+                _write_stream(str_io, a_str, a_str)
                 el = c_reader.read_element()
                 yield assert_equal, el, val
                 el = c_reader.read_element()

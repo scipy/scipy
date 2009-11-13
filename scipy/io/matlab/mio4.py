@@ -6,7 +6,7 @@ import numpy as np
 
 import scipy.sparse
 
-from miobase import MatFileReader, MatMatrixGetter, \
+from miobase import MatFileReader, \
      MatFileWriter, MatStreamWriter, docfiller, matdims, \
      read_dtype, process_element, convert_dtypes
 
@@ -64,30 +64,23 @@ order_codes = {
 
 
 class VarReader4(object):
-    ''' Class to read matlab 4 variable '''
-    # Mat4 variables never global or logical
-    is_global = False
+    ''' Class to contain parameters for and read matlab 4 variable '''
+    # Mat4 variables never logical
     is_logical = False
     # By default, we don't know the Mat dtype
     mat_dtype = None
     
     def __init__(self,
                  mat_stream,
-                 name,
                  dtype,
                  mclass,
                  dims,
                  is_complex):
         self.mat_stream = mat_stream
-        self.name = name
         self.dtype = dtype
         self.mclass = mclass
         self.dims = dims
         self.is_complex = is_complex
-        remaining_bytes = dtype.itemsize * np.product(dims)
-        if is_complex and not mclass == mxSPARSE_CLASS:
-            remaining_bytes *= 2
-        self.next_position = mat_stream.tell() + remaining_bytes
         if mclass == mxFULL_CLASS:
             if is_complex:
                self.mat_dtype = np.dtype(np.complex128)
@@ -105,7 +98,6 @@ class VarReader4(object):
         else:
             raise TypeError, 'No reader for class code %s' % T
 
-
     def read_element(self, copy=True):
         ''' Mat4 read always uses header dtype and dims
         self : object
@@ -115,7 +107,6 @@ class VarReader4(object):
            (buffer is usually read only)
 
         self.dtype is assumed to be correct endianness
-
         '''
         dt = self.dtype
         dims = self.dims
@@ -130,7 +121,6 @@ class VarReader4(object):
             arr = arr.copy()
         return arr
 
-
     def read_full_array(self):
         ''' Full (rather than sparse matrix) getter
         '''
@@ -140,7 +130,6 @@ class VarReader4(object):
             res_j = self.read_element(copy=False)
             return res + (res_j * 1j)
         return self.read_element()
-
 
     def read_char_array(self):
         ''' Ascii text matrix (char matrix) reader
@@ -152,7 +141,6 @@ class VarReader4(object):
         return np.ndarray(shape=self.dims,
                           dtype=np.dtype('U1'),
                           buffer = np.array(S)).copy()
-
 
     def read_sparse_array(self):
         ''' Read sparse matrix type
@@ -197,7 +185,8 @@ class MatFile4Reader(MatFileReader):
         '''
         super(MatFile4Reader, self).__init__(mat_stream, *args, **kwargs)
         self.dtypes = convert_dtypes(mdtypes_template, self.byte_order)
-
+        self._matrix_reader = None
+        
     def guess_byte_order(self):
         self.mat_stream.seek(0)
         mopt = read_dtype(self.mat_stream, np.dtype('i4'))
@@ -206,8 +195,8 @@ class MatFile4Reader(MatFileReader):
             return SYS_LITTLE_ENDIAN and '>' or '<'
         return SYS_LITTLE_ENDIAN and '<' or '>'
 
-    def get_reader(self):
-        ''' Read header, return var params '''
+    def get_var_params(self):
+        ''' Read header, return params, set reader '''
         data = read_dtype(self.mat_stream, self.dtypes['header'])
         name = self.mat_stream.read(int(data['namlen'])).strip('\x00')
         if data['mopt'] < 0 or  data['mopt'] > 5000:
@@ -220,15 +209,21 @@ class MatFile4Reader(MatFileReader):
             raise ValueError, 'O in MOPT integer should be 0, wrong format?'
         dims = (data['mrows'], data['ncols'])
         is_complex = data['imagf'] == 1
-        return VarReader4(
-           self.mat_stream,
-           name,
-           self.dtypes[P],
-           T,
-           dims,
-           is_complex)
+        dtype = self.dtypes[P]
+        remaining_bytes = dtype.itemsize * np.product(dims)
+        if is_complex and not T == mxSPARSE_CLASS:
+            remaining_bytes *= 2
+        next_position = self.mat_stream.tell() + remaining_bytes
+        self._matrix_reader = VarReader4(
+            self.mat_stream,
+            dtype,
+            T,
+            dims,
+            is_complex)
+        return name, next_position, False
     
-    def get_variable(self, reader):
+    def get_variable(self):
+        reader = self._matrix_reader
         arr = reader.get_raw_array()
         return process_element(arr, self, reader.mat_dtype)
 
