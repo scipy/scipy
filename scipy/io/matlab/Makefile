@@ -16,5 +16,6 @@ clean:
 
 ext: clean
 	cython mio5_utils.pyx
+	cython mio_utils.pyx
 	python setup.py build_ext --inplace
 

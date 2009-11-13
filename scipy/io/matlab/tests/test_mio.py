@@ -627,17 +627,9 @@ def test_save_object():
     yield assert_equal, c2['field2'], 'a string'
 
 
-def test_params_ro():
-    str_io = StringIO()
-    mfr = MatFileReader(str_io)
-    yield assert_raises, AttributeError, mfr.__setattr__, 'byte_order', '>'
-    yield assert_raises, AttributeError, mfr.__setattr__, 'mat_dtype', True
-    yield assert_raises, AttributeError, mfr.__setattr__, 'squeeze_me', True
-    yield assert_raises, AttributeError, mfr.__setattr__, 'chars_as_strings', True
-    yield assert_raises, AttributeError, mfr.__setattr__, 'struct_as_record', True
-
-
 def test_read_opts():
+    # tests if read is seeing option sets, at initialization and after
+    # initialization
     arr = np.arange(6).reshape(1,6)
     stream = StringIO()
     savemat(stream, {'a': arr})
@@ -647,12 +639,16 @@ def test_read_opts():
     yield assert_array_equal, rarr, arr
     rdr = MatFile5Reader(stream, squeeze_me=True)
     yield assert_array_equal, rdr.get_variables()['a'], arr.reshape((6,))
+    rdr.squeeze_me = False
+    yield assert_array_equal, rarr, arr
     rdr = MatFile5Reader(stream, byte_order=boc.native_code)
     yield assert_array_equal, rdr.get_variables()['a'], arr
     # inverted byte code leads to error on read because of swapped
     # header etc
     rdr = MatFile5Reader(stream, byte_order=boc.swapped_code)
     yield assert_raises, Exception, rdr.get_variables
+    rdr.byte_order = boc.native_code
+    yield assert_array_equal, rdr.get_variables()['a'], arr
     arr = np.array(['a string'])
     stream.truncate(0)
     savemat(stream, {'a': arr})
@@ -661,3 +657,5 @@ def test_read_opts():
     rdr = MatFile5Reader(stream, chars_as_strings=False)
     carr = np.atleast_2d(np.array(list(arr.item()), dtype='U1'))
     yield assert_array_equal, rdr.get_variables()['a'], carr
+    rdr.chars_as_strings=True
+    yield assert_array_equal, rdr.get_variables()['a'], arr

@@ -25,7 +25,7 @@ import scipy.sparse
 from byteordercodes import to_numpy_code
 from miobase import MatFileReader, \
      MatFileWriter, MatStreamWriter, docfiller, matdims, \
-     MatReadError, read_dtype, convert_dtypes
+     MatReadError, read_dtype, convert_dtypes, process_element
 
 miINT8 = 1
 miUINT8 = 2
@@ -306,31 +306,12 @@ class MatFile5Reader(MatFileReader):
             struct_as_record
             )
         # Set dtypes and codecs
-        self.dtypes = convert_dtypes(mdtypes_template, self.byte_order)
-        self.class_dtypes = convert_dtypes(mclass_dtypes_template,
-                                           self.byte_order)
-        self.codecs = convert_codecs(codecs_template, self.byte_order)
         if not uint16_codec:
             uint16_codec = sys.getdefaultencoding()
-        # Set length of miUINT16 char encoding
-        self.codecs['uint16_len'] = len("  ".encode(uint16_codec)) \
-                               - len(" ".encode(uint16_codec))
-        self.codecs['uint16_codec'] = uint16_codec
-        self._uint16_codec = uint16_codec
-        from mio5_utils import CReader
-        # reader for top level stream.  We need this extra top-level
-        # reader because we use the matrix_reader object to contain
-        # compressed matrices (so they have their own stream)
-        self._file_reader = CReader(self)
-        # reader for matrix streams 
-        self._matrix_reader = CReader(self)
-
-    def get_uint16_codec(self):
-        return self._uint16_codec
-    uint16_codec = property(get_uint16_codec,
-                            None,
-                            None,
-                            'get uint16_codec')
+        self.uint16_codec = uint16_codec
+        # placeholders for readers - see initialize_read method
+        self._file_reader = None
+        self._matrix_reader = None
 
     def guess_byte_order(self):
         ''' Guess byte order.
@@ -350,30 +331,61 @@ class MatFile5Reader(MatFileReader):
         hdict['__version__'] = '%d.%d' % (v_major, v_minor)
         return hdict
 
-    def get_var_params(self):
-        ''' Read header, return name, pos, is_global, set reader '''
+    def initialize_read(self):
+        ''' Run when beginning read of variables
+
+        Sets up readers from parameters in `self`
+        '''
+        self.dtypes = convert_dtypes(mdtypes_template, self.byte_order)
+        self.class_dtypes = convert_dtypes(mclass_dtypes_template,
+                                           self.byte_order)
+        self.codecs = convert_codecs(codecs_template, self.byte_order)
+        uint16_codec = self.uint16_codec
+        # Set length of miUINT16 char encoding
+        self.codecs['uint16_len'] = len("  ".encode(uint16_codec)) \
+                               - len(" ".encode(uint16_codec))
+        self.codecs['uint16_codec'] = uint16_codec
+        # make and initialize readers
+        from mio5_utils import CReader
+        # reader for top level stream.  We need this extra top-level
+        # reader because we use the matrix_reader object to contain
+        # compressed matrices (so they have their own stream)
+        self._file_reader = CReader(self)
+        # reader for matrix streams 
+        self._matrix_reader = CReader(self)
+
+    def read_var_header(self):
+        ''' Read header, return header, next position
+
+        Header has to define at least .name and .is_global
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        header : object
+           object that can be passed to self.read_var_array, and that
+           has attributes .name and .is_global
+        next_position : int
+           position in stream of next variable
+        '''
         mdtype, byte_count = self._file_reader.read_full_tag()
         assert byte_count > 0
         next_pos = self.mat_stream.tell() + byte_count
-        if mdtype == miCOMPRESSED:
-            stream = StringIO(
-                zlib.decompress(self.mat_stream.read(byte_count)))
-        elif not mdtype == miMATRIX:
+        if mdtype == miCOMPRESSED: # make new stream from compressed data
+            stream = StringIO(zlib.decompress(self.mat_stream.read(byte_count)))
+            self._matrix_reader.set_stream(stream)
+            mdtype, byte_count = self._matrix_reader.read_full_tag()
+        else:
+            self._matrix_reader.set_stream(self.mat_stream)
+        if not mdtype == miMATRIX:
             raise TypeError, \
                 'Expecting miMATRIX type here, got %d' %  mdtype
-        else:
-            stream = self.mat_stream
-        self._matrix_reader.set_stream(stream)
-        # read header
         header = self._matrix_reader.read_header()
-        # store header so variable read can continue
-        self._current_header = header
-        return header.name, next_pos, header.is_global
+        return header, next_pos
             
-    def get_variable(self):
-        reader = self._matrix_reader
-        return reader.get_mi_matrix(self._current_header)
-    
     
 class Mat5MatrixWriter(MatStreamWriter):
     ''' Generic matlab matrix writing class '''
@@ -760,8 +772,6 @@ class Mat5WriterGetter(object):
                 self.unicode_strings,
                 self.long_field_names,
                 self.oned_as)
-        if isinstance(narr, MatlabBinaryBlock):
-            return Mat5BinaryBlockWriter(*args)
         if isinstance(narr, MatlabObject):
             return Mat5ObjectWriter(*args)
         if narr.dtype.fields: # struct array

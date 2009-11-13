@@ -79,6 +79,10 @@ def test_read_element():
     r.codecs = {}
     r.class_dtypes = None
     r.struct_as_record = True
+    r.uint16_codec = None
+    r.chars_as_strings = False
+    r.mat_dtype = False
+    r.squeeze_me = False
     # check simplest of tags
     for base_dt, val, mdtype in (
         ('u2', 30, mio5.miUINT16),
@@ -86,7 +90,7 @@ def test_read_element():
         ('i2', -1, mio5.miINT16)):
         for byte_code in ('<', '>'):
             r.dtypes = miob.convert_dtypes(mio5.mdtypes_template, byte_code)
-            c_reader = m5u.CReader(r)
+            c_reader = m5u.VarReader5(r)
             yield assert_equal, c_reader.little_endian, byte_code == '<'
             yield assert_equal, c_reader.is_swapped, byte_code != boc.native_code
             for sde_f in (False, True):

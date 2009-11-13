@@ -4,8 +4,6 @@
 
 import sys
 
-import cStringIO
-import zlib
 from copy import copy as pycopy
 
 import numpy as np
@@ -86,19 +84,20 @@ cdef size_t cproduct(tup):
            
 
 cdef class ElementHeader:
+    cdef public object name
     cdef int mclass
+    cdef object dims
+    cdef int is_complex
     cdef int is_logical
     cdef public int is_global
-    cdef int is_complex
     cdef size_t nzmax
-    cdef object dims
-    cdef public object name
 
 
 cdef class CReader:
     cdef public int is_swapped, little_endian
-    cdef readonly object mat_stream, 
-    cdef object stream_type, dtypes, class_dtypes, codecs
+    cdef readonly object mat_stream
+    cdef readonly int stream_type
+    cdef object dtypes, class_dtypes, codecs
     cdef int struct_as_record
     cdef FILE* _file
     cdef object preader
@@ -120,7 +119,6 @@ cdef class CReader:
         
     def set_stream(self, fobj):
         self.mat_stream = fobj
-        fobj = self.mat_stream
         if isinstance(fobj, file):
             self.stream_type = real_file
             self._file = PyFile_AsFile(fobj)
@@ -363,22 +361,19 @@ cdef class CReader:
             byte_count = byteswap_u4(byte_count)
         return mdtype, byte_count
 
-    def get_mi_matrix(self):
-        mdtype, byte_count = self.read_full_tag()
-        if mdtype != mio5.miMATRIX:
-            raise TypeError('Expecting matrix here')
-        if byte_count == 0: # empty matrix
-            mat_dtype = 'f8'
-            arr = np.array([[]])
-        else:
-            header = self.read_header()
-            arr, mdtype = self.get_array(header)
-        return miob.process_element(arr, self.preader, mat_dtype)
-
     def read_header(self):
         ''' Return matrix header for current stream position
 
         Returns matrix headers at top level and sub levels
+        '''
+        return self.cread_header()
+        
+    cdef ElementHeader cread_header(self):
+        ''' Return matrix header for current stream position
+
+        Returns matrix headers at top level and sub levels
+
+        C callable version
         '''
         cdef:
             cnp.uint32_t af_mdtype, af_byte_count
@@ -408,7 +403,28 @@ cdef class CReader:
         header.name = self.read_name()
         return header
 
-    def get_array(self, ElementHeader header):
+    def array_from_header(self, ElementHeader header):
+        ''' Only called at the top level '''
+        arr, mat_dtype = self.read_array_mdtype(header)
+        return miob.process_element(arr, self.preader, mat_dtype)
+
+    cdef cnp.ndarray read_mi_matrix(self):
+        cdef:
+            ElementHeader header
+            cnp.uint32_t mdtype, byte_count
+            cnp.ndarray arr
+        mdtype, byte_count = self.read_full_tag()
+        if mdtype != mio5.miMATRIX:
+            raise TypeError('Expecting matrix here')
+        if byte_count == 0: # empty matrix
+            mat_dtype = 'f8'
+            arr = np.array([[]])
+        else:
+            header = self.cread_header()
+            arr, mat_dtype = self.read_array_mdtype(header)
+        return miob.process_element(arr, self.preader, mat_dtype)
+
+    def read_array_mdtype(self, ElementHeader header):
         cdef:
             int mc
             size_t length
@@ -484,7 +500,7 @@ cdef class CReader:
         elif mc == mio5.mxOBJECT_CLASS: # like structs, but with classname
             classname = self.read_element().tostring()
             arr = self._read_struct(header)
-            arr = mio5.MatlabObject(result, classname)
+            arr = mio5.MatlabObject(arr, classname)
         elif mc == mio5.mxFUNCTION_CLASS:
             raise mio5.MatReadError('Cannot read matlab functions')
         return arr, mat_dtype
@@ -496,7 +512,7 @@ cdef class CReader:
         length = cproduct(tupdims)
         result = np.empty(length, dtype=object)
         for i in range(length):
-            result[i] = self.get_mi_matrix()
+            result[i] = self.read_mi_matrix()
         return result.reshape(tupdims).T
         
     def _read_struct(self, ElementHeader header):
@@ -522,7 +538,7 @@ cdef class CReader:
             rec_res = np.empty(length, dtype=dtype)
             for i in range(length):
                 for field_name in field_names:
-                    rec_res[i][field_name] = self.get_mi_matrix()
+                    rec_res[i][field_name] = self.read_mi_matrix()
             return rec_res.reshape(tupdims).T
         # Backward compatibility with previous format
         obj_template = mio5.mat_struct()
@@ -531,7 +547,7 @@ cdef class CReader:
         for i in range(length):
             item = pycopy(obj_template)
             for name in field_names:
-                item.__dict__[name] = self.get_mi_matrix()
+                item.__dict__[name] = self.read_mi_matrix()
             result[i] = item
         return result.reshape(tupdims).T
 

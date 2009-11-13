@@ -90,35 +90,37 @@ for reading the whole file, and therefore every variable within that
 file. At the moment these are:
 
 * mat_stream
-* dtypes (derived from order code)
-* processor_func
+* dtypes (derived from byte code)
 * byte_order
+* chars_as_strings
+* squeeze_me
 * struct_as_record (matlab 5 files)
 * class_dtypes (derived from order code, matlab 5 files)
 * codecs (matlab 5 files)
 * uint16_codec (matlab 5 files)
 
 Another set of parameters are those that apply only the the current
-variable being read - *variable read parameters*:
+variable being read - the header**:
 
 * header related variables (different for v4 and v5 mat files)
 * is_complex
 * mclass
 * var_stream
-* next_position
+
+With the header, we need ``next_position`` to tell us where the next
+variable in the stream is.
 
 Then, there can be, for each element in a matrix, *element read
 parameters*.  An element is, for example, one element in a Matlab cell
 array.  At the moment these are:
 
 * mat_dtype
-* dims
-*
 
-The file-reading object contains the *file read parameters*.  There is
-also a variable-reading object that contains the *file read parameters*
-and the *variable read parameters*.  
-
+The file-reading object contains the *file read parameters*.  The
+*header* is passed around as a data object, or may be read and discarded
+in a single function.  The *element read parameters* - the mat_dtype in
+this instance, is passed into a general post-processing function - see
+``mio_utils`` for details.
 '''
 
 
@@ -165,14 +167,6 @@ def read_dtype(mat_stream, a_dtype):
                      buffer=mat_stream.read(num_bytes),
                      order='F')
     return arr
-
-
-def small_product(arr):
-    ''' Faster than product for small arrays '''
-    res = 1
-    for e in arr:
-        res *= e
-    return res
 
 
 def get_matfile_version(fileobj):
@@ -314,62 +308,18 @@ scipy.io.matlab.byteordercodes module instead.
 """)
 
 
-class FileReadParameters(object):
-    ''' Container for file read parameters '''
-    def __init__(self, byte_order, mat_dtype, squeeze_me,
-                 chars_as_strings, struct_as_record):
-        self.byte_order = byte_order
-        self.mat_dtype = mat_dtype
-        self.squeeze_me = squeeze_me
-        self.chars_as_strings = chars_as_strings
-        self.struct_as_record = struct_as_record
-        
-    @classmethod
-    def from_object(klass, obj):
-        return klass(
-            obj.byte_order,
-            obj.mat_dtype,
-            obj.squeeze_me,
-            obj.chars_as_strings,
-            obj.struct_as_record)
+class MatVarReader(object):
+    ''' Abstract class defining required interface for var readers'''
+    def __init__(self, file_reader):
+        pass
 
+    def read_header(self):
+        ''' Returns header '''
+        pass
 
-def process_element(arr, file_read_opts, mat_dtype):
-    if file_read_opts.chars_as_strings and arr.dtype.kind == 'U':
-        # Convert char array to string or array of strings
-        dims = arr.shape
-        if len(dims) >= 2: # return array of strings
-            n_dims = dims[:-1]
-            last_dim = dims[-1]
-            str_arr = arr.reshape(
-                (small_product(n_dims),
-                 last_dim))
-            dtstr = 'U%d' % (last_dim and last_dim or 1)
-            arr = np.empty(n_dims, dtype=dtstr)
-            for i in range(0, n_dims[-1]):
-                arr[...,i] = chars_to_str(str_arr[i])
-        else: # return string
-            arr = chars_to_str(arr)
-    if file_read_opts.mat_dtype:
-        # Apply options to replicate matlab's (TM)
-        # load into workspace
-        if mat_dtype is not None:
-            arr = arr.astype(mat_dtype)
-    if file_read_opts.squeeze_me:
-        arr = np.squeeze(arr)
-        if not arr.size:
-            arr = np.array([])
-        elif not arr.shape and arr.dtype.isbuiltin: # 0d coverted to scalar
-            arr = arr.item()
-    return arr
-
-
-def chars_to_str(str_arr):
-    ''' Convert string array to string '''
-    dt = np.dtype('U' + str(small_product(str_arr.shape)))
-    return np.ndarray(shape=(),
-                      dtype = dt,
-                      buffer = str_arr.copy()).item()
+    def array_from_header(self, header):
+        ''' Reads array given header '''
+        pass
 
 
 class MatFileReader(object):
@@ -405,58 +355,20 @@ class MatFileReader(object):
             byte_order = self.guess_byte_order()
         else:
             byte_order = boc.to_numpy_code(byte_order)
-        self._byte_order = byte_order
-        self._struct_as_record = struct_as_record
+        self.byte_order = byte_order
+        self.struct_as_record = struct_as_record
         if matlab_compatible:
             self.set_matlab_compatible()
         else:
-            self._squeeze_me = squeeze_me
-            self._chars_as_strings = chars_as_strings
-            self._mat_dtype = mat_dtype
-            self.processor_func = self.get_processor_func()
+            self.squeeze_me = squeeze_me
+            self.chars_as_strings = chars_as_strings
+            self.mat_dtype = mat_dtype
 
     def set_matlab_compatible(self):
         ''' Sets options to return arrays as matlab (tm) loads them '''
-        self._mat_dtype = True
-        self._squeeze_me = False
-        self._chars_as_strings = False
-        self.processor_func = self.get_processor_func()
-
-    def get_byte_order(self):
-        'Read only byte_order property'
-        return self._byte_order
-    byte_order = property(get_byte_order,
-                          None,
-                          None,
-                          'get byte_order code')
-
-    def get_mat_dtype(self):
-        return self._mat_dtype
-    mat_dtype = property(get_mat_dtype,
-                         None,
-                         None,
-                         'get mat_dtype property')
-
-    def get_squeeze_me(self):
-        return self._squeeze_me
-    squeeze_me = property(get_squeeze_me,
-                          None,
-                          None,
-                          'get squeeze me property')
-
-    def get_chars_as_strings(self):
-        return self._chars_as_strings
-    chars_as_strings = property(get_chars_as_strings,
-                                None,
-                                None,
-                                'get chars_as_strings property')
-
-    def get_struct_as_record(self):
-        return self._struct_as_record
-    struct_as_record = property(get_struct_as_record,
-                                None,
-                                None,
-                                'get struct_as_record property')
+        self.mat_dtype = True
+        self.squeeze_me = False
+        self.chars_as_strings = False
 
     def file_header(self):
         return {}
@@ -465,29 +377,6 @@ class MatFileReader(object):
         ''' As we do not know what file type we have, assume native '''
         return ByteOrder.native_code
 
-    def get_processor_func(self):
-        ''' Processing to apply to read matrices
-
-        Function applies options to matrices. We have to pass this
-        function into the reader routines because Mat5 matrices
-        occur as submatrices - in cell arrays, structs and objects -
-        so we will not see these in the main variable getting routine
-        here.
-
-        The read array is the first argument.
-        The getter, passed as second argument to the function, must
-        define properties, iff mat_dtype option is True:
-
-        mat_dtype    - data type when loaded into matlab (tm)
-                       (None for no conversion)
-
-        func returns the processed array
-        '''
-        params = FileReadParameters.from_object(self)
-        def func(arr, getter):
-            return process_element(arr, params, getter.mat_dtype)
-        return func
-    
     def get_variables(self, variable_names=None):
         ''' get variables from stream as dictionary
 
@@ -498,15 +387,18 @@ class MatFileReader(object):
         if isinstance(variable_names, basestring):
             variable_names = [variable_names]
         self.mat_stream.seek(0)
+        # Here we pass all the parameters in self to the reading objects
+        self.initialize_read()
         mdict = self.file_header()
         mdict['__globals__'] = []
         while not self.end_of_stream():
-            name, next_position, is_global = self.get_var_params()
+            hdr, next_position = self.read_var_header()
+            name = hdr.name
             if variable_names and name not in variable_names:
                 self.mat_stream.seek(next_position)
                 continue
             try:
-                res = self.get_variable()
+                res = self.read_var_array(hdr)
             except MatReadError, err:
                 warnings.warn(
                     'Unreadable variable "%s", because "%s"' % \
@@ -515,7 +407,7 @@ class MatFileReader(object):
                 res = "Read error: %s" % err
             self.mat_stream.seek(next_position)
             mdict[name] = res
-            if is_global:
+            if hdr.is_global:
                 mdict['__globals__'].append(name)
             if variable_names:
                 variable_names.remove(name)
@@ -529,11 +421,26 @@ class MatFileReader(object):
         self.mat_stream.seek(curpos-1)
         return len(b) == 0
 
-    def get_var_params(self):
+    def initialize_read(self):
         raise NotImplementedError
 
-    def get_variable(self):
+    def read_var_header(self):
         raise NotImplementedError
+
+    def read_var_array(self, header):
+        ''' Read array, given header
+
+        Parameters
+        ----------
+        header : header object
+           object with fields defining variable header
+
+        Returns
+        -------
+        arr : array
+           array with all post-processing applied
+        '''
+        return self._matrix_reader.array_from_header(header)
 
 
 class MatStreamWriter(object):

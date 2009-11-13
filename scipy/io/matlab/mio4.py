@@ -8,7 +8,9 @@ import scipy.sparse
 
 from miobase import MatFileReader, \
      MatFileWriter, MatStreamWriter, docfiller, matdims, \
-     read_dtype, process_element, convert_dtypes
+     read_dtype, convert_dtypes
+
+from mio_utils import FileReadOpts, process_element
 
 
 SYS_LITTLE_ENDIAN = sys.byteorder == 'little'
@@ -62,54 +64,88 @@ order_codes = {
     4: 'Cray', #!!
     }
 
-
-class VarReader4(object):
-    ''' Class to contain parameters for and read matlab 4 variable '''
-    # Mat4 variables never logical
+class VarHeader4(object):
+    # Mat4 variables never logical or global
     is_logical = False
-    # By default, we don't know the Mat dtype
-    mat_dtype = None
-    
+    is_global = False
+
     def __init__(self,
-                 mat_stream,
+                 name,
                  dtype,
                  mclass,
                  dims,
                  is_complex):
-        self.mat_stream = mat_stream
+        self.name = name
         self.dtype = dtype
         self.mclass = mclass
         self.dims = dims
         self.is_complex = is_complex
+    
+
+class VarReader4(object):
+    ''' Class to read matlab 4 variables '''
+    
+    def __init__(self, file_reader):
+        self.file_reader = file_reader
+        self.mat_stream = file_reader.mat_stream
+        self.dtypes = file_reader.dtypes
+        self.read_opts = FileReadOpts(
+            file_reader.chars_as_strings,
+            file_reader.mat_dtype,
+            file_reader.squeeze_me)
+        
+    def read_header(self):
+        ''' Reads and return header for variable '''
+        data = read_dtype(self.mat_stream, self.dtypes['header'])
+        name = self.mat_stream.read(int(data['namlen'])).strip('\x00')
+        if data['mopt'] < 0 or  data['mopt'] > 5000:
+            ValueError, 'Mat 4 mopt wrong format, byteswapping problem?'
+        M,rest = divmod(data['mopt'], 1000)
+        O,rest = divmod(rest,100)
+        P,rest = divmod(rest,10)
+        T = rest
+        if O != 0:
+            raise ValueError, 'O in MOPT integer should be 0, wrong format?'
+        dims = (data['mrows'], data['ncols'])
+        is_complex = data['imagf'] == 1
+        dtype = self.dtypes[P]
+        return VarHeader4(
+            name,
+            dtype,
+            T,
+            dims,
+            is_complex)
+        
+    def array_from_header(self, hdr):
+        mclass = hdr.mclass
+        mat_dtype = None
         if mclass == mxFULL_CLASS:
-            if is_complex:
-               self.mat_dtype = np.dtype(np.complex128)
+            arr = self.read_full_array(hdr)
+            if hdr.is_complex:
+               mat_dtype = np.dtype(np.complex128)
             else:
-               self.mat_dtype = np.dtype(np.float64)
-
-    def get_raw_array(self):
-        T = self.mclass
-        if T == mxFULL_CLASS:
-            return self.read_full_array()
-        elif T == mxCHAR_CLASS:
-            return self.read_char_array()
-        elif T == mxSPARSE_CLASS:
-            return self.read_sparse_array()
+               mat_dtype = np.dtype(np.float64)
+        elif mclass == mxCHAR_CLASS:
+            arr = self.read_char_array(hdr)
+        elif mclass == mxSPARSE_CLASS:
+            # no current processing (below) makes sense for sparse
+            return self.read_sparse_array(hdr)
         else:
-            raise TypeError, 'No reader for class code %s' % T
-
-    def read_element(self, copy=True):
+            raise TypeError, 'No reader for class code %s' % mclass
+        return process_element(arr, self.read_opts, mat_dtype)
+        
+    def read_sub_array(self, hdr, copy=True):
         ''' Mat4 read always uses header dtype and dims
-        self : object
-           object with attributes 'dtype', 'dims', 'mat_stream'
+        hdr : object
+           object with attributes 'dtype', 'dims'
         copy : bool
            copies array if True (default True)
            (buffer is usually read only)
 
         self.dtype is assumed to be correct endianness
         '''
-        dt = self.dtype
-        dims = self.dims
+        dt = hdr.dtype
+        dims = hdr.dims
         num_bytes = dt.itemsize
         for d in dims:
             num_bytes *= d
@@ -121,28 +157,28 @@ class VarReader4(object):
             arr = arr.copy()
         return arr
 
-    def read_full_array(self):
+    def read_full_array(self, hdr):
         ''' Full (rather than sparse matrix) getter
         '''
-        if self.is_complex:
+        if hdr.is_complex:
             # avoid array copy to save memory
-            res = self.read_element(copy=False)
-            res_j = self.read_element(copy=False)
+            res = self.read_sub_array(hdr, copy=False)
+            res_j = self.read_sub_array(hdr, copy=False)
             return res + (res_j * 1j)
-        return self.read_element()
+        return self.read_sub_array(hdr)
 
-    def read_char_array(self):
+    def read_char_array(self, hdr):
         ''' Ascii text matrix (char matrix) reader
 
         '''
-        arr = self.read_element().astype(np.uint8)
+        arr = self.read_sub_array(hdr).astype(np.uint8)
         # ascii to unicode
         S = arr.tostring().decode('ascii')
-        return np.ndarray(shape=self.dims,
+        return np.ndarray(shape=hdr.dims,
                           dtype=np.dtype('U1'),
                           buffer = np.array(S)).copy()
 
-    def read_sparse_array(self):
+    def read_sparse_array(self, hdr):
         ''' Read sparse matrix type
 
         Matlab (TM) 4 real sparse arrays are saved in a N+1 by 3 array
@@ -159,7 +195,7 @@ class VarReader4(object):
         header imagf field set to True; the fact that the data are complex
         is only detectable because there are 4 storage columns
         '''
-        res = self.read_element()
+        res = self.read_sub_array(hdr)
         tmp = res[:-1,:]
         dims = res[-1,0:2]
         I = np.ascontiguousarray(tmp[:,0],dtype='intc') #fixes byte order also
@@ -195,37 +231,37 @@ class MatFile4Reader(MatFileReader):
             return SYS_LITTLE_ENDIAN and '>' or '<'
         return SYS_LITTLE_ENDIAN and '<' or '>'
 
-    def get_var_params(self):
-        ''' Read header, return params, set reader '''
-        data = read_dtype(self.mat_stream, self.dtypes['header'])
-        name = self.mat_stream.read(int(data['namlen'])).strip('\x00')
-        if data['mopt'] < 0 or  data['mopt'] > 5000:
-            ValueError, 'Mat 4 mopt wrong format, byteswapping problem?'
-        M,rest = divmod(data['mopt'], 1000)
-        O,rest = divmod(rest,100)
-        P,rest = divmod(rest,10)
-        T = rest
-        if O != 0:
-            raise ValueError, 'O in MOPT integer should be 0, wrong format?'
-        dims = (data['mrows'], data['ncols'])
-        is_complex = data['imagf'] == 1
-        dtype = self.dtypes[P]
-        remaining_bytes = dtype.itemsize * np.product(dims)
-        if is_complex and not T == mxSPARSE_CLASS:
+    def initialize_read(self):
+        ''' Initialize reading objects from parameters in object '''
+        self._matrix_reader = VarReader4(self)
+
+    def read_var_header(self):
+        ''' Read header, return header, next position
+
+        Header has to define at least .name and .is_global
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        header : object
+           object that can be passed to self.read_var_array, and that
+           has attributes .name and .is_global
+        next_position : int
+           position in stream of next variable
+        '''
+        hdr = self._matrix_reader.read_header()
+        n = reduce(lambda x, y: x*y, hdr.dims, 1) # fast product
+        remaining_bytes = hdr.dtype.itemsize * n
+        if hdr.is_complex and not hdr.mclass == mxSPARSE_CLASS:
             remaining_bytes *= 2
         next_position = self.mat_stream.tell() + remaining_bytes
-        self._matrix_reader = VarReader4(
-            self.mat_stream,
-            dtype,
-            T,
-            dims,
-            is_complex)
-        return name, next_position, False
+        return hdr, next_position
     
-    def get_variable(self):
-        reader = self._matrix_reader
-        arr = reader.get_raw_array()
-        return process_element(arr, self, reader.mat_dtype)
+    def read_var_array(self, header):
+        return self._matrix_reader.array_from_header(header)
 
 
 class Mat4MatrixWriter(MatStreamWriter):
