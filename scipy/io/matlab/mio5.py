@@ -23,9 +23,9 @@ import numpy as np
 import scipy.sparse
 
 from byteordercodes import to_numpy_code
-from miobase import MatFileReader, MatMatrixGetter, \
+from miobase import MatFileReader, MatArrayReader, MatMatrixGetter, \
      MatFileWriter, MatStreamWriter, docfiller, matdims, \
-     MatReadError, read_dtype
+     MatReadError
 
 miINT8 = 1
 miUINT8 = 2
@@ -237,18 +237,10 @@ class MatlabBinaryBlock(object):
         self.endian = endian
 
 
-class Mat5ArrayReader(object):
+class Mat5ArrayReader(MatArrayReader):
     ''' Class to get Mat5 arrays
 
-    The array reader contains information about the current reading
-    process, such as byte ordered dtypes and the processing function
-    to apply to matrices as they are read, as well as routines for
-    reading matrix compenents.
-
-    "readers" do not store state of the current read, and only need to
-    be initialized once on object creation.
-
-    Provides element reader functions, matrix reader
+    Provides element reader functions, header reader, matrix reader
     factory function.
 
     Will move to mio5_utils as own type, in due course
@@ -580,7 +572,7 @@ class MatFile5Reader(MatFileReader):
     def file_header(self):
         ''' Read in mat 5 file header '''
         hdict = {}
-        hdr = read_dtype(self.mat_stream, self.dtypes['file_header'])
+        hdr = self.read_dtype(self.dtypes['file_header'])
         hdict['__header__'] = hdr['description'].item().strip(' \t\n\000')
         v_major = hdr['version'] >> 8
         v_minor = hdr['version'] & 0xFF

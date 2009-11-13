@@ -120,7 +120,8 @@ def read_dtype(mat_stream, a_dtype):
     num_bytes = a_dtype.itemsize
     arr = np.ndarray(shape=(),
                      dtype=a_dtype,
-                     buffer=mat_stream.read(num_bytes))
+                     buffer=mat_stream.read(num_bytes),
+                     order='F')
     return arr
 
 
