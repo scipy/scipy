@@ -23,13 +23,10 @@ import numpy as np
 import scipy.sparse
 
 from byteordercodes import to_numpy_code
-from miobase import MatFileReader, MatArrayReader, MatMatrixGetter, \
+from miobase import MatFileReader, MatMatrixGetter, \
      MatFileWriter, MatStreamWriter, docfiller, matdims, \
-     MatReadError
+     MatReadError, read_dtype
 
-from mio5_utils import CReader
-
-     
 miINT8 = 1
 miUINT8 = 2
 miINT16 = 3
@@ -240,13 +237,22 @@ class MatlabBinaryBlock(object):
         self.endian = endian
 
 
-class Mat5ArrayReader(MatArrayReader):
+class Mat5ArrayReader(object):
     ''' Class to get Mat5 arrays
 
-    Provides element reader functions, header reader, matrix reader
-    factory function
-    '''
+    The array reader contains information about the current reading
+    process, such as byte ordered dtypes and the processing function
+    to apply to matrices as they are read, as well as routines for
+    reading matrix compenents.
 
+    "readers" do not store state of the current read, and only need to
+    be initialized once on object creation.
+
+    Provides element reader functions, matrix reader
+    factory function.
+
+    Will move to mio5_utils as own type, in due course
+    '''
     def __init__(self,
                  mat_stream,
                  dtypes,
@@ -260,92 +266,11 @@ class Mat5ArrayReader(MatArrayReader):
         self.codecs = codecs
         self.class_dtypes = class_dtypes
         self.struct_as_record = struct_as_record
+        from mio5_utils import CReader
         self._c_reader = CReader(self)
         # set element reader function
         self.read_element = self._c_reader.read_element
-        
-    def matrix_getter_factory(self):
-        ''' Returns reader for next matrix at top level '''
-        tag = self.read_dtype(self.dtypes['tag_full'])
-        mdtype = tag['mdtype'].item()
-        byte_count = tag['byte_count'].item()
-        next_pos = self.mat_stream.tell() + byte_count
-        if mdtype == miCOMPRESSED:
-            getter = Mat5ZArrayReader(self, byte_count).matrix_getter_factory()
-        elif not mdtype == miMATRIX:
-            raise TypeError, \
-                  'Expecting miMATRIX type here, got %d' %  mdtype
-        else:
-            getter = self.current_getter(byte_count)
-        getter.next_position = next_pos
-        return getter
-
-    def current_getter(self, byte_count):
-        ''' Return matrix getter for current stream position
-
-        Returns matrix getters at top level and sub levels
-        '''
-        if not byte_count: # an empty miMATRIX can contain no bytes
-            return Mat5EmptyMatrixGetter(self)
-        af = self.read_dtype(self.dtypes['array_flags'])
-        header = {}
-        flags_class = af['flags_class']
-        mc = flags_class & 0xFF
-        header['mclass'] = mc
-        header['is_logical'] = flags_class >> 9 & 1
-        header['is_global'] = flags_class >> 10 & 1
-        header['is_complex'] = flags_class >> 11 & 1
-        header['nzmax'] = af['nzmax']
-        ''' Here I am playing with a binary block read of
-        untranslatable data. I am not using this at the moment because
-        reading it has the side effect of making opposite ending mat
-        files unwritable on the round trip.
-        
-        if mc == mxFUNCTION_CLASS:
-            # we can't read these, and want to keep track of the byte
-            # count - so we need to avoid the following unpredictable
-            # length element reads
-            return Mat5BinaryBlockGetter(self,
-                                         header,
-                                         af,
-                                         byte_count)
-        '''
-        header['dims'] = self.read_element()
-        header['name'] = self.read_element().tostring()
-        # maybe a dictionary mapping here as a dispatch table
-        if mc in mx_numbers:
-            return Mat5NumericMatrixGetter(self, header)
-        if mc == mxSPARSE_CLASS:
-            return Mat5SparseMatrixGetter(self, header)
-        if mc == mxCHAR_CLASS:
-            return Mat5CharMatrixGetter(self, header)
-        if mc == mxCELL_CLASS:
-            return Mat5CellMatrixGetter(self, header)
-        if mc == mxSTRUCT_CLASS:
-            return Mat5StructMatrixGetter(self, header)
-        if mc == mxOBJECT_CLASS:
-            return Mat5ObjectMatrixGetter(self, header)
-        if mc == mxFUNCTION_CLASS:
-            return Mat5FunctionGetter(self, header)
-        raise TypeError, 'No reader for class code %s' % mc
-
-
-class Mat5ZArrayReader(Mat5ArrayReader):
-    ''' Getter for compressed arrays
-
-    Sets up reader for gzipped stream on init, providing wrapper
-    for this new sub-stream.
-
-    '''
-    def __init__(self, array_reader, byte_count):
-        super(Mat5ZArrayReader, self).__init__(
-            cStringIO(zlib.decompress(
-                        array_reader.mat_stream.read(byte_count))),
-            array_reader.dtypes,
-            array_reader.processor_func,
-            array_reader.codecs,
-            array_reader.class_dtypes,
-            array_reader.struct_as_record)
+        self.matrix_getter_factory = self._c_reader.matrix_getter_factory
 
 
 class Mat5MatrixGetter(MatMatrixGetter):
@@ -655,7 +580,7 @@ class MatFile5Reader(MatFileReader):
     def file_header(self):
         ''' Read in mat 5 file header '''
         hdict = {}
-        hdr = self.read_dtype(self.dtypes['file_header'])
+        hdr = read_dtype(self.mat_stream, self.dtypes['file_header'])
         hdict['__header__'] = hdr['description'].item().strip(' \t\n\000')
         v_major = hdr['version'] >> 8
         v_minor = hdr['version'] & 0xFF

@@ -6,8 +6,9 @@ import numpy as np
 
 import scipy.sparse
 
-from miobase import MatFileReader, MatArrayReader, MatMatrixGetter, \
-     MatFileWriter, MatStreamWriter, docfiller, matdims
+from miobase import MatFileReader, MatMatrixGetter, \
+     MatFileWriter, MatStreamWriter, docfiller, matdims, \
+     read_dtype
 
 
 SYS_LITTLE_ENDIAN = sys.byteorder == 'little'
@@ -62,15 +63,27 @@ order_codes = {
     }
 
 
-class Mat4ArrayReader(MatArrayReader):
+class Mat4ArrayReader(object):
     ''' Class for reading Mat4 arrays
+
+    The array reader contains information about the current reading
+    process, such as byte ordered dtypes and the processing function
+    to apply to matrices as they are read, as well as routines for
+    reading matrix compenents.
+
+    "readers" do not store state of the current read, and only need to
+    be initialized once on object creation.
     '''
+    def __init__(self, mat_stream, dtypes, processor_func):
+        self.mat_stream = mat_stream
+        self.dtypes = dtypes
+        self.processor_func = processor_func
 
     def matrix_getter_factory(self):
         ''' Read header, return matrix getter '''
-        data = self.read_dtype(self.dtypes['header'])
+        data = read_dtype(self.mat_stream, self.dtypes['header'])
         header = {}
-        header['name'] = self.read_ztstring(int(data['namlen']))
+        header['name'] = self.mat_stream.read(int(data['namlen'])).strip('\x00')
         if data['mopt'] < 0 or  data['mopt'] > 5000:
             ValueError, 'Mat 4 mopt wrong format, byteswapping problem?'
         M,rest = divmod(data['mopt'], 1000)
@@ -100,16 +113,29 @@ class Mat4ArrayReader(MatArrayReader):
 
 
 class Mat4MatrixGetter(MatMatrixGetter):
+    ''' Base for reading matlab 4 format matrices
 
+    Adds:
+       read_array
+    '''
     # Mat4 variables never global or logical
     is_global = False
     is_logical = False
 
+    def __init__(self, array_reader, header):
+        self.mat_stream = array_reader.mat_stream
+        self.array_reader = array_reader
+        self.header = header
+        self.name = header['name']
+        
     def read_array(self, copy=True):
         ''' Mat4 read array always uses header dtype and dims
         copy        - copies array if True
         (buffer is usually read only)
         a_dtype is assumed to be correct endianness
+
+        Uses: self.mat_stream
+              self.header
         '''
         dt = self.header['dtype']
         dims = self.header['dims']
@@ -126,6 +152,15 @@ class Mat4MatrixGetter(MatMatrixGetter):
 
 
 class Mat4FullGetter(Mat4MatrixGetter):
+    ''' Full (rather than sparse matrix) getter
+
+    Adds (to base matlab 4):
+       setting mat_dtype to complex or float
+       implementation to fetch full numeric array
+
+    Uses:
+       self.header
+    '''
     def __init__(self, array_reader, header):
         super(Mat4FullGetter, self).__init__(array_reader, header)
         if header['is_complex']:
@@ -143,6 +178,13 @@ class Mat4FullGetter(Mat4MatrixGetter):
 
 
 class Mat4CharGetter(Mat4MatrixGetter):
+    ''' Ascii text matrix (char matrix) reader
+
+    Adds implementation to fetch char array
+
+    Uses:
+       self.header
+    '''
     def get_raw_array(self):
         arr = self.read_array().astype(np.uint8)
         # ascii to unicode
@@ -154,6 +196,8 @@ class Mat4CharGetter(Mat4MatrixGetter):
 
 class Mat4SparseGetter(Mat4MatrixGetter):
     ''' Read sparse matrix type
+
+    Adds implementation to fetch sparse array
 
     Matlab (TM) 4 real sparse arrays are saved in a N+1 by 3 array
     format, where N is the number of non-zero values.  Column 1 values
@@ -209,7 +253,7 @@ class MatFile4Reader(MatFileReader):
 
     def guess_byte_order(self):
         self.mat_stream.seek(0)
-        mopt = self.read_dtype(np.dtype('i4'))
+        mopt = read_dtype(self.mat_stream, np.dtype('i4'))
         self.mat_stream.seek(0)
         if mopt < 0 or mopt > 5000:
             return SYS_LITTLE_ENDIAN and '>' or '<'

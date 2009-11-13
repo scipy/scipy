@@ -103,6 +103,27 @@ def convert_dtypes(dtype_template, order_code):
     return dtypes
 
 
+def read_dtype(mat_stream, a_dtype):
+    ''' Generic get of byte stream data of known type
+
+    Parameters
+    ----------
+    mat_stream : file-like object
+    a_dtype : dtype
+       dtype of array to read.  `a_dtype` is assumed to be correct
+       endianness
+
+    Returns
+    -------
+    arr : array
+    '''
+    num_bytes = a_dtype.itemsize
+    arr = np.ndarray(shape=(),
+                     dtype=a_dtype,
+                     buffer=mat_stream.read(num_bytes))
+    return arr
+
+
 def small_product(arr):
     ''' Faster than product for small arrays '''
     res = 1
@@ -249,45 +270,7 @@ it in future versions of scipy.  Please use the
 scipy.io.matlab.byteordercodes module instead.
 """)
 
-
-class MatStreamAgent(object):
-    ''' Base object for readers / getters from mat file streams
-
-    Attaches to initialized stream
-
-    Base class for "getters" - which do store state of what they are
-    reading on initialization, and therefore need to be initialized
-    before each read, and "readers" which do not store state, and only
-    need to be initialized once on object creation
-
-    Implements common array reading functions
-
-    Inputs mat_steam - MatFileReader object
-    '''
-
-    def __init__(self, mat_stream):
-        self.mat_stream = mat_stream
-
-    def read_dtype(self, a_dtype):
-        ''' Generic get of byte stream data of known type
-
-        Inputs
-        a_dtype     - dtype of array
-
-        a_dtype is assumed to be correct endianness
-        '''
-        num_bytes = a_dtype.itemsize
-        arr = np.ndarray(shape=(),
-                         dtype=a_dtype,
-                         buffer=self.mat_stream.read(num_bytes),
-                         order='F')
-        return arr
-
-    def read_ztstring(self, num_bytes):
-        return self.mat_stream.read(num_bytes).strip('\x00')
-
-
-class MatFileReader(MatStreamAgent):
+class MatFileReader(object):
     """ Base object for reading mat files
 
     To make this class functional, you will need to override the
@@ -484,23 +467,51 @@ class MatFileReader(MatStreamAgent):
         return len(b) == 0
 
 
-class MatMatrixGetter(MatStreamAgent):
+class MatMatrixGetter(object):
     """ Base class for matrix getters
 
-    Getters are stateful versions of agents, and record state of
-    current read on initialization, so need to be created for each
-    read - one-shot objects.
+    Getters do store state of what they are reading on initialization,
+    and therefore need to be initialized before each read.  They are
+    one-shot objects.
 
-    MatrixGetters are initialized with the content of the matrix
-    header
+    The getter stores the:
+       mat_stream (file-like)
+          stream from which to read data
+       array_reader (object for reading arrays from the stream)
+          used to (base)
+             contain reference to 'processor_func'
+             pass in mat_stream
+             pass in dtypes
+          used to (mio4)
+             mat_stream used for read_array
+             dtypes not used
+          mio5 also:
+             pass reference to class_dtypes, codecs
+             provide read_element implementation
+             provide struct_as_record read flag to struct getter
+       dtypes (little- or big-endian versions of matlab dtypes)
+       header (information about the current matrix being read)
+       name (from the header - name of matrix being read)
 
-    Accepts
-    array_reader - array reading object (see below)
-    header       - header dictionary for matrix being read
+    Also has:
+       next_position (position for next matrix at base level)
+
+    Does:
+       get_array (just a shell to call get_raw_array, and run processor
+       func)
+       get_raw_array (actual work for array reading)
+       to_next (move to ``next_position`` above)
+       
+    Parameters
+    ----------
+    array_reader : array reading object
+       Containing stream, dtypes.
+    header : mapping
+       header dictionary for matrix being read
     """
 
     def __init__(self, array_reader, header):
-        super(MatMatrixGetter, self).__init__(array_reader.mat_stream)
+        self.mat_stream = array_reader.mat_stream
         self.array_reader = array_reader
         self.dtypes = array_reader.dtypes
         self.header = header
@@ -516,24 +527,6 @@ class MatMatrixGetter(MatStreamAgent):
 
     def to_next(self):
         self.mat_stream.seek(self.next_position)
-
-
-class MatArrayReader(MatStreamAgent):
-    ''' Base class for array readers
-
-    The array_reader contains information about the current reading
-    process, such as byte ordered dtypes and the processing function
-    to apply to matrices as they are read, as well as routines for
-    reading matrix compenents.
-    '''
-
-    def __init__(self, mat_stream, dtypes, processor_func):
-        self.mat_stream = mat_stream
-        self.dtypes = dtypes
-        self.processor_func = processor_func
-
-    def matrix_getter_factory(self):
-        assert False, 'Not implemented'
 
 
 class MatStreamWriter(object):

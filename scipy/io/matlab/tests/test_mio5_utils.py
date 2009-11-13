@@ -76,7 +76,6 @@ def test_read_element():
     r.mat_stream = StringIO()
     r.dtypes = None
     r.codecs = {}
-    r.current_getter = None
     # check simplest of tags
     for base_dt, val, mdtype in (
         ('u2', 30, mio5.miUINT16),
