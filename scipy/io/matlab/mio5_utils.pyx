@@ -67,13 +67,32 @@ cdef class CReader:
         cdef char tag_bytes[8]
         cdef char* data_ptr
         cdef cnp.uint32_t* u4_ptr
-        # First read 8 bytes.  If this is a small data element, there
-        # are two u2s, the first being the *byte_count* and the second
-        # being *mdtype*.  The next 1-4 bytes are data.  Otherwise (not
-        # small data element) the 8 bytes are two u4s, with the opposite
-        # order, thus, first *mdtype* then *byte_count*.  The most
-        # significant u2 of a U4 *mdtype* will always be 0, if it isn't,
-        # this must be SDE format
+        # First read 8 bytes.  The 8 bytes can be in one of two formats.
+        # For the first - standard format - the 8 bytes are two uint32
+        # values, of which the first is the integer code for the matlab
+        # data type (*mdtype*), and the second is the number of bytes of
+        # that data type that follow (*byte_count*).  Thus, if the
+        # ``mdtype`` is 4 (miDOUBLE), and the ``byte_count`` is 12, then
+        # there will follow 3 double values.  The alternative format is
+        # "small data element". The first four bytes contain the
+        # ``byte_count`` and the ``mdtype``, but as uint16.  The
+        # arrangement of the ``byte_count`` and ``mdtype`` is a little
+        # complex, see below. The following 4 bytes of the 8 bytes
+        # contain the data.  For example, the ``mdtype`` might be 2
+        # (miUINT8), and the byte count is 3, and the data is in a
+        # string ``tag``, then the contained matrix is length 3, type
+        # uint8, where values are ``tag[4], tag[5], tag[6]``.
+        #
+        # The following paragraph describes the extraction of ``mdtype``
+        # and ``byte_count`` for the small data element format.  The
+        # following is somewhat contrary to the matlab documentation,
+        # but seems to be true of actual .mat files.
+        #
+        # If the *file* is big endian, then the first four bytes of the
+        # tag are two big-endian uint16 values, first ``byte_count`` and
+        # second ``mdtype``.  If the *file* is little-endian then the
+        # first four bytes are two little-endian uint16 values, first
+        # ``mdtype`` and second ``byte_count``.   
         if self.stream_type == 1: # really a file object
             fread(tag_bytes, 8, 1, self._file)
             tag_ptr = <char *>tag_bytes
@@ -86,7 +105,8 @@ cdef class CReader:
             mdtype = byteswap_u4(u4_ptr[0])
         else:
             mdtype = u4_ptr[0]
-        # Byte count if this is small data element
+        # The most significant two bytes of a U4 *mdtype* will always be
+        # 0, if they are not, this must be SDE format
         byte_count_sde = mdtype >> 16
         if byte_count_sde: # small data element format
             mdtype_sde = mdtype & 0xffff

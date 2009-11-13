@@ -36,7 +36,7 @@ def _make_tag(base_dt, val, mdtype, sde=False):
     byte_count = base_dt.itemsize
     if not sde:
         udt = bo + 'u4'
-        padding = byte_count % 8
+        padding = 8 - (byte_count % 8)
         all_dt = [('mdtype', udt),
                   ('byte_count', udt),
                   ('val', base_dt)]
@@ -45,11 +45,11 @@ def _make_tag(base_dt, val, mdtype, sde=False):
     else: # is sde
         udt = bo + 'u2'
         padding = 4-byte_count
-        if bo == boc.native_code:
+        if bo == '<': # little endian
             all_dt = [('mdtype', udt),
                       ('byte_count', udt),
                       ('val', base_dt)]
-        else:
+        else: # big endian
             all_dt = [('byte_count', udt),
                       ('mdtype', udt),
                       ('val', base_dt)]
@@ -88,7 +88,8 @@ def test_read_element():
             yield assert_equal, c_reader.little_endian, byte_code == '<'
             yield assert_equal, c_reader.is_swapped, byte_code != boc.native_code
             for sde_f in (False, True):
-                a = _make_tag(base_dt, val, mdtype, sde_f)
+                dt = np.dtype(base_dt).newbyteorder(byte_code)
+                a = _make_tag(dt, val, mdtype, sde_f)
                 a_str = a.tostring()
                 _write_stream(r.mat_stream, a_str)
                 el = c_reader.read_element()
