@@ -23,6 +23,10 @@ import scipy.io.matlab.mio5_params as mio5p
 import scipy.sparse
 
 
+cdef extern from "stdlib.h" nogil:
+    void *memcpy(void *str1, void *str2, size_t n)
+
+
 cdef:
     int miDOUBLE = mio5p.miDOUBLE
     int miINT32 = mio5p.miINT32
@@ -119,7 +123,7 @@ cdef class VarReader5:
             pdata = tag_data
         else:
             pdata = None
-        return (mdtype, byte_count, tag_data)
+        return (mdtype, byte_count, pdata)
 
     cdef int cread_tag(self,
                      cnp.uint32_t *mdtype_ptr,
@@ -189,25 +193,15 @@ cdef class VarReader5:
         mdtype_ptr[0] = mdtype
         u4_ptr[0] = 0
         return 1
-            
+
     def read_element(self, int copy=True):
         cdef cnp.uint32_t mdtype, byte_count
-        cdef int mod8
-        cdef char* data_ptr
-        cdef int tag_res
+        cdef char *data_ptr
+        cdef size_t el_count
         cdef cnp.dtype dt
         cdef object data
-        cdef cnp.npy_intp dims[1]
-        data = streams.pyalloc_v(4, <void **>&data_ptr)
-        tag_res = self.cread_tag(&mdtype, &byte_count, data_ptr)
-        if tag_res == 1: # full format
-            if mdtype == miMATRIX:
-                raise TypeError('Not expecting matrix here')
-            data = self.cstream.read_string(byte_count, <void **>&data_ptr, copy)
-            # Seek to next 64-bit boundary
-            mod8 = byte_count % 8
-            if mod8:
-                self.cstream.seek(8 - mod8, 1)
+        data = self.read_element_string(
+            &mdtype, &byte_count, <void **>&data_ptr)
         if mdtype in self.codecs: # encoded char data
             codec = self.codecs[mdtype]
             if not codec:
@@ -216,11 +210,41 @@ cdef class VarReader5:
             el = tmp.decode(codec)
         else: # numeric data
             dt = self.dtypes[mdtype]
-            dims[0] = byte_count / dt.itemsize
-            el = np.ndarray(shape=(dims[0],),
+            el_count = byte_count // dt.itemsize
+            el = np.ndarray(shape=(el_count,),
                             dtype=dt,
                             buffer=data)
         return el
+            
+    cdef object read_element_string(self,
+                                    cnp.uint32_t *mdtype_ptr,
+                                    cnp.uint32_t *byte_count_ptr,
+                                    void **pp,
+                                    int copy=True):
+        cdef cnp.uint32_t mdtype, byte_count
+        cdef char tag_data[4]
+        cdef object data
+        cdef int mod8
+        cdef int tag_res = self.cread_tag(mdtype_ptr,
+                                          byte_count_ptr,
+                                          tag_data)
+        mdtype = mdtype_ptr[0]
+        byte_count = byte_count_ptr[0]
+        if tag_res == 1: # full format
+            if mdtype == miMATRIX:
+                raise TypeError('Not expecting matrix here')
+            data = self.cstream.read_string(
+                byte_count,
+                pp,
+                copy)
+            # Seek to next 64-bit boundary
+            mod8 = byte_count % 8
+            if mod8:
+                self.cstream.seek(8 - mod8, 1)
+        else: # SDE format, make safer home for data
+            data = streams.pyalloc_v(byte_count, <void **>pp)
+            memcpy(pp[0], tag_data, byte_count)
+        return data
 
     cdef int read_dims_into(self, cnp.int32_t *dims) except -1:
         ''' Read array dimensions into memory '''
@@ -244,7 +268,7 @@ cdef class VarReader5:
                 dims[i] = byteswap_u4(dims[i])
         return n_dims
     
-    cdef cnp.uint32_t read_name_into(self, char *name_ptr):
+    cdef cnp.uint32_t read_name_into(self, char *name_ptr) except -1:
         ''' Read matrix name into provided memory '''
         cdef cnp.uint32_t mdtype, byte_count
         cdef int name_len
@@ -253,6 +277,7 @@ cdef class VarReader5:
         res = self.cread_tag(&mdtype, &byte_count, name_ptr)
         if mdtype != miINT8:
             raise TypeError('Expecting miINT8 as data type')
+            return -1
         if res == 1: # full format
             res = self.cstream.read_into(<void *>name_ptr, byte_count)
             # Seek to next 64-bit boundary
