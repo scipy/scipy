@@ -70,3 +70,8 @@ def test_chars_strings():
     ca3d = char_arr.reshape((1,2,2,6))
     sa3d = str_arr.reshape((1,2,2))
     yield assert_array_equal, chars_to_strings(ca3d), sa3d
+    # Fortran ordered arrays
+    char_arrf = np.array(chars, dtype='U1', order='F') # shape (4,6)
+    yield assert_array_equal, chars_to_strings(char_arrf), str_arr
+    
+    

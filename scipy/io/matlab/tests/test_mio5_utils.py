@@ -111,7 +111,7 @@ def test_read_stream():
     yield assert_equal, s, tag.tostring()
 
 
-def test_read_element():
+def test_read_numeric():
     # make reader-like thing
     str_io = cStringIO.StringIO()
     r = _make_readerlike()
@@ -132,13 +132,13 @@ def test_read_element():
                 a = _make_tag(dt, val, mdtype, sde_f)
                 a_str = a.tostring()
                 _write_stream(str_io, a_str)
-                el = c_reader.read_element()
+                el = c_reader.read_numeric()
                 yield assert_equal, el, val
                 # two sequential reads
                 _write_stream(str_io, a_str, a_str)
-                el = c_reader.read_element()
+                el = c_reader.read_numeric()
                 yield assert_equal, el, val
-                el = c_reader.read_element()
+                el = c_reader.read_numeric()
                 yield assert_equal, el, val
     
 

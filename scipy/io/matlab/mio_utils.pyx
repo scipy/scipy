@@ -49,8 +49,6 @@ cpdef cnp.ndarray process_element(cnp.ndarray arr,
 cpdef cnp.ndarray chars_to_strings(cnp.ndarray arr):
     ''' Convert final axis of char array to strings
 
-    Python version, for testing
-
     Parameters
     ----------
     arr : array
@@ -67,5 +65,6 @@ cpdef cnp.ndarray chars_to_strings(cnp.ndarray arr):
     last_dim = dims[-1]
     old_dt_str = arr.dtype.str[:-1]
     new_dt_str = old_dt_str + str(last_dim)
-    arr = arr.view(new_dt_str).reshape(dims[:-1])
+    # Ravel to deal with F ordered arrays
+    arr = arr.ravel().view(new_dt_str).reshape(dims[:-1])
     return arr
