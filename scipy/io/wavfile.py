@@ -1,5 +1,9 @@
 import numpy
 import struct
+import warnings
+
+class WavFileWarning(UserWarning):
+    pass
 
 _big_endian = False
 
@@ -13,7 +17,7 @@ def _read_fmt_chunk(fid):
     res = struct.unpack(fmt+'ihHIIHH',fid.read(20))
     size, comp, noc, rate, sbytes, ba, bits = res
     if (comp != 1 or size > 16):
-        print "Warning:  unfamiliar format bytes..."
+        warnings.warn("Unfamiliar format bytes", WavFileWarning)
         if (size>16):
             fid.read(size-16)
     return size, comp, noc, rate, sbytes, ba, bits
@@ -47,7 +51,7 @@ def _read_riff_chunk(fid):
     if str1 == 'RIFX':
         _big_endian = True
     elif str1 != 'RIFF':
-        raise ValueError, "Not a WAV file."
+        raise ValueError("Not a WAV file.")
     if _big_endian:
         fmt = '>I'
     else:
@@ -55,7 +59,7 @@ def _read_riff_chunk(fid):
     fsize = struct.unpack(fmt, fid.read(4))[0] + 8
     str2 = fid.read(4)
     if (str2 != 'WAVE'):
-        raise ValueError, "Not a WAV file."
+        raise ValueError("Not a WAV file.")
     if str1 == 'RIFX':
         _big_endian = True
     return fsize
@@ -81,13 +85,11 @@ def read(file):
         # read the next chunk
         chunk_id = fid.read(4)
         if chunk_id == 'fmt ':
-            print "Reading fmt chunk"
             size, comp, noc, rate, sbytes, ba, bits = _read_fmt_chunk(fid)
         elif chunk_id == 'data':
-            print "Reading data chunk"
             data = _read_data_chunk(fid, noc, bits)
         else:
-            print "Warning:  %s chunk not understood"
+            warnings.warn("chunk not understood", WavFileWarning)
             size = struct.unpack('I',fid.read(4))[0]
             bytes = fid.read(size)
     fid.close()
