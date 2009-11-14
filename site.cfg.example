@@ -102,19 +102,3 @@ include_dirs = /usr/local/include
 #[umfpack]
 #umfpack_libs = umfpack
 
-# FFT libraries
-# -------------
-# There are two FFT libraries that we can configure here: FFTW (2 and 3) and djbfft.
-#
-#   http://fftw.org/
-#   http://cr.yp.to/djbfft.html
-#
-# Given only this section, numpy.distutils will try to figure out which version
-# of FFTW you are using.
-#[fftw]
-#libraries = fftw3
-#
-# For djbfft, numpy.distutils will look for either djbfft.a or libdjbfft.a . 
-#[djbfft]
-#include_dirs = /usr/local/djbfft/include
-#library_dirs = /usr/local/djbfft/lib
