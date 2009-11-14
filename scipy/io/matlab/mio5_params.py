@@ -1,4 +1,9 @@
-''' Constants and classes for matlab 5 read and write '''
+''' Constants and classes for matlab 5 read and write
+
+See also mio5_utils.pyx where these same constants arise as c enums.
+
+If you make changes in this file, don't forget to change mio5_utils.pyx
+'''
 
 import numpy as np
 

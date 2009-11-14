@@ -23,32 +23,42 @@ from python_string cimport PyString_Size, PyString_FromString, \
     PyString_FromStringAndSize
 
 
-cdef:
-    int miINT8 = mio5p.miINT8
-    int miUINT8 = mio5p.miUINT8
-    int miUINT16 = mio5p.miUINT16
-    int miDOUBLE = mio5p.miDOUBLE
-    int miINT32 = mio5p.miINT32
-    int miMATRIX = mio5p.miMATRIX
-    int miCOMPRESSED = mio5p.miCOMPRESSED
-    # Numeric matrix classes
-    int mxDOUBLE_CLASS = mio5p.mxDOUBLE_CLASS
-    int mxSINGLE_CLASS = mio5p.mxSINGLE_CLASS
-    int mxINT8_CLASS = mio5p.mxINT8_CLASS
-    int mxUINT8_CLASS = mio5p.mxUINT8_CLASS
-    int mxINT16_CLASS = mio5p.mxINT16_CLASS
-    int mxUINT16_CLASS = mio5p.mxUINT16_CLASS
-    int mxINT32_CLASS = mio5p.mxINT32_CLASS
-    int mxUINT32_CLASS = mio5p.mxUINT32_CLASS
-    int mxINT64_CLASS = mio5p.mxINT64_CLASS
-    int mxUINT64_CLASS = mio5p.mxUINT64_CLASS
-    # other matrix classes
-    int mxSPARSE_CLASS = mio5p.mxSPARSE_CLASS
-    int mxCHAR_CLASS = mio5p.mxCHAR_CLASS
-    int mxCELL_CLASS = mio5p.mxCELL_CLASS
-    int mxSTRUCT_CLASS = mio5p.mxSTRUCT_CLASS
-    int mxOBJECT_CLASS = mio5p.mxOBJECT_CLASS
-    int mxFUNCTION_CLASS = mio5p.mxFUNCTION_CLASS
+cdef enum:
+    miINT8 = 1
+    miUINT8 = 2
+    miINT16 = 3
+    miUINT16 = 4
+    miINT32 = 5
+    miUINT32 = 6
+    miSINGLE = 7
+    miDOUBLE = 9
+    miINT64 = 12
+    miUINT64 = 13
+    miMATRIX = 14
+    miCOMPRESSED = 15
+    miUTF8 = 16
+    miUTF16 = 17
+    miUTF32 = 18
+
+cdef enum: # see comments in mio5_params
+    mxCELL_CLASS = 1
+    mxSTRUCT_CLASS = 2
+    mxOBJECT_CLASS = 3
+    mxCHAR_CLASS = 4
+    mxSPARSE_CLASS = 5
+    mxDOUBLE_CLASS = 6
+    mxSINGLE_CLASS = 7
+    mxINT8_CLASS = 8
+    mxUINT8_CLASS = 9
+    mxINT16_CLASS = 10
+    mxUINT16_CLASS = 11
+    mxINT32_CLASS = 12
+    mxUINT32_CLASS = 13
+    mxINT64_CLASS = 14
+    mxUINT64_CLASS = 15
+    mxFUNCTION_CLASS = 16
+    mxOPAQUE_CLASS = 17 # This appears to be a function workspace
+    mxOBJECT_CLASS_FROM_MATRIX_H = 18
 
 
 sys_is_le = sys.byteorder == 'little'
