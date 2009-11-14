@@ -19,10 +19,8 @@ cimport mio_utils as cmio_utils
 import scipy.io.matlab.mio5_params as mio5p
 import scipy.sparse
 
-from python_string cimport PyString_Size, PyString_FromString
-
-cdef extern from "stdlib.h" nogil:
-    void *memcpy(void *str1, void *str2, size_t n)
+from python_string cimport PyString_Size, PyString_FromString, \
+    PyString_FromStringAndSize
 
 
 cdef:
@@ -188,8 +186,74 @@ cdef class VarReader5:
         u4_ptr[0] = 0
         return 1
 
+    cdef object read_element(self,
+                             cnp.uint32_t *mdtype_ptr,
+                             cnp.uint32_t *byte_count_ptr,
+                             void **pp,
+                             int copy=True):
+        ''' Read data element into string buffer, return buffer
+
+        The element is the atom of the matlab file format.
+
+        We use a python string as a container for the read memory.  If
+        `copy` is True, this string is writable (from python),
+        otherwise, it may not be. 
+
+        See ``read_element_into`` for routine to read element into a
+        pre-allocated block of memory.  
+        '''
+        cdef cnp.uint32_t mdtype, byte_count
+        cdef char tag_data[4]
+        cdef object data
+        cdef int mod8
+        cdef int tag_res = self.cread_tag(mdtype_ptr,
+                                          byte_count_ptr,
+                                          tag_data)
+        mdtype = mdtype_ptr[0]
+        byte_count = byte_count_ptr[0]
+        if tag_res == 1: # full format
+            data = self.cstream.read_string(
+                byte_count,
+                pp,
+                copy)
+            # Seek to next 64-bit boundary
+            mod8 = byte_count % 8
+            if mod8:
+                self.cstream.seek(8 - mod8, 1)
+        else: # SDE format, make safer home for data
+            data = PyString_FromStringAndSize(tag_data, byte_count)
+        return data
+
+    cdef void read_element_into(self,
+                                cnp.uint32_t *mdtype_ptr,
+                                cnp.uint32_t *byte_count_ptr,
+                                void *ptr):
+        ''' Read element into pre-allocated memory in `ptr`
+
+        Compare ``read_element``.
+        '''
+        cdef:
+           int mod8
+        cdef int res = self.cread_tag(
+            mdtype_ptr,
+            byte_count_ptr,
+            <char *>ptr)
+        cdef cnp.uint32_t byte_count = byte_count_ptr[0]
+        if res == 1: # full format
+            res = self.cstream.read_into(ptr, byte_count)
+            # Seek to next 64-bit boundary
+            mod8 = byte_count % 8
+            if mod8:
+                self.cstream.seek(8 - mod8, 1)
+    
     cpdef inline cnp.ndarray read_numeric(self, int copy=True):
-        ''' Read numeric data element into ndarray '''
+        ''' Read numeric data element into ndarray
+
+        Reads element, then casts to ndarray. 
+
+        The type of the array is given by the ``mdtype`` returned via
+        ``read_element``. 
+        '''
         cdef cnp.uint32_t mdtype, byte_count
         cdef char *data_ptr
         cdef size_t el_count
@@ -202,39 +266,14 @@ cdef class VarReader5:
                         dtype=dt,
                         buffer=data)
             
-    cdef object read_element(self,
-                             cnp.uint32_t *mdtype_ptr,
-                             cnp.uint32_t *byte_count_ptr,
-                             void **pp,
-                             int copy=True):
-        ''' Read data element into string buffer '''
-        cdef cnp.uint32_t mdtype, byte_count
-        cdef char tag_data[4]
-        cdef object data
-        cdef int mod8
-        cdef int tag_res = self.cread_tag(mdtype_ptr,
-                                          byte_count_ptr,
-                                          tag_data)
-        mdtype = mdtype_ptr[0]
-        byte_count = byte_count_ptr[0]
-        if tag_res == 1: # full format
-            if mdtype == miMATRIX:
-                raise TypeError('Not expecting matrix here')
-            data = self.cstream.read_string(
-                byte_count,
-                pp,
-                copy)
-            # Seek to next 64-bit boundary
-            mod8 = byte_count % 8
-            if mod8:
-                self.cstream.seek(8 - mod8, 1)
-        else: # SDE format, make safer home for data
-            data = streams.pyalloc_v(byte_count, <void **>pp)
-            memcpy(pp[0], tag_data, byte_count)
-        return data
-
     cdef inline object read_int8_string(self):
-        ''' Read, return int8 type string '''
+        ''' Read, return int8 type string
+
+        int8 type strings used for variable names, class names of
+        objects, and field names of structs and objects.
+
+        Specializes ``read_element``
+        '''
         cdef:
             cnp.uint32_t mdtype, byte_count
             void *ptr
@@ -247,7 +286,7 @@ cdef class VarReader5:
     cdef int read_into_int32s(self, cnp.int32_t *int32p) except -1:
         ''' Read int32 values into pre-allocated memory
 
-        Byteswap as necessary
+        Byteswap as necessary.  Specializes ``read_element_into``
 
         Parameters
         ----------
@@ -271,25 +310,6 @@ cdef class VarReader5:
                 int32p[i] = byteswap_u4(int32p[i])
         return n_ints
 
-    cdef void read_element_into(self,
-                                cnp.uint32_t *mdtype_ptr,
-                                cnp.uint32_t *byte_count_ptr,
-                                void *ptr):
-        ''' Read element into pre-allocated memory '''
-        cdef:
-           int mod8
-        cdef int res = self.cread_tag(
-            mdtype_ptr,
-            byte_count_ptr,
-            <char *>ptr)
-        cdef cnp.uint32_t byte_count = byte_count_ptr[0]
-        if res == 1: # full format
-            res = self.cstream.read_into(ptr, byte_count)
-            # Seek to next 64-bit boundary
-            mod8 = byte_count % 8
-            if mod8:
-                self.cstream.seek(8 - mod8, 1)
-    
     def read_full_tag(self):
         ''' Python method for reading full u4, u4 tag from stream
 
@@ -299,6 +319,12 @@ cdef class VarReader5:
            matlab data type code
         byte_count : int32
            number of data bytes following
+
+        Notes
+        -----
+        Assumes tag is in fact full, that is, is not a small data
+        element.  This means it can skip some checks and makes it
+        slightly faster than ``read_tag``
         '''
         cdef cnp.uint32_t mdtype, byte_count
         self.cread_full_tag(&mdtype, &byte_count)
@@ -360,6 +386,21 @@ cdef class VarReader5:
         return header
 
     cdef inline size_t size_from_header(self, VarHeader5 header):
+        ''' Supporting routine for calculating array sizes from header
+
+        Probably unnecessary optimization that uses integers stored in
+        header rather than ``header.dims`` that is a python list.
+
+        Parameters
+        ----------
+        header : VarHeader5
+           array header
+
+        Returns
+        -------
+        size : size_t
+           size of array (product of dims)
+        '''
         # calculate number of items in array from dims product
         cdef size_t size = 1
         for i in range(header.n_dims):
@@ -367,7 +408,14 @@ cdef class VarReader5:
         return size
 
     def array_from_header(self, VarHeader5 header):
-        ''' Only called at the top level '''
+        '''Read array from stream, given array header
+
+        Apply standard processing of array given ``read_opts`` options
+        set in ``self``.
+
+        Only called at the top level - that is, at when we start
+        reading of each variable in the mat file. 
+        '''
         arr, mat_dtype = self.read_array_mdtype(header)
         if header.mclass == mxSPARSE_CLASS:
             # no current processing makes sense for sparse
@@ -375,11 +423,16 @@ cdef class VarReader5:
         return process_element(arr, self.read_opts, mat_dtype)
 
     cdef cnp.ndarray read_mi_matrix(self):
-        ''' Read header with matrix at sub-levels '''
+        ''' Read header with matrix at sub-levels
+
+        Combines ``read_header`` and functionality of
+        ``array_from_header``.  Applies standard processing of array
+        given ``read_opts`` options set in self. 
+        '''
         cdef:
             VarHeader5 header
             cnp.uint32_t mdtype, byte_count
-            cnp.ndarray arr
+            object arr, mat_dtype
         # read full tag
         self.cread_full_tag(&mdtype, &byte_count)
         if mdtype != miMATRIX:
@@ -396,11 +449,26 @@ cdef class VarReader5:
         return process_element(arr, self.read_opts, mat_dtype)
 
     cpdef read_array_mdtype(self, VarHeader5 header):
-        ''' Read array of any type, return array and mat_dtype '''
+        ''' Read array of any type, return array and mat_dtype
+
+        Parameters
+        ----------
+        header : VarHeader5
+           array header object
+
+        Returns
+        -------
+        arr : array or sparse array
+           read array
+        mat_dtype : None or dtype
+           dtype of array as it would be read into matlab workspace, or
+           None if it does not make sense that this would differ from
+           the dtype of `arr`
+        '''
         cdef:
-            int mc
-        mc = header.mclass
-        mat_dtype = None
+            object arr
+        cdef int mc = header.mclass
+        cdef object mat_dtype = None
         if (mc == mxDOUBLE_CLASS
             or mc == mxSINGLE_CLASS
             or mc == mxINT8_CLASS
@@ -483,7 +551,7 @@ cdef class VarReader5:
         ''' Read char matrices from stream as arrays
 
         Matrices of char are likely to be converted to matrices of
-        string by later processing
+        string by later processing in ``process_element``
         '''
         cdef:
             cnp.uint32_t mdtype, byte_count
