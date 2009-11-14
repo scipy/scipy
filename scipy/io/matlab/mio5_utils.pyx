@@ -1,5 +1,13 @@
 ''' Cython mio5 utility routines (-*- python -*- like)
 
+Routines here have been reasonably optimized.
+
+To optimize further it might be worth trying to use the numpy C-API for
+array creation:
+
+http://wiki.cython.org/tutorials/numpy#UsingtheNumpyCAPI
+
+but taking care with dtype reference counts.
 '''
 
 import sys
@@ -11,6 +19,10 @@ cimport numpy as cnp
 
 # Constant from numpy - max number of array dimensions
 DEF _MAT_MAXDIMS = 32
+# max number of integer indices of matlab data types (miINT8 etc)
+DEF _N_MIS = 20
+# max number of integer indices of matlab class types (mxINT8_CLASS etc)
+DEF _N_MXS = 20
 
 cimport streams
 import scipy.io.matlab.miobase as miob
@@ -18,6 +30,8 @@ from scipy.io.matlab.mio_utils import FileReadOpts, process_element
 cimport mio_utils as cmio_utils
 import scipy.io.matlab.mio5_params as mio5p
 import scipy.sparse
+
+from python_object cimport PyObject
 
 from python_string cimport PyString_Size, PyString_FromString, \
     PyString_FromStringAndSize
@@ -60,6 +74,8 @@ cdef enum: # see comments in mio5_params
     mxOPAQUE_CLASS = 17 # This appears to be a function workspace
     mxOBJECT_CLASS_FROM_MATRIX_H = 18
 
+# boolean dtype
+cdef cnp.dtype dt_bool = np.dtype('bool')
 
 sys_is_le = sys.byteorder == 'little'
 native_code = sys_is_le and '<' or '>'
@@ -87,17 +103,16 @@ cdef class VarHeader5:
 
 cdef class VarReader5:
     cdef public int is_swapped, little_endian
-    cdef readonly object mat_stream
-    cdef object dtypes, class_dtypes, codecs, uint16_codec
+    cdef PyObject* dtypes[_N_MIS] # pointers to stuff in preader.dtypes
+    cdef PyObject* class_dtypes[_N_MXS] # pointers to stuff in preader.class_dtypes
+    cdef object codecs, uint16_codec
     cdef int struct_as_record
-    cdef object preader
+    cdef object preader # necessary to keep memory alive for .dtypes, .class_dtypes
     cdef cmio_utils.FileReadOpts read_opts
     cdef streams.GenericStream cstream
     
     def __new__(self, preader):
         self.preader = preader
-        self.dtypes = preader.dtypes
-        self.class_dtypes = preader.class_dtypes
         self.codecs = preader.codecs
         self.struct_as_record = preader.struct_as_record
         self.uint16_codec = preader.uint16_codec
@@ -107,25 +122,55 @@ cdef class VarReader5:
         else:
             self.little_endian = sys_is_le
         self.set_stream(preader.mat_stream)
+        # options structure for process_element
         self.read_opts = FileReadOpts(
             preader.chars_as_strings,
             preader.mat_dtype,
             preader.squeeze_me)
+        # copy refs to dtypes into object pointer array
+        for key, dt in preader.dtypes.items():
+            if isinstance(key, basestring):
+                continue
+            self.dtypes[key] = <PyObject*>dt
+        # copy refs to class_dtypes into object pointer array
+        for key, dt in preader.class_dtypes.items():
+            if isinstance(key, basestring):
+                continue
+            self.class_dtypes[key] = <PyObject*>dt
         
     def set_stream(self, fobj):
-        self.mat_stream = fobj
+        ''' Set stream of best type from file-like `fobj`
+
+        Called from Python when initiating a variable read
+        '''
         self.cstream = streams.make_stream(fobj)
         
     def read_tag(self):
+        ''' Read tag mdtype and byte_count
+
+        Does necessary swapping and takes account of SDE formats.
+
+        See also ``read_full_tag`` method.
+        
+        Returns
+        -------
+        mdtype : int
+           matlab data type code
+        byte_count : int
+           number of bytes following that comprise the data
+        tag_data : None or str
+           Any data from the tag itself.  This is None for a full tag,
+           and string length `byte_count` if this is a small data
+           element.
+        '''
         cdef cnp.uint32_t mdtype, byte_count
-        cdef char tag_data[4]
+        cdef char tag_ptr[4]
         cdef int tag_res
-        tag_res = self.cread_tag(&mdtype, &byte_count, tag_data)
+        cdef object tag_data = None
+        tag_res = self.cread_tag(&mdtype, &byte_count, tag_ptr)
         if tag_res == 2: # sde format
-            pdata = tag_data
-        else:
-            pdata = None
-        return (mdtype, byte_count, pdata)
+            tag_data = tag_ptr[:byte_count]
+        return (mdtype, byte_count, tag_data)
 
     cdef int cread_tag(self,
                      cnp.uint32_t *mdtype_ptr,
@@ -205,10 +250,28 @@ cdef class VarReader5:
 
         The element is the atom of the matlab file format.
 
-        We use a python string as a container for the read memory.  If
-        `copy` is True, this string is writable (from python),
-        otherwise, it may not be. 
+        Parameters
+        ----------
+        mdtype_ptr : uint32_t*
+           pointer to uint32_t value to which we write the mdtype value
+        byte_count_ptr : uint32_t*
+           pointer to uint32_t value to which we write the byte count
+        pp : void**
+           pointer to void*. pp[0] will be set to point to the start of
+           the returned string memory
+        copy : int
+           If not 0, do any copies required to allow memory to be freely
+           altered without interfering with other objects.  Otherwise
+           return string that should not be written to, therefore saving
+           unnecessary copies
 
+        Return
+        ------
+        data : str
+           Python string object containing read data
+
+        Notes
+        -----
         See ``read_element_into`` for routine to read element into a
         pre-allocated block of memory.  
         '''
@@ -240,6 +303,22 @@ cdef class VarReader5:
                                 void *ptr):
         ''' Read element into pre-allocated memory in `ptr`
 
+        Parameters
+        ----------
+        mdtype_ptr : uint32_t*
+           pointer to uint32_t value to which we write the mdtype value
+        byte_count_ptr : uint32_t*
+           pointer to uint32_t value to which we write the byte count
+        ptr : void*
+           memory location into which to read.  Memory is assumed large
+           enough to contain read data
+
+        Returns
+        -------
+        void
+
+        Notes
+        -----
         Compare ``read_element``.
         '''
         cdef:
@@ -267,10 +346,9 @@ cdef class VarReader5:
         cdef cnp.uint32_t mdtype, byte_count
         cdef char *data_ptr
         cdef size_t el_count
-        cdef cnp.dtype dt
         cdef object data = self.read_element(
             &mdtype, &byte_count, <void **>&data_ptr, copy)
-        dt = self.dtypes[mdtype]
+        cdef cnp.dtype dt = <cnp.dtype>self.dtypes[mdtype]
         el_count = byte_count // dt.itemsize
         return np.ndarray(shape=(el_count,),
                         dtype=dt,
@@ -388,6 +466,9 @@ cdef class VarReader5:
         header.is_complex = flags_class >> 11 & 1
         header.nzmax = nzmax
         header.n_dims = self.read_into_int32s(header.dims_ptr)
+        if header.n_dims > _MAT_MAXDIMS:
+            raise ValueError('Too many dimensions (%d) for numpy arrays'
+                             % header.n_dims)
         # convert dims to list
         header.dims = []
         for i in range(header.n_dims):
@@ -409,7 +490,7 @@ cdef class VarReader5:
         Returns
         -------
         size : size_t
-           size of array (product of dims)
+           size of array referenced by header (product of dims)
         '''
         # calculate number of items in array from dims product
         cdef size_t size = 1
@@ -490,9 +571,9 @@ cdef class VarReader5:
             or mc == mxINT64_CLASS
             or mc == mxUINT64_CLASS): # numeric matrix
             if header.is_logical:
-                mat_dtype = np.dtype('bool')
+                mat_dtype = dt_bool
             else:
-                mat_dtype = self.class_dtypes[mc]
+                mat_dtype = <object>self.class_dtypes[mc]
             arr = self.read_real_complex(header)
         elif mc == mxSPARSE_CLASS:
             arr = self.read_sparse(header)
@@ -567,7 +648,6 @@ cdef class VarReader5:
             cnp.uint32_t mdtype, byte_count
             char *data_ptr
             size_t el_count
-            cnp.dtype dt
             object data, res, codec
             cnp.ndarray arr
         cdef size_t length = self.size_from_header(header)
@@ -575,12 +655,14 @@ cdef class VarReader5:
             &mdtype, &byte_count, <void **>&data_ptr, True)
         # Character data can be of apparently numerical types,
         # specifically np.uint8, np.int8, np.uint16.  np.unit16 can have
-        # a length 1 type encoding, like ascii, or length 2 type encoding
+        # a length 1 type encoding, like ascii, or length 2 type
+        # encoding
+        cdef cnp.dtype dt = <cnp.dtype>self.dtypes[mdtype]
         if mdtype == miUINT16:
             codec = self.uint16_codec
             if self.codecs['uint16_len'] == 1: # need LSBs only
                 arr = np.ndarray(shape=(length,),
-                                  dtype=self.dtypes[mdtype],
+                                  dtype=dt,
                                   buffer=data)
                 data = arr.astype(np.uint8).tostring()
         elif mdtype == miINT8 or mdtype == miUINT8:
@@ -596,11 +678,11 @@ cdef class VarReader5:
         # cast to array to deal with 2, 4 byte width characters
         arr = np.array(uc_str)
         if self.little_endian:
-            dtc = '<U1'
+            U1_dt = '<U1'
         else:
-            dtc = '>U1'
+            U1_dt = '>U1'
         return np.ndarray(shape=header.dims,
-                          dtype=dtc,
+                          dtype=U1_dt,
                           buffer=arr,
                           order='F')
                              

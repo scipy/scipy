@@ -75,8 +75,8 @@ def _make_readerlike():
     class R(): pass
     r = R()
     r.byte_order = boc.native_code
-    r.dtypes = None
-    r.class_dtypes = None
+    r.dtypes = {}
+    r.class_dtypes = {}
     r.codecs = {}
     r.struct_as_record = True
     r.uint16_codec = None
@@ -141,4 +141,3 @@ def test_read_numeric():
                 el = c_reader.read_numeric()
                 yield assert_equal, el, val
     
-
