@@ -1,21 +1,42 @@
 ''' Cython mio5 utility routines (-*- python -*- like)
 
-Routines here have been reasonably optimized.
+Routines here have been reasonably optimized. 
 
-To optimize further it might be worth trying to use the numpy C-API for
-array creation:
-
-http://wiki.cython.org/tutorials/numpy#UsingtheNumpyCAPI
-
-but taking care with dtype reference counts.
 '''
 
 import sys
 
 from copy import copy as pycopy
 
+from python cimport Py_INCREF, Py_DECREF
+from python_object cimport PyObject
+
+cdef extern from "Python.h":
+    ctypedef struct PyTypeObject:
+        pass
+
+from python_string cimport PyString_Size, PyString_FromString, \
+    PyString_FromStringAndSize
+
 import numpy as np
 cimport numpy as cnp
+
+cdef extern from "numpy/arrayobject.h":
+    PyTypeObject PyArray_Type
+    cnp.ndarray PyArray_NewFromDescr(PyTypeObject *subtype,
+                                     cnp.dtype newdtype,
+                                     int nd,
+                                     cnp.npy_intp* dims,
+                                     cnp.npy_intp* strides,
+                                     void* data,
+                                     int flags,
+                                     object parent)
+
+cdef extern from "workaround.h":
+    void PyArray_Set_BASE(cnp.ndarray arr, object obj)
+
+# NOTE: numpy must be initialized before any other code is executed.
+cnp.import_array()
 
 # Constant from numpy - max number of array dimensions
 DEF _MAT_MAXDIMS = 32
@@ -30,11 +51,6 @@ from scipy.io.matlab.mio_utils import FileReadOpts, process_element
 cimport mio_utils as cmio_utils
 import scipy.io.matlab.mio5_params as mio5p
 import scipy.sparse
-
-from python_object cimport PyObject
-
-from python_string cimport PyString_Size, PyString_FromString, \
-    PyString_FromStringAndSize
 
 
 cdef enum:
@@ -110,6 +126,7 @@ cdef class VarReader5:
     cdef object preader # necessary to keep memory alive for .dtypes, .class_dtypes
     cdef cmio_utils.FileReadOpts read_opts
     cdef streams.GenericStream cstream
+    cdef cnp.dtype U1_dtype
     
     def __new__(self, preader):
         self.preader = preader
@@ -121,6 +138,10 @@ cdef class VarReader5:
             self.little_endian = not sys_is_le
         else:
             self.little_endian = sys_is_le
+        if self.little_endian:
+            self.U1_dtype = np.dtype('<U1')
+        else:
+            self.U1_dtype = np.dtype('>U1')
         self.set_stream(preader.mat_stream)
         # options structure for process_element
         self.read_opts = FileReadOpts(
@@ -295,6 +316,7 @@ cdef class VarReader5:
                 self.cstream.seek(8 - mod8, 1)
         else: # SDE format, make safer home for data
             data = PyString_FromStringAndSize(tag_data, byte_count)
+            pp[0] = <char *>data
         return data
 
     cdef void read_element_into(self,
@@ -344,15 +366,26 @@ cdef class VarReader5:
         ``read_element``. 
         '''
         cdef cnp.uint32_t mdtype, byte_count
-        cdef char *data_ptr
-        cdef size_t el_count
+        cdef void *data_ptr
+        cdef cnp.npy_intp el_count
+        cdef cnp.ndarray el
         cdef object data = self.read_element(
             &mdtype, &byte_count, <void **>&data_ptr, copy)
         cdef cnp.dtype dt = <cnp.dtype>self.dtypes[mdtype]
         el_count = byte_count // dt.itemsize
-        return np.ndarray(shape=(el_count,),
-                        dtype=dt,
-                        buffer=data)
+        cdef char * tmp = data
+        Py_INCREF(<object> dt)
+        el = PyArray_NewFromDescr(&PyArray_Type,
+                                   dt,
+                                   1,
+                                   &el_count,
+                                   NULL,
+                                   <void*>data_ptr,
+                                   0,
+                                   <object>NULL)
+        Py_INCREF(<object> data)
+        PyArray_Set_BASE(el, data)
+        return el
             
     cdef inline object read_int8_string(self):
         ''' Read, return int8 type string
@@ -677,12 +710,11 @@ cdef class VarReader5:
         uc_str = data.decode(codec)
         # cast to array to deal with 2, 4 byte width characters
         arr = np.array(uc_str)
-        if self.little_endian:
-            U1_dt = '<U1'
-        else:
-            U1_dt = '>U1'
+        dt = self.U1_dtype
+        # could take this to numpy C-API level, but probably not worth
+        # it
         return np.ndarray(shape=header.dims,
-                          dtype=U1_dt,
+                          dtype=dt,
                           buffer=arr,
                           order='F')
                              

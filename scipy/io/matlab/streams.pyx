@@ -82,7 +82,7 @@ cdef class GenericStream:
         if PyString_Size(data) != n:
             raise IOError('could not read bytes')
         if copy != True:
-           pp[0] = <void*> PyString_AS_STRING(data)
+           pp[0] = <void*>PyString_AS_STRING(data)
            return data
         cdef object d_copy = pyalloc_v(n, pp)
         memcpy(pp[0], PyString_AS_STRING(data), n)
@@ -112,17 +112,16 @@ cdef class cStringStream(GenericStream):
         return 0
 
     cdef object read_string(self, size_t n, void **pp, int copy=True):
-        ''' Make new memory, wrap with object '''
+        ''' Make new memory, wrap with object
+
+        It's not obvious to me how to avoid a copy
+        '''
         cdef:
             char *d_ptr
             object obj
         cdef size_t n_red = StringIO_cread(self.fobj, &d_ptr, n)
         if n_red != n:
             raise IOError('could not read bytes')
-        if copy != True:
-           obj = PyString_FromStringAndSize(d_ptr, n)
-           pp[0] = <void *>d_ptr
-           return obj
         obj = pyalloc_v(n, pp)
         memcpy(pp[0], d_ptr, n)
         return obj
