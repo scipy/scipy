@@ -1,7 +1,15 @@
 ''' Cython mio5 utility routines (-*- python -*- like)
 
-Routines here have been reasonably optimized. 
+'''
 
+'''
+Programmer's notes
+------------------
+Routines here have been reasonably optimized.
+
+The char matrix reading is not very fast, but it's not usually a
+bottleneck. See comments in ``read_char`` for possible ways to go if you
+want to optimize.
 '''
 
 import sys
@@ -32,10 +40,11 @@ cdef extern from "numpy/arrayobject.h":
                                      int flags,
                                      object parent)
 
-cdef extern from "workaround.h":
+cdef extern from "numpy_rephrasing.h":
     void PyArray_Set_BASE(cnp.ndarray arr, object obj)
 
-# NOTE: numpy must be initialized before any other code is executed.
+# Numpy must be initialized before any code using the numpy C-API
+# directly
 cnp.import_array()
 
 # Constant from numpy - max number of array dimensions
@@ -46,9 +55,9 @@ DEF _N_MIS = 20
 DEF _N_MXS = 20
 
 cimport streams
+cimport mio_utils as cmio_utils
 import scipy.io.matlab.miobase as miob
 from scipy.io.matlab.mio_utils import FileReadOpts, process_element
-cimport mio_utils as cmio_utils
 import scipy.io.matlab.mio5_params as mio5p
 import scipy.sparse
 
@@ -90,9 +99,6 @@ cdef enum: # see comments in mio5_params
     mxOPAQUE_CLASS = 17 # This appears to be a function workspace
     mxOBJECT_CLASS_FROM_MATRIX_H = 18
 
-# boolean dtype
-cdef cnp.dtype dt_bool = np.dtype('bool')
-
 sys_is_le = sys.byteorder == 'little'
 native_code = sys_is_le and '<' or '>'
 swapped_code = sys_is_le and '>' or '<'
@@ -119,36 +125,44 @@ cdef class VarHeader5:
 
 cdef class VarReader5:
     cdef public int is_swapped, little_endian
-    cdef PyObject* dtypes[_N_MIS] # pointers to stuff in preader.dtypes
-    cdef PyObject* class_dtypes[_N_MXS] # pointers to stuff in preader.class_dtypes
-    cdef object codecs, uint16_codec
     cdef int struct_as_record
-    cdef object preader # necessary to keep memory alive for .dtypes, .class_dtypes
+    cdef object codecs, uint16_codec
+    # process_element options
     cdef cmio_utils.FileReadOpts read_opts
+    # c-optimized version of reading stream
     cdef streams.GenericStream cstream
+    # pointers to stuff in preader.dtypes
+    cdef PyObject* dtypes[_N_MIS]
+    # pointers to stuff in preader.class_dtypes
+    cdef PyObject* class_dtypes[_N_MXS]
+    # necessary to keep memory alive for .dtypes, .class_dtypes
+    cdef object preader
+    # cached here for convenience in later array creation
     cdef cnp.dtype U1_dtype
+    cdef cnp.dtype bool_dtype
     
     def __new__(self, preader):
-        self.preader = preader
-        self.codecs = preader.codecs
-        self.struct_as_record = preader.struct_as_record
-        self.uint16_codec = preader.uint16_codec
         self.is_swapped = preader.byte_order == swapped_code
         if self.is_swapped:
             self.little_endian = not sys_is_le
         else:
             self.little_endian = sys_is_le
-        if self.little_endian:
-            self.U1_dtype = np.dtype('<U1')
-        else:
-            self.U1_dtype = np.dtype('>U1')
+        # option affecting reading of matlab struct arrays
+        self.struct_as_record = preader.struct_as_record
+        # store codecs for text matrix reading
+        self.codecs = preader.codecs
+        self.uint16_codec = preader.uint16_codec
+        # set c-optimized stream object from python file-like object
         self.set_stream(preader.mat_stream)
         # options structure for process_element
         self.read_opts = FileReadOpts(
             preader.chars_as_strings,
             preader.mat_dtype,
             preader.squeeze_me)
-        # copy refs to dtypes into object pointer array
+        # copy refs to dtypes into object pointer array. Store preader
+        # to keep preader.dtypes, class_dtypes alive. We only need the
+        # integer-keyed dtypes
+        self.preader = preader
         for key, dt in preader.dtypes.items():
             if isinstance(key, basestring):
                 continue
@@ -158,6 +172,12 @@ cdef class VarReader5:
             if isinstance(key, basestring):
                 continue
             self.class_dtypes[key] = <PyObject*>dt
+        # cache correctly byte ordered dtypes
+        if self.little_endian:
+            self.U1_dtype = np.dtype('<U1')
+        else:
+            self.U1_dtype = np.dtype('>U1')
+        bool_dtype = np.dtype('bool')
         
     def set_stream(self, fobj):
         ''' Set stream of best type from file-like `fobj`
@@ -604,7 +624,7 @@ cdef class VarReader5:
             or mc == mxINT64_CLASS
             or mc == mxUINT64_CLASS): # numeric matrix
             if header.is_logical:
-                mat_dtype = dt_bool
+                mat_dtype = self.bool_dtype
             else:
                 mat_dtype = <object>self.class_dtypes[mc]
             arr = self.read_real_complex(header)
@@ -676,6 +696,20 @@ cdef class VarReader5:
 
         Matrices of char are likely to be converted to matrices of
         string by later processing in ``process_element``
+        '''
+        '''Notes to friendly fellow-optimizer
+        
+        This routine is not much optimized.  If I was going to do it,
+        I'd store the codecs as an object pointer array, as for the
+        .dtypes, I might use python_string.PyString_Decode for decoding,
+        I'd do something with pointers to pull the LSB out of the uint16
+        dtype, without using an intermediate array, I guess I'd consider
+        using the numpy C-API for array creation. I'd try and work out
+        how to deal with UCS-2 and UCS-4 builds of python, and how numpy
+        deals with unicode strings passed as memory,
+
+        My own introduction here:
+        https://cirl.berkeley.edu/mb312/pydagogue/python_unicode.html
         '''
         cdef:
             cnp.uint32_t mdtype, byte_count
