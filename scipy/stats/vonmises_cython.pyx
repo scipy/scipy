@@ -46,7 +46,6 @@ def von_mises_cdf(k,x):
     k = np.atleast_1d(k)
     x = np.atleast_1d(x)
     ix = np.round(x/(2*np.pi))
-    print x, ix, x-ix*2*np.pi
     x = x-ix*2*np.pi
 
     # These values should give 12 decimal digits
