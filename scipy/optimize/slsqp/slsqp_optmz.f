@@ -1,3 +1,35 @@
+C
+C      ALGORITHM 733, COLLECTED ALGORITHMS FROM ACM.
+C      TRANSACTIONS ON MATHEMATICAL SOFTWARE,
+C      VOL. 20, NO. 3, SEPTEMBER, 1994, PP. 262-281.
+C      http://doi.acm.org/10.1145/192115.192124
+C
+C
+C      http://permalink.gmane.org/gmane.comp.python.scientific.devel/6725
+C      ------
+C      From: Deborah Cotton <cotton@hq.acm.org>
+C      Date: Fri, 14 Sep 2007 12:35:55 -0500
+C      Subject: RE: Algorithm License requested
+C      To: Alan Isaac
+C
+C      Prof. Issac,
+C
+C      In that case, then because the author consents to [the ACM] releasing
+C      the code currently archived at http://www.netlib.org/toms/733 under the
+C      BSD license, the ACM hereby releases this code under the BSD license.
+C
+C      Regards,
+C
+C      Deborah Cotton, Copyright & Permissions
+C      ACM Publications
+C      2 Penn Plaza, Suite 701**
+C      New York, NY 10121-0701
+C      permissions@acm.org
+C      212.869.7440 ext. 652
+C      Fax. 212.869.0481
+C      ------
+C
+
 ************************************************************************
 *                              optimizer                               *
 ************************************************************************
