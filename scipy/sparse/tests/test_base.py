@@ -1333,7 +1333,7 @@ class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
         B[:2,:2] = csc_matrix(array(block))
         assert_array_equal(B.todense()[:2,:2],block)
 
-    def test_lil_sequence_assignement(self):
+    def test_lil_sequence_assignment(self):
         A = lil_matrix((4,3))
         B = eye(3,4,format='lil')
 
@@ -1345,6 +1345,17 @@ class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
         A[1,i1] = B[i1,1]
         A[2,i2] = B[i2,2]
         assert_array_equal(A.todense(),B.T.todense())
+
+        # column slice
+        A = lil_matrix((2,3))
+        A[1,1:3] = [10,20]
+        assert_array_equal(A.todense(), [[0,0,0],[0,10,20]])
+
+        # column slice
+        A = lil_matrix((3,2))
+        A[1:3,1] = [[10],[20]]
+        assert_array_equal(A.todense(), [[0,0],[0,10],[0,20]])
+
 
     def test_lil_iteration(self):
         row_data = [[1,2,3],[4,5,6]]

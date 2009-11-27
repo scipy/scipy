@@ -223,14 +223,6 @@ class lil_matrix(spmatrix):
         else:
             raise IndexError
 
-
-    def _insertat(self, i, j, x):
-        """ helper for __setitem__: insert a value at (i,j) where i, j and x
-        are all scalars """
-        row = self.rows[i]
-        data = self.data[i]
-        self._insertat2(row, data, j, x)
-
     def _insertat2(self, row, data, j, x):
         """ helper for __setitem__: insert a value in the given row/data at
         column j. """
@@ -241,7 +233,6 @@ class lil_matrix(spmatrix):
         if j < 0 or j >= self.shape[1]:
             raise IndexError('column index out of bounds')
             
-        
         if not np.isscalar(x):
             raise ValueError('setting an array element with a sequence')
 
@@ -265,70 +256,83 @@ class lil_matrix(spmatrix):
                 del row[pos]
                 del data[pos]
 
-
-    def _insertat3(self, row, data, j, x):
-        """ helper for __setitem__ """
+    def _setitem_setrow(self, row, data, j, xrow, xdata, xcols):
         if isinstance(j, slice):
             j = self._slicetoseq(j, self.shape[1])
         if issequence(j):
-            if isinstance(x, spmatrix):
-                x = x.todense()
-            x = np.asarray(x).squeeze()
-            if np.isscalar(x) or x.size == 1:
+            if xcols == len(j):
+                for jj, xi in zip(j, xrange(xcols)):
+                   pos = bisect_left(xrow, xi)
+                   if pos != len(xdata) and xrow[pos] == xi:
+                       self._insertat2(row, data, jj, xdata[pos])
+                   else:
+                       self._insertat2(row, data, jj, 0)
+            elif xcols == 1:           # OK, broadcast across row
+                if len(xdata) > 0 and xrow[0] == 0:
+                    val = xdata[0]
+                else:
+                    val = 0
                 for jj in j:
-                    self._insertat2(row, data, jj, x)
+                    self._insertat2(row, data, jj,val)
             else:
-                # x must be one D. maybe check these things out
-                for jj, xx in zip(j, x):
-                    self._insertat2(row, data, jj, xx)
+                raise IndexError('invalid index')
         elif np.isscalar(j):
-            self._insertat2(row, data, j, x)
+            if not xcols == 1:
+                raise ValueError('array dimensions are not compatible for copy')
+            if len(xdata) > 0 and xrow[0] == 0:
+                self._insertat2(row, data, j, xdata[0])
+            else:
+                self._insertat2(row, data, j, 0)
         else:
             raise ValueError('invalid column value: %s' % str(j))
 
-
     def __setitem__(self, index, x):
-        if np.isscalar(x):
-            x = self.dtype.type(x)
-        elif not isinstance(x, spmatrix):
-            x = lil_matrix(x)
-
         try:
             i, j = index
         except (ValueError, TypeError):
             raise IndexError('invalid index')
 
+        # shortcut for common case of single entry assign:
+        if np.isscalar(x) and np.isscalar(i) and np.isscalar(j):
+            self._insertat2(self.rows[i], self.data[i], j, x)
+            return
+
+        # shortcut for common case of full matrix assign:
         if isspmatrix(x):
-            if (isinstance(i, slice) and (i == slice(None))) and \
-               (isinstance(j, slice) and (j == slice(None))):
-                # self[:,:] = other_sparse
-                x = lil_matrix(x)
-                self.rows = x.rows
-                self.data = x.data
-                return
+          if isinstance(i, slice) and i == slice(None) and \
+             isinstance(j, slice) and j == slice(None):
+               x = lil_matrix(x)
+               self.rows = x.rows
+               self.data = x.data
+               return
+
+        if isinstance(i, tuple):       # can't index lists with tuple
+            i = list(i)
 
         if np.isscalar(i):
-            row = self.rows[i]
-            data = self.data[i]
-            self._insertat3(row, data, j, x)
-        elif issequence(i) and issequence(j):
-            if np.isscalar(x):
-                for ii, jj in zip(i, j):
-                    self._insertat(ii, jj, x)
-            else:
-                for ii, jj, xx in zip(i, j, x):
-                    self._insertat(ii, jj, xx)
-        elif isinstance(i, slice) or issequence(i):
+            rows = [self.rows[i]]
+            datas = [self.data[i]]
+        else:
             rows = self.rows[i]
             datas = self.data[i]
-            if np.isscalar(x):
-                for row, data in zip(rows, datas):
-                    self._insertat3(row, data, j, x)
-            else:
-                for row, data, xx in zip(rows, datas, x):
-                    self._insertat3(row, data, j, xx)
+
+        x = lil_matrix(x, copy=False)
+        xrows, xcols = x.shape
+        if xrows == len(rows):    # normal rectangular copy
+            for row, data, xrow, xdata in zip(rows, datas, x.rows, x.data):
+                self._setitem_setrow(row, data, j, xrow, xdata, xcols)
+        elif xrows == 1:          # OK, broadcast down column
+            for row, data in zip(rows, datas):
+                self._setitem_setrow(row, data, j, x.rows[0], x.data[0], xcols)
+
+        # needed to pass 'test_lil_sequence_assignement' unit test:
+        # -- set row from column of entries --
+        elif xcols == len(rows):
+            x = x.T
+            for row, data, xrow, xdata in zip(rows, datas, x.rows, x.data):
+                self._setitem_setrow(row, data, j, xrow, xdata, xrows)
         else:
-            raise ValueError('invalid index value: %s' % str((i, j)))
+            raise IndexError('invalid index')
 
     def _mul_scalar(self, other):
         if other == 0:
