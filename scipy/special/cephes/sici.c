@@ -54,6 +54,8 @@ Cephes Math Library Release 2.1:  January, 1989
 Copyright 1984, 1987, 1989 by Stephen L. Moshier
 Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 */
+#include <Python.h>
+#include <numpy/npy_math.h>
 
 #include "mconf.h"
 
@@ -603,11 +605,20 @@ if( x == 0.0 )
 	}
 
 
-if( x > 1.0e9 )
-	{
+if( x > 1.0e9 ) {
+        if (npy_isinf(x)) {
+                if (sign == -1) {
+                        *si = -PIO2;
+                        *ci = NPY_NAN;
+                } else {
+                        *si = PIO2;
+                        *ci = 0;
+                }
+                return 0;
+        }
 	*si = PIO2 - cos(x)/x;
 	*ci = sin(x)/x;
-	}
+}
 
 
 

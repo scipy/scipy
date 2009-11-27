@@ -412,6 +412,15 @@ class TestCephes(TestCase):
         cephes.shichi(1)
     def test_sici(self):
         cephes.sici(1)
+
+        s, c = cephes.sici(np.inf)
+        assert_almost_equal(s, np.pi * 0.5)
+        assert_almost_equal(c, 0)
+
+        s, c = cephes.sici(-np.inf)
+        assert_almost_equal(s, -np.pi * 0.5)
+        assert_(np.isnan(c), "cosine integral(-inf) is not nan")
+
     def test_sindg(self):
         assert_equal(cephes.sindg(90),1.0)
     def test_smirnov(self):
