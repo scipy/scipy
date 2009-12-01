@@ -73,5 +73,8 @@ def test_chars_strings():
     # Fortran ordered arrays
     char_arrf = np.array(chars, dtype='U1', order='F') # shape (4,6)
     yield assert_array_equal, chars_to_strings(char_arrf), str_arr
-    
+    # empty array
+    arr = np.array([['']], dtype='U1')
+    out_arr = np.array([''], dtype='U1')
+    yield assert_array_equal, chars_to_strings(arr), out_arr
     

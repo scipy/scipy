@@ -4,7 +4,7 @@
 Need function load / save / roundtrip tests
 
 '''
-from os.path import join, dirname
+from os.path import join as pjoin, dirname
 from glob import glob
 from StringIO import StringIO
 from tempfile import mkdtemp
@@ -31,7 +31,7 @@ from scipy.io.matlab.mio import loadmat, savemat, find_mat_file, \
 from scipy.io.matlab.mio5 import MatlabObject, MatFile5Writer, \
      Mat5NumericWriter, MatFile5Reader
 
-test_data_path = join(dirname(__file__), 'data')
+test_data_path = pjoin(dirname(__file__), 'data')
 
 def mlarr(*args, **kwargs):
     ''' Convenience function to return matlab-compatible 2D array
@@ -176,7 +176,7 @@ case_table5.append(
      'expected': {'testobject': MO}
      })
 u_str = file(
-    join(test_data_path, 'japanese_utf8.txt'),
+    pjoin(test_data_path, 'japanese_utf8.txt'),
     'rb').read().decode('utf-8')
 case_table5.append(
     {'name': 'unicode',
@@ -289,7 +289,7 @@ def test_load():
     for case in case_table4 + case_table5:
         name = case['name']
         expected = case['expected']
-        filt = join(test_data_path, 'test%s_*.mat' % name)
+        filt = pjoin(test_data_path, 'test%s_*.mat' % name)
         files = glob(filt)
         assert_true(len(files) > 0,
                     "No files for test %s using filter %s" % (name, filt))
@@ -317,7 +317,7 @@ def test_gzip_simple():
 
     tmpdir = mkdtemp()
     try:
-        fname = join(tmpdir,name)
+        fname = pjoin(tmpdir,name)
         mat_stream = gzip.open( fname,mode='wb')
         savemat(mat_stream, expected, format=format)
         mat_stream.close()
@@ -335,7 +335,7 @@ def test_gzip_simple():
 def test_mat73():
     # Check any hdf5 files raise an error
     filenames = glob(
-        join(test_data_path, 'testhdf5*.mat'))
+        pjoin(test_data_path, 'testhdf5*.mat'))
     assert_true(len(filenames)>0)
     for filename in filenames:
         assert_raises(NotImplementedError,
@@ -345,7 +345,7 @@ def test_mat73():
 
 
 def test_warnings():
-    fname = join(test_data_path, 'testdouble_7.1_GLNX86.mat')
+    fname = pjoin(test_data_path, 'testdouble_7.1_GLNX86.mat')
     warnings.simplefilter('error')
     # This should not generate a warning
     mres = loadmat(fname, struct_as_record=True)
@@ -546,7 +546,7 @@ def test_skip_variable():
     # The problem arises when the chunk is large: this file has
     # a 256x256 array of random (uncompressible) doubles.
     #
-    filename = join(test_data_path,'test_skip_variable.mat')
+    filename = pjoin(test_data_path,'test_skip_variable.mat')
     #
     # Prove that it loads with loadmat
     #
@@ -566,7 +566,7 @@ def test_skip_variable():
 
 def test_empty_struct():
     # ticket 885
-    filename = join(test_data_path,'test_empty_struct.mat')
+    filename = pjoin(test_data_path,'test_empty_struct.mat')
     # before ticket fix, this would crash with ValueError, empty data
     # type
     d = loadmat(filename, struct_as_record=True)
@@ -659,3 +659,10 @@ def test_read_opts():
     yield assert_array_equal, rdr.get_variables()['a'], carr
     rdr.chars_as_strings=True
     yield assert_array_equal, rdr.get_variables()['a'], arr
+
+
+def test_empty_string():
+    estring_fname = pjoin(test_data_path, 'single_empty_string.mat')
+    rdr = MatFile5Reader(file(estring_fname))
+    d = rdr.get_variables()
+    yield assert_array_equal, d['a'], np.array([], dtype='U1')

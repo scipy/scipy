@@ -46,7 +46,7 @@ cpdef cnp.ndarray process_element(cnp.ndarray arr,
     return arr
 
 
-cpdef cnp.ndarray chars_to_strings(cnp.ndarray arr):
+cpdef cnp.ndarray chars_to_strings(in_arr):
     ''' Convert final axis of char array to strings
 
     Parameters
@@ -60,11 +60,18 @@ cpdef cnp.ndarray chars_to_strings(cnp.ndarray arr):
        dtype of 'UN' where N is the length of the last dimension of
        ``arr``
     '''
-    arr_np = arr
-    dims = arr_np.shape
-    last_dim = dims[-1]
-    old_dt_str = arr.dtype.str[:-1]
-    new_dt_str = old_dt_str + str(last_dim)
-    # Ravel to deal with F ordered arrays
-    arr = arr.ravel().view(new_dt_str).reshape(dims[:-1])
-    return arr
+    # make numpy version of array.  Strangely, if we don't do this, the
+    # array can change shape (1,1) to (1,) for example
+    cdef cnp.ndarray arr = in_arr
+    cdef int ndim = arr.ndim
+    cdef cnp.npy_intp *dims = arr.shape
+    cdef cnp.npy_intp last_dim = dims[ndim-1]
+    cdef object new_dt_str
+    if last_dim == 0: # deal with empty array case
+        new_dt_str = arr.dtype.str
+    else: # make new dtype string with N appended
+        new_dt_str = arr.dtype.str[:-1] + str(last_dim)
+    # Copy to deal with F ordered arrays
+    arr = np.ascontiguousarray(arr)
+    arr = arr.view(new_dt_str)
+    return arr.reshape(in_arr.shape[:-1])
