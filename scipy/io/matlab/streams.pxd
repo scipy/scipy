@@ -1,7 +1,5 @@
 # -*- python -*- or rather like
 
-cdef inline object pyalloc_v(Py_ssize_t n, void **pp)
-
 cdef class GenericStream:
     cdef object fobj
 

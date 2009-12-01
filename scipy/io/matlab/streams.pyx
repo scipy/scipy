@@ -3,6 +3,8 @@
 from python_string cimport PyString_FromStringAndSize, \
     PyString_AS_STRING, PyString_Size
 
+from pyalloc cimport pyalloc_v
+
 cdef extern from "stdlib.h" nogil:
     void *malloc(size_t size)
     void *memcpy(void *str1, void *str2, size_t n)
@@ -40,13 +42,6 @@ cdef extern from "cStringIO.h":
        
 # initialize cStringIO
 PycString_IMPORT
-
-
-# Function to allocate, wrap memory via Python string creation
-cdef inline object pyalloc_v(Py_ssize_t n, void **pp):
-    cdef object ob = PyString_FromStringAndSize(NULL, n)
-    pp[0] = <void*> PyString_AS_STRING(ob)
-    return ob
 
 
 cdef class GenericStream:
