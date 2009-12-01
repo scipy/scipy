@@ -51,7 +51,7 @@ cpdef cnp.ndarray chars_to_strings(in_arr):
 
     Parameters
     ----------
-    arr : array
+    in_arr : array
        dtype of 'U1'
        
     Returns
@@ -60,8 +60,6 @@ cpdef cnp.ndarray chars_to_strings(in_arr):
        dtype of 'UN' where N is the length of the last dimension of
        ``arr``
     '''
-    # make numpy version of array.  Strangely, if we don't do this, the
-    # array can change shape (1,1) to (1,) for example
     cdef cnp.ndarray arr = in_arr
     cdef int ndim = arr.ndim
     cdef cnp.npy_intp *dims = arr.shape
