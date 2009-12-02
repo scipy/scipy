@@ -160,7 +160,6 @@ def fftconvolve(in1, in2, mode="full"):
     fsize = 2**np.ceil(np.log2(size))
     IN1 = fftn(in1,fsize)
     IN1 *= fftn(in2,fsize)
-    ret = ifftn(IN1)
     fslice = tuple([slice(0, int(sz)) for sz in size])
     ret = ifftn(IN1)[fslice].copy()
     del IN1
