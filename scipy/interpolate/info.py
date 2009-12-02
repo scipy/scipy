@@ -23,7 +23,6 @@ Wrappers around FITPACK functions
           evaluate bivariate smoothing spline.
 
   UnivariateSpline
-
           A more recent, object-oriented wrapper; finds a (possibly
           smoothed) interpolating spline.
 
@@ -32,11 +31,29 @@ Wrappers around FITPACK functions
   LSQUnivariateSpline
 
   BivariateSpline
-
            A more recent, object-oriented wrapper; finds a
            interpolating spline for a bivariate function.
 
   SmoothBivariateSpline
+
+Low-level Piece-wise Spline Tools
+-----------------------------------
+  splmake
+              Create a spline representation from data-points
+              where the internal knots are the data-points.
+              
+  spleval
+              Evaluate a spline representation on a new set of
+              input data values.
+
+  spline
+              Single-call interface to splmake and spleval
+              
+  spltopp
+              Return piecewise polynomial representation from a
+              spline representation. 
+                
+  
 
 Interpolation Classes (univariate)
 -----------------------------------
@@ -53,23 +70,24 @@ Interpolation Classes (univariate)
                procedural interface to the above
 
   KroghInterpolator
-
                Compute with the Hermite interpolating polynomial
                (allows the specification of derivatives at some points).
 
   krogh_interpolate
-
                procedural interface to the above
 
   PiecewisePolynomial
-
                Spline that is specified by giving positions and
                derivatives at every knot; allows high orders and
                efficient appending.
 
   piecewise_polynomial_interpolate
-
                procedural interface to the above
+
+  ppform
+               Class to create a piecewise polynomial representation of
+               a spline from the coefficients of the polynomial in each
+               section and the break-points
 
 Interpolation Classes (multivariate)
 -------------------------------------
@@ -88,9 +106,40 @@ Additional tools
                Compute the Lagrange interpolating polynomial.
 
   approximate_taylor_polynomial
-
                compute an approximate Taylor polynomial for
                a function using polynomial interpolation
+
+
+See Also
+------------
+
+  ndimage
+     map_coordinates
+               N-d interpolation from evenly-spaced data using
+               fast B-splines. 
+
+     spline_filter
+               Method to pre-compute spline coefficients to make
+               map_coordinates efficient for muliple calls on the same
+               set of interpolated points.
+
+  signal
+     resample
+
+              Perform sinc-interpolation using a Fourier filter.
+              This function can decimate or interpolate to an evenly
+              sampled grid.
+          
+     bspline
+     gauss_spline
+     qspline1d
+     cspline1d
+     qspline1d_eval
+     cspline1d_eval
+     qspline2d
+     cspline2d
+               Low-level spline tools for regularly spaced data using
+               fast B-spline algorithms.
 
 """
 
