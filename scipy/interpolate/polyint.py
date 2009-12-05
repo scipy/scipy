@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import factorial
 
-__all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator", "barycentric_interpolate", "PiecewisePolynomial", "piecewise_polynomial_interpolate","approximate_taylor_polynomial"]
+__all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator", "barycentric_interpolate", "PiecewisePolynomial", "piecewise_polynomial_interpolate","approximate_taylor_polynomial", "pchip"]
 
 class KroghInterpolator(object):
     """The interpolating polynomial for a set of points
@@ -572,7 +572,7 @@ def barycentric_interpolate(xi, yi, x):
     """
     return BarycentricInterpolator(xi, yi)(x)
 
-
+
 class PiecewisePolynomial(object):
     """Piecewise polynomial curve specified by points and derivatives
 
@@ -854,3 +854,51 @@ def piecewise_polynomial_interpolate(xi,yi,x,orders=None,der=0):
 def _isscalar(x):
     """Check whether x is if a scalar type, or 0-dim"""
     return np.isscalar(x) or hasattr(x, 'shape') and x.shape == ()
+
+def _edge_case(d1, d2, h0, h1):
+    w1 = 2*h0 + h1
+    w2 = h0 + 2*h1
+    value = ((w1+w2)/d1 - w2/d2)/w1
+    return 1.0/value
+
+def _find_derivatives(x, y):
+    # Determine the derivatives at the points y_k, d_k, by using
+    #  PCHIP algorithm is:
+    # We choose the derivatives at the point x_k by
+    # Let m_k be the slope of the kth segment (between k and k+1)
+    # If m_k=0 or m_{k-1}=0 or sgn(m_k) != sgn(m_{k-1}) then d_k == 0
+    # else use weighted harmonic mean:
+    #   w_1 = 2h_k + h_{k-1}, w_2 = h_k + 2h_{k-1}
+    #   1/d_k = 1/(w_1 + w_2)*(w_1 / m_k + w_2 / m_{k-1})
+    #   where h_k is the spacing between x_k and x_{k+1}
+
+    hk = x[1:] - x[:-1]
+    mk = (y[1:] - y[:-1]) / hk
+    smk = np.sign(mk)
+    condition = ((smk[1:] != smk[:-1]) | (mk[1:]==0) | (mk[:-1]==0))
+
+    w1 = 2*hk[1:] + hk[:-1]
+    w2 = hk[1:] + 2*hk[:-1]
+    whmean = 1.0/(w1+w2)*(w1/mk[1:] + w2/mk[:-1])
+    
+    dk = np.zeros_like(y)
+    dk[1:-1][condition] = 1.0/whmean
+
+    # For end-points choose d_0 so that d_1 is the weighted harmonic-mean
+    #  between d_0 and d_2 and d_{N-2} is the weighted harmonic-mean
+    #  between d_{N-3} and d_{N-1}
+
+    dk[0] = _edge_case(dk[1],dk[2],hk[0],hk[1])
+    dk[-1] = _edge_case(dk[-2],dk[-3],hk[-1],hk[-2])
+    return dk
+    
+
+def pchip(x, y):
+    """PCHIP 1-d interpolation
+
+    Assumes x is sorted in monotonic order (e.g. x[1] > x[0])
+    """
+    derivs = _find_derivatives(x,y)
+    return PiecewisePolynomial(x, zip(yi, derivs), orders=3, direction=None)
+
+    
