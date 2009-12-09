@@ -855,11 +855,8 @@ def _isscalar(x):
     """Check whether x is if a scalar type, or 0-dim"""
     return np.isscalar(x) or hasattr(x, 'shape') and x.shape == ()
 
-def _edge_case(d1, d2, h0, h1):
-    w1 = 2*h0 + h1
-    w2 = h0 + 2*h1
-    value = ((w1+w2)/d1 - w2/d2)/w1
-    return 1.0/value
+def _edge_case(m0, d1):
+    return np.where((d1==0) | (m0==0), 0.0, 1.0/(1.0/m0+1.0/d1))
 
 def _find_derivatives(x, y):
     # Determine the derivatives at the points y_k, d_k, by using
@@ -882,23 +879,39 @@ def _find_derivatives(x, y):
     whmean = 1.0/(w1+w2)*(w1/mk[1:] + w2/mk[:-1])
     
     dk = np.zeros_like(y)
-    dk[1:-1][condition] = 1.0/whmean
+    dk[1:-1][condition] = 0.0
+    dk[1:-1][~condition] = 1.0/whmean[~condition]
 
-    # For end-points choose d_0 so that d_1 is the weighted harmonic-mean
-    #  between d_0 and d_2 and d_{N-2} is the weighted harmonic-mean
-    #  between d_{N-3} and d_{N-1}
+    # For end-points choose d_0 so that 1/d_0 = 1/m_0 + 1/d_1 unless
+    #  one of d_1 or m_0 is 0, then choose d_0 = 0
 
-    dk[0] = _edge_case(dk[1],dk[2],hk[0],hk[1])
-    dk[-1] = _edge_case(dk[-2],dk[-3],hk[-1],hk[-2])
+    dk[0] = _edge_case(mk[0],dk[1])
+    dk[-1] = _edge_case(mk[-1],dk[-2])
     return dk
     
 
 def pchip(x, y):
-    """PCHIP 1-d interpolation
+    """PCHIP 1-d monotonic cubic interpolation 
+    
+    Description
+    -----------
+    x and y are arrays of values used to approximate some function f:
+       y = f(x)
+    This class factory function returns a callable class whose __call__ method 
+    uses monotonic cubic, interpolation to find the value of new points.
 
+    Parameters
+    ----------
+    x : array
+        A 1D array of monotonically increasing real values.  x cannot
+        include duplicate values (otherwise f is overspecified)
+    y : array
+        A 1-D array of real values.  y's length along the interpolation
+        axis must be equal to the length of x.
+ 
     Assumes x is sorted in monotonic order (e.g. x[1] > x[0])
     """
     derivs = _find_derivatives(x,y)
-    return PiecewisePolynomial(x, zip(yi, derivs), orders=3, direction=None)
+    return PiecewisePolynomial(x, zip(y, derivs), orders=3, direction=None)
 
     
