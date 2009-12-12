@@ -2,6 +2,7 @@
 Test Scipy functions versus mpmath, if available.
 
 """
+import re
 import numpy as np
 from numpy.testing import *
 import scipy.special as sc
@@ -25,7 +26,7 @@ def mpmath_check(min_ver):
         except ValueError: return v
 
     def get_version(v):
-        return map(try_int, v.split('.'))
+        return map(try_int, re.split('[^0-9]', v))
 
     return dec.skipif(get_version(min_ver) > get_version(mpmath.__version__),
                       "mpmath %s required" % min_ver)
