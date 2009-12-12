@@ -135,7 +135,7 @@ cdef double complex lambertw_scalar(double complex z, int k, double tol):
         else:
             w = wn
 
-    warnings.warn("Lambert W iteration failed to converge: %g" % z)
+    warnings.warn("Lambert W iteration failed to converge: %r" % z)
     return wn
 
 

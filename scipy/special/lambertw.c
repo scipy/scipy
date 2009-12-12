@@ -467,7 +467,7 @@ static char __pyx_k_warn[] = "warn";
 static PyObject *__pyx_kp_warn;
 static PyObject *__pyx_builtin_range;
 static PyObject *__pyx_kp_4;
-static char __pyx_k_4[] = "Lambert W iteration failed to converge: %g";
+static char __pyx_k_4[] = "Lambert W iteration failed to converge: %r";
 
 /* "/home/pauli/koodi/proj/scipy/scipy/scipy/special/lambertw.pyx":43
  *     double NPY_PI
