@@ -404,7 +404,7 @@ def hermitenorm(n,monic=0):
     hn = sqrt(2*pi)*_gam(n+1)
     kn = 1.0
     p = orthopoly1d(x,w,hn,kn,wfunc=wfunc,limits=(-inf,inf),monic=monic,
-                    eval_func=eval_hermitenorm)
+                    eval_func=lambda x: eval_hermitenorm(n,x))
     return p
 
 ## The remainder of the polynomials can be derived from the ones above.
