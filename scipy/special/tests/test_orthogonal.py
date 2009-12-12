@@ -227,19 +227,28 @@ class _test_sh_jacobi(TestCase):
 
 class TestCall(object):
     def test_call(self):
-        jacobi(3,0.3,0.9)(0.5)
-        sh_jacobi(3, 0.3, 0.9)(0.5)
-        genlaguerre(3,0.3)(0.5)
-        laguerre(3)(0.5)
-        hermite(3)(0.5)
-        hermitenorm(3)(0.5)
-        gegenbauer(3, 0.3)(0.5)
-        chebyt(3)(0.5)
-        chebyu(3)(0.5)
-        chebyc(3)(0.5)
-        chebys(3)(0.5)
-        sh_chebyt(3)(0.5)
-        sh_chebyu(3)(0.5)
-        legendre(3)(0.5)
-        sh_legendre(3)(0.5)
+        poly = []
+        for n in xrange(5):
+            poly.extend([x.strip() for x in
+                ("""
+                jacobi(%(n)d,0.3,0.9)
+                sh_jacobi(%(n)d,0.3,0.9)
+                genlaguerre(%(n)d,0.3)
+                laguerre(%(n)d)
+                hermite(%(n)d)
+                hermitenorm(%(n)d)
+                gegenbauer(%(n)d,0.3)
+                chebyt(%(n)d)
+                chebyu(%(n)d)
+                chebyc(%(n)d)
+                chebys(%(n)d)
+                sh_chebyt(%(n)d)
+                sh_chebyu(%(n)d)
+                legendre(%(n)d)
+                sh_legendre(%(n)d)
+                """ % dict(n=n)).split()
+            ])
+        for pstr in poly:
+            p = eval(pstr)
+            assert_almost_equal(p(0.315), np.poly1d(p)(0.315), err_msg=pstr)
 

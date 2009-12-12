@@ -76,6 +76,10 @@ class TestPolys(object):
         self.check_poly(eval_chebys, chebys,
                    param_ranges=[], x_range=[-2, 2])
 
+    def test_chebyc(self):
+        self.check_poly(eval_chebyc, chebyc,
+                   param_ranges=[], x_range=[-2, 2])
+
     def test_sh_chebyt(self):
         self.check_poly(eval_sh_chebyt, sh_chebyt,
                    param_ranges=[], x_range=[0, 1])

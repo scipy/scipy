@@ -116,7 +116,8 @@ class orthopoly1d(np.poly1d):
         mu = sqrt(hn)
         if monic:
             evf = eval_func
-            eval_func = lambda x: evf(x)/kn
+            if evf:
+                eval_func = lambda x: evf(x)/kn
             mu = mu / abs(kn)
             kn = 1.0
         self.__dict__['normcoef'] = mu
@@ -136,7 +137,8 @@ class orthopoly1d(np.poly1d):
             return
         self.__dict__['coeffs'] *= p
         evf = self.__dict__['_eval_func']
-        self.__dict__['_eval_func'] = lambda x: evf(x) * p
+        if evf:
+            self.__dict__['_eval_func'] = lambda x: evf(x) * p
         self.__dict__['normcoef'] *= p
 
 def gen_roots_and_weights(n,an_func,sqrt_bn_func,mu):
@@ -203,7 +205,7 @@ def jacobi(n,alpha,beta,monic=0):
     wfunc = lambda x: (1-x)**alpha * (1+x)**beta
     if n==0:
         return orthopoly1d([],[],1.0,1.0,wfunc,(-1,1),monic,
-                           lambda x: eval_jacobi(n,alpha,beta,x))
+                           eval_func=np.ones_like)
     x,w,mu = j_roots(n,alpha,beta,mu=1)
     ab1 = alpha+beta+1.0
     hn = 2**ab1/(2*n+ab1)*_gam(n+alpha+1)
@@ -263,15 +265,17 @@ def sh_jacobi(n, p, q, monic=0):
         raise ValueError("n must be nonnegative")
     wfunc = lambda x: (1.0-x)**(p-q) * (x)**(q-1.)
     if n==0:
-        return orthopoly1d([],[],1.0,1.0,wfunc,(-1,1),monic)
+        return orthopoly1d([],[],1.0,1.0,wfunc,(-1,1),monic,
+                           eval_func=np.ones_like)
     n1 = n
     x,w,mu0 = js_roots(n1,p,q,mu=1)
     hn = _gam(n+1)*_gam(n+q)*_gam(n+p)*_gam(n+p-q+1)
     hn /= (2*n+p)*(_gam(2*n+p)**2)
     # kn = 1.0 in standard form so monic is redundant.  Kept for compatibility.
     kn = 1.0
-    p = orthopoly1d(x,w,hn,kn,wfunc=wfunc,limits=(0,1),monic=monic)
-    return p
+    pp = orthopoly1d(x,w,hn,kn,wfunc=wfunc,limits=(0,1),monic=monic,
+                     eval_func=lambda x: eval_sh_jacobi(n, p, q, x))
+    return pp
 
 # Generalized Laguerre               L^(alpha)_n(x)
 def la_roots(n,alpha,mu=0):
@@ -521,6 +525,7 @@ def chebyc(n,monic=0):
     p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: 1.0/sqrt(1-x*x/4.0),limits=(-2,2),monic=monic)
     if not monic:
         p._scale(2.0/p(2))
+        p.__dict__['_eval_func'] = lambda x: eval_chebyc(n,x)
     return p
 
 # Chebyshev of the second kind       S_n(x)
@@ -549,11 +554,11 @@ def chebys(n,monic=0):
     if n==0: x,w = [],[]
     hn = pi
     kn = 1.0
-    p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: sqrt(1-x*x/4.0),limits=(-2,2),monic=monic,
-                    eval_func=lambda x: eval_chebys(n,x))
+    p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: sqrt(1-x*x/4.0),limits=(-2,2),monic=monic)
     if not monic:
         factor = (n+1.0)/p(2)
         p._scale(factor)
+        p.__dict__['_eval_func'] = lambda x: eval_chebys(n,x)
     return p
 
 # Shifted Chebyshev of the first kind     T^*_n(x)
