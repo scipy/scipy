@@ -848,6 +848,24 @@ class _TestFancyIndexing:
         s = slice(int8(2),int8(4),None)
         assert_equal(A[s,:].todense(), B[2:4,:])
         assert_equal(A[:,s].todense(), B[:,2:4])
+    
+    def test_fancy_indexing_randomized(self):
+        random.seed(0) # make runs repeatable
+
+        NUM_SAMPLES = 50
+        M = 6
+        N = 4
+
+        D = np.asmatrix(np.random.rand(M,N))
+
+        I = np.random.random_integers(-M + 1, M - 1, size=NUM_SAMPLES)
+        J = np.random.random_integers(-N + 1, N - 1, size=NUM_SAMPLES)
+        
+        S = self.spmatrix(D)
+        
+        assert_equal(S[I,J], D[I,J])
+
+
 
 class _TestArithmetic:
     """

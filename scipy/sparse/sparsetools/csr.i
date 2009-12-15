@@ -30,4 +30,5 @@ INSTANTIATE_ALL(csr_sort_indices)
 INSTANTIATE_ALL(csr_eliminate_zeros)
 INSTANTIATE_ALL(csr_sum_duplicates)
 INSTANTIATE_ALL(get_csr_submatrix)
+INSTANTIATE_ALL(csr_sample_values)
 

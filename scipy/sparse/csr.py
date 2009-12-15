@@ -10,7 +10,7 @@ from warnings import warn
 import numpy as np
 
 from sparsetools import csr_tocsc, csr_tobsr, csr_count_blocks, \
-        get_csr_submatrix
+        get_csr_submatrix, csr_sample_values
 from sputils import upcast, isintlike
 
 
@@ -245,9 +245,14 @@ class csr_matrix(_cs_matrix):
                     if len(row.shape) == 1:
                         if len(row) != len(col):             #[[1,2],[1,2]]
                             raise IndexError('number of row and column indices differ')
-                        val = []
-                        for i,j in zip(row,col):
-                            val.append(self._get_single_element(i,j))
+                        num_samples = len(row)
+                        val = np.empty(num_samples, dtype=self.dtype)
+                        csr_sample_values(self.shape[0], self.shape[1],
+                                          self.indptr, self.indices, self.data,
+                                          num_samples, row, col, val)
+                        #val = []
+                        #for i,j in zip(row,col):
+                        #    val.append(self._get_single_element(i,j))
                         return np.asmatrix(val)
 
                     elif len(row.shape) == 2:

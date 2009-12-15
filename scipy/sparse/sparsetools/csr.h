@@ -1145,4 +1145,108 @@ I csr_count_diagonals(const I n_row,
 }
 
 
+/*
+ * Sample the matrix at specific locations
+ * 
+ * Determine the matrix value for each row,col pair
+ *    Bx[n] = A(Bi[n],Bj[n])
+ *
+ * Input Arguments:
+ *   I  n_row         - number of rows in A
+ *   I  n_col         - number of columns in A
+ *   I  Ap[n_row+1]   - row pointer
+ *   I  Aj[nnz(A)]    - column indices
+ *   T  Ax[nnz(A)]    - nonzeros
+ *   I  n_samples     - number of samples
+ *   I  Bi[N]         - sample rows
+ *   I  Bj[N]         - sample columns
+ *
+ * Output Arguments:
+ *   T  Bx[N]         - sample values
+ *
+ * Note:
+ *   Output array Yx must be preallocated
+ *
+ *   Complexity: varies 
+ *
+ *   TODO handle other cases with asymptotically optimal method
+ *
+ */
+template <class I, class T>
+void csr_sample_values(const I n_row,
+                       const I n_col,
+                       const I Ap[],
+                       const I Aj[],
+                       const T Ax[],
+                       const I n_samples,
+                       const I Bi[],
+                       const I Bj[],
+                             T Bx[])
+{
+    // ideally we'd do the following
+    // Case 1: A is canonical and B is sorted by row and column
+    //   -> special purpose csr_binop_csr() (optimized form)
+    // Case 2: A is canonical and B is unsorted and max(log(Ap[i+1] - Ap[i])) > log(num_samples)
+    //   -> do binary searches for each sample
+    // Case 3: A is canonical and B is unsorted and max(log(Ap[i+1] - Ap[i])) < log(num_samples)
+    //   -> sort B by row and column and use Case 1
+    // Case 4: A is not canonical and num_samples ~ nnz
+    //   -> special purpose csr_binop_csr() (general form)
+    // Case 5: A is not canonical and num_samples << nnz
+    //   -> do linear searches for each sample
+
+    const I nnz = Ap[n_row];
+
+    const I threshold = nnz / 10; // constant is arbitrary
+
+    if (n_samples > threshold && csr_has_canonical_format(n_row, Ap, Aj))
+    {
+        for(I n = 0; n < n_samples; n++)
+        {
+            const I i = Bi[n] < 0 ? Bi[n] + n_row : Bi[n]; // sample row
+            const I j = Bj[n] < 0 ? Bj[n] + n_col : Bj[n]; // sample column
+    
+            const I row_start = Ap[i];
+            const I row_end   = Ap[i+1];
+           
+            if (row_start < row_end)
+            {
+                const I * lb = std::lower_bound(Aj + row_start, Aj + row_end, j);
+
+                if (*lb == j)
+                    Bx[n] = *(Ax + (lb - Aj));
+                else
+                    Bx[n] = 0;
+            }
+            else
+            {
+                Bx[n] = 0;
+            }
+    
+        }
+    }
+    else
+    {
+        for(I n = 0; n < n_samples; n++)
+        {
+            const I i = Bi[n] < 0 ? Bi[n] + n_row : Bi[n]; // sample row
+            const I j = Bj[n] < 0 ? Bj[n] + n_col : Bj[n]; // sample column
+    
+            const I row_start = Ap[i];
+            const I row_end   = Ap[i+1];
+           
+            T x = 0;
+            
+            for(I jj = row_start; jj < row_end; jj++)
+            {
+                if (Aj[jj] == j)
+                    x += Ax[jj];
+            }
+    
+            Bx[n] = x;
+        }
+
+    }
+}
+
 #endif

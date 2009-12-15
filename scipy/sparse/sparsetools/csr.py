@@ -616,3 +616,37 @@ def get_csr_submatrix(*args):
     """
   return _csr.get_csr_submatrix(*args)
 
+def csr_sample_values(*args):
+  """
+    csr_sample_values(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
+        int n_samples, int Bi, int Bj, signed char Bx)
+    csr_sample_values(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
+        int n_samples, int Bi, int Bj, unsigned char Bx)
+    csr_sample_values(int n_row, int n_col, int Ap, int Aj, short Ax, int n_samples, 
+        int Bi, int Bj, short Bx)
+    csr_sample_values(int n_row, int n_col, int Ap, int Aj, unsigned short Ax, 
+        int n_samples, int Bi, int Bj, unsigned short Bx)
+    csr_sample_values(int n_row, int n_col, int Ap, int Aj, int Ax, int n_samples, 
+        int Bi, int Bj, int Bx)
+    csr_sample_values(int n_row, int n_col, int Ap, int Aj, unsigned int Ax, 
+        int n_samples, int Bi, int Bj, unsigned int Bx)
+    csr_sample_values(int n_row, int n_col, int Ap, int Aj, long long Ax, 
+        int n_samples, int Bi, int Bj, long long Bx)
+    csr_sample_values(int n_row, int n_col, int Ap, int Aj, unsigned long long Ax, 
+        int n_samples, int Bi, int Bj, unsigned long long Bx)
+    csr_sample_values(int n_row, int n_col, int Ap, int Aj, float Ax, int n_samples, 
+        int Bi, int Bj, float Bx)
+    csr_sample_values(int n_row, int n_col, int Ap, int Aj, double Ax, int n_samples, 
+        int Bi, int Bj, double Bx)
+    csr_sample_values(int n_row, int n_col, int Ap, int Aj, long double Ax, 
+        int n_samples, int Bi, int Bj, long double Bx)
+    csr_sample_values(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
+        int n_samples, int Bi, int Bj, npy_cfloat_wrapper Bx)
+    csr_sample_values(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
+        int n_samples, int Bi, int Bj, npy_cdouble_wrapper Bx)
+    csr_sample_values(int n_row, int n_col, int Ap, int Aj, npy_clongdouble_wrapper Ax, 
+        int n_samples, int Bi, int Bj, 
+        npy_clongdouble_wrapper Bx)
+    """
+  return _csr.csr_sample_values(*args)
+
