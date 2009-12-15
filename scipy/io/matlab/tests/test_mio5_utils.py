@@ -141,3 +141,19 @@ def test_read_numeric():
                 el = c_reader.read_numeric()
                 yield assert_equal, el, val
     
+
+def test_read_numeric_writeable():
+    # make reader-like thing
+    str_io = cStringIO.StringIO()
+    r = _make_readerlike()
+    r.mat_stream = str_io
+    r.byte_order = '<'
+    r.dtypes = miob.convert_dtypes(mio5.mdtypes_template, '<')
+    c_reader = m5u.VarReader5(r)
+    dt = np.dtype('<u2')
+    a = _make_tag(dt, 30, mio5.miUINT16, 0)
+    a_str = a.tostring()
+    _write_stream(str_io, a_str)
+    el = c_reader.read_numeric()
+    yield assert_true, el.flags.writeable
+    

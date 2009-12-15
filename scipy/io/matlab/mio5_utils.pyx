@@ -393,7 +393,9 @@ cdef class VarReader5:
             &mdtype, &byte_count, <void **>&data_ptr, copy)
         cdef cnp.dtype dt = <cnp.dtype>self.dtypes[mdtype]
         el_count = byte_count // dt.itemsize
-        cdef char * tmp = data
+        cdef int flags = 0
+        if copy:
+            flags = cnp.NPY_WRITEABLE
         Py_INCREF(<object> dt)
         el = PyArray_NewFromDescr(&PyArray_Type,
                                    dt,
@@ -401,7 +403,7 @@ cdef class VarReader5:
                                    &el_count,
                                    NULL,
                                    <void*>data_ptr,
-                                   0,
+                                   flags,
                                    <object>NULL)
         Py_INCREF(<object> data)
         PyArray_Set_BASE(el, data)
