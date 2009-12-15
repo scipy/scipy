@@ -184,21 +184,24 @@ class csr_matrix(_cs_matrix):
                 raise IndexError('invalid index')
             else:
                 return x
-
-        def extractor(indices,N):
-            """Return a sparse matrix P so that P*self implements
-            slicing of the form self[[1,2,3],:]
-            """
-            indices = asindices(indices)
-
+        def check_bounds(indices,N):
             max_indx = indices.max()
-
             if max_indx >= N:
                 raise IndexError('index (%d) out of range' % max_indx)
 
             min_indx = indices.min()
             if min_indx < -N:
                 raise IndexError('index (%d) out of range' % (N + min_indx))
+
+            return (min_indx,max_indx)
+
+        def extractor(indices,N):
+            """Return a sparse matrix P so that P*self implements
+            slicing of the form self[[1,2,3],:]
+            """
+            indices = asindices(indices)
+    
+            (min_indx,max_indx) = check_bounds(indices,N)
 
             if min_indx < 0:
                 indices = indices.copy()
@@ -245,6 +248,10 @@ class csr_matrix(_cs_matrix):
                     if len(row.shape) == 1:
                         if len(row) != len(col):             #[[1,2],[1,2]]
                             raise IndexError('number of row and column indices differ')
+
+                        check_bounds(row, self.shape[0])
+                        check_bounds(col, self.shape[1])
+
                         num_samples = len(row)
                         val = np.empty(num_samples, dtype=self.dtype)
                         csr_sample_values(self.shape[0], self.shape[1],

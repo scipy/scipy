@@ -1205,16 +1205,16 @@ void csr_sample_values(const I n_row,
         {
             const I i = Bi[n] < 0 ? Bi[n] + n_row : Bi[n]; // sample row
             const I j = Bj[n] < 0 ? Bj[n] + n_col : Bj[n]; // sample column
-    
+   
             const I row_start = Ap[i];
             const I row_end   = Ap[i+1];
-           
+            
             if (row_start < row_end)
             {
-                const I * lb = std::lower_bound(Aj + row_start, Aj + row_end, j);
-
-                if (*lb == j)
-                    Bx[n] = *(Ax + (lb - Aj));
+                const I offset = std::lower_bound(Aj + row_start, Aj + row_end, j) - Aj;
+                
+                if (offset < row_end && Aj[offset] == j)
+                    Bx[n] = Ax[offset];
                 else
                     Bx[n] = 0;
             }

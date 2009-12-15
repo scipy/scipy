@@ -857,6 +857,7 @@ class _TestFancyIndexing:
         N = 4
 
         D = np.asmatrix(np.random.rand(M,N))
+        D = np.multiply(D, D > 0.5)
 
         I = np.random.random_integers(-M + 1, M - 1, size=NUM_SAMPLES)
         J = np.random.random_integers(-N + 1, N - 1, size=NUM_SAMPLES)
@@ -865,6 +866,11 @@ class _TestFancyIndexing:
         
         assert_equal(S[I,J], D[I,J])
 
+        I_bad = I + M
+        J_bad = J - N
+
+        assert_raises(IndexError, S.__getitem__, (I_bad,J))
+        assert_raises(IndexError, S.__getitem__, (I,J_bad))
 
 
 class _TestArithmetic:
