@@ -749,7 +749,6 @@ cdef class VarReader5:
         dt = self.U1_dtype
         # could take this to numpy C-API level, but probably not worth
         # it
-        print 'hds %s, uc_str "%s"' % (header.dims, uc_str)
         return np.ndarray(shape=header.dims,
                           dtype=dt,
                           buffer=arr,
