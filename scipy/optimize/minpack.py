@@ -461,64 +461,89 @@ def check_gradient(fcn,Dfcn,x0,args=(),col_deriv=0):
 
 # Newton-Raphson method
 def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
-    """Given a function of a single variable and a starting point,
-    find a nearby zero using Newton-Raphson.
+    """Find a zero using the Newton-Raphson or secant method.
 
-    fprime is the derivative of the function.  If not given, the
-    Secant method is used.
+    Find a zero of the function `func` given a nearby starting point `x0`.
+    The Newton-Rapheson method is used if the derivative `fprime` of `func`
+    is provided, otherwise the secant method is used.
 
-    See also:
+    Parameters
+    ----------
+    func : function
+        The function whose zero is wanted. It must be a function of a
+        single variable of the form f(x,a,b,c...), where a,b,c... are extra
+        arguments that can be passed in the `args` parameter.
+    x0 : float
+        An initial estimate of the zero that should be somewhere near the
+        actual zero.
+    fprime : {None, function}, optional
+        The derivative of the function when available and convenient. If it
+        is None, then the secant method is used. The default is None.
+    args : tuple, optional
+        Extra arguments to be used in the function call.
+    tol : float, optional
+        The allowable error of the zero value.
+    maxiter : int, optional
+        Maximum number of iterations.
 
-      fmin, fmin_powell, fmin_cg,
-             fmin_bfgs, fmin_ncg -- multivariate local optimizers
-      leastsq -- nonlinear least squares minimizer
+    Returns
+    -------
+    zero : float
+        Estimated location where function is zero.
 
-      fmin_l_bfgs_b, fmin_tnc,
-             fmin_cobyla -- constrained multivariate optimizers
+    See Also
+    --------
+    brentq, brenth, ridder, bisect -- find zeroes in one dimension.
+    fsolve -- find zeroes in n dimensions.
 
-      anneal, brute -- global optimizers
-
-      fminbound, brent, golden, bracket -- local scalar minimizers
-
-      fsolve -- n-dimensional root-finding
-
-      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-
-      fixed_point -- scalar and vector fixed-point finder
+    Notes
+    -----
+    The convergence rate of the Newton-Rapheson method is quadratic while
+    that of the secant method is somewhat less. This means that if the
+    function is well behaved the actual error in the estimated zero is
+    approximatly the square of the requested tolerance up to roundoff
+    error. However, the stopping criterion used here is the step size and
+    there is no quarantee that a zero has been found. Consequently the
+    result should be verified. Safer algorithms are brentq, brenth, ridder,
+    and bisect, but they all require that the root first be bracketed in an
+    interval where the function changes sign. The brentq algorithm is
+    recommended for general use in one dimemsional problems when such an
+    interval has been found.
 
     """
-
     if fprime is not None:
+        # Newton-Rapheson method
         p0 = x0
         for iter in range(maxiter):
-            myargs = (p0,)+args
+            myargs = (p0,) + args
             fval = func(*myargs)
-            fpval = fprime(*myargs)
-            if fpval == 0:
+            fder = fprime(*myargs)
+            if fder == 0:
                 print "Warning: zero-derivative encountered."
                 return p0
             p = p0 - func(*myargs)/fprime(*myargs)
-            if abs(p-p0) < tol:
+            if abs(p - p0) < tol:
                 return p
             p0 = p
-    else: # Secant method
+    else:
+        # Secant method
         p0 = x0
-        p1 = x0*(1+1e-4)
-        q0 = func(*((p0,)+args))
-        q1 = func(*((p1,)+args))
+        p1 = x0*(1 + 1e-4)
+        q0 = func(*((p0,) + args))
+        q1 = func(*((p1,) + args))
         for iter in range(maxiter):
             if q1 == q0:
                 if p1 != p0:
                     print "Tolerance of %s reached" % (p1-p0)
-                return (p1+p0)/2.0
+                return (p1 + p0)/2.0
             else:
-                p = p1 - q1*(p1-p0)/(q1-q0)
-            if abs(p-p1) < tol:
+                p = p1 - q1*(p1 - p0)/(q1 - q0)
+            if abs(p - p1) < tol:
                 return p
             p0 = p1
             q0 = q1
             p1 = p
-            q1 = func(*((p1,)+args))
+            q1 = func(*((p1,) + args))
     raise RuntimeError, "Failed to converge after %d iterations, value is %s" % (maxiter,p)
 
 
