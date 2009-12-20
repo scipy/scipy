@@ -1,3 +1,4 @@
+import warnings
 import _minpack
 
 from numpy import atleast_1d, dot, take, triu, shape, eye, \
@@ -29,7 +30,6 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
 
     Parameters
     ----------
-
     func
         A Python function or method which takes at least one (possibly vector)
         argument.
@@ -47,7 +47,8 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
         the columns (faster, because there is no transpose operation).
     warning
         True to print a warning message when the call is unsuccessful; False to
-        suppress the warning message.
+        suppress the warning message. Deprecated, use the warnings module
+        instead.
 
     Returns
     -------
@@ -73,7 +74,6 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
 
     Other Parameters
     ----------------
-
     xtol
         The calculation will terminate if the relative error between two
         consecutive iterates is at most `xtol`.
@@ -98,12 +98,10 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
 
     Notes
     -----
-
     "fsolve" is a wrapper around MINPACK's hybrd and hybrj algorithms.
 
     See Also
     --------
-
     scikits.openopt : offers a unified syntax to call this and other solvers
 
     fmin, fmin_powell, fmin_cg, fmin_bfgs, fmin_ncg : multivariate local optimizers
@@ -121,6 +119,9 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
     fixed_point : scalar and vector fixed-point finder
 
     """
+    if not warning :
+        msg = "The warning keyword is deprecated. Use the warnings module."
+        warnings.warn(msg, DeprecationWarning)
     x0 = array(x0,ndmin=1)
     n = len(x0)
     if type(args) != type(()): args = (args,)
@@ -151,7 +152,8 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
     info = retval[-1]    # The FORTRAN return value
     if (info != 1 and not full_output):
         if info in [2,3,4,5]:
-            if warning:  print "Warning: " + errors[info][0]
+            msg = errors[info][0]
+            warnings.warn(msg, RuntimeWarning)
         else:
             try:
                 raise errors[info][1](errors[info][0])
@@ -198,6 +200,7 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
                  there is no transpose operation).
         warning -- True to print a warning message when the call is
              unsuccessful; False to suppress the warning message.
+             Deprecated, use the warnings module instead.
 
   Outputs: (x, {cov_x, infodict, mesg}, ier)
 
@@ -279,6 +282,9 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
       curve_fit -- find parameters for a curve-fitting problem.
 
     """
+    if not warning :
+        msg = "The warning keyword is deprecated. Use the warnings module."
+        warnings.warn(msg, DeprecationWarning)
     x0 = array(x0,ndmin=1)
     n = len(x0)
     if type(args) != type(()): args = (args,)
@@ -311,7 +317,7 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
 
     if (info not in [1,2,3,4] and not full_output):
         if info in [5,6,7,8]:
-            if warning:  print "Warning: " + errors[info][0]
+            warning.warn(errors[info][0], RuntimeWarning)
         else:
             try:
                 raise errors[info][1](errors[info][0])
@@ -521,7 +527,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
             fval = func(*myargs)
             fder = fprime(*myargs)
             if fder == 0:
-                print "Warning: zero-derivative encountered."
+                msg = "derivative was zero."
+                warnings.warn(msg, RuntimeWarning)
                 return p0
             p = p0 - func(*myargs)/fprime(*myargs)
             if abs(p - p0) < tol:
@@ -536,7 +543,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
         for iter in range(maxiter):
             if q1 == q0:
                 if p1 != p0:
-                    print "Tolerance of %s reached" % (p1-p0)
+                    msg = "Tolerance of %s reached" % (p1 - p0)
+                    warnings.warn(msg, RuntimeWarning)
                 return (p1 + p0)/2.0
             else:
                 p = p1 - q1*(p1 - p0)/(q1 - q0)
