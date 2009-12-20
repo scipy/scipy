@@ -537,7 +537,10 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
     else:
         # Secant method
         p0 = x0
-        p1 = x0*(1 + 1e-4)
+        if x0 >= 0:
+            p1 = x0*(1 + 1e-4) + 1e-4
+        else:
+            p1 = x0*(1 + 1e-4) - 1e-4
         q0 = func(*((p0,) + args))
         q1 = func(*((p1,) + args))
         for iter in range(maxiter):
