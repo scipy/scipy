@@ -15,7 +15,8 @@ def check_func(thefunc, x0, args, numinputs, output_shape=None):
             if len(output_shape) > 1:
                 if output_shape[1] == 1:
                     return shape(res)
-            raise TypeError, "There is a mismatch between the input and output shape of %s." % thefunc.func_name
+            msg =  "There is a mismatch between the input and output shape of %s." % thefunc.func_name
+            raise TypeError(msg)
     return shape(res)
 
 
@@ -153,9 +154,9 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
             if warning:  print "Warning: " + errors[info][0]
         else:
             try:
-                raise errors[info][1], errors[info][0]
+                raise errors[info][1](errors[info][0])
             except KeyError:
-                raise errors['unknown'][1], errors['unknown'][0]
+                raise errors['unknown'][1](errors['unknown'][0])
 
     if n == 1:
         retval = (retval[0][0],) + retval[1:]
@@ -313,9 +314,9 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
             if warning:  print "Warning: " + errors[info][0]
         else:
             try:
-                raise errors[info][1], errors[info][0]
+                raise errors[info][1](errors[info][0])
             except KeyError:
-                raise errors['unknown'][1], errors['unknown'][0]
+                raise errors['unknown'][1](errors['unknown'][0])
 
     if n == 1:
         retval = (retval[0][0],) + retval[1:]
@@ -403,8 +404,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
         import inspect
         args, varargs, varkw, defaults = inspect.getargspec(f)
         if len(args) < 2:
-            raise ValueError, "p0 not given as a sequence and inspection"\
-                " cannot determine the number of fit parameters"
+            msg = "Unable to determine number of fit parameters."
+            raise ValueError(msg)
         if p0 is None:
             p0 = 1.0
         p0 = [p0]*(len(args)-1)
@@ -415,11 +416,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
     else:
         func = _weighted_general_function
         args += (1.0/asarray(sigma),)
-    popt, pcov, infodict, mesg, ier = leastsq(func, p0, args=args,
-                                              full_output=1, **kw)
+    res = leastsq(func, p0, args=args, full_output=1, **kw)
+    (popt, pcov, infodict, errmsg, ier) = res
 
     if ier != 1:
-        raise RuntimeError, "Optimal parameters not found: " + mesg
+        msg = "Optimal parameters not found: " + errmsg
+        raise RuntimeError(msg)
 
     if (len(ydata) > len(p0)) and pcov is not None:
         s_sq = (func(popt, *args)**2).sum()/(len(ydata)-len(p0))
@@ -500,7 +502,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
     -----
     The convergence rate of the Newton-Rapheson method is quadratic while
     that of the secant method is somewhat less. This means that if the
-    function is well behaved the actual error in the estimated zero is
+    function is  well behaved the actual error in the estimated zero is
     approximatly the square of the requested tolerance up to roundoff
     error. However, the stopping criterion used here is the step size and
     there is no quarantee that a zero has been found. Consequently the
@@ -544,7 +546,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
             q0 = q1
             p1 = p
             q1 = func(*((p1,) + args))
-    raise RuntimeError, "Failed to converge after %d iterations, value is %s" % (maxiter,p)
+    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
+    raise RuntimeError(msg)
 
 
 # Steffensen's Method using Aitken's Del^2 convergence acceleration.
@@ -615,7 +618,8 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
             if relerr < xtol:
                 return p
             p0 = p
-    raise RuntimeError, "Failed to converge after %d iterations, value is %s" % (maxiter,p)
+    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
+    raise RuntimeError(msg)
 
 
 def bisection(func, a, b, args=(), xtol=1e-10, maxiter=400):
@@ -645,9 +649,11 @@ def bisection(func, a, b, args=(), xtol=1e-10, maxiter=400):
     i = 1
     eva = func(a,*args)
     evb = func(b,*args)
-    assert (eva*evb < 0), "Must start with interval with func(a) * func(b) <0"
-    while i<=maxiter:
-        dist = (b-a)/2.0
+    if eva*evb < 0:
+        msg = "Must start with interval where func(a) * func(b) < 0"
+        raise ValueError(msg)
+    while i <= maxiter:
+        dist = (b - a)/2.0
         p = a + dist
         if dist < xtol:
             return p
@@ -660,5 +666,5 @@ def bisection(func, a, b, args=(), xtol=1e-10, maxiter=400):
             eva = ev
         else:
             b = p
-    print "Warning: Method failed after %d iterations." % maxiter
-    return p
+    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
+    raise RuntimeError(msg)
