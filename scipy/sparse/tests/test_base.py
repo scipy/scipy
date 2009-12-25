@@ -749,6 +749,23 @@ class _TestFancyIndexing:
     """Tests fancy indexing features.  The tests for any matrix formats
     that implement these features should derive from this class.
     """
+    def test_fancy_indexing_set(self):
+        n, m = (5, 10)
+        def _test_set(i, j, nitems):
+            A = self.spmatrix((n, m))
+            A[i, j] = 1
+            assert_almost_equal(A.sum(), nitems)
+            assert_almost_equal(A[i, j], 1)
+
+        # [i,j]
+        for i, j in [(2, 3), (-1, 8), (-1, -2), (array(-1), -2), (-1, array(-2)), 
+                     (array(-1), array(-2))]:
+            _test_set(i, j, 1)
+
+        # [i,1:2]
+        for i, j in [(2, slice(m)), (2, slice(5, -2)), (array(2), slice(5, -2))]:
+            _test_set(i, j, 3)
+
     def test_fancy_indexing(self):
         B = asmatrix(arange(50).reshape(5,10))
         A = self.spmatrix( B )
@@ -960,6 +977,11 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
         _TestFancyIndexing, TestCase):
     spmatrix = csr_matrix
 
+    @dec.knownfailureif(True, "Fancy indexing is known to be broken for CSR" \
+                              " matrices")
+    def test_fancy_indexing_set(self):
+        _TestFancyIndexing.test_fancy_indexing_set(self)
+
     def test_constructor1(self):
         b = matrix([[0,4,0],
                    [3,0,0],
@@ -1067,6 +1089,11 @@ class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
         _TestHorizSlicing, _TestVertSlicing, _TestBothSlicing,
         _TestFancyIndexing, TestCase):
     spmatrix = csc_matrix
+
+    @dec.knownfailureif(True, "Fancy indexing is known to be broken for CSC" \
+                              " matrices")
+    def test_fancy_indexing_set(self):
+        _TestFancyIndexing.test_fancy_indexing_set(self)
 
     def test_constructor1(self):
         b = matrix([[1,0,0,0],[0,0,1,0],[0,2,0,3]],'d')
@@ -1272,7 +1299,7 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
 
 class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
         _TestBothSlicing, _TestGetSet, _TestSolve,
-        _TestArithmetic, _TestInplaceArithmetic,
+        _TestArithmetic, _TestInplaceArithmetic, _TestFancyIndexing,
         TestCase):
     spmatrix = lil_matrix
 
@@ -1281,6 +1308,17 @@ class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
     B[1,2] = 7
     B[2,1] = 3
     B[3,0] = 10
+
+    
+    @dec.knownfailureif(True, "Fancy indexing is known to be broken for LIL" \
+                              " matrices")
+    def test_fancy_indexing_set(self):
+        _TestFancyIndexing.test_fancy_indexing_set(self)
+
+    @dec.knownfailureif(True, "Fancy indexing is known to be broken for LIL" \
+                              " matrices")
+    def test_fancy_indexing_randomized(self):
+        _TestFancyIndexing.test_fancy_indexing_randomized(self)
 
     def test_dot(self):
         A = matrix(zeros((10,10)))
@@ -1379,7 +1417,6 @@ class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
         A = lil_matrix((3,2))
         A[1:3,1] = [[10],[20]]
         assert_array_equal(A.todense(), [[0,0],[0,10],[0,20]])
-
 
     def test_lil_iteration(self):
         row_data = [[1,2,3],[4,5,6]]
