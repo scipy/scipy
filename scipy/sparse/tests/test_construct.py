@@ -8,6 +8,7 @@ from numpy.testing import *
 from scipy.sparse import csr_matrix, coo_matrix
 
 from scipy.sparse.construct import *
+from scipy.sparse.construct import rand as sprand
 
 sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok']
 
@@ -203,6 +204,24 @@ class TestConstructUtils(TestCase):
                            [[0,0,0],
                             [4,0,0],
                             [6,5,0]])
+
+    def test_rand(self):
+        # Simple sanity checks for sparse.rand
+        for t in [np.float32, np.float64, np.longdouble]:
+            x = sprand(5, 10, density=0.1, dtype=t)
+            assert_equal(x.dtype, t)
+            assert_equal(x.shape, (5, 10))
+            assert_equal(x.nonzero()[0].size, 5)
+
+        x = sprand(5, 10, density=0.1)
+        assert_equal(x.dtype, np.double)
+
+        for fmt in ['coo', 'csc', 'csr', 'lil']:
+            x = sprand(5, 10, format=fmt)
+            assert_equal(x.format, fmt)
+
+        assert_raises(ValueError, lambda: sprand(5, 10, 1.1))
+        assert_raises(ValueError, lambda: sprand(5, 10, -0.1))
 
 if __name__ == "__main__":
     run_module_suite()
