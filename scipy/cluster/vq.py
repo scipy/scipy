@@ -485,7 +485,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
         result = _kmeans(obs, guess, thresh = thresh)
     else:
         #initialize best distance value to a large value
-        best_dist = 100000
+        best_dist = np.inf
         No = obs.shape[0]
         k = k_or_guess
         if k < 1:

@@ -83,6 +83,22 @@ class TestVq(TestCase):
             print "== not testing C imp of vq (rank 1) =="
 
 class TestKMean(TestCase):
+    def test_large_features(self):
+        # Generate a data set with large values, and run kmeans on it to
+        # (regression for 1077).
+        d = 300
+        n = 1e2
+
+        m1 = np.random.randn(d)
+        m2 = np.random.randn(d)
+        x = 10000 * np.random.randn(n, d) - 20000 * m1
+        y = 10000 * np.random.randn(n, d) + 20000 * m2
+
+        data = np.empty((x.shape[0] + y.shape[0], d), np.double)
+        data[:x.shape[0]] = x
+        data[x.shape[0]:] = y
+
+        res = kmeans(data, 2)
     def test_kmeans_simple(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()
