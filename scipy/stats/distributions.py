@@ -330,7 +330,7 @@ class rv_generic(object):
         if self._size > 1:
             size = numpy.array(size, ndmin=1)
 
-        if scale == 0:
+        if np.all(scale == 0):
             return loc*ones(size, 'd')
 
         vals = self._rvs(*args)
