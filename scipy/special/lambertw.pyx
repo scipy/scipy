@@ -40,6 +40,10 @@ cdef extern from "numpy/npy_math.h":
     double NPY_INFINITY
     double NPY_PI
 
+    enum NPY_ALLOW_C_API_DEF: NPY_ALLOW_C_API_DEF
+    enum NPY_ALLOW_C_API: NPY_ALLOW_C_API
+    enum NPY_DISABLE_C_API: NPY_DISABLE_C_API
+
 cdef inline bint zisnan(double complex x):
     return npy_isnan(x.real) or npy_isnan(x.imag)
 
@@ -60,7 +64,7 @@ cdef inline double complex zexp(double complex x):
 
 # Heavy lifting is here:
 
-cdef double complex lambertw_scalar(double complex z, int k, double tol):
+cdef double complex lambertw_scalar(double complex z, long k, double tol):
     """
     This is just the implementation of W for a single input z.
     See the docstring for lambertw() below for the full description.
@@ -135,7 +139,11 @@ cdef double complex lambertw_scalar(double complex z, int k, double tol):
         else:
             w = wn
 
-    warnings.warn("Lambert W iteration failed to converge: %r" % z)
+    if True:
+        NPY_ALLOW_C_API_DEF
+        NPY_ALLOW_C_API
+        warnings.warn("Lambert W iteration failed to converge: %r" % z)
+        NPY_DISABLE_C_API
     return wn
 
 
@@ -158,11 +166,11 @@ cdef extern from "numpy/ufuncobject.h":
 
 cdef void _apply_func_to_1d_vec(char **args, npy_intp *dimensions, npy_intp *steps,
                      void *func):
-    cdef int i
+    cdef npy_intp i
     cdef char *ip1=args[0], *ip2=args[1], *ip3=args[2], *op=args[3]
     for i in range(0, dimensions[0]):
-        (<double complex*>op)[0] = (<double complex(*)(double complex, int, double)>func)(
-            (<double complex*>ip1)[0], (<int*>ip2)[0], (<double*>ip3)[0])
+        (<double complex*>op)[0] = (<double complex(*)(double complex, long, double)>func)(
+            (<double complex*>ip1)[0], (<long*>ip2)[0], (<double*>ip3)[0])
         ip1 += steps[0]; ip2 += steps[1]; ip3 += steps[2]; op += steps[3]
 
 cdef PyUFuncGenericFunction _loop_funcs[1]
