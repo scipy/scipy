@@ -335,6 +335,12 @@ class TestHypergeom(TestCase):
 
         assert_almost_equal(hgpmf, 0.0010114963068932233, 11)
 
+class TestChi2(TestCase):
+    # regression tests after precision improvements, ticket:1041, not verified
+    def test_precision(self):
+        assert_almost_equal(stats.chi2.pdf(1000, 1000), 8.919133934753128e-003, 14)
+        assert_almost_equal(stats.chi2.pdf(100, 100), 0.028162503162596778, 14)
+
 
 class TestDocstring(TestCase):
     def test_docstrings(self):

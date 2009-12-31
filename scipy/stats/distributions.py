@@ -1407,9 +1407,10 @@ class chi2_gen(rv_continuous):
     def _rvs(self, df):
         return mtrand.chisquare(df,self._size)
     def _pdf(self, x, df):
-        Px = x**(df/2.0-1)*exp(-x/2.0)
-        Px /= special.gamma(df/2.0)* 2**(df/2.0)
-        return Px
+        return exp((df/2.-1)*log(x)-x/2.-gamln(df/2.)-(log(2)*df)/2.)
+##        Px = x**(df/2.0-1)*exp(-x/2.0)
+##        Px /= special.gamma(df/2.0)* 2**(df/2.0)
+##        return Px
     def _cdf(self, x, df):
         return special.chdtr(df, x)
     def _sf(self, x, df):
