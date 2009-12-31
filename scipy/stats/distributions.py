@@ -56,6 +56,8 @@ floatinfo = numpy.finfo(float)
 errp = special.errprint
 arr = asarray
 gam = special.gamma
+lgam = special.gammaln
+
 
 import types
 import stats as st
@@ -4456,7 +4458,11 @@ class hypergeom_gen(rv_discrete):
     def _pmf(self, k, M, n, N):
         tot, good = M, n
         bad = tot - good
-        return comb(good,k) * comb(bad,N-k) / comb(tot,N)
+        return np.exp(lgam(good+1) - lgam(good-k+1) - lgam(k+1) + lgam(bad+1)
+               - lgam(bad-N+k+1) - lgam(N-k+1) - lgam(tot+1) + lgam(tot-N+1)
+               + lgam(N+1))
+        #same as the following but numerically more precise
+        #return comb(good,k) * comb(bad,N-k) / comb(tot,N)
     def _stats(self, M, n, N):
         tot, good = M, n
         n = good*1.0

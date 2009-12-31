@@ -325,6 +325,16 @@ class TestSkellam(TestCase):
         assert_almost_equal(stats.skellam.cdf(k, mu1, mu2), skcdfR, decimal=5)
 
 
+class TestHypergeom(TestCase):
+    def test_precision(self):
+        # comparison number from mpmath
+
+        M,n,N = 2500,50,500
+        tot=M;good=n;bad=tot-good
+        hgpmf = stats.hypergeom.pmf(2,tot,good,N)
+
+        assert_almost_equal(hgpmf, 0.0010114963068932233, 11)
+
 
 class TestDocstring(TestCase):
     def test_docstrings(self):
