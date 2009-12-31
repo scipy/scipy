@@ -48,6 +48,7 @@ __all__ = [
            'entropy', 'rv_discrete',
            'binom', 'bernoulli', 'nbinom', 'geom', 'hypergeom', 'logser',
            'poisson', 'planck', 'boltzmann', 'randint', 'zipf', 'dlaplace',
+           'skellam'
           ]
 
 floatinfo = numpy.finfo(float)
@@ -4779,3 +4780,53 @@ dlapacle.pmf(k,a) = tanh(a/2) * exp(-a*abs(k))
 for a > 0.
 """
                         )
+
+
+class skellam_gen(rv_discrete):
+    def _rvs(self, mu1, mu2):
+        n = self._size
+        return np.random.poisson(mu1, n)-np.random.poisson(mu2, n)
+    def _pmf(self, x, mu1, mu2):
+        px = np.where(x < 0, ncx2.pdf(2*mu2, 2*(1-x), 2*mu1)*2,
+                         ncx2.pdf(2*mu1, 2*(x+1), 2*mu2)*2)
+        #ncx2.pdf() returns nan's for extremely low probabilities
+        return px
+    def _cdf(self, x, mu1, mu2):
+        x = np.floor(x)
+        px = np.where(x < 0, ncx2.cdf(2*mu2, -2*x, 2*mu1),
+                         1-ncx2.cdf(2*mu1, 2*(x+1), 2*mu2))
+        return px
+
+# enable later        
+##    def _cf(self, w, mu1, mu2):
+##        # characteristic function
+##        poisscf = poisson._cf
+##        return poisscf(w, mu1) * poisscf(-w, mu2)
+
+    def _stats(self, mu1, mu2):
+        mean = mu1 - mu2
+        var = mu1 + mu2
+        g1 = mean / np.sqrt((var)**3)
+        g2 = 1 / var
+        return mean, var, g1, g2
+skellam = skellam_gen(a=-np.inf, name="skellam", longname='A Skellam',
+                      shapes="mu1,mu2", extradoc="""
+
+Skellam distribution
+
+   Probability distribution of the difference of two correlated or
+   uncorrelated Poisson random variables.
+
+   Let k1 and k2 be two Poisson-distributed r.v. with expected values
+   lam1 and lam2. Then, k1-k2 follows a Skellam distribution with
+   parameters mu1 = lam1 - rho*sqrt(lam1*lam2) and
+   mu2 = lam2 - rho*sqrt(lam1*lam2), where rho is the correlation
+   coefficient between k1 and k2. If the two Poisson-distributed r.v.
+   are independent then rho = 0.
+
+   Parameters mu1 and mu2 must be strictly positive.
+
+   For details see: http://en.wikipedia.org/wiki/Skellam_distribution
+   
+"""
+                      )

@@ -21,6 +21,7 @@ distdiscrete = [
     ['planck',   (0.51,)],   #4.1
     ['poisson',  (0.6,)],
     ['randint',  (7, 31)],
+    ['skellam',  (15, 8)],
     ['zipf',     (4,)] ]   # arg=4 is ok,
                            # Zipf broken for arg = 2, e.g. weird .stats
                            # looking closer, mean, var should be inf for arg=2
