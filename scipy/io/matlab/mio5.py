@@ -303,30 +303,113 @@ class MatFile5Reader(MatFileReader):
         return header, next_pos
             
     
-class Mat5MatrixWriter(MatStreamWriter):
+def to_writeable(source):
+    ''' Convert input object ``source`` to something we can write
+
+    Parameters
+    ----------
+    source : object
+
+    Returns
+    -------
+    arr : ndarray
+
+    Examples
+    --------
+    >>> to_writeable(np.array([1])) # pass through ndarrays
+    array([1])
+    >>> expected = np.array([(1, 2)], dtype=[('a', '|O8'), ('b', '|O8')])
+    >>> np.all(to_writeable({'a':1,'b':2}) == expected)
+    True
+    >>> np.all(to_writeable({'a':1,'b':2, '_c':3}) == expected)
+    True
+    >>> np.all(to_writeable({'a':1,'b':2, 100:3}) == expected)
+    True
+    >>> np.all(to_writeable({'a':1,'b':2, '99':3}) == expected)
+    True
+    >>> class klass(object): pass
+    >>> c = klass
+    >>> c.a = 1
+    >>> c.b = 2
+    >>> np.all(to_writeable({'a':1,'b':2}) == expected)
+    True
+    >>> to_writeable([])
+    array([], dtype=float64)
+    >>> to_writeable(())
+    array([], dtype=float64)
+    >>> to_writeable(None)
+
+    >>> to_writeable('a string').dtype
+    dtype('|S8')
+    >>> to_writeable(1)
+    array(1)
+    >>> to_writeable([1])
+    array([1])
+    >>> to_writeable([1])
+    array([1])
+    >>> to_writeable(object()) # not convertable
+
+    dict keys with legal characters are convertible
+
+    >>> to_writeable({'a':1})['a']
+    array([1], dtype=object)
+
+    but not with illegal characters
+
+    >>> to_writeable({'1':1}) is None
+    True
+    >>> to_writeable({'_a':1}) is None
+    True
+    '''
+    if isinstance(source, np.ndarray):
+        return source
+    if source is None:
+        return None
+    # Objects that have dicts
+    if hasattr(source, '__dict__'):
+        source = dict((key, value) for key, value in source.__dict__.items()
+                      if not key.startswith('_'))
+    # Mappings or object dicts
+    if hasattr(source, 'keys'):
+        dtype = []
+        values = []
+        for field, value in source.items():
+            if (isinstance(field, basestring) and 
+                not field[0] in '_0123456789'):
+                dtype.append((field,object))
+                values.append(value)
+        if dtype:
+            return np.array( [tuple(values)] ,dtype)
+        else:
+            return None
+    # Next try and convert to an array
+    narr = np.asanyarray(source)
+    if narr.dtype.type in (np.object, np.object_) and \
+       narr.shape == () and narr == source:
+        # No interesting conversion possible
+        return None
+    return narr
+
+
+class VarWriter5(object):
     ''' Generic matlab matrix writing class '''
     mat_tag = np.zeros((), mdtypes_template['tag_full'])
     mat_tag['mdtype'] = miMATRIX
-    default_mclass = None # default class for header writing
-    def __init__(self,
-                 file_stream,
-                 arr,
-                 name,
-                 is_global=False,
-                 unicode_strings=False,
-                 long_field_names=False,
-                 oned_as='column'):
-        super(Mat5MatrixWriter, self).__init__(file_stream, 
-                                               arr, 
-                                               name,
-                                               oned_as)
-        self.is_global = is_global
-        self.unicode_strings = unicode_strings
-        self.long_field_names = long_field_names
-        self.oned_as = oned_as
 
-    def write_dtype(self, arr):
-        self.file_stream.write(arr.tostring())
+    def __init__(self, file_writer):
+        self.file_stream = file_writer.file_stream
+        self.unicode_strings=file_writer.unicode_strings
+        self.long_field_names=file_writer.long_field_names
+        self.oned_as = file_writer.oned_as
+        # These are used for top level writes, and unset after
+        self._var_name = None
+        self._var_is_global = False
+
+    def write_bytes(self, arr):
+        self.file_stream.write(arr.tostring(order='F'))
+
+    def write_string(self, s):
+        self.file_stream.write(s)
 
     def write_element(self, arr, mdtype=None):
         ''' write tag and data '''
@@ -344,7 +427,7 @@ class Mat5MatrixWriter(MatStreamWriter):
         tag['byte_count_mdtype'] = (byte_count << 16) + mdtype
         # if arr.tostring is < 4, the element will be zero-padded as needed.
         tag['data'] = arr.tostring(order='F')
-        self.write_dtype(tag)
+        self.write_bytes(tag)
 
     def write_regular_element(self, arr, mdtype, byte_count):
         # write tag, data
@@ -352,33 +435,34 @@ class Mat5MatrixWriter(MatStreamWriter):
         tag['mdtype'] = mdtype
         tag['byte_count'] = byte_count
         padding = (8 - tag['byte_count']) % 8
-        self.write_dtype(tag)
+        self.write_bytes(tag)
         self.write_bytes(arr)
         # pad to next 64-bit boundary
         self.write_bytes(np.zeros((padding,),'u1'))
 
     def write_header(self,
-                     name,
                      shape, 
-                     mclass=None,
-                     is_global=False,
+                     mclass,
                      is_complex=False,
                      is_logical=False,
                      nzmax=0):
         ''' Write header for given data options
-        name : str
         shape : sequence
            array shape
         mclass      - mat5 matrix class
-        is_global   - True if matrix is global
         is_complex  - True if matrix is complex
         is_logical  - True if matrix is logical
         nzmax        - max non zero elements for sparse arrays
+
+        We get the name and the global flag from the object, and reset
+        them to defaults after we've used them
         '''
-        if mclass is None:
-            mclass = self.default_mclass
+        # get name and is_global from one-shot object store
+        name = self._var_name
+        is_global = self._var_is_global
+        # initialize the top-level matrix tag, store position
         self._mat_tag_pos = self.file_stream.tell()
-        self.write_dtype(self.mat_tag)
+        self.write_bytes(self.mat_tag)
         # write array flags (complex, global, logical, class, nzmax)
         af = np.zeros((), mdtypes_template['array_flags'])
         af['data_type'] = miUINT32
@@ -386,32 +470,83 @@ class Mat5MatrixWriter(MatStreamWriter):
         flags = is_complex << 3 | is_global << 2 | is_logical << 1
         af['flags_class'] = mclass | flags << 8
         af['nzmax'] = nzmax
-        self.write_dtype(af)
+        self.write_bytes(af)
+        # shape
         self.write_element(np.array(shape, dtype='i4'))
         # write name
-        self.write_element(np.array([ord(c) for c in self.name], 'i1'))
-
-    def update_matrix_tag(self):
+        name = np.asarray(name)
+        if name == '': # empty string zero-terminated
+            self.write_smalldata_element(name, miINT8, 0)
+        else:
+            self.write_element(name, miINT8)
+        # reset the one-shot store to defaults
+        self._var_name = ''
+        self._var_is_global = False
+        
+    def update_matrix_tag(self, start_pos):
         curr_pos = self.file_stream.tell()
-        self.file_stream.seek(self._mat_tag_pos)
-        self.mat_tag['byte_count'] = curr_pos - self._mat_tag_pos - 8
-        self.write_dtype(self.mat_tag)
+        self.file_stream.seek(start_pos)
+        self.mat_tag['byte_count'] = curr_pos - start_pos - 8
+        self.write_bytes(self.mat_tag)
         self.file_stream.seek(curr_pos)
 
-    def write(self):
-        raise NotImplementedError
+    def write_top(self, arr, name, is_global):
+        """ Write variable at top level of mat file
+        
+        Parameters
+        ----------
+        arr : array-like
+            array-like object to create writer for
+        name : str, optional
+            name as it will appear in matlab workspace
+            default is empty string
+        is_global : {False, True} optional
+            whether variable will be global on load into matlab
+        """
+        # these are set before the top-level header write, and unset at
+        # the end of the same write, because they do not apply for lower levels
+        self._var_is_global = is_global
+        self._var_name = name
+        # write the header and data
+        self.write(arr)
+        
+    def write(self, arr):
+        ''' Write `arr` to stream at top and sub levels
 
-    def make_writer_getter(self):
-        ''' Make writer getter for this stream '''
-        return Mat5WriterGetter(self.unicode_strings,
-                                self.long_field_names,
-                                self.oned_as)
+        Parameters
+        ----------
+        arr : array-like
+            array-like object to create writer for
+        '''
+        # store position, so we can update the matrix tag
+        mat_tag_pos = self.file_stream.tell()
+        # First check if these are sparse
+        if scipy.sparse.issparse(arr):
+            self.write_sparse(arr)
+            self.update_matrix_tag(mat_tag_pos)
+            return
+        # Try to convert things that aren't arrays
+        narr = to_writeable(arr)
+        if narr is None:
+            raise TypeError('Could not convert %s (type %s) to array'
+                            % (arr, type(arr)))
+        if isinstance(narr, MatlabObject):
+            self.write_object(narr)
+        elif narr.dtype.fields: # struct array
+            self.write_struct(narr)
+        elif narr.dtype.hasobject: # cell array
+            self.write_cells(narr)
+        elif narr.dtype.kind in ('U', 'S'):
+            if self.unicode_strings:
+                codec='UTF8'
+            else:
+                codec = 'ascii'
+            self.write_char(narr,  codec)
+        else:
+            self.write_numeric(narr)
+        self.update_matrix_tag(mat_tag_pos)
 
-
-class Mat5NumericWriter(Mat5MatrixWriter):
-    default_mclass = None # can be any numeric type
-    def write(self):
-        arr = self.arr
+    def write_numeric(self, arr):
         imagf = arr.dtype.kind == 'c'
         try:
             mclass = np_to_mxtypes[arr.dtype.str[1:]]
@@ -421,22 +556,16 @@ class Mat5NumericWriter(Mat5MatrixWriter):
             else:
                 arr = arr.astype('f8')
             mclass = mxDOUBLE_CLASS
-        self.write_header(self.name,
-                          matdims(arr, self.oned_as),
-                          mclass=mclass,is_complex=imagf)
+        self.write_header(matdims(arr, self.oned_as),
+                          mclass,
+                          is_complex=imagf)
         if imagf:
             self.write_element(arr.real)
             self.write_element(arr.imag)
         else:
             self.write_element(arr)
-        self.update_matrix_tag()
 
-
-class Mat5CharWriter(Mat5MatrixWriter):
-    codec='ascii'
-    default_mclass = mxCHAR_CLASS
-    def write(self):
-        arr = self.arr
+    def write_char(self, arr, codec='ascii'):
         if arr.size == 0 or np.all(arr == ''):
             # This an empty string array or a string array containing
             # only empty strings.  Matlab cannot distiguish between a
@@ -448,9 +577,8 @@ class Mat5CharWriter(Mat5MatrixWriter):
             # empty strings have zero padding, which would otherwise
             # appear in matlab as a string with a space.
             shape = (0,) * np.max([arr.ndim, 2])
-            self.write_header(self.name, shape)
+            self.write_header(shape, mxCHAR_CLASS)
             self.write_smalldata_element(arr, miUTF8, 0)
-            self.update_matrix_tag()
             return
         # non-empty string
         arr = arr_to_chars(arr)
@@ -458,7 +586,7 @@ class Mat5CharWriter(Mat5MatrixWriter):
         # recode the characters, and the resulting stream of chars
         # may have a different length
         shape = arr.shape
-        self.write_header(self.name, shape)
+        self.write_header(shape, mxCHAR_CLASS)
         # We need to do our own transpose (not using the normal
         # write routines that do this for us), and copy to make a nice C
         # ordered thing
@@ -469,30 +597,21 @@ class Mat5CharWriter(Mat5MatrixWriter):
             st_arr = np.ndarray(shape=(),
                                 dtype=arr_dtype_number(arr, n_chars),
                                 buffer=arr)
-            st = st_arr.item().encode(self.codec)
+            st = st_arr.item().encode(codec)
             arr = np.ndarray(shape=(len(st),),
                              dtype='u1',
                              buffer=st)
         self.write_element(arr, mdtype=miUTF8)
-        self.update_matrix_tag()
 
-
-class Mat5UniCharWriter(Mat5CharWriter):
-    codec='UTF8'
-
-
-class Mat5SparseWriter(Mat5MatrixWriter):
-    default_mclass = mxSPARSE_CLASS
-    def write(self):
+    def write_sparse(self, arr):
         ''' Sparse matrices are 2D
         '''
-        arr = self.arr
         A = arr.tocsc() # convert to sparse CSC format
         A.sort_indices()     # MATLAB expects sorted row indices
         is_complex = (A.dtype.kind == 'c')
         nz = A.nnz
-        self.write_header(self.name,
-                          matdims(arr, self.oned_as),
+        self.write_header(matdims(arr, self.oned_as),
+                          mxSPARSE_CLASS,
                           is_complex=is_complex,
                           nzmax=nz)
         self.write_element(A.indices.astype('i4'))
@@ -500,44 +619,23 @@ class Mat5SparseWriter(Mat5MatrixWriter):
         self.write_element(A.data.real)
         if is_complex:
             self.write_element(A.data.imag)
-        self.update_matrix_tag()
 
-
-class Mat5CellWriter(Mat5MatrixWriter):
-    default_mclass = mxCELL_CLASS
-    def write(self):
-        self.write_header(self.name,  matdims(self.arr, self.oned_as))
-        self._write_items()
-
-    def _write_items(self):
+    def write_cells(self, arr):
+        self.write_header(matdims(arr, self.oned_as),
+                          mxCELL_CLASS)
         # loop over data, column major
-        A = np.atleast_2d(self.arr).flatten('F')
-        MWG = self.make_writer_getter()
+        A = np.atleast_2d(arr).flatten('F')
         for el in A:
-            MW = MWG.matrix_writer_factory(self.file_stream, el)
-            MW.write()
-        self.update_matrix_tag()
+            self.write(el)
 
+    def write_struct(self, arr):
+        self.write_header(matdims(arr, self.oned_as),
+                          mxSTRUCT_CLASS)
+        self._write_items(arr)
 
-class Mat5BinaryBlockWriter(Mat5MatrixWriter):
-    ''' class to write untranslatable binary blocks '''
-    def write(self):
-        # check endian
-        # write binary block as is
-        raise MatWriteError('Cannot write binary blocks yet')
-
-
-class Mat5StructWriter(Mat5CellWriter):
-    ''' class to write matlab structs
-
-    Differs from cell writing class in writing field names,
-    and in mx class
-    '''
-    default_mclass = mxSTRUCT_CLASS
-
-    def _write_items(self):
+    def _write_items(self, arr):
         # write fieldnames
-        fieldnames = [f[0] for f in self.arr.dtype.descr]
+        fieldnames = [f[0] for f in arr.dtype.descr]
         length = max([len(fieldname) for fieldname in fieldnames])+1
         max_length = (self.long_field_names and 64) or 32
         if length > max_length:
@@ -548,184 +646,20 @@ class Mat5StructWriter(Mat5CellWriter):
         self.write_element(
             np.array(fieldnames, dtype='S%d'%(length)),
             mdtype=miINT8)
-        A = np.atleast_2d(self.arr).flatten('F')
-        MWG = self.make_writer_getter()
+        A = np.atleast_2d(arr).flatten('F')
         for el in A:
             for f in fieldnames:
-                MW = MWG.matrix_writer_factory(self.file_stream, el[f])
-                MW.write()
-        self.update_matrix_tag()
+                self.write(el[f])
 
-
-class Mat5ObjectWriter(Mat5StructWriter):
-    ''' class to write matlab objects
-
-    Same as writing structs, except different mx class, and extra
-    classname element after header
-    '''
-    default_mclass = mxOBJECT_CLASS
-    def write(self):
-        self.write_header(self.name,  matdims(self.arr, self.oned_as))
-        self.write_element(np.array(self.arr.classname, dtype='S'),
+    def write_object(self, arr):
+        '''Same as writing structs, except different mx class, and extra
+        classname element after header
+        '''
+        self.write_header(matdims(arr, self.oned_as),
+                          mxOBJECT_CLASS)
+        self.write_element(np.array(arr.classname, dtype='S'),
                            mdtype=miINT8)
-        self._write_items()
-
-
-class Mat5WriterGetter(object):
-    ''' Wraps options, provides methods for getting Writer objects '''
-    @docfiller
-    def __init__(self, 
-                 unicode_strings=True, 
-                 long_field_names=False,
-                 oned_as='column'):
-        ''' Initialize writer getter
-
-        Parameters
-        ----------
-        unicode_strings : bool
-           If True, write unicode strings
-        %(long_fields)s
-        %(oned_as)s
-        '''
-        self.unicode_strings = unicode_strings
-        self.long_field_names = long_field_names
-        self.oned_as = oned_as
-
-    def to_writeable(self, source):
-        ''' Convert input object ``source`` to something we can write
-
-        Parameters
-        ----------
-        source : object
-
-        Returns
-        -------
-        arr : ndarray
-
-        Examples
-        --------
-        >>> mwg = Mat5WriterGetter()
-        >>> mwg.to_writeable(np.array([1])) # pass through ndarrays
-        array([1])
-        >>> expected = np.array([(1, 2)], dtype=[('a', '|O8'), ('b', '|O8')])
-        >>> np.all(mwg.to_writeable({'a':1,'b':2}) == expected)
-        True
-        >>> np.all(mwg.to_writeable({'a':1,'b':2, '_c':3}) == expected)
-        True
-        >>> np.all(mwg.to_writeable({'a':1,'b':2, 100:3}) == expected)
-        True
-        >>> np.all(mwg.to_writeable({'a':1,'b':2, '99':3}) == expected)
-        True
-        >>> class klass(object): pass
-        >>> c = klass
-        >>> c.a = 1
-        >>> c.b = 2
-        >>> np.all(mwg.to_writeable({'a':1,'b':2}) == expected)
-        True
-        >>> mwg.to_writeable([])
-        array([], dtype=float64)
-        >>> mwg.to_writeable(())
-        array([], dtype=float64)
-        >>> mwg.to_writeable(None)
-
-        >>> mwg.to_writeable('a string').dtype
-        dtype('|S8')
-        >>> mwg.to_writeable(1)
-        array(1)
-        >>> mwg.to_writeable([1])
-        array([1])
-        >>> mwg.to_writeable([1])
-        array([1])
-        >>> mwg.to_writeable(object()) # not convertable
-
-        dict keys with legal characters are convertible
-
-        >>> mwg.to_writeable({'a':1})['a']
-        array([1], dtype=object)
-
-        but not with illegal characters
-
-        >>> mwg.to_writeable({'1':1}) is None
-        True
-        >>> mwg.to_writeable({'_a':1}) is None
-        True
-        '''
-        if isinstance(source, np.ndarray):
-            return source
-        if source is None:
-            return None
-        # Objects that have dicts
-        if hasattr(source, '__dict__'):
-            source = dict((key, value) for key, value in source.__dict__.items()
-                          if not key.startswith('_'))
-        # Mappings or object dicts
-        if hasattr(source, 'keys'):
-            dtype = []
-            values = []
-            for field, value in source.items():
-                if (isinstance(field, basestring) and 
-                    not field[0] in '_0123456789'):
-                    dtype.append((field,object))
-                    values.append(value)
-            if dtype:
-                return np.array( [tuple(values)] ,dtype)
-            else:
-                return None
-        # Next try and convert to an array
-        narr = np.asanyarray(source)
-        if narr.dtype.type in (np.object, np.object_) and \
-           narr.shape == () and narr == source:
-            # No interesting conversion possible
-            return None
-        return narr
-
-    def matrix_writer_factory(self, stream, arr, name='', is_global=False):
-        ''' Factory function to return matrix writer given variable to write
-
-        Parameters
-        ----------
-        stream : fileobj
-            stream to write to
-        arr : array-like
-            array-like object to create writer for
-        name : string
-            name as it will appear in matlab workspace
-            default is empty string
-        is_global : {False, True} optional
-            whether variable will be global on load into matlab
-
-        Returns
-        -------
-        writer : matrix writer object
-        '''
-        # First check if these are sparse
-        if scipy.sparse.issparse(arr):
-            return Mat5SparseWriter(stream, arr, name, is_global)
-        # Try to convert things that aren't arrays
-        narr = self.to_writeable(arr)
-        if narr is None:
-            raise TypeError('Could not convert %s (type %s) to array'
-                            % (arr, type(arr)))
-        args = (stream,
-                narr,
-                name,
-                is_global,
-                self.unicode_strings,
-                self.long_field_names,
-                self.oned_as)
-        if isinstance(narr, MatlabObject):
-            return Mat5ObjectWriter(*args)
-        if narr.dtype.fields: # struct array
-            return Mat5StructWriter(*args)
-        if narr.dtype.hasobject: # cell array
-            return Mat5CellWriter(*args)
-        if narr.dtype.kind in ('U', 'S'):
-            if self.unicode_strings:
-                return Mat5UniCharWriter(*args)
-            else:
-                return Mat5CharWriter(*args)
-        else:
-            return Mat5NumericWriter(*args)
+        self._write_items(arr)
 
 
 class MatFile5Writer(MatFileWriter):
@@ -748,22 +682,25 @@ class MatFile5Writer(MatFileWriter):
         %(long_fields)s
         %(oned_as)s
         '''
-        super(MatFile5Writer, self).__init__(file_stream)
+        self.file_stream = file_stream
         self.do_compression = do_compression
+        self.unicode_strings = unicode_strings
         if global_vars:
             self.global_vars = global_vars
         else:
             self.global_vars = []
+        self.long_field_names = long_field_names
         # deal with deprecations
         if oned_as is None:
             warnings.warn("Using oned_as default value ('column')" +
                           " This will change to 'row' in future versions",
                           FutureWarning, stacklevel=2)
             oned_as = 'column'
-        self.writer_getter = Mat5WriterGetter(
-            unicode_strings,
-            long_field_names,
-            oned_as)
+        self.oned_as = oned_as
+        self._matrix_writer = None
+        self.write_file_header()
+
+    def write_file_header(self):
         # write header
         hdr =  np.zeros((), mdtypes_template['file_header'])
         hdr['description']='MATLAB 5.0 MAT-file Platform: %s, Created on: %s' \
@@ -772,58 +709,22 @@ class MatFile5Writer(MatFileWriter):
         hdr['endian_test']=np.ndarray(shape=(),
                                       dtype='S2',
                                       buffer=np.uint16(0x4d49))
-        file_stream.write(hdr.tostring())
-
-    def get_unicode_strings(self):
-        return self.writer_getter.unicode_strings
-    def set_unicode_strings(self, unicode_strings):
-        self.writer_getter.unicode_strings = unicode_strings
-    unicode_strings = property(get_unicode_strings,
-                               set_unicode_strings,
-                               None,
-                               'get/set unicode strings property')
-
-    def get_long_field_names(self):
-        return self.writer_getter.long_field_names
-    def set_long_field_names(self, long_field_names):
-        self.writer_getter.long_field_names = long_field_names
-    long_field_names = property(get_long_field_names,
-                                set_long_field_names,
-                                None,
-                                'enable writing 32-63 character field '
-                                'names for Matlab 7.6+')
-
-    def get_oned_as(self):
-        return self.writer_getter.oned_as
-    def set_oned_as(self, oned_as):
-        self.writer_getter.oned_as = oned_as
-    oned_as = property(get_oned_as,
-                       set_oned_as,
-                       None,
-                       'get/set oned_as property')
+        self.file_stream.write(hdr.tostring())
 
     def put_variables(self, mdict):
+        self._matrix_writer = VarWriter5(self)
         for name, var in mdict.items():
             if name[0] == '_':
                 continue
             is_global = name in self.global_vars
             if self.do_compression:
                 stream = StringIO()
-                mat_writer = self.writer_getter.matrix_writer_factory(
-                    stream,
-                    var,
-                    name,
-                    is_global)
-                mat_writer.write()
+                self._matrix_writer.file_stream = stream
+                self._matrix_writer.write_top(var, name, is_global)
                 out_str = zlib.compress(stream.getvalue())
                 tag = np.empty((), mdtypes_template['tag_full'])
                 tag['mdtype'] = miCOMPRESSED
                 tag['byte_count'] = len(out_str)
                 self.file_stream.write(tag.tostring() + out_str)
             else: # not compressing
-                mat_writer = self.writer_getter.matrix_writer_factory(
-                    self.file_stream,
-                    var,
-                    name,
-                    is_global)
-                mat_writer.write()
+                self._matrix_writer.write_top(var, name, is_global)

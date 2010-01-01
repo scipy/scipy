@@ -29,7 +29,7 @@ from scipy.io.matlab.miobase import matdims, MatFileReader
 from scipy.io.matlab.mio import loadmat, savemat, find_mat_file, \
      mat_reader_factory
 from scipy.io.matlab.mio5 import MatlabObject, MatFile5Writer, \
-     Mat5NumericWriter, MatFile5Reader
+      MatFile5Reader
 
 test_data_path = pjoin(dirname(__file__), 'data')
 
@@ -451,16 +451,18 @@ def test_writer_properties():
 def test_use_small_element():
     # Test whether we're using small data element or not
     sio = StringIO()
+    wtr = MatFile5Writer(sio)
     # First check size for no sde for name
-    writer = Mat5NumericWriter(sio, np.zeros(10), 'aaaaa').write()
+    arr = np.zeros(10)
+    wtr.put_variables({'aaaaa': arr})
     w_sz = sio.len
     # Check small name results in largish difference in size
     sio.truncate(0)
-    writer = Mat5NumericWriter(sio, np.zeros(10), 'aaaa').write()
+    wtr.put_variables({'aaaa': arr})
     yield assert_true, w_sz - sio.len > 4
     # Whereas increasing name size makes less difference
     sio.truncate(0)
-    writer = Mat5NumericWriter(sio, np.zeros(10), 'aaaaaa').write()
+    wtr.put_variables({'aaaaaa': arr})
     yield assert_true, sio.len - w_sz < 4
 
 
@@ -481,7 +483,6 @@ def test_1d_shape():
     vals = loadmat(stream)
     yield assert_equal, vals['oned'].shape, (5,1)
     # Current 4 behavior is 1D -> row vector
-    arr = np.arange(5)
     stream = StringIO()
     savemat(stream, {'oned':arr}, format='4')
     vals = loadmat(stream)

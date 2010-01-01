@@ -295,24 +295,33 @@ def arr_to_2d(arr, oned_as='row'):
                       'to matlab 4 format files',
                       DeprecationWarning,
                       )
-        return arr.reshape(-1,dims[-1])
-    arr.shape = dims
-    return arr
+        return arr.reshape((-1,dims[-1]))
+    return arr.reshape(dims)
 
 
-class Mat4MatrixWriter(MatStreamWriter):
+class VarWriter4(object):
+    def __init__(self, file_writer):
+        self.file_stream = file_writer.file_stream
+        self.oned_as = file_writer.oned_as
 
-    def write_header(self, arr, name, P=0,  T=0, imagf=0, dims=None):
+    def write_bytes(self, arr):
+        self.file_stream.write(arr.tostring(order='F'))
+
+    def write_string(self, s):
+        self.file_stream.write(s)
+
+    def write_header(self, name, shape, P=0,  T=0, imagf=0):
         ''' Write header for given data options
-        arr : array
-        name : string
+
+        Parameters
+        ----------
+        name : str
+        shape : sequence
+           Shape of array as it will be read in matlab
         P      - mat4 data type
         T      - mat4 matrix class
         imagf  - complex flag
-        dims   - matrix dimensions
         '''
-        if dims is None:
-            dims = arr.shape
         header = np.empty((), mdtypes_template['header'])
         M = not SYS_LITTLE_ENDIAN
         O = 0
@@ -320,21 +329,44 @@ class Mat4MatrixWriter(MatStreamWriter):
                           O * 100 +
                           P * 10 +
                           T)
-        header['mrows'] = dims[0]
-        header['ncols'] = dims[1]
+        header['mrows'] = shape[0]
+        header['ncols'] = shape[1]
         header['imagf'] = imagf
         header['namlen'] = len(name) + 1
         self.write_bytes(header)
         self.write_string(name + '\0')
 
-    def write(self):
-        assert False, 'Not implemented'
+    def write(self, arr, name):
+        ''' Write matrix `arr`, with name `name`
 
+        Parameters
+        ----------
+        arr : array-like
+           array to write
+        name : str
+           name in matlab workspace
+        '''
+        # we need to catch sparse first, because np.asarray returns an
+        # an object array for scipy.sparse
+        if scipy.sparse.issparse(arr):
+            self.write_sparse(arr, name)
+            return
+        arr = np.asarray(arr)
+        dt = arr.dtype
+        if not dt.isnative:
+            arr = arr.astype(dt.newbyteorder('='))
+        dtt = dt.type
+        if dtt is np.object_:
+            raise TypeError, 'Cannot save object arrays in Mat4'
+        elif dtt is np.void:
+            raise TypeError, 'Cannot save void type arrays'
+        elif dtt in (np.unicode_, np.string_):
+            self.write_char(arr, name)
+            return
+        self.write_numeric(arr, name)
 
-class Mat4NumericWriter(Mat4MatrixWriter):
-
-    def write(self):
-        arr = arr_to_2d(self.arr, self.oned_as)
+    def write_numeric(self, arr, name):
+        arr = arr_to_2d(arr, self.oned_as)
         imagf = arr.dtype.kind == 'c'
         try:
             P = np_to_mtypes[arr.dtype.str[1:]]
@@ -344,8 +376,8 @@ class Mat4NumericWriter(Mat4MatrixWriter):
             else:
                 arr = arr.astype('f8')
             P = miDOUBLE
-        self.write_header(arr,
-                          self.name,
+        self.write_header(name,
+                          arr.shape,
                           P=P,
                           T=mxFULL_CLASS,
                           imagf=imagf)
@@ -355,16 +387,13 @@ class Mat4NumericWriter(Mat4MatrixWriter):
         else:
             self.write_bytes(arr)
 
-
-class Mat4CharWriter(Mat4MatrixWriter):
-
-    def write(self):
-        arr = arr_to_chars(self.arr)
+    def write_char(self, arr, name):
+        arr = arr_to_chars(arr)
         arr = arr_to_2d(arr, self.oned_as)
         dims = arr.shape
         self.write_header(
-            arr,
-            self.name,
+            name,
+            dims,
             P=miUINT8,
             T=mxCHAR_CLASS)
         if arr.dtype.kind == 'U':
@@ -377,14 +406,12 @@ class Mat4CharWriter(Mat4MatrixWriter):
             arr = np.ndarray(shape=dims, dtype='S1', buffer=st)
         self.write_bytes(arr)
 
-
-class Mat4SparseWriter(Mat4MatrixWriter):
-
-    def write(self):
+    def write_sparse(self, arr, name):
         ''' Sparse matrices are 2D
-        See docstring for Mat4SparseGetter
+        
+        See docstring for VarReader4.read_sparse_array
         '''
-        A = self.arr.tocoo() #convert to sparse COO format (ijv)
+        A = arr.tocoo() #convert to sparse COO format (ijv)
         imagf = A.dtype.kind == 'c'
         ijv = np.zeros((A.nnz + 1, 3+imagf), dtype='f8')
         ijv[:-1,0] = A.row
@@ -397,32 +424,11 @@ class Mat4SparseWriter(Mat4MatrixWriter):
             ijv[:-1,2] = A.data
         ijv[-1,0:2] = A.shape
         self.write_header(
-            self.arr,
-            self.name,
+            name,
+            ijv.shape,
             P=miDOUBLE,
-            T=mxSPARSE_CLASS,
-            dims=ijv.shape)
+            T=mxSPARSE_CLASS)
         self.write_bytes(ijv)
-
-
-def matrix_writer_factory(stream, arr, name, oned_as='row'):
-    ''' Factory function to return matrix writer given variable to write
-    stream      - file or file-like stream to write to
-    arr         - array to write
-    name        - name in matlab (TM) workspace
-    '''
-    if scipy.sparse.issparse(arr):
-        return Mat4SparseWriter(stream, arr, name, oned_as)
-    arr = np.array(arr)
-    dtt = arr.dtype.type
-    if dtt is np.object_:
-        raise TypeError, 'Cannot save object arrays in Mat4'
-    elif dtt is np.void:
-        raise TypeError, 'Cannot save void type arrays'
-    elif dtt in (np.unicode_, np.string_):
-        return Mat4CharWriter(stream, arr, name, oned_as)
-    else:
-        return Mat4NumericWriter(stream, arr, name, oned_as)
 
 
 class MatFile4Writer(MatFileWriter):
@@ -432,10 +438,13 @@ class MatFile4Writer(MatFileWriter):
         if oned_as is None:
             oned_as = 'row'
         self.oned_as = oned_as
+        self._matrix_writer = None
+
+    def initialize_write(self):
+        ''' Initialize writing object from our parameters '''
+        self._matrix_writer = VarWriter4(self)
 
     def put_variables(self, mdict):
+        self.initialize_write()
         for name, var in mdict.items():
-            matrix_writer_factory(self.file_stream, 
-                                  var, 
-                                  name, 
-                                  self.oned_as).write()
+            self._matrix_writer.write(var, name)
