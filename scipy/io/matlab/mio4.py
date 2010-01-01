@@ -439,7 +439,26 @@ class MatFile4Writer(object):
         self.oned_as = oned_as
         self._matrix_writer = None
 
-    def put_variables(self, mdict):
+    def put_variables(self, mdict, write_header=None):
+        ''' Write variables in `mdict` to stream
+
+        Parameters
+        ----------
+        mdict : mapping
+           mapping with method ``items`` return name, contents pairs
+           where ``name`` which will appeak in the matlab workspace in
+           file load, and ``contents`` is something writeable to a
+           matlab file, such as a numpy array.
+        write_header : {None, True, False}
+           If True, then write the matlab file header before writing the
+           variables.  If None (the default) then write the file header
+           if we are at position 0 in the stream.  By setting False
+           here, and setting the stream position to the end of the file,
+           you can append variables to a matlab file
+        '''
+        # there is no header for a matlab 4 mat file, so we ignore the
+        # ``write_header`` input argument.  It's there for compatibility
+        # with the matlab 5 version of this method
         self._matrix_writer = VarWriter4(self)
         for name, var in mdict.items():
             self._matrix_writer.write(var, name)

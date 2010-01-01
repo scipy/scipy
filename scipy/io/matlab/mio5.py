@@ -697,7 +697,6 @@ class MatFile5Writer(object):
             oned_as = 'column'
         self.oned_as = oned_as
         self._matrix_writer = None
-        self.write_file_header()
 
     def write_file_header(self):
         # write header
@@ -710,7 +709,28 @@ class MatFile5Writer(object):
                                       buffer=np.uint16(0x4d49))
         self.file_stream.write(hdr.tostring())
 
-    def put_variables(self, mdict):
+    def put_variables(self, mdict, write_header=None):
+        ''' Write variables in `mdict` to stream
+
+        Parameters
+        ----------
+        mdict : mapping
+           mapping with method ``items`` return name, contents pairs
+           where ``name`` which will appeak in the matlab workspace in
+           file load, and ``contents`` is something writeable to a
+           matlab file, such as a numpy array.
+        write_header : {None, True, False}
+           If True, then write the matlab file header before writing the
+           variables.  If None (the default) then write the file header
+           if we are at position 0 in the stream.  By setting False
+           here, and setting the stream position to the end of the file,
+           you can append variables to a matlab file
+        '''
+        # write header if requested, or None and start of file
+        if write_header is None:
+            write_header = self.file_stream.tell() == 0
+        if write_header:
+            self.write_file_header()
         self._matrix_writer = VarWriter5(self)
         for name, var in mdict.items():
             if name[0] == '_':
