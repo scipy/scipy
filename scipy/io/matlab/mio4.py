@@ -7,8 +7,7 @@ import numpy as np
 
 import scipy.sparse
 
-from miobase import MatFileReader, \
-     MatFileWriter, MatStreamWriter, docfiller, matdims, \
+from miobase import MatFileReader, docfiller, matdims, \
      read_dtype, convert_dtypes, arr_to_chars, arr_dtype_number, \
      MatWriteError
 
@@ -431,7 +430,7 @@ class VarWriter4(object):
         self.write_bytes(ijv)
 
 
-class MatFile4Writer(MatFileWriter):
+class MatFile4Writer(object):
     ''' Class for writing matlab 4 format files '''
     def __init__(self, file_stream, oned_as=None):
         self.file_stream = file_stream
@@ -440,11 +439,7 @@ class MatFile4Writer(MatFileWriter):
         self.oned_as = oned_as
         self._matrix_writer = None
 
-    def initialize_write(self):
-        ''' Initialize writing object from our parameters '''
-        self._matrix_writer = VarWriter4(self)
-
     def put_variables(self, mdict):
-        self.initialize_write()
+        self._matrix_writer = VarWriter4(self)
         for name, var in mdict.items():
             self._matrix_writer.write(var, name)

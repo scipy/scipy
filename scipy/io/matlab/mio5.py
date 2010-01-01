@@ -21,8 +21,7 @@ import numpy as np
 
 import scipy.sparse
 
-from miobase import MatFileReader, \
-     MatFileWriter, MatStreamWriter, docfiller, matdims, \
+from miobase import MatFileReader, docfiller, matdims, \
      read_dtype, convert_dtypes, arr_to_chars, arr_dtype_number, \
      MatWriteError
 
@@ -662,7 +661,7 @@ class VarWriter5(object):
         self._write_items(arr)
 
 
-class MatFile5Writer(MatFileWriter):
+class MatFile5Writer(object):
     ''' Class for writing mat5 files '''
     @docfiller
     def __init__(self, file_stream,
