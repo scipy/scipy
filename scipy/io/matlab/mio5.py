@@ -23,7 +23,8 @@ import scipy.sparse
 
 from miobase import MatFileReader, \
      MatFileWriter, MatStreamWriter, docfiller, matdims, \
-     read_dtype, convert_dtypes
+     read_dtype, convert_dtypes, arr_to_chars, arr_dtype_number, \
+     MatWriteError
 
 # Reader object for matlab 5 format variables
 from mio5_utils import VarReader5
@@ -356,26 +357,26 @@ class Mat5MatrixWriter(MatStreamWriter):
         # pad to next 64-bit boundary
         self.write_bytes(np.zeros((padding,),'u1'))
 
-    def write_header(self, mclass=None,
+    def write_header(self,
+                     name,
+                     shape, 
+                     mclass=None,
                      is_global=False,
                      is_complex=False,
                      is_logical=False,
-                     nzmax=0,
-                     shape=None):
+                     nzmax=0):
         ''' Write header for given data options
+        name : str
+        shape : sequence
+           array shape
         mclass      - mat5 matrix class
         is_global   - True if matrix is global
         is_complex  - True if matrix is complex
         is_logical  - True if matrix is logical
         nzmax        - max non zero elements for sparse arrays
-        shape : {None, tuple} optional
-            directly specify shape if this is not the same as for
-            self.arr
         '''
         if mclass is None:
             mclass = self.default_mclass
-        if shape is None:
-            shape = matdims(self.arr, self.oned_as)
         self._mat_tag_pos = self.file_stream.tell()
         self.write_dtype(self.mat_tag)
         # write array flags (complex, global, logical, class, nzmax)
@@ -410,21 +411,24 @@ class Mat5MatrixWriter(MatStreamWriter):
 class Mat5NumericWriter(Mat5MatrixWriter):
     default_mclass = None # can be any numeric type
     def write(self):
-        imagf = self.arr.dtype.kind == 'c'
+        arr = self.arr
+        imagf = arr.dtype.kind == 'c'
         try:
-            mclass = np_to_mxtypes[self.arr.dtype.str[1:]]
+            mclass = np_to_mxtypes[arr.dtype.str[1:]]
         except KeyError:
             if imagf:
-                self.arr = self.arr.astype('c128')
+                arr = arr.astype('c128')
             else:
-                self.arr = self.arr.astype('f8')
+                arr = arr.astype('f8')
             mclass = mxDOUBLE_CLASS
-        self.write_header(mclass=mclass,is_complex=imagf)
+        self.write_header(self.name,
+                          matdims(arr, self.oned_as),
+                          mclass=mclass,is_complex=imagf)
         if imagf:
-            self.write_element(self.arr.real)
-            self.write_element(self.arr.imag)
+            self.write_element(arr.real)
+            self.write_element(arr.imag)
         else:
-            self.write_element(self.arr)
+            self.write_element(arr)
         self.update_matrix_tag()
 
 
@@ -432,20 +436,38 @@ class Mat5CharWriter(Mat5MatrixWriter):
     codec='ascii'
     default_mclass = mxCHAR_CLASS
     def write(self):
-        self.arr_to_chars()
+        arr = self.arr
+        if arr.size == 0 or np.all(arr == ''):
+            # This an empty string array or a string array containing
+            # only empty strings.  Matlab cannot distiguish between a
+            # string array that is empty, and a string array containing
+            # only empty strings, because it stores strings as arrays of
+            # char.  There is no way of having an array of char that is
+            # not empty, but contains an empty string. We have to
+            # special-case the array-with-empty-strings because even
+            # empty strings have zero padding, which would otherwise
+            # appear in matlab as a string with a space.
+            shape = (0,) * np.max([arr.ndim, 2])
+            self.write_header(self.name, shape)
+            self.write_smalldata_element(arr, miUTF8, 0)
+            self.update_matrix_tag()
+            return
+        # non-empty string
+        arr = arr_to_chars(arr)
         # We have to write the shape directly, because we are going
         # recode the characters, and the resulting stream of chars
         # may have a different length
-        shape = self.arr.shape
-        self.write_header(shape=shape)
+        shape = arr.shape
+        self.write_header(self.name, shape)
         # We need to do our own transpose (not using the normal
-        # write routines that do this for us)
-        arr = self.arr.T.copy()
-        if self.arr.dtype.kind == 'U' and arr.size:
+        # write routines that do this for us), and copy to make a nice C
+        # ordered thing
+        arr = arr.T.copy()
+        if arr.dtype.kind == 'U' and arr.size:
             # Recode unicode using self.codec
             n_chars = np.product(shape)
             st_arr = np.ndarray(shape=(),
-                                dtype=self.arr_dtype_number(n_chars),
+                                dtype=arr_dtype_number(arr, n_chars),
                                 buffer=arr)
             st = st_arr.item().encode(self.codec)
             arr = np.ndarray(shape=(len(st),),
@@ -464,11 +486,14 @@ class Mat5SparseWriter(Mat5MatrixWriter):
     def write(self):
         ''' Sparse matrices are 2D
         '''
-        A = self.arr.tocsc() # convert to sparse CSC format
+        arr = self.arr
+        A = arr.tocsc() # convert to sparse CSC format
         A.sort_indices()     # MATLAB expects sorted row indices
         is_complex = (A.dtype.kind == 'c')
         nz = A.nnz
-        self.write_header(is_complex=is_complex,
+        self.write_header(self.name,
+                          matdims(arr, self.oned_as),
+                          is_complex=is_complex,
                           nzmax=nz)
         self.write_element(A.indices.astype('i4'))
         self.write_element(A.indptr.astype('i4'))
@@ -481,7 +506,7 @@ class Mat5SparseWriter(Mat5MatrixWriter):
 class Mat5CellWriter(Mat5MatrixWriter):
     default_mclass = mxCELL_CLASS
     def write(self):
-        self.write_header()
+        self.write_header(self.name,  matdims(self.arr, self.oned_as))
         self._write_items()
 
     def _write_items(self):
@@ -499,7 +524,8 @@ class Mat5BinaryBlockWriter(Mat5MatrixWriter):
     def write(self):
         # check endian
         # write binary block as is
-        pass
+        raise MatWriteError('Cannot write binary blocks yet')
+
 
 class Mat5StructWriter(Mat5CellWriter):
     ''' class to write matlab structs
@@ -539,7 +565,7 @@ class Mat5ObjectWriter(Mat5StructWriter):
     '''
     default_mclass = mxOBJECT_CLASS
     def write(self):
-        self.write_header()
+        self.write_header(self.name,  matdims(self.arr, self.oned_as))
         self.write_element(np.array(self.arr.classname, dtype='S'),
                            mdtype=miINT8)
         self._write_items()

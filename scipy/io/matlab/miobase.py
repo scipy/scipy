@@ -13,6 +13,8 @@ import byteordercodes as boc
 
 class MatReadError(Exception): pass
 
+class MatWriteError(Exception): pass
+
 doc_dict = \
     {'file_arg':
          '''file_name : string
@@ -443,6 +445,22 @@ class MatFileReader(object):
         return self._matrix_reader.array_from_header(header)
 
 
+def arr_dtype_number(arr, num):
+    ''' Return dtype for given number of items per element'''
+    return np.dtype(arr.dtype.str[:2] + str(num))
+
+
+def arr_to_chars(arr):
+    ''' Convert string array to char array '''
+    dims = list(arr.shape)
+    if not dims:
+        dims = [1]
+    dims.append(int(arr.dtype.str[2:]))
+    return np.ndarray(shape=dims,
+                      dtype=arr_dtype_number(arr, 1),
+                      buffer=arr)
+
+
 class MatStreamWriter(object):
     ''' Base object for writing to mat files '''
     def __init__(self, file_stream, arr, name, oned_as):
@@ -453,23 +471,6 @@ class MatStreamWriter(object):
             self.arr = self.arr.astype(dt.newbyteorder('='))
         self.name = name
         self.oned_as = oned_as
-
-    def rewind(self):
-        self.file_stream.seek(0)
-
-    def arr_dtype_number(self, num):
-        ''' Return dtype for given number of items per element'''
-        return np.dtype(self.arr.dtype.str[:2] + str(num))
-
-    def arr_to_chars(self):
-        ''' Convert string array to char array '''
-        dims = list(self.arr.shape)
-        if not dims:
-            dims = [1]
-        dims.append(int(self.arr.dtype.str[2:]))
-        self.arr = np.ndarray(shape=dims,
-                              dtype=self.arr_dtype_number(1),
-                              buffer=self.arr)
 
     def write_bytes(self, arr):
         self.file_stream.write(arr.tostring(order='F'))

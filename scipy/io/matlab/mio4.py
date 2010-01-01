@@ -1,6 +1,7 @@
 ''' Classes for read / write of matlab (TM) 4 files
 '''
 import sys
+import warnings
 
 import numpy as np
 
@@ -8,7 +9,8 @@ import scipy.sparse
 
 from miobase import MatFileReader, \
      MatFileWriter, MatStreamWriter, docfiller, matdims, \
-     read_dtype, convert_dtypes
+     read_dtype, convert_dtypes, arr_to_chars, arr_dtype_number, \
+     MatWriteError
 
 from mio_utils import FileReadOpts, process_element
 
@@ -264,17 +266,53 @@ class MatFile4Reader(MatFileReader):
         return self._matrix_reader.array_from_header(header)
 
 
+def arr_to_2d(arr, oned_as='row'):
+    ''' Make ``arr`` exactly two dimensional
+
+    If `arr` has more than 2 dimensions, then, for the sake of
+    compatibility with previous versions of scipy, we reshape to 2D
+    preserving the last dimension and increasing the first dimension.
+    In future versions we will raise an error, as this is at best a very
+    counterinituitive thing to do.
+
+    Parameters
+    ----------
+    arr : array
+    oned_as : {'row', 'column'}
+       Whether to reshape 1D vectors as row vectors or column vectors.
+       See documentation for ``matdims`` for more detail
+
+    Returns
+    -------
+    arr2d : array
+       2D version of the array
+    '''
+    dims = matdims(arr, oned_as)
+    if len(dims) > 2:
+        warnings.warn('Matlab 4 files only support <=2 '
+                      'dimensions; future versions of scipy will '
+                      'raise an error when trying to write >2D arrays '
+                      'to matlab 4 format files',
+                      DeprecationWarning,
+                      )
+        return arr.reshape(-1,dims[-1])
+    arr.shape = dims
+    return arr
+
+
 class Mat4MatrixWriter(MatStreamWriter):
 
-    def write_header(self, P=0,  T=0, imagf=0, dims=None):
+    def write_header(self, arr, name, P=0,  T=0, imagf=0, dims=None):
         ''' Write header for given data options
+        arr : array
+        name : string
         P      - mat4 data type
         T      - mat4 matrix class
         imagf  - complex flag
         dims   - matrix dimensions
         '''
         if dims is None:
-            dims = self.arr.shape
+            dims = arr.shape
         header = np.empty((), mdtypes_template['header'])
         M = not SYS_LITTLE_ENDIAN
         O = 0
@@ -285,15 +323,9 @@ class Mat4MatrixWriter(MatStreamWriter):
         header['mrows'] = dims[0]
         header['ncols'] = dims[1]
         header['imagf'] = imagf
-        header['namlen'] = len(self.name) + 1
+        header['namlen'] = len(name) + 1
         self.write_bytes(header)
-        self.write_string(self.name + '\0')
-
-    def arr_to_2d(self):
-        dims = matdims(self.arr, self.oned_as)
-        self.arr.shape = dims
-        if len(dims) > 2:
-            self.arr = self.arr.reshape(-1,dims[-1])
+        self.write_string(name + '\0')
 
     def write(self):
         assert False, 'Not implemented'
@@ -302,43 +334,48 @@ class Mat4MatrixWriter(MatStreamWriter):
 class Mat4NumericWriter(Mat4MatrixWriter):
 
     def write(self):
-        self.arr_to_2d()
-        imagf = self.arr.dtype.kind == 'c'
+        arr = arr_to_2d(self.arr, self.oned_as)
+        imagf = arr.dtype.kind == 'c'
         try:
-            P = np_to_mtypes[self.arr.dtype.str[1:]]
+            P = np_to_mtypes[arr.dtype.str[1:]]
         except KeyError:
             if imagf:
-                self.arr = self.arr.astype('c128')
+                arr = arr.astype('c128')
             else:
-                self.arr = self.arr.astype('f8')
+                arr = arr.astype('f8')
             P = miDOUBLE
-        self.write_header(P=P,
+        self.write_header(arr,
+                          self.name,
+                          P=P,
                           T=mxFULL_CLASS,
                           imagf=imagf)
         if imagf:
-            self.write_bytes(self.arr.real)
-            self.write_bytes(self.arr.imag)
+            self.write_bytes(arr.real)
+            self.write_bytes(arr.imag)
         else:
-            self.write_bytes(self.arr)
+            self.write_bytes(arr)
 
 
 class Mat4CharWriter(Mat4MatrixWriter):
 
     def write(self):
-        self.arr_to_chars()
-        self.arr_to_2d()
-        dims = self.arr.shape
-        self.write_header(P=miUINT8,
-                          T=mxCHAR_CLASS)
-        if self.arr.dtype.kind == 'U':
+        arr = arr_to_chars(self.arr)
+        arr = arr_to_2d(arr, self.oned_as)
+        dims = arr.shape
+        self.write_header(
+            arr,
+            self.name,
+            P=miUINT8,
+            T=mxCHAR_CLASS)
+        if arr.dtype.kind == 'U':
             # Recode unicode to ascii
             n_chars = np.product(dims)
             st_arr = np.ndarray(shape=(),
-                                dtype=self.arr_dtype_number(n_chars),
-                                buffer=self.arr)
+                                dtype=arr_dtype_number(arr, n_chars),
+                                buffer=arr)
             st = st_arr.item().encode('ascii')
-            self.arr = np.ndarray(shape=dims, dtype='S1', buffer=st)
-        self.write_bytes(self.arr)
+            arr = np.ndarray(shape=dims, dtype='S1', buffer=st)
+        self.write_bytes(arr)
 
 
 class Mat4SparseWriter(Mat4MatrixWriter):
@@ -359,9 +396,12 @@ class Mat4SparseWriter(Mat4MatrixWriter):
         else:
             ijv[:-1,2] = A.data
         ijv[-1,0:2] = A.shape
-        self.write_header(P=miDOUBLE,
-                          T=mxSPARSE_CLASS,
-                          dims=ijv.shape)
+        self.write_header(
+            self.arr,
+            self.name,
+            P=miDOUBLE,
+            T=mxSPARSE_CLASS,
+            dims=ijv.shape)
         self.write_bytes(ijv)
 
 

@@ -662,7 +662,36 @@ def test_read_opts():
 
 
 def test_empty_string():
+    # make sure reading empty string does not raise error
     estring_fname = pjoin(test_data_path, 'single_empty_string.mat')
     rdr = MatFile5Reader(file(estring_fname))
     d = rdr.get_variables()
     yield assert_array_equal, d['a'], np.array([], dtype='U1')
+    # empty string round trip.  Matlab cannot distiguish
+    # between a string array that is empty, and a string array
+    # containing a single empty string, because it stores strings as
+    # arrays of char.  There is no way of having an array of char that
+    # is not empty, but contains an empty string. 
+    stream = StringIO()
+    savemat(stream, {'a': np.array([''])})
+    rdr = MatFile5Reader(stream)
+    d = rdr.get_variables()
+    yield assert_array_equal, d['a'], np.array([], dtype='U1')
+    stream.truncate(0)
+    savemat(stream, {'a': np.array([], dtype='U1')})
+    rdr = MatFile5Reader(stream)
+    d = rdr.get_variables()
+    yield assert_array_equal, d['a'], np.array([], dtype='U1')
+    
+
+def test_mat4_3d():
+    # test behavior when writing 3D arrays to matlab 4 files
+    stream = StringIO()
+    arr = np.arange(24).reshape((2,3,4))
+    warnings.simplefilter('error')
+    yield (assert_raises, DeprecationWarning, savemat, 
+           stream, {'a': arr}, True, '4')
+    warnings.resetwarnings()
+    savemat(stream, {'a': arr}, format='4')
+    d = loadmat(stream)
+    yield assert_array_equal, d['a'], arr.reshape((6,4))
