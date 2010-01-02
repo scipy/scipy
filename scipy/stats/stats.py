@@ -357,45 +357,110 @@ def nanmedian(x, axis=0):
 ########  CENTRAL TENDENCY  ########
 #####################################
 
-def gmean(a, axis=0):
-    """Calculates the geometric mean of the values in the passed array.
 
+def gmean(a, axis=0, dtype=None):
+    """Compute the geometric mean along the specified axis.
+
+    Returns the geometric average of the array elements. 
     That is:  n-th root of (x1 * x2 * ... * xn)
 
     Parameters
     ----------
-    a : array of positive values
-    axis : int or None
-    zero_sub : value to substitute for zero values. Default is 0.
+    a : array_like
+        Input array or object that can be converted to an array.
+    axis : int, optional, default axis=0
+        Axis along which the geometric mean is computed.
+    dtype : dtype, optional
+        Type of the returned array and of the accumulator in which the elements are summed. 
+        If dtype is not specified, it defaults to the dtype of a, unless a has an integer 
+        dtype with a precision less than that of the default platform integer. In that case, 
+        the default platform integer is used.
 
     Returns
     -------
-    The geometric mean computed over a single dimension of the input array or
-    all values in the array if axis==None.
+    gmean : ndarray, see dtype parameter above
+
+    See Also
+    --------
+    numpy.mean : Arithmetic average
+    numpy.average : Weighted average
+    hmean: Harmonic mean
+
+    Notes
+    -------
+    The geometric average is computed over a single dimension of the input
+    array, axis=0 by default, or all values in the array if axis=None.
+    float64 intermediate and return values are used for integer inputs.
+
+    Use masked arrays to ignore any non-finite values in the input or that arise in the
+    calculations such as Not a Number and infinity because masked arrays automatically 
+    mask any non-finite values.
+
     """
-    a, axis = _chk_asarray(a, axis)
-    log_a = np.log(a)
+    if not isinstance(a, np.ndarray): #if not an ndarray object attempt to convert it
+        log_a=np.log(np.array(a, dtype=dtype))
+    elif dtype: #Must change the default dtype allowing array type
+        if isinstance(a,np.ma.MaskedArray):
+            log_a=np.log(np.ma.asarray(a, dtype=dtype))
+        else:
+            log_a=np.log(np.asarray(a, dtype=dtype))
+    else:
+        log_a = np.log(a)
     return np.exp(log_a.mean(axis=axis))
 
-
-def hmean(a, axis=0, zero_sub=0):
-    """Calculates the harmonic mean of the values in the passed array.
+def hmean(a, axis=0, dtype=None):
+    """Calculates the harmonic mean along the specified axis.
 
     That is:  n / (1/x1 + 1/x2 + ... + 1/xn)
 
     Parameters
     ----------
-    a : array
-    axis : int or None
+    a : array_like
+        Input array, masked array or object that can be converted to an array.
+    axis : int, optional, default axis=0
+        Axis along which the harmonic mean is computed.
+    dtype : dtype, optional
+        Type of the returned array and of the accumulator in which the elements are summed. 
+        If dtype is not specified, it defaults to the dtype of a, unless a has an integer 
+        dtype with a precision less than that of the default platform integer. In that case, 
+        the default platform integer is used.
 
     Returns
     -------
-    The harmonic mean computed over a single dimension of the input array or all
-    values in the array if axis=None.
+    hmean : ndarray, see dtype parameter above
+
+    See Also
+    --------
+    numpy.mean : Arithmetic average
+    numpy.average : Weighted average
+    gmean: Geometric mean
+
+    Notes
+    -------
+    The harmonic mean is computed over a single dimension of the input
+    array, axis=0 by default, or all values in the array if axis=None.
+    float64 intermediate and return values are used for integer inputs.
+
+    Use masked arrays to ignore any non-finite values in the input or that arise in the
+    calculations such as Not a Number and infinity.
+
     """
-    a, axis = _chk_asarray(a, axis)
-    size = a.shape[axis]
-    return size / np.sum(1.0/a, axis)
+    if not isinstance(a, np.ndarray):
+        a=np.array(a, dtype=dtype)
+    if np.all(a >0): # Harmonic mean only defined if greater than zero
+        if isinstance(a, np.ma.MaskedArray):
+            size = a.count(axis)
+        else:
+            if axis == None:
+               a=a.ravel()
+               size = a.shape[0]
+            else:
+               size = a.shape[axis]
+        return size / np.sum(1.0/a, axis=axis, dtype=dtype)
+    else:
+        raise ValueError("Harmonic mean only defined if all elements greater than zero")
+
+
 
 def mean(a, axis=0):
     """Returns the arithmetic mean of m along the given dimension.

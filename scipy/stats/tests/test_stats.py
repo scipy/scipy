@@ -1467,8 +1467,147 @@ def test_obrientransform():
     assert_array_almost_equal(stats.obrientransform(x1, 2*x1), result, decimal=8)
 
 
+class HarMeanTestCase:
+    def test_1dlist(self):
+        ''' Test a 1d list'''
+        a=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+        b = 34.1417152147
+        self.do(a, b)
+    def test_1darray(self):
+        ''' Test a 1d array'''
+        a=np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+        b = 34.1417152147
+        self.do(a, b)
+    def test_1dma(self):
+        ''' Test a 1d masked array'''
+        a=np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+        b = 34.1417152147
+        self.do(a, b)
+    def test_1dmavalue(self):
+        ''' Test a 1d masked array with a masked value'''
+        a=np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+                      mask=[0,0,0,0,0,0,0,0,0,1])
+        b = 31.8137186141
+        self.do(a, b)
 
+    # Note the next tests use axis=None as default, not axis=0        
+    def test_2dlist(self):
+        ''' Test a 2d list'''
+        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = 38.6696271841
+        self.do(a, b)
+    def test_2darray(self):
+        ''' Test a 2d array'''
+        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = 38.6696271841
+        self.do(np.array(a), b)
+    def test_2dma(self):
+        ''' Test a 2d masked array'''
+        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = 38.6696271841
+        self.do(np.ma.array(a), b)
+    def test_2daxis0(self):
+        ''' Test a 2d list with axis=0'''
+        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = np.array([ 22.88135593,  39.13043478,  52.90076336,  65.45454545])
+        self.do(a, b, axis=0)
+    def test_2daxis1(self):
+        ''' Test a 2d list with axis=1'''
+        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = np.array([  19.2       ,   63.03939962,  103.80078637])
+        self.do(a, b, axis=1)
+##    def test_dtype(self):
+##        ''' Test a 1d list with a new dtype'''
+##        a=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+##        b = 34.1417152147
+##        self.do(a, b, dtype=np.float128)  # does not work on Win32
 
+class TestHarMean(HarMeanTestCase, TestCase):
+    def do(self, a, b, axis=None, dtype=None):
+        x = stats.hmean(a, axis=axis, dtype=dtype)
+        assert_almost_equal(b, x)
+	assert_equal(x.dtype, dtype)
+
+class GeoMeanTestCase:
+    def test_1dlist(self):
+        ''' Test a 1d list'''
+        a=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+        b = 45.2872868812
+        self.do(a, b)
+    def test_1darray(self):
+        ''' Test a 1d array'''
+        a=np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+        b = 45.2872868812
+        self.do(a, b)
+    def test_1dma(self):
+        ''' Test a 1d masked array'''
+        a=np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+        b = 45.2872868812
+        self.do(a, b)
+    def test_1dmavalue(self):
+        ''' Test a 1d masked array with a masked value'''
+        a=np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100], mask=[0,0,0,0,0,0,0,0,0,1])
+        b = 41.4716627439
+        self.do(a, b)
+
+    # Note the next tests use axis=None as default, not axis=0
+    def test_2dlist(self):
+        ''' Test a 2d list'''
+        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = 52.8885199
+        self.do(a, b)
+    def test_2darray(self):
+        ''' Test a 2d array'''
+        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = 52.8885199
+        self.do(np.array(a), b)
+    def test_2dma(self):
+        ''' Test a 2d masked array'''
+        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = 52.8885199
+        self.do(np.ma.array(a), b)
+    def test_2daxis0(self):
+        ''' Test a 2d list with axis=0'''
+        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = np.array([35.56893304,  49.32424149,  61.3579244 ,  72.68482371])
+        self.do(a, b, axis=0)
+    def test_2daxis1(self):
+        ''' Test a 2d list with axis=1'''
+        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = np.array([  22.13363839,   64.02171746,  104.40086817])
+        self.do(a, b, axis=1)
+##    def test_dtype(self):
+##        ''' Test a 1d list with a new dtype'''
+##        a=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+##        b = 45.2872868812
+##        self.do(a, b, dtype=np.float128)  # does not exist on win32
+    def test_1dlist0(self):
+        ''' Test a 1d list with zero element'''
+        a=[10, 20, 30, 40, 50, 60, 70, 80, 90, 0]
+        b = 0.0 # due to exp(-inf)=0
+        self.do(a, b)
+    def test_1darray0(self):
+        ''' Test a 1d array with zero element'''
+        a=np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
+        b = 0.0 # due to exp(-inf)=0
+        self.do(a, b)
+    def test_1dma0(self):
+        ''' Test a 1d masked array with zero element'''
+        a=np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
+        b = 41.4716627439
+        self.do(a, b)
+    def test_1dmainf(self):
+        ''' Test a 1d masked array with negative element'''
+        a=np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, -1])
+        b = 41.4716627439
+        self.do(a, b)
+
+class TestGeoMean(GeoMeanTestCase, TestCase):
+    def do(self, a, b, axis=None, dtype=None):
+        #Note this doesn't test when axis is not specified
+        x = stats.gmean(a, axis=axis, dtype=dtype)
+        assert_almost_equal(b, x)
+	assert_equal(x.dtype, dtype)
 
 if __name__ == "__main__":
     run_module_suite()
