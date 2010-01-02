@@ -1439,6 +1439,12 @@ def samplevar(a, axis=0):
     svar = ss(deviations,axis) / float(n)
     return svar
 
+@np.lib.deprecate(message="""
+scipy.stats.samplestd is deprecated; please update your code to use
+numpy.std.
+
+Please note that `numpy.std` axis argument defaults to None, not 0.
+""")
 def samplestd(a, axis=0):
     """Returns the sample standard deviation of the values in the passed
 array (i.e., using N).  Axis can equal None (ravel array first),
@@ -1447,16 +1453,31 @@ an integer (the axis over which to operate).
     return np.sqrt(samplevar(a,axis))
 
 
-def signaltonoise(instack, axis=0):
+def signaltonoise(a, axis=0, ddof=0):
     """
-Calculates signal-to-noise.  Axis can equal None (ravel array
-first), an integer (the axis over which to operate).
+    Calculates the signal-to-noise ratio, defined as the ratio between the mean
+    and the standard deviation.
+ 
 
-Returns: array containing the value of (mean/stdev) along axis,
-         or 0 when stdev=0
-"""
-    m = np.mean(instack,axis)
-    sd = samplestd(instack,axis)
+    Parameters
+    ----------
+    a: array-like
+        An array like object containing the sample data
+    axis: int or None, optional
+        If axis is equal to None, the array is first ravel'd. If axis is an
+        integer, this is the axis over which to operate. Defaults to None???0
+    ddof : integer, optional, default 0
+        degrees of freedom correction for standard deviation
+    
+
+    Returns
+    -------
+    array containing the value of the ratio of the mean to the standard
+    deviation along axis, or 0, when the standard deviation is equal to 0
+    """
+    a = np.asanyarray(a)
+    m = a.mean(axis)
+    sd = a.std(axis=axis, ddof=ddof)
     return np.where(sd == 0, 0, m/sd)
 
 def var(a, axis=0, bias=False):
@@ -1489,8 +1510,11 @@ Please note that:
       axis=0, ddof=0), scipy.stats.std(a, bias=False) by numpy.std(x, axis=0,
       ddof=1).""")
 
-
-def stderr(a, axis=0):
+@np.lib.deprecate(message="""
+scipy.stats.stderr is deprecated; please update your code to use
+scipy.stats.sem.
+""")
+def stderr(a, axis=0, ddof=1):
     """
 Returns the estimated population standard error of the values in the
 passed array (i.e., N-1).  Axis can equal None (ravel array
@@ -1500,15 +1524,31 @@ first), or an integer (the axis over which to operate).
     return np.std(a,axis,ddof=1) / float(np.sqrt(a.shape[axis]))
 
 
-def sem(a, axis=0):
+def sem(a, axis=0, ddof=1):
     """
-Returns the standard error of the mean (i.e., using N) of the values
-in the passed array.  Axis can equal None (ravel array first), or an
-integer (the axis over which to operate)
+    Calculates the standard error of the mean (or standard error of
+    measurement) of the values in the passed array. 
+
+    Parameters
+    ----------
+    a: array like
+        An array containing the values for which 
+    axis: int or None, optional.
+        if equal None, ravel array first. If equal to an integer, this will be
+        the axis over which to operate. Defaults to 0.
+    ddof: int
+        Delta degrees-of-freedom. How many degrees of freedom to adjust for
+        bias in limited samples relative to the population estimate of variance
+
+    Returns
+    -------
+    The standard error of the mean in the sample(s), along the input axis  
+
 """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    s = samplestd(a,axis) / np.sqrt(n-1)
+    #s = samplestd(a,axis) / np.sqrt(n-1)
+    s = np.std(a,axis=axis, ddof=ddof) / np.sqrt(n) #JP check normalization
     return s
 
 
