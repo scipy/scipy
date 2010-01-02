@@ -931,7 +931,25 @@ class TestVariability(TestCase):
         desired = ([-1.3416407864999, -0.44721359549996 , 0.44721359549996 , 1.3416407864999])
         assert_array_almost_equal(desired,y,decimal=12)
 
+    def test_zmap(self):
+        """
+        not in R, so tested by using
+        (testcase[i]-mean(testcase,axis=0))/sqrt(var(testcase)*3/4)
+        copied from test_zs
+        """
+        y = stats.zmap(self.testcase,self.testcase)
+        desired = ([-1.3416407864999, -0.44721359549996 , 0.44721359549996 , 1.3416407864999])
+        assert_array_almost_equal(desired,y,decimal=12)
 
+    def test_zscore(self):
+        """
+        not in R, so tested by using
+        (testcase[i]-mean(testcase,axis=0))/sqrt(var(testcase)*3/4)
+        copied from test_zs as regression test for new function
+        """
+        y = stats.zscore(self.testcase)
+        desired = ([-1.3416407864999, -0.44721359549996 , 0.44721359549996 , 1.3416407864999])
+        assert_array_almost_equal(desired,y,decimal=12)
 
 class TestMoments(TestCase):
     """

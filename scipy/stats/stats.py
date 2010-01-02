@@ -217,7 +217,7 @@ __all__ = ['gmean', 'hmean', 'mean', 'cmedian', 'median', 'mode',
            'itemfreq', 'scoreatpercentile', 'percentileofscore',
            'histogram', 'histogram2', 'cumfreq', 'relfreq',
            'obrientransform', 'samplevar', 'samplestd', 'signaltonoise',
-           'var', 'std', 'stderr', 'sem', 'z', 'zs', 'zmap',
+           'var', 'std', 'stderr', 'sem', 'z', 'zs', 'zmap', 'zscore',
            'threshold', 'trimboth', 'trim1', 'trim_mean',
            'cov', 'corrcoef', 'f_oneway', 'pearsonr', 'spearmanr',
            'pointbiserialr', 'kendalltau', 'linregress',
@@ -1551,7 +1551,10 @@ def sem(a, axis=0, ddof=1):
     s = np.std(a,axis=axis, ddof=ddof) / np.sqrt(n) #JP check normalization
     return s
 
-
+@np.lib.deprecate(message="""
+scipy.stats.z is deprecated; please update your code to use
+scipy.stats.zscore_compare.
+""")
 def z(a, score):
     """
 Returns the z-score of a given input score, given thearray from which
@@ -1562,7 +1565,10 @@ arrays > 1D.
     z = (score-np.mean(a,None)) / samplestd(a)
     return z
 
-
+@np.lib.deprecate(message="""
+scipy.stats.zs is deprecated; please update your code to use
+scipy.stats.zscore.
+""")
 def zs(a):
     """
 Returns a 1D array of z-scores, one for each score in the passed array,
@@ -1572,6 +1578,85 @@ computed relative to the passed array.
     mu = np.mean(a,None)
     sigma = samplestd(a)
     return (array(a)-mu)/sigma
+
+
+def zscore(a, axis=0, ddof=0):
+    """
+    Calculates the z score of each value in the sample, relative to the sample
+    mean and standard deviation.  
+ 
+    Parameters
+    ----------
+    a: array_like
+       An array like object containing the sample data
+    axis: int or None, optional
+         If axis is equal to None, the array is first ravel'd. If axis is an
+         integer, this is the axis over which to operate. Defaults to 0.
+    
+    Returns
+    -------
+    zscore: array_like
+        the z-scores, standardized by mean and standard deviation of input
+        array
+
+    Notes
+    -----
+    This function does not convert array classes, and works also with
+    matrices and masked arrays.
+
+    """
+    a = np.asanyarray(a)
+    mns = a.mean(axis=axis)
+    sstd = a.std(axis=axis, ddof=ddof)
+    if axis and mns.ndim < a.ndim:
+        return ((a - np.expand_dims(mns, axis=axis) /
+                 np.expand_dims(sstd,axis=axis)))
+    else:
+        return (a - mns) / sstd
+    
+
+
+def zmap(scores, compare, axis=0, ddof=0):
+    """
+    Calculates the zscores relative to the mean and standard deviation
+    of second input.
+
+    Returns an array of z-scores, i.e. scores that are standardized to zero
+    mean and unit variance, where mean and variance are calculated from the
+    comparison array.
+ 
+    Parameters
+    ----------
+    scores : array-like
+       The input for which z scores are calculated
+    compare : array-like
+       The input from which the mean and standard deviation of the
+       normalization are taken, assumed to have same dimension as scores
+    axis : integer or None, {optional, default 0)
+        axis over which mean and std of compare array are calculated
+
+    Returns
+    -------
+    zscore : array_like
+       zscore in the same shape as scores
+
+    Notes
+    -----
+    This function does not convert array classes, and works also with
+    matrices and masked arrays.
+
+    """
+    scores, compare = map(np.asanyarray, [scores, compare])
+    mns = compare.mean(axis=axis)
+    sstd = compare.std(axis=axis, ddof=ddof)
+    if axis and mns.ndim < compare.ndim:
+        return ((scores - np.expand_dims(mns, axis=axis) /
+                 np.expand_dims(sstd,axis=axis)))
+    else:
+        return (scores - mns) / sstd
+
+
+
 
 def zmap(scores, compare, axis=0):
     """
