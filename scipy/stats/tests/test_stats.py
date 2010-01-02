@@ -1516,6 +1516,16 @@ class HarMeanTestCase:
         a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.array([  19.2       ,   63.03939962,  103.80078637])
         self.do(a, b, axis=1)
+    def test_2dmatrixdaxis0(self):
+        ''' Test a 2d list with axis=0'''
+        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = np.matrix([[ 22.88135593,  39.13043478,  52.90076336,  65.45454545]])
+        self.do(np.matrix(a), b, axis=0)
+    def test_2dmatrixaxis1(self):
+        ''' Test a 2d list with axis=1'''
+        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = np.matrix([[  19.2       ,   63.03939962,  103.80078637]]).T
+        self.do(np.matrix(a), b, axis=1)
 ##    def test_dtype(self):
 ##        ''' Test a 1d list with a new dtype'''
 ##        a=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
@@ -1576,6 +1586,16 @@ class GeoMeanTestCase:
         a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.array([  22.13363839,   64.02171746,  104.40086817])
         self.do(a, b, axis=1)
+    def test_2dmatrixdaxis0(self):
+        ''' Test a 2d list with axis=0'''
+        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = np.matrix([[35.56893304,  49.32424149,  61.3579244 ,  72.68482371]])
+        self.do(np.matrix(a), b, axis=0)
+    def test_2dmatrixaxis1(self):
+        ''' Test a 2d list with axis=1'''
+        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = np.matrix([[  22.13363839,   64.02171746,  104.40086817]]).T
+        self.do(np.matrix(a), b, axis=1)
 ##    def test_dtype(self):
 ##        ''' Test a 1d list with a new dtype'''
 ##        a=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
