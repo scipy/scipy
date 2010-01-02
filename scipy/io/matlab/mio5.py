@@ -29,7 +29,7 @@ from miobase import MatFileReader, docfiller, matdims, \
 from mio5_utils import VarReader5
 
 # Constants and helper objects
-from mio5_params import MatlabObject, \
+from mio5_params import MatlabObject, MatlabFunction, \
     miINT8, miUINT8, miINT16, miUINT16, miINT32, miUINT32, \
     miSINGLE, miDOUBLE, miINT64, miUINT64, miMATRIX, \
     miCOMPRESSED, miUTF8, miUTF16, miUTF32, \
@@ -531,6 +531,8 @@ class VarWriter5(object):
                             % (arr, type(arr)))
         if isinstance(narr, MatlabObject):
             self.write_object(narr)
+        elif isinstance(narr, MatlabFunction):
+            raise MatWriteError('Cannot write matlab functions')
         elif narr.dtype.fields: # struct array
             self.write_struct(narr)
         elif narr.dtype.hasobject: # cell array

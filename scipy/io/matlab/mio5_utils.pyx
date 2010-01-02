@@ -113,8 +113,8 @@ cpdef cnp.uint32_t byteswap_u4(cnp.uint32_t u4):
 
 cdef class VarHeader5:
     cdef readonly object name
-    cdef int mclass
-    cdef object dims
+    cdef readonly int mclass
+    cdef readonly object dims
     cdef cnp.int32_t dims_ptr[_MAT_MAXDIMS]
     cdef int n_dims
     cdef int is_complex
@@ -642,8 +642,9 @@ cdef class VarReader5:
             classname = self.read_int8_string()
             arr = self.read_struct(header)
             arr = mio5p.MatlabObject(arr, classname)
-        elif mc == mxFUNCTION_CLASS:
-            raise miob.MatReadError('Cannot read matlab functions')
+        elif mc == mxFUNCTION_CLASS: # just a matrix of struct type
+            arr = self.read_mi_matrix()
+            arr = mio5p.MatlabFunction(arr)
         return arr, mat_dtype
 
     cpdef cnp.ndarray read_real_complex(self, VarHeader5 header):
@@ -816,5 +817,3 @@ cdef class VarReader5:
                 item.__dict__[name] = self.read_mi_matrix()
             result[i] = item
         return result.reshape(tupdims).T
-
-

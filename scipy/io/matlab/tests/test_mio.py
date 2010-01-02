@@ -25,11 +25,12 @@ from numpy import array
 import scipy.sparse as SP
 
 import scipy.io.matlab.byteordercodes as boc
-from scipy.io.matlab.miobase import matdims, MatFileReader
+from scipy.io.matlab.miobase import matdims, MatFileReader, \
+    MatWriteError
 from scipy.io.matlab.mio import loadmat, savemat, find_mat_file, \
      mat_reader_factory
 from scipy.io.matlab.mio5 import MatlabObject, MatFile5Writer, \
-      MatFile5Reader
+      MatFile5Reader, MatlabFunction
 
 test_data_path = pjoin(dirname(__file__), 'data')
 
@@ -190,13 +191,8 @@ case_table5.append(
     {'name': 'sparsecomplex',
      'expected': {'testsparsecomplex': SP.coo_matrix(B)},
      })
-# We cannot read matlab functions for the moment
-case_table5.append(
-    {'name': 'func',
-     'expected': {'testfunc': 'Read error: Cannot read matlab functions'},
-     })
 
-case_table5_rt = case_table5[:-1] # not the function read write
+case_table5_rt = case_table5[:]
 # Inline functions can't be concatenated in matlab, so RT only
 case_table5_rt.append(
     {'name': 'objectarray',
@@ -696,3 +692,13 @@ def test_mat4_3d():
     savemat(stream, {'a': arr}, format='4')
     d = loadmat(stream)
     yield assert_array_equal, d['a'], arr.reshape((6,4))
+
+
+def test_func_read():
+    func_eg = pjoin(test_data_path, 'testfunc_7.4_GLNX86.mat')
+    rdr = MatFile5Reader(file(func_eg))
+    d = rdr.get_variables()
+    yield assert_true, isinstance(d['testfunc'], MatlabFunction)
+    stream = StringIO()
+    wtr = MatFile5Writer(stream)
+    yield assert_raises, MatWriteError, wtr.put_variables, d

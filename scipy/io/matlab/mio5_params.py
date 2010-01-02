@@ -83,5 +83,5 @@ class MatlabFunction(np.ndarray):
     ''' Subclass to signal this is a matlab function '''
     def __new__(cls, input_array):
         obj = np.asarray(input_array).view(cls)
-
+        return obj
 
