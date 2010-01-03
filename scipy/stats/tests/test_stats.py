@@ -1681,5 +1681,38 @@ class Test_Trim(object):
         assert_equal(stats.trim_mean([5,4,3,1,2,0], 2/6.), 2.5)
 
 
+class TestSigamClip(object):
+    def test_sigmaclip1(self):
+        a = np.concatenate((np.linspace(9.5,10.5,31),np.linspace(0,20,5)))
+        fact = 4  #default
+        c, low, upp = stats.sigmaclip(a)
+        assert_(c.min()>low)
+        assert_(c.max()<upp)
+        assert_equal(low, c.mean() - fact*c.std())
+        assert_equal(upp, c.mean() + fact*c.std())
+        assert_equal(c.size, a.size)
+
+    def test_sigmaclip2(self):
+        a = np.concatenate((np.linspace(9.5,10.5,31),np.linspace(0,20,5)))
+        fact = 1.5
+        c, low, upp = stats.sigmaclip(a, fact, fact)
+        assert_(c.min()>low)
+        assert_(c.max()<upp)
+        assert_equal(low, c.mean() - fact*c.std())
+        assert_equal(upp, c.mean() + fact*c.std())
+        assert_equal(c.size, 4)
+        assert_equal(a.size, 36) #check original array unchanged
+        
+    def test_sigmaclip3(self):
+        a = np.concatenate((np.linspace(9.5,10.5,11),np.linspace(-100,-50,3)))
+        fact = 1.8
+        c, low, upp = stats.sigmaclip(a, fact, fact)
+        assert_(c.min()>low)
+        assert_(c.max()<upp)
+        assert_equal(low, c.mean() - fact*c.std())
+        assert_equal(upp, c.mean() + fact*c.std())
+        assert_equal(c, np.linspace(9.5,10.5,11))
+
+
 if __name__ == "__main__":
     run_module_suite()
