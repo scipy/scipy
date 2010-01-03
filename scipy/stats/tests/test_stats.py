@@ -1651,6 +1651,35 @@ def test_binomtest():
     assert_approx_equal(stats.binom_test(50,100,0.1), 5.8320387857343647e-024,
                             significant=12, err_msg='fail forp=%f'%p)
 
+class Test_Trim(object):
+    # test trim functions
+    def test_trim1(self):
+        a = np.arange(11)
+        assert_equal(stats.trim1(a, 0.1), np.arange(10))
+        assert_equal(stats.trim1(a, 0.2), np.arange(9))
+        assert_equal(stats.trim1(a, 0.2, tail='left'), np.arange(2,11))
+        assert_equal(stats.trim1(a, 3/11., tail='left'), np.arange(3,11))
+    
+    def test_trimboth(self):
+        a = np.arange(11)
+        assert_equal(stats.trimboth(a, 3/11.), np.arange(3,8))
+        assert_equal(stats.trimboth(a, 0.2), np.array([2, 3, 4, 5, 6, 7, 8]))
+        assert_equal(stats.trimboth(np.arange(24).reshape(6,4), 0.2),
+                     np.arange(4,20).reshape(4,4))
+        assert_equal(stats.trimboth(np.arange(24).reshape(4,6).T, 2/6.),
+               np.array([[ 2,  8, 14, 20],[ 3,  9, 15, 21]]))
+        assert_raises(ValueError, stats.trimboth, 
+               np.arange(24).reshape(4,6).T, 4/6.)
+
+    def test_trim_mean(self):
+        a = np.arange(11)
+        assert_equal(stats.trim_mean(np.arange(24).reshape(4,6).T, 2/6.),
+                        np.array([  2.5,   8.5,  14.5,  20.5]))
+        assert_equal(stats.trim_mean(np.arange(24).reshape(4,6), 2/6.),
+                        np.array([  9.,  10.,  11.,  12.,  13.,  14.]))
+        assert_equal(stats.trim_mean(np.arange(24), 2/6.), 11.5)
+        assert_equal(stats.trim_mean([5,4,3,1,2,0], 2/6.), 2.5)
+
 
 if __name__ == "__main__":
     run_module_suite()
