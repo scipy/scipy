@@ -396,6 +396,9 @@ class MatFileReader(object):
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
             name = hdr.name
+            if name == '':
+                # can only be a matlab 7 function workspace
+                name = '_function_workspace'
             if variable_names and name not in variable_names:
                 self.mat_stream.seek(next_position)
                 continue

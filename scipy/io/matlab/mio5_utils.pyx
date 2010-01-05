@@ -103,6 +103,8 @@ sys_is_le = sys.byteorder == 'little'
 native_code = sys_is_le and '<' or '>'
 swapped_code = sys_is_le and '>' or '<'
 
+cdef cnp.dtype OPAQUE_DTYPE = mio5p.OPAQUE_DTYPE
+
 
 cpdef cnp.uint32_t byteswap_u4(cnp.uint32_t u4):
     return ((u4 << 24) |
@@ -520,6 +522,12 @@ cdef class VarReader5:
         header.is_global = flags_class >> 10 & 1
         header.is_complex = flags_class >> 11 & 1
         header.nzmax = nzmax
+        # all miMATRIX types except the mxOPAQUE_CLASS have dims and a
+        # name.
+        if mc == mxOPAQUE_CLASS:
+            header.name = None
+            header.dims = None
+            return header
         header.n_dims = self.read_into_int32s(header.dims_ptr)
         if header.n_dims > _MAT_MAXDIMS:
             raise ValueError('Too many dimensions (%d) for numpy arrays'
@@ -645,6 +653,9 @@ cdef class VarReader5:
         elif mc == mxFUNCTION_CLASS: # just a matrix of struct type
             arr = self.read_mi_matrix()
             arr = mio5p.MatlabFunction(arr)
+        elif mc == mxOPAQUE_CLASS:
+            arr = self.read_opaque(header)
+            arr = mio5p.MatlabOpaque(arr)
         return arr, mat_dtype
 
     cpdef cnp.ndarray read_real_complex(self, VarHeader5 header):
@@ -767,19 +778,20 @@ cdef class VarReader5:
         for i in range(length):
             result[i] = self.read_mi_matrix()
         return result.reshape(tupdims).T
-        
-    cpdef cnp.ndarray read_struct(self, VarHeader5 header):
-        ''' Read struct or object array from stream
 
-        Objects are just structs with an extra field *classname*,
-        defined before (this here) struct format structure
+    def read_fieldnames(self):
+        ''' Read fieldnames for struct-like matrix '
+
+        Python wrapper for cdef'ed method
         '''
+        cdef int n_names
+        return self.cread_fieldnames(&n_names)
+
+    cdef inline object cread_fieldnames(self, int *n_names_ptr):
         cdef:
             cnp.int32_t namelength
             int i, n_names
-            cnp.ndarray rec_res
-            cnp.ndarray[object, ndim=1] result
-            object name, field_names, dt, tupdims
+            object name, field_names
         # Read field names into list
         cdef int res = self.read_into_int32s(&namelength)
         if res != 1:
@@ -792,6 +804,23 @@ cdef class VarReader5:
             name = PyString_FromString(n_ptr)
             field_names.append(name)
             n_ptr += namelength
+        n_names_ptr[0] = n_names
+        return field_names
+        
+    cpdef cnp.ndarray read_struct(self, VarHeader5 header):
+        ''' Read struct or object array from stream
+
+        Objects are just structs with an extra field *classname*,
+        defined before (this here) struct format structure
+        '''
+        cdef:
+            cnp.int32_t namelength
+            int i, n_names
+            cnp.ndarray rec_res
+            cnp.ndarray[object, ndim=1] result
+            object dt, tupdims
+        # Read field names into list
+        cdef object field_names = self.cread_fieldnames(&n_names)
         # Prepare struct array
         tupdims = tuple(header.dims[::-1])
         cdef size_t length = self.size_from_header(header)
@@ -817,3 +846,36 @@ cdef class VarReader5:
                 item.__dict__[name] = self.read_mi_matrix()
             result[i] = item
         return result.reshape(tupdims).T
+
+    cpdef cnp.ndarray read_opaque(self, VarHeader5 hdr):
+        ''' Read opaque (function workspace) type
+
+        Looking at some mat files, the structure of this type seems to
+        be:
+
+        * array flags as usual (already read into `hdr`)
+        * 3 int8 strings
+        * a matrix
+
+        At the end of the mat file (it seems) there is then an unnamed
+        top-level variable (name = '') which appears to be of double
+        class (mxCLASS_DOUBLE), but stored as uint8, the memory for
+        which is in the format of a mini .mat file, without the first
+        124 bytes of the file header (the description and the
+        subsystem_offset), but with the version U2 bytes, and the S2
+        endian test bytes.  There follow 4 zero bytes, presumably for 8
+        byte padding, and then a series of miMATRIX entries, as in a
+        standard mat file.
+
+        The mat files I was playing with are in ``tests/data``:
+
+        * sqr.mat
+        * parabola.mat
+        * some_functions.mat
+        '''
+        cdef cnp.ndarray res = np.empty((1,), dtype=OPAQUE_DTYPE)
+        res[0]['s0'] = self.read_int8_string()
+        res[0]['s1'] = self.read_int8_string()
+        res[0]['s2'] = self.read_int8_string()
+        res[0]['arr'] = self.read_mi_matrix()
+        return res

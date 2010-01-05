@@ -85,3 +85,13 @@ class MatlabFunction(np.ndarray):
         obj = np.asarray(input_array).view(cls)
         return obj
 
+
+class MatlabOpaque(np.ndarray):
+    ''' Subclass to signal this is a matlab opaque matrix '''
+    def __new__(cls, input_array):
+        obj = np.asarray(input_array).view(cls)
+        return obj
+
+
+OPAQUE_DTYPE = np.dtype(
+    [('s0', 'O'), ('s1', 'O'), ('s2', 'O'), ('arr', 'O')])
