@@ -7,6 +7,66 @@ http://www.mathworks.com/access/helpdesk/help/pdf_doc/matlab/matfile_format.pdf
 (as of December 5 2008)
 '''
 
+'''
+=================================
+ Note on functions and mat files
+=================================
+
+The document above does not give any hints as to the storage of matlab
+function hadles, or anonymous function handles.  I had therefore guess,
+by inspecting mat files, what the format was of matlab arrays of
+``mxFUNCTION_CLASS`` and ``mxOPAQUE_CLASS``.
+
+``mxFUNCTION_CLASS`` stores all types of matlab functions.  It seems to
+be struct with a set pattern of fields.   For anonymous functions, one of the fields seems to contain the well-named ``mxOPAQUE_CLASS``. This seems to cotain:
+
+* array flags as for any matlab matrix
+* 3 int8 strings
+* a matrix
+
+It seems that, whenever the mat file contains a ``mxOPAQUE_CLASS``
+instance, there is also an un-named matrix (name == '') at the end of
+the mat file.  I'll call this the ``__function_workspace__`` matrix.
+
+Experiments seemed to show that, when I saved two anonymous functions in
+a mat file, or appended another anonymous function to the mat file,
+there was still only one ``__function_workspace__`` un-named matrix at
+the end, but larger than that for a mat file with a single anonymous
+function, suggesting that the workspaces for the two functions had been
+merged.
+
+The ``__function_workspace__`` matrix appears to be of double class
+(``mxCLASS_DOUBLE``), but stored as uint8, the memory for which is in
+the format of a mini .mat file, without the first 124 bytes of the file
+header (the description and the subsystem_offset), but with the version
+U2 bytes, and the S2 endian test bytes.  There follow 4 zero bytes,
+presumably for 8 byte padding, and then a series of ``miMATRIX``
+entries, as in a standard mat file. The ``miMATRIX`` entries appear to
+be series of un-named (name == '') matrices, and may also contain arrays
+of this same mini-mat format.
+
+I guess that:
+
+* saving an anonymous function back to a mat file will need the
+  associated ``__function_workspace__`` matrix saved as well for the
+  anonymous function to work correctly.
+* appanding to a mat file that has a ``__function_workspace__`` would
+  involve first pulling off this workspace, appending, checking whether
+  there were any more anonymous functions appended, and then somehow
+  merging the relevant workspaces, and saving at the end of the mat
+  file.
+
+The mat files I was playing with are in ``tests/data``:
+
+* sqr.mat
+* parabola.mat
+* some_functions.mat
+
+See ``tests/test_mio.py:test_mio_funcs.py`` for a debugging
+script I was working with.
+
+'''
+
 # Small fragments of current code adapted from matfile.py by Heiko
 # Henkelmann
 
@@ -339,7 +399,7 @@ class MatFile5Reader(MatFileReader):
             name = hdr.name
             if name == '':
                 # can only be a matlab 7 function workspace
-                name = '_function_workspace'
+                name = '__function_workspace__'
                 # We want to keep this raw because mat_dtype processing
                 # will break the format (uint8 as mxDOUBLE_CLASS)
                 process = False

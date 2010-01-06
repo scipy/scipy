@@ -855,21 +855,11 @@ cdef class VarReader5:
         * 3 int8 strings
         * a matrix
 
-        At the end of the mat file (it seems) there is then an unnamed
-        top-level variable (name = '') which appears to be of double
-        class (mxCLASS_DOUBLE), but stored as uint8, the memory for
-        which is in the format of a mini .mat file, without the first
-        124 bytes of the file header (the description and the
-        subsystem_offset), but with the version U2 bytes, and the S2
-        endian test bytes.  There follow 4 zero bytes, presumably for 8
-        byte padding, and then a series of miMATRIX entries, as in a
-        standard mat file.
+        Then there's a matrix at the end of the mat file that seems have
+        the anonymous founction workspaces - we load it as
+        ``__function_workspace__``
 
-        The mat files I was playing with are in ``tests/data``:
-
-        * sqr.mat
-        * parabola.mat
-        * some_functions.mat
+        See the comments at the beginning of ``mio5.py``
         '''
         cdef cnp.ndarray res = np.empty((1,), dtype=OPAQUE_DTYPE)
         res[0]['s0'] = self.read_int8_string()
