@@ -23,7 +23,7 @@ import scipy.sparse
 
 from miobase import MatFileReader, docfiller, matdims, \
      read_dtype, convert_dtypes, arr_to_chars, arr_dtype_number, \
-     MatWriteError
+     MatWriteError, MatReadError
 
 # Reader object for matlab 5 format variables
 from mio5_utils import VarReader5
