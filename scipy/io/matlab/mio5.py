@@ -340,11 +340,16 @@ class MatFile5Reader(MatFileReader):
             if name == '':
                 # can only be a matlab 7 function workspace
                 name = '_function_workspace'
+                # We want to keep this raw because mat_dtype processing
+                # will break the format (uint8 as mxDOUBLE_CLASS)
+                process = False
+            else:
+                process = True
             if variable_names and name not in variable_names:
                 self.mat_stream.seek(next_position)
                 continue
             try:
-                res = self.read_var_array(hdr)
+                res = self.read_var_array(hdr, process)
             except MatReadError, err:
                 warnings.warn(
                     'Unreadable variable "%s", because "%s"' % \

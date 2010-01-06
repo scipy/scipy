@@ -712,3 +712,13 @@ def test_mat_dtype():
     rdr = MatFile5Reader(file(double_eg), mat_dtype=True)
     d = rdr.get_variables()
     yield assert_equal, d['testmatrix'].dtype.kind, 'f'
+
+
+def test_sparse_in_struct():
+    # reproduces bug found by DC where Cython code was insisting on
+    # ndarray return type, but getting sparse matrix
+    st = {'sparsefield': SP.coo_matrix(np.eye(4))}
+    stream = StringIO()
+    savemat(stream, {'a':st})
+    d = loadmat(stream, struct_as_record=True)
+    yield assert_array_equal, d['a'][0,0]['sparsefield'].todense(), np.eye(4)

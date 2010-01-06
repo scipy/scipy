@@ -558,7 +558,7 @@ cdef class VarReader5:
             size *= header.dims_ptr[i]
         return size
 
-    cdef cnp.ndarray read_mi_matrix(self, int process=1):
+    cdef read_mi_matrix(self, int process=1):
         ''' Read header with matrix at sub-levels
 
         Combines ``read_header`` and functionality of
@@ -569,7 +569,10 @@ cdef class VarReader5:
         ----------
         process : int, optional
            If not zero, apply post-processing on returned array
-           
+
+        Returns
+        -------
+        arr : ndarray or sparse matrix
         '''
         cdef:
             VarHeader5 header

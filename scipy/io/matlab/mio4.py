@@ -218,7 +218,6 @@ class MatFile4Reader(MatFileReader):
     %(load_args)s
         '''
         super(MatFile4Reader, self).__init__(mat_stream, *args, **kwargs)
-        self.dtypes = convert_dtypes(mdtypes_template, self.byte_order)
         self._matrix_reader = None
         
     def guess_byte_order(self):
@@ -229,6 +228,14 @@ class MatFile4Reader(MatFileReader):
             return SYS_LITTLE_ENDIAN and '>' or '<'
         return SYS_LITTLE_ENDIAN and '<' or '>'
 
+    def initialize_read(self):
+        ''' Run when beginning read of variables
+
+        Sets up readers from parameters in `self`
+        '''
+        self.dtypes = convert_dtypes(mdtypes_template, self.byte_order)
+        self._matrix_reader = VarReader4(self)
+    
     def read_var_header(self):
         ''' Read header, return header, next position
 
@@ -283,7 +290,8 @@ class MatFile4Reader(MatFileReader):
         if isinstance(variable_names, basestring):
             variable_names = [variable_names]
         self.mat_stream.seek(0)
-        self._matrix_reader = VarReader4(self)
+        # set up variable reader
+        self.initialize_read()
         mdict = {}
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
