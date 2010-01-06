@@ -702,3 +702,13 @@ def test_func_read():
     stream = StringIO()
     wtr = MatFile5Writer(stream)
     yield assert_raises, MatWriteError, wtr.put_variables, d
+
+
+def test_mat_dtype():
+    double_eg = pjoin(test_data_path, 'testmatrix_6.1_SOL2.mat')
+    rdr = MatFile5Reader(file(double_eg), mat_dtype=False)
+    d = rdr.get_variables()
+    yield assert_equal, d['testmatrix'].dtype.kind, 'u'
+    rdr = MatFile5Reader(file(double_eg), mat_dtype=True)
+    d = rdr.get_variables()
+    yield assert_equal, d['testmatrix'].dtype.kind, 'f'

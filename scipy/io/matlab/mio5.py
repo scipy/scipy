@@ -238,7 +238,7 @@ class MatFile5Reader(MatFileReader):
         self.mat_stream.seek(0)
         return mi == 'IM' and '<' or '>'
 
-    def file_header(self):
+    def read_file_header(self):
         ''' Read in mat 5 file header '''
         hdict = {}
         hdr = read_dtype(self.mat_stream, self.dtypes['file_header'])
@@ -301,6 +301,66 @@ class MatFile5Reader(MatFileReader):
         header = self._matrix_reader.read_header()
         return header, next_pos
             
+    def read_var_array(self, header, process=True):
+        ''' Read array, given `header`
+
+        Parameters
+        ----------
+        header : header object
+           object with fields defining variable header
+        process : {True, False} bool, optional
+           If True, apply recursive post-processing during loading of
+           array. 
+        
+        Returns
+        -------
+        arr : array
+           array with post-processing applied or not according to
+           `process`. 
+        '''
+        return self._matrix_reader.array_from_header(header, process)
+
+    def get_variables(self, variable_names=None):
+        ''' get variables from stream as dictionary
+
+        variable_names   - optional list of variable names to get
+
+        If variable_names is None, then get all variables in file
+        '''
+        if isinstance(variable_names, basestring):
+            variable_names = [variable_names]
+        self.mat_stream.seek(0)
+        # Here we pass all the parameters in self to the reading objects
+        self.initialize_read()
+        mdict = self.read_file_header()
+        mdict['__globals__'] = []
+        while not self.end_of_stream():
+            hdr, next_position = self.read_var_header()
+            name = hdr.name
+            if name == '':
+                # can only be a matlab 7 function workspace
+                name = '_function_workspace'
+            if variable_names and name not in variable_names:
+                self.mat_stream.seek(next_position)
+                continue
+            try:
+                res = self.read_var_array(hdr)
+            except MatReadError, err:
+                warnings.warn(
+                    'Unreadable variable "%s", because "%s"' % \
+                    (name, err),
+                    Warning, stacklevel=2)
+                res = "Read error: %s" % err
+            self.mat_stream.seek(next_position)
+            mdict[name] = res
+            if hdr.is_global:
+                mdict['__globals__'].append(name)
+            if variable_names:
+                variable_names.remove(name)
+                if len(variable_names) == 0:
+                    break
+        return mdict
+
     
 def to_writeable(source):
     ''' Convert input object ``source`` to something we can write

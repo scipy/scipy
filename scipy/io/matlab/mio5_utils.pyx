@@ -55,9 +55,8 @@ DEF _N_MIS = 20
 DEF _N_MXS = 20
 
 cimport streams
-cimport mio_utils as cmio_utils
 import scipy.io.matlab.miobase as miob
-from scipy.io.matlab.mio_utils import FileReadOpts, process_element
+from scipy.io.matlab.mio_utils import process_element
 import scipy.io.matlab.mio5_params as mio5p
 import scipy.sparse
 
@@ -129,8 +128,6 @@ cdef class VarReader5:
     cdef public int is_swapped, little_endian
     cdef int struct_as_record
     cdef object codecs, uint16_codec
-    # process_element options
-    cdef cmio_utils.FileReadOpts read_opts
     # c-optimized version of reading stream
     cdef streams.GenericStream cstream
     # pointers to stuff in preader.dtypes
@@ -142,7 +139,12 @@ cdef class VarReader5:
     # cached here for convenience in later array creation
     cdef cnp.dtype U1_dtype
     cdef cnp.dtype bool_dtype
-    
+    # process_element options
+    cdef:
+        int mat_dtype
+        int squeeze_me
+        int chars_as_strings
+        
     def __new__(self, preader):
         self.is_swapped = preader.byte_order == swapped_code
         if self.is_swapped:
@@ -156,11 +158,10 @@ cdef class VarReader5:
         self.uint16_codec = preader.uint16_codec
         # set c-optimized stream object from python file-like object
         self.set_stream(preader.mat_stream)
-        # options structure for process_element
-        self.read_opts = FileReadOpts(
-            preader.chars_as_strings,
-            preader.mat_dtype,
-            preader.squeeze_me)
+        # options for process_element
+        self.mat_dtype = preader.mat_dtype
+        self.chars_as_strings = preader.chars_as_strings
+        self.squeeze_me = preader.squeeze_me
         # copy refs to dtypes into object pointer array. Store preader
         # to keep preader.dtypes, class_dtypes alive. We only need the
         # integer-keyed dtypes
@@ -513,10 +514,6 @@ cdef class VarReader5:
             nzmax = u4s[1]
         header = VarHeader5()
         mc = flags_class & 0xFF
-        # Might want to detect unreadable mclasses (such as functions)
-        # here and divert to something that preserves the binary data.
-        # For now we bail later in read_array_mdtype, via
-        # read_mi_matrix, giving a MatReadError
         header.mclass = mc
         header.is_logical = flags_class >> 9 & 1
         header.is_global = flags_class >> 10 & 1
@@ -561,68 +558,54 @@ cdef class VarReader5:
             size *= header.dims_ptr[i]
         return size
 
-    def array_from_header(self, VarHeader5 header):
-        '''Read array from stream, given array header
-
-        Apply standard processing of array given ``read_opts`` options
-        set in ``self``.
-
-        Only called at the top level - that is, at when we start
-        reading of each variable in the mat file. 
-        '''
-        arr, mat_dtype = self.read_array_mdtype(header)
-        if header.mclass == mxSPARSE_CLASS:
-            # no current processing makes sense for sparse
-            return arr
-        return process_element(arr, self.read_opts, mat_dtype)
-
-    cdef cnp.ndarray read_mi_matrix(self):
+    cdef cnp.ndarray read_mi_matrix(self, int process=1):
         ''' Read header with matrix at sub-levels
 
         Combines ``read_header`` and functionality of
         ``array_from_header``.  Applies standard processing of array
-        given ``read_opts`` options set in self. 
+        given options set in self.
+
+        Parameters
+        ----------
+        process : int, optional
+           If not zero, apply post-processing on returned array
+           
         '''
         cdef:
             VarHeader5 header
             cnp.uint32_t mdtype, byte_count
-            object arr, mat_dtype
+            object arr
         # read full tag
         self.cread_full_tag(&mdtype, &byte_count)
         if mdtype != miMATRIX:
             raise TypeError('Expecting matrix here')
         if byte_count == 0: # empty matrix
-            mat_dtype = 'f8'
-            arr = np.array([[]])
-        else:
-            header = self.read_header()
-            arr, mat_dtype = self.read_array_mdtype(header)
-        if header.mclass == mxSPARSE_CLASS:
-            # no current processing makes sense for sparse
-            return arr
-        return process_element(arr, self.read_opts, mat_dtype)
+            if process and self.squeeze_me:
+                return np.array([])
+            else:
+                return np.array([[]])
+        header = self.read_header()
+        return self.array_from_header(header, process)
 
-    cpdef read_array_mdtype(self, VarHeader5 header):
-        ''' Read array of any type, return array and mat_dtype
+    cpdef array_from_header(self, VarHeader5 header, int process=1):
+        ''' Read array of any class, given matrix `header`
 
         Parameters
         ----------
         header : VarHeader5
            array header object
-
+        process : int, optional
+           If not zero, apply post-processing on returned array
+           
         Returns
         -------
         arr : array or sparse array
            read array
-        mat_dtype : None or dtype
-           dtype of array as it would be read into matlab workspace, or
-           None if it does not make sense that this would differ from
-           the dtype of `arr`
         '''
         cdef:
             object arr
+            cnp.dtype mat_dtype
         cdef int mc = header.mclass
-        cdef object mat_dtype = None
         if (mc == mxDOUBLE_CLASS
             or mc == mxSINGLE_CLASS
             or mc == mxINT8_CLASS
@@ -633,13 +616,17 @@ cdef class VarReader5:
             or mc == mxUINT32_CLASS
             or mc == mxINT64_CLASS
             or mc == mxUINT64_CLASS): # numeric matrix
-            if header.is_logical:
-                mat_dtype = self.bool_dtype
-            else:
-                mat_dtype = <object>self.class_dtypes[mc]
             arr = self.read_real_complex(header)
+            if process and self.mat_dtype: # might need to recast
+                if header.is_logical:
+                    mat_dtype = self.bool_dtype
+                else:
+                    mat_dtype = <object>self.class_dtypes[mc]
+                arr = arr.astype(mat_dtype)
         elif mc == mxSPARSE_CLASS:
             arr = self.read_sparse(header)
+            # no current processing makes sense for sparse
+            return arr
         elif mc == mxCHAR_CLASS:
             arr = self.read_char(header)
         elif mc == mxCELL_CLASS:
@@ -653,10 +640,18 @@ cdef class VarReader5:
         elif mc == mxFUNCTION_CLASS: # just a matrix of struct type
             arr = self.read_mi_matrix()
             arr = mio5p.MatlabFunction(arr)
+            # to make them more re-writeable - don't process
+            return arr
         elif mc == mxOPAQUE_CLASS:
             arr = self.read_opaque(header)
             arr = mio5p.MatlabOpaque(arr)
-        return arr, mat_dtype
+            # to make them more re-writeable - don't process
+            return arr
+        if process:
+            return process_element(arr,
+                                   self.chars_as_strings,
+                                   self.squeeze_me)
+        return arr
 
     cpdef cnp.ndarray read_real_complex(self, VarHeader5 header):
         ''' Read real / complex matrices from stream '''

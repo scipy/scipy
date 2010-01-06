@@ -4,7 +4,6 @@
 
 import numpy as np
 cimport numpy as cnp
-from mio_utils cimport FileReadOpts
 
 
 cpdef size_t cproduct(tup):
@@ -15,28 +14,12 @@ cpdef size_t cproduct(tup):
     return res
            
 
-cdef class FileReadOpts:
-    def __new__(self,
-                chars_as_strings,
-                mat_dtype,
-                squeeze_me):
-        self.chars_as_strings = chars_as_strings
-        self.mat_dtype = mat_dtype
-        self.squeeze_me = squeeze_me
-        
-
 cpdef cnp.ndarray process_element(cnp.ndarray arr,
-                    FileReadOpts file_read_opts,
-                    object mat_dtype):
-    cdef:
-        int i
-    if file_read_opts.chars_as_strings and arr.dtype.kind == 'U':
+                                  int chars_as_strings = 1,
+                                  int squeeze_me = 0):
+    if chars_as_strings and arr.dtype.kind == 'U':
         arr = chars_to_strings(arr)
-    if file_read_opts.mat_dtype:
-        # Apply options to replicate matlab datatype on load
-        if mat_dtype is not None:
-            arr = arr.astype(mat_dtype)
-    if file_read_opts.squeeze_me:
+    if squeeze_me:
         if not arr.size:
             arr = np.array([])
         else:

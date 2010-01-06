@@ -11,7 +11,7 @@ from miobase import MatFileReader, docfiller, matdims, \
      read_dtype, convert_dtypes, arr_to_chars, arr_dtype_number, \
      MatWriteError
 
-from mio_utils import FileReadOpts, process_element
+from mio_utils import process_element
 
 
 SYS_LITTLE_ENDIAN = sys.byteorder == 'little'
@@ -90,10 +90,8 @@ class VarReader4(object):
         self.file_reader = file_reader
         self.mat_stream = file_reader.mat_stream
         self.dtypes = file_reader.dtypes
-        self.read_opts = FileReadOpts(
-            file_reader.chars_as_strings,
-            file_reader.mat_dtype,
-            file_reader.squeeze_me)
+        self.chars_as_strings = file_reader.chars_as_strings
+        self.squeeze_me = file_reader.squeeze_me
         
     def read_header(self):
         ''' Reads and return header for variable '''
@@ -117,15 +115,10 @@ class VarReader4(object):
             dims,
             is_complex)
         
-    def array_from_header(self, hdr):
+    def array_from_header(self, hdr, process=True):
         mclass = hdr.mclass
-        mat_dtype = None
         if mclass == mxFULL_CLASS:
             arr = self.read_full_array(hdr)
-            if hdr.is_complex:
-               mat_dtype = np.dtype(np.complex128)
-            else:
-               mat_dtype = np.dtype(np.float64)
         elif mclass == mxCHAR_CLASS:
             arr = self.read_char_array(hdr)
         elif mclass == mxSPARSE_CLASS:
@@ -133,8 +126,12 @@ class VarReader4(object):
             return self.read_sparse_array(hdr)
         else:
             raise TypeError, 'No reader for class code %s' % mclass
-        return process_element(arr, self.read_opts, mat_dtype)
-        
+        if process:
+            return process_element(arr,
+                               self.chars_as_strings,
+                               self.squeeze_me)
+        return arr
+    
     def read_sub_array(self, hdr, copy=True):
         ''' Mat4 read always uses header dtype and dims
         hdr : object
@@ -232,10 +229,6 @@ class MatFile4Reader(MatFileReader):
             return SYS_LITTLE_ENDIAN and '>' or '<'
         return SYS_LITTLE_ENDIAN and '<' or '>'
 
-    def initialize_read(self):
-        ''' Initialize reading objects from parameters in object '''
-        self._matrix_reader = VarReader4(self)
-
     def read_var_header(self):
         ''' Read header, return header, next position
 
@@ -261,8 +254,50 @@ class MatFile4Reader(MatFileReader):
         next_position = self.mat_stream.tell() + remaining_bytes
         return hdr, next_position
     
-    def read_var_array(self, header):
-        return self._matrix_reader.array_from_header(header)
+    def read_var_array(self, header, process=True):
+        ''' Read array, given `header`
+
+        Parameters
+        ----------
+        header : header object
+           object with fields defining variable header
+        process : {True, False} bool, optional
+           If True, apply recursive post-processing during loading of
+           array. 
+        
+        Returns
+        -------
+        arr : array
+           array with post-processing applied or not according to
+           `process`. 
+        '''
+        return self._matrix_reader.array_from_header(header, process)
+
+    def get_variables(self, variable_names=None):
+        ''' get variables from stream as dictionary
+
+        variable_names   - optional list of variable names to get
+
+        If variable_names is None, then get all variables in file
+        '''
+        if isinstance(variable_names, basestring):
+            variable_names = [variable_names]
+        self.mat_stream.seek(0)
+        self._matrix_reader = VarReader4(self)
+        mdict = {}
+        while not self.end_of_stream():
+            hdr, next_position = self.read_var_header()
+            name = hdr.name
+            if variable_names and name not in variable_names:
+                self.mat_stream.seek(next_position)
+                continue
+            mdict[name] = self.read_var_array(hdr)
+            self.mat_stream.seek(next_position)
+            if variable_names:
+                variable_names.remove(name)
+                if len(variable_names) == 0:
+                    break
+        return mdict
 
 
 def arr_to_2d(arr, oned_as='row'):

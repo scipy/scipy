@@ -3,8 +3,6 @@
 """
 Base classes for matlab (TM) file stream reading
 """
-import warnings
-
 import numpy as np
 
 from scipy.ndimage import doccer
@@ -222,9 +220,6 @@ def get_matfile_version(fileobj):
                          % ret)
 
 
-class MatReadError(Exception): pass
-
-
 def matdims(arr, oned_as='column'):
     ''' Determine equivalent matlab dimensions for given array 
     
@@ -372,53 +367,9 @@ class MatFileReader(object):
         self.squeeze_me = False
         self.chars_as_strings = False
 
-    def file_header(self):
-        return {}
-
     def guess_byte_order(self):
         ''' As we do not know what file type we have, assume native '''
         return ByteOrder.native_code
-
-    def get_variables(self, variable_names=None):
-        ''' get variables from stream as dictionary
-
-        variable_names   - optional list of variable names to get
-
-        If variable_names is None, then get all variables in file
-        '''
-        if isinstance(variable_names, basestring):
-            variable_names = [variable_names]
-        self.mat_stream.seek(0)
-        # Here we pass all the parameters in self to the reading objects
-        self.initialize_read()
-        mdict = self.file_header()
-        mdict['__globals__'] = []
-        while not self.end_of_stream():
-            hdr, next_position = self.read_var_header()
-            name = hdr.name
-            if name == '':
-                # can only be a matlab 7 function workspace
-                name = '_function_workspace'
-            if variable_names and name not in variable_names:
-                self.mat_stream.seek(next_position)
-                continue
-            try:
-                res = self.read_var_array(hdr)
-            except MatReadError, err:
-                warnings.warn(
-                    'Unreadable variable "%s", because "%s"' % \
-                    (name, err),
-                    Warning, stacklevel=2)
-                res = "Read error: %s" % err
-            self.mat_stream.seek(next_position)
-            mdict[name] = res
-            if hdr.is_global:
-                mdict['__globals__'].append(name)
-            if variable_names:
-                variable_names.remove(name)
-                if not variable_names:
-                    break
-        return mdict
 
     def end_of_stream(self):
         b = self.mat_stream.read(1)
@@ -426,28 +377,7 @@ class MatFileReader(object):
         self.mat_stream.seek(curpos-1)
         return len(b) == 0
 
-    def initialize_read(self):
-        raise NotImplementedError
-
-    def read_var_header(self):
-        raise NotImplementedError
-
-    def read_var_array(self, header):
-        ''' Read array, given header
-
-        Parameters
-        ----------
-        header : header object
-           object with fields defining variable header
-
-        Returns
-        -------
-        arr : array
-           array with all post-processing applied
-        '''
-        return self._matrix_reader.array_from_header(header)
-
-
+    
 def arr_dtype_number(arr, num):
     ''' Return dtype for given number of items per element'''
     return np.dtype(arr.dtype.str[:2] + str(num))
