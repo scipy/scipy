@@ -13,12 +13,14 @@ http://www.mathworks.com/access/helpdesk/help/pdf_doc/matlab/matfile_format.pdf
 =================================
 
 The document above does not give any hints as to the storage of matlab
-function hadles, or anonymous function handles.  I had therefore guess,
-by inspecting mat files, what the format was of matlab arrays of
-``mxFUNCTION_CLASS`` and ``mxOPAQUE_CLASS``.
+function handles, or anonymous function handles.  I had therefore to
+guess the format of matlab arrays of ``mxFUNCTION_CLASS`` and
+``mxOPAQUE_CLASS`` by looking at example mat files.
 
 ``mxFUNCTION_CLASS`` stores all types of matlab functions.  It seems to
-be struct with a set pattern of fields.   For anonymous functions, one of the fields seems to contain the well-named ``mxOPAQUE_CLASS``. This seems to cotain:
+contain a struct matrix with a set pattern of fields.  For anonymous
+functions, a sub-fields of one of these fields seems to contain the
+well-named ``mxOPAQUE_CLASS``. This seems to cotain:
 
 * array flags as for any matlab matrix
 * 3 int8 strings
@@ -28,12 +30,11 @@ It seems that, whenever the mat file contains a ``mxOPAQUE_CLASS``
 instance, there is also an un-named matrix (name == '') at the end of
 the mat file.  I'll call this the ``__function_workspace__`` matrix.
 
-Experiments seemed to show that, when I saved two anonymous functions in
-a mat file, or appended another anonymous function to the mat file,
-there was still only one ``__function_workspace__`` un-named matrix at
-the end, but larger than that for a mat file with a single anonymous
-function, suggesting that the workspaces for the two functions had been
-merged.
+When I saved two anonymous functions in a mat file, or appended another
+anonymous function to the mat file, there was still only one
+``__function_workspace__`` un-named matrix at the end, but larger than
+that for a mat file with a single anonymous function, suggesting that
+the workspaces for the two functions had been merged.
 
 The ``__function_workspace__`` matrix appears to be of double class
 (``mxCLASS_DOUBLE``), but stored as uint8, the memory for which is in
@@ -50,8 +51,8 @@ I guess that:
 * saving an anonymous function back to a mat file will need the
   associated ``__function_workspace__`` matrix saved as well for the
   anonymous function to work correctly.
-* appanding to a mat file that has a ``__function_workspace__`` would
-  involve first pulling off this workspace, appending, checking whether
+* appending to a mat file that has a ``__function_workspace__`` would
+  invoLve first pulling off this workspace, appending, checking whether
   there were any more anonymous functions appended, and then somehow
   merging the relevant workspaces, and saving at the end of the mat
   file.
