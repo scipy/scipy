@@ -14,9 +14,13 @@ cpdef size_t cproduct(tup):
     return res
            
 
-cpdef cnp.ndarray process_element(cnp.ndarray arr,
+cpdef object process_element(cnp.ndarray arr,
                                   int chars_as_strings = 1,
                                   int squeeze_me = 0):
+    ''' Return processed object
+
+    The returned object may not be an ndarray - for example if we do
+    ``arr.item`` to return a ``mat_struct`` object from a struct array '''
     if chars_as_strings and arr.dtype.kind == 'U':
         arr = chars_to_strings(arr)
     if squeeze_me:
@@ -25,7 +29,7 @@ cpdef cnp.ndarray process_element(cnp.ndarray arr,
         else:
             arr = np.squeeze(arr)
             if not arr.shape and arr.dtype.isbuiltin: # 0d coverted to scalar
-                arr = arr.item()
+                return arr.item()
     return arr
 
 

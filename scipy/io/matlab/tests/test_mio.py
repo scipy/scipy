@@ -722,3 +722,17 @@ def test_sparse_in_struct():
     savemat(stream, {'a':st})
     d = loadmat(stream, struct_as_record=True)
     yield assert_array_equal, d['a'][0,0]['sparsefield'].todense(), np.eye(4)
+
+
+def test_mat_struct_squeeze():
+    stream = StringIO()
+    in_d = {'st':{'one':1, 'two':2}}
+    savemat(stream, in_d)
+    # no error without squeeze
+    out_d = loadmat(stream, struct_as_record=False)
+    # previous error was with squeeze, with mat_struct
+    out_d = loadmat(stream,
+                    struct_as_record=False,
+                    squeeze_me=True,
+                    )
+    
