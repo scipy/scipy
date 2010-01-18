@@ -115,7 +115,7 @@ def correlate(in1, in2, mode='full', old_behavior=True):
             if ps[i] <= 0:
                 raise ValueError("Dimension of x(%d) < y(%d) " \
                                  "not compatible with valid mode" % \
-                                 (x.shape[i], y.shape[i]))
+                                 (in1.shape[i], in2.shape[i]))
 
         z = sigtools._correlateND(in1, in2, out, val)
     else:
