@@ -178,7 +178,7 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
   Description:
 
     Return the point which minimizes the sum of squares of M
-    (non-linear) equations in N unknowns given a starting estimate, x0,
+    (non-linear) equations in N<=M unknowns given a starting estimate, x0,
     using a modification of the Levenberg-Marquardt algorithm.
 
                     x = arg min(sum(func(y)**2,axis=0))
@@ -289,6 +289,8 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
     n = len(x0)
     if type(args) != type(()): args = (args,)
     m = check_func(func,x0,args,n)[0]
+    if n>m:
+        raise TypeError('Improper input: N=%s must not exceed M=%s' % (n,m))
     if Dfun is None:
         if (maxfev == 0):
             maxfev = 200*(n+1)
@@ -329,15 +331,17 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
 
     mesg = errors[info][0]
     if full_output:
-        from numpy.dual import inv
-        from numpy.linalg import LinAlgError
-        perm = take(eye(n),retval[1]['ipvt']-1,0)
-        r = triu(transpose(retval[1]['fjac'])[:n,:])
-        R = dot(r, perm)
-        try:
-            cov_x = inv(dot(transpose(R),R))
-        except LinAlgError:
-            cov_x = None
+        cov_x = None
+        if info in [1,2,3,4]:
+            from numpy.dual import inv
+            from numpy.linalg import LinAlgError
+            perm = take(eye(n),retval[1]['ipvt']-1,0)
+            r = triu(transpose(retval[1]['fjac'])[:n,:])
+            R = dot(r, perm)
+            try:
+                cov_x = inv(dot(transpose(R),R))
+            except LinAlgError:
+                pass
         return (retval[0], cov_x) + retval[1:-1] + (mesg,info)
     else:
         return (retval[0], info)
