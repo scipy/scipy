@@ -1028,22 +1028,24 @@ def slepian(M,width,sym=1):
     return w
 
 
-def hilbert(x, N=None):
+def hilbert(x, N=None, axis=-1):
     """Compute the analytic signal.
 
-    The transformation is done along the first axis.
+    The transformation is done along the last axis by default.
 
     Parameters
     ----------
     x : array-like
         Signal data
     N : int, optional
-        Number of Fourier components. Default: ``x.shape[0]``
+        Number of Fourier components. Default: ``x.shape[axis]``
+    axis : int, optional
+        
 
     Returns
     -------
-    xa : ndarray, shape (N,) + x.shape[1:]
-        Analytic signal of `x`
+    xa : ndarray
+        Analytic signal of `x`, of each 1d array along axis
 
     Notes
     -----
@@ -1054,6 +1056,8 @@ def hilbert(x, N=None):
     where ``F`` is the Fourier transform, ``U`` the unit step function,
     and ``y`` the Hilbert transform of ``x``. [1]
 
+    changes in scipy 0.8.0: new axis argument, new default axis=-1
+
     References
     ----------
     .. [1] Wikipedia, "Analytic signal".
@@ -1062,13 +1066,13 @@ def hilbert(x, N=None):
     """
     x = asarray(x)
     if N is None:
-        N = len(x)
+        N = x.shape[axis]
     if N <=0:
         raise ValueError, "N must be positive."
     if iscomplexobj(x):
         print "Warning: imaginary part of x ignored."
         x = real(x)
-    Xf = fft(x,N,axis=0)
+    Xf = fft(x, N, axis=axis)
     h = zeros(N)
     if N % 2 == 0:
         h[0] = h[N/2] = 1
@@ -1078,8 +1082,10 @@ def hilbert(x, N=None):
         h[1:(N+1)/2] = 2
 
     if len(x.shape) > 1:
-        h = h[:, newaxis]
-    x = ifft(Xf*h)
+        ind = [newaxis]*x.ndim
+        ind[axis] = slice(None)
+        h = h[ind]
+    x = ifft(Xf*h, axis=axis)
     return x
 
 def hilbert2(x,N=None):

@@ -5,7 +5,7 @@ import types
 from numpy.testing import *
 
 import scipy.signal as signal
-from scipy.signal import lfilter, correlate, convolve, convolve2d
+from scipy.signal import lfilter, correlate, convolve, convolve2d, hilbert
 
 
 from numpy import array, arange
@@ -703,6 +703,86 @@ class TestDecimate:
     def test_basic(self):
         x = np.arange(6)
         assert_array_equal(signal.decimate(x, 2, n=1).round(), x[::2])
+
+
+class TestHilbert:
+    def test_hilbert_theoretical(self):
+        #test cases by Ariel Rokem
+        decimal = 14
+
+        pi = np.pi
+        t = np.arange(0, 2*pi, pi/256)
+        a0 = np.sin(t)
+        a1 = np.cos(t)
+        a2 = np.sin(2*t)
+        a3 = np.cos(2*t)
+        a = np.vstack([a0,a1,a2,a3])
+
+        h = hilbert(a)
+        h_abs = np.abs(h)
+        h_angle = np.angle(h)
+        h_real = np.real(h)
+
+        #The real part should be equal to the original signals:
+        assert_almost_equal(h_real, a, decimal)
+        #The absolute value should be one everywhere, for this input:
+        assert_almost_equal(h_abs, np.ones(a.shape), decimal)
+        #For the 'slow' sine - the phase should go from -pi/2 to pi/2 in
+        #the first 256 bins: 
+        assert_almost_equal(h_angle[0,:256], np.arange(-pi/2,pi/2,pi/256),
+                            decimal)
+        #For the 'slow' cosine - the phase should go from 0 to pi in the
+        #same interval:
+        assert_almost_equal(h_angle[1,:256], np.arange(0,pi,pi/256), decimal)
+        #The 'fast' sine should make this phase transition in half the time:
+        assert_almost_equal(h_angle[2,:128], np.arange(-pi/2,pi/2,pi/128),
+                            decimal)
+        #Ditto for the 'fast' cosine:
+        assert_almost_equal(h_angle[3,:128], np.arange(0,pi,pi/128), decimal)
+
+        #The imaginary part of hilbert(cos(t)) = sin(t) Wikipedia
+        assert_almost_equal(h[1].imag, a0, decimal)
+
+    def test_hilbert_axisN(self):
+        # tests for axis and N arguments
+        a = np.arange(18).reshape(3,6)
+        # test axis        
+        aa = hilbert(a, axis=-1)
+        yield assert_equal, hilbert(a.T, axis=0), aa.T
+        # test 1d
+        yield assert_equal, hilbert(a[0]), aa[0]
+        
+        # test N
+        aan = hilbert(a, N=20, axis=-1)
+        yield assert_equal, aan.shape, [3,20]
+        yield assert_equal, hilbert(a.T, N=20, axis=0).shape, [20,3]
+        #the next test is just a regression test,
+        #no idea whether numbers make sense
+        a0hilb = np.array(
+                          [  0.000000000000000e+00-1.72015830311905j ,
+                             1.000000000000000e+00-2.047794505137069j,
+                             1.999999999999999e+00-2.244055555687583j,
+                             3.000000000000000e+00-1.262750302935009j,
+                             4.000000000000000e+00-1.066489252384493j,
+                             5.000000000000000e+00+2.918022706971047j,
+                             8.881784197001253e-17+3.845658908989067j,
+                            -9.444121133484362e-17+0.985044202202061j,
+                            -1.776356839400251e-16+1.332257797702019j,
+                            -3.996802888650564e-16+0.501905089898885j,
+                             1.332267629550188e-16+0.668696078880782j,
+                            -1.192678053963799e-16+0.235487067862679j,
+                            -1.776356839400251e-16+0.286439612812121j,
+                             3.108624468950438e-16+0.031676888064907j,
+                             1.332267629550188e-16-0.019275656884536j,
+                            -2.360035624836702e-16-0.1652588660287j  ,
+                             0.000000000000000e+00-0.332049855010597j,
+                             3.552713678800501e-16-0.403810179797771j,
+                             8.881784197001253e-17-0.751023775297729j,
+                             9.444121133484362e-17-0.79252210110103j ])
+        yield assert_almost_equal, aan[0], a0hilb, 14, 'N regression'
+
+        
+
 
 if __name__ == "__main__":
     run_module_suite()
