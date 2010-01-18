@@ -3571,7 +3571,7 @@ def _drv2_moment(self, n, *args):
     tot = 0.0
     diff = 1e100
     #pos = self.a
-    pos = max(0, self.a)
+    pos = max(0.0, 1.0*self.a)
     count = 0
     #handle cases with infinite support
     ulimit = max(1000, (min(self.b,1000) + max(self.a,-1000))/2.0 )
@@ -3579,7 +3579,7 @@ def _drv2_moment(self, n, *args):
 
     while (pos <= self.b) and ((pos <= ulimit) or \
                                (diff > self.moment_tol)):
-        diff = pos**n * self.pmf(pos,*args)
+        diff = np.power(pos, n) * self.pmf(pos,*args)
         # use pmf because _pmf does not check support in randint
         #     and there might be problems ? with correct self.a, self.b at this stage
         tot += diff
@@ -3591,7 +3591,8 @@ def _drv2_moment(self, n, *args):
         pos = -self.inc
         while (pos >= self.a) and ((pos >= llimit) or \
                                    (diff > self.moment_tol)):
-            diff = pos**n * self.pmf(pos,*args)  #using pmf instead of _pmf
+            diff = np.power(pos, n) * self.pmf(pos,*args)
+            #using pmf instead of _pmf, see above
             tot += diff
             pos -= self.inc
             count += 1
