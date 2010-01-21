@@ -175,112 +175,103 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
 def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,xtol=1.49012e-8,gtol=0.0,maxfev=0,epsfcn=0.0,factor=100,diag=None,warning=True):
     """Minimize the sum of squares of a set of equations.
 
-  Description:
+        x = arg min(sum(func(y)**2,axis=0))
+                 y
 
-    Return the point which minimizes the sum of squares of M
-    (non-linear) equations in N<=M unknowns given a starting estimate, x0,
-    using a modification of the Levenberg-Marquardt algorithm.
+    Parameters
+    ----------
+    func : callable
+        should take at least one (possibly length N vector) argument and
+        returns M floating point numbers.
+    x0 :
+        The starting estimate for the minimization.
+    args :
+        Any extra arguments to func are placed in this tuple.
+    Dfun : callable
+        A function or method to compute the Jacobian of func with derivatives
+        across the rows. If this is None, the Jacobian will be estimated.
+    full_output :
+        non-zero to return all optional outputs.
+    col_deriv :
+        non-zero to specify that the Jacobian function computes derivatives
+        down the columns (faster, because there is no transpose operation).
+    ftol :
+        Relative error desired in the sum of squares.
+    xtol :
+        Relative error desired in the approximate solution.
+    gtol :
+        Orthogonality desired between the function vector and the columns of
+        the Jacobian.
+    maxfev :
+        The maximum number of calls to the function. If zero, then 100*(N+1) is
+        the maximum where N is the number of elements in x0.
+    epsfcn :
+        A suitable step length for the forward-difference approximation of the
+        Jacobian (for Dfun=None). If epsfcn is less than the machine precision,
+        it is assumed that the relative errors in the functions are of the
+        order of the machine precision.
+    factor :
+        A parameter determining the initial step bound (factor * || diag *
+        x||). Should be in interval (0.1,100).
+    diag :
+        A sequency of N positive entries that serve as a scale factors for the
+        variables.
+    warning : bool
+        True to print a warning message when the call is unsuccessful; False to
+        suppress the warning message.  Deprecated, use the warnings module
+        instead.
 
-                    x = arg min(sum(func(y)**2,axis=0))
-                             y
+    Returns
+    -------
+    x :
+        the solution (or the result of the last iteration for an unsuccessful
+        call.
 
-  Inputs:
+    cov_x :
+        uses the fjac and ipvt optional outputs to construct an estimate of the
+        jacobian around the solution.  None if a singular matrix encountered
+        (indicates very flat curvature in some direction).  This matrix must be
+        multiplied by the residual standard deviation to get the covariance of
+        the parameter estimates -- see curve_fit.
+    infodict : dict
+        a dictionary of optional outputs with the keys:
 
-    func -- A Python function or method which takes at least one
-            (possibly length N vector) argument and returns M
-            floating point numbers.
-    x0 -- The starting estimate for the minimization.
-    args -- Any extra arguments to func are placed in this tuple.
-    Dfun -- A function or method to compute the Jacobian of func with
-            derivatives across the rows. If this is None, the
-            Jacobian will be estimated.
-    full_output -- non-zero to return all optional outputs.
-    col_deriv -- non-zero to specify that the Jacobian function
-                 computes derivatives down the columns (faster, because
-                 there is no transpose operation).
-        warning -- True to print a warning message when the call is
-             unsuccessful; False to suppress the warning message.
-             Deprecated, use the warnings module instead.
+            - 'nfev' : the number of function calls
+            - 'fvec' : the function evaluated at the output
+            - 'fjac' : A permutation of the R matrix of a QR
+                     factorization of the final approximate
+                     Jacobian matrix, stored column wise.
+                     Together with ipvt, the covariance of the
+                     estimate can be approximated.
+            - 'ipvt' : an integer array of length N which defines
+                     a permutation matrix, p, such that
+                     fjac*p = q*r, where r is upper triangular
+                     with diagonal elements of nonincreasing
+                     magnitude. Column j of p is column ipvt(j)
+                     of the identity matrix.
+            - 'qtf'  : the vector (transpose(q) * fvec).
+    mesg :
+        a string message giving information about the cause of failure.
+    ier :
+        an integer flag.  If it is equal to 1, 2, 3 or 4, the solution was
+        found.  Otherwise, the solution was not found. In either case, the
+        optional output variable 'mesg' gives more information.
 
-  Outputs: (x, {cov_x, infodict, mesg}, ier)
-
-    x -- the solution (or the result of the last iteration for an
-         unsuccessful call.
-
-    cov_x -- uses the fjac and ipvt optional outputs to construct an
-             estimate of the jacobian around the solution.
-             None if a singular matrix encountered (indicates
-             very flat curvature in some direction).  This
-             matrix must be multiplied by the residual standard
-             deviation to get the covariance of the parameter
-             estimates --- see curve_fit.
-    infodict -- a dictionary of optional outputs with the keys:
-                'nfev' : the number of function calls
-                'fvec' : the function evaluated at the output
-                'fjac' : A permutation of the R matrix of a QR
-                         factorization of the final approximate
-                         Jacobian matrix, stored column wise.
-                         Together with ipvt, the covariance of the
-                         estimate can be approximated.
-                'ipvt' : an integer array of length N which defines
-                         a permutation matrix, p, such that
-                         fjac*p = q*r, where r is upper triangular
-                         with diagonal elements of nonincreasing
-                         magnitude. Column j of p is column ipvt(j)
-                         of the identity matrix.
-                'qtf'  : the vector (transpose(q) * fvec).
-    mesg -- a string message giving information about the cause of failure.
-    ier -- an integer flag.  If it is equal to 1, 2, 3 or 4, the
-           solution was found.  Otherwise, the solution was not
-           found. In either case, the optional output variable 'mesg'
-           gives more information.
-
-
-  Extended Inputs:
-
-   ftol -- Relative error desired in the sum of squares.
-   xtol -- Relative error desired in the approximate solution.
-   gtol -- Orthogonality desired between the function vector
-           and the columns of the Jacobian.
-   maxfev -- The maximum number of calls to the function. If zero,
-             then 100*(N+1) is the maximum where N is the number
-             of elements in x0.
-   epsfcn -- A suitable step length for the forward-difference
-             approximation of the Jacobian (for Dfun=None). If
-             epsfcn is less than the machine precision, it is assumed
-             that the relative errors in the functions are of
-             the order of the machine precision.
-   factor -- A parameter determining the initial step bound
-             (factor * || diag * x||). Should be in interval (0.1,100).
-   diag -- A sequency of N positive entries that serve as a
-           scale factors for the variables.
-
-  Remarks:
-
+    Notes
+    -----
     "leastsq" is a wrapper around MINPACK's lmdif and lmder algorithms.
 
-  See also:
-
-      scikits.openopt, which offers a unified syntax to call this and other solvers
-
-      fmin, fmin_powell, fmin_cg,
-             fmin_bfgs, fmin_ncg -- multivariate local optimizers
-
-      fmin_l_bfgs_b, fmin_tnc,
-             fmin_cobyla -- constrained multivariate optimizers
-
-      anneal, brute -- global optimizers
-
-      fminbound, brent, golden, bracket -- local scalar minimizers
-
-      fsolve -- n-dimensional root-finding
-
-      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-
-      fixed_point -- scalar and vector fixed-point finder
-
-      curve_fit -- find parameters for a curve-fitting problem.
-
+    See Also
+    --------
+    scikits.openopt: offers a unified syntax to call this and other solvers
+    fmin, fmin_powell, fmin_cg, fmin_bfgs, fmin_ncg: multivariate local optimizers
+    fmin_l_bfgs_b, fmin_tnc, fmin_cobyla: constrained multivariate optimizers
+    anneal, brute: global optimizers
+    fminbound, brent, golden, bracket: local scalar minimizers
+    fsolve: n-dimensional root-finding
+    brentq, brenth, ridder, bisect, newton: one-dimensional root-finding
+    fixed_point: scalar and vector fixed-point finder
+    curve_fit: find parameters for a curve-fitting problem.
     """
     if not warning :
         msg = "The warning keyword is deprecated. Use the warnings module."
