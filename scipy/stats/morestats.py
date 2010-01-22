@@ -596,19 +596,24 @@ def anderson(x,dist='norm'):
         z = distributions.logistic.cdf(w)
         sig = array([25,10,5,2.5,1,0.5])
         critical = around(_Avals_logistic / (1.0+0.25/N),3)
-    else:
-        def fixedsolve(th,xj,N):
-            val = stats.sum(xj)*1.0/N
-            tmp = exp(-xj/th)
-            term = sum(xj*tmp,axis=0)
-            term /= sum(tmp,axis=0)
-            return val - term
-        s = optimize.fixed_point(fixedsolve, 1.0, args=(x,N),xtol=1e-5)
-        xbar = -s*log(sum(exp(-x/s),axis=0)*1.0/N)
+    elif (dist == 'gumbel') or (dist == 'extreme1'):
+        #the following is incorrect, see ticket:1097
+##        def fixedsolve(th,xj,N):
+##            val = stats.sum(xj)*1.0/N
+##            tmp = exp(-xj/th)
+##            term = sum(xj*tmp,axis=0)
+##            term /= sum(tmp,axis=0)
+##            return val - term
+##        s = optimize.fixed_point(fixedsolve, 1.0, args=(x,N),xtol=1e-5)
+##        xbar = -s*log(sum(exp(-x/s),axis=0)*1.0/N)
+        xbar, s = distributions.gumbel_l.fit(x)
         w = (y-xbar)/s
         z = distributions.gumbel_l.cdf(w)
         sig = array([25,10,5,2.5,1])
         critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)),3)
+    else:
+        raise ValueError("dist has to be one of 'norm','expon','logistic'",
+                         "'gumbel','extreme1'")
     i = arange(1,N+1)
     S = sum((2*i-1.0)/N*(log(z)+log(1-z[::-1])),axis=0)
     A2 = -N-S
