@@ -116,8 +116,22 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
 
     basic_filter = BasicFilterFunctions[(int) (arX->descr->type_num)];
     if (basic_filter == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-                        "linear_filter not available for this type");
+        PyObject *msg, *str;
+        char *s;
+
+        str = PyObject_Str((PyObject*)arX->descr);
+        if (str == NULL) {
+            goto fail;
+        }
+        s = PyString_AsString(str);
+        msg = PyString_FromFormat(
+                        "input type '%s' not supported\n", s);
+        Py_DECREF(str);
+        if (msg == NULL) {
+            goto fail;
+        }
+        PyErr_SetObject(PyExc_NotImplementedError, msg);
+        Py_DECREF(msg);
         goto fail;
     }
 
