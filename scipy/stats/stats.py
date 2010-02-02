@@ -1403,7 +1403,7 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
         defaultlimits = (data_min - s, data_max + s)
     # use numpy's histogram method to compute bins
     hist, bin_edges = np.histogram(a, bins=numbins, range=defaultlimits,
-                                   weights=weights, new=True)
+                                   weights=weights)
     # hist are not always floats, convert to keep with old output
     hist = np.array(hist, dtype=float)
     # fixed width for bins is assumed, as numpy's histogram gives
