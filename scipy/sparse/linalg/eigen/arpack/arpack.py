@@ -129,7 +129,7 @@ def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
     """
     A = aslinearoperator(A)
     if A.shape[0] != A.shape[1]:
-        raise ValueError('expected square matrix (shape=%s)' % shape)
+        raise ValueError('expected square matrix (shape=%s)' % A.shape)
     n = A.shape[0]
 
     # guess type
