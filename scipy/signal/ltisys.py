@@ -136,13 +136,15 @@ def ss2tf(A, B, C, D, input=0):
     if D.shape[-1] != 0:
         D = D[:,input]
 
-    den = poly(A)
+    try:
+        den = poly(A)
+    except ValueError:
+        den = 1
 
     if (product(B.shape,axis=0) == 0) and (product(C.shape,axis=0) == 0):
         num = numpy.ravel(D)
         if (product(D.shape,axis=0) == 0) and (product(A.shape,axis=0) == 0):
             den = []
-        end
         return num, den
 
     num_states = A.shape[0]
