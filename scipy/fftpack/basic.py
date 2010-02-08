@@ -358,10 +358,13 @@ def fftn(x, shape=None, axes=None, overwrite_x=0):
                                       hasattr(x,'__array__'))
         work_function = fftpack.zfftnd
     elif istype(tmp, numpy.complex64):
-        raise NotImplementedError
+        work_function = fftpack.cfftnd
     else:
         overwrite_x = 1
-        work_function = fftpack.zfftnd
+        if istype(tmp, numpy.float32):
+            work_function = fftpack.cfftnd
+        else:
+            work_function = fftpack.zfftnd
     return _raw_fftnd(tmp,shape,axes,1,overwrite_x,work_function)
 
 

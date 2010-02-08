@@ -321,6 +321,17 @@ class Testfft2(TestCase):
         y_r = numpy.fft.fftn(x, s=(8, 8), axes=(-3,  -2))
         assert_array_almost_equal(y, y_r)
 
+class TestFftnSingle(TestCase):
+    def test_definition(self):
+        x = [[1,2,3],[4,5,6],[7,8,9]]
+        y = fftn(np.array(x, np.float32))
+        if not y.dtype == np.complex64:
+            raise ValueError("double precision output with single precision")
+
+        y_r = np.array(fftn(x), np.complex64)
+        assert_array_almost_equal_nulp(np.real(y), np.real(y_r))
+        assert_array_almost_equal_nulp(np.imag(y), np.imag(y_r))
+
 class TestFftn(TestCase):
 
     def test_definition(self):
