@@ -22,8 +22,7 @@ if not config.CheckF77Clib():
 config.CheckF77Mangling()
 config.Finish()
 
-env.AppendUnique(CPPPATH = env["PYEXTCPPPATH"]) 
-env.AppendUnique(CPPPATH = get_numpy_include_dirs())
+env.PrependUnique(CPPPATH=[get_numpy_include_dirs(), env["PYEXTCPPPATH"]])
 def build_lib(name, ext, libname = None):
     """ext should be .f or .c"""
     if not libname:
@@ -47,7 +46,7 @@ build_lib('specfun', '.f', 'sc_specfunlib')
 math_info = get_pkg_info("npymath")
 env.MergeFlags(math_info.cflags())
 env.MergeFlags(math_info.libs())
-env.AppendUnique(LIBPATH = ['.'])
+env.PrependUnique(LIBPATH = ['.'])
 
 # orthogonal_eval extension
 env.NumpyPythonExtension('orthogonal_eval', source = 'orthogonal_eval.c')
