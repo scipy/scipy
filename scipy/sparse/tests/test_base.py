@@ -65,7 +65,9 @@ class _TestCommon:
         """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
         """
         shape = (5, 5)
-        for mytype in ['int32', 'float32', 'float64', 'complex64', 'complex128']:
+        for mytype in [np.dtype('int32'), np.dtype('float32'),
+                np.dtype('float64'), np.dtype('complex64'),
+                np.dtype('complex128')]:
             a = self.spmatrix(shape, dtype=mytype)
             b = a + a
             c = 2 * a
@@ -239,11 +241,11 @@ class _TestCommon:
     def test_asfptype(self):
         A = self.spmatrix( arange(6,dtype='int32').reshape(2,3) )
 
-        assert_equal( A.dtype , 'int32' )
-        assert_equal( A.asfptype().dtype, 'float64' )
+        assert_equal( A.dtype , np.dtype('int32') )
+        assert_equal( A.asfptype().dtype, np.dtype('float64') )
         assert_equal( A.asfptype().format, A.format )
-        assert_equal( A.astype('int16').asfptype().dtype , 'float32' )
-        assert_equal( A.astype('complex128').asfptype().dtype , 'complex128' )
+        assert_equal( A.astype('int16').asfptype().dtype , np.dtype('float32') )
+        assert_equal( A.astype('complex128').asfptype().dtype , np.dtype('complex128') )
 
         B = A.asfptype()
         C = B.asfptype()
