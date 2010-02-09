@@ -16,6 +16,8 @@ def nnls(A,b):
 
     wrapper around NNLS.F code below nnls/ directory
 
+    Check OpenOpt for more LLSP solvers
+
     """
 
     A,b = map(asarray_chkfinite, (A,b))

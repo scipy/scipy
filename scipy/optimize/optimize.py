@@ -156,7 +156,8 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
         Uses a Nelder-Mead simplex algorithm to find the minimum of
         function of one or more variables.
-
+        Check OpenOpt - a tool which offers a unified syntax to call
+        this and other solvers with possibility of automatic differentiation.
     """
     fcalls, func = wrap_function(func, args)
     x0 = asfarray(x0).flatten()
@@ -694,8 +695,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 
     *See Also*:
 
-      scikits.openopt : SciKit which offers a unified syntax to call
-                        this and other solvers.
+      OpenOpt : a tool which offers a unified syntax to call
+                this and other solvers with possibility of automatic differentiation.
 
     """
     x0 = asarray(x0).squeeze()
@@ -862,7 +863,8 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
         using the nonlinear conjugate gradient algorithm of Polak and
         Ribiere See Wright, and Nocedal 'Numerical Optimization',
         1999, pg. 120-122.
-
+        Check OpenOpt - a tool which offers a unified syntax to call
+        this and other solvers with possibility of automatic differentiation.
     """
     x0 = asarray(x0).flatten()
     if maxiter is None:
@@ -1018,8 +1020,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             If True, return a list of results at each iteration.
 
     :Notes:
-      1. scikits.openopt offers a unified syntax to call this and other solvers.
-      2. Only one of `fhess_p` or `fhess` need to be given.  If `fhess`
+      1. Only one of `fhess_p` or `fhess` need to be given.  If `fhess`
       is provided, then `fhess_p` will be ignored.  If neither `fhess`
       nor `fhess_p` is provided, then the hessian product will be
       approximated using finite differences on `fprime`. `fhess_p`
@@ -1027,6 +1028,8 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
       given, finite-differences on `fprime` are used to compute
       it. See Wright, and Nocedal 'Numerical Optimization', 1999,
       pg. 140.
+      2. Check OpenOpt - a tool which offers a unified syntax to call
+      this and other solvers with possibility of automatic differentiation.
 
     """
     x0 = asarray(x0).flatten()
@@ -1179,7 +1182,8 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
         Finds a local minimizer of the scalar function `func` in the
         interval x1 < xopt < x2 using Brent's method.  (See `brent`
         for auto-bracketing).
-
+        Check OpenOpt - a tool which offers a unified syntax to call
+        this and other solvers with possibility of automatic differentiation.
 
     """
     # Test bounds are of correct form
@@ -1722,7 +1726,8 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
 
         Uses a modification of Powell's method to find the minimum of
         a function of N variables.
-
+        Check OpenOpt - a tool which offers a unified syntax to call
+        this and other solvers with possibility of automatic differentiation.
     """
     # we need to use a mutable object here that we can update in the
     # wrapper function

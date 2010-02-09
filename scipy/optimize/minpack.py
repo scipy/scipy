@@ -102,8 +102,6 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
 
     See Also
     --------
-    scikits.openopt : offers a unified syntax to call this and other solvers
-
     fmin, fmin_powell, fmin_cg, fmin_bfgs, fmin_ncg : multivariate local optimizers
 
     leastsq : nonlinear least squares minimizer
@@ -117,6 +115,9 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
     brentq, brenth, ridder, bisect, newton : one-dimensional root-finding
 
     fixed_point : scalar and vector fixed-point finder
+
+    OpenOpt : a tool which offers a unified syntax to call this and 
+     other solvers with possibility of automatic differentiation
 
     """
     if not warning :
@@ -263,7 +264,6 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
 
     See Also
     --------
-    scikits.openopt: offers a unified syntax to call this and other solvers
     fmin, fmin_powell, fmin_cg, fmin_bfgs, fmin_ncg: multivariate local optimizers
     fmin_l_bfgs_b, fmin_tnc, fmin_cobyla: constrained multivariate optimizers
     anneal, brute: global optimizers
@@ -272,6 +272,9 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
     brentq, brenth, ridder, bisect, newton: one-dimensional root-finding
     fixed_point: scalar and vector fixed-point finder
     curve_fit: find parameters for a curve-fitting problem.
+    OpenOpt : a tool which offers a unified syntax to call this and
+     other solvers with possibility of automatic differentiation
+
     """
     if not warning :
         msg = "The warning keyword is deprecated. Use the warnings module."

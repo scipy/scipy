@@ -46,8 +46,6 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
 
     See also:
 
-        scikits.openopt, which offers a unified syntax to call this and other solvers
-
         fmin, fmin_powell, fmin_cg,
               fmin_bfgs, fmin_ncg -- multivariate local optimizers
         leastsq -- nonlinear least squares minimizer
@@ -64,6 +62,9 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
         brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
 
         fixed_point -- scalar fixed-point finder
+
+        OpenOpt -- a tool which offers a unified syntax to call this and
+         other solvers with possibility of automatic differentiation
 
     """
     err = "cons must be a sequence of callable functions or a single"\

@@ -119,8 +119,6 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
        ACM Transactions on Mathematical Software, Vol 23, Num. 4, pp. 550 - 560.
 
     See also:
-        scikits.openopt, which offers a unified syntax to call this and other solvers
-
         fmin, fmin_powell, fmin_cg,
                fmin_bfgs, fmin_ncg -- multivariate local optimizers
         leastsq -- nonlinear least squares minimizer
@@ -137,6 +135,9 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
 
         fixed_point -- scalar fixed-point finder
+
+        OpenOpt -- a tool which offers a unified syntax to call this and
+         other solvers with possibility of automatic differentiation
 
     """
     n = len(x0)

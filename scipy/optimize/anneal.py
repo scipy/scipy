@@ -217,6 +217,8 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
 
       fixed_point -- scalar fixed-point finder
 
+      OpenOpt -- Python package with more optimization solvers
+
     """
     x0 = asarray(x0)
     lower = asarray(lower)

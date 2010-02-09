@@ -146,6 +146,11 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
 
     for examples see :ref:`in the tutorial <tutorial-sqlsp>`
 
+    See also
+    --------
+    OpenOpt - a tool which offers a unified syntax to call this 
+    and other solvers with possibility of automatic differentiation.
+
     """
 
     exit_modes = { -1 : "Gradient evaluation required (g & a)",
