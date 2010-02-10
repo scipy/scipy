@@ -88,6 +88,12 @@ Utility Functions::
    line_search --  Return a step that satisfies the strong Wolfe conditions.
    check_grad  --  Check the supplied derivative using finite difference
                      techniques.
+
+External Libraries::
+
+   OpenOpt -- A BSD-licensed optimisation framework which includes a number of
+              constrained and unconstrained solvers (see http://openopt.org).
+
 """
 
 postpone_import = 1
