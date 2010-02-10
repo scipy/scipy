@@ -329,8 +329,7 @@ class TestFftnSingle(TestCase):
             raise ValueError("double precision output with single precision")
 
         y_r = np.array(fftn(x), np.complex64)
-        assert_array_almost_equal_nulp(np.real(y), np.real(y_r))
-        assert_array_almost_equal_nulp(np.imag(y), np.imag(y_r))
+        assert_array_almost_equal_nulp(y, y_r)
 
 class TestFftn(TestCase):
 
