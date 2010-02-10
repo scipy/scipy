@@ -17,20 +17,28 @@ __docformat__ = "restructuredtext en"
 _epsilon = sqrt(finfo(float).eps)
 
 def approx_jacobian(x,func,epsilon,*args):
-    """Approximate the Jacobian matrix of callable function func
+    """Approximate the Jacobian matrix of a callable function.
 
-       *Parameters*:
-         x       - The state vector at which the Jacobian matrix is desired
-         func    - A vector-valued function of the form f(x,*args)
-         epsilon - The peturbation used to determine the partial derivatives
-         *args   - Additional arguments passed to func
+    Parameters
+    ----------
+    x : array_like
+        The state vector at which to compute the Jacobian matrix.
+    func : callable f(x, *args)
+        The vector-valued function.
+    epsilon : float\
+        The peturbation used to determine the partial derivatives.
+    *args : tuple
+        Additional arguments passed to func.
 
-       *Returns*:
-         An array of dimensions (lenf, lenx) where lenf is the length
-         of the outputs of func, and lenx is the number of
+    Returns
+    -------
+    An array of dimensions ``(lenf, lenx)`` where ``lenf`` is the length
+    of the outputs of `func`, and ``lenx`` is the number of elements in
+    `x`.
 
-       *Notes*:
-         The approximation is done using forward differences
+    Notes
+    -----
+    The approximation is done using forward differences.
 
     """
     x0 = asfarray(x)
@@ -42,8 +50,6 @@ def approx_jacobian(x,func,epsilon,*args):
         jac[i] = (func(*((x0+dx,)+args)) - f0)/epsilon
         dx[i] = 0.0
     return jac.transpose()
-
-
 
 
 def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
