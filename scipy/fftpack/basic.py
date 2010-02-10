@@ -263,7 +263,6 @@ def irfft(x, n=None, axis=-1, overwrite_x=0):
         work_function = fftpack.drfft
     return _raw_fft(tmp,n,axis,-1,overwrite_x,work_function)
 
-
 def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
     """ Internal auxiliary function for fftnd, ifftnd."""
     if s is None:
@@ -352,6 +351,9 @@ def fftn(x, shape=None, axes=None, overwrite_x=0):
     Notes:
       y == fftn(ifftn(y)) within numerical accuracy.
     """
+    return _raw_fftn_dispatch(x, shape, axes, overwrite_x, 1)
+
+def _raw_fftn_dispatch(x, shape, axes, overwrite_x, direction):
     tmp = asarray(x)
     if istype(tmp, numpy.complex128):
         overwrite_x = overwrite_x or (tmp is not x and not \
@@ -365,7 +367,7 @@ def fftn(x, shape=None, axes=None, overwrite_x=0):
             work_function = fftpack.cfftnd
         else:
             work_function = fftpack.zfftnd
-    return _raw_fftnd(tmp,shape,axes,1,overwrite_x,work_function)
+    return _raw_fftnd(tmp,shape,axes,direction,overwrite_x,work_function)
 
 
 def ifftn(x, shape=None, axes=None, overwrite_x=0):
@@ -383,18 +385,7 @@ def ifftn(x, shape=None, axes=None, overwrite_x=0):
 
     Optional input: see fftn.__doc__
     """
-    tmp = asarray(x)
-    if istype(tmp, numpy.complex128):
-        overwrite_x = overwrite_x or (tmp is not x and not \
-                                      hasattr(x,'__array__'))
-        work_function = fftpack.zfftnd
-    elif istype(tmp, numpy.complex64):
-        raise NotImplementedError
-    else:
-        overwrite_x = 1
-        work_function = fftpack.zfftnd
-    return _raw_fftnd(tmp,shape,axes,-1,overwrite_x,work_function)
-
+    return _raw_fftn_dispatch(x, shape, axes, overwrite_x, -1)
 
 def fft2(x, shape=None, axes=(-2,-1), overwrite_x=0):
     """
