@@ -486,22 +486,34 @@ class TestFftn(TestCase):
         except ValueError:
             pass
 
-class TestIfftn(TestCase):
-
+class _TestIfftn(TestCase):
+    dtype = None
+    cdtype = None
     def test_definition(self):
-        x = [[1,2,3],[4,5,6],[7,8,9]]
+        x = np.array([[1,2,3],[4,5,6],[7,8,9]], dtype=self.dtype)
         y = ifftn(x)
-        assert_array_almost_equal(y,direct_idftn(x))
+        assert y.dtype == self.cdtype
+        assert_array_almost_equal_nulp(y,direct_idftn(x),self.maxnlp)
         x = random((20,26))
-        assert_array_almost_equal(ifftn(x),direct_idftn(x))
+        assert_array_almost_equal_nulp(ifftn(x),direct_idftn(x),self.maxnlp)
         x = random((5,4,3,20))
-        assert_array_almost_equal(ifftn(x),direct_idftn(x))
+        assert_array_almost_equal_nulp(ifftn(x),direct_idftn(x),self.maxnlp)
 
     def test_random_complex(self):
         for size in [1,2,51,32,64,92]:
             x = random([size,size]) + 1j*random([size,size])
-            assert_array_almost_equal (ifftn(fftn(x)),x)
-            assert_array_almost_equal (fftn(ifftn(x)),x)
+            assert_array_almost_equal_nulp(ifftn(fftn(x)),x,self.maxnlp)
+            assert_array_almost_equal_nulp(fftn(ifftn(x)),x,self.maxnlp)
+
+class TestIfftnDouble(_TestIfftn):
+    dtype = np.float64
+    cdtype = np.complex128
+    maxnlp = 2000
+
+class TestIfftnSingle(_TestIfftn):
+    dtype = np.float32
+    cdtype = np.complex64
+    maxnlp = 2000
 
 if __name__ == "__main__":
     run_module_suite()
