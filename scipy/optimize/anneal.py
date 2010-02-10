@@ -160,64 +160,67 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     Schedule is a schedule class implementing the annealing schedule.
     Available ones are 'fast', 'cauchy', 'boltzmann'
 
-    Inputs:
+    Parameters
+    ----------
+    func : callable f(x, *args)
+        Function to be optimized.
+    x0 : ndarray
+        Initial guess.
+    args : tuple
+        Extra parameters to `func`.
+    schedule : base_schedule
+        Annealing schedule to use (a class).
+    full_output : bool
+        Whether to return optional outputs.
+    T0 : float
+        Initial Temperature (estimated as 1.2 times the largest
+        cost-function deviation over random points in the range).
+    Tf : float
+        Final goal temperature.
+    maxeval : int
+        Maximum function evaluations.
+    maxaccept : int
+        Maximum changes to accept.
+    maxiter : int
+        Maximum cooling iterations.
+    learn_rate : float
+        Scale constant for adjusting guesses.
+    boltzmann : float
+        Boltzmann constant in acceptance test
+        (increase for less stringent test at each temperature).
+    feps : float
+        Stopping relative error tolerance for the function value in
+        last four coolings.
+    quench, m, n : float
+        Parameters to alter fast_sa schedule.
+    lower, upper : float or ndarray
+        Lower and upper bounds on `x`.
+    dwell : int
+        The number of times to search the space at each temperature.
 
-    func         -- Function to be optimized
-    x0           -- Parameters to be optimized over
-    args         -- Extra parameters to function
-    schedule     -- Annealing schedule to use (a class)
-    full_output  -- Return optional outputs
-    T0           -- Initial Temperature (estimated as 1.2 times the largest
-                    cost-function deviation over random points in the range)
-    Tf           -- Final goal temperature
-    maxeval      -- Maximum function evaluations
-    maxaccept    -- Maximum changes to accept
-    maxiter      -- Maximum cooling iterations
-    learn_rate   -- scale constant for adjusting guesses
-    boltzmann    -- Boltzmann constant in acceptance test
-                     (increase for less stringent test at each temperature).
-    feps         -- Stopping relative error tolerance for the function value in
-                     last four coolings.
-    quench, m, n -- Parameters to alter fast_sa schedule
-    lower, upper -- lower and upper bounds on x0 (scalar or array).
-    dwell        -- The number of times to search the space at each temperature.
+    Outputs
+    -------
+    xmin : ndarray
+        Point giving smallest value found.
+    retval : int
+        Flag indicating stopping condition::
 
-    Outputs: (xmin, {Jmin, T, feval, iters, accept,} retval)
-
-    xmin -- Point giving smallest value found
-    retval -- Flag indicating stopping condition:
                 0 : Cooled to global optimum
                 1 : Cooled to final temperature
                 2 : Maximum function evaluations
                 3 : Maximum cooling iterations reached
                 4 : Maximum accepted query locations reached
 
-    Jmin  -- Minimum value of function found
-    T     -- final temperature
-    feval -- Number of function evaluations
-    iters  -- Number of cooling iterations
-    accept -- Number of tests accepted.
-
-    See also:
-
-      fmin, fmin_powell, fmin_cg,
-             fmin_bfgs, fmin_ncg -- multivariate local optimizers
-      leastsq -- nonlinear least squares minimizer
-
-      fmin_l_bfgs_b, fmin_tnc,
-             fmin_cobyla -- constrained multivariate optimizers
-
-      anneal, brute -- global optimizers
-
-      fminbound, brent, golden, bracket -- local scalar minimizers
-
-      fsolve -- n-dimensional root-finding
-
-      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-
-      fixed_point -- scalar fixed-point finder
-
-      OpenOpt -- Python package with more optimization solvers
+    Jmin : float
+        Minimum value of function found.
+    T : float
+        Final temperature.
+    feval : int
+        Number of function evaluations.
+    iters : int
+        Number of cooling iterations.
+    accept : int
+        Number of tests accepted.
 
     """
     x0 = asarray(x0)
