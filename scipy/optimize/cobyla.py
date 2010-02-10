@@ -14,61 +14,40 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
                 iprint=1, maxfun=1000):
     """
     Minimize a function using the Constrained Optimization BY Linear
-    Approximation (COBYLA) method
+    Approximation (COBYLA) method.
 
-    Arguments:
+    Parameters
+    ----------
+    func : callable f(x, *args)
+        Function to minimize.
+    x0 : ndarray
+        Initial guess.
+    cons : sequence
+        Constraint functions; must all be ``>=0`` (a single function
+        if only 1 constraint).
+    args : tuple
+        Extra arguments to pass to function.
+    consargs : tuple
+        Extra arguments to pass to constraint functions (default of None means
+        use same extra arguments as those passed to func).
+        Use ``()`` for no extra arguments.
+    rhobeg :
+        Reasonable initial changes to the variables.
+    rhoend :
+        Final accuracy in the optimization (not precisely guaranteed).
+    iprint : {0, 1, 2, 3}
+        Controls the frequency of output; 0 implies no output.
+    maxfun : int
+        Maximum number of function evaluations.
 
-    func     -- function to minimize. Called as func(x, *args)
-
-    x0       -- initial guess to minimum
-
-    cons     -- a sequence of functions that all must be >=0 (a single function
-                if only 1 constraint)
-
-    args     -- extra arguments to pass to function
-
-    consargs -- extra arguments to pass to constraints (default of None means
-                use same extra arguments as those passed to func).
-                Use () for no extra arguments.
-
-    rhobeg --  reasonable initial changes to the variables
-
-    rhoend --  final accuracy in the optimization (not precisely guaranteed)
-
-    iprint  -- controls the frequency of output: 0 (no output),1,2,3
-
-    maxfun  -- maximum number of function evaluations.
-
-
-    Returns:
-
-    x -- the minimum
-
-    See also:
-
-        fmin, fmin_powell, fmin_cg,
-              fmin_bfgs, fmin_ncg -- multivariate local optimizers
-        leastsq -- nonlinear least squares minimizer
-
-        fmin_l_bfgs_b, fmin_tnc,
-              fmin_cobyla -- constrained multivariate optimizers
-
-        anneal, brute -- global optimizers
-
-        fminbound, brent, golden, bracket -- local scalar minimizers
-
-        fsolve -- n-dimenstional root-finding
-
-        brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-
-        fixed_point -- scalar fixed-point finder
-
-        OpenOpt -- a tool which offers a unified syntax to call this and
-         other solvers with possibility of automatic differentiation
+    Returns
+    -------
+    x : ndarray
+        The argument that minimises `f`.
 
     """
     err = "cons must be a sequence of callable functions or a single"\
-              " callable function."
+          " callable function."
     try:
         m = len(cons)
     except TypeError:
@@ -93,7 +72,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
             k += 1
         return f
 
-    xopt = _cobyla.minimize(calcfc, m=m, x=copy(x0), rhobeg=rhobeg, rhoend=rhoend,
-                            iprint=iprint, maxfun=maxfun)
+    xopt = _cobyla.minimize(calcfc, m=m, x=copy(x0), rhobeg=rhobeg,
+                            rhoend=rhoend, iprint=iprint, maxfun=maxfun)
 
     return xopt
