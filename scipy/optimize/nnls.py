@@ -2,21 +2,26 @@ import _nnls
 from numpy import asarray_chkfinite, zeros, double
 
 def nnls(A,b):
-    """ 
-          Solve  || Ax - b ||_2 -> min  with  x>=0 
+    """
+    Solve ``argmin_x || Ax - b ||_2`` for ``x>=0``.
 
-          Inputs:
-                    A     --   matrix as above
-                    b     --   vector as above
+    Parameters
+    ----------
+    A : ndarray
+        Matrix ``A`` as shown above.
+    b : ndarray
+        Right-hand side vector.
 
-          Outputs:
-                    x     --   solution vector
-                    rnorm --  residual || Ax-b ||_2
+    Returns
+    -------
+    x : ndarray
+        Solution vector.
+    rnorm : float
+        The residual, ``|| Ax-b ||_2``.
 
-
-    wrapper around NNLS.F code below nnls/ directory
-
-    Check OpenOpt for more LLSP solvers
+    Notes
+    -----
+    This is a wrapper for ``NNLS.F``.
 
     """
 
@@ -26,7 +31,7 @@ def nnls(A,b):
         raise ValueError, "expected matrix"
     if len(b.shape)!=1:
         raise ValueError, "expected vector"
-        
+
     m,n = A.shape
 
     if m != b.shape[0]:
