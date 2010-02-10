@@ -149,13 +149,7 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
 
     Examples
     --------
-
-    for examples see :ref:`in the tutorial <tutorial-sqlsp>`
-
-    See also
-    --------
-    OpenOpt - a tool which offers a unified syntax to call this 
-    and other solvers with possibility of automatic differentiation.
+    Examples are given :ref:`in the tutorial <tutorial-sqlsp>`.
 
     """
 
