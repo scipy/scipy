@@ -7,7 +7,8 @@ from numpy import atleast_1d, dot, take, triu, shape, eye, \
 
 error = _minpack.error
 
-__all__ = ['fsolve', 'leastsq', 'newton', 'fixed_point','bisection', 'curve_fit']
+__all__ = ['fsolve', 'leastsq', 'newton', 'fixed_point',
+           'bisection', 'curve_fit']
 
 def check_func(thefunc, x0, args, numinputs, output_shape=None):
     res = atleast_1d(thefunc(*((x0[:numinputs],)+args)))
@@ -16,108 +17,95 @@ def check_func(thefunc, x0, args, numinputs, output_shape=None):
             if len(output_shape) > 1:
                 if output_shape[1] == 1:
                     return shape(res)
-            msg =  "There is a mismatch between the input and output shape of %s." % thefunc.func_name
+            msg = "There is a mismatch between the input and output " \
+                  "shape of %s." % thefunc.func_name
             raise TypeError(msg)
     return shape(res)
 
 
-def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8,maxfev=0,band=None,epsfcn=0.0,factor=100,diag=None, warning=True):
+def fsolve(func, x0, args=(), fprime=None, full_output=0,
+           col_deriv=0, xtol=1.49012e-8, maxfev=0, band=None,
+           epsfcn=0.0, factor=100, diag=None, warning=True):
     """
     Find the roots of a function.
 
-    Return the roots of the (non-linear) equations defined by func(x)=0 given a
-    starting estimate.
+    Return the roots of the (non-linear) equations defined by
+    ``func(x) = 0`` given a starting estimate.
 
     Parameters
     ----------
-    func
-        A Python function or method which takes at least one (possibly vector)
-        argument.
-    x0
-        The starting estimate for the roots of func(x)=0.
-    args
-        Any extra arguments to func are placed in this tuple.
-    fprime
-        A function or method to compute the Jacobian of func with derivatives
-        across the rows. If this is None, the Jacobian will be estimated.
-    full_output
-        Non-zero to return the optional outputs.
-    col_deriv
-        Non-zero to specify that the Jacobian function computes derivatives down
+    func : callable f(x, *args)
+        A function that takes at least one (possibly vector) argument.
+    x0 : ndarray
+        The starting estimate for the roots of ``func(x) = 0``.
+    args : tuple
+        Any extra arguments to `func`.
+    fprime : callable(x)
+        A function to compute the Jacobian of `func` with derivatives
+        across the rows. By default, the Jacobian will be estimated.
+    full_output : bool
+        If True, return optional outputs.
+    col_deriv : bool
+        Specify whether the Jacobian function computes derivatives down
         the columns (faster, because there is no transpose operation).
-    warning
-        True to print a warning message when the call is unsuccessful; False to
-        suppress the warning message. Deprecated, use the warnings module
-        instead.
+    warning : bool
+        Whether to print a warning message when the call is unsuccessful.
+        This option is deprecated, use the warnings module instead.
 
     Returns
     -------
-    x
-        The solution (or the result of the last iteration for an unsuccessful call.
-    infodict
-        A dictionary of optional outputs with the keys:
+    x : ndarray
+        The solution (or the result of the last iteration for
+        an unsuccessful call).
+    infodict : dict
+        A dictionary of optional outputs with the keys::
 
-        * 'nfev': number of function calls
-        * 'njev': number of Jacobian calls
-        * 'fvec': function evaluated at the output
-        * 'fjac': the orthogonal matrix, q, produced by the QR factorization of
-          the final approximate Jacobian matrix, stored column wise
-        * 'r': upper triangular matrix produced by QR factorization of same
-          matrix
-        * 'qtf': the vector (transpose(q) * fvec)
+          * 'nfev': number of function calls
+          * 'njev': number of Jacobian calls
+          * 'fvec': function evaluated at the output
+          * 'fjac': the orthogonal matrix, q, produced by the QR
+                    factorization of the final approximate Jacobian
+                    matrix, stored column wise
+          * 'r': upper triangular matrix produced by QR factorization of same
+                 matrix
+          * 'qtf': the vector (transpose(q) * fvec)
 
-    ier
-        An integer flag.  If it is 1, the solution was found.  If it is 1, the solution was
-        not found and the following message gives more information.
-    mesg
-        A string message giving information about the cause of failure.
+    ier : int
+        An integer flag.  Set to 1 if a solution was found, otherwise refer
+        to `mesg` for more information.
+    mesg : str
+        If no solution is found, `mesg` details the cause of failure.
 
     Other Parameters
     ----------------
-    xtol
+    xtol : float
         The calculation will terminate if the relative error between two
         consecutive iterates is at most `xtol`.
-    maxfev
-        The maximum number of calls to the function. If zero, then 100*(N+1) is
-        the maximum where N is the number of elements in x0.
-    band
-        If set to a two-sequence containing the number of sub- and super-diagonals
-        within the band of the Jacobi matrix, the Jacobi matrix is considered
-        banded (only for fprime=None).
-    epsfcn
-        A suitable step length for the forward-difference approximation of the
-        Jacobian (for fprime=None). If `epsfcn` is less than the machine
-        precision, it is assumed that the relative errors in the functions are of
-        the order of the machine precision.
-    factor
-        A parameter determining the initial step bound (`factor` * || `diag` * x||).
-        Should be in the interval (0.1,100).
-    diag
-        A sequency of N positive entries that serve as a scale factors for the
+    maxfev : int
+        The maximum number of calls to the function. If zero, then
+        ``100*(N+1)`` is the maximum where N is the number of elements
+        in `x0`.
+    band : tuple
+        If set to a two-sequence containing the number of sub- and
+        super-diagonals within the band of the Jacobi matrix, the
+        Jacobi matrix is considered banded (only for ``fprime=None``).
+    epsfcn : float
+        A suitable step length for the forward-difference
+        approximation of the Jacobian (for ``fprime=None``). If
+        `epsfcn` is less than the machine precision, it is assumed
+        that the relative errors in the functions are of the order of
+        the machine precision.
+    factor : float
+        A parameter determining the initial step bound
+        (``factor * || diag * x||``).  Should be in the interval
+        ``(0.1, 100)``.
+    diag : sequence
+        N positive entries that serve as a scale factors for the
         variables.
 
     Notes
     -----
-    "fsolve" is a wrapper around MINPACK's hybrd and hybrj algorithms.
-
-    See Also
-    --------
-    fmin, fmin_powell, fmin_cg, fmin_bfgs, fmin_ncg : multivariate local optimizers
-
-    leastsq : nonlinear least squares minimizer
-
-    fmin_l_bfgs_b, fmin_tnc, fmin_cobyla : constrained multivariate optimizers
-
-    anneal, brute : global optimizers
-
-    fminbound, brent, golden, bracket : local scalar minimizers
-
-    brentq, brenth, ridder, bisect, newton : one-dimensional root-finding
-
-    fixed_point : scalar and vector fixed-point finder
-
-    OpenOpt : a tool which offers a unified syntax to call this and 
-     other solvers with possibility of automatic differentiation
+    ``fsolve`` is a wrapper around MINPACK's hybrd and hybrj algorithms.
 
     """
     if not warning :
@@ -135,19 +123,28 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
             ml,mu = band[:2]
         if (maxfev == 0):
             maxfev = 200*(n+1)
-        retval = _minpack._hybrd(func,x0,args,full_output,xtol,maxfev,ml,mu,epsfcn,factor,diag)
+        retval = _minpack._hybrd(func, x0, args, full_output, xtol,
+                                 maxfev, ml, mu, epsfcn, factor, diag)
     else:
         check_func(Dfun,x0,args,n,(n,n))
         if (maxfev == 0):
             maxfev = 100*(n+1)
-        retval = _minpack._hybrj(func,Dfun,x0,args,full_output,col_deriv,xtol,maxfev,factor,diag)
+        retval = _minpack._hybrj(func, Dfun, x0, args, full_output,
+                                 col_deriv, xtol, maxfev, factor,diag)
 
     errors = {0:["Improper input parameters were entered.",TypeError],
-              1:["The solution converged.",None],
-              2:["The number of calls to function has reached maxfev = %d." % maxfev, ValueError],
-              3:["xtol=%f is too small, no further improvement in the approximate\n  solution is possible." % xtol, ValueError],
-              4:["The iteration is not making good progress, as measured by the \n  improvement from the last five Jacobian evaluations.", ValueError],
-              5:["The iteration is not making good progress, as measured by the \n  improvement from the last ten iterations.", ValueError],
+              1:["The solution converged.", None],
+              2:["The number of calls to function has "
+                 "reached maxfev = %d." % maxfev, ValueError],
+              3:["xtol=%f is too small, no further improvement "
+                 "in the approximate\n  solution "
+                 "is possible." % xtol, ValueError],
+              4:["The iteration is not making good progress, as measured "
+                 "by the \n  improvement from the last five "
+                 "Jacobian evaluations.", ValueError],
+              5:["The iteration is not making good progress, "
+                 "as measured by the \n  improvement from the last "
+                 "ten iterations.", ValueError],
               'unknown': ["An error occurred.", TypeError]}
 
     info = retval[-1]    # The FORTRAN return value
@@ -173,8 +170,12 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
         return retval[0]
 
 
-def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,xtol=1.49012e-8,gtol=0.0,maxfev=0,epsfcn=0.0,factor=100,diag=None,warning=True):
+def leastsq(func, x0, args=(), Dfun=None, full_output=0,
+            col_deriv=0, ftol=1.49012e-8, xtol=1.49012e-8,
+            gtol=0.0, maxfev=0, epsfcn=0.0, factor=100, diag=None,warning=True):
     """Minimize the sum of squares of a set of equations.
+
+    ::
 
         x = arg min(sum(func(y)**2,axis=0))
                  y
@@ -184,58 +185,56 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
     func : callable
         should take at least one (possibly length N vector) argument and
         returns M floating point numbers.
-    x0 :
+    x0 : ndarray
         The starting estimate for the minimization.
-    args :
+    args : tuple
         Any extra arguments to func are placed in this tuple.
     Dfun : callable
         A function or method to compute the Jacobian of func with derivatives
         across the rows. If this is None, the Jacobian will be estimated.
-    full_output :
+    full_output : bool
         non-zero to return all optional outputs.
-    col_deriv :
+    col_deriv : bool
         non-zero to specify that the Jacobian function computes derivatives
         down the columns (faster, because there is no transpose operation).
-    ftol :
+    ftol : float
         Relative error desired in the sum of squares.
-    xtol :
+    xtol : float
         Relative error desired in the approximate solution.
-    gtol :
+    gtol : float
         Orthogonality desired between the function vector and the columns of
         the Jacobian.
-    maxfev :
+    maxfev : int
         The maximum number of calls to the function. If zero, then 100*(N+1) is
         the maximum where N is the number of elements in x0.
-    epsfcn :
+    epsfcn : float
         A suitable step length for the forward-difference approximation of the
         Jacobian (for Dfun=None). If epsfcn is less than the machine precision,
         it is assumed that the relative errors in the functions are of the
         order of the machine precision.
-    factor :
-        A parameter determining the initial step bound (factor * || diag *
-        x||). Should be in interval (0.1,100).
-    diag :
-        A sequency of N positive entries that serve as a scale factors for the
-        variables.
+    factor : float
+        A parameter determining the initial step bound
+        (``factor * || diag * x||``). Should be in interval ``(0.1, 100)``.
+    diag : sequence
+        N positive entries that serve as a scale factors for the variables.
     warning : bool
-        True to print a warning message when the call is unsuccessful; False to
-        suppress the warning message.  Deprecated, use the warnings module
-        instead.
+        Whether to print a warning message when the call is unsuccessful.
+        Deprecated, use the warnings module instead.
 
     Returns
     -------
-    x :
-        the solution (or the result of the last iteration for an unsuccessful
-        call.
-
-    cov_x :
-        uses the fjac and ipvt optional outputs to construct an estimate of the
-        jacobian around the solution.  None if a singular matrix encountered
-        (indicates very flat curvature in some direction).  This matrix must be
-        multiplied by the residual standard deviation to get the covariance of
-        the parameter estimates -- see curve_fit.
+    x : ndarray
+        The solution (or the result of the last iteration for an unsuccessful
+        call).
+    cov_x : ndarray
+        Uses the fjac and ipvt optional outputs to construct an
+        estimate of the jacobian around the solution.  ``None`` if a
+        singular matrix encountered (indicates very flat curvature in
+        some direction).  This matrix must be multiplied by the
+        residual standard deviation to get the covariance of the
+        parameter estimates -- see curve_fit.
     infodict : dict
-        a dictionary of optional outputs with the keys:
+        a dictionary of optional outputs with the keys::
 
             - 'nfev' : the number of function calls
             - 'fvec' : the function evaluated at the output
@@ -251,29 +250,16 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
                      magnitude. Column j of p is column ipvt(j)
                      of the identity matrix.
             - 'qtf'  : the vector (transpose(q) * fvec).
-    mesg :
-        a string message giving information about the cause of failure.
-    ier :
-        an integer flag.  If it is equal to 1, 2, 3 or 4, the solution was
+    mesg : str
+        A string message giving information about the cause of failure.
+    ier : int
+        An integer flag.  If it is equal to 1, 2, 3 or 4, the solution was
         found.  Otherwise, the solution was not found. In either case, the
         optional output variable 'mesg' gives more information.
 
     Notes
     -----
     "leastsq" is a wrapper around MINPACK's lmdif and lmder algorithms.
-
-    See Also
-    --------
-    fmin, fmin_powell, fmin_cg, fmin_bfgs, fmin_ncg: multivariate local optimizers
-    fmin_l_bfgs_b, fmin_tnc, fmin_cobyla: constrained multivariate optimizers
-    anneal, brute: global optimizers
-    fminbound, brent, golden, bracket: local scalar minimizers
-    fsolve: n-dimensional root-finding
-    brentq, brenth, ridder, bisect, newton: one-dimensional root-finding
-    fixed_point: scalar and vector fixed-point finder
-    curve_fit: find parameters for a curve-fitting problem.
-    OpenOpt : a tool which offers a unified syntax to call this and
-     other solvers with possibility of automatic differentiation
 
     """
     if not warning :
@@ -288,7 +274,9 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
     if Dfun is None:
         if (maxfev == 0):
             maxfev = 200*(n+1)
-        retval = _minpack._lmdif(func,x0,args,full_output,ftol,xtol,gtol,maxfev,epsfcn,factor,diag)
+        retval = _minpack._lmdif(func, x0, args, full_output,
+                                 ftol, xtol, gtol,
+                                 maxfev, epsfcn, factor, diag)
     else:
         if col_deriv:
             check_func(Dfun,x0,args,n,(n,m))
@@ -299,14 +287,26 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
         retval = _minpack._lmder(func,Dfun,x0,args,full_output,col_deriv,ftol,xtol,gtol,maxfev,factor,diag)
 
     errors = {0:["Improper input parameters.", TypeError],
-              1:["Both actual and predicted relative reductions in the sum of squares\n  are at most %f" % ftol, None],
-              2:["The relative error between two consecutive iterates is at most %f" % xtol, None],
-              3:["Both actual and predicted relative reductions in the sum of squares\n  are at most %f and the relative error between two consecutive iterates is at \n  most %f" % (ftol,xtol), None],
-              4:["The cosine of the angle between func(x) and any column of the\n  Jacobian is at most %f in absolute value" % gtol, None],
-              5:["Number of calls to function has reached maxfev = %d." % maxfev, ValueError],
-              6:["ftol=%f is too small, no further reduction in the sum of squares\n  is possible.""" % ftol, ValueError],
-              7:["xtol=%f is too small, no further improvement in the approximate\n  solution is possible." % xtol, ValueError],
-              8:["gtol=%f is too small, func(x) is orthogonal to the columns of\n  the Jacobian to machine precision." % gtol, ValueError],
+              1:["Both actual and predicted relative reductions "
+                 "in the sum of squares\n  are at most %f" % ftol, None],
+              2:["The relative error between two consecutive "
+                 "iterates is at most %f" % xtol, None],
+              3:["Both actual and predicted relative reductions in "
+                 "the sum of squares\n  are at most %f and the "
+                 "relative error between two consecutive "
+                 "iterates is at \n  most %f" % (ftol,xtol), None],
+              4:["The cosine of the angle between func(x) and any "
+                 "column of the\n  Jacobian is at most %f in "
+                 "absolute value" % gtol, None],
+              5:["Number of calls to function has reached "
+                 "maxfev = %d." % maxfev, ValueError],
+              6:["ftol=%f is too small, no further reduction "
+                 "in the sum of squares\n  is possible.""" % ftol, ValueError],
+              7:["xtol=%f is too small, no further improvement in "
+                 "the approximate\n  solution is possible." % xtol, ValueError],
+              8:["gtol=%f is too small, func(x) is orthogonal to the "
+                 "columns of\n  the Jacobian to machine "
+                 "precision." % gtol, ValueError],
               'unknown':["Unknown error.", TypeError]}
 
     info = retval[-1]    # The FORTRAN return value
@@ -437,6 +437,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
 
 def check_gradient(fcn,Dfcn,x0,args=(),col_deriv=0):
     """Perform a simple check on the gradient for correctness.
+
     """
 
     x = atleast_1d(x0)
@@ -580,23 +581,6 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
     >>> fixed_point(func, [1.2, 1.3], args=(c1,c2))
     array([ 1.4920333 ,  1.37228132])
 
-    See also:
-
-      fmin, fmin_powell, fmin_cg,
-             fmin_bfgs, fmin_ncg -- multivariate local optimizers
-      leastsq -- nonlinear least squares minimizer
-
-      fmin_l_bfgs_b, fmin_tnc,
-             fmin_cobyla -- constrained multivariate optimizers
-
-      anneal, brute -- global optimizers
-
-      fminbound, brent, golden, bracket -- local scalar minimizers
-
-      fsolve -- n-dimensional root-finding
-
-      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-
     """
     if not isscalar(x0):
         x0 = asarray(x0)
@@ -634,25 +618,6 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
 def bisection(func, a, b, args=(), xtol=1e-10, maxiter=400):
     """Bisection root-finding method.  Given a function and an interval with
     func(a) * func(b) < 0, find the root between a and b.
-
-    See also:
-
-      fmin, fmin_powell, fmin_cg,
-             fmin_bfgs, fmin_ncg -- multivariate local optimizers
-      leastsq -- nonlinear least squares minimizer
-
-      fmin_l_bfgs_b, fmin_tnc,
-             fmin_cobyla -- constrained multivariate optimizers
-
-      anneal, brute -- global optimizers
-
-      fminbound, brent, golden, bracket -- local scalar minimizers
-
-      fsolve -- n-dimensional root-finding
-
-      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-
-      fixed_point -- scalar and vector fixed-point finder
 
     """
     i = 1
