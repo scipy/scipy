@@ -89,10 +89,13 @@ Utility Functions::
    check_grad  --  Check the supplied derivative using finite difference
                      techniques.
 
-External Libraries::
+Related Software::
 
-   OpenOpt -- A BSD-licensed optimisation framework which includes a number of
-              constrained and unconstrained solvers (see http://openopt.org).
+   OpenOpt -- A BSD-licensed optimisation framework (see http://openopt.org), 
+              which includes a number of constrained and unconstrained 
+              solvers from and beyond scipy.optimize module, 
+              unified text and graphical output of convergence
+              and automatic differentiation.
 
 """
 
