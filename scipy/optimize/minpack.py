@@ -313,7 +313,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
 
     if (info not in [1,2,3,4] and not full_output):
         if info in [5,6,7,8]:
-            warning.warn(errors[info][0], RuntimeWarning)
+            warnings.warn(errors[info][0], RuntimeWarning)
         else:
             try:
                 raise errors[info][1](errors[info][0])
