@@ -23,7 +23,7 @@ class TestTf2zpk(TestCase):
         assert_array_almost_equal(p, p_r)
 
     def test_bad_filter(self):
-        """Regression test for #651: better handling of badly conditionned
+        """Regression test for #651: better handling of badly conditioned
         filter coefficients."""
         warnings.simplefilter("error", BadCoefficients)
         try:
