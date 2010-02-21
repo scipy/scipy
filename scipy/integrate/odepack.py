@@ -105,6 +105,7 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         where ewt is a vector of positive error weights computed as:
         ``ewt = rtol * abs(y) + atol``
         rtol and atol can be either vectors the same length as y or scalars.
+        Defaults to 1.49012e-8.
     tcrit : array
         Vector of critical points (e.g. singularities) where integration
         care should be taken.
