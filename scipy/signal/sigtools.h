@@ -55,6 +55,9 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
 PyObject*
 scipy_signal_sigtools_correlateND(PyObject *NPY_UNUSED(dummy), PyObject *args);
 
+void
+scipy_signal_sigtools_linear_filter_module_init();
+
 /*
 static int index_out_of_bounds(int *, int *, int );
 static long compute_offsets (unsigned long *, long *, int *, int *, int *, int *, int);

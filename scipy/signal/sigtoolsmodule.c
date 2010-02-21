@@ -1338,6 +1338,7 @@ PyMODINIT_FUNC initsigtools(void) {
         PyDict_SetItemString(d,"HILBERT", PyInt_FromLong((long) HILBERT));
         */
 
+        scipy_signal_sigtools_linear_filter_module_init();
 
 	/* Check for errors */
 	if (PyErr_Occurred()) {

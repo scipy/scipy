@@ -33,12 +33,23 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
 
 typedef void (BasicFilterFunction) (char *, char *,  char *, char *, char *, intp, uintp, intp, intp);
 
-static BasicFilterFunction *BasicFilterFunctions[] =
-    { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    FLOAT_filt, DOUBLE_filt, EXTENDED_filt,
-    CFLOAT_filt, CDOUBLE_filt, CEXTENDED_filt,
-    OBJECT_filt, NULL, NULL, NULL
-};
+static BasicFilterFunction *BasicFilterFunctions[256];
+
+void
+scipy_signal_sigtools_linear_filter_module_init()
+{
+    int k;
+    for (k = 0; k < 256; ++k) {
+        BasicFilterFunctions[k] = NULL;
+    }
+    BasicFilterFunctions[NPY_FLOAT] = FLOAT_filt;
+    BasicFilterFunctions[NPY_DOUBLE] = DOUBLE_filt;
+    BasicFilterFunctions[NPY_LONGDOUBLE] = EXTENDED_filt;
+    BasicFilterFunctions[NPY_CFLOAT] = CFLOAT_filt;
+    BasicFilterFunctions[NPY_CDOUBLE] = CDOUBLE_filt;
+    BasicFilterFunctions[NPY_CLONGDOUBLE] = CEXTENDED_filt;
+    BasicFilterFunctions[NPY_OBJECT] = OBJECT_filt;
+}
 
 /* There is the start of an OBJECT_filt, but it may need work */
 
@@ -114,7 +125,12 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
                                                    typenum);
     }
 
-    basic_filter = BasicFilterFunctions[(int) (arX->descr->type_num)];
+    if (arX->descr->type_num < 256) {
+        basic_filter = BasicFilterFunctions[(int) (arX->descr->type_num)];
+    }
+    else {
+        basic_filter = NULL;
+    }
     if (basic_filter == NULL) {
         PyObject *msg, *str;
         char *s;
