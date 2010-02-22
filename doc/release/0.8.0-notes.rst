@@ -83,6 +83,13 @@ what most people expect if the old_behavior=False argument is passed:
       the slided sum-products, which correspond to the usual definition of
       correlation
 
+ARPACK-based sparse SVD
+-----------------------
+
+A naive implementation of SVD for sparse matrices is available in
+scipy.sparse.linalg.eigen.arpack. It is based on using an symmetric solver on
+<A, A>, and as such may not be very precise.
+
 Removed features
 ================
 
