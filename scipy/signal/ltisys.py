@@ -1,6 +1,6 @@
 """
-ltisys -- a collection of classes and functions for modeling linear time invariant
-systems.
+ltisys -- a collection of classes and functions for modeling linear
+time invariant systems.
 """
 
 #
@@ -24,13 +24,17 @@ from numpy import r_, eye, real, atleast_1d, atleast_2d, poly, \
 def tf2ss(num, den):
     """Transfer function to state-space representation.
 
-    Inputs:
+    Parameters
+    ----------
+    num, den : array_like
+        Sequences representing the numerator and denominator
+        polynomials.
 
-      num, den -- sequences representing the numerator and denominator polynomials.
+    Returns
+    -------
+    A, B, C, D : ndarray
+        State space representation of the system.
 
-    Outputs:
-
-      A, B, C, D -- state space representation of the system.
     """
     # Controller canonical state-space representation.
     #  if M+1 = len(num) and K+1 = len(den) then we must have M <= K
@@ -68,7 +72,7 @@ def tf2ss(num, den):
     C = num[:,1:] - num[:,0] * den[1:]
     return A, B, C, D
 
-def none_to_empty(arg):
+def _none_to_empty(arg):
     if arg is None:
         return []
     else:
@@ -76,8 +80,9 @@ def none_to_empty(arg):
 
 def abcd_normalize(A=None, B=None, C=None, D=None):
     """Check state-space matrices and ensure they are rank-2.
+
     """
-    A, B, C, D = map(none_to_empty, (A, B, C, D))
+    A, B, C, D = map(_none_to_empty, (A, B, C, D))
     A, B, C, D = map(atleast_2d, (A, B, C, D))
 
     if ((len(A.shape) > 2) or (len(B.shape) > 2) or \
@@ -118,15 +123,19 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
 def ss2tf(A, B, C, D, input=0):
     """State-space to transfer function.
 
-    Inputs:
+    Parameters
+    ----------
+    A, B, C, D : ndarray
+        State-space representation of linear system.
+    input : int
+        For multiple-input systems, the input to use.
 
-      A, B, C, D -- state-space representation of linear system.
-      input -- For multiple-input systems, the input to use.
+    Returns
+    -------
+    num, den : 1D ndarray
+        Numerator and denominator polynomials (as sequences)
+        respectively.
 
-    Outputs:
-
-      num, den -- Numerator and denominator polynomials (as sequences)
-                  respectively.
     """
     # transfer function is C (sI - A)**(-1) B + D
     A, B, C, D = map(asarray, (A, B, C, D))
@@ -168,13 +177,18 @@ def ss2tf(A, B, C, D, input=0):
 def zpk2ss(z,p,k):
     """Zero-pole-gain representation to state-space representation
 
-    Inputs:
+    Parameters
+    ----------
+    z, p : sequence
+        Zeros and poles.
+    k : float
+        System gain.
 
-      z, p, k -- zeros, poles (sequences), and gain of system
+    Returns
+    -------
+    A, B, C, D : ndarray
+        State-space matrices.
 
-    Outputs:
-
-      A, B, C, D -- state-space matrices.
     """
     return tf2ss(*zpk2tf(z,p,k))
 
@@ -281,33 +295,36 @@ class lti(object):
 
 
 def lsim2(system, U=None, T=None, X0=None, **kwargs):
-    """Simulate output of a continuous-time linear system, by using the ODE solver
-    `scipy.integrate.odeint`.
+    """Simulate output of a continuous-time linear system, by using
+    the ODE solver `scipy.integrate.odeint`.
 
     Parameters
     ----------
     system : an instance of the LTI class or a tuple describing the system.
-        The following gives the number of elements in the tuple and the interpretation.
+        The following gives the number of elements in the tuple and
+        the interpretation.
             2 (num, den)
             3 (zeros, poles, gain)
             4 (A, B, C, D)
     U : ndarray or array-like (1D or 2D), optional
-        An input array describing the input at each time T.  Linear interpolation
-        is used between given times.  If there are multiple inputs, then each column
-        of the rank-2 array represents an input.  If U is not given, the input is
-        assumed to be zero.
+        An input array describing the input at each time T.  Linear
+        interpolation is used between given times.  If there are
+        multiple inputs, then each column of the rank-2 array
+        represents an input.  If U is not given, the input is assumed
+        to be zero.
     T : ndarray or array-like (1D or 2D), optional
-        The time steps at which the input is defined and at which the output is
-        desired.  The default is 101 evenly spaced points on the interval [0,10.0].
+        The time steps at which the input is defined and at which the
+        output is desired.  The default is 101 evenly spaced points on
+        the interval [0,10.0].
     X0 : ndarray or array-like (1D), optional
-        The initial condition of the state vector.  If `X0` is not given, the initial
-        conditions are assumed to be 0.
+        The initial condition of the state vector.  If `X0` is not
+        given, the initial conditions are assumed to be 0.
     **kwargs :
-        Additional keyword arguments are passed on to the function odeint.  See the
-        notes below for more details. 
+        Additional keyword arguments are passed on to the function
+        odeint.  See the notes below for more details.
 
-    Returns: (T, yout, xout)
-    ------------------------
+    Returns
+    -------
     T : 1D ndarray
         The time values for the output.
     yout : ndarray
@@ -317,12 +334,12 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
 
     Notes
     -----
-    This function uses :func:`scipy.integrate.odeint` to solve the system's differential
-    equations.  Additional keyword arguments given to `lsim2` are passed on to `odeint`.
-    See the documentation for :func:`scipy.integrate.odeint` for the full list of
-    arguments.
-    """
+    This function uses :func:`scipy.integrate.odeint` to solve the
+    system's differential equations.  Additional keyword arguments
+    given to `lsim2` are passed on to `odeint`.  See the documentation
+    for :func:`scipy.integrate.odeint` for the full list of arguments.
 
+    """
     if isinstance(system, lti):
         sys = system
     else:
@@ -332,11 +349,12 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
         X0 = zeros(sys.B.shape[0],sys.A.dtype)
 
     if T is None:
-        # XXX T should really be a required argument, but U was changed from a required
-        # positional argument to a keyword, and T is after U in the argument list.
-        # So we either: change the API and move T in front of U; check here for T being
-        # None and raise an excpetion; or assign a default value to T here.  This code
-        # implements the latter.
+        # XXX T should really be a required argument, but U was
+        # changed from a required positional argument to a keyword,
+        # and T is after U in the argument list.  So we either: change
+        # the API and move T in front of U; check here for T being
+        # None and raise an excpetion; or assign a default value to T
+        # here.  This code implements the latter.
         T = linspace(0, 10.0, 101)
 
     T = atleast_1d(T)
@@ -349,22 +367,26 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
             U = U.reshape(-1,1)
         sU = U.shape
         if sU[0] != len(T):
-            raise ValueError, "U must have the same number of rows as elements in T."
+            raise ValueError("U must have the same number of rows "
+                             "as elements in T.")
+
         if sU[1] != sys.inputs:
-            raise ValueError("The number of inputs in U (%d) is not compatible with "
-                             "the number of system inputs (%d)" % (sU[1], sys.inputs))
-        # Create a callable that uses linear interpolation to calculate the input at
-        # any time.
-        ufunc = interpolate.interp1d(T, U, kind='linear', axis=0, bounds_error=False)
+            raise ValueError("The number of inputs in U (%d) is not "
+                             "compatible with the number of system "
+                             "inputs (%d)" % (sU[1], sys.inputs))
+        # Create a callable that uses linear interpolation to
+        # calculate the input at any time.
+        ufunc = interpolate.interp1d(T, U, kind='linear',
+                                     axis=0, bounds_error=False)
 
         def fprime(x, t, sys, ufunc):
-            """The vector field of the linear system.""" 
+            """The vector field of the linear system."""
             return dot(sys.A,x) + squeeze(dot(sys.B,nan_to_num(ufunc([t]))))
         xout = integrate.odeint(fprime, X0, T, args=(sys, ufunc), **kwargs)
         yout = dot(sys.C,transpose(xout)) + dot(sys.D,transpose(U))
     else:
         def fprime(x, t, sys):
-            """The vector field of the linear system.""" 
+            """The vector field of the linear system."""
             return dot(sys.A,x)
         xout = integrate.odeint(fprime, X0, T, args=(sys,), **kwargs)
         yout = dot(sys.C,transpose(xout))
@@ -375,28 +397,36 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
 def lsim(system, U, T, X0=None, interp=1):
     """Simulate output of a continuous-time linear system.
 
-    Inputs:
+    Parameters
+    ----------
+    system : an instance of the LTI class or a tuple describing the system.
+        The following gives the number of elements in the tuple and
+        the interpretation.
+            2 (num, den)
+            3 (zeros, poles, gain)
+            4 (A, B, C, D)
+    U : array_like
+        An input array describing the input at each time `T`
+        (interpolation is assumed between given times).  If there are
+        multiple inputs, then each column of the rank-2 array
+        represents an input.
+    T : array_like
+        The time steps at which the input is defined and at which the
+        output is desired.
+    X0 :
+        The initial conditions on the state vector (zero by default).
+    interp : {1, 0}
+        Whether to use linear (1) or zero-order hold (0) interpolation.
 
-      system -- an instance of the LTI class or a tuple describing the
-                system.  The following gives the number of elements in
-                the tuple and the interpretation.
-                  2 (num, den)
-                  3 (zeros, poles, gain)
-                  4 (A, B, C, D)
-      U -- an input array describing the input at each time T
-           (interpolation is assumed between given times).
-           If there are multiple inputs, then each column of the
-           rank-2 array represents an input.
-      T -- the time steps at which the input is defined and at which
-           the output is desired.
-      X0 -- (optional, default=0) the initial conditions on the state vector.
-      interp -- linear (1) or zero-order hold (0) interpolation
+    Returns
+    -------
+    T : 1D ndarray
+        Time values for the output.
+    yout : 1D ndarray
+        System response.
+    xout : ndarray
+        Time-evolution of the state-vector.
 
-    Outputs: (T, yout, xout)
-
-      T -- the time values for the output.
-      yout -- the response of the system.
-      xout -- the time-evolution of the state-vector.
     """
     # system is an lti system or a sequence
     #  with 2 (num, den)
@@ -419,7 +449,8 @@ def lsim(system, U, T, X0=None, interp=1):
     if len(T.shape) != 1:
         raise ValueError, "T must be a rank-1 array."
     if sU[0] != len(T):
-        raise ValueError, "U must have the same number of rows as elements in T."
+        raise ValueError("U must have the same number of rows "
+                         "as elements in T.")
     if sU[1] != sys.inputs:
         raise ValueError, "System does not define that many inputs."
 
@@ -464,19 +495,25 @@ def lsim(system, U, T, X0=None, interp=1):
 def impulse(system, X0=None, T=None, N=None):
     """Impulse response of continuous-time system.
 
-    Inputs:
+    Parameters
+    ----------
+    system : LTI class or tuple
+        If specified as a tuple, the system is described as
+        ``(num, den)``, ``(zero, pole, gain)``, or ``(A, B, C, D)``.
+    X0 : array_like, optional
+        Initial state-vector.  Defaults to zero.
+    T : array_like, optional
+        Time points.  Computed if not given.
+    N : int, optional
+        The number of time points to compute (if `T` is not given).
 
-      system -- an instance of the LTI class or a tuple with 2, 3, or 4
-                elements representing (num, den), (zero, pole, gain), or
-                (A, B, C, D) representation of the system.
-      X0 -- (optional, default = 0) inital state-vector.
-      T -- (optional) time points (autocomputed if not given).
-      N -- (optional) number of time points to autocompute (100 if not given).
+    Returns
+    -------
+    T : 1D ndarray
+        Time points.
+    yout : 1D ndarray
+        Impulse response of the system (except for singularities at zero).
 
-    Ouptuts: (T, yout)
-
-      T -- output time points,
-      yout -- impulse response of system (except possible singularities at 0).
     """
     if isinstance(system, lti):
         sys = system
@@ -512,27 +549,30 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     Parameters
     ----------
     system : an instance of the LTI class or a tuple describing the system.
-        The following gives the number of elements in the tuple and the interpretation.
+        The following gives the number of elements in the tuple and
+        the interpretation.
             2 (num, den)
             3 (zeros, poles, gain)
             4 (A, B, C, D)
     T : 1D ndarray or array-like, optional
-        The time steps at which the input is defined and at which the output is
-        desired.  If `T` is not given, the function will generate a set of time
-        samples automatically.
+        The time steps at which the input is defined and at which the
+        output is desired.  If `T` is not given, the function will
+        generate a set of time samples automatically.
     X0 : 1D ndarray or array-like, optional
-        The initial condition of the state vector.  If X0 is None, the initial
-        conditions are assumed to be 0.
+        The initial condition of the state vector.  If X0 is None, the
+        initial conditions are assumed to be 0.
     N : int, optional
-        Number of time points to compute.  If `N` is not given, 100 points are used.
+        Number of time points to compute.  If `N` is not given, 100
+        points are used.
     **kwargs :
-        Additional keyword arguments are passed on the function `scipy.signal.lsim2`,
-        which in turn passes them on to :func:`scipy.integrate.odeint`.  See the
-        documation for :func:`scipy.integrate.odeint` for information about these
+        Additional keyword arguments are passed on the function
+        `scipy.signal.lsim2`, which in turn passes them on to
+        :func:`scipy.integrate.odeint`.  See the documation for
+        :func:`scipy.integrate.odeint` for information about these
         arguments.
 
-    Returns: (T, yout, xout)
-    ------------------------
+    Returns
+    -------
     T : 1D ndarray
         The time values for the output.
     yout : ndarray
@@ -541,6 +581,7 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     See Also
     --------
     scipy.signal.impulse
+
     """
     if isinstance(system, lti):
         sys = system
@@ -574,19 +615,28 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
 def step(system, X0=None, T=None, N=None):
     """Step response of continuous-time system.
 
-    Inputs:
+    Parameters
+    ----------
+    system : an instance of the LTI class or a tuple describing the system.
+        The following gives the number of elements in the tuple and
+        the interpretation.
+            2 (num, den)
+            3 (zeros, poles, gain)
+            4 (A, B, C, D)
+    X0 : array_like, optional
+        Initial state-vector (default is zero).
+    T : array_like, optional
+        Time points (computed if not given).
+    N : int
+        Number of time points to compute if `T` is not given.
 
-      system -- an instance of the LTI class or a tuple with 2, 3, or 4
-                elements representing (num, den), (zero, pole, gain), or
-                (A, B, C, D) representation of the system.
-      X0 -- (optional, default = 0) inital state-vector.
-      T -- (optional) time points (autocomputed if not given).
-      N -- (optional) number of time points to autocompute (100 if not given).
+    Returns
+    -------
+    T : 1D ndarray
+        Output time points.
+    yout : 1D ndarray
+        Step response of system.
 
-    Ouptuts: (T, yout)
-
-      T -- output time points,
-      yout -- step response of system.
     """
     if isinstance(system, lti):
         sys = system
