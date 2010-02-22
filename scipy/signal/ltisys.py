@@ -1,16 +1,25 @@
+"""
+ltisys -- a collection of classes and functions for modeling linear time invariant
+systems.
+"""
+
 #
 # Author: Travis Oliphant 2001
+#
+# Feb 2010: Warren Weckesser
+#   Rewrote lsim2 and added impulse2.
 #
 
 from filter_design import tf2zpk, zpk2tf, normalize
 import numpy
 from numpy import product, zeros, array, dot, transpose, arange, ones, \
-    nan_to_num
+    nan_to_num, zeros_like, linspace
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import scipy.linalg as linalg
 from numpy import r_, eye, real, atleast_1d, atleast_2d, poly, \
      squeeze, diag, asarray
+
 
 def tf2ss(num, den):
     """Transfer function to state-space representation.
@@ -271,71 +280,95 @@ class lti(object):
         return lsim(self, U, T, X0=X0)
 
 
-def lsim2(system, U, T, X0=None):
-    """Simulate output of a continuous-time linear system, using ODE solver.
+def lsim2(system, U=None, T=None, X0=None, **kwargs):
+    """Simulate output of a continuous-time linear system, by using the ODE solver
+    `scipy.integrate.odeint`.
 
-    Inputs:
+    Parameters
+    ----------
+    system : an instance of the LTI class or a tuple describing the system.
+        The following gives the number of elements in the tuple and the interpretation.
+            2 (num, den)
+            3 (zeros, poles, gain)
+            4 (A, B, C, D)
+    U : ndarray or array-like (1D or 2D), optional
+        An input array describing the input at each time T.  Linear interpolation
+        is used between given times.  If there are multiple inputs, then each column
+        of the rank-2 array represents an input.  If U is not given, the input is
+        assumed to be zero.
+    T : ndarray or array-like (1D or 2D), optional
+        The time steps at which the input is defined and at which the output is
+        desired.  The default is 101 evenly spaced points on the interval [0,10.0].
+    X0 : ndarray or array-like (1D), optional
+        The initial condition of the state vector.  If `X0` is not given, the initial
+        conditions are assumed to be 0.
+    **kwargs :
+        Additional keyword arguments are passed on to the function odeint.  See the
+        notes below for more details. 
 
-      system -- an instance of the LTI class or a tuple describing the
-                system.  The following gives the number of elements in
-                the tuple and the interpretation.
-                  2 (num, den)
-                  3 (zeros, poles, gain)
-                  4 (A, B, C, D)
-      U -- an input array describing the input at each time T
-           (linear interpolation is assumed between given times).
-           If there are multiple inputs, then each column of the
-           rank-2 array represents an input.
-      T -- the time steps at which the input is defined and at which
-           the output is desired.
-      X0 -- (optional, default=0) the initial conditions on the state vector.
+    Returns: (T, yout, xout)
+    ------------------------
+    T : 1D ndarray
+        The time values for the output.
+    yout : ndarray
+        The response of the system.
+    xout : ndarray
+        The time-evolution of the state-vector.
 
-    Outputs: (T, yout, xout)
-
-      T -- the time values for the output.
-      yout -- the response of the system.
-      xout -- the time-evolution of the state-vector.
+    Notes
+    -----
+    This function uses :func:`scipy.integrate.odeint` to solve the system's differential
+    equations.  Additional keyword arguments given to `lsim2` are passed on to `odeint`.
+    See the documentation for :func:`scipy.integrate.odeint` for the full list of
+    arguments.
     """
-    # system is an lti system or a sequence
-    #  with 2 (num, den)
-    #       3 (zeros, poles, gain)
-    #       4 (A, B, C, D)
-    #  describing the system
-    #  U is an input vector at times T
-    #   if system describes multiple outputs
-    #   then U can be a rank-2 array with the number of columns
-    #   being the number of inputs
 
-    # rather than use lsim, use direct integration and matrix-exponential.
     if isinstance(system, lti):
         sys = system
     else:
         sys = lti(*system)
-    U = atleast_1d(U)
-    T = atleast_1d(T)
-    if len(U.shape) == 1:
-        U = U.reshape((U.shape[0],1))
-    sU = U.shape
-    if len(T.shape) != 1:
-        raise ValueError, "T must be a rank-1 array."
-    if sU[0] != len(T):
-        raise ValueError, "U must have the same number of rows as elements in T."
-    if sU[1] != sys.inputs:
-        raise ValueError, "System does not define that many inputs."
 
     if X0 is None:
         X0 = zeros(sys.B.shape[0],sys.A.dtype)
 
-    # for each output point directly integrate assume zero-order hold
-    #   or linear interpolation.
+    if T is None:
+        # XXX T should really be a required argument, but U was changed from a required
+        # positional argument to a keyword, and T is after U in the argument list.
+        # So we either: change the API and move T in front of U; check here for T being
+        # None and raise an excpetion; or assign a default value to T here.  This code
+        # implements the latter.
+        T = linspace(0, 10.0, 101)
 
-    ufunc = interpolate.interp1d(T, U, kind='linear', axis=0, bounds_error=False)
+    T = atleast_1d(T)
+    if len(T.shape) != 1:
+        raise ValueError, "T must be a rank-1 array."
 
-    def fprime(x, t, sys, ufunc):
-        return dot(sys.A,x) + squeeze(dot(sys.B,nan_to_num(ufunc([t]))))
+    if U is not None:
+        U = atleast_1d(U)
+        if len(U.shape) == 1:
+            U = U.reshape(-1,1)
+        sU = U.shape
+        if sU[0] != len(T):
+            raise ValueError, "U must have the same number of rows as elements in T."
+        if sU[1] != sys.inputs:
+            raise ValueError("The number of inputs in U (%d) is not compatible with "
+                             "the number of system inputs (%d)" % (sU[1], sys.inputs))
+        # Create a callable that uses linear interpolation to calculate the input at
+        # any time.
+        ufunc = interpolate.interp1d(T, U, kind='linear', axis=0, bounds_error=False)
 
-    xout = integrate.odeint(fprime, X0, T, args=(sys, ufunc))
-    yout = dot(sys.C,transpose(xout)) + dot(sys.D,transpose(U))
+        def fprime(x, t, sys, ufunc):
+            """The vector field of the linear system.""" 
+            return dot(sys.A,x) + squeeze(dot(sys.B,nan_to_num(ufunc([t]))))
+        xout = integrate.odeint(fprime, X0, T, args=(sys, ufunc), **kwargs)
+        yout = dot(sys.C,transpose(xout)) + dot(sys.D,transpose(U))
+    else:
+        def fprime(x, t, sys):
+            """The vector field of the linear system.""" 
+            return dot(sys.A,x)
+        xout = integrate.odeint(fprime, X0, T, args=(sys,), **kwargs)
+        yout = dot(sys.C,transpose(xout))
+
     return T, squeeze(transpose(yout)), xout
 
 
@@ -468,6 +501,75 @@ def impulse(system, X0=None, T=None, N=None):
         eA = (dot(dot(v,es),vi)).astype(h.dtype)
         h[k] = squeeze(dot(dot(C,eA),B))
     return T, h
+
+
+def impulse2(system, X0=None, T=None, N=None, **kwargs):
+    """Impulse response of a single-input continuous-time linear system.
+
+    The solution is generated by calling `scipy.soignal.lsim2`, which uses the
+    differential equation solver `scipy.integrate.odeint`.
+
+    Parameters
+    ----------
+    system : an instance of the LTI class or a tuple describing the system.
+        The following gives the number of elements in the tuple and the interpretation.
+            2 (num, den)
+            3 (zeros, poles, gain)
+            4 (A, B, C, D)
+    T : 1D ndarray or array-like, optional
+        The time steps at which the input is defined and at which the output is
+        desired.  If `T` is not given, the function will generate a set of time
+        samples automatically.
+    X0 : 1D ndarray or array-like, optional
+        The initial condition of the state vector.  If X0 is None, the initial
+        conditions are assumed to be 0.
+    N : int, optional
+        Number of time points to compute.  If `N` is not given, 100 points are used.
+    **kwargs :
+        Additional keyword arguments are passed on the function `scipy.signal.lsim2`,
+        which in turn passes them on to :func:`scipy.integrate.odeint`.  See the
+        documation for :func:`scipy.integrate.odeint` for information about these
+        arguments.
+
+    Returns: (T, yout, xout)
+    ------------------------
+    T : 1D ndarray
+        The time values for the output.
+    yout : ndarray
+        The output response of the system.
+
+    See Also
+    --------
+    scipy.signal.impulse
+    """
+    if isinstance(system, lti):
+        sys = system
+    else:
+        sys = lti(*system)
+    B = sys.B
+    if B.shape[-1] != 1:
+        raise ValueError, "impulse2() requires a single-input system."
+    B = B.squeeze()
+    if X0 is None:
+        X0 = zeros_like(B)
+    if N is None:
+        N = 100
+    if T is None:
+        # Create a reasonable time interval.  This could use some more work.
+        # For example, what is expected when the system is unstable?
+        vals = linalg.eigvals(sys.A)
+        r = min(abs(real(vals)))
+        if r == 0.0:
+            r = 1.0
+        tc = 1.0/r
+        T = arange(0, 7*tc, 7*tc / float(N))
+    # Move the impulse in the input to the initial conditions, and then
+    # solve using lsim2().
+    U = zeros_like(T)
+    ic = B + X0
+    Tr, Yr, Xr = lsim2(sys, U, T, ic, **kwargs)
+    return Tr, Yr
+
 
 def step(system, X0=None, T=None, N=None):
     """Step response of continuous-time system.
