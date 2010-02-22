@@ -14,7 +14,7 @@ env.Tool('f2py')
 if sys.platform=='win32':
 #        define_macros.append(('NOINFINITIES',None))
 #        define_macros.append(('NONANS',None))
-    env.AppendUnique(CPPDEFINES = '_USE_MATH_DEFINES')
+    env.PrependUnique(CPPDEFINES = '_USE_MATH_DEFINES')
 
 config = env.NumpyConfigure(custom_tests = {'CheckF77Clib' : CheckF77Clib})
 if not config.CheckF77Clib():
