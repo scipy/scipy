@@ -4,11 +4,14 @@ To run tests locally:
   python tests/test_arpack.py [-l<int>] [-v<int>]
 
 """
+import numpy as np
 
 from numpy.testing import *
 
 from numpy import array, finfo, argsort, dot, round, conj, random
-from scipy.sparse.linalg.eigen.arpack import eigen_symmetric, eigen
+from scipy.sparse.linalg.eigen.arpack import eigen_symmetric, eigen, svd
+
+from scipy.linalg import svd as dsvd
 
 def assert_almost_equal_cc(actual,desired,decimal=7,err_msg='',verbose=True):
     # almost equal or complex conjugates almost equal
@@ -262,6 +265,52 @@ class TestEigenComplexNonSymmetric(TestArpack):
             for which in ['LI','LR','LM','SI','SR','SM']:
                 for m in self.nonsymmetric:
                     self.eval_evec(m,typ,k,which)
+
+def sorted_svd(m, k):
+    """Compute svd of a dense matrix m, and return singular vectors/values
+    sorted."""
+    u, s, vh = dsvd(m)
+    ii = np.argsort(s)[-k:]
+
+    return u[:, ii], s[ii], vh[ii]
+
+def svd_estimate(u, s, vh):
+    return np.dot(u, np.dot(np.diag(s), vh))
+
+class TestSparseSvd(TestCase):
+    def test_simple_real(self):
+        x = np.array([[1, 2, 3],
+                      [3, 4, 3],
+                      [1, 0, 2],
+                      [0, 0, 1]], np.float)
+
+        for m in [x.T, x]:
+            for k in range(1, 3):
+                u, s, vh = sorted_svd(m, k)
+                su, ss, svh = svd(m, k)
+
+                m_hat = svd_estimate(u, s, vh)
+                sm_hat = svd_estimate(su, ss, svh)
+
+                assert_array_almost_equal_nulp(m_hat, sm_hat, nulp=1000)
+
+    @dec.knownfailureif(True, "Complex sparse SVD not implemented (depends on "
+                              "Hermitian support in eigen_symmetric")
+    def test_simple_complex(self):
+        x = np.array([[1, 2, 3],
+                      [3, 4, 3],
+                      [1+1j, 0, 2],
+                      [0, 0, 1]], np.complex)
+
+        for m in [x, x.T.conjugate()]:
+            for k in range(1, 3):
+                u, s, vh = sorted_svd(m, k)
+                su, ss, svh = svd(m, k)
+
+                m_hat = svd_estimate(u, s, vh)
+                sm_hat = svd_estimate(su, ss, svh)
+
+                assert_array_almost_equal_nulp(m_hat, sm_hat, nulp=1000)
 
 if __name__ == "__main__":
     run_module_suite()

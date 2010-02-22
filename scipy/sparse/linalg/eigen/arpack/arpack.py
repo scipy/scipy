@@ -39,13 +39,14 @@ Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
 
 __docformat__ = "restructuredtext en"
 
-__all___=['eigen','eigen_symmetric']
+__all___=['eigen','eigen_symmetric', 'svd']
 
 import warnings
 
 import _arpack
 import numpy as np
 from scipy.sparse.linalg.interface import aslinearoperator
+from scipy.sparse import csc_matrix, csr_matrix
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 _ndigits = {'f':5, 'd':12, 'F':5, 'D':12}
@@ -488,3 +489,58 @@ def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM', v0=None,
     if return_eigenvectors:
         return d,z
     return d
+
+def svd(A, k=6):
+    """Compute a few singular values/vectors for a sparse matrix using ARPACK.
+
+    Parameters
+    ----------
+    A: sparse matrix
+        Array to compute the SVD on.
+    k: int
+        Number of singular values and vectors to compute.
+
+    Note
+    ----
+    This is a naive implementation using the symmetric eigensolver on A.T * A
+    or A * A.T, depending on which one is more efficient.
+
+    Complex support is not implemented yet
+    """
+    # TODO: implement complex support once ARPACK-based eigen_hermitian is
+    # available
+    n, m = A.shape
+
+    if np.iscomplexobj(A):
+        raise NotImplementedError("Complex support for sparse SVD not " \
+                                  "implemented yet")
+        op = lambda x: x.T.conjugate()
+    else:
+        op = lambda x: x.T
+
+    def _left(x):
+        x = csc_matrix(x)
+        m = op(x) * x
+
+        eigvals, eigvec = eigen_symmetric(m, k)
+        s = np.sqrt(eigvals)
+
+        v = eigvec
+        u = (x * v) / s
+        return u, s, op(v)
+
+    def _right(x):
+        x = csr_matrix(x)
+        m = x * op(x)
+
+        eigvals, eigvec = eigen_symmetric(m, k)
+        s = np.sqrt(eigvals)
+
+        u = eigvec
+        vh = (op(u) * x) / s[:, None]
+        return u, s, vh
+
+    if n > m:
+        return _left(A)
+    else:
+        return _right(A)
