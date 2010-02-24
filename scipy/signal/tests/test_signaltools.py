@@ -280,6 +280,10 @@ class TestMedFilt(TestCase):
                                [ 0,  7, 11,  7,  4,  4, 19, 19, 24,  0]])
         assert_array_equal(d, e)
 
+    def test_none(self):
+        """Ticket #1124."""
+        signal.medfilt(None)
+
 class TestWiener(TestCase):
     def test_basic(self):
         g = array([[5,6,4,3],[3,5,6,2],[2,3,5,6],[1,6,9,7]],'d')
@@ -780,8 +784,6 @@ class TestHilbert:
                              8.881784197001253e-17-0.751023775297729j,
                              9.444121133484362e-17-0.79252210110103j ])
         yield assert_almost_equal, aan[0], a0hilb, 14, 'N regression'
-
-        
 
 
 if __name__ == "__main__":

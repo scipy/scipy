@@ -291,7 +291,7 @@ def medfilt(volume,kernel_size=None):
            result.
 
     """
-    volume = asarray(volume)
+    volume = atleast_1d(volume)
     if kernel_size is None:
         kernel_size = [3] * len(volume.shape)
     kernel_size = asarray(kernel_size)
