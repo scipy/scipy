@@ -662,10 +662,8 @@ def tril(m, k=0):
            [10, 11, 12]])
 
     """
-    ## svsp = getattr(m,'spacesaver',lambda:0)()
     m = asarray(m)
     out = tri(m.shape[0], m.shape[1], k=k, dtype=m.dtype.char)*m
-    pass  ## pass  ## out.savespace(svsp)
     return out
 
 def triu(m, k=0):
@@ -693,10 +691,8 @@ def triu(m, k=0):
            [ 0,  0, 12]])
 
     """
-    ## svsp = getattr(m,'spacesaver',lambda:0)()
     m = asarray(m)
     out = (1-tri(m.shape[0], m.shape[1], k-1, m.dtype.char))*m
-    pass  ## pass  ## out.savespace(svsp)
     return out
 
 def toeplitz(c,r=None):
