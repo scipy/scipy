@@ -16,7 +16,7 @@ __all__ = ['solve','inv','det','lstsq','norm','pinv','pinv2',
 from flinalg import get_flinalg_funcs
 from lapack import get_lapack_funcs
 from numpy import asarray,zeros,sum,newaxis,greater_equal,subtract,arange,\
-     conjugate,ravel,r_,mgrid,take,ones,dot,transpose,sqrt,add,real
+     conjugate,ravel,r_,mgrid,take,ones,dot,transpose
 import numpy
 from numpy import asarray_chkfinite, outer, concatenate, reshape, single
 from numpy import matrix as Matrix
@@ -662,7 +662,7 @@ def tril(m, k=0):
            [10, 11, 12]])
 
     """
-    svsp = getattr(m,'spacesaver',lambda:0)()
+    ## svsp = getattr(m,'spacesaver',lambda:0)()
     m = asarray(m)
     out = tri(m.shape[0], m.shape[1], k=k, dtype=m.dtype.char)*m
     pass  ## pass  ## out.savespace(svsp)
@@ -693,7 +693,7 @@ def triu(m, k=0):
            [ 0,  0, 12]])
 
     """
-    svsp = getattr(m,'spacesaver',lambda:0)()
+    ## svsp = getattr(m,'spacesaver',lambda:0)()
     m = asarray(m)
     out = (1-tri(m.shape[0], m.shape[1], k-1, m.dtype.char))*m
     pass  ## pass  ## out.savespace(svsp)
