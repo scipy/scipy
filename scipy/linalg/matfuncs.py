@@ -36,11 +36,6 @@ def expm(A,q=7):
 
     """
     A = asarray(A)
-    ss = True
-    if A.dtype.char in ['f', 'F']:
-        pass  ## A.savespace(1)
-    else:
-        pass  ## A.savespace(0)
 
     # Scale A so that norm is < 1/2
     nA = norm(A,Inf)
@@ -69,7 +64,6 @@ def expm(A,q=7):
     F = solve(D,N)
     for k in range(1,j+1):
         F = dot(F,F)
-    pass  ## A.savespace(ss)
     return F
 
 def expm2(A):
