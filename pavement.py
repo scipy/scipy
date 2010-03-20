@@ -105,10 +105,10 @@ DOC_BLD = DOC_ROOT / "build"
 DOC_BLD_LATEX = DOC_BLD / "latex"
 
 # Source of the release notes
-RELEASE = 'doc/release/0.7.1-notes.rst'
+RELEASE = 'doc/release/0.7.2-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'svn/tags/0.7.0'
+LOG_START = 'svn/tags/0.7.1'
 LOG_END = '0.7.x'
 
 # Virtualenv bootstrap stuff
