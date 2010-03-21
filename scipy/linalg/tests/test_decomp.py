@@ -205,6 +205,18 @@ class TestEig(TestCase):
             if all(isfinite(res[:, i])):
                 assert_array_almost_equal(res[:, i], 0)
 
+    def test_not_square_error(self):
+        """Check that passing a non-square array raises a ValueError."""
+        A = np.arange(6).reshape(3,2)
+        assert_raises(ValueError, eig, A)
+
+    def test_shape_mismatch(self):
+        """Check that passing arrays of with different shapes raises a ValueError."""
+        A = identity(2)
+        B = np.arange(9.0).reshape(3,3)
+        assert_raises(ValueError, eig, A, B)
+        assert_raises(ValueError, eig, B, A)
+
 class TestEigBanded(TestCase):
 
     def __init__(self, *args):

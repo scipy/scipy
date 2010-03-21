@@ -150,10 +150,12 @@ def eig(a,b=None, left=False, right=True, overwrite_a=False, overwrite_b=False):
     """
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
-        raise ValueError, 'expected square matrix'
+        raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or (_datanotshared(a1,a))
     if b is not None:
         b = asarray_chkfinite(b)
+        if b.shape != a1.shape:
+            raise ValueError('a and b must have the same shape')
         return _geneig(a1,b,left,right,overwrite_a,overwrite_b)
     geev, = get_lapack_funcs(('geev',),(a1,))
     compute_vl,compute_vr=left,right
