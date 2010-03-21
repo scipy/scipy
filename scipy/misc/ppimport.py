@@ -143,7 +143,7 @@ def ppimport(name):
     if p_name=='__main__':
         p_dir = ''
         fullname = name
-    elif '__path__' in _frame.f_locals:
+    elif '__path__' in p_frame.f_locals:
         # python package
         p_path = p_frame.f_locals['__path__']
         p_dir = p_path[0]
@@ -243,7 +243,7 @@ class _ModuleLoader(object):
 
         if location != 'sys.path':
             from numpy.testing import Tester
-            self.__dict__['test'] = Tester(os,path.dirname(location)).test
+            self.__dict__['test'] = Tester(os.path.dirname(location)).test
 
         # install loader
         sys.modules[name] = self
