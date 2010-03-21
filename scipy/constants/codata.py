@@ -469,8 +469,7 @@ def find(sub) :
         if l_sub in l_key:
             result.append(key)
     result.sort()
-    for key in result :
-        print key
+    return result
 
 #table is lacking some digits for exact values: calculate from definition
 
