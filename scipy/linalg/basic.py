@@ -7,16 +7,16 @@
 #
 # w/ additions by Travis Oliphant, March 2002
 
-__all__ = ['solve','inv','det','lstsq','norm','pinv','pinv2',
-           'tri','tril','triu','toeplitz','hankel','block_diag','lu_solve',
-           'cho_solve','solve_banded','LinAlgError','kron',
+__all__ = ['solve', 'inv', 'det', 'lstsq', 'norm', 'pinv', 'pinv2',
+           'tri','tril', 'triu', 'toeplitz', 'circulant', 'hankel', 'block_diag',
+           'lu_solve', 'cho_solve', 'solve_banded', 'LinAlgError', 'kron',
            'all_mat', 'cholesky_banded', 'solveh_banded']
 
 #from blas import get_blas_funcs
 from flinalg import get_flinalg_funcs
 from lapack import get_lapack_funcs
-from numpy import asarray,zeros,sum,newaxis,greater_equal,subtract,arange,\
-     conjugate,ravel,r_,mgrid,take,ones,dot,transpose
+from numpy import asarray, zeros, sum, greater_equal, subtract, arange,\
+     conjugate, dot, transpose
 import numpy
 from numpy import asarray_chkfinite, outer, concatenate, reshape, single
 from numpy import matrix as Matrix
@@ -537,6 +537,7 @@ eps = numpy.finfo(float).eps
 feps = numpy.finfo(single).eps
 
 _array_precision = {'f': 0, 'd': 1, 'F': 0, 'D': 1}
+
 def pinv2(a, cond=None, rcond=None):
     """Compute the (Moore-Penrose) pseudo-inverse of a matrix.
 
@@ -695,24 +696,31 @@ def triu(m, k=0):
     out = (1-tri(m.shape[0], m.shape[1], k-1, m.dtype.char))*m
     return out
 
-def toeplitz(c,r=None):
+
+def toeplitz(c, r=None):
     """Construct a Toeplitz matrix.
 
-    The Toepliz matrix has constant diagonals, c as its first column,
-    and r as its first row (if not given, r == c is assumed).
+    The Toepliz matrix has constant diagonals, with c as its first column
+    and r as its first row.  If r is not given, r == conjugate(c) is
+    assumed.
 
     Parameters
     ----------
-    c : array
-        First column of the matrix
-    r : array
-        First row of the matrix. If None, r == c is assumed.
+    c : array-like, 1D
+        First column of the matrix.  Whatever the actual shape of `c`, it
+        will be converted to a 1D array.
+    r : array-like, 1D
+        First row of the matrix. If None, `r = conjugate(c)` is assumed; in
+        this case, if `c[0]` is real, the result is a Hermitian matrix.
+        `r[0]` is ignored; the first row of the returned matrix is
+        `[c[0], r[1:]]`.  Whatever the actual shape of `r`, it will be
+        converted to a 1D array.
 
     Returns
     -------
     A : array, shape (len(c), len(r))
-        Constructed Toeplitz matrix.
-        dtype is the same as (c[0] + r[0]).dtype
+        The Toeplitz matrix.
+        dtype is the same as `(c[0] + r[0]).dtype`.
 
     Examples
     --------
@@ -721,54 +729,105 @@ def toeplitz(c,r=None):
     array([[1, 4, 5, 6],
            [2, 1, 4, 5],
            [3, 2, 1, 4]])
+    >>> toeplitz([1.0, 2+3j, 4-1j])
+    array([[ 1.+0.j,  2.-3.j,  4.+1.j],
+           [ 2.+3.j,  1.+0.j,  2.-3.j],
+           [ 4.-1.j,  2.+3.j,  1.+0.j]])
 
     See also
     --------
+    circulant : circulant matrix
     hankel : Hankel matrix
 
+    Notes
+    -----
+    The behavior when `c` or `r` is a scalar, or when `c` is complex and
+    `r` is None, was changed in version 0.8.0.  The behavior in previous
+    versions was undocumented and is no longer supported. 
     """
-    isscalar = numpy.isscalar
-    if isscalar(c) or isscalar(r):
-        return c
+    c = numpy.asarray(c).ravel()
     if r is None:
-        r = c
-        r[0] = conjugate(r[0])
-        c = conjugate(c)
-    r,c = map(asarray_chkfinite,(r,c))
-    r,c = map(ravel,(r,c))
-    rN,cN = map(len,(r,c))
-    if r[0] != c[0]:
-        print "Warning: column and row values don't agree; column value used."
-    vals = r_[r[rN-1:0:-1], c]
-    cols = mgrid[0:cN]
-    rows = mgrid[rN:0:-1]
-    indx = cols[:,newaxis]*ones((1,rN),dtype=int) + \
-           rows[newaxis,:]*ones((cN,1),dtype=int) - 1
-    return take(vals, indx, 0)
+        r = c.conjugate()
+    else:
+        r = numpy.asarray(r).ravel()
+    # Form a 1D array of values to be used in the matrix, containing a reversed
+    # copy of r[1:], followed by c.
+    vals = numpy.concatenate((r[-1:0:-1], c))
+    a, b = numpy.ogrid[0:len(c), len(r)-1:-1:-1]
+    indx = a + b
+    # `indx` is a 2D array of indices into the 1D array `vals`, arranged so that
+    # `vals[indx]` is the Toeplitz matrix.
+    return vals[indx]
 
-
-def hankel(c,r=None):
-    """Construct a Hankel matrix.
-
-    The Hankel matrix has constant anti-diagonals, c as its first column,
-    and r as its last row (if not given, r == 0 os assumed).
+def circulant(c):
+    """Construct a circulant matrix.
 
     Parameters
     ----------
-    c : array
-        First column of the matrix
-    r : array
-        Last row of the matrix. If None, r == 0 is assumed.
+    c : array-like, 1D
+        First column of the matrix.
+
+    Returns
+    -------
+    A : array, shape (len(c), len(c))
+        A circulant matrix whose first column is `c`.
+
+    Examples
+    --------
+    >>> from scipy.linalg import circulant
+    >>> circulant([1, 2, 3])
+    array([[1, 3, 2],
+           [2, 1, 3],
+           [3, 2, 1]])
+
+    See also
+    --------
+    toeplitz : Toeplitz matrix
+    hankel : Hankel matrix
+    
+    Notes
+    -----
+    .. versionadded:: 0.8.0
+
+    """
+    c = numpy.asarray(c).ravel()
+    a, b = numpy.ogrid[0:len(c), 0:-len(c):-1]
+    indx = a + b
+    # `indx` is a 2D array of indices into `c`, arranged so that `c[indx]` is
+    # the circulant matrix.
+    return c[indx]
+
+def hankel(c, r=None):
+    """Construct a Hankel matrix.
+
+    The Hankel matrix has constant anti-diagonals, with `c` as its
+    first column and `r` as its last row.  If `r` is not given, then
+    `r = zeros_like(c)` is assumed.
+
+    Parameters
+    ----------
+    c : array-like, 1D
+        First column of the matrix.  Whatever the actual shape of `c`, it
+        will be converted to a 1D array.
+    r : array-like, 1D
+        Last row of the matrix. If None, `r` == 0 is assumed.
+        `r[0]` is ignored; the last row of the returned matrix is
+        `[c[0], r[1:]]`.  Whatever the actual shape of `r`, it will be
+        converted to a 1D array.
 
     Returns
     -------
     A : array, shape (len(c), len(r))
-        Constructed Hankel matrix.
-        dtype is the same as (c[0] + r[0]).dtype
+        The Hankel matrix.
+        dtype is the same as `(c[0] + r[0]).dtype`.
 
     Examples
     --------
     >>> from scipy.linalg import hankel
+    >>> hankel([1, 17, 99])
+    array([[ 1, 17, 99],
+           [17, 99,  0],
+           [99,  0,  0]])
     >>> hankel([1,2,3,4], [4,7,7,8,9])
     array([[1, 2, 3, 4, 7],
            [2, 3, 4, 7, 7],
@@ -778,24 +837,22 @@ def hankel(c,r=None):
     See also
     --------
     toeplitz : Toeplitz matrix
+    circulant : circulant matrix
 
     """
-    isscalar = numpy.isscalar
-    if isscalar(c) or isscalar(r):
-        return c
+    c = numpy.asarray(c).ravel()
     if r is None:
-        r = zeros(len(c))
-    elif r[0] != c[-1]:
-        print "Warning: column and row values don't agree; column value used."
-    r,c = map(asarray_chkfinite,(r,c))
-    r,c = map(ravel,(r,c))
-    rN,cN = map(len,(r,c))
-    vals = r_[c, r[1:rN]]
-    cols = mgrid[1:cN+1]
-    rows = mgrid[0:rN]
-    indx = cols[:,newaxis]*ones((1,rN),dtype=int) + \
-           rows[newaxis,:]*ones((cN,1),dtype=int) - 1
-    return take(vals, indx, 0)
+        r = numpy.zeros_like(c)
+    else:
+        r = numpy.asarray(r).ravel()
+    # Form a 1D array of values to be used in the matrix, containing `c`
+    # followed by r[1:].
+    vals = numpy.concatenate((c, r[1:]))
+    a, b = numpy.ogrid[0:len(c), 0:len(r)]
+    indx = a + b
+    # `indx` is a 2D array of indices into the 1D array `vals`, arranged so that
+    # `vals[indx]` is the Hankel matrix.
+    return vals[indx]
 
 def all_mat(*args):
     return map(Matrix,args)

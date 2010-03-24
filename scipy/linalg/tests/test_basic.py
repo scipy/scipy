@@ -20,13 +20,13 @@ Run tests if linalg is not installed:
 """
 
 from numpy import arange, add, array, dot, zeros, identity, conjugate, \
-     transpose, eye, all
+     transpose, eye, all, copy
 import numpy.linalg as linalg
 
 from numpy.testing import *
 
-from scipy.linalg import solve,inv,det,lstsq, toeplitz, hankel, tri, triu, \
-     tril, pinv, pinv2, solve_banded, block_diag, norm
+from scipy.linalg import solve,inv,det,lstsq, toeplitz, hankel, circulant, \
+     tri, triu, tril, pinv, pinv2, solve_banded, block_diag, norm
 
 
 def random(size):
@@ -385,12 +385,53 @@ class TestTriu(TestCase):
                 b[l,k] = 0
         assert_equal(triu(a,k=-2),b)
 
+
 class TestToeplitz(TestCase):
+    
     def test_basic(self):
         y = toeplitz([1,2,3])
         assert_array_equal(y,[[1,2,3],[2,1,2],[3,2,1]])
         y = toeplitz([1,2,3],[1,4,5])
         assert_array_equal(y,[[1,4,5],[2,1,4],[3,2,1]])
+        
+    def test_complex_01(self):
+        data = (1.0 + arange(3.0)) * (1.0 + 1.0j)
+        x = copy(data)
+        t = toeplitz(x)
+        # Calling toeplitz should not change x.
+        assert_array_equal(x, data)
+        # According to the docstring, x should be the first column of t.
+        col0 = t[:,0]
+        assert_array_equal(col0, data)
+        assert_array_equal(t[0,1:], data[1:].conj())
+
+    def test_scalar_00(self):
+        """Scalar arguments still produce a 2D array."""
+        t = toeplitz(10)
+        assert_array_equal(t, [[10]])
+        t = toeplitz(10, 20)
+        assert_array_equal(t, [[10]])
+        
+    def test_scalar_01(self):
+        c = array([1,2,3])
+        t = toeplitz(c, 1)
+        assert_array_equal(t, [[1],[2],[3]])
+
+    def test_scalar_02(self):
+        c = array([1,2,3])
+        t = toeplitz(c, array(1))
+        assert_array_equal(t, [[1],[2],[3]])
+
+    def test_scalar_03(self):
+        c = array([1,2,3])
+        t = toeplitz(c, array([1]))
+        assert_array_equal(t, [[1],[2],[3]])
+
+    def test_scalar_04(self):
+        r = array([10,2,3])
+        t = toeplitz(1, r)
+        assert_array_equal(t, [[1,2,3]])
+
 
 class TestHankel(TestCase):
     def test_basic(self):
@@ -398,6 +439,13 @@ class TestHankel(TestCase):
         assert_array_equal(y,[[1,2,3],[2,3,0],[3,0,0]])
         y = hankel([1,2,3],[3,4,5])
         assert_array_equal(y,[[1,2,3],[2,3,4],[3,4,5]])
+
+
+class TestCirculant(TestCase):
+    def test_basic(self):
+        y = circulant([1,2,3])
+        assert_array_equal(y,[[1,3,2],[2,1,3],[3,2,1]])
+
 
 class TestBlockDiag:
     def test_basic(self):
