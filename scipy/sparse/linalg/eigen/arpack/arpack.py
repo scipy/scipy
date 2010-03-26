@@ -52,7 +52,7 @@ _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 _ndigits = {'f':5, 'd':12, 'F':5, 'D':12}
 
 class _ArpackParams(object):
-    def __init__(self, n, k, tp, mode="symmetric", sigma=None,
+    def __init__(self, n, k, tp, matvec, mode="symmetric", sigma=None,
                  ncv=None, v0=None, maxiter=None, which="LM", tol=0):
         if k <= 0:
             raise ValueError("k must be positive, k=%d" % k)
@@ -95,7 +95,8 @@ class _ArpackParams(object):
 
             self.workd = np.zeros(3 * n, tp)
             self.workl = np.zeros(3 * ncv * ncv + 6 * ncv, tp)
-            self.solver = _arpack.__dict__[ltr + 'naupd']
+            self._arpack_solver = _arpack.__dict__[ltr + 'naupd']
+            self.iterate = self._unsymmetric_solver
             self.extract = _arpack.__dict__[ltr + 'neupd']
 
             if tp in 'FD':
@@ -108,7 +109,8 @@ class _ArpackParams(object):
 
             self.workd = np.zeros(3 * n, tp)
             self.workl = np.zeros(ncv * (ncv + 8), tp)
-            self.solver = _arpack.__dict__[ltr + 'saupd']
+            self._arpack_solver = _arpack.__dict__[ltr + 'saupd']
+            self.iterate = self._symmetric_solver
             self.extract = _arpack.__dict__[ltr + 'seupd']
 
             self.ipntr = np.zeros(11, "int")
@@ -127,6 +129,7 @@ class _ArpackParams(object):
 
         self.n = n
         self.mode = mode
+        self.matvec = matvec
         self.tol = tol
         self.k = k
         self.maxiter = maxiter
@@ -135,6 +138,62 @@ class _ArpackParams(object):
         self.tp = tp
         self.info = info
         self.bmat = 'I'
+
+        self.converged = False
+        self.ido = 0
+
+    def _unsymmetric_solver(self):
+        if self.tp in 'fd':
+            self.ido, self.resid, self.v, self.iparam, self.ipntr, self.info = \
+                self._arpack_solver(self.ido, self.bmat, self.which, self.k, self.tol,
+                        self.resid, self.v, self.iparam, self.ipntr,
+                        self.workd, self.workl, self.info)
+        else:
+            self.ido, self.resid, self.v, self.iparam, self.ipntr, self.info =\
+                self._arpack_solver(self.ido, self.bmat, self.which, self.k, self.tol,
+                        self.resid, self.v, self.iparam, self.ipntr,
+                        self.workd, self.workl, self.rwork, self.info)
+
+        xslice = slice(self.ipntr[0]-1, self.ipntr[0]-1+self.n)
+        yslice = slice(self.ipntr[1]-1, self.ipntr[1]-1+self.n)
+        if self.ido == -1:
+            # initialization
+            self.workd[yslice] = self.matvec(self.workd[xslice])
+        elif self.ido == 1:
+            # compute y=Ax
+            self.workd[yslice] = self.matvec(self.workd[xslice])
+        else:
+            self.converged = True
+
+            if self.info < -1 :
+                raise RuntimeError("Error info=%d in arpack" % self.info)
+            elif self.info == -1:
+                warnings.warn("Maximum number of iterations taken: %s" % self.iparam[2])
+
+    def _symmetric_solver(self):
+        self.ido, self.resid, self.v, self.iparam, self.ipntr, self.info = \
+            self._arpack_solver(self.ido, self.bmat, self.which, self.k, self.tol,
+                    self.resid, self.v, self.iparam, self.ipntr,
+                    self.workd, self.workl, self.info)
+
+        xslice = slice(self.ipntr[0]-1, self.ipntr[0]-1+self.n)
+        yslice = slice(self.ipntr[1]-1, self.ipntr[1]-1+self.n)
+        if self.ido == -1:
+            # initialization
+            self.workd[yslice] = self.matvec(self.workd[xslice])
+        elif self.ido == 1:
+            # compute y=Ax
+            self.workd[yslice] = self.matvec(self.workd[xslice])
+        else:
+            self.converged = True
+
+            if self.info < -1 :
+                raise RuntimeError("Error info=%d in arpack" % self.info)
+            elif self.info == -1:
+                warnings.warn("Maximum number of iterations taken: %s" % self.iparam[2])
+
+            if self.iparam[4] < self.k:
+                warnings.warn("Only %d/%d eigenvectors converged" % (self.iparam[4], self.k))
 
 def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
           ncv=None, maxiter=None, tol=0,
@@ -217,41 +276,15 @@ def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
         raise ValueError('expected square matrix (shape=%s)' % A.shape)
     n = A.shape[0]
 
-    params = _ArpackParams(n, k, A.dtype.char, "unsymmetric", sigma,
+    matvec = lambda x : A.matvec(x)
+    params = _ArpackParams(n, k, A.dtype.char, matvec, "unsymmetric", sigma,
                            ncv, v0, maxiter, which, tol)
 
     if M is not None:
         raise NotImplementedError("generalized eigenproblem not supported yet")
 
-    ido = 0
-
-    while True:
-        if params.tp in 'fd':
-            ido, params.resid, params.v, params.iparam, params.ipntr, params.info = \
-                params.solver(ido, params.bmat, params.which, params.k, params.tol,
-                        params.resid, params.v, params.iparam, params.ipntr,
-                        params.workd, params.workl, params.info)
-        else:
-            ido, params.resid, params.v, params.iparam, params.ipntr, params.info =\
-                params.solver(ido, params.bmat, params.which, params.k, params.tol,
-                        params.resid, params.v, params.iparam, params.ipntr,
-                        params.workd, params.workl, params.rwork, params.info)
-
-        xslice = slice(params.ipntr[0]-1, params.ipntr[0]-1+n)
-        yslice = slice(params.ipntr[1]-1, params.ipntr[1]-1+n)
-        if ido == -1:
-            # initialization
-            params.workd[yslice] = A.matvec(params.workd[xslice])
-        elif ido == 1:
-            # compute y=Ax
-            params.workd[yslice] = A.matvec(params.workd[xslice])
-        else:
-            break
-
-    if params.info < -1 :
-        raise RuntimeError("Error info=%d in arpack" % params.info)
-    elif params.info == -1:
-        warnings.warn("Maximum number of iterations taken: %s" % self.iparam[2])
+    while not params.converged:
+        params.iterate()
 
     # now extract eigenvalues and (optionally) eigenvectors
     rvec = return_eigenvectors
@@ -419,34 +452,12 @@ def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM', v0=None,
     if M is not None:
         raise NotImplementedError("generalized eigenproblem not supported yet")
 
-    params = _ArpackParams(n, k, A.dtype.char, "symmetric", sigma,
+    matvec = lambda x : A.matvec(x)
+    params = _ArpackParams(n, k, A.dtype.char, matvec, "symmetric", sigma,
                            ncv, v0, maxiter, which, tol)
 
-    ido = 0
-    while True:
-        ido, params.resid, params.v, params.iparam, params.ipntr, params.info = \
-            params.solver(ido, params.bmat, params.which, params.k, params.tol,
-                    params.resid, params.v, params.iparam, params.ipntr,
-                    params.workd, params.workl, params.info)
-
-        xslice = slice(params.ipntr[0]-1, params.ipntr[0]-1+n)
-        yslice = slice(params.ipntr[1]-1, params.ipntr[1]-1+n)
-        if ido == -1:
-            # initialization
-            params.workd[yslice] = A.matvec(params.workd[xslice])
-        elif ido == 1:
-            # compute y=Ax
-            params.workd[yslice] = A.matvec(params.workd[xslice])
-        else:
-            break
-
-    if params.info < -1 :
-        raise RuntimeError("Error info=%d in arpack" % params.info)
-    elif params.info == 1:
-        warnings.warn("Maximum number of iterations taken: %s" % params.iparam[2])
-
-    if params.iparam[4] < k:
-        warnings.warn("Only %d/%d eigenvectors converged" % (params.iparam[4], k))
+    while not params.converged:
+        params.iterate()
 
     # now extract eigenvalues and (optionally) eigenvectors
     rvec = return_eigenvectors
