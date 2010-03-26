@@ -123,7 +123,7 @@ class _SymmetricArpackParams(_ArpackParams):
 
         ltr = _type_conv[self.tp]
         self._arpack_solver = _arpack.__dict__[ltr + 'saupd']
-        self.extract = _arpack.__dict__[ltr + 'seupd']
+        self._arpack_extract = _arpack.__dict__[ltr + 'seupd']
 
         self.ipntr = np.zeros(11, "int")
 
@@ -152,6 +152,26 @@ class _SymmetricArpackParams(_ArpackParams):
             if self.iparam[4] < self.k:
                 warnings.warn("Only %d/%d eigenvectors converged" % (self.iparam[4], self.k))
 
+    def extract(self, return_eigenvectors):
+        rvec = return_eigenvectors
+        ierr = 0
+        howmny = 'A' # return all eigenvectors
+        sselect = np.zeros(self.ncv, 'int') # unused
+        sigma = 0.0 # no shifts, not implemented
+
+        d, z, info = self._arpack_extract(rvec, howmny, sselect, sigma, self.bmat,
+                self.which, self.k, self.tol, self.resid, self.v,
+                self.iparam[0:7], self.ipntr, self.workd[0:2*self.n],
+                self.workl,ierr)
+
+        if ierr != 0:
+            raise RuntimeError("Error info=%d in arpack" % params.info)
+
+        if return_eigenvectors:
+            return d, z
+        else:
+            return d
+
 class _UnsymmetricArpackParams(_ArpackParams):
     def __init__(self, n, k, tp, matvec, sigma=None,
                  ncv=None, v0=None, maxiter=None, which="LM", tol=0):
@@ -166,7 +186,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
 
         ltr = _type_conv[self.tp]
         self._arpack_solver = _arpack.__dict__[ltr + 'naupd']
-        self.extract = _arpack.__dict__[ltr + 'neupd']
+        self._arpack_extract = _arpack.__dict__[ltr + 'neupd']
 
         self.ipntr = np.zeros(14, "int")
 
@@ -202,6 +222,88 @@ class _UnsymmetricArpackParams(_ArpackParams):
                 raise RuntimeError("Error info=%d in arpack" % self.info)
             elif self.info == -1:
                 warnings.warn("Maximum number of iterations taken: %s" % self.iparam[2])
+
+    def extract(self, return_eigenvectors):
+        k, n = self.k, self.n
+
+        ierr = 0
+        howmny = 'A' # return all eigenvectors
+        sselect = np.zeros(self.ncv, 'int') # unused
+        sigmai = 0.0 # no shifts, not implemented
+        sigmar = 0.0 # no shifts, not implemented
+        workev = np.zeros(3 * self.ncv, self.tp)
+
+        if self.tp in 'fd':
+            dr = np.zeros(k+1, self.tp)
+            di = np.zeros(k+1, self.tp)
+            zr = np.zeros((n, k+1), self.tp)
+            dr, di, zr, self.info=\
+                self._arpack_extract(return_eigenvectors,
+                       howmny, sselect, sigmar, sigmai, workev,
+                       self.bmat, self.which, k, self.tol, self.resid,
+                       self.v, self.iparam, self.ipntr,
+                       self.workd, self.workl, self.info)
+
+            # The ARPACK nonsymmetric real and double interface (s,d)naupd return
+            # eigenvalues and eigenvectors in real (float,double) arrays.
+
+            # Build complex eigenvalues from real and imaginary parts
+            d = dr + 1.0j * di
+
+            # Arrange the eigenvectors: complex eigenvectors are stored as
+            # real,imaginary in consecutive columns
+            z = zr.astype(self.tp.upper())
+            eps = np.finfo(self.tp).eps
+            i = 0
+            while i<=k:
+                # check if complex
+                if abs(d[i].imag) > eps:
+                    # assume this is a complex conjugate pair with eigenvalues
+                    # in consecutive columns
+                    z[:,i] = zr[:,i] + 1.0j * zr[:,i+1]
+                    z[:,i+1] = z[:,i].conjugate()
+                    i +=1
+                i += 1
+
+            # Now we have k+1 possible eigenvalues and eigenvectors
+            # Return the ones specified by the keyword "which"
+            nreturned = self.iparam[4] # number of good eigenvalues returned
+            if nreturned == k:    # we got exactly how many eigenvalues we wanted
+                d = d[:k]
+                z = z[:,:k]
+            else:   # we got one extra eigenvalue (likely a cc pair, but which?)
+                # cut at approx precision for sorting
+                rd = np.round(d, decimals = _ndigits[self.tp])
+                if self.which in ['LR','SR']:
+                    ind = np.argsort(rd.real)
+                elif self.which in ['LI','SI']:
+                    # for LI,SI ARPACK returns largest,smallest abs(imaginary) why?
+                    ind = np.argsort(abs(rd.imag))
+                else:
+                    ind = np.argsort(abs(rd))
+                if self.which in ['LR','LM','LI']:
+                    d = d[ind[-k:]]
+                    z = z[:,ind[-k:]]
+                if self.which in ['SR','SM','SI']:
+                    d = d[ind[:k]]
+                    z = z[:,ind[:k]]
+
+        else:
+            # complex is so much simpler...
+            d, z, self.info =\
+                    self._arpack_extract(return_eigenvectors,
+                           howmny, sselect, sigmar, workev,
+                           self.bmat, self.which, k, self.tol, self.resid,
+                           self.v, self.iparam, self.ipntr,
+                           self.workd, self.workl, self.rwork, ierr)
+
+        if ierr != 0:
+            raise RuntimeError("Error info=%d in arpack" % info)
+
+        if return_eigenvectors:
+            return d, z
+        else:
+            return d
 
 def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
           ncv=None, maxiter=None, tol=0,
@@ -294,87 +396,7 @@ def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
     while not params.converged:
         params.iterate()
 
-    # now extract eigenvalues and (optionally) eigenvectors
-    rvec = return_eigenvectors
-    ierr = 0
-    howmny = 'A' # return all eigenvectors
-    sselect = np.zeros(params.ncv, 'int') # unused
-    sigmai = 0.0 # no shifts, not implemented
-    sigmar = 0.0 # no shifts, not implemented
-    workev = np.zeros(3 * params.ncv, params.tp)
-
-    if params.tp in 'fd':
-        dr = np.zeros(k+1, params.tp)
-        di = np.zeros(k+1, params.tp)
-        zr = np.zeros((n, k+1), params.tp)
-        dr, di, zr, params.info=\
-            params.extract(rvec, howmny, sselect, sigmar, sigmai, workev,
-                   params.bmat, params.which, k, params.tol, params.resid,
-                   params.v, params.iparam, params.ipntr,
-                   params.workd, params.workl, params.info)
-
-        # The ARPACK nonsymmetric real and double interface (s,d)naupd return
-        # eigenvalues and eigenvectors in real (float,double) arrays.
-
-        # Build complex eigenvalues from real and imaginary parts
-        d = dr + 1.0j * di
-
-        # Arrange the eigenvectors: complex eigenvectors are stored as
-        # real,imaginary in consecutive columns
-        z = zr.astype(params.tp.upper())
-        eps = np.finfo(params.tp).eps
-        i = 0
-        while i<=k:
-            # check if complex
-            if abs(d[i].imag) > eps:
-                # assume this is a complex conjugate pair with eigenvalues
-                # in consecutive columns
-                z[:,i] = zr[:,i] + 1.0j * zr[:,i+1]
-                z[:,i+1] = z[:,i].conjugate()
-                i +=1
-            i += 1
-
-        # Now we have k+1 possible eigenvalues and eigenvectors
-        # Return the ones specified by the keyword "which"
-        nreturned = params.iparam[4] # number of good eigenvalues returned
-        if nreturned == k:    # we got exactly how many eigenvalues we wanted
-            d = d[:k]
-            z = z[:,:k]
-        else:   # we got one extra eigenvalue (likely a cc pair, but which?)
-            # cut at approx precision for sorting
-            rd = np.round(d, decimals = _ndigits[params.tp])
-            if params.which in ['LR','SR']:
-                ind = np.argsort(rd.real)
-            elif which in ['LI','SI']:
-                # for LI,SI ARPACK returns largest,smallest abs(imaginary) why?
-                ind = np.argsort(abs(rd.imag))
-            else:
-                ind = np.argsort(abs(rd))
-            if params.which in ['LR','LM','LI']:
-                d = d[ind[-k:]]
-                z = z[:,ind[-k:]]
-            if params.which in ['SR','SM','SI']:
-                d = d[ind[:k]]
-                z = z[:,ind[:k]]
-
-
-    else:
-        # complex is so much simpler...
-        d, z, params.info =\
-                params.extract(rvec, howmny, sselect, sigmar, workev,
-                       params.bmat, params.which, k, params.tol, params.resid,
-                       params.v, params.iparam, params.ipntr,
-                       params.workd, params.workl, params.rwork, ierr)
-
-
-
-    if ierr != 0:
-        raise RuntimeError("Error info=%d in arpack"%info)
-        return None
-    if return_eigenvectors:
-        return d,z
-    return d
-
+    return params.extract(return_eigenvectors)
 
 def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM', v0=None,
                     ncv=None, maxiter=None, tol=0,
@@ -467,23 +489,7 @@ def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM', v0=None,
     while not params.converged:
         params.iterate()
 
-    # now extract eigenvalues and (optionally) eigenvectors
-    rvec = return_eigenvectors
-    ierr = 0
-    howmny = 'A' # return all eigenvectors
-    sselect = np.zeros(params.ncv, 'int') # unused
-    sigma = 0.0 # no shifts, not implemented
-
-    d, z, info = params.extract(rvec, howmny, sselect, sigma, params.bmat,
-            params.which, k, params.tol, params.resid, params.v,
-            params.iparam[0:7], params.ipntr, params.workd[0:2*n],
-            params.workl,ierr)
-
-    if ierr != 0:
-        raise RuntimeError("Error info=%d in arpack" % params.info)
-    if return_eigenvectors:
-        return d, z
-    return d
+    return params.extract(return_eigenvectors)
 
 def svd(A, k=6):
     """Compute a few singular values/vectors for a sparse matrix using ARPACK.
