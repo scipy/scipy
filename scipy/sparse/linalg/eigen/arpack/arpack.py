@@ -519,22 +519,35 @@ def svd(A, k=6):
     else:
         op = lambda x: x.T
 
-    def _left(x):
-        x = csc_matrix(x)
-        m = op(x) * x
+    tp = A.dtype.char
+    linear_at = aslinearoperator(op(A))
+    linear_a = aslinearoperator(A)
 
-        eigvals, eigvec = eigen_symmetric(m, k)
+    def _left(x, sz):
+        x = csc_matrix(x)
+
+        matvec = lambda x: linear_at.matvec(linear_a.matvec(x))
+        params = _SymmetricArpackParams(sz, k, tp, matvec)
+
+        while not params.converged:
+            params.iterate()
+        eigvals, eigvec = params.extract(True)
         s = np.sqrt(eigvals)
 
         v = eigvec
         u = (x * v) / s
         return u, s, op(v)
 
-    def _right(x):
+    def _right(x, sz):
         x = csr_matrix(x)
-        m = x * op(x)
 
-        eigvals, eigvec = eigen_symmetric(m, k)
+        matvec = lambda x: linear_a.matvec(linear_at.matvec(x))
+        params = _SymmetricArpackParams(sz, k, tp, matvec)
+
+        while not params.converged:
+            params.iterate()
+        eigvals, eigvec = params.extract(True)
+
         s = np.sqrt(eigvals)
 
         u = eigvec
@@ -542,6 +555,6 @@ def svd(A, k=6):
         return u, s, vh
 
     if n > m:
-        return _left(A)
+        return _left(A, m)
     else:
-        return _right(A)
+        return _right(A, n)
