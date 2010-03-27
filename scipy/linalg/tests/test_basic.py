@@ -463,6 +463,23 @@ class TestBlockDiag:
 
         x = block_diag([[True]])
         assert_equal(x.dtype, bool)
+        
+    def test_scalar_and_1d_args(self):
+        a = block_diag(1)
+        assert_equal(a.shape, (1,1))
+        assert_array_equal(a, [[1]])
+        
+        a = block_diag([2,3], 4)
+        assert_array_equal(a, [[2, 3, 0], [0, 0, 4]])
+
+    def test_bad_arg(self):
+        assert_raises(ValueError, block_diag, [[[1]]])
+
+    def test_no_args(self):
+        a = block_diag()
+        assert_equal(a.ndim, 2)
+        assert_equal(a.nbytes, 0)
+
 
 class TestPinv(TestCase):
 

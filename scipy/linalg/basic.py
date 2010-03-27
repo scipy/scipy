@@ -18,7 +18,7 @@ from lapack import get_lapack_funcs
 from numpy import asarray, zeros, sum, greater_equal, subtract, arange,\
      conjugate, dot, transpose
 import numpy
-from numpy import asarray_chkfinite, outer, concatenate, reshape, single
+from numpy import asarray_chkfinite, atleast_2d, outer, concatenate, reshape, single
 from numpy import matrix as Matrix
 from numpy.linalg import LinAlgError
 from scipy.linalg import calc_lwork
@@ -894,7 +894,7 @@ def kron(a,b):
     return concatenate(concatenate(o, axis=1), axis=1)
 
 def block_diag(*arrs):
-    """Create a diagonal matrix from the provided arrays.
+    """Create a block diagonal matrix from the provided arrays.
 
     Given the inputs `A`, `B` and `C`, the output will have these
     arrays arranged on the diagonal::
@@ -908,8 +908,9 @@ def block_diag(*arrs):
 
     Parameters
     ----------
-    A, B, C, ... : 2-D ndarray
-        Input arrays.
+    A, B, C, ... : array-like, up to 2D
+        Input arrays.  A 1D array or array-like sequence with length n is
+        treated as a 2D array with shape (1,n).
 
     Returns
     -------
@@ -929,15 +930,28 @@ def block_diag(*arrs):
     >>> B = [[3, 4, 5],
     ...      [6, 7, 8]]
     >>> C = [[7]]
-    >>> print block_diag(A, B, C)
-    [[ 1.  0.  0.  0.  0.  0.]
-     [ 0.  1.  0.  0.  0.  0.]
-     [ 0.  0.  3.  4.  5.  0.]
-     [ 0.  0.  6.  7.  8.  0.]
-     [ 0.  0.  0.  0.  0.  7.]]
+    >>> print(block_diag(A, B, C))
+    [[1 0 0 0 0 0]
+     [0 1 0 0 0 0]
+     [0 0 3 4 5 0]
+     [0 0 6 7 8 0]
+     [0 0 0 0 0 7]]
+    >>> block_diag(1.0, [2, 3], [[4, 5], [6, 7]])
+    array([[ 1.,  0.,  0.,  0.,  0.],
+           [ 0.,  2.,  3.,  0.,  0.],
+           [ 0.,  0.,  0.,  4.,  5.],
+           [ 0.,  0.,  0.,  6.,  7.]])
 
     """
-    arrs = [asarray(a) for a in arrs]
+    if arrs == ():
+        arrs = ([],)
+    arrs = [atleast_2d(a) for a in arrs]
+
+    bad_args = [k for k in range(len(arrs)) if arrs[k].ndim > 2]
+    if bad_args:
+        raise ValueError("arguments in the following positions have dimension "
+                            "greater than 2: %s" % bad_args) 
+
     shapes = numpy.array([a.shape for a in arrs])
     out = zeros(sum(shapes, axis=0), dtype=arrs[0].dtype)
 
@@ -947,4 +961,3 @@ def block_diag(*arrs):
         r += rr
         c += cc
     return out
-
