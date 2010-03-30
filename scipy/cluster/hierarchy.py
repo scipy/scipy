@@ -193,9 +193,10 @@ Copyright (C) Damian Eads, 2007-2008. New BSD License.
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+import types
 
 import numpy as np
-import _hierarchy_wrap, types
+import _hierarchy_wrap
 import scipy.spatial.distance as distance
 
 _cpy_non_euclid_methods = {'single': 0, 'complete': 1, 'average': 2,
