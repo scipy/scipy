@@ -6,11 +6,10 @@
 
 __all__ = ['get_lapack_funcs']
 
-import new
-
 # The following ensures that possibly missing flavor (C or Fortran) is
 # replaced with the available one. If none is available, exception
 # is raised at the first attempt to use the resources.
+import types
 
 import numpy
 
@@ -97,9 +96,9 @@ def get_lapack_funcs(names, arrays=()):
                 func2 = getattr(m2,func_name,None)
                 if func2 is not None:
                     exec _colmajor_func_template % {'func_name':func_name}
-                    func = new.function(func_code,
-                                        {'clapack_func':func2},
-                                        func_name)
+                    func = types.FunctionType(func_code,
+                                              {'clapack_func':func2},
+                                              func_name)
                     func.module_name = m2_name
                     func.__doc__ = func2.__doc__
         func.prefix = required_prefix
