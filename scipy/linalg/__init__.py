@@ -10,9 +10,6 @@ from decomp import *
 from matfuncs import *
 from blas import *
 
-from iterative import *
-
-
 __all__ = filter(lambda s:not s.startswith('_'),dir())
 
 from numpy.dual import register_func
