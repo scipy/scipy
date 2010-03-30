@@ -1,10 +1,15 @@
 /*
- * vim:syntax=c
- *
  * This file implements vq for float and double in C. It is a direct
  * translation from the swig interface which could not be generated anymore
  * with recent swig
  */
+
+/*
+ * Including python.h is necessary because python header redefines some macros
+ * in standart C header
+ */
+#include <Python.h>
+
 #include <stddef.h>
 #include <math.h>
 
