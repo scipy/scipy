@@ -107,13 +107,13 @@ del linalg
 __all__.remove('linalg')
 
 try:
-    from __config__ import show as show_config
-except ImportError, e:
+    from scipy.__config__ import show as show_config
+except ImportError:
     msg = """Error importing scipy: you cannot import scipy while
     being in scipy source directory; please exit the scipy source
     tree first, and relaunch your python intepreter."""
     raise ImportError(msg)
-from version import version as __version__
+from scipy.version import version as __version__
 
 # Load scipy packages and their global_symbols
 from numpy._import_tools import PackageLoader
