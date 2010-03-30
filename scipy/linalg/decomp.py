@@ -15,8 +15,9 @@ __all__ = ['eig','eigh','eig_banded','eigvals','eigvalsh', 'eigvals_banded',
            'schur','rsf2csf','lu_factor','cho_factor','cho_solve','orth',
            'hessenberg']
 
-from basic import LinAlgError
-import basic
+from misc import LinAlgError
+import misc
+import special_matrices
 
 from warnings import warn
 from lapack import get_lapack_funcs, find_best_lapack_type
@@ -1196,9 +1197,9 @@ def qr(a, overwrite_a=0, lwork=None, econ=None, mode='qr'):
             % -info)
 
     if not econ or M<N:
-        R = basic.triu(qr)
+        R = special_matrices.triu(qr)
     else:
-        R = basic.triu(qr[0:N,0:N])
+        R = special_matrices.triu(qr[0:N,0:N])
 
     if mode=='r':
         return R
@@ -1276,7 +1277,7 @@ def qr_old(a,overwrite_a=0,lwork=None):
        'illegal value in %-th argument of internal geqrf'%(-info)
     gemm, = get_blas_funcs(('gemm',),(qr,))
     t = qr.dtype.char
-    R = basic.triu(qr)
+    R = special_matrices.triu(qr)
     Q = numpy.identity(M,dtype=t)
     ident = numpy.identity(M,dtype=t)
     zeros = numpy.zeros
@@ -1336,7 +1337,7 @@ def rq(a,overwrite_a=0,lwork=None):
        'illegal value in %-th argument of internal geqrf'%(-info)
     gemm, = get_blas_funcs(('gemm',),(rq,))
     t = rq.dtype.char
-    R = basic.triu(rq)
+    R = special_matrices.triu(rq)
     Q = numpy.identity(M,dtype=t)
     ident = numpy.identity(M,dtype=t)
     zeros = numpy.zeros
@@ -1490,7 +1491,7 @@ def rsf2csf(T, Z):
         if abs(T[m,m-1]) > eps*(abs(T[m-1,m-1]) + abs(T[m,m])):
             k = slice(m-1,m+1)
             mu = eigvals(T[k,k]) - T[m,m]
-            r = basic.norm([mu[0], T[m,m-1]])
+            r = misc.norm([mu[0], T[m,m-1]])
             c = mu[0] / r
             s = T[m,m-1] / r
             G = r_[arr([[conj(c),s]],dtype=t),arr([[-s,c]],dtype=t)]
