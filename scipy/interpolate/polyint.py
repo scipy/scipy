@@ -1,5 +1,5 @@
 import numpy as np
-from scipy import factorial
+from scipy.misc import factorial
 
 __all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator", "barycentric_interpolate", "PiecewisePolynomial", "piecewise_polynomial_interpolate","approximate_taylor_polynomial", "pchip"]
 
