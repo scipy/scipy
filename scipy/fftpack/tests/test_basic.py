@@ -515,5 +515,29 @@ class TestIfftnSingle(_TestIfftn):
     cdtype = np.complex64
     maxnlp = 2000
 
+class TestLongDoubleFailure(TestCase):
+    def test_complex(self):
+        x = np.random.randn(10).astype(np.longdouble) + \
+                1j * np.random.randn(10).astype(np.longdouble)
+
+        for f in [fft, ifft]:
+            try:
+                f(x)
+                raise AssertionError("Type %r not supported but does not fail" % \
+                                     np.longcomplex)
+            except ValueError:
+                pass
+
+    def test_real(self):
+        x = np.random.randn(10).astype(np.longcomplex)
+
+        for f in [fft, ifft]:
+            try:
+                f(x)
+                raise AssertionError("Type %r not supported but does not fail" % \
+                                     np.longcomplex)
+            except ValueError:
+                pass
+
 if __name__ == "__main__":
     run_module_suite()
