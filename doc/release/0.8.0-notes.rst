@@ -77,11 +77,11 @@ Correlation functions now implement the usual definition (scipy.signal)
 The outputs should now correspond to their matlab and R counterparts, and do
 what most people expect if the old_behavior=False argument is passed:
 
-    * correlate, convolve and their 2d counterparts do not swap their inputs
-      depending on their relative shape anymore.
-    * correlation functions now conjugate their second argument while computing
-      the slided sum-products, which correspond to the usual definition of
-      correlation
+* correlate, convolve and their 2d counterparts do not swap their inputs
+  depending on their relative shape anymore;
+* correlation functions now conjugate their second argument while computing
+  the slided sum-products, which correspond to the usual definition of
+  correlation.
 
 Additions and modification to LTI functions (scipy.signal)
 ----------------------------------------------------------
@@ -132,7 +132,8 @@ Removed features
 scipy.stsci: the package was removed
 
 scipy.signal.chirp:
-    1. The `qshape` keyword argument was removed.  Instead, use the `vertex_zero`
-       argument.
-    2. `chirp` no longer handles the case of a general polynomial.  This
-       functionality has been moved to a new function, `sweep_poly`.
+
+* The `qshape` keyword argument was removed.  Instead, use the `vertex_zero`
+  argument.
+* `chirp` no longer handles the case of a general polynomial.  This
+  functionality has been moved to a new function, `sweep_poly`.
