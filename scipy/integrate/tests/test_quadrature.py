@@ -57,6 +57,23 @@ class TestQuadrature(TestCase):
         assert_almost_equal(wts, n*numpy.array([7.0, 32.0, 12.0, 32.0, 7.0])/90.0)
         assert_almost_equal(errcoff, -n**7/1935360.0)
 
+    def test_newton_cotes2(self):
+        """Test newton_cotes with points that are not evenly spaced."""
+        
+        x = numpy.array([0.0, 1.5, 2.0])
+        y = x**2
+        wts, errcoff = newton_cotes(x)
+        exact_integral = 8.0/3
+        numeric_integral = numpy.dot(wts, y)
+        assert_almost_equal(numeric_integral, exact_integral)
+        
+        x = numpy.array([0.0, 1.4, 2.1, 3.0])
+        y = x**2
+        wts, errcoff = newton_cotes(x)
+        exact_integral = 9.0
+        numeric_integral = numpy.dot(wts, y)
+        assert_almost_equal(numeric_integral, exact_integral)        
+
 
 if __name__ == "__main__":
     run_module_suite()
