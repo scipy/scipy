@@ -319,6 +319,9 @@ def sweep_poly(t, poly, phi=0):
     --------
     scipy.signal.waveforms.chirp
 
+    Notes
+    -----
+    .. versionadded:: 0.8.0
     """
     # 'phase' is computed in _sweep_poly_phase, to make testing easier.
     phase = _sweep_poly_phase(t, poly)

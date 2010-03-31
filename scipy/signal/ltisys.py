@@ -582,6 +582,9 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     --------
     scipy.signal.impulse
 
+    Notes
+    -----
+    .. versionadded:: 0.8.0
     """
     if isinstance(system, lti):
         sys = system
