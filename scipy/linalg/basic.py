@@ -7,28 +7,29 @@
 #
 # w/ additions by Travis Oliphant, March 2002
 
-__all__ = ['solve', 'inv', 'det', 'lstsq', 'norm', 'pinv', 'pinv2',
-           'tri','tril', 'triu', 'toeplitz', 'circulant', 'hankel', 'block_diag',
-           'lu_solve', 'cho_solve', 'solve_banded', 'LinAlgError', 'kron',
-           'all_mat', 'cholesky_banded', 'solveh_banded']
+__all__ = ['solve', 'inv', 'det', 'lstsq', 'pinv', 'pinv2',
+           'cholesky_banded', 'solveh_banded', 'lu_solve', 'cho_solve',
+           'solve_banded',
+           #  From special_matrices:
+           'tri','tril', 'triu', 'toeplitz', 'circulant', 'hankel', 'kron',
+           'hadamard', 'block_diag', 'all_mat',
+           #  From misc:
+           'LinAlgError', 'norm',
+            ]
+
+from numpy import asarray, zeros, sum, conjugate, dot, transpose, \
+        asarray_chkfinite,  single
+import numpy
 
 #from blas import get_blas_funcs
 from flinalg import get_flinalg_funcs
 from lapack import get_lapack_funcs
-from numpy import asarray, zeros, sum, greater_equal, subtract, arange,\
-     conjugate, dot, transpose
-import numpy
-from numpy import asarray_chkfinite, atleast_2d, outer, concatenate, reshape, single
-from numpy import matrix as Matrix
 from misc import LinAlgError, norm
 from special_matrices import tri, tril, triu, toeplitz, circulant, hankel, \
-        kron, block_diag, all_mat
+        hadamard, kron, block_diag, all_mat
 from scipy.linalg import calc_lwork
-
-from misc import LinAlgError, norm
-from special_matrices import tri, tril, triu, toeplitz, circulant, hankel, \
-    block_diag, kron
 import decomp
+
 
 def lu_solve((lu, piv), b, trans=0, overwrite_b=0):
     """Solve an equation system, a x = b, given the LU factorization of a

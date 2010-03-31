@@ -1,3 +1,5 @@
+
+import math
 import numpy as np
 
 #-----------------------------------------------------------------------------
@@ -265,6 +267,59 @@ def hankel(c, r=None):
     # `vals[indx]` is the Hankel matrix.
     return vals[indx]
 
+def hadamard(n, dtype=int):
+    """Construct a Hadamard matrix.
+    
+    `hadamard(n)` constructs an n-by-n Hadamard matrix, using Sylvester's
+    construction.  `n` must be a power of 2.
+
+    Parameters
+    ----------
+    n : int
+        The order of the matrix.  `n` must be a power of 2.
+    dtype : numpy dtype
+        The data type of the array to be constructed.
+        
+    Returns
+    -------
+    H : ndarray with shape (n, n)
+        The Hadamard matrix.
+
+    Examples
+    --------
+    >>> hadamard(2, dtype=complex)
+    array([[ 1.+0.j,  1.+0.j],
+           [ 1.+0.j, -1.-0.j]])
+    >>> hadamard(4)
+    array([[ 1,  1,  1,  1],
+           [ 1, -1,  1, -1],
+           [ 1,  1, -1, -1],
+           [ 1, -1, -1,  1]])
+
+    Notes
+    -----
+    .. versionadded:: 0.8.0
+
+    """
+    
+    # This function is a slightly modified version of the
+    # function contributed by Ivo in ticket #675.
+
+    if n < 1:
+        lg2 = 0
+    else:
+        lg2 = int(math.log(n, 2))
+    if 2 ** lg2 != n:
+        raise ValueError("n must be an positive integer, and n must be power of 2")
+
+    H = np.array([[1]], dtype=dtype)
+
+    # Sylvester's construction
+    for i in range(0, lg2): 
+        H = np.vstack((np.hstack((H, H)), np.hstack((H, -H))))
+
+    return H
+
 def all_mat(*args):
     return map(np.matrix,args)
 
@@ -297,12 +352,12 @@ def kron(a,b):
 
     """
     if not a.flags['CONTIGUOUS']:
-        a = reshape(a, a.shape)
+        a = np.reshape(a, a.shape)
     if not b.flags['CONTIGUOUS']:
-        b = reshape(b, b.shape)
-    o = outer(a,b)
-    o=o.reshape(a.shape + b.shape)
-    return concatenate(concatenate(o, axis=1), axis=1)
+        b = np.reshape(b, b.shape)
+    o = np.outer(a,b)
+    o = o.reshape(a.shape + b.shape)
+    return np.concatenate(np.concatenate(o, axis=1), axis=1)
 
 def block_diag(*arrs):
     """Create a block diagonal matrix from the provided arrays.
