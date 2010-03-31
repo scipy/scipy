@@ -3,7 +3,7 @@ import numpy
 from numpy import cos, sin, pi
 from numpy.testing import *
 
-from scipy.integrate import quadrature, romberg, romb
+from scipy.integrate import quadrature, romberg, romb, newton_cotes
 
 class TestQuadrature(TestCase):
     def quad(self, x, a, b, args):
@@ -34,6 +34,28 @@ class TestQuadrature(TestCase):
         valmath = romberg(math.sin, 0, 1)
         expected_val = 0.45969769413185085
         assert_almost_equal(valmath, expected_val, decimal=7)
+
+    def test_newton_cotes(self):
+        """Test the first few degrees, for evenly spaced points."""
+        n = 1
+        wts, errcoff = newton_cotes(n, 1)
+        assert_equal(wts, n*numpy.array([0.5, 0.5]))
+        assert_almost_equal(errcoff, -n**3/12.0)
+
+        n = 2
+        wts, errcoff = newton_cotes(n, 1)
+        assert_almost_equal(wts, n*numpy.array([1.0, 4.0, 1.0])/6.0)
+        assert_almost_equal(errcoff, -n**5/2880.0)
+
+        n = 3
+        wts, errcoff = newton_cotes(n, 1)
+        assert_almost_equal(wts, n*numpy.array([1.0, 3.0, 3.0, 1.0])/8.0)
+        assert_almost_equal(errcoff, -n**5/6480.0)
+
+        n = 4
+        wts, errcoff = newton_cotes(n, 1)
+        assert_almost_equal(wts, n*numpy.array([7.0, 32.0, 12.0, 32.0, 7.0])/90.0)
+        assert_almost_equal(errcoff, -n**7/1935360.0)
 
 
 if __name__ == "__main__":
