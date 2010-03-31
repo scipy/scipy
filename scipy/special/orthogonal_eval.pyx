@@ -60,8 +60,8 @@ cdef void _loop_id_d(char **args, npy_intp *dimensions, npy_intp *steps,
     cdef double x
     cdef char *ip1=args[0], *ip2=args[1], *op=args[2]
     for i in range(0, dimensions[0]):
-        (<double*>op)[0] = (<double(*)(int,double)>func)(
-            (<int*>ip1)[0], (<double*>ip2)[0])
+        (<double*>op)[0] = (<double(*)(long,double)>func)(
+            (<long*>ip1)[0], (<double*>ip2)[0])
         ip1 += steps[0]; ip2 += steps[1]; op += steps[2]
 
 cdef char _id_d_types[3]
