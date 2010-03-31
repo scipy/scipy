@@ -4,7 +4,7 @@ SciPy 0.8.0 Release Notes
 
 .. contents::
 
-SciPy 0.8.0 is the culmination of 6 months of hard work. It contains
+SciPy 0.8.0 is the culmination of XXX months of hard work. It contains
 many new features, numerous bug-fixes, improved test coverage and
 better documentation.  There have been a number of deprecations and
 API changes in this release, which are documented below.  All users
@@ -32,7 +32,7 @@ project - everything - from which algorithms we implement, to details
 about our function's call signatures.
 
 Python 3.0
-----------
+==========
 
 Python 3.0 is not supported at all; it requires NumPy to be ported to
 Python 3.0.  This requires immense effort, since a lot of C code has
@@ -40,7 +40,7 @@ to be ported.  The transition to 3.0 is still under consideration;
 currently, we don't have any timeline or roadmap for this transition.
 
 Major documentation improvements
---------------------------------
+================================
 
 SciPy documentation is greatly improved.
 
@@ -71,8 +71,8 @@ Single precision support for fft functions (scipy.fftpack)
 fft functions can now handle single precision inputs as well: fft(x) will
 return a single precision array if x is single precision.
 
-correlation functions now implements the usual definition (scipy.signal)
-------------------------------------------------------------------------
+Correlation functions now implement the usual definition (scipy.signal)
+-----------------------------------------------------------------------
 
 The outputs should now correspond to their matlab and R counterparts, and do
 what most people expect if the old_behavior=False argument is passed:
@@ -83,6 +83,36 @@ what most people expect if the old_behavior=False argument is passed:
       the slided sum-products, which correspond to the usual definition of
       correlation
 
+Additions and modification to LTI functions (scipy.signal)
+----------------------------------------------------------
+* The function `impulse2` was added to `scipy.signal`.  It uses the ODE
+  solver `scipy.integrate.odeint` to compute the impulse response of
+  a system.
+* The function `scipy.signal.lsim2` was changed to pass any additional
+  keyword arguments to the ODE solver.
+
+Improved waveform generators (scipy.signal)
+-------------------------------------------
+Several improvements to the `chirp` function in `scipy.signal` were made:
+
+* The waveform generated when `method="logarithmic"` was corrected; it
+  now generates a waveform that is also known as an "exponential" or
+  "geometric" chirp. (See http://en.wikipedia.org/wiki/Chirp.)
+* A new `chirp` method, "hyperbolic", was added.
+* Instead of the keyword `qshape`, `chirp` now uses the keyword
+  `vertex_zero`, a boolean.
+* `chirp` no longer handles an arbitrary polynomial.  This functionality
+  has been moved to a new function, `sweep_poly`.
+
+A new function, `sweep_poly`, was added.
+
+New special matrix functions (scipy.linalg)
+-------------------------------------------
+The functions `circulant` and `hadamard` were added to `scipy.linalg`.
+
+The function `block_diag` was enhanced to accept scalar and 1D arguments,
+along with the usual 2D arguments.
+
 ARPACK-based sparse SVD
 -----------------------
 
@@ -90,7 +120,19 @@ A naive implementation of SVD for sparse matrices is available in
 scipy.sparse.linalg.eigen.arpack. It is based on using an symmetric solver on
 <A, A>, and as such may not be very precise.
 
+Better behavior for `scipy.constants.find` (scipy.constants)
+------------------------------------------------------------
+The function `scipy.constants.find` was modified to return the list of keys
+that it finds, instead of printing them and returning None.
+
+
 Removed features
 ================
 
 scipy.stsci: the package was removed
+
+scipy.signal.chirp:
+    1. The `qshape` keyword argument was removed.  Instead, use the `vertex_zero`
+       argument.
+    2. `chirp` no longer handles the case of a general polynomial.  This
+       functionality has been moved to a new function, `sweep_poly`.

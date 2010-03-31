@@ -2,4 +2,4 @@
 Release Notes
 *************
 
-.. include:: ../release/0.7.0-notes.rst
+.. include:: ../release/0.8.0-notes.rst
