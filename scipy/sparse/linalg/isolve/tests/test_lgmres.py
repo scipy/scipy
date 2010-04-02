@@ -4,13 +4,13 @@
 
 from numpy.testing import *
 
-from numpy import zeros, ones, arange, array, abs, max, allclose
+from numpy import zeros, array, allclose
 from scipy.linalg import norm
-from scipy.sparse import spdiags, csr_matrix, triu, tril
+from scipy.sparse import csr_matrix
 
 from scipy.sparse.linalg.interface import LinearOperator
 from scipy.sparse.linalg import splu
-from scipy.sparse.linalg.isolve import lgmres, gmres
+from scipy.sparse.linalg.isolve import lgmres
 
 Am = csr_matrix(array([[-2,1,0,0,0,9],
                        [1,-2,1,0,5,0],
