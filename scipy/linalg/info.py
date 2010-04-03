@@ -36,7 +36,7 @@ Eigenvalues and Decompositions::
    rsf2csf    --- Real to complex schur form
    hessenberg --- Hessenberg form of a matrix
 
-matrix Functions::
+Matrix Functions::
 
    expm       --- matrix exponential using Pade approx.
    expm2      --- matrix exponential using Eigenvalue decomp.
@@ -52,15 +52,17 @@ matrix Functions::
    sqrtm      --- matrix square root
    funm       --- Evaluating an arbitrary matrix function.
 
-Iterative linear systems solutions::
+Special Matrices::
 
-   cg         --- Conjugate gradient (symmetric systems only)
-   cgs        --- Conjugate gradient squared
-   qmr        --- Quasi-minimal residual
-   gmres      --- Generalized minimal residual
-   bicg       --- Bi-conjugate gradient
-   bicgstab   --- Bi-conjugate gradient stabilized
-
+   block_diag --- Construct a block diagonal matrix from submatrices.
+   circulant  --- Circulant matrix
+   hadamard   --- Hadamard matrix of order 2^n
+   hankel     --- Hankel matrix
+   kron       --- Kronecker product of two arrays.
+   toeplitz   --- Toeplitz matrix
+   tri        --- Construct a matrix filled with ones at and below a given diagonal. 
+   tril       --- Construct a lower-triangular matrix from a given matrix.
+   triu       --- Construct an upper-triangular matrix from a given matrix.
 """
 
 postpone_import = 1

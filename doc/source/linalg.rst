@@ -19,12 +19,6 @@ Basics
    lstsq
    pinv
    pinv2
-   kron
-   hankel
-   toeplitz
-   tri
-   tril
-   triu
 
 Eigenvalues and Decompositions
 ==============================
@@ -74,17 +68,18 @@ Matrix Functions
    sqrtm
    funm
 
-Iterative linear systems solutions
-==================================
-
-These functions are deprecated - use scipy.sparse.linalg instead
+Special Matrices
+================
 
 .. autosummary::
    :toctree: generated/
 
-   cg
-   cgs
-   qmr
-   gmres
-   bicg
-   bicgstab
+   block_diag
+   circulant
+   hadamard
+   hankel
+   kron
+   toeplitz
+   tri
+   tril
+   triu
