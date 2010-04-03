@@ -97,7 +97,9 @@ Linear Systems
 
    lti
    lsim
+   lsim2
    impulse
+   impulse2
    step
 
 LTI Reresentations
@@ -119,10 +121,11 @@ Waveforms
 .. autosummary::
    :toctree: generated/
 
+   chirp
+   gausspulse
    sawtooth
    square
-   gausspulse
-   chirp
+   sweep_poly
 
 Window functions
 ================

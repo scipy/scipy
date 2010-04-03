@@ -64,10 +64,12 @@ Signal Processing Tools
 
  Linear Systems:
 
-    lti     -- linear time invariant system object.
-    lsim    -- continuous-time simulation of output to linear system.
-    impulse -- impulse response of linear, time-invariant (LTI) system.
-    step    -- step response of continous-time LTI system.
+    lti      -- linear time invariant system object.
+    lsim     -- continuous-time simulation of output to linear system.
+    lsim2    -- like lsim, but `scipy.integrate.odeint` is used. 
+    impulse  -- impulse response of linear, time-invariant (LTI) system.
+    impulse2 -- like impulse2, but `scipy.integrate.odeint` is used.
+    step     -- step response of continous-time LTI system.
 
  LTI Reresentations:
 
@@ -80,10 +82,11 @@ Signal Processing Tools
 
  Waveforms:
 
+    chirp      -- Frequency swept cosine signal, with several frequency functions.
+    gausspulse -- Gaussian modulated sinusoid
     sawtooth   -- Periodic sawtooth
     square     -- Square wave
-    gausspulse -- Gaussian modulated sinusoid
-    chirp      -- Frequency swept cosine signal
+    sweep_poly -- Frequency swept cosine signal; frequency is arbitrary polynomial.
 
  Window functions:
 
