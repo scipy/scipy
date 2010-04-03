@@ -61,12 +61,14 @@ Filter design
 .. autosummary::
    :toctree: generated/
 
-   remez
+   bilinear
    firwin
-   iirdesign
-   iirfilter
    freqs
    freqz
+   iirdesign
+   iirfilter
+   kaiserord
+   remez
 
    unique_roots
    residue

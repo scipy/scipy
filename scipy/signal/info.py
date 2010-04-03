@@ -42,12 +42,14 @@ Signal Processing Tools
 
  Filter design:
 
-    remez         -- Optimal FIR filter design.
+    bilinear      -- Return a digital filter from an analog filter using the bilinear transform.
     firwin        -- Windowed FIR filter design.
-    iirdesign     -- IIR filter design given bands and gains.
-    iirfilter     -- IIR filter design given order and critical frequencies.
     freqs         -- Analog filter frequency response.
     freqz         -- Digital filter frequency response.
+    iirdesign     -- IIR filter design given bands and gains.
+    iirfilter     -- IIR filter design given order and critical frequencies.
+    kaiserord     -- Design a Kaiser window to limit ripple and width of transition region.
+    remez         -- Optimal FIR filter design.
 
     unique_roots  -- Unique roots and their multiplicities.
     residue       -- Partial fraction expansion of b(s) / a(s).
