@@ -78,11 +78,11 @@ interface
      integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
      integer intent(hide),depend(ab) :: n=shape(ab,1)
      integer intent(hide),depend(ab) :: kd=shape(ab,0)-1
-     integer intent(hide),depend(b) :: ldb=shape(b,1)
-     integer intent(hide),depend(b) :: nrhs=shape(b,0)
+     integer intent(hide),depend(b) :: ldb=shape(b,0)
+     integer intent(hide),depend(b) :: nrhs=shape(b,1)
      integer optional,intent(in),check(lower==0||lower==1) :: lower = 0   
 
-     <type_in> dimension(nrhs,ldb),intent(in,out,copy,out=x) :: b
+     <type_in> dimension(ldb, nrhs),intent(in,out,copy,out=x) :: b
      <type_in> dimension(ldab,n),intent(in,out,copy,out=c) :: ab
      integer intent(out) :: info
      
@@ -110,11 +110,11 @@ interface
      integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
      integer intent(hide),depend(ab) :: n=shape(ab,1)
      integer intent(hide),depend(ab) :: kd=shape(ab,0)-1
-     integer intent(hide),depend(b) :: ldb=shape(b,1)
-     integer intent(hide),depend(b) :: nrhs=shape(b,0)
+     integer intent(hide),depend(b) :: ldb=shape(b,0)
+     integer intent(hide),depend(b) :: nrhs=shape(b,1)
      integer optional,intent(in),check(lower==0||lower==1) :: lower = 0   
 
-     <type_in> dimension(nrhs,ldb),intent(in,out,copy,out=x) :: b
+     <type_in> dimension(ldb, nrhs),intent(in,out,copy,out=x) :: b
      <type_in> dimension(ldab,n),intent(in,out,copy,out=c) :: ab
      integer intent(out) :: info
      

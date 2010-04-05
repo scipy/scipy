@@ -19,12 +19,14 @@ Run tests if linalg is not installed:
   python tests/test_basic.py
 """
 
-from numpy import arange, array, dot, zeros, identity, conjugate, transpose
+from numpy import arange, array, dot, zeros, identity, conjugate, transpose, \
+        float32
 import numpy.linalg as linalg
 
 from numpy.testing import *
 
-from scipy.linalg import solve, inv, det, lstsq, pinv, pinv2, solve_banded, norm
+from scipy.linalg import solve, inv, det, lstsq, pinv, pinv2, norm,\
+        solve_banded, solveh_banded
 
 
 def random(size):
@@ -33,18 +35,203 @@ def random(size):
 
 class TestSolveBanded(TestCase):
 
-    def test_simple(self):
-
-        a = [[1,20,0,0],[-30,4,6,0],[2,1,20,2],[0,-1,7,14]]
-        ab = [[0,20,6,2],
-              [1,4,20,14],
-              [-30,1,7,0],
-              [2,-1,0,0]]
+    def test_real(self):
+        a = array([[ 1.0, 20,  0,  0],
+                   [ -30,  4,  6,  0],
+                   [   2,  1, 20,  2],
+                   [   0, -1,  7, 14]])
+        ab = array([[ 0.0, 20,  6,  2],
+                    [   1,  4, 20, 14],
+                    [ -30,  1,  7,  0],
+                    [   2, -1,  0,  0]])
         l,u = 2,1
-        for b in ([[1,0,0,0],[0,0,0,1],[0,1,0,0],[0,1,0,0]],
-                  [[2,1],[-30,4],[2,3],[1,3]]):
-            x = solve_banded((l,u),ab,b)
-            assert_array_almost_equal(dot(a,x),b)
+        b4 = array([10.0, 0.0, 2.0, 14.0])
+        b4by1 = b4.reshape(-1,1)
+        b4by2 = array([[ 2, 1],
+                       [-30, 4],
+                       [  2, 3],
+                       [  1, 3]])
+        b4by4 = array([[1, 0, 0, 0],
+                       [0, 0, 0, 1],
+                       [0, 1, 0, 0],
+                       [0, 1, 0, 0]])
+        for b in [b4, b4by1, b4by2, b4by4]:
+            x = solve_banded((l, u), ab, b)
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_complex(self):
+        a = array([[ 1.0, 20,  0,   0],
+                   [ -30,  4,  6,   0],
+                   [  2j,  1, 20,  2j],
+                   [   0, -1,  7,  14]])
+        ab = array([[ 0.0, 20,  6,  2j],
+                    [   1,  4, 20,  14],
+                    [ -30,  1,  7,   0],
+                    [  2j, -1,  0,   0]])
+        l,u = 2,1
+        b4 = array([10.0, 0.0, 2.0, 14.0j])
+        b4by1 = b4.reshape(-1,1)
+        b4by2 = array([[ 2, 1],
+                       [-30, 4],
+                       [  2, 3],
+                       [  1, 3]])
+        b4by4 = array([[1, 0, 0, 0],
+                       [0, 0, 0,1j],
+                       [0, 1, 0, 0],
+                       [0, 1, 0, 0]])
+        for b in [b4, b4by1, b4by2, b4by4]:
+            x = solve_banded((l, u), ab, b)
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_bad_shape(self):
+        ab = array([[ 0.0, 20,  6,  2],
+                    [   1,  4, 20, 14],
+                    [ -30,  1,  7,  0],
+                    [   2, -1,  0,  0]])
+        l,u = 2,1
+        bad = array([1.0, 2.0, 3.0, 4.0]).reshape(-1,4)
+        assert_raises(ValueError, solve_banded, (l, u), ab, bad)
+        assert_raises(ValueError, solve_banded, (l, u), ab, [1.0, 2.0])
+
+        # Values of (l,u) are not compatible with ab.
+        assert_raises(ValueError, solve_banded, (1, 1), ab, [1.0, 2.0])
+
+
+class TestSolveHBanded(TestCase):
+
+    def test_01_upper(self):
+        # Solve
+        # [ 4 1 0]     [1]
+        # [ 1 4 1] X = [4]
+        # [ 0 1 4]     [1]
+        # with the RHS as a 1D array.
+        ab = array([[-99, 1.0, 1.0], [4.0, 4.0, 4.0]])
+        b = array([1.0, 4.0, 1.0])
+        c, x = solveh_banded(ab, b)
+        assert_array_almost_equal(x, [0.0, 1.0, 0.0])
+
+    def test_02_upper(self):
+        # Solve
+        # [ 4 1 0]     [1 4]
+        # [ 1 4 1] X = [4 2]
+        # [ 0 1 4]     [1 4]
+        #
+        ab = array([[-99, 1.0, 1.0],
+                    [4.0, 4.0, 4.0]])
+        b = array([[1.0, 4.0],
+                   [4.0, 2.0],
+                   [1.0, 4.0]])
+        c, x = solveh_banded(ab, b)
+        expected = array([[0.0, 1.0],
+                          [1.0, 0.0],
+                          [0.0, 1.0]])
+        assert_array_almost_equal(x, expected)
+
+    def test_03_upper(self):
+        # Solve
+        # [ 4 1 0]     [1]
+        # [ 1 4 1] X = [4]
+        # [ 0 1 4]     [1]
+        # with the RHS as a 2D array with shape (3,1).
+        ab = array([[-99, 1.0, 1.0], [4.0, 4.0, 4.0]])
+        b = array([1.0, 4.0, 1.0]).reshape(-1,1)
+        c, x = solveh_banded(ab, b)
+        assert_array_almost_equal(x, array([0.0, 1.0, 0.0]).reshape(-1,1))
+
+    def test_01_lower(self):
+        # Solve
+        # [ 4 1 0]     [1]
+        # [ 1 4 1] X = [4]
+        # [ 0 1 4]     [1]
+        #
+        ab = array([[4.0, 4.0, 4.0],
+                    [1.0, 1.0, -99]])
+        b = array([1.0, 4.0, 1.0])
+        c, x = solveh_banded(ab, b, lower=True)
+        assert_array_almost_equal(x, [0.0, 1.0, 0.0])
+
+    def test_02_lower(self):
+        # Solve
+        # [ 4 1 0]     [1 4]
+        # [ 1 4 1] X = [4 2]
+        # [ 0 1 4]     [1 4]
+        #
+        ab = array([[4.0, 4.0, 4.0],
+                    [1.0, 1.0, -99]])
+        b = array([[1.0, 4.0],
+                   [4.0, 2.0],
+                   [1.0, 4.0]])
+        c, x = solveh_banded(ab, b, lower=True)
+        expected = array([[0.0, 1.0],
+                          [1.0, 0.0],
+                          [0.0, 1.0]])
+        assert_array_almost_equal(x, expected)
+
+    def test_01_float32(self):
+        # Solve
+        # [ 4 1 0]     [1]
+        # [ 1 4 1] X = [4]
+        # [ 0 1 4]     [1]
+        #
+        ab = array([[-99, 1.0, 1.0], [4.0, 4.0, 4.0]], dtype=float32)
+        b = array([1.0, 4.0, 1.0], dtype=float32)
+        c, x = solveh_banded(ab, b)
+        assert_array_almost_equal(x, [0.0, 1.0, 0.0])
+
+    def test_02_float32(self):
+        # Solve
+        # [ 4 1 0]     [1 4]
+        # [ 1 4 1] X = [4 2]
+        # [ 0 1 4]     [1 4]
+        #
+        ab = array([[-99, 1.0, 1.0],
+                    [4.0, 4.0, 4.0]], dtype=float32)
+        b = array([[1.0, 4.0],
+                   [4.0, 2.0],
+                   [1.0, 4.0]], dtype=float32)
+        c, x = solveh_banded(ab, b)
+        expected = array([[0.0, 1.0],
+                          [1.0, 0.0],
+                          [0.0, 1.0]])
+        assert_array_almost_equal(x, expected)
+
+    def test_01_complex(self):
+        # Solve
+        # [ 4 -j 0]     [ -j]
+        # [ j 4 -j] X = [4-j]
+        # [ 0 j  4]     [4+j]
+        #
+        ab = array([[-99, -1.0j, -1.0j], [4.0, 4.0, 4.0]])
+        b = array([-1.0j, 4.0-1j, 4+1j])
+        c, x = solveh_banded(ab, b)
+        assert_array_almost_equal(x, [0.0, 1.0, 1.0])
+
+    def test_02_complex(self):
+        # Solve
+        # [ 4 -j 0]     [ -j    4j]
+        # [ j 4 -j] X = [4-j  -1-j]
+        # [ 0 j  4]     [4+j   4  ]
+        #
+        ab = array([[-99, -1.0j, -1.0j],
+                    [4.0, 4.0, 4.0]])
+        b = array([[   -1j,    4.0j],
+                   [4.0-1j, -1.0-1j],
+                   [4.0+1j,     4.0]])
+        c, x = solveh_banded(ab, b)
+        expected = array([[0.0, 1.0j],
+                          [1.0,  0.0],
+                          [1.0,  1.0]])
+        assert_array_almost_equal(x, expected)
+
+    def test_bad_shapes(self):
+        ab = array([[-99, 1.0, 1.0],
+                    [4.0, 4.0, 4.0]])
+        b = array([[1.0, 4.0],
+                   [4.0, 2.0]])
+        assert_raises(ValueError, solveh_banded, ab, b)
+        assert_raises(ValueError, solveh_banded, ab, [1.0, 2.0])
+        assert_raises(ValueError, solveh_banded, ab, [1.0])
+
 
 class TestSolve(TestCase):
 

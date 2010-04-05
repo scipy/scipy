@@ -194,6 +194,14 @@ def solve_banded((l,u), ab, b, overwrite_ab=0, overwrite_b=0,
 
     """
     a1, b1 = map(asarray_chkfinite,(ab,b))
+
+    # Validate shapes.
+    if a1.shape[-1] != b1.shape[0]:
+        raise ValueError("shapes of ab and b are not compatible.")
+    if l+u+1 != a1.shape[0]:
+        raise ValueError("invalid values for the number of lower and upper diagonals:"
+                " l+u+1 (%d) does not equal ab.shape[0] (%d)" % (l+u+1, ab.shape[0]))
+
     overwrite_b = overwrite_b or (b1 is not b and not hasattr(b,'__array__'))
 
     gbsv, = get_lapack_funcs(('gbsv',),(a1,b1))
@@ -235,7 +243,7 @@ def solveh_banded(ab, b, overwrite_ab=0, overwrite_b=0,
 
     Parameters
     ----------
-    ab : array, shape (M, u + 1)
+    ab : array, shape (u + 1, M)
         Banded matrix
     b : array, shape (M,) or (M, K)
         Right-hand side
@@ -255,6 +263,10 @@ def solveh_banded(ab, b, overwrite_ab=0, overwrite_b=0,
 
     """
     ab, b = map(asarray_chkfinite,(ab,b))
+
+    # Validate shapes.
+    if ab.shape[-1] != b.shape[0]:
+        raise ValueError("shapes of ab and b are not compatible.")
 
     pbsv, = get_lapack_funcs(('pbsv',),(ab,b))
     c,x,info = pbsv(ab,b,
