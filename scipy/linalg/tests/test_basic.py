@@ -20,13 +20,13 @@ Run tests if linalg is not installed:
 """
 
 from numpy import arange, array, dot, zeros, identity, conjugate, transpose, \
-        float32
+        float32, zeros_like
 import numpy.linalg as linalg
 
 from numpy.testing import *
 
 from scipy.linalg import solve, inv, det, lstsq, pinv, pinv2, norm,\
-        solve_banded, solveh_banded
+        solve_banded, solveh_banded, cholesky_banded
 
 
 def random(size):
@@ -333,6 +333,69 @@ class TestSolve(TestCase):
         for i in range(2):
             x = solve(a,b,sym_pos=1)
             assert_array_almost_equal(dot(a,x),b)
+
+
+class TestCholeskyBanded(TestCase):
+
+    def test_upper_real(self):
+        # Symmetric positive definite banded matrix `a`
+        a = array([[4.0, 1.0, 0.0, 0.0],
+                    [1.0, 4.0, 0.5, 0.0],
+                    [0.0, 0.5, 4.0, 0.2],
+                    [0.0, 0.0, 0.2, 4.0]])
+        # Banded storage form of `a`.
+        ab = array([[-1.0, 1.0, 0.5, 0.2],
+                     [4.0, 4.0, 4.0, 4.0]])
+        c = cholesky_banded(ab, lower=False)
+        ufac = zeros_like(a)
+        ufac[range(4),range(4)] = c[-1]
+        ufac[(0,1,2),(1,2,3)] = c[0,1:]
+        assert_array_almost_equal(a, dot(ufac.T, ufac))
+
+    def test_upper_complex(self):
+        # Hermitian positive definite banded matrix `a`
+        a = array([[4.0, 1.0,  0.0,  0.0],
+                    [1.0, 4.0,  0.5,  0.0],
+                    [0.0, 0.5,  4.0, -0.2j],
+                    [0.0, 0.0,  0.2j, 4.0]])
+        # Banded storage form of `a`.
+        ab = array([[-1.0, 1.0, 0.5, -0.2j],
+                     [4.0, 4.0, 4.0,  4.0]])
+        c = cholesky_banded(ab, lower=False)
+        ufac = zeros_like(a)
+        ufac[range(4),range(4)] = c[-1]
+        ufac[(0,1,2),(1,2,3)] = c[0,1:]
+        assert_array_almost_equal(a, dot(ufac.conj().T, ufac))
+
+    def test_lower_real(self):
+        # Symmetric positive definite banded matrix `a`
+        a = array([[4.0, 1.0, 0.0, 0.0],
+                    [1.0, 4.0, 0.5, 0.0],
+                    [0.0, 0.5, 4.0, 0.2],
+                    [0.0, 0.0, 0.2, 4.0]])
+        # Banded storage form of `a`.
+        ab = array([[4.0, 4.0, 4.0, 4.0],
+                    [1.0, 0.5, 0.2, -1.0]])
+        c = cholesky_banded(ab, lower=True)
+        lfac = zeros_like(a)
+        lfac[range(4),range(4)] = c[0]
+        lfac[(1,2,3),(0,1,2)] = c[1,:3]
+        assert_array_almost_equal(a, dot(lfac, lfac.T))
+
+    def test_lower_complex(self):
+        # Hermitian positive definite banded matrix `a`
+        a = array([[4.0, 1.0,  0.0,  0.0],
+                    [1.0, 4.0,  0.5,  0.0],
+                    [0.0, 0.5,  4.0, -0.2j],
+                    [0.0, 0.0,  0.2j, 4.0]])
+        # Banded storage form of `a`.
+        ab = array([[4.0, 4.0, 4.0,  4.0],
+                    [1.0, 0.5, 0.2j, -1.0]])
+        c = cholesky_banded(ab, lower=True)
+        lfac = zeros_like(a)
+        lfac[range(4),range(4)] = c[0]
+        lfac[(1,2,3),(0,1,2)] = c[1,:3]
+        assert_array_almost_equal(a, dot(lfac, lfac.conj().T))
 
 
 class TestInv(TestCase):

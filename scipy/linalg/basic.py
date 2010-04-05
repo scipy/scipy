@@ -303,7 +303,7 @@ def cholesky_banded(ab, overwrite_ab=0, lower=0):
 
     Parameters
     ----------
-    ab : array, shape (M, u + 1)
+    ab : array, shape (u + 1, M)
         Banded matrix
     overwrite_ab : boolean
         Discard data in ab (may enhance performance)
@@ -312,7 +312,7 @@ def cholesky_banded(ab, overwrite_ab=0, lower=0):
 
     Returns
     -------
-    c : array, shape (M, u+1)
+    c : array, shape (u+1, M)
         Cholesky factorization of a, in the same banded format as ab
 
     """
