@@ -567,9 +567,9 @@ Force
 -----
 
 ====================  =======================================================
-``dyn``               one dyne in watts
-``lbf``               one pound force in watts
-``kgf``               one kilogram force in watts
+``dyn``               one dyne in newtons
+``lbf``               one pound force in newtons
+``kgf``               one kilogram force in newtons
 ====================  =======================================================
 
 Optics
