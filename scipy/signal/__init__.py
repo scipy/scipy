@@ -9,6 +9,7 @@ from waveforms import *
 from bsplines import *
 from filter_design import *
 from ltisys import *
+from windows import *
 from signaltools import *
 from wavelets import *
 

@@ -92,22 +92,24 @@ Signal Processing Tools
 
  Window functions:
 
-    boxcar           -- Boxcar window
-    triang           -- Triangular window
-    parzen           -- Parzen window
-    bohman           -- Bohman window
-    blackman         -- Blackman window
-    blackmanharris   -- Minimum 4-term Blackman-Harris window
-    nuttall          -- Nuttall's minimum 4-term Blackman-Harris window
-    flattop          -- Flat top window
-    bartlett         -- Bartlett window
-    hann             -- Hann window
+    get_window       -- Return a window of a given length and type.
     barthann         -- Bartlett-Hann window
-    hamming          -- Hamming window
-    kaiser           -- Kaiser window
+    bartlett         -- Bartlett window
+    blackman         -- Blackman window
+    blackmanharris   -- Minimum 4-term Blackman-Harris window    
+    bohman           -- Bohman window
+    boxcar           -- Boxcar window
+    chebwin          -- Dolph-Chebyshev window
+    flattop          -- Flat top window
     gaussian         -- Gaussian window
     general_gaussian -- Generalized Gaussian window
+    hamming          -- Hamming window
+    hann             -- Hann window
+    kaiser           -- Kaiser window
+    nuttall          -- Nuttall's minimum 4-term Blackman-Harris window
+    parzen           -- Parzen window
     slepian          -- Slepian window
+    triang           -- Triangular window
 
  Wavelets:
 

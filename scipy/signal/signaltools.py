@@ -1,23 +1,21 @@
 # Author: Travis Oliphant
 # 1999 -- 2002
 
-import types
 import warnings
 
 import sigtools
-from scipy import special, linalg
+from scipy import linalg
 from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2, fftn, \
-     ifftn, fftfreq
-from numpy import polyadd, polymul, polydiv, polysub, \
-     roots, poly, polyval, polyder, cast, asarray, isscalar, atleast_1d, \
-     ones, sin, linspace, real, extract, real_if_close, zeros, array, arange, \
-     where, sqrt, rank, newaxis, argmax, product, cos, pi, exp, \
-     ravel, size, less_equal, sum, r_, iscomplexobj, take, \
-     argsort, allclose, expand_dims, unique, prod, sort, reshape, \
-     transpose, dot, any, mean, cosh, arccosh, \
-     arccos, concatenate, flipud, ndarray
+        ifftn, fftfreq
+from numpy import polyadd, polymul, polydiv, polysub, roots, \
+        poly, polyval, polyder, cast, asarray, isscalar, atleast_1d, \
+        ones, real, real_if_close, zeros, array, arange, where, rank, \
+        newaxis, product, ravel, sum, r_, iscomplexobj, take, \
+        argsort, allclose, expand_dims, unique, prod, sort, reshape, \
+        transpose, dot, any, mean, flipud, ndarray
 import numpy as np
 from scipy.misc import factorial
+from .windows import get_window
 
 _modedict = {'valid':0, 'same':1, 'full':2}
 
@@ -625,8 +623,8 @@ def lfiltic(b,a,y,x=None):
      zi = {z_0[-1], z_1[-1], ..., z_K-1[-1]}  where K=max(M,N).
 
     """
-    N = size(a)-1
-    M = size(b)-1
+    N = np.size(a)-1
+    M = np.size(b)-1
     K = max(M,N)
     y = asarray(y)
     zi = zeros(K,y.dtype.char)
@@ -634,10 +632,10 @@ def lfiltic(b,a,y,x=None):
         x = zeros(M,y.dtype.char)
     else:
         x = asarray(x)
-        L = size(x)
+        L = np.size(x)
         if L < M:
             x = r_[x,zeros(M-L)]
-    L = size(y)
+    L = np.size(y)
     if L < N:
         y = r_[y,zeros(N-L)]
 
@@ -667,365 +665,6 @@ def deconvolve(signal, divisor):
         rem = num - convolve(den, quot, mode='full')
     return quot, rem
 
-
-def boxcar(M,sym=1):
-    """The M-point boxcar window.
-
-    """
-    return ones(M, float)
-
-def triang(M,sym=1):
-    """The M-point triangular window.
-
-    """
-    if M < 1:
-        return array([])
-    if M == 1:
-        return ones(1,'d')
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
-    n = arange(1,int((M+1)/2)+1)
-    if M % 2 == 0:
-        w = (2*n-1.0)/M
-        w = r_[w, w[::-1]]
-    else:
-        w = 2*n/(M+1.0)
-        w = r_[w, w[-2::-1]]
-
-    if not sym and not odd:
-        w = w[:-1]
-    return w
-
-def parzen(M,sym=1):
-    """The M-point Parzen window.
-
-    """
-    if M < 1:
-        return array([])
-    if M == 1:
-        return ones(1,'d')
-    odd = M % 2
-    if not sym and not odd:
-        M = M+1
-    n = arange(-(M-1)/2.0,(M-1)/2.0+0.5,1.0)
-    na = extract(n < -(M-1)/4.0, n)
-    nb = extract(abs(n) <= (M-1)/4.0, n)
-    wa = 2*(1-abs(na)/(M/2.0))**3.0
-    wb = 1-6*(abs(nb)/(M/2.0))**2.0 + 6*(abs(nb)/(M/2.0))**3.0
-    w = r_[wa,wb,wa[::-1]]
-    if not sym and not odd:
-        w = w[:-1]
-    return w
-
-def bohman(M,sym=1):
-    """The M-point Bohman window.
-
-    """
-    if M < 1:
-        return array([])
-    if M == 1:
-        return ones(1,'d')
-    odd = M % 2
-    if not sym and not odd:
-        M = M+1
-    fac = abs(linspace(-1,1,M)[1:-1])
-    w = (1 - fac)* cos(pi*fac) + 1.0/pi*sin(pi*fac)
-    w = r_[0,w,0]
-    if not sym and not odd:
-        w = w[:-1]
-    return w
-
-def blackman(M,sym=1):
-    """The M-point Blackman window.
-
-    """
-    if M < 1:
-        return array([])
-    if M == 1:
-        return ones(1,'d')
-    odd = M % 2
-    if not sym and not odd:
-        M = M+1
-    n = arange(0,M)
-    w = 0.42-0.5*cos(2.0*pi*n/(M-1)) + 0.08*cos(4.0*pi*n/(M-1))
-    if not sym and not odd:
-        w = w[:-1]
-    return w
-
-def nuttall(M,sym=1):
-    """A minimum 4-term Blackman-Harris window according to Nuttall.
-
-    """
-    if M < 1:
-        return array([])
-    if M == 1:
-        return ones(1,'d')
-    odd = M % 2
-    if not sym and not odd:
-        M = M+1
-    a = [0.3635819, 0.4891775, 0.1365995, 0.0106411]
-    n = arange(0,M)
-    fac = n*2*pi/(M-1.0)
-    w = a[0] - a[1]*cos(fac) + a[2]*cos(2*fac) - a[3]*cos(3*fac)
-    if not sym and not odd:
-        w = w[:-1]
-    return w
-
-def blackmanharris(M,sym=1):
-    """The M-point minimum 4-term Blackman-Harris window.
-
-    """
-    if M < 1:
-        return array([])
-    if M == 1:
-        return ones(1,'d')
-    odd = M % 2
-    if not sym and not odd:
-        M = M+1
-    a = [0.35875, 0.48829, 0.14128, 0.01168];
-    n = arange(0,M)
-    fac = n*2*pi/(M-1.0)
-    w = a[0] - a[1]*cos(fac) + a[2]*cos(2*fac) - a[3]*cos(3*fac)
-    if not sym and not odd:
-        w = w[:-1]
-    return w
-
-def flattop(M,sym=1):
-    """The M-point Flat top window.
-
-    """
-    if M < 1:
-        return array([])
-    if M == 1:
-        return ones(1,'d')
-    odd = M % 2
-    if not sym and not odd:
-        M = M+1
-    a = [0.2156, 0.4160, 0.2781, 0.0836, 0.0069]
-    n = arange(0,M)
-    fac = n*2*pi/(M-1.0)
-    w = a[0] - a[1]*cos(fac) + a[2]*cos(2*fac) - a[3]*cos(3*fac) + \
-        a[4]*cos(4*fac)
-    if not sym and not odd:
-        w = w[:-1]
-    return w
-
-
-def bartlett(M,sym=1):
-    """The M-point Bartlett window.
-
-    """
-    if M < 1:
-        return array([])
-    if M == 1:
-        return ones(1,'d')
-    odd = M % 2
-    if not sym and not odd:
-        M = M+1
-    n = arange(0,M)
-    w = where(less_equal(n,(M-1)/2.0),2.0*n/(M-1),2.0-2.0*n/(M-1))
-    if not sym and not odd:
-        w = w[:-1]
-    return w
-
-def hanning(M,sym=1):
-    """The M-point Hanning window.
-
-    """
-    if M < 1:
-        return array([])
-    if M == 1:
-        return ones(1,'d')
-    odd = M % 2
-    if not sym and not odd:
-        M = M+1
-    n = arange(0,M)
-    w = 0.5-0.5*cos(2.0*pi*n/(M-1))
-    if not sym and not odd:
-        w = w[:-1]
-    return w
-
-hann = hanning
-
-def barthann(M,sym=1):
-    """Return the M-point modified Bartlett-Hann window.
-
-    """
-    if M < 1:
-        return array([])
-    if M == 1:
-        return ones(1,'d')
-    odd = M % 2
-    if not sym and not odd:
-        M = M+1
-    n = arange(0,M)
-    fac = abs(n/(M-1.0)-0.5)
-    w = 0.62 - 0.48*fac + 0.38*cos(2*pi*fac)
-    if not sym and not odd:
-        w = w[:-1]
-    return w
-
-def hamming(M,sym=1):
-    """The M-point Hamming window.
-
-    """
-    if M < 1:
-        return array([])
-    if M == 1:
-        return ones(1,'d')
-    odd = M % 2
-    if not sym and not odd:
-        M = M+1
-    n = arange(0,M)
-    w = 0.54-0.46*cos(2.0*pi*n/(M-1))
-    if not sym and not odd:
-        w = w[:-1]
-    return w
-
-
-
-def kaiser(M,beta,sym=1):
-    """Return a Kaiser window of length M with shape parameter beta.
-
-    """
-    if M < 1:
-        return array([])
-    if M == 1:
-        return ones(1,'d')
-    odd = M % 2
-    if not sym and not odd:
-        M = M+1
-    n = arange(0,M)
-    alpha = (M-1)/2.0
-    w = special.i0(beta * sqrt(1-((n-alpha)/alpha)**2.0))/special.i0(beta)
-    if not sym and not odd:
-        w = w[:-1]
-    return w
-
-def gaussian(M,std,sym=1):
-    """Return a Gaussian window of length M with standard-deviation std.
-
-    """
-    if M < 1:
-        return array([])
-    if M == 1:
-        return ones(1,'d')
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
-    n = arange(0,M)-(M-1.0)/2.0
-    sig2 = 2*std*std
-    w = exp(-n**2 / sig2)
-    if not sym and not odd:
-        w = w[:-1]
-    return w
-
-def general_gaussian(M,p,sig,sym=1):
-    """Return a window with a generalized Gaussian shape.
-
-    exp(-0.5*(x/sig)**(2*p))
-
-    half power point is at (2*log(2)))**(1/(2*p))*sig
-
-    """
-    if M < 1:
-        return array([])
-    if M == 1:
-        return ones(1,'d')
-    odd = M % 2
-    if not sym and not odd:
-        M = M+1
-    n = arange(0,M)-(M-1.0)/2.0
-    w = exp(-0.5*(n/sig)**(2*p))
-    if not sym and not odd:
-        w = w[:-1]
-    return w
-
-
-# contributed by Kumar Appaiah.
-def chebwin(M, at, sym=1):
-    """Dolph-Chebyshev window.
-
-    INPUTS:
-
-      M : int
-        Window size
-      at : float
-        Attenuation (in dB)
-      sym : bool
-        Generates symmetric window if True.
-
-    """
-    if M < 1:
-        return array([])
-    if M == 1:
-        return ones(1,'d')
-
-    odd = M % 2
-    if not sym and not odd:
-        M = M+1
-
-    # compute the parameter beta
-    order = M - 1.0
-    beta = cosh(1.0/order * arccosh(10**(abs(at)/20.)))
-    k = r_[0:M]*1.0
-    x = beta*cos(pi*k/M)
-    #find the window's DFT coefficients
-    # Use analytic definition of Chebyshev polynomial instead of expansion
-    # from scipy.special. Using the expansion in scipy.special leads to errors.
-    p = zeros(x.shape)
-    p[x > 1] = cosh(order * arccosh(x[x > 1]))
-    p[x < -1] = (1 - 2*(order%2)) * cosh(order * arccosh(-x[x < -1]))
-    p[np.abs(x) <=1 ] = cos(order * arccos(x[np.abs(x) <= 1]))
-
-    # Appropriate IDFT and filling up
-    # depending on even/odd M
-    if M % 2:
-        w = real(fft(p))
-        n = (M + 1) / 2
-        w = w[:n] / w[0]
-        w = concatenate((w[n - 1:0:-1], w))
-    else:
-        p = p * exp(1.j*pi / M * r_[0:M])
-        w = real(fft(p))
-        n = M / 2 + 1
-        w = w / w[1]
-        w = concatenate((w[n - 1:0:-1], w[1:n]))
-    if not sym and not odd:
-        w = w[:-1]
-    return w
-
-
-def slepian(M,width,sym=1):
-    """Return the M-point slepian window.
-
-    """
-    if (M*width > 27.38):
-        raise ValueError, "Cannot reliably obtain slepian sequences for"\
-              " M*width > 27.38."
-    if M < 1:
-        return array([])
-    if M == 1:
-        return ones(1,'d')
-    odd = M % 2
-    if not sym and not odd:
-        M = M+1
-
-    twoF = width/2.0
-    alpha = (M-1)/2.0
-    m = arange(0,M)-alpha
-    n = m[:,newaxis]
-    k = m[newaxis,:]
-    AF = twoF*special.sinc(twoF*(n-k))
-    [lam,vec] = linalg.eig(AF)
-    ind = argmax(abs(lam),axis=-1)
-    w = abs(vec[:,ind])
-    w = w / max(w)
-
-    if not sym and not odd:
-        w = w[:-1]
-    return w
 
 
 def hilbert(x, N=None, axis=-1):
@@ -1421,88 +1060,6 @@ def invresz(r,p,k,tol=1e-3,rtype='avg'):
             indx += 1
     b = real_if_close(brev[::-1])
     return b, a
-
-
-def get_window(window,Nx,fftbins=1):
-    """Return a window of length Nx and type window.
-
-    If fftbins is 1, create a "periodic" window ready to use with ifftshift
-    and be multiplied by the result of an fft (SEE ALSO fftfreq).
-
-    Window types:  boxcar, triang, blackman, hamming, hanning, bartlett,
-                   parzen, bohman, blackmanharris, nuttall, barthann,
-                   kaiser (needs beta), gaussian (needs std),
-                   general_gaussian (needs power, width),
-                   slepian (needs width)
-
-    If the window requires no parameters, then it can be a string.
-    If the window requires parameters, the window argument should be a tuple
-        with the first argument the string name of the window, and the next
-        arguments the needed parameters.
-    If window is a floating point number, it is interpreted as the beta
-        parameter of the kaiser window.
-    """
-
-    sym = not fftbins
-    try:
-        beta = float(window)
-    except (TypeError, ValueError):
-        args = ()
-        if isinstance(window, types.TupleType):
-            winstr = window[0]
-            if len(window) > 1:
-                args = window[1:]
-        elif isinstance(window, types.StringType):
-            if window in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
-                        'general gaussian', 'general_gaussian',
-                        'general gauss', 'general_gauss', 'ggs',
-                        'slepian', 'optimal', 'slep', 'dss']:
-                raise ValueError, "That window needs a parameter -- pass a tuple"
-            else:
-                winstr = window
-
-        if winstr in ['blackman', 'black', 'blk']:
-            winfunc = blackman
-        elif winstr in ['triangle', 'triang', 'tri']:
-            winfunc = triang
-        elif winstr in ['hamming', 'hamm', 'ham']:
-            winfunc = hamming
-        elif winstr in ['bartlett', 'bart', 'brt']:
-            winfunc = bartlett
-        elif winstr in ['hanning', 'hann', 'han']:
-            winfunc = hanning
-        elif winstr in ['blackmanharris', 'blackharr','bkh']:
-            winfunc = blackmanharris
-        elif winstr in ['parzen', 'parz', 'par']:
-            winfunc = parzen
-        elif winstr in ['bohman', 'bman', 'bmn']:
-            winfunc = bohman
-        elif winstr in ['nuttall', 'nutl', 'nut']:
-            winfunc = nuttall
-        elif winstr in ['barthann', 'brthan', 'bth']:
-            winfunc = barthann
-        elif winstr in ['flattop', 'flat', 'flt']:
-            winfunc = flattop
-        elif winstr in ['kaiser', 'ksr']:
-            winfunc = kaiser
-        elif winstr in ['gaussian', 'gauss', 'gss']:
-            winfunc = gaussian
-        elif winstr in ['general gaussian', 'general_gaussian',
-                        'general gauss', 'general_gauss', 'ggs']:
-            winfunc = general_gaussian
-        elif winstr in ['boxcar', 'box', 'ones']:
-            winfunc = boxcar
-        elif winstr in ['slepian', 'slep', 'optimal', 'dss']:
-            winfunc = slepian
-        else:
-            raise ValueError, "Unknown window type."
-
-        params = (Nx,)+args + (sym,)
-    else:
-        winfunc = kaiser
-        params = (Nx,beta,sym)
-
-    return winfunc(*params)
 
 
 def resample(x,num,t=None,axis=0,window=None):

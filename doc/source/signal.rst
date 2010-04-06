@@ -135,22 +135,24 @@ Window functions
 .. autosummary::
    :toctree: generated/
 
-   boxcar
-   triang
-   parzen
-   bohman
+   get_window
+   barthann
+   bartlett
    blackman
    blackmanharris
-   nuttall
+   bohman
+   boxcar
+   chebwin
    flattop
-   bartlett
-   hann
-   barthann
-   hamming
-   kaiser
    gaussian
    general_gaussian
+   hamming
+   hann
+   kaiser
+   nuttall
+   parzen
    slepian
+   triang
 
 Wavelets
 ========
