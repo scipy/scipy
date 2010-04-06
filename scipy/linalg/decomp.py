@@ -396,7 +396,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
                           " and no eigenvalues or eigenvectors were"
                           " computed." % (info-b1.shape[0]))
 
-def eig_banded(a_band, lower=0, eigvals_only=0, overwrite_a_band=0,
+def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
                select='a', select_range=None, max_ev = 0):
     """Solve real symmetric or complex hermetian band matrix eigenvalue problem.
 
@@ -544,7 +544,7 @@ def eig_banded(a_band, lower=0, eigvals_only=0, overwrite_a_band=0,
         return w
     return w, v
 
-def eigvals(a,b=None,overwrite_a=0):
+def eigvals(a, b=None, overwrite_a=False):
     """Compute eigenvalues from an ordinary or generalized eigenvalue problem.
 
     Find eigenvalues of a general matrix::
@@ -641,7 +641,7 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
                 overwrite_a=overwrite_a, overwrite_b=overwrite_b,
                 turbo=turbo, eigvals=eigvals, type=type)
 
-def eigvals_banded(a_band,lower=0,overwrite_a_band=0,
+def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
                    select='a', select_range=None):
     """Solve real symmetric or complex hermitian band matrix eigenvalue problem.
 
@@ -711,7 +711,7 @@ def eigvals_banded(a_band,lower=0,overwrite_a_band=0,
                       overwrite_a_band=overwrite_a_band, select=select,
                       select_range=select_range)
 
-def lu_factor(a, overwrite_a=0):
+def lu_factor(a, overwrite_a=False):
     """Compute pivoted LU decomposition of a matrix.
 
     The decomposition is::
@@ -758,7 +758,7 @@ def lu_factor(a, overwrite_a=0):
                     RuntimeWarning)
     return lu, piv
 
-def lu_solve(a_lu_pivots,b):
+def lu_solve(a_lu_pivots, b):
     """Solve an equation system, a x = b, given the LU factorization of a
 
     Parameters
@@ -795,7 +795,7 @@ def lu_solve(a_lu_pivots,b):
     return b
 
 
-def lu(a,permute_l=0,overwrite_a=0):
+def lu(a, permute_l=False, overwrite_a=False):
     """Compute pivoted LU decompostion of a matrix.
 
     The decomposition is::
@@ -849,7 +849,7 @@ def lu(a,permute_l=0,overwrite_a=0):
         return l,u
     return p,l,u
 
-def svd(a,full_matrices=1,compute_uv=1,overwrite_a=0):
+def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False):
     """Singular Value Decomposition.
 
     Factorizes the matrix a into two unitary matrices U and Vh and
@@ -929,7 +929,7 @@ def svd(a,full_matrices=1,compute_uv=1,overwrite_a=0):
     else:
         return s
 
-def svdvals(a,overwrite_a=0):
+def svdvals(a, overwrite_a=False):
     """Compute singular values of a matrix.
 
     Parameters
@@ -954,7 +954,7 @@ def svdvals(a,overwrite_a=0):
     """
     return svd(a,compute_uv=0,overwrite_a=overwrite_a)
 
-def diagsvd(s,M,N):
+def diagsvd(s, M, N):
     """Construct the sigma matrix in SVD from singular values and size M,N.
 
     Parameters
@@ -981,7 +981,7 @@ def diagsvd(s,M,N):
     else:
         raise ValueError, "Length of s must be M or N."
 
-def cholesky(a,lower=0,overwrite_a=0):
+def cholesky(a, lower=False, overwrite_a=False):
     """Compute the Cholesky decomposition of a matrix.
 
     Returns the Cholesky decomposition, :lm:`A = L L^*` or :lm:`A = U^* U`
@@ -1028,7 +1028,7 @@ def cholesky(a,lower=0,overwrite_a=0):
        'illegal value in %-th argument of internal potrf'%(-info)
     return c
 
-def cho_factor(a, lower=0, overwrite_a=0):
+def cho_factor(a, lower=False, overwrite_a=False):
     """Compute the Cholesky decomposition of a matrix, to use in cho_solve
 
     Returns a matrix containing the Cholesky decomposition,
@@ -1115,7 +1115,7 @@ def cho_solve(clow, b):
         raise TypeError, msg
     return b
 
-def qr(a, overwrite_a=0, lwork=None, econ=None, mode='qr'):
+def qr(a, overwrite_a=False, lwork=None, econ=None, mode='qr'):
     """Compute QR decomposition of a matrix.
 
     Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
@@ -1237,7 +1237,7 @@ def qr(a, overwrite_a=0, lwork=None, econ=None, mode='qr'):
 
 
 
-def qr_old(a,overwrite_a=0,lwork=None):
+def qr_old(a, overwrite_a=False, lwork=None):
     """Compute QR decomposition of a matrix.
 
     Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
@@ -1291,7 +1291,7 @@ def qr_old(a,overwrite_a=0,lwork=None):
 
 
 
-def rq(a,overwrite_a=0,lwork=None):
+def rq(a, overwrite_a=False, lwork=None):
     """Compute RQ decomposition of a square real matrix.
 
     Calculate the decomposition :lm:`A = R Q` where Q is unitary/orthogonal
@@ -1353,7 +1353,7 @@ def rq(a,overwrite_a=0,lwork=None):
 
 _double_precision = ['i','l','d']
 
-def schur(a,output='real',lwork=None,overwrite_a=0):
+def schur(a, output='real', lwork=None, overwrite_a=False):
     """Compute Schur decomposition of a matrix.
 
     The Schur decomposition is
@@ -1421,6 +1421,7 @@ feps = numpy.finfo(single).eps
 _array_kind = {'b':0, 'h':0, 'B': 0, 'i':0, 'l': 0, 'f': 0, 'd': 0, 'F': 1, 'D': 1}
 _array_precision = {'i': 1, 'l': 1, 'f': 0, 'd': 1, 'F': 0, 'D': 1}
 _array_type = [['f', 'd'], ['F', 'D']]
+
 def _commonType(*arrays):
     kind = 0
     precision = 0
@@ -1533,7 +1534,7 @@ def orth(A):
     Q = u[:,:num]
     return Q
 
-def hessenberg(a,calc_q=0,overwrite_a=0):
+def hessenberg(a, calc_q=False, overwrite_a=False):
     """Compute Hessenberg form of a matrix.
 
     The Hessenberg decomposition is

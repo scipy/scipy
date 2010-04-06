@@ -31,7 +31,7 @@ from scipy.linalg import calc_lwork
 import decomp
 
 
-def lu_solve((lu, piv), b, trans=0, overwrite_b=0):
+def lu_solve((lu, piv), b, trans=0, overwrite_b=False):
     """Solve an equation system, a x = b, given the LU factorization of a
 
     Parameters
@@ -72,7 +72,7 @@ def lu_solve((lu, piv), b, trans=0, overwrite_b=0):
     raise ValueError,\
           'illegal value in %-th argument of internal gesv|posv'%(-info)
 
-def cho_solve((c, lower), b, overwrite_b=0):
+def cho_solve((c, lower), b, overwrite_b=False):
     """Solve an equation system, a x = b, given the Cholesky factorization of a
 
     Parameters
@@ -104,8 +104,8 @@ def cho_solve((c, lower), b, overwrite_b=0):
           'illegal value in %-th argument of internal gesv|posv'%(-info)
 
 # Linear equations
-def solve(a, b, sym_pos=0, lower=0, overwrite_a=0, overwrite_b=0,
-          debug = 0):
+def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False,
+          debug=False):
     """Solve the equation a x = b for x
 
     Parameters
@@ -159,8 +159,8 @@ def solve(a, b, sym_pos=0, lower=0, overwrite_a=0, overwrite_b=0,
     raise ValueError,\
           'illegal value in %-th argument of internal gesv|posv'%(-info)
 
-def solve_banded((l,u), ab, b, overwrite_ab=0, overwrite_b=0,
-          debug = 0):
+def solve_banded((l,u), ab, b, overwrite_ab=False, overwrite_b=False,
+          debug=False):
     """Solve the equation a x = b for x, assuming a is banded matrix.
 
     The matrix a is stored in ab using the matrix diagonal orded form::
@@ -217,8 +217,8 @@ def solve_banded((l,u), ab, b, overwrite_ab=0, overwrite_b=0,
     raise ValueError,\
           'illegal value in %-th argument of internal gbsv'%(-info)
 
-def solveh_banded(ab, b, overwrite_ab=0, overwrite_b=0,
-                  lower=0):
+def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False,
+                  lower=False):
     """Solve equation a x = b. a is Hermitian positive-definite banded matrix.
 
     The matrix a is stored in ab either in lower diagonal or upper
@@ -280,7 +280,7 @@ def solveh_banded(ab, b, overwrite_ab=0, overwrite_b=0,
     raise ValueError,\
           'illegal value in %d-th argument of internal pbsv'%(-info)
 
-def cholesky_banded(ab, overwrite_ab=0, lower=0):
+def cholesky_banded(ab, overwrite_ab=False, lower=False):
     """Cholesky decompose a banded Hermitian positive-definite matrix
 
     The matrix a is stored in ab either in lower diagonal or upper
@@ -332,7 +332,7 @@ def cholesky_banded(ab, overwrite_ab=0, lower=0):
 
 
 # matrix inversion
-def inv(a, overwrite_a=0):
+def inv(a, overwrite_a=False):
     """Compute the inverse of a matrix.
 
     Parameters
@@ -406,7 +406,7 @@ def inv(a, overwrite_a=0):
 
 ### Determinant
 
-def det(a, overwrite_a=0):
+def det(a, overwrite_a=False):
     """Compute the determinant of a matrix
 
     Parameters
@@ -434,7 +434,7 @@ def det(a, overwrite_a=0):
 
 ### Linear Least Squares
 
-def lstsq(a, b, cond=None, overwrite_a=0, overwrite_b=0):
+def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
     """Compute least-squares solution to equation :m:`a x = b`
 
     Compute a vector x such that the 2-norm :m:`|b - a x|` is minimised.

@@ -19,7 +19,7 @@ from decomp import eig, schur, rsf2csf, orth, svd
 eps = np.finfo(float).eps
 feps = np.finfo(single).eps
 
-def expm(A,q=7):
+def expm(A, q=7):
     """Compute the matrix exponential using Pade approximation.
 
     Parameters
@@ -89,7 +89,7 @@ def expm2(A):
     vri = inv(vr)
     return dot(dot(vr,diag(exp(s))),vri).astype(t)
 
-def expm3(A,q=20):
+def expm3(A, q=20):
     """Compute the matrix exponential using Taylor series.
 
     Parameters
@@ -120,7 +120,8 @@ def expm3(A,q=20):
     return eA
 
 _array_precision = {'i': 1, 'l': 1, 'f': 0, 'd': 1, 'F': 0, 'D': 1}
-def toreal(arr,tol=None):
+
+def toreal(arr, tol=None):
     """Return as real array if imaginary part is small.
 
     Parameters
@@ -267,7 +268,7 @@ def tanhm(A):
     else:
         return solve(coshm(A), sinhm(A))
 
-def funm(A,func,disp=1):
+def funm(A, func, disp=True):
     """Evaluate a matrix function specified by a callable.
 
     Returns the value of matrix-valued function f at A. The function f
@@ -342,7 +343,7 @@ def funm(A,func,disp=1):
     else:
         return F, err
 
-def logm(A,disp=1):
+def logm(A, disp=True):
     """Compute matrix logarithm.
 
     The matrix logarithm is the inverse of expm: expm(logm(A)) == A
@@ -393,7 +394,7 @@ def logm(A,disp=1):
     else:
         return F, errest
 
-def signm(a,disp=1):
+def signm(a, disp=True):
     """Matrix sign function.
 
     Extension of the scalar sign(x) to matrices.
@@ -470,7 +471,7 @@ def signm(a,disp=1):
     else:
         return S0, errest
 
-def sqrtm(A,disp=1):
+def sqrtm(A, disp=True):
     """Matrix square root.
 
     Parameters
