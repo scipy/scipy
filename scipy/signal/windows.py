@@ -377,7 +377,7 @@ def get_window(window, Nx, fftbins=True):
                    parzen, bohman, blackmanharris, nuttall, barthann,
                    kaiser (needs beta), gaussian (needs std),
                    general_gaussian (needs power, width),
-                   slepian (needs width)
+                   slepian (needs width), chebwin (needs attenuation)
 
     If the window requires no parameters, then it can be a string.
     If the window requires parameters, the window argument should be a tuple
@@ -400,8 +400,10 @@ def get_window(window, Nx, fftbins=True):
             if window in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
                         'general gaussian', 'general_gaussian',
                         'general gauss', 'general_gauss', 'ggs',
-                        'slepian', 'optimal', 'slep', 'dss']:
-                raise ValueError, "That window needs a parameter -- pass a tuple"
+                        'slepian', 'optimal', 'slep', 'dss',
+                        'chebwin', 'cheb']:
+                raise ValueError("The '" + window + "' window needs one or "
+                                    "more parameters  -- pass a tuple.")
             else:
                 winstr = window
 
@@ -438,12 +440,14 @@ def get_window(window, Nx, fftbins=True):
             winfunc = boxcar
         elif winstr in ['slepian', 'slep', 'optimal', 'dss']:
             winfunc = slepian
+        elif winstr in ['chebwin', 'cheb']:
+            winfunc = chebwin
         else:
             raise ValueError, "Unknown window type."
 
-        params = (Nx,)+args + (sym,)
+        params = (Nx,) + args + (sym,)
     else:
         winfunc = kaiser
-        params = (Nx,beta,sym)
+        params = (Nx, beta, sym)
 
     return winfunc(*params)
