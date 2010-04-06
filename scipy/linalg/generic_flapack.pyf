@@ -177,7 +177,7 @@ interface
      integer intent(in),optional :: lo = 0
      integer intent(in),optional,depend(n) :: hi = n-1
      <type_in> dimension(n-1),intent(out),depend(n) :: tau
-     <type_in> dimension(lwork),intent(cahce,hide),depend(lwork) :: work
+     <type_in> dimension(lwork),intent(cache,hide),depend(lwork) :: work
      integer intent(in),optional,depend(n),check(lwork>=MAX(n,1)) :: lwork = MAX(n,1)
      integer intent(out) :: info
 
