@@ -70,7 +70,7 @@ finally:
     sys.path.pop(0)
 
 # Default python version
-PYVER="2.5"
+PYVER="2.6"
 DMG_DIR = "dmg-source"
 
 # Wine config for win32 builds
@@ -78,10 +78,8 @@ if sys.platform == "win32":
     WINE_PY25 = [r"C:\Python25\python.exe"]
     WINE_PY26 = [r"C:\Python26\python26.exe"]
 elif sys.platform == "darwin":
-    WINE_PY25 = ["/Applications/Darwine/Wine.bundle/Contents/bin/wine",
-                 os.environ['HOME'] + '/.wine/drive_c/Python25/python.exe']
-    WINE_PY26 = ["/Applications/Darwine/Wine.bundle/Contents/bin/wine",
-                 os.environ['HOME'] + '/.wine/drive_c/Python26/python.exe']
+    WINE_PY25 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python25/python.exe"]
+    WINE_PY26 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python26/python.exe"]
 else:
     WINE_PY25 = [os.environ['HOME'] + "/.wine/drive_c/Python25/python.exe"]
     WINE_PY26 = [os.environ['HOME'] + "/.wine/drive_c/Python26/python.exe"]
