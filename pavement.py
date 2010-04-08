@@ -122,7 +122,7 @@ INSTALLERS_DIR = os.path.join(RELEASE_DIR, 'installers')
 options(sphinx=Bunch(builddir="build", sourcedir="source", docroot='doc'),
         virtualenv=Bunch(script_name=BOOTSTRAP_SCRIPT,
         packages_to_install=["sphinx==0.6.5"]),
-        wininst=Bunch(pyver="2.5", scratch=True))
+        wininst=Bunch(pyver="2.6", scratch=True))
 
 def parse_numpy_version(pyexec):
     if isinstance(pyexec, str):
