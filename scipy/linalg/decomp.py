@@ -82,7 +82,8 @@ def _geneig(a1,b,left,right,overwrite_a,overwrite_b):
         w = (alphar+_I*alphai)/beta
     if info<0: raise ValueError(
        'illegal value in %d-th argument of internal ggev' % (-info))
-    if info>0: raise LinAlgError,"generalized eig algorithm did not converge"
+    if info>0: raise LinAlgError(
+       "generalized eig algorithm did not converge (info=%d)" % (info))
 
     only_real = numpy.logical_and.reduce(numpy.equal(w.imag,0.0))
     if not (ggev.prefix in 'cz' or only_real):
@@ -190,7 +191,9 @@ def eig(a,b=None, left=False, right=True, overwrite_a=False, overwrite_b=False):
             w = wr+_I*wi
     if info<0: raise ValueError(
        'illegal value in %d-th argument of internal geev' % (-info))
-    if info>0: raise LinAlgError,"eig algorithm did not converge"
+    if info>0: raise LinAlgError(
+       "eig algorithm did not converge (only eigenvalues "\
+       "with order >=%d have converged)" % (info))
 
     only_real = numpy.logical_and.reduce(numpy.equal(w.imag,0.0))
     if not (geev.prefix in 'cz' or only_real):
@@ -1023,7 +1026,9 @@ def cholesky(a, lower=False, overwrite_a=False):
     overwrite_a = overwrite_a or _datanotshared(a1,a)
     potrf, = get_lapack_funcs(('potrf',),(a1,))
     c,info = potrf(a1,lower=lower,overwrite_a=overwrite_a,clean=1)
-    if info>0: raise LinAlgError, "matrix not positive definite"
+    if info>0: raise LinAlgError(
+       "matrix not positive definite (leading minor of order %d"\
+       "is not positive definite)" % (info-1))
     if info<0: raise ValueError(
        'illegal value in %d-th argument of internal potrf' % (-info))
     return c
@@ -1070,7 +1075,9 @@ def cho_factor(a, lower=False, overwrite_a=False):
     overwrite_a = overwrite_a or (_datanotshared(a1,a))
     potrf, = get_lapack_funcs(('potrf',),(a1,))
     c,info = potrf(a1,lower=lower,overwrite_a=overwrite_a,clean=0)
-    if info>0: raise LinAlgError, "matrix not positive definite"
+    if info>0: raise LinAlgError(
+       "matrix not positive definite (leading minor of order %d"\
+       "is not positive definite)"%(info-1))
     if info<0: raise ValueError(
        'illegal value in %d-th argument of internal potrf' % (-info))
     return c, lower
