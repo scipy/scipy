@@ -1341,7 +1341,7 @@ def rq(a, overwrite_a=False, lwork=None):
         lwork = work[0]
     rq,tau,work,info = gerqf(a1,lwork=lwork,overwrite_a=overwrite_a)
     if info<0: raise ValueError(
-       'illegal value in %d-th argument of internal geqrf'%(-info)
+       'illegal value in %d-th argument of internal geqrf' % (-info))
     gemm, = get_blas_funcs(('gemm',),(rq,))
     t = rq.dtype.char
     R = special_matrices.triu(rq)
