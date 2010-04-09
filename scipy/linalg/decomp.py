@@ -80,8 +80,8 @@ def _geneig(a1,b,left,right,overwrite_a,overwrite_b):
         alphar,alphai,beta,vl,vr,work,info = ggev(a1,b1,cvl,cvr,lwork,
                                                   overwrite_a,overwrite_b)
         w = (alphar+_I*alphai)/beta
-    if info<0: raise ValueError,\
-       'illegal value in %-th argument of internal ggev'%(-info)
+    if info<0: raise ValueError(
+       'illegal value in %d-th argument of internal ggev' % (-info))
     if info>0: raise LinAlgError,"generalized eig algorithm did not converge"
 
     only_real = numpy.logical_and.reduce(numpy.equal(w.imag,0.0))
@@ -188,8 +188,8 @@ def eig(a,b=None, left=False, right=True, overwrite_a=False, overwrite_b=False):
                                     overwrite_a=overwrite_a)
             t = {'f':'F','d':'D'}[wr.dtype.char]
             w = wr+_I*wi
-    if info<0: raise ValueError,\
-       'illegal value in %-th argument of internal geev'%(-info)
+    if info<0: raise ValueError(
+       'illegal value in %d-th argument of internal geev' % (-info))
     if info>0: raise LinAlgError,"eig algorithm did not converge"
 
     only_real = numpy.logical_and.reduce(numpy.equal(w.imag,0.0))
@@ -536,8 +536,8 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
         w = w[:m]
         if not eigvals_only:
             v = v[:, :m]
-    if info<0: raise ValueError,\
-    'illegal value in %-th argument of internal %s'%(-info, internal_name)
+    if info<0: raise ValueError(
+        'illegal value in %d-th argument of internal %s'%(-info, internal_name))
     if info>0: raise LinAlgError,"eig algorithm did not converge"
 
     if eigvals_only:
@@ -752,8 +752,8 @@ def lu_factor(a, overwrite_a=False):
     overwrite_a = overwrite_a or (_datanotshared(a1,a))
     getrf, = get_lapack_funcs(('getrf',),(a1,))
     lu, piv, info = getrf(a,overwrite_a=overwrite_a)
-    if info<0: raise ValueError,\
-       'illegal value in %-th argument of internal getrf (lu_factor)'%(-info)
+    if info<0: raise ValueError(
+       'illegal value in %d-th argument of internal getrf (lu_factor)' % (-info))
     if info>0: warn("Diagonal number %d is exactly zero. Singular matrix." % info,
                     RuntimeWarning)
     return lu, piv
@@ -843,8 +843,8 @@ def lu(a, permute_l=False, overwrite_a=False):
     overwrite_a = overwrite_a or (_datanotshared(a1,a))
     flu, = get_flinalg_funcs(('lu',),(a1,))
     p,l,u,info = flu(a1,permute_l=permute_l,overwrite_a = overwrite_a)
-    if info<0: raise ValueError,\
-       'illegal value in %-th argument of internal lu.getrf'%(-info)
+    if info<0: raise ValueError(
+       'illegal value in %d-th argument of internal lu.getrf' % (-info))
     if permute_l:
         return l,u
     return p,l,u
@@ -922,8 +922,8 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False):
     else: # 'clapack'
         raise NotImplementedError,'calling gesdd from %s' % (gesdd.module_name)
     if info>0: raise LinAlgError, "SVD did not converge"
-    if info<0: raise ValueError,\
-       'illegal value in %-th argument of internal gesdd'%(-info)
+    if info<0: raise ValueError(
+       'illegal value in %d-th argument of internal gesdd' % (-info))
     if compute_uv:
         return u,s,v
     else:
@@ -1024,8 +1024,8 @@ def cholesky(a, lower=False, overwrite_a=False):
     potrf, = get_lapack_funcs(('potrf',),(a1,))
     c,info = potrf(a1,lower=lower,overwrite_a=overwrite_a,clean=1)
     if info>0: raise LinAlgError, "matrix not positive definite"
-    if info<0: raise ValueError,\
-       'illegal value in %-th argument of internal potrf'%(-info)
+    if info<0: raise ValueError(
+       'illegal value in %d-th argument of internal potrf' % (-info))
     return c
 
 def cho_factor(a, lower=False, overwrite_a=False):
@@ -1071,8 +1071,8 @@ def cho_factor(a, lower=False, overwrite_a=False):
     potrf, = get_lapack_funcs(('potrf',),(a1,))
     c,info = potrf(a1,lower=lower,overwrite_a=overwrite_a,clean=0)
     if info>0: raise LinAlgError, "matrix not positive definite"
-    if info<0: raise ValueError,\
-       'illegal value in %-th argument of internal potrf'%(-info)
+    if info<0: raise ValueError(
+       'illegal value in %d-th argument of internal potrf' % (-info))
     return c, lower
 
 def cho_solve(clow, b):
@@ -1193,7 +1193,7 @@ def qr(a, overwrite_a=False, lwork=None, econ=None, mode='qr'):
 
     qr,tau,work,info = geqrf(a1,lwork=lwork,overwrite_a=overwrite_a)
     if info<0:
-        raise ValueError("illegal value in %-th argument of internal geqrf"
+        raise ValueError("illegal value in %d-th argument of internal geqrf"
             % -info)
 
     if not econ or M<N:
@@ -1230,7 +1230,7 @@ def qr(a, overwrite_a=False, lwork=None, econ=None, mode='qr'):
         Q,work,info = gor_un_gqr(qqr,tau,lwork=lwork,overwrite_a=1)
 
     if info < 0:
-        raise ValueError("illegal value in %-th argument of internal gorgqr"
+        raise ValueError("illegal value in %d-th argument of internal gorgqr"
             % -info)
 
     return Q, R
@@ -1273,8 +1273,8 @@ def qr_old(a, overwrite_a=False, lwork=None):
         qr,tau,work,info = geqrf(a1,lwork=-1,overwrite_a=1)
         lwork = work[0]
     qr,tau,work,info = geqrf(a1,lwork=lwork,overwrite_a=overwrite_a)
-    if info<0: raise ValueError,\
-       'illegal value in %-th argument of internal geqrf'%(-info)
+    if info<0: raise ValueError(
+       'illegal value in %d-th argument of internal geqrf' % (-info))
     gemm, = get_blas_funcs(('gemm',),(qr,))
     t = qr.dtype.char
     R = special_matrices.triu(qr)
@@ -1333,8 +1333,8 @@ def rq(a, overwrite_a=False, lwork=None):
         rq,tau,work,info = gerqf(a1,lwork=-1,overwrite_a=1)
         lwork = work[0]
     rq,tau,work,info = gerqf(a1,lwork=lwork,overwrite_a=overwrite_a)
-    if info<0: raise ValueError, \
-       'illegal value in %-th argument of internal geqrf'%(-info)
+    if info<0: raise ValueError(
+       'illegal value in %d-th argument of internal geqrf'%(-info)
     gemm, = get_blas_funcs(('gemm',),(rq,))
     t = rq.dtype.char
     R = special_matrices.triu(rq)
@@ -1410,8 +1410,8 @@ def schur(a, output='real', lwork=None, overwrite_a=False):
         lwork = result[-2][0]
     result = gees(lambda x: None,a,lwork=result[-2][0],overwrite_a=overwrite_a)
     info = result[-1]
-    if info<0: raise ValueError,\
-       'illegal value in %-th argument of internal gees'%(-info)
+    if info<0: raise ValueError(
+       'illegal value in %d-th argument of internal gees' % (-info))
     elif info>0: raise LinAlgError, "Schur form not found.  Possibly ill-conditioned."
     return result[0], result[-3]
 
@@ -1569,13 +1569,13 @@ def hessenberg(a, calc_q=False, overwrite_a=False):
     overwrite_a = overwrite_a or (_datanotshared(a1,a))
     gehrd,gebal = get_lapack_funcs(('gehrd','gebal'),(a1,))
     ba,lo,hi,pivscale,info = gebal(a,permute=1,overwrite_a = overwrite_a)
-    if info<0: raise ValueError,\
-       'illegal value in %-th argument of internal gebal (hessenberg)'%(-info)
+    if info<0: raise ValueError(
+       'illegal value in %d-th argument of internal gebal (hessenberg)' % (-info))
     n = len(a1)
     lwork = calc_lwork.gehrd(gehrd.prefix,n,lo,hi)
     hq,tau,info = gehrd(ba,lo=lo,hi=hi,lwork=lwork,overwrite_a=1)
-    if info<0: raise ValueError,\
-       'illegal value in %-th argument of internal gehrd (hessenberg)'%(-info)
+    if info<0: raise ValueError(
+       'illegal value in %d-th argument of internal gehrd (hessenberg)' % (-info))
 
     if not calc_q:
         for i in range(lo,hi):

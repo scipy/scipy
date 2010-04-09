@@ -69,8 +69,8 @@ def lu_solve((lu, piv), b, trans=0, overwrite_b=False):
     x,info = getrs(lu,piv,b1,trans=trans,overwrite_b=overwrite_b)
     if info==0:
         return x
-    raise ValueError,\
-          'illegal value in %-th argument of internal gesv|posv'%(-info)
+    raise ValueError(
+          'illegal value in %d-th argument of internal gesv|posv' % (-info))
 
 def cho_solve((c, lower), b, overwrite_b=False):
     """Solve an equation system, a x = b, given the Cholesky factorization of a
@@ -100,8 +100,8 @@ def cho_solve((c, lower), b, overwrite_b=False):
     x,info = potrs(c,b1,lower=lower,overwrite_b=overwrite_b)
     if info==0:
         return x
-    raise ValueError,\
-          'illegal value in %-th argument of internal gesv|posv'%(-info)
+    raise ValueError(
+          'illegal value in %d-th argument of internal gesv|posv' % (-info))
 
 # Linear equations
 def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False,
@@ -156,8 +156,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False
         return x
     if info>0:
         raise LinAlgError, "singular matrix"
-    raise ValueError,\
-          'illegal value in %-th argument of internal gesv|posv'%(-info)
+    raise ValueError(
+          'illegal value in %d-th argument of internal gesv|posv' % (-info))
 
 def solve_banded((l,u), ab, b, overwrite_ab=False, overwrite_b=False,
           debug=False):
@@ -214,8 +214,8 @@ def solve_banded((l,u), ab, b, overwrite_ab=False, overwrite_b=False,
         return x
     if info>0:
         raise LinAlgError, "singular matrix"
-    raise ValueError,\
-          'illegal value in %-th argument of internal gbsv'%(-info)
+    raise ValueError(
+          'illegal value in %d-th argument of internal gbsv' % (-info))
 
 def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False,
                   lower=False):
@@ -277,8 +277,8 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False,
         return c, x
     if info>0:
         raise LinAlgError, "%d-th leading minor not positive definite" % info
-    raise ValueError,\
-          'illegal value in %d-th argument of internal pbsv'%(-info)
+    raise ValueError(
+          'illegal value in %d-th argument of internal pbsv' % (-info))
 
 def cholesky_banded(ab, overwrite_ab=False, lower=False):
     """Cholesky decompose a banded Hermitian positive-definite matrix
@@ -327,8 +327,8 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False):
         return c
     if info>0:
         raise LinAlgError, "%d-th leading minor not positive definite" % info
-    raise ValueError,\
-          'illegal value in %d-th argument of internal pbtrf'%(-info)
+    raise ValueError(
+          'illegal value in %d-th argument of internal pbtrf' % (-info))
 
 
 # matrix inversion
@@ -370,7 +370,7 @@ def inv(a, overwrite_a=False):
 ##             return a_inv
 ##         if info>0: raise LinAlgError, "singular matrix"
 ##         if info<0: raise ValueError,\
-##            'illegal value in %-th argument of internal inv.getrf|getri'%(-info)
+##            'illegal value in %d-th argument of internal inv.getrf|getri'%(-info)
     getrf,getri = get_lapack_funcs(('getrf','getri'),(a1,))
     #XXX: C ATLAS versions of getrf/i have rowmajor=1, this could be
     #     exploited for further optimization. But it will be probably
@@ -399,8 +399,8 @@ def inv(a, overwrite_a=False):
         else: # clapack
             inv_a,info = getri(lu,piv,overwrite_lu=1)
     if info>0: raise LinAlgError, "singular matrix"
-    if info<0: raise ValueError,\
-       'illegal value in %-th argument of internal getrf|getri'%(-info)
+    if info<0: raise ValueError(
+       'illegal value in %d-th argument of internal getrf|getri' % (-info))
     return inv_a
 
 
@@ -428,8 +428,8 @@ def det(a, overwrite_a=False):
     overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
     fdet, = get_flinalg_funcs(('det',),(a1,))
     a_det,info = fdet(a1,overwrite_a=overwrite_a)
-    if info<0: raise ValueError,\
-       'illegal value in %-th argument of internal det.getrf'%(-info)
+    if info<0: raise ValueError(
+       'illegal value in %d-th argument of internal det.getrf' % (-info))
     return a_det
 
 ### Linear Least Squares
@@ -495,8 +495,8 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
     else:
         raise NotImplementedError,'calling gelss from %s' % (gelss.module_name)
     if info>0: raise LinAlgError, "SVD did not converge in Linear Least Squares"
-    if info<0: raise ValueError,\
-       'illegal value in %-th argument of internal gelss'%(-info)
+    if info<0: raise ValueError(
+       'illegal value in %d-th argument of internal gelss' % (-info))
     resids = asarray([], dtype=x.dtype)
     if n<m:
         x1 = x[:n]
