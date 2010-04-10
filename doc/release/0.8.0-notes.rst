@@ -106,8 +106,8 @@ Several improvements to the `chirp` function in `scipy.signal` were made:
 
 A new function, `sweep_poly`, was added.
 
-New functions and others changes in scipy.linalg
-------------------------------------------------
+New functions and other changes in scipy.linalg
+-----------------------------------------------
 The functions `circulant`, `hadamard` and `cho_solve_banded` were added
 to `scipy.linalg`.
 
