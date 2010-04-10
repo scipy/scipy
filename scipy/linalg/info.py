@@ -36,6 +36,7 @@ Decompositions::
    cholesky_banded   --- Cholesky decomposition of a banded symmetric or Hermitian matrix
    cho_factor --- Cholesky decomposition for use in solving linear system
    cho_solve  --- Solve previously factored linear system
+   cho_solve_banded  --- Solve previously factored banded linear system.
    qr         --- QR decomposition of a matrix
    schur      --- Schur decomposition of a matrix
    rsf2csf    --- Real to complex schur form

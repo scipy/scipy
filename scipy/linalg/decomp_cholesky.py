@@ -196,7 +196,7 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False):
                                                                     % -info)
     return c
 
-# my new function
+
 def cho_solve_banded((ab, lower), b, overwrite_b=False):
     """To be written..."""
 
