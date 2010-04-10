@@ -197,18 +197,39 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False):
     return c
 
 
-def cho_solve_banded((ab, lower), b, overwrite_b=False):
-    """To be written..."""
+def cho_solve_banded((cb, lower), b, overwrite_b=False):
+    """Solve the linear equations A x = b, given the Cholesky factorization of A.
 
-    ab = asarray_chkfinite(ab)
+    Parameters
+    ----------
+    (cb, lower) : tuple, (array, bool)
+        `cb` is the Cholesky factorization of A, as given by cholesky_banded.
+        `lower` must be the same value that was given to cholesky_banded.
+    b : array
+        Right-hand side
+    overwrite_b : bool
+        If True, the function will overwrite the values in `b`.    
+
+    Returns
+    -------
+    x : array
+        The solution to the system A x = b
+
+    See also
+    --------
+    cholesky_banded : Cholesky factorization of a banded matrix
+
+    """
+
+    cb = asarray_chkfinite(cb)
     b = asarray_chkfinite(b)
 
     # Validate shapes.
-    if ab.shape[-1] != b.shape[0]:
-        raise ValueError("shapes of ab and b are not compatible.")
+    if cb.shape[-1] != b.shape[0]:
+        raise ValueError("shapes of cb and b are not compatible.")
 
-    pbtrs, = get_lapack_funcs(('pbtrs',), (ab, b))
-    x, info = pbtrs(ab, b, lower=lower, overwrite_b=overwrite_b)
+    pbtrs, = get_lapack_funcs(('pbtrs',), (cb, b))
+    x, info = pbtrs(cb, b, lower=lower, overwrite_b=overwrite_b)
     if info > 0:
         raise LinAlgError("%d-th leading minor not positive definite" % info)
     if info < 0:
