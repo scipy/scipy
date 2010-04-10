@@ -1,5 +1,3 @@
-## Automatically adapted for scipy Oct 18, 2005 by
-
 #
 # Author: Travis Oliphant, March 2002
 #
@@ -13,8 +11,14 @@ from numpy import asarray, Inf, dot, floor, eye, diag, exp, \
      isfinite, sqrt, identity, single
 from numpy import matrix as mat
 import numpy as np
-from basic import solve, inv, norm, triu, all_mat
-from decomp import eig, schur, rsf2csf, orth, svd
+
+# Local imports
+from misc import norm
+from basic import solve, inv
+from special_matrices import triu, all_mat
+from decomp import eig
+from decomp_svd import orth, svd
+from decomp_schur import schur, rsf2csf
 
 eps = np.finfo(float).eps
 feps = np.finfo(single).eps

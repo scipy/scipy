@@ -14,12 +14,17 @@ Linear Algebra Basics::
    pinv       --- Pseudo-inverse (Moore-Penrose) using lstsq
    pinv2      --- Pseudo-inverse using svd
 
-Eigenvalues and Decompositions::
+Eigenvalue Problem::
 
    eig        --- Find the eigenvalues and vectors of a square matrix
    eigvals    --- Find the eigenvalues of a square matrix
+   eigh       --- Find the eigenvalues and eigenvectors of a complex Hermitian or real symmetric matrix.
+   eigvalsh   --- Find the eigenvalues of a complex Hermitian or real symmetric matrix.
    eig_banded --- Find the eigenvalues and vectors of a band matrix
    eigvals_banded --- Find the eigenvalues of a band matrix
+
+Decompositions::
+
    lu         --- LU decomposition of a matrix
    lu_factor  --- LU decomposition returning unordered matrix and pivots
    lu_solve   --- solve Ax=b using back substitution with output of lu_factor

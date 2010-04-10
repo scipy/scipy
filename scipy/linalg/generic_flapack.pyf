@@ -56,6 +56,57 @@ interface
      
    end subroutine <tchar=c,z>pbtrf
 
+
+   subroutine <tchar=s,d>pbtrs(lower, n, kd, nrhs, ab, ldab, b, ldb, info)
+
+     ! Solve a system of linear equations A*X = B with a symmetric
+     ! positive definite band matrix A using the Cholesky factorization.
+     ! AB is the triangular factur U or L from the Cholesky factorization
+     ! previously computed with *PBTRF.
+     ! A = U^T * U, AB = U if lower = 0
+     ! A = L * L^T, AB = L if lower = 1
+
+     callstatement (*f2py_func)((lower?"L":"U"),&n,&kd,&nrhs,ab,&ldab,b,&ldb,&info); 
+     callprotoargument char*,int*,int*,int*,<type_in_c>*,int*,<type_in_c>*,int*,int*
+
+     integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
+     integer intent(hide),depend(ab) :: n=shape(ab,1)
+     integer intent(hide),depend(ab) :: kd=shape(ab,0)-1
+     integer intent(hide),depend(b) :: ldb=shape(b,0)
+     integer intent(hide),depend(b) :: nrhs=shape(b,1)
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0   
+
+     <type_in> dimension(ldb, nrhs),intent(in,out,copy,out=x) :: b
+     <type_in> dimension(ldab,n),intent(in) :: ab
+     integer intent(out) :: info
+     
+   end subroutine <tchar=s,d>pbtrs
+
+   subroutine <tchar=c,z>pbtrs(lower, n, kd, nrhs, ab, ldab, b, ldb, info)
+
+     ! Solve a system of linear equations A*X = B with a symmetric
+     ! positive definite band matrix A using the Cholesky factorization.
+     ! AB is the triangular factur U or L from the Cholesky factorization
+     ! previously computed with *PBTRF.
+     ! A = U^T * U, AB = U if lower = 0
+     ! A = L * L^T, AB = L if lower = 1
+
+     callstatement (*f2py_func)((lower?"L":"U"),&n,&kd,&nrhs,ab,&ldab,b,&ldb,&info); 
+     callprotoargument char*,int*,int*,int*,<type_in_c>*,int*,<type_in_c>*,int*,int*
+
+     integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
+     integer intent(hide),depend(ab) :: n=shape(ab,1)
+     integer intent(hide),depend(ab) :: kd=shape(ab,0)-1
+     integer intent(hide),depend(b) :: ldb=shape(b,0)
+     integer intent(hide),depend(b) :: nrhs=shape(b,1)
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+
+     <type_in> dimension(ldb, nrhs),intent(in,out,copy,out=x) :: b
+     <type_in> dimension(ldab,n),intent(in) :: ab
+     integer intent(out) :: info
+     
+   end subroutine <tchar=c,z>pbtrs
+
    subroutine <tchar=s,d>pbsv(lower,n,kd,nrhs,ab,ldab,b,ldb,info)
    
      !

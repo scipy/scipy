@@ -20,8 +20,8 @@ Basics
    pinv
    pinv2
 
-Eigenvalues and Decompositions
-==============================
+Eigenvalue Problem
+==================
 
 .. autosummary::
    :toctree: generated/
@@ -32,6 +32,13 @@ Eigenvalues and Decompositions
    eigvalsh
    eig_banded
    eigvals_banded
+
+Decompositions
+==============
+
+.. autosummary::
+   :toctree: generated/
+
    lu
    lu_factor
    lu_solve
@@ -43,6 +50,7 @@ Eigenvalues and Decompositions
    cholesky_banded
    cho_factor
    cho_solve
+   cho_solve_banded
    qr
    schur
    rsf2csf

@@ -107,7 +107,7 @@ class TestSolveHBanded(TestCase):
         # with the RHS as a 1D array.
         ab = array([[-99, 1.0, 1.0], [4.0, 4.0, 4.0]])
         b = array([1.0, 4.0, 1.0])
-        c, x = solveh_banded(ab, b)
+        x = solveh_banded(ab, b)
         assert_array_almost_equal(x, [0.0, 1.0, 0.0])
 
     def test_02_upper(self):
@@ -121,7 +121,7 @@ class TestSolveHBanded(TestCase):
         b = array([[1.0, 4.0],
                    [4.0, 2.0],
                    [1.0, 4.0]])
-        c, x = solveh_banded(ab, b)
+        x = solveh_banded(ab, b)
         expected = array([[0.0, 1.0],
                           [1.0, 0.0],
                           [0.0, 1.0]])
@@ -135,7 +135,7 @@ class TestSolveHBanded(TestCase):
         # with the RHS as a 2D array with shape (3,1).
         ab = array([[-99, 1.0, 1.0], [4.0, 4.0, 4.0]])
         b = array([1.0, 4.0, 1.0]).reshape(-1,1)
-        c, x = solveh_banded(ab, b)
+        x = solveh_banded(ab, b)
         assert_array_almost_equal(x, array([0.0, 1.0, 0.0]).reshape(-1,1))
 
     def test_01_lower(self):
@@ -147,7 +147,7 @@ class TestSolveHBanded(TestCase):
         ab = array([[4.0, 4.0, 4.0],
                     [1.0, 1.0, -99]])
         b = array([1.0, 4.0, 1.0])
-        c, x = solveh_banded(ab, b, lower=True)
+        x = solveh_banded(ab, b, lower=True)
         assert_array_almost_equal(x, [0.0, 1.0, 0.0])
 
     def test_02_lower(self):
@@ -161,7 +161,7 @@ class TestSolveHBanded(TestCase):
         b = array([[1.0, 4.0],
                    [4.0, 2.0],
                    [1.0, 4.0]])
-        c, x = solveh_banded(ab, b, lower=True)
+        x = solveh_banded(ab, b, lower=True)
         expected = array([[0.0, 1.0],
                           [1.0, 0.0],
                           [0.0, 1.0]])
@@ -175,7 +175,7 @@ class TestSolveHBanded(TestCase):
         #
         ab = array([[-99, 1.0, 1.0], [4.0, 4.0, 4.0]], dtype=float32)
         b = array([1.0, 4.0, 1.0], dtype=float32)
-        c, x = solveh_banded(ab, b)
+        x = solveh_banded(ab, b)
         assert_array_almost_equal(x, [0.0, 1.0, 0.0])
 
     def test_02_float32(self):
@@ -189,7 +189,7 @@ class TestSolveHBanded(TestCase):
         b = array([[1.0, 4.0],
                    [4.0, 2.0],
                    [1.0, 4.0]], dtype=float32)
-        c, x = solveh_banded(ab, b)
+        x = solveh_banded(ab, b)
         expected = array([[0.0, 1.0],
                           [1.0, 0.0],
                           [0.0, 1.0]])
@@ -203,7 +203,7 @@ class TestSolveHBanded(TestCase):
         #
         ab = array([[-99, -1.0j, -1.0j], [4.0, 4.0, 4.0]])
         b = array([-1.0j, 4.0-1j, 4+1j])
-        c, x = solveh_banded(ab, b)
+        x = solveh_banded(ab, b)
         assert_array_almost_equal(x, [0.0, 1.0, 1.0])
 
     def test_02_complex(self):
@@ -217,7 +217,7 @@ class TestSolveHBanded(TestCase):
         b = array([[   -1j,    4.0j],
                    [4.0-1j, -1.0-1j],
                    [4.0+1j,     4.0]])
-        c, x = solveh_banded(ab, b)
+        x = solveh_banded(ab, b)
         expected = array([[0.0, 1.0j],
                           [1.0,  0.0],
                           [1.0,  1.0]])

@@ -17,8 +17,8 @@ Run tests if linalg is not installed:
 import numpy as np
 from numpy.testing import *
 
-from scipy.linalg import eig,eigvals,lu,svd,svdvals,cholesky,qr, \
-     schur,rsf2csf, lu_solve,lu_factor,solve,diagsvd,hessenberg,rq, \
+from scipy.linalg import eig, eigvals, lu, svd, svdvals, cholesky, qr, \
+     schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq, \
      eig_banded, eigvals_banded, eigh
 from scipy.linalg.flapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
      dsbev, dsbevd, dsbevx, zhbevd, zhbevx
@@ -837,7 +837,7 @@ class TestCholesky(TestCase):
             c = transpose(c)
             a = dot(c,transpose(conjugate(c)))
             assert_array_almost_equal(cholesky(a,lower=1),c)
-
+        
 
 class TestQR(TestCase):
 
