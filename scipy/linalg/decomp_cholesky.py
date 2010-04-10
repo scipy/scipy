@@ -219,6 +219,11 @@ def cho_solve_banded((cb, lower), b, overwrite_b=False):
     --------
     cholesky_banded : Cholesky factorization of a banded matrix
 
+    Notes
+    -----
+    
+    .. versionadded:: 0.8.0
+
     """
 
     cb = asarray_chkfinite(cb)

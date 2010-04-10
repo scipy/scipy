@@ -106,12 +106,16 @@ Several improvements to the `chirp` function in `scipy.signal` were made:
 
 A new function, `sweep_poly`, was added.
 
-New special matrix functions (scipy.linalg)
--------------------------------------------
-The functions `circulant` and `hadamard` were added to `scipy.linalg`.
+New functions and others changes in scipy.linalg
+------------------------------------------------
+The functions `circulant`, `hadamard` and `cho_solve_banded` were added
+to `scipy.linalg`.
 
 The function `block_diag` was enhanced to accept scalar and 1D arguments,
 along with the usual 2D arguments.
+
+The function `solveh_banded` no longer returns the Cholesky factorization.  It
+returns just the solution.
 
 ARPACK-based sparse SVD
 -----------------------
