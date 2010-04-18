@@ -110,7 +110,7 @@ RELEASE = 'doc/release/0.7.2-notes.rst'
 
 # Start/end of the log (from git)
 LOG_START = 'svn/tags/0.7.1'
-LOG_END = '0.7.x'
+LOG_END = 'svn/0.7.x'
 
 # Virtualenv bootstrap stuff
 BOOTSTRAP_DIR = "bootstrap"
