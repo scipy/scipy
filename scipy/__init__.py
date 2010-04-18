@@ -30,7 +30,7 @@ if majver < 1 or (majver == 1 and minver < 2):
                   UserWarning)
 
 # Suppress warnings due to a known harmless change in numpy 1.4.1
-if maxver == 1 and minver >= 4:
+if majver == 1 and minver >= 4:
     import warnings
     warnings.filterwarnings(action='ignore', message='.*numpy.dtype size changed.*')
     warnings.filterwarnings(action='ignore', message='.*numpy.flatiter size changed.*')
