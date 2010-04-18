@@ -336,19 +336,19 @@ def choose_compiler(compiler_name=''):
             compiler_name = 'unix'
     return compiler_name
 
-def gcc_exists(name = 'gcc'):
-    """ Test to make sure gcc is found
-
-        Does this return correct value on win98???
-    """
+def gcc_exists(name='gcc'):
+    """ Test to make sure gcc is found."""
     result = 0
     cmd = [str(name), '-v']
     try:
-        p = subprocess.Popen(cmd, True, stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT)
+        if sys.platform == 'win32':
+            p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT)
+        else:
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT)
         str_result = p.stdout.read()
-        #print str_result
-        if 'Reading specs' in str_result:
+        if 'specs' in str_result:
             result = 1
     except:
         # This was needed because the msvc compiler messes with
