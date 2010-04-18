@@ -346,7 +346,8 @@ class TestCephes(TestCase):
     def test_nrdtrimn(self):
         assert_approx_equal(cephes.nrdtrimn(0.5,1,1),1.0)
     def test_nrdtrisd(self):
-        assert_equal(cephes.nrdtrisd(0.5,0.5,0.5),0.0)
+        # abs() because nrdtrisd(0.5,0.5,0.5) returns -0.0, should be +0.0
+        assert_equal(np.abs(cephes.nrdtrisd(0.5,0.5,0.5)), 0.0)
 
     def test_obl_ang1(self):
         cephes.obl_ang1(1,1,1,0)
@@ -1409,7 +1410,7 @@ class TestBessel(TestCase):
                                        123.70194191713507279,
                                        129.02417238949092824,
                                        134.00114761868422559]), rtol=1e-13)
-        
+
         jn301 = jn_zeros(301,5)
         assert_tol_equal(jn301, array([313.59097866698830153,
                                        323.21549776096288280,
@@ -1422,7 +1423,7 @@ class TestBessel(TestCase):
         assert_tol_equal(jn0[260-1], 816.02884495068867280, rtol=1e-13)
         assert_tol_equal(jn0[280-1], 878.86068707124422606, rtol=1e-13)
         assert_tol_equal(jn0[300-1], 941.69253065317954064, rtol=1e-13)
-        
+
         jn10 = jn_zeros(10, 300)
         assert_tol_equal(jn10[260-1], 831.67668514305631151, rtol=1e-13)
         assert_tol_equal(jn10[280-1], 894.51275095371316931, rtol=1e-13)
@@ -1597,7 +1598,7 @@ class TestBessel(TestCase):
         an = yn_zeros(4,2)
         assert_array_almost_equal(an,array([ 5.64515,  9.36162]),5)
         an = yn_zeros(443,5)
-        assert_tol_equal(an, [450.13573091578090314, 463.05692376675001542, 
+        assert_tol_equal(an, [450.13573091578090314, 463.05692376675001542,
                               472.80651546418663566, 481.27353184725625838,
                               488.98055964441374646], rtol=1e-15)
 
@@ -1651,7 +1652,7 @@ class TestBessel(TestCase):
             for z in [-1300, -11, -10, -1, 1., 10., 200.5, 401., 600.5,
                       700.6, 1300, 10003]:
                 yield v, z
-                
+
         # check half-integers; these are problematic points at least
         # for cephes/iv
         for v in 0.5 + arange(-60, 60):
@@ -1744,12 +1745,12 @@ class TestBessel(TestCase):
         assert_tol_equal(iv(-2,   1+0j), 0.1357476697670383)
         assert_tol_equal(kv(-1,   1+0j), 0.6019072301972347)
         assert_tol_equal(kv(-2,   1+0j), 1.624838898635178)
-        
+
         assert_tol_equal(jv(-0.5, 1+0j), 0.43109886801837607952)
         assert_tol_equal(jv(-0.5, 1+1j), 0.2628946385649065-0.827050182040562j)
         assert_tol_equal(yv(-0.5, 1+0j), 0.6713967071418031)
         assert_tol_equal(yv(-0.5, 1+1j), 0.967901282890131+0.0602046062142816j)
-        
+
         assert_tol_equal(iv(-0.5, 1+0j), 1.231200214592967)
         assert_tol_equal(iv(-0.5, 1+1j), 0.77070737376928+0.39891821043561j)
         assert_tol_equal(kv(-0.5, 1+0j), 0.4610685044478945)
@@ -1876,7 +1877,7 @@ class TestBessel(TestCase):
         y=(iv(0,2)+iv(2,2))/2
         x = ivp(1,2)
         assert_almost_equal(x,y,10)
-    
+
 
 class TestLaguerre(TestCase):
     def test_laguerre(self):
@@ -2048,7 +2049,7 @@ class TestParabolicCylinder(TestCase):
         eps = 1e-7 + 1e-7*abs(x)
         dp = (pbdv(eta, x + eps)[0] - pbdv(eta, x - eps)[0]) / eps / 2.
         assert_tol_equal(p[1], dp, rtol=1e-6, atol=1e-6)
-        
+
     def test_pbvv_gradient(self):
         x = np.linspace(-4, 4, 8)[:,None]
         eta = np.linspace(-10, 10, 5)[None,:]
@@ -2057,7 +2058,7 @@ class TestParabolicCylinder(TestCase):
         eps = 1e-7 + 1e-7*abs(x)
         dp = (pbvv(eta, x + eps)[0] - pbvv(eta, x - eps)[0]) / eps / 2.
         assert_tol_equal(p[1], dp, rtol=1e-6, atol=1e-6)
-        
+
 
 class TestPolygamma(TestCase):
     # from Table 6.2 (pg. 271) of A&S
