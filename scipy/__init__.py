@@ -29,6 +29,12 @@ if majver < 1 or (majver == 1 and minver < 2):
                   "scipy (detected version %s)" % _num.version.version,
                   UserWarning)
 
+# Suppress warnings due to a known harmless change in numpy 1.4.1
+if maxver == 1 and minver >= 4:
+    import warnings
+    warnings.filterwarnings(action='ignore', message='.*numpy.dtype size changed.*')
+    warnings.filterwarnings(action='ignore', message='.*numpy.flatiter size changed.*')
+
 __all__ += ['oldnumeric']+_num.__all__
 
 __all__ += ['randn', 'rand', 'fft', 'ifft']
