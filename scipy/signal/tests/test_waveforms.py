@@ -174,6 +174,48 @@ class TestChirp(TestCase):
         t = np.linspace(0, t1, 10)        
         assert_raises(ValueError, waveforms.chirp, t, f0, t1, f1, method)
 
+    def test_integer_t1(self): 
+        f0 = 10.0
+        f1 = 20.0
+        t = np.linspace(-1, 1, 11)
+        t1 = 3.0
+        float_result = waveforms.chirp(t, f0, t1, f1)
+        t1 = 3
+        int_result = waveforms.chirp(t, f0, t1, f1)
+        err_msg = "Integer input 't1=3' gives wrong result" 
+        assert_equal(int_result, float_result, err_msg=err_msg)
+
+    def test_integer_f0(self): 
+        f1 = 20.0
+        t1 = 3.0
+        t = np.linspace(-1, 1, 11)
+        f0 = 10.0
+        float_result = waveforms.chirp(t, f0, t1, f1)
+        f0 = 10
+        int_result = waveforms.chirp(t, f0, t1, f1)
+        err_msg = "Integer input 'f0=10' gives wrong result" 
+        assert_equal(int_result, float_result, err_msg=err_msg) 
+
+    def test_integer_f1(self):
+        f0 = 10.0
+        t1 = 3.0
+        t = np.linspace(-1, 1, 11)
+        f1 = 20.0
+        float_result = waveforms.chirp(t, f0, t1, f1)
+        f1 = 20
+        int_result = waveforms.chirp(t, f0, t1, f1)
+        err_msg = "Integer input 'f1=20' gives wrong result" 
+        assert_equal(int_result, float_result, err_msg=err_msg) 
+
+    def test_integer_all(self):
+        f0 = 10
+        t1 = 3
+        f1 = 20
+        t = np.linspace(-1, 1, 11)
+        float_result = waveforms.chirp(t, float(f0), float(t1), float(f1))
+        int_result = waveforms.chirp(t, f0, t1, f1)
+        err_msg = "Integer input 'f0=10, t1=3, f1=20' gives wrong result" 
+        assert_equal(int_result, float_result, err_msg=err_msg) 
 
 class TestSweepPoly(TestCase):
 
@@ -241,6 +283,34 @@ class TestSweepPoly(TestCase):
         expected = np.poly1d(p)(tf)
         abserr = np.max(np.abs(f - expected))
         assert_(abserr < 1e-6)
+
+
+class TestGaussPulse(TestCase):
+    
+    def test_integer_fc(self):
+        float_result = waveforms.gausspulse('cutoff', fc=1000.0)
+        int_result = waveforms.gausspulse('cutoff', fc=1000)
+        err_msg = "Integer input 'fc=1000' gives wrong result"
+        assert_equal(int_result, float_result, err_msg=err_msg)
+
+    def test_integer_bw(self):
+        float_result = waveforms.gausspulse('cutoff', bw=1.0)
+        int_result = waveforms.gausspulse('cutoff', bw=1)
+        err_msg = "Integer input 'bw=1' gives wrong result"
+        assert_equal(int_result, float_result, err_msg=err_msg)
+
+    def test_integer_bwr(self):
+        float_result = waveforms.gausspulse('cutoff', bwr=-6.0)
+        int_result = waveforms.gausspulse('cutoff', bwr=-6)
+        err_msg = "Integer input 'bwr=-6' gives wrong result"
+        assert_equal(int_result, float_result, err_msg=err_msg)
+
+    def test_integer_tpr(self):
+        float_result = waveforms.gausspulse('cutoff', tpr=-60.0)
+        int_result = waveforms.gausspulse('cutoff', tpr=-60)
+        err_msg = "Integer input 'tpr=-60' gives wrong result"
+        assert_equal(int_result, float_result, err_msg=err_msg)
+
 
 if __name__ == "__main__":
     run_module_suite()

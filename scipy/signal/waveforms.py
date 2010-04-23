@@ -116,18 +116,18 @@ def gausspulse(t,fc=1000,bw=0.5,bwr=-6,tpr=-60,retquad=0,retenv=0):
 
     # exp(-a t^2) <->  sqrt(pi/a) exp(-pi^2/a * f^2)  = g(f)
 
-    ref = pow(10, bwr/ 20)
+    ref = pow(10.0, bwr / 20.0)
     # fdel = fc*bw/2:  g(fdel) = ref --- solve this for a
     #
     # pi^2/a * fc^2 * bw^2 /4=-log(ref)
-    a = -(pi*fc*bw)**2 / (4*log(ref))
+    a = -(pi*fc*bw)**2 / (4.0*log(ref))
 
     if t == 'cutoff': # compute cut_off point
         #  Solve exp(-a tc**2) = tref  for tc
         #   tc = sqrt(-log(tref) / a) where tref = 10^(tpr/20)
         if tpr >= 0:
             raise ValueError, "Reference level for time cutoff must be < 0 dB"
-        tref = pow(10, tpr / 20)
+        tref = pow(10.0, tpr / 20.0)
         return sqrt(-log(tref)/a)
 
     yenv = exp(-a*t*t)
@@ -242,6 +242,9 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
     chirp_phase for a description of the arguments.
 
     """
+    f0 = float(f0)
+    t1 = float(t1)
+    f1 = float(f1)
     if method in ['linear', 'lin', 'li']:
         beta = (f1 - f0) / t1
         phase = 2*pi * (f0*t + 0.5*beta*t*t)
