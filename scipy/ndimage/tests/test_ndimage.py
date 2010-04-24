@@ -48,6 +48,8 @@ def diff(a, b):
         a = numpy.asarray(a, numpy.complex128)
         b = numpy.asarray(b, numpy.complex128)
         t = ((a.real - b.real)**2).sum() + ((a.imag - b.imag)**2).sum()
+    if (a.dtype == numpy.object or b.dtype == numpy.object):
+        t = sum([diff(c,d)**2 for c,d in zip(a,b)])
     else:
         a = numpy.asarray(a)
         a = a.astype(numpy.float64)
@@ -2777,14 +2779,7 @@ class TestNdimage(TestCase):
             input = numpy.array([[1, 2], [3, 4]], type)
             output = ndimage.sum(input, labels = labels,
                                             index = [4, 8, 2])
-            self.failUnless(output == [4.0, 0.0, 5.0])
-
-    def test_sum13(self):
-        "sum 13"
-        input = numpy.array([1,2,3,4])
-        labels = numpy.array([0,0,0,0])
-        index = numpy.array([0],numpy.uint64)
-        self.failUnlessRaises(ValueError,ndimage.sum,input,labels,index)
+            self.failUnless(numpy.all(output == [4.0, 0.0, 5.0]))
 
     def test_mean01(self):
         "mean 1"
@@ -2817,7 +2812,8 @@ class TestNdimage(TestCase):
             input = numpy.array([[1, 2], [3, 4]], type)
             output = ndimage.mean(input, labels = labels,
                                             index = [4, 8, 2])
-            self.failUnless(output == [4.0, 0.0, 2.5])
+            self.failUnless(numpy.all(output[[0,2]] == [4.0, 2.5]) and
+                            numpy.isnan(output[1]))
 
     def test_minimum01(self):
         "minimum 1"
@@ -2850,7 +2846,7 @@ class TestNdimage(TestCase):
             input = numpy.array([[1, 2], [3, 4]], type)
             output = ndimage.minimum(input, labels = labels,
                                                index = [2, 3, 8])
-            self.failUnless(output == [2.0, 4.0, 0.0])
+            self.failUnless(numpy.all(output == [2.0, 4.0, 0.0]))
 
     def test_maximum01(self):
         "maximum 1"
@@ -2883,7 +2879,7 @@ class TestNdimage(TestCase):
             input = numpy.array([[1, 2], [3, 4]], type)
             output = ndimage.maximum(input, labels = labels,
                                                index = [2, 3, 8])
-            self.failUnless(output == [3.0, 4.0, 0.0])
+            self.failUnless(numpy.all(output == [3.0, 4.0, 0.0]))
 
     def test_maximum05(self):
         "Ticket #501"
@@ -2895,7 +2891,7 @@ class TestNdimage(TestCase):
         for type in self.types:
             input = numpy.array([], type)
             output = ndimage.variance(input)
-            self.failUnless(float(output) == 0.0)
+            self.failUnless(numpy.isnan(output))
 
     def test_variance02(self):
         "variance 2"
@@ -2909,13 +2905,13 @@ class TestNdimage(TestCase):
         for type in self.types:
             input = numpy.array([1, 3], type)
             output = ndimage.variance(input)
-            self.failUnless(output == 2.0)
+            self.failUnless(output == 1.0)
 
     def test_variance04(self):
         "variance 4"
         input = numpy.array([1, 0], bool)
         output = ndimage.variance(input)
-        self.failUnless(output == 0.5)
+        self.failUnless(output == 0.25)
 
     def test_variance05(self):
         "variance 5"
@@ -2923,7 +2919,7 @@ class TestNdimage(TestCase):
         for type in self.types:
             input = numpy.array([1, 3, 8], type)
             output = ndimage.variance(input, labels, 2)
-            self.failUnless(output == 2.0)
+            self.failUnless(output == 1.0)
 
     def test_variance06(self):
         "variance 6"
@@ -2931,14 +2927,14 @@ class TestNdimage(TestCase):
         for type in self.types:
             input = numpy.array([1, 3, 8, 10, 8], type)
             output = ndimage.variance(input, labels, [2, 3, 4])
-            self.failUnless(output == [2.0, 2.0, 0.0])
+            self.failUnless(numpy.all(output == [1.0, 1.0, 0.0]))
 
     def test_standard_deviation01(self):
         "standard deviation 1"
         for type in self.types:
             input = numpy.array([], type)
             output = ndimage.standard_deviation(input)
-            self.failUnless(float(output) == 0.0)
+            self.failUnless(numpy.isnan(output))
 
     def test_standard_deviation02(self):
         "standard deviation 2"
@@ -2952,13 +2948,13 @@ class TestNdimage(TestCase):
         for type in self.types:
             input = numpy.array([1, 3], type)
             output = ndimage.standard_deviation(input)
-            self.failUnless(output == math.sqrt(2.0))
+            self.failUnless(output == math.sqrt(1.0))
 
     def test_standard_deviation04(self):
         "standard deviation 4"
         input = numpy.array([1, 0], bool)
         output = ndimage.standard_deviation(input)
-        self.failUnless(output == math.sqrt(0.5))
+        self.failUnless(output == 0.5)
 
     def test_standard_deviation05(self):
         "standard deviation 5"
@@ -2966,7 +2962,7 @@ class TestNdimage(TestCase):
         for type in self.types:
             input = numpy.array([1, 3, 8], type)
             output = ndimage.standard_deviation(input, labels, 2)
-            self.failUnless(output == math.sqrt(2.0))
+            self.failUnless(output == 1.0)
 
     def test_standard_deviation06(self):
         "standard deviation 6"
@@ -2975,8 +2971,7 @@ class TestNdimage(TestCase):
             input = numpy.array([1, 3, 8, 10, 8], type)
             output = ndimage.standard_deviation(input, labels,
                                                           [2, 3, 4])
-            self.failUnless(output == [math.sqrt(2.0), math.sqrt(2.0),
-                                       0.0])
+            self.failUnless(all(output == [1.0, 1.0, 0.0]))
 
     def test_minimum_position01(self):
         "minimum position 1"
@@ -3041,7 +3036,7 @@ class TestNdimage(TestCase):
                                     [1, 5, 1, 1]], type)
             output = ndimage.minimum_position(input, labels,
                                                         [2, 3])
-            self.failUnless(output == [(0, 1), (1, 2)])
+            self.failUnless(output[0] == (0, 1) and output[1] == (1, 2))
 
     def test_maximum_position01(self):
         "maximum position 1"
@@ -3098,7 +3093,7 @@ class TestNdimage(TestCase):
                                     [1, 5, 1, 1]], type)
             output = ndimage.maximum_position(input, labels,
                                                         [1, 2])
-            self.failUnless(output == [(0, 0), (1, 1)])
+            self.failUnless(output[0] == (0, 0) and output[1] == (1, 1))
 
     def test_extrema01(self):
         "extrema 1"
@@ -3148,8 +3143,10 @@ class TestNdimage(TestCase):
                                         labels = labels, index = [2, 3, 8])
             output5 = ndimage.maximum_position(input,
                                         labels = labels, index = [2, 3, 8])
-            self.failUnless(output1 == (output2, output3, output4,
-                                        output5))
+            self.failUnless(numpy.all(output1[0] == output2))
+            self.failUnless(numpy.all(output1[1] == output3))
+            self.failUnless(numpy.all(output1[2]  == output4))
+            self.failUnless(numpy.all(output1[3]  == output5))
 
     def test_extrema04(self):
         "extrema 4"
@@ -3165,8 +3162,10 @@ class TestNdimage(TestCase):
                                                          [1, 2])
             output5 = ndimage.maximum_position(input, labels,
                                                          [1, 2])
-            self.failUnless(output1 == (output2, output3, output4,
-                                        output5))
+            self.failUnless(numpy.all(output1[0] == output2))
+            self.failUnless(numpy.all(output1[1] == output3))
+            self.failUnless(numpy.all(output1[2] == output4))
+            self.failUnless(numpy.all(output1[3] == output5))
 
     def test_center_of_mass01(self):
         "center of mass 1"
@@ -3260,7 +3259,7 @@ class TestNdimage(TestCase):
     def test_histogram02(self):
         "histogram 2"
         labels = [1, 1, 1, 1, 2, 2, 2, 2]
-        true = [0, 2, 0, 1, 0]
+        true = [0, 2, 0, 1, 1]
         input = numpy.array([1, 1, 3, 4, 3, 3, 3, 3])
         output = ndimage.histogram(input, 0, 4, 5, labels, 1)
         e = diff(true, output)
@@ -3269,7 +3268,7 @@ class TestNdimage(TestCase):
     def test_histogram03(self):
         "histogram 3"
         labels = [1, 0, 1, 1, 2, 2, 2, 2]
-        true1 = [0, 1, 0, 1, 0]
+        true1 = [0, 1, 0, 1, 1]
         true2 = [0, 0, 0, 3, 0]
         input = numpy.array([1, 1, 3, 4, 3, 5, 3, 3])
         output = ndimage.histogram(input, 0, 4, 5, labels, (1,2))

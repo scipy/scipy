@@ -34,6 +34,7 @@ import numpy
 import _ni_support
 import _nd_image
 import morphology
+import time
 
 def label(input, structure = None, output = None):
     """
@@ -180,7 +181,160 @@ def find_objects(input, max_label = 0):
         max_label = input.max()
     return _nd_image.find_objects(input, max_label)
 
-def sum(input, labels=None, index=None):
+def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_positions=False):
+    '''Roughly equivalent to [func(input[labels == i]) for i in index].
+
+    Special cases:
+      - index a scalar: returns a single value
+      - index is None: returns func(inputs[labels > 0])
+
+    func will be called with linear indices as a second argument if
+    pass_positions is True.
+    '''
+    
+    as_scalar = numpy.isscalar(index)
+    input = numpy.asarray(input)
+
+    if pass_positions:
+        positions = numpy.arange(input.size).reshape(input.shape)
+
+    if labels is None:
+        if index is not None:
+            raise ValueError, "index without defined labels"
+        if not pass_positions:
+            return func(input.ravel())
+        else:
+            return func(input.ravel(), positions.ravel())
+
+    try:
+        input, labels = numpy.broadcast_arrays(input, labels)
+    except ValueError:
+        raise ValueError, "input and labels must have the same shape (excepting dimensions with width 1)"
+
+    if index is None:
+        if not pass_positions:
+            return func(input[labels > 0])
+        else:
+            return func(input[labels > 0], positions[labels > 0])
+
+    index = numpy.atleast_1d(index)
+    if any(index.astype(labels.dtype).astype(index.dtype) != index):
+        raise ValueError, "Cannot convert index values from <%s> to <%s> (labels' type) without loss of precision"%(index.dtype, labels.dtype)
+    index = index.astype(labels.dtype)
+
+    # optimization: find min/max in index, and select those parts of labels, input, and positions
+    lo = index.min()
+    hi = index.max()
+    mask = (labels >= lo) & (labels <= hi)
+
+    # this also ravels the arrays
+    labels = labels[mask]
+    input = input[mask]
+    if pass_positions:
+        positions = positions[mask]
+
+    # sort everything by labels
+    label_order = labels.argsort()
+    labels = labels[label_order]
+    input = input[label_order]
+    if pass_positions:
+        positions = positions[label_order]
+    
+    index_order = index.argsort()
+    sorted_index = index[index_order]
+
+    def do_map(inputs, output):
+        '''labels must be sorted'''
+        
+        nlabels = labels.size
+        nidx = sorted_index.size
+
+        # Find boundaries for each stretch of constant labels
+        # This could be faster, but we already paid N log N to sort labels.
+        lo = numpy.searchsorted(labels, sorted_index, side='left')
+        hi = numpy.searchsorted(labels, sorted_index, side='right')
+    
+        for i, l, h in zip(range(nidx), lo, hi):
+            if l == h:
+                continue
+            idx = sorted_index[i]
+            output[i] = func(*[inp[l:h] for inp in inputs])
+            
+    temp = numpy.empty(index.shape, out_dtype)
+    temp[:] = default
+    if not pass_positions:
+        do_map([input], temp)
+    else:
+        do_map([input, positions], temp)
+    output = numpy.zeros(index.shape, out_dtype)
+    output[index_order] = temp
+
+    if as_scalar:
+        output = output[0]
+
+    return output
+
+def _stats(input, labels = None, index = None, do_sum2=False):
+    '''returns count, sum, and optionally sum^2 by label'''
+
+    def single_group(vals):
+        if do_sum2:
+            return vals.size, vals.sum(), (vals * vals.conjugate()).sum()
+        else:
+            return vals.size, vals.sum()
+        
+    if labels is None:
+        return single_group(input)
+
+    # ensure input and labels match sizes
+    input, labels = numpy.broadcast_arrays(input, labels)
+
+    if index is None:
+        return single_group(input[labels > 0])
+
+    if numpy.isscalar(index):
+        return single_group(input[labels == index])
+
+    # remap labels to unique integers if necessary, or if the largest
+    # label is larger than the number of values.
+    if ((not numpy.issubdtype(labels.dtype, numpy.int)) or 
+        (labels.min() < 0) or (labels.max() > labels.size)):
+        unique_labels, new_labels = numpy.unique1d(labels, return_inverse=True)
+
+        counts = numpy.bincount(new_labels)
+        sums = numpy.bincount(new_labels, weights=input.ravel())
+        if do_sum2:
+            sums2 = numpy.bincount(new_labels, weights=(input * input.conjugate()).ravel())
+
+        idxs = numpy.searchsorted(unique_labels, index)
+        # make all of idxs valid
+        idxs[idxs >= unique_labels.size] = 0
+        found = (unique_labels[idxs] == index)
+    else:
+        # labels are an integer type, and there aren't too many, so
+        # call bincount directly.
+        counts = numpy.bincount(labels.ravel())
+        sums = numpy.bincount(labels.ravel(), weights=input.ravel())
+        if do_sum2:
+            sums2 = numpy.bincount(labels.ravel(), weights=(input * input.conjugate()).ravel())
+
+        # make sure all index values are valid
+        idxs = numpy.asanyarray(index, numpy.int).copy()
+        found = (idxs >= 0) & (idxs < counts.size)
+        idxs[~ found] = 0
+
+    counts = counts[idxs]
+    counts[~ found] = 0
+    sums = sums[idxs]
+    sums[~ found] = 0
+    if not do_sum2:
+        return (counts, sums)    
+    sums2 = sums2[idxs]
+    sums2[~ found] = 0
+    return (counts, sums, sums2)
+
+        
+def sum(input, labels = None, index = None):
     """Calculate the sum of the values of the array.
 
     :Parameters:
@@ -201,247 +355,252 @@ def sum(input, labels=None, index=None):
     [1.0, 5.0]
 
     """
-    input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError, 'Complex type not supported'
-    if labels is not None:
-        labels = numpy.asarray(labels)
-        labels = _broadcast(labels, input.shape)
-
-        if labels.shape != input.shape:
-            raise RuntimeError, 'input and labels shape are not equal'
-    if index is not None:
-        T = getattr(index,'dtype',numpy.int32)
-        if T not in [numpy.int8, numpy.int16, numpy.int32,
-                     numpy.uint8, numpy.uint16, numpy.bool]:
-            raise ValueError("Invalid index type")
-        index = numpy.asarray(index,dtype=T)
-    return _nd_image.statistics(input, labels, index, 0)
-
+    count, sum = _stats(input, labels, index)
+    return sum
 
 def mean(input, labels = None, index = None):
-    """Calculate the mean of the values of the array.
+    """Calculate the mean of the values of an array at labels.
 
-    The index parameter is a single label number or a sequence of
-    label numbers of the objects to be measured. If index is None, all
-    values are used where labels is larger than zero.
+    Labels must be None or an array that can be broadcast to the input.
+
+    Index must be None, a single label or sequence of labels.  If
+    None, the mean for all values where label is greater than 0 is
+    calculated.
     """
-    input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError, 'Complex type not supported'
-    if labels is not None:
-        labels = numpy.asarray(labels)
-        labels = _broadcast(labels, input.shape)
 
-        if labels.shape != input.shape:
-            raise RuntimeError, 'input and labels shape are not equal'
-    return _nd_image.statistics(input, labels, index, 1)
-
+    count, sum = _stats(input, labels, index)
+    return sum / numpy.asanyarray(count).astype(numpy.float)
 
 def variance(input, labels = None, index = None):
-    """Calculate the variance of the values of the array.
+    """Calculate the variance of the values of an array at labels.
 
-    The index parameter is a single label number or a sequence of
-    label numbers of the objects to be measured. If index is None, all
-    values are used where labels is larger than zero.
+    Labels must be None or an array of the same dimensions as the input.  
+
+    Index must be None, a single label or sequence of labels.  If
+    none, all values where label is greater than zero are used.
     """
-    input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError, 'Complex type not supported'
-    if labels is not None:
-        labels = numpy.asarray(labels)
-        labels = _broadcast(labels, input.shape)
 
-        if labels.shape != input.shape:
-            raise RuntimeError, 'input and labels shape are not equal'
-    return _nd_image.statistics(input, labels, index, 2)
+    count, sum, sum2 = _stats(input, labels, index, do_sum2=True)
+    mean = sum / numpy.asanyarray(count).astype(numpy.float)
+    mean2 = sum2 / numpy.asanyarray(count).astype(numpy.float)
 
+    return mean2 - (mean * mean.conjugate())
 
 def standard_deviation(input, labels = None, index = None):
-    """Calculate the standard deviation of the values of the array.
+    """Calculate the standard deviation of the values of an array at labels.
 
-    The index parameter is a single label number or a sequence of
-    label numbers of the objects to be measured. If index is None, all
-    values are used where labels is larger than zero.
+    Labels must be None or an array of the same dimensions as the input.  
+
+    Index must be None, a single label or sequence of labels.  If
+    none, all values where label is greater than zero are used.
     """
-    var = variance(input, labels, index)
-    if (isinstance(var, types.ListType)):
-        return [math.sqrt(x) for x in var]
-    else:
-        return math.sqrt(var)
 
+    return numpy.sqrt(variance(input, labels, index))
+
+def _select(input, labels = None, index = None, find_min=False, find_max=False, find_min_positions=False, find_max_positions=False):
+    '''returns min, max, or both, plus positions if requested'''
+
+
+    find_positions = find_min_positions or find_max_positions
+    positions = None
+    if find_positions:
+        positions = numpy.arange(input.size).reshape(input.shape)
+
+    def single_group(vals, positions):
+        result = []
+        if find_min:
+            result += [vals.min()]
+        if find_min_positions:
+            result += [positions[vals == vals.min()][0]]
+        if find_max:
+            result += [vals.max()]
+        if find_max_positions:
+            result += [positions[vals == vals.max()][0]]
+        return result
+        
+    if labels is None:
+        return single_group(input, positions)
+
+    # ensure input and labels match sizes
+    input, labels = numpy.broadcast_arrays(input, labels)
+
+    if index is None:
+        mask = (labels > 0)
+        return single_group(input[mask], positions[mask] if find_positions else None)
+
+    if numpy.isscalar(index):
+        mask = (labels == index)
+        return single_group(input[mask], positions[mask] if find_positions else None)
+
+    order = input.ravel().argsort()
+    input = input.ravel()[order]
+    labels = labels.ravel()[order]
+    if find_positions:
+        positions = positions.ravel()[order]
+
+    # remap labels to unique integers if necessary, or if the largest
+    # label is larger than the number of values.
+    if ((not numpy.issubdtype(labels.dtype, numpy.int)) or 
+        (labels.min() < 0) or (labels.max() > labels.size)):
+        # remap labels, and indexes
+        unique_labels, labels = numpy.unique1d(labels, return_inverse=True)
+        idxs = numpy.searchsorted(unique_labels, index)
+
+        # make all of idxs valid
+        idxs[idxs >= unique_labels.size] = 0
+        found = (unique_labels[idxs] == index)
+    else:
+        # labels are an integer type, and there aren't too many.
+        idxs = numpy.asanyarray(index, numpy.int).copy()
+        found = (idxs >= 0) & (idxs <= labels.max())
+    
+    idxs[~ found] = labels.max() + 1
+
+    result = []
+    if find_min:
+        mins = numpy.zeros(labels.max() + 2, input.dtype)
+        mins[labels[::-1]] = input[::-1]
+        result += [mins[idxs]]
+    if find_min_positions:
+        minpos = numpy.zeros(labels.max() + 2)
+        minpos[labels[::-1]] = positions[::-1]
+        result += [minpos[idxs]]
+    if find_max:
+        maxs = numpy.zeros(labels.max() + 2, input.dtype)
+        maxs[labels] = input
+        result += [maxs[idxs]]
+    if find_max_positions:
+        maxpos = numpy.zeros(labels.max() + 2)
+        maxpos[labels] = positions
+        result += [maxpos[idxs]]
+    return result
 
 def minimum(input, labels = None, index = None):
-    """Calculate the minimum of the values of the array.
+    """Calculate the minimum of the values of an array at labels.
 
-    The index parameter is a single label number or a sequence of
-    label numbers of the objects to be measured. If index is None, all
-    values are used where labels is larger than zero.
+    Labels must be None or an array of the same dimensions as the input.  
+
+    Index must be None, a single label or sequence of labels.  If
+    none, all values where label is greater than zero are used.
     """
-    input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError, 'Complex type not supported'
-    if labels is not None:
-        labels = numpy.asarray(labels)
-        labels = _broadcast(labels, input.shape)
+    return _select(input, labels, index, find_min=True)[0]
 
-        if labels.shape != input.shape:
-            raise RuntimeError, 'input and labels shape are not equal'
-    return _nd_image.statistics(input, labels, index, 3)
+def maximum(input, labels = None, index = None):
+    """Calculate the maximum of the values of an array at labels.
 
+    Labels must be None or an array of the same dimensions as the input.  
 
-def maximum(input, labels=None, index=None):
-    """Return the maximum input value.
-
-    The index parameter is a single label number or a sequence of
-    label numbers of the objects to be measured. If index is None, all
-    values are used where labels is larger than zero.
-
+    Index must be None, a single label or sequence of labels.  If
+    none, all values where label is greater than zero are used.
     """
-    input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError, 'Complex type not supported'
-    if labels is not None:
-        labels = numpy.asarray(labels)
-        labels = _broadcast(labels, input.shape)
-
-        if labels.shape != input.shape:
-            raise RuntimeError, 'input and labels shape are not equal'
-    return _nd_image.statistics(input, labels, index, 4)
-
-
-def _index_to_position(index, shape):
-    """Convert a linear index to a position"""
-    if len(shape) > 0:
-        pos = []
-        stride = numpy.multiply.reduce(shape)
-        for size in shape:
-            stride = stride // size
-            pos.append(index // stride)
-            index -= pos[-1] * stride
-        return tuple(pos)
-    else:
-        return 0
-
+    return _select(input, labels, index, find_max=True)[0]
 
 def minimum_position(input, labels = None, index = None):
-    """Find the position of the minimum of the values of the array.
+    """Find the positions of the minimums of the values of an array at labels.
 
-    The index parameter is a single label number or a sequence of
-    label numbers of the objects to be measured. If index is None, all
-    values are used where labels is larger than zero.
+    Labels must be None or an array of the same dimensions as the input.  
+
+    Index must be None, a single label or sequence of labels.  If
+    none, all values where label is greater than zero are used.
     """
-    input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError, 'Complex type not supported'
-    if labels is not None:
-        labels = numpy.asarray(labels)
-        labels = _broadcast(labels, input.shape)
+    
+    dims = numpy.array(numpy.asarray(input).shape)
+    # see numpy.unravel_index to understand this line.
+    dim_prod = numpy.cumprod([1] + list(dims[:0:-1]))[::-1]
 
-        if labels.shape != input.shape:
-            raise RuntimeError, 'input and labels shape are not equal'
-    pos = _nd_image.statistics(input, labels, index, 5)
-    if (isinstance(pos, types.ListType)):
-        return [_index_to_position(x, input.shape) for x in pos]
-    else:
-        return _index_to_position(pos, input.shape)
+    result = _select(input, labels, index, find_min_positions=True)[0]
 
+    if numpy.isscalar(result):
+        return tuple((result // dim_prod) % dims)
+
+    return [tuple(v) for v in (result.reshape(-1, 1) // dim_prod) % dims]
 
 def maximum_position(input, labels = None, index = None):
-    """Find the position of the maximum of the values of the array.
+    """Find the positions of the maximums of the values of an array at labels.
 
-    The index parameter is a single label number or a sequence of
-    label numbers of the objects to be measured. If index is None, all
-    values are used where labels is larger than zero.
+    Labels must be None or an array of the same dimensions as the input.  
+
+    Index must be None, a single label or sequence of labels.  If
+    none, all values where label is greater than zero are used.
     """
-    input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError, 'Complex type not supported'
-    if labels is not None:
-        labels = numpy.asarray(labels)
-        labels = _broadcast(labels, input.shape)
+    
+    dims = numpy.array(numpy.asarray(input).shape)
+    # see numpy.unravel_index to understand this line.
+    dim_prod = numpy.cumprod([1] + list(dims[:0:-1]))[::-1]
 
-        if labels.shape != input.shape:
-            raise RuntimeError, 'input and labels shape are not equal'
-    pos = _nd_image.statistics(input, labels, index, 6)
-    if (isinstance(pos, types.ListType)):
-        return [_index_to_position(x, input.shape) for x in pos]
-    else:
-        return _index_to_position(pos, input.shape)
+    result = _select(input, labels, index, find_max_positions=True)[0]
 
+    if numpy.isscalar(result):
+        return tuple((result // dim_prod) % dims)
+
+    return [tuple(v) for v in (result.reshape(-1, 1) // dim_prod) % dims]
 
 def extrema(input, labels = None, index = None):
-    """Calculate the minimum, the maximum and their positions of the
-       values of the array.
+    """Calculate the minimums and maximums of the values of an array
+    at labels, along with their positions.
 
-    The index parameter is a single label number or a sequence of
-    label numbers of the objects to be measured. If index is None, all
-    values are used where labels is larger than zero.
+    Labels must be None or an array of the same dimensions as the input.  
+
+    Index must be None, a single label or sequence of labels.  If
+    none, all values where label is greater than zero are used.
+    
+    Returns: minimums, maximums, min_positions, max_positions
     """
-    input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError, 'Complex type not supported'
-    if labels is not None:
-        labels = numpy.asarray(labels)
-        labels = _broadcast(labels, input.shape)
+    
+    dims = numpy.array(numpy.asarray(input).shape)
+    # see numpy.unravel_index to understand this line.
+    dim_prod = numpy.cumprod([1] + list(dims[:0:-1]))[::-1]
 
-        if labels.shape != input.shape:
-            raise RuntimeError, 'input and labels shape are not equal'
+    minimums, min_positions, maximums, max_positions = _select(input, labels, index, 
+                                                               find_min=True, find_max=True, 
+                                                               find_min_positions=True, find_max_positions=True)
 
 
-    min, max, minp, maxp = _nd_image.statistics(input, labels, index, 7)
-    if (isinstance(minp, types.ListType)):
-        minp = [_index_to_position(x, input.shape) for x in minp]
-        maxp = [_index_to_position(x, input.shape) for x in maxp]
-    else:
-        minp = _index_to_position(minp, input.shape)
-        maxp = _index_to_position(maxp, input.shape)
-    return min, max, minp, maxp
+    if numpy.isscalar(minimums):
+        return minimums, maximums, tuple((min_positions // dim_prod) % dims), tuple((max_positions // dim_prod) % dims)
 
+    min_positions = [tuple(v) for v in (min_positions.reshape(-1, 1) // dim_prod) % dims]
+    max_positions = [tuple(v) for v in (max_positions.reshape(-1, 1) // dim_prod) % dims]
+
+    return minimums, maximums, min_positions, max_positions
 
 def center_of_mass(input, labels = None, index = None):
-    """Calculate the center of mass of of the array.
+    """Calculate the center of mass of the values of an array at labels.
 
-    The index parameter is a single label number or a sequence of
-    label numbers of the objects to be measured. If index is None, all
-    values are used where labels is larger than zero.
+    Labels must be None or an array of the same dimensions as the input.  
+
+    Index must be None, a single label or sequence of labels.  If
+    none, all values where label is greater than zero are used.
     """
-    input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError, 'Complex type not supported'
-    if labels is not None:
-        labels = numpy.asarray(labels)
-        labels = _broadcast(labels, input.shape)
 
-        if labels.shape != input.shape:
-            raise RuntimeError, 'input and labels shape are not equal'
-    return _nd_image.center_of_mass(input, labels, index)
+    normalizer = sum(input, labels, index)
+    grids = numpy.ogrid[[slice(0, i) for i in input.shape]]
 
+    results = [sum(input * grids[dir].astype(float), labels, index) / normalizer for dir in range(input.ndim)]
+    
+    if numpy.isscalar(results[0]):
+        return tuple(results)
+
+    return [tuple(v) for v in numpy.array(results).T]
 
 def histogram(input, min, max, bins, labels = None, index = None):
-    """Calculate a histogram of of the array.
+    """Calculate the histogram of the values of an array at labels.
 
-    The histogram is defined by its minimum and maximum value and the
+    Labels must be None or an array of the same dimensions as the input.  
+
+    The histograms are defined by the minimum and maximum values and the
     number of bins.
 
-    The index parameter is a single label number or a sequence of
-    label numbers of the objects to be measured. If index is None, all
-    values are used where labels is larger than zero.
+    Index must be None, a single label or sequence of labels.  If
+    none, all values where label is greater than zero are used.
     """
-    input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError, 'Complex type not supported'
-    if labels is not None:
-        labels = numpy.asarray(labels)
-        labels = _broadcast(labels, input.shape)
+    
+    _bins = numpy.linspace(min, max, bins + 1)
 
-        if labels.shape != input.shape:
-            raise RuntimeError, 'input and labels shape are not equal'
-    if bins < 1:
-        raise RuntimeError, 'number of bins must be >= 1'
-    if min >= max:
-        raise RuntimeError, 'min must be < max'
-    return _nd_image.histogram(input, min, max, bins, labels, index)
+    def _hist(vals):
+        return numpy.histogram(vals, _bins)[0]
+
+    return labeled_comprehension(input, labels, index, _hist, object, None, pass_positions=False)
 
 def watershed_ift(input, markers, structure = None, output = None):
     """Apply watershed from markers using a iterative forest transform
@@ -488,24 +647,4 @@ def watershed_ift(input, markers, structure = None, output = None):
         output = markers.dtype
     output, return_value = _ni_support._get_output(output, input)
     _nd_image.watershed_ift(input, markers, structure, output)
-    return return_value
-
-def _broadcast(arr, sshape):
-    """Return broadcast view of arr, else return None."""
-    ashape = arr.shape
-    return_value = numpy.zeros(sshape, arr.dtype)
-    # Just return arr if they have the same shape
-    if sshape == ashape:
-        return arr
-    srank = len(sshape)
-    arank = len(ashape)
-
-    aslices = []
-    sslices = []
-    for i in range(arank):
-        aslices.append(slice(0, ashape[i], 1))
-
-    for i in range(srank):
-        sslices.append(slice(0, sshape[i], 1))
-    return_value[sslices] = arr[aslices]
     return return_value
