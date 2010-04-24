@@ -225,6 +225,10 @@ class TestNanFunc(TestCase):
         s = stats.nanstd(self.Xall)
         assert np.isnan(s)
 
+    def test_nanstd_negative_axis(self):
+        x = np.array([1, 2, 3])
+        assert_equal(stats.nanstd(x, -1), 1)
+
     def test_nanmedian_none(self):
         """Check nanmedian when no values are nan."""
         m = stats.nanmedian(self.X)
