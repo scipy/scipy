@@ -1,8 +1,16 @@
+/* -*-c-*-  */
+/*
+ * _superlu object
+ *
+ * Python object representing SuperLU factorization + some utility functions.
+ */
+
 #include <Python.h>
 
 #define NO_IMPORT_ARRAY
 #include "_superluobject.h"
 #include <setjmp.h>
+#include <ctype.h>
 
 extern jmp_buf _superlu_py_jmpbuf;
 
@@ -22,7 +30,7 @@ b        array, right hand side(s) of equation\n\
 x        array, solution vector(s)\n\
 trans    'N': solve A   * x == b\n\
          'T': solve A^T * x == b\n\
-         'H': solve A^H * x == b (not yet implemented)\n\
+         'H': solve A^H * x == b\n\
          (optional, default value 'N')\n\
 ";
 
@@ -270,8 +278,7 @@ int NCFormat_from_spMatrix(SuperMatrix *A, int m, int n, int nnz,
 }
 
 PyObject *
-newSciPyLUObject(SuperMatrix *A, int relax, int panel_size,
-                 PyObject *option_dict, int intype, int ilu)
+newSciPyLUObject(SuperMatrix *A, PyObject *option_dict, int intype, int ilu)
 {
 
    /* A must be in SLU_NC format used by the factorization routine. */
@@ -283,10 +290,12 @@ newSciPyLUObject(SuperMatrix *A, int relax, int panel_size,
   int n;
   superlu_options_t options;
   SuperLUStat_t stat;
-  
+  int panel_size, relax;
+
   n = A->ncol;
 
-  if (!set_superlu_options_from_dict(&options, ilu, option_dict)) {
+  if (!set_superlu_options_from_dict(&options, ilu, option_dict,
+                                     &panel_size, &relax)) {
       return NULL;
   }
 
@@ -366,6 +375,7 @@ fail:
 #define ENUM_CHECK_INIT                         \
     long i = -1;                                \
     char *s = "";                               \
+    if (input == Py_None) return 1;             \
     if (PyString_Check(input)) {                \
         s = PyString_AS_STRING(input);          \
     }                                           \
@@ -373,16 +383,38 @@ fail:
         i = PyInt_AsLong(input);                \
     }
 
-#define ENUM_CHECK_FINISH                               \
-    PyErr_SetString(PyExc_ValueError, "unknown value"); \
+#define ENUM_CHECK_FINISH(message)              \
+    PyErr_SetString(PyExc_ValueError, message); \
     return 0;
 
 #define ENUM_CHECK(name) \
-    if (strcmp(s, #name) == 0 || i == (long)name) { *value = name; return 1; }
+    if (my_strxcmp(s, #name) == 0 || i == (long)name) { *value = name; return 1; }
+
+/*
+ * Compare strings ignoring case, underscores and whitespace
+ */
+static int my_strxcmp(const char *a, const char *b)
+{
+    int c;
+    while (*a != '\0' && *b != '\0') {
+        while (*a == '_' || isspace(*a)) ++a;
+        while (*b == '_' || isspace(*b)) ++b;
+        c = (int)tolower(*a) - (int)tolower(*b);
+        if (c != 0) {
+            return c;
+        }
+        ++a;
+        ++b;
+    }
+    return (int)tolower(*a) - (int)tolower(*b);
+}
 
 static int yes_no_cvt(PyObject *input, yes_no_t *value)
 {
-    if (input == Py_True) {
+    if (input == Py_None) {
+        return 1;
+    }
+    else if (input == Py_True) {
         *value = YES;
     } else if (input == Py_False) {
         *value = NO;
@@ -400,7 +432,7 @@ static int fact_cvt(PyObject *input, fact_t *value)
     ENUM_CHECK(SamePattern);
     ENUM_CHECK(SamePattern_SameRowPerm);
     ENUM_CHECK(FACTORED);
-    ENUM_CHECK_FINISH;
+    ENUM_CHECK_FINISH("invalid value for 'Fact' parameter");
 }
 
 static int rowperm_cvt(PyObject *input, rowperm_t *value)
@@ -409,7 +441,7 @@ static int rowperm_cvt(PyObject *input, rowperm_t *value)
     ENUM_CHECK(NOROWPERM);
     ENUM_CHECK(LargeDiag);
     ENUM_CHECK(MY_PERMR);
-    ENUM_CHECK_FINISH;
+    ENUM_CHECK_FINISH("invalid value for 'RowPerm' parameter");
 }
 
 static int colperm_cvt(PyObject *input, colperm_t *value)
@@ -420,7 +452,7 @@ static int colperm_cvt(PyObject *input, colperm_t *value)
     ENUM_CHECK(MMD_AT_PLUS_A);
     ENUM_CHECK(COLAMD);
     ENUM_CHECK(MY_PERMC);
-    ENUM_CHECK_FINISH;
+    ENUM_CHECK_FINISH("invalid value for 'ColPerm' parameter");
 }
 
 static int trans_cvt(PyObject *input, trans_t *value)
@@ -429,7 +461,10 @@ static int trans_cvt(PyObject *input, trans_t *value)
     ENUM_CHECK(NOTRANS);
     ENUM_CHECK(TRANS);
     ENUM_CHECK(CONJ);
-    ENUM_CHECK_FINISH;
+    if (my_strxcmp(s, "N") == 0) { *value = NOTRANS; return 1; }
+    if (my_strxcmp(s, "T") == 0) { *value = TRANS; return 1; }
+    if (my_strxcmp(s, "H") == 0) { *value = CONJ; return 1; }
+    ENUM_CHECK_FINISH("invalid value for 'Trans' parameter");
 }
 
 static int iterrefine_cvt(PyObject *input, IterRefine_t *value)
@@ -439,7 +474,7 @@ static int iterrefine_cvt(PyObject *input, IterRefine_t *value)
     ENUM_CHECK(SINGLE);
     ENUM_CHECK(DOUBLE);
     ENUM_CHECK(EXTRA);
-    ENUM_CHECK_FINISH;
+    ENUM_CHECK_FINISH("invalid value for 'IterRefine' parameter");
 }
 
 static int norm_cvt(PyObject *input, norm_t *value)
@@ -448,7 +483,7 @@ static int norm_cvt(PyObject *input, norm_t *value)
     ENUM_CHECK(ONE_NORM);
     ENUM_CHECK(TWO_NORM);
     ENUM_CHECK(INF_NORM);
-    ENUM_CHECK_FINISH;
+    ENUM_CHECK_FINISH("invalid value for 'ILU_Norm' parameter");
 }
 
 static int milu_cvt(PyObject *input, milu_t *value)
@@ -458,14 +493,100 @@ static int milu_cvt(PyObject *input, milu_t *value)
     ENUM_CHECK(SMILU_1);
     ENUM_CHECK(SMILU_2);
     ENUM_CHECK(SMILU_3);
-    ENUM_CHECK_FINISH;
+    ENUM_CHECK_FINISH("invalid value for 'ILU_MILU' parameter");
+}
+
+static int droprule_one_cvt(PyObject *input, int *value)
+{
+    ENUM_CHECK_INIT;
+    if (my_strxcmp(s, "BASIC") == 0) { *value = DROP_BASIC; return 1; }
+    if (my_strxcmp(s, "PROWS") == 0) { *value = DROP_PROWS; return 1; }
+    if (my_strxcmp(s, "COLUMN") == 0) { *value = DROP_COLUMN; return 1; }
+    if (my_strxcmp(s, "AREA") == 0) { *value = DROP_AREA; return 1; }
+    if (my_strxcmp(s, "SECONDARY") == 0) { *value = DROP_SECONDARY; return 1; }
+    if (my_strxcmp(s, "DYNAMIC") == 0) { *value = DROP_DYNAMIC; return 1; }
+    if (my_strxcmp(s, "INTERP") == 0) { *value = DROP_INTERP; return 1; }
+    ENUM_CHECK_FINISH("invalid value for 'ILU_DropRule' parameter");
+}
+
+static int droprule_cvt(PyObject *input, int *value)
+{
+    PyObject *seq = NULL;
+    int i;
+    int rule = 0;
+
+    if (input == Py_None) {
+        /* Leave as default */
+        return 1;
+    }
+    else if (PyInt_Check(input)) {
+        *value = PyInt_AsLong(input);
+        return 1;
+    }
+    else if (PyString_Check(input)) {
+        /* Comma-separated string */
+        seq = PyObject_CallMethod(input, "split", "s", ",");
+        if (seq == NULL || !PySequence_Check(seq))
+            goto fail;
+    }
+    else if (PySequence_Check(input)) {
+        /* Sequence of strings or integers */
+        seq = input;
+        Py_INCREF(seq);
+    }
+    else {
+        PyErr_SetString(PyExc_ValueError, "invalid value for drop rule");
+        goto fail;
+    }
+
+    /* OR multiple values together */
+    for (i = 0; i < PySequence_Size(seq); ++i) {
+        PyObject *item;
+        int one_value;
+        item = PySequence_ITEM(seq, i);
+        if (item == NULL) {
+            goto fail;
+        }
+        if (!droprule_one_cvt(item, &one_value)) {
+            Py_DECREF(item);
+            goto fail;
+        }
+        Py_DECREF(item);
+        rule |= one_value;
+    }
+    Py_DECREF(seq);
+
+    *value = rule;
+    return 1;
+
+fail:
+    Py_XDECREF(seq);
+    return 0;
+}
+
+static int double_cvt(PyObject *input, double *value)
+{
+    if (input == Py_None) return 1;
+    *value = PyFloat_AsDouble(input);
+    if (PyErr_Occurred()) return 0;
+    return 1;
+}
+
+static int int_cvt(PyObject *input, int *value)
+{
+    if (input == Py_None) return 1;
+    *value = PyInt_AsLong(input);
+    if (PyErr_Occurred()) return 0;
+    return 1;
 }
 
 int set_superlu_options_from_dict(superlu_options_t *options,
-                                  int ilu, PyObject *option_dict)
+                                  int ilu, PyObject *option_dict,
+                                  int *panel_size, int *relax)
 {
     PyObject *args;
     int ret;
+    int _relax, _panel_size;
 
     static char *kwlist[] = {
         "Fact", "Equil", "ColPerm", "Trans", "IterRefine",
@@ -473,7 +594,7 @@ int set_superlu_options_from_dict(superlu_options_t *options,
         "RowPerm", "SymmetricMode", "PrintStat", "ReplaceTinyPivot",
         "SolveInitialized", "RefineInitialized", "ILU_Norm",
         "ILU_MILU", "ILU_DropTol", "ILU_FillTol", "ILU_FillFactor",
-        "ILU_DropRule", NULL
+        "ILU_DropRule", "PanelSize", "Relax", NULL
     };
 
     if (ilu) {
@@ -483,6 +604,9 @@ int set_superlu_options_from_dict(superlu_options_t *options,
         set_default_options(options);
     }
 
+    _panel_size = sp_ienv(1);
+    _relax = sp_ienv(2);
+
     if (option_dict == NULL) {
         return 0;
     }
@@ -490,13 +614,13 @@ int set_superlu_options_from_dict(superlu_options_t *options,
     args = PyTuple_New(0);
     ret = PyArg_ParseTupleAndKeywords(
         args, option_dict,
-        "|O&O&O&O&O&dO&O&O&O&O&O&O&O&O&O&dddi", kwlist,
+        "|O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&", kwlist,
         fact_cvt, &options->Fact,
         yes_no_cvt, &options->Equil,
         colperm_cvt, &options->ColPerm,
         trans_cvt, &options->Trans,
         iterrefine_cvt, &options->IterRefine,
-        &options->DiagPivotThresh,
+        double_cvt, &options->DiagPivotThresh,
         yes_no_cvt, &options->PivotGrowth,
         yes_no_cvt, &options->ConditionNumber,
         rowperm_cvt, &options->RowPerm,
@@ -507,11 +631,21 @@ int set_superlu_options_from_dict(superlu_options_t *options,
         yes_no_cvt, &options->RefineInitialized,
         norm_cvt, &options->ILU_Norm,
         milu_cvt, &options->ILU_MILU,
-        &options->ILU_DropTol,
-        &options->ILU_FillTol,
-        &options->ILU_FillFactor,
-        &options->ILU_DropRule
+        double_cvt, &options->ILU_DropTol,
+        double_cvt, &options->ILU_FillTol,
+        double_cvt, &options->ILU_FillFactor,
+        droprule_cvt, &options->ILU_DropRule,
+        int_cvt, &_panel_size,
+        int_cvt, &_relax
         );
     Py_DECREF(args);
+
+    if (panel_size != NULL) {
+        *panel_size = _panel_size;
+    }
+    if (relax != NULL) {
+        *relax = _relax;
+    }
+
     return ret;
 }

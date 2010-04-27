@@ -1,3 +1,10 @@
+/* -*-c-*-  */
+/*
+ * _superlu object
+ *
+ * Python object representing SuperLU factorization + some utility functions.
+ */
+
 #ifndef __SUPERLU_OBJECT
 #define __SUPERLU_OBJECT
 
@@ -33,9 +40,10 @@ int NRFormat_from_spMatrix(SuperMatrix *, int, int, int, PyArrayObject *,
 int NCFormat_from_spMatrix(SuperMatrix *, int, int, int, PyArrayObject *,
                            PyArrayObject *, PyArrayObject *, int);
 colperm_t superlu_module_getpermc(int);
-PyObject *newSciPyLUObject(SuperMatrix *, int, int, PyObject*, int, int);
+PyObject *newSciPyLUObject(SuperMatrix *, PyObject*, int, int);
 int set_superlu_options_from_dict(superlu_options_t *options,
-                                  int ilu, PyObject *option_dict);
+                                  int ilu, PyObject *option_dict,
+                                  int *panel_size, int *relax);
 
 /*
  * Definitions for other SuperLU data types than Z,

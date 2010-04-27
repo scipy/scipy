@@ -65,7 +65,7 @@ Py_gssv(PyObject *self, PyObject *args, PyObject *kwdict)
         return NULL;
     }
 
-    if (!set_superlu_options_from_dict(&options, 0, option_dict)) {
+    if (!set_superlu_options_from_dict(&options, 0, option_dict, NULL, NULL)) {
         return NULL;
     }
 
@@ -136,8 +136,6 @@ static PyObject *
 Py_gstrf(PyObject *self, PyObject *args, PyObject *keywds)
 {
     /* default value for SuperLU parameters*/
-    int relax = 1;
-    int panel_size = 10;
     int N, nnz;
     PyArrayObject *rowind, *colptr, *nzvals;
     SuperMatrix A;
@@ -146,19 +144,17 @@ Py_gstrf(PyObject *self, PyObject *args, PyObject *keywds)
     int type;
     int ilu = 0;
 
-    static char *kwlist[] = {"N","nnz","nzvals","rowind","colptr",
-                             "options", "relax", "panel_size", "ilu",
+    static char *kwlist[] = {"N","nnz","nzvals","colind","rowptr",
+                             "options", "ilu",
                              NULL};
 
     int res = PyArg_ParseTupleAndKeywords(
-        args, keywds, "iiO!O!O!|Oiii", kwlist, 
+        args, keywds, "iiO!O!O!|Oi", kwlist, 
         &N, &nnz,
         &PyArray_Type, &nzvals,
         &PyArray_Type, &rowind,
         &PyArray_Type, &colptr,
         &option_dict,
-        &relax,
-        &panel_size,
         &ilu);
 
     if (!res)
@@ -182,8 +178,7 @@ Py_gstrf(PyObject *self, PyObject *args, PyObject *keywds)
         goto fail;
     }
 
-    result = newSciPyLUObject(&A, relax,
-                              panel_size, option_dict, type, ilu);
+    result = newSciPyLUObject(&A, option_dict, type, ilu);
     if (result == NULL) {
         goto fail;
     }
@@ -221,13 +216,8 @@ colptr    index into rowind for first non-zero value in this column\n\
 additional keyword arguments:\n\
 -----------------------------\n\
 options             specifies additional options for SuperLU\n\
-                    (same keys and values as in superlu_options_t C structure)\n\
-\n\
-relax               to control degree of relaxing supernodes\n\
-                    (default: 1)\n\
-\n\
-panel_size          a panel consist of at most panel_size consecutive columns.\n\
-                    (default: 10)\n\
+                    (same keys and values as in superlu_options_t C structure,\n\
+                    and additionally 'Relax' and 'PanelSize')\n\
 \n\
 ilu                 whether to perform an incomplete LU decomposition\n\
                     (default: false)\n\
