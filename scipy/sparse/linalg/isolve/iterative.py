@@ -303,7 +303,7 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None
     return postprocess(x), info
 
 
-def gmres(A, b, x0=None, tol=1e-5, restrt=20, maxiter=None, xtype=None, M=None, callback=None):
+def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=None, callback=None, restrt=None):
     """Use Generalized Minimal RESidual iteration to solve A x = b
 
     Parameters
@@ -319,7 +319,7 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=20, maxiter=None, xtype=None, M=None, 
         Starting guess for the solution.
     tol : float
         Relative tolerance to achieve before terminating.
-    restrt : integer
+    restart : integer
         Number of iterations between restarts. Larger values increase
         iteration cost, but may be necessary for convergence.
     maxiter : integer
@@ -359,6 +359,14 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=20, maxiter=None, xtype=None, M=None, 
         This parameter has been superceeded by LinearOperator.
 
     """
+
+    # Change 'restrt' keyword to 'restart'
+    if restrt is None:
+        restrt = restart
+    elif restart is not None:
+        raise ValueError("Cannot specify both restart and restrt keywords. "
+                         "Preferably use 'restart' only.")
+
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
     n = len(b)
