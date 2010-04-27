@@ -136,8 +136,22 @@ SciPyLU_getattr(SciPyLUObject *self, char *name)
     return Py_BuildValue("(i,i)", self->m, self->n);
   if (strcmp(name, "nnz") == 0)
     return Py_BuildValue("i", ((SCformat *)self->L.Store)->nnz + ((SCformat *)self->U.Store)->nnz);
+  if (strcmp(name, "perm_r") == 0) {
+    PyArrayObject* perm_r = PyArray_SimpleNewFromData(1, (npy_intp*) (&self->n), NPY_INT, (void*)self->perm_r);
+    /* For ref counting of the memory */
+    PyArray_BASE(perm_r) = self;
+    Py_INCREF(self);
+    return perm_r ;
+  }
+  if (strcmp(name, "perm_c") == 0) {
+    PyArrayObject* perm_c = PyArray_SimpleNewFromData(1, (npy_intp*) (&self->n), NPY_INT, (void*)self->perm_c);
+    /* For ref counting of the memory */
+    PyArray_BASE(perm_c) = self;
+    Py_INCREF(self);
+    return perm_c ;
+  }
   if (strcmp(name, "__members__") == 0) {
-    char *members[] = {"shape", "nnz"};
+    char *members[] = {"shape", "nnz", "perm_r", "perm_c"};
     int i;
 
     PyObject *list = PyList_New(sizeof(members)/sizeof(char *));
@@ -158,6 +172,27 @@ SciPyLU_getattr(SciPyLUObject *self, char *name)
 /***********************************************************************
  * SciPySuperLUType structure
  */
+static char factored_lu_doc[] = "\
+Object resulting from a factorization of a sparse matrix\n\
+\n\
+Attributes\n\
+-----------\n\
+\n\
+shape : 2-tuple\n\
+    the shape of the orginal matrix factored\n                     \
+nnz : int\n\
+    the number of non zero coefficient of the matrix\n             \
+perm_c\n\
+    the permutation applied to the colums of the matrix for the LU factorization\n\
+perm_r\n\
+    the permutation applied to the rows of the matrix for the LU factorization\n\
+\n\
+Methods\n\
+-------\n\
+solve\n\
+    solves the system for a given right hand side vector\n \
+\n\
+";
 
 PyTypeObject SciPySuperLUType = {
   PyObject_HEAD_INIT(NULL)
@@ -175,6 +210,13 @@ PyTypeObject SciPySuperLUType = {
   0,				/* tp_as_sequence*/
   0,				/* tp_as_mapping*/
   0,				/* tp_hash */
+  0,				/* tp_call */
+  0,				/* tp_str */
+  0,				/* tp_getattro */
+  0,				/* tp_setattro */
+  0,				/* tp_as_buffer */
+  0,				/* tp_flags */
+  factored_lu_doc,		/* tp_doc */
 };
 
 
