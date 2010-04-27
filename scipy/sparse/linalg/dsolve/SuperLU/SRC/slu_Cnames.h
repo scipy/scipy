@@ -19,6 +19,7 @@
 #ifndef __SUPERLU_CNAMES /* allow multiple inclusions */
 #define __SUPERLU_CNAMES
 
+#include "scipy_slu_config.h"
 
 #define ADD_       0
 #define ADD__      1
