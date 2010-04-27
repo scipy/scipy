@@ -3,6 +3,13 @@ import scipy.ndimage as ndi
 
 import os
 
+try:
+    from PIL import Image
+    pil_missing = False
+except ImportError:
+    pil_missing = True
+
+@dec.skipif(pil_missing, msg="The Python Image Library could not be found.")
 def test_imread():
     lp = os.path.join(os.path.dirname(__file__), 'dots.png')
     img = ndi.imread(lp)
