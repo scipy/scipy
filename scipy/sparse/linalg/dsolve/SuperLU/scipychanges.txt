@@ -1,0 +1,17 @@
+The following changes have been made to the original SuperLU 4.0 sources:
+
+1) ENH: scipy.sparse.dsolve/SuperLU: re-apply r4767, r4768, r5892 patches to SuperLU sources
+    
+    - Rename c_abs() and c_abs1() to slu_c_abs() and slu_c_abs1() to
+      avoid conflict with Python headers. Hopefully resolves ticket #735
+    
+    - BUG: fix SuperLU dubious format string.
+
+    - Drop ?myblas2.c routines, since we USE_VENDOR_BLAS
+
+    - Do not include *.f Harwell Subroutine Library files because of
+      license issues.
+
+2) ENH: sparse.linalg.dsolve/SuperLU: patch SuperLU upstream sources to get some variables from Scipy
+
+3) BUG: scipy.sparse.dsolve/SuperLU: sprinkle volatile into dlamc/slamc implementation to avoid an infinite loop
