@@ -1,11 +1,12 @@
 import warnings
 
-from numpy import array, finfo
+from numpy import array, finfo, arange
+import numpy.random as random
 from numpy.testing import *
 
 from scipy.linalg import norm, inv
 from scipy.sparse import spdiags, SparseEfficiencyWarning
-from scipy.sparse.linalg.dsolve import spsolve, use_solver
+from scipy.sparse.linalg.dsolve import spsolve, use_solver, splu, spilu
 
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
@@ -38,6 +39,27 @@ class TestLinsolve(TestCase):
 
                 assert( norm(b - Asp*x) < 10 * cond_A * eps )
 
+
+class TestSplu(object):
+    def setUp(self):
+        n = 40
+        d = arange(n) + 1
+        self.n = n
+        self.A = spdiags((d, 2*d, d[::-1]), (-3, 0, 5), n, n)
+        random.seed(1234)
+
+    def test_splu(self):
+        x = random.rand(self.n)
+        lu = splu(self.A)
+        r = self.A*lu.solve(x)
+        assert abs(x - r).max() < 1e-13
+
+    def test_spilu(self):
+        x = random.rand(self.n)
+        lu = spilu(self.A, drop_tol=1e-2, fill_factor=5)
+        r = self.A*lu.solve(x)
+        assert abs(x - r).max() < 1e-2
+        assert abs(x - r).max() > 1e-5
 
 if __name__ == "__main__":
     run_module_suite()
