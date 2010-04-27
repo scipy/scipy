@@ -107,7 +107,11 @@ if ( jcol == MIN_COL ) {
        Also search for user-specified pivot, and diagonal element. */
     if ( *usepr ) *pivrow = iperm_r[jcol];
     diagind = iperm_c[jcol];
+#ifdef SCIPY_SPECIFIC_FIX
+    pivmax = -1.0;
+#else
     pivmax = 0.0;
+#endif
     pivptr = nsupc;
     diag = EMPTY;
     old_pivptr = nsupc;
@@ -122,6 +126,13 @@ if ( jcol == MIN_COL ) {
     }
 
     /* Test for singularity */
+#ifdef SCIPY_SPECIFIC_FIX
+    if (pivmax < 0.0) {
+        perm_r[diagind] = jcol;
+        *usepr = 0;
+        return (jcol+1);
+    }
+#endif
     if ( pivmax == 0.0 ) {
 #if 1
 	*pivrow = lsub_ptr[pivptr];

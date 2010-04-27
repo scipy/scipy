@@ -40,6 +40,7 @@ Py_gssv(PyObject *self, PyObject *args, PyObject *kwdict)
     SuperLUStat_t stat;
     PyObject *option_dict = NULL;
     int type;
+    int ssv_finished = 0;
 
     static char *kwlist[] = {"N","nnz","nzvals","colind","rowptr","B", "csc",
                              "options",NULL};
@@ -109,7 +110,8 @@ Py_gssv(PyObject *self, PyObject *args, PyObject *kwdict)
         /* Compute direct inverse of sparse Matrix */
         gssv(type, &options, &A, perm_c, perm_r, &L, &U, &B, &stat, &info);
     }
-    
+    ssv_finished = 1;
+
     SUPERLU_FREE(perm_r);
     SUPERLU_FREE(perm_c);
     Destroy_SuperMatrix_Store(&A);  /* holds just a pointer to the data */
@@ -125,8 +127,12 @@ fail:
     SUPERLU_FREE(perm_c);
     Destroy_SuperMatrix_Store(&A);  /* holds just a pointer to the data */
     Destroy_SuperMatrix_Store(&B);
-    Destroy_SuperNode_Matrix(&L);
-    Destroy_CompCol_Matrix(&U);
+    if (ssv_finished) {
+        /* Avoid trying to free partially initialized matrices;
+           might leak some memory, but avoids a crash */
+        Destroy_SuperNode_Matrix(&L);
+        Destroy_CompCol_Matrix(&U);
+    }
     StatFree(&stat);  
     Py_XDECREF(Py_X);
     return NULL;
