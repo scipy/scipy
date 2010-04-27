@@ -41,7 +41,7 @@ def use_solver( **kwargs ):
         umfpack.configure( **kwargs )
 
 
-def spsolve(A, b, permc_spec=None):
+def spsolve(A, b, permc_spec=None, use_umfpack=True):
     """Solve the sparse linear system Ax=b
     """
     if isspmatrix( b ):
@@ -67,8 +67,9 @@ def spsolve(A, b, permc_spec=None):
         raise ValueError, "matrix - rhs size mismatch (%s - %s)"\
               % (A.shape, b.size)
 
+    use_umfpack = use_umfpack and useUmfpack
 
-    if isUmfpack and useUmfpack:
+    if isUmfpack and use_umfpack:
         if noScikit:
             warn( 'scipy.sparse.linalg.dsolve.umfpack will be removed,'\
                     ' install scikits.umfpack instead', DeprecationWarning )
