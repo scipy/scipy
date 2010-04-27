@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-from os.path import join
+from os.path import join, dirname
 import sys
+import os
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -16,43 +17,21 @@ def configuration(parent_package='',top_path=None):
         superlu_defs = []
     superlu_defs.append(('USE_VENDOR_BLAS',1))
 
+    superlu_src = os.path.join(dirname(__file__), 'SuperLU', 'SRC')
+
     config.add_library('superlu_src',
                        sources = [join(superlu_src,'*.c')],
-                       macros = superlu_defs
+                       macros = superlu_defs,
+                       include_dirs=[superlu_src],
                        )
 
-    #SuperLU/SRC/util.h  has been modifed to use these by default
-    #macs = [('USER_ABORT','superlu_python_module_abort'),
-    #        ('USER_MALLOC','superlu_python_module_malloc'),
-    #        ('USER_FREE','superlu_python_module_free')]
-
     # Extension
-    config.add_extension('_zsuperlu',
-                         sources = ['_zsuperlumodule.c','_superlu_utils.c',
+    config.add_extension('_superlu',
+                         sources = ['_superlumodule.c',
+                                    '_superlu_utils.c',
                                     '_superluobject.c'],
                          libraries = ['superlu_src'],
-                         extra_info = lapack_opt
-                         )
-
-    config.add_extension('_dsuperlu',
-                         sources = ['_dsuperlumodule.c','_superlu_utils.c',
-                                    '_superluobject.c'],
-                         libraries = ['superlu_src'],
-                         extra_info = lapack_opt
-                         )
-
-    config.add_extension('_csuperlu',
-                         sources = ['_csuperlumodule.c','_superlu_utils.c',
-                                    '_superluobject.c'],
-                         libraries = ['superlu_src'],
-                         extra_info = lapack_opt
-                         )
-
-    config.add_extension('_ssuperlu',
-                         sources = ['_ssuperlumodule.c','_superlu_utils.c',
-                                    '_superluobject.c'],
-                         libraries = ['superlu_src'],
-                         extra_info = lapack_opt
+                         extra_info = lapack_opt,
                          )
 
     config.add_subpackage('umfpack')

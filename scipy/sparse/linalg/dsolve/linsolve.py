@@ -20,10 +20,6 @@ useUmfpack = True
 
 __all__ = [ 'use_solver', 'spsolve', 'splu', 'factorized' ]
 
-#convert numpy char to superLU char
-superLU_transtabl = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
-
-
 def use_solver( **kwargs ):
     """
     Valid keyword arguments with defaults (other ignored):
@@ -93,12 +89,8 @@ def spsolve(A, b, permc_spec=2):
         else:
             flag = 0 # CSR format
 
-        ftype = superLU_transtabl[A.dtype.char]
-
-        gssv = eval('_superlu.' + ftype + 'gssv')
         b = asarray(b, dtype=A.dtype)
-
-        return gssv(N, A.nnz, A.data, A.indices, A.indptr, b, flag, permc_spec)[0]
+        return _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr, b, flag, permc_spec)[0]
 
 def splu(A, permc_spec=2, diag_pivot_thresh=1.0,
          drop_tol=0.0, relax=1, panel_size=10):
@@ -122,11 +114,8 @@ def splu(A, permc_spec=2, diag_pivot_thresh=1.0,
     if (M != N):
         raise ValueError, "can only factor square matrices" #is this true?
 
-    ftype = superLU_transtabl[A.dtype.char]
-
-    gstrf = eval('_superlu.' + ftype + 'gstrf')
-    return gstrf(N, A.nnz, A.data, A.indices, A.indptr, permc_spec,
-                 diag_pivot_thresh, drop_tol, relax, panel_size)
+    return _superlu.gstrf(N, A.nnz, A.data, A.indices, A.indptr, permc_spec,
+                          diag_pivot_thresh, drop_tol, relax, panel_size)
 
 def factorized( A ):
     """

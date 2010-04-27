@@ -1,6 +1,5 @@
+#include <Python.h>
 
-#include "Python.h"
-#include "SuperLU/SRC/zsp_defs.h"
 #define NO_IMPORT_ARRAY
 #include "_superluobject.h"
 #include <setjmp.h>
@@ -37,12 +36,18 @@ SciPyLU_solve(SciPyLUObject *self, PyObject *args, PyObject *kwds) {
 
   static char *kwlist[] = {"rhs","trans",NULL};
 
+  if (!CHECK_SLU_TYPE(self->type)) {
+      PyErr_SetString(PyExc_ValueError, "unsupported data type");
+      return NULL;
+  }
+
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|c", kwlist,
                                    &PyArray_Type, &b, 
                                    &itrans))
     return NULL;
 
-  /* solve transposed system: matrix was passed row-wise instead of column-wise */
+  /* solve transposed system: matrix was passed row-wise instead of
+   * column-wise */
   if (itrans == 'n' || itrans == 'N')
       trans = NOTRANS;
   else if (itrans == 't' || itrans == 'T')
@@ -67,26 +72,13 @@ SciPyLU_solve(SciPyLUObject *self, PyObject *args, PyObject *kwds) {
   StatInit(&stat);
 
   /* Solve the system, overwriting vector x. */
-  switch(self->type) {
-  case PyArray_FLOAT:
-      sgstrs(trans, &self->L, &self->U, self->perm_c, self->perm_r, &B, &stat, &info);      
-      break;
-  case PyArray_DOUBLE:
-      dgstrs(trans, &self->L, &self->U, self->perm_c, self->perm_r, &B, &stat, &info);      
-      break;
-  case PyArray_CFLOAT:
-      cgstrs(trans, &self->L, &self->U, self->perm_c, self->perm_r, &B, &stat, &info);      
-      break;
-  case PyArray_CDOUBLE:
-      zgstrs(trans, &self->L, &self->U, self->perm_c, self->perm_r, &B, &stat, &info); 
-      break;
-  default:
-      PyErr_SetString(PyExc_TypeError, "Invalid type for array.");
-      goto fail;
-  }
+  gstrs(self->type,
+        trans, &self->L, &self->U, self->perm_c, self->perm_r, &B,
+        &stat, &info);
 
   if (info) { 
-      PyErr_SetString(PyExc_SystemError, "gstrs was called with invalid arguments");
+      PyErr_SetString(PyExc_SystemError,
+                      "gstrs was called with invalid arguments");
       goto fail;
   }
   
@@ -95,7 +87,7 @@ SciPyLU_solve(SciPyLUObject *self, PyObject *args, PyObject *kwds) {
   StatFree(&stat);
   return (PyObject *)x;
 
- fail:
+fail:
   Destroy_SuperMatrix_Store(&B);  
   StatFree(&stat);
   Py_XDECREF(x);
@@ -197,32 +189,25 @@ int DenseSuper_from_Numeric(SuperMatrix *X, PyObject *PyX)
     ldx = m;
   }
   
-  if (setjmp(_superlu_py_jmpbuf)) return -1;
-  else 
-      switch (aX->descr->type_num) {
-      case PyArray_FLOAT:
-          sCreate_Dense_Matrix(X, m, n, (float *)aX->data, ldx, SLU_DN, SLU_S, SLU_GE);
-          break;
-      case PyArray_DOUBLE:
-          dCreate_Dense_Matrix(X, m, n, (double *)aX->data, ldx, SLU_DN, SLU_D, SLU_GE);
-          break;
-      case PyArray_CFLOAT:
-          cCreate_Dense_Matrix(X, m, n, (complex *)aX->data, ldx, SLU_DN, SLU_C, SLU_GE);
-          break;
-      case PyArray_CDOUBLE:
-          zCreate_Dense_Matrix(X, m, n, (doublecomplex *)aX->data, ldx, SLU_DN, SLU_Z, SLU_GE);
-          break;
-      default:
-          PyErr_SetString(PyExc_TypeError, "Invalid type for Numeric array.");
-          return -1;  
+  if (setjmp(_superlu_py_jmpbuf))
+      return -1;
+  else {
+      if (!CHECK_SLU_TYPE(aX->descr->type_num)) {
+          PyErr_SetString(PyExc_ValueError, "unsupported data type");
+          return -1;
       }
-  
+      Create_Dense_Matrix(aX->descr->type_num, X, m, n,
+                          aX->data, ldx, SLU_DN,
+                          NPY_TYPECODE_TO_SLU(aX->descr->type_num), SLU_GE);
+  }
   return 0;
 }
 
 /* Natively handles Compressed Sparse Row and CSC */
 
-int NRFormat_from_spMatrix(SuperMatrix *A, int m, int n, int nnz, PyArrayObject *nzvals, PyArrayObject *colind, PyArrayObject *rowptr, int typenum)
+int NRFormat_from_spMatrix(SuperMatrix *A, int m, int n, int nnz,
+                           PyArrayObject *nzvals, PyArrayObject *colind,
+                           PyArrayObject *rowptr, int typenum)
 {
   int err = 0;
     
@@ -234,34 +219,26 @@ int NRFormat_from_spMatrix(SuperMatrix *A, int m, int n, int nnz, PyArrayObject 
     return -1;
   }
 
-  if (setjmp(_superlu_py_jmpbuf)) return -1;
-  else 
-      switch (nzvals->descr->type_num) {
-      case PyArray_FLOAT:
-          sCreate_CompRow_Matrix(A, m, n, nnz, (float *)nzvals->data, (int *)colind->data, \
-                                 (int *)rowptr->data, SLU_NR, SLU_S, SLU_GE);
-          break;
-      case PyArray_DOUBLE:
-          dCreate_CompRow_Matrix(A, m, n, nnz, (double *)nzvals->data, (int *)colind->data, \
-                                 (int *)rowptr->data, SLU_NR, SLU_D, SLU_GE);
-          break;
-      case PyArray_CFLOAT:
-          cCreate_CompRow_Matrix(A, m, n, nnz, (complex *)nzvals->data, (int *)colind->data, \
-                                 (int *)rowptr->data, SLU_NR, SLU_C, SLU_GE);
-          break;
-      case PyArray_CDOUBLE:
-          zCreate_CompRow_Matrix(A, m, n, nnz, (doublecomplex *)nzvals->data, (int *)colind->data, \
-                                 (int *)rowptr->data, SLU_NR, SLU_Z, SLU_GE);
-          break;
-      default:
+  if (setjmp(_superlu_py_jmpbuf))
+      return -1;
+  else {
+      if (!CHECK_SLU_TYPE(nzvals->descr->type_num)) {
           PyErr_SetString(PyExc_TypeError, "Invalid type for array.");
           return -1;  
       }
+      Create_CompRow_Matrix(nzvals->descr->type_num,
+                            A, m, n, nnz, nzvals->data, (int *)colind->data,
+                            (int *)rowptr->data, SLU_NR,
+                            NPY_TYPECODE_TO_SLU(nzvals->descr->type_num),
+                            SLU_GE);
+  }
 
   return 0;
 }
 
-int NCFormat_from_spMatrix(SuperMatrix *A, int m, int n, int nnz, PyArrayObject *nzvals, PyArrayObject *rowind, PyArrayObject *colptr, int typenum)
+int NCFormat_from_spMatrix(SuperMatrix *A, int m, int n, int nnz,
+                           PyArrayObject *nzvals, PyArrayObject *rowind,
+                           PyArrayObject *colptr, int typenum)
 {
   int err=0;
 
@@ -274,29 +251,19 @@ int NCFormat_from_spMatrix(SuperMatrix *A, int m, int n, int nnz, PyArrayObject 
   }
 
 
-  if (setjmp(_superlu_py_jmpbuf)) return -1;
-  else 
-      switch (nzvals->descr->type_num) {
-      case PyArray_FLOAT:
-          sCreate_CompCol_Matrix(A, m, n, nnz, (float *)nzvals->data, (int *)rowind->data, \
-                                 (int *)colptr->data, SLU_NC, SLU_S, SLU_GE);
-          break;
-      case PyArray_DOUBLE:
-          dCreate_CompCol_Matrix(A, m, n, nnz, (double *)nzvals->data, (int *)rowind->data, \
-                                 (int *)colptr->data, SLU_NC, SLU_D, SLU_GE);
-          break;
-      case PyArray_CFLOAT:
-          cCreate_CompCol_Matrix(A, m, n, nnz, (complex *)nzvals->data, (int *)rowind->data, \
-                                 (int *)colptr->data, SLU_NC, SLU_C, SLU_GE);
-          break;
-      case PyArray_CDOUBLE:
-          zCreate_CompCol_Matrix(A, m, n, nnz, (doublecomplex *)nzvals->data, (int *)rowind->data, \
-                                 (int *)colptr->data, SLU_NC, SLU_Z, SLU_GE);
-          break;
-      default:
+  if (setjmp(_superlu_py_jmpbuf))
+      return -1;
+  else {
+      if (!CHECK_SLU_TYPE(nzvals->descr->type_num)) {
           PyErr_SetString(PyExc_TypeError, "Invalid type for array.");
           return -1;  
       }
+      Create_CompCol_Matrix(nzvals->descr->type_num,
+                            A, m, n, nnz, nzvals->data, (int *)rowind->data,
+                            (int *)colptr->data, SLU_NC,
+                            NPY_TYPECODE_TO_SLU(nzvals->descr->type_num),
+                            SLU_GE);
+  }
 
   return 0;
 }
@@ -319,7 +286,7 @@ colperm_t superlu_module_getpermc(int permc_spec)
 
 PyObject *
 newSciPyLUObject(SuperMatrix *A, double diag_pivot_thresh,
-		 double drop_tol, int relax, int panel_size, int permc_spec,
+		 int relax, int panel_size, int permc_spec,
                  int intype)
 {
 
@@ -351,46 +318,30 @@ newSciPyLUObject(SuperMatrix *A, double diag_pivot_thresh,
   etree = intMalloc(n);
   self->perm_r = intMalloc(n);
   self->perm_c = intMalloc(n);
-  
+
   set_default_options(&options);
   options.ColPerm=superlu_module_getpermc(permc_spec);
   options.DiagPivotThresh = diag_pivot_thresh;
   StatInit(&stat);
   
   get_perm_c(permc_spec, A, self->perm_c); /* calc column permutation */
-  sp_preorder(&options, A, self->perm_c, etree, &AC); /* apply column permutation */
-  
+  sp_preorder(&options, A, self->perm_c, etree, &AC); /* apply column
+                                                       * permutation */
 
   /* Perform factorization */
-  switch (A->Dtype) {
-  case SLU_S:
-      sgstrf(&options, &AC, (float) drop_tol, relax, panel_size,
-             etree, NULL, lwork, self->perm_c, self->perm_r,
-             &self->L, &self->U, &stat, &info);
-      break;
-  case SLU_D:
-      dgstrf(&options, &AC, drop_tol, relax, panel_size,
-             etree, NULL, lwork, self->perm_c, self->perm_r,
-             &self->L, &self->U, &stat, &info);
-      break;
-  case SLU_C:          
-      cgstrf(&options, &AC, (float) drop_tol, relax, panel_size,
-             etree, NULL, lwork, self->perm_c, self->perm_r,
-             &self->L, &self->U, &stat, &info);
-      break;
-  case SLU_Z:          
-      zgstrf(&options, &AC, drop_tol, relax, panel_size,
-             etree, NULL, lwork, self->perm_c, self->perm_r,
-             &self->L, &self->U, &stat, &info);
-      break;
-  default:
+  if (!CHECK_SLU_TYPE(SLU_TYPECODE_TO_NPY(A->Dtype))) {
       PyErr_SetString(PyExc_ValueError, "Invalid type in SuperMatrix.");
       goto fail;
   }
-  
+  gstrf(SLU_TYPECODE_TO_NPY(A->Dtype),
+        &options, &AC, relax, panel_size,
+        etree, NULL, lwork, self->perm_c, self->perm_r,
+        &self->L, &self->U, &stat, &info);
+
   if (info) {
     if (info < 0)
-        PyErr_SetString(PyExc_SystemError, "dgstrf was called with invalid arguments");
+        PyErr_SetString(PyExc_SystemError,
+                        "gstrf was called with invalid arguments");
     else {
         if (info <= n) 
             PyErr_SetString(PyExc_RuntimeError, "Factor is exactly singular");
@@ -399,7 +350,7 @@ newSciPyLUObject(SuperMatrix *A, double diag_pivot_thresh,
     }
     goto fail;
   }
-  
+
   /* free memory */
   SUPERLU_FREE(etree);
   Destroy_CompCol_Permuted(&AC);
@@ -407,7 +358,7 @@ newSciPyLUObject(SuperMatrix *A, double diag_pivot_thresh,
   
   return (PyObject *)self;
 
- fail:
+fail:
   SUPERLU_FREE(etree);
   Destroy_CompCol_Permuted(&AC);
   StatFree(&stat);
