@@ -319,10 +319,11 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
         Starting guess for the solution.
     tol : float
         Relative tolerance to achieve before terminating.
-    restart : integer
+    restart : integer, optional
         Number of iterations between restarts. Larger values increase
         iteration cost, but may be necessary for convergence.
-    maxiter : integer
+        (Default: 20)
+    maxiter : integer, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse matrix, dense matrix, LinearOperator}
@@ -373,6 +374,8 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
     if maxiter is None:
         maxiter = n*10
 
+    if restrt is None:
+        restrt = 20
     restrt = min(restrt, n)
 
     matvec = A.matvec
