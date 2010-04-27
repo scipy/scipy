@@ -90,7 +90,9 @@ def spsolve(A, b, permc_spec=2):
             flag = 0 # CSR format
 
         b = asarray(b, dtype=A.dtype)
-        return _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr, b, flag, permc_spec)[0]
+        options = dict(ColPerm=permc_spec)
+        return _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr, b, flag,
+                             options=options)[0]
 
 def splu(A, permc_spec=2, diag_pivot_thresh=1.0,
          drop_tol=0.0, relax=1, panel_size=10):
@@ -114,8 +116,12 @@ def splu(A, permc_spec=2, diag_pivot_thresh=1.0,
     if (M != N):
         raise ValueError, "can only factor square matrices" #is this true?
 
-    return _superlu.gstrf(N, A.nnz, A.data, A.indices, A.indptr, permc_spec,
-                          diag_pivot_thresh, drop_tol, relax, panel_size)
+    ilu = (drop_tol != 0)
+    options = dict(ILU_DropTol=drop_tol, DiagPivotThresh=diag_pivot_thresh,
+                   ColPerm=permc_spec)
+    return _superlu.gstrf(N, A.nnz, A.data, A.indices, A.indptr,
+                          relax=relax, panel_size=panel_size, ilu=ilu,
+                          options=options)
 
 def factorized( A ):
     """

@@ -33,8 +33,9 @@ int NRFormat_from_spMatrix(SuperMatrix *, int, int, int, PyArrayObject *,
 int NCFormat_from_spMatrix(SuperMatrix *, int, int, int, PyArrayObject *,
                            PyArrayObject *, PyArrayObject *, int);
 colperm_t superlu_module_getpermc(int);
-PyObject *newSciPyLUObject(SuperMatrix *, double, int, int, int, int);
-
+PyObject *newSciPyLUObject(SuperMatrix *, int, int, PyObject*, int, int);
+int set_superlu_options_from_dict(superlu_options_t *options,
+                                  int ilu, PyObject *option_dict);
 
 /*
  * Definitions for other SuperLU data types than Z,
@@ -93,7 +94,7 @@ PyObject *newSciPyLUObject(SuperMatrix *, double, int, int, int, int);
     SuperLUStat_t *h, int *i
 #define gssv_ARGS_REF a,b,c,d,e,f,g,h,i
 
-#define Create_Dense_Matrix_ARGS                               \ 
+#define Create_Dense_Matrix_ARGS                               \
     SuperMatrix *a, int b, int c, void *d, int e,              \
     Stype_t f, Dtype_t g, Mtype_t h
 #define Create_Dense_Matrix_ARGS_REF a,b,c,d,e,f,g,h

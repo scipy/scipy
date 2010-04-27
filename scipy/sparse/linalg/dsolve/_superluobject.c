@@ -6,6 +6,7 @@
 
 extern jmp_buf _superlu_py_jmpbuf;
 
+
 /*********************************************************************** 
  * SciPyLUObject methods
  */
@@ -268,26 +269,9 @@ int NCFormat_from_spMatrix(SuperMatrix *A, int m, int n, int nnz,
   return 0;
 }
 
-colperm_t superlu_module_getpermc(int permc_spec)
-{
-  switch(permc_spec) {
-  case 0:
-    return NATURAL;
-  case 1:
-    return MMD_ATA;
-  case 2:
-    return MMD_AT_PLUS_A;
-  case 3:
-    return COLAMD;
-  }
-  ABORT("Invalid input for permc_spec.");
-  return NATURAL; /* compiler complains... */
-}
-
 PyObject *
-newSciPyLUObject(SuperMatrix *A, double diag_pivot_thresh,
-		 int relax, int panel_size, int permc_spec,
-                 int intype)
+newSciPyLUObject(SuperMatrix *A, int relax, int panel_size,
+                 PyObject *option_dict, int intype, int ilu)
 {
 
    /* A must be in SLU_NC format used by the factorization routine. */
@@ -301,6 +285,10 @@ newSciPyLUObject(SuperMatrix *A, double diag_pivot_thresh,
   SuperLUStat_t stat;
   
   n = A->ncol;
+
+  if (!set_superlu_options_from_dict(&options, ilu, option_dict)) {
+      return NULL;
+  }
 
   /* Create SciPyLUObject */
   self = PyObject_New(SciPyLUObject, &SciPySuperLUType);
@@ -318,13 +306,9 @@ newSciPyLUObject(SuperMatrix *A, double diag_pivot_thresh,
   etree = intMalloc(n);
   self->perm_r = intMalloc(n);
   self->perm_c = intMalloc(n);
-
-  set_default_options(&options);
-  options.ColPerm=superlu_module_getpermc(permc_spec);
-  options.DiagPivotThresh = diag_pivot_thresh;
   StatInit(&stat);
-  
-  get_perm_c(permc_spec, A, self->perm_c); /* calc column permutation */
+
+  get_perm_c(options.ColPerm, A, self->perm_c); /* calc column permutation */
   sp_preorder(&options, A, self->perm_c, etree, &AC); /* apply column
                                                        * permutation */
 
@@ -333,10 +317,18 @@ newSciPyLUObject(SuperMatrix *A, double diag_pivot_thresh,
       PyErr_SetString(PyExc_ValueError, "Invalid type in SuperMatrix.");
       goto fail;
   }
-  gstrf(SLU_TYPECODE_TO_NPY(A->Dtype),
-        &options, &AC, relax, panel_size,
-        etree, NULL, lwork, self->perm_c, self->perm_r,
-        &self->L, &self->U, &stat, &info);
+  if (ilu) {
+      gsitrf(SLU_TYPECODE_TO_NPY(A->Dtype),
+             &options, &AC, relax, panel_size,
+             etree, NULL, lwork, self->perm_c, self->perm_r,
+             &self->L, &self->U, &stat, &info);
+  }
+  else {
+      gstrf(SLU_TYPECODE_TO_NPY(A->Dtype),
+            &options, &AC, relax, panel_size,
+            etree, NULL, lwork, self->perm_c, self->perm_r,
+            &self->L, &self->U, &stat, &info);
+  }
 
   if (info) {
     if (info < 0)
@@ -364,4 +356,162 @@ fail:
   StatFree(&stat);
   SciPyLU_dealloc(self);
   return NULL;
+}
+
+
+/***********************************************************************
+ * Preparing superlu_options_t
+ */
+
+#define ENUM_CHECK_INIT                         \
+    long i = -1;                                \
+    char *s = "";                               \
+    if (PyString_Check(input)) {                \
+        s = PyString_AS_STRING(input);          \
+    }                                           \
+    if (PyInt_Check(input)) {                   \
+        i = PyInt_AsLong(input);                \
+    }
+
+#define ENUM_CHECK_FINISH                               \
+    PyErr_SetString(PyExc_ValueError, "unknown value"); \
+    return 0;
+
+#define ENUM_CHECK(name) \
+    if (strcmp(s, #name) == 0 || i == (long)name) { *value = name; return 1; }
+
+static int yes_no_cvt(PyObject *input, yes_no_t *value)
+{
+    if (input == Py_True) {
+        *value = YES;
+    } else if (input == Py_False) {
+        *value = NO;
+    } else {
+        PyErr_SetString(PyExc_ValueError, "value not a boolean");
+        return 0;
+    }
+    return 1;
+}
+
+static int fact_cvt(PyObject *input, fact_t *value)
+{
+    ENUM_CHECK_INIT;
+    ENUM_CHECK(DOFACT);
+    ENUM_CHECK(SamePattern);
+    ENUM_CHECK(SamePattern_SameRowPerm);
+    ENUM_CHECK(FACTORED);
+    ENUM_CHECK_FINISH;
+}
+
+static int rowperm_cvt(PyObject *input, rowperm_t *value)
+{
+    ENUM_CHECK_INIT;
+    ENUM_CHECK(NOROWPERM);
+    ENUM_CHECK(LargeDiag);
+    ENUM_CHECK(MY_PERMR);
+    ENUM_CHECK_FINISH;
+}
+
+static int colperm_cvt(PyObject *input, colperm_t *value)
+{
+    ENUM_CHECK_INIT;
+    ENUM_CHECK(NATURAL);
+    ENUM_CHECK(MMD_ATA);
+    ENUM_CHECK(MMD_AT_PLUS_A);
+    ENUM_CHECK(COLAMD);
+    ENUM_CHECK(MY_PERMC);
+    ENUM_CHECK_FINISH;
+}
+
+static int trans_cvt(PyObject *input, trans_t *value)
+{
+    ENUM_CHECK_INIT;
+    ENUM_CHECK(NOTRANS);
+    ENUM_CHECK(TRANS);
+    ENUM_CHECK(CONJ);
+    ENUM_CHECK_FINISH;
+}
+
+static int iterrefine_cvt(PyObject *input, IterRefine_t *value)
+{
+    ENUM_CHECK_INIT;
+    ENUM_CHECK(NOREFINE);
+    ENUM_CHECK(SINGLE);
+    ENUM_CHECK(DOUBLE);
+    ENUM_CHECK(EXTRA);
+    ENUM_CHECK_FINISH;
+}
+
+static int norm_cvt(PyObject *input, norm_t *value)
+{
+    ENUM_CHECK_INIT;
+    ENUM_CHECK(ONE_NORM);
+    ENUM_CHECK(TWO_NORM);
+    ENUM_CHECK(INF_NORM);
+    ENUM_CHECK_FINISH;
+}
+
+static int milu_cvt(PyObject *input, milu_t *value)
+{
+    ENUM_CHECK_INIT;
+    ENUM_CHECK(SILU);
+    ENUM_CHECK(SMILU_1);
+    ENUM_CHECK(SMILU_2);
+    ENUM_CHECK(SMILU_3);
+    ENUM_CHECK_FINISH;
+}
+
+int set_superlu_options_from_dict(superlu_options_t *options,
+                                  int ilu, PyObject *option_dict)
+{
+    PyObject *args;
+    int ret;
+
+    static char *kwlist[] = {
+        "Fact", "Equil", "ColPerm", "Trans", "IterRefine",
+        "DiagPivotThresh", "PivotGrowth", "ConditionNumber",
+        "RowPerm", "SymmetricMode", "PrintStat", "ReplaceTinyPivot",
+        "SolveInitialized", "RefineInitialized", "ILU_Norm",
+        "ILU_MILU", "ILU_DropTol", "ILU_FillTol", "ILU_FillFactor",
+        "ILU_DropRule", NULL
+    };
+
+    if (ilu) {
+        ilu_set_default_options(options);
+    }
+    else {
+        set_default_options(options);
+    }
+
+    if (option_dict == NULL) {
+        return 0;
+    }
+    
+    args = PyTuple_New(0);
+    ret = PyArg_ParseTupleAndKeywords(
+        args, option_dict,
+        "|O&O&O&O&O&dO&O&O&O&O&O&O&O&O&O&dddi", kwlist,
+        fact_cvt, &options->Fact,
+        yes_no_cvt, &options->Equil,
+        colperm_cvt, &options->ColPerm,
+        trans_cvt, &options->Trans,
+        iterrefine_cvt, &options->IterRefine,
+        &options->DiagPivotThresh,
+        yes_no_cvt, &options->PivotGrowth,
+        yes_no_cvt, &options->ConditionNumber,
+        rowperm_cvt, &options->RowPerm,
+        yes_no_cvt, &options->SymmetricMode,
+        yes_no_cvt, &options->PrintStat,
+        yes_no_cvt, &options->ReplaceTinyPivot,
+        yes_no_cvt, &options->SolveInitialized,
+        yes_no_cvt, &options->RefineInitialized,
+        norm_cvt, &options->ILU_Norm,
+        milu_cvt, &options->ILU_MILU,
+        &options->ILU_DropTol,
+        &options->ILU_FillTol,
+        &options->ILU_FillFactor,
+        &options->ILU_DropRule
+        );
+    Py_DECREF(args);
+    return ret;
 }

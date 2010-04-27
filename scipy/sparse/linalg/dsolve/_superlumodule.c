@@ -33,21 +33,22 @@ Py_gssv(PyObject *self, PyObject *args, PyObject *kwdict)
     PyArrayObject *colind=NULL, *rowptr=NULL;
     int N, nnz;
     int info;
-    int csc=0, permc_spec=2;
+    int csc=0;
     int *perm_r=NULL, *perm_c=NULL;
     SuperMatrix A, B, L, U;
     superlu_options_t options;
     SuperLUStat_t stat;
+    PyObject *option_dict = NULL;
     int type;
 
     static char *kwlist[] = {"N","nnz","nzvals","colind","rowptr","B", "csc",
-                             "permc_spec",NULL};
+                             "options",NULL};
     
     /* Get input arguments */
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiO!O!O!O|ii", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiO!O!O!O|iO", kwlist,
                                      &N, &nnz, &PyArray_Type, &nzvals,
                                      &PyArray_Type, &colind, &PyArray_Type,
-                                     &rowptr, &Py_B, &csc, &permc_spec)) {
+                                     &rowptr, &Py_B, &csc, &option_dict)) {
         return NULL;
     }
 
@@ -61,6 +62,10 @@ Py_gssv(PyObject *self, PyObject *args, PyObject *kwdict)
     if (!CHECK_SLU_TYPE(type)) {
         PyErr_SetString(PyExc_TypeError,
                         "nzvals is not of a type supported by SuperLU");
+        return NULL;
+    }
+
+    if (!set_superlu_options_from_dict(&options, 0, option_dict)) {
         return NULL;
     }
 
@@ -99,8 +104,6 @@ Py_gssv(PyObject *self, PyObject *args, PyObject *kwdict)
     else {
         perm_c = intMalloc(N);
         perm_r = intMalloc(N);
-        set_default_options(&options);
-        options.ColPerm = superlu_module_getpermc(permc_spec);
         StatInit(&stat);
 
         /* Compute direct inverse of sparse Matrix */
@@ -133,30 +136,30 @@ static PyObject *
 Py_gstrf(PyObject *self, PyObject *args, PyObject *keywds)
 {
     /* default value for SuperLU parameters*/
-    double diag_pivot_thresh = 1.0;
     int relax = 1;
     int panel_size = 10;
-    int permc_spec = 2;
     int N, nnz;
     PyArrayObject *rowind, *colptr, *nzvals;
     SuperMatrix A;
     PyObject *result;
+    PyObject *option_dict = NULL;
     int type;
-  
+    int ilu = 0;
+
     static char *kwlist[] = {"N","nnz","nzvals","rowind","colptr",
-                             "permc_spec","diag_pivot_thresh",
-                             "relax", "panel_size", NULL};
+                             "options", "relax", "panel_size", "ilu",
+                             NULL};
 
     int res = PyArg_ParseTupleAndKeywords(
-        args, keywds, "iiO!O!O!|iddii", kwlist, 
+        args, keywds, "iiO!O!O!|Oiii", kwlist, 
         &N, &nnz,
         &PyArray_Type, &nzvals,
         &PyArray_Type, &rowind,
         &PyArray_Type, &colptr,
-        &permc_spec,
-        &diag_pivot_thresh,
+        &option_dict,
         &relax,
-        &panel_size);
+        &panel_size,
+        &ilu);
 
     if (!res)
         return NULL;
@@ -179,8 +182,8 @@ Py_gstrf(PyObject *self, PyObject *args, PyObject *keywds)
         goto fail;
     }
 
-    result = newSciPyLUObject(&A, diag_pivot_thresh, relax,
-                              panel_size, permc_spec, type);
+    result = newSciPyLUObject(&A, relax,
+                              panel_size, option_dict, type, ilu);
     if (result == NULL) {
         goto fail;
     }
@@ -217,24 +220,17 @@ colptr    index into rowind for first non-zero value in this column\n\
 \n\
 additional keyword arguments:\n\
 -----------------------------\n\
-permc_spec          specifies the matrix ordering used for the factorization\n\
-                    0: natural ordering\n\
-                    1: MMD applied to the structure of A^T * A\n\
-                    2: MMD applied to the structure of A^T + A\n\
-                    3: COLAMD, approximate minimum degree column ordering\n\
-                    (default: 2)\n\
-\n\
-diag_pivot_thresh   threshhold for partial pivoting.\n\
-                    0.0 <= diag_pivot_thresh <= 1.0\n\
-                    0.0 corresponds to no pivoting\n\
-                    1.0 corresponds to partial pivoting\n\
-                    (default: 1.0)\n\
+options             specifies additional options for SuperLU\n\
+                    (same keys and values as in superlu_options_t C structure)\n\
 \n\
 relax               to control degree of relaxing supernodes\n\
                     (default: 1)\n\
 \n\
 panel_size          a panel consist of at most panel_size consecutive columns.\n\
                     (default: 10)\n\
+\n\
+ilu                 whether to perform an incomplete LU decomposition\n\
+                    (default: false)\n\
 ";
 
 
