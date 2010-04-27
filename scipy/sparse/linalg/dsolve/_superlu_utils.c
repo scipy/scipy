@@ -67,3 +67,18 @@ void superlu_python_module_free(void *ptr)
   return; 
 }
 
+/*
+ * Stubs for Harwell Subroutine Library functions that SuperLU tries to call.
+ */
+
+void mc64id_(int *a)
+{
+    superlu_python_module_abort("chosen functionality not available");
+}
+
+void mc64ad_(int *a, int *b, int *c, int d[], int e[], double f[],
+             int *g, int h[], int *i, int j[], int *k, double l[],
+             int m[], int n[])
+{
+    superlu_python_module_abort("chosen functionality not available");
+}
