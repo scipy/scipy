@@ -1,22 +1,19 @@
 
-/*
+/*! @file cgssvx.c
+ * \brief Solves the system of linear equations A*X=B or A'*X=B
+ *
+ * <pre>
  * -- SuperLU routine (version 3.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * October 15, 2003
- *
+ * </pre>
  */
-#include "csp_defs.h"
+#include "slu_cdefs.h"
 
-void
-cgssvx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
-       int *etree, char *equed, float *R, float *C,
-       SuperMatrix *L, SuperMatrix *U, void *work, int lwork,
-       SuperMatrix *B, SuperMatrix *X, float *recip_pivot_growth, 
-       float *rcond, float *ferr, float *berr, 
-       mem_usage_t *mem_usage, SuperLUStat_t *stat, int *info )
-{
-/*
+/*! \brief
+ *
+ * <pre>
  * Purpose
  * =======
  *
@@ -314,7 +311,7 @@ cgssvx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
  *
  * stat   (output) SuperLUStat_t*
  *        Record the statistics on runtime and floating-point operation count.
- *        See util.h for the definition of 'SuperLUStat_t'.
+ *        See slu_util.h for the definition of 'SuperLUStat_t'.
  *
  * info    (output) int*
  *         = 0: successful exit   
@@ -332,8 +329,18 @@ cgssvx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
  *                    accurate than the value of RCOND would suggest.   
  *              > A->ncol+1: number of bytes allocated when memory allocation
  *                    failure occurred, plus A->ncol.
- *
+ * </pre>
  */
+
+void
+cgssvx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
+       int *etree, char *equed, float *R, float *C,
+       SuperMatrix *L, SuperMatrix *U, void *work, int lwork,
+       SuperMatrix *B, SuperMatrix *X, float *recip_pivot_growth, 
+       float *rcond, float *ferr, float *berr, 
+       mem_usage_t *mem_usage, SuperLUStat_t *stat, int *info )
+{
+
 
     DNformat  *Bstore, *Xstore;
     complex    *Bmat, *Xmat;
@@ -346,13 +353,12 @@ cgssvx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     int       i, j, info1;
     float    amax, anorm, bignum, smlnum, colcnd, rowcnd, rcmax, rcmin;
     int       relax, panel_size;
-    float    diag_pivot_thresh, drop_tol;
+    float    diag_pivot_thresh;
     double    t0;      /* temporary time */
     double    *utime;
 
     /* External functions */
     extern float clangs(char *, SuperMatrix *);
-    extern double slamch_(char *);
 
     Bstore = B->Store;
     Xstore = X->Store;
@@ -443,7 +449,6 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
     panel_size = sp_ienv(1);
     relax      = sp_ienv(2);
     diag_pivot_thresh = options->DiagPivotThresh;
-    drop_tol   = 0.0;
 
     utime = stat->utime;
     
@@ -455,7 +460,7 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
 			       Astore->nzval, Astore->colind, Astore->rowptr,
 			       SLU_NC, A->Dtype, A->Mtype);
 	if ( notran ) { /* Reverse the transpose argument. */
-            trant = CONJ;
+	    trant = TRANS;
 	    notran = 0;
 	} else {
 	    trant = NOTRANS;
@@ -523,8 +528,8 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
 	
 	/* Compute the LU factorization of A*Pc. */
 	t0 = SuperLU_timer_();
-	cgstrf(options, &AC, drop_tol, relax, panel_size,
-	       etree, work, lwork, perm_c, perm_r, L, U, stat, info);
+	cgstrf(options, &AC, relax, panel_size, etree,
+                work, lwork, perm_c, perm_r, L, U, stat, info);
 	utime[FACT] = SuperLU_timer_() - t0;
 	
 	if ( lwork == -1 ) {

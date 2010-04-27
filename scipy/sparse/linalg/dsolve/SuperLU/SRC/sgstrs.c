@@ -1,25 +1,27 @@
 
-/*
+/*! @file sgstrs.c
+ * \brief Solves a system using LU factorization
+ *
+ * <pre>
  * -- SuperLU routine (version 3.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * October 15, 2003
  *
+ * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
+ * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ *
+ * Permission is hereby granted to use or copy this program for any
+ * purpose, provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is
+ * granted, provided the above notices are retained, and a notice that
+ * the code was modified is included with the above copyright notice.
+ * </pre>
  */
-/*
-  Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
- 
-  THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
-  EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- 
-  Permission is hereby granted to use or copy this program for any
-  purpose, provided the above notices are retained on all copies.
-  Permission to modify the code and to distribute modified code is
-  granted, provided the above notices are retained, and a notice that
-  the code was modified is included with the above copyright notice.
-*/
 
-#include "ssp_defs.h"
+#include "slu_sdefs.h"
 
 
 /* 
@@ -29,13 +31,9 @@ void susolve(int, int, float*, float*);
 void slsolve(int, int, float*, float*);
 void smatvec(int, int, int, float*, float*, float*);
 
-
-void
-sgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
-        int *perm_c, int *perm_r, SuperMatrix *B,
-        SuperLUStat_t *stat, int *info)
-{
-/*
+/*! \brief
+ *
+ * <pre>
  * Purpose
  * =======
  *
@@ -85,8 +83,15 @@ sgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
  * info    (output) int*
  * 	   = 0: successful exit
  *	   < 0: if info = -i, the i-th argument had an illegal value
- *
+ * </pre>
  */
+
+void
+sgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
+        int *perm_c, int *perm_r, SuperMatrix *B,
+        SuperLUStat_t *stat, int *info)
+{
+
 #ifdef _CRAY
     _fcd ftcs1, ftcs2, ftcs3, ftcs4;
 #endif
@@ -288,7 +293,7 @@ sgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
 	
         stat->ops[SOLVE] = solve_ops;
 
-    } else { /* Solve A'*X=B */
+    } else { /* Solve A'*X=B or CONJ(A)*X=B */
 	/* Permute right hand sides to form Pc'*B. */
 	for (i = 0; i < nrhs; i++) {
 	    rhs_work = &Bmat[i*ldb];
@@ -297,7 +302,6 @@ sgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
 	}
 
 	stat->ops[SOLVE] = 0;
-	
 	for (k = 0; k < nrhs; ++k) {
 	    
 	    /* Multiply by inv(U'). */
@@ -307,7 +311,6 @@ sgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
 	    sp_strsv("L", "T", "U", L, U, &Bmat[k*ldb], stat, info);
 	    
 	}
-	
 	/* Compute the final solution X := Pr'*X (=inv(Pr)*X) */
 	for (i = 0; i < nrhs; i++) {
 	    rhs_work = &Bmat[i*ldb];

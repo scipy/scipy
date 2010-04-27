@@ -1,67 +1,74 @@
 
-
-/*
+/*! @file clacon.c
+ * \brief Estimates the 1-norm
+ *
+ * <pre>
  * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
- *
+ * </pre>
  */
 #include <math.h>
-#include "Cnames.h"
-#include "scomplex.h"
+#include "slu_Cnames.h"
+#include "slu_scomplex.h"
+
+/*! \brief
+ *
+ * <pre>
+ *   Purpose   
+ *   =======   
+ *
+ *   CLACON estimates the 1-norm of a square matrix A.   
+ *   Reverse communication is used for evaluating matrix-vector products. 
+ * 
+ *
+ *   Arguments   
+ *   =========   
+ *
+ *   N      (input) INT
+ *          The order of the matrix.  N >= 1.   
+ *
+ *   V      (workspace) COMPLEX PRECISION array, dimension (N)   
+ *          On the final return, V = A*W,  where  EST = norm(V)/norm(W)   
+ *          (W is not returned).   
+ *
+ *   X      (input/output) COMPLEX PRECISION array, dimension (N)   
+ *          On an intermediate return, X should be overwritten by   
+ *                A * X,   if KASE=1,   
+ *                A' * X,  if KASE=2,
+ *          where A' is the conjugate transpose of A,
+ *         and CLACON must be re-called with all the other parameters   
+ *          unchanged.   
+ *
+ *
+ *   EST    (output) FLOAT PRECISION   
+ *          An estimate (a lower bound) for norm(A).   
+ *
+ *   KASE   (input/output) INT
+ *          On the initial call to CLACON, KASE should be 0.   
+ *          On an intermediate return, KASE will be 1 or 2, indicating   
+ *          whether X should be overwritten by A * X  or A' * X.   
+ *          On the final return from CLACON, KASE will again be 0.   
+ *
+ *   Further Details   
+ *   ======= =======   
+ *
+ *   Contributed by Nick Higham, University of Manchester.   
+ *   Originally named CONEST, dated March 16, 1988.   
+ *
+ *   Reference: N.J. Higham, "FORTRAN codes for estimating the one-norm of 
+ *   a real or complex matrix, with applications to condition estimation", 
+ *   ACM Trans. Math. Soft., vol. 14, no. 4, pp. 381-396, December 1988.   
+ *   ===================================================================== 
+ * </pre>
+ */
 
 int
 clacon_(int *n, complex *v, complex *x, float *est, int *kase)
 
 {
-/*
-    Purpose   
-    =======   
 
-    CLACON estimates the 1-norm of a square matrix A.   
-    Reverse communication is used for evaluating matrix-vector products. 
-  
-
-    Arguments   
-    =========   
-
-    N      (input) INT
-           The order of the matrix.  N >= 1.   
-
-    V      (workspace) COMPLEX PRECISION array, dimension (N)   
-           On the final return, V = A*W,  where  EST = norm(V)/norm(W)   
-           (W is not returned).   
-
-    X      (input/output) COMPLEX PRECISION array, dimension (N)   
-           On an intermediate return, X should be overwritten by   
-                 A * X,   if KASE=1,   
-                 A' * X,  if KASE=2,
-           where A' is the conjugate transpose of A,
-           and CLACON must be re-called with all the other parameters   
-           unchanged.   
-
-
-    EST    (output) FLOAT PRECISION   
-           An estimate (a lower bound) for norm(A).   
-
-    KASE   (input/output) INT
-           On the initial call to CLACON, KASE should be 0.   
-           On an intermediate return, KASE will be 1 or 2, indicating   
-           whether X should be overwritten by A * X  or A' * X.   
-           On the final return from CLACON, KASE will again be 0.   
-
-    Further Details   
-    ======= =======   
-
-    Contributed by Nick Higham, University of Manchester.   
-    Originally named CONEST, dated March 16, 1988.   
-
-    Reference: N.J. Higham, "FORTRAN codes for estimating the one-norm of 
-    a real or complex matrix, with applications to condition estimation", 
-    ACM Trans. Math. Soft., vol. 14, no. 4, pp. 381-396, December 1988.   
-    ===================================================================== 
-*/
 
     /* Table of constant values */
     int c__1 = 1;
@@ -106,14 +113,14 @@ clacon_(int *n, complex *v, complex *x, float *est, int *kase)
   L20:
     if (*n == 1) {
 	v[0] = x[0];
-	*est = slu_c_abs(&v[0]);
+	*est = c_abs(&v[0]);
 	/*        ... QUIT */
 	goto L150;
     }
     *est = scsum1_(n, x, &c__1);
 
     for (i = 0; i < *n; ++i) {
-	d__1 = slu_c_abs(&x[i]);
+	d__1 = c_abs(&x[i]);
 	if (d__1 > safmin) {
 	    d__1 = 1 / d__1;
 	    x[i].r *= d__1;
@@ -158,7 +165,7 @@ L90:
     if (*est <= estold) goto L120;
 
     for (i = 0; i < *n; ++i) {
-	d__1 = slu_c_abs(&x[i]);
+	d__1 = c_abs(&x[i]);
 	if (d__1 > safmin) {
 	    d__1 = 1 / d__1;
 	    x[i].r *= d__1;

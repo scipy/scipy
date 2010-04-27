@@ -1,17 +1,26 @@
+/*! @file dlamch.c
+ * \brief Determines double precision machine parameters
+ *
+ * <pre>
+ *       -- LAPACK auxiliary routine (version 2.0) --   
+ *       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+ *       Courant Institute, Argonne National Lab, and Rice University   
+ *       October 31, 1992   
+ * </pre>
+ */
 #include <stdio.h>
+#include "slu_Cnames.h"
+
 #define TRUE_ (1)
 #define FALSE_ (0)
 #define abs(x) ((x) >= 0 ? (x) : -(x))
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 
-double dlamch_(char *cmach)
-{
-/*  -- LAPACK auxiliary routine (version 2.0) --   
-       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
-       Courant Institute, Argonne National Lab, and Rice University   
-       October 31, 1992   
 
+/*! \brief
+
+<pre>
     Purpose   
     =======   
 
@@ -47,7 +56,11 @@ double dlamch_(char *cmach)
             rmax  = overflow threshold  - (base**emax)*(1-eps)   
 
    ===================================================================== 
+</pre>
 */
+double dlamch_(char *cmach)
+{
+
 
     static int first = TRUE_;
 
@@ -125,18 +138,11 @@ double dlamch_(char *cmach)
 /*     End of DLAMCH */
 
 } /* dlamch_ */
-
-
-/* Subroutine */ int dlamc1_(int *beta, int *t, int *rnd, int 
-	*ieee1)
-{
-/*  -- LAPACK auxiliary routine (version 2.0) --   
-       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
-       Courant Institute, Argonne National Lab, and Rice University   
-       October 31, 1992   
-
-
-    Purpose   
+/* Subroutine */ 
+/*! \brief 
+ 
+<pre>
+ Purpose   
     =======   
 
     DLAMC1 determines the machine parameters given by BETA, T, RND, and   
@@ -177,7 +183,11 @@ double dlamch_(char *cmach)
           Comms. of the ACM, 17, 276-277.   
 
    ===================================================================== 
+</pre>
 */
+int dlamc1_(int *beta, int *t, int *rnd, int 
+	*ieee1)
+{
     /* Initialized data */
     static int first = TRUE_;
     /* System generated locals */
@@ -337,16 +347,10 @@ L30:
 } /* dlamc1_ */
 
 
-/* Subroutine */ int dlamc2_(int *beta, int *t, int *rnd, 
-	double *eps, int *emin, double *rmin, int *emax, 
-	double *rmax)
-{
-/*  -- LAPACK auxiliary routine (version 2.0) --   
-       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
-       Courant Institute, Argonne National Lab, and Rice University   
-       October 31, 1992   
-
-
+/* Subroutine */ 
+/*! \brief 
+ 
+<pre>
     Purpose   
     =======   
 
@@ -402,7 +406,13 @@ L30:
     W. Kahan of the University of California at Berkeley.   
 
    ===================================================================== 
+</pre>
 */
+int dlamc2_(int *beta, int *t, int *rnd, 
+	double *eps, int *emin, double *rmin, int *emax, 
+	double *rmax)
+{
+
     /* Table of constant values */
     static int c__1 = 1;
     
@@ -638,15 +648,9 @@ ing
 
 } /* dlamc2_ */
 
-
-double dlamc3_(double *a, double *b)
-{
-/*  -- LAPACK auxiliary routine (version 2.0) --   
-       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
-       Courant Institute, Argonne National Lab, and Rice University   
-       October 31, 1992   
-
-
+/*! \brief 
+ 
+<pre>
     Purpose   
     =======   
 
@@ -663,7 +667,10 @@ double dlamc3_(double *a, double *b)
             The values A and B.   
 
    ===================================================================== 
+</pre>
 */
+double dlamc3_(double *a, double *b)
+{
 /* >>Start of File<<   
        System generated locals */
     double ret_val;
@@ -677,14 +684,10 @@ double dlamc3_(double *a, double *b)
 } /* dlamc3_ */
 
 
-/* Subroutine */ int dlamc4_(int *emin, double *start, int *base)
-{
-/*  -- LAPACK auxiliary routine (version 2.0) --   
-       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
-       Courant Institute, Argonne National Lab, and Rice University   
-       October 31, 1992   
+/* Subroutine */ 
+/*! \brief
 
-
+<pre>
     Purpose   
     =======   
 
@@ -706,7 +709,11 @@ double dlamc3_(double *a, double *b)
             The base of the machine.   
 
    ===================================================================== 
+</pre>
 */
+
+int dlamc4_(int *emin, double *start, int *base)
+{
     /* System generated locals */
     int i__1;
     double d__1;
@@ -765,15 +772,10 @@ L10:
 } /* dlamc4_ */
 
 
-/* Subroutine */ int dlamc5_(int *beta, int *p, int *emin, 
-	int *ieee, int *emax, double *rmax)
-{
-/*  -- LAPACK auxiliary routine (version 2.0) --   
-       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
-       Courant Institute, Argonne National Lab, and Rice University   
-       October 31, 1992   
-
-
+/* Subroutine */ 
+/*! \brief 
+ 
+<pre>
     Purpose   
     =======   
 
@@ -815,7 +817,13 @@ L10:
        First compute LEXP and UEXP, two powers of 2 that bound   
        abs(EMIN). We then assume that EMAX + abs(EMIN) will sum   
        approximately to the bound that is closest to abs(EMIN).   
-       (EMAX is the exponent of the required number RMAX). */
+       (EMAX is the exponent of the required number RMAX).
+</pre>
+*/
+int dlamc5_(int *beta, int *p, int *emin, 
+	int *ieee, int *emax, double *rmax)
+{
+
     /* Table of constant values */
     static double c_b5 = 0.;
     

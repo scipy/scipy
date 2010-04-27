@@ -1,48 +1,32 @@
 
-
-/*
+/*! @file zpanel_dfs.c
+ * \brief Peforms a symbolic factorization on a panel of symbols
+ *
+ * <pre>
  * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
  *
+ * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
+ * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ * 
+ * Permission is hereby granted to use or copy this program for any
+ * purpose, provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is
+ * granted, provided the above notices are retained, and a notice that
+ * the code was modified is included with the above copyright notice.
+ * </pre>
  */
-/*
-  Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
- 
-  THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
-  EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- 
-  Permission is hereby granted to use or copy this program for any
-  purpose, provided the above notices are retained on all copies.
-  Permission to modify the code and to distribute modified code is
-  granted, provided the above notices are retained, and a notice that
-  the code was modified is included with the above copyright notice.
-*/
 
-#include "zsp_defs.h"
-#include "util.h"
 
-void
-zpanel_dfs (
-	   const int  m,           /* in - number of rows in the matrix */
-	   const int  w,           /* in */
-	   const int  jcol,        /* in */
-	   SuperMatrix *A,       /* in - original matrix */
-	   int        *perm_r,     /* in */
-	   int        *nseg,	   /* out */
-	   doublecomplex     *dense,      /* out */
-	   int        *panel_lsub, /* out */
-	   int        *segrep,     /* out */
-	   int        *repfnz,     /* out */
-	   int        *xprune,     /* out */
-	   int        *marker,     /* out */     
-	   int        *parent,     /* working array */
-	   int        *xplore,     /* working array */
-	   GlobalLU_t *Glu         /* modified */
-	   )
-{
-/*
+#include "slu_zdefs.h"
+
+/*! \brief
+ *
+ * <pre>
  * Purpose
  * =======
  *
@@ -68,8 +52,29 @@ zpanel_dfs (
  *   repfnz: SuperA-col --> PA-row
  *   parent: SuperA-col --> SuperA-col
  *   xplore: SuperA-col --> index to L-structure
- *
+ * </pre>
  */
+
+void
+zpanel_dfs (
+	   const int  m,           /* in - number of rows in the matrix */
+	   const int  w,           /* in */
+	   const int  jcol,        /* in */
+	   SuperMatrix *A,       /* in - original matrix */
+	   int        *perm_r,     /* in */
+	   int        *nseg,	   /* out */
+	   doublecomplex     *dense,      /* out */
+	   int        *panel_lsub, /* out */
+	   int        *segrep,     /* out */
+	   int        *repfnz,     /* out */
+	   int        *xprune,     /* out */
+	   int        *marker,     /* out */     
+	   int        *parent,     /* working array */
+	   int        *xplore,     /* working array */
+	   GlobalLU_t *Glu         /* modified */
+	   )
+{
+
     NCPformat *Astore;
     doublecomplex    *a;
     int       *asub;

@@ -1,39 +1,39 @@
-/*
+/*! @file util.c
+ * \brief Utility functions
+ * 
+ * <pre>
  * -- SuperLU routine (version 3.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * October 15, 2003
  *
+ * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
+ * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ *
+ * Permission is hereby granted to use or copy this program for any
+ * purpose, provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is
+ * granted, provided the above notices are retained, and a notice that
+ * the code was modified is included with the above copyright notice.
+ * </pre>
  */
-/*
-  Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
- 
-  THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
-  EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- 
-  Permission is hereby granted to use or copy this program for any
-  purpose, provided the above notices are retained on all copies.
-  Permission to modify the code and to distribute modified code is
-  granted, provided the above notices are retained, and a notice that
-  the code was modified is included with the above copyright notice.
-*/
+
 
 #include <math.h>
-#include "dsp_defs.h"
-#include "util.h"
+#include "slu_ddefs.h"
 
-/* 
- * Global statistics variale
+/*! \brief Global statistics variale
  */
 
 void superlu_abort_and_exit(char* msg)
 {
-    fprintf(stderr, "%s\n", msg);
+    fprintf(stderr, msg);
     exit (-1);
 }
 
-/*
- * Set the default values for the options argument.
+/*! \brief Set the default values for the options argument.
  */
 void set_default_options(superlu_options_t *options)
 {
@@ -49,7 +49,57 @@ void set_default_options(superlu_options_t *options)
     options->PrintStat = YES;
 }
 
-/* Deallocate the structure pointing to the actual storage of the matrix. */
+/*! \brief Set the default values for the options argument for ILU.
+ */
+void ilu_set_default_options(superlu_options_t *options)
+{
+    set_default_options(options);
+
+    /* further options for incomplete factorization */
+    options->DiagPivotThresh = 0.1;
+    options->RowPerm = LargeDiag;
+    options->DiagPivotThresh = 0.1;
+    options->ILU_FillFactor = 10.0;
+    options->ILU_DropTol = 1e-4;
+    options->ILU_DropRule = DROP_BASIC | DROP_AREA;
+    options->ILU_Norm = INF_NORM;
+    options->ILU_MILU = SMILU_2;   /* SILU */
+    options->ILU_FillTol = 1e-2;
+}
+
+/*! \brief Print the options setting.
+ */
+void print_options(superlu_options_t *options)
+{
+    printf(".. options:\n");
+    printf("\tFact\t %8d\n", options->Fact);
+    printf("\tEquil\t %8d\n", options->Equil);
+    printf("\tColPerm\t %8d\n", options->ColPerm);
+    printf("\tDiagPivotThresh %8.4f\n", options->DiagPivotThresh);
+    printf("\tTrans\t %8d\n", options->Trans);
+    printf("\tIterRefine\t%4d\n", options->IterRefine);
+    printf("\tSymmetricMode\t%4d\n", options->SymmetricMode);
+    printf("\tPivotGrowth\t%4d\n", options->PivotGrowth);
+    printf("\tConditionNumber\t%4d\n", options->ConditionNumber);
+    printf("..\n");
+}
+
+/*! \brief Print the options setting.
+ */
+void print_ilu_options(superlu_options_t *options)
+{
+    printf(".. ILU options:\n");
+    printf("\tDiagPivotThresh\t%6.2e\n", options->DiagPivotThresh);
+    printf("\ttau\t%6.2e\n", options->ILU_DropTol);
+    printf("\tgamma\t%6.2f\n", options->ILU_FillFactor);
+    printf("\tDropRule\t%0x\n", options->ILU_DropRule);
+    printf("\tMILU\t%d\n", options->ILU_MILU);
+    printf("\tMILU_ALPHA\t%6.2e\n", MILU_ALPHA);
+    printf("\tDiagFillTol\t%6.2e\n", options->ILU_FillTol);
+    printf("..\n");
+}
+
+/*! \brief Deallocate the structure pointing to the actual storage of the matrix. */
 void
 Destroy_SuperMatrix_Store(SuperMatrix *A)
 {
@@ -86,7 +136,7 @@ Destroy_SuperNode_Matrix(SuperMatrix *A)
     SUPERLU_FREE ( A->Store );
 }
 
-/* A is of type Stype==NCP */
+/*! \brief A is of type Stype==NCP */
 void
 Destroy_CompCol_Permuted(SuperMatrix *A)
 {
@@ -95,7 +145,7 @@ Destroy_CompCol_Permuted(SuperMatrix *A)
     SUPERLU_FREE ( A->Store );
 }
 
-/* A is of type Stype==DN */
+/*! \brief A is of type Stype==DN */
 void
 Destroy_Dense_Matrix(SuperMatrix *A)
 {
@@ -104,8 +154,7 @@ Destroy_Dense_Matrix(SuperMatrix *A)
     SUPERLU_FREE ( A->Store );
 }
 
-/*
- * Reset repfnz[] for the current column 
+/*! \brief Reset repfnz[] for the current column 
  */
 void
 resetrep_col (const int nseg, const int *segrep, int *repfnz)
@@ -119,9 +168,7 @@ resetrep_col (const int nseg, const int *segrep, int *repfnz)
 }
 
 
-/*
- * Count the total number of nonzeros in factors L and U,  and in the 
- * symmetrically reduced L. 
+/*! \brief Count the total number of nonzeros in factors L and U,  and in the symmetrically reduced L. 
  */
 void
 countnz(const int n, int *xprune, int *nnzL, int *nnzU, GlobalLU_t *Glu)
@@ -158,12 +205,41 @@ countnz(const int n, int *xprune, int *nnzL, int *nnzU, GlobalLU_t *Glu)
     /* printf("\tNo of nonzeros in symm-reduced L = %d\n", nnzL0);*/
 }
 
+/*! \brief Count the total number of nonzeros in factors L and U.
+ */
+void
+ilu_countnz(const int n, int *nnzL, int *nnzU, GlobalLU_t *Glu)
+{
+    int          nsuper, fsupc, i, j;
+    int          jlen, irep;
+    int          *xsup, *xlsub;
+
+    xsup   = Glu->xsup;
+    xlsub  = Glu->xlsub;
+    *nnzL  = 0;
+    *nnzU  = (Glu->xusub)[n];
+    nsuper = (Glu->supno)[n];
+
+    if ( n <= 0 ) return;
+
+    /*
+     * For each supernode
+     */
+    for (i = 0; i <= nsuper; i++) {
+	fsupc = xsup[i];
+	jlen = xlsub[fsupc+1] - xlsub[fsupc];
+
+	for (j = fsupc; j < xsup[i+1]; j++) {
+	    *nnzL += jlen;
+	    *nnzU += j - fsupc + 1;
+	    jlen--;
+	}
+	irep = xsup[i+1] - 1;
+    }
+}
 
 
-/*
- * Fix up the data storage lsub for L-subscripts. It removes the subscript
- * sets for structural pruning,	and applies permuation to the remaining
- * subscripts.
+/*! \brief Fix up the data storage lsub for L-subscripts. It removes the subscript sets for structural pruning,	and applies permuation to the remaining subscripts.
  */
 void
 fixupL(const int n, const int *perm_r, GlobalLU_t *Glu)
@@ -199,8 +275,7 @@ fixupL(const int n, const int *perm_r, GlobalLU_t *Glu)
 }
 
 
-/*
- * Diagnostic print of segment info after panel_dfs().
+/*! \brief Diagnostic print of segment info after panel_dfs().
  */
 void print_panel_seg(int n, int w, int jcol, int nseg, 
 		     int *segrep, int *repfnz)
@@ -234,6 +309,9 @@ StatInit(SuperLUStat_t *stat)
         stat->utime[i] = 0.;
         stat->ops[i] = 0.;
     }
+    stat->TinyPivots = 0;
+    stat->RefineSteps = 0;
+    stat->expansions = 0;
 }
 
 
@@ -254,6 +332,8 @@ StatPrint(SuperLUStat_t *stat)
     if ( utime[SOLVE] != 0.0 )
       printf("Solve flops = %e\tMflops = %8.2f\n", ops[SOLVE],
 	     ops[SOLVE]*1e-6/utime[SOLVE]);
+
+    printf("Number of memory expansions: %d\n", stat->expansions);
 
 }
 
@@ -283,8 +363,7 @@ LUSolveFlops(SuperLUStat_t *stat)
 
 
 
-/* 
- * Fills an integer array with a given value.
+/*! \brief Fills an integer array with a given value.
  */
 void ifill(int *a, int alen, int ival)
 {
@@ -294,8 +373,7 @@ void ifill(int *a, int alen, int ival)
 
 
 
-/* 
- * Get the statistics of the supernodes 
+/*! \brief Get the statistics of the supernodes 
  */
 #define NBUCKS 10
 static 	int	max_sup_size;
@@ -350,8 +428,7 @@ float DenseSize(int n, float sum_nw)
 
 
 
-/*
- * Check whether repfnz[] == EMPTY after reset.
+/*! \brief Check whether repfnz[] == EMPTY after reset.
  */
 void check_repfnz(int n, int w, int jcol, int *repfnz)
 {
@@ -367,7 +444,7 @@ void check_repfnz(int n, int w, int jcol, int *repfnz)
 }
 
 
-/* Print a summary of the testing results. */
+/*! \brief Print a summary of the testing results. */
 void
 PrintSumm(char *type, int nfail, int nrun, int nerrs)
 {
@@ -389,3 +466,19 @@ int print_int_vec(char *what, int n, int *vec)
     for (i = 0; i < n; ++i) printf("%d\t%d\n", i, vec[i]);
     return 0;
 }
+
+int slu_PrintInt10(char *name, int len, int *x)
+{
+    register i;
+    
+    printf("%10s:", name);
+    for (i = 0; i < len; ++i)
+    {
+	if ( i % 10 == 0 ) printf("\n\t[%2d-%2d]", i, i + 9);
+	printf("%6d", x[i]);
+    }
+    printf("\n");
+    return 0;
+}
+
+

@@ -1,21 +1,20 @@
 
-
-/*
+/*! @file cpivotgrowth.c
+ * \brief Computes the reciprocal pivot growth factor
+ *
+ * <pre>
  * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
- *
+ * </pre>
  */
 #include <math.h>
-#include "csp_defs.h"
-#include "util.h"
+#include "slu_cdefs.h"
 
-float
-cPivotGrowth(int ncols, SuperMatrix *A, int *perm_c, 
-             SuperMatrix *L, SuperMatrix *U)
-{
-/*
+/*! \brief
+ *
+ * <pre>
  * Purpose
  * =======
  *
@@ -43,8 +42,14 @@ cPivotGrowth(int ncols, SuperMatrix *A, int *perm_c,
  *	    The factor U from the factorization Pr*A*Pc=L*U. Use column-wise
  *          storage scheme, i.e., U has types: Stype = NC;
  *          Dtype = SLU_C; Mtype = TRU.
- *
+ * </pre>
  */
+
+float
+cPivotGrowth(int ncols, SuperMatrix *A, int *perm_c, 
+             SuperMatrix *L, SuperMatrix *U)
+{
+
     NCformat *Astore;
     SCformat *Lstore;
     NCformat *Ustore;
@@ -83,15 +88,15 @@ cPivotGrowth(int ncols, SuperMatrix *A, int *perm_c,
 	    maxaj = 0.;
             oldcol = inv_perm_c[j];
 	    for (i = Astore->colptr[oldcol]; i < Astore->colptr[oldcol+1]; ++i)
-		maxaj = SUPERLU_MAX( maxaj, slu_c_abs1( &Aval[i]) );
+		maxaj = SUPERLU_MAX( maxaj, c_abs1( &Aval[i]) );
 	
 	    maxuj = 0.;
 	    for (i = Ustore->colptr[j]; i < Ustore->colptr[j+1]; i++)
-		maxuj = SUPERLU_MAX( maxuj, slu_c_abs1( &Uval[i]) );
+		maxuj = SUPERLU_MAX( maxuj, c_abs1( &Uval[i]) );
 	    
 	    /* Supernode */
 	    for (i = 0; i < nz_in_U; ++i)
-		maxuj = SUPERLU_MAX( maxuj, slu_c_abs1( &luval[i]) );
+		maxuj = SUPERLU_MAX( maxuj, c_abs1( &luval[i]) );
 
 	    ++nz_in_U;
 	    luval += nsupr;

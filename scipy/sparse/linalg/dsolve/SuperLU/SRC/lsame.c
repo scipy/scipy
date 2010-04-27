@@ -1,10 +1,18 @@
-int lsame_(char *ca, char *cb)
-{
-/*  -- LAPACK auxiliary routine (version 2.0) --   
-       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
-       Courant Institute, Argonne National Lab, and Rice University   
-       September 30, 1994   
+/*! @file lsame.c
+ * \brief  Check if CA is the same letter as CB regardless of case.
+ *
+ * <pre>
+ * -- LAPACK auxiliary routine (version 2.0) --   
+ *      Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+ *      Courant Institute, Argonne National Lab, and Rice University   
+ *      September 30, 1994   
+ * </pre>
+ */
+#include "slu_Cnames.h"
 
+/*! \brief
+
+ <pre>
     Purpose   
     =======   
 
@@ -18,7 +26,12 @@ int lsame_(char *ca, char *cb)
             CA and CB specify the single characters to be compared.   
 
    ===================================================================== 
+</pre>
 */  
+
+int lsame_(char *ca, char *cb)
+{
+
 
     /* System generated locals */
     int ret_val;

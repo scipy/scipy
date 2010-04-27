@@ -17,7 +17,7 @@ def configuration(parent_package='',top_path=None):
     superlu_defs.append(('USE_VENDOR_BLAS',1))
 
     config.add_library('superlu_src',
-                       sources = [join('SuperLU','SRC','*.c')],
+                       sources = [join(superlu_src,'*.c')],
                        macros = superlu_defs
                        )
 

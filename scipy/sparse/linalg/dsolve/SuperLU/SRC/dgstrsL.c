@@ -1,27 +1,27 @@
-
-
-/*
+/*! @file dgstrsL.c
+ * \brief Performs the L-solve using the LU factorization computed by DGSTRF
+ *
+ * <pre>
  * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * September 15, 2003
  *
+ * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
+ * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ *
+ * Permission is hereby granted to use or copy this program for any
+ * purpose, provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is
+ * granted, provided the above notices are retained, and a notice that
+ * the code was modified is included with the above copyright notice.
+ * </pre>
  */
-/*
-  Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
- 
-  THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
-  EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- 
-  Permission is hereby granted to use or copy this program for any
-  purpose, provided the above notices are retained on all copies.
-  Permission to modify the code and to distribute modified code is
-  granted, provided the above notices are retained, and a notice that
-  the code was modified is included with the above copyright notice.
-*/
 
-#include "dsp_defs.h"
-#include "util.h"
+#include "slu_ddefs.h"
+#include "slu_util.h"
 
 
 /* 
@@ -31,15 +31,13 @@ void dusolve(int, int, double*, double*);
 void dlsolve(int, int, double*, double*);
 void dmatvec(int, int, int, double*, double*, double*);
 
-
-void
-dgstrsL(char *trans, SuperMatrix *L, int *perm_r, SuperMatrix *B, int *info)
-{
-/*
+/*! \brief
+ *
+ * <pre>
  * Purpose
  * =======
  *
- * DGSTRSL only performs the L-solve using the LU factorization computed
+ * dgstrsL only performs the L-solve using the LU factorization computed
  * by DGSTRF.
  *
  * See supermatrix.h for the definition of 'SuperMatrix' structure.
@@ -75,8 +73,11 @@ dgstrsL(char *trans, SuperMatrix *L, int *perm_r, SuperMatrix *B, int *info)
  * info    (output) int*
  * 	   = 0: successful exit
  *	   < 0: if info = -i, the i-th argument had an illegal value
- *
+ * </pre>
  */
+void
+dgstrsL(char *trans, SuperMatrix *L, int *perm_r, SuperMatrix *B, int *info)
+{
 #ifdef _CRAY
     _fcd ftcs1, ftcs2, ftcs3, ftcs4;
 #endif

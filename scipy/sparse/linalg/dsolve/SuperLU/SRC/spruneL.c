@@ -1,27 +1,38 @@
 
-
-/*
+/*! @file spruneL.c
+ * \brief Prunes the L-structure
+ *
+ *<pre>
  * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
  *
+ * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
+ * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ * 
+ * Permission is hereby granted to use or copy this program for any
+ * purpose, provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is
+ * granted, provided the above notices are retained, and a notice that
+ * the code was modified is included with the above copyright notice.
+ *</pre>
  */
-/*
-  Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
- 
-  THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
-  EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- 
-  Permission is hereby granted to use or copy this program for any
-  purpose, provided the above notices are retained on all copies.
-  Permission to modify the code and to distribute modified code is
-  granted, provided the above notices are retained, and a notice that
-  the code was modified is included with the above copyright notice.
-*/
 
-#include "ssp_defs.h"
-#include "util.h"
+
+#include "slu_sdefs.h"
+
+/*! \brief
+ *
+ * <pre>
+ * Purpose
+ * =======
+ *   Prunes the L-structure of supernodes whose L-structure
+ *   contains the current pivot row "pivrow"
+ * </pre>
+ */
 
 void
 spruneL(
@@ -35,13 +46,7 @@ spruneL(
        GlobalLU_t *Glu       /* modified - global LU data structures */
        )
 {
-/*
- * Purpose
- * =======
- *   Prunes the L-structure of supernodes whose L-structure
- *   contains the current pivot row "pivrow"
- *
- */
+
     float     utemp;
     int        jsupno, irep, irep1, kmin, kmax, krow, movnum;
     int        i, ktemp, minloc, maxloc;
@@ -108,8 +113,8 @@ spruneL(
 			kmax--;
 		    else if ( perm_r[lsub[kmin]] != EMPTY )
 			kmin++;
-		    else { /* kmin below pivrow, and kmax above pivrow: 
-		            * 	interchange the two subscripts
+		    else { /* kmin below pivrow (not yet pivoted), and kmax
+                            * above pivrow: interchange the two subscripts
 			    */
 		        ktemp = lsub[kmin];
 		        lsub[kmin] = lsub[kmax];

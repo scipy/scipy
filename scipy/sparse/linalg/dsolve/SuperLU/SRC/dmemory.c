@@ -1,54 +1,32 @@
 
-/*
- * -- SuperLU routine (version 3.0) --
- * Univ. of California Berkeley, Xerox Palo Alto Research Center,
- * and Lawrence Berkeley National Lab.
- * October 15, 2003
+/*! @file dmemory.c
+ * \brief Memory details
  *
+ * <pre>
+ * -- SuperLU routine (version 4.0) --
+ * Lawrence Berkeley National Laboratory.
+ * June 30, 2009
+ * </pre>
  */
-#include "dsp_defs.h"
+#include "slu_ddefs.h"
 
-/* Constants */
-#define NO_MEMTYPE  4      /* 0: lusup;
-			      1: ucol;
-			      2: lsub;
-			      3: usub */
-#define GluIntArray(n)   (5 * (n) + 5)
 
 /* Internal prototypes */
 void  *dexpand (int *, MemType,int, int, GlobalLU_t *);
-int   dLUWorkInit (int, int, int, int **, double **, LU_space_t);
+int   dLUWorkInit (int, int, int, int **, double **, GlobalLU_t *);
 void  copy_mem_double (int, void *, void *);
 void  dStackCompress (GlobalLU_t *);
-void  dSetupSpace (void *, int, LU_space_t *);
-void  *duser_malloc (int, int);
-void  duser_free (int, int);
+void  dSetupSpace (void *, int, GlobalLU_t *);
+void  *duser_malloc (int, int, GlobalLU_t *);
+void  duser_free (int, int, GlobalLU_t *);
 
-/* External prototypes (in memory.c - prec-indep) */
+/* External prototypes (in memory.c - prec-independent) */
 extern void    copy_mem_int    (int, void *, void *);
 extern void    user_bcopy      (char *, char *, int);
 
-/* Headers for 4 types of dynamatically managed memory */
-typedef struct e_node {
-    int size;      /* length of the memory that has been used */
-    void *mem;     /* pointer to the new malloc'd store */
-} ExpHeader;
-
-typedef struct {
-    int  size;
-    int  used;
-    int  top1;  /* grow upward, relative to &array[0] */
-    int  top2;  /* grow downward */
-    void *array;
-} LU_stack_t;
-
-/* Variables local to this file */
-static ExpHeader *expanders = 0; /* Array of pointers to 4 types of memory */
-static LU_stack_t stack;
-static int no_expand;
 
 /* Macros to manipulate stack */
-#define StackFull(x)         ( x + stack.used >= stack.size )
+#define StackFull(x)         ( x + Glu->stack.used >= Glu->stack.size )
 #define NotDoubleAlign(addr) ( (long int)addr & 7 )
 #define DoubleAlign(addr)    ( ((long int)addr + 7) & ~7L )
 #define TempSpace(m, w)      ( (2*w + 4 + NO_MARKER) * m * sizeof(int) + \
@@ -58,66 +36,67 @@ static int no_expand;
 
 
 
-/*
- * Setup the memory model to be used for factorization.
+/*! \brief Setup the memory model to be used for factorization.
+ *  
  *    lwork = 0: use system malloc;
  *    lwork > 0: use user-supplied work[] space.
  */
-void dSetupSpace(void *work, int lwork, LU_space_t *MemModel)
+void dSetupSpace(void *work, int lwork, GlobalLU_t *Glu)
 {
     if ( lwork == 0 ) {
-	*MemModel = SYSTEM; /* malloc/free */
+	Glu->MemModel = SYSTEM; /* malloc/free */
     } else if ( lwork > 0 ) {
-	*MemModel = USER;   /* user provided space */
-	stack.used = 0;
-	stack.top1 = 0;
-	stack.top2 = (lwork/4)*4; /* must be word addressable */
-	stack.size = stack.top2;
-	stack.array = (void *) work;
+	Glu->MemModel = USER;   /* user provided space */
+	Glu->stack.used = 0;
+	Glu->stack.top1 = 0;
+	Glu->stack.top2 = (lwork/4)*4; /* must be word addressable */
+	Glu->stack.size = Glu->stack.top2;
+	Glu->stack.array = (void *) work;
     }
 }
 
 
 
-void *duser_malloc(int bytes, int which_end)
+void *duser_malloc(int bytes, int which_end, GlobalLU_t *Glu)
 {
     void *buf;
     
     if ( StackFull(bytes) ) return (NULL);
 
     if ( which_end == HEAD ) {
-	buf = (char*) stack.array + stack.top1;
-	stack.top1 += bytes;
+	buf = (char*) Glu->stack.array + Glu->stack.top1;
+	Glu->stack.top1 += bytes;
     } else {
-	stack.top2 -= bytes;
-	buf = (char*) stack.array + stack.top2;
+	Glu->stack.top2 -= bytes;
+	buf = (char*) Glu->stack.array + Glu->stack.top2;
     }
     
-    stack.used += bytes;
+    Glu->stack.used += bytes;
     return buf;
 }
 
 
-void duser_free(int bytes, int which_end)
+void duser_free(int bytes, int which_end, GlobalLU_t *Glu)
 {
     if ( which_end == HEAD ) {
-	stack.top1 -= bytes;
+	Glu->stack.top1 -= bytes;
     } else {
-	stack.top2 += bytes;
+	Glu->stack.top2 += bytes;
     }
-    stack.used -= bytes;
+    Glu->stack.used -= bytes;
 }
 
 
 
-/*
+/*! \brief 
+ *
+ * <pre>
  * mem_usage consists of the following fields:
  *    - for_lu (float)
  *      The amount of space used in bytes for the L\U data structures.
  *    - total_needed (float)
  *      The amount of space needed in bytes to perform factorization.
- *    - expansions (int)
- *      Number of memory expansions during the LU factorization.
+ * </pre>
  */
 int dQuerySpace(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage)
 {
@@ -132,33 +111,75 @@ int dQuerySpace(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage)
     dword = sizeof(double);
 
     /* For LU factors */
-    mem_usage->for_lu = (float)( (4*n + 3) * iword + Lstore->nzval_colptr[n] *
-				 dword + Lstore->rowind_colptr[n] * iword );
-    mem_usage->for_lu += (float)( (n + 1) * iword +
+    mem_usage->for_lu = (float)( (4.0*n + 3.0) * iword +
+                                 Lstore->nzval_colptr[n] * dword +
+                                 Lstore->rowind_colptr[n] * iword );
+    mem_usage->for_lu += (float)( (n + 1.0) * iword +
 				 Ustore->colptr[n] * (dword + iword) );
 
     /* Working storage to support factorization */
     mem_usage->total_needed = mem_usage->for_lu +
-	(float)( (2 * panel_size + 4 + NO_MARKER) * n * iword +
-		(panel_size + 1) * n * dword );
-
-    mem_usage->expansions = --no_expand;
+	(float)( (2.0 * panel_size + 4.0 + NO_MARKER) * n * iword +
+		(panel_size + 1.0) * n * dword );
 
     return 0;
 } /* dQuerySpace */
 
-/*
- * Allocate storage for the data structures common to all factor routines.
- * For those unpredictable size, make a guess as FILL * nnz(A).
+
+/*! \brief
+ *
+ * <pre>
+ * mem_usage consists of the following fields:
+ *    - for_lu (float)
+ *      The amount of space used in bytes for the L\U data structures.
+ *    - total_needed (float)
+ *      The amount of space needed in bytes to perform factorization.
+ * </pre>
+ */
+int ilu_dQuerySpace(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage)
+{
+    SCformat *Lstore;
+    NCformat *Ustore;
+    register int n, panel_size = sp_ienv(1);
+    register float iword, dword;
+
+    Lstore = L->Store;
+    Ustore = U->Store;
+    n = L->ncol;
+    iword = sizeof(int);
+    dword = sizeof(double);
+
+    /* For LU factors */
+    mem_usage->for_lu = (float)( (4.0f * n + 3.0f) * iword +
+				 Lstore->nzval_colptr[n] * dword +
+				 Lstore->rowind_colptr[n] * iword );
+    mem_usage->for_lu += (float)( (n + 1.0f) * iword +
+				 Ustore->colptr[n] * (dword + iword) );
+
+    /* Working storage to support factorization.
+       ILU needs 5*n more integers than LU */
+    mem_usage->total_needed = mem_usage->for_lu +
+	(float)( (2.0f * panel_size + 9.0f + NO_MARKER) * n * iword +
+		(panel_size + 1.0f) * n * dword );
+
+    return 0;
+} /* ilu_dQuerySpace */
+
+
+/*! \brief Allocate storage for the data structures common to all factor routines.
+ *
+ * <pre>
+ * For those unpredictable size, estimate as fill_ratio * nnz(A).
  * Return value:
  *     If lwork = -1, return the estimated amount of space required, plus n;
  *     otherwise, return the amount of space actually allocated when
  *     memory allocation failure occurred.
+ * </pre> 
  */
 int
 dLUMemInit(fact_t fact, void *work, int lwork, int m, int n, int annz,
-	  int panel_size, SuperMatrix *L, SuperMatrix *U, GlobalLU_t *Glu,
-	  int **iwork, double **dwork)
+	  int panel_size, double fill_ratio, SuperMatrix *L, SuperMatrix *U,
+          GlobalLU_t *Glu, int **iwork, double **dwork)
 {
     int      info, iword, dword;
     SCformat *Lstore;
@@ -170,32 +191,33 @@ dLUMemInit(fact_t fact, void *work, int lwork, int m, int n, int annz,
     double   *ucol;
     int      *usub, *xusub;
     int      nzlmax, nzumax, nzlumax;
-    int      FILL = sp_ienv(6);
     
-    Glu->n    = n;
-    no_expand = 0;
     iword     = sizeof(int);
     dword     = sizeof(double);
+    Glu->n    = n;
+    Glu->num_expansions = 0;
 
-    if ( !expanders )	
-        expanders = (ExpHeader*)SUPERLU_MALLOC(NO_MEMTYPE * sizeof(ExpHeader));
-    if ( !expanders ) ABORT("SUPERLU_MALLOC fails for expanders");
+    if ( !Glu->expanders )	
+        Glu->expanders = (ExpHeader*)SUPERLU_MALLOC( NO_MEMTYPE *
+                                                     sizeof(ExpHeader) );
+    if ( !Glu->expanders ) ABORT("SUPERLU_MALLOC fails for expanders");
     
     if ( fact != SamePattern_SameRowPerm ) {
 	/* Guess for L\U factors */
-	nzumax = nzlumax = FILL * annz;
-	nzlmax = SUPERLU_MAX(1, FILL/4.) * annz;
+	nzumax = nzlumax = fill_ratio * annz;
+	nzlmax = SUPERLU_MAX(1, fill_ratio/4.) * annz;
 
 	if ( lwork == -1 ) {
 	    return ( GluIntArray(n) * iword + TempSpace(m, panel_size)
 		    + (nzlmax+nzumax)*iword + (nzlumax+nzumax)*dword + n );
         } else {
-	    dSetupSpace(work, lwork, &Glu->MemModel);
+	    dSetupSpace(work, lwork, Glu);
 	}
 	
-#ifdef DEBUG		   
-	printf("dLUMemInit() called: annz %d, MemModel %d\n", 
-		annz, Glu->MemModel);
+#if ( PRNTlevel >= 1 )
+	printf("dLUMemInit() called: fill_ratio %ld, nzlmax %ld, nzumax %ld\n", 
+	       fill_ratio, nzlmax, nzumax);
+	fflush(stdout);
 #endif	
 	
 	/* Integer pointers for L\U factors */
@@ -206,11 +228,11 @@ dLUMemInit(fact_t fact, void *work, int lwork, int m, int n, int annz,
 	    xlusup = intMalloc(n+1);
 	    xusub  = intMalloc(n+1);
 	} else {
-	    xsup   = (int *)duser_malloc((n+1) * iword, HEAD);
-	    supno  = (int *)duser_malloc((n+1) * iword, HEAD);
-	    xlsub  = (int *)duser_malloc((n+1) * iword, HEAD);
-	    xlusup = (int *)duser_malloc((n+1) * iword, HEAD);
-	    xusub  = (int *)duser_malloc((n+1) * iword, HEAD);
+	    xsup   = (int *)duser_malloc((n+1) * iword, HEAD, Glu);
+	    supno  = (int *)duser_malloc((n+1) * iword, HEAD, Glu);
+	    xlsub  = (int *)duser_malloc((n+1) * iword, HEAD, Glu);
+	    xlusup = (int *)duser_malloc((n+1) * iword, HEAD, Glu);
+	    xusub  = (int *)duser_malloc((n+1) * iword, HEAD, Glu);
 	}
 
 	lusup = (double *) dexpand( &nzlumax, LUSUP, 0, 0, Glu );
@@ -225,7 +247,8 @@ dLUMemInit(fact_t fact, void *work, int lwork, int m, int n, int annz,
 		SUPERLU_FREE(lsub); 
 		SUPERLU_FREE(usub);
 	    } else {
-		duser_free((nzlumax+nzumax)*dword+(nzlmax+nzumax)*iword, HEAD);
+		duser_free((nzlumax+nzumax)*dword+(nzlmax+nzumax)*iword,
+                            HEAD, Glu);
 	    }
 	    nzlumax /= 2;
 	    nzumax /= 2;
@@ -234,6 +257,11 @@ dLUMemInit(fact_t fact, void *work, int lwork, int m, int n, int annz,
 		printf("Not enough memory to perform factorization.\n");
 		return (dmemory_usage(nzlmax, nzumax, nzlumax, n) + n);
 	    }
+#if ( PRNTlevel >= 1)
+	    printf("dLUMemInit() reduce size: nzlmax %ld, nzumax %ld\n", 
+		   nzlmax, nzumax);
+	    fflush(stdout);
+#endif
 	    lusup = (double *) dexpand( &nzlumax, LUSUP, 0, 0, Glu );
 	    ucol  = (double *) dexpand( &nzumax, UCOL, 0, 0, Glu );
 	    lsub  = (int *)    dexpand( &nzlmax, LSUB, 0, 0, Glu );
@@ -260,18 +288,18 @@ dLUMemInit(fact_t fact, void *work, int lwork, int m, int n, int annz,
 	    Glu->MemModel = SYSTEM;
 	} else {
 	    Glu->MemModel = USER;
-	    stack.top2 = (lwork/4)*4; /* must be word-addressable */
-	    stack.size = stack.top2;
+	    Glu->stack.top2 = (lwork/4)*4; /* must be word-addressable */
+	    Glu->stack.size = Glu->stack.top2;
 	}
 	
-	lsub  = expanders[LSUB].mem  = Lstore->rowind;
-	lusup = expanders[LUSUP].mem = Lstore->nzval;
-	usub  = expanders[USUB].mem  = Ustore->rowind;
-	ucol  = expanders[UCOL].mem  = Ustore->nzval;;
-	expanders[LSUB].size         = nzlmax;
-	expanders[LUSUP].size        = nzlumax;
-	expanders[USUB].size         = nzumax;
-	expanders[UCOL].size         = nzumax;	
+	lsub  = Glu->expanders[LSUB].mem  = Lstore->rowind;
+	lusup = Glu->expanders[LUSUP].mem = Lstore->nzval;
+	usub  = Glu->expanders[USUB].mem  = Ustore->rowind;
+	ucol  = Glu->expanders[UCOL].mem  = Ustore->nzval;;
+	Glu->expanders[LSUB].size         = nzlmax;
+	Glu->expanders[LUSUP].size        = nzlumax;
+	Glu->expanders[USUB].size         = nzumax;
+	Glu->expanders[UCOL].size         = nzumax;	
     }
 
     Glu->xsup    = xsup;
@@ -287,20 +315,20 @@ dLUMemInit(fact_t fact, void *work, int lwork, int m, int n, int annz,
     Glu->nzumax  = nzumax;
     Glu->nzlumax = nzlumax;
     
-    info = dLUWorkInit(m, n, panel_size, iwork, dwork, Glu->MemModel);
+    info = dLUWorkInit(m, n, panel_size, iwork, dwork, Glu);
     if ( info )
 	return ( info + dmemory_usage(nzlmax, nzumax, nzlumax, n) + n);
     
-    ++no_expand;
+    ++Glu->num_expansions;
     return 0;
     
 } /* dLUMemInit */
 
-/* Allocate known working storage. Returns 0 if success, otherwise
+/*! \brief Allocate known working storage. Returns 0 if success, otherwise
    returns the number of bytes allocated so far when failure occurred. */
 int
 dLUWorkInit(int m, int n, int panel_size, int **iworkptr, 
-            double **dworkptr, LU_space_t MemModel)
+            double **dworkptr, GlobalLU_t *Glu)
 {
     int    isize, dsize, extra;
     double *old_ptr;
@@ -311,19 +339,19 @@ dLUWorkInit(int m, int n, int panel_size, int **iworkptr,
     dsize = (m * panel_size +
 	     NUM_TEMPV(m,panel_size,maxsuper,rowblk)) * sizeof(double);
     
-    if ( MemModel == SYSTEM ) 
+    if ( Glu->MemModel == SYSTEM ) 
 	*iworkptr = (int *) intCalloc(isize/sizeof(int));
     else
-	*iworkptr = (int *) duser_malloc(isize, TAIL);
+	*iworkptr = (int *) duser_malloc(isize, TAIL, Glu);
     if ( ! *iworkptr ) {
 	fprintf(stderr, "dLUWorkInit: malloc fails for local iworkptr[]\n");
 	return (isize + n);
     }
 
-    if ( MemModel == SYSTEM )
+    if ( Glu->MemModel == SYSTEM )
 	*dworkptr = (double *) SUPERLU_MALLOC(dsize);
     else {
-	*dworkptr = (double *) duser_malloc(dsize, TAIL);
+	*dworkptr = (double *) duser_malloc(dsize, TAIL, Glu);
 	if ( NotDoubleAlign(*dworkptr) ) {
 	    old_ptr = *dworkptr;
 	    *dworkptr = (double*) DoubleAlign(*dworkptr);
@@ -332,8 +360,8 @@ dLUWorkInit(int m, int n, int panel_size, int **iworkptr,
 #ifdef DEBUG	    
 	    printf("dLUWorkInit: not aligned, extra %d\n", extra);
 #endif	    
-	    stack.top2 -= extra;
-	    stack.used += extra;
+	    Glu->stack.top2 -= extra;
+	    Glu->stack.used += extra;
 	}
     }
     if ( ! *dworkptr ) {
@@ -345,8 +373,7 @@ dLUWorkInit(int m, int n, int panel_size, int **iworkptr,
 }
 
 
-/*
- * Set up pointers for real working arrays.
+/*! \brief Set up pointers for real working arrays.
  */
 void
 dSetRWork(int m, int panel_size, double *dworkptr,
@@ -362,8 +389,7 @@ dSetRWork(int m, int panel_size, double *dworkptr,
     dfill (*tempv, NUM_TEMPV(m,panel_size,maxsuper,rowblk), zero);     
 }
 	
-/*
- * Free the working storage used by factor routines.
+/*! \brief Free the working storage used by factor routines.
  */
 void dLUWorkFree(int *iwork, double *dwork, GlobalLU_t *Glu)
 {
@@ -371,18 +397,21 @@ void dLUWorkFree(int *iwork, double *dwork, GlobalLU_t *Glu)
 	SUPERLU_FREE (iwork);
 	SUPERLU_FREE (dwork);
     } else {
-	stack.used -= (stack.size - stack.top2);
-	stack.top2 = stack.size;
+	Glu->stack.used -= (Glu->stack.size - Glu->stack.top2);
+	Glu->stack.top2 = Glu->stack.size;
 /*	dStackCompress(Glu);  */
     }
     
-    SUPERLU_FREE (expanders);	
-    expanders = 0;
+    SUPERLU_FREE (Glu->expanders);	
+    Glu->expanders = NULL;
 }
 
-/* Expand the data structures for L and U during the factorization.
+/*! \brief Expand the data structures for L and U during the factorization.
+ * 
+ * <pre>
  * Return value:   0 - successful return
  *               > 0 - number of bytes allocated when run out of space
+ * </pre>
  */
 int
 dLUMemXpand(int jcol,
@@ -446,8 +475,7 @@ copy_mem_double(int howmany, void *old, void *new)
     for (i = 0; i < howmany; i++) dnew[i] = dold[i];
 }
 
-/*
- * Expand the existing storage to accommodate more fill-ins.
+/*! \brief Expand the existing storage to accommodate more fill-ins.
  */
 void
 *dexpand (
@@ -463,12 +491,14 @@ void
     float    alpha;
     void     *new_mem, *old_mem;
     int      new_len, tries, lword, extra, bytes_to_copy;
+    ExpHeader *expanders = Glu->expanders; /* Array of 4 types of memory */
 
     alpha = EXPAND;
 
-    if ( no_expand == 0 || keep_prev ) /* First time allocate requested */
+    if ( Glu->num_expansions == 0 || keep_prev ) {
+        /* First time allocate requested */
         new_len = *prev_len;
-    else {
+    } else {
 	new_len = alpha * *prev_len;
     }
     
@@ -476,9 +506,8 @@ void
     else lword = sizeof(double);
 
     if ( Glu->MemModel == SYSTEM ) {
-	new_mem = (void *) SUPERLU_MALLOC(new_len * lword);
-/*	new_mem = (void *) calloc(new_len, lword); */
-	if ( no_expand != 0 ) {
+	new_mem = (void *) SUPERLU_MALLOC((size_t)new_len * lword);
+	if ( Glu->num_expansions != 0 ) {
 	    tries = 0;
 	    if ( keep_prev ) {
 		if ( !new_mem ) return (NULL);
@@ -487,8 +516,7 @@ void
 		    if ( ++tries > 10 ) return (NULL);
 		    alpha = Reduce(alpha);
 		    new_len = alpha * *prev_len;
-		    new_mem = (void *) SUPERLU_MALLOC(new_len * lword); 
-/*		    new_mem = (void *) calloc(new_len, lword); */
+		    new_mem = (void *) SUPERLU_MALLOC((size_t)new_len * lword);
 		}
 	    }
 	    if ( type == LSUB || type == USUB ) {
@@ -501,8 +529,8 @@ void
 	expanders[type].mem = (void *) new_mem;
 	
     } else { /* MemModel == USER */
-	if ( no_expand == 0 ) {
-	    new_mem = duser_malloc(new_len * lword, HEAD);
+	if ( Glu->num_expansions == 0 ) {
+	    new_mem = duser_malloc(new_len * lword, HEAD, Glu);
 	    if ( NotDoubleAlign(new_mem) &&
 		(type == LUSUP || type == UCOL) ) {
 		old_mem = new_mem;
@@ -511,12 +539,11 @@ void
 #ifdef DEBUG		
 		printf("expand(): not aligned, extra %d\n", extra);
 #endif		
-		stack.top1 += extra;
-		stack.used += extra;
+		Glu->stack.top1 += extra;
+		Glu->stack.used += extra;
 	    }
 	    expanders[type].mem = (void *) new_mem;
-	}
-	else {
+	} else {
 	    tries = 0;
 	    extra = (new_len - *prev_len) * lword;
 	    if ( keep_prev ) {
@@ -532,7 +559,7 @@ void
 
 	    if ( type != USUB ) {
 		new_mem = (void*)((char*)expanders[type + 1].mem + extra);
-		bytes_to_copy = (char*)stack.array + stack.top1
+		bytes_to_copy = (char*)Glu->stack.array + Glu->stack.top1
 		    - (char*)expanders[type + 1].mem;
 		user_bcopy(expanders[type+1].mem, new_mem, bytes_to_copy);
 
@@ -548,11 +575,11 @@ void
 		    Glu->ucol = expanders[UCOL].mem =
 			(void*)((char*)expanders[UCOL].mem + extra);
 		}
-		stack.top1 += extra;
-		stack.used += extra;
+		Glu->stack.top1 += extra;
+		Glu->stack.used += extra;
 		if ( type == UCOL ) {
-		    stack.top1 += extra;   /* Add same amount for USUB */
-		    stack.used += extra;
+		    Glu->stack.top1 += extra;   /* Add same amount for USUB */
+		    Glu->stack.used += extra;
 		}
 		
 	    } /* if ... */
@@ -562,15 +589,14 @@ void
 
     expanders[type].size = new_len;
     *prev_len = new_len;
-    if ( no_expand ) ++no_expand;
+    if ( Glu->num_expansions ) ++Glu->num_expansions;
     
     return (void *) expanders[type].mem;
     
 } /* dexpand */
 
 
-/*
- * Compress the work[] array to remove fragmentation.
+/*! \brief Compress the work[] array to remove fragmentation.
  */
 void
 dStackCompress(GlobalLU_t *Glu)
@@ -610,9 +636,9 @@ dStackCompress(GlobalLU_t *Glu)
     usub = ito;
     
     last = (char*)usub + xusub[ndim] * iword;
-    fragment = (char*) (((char*)stack.array + stack.top1) - last);
-    stack.used -= (long int) fragment;
-    stack.top1 -= (long int) fragment;
+    fragment = (char*) (((char*)Glu->stack.array + Glu->stack.top1) - last);
+    Glu->stack.used -= (long int) fragment;
+    Glu->stack.top1 -= (long int) fragment;
 
     Glu->ucol = ucol;
     Glu->lsub = lsub;
@@ -626,8 +652,7 @@ dStackCompress(GlobalLU_t *Glu)
     
 }
 
-/*
- * Allocate storage for original matrix A
+/*! \brief Allocate storage for original matrix A
  */
 void
 dallocateA(int n, int nnz, double **a, int **asub, int **xa)
@@ -641,7 +666,7 @@ dallocateA(int n, int nnz, double **a, int **asub, int **xa)
 double *doubleMalloc(int n)
 {
     double *buf;
-    buf = (double *) SUPERLU_MALLOC(n * sizeof(double)); 
+    buf = (double *) SUPERLU_MALLOC((size_t)n * sizeof(double)); 
     if ( !buf ) {
 	ABORT("SUPERLU_MALLOC failed for buf in doubleMalloc()\n");
     }
@@ -653,7 +678,7 @@ double *doubleCalloc(int n)
     double *buf;
     register int i;
     double zero = 0.0;
-    buf = (double *) SUPERLU_MALLOC(n * sizeof(double));
+    buf = (double *) SUPERLU_MALLOC((size_t)n * sizeof(double));
     if ( !buf ) {
 	ABORT("SUPERLU_MALLOC failed for buf in doubleCalloc()\n");
     }

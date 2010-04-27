@@ -1,50 +1,38 @@
 
-
-/*
+/*! @file scolumn_dfs.c
+ * \brief Performs a symbolic factorization
+ *
+ * <pre>
  * -- SuperLU routine (version 3.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * October 15, 2003
  *
- */
-/*
-  Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
- 
-  THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
-  EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- 
-  Permission is hereby granted to use or copy this program for any
-  purpose, provided the above notices are retained on all copies.
-  Permission to modify the code and to distribute modified code is
-  granted, provided the above notices are retained, and a notice that
-  the code was modified is included with the above copyright notice.
+ * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
+ * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ *
+ * Permission is hereby granted to use or copy this program for any
+ * purpose, provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is
+ * granted, provided the above notices are retained, and a notice that
+ * the code was modified is included with the above copyright notice.
+ * </pre>
 */
 
-#include "ssp_defs.h"
+#include "slu_sdefs.h"
 
-/* What type of supernodes we want */
+/*! \brief What type of supernodes we want */
 #define T2_SUPER
 
-int
-scolumn_dfs(
-	   const int  m,         /* in - number of rows in the matrix */
-	   const int  jcol,      /* in */
-	   int        *perm_r,   /* in */
-	   int        *nseg,     /* modified - with new segments appended */
-	   int        *lsub_col, /* in - defines the RHS vector to start the dfs */
-	   int        *segrep,   /* modified - with new segments appended */
-	   int        *repfnz,   /* modified */
-	   int        *xprune,   /* modified */
-	   int        *marker,   /* modified */
-	   int        *parent,	 /* working array */
-	   int        *xplore,   /* working array */
-	   GlobalLU_t *Glu       /* modified */
-	   )
-{
-/* 
+
+/*! \brief
+ *
+ * <pre>
  * Purpose
  * =======
- *   "column_dfs" performs a symbolic factorization on column jcol, and
+ *   SCOLUMN_DFS performs a symbolic factorization on column jcol, and
  *   decide the supernode boundary.
  *
  *   This routine does not use numeric values, but only use the RHS 
@@ -72,8 +60,25 @@ scolumn_dfs(
  * ============
  *     0  success;
  *   > 0  number of bytes allocated when run out of space.
- *
+ * </pre>
  */
+int
+scolumn_dfs(
+	   const int  m,         /* in - number of rows in the matrix */
+	   const int  jcol,      /* in */
+	   int        *perm_r,   /* in */
+	   int        *nseg,     /* modified - with new segments appended */
+	   int        *lsub_col, /* in - defines the RHS vector to start the dfs */
+	   int        *segrep,   /* modified - with new segments appended */
+	   int        *repfnz,   /* modified */
+	   int        *xprune,   /* modified */
+	   int        *marker,   /* modified */
+	   int        *parent,	 /* working array */
+	   int        *xplore,   /* working array */
+	   GlobalLU_t *Glu       /* modified */
+	   )
+{
+
     int     jcolp1, jcolm1, jsuper, nsuper, nextl;
     int     k, krep, krow, kmark, kperm;
     int     *marker2;           /* Used for small panel LU */

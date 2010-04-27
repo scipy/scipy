@@ -1,33 +1,32 @@
 
-/*
+/*! @file dgstrf.c
+ * \brief Computes an LU factorization of a general sparse matrix
+ *
+ * <pre>
  * -- SuperLU routine (version 3.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * October 15, 2003
+ * 
+ * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
  *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
+ * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ * 
+ * Permission is hereby granted to use or copy this program for any
+ * purpose, provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is
+ * granted, provided the above notices are retained, and a notice that
+ * the code was modified is included with the above copyright notice.
+ * </pre>
  */
-/*
-  Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
- 
-  THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
-  EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- 
-  Permission is hereby granted to use or copy this program for any
-  purpose, provided the above notices are retained on all copies.
-  Permission to modify the code and to distribute modified code is
-  granted, provided the above notices are retained, and a notice that
-  the code was modified is included with the above copyright notice.
-*/
 
-#include "dsp_defs.h"
 
-void
-dgstrf (superlu_options_t *options, SuperMatrix *A, double drop_tol,
-        int relax, int panel_size, int *etree, void *work, int lwork,
-        int *perm_c, int *perm_r, SuperMatrix *L, SuperMatrix *U,
-        SuperLUStat_t *stat, int *info)
-{
-/*
+#include "slu_ddefs.h"
+
+/*! \brief
+ *
+ * <pre>
  * Purpose
  * =======
  *
@@ -52,11 +51,6 @@ dgstrf (superlu_options_t *options, SuperMatrix *A, double drop_tol,
  *	    Original matrix A, permuted by columns, of dimension
  *          (A->nrow, A->ncol). The type of A can be:
  *          Stype = SLU_NCP; Dtype = SLU_D; Mtype = SLU_GE.
- *
- * drop_tol (input) double (NOT IMPLEMENTED)
- *	    Drop tolerance parameter. At step j of the Gaussian elimination,
- *          if abs(A_ij)/(max_i abs(A_ij)) < drop_tol, drop entry A_ij.
- *          0 <= drop_tol <= 1. The default value of drop_tol is 0.
  *
  * relax    (input) int
  *          To control degree of relaxing supernodes. If the number
@@ -117,7 +111,7 @@ dgstrf (superlu_options_t *options, SuperMatrix *A, double drop_tol,
  *
  * stat     (output) SuperLUStat_t*
  *          Record the statistics on runtime and floating-point operation count.
- *          See util.h for the definition of 'SuperLUStat_t'.
+ *          See slu_util.h for the definition of 'SuperLUStat_t'.
  *
  * info     (output) int*
  *          = 0: successful exit
@@ -177,13 +171,20 @@ dgstrf (superlu_options_t *options, SuperMatrix *A, double drop_tol,
  *	    	   NOTE: there are W of them.
  *
  *   tempv[0:*]: real temporary used for dense numeric kernels;
- *	The size of this array is defined by NUM_TEMPV() in dsp_defs.h.
- *
+ *	The size of this array is defined by NUM_TEMPV() in slu_ddefs.h.
+ * </pre>
  */
+
+void
+dgstrf (superlu_options_t *options, SuperMatrix *A,
+        int relax, int panel_size, int *etree, void *work, int lwork,
+        int *perm_c, int *perm_r, SuperMatrix *L, SuperMatrix *U,
+        SuperLUStat_t *stat, int *info)
+{
     /* Local working arrays */
     NCPformat *Astore;
-    int       *iperm_r; /* inverse of perm_r;
-			   used when options->Fact == SamePattern_SameRowPerm */
+    int       *iperm_r = NULL; /* inverse of perm_r; used when 
+                                  options->Fact == SamePattern_SameRowPerm */
     int       *iperm_c; /* inverse of perm_c */
     int       *iwork;
     double    *dwork;
@@ -199,7 +200,8 @@ dgstrf (superlu_options_t *options, SuperMatrix *A, double drop_tol,
     int       *xsup, *supno;
     int       *xlsub, *xlusup, *xusub;
     int       nzlumax;
-    static GlobalLU_t Glu; /* persistent to facilitate multiple factors. */
+    double fill_ratio = sp_ienv(6);  /* estimated fill ratio */
+    static    GlobalLU_t Glu; /* persistent to facilitate multiple factors. */
 
     /* Local scalars */
     fact_t    fact = options->Fact;
@@ -230,7 +232,7 @@ dgstrf (superlu_options_t *options, SuperMatrix *A, double drop_tol,
 
     /* Allocate storage common to the factor routines */
     *info = dLUMemInit(fact, work, lwork, m, n, Astore->nnz,
-                       panel_size, L, U, &Glu, &iwork, &dwork);
+                       panel_size, fill_ratio, L, U, &Glu, &iwork, &dwork);
     if ( *info ) return;
     
     xsup    = Glu.xsup;
@@ -417,7 +419,7 @@ dgstrf (superlu_options_t *options, SuperMatrix *A, double drop_tol,
 	((NCformat *)U->Store)->rowind = Glu.usub;
 	((NCformat *)U->Store)->colptr = Glu.xusub;
     } else {
-        dCreate_SuperNode_Matrix(L, A->nrow, A->ncol, nnzL, Glu.lusup, 
+        dCreate_SuperNode_Matrix(L, A->nrow, min_mn, nnzL, Glu.lusup, 
 	                         Glu.xlusup, Glu.lsub, Glu.xlsub, Glu.supno,
 			         Glu.xsup, SLU_SC, SLU_D, SLU_TRLU);
     	dCreate_CompCol_Matrix(U, min_mn, min_mn, nnzU, Glu.ucol, 
@@ -425,6 +427,7 @@ dgstrf (superlu_options_t *options, SuperMatrix *A, double drop_tol,
     }
     
     ops[FACT] += ops[TRSV] + ops[GEMV];	
+    stat->expansions = --(Glu.num_expansions);
     
     if ( iperm_r_allocated ) SUPERLU_FREE (iperm_r);
     SUPERLU_FREE (iperm_c);

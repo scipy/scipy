@@ -1,25 +1,26 @@
 
-/*
+/*! @file dgsrfs.c
+ * \brief Improves computed solution to a system of inear equations
+ * 
+ * <pre>
  * -- SuperLU routine (version 3.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * October 15, 2003
  *
+ * Modified from lapack routine DGERFS
+ * </pre>
  */
 /*
  * File name:	dgsrfs.c
  * History:     Modified from lapack routine DGERFS
  */
 #include <math.h>
-#include "dsp_defs.h"
+#include "slu_ddefs.h"
 
-void
-dgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
-       int *perm_c, int *perm_r, char *equed, double *R, double *C,
-       SuperMatrix *B, SuperMatrix *X, double *ferr, double *berr,
-       SuperLUStat_t *stat, int *info)
-{
-/*
+/*! \brief
+ *
+ * <pre>
  *   Purpose   
  *   =======   
  *
@@ -123,7 +124,15 @@ dgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
  *
  *    ITMAX is the maximum number of steps of iterative refinement.   
  *
- */  
+ * </pre>
+ */
+void
+dgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
+       int *perm_c, int *perm_r, char *equed, double *R, double *C,
+       SuperMatrix *B, SuperMatrix *X, double *ferr, double *berr,
+       SuperLUStat_t *stat, int *info)
+{
+
 
 #define ITMAX 5
     
@@ -224,6 +233,8 @@ dgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
     nz     = A->ncol + 1;
     eps    = dlamch_("Epsilon");
     safmin = dlamch_("Safe minimum");
+    /* Set SAFE1 essentially to be the underflow threshold times the
+       number of additions in each row. */
     safe1  = nz * safmin;
     safe2  = safe1 / eps;
 
@@ -274,7 +285,7 @@ dgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	       where abs(Z) is the componentwise absolute value of the matrix
 	       or vector Z.  If the i-th component of the denominator is less
 	       than SAFE2, then SAFE1 is added to the i-th component of the   
-	       numerator and denominator before dividing. */
+	       numerator before dividing. */
 
 	    for (i = 0; i < A->nrow; ++i) rwork[i] = fabs( Bptr[i] );
 	    
@@ -297,11 +308,15 @@ dgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	    }
 	    s = 0.;
 	    for (i = 0; i < A->nrow; ++i) {
-		if (rwork[i] > safe2)
+		if (rwork[i] > safe2) {
 		    s = SUPERLU_MAX( s, fabs(work[i]) / rwork[i] );
-		else
-		    s = SUPERLU_MAX( s, (fabs(work[i]) + safe1) / 
-				(rwork[i] + safe1) );
+		} else if ( rwork[i] != 0.0 ) {
+                    /* Adding SAFE1 to the numerator guards against
+                       spuriously zero residuals (underflow). */
+		    s = SUPERLU_MAX( s, (safe1 + fabs(work[i])) / rwork[i] );
+                }
+                /* If rwork[i] is exactly 0.0, then we know the true 
+                   residual also must be exactly 0.0. */
 	    }
 	    berr[j] = s;
 

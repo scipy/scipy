@@ -1,11 +1,16 @@
+/*! @file sp_ienv.c
+ * \brief Chooses machine-dependent parameters for the local environment	 
+*/
+
 /*
  * File name:		sp_ienv.c
  * History:             Modified from lapack routine ILAENV
  */
-int
-sp_ienv(int ispec)
-{
-/*
+#include "slu_Cnames.h"
+
+/*! \brief
+
+ <pre>
     Purpose   
     =======   
 
@@ -40,7 +45,11 @@ sp_ienv(int ispec)
             < 0:  if SP_IENV = -k, the k-th argument had an illegal value. 
   
     ===================================================================== 
+</pre>
 */
+int
+sp_ienv(int ispec)
+{
     int i;
 
     switch (ispec) {

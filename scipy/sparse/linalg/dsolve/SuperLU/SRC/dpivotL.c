@@ -1,44 +1,36 @@
 
-/*
+/*! @file dpivotL.c
+ * \brief Performs numerical pivoting
+ *
+ * <pre>
  * -- SuperLU routine (version 3.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * October 15, 2003
  *
+ * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
+ * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ * 
+ * Permission is hereby granted to use or copy this program for any
+ * purpose, provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is
+ * granted, provided the above notices are retained, and a notice that
+ * the code was modified is included with the above copyright notice.
+ * </pre>
  */
-/*
-  Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
- 
-  THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
-  EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- 
-  Permission is hereby granted to use or copy this program for any
-  purpose, provided the above notices are retained on all copies.
-  Permission to modify the code and to distribute modified code is
-  granted, provided the above notices are retained, and a notice that
-  the code was modified is included with the above copyright notice.
-*/
+
 
 #include <math.h>
 #include <stdlib.h>
-#include "dsp_defs.h"
+#include "slu_ddefs.h"
 
 #undef DEBUG
 
-int
-dpivotL(
-        const int  jcol,     /* in */
-        const double u,      /* in - diagonal pivoting threshold */
-        int        *usepr,   /* re-use the pivot sequence given by perm_r/iperm_r */
-        int        *perm_r,  /* may be modified */
-        int        *iperm_r, /* in - inverse of perm_r */
-        int        *iperm_c, /* in - used to find diagonal of Pc*A*Pc' */
-        int        *pivrow,  /* out */
-        GlobalLU_t *Glu,     /* modified - global LU data structures */
-	SuperLUStat_t *stat  /* output */
-       )
-{
-/*
+/*! \brief
+ *
+ * <pre>
  * Purpose
  * =======
  *   Performs the numerical pivoting on the current column of L,
@@ -57,8 +49,23 @@ dpivotL(
  *
  *   Return value: 0      success;
  *                 i > 0  U(i,i) is exactly zero.
- *
+ * </pre>
  */
+
+int
+dpivotL(
+        const int  jcol,     /* in */
+        const double u,      /* in - diagonal pivoting threshold */
+        int        *usepr,   /* re-use the pivot sequence given by perm_r/iperm_r */
+        int        *perm_r,  /* may be modified */
+        int        *iperm_r, /* in - inverse of perm_r */
+        int        *iperm_c, /* in - used to find diagonal of Pc*A*Pc' */
+        int        *pivrow,  /* out */
+        GlobalLU_t *Glu,     /* modified - global LU data structures */
+	SuperLUStat_t *stat  /* output */
+       )
+{
+
     int          fsupc;	    /* first column in the supernode */
     int          nsupc;	    /* no of columns in the supernode */
     int          nsupr;     /* no of rows in the supernode */
@@ -116,8 +123,12 @@ if ( jcol == MIN_COL ) {
 
     /* Test for singularity */
     if ( pivmax == 0.0 ) {
+#if 1
 	*pivrow = lsub_ptr[pivptr];
 	perm_r[*pivrow] = jcol;
+#else
+	perm_r[diagind] = jcol;
+#endif
 	*usepr = 0;
 	return (jcol+1);
     }

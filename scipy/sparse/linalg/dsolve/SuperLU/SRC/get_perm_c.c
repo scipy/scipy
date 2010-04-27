@@ -1,11 +1,14 @@
-/*
- * -- SuperLU routine (version 2.0) --
+/*! @file get_perm_c.c
+ * \brief Matrix permutation operations
+ *
+ * <pre>
+ * -- SuperLU routine (version 3.1) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
- * November 15, 1997
- *
+ * August 1, 2008
+ * </pre>
  */
-#include "dsp_defs.h"
+#include "slu_ddefs.h"
 #include "colamd.h"
 
 extern int  genmmd_(int *, int *, int *, int *, int *, int *, int *, 
@@ -22,12 +25,11 @@ get_colamd(
 	   )
 {
     int Alen, *A, i, info, *p;
-    double *knobs;
+    double knobs[COLAMD_KNOBS];
+    int stats[COLAMD_STATS];
 
     Alen = colamd_recommended(nnz, m, n);
 
-    if ( !(knobs = (double *) SUPERLU_MALLOC(COLAMD_KNOBS * sizeof(double))) )
-        ABORT("Malloc fails for knobs");
     colamd_set_defaults(knobs);
 
     if (!(A = (int *) SUPERLU_MALLOC(Alen * sizeof(int))) )
@@ -36,29 +38,17 @@ get_colamd(
         ABORT("Malloc fails for p[]");
     for (i = 0; i <= n; ++i) p[i] = colptr[i];
     for (i = 0; i < nnz; ++i) A[i] = rowind[i];
-    info = colamd(m, n, Alen, A, p, knobs);
+    info = colamd(m, n, Alen, A, p, knobs, stats);
     if ( info == FALSE ) ABORT("COLAMD failed");
 
     for (i = 0; i < n; ++i) perm_c[p[i]] = i;
 
-    SUPERLU_FREE(knobs);
     SUPERLU_FREE(A);
     SUPERLU_FREE(p);
 }
-
-void
-getata(
-       const int m,      /* number of rows in matrix A. */
-       const int n,      /* number of columns in matrix A. */
-       const int nz,     /* number of nonzeros in matrix A */
-       int *colptr,      /* column pointer of size n+1 for matrix A. */
-       int *rowind,      /* row indices of size nz for matrix A. */
-       int *atanz,       /* out - on exit, returns the actual number of
-                            nonzeros in matrix A'*A. */
-       int **ata_colptr, /* out - size n+1 */
-       int **ata_rowind  /* out - size *atanz */
-       )
-/*
+/*! \brief
+ *
+ * <pre>
  * Purpose
  * =======
  *
@@ -75,8 +65,20 @@ getata(
  * =========
  *     o  Do I need to withhold the *dense* rows?
  *     o  How do I know the number of nonzeros in A'*A?
- * 
+ * </pre>
  */
+void
+getata(
+       const int m,      /* number of rows in matrix A. */
+       const int n,      /* number of columns in matrix A. */
+       const int nz,     /* number of nonzeros in matrix A */
+       int *colptr,      /* column pointer of size n+1 for matrix A. */
+       int *rowind,      /* row indices of size nz for matrix A. */
+       int *atanz,       /* out - on exit, returns the actual number of
+                            nonzeros in matrix A'*A. */
+       int **ata_colptr, /* out - size n+1 */
+       int **ata_rowind  /* out - size *atanz */
+       )
 {
     register int i, j, k, col, num_nz, ti, trow;
     int *marker, *b_colptr, *b_rowind;
@@ -188,6 +190,18 @@ getata(
 }
 
 
+/*! \brief
+ *
+ * <pre>
+ * Purpose
+ * =======
+ *
+ * Form the structure of A'+A. A is an n-by-n matrix in column oriented
+ * format represented by (colptr, rowind). The output A'+A is in column
+ * oriented format (symmetrically, also row oriented), represented by
+ * (b_colptr, b_rowind).
+ * </pre>
+ */
 void
 at_plus_a(
 	  const int n,      /* number of columns in matrix A. */
@@ -200,16 +214,6 @@ at_plus_a(
 	  int **b_rowind    /* out - size *bnz */
 	  )
 {
-/*
- * Purpose
- * =======
- *
- * Form the structure of A'+A. A is an n-by-n matrix in column oriented
- * format represented by (colptr, rowind). The output A'+A is in column
- * oriented format (symmetrically, also row oriented), represented by
- * (b_colptr, b_rowind).
- *
- */
     register int i, j, k, col, num_nz;
     int *t_colptr, *t_rowind; /* a column oriented form of T = A' */
     int *marker;
@@ -324,9 +328,9 @@ at_plus_a(
     SUPERLU_FREE(t_rowind);
 }
 
-void
-get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
-/*
+/*! \brief
+ *
+ * <pre>
  * Purpose
  * =======
  *
@@ -356,11 +360,13 @@ get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
  *	   Column permutation vector of size A->ncol, which defines the 
  *         permutation matrix Pc; perm_c[i] = j means column i of A is 
  *         in position j in A*Pc.
- *
+ * </pre>
  */
+void
+get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
 {
     NCformat *Astore = A->Store;
-    int m, n, bnz, *b_colptr, i;
+    int m, n, bnz = 0, *b_colptr, i;
     int delta, maxint, nofsub, *invp;
     int *b_rowind, *dhead, *qsize, *llist, *marker;
     double t, SuperLU_timer_();
@@ -372,12 +378,16 @@ get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
     switch ( ispec ) {
         case 0: /* Natural ordering */
 	      for (i = 0; i < n; ++i) perm_c[i] = i;
-	      /*printf("Use natural column ordering.\n");*/
+#if ( PRNTlevel>=1 )
+	      printf("Use natural column ordering.\n");
+#endif
 	      return;
         case 1: /* Minimum degree ordering on A'*A */
 	      getata(m, n, Astore->nnz, Astore->colptr, Astore->rowind,
 		     &bnz, &b_colptr, &b_rowind);
-	      /*printf("Use minimum degree ordering on A'*A.\n");*/
+#if ( PRNTlevel>=1 )
+	      printf("Use minimum degree ordering on A'*A.\n");
+#endif
 	      t = SuperLU_timer_() - t;
 	      /*printf("Form A'*A time = %8.3f\n", t);*/
 	      break;
@@ -385,14 +395,18 @@ get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
 	      if ( m != n ) ABORT("Matrix is not square");
 	      at_plus_a(n, Astore->nnz, Astore->colptr, Astore->rowind,
 			&bnz, &b_colptr, &b_rowind);
-	      /*printf("Use minimum degree ordering on A'+A.\n");*/
+#if ( PRNTlevel>=1 )
+	      printf("Use minimum degree ordering on A'+A.\n");
+#endif
 	      t = SuperLU_timer_() - t;
 	      /*printf("Form A'+A time = %8.3f\n", t);*/
 	      break;
         case 3: /* Approximate minimum degree column ordering. */
 	      get_colamd(m, n, Astore->nnz, Astore->colptr, Astore->rowind,
 			 perm_c);
-	      /*printf(".. Use approximate minimum degree column ordering.\n");*/
+#if ( PRNTlevel>=1 )
+	      printf(".. Use approximate minimum degree column ordering.\n");
+#endif
 	      return; 
         default:
 	      ABORT("Invalid ISPEC");
@@ -420,19 +434,18 @@ get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
 	for (i = 0; i <= n; ++i) ++b_colptr[i];
 	for (i = 0; i < bnz; ++i) ++b_rowind[i];
 	
-	genmmd_(&n, b_colptr, b_rowind, invp, perm_c, &delta, dhead, 
+	genmmd_(&n, b_colptr, b_rowind, perm_c, invp, &delta, dhead, 
 		qsize, llist, marker, &maxint, &nofsub);
 
 	/* Transform perm_c into 0-based indexing. */
 	for (i = 0; i < n; ++i) --perm_c[i];
 
-	SUPERLU_FREE(b_colptr);
-	SUPERLU_FREE(b_rowind);
 	SUPERLU_FREE(invp);
 	SUPERLU_FREE(dhead);
 	SUPERLU_FREE(qsize);
 	SUPERLU_FREE(llist);
 	SUPERLU_FREE(marker);
+	SUPERLU_FREE(b_rowind);
 
 	t = SuperLU_timer_() - t;
 	/*  printf("call GENMMD time = %8.3f\n", t);*/
@@ -441,4 +454,5 @@ get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
 	for (i = 0; i < n; ++i) perm_c[i] = i;
     }
 
+    SUPERLU_FREE(b_colptr);
 }

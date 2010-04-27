@@ -1,58 +1,65 @@
 
-
-/*
+/*! @file zlangs.c
+ * \brief Returns the value of the one norm
+ *
+ * <pre>
  * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
  *
+ * Modified from lapack routine ZLANGE 
+ * </pre>
  */
 /*
  * File name:	zlangs.c
  * History:     Modified from lapack routine ZLANGE
  */
 #include <math.h>
-#include "zsp_defs.h"
-#include "util.h"
+#include "slu_zdefs.h"
+
+/*! \brief
+ *
+ * <pre>
+ * Purpose   
+ *   =======   
+ *
+ *   ZLANGS returns the value of the one norm, or the Frobenius norm, or 
+ *   the infinity norm, or the element of largest absolute value of a 
+ *   real matrix A.   
+ *
+ *   Description   
+ *   ===========   
+ *
+ *   ZLANGE returns the value   
+ *
+ *      ZLANGE = ( max(abs(A(i,j))), NORM = 'M' or 'm'   
+ *               (   
+ *               ( norm1(A),         NORM = '1', 'O' or 'o'   
+ *               (   
+ *               ( normI(A),         NORM = 'I' or 'i'   
+ *               (   
+ *               ( normF(A),         NORM = 'F', 'f', 'E' or 'e'   
+ *
+ *   where  norm1  denotes the  one norm of a matrix (maximum column sum), 
+ *   normI  denotes the  infinity norm  of a matrix  (maximum row sum) and 
+ *   normF  denotes the  Frobenius norm of a matrix (square root of sum of 
+ *   squares).  Note that  max(abs(A(i,j)))  is not a  matrix norm.   
+ *
+ *   Arguments   
+ *   =========   
+ *
+ *   NORM    (input) CHARACTER*1   
+ *           Specifies the value to be returned in ZLANGE as described above.   
+ *   A       (input) SuperMatrix*
+ *           The M by N sparse matrix A. 
+ *
+ *  =====================================================================
+ * </pre>
+ */
 
 double zlangs(char *norm, SuperMatrix *A)
 {
-/* 
-    Purpose   
-    =======   
-
-    ZLANGS returns the value of the one norm, or the Frobenius norm, or 
-    the infinity norm, or the element of largest absolute value of a 
-    real matrix A.   
-
-    Description   
-    ===========   
-
-    ZLANGE returns the value   
-
-       ZLANGE = ( max(abs(A(i,j))), NORM = 'M' or 'm'   
-                (   
-                ( norm1(A),         NORM = '1', 'O' or 'o'   
-                (   
-                ( normI(A),         NORM = 'I' or 'i'   
-                (   
-                ( normF(A),         NORM = 'F', 'f', 'E' or 'e'   
-
-    where  norm1  denotes the  one norm of a matrix (maximum column sum), 
-    normI  denotes the  infinity norm  of a matrix  (maximum row sum) and 
-    normF  denotes the  Frobenius norm of a matrix (square root of sum of 
-    squares).  Note that  max(abs(A(i,j)))  is not a  matrix norm.   
-
-    Arguments   
-    =========   
-
-    NORM    (input) CHARACTER*1   
-            Specifies the value to be returned in ZLANGE as described above.   
-    A       (input) SuperMatrix*
-            The M by N sparse matrix A. 
-
-   ===================================================================== 
-*/
     
     /* Local variables */
     NCformat *Astore;

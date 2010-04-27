@@ -1,17 +1,20 @@
 
-/*
+/*! @file zsp_blas2.c
+ * \brief Sparse BLAS 2, using some dense BLAS 2 operations
+ *
+ * <pre>
  * -- SuperLU routine (version 3.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * October 15, 2003
- *
+ * </pre>
  */
 /*
  * File name:		zsp_blas2.c
  * Purpose:		Sparse BLAS 2, using some dense BLAS 2 operations.
  */
 
-#include "zsp_defs.h"
+#include "slu_zdefs.h"
 
 /* 
  * Function prototypes 
@@ -20,12 +23,9 @@ void zusolve(int, int, doublecomplex*, doublecomplex*);
 void zlsolve(int, int, doublecomplex*, doublecomplex*);
 void zmatvec(int, int, int, doublecomplex*, doublecomplex*, doublecomplex*);
 
-
-int
-sp_ztrsv(char *uplo, char *trans, char *diag, SuperMatrix *L, 
-         SuperMatrix *U, doublecomplex *x, SuperLUStat_t *stat, int *info)
-{
-/*
+/*! \brief Solves one of the systems of equations A*x = b,   or   A'*x = b
+ * 
+ * <pre>
  *   Purpose
  *   =======
  *
@@ -49,8 +49,8 @@ sp_ztrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
  *             On entry, trans specifies the equations to be solved as   
  *             follows:   
  *                trans = 'N' or 'n'   A*x = b.   
- *                trans = 'T' or 't'   A'*x = b.   
- *                trans = 'C' or 'c'   A'*x = b.   
+ *                trans = 'T' or 't'   A'*x = b.
+ *                trans = 'C' or 'c'   A^H*x = b.   
  *
  *   diag   - (input) char*
  *             On entry, diag specifies whether or not A is unit   
@@ -75,8 +75,12 @@ sp_ztrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
  *
  *   info    - (output) int*
  *             If *info = -i, the i-th argument had an illegal value.
- *
+ * </pre>
  */
+int
+sp_ztrsv(char *uplo, char *trans, char *diag, SuperMatrix *L, 
+         SuperMatrix *U, doublecomplex *x, SuperLUStat_t *stat, int *info)
+{
 #ifdef _CRAY
     _fcd ftcs1 = _cptofcd("L", strlen("L")),
 	 ftcs2 = _cptofcd("N", strlen("N")),
@@ -85,8 +89,8 @@ sp_ztrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
     SCformat *Lstore;
     NCformat *Ustore;
     doublecomplex   *Lval, *Uval;
-    doublecomplex temp;
     int incx = 1, incy = 1;
+    doublecomplex temp;
     doublecomplex alpha = {1.0, 0.0}, beta = {1.0, 0.0};
     doublecomplex comp_zero = {0.0, 0.0};
     int nrow;
@@ -98,7 +102,8 @@ sp_ztrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
     /* Test the input parameters */
     *info = 0;
     if ( !lsame_(uplo,"L") && !lsame_(uplo, "U") ) *info = -1;
-    else if ( !lsame_(trans, "N") && !lsame_(trans, "T") && !lsame_(trans,"C") ) *info = -2;
+    else if ( !lsame_(trans, "N") && !lsame_(trans, "T") && 
+              !lsame_(trans, "C")) *info = -2;
     else if ( !lsame_(diag, "U") && !lsame_(diag, "N") ) *info = -3;
     else if ( L->nrow != L->ncol || L->nrow < 0 ) *info = -4;
     else if ( U->nrow != U->ncol || U->nrow < 0 ) *info = -5;
@@ -131,7 +136,8 @@ sp_ztrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 		luptr = L_NZ_START(fsupc);
 		nrow = nsupr - nsupc;
 
-	        solve_ops += 4 * nsupc * (nsupc - 1);
+                /* 1 z_div costs 10 flops */
+	        solve_ops += 4 * nsupc * (nsupc - 1) + 10 * nsupc;
 	        solve_ops += 8 * nrow * nsupc;
 
 		if ( nsupc == 1 ) {
@@ -184,7 +190,8 @@ sp_ztrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 	    	nsupc = L_FST_SUPC(k+1) - fsupc;
 	    	luptr = L_NZ_START(fsupc);
 		
-    	        solve_ops += 4 * nsupc * (nsupc + 1);
+                /* 1 z_div costs 10 flops */
+    	        solve_ops += 4 * nsupc * (nsupc + 1) + 10 * nsupc;
 
 		if ( nsupc == 1 ) {
 		    z_div(&x[fsupc], &x[fsupc], &Lval[luptr]);
@@ -219,7 +226,7 @@ sp_ztrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 	    } /* for k ... */
 	    
 	}
-    } else if (lsame_(trans, "T") ) { /* Form x := inv(A')*x */
+    } else if ( lsame_(trans, "T") ) { /* Form x := inv(A')*x */
 	
 	if ( lsame_(uplo, "L") ) {
 	    /* Form x := inv(L')*x */
@@ -249,13 +256,13 @@ sp_ztrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 		    solve_ops += 4 * nsupc * (nsupc - 1);
 #ifdef _CRAY
                     ftcs1 = _cptofcd("L", strlen("L"));
-                    ftcs2 = _cptofcd(trans, strlen("T"));
+                    ftcs2 = _cptofcd("T", strlen("T"));
                     ftcs3 = _cptofcd("U", strlen("U"));
 		    CTRSV(ftcs1, ftcs2, ftcs3, &nsupc, &Lval[luptr], &nsupr,
 			&x[fsupc], &incx);
 #else
-                    ztrsv_("L", trans, "U", &nsupc, &Lval[luptr], &nsupr,
-                               &x[fsupc], &incx);
+		    ztrsv_("L", "T", "U", &nsupc, &Lval[luptr], &nsupr,
+			&x[fsupc], &incx);
 #endif
 		}
 	    }
@@ -278,26 +285,27 @@ sp_ztrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 		    }
 		}
 
-		solve_ops += 4 * nsupc * (nsupc + 1);
+                /* 1 z_div costs 10 flops */
+		solve_ops += 4 * nsupc * (nsupc + 1) + 10 * nsupc;
 
 		if ( nsupc == 1 ) {
 		    z_div(&x[fsupc], &x[fsupc], &Lval[luptr]);
 		} else {
 #ifdef _CRAY
                     ftcs1 = _cptofcd("U", strlen("U"));
-                    ftcs2 = _cptofcd(trans, strlen("T"));
+                    ftcs2 = _cptofcd("T", strlen("T"));
                     ftcs3 = _cptofcd("N", strlen("N"));
 		    CTRSV( ftcs1, ftcs2, ftcs3, &nsupc, &Lval[luptr], &nsupr,
 			    &x[fsupc], &incx);
 #else
-                    ztrsv_("U", trans, "N", &nsupc, &Lval[luptr], &nsupr,
-                               &x[fsupc], &incx);
+		    ztrsv_("U", "T", "N", &nsupc, &Lval[luptr], &nsupr,
+			    &x[fsupc], &incx);
 #endif
 		}
 	    } /* for k ... */
 	}
-    } else {  /* Form x := conj(inv(A'))*x */        
-        
+    } else { /* Form x := conj(inv(A'))*x */
+	
 	if ( lsame_(uplo, "L") ) {
 	    /* Form x := conj(inv(L'))*x */
     	    if ( L->nrow == 0 ) return 0; /* Quick return */
@@ -321,19 +329,19 @@ sp_ztrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 		    	z_sub(&x[jcol], &x[jcol], &comp_zero);
 			iptr++;
 		    }
-		}
-		
-		if ( nsupc > 1 ) {
+ 		}
+ 		
+ 		if ( nsupc > 1 ) {
 		    solve_ops += 4 * nsupc * (nsupc - 1);
 #ifdef _CRAY
                     ftcs1 = _cptofcd("L", strlen("L"));
                     ftcs2 = _cptofcd(trans, strlen("T"));
                     ftcs3 = _cptofcd("U", strlen("U"));
-		    CTRSV(ftcs1, ftcs2, ftcs3, &nsupc, &Lval[luptr], &nsupr,
+		    ZTRSV(ftcs1, ftcs2, ftcs3, &nsupc, &Lval[luptr], &nsupr,
 			&x[fsupc], &incx);
 #else
                     ztrsv_("L", trans, "U", &nsupc, &Lval[luptr], &nsupr,
-                               &x[fsupc], &incx);
+                           &x[fsupc], &incx);
 #endif
 		}
 	    }
@@ -357,25 +365,26 @@ sp_ztrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 		    }
 		}
 
-		solve_ops += 4 * nsupc * (nsupc + 1);
-
+                /* 1 z_div costs 10 flops */
+		solve_ops += 4 * nsupc * (nsupc + 1) + 10 * nsupc;
+ 
 		if ( nsupc == 1 ) {
-                    zz_conj(&temp, &Lval[luptr])
+                    zz_conj(&temp, &Lval[luptr]);
 		    z_div(&x[fsupc], &x[fsupc], &temp);
 		} else {
 #ifdef _CRAY
                     ftcs1 = _cptofcd("U", strlen("U"));
                     ftcs2 = _cptofcd(trans, strlen("T"));
                     ftcs3 = _cptofcd("N", strlen("N"));
-		    CTRSV( ftcs1, ftcs2, ftcs3, &nsupc, &Lval[luptr], &nsupr,
+		    ZTRSV( ftcs1, ftcs2, ftcs3, &nsupc, &Lval[luptr], &nsupr,
 			    &x[fsupc], &incx);
 #else
                     ztrsv_("U", trans, "N", &nsupc, &Lval[luptr], &nsupr,
                                &x[fsupc], &incx);
 #endif
-		}
-	    } /* for k ... */
-	}
+  		}
+  	    } /* for k ... */
+  	}
     }
 
     stat->ops[SOLVE] += solve_ops;
@@ -385,64 +394,68 @@ sp_ztrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 
 
 
+/*! \brief Performs one of the matrix-vector operations y := alpha*A*x + beta*y,   or   y := alpha*A'*x + beta*y
+ *
+ * <pre>  
+ *   Purpose   
+ *   =======   
+ *
+ *   sp_zgemv()  performs one of the matrix-vector operations   
+ *      y := alpha*A*x + beta*y,   or   y := alpha*A'*x + beta*y,   
+ *   where alpha and beta are scalars, x and y are vectors and A is a
+ *   sparse A->nrow by A->ncol matrix.   
+ *
+ *   Parameters   
+ *   ==========   
+ *
+ *   TRANS  - (input) char*
+ *            On entry, TRANS specifies the operation to be performed as   
+ *            follows:   
+ *               TRANS = 'N' or 'n'   y := alpha*A*x + beta*y.   
+ *               TRANS = 'T' or 't'   y := alpha*A'*x + beta*y.   
+ *               TRANS = 'C' or 'c'   y := alpha*A'*x + beta*y.   
+ *
+ *   ALPHA  - (input) doublecomplex
+ *            On entry, ALPHA specifies the scalar alpha.   
+ *
+ *   A      - (input) SuperMatrix*
+ *            Before entry, the leading m by n part of the array A must   
+ *            contain the matrix of coefficients.   
+ *
+ *   X      - (input) doublecomplex*, array of DIMENSION at least   
+ *            ( 1 + ( n - 1 )*abs( INCX ) ) when TRANS = 'N' or 'n'   
+ *           and at least   
+ *            ( 1 + ( m - 1 )*abs( INCX ) ) otherwise.   
+ *            Before entry, the incremented array X must contain the   
+ *            vector x.   
+ * 
+ *   INCX   - (input) int
+ *            On entry, INCX specifies the increment for the elements of   
+ *            X. INCX must not be zero.   
+ *
+ *   BETA   - (input) doublecomplex
+ *            On entry, BETA specifies the scalar beta. When BETA is   
+ *            supplied as zero then Y need not be set on input.   
+ *
+ *   Y      - (output) doublecomplex*,  array of DIMENSION at least   
+ *            ( 1 + ( m - 1 )*abs( INCY ) ) when TRANS = 'N' or 'n'   
+ *            and at least   
+ *            ( 1 + ( n - 1 )*abs( INCY ) ) otherwise.   
+ *            Before entry with BETA non-zero, the incremented array Y   
+ *            must contain the vector y. On exit, Y is overwritten by the 
+ *            updated vector y.
+ *	      
+ *   INCY   - (input) int
+ *            On entry, INCY specifies the increment for the elements of   
+ *            Y. INCY must not be zero.   
+ *
+ *    ==== Sparse Level 2 Blas routine.   
+ * </pre>
+*/
 int
 sp_zgemv(char *trans, doublecomplex alpha, SuperMatrix *A, doublecomplex *x, 
 	 int incx, doublecomplex beta, doublecomplex *y, int incy)
 {
-/*  Purpose   
-    =======   
-
-    sp_zgemv()  performs one of the matrix-vector operations   
-       y := alpha*A*x + beta*y,   or   y := alpha*A'*x + beta*y,   
-    where alpha and beta are scalars, x and y are vectors and A is a
-    sparse A->nrow by A->ncol matrix.   
-
-    Parameters   
-    ==========   
-
-    TRANS  - (input) char*
-             On entry, TRANS specifies the operation to be performed as   
-             follows:   
-                TRANS = 'N' or 'n'   y := alpha*A*x + beta*y.   
-                TRANS = 'T' or 't'   y := alpha*A'*x + beta*y.   
-                TRANS = 'C' or 'c'   y := alpha*A'*x + beta*y.   
-
-    ALPHA  - (input) doublecomplex
-             On entry, ALPHA specifies the scalar alpha.   
-
-    A      - (input) SuperMatrix*
-             Before entry, the leading m by n part of the array A must   
-             contain the matrix of coefficients.   
-
-    X      - (input) doublecomplex*, array of DIMENSION at least   
-             ( 1 + ( n - 1 )*abs( INCX ) ) when TRANS = 'N' or 'n'   
-             and at least   
-             ( 1 + ( m - 1 )*abs( INCX ) ) otherwise.   
-             Before entry, the incremented array X must contain the   
-             vector x.   
-
-    INCX   - (input) int
-             On entry, INCX specifies the increment for the elements of   
-             X. INCX must not be zero.   
-
-    BETA   - (input) doublecomplex
-             On entry, BETA specifies the scalar beta. When BETA is   
-             supplied as zero then Y need not be set on input.   
-
-    Y      - (output) doublecomplex*,  array of DIMENSION at least   
-             ( 1 + ( m - 1 )*abs( INCY ) ) when TRANS = 'N' or 'n'   
-             and at least   
-             ( 1 + ( n - 1 )*abs( INCY ) ) otherwise.   
-             Before entry with BETA non-zero, the incremented array Y   
-             must contain the vector y. On exit, Y is overwritten by the 
-             updated vector y.
-	     
-    INCY   - (input) int
-             On entry, INCY specifies the increment for the elements of   
-             Y. INCY must not be zero.   
-
-    ==== Sparse Level 2 Blas routine.   
-*/
 
     /* Local variables */
     NCformat *Astore;

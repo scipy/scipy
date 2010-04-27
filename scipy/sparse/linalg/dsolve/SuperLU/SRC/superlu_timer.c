@@ -1,11 +1,15 @@
-/* 
+/*! @file superlu_timer.c
+ * \brief Returns the time used
+ *
+ * <pre>
  * Purpose
  * ======= 
- *	Returns the time in seconds used by the process.
+ * 
+ * Returns the time in seconds used by the process.
  *
  * Note: the timer function call is machine dependent. Use conditional
  *       compilation to choose the appropriate function.
- *
+ * </pre>
  */
 
 
@@ -15,9 +19,21 @@
  *	nanoseconds. 
 */
 #include <sys/time.h>
- 
+
 double SuperLU_timer_() {
     return ( (double)gethrtime() / 1e9 );
+}
+
+#elif _WIN32
+
+#include <time.h>
+
+double SuperLU_timer_()
+{
+    clock_t t;
+    t=clock();
+
+    return ((double)t)/CLOCKS_PER_SEC;
 }
 
 #else
@@ -32,13 +48,14 @@ double SuperLU_timer_() {
 #ifndef CLK_TCK
 #define CLK_TCK 60
 #endif
-
+/*! \brief Timer function
+ */ 
 double SuperLU_timer_()
 {
 #ifdef NO_TIMER
-	/* no sys/times.h on WIN32 */
-	double tmp;
-	tmp = 0.0;
+    /* no sys/times.h on WIN32 */
+    double tmp;
+    tmp = 0.0;
 #else
     struct tms use;
     double tmp;

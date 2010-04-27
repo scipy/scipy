@@ -1,17 +1,20 @@
 
-/*
+/*! @file dsp_blas2.c
+ * \brief Sparse BLAS 2, using some dense BLAS 2 operations
+ *
+ * <pre>
  * -- SuperLU routine (version 3.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * October 15, 2003
- *
+ * </pre>
  */
 /*
  * File name:		dsp_blas2.c
  * Purpose:		Sparse BLAS 2, using some dense BLAS 2 operations.
  */
 
-#include "dsp_defs.h"
+#include "slu_ddefs.h"
 
 /* 
  * Function prototypes 
@@ -20,12 +23,9 @@ void dusolve(int, int, double*, double*);
 void dlsolve(int, int, double*, double*);
 void dmatvec(int, int, int, double*, double*, double*);
 
-
-int
-sp_dtrsv(char *uplo, char *trans, char *diag, SuperMatrix *L, 
-         SuperMatrix *U, double *x, SuperLUStat_t *stat, int *info)
-{
-/*
+/*! \brief Solves one of the systems of equations A*x = b,   or   A'*x = b
+ * 
+ * <pre>
  *   Purpose
  *   =======
  *
@@ -49,7 +49,7 @@ sp_dtrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
  *             On entry, trans specifies the equations to be solved as   
  *             follows:   
  *                trans = 'N' or 'n'   A*x = b.   
- *                trans = 'T' or 't'   A'*x = b.   
+ *                trans = 'T' or 't'   A'*x = b.
  *                trans = 'C' or 'c'   A'*x = b.   
  *
  *   diag   - (input) char*
@@ -75,8 +75,12 @@ sp_dtrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
  *
  *   info    - (output) int*
  *             If *info = -i, the i-th argument had an illegal value.
- *
+ * </pre>
  */
+int
+sp_dtrsv(char *uplo, char *trans, char *diag, SuperMatrix *L, 
+         SuperMatrix *U, double *x, SuperLUStat_t *stat, int *info)
+{
 #ifdef _CRAY
     _fcd ftcs1 = _cptofcd("L", strlen("L")),
 	 ftcs2 = _cptofcd("N", strlen("N")),
@@ -96,7 +100,8 @@ sp_dtrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
     /* Test the input parameters */
     *info = 0;
     if ( !lsame_(uplo,"L") && !lsame_(uplo, "U") ) *info = -1;
-    else if ( !lsame_(trans, "N") && !lsame_(trans, "T") ) *info = -2;
+    else if ( !lsame_(trans, "N") && !lsame_(trans, "T") && 
+              !lsame_(trans, "C")) *info = -2;
     else if ( !lsame_(diag, "U") && !lsame_(diag, "N") ) *info = -3;
     else if ( L->nrow != L->ncol || L->nrow < 0 ) *info = -4;
     else if ( U->nrow != U->ncol || U->nrow < 0 ) *info = -5;
@@ -298,68 +303,71 @@ sp_dtrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 
 
 
+/*! \brief Performs one of the matrix-vector operations y := alpha*A*x + beta*y,   or   y := alpha*A'*x + beta*y,   
+ *
+ * <pre>
+ *   Purpose   
+ *   =======   
+ *
+ *   sp_dgemv()  performs one of the matrix-vector operations   
+ *      y := alpha*A*x + beta*y,   or   y := alpha*A'*x + beta*y,   
+ *   where alpha and beta are scalars, x and y are vectors and A is a
+ *   sparse A->nrow by A->ncol matrix.   
+ *
+ *   Parameters   
+ *   ==========   
+ *
+ *   TRANS  - (input) char*
+ *            On entry, TRANS specifies the operation to be performed as   
+ *            follows:   
+ *               TRANS = 'N' or 'n'   y := alpha*A*x + beta*y.   
+ *               TRANS = 'T' or 't'   y := alpha*A'*x + beta*y.   
+ *               TRANS = 'C' or 'c'   y := alpha*A'*x + beta*y.   
+ *
+ *   ALPHA  - (input) double
+ *            On entry, ALPHA specifies the scalar alpha.   
+ *
+ *   A      - (input) SuperMatrix*
+ *            Matrix A with a sparse format, of dimension (A->nrow, A->ncol).
+ *            Currently, the type of A can be:
+ *                Stype = NC or NCP; Dtype = SLU_D; Mtype = GE. 
+ *            In the future, more general A can be handled.
+ *
+ *   X      - (input) double*, array of DIMENSION at least   
+ *            ( 1 + ( n - 1 )*abs( INCX ) ) when TRANS = 'N' or 'n'   
+ *            and at least   
+ *            ( 1 + ( m - 1 )*abs( INCX ) ) otherwise.   
+ *            Before entry, the incremented array X must contain the   
+ *            vector x.   
+ *
+ *   INCX   - (input) int
+ *            On entry, INCX specifies the increment for the elements of   
+ *            X. INCX must not be zero.   
+ *
+ *   BETA   - (input) double
+ *            On entry, BETA specifies the scalar beta. When BETA is   
+ *            supplied as zero then Y need not be set on input.   
+ *
+ *   Y      - (output) double*,  array of DIMENSION at least   
+ *            ( 1 + ( m - 1 )*abs( INCY ) ) when TRANS = 'N' or 'n'   
+ *            and at least   
+ *            ( 1 + ( n - 1 )*abs( INCY ) ) otherwise.   
+ *            Before entry with BETA non-zero, the incremented array Y   
+ *            must contain the vector y. On exit, Y is overwritten by the 
+ *            updated vector y.
+ *	     
+ *   INCY   - (input) int
+ *            On entry, INCY specifies the increment for the elements of   
+ *            Y. INCY must not be zero.   
+ *
+ *   ==== Sparse Level 2 Blas routine.   
+ * </pre>
+ */
 
 int
 sp_dgemv(char *trans, double alpha, SuperMatrix *A, double *x, 
 	 int incx, double beta, double *y, int incy)
 {
-/*  Purpose   
-    =======   
-
-    sp_dgemv()  performs one of the matrix-vector operations   
-       y := alpha*A*x + beta*y,   or   y := alpha*A'*x + beta*y,   
-    where alpha and beta are scalars, x and y are vectors and A is a
-    sparse A->nrow by A->ncol matrix.   
-
-    Parameters   
-    ==========   
-
-    TRANS  - (input) char*
-             On entry, TRANS specifies the operation to be performed as   
-             follows:   
-                TRANS = 'N' or 'n'   y := alpha*A*x + beta*y.   
-                TRANS = 'T' or 't'   y := alpha*A'*x + beta*y.   
-                TRANS = 'C' or 'c'   y := alpha*A'*x + beta*y.   
-
-    ALPHA  - (input) double
-             On entry, ALPHA specifies the scalar alpha.   
-
-    A      - (input) SuperMatrix*
-             Matrix A with a sparse format, of dimension (A->nrow, A->ncol).
-             Currently, the type of A can be:
-                 Stype = NC or NCP; Dtype = SLU_D; Mtype = GE. 
-             In the future, more general A can be handled.
-
-    X      - (input) double*, array of DIMENSION at least   
-             ( 1 + ( n - 1 )*abs( INCX ) ) when TRANS = 'N' or 'n'   
-             and at least   
-             ( 1 + ( m - 1 )*abs( INCX ) ) otherwise.   
-             Before entry, the incremented array X must contain the   
-             vector x.   
-
-    INCX   - (input) int
-             On entry, INCX specifies the increment for the elements of   
-             X. INCX must not be zero.   
-
-    BETA   - (input) double
-             On entry, BETA specifies the scalar beta. When BETA is   
-             supplied as zero then Y need not be set on input.   
-
-    Y      - (output) double*,  array of DIMENSION at least   
-             ( 1 + ( m - 1 )*abs( INCY ) ) when TRANS = 'N' or 'n'   
-             and at least   
-             ( 1 + ( n - 1 )*abs( INCY ) ) otherwise.   
-             Before entry with BETA non-zero, the incremented array Y   
-             must contain the vector y. On exit, Y is overwritten by the 
-             updated vector y.
-	     
-    INCY   - (input) int
-             On entry, INCY specifies the increment for the elements of   
-             Y. INCY must not be zero.   
-
-    ==== Sparse Level 2 Blas routine.   
-*/
-
     /* Local variables */
     NCformat *Astore;
     double   *Aval;

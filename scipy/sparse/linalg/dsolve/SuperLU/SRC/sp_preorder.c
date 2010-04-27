@@ -1,10 +1,12 @@
-#include "dsp_defs.h"
+/*! @file sp_preorder.c
+ * \brief Permute and performs functions on columns of orginal matrix
+ */
+#include "slu_ddefs.h"
 
-void
-sp_preorder(superlu_options_t *options,  SuperMatrix *A, int *perm_c, 
-	    int *etree, SuperMatrix *AC)
-{
-/*
+
+/*! \brief
+ *
+ * <pre>
  * Purpose
  * =======
  *
@@ -54,9 +56,12 @@ sp_preorder(superlu_options_t *options,  SuperMatrix *A, int *perm_c,
  *         The resulting matrix after applied the column permutation
  *         perm_c[] to matrix A. The type of AC can be:
  *         Stype = SLU_NCP; Dtype = A->Dtype; Mtype = SLU_GE.
- *
+ * </pre>
  */
-
+void
+sp_preorder(superlu_options_t *options,  SuperMatrix *A, int *perm_c, 
+	    int *etree, SuperMatrix *AC)
+{
     NCformat  *Astore;
     NCPformat *ACstore;
     int       *iwork, *post;

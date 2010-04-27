@@ -1,27 +1,45 @@
 
-
-/*
+/*! @file dsnode_dfs.c
+ * \brief Determines the union of row structures of columns within the relaxed node
+ *
+ * <pre>
  * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
  *
+ * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
+ * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ * 
+ * Permission is hereby granted to use or copy this program for any
+ * purpose, provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is
+ * granted, provided the above notices are retained, and a notice that
+ * the code was modified is included with the above copyright notice.
+ * </pre>
  */
-/*
-  Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
- 
-  THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
-  EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- 
-  Permission is hereby granted to use or copy this program for any
-  purpose, provided the above notices are retained on all copies.
-  Permission to modify the code and to distribute modified code is
-  granted, provided the above notices are retained, and a notice that
-  the code was modified is included with the above copyright notice.
-*/
 
-#include "dsp_defs.h"
-#include "util.h"
+
+#include "slu_ddefs.h"
+
+/*! \brief
+ *
+ * <pre>
+ * Purpose
+ * =======
+ *    dsnode_dfs() - Determine the union of the row structures of those 
+ *    columns within the relaxed snode.
+ *    Note: The relaxed snodes are leaves of the supernodal etree, therefore, 
+ *    the portion outside the rectangular supernode must be zero.
+ *
+ * Return value
+ * ============
+ *     0   success;
+ *    >0   number of bytes allocated when run out of memory.
+ * </pre>
+ */
 
 int
 dsnode_dfs (
@@ -35,19 +53,7 @@ dsnode_dfs (
 	   GlobalLU_t *Glu          /* modified */
 	   )
 {
-/* Purpose
- * =======
- *    dsnode_dfs() - Determine the union of the row structures of those 
- *    columns within the relaxed snode.
- *    Note: The relaxed snodes are leaves of the supernodal etree, therefore, 
- *    the portion outside the rectangular supernode must be zero.
- *
- * Return value
- * ============
- *     0   success;
- *    >0   number of bytes allocated when run out of memory.
- *
- */
+
     register int i, k, ifrom, ito, nextl, new_next;
     int          nsuper, krow, kmark, mem_error;
     int          *xsup, *supno;

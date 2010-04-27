@@ -1,25 +1,26 @@
 
-/*
+/*! @file cgsrfs.c
+ * \brief Improves computed solution to a system of inear equations
+ * 
+ * <pre>
  * -- SuperLU routine (version 3.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * October 15, 2003
  *
+ * Modified from lapack routine CGERFS
+ * </pre>
  */
 /*
  * File name:	cgsrfs.c
  * History:     Modified from lapack routine CGERFS
  */
 #include <math.h>
-#include "csp_defs.h"
+#include "slu_cdefs.h"
 
-void
-cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
-       int *perm_c, int *perm_r, char *equed, float *R, float *C,
-       SuperMatrix *B, SuperMatrix *X, float *ferr, float *berr,
-       SuperLUStat_t *stat, int *info)
-{
-/*
+/*! \brief
+ *
+ * <pre>
  *   Purpose   
  *   =======   
  *
@@ -123,7 +124,15 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
  *
  *    ITMAX is the maximum number of steps of iterative refinement.   
  *
- */  
+ * </pre>
+ */
+void
+cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
+       int *perm_c, int *perm_r, char *equed, float *R, float *C,
+       SuperMatrix *B, SuperMatrix *X, float *ferr, float *berr,
+       SuperLUStat_t *stat, int *info)
+{
+
 
 #define ITMAX 5
     
@@ -224,6 +233,8 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
     nz     = A->ncol + 1;
     eps    = slamch_("Epsilon");
     safmin = slamch_("Safe minimum");
+    /* Set SAFE1 essentially to be the underflow threshold times the
+       number of additions in each row. */
     safe1  = nz * safmin;
     safe2  = safe1 / eps;
 
@@ -274,34 +285,36 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	       where abs(Z) is the componentwise absolute value of the matrix
 	       or vector Z.  If the i-th component of the denominator is less
 	       than SAFE2, then SAFE1 is added to the i-th component of the   
-	       numerator and denominator before dividing. */
+	       numerator before dividing. */
 
-	    for (i = 0; i < A->nrow; ++i) rwork[i] = slu_c_abs1( &Bptr[i] );
+	    for (i = 0; i < A->nrow; ++i) rwork[i] = c_abs1( &Bptr[i] );
 	    
 	    /* Compute abs(op(A))*abs(X) + abs(B). */
 	    if (notran) {
 		for (k = 0; k < A->ncol; ++k) {
-		    xk = slu_c_abs1( &Xptr[k] );
+		    xk = c_abs1( &Xptr[k] );
 		    for (i = Astore->colptr[k]; i < Astore->colptr[k+1]; ++i)
-			rwork[Astore->rowind[i]] += slu_c_abs1(&Aval[i]) * xk;
+			rwork[Astore->rowind[i]] += c_abs1(&Aval[i]) * xk;
 		}
 	    } else {
 		for (k = 0; k < A->ncol; ++k) {
 		    s = 0.;
 		    for (i = Astore->colptr[k]; i < Astore->colptr[k+1]; ++i) {
 			irow = Astore->rowind[i];
-			s += slu_c_abs1(&Aval[i]) * slu_c_abs1(&Xptr[irow]);
+			s += c_abs1(&Aval[i]) * c_abs1(&Xptr[irow]);
 		    }
 		    rwork[k] += s;
 		}
 	    }
 	    s = 0.;
 	    for (i = 0; i < A->nrow; ++i) {
-		if (rwork[i] > safe2)
-		    s = SUPERLU_MAX( s, slu_c_abs1(&work[i]) / rwork[i] );
-		else
-		    s = SUPERLU_MAX( s, (slu_c_abs1(&work[i]) + safe1) / 
-				(rwork[i] + safe1) );
+		if (rwork[i] > safe2) {
+		    s = SUPERLU_MAX( s, c_abs1(&work[i]) / rwork[i] );
+                } else if ( rwork[i] != 0.0 ) {
+		    s = SUPERLU_MAX( s, (c_abs1(&work[i]) + safe1) / rwork[i] );
+                }
+                /* If rwork[i] is exactly 0.0, then we know the true 
+                   residual also must be exactly 0.0. */
 	    }
 	    berr[j] = s;
 
@@ -351,22 +364,22 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
              inv(op(A)) * diag(W),   
           where W = abs(R) + NZ*EPS*( abs(op(A))*abs(X)+abs(B) ))) */
 	
-	for (i = 0; i < A->nrow; ++i) rwork[i] = slu_c_abs1( &Bptr[i] );
+	for (i = 0; i < A->nrow; ++i) rwork[i] = c_abs1( &Bptr[i] );
 	
 	/* Compute abs(op(A))*abs(X) + abs(B). */
 	if ( notran ) {
 	    for (k = 0; k < A->ncol; ++k) {
-		xk = slu_c_abs1( &Xptr[k] );
+		xk = c_abs1( &Xptr[k] );
 		for (i = Astore->colptr[k]; i < Astore->colptr[k+1]; ++i)
-		    rwork[Astore->rowind[i]] += slu_c_abs1(&Aval[i]) * xk;
+		    rwork[Astore->rowind[i]] += c_abs1(&Aval[i]) * xk;
 	    }
 	} else {
 	    for (k = 0; k < A->ncol; ++k) {
 		s = 0.;
 		for (i = Astore->colptr[k]; i < Astore->colptr[k+1]; ++i) {
 		    irow = Astore->rowind[i];
-		    xk = slu_c_abs1( &Xptr[irow] );
-		    s += slu_c_abs1(&Aval[i]) * xk;
+		    xk = c_abs1( &Xptr[irow] );
+		    s += c_abs1(&Aval[i]) * xk;
 		}
 		rwork[k] += s;
 	    }
@@ -374,9 +387,9 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	
 	for (i = 0; i < A->nrow; ++i)
 	    if (rwork[i] > safe2)
-		rwork[i] = slu_c_abs(&work[i]) + (iwork[i]+1)*eps*rwork[i];
+		rwork[i] = c_abs(&work[i]) + (iwork[i]+1)*eps*rwork[i];
 	    else
-		rwork[i] = slu_c_abs(&work[i])+(iwork[i]+1)*eps*rwork[i]+safe1;
+		rwork[i] = c_abs(&work[i])+(iwork[i]+1)*eps*rwork[i]+safe1;
 	kase = 0;
 
 	do {
@@ -424,13 +437,13 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	lstres = 0.;
  	if ( notran && colequ ) {
 	    for (i = 0; i < A->nrow; ++i)
-	    	lstres = SUPERLU_MAX( lstres, C[i] * slu_c_abs1( &Xptr[i]) );
+	    	lstres = SUPERLU_MAX( lstres, C[i] * c_abs1( &Xptr[i]) );
   	} else if ( !notran && rowequ ) {
 	    for (i = 0; i < A->nrow; ++i)
-	    	lstres = SUPERLU_MAX( lstres, R[i] * slu_c_abs1( &Xptr[i]) );
+	    	lstres = SUPERLU_MAX( lstres, R[i] * c_abs1( &Xptr[i]) );
 	} else {
 	    for (i = 0; i < A->nrow; ++i)
-	    	lstres = SUPERLU_MAX( lstres, slu_c_abs1( &Xptr[i]) );
+	    	lstres = SUPERLU_MAX( lstres, c_abs1( &Xptr[i]) );
 	}
 	if ( lstres != 0. )
 	    ferr[j] /= lstres;

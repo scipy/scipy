@@ -1,14 +1,20 @@
+/*! @file icmax1.c
+ * \brief Finds the index of the element whose real part has maximum absolute value
+ *
+ * <pre>
+ *     -- LAPACK auxiliary routine (version 2.0) --   
+ *     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+ *     Courant Institute, Argonne National Lab, and Rice University   
+ *     October 31, 1992   
+ * </pre>
+ */
 #include <math.h>
-#include "scomplex.h"
+#include "slu_scomplex.h"
+#include "slu_Cnames.h"
 
-int icmax1_(int *n, complex *cx, int *incx)
-{
-/*  -- LAPACK auxiliary routine (version 2.0) --   
-       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
-       Courant Institute, Argonne National Lab, and Rice University   
-       September 30, 1994   
+/*! \brief
 
-
+ <pre>
     Purpose   
     =======   
 
@@ -33,9 +39,11 @@ int icmax1_(int *n, complex *cx, int *incx)
             The spacing between successive values of CX.  INCX >= 1.   
 
    ===================================================================== 
-  
-
-
+  </pre>
+*/
+int icmax1_(int *n, complex *cx, int *incx)
+{
+/*
        NEXT LINE IS THE ONLY MODIFICATION.   
 
     

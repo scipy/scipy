@@ -1,26 +1,29 @@
 
-/*
- * -- SuperLU routine (version 3.0) --
+/*! @file sutil.c
+ * \brief Matrix utility functions
+ *
+ * <pre>
+ * -- SuperLU routine (version 3.1) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
- * October 15, 2003
+ * August 1, 2008
  *
+ * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
+ * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ * 
+ * Permission is hereby granted to use or copy this program for any
+ * purpose, provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is
+ * granted, provided the above notices are retained, and a notice that
+ * the code was modified is included with the above copyright notice.
+ * </pre>
  */
-/*
-  Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
- 
-  THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
-  EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- 
-  Permission is hereby granted to use or copy this program for any
-  purpose, provided the above notices are retained on all copies.
-  Permission to modify the code and to distribute modified code is
-  granted, provided the above notices are retained, and a notice that
-  the code was modified is included with the above copyright notice.
-*/
+
 
 #include <math.h>
-#include "ssp_defs.h"
+#include "slu_sdefs.h"
 
 void
 sCreate_CompCol_Matrix(SuperMatrix *A, int m, int n, int nnz, 
@@ -64,7 +67,7 @@ sCreate_CompRow_Matrix(SuperMatrix *A, int m, int n, int nnz,
     Astore->rowptr = rowptr;
 }
 
-/* Copy matrix A into matrix B. */
+/*! \brief Copy matrix A into matrix B. */
 void
 sCopy_CompCol_Matrix(SuperMatrix *A, SuperMatrix *B)
 {
@@ -108,12 +111,7 @@ void
 sCopy_Dense_Matrix(int M, int N, float *X, int ldx,
 			float *Y, int ldy)
 {
-/*
- *
- *  Purpose
- *  =======
- *
- *  Copies a two-dimensional matrix X to another matrix Y.
+/*! \brief Copies a two-dimensional matrix X to another matrix Y.
  */
     int    i, j;
     
@@ -150,8 +148,7 @@ sCreate_SuperNode_Matrix(SuperMatrix *L, int m, int n, int nnz,
 }
 
 
-/*
- * Convert a row compressed storage into a column compressed storage.
+/*! \brief Convert a row compressed storage into a column compressed storage.
  */
 void
 sCompRow_to_CompCol(int m, int n, int nnz, 
@@ -266,23 +263,24 @@ sPrint_SuperNode_Matrix(char *what, SuperMatrix *A)
 void
 sPrint_Dense_Matrix(char *what, SuperMatrix *A)
 {
-    DNformat     *Astore;
-    register int i;
+    DNformat     *Astore = (DNformat *) A->Store;
+    register int i, j, lda = Astore->lda;
     float       *dp;
     
     printf("\nDense matrix %s:\n", what);
     printf("Stype %d, Dtype %d, Mtype %d\n", A->Stype,A->Dtype,A->Mtype);
-    Astore = (DNformat *) A->Store;
     dp = (float *) Astore->nzval;
-    printf("nrow %d, ncol %d, lda %d\n", A->nrow,A->ncol,Astore->lda);
+    printf("nrow %d, ncol %d, lda %d\n", A->nrow,A->ncol,lda);
     printf("\nnzval: ");
-    for (i = 0; i < A->nrow; ++i) printf("%f  ", dp[i]);
+    for (j = 0; j < A->ncol; ++j) {
+        for (i = 0; i < A->nrow; ++i) printf("%f  ", dp[i + j*lda]);
+        printf("\n");
+    }
     printf("\n");
     fflush(stdout);
 }
 
-/*
- * Diagnostic print of column "jcol" in the U/L factor.
+/*! \brief Diagnostic print of column "jcol" in the U/L factor.
  */
 void
 sprint_lu_col(char *msg, int jcol, int pivrow, int *xprune, GlobalLU_t *Glu)
@@ -324,9 +322,7 @@ sprint_lu_col(char *msg, int jcol, int pivrow, int *xprune, GlobalLU_t *Glu)
 }
 
 
-/*
- * Check whether tempv[] == 0. This should be true before and after 
- * calling any numeric routines, i.e., "panel_bmod" and "column_bmod". 
+/*! \brief Check whether tempv[] == 0. This should be true before and after calling any numeric routines, i.e., "panel_bmod" and "column_bmod". 
  */
 void scheck_tempv(int n, float *tempv)
 {
@@ -352,8 +348,7 @@ sGenXtrue(int n, int nrhs, float *x, int ldx)
 	}
 }
 
-/*
- * Let rhs[i] = sum of i-th row of A, so the solution vector is all 1's
+/*! \brief Let rhs[i] = sum of i-th row of A, so the solution vector is all 1's
  */
 void
 sFillRHS(trans_t trans, int nrhs, float *x, int ldx,
@@ -382,8 +377,7 @@ sFillRHS(trans_t trans, int nrhs, float *x, int ldx,
 
 }
 
-/* 
- * Fills a float precision array with a given value.
+/*! \brief Fills a float precision array with a given value.
  */
 void 
 sfill(float *a, int alen, float dval)
@@ -394,8 +388,7 @@ sfill(float *a, int alen, float dval)
 
 
 
-/* 
- * Check the inf-norm of the error vector 
+/*! \brief Check the inf-norm of the error vector 
  */
 void sinf_norm_error(int nrhs, SuperMatrix *X, float *xtrue)
 {
@@ -421,7 +414,7 @@ void sinf_norm_error(int nrhs, SuperMatrix *X, float *xtrue)
 
 
 
-/* Print performance of the code. */
+/*! \brief Print performance of the code. */
 void
 sPrintPerf(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage,
            float rpg, float rcond, float *ferr,
@@ -449,9 +442,9 @@ sPrintPerf(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage,
     printf("\tNo of nonzeros in factor U = %d\n", Ustore->nnz);
     printf("\tNo of nonzeros in L+U = %d\n", Lstore->nnz + Ustore->nnz);
 	
-    printf("L\\U MB %.3f\ttotal MB needed %.3f\texpansions %d\n",
-	   mem_usage->for_lu/1e6, mem_usage->total_needed/1e6,
-	   mem_usage->expansions);
+    printf("L\\U MB %.3f\ttotal MB needed %.3f\n",
+	   mem_usage->for_lu/1e6, mem_usage->total_needed/1e6);
+    printf("Number of memory expansions: %d\n", stat->expansions);
 	
     printf("\tFactor\tMflops\tSolve\tMflops\tEtree\tEquil\tRcond\tRefine\n");
     printf("PERF:%8.2f%8.2f%8.2f%8.2f%8.2f%8.2f%8.2f%8.2f\n",

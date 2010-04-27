@@ -1,69 +1,80 @@
 
-/*
+/*! @file dgscon.c
+ * \brief Estimates reciprocal of the condition number of a general matrix
+ * 
+ * <pre>
  * -- SuperLU routine (version 3.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * October 15, 2003
  *
+ * Modified from lapack routines DGECON.
+ * </pre> 
  */
+
 /*
  * File name:	dgscon.c
  * History:     Modified from lapack routines DGECON.
  */
 #include <math.h>
-#include "dsp_defs.h"
+#include "slu_ddefs.h"
+
+/*! \brief
+ *
+ * <pre>
+ *   Purpose   
+ *   =======   
+ *
+ *   DGSCON estimates the reciprocal of the condition number of a general 
+ *   real matrix A, in either the 1-norm or the infinity-norm, using   
+ *   the LU factorization computed by DGETRF.   *
+ *
+ *   An estimate is obtained for norm(inv(A)), and the reciprocal of the   
+ *   condition number is computed as   
+ *      RCOND = 1 / ( norm(A) * norm(inv(A)) ).   
+ *
+ *   See supermatrix.h for the definition of 'SuperMatrix' structure.
+ * 
+ *   Arguments   
+ *   =========   
+ *
+ *    NORM    (input) char*
+ *            Specifies whether the 1-norm condition number or the   
+ *            infinity-norm condition number is required:   
+ *            = '1' or 'O':  1-norm;   
+ *            = 'I':         Infinity-norm.
+ *	    
+ *    L       (input) SuperMatrix*
+ *            The factor L from the factorization Pr*A*Pc=L*U as computed by
+ *            dgstrf(). Use compressed row subscripts storage for supernodes,
+ *            i.e., L has types: Stype = SLU_SC, Dtype = SLU_D, Mtype = SLU_TRLU.
+ * 
+ *    U       (input) SuperMatrix*
+ *            The factor U from the factorization Pr*A*Pc=L*U as computed by
+ *            dgstrf(). Use column-wise storage scheme, i.e., U has types:
+ *            Stype = SLU_NC, Dtype = SLU_D, Mtype = SLU_TRU.
+ *	    
+ *    ANORM   (input) double
+ *            If NORM = '1' or 'O', the 1-norm of the original matrix A.   
+ *            If NORM = 'I', the infinity-norm of the original matrix A.
+ *	    
+ *    RCOND   (output) double*
+ *           The reciprocal of the condition number of the matrix A,   
+ *           computed as RCOND = 1/(norm(A) * norm(inv(A))).
+ *	    
+ *    INFO    (output) int*
+ *           = 0:  successful exit   
+ *           < 0:  if INFO = -i, the i-th argument had an illegal value   
+ *
+ *    ===================================================================== 
+ * </pre>
+ */
 
 void
 dgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
        double anorm, double *rcond, SuperLUStat_t *stat, int *info)
 {
-/*
-    Purpose   
-    =======   
 
-    DGSCON estimates the reciprocal of the condition number of a general 
-    real matrix A, in either the 1-norm or the infinity-norm, using   
-    the LU factorization computed by DGETRF.   
-
-    An estimate is obtained for norm(inv(A)), and the reciprocal of the   
-    condition number is computed as   
-       RCOND = 1 / ( norm(A) * norm(inv(A)) ).   
-
-    See supermatrix.h for the definition of 'SuperMatrix' structure.
- 
-    Arguments   
-    =========   
-
-    NORM    (input) char*
-            Specifies whether the 1-norm condition number or the   
-            infinity-norm condition number is required:   
-            = '1' or 'O':  1-norm;   
-            = 'I':         Infinity-norm.
-	    
-    L       (input) SuperMatrix*
-            The factor L from the factorization Pr*A*Pc=L*U as computed by
-            dgstrf(). Use compressed row subscripts storage for supernodes,
-            i.e., L has types: Stype = SLU_SC, Dtype = SLU_D, Mtype = SLU_TRLU.
- 
-    U       (input) SuperMatrix*
-            The factor U from the factorization Pr*A*Pc=L*U as computed by
-            dgstrf(). Use column-wise storage scheme, i.e., U has types:
-            Stype = SLU_NC, Dtype = SLU_D, Mtype = TRU.
-	    
-    ANORM   (input) double
-            If NORM = '1' or 'O', the 1-norm of the original matrix A.   
-            If NORM = 'I', the infinity-norm of the original matrix A.
-	    
-    RCOND   (output) double*
-            The reciprocal of the condition number of the matrix A,   
-            computed as RCOND = 1/(norm(A) * norm(inv(A))).
-	    
-    INFO    (output) int*
-            = 0:  successful exit   
-            < 0:  if INFO = -i, the i-th argument had an illegal value   
-
-    ===================================================================== 
-*/
 
     /* Local variables */
     int    kase, kase1, onenrm, i;

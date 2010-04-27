@@ -1,21 +1,20 @@
 
-
-/*
+/*! @file spivotgrowth.c
+ * \brief Computes the reciprocal pivot growth factor
+ *
+ * <pre>
  * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
- *
+ * </pre>
  */
 #include <math.h>
-#include "ssp_defs.h"
-#include "util.h"
+#include "slu_sdefs.h"
 
-float
-sPivotGrowth(int ncols, SuperMatrix *A, int *perm_c, 
-             SuperMatrix *L, SuperMatrix *U)
-{
-/*
+/*! \brief
+ *
+ * <pre>
  * Purpose
  * =======
  *
@@ -43,8 +42,14 @@ sPivotGrowth(int ncols, SuperMatrix *A, int *perm_c,
  *	    The factor U from the factorization Pr*A*Pc=L*U. Use column-wise
  *          storage scheme, i.e., U has types: Stype = NC;
  *          Dtype = SLU_S; Mtype = TRU.
- *
+ * </pre>
  */
+
+float
+sPivotGrowth(int ncols, SuperMatrix *A, int *perm_c, 
+             SuperMatrix *L, SuperMatrix *U)
+{
+
     NCformat *Astore;
     SCformat *Lstore;
     NCformat *Ustore;

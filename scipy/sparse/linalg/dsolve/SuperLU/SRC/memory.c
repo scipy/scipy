@@ -1,14 +1,17 @@
-/*
+/*! @file memory.c
+ * \brief Precision-independent memory-related routines
+ *
+ * <pre>
  * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
- *
+ * </pre>
  */
 /** Precision-independent memory-related routines.
     (Shared by [sdcz]memory.c) **/
 
-#include "dsp_defs.h"
+#include "slu_ddefs.h"
 
 
 #if ( DEBUGlevel>=1 )           /* Debug malloc/free. */
@@ -16,6 +19,7 @@ int superlu_malloc_total = 0;
 
 #define PAD_FACTOR  2
 #define DWORD  (sizeof(double)) /* Be sure it's no smaller than double. */
+/* size_t is usually defined as 'unsigned long' */
 
 void *superlu_malloc(size_t size)
 {
@@ -23,7 +27,7 @@ void *superlu_malloc(size_t size)
 
     buf = (char *) malloc(size + DWORD);
     if ( !buf ) {
-	printf("superlu_malloc fails: malloc_total %.0f MB, size %d\n",
+	printf("superlu_malloc fails: malloc_total %.0f MB, size %ld\n",
 	       superlu_malloc_total*1e-6, size);
 	ABORT("superlu_malloc: out of memory");
     }
@@ -85,8 +89,7 @@ void superlu_free(void *addr)
 #endif
 
 
-/*
- * Set up pointers for integer working arrays.
+/*! \brief Set up pointers for integer working arrays.
  */
 void
 SetIWork(int m, int n, int panel_size, int *iworkptr, int **segrep,

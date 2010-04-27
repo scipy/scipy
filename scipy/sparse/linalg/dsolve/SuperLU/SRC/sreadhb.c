@@ -1,114 +1,13 @@
 
-
-/*
+/*! @file sreadhb.c
+ * \brief Read a matrix stored in Harwell-Boeing format
+ *
+ * <pre>
  * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
  *
- */
-#include <stdio.h>
-#include <stdlib.h>
-#include "ssp_defs.h"
-
-
-/* Eat up the rest of the current line */
-int sDumpLine(FILE *fp)
-{
-    register int c;
-    while ((c = fgetc(fp)) != '\n') ;
-    return 0;
-}
-
-int sParseIntFormat(char *buf, int *num, int *size)
-{
-    char *tmp;
-
-    tmp = buf;
-    while (*tmp++ != '(') ;
-    sscanf(tmp, "%d", num);
-    while (*tmp != 'I' && *tmp != 'i') ++tmp;
-    ++tmp;
-    sscanf(tmp, "%d", size);
-    return 0;
-}
-
-int sParseFloatFormat(char *buf, int *num, int *size)
-{
-    char *tmp, *period;
-    
-    tmp = buf;
-    while (*tmp++ != '(') ;
-    *num = atoi(tmp); /*sscanf(tmp, "%d", num);*/
-    while (*tmp != 'E' && *tmp != 'e' && *tmp != 'D' && *tmp != 'd'
-	   && *tmp != 'F' && *tmp != 'f') {
-        /* May find kP before nE/nD/nF, like (1P6F13.6). In this case the
-           num picked up refers to P, which should be skipped. */
-        if (*tmp=='p' || *tmp=='P') {
-           ++tmp;
-           *num = atoi(tmp); /*sscanf(tmp, "%d", num);*/
-        } else {
-           ++tmp;
-        }
-    }
-    ++tmp;
-    period = tmp;
-    while (*period != '.' && *period != ')') ++period ;
-    *period = '\0';
-    *size = atoi(tmp); /*sscanf(tmp, "%2d", size);*/
-
-    return 0;
-}
-
-int sReadVector(FILE *fp, int n, int *where, int perline, int persize)
-{
-    register int i, j, item;
-    char tmp, buf[100];
-    
-    i = 0;
-    while (i < n) {
-	fgets(buf, 100, fp);    /* read a line at a time */
-	for (j=0; j<perline && i<n; j++) {
-	    tmp = buf[(j+1)*persize];     /* save the char at that place */
-	    buf[(j+1)*persize] = 0;       /* null terminate */
-	    item = atoi(&buf[j*persize]); 
-	    buf[(j+1)*persize] = tmp;     /* recover the char at that place */
-	    where[i++] = item - 1;
-	}
-    }
-
-    return 0;
-}
-
-int sReadValues(FILE *fp, int n, float *destination, int perline, int persize)
-{
-    register int i, j, k, s;
-    char tmp, buf[100];
-    
-    i = 0;
-    while (i < n) {
-	fgets(buf, 100, fp);    /* read a line at a time */
-	for (j=0; j<perline && i<n; j++) {
-	    tmp = buf[(j+1)*persize];     /* save the char at that place */
-	    buf[(j+1)*persize] = 0;       /* null terminate */
-	    s = j*persize;
-	    for (k = 0; k < persize; ++k) /* No D_ format in C */
-		if ( buf[s+k] == 'D' || buf[s+k] == 'd' ) buf[s+k] = 'E';
-	    destination[i++] = atof(&buf[s]);
-	    buf[(j+1)*persize] = tmp;     /* recover the char at that place */
-	}
-    }
-
-    return 0;
-}
-
-
-
-void
-sreadhb(int *nrow, int *ncol, int *nonz,
-	float **nzval, int **rowind, int **colptr)
-{
-/* 
  * Purpose
  * =======
  * 
@@ -173,7 +72,109 @@ sreadhb(int *nrow, int *ncol, int *nonz,
  *	A Assembled 
  *	E Elemental matrices (unassembled) 
  *
+ * </pre>
  */
+#include <stdio.h>
+#include <stdlib.h>
+#include "slu_sdefs.h"
+
+
+/*! \brief Eat up the rest of the current line */
+int sDumpLine(FILE *fp)
+{
+    register int c;
+    while ((c = fgetc(fp)) != '\n') ;
+    return 0;
+}
+
+int sParseIntFormat(char *buf, int *num, int *size)
+{
+    char *tmp;
+
+    tmp = buf;
+    while (*tmp++ != '(') ;
+    sscanf(tmp, "%d", num);
+    while (*tmp != 'I' && *tmp != 'i') ++tmp;
+    ++tmp;
+    sscanf(tmp, "%d", size);
+    return 0;
+}
+
+int sParseFloatFormat(char *buf, int *num, int *size)
+{
+    char *tmp, *period;
+    
+    tmp = buf;
+    while (*tmp++ != '(') ;
+    *num = atoi(tmp); /*sscanf(tmp, "%d", num);*/
+    while (*tmp != 'E' && *tmp != 'e' && *tmp != 'D' && *tmp != 'd'
+	   && *tmp != 'F' && *tmp != 'f') {
+        /* May find kP before nE/nD/nF, like (1P6F13.6). In this case the
+           num picked up refers to P, which should be skipped. */
+        if (*tmp=='p' || *tmp=='P') {
+           ++tmp;
+           *num = atoi(tmp); /*sscanf(tmp, "%d", num);*/
+        } else {
+           ++tmp;
+        }
+    }
+    ++tmp;
+    period = tmp;
+    while (*period != '.' && *period != ')') ++period ;
+    *period = '\0';
+    *size = atoi(tmp); /*sscanf(tmp, "%2d", size);*/
+
+    return 0;
+}
+
+static int ReadVector(FILE *fp, int n, int *where, int perline, int persize)
+{
+    register int i, j, item;
+    char tmp, buf[100];
+    
+    i = 0;
+    while (i < n) {
+	fgets(buf, 100, fp);    /* read a line at a time */
+	for (j=0; j<perline && i<n; j++) {
+	    tmp = buf[(j+1)*persize];     /* save the char at that place */
+	    buf[(j+1)*persize] = 0;       /* null terminate */
+	    item = atoi(&buf[j*persize]); 
+	    buf[(j+1)*persize] = tmp;     /* recover the char at that place */
+	    where[i++] = item - 1;
+	}
+    }
+
+    return 0;
+}
+
+int sReadValues(FILE *fp, int n, float *destination, int perline, int persize)
+{
+    register int i, j, k, s;
+    char tmp, buf[100];
+    
+    i = 0;
+    while (i < n) {
+	fgets(buf, 100, fp);    /* read a line at a time */
+	for (j=0; j<perline && i<n; j++) {
+	    tmp = buf[(j+1)*persize];     /* save the char at that place */
+	    buf[(j+1)*persize] = 0;       /* null terminate */
+	    s = j*persize;
+	    for (k = 0; k < persize; ++k) /* No D_ format in C */
+		if ( buf[s+k] == 'D' || buf[s+k] == 'd' ) buf[s+k] = 'E';
+	    destination[i++] = atof(&buf[s]);
+	    buf[(j+1)*persize] = tmp;     /* recover the char at that place */
+	}
+    }
+
+    return 0;
+}
+
+
+
+void
+sreadhb(int *nrow, int *ncol, int *nonz,
+	float **nzval, int **rowind, int **colptr)
+{
 
     register int i, numer_lines = 0, rhscrd = 0;
     int tmp, colnum, colsize, rownum, rowsize, valnum, valsize;
@@ -244,8 +245,8 @@ sreadhb(int *nrow, int *ncol, int *nonz,
     printf("valnum %d, valsize %d\n", valnum, valsize);
 #endif
     
-    sReadVector(fp, *ncol+1, *colptr, colnum, colsize);
-    sReadVector(fp, *nonz, *rowind, rownum, rowsize);
+    ReadVector(fp, *ncol+1, *colptr, colnum, colsize);
+    ReadVector(fp, *nonz, *rowind, rownum, rowsize);
     if ( numer_lines ) {
         sReadValues(fp, *nonz, *nzval, valnum, valsize);
     }

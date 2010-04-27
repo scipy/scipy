@@ -1,9 +1,30 @@
+/*! @file sp_coletree.c
+ * \brief Tree layout and computation routines
+ *
+ *<pre>
+ * -- SuperLU routine (version 3.1) --
+ * Univ. of California Berkeley, Xerox Palo Alto Research Center,
+ * and Lawrence Berkeley National Lab.
+ * August 1, 2008
+ *
+ * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
+ * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ *
+ * Permission is hereby granted to use or copy this program for any
+ * purpose, provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is
+ * granted, provided the above notices are retained, and a notice that
+ * the code was modified is included with the above copyright notice.
+ * </pre>
+*/
 
 /*  Elimination tree computation and layout routines */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "dsp_defs.h"
+#include "slu_ddefs.h"
 
 /* 
  *  Implementation of disjoint set union routines.
@@ -24,7 +45,6 @@
  *  Implemented path-halving by XSL 07/05/95.
  */
 
-static int	*pp;		/* parent array for sets */
 
 static 
 int *mxCallocInt(int n)
@@ -42,17 +62,19 @@ int *mxCallocInt(int n)
       
 static
 void initialize_disjoint_sets (
-	int n
-	)
+			       int n,
+			       int **pp
+			       )
 {
-	pp = mxCallocInt(n);
+	(*pp) = mxCallocInt(n);
 }
 
 
 static
 int make_set (
-	int i
-	)
+	      int i,
+	      int *pp
+	      )
 {
 	pp[i] = i;
 	return i;
@@ -61,9 +83,10 @@ int make_set (
 
 static
 int link (
-	int s,
-	int t
-	)
+	  int s,
+	  int t,
+	  int *pp
+	  )
 {
 	pp[s] = t;
 	return t;
@@ -72,7 +95,10 @@ int link (
 
 /* PATH HALVING */
 static
-int find (int i)
+int find (
+	  int i,
+	  int *pp
+	  )
 {
     register int p, gp;
     
@@ -102,8 +128,8 @@ int find (
 
 static
 void finalize_disjoint_sets (
-	void
-	)
+			     int *pp
+			     )
 {
 	SUPERLU_FREE(pp);
 }
@@ -143,9 +169,10 @@ sp_coletree(
 	int	row, col;
 	int	rroot;
 	int	p;
+	int     *pp;
 
 	root = mxCallocInt (nc);
-	initialize_disjoint_sets (nc);
+	initialize_disjoint_sets (nc, &pp);
 
 	/* Compute firstcol[row] = first nonzero column in row */
 
@@ -163,17 +190,17 @@ sp_coletree(
 	   centered at its first vertex, which has the same fill. */
 
 	for (col = 0; col < nc; col++) {
-		cset = make_set (col);
+		cset = make_set (col, pp);
 		root[cset] = col;
 		parent[col] = nc; /* Matlab */
 		for (p = acolst[col]; p < acolend[col]; p++) {
 			row = firstcol[arow[p]];
 			if (row >= col) continue;
-			rset = find (row);
+			rset = find (row, pp);
 			rroot = root[rset];
 			if (rroot != col) {
 				parent[rroot] = col;
-				cset = link (cset, rset);
+				cset = link (cset, rset, pp);
 				root[cset] = col;
 			}
 		}
@@ -181,7 +208,7 @@ sp_coletree(
 
 	SUPERLU_FREE (root);
 	SUPERLU_FREE (firstcol);
-	finalize_disjoint_sets ();
+	finalize_disjoint_sets (pp);
 	return 0;
 }
 
@@ -209,35 +236,88 @@ sp_coletree(
  *  Based on code written by John Gilbert at CMI in 1987.
  */
 
-static int	*first_kid, *next_kid;	/* Linked list of children.	*/
-static int	*post, postnum;
-
 static
 /*
  * Depth-first search from vertex v.
  */
 void etdfs (
-	int	v
-	)
+	    int	  v,
+	    int   first_kid[],
+	    int   next_kid[],
+	    int   post[], 
+	    int   *postnum
+	    )
 {
 	int	w;
 
 	for (w = first_kid[v]; w != -1; w = next_kid[w]) {
-		etdfs (w);
+		etdfs (w, first_kid, next_kid, post, postnum);
 	}
 	/* post[postnum++] = v; in Matlab */
-	post[v] = postnum++;    /* Modified by X.Li on 2/14/95 */
+	post[v] = (*postnum)++;    /* Modified by X. Li on 08/10/07 */
 }
 
+
+static
+/*
+ * Depth-first search from vertex n.  No recursion.
+ * This routine was contributed by Cédric Doucet, CEDRAT Group, Meylan, France.
+ */
+void nr_etdfs (int n, int *parent,
+	       int *first_kid, int *next_kid,
+	       int *post, int postnum)
+{
+    int current = n, first, next;
+
+    while (postnum != n){
+     
+        /* no kid for the current node */
+        first = first_kid[current];
+
+        /* no first kid for the current node */
+        if (first == -1){
+
+            /* numbering this node because it has no kid */
+            post[current] = postnum++;
+
+            /* looking for the next kid */
+            next = next_kid[current];
+
+            while (next == -1){
+
+                /* no more kids : back to the parent node */
+                current = parent[current];
+
+                /* numbering the parent node */
+                post[current] = postnum++;
+
+                /* get the next kid */
+                next = next_kid[current];
+	    }
+            
+            /* stopping criterion */
+            if (postnum==n+1) return;
+
+            /* updating current node */
+            current = next;
+        }
+        /* updating current node */
+        else {
+            current = first;
+	}
+    }
+}
 
 /*
  * Post order a tree
  */
 int *TreePostorder(
-	int n,
-	int *parent
-)
+		   int n,
+		   int *parent
+		   )
 {
+        int	*first_kid, *next_kid;	/* Linked list of children.	*/
+        int	*post, postnum;
 	int	v, dad;
 
 	/* Allocate storage for working arrays and results	*/
@@ -255,7 +335,13 @@ int *TreePostorder(
 
 	/* Depth-first search from dummy root vertex #n */
 	postnum = 0;
-	etdfs (n);
+#if 0
+	/* recursion */
+	etdfs (n, first_kid, next_kid, post, &postnum);
+#else
+	/* no recursion */
+	nr_etdfs(n, parent, first_kid, next_kid, post, postnum);
+#endif
 
 	SUPERLU_FREE (first_kid);
 	SUPERLU_FREE (next_kid);
@@ -306,27 +392,28 @@ sp_symetree(
 	int	row, col;
 	int	rroot;
 	int	p;
+	int     *pp;
 
 	root = mxCallocInt (n);
-	initialize_disjoint_sets (n);
+	initialize_disjoint_sets (n, &pp);
 
 	for (col = 0; col < n; col++) {
-		cset = make_set (col);
+		cset = make_set (col, pp);
 		root[cset] = col;
 		parent[col] = n; /* Matlab */
 		for (p = acolst[col]; p < acolend[col]; p++) {
 			row = arow[p];
 			if (row >= col) continue;
-			rset = find (row);
+			rset = find (row, pp);
 			rroot = root[rset];
 			if (rroot != col) {
 				parent[rroot] = col;
-				cset = link (cset, rset);
+				cset = link (cset, rset, pp);
 				root[cset] = col;
 			}
 		}
 	}
 	SUPERLU_FREE (root);
-	finalize_disjoint_sets ();
+	finalize_disjoint_sets (pp);
 	return 0;
 } /* SP_SYMETREE */

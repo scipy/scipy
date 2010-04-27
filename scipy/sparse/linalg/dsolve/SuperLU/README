@@ -1,4 +1,4 @@
-		SuperLU (Version 3.0)
+		SuperLU (Version 4.0)
 		=====================
 
 Copyright (c) 2003, The Regents of the University of California, through
@@ -52,6 +52,7 @@ SuperLU contains the following directory structure:
 
     SuperLU/README    instructions on installation
     SuperLU/CBLAS/    needed BLAS routines in C, not necessarily fast
+    SuperLU/DOC/      Users' Guide and documentation of source code
     SuperLU/EXAMPLE/  example programs
     SuperLU/FORTRAN/  Fortran interface
     SuperLU/INSTALL/  test machine dependent parameters; the Users' Guide.
@@ -100,14 +101,14 @@ on your system setup:
    In this case, you should do the following:
 
     1) In SuperLU/make.inc, undefine (comment out) BLASDEF, and define:
-          BLASLIB = ../blas$(PLAT).a
+          BLASLIB = ../lib/blas$(PLAT).a
 
     2) Go to the SuperLU/ directory, type:
           make blaslib
        to make the BLAS library from the routines in the CBLAS/ subdirectory.
 
 3. C preprocessor definition CDEFS.
-   In the header file SRC/Cnames.h, we use macros to determine how
+   In the header file SRC/slu_Cnames.h, we use macros to determine how
    C routines should be named so that they are callable by Fortran.
    (Some vendor-supplied BLAS libraries do not have C interface. So the 
     re-naming is needed in order for the SuperLU BLAS calls (in C) to 
@@ -144,14 +145,12 @@ The test results are in the files below:
        TESTING/ztest.out
 
 
-
------------------
-| RELEASE NOTES |
------------------
-* Version 3.0, 10-15-03
-   - add "options" and "stat" argument for the driver routines
-     DGSSV/DGSSVX. This interface is more user-friendly and flexible.
-   - add more examples in EXAMPLE/
-   - add a "symmetric mode" with better performance when the matrix is
-     symmetric, or diagonal dominant, or positive definite, or nearly so.
-
+--------------------
+| RELEASE VERSIONS |
+--------------------
+    February 4,  1997  Version 1.0
+    November 15, 1997  Version 1.1
+    September 1, 1999  Version 2.0
+    October 15,  2003  Version 3.0
+    August 1,    2008  Version 3.1
+    June 30,     2009  Version 4.0

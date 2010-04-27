@@ -1,27 +1,32 @@
 
-/*
+/*! @file zpanel_bmod.c
+ * \brief Performs numeric block updates
+ *
+ * <pre>
  * -- SuperLU routine (version 3.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * October 15, 2003
  *
+ * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
+ * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ * 
+ * Permission is hereby granted to use or copy this program for any
+ * purpose, provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is
+ * granted, provided the above notices are retained, and a notice that
+ * the code was modified is included with the above copyright notice.
+ * </pre>
  */
 /*
-  Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
- 
-  THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
-  EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- 
-  Permission is hereby granted to use or copy this program for any
-  purpose, provided the above notices are retained on all copies.
-  Permission to modify the code and to distribute modified code is
-  granted, provided the above notices are retained, and a notice that
-  the code was modified is included with the above copyright notice.
+
 */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "zsp_defs.h"
+#include "slu_zdefs.h"
 
 /* 
  * Function prototypes 
@@ -29,6 +34,25 @@
 void zlsolve(int, int, doublecomplex *, doublecomplex *);
 void zmatvec(int, int, int, doublecomplex *, doublecomplex *, doublecomplex *);
 extern void zcheck_tempv();
+
+/*! \brief
+ *
+ * <pre>
+ * Purpose
+ * =======
+ *
+ *    Performs numeric block updates (sup-panel) in topological order.
+ *    It features: col-col, 2cols-col, 3cols-col, and sup-col updates.
+ *    Special processing on the supernodal portion of L\U[*,j]
+ *
+ *    Before entering this routine, the original nonzeros in the panel 
+ *    were already copied into the spa[m,w].
+ *
+ *    Updated/Output parameters-
+ *    dense[0:m-1,w]: L[*,j:j+w-1] and U[*,j:j+w-1] are returned 
+ *    collectively in the m-by-w vector dense[*]. 
+ * </pre>
+ */
 
 void
 zpanel_bmod (
@@ -44,22 +68,7 @@ zpanel_bmod (
 	    SuperLUStat_t *stat    /* output */
 	    )
 {
-/* 
- * Purpose
- * =======
- *
- *    Performs numeric block updates (sup-panel) in topological order.
- *    It features: col-col, 2cols-col, 3cols-col, and sup-col updates.
- *    Special processing on the supernodal portion of L\U[*,j]
- *
- *    Before entering this routine, the original nonzeros in the panel 
- *    were already copied into the spa[m,w].
- *
- *    Updated/Output parameters-
- *	dense[0:m-1,w]: L[*,j:j+w-1] and U[*,j:j+w-1] are returned 
- *      collectively in the m-by-w vector dense[*]. 
- *
- */
+
 
 #ifdef USE_VENDOR_BLAS
 #ifdef _CRAY

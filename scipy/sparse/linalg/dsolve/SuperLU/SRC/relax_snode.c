@@ -1,25 +1,35 @@
-/*
+/*! @file relax_snode.c
+ * \brief Identify initial relaxed supernodes
+ *
+ * <pre>
  * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
  *
+ * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
+ * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ *
+ * Permission is hereby granted to use or copy this program for any
+ * purpose, provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is
+ * granted, provided the above notices are retained, and a notice that
+ * the code was modified is included with the above copyright notice.
+ * </pre>
  */
-/*
-  Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
- 
-  THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
-  EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- 
-  Permission is hereby granted to use or copy this program for any
-  purpose, provided the above notices are retained on all copies.
-  Permission to modify the code and to distribute modified code is
-  granted, provided the above notices are retained, and a notice that
-  the code was modified is included with the above copyright notice.
-*/
 
-#include "dsp_defs.h"
-
+#include "slu_ddefs.h"
+/*! \brief
+ *
+ * <pre>
+ * Purpose
+ * =======
+ *    relax_snode() - Identify the initial relaxed supernodes, assuming that 
+ *    the matrix has been reordered according to the postorder of the etree.
+ * </pre>
+ */ 
 void
 relax_snode (
 	     const     int n,
@@ -31,13 +41,7 @@ relax_snode (
 	     int       *relax_end     /* last column in a supernode */
 	     )
 {
-/*
- * Purpose
- * =======
- *    relax_snode() - Identify the initial relaxed supernodes, assuming that 
- *    the matrix has been reordered according to the postorder of the etree.
- *
- */ 
+
     register int j, parent;
     register int snode_start;	/* beginning of a snode */
     

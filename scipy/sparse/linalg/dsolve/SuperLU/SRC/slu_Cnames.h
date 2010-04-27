@@ -1,14 +1,12 @@
-/*
+/*! @file slu_Cnames.h
+ * \brief Macros defining how C routines will be called
+ *
+ * <pre>
  * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 1, 1997
  *
- */
-#ifndef __SUPERLU_CNAMES /* allow multiple inclusions */
-#define __SUPERLU_CNAMES
-
-/*
  * These macros define how C routines will be called.  ADD_ assumes that
  * they will be called by fortran, which expects C routines to have an
  * underscore postfixed to the name (Suns, and the Intel expect this).
@@ -16,7 +14,11 @@
  * the name called by fortran to be identical to that compiled by the C
  * (RS6K's do this).  UPCASE says it expects C routines called by fortran
  * to be in all upcase (CRAY wants this). 
+ * </pre>
  */
+#ifndef __SUPERLU_CNAMES /* allow multiple inclusions */
+#define __SUPERLU_CNAMES
+
 
 #define ADD_       0
 #define ADD__      1
@@ -67,6 +69,9 @@
  *           FORTRAN CALL               C DECLARATION
  *           call dgemm(...)           void dgemm__(...)
  */
+/* BLAS */
+#define sswap_    sswap__
+#define saxpy_    saxpy__
 #define sasum_    sasum__
 #define isamax_   isamax__
 #define scopy_    scopy__
@@ -83,6 +88,8 @@
 #define sgemm_    sgemm__
 #define strsm_    strsm__
 
+#define dswap_    dswap__
+#define daxpy_    daxpy__
 #define dasum_    dasum__
 #define idamax_   idamax__
 #define dcopy_    dcopy__
@@ -99,6 +106,8 @@
 #define dgemm_    dgemm__
 #define dtrsm_    dtrsm__
 
+#define cswap_    cswap__
+#define caxpy_    caxpy__
 #define scasum_   scasum__
 #define icamax_   icamax__
 #define ccopy_    ccopy__
@@ -113,6 +122,8 @@
 #define chemv_    chemv__
 #define cher2_    cher2__
 
+#define zswap_    zswap__
+#define zaxpy_    zaxpy__
 #define dzasum_   dzasum__
 #define izamax_   izamax__
 #define zcopy_    zcopy__
@@ -127,8 +138,26 @@
 #define zhemv_    zhemv__
 #define zher2_    zher2__
 
+/* LAPACK */
+#define dlamch_   dlamch__
+#define slamch_   slamch__
+#define xerbla_   xerbla__
+#define lsame_    lsame__
+#define dlacon_   dlacon__
+#define slacon_   slacon__
+#define icmax1_   icmax1__
+#define scsum1_   scsum1__
+#define clacon_   clacon__
+#define dzsum1_   dzsum1__
+#define izmax1_   izmax1__
+#define zlacon_   zlacon__
+
+/* Fortran interface */
 #define c_bridge_dgssv_ c_bridge_dgssv__
+#define c_fortran_sgssv_ c_fortran_sgssv__
 #define c_fortran_dgssv_ c_fortran_dgssv__
+#define c_fortran_cgssv_ c_fortran_cgssv__
+#define c_fortran_zgssv_ c_fortran_zgssv__
 #endif
 
 #if (F77_CALL_C == UPCASE)
@@ -139,6 +168,9 @@
  *           FORTRAN CALL               C DECLARATION
  *           call dgemm(...)           void DGEMM(...)
  */
+/* BLAS */
+#define sswap_    SSWAP
+#define saxpy_    SAXPY
 #define sasum_    SASUM
 #define isamax_   ISAMAX
 #define scopy_    SCOPY
@@ -155,6 +187,8 @@
 #define sgemm_    SGEMM
 #define strsm_    STRSM
 
+#define dswap_    DSWAP
+#define daxpy_    DAXPY
 #define dasum_    SASUM
 #define idamax_   ISAMAX
 #define dcopy_    SCOPY
@@ -171,6 +205,8 @@
 #define dgemm_    SGEMM
 #define dtrsm_    STRSM
 
+#define cswap_    CSWAP
+#define caxpy_    CAXPY
 #define scasum_   SCASUM
 #define icamax_   ICAMAX
 #define ccopy_    CCOPY
@@ -185,22 +221,42 @@
 #define chemv_    CHEMV
 #define cher2_    CHER2
 
-#define dzasum_   SCASUM
-#define izamax_   ICAMAX
-#define zcopy_    CCOPY
-#define zscal_    CSCAL
-#define dznrm2_   SCNRM2
-#define zaxpy_    CAXPY
-#define zgemv_    CGEMV
-#define ztrsv_    CTRSV
-#define zgemm_    CGEMM
-#define ztrsm_    CTRSM
-#define zgerc_    CGERC
-#define zhemv_    CHEMV
-#define zher2_    CHER2
+#define zswap_    ZSWAP
+#define zaxpy_    ZAXPY
+#define dzasum_   DZASUM
+#define izamax_   IZAMAX
+#define zcopy_    ZCOPY
+#define zscal_    ZSCAL
+#define dznrm2_   DZNRM2
+#define zaxpy_    ZAXPY
+#define zgemv_    ZGEMV
+#define ztrsv_    ZTRSV
+#define zgemm_    ZGEMM
+#define ztrsm_    ZTRSM
+#define zgerc_    ZGERC
+#define zhemv_    ZHEMV
+#define zher2_    ZHER2
 
+/* LAPACK */
+#define dlamch_   DLAMCH
+#define slamch_   SLAMCH
+#define xerbla_   XERBLA
+#define lsame_    LSAME
+#define dlacon_   DLACON
+#define slacon_   SLACON
+#define icmax1_   ICMAX1
+#define scsum1_   SCSUM1
+#define clacon_   CLACON
+#define dzsum1_   DZSUM1
+#define izmax1_   IZMAX1
+#define zlacon_   ZLACON
+
+/* Fortran interface */
 #define c_bridge_dgssv_ C_BRIDGE_DGSSV
+#define c_fortran_sgssv_ C_FORTRAN_SGSSV
 #define c_fortran_dgssv_ C_FORTRAN_DGSSV
+#define c_fortran_cgssv_ C_FORTRAN_CGSSV
+#define c_fortran_zgssv_ C_FORTRAN_ZGSSV
 #endif
 
 #if (F77_CALL_C == NOCHANGE)
@@ -211,6 +267,9 @@
  *           FORTRAN CALL               C DECLARATION
  *           call dgemm(...)           void dgemm(...)
  */
+/* BLAS */
+#define sswap_    sswap
+#define saxpy_    saxpy
 #define sasum_    sasum
 #define isamax_   isamax
 #define scopy_    scopy
@@ -227,6 +286,8 @@
 #define sgemm_    sgemm
 #define strsm_    strsm
 
+#define dswap_    dswap
+#define daxpy_    daxpy
 #define dasum_    dasum
 #define idamax_   idamax
 #define dcopy_    dcopy
@@ -243,6 +304,8 @@
 #define dgemm_    dgemm
 #define dtrsm_    dtrsm
 
+#define cswap_    cswap
+#define caxpy_    caxpy
 #define scasum_   scasum
 #define icamax_   icamax
 #define ccopy_    ccopy
@@ -257,6 +320,8 @@
 #define chemv_    chemv
 #define cher2_    cher2
 
+#define zswap_    zswap
+#define zaxpy_    zaxpy
 #define dzasum_   dzasum
 #define izamax_   izamax
 #define zcopy_    zcopy
@@ -271,8 +336,26 @@
 #define zhemv_    zhemv
 #define zher2_    zher2
 
+/* LAPACK */
+#define dlamch_   dlamch
+#define slamch_   slamch
+#define xerbla_   xerbla
+#define lsame_    lsame
+#define dlacon_   dlacon
+#define slacon_   slacon
+#define icmax1_   icmax1
+#define scsum1_   scsum1
+#define clacon_   clacon
+#define dzsum1_   dzsum1
+#define izmax1_   izmax1
+#define zlacon_   zlacon
+
+/* Fortran interface */
 #define c_bridge_dgssv_ c_bridge_dgssv
+#define c_fortran_sgssv_ c_fortran_sgssv
 #define c_fortran_dgssv_ c_fortran_dgssv
+#define c_fortran_cgssv_ c_fortran_cgssv
+#define c_fortran_zgssv_ c_fortran_zgssv
 #endif
 
 #endif /* __SUPERLU_CNAMES */

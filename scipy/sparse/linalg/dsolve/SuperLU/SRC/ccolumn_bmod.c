@@ -1,27 +1,29 @@
 
-/*
+/*! @file ccolumn_bmod.c
+ *  \brief performs numeric block updates
+ *
+ * <pre>
  * -- SuperLU routine (version 3.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * October 15, 2003
  *
- */
-/*
-  Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
- 
-  THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
-  EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- 
-  Permission is hereby granted to use or copy this program for any
-  purpose, provided the above notices are retained on all copies.
-  Permission to modify the code and to distribute modified code is
-  granted, provided the above notices are retained, and a notice that
-  the code was modified is included with the above copyright notice.
+ * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
+ * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ * 
+ *  Permission is hereby granted to use or copy this program for any
+ *  purpose, provided the above notices are retained on all copies.
+ *  Permission to modify the code and to distribute modified code is
+ *  granted, provided the above notices are retained, and a notice that
+ *  the code was modified is included with the above copyright notice.
+ * </pre>
 */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "csp_defs.h"
+#include "slu_cdefs.h"
 
 /* 
  * Function prototypes 
@@ -32,8 +34,17 @@ void cmatvec(int, int, int, complex*, complex*, complex*);
 
 
 
-/* Return value:   0 - successful return
+/*! \brief 
+ *
+ * <pre>
+ * Purpose:
+ * ========
+ * Performs numeric block updates (sup-col) in topological order.
+ * It features: col-col, 2cols-col, 3cols-col, and sup-col updates.
+ * Special processing on the supernodal portion of L\U[*,j]
+ * Return value:   0 - successful return
  *               > 0 - number of bytes allocated when run out of space
+ * </pre>
  */
 int
 ccolumn_bmod (
@@ -48,14 +59,7 @@ ccolumn_bmod (
 	     SuperLUStat_t *stat  /* output */
 	     )
 {
-/*
- * Purpose:
- * ========
- *    Performs numeric block updates (sup-col) in topological order.
- *    It features: col-col, 2cols-col, 3cols-col, and sup-col updates.
- *    Special processing on the supernodal portion of L\U[*,j]
- *
- */
+
 #ifdef _CRAY
     _fcd ftcs1 = _cptofcd("L", strlen("L")),
          ftcs2 = _cptofcd("N", strlen("N")),

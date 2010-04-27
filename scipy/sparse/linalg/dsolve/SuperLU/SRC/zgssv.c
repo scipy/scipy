@@ -1,20 +1,19 @@
 
-
-/*
+/*! @file zgssv.c
+ * \brief Solves the system of linear equations A*X=B 
+ *
+ * <pre>
  * -- SuperLU routine (version 3.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * October 15, 2003
- *
+ * </pre>  
  */
-#include "zsp_defs.h"
+#include "slu_zdefs.h"
 
-void
-zgssv(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
-      SuperMatrix *L, SuperMatrix *U, SuperMatrix *B,
-      SuperLUStat_t *stat, int *info )
-{
-/*
+/*! \brief
+ *
+ * <pre>
  * Purpose
  * =======
  *
@@ -127,15 +126,21 @@ zgssv(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
  *                so the solution could not be computed.
  *             > A->ncol: number of bytes allocated when memory allocation
  *                failure occurred, plus A->ncol.
- *   
+ * </pre>
  */
+
+void
+zgssv(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
+      SuperMatrix *L, SuperMatrix *U, SuperMatrix *B,
+      SuperLUStat_t *stat, int *info )
+{
+
     DNformat *Bstore;
     SuperMatrix *AA;/* A in SLU_NC format used by the factorization routine.*/
     SuperMatrix AC; /* Matrix postmultiplied by Pc */
     int      lwork = 0, *etree, i;
     
     /* Set default values for some parameters */
-    double   drop_tol = 0.;
     int      panel_size;     /* panel size */
     int      relax;          /* no of columns in a relaxed snodes */
     int      permc_spec;
@@ -201,8 +206,8 @@ zgssv(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	  relax, panel_size, sp_ienv(3), sp_ienv(4));*/
     t = SuperLU_timer_(); 
     /* Compute the LU factorization of A. */
-    zgstrf(options, &AC, drop_tol, relax, panel_size,
-	   etree, NULL, lwork, perm_c, perm_r, L, U, stat, info);
+    zgstrf(options, &AC, relax, panel_size, etree,
+            NULL, lwork, perm_c, perm_r, L, U, stat, info);
     utime[FACT] = SuperLU_timer_() - t;
 
     t = SuperLU_timer_();

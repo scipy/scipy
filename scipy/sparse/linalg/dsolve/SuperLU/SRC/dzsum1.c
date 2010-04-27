@@ -1,12 +1,20 @@
-#include "dcomplex.h"
+/*! @file dzsum1.c
+ * \brief Takes sum of the absolute values of a complex vector and returns a double precision result
+ *
+ * <pre>
+ *     -- LAPACK auxiliary routine (version 2.0) --   
+ *     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+ *     Courant Institute, Argonne National Lab, and Rice University   
+ *     October 31, 1992   
+ * </pre>
+ */
 
-double dzsum1_(int *n, doublecomplex *cx, int *incx)
-{
-/*  -- LAPACK auxiliary routine (version 2.0) --   
-       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
-       Courant Institute, Argonne National Lab, and Rice University   
-       October 31, 1992   
+#include "slu_dcomplex.h"
+#include "slu_Cnames.h"
 
+/*! \brief
+
+ <pre>
     Purpose   
     =======   
 
@@ -31,7 +39,10 @@ double dzsum1_(int *n, doublecomplex *cx, int *incx)
             The spacing between successive values of CX.  INCX > 0.   
 
     ===================================================================== 
+</pre>
 */  
+double dzsum1_(int *n, doublecomplex *cx, int *incx)
+{
 
     /* Builtin functions */
     double z_abs(doublecomplex *);

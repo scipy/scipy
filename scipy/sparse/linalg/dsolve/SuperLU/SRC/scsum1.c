@@ -1,13 +1,19 @@
-#include "scomplex.h"
+/*! @file scsum1.c
+ * \brief Takes sum of the absolute values of a complex vector and returns a single precision result
+ *
+ * <pre>
+ *     -- LAPACK auxiliary routine (version 2.0) --   
+ *     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+ *     Courant Institute, Argonne National Lab, and Rice University   
+ *     October 31, 1992   
+ * </pre>
+ */
+#include "slu_scomplex.h"
+#include "slu_Cnames.h"
 
-double scsum1_(int *n, complex *cx, int *incx)
-{
-/*  -- LAPACK auxiliary routine (version 2.0) --   
-       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
-       Courant Institute, Argonne National Lab, and Rice University   
-       October 31, 1992   
+/*! \brief
 
-
+<pre>
     Purpose   
     =======   
 
@@ -32,17 +38,15 @@ double scsum1_(int *n, complex *cx, int *incx)
             The spacing between successive values of CX.  INCX > 0.   
 
     ===================================================================== 
-  
-
-
-    
-   Parameter adjustments   
-       Function Body */
+</pre>
+*/
+double scsum1_(int *n, complex *cx, int *incx)
+{
     /* System generated locals */
     int i__1, i__2;
     float ret_val;
     /* Builtin functions */
-    double slu_c_abs(complex *);
+    double c_abs(complex *);
     /* Local variables */
     static int i, nincx;
     static float stemp;
@@ -69,7 +73,7 @@ double scsum1_(int *n, complex *cx, int *incx)
 
 /*        NEXT LINE MODIFIED. */
 
-	stemp += slu_c_abs(&CX(i));
+	stemp += c_abs(&CX(i));
 /* L10: */
     }
     ret_val = stemp;
@@ -83,7 +87,7 @@ L20:
 
 /*        NEXT LINE MODIFIED. */
 
-	stemp += slu_c_abs(&CX(i));
+	stemp += c_abs(&CX(i));
 /* L30: */
     }
     ret_val = stemp;
