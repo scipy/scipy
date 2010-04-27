@@ -132,7 +132,7 @@ cldperm(int_t job, int_t n, int_t nnz, int_t colptr[], int_t adjncy[],
     icntl[1] = -1;
 #endif
 
-    for (i = 0; i < nnz; ++i) nzval_d[i] = c_abs1(&nzval[i]);
+    for (i = 0; i < nnz; ++i) nzval_d[i] = slu_c_abs1(&nzval[i]);
     mc64ad_(&job, &n, &nnz, colptr, adjncy, nzval_d, &num, perm,
 	    &liw, iw, &ldw, dw, icntl, info);
 

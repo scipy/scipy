@@ -114,16 +114,16 @@ ilu_cpivotL(
 	switch (milu) {
 	    case SMILU_1:
                 c_add(&temp, &lu_col_ptr[isub], &drop_sum);
-		rtemp = c_abs1(&temp);
+		rtemp = slu_c_abs1(&temp);
 		break;
 	    case SMILU_2:
 	    case SMILU_3:
                 /* In this case, drop_sum contains the sum of the abs. value */
-		rtemp = c_abs1(&lu_col_ptr[isub]);
+		rtemp = slu_c_abs1(&lu_col_ptr[isub]);
 		break;
 	    case SILU:
 	    default:
-		rtemp = c_abs1(&lu_col_ptr[isub]);
+		rtemp = slu_c_abs1(&lu_col_ptr[isub]);
 		break;
 	}
 	if (rtemp > pivmax) { pivmax = rtemp; pivptr = isub; }
@@ -180,15 +180,15 @@ ilu_cpivotL(
 	    switch (milu) {
 		case SMILU_1:
                     c_add(&temp, &lu_col_ptr[old_pivptr], &drop_sum);
-		    rtemp = c_abs1(&temp);
+		    rtemp = slu_c_abs1(&temp);
 		    break;
 		case SMILU_2:
 		case SMILU_3:
-		    rtemp = c_abs1(&lu_col_ptr[old_pivptr]) + drop_sum.r;
+		    rtemp = slu_c_abs1(&lu_col_ptr[old_pivptr]) + drop_sum.r;
 		    break;
 		case SILU:
 		default:
-		    rtemp = c_abs1(&lu_col_ptr[old_pivptr]);
+		    rtemp = slu_c_abs1(&lu_col_ptr[old_pivptr]);
 		    break;
 	    }
 	    if ( rtemp != 0.0 && rtemp >= thresh ) pivptr = old_pivptr;
@@ -200,15 +200,15 @@ ilu_cpivotL(
 		switch (milu) {
 		    case SMILU_1:
                         c_add(&temp, &lu_col_ptr[diag], &drop_sum);
-         	        rtemp = c_abs1(&temp);
+         	        rtemp = slu_c_abs1(&temp);
 			break;
 		    case SMILU_2:
 		    case SMILU_3:
-			rtemp = c_abs1(&lu_col_ptr[diag]) + drop_sum.r;
+			rtemp = slu_c_abs1(&lu_col_ptr[diag]) + drop_sum.r;
 			break;
 		    case SILU:
 		    default:
-			rtemp = c_abs1(&lu_col_ptr[diag]);
+			rtemp = slu_c_abs1(&lu_col_ptr[diag]);
 			break;
 		}
 		if ( rtemp != 0.0 && rtemp >= thresh ) pivptr = diag;

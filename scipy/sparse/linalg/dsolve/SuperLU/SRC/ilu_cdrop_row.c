@@ -103,7 +103,7 @@ int ilu_cdrop_row(
 	    case INF_NORM:
 	    default:
 		k = icamax_(&n, &lusup[xlusup_first + i], &m) - 1;
-		temp[i] = c_abs1(&lusup[xlusup_first + i + m * k]);
+		temp[i] = slu_c_abs1(&lusup[xlusup_first + i + m * k]);
 		break;
 	}
 
@@ -125,7 +125,7 @@ int ilu_cdrop_row(
 		    case SMILU_3:
 			for (j = 0; j < n; j++)
 			    lusup[xlusup_first + (m - 1) + j * m].r +=
-				    c_abs1(&lusup[xlusup_first + i + j * m]);
+				    slu_c_abs1(&lusup[xlusup_first + i + j * m]);
 			break;
 		    case SILU:
 		    default:
@@ -141,7 +141,7 @@ int ilu_cdrop_row(
 		if (milu == SMILU_3)
 		    for (j = 0; j < n; j++) {
 			lusup[xlusup_first + m1 + j * m].r =
-				c_abs1(&lusup[xlusup_first + m1 + j * m]);
+				slu_c_abs1(&lusup[xlusup_first + m1 + j * m]);
 			lusup[xlusup_first + m1 + j * m].i = 0.0;
                     }
 	    }
@@ -201,7 +201,7 @@ int ilu_cdrop_row(
 			case SMILU_3:
 			    for (j = 0; j < n; j++)
 				lusup[xlusup_first + (m - 1) + j * m].r +=
-   				  c_abs1(&lusup[xlusup_first + i + j * m]);
+   				  slu_c_abs1(&lusup[xlusup_first + i + j * m]);
 			    break;
 			case SILU:
 			default:
@@ -217,7 +217,7 @@ int ilu_cdrop_row(
 		    if (milu == SMILU_3)
 			for (j = 0; j < n; j++) {
 			    lusup[xlusup_first + m1 + j * m].r =
-				    c_abs1(&lusup[xlusup_first + m1 + j * m]);
+				    slu_c_abs1(&lusup[xlusup_first + m1 + j * m]);
 			    lusup[xlusup_first + m1 + j * m].i = 0.0;
                         }
 		}
@@ -275,7 +275,7 @@ int ilu_cdrop_row(
 		case SMILU_2:
                     cs_mult(&lusup[xlusup_first + j * inc_diag],
                                           &lusup[xlusup_first + j * inc_diag],
-                                          1.0 + c_abs1(&t));
+                                          1.0 + slu_c_abs1(&t));
 		    break;
 		case SMILU_3:
                     c_add(&t, &t, &one);

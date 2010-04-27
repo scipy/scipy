@@ -375,7 +375,7 @@ cgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 		amax[0] = 0.0;
 		/* Scatter into SPA dense[*] */
 		for (k = xa_begin[icol]; k < xa_end[icol]; k++) {
-                    register float tmp = c_abs1 (&a[k]);
+                    register float tmp = slu_c_abs1 (&a[k]);
 		    if (tmp > amax[0]) amax[0] = tmp;
 		    dense[asub[k]] = a[k];
 		}

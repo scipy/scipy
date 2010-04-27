@@ -113,7 +113,7 @@ if ( jcol == MIN_COL ) {
     diag = EMPTY;
     old_pivptr = nsupc;
     for (isub = nsupc; isub < nsupr; ++isub) {
-        rtemp = c_abs1 (&lu_col_ptr[isub]);
+        rtemp = slu_c_abs1 (&lu_col_ptr[isub]);
 	if ( rtemp > pivmax ) {
 	    pivmax = rtemp;
 	    pivptr = isub;
@@ -138,7 +138,7 @@ if ( jcol == MIN_COL ) {
     
     /* Choose appropriate pivotal element by our policy. */
     if ( *usepr ) {
-        rtemp = c_abs1 (&lu_col_ptr[old_pivptr]);
+        rtemp = slu_c_abs1 (&lu_col_ptr[old_pivptr]);
 	if ( rtemp != 0.0 && rtemp >= thresh )
 	    pivptr = old_pivptr;
 	else
@@ -147,7 +147,7 @@ if ( jcol == MIN_COL ) {
     if ( *usepr == 0 ) {
 	/* Use diagonal pivot? */
 	if ( diag >= 0 ) { /* diagonal exists */
-            rtemp = c_abs1 (&lu_col_ptr[diag]);
+            rtemp = slu_c_abs1 (&lu_col_ptr[diag]);
 	    if ( rtemp != 0.0 && rtemp >= thresh ) pivptr = diag;
         }
 	*pivrow = lsub_ptr[pivptr];

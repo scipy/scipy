@@ -20,7 +20,7 @@ static complex *A;  /* used in _compare_ only */
 static int _compare_(const void *a, const void *b)
 {
     register int *x = (int *)a, *y = (int *)b;
-    register float xx = c_abs1(&A[*x]), yy = c_abs1(&A[*y]);
+    register float xx = slu_c_abs1(&A[*x]), yy = slu_c_abs1(&A[*y]);
     if (xx > yy) return -1;
     else if (xx < yy) return 1;
     else return 0;
@@ -108,7 +108,7 @@ ilu_ccopy_to_ucol(
 
 		for (i = 0; i < segsze; i++) {
 		    irow = lsub[isub++];
-         	    tmp = c_abs1(&dense[irow]);
+         	    tmp = slu_c_abs1(&dense[irow]);
 
 		    /* first dropping rule */
 		    if (quota > 0 && tmp >= drop_tol) {
@@ -164,7 +164,7 @@ ilu_ccopy_to_ucol(
 	    }
 	}
 	for (i = xusub[jcol]; i <= m0; ) {
-	    if (c_abs1(&ucol[i]) <= tol) {
+	    if (slu_c_abs1(&ucol[i]) <= tol) {
 		switch (milu) {
 		    case SMILU_1:
 		    case SMILU_2:
@@ -192,7 +192,7 @@ ilu_ccopy_to_ucol(
     }
 
     if (milu == SMILU_2) {
-        sum->r = c_abs1(sum); sum->i = 0.0;
+        sum->r = slu_c_abs1(sum); sum->i = 0.0;
     }
     if (milu == SMILU_3) sum->i = 0.0;
 
