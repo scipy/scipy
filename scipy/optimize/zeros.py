@@ -1,4 +1,3 @@
-## Automatically adapted for scipy Oct 07, 2005 by convertcode.py
 
 import _zeros
 from numpy import finfo

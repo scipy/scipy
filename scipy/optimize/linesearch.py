@@ -1,4 +1,3 @@
-## Automatically adapted for scipy Oct 07, 2005 by convertcode.py
 
 from scipy.optimize import minpack2
 import numpy

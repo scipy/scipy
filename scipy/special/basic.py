@@ -1,5 +1,3 @@
-## Automatically adapted for scipy Oct 05, 2005 by convertcode.py
-
 #
 # Author:  Travis Oliphant, 2002
 #

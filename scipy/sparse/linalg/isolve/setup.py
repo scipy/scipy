@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-## Automatically adapted for scipy Oct 18, 2005 by
 
 import os
 import sys

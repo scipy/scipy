@@ -1,4 +1,3 @@
-## Automatically adapted for scipy Oct 21, 2005 by convertcode.py
 
 import scipy.special
 from numpy import logical_and, asarray, pi, zeros_like, \

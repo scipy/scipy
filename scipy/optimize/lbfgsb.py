@@ -1,5 +1,3 @@
-## Automatically adapted for scipy Oct 07, 2005 by convertcode.py
-
 
 ## License for the Python wrapper
 ## ==============================
