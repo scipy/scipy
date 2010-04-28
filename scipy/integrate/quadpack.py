@@ -1,5 +1,3 @@
-## Automatically adapted for scipy Oct 21, 2005 by
-
 # Author: Travis Oliphant 2001
 
 __all__ = ['quad', 'dblquad', 'tplquad', 'quad_explain', 'Inf','inf']

@@ -1,5 +1,3 @@
-## Automatically adapted for scipy Oct 21, 2005 by
-
 # Author: Travis Oliphant
 
 __all__ = ['odeint']
