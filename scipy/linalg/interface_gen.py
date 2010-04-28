@@ -1,12 +1,7 @@
 #!/usr/bin/env python
 
 import os
-import sys
-
-if sys.version[:3]>='2.3':
-    import re
-else:
-    import pre as re
+import re
 from distutils.dir_util import mkpath
 
 def all_subroutines(interface_in):
