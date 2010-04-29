@@ -31,13 +31,13 @@ of users.  Specifically, we need feedback regarding all aspects of the
 project - everything - from which algorithms we implement, to details
 about our function's call signatures.
 
-Python 3.0
-==========
+Python 3
+========
 
-Python 3.0 is not supported at all; it requires NumPy to be ported to
-Python 3.0.  This requires immense effort, since a lot of C code has
-to be ported.  The transition to 3.0 is still under consideration;
-currently, we don't have any timeline or roadmap for this transition.
+Python 3 compatibility is planned and is currently technically
+feasible, since Numpy has been ported. However, since the Python 3
+compatible Numpy 2.0 has not been released yet, support for Python 3
+in Scipy might not yet be included in Scipy 0.8.
 
 Major documentation improvements
 ================================
