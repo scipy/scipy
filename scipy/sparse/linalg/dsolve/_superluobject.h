@@ -24,7 +24,7 @@
  */
 typedef struct {
     PyObject_VAR_HEAD
-    int m,n;
+    npy_intp m,n;
     SuperMatrix L;
     SuperMatrix U;
     int *perm_r;

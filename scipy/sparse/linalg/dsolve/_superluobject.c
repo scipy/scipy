@@ -179,9 +179,9 @@ Attributes\n\
 -----------\n\
 \n\
 shape : 2-tuple\n\
-    the shape of the orginal matrix factored\n                     \
+    the shape of the orginal matrix factored\n\
 nnz : int\n\
-    the number of non zero coefficient of the matrix\n             \
+    the number of non-zero elements in the matrix\n\
 perm_c\n\
     the permutation applied to the colums of the matrix for the LU factorization\n\
 perm_r\n\
