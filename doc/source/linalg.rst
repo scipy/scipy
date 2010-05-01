@@ -87,6 +87,7 @@ Special Matrices
    hadamard
    hankel
    kron
+   leslie
    toeplitz
    tri
    tril

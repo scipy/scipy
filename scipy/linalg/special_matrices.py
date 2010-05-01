@@ -320,6 +320,54 @@ def hadamard(n, dtype=int):
 
     return H
 
+
+def leslie(f, s):
+    """Create a Leslie matrix.
+    
+    Parameters
+    ----------
+    f : array-like, 1D
+        The "fecundity" coefficients.
+    s : array-like, 1D
+        The "survival" coefficients.  The length of `s` must be one less
+        than the length of `f`, and it must be at least 1.
+
+    Returns
+    -------
+    L : ndarray, 2D
+        Returns a 2D numpy ndarray with shape `(n,n)`, where `n` is the
+        length of `f`.  The array is zero except for the first row,
+        which is `f`, and the first subdiagonal, which is `s`.
+        The data type of the array will be the data type of `f[0]+s[0]`.
+
+    Examples
+    --------
+    >>> leslie([0.1, 2.0, 1.0, 0.1], [0.2, 0.8, 0.7])
+    array([[ 0.1,  2. ,  1. ,  0.1],
+           [ 0.2,  0. ,  0. ,  0. ],
+           [ 0. ,  0.8,  0. ,  0. ],
+           [ 0. ,  0. ,  0.7,  0. ]])
+    """
+    f = np.atleast_1d(f)
+    s = np.atleast_1d(s)
+    if f.ndim != 1:
+        raise ValueError("Incorrect shape for f.  f must be one-dimensional")
+    if s.ndim != 1:
+        raise ValueError("Incorrect shape for s.  s must be one-dimensional")
+    if f.size != s.size + 1:
+        raise ValueError("Incorrect lengths for f and s.  The length"
+                         " of s must be one less than the length of f.")
+    if s.size == 0:
+        raise ValueError("The length of s must be at least 1.")
+
+    tmp = f[0] + s[0]
+    n = f.size
+    a = np.zeros((n,n), dtype=tmp.dtype)
+    a[0] = f
+    a[range(1,n), range(0,n-1)] = s
+    return a
+
+
 def all_mat(*args):
     return map(np.matrix,args)
 

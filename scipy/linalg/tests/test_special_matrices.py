@@ -3,8 +3,8 @@
 from numpy import arange, add, array, eye, all, copy
 from numpy.testing import *
 
-from scipy.linalg import toeplitz, hankel, circulant, hadamard, tri, triu, tril, \
-                            kron, block_diag
+from scipy.linalg import toeplitz, hankel, circulant, hadamard, leslie, \
+                            tri, triu, tril, kron, block_diag
 
 
 def get_mat(n):
@@ -171,6 +171,23 @@ class TestHadamard(TestCase):
 
         assert_raises(ValueError, hadamard, 0)
         assert_raises(ValueError, hadamard, 5)
+
+
+class TestLeslie(TestCase):
+
+    def test_bad_shapes(self):
+        assert_raises(ValueError, leslie, [[1,1],[2,2]], [3,4,5])        
+        assert_raises(ValueError, leslie, [3,4,5], [[1,1],[2,2]])
+        assert_raises(ValueError, leslie, [1,2], [1,2])
+        assert_raises(ValueError, leslie, [1], [])
+
+    def test_basic(self):
+        a = leslie([1, 2, 3], [0.25, 0.5])
+        expected = array([
+            [1.0,  2.0, 3.0],
+            [0.25, 0.0, 0.0],
+            [0.0,  0.5, 0.0]])
+        assert_array_equal(a, expected)
 
 
 class TestBlockDiag:

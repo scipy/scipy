@@ -65,6 +65,7 @@ Special Matrices::
    hadamard   --- Hadamard matrix of order 2^n
    hankel     --- Hankel matrix
    kron       --- Kronecker product of two arrays.
+   leslie     --- Leslie matrix
    toeplitz   --- Toeplitz matrix
    tri        --- Construct a matrix filled with ones at and below a given diagonal. 
    tril       --- Construct a lower-triangular matrix from a given matrix.
