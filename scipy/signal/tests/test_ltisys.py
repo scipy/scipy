@@ -1,7 +1,8 @@
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, run_module_suite
 
-from scipy.signal.ltisys import ss2tf, lsim2, impulse2, lti
+from scipy.signal.ltisys import ss2tf, lsim2, impulse2, step2, lti
+
 
 class TestSS2TF:
     def tst_matrix_shapes(self, p, q, r):
@@ -146,6 +147,66 @@ class Test_impulse2(object):
         system = ([1.0], [1.0, 2.0, 1.0])
         tout, y = impulse2(system)
         expected_y = tout * np.exp(-tout)
+        assert_almost_equal(y, expected_y)
+
+class Test_step2(object):
+
+    def test_01(self):
+        # First order system: x'(t) + x(t) = u(t)
+        # Exact step response is x(t) = 1 - exp(-t).
+        system = ([1.0],[1.0,1.0])
+        tout, y = step2(system)
+        expected_y = 1.0 - np.exp(-tout)
+        assert_almost_equal(y, expected_y)
+
+    def test_02(self):
+        """Specify the desired time values for the output."""
+
+        # First order system: x'(t) + x(t) = u(t)
+        # Exact step response is x(t) = 1 - exp(-t).
+        system = ([1.0],[1.0,1.0])
+        n = 21
+        t = np.linspace(0, 2.0, n)
+        tout, y = step2(system, T=t)
+        assert_equal(tout.shape, (n,))
+        assert_almost_equal(tout, t)
+        expected_y = 1 - np.exp(-t)
+        assert_almost_equal(y, expected_y)
+
+    def test_03(self):
+        """Specify an initial condition as a scalar."""
+        
+        # First order system: x'(t) + x(t) = u(t), x(0)=3.0
+        # Exact step response is x(t) = 1 + 2*exp(-t).
+        system = ([1.0],[1.0,1.0])
+        tout, y = step2(system, X0=3.0)
+        expected_y = 1 + 2.0*np.exp(-tout)
+        assert_almost_equal(y, expected_y)
+
+    def test_04(self):
+        """Specify an initial condition as a list."""
+
+        # First order system: x'(t) + x(t) = u(t), x(0)=3.0
+        # Exact step response is x(t) = 1 + 2*exp(-t).
+        system = ([1.0],[1.0,1.0])
+        tout, y = step2(system, X0=[3.0])
+        expected_y = 1 + 2.0*np.exp(-tout)
+        assert_almost_equal(y, expected_y)
+
+    def test_05(self):
+        # Simple integrator: x'(t) = u(t)
+        # Exact step response is x(t) = t.
+        system = ([1.0],[1.0,0.0])
+        tout, y = step2(system, atol=1e-10, rtol=1e-8)
+        expected_y = tout
+        assert_almost_equal(y, expected_y)
+
+    def test_06(self):
+        # Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = u(t)
+        # The exact step response is 1 - (1 + t)*exp(-t).
+        system = ([1.0], [1.0, 2.0, 1.0])
+        tout, y = step2(system, atol=1e-10, rtol=1e-8)
+        expected_y = 1 - (1 + tout) * np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
 if __name__ == "__main__":

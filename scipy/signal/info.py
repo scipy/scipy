@@ -70,8 +70,9 @@ Signal Processing Tools
     lsim     -- continuous-time simulation of output to linear system.
     lsim2    -- like lsim, but `scipy.integrate.odeint` is used. 
     impulse  -- impulse response of linear, time-invariant (LTI) system.
-    impulse2 -- like impulse2, but `scipy.integrate.odeint` is used.
+    impulse2 -- like impulse, but `scipy.integrate.odeint` is used.
     step     -- step response of continous-time LTI system.
+    step2    -- like step, but `scipy.integrate.odeint` is used.
 
  LTI Reresentations:
 

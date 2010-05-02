@@ -495,8 +495,9 @@ def lsim(system, U, T, X0=None, interp=1):
 def _default_response_times(A, n):
     """Compute a reasonable set of time samples for the response time.
 
-    This function is used by impulse(), impulse2() and step() to compute
-    the response time when the `T` argument to the function  is None.
+    This function is used by impulse(), impulse2(), step() and step2()
+    to compute the response time when the `T` argument to the function
+    is None.
 
     Parameters
     ----------
@@ -595,7 +596,7 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     **kwargs :
         Additional keyword arguments are passed on the function
         `scipy.signal.lsim2`, which in turn passes them on to
-        :func:`scipy.integrate.odeint`.  See the documation for
+        :func:`scipy.integrate.odeint`.  See the documentation for
         :func:`scipy.integrate.odeint` for information about these
         arguments.
 
@@ -661,6 +662,9 @@ def step(system, X0=None, T=None, N=None):
     yout : 1D ndarray
         Step response of system.
 
+    See also
+    --------
+    scipy.signal.step2
     """
     if isinstance(system, lti):
         sys = system
@@ -672,4 +676,59 @@ def step(system, X0=None, T=None, N=None):
         T = _default_response_times(sys.A, N)
     U = ones(T.shape, sys.A.dtype)
     vals = lsim(sys, U, T, X0=X0)
+    return vals[0], vals[1]
+
+def step2(system, X0=None, T=None, N=None, **kwargs):
+    """Step response of continuous-time system.
+    
+    This function is functionally the same as `scipy.signal.step`, but
+    it uses the function `scipy.ltisys.lsim2` to compute the step
+    response.
+
+    Parameters
+    ----------
+    system : an instance of the LTI class or a tuple describing the system.
+        The following gives the number of elements in the tuple and
+        the interpretation.
+            2 (num, den)
+            3 (zeros, poles, gain)
+            4 (A, B, C, D)
+    X0 : array_like, optional
+        Initial state-vector (default is zero).
+    T : array_like, optional
+        Time points (computed if not given).
+    N : int
+        Number of time points to compute if `T` is not given.
+    **kwargs :
+        Additional keyword arguments are passed on the function
+        `scipy.signal.lsim2`, which in turn passes them on to
+        :func:`scipy.integrate.odeint`.  See the documentation for
+        :func:`scipy.integrate.odeint` for information about these
+        arguments.
+
+    Returns
+    -------
+    T : 1D ndarray
+        Output time points.
+    yout : 1D ndarray
+        Step response of system.
+
+    See also
+    --------
+    scipy.signal.step
+
+    Notes
+    -----
+    .. versionadded:: 0.8.0
+    """
+    if isinstance(system, lti):
+        sys = system
+    else:
+        sys = lti(*system)
+    if N is None:
+        N = 100
+    if T is None:
+        T = _default_response_times(sys.A, N)
+    U = ones(T.shape, sys.A.dtype)
+    vals = lsim2(sys, U, T, X0=X0, **kwargs)
     return vals[0], vals[1]

@@ -103,6 +103,7 @@ Linear Systems
    impulse
    impulse2
    step
+   step2
 
 LTI Reresentations
 ==================

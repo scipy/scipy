@@ -85,9 +85,9 @@ what most people expect if the old_behavior=False argument is passed:
 
 Additions and modification to LTI functions (scipy.signal)
 ----------------------------------------------------------
-* The function `impulse2` was added to `scipy.signal`.  It uses the ODE
-  solver `scipy.integrate.odeint` to compute the impulse response of
-  a system.
+* The functions `impulse2` and `step2` were added to `scipy.signal`.
+  They use the function `scipy.signal.lsim2` to compute the impulse and
+  step response of a system, respectively.
 * The function `scipy.signal.lsim2` was changed to pass any additional
   keyword arguments to the ODE solver.
 
