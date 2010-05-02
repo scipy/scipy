@@ -682,7 +682,7 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     """Step response of continuous-time system.
     
     This function is functionally the same as `scipy.signal.step`, but
-    it uses the function `scipy.ltisys.lsim2` to compute the step
+    it uses the function `scipy.signal.lsim2` to compute the step
     response.
 
     Parameters
