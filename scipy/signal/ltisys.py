@@ -12,7 +12,7 @@ time invariant systems.
 
 from filter_design import tf2zpk, zpk2tf, normalize
 import numpy
-from numpy import product, zeros, array, dot, transpose, arange, ones, \
+from numpy import product, zeros, array, dot, transpose, ones, \
     nan_to_num, zeros_like, linspace
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
@@ -492,6 +492,36 @@ def lsim(system, U, T, X0=None, interp=1):
     return T, squeeze(yout), squeeze(xout)
 
 
+def _default_response_times(A, n):
+    """Compute a reasonable set of time samples for the response time.
+
+    This function is used by impulse(), impulse2() and step() to compute
+    the response time when the `T` argument to the function  is None.
+
+    Parameters
+    ----------
+    A : square ndarray
+        The system matrix.
+    n : int
+        The number of time samples to generate.
+
+    Returns
+    -------
+    t : ndarray, 1D
+        The 1D array of length `n` of time samples at which the response
+        is to be computed.
+    """
+    # Create a reasonable time interval.  This could use some more work.
+    # For example, what is expected when the system is unstable?
+    vals = linalg.eigvals(A)
+    r = min(abs(real(vals)))
+    if r == 0.0:
+        r = 1.0
+    tc = 1.0 / r
+    t = linspace(0.0, 7*tc, n)
+    return t
+
+
 def impulse(system, X0=None, T=None, N=None):
     """Impulse response of continuous-time system.
 
@@ -526,9 +556,7 @@ def impulse(system, X0=None, T=None, N=None):
     if N is None:
         N = 100
     if T is None:
-        vals = linalg.eigvals(sys.A)
-        tc = 1.0/min(abs(real(vals)))
-        T = arange(0,7*tc,7*tc / float(N))
+        T = _default_response_times(sys.A, N)
     h = zeros(T.shape, sys.A.dtype)
     s,v = linalg.eig(sys.A)
     vi = linalg.inv(v)
@@ -599,14 +627,7 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     if N is None:
         N = 100
     if T is None:
-        # Create a reasonable time interval.  This could use some more work.
-        # For example, what is expected when the system is unstable?
-        vals = linalg.eigvals(sys.A)
-        r = min(abs(real(vals)))
-        if r == 0.0:
-            r = 1.0
-        tc = 1.0/r
-        T = arange(0, 7*tc, 7*tc / float(N))
+        T = _default_response_times(sys.A, N)
     # Move the impulse in the input to the initial conditions, and then
     # solve using lsim2().
     U = zeros_like(T)
@@ -648,9 +669,7 @@ def step(system, X0=None, T=None, N=None):
     if N is None:
         N = 100
     if T is None:
-        vals = linalg.eigvals(sys.A)
-        tc = 1.0/min(abs(real(vals)))
-        T = arange(0,7*tc,7*tc / float(N))
+        T = _default_response_times(sys.A, N)
     U = ones(T.shape, sys.A.dtype)
     vals = lsim(sys, U, T, X0=X0)
     return vals[0], vals[1]
