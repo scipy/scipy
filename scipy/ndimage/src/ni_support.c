@@ -168,6 +168,8 @@ int NI_ExtendLine(double *line, maybelong length, maybelong size1,
 
     switch (mode) {
     case NI_EXTEND_WRAP:
+        /* deal with situation where data is shorter than needed
+           for filling the line */
         nextend = size1 / length;
         rextend = size1 - nextend * length;
         l1 = line + size1 + length - rextend;

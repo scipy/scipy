@@ -330,26 +330,38 @@ def riccati_yn(n,x):
 def _sph_harmonic(m,n,theta,phi):
     """Compute spherical harmonics.
 
-    This is a ufunc and may take scalar or array arguments like any other ufunc.
-    The inputs will be broadcasted against each other.
+    This is a ufunc and may take scalar or array arguments like any
+    other ufunc.  The inputs will be broadcasted against each other.
 
-    :Parameters:
-      - `m` : int |m| <= n
-        The order of the harmonic.
-      - `n` : int >= 0
-        The degree of the harmonic.
-      - `theta` : float [0, 2*pi]
-        The azimuthal (longitudinal) coordinate.
-      - `phi` : float [0, pi]
-        The polar (colatitudinal) coordinate.
+    Parameters
+    ----------
+    m : int
+       |m| <= n; the order of the harmonic.
+    n : int
+       where `n` >= 0; the degree of the harmonic.  This is often called
+       ``l`` (lower case L) in descriptions of spherical harmonics.
+    theta : float
+       [0, 2*pi]; the azimuthal (longitudinal) coordinate.
+    phi : float
+       [0, pi]; the polar (colatitudinal) coordinate.
 
-    :Returns:
-      - `y_mn` : complex float
-        The harmonic $Y^m_n$ sampled at `theta` and `phi`.
+    Returns
+    -------
+    y_mn : complex float
+       The harmonic $Y^m_n$ sampled at `theta` and `phi`
+
+    Notes
+    -----
+    There are different conventions for the meaning of input arguments
+    `theta` and `phi`.  We take `theta` to be the azimuthal angle and
+    `phi` to be the polar angle.  It is common to see the opposite
+    convention - that is `theta` as the polar angle and `phi` as the
+    azimuthal angle.
     """
     x = cos(phi)
     m,n = int(m), int(n)
-    Pmn,Pmnd = lpmn(m,n,x)
+    Pmn,Pmn_deriv = lpmn(m,n,x)
+    # Legendre call generates all orders up to m and degrees up to n
     val = Pmn[-1, -1]
     val *= sqrt((2*n+1)/4.0/pi)
     val *= exp(0.5*(gammaln(n-m+1)-gammaln(n+m+1)))
@@ -484,6 +496,24 @@ def lpmn(m,n,z):
     all orders from 0..m and degrees from 0..n.
 
     z can be complex.
+
+    Parameters
+    ----------
+    m : int
+       |m| <= n; the order of the Legendre function
+    n : int
+       where `n` >= 0; the degree of the Legendre function.  Often
+       called ``l`` (lower case L) in descriptions of the associated
+       Legendre function
+    z : float or complex
+       input value
+
+    Returns
+    -------
+    Pmn_z : (m+1, n+1) array
+       Values for all orders 0..m and degrees 0..n
+    Pmn_d_z : (m+1, n+1) array
+       Derivatives for all orders 0..m and degrees 0..n       
     """
     if not isscalar(m) or (abs(m)>n):
         raise ValueError, "m must be <= n."

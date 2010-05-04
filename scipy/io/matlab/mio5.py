@@ -52,7 +52,7 @@ I guess that:
   associated ``__function_workspace__`` matrix saved as well for the
   anonymous function to work correctly.
 * appending to a mat file that has a ``__function_workspace__`` would
-  invoLve first pulling off this workspace, appending, checking whether
+  involve first pulling off this workspace, appending, checking whether
   there were any more anonymous functions appended, and then somehow
   merging the relevant workspaces, and saving at the end of the mat
   file.
@@ -559,11 +559,12 @@ class VarWriter5(object):
         tag = np.zeros((), mdtypes_template['tag_full'])
         tag['mdtype'] = mdtype
         tag['byte_count'] = byte_count
-        padding = (8 - tag['byte_count']) % 8
         self.write_bytes(tag)
         self.write_bytes(arr)
         # pad to next 64-bit boundary
-        self.write_bytes(np.zeros((padding,),'u1'))
+        bc_mod_8 = byte_count % 8
+        if bc_mod_8:
+            self.file_stream.write('\x00' * (8-bc_mod_8))
 
     def write_header(self,
                      shape, 
@@ -668,7 +669,7 @@ class VarWriter5(object):
                 codec='UTF8'
             else:
                 codec = 'ascii'
-            self.write_char(narr,  codec)
+            self.write_char(narr, codec)
         else:
             self.write_numeric(narr)
         self.update_matrix_tag(mat_tag_pos)
@@ -693,6 +694,8 @@ class VarWriter5(object):
             self.write_element(arr)
 
     def write_char(self, arr, codec='ascii'):
+        ''' Write string array `arr` with given `codec`
+        '''
         if arr.size == 0 or np.all(arr == ''):
             # This an empty string array or a string array containing
             # only empty strings.  Matlab cannot distiguish between a
@@ -707,26 +710,29 @@ class VarWriter5(object):
             self.write_header(shape, mxCHAR_CLASS)
             self.write_smalldata_element(arr, miUTF8, 0)
             return
-        # non-empty string
+        # non-empty string.
+        #
+        # Convert to char array
         arr = arr_to_chars(arr)
         # We have to write the shape directly, because we are going
         # recode the characters, and the resulting stream of chars
         # may have a different length
         shape = arr.shape
         self.write_header(shape, mxCHAR_CLASS)
-        # We need to do our own transpose (not using the normal
-        # write routines that do this for us), and copy to make a nice C
-        # ordered thing
-        arr = arr.T.copy()
         if arr.dtype.kind == 'U' and arr.size:
-            # Recode unicode using self.codec
+            # Make one long string from all the characters.  We need to
+            # transpose here, because we're flattening the array, before
+            # we write the bytes.  The bytes have to be written in
+            # Fortran order.
             n_chars = np.product(shape)
             st_arr = np.ndarray(shape=(),
                                 dtype=arr_dtype_number(arr, n_chars),
-                                buffer=arr)
+                                buffer=arr.T.copy()) # Fortran order
+            # Recode with codec to give byte string
             st = st_arr.item().encode(codec)
+            # Reconstruct as one-dimensional byte array
             arr = np.ndarray(shape=(len(st),),
-                             dtype='u1',
+                             dtype='S1',
                              buffer=st)
         self.write_element(arr, mdtype=miUTF8)
 

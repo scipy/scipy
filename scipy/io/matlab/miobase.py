@@ -389,8 +389,12 @@ def arr_to_chars(arr):
     if not dims:
         dims = [1]
     dims.append(int(arr.dtype.str[2:]))
-    return np.ndarray(shape=dims,
-                      dtype=arr_dtype_number(arr, 1),
-                      buffer=arr)
-
-
+    arr = np.ndarray(shape=dims,
+                     dtype=arr_dtype_number(arr, 1),
+                     buffer=arr)
+    empties = [arr == '']
+    if not np.any(empties):
+        return arr
+    arr = arr.copy()
+    arr[empties] = ' '
+    return arr
