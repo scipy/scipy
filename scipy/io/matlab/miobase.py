@@ -5,7 +5,7 @@ Base classes for matlab (TM) file stream reading
 """
 import numpy as np
 
-from scipy.ndimage import doccer
+from scipy.misc import doccer
 
 import byteordercodes as boc
 
@@ -139,7 +139,7 @@ def convert_dtypes(dtype_template, order_code):
     dtypes : mapping
        mapping where values have been replaced by
        ``np.dtype(val).newbyteorder(order_code)``
-       
+
     '''
     dtypes = dtype_template.copy()
     for k in dtypes:
@@ -221,8 +221,8 @@ def get_matfile_version(fileobj):
 
 
 def matdims(arr, oned_as='column'):
-    ''' Determine equivalent matlab dimensions for given array 
-    
+    ''' Determine equivalent matlab dimensions for given array
+
     Parameters
     ----------
     arr : ndarray
@@ -377,7 +377,7 @@ class MatFileReader(object):
         self.mat_stream.seek(curpos-1)
         return len(b) == 0
 
-    
+
 def arr_dtype_number(arr, num):
     ''' Return dtype for given number of items per element'''
     return np.dtype(arr.dtype.str[:2] + str(num))

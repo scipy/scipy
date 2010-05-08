@@ -6,7 +6,7 @@ from numpy.testing import assert_equal, assert_raises
 
 from nose.tools import assert_true
 
-import scipy.ndimage.doccer as sndd
+from scipy.misc import doccer
 
 docstring = \
 """Docstring
@@ -40,24 +40,24 @@ filled_docstring = \
 
 
 def test_unindent():
-    yield assert_equal, sndd.unindent_string(param_doc1), param_doc1
-    yield assert_equal, sndd.unindent_string(param_doc2), param_doc2
-    yield assert_equal, sndd.unindent_string(param_doc3), param_doc1
+    yield assert_equal, doccer.unindent_string(param_doc1), param_doc1
+    yield assert_equal, doccer.unindent_string(param_doc2), param_doc2
+    yield assert_equal, doccer.unindent_string(param_doc3), param_doc1
 
 
 def test_unindent_dict():
-    d2 = sndd.unindent_dict(doc_dict)
+    d2 = doccer.unindent_dict(doc_dict)
     yield assert_equal, d2['strtest1'], doc_dict['strtest1']
     yield assert_equal, d2['strtest2'], doc_dict['strtest2']
     yield assert_equal, d2['strtest3'], doc_dict['strtest1']
 
 
 def test_docformat():
-    udd = sndd.unindent_dict(doc_dict)
-    formatted = sndd.docformat(docstring, udd)
+    udd = doccer.unindent_dict(doc_dict)
+    formatted = doccer.docformat(docstring, udd)
     yield assert_equal, formatted, filled_docstring
     single_doc = 'Single line doc %(strtest1)s'
-    formatted = sndd.docformat(single_doc, doc_dict)
+    formatted = doccer.docformat(single_doc, doc_dict)
     # Note - initial indent of format string does not
     # affect subsequent indent of inserted parameter
     yield assert_equal, formatted, """Single line doc Another test
@@ -66,7 +66,7 @@ def test_docformat():
 
 def test_decorator():
     # with unindentation of parameters
-    decorator = sndd.filldoc(doc_dict, True)
+    decorator = doccer.filldoc(doc_dict, True)
     @decorator
     def func():
         """ Docstring
@@ -77,7 +77,7 @@ def test_decorator():
            with some indent
         """
     # without unindentation of parameters
-    decorator = sndd.filldoc(doc_dict, False)
+    decorator = doccer.filldoc(doc_dict, False)
     @decorator
     def func():
         """ Docstring

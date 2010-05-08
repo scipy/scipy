@@ -32,7 +32,7 @@ import math
 import numpy
 import _ni_support
 import _nd_image
-import doccer
+from scipy.misc import doccer
 
 _input_doc = \
 """input : array-like

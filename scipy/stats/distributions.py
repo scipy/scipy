@@ -62,7 +62,7 @@ lgam = special.gammaln
 import types
 import stats as st
 
-from scipy.ndimage import doccer
+from scipy.misc import doccer
 
 all = alltrue
 sgf = vectorize
@@ -4990,7 +4990,7 @@ class skellam_gen(rv_discrete):
                          1-ncx2.cdf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
-# enable later        
+# enable later
 ##    def _cf(self, w, mu1, mu2):
 ##        # characteristic function
 ##        poisscf = poisson._cf
@@ -5020,6 +5020,6 @@ Skellam distribution
    Parameters mu1 and mu2 must be strictly positive.
 
    For details see: http://en.wikipedia.org/wiki/Skellam_distribution
-   
+
 """
                       )

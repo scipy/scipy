@@ -36,6 +36,11 @@ from measurements import *
 from morphology import *
 from io import *
 
+# doccer is moved to scipy.misc in scipy 0.8
+from scipy.misc import doccer
+doccer = numpy.deprecate(doccer, old_name='doccer',
+                         new_name='scipy.misc.doccer')
+
 from info import __doc__
 __version__ = '2.0'
 
