@@ -2875,7 +2875,14 @@ class maxwell_gen(rv_continuous):
                (-12*pi*pi + 160*pi - 384) / val**2.0
     def _entropy(self):
         return _EULER + 0.5*log(2*pi)-0.5
-maxwell = maxwell_gen(a=0.0, name='maxwell')
+maxwell = maxwell_gen(a=0.0, name='maxwell', extradoc="""
+
+Maxwell distribution
+
+maxwell.pdf(x) = sqrt(2/pi) * x**2 * exp(-x**2/2)
+for x > 0.
+"""
+                      )
 
 
 # Mielke's Beta-Kappa
@@ -3628,7 +3635,15 @@ class wald_gen(invnorm_gen):
         return invnorm.cdf(x,1,0)
     def _stats(self):
         return 1.0, 1.0, 3.0, 15.0
-wald = wald_gen(a=0.0, name="wald")
+wald = wald_gen(a=0.0, name="wald", extradoc="""
+
+Wald distribution
+
+wald.pdf(x) = 1/sqrt(2*pi*x**3) * exp(-(x-1)**2/(2*x))
+for x > 0.
+"""
+                )
+
 
 
 ## Weibull
@@ -4566,7 +4581,14 @@ class nbinom_gen(rv_discrete):
         g1 = (Q+P)/sqrt(n*P*Q)
         g2 = (1.0 + 6*P*Q) / (n*P*Q)
         return mu, var, g1, g2
-nbinom = nbinom_gen(name='nbinom', shapes="n, pr")
+nbinom = nbinom_gen(name='nbinom', shapes="n, pr", extradoc="""
+
+Negative binomial distribution
+
+nbinom.pmf(k,n,p) = choose(k+n-1,n-1) * p**n * (1-p)**k
+for k >= 0.
+"""
+                    )
 
 
 ## Geometric distribution
