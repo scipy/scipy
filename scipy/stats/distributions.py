@@ -69,8 +69,8 @@ sgf = vectorize
 import new
 
 
-## These are the docstring parts used for substitution in specific
-## distribution docstrings.
+# These are the docstring parts used for substitution in specific
+# distribution docstrings.
 
 docheaders = {'methods':"""\nMethods\n-------\n""",
               'parameters':"""\nParameters\n---------\n""",
@@ -117,9 +117,9 @@ _doc_fit = \
 """fit(data, %(shapes)s, loc=0, scale=1)
     Parameter estimates for generic data.
 """
-_doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf, _doc_cdf,
-                           _doc_sf, _doc_ppf, _doc_isf, _doc_stats,
-                           _doc_entropy, _doc_fit])
+_doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
+                           _doc_cdf, _doc_sf, _doc_ppf, _doc_isf,
+                           _doc_stats, _doc_entropy, _doc_fit])
 
 _doc_default_callparams = \
 """
@@ -180,11 +180,14 @@ Random number generation
 >>> R = %(name)s.rvs(%(shapes)s, size=100)
 """
 
-_doc_default = ''.join([_doc_default_longsummary, _doc_allmethods,
-                        _doc_default_callparams, _doc_default_frozen_note,
+_doc_default = ''.join([_doc_default_longsummary,
+                        _doc_allmethods,
+                        _doc_default_callparams,
+                        _doc_default_frozen_note,
                         _doc_default_example])
 
-_doc_default_before_notes = ''.join([_doc_default_longsummary, _doc_allmethods,
+_doc_default_before_notes = ''.join([_doc_default_longsummary,
+                                     _doc_allmethods,
                                      _doc_default_callparams,
                                      _doc_default_frozen_note])
 
@@ -205,12 +208,13 @@ docdict = {'rvs':_doc_rvs,
            'default':_doc_default,
            'before_notes':_doc_default_before_notes}
 
-# Reuse common content between continous and discrete docs, change some minor
-# bits.
+# Reuse common content between continous and discrete docs, change some
+# minor bits.
 docdict_discrete = docdict.copy()
 
 docdict_discrete['pmf'] = _doc_pmf
-_doc_disc_methods = ['rvs', 'pmf', 'cdf', 'sf', 'ppf', 'isf', 'stats', 'entropy', 'fit']
+_doc_disc_methods = ['rvs', 'pmf', 'cdf', 'sf', 'ppf', 'isf', 'stats',
+                     'entropy', 'fit']
 for obj in _doc_disc_methods:
     docdict_discrete[obj] = docdict_discrete[obj].replace(', scale=1', '')
 docdict_discrete.pop('pdf')
