@@ -84,6 +84,10 @@ _doc_pdf = \
 """pdf(x, %(shapes)s, loc=0, scale=1)
     Probability density function.
 """
+_doc_pmf = \
+"""pmf(x, %(shapes)s, loc=0, scale=1)
+    Probability mass function.
+"""
 _doc_cdf = \
 """cdf(x, %(shapes)s, loc=0, scale=1)
     Cumulative density function.
@@ -211,10 +215,30 @@ docdict = {'rvs':_doc_rvs,
 # Reuse common content between continous and discrete docs, change some minor
 # bits.
 docdict_discrete = docdict.copy()
+
+docdict_discrete['pmf'] = _doc_pmf
+_doc_disc_methods = ['rvs', 'pmf', 'cdf', 'sf', 'ppf', 'isf', 'stats', 'entropy', 'fit']
+for obj in _doc_disc_methods:
+    docdict_discrete[obj] = docdict_discrete[obj].replace(', scale=1', '')
+docdict_discrete.pop('pdf')
+
+_doc_allmethods = ''.join([docdict_discrete[obj] for obj in
+                                              _doc_disc_methods])
+docdict_discrete['allmethods'] = docheaders['methods'] + _doc_allmethods
+
 docdict_discrete['longsummary'] = _doc_default_longsummary.replace(\
                                       'Continuous', 'Discrete')
-docdict_discrete['frozennote'] = _doc_default_frozen_note.replace('continuous',
-                                                                  'discrete')
+_doc_default_frozen_note = \
+"""
+Alternatively, the object may be called (as a function) to fix the shape and
+location parameters returning a "frozen" continuous RV object:
+
+rv = %(name)s(%(shapes)s, loc=0)
+    - Frozen RV object with the same methods but holding the given shape and
+      location fixed.
+"""
+docdict_discrete['frozennote'] = _doc_default_frozen_note
+
 docdict_discrete['example'] = _doc_default_example.replace('[0.9,]',
                                   'Replace with reasonable value')
 
