@@ -62,10 +62,155 @@ lgam = special.gammaln
 import types
 import stats as st
 
+from scipy.ndimage import doccer
 
 all = alltrue
 sgf = vectorize
 import new
+
+
+## These are the docstring parts used for substitution in specific
+## distribution docstrings.
+
+docheaders = {'methods':"""\nMethods\n-------\n""",
+              'parameters':"""\nParameters\n---------\n""",
+              'examples':"""\nExamples\n--------\n"""}
+
+_doc_rvs = \
+"""rvs(%(shapes)s, loc=0, scale=1, size=1)
+    Random variates.
+"""
+_doc_pdf = \
+"""pdf(x, %(shapes)s, loc=0, scale=1)
+    Probability density function.
+"""
+_doc_cdf = \
+"""cdf(x, %(shapes)s, loc=0, scale=1)
+    Cumulative density function.
+"""
+_doc_sf = \
+"""sf(x, %(shapes)s, loc=0, scale=1)
+    Survival function (1-cdf --- sometimes more accurate).
+"""
+_doc_ppf = \
+"""ppf(q, %(shapes)s, loc=0, scale=1)
+    Percent point function (inverse of cdf --- percentiles).
+"""
+_doc_isf = \
+"""isf(q, %(shapes)s, loc=0, scale=1)
+    Inverse survival function (inverse of sf).
+"""
+_doc_stats = \
+"""stats(%(shapes)s, loc=0, scale=1, moments='mv')
+    Mean('m'), variance('v'), skew('s'), and/or kurtosis('k').
+"""
+_doc_entropy = \
+"""entropy(%(shapes)s, loc=0, scale=1)
+    (Differential) entropy of the RV.
+"""
+_doc_fit = \
+"""fit(data, %(shapes)s, loc=0, scale=1)
+    Parameter estimates for generic data.
+"""
+_doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf, _doc_cdf,
+                           _doc_sf, _doc_ppf, _doc_isf, _doc_stats,
+                           _doc_entropy, _doc_fit])
+
+_doc_default_callparams = \
+"""
+Parameters
+----------
+x : array-like
+    quantiles
+q : array-like
+    lower or upper tail probability
+%(shapes)s : array-like
+    shape parameters
+loc : array-like, optional
+    location parameter (default=0)
+scale : array-like, optional
+    scale parameter (default=1)
+size : int or tuple of ints, optional
+    shape of random variates (default computed from input arguments )
+moments : str, optional
+    composed of letters ['mvsk'] specifying which moments to compute where
+    'm' = mean, 'v' = variance, 's' = (Fisher's) skew and
+    'k' = (Fisher's) kurtosis. (default='mv')
+"""
+_doc_default_longsummary = \
+"""Continuous random variables are defined from a standard form and may
+require some shape parameters to complete its specification.  Any
+optional keyword parameters can be passed to the methods of the RV
+object as given below:
+"""
+_doc_default_frozen_note = \
+"""
+Alternatively, the object may be called (as a function) to fix the shape,
+location, and scale parameters returning a "frozen" continuous RV object:
+
+rv = %(name)s(%(shapes)s, loc=0, scale=1)
+    - Frozen RV object with the same methods but holding the given shape,
+      location, and scale fixed.
+"""
+_doc_default_example = \
+"""
+Examples
+--------
+>>> import matplotlib.pyplot as plt
+>>> numargs = %(name)s.numargs
+>>> [ %(shapes)s ] = [0.9,] * numargs
+>>> rv = %(name)s(%(shapes)s)
+
+Display frozen pdf
+
+>>> x = np.linspace(0, np.minimum(rv.dist.b, 3))
+>>> h = plt.plot(x, rv.pdf(x))
+
+Check accuracy of cdf and ppf
+
+>>> prb = %(name)s.cdf(x, %(shapes)s)
+>>> h = plt.semilogy(np.abs(x - %(name)s.ppf(prb, %(shapes)s)) + 1e-20)
+
+Random number generation
+
+>>> R = %(name)s.rvs(%(shapes)s, size=100)
+"""
+
+_doc_default = ''.join([_doc_default_longsummary, _doc_allmethods,
+                        _doc_default_callparams, _doc_default_frozen_note,
+                        _doc_default_example])
+
+_doc_default_before_pdf = ''.join([_doc_default_longsummary,
+                                   docheaders['methods'], _doc_rvs])
+_doc_default_after_pdf = ''.join([_doc_cdf, _doc_sf, _doc_ppf, _doc_isf,
+                                  _doc_stats, _doc_entropy, _doc_fit,
+                                  _doc_default_callparams,
+                                  _doc_default_frozen_note,
+                                  _doc_default_example])
+docdict = {'rvs':_doc_rvs,
+           'pdf':_doc_pdf,
+           'cdf':_doc_cdf,
+           'sf':_doc_sf,
+           'ppf':_doc_ppf,
+           'isf':_doc_isf,
+           'stats':_doc_stats,
+           'entropy':_doc_entropy,
+           'fit':_doc_fit,
+           'allmethods':_doc_allmethods,
+           'callparams':_doc_default_callparams,
+           'longsummary':_doc_default_longsummary,
+           'frozennote':_doc_default_frozen_note,
+           'example':_doc_default_example,
+           'default':_doc_default,
+           'before_pdf':_doc_default_before_pdf,
+           'after_pdf':_doc_default_after_pdf}
+
+# clean up all the separate docstring elements, we do not need them anymore
+for obj in [s for s in dir() if s.startswith('_doc_')]:
+    exec('del ' + obj)
+del s, obj
+
+
 
 def _build_random_array(fun, args, size=None):
 # Build an array by applying function fun to
@@ -350,90 +495,54 @@ class rv_generic(object):
 
 
 class rv_continuous(rv_generic):
-    """
-    A Generic continuous random variable.
+    """A generic continuous random variable class meant for subclassing.
 
-    Continuous random variables are defined from a standard form and may
-    require some shape parameters to complete its specification.  Any
-    optional keyword parameters can be passed to the methods of the RV
-    object as given below:
-
-    Methods
-    -------
-    generic.rvs(<shape(s)>,loc=0,scale=1,size=1)
-        - random variates
-
-    generic.pdf(x,<shape(s)>,loc=0,scale=1)
-        - probability density function
-
-    generic.cdf(x,<shape(s)>,loc=0,scale=1)
-        - cumulative density function
-
-    generic.sf(x,<shape(s)>,loc=0,scale=1)
-        - survival function (1-cdf --- sometimes more accurate)
-
-    generic.ppf(q,<shape(s)>,loc=0,scale=1)
-        - percent point function (inverse of cdf --- percentiles)
-
-    generic.isf(q,<shape(s)>,loc=0,scale=1)
-        - inverse survival function (inverse of sf)
-
-    generic.stats(<shape(s)>,loc=0,scale=1,moments='mv')
-        - mean('m'), variance('v'), skew('s'), and/or kurtosis('k')
-
-    generic.entropy(<shape(s)>,loc=0,scale=1)
-        - (differential) entropy of the RV.
-
-    generic.fit(data,<shape(s)>,loc=0,scale=1)
-        - Parameter estimates for generic data
-
-    Alternatively, the object may be called (as a function) to fix the shape,
-    location, and scale parameters returning a "frozen" continuous RV object:
-
-    rv = generic(<shape(s)>,loc=0,scale=1)
-        - frozen RV object with the same methods but holding the given shape, location, and scale fixed
+    `rv_continuous` is a base class to construct specific distribution classes
+    and instances from for continuous random variables.
 
     Parameters
     ----------
-    x : array-like
-        quantiles
-    q : array-like
-        lower or upper tail probability
-    <shape(s)> : array-like
-        shape parameters
-    loc : array-like, optional
-        location parameter (default=0)
-    scale : array-like, optional
-        scale parameter (default=1)
-    size : int or tuple of ints, optional
-        shape of random variates (default computed from input arguments )
-    moments : string, optional
-        composed of letters ['mvsk'] specifying which moments to compute where
-        'm' = mean, 'v' = variance, 's' = (Fisher's) skew and
-        'k' = (Fisher's) kurtosis. (default='mv')
+    momtype :
+    a :
+    b :
+    xa :
+    xb :
+    xtol : float, optional
+        The tolerance ....
+    badvalue : object, optional
+        The value in (masked) arrays that indicates a value that should be
+        ignored.
+    name : str, optional
+        The name of the instance. This string is used to construct the default
+        example for distributions.
+    longname : str, optional
+        This string is used as part of the first line of the docstring returned
+        when a subclass has no docstring of its own. Note: `longname` exists
+        for backwards compatibility, do not use for new subclasses.
+    shapes : str, optional
+        The shape of the distribution. For example ``"m, n"`` for a
+        distribution that takes two integers as the first two arguments for all
+        its methods.
+    extradoc :  str, optional
+        This string is used as the last part of the docstring returned when a
+        subclass has no docstring of its own. Note: `extradoc` exists for
+        backwards compatibility, do not use for new subclasses.
+
+    Methods
+    -------
+    ...
 
     Examples
     --------
-    >>> import matplotlib.pyplot as plt
-    >>> numargs = generic.numargs
-    >>> [ <shape(s)> ] = [0.9,]*numargs
-    >>> rv = generic(<shape(s)>)
+    To create a new Gaussian distribution, we would do the following::
 
-    Display frozen pdf
-
-    >>> x = np.linspace(0,np.minimum(rv.dist.b,3))
-    >>> h=plt.plot(x,rv.pdf(x))
-
-    Check accuracy of cdf and ppf
-
-    >>> prb = generic.cdf(x,<shape(s)>)
-    >>> h=plt.semilogy(np.abs(x-generic.ppf(prb,<shape(s)>))+1e-20)
-
-    Random number generation
-
-    >>> R = generic.rvs(<shape(s)>,size=100)
-
+        class gaussian_gen(rv_continuous):
+            "Gaussian distribution"
+            def _pdf:
+                ...
+            ...
     """
+
     def __init__(self, momtype=1, a=None, b=None, xa=-10.0, xb=10.0,
                  xtol=1e-14, badvalue=None, name=None, longname=None,
                  shapes=None, extradoc=None):
@@ -486,20 +595,34 @@ class rv_continuous(rv_generic):
             if name[0] in ['aeiouAEIOU']: hstr = "An "
             else: hstr = "A "
             longname = hstr + name
+
+        # generate docstring for subclass instances
         if self.__doc__ is None:
-            self.__doc__ = rv_continuous.__doc__
-        if self.__doc__ is not None:
-            self.__doc__ = textwrap.dedent(self.__doc__)
-            if longname is not None:
-                self.__doc__ = self.__doc__.replace("A Generic",longname)
-            if name is not None:
-                self.__doc__ = self.__doc__.replace("generic",name)
-            if shapes is None:
-                self.__doc__ = self.__doc__.replace("<shape(s)>,","")
-            else:
-                self.__doc__ = self.__doc__.replace("<shape(s)>",shapes)
-            if extradoc is not None:
-                self.__doc__ += textwrap.dedent(extradoc)
+            self._construct_default_doc(longname=longname, extradoc=extradoc)
+        else:
+            self._construct_doc()
+
+        ## This only works for old-style classes...
+        # self.__class__.__doc__ = self.__doc__
+
+    def _construct_default_doc(self, longname=None, extradoc=None):
+        """Construct instance docstring from the default template."""
+        self.__doc__ = ''.join(['%s continuous random variable.'%longname,
+                                '\n\n%(default)s\n\n',
+                                extradoc])
+        self._construct_doc()
+
+    def _construct_doc(self):
+        """Construct the instance docstring with string substitutions."""
+        tempdict = docdict.copy()
+        tempdict['name'] = self.name or 'distname'
+        tempdict['shapes'] = self.shapes or ''
+
+        for i in range(2):
+            if self.shapes is None:
+                # necessary because we use %(shapes)s in two forms (w w/o ", ")
+                self.__doc__ = self.__doc__.replace("%(shapes)s, ", "")
+            self.__doc__ = doccer.docformat(self.__doc__, tempdict)
 
     def _ppf_to_solve(self, x, q,*args):
         return apply(self.cdf, (x, )+args)-q
@@ -2849,7 +2972,7 @@ class t_gen(rv_continuous):
     def _cdf(self, x, df):
         return special.stdtr(df, x)
     def _sf(self, x, df):
-        return special.stdtr(df, -x) 
+        return special.stdtr(df, -x)
     def _ppf(self, q, df):
         return special.stdtrit(df, q)
     def _isf(self, q, df):
@@ -4347,7 +4470,7 @@ class bernoulli_gen(binom_gen):
     def _argcheck(self, pr):
         return (pr >=0 ) & (pr <= 1)
     def _pmf(self, x, pr):
-        return binom_gen._pmf(self, x, 1, pr)    
+        return binom_gen._pmf(self, x, 1, pr)
     def _cdf(self, x, pr):
         return binom_gen._cdf(self, x, 1, pr)
     def _sf(self, x, pr):
@@ -4595,7 +4718,7 @@ class planck_gen(rv_discrete):
         vals = ceil(-1.0/lambda_ * log1p(-q)-1)
         vals1 = (vals-1).clip(self.a, np.inf)
         temp = self._cdf(vals1, lambda_)
-        return where(temp >= q, vals1, vals)        
+        return where(temp >= q, vals1, vals)
     def _stats(self, lambda_):
         mu = 1/(exp(lambda_)-1)
         var = exp(-lambda_)/(expm1(-lambda_))**2
