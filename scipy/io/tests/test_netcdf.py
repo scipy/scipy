@@ -74,9 +74,12 @@ def test_read_write_files():
         for testargs in gen_for_simple(f):
             yield testargs
         f.close()
-    finally:
+    except:
         os.chdir(cwd)
         shutil.rmtree(tmpdir)
+        raise
+    os.chdir(cwd)
+    shutil.rmtree(tmpdir)
 
 
 def test_read_write_sio():

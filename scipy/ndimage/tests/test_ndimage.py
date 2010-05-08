@@ -30,6 +30,7 @@
 
 import math
 import numpy
+import numpy as np
 from numpy import fft
 from numpy.testing import *
 import scipy.ndimage as ndimage
@@ -2971,7 +2972,7 @@ class TestNdimage(TestCase):
             input = numpy.array([1, 3, 8, 10, 8], type)
             output = ndimage.standard_deviation(input, labels,
                                                           [2, 3, 4])
-            self.failUnless(all(output == [1.0, 1.0, 0.0]))
+            self.failUnless(np.all(output == [1.0, 1.0, 0.0]))
 
     def test_minimum_position01(self):
         "minimum position 1"

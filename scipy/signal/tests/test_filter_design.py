@@ -28,12 +28,13 @@ class TestTf2zpk(TestCase):
         filter coefficients."""
         warnings.simplefilter("error", BadCoefficients)
         try:
-            b, a = bessel(20, 0.1)
-            z, p, k = tf2zpk(b, a)
-            raise AssertionError("tf2zpk did not warn about bad "\
-                                 "coefficients")
-        except BadCoefficients:
-            pass
+            try:
+                b, a = bessel(20, 0.1)
+                z, p, k = tf2zpk(b, a)
+                raise AssertionError("tf2zpk did not warn about bad "\
+                                     "coefficients")
+            except BadCoefficients:
+                pass
         finally:
             warnings.simplefilter("always", BadCoefficients)
 

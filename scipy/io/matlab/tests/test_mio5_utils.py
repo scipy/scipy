@@ -72,7 +72,8 @@ def _write_stream(stream, *strings):
 
 
 def _make_readerlike():
-    class R(): pass
+    class R(object):
+        pass
     r = R()
     r.byte_order = boc.native_code
     r.dtypes = {}

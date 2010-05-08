@@ -15,7 +15,7 @@ from numpy import polyadd, polymul, polydiv, polysub, roots, \
         transpose, dot, any, mean, flipud, ndarray
 import numpy as np
 from scipy.misc import factorial
-from .windows import get_window
+from windows import get_window
 
 _modedict = {'valid':0, 'same':1, 'full':2}
 

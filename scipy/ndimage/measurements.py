@@ -31,6 +31,7 @@
 import types
 import math
 import numpy
+import numpy as np
 import _ni_support
 import _nd_image
 import morphology
@@ -218,7 +219,7 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
             return func(input[labels > 0], positions[labels > 0])
 
     index = numpy.atleast_1d(index)
-    if any(index.astype(labels.dtype).astype(index.dtype) != index):
+    if np.any(index.astype(labels.dtype).astype(index.dtype) != index):
         raise ValueError, "Cannot convert index values from <%s> to <%s> (labels' type) without loss of precision"%(index.dtype, labels.dtype)
     index = index.astype(labels.dtype)
 
@@ -426,11 +427,17 @@ def _select(input, labels = None, index = None, find_min=False, find_max=False, 
 
     if index is None:
         mask = (labels > 0)
-        return single_group(input[mask], positions[mask] if find_positions else None)
+        masked_positions = None
+        if find_positions:
+            masked_positions = positions[mask]
+        return single_group(input[mask], masked_positions)
 
     if numpy.isscalar(index):
         mask = (labels == index)
-        return single_group(input[mask], positions[mask] if find_positions else None)
+        masked_positions = None
+        if find_positions:
+            masked_positions = positions[mask]
+        return single_group(input[mask], masked_positions)
 
     order = input.ravel().argsort()
     input = input.ravel()[order]
