@@ -1343,7 +1343,7 @@ class beta_gen(rv_continuous):
         g2 = 6.0*(a**3 + a**2*(1-2*b) + b**2*(1+b) - 2*a*b*(2+b))
         g2 /= a*b*(a+b+2)*(a+b+3)
         return mn, var, g1, g2
-beta = beta_gen(a=0.0, b=1.0, name='beta',shapes='a,b',extradoc="""
+beta = beta_gen(a=0.0, b=1.0, name='beta',shapes='a, b',extradoc="""
 
 Beta distribution
 
@@ -1377,7 +1377,7 @@ class betaprime_gen(rv_continuous):
                                                     *(b-2.0)*(b-1.0)), inf)
         else:
             raise NotImplementedError
-betaprime = betaprime_gen(a=0.0, b=500.0, name='betaprime', shapes='a,b',
+betaprime = betaprime_gen(a=0.0, b=500.0, name='betaprime', shapes='a, b',
                           extradoc="""
 
 Beta prime distribution
@@ -1457,7 +1457,7 @@ class burr_gen(rv_continuous):
             g2 -= 3*g1c**4 * g1cd**4 -4*gd**2*g3c*g1c*g1cd*g3cd
         return mu, mu2, g1, g2
 burr = burr_gen(a=0.0, name='burr', longname="Burr",
-                shapes="c,d", extradoc="""
+                shapes="c, d", extradoc="""
 
 Burr distribution
 
@@ -1734,7 +1734,7 @@ class exponweib_gen(rv_continuous):
         return (-log1p(-q**(1.0/a)))**arr(1.0/c)
 exponweib = exponweib_gen(a=0.0,name='exponweib',
                           longname="An exponentiated Weibull",
-                          shapes="a,c",extradoc="""
+                          shapes="a, c",extradoc="""
 
 Exponentiated Weibull distribution
 
@@ -1855,7 +1855,7 @@ class f_gen(rv_continuous):
         g2 = 3/(2*v2-16)*(8+g1*g1*(v2-6))
         g2 = where(v2 > 8, g2, nan)
         return mu, mu2, g1, g2
-f = f_gen(a=0.0,name='f',longname='An F',shapes="dfn,dfd",
+f = f_gen(a=0.0,name='f',longname='An F',shapes="dfn, dfd",
           extradoc="""
 
 F distribution
@@ -2052,7 +2052,7 @@ class genexpon_gen(rv_continuous):
         return -expm1((-a-b)*x + b*(-expm1(-c*x))/c)
 genexpon = genexpon_gen(a=0.0,name='genexpon',
                         longname='A generalized exponential',
-                        shapes='a,b,c',extradoc="""
+                        shapes='a, b, c',extradoc="""
 
 Generalized exponential distribution (Ryu 1993)
 
@@ -2209,7 +2209,7 @@ class gengamma_gen(rv_continuous):
         return a*(1-val) + 1.0/c*val + special.gammaln(a)-log(abs(c))
 gengamma = gengamma_gen(a=0.0, name='gengamma',
                         longname='A generalized gamma',
-                        shapes="a,c", extradoc="""
+                        shapes="a, c", extradoc="""
 
 Generalized gamma distribution
 
@@ -2440,7 +2440,7 @@ class gausshyper_gen(rv_continuous):
         return fac*num / den
 gausshyper = gausshyper_gen(a=0.0, b=1.0, name='gausshyper',
                             longname="A Gauss hypergeometric",
-                            shapes="a,b,c,z",
+                            shapes="a, b, c, z",
                             extradoc="""
 
 Gauss hypergeometric distribution
@@ -2543,7 +2543,7 @@ class johnsonsb_gen(rv_continuous):
         return 1.0/(1+exp(-1.0/b*(norm.ppf(q)-a)))
 johnsonsb = johnsonsb_gen(a=0.0,b=1.0,name='johnsonb',
                           longname="A Johnson SB",
-                          shapes="a,b",extradoc="""
+                          shapes="a, b",extradoc="""
 
 Johnson SB distribution
 
@@ -2565,7 +2565,7 @@ class johnsonsu_gen(rv_continuous):
     def _ppf(self, q, a, b):
         return sinh((norm.ppf(q)-a)/b)
 johnsonsu = johnsonsu_gen(name='johnsonsu',longname="A Johnson SU",
-                          shapes="a,b", extradoc="""
+                          shapes="a, b", extradoc="""
 
 Johnson SU distribution
 
@@ -2867,7 +2867,7 @@ class mielke_gen(rv_continuous):
         qsk = pow(q,s*1.0/k)
         return pow(qsk/(1.0-qsk),1.0/s)
 mielke = mielke_gen(a=0.0, name='mielke', longname="A Mielke's Beta-Kappa",
-                    shapes="k,s", extradoc="""
+                    shapes="k, s", extradoc="""
 
 Mielke's Beta-Kappa distribution
 
@@ -2923,7 +2923,7 @@ class ncx2_gen(rv_continuous):
         return df + nc, 2*val, sqrt(8)*(val+nc)/val**1.5, \
                12.0*(val+2*nc)/val**2.0
 ncx2 = ncx2_gen(a=0.0, name='ncx2', longname="A non-central chi-squared",
-                shapes="df,nc", extradoc="""
+                shapes="df, nc", extradoc="""
 
 Non-central chi-squared distribution
 
@@ -2966,7 +2966,7 @@ class ncf_gen(rv_continuous):
                     ((dfd-2.0)**2.0 * (dfd-4.0)))
         return mu, mu2, None, None
 ncf = ncf_gen(a=0.0, name='ncf', longname="A non-central F distribution",
-              shapes="dfn,dfd,nc", extradoc="""
+              shapes="dfn, dfd, nc", extradoc="""
 
 Non-central F distribution
 
@@ -3071,7 +3071,7 @@ class nct_gen(rv_continuous):
             g2 = g2n / g2d
         return mu, mu2, g1, g2
 nct = nct_gen(name="nct", longname="A Noncentral T",
-              shapes="df,nc", extradoc="""
+              shapes="df, nc", extradoc="""
 
 Non-central Student T distribution
 
@@ -3193,7 +3193,7 @@ class powerlognorm_gen(rv_continuous):
         return exp(-s*norm.ppf(pow(1.0-q,1.0/c)))
 powerlognorm = powerlognorm_gen(a=0.0, name="powerlognorm",
                                 longname="A power log-normal",
-                                shapes="c,s", extradoc="""
+                                shapes="c, s", extradoc="""
 
 Power log-normal distribution
 
@@ -3294,7 +3294,7 @@ class reciprocal_gen(rv_continuous):
         return 0.5*log(a*b)+log(log(b/a))
 reciprocal = reciprocal_gen(name="reciprocal",
                             longname="A reciprocal",
-                            shapes="a,b", extradoc="""
+                            shapes="a, b", extradoc="""
 
 Reciprocal distribution
 
@@ -3467,7 +3467,7 @@ class truncnorm_gen(rv_continuous):
         mu2 = 1 + (a*pA - b*pB) / d - mu*mu
         return mu, mu2, None, None
 truncnorm = truncnorm_gen(name='truncnorm', longname="A truncated normal",
-                          shapes="a,b", extradoc="""
+                          shapes="a, b", extradoc="""
 
 Truncated Normal distribution.
 
@@ -4457,7 +4457,7 @@ class binom_gen(rv_discrete):
         vals = self._pmf(k,n,pr)
         lvals = where(vals==0,0.0,log(vals))
         return -sum(vals*lvals,axis=0)
-binom = binom_gen(name='binom',shapes="n,pr",extradoc="""
+binom = binom_gen(name='binom',shapes="n, pr",extradoc="""
 
 Binomial distribution
 
@@ -4530,7 +4530,7 @@ class nbinom_gen(rv_discrete):
         g2 = (1.0 + 6*P*Q) / (n*P*Q)
         return mu, var, g1, g2
 nbinom = nbinom_gen(name='nbinom', longname="A negative binomial",
-                    shapes="n,pr", extradoc="""
+                    shapes="n, pr", extradoc="""
 
 Negative binomial distribution
 
@@ -4618,7 +4618,7 @@ class hypergeom_gen(rv_discrete):
         lvals = where(vals==0.0,0.0,log(vals))
         return -sum(vals*lvals,axis=0)
 hypergeom = hypergeom_gen(name='hypergeom',longname="A hypergeometric",
-                          shapes="M,n,N", extradoc="""
+                          shapes="M, n, N", extradoc="""
 
 Hypergeometric distribution
 
@@ -4736,7 +4736,7 @@ class planck_gen(rv_discrete):
         C = (1-exp(-l))
         return l*exp(-l)/C - log(C)
 planck = planck_gen(name='planck',longname='A discrete exponential ',
-                    shapes="lambda_",
+                    shapes="lamda",
                     extradoc="""
 
 Planck (Discrete Exponential)
@@ -4773,7 +4773,7 @@ class boltzmann_gen(rv_discrete):
         return mu, var, g1, g2
 
 boltzmann = boltzmann_gen(name='boltzmann',longname='A truncated discrete exponential ',
-                    shapes="lambda_,N",
+                    shapes="lamda, N",
                     extradoc="""
 
 Boltzmann (Truncated Discrete Exponential)
@@ -4822,7 +4822,7 @@ class randint_gen(rv_discrete):
     def _entropy(self, min, max):
         return log(max-min)
 randint = randint_gen(name='randint',longname='A discrete uniform '\
-                      '(random integer)', shapes="min,max",
+                      '(random integer)', shapes="min, max",
                       extradoc="""
 
 Discrete Uniform
