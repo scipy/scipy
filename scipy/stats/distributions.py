@@ -4522,6 +4522,14 @@ Bernoulli distribution
 
 # Negative binomial
 class nbinom_gen(rv_discrete):
+    """A negative binomial discrete random variable.
+
+    %(before_pdf)s
+    pmf(x, n, pr, loc=0, scale=1)
+       Probability mass function, given by
+       ``np.choose(k+n-1, n-1) * p**n * (1-p)**k`` for ``k >= 0``.
+    %(after_pdf)s
+    """
     def _rvs(self, n, pr):
         return mtrand.negative_binomial(n, pr, self._size)
     def _argcheck(self, n, pr):
@@ -4549,15 +4557,8 @@ class nbinom_gen(rv_discrete):
         g1 = (Q+P)/sqrt(n*P*Q)
         g2 = (1.0 + 6*P*Q) / (n*P*Q)
         return mu, var, g1, g2
-nbinom = nbinom_gen(name='nbinom', longname="A negative binomial",
-                    shapes="n, pr", extradoc="""
+nbinom = nbinom_gen(name='nbinom', shapes="n, pr")
 
-Negative binomial distribution
-
-nbinom.pmf(k,n,p) = choose(k+n-1,n-1) * p**n * (1-p)**k
-for k >= 0.
-"""
-                    )
 
 ## Geometric distribution
 
