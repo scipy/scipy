@@ -579,6 +579,7 @@ class rv_continuous(rv_generic):
             badvalue = nan
         self.badvalue = badvalue
         self.name = name
+        self.shapes = shapes
         self.a = a
         self.b = b
         if a is None:
@@ -3587,6 +3588,14 @@ Von Mises distribution
 ## Wald distribution (Inverse Normal with shape parameter mu=1.0)
 
 class wald_gen(invnorm_gen):
+    """A Wald continuous random variable.
+
+    %(before_pdf)s
+    pdf(x, loc=0, scale=1)
+        The probability density function, defined by
+        ``1/sqrt(2*pi*x**3) * exp(-(x-1)**2/(2*x))``, for ``x > 0``.
+    %(after_pdf)s
+    """
     def _rvs(self):
         return invnorm_gen._rvs(self, 1.0)
     def _pdf(self, x):
@@ -3595,15 +3604,8 @@ class wald_gen(invnorm_gen):
         return invnorm.cdf(x,1,0)
     def _stats(self):
         return 1.0, 1.0, 3.0, 15.0
-wald = wald_gen(a=0.0, name="wald", longname="A Wald",
-                extradoc="""
+wald = wald_gen(a=0.0, name="wald")
 
-Wald distribution
-
-wald.pdf(x) = 1/sqrt(2*pi*x**3) * exp(-(x-1)**2/(2*x))
-for x > 0.
-"""
-                )
 
 ## Weibull
 ## See Frechet
