@@ -77,14 +77,15 @@ DMG_DIR = "dmg-source"
 if sys.platform == "win32":
     WINE_PY25 = [r"C:\Python25\python.exe"]
     WINE_PY26 = [r"C:\Python26\python26.exe"]
+    MAKENSIS = ["makensis"]
 elif sys.platform == "darwin":
-    WINE_PY25 = ["/Applications/Darwine/Wine.bundle/Contents/bin/wine",
-                 "/Users/david/.wine/drive_c/Python25/python.exe"]
-    WINE_PY26 = ["/Applications/Darwine/Wine.bundle/Contents/bin/wine",
-                 "/Users/david/.wine/drive_c/Python26/python.exe"]
+    WINE_PY25 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python25/python.exe"]
+    WINE_PY26 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python26/python.exe"]
+    MAKENSIS = ["wine", "makensis"]
 else:
-    WINE_PY25 = ["/home/david/.wine/drive_c/Python25/python.exe"]
-    WINE_PY26 = ["/home/david/.wine/drive_c/Python26/python.exe"]
+    WINE_PY25 = [os.environ['HOME'] + "/.wine/drive_c/Python25/python.exe"]
+    WINE_PY26 = [os.environ['HOME'] + "/.wine/drive_c/Python26/python.exe"]
+    MAKENSIS = ["wine", "makensis"]
 WINE_PYS = {'2.6' : WINE_PY26, '2.5': WINE_PY25}
 SUPERPACK_BUILD = 'build-superpack'
 SUPERPACK_BINDIR = os.path.join(SUPERPACK_BUILD, 'binaries')
@@ -123,11 +124,15 @@ INSTALLERS_DIR = os.path.join(RELEASE_DIR, 'installers')
 
 options(sphinx=Bunch(builddir="build", sourcedir="source", docroot='doc'),
         virtualenv=Bunch(script_name=BOOTSTRAP_SCRIPT,
-        packages_to_install=["sphinx==0.6.1"]),
-        wininst=Bunch(pyver="2.5", scratch=True))
+        packages_to_install=["sphinx==0.6.5"]),
+        wininst=Bunch(pyver=PYVER, scratch=True))
 
 def parse_numpy_version(pyexec):
-    cmd = [pyexec, "-c", '"import numpy; print numpy.version.version"']
+    if isinstance(pyexec, str):
+        cmd = [pyexec, "-c", "'import numpy; print numpy.version.version'"]
+    else:
+        # sequence for pyexec
+        cmd = pyexec + ["-c", "'import numpy; print numpy.version.version'"]
 
     # Execute in shell because launching python from python does not work
     # (hangs)
@@ -357,8 +362,8 @@ def bdist_wininst_sse3(options):
 def bdist_superpack(options):
     """Build all arch specific wininst installers."""
     prepare_nsis_script(options.wininst.pyver, FULLVERSION)
-    subprocess.check_call(['makensis', 'scipy-superinstaller.nsi'],
-            cwd=SUPERPACK_BUILD)
+    subprocess.check_call(MAKENSIS + ['scipy-superinstaller.nsi'],
+                          cwd=SUPERPACK_BUILD)
 
     # Copy the superpack into installers dir
     if not os.path.exists(INSTALLERS_DIR):
