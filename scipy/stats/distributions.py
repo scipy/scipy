@@ -582,7 +582,6 @@ class rv_continuous(rv_generic):
             badvalue = nan
         self.badvalue = badvalue
         self.name = name
-        self.shapes = shapes
         self.a = a
         self.b = b
         if a is None:
@@ -611,6 +610,8 @@ class rv_continuous(rv_generic):
         self.vecentropy = sgf(self._entropy,otypes='d')
         self.vecentropy.nin = self.numargs + 1
         self.veccdf = sgf(self._cdf_single_call,otypes='d')
+        self.veccdf.nin = self.numargs + 1
+        self.shapes = shapes
         self.extradoc = extradoc
         if momtype == 0:
             self.generic_moment = sgf(self._mom0_sc,otypes='d')
