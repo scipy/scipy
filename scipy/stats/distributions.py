@@ -74,6 +74,7 @@ import new
 
 docheaders = {'methods':"""\nMethods\n-------\n""",
               'parameters':"""\nParameters\n---------\n""",
+              'notes':"""\nNotes\n-----\n""",
               'examples':"""\nExamples\n--------\n"""}
 
 _doc_rvs = \
@@ -157,8 +158,7 @@ rv = %(name)s(%(shapes)s, loc=0, scale=1)
       location, and scale fixed.
 """
 _doc_default_example = \
-"""
-Examples
+"""Examples
 --------
 >>> import matplotlib.pyplot as plt
 >>> numargs = %(name)s.numargs
@@ -643,9 +643,11 @@ class rv_continuous(rv_generic):
 
     def _construct_default_doc(self, longname=None, extradoc=None):
         """Construct instance docstring from the default template."""
+        if extradoc.startswith('\n\n'):
+            extradoc = extradoc[2:]
         self.__doc__ = ''.join(['%s continuous random variable.'%longname,
-                                '\n\n%(default)s\n\n',
-                                extradoc])
+                                '\n\n%(before_notes)s\n', docheaders['notes'],
+                                extradoc, '\n%(example)s'])
         self._construct_doc()
 
     def _construct_doc(self):
@@ -3980,9 +3982,11 @@ class rv_discrete(rv_generic):
 
     def _construct_default_doc(self, longname=None, extradoc=None):
         """Construct instance docstring from the rv_discrete template."""
+        if extradoc.startswith('\n\n'):
+            extradoc = extradoc[2:]
         self.__doc__ = ''.join(['%s discrete random variable.'%longname,
-                                '\n\n%(default)s\n\n',
-                                extradoc])
+                                '\n\n%(before_notes)s\n', docheaders['notes'],
+                                extradoc, '\n%(example)s'])
         self._construct_doc()
 
     def _construct_doc(self):
