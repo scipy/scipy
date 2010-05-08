@@ -187,6 +187,8 @@ _doc_default_after_pdf = ''.join([_doc_cdf, _doc_sf, _doc_ppf, _doc_isf,
                                   _doc_default_callparams,
                                   _doc_default_frozen_note,
                                   _doc_default_example])
+_doc_methods_after_pdf = ''.join([_doc_cdf, _doc_sf, _doc_ppf, _doc_isf,
+                                  _doc_stats, _doc_entropy, _doc_fit])
 docdict = {'rvs':_doc_rvs,
            'pdf':_doc_pdf,
            'cdf':_doc_cdf,
@@ -203,7 +205,8 @@ docdict = {'rvs':_doc_rvs,
            'example':_doc_default_example,
            'default':_doc_default,
            'before_pdf':_doc_default_before_pdf,
-           'after_pdf':_doc_default_after_pdf}
+           'after_pdf':_doc_default_after_pdf,
+           'afterpdf_methods':_doc_methods_after_pdf}
 
 # Reuse common content between continous and discrete docs, change some minor
 # bits.
@@ -2829,10 +2832,32 @@ gilbrat.pdf(x) = 1/(x*sqrt(2*pi)) * exp(-1/2*(log(x))**2)
 
 
 # MAXWELL
-#  a special case of chi with df = 3, loc=0.0, and given scale = 1.0/sqrt(a)
-#    where a is the parameter used in mathworld description
 
 class maxwell_gen(rv_continuous):
+    """A Maxwell continuous random variable.
+
+    Methods
+    -------
+    %(rvs)s
+    pdf(x, loc=0, scale=1)
+        Probability density function. Given by
+        :math:`\sqrt(2/\pi)x^2 exp(-x^2/2)` for ``x > 0``.
+    %(afterpdf_methods)s
+    %(callparams)s
+    %(frozennote)s
+
+    Notes
+    -----
+    A special case of a `chi` distribution,  with ``df = 3``, ``loc = 0.0``,
+    and given ``scale = 1.0 / sqrt(a)``, where a is the parameter used in
+    the Mathworld description [1]_.
+
+    References
+    ----------
+    .. [1] http://mathworld.wolfram.com/MaxwellDistribution.html
+
+    %(example)s
+    """
     def _rvs(self):
         return chi.rvs(3.0,size=self._size)
     def _pdf(self, x):
@@ -2847,15 +2872,8 @@ class maxwell_gen(rv_continuous):
                (-12*pi*pi + 160*pi - 384) / val**2.0
     def _entropy(self):
         return _EULER + 0.5*log(2*pi)-0.5
-maxwell = maxwell_gen(a=0.0, name='maxwell', longname="A Maxwell",
-                      extradoc="""
+maxwell = maxwell_gen(a=0.0, name='maxwell')
 
-Maxwell distribution
-
-maxwell.pdf(x) = sqrt(2/pi) * x**2 * exp(-x**2/2)
-for x > 0.
-"""
-                      )
 
 # Mielke's Beta-Kappa
 
