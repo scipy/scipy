@@ -205,6 +205,32 @@ docdict = {'rvs':_doc_rvs,
            'before_pdf':_doc_default_before_pdf,
            'after_pdf':_doc_default_after_pdf}
 
+# Reuse common content between continous and discrete docs, change some minor
+# bits.
+docdict_discrete = docdict.copy()
+docdict_discrete['longsummary'] = _doc_default_longsummary.replace(\
+                                      'Continuous', 'Discrete')
+docdict_discrete['frozennote'] = _doc_default_frozen_note.replace('continuous',
+                                                                  'discrete')
+docdict_discrete['example'] = _doc_default_example.replace('[0.9,]',
+                                  'Replace with reasonable value')
+
+_doc_default_disc = ''.join([docdict_discrete['longsummary'],
+                             docdict_discrete['allmethods'],
+                             docdict_discrete['frozennote'],
+                             docdict_discrete['example']])
+docdict_discrete['default'] = _doc_default_disc
+
+_doc_default_before_pdf = ''.join([docdict_discrete['longsummary'],
+                                   docheaders['methods'], _doc_rvs])
+docdict_discrete['before_pdf'] = _doc_default_before_pdf
+_doc_default_after_pdf = ''.join([_doc_cdf, _doc_sf, _doc_ppf, _doc_isf,
+                                  _doc_stats, _doc_entropy, _doc_fit,
+                                  docdict_discrete['frozennote'],
+                                  docdict_discrete['example']])
+docdict_discrete['after_pdf'] = _doc_default_after_pdf
+
+
 # clean up all the separate docstring elements, we do not need them anymore
 for obj in [s for s in dir() if s.startswith('_doc_')]:
     exec('del ' + obj)
@@ -581,8 +607,6 @@ class rv_continuous(rv_generic):
         self.vecentropy = sgf(self._entropy,otypes='d')
         self.vecentropy.nin = self.numargs + 1
         self.veccdf = sgf(self._cdf_single_call,otypes='d')
-        self.veccdf.nin = self.numargs+1
-        self.shapes = shapes
         self.extradoc = extradoc
         if momtype == 0:
             self.generic_moment = sgf(self._mom0_sc,otypes='d')
@@ -3786,80 +3810,55 @@ def make_dict(keys, values):
 #  x_k, p(x_k) lists in initialization
 
 class rv_discrete(rv_generic):
-    """
-    A Generic discrete random variable.
+    """A generic discrete random variable class meant for subclassing.
 
-    Discrete random variables are defined from a standard form and may require
-    some shape parameters to complete its specification. Any optional keyword
-    parameters can be passed to the methods of the RV object as given below:
+    `rv_discrete` is a base class to construct specific distribution classes
+    and instances from for discrete random variables.
+
+    Parameters
+    ----------
+    momtype :
+    a :
+    b :
+    xa :
+    xb :
+    xtol : float, optional
+        The tolerance ....
+    badvalue : object, optional
+        The value in (masked) arrays that indicates a value that should be
+        ignored.
+    name : str, optional
+        The name of the instance. This string is used to construct the default
+        example for distributions.
+    longname : str, optional
+        This string is used as part of the first line of the docstring returned
+        when a subclass has no docstring of its own. Note: `longname` exists
+        for backwards compatibility, do not use for new subclasses.
+    shapes : str, optional
+        The shape of the distribution. For example ``"m, n"`` for a
+        distribution that takes two integers as the first two arguments for all
+        its methods.
+    extradoc :  str, optional
+        This string is used as the last part of the docstring returned when a
+        subclass has no docstring of its own. Note: `extradoc` exists for
+        backwards compatibility, do not use for new subclasses.
 
     Methods
     -------
-    generic.rvs(<shape(s)>,loc=0,size=1)
-        - random variates
-
-    generic.pmf(x,<shape(s)>,loc=0)
-        - probability mass function
-
-    generic.cdf(x,<shape(s)>,loc=0)
-        - cumulative density function
-
-    generic.sf(x,<shape(s)>,loc=0)
-        - survival function (1-cdf --- sometimes more accurate)
-
-    generic.ppf(q,<shape(s)>,loc=0)
-        - percent point function (inverse of cdf --- percentiles)
-
-    generic.isf(q,<shape(s)>,loc=0)
-        - inverse survival function (inverse of sf)
-
-    generic.stats(<shape(s)>,loc=0,moments='mv')
-        - mean('m',axis=0), variance('v'), skew('s'), and/or kurtosis('k')
-
-    generic.entropy(<shape(s)>,loc=0)
-        - entropy of the RV
-
-    Alternatively, the object may be called (as a function) to fix
-    the shape and location parameters returning a
-    "frozen" discrete RV object:
-
-    myrv = generic(<shape(s)>,loc=0)
-        - frozen RV object with the same methods but holding the given shape and location fixed.
-
-    You can construct an aribtrary discrete rv where P{X=xk} = pk
-    by passing to the rv_discrete initialization method (through the values=
-    keyword) a tuple of sequences (xk,pk) which describes only those values of
-    X (xk) that occur with nonzero probability (pk).
+    ...
 
     Examples
     --------
+    To create a new Gaussian distribution, we would do the following::
 
-    >>> import matplotlib.pyplot as plt
-    >>> numargs = generic.numargs
-    >>> [ <shape(s)> ] = ['Replace with resonable value',]*numargs
-
-    Display frozen pmf:
-
-    >>> rv = generic(<shape(s)>)
-    >>> x = np.arange(0,np.min(rv.dist.b,3)+1)
-    >>> h = plt.plot(x,rv.pmf(x))
-
-    Check accuracy of cdf and ppf:
-
-    >>> prb = generic.cdf(x,<shape(s)>)
-    >>> h = plt.semilogy(np.abs(x-generic.ppf(prb,<shape(s)>))+1e-20)
-
-    Random number generation:
-
-    >>> R = generic.rvs(<shape(s)>,size=100)
-
-    Custom made discrete distribution:
-
-    >>> vals = [arange(7),(0.1,0.2,0.3,0.1,0.1,0.1,0.1)]
-    >>> custm = rv_discrete(name='custm',values=vals)
-    >>> h = plt.plot(vals[0],custm.pmf(vals[0]))
+        class gaussian_gen(rv_continuous):
+            "Gaussian distribution"
+            def _pdf:
+                ...
+            ...
 
     """
+
     def __init__(self, a=0, b=inf, name=None, badvalue=None,
                  moment_tol=1e-8,values=None,inc=1,longname=None,
                  shapes=None, extradoc=None):
@@ -3926,30 +3925,37 @@ class rv_discrete(rv_generic):
             self._vecppf = new.instancemethod(_vppf,
                                               self, rv_discrete)
 
-
-
         #now that self.numargs is defined, we can adjust nin
         self._cdfvec.nin = self.numargs + 1
 
-        if longname is None:
-            if name[0] in ['aeiouAEIOU']: hstr = "An "
-            else: hstr = "A "
-            longname = hstr + name
+        # generate docstring for subclass instances
         if self.__doc__ is None:
-            self.__doc__ = rv_discrete.__doc__
-        if self.__doc__ is not None:
-            self.__doc__ = textwrap.dedent(self.__doc__)
-            self.__doc__ = self.__doc__.replace("A Generic",longname)
-            if name is not None:
-                self.__doc__ = self.__doc__.replace("generic",name)
-            if shapes is None:
-                self.__doc__ = self.__doc__.replace("<shape(s)>,","")
-            else:
-                self.__doc__ = self.__doc__.replace("<shape(s)>",shapes)
-            ind = self.__doc__.find("You can construct an arbitrary")
-            self.__doc__ = self.__doc__[:ind].strip()
-            if extradoc is not None:
-                self.__doc__ += textwrap.dedent(extradoc)
+            self._construct_default_doc(longname=longname, extradoc=extradoc)
+        else:
+            self._construct_doc()
+
+        ## This only works for old-style classes...
+        # self.__class__.__doc__ = self.__doc__
+
+    def _construct_default_doc(self, longname=None, extradoc=None):
+        """Construct instance docstring from the rv_discrete template."""
+        self.__doc__ = ''.join(['%s discrete random variable.'%longname,
+                                '\n\n%(default)s\n\n',
+                                extradoc])
+        self._construct_doc()
+
+    def _construct_doc(self):
+        """Construct the instance docstring with string substitutions."""
+        tempdict = docdict_discrete.copy()
+        tempdict['name'] = self.name or 'distname'
+        tempdict['shapes'] = self.shapes or ''
+
+        for i in range(2):
+            if self.shapes is None:
+                # necessary because we use %(shapes)s in two forms (w w/o ", ")
+                self.__doc__ = self.__doc__.replace("%(shapes)s, ", "")
+            self.__doc__ = doccer.docformat(self.__doc__, tempdict)
+
 
     def _rvs(self, *args):
         return self._ppf(mtrand.random_sample(self._size),*args)
