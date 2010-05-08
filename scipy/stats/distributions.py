@@ -184,15 +184,10 @@ _doc_default = ''.join([_doc_default_longsummary, _doc_allmethods,
                         _doc_default_callparams, _doc_default_frozen_note,
                         _doc_default_example])
 
-_doc_default_before_pdf = ''.join([_doc_default_longsummary,
-                                   docheaders['methods'], _doc_rvs])
-_doc_default_after_pdf = ''.join([_doc_cdf, _doc_sf, _doc_ppf, _doc_isf,
-                                  _doc_stats, _doc_entropy, _doc_fit,
-                                  _doc_default_callparams,
-                                  _doc_default_frozen_note,
-                                  _doc_default_example])
-_doc_methods_after_pdf = ''.join([_doc_cdf, _doc_sf, _doc_ppf, _doc_isf,
-                                  _doc_stats, _doc_entropy, _doc_fit])
+_doc_default_before_notes = ''.join([_doc_default_longsummary, _doc_allmethods,
+                                     _doc_default_callparams,
+                                     _doc_default_frozen_note])
+
 docdict = {'rvs':_doc_rvs,
            'pdf':_doc_pdf,
            'cdf':_doc_cdf,
@@ -208,9 +203,7 @@ docdict = {'rvs':_doc_rvs,
            'frozennote':_doc_default_frozen_note,
            'example':_doc_default_example,
            'default':_doc_default,
-           'before_pdf':_doc_default_before_pdf,
-           'after_pdf':_doc_default_after_pdf,
-           'afterpdf_methods':_doc_methods_after_pdf}
+           'before_notes':_doc_default_before_notes}
 
 # Reuse common content between continous and discrete docs, change some minor
 # bits.
@@ -248,21 +241,11 @@ _doc_default_disc = ''.join([docdict_discrete['longsummary'],
                              docdict_discrete['example']])
 docdict_discrete['default'] = _doc_default_disc
 
-_doc_default_before_pdf = ''.join([docdict_discrete['longsummary'],
-                                   docheaders['methods'], _doc_rvs])
-docdict_discrete['before_pdf'] = _doc_default_before_pdf
-_doc_default_after_pdf = ''.join([_doc_cdf, _doc_sf, _doc_ppf, _doc_isf,
-                                  _doc_stats, _doc_entropy, _doc_fit,
-                                  docdict_discrete['frozennote'],
-                                  docdict_discrete['example']])
-docdict_discrete['after_pdf'] = _doc_default_after_pdf
-
 
 # clean up all the separate docstring elements, we do not need them anymore
 for obj in [s for s in dir() if s.startswith('_doc_')]:
     exec('del ' + obj)
 del s, obj
-
 
 
 def _build_random_array(fun, args, size=None):
@@ -2861,21 +2844,16 @@ gilbrat.pdf(x) = 1/(x*sqrt(2*pi)) * exp(-1/2*(log(x))**2)
 class maxwell_gen(rv_continuous):
     """A Maxwell continuous random variable.
 
-    Methods
-    -------
-    %(rvs)s
-    pdf(x, loc=0, scale=1)
-        Probability density function. Given by
-        :math:`\sqrt(2/\pi)x^2 exp(-x^2/2)` for ``x > 0``.
-    %(afterpdf_methods)s
-    %(callparams)s
-    %(frozennote)s
+    %(before_notes)s
 
     Notes
     -----
     A special case of a `chi` distribution,  with ``df = 3``, ``loc = 0.0``,
     and given ``scale = 1.0 / sqrt(a)``, where a is the parameter used in
     the Mathworld description [1]_.
+
+    Probability density function. Given by :math:`\sqrt(2/\pi)x^2 exp(-x^2/2)`
+    for ``x > 0``.
 
     References
     ----------
@@ -3633,11 +3611,14 @@ Von Mises distribution
 class wald_gen(invnorm_gen):
     """A Wald continuous random variable.
 
-    %(before_pdf)s
-    pdf(x, loc=0, scale=1)
-        The probability density function, defined by
-        ``1/sqrt(2*pi*x**3) * exp(-(x-1)**2/(2*x))``, for ``x > 0``.
-    %(after_pdf)s
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function, `pdf`, is defined by
+    ``1/sqrt(2*pi*x**3) * exp(-(x-1)**2/(2*x))``, for ``x > 0``.
+
+    %(example)s
     """
     def _rvs(self):
         return invnorm_gen._rvs(self, 1.0)
@@ -4549,11 +4530,14 @@ Bernoulli distribution
 class nbinom_gen(rv_discrete):
     """A negative binomial discrete random variable.
 
-    %(before_pdf)s
-    pmf(x, n, pr, loc=0, scale=1)
-       Probability mass function, given by
-       ``np.choose(k+n-1, n-1) * p**n * (1-p)**k`` for ``k >= 0``.
-    %(after_pdf)s
+    %(before_notes)s
+
+    Notes
+    -----
+    Probability mass function, given by
+    ``np.choose(k+n-1, n-1) * p**n * (1-p)**k`` for ``k >= 0``.
+
+    %(example)s
     """
     def _rvs(self, n, pr):
         return mtrand.negative_binomial(n, pr, self._size)
