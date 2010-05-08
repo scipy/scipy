@@ -52,10 +52,13 @@ def docformat(docstring, docdict=None):
     indented = {}
     for name, dstr in docdict.items():
         lines = dstr.expandtabs().splitlines()
-        newlines = [lines[0]]
-        for line in lines[1:]:
-            newlines.append(indent+line)
-        indented[name] = '\n'.join(newlines)
+        try:
+            newlines = [lines[0]]
+            for line in lines[1:]:
+                newlines.append(indent+line)
+            indented[name] = '\n'.join(newlines)
+        except IndexError:
+            indented[name] = dstr
     return docstring % indented
 
 
