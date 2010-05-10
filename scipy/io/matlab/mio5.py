@@ -350,8 +350,13 @@ class MatFile5Reader(MatFileReader):
         mdtype, byte_count = self._file_reader.read_full_tag()
         assert byte_count > 0
         next_pos = self.mat_stream.tell() + byte_count
-        if mdtype == miCOMPRESSED: # make new stream from compressed data
-            stream = StringIO(zlib.decompress(self.mat_stream.read(byte_count)))
+        if mdtype == miCOMPRESSED:
+            # make new stream from compressed data
+            data = self.mat_stream.read(byte_count)
+            # use decompressobj to work round puzzling zlib.decompress
+            # failure: http://bugs.python.org/issue8672
+            stream = StringIO(zlib.decompressobj().decompress(data))
+            del data
             self._matrix_reader.set_stream(stream)
             mdtype, byte_count = self._matrix_reader.read_full_tag()
         else:
