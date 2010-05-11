@@ -353,9 +353,15 @@ class MatFile5Reader(MatFileReader):
         if mdtype == miCOMPRESSED:
             # make new stream from compressed data
             data = self.mat_stream.read(byte_count)
-            # use decompressobj to work round puzzling zlib.decompress
-            # failure: http://bugs.python.org/issue8672
-            stream = StringIO(zlib.decompressobj().decompress(data))
+            # Some matlab files contain zlib streams without valid
+            # Z_STREAM_END termination.  To get round this, we use the
+            # decompressobj object, that allows you to decode an
+            # incomplete stream.  See discussion at
+            # http://bugs.python.org/issue8672
+            dcor = zlib.decompressobj()
+            stream = StringIO(dcor.decompress(data))
+            # Check the stream is not so broken as to leave cruft behind
+            assert dcor.flush() == ''
             del data
             self._matrix_reader.set_stream(stream)
             mdtype, byte_count = self._matrix_reader.read_full_tag()
