@@ -25,7 +25,7 @@ from numpy import flatnonzero as nonzero
 from scipy.special import gammaln as gamln
 from copy import copy
 import vonmises_cython
-import textwrap
+
 
 __all__ = [
            'rv_continuous',
