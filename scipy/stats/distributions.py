@@ -121,6 +121,8 @@ _doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
                            _doc_cdf, _doc_sf, _doc_ppf, _doc_isf,
                            _doc_stats, _doc_entropy, _doc_fit])
 
+# Note that the two lines for %(shapes) are searched for and replaced in
+# rv_continuous and rv_discrete - update there if the exact string changes
 _doc_default_callparams = \
 """
 Parameters
@@ -660,6 +662,11 @@ class rv_continuous(rv_generic):
         tempdict['name'] = self.name or 'distname'
         tempdict['shapes'] = self.shapes or ''
 
+        if self.shapes is None:
+            # remove shapes from call parameters if there are none
+            for item in ['callparams', 'default', 'before_notes']:
+                tempdict[item] = tempdict[item].replace(\
+                        "\n%(shapes)s : array-like\n    shape parameters", "")
         for i in range(2):
             if self.shapes is None:
                 # necessary because we use %(shapes)s in two forms (w w/o ", ")
@@ -3999,6 +4006,11 @@ class rv_discrete(rv_generic):
         tempdict['name'] = self.name or 'distname'
         tempdict['shapes'] = self.shapes or ''
 
+        if self.shapes is None:
+            # remove shapes from call parameters if there are none
+            for item in ['callparams', 'default', 'before_notes']:
+                tempdict[item] = tempdict[item].replace(\
+                        "\n%(shapes)s : array-like\n    shape parameters", "")
         for i in range(2):
             if self.shapes is None:
                 # necessary because we use %(shapes)s in two forms (w w/o ", ")
