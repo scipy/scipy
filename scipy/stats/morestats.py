@@ -18,7 +18,7 @@ import futil
 from numpy.testing.decorators import setastest
 import warnings
 
-__all__ = ['find_repeats',
+__all__ = ['find_repeats', 'describe',
            'bayes_mvs', 'kstat', 'kstatvar', 'probplot', 'ppcc_max', 'ppcc_plot',
            'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
            'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
@@ -100,7 +100,7 @@ def bayes_mvs(data,alpha=0.90):
         return _gauss_mvs(x, n, alpha)
     xbar = x.mean()
     C = x.var()
-    # mean
+    # mean 
     fac = sqrt(C/(n-1))
     tval = distributions.t.ppf((1+alpha)/2.0,n-1)
     delta = fac*tval
@@ -136,6 +136,40 @@ def bayes_mvs(data,alpha=0.90):
 
     return (mp,(ma,mb)),(vp,(va,vb)),(stp,(sta,stb))
 
+def describe(data):
+    """Describe data with distributions for mean, variance, and standard deviation
+    
+    Parameters
+    ----------
+    data : array-like (raveled to 1-d)
+    
+    Returns
+    -------
+    mdist : "frozen" distribution object
+        Distribution object representing the mean of the data
+    vdist : "frozen" distribution object
+        Distribution object representing the variance of the data
+    sdist : "frozen" distribution object
+        Distribution object representing the standard deviation of the data
+    """
+    x = ravel(data)
+    n = len(x)
+    if (n < 2):
+        raise ValueError, "Need at least 2 data-points."
+    xbar = x.mean()
+    C = x.var()
+    if (n > 1000): # gaussian approximations for large n
+        mdist = distributions.norm(loc=xbar, scale=math.sqrt(C/n))
+        sdist = distributions.norm(loc=math.sqrt(C), scale=math.sqrt(C/(2.*n)))
+        vdist = distributions.norm(loc=C, scale=math.sqrt(2.0/n)*C)
+    else:
+        nm1 = n-1
+        fac = n*C/2.
+        val = nm1/2.
+        mdist = distributions.t(nm1,loc=xbar,scale=math.sqrt(C/nm1))
+        sdist = distributions.gengamma(val,-2,scale=math.sqrt(fac))
+        vdist = distributions.invgamma(val,scale=fac)
+    return mdist, vdist, sdist
 
 
 ################################

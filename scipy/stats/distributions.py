@@ -58,12 +58,9 @@ arr = asarray
 gam = special.gamma
 lgam = special.gammaln
 
-
 import types
 import stats as st
-
 from scipy.misc import doccer
-
 all = alltrue
 sgf = vectorize
 import new
@@ -319,12 +316,22 @@ class rv_frozen(object):
         kwds = self.kwds
         kwds.update({'moments':moments})
         return self.dist.stats(*self.args,**kwds)
+    def median(self):
+        return self.dist.median(*self.args, **self.kwds)
+    def mean(self):
+        return self.dist.mean(*self.args,**self.kwds)
+    def var(self):
+        return self.dist.var(*self.args, **self.kwds)
+    def std(self):
+        return self.dist.std(*self.args, **self.kwds)
     def moment(self,n):
         return self.dist.moment(n,*self.args,**self.kwds)
     def entropy(self):
         return self.dist.entropy(*self.args,**self.kwds)
     def pmf(self,k):
         return self.dist.pmf(k,*self.args,**self.kwds)
+    def interval(self,alpha):
+        return self.dist.interval(alpha, *self.args, **self.kwds)
 
 
 
@@ -535,6 +542,57 @@ class rv_generic(object):
 
         return vals
 
+    def median(self, *args, **kwds):
+        return self.ppf(0.5, *args, **kwds)
+
+    def mean(self, *args, **kwds):
+        kwds['moments'] = 'm'
+        res = self.stats(*args, **kwds)
+        if isinstance(res, ndarray) and res.ndim == 0:
+            return res[()]
+
+    def var(self, *args, **kwds):
+        kwds['moments'] = 'v'
+        res = self.stats(*args, **kwds)
+        if isinstance(res, ndarray) and res.ndim == 0:
+            return res[()]
+        else:
+            return res
+
+    def std(self, *args, **kwds):
+        kwds['moments'] = 'v'
+        res = sqrt(self.stats(*args, **kwds))
+        return res
+
+    def interval(self, alpha, *args, **kwds):
+        """Confidence interval centered on the median
+
+        Parameters
+        ----------
+        alpha : array-like float in [0,1]
+            Probability that an rv will be drawn from the returned range
+        arg1, arg2, ... : array-like
+            The shape parameter(s) for the distribution (see docstring of the instance
+            object for more information)
+        loc: array-like, optioal
+            location parameter (deafult = 0)
+        scale : array-like, optional
+            scale paramter (default = 1)
+
+        Returns
+        -------
+        a, b: array-like (float)
+            end-points of range that contain alpha % of the rvs            
+        """
+        alpha = asarray(alpha)
+        if any((alpha > 1) | (alpha < 0)):
+            raise ValueError, "alpha must be between 0 and 1 inclusive"
+        q1 = (1.0-alpha)/2
+        q2 = (1.0+alpha)/2
+        a = self.ppf(q1, *args, **kwds)
+        b = self.ppf(q2, *args, **kwds)
+        return a, b
+
 
 class rv_continuous(rv_generic):
     """A generic continuous random variable class meant for subclassing.
@@ -573,6 +631,70 @@ class rv_continuous(rv_generic):
     Methods
     -------
     ...
+
+    generic.pdf(x,<shape(s)>,loc=0,scale=1)
+        - probability density function
+
+    generic.cdf(x,<shape(s)>,loc=0,scale=1)
+        - cumulative density function
+
+    generic.sf(x,<shape(s)>,loc=0,scale=1)
+        - survival function (1-cdf --- sometimes more accurate)
+
+    generic.ppf(q,<shape(s)>,loc=0,scale=1)
+        - percent point function (inverse of cdf --- percentiles)
+
+    generic.median(<shape(s)>,loc=0,scale=1)
+        - median of the distribution
+
+    generic.isf(q,<shape(s)>,loc=0,scale=1)
+        - inverse survival function (inverse of sf)
+
+    generic.stats(<shape(s)>,loc=0,scale=1,moments='mv')
+        - mean('m'), variance('v'), skew('s'), and/or kurtosis('k')
+
+    generic.mean(<shape(s)>,loc=0,scale=1)
+        - mean of the distribution
+
+    generic.var(<shape(s)>,loc=0,scale=1)
+        - variance of the distribution
+
+    generic.std(<shape(s)>,loc=0,scale=1)
+        - standard deviation of the distribution
+
+    generic.entropy(<shape(s)>,loc=0,scale=1)
+        - (differential) entropy of the RV.
+
+    generic.fit(data,<shape(s)>,loc=0,scale=1)
+        - Parameter estimates for generic data
+
+    generic.interval(alpha, <shape(s)>,loc=0,scale=1)
+        - Return an alpha confidence interval centered on the median
+
+    Alternatively, the object may be called (as a function) to fix the shape,
+    location, and scale parameters returning a "frozen" continuous RV object:
+
+    rv = generic(<shape(s)>,loc=0,scale=1)
+        - frozen RV object with the same methods but holding the given shape, location, and scale fixed
+
+    Parameters
+    ----------
+    x : array-like
+        quantiles
+    q : array-like
+        lower or upper tail probability
+    <shape(s)> : array-like
+        shape parameters
+    loc : array-like, optional
+        location parameter (default=0)
+    scale : array-like, optional
+        scale parameter (default=1)
+    size : int or tuple of ints, optional
+        shape of random variates (default computed from input arguments )
+    moments : string, optional
+        composed of letters ['mvsk'] specifying which moments to compute where
+        'm' = mean, 'v' = variance, 's' = (Fisher's) skew and
+        'k' = (Fisher's) kurtosis. (default='mv')
 
     Examples
     --------
@@ -1209,6 +1331,7 @@ class rv_continuous(rv_generic):
         else:
             place(output,cond0,self.vecentropy(*goodargs)+log(scale))
         return output
+    
 
 _EULER = 0.577215664901532860606512090082402431042  # -special.psi(1)
 _ZETA3 = 1.202056903159594285399738161511449990765  # special.zeta(3,1)  Apery's constant
@@ -4208,6 +4331,8 @@ class rv_discrete(rv_generic):
             instance object for more information)
         loc : array-like, optional
             location parameter (default=0)
+        scale: array-like, optional
+            scale parameter (default=1)
 
         Returns
         -------
