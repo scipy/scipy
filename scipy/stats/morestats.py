@@ -18,7 +18,7 @@ import futil
 from numpy.testing.decorators import setastest
 import warnings
 
-__all__ = ['find_repeats', 'describe',
+__all__ = ['find_repeats', 'mvsdist',
            'bayes_mvs', 'kstat', 'kstatvar', 'probplot', 'ppcc_max', 'ppcc_plot',
            'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
            'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
@@ -136,8 +136,8 @@ def bayes_mvs(data,alpha=0.90):
 
     return (mp,(ma,mb)),(vp,(va,vb)),(stp,(sta,stb))
 
-def describe(data):
-    """Describe data with distributions for mean, variance, and standard deviation
+def mvsdist(data):
+    """Return 'frozen' distributions for mean, variance, and standard deviation of data.
     
     Parameters
     ----------
