@@ -52,6 +52,7 @@ Filtering
    hilbert
    get_window
 
+   decimate
    detrend
    resample
 
@@ -105,8 +106,8 @@ Linear Systems
    step
    step2
 
-LTI Reresentations
-==================
+LTI Representations
+===================
 
 .. autosummary::
    :toctree: generated/
@@ -161,6 +162,7 @@ Wavelets
 .. autosummary::
    :toctree: generated/
 
-   daub
-   qmf
    cascade
+   daub
+   morlet
+   qmf
