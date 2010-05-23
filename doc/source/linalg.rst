@@ -84,6 +84,7 @@ Special Matrices
 
    block_diag
    circulant
+   companion
    hadamard
    hankel
    kron

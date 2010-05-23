@@ -4,7 +4,7 @@ from numpy import arange, add, array, eye, all, copy
 from numpy.testing import *
 
 from scipy.linalg import toeplitz, hankel, circulant, hadamard, leslie, \
-                            tri, triu, tril, kron, block_diag
+                            companion, tri, triu, tril, kron, block_diag
 
 
 def get_mat(n):
@@ -188,6 +188,28 @@ class TestLeslie(TestCase):
             [0.25, 0.0, 0.0],
             [0.0,  0.5, 0.0]])
         assert_array_equal(a, expected)
+
+
+class TestCompanion(TestCase):
+
+    def test_bad_shapes(self):
+        assert_raises(ValueError, companion, [[1,1],[2,2]])        
+        assert_raises(ValueError, companion, [0,4,5])
+        assert_raises(ValueError, companion, [1])
+        assert_raises(ValueError, companion, [])
+
+    def test_basic(self):
+        c = companion([1, 2, 3])
+        expected = array([
+            [-2.0, -3.0],
+            [ 1.0,  0.0]])
+        assert_array_equal(c, expected)
+
+        c = companion([2.0, 5.0, -10.0])
+        expected = array([
+            [-2.5, 5.0],
+            [ 1.0, 0.0]])
+        assert_array_equal(c, expected)
 
 
 class TestBlockDiag:

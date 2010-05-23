@@ -479,3 +479,52 @@ def block_diag(*arrs):
         r += rr
         c += cc
     return out
+
+def companion(a):
+    """Create a companion matrix.
+
+    Create the companion matrix associated with the polynomial whose
+    coefficients are given in `a`.
+
+    Parameters
+    ----------
+    a : array-like, 1D
+        Polynomial coefficients.  The length of `a` must be at least two,
+        and `a[0]` must not be zero.
+
+    Returns
+    -------
+    c : ndarray
+        A square ndarray with shape `(n-1, n-1)`, where `n` is the length
+        of `a`. The first row of `c` is `-a[1:]/a[0]`, and the first
+        subdiagonal is all ones.  The data type of the array is the same
+        as the data type of `a[1]/(1.0*a[0])`.
+
+    Notes
+    -----
+    .. versionadded:: 0.8.0
+    
+    Examples
+    --------
+    >>> companion([1, -10, 31, -30]) 
+    array([[ 10., -31.,  30.],
+           [  1.,   0.,   0.],
+           [  0.,   1.,   0.]])
+    """
+    a = np.atleast_1d(a)
+
+    if a.ndim != 1:
+        raise ValueError("Incorrect shape for `a`.  `a` must be one-dimensional.")
+
+    if a.size < 2:
+        raise ValueError("The length of `a` must be at least 2.")
+
+    if a[0] == 0:
+        raise ValueError("The first coefficient in `a` must not be zero.")
+
+    first_row = -a[1:]/(1.0*a[0])
+    n = a.size
+    c = np.zeros((n-1, n-1), dtype=first_row.dtype)
+    c[0] = first_row
+    c[range(1,n-1), range(0, n-2)] = 1
+    return c

@@ -111,6 +111,8 @@ Special Matrices:
         Construct a block diagonal matrix from submatrices.
     circulant:
         Circulant matrix
+    companion:
+        Companion matrix
     hadamard:
         Hadamard matrix of order 2^n
     hankel:

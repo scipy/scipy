@@ -108,8 +108,8 @@ A new function, `sweep_poly`, was added.
 
 New functions and other changes in scipy.linalg
 -----------------------------------------------
-The functions `cho_solve_banded`, `circulant`, `hadamard` and `leslie` 
-were added to `scipy.linalg`.
+The functions `cho_solve_banded`, `circulant`, `companion`, `hadamard` and
+`leslie` were added to `scipy.linalg`.
 
 The function `block_diag` was enhanced to accept scalar and 1D arguments,
 along with the usual 2D arguments.
