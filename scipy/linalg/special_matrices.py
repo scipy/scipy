@@ -340,6 +340,10 @@ def leslie(f, s):
         which is `f`, and the first subdiagonal, which is `s`.
         The data type of the array will be the data type of `f[0]+s[0]`.
 
+    Notes
+    -----
+    .. versionadded:: 0.8.0
+
     Examples
     --------
     >>> leslie([0.1, 2.0, 1.0, 0.1], [0.2, 0.8, 0.7])
