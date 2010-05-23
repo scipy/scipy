@@ -51,6 +51,8 @@ Signal Processing Tools
         4th-order IIR filter (cascade of second-order systems).
     lfilter:
         1-dimensional FIR and IIR digital linear filtering.
+    lfiltic:
+        Construct initial conditions for `lfilter`.
     deconvolve:
         1-d deconvolution using lfilter.
     hilbert:
@@ -196,6 +198,8 @@ Signal Processing Tools
         return quadrature mirror filter from low-pass
     cascade:
         compute scaling function and wavelet from coefficients
+    morlet:
+        Complex Morlet wavelet.
 """
 
 postpone_import = 1
