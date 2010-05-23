@@ -498,7 +498,7 @@ def companion(a):
         A square ndarray with shape `(n-1, n-1)`, where `n` is the length
         of `a`. The first row of `c` is `-a[1:]/a[0]`, and the first
         subdiagonal is all ones.  The data type of the array is the same
-        as the data type of `a[1]/(1.0*a[0])`.
+        as the data type of `1.0*a[0]`.
 
     Notes
     -----
