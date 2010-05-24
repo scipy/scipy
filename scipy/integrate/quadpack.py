@@ -9,6 +9,20 @@ from numpy import inf, Inf
 error = _quadpack.error
 
 def quad_explain(output=sys.stdout):
+    """
+    Print extra information about integrate.quad() parameters and returns.
+
+    Parameters
+    ----------
+    output : instance with "write" method
+        Information about `quad` is passed to ``output.write()``.
+        Default is ``sys.stdout``.
+
+    Returns
+    -------
+    None
+
+    """
     output.write("""
 Extra information for quad() inputs and outputs:
 
@@ -119,86 +133,95 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
          limit=50, points=None, weight=None, wvar=None, wopts=None, maxp1=50,
          limlst=50):
     """
-    quad(func, a, b, args=(), full_output=0, epsabs=1.4899999999999999e-08, epsrel=1.4899999999999999e-08, limit=50, points=None, weight=None, wvar=None, wopts=None, maxp1=50, limlst=50)
-
     Compute a definite integral.
 
     Integrate func from a to b (possibly infinite interval) using a technique
     from the Fortran library QUADPACK.
 
+    If func takes many arguments, it is integrated along the axis corresponding
+    to the first argument. Use the keyword argument `args` to pass the other
+    arguments.
+
     Run scipy.integrate.quad_explain() for more information on the
     more esoteric inputs and outputs.
 
     Parameters
-    -----------
-      func : function
-           a Python function or method to integrate.
-      a : float
-           lower limit of integration (use -scipy.integrate.Inf for -infinity).
-      b : float
-           upper limit of integration (use scipy.integrate.Inf for +infinity).
-      full_output :
-           non-zero to return a dictionary of integration information.
-           If non-zero, warning messages are also suppressed and the
-           message is appended to the output tuple.
+    ----------
+
+    func : function
+        A Python function or method to integrate.
+    a : float
+        Lower limit of integration (use -scipy.integrate.Inf for -infinity).
+    b : float
+        Upper limit of integration (use scipy.integrate.Inf for +infinity).
+    args : tuple, optional
+        extra arguments to pass to func
+    full_output : int
+        Non-zero to return a dictionary of integration information.
+        If non-zero, warning messages are also suppressed and the
+        message is appended to the output tuple.
 
     Returns
-    -----------
+    -------
 
-      y : float
-          the integral of func from a to b.
-      abserr : float
-          an estimate of the absolute error in the result.
+    y : float
+        The integral of func from a to b.
+    abserr : float
+        an estimate of the absolute error in the result.
 
-      infodict : dict
-          a dictionary containing additional information.
-          Run scipy.integrate.quad_explain() for more information.
-      message :
-          a convergence message.
-      explain :
-          appended only with 'cos' or 'sin' weighting and infinite
-          integration limits, it contains an explanation of the codes in
-          infodict['ierlst']
+    infodict : dict
+        a dictionary containing additional information.
+        Run scipy.integrate.quad_explain() for more information.
+    message :
+        a convergence message.
+    explain :
+        appended only with 'cos' or 'sin' weighting and infinite
+        integration limits, it contains an explanation of the codes in
+        infodict['ierlst']
 
     Other Parameters
     ----------------
-      epsabs :
-          absolute error tolerance.
-      epsrel :
-          relative error tolerance.
-      limit :
-          an upper bound on the number of subintervals used in the adaptive
-          algorithm.
-      points :
-          a sequence of break points in the bounded integration interval
-          where local difficulties of the integrand may occur (e.g.,
-          singularities, discontinuities). The sequence does not have
-          to be sorted.
+    epsabs :
+        absolute error tolerance.
+    epsrel :
+        relative error tolerance.
+    limit :
+        an upper bound on the number of subintervals used in the adaptive
+        algorithm.
+    points :
+        a sequence of break points in the bounded integration interval
+        where local difficulties of the integrand may occur (e.g.,
+        singularities, discontinuities). The sequence does not have
+        to be sorted.
+    weight :
+        string indicating weighting function.
+    wvar :
+        variables for use with weighting functions.
+    limlst :
+        Upper bound on the number of cylces (>=3) for use with a sinusoidal
+        weighting and an infinite end-point.
+    wopts :
+        Optional input for reusing Chebyshev moments.
+    maxp1 :
+        An upper bound on the number of Chebyshev moments.
 
-           **
-           ** Run scipy.integrate.quad_explain() for more information
-           ** on the following inputs
-           **
-      weight :
-          string indicating weighting function.
-      wvar :
-          variables for use with weighting functions.
-      limlst :
-           Upper bound on the number of cylces (>=3) for use with a sinusoidal
-           weighting and an infinite end-point.
-      wopts :
-           Optional input for reusing Chebyshev moments.
-      maxp1 :
-           An upper bound on the number of Chebyshev moments.
-
+    See Also
+    --------
+        dblquad, tplquad - double and triple integrals
+        fixed_quad - fixed-order Gaussian quadrature
+        quadrature - adaptive Gaussian quadrature
+        odeint, ode - ODE integrators
+        simps, trapz, romb - integrators for sampled data
+        scipy.special - for coefficients and roots of orthogonal polynomials
 
     Examples
     --------
 
     Calculate :math:`\\int^4_0 x^2 dx` and compare with an analytic result
 
+    >>> from scipy import integrate
     >>> x2 = lambda x: x**2
-    >>> quad(x,0.,4.)
+    >>> integrate.quad(x,0.,4.)
     (21.333333333333332, 2.3684757858670003e-13)
     >> print 4.**3/3
     21.3333333333
@@ -206,17 +229,17 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     Calculate :math:`\\int^\\infty_0 e^{-x} dx`
 
     >>> invexp = lambda x: exp(-x)
-    >>> quad(invexp,0,inf)
+    >>> integrate.quad(invexp,0,inf)
     (0.99999999999999989, 5.8426061711142159e-11)
 
 
-      See also:
-        dblquad, tplquad - double and triple integrals
-        fixed_quad - fixed-order Gaussian quadrature
-        quadrature - adaptive Gaussian quadrature
-        odeint, ode - ODE integrators
-        simps, trapz, romb - integrators for sampled data
-        scipy.special - for coefficients and roots of orthogonal polynomials
+    >>> f = lambda x,a : a*x
+    >>> y, err = integrate.quad(f, 0, 1, args=(1,))
+    >>> y
+    0.5
+    >>> y, err = integrate.quad(f, 0, 1, args=(3,))
+    >>> y
+    1.5
 
     """
     if type(args) != type(()): args = (args,)
@@ -410,50 +433,51 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     Return the triple integral of func3d(z, y,x) from
     x=a..b, y=gfun(x)..hfun(x), and z=qfun(x,y)..rfun(x,y)
 
-
     Parameters
-    -----------
-      func3d : function
-             a Python function or method of at least three variables in the
-             order (z, y, x).
-      (a,b) : tuple
-             the limits of integration in x: a < b
-      gfun  : function
-             the lower boundary curve in y which is a function taking a single
-             floating point argument (x) and returning a floating point result:
-             a lambda function can be useful here.
-      hfun  : function
-             the upper boundary curve in y (same requirements as gfun).
-      qfun  : function
-             the lower boundary surface in z.  It must be a function that takes
-             two floats in the order (x, y) and returns a float.
-      rfun  : function
-             the upper boundary surface in z. (Same requirements as qfun.)
-      args  :
-             extra arguments to pass to func3d.
-      epsabs : float
-             absolute tolerance passed directly to the innermost 1-D quadrature
-                integration.
-      epsrel : float
-             relative tolerance of the innermost 1-D integrals.
-
+    ----------
+    func3d : function
+        A Python function or method of at least three variables in the
+        order (z, y, x).
+    (a,b) : tuple
+        The limits of integration in x: a < b
+    gfun : function
+        The lower boundary curve in y which is a function taking a single
+        floating point argument (x) and returning a floating point result:
+        a lambda function can be useful here.
+    hfun : function
+        The upper boundary curve in y (same requirements as gfun).
+    qfun : function
+        The lower boundary surface in z.  It must be a function that takes
+        two floats in the order (x, y) and returns a float.
+    rfun : function
+        The upper boundary surface in z. (Same requirements as qfun.)
+    args : Arguments
+        Extra arguments to pass to func3d.
+    epsabs : float
+        Absolute tolerance passed directly to the innermost 1-D quadrature
+        integration.
+    epsrel : float
+        Relative tolerance of the innermost 1-D integrals.
 
     Returns
-    -----------
+    -------
+    y : float
+        The resultant integral.
+    abserr : float
+        An estimate of the error.
 
-      y      : float
-             the resultant integral.
-      abserr : float
-            an estimate of the error.
-
-    See also:
-      quad - single integral
-      dblquad - double integral
-      fixed_quad - fixed-order Gaussian quadrature
-      quadrature - adaptive Gaussian quadrature
-      odeint, ode - ODE integrators
-      simps, trapz, romb - integrators for sampled data
-      scipy.special - for coefficients and roots of orthogonal polynomials
+    See Also
+    --------
+    quad: Adaptive quadrature using QUADPACK
+    quadrature: Adaptive Gaussian quadrature
+    fixed_quad: Fixed-order Gaussian quadrature
+    dblquad: Double integrals
+    romb: Integrators for sampled data
+    trapz: Integrators for sampled data
+    simps: Integrators for sampled data
+    ode: ODE integrators
+    odeint: ODE integrators
+    scipy.special: For coefficients and roots of orthogonal polynomials
 
     """
     return dblquad(_infunc2,a,b,gfun,hfun,(func,qfun,rfun,args),epsabs=epsabs,epsrel=epsrel)

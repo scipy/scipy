@@ -10,34 +10,39 @@ import numpy as np
 import math
 
 def fixed_quad(func,a,b,args=(),n=5):
-    """Compute a definite integral using fixed-order Gaussian quadrature.
+    """
+    Compute a definite integral using fixed-order Gaussian quadrature.
 
-  Description:
+    Integrate `func` from a to b using Gaussian quadrature of order n.
 
-    Integrate func from a to b using Gaussian quadrature of order n.
+    Parameters
+    ----------
+    func : callable
+        A Python function or method to integrate (must accept vector inputs).
+    a : float
+        Lower limit of integration.
+    b : float
+        Upper limit of integration.
+    args : tuple, optional
+        Extra arguments to pass to function, if any.
+    n : int, optional
+        Order of quadrature integration. Default is 5.
 
-  Inputs:
+    Returns
+    -------
+    val : float
+        Gaussian quadrature approximation to the integral
 
-    func -- a Python function or method to integrate
-            (must accept vector inputs)
-    a -- lower limit of integration
-    b -- upper limit of integration
-    args -- extra arguments to pass to function.
-    n -- order of quadrature integration.
-
-  Outputs: (val, None)
-
-    val -- Gaussian quadrature approximation to the integral.
-
-  See also:
-
-    quad - adaptive quadrature using QUADPACK
-    dblquad, tplquad - double and triple integrals
-    romberg - adaptive Romberg quadrature
-    quadrature - adaptive Gaussian quadrature
-    romb, simps, trapz - integrators for sampled data
-    cumtrapz - cumulative integration for sampled data
+    See Also
+    --------
+    quad : adaptive quadrature using QUADPACK
+    dblquad, tplquad : double and triple integrals
+    romberg : adaptive Romberg quadrature
+    quadrature : adaptive Gaussian quadrature
+    romb, simps, trapz : integrators for sampled data
+    cumtrapz : cumulative integration for sampled data
     ode, odeint - ODE integrators
+
     """
     [x,w] = p_roots(n)
     x = real(x)
@@ -95,39 +100,52 @@ def vectorize1(func, args=(), vec_func=False):
     return vfunc
 
 def quadrature(func,a,b,args=(),tol=1.49e-8,maxiter=50, vec_func=True):
-    """Compute a definite integral using fixed-tolerance Gaussian quadrature.
-
-  Description:
+    """
+    Compute a definite integral using fixed-tolerance Gaussian quadrature.
 
     Integrate func from a to b using Gaussian quadrature
-    with absolute tolerance tol.
+    with absolute tolerance `tol`.
 
-  Inputs:
+    Parameters
+    ----------
+    func : function
+        A Python function or method to integrate.
+    a : float
+        Lower limit of integration.
+    b : float
+        Upper limit of integration.
+    args : tuple, optional
+        Extra arguments to pass to function.
+    tol : float, optional
+        Iteration stops when error between last two iterates is less than
+        tolerance.
+    maxiter : int, optional
+        Maximum number of iterations.
+    vec_func : bool, optional
+        True or False if func handles arrays as arguments (is
+        a "vector" function). Default is True.
 
-    func -- a Python function or method to integrate.
-    a -- lower limit of integration.
-    b -- upper limit of integration.
-    args -- extra arguments to pass to function.
-    tol -- iteration stops when error between last two iterates is less than
-           tolerance.
-    maxiter -- maximum number of iterations.
-    vec_func -- True or False if func handles arrays as arguments (is
-                a "vector" function ). Default is True.
+    Returns
+    -------
+    val : float
+        Gaussian quadrature approximation (within tolerance) to integral.
+    err : float
+        Difference between last two estimates of the integral.
 
-  Outputs: (val, err)
+    See also
+    --------
+    romberg: adaptive Romberg quadrature
+    fixed_quad: fixed-order Gaussian quadrature
+    quad: adaptive quadrature using QUADPACK
+    dblquad: double integrals
+    tplquad: triple integrals
+    romb: integrator for sampled data
+    simps: integrator for sampled data
+    trapz: integrator for sampled data
+    cumtrapz: cumulative integration for sampled data
+    ode: ODE integrator
+    odeint: ODE integrator
 
-    val -- Gaussian quadrature approximation (within tolerance) to integral.
-    err -- Difference between last two estimates of the integral.
-
-  See also:
-
-    romberg - adaptive Romberg quadrature
-    fixed_quad - fixed-order Gaussian quadrature
-    quad - adaptive quadrature using QUADPACK
-    dblquad, tplquad - double and triple integrals
-    romb, simps, trapz - integrators for sampled data
-    cumtrapz - cumulative integration for sampled data
-    ode, odeint - ODE integrators
     """
     err = 100.0
     val = err
@@ -148,20 +166,41 @@ def tupleset(t, i, value):
     return tuple(l)
 
 def cumtrapz(y, x=None, dx=1.0, axis=-1):
-    """Cumulatively integrate y(x) using samples along the given axis
+    """
+    Cumulatively integrate y(x) using samples along the given axis
     and the composite trapezoidal rule.  If x is None, spacing given by dx
     is assumed.
 
-    See also:
+    Parameters
+    ----------
+    y : array
 
-      quad - adaptive quadrature using QUADPACK
-      romberg - adaptive Romberg quadrature
-      quadrature - adaptive Gaussian quadrature
-      fixed_quad - fixed-order Gaussian quadrature
-      dblquad, tplquad - double and triple integrals
-      romb, trapz - integrators for sampled data
-      cumtrapz - cumulative integration for sampled data
-      ode, odeint - ODE integrators
+    x : array, optional
+
+    dx : int, optional
+
+    axis : int, optional
+        Specifies the axis to cumulate:
+
+          - -1 --> X axis
+          - 0  --> Z axis
+          - 1  --> Y axis
+
+    See Also
+    --------
+
+      quad: adaptive quadrature using QUADPACK
+      romberg: adaptive Romberg quadrature
+      quadrature: adaptive Gaussian quadrature
+      fixed_quad: fixed-order Gaussian quadrature
+      dblquad: double integrals
+      tplquad: triple integrals
+      romb: integrators for sampled data
+      trapz: integrators for sampled data
+      cumtrapz: cumulative integration for sampled data
+      ode: ODE integrators
+      odeint: ODE integrators
+
     """
     y = asarray(y)
     if x is None:
@@ -204,39 +243,57 @@ def _basic_simps(y,start,stop,x,dx,axis):
 
 
 def simps(y, x=None, dx=1, axis=-1, even='avg'):
-    """Integrate y(x) using samples along the given axis and the composite
+    """
+    Integrate y(x) using samples along the given axis and the composite
     Simpson's rule.  If x is None, spacing of dx is assumed.
 
     If there are an even number of samples, N, then there are an odd
     number of intervals (N-1), but Simpson's rule requires an even number
-    of intervals.  The parameter 'even' controls how this is handled as
-    follows:
+    of intervals.  The parameter 'even' controls how this is handled.
 
-    even='avg': Average two results: 1) use the first N-2 intervals with
-                a trapezoidal rule on the last interval and 2) use the last
-                N-2 intervals with a trapezoidal rule on the first interval
+    Parameters
+    ----------
+    y : array_like
+        Array to be integrated.
+    x : array_like, optional
+        If given, the points at which `y` is sampled.
+    dx : int, optional
+        Spacing of integration points along axis of `y`. Only used when
+        `x` is None. Default is 1.
+    axis : int, optional
+        Axis along which to integrate. Default is the last axis.
+    even : {'avg', 'first', 'str'}, optional
+        'avg' : Average two results:1) use the first N-2 intervals with
+                  a trapezoidal rule on the last interval and 2) use the last
+                  N-2 intervals with a trapezoidal rule on the first interval.
 
-    even='first': Use Simpson's rule for the first N-2 intervals with
-                  a trapezoidal rule on the last interval.
+        'first' : Use Simpson's rule for the first N-2 intervals with
+                a trapezoidal rule on the last interval.
 
-    even='last': Use Simpson's rule for the last N-2 intervals with a
-                 trapezoidal rule on the first interval.
+        'last' : Use Simpson's rule for the last N-2 intervals with a
+               trapezoidal rule on the first interval.
 
+    See Also
+    --------
+    quad: adaptive quadrature using QUADPACK
+    romberg: adaptive Romberg quadrature
+    quadrature: adaptive Gaussian quadrature
+    fixed_quad: fixed-order Gaussian quadrature
+    dblquad: double integrals
+    tplquad: triple integrals
+    romb: integrators for sampled data
+    trapz: integrators for sampled data
+    cumtrapz: cumulative integration for sampled data
+    ode: ODE integrators
+    odeint: ODE integrators
+
+    Notes
+    -----
     For an odd number of samples that are equally spaced the result is
-        exact if the function is a polynomial of order 3 or less.  If
-        the samples are not equally spaced, then the result is exact only
-        if the function is a polynomial of order 2 or less.
+    exact if the function is a polynomial of order 3 or less.  If
+    the samples are not equally spaced, then the result is exact only
+    if the function is a polynomial of order 2 or less.
 
-    See also:
-
-      quad - adaptive quadrature using QUADPACK
-      romberg - adaptive Romberg quadrature
-      quadrature - adaptive Gaussian quadrature
-      fixed_quad - fixed-order Gaussian quadrature
-      dblquad, tplquad - double and triple integrals
-      romb, trapz - integrators for sampled data
-      cumtrapz - cumulative integration for sampled data
-      ode, odeint - ODE integrators
     """
     y = asarray(y)
     nd = len(y.shape)
@@ -293,20 +350,30 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     return result
 
 def romb(y, dx=1.0, axis=-1, show=False):
-    """Romberg integration using samples of a function
+    """
+    Romberg integration using samples of a function
 
-    Inputs:
+    Parameters
+    -----------
+      y : array like
+           a vector of 2**k + 1 equally-spaced samples of a function
 
-       y    -  a vector of 2**k + 1 equally-spaced samples of a fucntion
-       dx   -  the sample spacing.
-       axis -  the axis along which to integrate
-       show -  When y is a single 1-d array, then if this argument is True
-               print the table showing Richardson extrapolation from the
-               samples.
+      dx : array like
+           the sample spacing.
 
-    Output: ret
+      axis : array like?
+           the axis along which to integrate
 
-       ret  - The integrated result for each axis.
+      show : Boolean
+           When y is a single 1-d array, then if this argument is True
+           print the table showing Richardson extrapolation from the
+           samples.
+
+    Returns
+    -----------
+
+       ret : array_like?
+          The integrated result for each axis.
 
     See also:
 
@@ -318,6 +385,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
       simps, trapz - integrators for sampled data
       cumtrapz - cumulative integration for sampled data
       ode, odeint - ODE integrators
+
     """
     y = asarray(y)
     nd = len(y.shape)
@@ -603,35 +671,46 @@ _builtincoeffs = {
     }
 
 def newton_cotes(rn,equal=0):
-    r"""Return weights and error coefficient for Netwon-Cotes integration.
+    """
+    Return weights and error coefficient for Newton-Cotes integration.
 
-     Suppose we have (N+1) samples of f at the positions
-       x_0, x_1, ..., x_N.  Then an N-point Newton-Cotes formula for the
-       integral between x_0 and x_N is:
+    Suppose we have (N+1) samples of f at the positions
+    x_0, x_1, ..., x_N.  Then an N-point Newton-Cotes formula for the
+    integral between x_0 and x_N is:
 
-     $\int_{x_0}^{x_N} f(x)dx = \Delta x \sum_{i=0}^{N} a_i f(x_i)
-                                + B_N (\Delta x)^{N+2} f^{N+1} (\xi)$
+    :math:`\\int_{x_0}^{x_N} f(x)dx = \\Delta x \\sum_{i=0}^{N} a_i f(x_i)
+    + B_N (\\Delta x)^{N+2} f^{N+1} (\\xi)`
 
-       where $\xi \in [x_0,x_N]$ and $\Delta x = \frac{x_N-x_0}{N}$ is the
-       averages samples spacing.
+    where :math:`\\xi \\in [x_0,x_N]` and :math:`\\Delta x = \\frac{x_N-x_0}{N}`
+    is the averages samples spacing.
 
-     If the samples are equally-spaced and N is even, then the error
-     term is $B_N (\Delta x)^{N+3} f^{N+2}(\xi)$.
+    If the samples are equally-spaced and N is even, then the error
+    term is :math:`B_N (\\Delta x)^{N+3} f^{N+2}(\\xi)`.
 
-     Normally, the Newton-Cotes rules are used on smaller integration
-     regions and a composite rule is used to return the total integral.
+    Parameters
+    ----------
 
-    Inputs:
-        rn    -- the integer order for equally-spaced data
-                 or the relative positions of the samples with
-                 the first sample at 0 and the last at N, where
-                 N+1 is the length of rn.  N is the order of the Newt
-        equal -- Set to 1 to enforce equally spaced data
+    rn : int
+        The integer order for equally-spaced data
+        or the relative positions of the samples with
+        the first sample at 0 and the last at N, where
+        N+1 is the length of rn.  N is the order of the Newton
+    equal: int, optional
+        Set to 1 to enforce equally spaced data
 
-    Outputs:
-        an    -- 1-d array of weights to apply to the function at
-                 the provided sample positions.
-        B     -- error coefficient
+    Returns
+    -------
+    an : array
+        1-d array of weights to apply to the function at
+        the provided sample positions.
+    B  : float
+        error coefficient
+
+    Notes
+    -----
+    Normally, the Newton-Cotes rules are used on smaller integration
+    regions and a composite rule is used to return the total integral.
+
     """
     try:
         N = len(rn)-1
