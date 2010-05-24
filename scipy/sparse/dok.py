@@ -13,12 +13,13 @@ from base import spmatrix, isspmatrix
 from sputils import isdense, getdtype, isshape, isintlike, isscalarlike, upcast
 
 class dok_matrix(spmatrix, dict):
-    """Dictionary Of Keys based sparse matrix.
+    """
+    Dictionary Of Keys based sparse matrix.
 
     This is an efficient structure for constructing sparse
     matrices incrementally.
 
-    This can be instatiated in several ways:
+    This can be instantiated in several ways:
         dok_matrix(D)
             with a dense matrix, D
 

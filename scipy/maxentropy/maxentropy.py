@@ -788,15 +788,16 @@ class model(basemodel):
 
 
 class conditionalmodel(model):
-    """A conditional maximum-entropy (exponential-form) model p(x|w) on a
+    """
+    A conditional maximum-entropy (exponential-form) model p(x|w) on a
     discrete sample space.  This is useful for classification problems:
     given the context w, what is the probability of each class x?
 
-    The form of such a model is
+    The form of such a model is::
 
         p(x | w) = exp(theta . f(w, x)) / Z(w; theta)
 
-    where Z(w; theta) is a normalization term equal to
+    where Z(w; theta) is a normalization term equal to::
 
         Z(w; theta) = sum_x exp(theta . f(w, x)).
 
@@ -804,11 +805,11 @@ class conditionalmodel(model):
     the constructor as the parameter 'samplespace'.
 
     Such a model form arises from maximizing the entropy of a conditional
-    model p(x | w) subject to the constraints:
+    model p(x | w) subject to the constraints::
 
         K_i = E f_i(W, X)
 
-    where the expectation is with respect to the distribution
+    where the expectation is with respect to the distribution::
 
         q(w) p(x | w)
 
@@ -818,7 +819,7 @@ class conditionalmodel(model):
     x) with respect to the empirical distribution.
 
     This method minimizes the Lagrangian dual L of the entropy, which is
-    defined for conditional models as
+    defined for conditional models as::
 
         L(theta) = sum_w q(w) log Z(w; theta)
                    - sum_{w,x} q(w,x) [theta . f(w,x)]
@@ -827,8 +828,10 @@ class conditionalmodel(model):
     entire sample space, since q(w,x) = 0 for all w,x not in the training
     set.
 
-    The partial derivatives of L are:
+    The partial derivatives of L are::
+
         dL / dtheta_i = K_i - E f_i(X, Y)
+
     where the expectation is as defined above.
 
     """

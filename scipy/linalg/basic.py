@@ -292,37 +292,49 @@ def det(a, overwrite_a=False):
 ### Linear Least Squares
 
 def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
-    """Compute least-squares solution to equation :m:`a x = b`
+    """
+    Compute least-squares solution to equation Ax = b.
 
-    Compute a vector x such that the 2-norm :m:`|b - a x|` is minimised.
+    Compute a vector x such that the 2-norm ``|b - A x|`` is minimized.
 
     Parameters
     ----------
     a : array, shape (M, N)
+        Left hand side matrix (2-D array).
     b : array, shape (M,) or (M, K)
-    cond : float
+        Right hand side matrix or vector (1-D or 2-D array).
+    cond : float, optional
         Cutoff for 'small' singular values; used to determine effective
-        rank of a. Singular values smaller than rcond*largest_singular_value
-        are considered zero.
-    overwrite_a : boolean
-        Discard data in a (may enhance performance)
-    overwrite_b : boolean
-        Discard data in b (may enhance performance)
+        rank of a. Singular values smaller than
+        ``rcond * largest_singular_value`` are considered zero.
+    overwrite_a : bool, optional
+        Discard data in `a` (may enhance performance). Default is False.
+    overwrite_b : bool, optional
+        Discard data in `b` (may enhance performance). Default is False.
 
     Returns
     -------
     x : array, shape (N,) or (N, K) depending on shape of b
-        Least-squares solution
-    residues : array, shape () or (1,) or (K,)
-        Sums of residues, squared 2-norm for each column in :m:`b - a x`
+        Least-squares solution.
+    residues : ndarray, shape () or (1,) or (K,)
+        Sums of residues, squared 2-norm for each column in ``b - a x``.
         If rank of matrix a is < N or > M this is an empty array.
-        If b was 1-d, this is an (1,) shape array, otherwise the shape is (K,)
-    rank : integer
-        Effective rank of matrix a
+        If b was 1-D, this is an (1,) shape array, otherwise the shape is (K,).
+    rank : int
+        Effective rank of matrix `a`.
     s : array, shape (min(M,N),)
-        Singular values of a. The condition number of a is abs(s[0]/s[-1]).
+        Singular values of `a`. The condition number of a is
+        ``abs(s[0]/s[-1])``.
 
-    Raises LinAlgError if computation does not converge
+    Raises
+    ------
+    LinAlgError :
+        If computation does not converge.
+
+
+    See Also
+    --------
+    optimize.nnls : linear least squares with non-negativity constraint
 
     """
     a1, b1 = map(asarray_chkfinite, (a, b))
