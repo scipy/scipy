@@ -56,13 +56,14 @@ def _bvalfromboundary(boundary):
 
 
 def correlate(in1, in2, mode='full', old_behavior=True):
-    """Cross-correlate two N-dimensional arrays.
+    """
+    Cross-correlate two N-dimensional arrays.
 
     Cross-correlate in1 and in2 with the output size determined by the mode
     argument.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     in1: array
         first input.
     in2: array
@@ -88,12 +89,13 @@ def correlate(in1, in2, mode='full', old_behavior=True):
         an N-dimensional array containing a subset of the discrete linear
         cross-correlation of in1 with in2.
 
-    Note
-    ----
+    Notes
+    -----
     The correlation z of two arrays x and y of rank d is defined as
 
-      z[...,k,...] = sum[..., i_l, ...] 
+      z[...,k,...] = sum[..., i_l, ...]
             x[..., i_l,...] * conj(y[..., i_l + k,...])
+
     """
     val = _valfrommode(mode)
 
@@ -176,30 +178,36 @@ def fftconvolve(in1, in2, mode="full"):
 
 
 def convolve(in1, in2, mode='full', old_behavior=True):
-    """Convolve two N-dimensional arrays.
+    """
+    Convolve two N-dimensional arrays.
 
     Convolve in1 and in2 with output size determined by mode.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     in1: array
         first input.
     in2: array
         second input. Should have the same number of dimensions as in1.
     mode: str {'valid', 'same', 'full'}
         a string indicating the size of the output:
-            - 'valid': the output consists only of those elements that do not
-            rely on the zero-padding.
-            - 'same': the output is the same size as the largest input centered
-              with respect to the 'full' output.
-            - 'full': the output is the full discrete linear cross-correlation
-              of the inputs. (Default)
+
+        ``valid`` : the output consists only of those elements that do not
+           rely on the zero-padding.
+
+        ``same`` : the output is the same size as the largest input centered
+           with respect to the 'full' output.
+
+        ``full`` : the output is the full discrete linear cross-correlation
+           of the inputs. (Default)
+
 
     Returns
     -------
     out: array
         an N-dimensional array containing a subset of the discrete linear
         cross-correlation of in1 with in2.
+
     """
     volume = asarray(in1)
     kernel = asarray(in2)
@@ -233,29 +241,30 @@ def convolve(in1, in2, mode='full', old_behavior=True):
             return correlate(volume, kernel[slice_obj], mode, old_behavior=False)
 
 def order_filter(a, domain, rank):
-    """Perform an order filter on an N-dimensional array.
+    """
+    Perform an order filter on an N-dimensional array.
 
-  Description:
+    Description:
 
-    Perform an order filter on the array in.  The domain argument acts as a
-    mask centered over each pixel.  The non-zero elements of domain are
-    used to select elements surrounding each input pixel which are placed
-    in a list.   The list is sorted, and the output for that pixel is the
-    element corresponding to rank in the sorted list.
+      Perform an order filter on the array in.  The domain argument acts as a
+      mask centered over each pixel.  The non-zero elements of domain are
+      used to select elements surrounding each input pixel which are placed
+      in a list.   The list is sorted, and the output for that pixel is the
+      element corresponding to rank in the sorted list.
 
-  Inputs:
+    Parameters
+    ----------
+      in -- an N-dimensional input array.
+      domain -- a mask array with the same number of dimensions as in.  Each
+                dimension should have an odd number of elements.
+      rank -- an non-negative integer which selects the element from the
+              sorted list (0 corresponds to the largest element, 1 is the
+              next largest element, etc.)
 
-    in -- an N-dimensional input array.
-    domain -- a mask array with the same number of dimensions as in.  Each
-              dimension should have an odd number of elements.
-    rank -- an non-negative integer which selects the element from the
-            sorted list (0 corresponds to the largest element, 1 is the
-            next largest element, etc.)
-
-  Output: (out,)
-
-    out -- the results of the order filter in an array with the same
-           shape as in.
+    Returns
+    -------
+      out -- the results of the order filter in an array with the same
+             shape as in.
 
     """
     domain = asarray(domain)
@@ -728,11 +737,26 @@ def hilbert(x, N=None, axis=-1):
     return x
 
 def hilbert2(x,N=None):
-    """Compute the '2-D' analytic signal of `x` of length `N`.
+    """
+    Compute the '2-D' analytic signal of `x`
 
-    See also
-    --------
-    hilbert
+
+    Parameters
+    ----------
+    x : array_like
+        2-D signal data.
+    N : int, optional
+        Number of Fourier components. Default is ``x.shape``
+
+    Returns
+    -------
+    xa : ndarray
+        Analytic signal of `x` taken along axes (0,1).
+
+    References
+    ----------
+    .. [1] Wikipedia, "Analytic signal",
+        http://en.wikipedia.org/wiki/Analytic_signal
 
     """
     x = asarray(x)

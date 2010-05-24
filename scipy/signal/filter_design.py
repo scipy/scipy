@@ -78,16 +78,16 @@ def freqs(b,a,worN=None,plot=None):
 
 def freqz(b, a=1, worN=None, whole=0, plot=None):
     """
-    Compute frequency response of a digital filter.
+    Compute the frequency response of a digital filter.
 
-    Given the numerator (b) and denominator (a) of a digital filter compute
-    its frequency response.
+    Given the numerator ``b`` and denominator ``a`` of a digital filter compute
+    its frequency response::
 
                jw               -jw            -jmw
         jw  B(e)    b[0] + b[1]e + .... + b[m]e
      H(e) = ---- = ------------------------------------
                jw               -jw            -jnw
-            A(e)    a[0] + a[2]e + .... + a[n]e
+            A(e)    a[0] + a[1]e + .... + a[n]e
 
     Parameters
     ----------
@@ -109,6 +109,29 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
         The frequencies at which h was computed.
     h : ndarray
         The frequency response.
+
+    Examples
+    --------
+
+    >>> b = firwin(80, 0.5, window=('kaiser', 8))
+    >>> h, w = freqz(b)
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.title('Digital filter frequency response')
+    >>> ax1 = fig.add_subplot(111)
+
+    >>> plt.semilogy(h, np.abs(w), 'b')
+    >>> plt.ylabel('Amplitude (dB)', color='b')
+    >>> plt.xlabel('Frequency (rad/sample)')
+    >>> plt.grid()
+    >>> plt.legend()
+
+    >>> ax2 = ax1.twinx()
+    >>> angles = np.unwrap(np.angle(w))
+    >>> plt.plot(h, angles, 'g')
+    >>> plt.ylabel('Angle (radians)', color='g')
+    >>> plt.show()
 
     """
     b, a = map(atleast_1d, (b,a))

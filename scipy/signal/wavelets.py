@@ -6,9 +6,17 @@ from scipy.misc import comb
 from scipy import linspace, pi, exp
 
 def daub(p):
-    """The coefficients for the FIR low-pass filter producing Daubechies wavelets.
+    """
+    The coefficients for the FIR low-pass filter producing Daubechies wavelets.
 
-    p>=1 gives the order of the zero at f=1/2.  There are 2p filter coefficients.
+    p>=1 gives the order of the zero at f=1/2.
+    There are 2p filter coefficients.
+
+    Parameters
+    ----------
+    p : int
+        Order of the zero at f=1/2, can have values from 1 to 34.
+
     """
     sqrt = np.sqrt
     assert(p>=1)
@@ -170,7 +178,8 @@ def cascade(hk,J=7):
     return x, phi, psi
 
 def morlet(M, w=5.0, s=1.0, complete=True):
-    """Complex Morlet wavelet.
+    """
+    Complex Morlet wavelet.
 
     Parameters
     ----------
@@ -183,8 +192,8 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     complete : bool
         Whether to use the complete or the standard version.
 
-    Notes:
-    ------
+    Notes
+    -----
     The standard version:
         pi**-0.25 * exp(1j*w*x) * exp(-0.5*(x**2))
 

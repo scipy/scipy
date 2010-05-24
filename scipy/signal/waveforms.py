@@ -9,10 +9,30 @@ from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
      exp, cos, sin, polyval, polyint
 
 def sawtooth(t,width=1):
-    """Returns a periodic sawtooth waveform with period 2*pi
-    which rises from -1 to 1 on the interval 0 to width*2*pi
-    and drops from 1 to -1 on the interval width*2*pi to 2*pi
-    width must be in the interval [0,1]
+    """
+    Return a periodic sawtooth waveform.
+
+    The sawtooth waveform has a period 2*pi, rises from -1 to 1 on the
+    interval 0 to width*2*pi and drops from 1 to -1 on the interval
+    width*2*pi to 2*pi. `width` must be in the interval [0,1].
+
+    Parameters
+    ----------
+    t : array_like
+        Time.
+    width : float, optional
+        Width of the waveform. Default is 1.
+
+    Returns
+    -------
+    y : ndarray
+        Output array containing the sawtooth waveform.
+
+    Examples
+    --------
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 20*np.pi, 500)
+    >>> plt.plot(x, sp.signal.sawtooth(x))
 
     """
     t,w = asarray(t), asarray(width)
@@ -49,9 +69,23 @@ def sawtooth(t,width=1):
 
 
 def square(t,duty=0.5):
-    """Returns a periodic square-wave waveform with period 2*pi
-    which is +1 from 0 to 2*pi*duty and -1 from 2*pi*duty to 2*pi
-    duty must be in the interval [0,1]
+    """
+    Return a periodic square-wave waveform.
+
+    The square wave has a period 2*pi, has value +1 from 0 to 2*pi*duty
+    and -1 from 2*pi*duty to 2*pi. `duty` must be in the interval [0,1].
+
+    Parameters
+    ----------
+    t : array_like
+        The input time array.
+    duty : float, optional
+        Duty cycle.
+
+    Returns
+    -------
+    y : array_like
+        The output square wave.
 
     """
     t,w = asarray(t), asarray(duty)
@@ -87,23 +121,32 @@ def square(t,duty=0.5):
     return y
 
 def gausspulse(t,fc=1000,bw=0.5,bwr=-6,tpr=-60,retquad=0,retenv=0):
-    """Return a gaussian modulated sinusoid:  exp(-a t^2) exp(1j*2*pi*fc)
+    """
+    Return a gaussian modulated sinusoid: exp(-a t^2) exp(1j*2*pi*fc).
 
-    If retquad is non-zero, then return the real and imaginary parts
-       (inphase and quadrature)
-    If retenv is non-zero, then return the envelope (unmodulated signal).
+    If `retquad` is non-zero, then return the real and imaginary parts
+    (in-phase and quadrature)
+    If `retenv` is non-zero, then return the envelope (unmodulated signal).
     Otherwise, return the real part of the modulated sinusoid.
 
-    Inputs:
-
-       t   --  Input array.
-       fc  --  Center frequency (Hz).
-       bw  --  Fractional bandwidth in frequency domain of pulse (Hz).
-       bwr --  Reference level at which fractional bandwidth is calculated (dB).
-       tpr --  If t is 'cutoff', then the function returns the cutoff time for when the
-                  pulse amplitude falls below tpr (in dB).
-       retquad -- Return the quadrature (imaginary) as well as the real part of the signal
-       retenv  -- Return the envelope of th signal.
+    Parameters
+    ----------
+    t : ndarray
+        Input array.
+    fc : int, optional
+        Center frequency (Hz).
+    bw : float, optional
+        Fractional bandwidth in frequency domain of pulse (Hz).
+    bwr: float, optional
+        Reference level at which fractional bandwidth is calculated (dB).
+    tpr : float, optional
+        If `t` is 'cutoff', then the function returns the cutoff
+        time for when the pulse amplitude falls below `tpr` (in dB).
+    retquad : int, optional
+        Return the quadrature (imaginary) as well as the real part
+        of the signal.
+    retenv : int, optional
+        Return the envelope of the signal.
 
     """
     if fc < 0:

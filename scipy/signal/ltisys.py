@@ -295,17 +295,20 @@ class lti(object):
 
 
 def lsim2(system, U=None, T=None, X0=None, **kwargs):
-    """Simulate output of a continuous-time linear system, by using
+    """
+    Simulate output of a continuous-time linear system, by using
     the ODE solver `scipy.integrate.odeint`.
 
     Parameters
     ----------
     system : an instance of the LTI class or a tuple describing the system.
         The following gives the number of elements in the tuple and
-        the interpretation.
-            2 (num, den)
-            3 (zeros, poles, gain)
-            4 (A, B, C, D)
+        the interpretation:
+
+        * 2: (num, den)
+        * 3: (zeros, poles, gain)
+        * 4: (A, B, C, D)
+
     U : ndarray or array-like (1D or 2D), optional
         An input array describing the input at each time T.  Linear
         interpolation is used between given times.  If there are
@@ -319,7 +322,7 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     X0 : ndarray or array-like (1D), optional
         The initial condition of the state vector.  If `X0` is not
         given, the initial conditions are assumed to be 0.
-    **kwargs :
+    kwargs : dict
         Additional keyword arguments are passed on to the function
         odeint.  See the notes below for more details.
 
@@ -395,16 +398,19 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
 
 
 def lsim(system, U, T, X0=None, interp=1):
-    """Simulate output of a continuous-time linear system.
+    """
+    Simulate output of a continuous-time linear system.
 
     Parameters
     ----------
     system : an instance of the LTI class or a tuple describing the system.
         The following gives the number of elements in the tuple and
-        the interpretation.
-            2 (num, den)
-            3 (zeros, poles, gain)
-            4 (A, B, C, D)
+        the interpretation:
+
+        * 2: (num, den)
+        * 3: (zeros, poles, gain)
+        * 4: (A, B, C, D)
+
     U : array_like
         An input array describing the input at each time `T`
         (interpolation is assumed between given times).  If there are
