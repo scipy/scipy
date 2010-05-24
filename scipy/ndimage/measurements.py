@@ -336,16 +336,34 @@ def _stats(input, labels = None, index = None, do_sum2=False):
 
         
 def sum(input, labels = None, index = None):
-    """Calculate the sum of the values of the array.
+    """
+    Calculate the sum of the values of the array.
 
-    :Parameters:
-        labels : array of integers, same shape as input
-            Assign labels to the values of the array.
+    Parameters
+    ----------
 
-        index : scalar or array
-            A single label number or a sequence of label numbers of
-            the objects to be measured. If index is None, all
-            values are used where 'labels' is larger than zero.
+    input : array_like
+        Values of `input` inside the regions defined by `labels`
+        are summed together.
+
+    labels : array of integers, same shape as input
+        Assign labels to the values of the array.
+
+    index : scalar or array
+        A single label number or a sequence of label numbers of
+        the objects to be measured.
+
+    Returns
+    -------
+
+    output : list
+        A list of the sums of the values of `input` inside the regions
+        defined by `labels`.
+
+    See also
+    --------
+
+    mean
 
     Examples
     --------
@@ -483,22 +501,147 @@ def _select(input, labels = None, index = None, find_min=False, find_max=False, 
     return result
 
 def minimum(input, labels = None, index = None):
-    """Calculate the minimum of the values of an array at labels.
+    """
+    Calculate the minimum of the values of an array over labeled regions.
 
-    Labels must be None or an array of the same dimensions as the input.  
+    Parameters
+    ----------
 
-    Index must be None, a single label or sequence of labels.  If
-    none, all values where label is greater than zero are used.
+    input: array-like
+        Array-like of values. For each region specified by `labels`, the
+        minimal values of `input` over the region is computed.
+
+    labels: array-like, optional
+        An array-like of integers marking different regions over which the
+        minimum value of `input` is to be computed. `labels` must have the
+        same shape as `input`. If `labels` is not specified, the minimum
+        over the whole array is returned.
+
+    index: array-like, optional
+        A list of region labels that are taken into account for computing the
+        minima. If index is None, the minimum over all elements where `labels`
+        is non-zero is returned.
+
+    Returns
+    -------
+    output : float or list of floats
+        List of minima of `input` over the regions determined by `labels` and
+        whose index is in `index`. If `index` or `labels` are not specified, a
+        float is returned: the minimal value of `input` if `labels` is None,
+        and the minimal value of elements where `labels` is greater than zero
+        if `index` is None.
+
+    See also
+    --------
+
+    label, maximum, minimum_position, extrema, sum, mean, variance,
+    standard_deviation
+
+    Notes
+    -----
+
+    The function returns a Python list and not a Numpy array, use
+    `np.array` to convert the list to an array.
+
+    Examples
+    --------
+
+    >>> a = np.array([[1, 2, 0, 0],
+    ...               [5, 3, 0, 4],
+    ...               [0, 0, 0, 7],
+    ...               [9, 3, 0, 0]])
+    >>> labels, labels_nb = ndimage.label(a)
+    >>> labels
+    array([[1, 1, 0, 0],
+           [1, 1, 0, 2],
+           [0, 0, 0, 2],
+           [3, 3, 0, 0]])
+    >>> ndimage.minimum(a, labels=labels, index=np.arange(1, labels_nb + 1))
+    [1.0, 4.0, 3.0]
+    >>> ndimage.minimum(a)
+    0.0
+    >>> ndimage.minimum(a, labels=labels)
+    1.0
+
     """
     return _select(input, labels, index, find_min=True)[0]
 
 def maximum(input, labels = None, index = None):
-    """Calculate the maximum of the values of an array at labels.
+    """
+    Calculate the maximum of the values of an array over labeled regions.
 
-    Labels must be None or an array of the same dimensions as the input.  
+    Parameters
+    ----------
+    input : array_like
+        Array-like of values. For each region specified by `labels`, the
+        maximal values of `input` over the region is computed.
+    labels : array_like, optional
+        An array of integers marking different regions over which the
+        maximum value of `input` is to be computed. `labels` must have the
+        same shape as `input`. If `labels` is not specified, the maximum
+        over the whole array is returned.
+    index : array_like, optional
+        A list of region labels that are taken into account for computing the
+        maxima. If index is None, the maximum over all elements where `labels`
+        is non-zero is returned.
 
-    Index must be None, a single label or sequence of labels.  If
-    none, all values where label is greater than zero are used.
+    Returns
+    -------
+    output : float or list of floats
+        List of maxima of `input` over the regions determined by `labels` and
+        whose index is in `index`. If `index` or `labels` are not specified, a
+        float is returned: the maximal value of `input` if `labels` is None,
+        and the maximal value of elements where `labels` is greater than zero
+        if `index` is None.
+
+    See also
+    --------
+    label, minimum, maximum_position, extrema, sum, mean, variance,
+    standard_deviation
+
+    Notes
+    -----
+    The function returns a Python list and not a Numpy array, use
+    `np.array` to convert the list to an array.
+
+    Examples
+    --------
+
+    >>> a = np.arange(16).reshape((4,4))
+    >>> a
+    array([[ 0,  1,  2,  3],
+           [ 4,  5,  6,  7],
+           [ 8,  9, 10, 11],
+           [12, 13, 14, 15]])
+    >>> labels = np.zeros_like(a)
+    >>> labels[:2,:2] = 1
+    >>> labels[2:, 1:3] = 2
+    >>> labels
+    array([[1, 1, 0, 0],
+           [1, 1, 0, 0],
+           [0, 2, 2, 0],
+           [0, 2, 2, 0]])
+    >>> from scipy import ndimage
+    >>> ndimage.maximum(a)
+    15.0
+    >>> ndimage.maximum(a, labels=labels, index=[1,2])
+    [5.0, 14.0]
+    >>> ndimage.maximum(a, labels=labels)
+    14.0
+
+    >>> b = np.array([[1, 2, 0, 0],
+                      [5, 3, 0, 4],
+                      [0, 0, 0, 7],
+                      [9, 3, 0, 0]])
+    >>> labels, labels_nb = ndimage.label(b)
+    >>> labels
+    array([[1, 1, 0, 0],
+           [1, 1, 0, 2],
+           [0, 0, 0, 2],
+           [3, 3, 0, 0]])
+    >>> ndimage.maximum(b, labels=labels, index=np.arange(1, labels_nb + 1))
+    [5.0, 7.0, 9.0]
+
     """
     return _select(input, labels, index, find_max=True)[0]
 

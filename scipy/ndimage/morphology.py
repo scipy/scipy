@@ -41,11 +41,60 @@ def _center_is_true(structure, origin):
     return bool(structure[coor])
 
 def iterate_structure(structure, iterations, origin = None):
-    """Iterate a structure by dilating it with itself.
+    """
+    Iterate a structure by dilating it with itself.
 
-    If origin is None, only the iterated structure is returned. If
-    not, a tuple of the iterated structure and the modified origin is
-    returned.
+    Parameters
+    ----------
+
+    structure : array_like
+       Structuring element (an array of bools, for example), to be dilated with
+       itself.
+
+    iterations : int
+       number of dilations performed on the structure with itself
+
+    origin : optional
+        If origin is None, only the iterated structure is returned. If
+        not, a tuple of the iterated structure and the modified origin is
+        returned.
+
+
+    Returns
+    -------
+
+    output: ndarray of bools
+        A new structuring element obtained by dilating `structure`
+        (`iterations` - 1) times with itself.
+
+    See also
+    --------
+
+    generate_binary_structure
+
+    Examples
+    --------
+
+    >>> struct = ndimage.generate_binary_structure(2, 1)
+    >>> struct.astype(int)
+    array([[0, 1, 0],
+           [1, 1, 1],
+           [0, 1, 0]])
+    >>> ndimage.iterate_structure(struct, 2).astype(int)
+    array([[0, 0, 1, 0, 0],
+           [0, 1, 1, 1, 0],
+           [1, 1, 1, 1, 1],
+           [0, 1, 1, 1, 0],
+           [0, 0, 1, 0, 0]])
+    >>> ndimage.iterate_structure(struct, 3).astype(int)
+    array([[0, 0, 0, 1, 0, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 1, 1, 1, 1, 1, 0],
+           [1, 1, 1, 1, 1, 1, 1],
+           [0, 1, 1, 1, 1, 1, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 0, 1, 0, 0, 0]])
+
     """
     structure = numpy.asarray(structure)
     if iterations < 2:
@@ -66,10 +115,93 @@ def iterate_structure(structure, iterations, origin = None):
         return out, origin
 
 def generate_binary_structure(rank, connectivity):
-    """Generate a binary structure for binary morphological operations.
+    """
+    Generate a binary structure for binary morphological operations.
 
-    The inputs are the rank of the array to which the structure will
-    be applied and the square of the connectivity of the structure.
+    Parameters
+    ----------
+
+    rank : int
+         Number of dimensions of the array to which the structuring element
+         will be applied, as returned by `np.ndim`.
+
+    connectivity : int
+         `connectivity` determines which elements of the output array belong
+         to the structure, i.e. are considered as neighbors of the central
+         element. Elements up to a squared distance of `connectivity` from
+         the center are considered neighbors. `connectivity` may range from 1
+         (no diagonal elements are neighbors) to `rank` (all elements are
+         neighbors).
+
+
+    Returns
+    -------
+
+    output : ndarray of bools
+         Structuring element which may be used for binary morphological
+         operations, with `rank` dimensions and all dimensions equal to 3.
+
+    See also
+    --------
+
+    iterate_structure, binary_dilation, binary_erosion
+
+
+    Notes
+    -----
+
+    `generate_binary_structure` can only create structuring elements with
+    dimensions equal to 3, i.e. minimal dimensions. For larger structuring
+    elements, that are useful e.g. for eroding large objects, one may either
+    use   `iterate_structure`, or create directly custom arrays with
+    numpy functions such as `numpy.ones`.
+
+    Examples
+    --------
+
+    >>> struct = ndimage.generate_binary_structure(2, 1)
+    >>> struct
+    array([[False,  True, False],
+           [ True,  True,  True],
+           [False,  True, False]], dtype=bool)
+    >>> a = np.zeros((5,5))
+    >>> a[2, 2] = 1
+    >>> a
+    array([[ 0.,  0.,  0.,  0.,  0.],
+           [ 0.,  0.,  0.,  0.,  0.],
+           [ 0.,  0.,  1.,  0.,  0.],
+           [ 0.,  0.,  0.,  0.,  0.],
+           [ 0.,  0.,  0.,  0.,  0.]])
+    >>> b = ndimage.binary_dilation(a, structure=struct).astype(a.dtype)
+    >>> b
+    array([[ 0.,  0.,  0.,  0.,  0.],
+           [ 0.,  0.,  1.,  0.,  0.],
+           [ 0.,  1.,  1.,  1.,  0.],
+           [ 0.,  0.,  1.,  0.,  0.],
+           [ 0.,  0.,  0.,  0.,  0.]])
+    >>> ndimage.binary_dilation(b, structure=struct).astype(a.dtype)
+    array([[ 0.,  0.,  1.,  0.,  0.],
+           [ 0.,  1.,  1.,  1.,  0.],
+           [ 1.,  1.,  1.,  1.,  1.],
+           [ 0.,  1.,  1.,  1.,  0.],
+           [ 0.,  0.,  1.,  0.,  0.]])
+    >>> struct = ndimage.generate_binary_structure(2, 2)
+    >>> struct
+    array([[ True,  True,  True],
+           [ True,  True,  True],
+           [ True,  True,  True]], dtype=bool)
+    >>> struct = ndimage.generate_binary_structure(3, 1)
+    >>> struct # no diagonal elements
+    array([[[False, False, False],
+            [False,  True, False],
+            [False, False, False]],
+           [[False,  True, False],
+            [ True,  True,  True],
+            [False,  True, False]],
+           [[False, False, False],
+            [False,  True, False],
+            [False, False, False]]], dtype=bool)
+
     """
     if connectivity < 1:
         connectivity = 1
@@ -159,33 +291,231 @@ def _binary_erosion(input, structure, iterations, mask, output,
 
 def binary_erosion(input, structure = None, iterations = 1, mask = None,
         output = None, border_value = 0, origin = 0, brute_force = False):
-    """Multi-dimensional binary erosion with the given structure.
+    """
+    Multi-dimensional binary erosion with a given structuring element.
 
-    An output array can optionally be provided. The origin parameter
-    controls the placement of the filter. If no structuring element is
-    provided an element is generated with a squared connectivity equal
-    to one. The border_value parameter gives the value of the array
-    outside the border. The erosion operation is repeated iterations
-    times. If iterations is less than 1, the erosion is repeated until
-    the result does not change anymore. If a mask is given, only those
-    elements with a true value at the corresponding mask element are
-    modified at each iteration.
+    Binary erosion is a mathematical morphology operation used for image
+    processing.
+
+    Parameters
+    ----------
+
+    input : array_like
+        Binary image to be eroded. Non-zero (True) elements form
+        the subset to be eroded.
+
+    structure : array_like, optional
+        Structuring element used for the erosion. Non-zero elements are
+        considered True. If no structuring element is provided, an element
+        is generated with a square connectivity equal to one.
+
+    iterations : {int, float}, optional
+        The erosion is repeated `iterations` times (one, by default).
+        If iterations is less than 1, the erosion is repeated until the
+        result does not change anymore.
+
+    mask : array_like, optional
+        If a mask is given, only those elements with a True value at
+        the corresponding mask element are modified at each iteration.
+
+    output : ndarray, optional
+        Array of the same shape as input, into which the output is placed.
+        By default, a new array is created.
+
+    origin: int or tuple of ints, optional
+        Placement of the filter, by default 0.
+
+    border_value: int (cast to 0 or 1)
+        Value at the border in the output array.
+
+
+    Returns
+    -------
+
+    out: ndarray of bools
+        Erosion of the input by the structuring element.
+
+
+    See also
+    --------
+
+    grey_erosion, binary_dilation, binary_closing, binary_opening,
+    generate_binary_structure
+
+    Notes
+    -----
+
+    Erosion [1]_ is a mathematical morphology operation [2]_ that uses a
+    structuring element for shrinking the shapes in an image. The binary
+    erosion of an image by a structuring element is the locus of the points
+    where a superimposition of the structuring element centered on the point
+    is entirely contained in the set of non-zero elements of the image.
+
+    References
+    ----------
+
+    .. [1] http://en.wikipedia.org/wiki/Erosion_%28morphology%29
+
+    .. [2] http://en.wikipedia.org/wiki/Mathematical_morphology
+
+    Examples
+    --------
+
+    >>> a = np.zeros((7,7), dtype=np.int)
+    >>> a[1:6, 2:5] = 1
+    >>> a
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+    >>> ndimage.binary_erosion(a).astype(a.dtype)
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 0, 0, 0],
+           [0, 0, 0, 1, 0, 0, 0],
+           [0, 0, 0, 1, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+    >>> #Erosion removes objects smaller than the structure
+    >>> ndimage.binary_erosion(a, structure=np.ones((5,5))).astype(a.dtype)
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+
     """
     return _binary_erosion(input, structure, iterations, mask,
                            output, border_value, origin, 0, brute_force)
 
 def binary_dilation(input, structure = None, iterations = 1, mask = None,
         output = None, border_value = 0, origin = 0, brute_force = False):
-    """Multi-dimensional binary dilation with the given structure.
+    """
+    Multi-dimensional binary dilation with the given structuring element.
 
-    An output array can optionally be provided. The origin parameter
-    controls the placement of the filter. If no structuring element is
-    provided an element is generated with a squared connectivity equal
-    to one. The dilation operation is repeated iterations times.  If
-    iterations is less than 1, the dilation is repeated until the
-    result does not change anymore.  If a mask is given, only those
-    elements with a true value at the corresponding mask element are
-    modified at each iteration.
+
+    Parameters
+    ----------
+
+    input : array_like
+        Binary array_like to be dilated. Non-zero (True) elements form
+        the subset to be dilated.
+
+    structure : array_like, optional
+        Structuring element used for the dilation. Non-zero elements are
+        considered True. If no structuring element is provided an element
+        is generated with a square connectivity equal to one.
+
+    iterations : {int, float}, optional
+        The dilation is repeated `iterations` times (one, by default).
+        If iterations is less than 1, the dilation is repeated until the
+        result does not change anymore.
+
+    mask : array_like, optional
+        If a mask is given, only those elements with a True value at
+        the corresponding mask element are modified at each iteration.
+
+
+    output : ndarray, optional
+        Array of the same shape as input, into which the output is placed.
+        By default, a new array is created.
+
+    origin : int or tuple of ints, optional
+        Placement of the filter, by default 0.
+
+    border_value : int (cast to 0 or 1)
+        Value at the border in the output array.
+
+
+    Returns
+    -------
+
+    out : ndarray of bools
+        Dilation of the input by the structuring element.
+
+
+    See also
+    --------
+
+    grey_dilation, binary_erosion, binary_closing, binary_opening,
+    generate_binary_structure
+
+    Notes
+    -----
+
+    Dilation [1]_ is a mathematical morphology operation [2]_ that uses a
+    structuring element for expanding the shapes in an image. The binary
+    dilation of an image by a structuring element is the locus of the points
+    covered by the structuring element, when its center lies within the
+    non-zero points of the image.
+
+    References
+    ----------
+
+    .. [1] http://en.wikipedia.org/wiki/Dilation_%28morphology%29
+
+    .. [2] http://en.wikipedia.org/wiki/Mathematical_morphology
+
+    Examples
+    --------
+
+    >>> a = np.zeros((5, 5))
+    >>> a[2, 2] = 1
+    >>> a
+    array([[ 0.,  0.,  0.,  0.,  0.],
+           [ 0.,  0.,  0.,  0.,  0.],
+           [ 0.,  0.,  1.,  0.,  0.],
+           [ 0.,  0.,  0.,  0.,  0.],
+           [ 0.,  0.,  0.,  0.,  0.]])
+    >>> ndimage.binary_dilation(a)
+    array([[False, False, False, False, False],
+           [False, False,  True, False, False],
+           [False,  True,  True,  True, False],
+           [False, False,  True, False, False],
+           [False, False, False, False, False]], dtype=bool)
+    >>> ndimage.binary_dilation(a).astype(a.dtype)
+    array([[ 0.,  0.,  0.,  0.,  0.],
+           [ 0.,  0.,  1.,  0.,  0.],
+           [ 0.,  1.,  1.,  1.,  0.],
+           [ 0.,  0.,  1.,  0.,  0.],
+           [ 0.,  0.,  0.,  0.,  0.]])
+    >>> # 3x3 structuring element with connectivity 1, used by default
+    >>> struct1 = ndimage.generate_binary_structure(2, 1)
+    >>> struct1
+    array([[False,  True, False],
+           [ True,  True,  True],
+           [False,  True, False]], dtype=bool)
+    >>> # 3x3 structuring element with connectivity 2
+    >>> struct2 = ndimage.generate_binary_structure(2, 2)
+    >>> struct2
+    array([[ True,  True,  True],
+           [ True,  True,  True],
+           [ True,  True,  True]], dtype=bool)
+    >>> ndimage.binary_dilation(a, structure=struct1).astype(a.dtype)
+    array([[ 0.,  0.,  0.,  0.,  0.],
+           [ 0.,  0.,  1.,  0.,  0.],
+           [ 0.,  1.,  1.,  1.,  0.],
+           [ 0.,  0.,  1.,  0.,  0.],
+           [ 0.,  0.,  0.,  0.,  0.]])
+    >>> ndimage.binary_dilation(a, structure=struct2).astype(a.dtype)
+    array([[ 0.,  0.,  0.,  0.,  0.],
+           [ 0.,  1.,  1.,  1.,  0.],
+           [ 0.,  1.,  1.,  1.,  0.],
+           [ 0.,  1.,  1.,  1.,  0.],
+           [ 0.,  0.,  0.,  0.,  0.]])
+    >>> ndimage.binary_dilation(a, structure=struct1,\\
+    ... iterations=2).astype(a.dtype)
+    array([[ 0.,  0.,  1.,  0.,  0.],
+           [ 0.,  1.,  1.,  1.,  0.],
+           [ 1.,  1.,  1.,  1.,  1.],
+           [ 0.,  1.,  1.,  1.,  0.],
+           [ 0.,  0.,  1.,  0.,  0.]])
+
     """
     input = numpy.asarray(input)
     if structure is None:
@@ -204,13 +534,109 @@ def binary_dilation(input, structure = None, iterations = 1, mask = None,
 
 def binary_opening(input, structure = None, iterations = 1, output = None,
                    origin = 0):
-    """Multi-dimensional binary opening with the given structure.
+    """
+    Multi-dimensional binary opening with the given structuring element.
 
-    An output array can optionally be provided. The origin parameter
-    controls the placement of the filter. If no structuring element is
-    provided an element is generated with a squared connectivity equal
-    to one. The iterations parameter gives the number of times the
-    erosions and then the dilations are done.
+    The *opening* of an input image by a structuring element is the
+    *dilation* of the *erosion* of the image by the structuring element.
+
+    Parameters
+    ----------
+
+    input : array_like
+        Binary array_like to be opened. Non-zero (True) elements form
+        the subset to be opened.
+
+    structure : array_like, optional
+        Structuring element used for the opening. Non-zero elements are
+        considered True. If no structuring element is provided an element
+        is generated with a square connectivity equal to one (i.e., only
+        nearest neighbors are connected to the center, diagonally-connected
+        elements are not considered neighbors).
+
+    iterations : {int, float}, optional
+        The erosion step of the opening, then the dilation step are each
+        repeated `iterations` times (one, by default). If `iterations` is
+        less than 1, each operation is repeated until the result does
+        not change anymore.
+
+    output : ndarray, optional
+        Array of the same shape as input, into which the output is placed.
+        By default, a new array is created.
+
+    origin : int or tuple of ints, optional
+        Placement of the filter, by default 0.
+
+    Returns
+    -------
+
+    out : ndarray of bools
+        Opening of the input by the structuring element.
+
+
+    See also
+    --------
+
+    grey_opening, binary_closing, binary_erosion, binary_dilation,
+    generate_binary_structure
+
+    Notes
+    -----
+
+    *Opening* [1]_ is a mathematical morphology operation [2]_ that
+    consists in the succession of an erosion and a dilation of the
+    input with the same structuring element. Opening therefore removes
+    objects smaller than the structuring element.
+
+    Together with *closing* (`binary_closing`), opening can be used for
+    noise removal.
+
+    References
+    ----------
+
+    .. [1] http://en.wikipedia.org/wiki/Opening_%28morphology%29
+
+    .. [2] http://en.wikipedia.org/wiki/Mathematical_morphology
+
+    Examples
+    --------
+
+    >>> a = np.zeros((5,5), dtype=np.int)
+    >>> a[1:4, 1:4] = 1; a[4, 4] = 1
+    >>> a
+    array([[0, 0, 0, 0, 0],
+           [0, 1, 1, 1, 0],
+           [0, 1, 1, 1, 0],
+           [0, 1, 1, 1, 0],
+           [0, 0, 0, 0, 1]])
+    >>> # Opening removes small objects
+    >>> ndimage.binary_opening(a, structure=np.ones((3,3))).astype(np.int)
+    array([[0, 0, 0, 0, 0],
+           [0, 1, 1, 1, 0],
+           [0, 1, 1, 1, 0],
+           [0, 1, 1, 1, 0],
+           [0, 0, 0, 0, 0]])
+    >>> # Opening can also smooth corners
+    >>> ndimage.binary_opening(a).astype(np.int)
+    array([[0, 0, 0, 0, 0],
+           [0, 0, 1, 0, 0],
+           [0, 1, 1, 1, 0],
+           [0, 0, 1, 0, 0],
+           [0, 0, 0, 0, 0]])
+    >>> # Opening is the dilation of the erosion of the input
+    >>> ndimage.binary_erosion(a).astype(np.int)
+    array([[0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0],
+           [0, 0, 1, 0, 0],
+           [0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0]])
+    >>> ndimage.binary_dilation(ndimage.binary_erosion(a)).astype(np.int)
+    array([[0, 0, 0, 0, 0],
+           [0, 0, 1, 0, 0],
+           [0, 1, 1, 1, 0],
+           [0, 0, 1, 0, 0],
+           [0, 0, 0, 0, 0]])
+
     """
     input = numpy.asarray(input)
     if structure is None:
@@ -224,13 +650,132 @@ def binary_opening(input, structure = None, iterations = 1, output = None,
 
 def binary_closing(input, structure = None, iterations = 1, output = None,
                    origin = 0):
-    """Multi-dimensional binary closing with the given structure.
+    """
+    Multi-dimensional binary closing with the given structuring element.
 
-    An output array can optionally be provided. The origin parameter
-    controls the placement of the filter. If no structuring element is
-    provided an element is generated with a squared connectivity equal
-    to one. The iterations parameter gives the number of times the
-    dilations and then the erosions are done.
+    The *closing* of an input image by a structuring element is the
+    *erosion* of the *dilation* of the image by the structuring element.
+
+    Parameters
+    ----------
+
+    input : array_like
+        Binary array_like to be closed. Non-zero (True) elements form
+        the subset to be closed.
+
+    structure : array_like, optional
+        Structuring element used for the closing. Non-zero elements are
+        considered True. If no structuring element is provided an element
+        is generated with a square connectivity equal to one (i.e., only
+        nearest neighbors are connected to the center, diagonally-connected
+        elements are not considered neighbors).
+
+    iterations : {int, float}, optional
+        The dilation step of the closing, then the erosion step are each
+        repeated `iterations` times (one, by default). If iterations is
+        less than 1, each operations is repeated until the result does
+        not change anymore.
+
+    output : ndarray, optional
+        Array of the same shape as input, into which the output is placed.
+        By default, a new array is created.
+
+    origin : int or tuple of ints, optional
+        Placement of the filter, by default 0.
+
+    Returns
+    -------
+
+    out : ndarray of bools
+        Closing of the input by the structuring element.
+
+
+    See also
+    --------
+
+    grey_closing, binary_opening, binary_dilation, binary_erosion,
+    generate_binary_structure
+
+    Notes
+    -----
+
+    *Closing* [1]_ is a mathematical morphology operation [2]_ that
+    consists in the succession of a dilation and an erosion of the
+    input with the same structuring element. Closing therefore fills
+    holes smaller than the structuring element.
+
+    Together with *opening* (`binary_opening`), closing can be used for
+    noise removal.
+
+    References
+    ----------
+
+    .. [1] http://en.wikipedia.org/wiki/Closing_%28morphology%29
+
+    .. [2] http://en.wikipedia.org/wiki/Mathematical_morphology
+
+    Examples
+    --------
+
+    >>> a = np.zeros((5,5), dtype=np.int)
+    >>> a[1:-1, 1:-1] = 1; a[2,2] = 0
+    >>> a
+    array([[0, 0, 0, 0, 0],
+           [0, 1, 1, 1, 0],
+           [0, 1, 0, 1, 0],
+           [0, 1, 1, 1, 0],
+           [0, 0, 0, 0, 0]])
+    >>> # Closing removes small holes
+    >>> ndimage.binary_closing(a).astype(np.int)
+    array([[0, 0, 0, 0, 0],
+           [0, 1, 1, 1, 0],
+           [0, 1, 1, 1, 0],
+           [0, 1, 1, 1, 0],
+           [0, 0, 0, 0, 0]])
+    >>> # Closing is the erosion of the dilation of the input
+    >>> ndimage.binary_dilation(a).astype(np.int)
+    array([[0, 1, 1, 1, 0],
+           [1, 1, 1, 1, 1],
+           [1, 1, 1, 1, 1],
+           [1, 1, 1, 1, 1],
+           [0, 1, 1, 1, 0]])
+    >>> ndimage.binary_erosion(ndimage.binary_dilation(a)).astype(np.int)
+    array([[0, 0, 0, 0, 0],
+           [0, 1, 1, 1, 0],
+           [0, 1, 1, 1, 0],
+           [0, 1, 1, 1, 0],
+           [0, 0, 0, 0, 0]])
+
+
+    >>> a = np.zeros((7,7), dtype=np.int)
+    >>> a[1:6, 2:5] = 1; a[1:3,3] = 0
+    >>> a
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 1, 0, 1, 0, 0],
+           [0, 0, 1, 0, 1, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+    >>> # In addition to removing holes, closing can also
+    >>> # coarsen boundaries with fine hollows.
+    >>> ndimage.binary_closing(a).astype(np.int)
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 1, 0, 1, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+    >>> ndimage.binary_closing(a, structure=np.ones((2,2))).astype(np.int)
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+
     """
     input = numpy.asarray(input)
     if structure is None:
@@ -244,15 +789,104 @@ def binary_closing(input, structure = None, iterations = 1, output = None,
 
 def binary_hit_or_miss(input, structure1 = None, structure2 = None,
                        output = None, origin1 = 0, origin2 = None):
-    """Multi-dimensional binary hit-or-miss transform.
+    """
+    Multi-dimensional binary hit-or-miss transform.
 
-    An output array can optionally be provided. The origin parameters
-    controls the placement of the structuring elements. If the first
-    structuring element is not given one is generated with a squared
-    connectivity equal to one. If the second structuring element is
-    not provided, it set equal to the inverse of the first structuring
-    element. If the origin for the second structure is equal to None
-    it is set equal to the origin of the first.
+    The hit-or-miss transform finds the locations of a given pattern
+    inside the input image.
+
+    Parameters
+    ----------
+
+    input : array_like (cast to booleans)
+        Binary image where a pattern is to be detected.
+
+    structure1 : array_like (cast to booleans), optional
+        Part of the structuring element to be fitted to the foreground
+        (non-zero elements) of `input`. If no value is provided, a
+        structure of square connectivity 1 is chosen.
+
+    structure2 : array_like (cast to booleans), optional
+        Second part of the structuring element that has to miss completely
+        the foreground. If no value is provided, the complementary of
+        `structure1` is taken.
+
+    output : ndarray, optional
+        Array of the same shape as input, into which the output is placed.
+        By default, a new array is created.
+
+    origin1 : int or tuple of ints, optional
+        Placement of the first part of the structuring element `structure1`,
+        by default 0 for a centered structure.
+
+    origin2 : int or tuple of ints, optional
+        Placement of the second part of the structuring element `structure2`,
+        by default 0 for a centered structure. If a value is provided for
+        `origin1` and not for `origin2`, then `origin2` is set to `origin1`.
+
+    Returns
+    -------
+
+    output : ndarray
+        Hit-or-miss transform of `input` with the given structuring
+        element (`structure1`, `structure2`).
+
+    See also
+    --------
+
+    ndimage.morphology, binary_erosion
+
+
+    Notes
+    -----
+
+
+
+
+    References
+    ----------
+
+    .. [1] http://en.wikipedia.org/wiki/Hit-or-miss_transform
+
+    Examples
+    --------
+
+    >>> a = np.zeros((7,7), dtype=np.int)
+    >>> a[1, 1] = 1; a[2:4, 2:4] = 1; a[4:6, 4:6] = 1
+    >>> a
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 1, 0, 0, 0, 0, 0],
+           [0, 0, 1, 1, 0, 0, 0],
+           [0, 0, 1, 1, 0, 0, 0],
+           [0, 0, 0, 0, 1, 1, 0],
+           [0, 0, 0, 0, 1, 1, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+    >>> structure1 = np.array([[1, 0, 0], [0, 1, 1], [0, 1, 1]])
+    >>> structure1
+    array([[1, 0, 0],
+           [0, 1, 1],
+           [0, 1, 1]])
+    >>> # Find the matches of structure1 in the array a
+    >>> ndimage.binary_hit_or_miss(a, structure1=structure1).astype(np.int)
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 1, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 1, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+    >>> # Change the origin of the filter
+    >>> # origin1=1 is equivalent to origin1=(1,1) here
+    >>> ndimage.binary_hit_or_miss(a, structure1=structure1,\\
+    ... origin1=1).astype(np.int)
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 1, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+
     """
     input = numpy.asarray(input)
     if structure1 is None:
@@ -279,28 +913,218 @@ def binary_hit_or_miss(input, structure1 = None, structure2 = None,
 
 def binary_propagation(input, structure = None, mask = None,
                        output = None, border_value = 0, origin = 0):
-    """Multi-dimensional binary propagation with the given structure.
+    """
+    Multi-dimensional binary propagation with the given structuring element.
 
-    An output array can optionally be provided. The origin parameter
-    controls the placement of the filter. If no structuring element is
-    provided an element is generated with a squared connectivity equal
-    to one. If a mask is given, only those elements with a true value at
-    the corresponding mask element are.
+
+    Parameters
+    ----------
+
+    input : array_like
+        Binary image to be propagated inside `mask`.
+
+    structure : array_like
+        Structuring element used in the successive dilations. The output
+        may depend on the structuring element, especially if `mask` has
+        several connex components. If no structuring element is
+        provided, an element is generated with a squared connectivity equal
+        to one.
+
+    mask : array_like
+        Binary mask defining the region into which `input` is allowed to
+        propagate.
+
+    output : ndarray, optional
+        Array of the same shape as input, into which the output is placed.
+        By default, a new array is created.
+
+    origin : int or tuple of ints, optional
+        Placement of the filter, by default 0.
+
+    Returns
+    -------
+
+    ouput : ndarray
+        Binary propagation of `input` inside `mask`.
+
+    Notes
+    -----
 
     This function is functionally equivalent to calling binary_dilation
     with the number of iterations less then one: iterative dilation until
     the result does not change anymore.
+
+    The succession of an erosion and propagation inside the original image
+    can be used instead of an *opening* for deleting small objects while
+    keeping the contours of larger objects untouched.
+
+    References
+    ----------
+
+    .. [1] http://cmm.ensmp.fr/~serra/cours/pdf/en/ch6en.pdf, slide 15.
+
+    .. [2] http://www.qi.tnw.tudelft.nl/Courses/FIP/noframes/fip-Morpholo.html#Heading102
+
+    Examples
+    --------
+
+    >>> input = np.zeros((8, 8), dtype=np.int)
+    >>> input[2, 2] = 1
+    >>> mask = np.zeros((8, 8), dtype=np.int)
+    >>> mask[1:4, 1:4] = mask[4, 4]  = mask[6:8, 6:8] = 1
+    >>> input
+    array([[0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 1, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0]])
+    >>> mask
+    array([[0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 1, 1, 1, 0, 0, 0, 0],
+           [0, 1, 1, 1, 0, 0, 0, 0],
+           [0, 1, 1, 1, 0, 0, 0, 0],
+           [0, 0, 0, 0, 1, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 1, 1],
+           [0, 0, 0, 0, 0, 0, 1, 1]])
+    >>> ndimage.binary_propagation(input, mask=mask).astype(np.int)
+    array([[0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 1, 1, 1, 0, 0, 0, 0],
+           [0, 1, 1, 1, 0, 0, 0, 0],
+           [0, 1, 1, 1, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0]])
+    >>> ndimage.binary_propagation(input, mask=mask,\\
+    ... structure=np.ones((3,3))).astype(np.int)
+    array([[0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 1, 1, 1, 0, 0, 0, 0],
+           [0, 1, 1, 1, 0, 0, 0, 0],
+           [0, 1, 1, 1, 0, 0, 0, 0],
+           [0, 0, 0, 0, 1, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0, 0]])
+
+    >>> # Comparison between opening and erosion+propagation
+    >>> a = np.zeros((6,6), dtype=np.int)
+    >>> a[2:5, 2:5] = 1; a[0, 0] = 1; a[5, 5] = 1
+    >>> a
+    array([[1, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 1, 1, 1, 0],
+           [0, 0, 1, 1, 1, 0],
+           [0, 0, 1, 1, 1, 0],
+           [0, 0, 0, 0, 0, 1]])
+    >>> ndimage.binary_opening(a).astype(np.int)
+    array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 0, 0],
+           [0, 0, 1, 1, 1, 0],
+           [0, 0, 0, 1, 0, 0],
+           [0, 0, 0, 0, 0, 0]])
+    >>> b = ndimage.binary_erosion(a)
+    >>> b.astype(int)
+    array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 0, 0],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]])
+    >>> ndimage.binary_propagation(b, mask=a).astype(np.int)
+    array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 1, 1, 1, 0],
+           [0, 0, 1, 1, 1, 0],
+           [0, 0, 1, 1, 1, 0],
+           [0, 0, 0, 0, 0, 0]])
+
     """
     return binary_dilation(input, structure, -1, mask, output,
                            border_value, origin)
 
 def binary_fill_holes(input, structure = None, output = None, origin = 0):
-    """Fill the holes in binary objects.
+    """
+    Fill the holes in binary objects.
 
-    An output array can optionally be provided. The origin parameter
-    controls the placement of the filter. If no structuring element is
-    provided an element is generated with a squared connectivity equal
-    to one.
+
+    Parameters
+    ----------
+
+    input: array_like
+        n-dimensional binary array with holes to be filled
+
+    structure: array_like, optional
+        Structuring element used in the computation; large-size elements
+        make computations faster but may miss holes separated from the
+        background by thin regions. The default element (with a square
+        connectivity equal to one) yields the intuitive result where all
+        holes in the input have been filled.
+
+    output: ndarray, optional
+        Array of the same shape as input, into which the output is placed.
+        By default, a new array is created.
+
+    origin: int, tuple of ints, optional
+        Position of the structuring element.
+
+    Returns
+    -------
+
+    out: ndarray
+        Transformation of the initial image `input` where holes have been
+        filled.
+
+    See also
+    --------
+
+    binary_dilation, binary_propagation, label
+
+    Notes
+    -----
+
+    The algorithm used in this function consists in invading the complementary
+    of the shapes in `input` from the outer boundary of the image,
+    using binary dilations. Holes are not connected to the boundary and are
+    therefore not invaded. The result is the complementary subset of the
+    invaded region.
+
+    References
+    ----------
+
+    .. [1] http://en.wikipedia.org/wiki/Mathematical_morphology
+
+
+    Examples
+    --------
+
+    >>> a = np.zeros((5, 5), dtype=int)
+    >>> a[1:4, 1:4] = 1
+    >>> a[2,2] = 0
+    >>> a
+    array([[0, 0, 0, 0, 0],
+           [0, 1, 1, 1, 0],
+           [0, 1, 0, 1, 0],
+           [0, 1, 1, 1, 0],
+           [0, 0, 0, 0, 0]])
+    >>> ndimage.binary_fill_holes(a).astype(int)
+    array([[0, 0, 0, 0, 0],
+           [0, 1, 1, 1, 0],
+           [0, 1, 1, 1, 0],
+           [0, 1, 1, 1, 0],
+           [0, 0, 0, 0, 0]])
+    >>> # Too big structuring element
+    >>> ndimage.binary_fill_holes(a, structure=np.ones((5,5))).astype(int)
+    array([[0, 0, 0, 0, 0],
+           [0, 1, 1, 1, 0],
+           [0, 1, 0, 1, 0],
+           [0, 1, 1, 1, 0],
+           [0, 0, 0, 0, 0]])
+
     """
     mask = numpy.logical_not(input)
     tmp = numpy.zeros(mask.shape, bool)
@@ -316,13 +1140,123 @@ def binary_fill_holes(input, structure = None, output = None, origin = 0):
 
 def grey_erosion(input,  size = None, footprint = None, structure = None,
                  output = None, mode = "reflect", cval = 0.0, origin = 0):
-    """Calculate a grey values erosion.
+    """
+    Calculate a greyscale erosion, using either a structuring element,
+    or a footprint corresponding to a flat structuring element.
 
-    Either a size or a footprint, or the structure must be provided. An
-    output array can optionally be provided. The origin parameter
-    controls the placement of the filter. The mode parameter
-    determines how the array borders are handled, where cval is the
-    value when mode is equal to 'constant'.
+    Grayscale erosion is a mathematical morphology operation. For the
+    simple case of a full and flat structuring element, it can be viewed
+    as a minimum filter over a sliding window.
+
+    Parameters
+    ----------
+
+    input : array_like
+        Array over which the grayscale erosion is to be computed.
+
+    size : tuple of ints
+        Shape of a flat and full structuring element used for the
+        grayscale erosion. Optional if `footprint` is provided.
+
+    footprint : array of ints, optional
+        Positions of non-infinite elements of a flat structuring element
+        used for the grayscale erosion. Non-zero values give the set of
+        neighbors of the center over which the minimum is chosen.
+
+    structure : array of ints, optional
+        Structuring element used for the grayscale erosion. `structure`
+        may be a non-flat structuring element.
+
+    output : array, optional
+        An array used for storing the ouput of the erosion may be provided.
+
+    mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
+        The `mode` parameter determines how the array borders are
+        handled, where `cval` is the value when mode is equal to
+        'constant'. Default is 'reflect'
+
+    cval : scalar, optional
+        Value to fill past edges of input if `mode` is 'constant'. Default
+        is 0.0.
+
+    origin : scalar, optional
+        The `origin` parameter controls the placement of the filter.
+        Default 0
+
+
+    Returns
+    -------
+
+    output : ndarray
+        Grayscale erosion of `input`.
+
+    See also
+    --------
+
+    binary_erosion, grey_dilation, grey_opening, grey_closing
+
+    generate_binary_structure
+
+    ndimage.minimum_filter
+
+    Notes
+    -----
+
+    The grayscale erosion of an image input by a structuring element s defined
+    over a domain E is given by:
+
+    (input+s)(x) = min {input(y) - s(x-y), for y in E}
+
+    In particular, for structuring elements defined as
+    s(y) = 0 for y in E, the grayscale erosion computes the minimum of the
+    input image inside a sliding window defined by E.
+
+    Grayscale erosion [1]_ is a *mathematical morphology* operation [2]_.
+
+    References
+    ----------
+
+    .. [1] http://en.wikipedia.org/wiki/Erosion_%28morphology%29
+
+    .. [2] http://en.wikipedia.org/wiki/Mathematical_morphology
+
+    Examples
+    --------
+
+    >>> a = np.zeros((7,7), dtype=np.int)
+    >>> a[1:6, 1:6] = 3
+    >>> a[4,4] = 2; a[2,3] = 1
+    >>> a
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 3, 3, 3, 3, 3, 0],
+           [0, 3, 3, 1, 3, 3, 0],
+           [0, 3, 3, 3, 3, 3, 0],
+           [0, 3, 3, 3, 2, 3, 0],
+           [0, 3, 3, 3, 3, 3, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+    >>> ndimage.grey_erosion(a, size=(3,3))
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 3, 2, 2, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+    >>> footprint = ndimage.generate_binary_structure(2, 1)
+    >>> footprint
+    array([[False,  True, False],
+           [ True,  True,  True],
+           [False,  True, False]], dtype=bool)
+    >>> # Diagonally-connected elements are not considered neighbors
+    >>> ndimage.grey_erosion(a, size=(3,3), footprint=footprint)
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 3, 1, 2, 0, 0],
+           [0, 0, 3, 2, 2, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+
     """
     return filters._min_or_max_filter(input, size, footprint, structure,
                                       output, mode, cval, origin, 1)
@@ -330,13 +1264,139 @@ def grey_erosion(input,  size = None, footprint = None, structure = None,
 
 def grey_dilation(input,  size = None, footprint = None, structure = None,
                  output = None, mode = "reflect", cval = 0.0, origin = 0):
-    """Calculate a grey values dilation.
+    """
+    Calculate a greyscale dilation, using either a structuring element,
+    or a footprint corresponding to a flat structuring element.
 
-    Either a size or a footprint, or the structure must be
-    provided. An output array can optionally be provided. The origin
-    parameter controls the placement of the filter. The mode parameter
-    determines how the array borders are handled, where cval is the
-    value when mode is equal to 'constant'.
+    Grayscale dilation is a mathematical morphology operation. For the
+    simple case of a full and flat structuring element, it can be viewed
+    as a maximum filter over a sliding window.
+
+    Parameters
+    ----------
+
+    input : array_like
+        Array over which the grayscale dilation is to be computed.
+
+    size : tuple of ints
+        Shape of a flat and full structuring element used for the
+        grayscale dilation. Optional if `footprint` is provided.
+
+    footprint : array of ints, optional
+        Positions of non-infinite elements of a flat structuring element
+        used for the grayscale dilation. Non-zero values give the set of
+        neighbors of the center over which the maximum is chosen.
+
+    structure : array of ints, optional
+        Structuring element used for the grayscale dilation. `structure`
+        may be a non-flat structuring element.
+
+    output : array, optional
+        An array used for storing the ouput of the dilation may be provided.
+
+    mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
+        The `mode` parameter determines how the array borders are
+        handled, where `cval` is the value when mode is equal to
+        'constant'. Default is 'reflect'
+
+    cval : scalar, optional
+        Value to fill past edges of input if `mode` is 'constant'. Default
+        is 0.0.
+
+    origin : scalar, optional
+        The `origin` parameter controls the placement of the filter.
+        Default 0
+
+
+    Returns
+    -------
+
+    output : ndarray
+        Grayscale dilation of `input`.
+
+    See also
+    --------
+
+    binary_dilation, grey_erosion, grey_closing, grey_opening
+
+    generate_binary_structure
+
+    ndimage.maximum_filter
+
+    Notes
+    -----
+
+    The grayscale dilation of an image input by a structuring element s defined
+    over a domain E is given by:
+
+    (input+s)(x) = max {input(y) + s(x-y), for y in E}
+
+    In particular, for structuring elements defined as
+    s(y) = 0 for y in E, the grayscale dilation computes the maximum of the
+    input image inside a sliding window defined by E.
+
+    Grayscale dilation [1]_ is a *mathematical morphology* operation [2]_.
+
+    References
+    ----------
+
+    .. [1] http://en.wikipedia.org/wiki/Dilation_%28morphology%29
+
+    .. [2] http://en.wikipedia.org/wiki/Mathematical_morphology
+
+
+    Examples
+    --------
+
+    >>> a = np.zeros((7,7), dtype=np.int)
+    >>> a[2:5, 2:5] = 1
+    >>> a[4,4] = 2; a[2,3] = 3
+    >>> a
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 1, 3, 1, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 1, 1, 2, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+    >>> ndimage.grey_dilation(a, size=(3,3))
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 1, 3, 3, 3, 1, 0],
+           [0, 1, 3, 3, 3, 1, 0],
+           [0, 1, 3, 3, 3, 2, 0],
+           [0, 1, 1, 2, 2, 2, 0],
+           [0, 1, 1, 2, 2, 2, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+    >>> ndimage.grey_dilation(a, footprint=np.ones((3,3)))
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 1, 3, 3, 3, 1, 0],
+           [0, 1, 3, 3, 3, 1, 0],
+           [0, 1, 3, 3, 3, 2, 0],
+           [0, 1, 1, 2, 2, 2, 0],
+           [0, 1, 1, 2, 2, 2, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+    >>> s = ndimage.generate_binary_structure(2,1)
+    >>> s
+    array([[False,  True, False],
+           [ True,  True,  True],
+           [False,  True, False]], dtype=bool)
+    >>> ndimage.grey_dilation(a, footprint=s)
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 1, 3, 1, 0, 0],
+           [0, 1, 3, 3, 3, 1, 0],
+           [0, 1, 1, 3, 2, 1, 0],
+           [0, 1, 1, 2, 2, 2, 0],
+           [0, 0, 1, 1, 2, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+    >>> ndimage.grey_dilation(a, size=(3,3), structure=np.ones((3,3)))
+    array([[1, 1, 1, 1, 1, 1, 1],
+           [1, 2, 4, 4, 4, 2, 1],
+           [1, 2, 4, 4, 4, 2, 1],
+           [1, 2, 4, 4, 4, 3, 1],
+           [1, 2, 2, 3, 3, 3, 1],
+           [1, 2, 2, 3, 3, 3, 1],
+           [1, 1, 1, 1, 1, 1, 1]])
+
     """
     if structure is not None:
         structure = numpy.asarray(structure)
@@ -362,13 +1422,92 @@ def grey_dilation(input,  size = None, footprint = None, structure = None,
 
 def grey_opening(input, size = None, footprint = None, structure = None,
                  output = None, mode = "reflect", cval = 0.0, origin = 0):
-    """Multi-dimensional grey valued opening.
+    """
+    Multi-dimensional greyscale opening.
 
-    Either a size or a footprint, or the structure must be provided. An
-    output array can optionally be provided. The origin parameter
-    controls the placement of the filter. The mode parameter
-    determines how the array borders are handled, where cval is the
-    value when mode is equal to 'constant'.
+    A greyscale opening consists in the succession of a greyscale erosion,
+    and a greyscale dilation.
+
+    Parameters
+    ----------
+
+    input : array_like
+        Array over which the grayscale opening is to be computed.
+
+    size : tuple of ints
+        Shape of a flat and full structuring element used for the
+        grayscale opening. Optional if `footprint` is provided.
+
+    footprint : array of ints, optional
+        Positions of non-infinite elements of a flat structuring element
+        used for the grayscale opening.
+
+    structure : array of ints, optional
+        Structuring element used for the grayscale opening. `structure`
+        may be a non-flat structuring element.
+
+    output : array, optional
+        An array used for storing the ouput of the opening may be provided.
+
+    mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
+        The `mode` parameter determines how the array borders are
+        handled, where `cval` is the value when mode is equal to
+        'constant'. Default is 'reflect'
+
+    cval : scalar, optional
+        Value to fill past edges of input if `mode` is 'constant'. Default
+        is 0.0.
+
+    origin : scalar, optional
+        The `origin` parameter controls the placement of the filter.
+        Default 0
+
+    Returns
+    -------
+
+    output : ndarray
+        Result of the grayscale opening of `input` with `structure`.
+
+    See also
+    --------
+
+    binary_opening, grey_dilation, grey_erosion, grey_closing
+
+    generate_binary_structure
+
+    Notes
+    -----
+
+    The action of a grayscale opening with a flat structuring element amounts
+    to smoothen high local maxima, whereas binary opening erases small objects.
+
+    References
+    ----------
+
+    .. [1] http://en.wikipedia.org/wiki/Mathematical_morphology
+
+
+    Examples
+    --------
+
+    >>> a = np.arange(36).reshape((6,6))
+    >>> a[3, 3] = 50
+    >>> a
+    array([[ 0,  1,  2,  3,  4,  5],
+           [ 6,  7,  8,  9, 10, 11],
+           [12, 13, 14, 15, 16, 17],
+           [18, 19, 20, 50, 22, 23],
+           [24, 25, 26, 27, 28, 29],
+           [30, 31, 32, 33, 34, 35]])
+    >>> ndimage.grey_opening(a, size=(3,3))
+    array([[ 0,  1,  2,  3,  4,  4],
+           [ 6,  7,  8,  9, 10, 10],
+           [12, 13, 14, 15, 16, 16],
+           [18, 19, 20, 22, 22, 22],
+           [24, 25, 26, 27, 28, 28],
+           [24, 25, 26, 27, 28, 28]])
+    >>> # Note that the local maximum a[3,3] has disappeared
+
     """
     tmp = grey_erosion(input, size, footprint, structure, None, mode,
                        cval, origin)
@@ -378,13 +1517,92 @@ def grey_opening(input, size = None, footprint = None, structure = None,
 
 def grey_closing(input, size = None, footprint = None, structure = None,
                  output = None, mode = "reflect", cval = 0.0, origin = 0):
-    """Multi-dimensional grey valued closing.
+    """
+    Multi-dimensional greyscale closing.
 
-    Either a size or a footprint, or the structure must be provided. An
-    output array can optionally be provided. The origin parameter
-    controls the placement of the filter. The mode parameter
-    determines how the array borders are handled, where cval is the
-    value when mode is equal to 'constant'.
+    A greyscale closing consists in the succession of a greyscale dilation,
+    and a greyscale erosion.
+
+    Parameters
+    ----------
+
+    input : array_like
+        Array over which the grayscale closing is to be computed.
+
+    size : tuple of ints
+        Shape of a flat and full structuring element used for the
+        grayscale closing. Optional if `footprint` is provided.
+
+    footprint : array of ints, optional
+        Positions of non-infinite elements of a flat structuring element
+        used for the grayscale closing.
+
+    structure : array of ints, optional
+        Structuring element used for the grayscale closing. `structure`
+        may be a non-flat structuring element.
+
+    output : array, optional
+        An array used for storing the ouput of the closing may be provided.
+
+    mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
+        The `mode` parameter determines how the array borders are
+        handled, where `cval` is the value when mode is equal to
+        'constant'. Default is 'reflect'
+
+    cval : scalar, optional
+        Value to fill past edges of input if `mode` is 'constant'. Default
+        is 0.0.
+
+    origin : scalar, optional
+        The `origin` parameter controls the placement of the filter.
+        Default 0
+
+    Returns
+    -------
+
+    output : ndarray
+        Result of the grayscale closing of `input` with `structure`.
+
+    See also
+    --------
+
+    binary_closing, grey_dilation, grey_erosion, grey_opening
+
+    generate_binary_structure
+
+    Notes
+    -----
+
+    The action of a grayscale closing with a flat structuring element amounts
+    to smoothen deep local minima, whereas binary closing fills small holes.
+
+    References
+    ----------
+
+    .. [1] http://en.wikipedia.org/wiki/Mathematical_morphology
+
+
+    Examples
+    --------
+
+    >>> a = np.arange(36).reshape((6,6))
+    >>> a[3,3] = 0
+    >>> a
+    array([[ 0,  1,  2,  3,  4,  5],
+           [ 6,  7,  8,  9, 10, 11],
+           [12, 13, 14, 15, 16, 17],
+           [18, 19, 20,  0, 22, 23],
+           [24, 25, 26, 27, 28, 29],
+           [30, 31, 32, 33, 34, 35]])
+    >>> ndimage.grey_closing(a, size=(3,3))
+    array([[ 7,  7,  8,  9, 10, 11],
+           [ 7,  7,  8,  9, 10, 11],
+           [13, 13, 14, 15, 16, 17],
+           [19, 19, 20, 20, 22, 23],
+           [25, 25, 26, 27, 28, 29],
+           [31, 31, 32, 33, 34, 35]])
+    >>> # Note that the local minimum a[3,3] has disappeared
+
     """
     tmp = grey_dilation(input, size, footprint, structure, None, mode,
                         cval, origin)
@@ -395,13 +1613,120 @@ def grey_closing(input, size = None, footprint = None, structure = None,
 def morphological_gradient(input, size = None, footprint = None,
                         structure = None, output = None, mode = "reflect",
                         cval = 0.0, origin = 0):
-    """Multi-dimensional morphological gradient.
+    """
+    Multi-dimensional morphological gradient.
 
-    Either a size or a footprint, or the structure must be provided. An
-    output array can optionally be provided. The origin parameter
-    controls the placement of the filter. The mode parameter
-    determines how the array borders are handled, where cval is the
-    value when mode is equal to 'constant'.
+    The morphological gradient is calculated as the difference between a
+    dilation and an erosion of the input with a given structuring element.
+
+
+    Parameters
+    ----------
+
+    input : array_like
+        Array over which to compute the morphlogical gradient.
+
+    size : tuple of ints
+        Shape of a flat and full structuring element used for the
+        mathematical morphology operations. Optional if `footprint`
+        is provided. A larger `size` yields a more blurred gradient.
+
+    footprint : array of ints, optional
+        Positions of non-infinite elements of a flat structuring element
+        used for the morphology operations. Larger footprints
+        give a more blurred morphological gradient.
+
+    structure : array of ints, optional
+        Structuring element used for the morphology operations.
+        `structure` may be a non-flat structuring element.
+
+    output : array, optional
+        An array used for storing the ouput of the morphological gradient
+        may be provided.
+
+    mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
+        The `mode` parameter determines how the array borders are
+        handled, where `cval` is the value when mode is equal to
+        'constant'. Default is 'reflect'
+
+    cval : scalar, optional
+        Value to fill past edges of input if `mode` is 'constant'. Default
+        is 0.0.
+
+    origin : scalar, optional
+        The `origin` parameter controls the placement of the filter.
+        Default 0
+
+    Returns
+    -------
+
+    output : ndarray
+        Morphological gradient of `input`.
+
+    See also
+    --------
+
+    grey_dilation, grey_erosion
+
+    ndimage.gaussian_gradient_magnitude
+
+    Notes
+    -----
+
+    For a flat structuring element, the morphological gradient
+    computed at a given point corresponds to the maximal difference
+    between elements of the input among the elements covered by the
+    structuring element centered on the point.
+
+    References
+    ----------
+
+    .. [1] http://en.wikipedia.org/wiki/Mathematical_morphology
+
+    Examples
+    --------
+
+    >>> a = np.zeros((7,7), dtype=np.int)
+    >>> a[2:5, 2:5] = 1
+    >>> ndimage.morphological_gradient(a, size=(3,3))
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 1, 1, 1, 1, 1, 0],
+           [0, 1, 1, 1, 1, 1, 0],
+           [0, 1, 1, 0, 1, 1, 0],
+           [0, 1, 1, 1, 1, 1, 0],
+           [0, 1, 1, 1, 1, 1, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+    >>> # The morphological gradient is computed as the difference
+    >>> # between a dilation and an erosion
+    >>> ndimage.grey_dilation(a, size=(3,3)) -\\
+    ...  ndimage.grey_erosion(a, size=(3,3))
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 1, 1, 1, 1, 1, 0],
+           [0, 1, 1, 1, 1, 1, 0],
+           [0, 1, 1, 0, 1, 1, 0],
+           [0, 1, 1, 1, 1, 1, 0],
+           [0, 1, 1, 1, 1, 1, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+    >>> a = np.zeros((7,7), dtype=np.int)
+    >>> a[2:5, 2:5] = 1
+    >>> a[4,4] = 2; a[2,3] = 3
+    >>> a
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 1, 3, 1, 0, 0],
+           [0, 0, 1, 1, 1, 0, 0],
+           [0, 0, 1, 1, 2, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+    >>> ndimage.morphological_gradient(a, size=(3,3))
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 1, 3, 3, 3, 1, 0],
+           [0, 1, 3, 3, 3, 1, 0],
+           [0, 1, 3, 2, 3, 2, 0],
+           [0, 1, 1, 2, 2, 2, 0],
+           [0, 1, 1, 2, 2, 2, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+
     """
     tmp = grey_dilation(input, size, footprint, structure, None, mode,
                         cval, origin)
@@ -470,13 +1795,26 @@ def white_tophat(input, size = None, footprint = None, structure = None,
 def black_tophat(input, size = None, footprint = None,
                  structure = None, output = None, mode = "reflect",
                  cval = 0.0, origin = 0):
-    """Multi-dimensional black tophat filter.
+    """
+    Multi-dimensional black tophat filter.
 
     Either a size or a footprint, or the structure must be provided. An
     output array can optionally be provided. The origin parameter
     controls the placement of the filter. The mode parameter
     determines how the array borders are handled, where cval is the
     value when mode is equal to 'constant'.
+
+    See also
+    --------
+
+    grey_opening, grey_closing
+
+    References
+    ----------
+
+    .. [1] http://cmm.ensmp.fr/Micromorph/course/sld011.htm, and following slides
+    .. [2] http://en.wikipedia.org/wiki/Top-hat_transform
+
     """
     tmp = grey_dilation(input, size, footprint, structure, None, mode,
                         cval, origin)

@@ -3,14 +3,15 @@ __all__ = ['imread']
 from numpy import array
 
 def imread(fname, flatten=False):
-    """Load an image from file.
+    """
+    Load an image from file.
 
     Parameters
     ----------
-    fname : string
+    fname : str
         Image file name, e.g. ``test.jpg``.
-    flatten : bool
-        If true, convert the output to grey-scale.
+    flatten : bool, optional
+        If true, convert the output to grey-scale. Default is False.
 
     Returns
     -------
@@ -18,6 +19,11 @@ def imread(fname, flatten=False):
         The different colour bands/channels are stored in the
         third dimension, such that a grey-image is MxN, an
         RGB-image MxNx3 and an RGBA-image MxNx4.
+
+    Raises
+    ------
+    ImportError
+        If the Python Imaging Library (PIL) can not be imported.
 
     """
     try:
