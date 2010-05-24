@@ -26,8 +26,8 @@ stats.py module
 A collection of basic statistical functions for python.  The function
 names appear below.
 
- *** Some scalar functions defined here are also available in the scipy.special
-     package where they work on arbitrary sized arrays. ****
+ Some scalar functions defined here are also available in the scipy.special
+ package where they work on arbitrary sized arrays.
 
 Disclaimers:  The function list is obviously incomplete and, worse, the
 functions are not optimized.  All functions have been tested (some more
@@ -353,9 +353,10 @@ def nanmedian(x, axis=0):
 
 
 def gmean(a, axis=0, dtype=None):
-    """Compute the geometric mean along the specified axis.
+    """
+    Compute the geometric mean along the specified axis.
 
-    Returns the geometric average of the array elements. 
+    Returns the geometric average of the array elements.
     That is:  n-th root of (x1 * x2 * ... * xn)
 
     Parameters
@@ -365,14 +366,16 @@ def gmean(a, axis=0, dtype=None):
     axis : int, optional, default axis=0
         Axis along which the geometric mean is computed.
     dtype : dtype, optional
-        Type of the returned array and of the accumulator in which the elements are summed. 
-        If dtype is not specified, it defaults to the dtype of a, unless a has an integer 
-        dtype with a precision less than that of the default platform integer. In that case, 
-        the default platform integer is used.
+        Type of the returned array and of the accumulator in which the
+        elements are summed. If dtype is not specified, it defaults to the
+        dtype of a, unless a has an integer dtype with a precision less than
+        that of the default platform integer. In that case, the default
+        platform integer is used.
 
     Returns
     -------
-    gmean : ndarray, see dtype parameter above
+    gmean : ndarray,
+        see dtype parameter above
 
     See Also
     --------
@@ -381,14 +384,14 @@ def gmean(a, axis=0, dtype=None):
     hmean: Harmonic mean
 
     Notes
-    -------
+    -----
     The geometric average is computed over a single dimension of the input
     array, axis=0 by default, or all values in the array if axis=None.
     float64 intermediate and return values are used for integer inputs.
 
-    Use masked arrays to ignore any non-finite values in the input or that arise in the
-    calculations such as Not a Number and infinity because masked arrays automatically 
-    mask any non-finite values.
+    Use masked arrays to ignore any non-finite values in the input or that
+    arise in the calculations such as Not a Number and infinity because masked
+    arrays automatically mask any non-finite values.
 
     """
     if not isinstance(a, np.ndarray): #if not an ndarray object attempt to convert it
@@ -403,7 +406,8 @@ def gmean(a, axis=0, dtype=None):
     return np.exp(log_a.mean(axis=axis))
 
 def hmean(a, axis=0, dtype=None):
-    """Calculates the harmonic mean along the specified axis.
+    """
+    Calculates the harmonic mean along the specified axis.
 
     That is:  n / (1/x1 + 1/x2 + ... + 1/xn)
 
@@ -414,14 +418,16 @@ def hmean(a, axis=0, dtype=None):
     axis : int, optional, default axis=0
         Axis along which the harmonic mean is computed.
     dtype : dtype, optional
-        Type of the returned array and of the accumulator in which the elements are summed. 
-        If dtype is not specified, it defaults to the dtype of a, unless a has an integer 
-        dtype with a precision less than that of the default platform integer. In that case, 
-        the default platform integer is used.
+        Type of the returned array and of the accumulator in which the
+        elements are summed. If dtype is not specified, it defaults to the
+        dtype of a, unless a has an integer dtype with a precision less than
+        that of the default platform integer. In that case, the default
+        platform integer is used.
 
     Returns
     -------
-    hmean : ndarray, see dtype parameter above
+    hmean : ndarray,
+        see dtype parameter above
 
     See Also
     --------
@@ -430,13 +436,13 @@ def hmean(a, axis=0, dtype=None):
     gmean: Geometric mean
 
     Notes
-    -------
+    -----
     The harmonic mean is computed over a single dimension of the input
     array, axis=0 by default, or all values in the array if axis=None.
     float64 intermediate and return values are used for integer inputs.
 
-    Use masked arrays to ignore any non-finite values in the input or that arise in the
-    calculations such as Not a Number and infinity.
+    Use masked arrays to ignore any non-finite values in the input or that
+    arise in the calculations such as Not a Number and infinity.
 
     """
     if not isinstance(a, np.ndarray):
@@ -457,7 +463,8 @@ def hmean(a, axis=0, dtype=None):
 
 
 def mean(a, axis=0):
-    """Returns the arithmetic mean of m along the given dimension.
+    """
+    Returns the arithmetic mean of m along the given dimension.
 
     That is: (x1 + x2 + .. + xn) / n
 
@@ -471,6 +478,22 @@ def mean(a, axis=0):
     The arithmetic mean computed over a single dimension of the input array or
     all values in the array if axis=None. The return value will have a floating
     point dtype even if the input data are integers.
+
+
+    Notes
+    -----
+    scipy.stats.mean is deprecated; please update your code to use numpy.mean.
+
+    Please note that:
+        - numpy.mean axis argument defaults to None, not 0
+        - numpy.mean has a ddof argument to replace bias in a more general
+          manner.
+        - scipy.stats.mean(a, bias=True) can be replaced by ::
+
+             numpy.mean(x, axis=0, ddof=1)
+
+    removed in scipy 0.8.0
+
     """
     raise DeprecationWarning("""\
 scipy.stats.mean is deprecated; please update your code to use numpy.mean.
@@ -843,21 +866,29 @@ def tsem(a, limits=None, inclusive=(True,True)):
 #####################################
 
 def moment(a, moment=1, axis=0):
-    """Calculates the nth moment about the mean for a sample.
+    """
+    Calculates the nth moment about the mean for a sample.
 
     Generally used to calculate coefficients of skewness and
     kurtosis.
 
     Parameters
     ----------
-    a : array
+    a : array_like
+       data
     moment : int
+       order of central moment that is returned
     axis : int or None
+       Axis along which the central moment is computed. If None, then the data
+       array is raveled. The default axis is zero.
 
     Returns
     -------
-    The appropriate moment along the given axis or over all values if axis is
-    None.
+    n-th central moment : ndarray or float
+       The appropriate moment along the given axis or over all values if axis
+       is None. The denominator for the moment calculation is the number of
+       observations, no degrees of freedom correction is done.
+
     """
     a, axis = _chk_asarray(a, axis)
     if moment == 1:
@@ -900,7 +931,8 @@ def variation(a, axis=0):
 
 
 def skew(a, axis=0, bias=True):
-    """Computes the skewness of a data set.
+    """
+    Computes the skewness of a data set.
 
     For normally distributed data, the skewness should be about 0. A skewness
     value > 0 means that there is more weight in the left tail of the
@@ -909,15 +941,18 @@ def skew(a, axis=0, bias=True):
 
     Parameters
     ----------
-    a : array
+    a : ndarray
+        data
     axis : int or None
+        axis along which skewness is calculated
     bias : bool
         If False, then the calculations are corrected for statistical bias.
 
     Returns
     -------
-    The skewness of values along an axis, returning 0 where all values are
-    equal.
+    skewness : ndarray
+        The skewness of values along an axis, returning 0 where all values are
+        equal.
 
     References
     ----------
@@ -946,21 +981,24 @@ def skew(a, axis=0, bias=True):
     return vals
 
 def kurtosis(a, axis=0, fisher=True, bias=True):
-    """Computes the kurtosis (Fisher or Pearson) of a dataset.
+    """
+    Computes the kurtosis (Fisher or Pearson) of a dataset.
 
-    Kurtosis is the fourth central moment divided by the square of the variance.
-    If Fisher's definition is used, then 3.0 is subtracted from the result to
-    give 0.0 for a normal distribution.
+    Kurtosis is the fourth central moment divided by the square of the
+    variance. If Fisher's definition is used, then 3.0 is subtracted from
+    the result to give 0.0 for a normal distribution.
 
     If bias is False then the kurtosis is calculated using k statistics to
-    eliminate bias comming from biased moment estimators
+    eliminate bias coming from biased moment estimators
 
     Use kurtosistest() to see if result is close enough to normal.
 
     Parameters
     ----------
     a : array
+        data for which the kurtosis is calculated
     axis : int or None
+        Axis along which the kurtosis is calculated
     fisher : bool
         If True, Fisher's definition is used (normal ==> 0.0). If False,
         Pearson's definition is used (normal ==> 3.0).
@@ -969,8 +1007,9 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
 
     Returns
     -------
-    The kurtosis of values along an axis. If all values are equal, return -3 for Fisher's
-    definition and 0 for Pearson's definition.
+    kurtosis : array
+        The kurtosis of values along an axis. If all values are equal,
+        return -3 for Fisher's definition and 0 for Pearson's definition.
 
 
     References
@@ -1005,21 +1044,40 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         return vals
 
 def describe(a, axis=0):
-    """Computes several descriptive statistics of the passed array.
+    """
+    Computes several descriptive statistics of the passed array.
 
     Parameters
     ----------
-    a : array
+    a : array_like
+       data
     axis : int or None
+       axis along which statistics are calculated. If axis is None, then data
+       array is raveled. The default axis is zero.
 
     Returns
     -------
-    (size of the data,
-     (min, max),
-     arithmetic mean,
-     unbiased variance,
-     biased skewness,
-     biased kurtosis)
+    size of the data : int
+       length of data along axis
+    (min, max): tuple of ndarrays or floats
+       minimum and maximum value of data array
+    arithmetic mean : ndarray or float
+       mean of data along axis
+    unbiased variance : ndarray or float
+       variance of the data along axis, denominator is number of observations
+       minus one.
+    biased skewness : ndarray or float
+       skewness, based on moment calculations with denominator equal to the
+       number of observations, i.e. no degrees of freedom correction
+    biased kurtosis : ndarray or float
+       kurtosis (Fisher), the kurtosis is normalized so that it is zero for the
+       normal distribution. No degrees of freedom or bias correction is used.
+
+    See Also
+    --------
+    skew
+    kurtosis
+
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
@@ -1351,9 +1409,9 @@ def histogram2(a, bins):
 
 def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False):
     """
-    Separates the range into several bins and returns the number of instances of a
-    in each bin. This histogram is based on numpy's histogram but has a larger
-    range by default if defaultlimits is not set.
+    Separates the range into several bins and returns the number of instances
+    of a in each bin. This histogram is based on numpy's histogram but has a
+    larger range by default if default limits is not set.
 
     Parameters
     ----------
@@ -1363,14 +1421,15 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
         The number of bins to use for the histogram. Default is 10.
     defaultlimits: tuple (lower, upper), optional
         The lower and upper values for the range of the histogram.
-        If no value is given, a range slightly larger then the range of the values
-        in a is used. Specifically (a.min() - s, a.max() + s),
+        If no value is given, a range slightly larger then the range of the
+        values in a is used. Specifically (a.min() - s, a.max() + s),
             where s is (1/2)(a.max() - a.min()) / (numbins - 1)
     weights: array like, same length as a, optional
-        The weights for each value in a. Default is None, which gives each value a
-        weight of 1.0
+        The weights for each value in a. Default is None, which gives each
+        value a weight of 1.0
     printextras: boolean, optional
-        If True, the number of extra points is printed to standard output. Default is False
+        If True, the number of extra points is printed to standard output.
+        Default is False
 
     Returns
     -------
@@ -1386,6 +1445,7 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
     See Also
     --------
     numpy.histogram
+
     """
     a = np.ravel(a)               # flatten any >1D arrays
     if defaultlimits is None:
@@ -2076,6 +2136,9 @@ def spearmanr(x, y):
     as the one computed from these datasets. The p-values are not entirely
     reliable but are probably reasonable for datasets larger than 500 or so.
 
+    spearmanr currently does not do any tie correction, and is only correct
+    if there are no ties in the data.
+
     Parameters
     ----------
     x : 1D array
@@ -2253,11 +2316,27 @@ def linregress(*args):
         slope of the regression line
     intercept : float
         intercept of the regression line
+    r-value : float
+        correlation coefficient
     p-value : float
         two-sided p-value for a hypothesis test whose null hypothesis is
         that the slope is zero.
     stderr : float
         Standard error of the estimate
+
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import numpy as np
+    >>> x = np.random.random(10)
+    >>> y = np.random.random(10)
+    >>> slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
+
+    # To get coefficient of determination (r_squared)
+
+    >>> print "r-squared:", r_value**2
+    r-squared: 0.15286643777
 
     """
     TINY = 1.0e-20

@@ -62,6 +62,8 @@ class gaussian_kde(object):
         integrate pdf over a rectangular space between low_bounds and high_bounds
     kde.integrate_kde(other_kde) : float
         integrate two kernel density estimates multiplied together
+    kde.resample(size=None) : array
+        randomly sample a dataset from the estimated pdf.
 
     Internal Methods
     ----------------
