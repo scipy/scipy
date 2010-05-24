@@ -4,7 +4,8 @@ from scipy.misc import factorial
 __all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator", "barycentric_interpolate", "PiecewisePolynomial", "piecewise_polynomial_interpolate","approximate_taylor_polynomial", "pchip"]
 
 class KroghInterpolator(object):
-    """The interpolating polynomial for a set of points
+    """
+    The interpolating polynomial for a set of points
 
     Constructs a polynomial that passes through a given set of points,
     optionally with specified derivatives at those points.
@@ -22,8 +23,22 @@ class KroghInterpolator(object):
     x values, degrees higher than about thirty cause problems with
     numerical instability in this code.
 
-    Based on Krogh 1970, "Efficient Algorithms for Polynomial Interpolation
-    and Numerical Differentiation"
+    Based on [1]_.
+
+    Parameters
+    ----------
+    xi : array-like, length N
+        Known x-coordinates
+    yi : array-like, N by R
+        Known y-coordinates, interpreted as vectors of length R,
+        or scalars if R=1. When an xi occurs two or more times in
+        a row, the corresponding yi's represent derivative values.
+
+    References
+    ----------
+    .. [1] Krogh, "Efficient Algorithms for Polynomial Interpolation
+        and Numerical Differentiation", 1970.
+
     """
     def __init__(self, xi, yi):
         """Construct an interpolator passing through the specified points
@@ -311,9 +326,9 @@ def krogh_interpolate(xi,yi,x,der=0):
 
 
 def approximate_taylor_polynomial(f,x,degree,scale,order=None):
-    """Estimate the Taylor polynomial of f at x by polynomial fitting
+    """
+    Estimate the Taylor polynomial of f at x by polynomial fitting.
 
-    A polynomial
     Parameters
     ----------
     f : callable
@@ -321,32 +336,33 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
         a vector of x values.
     x : scalar
         The point at which the polynomial is to be evaluated.
-    degree : integer
+    degree : int
         The degree of the Taylor polynomial
     scale : scalar
         The width of the interval to use to evaluate the Taylor polynomial.
         Function values spread over a range this wide are used to fit the
         polynomial. Must be chosen carefully.
-    order : integer or None
+    order : int or None
         The order of the polynomial to be used in the fitting; f will be
-        evaluated order+1 times. If None, use degree.
+        evaluated ``order+1`` times. If None, use `degree`.
 
     Returns
     -------
-    p : poly1d
-        the Taylor polynomial (translated to the origin, so that
+    p : poly1d instance
+        The Taylor polynomial (translated to the origin, so that
         for example p(0)=f(x)).
 
     Notes
     -----
-    The appropriate choice of "scale" is a tradeoff - too large and the
+    The appropriate choice of "scale" is a trade-off; too large and the
     function differs from its Taylor polynomial too much to get a good
-    answer, too small and roundoff errors overwhelm the higher-order terms.
+    answer, too small and round-off errors overwhelm the higher-order terms.
     The algorithm used becomes numerically unstable around order 30 even
     under ideal circumstances.
 
     Choosing order somewhat larger than degree may improve the higher-order
     terms.
+
     """
     if order is None:
         order=degree

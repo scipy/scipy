@@ -432,43 +432,45 @@ def _ntlist(l): # return non-trivial list
     #return l[0]
 
 def splev(x,tck,der=0):
-    """Evaulate a B-spline and its derivatives.
+    """
+    Evaluate a B-spline and its derivatives.
 
-    Description:
+    Given the knots and coefficients of a B-spline representation, evaluate
+    the value of the smoothing polynomial and it's derivatives.
+    This is a wrapper around the FORTRAN routines splev and splder of FITPACK.
 
-      Given the knots and coefficients of a B-spline representation, evaluate
-      the value of the smoothing polynomial and it's derivatives.
-      This is a wrapper around the FORTRAN routines splev and splder of FITPACK.
+    Parameters
+    ----------
+    x (u) -- a 1-D array of points at which to return the value of the
+             smoothed spline or its derivatives.  If tck was returned from
+             splprep, then the parameter values, u should be given.
+    tck -- A sequence of length 3 returned by splrep or splprep containg the
+           knots, coefficients, and degree of the spline.
+    der -- The order of derivative of the spline to compute (must be less than
+           or equal to k).
 
-    Inputs:
+    Returns
+    -------
+    y -- an array of values representing the spline function or curve.
+         If tck was returned from splrep, then this is a list of arrays
+         representing the curve in N-dimensional space.
 
-      x (u) -- a 1-D array of points at which to return the value of the
-               smoothed spline or its derivatives.  If tck was returned from
-               splprep, then the parameter values, u should be given.
-      tck -- A sequence of length 3 returned by splrep or splprep containg the
-             knots, coefficients, and degree of the spline.
-      der -- The order of derivative of the spline to compute (must be less than
-             or equal to k).
+    See Also
+    --------
+    splprep, splrep, sproot, spalde, splint : evaluation, roots, integral
+    bisplrep, bisplev : bivariate splines
+    UnivariateSpline, BivariateSpline :
+        An alternative wrapping of the FITPACK functions.
 
-    Outputs: (y, )
+    References
+    ----------
+    .. [1] C. de Boor, "On calculating with b-splines", J. Approximation
+        Theory, 6, p.50-62, 1972.
+    .. [2] M.G. Cox, "The numerical evaluation of b-splines", J. Inst. Maths
+        Applics, 10, p.134-149, 1972.
+    .. [3] P. Dierckx, "Curve and surface fitting with splines", Monographs
+        on Numerical Analysis, Oxford University Press, 1993.
 
-      y -- an array of values representing the spline function or curve.
-           If tck was returned from splrep, then this is a list of arrays
-           representing the curve in N-dimensional space.
-
-    See also:
-      splprep, splrep, sproot, spalde, splint - evaluation, roots, integral
-      bisplrep, bisplev - bivariate splines
-      UnivariateSpline, BivariateSpline - an alternative wrapping
-              of the FITPACK functions
-
-    Notes:
-        de Boor C  : On calculating with b-splines, J. Approximation Theory
-                     6 (1972) 50-62.
-        Cox M.G.   : The numerical evaluation of b-splines, J. Inst. Maths
-                     Applics 10 (1972) 134-149.
-        Dierckx P. : Curve and surface fitting with splines, Monographs on
-                     Numerical Analysis, Oxford University Press, 1993.
     """
     t,c,k=tck
     try:
@@ -489,37 +491,39 @@ def splev(x,tck,der=0):
         return y[0]
 
 def splint(a,b,tck,full_output=0):
-    """Evaluate the definite integral of a B-spline.
+    """
+    Evaluate the definite integral of a B-spline.
 
-    Description:
+    Given the knots and coefficients of a B-spline, evaluate the definite
+    integral of the smoothing polynomial between two given points.
 
-      Given the knots and coefficients of a B-spline, evaluate the definite
-      integral of the smoothing polynomial between two given points.
+    Parameters
+    ----------
+    a, b -- The end-points of the integration interval.
+    tck -- A length 3 sequence describing the given spline (See splev).
+    full_output -- Non-zero to return optional output.
 
-    Inputs:
+    Returns
+    -------
+    integral -- The resulting integral.
 
-      a, b -- The end-points of the integration interval.
-      tck -- A length 3 sequence describing the given spline (See splev).
-      full_output -- Non-zero to return optional output.
+    wrk -- An array containing the integrals of the
+           normalized B-splines defined on the set of knots.
 
-    Outputs: (integral, {wrk})
+    See Also
+    --------
+    splprep, splrep, sproot, spalde, splev : evaluation, roots, integral
+    bisplrep, bisplev : bivariate splines
+    UnivariateSpline, BivariateSpline :
+        An alternative wrapping of the FITPACK functions.
 
-      integral -- The resulting integral.
-      wrk -- An array containing the integrals of the normalized B-splines defined
-             on the set of knots.
+    References
+    ----------
+    .. [1] P.W. Gaffney, The calculation of indefinite integrals of b-splines",
+        J. Inst. Maths Applics, 17, p.37-41, 1976.
+    .. [2] P. Dierckx, "Curve and surface fitting with splines", Monographs
+        on Numerical Analysis, Oxford University Press, 1993.
 
-
-    See also:
-      splprep, splrep, sproot, spalde, splev - evaluation, roots, integral
-      bisplrep, bisplev - bivariate splines
-      UnivariateSpline, BivariateSpline - an alternative wrapping
-              of the FITPACK functions
-
-    Notes:
-        Gaffney P.W. : The calculation of indefinite integrals of b-splines
-                       J. Inst. Maths Applics 17 (1976) 37-41.
-        Dierckx P. : Curve and surface fitting with splines, Monographs on
-                     Numerical Analysis, Oxford University Press, 1993.
     """
     t,c,k=tck
     try:
@@ -535,29 +539,44 @@ def splint(a,b,tck,full_output=0):
         else: return aint
 
 def sproot(tck,mest=10):
-    """Find the roots of a cubic B-spline.
+    """
+    Find the roots of a cubic B-spline.
 
-    Description:
+    Given the knots (>=8) and coefficients of a cubic B-spline return the
+    roots of the spline.
 
-      Given the knots (>=8) and coefficients of a cubic B-spline return the
-      roots of the spline.
+    Parameters
+    ----------
 
-    Inputs:
+    tck -- A length 3 sequence describing the given spline (See splev).
+           The number of knots must be >= 8.  The knots must be a montonically
+           increasing sequence.
 
-      tck -- A length 3 sequence describing the given spline (See splev).
-             The number of knots must be >= 8.  The knots must be a montonically
-             increasing sequence.
-      mest -- An estimate of the number of zeros (Default is 10).
+    mest -- An estimate of the number of zeros (Default is 10)
 
-    Outputs: (zeros, )
 
-      zeros -- An array giving the roots of the spline.
+    Returns
+    -------
 
-    See also:
-      splprep, splrep, splint, spalde, splev - evaluation, roots, integral
-      bisplrep, bisplev - bivariate splines
-      UnivariateSpline, BivariateSpline - an alternative wrapping
-              of the FITPACK functions
+    zeros -- An array giving the roots of the spline.
+
+    See also
+    --------
+    splprep, splrep, splint, spalde, splev :
+        evaluation, roots, integral
+    bisplrep, bisplev :
+        bivariate splines
+    UnivariateSpline, BivariateSpline :
+        An alternative wrapping of the FITPACK functions.
+
+    References
+    ----------
+    .. [1] C. de Boor, "On calculating with b-splines", J. Approximation
+        Theory, 6, p.50-62, 1972.
+    .. [2] M.G. Cox, "The numerical evaluation of b-splines", J. Inst. Maths
+        Applics, 10, p.134-149, 1972.
+    .. [3] P. Dierckx, "Curve and surface fitting with splines", Monographs
+        on Numerical Analysis, Oxford University Press, 1993.
 
     """
     t,c,k=tck
@@ -868,40 +887,49 @@ def dblint(xa,xb,ya,yb,tck):
     return dfitpack.dblint(tx,ty,c,kx,ky,xb,xe,yb,ye)
 
 def insert(x,tck,m=1,per=0):
-    """Insert knots into a B-spline.
+    """
+    Insert knots into a B-spline.
 
-    Description:
+    Given the knots and coefficients of a B-spline representation, create a
+    new B-spline with a knot inserted m times at point x.
+    This is a wrapper around the FORTRAN routine insert of FITPACK.
 
-      Given the knots and coefficients of a B-spline representation, create a
-      new B-spline with a knot inserted m times at point x.
-      This is a wrapper around the FORTRAN routine insert of FITPACK.
+    Parameters
+    ----------
 
-    Inputs:
+    x (u) -- A 1-D point at which to insert a new knot(s).  If tck was returned
+             from splprep, then the parameter values, u should be given.
+    tck -- A sequence of length 3 returned by splrep or splprep containg the
+           knots, coefficients, and degree of the spline.
 
-      x (u) -- A 1-D point at which to insert a new knot(s).  If tck was returned
-               from splprep, then the parameter values, u should be given.
-      tck -- A sequence of length 3 returned by splrep or splprep containg the
-             knots, coefficients, and degree of the spline.
-      m -- The number of times to insert the given knot (its multiplicity).
-      per -- If non-zero, input spline is considered periodic.
+    m -- The number of times to insert the given knot (its multiplicity).
 
-    Outputs: tck
+    per -- If non-zero, input spline is considered periodic.
 
-      tck -- (t,c,k) a tuple containing the vector of knots, the B-spline
+    Returns
+    -------
+
+    tck -- (t,c,k) a tuple containing the vector of knots, the B-spline
              coefficients, and the degree of the new spline.
 
-    Requirements:
-        t(k+1) <= x <= t(n-k), where k is the degree of the spline.
-        In case of a periodic spline (per != 0) there must be
-           either at least k interior knots t(j) satisfying t(k+1)<t(j)<=x
-           or at least k interior knots t(j) satisfying x<=t(j)<t(n-k).
 
-    Notes:
-    Based on algorithms from:
-        Boehm W : Inserting new knots into b-spline curves. Computer Aided
-                  Design 12 (1980) 199-201.
-       Dierckx P. : Curve and surface fitting with splines, Monographs on
-                    Numerical Analysis, Oxford University Press, 1993.
+    t(k+1) <= x <= t(n-k), where k is the degree of the spline.
+    In case of a periodic spline (per != 0) there must be
+    either at least k interior knots t(j) satisfying t(k+1)<t(j)<=x
+    or at least k interior knots t(j) satisfying x<=t(j)<t(n-k).
+
+
+    Notes
+    -----
+    Based on algorithms from [1]_ and [2]_.
+
+    References
+    ----------
+    .. [1] W. Boehm, "Inserting new knots into b-spline curves.",
+        Computer Aided Design, 12, p.199-201, 1980.
+    .. [2] P. Dierckx, "Curve and surface fitting with splines, Monographs on
+        Numerical Analysis", Oxford University Press, 1993.
+
     """
     t,c,k=tck
     try:
