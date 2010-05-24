@@ -93,8 +93,30 @@ def factorial2(n, exact=False):
         return vals
 
 def factorialk(n,k,exact=1):
-    """n(!!...!)  = multifactorial of order k
-        k times
+    """
+    n(!!...!)  = multifactorial of order k
+    k times
+
+
+    Parameters
+    ----------
+    n : int, array-like
+        Calculate multifactorial. Arrays are only supported with exact
+        set to False. If n < 0, the return value is 0.
+    exact : bool, optional
+        If exact is set to True, calculate the answer exactly using
+        integer arithmetic.
+
+    Returns
+    -------
+    val : int
+        Multi factorial of n.
+
+    Raises
+    ------
+    NotImplementedError
+        Raises when exact is False
+
     """
     if exact:
         if n < 1-k:
@@ -110,14 +132,29 @@ def factorialk(n,k,exact=1):
 
 
 def comb(N,k,exact=0):
-    """Combinations of N things taken k at a time.
+    """
+    Combinations of N things taken k at a time.
 
-    If exact==0, then floating point precision is used, otherwise
-    exact long integer is computed.
+    Parameters
+    ----------
+    N : int, array
+        Nunmber of things.
+    k : int, array
+        Numner of elements taken.
+    exact : int, optional
+        If exact is 0, then floating point precision is used, otherwise
+        exact long integer is computed.
 
-    Notes:
-      - Array arguments accepted only for exact=0 case.
-      - If k > N, N < 0, or k < 0, then a 0 is returned.
+    Returns
+    -------
+    val : int, array
+        The total number of combinations.
+
+    Notes
+    -----
+    - Array arguments accepted only for exact=0 case.
+    - If k > N, N < 0, or k < 0, then a 0 is returned.
+
     """
     if exact:
         if (k > N) or (N < 0) or (k < 0):
@@ -137,13 +174,17 @@ def comb(N,k,exact=0):
         return where(cond, vals, 0.0)
 
 def central_diff_weights(Np,ndiv=1):
-    """Return weights for an Np-point central derivative of order ndiv
-       assuming equally-spaced function points.
+    """
+    Return weights for an Np-point central derivative of order ndiv
+    assuming equally-spaced function points.
 
-       If weights are in the vector w, then
-       derivative is w[0] * f(x-ho*dx) + ... + w[-1] * f(x+h0*dx)
+    If weights are in the vector w, then
+    derivative is w[0] * f(x-ho*dx) + ... + w[-1] * f(x+h0*dx)
 
-       Can be inaccurate for large number of points.
+    Notes
+    -----
+    Can be inaccurate for large number of points.
+
     """
     assert (Np >= ndiv+1), "Number of points must be at least the derivative order + 1."
     assert (Np % 2 == 1), "Odd-number of points only."
@@ -158,13 +199,31 @@ def central_diff_weights(Np,ndiv=1):
     return w
 
 def derivative(func,x0,dx=1.0,n=1,args=(),order=3):
-    """Given a function, use a central difference formula with spacing dx to
-       compute the nth derivative at x0.
+    """
+    Find the n-th derivative of a function at point x0.
 
-       order is the number of points to use and must be odd.
+    Given a function, use a central difference formula with spacing `dx` to
+    compute the n-th derivative at `x0`.
 
-       Warning: Decreasing the step size too small can result in
-       round-off error.
+    Parameters
+    ----------
+    func : function
+        Input function.
+    x0 : float
+        The point at which nth derivative is found.
+    dx : int, optional
+        Spacing.
+    n : int, optional
+        Order of the derivative. Default is 1.
+    args : tuple, optional
+        Arguments
+    order : int, optional
+        Number of points to use, must be odd.
+
+    Notes
+    -----
+    Decreasing the step size too small can result in round-off error.
+
     """
     assert (order >= n+1), "Number of points must be at least the derivative order + 1."
     assert (order % 2 == 1), "Odd number of points only."

@@ -15,6 +15,22 @@ __all__ = ['fromimage','toimage','imsave','imread','bytescale',
 
 # Returns a byte-scaled image
 def bytescale(data, cmin=None, cmax=None, high=255, low=0):
+    """
+    Parameters
+    ----------
+    im : PIL image
+         Input image.
+    flatten : bool
+              If true, convert the output to grey-scale
+
+    Returns
+    -------
+    img_array : ndarray
+                The different colour bands/channels are stored in the
+                third dimension, such that a grey-image is MxN, an
+                RGB-image MxNx3 and an RGBA-image MxNx4.
+
+    """
     if data.dtype == uint8:
         return data
     high = high - low
@@ -25,39 +41,72 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     return bytedata + cast[uint8](low)
 
 def imread(name,flatten=0):
-    """Read an image file from a filename.
+    """
+    Read an image file from a filename.
 
-    Optional arguments:
+    Parameters
+    ----------
+    name : str
+        The file name to be read.
+    flatten : bool, optional
+        If True, flattens the color layers into a single gray-scale layer.
 
-     - flatten (0): if true, the image is flattened by calling convert('F') on
-     the resulting image object.  This flattens the color layers into a single
-     grayscale layer.
+    Returns
+    -------
+     : nd_array
+        The array obtained by reading image.
+
+    Notes
+    -----
+    The image is flattened by calling convert('F') on
+    the resulting image object.
+
     """
 
     im = Image.open(name)
     return fromimage(im,flatten=flatten)
 
 def imsave(name, arr):
-    """Save an array to an image file.
+    """
+    Save an array to an image file.
+
+    Parameters
+    ----------
+    im : PIL image
+         Input image.
+
+    flatten : bool
+         If true, convert the output to grey-scale.
+
+    Returns
+    -------
+    img_array : ndarray
+                The different colour bands/channels are stored in the
+                third dimension, such that a grey-image is MxN, an
+                RGB-image MxNx3 and an RGBA-image MxNx4.
+
     """
     im = toimage(arr)
     im.save(name)
     return
 
 def fromimage(im, flatten=0):
-    """Return a copy of a PIL image as a numpy array.
+    """
+    Return a copy of a PIL image as a numpy array.
 
-    :Parameters:
-        im : PIL image
-            Input image.
-        flatten : bool
-            If true, convert the output to grey-scale.
+    Parameters
+    ----------
+    im : PIL image
+        Input image.
+    flatten : bool
+        If true, convert the output to grey-scale.
 
-    :Returns:
-        img_array : ndarray
-            The different colour bands/channels are stored in the
-            third dimension, such that a grey-image is MxN, an
-            RGB-image MxNx3 and an RGBA-image MxNx4.
+    Returns
+    -------
+    img_array : ndarray
+        The different colour bands/channels are stored in the
+        third dimension, such that a grey-image is MxN, an
+        RGB-image MxNx3 and an RGBA-image MxNx4.
 
     """
     if not Image.isImageType(im):
@@ -171,12 +220,33 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
     return image
 
 def imrotate(arr,angle,interp='bilinear'):
-    """Rotate an image counter-clockwise by angle degrees.
+    """
+    Rotate an image counter-clockwise by angle degrees.
+
+    Parameters
+    ----------
+    arr : nd_array
+        Input array of image to be rotated.
+    angle : float
+        The angle of rotation.
+    interp : str, optional
+        Interpolation
+
+
+    Returns
+    -------
+     : nd_array
+        The rotated array of image.
+
+    Notes
+    -----
 
     Interpolation methods can be:
-        'nearest' :  for nearest neighbor
-        'bilinear' : for bilinear
-        'cubic' or 'bicubic' : for bicubic
+    * 'nearest' :  for nearest neighbor
+    * 'bilinear' : for bilinear
+    * 'cubic' : cubic
+    * 'bicubic' : for bicubic
+
     """
     arr = asarray(arr)
     func = {'nearest':0,'bilinear':2,'bicubic':3,'cubic':3}
@@ -215,11 +285,25 @@ def imshow(arr):
         raise RuntimeError('Could not execute image viewer.')
 
 def imresize(arr,size):
-    """Resize an image.
+    """
+    Resize an image.
 
-    If size is an integer it is a percentage of current size.
-    If size is a float it is a fraction of current size.
-    If size is a tuple it is the size of the output image.
+    Parameters
+    ----------
+    arr : nd_array
+        The array of image to be resized.
+
+    size : int, float or tuple
+        * int   - Percentage of current size.
+        * float - Fraction of current size.
+        * tuple - Size of the output image.
+
+    Returns
+    -------
+
+     : nd_array
+        The resized array of image.
+
     """
     im = toimage(arr)
     ts = type(size)
@@ -234,11 +318,29 @@ def imresize(arr,size):
 
 
 def imfilter(arr,ftype):
-    """Simple filtering of an image.
+    """
+    Simple filtering of an image.
 
-    type can be:
-            'blur', 'contour', 'detail', 'edge_enhance', 'edge_enhance_more',
-            'emboss', 'find_edges', 'smooth', 'smooth_more', 'sharpen'
+    Parameters
+    ----------
+    arr : ndarray
+        The array of Image in which the filter is to be applied.
+    ftype : str
+        The filter that has to be applied. Legal values are:
+        'blur', 'contour', 'detail', 'edge_enhance', 'edge_enhance_more',
+        'emboss', 'find_edges', 'smooth', 'smooth_more', 'sharpen'.
+
+    Returns
+    -------
+    res : nd_array
+        The array with filter applied.
+
+    Raises
+    ------
+    ValueError
+        *Unknown filter type.* . If the filter you are trying
+        to apply is unsupported.
+
     """
     _tdict = {'blur':ImageFilter.BLUR,
               'contour':ImageFilter.CONTOUR,
