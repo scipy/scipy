@@ -408,19 +408,23 @@ def _raw_fftn_dispatch(x, shape, axes, overwrite_x, direction):
 
 
 def ifftn(x, shape=None, axes=None, overwrite_x=0):
-    """ ifftn(x, s=None, axes=None, overwrite_x=0) -> y
-
+    """
     Return inverse multi-dimensional discrete Fourier transform of
     arbitrary type sequence x.
 
-    The returned array contains
+    The returned array contains::
 
       y[j_1,..,j_d] = 1/p * sum[k_1=0..n_1-1, ..., k_d=0..n_d-1]
          x[k_1,..,k_d] * prod[i=1..d] exp(sqrt(-1)*2*pi/n_i * j_i * k_i)
 
-    where d = len(x.shape), n = x.shape, and p = prod[i=1..d] n_i.
+    where ``d = len(x.shape)``, ``n = x.shape``, and ``p = prod[i=1..d] n_i``.
 
-    Optional input: see fftn.__doc__
+    For description of parameters see `fftn`.
+
+    See Also
+    --------
+    fftn : for detailed information.
+
     """
     return _raw_fftn_dispatch(x, shape, axes, overwrite_x, -1)
 

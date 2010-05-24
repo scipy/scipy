@@ -252,26 +252,30 @@ del _cache
 _cache = {}
 def sc_diff(x, a, b, period=None,
             _cache = _cache):
-    """ sc_diff(x, a, b, period=2*pi) -> y
-
+    """
     Return (a,b)-sinh/cosh pseudo-derivative of a periodic sequence x.
 
     If x_j and y_j are Fourier coefficients of periodic functions x
-    and y, respectively, then
+    and y, respectively, then::
 
       y_j = sqrt(-1)*sinh(j*a*2*pi/period)/cosh(j*b*2*pi/period) * x_j
       y_0 = 0
 
-    Input:
-      a,b
+    Parameters
+    ----------
+    x : array_like
+        Input array.
+    a,b : float
         Defines the parameters of the sinh/cosh pseudo-differential
         operator.
-      period
+    period : float, optional
         The period of the sequence x. Default is 2*pi.
 
-    Notes:
-      sc_diff(cs_diff(x,a,b),b,a) == x
-      For even len(x), the Nyquist mode of x is taken zero.
+    Notes
+    -----
+    ``sc_diff(cs_diff(x,a,b),b,a) == x``
+    For even ``len(x)``, the Nyquist mode of x is taken as zero.
+
     """
     tmp = asarray(x)
     if iscomplexobj(tmp):
