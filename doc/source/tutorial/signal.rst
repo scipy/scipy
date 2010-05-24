@@ -159,10 +159,10 @@ and non-linear. Linear filters can always be reduced to multiplication
 of the flattened Numpy array by an appropriate matrix resulting in
 another flattened Numpy array. Of course, this is not usually the best
 way to compute the filter as the matrices and vectors involved may be
-huge. For example filtering a :math:`512\times512` image with this
-method would require multiplication of a :math:`512^{2}x512^{2}`
-matrix with a :math:`512^{2}` vector. Just trying to store the
-:math:`512^{2}\times512^{2}` matrix using a standard Numpy array would
+huge. For example filtering a :math:`512 \times 512` image with this
+method would require multiplication of a :math:`512^2 \times 512^2`
+matrix with a :math:`512^2` vector. Just trying to store the
+:math:`512^2 \times 512^2` matrix using a standard Numpy array would
 require :math:`68,719,476,736` elements. At 4 bytes per element this
 would require :math:`256\textrm{GB}` of memory. In most applications
 most of the elements of this matrix are zero and a different method
@@ -439,106 +439,106 @@ where :math:`H` is 2 for positive frequencies, :math:`0` for negative frequencie
 ..
 .. Detrend
 .. """""""
-.. 
+..
 .. Filter design
 .. -------------
-.. 
-.. 
+..
+..
 .. Finite-impulse response design
 .. ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. 
-.. 
+..
+..
 .. Inifinite-impulse response design
 .. ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. 
-.. 
+..
+..
 .. Analog filter frequency response
 .. ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. 
-.. 
+..
+..
 .. Digital filter frequency response
 .. ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. 
-.. 
+..
+..
 .. Linear Time-Invariant Systems
 .. -----------------------------
-.. 
-.. 
+..
+..
 .. LTI Object
 .. ^^^^^^^^^^
-.. 
-.. 
+..
+..
 .. Continuous-Time Simulation
 .. ^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. 
-.. 
+..
+..
 .. Step response
 .. ^^^^^^^^^^^^^
-.. 
-.. 
+..
+..
 .. Impulse response
 .. ^^^^^^^^^^^^^^^^
-.. 
-.. 
+..
+..
 .. Input/Output
 .. ============
-.. 
-.. 
+..
+..
 .. Binary
 .. ------
-.. 
-.. 
+..
+..
 .. Arbitrary binary input and output (fopen)
 .. ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. 
-.. 
+..
+..
 .. Read and write Matlab .mat files
 .. ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. 
-.. 
+..
+..
 .. Saving workspace
 .. ^^^^^^^^^^^^^^^^
-.. 
-.. 
+..
+..
 .. Text-file
 .. ---------
-.. 
-.. 
+..
+..
 .. Read text-files (read_array)
 .. ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. 
-.. 
+..
+..
 .. Write a text-file (write_array)
 .. ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. 
-.. 
+..
+..
 .. Fourier Transforms
 .. ==================
-.. 
-.. 
+..
+..
 .. One-dimensional
 .. ---------------
-.. 
-.. 
+..
+..
 .. Two-dimensional
 .. ---------------
-.. 
-.. 
+..
+..
 .. N-dimensional
 .. -------------
-.. 
-.. 
+..
+..
 .. Shifting
 .. --------
-.. 
-.. 
+..
+..
 .. Sample frequencies
 .. ------------------
-.. 
-.. 
+..
+..
 .. Hilbert transform
 .. -----------------
-.. 
-.. 
+..
+..
 .. Tilbert transform
 .. -----------------

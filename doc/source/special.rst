@@ -160,7 +160,7 @@ These are not universal functions:
    sph_kn
    sph_inkn
 
-Ricatti-Bessel Functions
+Riccati-Bessel Functions
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 These are not universal functions:

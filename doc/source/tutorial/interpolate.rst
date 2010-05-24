@@ -11,7 +11,8 @@ There are two general interpolation facilities available in SciPy. The
 first facility is an interpolation class which performs linear
 1-dimensional interpolation. The second facility is based on the
 FORTRAN library FITPACK and provides functions for 1- and
-2-dimensional (smoothed) cubic-spline interpolation.
+2-dimensional (smoothed) cubic-spline interpolation. There are both
+procedural and object-oriented interfaces for the FITPACK library.
 
 
 Linear 1-d interpolation (:class:`interp1d`)
@@ -22,11 +23,11 @@ create a function based on fixed data points which can be evaluated
 anywhere within the domain defined by the given data using linear
 interpolation. An instance of this class is created by passing the 1-d
 vectors comprising the data. The instance of this class defines a
-:meth:`__call__ <interp1d.__call__>` method and can therefore by
-treated like a function which interpolates between known data values
-to obtain unknown values (it also has a docstring for help). Behavior
-at the boundary can be specified at instantiation time. The following
-example demonstrates it's use.
+__call__ method and can therefore by treated like a function which
+interpolates between known data values to obtain unknown values (it
+also has a docstring for help). Behavior at the boundary can be
+specified at instantiation time. The following example demonstrates
+it's use.
 
 .. plot::
 
@@ -45,13 +46,13 @@ example demonstrates it's use.
 ..             class :obj:`interpolate.interp1d`
 
 
-Spline interpolation in 1-d (interpolate.splXXX)
-------------------------------------------------
+Spline interpolation in 1-d: Procedural (interpolate.splXXX)
+------------------------------------------------------------
 
 Spline interpolation requires two essential steps: (1) a spline
 representation of the curve is computed, and (2) the spline is
 evaluated at the desired points. In order to find the spline
-representation, there are two different was to represent a curve and
+representation, there are two different ways to represent a curve and
 obtain (smoothing) spline coefficients: directly and parametrically.
 The direct method finds the spline representation of a curve in a two-
 dimensional plane using the function :obj:`splrep`. The
@@ -84,7 +85,7 @@ being fit. Therefore, **if no smoothing is desired a value of**
 Once the spline representation of the data has been determined,
 functions are available for evaluating the spline
 (:func:`splev`) and its derivatives
-(:func:`splev`, :func:`splade`) at any point
+(:func:`splev`, :func:`spalde`) at any point
 and the integral of the spline between any two points (
 :func:`splint`). In addition, for cubic splines ( :math:`k=3`
 ) with 8 or more knots, the roots of the spline can be estimated (
@@ -160,9 +161,80 @@ example that follows.
    >>> plt.title('Spline of parametrically-defined curve')
    >>> plt.show()
 
+Spline interpolation in 1-d: Object-oriented (:class:`UnivariateSpline`)
+-----------------------------------------------------------------------------
 
-Two-dimensional spline representation (:func:`bisplrep`)
---------------------------------------------------------
+The spline-fitting capabilities described above are also available via
+an objected-oriented interface.  The one dimensional splines are
+objects of the `UnivariateSpline` class, and are created with the
+:math:`x` and :math:`y` components of the curve provided as arguments
+to the constructor.  The class defines __call__, allowing the object
+to be called with the x-axis values at which the spline should be
+evaluated, returning the interpolated y-values.  This is shown in
+the example below for the subclass `InterpolatedUnivariateSpline`.
+The methods :meth:`integral <UnivariateSpline.integral>`,
+:meth:`derivatives <UnivariateSpline.derivatives>`, and
+:meth:`roots <UnivariateSpline.roots>` methods are also available
+on `UnivariateSpline` objects, allowing definite integrals,
+derivatives, and roots to be computed for the spline.
+
+The UnivariateSpline class can also be used to smooth data by
+providing a non-zero value of the smoothing parameter `s`, with the
+same meaning as the `s` keyword of the :obj:`splrep` function
+described above.  This results in a spline that has fewer knots
+than the number of data points, and hence is no longer strictly
+an interpolating spline, but rather a smoothing spline.  If this
+is not desired, the `InterpolatedUnivariateSpline` class is available.
+It is a subclass of `UnivariateSpline` that always passes  through all
+points (equivalent to forcing the smoothing parameter to 0).  This
+class is demonstrated in the example below.
+
+The `LSQUnivarateSpline` is the other subclass of `UnivarateSpline`.
+It allows the user to specify the number and location of internal
+knots as explicitly with the parameter `t`.  This allows creation
+of customized splines with non-linear spacing, to interpolate in
+some domains and smooth in others, or change the character of the
+spline.
+
+
+.. plot::
+
+   >>> import numpy as np
+   >>> import matplotlib.pyplot as plt
+   >>> from scipy import interpolate
+
+   InterpolatedUnivariateSpline
+
+   >>> x = np.arange(0,2*np.pi+np.pi/4,2*np.pi/8)
+   >>> y = np.sin(x)
+   >>> s = interpolate.InterpolatedUnivariateSpline(x,y)
+   >>> xnew = np.arange(0,2*np.pi,np.pi/50)
+   >>> ynew = s(xnew)
+
+   >>> plt.figure()
+   >>> plt.plot(x,y,'x',xnew,ynew,xnew,np.sin(xnew),x,y,'b')
+   >>> plt.legend(['Linear','InterpolatedUnivariateSpline', 'True'])
+   >>> plt.axis([-0.05,6.33,-1.05,1.05])
+   >>> plt.title('InterpolatedUnivariateSpline')
+   >>> plt.show()
+
+   LSQUnivarateSpline with non-uniform knots
+
+   >>> t = [np.pi/2-.1,np.pi/2-.1,3*np.pi/2-.1,3*np.pi/2+.1]
+   >>> s = interpolate.LSQUnivariateSpline(x,y,t)
+   >>> ynew = s(xnew)
+
+   >>> plt.figure()
+   >>> plt.plot(x,y,'x',xnew,ynew,xnew,np.sin(xnew),x,y,'b')
+   >>> plt.legend(['Linear','LSQUnivariateSpline', 'True'])
+   >>> plt.axis([-0.05,6.33,-1.05,1.05])
+   >>> plt.title('Spline with Specified Interior Knots')
+   >>> plt.show()
+
+
+
+Two-dimensional spline representation: Procedural (:func:`bisplrep`)
+--------------------------------------------------------------------
 
 For (smooth) spline-fitting to a two dimensional surface, the function
 :func:`bisplrep` is available. This function takes as required inputs
@@ -234,6 +306,18 @@ passed in :obj:`mgrid <numpy.mgrid>`.
 
 ..   :caption: Example of two-dimensional spline interpolation.
 
+
+Two-dimensional spline representation: Object-oriented (:class:`BivariateSpline`)
+---------------------------------------------------------------------------------
+
+The :class:`BivariateSpline` class is the 2-dimensional analog of the
+:class:`UnivariateSpline` class.  It and its subclasses implement
+the FITPACK functions described above in an object oriented fashion,
+allowing objects to be instantiated that can be called to compute
+the spline value by passing in the two coordinates as the two
+arguments.
+
+
 Using radial basis functions for smoothing/interpolation
 ---------------------------------------------------------
 
@@ -274,7 +358,7 @@ from the scipy.interpolate module.
 
     >>> plt.subplot(2, 1, 2)
     >>> plt.plot(x, y, 'bo')
-    >>> plt.plot(xi, yi, 'g')
+    >>> plt.plot(xi, fi, 'g')
     >>> plt.plot(xi, np.sin(xi), 'r')
     >>> plt.title('Interpolation using RBF - multiquadrics')
     >>> plt.show()
@@ -313,4 +397,3 @@ This example shows how to interpolate scattered 2d data.
     >>> plt.xlim(-2, 2)
     >>> plt.ylim(-2, 2)
     >>> plt.colorbar()
-

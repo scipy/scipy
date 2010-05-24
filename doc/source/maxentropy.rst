@@ -4,36 +4,40 @@ Maximum entropy models (:mod:`scipy.maxentropy`)
 
 .. automodule:: scipy.maxentropy
 
-
 Models
 ======
-
-.. autoclass:: model
+.. autoclass:: scipy.maxentropy.basemodel
 
 .. autosummary::
    :toctree: generated/
 
-   model.beginlogging
-   model.endlogging
-   model.clearcache
-   model.crossentropy
-   model.dual
-   model.fit
-   model.grad
-   model.log
-   model.logparams
-   model.normconst
-   model.reset
-   model.setcallback
-   model.setparams
-   model.setsmooth
+   basemodel.beginlogging
+   basemodel.endlogging
+   basemodel.clearcache
+   basemodel.crossentropy
+   basemodel.dual
+   basemodel.fit
+   basemodel.grad
+   basemodel.log
+   basemodel.logparams
+   basemodel.normconst
+   basemodel.reset
+   basemodel.setcallback
+   basemodel.setparams
+   basemodel.setsmooth
+
+.. autoclass:: scipy.maxentropy.model
+
+.. autosummary::
+   :toctree: generated/
+
    model.expectations
    model.lognormconst
    model.logpmf
    model.pmf_function
    model.setfeaturesandsamplespace
 
-.. autoclass:: bigmodel
+.. autoclass:: scipy.maxentropy.bigmodel
 
 .. autosummary::
    :toctree: generated/
@@ -48,7 +52,7 @@ Models
    bigmodel.stochapprox
    bigmodel.test
 
-.. autoclass:: conditionalmodel
+.. autoclass:: scipy.maxentropy.conditionalmodel
 
 .. autosummary::
    :toctree: generated/

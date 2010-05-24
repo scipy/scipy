@@ -8,3 +8,12 @@ C/C++ integration (:mod:`scipy.weave`)
 
 .. automodule:: scipy.weave
    :members:
+
+
+.. autosummary::
+   :toctree: generated/
+
+   inline
+   blitz
+   ext_tools
+   accelerate
