@@ -18,20 +18,22 @@ aliases = {'little': ('little', '<', 'l', 'le'),
            'swapped': ('swapped', 'S')}
 
 def to_numpy_code(code):
-    ''' Convert various order codings to numpy format
+    """
+    Convert various order codings to numpy format.
+
     Parameters
     ----------
-    code : {'little','big','l','b','le','be','<','>',
-             'native','=',
-             'swapped', 's'} string
-          code is converted to lower case before parsing
+    code : str
+        The code to convert. It is converted to lower case before parsing.
+        Legal values are:
+        'little', 'big', 'l', 'b', 'le', 'be', '<', '>', 'native', '=',
+        'swapped', 's'.
 
     Returns
     -------
-    out_code : {'<','>'} string
-             where '<' is the numpy dtype code for little
-             endian, and '>' is the code for big endian
-
+    out_code : {'<', '>'}
+        Here '<' is the numpy dtype code for little endian,
+        and '>' is the code for big endian.
 
     Examples
     --------
@@ -48,7 +50,8 @@ def to_numpy_code(code):
     >>> sc = to_numpy_code('swapped')
     >>> sc == '>' if sys_is_le else sc == '<'
     True
-    '''
+
+    """
     code = code.lower()
     if code is None:
         return native_code

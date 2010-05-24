@@ -148,11 +148,13 @@ def convert_dtypes(dtype_template, order_code):
 
 
 def read_dtype(mat_stream, a_dtype):
-    ''' Generic get of byte stream data of known type
+    """
+    Generic get of byte stream data of known type
 
     Parameters
     ----------
     mat_stream : file-like object
+        Matlam (TM) stream
     a_dtype : dtype
        dtype of array to read.  `a_dtype` is assumed to be correct
        endianness
@@ -160,7 +162,9 @@ def read_dtype(mat_stream, a_dtype):
     Returns
     -------
     arr : array
-    '''
+        Array of given datatype obtained from stream.
+
+    """
     num_bytes = a_dtype.itemsize
     arr = np.ndarray(shape=(),
                      dtype=a_dtype,
@@ -221,16 +225,31 @@ def get_matfile_version(fileobj):
 
 
 def matdims(arr, oned_as='column'):
-    ''' Determine equivalent matlab dimensions for given array
+    """
+    Determine equivalent matlab dimensions for given array
 
     Parameters
     ----------
     arr : ndarray
-    oned_as : {'column', 'row'} string, optional
+        Input array.
+    oned_as : {'column', 'row'}, optional
+        Whether 1-D arrays are returned as Matlab row or column matrices.
+        Default is 'column'.
 
     Returns
     -------
-    dims : shape as matlab expects
+    dims : tuple
+        Shape tuple, in the form Matlab expects it.
+
+    Notes
+    -----
+    We had to decide what shape a 1 dimensional array would be by
+    default.  ``np.atleast_2d`` thinks it is a row vector.  The
+    default for a vector in matlab (e.g. ``>> 1:12``) is a row vector.
+
+    Versions of scipy up to and including 0.7 resulted (accidentally)
+    in 1-D arrays being read as column vectors.  For the moment, we
+    maintain the same tradition here.
 
     Examples
     --------
@@ -253,7 +272,7 @@ def matdims(arr, oned_as='column'):
     >>> matdims(np.array([[[]]])) # empty 3d
     (0, 0, 0)
 
-    Optional argument flips 1d shape behavior
+    Optional argument flips 1-D shape behavior.
 
     >>> matdims(np.array([1,2]), 'row') # 1d array, 2 elements
     (1, 2)
@@ -265,16 +284,7 @@ def matdims(arr, oned_as='column'):
        ...
     ValueError: 1D option "bizarre" is strange
 
-    Notes
-    -----
-    We had to decide what shape a 1 dimensional array would be by
-    default.  ``np.atleast_2d`` thinks it is a row vector.  The
-    default for a vector in matlab (e.g. ``>> 1:12``) is a row vector.
-
-    Versions of scipy up to and including 0.7 resulted (accidentally)
-    in 1d arrays being read as column vectors.  For the moment, we
-    maintain the same tradition here.
-    '''
+    """
     if arr.size == 0: # empty
         return (0,) * np.max([arr.ndim, 2])
     shape = arr.shape

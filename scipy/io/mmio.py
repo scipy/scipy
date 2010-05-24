@@ -18,50 +18,74 @@ __all__ = ['mminfo','mmread','mmwrite', 'MMFile']
 
 #-------------------------------------------------------------------------------
 def mminfo(source):
-    """ Queries the contents of the Matrix Market file 'filename' to
+    """
+    Queries the contents of the Matrix Market file 'filename' to
     extract size and storage information.
 
-    Inputs:
+    Parameters
+    ----------
 
-      source     - Matrix Market filename (extension .mtx) or open file object
+    source : file
+        Matrix Market filename (extension .mtx) or open file object
 
-    Outputs:
+    Returns
+    -------
 
-      rows,cols  - number of matrix rows and columns
-      entries    - number of non-zero entries of a sparse matrix
-                   or rows*cols for a dense matrix
-      format     - 'coordinate' | 'array'
-      field      - 'real' | 'complex' | 'pattern' | 'integer'
-      symm       - 'general' | 'symmetric' | 'skew-symmetric' | 'hermitian'
+    rows,cols : int
+       Number of matrix rows and columns
+    entries : int
+        Number of non-zero entries of a sparse matrix
+        or rows*cols for a dense matrix
+
+    format : {'coordinate', 'array'}
+
+    field : {'real', 'complex', 'pattern', 'integer'}
+
+    symm : {'general', 'symmetric', 'skew-symmetric', 'hermitian'}
+
     """
     return MMFile.info(source)
 
 #-------------------------------------------------------------------------------
 def mmread(source):
-    """ Reads the contents of a Matrix Market file 'filename' into a matrix.
+    """
+    Reads the contents of a Matrix Market file 'filename' into a matrix.
 
-    Inputs:
+    Parameters
+    ----------
 
-      source    - Matrix Market filename (extensions .mtx, .mtz.gz)
-                  or open file object.
+    source : file
+        Matrix Market filename (extensions .mtx, .mtz.gz)
+        or open file object.
 
-    Outputs:
+    Returns
+    -------
+    a:
+        Sparse or full matrix
 
-      a         - sparse or full matrix
     """
     return MMFile().read(source)
 
 #-------------------------------------------------------------------------------
 def mmwrite(target, a, comment='', field=None, precision=None):
-    """ Writes the sparse or dense matrix A to a Matrix Market formatted file.
+    """
+    Writes the sparse or dense matrix A to a Matrix Market formatted file.
 
-    Inputs:
+    Parameters
+    ----------
 
-      target    - Matrix Market filename (extension .mtx) or open file object
-      a         - sparse or full matrix
-      comment   - comments to be prepended to the Matrix Market file
-      field     - 'real' | 'complex' | 'pattern' | 'integer'
-      precision - Number of digits to display for real or complex values.
+    target : file
+        Matrix Market filename (extension .mtx) or open file object
+    a : array like
+        Sparse or full matrix
+    comment : str
+        comments to be prepended to the Matrix Market file
+
+    field : {'real', 'complex', 'pattern', 'integer'}, optional
+
+    precision :
+        Number of digits to display for real or complex values.
+
     """
     MMFile().write(target, a, comment, field, precision)
 

@@ -1,3 +1,13 @@
+"""
+Module to read / write wav files using numpy arrays
+
+Functions
+---------
+read: Return the sample rate (in samples/sec) and data from a WAV file.
+
+write: Write a numpy array as a WAV file.
+
+"""
 import numpy
 import struct
 import warnings
@@ -66,12 +76,30 @@ def _read_riff_chunk(fid):
 
 # open a wave-file
 def read(file):
-    """Return the sample rate (in samples/sec) and data from a WAV file
+    """
+    Return the sample rate (in samples/sec) and data from a WAV file
 
-    The file can be an open file or a filename.
-    The returned sample rate is a Python integer
-    The data is returned as a numpy array with a
-        data-type determined from the file.
+    Parameters
+    ----------
+    file : file
+        Input wav file.
+
+    Returns
+    -------
+    rate : int
+        Sample rate of wav file
+    data : numpy array
+        Data read from wav file
+
+    Notes
+    -----
+
+    * The file can be an open file or a filename.
+
+    * The returned sample rate is a Python integer
+    * The data is returned as a numpy array with a
+      data-type determined from the file.
+
     """
     if hasattr(file,'read'):
         fid = file
@@ -98,16 +126,25 @@ def read(file):
 # Write a wave-file
 # sample rate, data
 def write(filename, rate, data):
-    """Write a numpy array as a WAV file
+    """
+    Write a numpy array as a WAV file
 
-    filename -- The name of the file to write (will be over-written)
-    rate -- The sample rate (in samples/sec).
-    data -- A 1-d or 2-d numpy array of integer data-type.
-            The bits-per-sample will be determined by the data-type
-            To write multiple-channels, use a 2-d array of shape
-            (Nsamples, Nchannels)
+    Parameters
+    ----------
+    filename : file
+        The name of the file to write (will be over-written).
+    rate : int
+        The sample rate (in samples/sec).
+    data : ndarray
+        A 1-D or 2-D numpy array of integer data-type.
 
-    Writes a simple uncompressed WAV file.
+    Notes
+    -----
+    * Writes a simple uncompressed WAV file.
+    * The bits-per-sample will be determined by the data-type.
+    * To write multiple-channels, use a 2-D array of shape
+      (Nsamples, Nchannels).
+
     """
     fid = open(filename, 'wb')
     fid.write('RIFF')

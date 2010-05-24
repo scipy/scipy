@@ -86,8 +86,16 @@ HDF5 or .npz files instead.
 
 
 def save_as_module(file_name=None,data=None):
-    """ Save the dictionary "data" into
-        a module and shelf named save
+    """
+    Save the dictionary "data" into a module and shelf named save.
+
+    Parameters
+    ----------
+    file_name : str, optional
+        File name of the module to save.
+    data : dict, optional
+        The dictionary to store in the module.
+
     """
     _create_module(file_name)
     _create_shelf(file_name,data)
