@@ -7,18 +7,22 @@ import numpy as np
 #-----------------------------------------------------------------------------
 
 def tri(N, M=None, k=0, dtype=None):
-    """Construct (N, M) matrix filled with ones at and below the k-th diagonal.
+    """
+    Construct (N, M) matrix filled with ones at and below the k-th diagonal.
 
     The matrix has A[i,j] == 1 for i <= j + k
 
     Parameters
     ----------
     N : integer
-    M : integer
-        Size of the matrix. If M is None, M == N is assumed.
+        The size of the first dimension of the matrix.
+    M : integer or None
+        The size of the second dimension of the matrix. If `M` is None,
+        `M = N` is assumed.
     k : integer
         Number of subdiagonal below which matrix is filled with ones.
-        k == 0 is the main diagonal, k < 0 subdiagonal and k > 0 superdiagonal.
+        `k` = 0 is the main diagonal, `k` < 0 subdiagonal and `k` > 0
+        superdiagonal.
     dtype : dtype
         Data type of the matrix.
 
@@ -111,7 +115,8 @@ def triu(m, k=0):
 
 
 def toeplitz(c, r=None):
-    """Construct a Toeplitz matrix.
+    """
+    Construct a Toeplitz matrix.
 
     The Toepliz matrix has constant diagonals, with c as its first column
     and r as its first row.  If r is not given, r == conjugate(c) is
@@ -135,6 +140,17 @@ def toeplitz(c, r=None):
         The Toeplitz matrix.
         dtype is the same as `(c[0] + r[0]).dtype`.
 
+    See also
+    --------
+    circulant : circulant matrix
+    hankel : Hankel matrix
+
+    Notes
+    -----
+    The behavior when `c` or `r` is a scalar, or when `c` is complex and
+    `r` is None, was changed in version 0.8.0.  The behavior in previous
+    versions was undocumented and is no longer supported.
+
     Examples
     --------
     >>> from scipy.linalg import toeplitz
@@ -147,16 +163,6 @@ def toeplitz(c, r=None):
            [ 2.+3.j,  1.+0.j,  2.-3.j],
            [ 4.-1.j,  2.+3.j,  1.+0.j]])
 
-    See also
-    --------
-    circulant : circulant matrix
-    hankel : Hankel matrix
-
-    Notes
-    -----
-    The behavior when `c` or `r` is a scalar, or when `c` is complex and
-    `r` is None, was changed in version 0.8.0.  The behavior in previous
-    versions was undocumented and is no longer supported. 
     """
     c = np.asarray(c).ravel()
     if r is None:
@@ -173,7 +179,8 @@ def toeplitz(c, r=None):
     return vals[indx]
 
 def circulant(c):
-    """Construct a circulant matrix.
+    """
+    Construct a circulant matrix.
 
     Parameters
     ----------
@@ -185,6 +192,15 @@ def circulant(c):
     A : array, shape (len(c), len(c))
         A circulant matrix whose first column is `c`.
 
+    See also
+    --------
+    toeplitz : Toeplitz matrix
+    hankel : Hankel matrix
+
+    Notes
+    -----
+    .. versionadded:: 0.8.0
+
     Examples
     --------
     >>> from scipy.linalg import circulant
@@ -192,15 +208,6 @@ def circulant(c):
     array([[1, 3, 2],
            [2, 1, 3],
            [3, 2, 1]])
-
-    See also
-    --------
-    toeplitz : Toeplitz matrix
-    hankel : Hankel matrix
-    
-    Notes
-    -----
-    .. versionadded:: 0.8.0
 
     """
     c = np.asarray(c).ravel()
@@ -211,7 +218,8 @@ def circulant(c):
     return c[indx]
 
 def hankel(c, r=None):
-    """Construct a Hankel matrix.
+    """
+    Construct a Hankel matrix.
 
     The Hankel matrix has constant anti-diagonals, with `c` as its
     first column and `r` as its last row.  If `r` is not given, then
@@ -223,9 +231,9 @@ def hankel(c, r=None):
         First column of the matrix.  Whatever the actual shape of `c`, it
         will be converted to a 1D array.
     r : array-like, 1D
-        Last row of the matrix. If None, `r` == 0 is assumed.
+        Last row of the matrix. If None, `r = zeros_like(c)` is assumed.
         `r[0]` is ignored; the last row of the returned matrix is
-        `[c[0], r[1:]]`.  Whatever the actual shape of `r`, it will be
+        `[c[-1], r[1:]]`.  Whatever the actual shape of `r`, it will be
         converted to a 1D array.
 
     Returns
@@ -233,6 +241,11 @@ def hankel(c, r=None):
     A : array, shape (len(c), len(r))
         The Hankel matrix.
         dtype is the same as `(c[0] + r[0]).dtype`.
+
+    See also
+    --------
+    toeplitz : Toeplitz matrix
+    circulant : circulant matrix
 
     Examples
     --------
@@ -246,11 +259,6 @@ def hankel(c, r=None):
            [2, 3, 4, 7, 7],
            [3, 4, 7, 7, 8],
            [4, 7, 7, 8, 9]])
-
-    See also
-    --------
-    toeplitz : Toeplitz matrix
-    circulant : circulant matrix
 
     """
     c = np.asarray(c).ravel()
@@ -268,8 +276,9 @@ def hankel(c, r=None):
     return vals[indx]
 
 def hadamard(n, dtype=int):
-    """Construct a Hadamard matrix.
-    
+    """
+    Construct a Hadamard matrix.
+
     `hadamard(n)` constructs an n-by-n Hadamard matrix, using Sylvester's
     construction.  `n` must be a power of 2.
 
@@ -279,11 +288,15 @@ def hadamard(n, dtype=int):
         The order of the matrix.  `n` must be a power of 2.
     dtype : numpy dtype
         The data type of the array to be constructed.
-        
+
     Returns
     -------
     H : ndarray with shape (n, n)
         The Hadamard matrix.
+
+    Notes
+    -----
+    .. versionadded:: 0.8.0
 
     Examples
     --------
@@ -295,10 +308,6 @@ def hadamard(n, dtype=int):
            [ 1, -1,  1, -1],
            [ 1,  1, -1, -1],
            [ 1, -1, -1,  1]])
-
-    Notes
-    -----
-    .. versionadded:: 0.8.0
 
     """
     
