@@ -13,6 +13,7 @@ SciPy Tutorial
    integrate
    optimize
    interpolate
+   fftpack
    signal
    linalg
    stats
