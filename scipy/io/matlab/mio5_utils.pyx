@@ -56,7 +56,7 @@ DEF _N_MXS = 20
 
 cimport streams
 import scipy.io.matlab.miobase as miob
-from scipy.io.matlab.mio_utils import process_element
+from scipy.io.matlab.mio_utils import squeeze_element, chars_to_strings
 import scipy.io.matlab.mio5_params as mio5p
 import scipy.sparse
 
@@ -139,7 +139,7 @@ cdef class VarReader5:
     # cached here for convenience in later array creation
     cdef cnp.dtype U1_dtype
     cdef cnp.dtype bool_dtype
-    # process_element options
+    # element processing options
     cdef:
         int mat_dtype
         int squeeze_me
@@ -158,7 +158,7 @@ cdef class VarReader5:
         self.uint16_codec = preader.uint16_codec
         # set c-optimized stream object from python file-like object
         self.set_stream(preader.mat_stream)
-        # options for process_element
+        # options for element processing
         self.mat_dtype = preader.mat_dtype
         self.chars_as_strings = preader.chars_as_strings
         self.squeeze_me = preader.squeeze_me
@@ -632,6 +632,8 @@ cdef class VarReader5:
             return arr
         elif mc == mxCHAR_CLASS:
             arr = self.read_char(header)
+            if process and self.chars_as_strings:
+                arr = chars_to_strings(arr)
         elif mc == mxCELL_CLASS:
             arr = self.read_cells(header)
         elif mc == mxSTRUCT_CLASS:
@@ -643,17 +645,15 @@ cdef class VarReader5:
         elif mc == mxFUNCTION_CLASS: # just a matrix of struct type
             arr = self.read_mi_matrix()
             arr = mio5p.MatlabFunction(arr)
-            # to make them more re-writeable - don't process
+            # to make them more re-writeable - don't squeeze
             return arr
         elif mc == mxOPAQUE_CLASS:
             arr = self.read_opaque(header)
             arr = mio5p.MatlabOpaque(arr)
-            # to make them more re-writeable - don't process
+            # to make them more re-writeable - don't squeeze
             return arr
-        if process:
-            return process_element(arr,
-                                   self.chars_as_strings,
-                                   self.squeeze_me)
+        if process and self.squeeze_me:
+            return squeeze_element(arr)
         return arr
 
     cpdef cnp.ndarray read_real_complex(self, VarHeader5 header):
@@ -707,7 +707,7 @@ cdef class VarReader5:
         ''' Read char matrices from stream as arrays
 
         Matrices of char are likely to be converted to matrices of
-        string by later processing in ``process_element``
+        string by later processing in ``array_from_header``
         '''
         '''Notes to friendly fellow-optimizer
         
@@ -720,7 +720,7 @@ cdef class VarReader5:
         how to deal with UCS-2 and UCS-4 builds of python, and how numpy
         deals with unicode strings passed as memory,
 
-        My own introduction here:
+        My own unicode introduction here:
         https://cirl.berkeley.edu/mb312/pydagogue/python_unicode.html
         '''
         cdef:

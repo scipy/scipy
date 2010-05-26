@@ -11,7 +11,7 @@ from miobase import MatFileReader, docfiller, matdims, \
      read_dtype, convert_dtypes, arr_to_chars, arr_dtype_number, \
      MatWriteError
 
-from mio_utils import process_element
+from mio_utils import squeeze_element, chars_to_strings
 
 
 SYS_LITTLE_ENDIAN = sys.byteorder == 'little'
@@ -121,15 +121,15 @@ class VarReader4(object):
             arr = self.read_full_array(hdr)
         elif mclass == mxCHAR_CLASS:
             arr = self.read_char_array(hdr)
+            if process and self.chars_as_strings:
+                arr = chars_to_strings(arr)
         elif mclass == mxSPARSE_CLASS:
             # no current processing (below) makes sense for sparse
             return self.read_sparse_array(hdr)
         else:
             raise TypeError, 'No reader for class code %s' % mclass
-        if process:
-            return process_element(arr,
-                               self.chars_as_strings,
-                               self.squeeze_me)
+        if process and self.squeeze_me:
+            return squeeze_element(arr)
         return arr
     
     def read_sub_array(self, hdr, copy=True):
