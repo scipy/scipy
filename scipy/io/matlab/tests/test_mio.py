@@ -8,6 +8,7 @@ from os.path import join as pjoin, dirname
 from glob import glob
 from StringIO import StringIO
 from tempfile import mkdtemp
+from functools import partial
 import warnings
 import shutil
 import gzip
@@ -27,10 +28,21 @@ import scipy.sparse as SP
 import scipy.io.matlab.byteordercodes as boc
 from scipy.io.matlab.miobase import matdims, MatFileReader, \
     MatWriteError
-from scipy.io.matlab.mio import loadmat, savemat, find_mat_file, \
-     mat_reader_factory
+from scipy.io.matlab.mio import find_mat_file, mat_reader_factory, \
+    loadmat, savemat
 from scipy.io.matlab.mio5 import MatlabObject, MatFile5Writer, \
       MatFile5Reader, MatlabFunction
+
+# Use future defaults to silence unwanted test warnings
+loadmat_future = partial(loadmat, struct_as_record=True)
+savemat_future = partial(savemat, oned_as='row')
+class MatFile5Reader_future(MatFile5Reader):
+    def __init__(self, *args, **kwargs):
+        sar = kwargs.get('struct_as_record')
+        if sar is None:
+            kwargs['struct_as_record'] = True
+        super(MatFile5Reader_future, self).__init__(*args, **kwargs)
+
 
 test_data_path = pjoin(dirname(__file__), 'data')
 
@@ -264,7 +276,7 @@ def _check_level(label, expected, actual):
 
 def _load_check_case(name, files, case):
     for file_name in files:
-        matdict = loadmat(file_name, struct_as_record=True)
+        matdict = loadmat_future(file_name, struct_as_record=True)
         label = "test %s; file %s" % (name, file_name)
         for k, expected in case.items():
             k_label = "%s, variable %s" % (label, k)
@@ -275,7 +287,7 @@ def _load_check_case(name, files, case):
 # Round trip tests
 def _rt_check_case(name, expected, format):
     mat_stream = StringIO()
-    savemat(mat_stream, expected, format=format)
+    savemat_future(mat_stream, expected, format=format)
     mat_stream.seek(0)
     _load_check_case(name, [mat_stream], expected)
 
@@ -315,11 +327,11 @@ def test_gzip_simple():
     try:
         fname = pjoin(tmpdir,name)
         mat_stream = gzip.open( fname,mode='wb')
-        savemat(mat_stream, expected, format=format)
+        savemat_future(mat_stream, expected, format=format)
         mat_stream.close()
 
         mat_stream = gzip.open( fname,mode='rb')
-        actual = loadmat(mat_stream, struct_as_record=True)
+        actual = loadmat_future(mat_stream, struct_as_record=True)
         mat_stream.close()
     finally:
         shutil.rmtree(tmpdir)
@@ -335,7 +347,7 @@ def test_mat73():
     assert_true(len(filenames)>0)
     for filename in filenames:
         assert_raises(NotImplementedError,
-                      loadmat,
+                      loadmat_future,
                       filename,
                       struct_as_record=True)
 
@@ -360,7 +372,7 @@ def test_warnings():
 
 def test_regression_653():
     """Regression test for #653."""
-    assert_raises(TypeError, savemat, StringIO(), {'d':{1:2}}, format='5')
+    assert_raises(TypeError, savemat_future, StringIO(), {'d':{1:2}}, format='5')
 
 
 def test_structname_len():
@@ -369,17 +381,17 @@ def test_structname_len():
     fldname = 'a' * lim
     st1 = np.zeros((1,1), dtype=[(fldname, object)])
     mat_stream = StringIO()
-    savemat(StringIO(), {'longstruct': st1}, format='5')
+    savemat_future(StringIO(), {'longstruct': st1}, format='5')
     fldname = 'a' * (lim+1)
     st1 = np.zeros((1,1), dtype=[(fldname, object)])
-    assert_raises(ValueError, savemat, StringIO(),
+    assert_raises(ValueError, savemat_future, StringIO(),
                   {'longstruct': st1}, format='5')
 
 
 def test_4_and_long_field_names_incompatible():
     # Long field names option not supported in 4
     my_struct = np.zeros((1,1),dtype=[('my_fieldname',object)])
-    assert_raises(ValueError, savemat, StringIO(),
+    assert_raises(ValueError, savemat_future, StringIO(),
                   {'my_struct':my_struct}, format='4', long_field_names=True)
 
 
@@ -389,10 +401,10 @@ def test_long_field_names():
     fldname = 'a' * lim
     st1 = np.zeros((1,1), dtype=[(fldname, object)])
     mat_stream = StringIO()
-    savemat(StringIO(), {'longstruct': st1}, format='5',long_field_names=True)
+    savemat_future(StringIO(), {'longstruct': st1}, format='5',long_field_names=True)
     fldname = 'a' * (lim+1)
     st1 = np.zeros((1,1), dtype=[(fldname, object)])
-    assert_raises(ValueError, savemat, StringIO(),
+    assert_raises(ValueError, savemat_future, StringIO(),
                   {'longstruct': st1}, format='5',long_field_names=True)
 
 
@@ -406,11 +418,11 @@ def test_long_field_names_in_struct():
     cell[0,0]=st1
     cell[0,1]=st1
     mat_stream = StringIO()
-    savemat(StringIO(), {'longstruct': cell}, format='5',long_field_names=True)
+    savemat_future(StringIO(), {'longstruct': cell}, format='5',long_field_names=True)
     #
     # Check to make sure it fails with long field names off
     #
-    assert_raises(ValueError, savemat, StringIO(),
+    assert_raises(ValueError, savemat_future, StringIO(),
                   {'longstruct': cell}, format='5', long_field_names=False)
 
 
@@ -422,17 +434,17 @@ def test_cell_with_one_thing_in_it():
     cells[0,0]='Hello'
     cells[0,1]='World'
     mat_stream = StringIO()
-    savemat(StringIO(), {'x': cells}, format='5')
+    savemat_future(StringIO(), {'x': cells}, format='5')
 
     cells = np.ndarray((1,1),dtype=object)
     cells[0,0]='Hello, world'
     mat_stream = StringIO()
-    savemat(StringIO(), {'x': cells}, format='5')
+    savemat_future(StringIO(), {'x': cells}, format='5')
 
 
 def test_writer_properties():
     # Tests getting, setting of properties of matrix writer
-    mfw = MatFile5Writer(StringIO())
+    mfw = MatFile5Writer(StringIO(), oned_as='row')
     yield assert_equal, mfw.global_vars, []
     mfw.global_vars = ['avar']
     yield assert_equal, mfw.global_vars, ['avar']
@@ -447,7 +459,7 @@ def test_writer_properties():
 def test_use_small_element():
     # Test whether we're using small data element or not
     sio = StringIO()
-    wtr = MatFile5Writer(sio)
+    wtr = MatFile5Writer(sio, oned_as='column')
     # First check size for no sde for name
     arr = np.zeros(10)
     wtr.put_variables({'aaaaa': arr})
@@ -466,22 +478,24 @@ def test_save_dict():
     # Test that dict can be saved (as recarray), loaded as matstruct
     d = {'a':1, 'b':2}
     stream = StringIO()
-    savemat(stream, {'dict':d})
+    savemat_future(stream, {'dict':d})
     stream.seek(0)
-    vals = loadmat(stream)
+    vals = loadmat_future(stream)
 
 
 def test_1d_shape():
     # Current 5 behavior is 1D -> column vector
     arr = np.arange(5)
     stream = StringIO()
+    # silence warnings for tests
+    warnings.simplefilter('ignore')
     savemat(stream, {'oned':arr}, format='5')
-    vals = loadmat(stream)
+    vals = loadmat_future(stream)
     yield assert_equal, vals['oned'].shape, (5,1)
     # Current 4 behavior is 1D -> row vector
     stream = StringIO()
     savemat(stream, {'oned':arr}, format='4')
-    vals = loadmat(stream)
+    vals = loadmat_future(stream)
     yield assert_equal, vals['oned'].shape, (1, 5)
     for format in ('4', '5'):
         # can be explicitly 'column' for oned_as
@@ -489,47 +503,48 @@ def test_1d_shape():
         savemat(stream, {'oned':arr}, 
                 format=format,
                 oned_as='column')
-        vals = loadmat(stream)
+        vals = loadmat_future(stream)
         yield assert_equal, vals['oned'].shape, (5,1)
         # but different from 'row'
         stream = StringIO()
         savemat(stream, {'oned':arr}, 
                 format=format,
                 oned_as='row')
-        vals = loadmat(stream)
+        vals = loadmat_future(stream)
         yield assert_equal, vals['oned'].shape, (1,5)
-    
+    warnings.resetwarnings()
+
 
 def test_compression():
     arr = np.zeros(100).reshape((5,20))
     arr[2,10] = 1
     stream = StringIO()
-    savemat(stream, {'arr':arr})
+    savemat_future(stream, {'arr':arr})
     raw_len = len(stream.getvalue())
-    vals = loadmat(stream)
+    vals = loadmat_future(stream)
     yield assert_array_equal, vals['arr'], arr
     stream = StringIO()
-    savemat(stream, {'arr':arr}, do_compression=True)
+    savemat_future(stream, {'arr':arr}, do_compression=True)
     compressed_len = len(stream.getvalue())
-    vals = loadmat(stream)
+    vals = loadmat_future(stream)
     yield assert_array_equal, vals['arr'], arr
     yield assert_true, raw_len>compressed_len
     # Concatenate, test later
     arr2 = arr.copy()
     arr2[0,0] = 1
     stream = StringIO()
-    savemat(stream, {'arr':arr, 'arr2':arr2}, do_compression=False)
-    vals = loadmat(stream)
+    savemat_future(stream, {'arr':arr, 'arr2':arr2}, do_compression=False)
+    vals = loadmat_future(stream)
     yield assert_array_equal, vals['arr2'], arr2
     stream = StringIO()
-    savemat(stream, {'arr':arr, 'arr2':arr2}, do_compression=True)
-    vals = loadmat(stream)
+    savemat_future(stream, {'arr':arr, 'arr2':arr2}, do_compression=True)
+    vals = loadmat_future(stream)
     yield assert_array_equal, vals['arr2'], arr2
     
 
 def test_single_object():
     stream = StringIO()
-    savemat(stream, {'A':np.array(1, dtype=object)})
+    savemat_future(stream, {'A':np.array(1, dtype=object)})
 
 
 def test_skip_variable():
@@ -545,9 +560,9 @@ def test_skip_variable():
     #
     filename = pjoin(test_data_path,'test_skip_variable.mat')
     #
-    # Prove that it loads with loadmat
+    # Prove that it loads with loadmat_future
     #
-    d = loadmat(filename, struct_as_record=True)
+    d = loadmat_future(filename, struct_as_record=True)
     yield assert_true, d.has_key('first')
     yield assert_true, d.has_key('second')
     #
@@ -566,7 +581,7 @@ def test_empty_struct():
     filename = pjoin(test_data_path,'test_empty_struct.mat')
     # before ticket fix, this would crash with ValueError, empty data
     # type
-    d = loadmat(filename, struct_as_record=True)
+    d = loadmat_future(filename, struct_as_record=True)
     a = d['a']
     yield assert_equal, a.shape, (1,1)
     yield assert_equal, a.dtype, np.dtype(np.object)
@@ -574,8 +589,8 @@ def test_empty_struct():
     stream = StringIO()
     arr = np.array((), dtype='U')
     # before ticket fix, this used to give data type not understood
-    savemat(stream, {'arr':arr})
-    d = loadmat(stream)
+    savemat_future(stream, {'arr':arr})
+    d = loadmat_future(stream)
     a2 = d['arr']
     yield assert_array_equal, a2, arr
 
@@ -590,12 +605,12 @@ def test_recarray():
     arr[1]['f1'] = 99
     arr[1]['f2'] = 'not perl'
     stream = StringIO()
-    savemat(stream, {'arr': arr})
-    d = loadmat(stream, struct_as_record=False)
+    savemat_future(stream, {'arr': arr})
+    d = loadmat_future(stream, struct_as_record=False)
     a20 = d['arr'][0,0]
     yield assert_equal, a20.f1, 0.5
     yield assert_equal, a20.f2, 'python'
-    d = loadmat(stream, struct_as_record=True)
+    d = loadmat_future(stream, struct_as_record=True)
     a20 = d['arr'][0,0]
     yield assert_equal, a20['f1'], 0.5
     yield assert_equal, a20['f2'], 'python'
@@ -613,12 +628,12 @@ def test_save_object():
     c.field1 = 1
     c.field2 = 'a string'
     stream = StringIO()
-    savemat(stream, {'c': c})
-    d = loadmat(stream, struct_as_record=False)
+    savemat_future(stream, {'c': c})
+    d = loadmat_future(stream, struct_as_record=False)
     c2 = d['c'][0,0]
     yield assert_equal, c2.field1, 1
     yield assert_equal, c2.field2, 'a string'
-    d = loadmat(stream, struct_as_record=True)
+    d = loadmat_future(stream, struct_as_record=True)
     c2 = d['c'][0,0]
     yield assert_equal, c2['field1'], 1
     yield assert_equal, c2['field2'], 'a string'
@@ -629,29 +644,29 @@ def test_read_opts():
     # initialization
     arr = np.arange(6).reshape(1,6)
     stream = StringIO()
-    savemat(stream, {'a': arr})
-    rdr = MatFile5Reader(stream)
+    savemat_future(stream, {'a': arr})
+    rdr = MatFile5Reader_future(stream)
     back_dict = rdr.get_variables()
     rarr = back_dict['a']
     yield assert_array_equal, rarr, arr
-    rdr = MatFile5Reader(stream, squeeze_me=True)
+    rdr = MatFile5Reader_future(stream, squeeze_me=True)
     yield assert_array_equal, rdr.get_variables()['a'], arr.reshape((6,))
     rdr.squeeze_me = False
     yield assert_array_equal, rarr, arr
-    rdr = MatFile5Reader(stream, byte_order=boc.native_code)
+    rdr = MatFile5Reader_future(stream, byte_order=boc.native_code)
     yield assert_array_equal, rdr.get_variables()['a'], arr
     # inverted byte code leads to error on read because of swapped
     # header etc
-    rdr = MatFile5Reader(stream, byte_order=boc.swapped_code)
+    rdr = MatFile5Reader_future(stream, byte_order=boc.swapped_code)
     yield assert_raises, Exception, rdr.get_variables
     rdr.byte_order = boc.native_code
     yield assert_array_equal, rdr.get_variables()['a'], arr
     arr = np.array(['a string'])
     stream.truncate(0)
-    savemat(stream, {'a': arr})
-    rdr = MatFile5Reader(stream)
+    savemat_future(stream, {'a': arr})
+    rdr = MatFile5Reader_future(stream)
     yield assert_array_equal, rdr.get_variables()['a'], arr
-    rdr = MatFile5Reader(stream, chars_as_strings=False)
+    rdr = MatFile5Reader_future(stream, chars_as_strings=False)
     carr = np.atleast_2d(np.array(list(arr.item()), dtype='U1'))
     yield assert_array_equal, rdr.get_variables()['a'], carr
     rdr.chars_as_strings=True
@@ -661,7 +676,7 @@ def test_read_opts():
 def test_empty_string():
     # make sure reading empty string does not raise error
     estring_fname = pjoin(test_data_path, 'single_empty_string.mat')
-    rdr = MatFile5Reader(file(estring_fname))
+    rdr = MatFile5Reader_future(file(estring_fname))
     d = rdr.get_variables()
     yield assert_array_equal, d['a'], np.array([], dtype='U1')
     # empty string round trip.  Matlab cannot distiguish
@@ -670,13 +685,13 @@ def test_empty_string():
     # arrays of char.  There is no way of having an array of char that
     # is not empty, but contains an empty string. 
     stream = StringIO()
-    savemat(stream, {'a': np.array([''])})
-    rdr = MatFile5Reader(stream)
+    savemat_future(stream, {'a': np.array([''])})
+    rdr = MatFile5Reader_future(stream)
     d = rdr.get_variables()
     yield assert_array_equal, d['a'], np.array([], dtype='U1')
     stream.truncate(0)
-    savemat(stream, {'a': np.array([], dtype='U1')})
-    rdr = MatFile5Reader(stream)
+    savemat_future(stream, {'a': np.array([], dtype='U1')})
+    rdr = MatFile5Reader_future(stream)
     d = rdr.get_variables()
     yield assert_array_equal, d['a'], np.array([], dtype='U1')
     
@@ -686,30 +701,33 @@ def test_mat4_3d():
     stream = StringIO()
     arr = np.arange(24).reshape((2,3,4))
     warnings.simplefilter('error')
-    yield (assert_raises, DeprecationWarning, savemat, 
+    yield (assert_raises, DeprecationWarning, savemat_future, 
            stream, {'a': arr}, True, '4')
     warnings.resetwarnings()
-    savemat(stream, {'a': arr}, format='4')
-    d = loadmat(stream)
+    # For now, we save a 3D array as 2D
+    warnings.simplefilter('ignore')
+    savemat_future(stream, {'a': arr}, format='4')
+    warnings.resetwarnings()
+    d = loadmat_future(stream)
     yield assert_array_equal, d['a'], arr.reshape((6,4))
 
 
 def test_func_read():
     func_eg = pjoin(test_data_path, 'testfunc_7.4_GLNX86.mat')
-    rdr = MatFile5Reader(file(func_eg))
+    rdr = MatFile5Reader_future(file(func_eg))
     d = rdr.get_variables()
     yield assert_true, isinstance(d['testfunc'], MatlabFunction)
     stream = StringIO()
-    wtr = MatFile5Writer(stream)
+    wtr = MatFile5Writer(stream, oned_as='row')
     yield assert_raises, MatWriteError, wtr.put_variables, d
 
 
 def test_mat_dtype():
     double_eg = pjoin(test_data_path, 'testmatrix_6.1_SOL2.mat')
-    rdr = MatFile5Reader(file(double_eg), mat_dtype=False)
+    rdr = MatFile5Reader_future(file(double_eg), mat_dtype=False)
     d = rdr.get_variables()
     yield assert_equal, d['testmatrix'].dtype.kind, 'u'
-    rdr = MatFile5Reader(file(double_eg), mat_dtype=True)
+    rdr = MatFile5Reader_future(file(double_eg), mat_dtype=True)
     d = rdr.get_variables()
     yield assert_equal, d['testmatrix'].dtype.kind, 'f'
 
@@ -719,19 +737,19 @@ def test_sparse_in_struct():
     # ndarray return type, but getting sparse matrix
     st = {'sparsefield': SP.coo_matrix(np.eye(4))}
     stream = StringIO()
-    savemat(stream, {'a':st})
-    d = loadmat(stream, struct_as_record=True)
+    savemat_future(stream, {'a':st})
+    d = loadmat_future(stream, struct_as_record=True)
     yield assert_array_equal, d['a'][0,0]['sparsefield'].todense(), np.eye(4)
 
 
 def test_mat_struct_squeeze():
     stream = StringIO()
     in_d = {'st':{'one':1, 'two':2}}
-    savemat(stream, in_d)
+    savemat_future(stream, in_d)
     # no error without squeeze
-    out_d = loadmat(stream, struct_as_record=False)
+    out_d = loadmat_future(stream, struct_as_record=False)
     # previous error was with squeeze, with mat_struct
-    out_d = loadmat(stream,
+    out_d = loadmat_future(stream,
                     struct_as_record=False,
                     squeeze_me=True,
                     )
@@ -742,8 +760,8 @@ def test_str_round():
     stream = StringIO()
     in_arr = np.array(['Hello', 'Foob'])
     out_arr = np.array(['Hello', 'Foob '])
-    savemat(stream, dict(a=in_arr))
-    res = loadmat(stream)
+    savemat_future(stream, dict(a=in_arr))
+    res = loadmat_future(stream)
     # resulted in [u'HloolFoa', u'elWrdobr']
     yield assert_array_equal, res['a'], out_arr
     stream.truncate(0)
@@ -753,13 +771,13 @@ def test_str_round():
                              dtype=in_arr.dtype,
                              order='F',
                              buffer=in_str)
-    savemat(stream, dict(a=in_from_str))
+    savemat_future(stream, dict(a=in_from_str))
     yield assert_array_equal, res['a'], out_arr
     # unicode save did lead to buffer too small error
     stream.truncate(0)
     in_arr_u = in_arr.astype('U')
     out_arr_u = out_arr.astype('U')
-    savemat(stream, {'a': in_arr_u})
-    res = loadmat(stream)
+    savemat_future(stream, {'a': in_arr_u})
+    res = loadmat_future(stream)
     yield assert_array_equal, res['a'], out_arr_u
 
