@@ -15,6 +15,10 @@ import sys
 import types
 import traceback
 
+import warnings
+warnings.warn('The ppimport module is deprecated. It will be removed from SciPy in version 0.9.',
+              DeprecationWarning)
+
 DEBUG=0
 
 _ppimport_is_enabled = 1

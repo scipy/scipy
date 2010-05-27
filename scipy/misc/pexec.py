@@ -12,6 +12,11 @@ import threading
 import Queue
 import traceback
 
+import warnings
+warnings.warn('The pexec module is deprecated. It will be removed from SciPy in version 0.9.',
+              DeprecationWarning)
+
+
 class ParallelExec(threading.Thread):
     """ Create a thread of parallel execution.
     """

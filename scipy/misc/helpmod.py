@@ -3,6 +3,10 @@ import types
 import sys
 import pydoc
 
+import warnings
+warnings.warn('The helpmod module is deprecated. It will be removed from SciPy in version 0.9.',
+              DeprecationWarning)
+
 __all__ = ['info','source']
 
 # NOTE:  pydoc defines a help function which works simliarly to this
