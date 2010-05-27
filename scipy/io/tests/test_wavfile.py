@@ -38,7 +38,6 @@ def _check_roundtrip(rate, dtype, channels):
 
         assert rate == rate2
         assert data2.dtype.byteorder in ('<', '=', '|'), data2.dtype
-        print data[:5], data2[:5]
         assert_array_equal(data, data2)
     finally:
         os.unlink(tmpfile)
