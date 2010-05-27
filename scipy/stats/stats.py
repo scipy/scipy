@@ -2117,7 +2117,7 @@ def pearsonr(x, y):
     return r,prob
 
 
-def spearmanr(x, y):
+def spearmanr(a, b=None, axis=0):
     """
     Calculates a Spearman rank-order correlation coefficient and the p-value
     to test for non-correlation.
@@ -2141,18 +2141,32 @@ def spearmanr(x, y):
 
     Parameters
     ----------
-    x : 1D array
-        Must have length > 2
-    y : 1D array
-        Must have the same length as x.
+    a, b : 1D or 2D array_like, b is optional
+        One or two 1-D or 2-D arrays containing multiple variables and
+        observations. Each column of m represents a variable, and each row
+        entry a single observation of those variables. Also see axis below.
+        Both arrays need to have the same length in the `axis` dimension.
+        
+    axis : int or None, optional
+        If axis=0 (default), then each column represents a variable, with
+        observations in the rows. If axis=0, the relationship is transposed:
+        each row represents a variable, while the columns contain observations.
+        If axis=None, then both arrays will be raveled
 
     Returns
     -------
-    r : float
-        The Spearman correlation coefficient
+    rho: float or array (2D square)
+        Spearman correlation matrix or correlation coefficient (if only 2 variables
+        are given as parameters. Correlation matrix is square with length
+        equal to total number of variables (columns or rows) in a and b
+        combined
     p-value : float
         The two-sided p-value for a hypothesis test whose null hypothesis is
-        that the two sets of data are uncorrelated.
+        that two sets of data are uncorrelated, has same dimension as rho
+
+    Notes
+    -----
+    changes in scipy 0.8: rewrite to add tie-handling,  and axis
 
     References
     ----------
@@ -2162,28 +2176,62 @@ def spearmanr(x, y):
        Probablity and Statistics Tables and Formulae. Chapman & Hall: New
        York. 2000.
 
+    Examples
+    --------
+
+    >>> spearmanr([1,2,3,4,5],[5,6,7,8,7])
+    (0.82078268166812329, 0.088587005313543798)
+    >>> np.random.seed(1234321)
+    >>> x2n=np.random.randn(100,2)
+    >>> y2n=np.random.randn(100,2)
+    >>> spearmanr(x2n)
+    (0.059969996999699973, 0.55338590803773591)
+    >>> spearmanr(x2n[:,0], x2n[:,1])
+    (0.059969996999699973, 0.55338590803773591)
+    >>> rho, pval = spearmanr(x2n,y2n)
+    >>> rho
+    array([[ 1.        ,  0.05997   ,  0.18569457,  0.06258626],
+           [ 0.05997   ,  1.        ,  0.110003  ,  0.02534653],
+           [ 0.18569457,  0.110003  ,  1.        ,  0.03488749],
+           [ 0.06258626,  0.02534653,  0.03488749,  1.        ]])
+    >>> pval
+    array([[ 0.        ,  0.55338591,  0.06435364,  0.53617935],
+           [ 0.55338591,  0.        ,  0.27592895,  0.80234077],
+           [ 0.06435364,  0.27592895,  0.        ,  0.73039992],
+           [ 0.53617935,  0.80234077,  0.73039992,  0.        ]])
+    >>> rho, pval = spearmanr(x2n.T, y2n.T, axis=1)
+    >>> rho
+    array([[ 1.        ,  0.05997   ,  0.18569457,  0.06258626],
+           [ 0.05997   ,  1.        ,  0.110003  ,  0.02534653],
+           [ 0.18569457,  0.110003  ,  1.        ,  0.03488749],
+           [ 0.06258626,  0.02534653,  0.03488749,  1.        ]])
+    >>> spearmanr(x2n, y2n, axis=None)
+    (0.10816770419260482, 0.1273562188027364)
+    >>> spearmanr(x2n.ravel(), y2n.ravel())
+    (0.10816770419260482, 0.1273562188027364)
+    
+    >>> xint = np.random.randint(10,size=(100,2))
+    >>> spearmanr(xint)
+    (0.052760927029710199, 0.60213045837062351)
+
     """
-    x = np.asanyarray(x)
-    y = np.asanyarray(y)
-    n = len(x)
-    m = len(y)
-    if n != m:
-        raise ValueError("lengths of x and y must match: %s != %s" % (n, m))
-    if n <= 2:
-        raise ValueError("length must be > 2")
-    rankx = rankdata(x)
-    ranky = rankdata(y)
-    dsq = np.add.reduce((rankx-ranky)**2)
-    rs = 1 - 6*dsq / float(n*(n**2-1))
-    df = n-2
+    a, axisout = _chk_asarray(a, axis)
+    ar = np.apply_along_axis(rankdata,axisout,a)
+    
+    br = None
+    if not b is None:
+        b, axisout = _chk_asarray(b, axis)
+        br = np.apply_along_axis(rankdata,axisout,b)
+    n = a.shape[axisout]
+    rs = np.corrcoef(ar,br,rowvar=axisout)
 
-    try:
-        t = rs * np.sqrt((n-2) / ((rs+1.0)*(1.0-rs)))
-        probrs = betai(0.5*df, 0.5, df/(df+t*t))
-    except ZeroDivisionError:
-        probrs = 0.0
-
-    return rs, probrs
+    t = rs * np.sqrt((n-2) / ((rs+1.0)*(1.0-rs)))
+    prob = distributions.t.sf(np.abs(t),n-2)*2
+    
+    if rs.shape == (2,2):
+        return rs[1,0], prob[1,0]
+    else:
+        return rs, prob
 
 
 def pointbiserialr(x, y):
