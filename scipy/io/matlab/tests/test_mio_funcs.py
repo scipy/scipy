@@ -52,6 +52,8 @@ def read_workspace_vars(fname):
     rdr.mat_stream.read(4) # presumably byte padding
     return read_minimat_vars(rdr)
 
-# example
-fname = pjoin(test_data_path, 'parabola.mat')
-ws_vars = read_workspace_vars(fname)
+
+if __name__ == '__main__':
+    # example
+    fname = pjoin(test_data_path, 'parabola.mat')
+    ws_vars = read_workspace_vars(fname)

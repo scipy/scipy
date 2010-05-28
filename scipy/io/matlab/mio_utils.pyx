@@ -22,7 +22,7 @@ cpdef object squeeze_element(cnp.ndarray arr):
     if not arr.size:
         return np.array([])
     arr = np.squeeze(arr)
-    if np.isscalar(arr): # 0d coverted to scalar
+    if not arr.shape and arr.dtype.isbuiltin: # 0d coverted to scalar
         return arr.item()
     return arr
 
