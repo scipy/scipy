@@ -2206,8 +2206,8 @@ class f_gen(rv_continuous):
     def _logpdf(self, x, dfn, dfd):
         n = 1.0*dfn
         m = 1.0*dfd
-        lPx = m/2 * log(m) + n/2 * log(n) + (n/2-1)*log(x)
-        lPx -= (n+m)/2*log(m+n*x) - special.betaln(n/2,m/2)
+        lPx = m/2*log(m) + n/2*log(n) + (n/2-1)*log(x)
+        lPx -= ((n+m)/2)*log(m+n*x) + special.betaln(n/2,m/2)
         return lPx
     def _cdf(self, x, dfn, dfd):
         return special.fdtr(dfn, dfd, x)
