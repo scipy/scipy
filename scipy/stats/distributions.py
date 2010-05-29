@@ -848,6 +848,12 @@ class rv_continuous(rv_generic):
     def _isf(self, q, *args):
         return self._ppf(1.0-q,*args) #use correct _ppf for subclasses
 
+    def _logpdf(self, x, *arg):
+        return np.log(self._pdf(x, *arg))
+
+    def _logcdf(self, x, *arg):
+        return np.log(self._cdf(x, *arg))
+
     # The actual cacluation functions (no basic checking need be done)
     #  If these are defined, the others won't be looked at.
     #  Otherwise, the other set can be defined.
@@ -1393,6 +1399,8 @@ class norm_gen(rv_continuous):
         return 0.0, 1.0, 0.0, 0.0
     def _entropy(self):
         return 0.5*(log(2*pi)+1)
+    def _logpdf(self, x):
+        return -0.5 * np.log(2.0*np.pi) - x**2/2.0
 norm = norm_gen(name='norm',longname='A normal',extradoc="""
 
 Normal distribution
@@ -1857,6 +1865,8 @@ class expon_gen(rv_continuous):
         return 1.0, 1.0, 2.0, 6.0
     def _entropy(self):
         return 1.0
+    def _logpdf(self, x):
+        return -x
 expon = expon_gen(a=0.0,name='expon',longname="An exponential",
                   extradoc="""
 
@@ -2069,6 +2079,8 @@ class frechet_r_gen(rv_continuous):
         return special.gamma(1.0+n*1.0/c)
     def _entropy(self, c):
         return -_EULER / c - log(c) + _EULER + 1
+    def _logpdf(self, x, c):
+        return log(c) + (c-1)*log(x) - np.power(x,c)
 frechet_r = frechet_r_gen(a=0.0,name='frechet_r',longname="A Frechet right",
                           shapes='c',extradoc="""
 
@@ -2145,6 +2157,8 @@ class genlogistic_gen(rv_continuous):
         g2 = pi**4/15.0 + 6*zeta(4,c)
         g2 /= mu2**2.0
         return mu, mu2, g1, g2
+    def _logpdf(self, x, c):
+        return log(c) - x - (c+1.0)*log1p(exp(-x))
 genlogistic = genlogistic_gen(name='genlogistic',
                               longname="A generalized logistic",
                               shapes='c',extradoc="""
@@ -2180,6 +2194,9 @@ class genpareto_gen(rv_continuous):
         else:
             self.b = -1.0 / c
             return rv_continuous._entropy(self, c)
+    def _logpdf(self, x, c):
+        return (-1.0-1.0/c) * np.log1p(c*x)
+    
 genpareto = genpareto_gen(a=0.0,name='genpareto',
                           longname="A generalized Pareto",
                           shapes='c',extradoc="""
@@ -2198,6 +2215,8 @@ class genexpon_gen(rv_continuous):
         return (a+b*(-expm1(-c*x)))*exp((-a-b)*x+b*(-expm1(-c*x))/c)
     def _cdf(self, x, a, b, c):
         return -expm1((-a-b)*x + b*(-expm1(-c*x))/c)
+    def _logpdf(self, x, a, b, c):
+        return np.log(a+b*(-expm1(-c*x))) + (-a-b)*x+b*(-expm1(-c*x))/c
 genexpon = genexpon_gen(a=0.0,name='genexpon',
                         longname='A generalized exponential',
                         shapes='a, b, c',extradoc="""
@@ -2321,6 +2340,8 @@ class gamma_gen(rv_continuous):
         return a, a, 2.0/sqrt(a), 6.0/a
     def _entropy(self, a):
         return special.psi(a)*(1-a) + 1 + special.gammaln(a)
+    def _logpdf(self, x, a):
+        return (a-1)*log(x) - x - special.gammaln(a)
 gamma = gamma_gen(a=0.0,name='gamma',longname='A gamma',
                   shapes='a',extradoc="""
 
@@ -2440,6 +2461,10 @@ class gumbel_r_gen(rv_continuous):
                12*sqrt(6)/pi**3 * _ZETA3, 12.0/5
     def _entropy(self):
         return 1.0608407169541684911
+    def _logpdf(self, x):
+        return -x - exp(-x)
+    def _logcdf(self, x):
+        return -exp(-x)
 gumbel_r = gumbel_r_gen(name='gumbel_r',longname="A (right-skewed) Gumbel",
                         extradoc="""
 
@@ -2461,6 +2486,8 @@ class gumbel_l_gen(rv_continuous):
                -12*sqrt(6)/pi**3 * _ZETA3, 12.0/5
     def _entropy(self):
         return 1.0608407169541684911
+    def _logpdf(self, x):
+        return x - exp(x)
 gumbel_l = gumbel_l_gen(name='gumbel_l',longname="A left-skewed Gumbel",
                         extradoc="""
 
@@ -2483,6 +2510,8 @@ class halfcauchy_gen(rv_continuous):
         return inf, inf, nan, nan
     def _entropy(self):
         return log(2*pi)
+    def _logpdf(self, x):
+        return np.log(2.0/pi) - np.log1p(x*x)
 halfcauchy = halfcauchy_gen(a=0.0,name='halfcauchy',
                             longname="A Half-Cauchy",extradoc="""
 
@@ -2540,6 +2569,8 @@ class halfnorm_gen(rv_continuous):
                8*(pi-3)/(pi-2)**2
     def _entropy(self):
         return 0.5*log(pi/2.0)+0.5
+    def _logpdf(self, x):
+        return 0.5 * np.log(2.0/pi) - x*x/2.0
 halfnorm = halfnorm_gen(a=0.0, name='halfnorm',
                         longname="A half-normal",
                         extradoc="""
@@ -2614,6 +2645,8 @@ class invgamma_gen(rv_continuous):
         return exp(special.gammaln(a-n) - special.gammaln(a))
     def _entropy(self, a):
         return a - (a+1.0)*special.psi(a) + special.gammaln(a)
+    def _logpdf(self, x, a):
+        return (-(a+1)*np.log(x)-special.gammaln(a) - 1.0/x)
 invgamma = invgamma_gen(a=0.0, name='invgamma',longname="An inverted gamma",
                         shapes='a',extradoc="""
 
