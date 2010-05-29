@@ -17,10 +17,7 @@ doc_dict = \
     {'file_arg':
          '''file_name : string
    Name of the mat file (do not need .mat extension if
-   appendmat==True) If name not a full path name, search for the
-   file on the sys.path list and use the first one found (the
-   current directory is searched first).  Can also pass open
-   file-like object''',
+   appendmat==True) Can also pass open file-like object''',
      'append_arg':
          '''appendmat : {True, False} optional
    True to append the .mat extension to the end of the given

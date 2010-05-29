@@ -362,7 +362,7 @@ def test_warnings():
     # This should
     yield assert_raises, FutureWarning, loadmat, fname
     # This too
-    yield assert_raises, FutureWarning, find_mat_file, fname
+    yield assert_raises, DeprecationWarning, find_mat_file, fname
     warnings.resetwarnings()
 
 

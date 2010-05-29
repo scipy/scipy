@@ -30,8 +30,8 @@ def find_mat_file(file_name, appendmat=True):
        possibly modified name after path search
     '''
     warnings.warn('Searching for mat files on python system path will be ' +
-                  'removed in future versions of scipy',
-                   FutureWarning, stacklevel=2)
+                  'removed in next version of scipy',
+                   DeprecationWarning, stacklevel=2)
     if appendmat and file_name.endswith(".mat"):
         file_name = file_name[:-4]
     if os.sep in file_name:
@@ -54,6 +54,33 @@ def find_mat_file(file_name, appendmat=True):
                 pass
     return full_name
 
+
+def _open_file(file_like, appendmat):
+    ''' Open `file_like` and return as file-like object '''
+    if isinstance(file_like, basestring):
+        try:
+            return open(file_like, 'rb')
+        except IOError:
+            pass
+        if appendmat and not file_like.endswith('.mat'):
+            try:
+                return open(file_like + '.mat', 'rb')
+            except IOError:
+                pass
+        # search the python path - we'll remove this soon
+        full_name = find_mat_file(file_like, appendmat)
+        if full_name is None:
+            raise IOError("%s not found on the path."
+                          % file_like)
+        return open(full_name, 'rb')
+    # not a string - maybe file-like object
+    try:
+        file_like.read(0)
+    except AttributeError:
+        raise IOError('Reader needs file name or open file-like object')
+    return file_like
+
+
 @docfiller
 def mat_reader_factory(file_name, appendmat=True, **kwargs):
     """Create reader for matlab .mat format files
@@ -71,20 +98,7 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
        Initialized instance of MatFileReader class matching the mat file
        type detected in `filename`.
     """
-    if isinstance(file_name, basestring):
-        try:
-            byte_stream = open(file_name, 'rb')
-        except IOError:
-            full_name = find_mat_file(file_name, appendmat)
-            if full_name is None:
-                raise IOError, "%s not found on the path." % file_name
-            byte_stream = open(full_name, 'rb')
-    else:
-        try:
-            file_name.read(0)
-        except AttributeError:
-            raise IOError, 'Reader needs file name or open file-like object'
-        byte_stream = file_name
+    byte_stream = _open_file(file_name, appendmat)
     mjv, mnv = get_matfile_version(byte_stream)
     if mjv == 0:
         return MatFile4Reader(byte_stream, **kwargs)
