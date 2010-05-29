@@ -676,7 +676,7 @@ def test_read_opts():
 def test_empty_string():
     # make sure reading empty string does not raise error
     estring_fname = pjoin(test_data_path, 'single_empty_string.mat')
-    rdr = MatFile5Reader_future(file(estring_fname))
+    rdr = MatFile5Reader_future(file(estring_fname, 'rb'))
     d = rdr.get_variables()
     yield assert_array_equal, d['a'], np.array([], dtype='U1')
     # empty string round trip.  Matlab cannot distiguish
@@ -714,7 +714,7 @@ def test_mat4_3d():
 
 def test_func_read():
     func_eg = pjoin(test_data_path, 'testfunc_7.4_GLNX86.mat')
-    rdr = MatFile5Reader_future(file(func_eg))
+    rdr = MatFile5Reader_future(file(func_eg, 'rb'))
     d = rdr.get_variables()
     yield assert_true, isinstance(d['testfunc'], MatlabFunction)
     stream = StringIO()
@@ -724,10 +724,10 @@ def test_func_read():
 
 def test_mat_dtype():
     double_eg = pjoin(test_data_path, 'testmatrix_6.1_SOL2.mat')
-    rdr = MatFile5Reader_future(file(double_eg), mat_dtype=False)
+    rdr = MatFile5Reader_future(file(double_eg, 'rb'), mat_dtype=False)
     d = rdr.get_variables()
     yield assert_equal, d['testmatrix'].dtype.kind, 'u'
-    rdr = MatFile5Reader_future(file(double_eg), mat_dtype=True)
+    rdr = MatFile5Reader_future(file(double_eg, 'rb'), mat_dtype=True)
     d = rdr.get_variables()
     yield assert_equal, d['testmatrix'].dtype.kind, 'f'
 

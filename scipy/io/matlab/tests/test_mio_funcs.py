@@ -39,7 +39,7 @@ def read_minimat_vars(rdr):
     return mdict
 
 def read_workspace_vars(fname):
-    rdr = MatFile5Reader(file(fname),
+    rdr = MatFile5Reader(file(fname, 'rb'),
                           struct_as_record=True)
     vars = rdr.get_variables()
     fws = vars['__function_workspace__']
@@ -53,7 +53,7 @@ def read_workspace_vars(fname):
     return read_minimat_vars(rdr)
 
 
-if __name__ == '__main__':
+def test_jottings():
     # example
     fname = pjoin(test_data_path, 'parabola.mat')
     ws_vars = read_workspace_vars(fname)
