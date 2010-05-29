@@ -62,7 +62,6 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
     ----------
     %(file_arg)s
     %(append_arg)s
-    %(basename_arg)s
     %(load_args)s
     %(struct_arg)s
 
@@ -86,12 +85,6 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
         except AttributeError:
             raise IOError, 'Reader needs file name or open file-like object'
         byte_stream = file_name
-    # Deal with deprecations
-    if kwargs.has_key('basename'):
-        warnings.warn(
-            'basename argument will be removed in future scipy versions',
-            DeprecationWarning, stacklevel=2)
-        del kwargs['basename']
     mjv, mnv = get_matfile_version(byte_stream)
     if mjv == 0:
         return MatFile4Reader(byte_stream, **kwargs)
@@ -112,7 +105,6 @@ def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
     m_dict : dict, optional
         dictionary in which to insert matfile variables
     %(append_arg)s
-    %(basename_arg)s
     %(load_args)s
     %(struct_arg)s
 

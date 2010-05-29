@@ -25,11 +25,6 @@ doc_dict = \
          '''appendmat : {True, False} optional
    True to append the .mat extension to the end of the given
    filename, if not already present''',
-     'basename_arg':
-         '''base_name : string, optional, unused
-   base name for unnamed variables.  The code no longer uses
-   this.  We deprecate for this version of scipy, and will remove
-   it in future versions''',
      'load_args':
          '''byte_order : {None, string}, optional
    None by default, implying byte order guessed from mat

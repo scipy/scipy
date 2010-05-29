@@ -363,10 +363,6 @@ def test_warnings():
     yield assert_raises, FutureWarning, loadmat, fname
     # This too
     yield assert_raises, FutureWarning, find_mat_file, fname
-    # we need kwargs for this one
-    yield (lambda a, k: assert_raises(*a, **k),
-          (DeprecationWarning, loadmat, fname),
-          {'struct_as_record':True, 'basename':'raw'})
     warnings.resetwarnings()
 
 
