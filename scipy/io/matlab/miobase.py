@@ -296,20 +296,6 @@ def matdims(arr, oned_as='column'):
     return shape
 
 
-class ByteOrder(object):
-    ''' Namespace for byte ordering '''
-    little_endian = boc.sys_is_le
-    native_code = boc.native_code
-    swapped_code = boc.swapped_code
-    to_numpy_code = boc.to_numpy_code
-
-ByteOrder = np.deprecate(ByteOrder, message="""
-We no longer use the ByteOrder class, and deprecate it; we will remove
-it in future versions of scipy.  Please use the
-scipy.io.matlab.byteordercodes module instead.
-""")
-
-
 class MatVarReader(object):
     ''' Abstract class defining required interface for var readers'''
     def __init__(self, file_reader):
@@ -374,7 +360,7 @@ class MatFileReader(object):
 
     def guess_byte_order(self):
         ''' As we do not know what file type we have, assume native '''
-        return ByteOrder.native_code
+        return boc.native_code
 
     def end_of_stream(self):
         b = self.mat_stream.read(1)
