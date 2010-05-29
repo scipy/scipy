@@ -34,7 +34,6 @@ from scipy.io.matlab.mio5 import MatlabObject, MatFile5Writer, \
       MatFile5Reader, MatlabFunction
 
 # Use future defaults to silence unwanted test warnings
-loadmat_future = partial(loadmat, struct_as_record=True)
 savemat_future = partial(savemat, oned_as='row')
 class MatFile5Reader_future(MatFile5Reader):
     def __init__(self, *args, **kwargs):
@@ -276,7 +275,7 @@ def _check_level(label, expected, actual):
 
 def _load_check_case(name, files, case):
     for file_name in files:
-        matdict = loadmat_future(file_name, struct_as_record=True)
+        matdict = loadmat(file_name, struct_as_record=True)
         label = "test %s; file %s" % (name, file_name)
         for k, expected in case.items():
             k_label = "%s, variable %s" % (label, k)
@@ -331,7 +330,7 @@ def test_gzip_simple():
         mat_stream.close()
 
         mat_stream = gzip.open( fname,mode='rb')
-        actual = loadmat_future(mat_stream, struct_as_record=True)
+        actual = loadmat(mat_stream, struct_as_record=True)
         mat_stream.close()
     finally:
         shutil.rmtree(tmpdir)
@@ -347,7 +346,7 @@ def test_mat73():
     assert_true(len(filenames)>0)
     for filename in filenames:
         assert_raises(NotImplementedError,
-                      loadmat_future,
+                      loadmat,
                       filename,
                       struct_as_record=True)
 
@@ -359,9 +358,7 @@ def test_warnings():
     mres = loadmat(fname, struct_as_record=True)
     # This neither
     mres = loadmat(fname, struct_as_record=False)
-    # This should
-    yield assert_raises, FutureWarning, loadmat, fname
-    # This too
+    # This should - because of deprecated system path search
     yield assert_raises, DeprecationWarning, find_mat_file, fname
     warnings.resetwarnings()
 
@@ -476,7 +473,7 @@ def test_save_dict():
     stream = StringIO()
     savemat_future(stream, {'dict':d})
     stream.seek(0)
-    vals = loadmat_future(stream)
+    vals = loadmat(stream)
 
 
 def test_1d_shape():
@@ -486,12 +483,12 @@ def test_1d_shape():
     # silence warnings for tests
     warnings.simplefilter('ignore')
     savemat(stream, {'oned':arr}, format='5')
-    vals = loadmat_future(stream)
+    vals = loadmat(stream)
     yield assert_equal, vals['oned'].shape, (5,1)
     # Current 4 behavior is 1D -> row vector
     stream = StringIO()
     savemat(stream, {'oned':arr}, format='4')
-    vals = loadmat_future(stream)
+    vals = loadmat(stream)
     yield assert_equal, vals['oned'].shape, (1, 5)
     for format in ('4', '5'):
         # can be explicitly 'column' for oned_as
@@ -499,14 +496,14 @@ def test_1d_shape():
         savemat(stream, {'oned':arr}, 
                 format=format,
                 oned_as='column')
-        vals = loadmat_future(stream)
+        vals = loadmat(stream)
         yield assert_equal, vals['oned'].shape, (5,1)
         # but different from 'row'
         stream = StringIO()
         savemat(stream, {'oned':arr}, 
                 format=format,
                 oned_as='row')
-        vals = loadmat_future(stream)
+        vals = loadmat(stream)
         yield assert_equal, vals['oned'].shape, (1,5)
     warnings.resetwarnings()
 
@@ -517,12 +514,12 @@ def test_compression():
     stream = StringIO()
     savemat_future(stream, {'arr':arr})
     raw_len = len(stream.getvalue())
-    vals = loadmat_future(stream)
+    vals = loadmat(stream)
     yield assert_array_equal, vals['arr'], arr
     stream = StringIO()
     savemat_future(stream, {'arr':arr}, do_compression=True)
     compressed_len = len(stream.getvalue())
-    vals = loadmat_future(stream)
+    vals = loadmat(stream)
     yield assert_array_equal, vals['arr'], arr
     yield assert_true, raw_len>compressed_len
     # Concatenate, test later
@@ -530,11 +527,11 @@ def test_compression():
     arr2[0,0] = 1
     stream = StringIO()
     savemat_future(stream, {'arr':arr, 'arr2':arr2}, do_compression=False)
-    vals = loadmat_future(stream)
+    vals = loadmat(stream)
     yield assert_array_equal, vals['arr2'], arr2
     stream = StringIO()
     savemat_future(stream, {'arr':arr, 'arr2':arr2}, do_compression=True)
-    vals = loadmat_future(stream)
+    vals = loadmat(stream)
     yield assert_array_equal, vals['arr2'], arr2
     
 
@@ -556,9 +553,9 @@ def test_skip_variable():
     #
     filename = pjoin(test_data_path,'test_skip_variable.mat')
     #
-    # Prove that it loads with loadmat_future
+    # Prove that it loads with loadmat
     #
-    d = loadmat_future(filename, struct_as_record=True)
+    d = loadmat(filename, struct_as_record=True)
     yield assert_true, d.has_key('first')
     yield assert_true, d.has_key('second')
     #
@@ -577,7 +574,7 @@ def test_empty_struct():
     filename = pjoin(test_data_path,'test_empty_struct.mat')
     # before ticket fix, this would crash with ValueError, empty data
     # type
-    d = loadmat_future(filename, struct_as_record=True)
+    d = loadmat(filename, struct_as_record=True)
     a = d['a']
     yield assert_equal, a.shape, (1,1)
     yield assert_equal, a.dtype, np.dtype(np.object)
@@ -586,7 +583,7 @@ def test_empty_struct():
     arr = np.array((), dtype='U')
     # before ticket fix, this used to give data type not understood
     savemat_future(stream, {'arr':arr})
-    d = loadmat_future(stream)
+    d = loadmat(stream)
     a2 = d['arr']
     yield assert_array_equal, a2, arr
 
@@ -602,11 +599,11 @@ def test_recarray():
     arr[1]['f2'] = 'not perl'
     stream = StringIO()
     savemat_future(stream, {'arr': arr})
-    d = loadmat_future(stream, struct_as_record=False)
+    d = loadmat(stream, struct_as_record=False)
     a20 = d['arr'][0,0]
     yield assert_equal, a20.f1, 0.5
     yield assert_equal, a20.f2, 'python'
-    d = loadmat_future(stream, struct_as_record=True)
+    d = loadmat(stream, struct_as_record=True)
     a20 = d['arr'][0,0]
     yield assert_equal, a20['f1'], 0.5
     yield assert_equal, a20['f2'], 'python'
@@ -625,11 +622,11 @@ def test_save_object():
     c.field2 = 'a string'
     stream = StringIO()
     savemat_future(stream, {'c': c})
-    d = loadmat_future(stream, struct_as_record=False)
+    d = loadmat(stream, struct_as_record=False)
     c2 = d['c'][0,0]
     yield assert_equal, c2.field1, 1
     yield assert_equal, c2.field2, 'a string'
-    d = loadmat_future(stream, struct_as_record=True)
+    d = loadmat(stream, struct_as_record=True)
     c2 = d['c'][0,0]
     yield assert_equal, c2['field1'], 1
     yield assert_equal, c2['field2'], 'a string'
@@ -704,7 +701,7 @@ def test_mat4_3d():
     warnings.simplefilter('ignore')
     savemat_future(stream, {'a': arr}, format='4')
     warnings.resetwarnings()
-    d = loadmat_future(stream)
+    d = loadmat(stream)
     yield assert_array_equal, d['a'], arr.reshape((6,4))
 
 
@@ -734,7 +731,7 @@ def test_sparse_in_struct():
     st = {'sparsefield': SP.coo_matrix(np.eye(4))}
     stream = StringIO()
     savemat_future(stream, {'a':st})
-    d = loadmat_future(stream, struct_as_record=True)
+    d = loadmat(stream, struct_as_record=True)
     yield assert_array_equal, d['a'][0,0]['sparsefield'].todense(), np.eye(4)
 
 
@@ -743,9 +740,9 @@ def test_mat_struct_squeeze():
     in_d = {'st':{'one':1, 'two':2}}
     savemat_future(stream, in_d)
     # no error without squeeze
-    out_d = loadmat_future(stream, struct_as_record=False)
+    out_d = loadmat(stream, struct_as_record=False)
     # previous error was with squeeze, with mat_struct
-    out_d = loadmat_future(stream,
+    out_d = loadmat(stream,
                     struct_as_record=False,
                     squeeze_me=True,
                     )
@@ -757,7 +754,7 @@ def test_str_round():
     in_arr = np.array(['Hello', 'Foob'])
     out_arr = np.array(['Hello', 'Foob '])
     savemat_future(stream, dict(a=in_arr))
-    res = loadmat_future(stream)
+    res = loadmat(stream)
     # resulted in [u'HloolFoa', u'elWrdobr']
     yield assert_array_equal, res['a'], out_arr
     stream.truncate(0)
@@ -774,6 +771,6 @@ def test_str_round():
     in_arr_u = in_arr.astype('U')
     out_arr_u = out_arr.astype('U')
     savemat_future(stream, {'a': in_arr_u})
-    res = loadmat_future(stream)
+    res = loadmat(stream)
     yield assert_array_equal, res['a'], out_arr_u
 

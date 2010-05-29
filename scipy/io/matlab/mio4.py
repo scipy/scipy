@@ -332,7 +332,7 @@ def arr_to_2d(arr, oned_as='row'):
     dims = matdims(arr, oned_as)
     if len(dims) > 2:
         warnings.warn('Matlab 4 files only support <=2 '
-                      'dimensions; future versions of scipy will '
+                      'dimensions; the next version of scipy will '
                       'raise an error when trying to write >2D arrays '
                       'to matlab 4 format files',
                       DeprecationWarning,

@@ -39,16 +39,12 @@ matlab_compatible : {False, True}
    squeeze_me=False, chars_as_strings=False, mat_dtype=True,
    struct_as_record=True)''',
      'struct_arg':
-         '''struct_as_record : {False, True} optional
+         '''struct_as_record : {True, False} optional
    Whether to load matlab structs as numpy record arrays, or as
    old-style numpy arrays with dtype=object.  Setting this flag to
-   False replicates the behaviour of scipy version 0.6 (returning
-   numpy object arrays).  The preferred setting is True, because it
-   allows easier round-trip load and save of matlab files.  In a
-   future version of scipy, we will change the default setting to
-   True, and following versions may remove this flag entirely.  For
-   now, we set the default to False, for backwards compatibility, but
-   issue a warning.''',
+   False replicates the behaviour of scipy version 0.7.x (returning
+   numpy object arrays).  The default setting is True, because it
+   allows easier round-trip load and save of matlab files.''',
      'matstream_arg':
          '''mat_stream : file-like
    object with file API, open for reading''',
@@ -324,7 +320,7 @@ class MatFileReader(object):
                  squeeze_me=False,
                  chars_as_strings=True,
                  matlab_compatible=False,
-                 struct_as_record=None
+                 struct_as_record=True
                  ):
         '''
         Initializer for mat file reader

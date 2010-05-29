@@ -252,7 +252,7 @@ class MatFile5Reader(MatFileReader):
                  squeeze_me=False,
                  chars_as_strings=True,
                  matlab_compatible=False,
-                 struct_as_record=None, # default False, for now
+                 struct_as_record=True,
                  uint16_codec=None
                  ):
         '''Initializer for matlab 5 file format reader
@@ -264,12 +264,6 @@ class MatFile5Reader(MatFileReader):
         Set codec to use for uint16 char arrays (e.g. 'utf-8').
         Use system default codec if None
         '''
-        # Deal with deprecations
-        if struct_as_record is None:
-            warnings.warn("Using struct_as_record default value (False)" +
-                          " This will change to True in future versions",
-                          FutureWarning, stacklevel=2)
-            struct_as_record = False
         super(MatFile5Reader, self).__init__(
             mat_stream,
             byte_order,
