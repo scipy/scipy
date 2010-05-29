@@ -3798,15 +3798,17 @@ class wrapcauchy_gen(rv_continuous):
         c1 = x<pi
         c2 = 1-c1
         xp = extract( c1,x)
-        valp = extract(c1,val)
+        #valp = extract(c1,val)
         xn = extract( c2,x)
-        valn = extract(c2,val)
+        #valn = extract(c2,val)
         if (any(xn)):
+            valn = extract(c2, np.ones_like(x)*val)
             xn = 2*pi - xn
             yn = tan(xn/2.0)
             on = 1.0-1.0/pi*arctan(valn*yn)
             place(output, c2, on)
         if (any(xp)):
+            valp = extract(c1, np.ones_like(x)*val)
             yp = tan(xp/2.0)
             op = 1.0/pi*arctan(valp*yp)
             place(output, c1, op)
