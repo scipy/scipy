@@ -1236,6 +1236,10 @@ def _hermnorm(N):
         plist[n] = plist[n-1].deriv() - poly1d([1,0])*plist[n-1]
     return plist
 
+@np.lib.deprecate(message="""
+scipy.stats.pdf_moments is broken. It will be removed from scipy in 0.9
+unless it is fixed.
+""")
 def pdf_moments(cnt):
     """Return the Gaussian expanded pdf function given the list of central
     moments (first one is mean).
@@ -1291,6 +1295,10 @@ def pdf_fromgamma(g1,g2,g3=0.0,g4=None):
         return totp(xn)*exp(-xn*xn/2.0)
     return thefunc
 
+@np.lib.deprecate(message="""
+scipy.stats.pdfapprox is broken. It will be removed from scipy in 0.9
+unless it is fixed.
+""")
 def pdfapprox(samples):
     """Return a function that approximates the pdf of a set of samples
     using a Gaussian expansion computed from the mean, variance, skewness
