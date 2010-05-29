@@ -4494,7 +4494,7 @@ class rv_discrete(rv_generic):
 
         """
         kwargs['discrete'] = True
-        return super(rv_generic, self).rvs(*args, **kwargs)
+        return super(rv_discrete, self).rvs(*args, **kwargs)
 
     def pmf(self, k,*args, **kwds):
         """
