@@ -4494,7 +4494,7 @@ class rv_discrete(rv_generic):
 
         """
         kwargs['discrete'] = True
-        return rv_generic.rvs(self, *args, **kwargs)
+        return super(rv_generic, self).rvs(*args, **kwargs)
 
     def pmf(self, k,*args, **kwds):
         """
@@ -5075,17 +5075,17 @@ class bernoulli_gen(binom_gen):
     def _argcheck(self, pr):
         return (pr >=0 ) & (pr <= 1)
     def _logpmf(self, x, pr):
-        return binom_gen._logpmf(self, x, 1, pr)
+        return binom._logpmf(x, 1, pr)
     def _pmf(self, x, pr):
-        return binom_gen._pmf(self, x, 1, pr)
+        return binom._pmf(x, 1, pr)
     def _cdf(self, x, pr):
-        return binom_gen._cdf(self, x, 1, pr)
+        return binom._cdf(x, 1, pr)
     def _sf(self, x, pr):
-        return binom_gen._sf(self, x, 1, pr)
+        return binom._sf(x, 1, pr)
     def _ppf(self, q, pr):
-        return binom_gen._ppf(self, q, 1, pr)
+        return binom._ppf(q, 1, pr)
     def _stats(self, pr):
-        return binom_gen._stats(self, 1, pr)
+        return binom._stats(1, pr)
     def _entropy(self, pr):
         return -pr*log(pr)-(1-pr)*log(1-pr)
 bernoulli = bernoulli_gen(b=1,name='bernoulli',shapes="pr",extradoc="""
