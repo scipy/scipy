@@ -143,8 +143,7 @@ decompositions. These can be accessed via `scipy.sparse.linalg.spilu`.
 Upgrade to SuperLU 4.0 also fixes some known bugs.
 
 Faster matlab file reader and default behavior change
------------------------------------------------------
-
+------------------------------------------------------
 We've rewritten the matlab file reader in Cython and it should now read
 matlab files at around the same speed that Matlab does.
 
@@ -164,6 +163,23 @@ matlab 4 files.  We will change this in the next version, so both write
 row vectors.  There is a `FutureWarning` when calling the writer to warn
 of this change; for now we suggest using the ``oned_as='row'`` keyword
 argument to `scipy.io.savemat` and friends.
+
+
+Improvements to scipy.stats
+---------------------------
+
+* addition of mvsdist function which returns distribution objects
+  providing full information about mean, variance, and standard deviation
+  of a data-set
+* addition of 'median', 'mean', 'std', 'var', 'interval', 'logpdf', 
+              'logcdf', 'logsf'
+* addition of 'fit_loc_scale' (deprecation of 'est_loc_scale')
+* improvement to 'fit' method of distribution objects so that sub-classes
+  can add a _fitstart method to fix the starting position of the arguments. 
+  Also, some parameters can be fixed and the data-fitting proceed over the
+  remaining free parameters using f0..fn and floc and fscale keywords to the
+  fit function. 
+
 
 Removed features
 ================

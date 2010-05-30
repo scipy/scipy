@@ -112,7 +112,7 @@ of distrition parameters:
 
 * fit:   maximum likelihood estimation of distribution parameters, including location
          and scale
-* est_loc_scale: estimation of location and scale when shape parameters are given
+* fit_loc_scale: estimation of location and scale when shape parameters are given
 * nnlf:  negative log likelihood function
 
 All continuous distributions take `loc` and `scale` as keyword
