@@ -2,7 +2,7 @@
 #
 # Disclaimer
 #
-# This software is provided "as-is".  There are no expressed or implied
+# This software is provided "as-is".  There are no exprgoessed or implied
 # warranties of any kind, including, but not limited to, the warranties
 # of merchantability and fittness for a given application.  In no event
 # shall Gary Strangman be liable for any direct, indirect, incidental,
@@ -1775,18 +1775,6 @@ def zmap(scores, compare, axis=0, ddof=0):
         return (scores - mns) / sstd
 
 
-
-
-def zmap(scores, compare, axis=0):
-    """
-Returns an array of z-scores the shape of scores (e.g., [x,y]), compared to
-array passed to compare (e.g., [time,x,y]).  Assumes collapsing over dim 0
-of the compare array.
-
-"""
-    mns = np.mean(compare,axis)
-    sstd = samplestd(compare,0)
-    return (scores - mns) / sstd
 
 
 #####################################

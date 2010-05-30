@@ -1423,15 +1423,26 @@ class rv_continuous(rv_generic):
         if (Narg < self.numargs):
             start = self._fitstart(data)  # get distribution specific starting locations
             args += start[Narg:]
-        # location and scale are at the end
-        x0 = args + map(kwds.get, ['loc', 'scale'], self.fit_loc_scale(data))
+        # location and scale
+        loc0, scale0 = None, None
+        if 'loc' not in kwds or 'scale' not in kwds:
+            loc0, scale0 = self.fit_loc_scale(data, *args)
+        loc = kwds.get('loc', loc0)
+        scale = kwds.get('scale', scale0)
+
+        if not np.isfinite(scale):
+            scale = np.sqrt(data.std())
+        if not np.isfinite(loc):
+            loc = data.mean()
+
+        x0 = args + (loc, scale)
         return optimize.fmin(self.nnlf,x0,args=(ravel(data),),disp=0)
 
     def fit_loc_scale(self, data, *args):
         """
         Estimate loc and scale parameters from data using 1st and 2nd moments
         """
-        mu, mu2 = self.stats(*args,**{'moments':'mv'})
+        mu, mu2 = self.stats(*args,moments='mv')
         muhat = st.nanmean(data)
         mu2hat = st.nanstd(data)
         Shat = sqrt(mu2hat / mu2)
@@ -1574,6 +1585,7 @@ class norm_gen(rv_continuous):
         return 0.0, 1.0, 0.0, 0.0
     def _entropy(self):
         return 0.5*(log(2*pi)+1)
+    def fit(self, data, *args, **kwds):
         return arr(data).mean(), arr(data).std(ddof=0)
 norm = norm_gen(name='norm',longname='A normal',extradoc="""
 
@@ -4861,7 +4873,7 @@ class rv_discrete(rv_generic):
 
         signature = inspect.getargspec(self._stats.im_func)
         if (signature[2] is not None) or ('moments' in signature[0]):
-            mu, mu2, g1, g2 = self._stats(*args,**{'moments':moments})
+            mu, mu2, g1, g2 = self._stats(*args,moments=moments)
         else:
             mu, mu2, g1, g2 = self._stats(*args)
         if g1 is None:
