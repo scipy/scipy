@@ -2654,7 +2654,7 @@ class gamma_gen(rv_continuous):
         a = 4 / _skew(data)**2
         return super(gamma_gen, self)._fitstart(data, args=(a,))
     def fit(self, data, *args, **kwds):
-        floc = kwds.get('floc', None):
+        floc = kwds.get('floc', None)
         if floc == 0:
             xbar = ravel(data).mean()
             logx_bar = ravel(log(data)).mean()
@@ -2664,7 +2664,7 @@ class gamma_gen(rv_continuous):
             aest = (3-s + math.sqrt((s-3)**2 + 24*s)) / (12*s)
             xa = aest*(1-0.4)
             xb = aest*(1+0.4)
-            a = optimize.brentq(func, [xa, xb], disp=0)
+            a = optimize.brentq(func, xa, xb, disp=0)
             scale = xbar / a
             return a, floc, scale
         else:
