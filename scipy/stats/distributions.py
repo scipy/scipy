@@ -2653,6 +2653,22 @@ class gamma_gen(rv_continuous):
     def _fitstart(self, data):
         a = 4 / _skew(data)**2
         return super(gamma_gen, self)._fitstart(data, args=(a,))
+    def fit(self, data, *args, **kwds):
+        floc = kwds.get('floc', None):
+        if floc == 0:
+            xbar = ravel(data).mean()
+            logx_bar = ravel(log(data)).mean()
+            s = log(xbar) - logx_bar
+            def func(a):
+                return log(a) - special.digamma(a) - s
+            aest = (3-s + math.sqrt((s-3)**2 + 24*s)) / (12*s)
+            xa = aest*(1-0.4)
+            xb = aest*(1+0.4)
+            a = optimize.brentq(func, [xa, xb], disp=0)
+            scale = xbar / a
+            return a, floc, scale
+        else:
+            return super(gamma_gen, self).fit(data, *args, **kwds)
 gamma = gamma_gen(a=0.0,name='gamma',longname='A gamma',
                   shapes='a',extradoc="""
 
