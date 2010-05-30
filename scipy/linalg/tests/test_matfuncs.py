@@ -31,7 +31,7 @@ class TestSignM(TestCase):
 
     def test_defective1(self):
         a = array([[0.0,1,0,0],[1,0,1,0],[0,0,0,1],[0,0,1,0]])
-        r = signm(a)
+        r = signm(a, disp=False)
         #XXX: what would be the correct result?
 
     def test_defective2(self):
@@ -41,7 +41,7 @@ class TestSignM(TestCase):
             [-10.0,6.0,-20.0,-18.0,-2.0],
             [-9.6,9.6,-25.5,-15.4,-2.0],
             [9.8,-4.8,18.0,18.2,2.0]))
-        r = signm(a)
+        r = signm(a, disp=False)
         #XXX: what would be the correct result?
 
     def test_defective3(self):
@@ -52,7 +52,7 @@ class TestSignM(TestCase):
                    [  0.,   0.,   0.,   0.,   3.,  10.,   0.],
                    [  0.,   0.,   0.,   0.,   0.,  -2.,  25.],
                    [  0.,   0.,   0.,   0.,   0.,   0.,  -3.]])
-        r = signm(a)
+        r = signm(a, disp=False)
         #XXX: what would be the correct result?
 
 class TestLogM(TestCase):
@@ -66,7 +66,8 @@ class TestLogM(TestCase):
                    [  0.,   0.,   0.,   0.,   0.,  -2.,  25.],
                    [  0.,   0.,   0.,   0.,   0.,   0.,  -3.]])
         m = (identity(7)*3.1+0j)-a
-        logm(m)
+        logm(m, disp=False)
+        #XXX: what would be the correct result?
 
 
 class TestSqrtM(TestCase):
@@ -83,7 +84,7 @@ class TestSqrtM(TestCase):
                     [0,0,se,0],
                     [0,0,0,1]])
         assert_array_almost_equal(dot(sa,sa),a)
-        esa = sqrtm(a)
+        esa = sqrtm(a, disp=False)[0]
         assert_array_almost_equal(dot(esa,esa),a)
 
 class TestExpM(TestCase):
