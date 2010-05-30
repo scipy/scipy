@@ -27,6 +27,24 @@ from scipy.special import gammaln as gamln
 from copy import copy
 import vonmises_cython
 
+def _moment(data, n, mu=None):
+    if mu is None:
+        mu = data.mean()
+    return ((data - mu)**n).mean()
+
+def _skew(data):
+    data = np.ravel(data)
+    mu = data.mean()
+    m2 = ((data - mu)**2).mean()
+    m3 = ((data - mu)**3).mean()
+    return m3 / m2**1.5
+
+def _kurtosis(data):
+    data = np.ravel(data)
+    mu = data.mean()
+    m2 = ((data - mu)**2).mean()
+    m4 = ((data - mu)**4).mean()
+    return m4 / m2**2 - 3
 
 __all__ = [
            'rv_continuous',
@@ -59,7 +77,6 @@ arr = asarray
 gam = special.gamma
 
 import types
-import stats as st
 from scipy.misc import doccer
 all = alltrue
 sgf = vectorize
@@ -1392,9 +1409,49 @@ class rv_continuous(rv_generic):
             N = len(x)
             return self._nnlf(x, *args) + N*log(scale)
 
-    def _fitstart(self, data):
-        return (1.0,)*self.numargs 
+    # return starting point for fit (shape arguments + loc + scale)
+    def _fitstart(self, data, args=None):
+        if args is None:
+            args = (1.0,)*self.numargs
+        return args + self.fit_loc_scale(data, *args)
 
+    def _reduce_func(self, args, kwds):
+        args = list(args)
+        Nargs = len(args) - 2
+        fixedn = []
+        index = range(Nargs) + [-2, -1]
+        names = ['f%d' % n for n in range(Nargs)] + ['floc', 'fscale']
+        x0 = args[:]
+        for n, key in zip(index, names):
+            if kwds.has_key(key):
+                fixedn.append(n)
+                args[n] = kwds[key]
+                del x0[n]
+
+        if len(fixedn) == 0:
+            func = self.nnlf
+            restore = None
+        else:
+            if len(fixedn) == len(index):
+                raise ValueError, "All parameters fixed. There is nothing to optimize."
+            def restore(args, theta):
+                # Replace with theta for all numbers not in fixedn
+                # This allows the non-fixed values to vary, but
+                #  we still call self.nnlf with all parameters.
+                i = 0
+                for n in range(Nargs):
+                    if n not in fixedn:
+                        args[n] = theta[i]
+                        i += 1
+                return args
+
+            def func(theta, x):
+                newtheta = restore(args[:], theta)
+                return self.nnlf(newtheta, x)
+
+        return x0, func, restore, args
+
+            
     def fit(self, data, *args, **kwds):
         """
         Return max like estimators to shape, location, and scale from data
@@ -1403,15 +1460,25 @@ class rv_continuous(rv_generic):
         arguments not given starting points, self._fitstart(data) is called 
         to get the starting estimates.
 
+        You can hold some parameters fixed to specific values by passing in 
+        keyword arguments f0..fn for shape paramters and floc, fscale for 
+        location and scale parameters.
+
         Parameters
         ----------
         data : array-like
             Data to use in calculating the MLE
         args : optional
-            Starting values for any shape arguments
+            Starting values for any shape arguments (those not specified 
+            will be determined by _fitstart(data))
         kwds : loc, scale
             Starting values for the location and scale parameters 
-
+            Special keyword arguments are recognized as holding certain 
+              parameters fixed:
+            f1..fn : hold respective shape paramters fixed
+            floc : hold location parameter fixed to specified value
+            fscale : hold scale parameter fixed to specified value
+              
         Return
         ------
         shape, loc, scale : tuple of float
@@ -1420,23 +1487,20 @@ class rv_continuous(rv_generic):
         Narg = len(args)
         if Narg > self.numargs:
                 raise ValueError, "Too many input arguments."
-        if (Narg < self.numargs):
+        start = [None]*2
+        if (Narg < self.numargs) or not (kwds.has_key('loc') and
+                                         kwds.has_key('scale')):
             start = self._fitstart(data)  # get distribution specific starting locations
-            args += start[Narg:]
-        # location and scale
-        loc0, scale0 = None, None
-        if 'loc' not in kwds or 'scale' not in kwds:
-            loc0, scale0 = self.fit_loc_scale(data, *args)
-        loc = kwds.get('loc', loc0)
-        scale = kwds.get('scale', scale0)
-
-        if not np.isfinite(scale):
-            scale = np.sqrt(data.std())
-        if not np.isfinite(loc):
-            loc = data.mean()
-
-        x0 = args + (loc, scale)
-        return optimize.fmin(self.nnlf,x0,args=(ravel(data),),disp=0)
+            args += start[Narg:-2]
+        loc = kwds.get('loc', start[-2])
+        scale = kwds.get('scale', start[-1])
+        args += (loc, scale)
+        x0, func, restore, args = self._reduce_func(args, kwds)
+        vals = optimize.fmin(func,x0,args=(ravel(data),),disp=0)
+        vals = tuple(vals)
+        if restore is not None:
+            vals = restore(args, vals)
+        return vals
 
     def fit_loc_scale(self, data, *args):
         """
@@ -1585,8 +1649,6 @@ class norm_gen(rv_continuous):
         return 0.0, 1.0, 0.0, 0.0
     def _entropy(self):
         return 0.5*(log(2*pi)+1)
-    def fit(self, data, *args, **kwds):
-        return arr(data).mean(), arr(data).std(ddof=0)
 norm = norm_gen(name='norm',longname='A normal',extradoc="""
 
 Normal distribution
@@ -1691,6 +1753,32 @@ class beta_gen(rv_continuous):
         g2 = 6.0*(a**3 + a**2*(1-2*b) + b**2*(1+b) - 2*a*b*(2+b))
         g2 /= a*b*(a+b+2)*(a+b+3)
         return mn, var, g1, g2
+    def _fitstart(self, data):
+        g1 = _skew(data)
+        g2 = _kurtosis(data)
+        def func(x):
+            a, b = x
+            sk = 2*(b-a)*math.sqrt(a + b + 1) / (a + b + 2) / math.sqrt(a*b)
+            ku = a**3 - a**2*(2*b-1) + b**2*(b+1) - 2*a*b*(b+2)
+            ku /= a*b*(a+b+2)*(a+b+3)
+            ku *= 6
+            return [sk-g1, ku-g2]            
+        a, b = optimize.fsolve(func, (1.0, 1.0))
+        return super(beta_gen, self)._fitstart(data, args=(a,b))
+    def fit(self, data, *args, **kwds):
+        floc = kwds.get('floc', None)
+        fscale = kwds.get('fscale', None)
+        if floc == 0 and fscale == 1:
+            # special case
+            xbar = arr(data).mean()
+            v = arr(data).var(ddof=0)
+            fac = xbar*(1-xbar)/v - 1
+            a = xbar * fac
+            b = (1-xbar) * fac
+            return a, b, floc, fscale
+        else: # do general fit
+            return super(beta_gen, self).fit(data, *args, **kwds)
+            
 beta = beta_gen(a=0.0, b=1.0, name='beta',shapes='a, b',extradoc="""
 
 Beta distribution
@@ -2562,9 +2650,9 @@ class gamma_gen(rv_continuous):
         return a, a, 2.0/sqrt(a), 6.0/a
     def _entropy(self, a):
         return special.psi(a)*(1-a) + 1 + gamln(a)
-    def _fitstart(self, x):
-        from distributions import skew
-        return (4 / skew(x)**2,)
+    def _fitstart(self, data):
+        a = 4 / _skew(data)**2
+        return super(gamma_gen, self)._fitstart(data, args=(a,))
 gamma = gamma_gen(a=0.0,name='gamma',longname='A gamma',
                   shapes='a',extradoc="""
 
