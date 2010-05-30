@@ -172,7 +172,7 @@ Improvements to scipy.stats
   providing full information about mean, variance, and standard deviation
   of a data-set
 * addition of 'median', 'mean', 'std', 'var', 'interval', 'logpdf', 
-              'logcdf', 'logsf'
+              'logcdf', 'logsf', 'expect'
 * addition of 'fit_loc_scale' (deprecation of 'est_loc_scale')
 * improvement to 'fit' method of distribution objects so that sub-classes
   can add a _fitstart method to fix the starting position of the arguments. 

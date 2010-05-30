@@ -1,15 +1,14 @@
 # Functions to implement several important functions for
 #   various Continous and Discrete Probability Distributions
 #
-# Author:  Travis Oliphant  2002-2003 with contributions from 
+# Author:  Travis Oliphant  2002-2010 with contributions from 
 #          SciPy Developers 2004-2010
 #
 
-import scipy
 from scipy.misc import comb, derivative
 from scipy import special
 from scipy import optimize
-import scipy.integrate
+from scipy import integrate
 
 import inspect
 from numpy import alltrue, where, arange, putmask, \
@@ -825,13 +824,13 @@ class rv_continuous(rv_generic):
     def _mom_integ0(self, x,m,*args):
         return x**m * self.pdf(x,*args)
     def _mom0_sc(self, m,*args):
-        return scipy.integrate.quad(self._mom_integ0, self.a,
+        return integrate.quad(self._mom_integ0, self.a,
                                     self.b, args=(m,)+args)[0]
     # moment calculated using ppf
     def _mom_integ1(self, q,m,*args):
         return (self.ppf(q,*args))**m
     def _mom1_sc(self, m,*args):
-        return scipy.integrate.quad(self._mom_integ1, 0, 1,args=(m,)+args)[0]
+        return integrate.quad(self._mom_integ1, 0, 1,args=(m,)+args)[0]
 
     ## These are the methods you must define (standard form functions)
     def _argcheck(self, *args):
@@ -858,7 +857,7 @@ class rv_continuous(rv_generic):
         return Y
 
     def _cdf_single_call(self, x, *args):
-        return scipy.integrate.quad(self._pdf, self.a, x, args=args)[0]
+        return integrate.quad(self._pdf, self.a, x, args=args)[0]
 
     def _cdf(self, x, *args):
         return self.veccdf(x,*args)
@@ -1529,7 +1528,7 @@ class rv_continuous(rv_generic):
             val = self._pdf(x, *args)
             return val*log(val)
 
-        entr = -scipy.integrate.quad(integ,self.a,self.b)[0]
+        entr = -integrate.quad(integ,self.a,self.b)[0]
         if not np.isnan(entr):
             return entr
         else:  # try with different limits if integration problems
@@ -1542,7 +1541,7 @@ class rv_continuous(rv_generic):
                 lower = low
             else:
                 lower = self.a
-            return -scipy.integrate.quad(integ,lower,upper)[0]
+            return -integrate.quad(integ,lower,upper)[0]
 
 
     def entropy(self, *args, **kwds):
@@ -1574,8 +1573,55 @@ class rv_continuous(rv_generic):
         else:
             place(output,cond0,self.vecentropy(*goodargs)+log(scale))
         return output
-    
+   
+    def expect(self, func=None, args=(), loc=0, scale=1, lb=None, ub=None, 
+               conditional=False, **kwds):
+        """calculate expected value of a function with respect to the distribution
 
+        location and scale only tested on a few examples
+
+        Parameters
+        ----------
+        all parameters are keyword parameters
+        func : function (default: identity mapping)
+           Function for which integral is calculated. Takes only one argument.
+        args : tuple
+           argument (parameters) of the distribution
+        lb, ub : numbers
+           lower and upper bound for integration, default is set to the support
+           of the distribution
+        conditional : boolean (False)
+           If true then the integral is corrected by the conditional probability
+           of the integration interval. The return value is the expectation
+           of the function, conditional on being in the given interval.
+
+        Returns
+        -------
+        expected value : float
+        
+        Notes
+        -----
+        This function has not been checked for it's behavior when the integral is
+        not finite. The integration behavior is inherited from integrate.quad.           
+        """
+        if func is None:
+            def fun(x, *args):
+                return x*self.pdf(x, *args, loc=loc, scale=scale)
+        else:
+            def fun(x, *args):
+                return func(x)*self.pdf(x, *args, loc=loc, scale=scale)
+        if lb is None:
+            lb = (self.a - loc)/(1.0*scale)
+        if ub is None:
+            ub = (self.b - loc)/(1.0*scale)
+        if conditional:
+            invfac = self.sf(lb,*args) - self.sf(ub,*args)
+        else:
+            invfac = 1.0
+            kwds['args'] = args
+            return integrate.quad(fun, lb, ub, **kwds)[0] / invfac
+
+ 
 _EULER = 0.577215664901532860606512090082402431042  # -special.psi(1)
 _ZETA3 = 1.202056903159594285399738161511449990765  # special.zeta(3,1)  Apery's constant
 
@@ -1768,10 +1814,11 @@ class beta_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         floc = kwds.get('floc', None)
         fscale = kwds.get('fscale', None)
-        if floc == 0 and fscale == 1:
+        if floc is not None and fscale is not None:
             # special case
-            xbar = arr(data).mean()
-            v = arr(data).var(ddof=0)
+            data = (ravel(data)-floc)/fscale
+            xbar = data.mean()
+            v = data.var(ddof=0)
             fac = xbar*(1-xbar)/v - 1
             a = xbar * fac
             b = (1-xbar) * fac
@@ -4071,7 +4118,7 @@ class tukeylambda_gen(rv_continuous):
     def _entropy(self, lam):
         def integ(p):
             return log(pow(p,lam-1)+pow(1-p,lam-1))
-        return scipy.integrate.quad(integ,0,1)[0]
+        return integrate.quad(integ,0,1)[0]
 tukeylambda = tukeylambda_gen(name='tukeylambda', longname="A Tukey-Lambda",
                               shapes="lam", extradoc="""
 
@@ -5127,6 +5174,110 @@ class rv_discrete(rv_generic):
 
     def __call__(self, *args, **kwds):
         return self.freeze(*args,**kwds)
+
+    def expect(self, func=None, args=(), loc=0, lb=None, ub=None, conditional=False):
+        """calculate expected value of a function with respect to the distribution
+        for discrete distribution
+
+        Parameters
+        ----------
+            fn : function (default: identity mapping)
+               Function for which integral is calculated. Takes only one argument.
+            args : tuple
+               argument (parameters) of the distribution
+            optional keyword parameters
+            lb, ub : numbers
+               lower and upper bound for integration, default is set to the support
+               of the distribution, lb and ub are inclusive (ul<=k<=ub)
+            conditional : boolean (False)
+               If true then the expectation is corrected by the conditional
+               probability of the integration interval. The return value is the
+               expectation of the function, conditional on being in the given
+               interval (k such that ul<=k<=ub).
+
+        Returns
+        -------
+            expected value : float
+
+        Notes
+        -----
+        * function is not vectorized
+        * accuracy: uses self.moment_tol as stopping criterium
+            for heavy tailed distribution e.g. zipf(4), accuracy for
+            mean, variance in example is only 1e-5,
+            increasing precision (moment_tol) makes zipf very slow
+        * suppnmin=100 internal parameter for minimum number of points to evaluate
+            could be added as keyword parameter, to evaluate functions with
+            non-monotonic shapes, points include integers in (-suppnmin, suppnmin)
+        * uses maxcount=1000 limits the number of points that are evaluated
+            to break loop for infinite sums
+            (a maximum of suppnmin+1000 positive plus suppnmin+1000 negative integers
+            are evaluated)
+
+
+        """
+
+        #moment_tol = 1e-12 # increase compared to self.moment_tol,
+        # too slow for only small gain in precision for zipf
+
+        #avoid endless loop with unbound integral, eg. var of zipf(2)
+        maxcount = 1000
+        suppnmin = 100  #minimum number of points to evaluate (+ and -)
+
+        if func is None:
+            def fun(x):
+                #loc and args from outer scope
+                return (x+loc)*self._pmf(x, *args)
+        else:
+            def fun(x):
+                #loc and args from outer scope
+                return func(x+loc)*self._pmf(x, *args)
+        # used pmf because _pmf does not check support in randint
+        # and there might be problems(?) with correct self.a, self.b at this stage
+        # maybe not anymore, seems to work now with _pmf
+
+        self._argcheck(*args) # (re)generate scalar self.a and self.b
+        if lb is None:
+            lb = (self.a)
+        if ub is None:
+            ub = (self.b)
+        if conditional:
+            invfac = self.sf(lb,*args) - self.sf(ub+1,*args)
+        else:
+            invfac = 1.0
+
+        tot = 0.0
+        low, upp = self._ppf(0.001, *args), self._ppf(0.999, *args)
+        low = max(min(-suppnmin, low), lb)
+        upp = min(max(suppnmin, upp), ub)
+        supp = np.arange(low, upp+1, self.inc) #check limits
+        #print 'low, upp', low, upp
+        tot = np.sum(fun(supp))
+        diff = 1e100
+        pos = upp + self.inc
+        count = 0
+
+        #handle cases with infinite support
+
+        while (pos <= ub) and (diff > self.moment_tol) and count <= maxcount: 
+            diff = fun(pos)
+            tot += diff
+            pos += self.inc
+            count += 1
+
+        if self.a < 0: #handle case when self.a = -inf
+            diff = 1e100
+            pos = low - self.inc
+            while (pos >= lb) and (diff > self.moment_tol) and count <= maxcount: 
+                diff = fun(pos)
+                tot += diff
+                pos -= self.inc
+                count += 1
+        if count > maxcount:
+            # replace with proper warning
+            print 'sum did not converge'
+        return tot/invfac
+    
 
 # Binomial
 

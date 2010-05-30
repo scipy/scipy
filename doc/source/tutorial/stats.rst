@@ -114,6 +114,7 @@ of distrition parameters:
          and scale
 * fit_loc_scale: estimation of location and scale when shape parameters are given
 * nnlf:  negative log likelihood function
+* expect: Calculate the expectation of a function against the pdf or pmf
 
 All continuous distributions take `loc` and `scale` as keyword
 parameters to adjust the location and scale of the distribution,
