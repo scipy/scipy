@@ -11,7 +11,6 @@ except ImportError:
 from weave_test_utils import *
 
 build_dir = empty_temp_dir()
-print 'building extensions here:', build_dir
 
 class TestExtModule(TestCase):
     #should really do some testing of where modules end up
