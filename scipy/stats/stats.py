@@ -3205,8 +3205,6 @@ def friedmanchisquare(*args):
     for i in range(1,k):
         if len(args[i]) <> n:
             raise ValueError, 'Unequal N in friedmanchisquare.  Aborting.'
-    if n < 10 and k < 6:
-        print 'Warning: friedmanchisquare test using Chisquared aproximation'
 
     # Rank data
     data = apply(_support.abut,args)
