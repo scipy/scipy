@@ -2963,7 +2963,7 @@ C = 1/(B(a,b)F[2,1](c,a;a+b;-z))
 
 class invgamma_gen(rv_continuous):
     def _pdf(self, x, a):
-        return exp(-self._logpdf(x,a))
+        return exp(self._logpdf(x,a))
     def _logpdf(self, x, a):
         return (-(a+1)*log(x)-gamln(a) - 1.0/x)
     def _cdf(self, x, a):
