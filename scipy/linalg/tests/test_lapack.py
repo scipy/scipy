@@ -45,25 +45,14 @@ class TestLapack(TestCase):
 
     def test_flapack(self):
         if hasattr(flapack,'empty_module'):
-            print """
-****************************************************************
-WARNING: flapack module is empty
------------
-See scipy/INSTALL.txt for troubleshooting.
-****************************************************************
-"""
+            #flapack module is empty
+            pass
+
     def test_clapack(self):
         if hasattr(clapack,'empty_module'):
-            print """
-****************************************************************
-WARNING: clapack module is empty
------------
-See scipy/INSTALL.txt for troubleshooting.
-Notes:
-* If atlas library is not found by numpy/distutils/system_info.py,
-  then scipy uses flapack instead of clapack.
-****************************************************************
-"""
+            #clapack module is empty
+            pass
+
 
 if __name__ == "__main__":
     run_module_suite()
