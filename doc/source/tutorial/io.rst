@@ -79,12 +79,10 @@ the command line for me):
 Now, to Python:
 
   >>> mat_contents = sio.loadmat('octave_a.mat')
-  /home/mb312/usr/local/lib/python2.5/site-packages/scipy/io/Matlab/mio.py:84: FutureWarning: Using struct_as_record default value (False) This will change to True in future versions
-    return MatFile5Reader(byte_stream, **kwargs)
   >>> print mat_contents
   {'a': array([[[  1.,   4.,   7.,  10.],
           [  2.,   5.,   8.,  11.],
-          [  3.,   6.,   9.,  12.]]]), '__version__': '1.0', '__header__': 'MATLAB 5.0 MAT-file, written by Octave 3.0.1, 2009-05-14 22:21:44 UTC', '__globals__': []}
+          [  3.,   6.,   9.,  12.]]]), '__version__': '1.0', '__header__': 'MATLAB 5.0 MAT-file, written by Octave 3.2.3, 2010-05-30 02:13:40 UTC', '__globals__': []}
   >>> oct_a = mat_contents['a']
   >>> print oct_a
   [[[  1.   4.   7.  10.]
@@ -93,16 +91,15 @@ Now, to Python:
   >>> print oct_a.shape
   (1, 3, 4)
 
-We'll get to the deprecation warning in a second.  Now let's try the
-other way round:
+Now let's try the other way round:
 
    >>> import numpy as np
    >>> vect = np.arange(10)
    >>> print vect.shape
    (10,)
    >>> sio.savemat('np_vector.mat', {'vect':vect})
-   /home/mb312/usr/local/lib/python2.5/site-packages/scipy/io/Matlab/mio.py:165: FutureWarning: Using oned_as default value ('column') This will change to 'row' in future versions
-     oned_as=oned_as)
+   /Users/mb312/usr/local/lib/python2.6/site-packages/scipy/io/matlab/mio.py:196: FutureWarning: Using oned_as default value ('column') This will change to 'row' in future versions
+  oned_as=oned_as)
 
 Then back to Octave:
 
@@ -173,21 +170,24 @@ We can load this in Python:
 
    >>> mat_contents = sio.loadmat('octave_struct.mat')
    >>> print mat_contents
-   {'my_struct': array([[<scipy.io.matlab.mio5.mat_struct object at 0x26421d0>]], dtype=object), '__version__': '1.0', '__header__': 'MATLAB 5.0 MAT-file, written by Octave 3.0.1, 2009-05-14 22:40:04 UTC', '__globals__': []}
+   {'my_struct': array([[([[1.0]], [[2.0]])]], 
+         dtype=[('field1', '|O8'), ('field2', '|O8')]), '__version__': '1.0', '__header__': 'MATLAB 5.0 MAT-file, written by Octave 3.2.3, 2010-05-30 02:00:26 UTC', '__globals__': []}
    >>> oct_struct = mat_contents['my_struct']
    >>> print oct_struct.shape
    (1, 1)
    >>> val = oct_struct[0,0]
    >>> print val
-   <scipy.io.Matlab.mio5.mat_struct object at 0x2ade950>
-   >>> print val.field1
+   ([[1.0]], [[2.0]])
+   >>> print val['field1']
    [[ 1.]]
-   >>> print val.field2
+   >>> print val['field2']
    [[ 2.]]
+   >>> print val.dtype
+   [('field1', '|O8'), ('field2', '|O8')]
 
-In this version of Scipy (0.7.1), Matlab structs come back as custom
-objects, called ``mat_struct``, with attributes named for the fields in
-the structure.  Note also:
+In this version of Scipy (0.8.0), Matlab structs come back as numpy
+structured arrays, with fields named for the struct fields.  You can see
+the field names in the ``dtype`` output above.  Note also:
 
    >>> val = oct_struct[0,0]
 
@@ -206,12 +206,29 @@ squeezed out, try this:
 
    >>> mat_contents = sio.loadmat('octave_struct.mat', squeeze_me=True)
    >>> oct_struct = mat_contents['my_struct']
+   >>> oct_struct.shape
+   ()
+
+Sometimes, it's more convenient to load the matlab structs as python
+objects rather than numpy structured arrarys - it can make the access
+syntax in python a bit more similar to that in matlab.  In order to do
+this, use the ``struct_as_record=False`` parameter to ``loadmat``. 
+
+   >>> mat_contents = sio.loadmat('octave_struct.mat', struct_as_record=False)
+   >>> oct_struct = mat_contents['my_struct']
+   >>> oct_struct[0,0].field1
+   array([[ 1.]])
+
+``struct_as_record=False`` works nicely with ``squeeze_me``:
+
+   >>> mat_contents = sio.loadmat('octave_struct.mat', struct_as_record=False, squeeze_me=True)
+   >>> oct_struct = mat_contents['my_struct']
    >>> oct_struct.shape # but no - it's a scalar
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
    AttributeError: 'mat_struct' object has no attribute 'shape'
-   >>> print oct_struct
-   <scipy.io.Matlab.mio5.mat_struct object at 0x2aded90>
+   >>> print type(oct_struct)
+   <class 'scipy.io.matlab.mio5_params.mat_struct'>
    >>> print oct_struct.field1
    1.0
 
@@ -232,22 +249,6 @@ loaded as:
      field2 = a string
      field1 =  0.50000
    }
-
-Further up, you'll remember this deprecation warning::
-
-  >>> mat_contents = sio.loadmat('octave_a.mat')
-  /home/mb312/usr/local/lib/python2.5/site-packages/scipy/io/Matlab/mio.py:84: FutureWarning: Using struct_as_record default value (False) This will change to True in future versions
-    return MatFile5Reader(byte_stream, **kwargs)
-
-The way that the reader returns struct arrays will soon change.  Like this:
-
-   >>> mat_contents = sio.loadmat('octave_struct.mat', struct_as_record=True)
-   >>> oct_struct = mat_contents['my_struct']
-   >>> val = oct_struct[0,0]
-   >>> print val
-   ([[1.0]], [[2.0]])
-   >>> print val.dtype
-   [('field1', '|O8'), ('field2', '|O8')]
 
 You can also save structs back again to Matlab (or Octave in our case)
 like this:

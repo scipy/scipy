@@ -142,6 +142,28 @@ Scipy now wraps SuperLU version 4.0, which supports incomplete sparse LU
 decompositions. These can be accessed via `scipy.sparse.linalg.spilu`.
 Upgrade to SuperLU 4.0 also fixes some known bugs.
 
+Faster matlab file reader and default behavior change
+-----------------------------------------------------
+
+We've rewritten the matlab file reader in Cython and it should now read
+matlab files at around the same speed that Matlab does.
+
+The reader reads matlab named and anonymous functions, but it can't
+write them.
+
+Until scipy 0.8.0 we have returned arrays of matlab structs as numpy
+object arrays, where the objects have attributes named for the struct
+fields.  As of 0.8.0, we return matlab structs as numpy structured
+arrays.  You can get the older behavior by using the optional
+``struct_as_record=False`` keyword argument to `scipy.io.loadmat` and
+friends.
+
+There is an inconsistency in the matlab file writer, in that it writes
+numpy 1D arrays as column vectors in matlab 5 files, and row vectors in
+matlab 4 files.  We will change this in the next version, so both write
+row vectors.  There is a `FutureWarning` when calling the writer to warn
+of this change; for now we suggest using the ``oned_as='row'`` keyword
+argument to `scipy.io.savemat` and friends.
 
 Removed features
 ================
