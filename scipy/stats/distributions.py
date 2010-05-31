@@ -1504,7 +1504,7 @@ class rv_continuous(rv_generic):
         """
         Estimate loc and scale parameters from data using 1st and 2nd moments
         """
-        mu, mu2 = self.stats(*args,moments='mv')
+        mu, mu2 = self.stats(*args,**{'moments':'mv'})
         muhat = arr(data).mean()
         mu2hat = arr(data).var()
         Shat = sqrt(mu2hat / mu2)
