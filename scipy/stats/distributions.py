@@ -5024,7 +5024,7 @@ class rv_discrete(rv_generic):
 
         signature = inspect.getargspec(self._stats.im_func)
         if (signature[2] is not None) or ('moments' in signature[0]):
-            mu, mu2, g1, g2 = self._stats(*args,moments=moments)
+            mu, mu2, g1, g2 = self._stats(*args,**{'moments':moments})
         else:
             mu, mu2, g1, g2 = self._stats(*args)
         if g1 is None:
