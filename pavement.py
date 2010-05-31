@@ -456,7 +456,7 @@ def _build_mpkg(pyver):
 def dmg():
     pyver = ".".join([str(i) for i in sys.version_info[:2]])
 
-    dmg_n = dmg_name()
+    dmg_n = dmg_name(pyver)
     dmg = paver.path.path('scipy-macosx-installer') / dmg_n
     if dmg.exists():
         dmg.remove()
