@@ -20,11 +20,12 @@
 # TODO: use a series expansion when extremely close to the branch point
 # at `-1/e` and make sure that the proper branch is chosen there
 
+import cython
 import warnings
 
 cdef extern from "math.h":
-    double exp(double x)
-    double log(double x)
+    double exp(double x) nogil
+    double log(double x) nogil
 
 # Use Numpy's portable C99-compatible complex functios
 
@@ -33,38 +34,38 @@ cdef extern from "numpy/npy_math.h":
         double real
         double imag
 
-    double npy_cabs(npy_cdouble z)
-    npy_cdouble npy_clog(npy_cdouble z)
-    npy_cdouble npy_cexp(npy_cdouble z)
-    int npy_isnan(double x)
+    double npy_cabs(npy_cdouble z) nogil
+    npy_cdouble npy_clog(npy_cdouble z) nogil
+    npy_cdouble npy_cexp(npy_cdouble z) nogil
+    int npy_isnan(double x) nogil
     double NPY_INFINITY
     double NPY_PI
 
-    enum NPY_ALLOW_C_API_DEF: NPY_ALLOW_C_API_DEF
-    enum NPY_ALLOW_C_API: NPY_ALLOW_C_API
-    enum NPY_DISABLE_C_API: NPY_DISABLE_C_API
-
-cdef inline bint zisnan(double complex x):
+cdef inline bint zisnan(double complex x) nogil:
     return npy_isnan(x.real) or npy_isnan(x.imag)
 
-cdef inline double zabs(double complex x):
+cdef inline double zabs(double complex x) nogil:
     cdef double r
     r = npy_cabs((<npy_cdouble*>&x)[0])
     return r
 
-cdef inline double complex zlog(double complex x):
+cdef inline double complex zlog(double complex x) nogil:
     cdef npy_cdouble r
     r = npy_clog((<npy_cdouble*>&x)[0])
     return (<double complex*>&r)[0]
 
-cdef inline double complex zexp(double complex x):
+cdef inline double complex zexp(double complex x) nogil:
     cdef npy_cdouble r
     r = npy_cexp((<npy_cdouble*>&x)[0])
     return (<double complex*>&r)[0]
 
+cdef void lambertw_raise_warning(double complex z) with gil:
+    warnings.warn("Lambert W iteration failed to converge: %r" % z)
+
 # Heavy lifting is here:
 
-cdef double complex lambertw_scalar(double complex z, long k, double tol):
+@cython.cdivision(True)
+cdef double complex lambertw_scalar(double complex z, long k, double tol) nogil:
     """
     This is just the implementation of W for a single input z.
     See the docstring for lambertw() below for the full description.
@@ -141,11 +142,7 @@ cdef double complex lambertw_scalar(double complex z, long k, double tol):
         else:
             w = wn
 
-    if True:
-        NPY_ALLOW_C_API_DEF
-        NPY_ALLOW_C_API
-        warnings.warn("Lambert W iteration failed to converge: %r" % z)
-        NPY_DISABLE_C_API
+    lambertw_raise_warning(z)
     return wn
 
 
@@ -167,11 +164,11 @@ cdef extern from "numpy/ufuncobject.h":
         int identity, char* name, char* doc, int c)
 
 cdef void _apply_func_to_1d_vec(char **args, npy_intp *dimensions, npy_intp *steps,
-                     void *func):
+                     void *func) nogil:
     cdef npy_intp i
     cdef char *ip1=args[0], *ip2=args[1], *ip3=args[2], *op=args[3]
     for i in range(0, dimensions[0]):
-        (<double complex*>op)[0] = (<double complex(*)(double complex, long, double)>func)(
+        (<double complex*>op)[0] = (<double complex(*)(double complex, long, double) nogil>func)(
             (<double complex*>ip1)[0], (<long*>ip2)[0], (<double*>ip3)[0])
         ip1 += steps[0]; ip2 += steps[1]; ip3 += steps[2]; op += steps[3]
 
