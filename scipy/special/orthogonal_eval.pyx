@@ -1,5 +1,6 @@
 """
-Evaluate orthogonal polynomial values using recurrence relations.
+Evaluate orthogonal polynomial values using recurrence relations
+or by calling special functions.
 
 References
 ----------
@@ -19,9 +20,9 @@ References
 #------------------------------------------------------------------------------
 
 cdef extern from "math.h":
-    double sqrt(double x)
+    double sqrt(double x) nogil
 
-cdef double eval_poly_chebyt(long k, double x):
+cdef double eval_poly_chebyt(long k, double x) nogil:
     # Use Chebyshev T recurrence directly, see [MH]
     cdef long m
     cdef double b2, b1, b0
@@ -30,7 +31,7 @@ cdef double eval_poly_chebyt(long k, double x):
     b1 = -1
     b0 = 0
     x = 2*x
-    for m in range(k+1, 0, -1):
+    for m in range(k+1):
         b2 = b1
         b1 = b0
         b0 = x*b1 - b2
@@ -55,12 +56,12 @@ cdef extern from "numpy/ufuncobject.h":
                                    int identity, char* name, char* doc, int c)
 
 cdef void _loop_id_d(char **args, npy_intp *dimensions, npy_intp *steps,
-                     void *func):
+                     void *func) nogil:
     cdef int i
     cdef double x
     cdef char *ip1=args[0], *ip2=args[1], *op=args[2]
     for i in range(0, dimensions[0]):
-        (<double*>op)[0] = (<double(*)(long,double)>func)(
+        (<double*>op)[0] = (<double(*)(long,double) nogil>func)(
             (<long*>ip1)[0], (<double*>ip2)[0])
         ip1 += steps[0]; ip2 += steps[1]; op += steps[2]
 
