@@ -70,7 +70,7 @@ finally:
     sys.path.pop(0)
 
 # Default python version
-PYVER="2.5"
+PYVER="2.6"
 DMG_DIR = "dmg-source"
 
 # Wine config for win32 builds
@@ -443,10 +443,8 @@ def bdist_mpkg():
 def _build_mpkg(pyver):
     numver = parse_numpy_version(MPKG_PYTHON[pyver])
     numverstr = ".".join(["%i" % i for i in numver])
-    if pyver == "2.5" and not numver[:2] == (1, 2):
-        raise ValueError("Scipy 0.7.x should be built against numpy 1.2.x for python 2.5 (detected %s)" % numverstr)
-    elif pyver == "2.6" and not numver[:2] == (1, 3):
-        raise ValueError("Scipy 0.7.x should be built against numpy 1.3.x for python 2.6 (detected %s)" % numverstr)
+    if not numver == (1, 4, 1):
+        raise ValueError("Scipy 0.8.x should be built against numpy 1.4.1, (detected %s)" % numverstr)
 
     prepare_static_gfortran_runtime("build")
     ldflags = "-undefined dynamic_lookup -bundle -arch i386 -arch ppc -Wl,-search_paths_first"
