@@ -111,6 +111,8 @@ cdef double complex lambertw_scalar(double complex z, long k, double tol):
                 w = 0.7 + 0.7j
             else:
                 w = 0.7 - 0.7j
+        else:
+            w = z
     
     else:
         if z.real == NPY_INFINITY:
