@@ -259,7 +259,7 @@ class TestSolveHBanded(TestCase):
         ab = array([[-99, 1.0, 1.0], [4.0, 4.0, 4.0]])
         b = array([1.0, 4.0, 1.0])
         assert_raises(DeprecationWarning, solveh_banded, ab, b)
-        #warnings.simplefilter('ignore', category=DeprecationWarning)
+
 
 class TestSolve(TestCase):
 
