@@ -61,6 +61,12 @@ Obsolete code deprecated (scipy.misc)
 The modules `helpmod`, `ppimport` and `pexec` from `scipy.misc` are deprecated.
 They will be removed from SciPy in version 0.9.
 
+Additional deprecations
+-----------------------
+* linalg: The function `solveh_banded` currently returns a tuple containing
+  the Cholesky factorization and the solution to the linear system.  In
+  SciPy 0.9, the return value will be just the solution.
+
 New features
 ============
 
