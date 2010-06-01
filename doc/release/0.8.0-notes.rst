@@ -126,9 +126,6 @@ The functions `cho_solve_banded`, `circulant`, `companion`, `hadamard` and
 The function `block_diag` was enhanced to accept scalar and 1D arguments,
 along with the usual 2D arguments.
 
-The function `solveh_banded` no longer returns the Cholesky factorization.  It
-returns just the solution.
-
 ARPACK-based sparse SVD
 -----------------------
 
