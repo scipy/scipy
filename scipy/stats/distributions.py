@@ -2332,7 +2332,7 @@ class exponpow_gen(rv_continuous):
         return exp(1)*b*xbm1 * exp(xb - exp(xb))
     def _logpdf(self, x, b):
         xb = x**(b-1.0)*x
-        return log(b) + (b-1.0)*log(x) + xb - exp(xb)
+        return 1 + log(b) + (b-1.0)*log(x) + xb - exp(xb)
     def _cdf(self, x, b):
         xb = arr(x**b)
         return -expm1(-expm1(xb))
@@ -4282,11 +4282,13 @@ class wald_gen(invnorm_gen):
     %(example)s
     """
     def _rvs(self):
-        return invnorm_gen._rvs(self, 1.0)
+        return mtrand.wald(1.0, 1.0, size=self._size)
     def _pdf(self, x):
-        return invnorm.pdf(x,1.0)
+        return invnorm._pdf(x, 1.0)
+    def _logpdf(self, x):
+        return invnorm._logpdf(x, 1.0)
     def _cdf(self, x):
-        return invnorm.cdf(x,1,0)
+        return invnorm._logcdf(x, 1.0)
     def _stats(self):
         return 1.0, 1.0, 3.0, 15.0
 wald = wald_gen(a=0.0, name="wald", extradoc="""

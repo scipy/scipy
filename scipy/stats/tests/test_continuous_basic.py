@@ -175,10 +175,13 @@ def test_cont_basic():
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
         yield check_pdf, distfn, arg, distname
+        if distname in ['wald']: continue
+        yield check_pdf_logpdf, distfn, arg, distname
+        yield check_cdf_logcdf, distfn, arg, distname
+        yield check_sf_logsf, distfn, arg, distname
         if distname in distmissing:
             alpha = 0.01
-            yield check_distribution_rvs, dist, args, alpha, rvs
-
+ #           yield check_distribution_rvs, dist, args, alpha, rvs
 
 @npt.dec.slow
 def test_cont_basic_slow():
@@ -202,13 +205,13 @@ def test_cont_basic_slow():
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
         yield check_pdf, distfn, arg, distname
+        yield check_pdf_logpdf, distfn, arg, distname
+        yield check_cdf_logcdf, distfn, arg, distname
+        yield check_sf_logsf, distfn, arg, distname
         #yield check_oth, distfn, arg # is still missing
         if distname in distmissing:
             alpha = 0.01
             yield check_distribution_rvs, dist, args, alpha, rvs
-
-
-
 
 def check_moment(distfn, arg, m, v, msg):
     m1  = distfn.moment(1,*arg)
@@ -313,6 +316,36 @@ def check_pdf(distfn, arg, msg):
     #actually, this works pretty well
     npt.assert_almost_equal(pdfv, cdfdiff,
                 decimal=DECIMAL, err_msg= msg + ' - cdf-pdf relationship')
+
+def check_pdf_logpdf(distfn, args, msg):
+    # compares pdf at several points with the log of the pdf
+    points = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+    vals = distfn.ppf(points, *args)
+    pdf = distfn.pdf(vals, *args)
+    logpdf = distfn.logpdf(vals, *args)
+    pdf = pdf[pdf != 0]
+    logpdf = logpdf[np.isfinite(logpdf)]
+    npt.assert_almost_equal(np.log(pdf), logpdf, decimal=7, err_msg=msg + " - logpdf-log(pdf) relationship")
+
+def check_sf_logsf(distfn, args, msg):
+    # compares sf at several points with the log of the sf
+    points = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+    vals = distfn.ppf(points, *args)
+    sf = distfn.sf(vals, *args)
+    logsf = distfn.logsf(vals, *args)
+    sf = sf[sf != 0]
+    logsf = logsf[np.isfinite(logsf)]
+    npt.assert_almost_equal(np.log(sf), logsf, decimal=7, err_msg=msg + " - logsf-log(sf) relationship")
+
+def check_cdf_logcdf(distfn, args, msg):
+    # compares cdf at several points with the log of the cdf
+    points = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+    vals = distfn.ppf(points, *args)
+    cdf = distfn.cdf(vals, *args)
+    logcdf = distfn.logcdf(vals, *args)
+    cdf = cdf[cdf != 0]
+    logcdf = logcdf[np.isfinite(logcdf)]
+    npt.assert_almost_equal(np.log(cdf), logcdf, decimal=7, err_msg=msg + " - logcdf-log(cdf) relationship")
 
 
 def check_distribution_rvs(dist, args, alpha, rvs):
