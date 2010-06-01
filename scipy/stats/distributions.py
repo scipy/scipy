@@ -5,10 +5,14 @@
 #          SciPy Developers 2004-2010
 #
 
+import math
+from copy import copy
+
 from scipy.misc import comb, derivative
 from scipy import special
 from scipy import optimize
 from scipy import integrate
+from scipy.special import gammaln as gamln
 
 import inspect
 from numpy import alltrue, where, arange, putmask, \
@@ -22,8 +26,6 @@ import numpy
 import numpy as np
 import numpy.random as mtrand
 from numpy import flatnonzero as nonzero
-from scipy.special import gammaln as gamln
-from copy import copy
 import vonmises_cython
 
 def _moment(data, n, mu=None):
@@ -562,34 +564,112 @@ class rv_generic(object):
         return vals
 
     def median(self, *args, **kwds):
+        """
+        Median of the distribution.
+
+        Parameters
+        ----------
+        arg1, arg2, arg3,... : array-like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array-like, optional
+            location parameter (default=0)
+        scale : array-like, optional
+            scale parameter (default=1)
+
+        Returns
+        -------
+        median : float
+            the median of the distribution.
+
+        See Also
+        --------
+        self.ppf --- inverse of the CDF
+        """
         return self.ppf(0.5, *args, **kwds)
 
     def mean(self, *args, **kwds):
+        """
+        Mean of the distribution
+
+        Parameters
+        ----------
+        arg1, arg2, arg3,... : array-like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array-like, optional
+            location parameter (default=0)
+        scale : array-like, optional
+            scale parameter (default=1)
+
+        Returns
+        -------
+        mean : float
+            the mean of the distribution
+        """
         kwds['moments'] = 'm'
         res = self.stats(*args, **kwds)
         if isinstance(res, ndarray) and res.ndim == 0:
             return res[()]
+        return res
 
     def var(self, *args, **kwds):
+        """
+        Variance of the distribution
+
+        Parameters
+        ----------
+        arg1, arg2, arg3,... : array-like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array-like, optional
+            location parameter (default=0)
+        scale : array-like, optional
+            scale parameter (default=1)
+
+        Returns
+        -------
+        var : float
+            the variance of the distribution
+
+        """
         kwds['moments'] = 'v'
         res = self.stats(*args, **kwds)
         if isinstance(res, ndarray) and res.ndim == 0:
             return res[()]
-        else:
-            return res
+        return res
 
     def std(self, *args, **kwds):
+        """
+        Standard deviation of the distribution.
+
+        Parameters
+        ----------
+        arg1, arg2, arg3,... : array-like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array-like, optional
+            location parameter (default=0)
+        scale : array-like, optional
+            scale parameter (default=1)
+
+        Returns
+        -------
+        std : float
+            standard deviation of the distribution
+
+        """
         kwds['moments'] = 'v'
-        res = sqrt(self.stats(*args, **kwds))
+        res = math.sqrt(self.stats(*args, **kwds))
         return res
 
     def interval(self, alpha, *args, **kwds):
-        """Confidence interval centered on the median
+        """Confidence interval with equal areas around the median
 
         Parameters
         ----------
         alpha : array-like float in [0,1]
-            Probability that an rv will be drawn from the returned range
+            Probability that an rv will be drawn from the returned range        
         arg1, arg2, ... : array-like
             The shape parameter(s) for the distribution (see docstring of the instance
             object for more information)
@@ -1605,10 +1685,10 @@ class rv_continuous(rv_generic):
         """
         if func is None:
             def fun(x, *args):
-                return x*self.pdf(x, *args, loc=loc, scale=scale)
+                return x*self.pdf(x, *args, **{'loc':loc, 'scale':scale})
         else:
             def fun(x, *args):
-                return func(x)*self.pdf(x, *args, loc=loc, scale=scale)
+                return func(x)*self.pdf(x, *args, **{'loc':loc, 'scale':scale})
         if lb is None:
             lb = (self.a - loc)/(1.0*scale)
         if ub is None:
@@ -1617,8 +1697,8 @@ class rv_continuous(rv_generic):
             invfac = self.sf(lb,*args) - self.sf(ub,*args)
         else:
             invfac = 1.0
-            kwds['args'] = args
-            return integrate.quad(fun, lb, ub, **kwds)[0] / invfac
+        kwds['args'] = args
+        return integrate.quad(fun, lb, ub, **kwds)[0] / invfac
 
  
 _EULER = 0.577215664901532860606512090082402431042  # -special.psi(1)
@@ -1658,7 +1738,6 @@ Kolmogorov-Smirnov two-sided test for large N
 # loc = mu, scale = std
 # Keep these implementations out of the class definition so they can be reused
 # by other distributions.
-import math
 _norm_pdf_C = math.sqrt(2*pi)
 _norm_pdf_logC = math.log(_norm_pdf_C)
 def _norm_pdf(x):
@@ -4481,7 +4560,7 @@ class rv_discrete(rv_generic):
                  moment_tol=1e-8,values=None,inc=1,longname=None,
                  shapes=None, extradoc=None):
 
-        rv_generic.__init__(self)
+        super(rv_generic,self).__init__()
 
         if badvalue is None:
             badvalue = nan
@@ -5180,15 +5259,15 @@ class rv_discrete(rv_generic):
 
         Parameters
         ----------
-            fn : function (default: identity mapping)
+        fn : function (default: identity mapping)
                Function for which integral is calculated. Takes only one argument.
-            args : tuple
+        args : tuple
                argument (parameters) of the distribution
-            optional keyword parameters
-            lb, ub : numbers
+        optional keyword parameters
+        lb, ub : numbers
                lower and upper bound for integration, default is set to the support
                of the distribution, lb and ub are inclusive (ul<=k<=ub)
-            conditional : boolean (False)
+        conditional : boolean (False)
                If true then the expectation is corrected by the conditional
                probability of the integration interval. The return value is the
                expectation of the function, conditional on being in the given
@@ -5196,7 +5275,7 @@ class rv_discrete(rv_generic):
 
         Returns
         -------
-            expected value : float
+        expected value : float
 
         Notes
         -----
@@ -5212,7 +5291,6 @@ class rv_discrete(rv_generic):
             to break loop for infinite sums
             (a maximum of suppnmin+1000 positive plus suppnmin+1000 negative integers
             are evaluated)
-
 
         """
 
@@ -5273,7 +5351,7 @@ class rv_discrete(rv_generic):
                 pos -= self.inc
                 count += 1
         if count > maxcount:
-            # replace with proper warning
+            # fixme: replace with proper warning
             print 'sum did not converge'
         return tot/invfac
     
