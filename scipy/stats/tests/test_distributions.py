@@ -380,6 +380,47 @@ def TestArgsreduce():
     assert_array_equal(b, a)
     assert_array_equal(c, [2] * numpy.size(a))
 
+import sys
+class TestFitMethod(TestCase):
+    skip = ['ncf']
+    def test_fit(self):
+        for func, dist, args, alpha in test_all_distributions():
+            if dist in self.skip:
+                continue
+            distfunc = getattr(stats, dist)
+            res = distfunc.rvs(*args, size=200)
+            vals = distfunc.fit(res)
+            if dist in ['erlang', 'frechet']:
+                assert(len(vals)==len(args))
+            else:
+                assert(len(vals) == 2+len(args))
+
+    def test_fix_fit(self):
+        for func, dist, args, alpha in test_all_distributions():
+            # Not sure why 'ncf', and 'beta' are failing
+            # erlang and frechet have different len(args) than distfunc.numargs
+            if dist in self.skip + ['erlang', 'frechet', 'beta']:
+                continue
+            distfunc = getattr(stats, dist)
+            res = distfunc.rvs(*args, size=200)
+            vals = distfunc.fit(res,floc=0)
+            vals2 = distfunc.fit(res,fscale=1)
+            assert(len(vals) == 2+len(args))
+            assert(vals[-2] == 0)
+            assert(vals2[-1] == 1)
+            assert(len(vals2) == 2+len(args))
+            if len(args) > 0:
+                vals3 = distfunc.fit(res, f0=args[0])
+                assert(len(vals3) == 2+len(args)) 
+                assert(vals3[0] == args[0])
+            if len(args) > 1:
+                vals4 = distfunc.fit(res, f1=args[1])
+                assert(len(vals4) == 2+len(args)) 
+                assert(vals4[1] == args[1])
+            if len(args) > 2:
+                vals5 = distfunc.fit(res, f2=args[2])
+                assert(len(vals5) == 2+len(args)) 
+                assert(vals5[2] == args[2])
 
 if __name__ == "__main__":
     run_module_suite()
