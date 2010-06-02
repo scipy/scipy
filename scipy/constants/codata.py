@@ -20,6 +20,7 @@
     find(sub) prints out a list of keys containing the string sub.
 """
 
+import warnings
 import string
 from math import pi, sqrt
 __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find']
@@ -442,19 +443,24 @@ def precision(key) :
     """
     return physical_constants[key][2] / physical_constants[key][0]
 
-def find(sub) :
+
+def find(sub, disp=True) :
     """
-    Return list of codata.physical_constant keys containing a given string
+    Find the codata.physical_constant keys containing a given string.
 
     Parameters
     ----------
     sub : str or unicode
         Sub-string to search keys for
+    disp : bool
+        If True, print the keys that are found, and return None.
+        Otherwise, return the list of keys without printing anything.
 
     Returns
     -------
-    keys : list
-        List of keys containing `sub`
+    keys : None or list
+        If `disp` is False, the list of keys is returned. Otherwise, None
+        is returned.
 
     See Also
     --------
@@ -462,6 +468,9 @@ def find(sub) :
         dictionary literal object, does not itself possess a docstring.
 
     """
+    warnings.warn("In Scipy version 0.8.0, the keyword argument 'disp' was added to "
+                  "find(), with the default value True.  In 0.9.0, the default will be False.",
+                  DeprecationWarning)
     l_sub = string.lower(sub)
     result = []
     for key in physical_constants :
@@ -469,7 +478,13 @@ def find(sub) :
         if l_sub in l_key:
             result.append(key)
     result.sort()
-    return result
+    if disp:
+        for key in result:
+            print key
+        return
+    else:
+        return result
+
 
 #table is lacking some digits for exact values: calculate from definition
 

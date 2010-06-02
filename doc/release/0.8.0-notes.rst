@@ -66,6 +66,10 @@ Additional deprecations
 * linalg: The function `solveh_banded` currently returns a tuple containing
   the Cholesky factorization and the solution to the linear system.  In
   SciPy 0.9, the return value will be just the solution.
+* The function `constants.codata.find` will generate a DeprecationWarning.
+  In Scipy version 0.8.0, the keyword argument 'disp' was added to the
+  function, with the default value 'True'.  In 0.9.0, the default will be
+  'False'.
 
 New features
 ============
@@ -133,10 +137,13 @@ A naive implementation of SVD for sparse matrices is available in
 scipy.sparse.linalg.eigen.arpack. It is based on using an symmetric solver on
 <A, A>, and as such may not be very precise.
 
-Better behavior for `scipy.constants.find` (scipy.constants)
-------------------------------------------------------------
-The function `scipy.constants.find` was modified to return the list of keys
-that it finds, instead of printing them and returning None.
+Alternative behavior available for `scipy.constants.find`
+---------------------------------------------------------
+The keyword argument `disp` was added to the function `scipy.constants.find`,
+with the default value `True`.  When `disp` is `True`, the behavior is the
+same as in Scipy version 0.7.  When `False`, the function returns the list of
+keys instead of printing them.  (In SciPy version 0.9, the default will be
+reversed.)
 
 Incomplete sparse LU decompositions
 -----------------------------------
