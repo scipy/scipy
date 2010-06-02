@@ -1,16 +1,20 @@
 
+import warnings
+
 from scipy.constants import find
 from numpy.testing import assert_equal
 
 def test_find():
 
-    keys = find('weak mixing')
+    warnings.simplefilter('ignore', DeprecationWarning)
+
+    keys = find('weak mixing', disp=False)
     assert_equal(keys, ['weak mixing angle'])
 
-    keys = find('qwertyuiop')
+    keys = find('qwertyuiop', disp=False)
     assert_equal(keys, [])
 
-    keys = find('natural unit')
+    keys = find('natural unit', disp=False)
     assert_equal(keys, sorted(['natural unit of velocity',
                                 'natural unit of action',
                                 'natural unit of action in eV s',
