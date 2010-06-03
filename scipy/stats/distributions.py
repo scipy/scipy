@@ -1,51 +1,31 @@
 # Functions to implement several important functions for
 #   various Continous and Discrete Probability Distributions
 #
-# Author:  Travis Oliphant  2002-2010 with contributions from 
-#          SciPy Developers 2004-2010
+# Author:  Travis Oliphant  2002-2003
 #
 
-import math
-from copy import copy
-
+import scipy
 from scipy.misc import comb, derivative
 from scipy import special
 from scipy import optimize
-from scipy import integrate
-from scipy.special import gammaln as gamln
+import scipy.integrate
 
 import inspect
-from numpy import alltrue, where, arange, putmask, \
+from numpy import alltrue, where, arange, put, putmask, \
      ravel, take, ones, sum, shape, product, repeat, reshape, \
      zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
      arctan, tanh, ndarray, cos, cosh, sinh, newaxis, array, log1p, expm1
-from numpy import atleast_1d, polyval, ceil, place, extract, \
-     any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isinf, \
-     power, NINF, empty
+from numpy import atleast_1d, polyval, angle, ceil, place, extract, \
+     any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isnan, isinf, \
+     power
 import numpy
 import numpy as np
 import numpy.random as mtrand
 from numpy import flatnonzero as nonzero
+from scipy.special import gammaln as gamln
+from copy import copy
 import vonmises_cython
 
-def _moment(data, n, mu=None):
-    if mu is None:
-        mu = data.mean()
-    return ((data - mu)**n).mean()
-
-def _skew(data):
-    data = np.ravel(data)
-    mu = data.mean()
-    m2 = ((data - mu)**2).mean()
-    m3 = ((data - mu)**3).mean()
-    return m3 / m2**1.5
-
-def _kurtosis(data):
-    data = np.ravel(data)
-    mu = data.mean()
-    m2 = ((data - mu)**2).mean()
-    m4 = ((data - mu)**4).mean()
-    return m4 / m2**2 - 3
 
 __all__ = [
            'rv_continuous',
@@ -76,9 +56,14 @@ floatinfo = numpy.finfo(float)
 errp = special.errprint
 arr = asarray
 gam = special.gamma
+lgam = special.gammaln
+
 
 import types
+import stats as st
+
 from scipy.misc import doccer
+
 all = alltrue
 sgf = vectorize
 import new
@@ -334,22 +319,12 @@ class rv_frozen(object):
         kwds = self.kwds
         kwds.update({'moments':moments})
         return self.dist.stats(*self.args,**kwds)
-    def median(self):
-        return self.dist.median(*self.args, **self.kwds)
-    def mean(self):
-        return self.dist.mean(*self.args,**self.kwds)
-    def var(self):
-        return self.dist.var(*self.args, **self.kwds)
-    def std(self):
-        return self.dist.std(*self.args, **self.kwds)
     def moment(self,n):
         return self.dist.moment(n,*self.args,**self.kwds)
     def entropy(self):
         return self.dist.entropy(*self.args,**self.kwds)
     def pmf(self,k):
         return self.dist.pmf(k,*self.args,**self.kwds)
-    def interval(self,alpha):
-        return self.dist.interval(alpha, *self.args, **self.kwds)
 
 
 
@@ -388,11 +363,8 @@ class rv_frozen(object):
 ##
 ## rvs -- Random Variates (alternatively calling the class could produce these)
 ## pdf -- PDF
-## logpdf -- log PDF (more  numerically accurate if possible)
 ## cdf -- CDF
-## logcdf -- log of CDF 
 ## sf  -- Survival Function (1-CDF)
-## logsf --- log of SF
 ## ppf -- Percent Point Function (Inverse of CDF)
 ## isf -- Inverse Survival Function (Inverse of SF)
 ## stats -- Return mean, variance, (Fisher's) skew, or (Fisher's) kurtosis
@@ -422,7 +394,7 @@ class rv_frozen(object):
 ##
 ##     _cdf, _ppf, _rvs, _isf, _sf
 ##
-##   Rarely would you override _isf  and _sf but you could for numerical precision. 
+##   Rarely would you override _isf  and _sf but you could.
 ##
 ##   Statistics are computed using numerical integration by default.
 ##     For speed you can redefine this using
@@ -451,7 +423,7 @@ def valarray(shape,value=nan,typecode=None):
     if typecode is not None:
         out = out.astype(typecode)
     if not isinstance(out, ndarray):
-        out = arr(out)
+        out = asarray(out)
     return out
 
 # This should be rewritten
@@ -562,135 +534,6 @@ class rv_generic(object):
                 vals = vals.astype(int)
 
         return vals
-
-    def median(self, *args, **kwds):
-        """
-        Median of the distribution.
-
-        Parameters
-        ----------
-        arg1, arg2, arg3,... : array-like
-            The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information)
-        loc : array-like, optional
-            location parameter (default=0)
-        scale : array-like, optional
-            scale parameter (default=1)
-
-        Returns
-        -------
-        median : float
-            the median of the distribution.
-
-        See Also
-        --------
-        self.ppf --- inverse of the CDF
-        """
-        return self.ppf(0.5, *args, **kwds)
-
-    def mean(self, *args, **kwds):
-        """
-        Mean of the distribution
-
-        Parameters
-        ----------
-        arg1, arg2, arg3,... : array-like
-            The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information)
-        loc : array-like, optional
-            location parameter (default=0)
-        scale : array-like, optional
-            scale parameter (default=1)
-
-        Returns
-        -------
-        mean : float
-            the mean of the distribution
-        """
-        kwds['moments'] = 'm'
-        res = self.stats(*args, **kwds)
-        if isinstance(res, ndarray) and res.ndim == 0:
-            return res[()]
-        return res
-
-    def var(self, *args, **kwds):
-        """
-        Variance of the distribution
-
-        Parameters
-        ----------
-        arg1, arg2, arg3,... : array-like
-            The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information)
-        loc : array-like, optional
-            location parameter (default=0)
-        scale : array-like, optional
-            scale parameter (default=1)
-
-        Returns
-        -------
-        var : float
-            the variance of the distribution
-
-        """
-        kwds['moments'] = 'v'
-        res = self.stats(*args, **kwds)
-        if isinstance(res, ndarray) and res.ndim == 0:
-            return res[()]
-        return res
-
-    def std(self, *args, **kwds):
-        """
-        Standard deviation of the distribution.
-
-        Parameters
-        ----------
-        arg1, arg2, arg3,... : array-like
-            The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information)
-        loc : array-like, optional
-            location parameter (default=0)
-        scale : array-like, optional
-            scale parameter (default=1)
-
-        Returns
-        -------
-        std : float
-            standard deviation of the distribution
-
-        """
-        kwds['moments'] = 'v'
-        res = math.sqrt(self.stats(*args, **kwds))
-        return res
-
-    def interval(self, alpha, *args, **kwds):
-        """Confidence interval with equal areas around the median
-
-        Parameters
-        ----------
-        alpha : array-like float in [0,1]
-            Probability that an rv will be drawn from the returned range        
-        arg1, arg2, ... : array-like
-            The shape parameter(s) for the distribution (see docstring of the instance
-            object for more information)
-        loc: array-like, optioal
-            location parameter (deafult = 0)
-        scale : array-like, optional
-            scale paramter (default = 1)
-
-        Returns
-        -------
-        a, b: array-like (float)
-            end-points of range that contain alpha % of the rvs   
-        """
-        alpha = arr(alpha)
-        if any((alpha > 1) | (alpha < 0)):
-            raise ValueError, "alpha must be between 0 and 1 inclusive"
-        q1 = (1.0-alpha)/2
-        q2 = (1.0+alpha)/2
-        a = self.ppf(q1, *args, **kwds)
-        b = self.ppf(q2, *args, **kwds)
-        return a, b
 
 
 class rv_continuous(rv_generic):
@@ -840,13 +683,13 @@ class rv_continuous(rv_generic):
     def _mom_integ0(self, x,m,*args):
         return x**m * self.pdf(x,*args)
     def _mom0_sc(self, m,*args):
-        return integrate.quad(self._mom_integ0, self.a,
+        return scipy.integrate.quad(self._mom_integ0, self.a,
                                     self.b, args=(m,)+args)[0]
     # moment calculated using ppf
     def _mom_integ1(self, q,m,*args):
         return (self.ppf(q,*args))**m
     def _mom1_sc(self, m,*args):
-        return integrate.quad(self._mom_integ1, 0, 1,args=(m,)+args)[0]
+        return scipy.integrate.quad(self._mom_integ1, 0, 1,args=(m,)+args)[0]
 
     ## These are the methods you must define (standard form functions)
     def _argcheck(self, *args):
@@ -861,11 +704,7 @@ class rv_continuous(rv_generic):
     def _pdf(self,x,*args):
         return derivative(self._cdf,x,dx=1e-5,args=args,order=5)
 
-    ## Could also define any of these 
-    def _logpdf(self, x, *args):
-        return log(self._pdf(x, *args))
-
-    ##(return 1-d using self._size to get number)
+    ## Could also define any of these (return 1-d using self._size to get number)
     def _rvs(self, *args):
         ## Use basic inverse cdf algorithm for RV generation as default.
         U = mtrand.sample(self._size)
@@ -873,19 +712,13 @@ class rv_continuous(rv_generic):
         return Y
 
     def _cdf_single_call(self, x, *args):
-        return integrate.quad(self._pdf, self.a, x, args=args)[0]
+        return scipy.integrate.quad(self._pdf, self.a, x, args=args)[0]
 
     def _cdf(self, x, *args):
         return self.veccdf(x,*args)
 
-    def _logcdf(self, x, *args):
-        return log(self._cdf(x, *args))
-
     def _sf(self, x, *args):
         return 1.0-self._cdf(x,*args)
-
-    def _logsf(self, x, *args):
-        return log(self._sf(x, *args))
 
     def _ppf(self, q, *args):
         return self.vecfunc(q,*args)
@@ -897,6 +730,7 @@ class rv_continuous(rv_generic):
     #  If these are defined, the others won't be looked at.
     #  Otherwise, the other set can be defined.
     def _stats(self,*args, **kwds):
+        moments = kwds.get('moments')
         return None, None, None, None
 
     #  Central moments
@@ -942,49 +776,6 @@ class rv_continuous(rv_generic):
             return output[()]
         return output
 
-    def logpdf(self, x, *args, **kwds):
-        """
-        Log of the probability density function at x of the given RV.
-        
-        This uses more numerically accurate calculation if available. 
-
-        Parameters
-        ----------
-        x : array-like
-            quantiles
-        arg1, arg2, arg3,... : array-like
-            The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information)
-        loc : array-like, optional
-            location parameter (default=0)
-        scale : array-like, optional
-            scale parameter (default=1)
-
-        Returns
-        -------
-        logpdf : array-like
-            Log of the probability density function evaluated at x
-
-        """
-        loc,scale=map(kwds.get,['loc','scale'])
-        args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        x,loc,scale = map(arr,(x,loc,scale))
-        args = tuple(map(arr,args))
-        x = arr((x-loc)*1.0/scale)
-        cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = (scale > 0) & (x >= self.a) & (x <= self.b)
-        cond = cond0 & cond1
-        output = empty(shape(cond),'d')
-        output.fill(NINF)
-        putmask(output,(1-cond0)*array(cond1,bool),self.badvalue)
-        goodargs = argsreduce(cond, *((x,)+args+(scale,)))
-        scale, goodargs = goodargs[-1], goodargs[:-1]
-        place(output,cond,self._logpdf(*goodargs) - log(scale))
-        if output.ndim == 0:
-            return output[()]
-        return output
-        
-
     def cdf(self,x,*args,**kwds):
         """
         Cumulative distribution function at x of the given RV.
@@ -1026,48 +817,6 @@ class rv_continuous(rv_generic):
             return output[()]
         return output
 
-    def logcdf(self,x,*args,**kwds):
-        """
-        Log of the cumulative distribution function at x of the given RV.
-
-        Parameters
-        ----------
-        x : array-like
-            quantiles
-        arg1, arg2, arg3,... : array-like
-            The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information)
-        loc : array-like, optional
-            location parameter (default=0)
-        scale : array-like, optional
-            scale parameter (default=1)
-
-        Returns
-        -------
-        logcdf : array-like
-            Log of the cumulative distribution function evaluated at x
-
-        """
-        loc,scale=map(kwds.get,['loc','scale'])
-        args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        x,loc,scale = map(arr,(x,loc,scale))
-        args = tuple(map(arr,args))
-        x = (x-loc)*1.0/scale
-        cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = (scale > 0) & (x > self.a) & (x < self.b)
-        cond2 = (x >= self.b) & cond0
-        cond = cond0 & cond1
-        output = empty(shape(cond),'d')
-        output.fill(NINF)
-        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
-        place(output,cond2,0.0)
-        if any(cond):  #call only if at least 1 entry
-            goodargs = argsreduce(cond, *((x,)+args))
-            place(output,cond,self._logcdf(*goodargs))
-        if output.ndim == 0:
-            return output[()]
-        return output
-
     def sf(self,x,*args,**kwds):
         """
         Survival function (1-cdf) at x of the given RV.
@@ -1104,46 +853,6 @@ class rv_continuous(rv_generic):
         place(output,cond2,1.0)
         goodargs = argsreduce(cond, *((x,)+args))
         place(output,cond,self._sf(*goodargs))
-        if output.ndim == 0:
-            return output[()]
-        return output
-
-    def logsf(self,x,*args,**kwds):
-        """
-        Log of the Survival function log(1-cdf) at x of the given RV.
-
-        Parameters
-        ----------
-        x : array-like
-            quantiles
-        arg1, arg2, arg3,... : array-like
-            The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information)
-        loc : array-like, optional
-            location parameter (default=0)
-        scale : array-like, optional
-            scale parameter (default=1)
-
-        Returns
-        -------
-        logsf : array-like
-            Log of the survival function evaluated at x
-        """
-        loc,scale=map(kwds.get,['loc','scale'])
-        args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        x,loc,scale = map(arr,(x,loc,scale))
-        args = tuple(map(arr,args))
-        x = (x-loc)*1.0/scale
-        cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = (scale > 0) & (x > self.a) & (x < self.b)
-        cond2 = cond0 & (x <= self.a)
-        cond = cond0 & cond1
-        output = empty(shape(cond),'d')
-        output.fill(NINF)
-        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
-        place(output,cond2,0.0)
-        goodargs = argsreduce(cond, *((x,)+args))
-        place(output,cond,self._logsf(*goodargs))
         if output.ndim == 0:
             return output[()]
         return output
@@ -1402,7 +1111,7 @@ class rv_continuous(rv_generic):
             return self._munp(n,*args)
 
     def _nnlf(self, x, *args):
-        return -sum(self._logpdf(x, *args),axis=0)
+        return -sum(log(self._pdf(x, *args)),axis=0)
 
     def nnlf(self, theta, x):
         # - sum (log pdf(x, theta),axis=0)
@@ -1424,114 +1133,25 @@ class rv_continuous(rv_generic):
             N = len(x)
             return self._nnlf(x, *args) + N*log(scale)
 
-    # return starting point for fit (shape arguments + loc + scale)
-    def _fitstart(self, data, args=None):
-        if args is None:
-            args = (1.0,)*self.numargs
-        return args + self.fit_loc_scale(data, *args)
-
-    def _reduce_func(self, args, kwds):
-        args = list(args)
-        Nargs = len(args) - 2
-        fixedn = []
-        index = range(Nargs) + [-2, -1]
-        names = ['f%d' % n for n in range(Nargs)] + ['floc', 'fscale']
-        x0 = args[:]
-        for n, key in zip(index, names):
-            if kwds.has_key(key):
-                fixedn.append(n)
-                args[n] = kwds[key]
-                del x0[n]
-
-        if len(fixedn) == 0:
-            func = self.nnlf
-            restore = None
-        else:
-            if len(fixedn) == len(index):
-                raise ValueError, "All parameters fixed. There is nothing to optimize."
-            def restore(args, theta):
-                # Replace with theta for all numbers not in fixedn
-                # This allows the non-fixed values to vary, but
-                #  we still call self.nnlf with all parameters.
-                i = 0
-                for n in range(Nargs):
-                    if n not in fixedn:
-                        args[n] = theta[i]
-                        i += 1
-                return args
-
-            def func(theta, x):
-                newtheta = restore(args[:], theta)
-                return self.nnlf(newtheta, x)
-
-        return x0, func, restore, args
-
-            
     def fit(self, data, *args, **kwds):
-        """
-        Return max like estimators to shape, location, and scale from data
-
-        Starting points for the fit are given by input arguments.  For any 
-        arguments not given starting points, self._fitstart(data) is called 
-        to get the starting estimates.
-
-        You can hold some parameters fixed to specific values by passing in 
-        keyword arguments f0..fn for shape paramters and floc, fscale for 
-        location and scale parameters.
-
-        Parameters
-        ----------
-        data : array-like
-            Data to use in calculating the MLE
-        args : optional
-            Starting values for any shape arguments (those not specified 
-            will be determined by _fitstart(data))
-        kwds : loc, scale
-            Starting values for the location and scale parameters 
-            Special keyword arguments are recognized as holding certain 
-              parameters fixed:
-            f1..fn : hold respective shape paramters fixed
-            floc : hold location parameter fixed to specified value
-            fscale : hold scale parameter fixed to specified value
-              
-        Return
-        ------
-        shape, loc, scale : tuple of float
-            MLE estimates for any shape arguments followed by location and scale
-        """
+        loc0, scale0 = map(kwds.get, ['loc', 'scale'],[0.0, 1.0])
         Narg = len(args)
-        if Narg > self.numargs:
+        if Narg != self.numargs:
+            if Narg > self.numargs:
                 raise ValueError, "Too many input arguments."
-        start = [None]*2
-        if (Narg < self.numargs) or not (kwds.has_key('loc') and
-                                         kwds.has_key('scale')):
-            start = self._fitstart(data)  # get distribution specific starting locations
-            args += start[Narg:-2]
-        loc = kwds.get('loc', start[-2])
-        scale = kwds.get('scale', start[-1])
-        args += (loc, scale)
-        x0, func, restore, args = self._reduce_func(args, kwds)
-        vals = optimize.fmin(func,x0,args=(ravel(data),),disp=0)
-        vals = tuple(vals)
-        if restore is not None:
-            vals = restore(args, vals)
-        return vals
+            else:
+                args += (1.0,)*(self.numargs-Narg)
+        # location and scale are at the end
+        x0 = args + (loc0, scale0)
+        return optimize.fmin(self.nnlf,x0,args=(ravel(data),),disp=0)
 
-    def fit_loc_scale(self, data, *args):
-        """
-        Estimate loc and scale parameters from data using 1st and 2nd moments
-        """
+    def est_loc_scale(self, data, *args):
         mu, mu2 = self.stats(*args,**{'moments':'mv'})
-        muhat = arr(data).mean()
-        mu2hat = arr(data).var()
+        muhat = st.nanmean(data)
+        mu2hat = st.nanstd(data)
         Shat = sqrt(mu2hat / mu2)
         Lhat = muhat - Shat*mu
         return Lhat, Shat
-
-    @np.deprecate
-    def est_loc_scale(self, data, *args):
-        """This function is deprecated, use self.fit_loc_scale(data) instead. """
-        return self.fit_loc_scale(data, *args)        
 
     def freeze(self,*args,**kwds):
         return rv_frozen(self,*args,**kwds)
@@ -1544,7 +1164,7 @@ class rv_continuous(rv_generic):
             val = self._pdf(x, *args)
             return val*log(val)
 
-        entr = -integrate.quad(integ,self.a,self.b)[0]
+        entr = -scipy.integrate.quad(integ,self.a,self.b)[0]
         if not np.isnan(entr):
             return entr
         else:  # try with different limits if integration problems
@@ -1557,7 +1177,7 @@ class rv_continuous(rv_generic):
                 lower = low
             else:
                 lower = self.a
-            return -integrate.quad(integ,lower,upper)[0]
+            return -scipy.integrate.quad(integ,lower,upper)[0]
 
 
     def entropy(self, *args, **kwds):
@@ -1589,55 +1209,7 @@ class rv_continuous(rv_generic):
         else:
             place(output,cond0,self.vecentropy(*goodargs)+log(scale))
         return output
-   
-    def expect(self, func=None, args=(), loc=0, scale=1, lb=None, ub=None, 
-               conditional=False, **kwds):
-        """calculate expected value of a function with respect to the distribution
 
-        location and scale only tested on a few examples
-
-        Parameters
-        ----------
-        all parameters are keyword parameters
-        func : function (default: identity mapping)
-           Function for which integral is calculated. Takes only one argument.
-        args : tuple
-           argument (parameters) of the distribution
-        lb, ub : numbers
-           lower and upper bound for integration, default is set to the support
-           of the distribution
-        conditional : boolean (False)
-           If true then the integral is corrected by the conditional probability
-           of the integration interval. The return value is the expectation
-           of the function, conditional on being in the given interval.
-
-        Returns
-        -------
-        expected value : float
-        
-        Notes
-        -----
-        This function has not been checked for it's behavior when the integral is
-        not finite. The integration behavior is inherited from integrate.quad.           
-        """
-        if func is None:
-            def fun(x, *args):
-                return x*self.pdf(x, *args, **{'loc':loc, 'scale':scale})
-        else:
-            def fun(x, *args):
-                return func(x)*self.pdf(x, *args, **{'loc':loc, 'scale':scale})
-        if lb is None:
-            lb = (self.a - loc)/(1.0*scale)
-        if ub is None:
-            ub = (self.b - loc)/(1.0*scale)
-        if conditional:
-            invfac = self.sf(lb,*args) - self.sf(ub,*args)
-        else:
-            invfac = 1.0
-        kwds['args'] = args
-        return integrate.quad(fun, lb, ub, **kwds)[0] / invfac
-
- 
 _EULER = 0.577215664901532860606512090082402431042  # -special.psi(1)
 _ZETA3 = 1.202056903159594285399738161511449990765  # special.zeta(3,1)  Apery's constant
 
@@ -1675,16 +1247,10 @@ Kolmogorov-Smirnov two-sided test for large N
 # loc = mu, scale = std
 # Keep these implementations out of the class definition so they can be reused
 # by other distributions.
-_norm_pdf_C = math.sqrt(2*pi)
-_norm_pdf_logC = math.log(_norm_pdf_C)
 def _norm_pdf(x):
-    return exp(-x**2/2.0) / _norm_pdf_C
-def _norm_logpdf(x):
-    return -x**2 / 2.0 - _norm_pdf_logC
+    return 1.0/sqrt(2*pi)*exp(-x**2/2.0)
 def _norm_cdf(x):
     return special.ndtr(x)
-def _norm_logcdf(x):
-    return log(special.ndtr(x))
 def _norm_ppf(q):
     return special.ndtri(q)
 class norm_gen(rv_continuous):
@@ -1692,16 +1258,10 @@ class norm_gen(rv_continuous):
         return mtrand.standard_normal(self._size)
     def _pdf(self,x):
         return _norm_pdf(x)
-    def _logpdf(self, x):
-        return _norm_logpdf(x)
     def _cdf(self,x):
         return _norm_cdf(x)
-    def _logcdf(self, x):
-        return _norm_logcdf(x)
     def _sf(self, x):
         return _norm_cdf(-x)
-    def _logsf(self, x):
-        return _norm_logcdf(-x)
     def _ppf(self,q):
         return _norm_ppf(q)
     def _isf(self,q):
@@ -1725,9 +1285,7 @@ normal.pdf(x) = exp(-x**2/2)/sqrt(2*pi)
 ##
 class alpha_gen(rv_continuous):
     def _pdf(self, x, a):
-        return 1.0/(x**2)/special.ndtr(a)*_norm_pdf(a-1.0/x)
-    def _logpdf(self, x, a):
-        return -2*log(x) + _norm_logpdf(a-1.0/x) - log(special.ndtr(a))
+        return 1.0/arr(x**2)/special.ndtr(a)*norm.pdf(a-1.0/x)
     def _cdf(self, x, a):
         return special.ndtr(a-1.0/x) / special.ndtr(a)
     def _ppf(self, q, a):
@@ -1773,7 +1331,7 @@ class arcsine_gen(rv_continuous):
     def _ppf(self, q):
         return sin(pi/2.0*q)**2.0
     def _stats(self):
-        #mup = 0.5, 3.0/8.0, 15.0/48.0, 35.0/128.0
+        mup = 0.5, 3.0/8.0, 15.0/48.0, 35.0/128.0
         mu = 0.5
         mu2 = 1.0/8
         g1 = 0
@@ -1799,10 +1357,6 @@ class beta_gen(rv_continuous):
         Px = (1.0-x)**(b-1.0) * x**(a-1.0)
         Px /= special.beta(a,b)
         return Px
-    def _logpdf(self, x, a, b):
-        lPx = (b-1.0)*log(1.0-x) + (a-1.0)*log(x)
-        lPx -= log(special.beta(a,b))
-        return lPx
     def _cdf(self, x, a, b):
         return special.btdtr(a,b,x)
     def _ppf(self, q, a, b):
@@ -1814,33 +1368,6 @@ class beta_gen(rv_continuous):
         g2 = 6.0*(a**3 + a**2*(1-2*b) + b**2*(1+b) - 2*a*b*(2+b))
         g2 /= a*b*(a+b+2)*(a+b+3)
         return mn, var, g1, g2
-    def _fitstart(self, data):
-        g1 = _skew(data)
-        g2 = _kurtosis(data)
-        def func(x):
-            a, b = x
-            sk = 2*(b-a)*math.sqrt(a + b + 1) / (a + b + 2) / math.sqrt(a*b)
-            ku = a**3 - a**2*(2*b-1) + b**2*(b+1) - 2*a*b*(b+2)
-            ku /= a*b*(a+b+2)*(a+b+3)
-            ku *= 6
-            return [sk-g1, ku-g2]            
-        a, b = optimize.fsolve(func, (1.0, 1.0))
-        return super(beta_gen, self)._fitstart(data, args=(a,b))
-    def fit(self, data, *args, **kwds):
-        floc = kwds.get('floc', None)
-        fscale = kwds.get('fscale', None)
-        if floc is not None and fscale is not None:
-            # special case
-            data = (ravel(data)-floc)/fscale
-            xbar = data.mean()
-            v = data.var(ddof=0)
-            fac = xbar*(1-xbar)/v - 1
-            a = xbar * fac
-            b = (1-xbar) * fac
-            return a, b, floc, fscale
-        else: # do general fit
-            return super(beta_gen, self).fit(data, *args, **kwds)
-            
 beta = beta_gen(a=0.0, b=1.0, name='beta',shapes='a, b',extradoc="""
 
 Beta distribution
@@ -1857,8 +1384,6 @@ class betaprime_gen(rv_continuous):
         return (u1 / u2)
     def _pdf(self, x, a, b):
         return 1.0/special.beta(a,b)*x**(a-1.0)/(1+x)**(a+b)
-    def _logpdf(self, x, a, b):
-        return (a-1.0)*log(x) - (a+b)*log(1+x) - log(special.beta(a,b))
     def _cdf_skip(self, x, a, b):
         # remove for now: special.hyp2f1 is incorrect for large a
         x = where(x==1.0, 1.0-1e-6,x)
@@ -2054,12 +1579,10 @@ class chi2_gen(rv_continuous):
     def _rvs(self, df):
         return mtrand.chisquare(df,self._size)
     def _pdf(self, x, df):
-        return exp(self._logpdf(x, df))
-    def _logpdf(self, x, df):
-        return (df/2.-1)*log(x)-x/2.-gamln(df/2.)-(log(2)*df)/2.
+        return exp((df/2.-1)*log(x)-x/2.-gamln(df/2.)-(log(2)*df)/2.)
 ##        Px = x**(df/2.0-1)*exp(-x/2.0)
 ##        Px /= special.gamma(df/2.0)* 2**(df/2.0)
-##        return log(Px)        
+##        return Px
     def _cdf(self, x, df):
         return special.chdtr(df, x)
     def _sf(self, x, df):
@@ -2109,9 +1632,6 @@ class dgamma_gen(rv_continuous):
     def _pdf(self, x, a):
         ax = abs(x)
         return 1.0/(2*special.gamma(a))*ax**(a-1.0) * exp(-ax)
-    def _logpdf(self, x, a):
-        ax = abs(x)
-        return (a-1.0)*log(ax) - ax - log(2) - gamln(a)
     def _cdf(self, x, a):
         fac = 0.5*special.gammainc(a,abs(x))
         return where(x>0,0.5+fac,0.5-fac)
@@ -2145,9 +1665,6 @@ class dweibull_gen(rv_continuous):
         ax = abs(x)
         Px = c/2.0*ax**(c-1.0)*exp(-ax**c)
         return Px
-    def _logpdf(self, x, c):
-        ax = abs(x)
-        return log(c) - log(2.0) + (c-1.0)*log(ax) - ax**c
     def _cdf(self, x, c):
         Cx1 = 0.5*exp(-abs(x)**c)
         return where(x > 0, 1-Cx1, Cx1)
@@ -2179,8 +1696,6 @@ class erlang_gen(rv_continuous):
     def _pdf(self, x, n):
         Px = (x)**(n-1.0)*exp(-x)/special.gamma(n)
         return Px
-    def _logpdf(self, x, n):
-        return (n-1.0)*log(x) - x - gamln(n)
     def _cdf(self, x, n):
         return special.gdtr(1.0,n,x)
     def _sf(self, x, n):
@@ -2191,7 +1706,7 @@ class erlang_gen(rv_continuous):
         n = n*1.0
         return n, n, 2/sqrt(n), 6/n
     def _entropy(self, n):
-        return special.psi(n)*(1-n) + 1 + gamln(n)
+        return special.psi(n)*(1-n) + 1 + special.gammaln(n)
 erlang = erlang_gen(a=0.0,name='erlang',longname='An Erlang',
                     shapes='n',extradoc="""
 
@@ -2207,16 +1722,12 @@ class expon_gen(rv_continuous):
         return mtrand.standard_exponential(self._size)
     def _pdf(self, x):
         return exp(-x)
-    def _logpdf(self, x):
-        return -x
     def _cdf(self, x):
         return -expm1(-x)
     def _ppf(self, q):
         return -log1p(-q)
     def _sf(self,x):
         return exp(-x)
-    def _logsf(self, x):
-        return -x
     def _isf(self,q):
         return -log(q)
     def _stats(self):
@@ -2240,10 +1751,7 @@ scale = 1.0 / lambda
 class exponweib_gen(rv_continuous):
     def _pdf(self, x, a, c):
         exc = exp(-x**c)
-        return a*c*(1-exc)**arr(a-1) * exc * x**(c-1)
-    def _logpdf(self, x, a, c):
-        exc = exp(-x**c)
-        return log(a) + log(c) + (a-1.)*log(1-exc) - x**c + (c-1.0)*log(x)
+        return a*c*(1-exc)**arr(a-1) * exc * x**arr(c-1)
     def _cdf(self, x, a, c):
         exm1c = -expm1(-x**c)
         return arr((exm1c)**a)
@@ -2267,9 +1775,6 @@ class exponpow_gen(rv_continuous):
         xbm1 = arr(x**(b-1.0))
         xb = xbm1 * x
         return exp(1)*b*xbm1 * exp(xb - exp(xb))
-    def _logpdf(self, x, b):
-        xb = x**(b-1.0)*x
-        return 1 + log(b) + (b-1.0)*log(x) + xb - exp(xb)
     def _cdf(self, x, b):
         xb = arr(x**b)
         return -expm1(-expm1(xb))
@@ -2300,8 +1805,6 @@ class fatiguelife_gen(rv_continuous):
         return t
     def _pdf(self, x, c):
         return (x+1)/arr(2*c*sqrt(2*pi*x**3))*exp(-(x-1)**2/arr((2.0*x*c**2)))
-    def _logpdf(self, x, c):
-        return log(x+1) - (x-1)**2 / (2.0*x*c**2) - log(2*c) - 0.5*(log(2*pi) + 3*log(x))
     def _cdf(self, x, c):
         return special.ndtr(1.0/c*(sqrt(x)-1.0/arr(sqrt(x))))
     def _ppf(self, q, c):
@@ -2355,17 +1858,11 @@ class f_gen(rv_continuous):
     def _rvs(self, dfn, dfd):
         return mtrand.f(dfn, dfd, self._size)
     def _pdf(self, x, dfn, dfd):
-#        n = arr(1.0*dfn)
-#        m = arr(1.0*dfd)
-#        Px = m**(m/2) * n**(n/2) * x**(n/2-1)
-#        Px /= (m+n*x)**((n+m)/2)*special.beta(n/2,m/2)
-        return exp(self._logpdf(x, dfn, dfd))
-    def _logpdf(self, x, dfn, dfd):
-        n = 1.0*dfn
-        m = 1.0*dfd
-        lPx = m/2*log(m) + n/2*log(n) + (n/2-1)*log(x)
-        lPx -= ((n+m)/2)*log(m+n*x) + special.betaln(n/2,m/2)
-        return lPx
+        n = arr(1.0*dfn)
+        m = arr(1.0*dfd)
+        Px = m**(m/2) * n**(n/2) * x**(n/2-1)
+        Px /= (m+n*x)**((n+m)/2)*special.beta(n/2,m/2)
+        return Px
     def _cdf(self, x, dfn, dfd):
         return special.fdtr(dfn, dfd, x)
     def _sf(self, x, dfn, dfd):
@@ -2441,8 +1938,6 @@ for c >= 0.
 class frechet_r_gen(rv_continuous):
     def _pdf(self, x, c):
         return c*pow(x,c-1)*exp(-pow(x,c))
-    def _logpdf(self, x, c):
-        return log(c) + (c-1)*log(x) - pow(x,c)
     def _cdf(self, x, c):
         return -expm1(-pow(x,c))
     def _ppf(self, q, c):
@@ -2512,8 +2007,6 @@ class genlogistic_gen(rv_continuous):
     def _pdf(self, x, c):
         Px = c*exp(-x)/(1+exp(-x))**(c+1.0)
         return Px
-    def _logpdf(self, x, c):
-        return log(c) - x - (c+1.0)*log1p(exp(-x))
     def _cdf(self, x, c):
         Cx = (1+exp(-x))**(-c)
         return Cx
@@ -2549,8 +2042,6 @@ class genpareto_gen(rv_continuous):
     def _pdf(self, x, c):
         Px = pow(1+c*x,arr(-1.0-1.0/c))
         return Px
-    def _logpdf(self, x, c):
-        return (-1.0-1.0/c) * np.log1p(c*x)
     def _cdf(self, x, c):
         return 1.0 - pow(1+c*x,arr(-1.0/c))
     def _ppf(self, q, c):
@@ -2566,7 +2057,6 @@ class genpareto_gen(rv_continuous):
         else:
             self.b = -1.0 / c
             return rv_continuous._entropy(self, c)
-    
 genpareto = genpareto_gen(a=0.0,name='genpareto',
                           longname="A generalized Pareto",
                           shapes='c',extradoc="""
@@ -2585,8 +2075,6 @@ class genexpon_gen(rv_continuous):
         return (a+b*(-expm1(-c*x)))*exp((-a-b)*x+b*(-expm1(-c*x))/c)
     def _cdf(self, x, a, b, c):
         return -expm1((-a-b)*x + b*(-expm1(-c*x))/c)
-    def _logpdf(self, x, a, b, c):
-        return np.log(a+b*(-expm1(-c*x))) + (-a-b)*x+b*(-expm1(-c*x))/c
 genexpon = genexpon_gen(a=0.0,name='genexpon',
                         longname='A generalized exponential',
                         shapes='a, b, c',extradoc="""
@@ -2702,8 +2190,6 @@ class gamma_gen(rv_continuous):
         return mtrand.standard_gamma(a, self._size)
     def _pdf(self, x, a):
         return x**(a-1)*exp(-x)/special.gamma(a)
-    def _logpdf(self, x, a):
-        return (a-1)*log(x) - x - gamln(a)
     def _cdf(self, x, a):
         return special.gammainc(a, x)
     def _ppf(self, q, a):
@@ -2711,26 +2197,7 @@ class gamma_gen(rv_continuous):
     def _stats(self, a):
         return a, a, 2.0/sqrt(a), 6.0/a
     def _entropy(self, a):
-        return special.psi(a)*(1-a) + 1 + gamln(a)
-    def _fitstart(self, data):
-        a = 4 / _skew(data)**2
-        return super(gamma_gen, self)._fitstart(data, args=(a,))
-    def fit(self, data, *args, **kwds):
-        floc = kwds.get('floc', None)
-        if floc == 0:
-            xbar = ravel(data).mean()
-            logx_bar = ravel(log(data)).mean()
-            s = log(xbar) - logx_bar
-            def func(a):
-                return log(a) - special.digamma(a) - s
-            aest = (3-s + math.sqrt((s-3)**2 + 24*s)) / (12*s)
-            xa = aest*(1-0.4)
-            xb = aest*(1+0.4)
-            a = optimize.brentq(func, xa, xb, disp=0)
-            scale = xbar / a
-            return a, floc, scale
-        else:
-            return super(gamma_gen, self).fit(data, *args, **kwds)
+        return special.psi(a)*(1-a) + 1 + special.gammaln(a)
 gamma = gamma_gen(a=0.0,name='gamma',longname='A gamma',
                   shapes='a',extradoc="""
 
@@ -2749,7 +2216,7 @@ class gengamma_gen(rv_continuous):
     def _argcheck(self, a, c):
         return (a > 0) & (c != 0)
     def _pdf(self, x, a, c):
-        return abs(c)* exp((c*a-1)*log(x)-x**c- gamln(a))
+        return abs(c)* exp((c*a-1)*log(x)-x**c- special.gammaln(a))
     def _cdf(self, x, a, c):
         val = special.gammainc(a,x**c)
         cond = c + 0*val
@@ -2764,7 +2231,7 @@ class gengamma_gen(rv_continuous):
         return special.gamma(a+n*1.0/c) / special.gamma(a)
     def _entropy(self, a,c):
         val = special.psi(a)
-        return a*(1-val) + 1.0/c*val + gamln(a)-log(abs(c))
+        return a*(1-val) + 1.0/c*val + special.gammaln(a)-log(abs(c))
 gengamma = gengamma_gen(a=0.0, name='gengamma',
                         longname='A generalized gamma',
                         shapes="a, c", extradoc="""
@@ -2841,12 +2308,8 @@ class gumbel_r_gen(rv_continuous):
     def _pdf(self, x):
         ex = exp(-x)
         return ex*exp(-ex)
-    def _logpdf(self, x):
-        return -x - exp(-x)
     def _cdf(self, x):
         return exp(-exp(-x))
-    def _logcdf(self, x):
-        return -exp(-x)
     def _ppf(self, q):
         return -log(-log(q))
     def _stats(self):
@@ -2866,8 +2329,6 @@ class gumbel_l_gen(rv_continuous):
     def _pdf(self, x):
         ex = exp(x)
         return ex*exp(-ex)
-    def _logpdf(self, x):
-        return x - exp(x)
     def _cdf(self, x):
         return 1.0-exp(-exp(x))
     def _ppf(self, q):
@@ -2891,8 +2352,6 @@ gumbel_l.pdf(x) = exp(x - exp(x))
 class halfcauchy_gen(rv_continuous):
     def _pdf(self, x):
         return 2.0/pi/(1.0+x*x)
-    def _logpdf(self, x):
-        return np.log(2.0/pi) - np.log1p(x*x)
     def _cdf(self, x):
         return 2.0/pi*arctan(x)
     def _ppf(self, q):
@@ -2949,8 +2408,6 @@ class halfnorm_gen(rv_continuous):
         return abs(norm.rvs(size=self._size))
     def _pdf(self, x):
         return sqrt(2.0/pi)*exp(-x*x/2.0)
-    def _logpdf(self, x):
-        return 0.5 * np.log(2.0/pi) - x*x/2.0
     def _cdf(self, x):
         return special.ndtr(x)*2-1.0
     def _ppf(self, q):
@@ -3025,17 +2482,15 @@ C = 1/(B(a,b)F[2,1](c,a;a+b;-z))
 
 class invgamma_gen(rv_continuous):
     def _pdf(self, x, a):
-        return exp(self._logpdf(x,a))
-    def _logpdf(self, x, a):
-        return (-(a+1)*log(x)-gamln(a) - 1.0/x)
+        return exp(-(a+1)*log(x)-special.gammaln(a) - 1.0/x)
     def _cdf(self, x, a):
         return 1.0-special.gammainc(a, 1.0/x)
     def _ppf(self, q, a):
         return 1.0/special.gammaincinv(a,1-q)
     def _munp(self, n, a):
-        return exp(gamln(a-n) - gamln(a))
+        return exp(special.gammaln(a-n) - special.gammaln(a))
     def _entropy(self, a):
-        return a - (a+1.0)*special.psi(a) + gamln(a)
+        return a - (a+1.0)*special.psi(a) + special.gammaln(a)
 invgamma = invgamma_gen(a=0.0, name='invgamma',longname="An inverted gamma",
                         shapes='a',extradoc="""
 
@@ -3055,8 +2510,6 @@ class invnorm_gen(rv_continuous):
         return mtrand.wald(mu, 1.0, size=self._size)
     def _pdf(self, x, mu):
         return 1.0/sqrt(2*pi*x**3.0)*exp(-1.0/(2*x)*((x-mu)/mu)**2)
-    def _logpdf(self, x, mu):
-        return -0.5*log(2*pi) - 1.5*log(x) - ((x-mu)/mu)**2/(2*x)
     def _cdf(self, x, mu):
         fac = sqrt(1.0/x)
         C1 = norm.cdf(fac*(x-mu)/mu)
@@ -3292,7 +2745,7 @@ class loggamma_gen(rv_continuous):
     def _rvs(self, c):
         return log(mtrand.gamma(c, size=self._size))
     def _pdf(self, x, c):
-        return exp(c*x-exp(x)-gamln(c))
+        return exp(c*x-exp(x)-special.gammaln(c))
     def _cdf(self, x, c):
         return special.gammainc(c, exp(x))
     def _ppf(self, q, c):
@@ -3579,14 +3032,9 @@ class t_gen(rv_continuous):
         #return 0.5*sqrt(df)*(sY-1.0/sY)
     def _pdf(self, x, df):
         r = arr(df*1.0)
-        Px = exp(gamln((r+1)/2)-gamln(r/2))
+        Px = exp(special.gammaln((r+1)/2)-special.gammaln(r/2))
         Px /= sqrt(r*pi)*(1+(x**2)/r)**((r+1)/2)
         return Px
-    def _logpdf(self, x, df):
-        r = df*1.0
-        lPx = gamln((r+1)/2)-gamln(r/2)
-        lPx -= 0.5*log(r*pi) + (r+1)/2*log(1+(x**2)/r)
-        return lPx
     def _cdf(self, x, df):
         return special.stdtr(df, x)
     def _sf(self, x, df):
@@ -3729,14 +3177,8 @@ for x >= 1, b > 0.
 class lomax_gen(rv_continuous):
     def _pdf(self, x, c):
         return c*1.0/(1.0+x)**(c+1.0)
-    def _logpdf(self, x, c):
-        return log(c) - (c+1)*log(1+x)
     def _cdf(self, x, c):
         return 1.0-1.0/(1.0+x)**c
-    def _sf(self, x, c):
-        return 1.0/(1.0+x)**c
-    def _logsf(self, x, c):
-        return -c*log(1+x)
     def _ppf(self, q, c):
         return pow(1.0-q,-1.0/c)-1
     def _stats(self, c):
@@ -3760,12 +3202,8 @@ for x >= 0, c > 0.
 class powerlaw_gen(rv_continuous):
     def _pdf(self, x, a):
         return a*x**(a-1.0)
-    def _logpdf(self, x, a):
-        return log(a) + (a-1)*log(x)
     def _cdf(self, x, a):
         return x**(a*1.0)
-    def _logcdf(self, x, a):
-        return a*log(x)
     def _ppf(self, q, a):
         return pow(q, 1.0/a)
     def _stats(self, a):
@@ -3810,12 +3248,10 @@ where phi is the normal pdf, and Phi is the normal cdf, and x > 0, s,c > 0.
 
 class powernorm_gen(rv_continuous):
     def _pdf(self, x, c):
-        return c*_norm_pdf(x)* \
-               (_norm_cdf(-x)**(c-1.0))
-    def _logpdf(self, x, c):
-        return log(c) + _norm_logpdf(x) + (c-1)*_norm_logcdf(-x)
+        return c*norm.pdf(x)* \
+               (norm.cdf(-x)**(c-1.0))
     def _cdf(self, x, c):
-        return 1.0-_norm_cdf(-x)**(c*1.0)
+        return 1.0-norm.cdf(-x)**(c*1.0)
     def _ppf(self, q, c):
         return -norm.ppf(pow(1.0-q,1.0/c))
 powernorm = powernorm_gen(name='powernorm', longname="A power normal",
@@ -3890,8 +3326,6 @@ class reciprocal_gen(rv_continuous):
     def _pdf(self, x, a, b):
         # argcheck should be called before _pdf
         return 1.0/(x*self.d)
-    def _logpdf(self, x, a, b):
-        return -log(x) - log(self.d)
     def _cdf(self, x, a, b):
         return (log(x)-log(a)) / self.d
     def _ppf(self, q, a, b):
@@ -3917,8 +3351,6 @@ for a <= x <= b, a,b > 0.
 class rice_gen(rv_continuous):
     def _pdf(self, x, b):
         return x*exp(-(x*x+b*b)/2.0)*special.i0(x*b)
-    def _logpdf(self, x, b):
-        return log(x) - (x*x + b*b)/2.0 + log(special.i0(x*b))
     def _munp(self, n, b):
         nd2 = n/2.0
         n1 = 1+nd2
@@ -3943,13 +3375,11 @@ class recipinvgauss_gen(rv_continuous):
         return 1.0/mtrand.wald(mu, 1.0, size=self._size)
     def _pdf(self, x, mu):
         return 1.0/sqrt(2*pi*x)*exp(-(1-mu*x)**2.0 / (2*x*mu**2.0))
-    def _logpdf(self, x, mu):
-        return -(1-mu*x)**2.0 / (2*x*mu**2.0) - 0.5*log(2*pi*x)
     def _cdf(self, x, mu):
         trm1 = 1.0/mu - x
         trm2 = 1.0/mu + x
         isqx = 1.0/sqrt(x)
-        return 1.0-_norm_cdf(isqx*trm1)-exp(2.0/mu)*_norm_cdf(-isqx*trm2)
+        return 1.0-norm.cdf(isqx*trm1)-exp(2.0/mu)*norm.cdf(-isqx*trm2)
     # xb=50 or something large is necessary for stats to converge without exception
 recipinvgauss = recipinvgauss_gen(a=0.0, xb=50, name='recipinvgauss',
                                   longname="A reciprocal inverse Gaussian",
@@ -4027,8 +3457,6 @@ class truncexpon_gen(rv_continuous):
         return (b > 0)
     def _pdf(self, x, b):
         return exp(-x)/(1-exp(-b))
-    def _logpdf(self, x, b):
-        return -x - log(1-exp(-b))
     def _cdf(self, x, b):
         return (1.0-exp(-x))/(1-exp(-b))
     def _ppf(self, q, b):
@@ -4064,25 +3492,19 @@ class truncnorm_gen(rv_continuous):
     def _argcheck(self, a, b):
         self.a = a
         self.b = b
-        self._nb = _norm_cdf(b)
-        self._na = _norm_cdf(a)
-        self._delta = self._nb - self._na
-        self._logdelta = log(self._delta)
+        self.nb = norm._cdf(b)
+        self.na = norm._cdf(a)
         return (a != b)
-    # All of these assume that _argcheck is called first
-    #  and no other thread calls _pdf before. 
     def _pdf(self, x, a, b):
-        return _norm_pdf(x) / self._delta
-    def _logpdf(self, x, a, b):
-        return _norm_logpdf(x) - self._logdelta
+        return norm._pdf(x) / (self.nb - self.na)
     def _cdf(self, x, a, b):
-        return (_norm_cdf(x) - self._na) / self._delta
+        return (norm._cdf(x) - self.na) / (self.nb - self.na)
     def _ppf(self, q, a, b):
-        return norm._ppf(q*self._nb + self._na*(1.0-q))
+        return norm._ppf(q*self.nb + self.na*(1.0-q))
     def _stats(self, a, b):
-        nA, nB = self._na, self._nb
+        nA, nB = self.na, self.nb
         d = nB - nA
-        pA, pB = _norm_pdf(a), _norm_pdf(b)
+        pA, pB = norm._pdf(a), norm._pdf(b)
         mu = (pA - pB) / d   #correction sign
         mu2 = 1 + (a*pA - b*pB) / d - mu*mu
         return mu, mu2, None, None
@@ -4133,7 +3555,7 @@ class tukeylambda_gen(rv_continuous):
     def _entropy(self, lam):
         def integ(p):
             return log(pow(p,lam-1)+pow(1-p,lam-1))
-        return integrate.quad(integ,0,1)[0]
+        return scipy.integrate.quad(integ,0,1)[0]
 tukeylambda = tukeylambda_gen(name='tukeylambda', longname="A Tukey-Lambda",
                               shapes="lam", extradoc="""
 
@@ -4219,13 +3641,11 @@ class wald_gen(invnorm_gen):
     %(example)s
     """
     def _rvs(self):
-        return mtrand.wald(1.0, 1.0, size=self._size)
+        return invnorm_gen._rvs(self, 1.0)
     def _pdf(self, x):
-        return invnorm._pdf(x, 1.0)
-    def _logpdf(self, x):
-        return invnorm._logpdf(x, 1.0)
+        return invnorm.pdf(x,1.0)
     def _cdf(self, x):
-        return invnorm._logcdf(x, 1.0)
+        return invnorm.cdf(x,1,0)
     def _stats(self):
         return 1.0, 1.0, 3.0, 15.0
 wald = wald_gen(a=0.0, name="wald", extradoc="""
@@ -4499,7 +3919,7 @@ class rv_discrete(rv_generic):
                  moment_tol=1e-8,values=None,inc=1,longname=None,
                  shapes=None, extradoc=None):
 
-        super(rv_generic,self).__init__()
+        rv_generic.__init__(self)
 
         if badvalue is None:
             badvalue = nan
@@ -4613,10 +4033,7 @@ class rv_discrete(rv_generic):
         return cond
 
     def _pmf(self, k, *args):
-        return self._cdf(k,*args) - self._cdf(k-1,*args)
-
-    def _logpmf(self, k, *args):
-        return log(self._pmf(k, *args))
+        return self.cdf(k,*args) - self.cdf(k-1,*args)
 
     def _cdfsingle(self, k, *args):
         m = arange(int(self.a),k+1)
@@ -4626,14 +4043,8 @@ class rv_discrete(rv_generic):
         k = floor(x)
         return self._cdfvec(k,*args)
 
-    def _logcdf(self, x, *args):
-        return log(self._cdf(x, *args))
-
     def _sf(self, x, *args):
         return 1.0-self._cdf(x,*args)
-
-    def _logsf(self, x, *args):
-        return log(self._sf(x, *args))
 
     def _ppf(self, q, *args):
         return self._vecppf(q, *args)
@@ -4669,7 +4080,7 @@ class rv_discrete(rv_generic):
 
         """
         kwargs['discrete'] = True
-        return super(rv_discrete, self).rvs(*args, **kwargs)
+        return rv_generic.rvs(self, *args, **kwargs)
 
     def pmf(self, k,*args, **kwds):
         """
@@ -4704,44 +4115,6 @@ class rv_discrete(rv_generic):
         place(output,(1-cond0)*(cond1==cond1),self.badvalue)
         goodargs = argsreduce(cond, *((k,)+args))
         place(output,cond,self._pmf(*goodargs))
-        if output.ndim == 0:
-            return output[()]
-        return output
-
-    def logpmf(self, k,*args, **kwds):
-        """
-        Log of the probability mass function at k of the given RV.
-
-
-        Parameters
-        ----------
-        k : array-like
-            quantiles
-        arg1, arg2, arg3,... : array-like
-            The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information)
-        loc : array-like, optional
-            location parameter (default=0)
-
-        Returns
-        -------
-        logpmf : array-like
-            Log of the probability mass function evaluated at k
-
-        """
-        loc = kwds.get('loc')
-        args, loc = self._fix_loc(args, loc)
-        k,loc = map(arr,(k,loc))
-        args = tuple(map(arr,args))
-        k = arr((k-loc))
-        cond0 = self._argcheck(*args)
-        cond1 = (k >= self.a) & (k <= self.b) & self._nonzero(k,*args)
-        cond = cond0 & cond1
-        output = empty(shape(cond),'d')
-        output.fill(NINF)
-        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
-        goodargs = argsreduce(cond, *((k,)+args))
-        place(output,cond,self._logpmf(*goodargs))
         if output.ndim == 0:
             return output[()]
         return output
@@ -4786,47 +4159,6 @@ class rv_discrete(rv_generic):
             return output[()]
         return output
 
-    def logcdf(self, k, *args, **kwds):
-        """
-        Log of the cumulative distribution function at k of the given RV
-
-        Parameters
-        ----------
-        k : array-like, int
-            quantiles
-        arg1, arg2, arg3,... : array-like
-            The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information)
-        loc : array-like, optional
-            location parameter (default=0)
-
-        Returns
-        -------
-        logcdf : array-like
-            Log of the cumulative distribution function evaluated at k
-
-        """
-        loc = kwds.get('loc')
-        args, loc = self._fix_loc(args, loc)
-        k,loc = map(arr,(k,loc))
-        args = tuple(map(arr,args))
-        k = arr((k-loc))
-        cond0 = self._argcheck(*args)
-        cond1 = (k >= self.a) & (k < self.b)
-        cond2 = (k >= self.b)
-        cond = cond0 & cond1
-        output = empty(shape(cond),'d')
-        output.fill(NINF)
-        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
-        place(output,cond2*(cond0==cond0), 0.0)
-
-        if any(cond):
-            goodargs = argsreduce(cond, *((k,)+args))
-            place(output,cond,self._logcdf(*goodargs))
-        if output.ndim == 0:
-            return output[()]
-        return output
-
     def sf(self,k,*args,**kwds):
         """
         Survival function (1-cdf) at k of the given RV
@@ -4865,45 +4197,6 @@ class rv_discrete(rv_generic):
             return output[()]
         return output
 
-    def logsf(self,k,*args,**kwds):
-        """
-        Log of the survival function (1-cdf) at k of the given RV
-
-        Parameters
-        ----------
-        k : array-like
-            quantiles
-        arg1, arg2, arg3,... : array-like
-            The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information)
-        loc : array-like, optional
-            location parameter (default=0)
-
-        Returns
-        -------
-        sf : array-like
-            Survival function evaluated at k
-
-        """
-        loc= kwds.get('loc')
-        args, loc = self._fix_loc(args, loc)
-        k,loc = map(arr,(k,loc))
-        args = tuple(map(arr,args))
-        k = arr(k-loc)
-        cond0 = self._argcheck(*args)
-        cond1 = (k >= self.a) & (k <= self.b)
-        cond2 = (k < self.a) & cond0
-        cond = cond0 & cond1
-        output = empty(shape(cond),'d')
-        output.fill(NINF)
-        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
-        place(output,cond2,0.0)
-        goodargs = argsreduce(cond, *((k,)+args))
-        place(output,cond,self._logsf(*goodargs))
-        if output.ndim == 0:
-            return output[()]
-        return output
-
     def ppf(self,q,*args,**kwds):
         """
         Percent point function (inverse of cdf) at q of the given RV
@@ -4917,8 +4210,6 @@ class rv_discrete(rv_generic):
             instance object for more information)
         loc : array-like, optional
             location parameter (default=0)
-        scale: array-like, optional
-            scale parameter (default=1)
 
         Returns
         -------
@@ -5192,109 +4483,6 @@ class rv_discrete(rv_generic):
     def __call__(self, *args, **kwds):
         return self.freeze(*args,**kwds)
 
-    def expect(self, func=None, args=(), loc=0, lb=None, ub=None, conditional=False):
-        """calculate expected value of a function with respect to the distribution
-        for discrete distribution
-
-        Parameters
-        ----------
-        fn : function (default: identity mapping)
-               Function for which integral is calculated. Takes only one argument.
-        args : tuple
-               argument (parameters) of the distribution
-        optional keyword parameters
-        lb, ub : numbers
-               lower and upper bound for integration, default is set to the support
-               of the distribution, lb and ub are inclusive (ul<=k<=ub)
-        conditional : boolean (False)
-               If true then the expectation is corrected by the conditional
-               probability of the integration interval. The return value is the
-               expectation of the function, conditional on being in the given
-               interval (k such that ul<=k<=ub).
-
-        Returns
-        -------
-        expected value : float
-
-        Notes
-        -----
-        * function is not vectorized
-        * accuracy: uses self.moment_tol as stopping criterium
-            for heavy tailed distribution e.g. zipf(4), accuracy for
-            mean, variance in example is only 1e-5,
-            increasing precision (moment_tol) makes zipf very slow
-        * suppnmin=100 internal parameter for minimum number of points to evaluate
-            could be added as keyword parameter, to evaluate functions with
-            non-monotonic shapes, points include integers in (-suppnmin, suppnmin)
-        * uses maxcount=1000 limits the number of points that are evaluated
-            to break loop for infinite sums
-            (a maximum of suppnmin+1000 positive plus suppnmin+1000 negative integers
-            are evaluated)
-
-        """
-
-        #moment_tol = 1e-12 # increase compared to self.moment_tol,
-        # too slow for only small gain in precision for zipf
-
-        #avoid endless loop with unbound integral, eg. var of zipf(2)
-        maxcount = 1000
-        suppnmin = 100  #minimum number of points to evaluate (+ and -)
-
-        if func is None:
-            def fun(x):
-                #loc and args from outer scope
-                return (x+loc)*self._pmf(x, *args)
-        else:
-            def fun(x):
-                #loc and args from outer scope
-                return func(x+loc)*self._pmf(x, *args)
-        # used pmf because _pmf does not check support in randint
-        # and there might be problems(?) with correct self.a, self.b at this stage
-        # maybe not anymore, seems to work now with _pmf
-
-        self._argcheck(*args) # (re)generate scalar self.a and self.b
-        if lb is None:
-            lb = (self.a)
-        if ub is None:
-            ub = (self.b)
-        if conditional:
-            invfac = self.sf(lb,*args) - self.sf(ub+1,*args)
-        else:
-            invfac = 1.0
-
-        tot = 0.0
-        low, upp = self._ppf(0.001, *args), self._ppf(0.999, *args)
-        low = max(min(-suppnmin, low), lb)
-        upp = min(max(suppnmin, upp), ub)
-        supp = np.arange(low, upp+1, self.inc) #check limits
-        #print 'low, upp', low, upp
-        tot = np.sum(fun(supp))
-        diff = 1e100
-        pos = upp + self.inc
-        count = 0
-
-        #handle cases with infinite support
-
-        while (pos <= ub) and (diff > self.moment_tol) and count <= maxcount: 
-            diff = fun(pos)
-            tot += diff
-            pos += self.inc
-            count += 1
-
-        if self.a < 0: #handle case when self.a = -inf
-            diff = 1e100
-            pos = low - self.inc
-            while (pos >= lb) and (diff > self.moment_tol) and count <= maxcount: 
-                diff = fun(pos)
-                tot += diff
-                pos -= self.inc
-                count += 1
-        if count > maxcount:
-            # fixme: replace with proper warning
-            print 'sum did not converge'
-        return tot/invfac
-    
-
 # Binomial
 
 class binom_gen(rv_discrete):
@@ -5303,13 +4491,11 @@ class binom_gen(rv_discrete):
     def _argcheck(self, n, pr):
         self.b = n
         return (n>=0) & (pr >= 0) & (pr <= 1)
-    def _logpmf(self, x, n, pr):
-        k = floor(x)
-        combiln = (gamln(n+1) - (gamln(k+1) +
-                                           gamln(n-k+1)))
-        return combiln + k*np.log(pr) + (n-k)*np.log(1-pr)
     def _pmf(self, x, n, pr):
-        return exp(self._logpmf(x, n, pr))
+        k = floor(x)
+        combiln = (special.gammaln(n+1) - (special.gammaln(k+1) +
+                                           special.gammaln(n-k+1)))
+        return np.exp(combiln + k*np.log(pr) + (n-k)*np.log(1-pr))
     def _cdf(self, x, n, pr):
         k = floor(x)
         vals = special.bdtr(k,n,pr)
@@ -5352,18 +4538,16 @@ class bernoulli_gen(binom_gen):
         return binom_gen._rvs(self, 1, pr)
     def _argcheck(self, pr):
         return (pr >=0 ) & (pr <= 1)
-    def _logpmf(self, x, pr):
-        return binom._logpmf(x, 1, pr)
     def _pmf(self, x, pr):
-        return binom._pmf(x, 1, pr)
+        return binom_gen._pmf(self, x, 1, pr)
     def _cdf(self, x, pr):
-        return binom._cdf(x, 1, pr)
+        return binom_gen._cdf(self, x, 1, pr)
     def _sf(self, x, pr):
-        return binom._sf(x, 1, pr)
+        return binom_gen._sf(self, x, 1, pr)
     def _ppf(self, q, pr):
-        return binom._ppf(q, 1, pr)
+        return binom_gen._ppf(self, q, 1, pr)
     def _stats(self, pr):
-        return binom._stats(1, pr)
+        return binom_gen._stats(self, 1, pr)
     def _entropy(self, pr):
         return -pr*log(pr)-(1-pr)*log(1-pr)
 bernoulli = bernoulli_gen(b=1,name='bernoulli',shapes="pr",extradoc="""
@@ -5397,11 +4581,8 @@ class nbinom_gen(rv_discrete):
     def _argcheck(self, n, pr):
         return (n >= 0) & (pr >= 0) & (pr <= 1)
     def _pmf(self, x, n, pr):
-        coeff = exp(gamln(n+x) - gamln(x+1) - gamln(n))
+        coeff = exp(special.gammaln(n+x) - special.gammaln(x+1) - special.gammaln(n))
         return coeff * power(pr,n) * power(1-pr,x)
-    def _logpmf(self, x, n, pr):
-        coeff = gamln(n+x) - gamln(x+1) - gamln(n)
-        return coeff + n*log(pr) + x*log(1-pr)
     def _cdf(self, x, n, pr):
         k = floor(x)
         return special.betainc(n, k+1, pr)
@@ -5441,8 +4622,6 @@ class geom_gen(rv_discrete):
         return (pr<=1) & (pr >= 0)
     def _pmf(self, k, pr):
         return (1-pr)**(k-1) * pr
-    def _logpmf(self, k, pr):
-        return (k-1)*log(1-pr) + pr
     def _cdf(self, x, pr):
         k = floor(x)
         return (1.0-(1.0-pr)**k)
@@ -5481,16 +4660,14 @@ class hypergeom_gen(rv_discrete):
         self.a = N-(M-n)
         self.b = min(n,N)
         return cond
-    def _logpmf(self, k, M, n, N):
+    def _pmf(self, k, M, n, N):
         tot, good = M, n
         bad = tot - good
-        return gamln(good+1) - gamln(good-k+1) - gamln(k+1) + gamln(bad+1) \
-            - gamln(bad-N+k+1) - gamln(N-k+1) - gamln(tot+1) + gamln(tot-N+1) \
-            + gamln(N+1)
-    def _pmf(self, k, M, n, N):
+        return np.exp(lgam(good+1) - lgam(good-k+1) - lgam(k+1) + lgam(bad+1)
+               - lgam(bad-N+k+1) - lgam(N-k+1) - lgam(tot+1) + lgam(tot-N+1)
+               + lgam(N+1))
         #same as the following but numerically more precise
         #return comb(good,k) * comb(bad,N-k) / comb(tot,N)
-        return exp(self._logpmf(k, M, n, N))
     def _stats(self, M, n, N):
         tot, good = M, n
         n = good*1.0
@@ -5570,7 +4747,7 @@ class poisson_gen(rv_discrete):
     def _rvs(self, mu):
         return mtrand.poisson(mu, self._size)
     def _pmf(self, k, mu):
-        Pk = k*log(mu)-gamln(k+1) - mu
+        Pk = k*log(mu)-special.gammaln(k+1) - mu
         return exp(Pk)
     def _cdf(self, x, mu):
         k = floor(x)

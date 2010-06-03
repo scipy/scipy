@@ -134,7 +134,8 @@ the passed criterion expression (a string).
 
 Format:  adm (a,criterion)   where criterion is like 'x[2]==37'\n"""
 
-    lines = eval('filter(lambda x: '+criterion+',a)')
+    function = 'lines = filter(lambda x: '+criterion+',a)'
+    exec(function)
     try:
         lines = np.array(lines)
     except:
