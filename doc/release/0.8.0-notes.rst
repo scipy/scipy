@@ -70,6 +70,11 @@ Additional deprecations
   In Scipy version 0.8.0, the keyword argument 'disp' was added to the
   function, with the default value 'True'.  In 0.9.0, the default will be
   'False'.
+* The `qshape` keyword argument of `signal.chirp` is deprecated.  Use
+  the argument `vertex_zero` instead.
+* Passing the coefficients of a polynomial as the argument `f0` to
+  `signal.chirp` is deprecated.  Use the function `signal.sweep_poly`
+  instead.
 
 New features
 ============
@@ -198,9 +203,4 @@ scipy.stsci: the package was removed
 
 The module `scipy.misc.limits` was removed.
 
-scipy.signal.chirp:
 
-* The `qshape` keyword argument was removed.  Instead, use the `vertex_zero`
-  argument.
-* `chirp` no longer handles the case of a general polynomial.  This
-  functionality has been moved to a new function, `sweep_poly`.
