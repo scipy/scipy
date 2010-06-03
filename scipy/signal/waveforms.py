@@ -5,8 +5,9 @@
 #   Rewrote much of chirp()
 #   Added sweep_poly()
 
+import warnings
 from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
-     exp, cos, sin, polyval, polyint
+     exp, cos, sin, polyval, polyint, size, log10
 
 def sawtooth(t,width=1):
     """
@@ -186,7 +187,81 @@ def gausspulse(t,fc=1000,bw=0.5,bwr=-6,tpr=-60,retquad=0,retenv=0):
         return yI, yQ, yenv
 
 
-def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
+# This is chirp from scipy 0.7:
+
+def old_chirp(t, f0=0, t1=1, f1=100, method='linear', phi=0, qshape=None):
+    """Frequency-swept cosine generator.
+
+    Parameters
+    ----------
+    t : ndarray
+        Times at which to evaluate the waveform.
+    f0 : float or ndarray, optional
+        Frequency (in Hz) of the waveform at time 0.  If `f0` is an
+        ndarray, it specifies the frequency change as a polynomial in
+        `t` (see Notes below).
+    t1 : float, optional
+        Time at which `f1` is specified.
+    f1 : float, optional
+        Frequency (in Hz) of the waveform at time `t1`.
+    method : {'linear', 'quadratic', 'logarithmic'}, optional
+        Kind of frequency sweep.
+    phi : float
+        Phase offset, in degrees.
+    qshape : {'convex', 'concave'}
+        If method is 'quadratic', `qshape` specifies its shape.
+
+    Notes
+    -----
+    If `f0` is an array, it forms the coefficients of a polynomial in
+    `t` (see `numpy.polval`). The polynomial determines the waveform
+    frequency change in time.  In this case, the values of `f1`, `t1`,
+    `method`, and `qshape` are ignored.
+
+    This function is deprecated.  It will be removed in SciPy version 0.9.0.
+    It exists so that during in version 0.8.0, the new chirp function can
+    call this function to preserve the old behavior of the quadratic chirp.
+    """
+    warnings.warn("The function old_chirp is deprecated, and will be removed in "
+                    "SciPy 0.9", DeprecationWarning)
+    # Convert to radians.
+    phi *= pi / 180
+    if size(f0) > 1:
+        # We were given a polynomial.
+        return cos(2*pi*polyval(polyint(f0),t)+phi)
+    if method in ['linear','lin','li']:
+        beta = (f1-f0)/t1
+        phase_angle = 2*pi * (f0*t + 0.5*beta*t*t)
+    elif method in ['quadratic','quad','q']:
+        if qshape == 'concave':
+            mxf = max(f0,f1)
+            mnf = min(f0,f1)
+            f1,f0 = mxf, mnf
+        elif qshape == 'convex':
+            mxf = max(f0,f1)
+            mnf = min(f0,f1)
+            f1,f0 = mnf, mxf
+        else:
+            raise ValueError("qshape must be either 'concave' or 'convex' but "
+                "a value of %r was given." % qshape)
+        beta = (f1-f0)/t1/t1
+        phase_angle = 2*pi * (f0*t + beta*t*t*t/3)
+    elif method in ['logarithmic','log','lo']:
+        if f1 <= f0:
+            raise ValueError(
+                "For a logarithmic sweep, f1=%f must be larger than f0=%f."
+                % (f1, f0))
+        beta = log10(f1-f0)/t1
+        phase_angle = 2*pi * (f0*t + (pow(10,beta*t)-1)/(beta*log(10)))
+    else:
+        raise ValueError("method must be 'linear', 'quadratic', or "
+            "'logarithmic' but a value of %r was given." % method)
+
+    return cos(phase_angle + phi)
+
+
+def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True,
+                                                            qshape=None):
     """Frequency-swept cosine generator.
 
     In the following, 'Hz' should be interpreted as 'cycles per time unit';
@@ -213,6 +288,10 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
         This parameter is only used when `method` is 'quadratic'.
         It determines whether the vertex of the parabola that is the graph
         of the frequency is at t=0 or t=t1.
+    qshape : str (deprecated)
+        If `method` is `quadratic` and `qshape` is not None, chirp() will
+        use scipy.signal.waveforms.old_chirp to compute the wave form.
+        This parameter is deprecated, and will be removed in SciPy 0.9.
 
     Returns
     -------
@@ -272,6 +351,24 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
         f1 must be positive, and f0 must be greater than f1.
 
     """
+    if size(f0) > 1:
+        # Preserve old behavior for one release cycle; this can be
+        # removed in scipy 0.9.
+        warnings.warn("Passing a list of polynomial coefficients in f0 to the "
+                "function chirp is deprecated.  Use scipy.signal.sweep_poly.",
+                DeprecationWarning)
+        return old_chirp(t, f0, t1, f1, method, phi, qshape)
+
+    if method in ['quadratic', 'quad', 'q'] and qshape is not None:
+        # We must use the old version of the quadratic chirp.  Fortunately,
+        # the old API *required* that qshape be either 'convex' or 'concave'
+        # if the quadratic method was selected--`None` would raise an error.
+        # So if the code reaches this point, we should use the old version.
+        warnings.warn("The qshape keyword argument is deprecated.  "
+                "Use vertex_zero.", DeprecationWarning)
+        waveform = old_chirp(t, f0, t1, f1, method, phi, qshape)
+        return waveform
+
     # 'phase' is computed in _chirp_phase, to make testing easier.
     phase = _chirp_phase(t, f0, t1, f1, method, vertex_zero)
     # Convert  phi to radians.
