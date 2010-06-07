@@ -178,6 +178,32 @@ row vectors.  There is a `FutureWarning` when calling the writer to warn
 of this change; for now we suggest using the ``oned_as='row'`` keyword
 argument to `scipy.io.savemat` and friends.
 
+Faster evaluation of orthogonal polynomials
+-------------------------------------------
+
+Values of orthogonal polynomials can be evaluated with new vectorized functions
+in ``scipy.special``: ``eval_legendre``, ``eval_chebyt``, ``eval_chebyu``,
+``eval_chebyc``, ``eval_chebys``, ``eval_jacobi``, ``eval_laguerre``,
+``eval_genlaguerre``, ``eval_hermite``, ``eval_hermitenorm``,
+``eval_gegenbauer``, ``eval_sh_legendre``, ``eval_sh_chebyt``,
+``eval_sh_chebyu``, ``eval_sh_jacobi``. This is faster than constructing the
+full coefficient representation of the polynomials, which was previously the
+only available way.
+
+Note that the previous orthogonal polynomial routines will now also invoke this
+feature, when possible.
+
+Lambert W function
+------------------
+
+``scipy.special.lambertw`` can now be used for evaluating the Lambert W
+function.
+
+Improved hypergeometric 2F1 function
+------------------------------------
+
+Implementation of ``scipy.special.hyp2f1`` for real parameters was revised.
+The new version should produce accurate values for all real parameters.
 
 Removed features
 ================
