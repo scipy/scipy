@@ -34,7 +34,7 @@ Python 3
 
 Python 3 compatibility is planned and is currently technically
 feasible, since Numpy has been ported. However, since the Python 3
-compatible Numpy 2.0 has not been released yet, support for Python 3
+compatible Numpy 1.5 has not been released yet, support for Python 3
 in Scipy is not yet included in Scipy 0.8.  SciPy 0.9, planned for fall 
 2010, will very likely include experimental support for Python 3.
 
