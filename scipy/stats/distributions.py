@@ -694,23 +694,32 @@ class rv_generic(object):
 
 
 class rv_continuous(rv_generic):
-    """A generic continuous random variable class meant for subclassing.
+    """
+    A generic continuous random variable class meant for subclassing.
 
     `rv_continuous` is a base class to construct specific distribution classes
-    and instances from for continuous random variables.
+    and instances from for continuous random variables. It cannot be used
+    directly as a distribution.
 
     Parameters
     ----------
-    momtype :
-    a :
-    b :
-    xa :
-    xb :
+    momtype : int, optional
+        The type of generic moment calculation to use (check this).
+    a : float, optional
+        Lower bound of the support of the distribution, default is minus
+        infinity.
+    b : float, optional
+        Upper bound of the support of the distribution, default is plus
+        infinity.
+    xa : float, optional
+        Lower bound for fixed point calculation for generic ppf.
+    xb : float, optional
+        Upper bound for fixed point calculation for generic ppf.
     xtol : float, optional
-        The tolerance ....
+        The tolerance for fixed point calculation for generic ppf.
     badvalue : object, optional
-        The value in (masked) arrays that indicates a value that should be
-        ignored.
+        The value in a result arrays that indicates a value that for which
+        some argument restriction is violated, default is np.nan.
     name : str, optional
         The name of the instance. This string is used to construct the default
         example for distributions.
@@ -720,7 +729,7 @@ class rv_continuous(rv_generic):
         for backwards compatibility, do not use for new subclasses.
     shapes : str, optional
         The shape of the distribution. For example ``"m, n"`` for a
-        distribution that takes two integers as the first two arguments for all
+        distribution that takes two integers as the two shape arguments for all
         its methods.
     extradoc :  str, optional
         This string is used as the last part of the docstring returned when a
@@ -729,7 +738,134 @@ class rv_continuous(rv_generic):
 
     Methods
     -------
-    ...
+    rvs(<shape(s)>, loc=0, scale=1, size=1)
+        random variates
+
+    pdf(x, <shape(s)>, loc=0, scale=1)
+        probability density function
+
+    cdf(x, <shape(s)>, loc=0, scale=1)
+        cumulative density function
+
+    sf(x, <shape(s)>, loc=0, scale=1)
+        survival function (1-cdf --- sometimes more accurate)
+
+    ppf(q, <shape(s)>, loc=0, scale=1)
+      percent point function (inverse of cdf --- quantiles)
+
+    isf(q, <shape(s)>, loc=0, scale=1)
+        inverse survival function (inverse of sf)
+
+    moments(n, <shape(s)>)
+        non-central n-th moment of the standard distribution (oc=0, scale=1)
+
+    stats(<shape(s)>, loc=0, scale=1, moments='mv')
+        mean('m'), variance('v'), skew('s'), and/or kurtosis('k')
+
+    entropy(<shape(s)>, loc=0, scale=1)
+        (differential) entropy of the RV.
+
+    fit(data, <shape(s)>, loc=0, scale=1)
+        Parameter estimates for generic data
+
+    __call__(<shape(s)>, loc=0, scale=1)
+        calling a distribution instance creates a frozen RV object with the
+        same methods but holding the given shape, location, and scale fixed.
+        see Notes section
+
+    **Parameters for Methods**
+
+    x : array-like
+        quantiles
+    q : array-like
+        lower or upper tail probability
+    <shape(s)> : array-like
+        shape parameters
+    loc : array-like, optional
+        location parameter (default=0)
+    scale : array-like, optional
+        scale parameter (default=1)
+    size : int or tuple of ints, optional
+        shape of random variates (default computed from input arguments )
+    moments : string, optional
+        composed of letters ['mvsk'] specifying which moments to compute where
+        'm' = mean, 'v' = variance, 's' = (Fisher's) skew and
+        'k' = (Fisher's) kurtosis. (default='mv')
+    n : int
+        order of moment to calculate in method moments
+
+
+    **Methods that can be overwritten by subclasses**
+    ::
+
+      _rvs
+      _pdf
+      _cdf
+      _sf
+      _ppf
+      _isf
+      _stats
+      _munp
+      _entropy
+      _argcheck
+
+    There are additional (internal and private) generic methods that can
+    be useful for cross-checking and for debugging, but might work in all
+    cases when directly called.
+
+
+    Notes
+    -----
+
+    **Frozen Distribution**
+
+    Alternatively, the object may be called (as a function) to fix the shape,
+    location, and scale parameters returning a "frozen" continuous RV object:
+
+    rv = generic(<shape(s)>, loc=0, scale=1)
+        frozen RV object with the same methods but holding the given shape,
+        location, and scale fixed
+
+    **Subclassing**
+
+    New random variables can be defined by subclassing rv_continuous class
+    and re-defining at least the
+
+    _pdf or the cdf method which will be given clean arguments (in between a
+    and b) and passing the argument check method
+
+    If postive argument checking is not correct for your RV
+    then you will also need to re-define ::
+
+      _argcheck
+
+    Correct, but potentially slow defaults exist for the remaining
+    methods but for speed and/or accuracy you can over-ride ::
+
+      _cdf, _ppf, _rvs, _isf, _sf
+
+    Rarely would you override _isf  and _sf but you could.
+
+    Statistics are computed using numerical integration by default.
+    For speed you can redefine this using
+
+    _stats
+     - take shape parameters and return mu, mu2, g1, g2
+     - If you can't compute one of these, return it as None
+     - Can also be defined with a keyword argument moments=<str>
+       where <str> is a string composed of 'm', 'v', 's',
+       and/or 'k'.  Only the components appearing in string
+       should be computed and returned in the order 'm', 'v',
+       's', or 'k'  with missing values returned as None
+
+    OR
+
+    You can override
+
+    _munp
+      takes n and shape parameters and returns
+      the nth non-central moment of the distribution.
+
 
     Examples
     --------
@@ -740,6 +876,7 @@ class rv_continuous(rv_generic):
             def _pdf:
                 ...
             ...
+
     """
 
     def __init__(self, momtype=1, a=None, b=None, xa=-10.0, xb=10.0,
@@ -4444,20 +4581,28 @@ def make_dict(keys, values):
 #  x_k, p(x_k) lists in initialization
 
 class rv_discrete(rv_generic):
-    """A generic discrete random variable class meant for subclassing.
+    """
+    A generic discrete random variable class meant for subclassing.
 
     `rv_discrete` is a base class to construct specific distribution classes
-    and instances from for discrete random variables.
+    and instances from for discrete random variables. rv_discrete can be used
+    to construct an arbitrary distribution with defined by a list of support
+    points and the corresponding probabilities.
 
     Parameters
     ----------
-    momtype :
-    a :
-    b :
-    xa :
-    xb :
-    xtol : float, optional
-        The tolerance ....
+    a : float, optional
+        Lower bound of the support of the distribution, default: 0
+    b : float, optional
+        Upper bound of the support of the distribution, default: plus infinity
+    moment_tol : float, optional
+        The tolerance for the generic calculation of moments
+    values : tuple of two array_like
+        (xk, pk) where xk are points (integers) with positive probability pk
+        with sum(pk) = 1
+    inc : integer
+        increment for the support of the distribution, default: 1
+        other values have not been tested
     badvalue : object, optional
         The value in (masked) arrays that indicates a value that should be
         ignored.
@@ -4477,19 +4622,94 @@ class rv_discrete(rv_generic):
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility, do not use for new subclasses.
 
+
     Methods
     -------
-    ...
+
+    generic.rvs(<shape(s)>, loc=0, size=1)
+        random variates
+
+    generic.pmf(x, <shape(s)>, loc=0)
+        probability mass function
+
+    generic.cdf(x, <shape(s)>, loc=0)
+        cumulative density function
+
+    generic.sf(x, <shape(s)>, loc=0)
+        survival function (1-cdf --- sometimes more accurate)
+
+    generic.ppf(q, <shape(s)>, loc=0)
+        percent point function (inverse of cdf --- percentiles)
+
+    generic.isf(q, <shape(s)>, loc=0)
+        inverse survival function (inverse of sf)
+
+    generic.stats(<shape(s)>, loc=0, moments='mv')
+        mean('m', axis=0), variance('v'), skew('s'), and/or kurtosis('k')
+
+    generic.entropy(<shape(s)>, loc=0)
+        entropy of the RV
+
+    generic(<shape(s)>, loc=0)
+        calling a distribution instance returns a frozen distribution
+
+    Notes
+    -----
+
+    Alternatively, the object may be called (as a function) to fix
+    the shape and location parameters returning a
+    "frozen" discrete RV object:
+
+    myrv = generic(<shape(s)>, loc=0)
+        - frozen RV object with the same methods but holding the given shape
+          and location fixed.
+
+    You can construct an aribtrary discrete rv where P{X=xk} = pk
+    by passing to the rv_discrete initialization method (through the
+    values=keyword) a tuple of sequences (xk, pk) which describes only those
+    values of X (xk) that occur with nonzero probability (pk).
+
+    To create a new discrete distribution, we would do the following::
+
+        class poisson_gen(rv_continuous):
+            #"Poisson distribution"
+            def _pmf(self, k, mu):
+                ...
+
+    and create an instance
+
+    poisson = poisson_gen(name="poisson", shapes="mu", longname='A Poisson')
+
+    The docstring can be created from a template.
+
 
     Examples
     --------
-    To create a new Gaussian distribution, we would do the following::
 
-        class gaussian_gen(rv_continuous):
-            "Gaussian distribution"
-            def _pdf:
-                ...
-            ...
+    >>> import matplotlib.pyplot as plt
+    >>> numargs = generic.numargs
+    >>> [ <shape(s)> ] = ['Replace with resonable value', ]*numargs
+
+    Display frozen pmf:
+
+    >>> rv = generic(<shape(s)>)
+    >>> x = np.arange(0, np.min(rv.dist.b, 3)+1)
+    >>> h = plt.plot(x, rv.pmf(x))
+
+    Check accuracy of cdf and ppf:
+
+    >>> prb = generic.cdf(x, <shape(s)>)
+    >>> h = plt.semilogy(np.abs(x-generic.ppf(prb, <shape(s)>))+1e-20)
+
+    Random number generation:
+
+    >>> R = generic.rvs(<shape(s)>, size=100)
+
+    Custom made discrete distribution:
+
+    >>> vals = [arange(7), (0.1, 0.2, 0.3, 0.1, 0.1, 0.1, 0.1)]
+    >>> custm = rv_discrete(name='custm', values=vals)
+    >>> h = plt.plot(vals[0], custm.pmf(vals[0]))
 
     """
 
