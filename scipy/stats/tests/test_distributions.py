@@ -388,7 +388,7 @@ class TestFitMethod(TestCase):
             if dist in self.skip:
                 continue
             distfunc = getattr(stats, dist)
-            res = distfunc.rvs(*args, size=200)
+            res = distfunc.rvs(*args, **{'size':200})
             vals = distfunc.fit(res)
             if dist in ['erlang', 'frechet']:
                 assert(len(vals)==len(args))
@@ -402,7 +402,7 @@ class TestFitMethod(TestCase):
             if dist in self.skip + ['erlang', 'frechet', 'beta']:
                 continue
             distfunc = getattr(stats, dist)
-            res = distfunc.rvs(*args, size=200)
+            res = distfunc.rvs(*args, **{'size':200})
             vals = distfunc.fit(res,floc=0)
             vals2 = distfunc.fit(res,fscale=1)
             assert(len(vals) == 2+len(args))
