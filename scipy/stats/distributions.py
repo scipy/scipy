@@ -4360,7 +4360,7 @@ class wald_gen(invnorm_gen):
     def _logpdf(self, x):
         return invnorm._logpdf(x, 1.0)
     def _cdf(self, x):
-        return invnorm._logcdf(x, 1.0)
+        return invnorm._cdf(x, 1.0)
     def _stats(self):
         return 1.0, 1.0, 3.0, 15.0
 wald = wald_gen(a=0.0, name="wald", extradoc="""
