@@ -9,7 +9,8 @@ import numpy as np
 from nose.tools import assert_true, assert_false, \
      assert_equal, assert_raises
 
-from numpy.testing import assert_array_equal, assert_array_almost_equal
+from numpy.testing import assert_array_equal, assert_array_almost_equal, \
+     run_module_suite
 
 import scipy.io.matlab.byteordercodes as boc
 import scipy.io.matlab.streams as streams
@@ -158,3 +159,5 @@ def test_read_numeric_writeable():
     el = c_reader.read_numeric()
     yield assert_true, el.flags.writeable
     
+if __name__ == "__main__":
+    run_module_suite()

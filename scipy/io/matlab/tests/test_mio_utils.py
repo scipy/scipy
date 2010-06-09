@@ -7,7 +7,8 @@ import numpy as np
 from nose.tools import assert_true, assert_false, \
      assert_equal, assert_raises
 
-from numpy.testing import assert_array_equal, assert_array_almost_equal
+from numpy.testing import assert_array_equal, assert_array_almost_equal, \
+     run_module_suite
 
 from scipy.io.matlab.mio_utils import cproduct, squeeze_element, \
     chars_to_strings
@@ -53,4 +54,7 @@ def test_chars_strings():
     arr = np.array([['']], dtype='U1')
     out_arr = np.array([''], dtype='U1')
     yield assert_array_equal, chars_to_strings(arr), out_arr
-    
+
+if __name__ == "__main__":
+    run_module_suite()
+

@@ -13,7 +13,8 @@ import numpy as np
 from nose.tools import assert_true, assert_false, \
      assert_equal, assert_raises
 
-from numpy.testing import assert_array_equal, assert_array_almost_equal
+from numpy.testing import assert_array_equal, assert_array_almost_equal, \
+     run_module_suite
 
 from scipy.io.matlab.streams import make_stream, \
     GenericStream, cStringStream, FileStream, \
@@ -88,3 +89,6 @@ def test_read():
         res = _read_string(st, 4)
         yield assert_equal, res, 'ring'
         yield assert_raises, IOError, _read_string, st, 2
+
+if __name__ == "__main__":
+    run_module_suite()

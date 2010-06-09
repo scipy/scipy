@@ -10,7 +10,7 @@ from numpy.testing import \
      assert_array_equal, \
      assert_array_almost_equal, \
      assert_equal, \
-     assert_raises
+     assert_raises, run_module_suite
 
 from nose.tools import assert_true
 
@@ -57,3 +57,6 @@ def test_jottings():
     # example
     fname = pjoin(test_data_path, 'parabola.mat')
     ws_vars = read_workspace_vars(fname)
+
+if __name__ == "__main__":
+    run_module_suite()

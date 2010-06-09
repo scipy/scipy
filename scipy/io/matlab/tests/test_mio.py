@@ -17,7 +17,7 @@ from numpy.testing import \
      assert_array_equal, \
      assert_array_almost_equal, \
      assert_equal, \
-     assert_raises
+     assert_raises, run_module_suite
 
 from nose.tools import assert_true
 
@@ -774,3 +774,5 @@ def test_str_round():
     res = loadmat(stream)
     yield assert_array_equal, res['a'], out_arr_u
 
+if __name__ == "__main__":
+    run_module_suite()
