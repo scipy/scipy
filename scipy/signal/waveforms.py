@@ -9,7 +9,7 @@ import warnings
 from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
      exp, cos, sin, polyval, polyint, size, log10
 
-def sawtooth(t,width=1):
+def sawtooth(t, width=1):
     """
     Return a periodic sawtooth waveform.
 
@@ -69,7 +69,7 @@ def sawtooth(t,width=1):
     return y
 
 
-def square(t,duty=0.5):
+def square(t, duty=0.5):
     """
     Return a periodic square-wave waveform.
 
@@ -121,42 +121,45 @@ def square(t,duty=0.5):
     place(y,mask3,-1)
     return y
 
-def gausspulse(t,fc=1000,bw=0.5,bwr=-6,tpr=-60,retquad=0,retenv=0):
+def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False, retenv=False):
     """
-    Return a gaussian modulated sinusoid: exp(-a t^2) exp(1j*2*pi*fc).
+    Return a gaussian modulated sinusoid: exp(-a t^2) exp(1j*2*pi*fc*t).
 
-    If `retquad` is non-zero, then return the real and imaginary parts
-    (in-phase and quadrature)
-    If `retenv` is non-zero, then return the envelope (unmodulated signal).
+    If `retquad` is True, then return the real and imaginary parts
+    (in-phase and quadrature).
+    If `retenv` is True, then return the envelope (unmodulated signal).
     Otherwise, return the real part of the modulated sinusoid.
 
     Parameters
     ----------
-    t : ndarray
+    t : ndarray, or the string 'cutoff'
         Input array.
     fc : int, optional
-        Center frequency (Hz).
+        Center frequency (Hz).  Default is 1000.
     bw : float, optional
         Fractional bandwidth in frequency domain of pulse (Hz).
+        Default is 0.5.
     bwr: float, optional
         Reference level at which fractional bandwidth is calculated (dB).
+        Default is -6.
     tpr : float, optional
         If `t` is 'cutoff', then the function returns the cutoff
         time for when the pulse amplitude falls below `tpr` (in dB).
-    retquad : int, optional
-        Return the quadrature (imaginary) as well as the real part
-        of the signal.
-    retenv : int, optional
-        Return the envelope of the signal.
+        Default is -60.
+    retquad : bool, optional
+        If True, return the quadrature (imaginary) as well as the real part
+        of the signal.  Default is False.
+    retenv : bool, optional
+        If True, return the envelope of the signal.  Default is False.
 
     """
     if fc < 0:
-        raise ValueError, "Center frequency (fc=%.2f) must be >=0." % fc
+        raise ValueError("Center frequency (fc=%.2f) must be >=0." % fc)
     if bw <= 0:
-        raise ValueError, "Fractional bandwidth (bw=%.2f) must be > 0." % bw
+        raise ValueError("Fractional bandwidth (bw=%.2f) must be > 0." % bw)
     if bwr >= 0:
-        raise ValueError, "Reference level for bandwidth (bwr=%.2f) must " \
-              "be < 0 dB" % bwr
+        raise ValueError("Reference level for bandwidth (bwr=%.2f) must "
+              "be < 0 dB" % bwr)
 
     # exp(-a t^2) <->  sqrt(pi/a) exp(-pi^2/a * f^2)  = g(f)
 
@@ -170,7 +173,7 @@ def gausspulse(t,fc=1000,bw=0.5,bwr=-6,tpr=-60,retquad=0,retenv=0):
         #  Solve exp(-a tc**2) = tref  for tc
         #   tc = sqrt(-log(tref) / a) where tref = 10^(tpr/20)
         if tpr >= 0:
-            raise ValueError, "Reference level for time cutoff must be < 0 dB"
+            raise ValueError("Reference level for time cutoff must be < 0 dB")
         tref = pow(10.0, tpr / 20.0)
         return sqrt(-log(tref)/a)
 
