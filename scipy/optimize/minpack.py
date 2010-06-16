@@ -7,7 +7,7 @@ from numpy import atleast_1d, dot, take, triu, shape, eye, \
 
 error = _minpack.error
 
-__all__ = ['fsolve', 'leastsq', 'fixed_point', 'bisection', 'curve_fit']
+__all__ = ['fsolve', 'leastsq', 'fixed_point', 'curve_fit']
 
 def check_func(thefunc, x0, args, numinputs, output_shape=None):
     res = atleast_1d(thefunc(*((x0[:numinputs],)+args)))
@@ -465,103 +465,6 @@ def check_gradient(fcn,Dfcn,x0,args=(),col_deriv=0):
     return (good,err)
 
 
-# Newton-Raphson method
-def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
-    """Find a zero using the Newton-Raphson or secant method.
-
-    Find a zero of the function `func` given a nearby starting point `x0`.
-    The Newton-Rapheson method is used if the derivative `fprime` of `func`
-    is provided, otherwise the secant method is used.
-
-    Parameters
-    ----------
-    func : function
-        The function whose zero is wanted. It must be a function of a
-        single variable of the form f(x,a,b,c...), where a,b,c... are extra
-        arguments that can be passed in the `args` parameter.
-    x0 : float
-        An initial estimate of the zero that should be somewhere near the
-        actual zero.
-    fprime : {None, function}, optional
-        The derivative of the function when available and convenient. If it
-        is None, then the secant method is used. The default is None.
-    args : tuple, optional
-        Extra arguments to be used in the function call.
-    tol : float, optional
-        The allowable error of the zero value.
-    maxiter : int, optional
-        Maximum number of iterations.
-
-    Returns
-    -------
-    zero : float
-        Estimated location where function is zero.
-
-    See Also
-    --------
-    brentq, brenth, ridder, bisect -- find zeroes in one dimension.
-    fsolve -- find zeroes in n dimensions.
-
-    Notes
-    -----
-    The convergence rate of the Newton-Rapheson method is quadratic while
-    that of the secant method is somewhat less. This means that if the
-    function is  well behaved the actual error in the estimated zero is
-    approximatly the square of the requested tolerance up to roundoff
-    error. However, the stopping criterion used here is the step size and
-    there is no quarantee that a zero has been found. Consequently the
-    result should be verified. Safer algorithms are brentq, brenth, ridder,
-    and bisect, but they all require that the root first be bracketed in an
-    interval where the function changes sign. The brentq algorithm is
-    recommended for general use in one dimemsional problems when such an
-    interval has been found.
-
-    """
-    msg  = "minpack.newton is moving to zeros.newton"
-    warnings.warn(msg, DeprecationWarning)
-
-    if fprime is not None:
-        # Newton-Rapheson method
-        p0 = x0
-        for iter in range(maxiter):
-            myargs = (p0,) + args
-            fval = func(*myargs)
-            fder = fprime(*myargs)
-            if fder == 0:
-                msg = "derivative was zero."
-                warnings.warn(msg, RuntimeWarning)
-                return p0
-            p = p0 - func(*myargs)/fprime(*myargs)
-            if abs(p - p0) < tol:
-                return p
-            p0 = p
-    else:
-        # Secant method
-        p0 = x0
-        if x0 >= 0:
-            p1 = x0*(1 + 1e-4) + 1e-4
-        else:
-            p1 = x0*(1 + 1e-4) - 1e-4
-        q0 = func(*((p0,) + args))
-        q1 = func(*((p1,) + args))
-        for iter in range(maxiter):
-            if q1 == q0:
-                if p1 != p0:
-                    msg = "Tolerance of %s reached" % (p1 - p0)
-                    warnings.warn(msg, RuntimeWarning)
-                return (p1 + p0)/2.0
-            else:
-                p = p1 - q1*(p1 - p0)/(q1 - q0)
-            if abs(p - p1) < tol:
-                return p
-            p0 = p1
-            q0 = q1
-            p1 = p
-            q1 = func(*((p1,) + args))
-    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
-    raise RuntimeError(msg)
-
-
 # Steffensen's Method using Aitken's Del^2 convergence acceleration.
 def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
     """Find the point where func(x) == x
@@ -613,37 +516,5 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
             if relerr < xtol:
                 return p
             p0 = p
-    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
-    raise RuntimeError(msg)
-
-
-def bisection(func, a, b, args=(), xtol=1e-10, maxiter=400):
-    """Bisection root-finding method.  Given a function and an interval with
-    func(a) * func(b) < 0, find the root between a and b.
-
-    """
-    msg = "minpack.bisection is deprecated, use zeros.bisect instead"
-    warnings.warn(msg, DeprecationWarning)
-
-    i = 1
-    eva = func(a,*args)
-    evb = func(b,*args)
-    if eva*evb >= 0:
-        msg = "Must start with interval where func(a) * func(b) < 0"
-        raise ValueError(msg)
-    while i <= maxiter:
-        dist = (b - a)/2.0
-        p = a + dist
-        if dist < xtol:
-            return p
-        ev = func(p,*args)
-        if ev == 0:
-            return p
-        i += 1
-        if ev*eva > 0:
-            a = p
-            eva = ev
-        else:
-            b = p
     msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
     raise RuntimeError(msg)
