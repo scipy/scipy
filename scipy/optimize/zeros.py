@@ -1,4 +1,3 @@
-
 import _zeros
 from numpy import finfo
 
@@ -7,12 +6,13 @@ _xtol = 1e-12
 # not actually used at the moment
 _rtol = finfo(float).eps * 2
 
-__all__ = ['bisect','ridder','brentq','brenth']
+__all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth']
 
 CONVERGED = 'converged'
 SIGNERR = 'sign error'
 CONVERR = 'convergence error'
 flag_map = {0 : CONVERGED, -1 : SIGNERR, -2 : CONVERR}
+
 
 class RootResults(object):
     def __init__(self, root, iterations, function_calls, flag):
@@ -25,6 +25,7 @@ class RootResults(object):
         except KeyError:
             self.flag = 'unknown error %d' % (flag,)
 
+
 def results_c(full_output, r):
     if full_output:
         x, funcalls, iterations, flag = r
@@ -35,6 +36,101 @@ def results_c(full_output, r):
         return x, results
     else:
         return r
+
+
+# Newton-Raphson method
+def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
+    """Find a zero using the Newton-Raphson or secant method.
+
+    Find a zero of the function `func` given a nearby starting point `x0`.
+    The Newton-Rapheson method is used if the derivative `fprime` of `func`
+    is provided, otherwise the secant method is used.
+
+    Parameters
+    ----------
+    func : function
+        The function whose zero is wanted. It must be a function of a
+        single variable of the form f(x,a,b,c...), where a,b,c... are extra
+        arguments that can be passed in the `args` parameter.
+    x0 : float
+        An initial estimate of the zero that should be somewhere near the
+        actual zero.
+    fprime : {None, function}, optional
+        The derivative of the function when available and convenient. If it
+        is None, then the secant method is used. The default is None.
+    args : tuple, optional
+        Extra arguments to be used in the function call.
+    tol : float, optional
+        The allowable error of the zero value.
+    maxiter : int, optional
+        Maximum number of iterations.
+
+    Returns
+    -------
+    zero : float
+        Estimated location where function is zero.
+
+    See Also
+    --------
+    brentq, brenth, ridder, bisect -- find zeroes in one dimension.
+    fsolve -- find zeroes in n dimensions.
+
+    Notes
+    -----
+    The convergence rate of the Newton-Rapheson method is quadratic while
+    that of the secant method is somewhat less. This means that if the
+    function is  well behaved the actual error in the estimated zero is
+    approximatly the square of the requested tolerance up to roundoff
+    error. However, the stopping criterion used here is the step size and
+    there is no quarantee that a zero has been found. Consequently the
+    result should be verified. Safer algorithms are brentq, brenth, ridder,
+    and bisect, but they all require that the root first be bracketed in an
+    interval where the function changes sign. The brentq algorithm is
+    recommended for general use in one dimemsional problems when such an
+    interval has been found.
+
+    """
+    if fprime is not None:
+        # Newton-Rapheson method
+        p0 = x0
+        for iter in range(maxiter):
+            myargs = (p0,) + args
+            fval = func(*myargs)
+            fder = fprime(*myargs)
+            if fder == 0:
+                msg = "derivative was zero."
+                warnings.warn(msg, RuntimeWarning)
+                return p0
+            p = p0 - func(*myargs)/fprime(*myargs)
+            if abs(p - p0) < tol:
+                return p
+            p0 = p
+    else:
+        # Secant method
+        p0 = x0
+        if x0 >= 0:
+            p1 = x0*(1 + 1e-4) + 1e-4
+        else:
+            p1 = x0*(1 + 1e-4) - 1e-4
+        q0 = func(*((p0,) + args))
+        q1 = func(*((p1,) + args))
+        for iter in range(maxiter):
+            if q1 == q0:
+                if p1 != p0:
+                    msg = "Tolerance of %s reached" % (p1 - p0)
+                    warnings.warn(msg, RuntimeWarning)
+                return (p1 + p0)/2.0
+            else:
+                p = p1 - q1*(p1 - p0)/(q1 - q0)
+            if abs(p - p1) < tol:
+                return p
+            p0 = p1
+            q0 = q1
+            p1 = p
+            q1 = func(*((p1,) + args))
+    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
+    raise RuntimeError(msg)
+
 
 def bisect(f, a, b, args=(),
            xtol=_xtol, rtol=_rtol, maxiter=_iter,
@@ -90,6 +186,7 @@ def bisect(f, a, b, args=(),
         args = (args,)
     r = _zeros._bisect(f,a,b,xtol,maxiter,args,full_output,disp)
     return results_c(full_output, r)
+
 
 def ridder(f, a, b, args=(),
            xtol=_xtol, rtol=_rtol, maxiter=_iter,
@@ -159,6 +256,7 @@ def ridder(f, a, b, args=(),
         args = (args,)
     r = _zeros._ridder(f,a,b,xtol,maxiter,args,full_output,disp)
     return results_c(full_output, r)
+
 
 def brentq(f, a, b, args=(),
            xtol=_xtol, rtol=_rtol, maxiter=_iter,
@@ -261,6 +359,7 @@ def brentq(f, a, b, args=(),
         args = (args,)
     r = _zeros._brentq(f,a,b,xtol,maxiter,args,full_output,disp)
     return results_c(full_output, r)
+
 
 def brenth(f, a, b, args=(),
            xtol=_xtol, rtol=_rtol, maxiter=_iter,

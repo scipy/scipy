@@ -7,8 +7,7 @@ from numpy import atleast_1d, dot, take, triu, shape, eye, \
 
 error = _minpack.error
 
-__all__ = ['fsolve', 'leastsq', 'newton', 'fixed_point',
-           'bisection', 'curve_fit']
+__all__ = ['fsolve', 'leastsq', 'fixed_point', 'bisection', 'curve_fit']
 
 def check_func(thefunc, x0, args, numinputs, output_shape=None):
     res = atleast_1d(thefunc(*((x0[:numinputs],)+args)))
@@ -518,6 +517,9 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
     interval has been found.
 
     """
+    msg  = "minpack.newton is moving to zeros.newton"
+    warnings.warn(msg, DeprecationWarning)
+
     if fprime is not None:
         # Newton-Rapheson method
         p0 = x0
@@ -620,10 +622,13 @@ def bisection(func, a, b, args=(), xtol=1e-10, maxiter=400):
     func(a) * func(b) < 0, find the root between a and b.
 
     """
+    msg = "minpack.bisection is deprecated, use zeros.bisect instead"
+    warnings.warn(msg, DeprecationWarning)
+
     i = 1
     eva = func(a,*args)
     evb = func(b,*args)
-    if eva*evb < 0:
+    if eva*evb >= 0:
         msg = "Must start with interval where func(a) * func(b) < 0"
         raise ValueError(msg)
     while i <= maxiter:
