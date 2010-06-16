@@ -24,7 +24,7 @@ def check_func(thefunc, x0, args, numinputs, output_shape=None):
 
 def fsolve(func, x0, args=(), fprime=None, full_output=0,
            col_deriv=0, xtol=1.49012e-8, maxfev=0, band=None,
-           epsfcn=0.0, factor=100, diag=None, warning=True):
+           epsfcn=0.0, factor=100, diag=None):
     """
     Find the roots of a function.
 
@@ -47,9 +47,6 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     col_deriv : bool
         Specify whether the Jacobian function computes derivatives down
         the columns (faster, because there is no transpose operation).
-    warning : bool
-        Whether to print a warning message when the call is unsuccessful.
-        This option is deprecated, use the warnings module instead.
 
     Returns
     -------
@@ -107,9 +104,6 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     ``fsolve`` is a wrapper around MINPACK's hybrd and hybrj algorithms.
 
     """
-    if not warning :
-        msg = "The warning keyword is deprecated. Use the warnings module."
-        warnings.warn(msg, DeprecationWarning)
     x0 = array(x0, ndmin=1)
     n = len(x0)
     if type(args) != type(()): args = (args,)
