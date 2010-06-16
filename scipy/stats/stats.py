@@ -2,9 +2,9 @@
 #
 # Disclaimer
 #
-# This software is provided "as-is".  There are no exprgoessed or implied
+# This software is provided "as-is".  There are no expressed or implied
 # warranties of any kind, including, but not limited to, the warranties
-# of merchantability and fittness for a given application.  In no event
+# of merchantability and fitness for a given application.  In no event
 # shall Gary Strangman be liable for any direct, indirect, incidental,
 # special, exemplary or consequential damages (including, but not limited
 # to, loss of use, data or profits, or business interruption) however
@@ -125,7 +125,7 @@ References
 [CRCProbStat2000]_
 
 .. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
-   Probablity and Statistics Tables and Formulae. Chapman & Hall: New
+   Probability and Statistics Tables and Formulae. Chapman & Hall: New
    York. 2000.
 
 """
@@ -194,7 +194,7 @@ References
 import warnings
 import math
 
-#friedmanchisquare patch uses python sum
+# friedmanchisquare patch uses python sum
 pysum = sum  # save it before it gets overwritten
 
 # Scipy imports.
@@ -531,7 +531,7 @@ def cmedian(a, numbins=1000):
     [CRCProbStat2000]_ Section 2.2.6
 
     .. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
-       Probablity and Statistics Tables and Formulae. Chapman & Hall: New
+       Probability and Statistics Tables and Formulae. Chapman & Hall: New
        York. 2000.
 
     """
@@ -921,7 +921,7 @@ def variation(a, axis=0):
     [CRCProbStat2000]_ Section 2.2.20
 
     .. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
-       Probablity and Statistics Tables and Formulae. Chapman & Hall: New
+       Probability and Statistics Tables and Formulae. Chapman & Hall: New
        York. 2000.
 
     """
@@ -959,7 +959,7 @@ def skew(a, axis=0, bias=True):
     [CRCProbStat2000]_ Section 2.2.24.1
 
     .. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
-       Probablity and Statistics Tables and Formulae. Chapman & Hall: New
+       Probability and Statistics Tables and Formulae. Chapman & Hall: New
        York. 2000.
 
     """
@@ -1017,7 +1017,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
     [CRCProbStat2000]_ Section  2.2.25
 
     .. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
-       Probablity and Statistics Tables and Formulae. Chapman & Hall: New
+       Probability and Statistics Tables and Formulae. Chapman & Hall: New
        York. 2000.
 
     """
@@ -2161,7 +2161,7 @@ def spearmanr(a, b=None, axis=0):
     [CRCProbStat2000]_ Section  14.7
 
     .. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
-       Probablity and Statistics Tables and Formulae. Chapman & Hall: New
+       Probability and Statistics Tables and Formulae. Chapman & Hall: New
        York. 2000.
 
     Examples
@@ -2862,7 +2862,7 @@ def chisquare(f_obs, f_exp=None, ddof=0):
     k-1-p. If the parameters are estimated in a different way, then then
     the dof can be between k-1-p and k-1. However, it is also possible that
     the asymptotic distributions is not a chisquare, in which case this
-    test is notappropriate.
+    test is not appropriate.
 
     References
     ----------
@@ -3190,7 +3190,7 @@ def friedmanchisquare(*args):
     Notes
     -----
     Due to the assumption that the test statistic has a chi squared
-    distribution, the p-vale is only reliable for n > 10 and more than
+    distribution, the p-value is only reliable for n > 10 and more than
     6 repeated measurements.
 
     References
