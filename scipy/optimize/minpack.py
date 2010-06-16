@@ -110,26 +110,26 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     if not warning :
         msg = "The warning keyword is deprecated. Use the warnings module."
         warnings.warn(msg, DeprecationWarning)
-    x0 = array(x0,ndmin=1)
+    x0 = array(x0, ndmin=1)
     n = len(x0)
     if type(args) != type(()): args = (args,)
-    check_func(func,x0,args,n,(n,))
+    check_func(func, x0, args, n, (n,))
     Dfun = fprime
     if Dfun is None:
         if band is None:
-            ml,mu = -10,-10
+            ml, mu = -10,-10
         else:
-            ml,mu = band[:2]
+            ml, mu = band[:2]
         if (maxfev == 0):
-            maxfev = 200*(n+1)
+            maxfev = 200*(n + 1)
         retval = _minpack._hybrd(func, x0, args, full_output, xtol,
-                                 maxfev, ml, mu, epsfcn, factor, diag)
+                maxfev, ml, mu, epsfcn, factor, diag)
     else:
         check_func(Dfun,x0,args,n,(n,n))
         if (maxfev == 0):
-            maxfev = 100*(n+1)
+            maxfev = 100*(n + 1)
         retval = _minpack._hybrj(func, Dfun, x0, args, full_output,
-                                 col_deriv, xtol, maxfev, factor,diag)
+                col_deriv, xtol, maxfev, factor,diag)
 
     errors = {0:["Improper input parameters were entered.",TypeError],
               1:["The solution converged.", None],
@@ -429,35 +429,35 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
 
     return popt, pcov
 
-def check_gradient(fcn,Dfcn,x0,args=(),col_deriv=0):
+def check_gradient(fcn, Dfcn, x0, args=(), col_deriv=0):
     """Perform a simple check on the gradient for correctness.
 
     """
 
     x = atleast_1d(x0)
     n = len(x)
-    x=x.reshape((n,))
+    x = x.reshape((n,))
     fvec = atleast_1d(fcn(x,*args))
     m = len(fvec)
-    fvec=fvec.reshape((m,))
+    fvec = fvec.reshape((m,))
     ldfjac = m
     fjac = atleast_1d(Dfcn(x,*args))
-    fjac=fjac.reshape((m,n))
+    fjac = fjac.reshape((m,n))
     if col_deriv == 0:
         fjac = transpose(fjac)
 
     xp = zeros((n,), float)
     err = zeros((m,), float)
     fvecp = None
-    _minpack._chkder(m,n,x,fvec,fjac,ldfjac,xp,fvecp,1,err)
+    _minpack._chkder(m, n, x, fvec, fjac, ldfjac, xp, fvecp, 1, err)
 
     fvecp = atleast_1d(fcn(xp,*args))
-    fvecp=fvecp.reshape((m,))
-    _minpack._chkder(m,n,x,fvec,fjac,ldfjac,xp,fvecp,2,err)
+    fvecp = fvecp.reshape((m,))
+    _minpack._chkder(m, n, x, fvec, fjac, ldfjac, xp, fvecp, 2, err)
 
-    good = (product(greater(err,0.5),axis=0))
+    good = (product(greater(err, 0.5), axis=0))
 
-    return (good,err)
+    return (good, err)
 
 
 # Steffensen's Method using Aitken's Del^2 convergence acceleration.
@@ -489,7 +489,7 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
             p1 = func(p0, *args)
             p2 = func(p1, *args)
             d = p2 - 2.0 * p1 + p0
-            p = where(d == 0, p2, p0 - (p1 - p0)*(p1-p0) / d)
+            p = where(d == 0, p2, p0 - (p1 - p0)*(p1 - p0) / d)
             relerr = where(p0 == 0, p, (p-p0)/p0)
             if all(relerr < xtol):
                 return p
@@ -503,11 +503,11 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
             if d == 0.0:
                 return p2
             else:
-                p = p0 - (p1 - p0)*(p1-p0) / d
+                p = p0 - (p1 - p0)*(p1 - p0) / d
             if p0 == 0:
                 relerr = p
             else:
-                relerr = (p-p0)/p0
+                relerr = (p - p0)/p0
             if relerr < xtol:
                 return p
             p0 = p
