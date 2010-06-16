@@ -16,7 +16,7 @@ Run tests if linalg is not installed:
 
 import numpy as np
 from numpy.testing import TestCase, assert_equal, assert_array_almost_equal, \
-        assert_array_equal, assert_raises, run_module_suite
+        assert_array_equal, assert_raises, run_module_suite, dec
 
 from scipy.linalg import eig, eigvals, lu, svd, svdvals, cholesky, qr, \
      schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq, \
@@ -1030,7 +1030,7 @@ def test_aligned_mem_float():
 
     eig(z, overwrite_a=True)
     eig(z.T, overwrite_a=True)
-     
+
 
 def test_aligned_mem():
     """Check linalg works with non-aligned memory"""
@@ -1041,7 +1041,7 @@ def test_aligned_mem():
     z = np.frombuffer(a.data, offset=4, count=100, dtype=float)
     z.shape = 10, 10
 
-    eig(z, overwrite_a=True) 
+    eig(z, overwrite_a=True)
     eig(z.T, overwrite_a=True)
 
 def test_aligned_mem_complex():
@@ -1074,6 +1074,7 @@ def check_lapack_misaligned(func, args, kwargs):
                 func(*a,**kwargs)
 
 
+@dec.knownfailureif(True, "Ticket #1152, triggers a segfault in rare cases.")
 def test_lapack_misaligned():
     M = np.eye(10,dtype=float)
     R = np.arange(100)
@@ -1089,8 +1090,8 @@ def test_lapack_misaligned():
             (eigvals,(S,),dict(overwrite_a=True)), # no crash
             (lu,(S,),dict(overwrite_a=True)), # no crash
             (lu_factor,(S,),dict(overwrite_a=True)), # no crash
-            (lu_solve,((LU,piv),b),dict(overwrite_b=True)), 
-            (solve,(S,b),dict(overwrite_a=True,overwrite_b=True)), 
+            (lu_solve,((LU,piv),b),dict(overwrite_b=True)),
+            (solve,(S,b),dict(overwrite_a=True,overwrite_b=True)),
             (svd,(M,),dict(overwrite_a=True)), # no crash
             (svd,(R,),dict(overwrite_a=True)), # no crash
             (svd,(S,),dict(overwrite_a=True)), # crash
