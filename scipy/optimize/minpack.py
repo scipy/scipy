@@ -171,7 +171,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
 
 def leastsq(func, x0, args=(), Dfun=None, full_output=0,
             col_deriv=0, ftol=1.49012e-8, xtol=1.49012e-8,
-            gtol=0.0, maxfev=0, epsfcn=0.0, factor=100, diag=None,warning=True):
+            gtol=0.0, maxfev=0, epsfcn=0.0, factor=100, diag=None):
     """Minimize the sum of squares of a set of equations.
 
     ::
@@ -216,9 +216,6 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         (``factor * || diag * x||``). Should be in interval ``(0.1, 100)``.
     diag : sequence
         N positive entries that serve as a scale factors for the variables.
-    warning : bool
-        Whether to print a warning message when the call is unsuccessful.
-        Deprecated, use the warnings module instead.
 
     Returns
     -------
@@ -261,29 +258,27 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     "leastsq" is a wrapper around MINPACK's lmdif and lmder algorithms.
 
     """
-    if not warning :
-        msg = "The warning keyword is deprecated. Use the warnings module."
-        warnings.warn(msg, DeprecationWarning)
-    x0 = array(x0,ndmin=1)
+    x0 = array(x0, ndmin=1)
     n = len(x0)
-    if type(args) != type(()): args = (args,)
-    m = check_func(func,x0,args,n)[0]
-    if n>m:
+    if type(args) != type(()):
+        args = (args,)
+    m = check_func(func, x0, args, n)[0]
+    if n > m:
         raise TypeError('Improper input: N=%s must not exceed M=%s' % (n,m))
     if Dfun is None:
         if (maxfev == 0):
-            maxfev = 200*(n+1)
-        retval = _minpack._lmdif(func, x0, args, full_output,
-                                 ftol, xtol, gtol,
-                                 maxfev, epsfcn, factor, diag)
+            maxfev = 200*(n + 1)
+        retval = _minpack._lmdif(func, x0, args, full_output, ftol, xtol,
+                gtol, maxfev, epsfcn, factor, diag)
     else:
         if col_deriv:
-            check_func(Dfun,x0,args,n,(n,m))
+            check_func(Dfun, x0, args, n, (n,m))
         else:
-            check_func(Dfun,x0,args,n,(m,n))
+            check_func(Dfun, x0, args, n, (m,n))
         if (maxfev == 0):
-            maxfev = 100*(n+1)
-        retval = _minpack._lmder(func,Dfun,x0,args,full_output,col_deriv,ftol,xtol,gtol,maxfev,factor,diag)
+            maxfev = 100*(n + 1)
+        retval = _minpack._lmder(func, Dfun, x0, args, full_output, col_deriv,
+                ftol, xtol, gtol, maxfev, factor, diag)
 
     errors = {0:["Improper input parameters.", TypeError],
               1:["Both actual and predicted relative reductions "
@@ -335,7 +330,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
                 cov_x = inv(dot(transpose(R),R))
             except LinAlgError:
                 pass
-        return (retval[0], cov_x) + retval[1:-1] + (mesg,info)
+        return (retval[0], cov_x) + retval[1:-1] + (mesg, info)
     else:
         return (retval[0], info)
 
