@@ -6,6 +6,7 @@
 #**************************************************************************#
 #*  *#
 #**************************************************************************#
+import sys
 import inspect
 import accelerate_tools
 
@@ -237,7 +238,10 @@ class ByteCodeMeaning(object):
         elif goto is None:
             return next # Normal
         else:
-            raise 'xx'
+            if sys.version_info < (2, 6):
+                raise "Executing code failed."
+            else:
+                raise ValueError("Executing code failed.")
 
     symbols = { 0: 'less', 1: 'lesseq', 2: 'equal', 3: 'notequal',
                 4: 'greater', 5: 'greatereq', 6: 'in', 7: 'not in',
@@ -977,7 +981,6 @@ class CXXCoder(ByteCodeMeaning):
         var_name = self.codeobject.co_names[var_num]
 
         # First, figure out who owns this global
-        import sys
         myHash = id(self.function.func_globals)
         for module_name in sys.modules.keys():
             module = sys.modules[module_name]
