@@ -48,7 +48,7 @@ fsolve_result_t
 false_position(double *a, double *fa, double *b, double *fb,
                objective_function f, void *f_extra,
                double abserr, double relerr, double bisect_til,
-               double *best_x, double *best_f)
+               double *best_x, double *best_f, double *errest)
 {
     double x1=*a, f1=*fa, x2=*b, f2=*fb;
     fsolve_result_t r = FSOLVE_CONVERGED;
@@ -163,5 +163,6 @@ exact_soln:
     r = FSOLVE_EXACT;
 finish:
     *a = x1; *fa = f1; *b = x2; *fb = f2;
+    *errest = w;
     return r;
 }

@@ -1,8 +1,16 @@
+#include <Python.h>
+#include <numpy/npy_math.h>
+
 #include <stdio.h>
 #include <math.h>
+
 #include "../cephes.h"
 #undef fabs
 #include "misc.h"
+
+/* Limits after which to issue warnings about non-convergence */
+#define ALLOWED_ATOL (1e-306)
+#define ALLOWED_RTOL (1e-9)
 
 void scipy_special_raise_warning(char *fmt, ...);
 
@@ -16,7 +24,7 @@ void scipy_special_raise_warning(char *fmt, ...);
 
 */
 
-extern double MACHEP;
+extern double MACHEP, MAXNUM;
 
 static double
 gammainc(double x, double params[2])
@@ -30,7 +38,7 @@ gammaincinv(double a, double y)
     double lo = 0.0, hi;
     double flo = -y, fhi = 0.25 - y;
     double params[2];
-    double best_x, best_f;
+    double best_x, best_f, errest;
     fsolve_result_t r;
 
     if (a <= 0.0 || y <= 0.0 || y >= 0.25) {
@@ -53,12 +61,13 @@ gammaincinv(double a, double y)
     r = false_position(&lo, &flo, &hi, &fhi,
                        (objective_function)gammainc, params,
                        2*MACHEP, 2*MACHEP, 1e-2*a,
-                       &best_x, &best_f);
-    if (!(r == FSOLVE_CONVERGED || r == FSOLVE_EXACT)) {
+                       &best_x, &best_f, &errest);
+    if (!(r == FSOLVE_CONVERGED || r == FSOLVE_EXACT) &&
+            errest > ALLOWED_ATOL + ALLOWED_RTOL*fabs(best_x)) {
         scipy_special_raise_warning(
-            "gammaincinv: failed to converge at (a, y) = (%.20g, %.20g): %d\n",
-            a, y, r);
-        best_x = 0.0;
+            "gammaincinv: failed to converge at (a, y) = (%.20g, %.20g): got %g +- %g, code %d\n",
+            a, y, best_x, errest, r);
+        best_x = NPY_NAN;
     }
     return best_x;
 }

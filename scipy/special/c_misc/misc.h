@@ -18,7 +18,7 @@ typedef double (*objective_function)(double, void *);
 fsolve_result_t false_position(double *a, double *fa, double *b, double *fb,
                        objective_function f, void *f_extra,
                        double abserr, double relerr, double bisect_til,
-                       double *best_x, double *best_f);
+                       double *best_x, double *best_f, double *errest);
 
 double besselpoly(double a, double lambda, double nu);
 double gammaincinv(double a, double x);
