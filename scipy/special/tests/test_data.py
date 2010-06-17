@@ -140,7 +140,7 @@ def test_boost():
         data(gammaincinv, 'gamma_inv_data_ipp-gamma_inv_data', (0,1), 2,
              rtol=1e-12),
         data(gammaincinv, 'gamma_inv_big_data_ipp-gamma_inv_big_data',
-             (0,1), 2, rtol=5e-12),
+             (0,1), 2, rtol=1e-11),
 
         # XXX: the data file needs reformatting...
         #data(gammaincinv, 'gamma_inv_small_data_ipp-gamma_inv_small_data',
