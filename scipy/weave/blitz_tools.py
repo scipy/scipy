@@ -32,7 +32,10 @@ def blitz(expr,local_dict=None, global_dict=None,check_size=1,verbose=0,**kw):
     #    of time.  It also can cause core-dumps if the sizes of the inputs
     #    aren't compatible.
     if check_size and not size_check.check_expr(expr,local_dict,global_dict):
-        raise 'inputs failed to pass size check.'
+        if sys.version_info < (2, 6):
+            raise "inputs failed to pass size check."
+        else:
+            raise ValueError("inputs failed to pass size check.")
 
     # 2. try local cache
     try:
