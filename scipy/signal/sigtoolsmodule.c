@@ -1254,7 +1254,7 @@ static PyObject *sigtools_median2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
     if (a_image == NULL) goto fail;
 
     if (size != NULL) {
-	a_size = (PyArrayObject *)PyArray_ContiguousFromObject(size, PyArray_LONG, 1, 1);
+	a_size = (PyArrayObject *)PyArray_ContiguousFromObject(size, NPY_INTP, 1, 1);
 	if (a_size == NULL) goto fail;
 	if ((RANK(a_size) != 1) || (DIMS(a_size)[0] < 2)) 
 	    PYERR("Size must be a length two sequence");
