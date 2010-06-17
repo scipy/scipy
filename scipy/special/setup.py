@@ -24,7 +24,9 @@ def configuration(parent_package='',top_path=None):
         define_macros.append(('_USE_MATH_DEFINES',None))
 
     # C libraries
-    config.add_library('sc_c_misc',sources=[join('c_misc','*.c')])
+    config.add_library('sc_c_misc',sources=[join('c_misc','*.c')],
+                       include_dirs=[get_python_inc(), get_numpy_include_dirs()],
+                       macros=define_macros)
     config.add_library('sc_cephes',sources=[join('cephes','*.c')],
                        include_dirs=[get_python_inc(), get_numpy_include_dirs()],
                        macros=define_macros)
