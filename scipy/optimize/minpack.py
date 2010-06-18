@@ -308,9 +308,6 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
             except KeyError:
                 raise errors['unknown'][1](errors['unknown'][0])
 
-    if n == 1:
-        retval = (retval[0][0],) + retval[1:]
-
     mesg = errors[info][0]
     if full_output:
         cov_x = None
