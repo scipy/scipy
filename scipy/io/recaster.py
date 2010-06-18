@@ -5,9 +5,20 @@ Recaster class for recasting numeric arrays
 """
 
 from numpy import *
+from numpy.lib.utils import deprecate
 
+# deprecated in 0.8, will be removed in 0.9.
+@deprecate
 def sctype_attributes():
-    ''' Return dictionary describing numpy scalar types '''
+    """Return dictionary describing numpy scalar types
+
+    .. deprecated:: sctype_attributes is deprecated in scipy 0.8 and
+                    will be removed in scipy 0.9.
+    """
+    return _sctype_attributes()
+
+
+def _sctype_attributes():
     d_dict = {}
     for sc_type in ('complex','float'):
         t_list = sctypes[sc_type]
@@ -46,8 +57,12 @@ def sctype_attributes():
 class RecastError(ValueError):
     pass
 
+# deprecated in 0.8, will be removed in 0.9.
 class Recaster(object):
     ''' Class to recast arrays to one of acceptable scalar types
+
+    .. deprecated:: Recaster is deprecated in scipy 0.8 and will be
+                    removed in scipy 0.9.
 
     Initialization specifies acceptable types (ATs)
 
@@ -58,7 +73,7 @@ class Recaster(object):
     specified in options at object creation.
     '''
 
-    _sctype_attributes = sctype_attributes()
+    _sctype_attributes = _sctype_attributes()
     _k = 2**10
     _option_defaults = {
         'only_if_none': {
@@ -107,6 +122,7 @@ class Recaster(object):
         }
         }
 
+    @deprecate
     def __init__(self, sctype_list=None,
                  sctype_tols=None,
                  recast_options='only_if_none'):
