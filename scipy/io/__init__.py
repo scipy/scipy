@@ -6,11 +6,6 @@ from info import __doc__
 
 from numpy import deprecate
 
-# These are all deprecated (until the end deprecated tag)
-from npfile import npfile
-from data_store import save, load, create_module, create_shelf
-from array_import import read_array, write_array
-from pickler import objload, objsave
 
 from numpyio import packbits, unpackbits, bswap, fread, fwrite, \
      convert_objectarray
