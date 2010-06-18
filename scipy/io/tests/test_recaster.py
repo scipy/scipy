@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from numpy.testing import *
 
@@ -166,6 +168,8 @@ class TestRecaster(TestCase):
             dtt = arr.dtype.type
             assert dtt is outp, \
                    'Expected %s from %s, got %s' % (outp, inp, dtt)
+
+warnings.simplefilter('ignore', category=DeprecationWarning)
 
 if __name__ == "__main__":
     run_module_suite()
