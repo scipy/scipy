@@ -4,7 +4,7 @@ NetCDF reader/writer module.
 This module implements the Scientific.IO.NetCDF API to read and create
 NetCDF files. The same API is also used in the PyNIO and pynetcdf
 modules, allowing these modules to be used interchangebly when working
-with NetCDF files. The major advantage of ``scipy.io.netcdf`` over other 
+with NetCDF files. The major advantage of ``scipy.io.netcdf`` over other
 modules is that it doesn't require the code to be linked to the NetCDF
 libraries as the other modules do.
 
@@ -28,7 +28,7 @@ will. All record variables share a same dimension at the first axis,
 and they are stored at the end of the file per record, ie
 
     A[0], B[0], ..., A[1], B[1], ..., etc,
-    
+
 so that new data can be appended to the file without changing its original
 structure. Non-record data are padded to a 4n bytes boundary. Record data
 are also padded, unless there is exactly one record variable in the file,
@@ -86,7 +86,7 @@ from numpy import fromstring, ndarray, dtype, empty, array, asarray
 from numpy import little_endian as LITTLE_ENDIAN
 
 
-ABSENT       = '\x00\x00\x00\x00\x00\x00\x00\x00' 
+ABSENT       = '\x00\x00\x00\x00\x00\x00\x00\x00'
 ZERO         = '\x00\x00\x00\x00'
 NC_BYTE      = '\x00\x00\x00\x01'
 NC_CHAR      = '\x00\x00\x00\x02'
@@ -193,7 +193,7 @@ class netcdf_file(object):
     def close(self):
         if not self.fp.closed:
             try:
-                self.flush()
+               self.flush()
             finally:
                 self.fp.close()
     __del__ = close
@@ -203,7 +203,7 @@ class netcdf_file(object):
         self._dims.append(name)
 
     def createVariable(self, name, type, dimensions):
-        shape = tuple([self.dimensions[dim] for dim in dimensions]) 
+        shape = tuple([self.dimensions[dim] for dim in dimensions])
         shape_ = tuple([dim or 0 for dim in shape])  # replace None with 0 for numpy
 
         if isinstance(type, basestring): type = dtype(type)
@@ -216,7 +216,7 @@ class netcdf_file(object):
         return self.variables[name]
 
     def flush(self):
-        if self.mode is 'w':
+        if hasattr(self, 'mode') and self.mode is 'w':
             self._write()
     sync = flush
 
@@ -266,7 +266,7 @@ class netcdf_file(object):
             self.fp.write(NC_VARIABLE)
             self._pack_int(len(self.variables))
 
-            # Sort variables non-recs first, then recs. We use a DSU 
+            # Sort variables non-recs first, then recs. We use a DSU
             # since some people use pupynere with Python 2.3.x.
             deco = [ (v._shape and not v.isrec, k) for (k, v) in self.variables.items() ]
             deco.sort()
@@ -321,7 +321,7 @@ class netcdf_file(object):
 
     def _write_var_data(self, name):
         var = self.variables[name]
-        
+
         # Set begin in file header.
         the_beguine = self.fp.tell()
         self.fp.seek(var._begin)
@@ -330,7 +330,7 @@ class netcdf_file(object):
 
         # Write data.
         if not var.isrec:
-            self.fp.write(var.data.tostring())    
+            self.fp.write(var.data.tostring())
             count = var.data.size * var.data.itemsize
             self.fp.write('0' * (var._vsize - count))
         else:  # record variable
@@ -379,7 +379,7 @@ class netcdf_file(object):
             dtype_ = '>%s' % typecode
             if size > 1: dtype_ += str(size)
 
-        values = asarray(values, dtype=dtype_) 
+        values = asarray(values, dtype=dtype_)
 
         self.fp.write(nc_type)
 
@@ -527,7 +527,7 @@ class netcdf_file(object):
         dimensions = []
         shape = []
         dims = self._unpack_int()
-        
+
         for i in range(dims):
             dimid = self._unpack_int()
             dimname = self._dims[dimid]
@@ -565,7 +565,7 @@ class netcdf_file(object):
             values = fromstring(values, dtype='>%s%d' % (typecode, size))
             if values.shape == (1,): values = values[0]
         else:
-            values = values.rstrip('\x00') 
+            values = values.rstrip('\x00')
         return values
 
     def _pack_begin(self, begin):

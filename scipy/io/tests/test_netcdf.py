@@ -38,7 +38,7 @@ def gen_for_simple(ncfileobj):
     yield assert_equal, str(time.units), 'days since 2008-01-01'
     yield assert_equal, time.shape, (N_EG_ELS,)
     yield assert_equal, time[-1], N_EG_ELS-1
-    
+
 
 def test_read_write_files():
     # test round trip for example file
@@ -118,4 +118,4 @@ def test_read_example_data():
     for fname in glob(pjoin(TEST_DATA_PATH, '*.nc')):
         f = netcdf_file(fname, 'r')
         f = netcdf_file(fname, 'r', mmap=False)
-    
+
