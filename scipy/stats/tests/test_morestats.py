@@ -1,8 +1,9 @@
 # Author:  Travis Oliphant, 2002
 #
 
-from numpy.testing import *
+import warnings
 
+from numpy.testing import *
 
 import scipy.stats as stats
 
@@ -121,6 +122,9 @@ def test_mood():
     x1=np.arange(5)
     assert_array_almost_equal(stats.mood(x1,x1**2),
             (-1.3830857299399906, 0.16663858066771478), 11)
+
+# First Anssari test yields this warning
+warnings.filterwarnings("ignore", "Ties preclude use of exact statistic")
 
 if __name__ == "__main__":
     run_module_suite()
