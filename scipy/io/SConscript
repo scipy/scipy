@@ -3,5 +3,3 @@
 from numscons import GetNumpyEnvironment
 
 env = GetNumpyEnvironment(ARGUMENTS)
-
-env.NumpyPythonExtension('numpyio', source = 'numpyiomodule.c')
