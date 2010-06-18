@@ -12,6 +12,8 @@ Run tests if interpolate is not installed:
 """
 #import libwadpy
 
+import warnings
+
 from numpy.testing import *
 from numpy import array, diff
 from scipy.interpolate.fitpack2 import UnivariateSpline, LSQBivariateSpline, \
@@ -162,6 +164,10 @@ class TestRectBivariateSpline(TestCase):
         zi2 = array([lut(xp, yp)[0,0] for xp, yp in zip(xi, yi)])
 
         assert_almost_equal(zi, zi2)
+
+# filter test_bilinearity and test_integral warnings
+warnings.filterwarnings("ignore", "\nThe coefficients of the spline returned")
+warnings.filterwarnings("ignore", "\nThe required storage space exceeds")
 
 if __name__ == "__main__":
     run_module_suite()
