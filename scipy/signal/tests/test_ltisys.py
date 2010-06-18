@@ -1,7 +1,11 @@
+import warnings
+
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, run_module_suite
 
 from scipy.signal.ltisys import ss2tf, lsim2, impulse2, step2, lti
+# import BadCoefficients so we can filter the warning for lsim2.test_05
+from scipy.signal import BadCoefficients
 
 
 class TestSS2TF:
@@ -64,6 +68,7 @@ class Test_lsim2(object):
         # This test triggers a "BadCoefficients" warning from scipy.signal.filter_design,
         # but the test passes.  I think the warning is related to the incomplete handling
         # of multi-input systems in scipy.signal.
+        warnings.simplefilter("ignore", BadCoefficients)
 
         # A system with two state variables, two inputs, and one output.
         A = np.array([[-1.0, 0.0], [0.0, -2.0]])
