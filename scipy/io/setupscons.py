@@ -2,7 +2,8 @@
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
-    config = Configuration('io', parent_package, top_path)
+    config = Configuration('io', parent_package, top_path,
+                           setup_name = 'setupscons.py')
 
     config.add_sconscript('SConstruct')
 
