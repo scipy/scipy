@@ -343,7 +343,7 @@ def safe_float(x):
     >>> safe_float('?\\n')
     nan
     """
-    if x.strip() == '?':
+    if '?' in x:
         return np.nan
     else:
         return np.float(x)
@@ -574,15 +574,20 @@ def loadarff(filename):
         while r_comment.match(raw):
             raw = row_iter.next()
 
+        # 'compiling' the range since it does not change
+        # Note, I have already tried zipping the converters and
+        # row elements and got slightly worse performance.
+        elems = range(ni)
+
         row = raw.split(delim)
-        yield tuple([convertors[i](row[i]) for i in range(ni)])
+        yield tuple([convertors[i](row[i]) for i in elems])
         for raw in row_iter:
             while r_comment.match(raw):
                 raw = row_iter.next()
             while r_empty.match(raw):
                 raw = row_iter.next()
             row = raw.split(delim)
-            yield tuple([convertors[i](row[i]) for i in range(ni)])
+            yield tuple([convertors[i](row[i]) for i in elems])
 
     a = generator(ofile, delim = delim)
     # No error should happen here: it is a bug otherwise
