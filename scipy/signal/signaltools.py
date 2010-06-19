@@ -1284,7 +1284,8 @@ def filtfilt(b,a,x):
     return flipud(y[edge-1:-edge+1])
 
 
-from scipy.signal.filter_design import cheby1, firwin
+from scipy.signal.filter_design import cheby1
+from scipy.signal.fir_filter_design import firwin
 
 def decimate(x, q, n=None, ftype='iir', axis=-1):
     """downsample the signal x by an integer factor q, using an order n filter

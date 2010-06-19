@@ -8,6 +8,7 @@ import sigtools
 from waveforms import *
 from bsplines import *
 from filter_design import *
+from fir_filter_design import *
 from ltisys import *
 from windows import *
 from signaltools import *
