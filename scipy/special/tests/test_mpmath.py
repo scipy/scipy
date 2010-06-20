@@ -42,7 +42,7 @@ def test_expi_complex():
     for r in np.logspace(-99, 2, 10):
         for p in np.linspace(0, 2*np.pi, 30):
             z = r*np.exp(1j*p)
-            dataset.append((z, mpmath.ei(z)))
+            dataset.append((z, complex(mpmath.ei(z))))
     dataset = np.array(dataset, dtype=np.complex_)
 
     FuncData(sc.expi, dataset, 0, 1).check()
@@ -168,7 +168,7 @@ def test_erf_complex():
 
         # note that the global accuracy of our complex erf algorithm is limited
         # roughly to 2e-8
-        assert_func_equal(sc.erf, mpmath.erf, points, vectorized=False,
-                          rtol=2e-8)
+        assert_func_equal(sc.erf, lambda x: complex(mpmath.erf(x)), points,
+                          vectorized=False, rtol=2e-8)
     finally:
         mpmath.mp.dps, mpmath.mp.prec = old_dps, old_prec
