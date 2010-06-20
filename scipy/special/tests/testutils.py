@@ -6,6 +6,9 @@ from numpy.testing.noseclasses import KnownFailureTest
 
 import scipy.special as sc
 
+__all__ = ['with_special_errors', 'assert_tol_equal', 'assert_func_equal',
+           'FuncData']
+
 #------------------------------------------------------------------------------
 # Enable convergence and loss of precision warnings -- turn off one by one
 #------------------------------------------------------------------------------
@@ -45,6 +48,39 @@ def assert_tol_equal(a, b, rtol=1e-7, atol=0, err_msg='', verbose=True):
 # Comparing function values at many data points at once, with helpful
 # error reports
 #------------------------------------------------------------------------------
+
+def assert_func_equal(func, results, points, rtol=None, atol=None,
+                      param_filter=None, knownfailure=None,
+                      vectorized=True, dtype=None):
+    if hasattr(points, 'next'):
+        # it's a generator
+        points = list(points)
+
+    points = np.asarray(points)
+    if points.ndim == 1:
+        points = points[:,None]
+
+    if hasattr(results, '__name__'):
+        # function
+        if vectorized:
+            results = results(*tuple(points.T))
+        else:
+            results = np.array([results(*tuple(p)) for p in points])
+            if results.dtype == object:
+                try:
+                    results = results.astype(float)
+                except TypeError:
+                    results = results.astype(complex)
+    else:
+        results = np.asarray(results)
+
+    npoints = points.shape[1]
+
+    data = np.c_[points, results]
+    fdata = FuncData(func, data, range(npoints), range(npoints, data.shape[1]),
+                     rtol=rtol, atol=atol, param_filter=param_filter,
+                     knownfailure=knownfailure)
+    fdata.check()
 
 class FuncData(object):
     """
