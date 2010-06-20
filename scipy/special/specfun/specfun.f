@@ -2453,7 +2453,18 @@ C
         IF (DBLE(Z).LT.0.0) THEN
            Z1=-Z
         ENDIF
-        IF (A0.LE.5.8D0) THEN    
+C
+C       Cutoff radius R = 4.36; determined by balancing rounding error
+C       and asymptotic expansion error, see below.
+C
+C       The resulting maximum global accuracy expected is around 1e-8
+C
+        IF (A0.LE.4.36D0) THEN
+C
+C          Rounding error in the Taylor expansion is roughly
+C
+C          ~ R*R * EPSILON * R**(2 R**2) / (2 R**2 Gamma(R**2 + 1/2))
+C
            CS=Z1
            CR=Z1
            DO 10 K=1,120
@@ -2465,7 +2476,15 @@ C
         ELSE                              
            CL=1.0D0/Z1              
            CR=CL
-           DO 20 K=1,13
+C
+C          Asymptotic series; maximum K must be at most ~ R^2.
+C
+C          The maximum accuracy obtainable from this expansion is roughly
+C
+C          ~ Gamma(2R**2 + 2) / (
+C                   (2 R**2)**(R**2 + 1/2) Gamma(R**2 + 3/2) 2**(R**2 + 1/2))
+C
+           DO 20 K=1,20
               CR=-CR*(K-0.5D0)/(Z1*Z1)
               CL=CL+CR
               IF (CDABS(CR/CL).LT.1.0D-15) GO TO 25
