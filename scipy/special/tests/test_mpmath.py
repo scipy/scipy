@@ -151,3 +151,24 @@ def test_hyp2f1_real_random():
         ds[4] = float(mpmath.hyp2f1(*tuple(ds[:4])))
 
     FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-9).check()
+
+#------------------------------------------------------------------------------
+# erf (complex)
+#------------------------------------------------------------------------------
+
+@mpmath_check('0.14')
+def test_erf_complex():
+    # need to increase mpmath precision for this test
+    old_dps, old_prec = mpmath.mp.dps, mpmath.mp.prec
+    try:
+        mpmath.mp.dps = 70
+        x1, y1 = np.meshgrid(np.linspace(-10, 1, 11), np.linspace(-10, 1, 11))
+        x2, y2 = np.meshgrid(np.logspace(-10, .8, 11), np.logspace(-10, .8, 11))
+        points = np.r_[x1.ravel(),x2.ravel()] + 1j*np.r_[y1.ravel(),y2.ravel()]
+
+        # note that the global accuracy of our complex erf algorithm is limited
+        # roughly to 2e-8
+        assert_func_equal(sc.erf, mpmath.erf, points, vectorized=False,
+                          rtol=2e-8)
+    finally:
+        mpmath.mp.dps, mpmath.mp.prec = old_dps, old_prec
