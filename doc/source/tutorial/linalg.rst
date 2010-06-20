@@ -823,3 +823,32 @@ Bessel function applied to a matrix.
 Note how, by virtue of how matrix analytic functions are defined,
 the Bessel function has acted on the matrix eigenvalues.
 
+
+Special matrices
+----------------
+
+SciPy and NumPy provide several functions for creating special matrices
+that are frequently used in engineering and science.
+
+====================  =========================  =========================================================
+Type                  Function                   Description
+====================  =========================  =========================================================
+block diagonal        `scipy.linalg.block_diag`  Create a block diagonal matrix from the provided arrays.
+--------------------  -------------------------  ---------------------------------------------------------
+circulant             `scipy.linalg.circulant`   Construct a circulant matrix.
+--------------------  -------------------------  ---------------------------------------------------------
+companion             `scipy.linalg.companion`   Create a companion matrix.
+--------------------  -------------------------  ---------------------------------------------------------
+Hadamard              `scipy.linalg.hadamard`    Construct a Hadamard matrix.
+--------------------  -------------------------  ---------------------------------------------------------
+Hankel                `scipy.linalg.hankel`      Construct a Hankel matrix.
+--------------------  -------------------------  ---------------------------------------------------------
+Leslie                `scipy.linalg.leslie`      Create a Leslie matrix.
+--------------------  -------------------------  ---------------------------------------------------------
+Toeplitz              `scipy.linalg.toeplitz`    Construct a Toeplitz matrix.
+--------------------  -------------------------  ---------------------------------------------------------
+Van der Monde         `numpy.vander`             Generate a Van der Monde matrix.
+====================  =========================  =========================================================
+
+
+For examples of the use of these functions, see their respective docstrings.
