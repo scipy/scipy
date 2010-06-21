@@ -157,9 +157,6 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
             except KeyError:
                 raise errors['unknown'][1](errors['unknown'][0])
 
-    if n == 1:
-        retval = (retval[0][0],) + retval[1:]
-
     if full_output:
         try:
             return retval + (errors[info][0],)  # Return all + the message
