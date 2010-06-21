@@ -1251,6 +1251,24 @@ class rv_continuous(rv_generic):
         return -sum(log(self._pdf(x, *args)),axis=0)
 
     def nnlf(self, theta, x):
+        """Negative log likelihood function. 
+
+        This function should be minimized to produce maximum likelihood estimates (MLE).
+
+        Paramters
+        ---------
+        theta : array-like
+             Parameters that the log-likelihood function depends on (shape<s>, loc, scale)
+             where loc and scale are always the last two parameters.
+        x : array-like
+             The value of x to evaluate the log-likelihood function at (the observed data). 
+             
+        Returns
+        -------
+        nnlf : float
+             For an array of x values, this reeturns the sum (along axis=0) of the log-likelihood
+             (i.e. assumes independent observations). 
+        """
         # - sum (log pdf(x, theta),axis=0)
         #   where theta are the parameters (including loc and scale)
         #
