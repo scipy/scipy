@@ -7,7 +7,7 @@ import numpy as np
 from numpy import array, float64
 
 from scipy import optimize
-from scipy.optimize.minpack import fsolve, leastsq
+from scipy.optimize.minpack import fsolve, leastsq, curve_fit
 
 class TestFSolve(TestCase):
     def pressure_network(self, flow_rates, Qtot, k):
@@ -121,6 +121,32 @@ class TestLeastSq(TestCase):
         params_fit, cov_x, infodict, mesg, ier = full_output
         assert_(ier in (1,2,3,4), 'solution not found: %s'%mesg)
         assert_array_equal(p0, p0_copy)
+
+class TestCurveFit(TestCase):
+    def setUp(self):
+        self.y = array([1.0, 3.2, 9.5, 13.7])
+        self.x = array([1.0, 2.0, 3.0, 4.0])
+
+    def test_one_argument(self):
+        def func(x,a):
+            return x**a
+        popt, pcov = curve_fit(func, self.x, self.y)
+        assert len(popt)==1
+        assert pcov.shape==(1,1)
+        assert_almost_equal(popt[0], 1.9149, decimal=4)
+        assert_almost_equal(pcov[0,0], 0.0016, decimal=4)
+
+    def test_two_argument(self):
+        def func(x, a, b):
+            return b*x**a
+        popt, pcov = curve_fit(func, self.x, self.y)
+        assert len(popt)==2
+        assert pcov.shape==(2,2)
+        assert_array_almost_equal(popt, [1.7989, 1.1642], decimal=4)
+        assert_array_almost_equal(pcov, [[0.0852, -0.1260],[-0.1260, 0.1912]], decimal=4)
+
+
+
 
 if __name__ == "__main__":
     run_module_suite()

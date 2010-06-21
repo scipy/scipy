@@ -151,9 +151,6 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
             except KeyError:
                 raise errors['unknown'][1](errors['unknown'][0])
 
-    if n == 1:
-        retval = (retval[0][0],) + retval[1:]
-
     if full_output:
         try:
             return retval + (errors[info][0],)  # Return all + the message
@@ -405,6 +402,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
     else:
         func = _weighted_general_function
         args += (1.0/asarray(sigma),)
+
     res = leastsq(func, p0, args=args, full_output=1, **kw)
     (popt, pcov, infodict, errmsg, ier) = res
 
