@@ -1,3 +1,6 @@
+
+import warnings
+
 import _zeros
 from numpy import finfo
 
@@ -95,7 +98,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
         p0 = x0
         for iter in range(maxiter):
             myargs = (p0,) + args
-            fval = func(*myargs)
+            # fval = func(*myargs)
             fder = fprime(*myargs)
             if fder == 0:
                 msg = "derivative was zero."

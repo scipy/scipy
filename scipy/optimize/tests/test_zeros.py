@@ -2,7 +2,8 @@
 
 from math import sqrt
 
-from numpy.testing import *
+from numpy.testing import TestCase, assert_almost_equal, assert_warns, \
+                            run_module_suite
 
 from scipy.optimize import zeros as cc
 
@@ -28,6 +29,10 @@ class TestBasic(TestCase) :
     def test_brenth(self):
         self.run_check(cc.brenth, 'brenth')
 
+    def test_deriv_zero_warning(self):
+        func = lambda x: x**2
+        dfunc = lambda x: 2*x
+        assert_warns(RuntimeWarning, cc.newton, func, 0.0, dfunc)
 
 if __name__ == '__main__' :
     run_module_suite()
