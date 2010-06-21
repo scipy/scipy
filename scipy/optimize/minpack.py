@@ -406,7 +406,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
     res = leastsq(func, p0, args=args, full_output=1, **kw)
     (popt, pcov, infodict, errmsg, ier) = res
 
-    if ier != 1:
+    if ier not in [1,2,3,4]:
         msg = "Optimal parameters not found: " + errmsg
         raise RuntimeError(msg)
 
