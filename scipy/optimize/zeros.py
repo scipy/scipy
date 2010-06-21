@@ -103,7 +103,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
                 msg = "derivative was zero."
                 warnings.warn(msg, RuntimeWarning)
                 return p0
-            p = p0 - func(*myargs)/fprime(*myargs)
+            p = p0 - func(*myargs) / fder
             if abs(p - p0) < tol:
                 return p
             p0 = p
