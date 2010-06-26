@@ -39,5 +39,12 @@ def test_basic_lookup():
     assert_equal('%d %s' % (codata.c, codata.unit('speed of light in vacuum')),
                  '299792458 m s^-1')
 
+def test_find_all():
+    assert len(codata.find(disp=False)) > 300
+
+def test_find_single():
+    assert_equal(codata.find('Wien freq', disp=False)[0],
+                 'Wien frequency displacement law constant')
+
 if __name__ == "__main__":
     run_module_suite()

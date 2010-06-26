@@ -2,22 +2,26 @@
 # updated to 2002 values by BasSw, 2006
 # Updated to 2006 values by Vincent Davis June 2010
 
-""" Fundamental Physical Constants
+"""
+Fundamental Physical Constants
 
-    These constants are taken from CODATA Recommended Values of the
-    Fundamental Physical Constants. They may be found at
-    http://physics.nist.gov/cuu/Constants/index.html
+These constants are taken from CODATA Recommended Values of the
+Fundamental Physical Constants. They may be found at
 
-    The values are stored in the dictionary physical_constants as a tuple
-    containing the value, the units, and the relative precision, in that order.
-    All constants are in SI units unless otherwise stated.
+http://physics.nist.gov/cuu/Constants/index.html
 
-    Several helper functions are provided:
+The values are stored in the dictionary physical_constants as a tuple
+containing the value, the units, and the relative precision, in that
+order.  All constants are in SI units unless otherwise stated.
 
-    value(key) : returns the value of the physical constant.
-    unit(key) : returns the units of the physical constant.
-    precision(key) : returns the relative precision of the physical constant.
-    find(sub) : prints a list of keys containing the string sub, Defualt is all.
+Several helper functions are provided:
+
+    value(key) : Returns the value of the physical constant.
+    unit(key) : Returns the units of the physical constant.
+    precision(key) : Returns the relative precision of the physical constant.
+    find(sub) : Prints a list of keys containing the string sub.
+                If sub is not specified, returns all keys.
+
 """
 
 import warnings
@@ -26,25 +30,17 @@ from math import pi, sqrt
 __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find']
 
 """
-Website:  http://physics.nist.gov/cuu/Constants/index.html
+Source:  http://physics.nist.gov/cuu/Constants/index.html
 
-Source: Source of the CODATA internationally recommended values
-        The values of the constants provided at this site are recommended for
-        international use by CODATA and are the latest available. Termed the
-        "2006 CODATA recommended values," they are generally recognized
-        worldwide for use in all fields of science and technology. The values
-        became available in March 2007 and replaced the 2002 CODATA set. They
-        are based on all of the data available through 31 December 2006. The
-        2006 adjustment was carried out under the auspices of the CODATA Task
-        Group on Fundamental Constants. Also available is an Introduction to
-        the constants for nonexperts.
+The values of the constants provided at the above site are recommended
+for international use by CODATA and are the latest available. Termed
+the "2006 CODATA recommended values", they are generally recognized
+worldwide for use in all fields of science and technology. The values
+became available in March 2007 and replaced the 2002 CODATA set. They
+are based on all of the data available through 31 December 2006. The
+2006 adjustment was carried out under the auspices of the CODATA Task
+Group on Fundamental Constants.
 
-bibliography: This bibliography gives citations for the most important
-              theoretical and experimental publications relevant to the
-              fundamental constants and closely related precision measurements
-              published since the mid 1980s, but also including many older
-              papers of particular interest, some of which date back to the
-              1800s.
 """
 """
 Quantity                                               Value                 Uncertainty          Unit
@@ -471,7 +467,7 @@ def precision(key) :
     """
     return physical_constants[key][2] / physical_constants[key][0]
 
-def find(sub, disp=True) :
+def find(sub=None, disp=True) :
     """
     Return list of codata.physical_constant keys containing a given string
 
@@ -482,9 +478,8 @@ def find(sub, disp=True) :
 
     Parameters
     ----------
-    sub : str, unicode or defualt=None
-        defualt, print all keys
-        Sub-string to search keys for
+    sub : str, unicode
+        Sub-string to search keys for.  By default, return all keys.
     disp : bool
         If True, print the keys that are found, and return None.
         Otherwise, return the list of keys without printing anything.
@@ -504,17 +499,13 @@ def find(sub, disp=True) :
     warnings.warn("In Scipy version 0.8.0, the keyword argument 'disp' was added to "
                   "find(), with the default value True.  In 0.9.0, the default will be False.",
                   DeprecationWarning)
-    if sub==None:
-        results = physical_constants.keys()
-        results.sort()
+    if sub is None:
+        result = physical_constants.keys()
     else:
-        l_sub = string.lower(sub)
-        result = []
-        for key in physical_constants :
-            l_key = string.lower(key)
-            if l_sub in l_key:
-                result.append(key)
-        result.sort()
+        result = [key for key in physical_constants \
+                 if sub.lower() in key.lower()]
+
+    result.sort()
     if disp:
         for key in result:
             print key
