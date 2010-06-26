@@ -68,7 +68,7 @@ alpha = fine_structure = _cd('fine-structure constant')
 N_A = Avogadro = _cd('Avogadro constant')
 k = Bolzmann = _cd('Boltzmann constant')
 sigma = Stefan_Bolzmann = _cd('Stefan-Boltzmann constant')
-Wien = _cd('Wien displacement law constant')
+Wien = _cd('Wien wavelength displacement law constant')
 Rydberg = _cd('Rydberg constant')
 
 #weight in kg
