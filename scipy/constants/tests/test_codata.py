@@ -2,7 +2,7 @@
 import warnings
 
 from scipy.constants import find
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, run_module_suite
 
 def test_find():
 
@@ -25,3 +25,6 @@ def test_find():
                                 'natural unit of momentum in MeV/c',
                                 'natural unit of length',
                                 'natural unit of time']))
+
+if __name__ == "__main__":
+    run_module_suite()
