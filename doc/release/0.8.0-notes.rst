@@ -83,14 +83,17 @@ DCT support (scipy.fftpack)
 ---------------------------
 
 New realtransforms have been added, namely dct and idct for Discrete Cosine
-Transform; type I, II and III are available, for both single and double
-precision.
+Transform; type I, II and III are available.
 
 Single precision support for fft functions (scipy.fftpack)
 ----------------------------------------------------------
 
 fft functions can now handle single precision inputs as well: fft(x) will
 return a single precision array if x is single precision.
+
+At the moment, for FFT sizes that are not composites of 2, 3, and 5, the
+transform is computed internally in double precision to avoid rounding error in
+FFTPACK.
 
 Correlation functions now implement the usual definition (scipy.signal)
 -----------------------------------------------------------------------
