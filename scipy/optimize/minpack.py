@@ -106,6 +106,9 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     -----
     ``fsolve`` is a wrapper around MINPACK's hybrd and hybrj algorithms.
 
+    From scipy 0.8.0 `fsolve` returns an array of size one instead of a scalar
+    when solving for a single parameter.
+
     """
     if not warning :
         msg = "The warning keyword is deprecated. Use the warnings module."
@@ -256,6 +259,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     Notes
     -----
     "leastsq" is a wrapper around MINPACK's lmdif and lmder algorithms.
+
+    From scipy 0.8.0 `leastsq` returns an array of size one instead of a scalar
+    when solving for a single parameter.
 
     """
     if not warning :

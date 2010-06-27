@@ -62,6 +62,7 @@ They will be removed from SciPy in version 0.9.
 
 Additional deprecations
 -----------------------
+
 * linalg: The function `solveh_banded` currently returns a tuple containing
   the Cholesky factorization and the solution to the linear system.  In
   SciPy 0.9, the return value will be just the solution.
@@ -109,6 +110,7 @@ what most people expect if the old_behavior=False argument is passed:
 
 Additions and modification to LTI functions (scipy.signal)
 ----------------------------------------------------------
+
 * The functions `impulse2` and `step2` were added to `scipy.signal`.
   They use the function `scipy.signal.lsim2` to compute the impulse and
   step response of a system, respectively.
@@ -117,6 +119,7 @@ Additions and modification to LTI functions (scipy.signal)
 
 Improved waveform generators (scipy.signal)
 -------------------------------------------
+
 Several improvements to the `chirp` function in `scipy.signal` were made:
 
 * The waveform generated when `method="logarithmic"` was corrected; it
@@ -132,14 +135,25 @@ A new function, `sweep_poly`, was added.
 
 New functions and other changes in scipy.linalg
 -----------------------------------------------
+
 The functions `cho_solve_banded`, `circulant`, `companion`, `hadamard` and
 `leslie` were added to `scipy.linalg`.
 
 The function `block_diag` was enhanced to accept scalar and 1D arguments,
 along with the usual 2D arguments.
 
+New function and changes in scipy.optimize
+------------------------------------------
+
+The `curve_fit` function has been added; it takes a function and uses
+non-linear least squares to fit that to the provided data.
+
+The `leastsq` and `fsolve` functions now return an array of size one instead of
+a scalar when solving for a single parameter.
+
 New sparse least squares solver
 -------------------------------
+
 The `lsqr` function was added to `scipy.sparse`.  `This routine
 <http://www.stanford.edu/group/SOL/software/lsqr.html>`_ finds a
 least-squares solution to a large, sparse, linear system of equations.
@@ -153,6 +167,7 @@ scipy.sparse.linalg.eigen.arpack. It is based on using an symmetric solver on
 
 Alternative behavior available for `scipy.constants.find`
 ---------------------------------------------------------
+
 The keyword argument `disp` was added to the function `scipy.constants.find`,
 with the default value `True`.  When `disp` is `True`, the behavior is the
 same as in Scipy version 0.7.  When `False`, the function returns the list of
@@ -168,6 +183,7 @@ Upgrade to SuperLU 4.0 also fixes some known bugs.
 
 Faster matlab file reader and default behavior change
 ------------------------------------------------------
+
 We've rewritten the matlab file reader in Cython and it should now read
 matlab files at around the same speed that Matlab does.
 
@@ -192,11 +208,11 @@ Faster evaluation of orthogonal polynomials
 -------------------------------------------
 
 Values of orthogonal polynomials can be evaluated with new vectorized functions
-in ``scipy.special``: ``eval_legendre``, ``eval_chebyt``, ``eval_chebyu``,
-``eval_chebyc``, ``eval_chebys``, ``eval_jacobi``, ``eval_laguerre``,
-``eval_genlaguerre``, ``eval_hermite``, ``eval_hermitenorm``,
-``eval_gegenbauer``, ``eval_sh_legendre``, ``eval_sh_chebyt``,
-``eval_sh_chebyu``, ``eval_sh_jacobi``. This is faster than constructing the
+in `scipy.special`: `eval_legendre`, `eval_chebyt`, `eval_chebyu`,
+`eval_chebyc`, `eval_chebys`, `eval_jacobi`, `eval_laguerre`,
+`eval_genlaguerre`, `eval_hermite`, `eval_hermitenorm`,
+`eval_gegenbauer`, `eval_sh_legendre`, `eval_sh_chebyt`,
+`eval_sh_chebyu`, `eval_sh_jacobi`. This is faster than constructing the
 full coefficient representation of the polynomials, which was previously the
 only available way.
 
@@ -206,13 +222,13 @@ feature, when possible.
 Lambert W function
 ------------------
 
-``scipy.special.lambertw`` can now be used for evaluating the Lambert W
+`scipy.special.lambertw` can now be used for evaluating the Lambert W
 function.
 
 Improved hypergeometric 2F1 function
 ------------------------------------
 
-Implementation of ``scipy.special.hyp2f1`` for real parameters was revised.
+Implementation of `scipy.special.hyp2f1` for real parameters was revised.
 The new version should produce accurate values for all real parameters.
 
 Removed features
@@ -230,11 +246,11 @@ reworked. NumPy will be where basic code for reading and writing NumPy
 arrays is located, while SciPy will house file readers and writers for
 various data formats (data, audio, video, images, matlab, etc.).
 
-Several functions in ``scipy.io`` are removed in the 0.8.0 release including:
-``npfile``, ``save``, ``load``, ``create_module``, ``create_shelf``,
-``objload``, ``objsave``, ``fopen``, ``read_array``, ``write_array``,
-``fread``, ``fwrite``, ``bswap``, ``packbits``, ``unpackbits``, and
-``convert_objectarray``.  Some of these functions have been replaced by NumPy's
+Several functions in `scipy.io` are removed in the 0.8.0 release including:
+`npfile`, `save`, `load`, `create_module`, `create_shelf`,
+`objload`, `objsave`, `fopen`, `read_array`, `write_array`,
+`fread`, `fwrite`, `bswap`, `packbits`, `unpackbits`, and
+`convert_objectarray`.  Some of these functions have been replaced by NumPy's
 raw reading and writing capabilities, memory-mapping capabilities, or array
 methods.  Others have been moved from SciPy to NumPy, since basic array reading
 and writing capability is now handled by NumPy.
