@@ -13,7 +13,8 @@ import numpy.ma as ma
 import scipy.stats.mstats as ms
 #import scipy.stats.mmorestats as mms
 
-from numpy.testing import *
+from numpy.testing import TestCase, run_module_suite, assert_equal, \
+    assert_almost_equal
 
 
 class TestMisc(TestCase):

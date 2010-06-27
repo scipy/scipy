@@ -2,7 +2,8 @@
 
 """
 
-from numpy.testing import *
+from numpy.testing import TestCase, run_module_suite, assert_equal, \
+    assert_array_equal, assert_almost_equal, assert_array_almost_equal, rand
 
 
 import numpy
@@ -19,7 +20,7 @@ def kolmogorov_check(diststr,args=(),N=20,significance=0.01):
     kwds = {'size':N}
     vals = numpy.sort(dist.rvs(*args,**kwds))
     cdfvals = cdf(vals,*args)
-    q = max(abs(cdfvals-arange(1.0,N+1)/N))
+    q = max(abs(cdfvals - np.arange(1.0,N+1)/N))
     assert (q < qtest), "Failed q=%f, bound=%f, alpha=%f" % (q, qtest, significance)
     return
 
@@ -329,12 +330,15 @@ class TestSkellam(TestCase):
 class TestHypergeom(TestCase):
     def test_precision(self):
         # comparison number from mpmath
-
-        M,n,N = 2500,50,500
-        tot=M;good=n;bad=tot-good
-        hgpmf = stats.hypergeom.pmf(2,tot,good,N)
+        M = 2500
+        n = 50
+        N = 500
+        tot = M
+        good = n
+        hgpmf = stats.hypergeom.pmf(2, tot, good, N)
 
         assert_almost_equal(hgpmf, 0.0010114963068932233, 11)
+
 
 class TestChi2(TestCase):
     # regression tests after precision improvements, ticket:1041, not verified
@@ -380,7 +384,7 @@ def TestArgsreduce():
     assert_array_equal(b, a)
     assert_array_equal(c, [2] * numpy.size(a))
 
-import sys
+
 class TestFitMethod(TestCase):
     skip = ['ncf']
     def test_fit(self):

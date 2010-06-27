@@ -6,7 +6,9 @@
 
 """
 
-from numpy.testing import *
+from numpy.testing import TestCase, rand, assert_, assert_equal, \
+    assert_almost_equal, assert_array_almost_equal, assert_array_equal, \
+    assert_approx_equal, assert_raises, run_module_suite
 from numpy import array, arange, zeros, ravel, float32, float64, power
 import numpy as np
 
@@ -1351,7 +1353,6 @@ def test_ttest_ind():
 def test_ttest_1samp_new():
     n1, n2, n3 = (10,15,20)
     rvn1 = stats.norm.rvs(loc=5,scale=10,size=(n1,n2,n3))
-    rvn2 = stats.norm.rvs(loc=5,scale=10,size=(n1,n2,n3))
 
     #check multidimensional array and correct axis handling
     #deterministic rvn1 and rvn2 would be better as in test_ttest_rel
@@ -1677,7 +1678,6 @@ class Test_Trim(object):
                np.arange(24).reshape(4,6).T, 4/6.)
 
     def test_trim_mean(self):
-        a = np.arange(11)
         assert_equal(stats.trim_mean(np.arange(24).reshape(4,6).T, 2/6.),
                         np.array([  2.5,   8.5,  14.5,  20.5]))
         assert_equal(stats.trim_mean(np.arange(24).reshape(4,6), 2/6.),

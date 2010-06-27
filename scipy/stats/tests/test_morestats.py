@@ -1,7 +1,8 @@
 # Author:  Travis Oliphant, 2002
 #
 
-from numpy.testing import *
+from numpy.testing import TestCase, run_module_suite, assert_array_equal, \
+    assert_almost_equal, assert_array_less, assert_array_almost_equal
 
 
 import scipy.stats as stats

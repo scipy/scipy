@@ -9,7 +9,7 @@ import numpy.ma as ma
 from numpy.ma import masked, nomask
 
 import scipy.stats.mstats as mstats
-from numpy.testing import *
+from numpy.testing import TestCase, run_module_suite
 from numpy.ma.testutils import assert_equal, assert_almost_equal, \
     assert_array_almost_equal
 
