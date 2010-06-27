@@ -1,7 +1,8 @@
 """Tests for functions in special_matrices.py."""
 
 from numpy import arange, add, array, eye, all, copy
-from numpy.testing import *
+from numpy.testing import TestCase, run_module_suite, assert_raises, \
+    assert_equal, assert_array_equal
 
 from scipy.linalg import toeplitz, hankel, circulant, hadamard, leslie, \
                             companion, tri, triu, tril, kron, block_diag

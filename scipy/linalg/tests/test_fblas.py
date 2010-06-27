@@ -10,7 +10,8 @@ from numpy import float32, float64, complex64, complex128, arange, array, \
                   zeros, shape, transpose, newaxis, common_type, conjugate
 from scipy.linalg import fblas
 
-from numpy.testing import *
+from numpy.testing import TestCase, run_module_suite, assert_array_equal, \
+    assert_array_almost_equal
 
 
 #decimal accuracy to require between Python and LAPACK/BLAS calculations

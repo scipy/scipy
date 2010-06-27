@@ -3,7 +3,8 @@
 # Created by: Pearu Peterson, September 2002
 #
 
-from numpy.testing import *
+from numpy.testing import TestCase, run_module_suite, assert_equal, \
+    assert_array_almost_equal
 from numpy import ones
 
 from scipy.linalg import flapack, clapack

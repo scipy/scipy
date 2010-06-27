@@ -25,10 +25,11 @@ from numpy import arange, array, dot, zeros, identity, conjugate, transpose, \
         float32, zeros_like
 import numpy.linalg as linalg
 
-from numpy.testing import *
+from numpy.testing import TestCase, rand, run_module_suite, assert_raises, \
+    assert_equal, assert_almost_equal, assert_array_almost_equal
 
 from scipy.linalg import solve, inv, det, lstsq, pinv, pinv2, norm,\
-        solve_banded, solveh_banded, cholesky_banded
+        solve_banded, solveh_banded
 
 
 def random(size):

@@ -3,8 +3,6 @@
 # Created by: Pearu Peterson, October 2003
 #
 
-from numpy.testing import *
-
 import scipy.linalg.atlas_version
 
 

@@ -7,9 +7,8 @@
 """
 
 from numpy import array, identity, dot, sqrt
-from numpy.testing import *
+from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal
 
-import scipy.linalg
 from scipy.linalg import signm, logm, sqrtm, expm, expm2, expm3
 
 
