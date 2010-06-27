@@ -1,5 +1,6 @@
 import numpy as np
-from numpy.testing import *
+from numpy.testing import TestCase, run_module_suite, assert_equal, \
+    assert_array_equal, assert_array_almost_equal, assert_array_less
 
 from scipy.signal import wavelets
 

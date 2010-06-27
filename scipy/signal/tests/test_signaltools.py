@@ -2,7 +2,9 @@
 from decimal import Decimal
 import types
 
-from numpy.testing import *
+from numpy.testing import TestCase, run_module_suite, assert_equal, \
+    assert_almost_equal, assert_array_equal, assert_array_almost_equal, \
+    dec
 
 import scipy.signal as signal
 from scipy.signal import lfilter, correlate, convolve, convolve2d, hilbert
