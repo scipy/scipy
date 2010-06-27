@@ -18,6 +18,7 @@ The ones without any suffix should be the most common one.
 
 import math as _math
 from codata import value as _cd
+import numpy as np
 
 #mathematical constants
 pi = _math.pi
@@ -196,7 +197,7 @@ def C2K(C):
     array([ 233.15,  313.15])
 
     """
-    return C + zero_Celsius
+    return np.asanyarray(C) + zero_Celsius
 
 def K2C(K):
     """
@@ -224,7 +225,7 @@ def K2C(K):
     array([-40.,  40.])
 
     """
-    return K - zero_Celsius
+    return np.asanyarray(K) - zero_Celsius
 
 def F2C(F):
     """
@@ -251,7 +252,7 @@ def F2C(F):
     array([-40.        ,   4.44444444])
 
     """
-    return (F - 32) / 1.8
+    return (np.asanyarray(F) - 32) / 1.8
 
 def C2F(C):
     """
@@ -278,7 +279,7 @@ def C2F(C):
     array([ -40.,  104.])
 
     """
-    return 1.8 * C + 32
+    return 1.8 * np.asanyarray(C) + 32
 
 def F2K(F):
     """
@@ -307,7 +308,7 @@ def F2K(F):
     array([ 233.15,  313.15])
 
     """
-    return C2K(F2C(F))
+    return C2K(F2C(np.asanyarray(F)))
 
 def K2F(K):
     """
@@ -336,7 +337,7 @@ def K2F(K):
     array([ -40.,  104.])
 
     """
-    return C2F(K2C(K))
+    return C2F(K2C(np.asanyarray(K)))
 
 #optics
 
@@ -366,7 +367,7 @@ def lambda2nu(lambda_):
     array([  2.99792458e+08,   1.00000000e+00])
 
     """
-    return c / lambda_
+    return np.asanyarray(c) / lambda_
 
 def nu2lambda(nu):
     """
@@ -394,4 +395,5 @@ def nu2lambda(nu):
     array([  2.99792458e+08,   1.00000000e+00])
 
     """
-    return c / nu
+    return c / np.asanyarray(nu)
+
