@@ -1,5 +1,5 @@
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
-from numpy.testing import *
+from numpy.testing import TestCase, run_module_suite
 from scipy.integrate import quad, dblquad, tplquad
 
 def assert_quad((value, err), tabledValue, errTol=1.5e-8):

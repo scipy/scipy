@@ -7,7 +7,7 @@ import numpy
 from numpy import arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp, \
                   allclose
 
-from numpy.testing import *
+from numpy.testing import TestCase, run_module_suite
 from scipy.integrate import odeint, ode, complex_ode
 
 #------------------------------------------------------------------------------

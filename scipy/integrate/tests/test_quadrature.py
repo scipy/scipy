@@ -1,7 +1,8 @@
 
 import numpy
 from numpy import cos, sin, pi
-from numpy.testing import *
+from numpy.testing import TestCase, run_module_suite, assert_equal, \
+    assert_almost_equal
 
 from scipy.integrate import quadrature, romberg, romb, newton_cotes
 
