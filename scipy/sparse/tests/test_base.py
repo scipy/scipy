@@ -18,7 +18,7 @@ import warnings
 import numpy as np
 from numpy import arange, zeros, array, dot, matrix, asmatrix, asarray, \
                   vstack, ndarray, transpose, diag, kron, inf, conjugate, \
-                  int8
+                  int8, ComplexWarning
 
 import random
 from numpy.testing import *
@@ -32,6 +32,7 @@ from scipy.sparse.linalg import splu
 
 
 warnings.simplefilter('ignore', SparseEfficiencyWarning)
+warnings.simplefilter('ignore', ComplexWarning)
 
 
 #TODO check that spmatrix( ... , copy=X ) is respected
