@@ -1626,9 +1626,14 @@ class rv_continuous(rv_generic):
             Starting values for the location and scale parameters 
             Special keyword arguments are recognized as holding certain 
               parameters fixed:
-            f1..fn : hold respective shape paramters fixed
-            floc : hold location parameter fixed to specified value
-            fscale : hold scale parameter fixed to specified value
+               f0..fn : hold respective shape paramters fixed
+               floc : hold location parameter fixed to specified value
+               fscale : hold scale parameter fixed to specified value
+            optimizer : The optimizer to use.  The optimizer must take func, 
+                         and starting position as the first two arguments, 
+                         plus args (for extra arguments to pass to the 
+                         function to be optimized) and disp=0 to suppress
+                         output as keyword arguments.
               
         Return
         ------
@@ -1647,7 +1652,19 @@ class rv_continuous(rv_generic):
         scale = kwds.get('scale', start[-1])
         args += (loc, scale)
         x0, func, restore, args = self._reduce_func(args, kwds)
-        vals = optimize.fmin(func,x0,args=(ravel(data),),disp=0)
+
+        optimizer = kwds.get('optimizer', optimize.fmin)
+        # convert string to function in scipy.optimize
+        if not callable(optimizer) and isinstance(optimizer, (str, unicode)):
+            if not optimizer.startswith('fmin_'):
+                optimizer = "fmin_"+optimizer
+            if optimizer == 'fmin_': 
+                optimizer = 'fmin'
+            try:
+                optimizer = getattr(optimize, optimizer)
+            except AttributeError:
+                raise ValueError, "%s is not a valid optimizer" % optimizer
+        vals = optimizer(func,x0,args=(ravel(data),),disp=0)
         vals = tuple(vals)
         if restore is not None:
             vals = restore(args, vals)

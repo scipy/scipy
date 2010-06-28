@@ -394,10 +394,17 @@ class TestFitMethod(TestCase):
             distfunc = getattr(stats, dist)
             res = distfunc.rvs(*args, **{'size':200})
             vals = distfunc.fit(res)
+            vals2 = distfunc.fit(res, optimizer='powell')
+            # Only check the length of the return
+            # FIXME: should check the actual results to see if we are 'close'
+            #   to what was created --- but what is 'close' enough
             if dist in ['erlang', 'frechet']:
                 assert(len(vals)==len(args))
+                assert(len(vals2)==len(args))
             else:
                 assert(len(vals) == 2+len(args))
+                assert(len(vals2)==2+len(args))
+                
 
     def test_fix_fit(self):
         for func, dist, args, alpha in test_all_distributions():
