@@ -55,7 +55,7 @@ def approx_jacobian(x,func,epsilon,*args):
 def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
                 bounds = [], fprime = None, fprime_eqcons=None,
                 fprime_ieqcons=None, args = (), iter = 100, acc = 1.0E-6,
-                iprint = 1, full_output = 0, epsilon = _epsilon ):
+                iprint = 1, disp = None, full_output = 0, epsilon = _epsilon ):
     """
     Minimize a function using Sequential Least SQuares Programming
 
@@ -111,6 +111,8 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
         * iprint <= 0 : Silent operation
         * iprint == 1 : Print summary upon completion (default)
         * iprint >= 2 : Print status of each iterate and summary
+    disp : int
+        Over-rides the iprint interface (preferred).
     full_output : bool
         If False, return only the minimizer of func (default).
         Otherwise, output final objective function and summary
@@ -164,6 +166,9 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
                     7 : "Rank-deficient equality constraint subproblem HFTI",
                     8 : "Positive directional derivative for linesearch",
                     9 : "Iteration limit exceeded" }
+    
+    if disp is not None:
+        iprint = disp
 
     # Now do a lot of function wrapping
 

@@ -82,7 +82,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
              bounds=None, epsilon=1e-8, scale=None, offset=None,
              messages=MSG_ALL, maxCGit=-1, maxfun=None, eta=-1,
              stepmx=0, accuracy=0, fmin=0, ftol=-1, xtol=-1, pgtol=-1,
-             rescale=-1):
+             rescale=-1, disp=None):
     """Minimize a function with variables subject to bounds, using
     gradient information.
 
@@ -118,6 +118,8 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         Bit mask used to select messages display during
         minimization values defined in the MSGS dict.  Defaults to
         MGS_ALL.
+    disp : int
+        Integer interface to messages.  0 = no message, 5 = all messages
     maxCGit : int
         Maximum number of hessian*vector evaluations per main
         iteration.  If maxCGit == 0, the direction chosen is
@@ -173,6 +175,10 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         bounds = [(None,None)] * n
     if len(bounds) != n:
         raise ValueError('length of x0 != length of bounds')
+
+    if disp is not None:
+        messages = {0:MSG_NONE, 1:MSG_ITER, 2:MSG_INFO, 3:MSG_VERS, 
+                    4:MSG_EXIT, 5:MSG_ALL}.get(disp, MSG_ALL)
 
     if approx_grad:
         def func_and_grad(x):

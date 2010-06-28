@@ -34,7 +34,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
                   approx_grad=0,
                   bounds=None, m=10, factr=1e7, pgtol=1e-5,
                   epsilon=1e-8,
-                  iprint=-1, maxfun=15000):
+                  iprint=-1, maxfun=15000, disp=None):
     """
     Minimize a function func using the L-BFGS-B algorithm.
 
@@ -78,6 +78,8 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         calculating the gradient
     iprint : int
         Controls the frequency of output. ``iprint < 0`` means no output.
+    disp : int
+        If zero, then no output.  If positive number, then this over-rides iprint
     maxfun : int
         Maximum number of function evaluations.
 
@@ -127,6 +129,12 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         bounds = [(None,None)] * n
     if len(bounds) != n:
         raise ValueError('length of x0 != length of bounds')
+
+    if disp is not None:
+        if disp == 0:
+            iprint = -1
+        else:
+            iprint = disp
 
     if approx_grad:
         def func_and_grad(x):

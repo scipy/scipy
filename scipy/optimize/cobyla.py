@@ -11,7 +11,7 @@ fmin_coblya(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
 import _cobyla
 from numpy import copy
 def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
-                iprint=1, maxfun=1000):
+                iprint=1, maxfun=1000, disp=None):
     """
     Minimize a function using the Constrained Optimization BY Linear
     Approximation (COBYLA) method.
@@ -36,7 +36,9 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
     rhoend :
         Final accuracy in the optimization (not precisely guaranteed).
     iprint : {0, 1, 2, 3}
-        Controls the frequency of output; 0 implies no output.
+        Controls the frequency of output; 0 implies no output.  Deprecated
+    disp : {0, 1, 2, 3}
+        Over-rides the iprint interface.  Preferred.
     maxfun : int
         Maximum number of function evaluations.
 
@@ -63,6 +65,9 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
 
     if consargs is None:
         consargs = args
+
+    if disp is not None:
+        iprint = disp
 
     def calcfc(x, con):
         f = func(x, *args)
