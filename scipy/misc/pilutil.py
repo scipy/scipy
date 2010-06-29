@@ -254,16 +254,6 @@ def imrotate(arr,angle,interp='bilinear'):
     im = im.rotate(angle,resample=func[interp])
     return fromimage(im)
 
-def imresize(arr,newsize,interp='bilinear',mode=None):
-    newsize=list(newsize)
-    newsize.reverse()
-    newsize = tuple(newsize)
-    arr = asarray(arr)
-    func = {'nearest':0,'bilinear':2,'bicubic':3,'cubic':3}
-    im = toimage(arr,mode=mode)
-    im = im.resize(newsize,resample=func[interp])
-    return fromimage(im)
-
 def imshow(arr):
     """Simple showing of an image through an external viewer.
     """
@@ -284,7 +274,7 @@ def imshow(arr):
     if status != 0:
         raise RuntimeError('Could not execute image viewer.')
 
-def imresize(arr,size):
+def imresize(arr, size, interp='bilinear', mode=None):
     """
     Resize an image.
 
@@ -298,6 +288,12 @@ def imresize(arr,size):
         * float - Fraction of current size.
         * tuple - Size of the output image.
 
+    interp : string
+        interpolation to use for re-sizing ('nearest', 'bilinear', 'bicubic' or 'cubic')
+
+    mode :
+        mode is the PIL image mode ('P', 'L', etc.)
+
     Returns
     -------
 
@@ -305,7 +301,7 @@ def imresize(arr,size):
         The resized array of image.
 
     """
-    im = toimage(arr)
+    im = toimage(arr, mode=mode)
     ts = type(size)
     if issubdtype(ts,int):
         size = size / 100.0
@@ -313,7 +309,8 @@ def imresize(arr,size):
         size = (array(im.size)*size).astype(int)
     else:
         size = (size[1],size[0])
-    imnew = im.resize(size)
+    func = {'nearest':0,'bilinear':2,'bicubic':3,'cubic':3}
+    imnew = im.resize(size, resample=func[interp])
     return fromimage(imnew)
 
 

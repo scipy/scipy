@@ -23,6 +23,16 @@ class TestPILUtil(TestCase):
             im1 = pilutil.imresize(im,T(1.1))
             assert_equal(im1.shape,(11,22))
 
+    def test_imresize2(self):
+        im = np.random.random((20,30))
+        im2 = pilutil.imresize(im, (30,40), interp='bicubic')
+        assert_equal(im2.shape, (30,40))
+
+    def test_imresize3(self):
+        im = np.random.random((15,30))
+        im2 = pilutil.imresize(im, (30,60), interp='nearest')
+        assert_equal(im2.shape, (30,60))
+
     def test_bytescale(self):
         x = np.array([0,1,2],np.uint8)
         y = np.array([0,1,2])
