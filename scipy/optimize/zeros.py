@@ -95,7 +95,9 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
     """
     if fprime is not None:
         # Newton-Rapheson method
-        p0 = x0
+        # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
+        # so it still works if x0 is complex.
+        p0 = 1.0 * x0
         for iter in range(maxiter):
             myargs = (p0,) + args
             fder = fprime(*myargs)
