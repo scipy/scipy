@@ -181,6 +181,11 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
 
     This is most efficient for n a power of two.
 
+    .. note:: In scipy 0.8.0 `fft` in single precision is available, but *only*
+        for input array sizes which can be factorized into (combinations of) 2,
+        3 and 5. For other sizes the computation will be done in double
+        precision.
+
     Examples
     --------
     >>> x = np.arange(5)
