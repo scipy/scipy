@@ -14,7 +14,7 @@ class TestSS2TF:
     def test_basic(self):
         for p, q, r in [
             (3, 3, 3),
-            (0, 3, 3),
+            (1, 3, 3),
             (1, 1, 1)]:
             yield self.tst_matrix_shapes, p, q, r
 
@@ -64,7 +64,7 @@ class Test_lsim2(object):
         # This test triggers a "BadCoefficients" warning from scipy.signal.filter_design,
         # but the test passes.  I think the warning is related to the incomplete handling
         # of multi-input systems in scipy.signal.
-        
+
         # A system with two state variables, two inputs, and one output.
         A = np.array([[-1.0, 0.0], [0.0, -2.0]])
         B = np.array([[1.0, 0.0], [0.0, 1.0]])
@@ -116,7 +116,7 @@ class Test_impulse2(object):
 
     def test_03(self):
         """Specify an initial condition as a scalar."""
-        
+
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
         # Exact impulse response is x(t) = 4*exp(-t).
         system = ([1.0],[1.0,1.0])
@@ -175,7 +175,7 @@ class Test_step2(object):
 
     def test_03(self):
         """Specify an initial condition as a scalar."""
-        
+
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
         # Exact step response is x(t) = 1 + 2*exp(-t).
         system = ([1.0],[1.0,1.0])
