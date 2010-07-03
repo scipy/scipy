@@ -212,14 +212,14 @@ class TestFFTConvolve(TestCase):
         x = array([1+1j,2+2j,3+3j])
         assert_array_almost_equal(signal.fftconvolve(x,x),
                                   [0+2.0j, 0+8j, 0+20j, 0+24j, 0+18j])
-                                
+
     def test_2d_real_same(self):
         a = array([[1,2,3],[4,5,6]])
         assert_array_almost_equal(signal.fftconvolve(a,a),\
                                                 array([[1,4,10,12,9],\
                                                        [8,26,56,54,36],\
                                                        [16,40,73,60,36]]))
-    
+
     def test_2d_complex_same(self):
         a = array([[1+2j,3+4j,5+6j],[2+1j,4+3j,6+5j]])
         c = signal.fftconvolve(a,a)
@@ -227,21 +227,21 @@ class TestFFTConvolve(TestCase):
                    [10j,44j,118j,156j,122j],\
                    [3+4j,10+20j,21+56j,18+76j,11+60j]])
         assert_array_almost_equal(c,d)
-        
+
     def test_real_same_mode(self):
         a = array([1,2,3])
         b = array([3,3,5,6,8,7,9,0,1])
         c = signal.fftconvolve(a,b,'same')
         d = array([9.,20.,25.,35.,41.,47.,39.,28.,2.])
         assert_array_almost_equal(c,d)
-        
+
     def test_real_valid_mode(self):
         a = array([3,2,1])
         b = array([3,3,5,6,8,7,9,0,1])
         c = signal.fftconvolve(a,b,'valid')
         d = array([24.,31.,41.,43.,49.,25.,12.])
         assert_array_almost_equal(c,d)
-        
+
     def test_zero_order(self):
         a = array([4967])
         b = array([3920])
@@ -285,8 +285,11 @@ class TestMedFilt(TestCase):
         assert_array_equal(d, e)
 
     def test_none(self):
-        """Ticket #1124."""
-        signal.medfilt(None)
+        """Ticket #1124. Ensure this does not segfault."""
+        try:
+            signal.medfilt(None)
+        except:
+            pass
 
 class TestWiener(TestCase):
     def test_basic(self):
@@ -395,7 +398,7 @@ class _TestLinearFilter(TestCase):
         b = np.array([1, -1]).astype(self.dt)
         a = np.array([0.5, 0.5]).astype(self.dt)
 
-        y_r2_a0_0 = np.array([[1, 3, 5], [5, 3, 1], [1, 3, 5], [5 ,3 ,1]], 
+        y_r2_a0_0 = np.array([[1, 3, 5], [5, 3, 1], [1, 3, 5], [5 ,3 ,1]],
                              dtype=self.dt)
         zf_r = np.array([[-23, -23, -23]], dtype=self.dt)
         y, zf = lfilter(b, a, x, axis = 0, zi = np.ones((1, 3)))
@@ -694,7 +697,7 @@ class TestHilbert:
         #The absolute value should be one everywhere, for this input:
         assert_almost_equal(h_abs, np.ones(a.shape), decimal)
         #For the 'slow' sine - the phase should go from -pi/2 to pi/2 in
-        #the first 256 bins: 
+        #the first 256 bins:
         assert_almost_equal(h_angle[0,:256], np.arange(-pi/2,pi/2,pi/256),
                             decimal)
         #For the 'slow' cosine - the phase should go from 0 to pi in the
@@ -712,12 +715,12 @@ class TestHilbert:
     def test_hilbert_axisN(self):
         # tests for axis and N arguments
         a = np.arange(18).reshape(3,6)
-        # test axis        
+        # test axis
         aa = hilbert(a, axis=-1)
         yield assert_equal, hilbert(a.T, axis=0), aa.T
         # test 1d
         yield assert_equal, hilbert(a[0]), aa[0]
-        
+
         # test N
         aan = hilbert(a, N=20, axis=-1)
         yield assert_equal, aan.shape, [3,20]
