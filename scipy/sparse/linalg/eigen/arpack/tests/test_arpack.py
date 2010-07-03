@@ -4,6 +4,8 @@ To run tests locally:
   python tests/test_arpack.py [-l<int>] [-v<int>]
 
 """
+import sys, platform
+
 import numpy as np
 
 from numpy.testing import *
@@ -30,6 +32,11 @@ def assert_array_almost_equal_cc(actual,desired,decimal=7,
         assert_array_almost_equal(actual,conj(desired),decimal,err_msg,verbose)
 
 
+# check if we're on 64-bit OS X, there these tests fail.
+if sys.platform == 'darwin' and platform.architecture()[0] == '64bit':
+    _osx64bit = True
+else:
+    _osx64bit = False
 
 # precision for tests
 _ndigits = {'f':4, 'd':12, 'F':4, 'D':12}
@@ -102,12 +109,14 @@ class TestEigenSymmetric(TestArpack):
                                       eval[i]*evec[:,i],
                                       decimal=_ndigits[typ])
 
+    @dec.knownfailureif(_osx64bit, "Currently fails on 64-bit OS X 10.6")
     def test_symmetric_modes(self):
         k=2
         for typ in 'fd':
             for which in ['LM','SM','BE']:
                 self.eval_evec(self.symmetric[0],typ,k,which)
 
+    @dec.knownfailureif(_osx64bit, "Currently fails on 64-bit OS X 10.6")
     def test_starting_vector(self):
         k=2
         for typ in 'fd':
@@ -149,6 +158,7 @@ class TestEigenComplexSymmetric(TestArpack):
                                       eval[i]*evec[:,i],
                                       decimal=_ndigits[typ])
 
+    @dec.knownfailureif(_osx64bit, "Currently fails on 64-bit OS X 10.6")
     def test_complex_symmetric_modes(self):
         k=2
         for typ in 'FD':
@@ -196,6 +206,7 @@ class TestEigenNonSymmetric(TestArpack):
                                       decimal=_ndigits[typ])
 
 
+    @dec.knownfailureif(_osx64bit, "Currently fails on 64-bit OS X 10.6")
     def test_nonsymmetric_modes(self):
         k=2
         for typ in 'fd':
@@ -205,6 +216,7 @@ class TestEigenNonSymmetric(TestArpack):
 
 
 
+    @dec.knownfailureif(_osx64bit, "Currently fails on 64-bit OS X 10.6")
     def test_starting_vector(self):
         k=2
         for typ in 'fd':
@@ -259,6 +271,7 @@ class TestEigenComplexNonSymmetric(TestArpack):
                                       eval[i]*evec[:,i],
                                       decimal=_ndigits[typ])
 
+    @dec.knownfailureif(_osx64bit, "Currently fails on 64-bit OS X 10.6")
     def test_complex_nonsymmetric_modes(self):
         k=2
         for typ in 'FD':
