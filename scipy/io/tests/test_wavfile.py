@@ -1,9 +1,11 @@
 import os
 import tempfile
-import numpy as np
+import warnings
 
+import numpy as np
 from numpy.testing import *
 from scipy.io import wavfile
+
 
 def datafile(fn):
     return os.path.join(os.path.dirname(__file__), 'data', fn)
@@ -55,3 +57,8 @@ def test_write_roundtrip():
                     for channels in (1, 2, 5):
                         dt = np.dtype('%s%s%d' % (endianness, signed, size))
                         yield _check_roundtrip, rate, dt, channels
+
+
+# Filter test noise in 0.8.x branch. Format of data file does not seem to be
+# recognized.
+warnings.filterwarnings("ignore", category=wavfile.WavFileWarning)
