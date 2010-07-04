@@ -1073,7 +1073,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             # check curvature
             Ap = asarray(Ap).squeeze() # get rid of matrices...
             curv = numpy.dot(psupi,Ap)
-            if curv == 0.0:
+            if 0 <= curv <= 3*numpy.finfo(numpy.float64).eps:
                 break
             elif curv < 0:
                 if (i > 0):
