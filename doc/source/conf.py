@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import sys, os
+import sys, os, re
 
 # If your extensions are in another directory, add it here. If the directory
 # is relative to the documentation root, use os.path.abspath to make it
@@ -45,10 +45,19 @@ copyright = '2008-2009, The Scipy community'
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
 #
-# The short X.Y version.
-version = '0.8.dev'
+import scipy
+# The short X.Y version (including the .devXXXX suffix if present)
+version = re.sub(r'^(\d+\.\d+)\.\d+(.*)', r'\1\2', scipy.__version__)
+if 'dev' in version:
+    # retain the .dev suffix, but clean it up
+    version = re.sub(r'(\.dev\d*).*?$', r'\1', version)
+else:
+    # strip all other suffixes
+    version = re.sub(r'^(\d+\.\d+).*?$', r'\1', version)
 # The full version, including alpha/beta/rc tags.
-release = '0.8.dev'
+release = scipy.__version__
+
+print "Scipy (VERSION %s) (RELEASE %s)" % (version, release)
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
