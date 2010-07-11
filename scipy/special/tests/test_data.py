@@ -3,7 +3,7 @@ import os
 import numpy as np
 from numpy.testing import *
 from scipy.special import (
-    arccosh, arcsinh, arctanh, erf, erfc, log1p, expm1, 
+    arccosh, arcsinh, arctanh, erf, erfc, log1p, expm1,
     jn, jv, yn, yv, iv, kv, kn, gamma, gammaln, digamma, beta, cbrt,
     ellipe, ellipeinc, ellipk, ellipj, erfinv, erfcinv, exp1, expi, expn,
     zeta, gammaincinv,
@@ -31,14 +31,14 @@ def zeta_(x):
 
 def test_boost():
     TESTS = [
-        data(arccosh, 'acosh_data_ipp-acosh_data', 0, 1),
+        data(arccosh, 'acosh_data_ipp-acosh_data', 0, 1, rtol=5e-13),
         data(arccosh, 'acosh_data_ipp-acosh_data', 0j, 1, rtol=5e-14),
 
         data(arcsinh, 'asinh_data_ipp-asinh_data', 0, 1, rtol=1e-11),
         data(arcsinh, 'asinh_data_ipp-asinh_data', 0j, 1, rtol=1e-11),
 
-        data(arctanh, 'atanh_data_ipp-atanh_data', 0, 1, rtol=1e-13),
-        data(arctanh, 'atanh_data_ipp-atanh_data', 0j, 1, rtol=1e-13),
+        data(arctanh, 'atanh_data_ipp-atanh_data', 0, 1, rtol=1e-11),
+        data(arctanh, 'atanh_data_ipp-atanh_data', 0j, 1, rtol=1e-11),
 
         data(beta, 'beta_exp_data_ipp-beta_exp_data', (0,1), 2, rtol=1e-13),
         data(beta, 'beta_exp_data_ipp-beta_exp_data', (0,1), 2, rtol=1e-13),
