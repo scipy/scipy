@@ -48,9 +48,6 @@ class TestSparseFunctions(TestCase):
         assert_equal(S.todense(), E*diag(v) )
 
 
-
-
-
     def test_estimate_blocksize(self):
         mats = []
         mats.append( [[0,1],[1,0]] )
@@ -100,6 +97,27 @@ class TestSparseFunctions(TestCase):
         assert_equal(count_blocks(X,(1,2)),gold(X,(1,2)))
         assert_equal(count_blocks(Y,(1,2)),gold(X,(1,2)))
 
+    def test_cs_graph_components(self):
+        import numpy as np
+        from scipy.sparse import csr_matrix, cs_graph_components
+
+        D = np.eye(4, dtype=np.bool)
+
+        n_comp, flag = cs_graph_components(csr_matrix(D))
+        assert(n_comp == 4)
+        assert_equal(flag, [0, 1, 2, 3])
+
+        D[0,1] = D[1,0] = 1
+
+        n_comp, flag = cs_graph_components(csr_matrix(D))
+        assert(n_comp == 3)
+        assert_equal(flag, [0, 0, 1, 2])
+
+        # A pathological case...
+        D[2,2] = 0
+        n_comp, flag = cs_graph_components(csr_matrix(D))
+        assert(n_comp == 2)
+        assert_equal(flag, [0, 0, -2, 1])
 
 if __name__ == "__main__":
     run_module_suite()

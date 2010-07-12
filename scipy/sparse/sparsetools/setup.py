@@ -6,7 +6,7 @@ def configuration(parent_package='',top_path=None):
 
     config = Configuration('sparsetools',parent_package,top_path)
 
-    for fmt in ['csr','csc','coo','bsr','dia']:
+    for fmt in ['csr','csc','coo','bsr','dia','csgraph']:
         sources = [ fmt + '_wrap.cxx' ]
         depends = [ fmt + '.h' ]
         config.add_extension('_' + fmt, sources=sources, depends=depends)

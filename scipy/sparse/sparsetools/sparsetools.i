@@ -101,7 +101,8 @@
   ctype Bj [ ],
   ctype Cp [ ],
   ctype Ci [ ],
-  ctype Cj [ ]
+  ctype Cj [ ],
+  ctype flag [ ]
 };
 %enddef
 
