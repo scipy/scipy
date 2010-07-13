@@ -180,7 +180,7 @@ class Rbf(object):
         self.epsilon = kwargs.pop('epsilon', r.mean())
         self.smooth = kwargs.pop('smooth', 0.0)
 
-        self.function = kwargs.pop('function', self._h_multiquadric)
+        self.function = kwargs.pop('function', 'multiquadric')
 
         # attach anything left in kwargs to self
         #  for use by any user-callable function or 
