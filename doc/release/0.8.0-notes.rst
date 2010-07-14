@@ -231,6 +231,13 @@ Improved hypergeometric 2F1 function
 Implementation of `scipy.special.hyp2f1` for real parameters was revised.
 The new version should produce accurate values for all real parameters.
 
+More flexible interface for Radial basis function interpolation
+---------------------------------------------------------------
+
+The `scipy.interpolate.Rbf` class now accepts a callable as input for the
+"function" argument, in addition to the built-in radial basis functions which
+can be selected with a string argument.
+
 Removed features
 ================
 
