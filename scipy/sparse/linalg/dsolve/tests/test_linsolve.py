@@ -1,6 +1,6 @@
 import warnings
 
-from numpy import array, finfo, arange, eye, all, unique, ones, dot
+from numpy import array, finfo, arange, eye, all, unique, ones, dot, matrix
 import numpy.random as random
 from numpy.testing import *
 
@@ -38,6 +38,17 @@ class TestLinsolve(TestCase):
 
                 assert( norm(b - Asp*x) < 10 * cond_A * eps )
 
+    def test_smoketest(self):
+        Adense = matrix([[ 0.,  1.,  1.],
+                         [ 1.,  0.,  1.],
+                         [ 0.,  0.,  1.]])
+        As =  csc_matrix(Adense)
+        random.seed(1234)
+        x = random.randn(3)
+        b = As*x
+        x2 = spsolve(As, b)
+
+        assert_array_almost_equal(x, x2)
 
 class TestSplu(object):
     def setUp(self):
