@@ -601,7 +601,12 @@ class TestIfftnSingle(_TestIfftn):
     maxnlp = 3500
 
 class TestLongDoubleFailure(TestCase):
+
     def test_complex(self):
+        if np.dtype(np.longcomplex).itemsize == np.dtype(np.complex).itemsize:
+            # longdouble == double; so fft is supported
+            return
+
         x = np.random.randn(10).astype(np.longdouble) + \
                 1j * np.random.randn(10).astype(np.longdouble)
 
@@ -614,6 +619,10 @@ class TestLongDoubleFailure(TestCase):
                 pass
 
     def test_real(self):
+        if np.dtype(np.longdouble).itemsize == np.dtype(np.double).itemsize:
+            # longdouble == double; so fft is supported
+            return
+
         x = np.random.randn(10).astype(np.longcomplex)
 
         for f in [fft, ifft]:
