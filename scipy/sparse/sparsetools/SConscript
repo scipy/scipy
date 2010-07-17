@@ -4,6 +4,6 @@ from numscons import GetNumpyEnvironment
 
 env = GetNumpyEnvironment(ARGUMENTS)
 
-for fmt in ['csr','csc','coo','bsr','dia']:
+for fmt in ['csr','csc','coo','bsr','dia', 'csgraph']:
     sources = [ fmt + '_wrap.cxx' ]
     env.NumpyPythonExtension('_%s' % fmt, source = sources)
