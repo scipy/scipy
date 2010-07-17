@@ -1,10 +1,6 @@
-
 import warnings
 
-import codata
-import constants
-
-from scipy.constants import find
+from scipy.constants import constants, codata, find
 from numpy.testing import assert_equal, run_module_suite
 
 def test_find():
