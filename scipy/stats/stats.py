@@ -1469,7 +1469,7 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
     if extrapoints > 0 and printextras:
         # fixme: warnings.warn()
         print '\nPoints outside given histogram range =',extrapoints
-    return (hist, defaultlimits[0], binsize, extrapoints) 
+    return (hist, defaultlimits[0], binsize, extrapoints)
 
 
 def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
@@ -1576,7 +1576,7 @@ def signaltonoise(a, axis=0, ddof=0):
     """
     Calculates the signal-to-noise ratio, defined as the ratio between the mean
     and the standard deviation.
- 
+
 
     Parameters
     ----------
@@ -1587,7 +1587,7 @@ def signaltonoise(a, axis=0, ddof=0):
         integer, this is the axis over which to operate. Defaults to None???0
     ddof : integer, optional, default 0
         degrees of freedom correction for standard deviation
-    
+
 
     Returns
     -------
@@ -1646,12 +1646,12 @@ first), or an integer (the axis over which to operate).
 def sem(a, axis=0, ddof=1):
     """
     Calculates the standard error of the mean (or standard error of
-    measurement) of the values in the passed array. 
+    measurement) of the values in the passed array.
 
     Parameters
     ----------
     a: array like
-        An array containing the values for which 
+        An array containing the values for which
     axis: int or None, optional.
         if equal None, ravel array first. If equal to an integer, this will be
         the axis over which to operate. Defaults to 0.
@@ -1661,7 +1661,7 @@ def sem(a, axis=0, ddof=1):
 
     Returns
     -------
-    The standard error of the mean in the sample(s), along the input axis  
+    The standard error of the mean in the sample(s), along the input axis
 
 """
     a, axis = _chk_asarray(a, axis)
@@ -1702,8 +1702,8 @@ computed relative to the passed array.
 def zscore(a, axis=0, ddof=0):
     """
     Calculates the z score of each value in the sample, relative to the sample
-    mean and standard deviation.  
- 
+    mean and standard deviation.
+
     Parameters
     ----------
     a: array_like
@@ -1711,7 +1711,7 @@ def zscore(a, axis=0, ddof=0):
     axis: int or None, optional
          If axis is equal to None, the array is first ravel'd. If axis is an
          integer, this is the axis over which to operate. Defaults to 0.
-    
+
     Returns
     -------
     zscore: array_like
@@ -1732,7 +1732,7 @@ def zscore(a, axis=0, ddof=0):
                  np.expand_dims(sstd,axis=axis)))
     else:
         return (a - mns) / sstd
-    
+
 
 
 def zmap(scores, compare, axis=0, ddof=0):
@@ -1743,7 +1743,7 @@ def zmap(scores, compare, axis=0, ddof=0):
     Returns an array of z-scores, i.e. scores that are standardized to zero
     mean and unit variance, where mean and variance are calculated from the
     comparison array.
- 
+
     Parameters
     ----------
     scores : array-like
@@ -1805,10 +1805,10 @@ Returns: a, with values less than threshmin or greater than threshmax
 
 def sigmaclip(a, low=4., high=4.):
     """Iterative sigma-clipping of array elements.
-    
+
     The output array contains only those elements of the input array `c`
     that satisfy the conditions ::
-    
+
         mean(c) - std(c)*low < c < mean(c) + std(c)*high
 
     Parameters
@@ -1828,8 +1828,8 @@ def sigmaclip(a, low=4., high=4.):
         lower threshold value use for clipping
     critlupper : float
         upper threshold value use for clipping
-        
-    
+
+
     Examples
     --------
     >>> a = np.concatenate((np.linspace(9.5,10.5,31),np.linspace(0,20,5)))
@@ -1843,7 +1843,7 @@ def sigmaclip(a, low=4., high=4.):
     (9.9646446609406727, 9.9646446609406727, 9.9666666666666668)
     >>> upp, c.mean() + fact*c.std(), c.max()
     (10.035355339059327, 10.035355339059327, 10.033333333333333)
-    
+
     >>> a = np.concatenate((np.linspace(9.5,10.5,11),
         np.linspace(-100,-50,3)))
     >>> c, low, upp = sigmaclip(a, 1.8, 1.8)
@@ -2134,7 +2134,7 @@ def spearmanr(a, b=None, axis=0):
         observations. Each column of m represents a variable, and each row
         entry a single observation of those variables. Also see axis below.
         Both arrays need to have the same length in the `axis` dimension.
-        
+
     axis : int or None, optional
         If axis=0 (default), then each column represents a variable, with
         observations in the rows. If axis=0, the relationship is transposed:
@@ -2197,7 +2197,7 @@ def spearmanr(a, b=None, axis=0):
     (0.10816770419260482, 0.1273562188027364)
     >>> spearmanr(x2n.ravel(), y2n.ravel())
     (0.10816770419260482, 0.1273562188027364)
-    
+
     >>> xint = np.random.randint(10,size=(100,2))
     >>> spearmanr(xint)
     (0.052760927029710199, 0.60213045837062351)
@@ -2205,7 +2205,7 @@ def spearmanr(a, b=None, axis=0):
     """
     a, axisout = _chk_asarray(a, axis)
     ar = np.apply_along_axis(rankdata,axisout,a)
-    
+
     br = None
     if not b is None:
         b, axisout = _chk_asarray(b, axis)
@@ -2215,7 +2215,7 @@ def spearmanr(a, b=None, axis=0):
 
     t = rs * np.sqrt((n-2) / ((rs+1.0)*(1.0-rs)))
     prob = distributions.t.sf(np.abs(t),n-2)*2
-    
+
     if rs.shape == (2,2):
         return rs[1,0], prob[1,0]
     else:
@@ -2332,7 +2332,7 @@ def kendalltau(x, y):
     return tau, prob
 
 
-def linregress(*args):
+def linregress(x, y=None):
     """
     Calculate a regression line
 
@@ -2342,9 +2342,9 @@ def linregress(*args):
     ----------
     x, y : array_like
         two sets of measurements.  Both arrays should have the same length.
-        If only x is given, then it must be a two-dimensional array where one
-        dimension has length 2.  The two sets of measurements are then found
-        by splitting the array along the length-2 dimension.
+        If only x is given (and y=None), then it must be a two-dimensional
+        array where one dimension has length 2.  The two sets of measurements
+        are then found by splitting the array along the length-2 dimension.
 
     Returns
     -------
@@ -2376,17 +2376,19 @@ def linregress(*args):
 
     """
     TINY = 1.0e-20
-    if len(args) == 1:  # more than 1D array?
-        args = asarray(args[0])
-        if len(args) == 2:
-            x = args[0]
-            y = args[1]
+    if y is None:  # x is a (2, N) or (N, 2) shaped array_like
+        x = asarray(x)
+        if x.shape[0] == 2:
+            x, y = x
+        elif x.shape[1] == 2:
+            x, y = x.T
         else:
-            x = args[:,0]
-            y = args[:,1]
+            msg = "If only `x` is given as input, it has to be of shape (2, N) \
+            or (N, 2), provided shape was %s" % str(x.shape)
+            raise ValueError(msg)
     else:
-        x = asarray(args[0])
-        y = asarray(args[1])
+        x = asarray(x)
+        y = asarray(y)
     n = len(x)
     xmean = np.mean(x,None)
     ymean = np.mean(y,None)
@@ -3021,10 +3023,10 @@ def mannwhitneyu(x, y, use_continuity=True):
     if T == 0:
         raise ValueError, 'All numbers are identical in amannwhitneyu'
     sd = np.sqrt(T*n1*n2*(n1+n2+1)/12.0)
-    
+
     if use_continuity:
         # normal approximation for prob calc with continuity correction
-        z = abs((bigu-0.5-n1*n2/2.0) / sd)  
+        z = abs((bigu-0.5-n1*n2/2.0) / sd)
     else:
         z = abs((bigu-n1*n2/2.0) / sd)  # normal approximation for prob calc
     return smallu, distributions.norm.sf(z)  #(1.0 - zprob(z))

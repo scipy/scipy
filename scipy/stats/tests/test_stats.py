@@ -497,6 +497,35 @@ class TestRegression(TestCase):
         res = stats.linregress(x, y)
         assert_almost_equal(res[4], 2.3957814497838803e-3) #4.3609875083149268e-3)
 
+    def test_regress_simple_onearg_rows(self):
+        """Regress a line with sinusoidal noise, with a single input of shape
+        (2, N).
+        """
+        x = np.linspace(0, 100, 100)
+        y = 0.2 * np.linspace(0, 100, 100) + 10
+        y += np.sin(np.linspace(0, 20, 100))
+        rows = np.vstack((x, y))
+
+        res = stats.linregress(rows)
+        assert_almost_equal(res[4], 2.3957814497838803e-3) #4.3609875083149268e-3)
+
+    def test_regress_simple_onearg_cols(self):
+        """Regress a line with sinusoidal noise, with a single input of shape
+        (N, 2).
+        """
+        x = np.linspace(0, 100, 100)
+        y = 0.2 * np.linspace(0, 100, 100) + 10
+        y += np.sin(np.linspace(0, 20, 100))
+        cols = np.hstack((np.expand_dims(x, 1), np.expand_dims(y, 1)))
+
+        res = stats.linregress(cols)
+        assert_almost_equal(res[4], 2.3957814497838803e-3) #4.3609875083149268e-3)
+
+    def test_regress_shape_error(self):
+        """Check that a single input argument to linregress with wrong shape
+        results in a ValueError."""
+        assert_raises(ValueError, stats.linregress, np.ones((3, 3)))
+
     def test_linregress(self):
         '''compared with multivariate ols with pinv'''
         x = np.arange(11)
