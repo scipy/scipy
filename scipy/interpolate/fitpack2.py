@@ -468,14 +468,14 @@ class BivariateSpline(object):
     [xb,xe] x [yb, ye] calculated from a given set of data points
     (x,y,z).
 
-    See also:
-
-    bisplrep, bisplev - an older wrapping of FITPACK
-    UnivariateSpline - a similar class for univariate spline interpolation
-    SmoothUnivariateSpline - to create a BivariateSpline through the
-                             given points
-    LSQUnivariateSpline - to create a BivariateSpline using weighted
-                          least-squares fitting
+    See Also
+    --------
+    bisplrep, bisplev : an older wrapping of FITPACK
+    UnivariateSpline : a similar class for univariate spline interpolation
+    SmoothUnivariateSpline :
+        to create a BivariateSpline through the given points
+    LSQUnivariateSpline :
+        to create a BivariateSpline using weighted least-squares fitting
     """
 
     def get_residual(self):
@@ -537,37 +537,42 @@ class BivariateSpline(object):
 class SmoothBivariateSpline(BivariateSpline):
     """ Smooth bivariate spline approximation.
 
-    See also:
+    Parameters
+    ----------
+    x, y, z : array_like
+        1-D sequences of data points (order is not important).
+    w : array_lie, optional
+        Positive 1-D sequence of weights.
+    bbox : array_like, optional
+        Sequence of length 4 specifying the boundary of the rectangular
+        approximation domain.  By default,
+        ``bbox=[min(x,tx),max(x,tx), min(y,ty),max(y,ty)]``.
+    kx, ky : ints, optional
+        Degrees of the bivariate spline. Default is 3.
+    s : float, optional
+        Positive smoothing factor defined for estimation condition:
+        ``sum((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0) <= s``
+        Default ``s=len(w)`` which should be a good value if 1/w[i] is an
+        estimate of the standard deviation of z[i].
+    eps : float, optional
+        A threshold for determining the effective rank of an over-determined
+        linear system of equations. `eps` should have a value between 0 and 1,
+        the default is 1e-16.
 
-    bisplrep, bisplev - an older wrapping of FITPACK
-    UnivariateSpline - a similar class for univariate spline interpolation
-    LSQUnivariateSpline - to create a BivariateSpline using weighted
-                          least-squares fitting
+    Notes
+    -----
+    The length of `x`, `y` and `z` should be at least ``(kx+1) * (ky+1)``.
+
+    See Also
+    --------
+    bisplrep, bisplev : an older wrapping of FITPACK
+    UnivariateSpline : a similar class for univariate spline interpolation
+    LSQUnivariateSpline : to create a BivariateSpline using weighted
+
     """
 
-    def __init__(self, x, y, z, w=None,
-                 bbox = [None]*4, kx=3, ky=3, s=None, eps=None):
-        """
-        Input:
-          x,y,z  - 1-d sequences of data points (order is not
-                   important)
-        Optional input:
-          w          - positive 1-d sequence of weights
-          bbox       - 4-sequence specifying the boundary of
-                       the rectangular approximation domain.
-                       By default, bbox=[min(x,tx),max(x,tx),
-                                         min(y,ty),max(y,ty)]
-          kx,ky=3,3  - degrees of the bivariate spline.
-          s          - positive smoothing factor defined for
-                       estimation condition:
-                         sum((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0) <= s
-                       Default s=len(w) which should be a good value
-                       if 1/w[i] is an estimate of the standard
-                       deviation of z[i].
-          eps        - a threshold for determining the effective rank
-                       of an over-determined linear system of
-                       equations. 0 < eps < 1, default is 1e-16.
-        """
+    def __init__(self, x, y, z, w=None, bbox = [None]*4, kx=3, ky=3, s=None,
+                 eps=None):
         xb,xe,yb,ye = bbox
         nx,tx,ny,ty,c,fp,wrk1,ier = dfitpack.surfit_smth(x,y,z,w,
                                                          xb,xe,yb,ye,
@@ -584,35 +589,45 @@ class SmoothBivariateSpline(BivariateSpline):
         self.degrees = kx,ky
 
 class LSQBivariateSpline(BivariateSpline):
-    """ Weighted least-squares spline approximation.
-    See also:
+    """ Weighted least-squares bivariate spline approximation.
 
-    bisplrep, bisplev - an older wrapping of FITPACK
-    UnivariateSpline - a similar class for univariate spline interpolation
-    SmoothUnivariateSpline - to create a BivariateSpline through the
-                             given points
+    Parameters
+    ----------
+    x, y, z : array_like
+        1-D sequences of data points (order is not important).
+    tx, ty : array_like
+        Strictly ordered 1-D sequences of knots coordinates.
+    w : array_lie, optional
+        Positive 1-D sequence of weights.
+    bbox : array_like, optional
+        Sequence of length 4 specifying the boundary of the rectangular
+        approximation domain.  By default,
+        ``bbox=[min(x,tx),max(x,tx), min(y,ty),max(y,ty)]``.
+    kx, ky : ints, optional
+        Degrees of the bivariate spline. Default is 3.
+    s : float, optional
+        Positive smoothing factor defined for estimation condition:
+        ``sum((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0) <= s``
+        Default ``s=len(w)`` which should be a good value if 1/w[i] is an
+        estimate of the standard deviation of z[i].
+    eps : float, optional
+        A threshold for determining the effective rank of an over-determined
+        linear system of equations. `eps` should have a value between 0 and 1,
+        the default is 1e-16.
+
+    Notes
+    -----
+    The length of `x`, `y` and `z` should be at least ``(kx+1) * (ky+1)``.
+
+    See Also
+    --------
+    bisplrep, bisplev : an older wrapping of FITPACK
+    UnivariateSpline : a similar class for univariate spline interpolation
+    SmoothUnivariateSpline : To create a BivariateSpline through the given points
     """
 
-    def __init__(self, x, y, z, tx, ty, w=None,
-                 bbox = [None]*4,
-                 kx=3, ky=3, eps=None):
-        """
-        Input:
-          x,y,z  - 1-d sequences of data points (order is not
-                   important)
-          tx,ty  - strictly ordered 1-d sequences of knots
-                   coordinates.
-        Optional input:
-          w          - positive 1-d sequence of weights
-          bbox       - 4-sequence specifying the boundary of
-                       the rectangular approximation domain.
-                       By default, bbox=[min(x,tx),max(x,tx),
-                                         min(y,ty),max(y,ty)]
-          kx,ky=3,3  - degrees of the bivariate spline.
-          eps        - a threshold for determining the effective rank
-                       of an over-determined linear system of
-                       equations. 0 < eps < 1, default is 1e-16.
-        """
+    def __init__(self, x, y, z, tx, ty, w=None, bbox=[None]*4, kx=3, ky=3,
+                 eps=None):
         nx = 2*kx+2+len(tx)
         ny = 2*ky+2+len(ty)
         tx1 = zeros((nx,),float)
@@ -644,32 +659,33 @@ class LSQBivariateSpline(BivariateSpline):
 class RectBivariateSpline(BivariateSpline):
     """ Bivariate spline approximation over a rectangular mesh.
 
-    Can be used for both smoothing or interpolating data.
+    Can be used for both smoothing and interpolating data.
 
-    See also:
+    Parameters
+    ----------
+    x,y : array_like
+        1-D arrays of coordinates in strictly ascending order.
+    z : array_like
+        2-D array of data with shape (x.size,y.size).
+    bbox : array_like, optional
+        Sequence of length 4 specifying the boundary of the rectangular
+        approximation domain.  By default,
+        ``bbox=[min(x,tx),max(x,tx), min(y,ty),max(y,ty)]``.
+    kx, ky : ints, optional
+        Degrees of the bivariate spline. Default is 3.
+    s : float, optional
+        Positive smoothing factor defined for estimation condition:
+        ``sum((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0) <= s``
+        Default is s=0, which is for interpolation.
 
-    SmoothBivariateSpline - a smoothing bivariate spline for scattered data
-    bisplrep, bisplev - an older wrapping of FITPACK
-    UnivariateSpline - a similar class for univariate spline interpolation
+    See Also
+    --------
+    SmoothBivariateSpline : a smoothing bivariate spline for scattered data
+    bisplrep, bisplev : an older wrapping of FITPACK
+    UnivariateSpline : a similar class for univariate spline interpolation
     """
 
-    def __init__(self, x, y, z,
-                 bbox = [None]*4, kx=3, ky=3, s=0):
-        """
-        Input:
-          x,y  - 1-d sequences of coordinates in strictly ascending order
-            z  - 2-d array of data with shape (x.size,y.size)
-        Optional input:
-          bbox       - 4-sequence specifying the boundary of
-                       the rectangular approximation domain.
-                       By default, bbox=[min(x,tx),max(x,tx),
-                                         min(y,ty),max(y,ty)]
-          kx,ky=3,3  - degrees of the bivariate spline.
-          s          - positive smoothing factor defined for
-                       estimation condition:
-                         sum((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0) <= s
-                       Default s=0 which is for interpolation
-        """
+    def __init__(self, x, y, z, bbox = [None]*4, kx=3, ky=3, s=0):
         x,y = ravel(x),ravel(y)
         if not all(diff(x) > 0.0):
             raise TypeError,'x must be strictly increasing'
