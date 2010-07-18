@@ -787,8 +787,8 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
     tck=[tx,ty,c,kx,ky]
 
     ierm=min(11,max(-3,ier))
-    if ier<=0 and not quiet:
-        print _iermess2[ier][0]
+    if ierm<=0 and not quiet:
+        print _iermess2[ierm][0]
         print "\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f"%(kx,ky,len(tx),
                                                            len(ty),m,fp,s)
     if ierm>0 and not full_output:
