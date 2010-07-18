@@ -107,7 +107,7 @@ static PyObject *fitpack_bispev(PyObject *dummy, PyObject *args) {
   ap_tx = (PyArrayObject *)PyArray_ContiguousFromObject(tx_py, PyArray_DOUBLE, 0, 1);
   ap_ty = (PyArrayObject *)PyArray_ContiguousFromObject(ty_py, PyArray_DOUBLE, 0, 1);
   if (ap_x == NULL || ap_y == NULL || ap_c == NULL || ap_tx == NULL \
-      || ap_ty == NULL) goto fail;  
+      || ap_ty == NULL) goto fail;
   x = (double *) ap_x->data;
   y = (double *) ap_y->data;
   c = (double *) ap_c->data;
@@ -120,7 +120,7 @@ static PyObject *fitpack_bispev(PyObject *dummy, PyObject *args) {
   mxy = mx*my;
   ap_z = (PyArrayObject *)PyArray_SimpleNew(1,&mxy,PyArray_DOUBLE);
   z = (double *) ap_z->data;
-  if (nux || nuy) 
+  if (nux || nuy)
     lwrk = mx*(kx+1-nux)+my*(ky+1-nuy)+(nx-kx-1)*(ny-ky-1);
   else
     lwrk = mx*(kx+1)+my*(ky+1);
@@ -346,7 +346,7 @@ static PyObject *fitpack_parcur(PyObject *dummy, PyObject *args) {
   for (i=0;i<idim;i++)
     memcpy((double *) ap_c->data+i*(n-k-1),c+i*n,(n-k-1)*sizeof(double));
   memcpy(ap_wrk->data,wrk,n*sizeof(double));
-  memcpy(ap_iwrk->data,iwrk,n*sizeof(int));  
+  memcpy(ap_iwrk->data,iwrk,n*sizeof(int));
   if (wa) free(wa);
   Py_DECREF(ap_x);
   Py_DECREF(ap_w);
@@ -447,229 +447,291 @@ static PyObject *fitpack_curfit(PyObject *dummy, PyObject *args) {
 }
 
 static char doc_spl_[] = " [y,ier] = _spl_(x,nu,t,c,k )";
-static PyObject *fitpack_spl_(PyObject *dummy, PyObject *args) {
-  int n,nu,ier,k;
-  npy_intp m;
-  double *x,*y,*t,*c,*wrk = NULL;
-  PyArrayObject *ap_x = NULL,*ap_y = NULL,*ap_t = NULL,*ap_c = NULL;
-  PyObject *x_py = NULL,*t_py = NULL,*c_py = NULL;
-  if (!PyArg_ParseTuple(args, "OiOOi",&x_py,&nu,&t_py,&c_py,&k)) return NULL;
-  ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x_py, PyArray_DOUBLE, 0, 1);
-  ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, PyArray_DOUBLE, 0, 1);
-  ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, PyArray_DOUBLE, 0, 1);
-  if ((ap_x == NULL || ap_t == NULL || ap_c == NULL)) goto fail;
-  x = (double *) ap_x->data;
-  m = ap_x->dimensions[0];
-  t = (double *) ap_t->data;
-  c = (double *) ap_c->data;
-  n = ap_t->dimensions[0];
-  ap_y = (PyArrayObject *)PyArray_SimpleNew(1,&m,PyArray_DOUBLE);
-  if (ap_y == NULL) goto fail;
-  y = (double *) ap_y->data;
-  if ((wrk = (double *)malloc(n*sizeof(double)))==NULL) {
-    PyErr_NoMemory();
-    goto fail;
-  }
-  if (nu)
-    SPLDER(t,&n,c,&k,&nu,x,y,&m,wrk,&ier);
-  else
-    SPLEV(t,&n,c,&k,x,y,&m,&ier);
-  if (wrk) free(wrk);
-  Py_DECREF(ap_x);
-  Py_DECREF(ap_c);
-  Py_DECREF(ap_t);
-  return Py_BuildValue("Ni",PyArray_Return(ap_y),ier);
- fail:
-  if (wrk) free(wrk);
-  Py_XDECREF(ap_x);
-  Py_XDECREF(ap_c);
-  Py_XDECREF(ap_t);
-  return NULL;
+static PyObject *fitpack_spl_(PyObject *dummy, PyObject *args)
+{
+    int n, nu, ier, k;
+    npy_intp m;
+    double *x, *y, *t, *c, *wrk = NULL;
+    PyArrayObject *ap_x = NULL, *ap_y = NULL, *ap_t = NULL, *ap_c = NULL;
+    PyObject *x_py = NULL, *t_py = NULL, *c_py = NULL;
+
+    if (!PyArg_ParseTuple(args, "OiOOi",&x_py,&nu,&t_py,&c_py,&k)) {
+        return NULL;
+    }
+    ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x_py, PyArray_DOUBLE, 0, 1);
+    ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, PyArray_DOUBLE, 0, 1);
+    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, PyArray_DOUBLE, 0, 1);
+    if ((ap_x == NULL || ap_t == NULL || ap_c == NULL)) {
+        goto fail;
+    }
+    x = (double *)ap_x->data;
+    m = ap_x->dimensions[0];
+    t = (double *)ap_t->data;
+    c = (double *)ap_c->data;
+    n = ap_t->dimensions[0];
+    ap_y = (PyArrayObject *)PyArray_SimpleNew(1,&m,PyArray_DOUBLE);
+    if (ap_y == NULL) {
+        goto fail;
+    }
+    y = (double *)ap_y->data;
+    if ((wrk = (double *)malloc(n*sizeof(double))) == NULL) {
+        PyErr_NoMemory();
+        goto fail;
+    }
+    if (nu) {
+        SPLDER(t, &n, c, &k, &nu, x, y, &m, wrk, &ier);
+    }
+    else {
+        SPLEV(t, &n, c, &k, x, y, &m, &ier);
+    }
+    if (wrk) {
+        free(wrk);
+    }
+    Py_DECREF(ap_x);
+    Py_DECREF(ap_c);
+    Py_DECREF(ap_t);
+    return Py_BuildValue("Ni", PyArray_Return(ap_y), ier);
+
+fail:
+    if (wrk) {
+        free(wrk);
+    }
+    Py_XDECREF(ap_x);
+    Py_XDECREF(ap_c);
+    Py_XDECREF(ap_t);
+    return NULL;
 }
 
 static char doc_splint[] = " [aint,wrk] = _splint(t,c,k,a,b)";
-static PyObject *fitpack_splint(PyObject *dummy, PyObject *args) {
-  int k;
-  npy_intp n;
-  double *t,*c,*wrk = NULL,a,b,aint;
-  PyArrayObject *ap_t = NULL,*ap_c = NULL;
-  PyArrayObject *ap_wrk = NULL;
-  PyObject *t_py = NULL,*c_py = NULL;
-  if (!PyArg_ParseTuple(args, "OOidd",&t_py,&c_py,&k,&a,&b)) return NULL;
-  ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, PyArray_DOUBLE, 0, 1);
-  ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, PyArray_DOUBLE, 0, 1);
-  if ((ap_t == NULL || ap_c == NULL)) goto fail;
-  t = (double *) ap_t->data;
-  c = (double *) ap_c->data;
-  n = ap_t->dimensions[0];
-  ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_DOUBLE);
-  if (ap_wrk == NULL) goto fail;
-  wrk = (double *) ap_wrk->data;
-  aint = SPLINT(t,&n,c,&k,&a,&b,wrk);
-  Py_DECREF(ap_c);
-  Py_DECREF(ap_t);
-  return Py_BuildValue("dN",aint,PyArray_Return(ap_wrk));
- fail:
-  Py_XDECREF(ap_c);
-  Py_XDECREF(ap_t);
-  return NULL;
+static PyObject *fitpack_splint(PyObject *dummy, PyObject *args)
+{
+    int k;
+    npy_intp n;
+    double *t, *c, *wrk = NULL, a, b, aint;
+    PyArrayObject *ap_t = NULL, *ap_c = NULL;
+    PyArrayObject *ap_wrk = NULL;
+    PyObject *t_py = NULL, *c_py = NULL;
+
+    if (!PyArg_ParseTuple(args, "OOidd",&t_py,&c_py,&k,&a,&b)) {
+        return NULL;
+    }
+    ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, PyArray_DOUBLE, 0, 1);
+    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, PyArray_DOUBLE, 0, 1);
+    if ((ap_t == NULL || ap_c == NULL)) {
+        goto fail;
+    }
+    t = (double *)ap_t->data;
+    c = (double *)ap_c->data;
+    n = ap_t->dimensions[0];
+    ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1, &n, PyArray_DOUBLE);
+    if (ap_wrk == NULL) {
+        goto fail;
+    }
+    wrk = (double *)ap_wrk->data;
+    aint = SPLINT(t,&n,c,&k,&a,&b,wrk);
+    Py_DECREF(ap_c);
+    Py_DECREF(ap_t);
+    return Py_BuildValue("dN", aint, PyArray_Return(ap_wrk));
+
+fail:
+    Py_XDECREF(ap_c);
+    Py_XDECREF(ap_t);
+    return NULL;
 }
 
 static char doc_sproot[] = " [z,ier] = _sproot(t,c,k,mest)";
-static PyObject *fitpack_sproot(PyObject *dummy, PyObject *args) {
-  int n,k,mest,ier;
-  npy_intp m;
-  double *t,*c,*z=NULL;
-  PyArrayObject *ap_t = NULL,*ap_c = NULL;
-  PyArrayObject *ap_z = NULL;
-  PyObject *t_py = NULL,*c_py = NULL;
-  if (!PyArg_ParseTuple(args, "OOii",&t_py,&c_py,&k,&mest)) return NULL;
-  ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, PyArray_DOUBLE, 0, 1);
-  ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, PyArray_DOUBLE, 0, 1);
-  if ((ap_t == NULL || ap_c == NULL)) goto fail;
-  t = (double *) ap_t->data;
-  c = (double *) ap_c->data;
-  n = ap_t->dimensions[0];
-  if ((z = (double *)malloc(mest*sizeof(double)))==NULL) {
-    PyErr_NoMemory();
-    goto fail;
-  }
-  SPROOT(t,&n,c,z,&mest,&m,&ier);
-  if (ier==10) m=0;
-  ap_z = (PyArrayObject *)PyArray_SimpleNew(1,&m,PyArray_DOUBLE);
-  if (ap_z == NULL) goto fail;
-  memcpy(ap_z->data,z,m*sizeof(double));
-  if (z) free(z);
-  Py_DECREF(ap_c);
-  Py_DECREF(ap_t);
-  return Py_BuildValue("Ni",PyArray_Return(ap_z),ier);
- fail:
-  if (z) free(z);
-  Py_XDECREF(ap_c);
-  Py_XDECREF(ap_t);
-  return NULL;
+static PyObject *fitpack_sproot(PyObject *dummy, PyObject *args)
+{
+    int n, k, mest, ier;
+    npy_intp m;
+    double *t, *c, *z = NULL;
+    PyArrayObject *ap_t = NULL, *ap_c = NULL;
+    PyArrayObject *ap_z = NULL;
+    PyObject *t_py = NULL, *c_py = NULL;
+
+    if (!PyArg_ParseTuple(args, "OOii",&t_py,&c_py,&k,&mest)) {
+        return NULL;
+    }
+    ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, PyArray_DOUBLE, 0, 1);
+    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, PyArray_DOUBLE, 0, 1);
+    if ((ap_t == NULL || ap_c == NULL)) {
+        goto fail;
+    }
+    t = (double *)ap_t->data;
+    c = (double *)ap_c->data;
+    n = ap_t->dimensions[0];
+    if ((z = (double *)malloc(mest*sizeof(double))) == NULL) {
+        PyErr_NoMemory();
+        goto fail;
+    }
+    SPROOT(t,&n,c,z,&mest,&m,&ier);
+    if (ier==10) {
+        m = 0;
+    }
+    ap_z = (PyArrayObject *)PyArray_SimpleNew(1, &m, PyArray_DOUBLE);
+    if (ap_z == NULL) {
+        goto fail;
+    }
+    memcpy(ap_z->data,z,m*sizeof(double));
+    if (z) {
+        free(z);
+    }
+    Py_DECREF(ap_c);
+    Py_DECREF(ap_t);
+    return Py_BuildValue("Ni", PyArray_Return(ap_z), ier);
+
+fail:
+    if (z) {
+        free(z);
+    }
+    Py_XDECREF(ap_c);
+    Py_XDECREF(ap_t);
+    return NULL;
 }
 
 static char doc_spalde[] = " [d,ier] = _spalde(t,c,k,x)";
-static PyObject *fitpack_spalde(PyObject *dummy, PyObject *args) {
-  int n,k,ier;
-  npy_intp k1;
-  double *t,*c,*d=NULL,x;
-  PyArrayObject *ap_t = NULL,*ap_c = NULL,*ap_d = NULL;
-  PyObject *t_py = NULL,*c_py = NULL;
-  if (!PyArg_ParseTuple(args, "OOid",&t_py,&c_py,&k,&x)) return NULL;
-  ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, PyArray_DOUBLE, 0, 1);
-  ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, PyArray_DOUBLE, 0, 1);
-  if ((ap_t == NULL || ap_c == NULL)) goto fail;
-  t = (double *) ap_t->data;
-  c = (double *) ap_c->data;
-  n = ap_t->dimensions[0];
-  k1=k+1;
-  ap_d = (PyArrayObject *)PyArray_SimpleNew(1,&k1,PyArray_DOUBLE);
-  if (ap_d == NULL) goto fail;
-  d = (double *) ap_d->data;
-  SPALDE(t,&n,c,&k1,&x,d,&ier);
-  Py_DECREF(ap_c);
-  Py_DECREF(ap_t);
-  return Py_BuildValue("Ni",PyArray_Return(ap_d),ier);
- fail:
-  Py_XDECREF(ap_c);
-  Py_XDECREF(ap_t);
-  return NULL;
+static PyObject *fitpack_spalde(PyObject *dummy, PyObject *args)
+{
+    int n, k, ier;
+    npy_intp k1;
+    double *t, *c, *d = NULL, x;
+    PyArrayObject *ap_t = NULL, *ap_c = NULL, *ap_d = NULL;
+    PyObject *t_py = NULL, *c_py = NULL;
+
+    if (!PyArg_ParseTuple(args, "OOid",&t_py,&c_py,&k,&x)) {
+        return NULL;
+    }
+    ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, PyArray_DOUBLE, 0, 1);
+    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, PyArray_DOUBLE, 0, 1);
+    if ((ap_t == NULL || ap_c == NULL)) {
+        goto fail;
+    }
+    t = (double *)ap_t->data;
+    c = (double *)ap_c->data;
+    n = ap_t->dimensions[0];
+    k1 = k + 1;
+    ap_d = (PyArrayObject *)PyArray_SimpleNew(1, &k1, PyArray_DOUBLE);
+    if (ap_d == NULL) {
+        goto fail;
+    }
+    d = (double *)ap_d->data;
+    SPALDE(t, &n, c, &k1, &x, d, &ier);
+    Py_DECREF(ap_c);
+    Py_DECREF(ap_t);
+    return Py_BuildValue("Ni", PyArray_Return(ap_d), ier);
+
+fail:
+    Py_XDECREF(ap_c);
+    Py_XDECREF(ap_t);
+    return NULL;
 }
 
 static char doc_insert[] = " [tt,cc,ier] = _insert(iopt,t,c,k,x,m)";
-static PyObject *fitpack_insert(PyObject *dummy, PyObject*args) {
-  int iopt, n, nn, k, ier, m;
-  npy_intp nest;
-  double x;
-  double *t, *c, *tt, *cc;
-  PyArrayObject *ap_t = NULL, *ap_c = NULL, *ap_tt = NULL, *ap_cc = NULL;
-  PyObject *t_py = NULL, *c_py = NULL;
-  PyObject *ret = NULL;
-  if (!PyArg_ParseTuple(args, "iOOidi",&iopt,&t_py,&c_py,&k, &x, &m)) return NULL;
-  ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, PyArray_DOUBLE, 0, 1);
-  ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, PyArray_DOUBLE, 0, 1);
-  if (ap_t == NULL || ap_c == NULL) goto fail;
-  t = (double *) ap_t->data;
-  c = (double *) ap_c->data;
-  n = ap_t->dimensions[0];
-  nest = n + m;
-  ap_tt = (PyArrayObject *)PyArray_SimpleNew(1,&nest,PyArray_DOUBLE);
-  ap_cc = (PyArrayObject *)PyArray_SimpleNew(1,&nest,PyArray_DOUBLE);
-  if (ap_tt == NULL || ap_cc == NULL) goto fail;
-  tt = (double *) ap_tt->data;
-  cc = (double *) ap_cc->data;
-  for ( ; n < nest; n++) {
-    INSERT(&iopt, t, &n, c, &k, &x, tt, &nn, cc, &nest, &ier);
-    if (ier) break;
-    t = tt;
-    c = cc;
-  }
-  Py_DECREF(ap_c);
-  Py_DECREF(ap_t);
-  ret = Py_BuildValue("NNi",PyArray_Return(ap_tt),PyArray_Return(ap_cc),ier);
-  return ret;
-  
-  fail:
-  Py_XDECREF(ap_c);
-  Py_XDECREF(ap_t);
-  return NULL;
-  }
+static PyObject *fitpack_insert(PyObject *dummy, PyObject*args)
+{
+    int iopt, n, nn, k, ier, m;
+    npy_intp nest;
+    double x;
+    double *t, *c, *tt, *cc;
+    PyArrayObject *ap_t = NULL, *ap_c = NULL, *ap_tt = NULL, *ap_cc = NULL;
+    PyObject *t_py = NULL, *c_py = NULL;
+    PyObject *ret = NULL;
+
+    if (!PyArg_ParseTuple(args, "iOOidi",&iopt,&t_py,&c_py,&k, &x, &m)) {
+        return NULL;
+    }
+    ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, PyArray_DOUBLE, 0, 1);
+    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, PyArray_DOUBLE, 0, 1);
+    if (ap_t == NULL || ap_c == NULL) {
+        goto fail;
+    }
+    t = (double *)ap_t->data;
+    c = (double *)ap_c->data;
+    n = ap_t->dimensions[0];
+    nest = n + m;
+    ap_tt = (PyArrayObject *)PyArray_SimpleNew(1, &nest, PyArray_DOUBLE);
+    ap_cc = (PyArrayObject *)PyArray_SimpleNew(1, &nest, PyArray_DOUBLE);
+    if (ap_tt == NULL || ap_cc == NULL) {
+        goto fail;
+    }
+    tt = (double *)ap_tt->data;
+    cc = (double *)ap_cc->data;
+    for ( ; n < nest; n++) {
+        INSERT(&iopt, t, &n, c, &k, &x, tt, &nn, cc, &nest, &ier);
+        if (ier) {
+            break;
+        }
+        t = tt;
+        c = cc;
+    }
+    Py_DECREF(ap_c);
+    Py_DECREF(ap_t);
+    ret = Py_BuildValue("NNi", PyArray_Return(ap_tt), PyArray_Return(ap_cc), ier);
+    return ret;
+
+fail:
+    Py_XDECREF(ap_c);
+    Py_XDECREF(ap_t);
+    return NULL;
+}
 
 
 static void
 _deBoor_D(double *t, double x, int k, int ell, int m, double *result) {
-    /* On completion the result array stores 
-       the k+1 non-zero values of beta^(m)_i,k(x):  for i=ell, ell-1, ell-2, ell-k.
-       Where t[ell] <= x < t[ell+1]. 
-    */
-    /* Implements a recursive algorithm similar to the original algorithm of 
-       deBoor. 
-    */
-
+    /*
+     * On completion the result array stores
+     * the k+1 non-zero values of beta^(m)_i,k(x):  for i=ell, ell-1, ell-2, ell-k.
+     * Where t[ell] <= x < t[ell+1].
+     */
+    /*
+     * Implements a recursive algorithm similar to the original algorithm of
+     * deBoor.
+     */
     double *hh = result + k + 1;
     double *h = result;
     double xb, xa, w;
     int ind, j, n;
 
-    /* Perform k-m "standard" deBoor iterations */
-    /* so that h contains the k+1 non-zero values of beta_{ell,k-m}(x) */
-    /* needed to calculate the remaining derivatives. */
-
+    /*
+     * Perform k-m "standard" deBoor iterations
+     * so that h contains the k+1 non-zero values of beta_{ell,k-m}(x)
+     * needed to calculate the remaining derivatives.
+     */
     result[0] = 1.0;
-    for (j=1; j<=k-m; j++) {
+    for (j = 1; j <= k - m; j++) {
         memcpy(hh, h, j*sizeof(double));
         h[0] = 0.0;
-        for (n=1; n<=j; n++) {
+        for (n = 1; n <= j; n++) {
             ind = ell + n;
             xb = t[ind];
-            xa = t[ind-j];
+            xa = t[ind - j];
             if (xb == xa) {
                 h[n] = 0.0;
                 continue;
             }
-            w = hh[n-1]/(xb-xa);
-            h[n-1] += w*(xb-x);
-            h[n] = w*(x-xa);
+            w = hh[n - 1]/(xb - xa);
+            h[n - 1] += w*(xb - x);
+            h[n] = w*(x - xa);
         }
     }
 
-    /* Now do m "derivative" recursions */
-    /* to convert the values of beta into the mth derivative */
-    for (j=k-m+1; j<=k; j++) {
+    /*
+     * Now do m "derivative" recursions
+     * to convert the values of beta into the mth derivative
+     */
+    for (j = k - m + 1; j <= k; j++) {
         memcpy(hh, h, j*sizeof(double));
         h[0] = 0.0;
-        for (n=1; n<=j; n++) {
+        for (n = 1; n <= j; n++) {
             ind = ell + n;
             xb = t[ind];
-            xa = t[ind-j];
+            xa = t[ind - j];
             if (xb == xa) {
                 h[m] = 0.0;
                 continue;
             }
-            w = j*hh[n-1]/(xb-xa);
-            h[n-1] -= w;
+            w = j*hh[n - 1]/(xb - xa);
+            h[n - 1] -= w;
             h[n] = w;
         }
     }
@@ -677,16 +739,16 @@ _deBoor_D(double *t, double x, int k, int ell, int m, double *result) {
 
 
 /* Given a set of (N+1) samples:  A default set of knots is constructed
-   using the samples xk plus 2*(K-1) additional knots where 
+   using the samples xk plus 2*(K-1) additional knots where
    K = max(order,1) and the knots are chosen so that distances
    are symmetric around the first and last samples: x_0 and x_N.
 
    There should be a vector of N+K coefficients for the spline
    curve in coef.  These coefficients form the curve as
-   
+
    s(x) = sum(c_j B_{j,K}(x), j=-K..N-1)
 
-   The spline function is evaluated at all points xx. 
+   The spline function is evaluated at all points xx.
    The approximation interval is from xk[0] to xk[-1]
    Any xx outside that interval is set automatically to 0.0
  */
@@ -710,19 +772,19 @@ static PyObject *_bspleval(PyObject *dummy, PyObject *args) {
     PyArrayIterObject *xx_iter;
     double *t=NULL, *h=NULL, *ptr;
     double x0, xN, xN1, arg, sp, cval;
-    if (!PyArg_ParseTuple(args, "OOOi|i", &xx_py, &x_i_py, &coef_py, &k, &deriv)) 
+    if (!PyArg_ParseTuple(args, "OOOi|i", &xx_py, &x_i_py, &coef_py, &k, &deriv))
         return NULL;
     if (k < 0) {
         PyErr_Format(PyExc_ValueError, "order (%d) must be >=0", k);
         return NULL;
     }
     if (deriv > k) {
-        PyErr_Format(PyExc_ValueError, "derivative (%d) must be <= order (%d)", 
+        PyErr_Format(PyExc_ValueError, "derivative (%d) must be <= order (%d)",
                      deriv, k);
         return NULL;
     }
     kk = k;
-    if (k==0) kk = 1;       
+    if (k==0) kk = 1;
     dk = (k == 0 ? 0 : 1);
     x_i = (PyArrayObject *)PyArray_FROMANY(x_i_py, NPY_DOUBLE, 1, 1, NPY_ALIGNED);
     coef = (PyArrayObject *)PyArray_FROMANY(coef_py, NPY_DOUBLE, 1, 1, NPY_ALIGNED);
@@ -732,11 +794,11 @@ static PyObject *_bspleval(PyObject *dummy, PyObject *args) {
     N = PyArray_DIM(x_i,0)-1;
 
     if (PyArray_DIM(coef,0) < (N+k)) {
-        PyErr_Format(PyExc_ValueError, "too few coefficients (have %d need at least %d)", 
+        PyErr_Format(PyExc_ValueError, "too few coefficients (have %d need at least %d)",
                      PyArray_DIM(coef,0), N+k);
         goto fail;
     }
-    
+
     /* create output values */
     yy = (PyArrayObject *)PyArray_EMPTY(xx->nd, xx->dimensions, NPY_DOUBLE, 0);
     if (yy == NULL) goto fail;
@@ -758,9 +820,9 @@ static PyObject *_bspleval(PyObject *dummy, PyObject *args) {
     for (i=0; i<=N; i++) {
         *ptr++ = *((double *)(PyArray_GETPTR1(x_i, i)));
     }
-   
+
     /* Create work array to hold computed non-zero values for
-       the spline for a value of x. 
+       the spline for a value of x.
     */
     h = (double *)malloc(sizeof(double)*(2*kk+1));
     if (h==NULL) {
@@ -768,7 +830,7 @@ static PyObject *_bspleval(PyObject *dummy, PyObject *args) {
         goto fail;
     }
 
-    /* Determine the spline for each value of x */ 
+    /* Determine the spline for each value of x */
     xx_iter = (PyArrayIterObject *)PyArray_IterNew((PyObject *)xx);
     if (xx_iter == NULL) goto fail;
     ptr = PyArray_DATA(yy);
@@ -776,13 +838,13 @@ static PyObject *_bspleval(PyObject *dummy, PyObject *args) {
     while(PyArray_ITER_NOTDONE(xx_iter)) {
         arg = *((double *)PyArray_ITER_DATA(xx_iter));
         if ((arg < x0) || (arg > xN)) {
-            /* If we are outside the interpolation region, 
+            /* If we are outside the interpolation region,
                fill with zeros
             */
             *ptr++ = 0.0;
         }
         else {
-            /* Find the interval that arg lies between in the set of knots 
+            /* Find the interval that arg lies between in the set of knots
                t[ell] <= arg < t[ell+1] (last-knot use the previous interval) */
             xN1 = *((double *)PyArray_DATA(x_i) + N-1);
             if (arg >= xN1) {
@@ -793,9 +855,9 @@ static PyObject *_bspleval(PyObject *dummy, PyObject *args) {
                 while ((arg > t[ell])) ell++;
                 if (arg != t[ell]) ell--;
             }
-            
+
             _deBoor_D(t, arg, k, ell, deriv, h);
-            
+
             sp = 0.0;
             for (i=0; i<=k; i++) {
                 cval = *((double *)(PyArray_GETPTR1(coef, ell-i+dk)));
@@ -812,7 +874,7 @@ static PyObject *_bspleval(PyObject *dummy, PyObject *args) {
     free(t);
     free(h);
     return PyArray_Return(yy);
-  
+
  fail:
     Py_XDECREF(xx);
     Py_XDECREF(coef);
@@ -826,30 +888,30 @@ static PyObject *_bspleval(PyObject *dummy, PyObject *args) {
 
 /* Given a set of (N+1) sample positions:
    Construct the diagonals of the (N+1) x (N+K) matrix that is needed to find
-   the coefficients of a spline fit of order K.  
-       Note that K>=2 because for K=0,1, the coefficients are just the 
+   the coefficients of a spline fit of order K.
+       Note that K>=2 because for K=0,1, the coefficients are just the
        sample values themselves.
 
    The equation that expresses the constraints is
-   
+
      s(x_i) = sum(c_j B_{j,K}(x_i), j=-K..N-1) = w_i   for i=0..N
 
-   This is equivalent to 
+   This is equivalent to
 
      w = B*c   where c.T = [c_{-K}, c{-K+1}, ..., c_{N-1}] and
                      w.T = [w_{0}, w_{1}, ..., w_{N}]
 
    Therefore B is an (N+1) times (N+K) matrix with entries
 
-   B_{j,K}(x_i)  for column j=-K..N-1 
+   B_{j,K}(x_i)  for column j=-K..N-1
                  and row i=0..N
 
-   This routine takes the N+1 sample positions and the order k and 
+   This routine takes the N+1 sample positions and the order k and
       constructs the banded constraint matrix B (with k non-zero diagonals)
 
    The returned array is (N+1) times (N+K) ready to be either used
    to compute a minimally Kth-order derivative discontinuous spline
-   or to be expanded with an additional K-1 constraints to be used in 
+   or to be expanded with an additional K-1 constraints to be used in
    an exact spline specification.
  */
 static char doc_bsplmat[] = "B = _bsplmat(order,xk)\n"
@@ -866,7 +928,7 @@ static PyObject *_bsplmat(PyObject *dummy, PyObject *args) {
     PyArrayObject *x_i=NULL, *BB=NULL;
     double *t=NULL, *h=NULL, *ptr;
     double x0, xN, arg;
-    if (!PyArg_ParseTuple(args, "iO", &k, &x_i_py)) 
+    if (!PyArg_ParseTuple(args, "iO", &k, &x_i_py))
         return NULL;
     if (k < 2) {
         PyErr_Format(PyExc_ValueError, "order (%d) must be >=2", k);
@@ -882,7 +944,7 @@ static PyObject *_bsplmat(PyObject *dummy, PyObject *args) {
         equal = 1;
     }
     N -= 1;
-    
+
     /* create output matrix */
     dims[0] = N+1;
     dims[1] = N+k;
@@ -896,7 +958,7 @@ static PyObject *_bsplmat(PyObject *dummy, PyObject *args) {
     }
 
     /* Create work array to hold computed non-zero values for
-       the spline for a value of x. 
+       the spline for a value of x.
     */
     h = (double *)malloc(sizeof(double)*(2*k+1));
     if (h==NULL) {
@@ -941,12 +1003,12 @@ static PyObject *_bsplmat(PyObject *dummy, PyObject *args) {
     for (i=0; i<=N; i++) {
         *ptr++ = *((double *)(PyArray_GETPTR1(x_i, i)));
     }
-   
 
-    /* Determine the K+1 non-zero values of the spline and place them in the 
-       correct location in the matrix for each row (along the diagonals). 
+
+    /* Determine the K+1 non-zero values of the spline and place them in the
+       correct location in the matrix for each row (along the diagonals).
        In fact, the last member is always zero so only K non-zero values
-       are present. 
+       are present.
     */
     ptr = PyArray_DATA(BB);
     for (i=0,j=k-1; i<N; i++,j++) {
@@ -964,7 +1026,7 @@ static PyObject *_bsplmat(PyObject *dummy, PyObject *args) {
     free(t);
     free(h);
     return (PyObject *)BB;
-  
+
  fail:
     Py_XDECREF(x_i);
     Py_XDECREF(BB);
@@ -979,18 +1041,18 @@ static PyObject *_bsplmat(PyObject *dummy, PyObject *args) {
    Construct the (N-1) x (N+K) error matrix J_{ij} such that
 
    for i=1..N-1,
-   
-   e_i = sum(J_{ij}c_{j},j=-K..N-1) 
 
-   is the discontinuity of the Kth derivative at the point i in the spline. 
+   e_i = sum(J_{ij}c_{j},j=-K..N-1)
 
-   This routine takes the N+1 sample positions and the order k and 
-      constructs the banded matrix J 
+   is the discontinuity of the Kth derivative at the point i in the spline.
+
+   This routine takes the N+1 sample positions and the order k and
+      constructs the banded matrix J
 
    The returned array is (N+1) times (N+K) ready to be either used
    to compute a minimally Kth-order derivative discontinuous spline
-   or to be expanded with an additional K-1 constraints to be used in 
-   an exact reconstruction approach.  
+   or to be expanded with an additional K-1 constraints to be used in
+   an exact reconstruction approach.
  */
 static char doc_bspldismat[] = "B = _bspldismat(order,xk)\n"
 "Construct the kth derivative discontinuity jump constraint matrix \n"
@@ -1007,7 +1069,7 @@ static PyObject *_bspldismat(PyObject *dummy, PyObject *args) {
     PyArrayObject *x_i=NULL, *BB=NULL;
     double *t=NULL, *h=NULL, *ptr, *dptr;
     double x0, xN, dx;
-    if (!PyArg_ParseTuple(args, "iO", &k, &x_i_py)) 
+    if (!PyArg_ParseTuple(args, "iO", &k, &x_i_py))
         return NULL;
     if (k < 2) {
         PyErr_Format(PyExc_ValueError, "order (%d) must be >=2", k);
@@ -1049,7 +1111,7 @@ static PyObject *_bspldismat(PyObject *dummy, PyObject *args) {
     }
 
     /* Create work array to hold computed non-zero values for
-       the spline for a value of x. 
+       the spline for a value of x.
     */
     h = (double *)malloc(sizeof(double)*(2*k+1));
     if (h==NULL) {
@@ -1112,14 +1174,14 @@ static PyObject *_bspldismat(PyObject *dummy, PyObject *args) {
     for (i=0; i<=N; i++) {
         *ptr++ = *((double *)(PyArray_GETPTR1(x_i, i)));
     }
-   
+
 
     /* Determine the K+1 non-zero values of the discontinuity jump matrix
        and place them in the correct location in the matrix for each row
-       (along the diagonals). 
+       (along the diagonals).
 
        The matrix is
-       
+
        J_{ij} = b^{(k)}_{j,k}(x^{+}_i) - b^{(k)}_{j,k}(x^{-}_i)
 
     */
@@ -1135,7 +1197,7 @@ static PyObject *_bspldismat(PyObject *dummy, PyObject *args) {
             for (m=0; m<=k; m++) *dptr++ += h[m];
         }
         /* store location of last start position plus one.*/
-        dptr = ptr - k; 
+        dptr = ptr - k;
         ptr += N;  /* advance to next row shifted over one */
     }
     /* We need to finish the result for the last row. */
@@ -1147,7 +1209,7 @@ static PyObject *_bspldismat(PyObject *dummy, PyObject *args) {
     free(t);
     free(h);
     return (PyObject *)BB;
-  
+
  fail:
     Py_XDECREF(x_i);
     Py_XDECREF(BB);
@@ -1155,6 +1217,3 @@ static PyObject *_bspldismat(PyObject *dummy, PyObject *args) {
     if (h != NULL) free(h);
     return NULL;
 }
-
-
-
