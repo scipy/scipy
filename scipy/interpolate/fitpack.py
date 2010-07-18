@@ -431,29 +431,37 @@ def _ntlist(l): # return non-trivial list
     #if len(l)>1: return l
     #return l[0]
 
-def splev(x,tck,der=0):
-    """
-    Evaluate a B-spline and its derivatives.
+def splev(x, tck, der=0, extrapolate=1):
+    """Evaluate a B-spline or its derivatives.
 
     Given the knots and coefficients of a B-spline representation, evaluate
-    the value of the smoothing polynomial and it's derivatives.
-    This is a wrapper around the FORTRAN routines splev and splder of FITPACK.
+    the value of the smoothing polynomial and it's derivatives.  This is a
+    wrapper around the FORTRAN routines splev and splder of FITPACK.
 
     Parameters
     ----------
-    x (u) -- a 1-D array of points at which to return the value of the
-             smoothed spline or its derivatives.  If tck was returned from
-             splprep, then the parameter values, u should be given.
-    tck -- A sequence of length 3 returned by splrep or splprep containg the
-           knots, coefficients, and degree of the spline.
-    der -- The order of derivative of the spline to compute (must be less than
-           or equal to k).
+    x : array_like
+        A 1-D array of points at which to return the value of the smoothed
+        spline or its derivatives.  If tck was returned from splprep, then
+        the parameter values, u should be given.
+    tck : tuple
+        A sequence of length 3 returned by splrep or splprep containg the
+        knots, coefficients, and degree of the spline.
+    der : int
+        The order of derivative of the spline to compute (must be less than
+        or equal to k).
+    extrapolate : int
+        If zero, points outside of the interval defined by the knot
+        sequence evaluate to zero, otherwise the piecewise polynomials in
+        the end spans of the knot sequence are extrapolated. The default
+        value is 1.
 
     Returns
     -------
-    y -- an array of values representing the spline function or curve.
-         If tck was returned from splrep, then this is a list of arrays
-         representing the curve in N-dimensional space.
+    y : ndarray or list of ndarrays
+        An array of values representing the spline function evaluated at
+        the points in ``x``.  If tck was returned from splrep, then this is
+        a list of arrays representing the curve in N-dimensional space.
 
     See Also
     --------
@@ -472,22 +480,25 @@ def splev(x,tck,der=0):
         on Numerical Analysis, Oxford University Press, 1993.
 
     """
-    t,c,k=tck
+    t,c,k = tck
     try:
         c[0][0]
         parametric = True
     except:
         parametric = False
     if parametric:
-        return map(lambda c,x=x,t=t,k=k,der=der:splev(x,[t,c,k],der),c)
+        return map(lambda c, x=x, t=t, k=k, der=der : splev(x, [t,c,k], der), c)
     else:
-        if not (0<=der<=k):
-            raise ValueError,"0<=der=%d<=k=%d must hold"%(der,k)
-        x=myasarray(x)
-        y,ier=_fitpack._spl_(x,der,t,c,k)
-        if ier==10: raise ValueError,"Invalid input data"
-        if ier: raise TypeError,"An error occurred"
-        if len(y)>1: return y
+        if not (0 <= der <= k):
+            raise ValueError, "0<=der=%d<=k=%d must hold"%(der,k)
+        x = myasarray(x)
+        y, ier =_fitpack._spl_(x, der, t, c, k, extrapolate)
+        if ier == 10:
+            raise ValueError,"Invalid input data"
+        if ier:
+            raise TypeError,"An error occurred"
+        if len(y) > 1:
+            return y
         return y[0]
 
 def splint(a,b,tck,full_output=0):

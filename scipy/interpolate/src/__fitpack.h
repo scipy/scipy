@@ -78,7 +78,7 @@ void CURFIT(int*,int*,double*,double*,double*,double*,double*,int*,double*,int*,
 void PERCUR(int*,int*,double*,double*,double*,int*,double*,int*,int*,double*,double*,double*,double*,int*,int*,int*);
 void SPALDE(double*,int*,double*,int*,double*,double*,int*);
 void SPLDER(double*,int*,double*,int*,int*,double*,double*,int*,double*,int*);
-void SPLEV(double*,int*,double*,int*,double*,double*,int*,int*);
+void SPLEV(double*,int*,double*,int*,double*,double*,int*,int*,int*);
 double SPLINT(double*,int*,double*,int*,double*,double*,double*);
 void SPROOT(double*,int*,double*,double*,int*,int*,int*);
 void PARCUR(int*,int*,int*,int*,double*,int*,double*,double*,double*,double*,int*,double*,int*,int*,double*,int*,double*,double*,double*,int*,int*,int*);
@@ -446,16 +446,16 @@ static PyObject *fitpack_curfit(PyObject *dummy, PyObject *args) {
   return NULL;
 }
 
-static char doc_spl_[] = " [y,ier] = _spl_(x,nu,t,c,k )";
+static char doc_spl_[] = " [y,ier] = _spl_(x,nu,t,c,k,e)";
 static PyObject *fitpack_spl_(PyObject *dummy, PyObject *args)
 {
-    int n, nu, ier, k;
+    int n, nu, ier, k, e=1;
     npy_intp m;
     double *x, *y, *t, *c, *wrk = NULL;
     PyArrayObject *ap_x = NULL, *ap_y = NULL, *ap_t = NULL, *ap_c = NULL;
     PyObject *x_py = NULL, *t_py = NULL, *c_py = NULL;
 
-    if (!PyArg_ParseTuple(args, "OiOOi",&x_py,&nu,&t_py,&c_py,&k)) {
+    if (!PyArg_ParseTuple(args, "OiOOii", &x_py, &nu, &t_py, &c_py, &k, &e)) {
         return NULL;
     }
     ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x_py, PyArray_DOUBLE, 0, 1);
@@ -482,7 +482,7 @@ static PyObject *fitpack_spl_(PyObject *dummy, PyObject *args)
         SPLDER(t, &n, c, &k, &nu, x, y, &m, wrk, &ier);
     }
     else {
-        SPLEV(t, &n, c, &k, x, y, &m, &ier);
+        SPLEV(t, &n, c, &k, x, y, &m, &e, &ier);
     }
     if (wrk) {
         free(wrk);

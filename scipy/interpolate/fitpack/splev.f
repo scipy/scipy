@@ -1,9 +1,9 @@
-      subroutine splev(t,n,c,k,x,y,m,ier)
+      subroutine splev(t,n,c,k,x,y,m,e,ier)
 c  subroutine splev evaluates in a number of points x(i),i=1,2,...,m
 c  a spline s(x) of degree k, given in its b-spline representation.
 c
 c  calling sequence:
-c     call splev(t,n,c,k,x,y,m,ier)
+c     call splev(t,n,c,k,x,y,m,e,ier)
 c
 c  input parameters:
 c    t    : array,length n, which contains the position of the knots.
@@ -14,6 +14,9 @@ c    x    : array,length m, which contains the points where s(x) must
 c           be evaluated.
 c    m    : integer, giving the number of points where s(x) must be
 c           evaluated.
+c    e    : integer, if != 0 the spline is extrapolated from the end
+c           spans for points not in the support, if == 0 the spline
+c           evaluates to zero for those points.
 c
 c  output parameter:
 c    y    : array,length m, giving the value of s(x) at the different
@@ -50,15 +53,15 @@ c++   - removed the restriction of the orderness of x values
 c++   - fixed initialization of sp to double precision value
 c
 c  ..scalar arguments..
-      integer n,k,m,ier
+      integer n, k, m, e, ier
 c  ..array arguments..
-      real*8 t(n),c(n),x(m),y(m)
+      real*8 t(n), c(n), x(m), y(m)
 c  ..local scalars..
-      integer i,j,k1,l,ll,l1,nk1
+      integer i, j, k1, l, ll, l1, nk1
 c++..
       integer k2
 c..++
-      real*8 arg,sp,tb,te
+      real*8 arg, sp, tb, te
 c  ..local array..
       real*8 h(20)
 c  ..
@@ -67,47 +70,49 @@ c  are invalid control is immediately repassed to the calling program.
       ier = 10
 c--      if(m-1) 100,30,10
 c++..
-      if(m.lt.1) go to 100
+      if (m .lt. 1) go to 100
 c..++
 c--  10  do 20 i=2,m
 c--        if(x(i).lt.x(i-1)) go to 100
 c--  20  continue
   30  ier = 0
 c  fetch tb and te, the boundaries of the approximation interval.
-      k1 = k+1
+      k1 = k + 1
 c++..
-      k2 = k1+1
+      k2 = k1 + 1
 c..++
-      nk1 = n-k1
+      nk1 = n - k1
       tb = t(k1)
-      te = t(nk1+1)
+      te = t(nk1 + 1)
       l = k1
-      l1 = l+1
+      l1 = l + 1
 c  main loop for the different points.
-      do 80 i=1,m
+      do 80 i = 1, m
 c  fetch a new x-value arg.
         arg = x(i)
-c--        if(arg.lt.tb) arg = tb
-c--        if(arg.gt.te) arg = te
+c  check if arg is in the support
+        if (e .eq. 1 .or. arg .ge. tb .and. arg .le. te) go to 35
+        y(i) = 0
+        goto 80
 c  search for knot interval t(l) <= arg < t(l+1)
 c++..
- 35     if(arg.ge.t(l) .or. l1.eq.k2) go to 40
+ 35     if (arg .ge. t(l) .or. l1 .eq. k2) go to 40
         l1 = l
-        l = l-1
+        l = l - 1
         go to 35
 c..++
-  40    if(arg.lt.t(l1) .or. l.eq.nk1) go to 50
+  40    if(arg .lt. t(l1) .or. l .eq. nk1) go to 50
         l = l1
-        l1 = l+1
+        l1 = l + 1
         go to 40
 c  evaluate the non-zero b-splines at arg.
-  50    call fpbspl(t,n,k,arg,l,h)
+  50    call fpbspl(t, n, k, arg, l, h)
 c  find the value of s(x) at x=arg.
         sp = 0.0d0
-        ll = l-k1
-        do 60 j=1,k1
-          ll = ll+1
-          sp = sp+c(ll)*h(j)
+        ll = l - k1
+        do 60 j = 1, k1
+          ll = ll + 1
+          sp = sp + c(ll)*h(j)
   60    continue
         y(i) = sp
   80  continue

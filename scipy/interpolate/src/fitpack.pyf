@@ -64,7 +64,7 @@ static int calc_surfit_lwrk2(int m, int kx, int ky, int nxest, int nyest) {
  return u*v*(b2+1)+b2;
 }
 
-static int calc_regrid_lwrk(int mx, int my, int kx, int ky, 
+static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
                             int nxest, int nyest) {
  int u = MAX(my, nxest);
  return 4+nxest*(my+2*kx+5)+nyest*(2*ky+5)+mx*(kx+1)+my*(ky+1)+u;
@@ -75,8 +75,8 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
 
      !!!!!!!!!! Univariate spline !!!!!!!!!!!
 
-     subroutine splev(t,n,c,k,x,y,m,ier)
-       ! y = splev(t,c,k,x)
+     subroutine splev(t,n,c,k,x,y,m,e,ier)
+       ! y = splev(t,c,k,x,e)
        real*8 dimension(n),intent(in) :: t
        integer intent(hide),depend(t) :: n=len(t)
        real*8 dimension(n),depend(n,k),check(len(c)==n),intent(in) :: c
@@ -84,6 +84,7 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
        real*8 dimension(m),intent(in) :: x
        real*8 dimension(m),depend(m),intent(out) :: y
        integer intent(hide),depend(x) :: m=len(x)
+       integer :: e=1
        integer intent(hide) :: ier
      end subroutine splev
 
@@ -161,7 +162,7 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
        integer intent(out) :: ier
      end subroutine curfit
 
-     subroutine percur(iopt,m,x,y,w,k,s,nest,n,t,c,fp,wrk,lwrk,iwrk,ier) 
+     subroutine percur(iopt,m,x,y,w,k,s,nest,n,t,c,fp,wrk,lwrk,iwrk,ier)
        ! in percur.f
        integer :: iopt
        integer intent(hide),depend(x),check(m>k),depend(k) :: m=len(x)
@@ -180,9 +181,9 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
        integer dimension(nest),intent(inout) :: iwrk
        integer intent(out) :: ier
      end subroutine percur
-     
 
-     subroutine parcur(iopt,ipar,idim,m,u,mx,x,w,ub,ue,k,s,nest,n,t,nc,c,fp,wrk,lwrk,iwrk,ier) 
+
+     subroutine parcur(iopt,ipar,idim,m,u,mx,x,w,ub,ue,k,s,nest,n,t,nc,c,fp,wrk,lwrk,iwrk,ier)
        ! in parcur.f
        integer check(iopt>=-1 && iopt <= 1):: iopt
        integer check(ipar == 1 || ipar == 0) :: ipar
@@ -436,7 +437,7 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
             :: kwrk=m+(nx-2*kx-1)*(ny-2*ky-1)
        integer intent(out) :: ier
      end subroutine surfit_lsq
-    
+
      subroutine regrid_smth(iopt,mx,x,my,y,z,xb,xe,yb,ye,kx,ky,s,&
         nxest,nyest,nx,tx,ny,ty,c,fp,wrk,lwrk,iwrk,kwrk,ier)
        !  nx,tx,ny,ty,c,fp,ier = regrid_smth(x,y,z,[xb,xe,yb,ye,kx,ky,s])
@@ -446,7 +447,7 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
        integer intent(hide) :: iopt=0
        integer intent(hide),depend(x,kx),check(mx>kx) :: mx=len(x)
        real*8 dimension(mx) :: x
-       integer intent(hide),depend(y,ky),check(my>ky) :: my=len(y) 
+       integer intent(hide),depend(y,ky),check(my>ky) :: my=len(y)
        real*8 dimension(my) :: y
        real*8 dimension(mx*my),depend(mx,my),check(len(z)==mx*my) :: z
        real*8 optional,depend(x,mx) :: xb=dmin(x,mx)
@@ -475,7 +476,7 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
             :: kwrk=3+mx+my+nxest+nyest
        integer intent(out) :: ier
      end subroutine regrid_smth
-     
+ 
      function dblint(tx,nx,ty,ny,c,kx,ky,xb,xe,yb,ye,wrk)
        ! iy = dblint(tx,ty,c,kx,ky,xb,xe,yb,ye)
        real*8 dimension(nx),intent(in) :: tx
