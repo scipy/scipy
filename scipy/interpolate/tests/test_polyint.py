@@ -18,6 +18,7 @@ class CheckKrogh(TestCase):
     def test_lagrange(self):
         P = KroghInterpolator(self.xs,self.ys)
         assert_almost_equal(self.true_poly(self.test_xs),P(self.test_xs))
+
     def test_scalar(self):
         P = KroghInterpolator(self.xs,self.ys)
         assert_almost_equal(self.true_poly(7),P(7))
@@ -29,23 +30,27 @@ class CheckKrogh(TestCase):
         for i in xrange(D.shape[0]):
             assert_almost_equal(self.true_poly.deriv(i)(self.test_xs),
                                 D[i])
+
     def test_low_derivatives(self):
         P = KroghInterpolator(self.xs,self.ys)
         D = P.derivatives(self.test_xs,len(self.xs)+2)
         for i in xrange(D.shape[0]):
             assert_almost_equal(self.true_poly.deriv(i)(self.test_xs),
                                 D[i])
+
     def test_derivative(self):
         P = KroghInterpolator(self.xs,self.ys)
         m = 10
         r = P.derivatives(self.test_xs,m)
         for i in xrange(m):
             assert_almost_equal(P.derivative(self.test_xs,i),r[i])
+
     def test_high_derivative(self):
         P = KroghInterpolator(self.xs,self.ys)
         for i in xrange(len(self.xs),2*len(self.xs)):
             assert_almost_equal(P.derivative(self.test_xs,i),
                                 np.zeros(len(self.test_xs)))
+
     def test_hermite(self):
         xs = [0,0,0,1,1,1,2]
         ys = [self.true_poly(0),
@@ -73,6 +78,7 @@ class CheckKrogh(TestCase):
     def test_empty(self):
         P = KroghInterpolator(self.xs,self.ys)
         assert_array_equal(P([]), [])
+
     def test_shapes_scalarvalue(self):
         P = KroghInterpolator(self.xs,self.ys)
         assert_array_equal(np.shape(P(0)), ())
@@ -132,6 +138,7 @@ class CheckBarycentric(TestCase):
     def test_lagrange(self):
         P = BarycentricInterpolator(self.xs,self.ys)
         assert_almost_equal(self.true_poly(self.test_xs),P(self.test_xs))
+
     def test_scalar(self):
         P = BarycentricInterpolator(self.xs,self.ys)
         assert_almost_equal(self.true_poly(7),P(7))
@@ -168,6 +175,7 @@ class CheckBarycentric(TestCase):
         assert_array_equal(np.shape(P(0)), (3,))
         assert_array_equal(np.shape(P([0])), (1,3))
         assert_array_equal(np.shape(P([0,1])), (2,3))
+
     def test_shapes_1d_vectorvalue(self):
         P = BarycentricInterpolator(self.xs,np.outer(self.ys,[1]))
         assert_array_equal(np.shape(P(0)), (1,))
@@ -190,6 +198,7 @@ class CheckPiecewise(TestCase):
     def test_construction(self):
         P = PiecewisePolynomial(self.xi,self.yi,3)
         assert_almost_equal(P(self.test_xs),self.spline_ys)
+
     def test_scalar(self):
         P = PiecewisePolynomial(self.xi,self.yi,3)
         assert_almost_equal(P(self.test_xs[0]),self.spline_ys[0])
@@ -200,6 +209,7 @@ class CheckPiecewise(TestCase):
     def test_derivative(self):
         P = PiecewisePolynomial(self.xi,self.yi,3)
         assert_almost_equal(P.derivative(self.test_xs,1),self.spline_yps)
+
     def test_derivatives(self):
         P = PiecewisePolynomial(self.xi,self.yi,3)
         m = 4
@@ -207,6 +217,7 @@ class CheckPiecewise(TestCase):
         #print r.shape, r
         for i in xrange(m):
             assert_almost_equal(P.derivative(self.test_xs,i),r[i])
+
     def test_vector(self):
         xs = [0, 1, 2]
         ys = [[[0,1]],[[1,0],[-1,-1]],[[2,1]]]
@@ -219,6 +230,7 @@ class CheckPiecewise(TestCase):
         assert_almost_equal(P.derivative(test_xs,1),
                 np.transpose(np.asarray([p.derivative(test_xs,1) for p in Pi]),
                     (1,0)))
+
     def test_incremental(self):
         P = PiecewisePolynomial([self.xi[0]], [self.yi[0]], 3)
         for i in xrange(1,len(self.xi)):
