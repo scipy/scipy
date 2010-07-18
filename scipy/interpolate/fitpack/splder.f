@@ -4,7 +4,7 @@ c  the derivative of order nu of a spline s(x) of degree k,given in
 c  its b-spline representation.
 c
 c  calling sequence:
-c     call splder(t,n,c,k,nu,x,y,m,wrk,ier)
+c     call splder(t,n,c,k,nu,x,y,m,e,wrk,ier)
 c
 c  input parameters:
 c    t    : array,length n, which contains the position of the knots.
@@ -59,7 +59,7 @@ c++   - removed the restriction of the orderness of x values
 c++   - fixed initialization of sp to double precision value
 c
 c  ..scalar arguments..
-      integer n,k,nu,m,ier
+      integer n,k,nu,m,e,ier
 c  ..array arguments..
       real*8 t(n),c(n),x(m),y(m),wrk(n)
 c  ..local scalars..
