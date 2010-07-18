@@ -13,7 +13,7 @@ Run tests if interpolate is not installed:
 #import libwadpy
 
 from numpy.testing import *
-from numpy import array, diff
+from numpy import array, diff, shape
 from scipy.interpolate.fitpack2 import UnivariateSpline, LSQBivariateSpline, \
     SmoothBivariateSpline, RectBivariateSpline
 
@@ -26,6 +26,17 @@ class TestUnivariateSpline(TestCase):
         assert_array_almost_equal(lut.get_coeffs(),[3,3])
         assert_almost_equal(lut.get_residual(),0.0)
         assert_array_almost_equal(lut([1,1.5,2]),[3,3,3])
+
+    def test_preserve_shape(self):
+        x = [1, 2, 3]
+        y = [0, 2, 4]
+        lut = UnivariateSpline(x, y, k=1)
+        arg = 2
+        assert_equal(shape(arg), shape(lut(arg)))
+        assert_equal(shape(arg), shape(lut(arg, nu=1)))
+        arg = [1.5, 2, 2.5]
+        assert_equal(shape(arg), shape(lut(arg)))
+        assert_equal(shape(arg), shape(lut(arg, nu=1)))
 
     def test_linear_1d(self):
         x = [1,2,3]

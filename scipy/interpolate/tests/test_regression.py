@@ -11,5 +11,3 @@ class TestRegression(TestCase):
         res = interp.spalde(np.float64(1), tck)
         des = np.array([ 1.,  3.,  6.,  6.])
         assert_almost_equal(res, des)
-
-

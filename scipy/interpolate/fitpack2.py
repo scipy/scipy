@@ -20,6 +20,7 @@ __all__ = [
 import warnings
 from numpy import zeros, concatenate, alltrue, ravel, all, diff
 
+import fitpack
 import dfitpack
 
 ################ Univariate spline ####################
@@ -205,15 +206,16 @@ class UnivariateSpline(object):
         self._data = data
         self._reset_class()
 
-    def __call__(self, x, nu=None):
+    def __call__(self, x, nu=0):
         """ Evaluate spline (or its nu-th derivative) at positions x.
         Note: x can be unordered but the evaluation is more efficient
         if x is (partially) ordered.
 
         """
-        if nu is None:
-            return dfitpack.splev(*(self._eval_args+(x,)))
-        return dfitpack.splder(nu=nu,*(self._eval_args+(x,)))
+#        if nu is None:
+#            return dfitpack.splev(*(self._eval_args+(x,)))
+#        return dfitpack.splder(nu=nu,*(self._eval_args+(x,)))
+        return fitpack.splev(x, self._eval_args, der=nu)
 
     def get_knots(self):
         """ Return the positions of (boundary and interior)
