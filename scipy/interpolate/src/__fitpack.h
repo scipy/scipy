@@ -77,7 +77,7 @@
 void CURFIT(int*,int*,double*,double*,double*,double*,double*,int*,double*,int*,int*,double*,double*,double*,double*,int*,int*,int*);
 void PERCUR(int*,int*,double*,double*,double*,int*,double*,int*,int*,double*,double*,double*,double*,int*,int*,int*);
 void SPALDE(double*,int*,double*,int*,double*,double*,int*);
-void SPLDER(double*,int*,double*,int*,int*,double*,double*,int*,double*,int*);
+void SPLDER(double*,int*,double*,int*,int*,double*,double*,int*,int*,double*,int*);
 void SPLEV(double*,int*,double*,int*,double*,double*,int*,int*,int*);
 double SPLINT(double*,int*,double*,int*,double*,double*,double*);
 void SPROOT(double*,int*,double*,double*,int*,int*,int*);
@@ -479,7 +479,7 @@ static PyObject *fitpack_spl_(PyObject *dummy, PyObject *args)
         goto fail;
     }
     if (nu) {
-        SPLDER(t, &n, c, &k, &nu, x, y, &m, wrk, &ier);
+        SPLDER(t, &n, c, &k, &nu, x, y, &m, &e, wrk, &ier);
     }
     else {
         SPLEV(t, &n, c, &k, x, y, &m, &e, &ier);

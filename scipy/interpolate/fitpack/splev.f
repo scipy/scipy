@@ -14,15 +14,17 @@ c    x    : array,length m, which contains the points where s(x) must
 c           be evaluated.
 c    m    : integer, giving the number of points where s(x) must be
 c           evaluated.
-c    e    : integer, if != 0 the spline is extrapolated from the end
-c           spans for points not in the support, if == 0 the spline
-c           evaluates to zero for those points.
+c    e    : integer, if 0 the spline is extrapolated from the end
+c           spans for points not in the support, if 1 the spline
+c           evaluates to zero for those points, and if 2 ier is set to
+c           1 and the subroutine returns.
 c
 c  output parameter:
 c    y    : array,length m, giving the value of s(x) at the different
 c           points.
 c    ier  : error flag
 c      ier = 0 : normal return
+c      ier = 1 : argument out of bounds and e == 2
 c      ier =10 : invalid input data (see restrictions)
 c
 c  restrictions:
