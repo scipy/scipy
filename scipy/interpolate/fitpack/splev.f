@@ -91,9 +91,17 @@ c  main loop for the different points.
 c  fetch a new x-value arg.
         arg = x(i)
 c  check if arg is in the support
-        if (e .eq. 1 .or. arg .ge. tb .and. arg .le. te) go to 35
-        y(i) = 0
-        goto 80
+        if (arg .lt. tb .or. arg .gt. te) then
+            if (e .eq. 0) then
+                goto 35
+            else if (e .eq. 1) then
+                y(i) = 0
+                goto 80
+            else if (e .eq. 2) then
+                ier = 1
+                goto 100
+            endif
+        endif
 c  search for knot interval t(l) <= arg < t(l+1)
 c++..
  35     if (arg .ge. t(l) .or. l1 .eq. k2) go to 40

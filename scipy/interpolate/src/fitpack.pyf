@@ -84,7 +84,7 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
        real*8 dimension(m),intent(in) :: x
        real*8 dimension(m),depend(m),intent(out) :: y
        integer intent(hide),depend(x) :: m=len(x)
-       integer :: e=1
+       integer :: e=0
        integer intent(hide) :: ier
      end subroutine splev
 

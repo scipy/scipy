@@ -449,7 +449,7 @@ static PyObject *fitpack_curfit(PyObject *dummy, PyObject *args) {
 static char doc_spl_[] = " [y,ier] = _spl_(x,nu,t,c,k,e)";
 static PyObject *fitpack_spl_(PyObject *dummy, PyObject *args)
 {
-    int n, nu, ier, k, e=1;
+    int n, nu, ier, k, e=0;
     npy_intp m;
     double *x, *y, *t, *c, *wrk = NULL;
     PyArrayObject *ap_x = NULL, *ap_y = NULL, *ap_t = NULL, *ap_c = NULL;
