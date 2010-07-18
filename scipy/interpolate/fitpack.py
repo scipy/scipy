@@ -431,7 +431,7 @@ def _ntlist(l): # return non-trivial list
     #if len(l)>1: return l
     #return l[0]
 
-def splev(x, tck, der=0, extrapolate=0):
+def splev(x, tck, der=0, ext=0):
     """Evaluate a B-spline or its derivatives.
 
     Given the knots and coefficients of a B-spline representation, evaluate
@@ -450,13 +450,13 @@ def splev(x, tck, der=0, extrapolate=0):
     der : int
         The order of derivative of the spline to compute (must be less than
         or equal to k).
-    extrapolate : int
+    ext : int
         Controls the value returned for elements of ``x`` not in the
         interval defined by the knot sequence.
 
-        * if extrapolate=0, return the extrapolated value.
-        * if extrapolate=1, return 0
-        * if extrapolate=2, raise a ValueError
+        * if ext=0, return the extrapolated value.
+        * if ext=1, return 0
+        * if ext=2, raise a ValueError
 
         The default value is 0.
 
@@ -495,12 +495,15 @@ def splev(x, tck, der=0, extrapolate=0):
     else:
         if not (0 <= der <= k):
             raise ValueError("0<=der=%d<=k=%d must hold"%(der,k))
+        if not ext in (0,1,2):
+            raise ValueError("ext not in (0, 1, 2)")
+
         x = myasarray(x)
-        y, ier =_fitpack._spl_(x, der, t, c, k, extrapolate)
+        y, ier =_fitpack._spl_(x, der, t, c, k, ext)
         if ier == 10:
             raise ValueError("Invalid input data")
         if ier == 1:
-            raise ValueError("Argument out of bounds.")
+            raise ValueError("Found x value not in the domain")
         if ier:
             raise TypeError("An error occurred")
         if len(y) > 1:
