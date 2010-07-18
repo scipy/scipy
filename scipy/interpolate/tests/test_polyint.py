@@ -188,16 +188,16 @@ class CheckBarycentric(TestCase):
 
 class CheckPiecewise(TestCase):
     def setUp(self):
-        self.tck = splrep([0,1,2,3,4,5],[0,10,-1,3,7,2],s=0)
+        self.tck = splrep([0,1,2,3,4,5], [0,10,-1,3,7,2], s=0)
         self.test_xs = np.linspace(-1,6,100)
         self.spline_ys = splev(self.test_xs, self.tck)
         self.spline_yps = splev(self.test_xs, self.tck, der=1)
         self.xi = np.unique(self.tck[0])
-        self.yi = [[splev(x,self.tck,der=j) for j in xrange(3)] for x in self.xi]
+        self.yi = [[splev(x, self.tck, der=j) for j in xrange(3)] for x in self.xi]
 
     def test_construction(self):
-        P = PiecewisePolynomial(self.xi,self.yi,3)
-        assert_almost_equal(P(self.test_xs),self.spline_ys)
+        P = PiecewisePolynomial(self.xi, self.yi, 3)
+        assert_almost_equal(P(self.test_xs), self.spline_ys)
 
     def test_scalar(self):
         P = PiecewisePolynomial(self.xi,self.yi,3)
@@ -206,6 +206,7 @@ class CheckPiecewise(TestCase):
         assert_almost_equal(P(np.array(self.test_xs[0])),self.spline_ys[0])
         assert_almost_equal(P.derivative(np.array(self.test_xs[0]),1),
                             self.spline_yps[0])
+
     def test_derivative(self):
         P = PiecewisePolynomial(self.xi,self.yi,3)
         assert_almost_equal(P.derivative(self.test_xs,1),self.spline_yps)
