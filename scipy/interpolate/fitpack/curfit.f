@@ -230,9 +230,9 @@ c  are invalid, control is immediately repassed to the calling program.
       if(m.lt.k1 .or. nest.lt.nmin) go to 50
       lwest = m*k1+nest*(7+3*k)
       if(lwrk.lt.lwest) go to 50
-      if(xb.gt.x(1) .or. xe.lt.x(m) .or. w(1).le.0.) go to 50
+      if(xb.gt.x(1) .or. xe.lt.x(m)) go to 50
       do 10 i=2,m
-         if(x(i-1).ge.x(i) .or. w(i).le.0.) go to 50
+         if(x(i-1).gt.x(i)) go to 50
   10  continue
       if(iopt.ge.0) go to 30
       if(n.lt.nmin .or. n.gt.nest) go to 50
@@ -247,7 +247,6 @@ c  are invalid, control is immediately repassed to the calling program.
       go to 50
   30  if(s.lt.0.) go to 50
       if(s.eq.0. .and. nest.lt.(m+k1)) go to 50
-      ier = 0
 c we partition the working space and determine the spline approximation.
   40  ifp = 1
       iz = ifp+nest
