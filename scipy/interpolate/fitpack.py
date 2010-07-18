@@ -663,10 +663,7 @@ def spalde(x,tck):
     if parametric:
         return _ntlist(map(lambda c,x=x,t=t,k=k:spalde(x,[t,c,k]),c))
     else:
-        try: x=x.tolist()
-        except:
-            try: x=list(x)
-            except: x=[x]
+        x = myasarray(x)
         if len(x)>1:
             return map(lambda x,tck=tck:spalde(x,tck),x)
         d,ier=_fitpack._spalde(t,c,k,x[0])
