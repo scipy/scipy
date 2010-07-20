@@ -3,7 +3,8 @@
 """
 
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
-    assert_array_equal, assert_almost_equal, assert_array_almost_equal, rand
+    assert_array_equal, assert_almost_equal, assert_array_almost_equal, \
+    rand, dec
 
 
 import numpy
@@ -387,6 +388,8 @@ def TestArgsreduce():
 
 class TestFitMethod(TestCase):
     skip = ['ncf']
+
+    @dec.slow
     def test_fit(self):
         for func, dist, args, alpha in test_all_distributions():
             if dist in self.skip:
@@ -405,7 +408,7 @@ class TestFitMethod(TestCase):
                 assert(len(vals) == 2+len(args))
                 assert(len(vals2)==2+len(args))
                 
-
+    @dec.slow
     def test_fix_fit(self):
         for func, dist, args, alpha in test_all_distributions():
             # Not sure why 'ncf', and 'beta' are failing
