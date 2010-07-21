@@ -8,7 +8,12 @@ from os.path import join as pjoin, dirname
 from glob import glob
 from StringIO import StringIO
 from tempfile import mkdtemp
-from functools import partial
+# functools is only available in Python >=2.5
+try:
+    from functools import partial
+except ImportError:
+    from scipy.io.arff.myfunctools import partial
+
 import warnings
 import shutil
 import gzip
@@ -212,7 +217,7 @@ case_table5_rt.append(
 
 def types_compatible(var1, var2):
     ''' Check if types are same or compatible
-    
+
     0d numpy scalars are compatible with bare python scalars
     '''
     type1 = type(var1)
@@ -237,7 +242,7 @@ def _check_level(label, expected, actual):
         return
     # Check types are as expected
     assert_true(types_compatible(expected, actual), \
-           "Expected type %s, got %s at %s" % 
+           "Expected type %s, got %s at %s" %
                 (type(expected), type(actual), label))
     # A field in a record array may not be an ndarray
     # A scalar from a record array will be type np.void
@@ -493,14 +498,14 @@ def test_1d_shape():
     for format in ('4', '5'):
         # can be explicitly 'column' for oned_as
         stream = StringIO()
-        savemat(stream, {'oned':arr}, 
+        savemat(stream, {'oned':arr},
                 format=format,
                 oned_as='column')
         vals = loadmat(stream)
         yield assert_equal, vals['oned'].shape, (5,1)
         # but different from 'row'
         stream = StringIO()
-        savemat(stream, {'oned':arr}, 
+        savemat(stream, {'oned':arr},
                 format=format,
                 oned_as='row')
         vals = loadmat(stream)
@@ -533,7 +538,7 @@ def test_compression():
     savemat_future(stream, {'arr':arr, 'arr2':arr2}, do_compression=True)
     vals = loadmat(stream)
     yield assert_array_equal, vals['arr2'], arr2
-    
+
 
 def test_single_object():
     stream = StringIO()
@@ -613,7 +618,7 @@ def test_recarray():
     a21 = d['arr'].flat[1]
     yield assert_equal, a21['f1'], 99
     yield assert_equal, a21['f2'], 'not perl'
-          
+
 
 def test_save_object():
     class C(object): pass
@@ -676,7 +681,7 @@ def test_empty_string():
     # between a string array that is empty, and a string array
     # containing a single empty string, because it stores strings as
     # arrays of char.  There is no way of having an array of char that
-    # is not empty, but contains an empty string. 
+    # is not empty, but contains an empty string.
     stream = StringIO()
     savemat_future(stream, {'a': np.array([''])})
     rdr = MatFile5Reader_future(stream)
@@ -687,14 +692,14 @@ def test_empty_string():
     rdr = MatFile5Reader_future(stream)
     d = rdr.get_variables()
     yield assert_array_equal, d['a'], np.array([], dtype='U1')
-    
+
 
 def test_mat4_3d():
     # test behavior when writing 3D arrays to matlab 4 files
     stream = StringIO()
     arr = np.arange(24).reshape((2,3,4))
     warnings.simplefilter('error')
-    yield (assert_raises, DeprecationWarning, savemat_future, 
+    yield (assert_raises, DeprecationWarning, savemat_future,
            stream, {'a': arr}, True, '4')
     warnings.resetwarnings()
     # For now, we save a 3D array as 2D
@@ -746,7 +751,7 @@ def test_mat_struct_squeeze():
                     struct_as_record=False,
                     squeeze_me=True,
                     )
-    
+
 
 def test_str_round():
     # from report by Angus McMorland on mailing list 3 May 2010
