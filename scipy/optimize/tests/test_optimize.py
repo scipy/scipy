@@ -32,6 +32,8 @@ class TestOptimize(TestCase):
         self.solution = array([0., -0.524869316, 0.487525860])
         self.maxiter = 1000
         self.funccalls = 0
+        self.gradcalls = 0
+        self.trace = []
 
 
     def func(self, x):
@@ -41,10 +43,12 @@ class TestOptimize(TestCase):
         log_pdot = dot(self.F, x)
         logZ = log(sum(exp(log_pdot)))
         f = logZ - dot(self.K, x)
+        self.trace.append(x)
         return f
 
 
     def grad(self, x):
+        self.gradcalls += 1
         log_pdot = dot(self.F, x)
         logZ = log(sum(exp(log_pdot)))
         p = exp(log_pdot - logZ)
@@ -63,6 +67,18 @@ class TestOptimize(TestCase):
         err = abs(self.func(params) - self.func(self.solution))
         #print "CG: Difference is: " + str(err)
         assert err < 1e-6
+        print self.funccalls, self.gradcalls
+
+        # Ensure that function call counts are 'known good'; these are from
+        # Scipy 0.7.0. Don't allow them to increase.
+        assert self.funccalls == 9, self.funccalls
+        assert self.gradcalls == 7, self.gradcalls
+
+        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        assert np.allclose(self.trace[2:4],
+                           [[0, -0.5, 0.5],
+                            [0, -5.05700028e-01, 4.95985862e-01]],
+                           atol=1e-14, rtol=1e-7), self.trace[2:4]
 
 
     def test_bfgs(self):
@@ -78,6 +94,17 @@ class TestOptimize(TestCase):
         #print "BFGS: Difference is: " + str(err)
         assert err < 1e-6
 
+        # Ensure that function call counts are 'known good'; these are from
+        # Scipy 0.7.0. Don't allow them to increase.
+        assert self.funccalls == 10, self.funccalls
+        assert self.gradcalls == 8, self.gradcalls
+
+        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        assert np.allclose(self.trace[6:8],
+                           [[0, -5.25060743e-01,   4.87748473e-01],
+                            [0, -5.24885582e-01,   4.87530347e-01]],
+                           atol=1e-14, rtol=1e-7), self.trace[6:8]
+
 
     def test_powell(self):
         """ Powell (direction set) optimization routine
@@ -92,6 +119,20 @@ class TestOptimize(TestCase):
         #print "Powell: Difference is: " + str(err)
         assert err < 1e-6
 
+        # Ensure that function call counts are 'known good'; these are from
+        # Scipy 0.7.0. Don't allow them to increase.
+        assert self.funccalls == 116, self.funccalls
+        assert self.gradcalls == 0, self.gradcalls
+
+        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        assert np.allclose(self.trace[34:39],
+                           [[ 0.72949016, -0.44156936,  0.47100962],
+                            [ 0.72949016, -0.44156936,  0.48052496],
+                            [ 1.45898031, -0.88313872,  0.95153458],
+                            [ 0.72949016, -0.44156936,  0.47576729],
+                            [ 1.72949016, -0.44156936,  0.47576729]],
+                           atol=1e-14, rtol=1e-7), self.trace[34:39]
+
     def test_neldermead(self):
         """ Nelder-Mead simplex algorithm
         """
@@ -104,6 +145,17 @@ class TestOptimize(TestCase):
         err = abs(self.func(params) - self.func(self.solution))
         #print "Nelder-Mead: Difference is: " + str(err)
         assert err < 1e-6
+
+        # Ensure that function call counts are 'known good'; these are from
+        # Scipy 0.7.0. Don't allow them to increase.
+        assert self.funccalls == 167, self.funccalls
+        assert self.gradcalls == 0, self.gradcalls
+
+        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        assert np.allclose(self.trace[76:78],
+                           [[0.1928968 , -0.62780447,  0.35166118],
+                            [0.19572515, -0.63648426,  0.35838135]],
+                           atol=1e-14, rtol=1e-7), self.trace[76:78]
 
     def test_ncg(self):
         """ line-search Newton conjugate gradient optimization routine
@@ -119,6 +171,26 @@ class TestOptimize(TestCase):
         #print "NCG: Difference is: " + str(err)
         assert err < 1e-6
 
+        # Ensure that function call counts are 'known good'; these are from
+        # Scipy 0.7.0. Don't allow them to increase.
+        assert self.funccalls == 7, self.funccalls
+        assert self.gradcalls == 18, self.gradcalls # 0.8.0
+        #assert self.gradcalls == 22, self.gradcalls # 0.7.0
+
+        # Ensure that the function behaves the same;
+
+        # # This is from Scipy 0.7.0
+        #assert np.allclose(self.trace[3:5],
+        #                   [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
+        #                    [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
+        #                   atol=1e-14, rtol=1e-7), self.trace[3:5]
+
+        # This if from Scipy 0.8.0; with some fixes in ncg
+        assert np.allclose(self.trace[3:5],
+                           [[-2.90334653e-07,-5.24869431e-01,4.87527470e-01],
+                            [-2.90334653e-07,-5.24869375e-01,4.87527680e-01]],
+                           atol=1e-14, rtol=1e-7), self.trace[3:5]
+
 
     def test_l_bfgs_b(self):
         """ limited-memory bound-constrained BFGS algorithm
@@ -132,6 +204,17 @@ class TestOptimize(TestCase):
         err = abs(self.func(params) - self.func(self.solution))
         #print "LBFGSB: Difference is: " + str(err)
         assert err < 1e-6
+
+        # Ensure that function call counts are 'known good'; these are from
+        # Scipy 0.7.0. Don't allow them to increase.
+        assert self.funccalls == 7, self.funccalls
+        assert self.gradcalls == 5, self.gradcalls
+
+        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        assert np.allclose(self.trace[3:5],
+                           [[0.        , -0.52489628,  0.48753042],
+                            [0.        , -0.52489628,  0.48753042]],
+                           atol=1e-14, rtol=1e-7), self.trace[3:5]
 
     def test_brent(self):
         """ brent algorithm
