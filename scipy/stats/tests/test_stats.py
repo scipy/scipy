@@ -4,6 +4,7 @@
     BASED ON WILKINSON'S STATISTICS QUIZ
     http://www.stanford.edu/~clint/bench/wilk.txt
 
+    Additional tests by a host of SciPy developers.
 """
 
 from numpy.testing import TestCase, rand, assert_, assert_equal, \
@@ -1747,6 +1748,20 @@ class TestSigamClip(object):
         assert_equal(upp, c.mean() + fact*c.std())
         assert_equal(c, np.linspace(9.5,10.5,11))
 
+
+class TestFOneWay(TestCase):
+
+    def test_trivial(self):
+        """A trivial test of stats.f_oneway, with F=0."""
+        F, p = stats.f_oneway([0,2], [0,2])
+        assert_equal(F, 0.0)
+
+    def test_basic(self):
+        """A test of stats.f_oneway, with F=2."""
+        F, p = stats.f_oneway([0,2], [2,4])
+        # Despite being a floating point calculation, this data should
+        # result in F being exactly 2.0.
+        assert_equal(F, 2.0)
 
 if __name__ == "__main__":
     run_module_suite()
