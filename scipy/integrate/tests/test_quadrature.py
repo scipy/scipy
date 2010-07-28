@@ -32,6 +32,14 @@ class TestQuadrature(TestCase):
         table_val = 0.30614353532540296487
         assert_almost_equal(val, table_val, decimal=7)
 
+    def test_romberg_rtol(self):
+        # Typical function with two extra arguments:
+        def myfunc(x, n, z):       # Bessel function integrand
+            return 1e19*cos(n*x-z*sin(x))/pi
+        val = romberg(myfunc,0,pi, args=(2, 1.8), rtol=1e-10)
+        table_val = 1e19*0.30614353532540296487
+        assert_allclose(val, table_val, rtol=1e-10)
+
     def test_romb(self):
         assert_equal(romb(numpy.arange(17)),128)
 

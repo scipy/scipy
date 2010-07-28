@@ -513,7 +513,7 @@ def _printresmat(function, interval, resmat):
     print 'The final result is', resmat[i][j],
     print 'after', 2**(len(resmat)-1)+1, 'function evaluations.'
 
-def romberg(function, a, b, args=(), tol=1.48E-8, show=False,
+def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
             divmax=10, vec_func=False):
     """
     Romberg integration of a callable function or method.
@@ -545,12 +545,12 @@ def romberg(function, a, b, args=(), tol=1.48E-8, show=False,
         Extra arguments to pass to function. Each element of `args` will
         be passed as a single argument to `func`. Default is to pass no
         extra arguments.
-    tol : float, optional
-        The desired tolerance. Default is 1.48e-8.
+    tol, rtol : float, optional
+        The desired absolute and relative tolerances. Defaults are 1.48e-8.
     show : bool, optional
         Whether to print the results. Default is False.
     divmax : int, optional
-        ?? Default is 10.
+        Maximum order of extrapolation. Default is 10.
     vec_func : bool, optional
         Whether `func` handles arrays as arguments (i.e whether it is a
         "vector" function). Default is False.
@@ -596,14 +596,14 @@ def romberg(function, a, b, args=(), tol=1.48E-8, show=False,
     if isinf(a) or isinf(b):
         raise ValueError("Romberg integration only available for finite limits.")
     vfunc = vectorize1(function, args, vec_func=vec_func)
-    i = n = 1
+    n = 1
     interval = [a,b]
     intrange = b-a
     ordsum = _difftrap(vfunc, interval, n)
     result = intrange * ordsum
     resmat = [[result]]
-    lastresult = result + tol * 2.0
-    while (abs(result - lastresult) > tol) and (i <= divmax):
+    err = np.inf
+    for i in xrange(1, divmax+1):
         n = n * 2
         ordsum = ordsum + _difftrap(vfunc, interval, n)
         resmat.append([])
@@ -612,7 +612,15 @@ def romberg(function, a, b, args=(), tol=1.48E-8, show=False,
             resmat[i].append(_romberg_diff(resmat[i-1][k], resmat[i][k], k+1))
         result = resmat[i][i]
         lastresult = resmat[i-1][i-1]
-        i = i + 1
+
+        err = abs(result - lastresult)
+        if err < tol or err < rtol*abs(result):
+            break
+    else:
+        warnings.warn(
+            "divmax (%d) exceeded. Latest difference = %e" % (divmax, err),
+            AccuracyWarning)
+
     if show:
         _printresmat(vfunc, interval, resmat)
     return result
