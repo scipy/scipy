@@ -1,8 +1,7 @@
-
 import numpy
 from numpy import cos, sin, pi
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
-    assert_almost_equal
+    assert_almost_equal, assert_allclose
 
 from scipy.integrate import quadrature, romberg, romb, newton_cotes
 
@@ -17,6 +16,13 @@ class TestQuadrature(TestCase):
         val, err = quadrature(myfunc,0,pi,(2,1.8))
         table_val = 0.30614353532540296487
         assert_almost_equal(val, table_val, decimal=7)
+
+    def test_quadrature_rtol(self):
+        def myfunc(x,n,z):       # Bessel function integrand
+            return 1e90 * cos(n*x-z*sin(x))/pi
+        val, err = quadrature(myfunc,0,pi,(2,1.8),rtol=1e-10)
+        table_val = 1e90 * 0.30614353532540296487
+        assert_allclose(val, table_val, rtol=1e-10)
 
     def test_romberg(self):
         # Typical function with two extra arguments:

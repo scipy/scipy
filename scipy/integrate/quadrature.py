@@ -8,6 +8,10 @@ from numpy import sum, ones, add, diff, isinf, isscalar, \
      asarray, real, trapz, arange, empty
 import numpy as np
 import math
+import warnings
+
+class AccuracyWarning(Warning):
+    pass
 
 def fixed_quad(func,a,b,args=(),n=5):
     """
@@ -99,7 +103,8 @@ def vectorize1(func, args=(), vec_func=False):
             return output
     return vfunc
 
-def quadrature(func,a,b,args=(),tol=1.49e-8,maxiter=50, vec_func=True):
+def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
+               vec_func=True):
     """
     Compute a definite integral using fixed-tolerance Gaussian quadrature.
 
@@ -116,9 +121,9 @@ def quadrature(func,a,b,args=(),tol=1.49e-8,maxiter=50, vec_func=True):
         Upper limit of integration.
     args : tuple, optional
         Extra arguments to pass to function.
-    tol : float, optional
+    tol, rol : float, optional
         Iteration stops when error between last two iterates is less than
-        tolerance.
+        `tol` OR the relative change is less than `rtol`.
     maxiter : int, optional
         Maximum number of iterations.
     vec_func : bool, optional
@@ -147,17 +152,20 @@ def quadrature(func,a,b,args=(),tol=1.49e-8,maxiter=50, vec_func=True):
     odeint: ODE integrator
 
     """
-    err = 100.0
-    val = err
-    n = 1
     vfunc = vectorize1(func, args, vec_func=vec_func)
-    while (err > tol) and (n < maxiter):
+    val = np.inf
+    err = np.inf
+    for n in xrange(1, maxiter+1):
         newval = fixed_quad(vfunc, a, b, (), n)[0]
         err = abs(newval-val)
         val = newval
-        n = n + 1
-    if n == maxiter:
-        print "maxiter (%d) exceeded. Latest difference = %e" % (n,err)
+
+        if err < tol or err < rtol*abs(val):
+            break
+    else:
+        warnings.warn(
+            "maxiter (%d) exceeded. Latest difference = %e" % (maxiter, err),
+            AccuracyWarning)
     return val, err
 
 def tupleset(t, i, value):
