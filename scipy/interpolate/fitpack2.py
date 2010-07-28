@@ -18,7 +18,8 @@ __all__ = [
     'RectBivariateSpline']
 
 import warnings
-from numpy import zeros, concatenate, alltrue, ravel, all, diff
+from numpy import zeros, concatenate, alltrue, ravel, all, diff, array
+import numpy as np
 
 import fitpack
 import dfitpack
@@ -212,6 +213,10 @@ class UnivariateSpline(object):
         if x is (partially) ordered.
 
         """
+        x = np.asarray(x)
+        # empty input yields empty output
+        if x.size == 0:
+            return array([])
 #        if nu is None:
 #            return dfitpack.splev(*(self._eval_args+(x,)))
 #        return dfitpack.splder(nu=nu,*(self._eval_args+(x,)))
@@ -485,6 +490,7 @@ class BivariateSpline(object):
         approximation: sum ((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0)
         """
         return self.fp
+
     def get_knots(self):
         """ Return a tuple (tx,ty) where tx,ty contain knots positions
         of the spline with respect to x-, y-variable, respectively.
@@ -492,11 +498,19 @@ class BivariateSpline(object):
           t[k+1:-k-1] and t[:k+1]=b, t[-k-1:]=e, respectively.
         """
         return self.tck[:2]
+
     def get_coeffs(self):
         """ Return spline coefficients."""
         return self.tck[2]
-    def __call__(self,x,y,mth='array'):
+
+    def __call__(self, x, y, mth='array'):
         """ Evaluate spline at positions x,y."""
+        x = np.asarray(x)
+        y = np.asarray(y)
+        # empty input yields empty output
+        if (x.size == 0) and (y.size == 0):
+            return array([])
+
         if mth=='array':
             tx,ty,c = self.tck[:3]
             kx,ky = self.degrees

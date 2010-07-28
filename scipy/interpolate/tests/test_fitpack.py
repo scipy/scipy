@@ -57,6 +57,14 @@ class TestUnivariateSpline(TestCase):
         sp = ZeroSpline([1,2,3,4,5], [3,2,3,2,3], k=2)
         assert_array_equal(sp([1.5, 2.5]), [0., 0.])
 
+    def test_empty_input(self):
+        """Test whether empty input returns an empty output. Ticket 1014"""
+        x = [1,3,5,7,9]
+        y = [0,4,9,12,21]
+        spl = UnivariateSpline(x, y, k=3)
+        assert_array_equal(spl([]), array([]))
+
+
 class TestLSQBivariateSpline(TestCase):
     def test_linear_constant(self):
         x = [1,1,1,2,2,2,3,3,3]
@@ -108,6 +116,18 @@ class TestLSQBivariateSpline(TestCase):
                     *(tz[:-1,:-1]+tz[1:,:-1]+tz[:-1,1:]+tz[1:,1:])).sum()
 
         assert_almost_equal(lut.integral(tx[0], tx[-1], ty[0], ty[-1]), trpz)
+
+    def test_empty_input(self):
+        """Test whether empty inputs returns an empty output. Ticket 1014"""
+        x = [1,1,1,2,2,2,3,3,3]
+        y = [1,2,3,1,2,3,1,2,3]
+        z = [3,3,3,3,3,3,3,3,3]
+        s = 0.1
+        tx = [1+s,3-s]
+        ty = [1+s,3-s]
+        lut = LSQBivariateSpline(x,y,z,tx,ty,kx=1,ky=1)
+
+        assert_array_equal(lut([], []), array([]))
 
 class TestSmoothBivariateSpline(TestCase):
     def test_linear_constant(self):
