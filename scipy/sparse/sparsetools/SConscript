@@ -3,6 +3,7 @@
 from numscons import GetNumpyEnvironment
 
 env = GetNumpyEnvironment(ARGUMENTS)
+env.PrependUnique(CPPDEFINES = '__STDC_FORMAT_MACROS')
 
 for fmt in ['csr','csc','coo','bsr','dia', 'csgraph']:
     sources = [ fmt + '_wrap.cxx' ]
