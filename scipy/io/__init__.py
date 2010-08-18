@@ -17,6 +17,7 @@ from recaster import sctype_attributes, Recaster
 import matlab.byteordercodes as byteordercodes
 from data_store import save_as_module
 from mmio import mminfo, mmread, mmwrite
+import idlsave
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
 from numpy.testing import Tester
