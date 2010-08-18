@@ -578,7 +578,7 @@ class AttrDict(dict):
 
 
 def read(file_name, idict=None, python_dict=False,
-         uncompressed_file_name=None, verbose=True):
+         uncompressed_file_name=None, verbose=False):
     '''
     Read an IDL .sav file
 
@@ -592,7 +592,7 @@ def read(file_name, idict=None, python_dict=False,
         By default, the object return is not a Python dictionary, but a
         case-insensitive dictionary with item, attribute, and call access
         to variables. To get a standard Python dictionary, set this option
-        to True. If `idict` is specified, `attribute_access` is ignored.
+        to True.
     uncompressed_file_name : str, optional
         This option only has an effect for .sav files written with the
         /compress option. If a file name is specified, compressed .sav
