@@ -577,8 +577,8 @@ class AttrDict(dict):
     __call__ = __getitem__
 
 
-def read(file_name, idict=None, python_dict=False,
-         uncompressed_file_name=None, verbose=False):
+def readsav(file_name, idict=None, python_dict=False,
+            uncompressed_file_name=None, verbose=False):
     '''
     Read an IDL .sav file
 
@@ -596,7 +596,7 @@ def read(file_name, idict=None, python_dict=False,
     uncompressed_file_name : str, optional
         This option only has an effect for .sav files written with the
         /compress option. If a file name is specified, compressed .sav
-        files are uncompressed to this file. Otherwise, idlsave will use
+        files are uncompressed to this file. Otherwise, readsav will use
         the `tempfile` module to determine a temporary filename
         automatically, and will remove the temporary file upon successfully
         reading it in.
