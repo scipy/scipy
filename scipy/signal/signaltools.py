@@ -514,6 +514,9 @@ def remez(numtaps, bands, desired, weight=None, Hz=1, type='bandpass',
     type --- The type of filter:
              'bandpass' : flat response in bands.
              'differentiator' : frequency proportional response in bands.
+             'hilbert' : filter with odd symmetry, that is, type III
+                         (for even order) or type IV (for odd order)
+                         linear phase filters
 
   Outputs: (out,)
 
@@ -523,9 +526,9 @@ def remez(numtaps, bands, desired, weight=None, Hz=1, type='bandpass',
     """
     # Convert type
     try:
-        tnum = {'bandpass':1, 'differentiator':2}[type]
+        tnum = {'bandpass':1, 'differentiator':2, 'hilbert':3}[type]
     except KeyError:
-        raise ValueError, "Type must be 'bandpass', or 'differentiator'"
+        raise ValueError("Type must be 'bandpass', 'differentiator', or 'hilbert'")
 
     # Convert weight
     if weight is None:
