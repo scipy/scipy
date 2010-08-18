@@ -1,7 +1,7 @@
 import warnings
 
 import numpy as np
-from numpy.testing import *
+from numpy.testing import TestCase, assert_array_almost_equal, assert_
 
 from scipy.signal import tf2zpk, bessel, BadCoefficients, kaiserord, firwin, freqz, remez
 
