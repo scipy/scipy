@@ -1,22 +1,35 @@
+========================================
 Interpolation (:mod:`scipy.interpolate`)
 ========================================
 
 .. sectionauthor:: Travis E. Oliphant
 
+.. sectionauthor:: Pauli Virtanen
+
 .. currentmodule:: scipy.interpolate
 
 .. contents::
 
-There are two general interpolation facilities available in SciPy. The
-first facility is an interpolation class which performs linear
-1-dimensional interpolation. The second facility is based on the
-FORTRAN library FITPACK and provides functions for 1- and
-2-dimensional (smoothed) cubic-spline interpolation. There are both
-procedural and object-oriented interfaces for the FITPACK library.
+There are several general interpolation facilities available in SciPy,
+for data in 1, 2, and higher dimensions:
+
+- A class representing an interpolant (:class:`interp1d`) in 1-D,
+  offering several interpolation methods.
+
+- Convenience function :func:`griddata` offering a simple interface to
+  interpolation in N dimensions (N = 1, 2, 3, 4, ...).
+  Object-oriented interface for the underlying routines is also
+  available.
+
+- Functions for 1- and 2-dimensional (smoothed) cubic-spline
+  interpolation, based on the FORTRAN library FITPACK. There are both
+  procedural and object-oriented interfaces for the FITPACK library.
+
+- Interpolation using Radial Basis Functions.
 
 
-Linear 1-d interpolation (:class:`interp1d`)
---------------------------------------------
+1-D interpolation (:class:`interp1d`)
+=====================================
 
 The interp1d class in scipy.interpolate is a convenient method to
 create a function based on fixed data points which can be evaluated
@@ -27,24 +40,82 @@ __call__ method and can therefore by treated like a function which
 interpolates between known data values to obtain unknown values (it
 also has a docstring for help). Behavior at the boundary can be
 specified at instantiation time. The following example demonstrates
-it's use.
+its use, for linear and cubic spline interpolation:
 
 .. plot::
 
-   >>> import numpy as np
-   >>> from scipy import interpolate
+   >>> from scipy.interpolate import interp1d
 
-   >>> x = np.arange(0,10)
+   >>> x = np.linspace(0, 10, 10)
    >>> y = np.exp(-x/3.0)
-   >>> f = interpolate.interp1d(x, y)
+   >>> f = interp1d(x, y)
+   >>> f2 = interp1d(x, y, kind='cubic')
 
-   >>> xnew = np.arange(0,9,0.1)
+   >>> xnew = np.linspace(0, 10, 40)
    >>> import matplotlib.pyplot as plt
-   >>> plt.plot(x,y,'o',xnew,f(xnew),'-')
+   >>> plt.plot(x,y,'o',xnew,f(xnew),'-', xnew, f2(xnew),'--')
+   >>> plt.legend(['data', 'linear', 'cubic'], loc='best')
+   >>> plt.show()
 
 ..   :caption: One-dimensional interpolation using the
 ..             class :obj:`interpolate.interp1d`
 
+
+Multivariate data interpolation (:func:`griddata`)
+==================================================
+
+Suppose you have multidimensional data, for instance for an underlying
+function *f(x, y)* you only know the values at points *(x[i], y[i])*
+that do not form a regular grid.
+
+.. plot::
+
+    Suppose we want to interpolate the 2-D function
+
+    >>> def func(x, y):
+    >>>     return x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
+
+    on a grid in [0, 1]x[0, 1]
+
+    >>> grid_x, grid_y = np.mgrid[0:1:100j, 0:1:200j]
+
+    but we only know its values at 1000 data points:
+
+    >>> points = np.random.rand(1000, 2)
+    >>> values = func(points[:,0], points[:,1])
+
+    This can be done with `griddata` -- below we try out all of the
+    interpolation methods:
+
+    >>> from scipy.interpolate import griddata
+    >>> grid_z0 = griddata(points, values, (grid_x, grid_y), method='nearest')
+    >>> grid_z1 = griddata(points, values, (grid_x, grid_y), method='linear')
+    >>> grid_z2 = griddata(points, values, (grid_x, grid_y), method='cubic')
+
+    One can see that the exact result is reproduced by all of the
+    methods to some degree, but for this smooth function the piecewise
+    cubic interpolant gives the best results:
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.subplot(221)
+    >>> plt.imshow(func(grid_x, grid_y).T, extent=(0,1,0,1), origin='lower')
+    >>> plt.plot(points[:,0], points[:,1], 'k.', ms=1)
+    >>> plt.title('Original')
+    >>> plt.subplot(222)
+    >>> plt.imshow(grid_z0.T, extent=(0,1,0,1), origin='lower')
+    >>> plt.title('Nearest')
+    >>> plt.subplot(223)
+    >>> plt.imshow(grid_z1.T, extent=(0,1,0,1), origin='lower')
+    >>> plt.title('Linear')
+    >>> plt.subplot(224)
+    >>> plt.imshow(grid_z2.T, extent=(0,1,0,1), origin='lower')
+    >>> plt.title('Cubic')
+    >>> plt.gcf().set_size_inches(6, 6)
+    >>> plt.show()
+
+
+Spline interpolation
+====================
 
 Spline interpolation in 1-d: Procedural (interpolate.splXXX)
 ------------------------------------------------------------
@@ -220,8 +291,8 @@ spline.
 
    LSQUnivarateSpline with non-uniform knots
 
-   >>> t = [np.pi/2-.1,np.pi/2-.1,3*np.pi/2-.1,3*np.pi/2+.1]
-   >>> s = interpolate.LSQUnivariateSpline(x,y,t)
+   >>> t = [np.pi/2-.1,np.pi/2+.1,3*np.pi/2-.1,3*np.pi/2+.1]
+   >>> s = interpolate.LSQUnivariateSpline(x,y,t,k=2)
    >>> ynew = s(xnew)
 
    >>> plt.figure()
@@ -230,7 +301,6 @@ spline.
    >>> plt.axis([-0.05,6.33,-1.05,1.05])
    >>> plt.title('Spline with Specified Interior Knots')
    >>> plt.show()
-
 
 
 Two-dimensional spline representation: Procedural (:func:`bisplrep`)
@@ -319,14 +389,14 @@ arguments.
 
 
 Using radial basis functions for smoothing/interpolation
----------------------------------------------------------
+========================================================
 
 Radial basis functions can be used for smoothing/interpolating scattered
 data in n-dimensions, but should be used with caution for extrapolation
 outside of the observed data range.
 
 1-d Example
-^^^^^^^^^^^
+-----------
 
 This example compares the usage of the Rbf and UnivariateSpline classes
 from the scipy.interpolate module.
@@ -366,7 +436,7 @@ from the scipy.interpolate module.
 ..   :caption: Example of one-dimensional RBF interpolation.
 
 2-d Example
-^^^^^^^^^^^
+-----------
 
 This example shows how to interpolate scattered 2d data.
 

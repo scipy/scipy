@@ -22,11 +22,23 @@ Univariate interpolation
 Multivariate interpolation
 ==========================
 
+Unstructured data:
+
+.. autosummary::
+   :toctree: generated/
+
+   griddata
+   LinearNDInterpolator
+   NearestNDInterpolator
+   CloughTocher2DInterpolator
+   Rbf
+
+Data given on a regular grid:
+
 .. autosummary::
    :toctree: generated/
 
    interp2d
-   Rbf
 
 
 1-D Splines
