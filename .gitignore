@@ -2,6 +2,15 @@
 *.swp
 *.pyd
 *.so
+*.o
+*.lo
+*.la
+*~
+*.bak
+*.swp
+.\#*
+.deps
+.libs
 /build
 /dist
 /scipy.egg-info
