@@ -226,8 +226,8 @@ intersphinx_mapping = {
 # If we want to do a phantom import from an XML file for all autodocs
 phantom_import_file = 'dump.xml'
 
-# Edit links
-#numpydoc_edit_link = '`Edit </pydocweb/doc/%(full_name)s/>`__'
+# Generate plots for example sections
+numpydoc_use_plots = True
 
 # -----------------------------------------------------------------------------
 # Autosummary
@@ -264,6 +264,7 @@ np.random.seed(123)
 """
 plot_include_source = True
 plot_formats = [('png', 100), 'pdf']
+plot_html_show_formats = False
 
 import math
 phi = (math.sqrt(5) + 1)/2
