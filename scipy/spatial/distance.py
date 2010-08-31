@@ -1,89 +1,64 @@
 """
+=====================================================
+Distance computations (:mod:`scipy.spatial.distance`)
+=====================================================
+
+.. sectionauthor:: Damian Eads
+
 Function Reference
 ------------------
 
 Distance matrix computation from a collection of raw observation vectors
 stored in a rectangular array.
 
-+------------------+-------------------------------------------------+
-|*Function*        | *Description*                                   |
-+------------------+-------------------------------------------------+
-|pdist             | pairwise distances between observation          |
-|                  | vectors.                                        |
-+------------------+-------------------------------------------------+
-|cdist             | distances between between two collections of    |
-|                  | observation vectors.                            |
-+------------------+-------------------------------------------------+
-|squareform        | converts a square distance matrix to a          |
-|                  | condensed one and vice versa.                   |
-+------------------+-------------------------------------------------+
+.. autosummary::
+   :toctree: generated/
+
+   pdist   -- pairwise distances between observation vectors.
+   cdist   -- distances between between two collections of observation vectors
+   squareform -- convert distance matrix to a condensed one and vice versa
 
 Predicates for checking the validity of distance matrices, both
 condensed and redundant. Also contained in this module are functions
 for computing the number of observations in a distance matrix.
 
-+------------------+-------------------------------------------------+
-|*Function*        | *Description*                                   |
-+------------------+-------------------------------------------------+
-|is_valid_dm       | checks for a valid distance matrix.             |
-+------------------+-------------------------------------------------+
-|is_valid_y        | checks for a valid condensed distance matrix.   |
-+------------------+-------------------------------------------------+
-|num_obs_dm        | # of observations in a distance matrix.         |
-+------------------+-------------------------------------------------+
-|num_obs_y         | # of observations in a condensed distance       |
-|                  | matrix.                                         |
-+------------------+-------------------------------------------------+
+.. autosummary::
+   :toctree: generated/
+
+   is_valid_dm -- checks for a valid distance matrix
+   is_valid_y  -- checks for a valid condensed distance matrix
+   num_obs_dm  -- # of observations in a distance matrix
+   num_obs_y   -- # of observations in a condensed distance matrix
 
 Distance functions between two vectors ``u`` and ``v``. Computing
 distances over a large collection of vectors is inefficient for these
 functions. Use ``pdist`` for this purpose.
 
-+------------------+-------------------------------------------------+
-|*Function*        | *Description*                                   |
-+------------------+-------------------------------------------------+
-| braycurtis       | the Bray-Curtis distance.                       |
-+------------------+-------------------------------------------------+
-| canberra         | the Canberra distance.                          |
-+------------------+-------------------------------------------------+
-| chebyshev        | the Chebyshev distance.                         |
-+------------------+-------------------------------------------------+
-| cityblock        | the Manhattan distance.                         |
-+------------------+-------------------------------------------------+
-| correlation      | the Correlation distance.                       |
-+------------------+-------------------------------------------------+
-| cosine           | the Cosine distance.                            |
-+------------------+-------------------------------------------------+
-| dice             | the Dice dissimilarity (boolean).               |
-+------------------+-------------------------------------------------+
-| euclidean        | the Euclidean distance.                         |
-+------------------+-------------------------------------------------+
-| hamming          | the Hamming distance (boolean).                 |
-+------------------+-------------------------------------------------+
-| jaccard          | the Jaccard distance (boolean).                 |
-+------------------+-------------------------------------------------+
-| kulsinski        | the Kulsinski distance (boolean).               |
-+------------------+-------------------------------------------------+
-| mahalanobis      | the Mahalanobis distance.                       |
-+------------------+-------------------------------------------------+
-| matching         | the matching dissimilarity (boolean).           |
-+------------------+-------------------------------------------------+
-| minkowski        | the Minkowski distance.                         |
-+------------------+-------------------------------------------------+
-| rogerstanimoto   | the Rogers-Tanimoto dissimilarity (boolean).    |
-+------------------+-------------------------------------------------+
-| russellrao       | the Russell-Rao dissimilarity (boolean).        |
-+------------------+-------------------------------------------------+
-| seuclidean       | the normalized Euclidean distance.              |
-+------------------+-------------------------------------------------+
-| sokalmichener    | the Sokal-Michener dissimilarity (boolean).     |
-+------------------+-------------------------------------------------+
-| sokalsneath      | the Sokal-Sneath dissimilarity (boolean).       |
-+------------------+-------------------------------------------------+
-| sqeuclidean      | the squared Euclidean distance.                 |
-+------------------+-------------------------------------------------+
-| yule             | the Yule dissimilarity (boolean).               |
-+------------------+-------------------------------------------------+
+.. autosummary::
+   :toctree: generated/
+
+   braycurtis       -- the Bray-Curtis distance.
+   canberra         -- the Canberra distance.
+   chebyshev        -- the Chebyshev distance.
+   cityblock        -- the Manhattan distance.
+   correlation      -- the Correlation distance.
+   cosine           -- the Cosine distance.
+   dice             -- the Dice dissimilarity (boolean).
+   euclidean        -- the Euclidean distance.
+   hamming          -- the Hamming distance (boolean).
+   jaccard          -- the Jaccard distance (boolean).
+   kulsinski        -- the Kulsinski distance (boolean).
+   mahalanobis      -- the Mahalanobis distance.
+   matching         -- the matching dissimilarity (boolean).
+   minkowski        -- the Minkowski distance.
+   rogerstanimoto   -- the Rogers-Tanimoto dissimilarity (boolean).
+   russellrao       -- the Russell-Rao dissimilarity (boolean).
+   seuclidean       -- the normalized Euclidean distance.
+   sokalmichener    -- the Sokal-Michener dissimilarity (boolean).
+   sokalsneath      -- the Sokal-Sneath dissimilarity (boolean).
+   sqeuclidean      -- the squared Euclidean distance.
+   yule             -- the Yule dissimilarity (boolean).
+
 
 References
 ----------
