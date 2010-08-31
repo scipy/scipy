@@ -44,3 +44,6 @@ env.NumpyPythonExtension('dfitpack', source = 'src/fitpack.pyf',
 # Build _interpolate
 env.NumpyPythonExtension('_interpolate', source = 'src/_interpolate.cpp',
                          CXXFILESUFFIX = ".cpp")
+
+# Build interpnd
+env.NumpyPythonExtension('interpnd', source = 'interpnd.c')

@@ -11,6 +11,9 @@ def configuration(parent_package='',top_path=None):
                        sources=[join('fitpack', '*.f')],
                       )
 
+    config.add_extension('interpnd',
+                         sources=['interpnd.c'])
+
     config.add_extension('_fitpack',
                          sources=['src/_fitpackmodule.c'],
                          libraries=['fitpack'],
