@@ -485,19 +485,20 @@ cdef void _RidgeIter2D_init(RidgeIter2D_t *it, DelaunayInfo_t *d,
     it.vertex = vertex
     it.triangle = d.vertex_to_simplex[vertex]
     it.start_triangle = it.triangle
+    it.restart = 0
 
     if it.triangle != -1:
-        # find some edge connected to this vertex; start from -1 edges
+        # find some edge connected to this vertex
         for k in xrange(3):
             ivertex = it.info.vertices[it.triangle*3 + k]
             if ivertex != vertex:
                 it.vertex2 = ivertex
-                it.edge = k
-                it.start_edge = k
+                it.index = k
+                it.start_index = k
                 break
     else:
-        it.start_edge = -1
-        it.edge = -1
+        it.start_index = -1
+        it.index = -1
 
 cdef void _RidgeIter2D_next(RidgeIter2D_t *it) nogil:
     cdef int itri, k, ivertex
@@ -515,27 +516,48 @@ cdef void _RidgeIter2D_next(RidgeIter2D_t *it) nogil:
     #         `+------k
     #
 
-    # jump to the next triangle
-    itri = it.info.neighbors[it.triangle*3 + it.edge]
-
-    # if it's outside triangulation, restart it to the opposite direction
-    if itri == -1:
-        if it.start_edge == -1:
+    if it.restart:
+        if it.start_index == -1:
             # we already did that -> we have iterated over everything
-            it.edge = -1
+            it.index = -1
             return
 
+        # restart to opposite direction
+        it.triangle = it.start_triangle
         for k in xrange(3):
             ivertex = it.info.vertices[it.triangle*3 + k]
-            if ivertex != it.vertex and k != it.start_edge:
-                it.edge = k
+            if ivertex != it.vertex and k != it.start_index:
+                it.index = k
+                it.vertex2 = ivertex
+                break
+        it.start_index = -1
+        it.restart = 0
+
+        if it.info.neighbors[it.triangle*3 + it.index] == -1:
+            it.index = -1
+            return
+        else:
+            _RidgeIter2D_next(it)
+            if it.index == -1:
+                return
+
+    # jump to the next triangle
+    itri = it.info.neighbors[it.triangle*3 + it.index]
+
+    # if it's outside triangulation, take the last edge, and signal
+    # restart to the opposite direction
+    if itri == -1:
+        for k in xrange(3):
+            ivertex = it.info.vertices[it.triangle*3 + k]
+            if ivertex != it.vertex and k != it.index:
+                it.index = k
                 it.vertex2 = ivertex
                 break
 
-        it.start_edge = -1
+        it.restart = 1
         return
 
-    # Find at which edge we are now:
+    # Find at which index we are now:
     #
     # it.vertex
     #      O-------k------.
@@ -547,14 +569,14 @@ cdef void _RidgeIter2D_next(RidgeIter2D_t *it) nogil:
     #
     # A = it.triangle
     # B = itri
-    # E = it.edge
+    # E = it.index
     # O = it.vertex
     #
     for k in xrange(3):
         ivertex = it.info.vertices[itri*3 + k]
         if it.info.neighbors[itri*3 + k] != it.triangle and \
                ivertex != it.vertex:
-            it.edge = k
+            it.index = k
             it.vertex2 = ivertex
             break
 
@@ -562,8 +584,38 @@ cdef void _RidgeIter2D_next(RidgeIter2D_t *it) nogil:
 
     # check termination
     if it.triangle == it.start_triangle:
-        it.edge = -1
+        it.index = -1
         return
+
+cdef class RidgeIter2D(object):
+    cdef RidgeIter2D_t it
+    cdef object delaunay
+    cdef DelaunayInfo_t *info
+
+    def __init__(self, delaunay, ivertex):
+        self.info = NULL
+        if delaunay.ndim != 2:
+            raise ValueError("RidgeIter2D supports only 2-D")
+        self.delaunay = delaunay
+        self.info = _get_delaunay_info(delaunay, 0, 1)
+        _RidgeIter2D_init(&self.it, self.info, ivertex)
+
+    def __del__(self):
+        if self.info != NULL:
+            free(self.info)
+            self.info = NULL
+        self.delaunay = None
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.it.index == -1:
+            raise StopIteration()
+        ret = (self.it.vertex, self.it.vertex2, self.it.index, self.it.triangle)
+        _RidgeIter2D_next(&self.it)
+        return ret
+
 
 #------------------------------------------------------------------------------
 # Finding simplices

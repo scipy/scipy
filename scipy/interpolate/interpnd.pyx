@@ -394,7 +394,7 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
             # walk over neighbours of given point
             qhull._RidgeIter2D_init(&it, d, ipoint)
 
-            while it.edge != -1:
+            while it.index != -1:
                 # edge
                 ex = d.points[2*it.vertex2 + 0] - d.points[2*it.vertex + 0]
                 ey = d.points[2*it.vertex2 + 1] - d.points[2*it.vertex + 1]

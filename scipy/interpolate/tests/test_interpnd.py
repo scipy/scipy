@@ -98,7 +98,8 @@ class TestCloughTocher2DInterpolator(object):
         np.random.seed(1234)
         if x is None:
             x = np.array([(0, 0), (0, 1),
-                          (1, 0), (1, 1), (0.25, 0.75), (0.6, 0.8)],
+                          (1, 0), (1, 1), (0.25, 0.75), (0.6, 0.8),
+                          (0.5, 0.2)],
                          dtype=float)
 
         ip = interpnd.CloughTocher2DInterpolator(x, func(x[:,0], x[:,1]),
@@ -128,7 +129,7 @@ class TestCloughTocher2DInterpolator(object):
             self._check_accuracy(func, tol=1e-13, atol=1e-7, rtol=1e-7,
                                  err_msg="Function %d" % j)
 
-    def test_quadratic_dense_smoketest(self):
+    def test_quadratic_smoketest(self):
         # Should be reasonably accurate for quadratic functions
         funcs = [
             lambda x, y: x**2,
@@ -156,7 +157,7 @@ class TestCloughTocher2DInterpolator(object):
                      np.random.rand(30*30, 2)]
 
         for j, func in enumerate(funcs):
-            self._check_accuracy(func, x=grid, tol=1e-9, atol=1e-2, rtol=1e-2,
+            self._check_accuracy(func, x=grid, tol=1e-9, atol=5e-3, rtol=1e-2,
                                  err_msg="Function %d" % j)
 
 if __name__ == "__main__":

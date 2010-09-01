@@ -70,6 +70,76 @@ class TestUtilities(object):
 
         assert_equal(tri.convex_hull, [[1, 2], [3, 2], [1, 0], [3, 0]])
 
+class TestRidgeIter2D(object):
+
+    def _check_ridges(self, tri, vertex, expected):
+        got = [(v1, v2) for v1, v2, i, t in qhull.RidgeIter2D(tri, vertex)]
+        got.sort()
+        expected.sort()
+        assert_equal(got, expected, err_msg="%d: %r != %r" % (
+            vertex, got, expected))
+
+    def test_triangle(self):
+        points = np.array([(0,0), (0,1), (1,0)], dtype=np.double)
+        tri = qhull.Delaunay(points)
+
+        # 1
+        # +
+        # |\
+        # | \
+        # |0 \ 
+        # +---+
+        # 0   2
+
+        self._check_ridges(tri, 0, [(0, 1), (0, 2)])
+        self._check_ridges(tri, 1, [(1, 0), (1, 2)])
+        self._check_ridges(tri, 2, [(2, 0), (2, 1)])
+
+    def test_rectangle(self):
+        points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.double)
+        tri = qhull.Delaunay(points)
+
+        # 1   2
+        # +---+
+        # |\ 0|
+        # | \ |
+        # |1 \|
+        # +---+
+        # 0   3
+
+        self._check_ridges(tri, 0, [(0, 1), (0, 3)])
+        self._check_ridges(tri, 1, [(1, 0), (1, 3), (1, 2)])
+        self._check_ridges(tri, 2, [(2, 1), (2, 3)])
+        self._check_ridges(tri, 3, [(3, 0), (3, 1), (3, 2)])
+
+    def test_complicated(self):
+        points = np.array([(0,0), (0,1), (1,1), (1,0),
+                           (0.5, 0.5), (0.9, 0.5)], dtype=np.double)
+        tri = qhull.Delaunay(points)
+
+        #  1                       2
+        #  +-----------------------+
+        #  | \-                 /-||
+        #  |   \-      0      /-  /|
+        #  |     \-         /-   / |
+        #  |       \-     /-    |  |
+        #  |         \-4/-  4  5/  |
+        #  |   1       +-------+  3|
+        #  |         -/  \- 5   \  |
+        #  |      --/      \--   \ |
+        #  |   --/     2      \- | |
+        #  | -/                 \-\|
+        #  +-----------------------+
+        #  0                       3
+        #
+
+        self._check_ridges(tri, 0, [(0, 1), (0, 3), (0, 4)])
+        self._check_ridges(tri, 1, [(1, 0), (1, 2), (1, 4)])
+        self._check_ridges(tri, 2, [(2, 1), (2, 4), (2, 5), (2, 3)])
+        self._check_ridges(tri, 3, [(3, 0), (3, 4), (3, 5), (3, 2)])
+        self._check_ridges(tri, 4, [(4, 0), (4, 1), (4, 2), (4, 3), (4, 5)])
+        self._check_ridges(tri, 5, [(5, 2), (5, 3), (5, 4)])
+
 
 class TestTriangulation(object):
     """

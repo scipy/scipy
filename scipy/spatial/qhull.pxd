@@ -77,12 +77,13 @@ cdef int _find_simplex(DelaunayInfo_t *d, double *c, double *x, int *start,
 
 ctypedef struct RidgeIter2D_t:
     DelaunayInfo_t *info
+    int index
     int vertex
-    int edge
     int vertex2
     int triangle
     int start_triangle
-    int start_edge
+    int start_index
+    int restart
 
 cdef void _RidgeIter2D_init(RidgeIter2D_t *it, DelaunayInfo_t *d,
                             int vertex) nogil
