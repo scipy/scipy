@@ -399,12 +399,13 @@ typedef struct {
 
 typedef struct {
   __pyx_t_5scipy_7spatial_5qhull_DelaunayInfo_t *info;
+  int index;
   int vertex;
-  int edge;
   int vertex2;
   int triangle;
   int start_triangle;
-  int start_edge;
+  int start_index;
+  int restart;
 } __pyx_t_5scipy_7spatial_5qhull_RidgeIter2D_t;
 
 #ifndef CYTHON_REFNANNY
@@ -865,7 +866,6 @@ static char __pyx_k__tol[] = "tol";
 static char __pyx_k__tri[] = "tri";
 static char __pyx_k__base[] = "base";
 static char __pyx_k__data[] = "data";
-static char __pyx_k__edge[] = "edge";
 static char __pyx_k__grad[] = "grad";
 static char __pyx_k__imag[] = "imag";
 static char __pyx_k__ndim[] = "ndim";
@@ -877,6 +877,7 @@ static char __pyx_k__descr[] = "descr";
 static char __pyx_k__dtype[] = "dtype";
 static char __pyx_k__empty[] = "empty";
 static char __pyx_k__finfo[] = "finfo";
+static char __pyx_k__index[] = "index";
 static char __pyx_k__names[] = "names";
 static char __pyx_k__numpy[] = "numpy";
 static char __pyx_k__qhull[] = "qhull";
@@ -983,7 +984,6 @@ static PyObject *__pyx_n_s__data;
 static PyObject *__pyx_n_s__descr;
 static PyObject *__pyx_n_s__double;
 static PyObject *__pyx_n_s__dtype;
-static PyObject *__pyx_n_s__edge;
 static PyObject *__pyx_n_s__empty;
 static PyObject *__pyx_n_s__enumerate;
 static PyObject *__pyx_n_s__eps;
@@ -993,6 +993,7 @@ static PyObject *__pyx_n_s__finfo;
 static PyObject *__pyx_n_s__format;
 static PyObject *__pyx_n_s__grad;
 static PyObject *__pyx_n_s__imag;
+static PyObject *__pyx_n_s__index;
 static PyObject *__pyx_n_s__is_complex;
 static PyObject *__pyx_n_s__issubdtype;
 static PyObject *__pyx_n_s__itemsize;
@@ -3553,7 +3554,7 @@ static  int __pyx_f_8interpnd__estimate_gradients_2d_global(__pyx_t_5scipy_7spat
 
       
       while (1) {
-        __pyx_t_7 = (__pyx_v_it.edge != -1);
+        __pyx_t_7 = (__pyx_v_it.index != -1);
         if (!__pyx_t_7) break;
 
         
@@ -7407,7 +7408,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s__descr, __pyx_k__descr, sizeof(__pyx_k__descr), 0, 0, 1, 1},
   {&__pyx_n_s__double, __pyx_k__double, sizeof(__pyx_k__double), 0, 0, 1, 1},
   {&__pyx_n_s__dtype, __pyx_k__dtype, sizeof(__pyx_k__dtype), 0, 0, 1, 1},
-  {&__pyx_n_s__edge, __pyx_k__edge, sizeof(__pyx_k__edge), 0, 0, 1, 1},
   {&__pyx_n_s__empty, __pyx_k__empty, sizeof(__pyx_k__empty), 0, 0, 1, 1},
   {&__pyx_n_s__enumerate, __pyx_k__enumerate, sizeof(__pyx_k__enumerate), 0, 0, 1, 1},
   {&__pyx_n_s__eps, __pyx_k__eps, sizeof(__pyx_k__eps), 0, 0, 1, 1},
@@ -7417,6 +7417,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s__format, __pyx_k__format, sizeof(__pyx_k__format), 0, 0, 1, 1},
   {&__pyx_n_s__grad, __pyx_k__grad, sizeof(__pyx_k__grad), 0, 0, 1, 1},
   {&__pyx_n_s__imag, __pyx_k__imag, sizeof(__pyx_k__imag), 0, 0, 1, 1},
+  {&__pyx_n_s__index, __pyx_k__index, sizeof(__pyx_k__index), 0, 0, 1, 1},
   {&__pyx_n_s__is_complex, __pyx_k__is_complex, sizeof(__pyx_k__is_complex), 0, 0, 1, 1},
   {&__pyx_n_s__issubdtype, __pyx_k__issubdtype, sizeof(__pyx_k__issubdtype), 0, 0, 1, 1},
   {&__pyx_n_s__itemsize, __pyx_k__itemsize, sizeof(__pyx_k__itemsize), 0, 0, 1, 1},
