@@ -12,10 +12,10 @@ env.NumpyPythonExtension('_distance_wrap',
                                    join('src', 'distance.c')])
 
 # Build qhull
-src = [pjoin('qhull', 'src', s) for s in [
+src = [join('qhull', 'src', s) for s in [
     'geom.c', 'geom2.c', 'global.c', 'io.c', 'mem.c',
     'merge.c', 'poly.c', 'poly2.c', 'qset.c', 'user.c',
     'stat.c', 'qhull.c']]
 qhullsrc = env.DistutilsStaticExtLibrary('qhullsrc', source=src)
 
-env.NumpyPythonExtension('qhull', source = 'qhull.c', LIBS="qhullsrc")
+env.NumpyPythonExtension('qhull', source = 'qhull.c', LIBS=qhullsrc)

@@ -21,7 +21,10 @@ def configuration(parent_package = '', top_path = None):
                        )
 
     lapack = dict(get_info('lapack_opt'))
-    libs = ['qhull'] + lapack.pop('libraries')
+    try:
+        libs = ['qhull'] + lapack.pop('libraries')
+    except KeyError:
+        libs = ['qhull']
     config.add_extension('qhull',
                          sources=['qhull.c'],
                          libraries=libs,
