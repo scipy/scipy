@@ -212,12 +212,12 @@ def _qhull_get_facet_array(int ndim, int numpoints):
     cdef facetT* neighbor
     cdef vertexT *vertex
     cdef int i, j, point
-    cdef np.ndarray[np.int_t, ndim=2] vertices
-    cdef np.ndarray[np.int_t, ndim=2] neighbors
+    cdef np.ndarray[np.npy_int, ndim=2] vertices
+    cdef np.ndarray[np.npy_int, ndim=2] neighbors
     cdef np.ndarray[np.double_t, ndim=2] equations
-    cdef np.ndarray[np.int_t, ndim=1] id_map
+    cdef np.ndarray[np.npy_int, ndim=1] id_map
 
-    id_map = np.empty((qh_qh.facet_id,), dtype=np.int)
+    id_map = np.empty((qh_qh.facet_id,), dtype=np.intc)
     id_map.fill(-1)
 
     # Compute facet indices
@@ -230,8 +230,8 @@ def _qhull_get_facet_array(int ndim, int numpoints):
         facet = facet.next
 
     # Allocate output
-    vertices = np.zeros((j, ndim+1), dtype=np.int)
-    neighbors = np.zeros((j, ndim+1), dtype=np.int)
+    vertices = np.zeros((j, ndim+1), dtype=np.intc)
+    neighbors = np.zeros((j, ndim+1), dtype=np.intc)
     equations = np.zeros((j, ndim+2), dtype=np.double)
 
     # Retrieve facet information
@@ -273,7 +273,7 @@ def _qhull_get_facet_array(int ndim, int numpoints):
 
 @cython.boundscheck(False)
 def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
-                                np.ndarray[np.int_t, ndim=2] vertices):
+                                np.ndarray[np.npy_int, ndim=2] vertices):
     """
     Compute barycentric affine coordinate transformations for given
     simplices.
@@ -913,6 +913,7 @@ class Delaunay(object):
     """
 
     def __init__(self, points):
+        points = np.ascontiguousarray(points).astype(np.double)
         vertices, neighbors, equations, paraboloid_scale, paraboloid_shift = \
                   _construct_delaunay(points)
 
@@ -961,11 +962,11 @@ class Delaunay(object):
         :type: ndarray of int, shape (npoints,)
         """
         cdef int isimplex, k, ivertex, nsimplex, ndim
-        cdef np.ndarray[np.int_t, ndim=2] vertices
-        cdef np.ndarray[np.int_t, ndim=1] arr
+        cdef np.ndarray[np.npy_int, ndim=2] vertices
+        cdef np.ndarray[np.npy_int, ndim=1] arr
 
         if self._vertex_to_simplex is None:
-            self._vertex_to_simplex = np.empty((self.npoints,), dtype=int)
+            self._vertex_to_simplex = np.empty((self.npoints,), dtype=np.intc)
             self._vertex_to_simplex.fill(-1)
 
             arr = self._vertex_to_simplex
@@ -996,9 +997,9 @@ class Delaunay(object):
 
         """
         cdef int isimplex, k, j, ndim, nsimplex, m, msize
-        cdef np.ndarray[np.int_t, ndim=2] arr
-        cdef np.ndarray[np.int_t, ndim=2] neighbors
-        cdef np.ndarray[np.int_t, ndim=2] vertices
+        cdef np.ndarray[np.npy_int, ndim=2] arr
+        cdef np.ndarray[np.npy_int, ndim=2] neighbors
+        cdef np.ndarray[np.npy_int, ndim=2] vertices
 
         neighbors = self.neighbors
         vertices = self.vertices
@@ -1006,7 +1007,7 @@ class Delaunay(object):
         nsimplex = self.nsimplex
 
         msize = 10
-        out = np.empty((msize, ndim), dtype=int)
+        out = np.empty((msize, ndim), dtype=np.intc)
         arr = out
 
         m = 0
@@ -1067,7 +1068,7 @@ class Delaunay(object):
         cdef int start
         cdef int k
         cdef np.ndarray[np.double_t, ndim=2] x
-        cdef np.ndarray[np.int_t, ndim=1] out_
+        cdef np.ndarray[np.npy_int, ndim=1] out_
 
         xi = np.asanyarray(xi)
 
@@ -1081,7 +1082,7 @@ class Delaunay(object):
         start = 0
 
         eps = np.finfo(np.double).eps * 10
-        out = np.zeros((xi.shape[0],), dtype=np.int)
+        out = np.zeros((xi.shape[0],), dtype=np.intc)
         out_ = out
         info = _get_delaunay_info(self, 1, 0)
 
@@ -1178,10 +1179,10 @@ cdef DelaunayInfo_t *_get_delaunay_info(obj,
                                         int compute_vertex_to_simplex):
     cdef DelaunayInfo_t *info
     cdef np.ndarray[np.double_t, ndim=3] transform
-    cdef np.ndarray[np.int_t, ndim=1] vertex_to_simplex
+    cdef np.ndarray[np.npy_int, ndim=1] vertex_to_simplex
     cdef np.ndarray[np.double_t, ndim=2] points = obj.points
-    cdef np.ndarray[np.int_t, ndim=2] vertices = obj.vertices
-    cdef np.ndarray[np.int_t, ndim=2] neighbors = obj.neighbors
+    cdef np.ndarray[np.npy_int, ndim=2] vertices = obj.vertices
+    cdef np.ndarray[np.npy_int, ndim=2] neighbors = obj.neighbors
     cdef np.ndarray[np.double_t, ndim=2] equations = obj.equations
     cdef np.ndarray[np.double_t, ndim=1] min_bound = obj.min_bound
     cdef np.ndarray[np.double_t, ndim=1] max_bound = obj.max_bound

@@ -199,7 +199,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
         cdef np.ndarray[np.${DTYPE}_t, ndim=2] values = self.values
         cdef np.ndarray[np.${DTYPE}_t, ndim=2] out
         cdef np.ndarray[np.double_t, ndim=2] points = self.points
-        cdef np.ndarray[np.int_t, ndim=2] vertices = self.tri.vertices
+        cdef np.ndarray[np.npy_int, ndim=2] vertices = self.tri.vertices
         cdef double c[NPY_MAXDIMS]
         cdef ${CDTYPE} fill_value
         cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
@@ -812,7 +812,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         cdef np.ndarray[np.${DTYPE}_t, ndim=3] grad = self.grad
         cdef np.ndarray[np.${DTYPE}_t, ndim=2] out
         cdef np.ndarray[np.double_t, ndim=2] points = self.points
-        cdef np.ndarray[np.int_t, ndim=2] vertices = self.tri.vertices
+        cdef np.ndarray[np.npy_int, ndim=2] vertices = self.tri.vertices
         cdef double c[NPY_MAXDIMS]
         cdef ${CDTYPE} f[NPY_MAXDIMS+1]
         cdef ${CDTYPE} df[2*NPY_MAXDIMS+2]
