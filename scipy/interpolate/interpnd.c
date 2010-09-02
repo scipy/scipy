@@ -787,7 +787,7 @@ static int __pyx_f_8interpnd__estimate_gradients_2d_global(__pyx_t_5scipy_7spati
 static double __pyx_f_8interpnd__clough_tocher_2d_single_double(__pyx_t_5scipy_7spatial_5qhull_DelaunayInfo_t *, int, double *, double *, double *); 
 static __pyx_t_double_complex __pyx_f_8interpnd__clough_tocher_2d_single_complex(__pyx_t_5scipy_7spatial_5qhull_DelaunayInfo_t *, int, double *, __pyx_t_double_complex *, __pyx_t_double_complex *); 
 static __Pyx_TypeInfo __Pyx_TypeInfo_nn___pyx_t_5numpy_double_t = { "numpy.double_t", NULL, sizeof(__pyx_t_5numpy_double_t), 'R' };
-static __Pyx_TypeInfo __Pyx_TypeInfo_nn___pyx_t_5numpy_int_t = { "numpy.int_t", NULL, sizeof(__pyx_t_5numpy_int_t), 'I' };
+static __Pyx_TypeInfo __Pyx_TypeInfo_nn_npy_int = { "numpy.npy_int", NULL, sizeof(npy_int), 'I' };
 static __Pyx_TypeInfo __Pyx_TypeInfo_double = { "double", NULL, sizeof(double), 'R' };
 static __Pyx_StructField __Pyx_StructFields_nn___pyx_t_5numpy_complex_t[] = {
   {&__Pyx_TypeInfo_double, "real", offsetof(__pyx_t_5numpy_complex_t, real)},
@@ -2718,7 +2718,7 @@ static PyObject *__pyx_pf_8interpnd_20LinearNDInterpolator__evaluate_double(PyOb
   __pyx_t_5 = ((PyArrayObject *)__pyx_t_4);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_bstruct_vertices, (PyObject*)__pyx_t_5, &__Pyx_TypeInfo_nn___pyx_t_5numpy_int_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) {
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_bstruct_vertices, (PyObject*)__pyx_t_5, &__Pyx_TypeInfo_nn_npy_int, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) {
       __pyx_v_vertices = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_bstruct_vertices.buf = NULL;
       {__pyx_filename = __pyx_f[0]; __pyx_lineno = 200; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     } else {__pyx_bstride_0_vertices = __pyx_bstruct_vertices.strides[0]; __pyx_bstride_1_vertices = __pyx_bstruct_vertices.strides[1];
@@ -2913,7 +2913,7 @@ static PyObject *__pyx_pf_8interpnd_20LinearNDInterpolator__evaluate_double(PyOb
             __pyx_t_26 = __pyx_v_j;
             if (__pyx_t_25 < 0) __pyx_t_25 += __pyx_bshape_0_vertices;
             if (__pyx_t_26 < 0) __pyx_t_26 += __pyx_bshape_1_vertices;
-            __pyx_v_m = (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_int_t *, __pyx_bstruct_vertices.buf, __pyx_t_25, __pyx_bstride_0_vertices, __pyx_t_26, __pyx_bstride_1_vertices));
+            __pyx_v_m = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_bstruct_vertices.buf, __pyx_t_25, __pyx_bstride_0_vertices, __pyx_t_26, __pyx_bstride_1_vertices));
 
             
             __pyx_t_27 = __pyx_v_m;
@@ -3184,7 +3184,7 @@ static PyObject *__pyx_pf_8interpnd_20LinearNDInterpolator__evaluate_complex(PyO
   __pyx_t_5 = ((PyArrayObject *)__pyx_t_4);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_bstruct_vertices, (PyObject*)__pyx_t_5, &__Pyx_TypeInfo_nn___pyx_t_5numpy_int_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) {
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_bstruct_vertices, (PyObject*)__pyx_t_5, &__Pyx_TypeInfo_nn_npy_int, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) {
       __pyx_v_vertices = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_bstruct_vertices.buf = NULL;
       {__pyx_filename = __pyx_f[0]; __pyx_lineno = 249; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     } else {__pyx_bstride_0_vertices = __pyx_bstruct_vertices.strides[0]; __pyx_bstride_1_vertices = __pyx_bstruct_vertices.strides[1];
@@ -3393,7 +3393,7 @@ static PyObject *__pyx_pf_8interpnd_20LinearNDInterpolator__evaluate_complex(PyO
             __pyx_t_31 = __pyx_v_j;
             if (__pyx_t_30 < 0) __pyx_t_30 += __pyx_bshape_0_vertices;
             if (__pyx_t_31 < 0) __pyx_t_31 += __pyx_bshape_1_vertices;
-            __pyx_v_m = (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_int_t *, __pyx_bstruct_vertices.buf, __pyx_t_30, __pyx_bstride_0_vertices, __pyx_t_31, __pyx_bstride_1_vertices));
+            __pyx_v_m = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_bstruct_vertices.buf, __pyx_t_30, __pyx_bstride_0_vertices, __pyx_t_31, __pyx_bstride_1_vertices));
 
             
             __pyx_t_32 = __pyx_v_m;
@@ -5159,16 +5159,16 @@ static PyObject *__pyx_pf_8interpnd_26CloughTocher2DInterpolator__evaluate_doubl
   int __pyx_t_23;
   int __pyx_t_24;
   int __pyx_t_25;
-  __pyx_t_5numpy_int_t __pyx_t_26;
+  npy_int __pyx_t_26;
   int __pyx_t_27;
   int __pyx_t_28;
   int __pyx_t_29;
-  __pyx_t_5numpy_int_t __pyx_t_30;
+  npy_int __pyx_t_30;
   int __pyx_t_31;
   long __pyx_t_32;
   int __pyx_t_33;
   int __pyx_t_34;
-  __pyx_t_5numpy_int_t __pyx_t_35;
+  npy_int __pyx_t_35;
   int __pyx_t_36;
   long __pyx_t_37;
   int __pyx_t_38;
@@ -5296,7 +5296,7 @@ static PyObject *__pyx_pf_8interpnd_26CloughTocher2DInterpolator__evaluate_doubl
   __pyx_t_6 = ((PyArrayObject *)__pyx_t_5);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_bstruct_vertices, (PyObject*)__pyx_t_6, &__Pyx_TypeInfo_nn___pyx_t_5numpy_int_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) {
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_bstruct_vertices, (PyObject*)__pyx_t_6, &__Pyx_TypeInfo_nn_npy_int, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) {
       __pyx_v_vertices = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_bstruct_vertices.buf = NULL;
       {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1063; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     } else {__pyx_bstride_0_vertices = __pyx_bstruct_vertices.strides[0]; __pyx_bstride_1_vertices = __pyx_bstruct_vertices.strides[1];
@@ -5478,7 +5478,7 @@ static PyObject *__pyx_pf_8interpnd_26CloughTocher2DInterpolator__evaluate_doubl
             __pyx_t_25 = __pyx_v_j;
             if (__pyx_t_24 < 0) __pyx_t_24 += __pyx_bshape_0_vertices;
             if (__pyx_t_25 < 0) __pyx_t_25 += __pyx_bshape_1_vertices;
-            __pyx_t_26 = (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_int_t *, __pyx_bstruct_vertices.buf, __pyx_t_24, __pyx_bstride_0_vertices, __pyx_t_25, __pyx_bstride_1_vertices));
+            __pyx_t_26 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_bstruct_vertices.buf, __pyx_t_24, __pyx_bstride_0_vertices, __pyx_t_25, __pyx_bstride_1_vertices));
             __pyx_t_27 = __pyx_v_k;
             if (__pyx_t_26 < 0) __pyx_t_26 += __pyx_bshape_0_values;
             if (__pyx_t_27 < 0) __pyx_t_27 += __pyx_bshape_1_values;
@@ -5489,7 +5489,7 @@ static PyObject *__pyx_pf_8interpnd_26CloughTocher2DInterpolator__evaluate_doubl
             __pyx_t_29 = __pyx_v_j;
             if (__pyx_t_28 < 0) __pyx_t_28 += __pyx_bshape_0_vertices;
             if (__pyx_t_29 < 0) __pyx_t_29 += __pyx_bshape_1_vertices;
-            __pyx_t_30 = (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_int_t *, __pyx_bstruct_vertices.buf, __pyx_t_28, __pyx_bstride_0_vertices, __pyx_t_29, __pyx_bstride_1_vertices));
+            __pyx_t_30 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_bstruct_vertices.buf, __pyx_t_28, __pyx_bstride_0_vertices, __pyx_t_29, __pyx_bstride_1_vertices));
             __pyx_t_31 = __pyx_v_k;
             __pyx_t_32 = 0;
             if (__pyx_t_30 < 0) __pyx_t_30 += __pyx_bshape_0_grad;
@@ -5502,7 +5502,7 @@ static PyObject *__pyx_pf_8interpnd_26CloughTocher2DInterpolator__evaluate_doubl
             __pyx_t_34 = __pyx_v_j;
             if (__pyx_t_33 < 0) __pyx_t_33 += __pyx_bshape_0_vertices;
             if (__pyx_t_34 < 0) __pyx_t_34 += __pyx_bshape_1_vertices;
-            __pyx_t_35 = (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_int_t *, __pyx_bstruct_vertices.buf, __pyx_t_33, __pyx_bstride_0_vertices, __pyx_t_34, __pyx_bstride_1_vertices));
+            __pyx_t_35 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_bstruct_vertices.buf, __pyx_t_33, __pyx_bstride_0_vertices, __pyx_t_34, __pyx_bstride_1_vertices));
             __pyx_t_36 = __pyx_v_k;
             __pyx_t_37 = 1;
             if (__pyx_t_35 < 0) __pyx_t_35 += __pyx_bshape_0_grad;
@@ -5675,30 +5675,30 @@ static PyObject *__pyx_pf_8interpnd_26CloughTocher2DInterpolator__evaluate_compl
   int __pyx_t_26;
   int __pyx_t_27;
   int __pyx_t_28;
-  __pyx_t_5numpy_int_t __pyx_t_29;
+  npy_int __pyx_t_29;
   int __pyx_t_30;
   int __pyx_t_31;
   int __pyx_t_32;
-  __pyx_t_5numpy_int_t __pyx_t_33;
+  npy_int __pyx_t_33;
   int __pyx_t_34;
   int __pyx_t_35;
   int __pyx_t_36;
-  __pyx_t_5numpy_int_t __pyx_t_37;
+  npy_int __pyx_t_37;
   int __pyx_t_38;
   long __pyx_t_39;
   int __pyx_t_40;
   int __pyx_t_41;
-  __pyx_t_5numpy_int_t __pyx_t_42;
+  npy_int __pyx_t_42;
   int __pyx_t_43;
   long __pyx_t_44;
   int __pyx_t_45;
   int __pyx_t_46;
-  __pyx_t_5numpy_int_t __pyx_t_47;
+  npy_int __pyx_t_47;
   int __pyx_t_48;
   long __pyx_t_49;
   int __pyx_t_50;
   int __pyx_t_51;
-  __pyx_t_5numpy_int_t __pyx_t_52;
+  npy_int __pyx_t_52;
   int __pyx_t_53;
   long __pyx_t_54;
   int __pyx_t_55;
@@ -5828,7 +5828,7 @@ static PyObject *__pyx_pf_8interpnd_26CloughTocher2DInterpolator__evaluate_compl
   __pyx_t_6 = ((PyArrayObject *)__pyx_t_5);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_bstruct_vertices, (PyObject*)__pyx_t_6, &__Pyx_TypeInfo_nn___pyx_t_5numpy_int_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) {
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_bstruct_vertices, (PyObject*)__pyx_t_6, &__Pyx_TypeInfo_nn_npy_int, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) {
       __pyx_v_vertices = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_bstruct_vertices.buf = NULL;
       {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1119; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     } else {__pyx_bstride_0_vertices = __pyx_bstruct_vertices.strides[0]; __pyx_bstride_1_vertices = __pyx_bstruct_vertices.strides[1];
@@ -6017,7 +6017,7 @@ static PyObject *__pyx_pf_8interpnd_26CloughTocher2DInterpolator__evaluate_compl
             __pyx_t_28 = __pyx_v_j;
             if (__pyx_t_27 < 0) __pyx_t_27 += __pyx_bshape_0_vertices;
             if (__pyx_t_28 < 0) __pyx_t_28 += __pyx_bshape_1_vertices;
-            __pyx_t_29 = (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_int_t *, __pyx_bstruct_vertices.buf, __pyx_t_27, __pyx_bstride_0_vertices, __pyx_t_28, __pyx_bstride_1_vertices));
+            __pyx_t_29 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_bstruct_vertices.buf, __pyx_t_27, __pyx_bstride_0_vertices, __pyx_t_28, __pyx_bstride_1_vertices));
             __pyx_t_30 = __pyx_v_k;
             if (__pyx_t_29 < 0) __pyx_t_29 += __pyx_bshape_0_values;
             if (__pyx_t_30 < 0) __pyx_t_30 += __pyx_bshape_1_values;
@@ -6028,7 +6028,7 @@ static PyObject *__pyx_pf_8interpnd_26CloughTocher2DInterpolator__evaluate_compl
             __pyx_t_32 = __pyx_v_j;
             if (__pyx_t_31 < 0) __pyx_t_31 += __pyx_bshape_0_vertices;
             if (__pyx_t_32 < 0) __pyx_t_32 += __pyx_bshape_1_vertices;
-            __pyx_t_33 = (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_int_t *, __pyx_bstruct_vertices.buf, __pyx_t_31, __pyx_bstride_0_vertices, __pyx_t_32, __pyx_bstride_1_vertices));
+            __pyx_t_33 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_bstruct_vertices.buf, __pyx_t_31, __pyx_bstride_0_vertices, __pyx_t_32, __pyx_bstride_1_vertices));
             __pyx_t_34 = __pyx_v_k;
             if (__pyx_t_33 < 0) __pyx_t_33 += __pyx_bshape_0_values;
             if (__pyx_t_34 < 0) __pyx_t_34 += __pyx_bshape_1_values;
@@ -6039,7 +6039,7 @@ static PyObject *__pyx_pf_8interpnd_26CloughTocher2DInterpolator__evaluate_compl
             __pyx_t_36 = __pyx_v_j;
             if (__pyx_t_35 < 0) __pyx_t_35 += __pyx_bshape_0_vertices;
             if (__pyx_t_36 < 0) __pyx_t_36 += __pyx_bshape_1_vertices;
-            __pyx_t_37 = (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_int_t *, __pyx_bstruct_vertices.buf, __pyx_t_35, __pyx_bstride_0_vertices, __pyx_t_36, __pyx_bstride_1_vertices));
+            __pyx_t_37 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_bstruct_vertices.buf, __pyx_t_35, __pyx_bstride_0_vertices, __pyx_t_36, __pyx_bstride_1_vertices));
             __pyx_t_38 = __pyx_v_k;
             __pyx_t_39 = 0;
             if (__pyx_t_37 < 0) __pyx_t_37 += __pyx_bshape_0_grad;
@@ -6052,7 +6052,7 @@ static PyObject *__pyx_pf_8interpnd_26CloughTocher2DInterpolator__evaluate_compl
             __pyx_t_41 = __pyx_v_j;
             if (__pyx_t_40 < 0) __pyx_t_40 += __pyx_bshape_0_vertices;
             if (__pyx_t_41 < 0) __pyx_t_41 += __pyx_bshape_1_vertices;
-            __pyx_t_42 = (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_int_t *, __pyx_bstruct_vertices.buf, __pyx_t_40, __pyx_bstride_0_vertices, __pyx_t_41, __pyx_bstride_1_vertices));
+            __pyx_t_42 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_bstruct_vertices.buf, __pyx_t_40, __pyx_bstride_0_vertices, __pyx_t_41, __pyx_bstride_1_vertices));
             __pyx_t_43 = __pyx_v_k;
             __pyx_t_44 = 0;
             if (__pyx_t_42 < 0) __pyx_t_42 += __pyx_bshape_0_grad;
@@ -6065,7 +6065,7 @@ static PyObject *__pyx_pf_8interpnd_26CloughTocher2DInterpolator__evaluate_compl
             __pyx_t_46 = __pyx_v_j;
             if (__pyx_t_45 < 0) __pyx_t_45 += __pyx_bshape_0_vertices;
             if (__pyx_t_46 < 0) __pyx_t_46 += __pyx_bshape_1_vertices;
-            __pyx_t_47 = (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_int_t *, __pyx_bstruct_vertices.buf, __pyx_t_45, __pyx_bstride_0_vertices, __pyx_t_46, __pyx_bstride_1_vertices));
+            __pyx_t_47 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_bstruct_vertices.buf, __pyx_t_45, __pyx_bstride_0_vertices, __pyx_t_46, __pyx_bstride_1_vertices));
             __pyx_t_48 = __pyx_v_k;
             __pyx_t_49 = 1;
             if (__pyx_t_47 < 0) __pyx_t_47 += __pyx_bshape_0_grad;
@@ -6078,7 +6078,7 @@ static PyObject *__pyx_pf_8interpnd_26CloughTocher2DInterpolator__evaluate_compl
             __pyx_t_51 = __pyx_v_j;
             if (__pyx_t_50 < 0) __pyx_t_50 += __pyx_bshape_0_vertices;
             if (__pyx_t_51 < 0) __pyx_t_51 += __pyx_bshape_1_vertices;
-            __pyx_t_52 = (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_int_t *, __pyx_bstruct_vertices.buf, __pyx_t_50, __pyx_bstride_0_vertices, __pyx_t_51, __pyx_bstride_1_vertices));
+            __pyx_t_52 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_bstruct_vertices.buf, __pyx_t_50, __pyx_bstride_0_vertices, __pyx_t_51, __pyx_bstride_1_vertices));
             __pyx_t_53 = __pyx_v_k;
             __pyx_t_54 = 1;
             if (__pyx_t_52 < 0) __pyx_t_52 += __pyx_bshape_0_grad;
