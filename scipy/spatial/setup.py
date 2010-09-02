@@ -20,11 +20,12 @@ def configuration(parent_package = '', top_path = None):
                        #extra_compiler_args=['-fno-strict-aliasing'],
                        )
 
-    lapack = get_info('lapack_opt')
+    lapack = dict(get_info('lapack_opt'))
+    libs = ['qhull'] + lapack.pop('libraries')
     config.add_extension('qhull',
                          sources=['qhull.c'],
-                         libraries=['qhull'] + lapack['libraries'],
-                        )
+                         libraries=libs,
+                         **lapack)
 
     config.add_extension('ckdtree', sources=['ckdtree.c']) # FIXME: cython
 
