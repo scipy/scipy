@@ -244,27 +244,53 @@ def order_filter(a, domain, rank):
     """
     Perform an order filter on an N-dimensional array.
 
-    Description:
-
-      Perform an order filter on the array in.  The domain argument acts as a
-      mask centered over each pixel.  The non-zero elements of domain are
-      used to select elements surrounding each input pixel which are placed
-      in a list.   The list is sorted, and the output for that pixel is the
-      element corresponding to rank in the sorted list.
+    Perform an order filter on the array in.  The domain argument acts as a
+    mask centered over each pixel.  The non-zero elements of domain are
+    used to select elements surrounding each input pixel which are placed
+    in a list.   The list is sorted, and the output for that pixel is the
+    element corresponding to rank in the sorted list.
 
     Parameters
     ----------
-      in -- an N-dimensional input array.
-      domain -- a mask array with the same number of dimensions as in.  Each
-                dimension should have an odd number of elements.
-      rank -- an non-negative integer which selects the element from the
-              sorted list (0 corresponds to the largest element, 1 is the
-              next largest element, etc.)
+    a : ndarray
+        The N-dimensional input array.
+    domain : array_like
+        A mask array with the same number of dimensions as `in`.
+        Each dimension should have an odd number of elements.
+    rank : int
+        A non-negative integer which selects the element from the
+        sorted list (0 corresponds to the smallest element, 1 is the
+        next smallest element, etc.).
 
     Returns
     -------
-      out -- the results of the order filter in an array with the same
-             shape as in.
+    out : ndarray
+        The results of the order filter in an array with the same
+        shape as `in`.
+
+    Examples
+    --------
+    >>> import scipy.signal
+    >>> x = np.arange(25).reshape(5, 5)
+    >>> domain = np.identity(3)
+    >>> x
+    array([[ 0,  1,  2,  3,  4],
+           [ 5,  6,  7,  8,  9],
+           [10, 11, 12, 13, 14],
+           [15, 16, 17, 18, 19],
+           [20, 21, 22, 23, 24]])
+    >>> sp.signal.order_filter(x, domain, 0)
+    array([[  0.,   0.,   0.,   0.,   0.],
+           [  0.,   0.,   1.,   2.,   0.],
+           [  0.,   5.,   6.,   7.,   0.],
+           [  0.,  10.,  11.,  12.,   0.],
+           [  0.,   0.,   0.,   0.,   0.]])
+    >>> sp.signal.order_filter(x, domain, 2)
+    array([[  6.,   7.,   8.,   9.,   4.],
+           [ 11.,  12.,  13.,  14.,   9.],
+           [ 16.,  17.,  18.,  19.,  14.],
+           [ 21.,  22.,  23.,  24.,  19.],
+           [ 20.,  21.,  22.,  23.,  24.]])
 
     """
     domain = asarray(domain)
@@ -277,25 +303,27 @@ def order_filter(a, domain, rank):
 
 
 def medfilt(volume,kernel_size=None):
-    """Perform a median filter on an N-dimensional array.
-
-  Description:
+    """
+    Perform a median filter on an N-dimensional array.
 
     Apply a median filter to the input array using a local window-size
     given by kernel_size.
 
-  Inputs:
+    Parameters
+    ----------
+    volume : array_like
+        An N-dimensional input array.
+    kernel_size : array_like, optional
+        A scalar or an N-length list giving the size of the median filter
+        window in each dimension.  Elements of `kernel_size` should be odd.
+        If `kernel_size` is a scalar, then this scalar is used as the size in
+        each dimension. Default size is 3 for each dimension.
 
-    in -- An N-dimensional input array.
-    kernel_size -- A scalar or an N-length list giving the size of the
-                   median filter window in each dimension.  Elements of
-                   kernel_size should be odd.  If kernel_size is a scalar,
-                   then this scalar is used as the size in each dimension.
-
-  Outputs: (out,)
-
-    out -- An array the same size as input containing the median filtered
-           result.
+    Returns
+    -------
+    out : ndarray
+        An array the same size as input containing the median filtered
+        result.
 
     """
     volume = atleast_1d(volume)
@@ -321,23 +349,25 @@ def wiener(im,mysize=None,noise=None):
     """
     Perform a Wiener filter on an N-dimensional array.
 
-    Description:
+    Apply a Wiener filter to the N-dimensional array `im`.
 
-      Apply a Wiener filter to the N-dimensional array in.
+    Parameters
+    ----------
+    im : ndarray
+        An N-dimensional array.
+    mysize : int or arraylike, optional
+        A scalar or an N-length list giving the size of the Wiener filter
+        window in each dimension.  Elements of mysize should be odd.
+        If mysize is a scalar, then this scalar is used as the size
+        in each dimension.
+    noise : float, optional
+        The noise-power to use. If None, then noise is estimated as the
+        average of the local variance of the input.
 
-    Inputs:
-
-      in -- an N-dimensional array.
-      kernel_size -- A scalar or an N-length list giving the size of the
-                     Wiener filter window in each dimension.  Elements of
-                     kernel_size should be odd.  If kernel_size is a scalar,
-                     then this scalar is used as the size in each dimension.
-      noise -- The noise-power to use.  If None, then noise is estimated as
-               the average of the local variance of the input.
-
-    Outputs: (out,)
-
-      out -- Wiener filtered result with the same shape as in.
+    Returns
+    -------
+    out : ndarray
+        Wiener filtered result with the same shape as `im`.
 
     """
     im = asarray(im)
@@ -456,25 +486,28 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0, old_behavio
     return sigtools._convolve2d(in1, in2, 0,val,bval,fillvalue)
 
 def medfilt2d(input, kernel_size=3):
-    """Median filter two 2-dimensional arrays.
-
-  Description:
+    """
+    Median filter a 2-dimensional array.
 
     Apply a median filter to the input array using a local window-size
     given by kernel_size (must be odd).
 
-  Inputs:
+    Parameters
+    ----------
+    input : array_like
+        A 2-dimensional input array.
+    kernel_size : array_like, optional
+        A scalar or a list of length 2, giving the size of the
+        median filter window in each dimension.  Elements of
+        `kernel_size` should be odd.  If `kernel_size` is a scalar,
+        then this scalar is used as the size in each dimension.
+        Default is a kernel of size (3, 3).
 
-    in -- An 2 dimensional input array.
-    kernel_size -- A scalar or an length-2 list giving the size of the
-                   median filter window in each dimension.  Elements of
-                   kernel_size should be odd.  If kernel_size is a scalar,
-                   then this scalar is used as the size in each dimension.
-
-  Outputs: (out,)
-
-    out -- An array the same size as input containing the median filtered
-           result.
+    Returns
+    -------
+    out : ndarray
+        An array the same size as input containing the median filtered
+        result.
 
     """
     image = asarray(input)
@@ -493,35 +526,85 @@ def medfilt2d(input, kernel_size=3):
 
 def remez(numtaps, bands, desired, weight=None, Hz=1, type='bandpass',
           maxiter=25, grid_density=16):
-    """Calculate the minimax optimal filter using Remez exchange algorithm.
-
-  Description:
+    """
+    Calculate the minimax optimal filter using the Remez exchange algorithm.
 
     Calculate the filter-coefficients for the finite impulse response
     (FIR) filter whose transfer function minimizes the maximum error
-    between the desired gain and the realized gain in the specified bands
-    using the remez exchange algorithm.
+    between the desired gain and the realized gain in the specified
+    frequency bands using the Remez exchange algorithm.
 
-  Inputs:
+    Parameters
+    ----------
+    numtaps : int
+        The desired number of taps in the filter. The number of taps is
+        the number of terms in the filter, or the filter order plus one.
+    bands : array_like
+        A monotonic sequence containing the band edges in Hz.
+        All elements must be non-negative and less than half the sampling
+        frequency as given by `Hz`.
+    desired : array_like
+        A sequence half the size of bands containing the desired gain
+        in each of the specified bands.
+    weight : array_like, optional
+        A relative weighting to give to each band region. The length of
+        `weight` has to be half the length of `bands`.
+    Hz : scalar, optional
+        The sampling frequency in Hz. Default is 1.
+    type : {'bandpass', 'differentiator', 'hilbert'}, optional
+        The type of filter:
 
-    numtaps -- The desired number of taps in the filter.
-    bands -- A montonic sequence containing the band edges.  All elements
-             must be non-negative and less than 1/2 the sampling frequency
-             as given by Hz.
-    desired -- A sequency half the size of bands containing the desired gain
-               in each of the specified bands
-    weight -- A relative weighting to give to each band region.
-    type --- The type of filter:
-             'bandpass' : flat response in bands.
-             'differentiator' : frequency proportional response in bands.
-             'hilbert' : filter with odd symmetry, that is, type III
-                         (for even order) or type IV (for odd order)
-                         linear phase filters
+          'bandpass' : flat response in bands. This is the default.
 
-  Outputs: (out,)
+          'differentiator' : frequency proportional response in bands.
 
-    out -- A rank-1 array containing the coefficients of the optimal
-           (in a minimax sense) filter.
+          'hilbert' : filter with odd symmetry, that is, type III
+                      (for even order) or type IV (for odd order)
+                      linear phase filters.
+
+    maxiter : int, optional
+        Maximum number of iterations of the algorithm. Default is 25.
+    grid_density : int, optional
+        Grid density. The dense grid used in `remez` is of size
+        ``(numtaps + 1) * grid_density``. Default is 16.
+
+    Returns
+    -------
+    out : ndarray
+        A rank-1 array containing the coefficients of the optimal
+        (in a minimax sense) filter.
+
+    See Also
+    --------
+    freqz : Compute the frequency response of a digital filter.
+
+    References
+    ----------
+    .. [1] J. H. McClellan and T. W. Parks, "A unified approach to the
+           design of optimum FIR linear phase digital filters",
+           IEEE Trans. Circuit Theory, vol. CT-20, pp. 697-701, 1973.
+    .. [2] J. H. McClellan, T. W. Parks and L. R. Rabiner, "A Computer
+           Program for Designing Optimum FIR Linear Phase Digital
+           Filters", IEEE Trans. Audio Electroacoust., vol. AU-21,
+           pp. 506-525, 1973.
+
+    Examples
+    --------
+    We want to construct a filter with a passband at 0.2-0.4 Hz, and
+    stop bands at 0-0.1 Hz and 0.45-0.5 Hz. Note that this means that the
+    behavior in the frequency ranges between those bands is unspecified and
+    may overshoot.
+
+    >>> bpass = sp.signal.remez(72, [0, 0.1, 0.2, 0.4, 0.45, 0.5], [0, 1, 0])
+    >>> freq, response = sp.signal.freqz(bpass)
+    >>> ampl = np.abs(response)
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> ax1 = fig.add_subplot(111)
+    >>> ax1.semilogy(freq/(2*np.pi), ampl, 'b-') # freq in Hz
+    [<matplotlib.lines.Line2D object at 0xf486790>]
+    >>> plt.show()
 
     """
     # Convert type
@@ -680,23 +763,24 @@ def deconvolve(signal, divisor):
 
 
 def hilbert(x, N=None, axis=-1):
-    """Compute the analytic signal.
+    """
+    Compute the analytic signal.
 
     The transformation is done along the last axis by default.
 
     Parameters
     ----------
-    x : array-like
+    x : array_like
         Signal data
     N : int, optional
-        Number of Fourier components. Default: ``x.shape[axis]``
+        Number of Fourier components.  Default: ``x.shape[axis]``
     axis : int, optional
-        
+        Axis along which to do the transformation.  Default: -1.
 
     Returns
     -------
     xa : ndarray
-        Analytic signal of `x`, of each 1d array along axis
+        Analytic signal of `x`, of each 1-D array along `axis`
 
     Notes
     -----
@@ -705,9 +789,9 @@ def hilbert(x, N=None, axis=-1):
         x_a = F^{-1}(F(x) 2U) = x + i y
 
     where ``F`` is the Fourier transform, ``U`` the unit step function,
-    and ``y`` the Hilbert transform of ``x``. [1]
+    and ``y`` the Hilbert transform of ``x``. [1]_
 
-    changes in scipy 0.8.0: new axis argument, new default axis=-1
+    `axis` argument is new in scipy 0.8.0.
 
     References
     ----------
@@ -806,20 +890,46 @@ def cmplx_sort(p):
     return take(p,indx,0), indx
 
 def unique_roots(p,tol=1e-3,rtype='min'):
-    """Determine the unique roots and their multiplicities in two lists
+    """
+    Determine unique roots and their multiplicities from a list of roots.
 
-    Inputs:
+    Parameters
+    ----------
+    p : array_like
+        The list of roots.
+    tol : float, optional
+        The tolerance for two roots to be considered equal. Default is 1e-3.
+    rtype : {'max', 'min, 'avg'}, optional
+        How to determine the returned root if multiple roots are within
+        `tol` of each other.
 
-      p -- The list of roots
-      tol --- The tolerance for two roots to be considered equal.
-      rtype --- How to determine the returned root from the close
-                  ones:  'max': pick the maximum
-                         'min': pick the minimum
-                         'avg': average roots
-    Outputs: (pout, mult)
+          - 'max': pick the maximum of those roots.
+          - 'min': pick the minimum of those roots.
+          - 'avg': take the average of those roots.
 
-      pout -- The list of sorted roots
-      mult -- The multiplicity of each root
+    Returns
+    -------
+    pout : ndarray
+        The list of unique roots, sorted from low to high.
+    mult : ndarray
+        The multiplicity of each root.
+
+    Notes
+    -----
+    This utility function is not specific to roots but can be used for any
+    sequence of values for which uniqueness and multiplicity has to be
+    determined. For a more general routine, see `numpy.unique`.
+
+    Examples
+    --------
+    >>> vals = [0, 1.3, 1.31, 2.8, 1.25, 2.2, 10.3]
+    >>> uniq, mult = sp.signal.unique_roots(vals, tol=2e-2, rtype='avg')
+
+    Check which roots have multiplicity larger than 1:
+
+    >>> uniq[mult > 1]
+    array([ 1.305])
+
     """
     if rtype in ['max','maximum']:
         comproot = np.maximum
@@ -905,20 +1015,22 @@ def invres(r,p,k,tol=1e-3,rtype='avg'):
     return b, a
 
 def residue(b,a,tol=1e-3,rtype='avg'):
-    """Compute partial-fraction expansion of b(s) / a(s).
+    """
+    Compute partial-fraction expansion of b(s) / a(s).
 
-    If M = len(b) and N = len(a)
+    If ``M = len(b)`` and ``N = len(a)``, then the partial-fraction
+    expansion H(s) is defined as::
 
-            b(s)     b[0] s**(M-1) + b[1] s**(M-2) + ... + b[M-1]
-    H(s) = ------ = ----------------------------------------------
-            a(s)     a[0] s**(N-1) + a[1] s**(N-2) + ... + a[N-1]
+              b(s)     b[0] s**(M-1) + b[1] s**(M-2) + ... + b[M-1]
+      H(s) = ------ = ----------------------------------------------
+              a(s)     a[0] s**(N-1) + a[1] s**(N-2) + ... + a[N-1]
 
-             r[0]       r[1]             r[-1]
-         = -------- + -------- + ... + --------- + k(s)
-           (s-p[0])   (s-p[1])         (s-p[-1])
+               r[0]       r[1]             r[-1]
+           = -------- + -------- + ... + --------- + k(s)
+             (s-p[0])   (s-p[1])         (s-p[-1])
 
-    If there are any repeated roots (closer than tol), then the partial
-    fraction expansion has terms like
+    If there are any repeated roots (closer together than `tol`), then H(s)
+    has terms like::
 
             r[i]      r[i+1]              r[i+n-1]
           -------- + ----------- + ... + -----------
@@ -927,15 +1039,15 @@ def residue(b,a,tol=1e-3,rtype='avg'):
     Returns
     -------
     r : ndarray
-        Residues
+        Residues.
     p : ndarray
-        Poles
+        Poles.
     k : ndarray
         Coefficients of the direct polynomial term.
 
     See Also
     --------
-    invres, poly, polyval, unique_roots
+    invres, numpy.poly, unique_roots
 
     """
 
@@ -1090,56 +1202,63 @@ def invresz(r,p,k,tol=1e-3,rtype='avg'):
 
 
 def resample(x,num,t=None,axis=0,window=None):
-    """Resample to num samples using Fourier method along the given axis.
+    """
+    Resample `x` to `num` samples using Fourier method along the given axis.
 
-    The resampled signal starts at the same value of x but is sampled
-    with a spacing of len(x) / num * (spacing of x).  Because a
+    The resampled signal starts at the same value as `x` but is sampled
+    with a spacing of `len(x) / num * (spacing of x)`.  Because a
     Fourier method is used, the signal is assumed periodic.
 
-    Window controls a Fourier-domain window that tapers the Fourier
-    spectrum before zero-padding to alleviate ringing in the resampled
-    values for sampled signals you didn't intend to be interpreted as
-    band-limited.
+    Parameters
+    ----------
+    x : array_like
+        The data to be resampled.
+    num : int
+        The number of samples in the resampled signal.
+    t : array_like, optional
+        If `t` is given, it is assumed to be the sample positions
+        associated with the signal data in `x`.
+    axis : int, optional
+        The axis of `x` that is resampled.  Default is 0.
+    window : array_like, callable, string, float, or tuple, optional
+        Specifies the window applied to the signal in the Fourier
+        domain.  See below for details.
 
-    If window is a function, then it is called with a vector of inputs
-    indicating the frequency bins (i.e. fftfreq(x.shape[axis]) )
+    Returns
+    -------
 
-    If window is an array of the same length as x.shape[axis] it is
+    resampled_x or (resampled_x, resampled_t)
+        Either the resampled array, or, if `t` was given, a tuple
+        containing the resampled array and the corresponding resampled
+        positions.
+
+    Notes
+    -----
+    The argument `window` controls a Fourier-domain window that tapers
+    the Fourier spectrum before zero-padding to alleviate ringing in
+    the resampled values for sampled signals you didn't intend to be
+    interpreted as band-limited.
+
+    If `window` is a function, then it is called with a vector of inputs
+    indicating the frequency bins (i.e. fftfreq(x.shape[axis]) ).
+
+    If `window` is an array of the same length as `x.shape[axis]` it is
     assumed to be the window to be applied directly in the Fourier
     domain (with dc and low-frequency first).
 
-    If window is a string then use the named window.  If window is a
-    float, then it represents a value of beta for a kaiser window.  If
-    window is a tuple, then the first component is a string
-    representing the window, and the next arguments are parameters for
-    that window.  
-    
-    Possible windows are:
-           'flattop'        -- 'flat', 'flt'
-           'boxcar'         -- 'ones', 'box'
-           'triang'         -- 'traing', 'tri'
-           'parzen'         -- 'parz', 'par'
-           'bohman'         -- 'bman', 'bmn'
-           'blackmanharris' -- 'blackharr', 'bkh'
-           'nuttall',       -- 'nutl', 'nut'
-           'barthann'       -- 'brthan', 'bth'
-           'blackman'       -- 'black',   'blk'
-           'hamming'        -- 'hamm',    'ham'
-           'bartlett'       -- 'bart',    'brt'
-           'hanning'        -- 'hann',    'han'
-           ('kaiser', beta)                 -- 'ksr'
-           ('gaussian', std)                -- 'gauss',   'gss' 
-           ('general gauss', power, width)  -- 'general', 'ggs'
-           ('slepian', width)               -- 'slep', 'optimal', 'dss'
+    For any other type of `window`, the function `scipy.signal.get_window`
+    is called to generate the window.
 
     The first sample of the returned vector is the same as the first
-    sample of the input vector, the spacing between samples is changed
-    from dx to
+    sample of the input vector.  The spacing between samples is changed
+    from dx to:
 
         dx * len(x) / num
 
-    If t is not None, then it represents the old sample positions, and the new
-    sample positions will be returned as well as the new samples.
+    If `t` is not None, then it represents the old sample positions,
+    and the new sample positions will be returned as well as the new
+    samples.
+
     """
     x = asarray(x)
     X = fft(x,axis=axis)
@@ -1176,12 +1295,39 @@ def resample(x,num,t=None,axis=0,window=None):
         return y, new_t
 
 def detrend(data, axis=-1, type='linear', bp=0):
-    """Remove linear trend along axis from data.
+    """
+    Remove linear trend along axis from data.
 
-    If type is 'constant' then remove mean only.
+    Parameters
+    ----------
+    data : array_like
+        The input data.
+    axis : int, optional
+        The axis along which to detrend the data. By default this is the
+        last axis (-1).
+    type : {'linear', 'constant'}, optional
+        The type of detrending. If ``type == 'linear'`` (default),
+        the result of a linear least-squares fit to `data` is subtracted
+        from `data`.
+        If ``type == 'constant'``, only the mean of `data` is subtracted.
+    bp : array_like of ints, optional
+        A sequence of break points. If given, an individual linear fit is
+        performed for each part of `data` between two break points.
+        Break points are specified as indices into `data`.
 
-    If bp is given, then it is a sequence of points at which to
-       break a piecewise-linear fit to the data.
+    Returns
+    -------
+    ret : ndarray
+        The detrended input data.
+
+    Examples
+    --------
+    >>> randgen = np.random.RandomState(9)
+    >>> npoints = 1e3
+    >>> noise = randgen.randn(npoints)
+    >>> x = 3 + 2*np.linspace(0, 1, npoints) + noise
+    >>> (sp.signal.detrend(x) - noise).max() < 0.01
+    True
 
     """
     if type not in ['linear','l','constant','c']:

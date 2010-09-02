@@ -368,23 +368,54 @@ def slepian(M, width, sym=True):
 
 
 def get_window(window, Nx, fftbins=True):
-    """Return a window of length Nx and type window.
+    """
+    Return a window of length `Nx` and type `window`.
 
-    If fftbins is True, create a "periodic" window ready to use with ifftshift
-    and be multiplied by the result of an fft (SEE ALSO fftfreq).
+    Parameters
+    ----------
+    window : string, float, or tuple
+        The type of window to create. See below for more details.
+    Nx : int
+        The number of samples in the window.
+    fftbins : bool, optional
+        If True, create a "periodic" window ready to use with ifftshift
+        and be multiplied by the result of an fft (SEE ALSO fftfreq).
 
-    Window types:  boxcar, triang, blackman, hamming, hanning, bartlett,
-                   parzen, bohman, blackmanharris, nuttall, barthann,
-                   kaiser (needs beta), gaussian (needs std),
-                   general_gaussian (needs power, width),
-                   slepian (needs width), chebwin (needs attenuation)
+    Notes
+    -----
+    Window types:
 
-    If the window requires no parameters, then it can be a string.
-    If the window requires parameters, the window argument should be a tuple
-        with the first argument the string name of the window, and the next
-        arguments the needed parameters.
-    If window is a floating point number, it is interpreted as the beta
-        parameter of the kaiser window.
+        boxcar, triang, blackman, hamming, hanning, bartlett,
+        parzen, bohman, blackmanharris, nuttall, barthann,
+        kaiser (needs beta), gaussian (needs std),
+        general_gaussian (needs power, width),
+        slepian (needs width), chebwin (needs attenuation)
+
+
+    If the window requires no parameters, then `window` can be a string.
+
+    If the window requires parameters, then `window` must be a tuple
+    with the first argument the string name of the window, and the next
+    arguments the needed parameters.
+
+    If `window` is a floating point number, it is interpreted as the beta
+    parameter of the kaiser window.
+
+    Each of the window types listed above is also the name of
+    a function that can be called directly to create a window of
+    that type.
+
+    Examples
+    --------
+    >>> get_window('triang', 7)
+    array([ 0.25,  0.5 ,  0.75,  1.  ,  0.75,  0.5 ,  0.25])
+    >>> get_window(('kaiser', 4.0), 9)
+    array([ 0.08848053,  0.32578323,  0.63343178,  0.89640418,  1.        ,
+            0.89640418,  0.63343178,  0.32578323,  0.08848053])
+    >>> get_window(4.0, 9)
+    array([ 0.08848053,  0.32578323,  0.63343178,  0.89640418,  1.        ,
+            0.89640418,  0.63343178,  0.32578323,  0.08848053])
+
     """
 
     sym = not fftbins

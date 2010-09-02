@@ -94,14 +94,18 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
     b : ndarray
         numerator of a linear filter
     a : ndarray
-        numerator of a linear filter
+        denominator of a linear filter
     worN : {None, int}, optional
         If None, then compute at 512 frequencies around the unit circle.
         If a single integer, the compute at that many frequencies.
         Otherwise, compute the response at frequencies given in worN
-    whole : {0,1}, optional
+    whole : bool, optional
         Normally, frequencies are computed from 0 to pi (upper-half of
-        unit-circle.  If whole is non-zero compute frequencies from 0 to 2*pi.
+        unit-circle.  If whole is False, compute frequencies from 0 to 2*pi.
+    plot : callable
+        A callable that takes two arguments. If given, the return parameters
+        `w` and `h` are passed to plot. Useful for plotting the frequency
+        response inside `freqz`.
 
     Returns
     -------
@@ -110,9 +114,14 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
     h : ndarray
         The frequency response.
 
+    Notes
+    -----
+    Using Matplotlib's "plot" function as the callable for `plot` produces
+    unexpected results,  this plots the real part of the complex transfer
+    function, not the magnitude.
+
     Examples
     --------
-
     >>> b = firwin(80, 0.5, window=('kaiser', 8))
     >>> h, w = freqz(b)
 
