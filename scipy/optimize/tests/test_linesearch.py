@@ -159,6 +159,8 @@ class TestLineSearch(object):
                                                            amax=smax)
             assert_equal(self.fcount, fc+gc)
             assert_equal(ofv, f(x))
+            if s is None:
+                continue
             assert_equal(fv, f(x + s*p))
             assert_equal(gv, fprime(x + s*p))
             if s < smax:

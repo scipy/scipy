@@ -151,7 +151,7 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
         else:
             break
 
-    if task[:5] == 'ERROR':
+    if task[:5] == 'ERROR' or task[:4] == 'WARN':
         stp = None  # failed
 
     return stp, phi1, phi0
