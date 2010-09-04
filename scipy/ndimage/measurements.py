@@ -35,7 +35,6 @@ import numpy as np
 import _ni_support
 import _nd_image
 import morphology
-import time
 
 def label(input, structure = None, output = None):
     """
@@ -192,7 +191,7 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
     func will be called with linear indices as a second argument if
     pass_positions is True.
     '''
-    
+
     as_scalar = numpy.isscalar(index)
     input = numpy.asarray(input)
 
@@ -240,13 +239,13 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
     input = input[label_order]
     if pass_positions:
         positions = positions[label_order]
-    
+
     index_order = index.argsort()
     sorted_index = index[index_order]
 
     def do_map(inputs, output):
         '''labels must be sorted'''
-        
+
         nlabels = labels.size
         nidx = sorted_index.size
 
@@ -254,13 +253,13 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
         # This could be faster, but we already paid N log N to sort labels.
         lo = numpy.searchsorted(labels, sorted_index, side='left')
         hi = numpy.searchsorted(labels, sorted_index, side='right')
-    
+
         for i, l, h in zip(range(nidx), lo, hi):
             if l == h:
                 continue
             idx = sorted_index[i]
             output[i] = func(*[inp[l:h] for inp in inputs])
-            
+
     temp = numpy.empty(index.shape, out_dtype)
     temp[:] = default
     if not pass_positions:
@@ -283,7 +282,7 @@ def _stats(input, labels = None, index = None, do_sum2=False):
             return vals.size, vals.sum(), (vals * vals.conjugate()).sum()
         else:
             return vals.size, vals.sum()
-        
+
     if labels is None:
         return single_group(input)
 
@@ -298,7 +297,7 @@ def _stats(input, labels = None, index = None, do_sum2=False):
 
     # remap labels to unique integers if necessary, or if the largest
     # label is larger than the number of values.
-    if ((not numpy.issubdtype(labels.dtype, numpy.int)) or 
+    if ((not numpy.issubdtype(labels.dtype, numpy.int)) or
         (labels.min() < 0) or (labels.max() > labels.size)):
         unique_labels, new_labels = numpy.unique1d(labels, return_inverse=True)
 
@@ -329,12 +328,12 @@ def _stats(input, labels = None, index = None, do_sum2=False):
     sums = sums[idxs]
     sums[~ found] = 0
     if not do_sum2:
-        return (counts, sums)    
+        return (counts, sums)
     sums2 = sums2[idxs]
     sums2[~ found] = 0
     return (counts, sums, sums2)
 
-        
+
 def sum(input, labels = None, index = None):
     """
     Calculate the sum of the values of the array.
@@ -393,7 +392,7 @@ def mean(input, labels = None, index = None):
 def variance(input, labels = None, index = None):
     """Calculate the variance of the values of an array at labels.
 
-    Labels must be None or an array of the same dimensions as the input.  
+    Labels must be None or an array of the same dimensions as the input.
 
     Index must be None, a single label or sequence of labels.  If
     none, all values where label is greater than zero are used.
@@ -408,7 +407,7 @@ def variance(input, labels = None, index = None):
 def standard_deviation(input, labels = None, index = None):
     """Calculate the standard deviation of the values of an array at labels.
 
-    Labels must be None or an array of the same dimensions as the input.  
+    Labels must be None or an array of the same dimensions as the input.
 
     Index must be None, a single label or sequence of labels.  If
     none, all values where label is greater than zero are used.
@@ -436,7 +435,7 @@ def _select(input, labels = None, index = None, find_min=False, find_max=False, 
         if find_max_positions:
             result += [positions[vals == vals.max()][0]]
         return result
-        
+
     if labels is None:
         return single_group(input, positions)
 
@@ -465,7 +464,7 @@ def _select(input, labels = None, index = None, find_min=False, find_max=False, 
 
     # remap labels to unique integers if necessary, or if the largest
     # label is larger than the number of values.
-    if ((not numpy.issubdtype(labels.dtype, numpy.int)) or 
+    if ((not numpy.issubdtype(labels.dtype, numpy.int)) or
         (labels.min() < 0) or (labels.max() > labels.size)):
         # remap labels, and indexes
         unique_labels, labels = numpy.unique1d(labels, return_inverse=True)
@@ -478,7 +477,7 @@ def _select(input, labels = None, index = None, find_min=False, find_max=False, 
         # labels are an integer type, and there aren't too many.
         idxs = numpy.asanyarray(index, numpy.int).copy()
         found = (idxs >= 0) & (idxs <= labels.max())
-    
+
     idxs[~ found] = labels.max() + 1
 
     result = []
@@ -648,12 +647,12 @@ def maximum(input, labels = None, index = None):
 def minimum_position(input, labels = None, index = None):
     """Find the positions of the minimums of the values of an array at labels.
 
-    Labels must be None or an array of the same dimensions as the input.  
+    Labels must be None or an array of the same dimensions as the input.
 
     Index must be None, a single label or sequence of labels.  If
     none, all values where label is greater than zero are used.
     """
-    
+
     dims = numpy.array(numpy.asarray(input).shape)
     # see numpy.unravel_index to understand this line.
     dim_prod = numpy.cumprod([1] + list(dims[:0:-1]))[::-1]
@@ -668,12 +667,12 @@ def minimum_position(input, labels = None, index = None):
 def maximum_position(input, labels = None, index = None):
     """Find the positions of the maximums of the values of an array at labels.
 
-    Labels must be None or an array of the same dimensions as the input.  
+    Labels must be None or an array of the same dimensions as the input.
 
     Index must be None, a single label or sequence of labels.  If
     none, all values where label is greater than zero are used.
     """
-    
+
     dims = numpy.array(numpy.asarray(input).shape)
     # see numpy.unravel_index to understand this line.
     dim_prod = numpy.cumprod([1] + list(dims[:0:-1]))[::-1]
@@ -689,20 +688,20 @@ def extrema(input, labels = None, index = None):
     """Calculate the minimums and maximums of the values of an array
     at labels, along with their positions.
 
-    Labels must be None or an array of the same dimensions as the input.  
+    Labels must be None or an array of the same dimensions as the input.
 
     Index must be None, a single label or sequence of labels.  If
     none, all values where label is greater than zero are used.
-    
+
     Returns: minimums, maximums, min_positions, max_positions
     """
-    
+
     dims = numpy.array(numpy.asarray(input).shape)
     # see numpy.unravel_index to understand this line.
     dim_prod = numpy.cumprod([1] + list(dims[:0:-1]))[::-1]
 
-    minimums, min_positions, maximums, max_positions = _select(input, labels, index, 
-                                                               find_min=True, find_max=True, 
+    minimums, min_positions, maximums, max_positions = _select(input, labels, index,
+                                                               find_min=True, find_max=True,
                                                                find_min_positions=True, find_max_positions=True)
 
 
@@ -717,7 +716,7 @@ def extrema(input, labels = None, index = None):
 def center_of_mass(input, labels = None, index = None):
     """Calculate the center of mass of the values of an array at labels.
 
-    Labels must be None or an array of the same dimensions as the input.  
+    Labels must be None or an array of the same dimensions as the input.
 
     Index must be None, a single label or sequence of labels.  If
     none, all values where label is greater than zero are used.
@@ -727,7 +726,7 @@ def center_of_mass(input, labels = None, index = None):
     grids = numpy.ogrid[[slice(0, i) for i in input.shape]]
 
     results = [sum(input * grids[dir].astype(float), labels, index) / normalizer for dir in range(input.ndim)]
-    
+
     if numpy.isscalar(results[0]):
         return tuple(results)
 
@@ -736,7 +735,7 @@ def center_of_mass(input, labels = None, index = None):
 def histogram(input, min, max, bins, labels = None, index = None):
     """Calculate the histogram of the values of an array at labels.
 
-    Labels must be None or an array of the same dimensions as the input.  
+    Labels must be None or an array of the same dimensions as the input.
 
     The histograms are defined by the minimum and maximum values and the
     number of bins.
@@ -744,7 +743,7 @@ def histogram(input, min, max, bins, labels = None, index = None):
     Index must be None, a single label or sequence of labels.  If
     none, all values where label is greater than zero are used.
     """
-    
+
     _bins = numpy.linspace(min, max, bins + 1)
 
     def _hist(vals):
