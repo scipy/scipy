@@ -177,18 +177,10 @@ class TestOptimize(TestCase):
         assert self.gradcalls == 18, self.gradcalls # 0.8.0
         #assert self.gradcalls == 22, self.gradcalls # 0.7.0
 
-        # Ensure that the function behaves the same;
-
-        # # This is from Scipy 0.7.0
-        #assert np.allclose(self.trace[3:5],
-        #                   [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
-        #                    [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
-        #                   atol=1e-14, rtol=1e-7), self.trace[3:5]
-
-        # This if from Scipy 0.8.0; with some fixes in ncg
+        # Ensure that the function behaves the same; this is from Scipy 0.7.0
         assert np.allclose(self.trace[3:5],
-                           [[-2.90334653e-07,-5.24869431e-01,4.87527470e-01],
-                            [-2.90334653e-07,-5.24869375e-01,4.87527680e-01]],
+                           [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
+                            [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                            atol=1e-14, rtol=1e-7), self.trace[3:5]
 
 
