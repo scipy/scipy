@@ -26,7 +26,8 @@ Optional Parameters
 x0  : {array, matrix}
     Starting guess for the solution.
 tol : float
-    Relative tolerance to achieve before terminating.
+    Tolerance to achieve. The algorithm terminates when either the relative
+    or the absolute residual is below `tol`.
 maxiter : integer
     Maximum number of iterations.  Iteration will stop after maxiter
     steps even if the specified tolerance has not been achieved.
@@ -318,8 +319,9 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
     x0  : {array, matrix}
         Starting guess for the solution.
     tol : float
-        Relative tolerance to achieve before terminating.
-    restart : integer, optional
+        Tolerance to achieve. The algorithm terminates when either the relative
+        or the absolute residual is below `tol`.
+    restart : integer
         Number of iterations between restarts. Larger values increase
         iteration cost, but may be necessary for convergence.
         (Default: 20)
@@ -463,7 +465,8 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
     x0  : {array, matrix}
         Starting guess for the solution.
     tol : float
-        Relative tolerance to achieve before terminating.
+        Tolerance to achieve. The algorithm terminates when either the relative
+        or the absolute residual is below `tol`.
     maxiter : integer
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
