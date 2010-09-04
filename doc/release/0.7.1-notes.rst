@@ -1,0 +1,88 @@
+=========================
+SciPy 0.7.1 Release Notes
+=========================
+
+.. contents::
+
+SciPy 0.7.1 is a bug-fix release with no new features compared to 0.7.0.
+
+scipy.io
+========
+
+Bugs fixed:
+
+- Several fixes in Matlab file IO
+
+scipy.odr
+=========
+
+Bugs fixed:
+
+- Work around a failure with Python 2.6
+
+scipy.signal
+============
+
+Memory leak in lfilter have been fixed, as well as support for array object
+
+Bugs fixed:
+
+- #880, #925: lfilter fixes
+- #871: bicgstab fails on Win32
+
+
+scipy.sparse
+============
+
+Bugs fixed:
+
+- #883: scipy.io.mmread with scipy.sparse.lil_matrix broken
+- lil_matrix and csc_matrix reject now unexpected sequences,
+  cf. http://thread.gmane.org/gmane.comp.python.scientific.user/19996
+
+scipy.special
+=============
+
+Several bugs of varying severity were fixed in the special functions:
+
+- #503, #640: iv: problems at large arguments fixed by new implementation
+- #623: jv: fix errors at large arguments
+- #679: struve: fix wrong output for v < 0
+- #803: pbdv produces invalid output
+- #804: lqmn: fix crashes on some input
+- #823: betainc: fix documentation
+- #834: exp1 strange behavior near negative integer values
+- #852: jn_zeros: more accurate results for large s, also in jnp/yn/ynp_zeros
+- #853: jv, yv, iv: invalid results for non-integer v < 0, complex x
+- #854: jv, yv, iv, kv: return nan more consistently when out-of-domain
+- #927: ellipj: fix segfault on Windows
+- #946: ellpj: fix segfault on Mac OS X/python 2.6 combination.
+- ive, jve, yve, kv, kve: with real-valued input, return nan for out-of-domain
+  instead of returning only the real part of the result.
+
+Also, when ``scipy.special.errprint(1)`` has been enabled, warning
+messages are now issued as Python warnings instead of printing them to
+stderr.
+
+
+scipy.stats
+===========
+
+- linregress, mannwhitneyu, describe: errors fixed
+- kstwobign, norm, expon, exponweib, exponpow, frechet, genexpon, rdist,
+  truncexpon, planck: improvements to numerical accuracy in distributions
+
+Windows binaries for python 2.6
+===============================
+
+python 2.6 binaries for windows are now included. The binary for python 2.5
+requires numpy 1.2.0 or above, and and the one for python 2.6 requires numpy
+1.3.0 or above.
+
+Universal build for scipy
+=========================
+
+Mac OS X binary installer is now a proper universal build, and does not depend
+on gfortran anymore (libgfortran is statically linked). The python 2.5 version
+of scipy requires numpy 1.2.0 or above, the python 2.6 version requires numpy
+1.3.0 or above.
