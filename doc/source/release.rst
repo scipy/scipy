@@ -2,4 +2,9 @@
 Release Notes
 *************
 
-.. include:: ../release/0.8.0-notes.rst
+.. toctree::
+   :maxdepth: 0
+
+   release.prev
+
+.. include:: ../release/0.9.0-notes.rst
