@@ -69,8 +69,8 @@ Root finding
 
    fsolve
 
-Scalar function solvers
------------------------
+Scalar functions
+----------------
 
 .. autosummary::
    :toctree: generated/
@@ -88,18 +88,40 @@ Fixed point finding:
 
    fixed_point
 
-General-purpose nonlinear (multidimensional)
---------------------------------------------
+Multidimensional
+----------------
+
+.. toctree::
+   :maxdepth: 1
+
+   optimize.nonlin
+
+General nonlinear solvers:
 
 .. autosummary::
    :toctree: generated/
 
+   fsolve
    broyden1
    broyden2
-   broyden3
-   broyden_generalized
+
+Large-scale nonlinear solvers:
+
+.. autosummary::
+   :toctree: generated/
+
+   newton_krylov
    anderson
-   anderson2
+
+Simple iterations:
+
+.. autosummary::
+   :toctree: generated/
+
+   excitingmixing
+   linearmixing
+   vackar
+
 
 Utility Functions
 =================

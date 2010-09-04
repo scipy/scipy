@@ -11,8 +11,7 @@ from anneal import *
 from lbfgsb import fmin_l_bfgs_b
 from tnc import fmin_tnc
 from cobyla import fmin_cobyla
-from nonlin import broyden1, broyden2, broyden3, broyden_generalized, \
-    anderson, anderson2
+from nonlin import *
 from slsqp import fmin_slsqp
 from nnls import nnls
 

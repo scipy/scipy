@@ -9,7 +9,7 @@ from numpy import array, float64
 from scipy import optimize
 from scipy.optimize.minpack import fsolve, leastsq, curve_fit
 
-class TestFSolve(TestCase):
+class TestFSolve(object):
     def pressure_network(self, flow_rates, Qtot, k):
         """Evaluate non-linear equation system representing
         the pressures and flows in a system of n parallel pipes::
