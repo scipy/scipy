@@ -120,7 +120,7 @@ Simple iterations:
 
    excitingmixing
    linearmixing
-   vackar
+   diagbroyden
 
 
 Utility Functions
