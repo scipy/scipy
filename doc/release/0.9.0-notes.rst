@@ -88,10 +88,14 @@ Scipy includes new routines for large-scale nonlinear equation solving
 in ``scipy.optimize``.  The following methods are implemented:
 
 * Newton-Krylov (``scipy.optimize.newton_krylov``)
+
 * (Generalized) secant methods:
+
   - Limited-memory Broyden methods (``scipy.optimize.broyden1``,
     ``scipy.optimize.broyden2``)
+
   - Anderson method (``scipy.optimize.anderson``)
+
 * Simple iterations (``scipy.optimize.diagbroyden``,
   ``scipy.optimize.excitingmixing``, ``scipy.optimize.linearmixing``)
 

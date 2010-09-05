@@ -39,7 +39,7 @@ the next year, we hope to see this trend continue and invite everyone
 to become more involved.
 
 Python 2.6 and 3.0
-------------------
+==================
 
 A significant amount of work has gone into making SciPy compatible
 with Python 2.6; however, there are still some issues in this regard.
@@ -55,7 +55,7 @@ to be ported.  The transition to 3.0 is still under consideration;
 currently, we don't have any timeline or roadmap for this transition.
 
 Major documentation improvements
---------------------------------
+================================
 
 SciPy documentation is greatly improved; you can view a HTML reference
 manual `online <http://docs.scipy.org/>`__ or download it as a PDF
@@ -75,7 +75,7 @@ to help us out, please register a user name in our web-based
 documentation editor at http://docs.scipy.org/ and correct the issues.
 
 Running Tests
--------------
+=============
 
 NumPy 1.2 introduced a new testing framework based on `nose
 <http://somethingaboutorange.com/mrl/projects/nose/>`__.  Starting with
@@ -97,7 +97,7 @@ We have also greatly improved our test coverage.  There were just over
 that number, with just over 4,000 unit tests.
 
 Building SciPy
---------------
+==============
 
 Support for NumScons has been added. NumScons is a tentative new build
 system for NumPy/SciPy, using `SCons <http://www.scons.org/>`__ at its
@@ -113,7 +113,7 @@ support, more tools, and support for ``numpy.distutils``/``scons``
 cooperation.
 
 Sandbox Removed
----------------
+===============
 
 While porting SciPy to NumPy in 2005, several packages and modules
 were moved into ``scipy.sandbox``.  The sandbox was a staging ground
@@ -126,7 +126,7 @@ remaining code was just deleted, as the functionality had been
 replaced by other code.
 
 Sparse Matrices
----------------
+===============
 
 Sparse matrices have seen extensive improvements.  There is now
 support for integer dtypes such ``int8``, ``uint32``, etc.  Two new
@@ -169,7 +169,7 @@ matrix arithmetic have been made.  Finally, this release contains
 numerous bugfixes.
 
 Statistics package
-------------------
+==================
 
 Statistical functions for masked arrays have been added, and are
 accessible through ``scipy.stats.mstats``. The functions are similar
@@ -198,7 +198,7 @@ We expect more bugfixes, increases in numerical precision and
 enhancements in the next release of scipy.
 
 Reworking of IO package
------------------------
+=======================
 
 The IO code in both NumPy and SciPy is being extensively
 reworked. NumPy will be where basic code for reading and writing NumPy
@@ -227,7 +227,7 @@ The Matlab (TM) file readers/writers have a number of improvements:
   ``squeeze_me=False`` by default
 
 New Hierarchical Clustering module
-----------------------------------
+==================================
 
 This module adds new hierarchical clustering functionality to the
 ``scipy.cluster`` package. The function interfaces are similar to the
@@ -251,7 +251,7 @@ function plots hierarchical clusterings as a dendrogram, using
 matplotlib.
 
 New Spatial package
--------------------
+===================
 
 The new spatial package contains a collection of spatial algorithms
 and data structures, useful for spatial statistics and clustering
@@ -278,14 +278,14 @@ form; only the upper triangular is stored. ``squareform`` converts
 distance matrices between square and condensed forms.
 
 Reworked fftpack package
-------------------------
+========================
 
 FFTW2, FFTW3, MKL and DJBFFT wrappers have been removed. Only (NETLIB)
 fftpack remains. By focusing on one backend, we hope to add new
 features - like float32 support - more easily.
 
 New Constants package
----------------------
+=====================
 
 ``scipy.constants`` provides a collection of physical constants and
 conversion factors.  These constants are taken from CODATA Recommended
@@ -296,7 +296,7 @@ relative precision - in that order. All constants are in SI units,
 unless otherwise stated.  Several helper functions are provided.
 
 New Radial Basis Function module
---------------------------------
+================================
 
 ``scipy.interpolate`` now contains a Radial Basis Function module.
 Radial basis functions can be used for smoothing/interpolating
@@ -304,14 +304,14 @@ scattered data in n-dimensions, but should be used with caution for
 extrapolation outside of the observed data range.
 
 New complex ODE integrator
---------------------------
+==========================
 
 ``scipy.integrate.ode`` now contains a wrapper for the ZVODE
 complex-valued ordinary differential equation solver (by Peter
 N. Brown, Alan C. Hindmarsh, and George D. Byrne).
 
 New generalized symmetric and hermitian eigenvalue problem solver
------------------------------------------------------------------
+=================================================================
 
 ``scipy.linalg.eigh`` now contains wrappers for more LAPACK symmetric
 and hermitian eigenvalue problem solvers. Users can now solve
@@ -320,7 +320,7 @@ to use a faster algorithm at the expense of increased memory
 usage. The signature of the ``scipy.linalg.eigh`` changed accordingly.
 
 Bug fixes in the interpolation package
---------------------------------------
+======================================
 
 The shape of return values from ``scipy.interpolate.interp1d`` used to
 be incorrect, if interpolated data had more than 2 dimensions and the
@@ -330,14 +330,14 @@ is a scalar. Users of ``scipy.interpolate.interp1d`` may need to
 revise their code if it relies on the previous behavior.
 
 Weave clean up
---------------
+==============
 
 There were numerous improvements to ``scipy.weave``.  ``blitz++`` was
 relicensed by the author to be compatible with the SciPy license.
 ``wx_spec.py`` was removed.
 
 Known problems
---------------
+==============
 
 Here are known problems with scipy 0.7.0:
 
