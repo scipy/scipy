@@ -64,7 +64,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
 # Convenience interface function
 #------------------------------------------------------------------------------
 
-def griddata(points, values, xi, method='linear'):
+def griddata(points, values, xi, method='linear', fill_value=np.nan):
     """
     griddata(points, values, xi, method='linear')
 
@@ -100,6 +100,12 @@ def griddata(points, values, xi, method='linear'):
           piecewise cubic, continuously differentiable (C1), and
           approximately curvature-minimizing polynomial surface. See
           `CloughTocher2DInterpolator` for more details.
+
+    fill_value : float, optional
+        Value used to fill in for requested points outside of the
+        convex hull of the input points.  If not provided, then the
+        default is ``nan``. This option has no effect for the
+        'nearest' method.
 
 
     Examples
@@ -156,16 +162,17 @@ def griddata(points, values, xi, method='linear'):
     ndim = points.shape[-1]
 
     if ndim == 1 and method in ('nearest', 'linear', 'cubic'):
-        ip = interp1d(points, values, kind=method, axis=0, bounds_error=False)
+        ip = interp1d(points, values, kind=method, axis=0, bounds_error=False,
+                      fill_value=fill_value)
         return ip(xi)
     elif method == 'nearest':
         ip = NearestNDInterpolator(points, values)
         return ip(xi)
     elif method == 'linear':
-        ip = LinearNDInterpolator(points, values)
+        ip = LinearNDInterpolator(points, values, fill_value=fill_value)
         return ip(xi)
     elif method == 'cubic' and ndim == 2:
-        ip = CloughTocher2DInterpolator(points, values)
+        ip = CloughTocher2DInterpolator(points, values, fill_value=fill_value)
         return ip(xi)
     else:
         raise ValueError("Unknown interpolation method %r for "

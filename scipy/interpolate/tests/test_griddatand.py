@@ -5,6 +5,15 @@ from scipy.interpolate.griddatand import griddata
 
 
 class TestGriddata(object):
+    def test_fill_value(self):
+        x = [(0,0), (0,1), (1,0)]
+        y = [1, 2, 3]
+
+        yi = griddata(x, y, [(1,1), (1,2), (0,0)], fill_value=-1)
+        assert_array_equal(yi, [-1, -1, 1])
+
+        yi = griddata(x, y, [(1,1), (1,2), (0,0)])
+        assert_array_equal(yi, [np.nan, np.nan, 1])
 
     def test_alternative_call(self):
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
@@ -14,7 +23,7 @@ class TestGriddata(object):
 
         for method in ('nearest', 'linear', 'cubic'):
             yi = griddata((x[:,0], x[:,1]), y, (x[:,0], x[:,1]), method=method)
-            assert_almost_equal(y, yi, err_msg=method)
+            assert_allclose(y, yi, atol=1e-14, err_msg=method)
 
     def test_multivalue_2d(self):
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
@@ -24,7 +33,7 @@ class TestGriddata(object):
 
         for method in ('nearest', 'linear', 'cubic'):
             yi = griddata(x, y, x, method=method)
-            assert_almost_equal(y, yi, err_msg=method)
+            assert_allclose(y, yi, atol=1e-14, err_msg=method)
 
     def test_multipoint_2d(self):
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
@@ -37,7 +46,8 @@ class TestGriddata(object):
             yi = griddata(x, y, xi, method=method)
 
             assert_equal(yi.shape, (5, 3), err_msg=method)
-            assert_almost_equal(yi, np.tile(y[:,None], (1, 3)), err_msg=method)
+            assert_allclose(yi, np.tile(y[:,None], (1, 3)),
+                            atol=1e-14, err_msg=method)
 
     def test_complex_2d(self):
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
@@ -51,7 +61,8 @@ class TestGriddata(object):
             yi = griddata(x, y, xi, method=method)
 
             assert_equal(yi.shape, (5, 3), err_msg=method)
-            assert_almost_equal(yi, np.tile(y[:,None], (1, 3)), err_msg=method)
+            assert_allclose(yi, np.tile(y[:,None], (1, 3)),
+                            atol=1e-14, err_msg=method)
 
 if __name__ == "__main__":
     run_module_suite()
