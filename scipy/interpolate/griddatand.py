@@ -66,8 +66,6 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
 def griddata(points, values, xi, method='linear', fill_value=np.nan):
     """
-    griddata(points, values, xi, method='linear')
-
     Interpolate unstructured N-dimensional data.
 
     .. versionadded:: 0.9
