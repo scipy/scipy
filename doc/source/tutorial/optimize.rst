@@ -588,7 +588,10 @@ and the set of non-linear equations
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} x_{0}\cos\left(x_{1}\right) & = & 4,\\ x_{0}x_{1}-x_{1} & = & 5.\end{eqnarray*}
+    \begin{eqnarray*}
+    x_{0}\cos\left(x_{1}\right) & = & 4,\\
+    x_{0}x_{1}-x_{1} & = & 5.
+    \end{eqnarray*}
 
 The results are :math:`x=-1.0299` and :math:`x_{0}=6.5041,\, x_{1}=0.9084` .
 
@@ -608,7 +611,6 @@ The results are :math:`x=-1.0299` and :math:`x_{0}=6.5041,\, x_{1}=0.9084` .
     >>> x02 = fsolve(func2, [1, 1])
     >>> print x02
     [ 6.50409711  0.90841421]
-
 
 
 Scalar function root finding
@@ -635,3 +637,80 @@ Equivalently, the root of :math:`f` is the fixed_point of
 :obj:`fixed_point` provides a simple iterative method using Aitkens
 sequence acceleration to estimate the fixed point of :math:`g` given a
 starting point.
+
+
+Large problems
+^^^^^^^^^^^^^^
+
+The :obj:`fsolve` function cannot deal with a very large number of
+variables (*N*), as it needs to calculate and invert a dense *N x N*
+Jacobian matrix on every Newton step. This becomes rather inefficent
+when *N* grows.
+
+Consider for instance the following problem: we need to solve the
+following integrodifferential equation on the square
+:math:`[0,1]\times[0,1]`:
+
+.. math::
+
+   \nabla^2 P = 10 \left(\int_0^1\int_0^1\cosh(P)\,dx\,dy\right)^2
+
+with the boundary condition :math:`P(x,1) = 1` on the upper edge and
+:math:`P=0` elsewhere on the boundary of the square. This can be done
+by approximating the continuous function *P* by its values on a grid,
+:math:`P(n h, m h)`, with a small grid spacing *h*. The derivatives
+and integrals can then be approximated, for example by
+:math:`\partial_x P(x,y)\approx{}(P(x+h) - P(x-h))/2h`. The problem
+is then equivalent to finding the root of some function *residual(P)*,
+where *P* is a vector of length :math:`N_x N_y`.
+
+Now, because :math:`N_x N_y` can be large, :obj:`fsolve` will take a
+long time to solve this problem.  The solution can however be found
+using one of the large-scale solvers in :mod:`scipy.optimize`, for
+example :obj:`newton_krylov`, :obj:`broyden2`, or
+:obj:`anderson`. These use what is known as the inexact Newton method,
+which instead of computing the Jacobian matrix exactly, form an
+approximation for it.
+
+The problem we have can now be solved as follows:
+
+.. plot::
+
+   import numpy as np
+   from scipy.optimize import newton_krylov
+   from numpy import cosh, zeros_like, mgrid, zeros
+
+   # parameters
+   nx, ny = 75, 75
+   hx, hy = 1./(nx-1), 1./(ny-1)
+
+   P_left, P_right = 0, 0
+   P_top, P_bottom = 1, 0
+
+   def residual(P):
+       d2x = zeros_like(P)
+       d2y = zeros_like(P)
+
+       d2x[1:-1] = (P[2:]   - 2*P[1:-1] + P[:-2]) / hx/hx
+       d2x[0]    = (P[1]    - 2*P[0]    + P_left)/hx/hx
+       d2x[-1]   = (P_right - 2*P[-1]   + P[-2])/hx/hx
+
+       d2y[:,1:-1] = (P[:,2:] - 2*P[:,1:-1] + P[:,:-2])/hy/hy
+       d2y[:,0]    = (P[:,1]  - 2*P[:,0]    + P_bottom)/hy/hy
+       d2y[:,-1]   = (P_top   - 2*P[:,-1]   + P[:,-2])/hy/hy
+
+       return d2x + d2y - 10*cosh(P).mean()**2
+
+   # solve
+   guess = zeros((nx, ny), float)
+   sol = newton_krylov(residual, guess, verbose=1)
+   #sol = broyden2(residual, guess, max_rank=50, verbose=1)
+   #sol = anderson(residual, guess, M=10, verbose=1)
+   print 'Residual', abs(residual(sol)).max()
+
+   # visualize
+   import matplotlib.pyplot as plt
+   x, y = mgrid[0:1:(nx*1j), 0:1:(ny*1j)]
+   plt.pcolor(x, y, sol)
+   plt.colorbar()
+   plt.show()
