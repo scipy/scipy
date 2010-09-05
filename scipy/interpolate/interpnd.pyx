@@ -64,11 +64,11 @@ class NDInterpolatorBase(object):
         C-contiguous, and of correct type.
         """
         points = _ndim_coords_from_arrays(points)
+        values = np.ascontiguousarray(values)
 
         self._check_init_shape(points, values, ndim=ndim)
 
         points = np.ascontiguousarray(points.astype(np.double))
-        values = np.ascontiguousarray(values)
 
         self.values_shape = values.shape[1:]
         if values.ndim == 1:
