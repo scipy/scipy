@@ -406,10 +406,14 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     gnorm = vecnorm(gfk,ord=norm)
     while (gnorm > gtol) and (k < maxiter):
         pk = -numpy.dot(Hk,gfk)
-        alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
+        alpha_k, fc, gc, old_fval2, old_old_fval2, gfkp1 = \
            line_search_wolfe1(f,myfprime,xk,pk,gfk,
                               old_fval,old_old_fval)
-        if alpha_k is None:  # line search failed try different one.
+        if alpha_k is not None:
+            old_fval = old_fval2
+            old_old_fval = old_old_fval2
+        else:
+            # line search failed: try different one.
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      line_search_wolfe2(f,myfprime,xk,pk,gfk,
                                         old_fval,old_old_fval)
