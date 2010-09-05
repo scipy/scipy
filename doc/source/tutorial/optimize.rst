@@ -653,16 +653,17 @@ following integrodifferential equation on the square
 
 .. math::
 
-   \nabla^2 P = 10 \left(\int_0^1\int_0^1\cosh(P)\,dx\,dy\right)^2
+   (\partial_x^2 + \partial_y^2) P + 5 \left(\int_0^1\int_0^1\cosh(P)\,dx\,dy\right)^2 = 0
 
 with the boundary condition :math:`P(x,1) = 1` on the upper edge and
 :math:`P=0` elsewhere on the boundary of the square. This can be done
 by approximating the continuous function *P* by its values on a grid,
 :math:`P(n h, m h)`, with a small grid spacing *h*. The derivatives
-and integrals can then be approximated, for example by
-:math:`\partial_x P(x,y)\approx{}(P(x+h) - P(x-h))/2h`. The problem
-is then equivalent to finding the root of some function *residual(P)*,
-where *P* is a vector of length :math:`N_x N_y`.
+and integrals can then be approximated; for instance
+:math:`\partial_x^2 P(x,y)\approx{}(P(x+h,y) - 2 P(x,y) +
+P(x-h,y))/h^2`. The problem is then equivalent to finding the root of
+some function *residual(P)*, where *P* is a vector of length
+:math:`N_x N_y`.
 
 Now, because :math:`N_x N_y` can be large, :obj:`fsolve` will take a
 long time to solve this problem.  The solution can however be found
@@ -699,7 +700,7 @@ The problem we have can now be solved as follows:
        d2y[:,0]    = (P[:,1]  - 2*P[:,0]    + P_bottom)/hy/hy
        d2y[:,-1]   = (P_top   - 2*P[:,-1]   + P[:,-2])/hy/hy
 
-       return d2x + d2y - 10*cosh(P).mean()**2
+       return d2x + d2y + 5*cosh(P).mean()**2
 
    # solve
    guess = zeros((nx, ny), float)
