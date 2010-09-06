@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import *
 
-from scipy.interpolate.griddatand import griddata
+from scipy.interpolate import griddata
 
 
 class TestGriddata(object):
