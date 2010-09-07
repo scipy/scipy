@@ -64,11 +64,6 @@ Fitting
 Root finding
 ============
 
-.. autosummary::
-   :toctree: generated/
-
-   fsolve
-
 Scalar functions
 ----------------
 
