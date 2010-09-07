@@ -3,21 +3,33 @@ Optimization (optimize)
 
 .. sectionauthor:: Travis E. Oliphant
 
+.. sectionauthor:: Pauli Virtanen
+
 .. currentmodule:: scipy.optimize
 
-There are several classical optimization algorithms provided by SciPy
-in the :mod:`scipy.optimize` package. An overview of the module is
-available using :func:`help` (or :func:`pydoc.help`):
+The :mod:`scipy.optimize` package provides several commonly used
+optimization algorithms. An detailed listing is available:
+:mod:`scipy.optimize` (can also be found by ``help(scipy.optimize)``).
 
-.. literalinclude:: examples/5-1
+The module contains:
 
-The first four algorithms are unconstrained minimization algorithms
-(:func:`fmin`: Nelder-Mead simplex, :func:`fmin_bfgs`: BFGS,
-:func:`fmin_ncg`: Newton Conjugate Gradient, and :func:`leastsq`:
-Levenburg-Marquardt). The last algorithm actually finds the roots of a
-general function of possibly many variables. It is included in the
-optimization package because at the (non-boundary) extreme points of a
-function, the gradient is equal to zero.
+1. Unconstrained and constrained minimization and least-squares algorithms
+   (e.g., :func:`fmin`: Nelder-Mead simplex, :func:`fmin_bfgs`:
+   BFGS, :func:`fmin_ncg`: Newton Conjugate Gradient,
+   :func:`leastsq`: Levenberg-Marquardt, :func:`fmin_cobyla`: COBYLA).
+
+2. Global (brute-force) optimization routines  (e.g., :func:`anneal`)
+
+3. Curve fitting (:func:`curve_fit`)
+
+4. Scalar function minimizers and root finders (e.g., Brent's method
+   :func:`fminbound`, and :func:`newton`)
+
+5. Multivariate equation system solvers (:func:`fsolve`)
+
+6. Large-scale multivariate equation system solvers (e.g. :func:`newton_krylov`)
+
+Below, several examples demonstrate their basic usage.
 
 
 Nelder-Mead Simplex algorithm (:func:`fmin`)
@@ -639,8 +651,8 @@ sequence acceleration to estimate the fixed point of :math:`g` given a
 starting point.
 
 
-Large problems
-^^^^^^^^^^^^^^
+Root finding: Large problems
+----------------------------
 
 The :obj:`fsolve` function cannot deal with a very large number of
 variables (*N*), as it needs to calculate and invert a dense *N x N*
@@ -658,9 +670,9 @@ following integrodifferential equation on the square
 with the boundary condition :math:`P(x,1) = 1` on the upper edge and
 :math:`P=0` elsewhere on the boundary of the square. This can be done
 by approximating the continuous function *P* by its values on a grid,
-:math:`P(n h, m h)`, with a small grid spacing *h*. The derivatives
-and integrals can then be approximated; for instance
-:math:`\partial_x^2 P(x,y)\approx{}(P(x+h,y) - 2 P(x,y) +
+:math:`P_{n,m}\approx{}P(n h, m h)`, with a small grid spacing
+*h*. The derivatives and integrals can then be approximated; for
+instance :math:`\partial_x^2 P(x,y)\approx{}(P(x+h,y) - 2 P(x,y) +
 P(x-h,y))/h^2`. The problem is then equivalent to finding the root of
 some function *residual(P)*, where *P* is a vector of length
 :math:`N_x N_y`.
@@ -670,7 +682,7 @@ long time to solve this problem.  The solution can however be found
 using one of the large-scale solvers in :mod:`scipy.optimize`, for
 example :obj:`newton_krylov`, :obj:`broyden2`, or
 :obj:`anderson`. These use what is known as the inexact Newton method,
-which instead of computing the Jacobian matrix exactly, form an
+which instead of computing the Jacobian matrix exactly, forms an
 approximation for it.
 
 The problem we have can now be solved as follows:
@@ -715,3 +727,107 @@ The problem we have can now be solved as follows:
    plt.pcolor(x, y, sol)
    plt.colorbar()
    plt.show()
+
+
+Still too slow? Preconditioning.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When looking for the zero of the functions :math:`f_i({\bf x}) = 0`,
+*i = 1, 2, ..., N*, the :obj:`newton_krylov` solver spends most of its
+time inverting the Jacobian matrix,
+
+.. math:: J_{ij} = \frac{\partial f_i}{\partial x_j} .
+
+If you have an approximation for the inverse matrix
+:math:`M\approx{}J^{-1}`, you can use it for *preconditioning* the
+linear inversion problem. The idea is that instead of solving
+:math:`J{\bf s}={\bf y}` one solves :math:`MJ{\bf s}=M{\bf y}`: since
+matrix :math:`MJ` is "closer" to the identity matrix than :math:`J`
+is, the equation should be easier for the Krylov method to deal with.
+
+The matrix *M* can be passed to :obj:`newton_krylov` as the *inner_M*
+parameter. It can be a (sparse) matrix or a
+:obj:`scipy.sparse.linalg.LinearOperator` instance.
+
+For the problem in the previous section, we note that the function to
+solve consists of two parts: the first one is application of the
+Laplace operator, :math:`[\partial_x^2 + \partial_y^2] P`, and the second
+is the integral. We can actually easily compute the Jacobian corresponding
+to the Laplace operator part: we know that in one dimension
+
+.. math::
+
+   \partial_x^2 \approx \frac{1}{h_x^2} \begin{pmatrix} 
+   -2 & 1 & 0 & 0 \cdots \\
+   1 & -2 & 1 & 0 \cdots \\
+   0 & 1 & -2 & 1 \cdots \\
+   \ldots
+   \end{pmatrix}
+   = h_x^{-2} L
+
+so that the whole 2-D operator is represented by
+
+.. math::
+
+   J_1 = \partial_x^2 + \partial_y^2
+   \simeq
+   h_x^{-2} L \otimes I + h_y^{-2} I \otimes L
+
+The matrix :math:`J_2` of the Jacobian corresponding to the integral
+is more difficult to calculate, and since *all* of it entries are
+nonzero, it will be difficult to invert. :math:`J_1` on the other hand
+is a relatively simple matrix, and can be inverted by
+:obj:`scipy.sparse.linalg.splu` (or the inverse can be approximated by
+:obj:`scipy.sparse.linalg.spilu`). So we are content to take
+:math:`M\approx{}J_1^{-1}` and hope for the best.
+
+In the example below, we use the preconditioner :math:`M=J_1^{-1}`.
+
+.. literalinclude:: examples/newton_krylov_preconditioning.py
+
+Resulting run, first without preconditioning::
+
+  0:  |F(x)| = 803.614; step 1; tol 0.000257947
+  1:  |F(x)| = 345.912; step 1; tol 0.166755
+  2:  |F(x)| = 139.159; step 1; tol 0.145657
+  3:  |F(x)| = 27.3682; step 1; tol 0.0348109
+  4:  |F(x)| = 1.03303; step 1; tol 0.00128227
+  5:  |F(x)| = 0.0406634; step 1; tol 0.00139451
+  6:  |F(x)| = 0.00344341; step 1; tol 0.00645373
+  7:  |F(x)| = 0.000153671; step 1; tol 0.00179246
+  8:  |F(x)| = 6.7424e-06; step 1; tol 0.00173256
+  Residual 3.57078908664e-07
+  Evaluations 317
+
+and then with preconditioning::
+
+  0:  |F(x)| = 136.993; step 1; tol 7.49599e-06
+  1:  |F(x)| = 4.80983; step 1; tol 0.00110945
+  2:  |F(x)| = 0.195942; step 1; tol 0.00149362
+  3:  |F(x)| = 0.000563597; step 1; tol 7.44604e-06
+  4:  |F(x)| = 1.00698e-09; step 1; tol 2.87308e-12
+  Residual 9.29603061195e-11
+  Evaluations 77
+
+Using a preconditioner reduced the number of evaluations of the
+*residual* function by a factor of *4*. For problems where the
+residual is expensive to compute, good preconditioning can be crucial
+--- it can even decide whether the problem is solvable in practice or
+not.
+
+Preconditioning is an art, science, and industry. Here, we were lucky
+in making a simple choice that worked reasonably well, but there is a
+lot more depth to this topic than is shown here.
+
+.. rubric:: References
+
+Some further reading and related software:
+
+.. [KK] D.A. Knoll and D.E. Keyes, "Jacobian-free Newton-Krylov methods",
+        J. Comp. Phys. 193, 357 (2003).
+
+.. [PP] PETSc http://www.mcs.anl.gov/petsc/ and its Python bindings
+        http://code.google.com/p/petsc4py/
+
+.. [AMG] PyAMG (algebraic multigrid preconditioners/solvers)
+         http://code.google.com/p/pyamg/
