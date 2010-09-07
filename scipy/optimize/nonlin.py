@@ -1290,6 +1290,10 @@ class KrylovJacobian(Jacobian):
 
         >>> jac = BroydenFirst()
         >>> kjac = KrylovJacobian(inner_M=jac.inverse).
+
+        If the preconditioner has a method named 'update', it will be called
+        as ``update(x, f)`` after each nonlinear step, with ``x`` giving
+        the current point, and ``f`` the current function value.
     inner_tol, inner_maxiter, ...
         Parameters to pass on to the \"inner\" Krylov solver.
         See `scipy.sparse.linalg.gmres` for details.
