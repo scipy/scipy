@@ -157,7 +157,7 @@
 #include "stdio.h"
 #include "numpy/arrayobject.h"
 #include "numpy/ufuncobject.h"
-#include "numpy/ndarraytypes.h"
+#include "numpy/ndarrayobject.h"
 #include "math.h"
 
 #ifndef CYTHON_INLINE

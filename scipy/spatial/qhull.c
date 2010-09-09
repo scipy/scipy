@@ -154,7 +154,7 @@
 #include <math.h>
 #define __PYX_HAVE_API__scipy__spatial__qhull
 #include "stdlib.h"
-#include "numpy/ndarraytypes.h"
+#include "numpy/ndarrayobject.h"
 #include "stdio.h"
 #include "numpy/arrayobject.h"
 #include "numpy/ufuncobject.h"

@@ -40,7 +40,7 @@ cdef extern from "math.h":
     double fmax(double a, double b) nogil
     double fabs(double a) nogil
 
-cdef extern from "numpy/ndarraytypes.h":
+cdef extern from "numpy/ndarrayobject.h":
     cdef enum:
         NPY_MAXDIMS
 

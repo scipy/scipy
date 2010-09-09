@@ -13,7 +13,7 @@ cdef extern from "stdlib.h":
     void *malloc(int size)
     void free(void *ptr)
 
-cdef extern from "numpy/ndarraytypes.h":
+cdef extern from "numpy/ndarrayobject.h":
     cdef enum:
         NPY_MAXDIMS
 
