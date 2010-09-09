@@ -3,11 +3,12 @@
 from os.path import join as pjoin
 
 from numscons import GetNumpyEnvironment
+from numscons import CheckF77Mangling
 
 env = GetNumpyEnvironment(ARGUMENTS)
 env.Tool('f2py')
 
-config = env.NumpyConfigure()
+config = env.NumpyConfigure(custom_tests = {'CheckF77Mangling' : CheckF77Mangling})
 config.CheckF77Mangling()
 config.Finish()
 

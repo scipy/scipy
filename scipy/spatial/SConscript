@@ -1,9 +1,32 @@
 # Last Change: Mon Nov 03 06:00 PM 2008 J
 # vim:syntax=python
 from os.path import join
-from numscons import GetNumpyEnvironment
+from numscons import GetNumpyEnvironment, CheckF77LAPACK, CheckF77Clib
+from numscons import write_info
 
 env = GetNumpyEnvironment(ARGUMENTS)
+
+#=======================
+# Starting Configuration
+#=======================
+config = env.NumpyConfigure(custom_tests = {'CheckLAPACK' : CheckF77LAPACK})
+
+#-----------------
+# Checking Lapack
+#-----------------
+st = config.CheckLAPACK()
+if not st:
+    has_lapack = 0
+else:
+    has_lapack = 1
+
+config.Finish()
+write_info(env)
+
+
+#==========
+#  Build
+#==========
 
 env.NumpyPythonExtension('ckdtree', source = ['ckdtree.c'])
 
@@ -16,6 +39,5 @@ src = [join('qhull', 'src', s) for s in [
     'geom.c', 'geom2.c', 'global.c', 'io.c', 'mem.c',
     'merge.c', 'poly.c', 'poly2.c', 'qset.c', 'user.c',
     'stat.c', 'qhull.c']]
-qhullsrc = env.DistutilsStaticExtLibrary('qhullsrc', source=src)
 
-env.NumpyPythonExtension('qhull', source = 'qhull.c', LIBS=qhullsrc)
+env.NumpyPythonExtension('qhull', source = ['qhull.c'] + src)
