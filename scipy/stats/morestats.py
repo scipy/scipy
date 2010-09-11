@@ -157,7 +157,7 @@ def mvsdist(data):
     x = ravel(data)
     n = len(x)
     if (n < 2):
-        raise ValueError, "Need at least 2 data-points."
+        raise ValueError("Need at least 2 data-points.")
     xbar = x.mean()
     C = x.var()
     if (n > 1000): # gaussian approximations for large n
@@ -206,8 +206,8 @@ def kstat(data,n=2):
     The nth k-statistic is the unique symmetric unbiased estimator of the nth
     cumulant kappa_n
     """
-    if n>4 or n<1:
-        raise ValueError, "k-statistics only supported for 1<=n<=4"
+    if n > 4 or n < 1:
+        raise ValueError("k-statistics only supported for 1<=n<=4")
     n = int(n)
     S = zeros(n+1,'d')
     data = ravel(data)
@@ -225,21 +225,21 @@ def kstat(data,n=2):
                 4*N*(N+1)*S[1]*S[3] + N*N*(N+1)*S[4]) / \
                 (N*(N-1.0)*(N-2.0)*(N-3.0))
     else:
-        raise ValueError, "Should not be here."
+        raise ValueError("Should not be here.")
 
 def kstatvar(data,n=2):
     """Returns an unbiased estimator of the variance of the k-statistic:  n=1 or 2
     """
     data = ravel(data)
     N = len(data)
-    if n==1:
+    if n == 1:
         return kstat(data,n=2)*1.0/N
-    elif n==2:
+    elif n == 2:
         k2 = kstat(data,n=2)
         k4 = kstat(data,n=4)
         return (2*k2*k2*N + (N-1)*k4)/(N*(N+1))
     else:
-        raise ValueError, "Only n=1 or n=2 supported."
+        raise ValueError("Only n=1 or n=2 supported.")
 
 
 #__all__ = ['probplot','ppcc_max','ppcc_plot','boxcox','boxcox_llf',
@@ -262,9 +262,9 @@ def probplot(x, sparams=(), dist='norm', fit=1, plot=None):
     i = arange(2,N)
     Ui[1:-1] = (i-0.3175)/(N+0.365)
     try:
-        ppf_func = eval('distributions.%s.ppf'%dist)
+        ppf_func = eval('distributions.%s.ppf' % dist)
     except AttributeError:
-        raise dist, "is not a valid distribution with a ppf."
+        raise ValueError("%s is not a valid distribution with a ppf." % dist)
     if sparams is None:
         sparams = ()
     if isscalar(sparams):
@@ -312,7 +312,7 @@ def ppcc_max(x, brack=(0.0,1.0), dist='tukeylambda'):
     try:
         ppf_func = eval('distributions.%s.ppf'%dist)
     except AttributeError:
-        raise dist, "is not a valid distribution with a ppf."
+        raise ValueError("%s is not a valid distribution with a ppf." % dist)
     """
     res = inspect.getargspec(ppf_func)
     if not ('loc' == res[0][-2] and 'scale' == res[0][-1] and \
@@ -386,18 +386,18 @@ def _boxcox_conf_interval(x, lmax, alpha):
     while (rootfunc(newlm,x,target) > 0.0) and (N < 500):
         newlm += 0.1
         N +=1
-    if (N==500):
-        raise RuntimeError, "Could not find endpoint."
+    if N == 500:
+        raise RuntimeError("Could not find endpoint.")
     lmplus = optimize.brentq(rootfunc,lmax,newlm,args=(x,target))
     newlm = lmax-0.5
     N = 0
     while (rootfunc(newlm,x,target) > 0.0) and (N < 500):
         newlm += 0.1
         N +=1
-    if (N==500):
-        raise RuntimeError, "Could not find endpoint."
-    lmminus = optimize.brentq(rootfunc,newlm,lmax,args=(x,target))
-    return lmminus,lmplus
+    if N == 500:
+        raise RuntimeError("Could not find endpoint.")
+    lmminus = optimize.brentq(rootfunc, newlm, lmax, args=(x,target))
+    return lmminus, lmplus
 
 def boxcox(x,lmbda=None,alpha=None):
     """Return a positive dataset tranformed by a Box-Cox power transformation.
@@ -411,7 +411,7 @@ def boxcox(x,lmbda=None,alpha=None):
     lambda as the third output argument.
     """
     if any(x < 0):
-        raise ValueError, "Data must be positive."
+        raise ValueError("Data must be positive.")
     if lmbda is not None:  # single transformation
         lmbda = lmbda*(x==x)
         y = where(lmbda == 0, log(x), (x**lmbda - 1)/lmbda)
@@ -506,7 +506,7 @@ def shapiro(x,a=None,reta=0):
     """
     N = len(x)
     if N < 3:
-        raise ValueError, "Data must be at least length 3."
+        raise ValueError("Data must be at least length 3.")
     if a is None:
         a = zeros(N,'f')
         init = 0
@@ -603,7 +603,8 @@ def anderson(x,dist='norm'):
 
     """
     if not dist in ['norm','expon','gumbel','extreme1','logistic']:
-        raise ValueError, "Invalid distribution."
+        raise ValueError("Invalid distribution; dist must be 'norm', "
+                            "'expon', 'gumbel', 'extreme1' or 'logistic'.")
     y = sort(x)
     xbar = np.mean(x, axis=0)
     N = len(y)
@@ -632,7 +633,7 @@ def anderson(x,dist='norm'):
         z = distributions.logistic.cdf(w)
         sig = array([25,10,5,2.5,1,0.5])
         critical = around(_Avals_logistic / (1.0+0.25/N),3)
-    elif (dist == 'gumbel') or (dist == 'extreme1'):
+    else:  # (dist == 'gumbel') or (dist == 'extreme1'):
         #the following is incorrect, see ticket:1097
 ##        def fixedsolve(th,xj,N):
 ##            val = stats.sum(xj)*1.0/N
@@ -647,9 +648,7 @@ def anderson(x,dist='norm'):
         z = distributions.gumbel_l.cdf(w)
         sig = array([25,10,5,2.5,1])
         critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)),3)
-    else:
-        raise ValueError("dist has to be one of 'norm','expon','logistic'",
-                         "'gumbel','extreme1'")
+
     i = arange(1,N+1)
     S = sum((2*i-1.0)/N*(log(z)+log(1-z[::-1])),axis=0)
     A2 = -N-S
@@ -722,10 +721,10 @@ def ansari(x,y):
     x,y = asarray(x),asarray(y)
     n = len(x)
     m = len(y)
-    if (m < 1):
-        raise ValueError, "Not enough other observations."
-    if (n < 1):
-        raise ValueError, "Not enough test observations."
+    if m < 1:
+        raise ValueError("Not enough other observations.")
+    if n < 1:
+        raise ValueError("Not enough test observations.")
     N = m+n
     xy = r_[x,y]  # combine
     rank = stats.rankdata(xy)
@@ -804,7 +803,7 @@ def bartlett(*args):
     """
     k = len(args)
     if k < 2:
-        raise ValueError, "Must enter at least two input sample vectors."
+        raise ValueError("Must enter at least two input sample vectors.")
     Ni = zeros(k)
     ssq = zeros(k,'d')
     for j in range(k):
@@ -966,13 +965,13 @@ def binom_test(x,n=None,p=0.5):
     elif len(x) == 1:
         x = x[0]
         if n is None or n < x:
-            raise ValueError, "n must be >= x"
+            raise ValueError("n must be >= x")
         n = np.int_(n)
     else:
-        raise ValueError, "Incorrect length for x."
+        raise ValueError("Incorrect length for x.")
 
     if (p > 1.0) or (p < 0.0):
-        raise ValueError, "p must be in range [0,1]"
+        raise ValueError("p must be in range [0,1]")
 
     d = distributions.binom.pmf(x,n,p)
     rerr = 1+1e-7
@@ -1128,8 +1127,8 @@ def mood(x,y):
     m = len(y)
     xy = r_[x,y]
     N = m+n
-    if (N < 3):
-        raise ValueError, "Not enough observations."
+    if N < 3:
+        raise ValueError("Not enough observations.")
     ranks = stats.rankdata(xy)
     Ri = ranks[:n]
     M = sum((Ri - (N+1.0)/2)**2,axis=0)
@@ -1162,7 +1161,7 @@ def oneway(*args,**kwds):
     """
     k = len(args)
     if k < 2:
-        raise ValueError, "Must enter at least two input sample vectors."
+        raise ValueError("Must enter at least two input sample vectors.")
     if 'equal_var' in kwds.keys():
         if kwds['equal_var']: evar = 1
         else: evar = 0
@@ -1229,7 +1228,7 @@ def wilcoxon(x,y=None):
     else:
         x, y = map(asarray, (x, y))
         if len(x) <> len(y):
-            raise ValueError, 'Unequal N in wilcoxon.  Aborting.'
+            raise ValueError('Unequal N in wilcoxon.  Aborting.')
         d = x-y
     d = compress(not_equal(d,0),d,axis=-1) # Keep all non-zero differences
     count = len(d)
@@ -1275,8 +1274,8 @@ def pdf_moments(cnt):
     """
     N = len(cnt)
     if N < 2:
-        raise ValueError, "At least two moments must be given to" + \
-              "approximate the pdf."
+        raise ValueError("At least two moments must be given to " +
+              "approximate the pdf.")
     totp = poly1d(1)
     sig = sqrt(cnt[1])
     mu = cnt[0]

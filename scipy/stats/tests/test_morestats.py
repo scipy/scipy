@@ -24,6 +24,7 @@ g8 = [0.998, 1.000, 1.006, 1.000, 1.002, 0.996, 0.998, 0.996, 1.002, 1.006]
 g9 = [1.002, 0.998, 0.996, 0.995, 0.996, 1.004, 1.004, 0.998, 0.999, 0.991]
 g10= [0.991, 0.995, 0.984, 0.994, 0.997, 0.997, 0.991, 0.998, 1.004, 0.997]
 
+
 class TestShapiro(TestCase):
     def test_basic(self):
         x1 = [0.11,7.87,4.61,10.14,7.95,3.14,0.46,
@@ -38,6 +39,12 @@ class TestShapiro(TestCase):
         w,pw = stats.shapiro(x2)
         assert_almost_equal(w,0.9590270,6)
         assert_almost_equal(pw,0.52460,3)
+
+    def test_bad_arg(self):
+        # Length of x is less than 3.
+        x = [1]
+        assert_raises(ValueError, stats.shapiro, x)
+
 
 class TestAnderson(TestCase):
     def test_normal(self):
@@ -58,7 +65,12 @@ class TestAnderson(TestCase):
         A,crit,sig = stats.anderson(x2,'expon')
         assert_array_less(crit[:-1], A)
 
+    def test_bad_arg(self):
+        assert_raises(ValueError, stats.anderson, [1], dist='plate_of_shrimp')
+
+
 class TestAnsari(TestCase):
+
     def test_small(self):
         x = [1,2,3,3,4]
         y = [3,2,6,1,6,1,4,1]
@@ -80,12 +92,23 @@ class TestAnsari(TestCase):
         assert_almost_equal(W,10.0,11)
         assert_almost_equal(pval,0.533333333333333333,7)
 
+    def test_bad_arg(self):
+        assert_raises(ValueError, stats.ansari, [], [1])
+        assert_raises(ValueError, stats.ansari, [1], [])
+
+
 class TestBartlett(TestCase):
+
     def test_data(self):
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
         T, pval = stats.bartlett(*args)
         assert_almost_equal(T,20.78587342806484,7)
         assert_almost_equal(pval,0.0136358632781,7)
+
+    def test_bad_arg(self):
+        """Too few args raises ValueError."""
+        assert_raises(ValueError, stats.bartlett, [1])
+
 
 class TestLevene(TestCase):
 
@@ -127,9 +150,14 @@ class TestLevene(TestCase):
 
     def test_bad_center_value(self):
         x = np.linspace(-1,1,21)
-        assert_raises(ValueError, stats.levene, x, x, center='trim')        
+        assert_raises(ValueError, stats.levene, x, x, center='trim')
+        
+    def test_too_few_args(self):
+        assert_raises(ValueError, stats.levene, [1])
+
 
 class TestBinomP(TestCase):
+
     def test_data(self):
         pval = stats.binom_test(100,250)
         assert_almost_equal(pval,0.0018833009350757682,11)
@@ -137,6 +165,21 @@ class TestBinomP(TestCase):
         assert_almost_equal(pval,0.92085205962670713,11)
         pval = stats.binom_test([682,243],p=3.0/4)
         assert_almost_equal(pval,0.38249155957481695,11)
+
+    def test_bad_len_x(self):
+        """Length of x must be 1 or 2."""
+        assert_raises(ValueError, stats.binom_test, [1,2,3])
+
+    def test_bad_n(self):
+        """len(x) is 1, but n is invalid."""
+        # Missing n
+        assert_raises(ValueError, stats.binom_test, [100])
+        # n less than x[0]
+        assert_raises(ValueError, stats.binom_test, [100], n=50)
+
+    def test_bad_p(self):
+        assert_raises(ValueError, stats.binom_test, [50, 50], p=2.0)
+
 
 class TestFindRepeats(TestCase):
     def test_basic(self):
@@ -194,11 +237,60 @@ class TestFligner(TestCase):
         x = np.linspace(-1,1,21)
         assert_raises(ValueError, stats.fligner, x, x, center='trim')
 
+    def test_bad_num_args(self):
+        """Too few args raises ValueError."""
+        assert_raises(ValueError, stats.fligner, [1])
+
+
 def test_mood():
     # numbers from R: mood.test in package stats
     x1 = np.arange(5)
     assert_array_almost_equal(stats.mood(x1,x1**2),
             (-1.3830857299399906, 0.16663858066771478), 11)
+
+def test_mood_bad_arg():
+    """Raise ValueError when the sum of the lengths of the args is less than 3."""
+    assert_raises(ValueError, stats.mood, [1], [])
+
+def test_oneway_bad_arg():
+    """Raise ValueError is fewer than two args are given."""
+    assert_raises(ValueError, stats.oneway, [1])
+
+def test_wilcoxon_bad_arg():
+    """Raise ValueError when two args of different lengths are given."""
+    assert_raises(ValueError, stats.wilcoxon, [1], [1,2])
+
+def test_mvsdist_bad_arg():
+    """Raise ValueError if fewer than two data points are given."""
+    data = [1]
+    assert_raises(ValueError, stats.mvsdist, data)
+
+def test_kstat_bad_arg():
+    """Raise ValueError if n > 4 or n > 1."""
+    data = [1]
+    n = 10
+    assert_raises(ValueError, stats.kstat, data, n=n)
+
+def test_kstatvar_bad_arg():
+    """Raise ValueError is n is not 1 or 2."""
+    data = [1]
+    n = 10
+    assert_raises(ValueError, stats.kstatvar, data, n=n)
+
+def test_probplot_bad_arg():
+    """Raise ValueError when given an invalid distribution."""
+    data = [1]
+    assert_raises(ValueError, stats.probplot, data, dist="plate_of_shrimp")
+
+def test_ppcc_max_bad_arg():
+    """Raise ValueError when given an invalid distribution."""
+    data = [1]
+    assert_raises(ValueError, stats.ppcc_max, data, dist="plate_of_shrimp")
+
+def test_boxcox_bad_arg():
+    """Raise ValueError if any data value is negative."""
+    x = np.array([-1])
+    assert_raises(ValueError, stats.boxcox, x)
 
 if __name__ == "__main__":
     run_module_suite()
