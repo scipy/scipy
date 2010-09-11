@@ -192,7 +192,7 @@ class TestFligner(TestCase):
 
     def test_bad_center_value(self):
         x = np.linspace(-1,1,21)
-        assert_raises(ValueError, stats.levene, x, x, center='trim')
+        assert_raises(ValueError, stats.fligner, x, x, center='trim')
 
 def test_mood():
     # numbers from R: mood.test in package stats
