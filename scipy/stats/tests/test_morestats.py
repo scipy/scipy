@@ -121,7 +121,7 @@ class TestLevene(TestCase):
         assert_almost_equal(W1, W2)        
         assert_almost_equal(pval1, pval2)
 
-    def test_bad_keywod(self):
+    def test_bad_keyword(self):
         x = np.linspace(-1,1,21)
         assert_raises(TypeError, stats.levene, x, x, portiontocut=0.1)
 
@@ -186,7 +186,7 @@ class TestFligner(TestCase):
     #    assert_almost_equal(W1, W2)
     #    assert_almost_equal(pval1, pval2)
 
-    def test_bad_keywod(self):
+    def test_bad_keyword(self):
         x = np.linspace(-1,1,21)
         assert_raises(TypeError, stats.fligner, x, x, portiontocut=0.1)
 
