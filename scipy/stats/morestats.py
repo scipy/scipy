@@ -1,5 +1,7 @@
 # Author:  Travis Oliphant, 2002
 #
+# Further updates and enhancements by many SciPy developers.
+#
 
 import math
 import statlib
@@ -833,6 +835,10 @@ def levene(*args,**kwds):
     center : {'mean', 'median', 'trimmed'}, optional
         Which function of the data to use in the test.  The default
         is 'median'.
+    proportiontocut : float, optional
+        When `center` is 'trimmed', this gives the proportion of data points
+        to cut from each end. (See `scipy.stats.trim_mean`.)
+        Default is 0.05.
 
     Returns
     -------
@@ -863,24 +869,35 @@ def levene(*args,**kwds):
               Statistical Association, 69, 364-367
 
     """
+    # Handle keyword arguments.
+    center = 'median'
+    proportiontocut = 0.05
+    for kw, value in kwds.items():
+        if kw not in ['center', 'proportiontocut']:
+            raise TypeError("levene() got an unexpected keyword argument '%s'" % kw)
+        if kw == 'center':
+            center = value
+        else:
+            proportiontocut = value
+
     k = len(args)
     if k < 2:
-        raise ValueError, "Must enter at least two input sample vectors."
+        raise ValueError("Must enter at least two input sample vectors.")
     Ni = zeros(k)
     Yci = zeros(k,'d')
-    if 'center' in kwds.keys():
-        center = kwds['center']
-    else:
-        center = 'median'
+
     if not center in ['mean','median','trimmed']:
-        raise ValueError, "Keyword argument <center> must be 'mean', 'median'"\
-              + "or 'trimmed'."
+        raise ValueError("Keyword argument <center> must be 'mean', 'median'"
+              + "or 'trimmed'.")
+
     if center == 'median':
         func = lambda x: np.median(x, axis=0)
     elif center == 'mean':
         func = lambda x: np.mean(x, axis=0)
-    else:
-        func = stats.trim_mean
+    else: # center == 'trimmed'
+        args = tuple(stats.trimboth(arg, proportiontocut) for arg in args)
+        func = lambda x: np.mean(x, axis=0)
+
     for j in range(k):
         Ni[j] = len(args[j])
         Yci[j] = func(args[j])
@@ -997,6 +1014,10 @@ def fligner(*args,**kwds):
         keyword argument controlling which function of the data
         is used in computing the test statistic.  The default
         is 'median'.
+    proportiontocut : float, optional
+        When `center` is 'trimmed', this gives the proportion of data points
+        to cut from each end. (See `scipy.stats.trim_mean`.)
+        Default is 0.05.
 
     Returns
     -------
@@ -1021,22 +1042,32 @@ def fligner(*args,**kwds):
            71(353), 210-213.
 
     """
+    # Handle keyword arguments.
+    center = 'median'
+    proportiontocut = 0.05
+    for kw, value in kwds.items():
+        if kw not in ['center', 'proportiontocut']:
+            raise TypeError("fligner() got an unexpected keyword argument '%s'" % kw)
+        if kw == 'center':
+            center = value
+        else:
+            proportiontocut = value
+
     k = len(args)
     if k < 2:
-        raise ValueError, "Must enter at least two input sample vectors."
-    if 'center' in kwds.keys():
-        center = kwds['center']
-    else:
-        center = 'median'
+        raise ValueError("Must enter at least two input sample vectors.")
+
     if not center in ['mean','median','trimmed']:
-        raise ValueError, "Keyword argument <center> must be 'mean', 'median'"\
-              + "or 'trimmed'."
+        raise ValueError("Keyword argument <center> must be 'mean', 'median'"
+              + "or 'trimmed'.")
+
     if center == 'median':
         func = lambda x: np.median(x, axis=0)
     elif center == 'mean':
         func = lambda x: np.mean(x, axis=0)
-    else:
-        func = stats.trim_mean
+    else: # center == 'trimmed'
+        args = tuple(stats.trimboth(arg, proportiontocut) for arg in args)
+        func = lambda x: np.mean(x, axis=0)
 
     Ni = asarray([len(args[j]) for j in range(k)])
     Yci = asarray([func(args[j]) for j in range(k)])
@@ -1048,16 +1079,15 @@ def fligner(*args,**kwds):
     for i in range(k):
         allZij.extend(list(Zij[i]))
         g.append(len(allZij))
-
-    a = distributions.norm.ppf(stats.rankdata(allZij)/(2*(Ntot+1.0)) + 0.5)
+    
+    ranks = stats.rankdata(allZij)
+    a = distributions.norm.ppf(ranks/(2*(Ntot+1.0)) + 0.5)
 
     # compute Aibar
     Aibar = _apply_func(a,g,sum) / Ni
     anbar = np.mean(a, axis=0)
     varsq = np.var(a,axis=0, ddof=1)
-
     Xsq = sum(Ni*(asarray(Aibar)-anbar)**2.0,axis=0)/varsq
-
     pval = distributions.chi2.sf(Xsq,k-1) # 1 - cdf
     return Xsq, pval
 
@@ -1156,7 +1186,6 @@ def oneway(*args,**kwds):
         pval = distributions.f.sf(F,k-1.0,1.0/(3*tmp))
 
     return F, pval
-
 
 
 def wilcoxon(x,y=None):

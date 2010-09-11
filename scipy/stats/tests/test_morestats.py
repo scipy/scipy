@@ -1,14 +1,17 @@
 # Author:  Travis Oliphant, 2002
 #
+# Further enhancements and tests added by numerous SciPy developers.
+#
 
 from numpy.testing import TestCase, run_module_suite, assert_array_equal, \
-    assert_almost_equal, assert_array_less, assert_array_almost_equal
-
+    assert_almost_equal, assert_array_less, assert_array_almost_equal, \
+    assert_raises
 
 import scipy.stats as stats
 
 import numpy as np
 from numpy.random import RandomState
+
 
 g1 = [1.006, 0.996, 0.998, 1.000, 0.992, 0.993, 1.002, 0.999, 0.994, 1.000]
 g2 = [0.998, 1.006, 1.000, 1.002, 0.997, 0.998, 0.996, 1.000, 1.006, 0.988]
@@ -79,21 +82,52 @@ class TestAnsari(TestCase):
 
 class TestBartlett(TestCase):
     def test_data(self):
-        args = []
-        for k in range(1,11):
-            args.append(eval('g%d'%k))
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
         T, pval = stats.bartlett(*args)
         assert_almost_equal(T,20.78587342806484,7)
         assert_almost_equal(pval,0.0136358632781,7)
 
 class TestLevene(TestCase):
+
     def test_data(self):
-        args = []
-        for k in range(1,11):
-            args.append(eval('g%d'%k))
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
         W, pval = stats.levene(*args)
         assert_almost_equal(W,1.7059176930008939,7)
         assert_almost_equal(pval,0.0990829755522,7)
+
+    def test_trimmed1(self):
+        """Test that center='trimmed' gives the same result as center='mean' when proportiontocut=0."""
+        W1, pval1 = stats.levene(g1, g2, g3, center='mean')
+        W2, pval2 = stats.levene(g1, g2, g3, center='trimmed', proportiontocut=0.0)
+        assert_almost_equal(W1, W2)
+        assert_almost_equal(pval1, pval2)
+    
+    def test_trimmed2(self):
+        x = [1.2, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 100.0]
+        y = [0.0, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 200.0]
+        # Use center='trimmed'
+        W1, pval1 = stats.levene(x, y, center='trimmed', proportiontocut=0.125)
+        # Trim the data here, and use center='mean'
+        W2, pval2 = stats.levene(x[1:-1], y[1:-1], center='mean')
+        # Result should be the same.
+        assert_almost_equal(W1, W2)
+        assert_almost_equal(pval1, pval2)
+
+    def test_equal_mean_median(self):
+        x = np.linspace(-1,1,21)
+        y = x**3
+        W1, pval1 = stats.levene(x, y, center='mean')
+        W2, pval2 = stats.levene(x, y, center='median')
+        assert_almost_equal(W1, W2)        
+        assert_almost_equal(pval1, pval2)
+
+    def test_bad_keywod(self):
+        x = np.linspace(-1,1,21)
+        assert_raises(TypeError, stats.levene, x, x, portiontocut=0.1)
+
+    def test_bad_center_value(self):
+        x = np.linspace(-1,1,21)
+        assert_raises(ValueError, stats.levene, x, x, center='trim')        
 
 class TestBinomP(TestCase):
     def test_data(self):
@@ -111,15 +145,58 @@ class TestFindRepeats(TestCase):
         assert_array_equal(res,[1,2,3,4])
         assert_array_equal(nums,[3,3,2,2])
 
-def test_fligner():
-    #numbers from R: fligner.test in package stats
-    x1=np.arange(5)
-    assert_array_almost_equal(stats.fligner(x1,x1**2),
-                       (3.2282229927203536, 0.072379187848207877), 11)
+
+class TestFligner(TestCase):
+
+    def test_data(self):
+        # numbers from R: fligner.test in package stats
+        x1 = np.arange(5)
+        assert_array_almost_equal(stats.fligner(x1,x1**2),
+                           (3.2282229927203536, 0.072379187848207877), 11)
+
+    def test_trimmed1(self):
+        """Test that center='trimmed' gives the same result as center='mean' when proportiontocut=0."""
+        Xsq1, pval1 = stats.fligner(g1, g2, g3, center='mean')
+        Xsq2, pval2 = stats.fligner(g1, g2, g3, center='trimmed', proportiontocut=0.0)
+        assert_almost_equal(Xsq1, Xsq2)
+        assert_almost_equal(pval1, pval2)
+        
+    def test_trimmed2(self):
+        x = [1.2, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 100.0]
+        y = [0.0, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 200.0]
+        # Use center='trimmed'
+        Xsq1, pval1 = stats.fligner(x, y, center='trimmed', proportiontocut=0.125)
+        # Trim the data here, and use center='mean'
+        Xsq2, pval2 = stats.fligner(x[1:-1], y[1:-1], center='mean')
+        # Result should be the same.
+        assert_almost_equal(Xsq1, Xsq2)
+        assert_almost_equal(pval1, pval2) 
+
+    # The following test looks reasonable at first, but fligner() uses the
+    # function stats.rankdata(), and in one of the cases in this test,
+    # there are ties, while in the other (because of normal rounding
+    # errors) there are not.  This difference leads to differences in the
+    # third significant digit of W.
+    #
+    #def test_equal_mean_median(self):
+    #    x = np.linspace(-1,1,21)
+    #    y = x**3
+    #    W1, pval1 = stats.fligner(x, y, center='mean')
+    #    W2, pval2 = stats.fligner(x, y, center='median')
+    #    assert_almost_equal(W1, W2)
+    #    assert_almost_equal(pval1, pval2)
+
+    def test_bad_keywod(self):
+        x = np.linspace(-1,1,21)
+        assert_raises(TypeError, stats.fligner, x, x, portiontocut=0.1)
+
+    def test_bad_center_value(self):
+        x = np.linspace(-1,1,21)
+        assert_raises(ValueError, stats.levene, x, x, center='trim')
 
 def test_mood():
-    #numbers from R: mood.test in package stats
-    x1=np.arange(5)
+    # numbers from R: mood.test in package stats
+    x1 = np.arange(5)
     assert_array_almost_equal(stats.mood(x1,x1**2),
             (-1.3830857299399906, 0.16663858066771478), 11)
 
