@@ -181,7 +181,7 @@ class TestOptimize(TestCase):
         assert np.allclose(self.trace[3:5],
                            [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
                             [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
-                           atol=1e-14, rtol=1e-7), self.trace[3:5]
+                           atol=1e-6, rtol=1e-7), self.trace[:5]
 
 
     def test_l_bfgs_b(self):

@@ -123,9 +123,9 @@ class TestLineSearch(object):
             c += 1
             s, phi1, phi0 = ls.scalar_search_wolfe1(phi, derphi, phi(0),
                                                     old_phi0, derphi(0))
-            assert_equal(phi0, phi(0))
-            assert_equal(phi1, phi(s))
-            assert_wolfe(s, phi, derphi)
+            assert_equal(phi0, phi(0), name)
+            assert_equal(phi1, phi(s), name)
+            assert_wolfe(s, phi, derphi, err_msg=name)
 
         assert c > 3 # check that the iterator really works...
 
