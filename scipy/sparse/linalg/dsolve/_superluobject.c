@@ -6,6 +6,7 @@
  */
 
 #include <Python.h>
+#include "py3k.h"
 
 #define NO_IMPORT_ARRAY
 #include "_superluobject.h"
@@ -157,7 +158,7 @@ SciPyLU_getattr(SciPyLUObject *self, char *name)
     PyObject *list = PyList_New(sizeof(members)/sizeof(char *));
     if (list != NULL) {
       for (i = 0; i < sizeof(members)/sizeof(char *); i ++)
-	PyList_SetItem(list, i, PyString_FromString(members[i]));
+	PyList_SetItem(list, i, PyUstring_FromString(members[i]));
       if (PyErr_Occurred()) {
 	Py_DECREF(list);
 	list = NULL;
@@ -165,7 +166,17 @@ SciPyLU_getattr(SciPyLUObject *self, char *name)
     }
     return list;
   }
+#if PY_VERSION_HEX >= 0x03000000
+  if (1) {
+      PyObject *str, *ret;
+      str = PyUnicode_FromString(name);
+      ret = PyObject_GenericGetAttr((PyObject *)self, str);
+      Py_DECREF(str);
+      return ret;
+  }
+#else
   return Py_FindMethod(SciPyLU_methods, (PyObject *)self, name);
+#endif
 }
 
 

@@ -240,6 +240,39 @@ static PyMethodDef SuperLU_Methods[] = {
     {NULL, NULL}
 };
 
+#if PY_VERSION_HEX >= 0x03000000
+
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "_superlu",
+    NULL,
+    -1,
+    SuperLU_Methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyObject *PyInit__superlu(void)
+{
+    PyObject *m, *d;
+
+    m = PyModule_Create(&moduledef);
+    d = PyModule_GetDict(m);
+
+    PyDict_SetItemString(d, "SciPyLUType", (PyObject *)&SciPySuperLUType);
+
+    import_array();
+
+    if (PyErr_Occurred())
+        Py_FatalError("can't initialize module _superlu");
+
+    return m;
+}
+
+#else
+
 PyMODINIT_FUNC
 init_superlu(void)
 {
@@ -254,3 +287,5 @@ init_superlu(void)
 
     import_array();
 }
+
+#endif

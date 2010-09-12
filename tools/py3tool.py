@@ -153,6 +153,7 @@ def custom_mangling(filename):
         os.path.join('linalg', 'decomp.py'),
         os.path.join('linalg', 'lapack.py'),
         os.path.join('linalg', 'flinalg.py'),
+        os.path.join('linalg', 'iterative.py'),
         os.path.join('lib', 'blas', '__init__.py'),
         os.path.join('lib', 'lapack', '__init__.py'),
         os.path.join('ndimage', 'filters.py'),
@@ -173,9 +174,15 @@ def custom_mangling(filename):
         os.path.join('special', 'orthogonal.py'),
         os.path.join('spatial', '__init__.py'),
         os.path.join('spatial', 'distance.py'),
+        os.path.join('sparse', 'linalg', 'isolve', 'iterative.py'),
+        os.path.join('sparse', 'linalg', 'dsolve', '_superlu.py'),
+        os.path.join('sparse', 'linalg', 'eigen', 'arpack', 'arpack.py'),
+        os.path.join('sparse', 'linalg', 'eigen', 'arpack', 'speigs.py'),
+        os.path.join('sparse', 'linalg', 'iterative', 'isolve', 'iterative.py'),
     ]
 
     if any(filename.endswith(x) for x in import_mangling):
+        print(filename)
         f = open(filename, 'r')
         text = f.read()
         f.close()
@@ -192,6 +199,8 @@ def custom_mangling(filename):
                     'futil', 'mvn',
                     '_nd_image',
                     'numpyio',
+                    '_zsuperlu', '_ssuperlu', '_dsuperlu', '_csuperlu',
+                    '_arpack', '_iterative',
                     ]:
             text = re.sub(r'^(\s*)import %s' % mod,
                           r'\1from . import %s' % mod,

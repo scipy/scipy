@@ -1,3 +1,5 @@
+/* Should be imported before Python.h */
+#include "py3k.h"
 
 #include "Python.h"
 #include <setjmp.h>

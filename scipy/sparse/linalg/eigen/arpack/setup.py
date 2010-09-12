@@ -27,7 +27,7 @@ def configuration(parent_package='',top_path=None):
     lapack_opt = get_info('lapack_opt')
 
     if not lapack_opt:
-        raise NotFoundError,'no lapack/blas resources found'
+        raise NotFoundError('no lapack/blas resources found')
 
     config = Configuration('arpack', parent_package, top_path)
 

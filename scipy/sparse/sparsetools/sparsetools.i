@@ -5,6 +5,7 @@
 #pragma SWIG nowarn=467
 
 %{
+#include "py3k.h"
 #define SWIG_FILE_WITH_INIT
 #include "Python.h"
 #include "numpy/arrayobject.h"
