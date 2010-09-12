@@ -140,13 +140,20 @@ def custom_mangling(filename):
         os.path.join('cluster', 'vq.py'),
         os.path.join('fftpack', 'basic.py'),
         os.path.join('fftpack', 'pseudo_diffs.py'),
+        os.path.join('linalg', 'basic.py'),
+        os.path.join('linalg', 'decomp.py'),
+        os.path.join('linalg', 'lapack.py'),
+        os.path.join('linalg', 'flinalg.py'),
+        os.path.join('lib', 'blas', '__init__.py'),
+        os.path.join('lib', 'lapack', '__init__.py'),
     ]
 
     if any(filename.endswith(x) for x in import_mangling):
         f = open(filename, 'r')
         text = f.read()
         f.close()
-        for mod in ['_vq', '_hierarchy_wrap', '_fftpack', 'convolve']:
+        for mod in ['_vq', '_hierarchy_wrap', '_fftpack', 'convolve',
+                    '_flinalg', 'fblas', 'flapack', 'cblas', 'clapack',                    'calc_lwork']:
             text = re.sub(r'^(\s*)import %s' % mod,
                           r'\1from . import %s' % mod,
                           text, flags=re.M)
