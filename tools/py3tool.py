@@ -148,6 +148,10 @@ def custom_mangling(filename):
         os.path.join('lib', 'lapack', '__init__.py'),
         os.path.join('optimize', 'minpack.py'),
         os.path.join('optimize', 'zeros.py'),
+        os.path.join('optimize', 'lbfgsb.py'),
+        os.path.join('optimize', 'cobyla.py'),
+        os.path.join('optimize', 'slsqp.py'),
+        os.path.join('optimize', 'nnls.py'),
         os.path.join('special', '__init__.py'),
         os.path.join('special', 'basic.py'),
         os.path.join('special', 'orthogonal.py'),
@@ -163,7 +167,8 @@ def custom_mangling(filename):
                     '_flinalg', 'fblas', 'flapack', 'cblas', 'clapack',
                     'calc_lwork', '_cephes', 'specfun', 'orthogonal_eval',
                     'lambertw', 'ckdtree', '_distance_wrap',
-                    '_minpack', '_zeros']:
+                    '_minpack', '_zeros', '_lbfgsb', '_cobyla', '_slsqp',
+                    '_nnls']:
             text = re.sub(r'^(\s*)import %s' % mod,
                           r'\1from . import %s' % mod,
                           text, flags=re.M)
