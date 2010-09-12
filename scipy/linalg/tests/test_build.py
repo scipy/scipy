@@ -4,6 +4,7 @@ import re
 
 import numpy as np
 from numpy.testing import TestCase, dec
+from numpy.compat import asbytes
 
 from scipy.linalg import flapack
 
@@ -29,7 +30,7 @@ class FindDependenciesLdd:
     def grep_dependencies(self, file, deps):
         stdout = self.get_dependencies(file)
 
-        rdeps = dict([(dep, re.compile(dep)) for dep in deps])
+        rdeps = dict([(asbytes(dep), re.compile(asbytes(dep))) for dep in deps])
         founds = []
         for l in stdout.splitlines():
             for k, v in rdeps.items():
