@@ -86,7 +86,7 @@ class BaseAxpy(object):
         except: # what kind of error should be caught?
             return
         # should catch error and never get here
-        assert(0)
+        assert_(0)
 
     def test_y_bad_size(self):
         x = arange(12.,dtype=complex64)
@@ -96,7 +96,7 @@ class BaseAxpy(object):
         except: # what kind of error should be caught?
             return
         # should catch error and never get here
-        assert(0)
+        assert_(0)
 
 try:
     class TestSaxpy(TestCase, BaseAxpy):
@@ -148,7 +148,7 @@ class BaseScal(object):
         except: # what kind of error should be caught?
             return
         # should catch error and never get here
-        assert(0)
+        assert_(0)
 
 try:
     class TestSscal(TestCase, BaseScal):
@@ -214,7 +214,7 @@ class BaseCopy(object):
         except: # what kind of error should be caught?
             return
         # should catch error and never get here
-        assert(0)
+        assert_(0)
 
     def test_y_bad_size(self):
         x = arange(12.,dtype=complex64)
@@ -224,7 +224,8 @@ class BaseCopy(object):
         except: # what kind of error should be caught?
             return
         # should catch error and never get here
-        assert(0)
+        assert_(0)
+
     #def test_y_bad_type(self):
     ##   Hmmm. Should this work?  What should be the output.
     #    x = arange(3.,dtype=self.dtype)
@@ -306,7 +307,7 @@ class BaseSwap(object):
         except: # what kind of error should be caught?
             return
         # should catch error and never get here
-        assert(0)
+        assert_(0)
 
     def test_y_bad_size(self):
         x = arange(12.,dtype=complex64)
@@ -316,7 +317,7 @@ class BaseSwap(object):
         except: # what kind of error should be caught?
             return
         # should catch error and never get here
-        assert(0)
+        assert_(0)
 
 try:
     class TestSswap(TestCase, BaseSwap):
@@ -401,12 +402,12 @@ class BaseGemv(object):
         alpha,beta,a,x,y = self.get_data(x_stride=2)
         try:
             y = self.blas_func(1,a,x,1,y,trans=0,incx=3)
-            assert(0)
+            assert_(0)
         except:
             pass
         try:
             y = self.blas_func(1,a,x,1,y,trans=1,incx=3)
-            assert(0)
+            assert_(0)
         except:
             pass
 
@@ -429,12 +430,12 @@ class BaseGemv(object):
         alpha,beta,a,x,y = self.get_data(y_stride=2)
         try:
             y = self.blas_func(1,a,x,1,y,trans=0,incy=3)
-            assert(0)
+            assert_(0)
         except:
             pass
         try:
             y = self.blas_func(1,a,x,1,y,trans=1,incy=3)
-            assert(0)
+            assert_(0)
         except:
             pass
 
