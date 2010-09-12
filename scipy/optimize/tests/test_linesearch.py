@@ -2,7 +2,7 @@
 Tests for line search routines
 """
 
-from numpy.testing import *
+from numpy.testing import assert_, assert_equal
 import scipy.optimize.linesearch as ls
 import numpy as np
 
@@ -127,7 +127,7 @@ class TestLineSearch(object):
             assert_equal(phi1, phi(s), name)
             assert_wolfe(s, phi, derphi, err_msg=name)
 
-        assert c > 3 # check that the iterator really works...
+        assert_(c > 3) # check that the iterator really works...
 
     def test_scalar_search_wolfe2(self):
         for name, phi, derphi, old_phi0 in self.scalar_iter():
@@ -167,7 +167,7 @@ class TestLineSearch(object):
                 c += 1
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
 
-        assert c > 3 # check that the iterator really works...
+        assert_(c > 3) # check that the iterator really works...
 
     def test_line_search_wolfe2(self):
         c = 0
@@ -187,7 +187,7 @@ class TestLineSearch(object):
             if s < smax:
                 c += 1
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
-        assert c > 3 # check that the iterator really works...
+        assert_(c > 3) # check that the iterator really works...
 
     def test_line_search_armijo(self):
         c = 0
@@ -200,7 +200,7 @@ class TestLineSearch(object):
             assert_equal(self.fcount, fc)
             assert_equal(fv, f(x + s*p))
             assert_line_armijo(x, p, s, f, err_msg=name)
-        assert c >= 9
+        assert_(c >= 9)
 
     # -- More specific tests
 
@@ -231,6 +231,6 @@ class TestLineSearch(object):
         for func in [ls.scalar_search_wolfe1, ls.scalar_search_wolfe2]:
             count = [0]
             r = func(phi, derphi, phi(0), None, derphi(0))
-            assert r[0] is not None, (r, func)
-            assert count[0] <= 2 + 2, (count, func)
+            assert_(r[0] is not None, (r, func))
+            assert_(count[0] <= 2 + 2, (count, func))
             assert_wolfe(r[0], phi, derphi, err_msg=str(func))

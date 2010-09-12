@@ -2,12 +2,13 @@
 Unit tests for optimization routines from minpack.py.
 """
 
-from numpy.testing import *
+from numpy.testing import assert_, assert_almost_equal, assert_array_equal, \
+        assert_array_almost_equal, TestCase, run_module_suite
 import numpy as np
 from numpy import array, float64
 
 from scipy import optimize
-from scipy.optimize.minpack import fsolve, leastsq, curve_fit
+from scipy.optimize.minpack import leastsq, curve_fit
 
 class TestFSolve(object):
     def pressure_network(self, flow_rates, Qtot, k):
@@ -131,8 +132,8 @@ class TestCurveFit(TestCase):
         def func(x,a):
             return x**a
         popt, pcov = curve_fit(func, self.x, self.y)
-        assert len(popt)==1
-        assert pcov.shape==(1,1)
+        assert_(len(popt) == 1)
+        assert_(pcov.shape == (1,1))
         assert_almost_equal(popt[0], 1.9149, decimal=4)
         assert_almost_equal(pcov[0,0], 0.0016, decimal=4)
 
@@ -140,8 +141,8 @@ class TestCurveFit(TestCase):
         def func(x, a, b):
             return b*x**a
         popt, pcov = curve_fit(func, self.x, self.y)
-        assert len(popt)==2
-        assert pcov.shape==(2,2)
+        assert_(len(popt) == 2)
+        assert_(pcov.shape == (2,2))
         assert_array_almost_equal(popt, [1.7989, 1.1642], decimal=4)
         assert_array_almost_equal(pcov, [[0.0852, -0.1260],[-0.1260, 0.1912]], decimal=4)
 

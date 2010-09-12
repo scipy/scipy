@@ -3,7 +3,7 @@ Author: Ondrej Certik
 May 2007
 """
 
-from numpy.testing import *
+from numpy.testing import assert_, dec, TestCase, run_module_suite
 
 from scipy.optimize import nonlin
 from numpy import matrix, diag, dot
@@ -80,7 +80,7 @@ class TestNonlin(object):
 
     def _check_func(self, f, func, f_tol=1e-2):
         x = func(f, f.xin, f_tol=f_tol, maxiter=200, verbose=0)
-        assert np.absolute(f(x)).max() < f_tol
+        assert_(np.absolute(f(x)).max() < f_tol)
 
     @dec.knownfailureif(True)
     def _check_func_fail(self, *a, **kw):
@@ -122,13 +122,13 @@ class TestSecant(TestCase):
             for k in xrange(min(npoints, j+1)):
                 dx = self.xs[j-k+1] - self.xs[j-k]
                 df = self.fs[j-k+1] - self.fs[j-k]
-                assert np.allclose(dx, jac.solve(df))
+                assert_(np.allclose(dx, jac.solve(df)))
 
             # Check that the `npoints` secant bound is strict
             if j >= npoints:
                 dx = self.xs[j-npoints+1] - self.xs[j-npoints]
                 df = self.fs[j-npoints+1] - self.fs[j-npoints]
-                assert not np.allclose(dx, jac.solve(df))
+                assert_(not np.allclose(dx, jac.solve(df)))
 
     def test_broyden1(self):
         self._check_secant(nonlin.BroydenFirst)
@@ -148,7 +148,7 @@ class TestSecant(TestCase):
             dx = x - self.xs[last_j]
             B += (df - dot(B, dx))[:,None] * dx[None,:] / dot(dx, dx)
             jac.update(x, f)
-            assert np.allclose(jac.todense(), B, rtol=1e-10, atol=1e-13)
+            assert_(np.allclose(jac.todense(), B, rtol=1e-10, atol=1e-13))
 
     def test_broyden2_update(self):
         # Check that BroydenSecond update works as for a dense matrix
@@ -162,7 +162,7 @@ class TestSecant(TestCase):
             dx = x - self.xs[last_j]
             H += (dx - dot(H, df))[:,None] * df[None,:] / dot(df, df)
             jac.update(x, f)
-            assert np.allclose(jac.todense(), inv(H), rtol=1e-10, atol=1e-13)
+            assert_(np.allclose(jac.todense(), inv(H), rtol=1e-10, atol=1e-13))
             
     def test_anderson(self):
         # Anderson mixing (with w0=0) satisfies secant conditions
@@ -190,7 +190,7 @@ class TestLinear(TestCase):
 
         sol = nonlin.nonlin_solve(func, b*0, jac, maxiter=maxiter,
                                   f_tol=1e-6, line_search=None, verbose=0)
-        assert np.allclose(dot(A, sol), b, atol=1e-6)
+        assert_(np.allclose(dot(A, sol), b, atol=1e-6))
 
     def test_broyden1(self):
         # Broyden methods solve linear systems exactly in 2*N steps
@@ -314,32 +314,32 @@ class TestNonlinOldTests(TestCase):
 
     def test_broyden1(self):
         x= nonlin.broyden1(F,F.xin,iter=12,alpha=1)
-        assert nonlin.norm(x)<1e-9
-        assert nonlin.norm(F(x))<1e-9
+        assert_(nonlin.norm(x) < 1e-9)
+        assert_(nonlin.norm(F(x)) < 1e-9)
 
     def test_broyden2(self):
         x= nonlin.broyden2(F,F.xin,iter=12,alpha=1)
-        assert nonlin.norm(x)<1e-9
-        assert nonlin.norm(F(x))<1e-9
+        assert_(nonlin.norm(x) < 1e-9)
+        assert_(nonlin.norm(F(x)) < 1e-9)
 
     def test_anderson(self):
         x= nonlin.anderson(F,F.xin,iter=12,alpha=0.03,M=5)
-        assert nonlin.norm(x)<0.33
+        assert_(nonlin.norm(x) < 0.33)
 
     def test_linearmixing(self):
         x = nonlin.linearmixing(F,F.xin,iter=60,alpha=0.5)
-        assert nonlin.norm(x)<1e-7
-        assert nonlin.norm(F(x))<1e-7
+        assert_(nonlin.norm(x) < 1e-7)
+        assert_(nonlin.norm(F(x)) < 1e-7)
 
     def test_exciting(self):
         x= nonlin.excitingmixing(F,F.xin,iter=20,alpha=0.5)
-        assert nonlin.norm(x)<1e-5
-        assert nonlin.norm(F(x))<1e-5
+        assert_(nonlin.norm(x) < 1e-5)
+        assert_(nonlin.norm(F(x)) < 1e-5)
 
     def test_diagbroyden(self):
         x= nonlin.diagbroyden(F,F.xin,iter=11,alpha=1)
-        assert nonlin.norm(x)<1e-8
-        assert nonlin.norm(F(x))<1e-8
+        assert_(nonlin.norm(x) < 1e-8)
+        assert_(nonlin.norm(F(x)) < 1e-8)
 
 if __name__ == "__main__":
     run_module_suite()

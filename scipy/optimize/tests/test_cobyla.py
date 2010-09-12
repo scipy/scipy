@@ -1,6 +1,6 @@
 import math
 
-from numpy.testing import *
+from numpy.testing import assert_almost_equal, TestCase, run_module_suite
 
 from scipy.optimize import cobyla as co
 

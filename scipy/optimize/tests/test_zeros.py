@@ -3,7 +3,7 @@
 from math import sqrt
 
 from numpy.testing import TestCase, assert_almost_equal, assert_warns, \
-                            run_module_suite
+                            assert_, run_module_suite
 
 from scipy.optimize import zeros as cc
 
@@ -16,7 +16,7 @@ class TestBasic(TestCase) :
         b = sqrt(3)
         for function, fname in zip(functions, fstrings):
             zero, r = method(function, a, b, xtol=0.1e-12, full_output=True)
-            assert r.converged
+            assert_(r.converged)
             assert_almost_equal(zero, 1.0, decimal=12,
                 err_msg='method %s, function %s' % (name, fname))
 

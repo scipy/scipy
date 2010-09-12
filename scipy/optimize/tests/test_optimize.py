@@ -10,10 +10,10 @@ To run it in its simplest form::
 
 """
 
-from numpy.testing import *
+from numpy.testing import assert_raises, assert_almost_equal, \
+        assert_, TestCase, run_module_suite
 
 from scipy import optimize
-from scipy.optimize import leastsq
 from numpy import array, zeros, float64, dot, log, exp, inf, sin, cos
 import numpy as np
 from scipy.optimize.tnc import RCSTRINGS, MSG_NONE
@@ -66,19 +66,19 @@ class TestOptimize(TestCase):
 
         err = abs(self.func(params) - self.func(self.solution))
         #print "CG: Difference is: " + str(err)
-        assert err < 1e-6
+        assert_(err < 1e-6)
         print self.funccalls, self.gradcalls
 
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
-        assert self.funccalls == 9, self.funccalls
-        assert self.gradcalls == 7, self.gradcalls
+        assert_(self.funccalls == 9, self.funccalls)
+        assert_(self.gradcalls == 7, self.gradcalls)
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
-        assert np.allclose(self.trace[2:4],
+        assert_(np.allclose(self.trace[2:4],
                            [[0, -0.5, 0.5],
                             [0, -5.05700028e-01, 4.95985862e-01]],
-                           atol=1e-14, rtol=1e-7), self.trace[2:4]
+                           atol=1e-14, rtol=1e-7), self.trace[2:4])
 
 
     def test_bfgs(self):
@@ -92,18 +92,18 @@ class TestOptimize(TestCase):
 
         err = abs(self.func(params) - self.func(self.solution))
         #print "BFGS: Difference is: " + str(err)
-        assert err < 1e-6
+        assert_(err < 1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
-        assert self.funccalls == 10, self.funccalls
-        assert self.gradcalls == 8, self.gradcalls
+        assert_(self.funccalls == 10, self.funccalls)
+        assert_(self.gradcalls == 8, self.gradcalls)
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
-        assert np.allclose(self.trace[6:8],
+        assert_(np.allclose(self.trace[6:8],
                            [[0, -5.25060743e-01,   4.87748473e-01],
                             [0, -5.24885582e-01,   4.87530347e-01]],
-                           atol=1e-14, rtol=1e-7), self.trace[6:8]
+                           atol=1e-14, rtol=1e-7), self.trace[6:8])
 
 
     def test_powell(self):
@@ -117,21 +117,21 @@ class TestOptimize(TestCase):
 
         err = abs(self.func(params) - self.func(self.solution))
         #print "Powell: Difference is: " + str(err)
-        assert err < 1e-6
+        assert_(err < 1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
-        assert self.funccalls == 116, self.funccalls
-        assert self.gradcalls == 0, self.gradcalls
+        assert_(self.funccalls == 116, self.funccalls)
+        assert_(self.gradcalls == 0, self.gradcalls)
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
-        assert np.allclose(self.trace[34:39],
+        assert_(np.allclose(self.trace[34:39],
                            [[ 0.72949016, -0.44156936,  0.47100962],
                             [ 0.72949016, -0.44156936,  0.48052496],
                             [ 1.45898031, -0.88313872,  0.95153458],
                             [ 0.72949016, -0.44156936,  0.47576729],
                             [ 1.72949016, -0.44156936,  0.47576729]],
-                           atol=1e-14, rtol=1e-7), self.trace[34:39]
+                           atol=1e-14, rtol=1e-7), self.trace[34:39])
 
     def test_neldermead(self):
         """ Nelder-Mead simplex algorithm
@@ -144,18 +144,18 @@ class TestOptimize(TestCase):
 
         err = abs(self.func(params) - self.func(self.solution))
         #print "Nelder-Mead: Difference is: " + str(err)
-        assert err < 1e-6
+        assert_(err < 1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
-        assert self.funccalls == 167, self.funccalls
-        assert self.gradcalls == 0, self.gradcalls
+        assert_(self.funccalls == 167, self.funccalls)
+        assert_(self.gradcalls == 0, self.gradcalls)
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
-        assert np.allclose(self.trace[76:78],
+        assert_(np.allclose(self.trace[76:78],
                            [[0.1928968 , -0.62780447,  0.35166118],
                             [0.19572515, -0.63648426,  0.35838135]],
-                           atol=1e-14, rtol=1e-7), self.trace[76:78]
+                           atol=1e-14, rtol=1e-7), self.trace[76:78])
 
     def test_ncg(self):
         """ line-search Newton conjugate gradient optimization routine
@@ -169,19 +169,19 @@ class TestOptimize(TestCase):
 
         err = abs(self.func(params) - self.func(self.solution))
         #print "NCG: Difference is: " + str(err)
-        assert err < 1e-6
+        assert_(err < 1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
-        assert self.funccalls == 7, self.funccalls
-        assert self.gradcalls == 18, self.gradcalls # 0.8.0
-        #assert self.gradcalls == 22, self.gradcalls # 0.7.0
+        assert_(self.funccalls == 7, self.funccalls)
+        assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
+        #assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
-        assert np.allclose(self.trace[3:5],
+        assert_(np.allclose(self.trace[3:5],
                            [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
                             [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
-                           atol=1e-6, rtol=1e-7), self.trace[:5]
+                           atol=1e-6, rtol=1e-7), self.trace[:5])
 
 
     def test_l_bfgs_b(self):
@@ -195,18 +195,18 @@ class TestOptimize(TestCase):
 
         err = abs(self.func(params) - self.func(self.solution))
         #print "LBFGSB: Difference is: " + str(err)
-        assert err < 1e-6
+        assert_(err < 1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
-        assert self.funccalls == 7, self.funccalls
-        assert self.gradcalls == 5, self.gradcalls
+        assert_(self.funccalls == 7, self.funccalls)
+        assert_(self.gradcalls == 5, self.gradcalls)
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
-        assert np.allclose(self.trace[3:5],
+        assert_(np.allclose(self.trace[3:5],
                            [[0.        , -0.52489628,  0.48753042],
                             [0.        , -0.52489628,  0.48753042]],
-                           atol=1e-14, rtol=1e-7), self.trace[3:5]
+                           atol=1e-14, rtol=1e-7), self.trace[3:5])
 
     def test_brent(self):
         """ brent algorithm
@@ -220,19 +220,19 @@ class TestOptimize(TestCase):
         x = optimize.brent(lambda x: (x-1.5)**2-0.8, brack = (-15,-1,15))
         err4 = abs(x - 1.5)
 
-        assert max((err1,err2,err3,err4)) < 1e-6
+        assert_(max((err1,err2,err3,err4)) < 1e-6)
 
 
     def test_fminbound(self):
         """Test fminbound
         """
         x = optimize.fminbound(lambda x: (x - 1.5)**2 - 0.8, 0, 1)
-        assert abs(x - 1) < 1e-5
+        assert_(abs(x - 1) < 1e-5)
         x = optimize.fminbound(lambda x: (x - 1.5)**2 - 0.8, 1, 5)
-        assert abs(x - 1.5) < 1e-6
+        assert_(abs(x - 1.5) < 1e-6)
         x = optimize.fminbound(lambda x: (x - 1.5)**2 - 0.8,
                                numpy.array([1]), numpy.array([5]))
-        assert abs(x - 1.5) < 1e-6
+        assert_(abs(x - 1.5) < 1e-6)
         assert_raises(ValueError,
                 optimize.fminbound, lambda x: (x - 1.5)**2 - 0.8, 5, 1)
 

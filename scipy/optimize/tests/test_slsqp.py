@@ -1,4 +1,4 @@
-from numpy.testing import *
+from numpy.testing import assert_array_almost_equal, TestCase, run_module_suite
 import numpy as np
 
 from scipy.optimize import  fmin_slsqp
