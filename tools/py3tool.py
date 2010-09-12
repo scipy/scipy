@@ -149,6 +149,8 @@ def custom_mangling(filename):
         os.path.join('special', '__init__.py'),
         os.path.join('special', 'basic.py'),
         os.path.join('special', 'orthogonal.py'),
+        os.path.join('spatial', '__init__.py'),
+        os.path.join('spatial', 'distance.py'),
     ]
 
     if any(filename.endswith(x) for x in import_mangling):
@@ -158,7 +160,7 @@ def custom_mangling(filename):
         for mod in ['_vq', '_hierarchy_wrap', '_fftpack', 'convolve',
                     '_flinalg', 'fblas', 'flapack', 'cblas', 'clapack',
                     'calc_lwork', '_cephes', 'specfun', 'orthogonal_eval',
-                    'lambertw']:
+                    'lambertw', 'ckdtree', '_distance_wrap']:
             text = re.sub(r'^(\s*)import %s' % mod,
                           r'\1from . import %s' % mod,
                           text, flags=re.M)
