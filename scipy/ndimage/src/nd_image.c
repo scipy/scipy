@@ -38,6 +38,8 @@
 #include "ni_interpolation.h"
 #include "ni_measure.h"
 
+#include "numpy/npy_3kcompat.h"
+
 typedef struct {
     PyObject *function;
     PyObject *extra_arguments;
@@ -318,9 +320,9 @@ static PyObject *Py_GenericFilter1D(PyObject *obj, PyObject *args)
                                         "extra_keywords must be a dictionary");
         goto exit;
     }
-    if (PyCObject_Check(fnc)) {
-        func = PyCObject_AsVoidPtr(fnc);
-        data = PyCObject_GetDesc(fnc);
+    if (NpyCapsule_Check(fnc)) {
+        func = NpyCapsule_AsVoidPtr(fnc);
+        data = NpyCapsule_GetDesc(fnc);
     } else if (PyCallable_Check(fnc)) {
         cbdata.function = fnc;
         cbdata.extra_arguments = extra_arguments;
@@ -394,9 +396,9 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
                                         "extra_keywords must be a dictionary");
         goto exit;
     }
-    if (PyCObject_Check(fnc)) {
-        func = PyCObject_AsVoidPtr(fnc);
-        data = PyCObject_GetDesc(fnc);
+    if (NpyCapsule_Check(fnc)) {
+        func = NpyCapsule_AsVoidPtr(fnc);
+        data = NpyCapsule_GetDesc(fnc);
     } else if (PyCallable_Check(fnc)) {
         cbdata.function = fnc;
         cbdata.extra_arguments = extra_arguments;
@@ -546,9 +548,9 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
                                             "extra_keywords must be a dictionary");
             goto exit;
         }
-        if (PyCObject_Check(fnc)) {
-            func = PyCObject_AsVoidPtr(fnc);
-            data = PyCObject_GetDesc(fnc);
+        if (NpyCapsule_Check(fnc)) {
+            func = NpyCapsule_AsVoidPtr(fnc);
+            data = NpyCapsule_GetDesc(fnc);
         } else if (PyCallable_Check(fnc)) {
             func = Py_Map;
             cbdata.function = fnc;
@@ -788,10 +790,17 @@ exit:
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
+#ifdef NPY_PY3K
+static void _FreeCoordinateList(PyObject *obj)
+{
+    NI_FreeCoordinateList((NI_CoordinateList*)PyCapsule_GetPointer(obj, NULL));
+}
+#else
 static void _FreeCoordinateList(void* ptr)
 {
     NI_FreeCoordinateList((NI_CoordinateList*)ptr);
 }
+#endif
 
 static PyObject *Py_BinaryErosion(PyObject *obj, PyObject *args)
 {
@@ -815,7 +824,7 @@ static PyObject *Py_BinaryErosion(PyObject *obj, PyObject *args)
                                                 return_coordinates ? &coordinate_list : NULL))
         goto exit;
     if (return_coordinates) {
-        cobj = PyCObject_FromVoidPtr(coordinate_list, _FreeCoordinateList);
+        cobj = NpyCapsule_FromVoidPtr(coordinate_list, _FreeCoordinateList);
     }
 exit:
     Py_XDECREF(input);
@@ -849,8 +858,8 @@ static PyObject *Py_BinaryErosion2(PyObject *obj, PyObject *args)
                     &cobj))
         goto exit;
 
-    if (PyCObject_Check(cobj)) {
-        NI_CoordinateList *cobj_data = PyCObject_AsVoidPtr(cobj);
+    if (NpyCapsule_Check(cobj)) {
+        NI_CoordinateList *cobj_data = NpyCapsule_AsVoidPtr(cobj);
         if (!NI_BinaryErosion2(array, strct, mask, niter, origins, invert,
                                                      &cobj_data))
             goto exit;
@@ -913,7 +922,7 @@ static PyMethodDef methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
-#if PY_VERSION_HEX >= 0x03000000
+#ifdef NPY_PY3K
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_nd_image",
