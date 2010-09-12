@@ -15,11 +15,35 @@ static PyMethodDef vqmethods [] = {
     {NULL, NULL, 0, NULL}
 };
 
+#if defined(SCIPY_PY3K)
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "_vq",
+    NULL,
+    -1,
+    vqmethods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyObject *PyInit__vq(void)
+{
+    PyObject *m;
+
+    m = PyModule_Create(&moduledef);
+    import_array();
+
+    return m;
+}
+#else
 PyMODINIT_FUNC init_vq(void) 
 {
     Py_InitModule("_vq", vqmethods);
     import_array();
 }
+#endif
 
 PyObject* compute_vq(PyObject* self, PyObject* args)
 {

@@ -373,7 +373,31 @@ static PyMethodDef _hierarchyWrapMethods[] = {
   {NULL, NULL}     /* Sentinel - marks the end of this structure */
 };
 
+#if defined(SCIPY_PY3K)
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "_vq",
+    NULL,
+    -1,
+    _hierarchyWrapMethods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyObject *PyInit__hierarchy_wrap(void)
+{
+    PyObject *m;
+
+    m = PyModule_Create(&moduledef);
+    import_array();
+
+    return m;
+}
+#else
 PyMODINIT_FUNC init_hierarchy_wrap(void)  {
   (void) Py_InitModule("_hierarchy_wrap", _hierarchyWrapMethods);
   import_array();  // Must be present for NumPy.  Called first after above line.
 }
+#endif
