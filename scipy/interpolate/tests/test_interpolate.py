@@ -219,8 +219,8 @@ class TestInterp1D(object):
     def test_bounds(self):
         for kind in ('linear', 'cubic', 'nearest',
                      'slinear', 'zero', 'quadratic'):
-            yield self._bounds_check, kind
-            yield self._bounds_check_int_nan_fill, kind
+            self._bounds_check(kind)
+            self._bounds_check_int_nan_fill(kind)
 
     def _nd_check_interp(self, kind='linear'):
         """Check the behavior when the inputs and outputs are multidimensional.
@@ -289,8 +289,8 @@ class TestInterp1D(object):
 
     def test_nd(self):
         for kind in ('linear', 'cubic', 'slinear', 'quadratic', 'nearest'):
-            yield self._nd_check_interp, kind
-            yield self._nd_check_shape, kind
+            self._nd_check_interp(kind)
+            self._nd_check_shape(kind)
 
     def _check_complex(self, dtype=np.complex_, kind='linear'):
         x = np.array([1, 2.5, 3, 3.1, 4, 6.4, 7.9, 8.0, 9.5, 10])
@@ -311,8 +311,8 @@ class TestInterp1D(object):
     def test_complex(self):
         for kind in ('linear', 'nearest', 'cubic', 'slinear', 'quadratic',
                      'zero'):
-            yield self._check_complex, np.complex64, kind
-            yield self._check_complex, np.complex128, kind
+            self._check_complex(np.complex64, kind)
+            self._check_complex(np.complex128, kind)
 
     @dec.knownfailureif(True, "zero-order splines fail for the last point")
     def test_nd_zero_spline(self):
