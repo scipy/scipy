@@ -3452,7 +3452,7 @@ class loggamma_gen(rv_continuous):
     def _munp(self,n,*args):
         # use generic moment calculation using ppf
         return self._mom0_sc(n,*args)
-loggamma = loggamma_gen(name='loggamma', longname="A log gamma",
+loggamma = loggamma_gen(name='loggamma', longname="A log gamma", shapes='c',
                         extradoc="""
 
 Log gamma distribution
