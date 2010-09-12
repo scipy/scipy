@@ -12,6 +12,7 @@
 import os
 from numpy import asarray, real, imag, conj, zeros, ndarray, concatenate, \
                   ones, ascontiguousarray, vstack, savetxt, fromfile, fromstring
+from numpy.compat import asbytes, asstr
 
 __all__ = ['mminfo','mmread','mmwrite', 'MMFile']
 
@@ -180,7 +181,7 @@ class MMFile (object):
             # read and validate header line
             line = source.readline()
             mmid, matrix, format, field, symmetry  = \
-              [part.strip().lower() for part in line.split()]
+              [asstr(part.strip().lower()) for part in line.split()]
             if not mmid.startswith('%%matrixmarket'):
                 raise ValueError,'source is not in Matrix Market format'
 
@@ -192,7 +193,7 @@ class MMFile (object):
             elif format == 'sparse': format = self.FORMAT_COORDINATE
 
             # skip comments
-            while line.startswith('%'): line = source.readline()
+            while line.startswith(asbytes('%')): line = source.readline()
 
             line = line.split()
             if format == self.FORMAT_ARRAY:
@@ -210,7 +211,7 @@ class MMFile (object):
 
     #---------------------------------------------------------------------------
     @staticmethod
-    def _open(filespec, mode='r'):
+    def _open(filespec, mode='rb'):
         """
         Return an open file stream for reading based on source.  If source is
         a file name, open it (after trying to find it with mtx and gzipped mtx
@@ -237,7 +238,7 @@ class MMFile (object):
                     stream = gzip.open(filespec, mode)
                 elif filespec.endswith('.bz2'):
                     import bz2
-                    stream = bz2.BZ2File(filespec, 'r')
+                    stream = bz2.BZ2File(filespec, 'rb')
                 else:
                     stream = open(filespec, mode)
 
@@ -301,7 +302,7 @@ class MMFile (object):
 
     #---------------------------------------------------------------------------
     def write(self, target, a, comment='', field=None, precision=None):
-        stream, close_it = self._open(target, 'w')
+        stream, close_it = self._open(target, 'wb')
 
         try:
             self._write(stream, a, comment, field, precision)
@@ -358,7 +359,7 @@ class MMFile (object):
             i,j = 0,0
             while line:
                 line = stream.readline()
-                if not line or line.startswith('%'):
+                if not line or line.startswith(asbytes('%')):
                     continue
                 if is_complex:
                     aij = complex(*map(float,line.split()))
@@ -389,7 +390,7 @@ class MMFile (object):
             k = 0
             while line:
                 line = stream.readline()
-                if not line or line.startswith('%'):
+                if not line or line.startswith(asbytes('%')):
                     continue
                 l = line.split()
                 i,j = map(int,l[:2])
@@ -528,11 +529,11 @@ class MMFile (object):
         self.__class__._validate_symmetry(symm)
 
         # write initial header line
-        stream.write('%%%%MatrixMarket matrix %s %s %s\n' % (rep,field,symm))
+        stream.write(asbytes('%%%%MatrixMarket matrix %s %s %s\n' % (rep,field,symm)))
 
         # write comments
         for line in comment.split('\n'):
-            stream.write('%%%s\n' % (line))
+            stream.write(asbytes('%%%s\n' % (line)))
 
 
         template = self._field_template(field, precision)
@@ -541,18 +542,18 @@ class MMFile (object):
         if rep == self.FORMAT_ARRAY:
 
             # write shape spec
-            stream.write('%i %i\n' % (rows,cols))
+            stream.write(asbytes('%i %i\n' % (rows,cols)))
 
             if field in (self.FIELD_INTEGER, self.FIELD_REAL):
 
                 if symm == self.SYMMETRY_GENERAL:
                     for j in range(cols):
                         for i in range(rows):
-                            stream.write(template % a[i,j])
+                            stream.write(asbytes(template % a[i,j]))
                 else:
                     for j in range(cols):
                         for i in range(j,rows):
-                            stream.write(template % a[i,j])
+                            stream.write(asbytes(template % a[i,j]))
 
             elif field == self.FIELD_COMPLEX:
 
@@ -560,12 +561,12 @@ class MMFile (object):
                     for j in range(cols):
                         for i in range(rows):
                             aij = a[i,j]
-                            stream.write(template % (real(aij),imag(aij)))
+                            stream.write(asbytes(template % (real(aij),imag(aij))))
                 else:
                     for j in range(cols):
                         for i in range(j,rows):
                             aij = a[i,j]
-                            stream.write(template % (real(aij),imag(aij)))
+                            stream.write(asbytes(template % (real(aij),imag(aij))))
 
             elif field == self.FIELD_PATTERN:
                 raise ValueError,'pattern type inconsisted with dense format'
@@ -582,7 +583,7 @@ class MMFile (object):
             coo = a.tocoo() # convert to COOrdinate format
 
             # write shape spec
-            stream.write('%i %i %i\n' % (rows, cols, coo.nnz))
+            stream.write(asbytes('%i %i %i\n' % (rows, cols, coo.nnz)))
 
             fmt = '%%.%dg' % precision
 

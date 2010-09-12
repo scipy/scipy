@@ -3,6 +3,7 @@
 from tempfile import mktemp
 from numpy import array,transpose
 from numpy.testing import *
+from numpy.compat import asbytes, asbytes_nested
 
 import scipy.sparse
 from scipy.io.mmio import mminfo,mmread,mmwrite
@@ -183,7 +184,7 @@ _symmetric_pattern_example = '''\
 '''
 
 class TestMMIOCoordinate(TestCase):
-    def test_read_geneal(self):
+    def test_read_general(self):
         """read a general matrix"""
         fn = mktemp()
         f = open(fn,'w')
