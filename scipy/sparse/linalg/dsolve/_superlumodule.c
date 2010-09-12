@@ -14,7 +14,11 @@
 #include <Python.h>
 #include <setjmp.h>
 
+#define PY_ARRAY_UNIQUE_SYMBOL _scipy_sparse_superlu_ARRAY_API
+#include <numpy/arrayobject.h>
+
 #include "_superluobject.h"
+#include "npy_3kcompat.h"
 
 extern jmp_buf _superlu_py_jmpbuf;
 
@@ -258,12 +262,17 @@ PyObject *PyInit__superlu(void)
 {
     PyObject *m, *d;
 
+    import_array();
+
+    if (PyType_Ready(&SciPySuperLUType) < 0) {
+        return;
+    }
+
     m = PyModule_Create(&moduledef);
     d = PyModule_GetDict(m);
 
+    Py_INCREF(&PyArrayFlags_Type);
     PyDict_SetItemString(d, "SciPyLUType", (PyObject *)&SciPySuperLUType);
-
-    import_array();
 
     if (PyErr_Occurred())
         Py_FatalError("can't initialize module _superlu");
@@ -278,14 +287,18 @@ init_superlu(void)
 {
     PyObject *m, *d;
 
+    import_array();
+
     SciPySuperLUType.ob_type = &PyType_Type;
+    if (PyType_Ready(&SciPySuperLUType) < 0) {
+        return;
+    }
 
     m = Py_InitModule("_superlu", SuperLU_Methods);
     d = PyModule_GetDict(m);
 
+    Py_INCREF(&PyArrayFlags_Type);
     PyDict_SetItemString(d, "SciPyLUType", (PyObject *)&SciPySuperLUType);
-
-    import_array();
 }
 
 #endif

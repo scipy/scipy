@@ -1,7 +1,12 @@
 /* Should be imported before Python.h */
-#include "py3k.h"
 
-#include "Python.h"
+#include <Python.h>
+
+#define NO_IMPORT_ARRAY
+#define PY_ARRAY_UNIQUE_SYMBOL _scipy_sparse_superlu_ARRAY_API
+
+#include "_superluobject.h"
+#include "npy_3kcompat.h"
 #include <setjmp.h>
 
 jmp_buf _superlu_py_jmpbuf;

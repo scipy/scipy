@@ -175,7 +175,7 @@ def custom_mangling(filename):
         os.path.join('spatial', '__init__.py'),
         os.path.join('spatial', 'distance.py'),
         os.path.join('sparse', 'linalg', 'isolve', 'iterative.py'),
-        os.path.join('sparse', 'linalg', 'dsolve', '_superlu.py'),
+        os.path.join('sparse', 'linalg', 'dsolve', 'linsolve.py'),
         os.path.join('sparse', 'linalg', 'eigen', 'arpack', 'arpack.py'),
         os.path.join('sparse', 'linalg', 'eigen', 'arpack', 'speigs.py'),
         os.path.join('sparse', 'linalg', 'iterative', 'isolve', 'iterative.py'),
@@ -199,8 +199,7 @@ def custom_mangling(filename):
                     'futil', 'mvn',
                     '_nd_image',
                     'numpyio',
-                    '_zsuperlu', '_ssuperlu', '_dsuperlu', '_csuperlu',
-                    '_arpack', '_iterative',
+                    '_superlu', '_arpack', '_iterative',
                     ]:
             text = re.sub(r'^(\s*)import %s' % mod,
                           r'\1from . import %s' % mod,

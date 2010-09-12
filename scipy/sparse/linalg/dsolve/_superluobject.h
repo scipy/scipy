@@ -10,7 +10,6 @@
 
 #include "Python.h"
 #include "SuperLU/SRC/slu_zdefs.h"
-#define PY_ARRAY_UNIQUE_SYMBOL _scipy_sparse_superlu_ARRAY_API
 #include "numpy/arrayobject.h"
 #include "SuperLU/SRC/slu_util.h"
 #include "SuperLU/SRC/slu_dcomplex.h"
@@ -23,7 +22,7 @@
  * SuperLUObject definition
  */
 typedef struct {
-    PyObject_VAR_HEAD
+    PyObject_HEAD
     npy_intp m,n;
     SuperMatrix L;
     SuperMatrix U;
