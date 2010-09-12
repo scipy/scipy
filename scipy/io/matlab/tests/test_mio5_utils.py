@@ -1,8 +1,14 @@
 """ Testing 
 
 """
-import cStringIO
-import StringIO
+import sys
+
+if sys.version_info[0] >= 3:
+    from io import BytesIO
+    cStringIO = BytesIO
+else:
+    from cStringIO import StringIO as cStringIO
+    from StringIO import StringIO as BytesIO
 
 import numpy as np
 
@@ -67,6 +73,7 @@ def _make_tag(base_dt, val, mdtype, sde=False):
 
 def _write_stream(stream, *strings):
     stream.truncate(0)
+    stream.seek(0)
     for s in strings:
         stream.write(s)
     stream.seek(0)
@@ -91,7 +98,7 @@ def _make_readerlike():
 def test_read_tag():
     # mainly to test errors
     # make reader-like thing
-    str_io = StringIO.StringIO()
+    str_io = BytesIO()
     r = _make_readerlike()
     r.mat_stream = str_io
     c_reader = m5u.VarReader5(r)
@@ -107,7 +114,7 @@ def test_read_tag():
 def test_read_stream():
     tag = _make_tag('i4', 1, mio5.miINT32, sde=True)
     tag_str = tag.tostring()
-    str_io = cStringIO.StringIO(tag_str)
+    str_io = cStringIO(tag_str)
     st = streams.make_stream(str_io)
     s = streams._read_into(st, tag.itemsize)
     yield assert_equal, s, tag.tostring()
@@ -115,7 +122,7 @@ def test_read_stream():
 
 def test_read_numeric():
     # make reader-like thing
-    str_io = cStringIO.StringIO()
+    str_io = cStringIO()
     r = _make_readerlike()
     r.mat_stream = str_io
     # check simplest of tags
@@ -146,7 +153,7 @@ def test_read_numeric():
 
 def test_read_numeric_writeable():
     # make reader-like thing
-    str_io = cStringIO.StringIO()
+    str_io = cStringIO()
     r = _make_readerlike()
     r.mat_stream = str_io
     r.byte_order = '<'
