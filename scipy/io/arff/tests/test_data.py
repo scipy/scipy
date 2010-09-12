@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 """Tests for parsing full arff files."""
+
 import os
 from os.path import join as pjoin
 
 import numpy as np
 
-from numpy.testing import TestCase, assert_array_almost_equal
+from numpy.testing import TestCase, assert_array_almost_equal, assert_equal
 
 from scipy.io.arff.arffread import loadarff
+
 
 data_path = pjoin(os.path.dirname(__file__), 'data')
 
@@ -16,12 +18,14 @@ test5 = pjoin(data_path, 'test5.arff')
 expect4_data = [(0.1, 0.2, 0.3, 0.4, 'class1'),
         (-0.1, -0.2, -0.3, -0.4, 'class2'),
         (1, 2, 3, 4, 'class3')]
+expected_types = ['numeric', 'numeric', 'numeric', 'numeric', 'nominal']
 
 missing = pjoin(data_path, 'missing.arff')
 expect_missing_raw = np.array([[1, 5], [2, 4], [np.nan, np.nan]])
 expect_missing = np.empty(3, [('yop', np.float), ('yap', np.float)])
 expect_missing['yop'] = expect_missing_raw[:, 0]
 expect_missing['yap'] = expect_missing_raw[:, 1]
+
 
 class DataTest(TestCase):
     def test1(self):
@@ -37,12 +41,11 @@ class DataTest(TestCase):
         for i in range(len(data)):
             for j in range(4):
                 assert_array_almost_equal(expect4_data[i][j], data[i][j])
+        assert_equal(meta.types(), expected_types)
+
 
 class MissingDataTest(TestCase):
     def test_missing(self):
         data, meta = loadarff(missing)
         for i in ['yop', 'yap']:
             assert_array_almost_equal(data[i], expect_missing[i])
-
-
-

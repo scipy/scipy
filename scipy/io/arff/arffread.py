@@ -450,7 +450,8 @@ class MetaData(object):
 
     def types(self):
         """Return the list of attribute types."""
-        return [v[0] for v in self._attributes.values()]
+        attr_types = [self._attributes[name][0] for name in self._attrnames]
+        return attr_types
 
 
 def loadarff(filename):
