@@ -1572,7 +1572,7 @@ class TestHarMean(HarMeanTestCase, TestCase):
     def do(self, a, b, axis=None, dtype=None):
         x = stats.hmean(a, axis=axis, dtype=dtype)
         assert_almost_equal(b, x)
-	assert_equal(x.dtype, dtype)
+        assert_equal(x.dtype, dtype)
 
 class GeoMeanTestCase:
     def test_1dlist(self):
@@ -1663,7 +1663,7 @@ class TestGeoMean(GeoMeanTestCase, TestCase):
         #Note this doesn't test when axis is not specified
         x = stats.gmean(a, axis=axis, dtype=dtype)
         assert_almost_equal(b, x)
-	assert_equal(x.dtype, dtype)
+        assert_equal(x.dtype, dtype)
 
 
 def test_binomtest():

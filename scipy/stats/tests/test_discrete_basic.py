@@ -142,7 +142,7 @@ def check_moment_frozen(distfn, arg, m, k, decim):
 
 def check_oth(distfn, arg, msg):
     #checking other methods of distfn
-    meanint = round(distfn.stats(*arg)[0]) # closest integer to mean
+    meanint = round(float(distfn.stats(*arg)[0])) # closest integer to mean
     npt.assert_almost_equal(distfn.sf(meanint, *arg), 1 - \
                             distfn.cdf(meanint, *arg), decimal=8)
     median_sf = distfn.isf(0.5, *arg)

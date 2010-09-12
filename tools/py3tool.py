@@ -173,6 +173,7 @@ def custom_mangling(filename):
         os.path.join('optimize', 'nnls.py'),
         os.path.join('signal', '__init__.py'),
         os.path.join('signal', 'bsplines.py'),
+        os.path.join('signal', 'signaltools.py'),
         os.path.join('special', '__init__.py'),
         os.path.join('special', 'basic.py'),
         os.path.join('special', 'orthogonal.py'),
@@ -184,6 +185,11 @@ def custom_mangling(filename):
         os.path.join('sparse', 'linalg', 'eigen', 'arpack', 'arpack.py'),
         os.path.join('sparse', 'linalg', 'eigen', 'arpack', 'speigs.py'),
         os.path.join('sparse', 'linalg', 'iterative', 'isolve', 'iterative.py'),
+        os.path.join('stats', 'stats.py'),
+        os.path.join('stats', 'distributions.py'),
+        os.path.join('stats', 'morestats.py'),
+        os.path.join('stats', 'kde.py'),
+        os.path.join('stats', 'mstats_basic.py'),
     ]
 
     if any(filename.endswith(x) for x in import_mangling):

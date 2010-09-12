@@ -203,12 +203,12 @@ import scipy.special as special
 import scipy.linalg as linalg
 import numpy as np
 
-#import scipy.stats  #is this a circular import ?
-from morestats import find_repeats #is only reference to scipy.stats
+import futil
 import distributions
 
 # Local imports.
 import _support
+from _support import _chk_asarray, _chk2_asarray
 
 __all__ = ['gmean', 'hmean', 'mean', 'cmedian', 'median', 'mode',
            'tmean', 'tvar', 'tmin', 'tmax', 'tstd', 'tsem',
@@ -233,25 +233,11 @@ __all__ = ['gmean', 'hmean', 'mean', 'cmedian', 'median', 'mode',
           ]
 
 
-def _chk_asarray(a, axis):
-    if axis is None:
-        a = np.ravel(a)
-        outaxis = 0
-    else:
-        a = np.asarray(a)
-        outaxis = axis
-    return a, outaxis
-
-def _chk2_asarray(a, b, axis):
-    if axis is None:
-        a = np.ravel(a)
-        b = np.ravel(b)
-        outaxis = 0
-    else:
-        a = np.asarray(a)
-        b = np.asarray(b)
-        outaxis = axis
-    return a, b, outaxis
+def find_repeats(arr):
+    """Find repeats in arr and return (repeats, repeat_count)
+    """
+    v1,v2, n = futil.dfreps(arr)
+    return v1[:n],v2[:n]
 
 #######
 ### NAN friendly functions
@@ -1641,7 +1627,6 @@ first), or an integer (the axis over which to operate).
 """
     a, axis = _chk_asarray(a, axis)
     return np.std(a,axis,ddof=1) / float(np.sqrt(a.shape[axis]))
-
 
 def sem(a, axis=0, ddof=1):
     """

@@ -6,6 +6,7 @@
 import math
 import statlib
 import stats
+from stats import find_repeats
 import distributions
 from numpy import isscalar, r_, log, sum, around, unique, asarray
 from numpy import zeros, arange, sort, amin, amax, any, where, \
@@ -28,12 +29,6 @@ __all__ = ['find_repeats', 'mvsdist',
            'pdf_moments', 'pdf_fromgamma', 'pdfapprox',
            'circmean', 'circvar', 'circstd',
           ]
-
-def find_repeats(arr):
-    """Find repeats in arr and return (repeats, repeat_count)
-    """
-    v1,v2, n = futil.dfreps(arr)
-    return v1[:n],v2[:n]
 
 
 ##########################################################

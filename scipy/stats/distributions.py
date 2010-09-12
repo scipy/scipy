@@ -81,7 +81,13 @@ import types
 from scipy.misc import doccer
 all = alltrue
 sgf = vectorize
-import new
+
+try:
+    from new import instancemethod
+except ImportError:
+    # Python 3
+    def instancemethod(func, obj, cls):
+        return types.MethodType(func, obj)
 
 
 # These are the docstring parts used for substitution in specific
@@ -266,7 +272,13 @@ docdict_discrete['default'] = _doc_default_disc
 # clean up all the separate docstring elements, we do not need them anymore
 for obj in [s for s in dir() if s.startswith('_doc_')]:
     exec('del ' + obj)
-del s, obj
+del obj
+try:
+    del s
+except NameError:
+    # in Python 3, loop variables are not visible after the loop
+    pass
+
 
 
 def _build_random_array(fun, args, size=None):
@@ -542,7 +554,7 @@ class rv_generic(object):
 
         # self._size is total size of all output values
         self._size = product(size, axis=0)
-        if self._size > 1:
+        if self._size is not None and self._size > 1:
             size = numpy.array(size, ndmin=1)
 
         if np.all(scale == 0):
@@ -4764,17 +4776,17 @@ class rv_discrete(rv_generic):
             self.qvals = numpy.cumsum(self.pk,axis=0)
             self.F = make_dict(self.xk, self.qvals)
             self.Finv = reverse_dict(self.F)
-            self._ppf = new.instancemethod(sgf(_drv_ppf,otypes='d'),
-                                           self, rv_discrete)
-            self._pmf = new.instancemethod(sgf(_drv_pmf,otypes='d'),
-                                           self, rv_discrete)
-            self._cdf = new.instancemethod(sgf(_drv_cdf,otypes='d'),
-                                           self, rv_discrete)
-            self._nonzero = new.instancemethod(_drv_nonzero, self, rv_discrete)
-            self.generic_moment = new.instancemethod(_drv_moment,
-                                                     self, rv_discrete)
-            self.moment_gen = new.instancemethod(_drv_moment_gen,
+            self._ppf = instancemethod(sgf(_drv_ppf,otypes='d'),
+                                       self, rv_discrete)
+            self._pmf = instancemethod(sgf(_drv_pmf,otypes='d'),
+                                       self, rv_discrete)
+            self._cdf = instancemethod(sgf(_drv_cdf,otypes='d'),
+                                       self, rv_discrete)
+            self._nonzero = instancemethod(_drv_nonzero, self, rv_discrete)
+            self.generic_moment = instancemethod(_drv_moment,
                                                  self, rv_discrete)
+            self.moment_gen = instancemethod(_drv_moment_gen,
+                                             self, rv_discrete)
             self.numargs=0
         else:
             cdf_signature = inspect.getargspec(self._cdf.im_func)
@@ -4787,14 +4799,14 @@ class rv_discrete(rv_generic):
             #correct nin for generic moment vectorization
             self.vec_generic_moment = sgf(_drv2_moment, otypes='d')
             self.vec_generic_moment.nin = self.numargs + 2
-            self.generic_moment = new.instancemethod(self.vec_generic_moment,
-                                                     self, rv_discrete)
+            self.generic_moment = instancemethod(self.vec_generic_moment,
+                                                 self, rv_discrete)
 
             #correct nin for ppf vectorization
             _vppf = sgf(_drv2_ppfsingle,otypes='d')
             _vppf.nin = self.numargs + 2 # +1 is for self
-            self._vecppf = new.instancemethod(_vppf,
-                                              self, rv_discrete)
+            self._vecppf = instancemethod(_vppf,
+                                          self, rv_discrete)
 
         #now that self.numargs is defined, we can adjust nin
         self._cdfvec.nin = self.numargs + 1

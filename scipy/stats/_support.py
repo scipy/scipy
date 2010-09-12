@@ -1,8 +1,10 @@
 from numpy import asarray
-import stats
 import numpy as np
-from types import ListType, TupleType, StringType
 import copy
+
+ListType = list
+TupleType = tuple
+StringType = str
 
 def abut(source, *args):
     # comment: except for the repetition, this is equivalent to hstack.
@@ -236,7 +238,7 @@ def collapse(a, keepcols, collapsecols, stderr=0, ns=0, cfcn=None):
                 item.append(cfcn(avgcol))
                 if stderr:
                     if len(avgcol)>1:
-                        item.append(stats.stderr(avgcol))
+                        item.append(compute_stderr(avgcol))
                     else:
                         item.append('N/A')
                 if ns:
@@ -248,6 +250,29 @@ def collapse(a, keepcols, collapsecols, stderr=0, ns=0, cfcn=None):
             new_a = np.array(newlist,'O')
         return new_a
 
+def _chk_asarray(a, axis):
+    if axis is None:
+        a = np.ravel(a)
+        outaxis = 0
+    else:
+        a = np.asarray(a)
+        outaxis = axis
+    return a, outaxis
+
+def _chk2_asarray(a, b, axis):
+    if axis is None:
+        a = np.ravel(a)
+        b = np.ravel(b)
+        outaxis = 0
+    else:
+        a = np.asarray(a)
+        b = np.asarray(b)
+        outaxis = axis
+    return a, b, outaxis
+
+def compute_stderr(a, axis=0, ddof=1):
+    a, axis = _chk_asarray(a, axis)
+    return np.std(a,axis,ddof=1) / float(np.sqrt(a.shape[axis]))
 
 def makestr(item):
     if type(item) != StringType:
