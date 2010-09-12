@@ -7,7 +7,8 @@ import os.path
 import warnings
 
 import numpy as np
-from numpy.testing import *
+from numpy.testing import assert_array_equal, assert_array_almost_equal, \
+        TestCase, run_module_suite
 
 from scipy.cluster.vq import kmeans, kmeans2, py_vq, py_vq2, vq, ClusterError
 try:
