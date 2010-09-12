@@ -27,6 +27,7 @@ from cpython cimport PyBytes_Size, PyBytes_FromString, \
     PyBytes_FromStringAndSize
 
 import numpy as np
+from numpy.compat import asbytes, asstr
 cimport numpy as cnp
 
 cdef extern from "numpy/arrayobject.h":
@@ -641,7 +642,7 @@ cdef class VarReader5:
         elif mc == mxSTRUCT_CLASS:
             arr = self.read_struct(header)
         elif mc == mxOBJECT_CLASS: # like structs, but with classname
-            classname = self.read_int8_string()
+            classname = asstr(self.read_int8_string())
             arr = self.read_struct(header)
             arr = mio5p.MatlabObject(arr, classname)
         elif mc == mxFUNCTION_CLASS: # just a matrix of struct type
@@ -757,7 +758,7 @@ cdef class VarReader5:
                              % mdtype)
         uc_str = data.decode(codec)
         # cast to array to deal with 2, 4 byte width characters
-        arr = np.array(uc_str)
+        arr = np.array(uc_str, dtype='U')
         dt = self.U1_dtype
         # could take this to numpy C-API level, but probably not worth
         # it
@@ -802,7 +803,7 @@ cdef class VarReader5:
         cdef char *n_ptr = names
         for i in range(n_names):
             name = PyBytes_FromString(n_ptr)
-            field_names.append(name)
+            field_names.append(asstr(name))
             n_ptr += namelength
         n_names_ptr[0] = n_names
         return field_names

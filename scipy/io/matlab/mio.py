@@ -8,6 +8,8 @@ import os
 import sys
 import warnings
 
+from numpy.compat import asbytes
+
 from miobase import get_matfile_version, docfiller
 from mio4 import MatFile4Reader, MatFile4Writer
 from mio5 import MatFile5Reader, MatFile5Writer
@@ -178,7 +180,7 @@ def savemat(file_name, mdict,
         file_stream = open(file_name, 'wb')
     else:
         try:
-            file_name.write('')
+            file_name.write(asbytes(''))
         except AttributeError:
             raise IOError, 'Writer needs file name or writeable '\
                            'file-like object'

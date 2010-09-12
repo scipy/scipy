@@ -4,6 +4,7 @@ import sys
 import warnings
 
 import numpy as np
+from numpy.compat import asbytes, asstr
 
 import scipy.sparse
 
@@ -96,7 +97,7 @@ class VarReader4(object):
     def read_header(self):
         ''' Reads and return header for variable '''
         data = read_dtype(self.mat_stream, self.dtypes['header'])
-        name = self.mat_stream.read(int(data['namlen'])).strip('\x00')
+        name = self.mat_stream.read(int(data['namlen'])).strip(asbytes('\x00'))
         if data['mopt'] < 0 or  data['mopt'] > 5000:
             ValueError, 'Mat 4 mopt wrong format, byteswapping problem?'
         M,rest = divmod(data['mopt'], 1000)
@@ -149,7 +150,7 @@ class VarReader4(object):
             num_bytes *= d
         arr = np.ndarray(shape=dims,
                          dtype=dt,
-                         buffer=self.mat_stream.read(num_bytes),
+                         buffer=self.mat_stream.read(int(num_bytes)),
                          order='F')
         if copy:
             arr = arr.copy()
@@ -295,7 +296,7 @@ class MatFile4Reader(MatFileReader):
         mdict = {}
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
-            name = hdr.name
+            name = asstr(hdr.name)
             if variable_names and name not in variable_names:
                 self.mat_stream.seek(next_position)
                 continue
@@ -376,7 +377,7 @@ class VarWriter4(object):
         header['imagf'] = imagf
         header['namlen'] = len(name) + 1
         self.write_bytes(header)
-        self.write_string(name + '\0')
+        self.write_string(asbytes(name + '\0'))
 
     def write(self, arr, name):
         ''' Write matrix `arr`, with name `name`

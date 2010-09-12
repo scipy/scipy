@@ -3,7 +3,14 @@
 """
 Base classes for matlab (TM) file stream reading
 """
+import sys
 import numpy as np
+from numpy.compat import asbytes
+
+if sys.version_info[0] >= 3:
+    byteord = int
+else:
+    byteord = ord
 
 from scipy.misc import doccer
 
@@ -201,9 +208,9 @@ def get_matfile_version(fileobj):
     fileobj.seek(124)
     tst_str = fileobj.read(4)
     fileobj.seek(0)
-    maj_ind = int(tst_str[2] == 'I')
-    maj_val = ord(tst_str[maj_ind])
-    min_val = ord(tst_str[1-maj_ind])
+    maj_ind = int(tst_str[2] == asbytes('I')[0])
+    maj_val = byteord(tst_str[maj_ind])
+    min_val = byteord(tst_str[1-maj_ind])
     ret = (maj_val, min_val)
     if maj_val in (1, 2):
         return ret

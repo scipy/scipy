@@ -75,10 +75,14 @@ import os
 import time
 import sys
 import zlib
-from cStringIO import StringIO
+if sys.version_info[0] >= 3:
+    from io import BytesIO
+else:
+    from cStringIO import StringIO as BytesIO
 import warnings
 
 import numpy as np
+from numpy.compat import asbytes, asstr
 
 import scipy.sparse
 
@@ -291,13 +295,13 @@ class MatFile5Reader(MatFileReader):
         self.mat_stream.seek(126)
         mi = self.mat_stream.read(2)
         self.mat_stream.seek(0)
-        return mi == 'IM' and '<' or '>'
+        return mi == asbytes('IM') and '<' or '>'
 
     def read_file_header(self):
         ''' Read in mat 5 file header '''
         hdict = {}
         hdr = read_dtype(self.mat_stream, self.dtypes['file_header'])
-        hdict['__header__'] = hdr['description'].item().strip(' \t\n\000')
+        hdict['__header__'] = hdr['description'].item().strip(asbytes(' \t\n\000'))
         v_major = hdr['version'] >> 8
         v_minor = hdr['version'] & 0xFF
         hdict['__version__'] = '%d.%d' % (v_major, v_minor)
@@ -353,9 +357,9 @@ class MatFile5Reader(MatFileReader):
             # incomplete stream.  See discussion at
             # http://bugs.python.org/issue8672
             dcor = zlib.decompressobj()
-            stream = StringIO(dcor.decompress(data))
+            stream = BytesIO(dcor.decompress(data))
             # Check the stream is not so broken as to leave cruft behind
-            assert dcor.flush() == ''
+            assert dcor.flush() == asbytes('')
             del data
             self._matrix_reader.set_stream(stream)
             mdtype, byte_count = self._matrix_reader.read_full_tag()
@@ -402,7 +406,7 @@ class MatFile5Reader(MatFileReader):
         mdict['__globals__'] = []
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
-            name = hdr.name
+            name = asstr(hdr.name)
             if name == '':
                 # can only be a matlab 7 function workspace
                 name = '__function_workspace__'
@@ -569,7 +573,7 @@ class VarWriter5(object):
         # pad to next 64-bit boundary
         bc_mod_8 = byte_count % 8
         if bc_mod_8:
-            self.file_stream.write('\x00' * (8-bc_mod_8))
+            self.file_stream.write(asbytes('\x00') * (8-bc_mod_8))
 
     def write_header(self,
                      shape, 
@@ -876,13 +880,13 @@ class MatFile5Writer(object):
                 continue
             is_global = name in self.global_vars
             if self.do_compression:
-                stream = StringIO()
+                stream = BytesIO()
                 self._matrix_writer.file_stream = stream
-                self._matrix_writer.write_top(var, name, is_global)
+                self._matrix_writer.write_top(var, asbytes(name), is_global)
                 out_str = zlib.compress(stream.getvalue())
                 tag = np.empty((), mdtypes_template['tag_full'])
                 tag['mdtype'] = miCOMPRESSED
                 tag['byte_count'] = len(out_str)
                 self.file_stream.write(tag.tostring() + out_str)
             else: # not compressing
-                self._matrix_writer.write_top(var, name, is_global)
+                self._matrix_writer.write_top(var, asbytes(name), is_global)
