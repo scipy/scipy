@@ -47,7 +47,7 @@ PyMODINIT_FUNC init_odepack(void) {
   import_array();
   d = PyModule_GetDict(m);
 
-  s = PyUSString_FromString(" 1.9 ");
+  s = PyUString_FromString(" 1.9 ");
   PyDict_SetItemString(d, "__version__", s);
   odepack_error = PyErr_NewException ("odepack.error", NULL, NULL);
   Py_DECREF(s);
