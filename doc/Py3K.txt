@@ -10,6 +10,7 @@ Test status (as of 2010-09-10)
 * fftpack OK
 * integrate OK
 * interpolate OK
+* io OK
 * lib OK
 * linalg OK
 * maxentropy OK
@@ -18,11 +19,9 @@ Test status (as of 2010-09-10)
 * odr OK
 * optimize OK
 * signal OK
+* sparse OK
 * spatial OK
 * special OK
+* stats OK
 
-
-* io ERROR (matlab stuff)
-* sparse ERROR
-* stats  ERROR
 * weave ERROR
