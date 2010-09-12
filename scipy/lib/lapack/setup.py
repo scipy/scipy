@@ -69,7 +69,7 @@ def configuration(parent_package='',top_path=None):
     # clapack:
     def get_clapack_source(ext, build_dir):
         name = ext.name.split('.')[-1]
-        assert name=='clapack',`name`
+        assert name=='clapack', repr(name)
         if atlas_version is None:
             target = os.path.join(build_dir,target_dir,'clapack.pyf')
             from distutils.dep_util import newer
