@@ -4,8 +4,6 @@ import numpy as np
 
 from numpy.testing import assert_equal, assert_raises
 
-from nose.tools import assert_true
-
 import scipy.ndimage as sndi
 
 

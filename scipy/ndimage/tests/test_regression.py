@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import *
+from numpy.testing import assert_array_almost_equal, run_module_suite
 
 import scipy.ndimage as ndimage
 

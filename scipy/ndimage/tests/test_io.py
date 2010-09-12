@@ -1,4 +1,4 @@
-from numpy.testing import *
+from numpy.testing import assert_array_equal, dec, run_module_suite
 import scipy.ndimage as ndi
 
 import os

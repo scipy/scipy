@@ -32,7 +32,8 @@ import math
 import numpy
 import numpy as np
 from numpy import fft
-from numpy.testing import *
+from numpy.testing import assert_, assert_equal, assert_array_equal, \
+        TestCase, run_module_suite
 import scipy.ndimage as ndimage
 
 eps = 1e-12
@@ -2118,11 +2119,11 @@ class TestNdimage(TestCase):
                 arr = numpy.array(range(25)).reshape((5,5)).astype(float)
                 arr = ndimage.zoom(arr, z, order=order)
                 assert_equal(arr.shape,(10,10))
-                assert numpy.all(arr[-1,:] != 0)
-                assert numpy.all(arr[-1,:] >= (20 - eps))
-                assert numpy.all(arr[0,:] <= (5 + eps))
-                assert numpy.all(arr >= (0 - eps))
-                assert numpy.all(arr <= (24 + eps))
+                assert_(numpy.all(arr[-1,:] != 0))
+                assert_(numpy.all(arr[-1,:] >= (20 - eps)))
+                assert_(numpy.all(arr[0,:] <= (5 + eps)))
+                assert_(numpy.all(arr >= (0 - eps)))
+                assert_(numpy.all(arr <= (24 + eps)))
 
     def test_zoom2(self):
         "zoom 2"
