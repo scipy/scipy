@@ -20,14 +20,40 @@ static PyMethodDef module_methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
+#if PY_VERSION_HEX >= 0x03000000
+
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "atlas_version",
+    NULL,
+    -1,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyObject *PyInit_atlas_version(void)
+{
+#define RETVAL m
+    PyObject *m;
+    m = PyModule_Create(&moduledef);
+#else
+#define RETVAL
 PyMODINIT_FUNC initatlas_version(void)
 {
     PyObject *m = NULL;
     m = Py_InitModule("atlas_version", module_methods);
+#endif
+    if (m == NULL) {
+        return RETVAL;
+    }
 #if defined(ATLAS_INFO)
     {
         PyObject *d = PyModule_GetDict(m);
         PyDict_SetItemString(d,"ATLAS_VERSION",PyString_FromString(ATLAS_INFO));
     }
 #endif
+    return RETVAL;
 }
