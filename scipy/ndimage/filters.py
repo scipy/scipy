@@ -750,12 +750,12 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         axes = [(axes[ii], sizes[ii], origins[ii])
                                for ii in range(len(axes)) if sizes[ii] > 1]
         if minimum:
-            filter = minimum_filter1d
+            filter_ = minimum_filter1d
         else:
-            filter = maximum_filter1d
+            filter_ = maximum_filter1d
         if len(axes) > 0:
             for axis, size, origin in axes:
-                filter(input, int(size), axis, output, mode, cval, origin)
+                filter_(input, int(size), axis, output, mode, cval, origin)
                 input = output
         else:
             output[...] = input[...]
