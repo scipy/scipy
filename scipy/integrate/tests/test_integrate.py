@@ -7,7 +7,7 @@ import numpy
 from numpy import arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp, \
                   allclose
 
-from numpy.testing import TestCase, run_module_suite
+from numpy.testing import assert_, TestCase, run_module_suite
 from scipy.integrate import odeint, ode, complex_ode
 
 #------------------------------------------------------------------------------
@@ -21,7 +21,7 @@ class TestOdeint(TestCase):
     def _do_problem(self, problem):
         t = arange(0.0, problem.stop_t, 0.05)
         z, infodict = odeint(problem.f, problem.z0, t, full_output=True)
-        assert problem.verify(z, t)
+        assert_(problem.verify(z, t))
 
     def test_odeint(self):
         for problem_cls in PROBLEMS:
@@ -49,8 +49,8 @@ class TestOde(TestCase):
         ig.set_initial_value(problem.z0, t=0.0)
         z = ig.integrate(problem.stop_t)
 
-        assert ig.successful(), (problem, method)
-        assert problem.verify(array([z]), problem.stop_t), (problem, method)
+        assert_(ig.successful(), (problem, method))
+        assert_(problem.verify(array([z]), problem.stop_t), (problem, method))
 
     def test_vode(self):
         """Check the vode solver"""
@@ -106,8 +106,8 @@ class TestComplexOde(TestCase):
         ig.set_initial_value(problem.z0, t=0.0)
         z = ig.integrate(problem.stop_t)
 
-        assert ig.successful(), (problem, method)
-        assert problem.verify(array([z]), problem.stop_t), (problem, method)
+        assert_(ig.successful(), (problem, method))
+        assert_(problem.verify(array([z]), problem.stop_t), (problem, method))
 
     def test_vode(self):
         """Check the vode solver"""

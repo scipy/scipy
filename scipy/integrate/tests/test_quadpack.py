@@ -1,11 +1,11 @@
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
-from numpy.testing import TestCase, run_module_suite
+from numpy.testing import assert_, TestCase, run_module_suite
 from scipy.integrate import quad, dblquad, tplquad
 
 def assert_quad((value, err), tabledValue, errTol=1.5e-8):
-    assert abs(value-tabledValue) < err, (value, tabledValue, err)
+    assert_(abs(value-tabledValue) < err, (value, tabledValue, err))
     if errTol is not None:
-        assert err < errTol, (err, errTol)
+        assert_(err < errTol, (err, errTol))
 
 class TestQuad(TestCase):
     def test_typical(self):
