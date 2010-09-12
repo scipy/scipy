@@ -1583,7 +1583,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
     for k in range(N-1,-1,-1):
         thisN = Nshape[k]
         Nindx[k] = indx % Nshape[k]
-        indx = indx / thisN
+        indx = indx // thisN
     for k in range(N):
         xmin[k] = grid[k][tuple(Nindx)]
 
