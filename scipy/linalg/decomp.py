@@ -38,7 +38,7 @@ def _make_complex_eigvecs(w, vin, cmplx_tcode):
     vnew.imag = numpy.take(vin, ind[1::2],1)
     count = 0
     conj = numpy.conjugate
-    for i in range(len(ind)/2):
+    for i in range(len(ind)//2):
         v[:, ind[2*i]] = vnew[:, count]
         v[:, ind[2*i+1]] = conj(vnew[:, count])
         count += 1
