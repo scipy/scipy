@@ -219,21 +219,21 @@ def tokenize_attribute(iterable, attribute):
         atrv = mattr.group(1)
         if r_comattrval.match(atrv):
             name, type = tokenize_single_comma(atrv)
-            next = iterable.next()
+            next_item = iterable.next()
         elif r_wcomattrval.match(atrv):
             name, type = tokenize_single_wcomma(atrv)
-            next = iterable.next()
+            next_item = iterable.next()
         else:
             # Not sure we should support this, as it does not seem supported by
             # weka.
             raise ValueError("multi line not supported yet")
-            #name, type, next = tokenize_multilines(iterable, atrv)
+            #name, type, next_item = tokenize_multilines(iterable, atrv)
     else:
         raise ValueError("First line unparsable: %s" % sattr)
 
     if type == 'relational':
         raise ValueError("relational attributes not supported yet")
-    return name, type, next
+    return name, type, next_item
 
 
 def tokenize_multilines(iterable, val):
