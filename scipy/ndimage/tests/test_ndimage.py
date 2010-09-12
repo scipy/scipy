@@ -1138,7 +1138,7 @@ class TestNdimage(TestCase):
 
     def test_generic_filter01(self):
         "generic filter 1"
-        filter = numpy.array([[1.0, 2.0], [3.0, 4.0]])
+        filter_ = numpy.array([[1.0, 2.0], [3.0, 4.0]])
         footprint = numpy.array([[1, 0], [0, 1]])
         cf = numpy.array([1., 4.])
         def _filter_func(buffer, weights, total = 1.0):
@@ -1147,7 +1147,7 @@ class TestNdimage(TestCase):
         for type in self.types:
             a = numpy.arange(12, dtype = type)
             a.shape = (3,4)
-            r1 = ndimage.correlate(a, filter * footprint) / 5
+            r1 = ndimage.correlate(a, filter_ * footprint) / 5
             r2 = ndimage.generic_filter(a, _filter_func,
                             footprint = footprint, extra_arguments = (cf,),
                             extra_keywords = {'total': cf.sum()})
