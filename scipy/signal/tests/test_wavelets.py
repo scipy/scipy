@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
-    assert_array_equal, assert_array_almost_equal, assert_array_less
+    assert_array_equal, assert_array_almost_equal, assert_array_less, assert_
 
 from scipy.signal import wavelets
 
@@ -19,7 +19,7 @@ class TestWavelets(TestCase):
                 lpcoef = wavelets.daub(i)
                 k = len(lpcoef)
                 x,phi,psi = wavelets.cascade(lpcoef,J)
-                assert len(x) == len(phi) == len(psi)
+                assert_(len(x) == len(phi) == len(psi))
                 assert_equal(len(x),(k-1)*2**J)
 
     def test_morlet(self):

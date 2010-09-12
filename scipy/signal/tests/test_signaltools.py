@@ -1,10 +1,9 @@
 #this program corresponds to special.py
 from decimal import Decimal
-import types
 
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_almost_equal, assert_array_equal, assert_array_almost_equal, \
-    dec
+    assert_, dec
 
 import scipy.signal as signal
 from scipy.signal import lfilter, correlate, convolve, convolve2d, hilbert
@@ -255,7 +254,7 @@ class TestFFTConvolve(TestCase):
         b = np.random.rand(1321) + 1j*np.random.rand(1321)
         c = signal.fftconvolve(a, b, 'full')
         d = np.convolve(a, b, 'full')
-        assert np.allclose(c, d, rtol=1e-10)
+        assert_(np.allclose(c, d, rtol=1e-10))
 
 class TestMedFilt(TestCase):
     def test_basic(self):
