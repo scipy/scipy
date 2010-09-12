@@ -16,15 +16,15 @@ import sys
 
 from copy import copy as pycopy
 
-from python cimport Py_INCREF, Py_DECREF
-from python_object cimport PyObject
+from cpython cimport Py_INCREF, Py_DECREF
+from cpython cimport PyObject
 
 cdef extern from "Python.h":
     ctypedef struct PyTypeObject:
         pass
 
-from python_string cimport PyString_Size, PyString_FromString, \
-    PyString_FromStringAndSize
+from cpython cimport PyBytes_Size, PyBytes_FromString, \
+    PyBytes_FromStringAndSize
 
 import numpy as np
 cimport numpy as cnp
@@ -167,12 +167,12 @@ cdef class VarReader5:
         # integer-keyed dtypes
         self.preader = preader
         for key, dt in preader.dtypes.items():
-            if isinstance(key, basestring):
+            if isinstance(key, str):
                 continue
             self.dtypes[key] = <PyObject*>dt
         # copy refs to class_dtypes into object pointer array
         for key, dt in preader.class_dtypes.items():
-            if isinstance(key, basestring):
+            if isinstance(key, str):
                 continue
             self.class_dtypes[key] = <PyObject*>dt
         # cache correctly byte ordered dtypes
@@ -338,7 +338,7 @@ cdef class VarReader5:
             if mod8:
                 self.cstream.seek(8 - mod8, 1)
         else: # SDE format, make safer home for data
-            data = PyString_FromStringAndSize(tag_data, byte_count)
+            data = PyBytes_FromStringAndSize(tag_data, byte_count)
             pp[0] = <char *>data
         return data
 
@@ -713,7 +713,7 @@ cdef class VarReader5:
         
         This routine is not much optimized.  If I was going to do it,
         I'd store the codecs as an object pointer array, as for the
-        .dtypes, I might use python_string.PyString_Decode for decoding,
+        .dtypes, I might use python_string.PyBytes_Decode for decoding,
         I'd do something with pointers to pull the LSB out of the uint16
         dtype, without using an intermediate array, I guess I'd consider
         using the numpy C-API for array creation. I'd try and work out
@@ -796,10 +796,10 @@ cdef class VarReader5:
             raise ValueError('Only one value for namelength')
         cdef object names = self.read_int8_string()
         field_names = []
-        n_names = PyString_Size(names) // namelength
+        n_names = PyBytes_Size(names) // namelength
         cdef char *n_ptr = names
         for i in range(n_names):
-            name = PyString_FromString(n_ptr)
+            name = PyBytes_FromString(n_ptr)
             field_names.append(name)
             n_ptr += namelength
         n_names_ptr[0] = n_names
