@@ -28,6 +28,8 @@ the result tuple when the full_output argument is non-zero.
 */
 
 #include "Python.h"
+
+#include "npy_3kcompat.h"
 #include "numpy/arrayobject.h"
 #include <setjmp.h>
 
