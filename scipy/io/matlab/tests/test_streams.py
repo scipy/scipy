@@ -4,11 +4,19 @@
 
 import os
 
-import StringIO
-import cStringIO
+import sys
+
+if sys.version_info[0] >= 3:
+    from io import BytesIO
+    cStringIO = BytesIO
+else:
+    from cStringIO import StringIO as cStringIO
+    from StringIO import StringIO as BytesIO
+
 from tempfile import mkstemp
 
 import numpy as np
+from numpy.compat import asbytes
 
 from nose.tools import assert_true, assert_false, \
      assert_equal, assert_raises
@@ -22,15 +30,15 @@ from scipy.io.matlab.streams import make_stream, \
 
 
 def setup():
-    val = 'a\x00string'
+    val = asbytes('a\x00string')
     global fs, gs, cs, fname
     fd, fname = mkstemp()
     fs = os.fdopen(fd, 'wb')
     fs.write(val)
     fs.close()
-    fs = open(fname)
-    gs = StringIO.StringIO(val)
-    cs = cStringIO.StringIO(val)
+    fs = open(fname, 'rb')
+    gs = BytesIO(val)
+    cs = cStringIO(val)
 
 
 def teardown():
@@ -42,9 +50,10 @@ def teardown():
 def test_make_stream():
     global fs, gs, cs
     # test stream initialization
-    yield assert_true, isinstance(make_stream(gs), GenericStream)
-    yield assert_true, isinstance(make_stream(cs), cStringStream)
-    yield assert_true, isinstance(make_stream(fs), FileStream)
+    assert_true(isinstance(make_stream(gs), GenericStream))
+    if sys.version_info[0] < 3:
+        assert_true(isinstance(make_stream(cs), cStringStream))
+        assert_true(isinstance(make_stream(fs), FileStream))
 
 
 def test_tell_seek():
@@ -71,23 +80,23 @@ def test_read():
         st = make_stream(s)
         st.seek(0)
         res = st.read(-1)
-        yield assert_equal, res, 'a\x00string'
+        yield assert_equal, res, asbytes('a\x00string')
         st.seek(0)
         res = st.read(4)
-        yield assert_equal, res, 'a\x00st'
+        yield assert_equal, res, asbytes('a\x00st')
         # read into
         st.seek(0)
         res = _read_into(st, 4)
-        yield assert_equal, res, 'a\x00st'
+        yield assert_equal, res, asbytes('a\x00st')
         res = _read_into(st, 4)
-        yield assert_equal, res, 'ring'
+        yield assert_equal, res, asbytes('ring')
         yield assert_raises, IOError, _read_into, st, 2
         # read alloc
         st.seek(0)
         res = _read_string(st, 4)
-        yield assert_equal, res, 'a\x00st'
+        yield assert_equal, res, asbytes('a\x00st')
         res = _read_string(st, 4)
-        yield assert_equal, res, 'ring'
+        yield assert_equal, res, asbytes('ring')
         yield assert_raises, IOError, _read_string, st, 2
 
 if __name__ == "__main__":

@@ -1,7 +1,9 @@
 # -*- python -*- or near enough
 
-from python_string cimport PyString_FromStringAndSize, \
-    PyString_AS_STRING, PyString_Size
+import sys
+
+from cpython cimport PyBytes_FromStringAndSize, \
+    PyBytes_AS_STRING, PyBytes_Size
 
 from pyalloc cimport pyalloc_v
 
@@ -17,28 +19,26 @@ cdef extern from "Python.h":
     ctypedef struct PyObject:
         pass
     ctypedef struct FILE
-    FILE *PyFile_AsFile(object)
     size_t fread (void *ptr, size_t size, size_t n, FILE* fptr)
     int fseek (FILE * fptr, long int offset, int whence)
     long int ftell (FILE *stream)
 
-cdef extern from "fileobject.h":
-    ctypedef class __builtin__.file [object PyFileObject]:
-        pass
-
-cdef extern from "cStringIO.h":
+cdef extern from "py3k.h":
     # From:
     # http://svn.pyamf.org/pyamf/tags/release-0.4rc2/cpyamf/util.pyx
     # (MIT license) - with thanks
     void PycString_IMPORT()
-    object StringIO_NewOutput "PycStringIO->NewOutput" (int)
-    object StringIO_NewInput "PycStringIO->NewInput" (object)
     int StringIO_cread "PycStringIO->cread" (object, char **, Py_ssize_t)
     int StringIO_creadline "PycStringIO->creadline" (object, char **)
     int StringIO_cwrite "PycStringIO->cwrite" (object, char *, Py_ssize_t)
     object StringIO_cgetvalue "PycStringIO->cgetvalue" (obj)
     bint PycStringIO_InputCheck(object O)
     bint PycStringIO_OutputCheck(object O)
+
+    FILE* npy_PyFile_Dup(object file, char *mode) except NULL
+    int npy_PyFile_DupClose(object file, FILE *handle) except -1
+    int npy_PyFile_Check(object file)
+
        
 # initialize cStringIO
 PycString_IMPORT
@@ -60,11 +60,11 @@ cdef class GenericStream:
         return self.fobj.read(n_bytes)
 
     cdef int read_into(self, void *buf, size_t n) except -1:
-        ''' Read n bytes from stream into pre-allocated buffer `buf`
-        '''
+        """ Read n bytes from stream into pre-allocated buffer `buf`
+        """
         cdef char* d_ptr
         data = self.fobj.read(n)
-        if PyString_Size(data) != n:
+        if PyBytes_Size(data) != n:
             raise IOError('could not read bytes')
             return -1
         d_ptr = data
@@ -72,15 +72,15 @@ cdef class GenericStream:
         return 0
 
     cdef object read_string(self, size_t n, void **pp, int copy=True):
-        ''' Make new memory, wrap with object '''
+        """ Make new memory, wrap with object """
         data = self.fobj.read(n)
-        if PyString_Size(data) != n:
+        if PyBytes_Size(data) != n:
             raise IOError('could not read bytes')
         if copy != True:
-           pp[0] = <void*>PyString_AS_STRING(data)
+           pp[0] = <void*>PyBytes_AS_STRING(data)
            return data
         cdef object d_copy = pyalloc_v(n, pp)
-        memcpy(pp[0], PyString_AS_STRING(data), n)
+        memcpy(pp[0], PyBytes_AS_STRING(data), n)
         return d_copy
 
 
@@ -95,8 +95,8 @@ cdef class cStringStream(GenericStream):
             return GenericStream.seek(self, offset, whence)
 
     cdef int read_into(self, void *buf, size_t n) except -1:
-        ''' Read n bytes from stream into pre-allocated buffer `buf`
-        '''
+        """ Read n bytes from stream into pre-allocated buffer `buf`
+        """
         cdef:
             size_t n_red
             char* d_ptr
@@ -107,10 +107,10 @@ cdef class cStringStream(GenericStream):
         return 0
 
     cdef object read_string(self, size_t n, void **pp, int copy=True):
-        ''' Make new memory, wrap with object
+        """ Make new memory, wrap with object
 
         It's not obvious to me how to avoid a copy
-        '''
+        """
         cdef:
             char *d_ptr
             object obj
@@ -127,11 +127,14 @@ cdef class FileStream(GenericStream):
 
     def __init__(self, fobj):
         self.fobj = fobj
-        self.file = PyFile_AsFile(fobj)
-        
+        self.file = npy_PyFile_Dup(fobj, "rb")
+
+    def __del__(self):
+        npy_PyFile_DupClose(self.fobj, self.file)
+
     cpdef int seek(self, long int offset, int whence=0) except -1:
         cdef int ret
-        ''' move `offset` bytes in stream
+        """ move `offset` bytes in stream
 
         Parameters
         ----------
@@ -148,7 +151,7 @@ cdef class FileStream(GenericStream):
         Returns
         -------
         ret : int
-        '''
+        """
         ret = fseek(self.file, offset, whence)
         if ret:
             raise IOError('Failed seek')
@@ -159,8 +162,8 @@ cdef class FileStream(GenericStream):
         return ftell(self.file)
 
     cdef int read_into(self, void *buf, size_t n) except -1:
-        ''' Read n bytes from stream into pre-allocated buffer `buf`
-        '''
+        """ Read n bytes from stream into pre-allocated buffer `buf`
+        """
         cdef:
             size_t n_red
             char* d_ptr
@@ -171,18 +174,17 @@ cdef class FileStream(GenericStream):
         return 0
 
     cdef object read_string(self, size_t n, void **pp, int copy=True):
-        ''' Make new memory, wrap with object '''
+        """ Make new memory, wrap with object """
         cdef object obj = pyalloc_v(n, pp)
         cdef size_t n_red = fread(pp[0], 1, n, self.file)
         if n_red != n:
             raise IOError('could not read bytes')
         return obj
 
-
 def _read_into(GenericStream st, size_t n):
     # for testing only.  Use st.read instead
     cdef char * d_ptr
-    my_str = ' ' * n
+    my_str = b' ' * n
     d_ptr = my_str
     st.read_into(d_ptr, n)
     return my_str
@@ -192,17 +194,20 @@ def _read_string(GenericStream st, size_t n):
     # for testing only.  Use st.read instead
     cdef char *d_ptr
     cdef object obj = st.read_string(n, <void **>&d_ptr, True)
-    my_str = 'A' * n
+    my_str = b'A' * n
     cdef char *mys_ptr = my_str
     memcpy(mys_ptr, d_ptr, n)
     return my_str
 
     
 cpdef GenericStream make_stream(object fobj):
-    ''' Make stream of correct type for file-like `fobj`
-    '''
-    if isinstance(fobj, file):
-        return FileStream(fobj)
+    """ Make stream of correct type for file-like `fobj`
+    """
+    if npy_PyFile_Check(fobj):
+        if sys.version_info[0] >= 3:
+            return GenericStream(fobj)
+        else:
+            return FileStream(fobj)
     elif PycStringIO_InputCheck(fobj) or PycStringIO_OutputCheck(fobj):
         return cStringStream(fobj)
     return GenericStream(fobj)
