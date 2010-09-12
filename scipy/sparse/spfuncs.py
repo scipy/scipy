@@ -22,7 +22,7 @@ def extract_diagonal(A):
 #        M,N = A.shape
 #        R,C = A.blocksize
 #        y = empty( min(M,N), dtype=upcast(A.dtype) )
-#        fn = sparsetools.bsr_diagonal(M/R, N/C, R, C, \
+#        fn = sparsetools.bsr_diagonal(M//R, N//C, R, C, \
 #                A.indptr, A.indices, ravel(A.data), y)
 #        return y
 #    else:

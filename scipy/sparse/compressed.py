@@ -698,7 +698,7 @@ class _cs_matrix(_data_matrix):
         actual_nnz = indptr[-1]
         indices = indices[:actual_nnz]
         data    = data[:actual_nnz]
-        if actual_nnz < maxnnz / 2:
+        if actual_nnz < maxnnz // 2:
             #too much waste, trim arrays
             indices = indices.copy()
             data    = data.copy()

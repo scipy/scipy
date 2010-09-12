@@ -121,7 +121,7 @@ class bsr_matrix(_cs_matrix):
                 if (M % R) != 0 or (N % C) != 0:
                     raise ValueError, 'shape must be multiple of blocksize'
 
-                self.indptr  = np.zeros(M/R + 1, dtype=np.intc )
+                self.indptr  = np.zeros(M//R + 1, dtype=np.intc )
 
             elif len(arg1) == 2:
                 # (data,(row,col)) format
@@ -205,10 +205,10 @@ class bsr_matrix(_cs_matrix):
             raise ValueError,"data should be rank 3"
 
         # check index pointer
-        if (len(self.indptr) != M/R + 1 ):
+        if (len(self.indptr) != M//R + 1 ):
             raise ValueError, \
                 "index pointer size (%d) should be (%d)" % \
-                 (len(self.indptr), M/R + 1)
+                 (len(self.indptr), M//R + 1)
         if (self.indptr[0] != 0):
             raise ValueError,"index pointer should start with 0"
 
@@ -225,9 +225,9 @@ class bsr_matrix(_cs_matrix):
         if full_check:
             #check format validity (more expensive)
             if self.nnz > 0:
-                if self.indices.max() >= N/C:
+                if self.indices.max() >= N//C:
                     print "max index",self.indices.max()
-                    raise ValueError, "column index values must be < %d" % (N/C)
+                    raise ValueError, "column index values must be < %d" % (N//C)
                 if self.indices.min() < 0:
                     raise ValueError, "column index values must be >= 0"
                 if diff(self.indptr).min() < 0:
@@ -262,7 +262,7 @@ class bsr_matrix(_cs_matrix):
         M,N = self.shape
         R,C = self.blocksize
         y = np.empty(min(M,N), dtype=upcast(self.dtype))
-        sparsetools.bsr_diagonal(M/R, N/C, R, C, \
+        sparsetools.bsr_diagonal(M//R, N//C, R, C, \
                 self.indptr, self.indices, np.ravel(self.data), y)
         return y
 
@@ -295,7 +295,7 @@ class bsr_matrix(_cs_matrix):
 
         result = np.zeros(self.shape[0], dtype=upcast(self.dtype, other.dtype))
 
-        bsr_matvec(M/R, N/C, R, C, \
+        bsr_matvec(M//R, N//C, R, C, \
             self.indptr, self.indices, self.data.ravel(),
             other, result)
 
@@ -308,7 +308,7 @@ class bsr_matrix(_cs_matrix):
 
         result = np.zeros((M,n_vecs), dtype=upcast(self.dtype,other.dtype))
 
-        bsr_matvecs(M/R, N/C, n_vecs, R, C, \
+        bsr_matvecs(M//R, N//C, n_vecs, R, C, \
                 self.indptr, self.indices, self.data.ravel(), \
                 other.ravel(), result.ravel())
 
@@ -335,7 +335,7 @@ class bsr_matrix(_cs_matrix):
         else:
             other = other.tobsr(blocksize=(n,C))
 
-        csr_matmat_pass1( M/R, N/C, \
+        csr_matmat_pass1( M//R, N//C, \
                 self.indptr,  self.indices, \
                 other.indptr, other.indices, \
                 indptr)
@@ -344,7 +344,7 @@ class bsr_matrix(_cs_matrix):
         indices = np.empty(bnnz, dtype=np.intc)
         data    = np.empty(R*C*bnnz, dtype=upcast(self.dtype,other.dtype))
 
-        bsr_matmat_pass2( M/R, N/C, R, C, n, \
+        bsr_matmat_pass2( M//R, N//C, R, C, n, \
                 self.indptr,  self.indices,  np.ravel(self.data), \
                 other.indptr, other.indices, np.ravel(other.data), \
                 indptr,       indices,       data)
@@ -387,7 +387,7 @@ class bsr_matrix(_cs_matrix):
         M,N = self.shape
         R,C = self.blocksize
 
-        row  = (R * np.arange(M/R)).repeat(np.diff(self.indptr))
+        row  = (R * np.arange(M//R)).repeat(np.diff(self.indptr))
         row  = row.repeat(R*C).reshape(-1,R,C)
         row += np.tile(np.arange(R).reshape(-1,1), (1,C))
         row  = row.reshape(-1)
@@ -409,16 +409,16 @@ class bsr_matrix(_cs_matrix):
 
         R,C = self.blocksize
         M,N = self.shape
-        NBLK = self.nnz/(R*C)
+        NBLK = self.nnz//(R*C)
 
         if self.nnz == 0:
             return bsr_matrix((N,M), blocksize=(C,R))
 
-        indptr  = np.empty( N/C + 1,    dtype=self.indptr.dtype)
+        indptr  = np.empty( N//C + 1,    dtype=self.indptr.dtype)
         indices = np.empty( NBLK,       dtype=self.indices.dtype)
         data    = np.empty( (NBLK,C,R), dtype=self.data.dtype)
 
-        bsr_transpose(M/R, N/C, R, C, \
+        bsr_transpose(M//R, N//C, R, C, \
                       self.indptr, self.indices, self.data.ravel(), \
                       indptr,      indices,      data.ravel())
 
@@ -445,7 +445,7 @@ class bsr_matrix(_cs_matrix):
         from csr import csr_matrix
 
         # modifies self.indptr and self.indices *in place*
-        proxy = csr_matrix((mask,self.indices,self.indptr),shape=(M/R,N/C))
+        proxy = csr_matrix((mask,self.indices,self.indptr),shape=(M//R,N//C))
         proxy.eliminate_zeros()
 
         self.prune()
@@ -463,7 +463,7 @@ class bsr_matrix(_cs_matrix):
         R,C = self.blocksize
         M,N = self.shape
 
-        bsr_sort_indices(M/R, N/C, R, C, self.indptr, self.indices, self.data.ravel())
+        bsr_sort_indices(M//R, N//C, R, C, self.indptr, self.indices, self.data.ravel())
 
         self.has_sorted_indices = True
 
@@ -474,7 +474,7 @@ class bsr_matrix(_cs_matrix):
         R,C = self.blocksize
         M,N = self.shape
 
-        if len(self.indptr) != M/R + 1:
+        if len(self.indptr) != M//R + 1:
             raise ValueError, "index pointer has invalid length"
 
         bnnz = self.indptr[-1]
@@ -505,7 +505,7 @@ class bsr_matrix(_cs_matrix):
         indices = np.empty(max_bnnz, dtype=np.intc)
         data    = np.empty(R*C*max_bnnz, dtype=upcast(self.dtype,other.dtype))
 
-        fn(self.shape[0]/R, self.shape[1]/C, R, C,
+        fn(self.shape[0]//R, self.shape[1]//C, R, C,
                 self.indptr,  self.indices,  np.ravel(self.data),
                 other.indptr, other.indices, np.ravel(other.data),
                 indptr,       indices,       data)
