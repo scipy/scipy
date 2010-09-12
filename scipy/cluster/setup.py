@@ -1,6 +1,12 @@
 #!/usr/bin/env python
+import sys
 
 from os.path import join
+
+if sys.version_info[0] >= 3:
+    DEFINE_MACROS = [("SCIPY_PY3K", None)]
+else:
+    DEFINE_MACROS = []
 
 def configuration(parent_package = '', top_path = None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
@@ -10,11 +16,13 @@ def configuration(parent_package = '', top_path = None):
 
     config.add_extension('_vq',
         sources=[join('src', 'vq_module.c'), join('src', 'vq.c')],
-        include_dirs = [get_numpy_include_dirs()])
+        include_dirs = [get_numpy_include_dirs()],
+        define_macros=DEFINE_MACROS)
 
     config.add_extension('_hierarchy_wrap',
         sources=[join('src', 'hierarchy_wrap.c'), join('src', 'hierarchy.c')],
-        include_dirs = [get_numpy_include_dirs()])
+        include_dirs = [get_numpy_include_dirs()],
+        define_macros=DEFINE_MACROS)
 
     return config
 
