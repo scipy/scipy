@@ -1,6 +1,8 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
-from numpy.testing import *
+
+from numpy.testing import assert_equal, assert_array_equal, assert_almost_equal, \
+        assert_, run_module_suite
 
 import numpy as np
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
@@ -12,7 +14,7 @@ class ConsistencyTests:
         d, i = self.kdtree.query(x, 1)
         assert_almost_equal(d**2,np.sum((x-self.data[i])**2))
         eps = 1e-8
-        assert np.all(np.sum((self.data-x[np.newaxis,:])**2,axis=1)>d**2-eps)
+        assert_(np.all(np.sum((self.data-x[np.newaxis,:])**2,axis=1)>d**2-eps))
 
     def test_m_nearest(self):
         x = self.x
@@ -35,7 +37,7 @@ class ConsistencyTests:
                 continue
             hits += 1
             assert_almost_equal(near_d**2,np.sum((x-self.data[near_i])**2))
-            assert near_d<d+eps, "near_d=%g should be less than %g" % (near_d,d)
+            assert_(near_d<d+eps, "near_d=%g should be less than %g" % (near_d,d))
         assert_equal(np.sum(np.sum((self.data-x[np.newaxis,:])**2,axis=1)<d**2+eps),hits)
 
     def test_points_near_l1(self):
@@ -49,7 +51,7 @@ class ConsistencyTests:
                 continue
             hits += 1
             assert_almost_equal(near_d,distance(x,self.data[near_i],1))
-            assert near_d<d+eps, "near_d=%g should be less than %g" % (near_d,d)
+            assert_(near_d<d+eps, "near_d=%g should be less than %g" % (near_d,d))
         assert_equal(np.sum(distance(self.data,x,1)<d+eps),hits)
     def test_points_near_linf(self):
         x = self.x
@@ -62,7 +64,7 @@ class ConsistencyTests:
                 continue
             hits += 1
             assert_almost_equal(near_d,distance(x,self.data[near_i],np.inf))
-            assert near_d<d+eps, "near_d=%g should be less than %g" % (near_d,d)
+            assert_(near_d<d+eps, "near_d=%g should be less than %g" % (near_d,d))
         assert_equal(np.sum(distance(self.data,x,np.inf)<d+eps),hits)
 
     def test_approx(self):
@@ -71,7 +73,7 @@ class ConsistencyTests:
         eps = 0.1
         d_real, i_real = self.kdtree.query(x, k)
         d, i = self.kdtree.query(x, k, eps=eps)
-        assert np.all(d<=d_real*(1+eps))
+        assert_(np.all(d<=d_real*(1+eps)))
 
 
 class test_random(ConsistencyTests):
@@ -150,8 +152,8 @@ class test_vectorization:
 
     def test_single_query(self):
         d, i = self.kdtree.query(np.array([0,0,0]))
-        assert isinstance(d,float)
-        assert np.issubdtype(i, int)
+        assert_(isinstance(d,float))
+        assert_(np.issubdtype(i, int))
 
     def test_vectorized_query(self):
         d, i = self.kdtree.query(np.zeros((2,4,3)))
@@ -164,27 +166,30 @@ class test_vectorization:
         d, i = self.kdtree.query(np.array([0,0,0]),k=kk)
         assert_equal(np.shape(d),(kk,))
         assert_equal(np.shape(i),(kk,))
-        assert np.all(~np.isfinite(d[-s:]))
-        assert np.all(i[-s:]==self.kdtree.n)
+        assert_(np.all(~np.isfinite(d[-s:])))
+        assert_(np.all(i[-s:]==self.kdtree.n))
+
     def test_vectorized_query_multiple_neighbors(self):
         s = 23
         kk = self.kdtree.n+s
         d, i = self.kdtree.query(np.zeros((2,4,3)),k=kk)
         assert_equal(np.shape(d),(2,4,kk))
         assert_equal(np.shape(i),(2,4,kk))
-        assert np.all(~np.isfinite(d[:,:,-s:]))
-        assert np.all(i[:,:,-s:]==self.kdtree.n)
+        assert_(np.all(~np.isfinite(d[:,:,-s:])))
+        assert_(np.all(i[:,:,-s:]==self.kdtree.n))
+
     def test_single_query_all_neighbors(self):
         d, i = self.kdtree.query([0,0,0],k=None,distance_upper_bound=1.1)
-        assert isinstance(d,list)
-        assert isinstance(i,list)
+        assert_(isinstance(d,list))
+        assert_(isinstance(i,list))
+
     def test_vectorized_query_all_neighbors(self):
         d, i = self.kdtree.query(np.zeros((2,4,3)),k=None,distance_upper_bound=1.1)
         assert_equal(np.shape(d),(2,4))
         assert_equal(np.shape(i),(2,4))
 
-        assert isinstance(d[0,0],list)
-        assert isinstance(i[0,0],list)
+        assert_(isinstance(d[0,0],list))
+        assert_(isinstance(i[0,0],list))
 
 class test_vectorization_compiled:
     def setUp(self):
@@ -200,8 +205,8 @@ class test_vectorization_compiled:
 
     def test_single_query(self):
         d, i = self.kdtree.query([0,0,0])
-        assert isinstance(d,float)
-        assert isinstance(i,int)
+        assert_(isinstance(d,float))
+        assert_(isinstance(i,int))
 
     def test_vectorized_query(self):
         d, i = self.kdtree.query(np.zeros((2,4,3)))
@@ -221,29 +226,30 @@ class test_vectorization_compiled:
         d, i = self.kdtree.query([0,0,0],k=kk)
         assert_equal(np.shape(d),(kk,))
         assert_equal(np.shape(i),(kk,))
-        assert np.all(~np.isfinite(d[-s:]))
-        assert np.all(i[-s:]==self.kdtree.n)
+        assert_(np.all(~np.isfinite(d[-s:])))
+        assert_(np.all(i[-s:]==self.kdtree.n))
+
     def test_vectorized_query_multiple_neighbors(self):
         s = 23
         kk = self.kdtree.n+s
         d, i = self.kdtree.query(np.zeros((2,4,3)),k=kk)
         assert_equal(np.shape(d),(2,4,kk))
         assert_equal(np.shape(i),(2,4,kk))
-        assert np.all(~np.isfinite(d[:,:,-s:]))
-        assert np.all(i[:,:,-s:]==self.kdtree.n)
+        assert_(np.all(~np.isfinite(d[:,:,-s:])))
+        assert_(np.all(i[:,:,-s:]==self.kdtree.n))
 
 class ball_consistency:
 
     def test_in_ball(self):
         l = self.T.query_ball_point(self.x, self.d, p=self.p, eps=self.eps)
         for i in l:
-            assert distance(self.data[i],self.x,self.p)<=self.d*(1.+self.eps)
+            assert_(distance(self.data[i],self.x,self.p)<=self.d*(1.+self.eps))
 
     def test_found_all(self):
         c = np.ones(self.T.n,dtype=np.bool)
         l = self.T.query_ball_point(self.x, self.d, p=self.p, eps=self.eps)
         c[l] = False
-        assert np.all(distance(self.data[c],self.x,self.p)>=self.d/(1.+self.eps))
+        assert_(np.all(distance(self.data[c],self.x,self.p)>=self.d/(1.+self.eps)))
 
 class test_random_ball(ball_consistency):
 
@@ -289,7 +295,7 @@ def test_random_ball_vectorized():
 
     r = T.query_ball_point(np.random.randn(2,3,m),1)
     assert_equal(r.shape,(2,3))
-    assert isinstance(r[0,0],list)
+    assert_(isinstance(r[0,0],list))
 
 class two_trees_consistency:
 
@@ -297,13 +303,13 @@ class two_trees_consistency:
         r = self.T1.query_ball_tree(self.T2, self.d, p=self.p, eps=self.eps)
         for i, l in enumerate(r):
             for j in l:
-                assert distance(self.data1[i],self.data2[j],self.p)<=self.d*(1.+self.eps)
+                assert_(distance(self.data1[i],self.data2[j],self.p)<=self.d*(1.+self.eps))
     def test_found_all(self):
         r = self.T1.query_ball_tree(self.T2, self.d, p=self.p, eps=self.eps)
         for i, l in enumerate(r):
             c = np.ones(self.T2.n,dtype=np.bool)
             c[l] = False
-            assert np.all(distance(self.data2[c],self.data1[i],self.p)>=self.d/(1.+self.eps))
+            assert_(np.all(distance(self.data2[c],self.data1[i],self.p)>=self.d/(1.+self.eps)))
 
 class test_two_random_trees(two_trees_consistency):
 
@@ -389,7 +395,7 @@ class test_count_neighbors:
     def test_multiple_radius(self):
         rs = np.exp(np.linspace(np.log(0.01),np.log(10),3))
         results = self.T1.count_neighbors(self.T2, rs)
-        assert np.all(np.diff(results)>=0)
+        assert_(np.all(np.diff(results)>=0))
         for r,result in zip(rs, results):
             assert_equal(self.T1.count_neighbors(self.T2, r), result)
 
@@ -408,7 +414,7 @@ class test_sparse_distance_matrix:
             for j in l:
                 assert_equal(M[i,j],distance(self.T1.data[i],self.T2.data[j]))
         for ((i,j),d) in M.items():
-            assert j in r[i]
+            assert_(j in r[i])
 
     def test_zero_distance(self):
         M = self.T1.sparse_distance_matrix(self.T1, self.r) # raises an exception for bug 870
@@ -442,7 +448,7 @@ def check_onetree_query(T,d):
             if i<j:
                 s.add((i,j))
 
-    assert s == T.query_pairs(d)
+    assert_(s == T.query_pairs(d))
 
 def test_onetree_query():
     np.random.seed(0)

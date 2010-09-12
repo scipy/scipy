@@ -37,7 +37,7 @@
 import os.path
 
 import numpy as np
-from numpy.testing import *
+from numpy.testing import verbose, TestCase, run_module_suite
 from scipy.spatial.distance import squareform, pdist, cdist, matching, \
                                    jaccard, dice, sokalsneath, rogerstanimoto, \
                                    russellrao, yule, num_obs_y, num_obs_dm, \
@@ -301,17 +301,6 @@ class TestCdist(TestCase):
             print (Y1-Y2).max()
         self.failUnless(within_tol(Y1, Y2, eps))
 
-    def test_cdist_sqeuclidean_random(self):
-        "Tests cdist(X, 'sqeuclidean') on random data."
-        eps = 1e-07
-        # Get the data: the input matrix and the right output.
-        X1 = eo['cdist-X1']
-        X2 = eo['cdist-X2']
-        Y1 = cdist(X1, X2, 'sqeuclidean')
-        Y2 = cdist(X1, X2, 'test_sqeuclidean')
-        if verbose > 2:
-            print (Y1-Y2).max()
-        self.failUnless(within_tol(Y1, Y2, eps))
 
     def test_cdist_cosine_random(self):
         "Tests cdist(X, 'cosine') on random data."
@@ -486,7 +475,7 @@ class TestPdist(TestCase):
         Y_test1 = pdist(X, 'euclidean')
         self.failUnless(within_tol(Y_test1, Y_right, eps))
         
-    def test_pdist_euclidean_random(self):
+    def test_pdist_euclidean_random_u(self):
         "Tests pdist(X, 'euclidean') with unicode metric string"
         eps = 1e-07
         # Get the data: the input matrix and the right output.
@@ -827,7 +816,7 @@ class TestPdist(TestCase):
         Y_test2 = pdist(X, 'test_minkowski', 3.2)
         self.failUnless(within_tol(Y_test2, Y_right, eps))
 
-    def test_pdist_minkowski_iris(self):
+    def test_pdist_minkowski_3_2_iris(self):
         "Tests pdist(X, 'minkowski') on iris data."
         eps = 1e-07
         # Get the data: the input matrix and the right output.
@@ -837,7 +826,7 @@ class TestPdist(TestCase):
         #print "minkowski-iris-3.2", np.abs(Y_test1 - Y_right).max()
         self.failUnless(within_tol(Y_test1, Y_right, eps))
 
-    def test_pdist_minkowski_iris_float32(self):
+    def test_pdist_minkowski_3_2_iris_float32(self):
         "Tests pdist(X, 'minkowski') on iris data. (float32)"
         eps = 1e-07
         # Get the data: the input matrix and the right output.
@@ -847,7 +836,7 @@ class TestPdist(TestCase):
         #print "minkowski-iris-3.2", np.abs(Y_test1 - Y_right).max()
         self.failUnless(within_tol(Y_test1, Y_right, eps))
 
-    def test_pdist_minkowski_iris_nonC(self):
+    def test_pdist_minkowski_3_2_iris_nonC(self):
         "Tests pdist(X, 'test_minkowski') [the non-C implementation] on iris data."
         eps = 1e-07
         # Get the data: the input matrix and the right output.
@@ -856,7 +845,7 @@ class TestPdist(TestCase):
         Y_test2 = pdist(X, 'test_minkowski', 3.2)
         self.failUnless(within_tol(Y_test2, Y_right, eps))
 
-    def test_pdist_minkowski_iris(self):
+    def test_pdist_minkowski_5_8_iris(self):
         "Tests pdist(X, 'minkowski') on iris data."
         eps = 1e-07
         # Get the data: the input matrix and the right output.
@@ -866,7 +855,7 @@ class TestPdist(TestCase):
         #print "minkowski-iris-5.8", np.abs(Y_test1 - Y_right).max()
         self.failUnless(within_tol(Y_test1, Y_right, eps))
 
-    def test_pdist_minkowski_iris_float32(self):
+    def test_pdist_minkowski_5_8_iris_float32(self):
         "Tests pdist(X, 'minkowski') on iris data. (float32)"
         eps = 1e-06
         # Get the data: the input matrix and the right output.
@@ -878,7 +867,7 @@ class TestPdist(TestCase):
             print "minkowski-iris-5.8", np.abs(Y_test1 - Y_right).max()
         self.failUnless(within_tol(Y_test1, Y_right, eps))
 
-    def test_pdist_minkowski_iris_nonC(self):
+    def test_pdist_minkowski_5_8_iris_nonC(self):
         "Tests pdist(X, 'test_minkowski') [the non-C implementation] on iris data."
         eps = 1e-07
         # Get the data: the input matrix and the right output.
