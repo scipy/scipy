@@ -150,6 +150,7 @@ def custom_mangling(filename):
         os.path.join('interpolate', 'fitpack2.py'),
         os.path.join('interpolate', 'interpolate.py'),
         os.path.join('interpolate', 'interpolate_wrapper.py'),
+        os.path.join('interpolate', 'ndgriddata.py'),
         os.path.join('io', 'array_import.py'),
         os.path.join('io', '__init__.py'),
         os.path.join('linalg', 'basic.py'),
@@ -203,7 +204,8 @@ def custom_mangling(filename):
                     'futil', 'mvn',
                     '_nd_image',
                     'numpyio',
-                    '_superlu', '_arpack', '_iterative', '_umfpack'
+                    '_superlu', '_arpack', '_iterative', '_umfpack',
+                    'interpnd'
                     ]:
             text = re.sub(r'^(\s*)import %s' % mod,
                           r'\1from . import %s' % mod,
