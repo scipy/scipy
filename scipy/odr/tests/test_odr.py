@@ -1,7 +1,7 @@
 # Scipy imports.
 import numpy as np
 from numpy import pi
-from numpy.testing import *
+from numpy.testing import assert_array_almost_equal, TestCase, run_module_suite
 from scipy.odr import Data, Model, ODR, RealData, odr_stop
 
 
