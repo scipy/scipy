@@ -10,6 +10,7 @@ Authors: Robert Cimrman, Andrew Knyazev
 Examples in tests directory contributed by Nils Wagner.
 """
 
+import sys
 import numpy as np
 import scipy as sp
 
@@ -81,6 +82,10 @@ def as2d( ar ):
         aux.shape = (ar.shape[0], 1)
         return aux
 
+class CallableLinearOperator(LinearOperator):
+    def __call__(self, x):
+        return self.matmat(x)
+
 def makeOperator( operatorInput, expectedShape ):
     """Internal. Takes a dense numpy array or a sparse matrix or
     a function and makes an operator performing matrix * blockvector
@@ -103,7 +108,11 @@ def makeOperator( operatorInput, expectedShape ):
     if operator.shape != expectedShape:
         raise ValueError('operator has invalid shape')
 
-    operator.__call__ = operator.matmat
+    if sys.version_info[0] >= 3:
+        # special methods are looked up on the class -- so make a new one
+        operator.__class__ = CallableLinearOperator
+    else:
+        operator.__call__ = operator.matmat
 
     return operator
 
