@@ -147,6 +147,8 @@ def custom_mangling(filename):
         os.path.join('interpolate', 'fitpack2.py'),
         os.path.join('interpolate', 'interpolate.py'),
         os.path.join('interpolate', 'interpolate_wrapper.py'),
+        os.path.join('io', 'array_import.py'),
+        os.path.join('io', '__init__.py'),
         os.path.join('linalg', 'basic.py'),
         os.path.join('linalg', 'decomp.py'),
         os.path.join('linalg', 'lapack.py'),
@@ -189,6 +191,7 @@ def custom_mangling(filename):
                     'vonmises_cython',
                     'futil', 'mvn',
                     '_nd_image',
+                    'numpyio',
                     ]:
             text = re.sub(r'^(\s*)import %s' % mod,
                           r'\1from . import %s' % mod,
