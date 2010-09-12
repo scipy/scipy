@@ -12,6 +12,7 @@ from numpy.testing import TestCase, rand, assert_, assert_equal, \
     assert_approx_equal, assert_raises, run_module_suite
 from numpy import array, arange, zeros, ravel, float32, float64, power
 import numpy as np
+import sys
 
 import scipy.stats as stats
 
@@ -79,9 +80,15 @@ class TestRound(TestCase):
             numbers inconsistently). Needless to say, statical packages
             written in these languages may fail the test as well.
         """
-        for i in range(0,9):
-            y = round(ROUND[i])
-            assert_equal(y,i+1)
+        if sys.version_info[0] >= 3:
+            # round to even
+            for i in range(0,9):
+                y = round(ROUND[i])
+                assert_equal(y, 2*((i+1)//2))
+        else:
+            for i in range(0,9):
+                y = round(ROUND[i])
+                assert_equal(y,i+1)
 
     def test_rounding1(self):
         """ W.II.A.1. Y = INT(2.6*7 -0.2) (Y should be 18)"""
