@@ -73,7 +73,7 @@ class TestSparseFunctions(TestCase):
         def gold(A,bs):
             R,C = bs
             I,J = A.nonzero()
-            return len( set( zip(I/R,J/C) ) )
+            return len( set( zip(I//R,J//C) ) )
 
         mats = []
         mats.append( [[0]] )

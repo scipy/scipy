@@ -84,8 +84,8 @@ class TestEigenSymmetric(TestArpack):
             return eval[:k]
         if which=='BE':
             # one ev from each end - if k is odd, extra ev on high end
-            l=k/2
-            h=k/2+k%2
+            l=k//2
+            h=k//2+k%2
             low=range(len(eval))[:l]
             high=range(len(eval))[-h:]
             return eval[low+high]
