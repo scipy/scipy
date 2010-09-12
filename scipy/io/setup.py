@@ -6,7 +6,7 @@ def configuration(parent_package='',top_path=None):
 
     config.add_data_dir('tests')
     config.add_data_dir('docs')
-    #config.add_subpackage('matlab')
+    config.add_subpackage('matlab')
     config.add_subpackage('arff')
     return config
 

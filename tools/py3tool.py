@@ -153,6 +153,10 @@ def custom_mangling(filename):
         os.path.join('interpolate', 'ndgriddata.py'),
         os.path.join('io', 'array_import.py'),
         os.path.join('io', '__init__.py'),
+        os.path.join('io', 'matlab', 'miobase.py'),
+        os.path.join('io', 'matlab', 'mio4.py'),
+        os.path.join('io', 'matlab', 'mio5.py'),
+        os.path.join('io', 'matlab', 'mio5_params.py'),
         os.path.join('linalg', 'basic.py'),
         os.path.join('linalg', 'decomp.py'),
         os.path.join('linalg', 'lapack.py'),
@@ -211,7 +215,8 @@ def custom_mangling(filename):
                     '_nd_image',
                     'numpyio',
                     '_superlu', '_arpack', '_iterative', '_umfpack',
-                    'interpnd'
+                    'interpnd',
+                    'mio_utils', 'mio5_utils', 'streams'
                     ]:
             text = re.sub(r'^(\s*)import %s' % mod,
                           r'\1from . import %s' % mod,
