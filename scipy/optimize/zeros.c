@@ -178,15 +178,42 @@ Zerosmethods[] = {
 	{NULL, NULL}
 };
 
-PyMODINIT_FUNC init_zeros(void)
+static double __compute_relative_precision()
 {
-        double tol;
+    double tol;
 
-        /* Determine relative precision of doubles, assumes binary */
-        for(tol = 1; tol + 1 != 1; tol /= 2);
-        scipy_zeros_rtol = 2*tol;
-
-        Py_InitModule("_zeros", Zerosmethods);
+    /* Determine relative precision of doubles, assumes binary */
+    for(tol = 1; tol + 1 != 1; tol /= 2);
+    return 2*tol;
 }
 
+#if PY_VERSION_HEX >= 0x03000000
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "_zeros",
+    NULL,
+    -1,
+    Zerosmethods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
 
+PyObject *PyInit__zeros(void)
+{
+    PyObject *m, *d, *s;
+
+    m = PyModule_Create(&moduledef);
+
+    scipy_zeros_rtol = __compute_relative_precision();
+
+    return m;
+}
+#else
+PyMODINIT_FUNC init_zeros(void)
+{
+        Py_InitModule("_zeros", Zerosmethods);
+        scipy_zeros_rtol = __compute_relative_precision();
+}
+#endif
