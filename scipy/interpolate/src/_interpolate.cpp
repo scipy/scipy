@@ -221,7 +221,29 @@ static PyMethodDef interpolate_methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
+#if PY_VERSION_HEX >= 0x03000000
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "_interpolate",
+    NULL,
+    -1,
+    interpolate_methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
 
+PyObject *PyInit__interpolate(void)
+{
+    PyObject *m, *d, *s;
+
+    m = PyModule_Create(&moduledef);
+    import_array();
+
+    return m;
+}
+#else
 PyMODINIT_FUNC init_interpolate(void)
 {
     PyObject* m;
@@ -232,5 +254,5 @@ PyMODINIT_FUNC init_interpolate(void)
         return;
     import_array();
 }
-
+#endif
 } // extern "C"

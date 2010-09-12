@@ -31,6 +31,24 @@ the result tuple when the full_output argument is non-zero.
 #include "Python.h"
 #include "numpy/arrayobject.h"
 
+#if PY_VERSION_HEX >= 0x03000000
+    #define PyString_AsString PyBytes_AsString
+    #define PyString_FromString PyBytes_FromString
+    #define PyString_ConcatAndDel PyBytes_ConcatAndDel
+
+    #define PyInt_AsLong PyLong_AsLong
+
+    /* Return True only if the long fits in a C long */
+    static NPY_INLINE int PyInt_Check(PyObject *op) {
+        int overflow = 0;
+        if (!PyLong_Check(op)) {
+            return 0;
+        }
+        PyLong_AsLongAndOverflow(op, &overflow);
+        return (overflow == 0);
+    }
+#endif
+
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); goto fail;}
 #define PYERR2(errobj,message) {PyErr_Print(); PyErr_SetString(errobj, message); goto fail;}
 #define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
