@@ -18,7 +18,7 @@
 #include <numpy/arrayobject.h>
 
 #include "_superluobject.h"
-#include "npy_3kcompat.h"
+#include "numpy/npy_3kcompat.h"
 
 extern jmp_buf _superlu_py_jmpbuf;
 

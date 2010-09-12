@@ -1,7 +1,7 @@
 #include "Python.h"
 #include "numpy/arrayobject.h"
 
-#include "npy_3kcompat.h"
+#include "numpy/npy_3kcompat.h"
 
 #if defined(NO_APPEND_FORTRAN)
 #if defined(UPPERCASE_FORTRAN)
