@@ -12,7 +12,8 @@ Run tests if interpolate is not installed:
 """
 #import libwadpy
 
-from numpy.testing import *
+from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal, \
+        assert_array_almost_equal, TestCase, run_module_suite
 from numpy import array, diff, shape
 from scipy.interpolate.fitpack2 import UnivariateSpline, LSQBivariateSpline, \
     SmoothBivariateSpline, RectBivariateSpline

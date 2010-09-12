@@ -1,4 +1,6 @@
-from numpy.testing import *
+from numpy.testing import assert_, assert_equal, assert_almost_equal, \
+        assert_array_almost_equal, assert_raises, assert_array_equal, \
+        dec, TestCase, run_module_suite
 from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np
 
@@ -80,11 +82,11 @@ class TestInterp1D(object):
         constructor.
         """
 
-        assert interp1d(self.x10, self.y10).copy
-        assert not interp1d(self.x10, self.y10, copy=False).copy
-        assert interp1d(self.x10, self.y10).bounds_error
-        assert not interp1d(self.x10, self.y10, bounds_error=False).bounds_error
-        assert np.isnan(interp1d(self.x10, self.y10).fill_value)
+        assert_(interp1d(self.x10, self.y10).copy)
+        assert_(not interp1d(self.x10, self.y10, copy=False).copy)
+        assert_(interp1d(self.x10, self.y10).bounds_error)
+        assert_(not interp1d(self.x10, self.y10, bounds_error=False).bounds_error)
+        assert_(np.isnan(interp1d(self.x10, self.y10).fill_value))
         assert_equal(
             interp1d(self.x10, self.y10, fill_value=3.0).fill_value,
             3.0,
@@ -213,7 +215,7 @@ class TestInterp1D(object):
         y = np.arange(10).astype(np.int_)
         c = interp1d(x, y, kind=kind, fill_value=np.nan, bounds_error=False)
         yi = c(x - 1)
-        assert np.isnan(yi[0])
+        assert_(np.isnan(yi[0]))
         assert_array_almost_equal(yi, np.r_[np.nan, y[:-1]])
 
     def test_bounds(self):
@@ -234,7 +236,7 @@ class TestInterp1D(object):
         )
 
         # Scalar input -> 0-dim scalar array output
-        assert isinstance(interp10(1.2), np.ndarray)
+        assert_(isinstance(interp10(1.2), np.ndarray))
         assert_equal(interp10(1.2).shape, ())
 
         # Multidimensional outputs.

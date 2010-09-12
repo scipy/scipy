@@ -2,9 +2,8 @@
 # Created by John Travers, Robert Hetland, 2007
 """ Test functions for rbf module """
 
-import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_almost_equal
-from numpy import linspace, sin, random, exp, log10, allclose
+from numpy.testing import assert_, assert_array_almost_equal, assert_almost_equal
+from numpy import linspace, sin, random, exp, allclose
 from scipy.interpolate.rbf import Rbf
 
 FUNCTIONS = ('multiquadric', 'inverse multiquadric', 'gaussian',
@@ -60,7 +59,7 @@ def check_rbf1d_regularity(function, atol):
     #plt.title(function)
     #plt.show()
     msg = "abs-diff: %f" % abs(yi - sin(xi)).max()
-    assert allclose(yi, sin(xi), atol=atol), msg
+    assert_(allclose(yi, sin(xi), atol=atol), msg)
 
 def test_rbf_regularity():
     tolerances = {

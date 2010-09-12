@@ -1,5 +1,6 @@
 import numpy as np
-from numpy.testing import *
+from numpy.testing import assert_equal, assert_array_equal, assert_allclose, \
+        run_module_suite
 
 from scipy.interpolate import griddata
 
