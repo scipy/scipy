@@ -62,7 +62,7 @@ def make_system(A, M, x0, b, xtype=None):
     A = aslinearoperator(A)
 
     if A.shape[0] != A.shape[1]:
-        raise ValueError('expected square matrix (shape=%s)' % shape)
+        raise ValueError('expected square matrix, but got shape=%s' % (A.shape,))
 
     N = A.shape[0]
 
