@@ -11,8 +11,7 @@ from numpy.ma import masked, nomask
 import scipy.stats.mstats as mstats
 from numpy.testing import TestCase, run_module_suite
 from numpy.ma.testutils import assert_equal, assert_almost_equal, \
-    assert_array_almost_equal
-
+    assert_array_almost_equal, assert_
 
 
 class TestMquantiles(TestCase):
@@ -47,7 +46,7 @@ class TestGMean(TestCase):
 
         desired1 = mstats.gmean(a,axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
-        assert not isinstance(desired1, ma.MaskedArray)
+        assert_(not isinstance(desired1, ma.MaskedArray))
         #
         a = ma.array((1,2,3,4),mask=(0,0,0,1))
         actual= mstats.gmean(a)
@@ -134,8 +133,8 @@ class TestCorr(TestCase):
         #
         x = ma.array(x, mask=True)
         pr = mstats.pearsonr(x,x)
-        assert(pr[0] is masked)
-        assert(pr[1] is masked)
+        assert_(pr[0] is masked)
+        assert_(pr[1] is masked)
     #
     def test_spearmanr(self):
         "Tests some computations of Spearman's rho"

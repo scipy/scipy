@@ -218,7 +218,7 @@ class TestNanFunc(TestCase):
     def test_nanmean_all(self):
         """Check nanmean when all values are nan."""
         m = stats.nanmean(self.Xall)
-        assert np.isnan(m)
+        assert_(np.isnan(m))
 
     def test_nanstd_none(self):
         """Check nanstd when no values are nan."""
@@ -233,7 +233,7 @@ class TestNanFunc(TestCase):
     def test_nanstd_all(self):
         """Check nanstd when all values are nan."""
         s = stats.nanstd(self.Xall)
-        assert np.isnan(s)
+        assert_(np.isnan(s))
 
     def test_nanstd_negative_axis(self):
         x = np.array([1, 2, 3])
@@ -252,7 +252,7 @@ class TestNanFunc(TestCase):
     def test_nanmedian_all(self):
         """Check nanmedian when all values are nan."""
         m = stats.nanmedian(self.Xall)
-        assert np.isnan(m)
+        assert_(np.isnan(m))
 
 class TestCorr(TestCase):
     """ W.II.D. Compute a correlation matrix on all the variables.

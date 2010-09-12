@@ -8,7 +8,6 @@
 
 import numpy.testing as npt
 import numpy as np
-import nose
 
 from scipy import stats
 
@@ -56,13 +55,13 @@ def check_ppf_limits(distfn,arg,msg):
     #print distfn.name,below,low,upp,above
     assert_equal_inf_nan(distfn.a,low, msg + 'ppf lower bound')
     assert_equal_inf_nan(distfn.b,upp, msg + 'ppf upper bound')
-    assert np.isnan(below), msg + 'ppf out of bounds - below'
-    assert np.isnan(above), msg + 'ppf out of bounds - above'
+    npt.assert_(np.isnan(below), msg + 'ppf out of bounds - below')
+    npt.assert_(np.isnan(above), msg + 'ppf out of bounds - above')
 
 def check_ppf_private(distfn,arg,msg):
     #fails by design for trunk norm self.nb not defined
     ppfs = distfn._ppf(np.array([0.1,0.5,0.9]), *arg)
-    assert not np.any(np.isnan(ppfs)), msg + 'ppf private is nan'
+    npt.assert_(not np.any(np.isnan(ppfs)), msg + 'ppf private is nan')
 
 
 def check_isf_limits(distfn,arg,msg):
@@ -71,8 +70,8 @@ def check_isf_limits(distfn,arg,msg):
     #print distfn.name,below,low,upp,above
     assert_equal_inf_nan(distfn.a,upp, msg + 'isf lower bound')
     assert_equal_inf_nan(distfn.b,low, msg + 'isf upper bound')
-    assert np.isnan(below), msg + 'isf out of bounds - below'
-    assert np.isnan(above), msg + 'isf out of bounds - above'
+    npt.assert_(np.isnan(below), msg + 'isf out of bounds - below')
+    npt.assert_(np.isnan(above), msg + 'isf out of bounds - above')
 
 
 def check_loc_scale(distfn,arg,msg):
@@ -85,19 +84,18 @@ def check_loc_scale(distfn,arg,msg):
 def check_entropy(distfn,arg,msg):
     ent = distfn.entropy(*arg)
     #print 'Entropy =', ent
-    assert not np.isnan(ent), msg + 'test Entropy is nan'\
+    npt.assert_(not np.isnan(ent), msg + 'test Entropy is nan')
 
 def assert_equal_inf_nan(v1,v2,msg):
-    assert not np.isnan(v1)
+    npt.assert_(not np.isnan(v1))
     if not np.isinf(v1):
         npt.assert_almost_equal(v1, v2, decimal=DECIMAL, err_msg = msg + \
                                    ' - finite')
     else:
-        assert np.isinf(v2) or np.isnan(v2), \
-               msg + ' - infinite, v2=%s' % str(v2)
+        npt.assert_(np.isinf(v2) or np.isnan(v2),
+               msg + ' - infinite, v2=%s' % str(v2))
 
 if __name__ == "__main__":
     import nose
     #nose.run(argv=['', __file__])
     nose.runmodule(argv=[__file__,'-s'], exit=False)
-

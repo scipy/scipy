@@ -14,7 +14,7 @@ import scipy.stats.mstats as ms
 #import scipy.stats.mmorestats as mms
 
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
-    assert_almost_equal
+    assert_almost_equal, assert_
 
 
 class TestMisc(TestCase):
@@ -49,7 +49,7 @@ class TestMisc(TestCase):
                             test.repeat(2).reshape(-1,2))
         test = [0,0]
         _result = ms.idealfourths(test)
-        assert(np.isnan(_result).all())
+        assert_(np.isnan(_result).all())
 
 #..............................................................................
 class TestQuantiles(TestCase):

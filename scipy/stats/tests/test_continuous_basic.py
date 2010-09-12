@@ -220,15 +220,15 @@ def check_moment(distfn, arg, m, v, msg):
         npt.assert_almost_equal(m1, m, decimal=10, err_msg= msg + \
                             ' - 1st moment')
     else:                     # or np.isnan(m1), 
-        assert np.isinf(m1), \
-               msg + ' - 1st moment -infinite, m1=%s' % str(m1)
+        npt.assert_(np.isinf(m1), 
+               msg + ' - 1st moment -infinite, m1=%s' % str(m1))
         #np.isnan(m1) temporary special treatment for loggamma
     if not np.isinf(v):
         npt.assert_almost_equal(m2-m1*m1, v, decimal=10, err_msg= msg + \
                             ' - 2ndt moment')
     else:                     #or np.isnan(m2), 
-        assert np.isinf(m2), \
-               msg + ' - 2nd moment -infinite, m2=%s' % str(m2)
+        npt.assert_(np.isinf(m2),
+               msg + ' - 2nd moment -infinite, m2=%s' % str(m2))
         #np.isnan(m2) temporary special treatment for loggamma
 
 def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
@@ -260,7 +260,7 @@ Returns: t-value, two-tailed prob
     prob = stats.betai(0.5*df,0.5,df/(df+t*t))
 
     #return t,prob
-    assert prob>0.01, 'mean fail, t,prob = %f, %f, m,sm=%f,%f' % (t,prob,popmean,sm)
+    npt.assert_(prob > 0.01, 'mean fail, t,prob = %f, %f, m,sm=%f,%f' % (t,prob,popmean,sm))
 
 def check_sample_var(sv,n, popvar):
     '''
@@ -269,10 +269,9 @@ two-sided chisquare test for sample variance equal to hypothesized variance
     df = n-1
     chi2 = (n-1)*popvar/float(popvar)
     pval = stats.chisqprob(chi2,df)*2
-    assert pval>0.01, 'var fail, t,pval = %f, %f, v,sv=%f,%f' % (chi2,pval,popvar,sv)
-    
+    npt.assert_(pval > 0.01, 'var fail, t,pval = %f, %f, v,sv=%f,%f' % (chi2,pval,popvar,sv))
 
-    
+
 def check_sample_skew_kurt(distfn, arg, ss, sk, msg):
     skew,kurt = distfn.stats(moments='sk',*arg)
 ##    skew = distfn.stats(moment='s',*arg)[()]
@@ -354,10 +353,9 @@ def check_distribution_rvs(dist, args, alpha, rvs):
     D,pval = stats.kstest(rvs, dist, args=args, N=1000)
     if (pval < alpha):
         D,pval = stats.kstest(dist,'',args=args, N=1000)
-        assert (pval > alpha), "D = " + str(D) + "; pval = " + str(pval) + \
-               "; alpha = " + str(alpha) + "\nargs = " + str(args)
+        npt.assert_(pval > alpha, "D = " + str(D) + "; pval = " + str(pval) +
+               "; alpha = " + str(alpha) + "\nargs = " + str(args))
 
 if __name__ == "__main__":
     #nose.run(argv=['', __file__])
     nose.runmodule(argv=[__file__,'-s'], exit=False)
-

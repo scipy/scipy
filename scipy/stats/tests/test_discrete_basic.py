@@ -87,7 +87,7 @@ def check_sample_meanvar(sm,m,msg):
         npt.assert_almost_equal(sm, m, decimal=DECIMAL_meanvar, err_msg=msg + \
                                 ' - finite moment')
     else:
-        assert sm > 10000, 'infinite moment, sm = ' + str(sm)
+        npt.assert_(sm > 10000, msg='infinite moment, sm = ' + str(sm))
 
 def check_sample_var(sm,m,msg):
     npt.assert_almost_equal(sm, m, decimal=DECIMAL_meanvar, err_msg= msg + 'var')
@@ -97,7 +97,7 @@ def check_cdf_ppf(distfn,arg,msg):
     cdf05 = distfn.cdf(ppf05,*arg)
     npt.assert_almost_equal(distfn.ppf(cdf05-1e-6,*arg),ppf05,
                             err_msg=msg + 'ppf-cdf-median')
-    assert (distfn.ppf(cdf05+1e-4,*arg)>ppf05), msg + 'ppf-cdf-next'
+    npt.assert_((distfn.ppf(cdf05+1e-4,*arg)>ppf05), msg + 'ppf-cdf-next')
 
 def check_cdf_ppf2(distfn,arg,supp,msg):
     npt.assert_array_equal(distfn.ppf(distfn.cdf(supp,*arg),*arg),
@@ -112,17 +112,17 @@ def check_cdf_ppf_private(distfn,arg,msg):
     cdf05 = distfn.cdf(ppf05,*arg)
     npt.assert_almost_equal(distfn._ppf(cdf05-1e-6,*arg),ppf05,
                             err_msg=msg + '_ppf-cdf-median ')
-    assert (distfn._ppf(cdf05+1e-4,*arg)>ppf05), msg + '_ppf-cdf-next'
+    npt.assert_((distfn._ppf(cdf05+1e-4,*arg)>ppf05), msg + '_ppf-cdf-next')
 
 def check_ppf_ppf(distfn, arg):
-    assert distfn.ppf(0.5,*arg) < np.inf
+    npt.assert_(distfn.ppf(0.5,*arg) < np.inf)
     ppfs = distfn.ppf([0.5,0.9],*arg)
     ppf_s = [distfn._ppf(0.5,*arg), distfn._ppf(0.9,*arg)]
-    assert np.all(ppfs < np.inf)
-    assert ppf_s[0] == distfn.ppf(0.5,*arg)
-    assert ppf_s[1] == distfn.ppf(0.9,*arg)
-    assert ppf_s[0] == ppfs[0]
-    assert ppf_s[1] == ppfs[1]
+    npt.assert_(np.all(ppfs < np.inf))
+    npt.assert_(ppf_s[0] == distfn.ppf(0.5,*arg))
+    npt.assert_(ppf_s[1] == distfn.ppf(0.9,*arg))
+    npt.assert_(ppf_s[0] == ppfs[0])
+    npt.assert_(ppf_s[1] == ppfs[1])
 
 def check_pmf_cdf(distfn, arg, msg):
     startind = np.int(distfn._ppf(0.01,*arg)-1)
@@ -147,8 +147,8 @@ def check_oth(distfn, arg, msg):
                             distfn.cdf(meanint, *arg), decimal=8)
     median_sf = distfn.isf(0.5, *arg)
 
-    assert distfn.sf(median_sf - 1, *arg) > 0.5
-    assert distfn.cdf(median_sf + 1, *arg) > 0.5
+    npt.assert_(distfn.sf(median_sf - 1, *arg) > 0.5)
+    npt.assert_(distfn.cdf(median_sf + 1, *arg) > 0.5)
     npt.assert_equal(distfn.isf(0.5, *arg), distfn.ppf(0.5, *arg))
 
 #next 3 functions copied from test_continous_extra
@@ -160,8 +160,8 @@ def check_ppf_limits(distfn,arg,msg):
     #print distfn.name,below,low,upp,above
     assert_equal_inf_nan(distfn.a-1,low, msg + 'ppf lower bound')
     assert_equal_inf_nan(distfn.b,upp, msg + 'ppf upper bound')
-    assert np.isnan(below), msg + 'ppf out of bounds - below'
-    assert np.isnan(above), msg + 'ppf out of bounds - above'
+    npt.assert_(np.isnan(below), msg + 'ppf out of bounds - below')
+    npt.assert_(np.isnan(above), msg + 'ppf out of bounds - above')
 
 def check_isf_limits(distfn,arg,msg):
     below,low,upp,above = distfn.isf([-1,0,1,2], *arg)
@@ -169,17 +169,17 @@ def check_isf_limits(distfn,arg,msg):
     #print distfn.name,below,low,upp,above
     assert_equal_inf_nan(distfn.a-1,upp, msg + 'isf lower bound')
     assert_equal_inf_nan(distfn.b,low, msg + 'isf upper bound')
-    assert np.isnan(below), msg + 'isf out of bounds - below'
-    assert np.isnan(above), msg + 'isf out of bounds - above'
+    npt.assert_(np.isnan(below), msg + 'isf out of bounds - below')
+    npt.assert_(np.isnan(above), msg + 'isf out of bounds - above')
 
 def assert_equal_inf_nan(v1,v2,msg):
-    assert not np.isnan(v1)
+    npt.assert_(not np.isnan(v1))
     if not np.isinf(v1):
         npt.assert_almost_equal(v1, v2, decimal=10, err_msg = msg + \
                                    ' - finite')
     else:
-        assert np.isinf(v2) or np.isnan(v2), \
-               msg + ' - infinite, v2=%s' % str(v2)
+        npt.assert_(np.isinf(v2) or np.isnan(v2),
+               msg + ' - infinite, v2=%s' % str(v2))
 
 def check_sample_skew_kurt(distfn, arg, sk, ss, msg):
     k,s = distfn.stats(moment='ks',*arg)
@@ -190,8 +190,7 @@ def check_sample_skew_kurt(distfn, arg, sk, ss, msg):
 def check_entropy(distfn,arg,msg):
     ent = distfn.entropy(*arg)
     #print 'Entropy =', ent
-    assert not np.isnan(ent), msg + 'test Entropy is nan'\
-
+    npt.assert_(not np.isnan(ent), msg + 'test Entropy is nan')
 
 
 def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
@@ -253,8 +252,8 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
     cdfs = distfn.cdf(distsupp,*arg)
     (chis,pval) = stats.chisquare(np.array(freq),n*distmass)
 
-    assert (pval > alpha), 'chisquare - test for %s' \
-           'at arg = %s with pval = %s' % (msg,str(arg),str(pval))
+    npt.assert_(pval > alpha, 'chisquare - test for %s' 
+           ' at arg = %s with pval = %s' % (msg,str(arg),str(pval)))
 
 
 if __name__ == "__main__":
