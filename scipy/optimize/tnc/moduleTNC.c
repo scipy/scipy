@@ -304,7 +304,26 @@ static PyMethodDef moduleTNC_methods[] =
   {NULL, NULL}
 };
 
+#if PY_VERSION_HEX >= 0x03000000
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "moduleTNC",
+    NULL,
+    -1,
+    moduleTNC_methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyObject *PyInit_moduleTNC(void)
+{
+    return PyModule_Create(&moduledef);
+}
+#else
 PyMODINIT_FUNC initmoduleTNC(void)
 {
   (void) Py_InitModule("moduleTNC", moduleTNC_methods);
 }
+#endif
