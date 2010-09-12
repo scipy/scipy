@@ -342,10 +342,10 @@ cdef class VarReader5:
             pp[0] = <char *>data
         return data
 
-    cdef void read_element_into(self,
-                                cnp.uint32_t *mdtype_ptr,
-                                cnp.uint32_t *byte_count_ptr,
-                                void *ptr):
+    cdef int read_element_into(self,
+                               cnp.uint32_t *mdtype_ptr,
+                               cnp.uint32_t *byte_count_ptr,
+                               void *ptr) except -1:
         ''' Read element into pre-allocated memory in `ptr`
 
         Parameters
@@ -379,6 +379,7 @@ cdef class VarReader5:
             mod8 = byte_count % 8
             if mod8:
                 self.cstream.seek(8 - mod8, 1)
+        return 0
     
     cpdef inline cnp.ndarray read_numeric(self, int copy=True):
         ''' Read numeric data element into ndarray
@@ -476,9 +477,9 @@ cdef class VarReader5:
         self.cread_full_tag(&mdtype, &byte_count)
         return mdtype, byte_count
 
-    cdef void cread_full_tag(self,
-                        cnp.uint32_t* mdtype,
-                        cnp.uint32_t* byte_count):
+    cdef int cread_full_tag(self,
+                            cnp.uint32_t* mdtype,
+                            cnp.uint32_t* byte_count) except -1:
         ''' C method for reading full u4, u4 tag from stream'''
         cdef cnp.uint32_t u4s[2]
         self.cstream.read_into(<void *>u4s, 8)
@@ -488,6 +489,7 @@ cdef class VarReader5:
         else:
             mdtype[0] = u4s[0]
             byte_count[0] = u4s[1]
+        return 0
 
     cpdef VarHeader5 read_header(self):
         ''' Return matrix header for current stream position
