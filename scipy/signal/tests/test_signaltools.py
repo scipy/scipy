@@ -569,11 +569,17 @@ class _TestCorrelateReal(TestCase):
         assert_array_almost_equal(y, y_r)
         self.failUnless(y.dtype == self.dt)
 
+def _get_testcorrelate_class(i, base):
+    class TestCorrelateX(base):
+        dt = i
+    TestCorrelateX.__name__ = "TestCorrelate%s" % i.__name__.title()
+    return TestCorrelateX
+
 for i in [np.ubyte, np.byte, np.ushort, np.short, np.uint, np.int,
         np.ulonglong, np.ulonglong, np.float32, np.float64, np.longdouble,
         Decimal]:
-    name = "TestCorrelate%s" % i.__name__.title()
-    globals()[name] = types.ClassType(name, (_TestCorrelateReal,), {"dt": i})
+    cls = _get_testcorrelate_class(i, _TestCorrelateReal)
+    globals()[cls.__name__] = cls
 
 class _TestCorrelateComplex(TestCase):
     dt = None
@@ -660,8 +666,8 @@ class _TestCorrelateComplex(TestCase):
         self.failUnless(y.dtype == self.dt)
 
 for i in [np.csingle, np.cdouble, np.clongdouble]:
-    name = "TestCorrelate%s" % i.__name__.title()
-    globals()[name] = types.ClassType(name, (_TestCorrelateComplex,), {"dt": i})
+    cls = _get_testcorrelate_class(i, _TestCorrelateComplex)
+    globals()[cls.__name__] = cls
 
 class TestFiltFilt:
     def test_basic(self):

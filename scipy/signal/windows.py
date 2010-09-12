@@ -423,11 +423,11 @@ def get_window(window, Nx, fftbins=True):
         beta = float(window)
     except (TypeError, ValueError):
         args = ()
-        if isinstance(window, types.TupleType):
+        if isinstance(window, tuple):
             winstr = window[0]
             if len(window) > 1:
                 args = window[1:]
-        elif isinstance(window, types.StringType):
+        elif isinstance(window, str):
             if window in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
                         'general gaussian', 'general_gaussian',
                         'general gauss', 'general_gauss', 'ggs',
