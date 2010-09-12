@@ -13,7 +13,8 @@ Run tests if scipy is installed:
 import math
 
 from numpy import array
-from numpy.testing import *
+from numpy.testing import assert_equal, assert_almost_equal, \
+        assert_array_almost_equal, TestCase, run_module_suite
 from scipy.lib.blas import fblas
 from scipy.lib.blas import cblas
 from scipy.lib.blas import get_blas_funcs
