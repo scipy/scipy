@@ -41,7 +41,11 @@ static PyObject *
 SciPyLU_solve(SciPyLUObject *self, PyObject *args, PyObject *kwds) {
   PyArrayObject *b, *x=NULL;
   SuperMatrix B;
+#ifndef NPY_PY3K
   char itrans = 'N';
+#else
+  int itrans = 'N';
+#endif
   int info;
   trans_t trans;
   SuperLUStat_t stat;
@@ -53,7 +57,11 @@ SciPyLU_solve(SciPyLUObject *self, PyObject *args, PyObject *kwds) {
       return NULL;
   }
 
+#ifndef NPY_PY3K
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|c", kwlist,
+#else
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|C", kwlist,
+#endif
                                    &PyArray_Type, &b, 
                                    &itrans))
     return NULL;
@@ -474,20 +482,31 @@ fail:
 #define ENUM_CHECK_INIT                         \
     long i = -1;                                \
     char *s = "";                               \
+    PyObject *tmpobj = NULL;                    \
     if (input == Py_None) return 1;             \
     if (PyString_Check(input)) {                \
         s = PyString_AS_STRING(input);          \
     }                                           \
-    if (PyInt_Check(input)) {                   \
+    else if (PyUnicode_Check(input)) {          \
+        tmpobj = PyUnicode_AsASCIIString(input);\
+        if (tmpobj == NULL) return 0;           \
+        s = PyString_AS_STRING(tmpobj);         \
+    }                                           \
+    else if (PyInt_Check(input)) {              \
         i = PyInt_AsLong(input);                \
     }
 
 #define ENUM_CHECK_FINISH(message)              \
+    Py_XDECREF(tmpobj);                         \
     PyErr_SetString(PyExc_ValueError, message); \
     return 0;
 
-#define ENUM_CHECK(name) \
-    if (my_strxcmp(s, #name) == 0 || i == (long)name) { *value = name; return 1; }
+#define ENUM_CHECK(name)                                \
+    if (my_strxcmp(s, #name) == 0 || i == (long)name) { \
+        *value = name;                                  \
+        Py_XDECREF(tmpobj);                             \
+        return 1;                                       \
+    }
 
 /*
  * Compare strings ignoring case, underscores and whitespace
@@ -627,6 +646,18 @@ static int droprule_cvt(PyObject *input, int *value)
         seq = PyObject_CallMethod(input, "split", "s", ",");
         if (seq == NULL || !PySequence_Check(seq))
             goto fail;
+    }
+    else if (PyUnicode_Check(input)) {
+        /* Comma-separated string */
+        PyObject *s;
+        int ret;
+        s = PyUnicode_AsASCIIString(input);
+        if (s == NULL) {
+            goto fail;
+        }
+        ret = droprule_cvt(s, value);
+        Py_DECREF(s);
+        return ret;
     }
     else if (PySequence_Check(input)) {
         /* Sequence of strings or integers */
