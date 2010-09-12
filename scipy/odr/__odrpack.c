@@ -1356,6 +1356,35 @@ static PyMethodDef methods[] = {
   {NULL, NULL},
 };
 
+#if PY_VERSION_HEX >= 0x03000000
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "_odrpack",
+    NULL,
+    -1,
+    methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyObject *PyInit___odrpack(void)
+{
+    PyObject *m, *s, *d;
+
+    m = PyModule_Create(&moduledef);
+    import_array();
+
+    d = PyModule_GetDict(m);
+    odr_error = PyErr_NewException("odr.odrpack.odr_error", NULL, NULL);
+    odr_stop = PyErr_NewException("odr.odrpack.odr_stop", NULL, NULL);
+    PyDict_SetItemString(d, "odr_error", odr_error);
+    PyDict_SetItemString(d, "odr_stop", odr_stop);
+
+    return m;
+}
+#else
 PyMODINIT_FUNC init__odrpack(void)
 {
   PyObject *m, *d;
@@ -1369,3 +1398,4 @@ PyMODINIT_FUNC init__odrpack(void)
   PyDict_SetItemString(d, "odr_error", odr_error);
   PyDict_SetItemString(d, "odr_stop", odr_stop);
 }
+#endif

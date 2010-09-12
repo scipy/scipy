@@ -41,6 +41,8 @@
 #include <numpy/noprefix.h>
 #undef NO_IMPORT_ARRAY
 
+#include "npy_3kcompat.h"
+
 /* Eventually get rid of everything below this line */
 
 typedef enum

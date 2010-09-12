@@ -28,7 +28,6 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 #define ND_IMPORT_ARRAY
 #include "nd_image.h"
 #undef ND_IMPORT_ARRAY
@@ -914,8 +913,32 @@ static PyMethodDef methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
+#if PY_VERSION_HEX >= 0x03000000
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "_nd_image",
+    NULL,
+    -1,
+    methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyObject *PyInit__nd_image(void)
+{
+    PyObject *m, *s, *d;
+
+    m = PyModule_Create(&moduledef);
+    import_array();
+
+    return m;
+}
+#else
 PyMODINIT_FUNC init_nd_image(void)
 {
     Py_InitModule("_nd_image", methods);
     import_array();
 }
+#endif

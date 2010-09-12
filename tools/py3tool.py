@@ -153,6 +153,11 @@ def custom_mangling(filename):
         os.path.join('linalg', 'flinalg.py'),
         os.path.join('lib', 'blas', '__init__.py'),
         os.path.join('lib', 'lapack', '__init__.py'),
+        os.path.join('ndimage', 'filters.py'),
+        os.path.join('ndimage', 'fourier.py'),
+        os.path.join('ndimage', 'interpolation.py'),
+        os.path.join('ndimage', 'measurements.py'),
+        os.path.join('ndimage', 'morphology.py'),
         os.path.join('optimize', 'minpack.py'),
         os.path.join('optimize', 'zeros.py'),
         os.path.join('optimize', 'lbfgsb.py'),
@@ -180,7 +185,11 @@ def custom_mangling(filename):
                     '_nnls',
                     'sigtools', 'spline',
                     '_fitpack', 'dfitpack', '_interpolate',
-                    '_odepack', '_quadpack', 'vode', '_dop']:
+                    '_odepack', '_quadpack', 'vode', '_dop',
+                    'vonmises_cython',
+                    'futil', 'mvn',
+                    '_nd_image',
+                    ]:
             text = re.sub(r'^(\s*)import %s' % mod,
                           r'\1from . import %s' % mod,
                           text, flags=re.M)
