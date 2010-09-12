@@ -47,11 +47,11 @@ case t ## _type:                   \
     break
 
 int NI_Label(PyArrayObject* input, PyArrayObject* strct,
-                         maybelong *max_label, PyArrayObject* output)
+                         npy_intp *max_label, PyArrayObject* output)
 {
     int kk;
-    maybelong jj, ll, ssize, size, filter_size, *offsets = NULL;
-    maybelong mask_value, *oo;
+    npy_intp jj, ll, ssize, size, filter_size, *offsets = NULL;
+    npy_intp mask_value, *oo;
     Bool *ps, *footprint = NULL;
     char *pi, *po;
     Int32 index = 0, *index_map = NULL;
@@ -193,8 +193,8 @@ int NI_Label(PyArrayObject* input, PyArrayObject* strct,
                 index_map[idx2] = idx1;
             } else {
                 /* idx2 was already mapped, therefore we find what it was
-                     mapped to and change the current pair to the result of that
-                     and idx1. Since the pair is not destroyed, it will be
+                     mapped to and change the current pair to the result of
+                     that and idx1. Since the pair is not destroyed, it will be
                      re-processed with the adapted values.  */
                 idx2 = index_map[idx2];
                 /* keep the pairs ordered: */
@@ -256,19 +256,19 @@ int NI_Label(PyArrayObject* input, PyArrayObject* strct,
 case t ## _type:                                                  \
 {                                                                 \
     int _kk;                                                        \
-    maybelong _sindex = *(_type*)_pi - 1;                           \
+    npy_intp _sindex = *(_type*)_pi - 1;                            \
     if (_sindex >= 0 && _sindex < _max_label) {                     \
         if (_rank > 0) {                                              \
             _sindex *= 2 * _rank;                                       \
             if (_regions[_sindex] < 0) {                                \
                 for(_kk = 0; _kk < _rank; _kk++) {                        \
-                    maybelong _cc = _ii.coordinates[_kk];                   \
+                    npy_intp _cc = _ii.coordinates[_kk];            \
                     _regions[_sindex + _kk] = _cc;                          \
                     _regions[_sindex + _kk + _rank] = _cc + 1;              \
                 }                                                         \
             } else {                                                    \
                 for(_kk = 0; _kk < _rank; _kk++) {                        \
-                    maybelong _cc = _ii.coordinates[_kk];                   \
+                    npy_intp _cc = _ii.coordinates[_kk];            \
                     if (_cc < _regions[_sindex + _kk])                      \
                         _regions[_sindex + _kk] = _cc;                        \
                     if (_cc + 1 > _regions[_sindex + _kk + _rank])          \
@@ -282,11 +282,11 @@ case t ## _type:                                                  \
 }                                                                 \
 break
 
-int NI_FindObjects(PyArrayObject* input, maybelong max_label,
-                                     maybelong* regions)
+int NI_FindObjects(PyArrayObject* input, npy_intp max_label,
+                                     npy_intp* regions)
 {
     int kk;
-    maybelong size, jj;
+    npy_intp size, jj;
     NI_Iterator ii;
     char *pi;
 
@@ -378,7 +378,8 @@ int NI_FindObjects(PyArrayObject* input, maybelong max_label,
         _v = *(Float64*)_pi;                                              \
         break;                                                            \
     default:                                                            \
-            PyErr_SetString(PyExc_RuntimeError, "data type not supported"); \
+            PyErr_SetString(PyExc_RuntimeError,                       \
+                                         "data type not supported");  \
             return 0;                                                       \
     }                                                                   \
 }
@@ -417,7 +418,8 @@ int NI_FindObjects(PyArrayObject* input, maybelong max_label,
         _v = *(Float64*)_pi;                                              \
         break;                                                            \
     default:                                                            \
-            PyErr_SetString(PyExc_RuntimeError, "data type not supported"); \
+            PyErr_SetString(PyExc_RuntimeError,                       \
+                                        "data type not supported");   \
             return 0;                                                       \
     }                                                                   \
 }
@@ -463,7 +465,8 @@ int NI_FindObjects(PyArrayObject* input, maybelong max_label,
             _label = *(Float64*)_pm;                                        \
             break;                                                          \
         default:                                                          \
-            PyErr_SetString(PyExc_RuntimeError, "data type not supported"); \
+            PyErr_SetString(PyExc_RuntimeError,                       \
+                                        "data type not supported");   \
             return 0;                                                       \
         }                                                                 \
     }                                                                   \
@@ -504,7 +507,8 @@ int NI_FindObjects(PyArrayObject* input, maybelong max_label,
             _label = *(Float64*)_pm;                                        \
             break;                                                          \
         default:                                                          \
-            PyErr_SetString(PyExc_RuntimeError, "data type not supported"); \
+            PyErr_SetString(PyExc_RuntimeError,                       \
+                                        "data type not supported");   \
             return 0;                                                       \
         }                                                                 \
     }                                                                   \
@@ -512,13 +516,13 @@ int NI_FindObjects(PyArrayObject* input, maybelong max_label,
 #endif
 
 int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
-    maybelong min_label, maybelong max_label, maybelong *indices,
-    maybelong n_results, double *sum, maybelong *total, double *variance,
-    double *minimum, double *maximum, maybelong* min_pos, maybelong* max_pos)
+    npy_intp min_label, npy_intp max_label, npy_intp *indices,
+    npy_intp n_results, double *sum, npy_intp *total, double *variance,
+    double *minimum, double *maximum, npy_intp* min_pos, npy_intp* max_pos)
 {
     char *pi = NULL, *pm = NULL;
     NI_Iterator ii, mi;
-    maybelong jj, size, idx = 0, label = 1, doit = 1;
+    npy_intp jj, size, idx = 0, label = 1, doit = 1;
     int qq;
 
     /* input iterator: */
@@ -650,12 +654,12 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
 
 
 int NI_CenterOfMass(PyArrayObject *input, PyArrayObject *labels,
-                            maybelong min_label, maybelong max_label, maybelong *indices,
-                            maybelong n_results, double *center_of_mass)
+                    npy_intp min_label, npy_intp max_label, npy_intp *indices,
+                    npy_intp n_results, double *center_of_mass)
 {
     char *pi = NULL, *pm = NULL;
     NI_Iterator ii, mi;
-    maybelong jj, kk, size, idx = 0, label = 1, doit = 1;
+    npy_intp jj, kk, size, idx = 0, label = 1, doit = 1;
     double *sum = NULL;
     int qq;
 
@@ -720,13 +724,13 @@ int NI_CenterOfMass(PyArrayObject *input, PyArrayObject *labels,
 
 
 int NI_Histogram(PyArrayObject *input, PyArrayObject *labels,
-                            maybelong min_label, maybelong max_label, maybelong *indices,
-                            maybelong n_results, PyArrayObject **histograms,
-                            double min, double max, maybelong nbins)
+                 npy_intp min_label, npy_intp max_label, npy_intp *indices,
+                 npy_intp n_results, PyArrayObject **histograms,
+                 double min, double max, npy_intp nbins)
 {
     char *pi = NULL, *pm = NULL;
     NI_Iterator ii, mi;
-    maybelong jj, kk, size, idx = 0, label = 1, doit = 1;
+    npy_intp jj, kk, size, idx = 0, label = 1, doit = 1;
     Int32 **ph = NULL;
     double bsize;
     int qq;
@@ -797,7 +801,7 @@ do {                                                              \
         _out = _index * sizeof(_type);                                \
     } else {                                                        \
         int _qq;                                                      \
-        maybelong _cc, _idx = _index;                                 \
+        npy_intp _cc, _idx = _index;                              \
         _out = 0;                                                     \
         for (_qq = 0; _qq < _rank; _qq++) {                           \
             _cc = _idx / _c_strides[_qq];                               \
@@ -854,7 +858,7 @@ break
 #define WS_MAXDIM 7
 
 typedef struct {
-    maybelong index;
+    npy_intp index;
     COST_TYPE cost;
     void *next, *prev;
     DONE_TYPE done;
@@ -865,9 +869,9 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
 {
     char *pl, *pm, *pi;
     int ll;
-    maybelong size, jj, hh, kk, maxval;
-    maybelong strides[WS_MAXDIM], coordinates[WS_MAXDIM];
-    maybelong *nstrides = NULL, nneigh, ssize;
+    npy_intp size, jj, hh, kk, maxval;
+    npy_intp strides[WS_MAXDIM], coordinates[WS_MAXDIM];
+    npy_intp *nstrides = NULL, nneigh, ssize;
     int i_contiguous, o_contiguous;
     NI_WatershedElement *temp = NULL, **first = NULL, **last = NULL;
     Bool *ps = NULL;
@@ -978,8 +982,8 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
                 last[0] = first[0];
             } else {
                 if (label > 0) {
-                    /* object markers are enqueued at the beginning, so they are
-                         processed first. */
+                    /* object markers are enqueued at the beginning, so they
+                       are processed first. */
                     temp[jj].next = first[0];
                     temp[jj].prev = NULL;
                     first[0]->prev = &(temp[jj]);
@@ -1014,7 +1018,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     for (kk = 0; kk < ssize; kk++)
         if (ps[kk] && kk != (ssize / 2))
             ++nneigh;
-    nstrides = (maybelong*)malloc(nneigh * sizeof(maybelong));
+    nstrides = (npy_intp*)malloc(nneigh * sizeof(npy_intp));
     if (!nstrides) {
         PyErr_NoMemory();
         goto exit;
@@ -1057,7 +1061,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
             v->done = 1;
             /* Iterate over the neighbors of the element: */
             for(hh = 0; hh < nneigh; hh++) {
-                maybelong v_index = v->index, p_index = v->index, idx, cc;
+                npy_intp v_index = v->index, p_index = v->index, idx, cc;
                 int qq, outside = 0;
                 p_index += nstrides[hh];
                 /* check if the neighbor is within the extent of the array: */

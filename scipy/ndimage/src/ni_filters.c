@@ -38,10 +38,10 @@
 
 int NI_Correlate1D(PyArrayObject *input, PyArrayObject *weights,
                                      int axis, PyArrayObject *output, NI_ExtendMode mode,
-                                     double cval, maybelong origin)
+                   double cval, npy_intp origin)
 {
-    int symmetric = 0, ii, jj, more;
-    maybelong ll, lines, length, size1, size2, filter_size;
+    int symmetric = 0, more;
+    npy_intp ii, jj, ll, lines, length, size1, size2, filter_size;
     double *ibuffer = NULL, *obuffer = NULL;
     Float64 *fw;
     NI_LineBuffer iline_buffer, oline_buffer;
@@ -133,7 +133,7 @@ exit:
                                                          _cvalue, _type, _res, _mv)             \
 case t ## _type:                                                    \
 {                                                                   \
-    maybelong _ii, _offset;                                           \
+    npy_intp _ii, _offset;                                            \
     for(_ii = 0; _ii < _filter_size; _ii++) {                         \
         _offset = _offsets[_ii];                                        \
         if (_offset == _mv)                                             \
@@ -151,11 +151,11 @@ case t ## _type:                          \
 
 int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
                                                 PyArrayObject* output, NI_ExtendMode mode,
-                                                double cvalue, maybelong *origins)
+                 double cvalue, npy_intp *origins)
 {
     Bool *pf = NULL;
-    maybelong fsize, jj, kk, filter_size = 0, border_flag_value;
-    maybelong *offsets = NULL, *oo, size;
+    npy_intp fsize, jj, kk, filter_size = 0, border_flag_value;
+    npy_intp *offsets = NULL, *oo, size;
     NI_FilterIterator fi;
     NI_Iterator ii, io;
     char *pi, *po;
@@ -274,11 +274,11 @@ exit:
 }
 
 int
-NI_UniformFilter1D(PyArrayObject *input, long filter_size,
+NI_UniformFilter1D(PyArrayObject *input, npy_intp filter_size,
                                      int axis, PyArrayObject *output, NI_ExtendMode mode,
-                                     double cval, long origin)
+                   double cval, npy_intp origin)
 {
-    maybelong lines, kk, ll, length, size1, size2;
+    npy_intp lines, kk, ll, length, size1, size2;
     int more;
     double *ibuffer = NULL, *obuffer = NULL;
     NI_LineBuffer iline_buffer, oline_buffer;
@@ -336,11 +336,11 @@ NI_UniformFilter1D(PyArrayObject *input, long filter_size,
 }
 
 int
-NI_MinOrMaxFilter1D(PyArrayObject *input, long filter_size,
+NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
                                         int axis, PyArrayObject *output, NI_ExtendMode mode,
-                                        double cval, long origin, int minimum)
+                    double cval, npy_intp origin, int minimum)
 {
-    maybelong lines, kk, jj, ll, length, size1, size2;
+    npy_intp lines, kk, jj, ll, length, size1, size2;
     int more;
     double *ibuffer = NULL, *obuffer = NULL;
     NI_LineBuffer iline_buffer, oline_buffer;
@@ -405,7 +405,7 @@ NI_MinOrMaxFilter1D(PyArrayObject *input, long filter_size,
                                                             _type, _minimum, _res, _mv, _ss)    \
 case t ## _type:                                                  \
 {                                                                 \
-    maybelong _ii, _oo = *_offsets;                                 \
+    npy_intp _ii, _oo = *_offsets;                                \
     _type _cv = (_type)_cval, _tmp;                                 \
     _res = _oo == _mv ? _cv : *(_type*)(_pi + _oo);                 \
     if (_ss)                                                        \
@@ -428,11 +428,12 @@ break
 
 int NI_MinOrMaxFilter(PyArrayObject* input, PyArrayObject* footprint,
                 PyArrayObject* structure, PyArrayObject* output,
-                NI_ExtendMode mode, double cvalue, maybelong *origins, int minimum)
+                      NI_ExtendMode mode, double cvalue, npy_intp *origins,
+                      int minimum)
 {
     Bool *pf = NULL;
-    maybelong fsize, jj, kk, filter_size = 0, border_flag_value;
-    maybelong *offsets = NULL, *oo, size;
+    npy_intp fsize, jj, kk, filter_size = 0, border_flag_value;
+    npy_intp *offsets = NULL, *oo, size;
     NI_FilterIterator fi;
     NI_Iterator ii, io;
     char *pi, *po;
@@ -581,9 +582,9 @@ static double NI_Select(double *buffer, int min, int max, int rank)
                                                 _rank, _buffer, _res, _mv)                 \
 case t ## _type:                                                   \
 {                                                                  \
-    maybelong _ii;                                                   \
+    npy_intp _ii;                                                  \
     for(_ii = 0; _ii < _filter_size; _ii++) {                        \
-        maybelong _offset = _offsets[_ii];                             \
+        npy_intp _offset = _offsets[_ii];                          \
         if (_offset == _mv)                                            \
             _buffer[_ii] = (_type)_cval;                                 \
         else                                                           \
@@ -595,10 +596,10 @@ break
 
 int NI_RankFilter(PyArrayObject* input, int rank,
                                     PyArrayObject* footprint, PyArrayObject* output,
-                                    NI_ExtendMode mode, double cvalue, maybelong *origins)
+                  NI_ExtendMode mode, double cvalue, npy_intp *origins)
 {
-    maybelong fsize, jj, filter_size = 0, border_flag_value;
-    maybelong *offsets = NULL, *oo, size;
+    npy_intp fsize, jj, filter_size = 0, border_flag_value;
+    npy_intp *offsets = NULL, *oo, size;
     NI_FilterIterator fi;
     NI_Iterator ii, io;
     char *pi, *po;
@@ -704,12 +705,12 @@ exit:
 }
 
 int NI_GenericFilter1D(PyArrayObject *input,
-                int (*function)(double*, maybelong, double*, maybelong, void*),
-                void* data, long filter_size, int axis, PyArrayObject *output,
-                NI_ExtendMode mode, double cval, long origin)
+            int (*function)(double*, npy_intp, double*, npy_intp, void*),
+            void* data, npy_intp filter_size, int axis, PyArrayObject *output,
+            NI_ExtendMode mode, double cval, npy_intp origin)
 {
     int more;
-    maybelong ii, lines, length, size1, size2;
+    npy_intp ii, lines, length, size1, size2;
     double *ibuffer = NULL, *obuffer = NULL;
     NI_LineBuffer iline_buffer, oline_buffer;
 
@@ -761,7 +762,7 @@ exit:
                                                     _res, _mv, _function, _data, _buffer)        \
 case t ## _type:                                                       \
 {                                                                      \
-    maybelong _ii, _offset;                                              \
+    npy_intp _ii, _offset;                                             \
     for(_ii = 0; _ii < _filter_size; _ii++) {                            \
         _offset = _offsets[_ii];                                           \
         if (_offset == _mv)                                                \
@@ -780,13 +781,13 @@ break
 
 
 int NI_GenericFilter(PyArrayObject* input,
-            int (*function)(double*, maybelong, double*, void*), void *data,
+            int (*function)(double*, npy_intp, double*, void*), void *data,
             PyArrayObject* footprint, PyArrayObject* output,
-            NI_ExtendMode mode, double cvalue, maybelong *origins)
+            NI_ExtendMode mode, double cvalue, npy_intp *origins)
 {
     Bool *pf = NULL;
-    maybelong fsize, jj, filter_size = 0, border_flag_value;
-    maybelong *offsets = NULL, *oo, size;
+    npy_intp fsize, jj, filter_size = 0, border_flag_value;
+    npy_intp *offsets = NULL, *oo, size;
     NI_FilterIterator fi;
     NI_Iterator ii, io;
     char *pi, *po;

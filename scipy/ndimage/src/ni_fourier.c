@@ -181,12 +181,13 @@ case t ## _type:                                 \
     break;
 
 int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
-                        maybelong n, int axis, PyArrayObject* output, int filter_type)
+                     npy_intp n, int axis, PyArrayObject* output,
+                     int filter_type)
 {
     NI_Iterator ii, io;
     char *pi, *po;
     double *parameters = NULL, **params = NULL;
-    maybelong kk, hh, size;
+    npy_intp kk, hh, size;
     Float64 *iparameters = (void *)PyArray_DATA(parameter_array);
     int ll;
 
@@ -432,12 +433,12 @@ case t ## _type:                                                   \
     break;
 
 int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
-            maybelong n, int axis, PyArrayObject* output)
+            npy_intp n, int axis, PyArrayObject* output)
 {
     NI_Iterator ii, io;
     char *pi, *po;
     double *shifts = NULL, **params = NULL;
-    maybelong kk, hh, size;
+    npy_intp kk, hh, size;
     Float64 *ishifts = (void *)PyArray_DATA(shift_array);
     int ll;
 

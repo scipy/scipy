@@ -69,7 +69,6 @@ typedef enum
 
 #define NI_MAXDIM NPY_MAXDIMS
 
-typedef npy_intp maybelong;
 #define MAXDIM NPY_MAXDIMS
 
 #define HAS_UINT64 1
@@ -179,7 +178,7 @@ NA_IoArray(PyObject *a, NumarrayType t, int requires)
 static int
 NA_ByteOrder(void)
 {
-        unsigned long byteorder_test;
+    unsigned int byteorder_test;
         byteorder_test = 1;
         if (*((char *) &byteorder_test))
                 return NUM_LITTLE_ENDIAN;
@@ -189,9 +188,10 @@ NA_ByteOrder(void)
 
 /* ignores bytestride */
 static PyArrayObject *
-NA_NewAllFromBuffer(int ndim, maybelong *shape, NumarrayType type,
-                                        PyObject *bufferObject, maybelong byteoffset, maybelong bytestride,
-                                        int byteorder, int aligned, int writeable)
+NA_NewAllFromBuffer(int ndim, npy_intp *shape, NumarrayType type,
+                    PyObject *bufferObject, npy_intp byteoffset,
+                    npy_intp bytestride, int byteorder, int aligned,
+                    int writeable)
 {
         PyArrayObject *self = NULL;
         PyArray_Descr *dtype;
@@ -240,18 +240,16 @@ NA_NewAllFromBuffer(int ndim, maybelong *shape, NumarrayType type,
 }
 
 static PyArrayObject *
-NA_NewAll(int ndim, maybelong *shape, NumarrayType type,
-                    void *buffer, maybelong byteoffset, maybelong bytestride,
+NA_NewAll(int ndim, npy_intp *shape, NumarrayType type,
+                    void *buffer, npy_intp byteoffset, npy_intp bytestride,
                     int byteorder, int aligned, int writeable)
 {
-        PyArrayObject *result = NA_NewAllFromBuffer(
-                                                                                                ndim, shape, type, Py_None,
+    PyArrayObject *result = NA_NewAllFromBuffer(ndim, shape, type, Py_None,
                                                                                                 byteoffset, bytestride,
                                                                                                 byteorder, aligned, writeable);
         if (result) {
                 if (!PyArray_Check((PyObject *) result)) {
-                        PyErr_Format( PyExc_TypeError,
-                                                    "NA_NewAll: non-NumArray result");
+            PyErr_Format(PyExc_TypeError, "NA_NewAll: non-NumArray result");
                         result = NULL;
                 } else {
                         if (buffer) {
@@ -269,7 +267,7 @@ references a C_array: aligned, !byteswapped, contiguous, ...
 Call with buffer==NULL to allocate storage.
 */
 static PyArrayObject *
-NA_NewArray(void *buffer, NumarrayType type, int ndim, maybelong *shape)
+NA_NewArray(void *buffer, NumarrayType type, int ndim, npy_intp *shape)
 {
         return (PyArrayObject *) NA_NewAll(ndim, shape, type, buffer, 0, 0,
                                                                              NA_ByteOrder(), 1, 1);

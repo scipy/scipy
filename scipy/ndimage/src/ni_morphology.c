@@ -53,7 +53,7 @@ case t ## _type:                      \
                                                         _true, _false, _changed)                  \
 case t ## _type:                                                      \
 {                                                                     \
-    maybelong _ii, _oo;                                                 \
+    npy_intp _ii, _oo;                                                  \
     int _in = *(_type*)_pi ? 1 : 0;                                     \
     if (_mv) {                                                          \
         if (_center_is_true && _in == false) {                            \
@@ -86,11 +86,11 @@ break
 
 int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
                 PyArrayObject* mask, PyArrayObject* output, int bdr_value,
-                maybelong *origins, int invert, int center_is_true, int* changed,
-                NI_CoordinateList **coordinate_list)
+                     npy_intp *origins, int invert, int center_is_true,
+                     int* changed, NI_CoordinateList **coordinate_list)
 {
-    maybelong struct_size = 0, *offsets = NULL, size, *oo, jj;
-    maybelong ssize, block_size = 0, *current = NULL, border_flag_value;
+    npy_intp struct_size = 0, *offsets = NULL, size, *oo, jj;
+    npy_intp ssize, block_size = 0, *current = NULL, border_flag_value;
     int kk, true, false, msk_value;
     NI_Iterator ii, io, mi;
     NI_FilterIterator fi;
@@ -274,12 +274,12 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
                                                     _mklist)                                     \
 case t ## _type:                                                       \
 {                                                                      \
-    maybelong _hh, _kk;                                                  \
+    npy_intp _hh, _kk;                                                        \
     for(_hh = 0; _hh < _struct_size; _hh++) {                            \
-        maybelong _to = _offsets[_oo + _hh];                               \
+        npy_intp _to = _offsets[_oo + _hh];                                   \
         if (_to != _bf_value && *(_type*)(_pi + _to) == _true) {           \
             if (_mklist) {                                                   \
-                maybelong *_tc = &(_coordinate_offsets[(_oo + _hh) * _irank]); \
+                npy_intp *_tc = &(_coordinate_offsets[(_oo + _hh) * _irank]); \
                 if (_block2 == NULL || _block2->size == _list2->block_size) {  \
                     _block2 = NI_CoordinateListAddBlock(_list2);                 \
                     _current_coors2 = _block2->coordinates;                      \
@@ -295,13 +295,13 @@ case t ## _type:                                                       \
 break
 
 int NI_BinaryErosion2(PyArrayObject* array, PyArrayObject* strct,
-                                            PyArrayObject* mask, int niter, maybelong *origins,
+                      PyArrayObject* mask, int niter, npy_intp *origins,
                                             int invert, NI_CoordinateList **iclist)
 {
-    maybelong struct_size = 0, *offsets = NULL, oo, jj, ssize;
-    maybelong *coordinate_offsets = NULL, size = 0;
-    maybelong *current_coordinates1 = NULL, *current_coordinates2 = NULL;
-    maybelong kk, border_flag_value, current = 0;
+    npy_intp struct_size = 0, *offsets = NULL, oo, jj, ssize;
+    npy_intp *coordinate_offsets = NULL, size = 0;
+    npy_intp *current_coordinates1 = NULL, *current_coordinates2 = NULL;
+    npy_intp kk, border_flag_value, current = 0;
     int true, false;
     NI_Iterator ii, mi;
     NI_FilterIterator fi, ci;
@@ -495,8 +495,8 @@ int NI_BinaryErosion2(PyArrayObject* array, PyArrayObject* strct,
 #define NI_DISTANCE_CHESSBOARD 3
 
 typedef struct {
-    maybelong *coordinates;
-    maybelong index;
+    npy_intp *coordinates;
+    npy_intp index;
     void *next;
 } NI_BorderElement;
 
@@ -505,7 +505,7 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
                                                                      PyArrayObject* distances,
                                                                      PyArrayObject* features)
 {
-    maybelong size, jj, min_index = 0;
+    npy_intp size, jj, min_index = 0;
     int kk;
     NI_BorderElement *border_elements = NULL, *temp;
     NI_Iterator ii, di, fi;
@@ -543,7 +543,7 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
             temp->next = border_elements;
             border_elements = temp;
             temp->index = jj;
-            temp->coordinates = (maybelong*)malloc(input->nd * sizeof(maybelong));
+            temp->coordinates = (npy_intp*)malloc(input->nd * sizeof(npy_intp));
             for(kk = 0; kk < input->nd; kk++)
                     temp->coordinates[kk] = ii.coordinates[kk];
         }
@@ -597,11 +597,11 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
     case NI_DISTANCE_CHESSBOARD:
         for(jj = 0; jj < size; jj++) {
             if (*(Int8*)pi > 0) {
-                unsigned long distance = ULONG_MAX;
+                unsigned int distance = UINT_MAX;
                 temp = border_elements;
                 while(temp) {
                     unsigned int d = 0;
-                    maybelong t;
+                    npy_intp t;
                     for(kk = 0; kk < input->nd; kk++) {
                         t = ii.coordinates[kk] - temp->coordinates[kk];
                         if (t < 0)
@@ -657,11 +657,12 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
 
 
 int NI_DistanceTransformOnePass(PyArrayObject *strct,
-                                                PyArrayObject* distances, PyArrayObject *features)
+                                PyArrayObject* distances,
+                                PyArrayObject *features)
 {
     int kk;
-    maybelong jj, ii, ssize, size, filter_size, mask_value, *oo;
-    maybelong *foffsets = NULL, *foo = NULL, *offsets = NULL;
+    npy_intp jj, ii, ssize, size, filter_size, mask_value, *oo;
+    npy_intp *foffsets = NULL, *foo = NULL, *offsets = NULL;
     Bool *ps, *pf = NULL, *footprint = NULL;
     char *pd;
     NI_FilterIterator si, ti;
@@ -704,7 +705,7 @@ int NI_DistanceTransformOnePass(PyArrayObject *strct,
         goto exit;
 
     if (features) {
-        maybelong dummy;
+        npy_intp dummy;
         /* initialize point iterator: */
         pf = (void *)PyArray_DATA(features);
         if (!NI_InitPointIterator(features, &fi))
@@ -726,10 +727,10 @@ int NI_DistanceTransformOnePass(PyArrayObject *strct,
         Int32 value = *(Int32*)pd;
         if (value != 0) {
             Int32 min = value;
-            maybelong min_offset = 0;
+            npy_intp min_offset = 0;
             /* iterate over structuring element: */
             for(ii = 0; ii < filter_size; ii++) {
-                maybelong offset = oo[ii];
+                npy_intp offset = oo[ii];
                 Int32 tt = -1;
                 if (offset < mask_value)
                     tt = *(Int32*)(pd + offset);
@@ -759,11 +760,11 @@ int NI_DistanceTransformOnePass(PyArrayObject *strct,
     return PyErr_Occurred() ? 0 : 1;
 }
 
-static void _VoronoiFT(char *pf, maybelong len, maybelong *coor, int rank,
-                                             int d, maybelong stride, maybelong cstride,
-                                             maybelong **f, maybelong *g, Float64 *sampling)
+static void _VoronoiFT(char *pf, npy_intp len, npy_intp *coor, int rank,
+                       int d, npy_intp stride, npy_intp cstride,
+                       npy_intp **f, npy_intp *g, Float64 *sampling)
 {
-    maybelong l = -1, ii, maxl, idx1, idx2;
+    npy_intp l = -1, ii, maxl, idx1, idx2;
     int jj;
 
     for(ii = 0; ii < len; ii++)
@@ -847,13 +848,13 @@ static void _VoronoiFT(char *pf, maybelong len, maybelong *coor, int rank,
 
 
 /* Recursive feature transform */
-static void _ComputeFT(char *pi, char *pf, maybelong *ishape,
-                                             maybelong *istrides, maybelong *fstrides, int rank,
-                                             int d, maybelong *coor, maybelong **f, maybelong *g,
+static void _ComputeFT(char *pi, char *pf, npy_intp *ishape,
+                       npy_intp *istrides, npy_intp *fstrides, int rank,
+                       int d, npy_intp *coor, npy_intp **f, npy_intp *g,
                                              PyArrayObject *features, Float64 *sampling)
 {
     int kk;
-    maybelong jj;
+    npy_intp jj;
 
     if (d == 0) {
         char *tf1 = pf;
@@ -876,7 +877,7 @@ static void _ComputeFT(char *pi, char *pf, maybelong *ishape,
     } else {
         UInt32 axes = 0;
         char *tf = pf;
-        maybelong size = 1;
+        npy_intp size = 1;
         NI_Iterator ii;
 
         for(jj = 0; jj < ishape[d]; jj++) {
@@ -915,8 +916,8 @@ int NI_EuclideanFeatureTransform(PyArrayObject* input,
                                                                  PyArrayObject* features)
 {
     int ii;
-    maybelong coor[NI_MAXDIM], mx = 0, jj;
-    maybelong *tmp = NULL, **f = NULL, *g = NULL;
+    npy_intp coor[NI_MAXDIM], mx = 0, jj;
+    npy_intp *tmp = NULL, **f = NULL, *g = NULL;
     char *pi, *pf;
     Float64 *sampling = sampling_arr ? ((void *)PyArray_DATA(sampling_arr)) : NULL;
 
@@ -929,9 +930,9 @@ int NI_EuclideanFeatureTransform(PyArrayObject* input,
     }
 
     /* Some temporaries */
-    f = (maybelong**)malloc(mx * sizeof(maybelong*));
-    g = (maybelong*)malloc(mx * sizeof(maybelong));
-    tmp = (maybelong*)malloc(mx * input->nd * sizeof(maybelong));
+    f = (npy_intp**)malloc(mx * sizeof(npy_intp*));
+    g = (npy_intp*)malloc(mx * sizeof(npy_intp));
+    tmp = (npy_intp*)malloc(mx * input->nd * sizeof(npy_intp));
     if (!f || !g || !tmp) {
         PyErr_NoMemory();
         goto exit;

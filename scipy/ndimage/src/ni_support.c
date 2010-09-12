@@ -84,10 +84,10 @@ int NI_LineIterator(NI_Iterator *iterator, int axis)
 /******************************************************************/
 
 /* Allocate line buffer data */
-int NI_AllocateLineBuffer(PyArrayObject* array, int axis, maybelong size1,
-        maybelong size2, maybelong *lines, maybelong max_size, double **buffer)
+int NI_AllocateLineBuffer(PyArrayObject* array, int axis, npy_intp size1,
+        npy_intp size2, npy_intp *lines, npy_intp max_size, double **buffer)
 {
-    maybelong line_size, max_lines;
+    npy_intp line_size, max_lines;
     int ii;
 
     /* the number of lines of the array is an upper limit for the
@@ -120,11 +120,11 @@ int NI_AllocateLineBuffer(PyArrayObject* array, int axis, maybelong size1,
 }
 
 /* Initialize a line buffer */
-int NI_InitLineBuffer(PyArrayObject *array, int axis, maybelong size1,
-        maybelong size2, maybelong buffer_lines, double *buffer_data,
+int NI_InitLineBuffer(PyArrayObject *array, int axis, npy_intp size1,
+        npy_intp size2, npy_intp buffer_lines, double *buffer_data,
         NI_ExtendMode extend_mode, double extend_value, NI_LineBuffer *buffer)
 {
-    maybelong line_length = 0, array_lines = 0, size;
+    npy_intp line_length = 0, array_lines = 0, size;
     int ii;
 
     size = 1;
@@ -160,10 +160,10 @@ int NI_InitLineBuffer(PyArrayObject *array, int axis, maybelong size1,
 }
 
 /* Extend a line in memory to implement boundary conditions: */
-int NI_ExtendLine(double *line, maybelong length, maybelong size1,
-                                maybelong size2, NI_ExtendMode mode, double constant_value)
+int NI_ExtendLine(double *line, npy_intp length, npy_intp size1,
+                  npy_intp size2, NI_ExtendMode mode, double constant_value)
 {
-    maybelong ii, jj, length1, nextend, rextend;
+    npy_intp ii, jj, length1, nextend, rextend;
     double *l1, *l2, *l3, val;
 
     switch (mode) {
@@ -287,7 +287,7 @@ int NI_ExtendLine(double *line, maybelong length, maybelong size1,
 #define CASE_COPY_DATA_TO_LINE(_pi, _po, _length, _stride, _type) \
 case t ## _type:                                                  \
 {                                                                 \
-    maybelong _ii;                                                  \
+    npy_intp _ii;                                                  \
     for(_ii = 0; _ii < _length; _ii++) {                            \
         _po[_ii] = (double)*(_type*)_pi;                              \
         _pi += _stride;                                               \
@@ -298,11 +298,11 @@ break
 
 /* Copy a line from an array to a buffer: */
 int NI_ArrayToLineBuffer(NI_LineBuffer *buffer,
-                                                 maybelong *number_of_lines, int *more)
+                         npy_intp *number_of_lines, int *more)
 {
     double *pb = buffer->buffer_data;
     char *pa;
-    maybelong length = buffer->line_length;
+    npy_intp length = buffer->line_length;
 
     pb += buffer->size1;
     *number_of_lines = 0;
@@ -327,7 +327,8 @@ int NI_ArrayToLineBuffer(NI_LineBuffer *buffer,
             CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Float32);
             CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Float64);
         default:
-            PyErr_Format(PyExc_RuntimeError, "array type %d not supported", buffer->array_type);
+            PyErr_Format(PyExc_RuntimeError, "array type %d not supported",
+                         buffer->array_type);
             return 0;
         }
         /* goto next line in the array: */
@@ -352,7 +353,7 @@ int NI_ArrayToLineBuffer(NI_LineBuffer *buffer,
 #define CASE_COPY_LINE_TO_DATA(_pi, _po, _length, _stride, _type) \
 case t ## _type:                                                  \
 {                                                                 \
-    maybelong _ii;                                                  \
+    npy_intp _ii;                                                  \
     for(_ii = 0; _ii < _length; _ii++) {                            \
         *(_type*)_po = (_type)_pi[_ii];                               \
         _po += _stride;                                               \
@@ -365,7 +366,7 @@ int NI_LineBufferToArray(NI_LineBuffer *buffer)
 {
     double *pb = buffer->buffer_data;
     char *pa;
-    maybelong jj, length = buffer->line_length;
+    npy_intp jj, length = buffer->line_length;
 
     pb += buffer->size1;
     for(jj = 0; jj < buffer->buffer_lines; jj++) {
@@ -408,12 +409,12 @@ int NI_LineBufferToArray(NI_LineBuffer *buffer)
 
 /* Initialize a filter iterator: */
 int
-NI_InitFilterIterator(int rank, maybelong *filter_shape,
-                    maybelong filter_size, maybelong *array_shape,
-                    maybelong *origins, NI_FilterIterator *iterator)
+NI_InitFilterIterator(int rank, npy_intp *filter_shape,
+                    npy_intp filter_size, npy_intp *array_shape,
+                    npy_intp *origins, NI_FilterIterator *iterator)
 {
     int ii;
-    maybelong fshape[MAXDIM], forigins[MAXDIM];
+    npy_intp fshape[MAXDIM], forigins[MAXDIM];
 
     for(ii = 0; ii < rank; ii++) {
         fshape[ii] = *filter_shape++;
@@ -424,15 +425,15 @@ NI_InitFilterIterator(int rank, maybelong *filter_shape,
     if (rank > 0) {
         iterator->strides[rank - 1] = filter_size;
         for(ii = rank - 2; ii >= 0; ii--) {
-            maybelong step = array_shape[ii + 1] < fshape[ii + 1] ?
+            npy_intp step = array_shape[ii + 1] < fshape[ii + 1] ?
                                                                          array_shape[ii + 1] : fshape[ii + 1];
             iterator->strides[ii] =  iterator->strides[ii + 1] * step;
         }
     }
     for(ii = 0; ii < rank; ii++) {
-        maybelong step = array_shape[ii] < fshape[ii] ?
+        npy_intp step = array_shape[ii] < fshape[ii] ?
                                                                                          array_shape[ii] : fshape[ii];
-        maybelong orgn = fshape[ii] / 2 + forigins[ii];
+        npy_intp orgn = fshape[ii] / 2 + forigins[ii];
         /* stride for stepping back to previous offsets: */
         iterator->backstrides[ii] = (step - 1) * iterator->strides[ii];
         /* initialize boundary extension sizes: */
@@ -445,22 +446,22 @@ NI_InitFilterIterator(int rank, maybelong *filter_shape,
 /* Calculate the offsets to the filter points, for all border regions and
      the interior of the array: */
 int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
-         maybelong *filter_shape, maybelong* origins,
-         NI_ExtendMode mode, maybelong **offsets, maybelong *border_flag_value,
-         maybelong **coordinate_offsets)
+         npy_intp *filter_shape, npy_intp* origins,
+         NI_ExtendMode mode, npy_intp **offsets, npy_intp *border_flag_value,
+         npy_intp **coordinate_offsets)
 {
     int rank, ii;
-    maybelong kk, ll, filter_size = 1, offsets_size = 1, max_size = 0;
-    maybelong max_stride = 0, *ashape = NULL, *astrides = NULL;
-    maybelong footprint_size = 0, coordinates[MAXDIM], position[MAXDIM];
-    maybelong fshape[MAXDIM], forigins[MAXDIM], *po, *pc = NULL;
+    npy_intp kk, ll, filter_size = 1, offsets_size = 1, max_size = 0;
+    npy_intp max_stride = 0, *ashape = NULL, *astrides = NULL;
+    npy_intp footprint_size = 0, coordinates[MAXDIM], position[MAXDIM];
+    npy_intp fshape[MAXDIM], forigins[MAXDIM], *po, *pc = NULL;
 
     rank = array->nd;
     ashape = array->dimensions;
     astrides = array->strides;
     for(ii = 0; ii < rank; ii++) {
         fshape[ii] = *filter_shape++;
-        forigins[ii] = origins ? *origins++ : 0.0;
+        forigins[ii] = origins ? *origins++ : 0;
     }
     /* the size of the footprint array: */
     for(ii = 0; ii < rank; ii++)
@@ -477,22 +478,22 @@ int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
     for(ii = 0; ii < rank; ii++)
         offsets_size *= (ashape[ii] < fshape[ii] ? ashape[ii] : fshape[ii]);
     /* allocate offsets data: */
-    *offsets = (maybelong*)malloc(offsets_size * footprint_size *
-                                                                                                                sizeof(maybelong));
+    *offsets = (npy_intp*)malloc(offsets_size * footprint_size *
+                                                        sizeof(npy_intp));
     if (!*offsets) {
         PyErr_NoMemory();
         goto exit;
     }
     if (coordinate_offsets) {
-        *coordinate_offsets = (maybelong*)malloc(offsets_size * rank *
-                                                                             footprint_size * sizeof(maybelong));
+        *coordinate_offsets = (npy_intp*)malloc(offsets_size * rank *
+                                        footprint_size * sizeof(npy_intp));
         if (!*coordinate_offsets) {
             PyErr_NoMemory();
             goto exit;
         }
     }
     for(ii = 0; ii < rank; ii++) {
-        maybelong stride;
+        npy_intp stride;
         /* find maximum axis size: */
         if (ashape[ii] > max_size)
             max_size = ashape[ii];
@@ -518,14 +519,14 @@ int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
     for(ll = 0; ll < offsets_size; ll++) {
         /* iterate over the elements in the footprint array: */
         for(kk = 0; kk < filter_size; kk++) {
-            maybelong offset = 0;
+            npy_intp offset = 0;
             /* only calculate an offset if the footprint is 1: */
             if (!footprint || footprint[kk]) {
                 /* find offsets along all axes: */
                 for(ii = 0; ii < rank; ii++) {
-                    maybelong orgn = fshape[ii] / 2 + forigins[ii];
-                    maybelong cc = coordinates[ii] - orgn + position[ii];
-                    maybelong len = ashape[ii];
+                    npy_intp orgn = fshape[ii] / 2 + forigins[ii];
+                    npy_intp cc = coordinates[ii] - orgn + position[ii];
+                    npy_intp len = ashape[ii];
                     /* apply boundary conditions, if necessary: */
                     switch (mode) {
                     case NI_EXTEND_MIRROR:
@@ -612,8 +613,8 @@ int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
                             pc[ii] = 0;
                         break;
                     } else {
-                        /* use an offset that is possibly mapped from outside the
-                             border: */
+                        /* use an offset that is possibly mapped from outside
+                           the border: */
                         cc = cc - position[ii];
                         offset += astrides[ii] * cc;
                         if (coordinate_offsets)
@@ -705,8 +706,8 @@ NI_CoordinateBlock* NI_CoordinateListAddBlock(NI_CoordinateList *list)
         PyErr_NoMemory();
         goto exit;
     }
-    block->coordinates = (maybelong*)malloc(list->block_size * list->rank *
-					  sizeof(maybelong));
+    block->coordinates = (npy_intp*)malloc(list->block_size * list->rank *
+                                                           sizeof(npy_intp));
     if (!block->coordinates) {
         PyErr_NoMemory();
         goto exit;
