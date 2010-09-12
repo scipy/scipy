@@ -11,7 +11,8 @@ Run tests if fftpack is not installed:
   python tests/test_basic.py
 """
 
-from numpy.testing import *
+from numpy.testing import assert_, assert_equal, assert_array_almost_equal, \
+        assert_array_almost_equal_nulp, assert_raises, run_module_suite, TestCase
 from scipy.fftpack import ifft,fft,fftn,ifftn,rfft,irfft, fft2
 from scipy.fftpack import _fftpack as fftpack
 
@@ -492,15 +493,10 @@ class TestFftn(TestCase):
         assert_array_almost_equal(y, numpy.fft.fftn(x, axes=(-3, -2), s=(8, 8)))
 
     def test_shape_argument_more(self):
-        # Test that fftn raise a value error exception when s.shape is longer
-        # than x.shape
+        """Test that fftn raises ValueError when s.shape is longer than x.shape"""
         x = zeros((4, 4, 2))
-        try:
-            fx = fftn(x, shape = (8, 8, 2, 1))
-            raise AssertionError("s.shape longer than x.shape succeded, "\
-                                 "but should not have.")
-        except ValueError:
-            pass
+        assert_raises(ValueError, fftn, x, shape=(8, 8, 2, 1))
+
 
 class _TestIfftn(TestCase):
     dtype = None
@@ -512,7 +508,7 @@ class _TestIfftn(TestCase):
     def test_definition(self):
         x = np.array([[1,2,3],[4,5,6],[7,8,9]], dtype=self.dtype)
         y = ifftn(x)
-        assert y.dtype == self.cdtype
+        assert_(y.dtype == self.cdtype)
         assert_array_almost_equal_nulp(y,direct_idftn(x),self.maxnlp)
         x = random((20,26))
         assert_array_almost_equal_nulp(ifftn(x),direct_idftn(x),self.maxnlp)
