@@ -26,7 +26,7 @@ from numpy import arange, array, dot, zeros, identity, conjugate, transpose, \
 import numpy.linalg as linalg
 
 from numpy.testing import TestCase, rand, run_module_suite, assert_raises, \
-    assert_equal, assert_almost_equal, assert_array_almost_equal
+    assert_equal, assert_almost_equal, assert_array_almost_equal, assert_
 
 from scipy.linalg import solve, inv, det, lstsq, pinv, pinv2, norm,\
         solve_banded, solveh_banded
@@ -498,7 +498,7 @@ class TestLstsq(TestCase):
         for i in range(4):
             b = random([n,3])
             x,res,r,s = lstsq(a,b)
-            assert r==m,'unexpected efficient rank'
+            assert_(r == m, 'unexpected efficient rank')
             #XXX: check definition of res
             assert_array_almost_equal(x,direct_lstsq(a,b))
 
@@ -511,7 +511,7 @@ class TestLstsq(TestCase):
         for i in range(2):
             b = random([n,3])
             x,res,r,s = lstsq(a,b)
-            assert r==m,'unexpected efficient rank'
+            assert_(r == m, 'unexpected efficient rank')
             #XXX: check definition of res
             assert_array_almost_equal(x,direct_lstsq(a,b,1))
 

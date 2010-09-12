@@ -1,6 +1,6 @@
 """Tests for functions in special_matrices.py."""
 
-from numpy import arange, add, array, eye, all, copy
+from numpy import arange, add, array, eye, copy
 from numpy.testing import TestCase, run_module_suite, assert_raises, \
     assert_equal, assert_array_equal
 
@@ -216,12 +216,12 @@ class TestCompanion(TestCase):
 class TestBlockDiag:
     def test_basic(self):
         x = block_diag(eye(2), [[1,2], [3,4], [5,6]], [[1, 2, 3]])
-        assert all(x == [[1, 0, 0, 0, 0, 0, 0],
-                         [0, 1, 0, 0, 0, 0, 0],
-                         [0, 0, 1, 2, 0, 0, 0],
-                         [0, 0, 3, 4, 0, 0, 0],
-                         [0, 0, 5, 6, 0, 0, 0],
-                         [0, 0, 0, 0, 1, 2, 3]])
+        assert_array_equal(x, [[1, 0, 0, 0, 0, 0, 0],
+                               [0, 1, 0, 0, 0, 0, 0],
+                               [0, 0, 1, 2, 0, 0, 0],
+                               [0, 0, 3, 4, 0, 0, 0],
+                               [0, 0, 5, 6, 0, 0, 0],
+                               [0, 0, 0, 0, 1, 2, 3]])
 
     def test_dtype(self):
         x = block_diag([[1.5]])

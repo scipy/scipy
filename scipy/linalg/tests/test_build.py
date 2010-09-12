@@ -2,7 +2,6 @@ from subprocess import call, PIPE, Popen
 import sys
 import re
 
-import numpy as np
 from numpy.testing import TestCase, dec
 from numpy.compat import asbytes
 

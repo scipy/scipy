@@ -16,7 +16,7 @@ Run tests if linalg is not installed:
 
 import numpy as np
 from numpy.testing import TestCase, assert_equal, assert_array_almost_equal, \
-        assert_array_equal, assert_raises, run_module_suite, dec
+        assert_array_equal, assert_raises, assert_, run_module_suite, dec
 
 from scipy.linalg import eig, eigvals, lu, svd, svdvals, cholesky, qr, \
      schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq, \
@@ -47,7 +47,7 @@ def assert_dtype_equal(act, des):
     else:
         des = dtype(des)
 
-    assert act == des, 'dtype mismatch: "%s" (should be "%s") '%(act, des)
+    assert_(act == des, 'dtype mismatch: "%s" (should be "%s") ' % (act, des))
 
 # XXX: This function should not be defined here, but somewhere in
 #      scipy.linalg namespace
@@ -753,38 +753,38 @@ class TestSVDVals(TestCase):
     def test_simple(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
         s = svdvals(a)
-        assert len(s)==3
-        assert s[0]>=s[1]>=s[2]
+        assert_(len(s) == 3)
+        assert_(s[0] >= s[1] >= s[2])
 
     def test_simple_underdet(self):
         a = [[1,2,3],[4,5,6]]
         s = svdvals(a)
-        assert len(s)==2
-        assert s[0]>=s[1]
+        assert_(len(s) == 2)
+        assert_(s[0] >= s[1])
 
     def test_simple_overdet(self):
         a = [[1,2],[4,5],[3,4]]
         s = svdvals(a)
-        assert len(s)==2
-        assert s[0]>=s[1]
+        assert_(len(s) == 2)
+        assert_(s[0] >= s[1])
 
     def test_simple_complex(self):
         a = [[1,2,3],[1,20,3j],[2,5,6]]
         s = svdvals(a)
-        assert len(s)==3
-        assert s[0]>=s[1]>=s[2]
+        assert_(len(s) == 3)
+        assert_(s[0] >= s[1] >= s[2])
 
     def test_simple_underdet_complex(self):
         a = [[1,2,3],[4,5j,6]]
         s = svdvals(a)
-        assert len(s)==2
-        assert s[0]>=s[1]
+        assert_(len(s) == 2)
+        assert_(s[0] >= s[1])
 
     def test_simple_overdet_complex(self):
         a = [[1,2],[4,5],[3j,4]]
         s = svdvals(a)
-        assert len(s)==2
-        assert s[0]>=s[1]
+        assert_(len(s) == 2)
+        assert_(s[0] >= s[1])
 
 class TestDiagSVD(TestCase):
 
@@ -947,7 +947,7 @@ class TestSchur(TestCase):
         t,z = schur(a)
         assert_array_almost_equal(dot(dot(z,t),transp(conj(z))),a)
         tc,zc = schur(a,'complex')
-        assert(any(ravel(iscomplex(zc))) and any(ravel(iscomplex(tc))))
+        assert_(any(ravel(iscomplex(zc))) and any(ravel(iscomplex(tc))))
         assert_array_almost_equal(dot(dot(zc,tc),transp(conj(zc))),a)
         tc2,zc2 = rsf2csf(tc,zc)
         assert_array_almost_equal(dot(dot(zc2,tc2),transp(conj(zc2))),a)

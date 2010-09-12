@@ -11,7 +11,7 @@ from numpy import float32, float64, complex64, complex128, arange, array, \
 from scipy.linalg import fblas
 
 from numpy.testing import TestCase, run_module_suite, assert_array_equal, \
-    assert_array_almost_equal
+    assert_array_almost_equal, assert_
 
 
 #decimal accuracy to require between Python and LAPACK/BLAS calculations
@@ -25,7 +25,7 @@ def matrixmultiply(a, b):
         b = b[:,newaxis]
     else:
         b_is_vector = False
-    assert a.shape[1] == b.shape[0]
+    assert_(a.shape[1] == b.shape[0])
     c = zeros((a.shape[0], b.shape[1]), common_type(a, b))
     for i in xrange(a.shape[0]):
         for j in xrange(b.shape[1]):

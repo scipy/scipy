@@ -4,7 +4,7 @@
 #
 
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
-    assert_array_almost_equal
+    assert_array_almost_equal, assert_
 from numpy import ones
 
 from scipy.linalg import flapack, clapack
@@ -22,13 +22,13 @@ class TestFlapackSimple(TestCase):
             f = getattr(flapack,p+'gebal',None)
             if f is None: continue
             ba,lo,hi,pivscale,info = f(a)
-            assert not info,`info`
+            assert_(not info,`info`)
             assert_array_almost_equal(ba,a)
             assert_equal((lo,hi),(0,len(a[0])-1))
             assert_array_almost_equal(pivscale,ones(len(a)))
 
             ba,lo,hi,pivscale,info = f(a1,permute=1,scale=1)
-            assert not info,`info`
+            assert_(not info,`info`)
             #print a1
             #print ba,lo,hi,pivscale
 
@@ -40,7 +40,7 @@ class TestFlapackSimple(TestCase):
             f = getattr(flapack,p+'gehrd',None)
             if f is None: continue
             ht,tau,info = f(a)
-            assert not info,`info`
+            assert_(not info,`info`)
 
 class TestLapack(TestCase):
 
