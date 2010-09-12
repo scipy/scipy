@@ -8,7 +8,7 @@ from numpy import deprecate
 
 
 # matfile read and write
-from matlab.mio import loadmat, savemat
+from matlab import loadmat, savemat
 
 # netCDF file support
 from netcdf import netcdf_file, netcdf_variable
