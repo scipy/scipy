@@ -5,10 +5,15 @@ from os.path import join as pjoin, dirname
 import shutil
 import tempfile
 import time
-from StringIO import StringIO
+import sys
+if sys.version_info[0] >= 3:
+    from io import BytesIO
+else:
+    from StringIO import StringIO as BytesIO
 from glob import glob
 
 import numpy as np
+from numpy.compat import asbytes
 
 from scipy.io.netcdf import netcdf_file
 
@@ -33,9 +38,9 @@ def make_simple(*args, **kwargs):
 
 def gen_for_simple(ncfileobj):
     ''' Generator for example fileobj tests '''
-    yield assert_equal, ncfileobj.history, 'Created for a test'
+    yield assert_equal, ncfileobj.history, asbytes('Created for a test')
     time = ncfileobj.variables['time']
-    yield assert_equal, str(time.units), 'days since 2008-01-01'
+    yield assert_equal, time.units, asbytes('days since 2008-01-01')
     yield assert_equal, time.shape, (N_EG_ELS,)
     yield assert_equal, time[-1], N_EG_ELS-1
 
@@ -67,7 +72,7 @@ def test_read_write_files():
         # raised an error in pupynere 1.0.12 and scipy rev 5893, because
         # calculated vsize was rounding up in units of 4 - see
         # http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html
-        fobj = open('simple.nc', 'r')
+        fobj = open('simple.nc', 'rb')
         f = netcdf_file(fobj)
         # by default, don't use mmap for file-like
         yield assert_false, f.use_mmap
@@ -83,30 +88,30 @@ def test_read_write_files():
 
 
 def test_read_write_sio():
-    eg_sio1 = StringIO()
+    eg_sio1 = BytesIO()
     f1 = make_simple(eg_sio1, 'w')
     str_val = eg_sio1.getvalue()
     f1.close()
-    eg_sio2 = StringIO(str_val)
+    eg_sio2 = BytesIO(str_val)
     f2 = netcdf_file(eg_sio2)
     for testargs in gen_for_simple(f2):
         yield testargs
     f2.close()
     # Test that error is raised if attempting mmap for sio
-    eg_sio3 = StringIO(str_val)
+    eg_sio3 = BytesIO(str_val)
     yield assert_raises, ValueError, netcdf_file, eg_sio3, 'r', True
     # Test 64-bit offset write / read
-    eg_sio_64 = StringIO()
+    eg_sio_64 = BytesIO()
     f_64 = make_simple(eg_sio_64, 'w', version=2)
     str_val = eg_sio_64.getvalue()
     f_64.close()
-    eg_sio_64 = StringIO(str_val)
+    eg_sio_64 = BytesIO(str_val)
     f_64 = netcdf_file(eg_sio_64)
     for testargs in gen_for_simple(f_64):
         yield testargs
     yield assert_equal, f_64.version_byte, 2
     # also when version 2 explicitly specified
-    eg_sio_64 = StringIO(str_val)
+    eg_sio_64 = BytesIO(str_val)
     f_64 = netcdf_file(eg_sio_64, version=2)
     for testargs in gen_for_simple(f_64):
         yield testargs
