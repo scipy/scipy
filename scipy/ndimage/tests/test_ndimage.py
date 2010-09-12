@@ -1147,11 +1147,13 @@ class TestNdimage(TestCase):
         for type in self.types:
             a = numpy.arange(12, dtype = type)
             a.shape = (3,4)
-            r1 = ndimage.correlate(a, filter_ * footprint) / 5
+            r1 = ndimage.correlate(a, filter_ * footprint)
+            r1 /= 5
             r2 = ndimage.generic_filter(a, _filter_func,
                             footprint = footprint, extra_arguments = (cf,),
                             extra_keywords = {'total': cf.sum()})
-            self.failUnless(diff(r1, r2) < eps)
+            self.failUnless(diff(r1, r2) < eps,
+                            "%r\n%r" % (r1, r2))
 
     def test_extend01(self):
         "line extension 1"
@@ -1621,11 +1623,12 @@ class TestNdimage(TestCase):
         "geometric transform 13"
         data = numpy.ones([2], numpy.float64)
         def mapping(x):
-            return (x[0] / 2,)
+            return (x[0] // 2,)
         for order in range(0, 6):
             out = ndimage.geometric_transform(data, mapping,
                                                         [4], order=order)
-            self.failUnless(diff(out, [1, 1, 1, 1]) < eps)
+            self.failUnless(diff(out, [1, 1, 1, 1]) < eps,
+                            "%r" % out)
 
     def test_geometric_transform14(self):
         "geometric transform 14"
