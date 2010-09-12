@@ -652,8 +652,8 @@ def rotate(input, angle, axes = (1, 0), reshape = True,
     else:
         coordinates = []
         size = numpy.product(input.shape,axis=0)
-        size /= input.shape[axes[0]]
-        size /= input.shape[axes[1]]
+        size //= input.shape[axes[0]]
+        size //= input.shape[axes[1]]
         for ii in range(input.ndim):
             if ii not in axes:
                 coordinates.append(0)
