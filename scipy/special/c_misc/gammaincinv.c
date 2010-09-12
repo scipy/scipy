@@ -10,7 +10,7 @@
 
 /* Limits after which to issue warnings about non-convergence */
 #define ALLOWED_ATOL (1e-306)
-#define ALLOWED_RTOL (1e-9)
+#define ALLOWED_RTOL (1e-6)
 
 void scipy_special_raise_warning(char *fmt, ...);
 
