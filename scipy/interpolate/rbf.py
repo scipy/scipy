@@ -141,9 +141,9 @@ class Rbf(object):
                    ", ".join(functionlist)               
            self._function = getattr(self, "_h_"+self.function)
         elif callable(self.function):
-            import new
             allow_one = False
-            if hasattr(self.function, 'func_code'):
+            if hasattr(self.function, 'func_code') or \
+                   hasattr(self.function, '__code__'):
                 val = self.function
                 allow_one = True
             elif hasattr(self.function, "im_func"):
@@ -157,7 +157,12 @@ class Rbf(object):
             if allow_one and argcount == 1:
                 self._function = self.function
             elif argcount == 2:
-                self._function = new.instancemethod(self.function, self, Rbf)
+                if sys.version_info[0] >= 3:
+                    self._function = function.__get__(self, Rbf)
+                else:
+                    import new
+                    self._function = new.instancemethod(self.function, self,
+                                                        Rbf)
             else:
                 raise ValueError, "Function argument must take 1 or 2 arguments."
                 
