@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "numpy/npy_3kcompat.h"
 
 static PyObject* version(PyObject* self, PyObject* dummy)
 {
@@ -52,7 +53,8 @@ PyMODINIT_FUNC initatlas_version(void)
 #if defined(ATLAS_INFO)
     {
         PyObject *d = PyModule_GetDict(m);
-        PyDict_SetItemString(d,"ATLAS_VERSION",PyString_FromString(ATLAS_INFO));
+        PyDict_SetItemString(d,"ATLAS_VERSION",
+                             PyUString_FromString(ATLAS_INFO));
     }
 #endif
     return RETVAL;
