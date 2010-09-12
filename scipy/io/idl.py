@@ -29,6 +29,7 @@
 
 import struct
 import numpy as np
+from numpy.compat import asbytes, asstr
 import tempfile
 import zlib
 import warnings
@@ -91,7 +92,7 @@ def _read_bytes(f, n):
 
 def _read_byte(f):
     '''Read a single byte'''
-    return np.uint8(struct.unpack('>B', f.read(4)[0])[0])
+    return np.uint8(struct.unpack('>B', f.read(4)[:1])[0])
 
 
 def _read_long(f):
@@ -153,9 +154,10 @@ def _read_string(f):
     if length > 0:
         chars = _read_bytes(f, length)
         _align_32(f)
+        chars = asstr(chars)
     else:
         chars = None
-    return np.str(chars)
+    return chars
 
 
 def _read_string_data(f):
@@ -167,7 +169,7 @@ def _read_string_data(f):
         _align_32(f)
     else:
         string = None
-    return np.str(string)
+    return string
 
 
 def _read_data(f, dtype):
@@ -623,27 +625,27 @@ def readsav(file_name, idict=None, python_dict=False,
         variables = AttrDict()
 
     # Open the IDL file
-    f = file(file_name, 'rb')
+    f = open(file_name, 'rb')
 
     # Read the signature, which should be 'SR'
     signature = _read_bytes(f, 2)
-    if signature <> 'SR':
+    if signature <> asbytes('SR'):
         raise Exception("Invalid SIGNATURE: %s" % signature)
 
     # Next, the record format, which is '\x00\x04' for normal .sav
     # files, and '\x00\x06' for compressed .sav files.
     recfmt = _read_bytes(f, 2)
 
-    if recfmt == '\x00\x04':
+    if recfmt == asbytes('\x00\x04'):
         pass
 
-    elif recfmt == '\x00\x06':
+    elif recfmt == asbytes('\x00\x06'):
 
         if verbose:
             print "IDL Save file is compressed"
 
         if uncompressed_file_name:
-            fout = file(uncompressed_file_name, 'w+b')
+            fout = open(uncompressed_file_name, 'w+b')
         else:
             fout = tempfile.NamedTemporaryFile(suffix='.sav')
 
@@ -651,14 +653,14 @@ def readsav(file_name, idict=None, python_dict=False,
             print " -> expanding to %s" % fout.name
 
         # Write header
-        fout.write('SR\x00\x04')
+        fout.write(asbytes('SR\x00\x04'))
 
         # Cycle through records
         while True:
 
             # Read record type
             rectype = _read_long(f)
-            fout.write(struct.pack('>l', rectype))
+            fout.write(struct.pack('>l', int(rectype)))
 
             # Read position of next record and return as int
             nextrec = _read_uint32(f)
