@@ -1,5 +1,6 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
+import sys
 import numpy as np
 from heapq import heappush, heappop
 import scipy.sparse
@@ -136,7 +137,12 @@ class KDTree(object):
         self.tree = self.__build(np.arange(self.n), self.maxes, self.mins)
 
     class node(object):
-        pass
+        if sys.version_info[0] >= 3:
+            def __lt__(self, other): id(self) < id(other)
+            def __gt__(self, other): id(self) > id(other)
+            def __le__(self, other): id(self) <= id(other)
+            def __ge__(self, other): id(self) >= id(other)
+            def __eq__(self, other): id(self) == id(other)
     class leafnode(node):
         def __init__(self, idx):
             self.idx = idx
@@ -364,7 +370,10 @@ class KDTree(object):
             raise ValueError("Only p-norms with 1<=p<=infinity permitted")
         retshape = np.shape(x)[:-1]
         if retshape!=():
-            if k>1:
+            if k is None:
+                dd = np.empty(retshape,dtype=np.object)
+                ii = np.empty(retshape,dtype=np.object)
+            elif k>1:
                 dd = np.empty(retshape+(k,),dtype=np.float)
                 dd.fill(np.inf)
                 ii = np.empty(retshape+(k,),dtype=np.int)
@@ -374,14 +383,14 @@ class KDTree(object):
                 dd.fill(np.inf)
                 ii = np.empty(retshape,dtype=np.int)
                 ii.fill(self.n)
-            elif k is None:
-                dd = np.empty(retshape,dtype=np.object)
-                ii = np.empty(retshape,dtype=np.object)
             else:
                 raise ValueError("Requested %s nearest neighbors; acceptable numbers are integers greater than or equal to one, or None")
             for c in np.ndindex(retshape):
                 hits = self.__query(x[c], k=k, p=p, distance_upper_bound=distance_upper_bound)
-                if k>1:
+                if k is None:
+                    dd[c] = [d for (d,i) in hits]
+                    ii[c] = [i for (d,i) in hits]
+                elif k>1:
                     for j in range(len(hits)):
                         dd[c+(j,)], ii[c+(j,)] = hits[j]
                 elif k==1:
@@ -390,13 +399,12 @@ class KDTree(object):
                     else:
                         dd[c] = np.inf
                         ii[c] = self.n
-                elif k is None:
-                    dd[c] = [d for (d,i) in hits]
-                    ii[c] = [i for (d,i) in hits]
             return dd, ii
         else:
             hits = self.__query(x, k=k, p=p, distance_upper_bound=distance_upper_bound)
-            if k==1:
+            if k is None:
+                return [d for (d,i) in hits], [i for (d,i) in hits]
+            elif k==1:
                 if len(hits)>0:
                     return hits[0]
                 else:
@@ -409,8 +417,6 @@ class KDTree(object):
                 for j in range(len(hits)):
                     dd[j], ii[j] = hits[j]
                 return dd, ii
-            elif k is None:
-                return [d for (d,i) in hits], [i for (d,i) in hits]
             else:
                 raise ValueError("Requested %s nearest neighbors; acceptable numbers are integers greater than or equal to one, or None")
 
