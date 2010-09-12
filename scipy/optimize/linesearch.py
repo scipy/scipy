@@ -1,5 +1,6 @@
 from scipy.optimize import minpack2
 import numpy as np
+from numpy.compat import asbytes
 
 __all__ = ['line_search_wolfe1', 'line_search_wolfe2',
            'scalar_search_wolfe1', 'scalar_search_wolfe2',
@@ -138,20 +139,20 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     derphi1 = derphi0
     isave = np.zeros((2,), np.intc)
     dsave = np.zeros((13,), float)
-    task = 'START'
+    task = asbytes('START')
 
     while 1:
         stp, phi1, derphi1, task = minpack2.dcsrch(alpha1, phi1, derphi1,
                                                    c1, c2, xtol, task,
                                                    amin, amax, isave, dsave)
-        if task[:2] == 'FG':
+        if task[:2] == asbytes('FG'):
             alpha1 = stp
             phi1 = phi(stp)
             derphi1 = derphi(stp)
         else:
             break
 
-    if task[:5] == 'ERROR' or task[:4] == 'WARN':
+    if task[:5] == asbytes('ERROR') or task[:4] == asbytes('WARN'):
         stp = None  # failed
 
     return stp, phi1, phi0
