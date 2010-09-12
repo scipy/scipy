@@ -2,6 +2,7 @@ import os
 import warnings
 
 import numpy as np
+from numpy.testing import assert_
 from numpy.testing.noseclasses import KnownFailureTest
 
 import scipy.special as sc
@@ -180,7 +181,7 @@ class FuncData(object):
 
         # Check the validity of each output returned
 
-        assert len(got) == len(wanted)
+        assert_(len(got) == len(wanted))
 
         for output_num, (x, y) in enumerate(zip(got, wanted)):
             pinf_x = np.isinf(x) & (x > 0)
@@ -220,7 +221,7 @@ class FuncData(object):
                     c = "  ".join(map(fmt, wanted))
                     d = fmt(rdiff)
                     msg.append("%s => %s != %s  (rdiff %s)" % (a, b, c, d))
-                assert False, "\n".join(msg)
+                assert_(False, "\n".join(msg))
 
     def __repr__(self):
         """Pretty-printing, esp. for Nose output"""

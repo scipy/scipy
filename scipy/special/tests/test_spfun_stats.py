@@ -1,7 +1,8 @@
 import numpy as np
-from numpy.testing import *
+from numpy.testing import assert_array_equal, TestCase, run_module_suite
 
 from scipy.special import gammaln, multigammaln
+
 
 class TestMultiGammaLn(TestCase):
     def test1(self):

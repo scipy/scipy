@@ -1,17 +1,19 @@
-from numpy.testing import *
-import numpy as np
-from numpy import array, sqrt
-from scipy.special.orthogonal import *
-from scipy.special import gamma
+#from numpy.testing import 
 
-from testutils import *
+import numpy as np
+from numpy.testing import assert_
+import scipy.special.orthogonal as orth
+
+from testutils import FuncData
+
 
 def test_eval_chebyt():
     n = np.arange(0, 10000, 7)
     x = 2*np.random.rand() - 1
     v1 = np.cos(n*np.arccos(x))
-    v2 = eval_chebyt(n, x)
-    assert np.allclose(v1, v2, rtol=1e-15)
+    v2 = orth.eval_chebyt(n, x)
+    assert_(np.allclose(v1, v2, rtol=1e-15))
+
 
 class TestPolys(object):
     """
@@ -50,64 +52,64 @@ class TestPolys(object):
         ds.check()
 
     def test_jacobi(self):
-        self.check_poly(eval_jacobi, jacobi,
+        self.check_poly(orth.eval_jacobi, orth.jacobi,
                    param_ranges=[(-0.99, 10), (-0.99, 10)], x_range=[-1, 1],
                    rtol=1e-5)
 
     def test_sh_jacobi(self):
-        self.check_poly(eval_sh_jacobi, sh_jacobi,
+        self.check_poly(orth.eval_sh_jacobi, orth.sh_jacobi,
                    param_ranges=[(1, 10), (0, 1)], x_range=[0, 1],
                    rtol=1e-5)
 
     def test_gegenbauer(self):
-        self.check_poly(eval_gegenbauer, gegenbauer,
+        self.check_poly(orth.eval_gegenbauer, orth.gegenbauer,
                    param_ranges=[(-0.499, 10)], x_range=[-1, 1],
                    rtol=1e-7)
 
     def test_chebyt(self):
-        self.check_poly(eval_chebyt, chebyt,
+        self.check_poly(orth.eval_chebyt, orth.chebyt,
                    param_ranges=[], x_range=[-1, 1])
 
     def test_chebyu(self):
-        self.check_poly(eval_chebyu, chebyu,
+        self.check_poly(orth.eval_chebyu, orth.chebyu,
                    param_ranges=[], x_range=[-1, 1])
 
     def test_chebys(self):
-        self.check_poly(eval_chebys, chebys,
+        self.check_poly(orth.eval_chebys, orth.chebys,
                    param_ranges=[], x_range=[-2, 2])
 
     def test_chebyc(self):
-        self.check_poly(eval_chebyc, chebyc,
+        self.check_poly(orth.eval_chebyc, orth.chebyc,
                    param_ranges=[], x_range=[-2, 2])
 
     def test_sh_chebyt(self):
-        self.check_poly(eval_sh_chebyt, sh_chebyt,
+        self.check_poly(orth.eval_sh_chebyt, orth.sh_chebyt,
                    param_ranges=[], x_range=[0, 1])
 
     def test_sh_chebyu(self):
-        self.check_poly(eval_sh_chebyu, sh_chebyu,
+        self.check_poly(orth.eval_sh_chebyu, orth.sh_chebyu,
                    param_ranges=[], x_range=[0, 1])
 
     def test_legendre(self):
-        self.check_poly(eval_legendre, legendre,
+        self.check_poly(orth.eval_legendre, orth.legendre,
                    param_ranges=[], x_range=[-1, 1])
 
     def test_sh_legendre(self):
-        self.check_poly(eval_sh_legendre, sh_legendre,
+        self.check_poly(orth.eval_sh_legendre, orth.sh_legendre,
                    param_ranges=[], x_range=[0, 1])
 
     def test_genlaguerre(self):
-        self.check_poly(eval_genlaguerre, genlaguerre,
+        self.check_poly(orth.eval_genlaguerre, orth.genlaguerre,
                    param_ranges=[(-0.99, 10)], x_range=[0, 100])
 
     def test_laguerre(self):
-        self.check_poly(eval_laguerre, laguerre,
+        self.check_poly(orth.eval_laguerre, orth.laguerre,
                    param_ranges=[], x_range=[0, 100])
 
     def test_hermite(self):
-        self.check_poly(eval_hermite, hermite,
+        self.check_poly(orth.eval_hermite, orth.hermite,
                    param_ranges=[], x_range=[-100, 100])
 
     def test_hermitenorm(self):
-        self.check_poly(eval_hermitenorm, hermitenorm,
+        self.check_poly(orth.eval_hermitenorm, orth.hermitenorm,
                         param_ranges=[], x_range=[-100, 100])

@@ -4,10 +4,10 @@ Test Scipy functions versus mpmath, if available.
 """
 import re
 import numpy as np
-from numpy.testing import *
+from numpy.testing import dec
 import scipy.special as sc
 
-from testutils import *
+from testutils import FuncData, assert_func_equal
 
 try:
     import mpmath

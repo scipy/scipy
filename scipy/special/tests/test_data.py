@@ -1,7 +1,6 @@
 import os
 
 import numpy as np
-from numpy.testing import *
 from scipy.special import (
     arccosh, arcsinh, arctanh, erf, erfc, log1p, expm1,
     jn, jv, yn, yv, iv, kv, kn, gamma, gammaln, digamma, beta, cbrt,
@@ -9,7 +8,7 @@ from scipy.special import (
     zeta, gammaincinv,
 )
 
-from testutils import *
+from testutils import FuncData
 
 DATASETS = np.load(os.path.join(os.path.dirname(__file__),
                                 "data", "boost.npz"))

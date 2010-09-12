@@ -6,14 +6,15 @@
 # [1] mpmath source code, Subversion revision 992
 #     http://code.google.com/p/mpmath/source/browse/trunk/mpmath/tests/test_functions2.py?spec=svn994&r=992
 
-from numpy.testing import *
+from numpy.testing import assert_, assert_equal, assert_array_almost_equal
 from scipy.special import lambertw
 from numpy import nan, inf, pi, e, isnan, log, r_, array, complex_
 
-from testutils import *
+from testutils import FuncData
+
 
 def test_values():
-    assert isnan(lambertw(nan))
+    assert_(isnan(lambertw(nan)))
     assert_equal(lambertw(inf,1).real, inf)
     assert_equal(lambertw(inf,1).imag, 2*pi)
     assert_equal(lambertw(-inf,1).real, inf)
