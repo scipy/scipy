@@ -10,6 +10,8 @@ include setup.py
 include scipy/*.py
 # Adding scons build relateed files not found by distutils
 recursive-include scipy SConstruct SConscript
+# Add py3tool
+include tools/py3tool.py
 # Add documentation: we don't use add_data_dir since we do not want to include
 # this at installation, only for sdist-generated tarballs
 include doc/Makefile doc/postprocess.py
