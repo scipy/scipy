@@ -21,7 +21,6 @@ import sys
 import os
 import time
 import tempfile
-import exceptions
 import commands
 import subprocess
 import warnings
@@ -73,7 +72,7 @@ distutils.sysconfig._init_posix = _init_posix
 # end force g++
 
 
-class CompileError(exceptions.Exception):
+class CompileError(Exception):
     pass
 
 
