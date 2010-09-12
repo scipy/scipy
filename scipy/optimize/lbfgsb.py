@@ -27,6 +27,7 @@
 from numpy import zeros, float64, array, int32
 import _lbfgsb
 import optimize
+from numpy.compat import asbytes
 
 approx_fprime = optimize.approx_fprime
 
@@ -188,20 +189,20 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
                        pgtol, wa, iwa, task, iprint, csave, lsave,
                        isave, dsave)
         task_str = task.tostring()
-        if task_str.startswith('FG'):
+        if task_str.startswith(asbytes('FG')):
             # minimization routine wants f and g at the current x
             n_function_evals += 1
             # Overwrite f and g:
             f, g = func_and_grad(x)
-        elif task_str.startswith('NEW_X'):
+        elif task_str.startswith(asbytes('NEW_X')):
             # new iteration
             if n_function_evals > maxfun:
                 task[:] = 'STOP: TOTAL NO. of f AND g EVALUATIONS EXCEEDS LIMIT'
         else:
             break
 
-    task_str = task.tostring().strip('\x00').strip()
-    if task_str.startswith('CONV'):
+    task_str = task.tostring().strip(asbytes('\x00')).strip()
+    if task_str.startswith(asbytes('CONV')):
         warnflag = 0
     elif n_function_evals > maxfun:
         warnflag = 1
