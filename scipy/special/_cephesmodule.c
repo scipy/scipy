@@ -25,6 +25,12 @@ extern int scipy_special_print_error_messages;
 
 #include "cephes_doc.h"
 
+#if PY_VERSION_HEX >= 0x03000000
+#define PyInt_FromLong PyLong_FromLong
+#define PyUString_FromString PyUnicode_FromString
+#else
+#define PyUString_FromString PyString_FromString
+#endif
 static PyUFuncGenericFunction cephes1_functions[] = { NULL, NULL, };
 static PyUFuncGenericFunction cephes1rc_functions[] = { NULL, NULL, NULL, NULL};
 static PyUFuncGenericFunction cephes1_2_functions[] = { NULL, NULL, NULL, NULL,};
@@ -1086,7 +1092,54 @@ static struct PyMethodDef methods[] = {
   {NULL,		NULL, 0}		/* sentinel */
 };
 
+#if PY_VERSION_HEX >= 0x03000000
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "_cephes",
+    NULL,
+    -1,
+    methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
 
+PyObject *PyInit__cephes(void)
+{
+    PyObject *m, *s, *d;
+
+    m = PyModule_Create(&moduledef);
+    import_array();
+    import_ufunc();
+
+    /* Add some symbolic constants to the module */
+    d = PyModule_GetDict(m);
+
+    s = PyUString_FromString("2.0");
+    PyDict_SetItemString(d, "__version__", s);
+    Py_DECREF(s);
+
+    /* Add scipy_special_print_error_message global variable */
+    /*  No, instead acessible through errprint */
+
+    /* Load the cephes operators into the array module's namespace */
+    Cephes_InitOperators(d);
+
+    /* Register and add the warning type object */
+    scipy_special_SpecialFunctionWarning = PyErr_NewException(
+            "scipy.special._cephes.SpecialFunctionWarning",
+            PyExc_RuntimeWarning,
+            NULL);
+    PyModule_AddObject(m, "SpecialFunctionWarning",
+            scipy_special_SpecialFunctionWarning);
+
+    /* Check for errors */
+    if (PyErr_Occurred())
+        Py_FatalError("can't initialize module _cephes");
+    return m;
+}
+#else
 PyMODINIT_FUNC init_cephes(void) {
   PyObject *m, *d, *s;
 
@@ -1122,3 +1175,4 @@ PyMODINIT_FUNC init_cephes(void) {
   if (PyErr_Occurred())
     Py_FatalError("can't initialize module _cephes");
 }
+#endif
