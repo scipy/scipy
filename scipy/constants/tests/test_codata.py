@@ -1,7 +1,7 @@
 import warnings
 
 from scipy.constants import constants, codata, find
-from numpy.testing import assert_equal, run_module_suite
+from numpy.testing import assert_equal, assert_, run_module_suite
 
 def test_find():
 
@@ -36,7 +36,7 @@ def test_basic_lookup():
                  '299792458 m s^-1')
 
 def test_find_all():
-    assert len(codata.find(disp=False)) > 300
+    assert_(len(codata.find(disp=False)) > 300)
 
 def test_find_single():
     assert_equal(codata.find('Wien freq', disp=False)[0],
