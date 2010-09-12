@@ -7,6 +7,10 @@
 #define NO_IMPORT_ARRAY
 #include <numpy/noprefix.h>
 
+#if PY_VERSION_HEX >= 0x03000000
+#define PyNumber_Divide PyNumber_TrueDivide
+#endif
+
 #include "sigtools.h"
 
 static void FLOAT_filt(char *b, char *a, char *x, char *y, char *Z,

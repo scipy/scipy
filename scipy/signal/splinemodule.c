@@ -469,7 +469,40 @@ static struct PyMethodDef toolbox_module_methods[] = {
 };
 
 /* Initialization function for the module (*must* be called initXXXXX) */
+#if PY_VERSION_HEX >= 0x03000000
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "spline",
+    NULL,
+    -1,
+    toolbox_module_methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
 
+PyObject *PyInit_spline(void)
+{
+    PyObject *m, *d, *s;
+
+    m = PyModule_Create(&moduledef);
+    import_array();
+
+    /* Add some symbolic constants to the module */
+    d = PyModule_GetDict(m);
+
+    s = PyUnicode_FromString("0.2");
+    PyDict_SetItemString(d, "__version__", s);
+    Py_DECREF(s);
+    
+    /* Check for errors */
+    if (PyErr_Occurred()) {
+        Py_FatalError("can't initialize module array");
+    }
+    return m;
+}
+#else
 PyMODINIT_FUNC initspline(void) {
     PyObject *m, *d, *s;
 	
@@ -490,18 +523,4 @@ PyMODINIT_FUNC initspline(void) {
     if (PyErr_Occurred())
 	Py_FatalError("can't initialize module array");
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#endif

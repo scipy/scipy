@@ -5,6 +5,7 @@ Permission to use, copy, modify, and distribute this software without fee
 is granted under the SciPy License.
 */
 #include <Python.h>
+
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_signal_ARRAY_API
 #include <numpy/noprefix.h>
 
@@ -822,10 +823,11 @@ COMPARE(ULONGLONG_compare, ulonglong)
 
 
 int OBJECT_compare(PyObject **ip1, PyObject **ip2) {
-        return PyObject_Compare(*ip1, *ip2);
+        /*return PyObject_Compare(*ip1, *ip2); */
+        return PyObject_RichCompareBool(*ip1, *ip2, Py_EQ) != 1;
 }
 
-typedef int (*CompareFunction) Py_FPROTO((const void *, const void *));
+typedef int (*CompareFunction)(const void *, const void *);
 
 CompareFunction compare_functions[] = \
 	{NULL, (CompareFunction)BYTE_compare,(CompareFunction)UBYTE_compare,\
@@ -1312,6 +1314,30 @@ static struct PyMethodDef toolbox_module_methods[] = {
 	{NULL, NULL, 0, NULL}		/* sentinel */
 };
 
+#if PY_VERSION_HEX >= 0x03000000
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "sigtools",
+    NULL,
+    -1,
+    toolbox_module_methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+PyObject *PyInit_sigtools(void)
+{
+    PyObject *m, *d, *s;
+
+    m = PyModule_Create(&moduledef);
+	import_array();
+
+    scipy_signal_sigtools_linear_filter_module_init();
+
+    return m;
+}
+#else
 /* Initialization function for the module (*must* be called initsigtools) */
 
 PyMODINIT_FUNC initsigtools(void) {
@@ -1346,3 +1372,4 @@ PyMODINIT_FUNC initsigtools(void) {
 	  Py_FatalError("can't initialize module array");
 	}
 }
+#endif
