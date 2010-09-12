@@ -4,13 +4,19 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['dok_matrix', 'isspmatrix_dok']
 
-import operator
 from itertools import izip
 
 import numpy as np
 
 from base import spmatrix, isspmatrix
 from sputils import isdense, getdtype, isshape, isintlike, isscalarlike, upcast
+
+try:
+    from operator import isSequenceType as _is_sequence
+except ImportError:
+    def _is_sequence(x):
+        return (hasattr(x, '__len__') or hasattr(x, '__next__')
+                or hasattr(x, 'next'))
 
 class dok_matrix(spmatrix, dict):
     """
@@ -137,7 +143,7 @@ class dok_matrix(spmatrix, dict):
             if isinstance(i, slice):
                 # Is there an easier way to do this?
                 seq = xrange(i.start or 0, i.stop or self.shape[0], i.step or 1)
-            elif operator.isSequenceType(i):
+            elif _is_sequence(i):
                 seq = i
             else:
                 # Make sure i is an integer. (But allow it to be a subclass of int).
@@ -176,7 +182,7 @@ class dok_matrix(spmatrix, dict):
             if isinstance(j, slice):
                 # Is there an easier way to do this?
                 seq = xrange(j.start or 0, j.stop or self.shape[1], j.step or 1)
-            elif operator.isSequenceType(j):
+            elif _is_sequence(j):
                 seq = j
             else:
                 # j is not an integer
@@ -232,7 +238,7 @@ class dok_matrix(spmatrix, dict):
             if isinstance(i, slice):
                 # Is there an easier way to do this?
                 seq = xrange(i.start or 0, i.stop or self.shape[0], i.step or 1)
-            elif operator.isSequenceType(i):
+            elif _is_sequence(i):
                 seq = i
             else:
                 # Make sure i is an integer. (But allow it to be a subclass of int).
@@ -273,7 +279,7 @@ class dok_matrix(spmatrix, dict):
                 # Process j
                 if isinstance(j, slice):
                     seq = xrange(j.start or 0, j.stop or self.shape[1], j.step or 1)
-                elif operator.isSequenceType(j):
+                elif _is_sequence(j):
                     seq = j
                 else:
                     # j is not an integer
