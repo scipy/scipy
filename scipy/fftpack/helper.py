@@ -16,4 +16,4 @@ def rfftfreq(n,d=1.0):
       f = [0,1,1,2,2,...,n/2-1,n/2-1,n/2,n/2]/(d*n)   if n is odd
     """
     assert isinstance(n,int)
-    return array(range(1,n+1),dtype=int)/2/float(n*d)
+    return (array(range(1,n+1),dtype=int)//2)/float(n*d)
