@@ -2,7 +2,7 @@ import os
 import tempfile
 import numpy as np
 
-from numpy.testing import *
+from numpy.testing import assert_equal, assert_, assert_raises, assert_array_equal
 from scipy.io import wavfile
 
 def datafile(fn):
@@ -10,15 +10,15 @@ def datafile(fn):
 
 def test_read_1():
     rate, data = wavfile.read(datafile('test-44100-le-1ch-4bytes.wav'))
-    assert rate == 44100
-    assert np.issubdtype(data.dtype, np.int32)
-    assert data.shape == (4410,)
+    assert_equal(rate, 44100)
+    assert_(np.issubdtype(data.dtype, np.int32))
+    assert_equal(data.shape, (4410,))
 
 def test_read_2():
     rate, data = wavfile.read(datafile('test-8000-le-2ch-1byteu.wav'))
-    assert rate == 8000
-    assert np.issubdtype(data.dtype, np.uint8)
-    assert data.shape == (800, 2)
+    assert_equal(rate, 8000)
+    assert_(np.issubdtype(data.dtype, np.uint8))
+    assert_equal(data.shape, (800, 2))
 
 def test_read_fail():
     assert_raises(ValueError, wavfile.read, datafile('example_1.nc'))
@@ -36,8 +36,8 @@ def _check_roundtrip(rate, dtype, channels):
         wavfile.write(tmpfile, rate, data)
         rate2, data2 = wavfile.read(tmpfile)
 
-        assert rate == rate2
-        assert data2.dtype.byteorder in ('<', '=', '|'), data2.dtype
+        assert_equal(rate, rate2)
+        assert_(data2.dtype.byteorder in ('<', '=', '|'), msg=data2.dtype)
         assert_array_equal(data, data2)
     finally:
         os.unlink(tmpfile)

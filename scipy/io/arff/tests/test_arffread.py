@@ -4,7 +4,8 @@ from os.path import join as pjoin
 
 import numpy as np
 
-from numpy.testing import TestCase, assert_array_almost_equal, assert_equal
+from numpy.testing import TestCase, assert_array_almost_equal, assert_equal, \
+        assert_, assert_raises
 
 from scipy.io.arff.arffread import loadarff
 from scipy.io.arff.arffread import read_header, parse_type, ParseArffError
@@ -61,7 +62,7 @@ class HeaderTest(TestCase):
                     'numeric', 'string', 'string', 'nominal', 'nominal']
 
         for i in range(len(attrs)):
-            assert parse_type(attrs[i][1]) == expected[i]
+            assert_(parse_type(attrs[i][1]) == expected[i])
 
     def test_badtype_parsing(self):
         """Test parsing wrong type of attribute from their value."""
@@ -69,11 +70,7 @@ class HeaderTest(TestCase):
         rel, attrs = read_header(ofile)
 
         for name, value in attrs:
-            try:
-                parse_type(value)
-                raise Error("Could parse type of crap, should not happen.")
-            except ParseArffError:
-                pass
+            assert_raises(ParseArffError, parse_type, value)
 
     def test_fullheader1(self):
         """Parsing trivial header with nothing."""
@@ -81,18 +78,18 @@ class HeaderTest(TestCase):
         rel, attrs = read_header(ofile)
 
         # Test relation
-        assert rel == 'test1'
+        assert_(rel == 'test1')
 
         # Test numerical attributes
-        assert len(attrs) == 5
+        assert_(len(attrs) == 5)
         for i in range(4):
-            assert attrs[i][0] == 'attr%d' % i
-            assert attrs[i][1] == 'REAL'
+            assert_(attrs[i][0] == 'attr%d' % i)
+            assert_(attrs[i][1] == 'REAL')
         classes = attrs[4][1]
 
         # Test nominal attribute
-        assert attrs[4][0] == 'class'
-        assert attrs[4][1] == '{class0, class1, class2, class3}'
+        assert_(attrs[4][0] == 'class')
+        assert_(attrs[4][1] == '{class0, class1, class2, class3}')
 
 if __name__ == "__main__":
     import nose
