@@ -1,7 +1,8 @@
 import os.path
 import numpy as np
 
-from numpy.testing import *
+from numpy.testing import assert_, assert_equal, \
+        dec, decorate_methods, TestCase, run_module_suite
 
 try:
     import PIL.Image
@@ -42,8 +43,8 @@ class TestPILUtil(TestCase):
 def tst_fromimage(filename, irange):
     img = pilutil.fromimage(PIL.Image.open(filename))
     imin,imax = irange
-    assert img.min() >= imin
-    assert img.max() <= imax
+    assert_(img.min() >= imin)
+    assert_(img.max() <= imax)
 
 @_pilskip
 def test_fromimage():
