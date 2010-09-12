@@ -87,7 +87,7 @@ def configuration(parent_package='',top_path=None):
         skip_names['clapack'].extend(\
             'sgetri dgetri cgetri zgetri spotri dpotri cpotri zpotri'\
             ' slauum dlauum clauum zlauum strtri dtrtri ctrtri ztrtri'.split())
-    elif atlas_version>'3.4.0' and atlas_version<='3.5.12':
+    elif atlas_version and atlas_version>'3.4.0' and atlas_version<='3.5.12':
         skip_names['clapack'].extend('cpotrf zpotrf'.split())
 
     def generate_pyf(extension, build_dir):
