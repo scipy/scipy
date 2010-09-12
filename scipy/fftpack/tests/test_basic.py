@@ -93,6 +93,7 @@ class _TestFFTBase(TestCase):
     def setUp(self):
         self.cdt = None
         self.rdt = None
+        np.random.seed(1234)
 
     def test_definition(self):
         x = np.array([1,2,3,4+1j,1,2,3,4+2j], dtype = self.cdt)
@@ -146,6 +147,9 @@ class TestSingleFFT(_TestFFTBase):
         self.rdt = np.float32
 
 class _TestIFFTBase(TestCase):
+    def setUp(self):
+        np.random.seed(1234)
+
     def test_definition(self):
         x = np.array([1,2,3,4+1j,1,2,3,4+2j], self.cdt)
         y = ifft(x)
@@ -216,6 +220,8 @@ class TestSingleIFFT(_TestIFFTBase):
         self.rdt = np.float32
 
 class _TestRFFTBase(TestCase):
+    def setUp(self):
+        np.random.seed(1234)
 
     def test_definition(self):
         for t in [[1, 2, 3, 4, 1, 2, 3, 4], [1, 2, 3, 4, 1, 2, 3, 4, 5]]:
@@ -252,6 +258,8 @@ class TestRFFTSingle(_TestRFFTBase):
         self.rdt = np.float32
 
 class _TestIRFFTBase(TestCase):
+    def setUp(self):
+        np.random.seed(1234)
 
     def test_definition(self):
         x1 = [1,2,3,4,1,2,3,4]
@@ -312,6 +320,9 @@ class TestIRFFTSingle(_TestIRFFTBase):
         self.ndec = 5
 
 class Testfft2(TestCase):
+    def setUp(self):
+        np.random.seed(1234)
+
     def test_regression_244(self):
         """fft returns wrong result with axes parameter."""
         # fftn (and hence fft2) used to break when both axes and shape were
@@ -322,6 +333,9 @@ class Testfft2(TestCase):
         assert_array_almost_equal(y, y_r)
 
 class TestFftnSingle(TestCase):
+    def setUp(self):
+        np.random.seed(1234)
+
     def test_definition(self):
         x = [[1,2,3],[4,5,6],[7,8,9]]
         y = fftn(np.array(x, np.float32))
@@ -332,6 +346,8 @@ class TestFftnSingle(TestCase):
         assert_array_almost_equal_nulp(y, y_r)
 
 class TestFftn(TestCase):
+    def setUp(self):
+        np.random.seed(1234)
 
     def test_definition(self):
         x = [[1,2,3],[4,5,6],[7,8,9]]
@@ -489,6 +505,10 @@ class TestFftn(TestCase):
 class _TestIfftn(TestCase):
     dtype = None
     cdtype = None
+
+    def setUp(self):
+        np.random.seed(1234)
+
     def test_definition(self):
         x = np.array([[1,2,3],[4,5,6],[7,8,9]], dtype=self.dtype)
         y = ifftn(x)
@@ -516,6 +536,8 @@ class TestIfftnSingle(_TestIfftn):
     maxnlp = 2000
 
 class TestLongDoubleFailure(TestCase):
+    def setUp(self):
+        np.random.seed(1234)
 
     def test_complex(self):
         if np.dtype(np.longcomplex).itemsize == np.dtype(np.complex).itemsize:
