@@ -181,7 +181,7 @@ def test_cont_basic():
         yield check_sf_logsf, distfn, arg, distname
         if distname in distmissing:
             alpha = 0.01
- #           yield check_distribution_rvs, dist, args, alpha, rvs
+            yield check_distribution_rvs, distname, arg, alpha, rvs
 
 @npt.dec.slow
 def test_cont_basic_slow():
@@ -211,7 +211,7 @@ def test_cont_basic_slow():
         #yield check_oth, distfn, arg # is still missing
         if distname in distmissing:
             alpha = 0.01
-            yield check_distribution_rvs, dist, args, alpha, rvs
+            yield check_distribution_rvs, distname, arg, alpha, rvs
 
 def check_moment(distfn, arg, m, v, msg):
     m1  = distfn.moment(1,*arg)
