@@ -356,9 +356,9 @@ class TestDocstring(TestCase):
     def test_docstrings(self):
         """See ticket #761"""
         if stats.rayleigh.__doc__ is not None:
-            self.failUnless("rayleigh" in stats.rayleigh.__doc__.lower())
+            self.assertTrue("rayleigh" in stats.rayleigh.__doc__.lower())
         if stats.bernoulli.__doc__ is not None:
-            self.failUnless("bernoulli" in stats.bernoulli.__doc__.lower())
+            self.assertTrue("bernoulli" in stats.bernoulli.__doc__.lower())
 
 class TestEntropy(TestCase):
     def test_entropy_positive(self):

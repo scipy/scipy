@@ -42,7 +42,7 @@ class _TestDCTBase(TestCase):
         for i in FFTWDATA_SIZES:
             x, yr = fftw_ref(self.type, i, self.rdt)
             y = dct(x, type=self.type)
-            self.failUnless(y.dtype == self.rdt,
+            self.assertTrue(y.dtype == self.rdt,
                     "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
             # XXX: we divide by np.max(y) because the tests fail otherwise. We
             # should really use something like assert_array_approx_equal. The
@@ -73,7 +73,7 @@ class _TestDCTIIBase(_TestDCTBase):
             x = np.array(X[i], dtype=self.rdt)
             yr = Y[i]
             y = dct(x, norm="ortho", type=2)
-            self.failUnless(y.dtype == self.rdt,
+            self.assertTrue(y.dtype == self.rdt,
                     "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
             assert_array_almost_equal(y, yr, decimal=self.dec)
 
@@ -84,7 +84,7 @@ class _TestDCTIIIBase(_TestDCTBase):
             x = np.array(X[i], dtype=self.rdt)
             y = dct(x, norm='ortho', type=2)
             xi = dct(y, norm="ortho", type=3)
-            self.failUnless(xi.dtype == self.rdt,
+            self.assertTrue(xi.dtype == self.rdt,
                     "Output dtype is %s, expected %s" % (xi.dtype, self.rdt))
             assert_array_almost_equal(xi, x, decimal=self.dec)
 
@@ -139,7 +139,7 @@ class _TestIDCTBase(TestCase):
                 x /= 2 * (i-1)
             else:
                 x /= 2 * i
-            self.failUnless(x.dtype == self.rdt,
+            self.assertTrue(x.dtype == self.rdt,
                     "Output dtype is %s, expected %s" % (x.dtype, self.rdt))
             # XXX: we divide by np.max(y) because the tests fail otherwise. We
             # should really use something like assert_array_approx_equal. The

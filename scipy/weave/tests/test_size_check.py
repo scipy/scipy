@@ -40,7 +40,7 @@ class TestBinaryOpSize(TestCase):
         desired = desired
         assert_array_equal(actual,desired)
     def generic_error_check(self,x,y):
-        self.failUnlessRaises(ValueError, size_check.binary_op_size, x, y)
+        self.assertRaises(ValueError, size_check.binary_op_size, x, y)
 
     def desired_type(self,val):
         return np.array(val)

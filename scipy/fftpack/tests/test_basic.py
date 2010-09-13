@@ -99,7 +99,7 @@ class _TestFFTBase(TestCase):
     def test_definition(self):
         x = np.array([1,2,3,4+1j,1,2,3,4+2j], dtype = self.cdt)
         y = fft(x)
-        self.failUnless(y.dtype == self.cdt,
+        self.assertTrue(y.dtype == self.cdt,
                 "Output dtype is %s, expected %s" % (y.dtype, self.cdt))
         y1 = direct_dft(x)
         assert_array_almost_equal(y,y1)
@@ -110,7 +110,7 @@ class _TestFFTBase(TestCase):
         x1 = np.array([1,2,3,4], dtype=self.rdt)
         x2 = np.array([1,2,3,4], dtype=self.rdt)
         y = fft([x1,x2],n=4)
-        self.failUnless(y.dtype == self.cdt,
+        self.assertTrue(y.dtype == self.cdt,
                 "Output dtype is %s, expected %s" % (y.dtype, self.cdt))
         assert_equal(y.shape,(2,4))
         assert_array_almost_equal(y[0],direct_dft(x1))
@@ -120,7 +120,7 @@ class _TestFFTBase(TestCase):
         x1 = np.array([1,2,3,4+1j], dtype=self.cdt)
         x2 = np.array([1,2,3,4+1j], dtype=self.cdt)
         y = fft([x1,x2],n=4)
-        self.failUnless(y.dtype == self.cdt,
+        self.assertTrue(y.dtype == self.cdt,
                 "Output dtype is %s, expected %s" % (y.dtype, self.cdt))
         assert_equal(y.shape,(2,4))
         assert_array_almost_equal(y[0],direct_dft(x1))
@@ -155,7 +155,7 @@ class _TestIFFTBase(TestCase):
         x = np.array([1,2,3,4+1j,1,2,3,4+2j], self.cdt)
         y = ifft(x)
         y1 = direct_idft(x)
-        self.failUnless(y.dtype == self.cdt,
+        self.assertTrue(y.dtype == self.cdt,
                 "Output dtype is %s, expected %s" % (y.dtype, self.cdt))
         assert_array_almost_equal(y,y1)
 
@@ -165,13 +165,13 @@ class _TestIFFTBase(TestCase):
     def test_definition_real(self):
         x = np.array([1,2,3,4,1,2,3,4], self.rdt)
         y = ifft(x)
-        self.failUnless(y.dtype == self.cdt,
+        self.assertTrue(y.dtype == self.cdt,
                 "Output dtype is %s, expected %s" % (y.dtype, self.cdt))
         y1 = direct_idft(x)
         assert_array_almost_equal(y,y1)
 
         x = np.array([1,2,3,4,5], dtype=self.rdt)
-        self.failUnless(y.dtype == self.cdt,
+        self.assertTrue(y.dtype == self.cdt,
                 "Output dtype is %s, expected %s" % (y.dtype, self.cdt))
         assert_array_almost_equal(ifft(x),direct_idft(x))
 
@@ -191,9 +191,9 @@ class _TestIFFTBase(TestCase):
             x = random([size]).astype(self.cdt) +1j*x
             y1 = ifft(fft(x))
             y2 = fft(ifft(x))
-            self.failUnless(y1.dtype == self.cdt,
+            self.assertTrue(y1.dtype == self.cdt,
                     "Output dtype is %s, expected %s" % (y1.dtype, self.cdt))
-            self.failUnless(y2.dtype == self.cdt,
+            self.assertTrue(y2.dtype == self.cdt,
                     "Output dtype is %s, expected %s" % (y2.dtype, self.cdt))
             assert_array_almost_equal (y1, x)
             assert_array_almost_equal (y2, x)
@@ -203,9 +203,9 @@ class _TestIFFTBase(TestCase):
             x = random([size]).astype(self.rdt)
             y1 = ifft(fft(x))
             y2 = fft(ifft(x))
-            self.failUnless(y1.dtype == self.cdt,
+            self.assertTrue(y1.dtype == self.cdt,
                     "Output dtype is %s, expected %s" % (y1.dtype, self.cdt))
-            self.failUnless(y2.dtype == self.cdt,
+            self.assertTrue(y2.dtype == self.cdt,
                     "Output dtype is %s, expected %s" % (y2.dtype, self.cdt))
             assert_array_almost_equal (y1, x)
             assert_array_almost_equal (y2, x)
@@ -230,7 +230,7 @@ class _TestRFFTBase(TestCase):
             y = rfft(x)
             y1 = direct_rdft(x)
             assert_array_almost_equal(y,y1)
-            self.failUnless(y.dtype == self.rdt,
+            self.assertTrue(y.dtype == self.rdt,
                     "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
 
     def test_djbfft(self):
@@ -271,7 +271,7 @@ class _TestIRFFTBase(TestCase):
         def _test(x, xr):
             y = irfft(np.array(x, dtype=self.rdt))
             y1 = direct_irdft(x)
-            self.failUnless(y.dtype == self.rdt,
+            self.assertTrue(y.dtype == self.rdt,
                     "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
             assert_array_almost_equal(y,y1, decimal=self.ndec)
             assert_array_almost_equal(y,ifft(xr), decimal=self.ndec)
@@ -299,9 +299,9 @@ class _TestIRFFTBase(TestCase):
             x = random([size]).astype(self.rdt)
             y1 = irfft(rfft(x))
             y2 = rfft(irfft(x))
-            self.failUnless(y1.dtype == self.rdt,
+            self.assertTrue(y1.dtype == self.rdt,
                     "Output dtype is %s, expected %s" % (y1.dtype, self.rdt))
-            self.failUnless(y2.dtype == self.rdt,
+            self.assertTrue(y2.dtype == self.rdt,
                     "Output dtype is %s, expected %s" % (y2.dtype, self.rdt))
             assert_array_almost_equal (y1, x, decimal=self.ndec)
             assert_array_almost_equal (y2, x, decimal=self.ndec)
