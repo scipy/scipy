@@ -54,6 +54,8 @@ os.environ['NO_SCIPY_IMPORT']='SciPy/setup.py'
 
 # Return the svn version as a string, raise a ValueError otherwise
 def svn_version():
+    from numpy.compat import asstr
+
     env = os.environ.copy()
     env['LC_ALL'] = 'C'
     try:
@@ -65,7 +67,7 @@ def svn_version():
 
     r = re.compile('Revision: ([0-9]+)')
     svnver = None
-    for line in out.split('\n'):
+    for line in asstr(out).split('\n'):
         m = r.match(line)
         if m:
             svnver = m.group(1)
