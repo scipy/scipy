@@ -37,13 +37,11 @@ cdef extern from "stdlib.h":
 
 cdef extern from "math.h":
     double sqrt(double x) nogil
-    double fmax(double a, double b) nogil
     double fabs(double a) nogil
 
 cdef extern from "numpy/ndarrayobject.h":
     cdef enum:
         NPY_MAXDIMS
-
 
 #------------------------------------------------------------------------------
 # Interpolator base class
@@ -427,15 +425,15 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
             r[0] = ( Q[3]*s[0] - Q[1]*s[1])/det
             r[1] = (-Q[2]*s[0] + Q[0]*s[1])/det
 
-            change = fmax(fabs(y[it.vertex*2 + 0] + r[0]),
-                          fabs(y[it.vertex*2 + 1] + r[1]))
+            change = max(fabs(y[it.vertex*2 + 0] + r[0]),
+                         fabs(y[it.vertex*2 + 1] + r[1]))
             
             y[it.vertex*2 + 0] = -r[0]
             y[it.vertex*2 + 1] = -r[1]
 
             # relative/absolute error
-            change /= fmax(1.0, fmax(fabs(r[0]), fabs(r[1])))
-            err = fmax(err, change)
+            change /= max(1.0, max(fabs(r[0]), fabs(r[1])))
+            err = max(err, change)
 
         if err < tol:
             return iiter + 1
