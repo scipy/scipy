@@ -21,7 +21,9 @@ from numpy import arange, zeros, array, dot, matrix, asmatrix, asarray, \
                   int8, ComplexWarning
 
 import random
-from numpy.testing import *
+from numpy.testing import assert_raises, assert_equal, assert_array_equal, \
+        assert_array_almost_equal, assert_almost_equal, assert_, \
+        dec, TestCase, run_module_suite
 
 import scipy.sparse as sparse
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
@@ -250,7 +252,7 @@ class _TestCommon:
 
         B = A.asfptype()
         C = B.asfptype()
-        assert( B is C )
+        assert_( B is C )
 
 
     def test_mul_scalar(self):
@@ -356,7 +358,7 @@ class _TestCommon:
         """
         A = self.spmatrix([[1],[2],[3]])
 
-        assert(isspmatrix(A * array(1)))
+        assert_(isspmatrix(A * array(1)))
         assert_equal((A * array(1)).todense(), [[1],[2],[3]])
         assert_equal(A * array([1]), array([1,2,3]))
         assert_equal(A * array([[1]]), array([[1],[2],[3]]))
@@ -372,8 +374,8 @@ class _TestCommon:
         assert_equal((M * matrix([[1],[2],[3]])).shape,(4,1))
 
         #check result type
-        assert(isinstance( M * array([1,2,3]), ndarray))
-        assert(isinstance( M * matrix([1,2,3]).T, matrix))
+        assert_(isinstance( M * array([1,2,3]), ndarray))
+        assert_(isinstance( M * matrix([1,2,3]).T, matrix))
 
         #ensure exception is raised for improper dimensions
         bad_vecs = [array([1,2]), array([1,2,3,4]), array([[1],[2]]),
@@ -464,7 +466,7 @@ class _TestCommon:
 
         for b in bs:
             result = asp*b
-            assert( isinstance(result, type(b)) )
+            assert_( isinstance(result, type(b)) )
             assert_equal( result.shape, (4,2) )
             assert_equal( result, dot(a,b) )
 
@@ -556,7 +558,7 @@ class _TestCommon:
         B = A.copy()
         try:
             B[0,0] += 1
-            assert B[0,0]!=A[0,0]
+            assert_(B[0,0] != A[0,0])
         except NotImplementedError:
             # not all sparse matrices can be indexed
             pass
@@ -689,7 +691,7 @@ class _TestHorizSlicing:
             a = A[6,3:7]
         except IndexError:
             caught += 1
-        assert caught == 2
+        assert_(caught == 2)
 
 
 class _TestVertSlicing:
@@ -724,7 +726,7 @@ class _TestVertSlicing:
             a = A[6,3:7]
         except IndexError:
             caught += 1
-        assert caught == 2
+        assert_(caught == 2)
 
 
 

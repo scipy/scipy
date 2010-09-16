@@ -3,7 +3,7 @@
 """
 
 import numpy
-from numpy.testing import *
+from numpy.testing import assert_almost_equal, run_module_suite
 
 from scipy import arange, ones, rand, set_printoptions, r_, diag, linalg
 from scipy.linalg import eig

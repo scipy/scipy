@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.testing import assert_
 
 from scipy.sparse.linalg import lsqr
 from time import time
@@ -25,7 +26,7 @@ def test_basic():
     svx = np.linalg.solve(G, b)
     X = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit)
     xo = X[0]
-    assert norm(svx - xo) < 1e-5
+    assert_(norm(svx - xo) < 1e-5)
 
 if __name__ == "__main__":
     svx = np.linalg.solve(G, b)

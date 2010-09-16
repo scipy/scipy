@@ -1,7 +1,7 @@
 from numpy import array, kron, matrix, diag
-from numpy.testing import *
+from numpy.testing import TestCase, run_module_suite, assert_, assert_equal
 
-from scipy.sparse.spfuncs import *
+from scipy.sparse import spfuncs
 from scipy.sparse import csr_matrix, csc_matrix, bsr_matrix
 from scipy.sparse.sparsetools import csr_scale_rows, csr_scale_columns, \
         bsr_scale_rows, bsr_scale_columns
@@ -65,9 +65,9 @@ class TestSparseFunctions(TestCase):
         for A in mats:
             for B in blks:
                 X = kron(A,B)
-                r,c = estimate_blocksize(X)
-                assert(r >= B.shape[0])
-                assert(c >= B.shape[1])
+                r,c = spfuncs.estimate_blocksize(X)
+                assert_(r >= B.shape[0])
+                assert_(c >= B.shape[1])
 
     def test_count_blocks(self):
         def gold(A,bs):
@@ -90,12 +90,12 @@ class TestSparseFunctions(TestCase):
                 Y = csr_matrix(X)
                 for R in range(1,6):
                     for C in range(1,6):
-                        assert_equal(count_blocks(Y,(R,C)),gold(X,(R,C)))
+                        assert_equal(spfuncs.count_blocks(Y, (R, C)), gold(X, (R, C)))
 
         X = kron([[1,1,0],[0,0,1],[1,0,1]],[[1,1]])
         Y = csc_matrix(X)
-        assert_equal(count_blocks(X,(1,2)),gold(X,(1,2)))
-        assert_equal(count_blocks(Y,(1,2)),gold(X,(1,2)))
+        assert_equal(spfuncs.count_blocks(X, (1, 2)), gold(X, (1, 2)))
+        assert_equal(spfuncs.count_blocks(Y, (1, 2)), gold(X, (1, 2)))
 
     def test_cs_graph_components(self):
         import numpy as np
@@ -104,19 +104,19 @@ class TestSparseFunctions(TestCase):
         D = np.eye(4, dtype=np.bool)
 
         n_comp, flag = cs_graph_components(csr_matrix(D))
-        assert(n_comp == 4)
+        assert_(n_comp == 4)
         assert_equal(flag, [0, 1, 2, 3])
 
         D[0,1] = D[1,0] = 1
 
         n_comp, flag = cs_graph_components(csr_matrix(D))
-        assert(n_comp == 3)
+        assert_(n_comp == 3)
         assert_equal(flag, [0, 0, 1, 2])
 
         # A pathological case...
         D[2,2] = 0
         n_comp, flag = cs_graph_components(csr_matrix(D))
-        assert(n_comp == 2)
+        assert_(n_comp == 2)
         assert_equal(flag, [0, 0, -2, 1])
 
 if __name__ == "__main__":

@@ -7,7 +7,8 @@
 
 import warnings
 import random
-from numpy.testing import *
+from numpy.testing import TestCase, assert_array_almost_equal, dec, \
+        decorate_methods
 
 from scipy import rand, matrix, diag, eye
 from scipy.sparse import csc_matrix, spdiags, SparseEfficiencyWarning
@@ -179,4 +180,5 @@ for cls in [TestSolvers, TestFactorization]:
     decorate_methods(cls, _umfpack_skip)
 
 if __name__ == "__main__":
+    import nose
     nose.run(argv=['', __file__])

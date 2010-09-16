@@ -1,12 +1,13 @@
 """Test functions for the sparse.linalg.interface module
 """
 
-from numpy.testing import *
+from numpy.testing import TestCase, assert_, assert_equal, \
+        assert_raises
 
 import numpy as np
 import scipy.sparse as sparse
 
-from scipy.sparse.linalg.interface import *
+from scipy.sparse.linalg import interface
 
 
 class TestLinearOperator(TestCase):
@@ -26,7 +27,7 @@ class TestLinearOperator(TestCase):
     def test_matvec(self):
 
         for matvec in self.matvecs:
-            A = LinearOperator((2,3), matvec)
+            A = interface.LinearOperator((2,3), matvec)
 
             assert_equal(A.matvec(np.array([1,2,3])),       [14,32])
             assert_equal(A.matvec(np.array([[1],[2],[3]])), [[14],[32]])
@@ -36,13 +37,13 @@ class TestLinearOperator(TestCase):
             assert_equal(A.matvec(np.matrix([[1],[2],[3]])), [[14],[32]])
             assert_equal(A * np.matrix([[1],[2],[3]]),       [[14],[32]])
 
-            assert( isinstance(A.matvec(np.array([1,2,3])),       np.ndarray) )
-            assert( isinstance(A.matvec(np.array([[1],[2],[3]])), np.ndarray) )
-            assert( isinstance(A * np.array([1,2,3]),             np.ndarray) )
-            assert( isinstance(A * np.array([[1],[2],[3]]),       np.ndarray) )
+            assert_( isinstance(A.matvec(np.array([1,2,3])),       np.ndarray) )
+            assert_( isinstance(A.matvec(np.array([[1],[2],[3]])), np.ndarray) )
+            assert_( isinstance(A * np.array([1,2,3]),             np.ndarray) )
+            assert_( isinstance(A * np.array([[1],[2],[3]]),       np.ndarray) )
 
-            assert( isinstance(A.matvec(np.matrix([[1],[2],[3]])), np.ndarray) )
-            assert( isinstance(A * np.matrix([[1],[2],[3]]),       np.ndarray) )
+            assert_( isinstance(A.matvec(np.matrix([[1],[2],[3]])), np.ndarray) )
+            assert_( isinstance(A * np.matrix([[1],[2],[3]]),       np.ndarray) )
 
             assert_raises(ValueError, A.matvec, np.array([1,2]))
             assert_raises(ValueError, A.matvec, np.array([1,2,3,4]))
@@ -84,7 +85,7 @@ class TestAsLinearOperator(TestCase):
     def test_basic(self):
 
         for M in self.cases:
-            A = aslinearoperator(M)
+            A = interface.aslinearoperator(M)
             M,N = A.shape
 
             assert_equal(A.matvec(np.array([1,2,3])),       [14,32])

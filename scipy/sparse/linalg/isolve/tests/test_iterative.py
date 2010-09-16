@@ -2,7 +2,7 @@
 """ Test functions for the sparse.linalg.isolve module
 """
 
-from numpy.testing import *
+from numpy.testing import TestCase, assert_equal, assert_array_equal, assert_
 
 from numpy import zeros, ones, arange, array, abs, max
 from scipy.linalg import norm
@@ -101,7 +101,7 @@ class TestIterative(TestCase):
                 assert_array_equal(x0, 0*b) #ensure that x0 is not overwritten
                 assert_equal(info,0)
 
-                assert( norm(b - A*x) < tol*norm(b) )
+                assert_( norm(b - A*x) < tol*norm(b) )
 
     def test_precond(self):
         """test whether all methods accept a trivial preconditioner"""
@@ -131,7 +131,7 @@ class TestIterative(TestCase):
                 else:
                     x, info = solver(A, b, M=precond, x0=x0, tol=tol)
                 assert_equal(info,0)
-                assert( norm(b - A*x) < tol*norm(b) )
+                assert_( norm(b - A*x) < tol*norm(b) )
 
                 A = A.copy()
                 A.psolve  = identity
@@ -139,7 +139,7 @@ class TestIterative(TestCase):
 
                 x, info = solver(A, b, x0=x0, tol=tol)
                 assert_equal(info,0)
-                assert( norm(b - A*x) < tol*norm(b) )
+                assert_( norm(b - A*x) < tol*norm(b) )
 
 
 class TestQMR(TestCase):
@@ -176,7 +176,7 @@ class TestQMR(TestCase):
         x,info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
 
         assert_equal(info,0)
-        assert( norm(b - A*x) < 1e-8*norm(b) )
+        assert_( norm(b - A*x) < 1e-8*norm(b) )
 
 
 class TestGMRES(TestCase):
@@ -194,8 +194,9 @@ class TestGMRES(TestCase):
         callback = lambda r:store_residual(r, rvec)
         x,flag = gmres(A, b, x0=zeros(A.shape[0]), tol=1e-16, maxiter=maxiter, callback=callback)
         diff = max(abs((rvec - array([1.0,   0.81649658092772603]))))
-        assert(diff < 1e-5)
+        assert_(diff < 1e-5)
 
 
 if __name__ == "__main__":
+    import nose
     nose.run(argv=['', __file__])

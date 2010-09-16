@@ -2,7 +2,8 @@ import warnings
 
 from numpy import array, finfo, arange, eye, all, unique, ones, dot, matrix
 import numpy.random as random
-from numpy.testing import *
+from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal, \
+    assert_raises, assert_almost_equal, assert_equal, assert_array_equal, assert_
 
 from scipy.linalg import norm, inv
 from scipy.sparse import spdiags, SparseEfficiencyWarning, csc_matrix
@@ -63,15 +64,15 @@ class TestSplu(object):
         x = random.rand(self.n)
         lu = splu(self.A)
         r = self.A*lu.solve(x)
-        assert abs(x - r).max() < 1e-13
+        assert_(abs(x - r).max() < 1e-13)
 
     def test_spilu_smoketest(self):
         # Check that spilu works at all
         x = random.rand(self.n)
         lu = spilu(self.A, drop_tol=1e-2, fill_factor=5)
         r = self.A*lu.solve(x)
-        assert abs(x - r).max() < 1e-2
-        assert abs(x - r).max() > 1e-5
+        assert_(abs(x - r).max() < 1e-2)
+        assert_(abs(x - r).max() > 1e-5)
 
     def test_splu_nnz0(self):
         A = csc_matrix( (5,5), dtype='d' )

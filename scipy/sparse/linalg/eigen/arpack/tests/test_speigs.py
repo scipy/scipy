@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-from numpy.testing import *
+from numpy.testing import run_module_suite, TestCase, assert_array_almost_equal
 
 from scipy.sparse.linalg.interface import aslinearoperator
-from scipy.sparse.linalg.eigen.arpack.speigs import *
+from scipy.sparse.linalg.eigen.arpack import speigs
 
 import numpy as np
 
@@ -11,7 +11,7 @@ class TestEigs(TestCase):
     def test(self):
         maxn=15                # Dimension of square matrix to be solved
         # Use a PDP^-1 factorisation to construct matrix with known
-        # eiegevalues/vectors. Used random eiegenvectors initially.
+        # eigenvalues/vectors. Used random eigenvectors initially.
         P = np.mat(np.random.random((maxn,)*2))
         P /= map(np.linalg.norm, P.T)            # Normalise the eigenvectors
         D = np.mat(np.zeros((maxn,)*2))
@@ -27,7 +27,7 @@ class TestEigs(TestCase):
         matvec = A.matvec
         #= lambda x: np.asarray(A*x)[0]
         nev=4
-        eigvs = ARPACK_eigs(matvec, A.shape[0], nev=nev)
+        eigvs = speigs.ARPACK_eigs(matvec, A.shape[0], nev=nev)
         calc_vals = eigvs[0]
         # Ensure the calculated eigenvectors have the same sign as the reference values
         calc_vecs = eigvs[1] / [np.sign(x[0]) for x in eigvs[1].T]
