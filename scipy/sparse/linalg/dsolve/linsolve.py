@@ -62,10 +62,10 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
     M, N = A.shape
     if (M != N):
-        raise ValueError, "matrix must be square (has shape %s)" % (M,N)
+        raise ValueError("matrix must be square (has shape %s)" % ((M, N),))
     if M != b.size:
-        raise ValueError, "matrix - rhs size mismatch (%s - %s)"\
-              % (A.shape, b.size)
+        raise ValueError("matrix - rhs size mismatch (%s - %s)"\
+              % (A.shape, b.size))
 
     use_umfpack = use_umfpack and useUmfpack
 

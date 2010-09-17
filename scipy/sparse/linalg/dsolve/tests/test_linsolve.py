@@ -51,6 +51,11 @@ class TestLinsolve(TestCase):
 
         assert_array_almost_equal(x, x2)
 
+    def test_non_square(self):
+        A = ones((3, 4))
+        b = ones((4, 1))
+        assert_raises(ValueError, spsolve, A, b)
+
 class TestSplu(object):
     def setUp(self):
         n = 40
