@@ -8,9 +8,10 @@ import numpy as np
 
 from numpy.testing import assert_almost_equal, assert_array_almost_equal, \
         assert_array_almost_equal_nulp, TestCase, run_module_suite, dec, \
-        verbose
+        assert_raises, verbose
 
 from numpy import array, finfo, argsort, dot, round, conj, random
+from scipy.sparse import csc_matrix
 from scipy.sparse.linalg.eigen.arpack import eigen_symmetric, eigen, svd
 
 from scipy.linalg import svd as dsvd
@@ -155,8 +156,7 @@ class TestEigenComplexSymmetric(TestArpack):
         k=2
         for typ in 'FD':
             for which in ['LM','SM','LR','SR']:
-                self.eval_evec(self.symmetric[0],typ,k,which)
-
+                self.eval_evec(self.symmetric[0],typ,k,which)        
 
 
 class TestEigenNonSymmetric(TestArpack):
@@ -267,6 +267,13 @@ class TestEigenComplexNonSymmetric(TestArpack):
             for which in ['LI','LR','LM','SI','SR','SM']:
                 for m in self.nonsymmetric:
                     self.eval_evec(m,typ,k,which)
+
+
+def test_eigen_bad_shapes():
+    # A is not square.
+    A = csc_matrix(np.zeros((2,3)))
+    assert_raises(ValueError, eigen, A)
+
 
 def sorted_svd(m, k):
     """Compute svd of a dense matrix m, and return singular vectors/values
