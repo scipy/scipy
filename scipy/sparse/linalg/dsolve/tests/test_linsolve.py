@@ -37,7 +37,7 @@ class TestLinsolve(TestCase):
 
                 x = spsolve(Asp,b)
 
-                assert( norm(b - Asp*x) < 10 * cond_A * eps )
+                assert_( norm(b - Asp*x) < 10 * cond_A * eps )
 
     def test_smoketest(self):
         Adense = matrix([[ 0.,  1.,  1.],
@@ -52,9 +52,14 @@ class TestLinsolve(TestCase):
         assert_array_almost_equal(x, x2)
 
     def test_non_square(self):
+        # A is not square.
         A = ones((3, 4))
         b = ones((4, 1))
         assert_raises(ValueError, spsolve, A, b)
+        # A2 and b2 have incompatible shapes.
+        A2 = csc_matrix(eye(3))
+        b2 = array([1.0, 2.0])
+        assert_raises(ValueError, spsolve, A2, b2)
 
 class TestSplu(object):
     def setUp(self):

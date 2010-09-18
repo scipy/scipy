@@ -51,7 +51,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         if max( b.shape ) == b.size:
             b = b.squeeze()
         else:
-            raise ValueError, "rhs must be a vector (has shape %s)" % (b.shape,)
+            raise ValueError("rhs must be a vector (has shape %s)" % (b.shape,))
 
     if not (isspmatrix_csc(A) or isspmatrix_csr(A)):
         A = csc_matrix(A)
@@ -64,18 +64,18 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     if (M != N):
         raise ValueError("matrix must be square (has shape %s)" % ((M, N),))
     if M != b.size:
-        raise ValueError("matrix - rhs size mismatch (%s - %s)"\
+        raise ValueError("matrix - rhs size mismatch (%s - %s)"
               % (A.shape, b.size))
 
     use_umfpack = use_umfpack and useUmfpack
 
     if isUmfpack and use_umfpack:
         if noScikit:
-            warn( 'scipy.sparse.linalg.dsolve.umfpack will be removed,'\
+            warn( 'scipy.sparse.linalg.dsolve.umfpack will be removed,'
                     ' install scikits.umfpack instead', DeprecationWarning )
         if A.dtype.char not in 'dD':
-            raise ValueError, "convert matrix data to double, please, using"\
-                  " .astype(), or set linsolve.useUmfpack = False"
+            raise ValueError("convert matrix data to double, please, using"
+                  " .astype(), or set linsolve.useUmfpack = False")
 
         b = asarray(b, dtype=A.dtype).reshape(-1)
 
@@ -163,7 +163,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     M, N = A.shape
     if (M != N):
-        raise ValueError, "can only factor square matrices" #is this true?
+        raise ValueError("can only factor square matrices") #is this true?
 
     _options = dict(DiagPivotThresh=diag_pivot_thresh, ColPerm=permc_spec,
                     PanelSize=panel_size, Relax=relax)
@@ -233,7 +233,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     M, N = A.shape
     if (M != N):
-        raise ValueError, "can only factor square matrices" #is this true?
+        raise ValueError("can only factor square matrices") #is this true?
 
     _options = dict(ILU_DropRule=drop_rule, ILU_DropTol=drop_tol,
                     ILU_FillFactor=fill_factor,
@@ -255,7 +255,7 @@ def factorized( A ):
     """
     if isUmfpack and useUmfpack:
         if noScikit:
-            warn( 'scipy.sparse.linalg.dsolve.umfpack will be removed,'\
+            warn( 'scipy.sparse.linalg.dsolve.umfpack will be removed,'
                     ' install scikits.umfpack instead', DeprecationWarning )
 
         if not isspmatrix_csc(A):
@@ -266,8 +266,8 @@ def factorized( A ):
         A = A.asfptype()  #upcast to a floating point format
 
         if A.dtype.char not in 'dD':
-            raise ValueError, "convert matrix data to double, please, using"\
-                  " .astype(), or set linsolve.useUmfpack = False"
+            raise ValueError("convert matrix data to double, please, using"
+                  " .astype(), or set linsolve.useUmfpack = False")
 
         family = {'d' : 'di', 'D' : 'zi'}
         umf = umfpack.UmfpackContext( family[A.dtype.char] )
