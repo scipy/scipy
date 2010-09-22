@@ -27,6 +27,9 @@ cdef extern from "stdio.h":
     extern void *stderr
     extern void *stdout
 
+cdef extern from "math.h":
+    double fabs(double x) nogil
+
 cdef extern from "qhull/src/qset.h":
     ctypedef union setelemT:
         void *p
@@ -832,7 +835,14 @@ cdef int _find_simplex(DelaunayInfo_t *d, double *c,
             if ineigh == -1:
                 continue
             dist = _distplane(d, ineigh, z)
-            if dist > best_dist:
+
+            # Note addition of eps -- otherwise, this code does not
+            # necessarily terminate! The compiler may use extended
+            # accuracy of the FPU so that (dist > best_dist), but
+            # after storing to double size, dist == best_dist,
+            # resulting to non-terminating loop
+
+            if dist > best_dist + eps*(1 + fabs(best_dist)):
                 # Note: this is intentional: we jump in the middle of the cycle,
                 #       and continue the cycle from the next k.
                 #
