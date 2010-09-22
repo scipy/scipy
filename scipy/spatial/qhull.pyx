@@ -713,24 +713,20 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
 
             if c[k] < -eps:
                 # The target point is in the direction of neighbor `k`!
-
                 m = d.neighbors[(ndim+1)*isimplex + k]
                 if m == -1:
                     # The point is outside the triangulation: bail out
                     start[0] = isimplex
                     return -1
 
-                # Check that the target simplex is not degenerate.
-                v = d.transform[m*ndim*(ndim+1)]
-                if v != v:
-                    # nan
-                    continue
-                else:
-                    isimplex = m
-                    inside = -1
-                    break
-            elif c[k] > 1 + eps:
-                # we're outside this simplex
+                isimplex = m
+                inside = -1
+                break
+            elif c[k] <= 1 + eps:
+                # we're inside this simplex
+                pass
+            else:
+                # we're outside (or the coordinate is nan; a degenerate simplex)
                 inside = 0
 
         if inside == -1:
