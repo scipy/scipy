@@ -254,7 +254,7 @@ class TestNanFunc(TestCase):
         m = stats.nanmedian(self.Xall)
         assert_(np.isnan(m))
 
-class TestCorr(TestCase):
+class TestCorrPearsonr(TestCase):
     """ W.II.D. Compute a correlation matrix on all the variables.
 
         All the correlations, except for ZERO and MISS, shoud be exactly 1.
@@ -266,170 +266,237 @@ class TestCorr(TestCase):
         y = stats.pearsonr(X,X)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_pXBIG(self):
         y = stats.pearsonr(X,BIG)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_pXLITTLE(self):
         y = stats.pearsonr(X,LITTLE)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_pXHUGE(self):
         y = stats.pearsonr(X,HUGE)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_pXTINY(self):
         y = stats.pearsonr(X,TINY)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_pXROUND(self):
         y = stats.pearsonr(X,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_pBIGBIG(self):
         y = stats.pearsonr(BIG,BIG)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_pBIGLITTLE(self):
         y = stats.pearsonr(BIG,LITTLE)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_pBIGHUGE(self):
         y = stats.pearsonr(BIG,HUGE)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_pBIGTINY(self):
         y = stats.pearsonr(BIG,TINY)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_pBIGROUND(self):
         y = stats.pearsonr(BIG,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_pLITTLELITTLE(self):
         y = stats.pearsonr(LITTLE,LITTLE)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_pLITTLEHUGE(self):
         y = stats.pearsonr(LITTLE,HUGE)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_pLITTLETINY(self):
         y = stats.pearsonr(LITTLE,TINY)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_pLITTLEROUND(self):
         y = stats.pearsonr(LITTLE,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_pHUGEHUGE(self):
         y = stats.pearsonr(HUGE,HUGE)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_pHUGETINY(self):
         y = stats.pearsonr(HUGE,TINY)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_pHUGEROUND(self):
         y = stats.pearsonr(HUGE,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_pTINYTINY(self):
         y = stats.pearsonr(TINY,TINY)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_pTINYROUND(self):
         y = stats.pearsonr(TINY,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_pROUNDROUND(self):
         y = stats.pearsonr(ROUND,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
+
+
+class TestCorrSpearmanr(TestCase):
+    """ W.II.D. Compute a correlation matrix on all the variables.
+
+        All the correlations, except for ZERO and MISS, shoud be exactly 1.
+        ZERO and MISS should have undefined or missing correlations with the
+        other variables.  The same should go for SPEARMAN corelations, if
+        your program has them.
+    """
     def test_sXX(self):
         y = stats.spearmanr(X,X)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_sXBIG(self):
         y = stats.spearmanr(X,BIG)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_sXLITTLE(self):
         y = stats.spearmanr(X,LITTLE)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_sXHUGE(self):
         y = stats.spearmanr(X,HUGE)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_sXTINY(self):
         y = stats.spearmanr(X,TINY)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_sXROUND(self):
         y = stats.spearmanr(X,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_sBIGBIG(self):
         y = stats.spearmanr(BIG,BIG)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_sBIGLITTLE(self):
         y = stats.spearmanr(BIG,LITTLE)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_sBIGHUGE(self):
         y = stats.spearmanr(BIG,HUGE)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_sBIGTINY(self):
         y = stats.spearmanr(BIG,TINY)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_sBIGROUND(self):
         y = stats.spearmanr(BIG,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_sLITTLELITTLE(self):
         y = stats.spearmanr(LITTLE,LITTLE)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_sLITTLEHUGE(self):
         y = stats.spearmanr(LITTLE,HUGE)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_sLITTLETINY(self):
         y = stats.spearmanr(LITTLE,TINY)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_sLITTLEROUND(self):
         y = stats.spearmanr(LITTLE,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_sHUGEHUGE(self):
         y = stats.spearmanr(HUGE,HUGE)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_sHUGETINY(self):
         y = stats.spearmanr(HUGE,TINY)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_sHUGEROUND(self):
         y = stats.spearmanr(HUGE,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_sTINYTINY(self):
         y = stats.spearmanr(TINY,TINY)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_sTINYROUND(self):
         y = stats.spearmanr(TINY,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
+
     def test_sROUNDROUND(self):
         y = stats.spearmanr(ROUND,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
+
+class TestCorrSpearmanrTies(TestCase):
+    """Some tests of tie-handling by the spearmanr function."""
+
+    def test_tie1(self):
+        # Data
+        x = [1.0, 2.0, 3.0, 4.0]
+        y = [1.0, 2.0, 2.0, 3.0]
+        # Ranks of the data, with tie-handling.
+        xr = [1.0, 2.0, 3.0, 4.0]
+        yr = [1.0, 2.5, 2.5, 4.0]
+        # Result of spearmanr should be the same as applying
+        # pearsonr to the ranks.
+        sr = stats.spearmanr(x, y)
+        pr = stats.pearsonr(xr, yr)
+        assert_almost_equal(sr, pr)
+
 
 ##    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
 ##    should appear on the diagonal and the total should be 899999955.
