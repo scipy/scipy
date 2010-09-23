@@ -10,22 +10,34 @@ def kaiserord(ripple, width):
 
     Parameters
     ----------
-    ripple -- positive number specifying maximum ripple in passband (dB)
-                and minimum ripple in stopband
-    width  -- width of transition region (normalized so that 1 corresponds
-                to pi radians / sample)
+    ripple : float
+        Positive number specifying maximum ripple in passband (dB) and minimum
+        ripple in stopband.
+    width : float
+        Width of transition region (normalized so that 1 corresponds to pi
+        radians / sample).
 
     Returns
     -------
-    N, beta -- the order and beta parameter for the kaiser window.
+    N : int
+        The order parameter for the kaiser window.
+    beta :
+        The beta parameter for the kaiser window.
 
-               signal.kaiser(N,beta,sym=0) returns the window as does
-               signal.get_window(beta,N)
-               signal.get_window(('kaiser',beta),N)
+    Notes
+    -----
+    There are several ways to obtain the Kaiser window:
 
-    Uses the empirical equations discovered by Kaiser.
+      signal.kaiser(N, beta, sym=0)
+      signal.get_window(beta,N)
+      signal.get_window(('kaiser',beta),N)
 
-    Oppenheim, Schafer, "Discrete-Time Signal Processing,", p.475-476.
+    The empirical equations discovered by Kaiser are used.
+
+    References
+    ----------
+    Oppenheim, Schafer, "Discrete-Time Signal Processing", p.475-476.
+
     """
     A = abs(ripple)  # in case somebody is confused as to what's meant
     if (A>50):
@@ -43,19 +55,23 @@ def firwin(N, cutoff, width=None, window='hamming'):
 
     Parameters
     ----------
-    N      -- order of filter (number of taps)
-    cutoff -- cutoff frequency of filter (normalized so that 1 corresponds to
-              Nyquist or pi radians / sample)
-
-    width  -- if width is not None, then assume it is the approximate width of
-              the transition region (normalized so that 1 corresonds to pi)
-              for use in kaiser FIR filter design.
-    window -- desired window to use. See get_window for a list
-              of windows and required parameters.
+    N : int
+        Order of filter (number of taps).
+    cutoff : float
+        Cutoff frequency of filter (normalized so that 1 corresponds to Nyquist
+        or pi radians / sample)
+    width : float
+        If `width` is not None, then assume it is the approximate width of the
+        transition region (normalized so that 1 corresonds to pi) for use in
+        kaiser FIR filter design.
+    window : str. optional
+        Desired window to use. See `get_window` for a list of windows and
+        required parameters. Default is 'hamming'.
 
     Returns
     -------
-    h      -- coefficients of length N fir filter.
+    h : ndarray
+        Coefficients of length N FIR filter.
 
     """
 

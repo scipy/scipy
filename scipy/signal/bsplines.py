@@ -14,8 +14,8 @@ def factorial(n):
 def spline_filter(Iin, lmbda=5.0):
     """Smoothing spline (cubic) filtering of a rank-2 array.
 
-    Filter an input data set, Iin, using a (cubic) smoothing spline of
-    fall-off lmbda.
+    Filter an input data set, `Iin`, using a (cubic) smoothing spline of
+    fall-off `lmbda`.
     """
     intype = Iin.dtype.char
     hcol = array([1.0,4.0,1.0],'f')/6.0
@@ -37,15 +37,15 @@ def spline_filter(Iin, lmbda=5.0):
 _splinefunc_cache = {}
 
 def _bspline_piecefunctions(order):
-    """Returns the function defined over the left-side
-    pieces for a bspline of a given order.  The 0th piece
-    is the first one less than 0.  The last piece is
-    a function identical to 0 (returned as the constant 0).
+    """Returns the function defined over the left-side pieces for a bspline of
+    a given order.
 
-    (There are order//2 + 2 total pieces).
+    The 0th piece is the first one less than 0.  The last piece is a function
+    identical to 0 (returned as the constant 0).  (There are order//2 + 2 total
+    pieces).
 
-    Also returns the condition functions that when evaluated
-    return boolean arrays for use with numpy.piecewise
+    Also returns the condition functions that when evaluated return boolean
+    arrays for use with `numpy.piecewise`.
     """
     try:
         return _splinefunc_cache[order]
@@ -100,9 +100,13 @@ def _bspline_piecefunctions(order):
 
     return funclist, condfuncs
 
-def bspline(x,n):
-    """bspline(x,n):  B-spline basis function of order n.
-    uses numpy.piecewise and automatic function-generator.
+def bspline(x, n):
+    """B-spline basis function of order n.
+
+    Notes
+    -----
+    Uses numpy.piecewise and automatic function-generator.
+
     """
     ax = -abs(asarray(x))
     # number of pieces on the left-side is (n+1)/2
@@ -110,14 +114,16 @@ def bspline(x,n):
     condlist = [func(ax) for func in condfuncs]
     return piecewise(ax, condlist, funclist)
 
-def gauss_spline(x,n):
+def gauss_spline(x, n):
     """Gaussian approximation to B-spline basis function of order n.
     """
     signsq = (n+1) / 12.0
     return 1/sqrt(2*pi*signsq) * exp(-x**2 / 2 / signsq)
 
 def cubic(x):
-    """Special case of bspline.  Equivalent to bspline(x,3).
+    """A cubic B-spline.
+
+    This is a special case of `bspline`, and equivalent to ``bspline(x, 3)``.
     """
     ax = abs(asarray(x))
     res = zeros_like(ax)
@@ -132,7 +138,9 @@ def cubic(x):
     return res
 
 def quadratic(x):
-    """Special case of bspline. Equivalent to bspline(x,2).
+    """A quadratic B-spline.
+
+    This is a special case of `bspline`, and equivalent to ``bspline(x, 2)``.
     """
     ax = abs(asarray(x))
     res = zeros_like(ax)
@@ -182,16 +190,16 @@ def _coeff_smooth(lam):
     rho = rho * sqrt((48*lam + 24*lam * sqrt(3+144*lam))/xi)
     return rho,omeg
 
-def _hc(k,cs,rho,omega):
+def _hc(k, cs, rho, omega):
     return cs / sin(omega) * (rho**k)*sin(omega*(k+1))*(greater(k,-1))
 
-def _hs(k,cs,rho,omega):
+def _hs(k, cs, rho, omega):
     c0 = cs*cs * (1 + rho*rho) / (1 - rho*rho) / (1-2*rho*rho*cos(2*omega) + rho**4)
     gamma = (1-rho*rho) / (1+rho*rho) / tan(omega)
     ak = abs(k)
     return c0 * rho**ak * (cos(omega*ak) + gamma*sin(omega*ak))
 
-def _cubic_smooth_coeff(signal,lamb):
+def _cubic_smooth_coeff(signal, lamb):
     rho, omega = _coeff_smooth(lamb)
     cs = 1-2*rho*cos(omega) + rho*rho
     K = len(signal)
@@ -245,24 +253,27 @@ def _quadratic_coeff(signal):
         output[k] = zi*(output[k+1]-yplus[k])
     return output*8.0
 
-def cspline1d(signal,lamb=0.0):
-    """Compute cubic spline coefficients for rank-1 array.
+def cspline1d(signal, lamb=0.0):
+    """
+    Compute cubic spline coefficients for rank-1 array.
 
-    Description:
+    Find the cubic spline coefficients for a 1-D signal assuming
+    mirror-symmetric boundary conditions.   To obtain the signal back from the
+    spline representation mirror-symmetric-convolve these coefficients with a
+    length 3 FIR window [1.0, 4.0, 1.0]/ 6.0 .
 
-      Find the cubic spline coefficients for a 1-D signal assuming
-      mirror-symmetric boundary conditions.   To obtain the signal back from
-      the spline representation mirror-symmetric-convolve these coefficients
-      with a length 3 FIR window [1.0, 4.0, 1.0]/ 6.0 .
+    Parameters
+    ----------
+    signal : ndarray
+        A rank-1 array representing samples of a signal.
+    lamb : float, optional
+        Smoothing coefficient, default is 0.0.
 
-    Inputs:
+    Returns
+    -------
+    c : ndarray
+        Cubic spline coefficients.
 
-      signal -- a rank-1 array representing samples of a signal.
-      lamb -- smoothing coefficient (default = 0.0)
-
-    Output:
-
-      c -- cubic spline coefficients.
     """
     if lamb != 0.0:
         return _cubic_smooth_coeff(signal,lamb)
@@ -270,24 +281,25 @@ def cspline1d(signal,lamb=0.0):
         return _cubic_coeff(signal)
 
 
-def qspline1d(signal,lamb=0.0):
+def qspline1d(signal, lamb=0.0):
     """Compute quadratic spline coefficients for rank-1 array.
 
-    Description:
+    Find the quadratic spline coefficients for a 1-D signal assuming
+    mirror-symmetric boundary conditions.   To obtain the signal back from the
+    spline representation mirror-symmetric-convolve these coefficients with a
+    length 3 FIR window [1.0, 6.0, 1.0]/ 8.0 .
 
-      Find the quadratic spline coefficients for a 1-D signal assuming
-      mirror-symmetric boundary conditions.   To obtain the signal back from
-      the spline representation mirror-symmetric-convolve these coefficients
-      with a length 3 FIR window [1.0, 6.0, 1.0]/ 8.0 .
+    Parameters
+    ----------
+    signal : ndarray
+        A rank-1 array representing samples of a signal.
+    lamb : float, optional
+        Smoothing coefficient (must be zero for now).
 
-    Inputs:
-
-      signal -- a rank-1 array representing samples of a signal.
-      lamb -- smoothing coefficient (must be zero for now.)
-
-    Output:
-
-      c -- cubic spline coefficients.
+    Returns
+    -------
+    c : ndarray
+        Cubic spline coefficients.
     """
     if lamb != 0.0:
         raise ValueError, "Smoothing quadratic splines not supported yet."
@@ -297,16 +309,15 @@ def qspline1d(signal,lamb=0.0):
 
 def cspline1d_eval(cj, newx, dx=1.0, x0=0):
     """Evaluate a spline at the new set of points.
-    dx is the old sample-spacing while x0 was the old origin.
 
-    In other-words the old-sample points (knot-points) for which the cj
-    represent spline coefficients were at equally-spaced points of
+    `dx` is the old sample-spacing while `x0` was the old origin.  In
+    other-words the old-sample points (knot-points) for which the `cj`
+    represent spline coefficients were at equally-spaced points of:
 
-    oldx = x0 + j*dx  j=0...N-1
+      oldx = x0 + j*dx  j=0...N-1, with N=len(cj)
 
-    N=len(cj)
+    Edges are handled using mirror-symmetric boundary conditions.
 
-    edges are handled using mirror-symmetric boundary conditions.
     """
     newx = (asarray(newx)-x0)/float(dx)
     res = zeros_like(newx)
@@ -333,16 +344,15 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
 
 def qspline1d_eval(cj, newx, dx=1.0, x0=0):
     """Evaluate a quadratic spline at the new set of points.
-    dx is the old sample-spacing while x0 was the old origin.
 
-    In other-words the old-sample points (knot-points) for which the cj
-    represent spline coefficients were at equally-spaced points of
+    `dx` is the old sample-spacing while `x0` was the old origin.  In
+    other-words the old-sample points (knot-points) for which the `cj`
+    represent spline coefficients were at equally-spaced points of:
 
-    oldx = x0 + j*dx  j=0...N-1
+      oldx = x0 + j*dx  j=0...N-1, with N=len(cj)
 
-    N=len(cj)
+    Edges are handled using mirror-symmetric boundary conditions.
 
-    edges are handled using mirror-symmetric boundary conditions.
     """
     newx = (asarray(newx)-x0)/dx
     res = zeros_like(newx)
