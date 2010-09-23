@@ -1,6 +1,6 @@
 # Authors: Pearu Peterson, Pauli Virtanen, John Travers
 """
-First-order ODE integrators
+First-order ODE integrators.
 
 User-friendly interface to various numerical integrators for solving a
 system of first order ODEs with prescribed initial conditions::
@@ -35,7 +35,7 @@ class complex_ode
 This class has the same generic interface as ode, except it can handle complex
 f, y and Jacobians by transparently translating them into the equivalent
 real valued system. It supports the real valued solvers (i.e not zvode) and is
-an alternative to ode with the zvode solver, sometimes performing better. 
+an alternative to ode with the zvode solver, sometimes performing better.
 """
 
 integrator_info = \
@@ -109,21 +109,21 @@ dopri5
 
     Numerical solution of a system of first order
     ordinary differential equations  y'=f(x,y).
-    this is an explicit runge-kutta method of order (4)5  
+    this is an explicit runge-kutta method of order (4)5
     due to Dormand & Prince (with stepsize control and
     dense output).
 
     Authors: E. Hairer and G. Wanner
              Universite de Geneve, Dept. de Mathematiques
-             CH-1211 Geneve 24, Switzerland 
+             CH-1211 Geneve 24, Switzerland
              e-mail:  ernst.hairer@math.unige.ch
                       gerhard.wanner@math.unige.ch
-     
-    This code is described in: 
+
+    This code is described in:
           E. Hairer, S.P. Norsett and G. Wanner, Solving Ordinary
           Differential Equations i. Nonstiff Problems. 2nd edition.
           Springer Series in Computational Mathematics,
-          Springer-Verlag (1993)               
+          Springer-Verlag (1993)
 
 This integrator accepts the following parameters in set_integrator()
 method of the ode class:
@@ -150,7 +150,7 @@ dop853
 
     Numerical solution of a system of first 0rder
     ordinary differential equations  y'=f(x,y).
-    this is an explicit runge-kutta method of order 8(5,3)  
+    this is an explicit runge-kutta method of order 8(5,3)
     due to Dormand & Prince (with stepsize control and
     dense output).
 
@@ -295,7 +295,7 @@ The integration:
         Parameters
         ----------
         name : str
-            Name of the integrator
+            Name of the integrator.
         integrator_params :
             Additional parameters for the integrator.
         """
@@ -345,7 +345,11 @@ The integration:
         return self
 
 class complex_ode(ode):
-    """ A wrapper of ode for complex systems. """
+    """ A wrapper of ode for complex systems.
+
+    For usage examples, see `ode`.
+
+    """
 
     def __init__(self, f, jac=None):
         """
@@ -366,13 +370,13 @@ class complex_ode(ode):
             ode.__init__(self, self._wrap, self._wrap_jac)
         else:
             ode.__init__(self, self._wrap, None)
-            
+
     def _wrap(self, t, y, *f_args):
         f = self.cf(*((t, y[::2] + 1j*y[1::2]) + f_args))
         self.tmp[::2] = real(f)
         self.tmp[1::2] = imag(f)
         return self.tmp
-        
+
     def _wrap_jac(self, t, y, *jac_args):
         jac = self.cjac(*((t, y[::2] + 1j*y[1::2]) + jac_args))
         self.jac_tmp[1::2,1::2] = self.jac_tmp[::2,::2] = real(jac)
@@ -681,7 +685,7 @@ class zvode(vode):
     def run(self,*args):
         y1,t,istate = self.runner(*(args[:5]+tuple(self.call_args)+args[5:]))
         if istate < 0:
-            warnings.warn('zvode: ' + 
+            warnings.warn('zvode: ' +
                 self.messages.get(istate, 'Unexpected istate=%s'%istate))
             self.success = 0
         else:
@@ -744,11 +748,11 @@ class dopri5(IntegratorBase):
     def run(self,f,jac,y0,t0,t1,f_params,jac_params):
         x,y,iwork,idid = self.runner(*((f,t0,y0,t1) + tuple(self.call_args)))
         if idid < 0:
-            warnings.warn(self.name + ': ' + 
+            warnings.warn(self.name + ': ' +
                 self.messages.get(idid, 'Unexpected idid=%s'%idid))
             self.success = 0
         return y,x
-        
+
     def _solout(self, *args):
         # dummy solout function
         pass

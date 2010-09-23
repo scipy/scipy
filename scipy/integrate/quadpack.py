@@ -114,17 +114,17 @@ Weighting the integrand:
   information dictionary contains the following entries instead of 'last',
   'alist', 'blist', 'rlist', and 'elist':
 
-  'lst' -- The number of subintervals needed for the integration (call it K_f).
-  'rslst' -- A rank-1 array of length M_f=limlst, whose first K_f elements
+  'lst'    : The number of subintervals needed for the integration (call it K_f).
+  'rslst'  : A rank-1 array of length M_f=limlst, whose first K_f elements
              contain the integral contribution over the interval (a+(k-1)c,
              a+kc) where c = (2*floor(|w|) + 1) * pi / |w| and k=1,2,...,K_f.
-  'erlst' -- A rank-1 array of length M_f containing the error estimate
+  'erlst'  : A rank-1 array of length M_f containing the error estimate
              corresponding to the interval in the same position in
              infodict['rslist'].
-  'ierlst' -- A rank-1 integer array of length M_f containing an error flag
-              corresponding to the interval in the same position in
-              infodict['rslist'].  See the explanation dictionary (last entry
-              in the output tuple) for the meaning of the codes.
+  'ierlst' : A rank-1 integer array of length M_f containing an error flag
+             corresponding to the interval in the same position in
+             infodict['rslist'].  See the explanation dictionary (last entry
+             in the output tuple) for the meaning of the codes.
 """)
     return
 
@@ -207,16 +207,15 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     See Also
     --------
-        dblquad, tplquad - double and triple integrals
-        fixed_quad - fixed-order Gaussian quadrature
-        quadrature - adaptive Gaussian quadrature
-        odeint, ode - ODE integrators
-        simps, trapz, romb - integrators for sampled data
-        scipy.special - for coefficients and roots of orthogonal polynomials
+    dblquad, tplquad : double and triple integrals
+    fixed_quad : fixed-order Gaussian quadrature
+    quadrature : adaptive Gaussian quadrature
+    odeint, ode : ODE integrators
+    simps, trapz, romb : integrators for sampled data
+    scipy.special : for coefficients and roots of orthogonal polynomials
 
     Examples
     --------
-
     Calculate :math:`\\int^4_0 x^2 dx` and compare with an analytic result
 
     >>> from scipy import integrate
@@ -231,7 +230,6 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     >>> invexp = lambda x: exp(-x)
     >>> integrate.quad(invexp,0,inf)
     (0.99999999999999989, 5.8426061711142159e-11)
-
 
     >>> f = lambda x,a : a*x
     >>> y, err = integrate.quad(f, 0, 1, args=(1,))
@@ -375,46 +373,48 @@ def _infunc(x,func,gfun,hfun,more_args):
 
 def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     """
-    Compute the double integral of func2d(y,x)
-    from x=a..b and y=gfun(x)..hfun(x).
+    Compute a double integral.
+
+    Return the double (definite) integral of func(y,x) from x=a..b and
+    y=gfun(x)..hfun(x).
 
     Parameters
     -----------
-      func2d : function
-             a Python function or method of at least two variables: y must be
-             the first argument and x the second argument.
-      (a,b)  : tuple
-             the limits of integration in x: a < b
-      gfun   : function
-             the lower boundary curve in y which is a function taking a single
-             floating point argument (x) and returning a floating point result:
-             a lambda function can be useful here.
-      hfun   : function
-             the upper boundary curve in y (same requirements as gfun).
-      args   :
-             extra arguments to pass to func2d.
-      epsabs : float
-             absolute tolerance passed directly to the inner 1-D quadrature
-             integration.
-      epsrel : float
-             relative tolerance of the inner 1-D integrals.
-
+    func : callable
+        A Python function or method of at least two variables: y must be the
+        first argument and x the second argument.
+    (a,b) : tuple
+        The limits of integration in x: a < b
+    gfun : callable
+        The lower boundary curve in y which is a function taking a single
+        floating point argument (x) and returning a floating point result: a
+        lambda function can be useful here.
+    hfun : callable
+        The upper boundary curve in y (same requirements as `gfun`).
+    args : sequence, optional
+        Extra arguments to pass to `func2d`.
+    epsabs : float, optional
+        Absolute tolerance passed directly to the inner 1-D quadrature
+        integration. Default is 1.49e-8.
+    epsrel : float
+        Relative tolerance of the inner 1-D integrals. Default is 1.49e-8.
 
     Returns
-    -----------
-      y      : float
-             the resultant integral.
-      abserr : float
-             an estimate of the error.
+    -------
+    y : float
+        The resultant integral.
+    abserr : float
+        An estimate of the error.
 
-    See also:
-        quad - single integral
-        tplquad - triple integral
-        fixed_quad - fixed-order Gaussian quadrature
-        quadrature - adaptive Gaussian quadrature
-        odeint, ode - ODE integrators
-        simps, trapz, romb - integrators for sampled data
-        scipy.special - for coefficients and roots of orthogonal polynomials
+    See also
+    --------
+    quad : single integral
+    tplquad : triple integral
+    fixed_quad : fixed-order Gaussian quadrature
+    quadrature : adaptive Gaussian quadrature
+    odeint, ode : ODE integrators
+    simps, trapz, romb : integrators for sampled data
+    scipy.special : for coefficients and roots of orthogonal polynomials
 
     """
     return quad(_infunc,a,b,(func,gfun,hfun,args),epsabs=epsabs,epsrel=epsrel)
@@ -430,12 +430,12 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     """
     Compute a triple (definite) integral.
 
-    Return the triple integral of func3d(z, y,x) from
+    Return the triple integral of func(z, y, x) from
     x=a..b, y=gfun(x)..hfun(x), and z=qfun(x,y)..rfun(x,y)
 
     Parameters
     ----------
-    func3d : function
+    func : function
         A Python function or method of at least three variables in the
         order (z, y, x).
     (a,b) : tuple
@@ -453,11 +453,11 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         The upper boundary surface in z. (Same requirements as qfun.)
     args : Arguments
         Extra arguments to pass to func3d.
-    epsabs : float
+    epsabs : float, optional
         Absolute tolerance passed directly to the innermost 1-D quadrature
-        integration.
-    epsrel : float
-        Relative tolerance of the innermost 1-D integrals.
+        integration. Default is 1.49e-8.
+    epsrel : float, optional
+        Relative tolerance of the innermost 1-D integrals. Default is 1.49e-8.
 
     Returns
     -------

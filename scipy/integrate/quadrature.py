@@ -176,7 +176,7 @@ def tupleset(t, i, value):
 def cumtrapz(y, x=None, dx=1.0, axis=-1):
     """
     Cumulatively integrate y(x) using samples along the given axis
-    and the composite trapezoidal rule.  If x is None, spacing given by dx
+    and the composite trapezoidal rule.  If x is None, spacing given by `dx`
     is assumed.
 
     Parameters
@@ -196,18 +196,17 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1):
 
     See Also
     --------
-
-      quad: adaptive quadrature using QUADPACK
-      romberg: adaptive Romberg quadrature
-      quadrature: adaptive Gaussian quadrature
-      fixed_quad: fixed-order Gaussian quadrature
-      dblquad: double integrals
-      tplquad: triple integrals
-      romb: integrators for sampled data
-      trapz: integrators for sampled data
-      cumtrapz: cumulative integration for sampled data
-      ode: ODE integrators
-      odeint: ODE integrators
+    quad: adaptive quadrature using QUADPACK
+    romberg: adaptive Romberg quadrature
+    quadrature: adaptive Gaussian quadrature
+    fixed_quad: fixed-order Gaussian quadrature
+    dblquad: double integrals
+    tplquad: triple integrals
+    romb: integrators for sampled data
+    trapz: integrators for sampled data
+    cumtrapz: cumulative integration for sampled data
+    ode: ODE integrators
+    odeint: ODE integrators
 
     """
     y = asarray(y)
@@ -359,40 +358,36 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
 
 def romb(y, dx=1.0, axis=-1, show=False):
     """
-    Romberg integration using samples of a function
+    Romberg integration using samples of a function.
 
     Parameters
     -----------
-      y : array like
-           a vector of 2**k + 1 equally-spaced samples of a function
-
-      dx : array like
-           the sample spacing.
-
-      axis : array like?
-           the axis along which to integrate
-
-      show : Boolean
-           When y is a single 1-d array, then if this argument is True
+    y : array_like
+        A vector of ``2**k + 1`` equally-spaced samples of a function.
+    dx : array_like, optional
+        The sample spacing. Default is 1.
+    axis : array_like?, optional
+        The axis along which to integrate. Default is -1 (last axis).
+    show : bool, optional
+           When y is a single 1-D array, then if this argument is True
            print the table showing Richardson extrapolation from the
-           samples.
+           samples. Default is False.
 
     Returns
-    -----------
+    -------
+    ret : array_like?
+        The integrated result for each axis.
 
-       ret : array_like?
-          The integrated result for each axis.
-
-    See also:
-
-      quad - adaptive quadrature using QUADPACK
-      romberg - adaptive Romberg quadrature
-      quadrature - adaptive Gaussian quadrature
-      fixed_quad - fixed-order Gaussian quadrature
-      dblquad, tplquad - double and triple integrals
-      simps, trapz - integrators for sampled data
-      cumtrapz - cumulative integration for sampled data
-      ode, odeint - ODE integrators
+    See also
+    --------
+    quad - adaptive quadrature using QUADPACK
+    romberg - adaptive Romberg quadrature
+    quadrature - adaptive Gaussian quadrature
+    fixed_quad - fixed-order Gaussian quadrature
+    dblquad, tplquad - double and triple integrals
+    simps, trapz - integrators for sampled data
+    cumtrapz - cumulative integration for sampled data
+    ode, odeint - ODE integrators
 
     """
     y = asarray(y)
@@ -570,7 +565,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
 
     Examples
     --------
-    Integrate a gaussian from 0,1 and compare to the error function.
+    Integrate a gaussian from 0 to 1 and compare to the error function.
 
     >>> from scipy.special import erf
     >>> gaussian = lambda x: 1/np.sqrt(np.pi) * np.exp(-x**2)
@@ -686,7 +681,7 @@ _builtincoeffs = {
         1275983280000)
     }
 
-def newton_cotes(rn,equal=0):
+def newton_cotes(rn, equal=0):
     """
     Return weights and error coefficient for Newton-Cotes integration.
 
@@ -705,22 +700,20 @@ def newton_cotes(rn,equal=0):
 
     Parameters
     ----------
-
     rn : int
-        The integer order for equally-spaced data
-        or the relative positions of the samples with
-        the first sample at 0 and the last at N, where
-        N+1 is the length of rn.  N is the order of the Newton
+        The integer order for equally-spaced data or the relative positions of
+        the samples with the first sample at 0 and the last at N, where N+1 is
+        the length of `rn`.  N is the order of the Newton-Cotes integration.
     equal: int, optional
-        Set to 1 to enforce equally spaced data
+        Set to 1 to enforce equally spaced data.
 
     Returns
     -------
-    an : array
-        1-d array of weights to apply to the function at
-        the provided sample positions.
-    B  : float
-        error coefficient
+    an : ndarray
+        1-D array of weights to apply to the function at the provided sample
+        positions.
+    B : float
+        Error coefficient.
 
     Notes
     -----
