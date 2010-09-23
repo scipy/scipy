@@ -33,7 +33,7 @@ def findfreqs(num, den, N):
     w = logspace(lfreq, hfreq, N)
     return w
 
-def freqs(b,a,worN=None,plot=None):
+def freqs(b, a, worN=None, plot=None):
     """Compute frequency response of analog filter.
 
     Given the numerator (b) and denominator (a) of a filter compute its
@@ -46,9 +46,9 @@ def freqs(b,a,worN=None,plot=None):
     Parameters
     ----------
     b : ndarray
-        numerator of a linear filter
+        Numerator of a linear filter.
     a : ndarray
-        numerator of a linear filter
+        Denominator of a linear filter.
     worN : {None, int}, optional
         If None, then compute at 200 frequencies around the interesting parts
         of the response curve (determined by pole-zero locations).  If a single
@@ -163,7 +163,7 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
         plot(w, h)
     return w, h
 
-def tf2zpk(b,a):
+def tf2zpk(b, a):
     """Return zero, pole, gain (z,p,k) representation from a numerator,
     denominator representation of a linear filter.
 
@@ -177,11 +177,11 @@ def tf2zpk(b,a):
     Returns
     -------
     z : ndarray
-        zeros of the transfer function.
+        Zeros of the transfer function.
     p : ndarray
-        poles of the transfer function.
+        Poles of the transfer function.
     k : float
-        system gain.
+        System gain.
 
     If some values of b are too close to 0, they are removed. In that case, a
     BadCoefficients warning is emitted.
@@ -195,25 +195,25 @@ def tf2zpk(b,a):
     p = roots(a)
     return z, p, k
 
-def zpk2tf(z,p,k):
+def zpk2tf(z, p, k):
     """Return polynomial transfer function representation from zeros
     and poles
 
     Parameters
     ----------
     z : ndarray
-        zeros of the transfer function.
+        Zeros of the transfer function.
     p : ndarray
-        poles of the transfer function.
+        Poles of the transfer function.
     k : float
-        system gain.
+        System gain.
 
     Returns
     -------
     b : ndarray
-        numerator polynomial.
+        Numerator polynomial.
     a : ndarray
-        numerator and denominator polynomials.
+        Numerator and denominator polynomials.
 
     Note
     ----
@@ -234,7 +234,7 @@ def zpk2tf(z,p,k):
     a = poly(p)
     return b, a
 
-def normalize(b,a):
+def normalize(b, a):
     """Normalize polynomial representation of a transfer function.
 
     If values of b are too close to 0, they are removed. In that case, a
@@ -261,8 +261,8 @@ def normalize(b,a):
     return outb, outa
 
 
-def lp2lp(b,a,wo=1.0):
-    """Return a low-pass filter with cuttoff frequency wo
+def lp2lp(b, a, wo=1.0):
+    """Return a low-pass filter with cutoff frequency `wo`
     from a low-pass filter prototype with unity cutoff frequency.
     """
     a,b = map(atleast_1d,(a,b))
@@ -280,8 +280,8 @@ def lp2lp(b,a,wo=1.0):
     a = a * pwo[start1]/pwo[start1:]
     return normalize(b, a)
 
-def lp2hp(b,a,wo=1.0):
-    """Return a high-pass filter with cuttoff frequency wo
+def lp2hp(b, a, wo=1.0):
+    """Return a high-pass filter with cutoff frequency `wo`
     from a low-pass filter prototype with unity cutoff frequency.
     """
     a,b = map(atleast_1d,(a,b))
@@ -308,8 +308,8 @@ def lp2hp(b,a,wo=1.0):
 
     return normalize(outb, outa)
 
-def lp2bp(b,a,wo=1.0, bw=1.0):
-    """Return a band-pass filter with center frequency wo and bandwidth bw
+def lp2bp(b, a, wo=1.0, bw=1.0):
+    """Return a band-pass filter with center frequency `wo` and bandwidth `bw`
     from a low-pass filter prototype with unity cutoff frequency.
     """
     a,b = map(atleast_1d,(a,b))
@@ -339,8 +339,8 @@ def lp2bp(b,a,wo=1.0, bw=1.0):
 
     return normalize(bprime, aprime)
 
-def lp2bs(b,a,wo=1,bw=1):
-    """Return a band-stop filter with center frequency wo and bandwidth bw
+def lp2bs(b, a, wo=1, bw=1):
+    """Return a band-stop filter with center frequency `wo` and bandwidth `bw`
     from a low-pass filter prototype with unity cutoff frequency.
     """
     a,b = map(atleast_1d,(a,b))
@@ -370,10 +370,10 @@ def lp2bs(b,a,wo=1,bw=1):
 
     return normalize(bprime, aprime)
 
-def bilinear(b,a,fs=1.0):
+def bilinear(b, a, fs=1.0):
     """Return a digital filter from an analog filter using the bilinear transform.
 
-    The bilinear transform substitutes (z-1) / (z+1) for s
+    The bilinear transform substitutes ``(z-1) / (z+1``) for ``s``.
     """
     fs =float(fs)
     a,b = map(atleast_1d,(a,b))
@@ -413,28 +413,43 @@ def iirdesign(wp, ws, gpass, gstop, analog=0, ftype='ellip', output='ba'):
 
     Parameters
     ----------
-    wp, ws -- Passband and stopband edge frequencies, normalized from 0
-              to 1 (1 corresponds to pi radians / sample).  For example:
-                 Lowpass:   wp = 0.2,          ws = 0.3
-                 Highpass:  wp = 0.3,          ws = 0.2
-                 Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
-                 Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
-    gpass -- The maximum loss in the passband (dB).
-    gstop -- The minimum attenuation in the stopband (dB).
-    analog -- Non-zero to design an analog filter (in this case wp and
-              ws are in radians / second).
-    ftype -- The type of iir filter to design:
-               elliptic    : 'ellip'
-               Butterworth : 'butter',
-               Chebyshev I : 'cheby1',
-               Chebyshev II: 'cheby2',
-               Bessel :      'bessel'
-    output -- Type of output:  numerator/denominator ('ba') or pole-zero ('zpk')
+    wp, ws : float
+        Passband and stopband edge frequencies, normalized from 0 to 1 (1
+        corresponds to pi radians / sample).  For example:
+
+            - Lowpass:   wp = 0.2,          ws = 0.3
+            - Highpass:  wp = 0.3,          ws = 0.2
+            - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
+            - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
+
+    gpass : float
+        The maximum loss in the passband (dB).
+    gstop : float
+        The minimum attenuation in the stopband (dB).
+    analog : int, optional
+        Non-zero to design an analog filter (in this case `wp` and `ws` are in
+        radians / second).
+    ftype : str, optional
+        The type of IIR filter to design:
+
+            - elliptic    : 'ellip'
+            - Butterworth : 'butter',
+            - Chebyshev I : 'cheby1',
+            - Chebyshev II: 'cheby2',
+            - Bessel :      'bessel'
+
+    output : ['ba', 'zpk'], optional
+        Type of output:  numerator/denominator ('ba') or pole-zero ('zpk').
+        Default is 'ba'.
 
     Returns
     -------
-      b,a -- Numerator and denominator of the iir filter.
-      z,p,k -- Zeros, poles, and gain of the iir filter.
+    b, a :
+        Numerator and denominator of the IIR filter. Only returned if
+        ``output='ba'``.
+    z, p, k : Zeros, poles, and gain of the IIR filter. Only returned if
+    ``output='zpk'``.
+
     """
 
     try:
@@ -465,18 +480,38 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=0, ftype='butter', o
 
     Parameters
     ----------
-    N -- the order of the filter.
-    Wn -- a scalar or length-2 sequence giving the critical frequencies.
-    rp, rs -- For chebyshev and elliptic filters provides the maximum ripple
-              in the passband and the minimum attenuation in the stop band.
-    btype -- the type of filter (lowpass, highpass, bandpass, or bandstop).
-    analog -- non-zero to return an analog filter, otherwise
-              a digital filter is returned.
-    ftype -- the type of IIR filter (Butterworth, Cauer (Elliptic),
-             Bessel, Chebyshev1, Chebyshev2)
-    output -- 'ba' for (b,a) output, 'zpk' for (z,p,k) output.
+    N : int
+        The order of the filter.
+    Wn : array_like
+        A scalar or length-2 sequence giving the critical frequencies.
+    rp : float, optional
+        For Chebyshev and elliptic filters provides the maximum ripple
+        in the passband.
+    rs : float, optional
+        For chebyshev and elliptic filters provides the minimum attenuation in
+        the stop band.
+    btype : str, optional
+        The type of filter (lowpass, highpass, bandpass, bandstop).
+        Default is bandpass.
+    analog : int, optional
+        Non-zero to return an analog filter, otherwise a digital filter is
+        returned.
+    ftype : str, optional
+        The type of IIR filter to design:
 
-    SEE ALSO butterord, cheb1ord, cheb2ord, ellipord
+            - elliptic    : 'ellip'
+            - Butterworth : 'butter',
+            - Chebyshev I : 'cheby1',
+            - Chebyshev II: 'cheby2',
+            - Bessel :      'bessel'
+
+    output : ['ba', 'zpk'], optional
+        Type of output:  numerator/denominator ('ba') or pole-zero ('zpk').
+        Default is 'ba'.
+
+    See Also
+    --------
+    butterord, cheb1ord, cheb2ord, ellipord
     """
 
     ftype, btype, output = [x.lower() for x in (ftype, btype, output)]
@@ -551,58 +586,56 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=0, ftype='butter', o
 def butter(N, Wn, btype='low', analog=0, output='ba'):
     """Butterworth digital and analog filter design.
 
-    Description:
+    Design an Nth order lowpass digital or analog Butterworth filter and return
+    the filter coefficients in (B,A) or (Z,P,K) form.
 
-      Design an Nth order lowpass digital or analog Butterworth filter
-      and return the filter coefficients in (B,A) or (Z,P,K) form.
-
-    See also buttord.
+    See also
+    --------
+    buttord.
     """
     return iirfilter(N, Wn, btype=btype, analog=analog, output=output, ftype='butter')
 
 def cheby1(N, rp, Wn, btype='low', analog=0, output='ba'):
     """Chebyshev type I digital and analog filter design.
 
-    Description:
+    Design an Nth order lowpass digital or analog Chebyshev type I filter and
+    return the filter coefficients in (B,A) or (Z,P,K) form.
 
-      Design an Nth order lowpass digital or analog Chebyshev type I filter
-      and return the filter coefficients in (B,A) or (Z,P,K) form.
-
-    See also cheb1ord.
+    See also
+    --------
+    cheb1ord.
     """
     return iirfilter(N, Wn, rp=rp, btype=btype, analog=analog, output=output, ftype='cheby1')
 
 def cheby2(N, rs, Wn, btype='low', analog=0, output='ba'):
     """Chebyshev type I digital and analog filter design.
 
-    Description:
+    Design an Nth order lowpass digital or analog Chebyshev type I filter and
+    return the filter coefficients in (B,A) or (Z,P,K) form.
 
-      Design an Nth order lowpass digital or analog Chebyshev type I filter
-      and return the filter coefficients in (B,A) or (Z,P,K) form.
-
-    See also cheb2ord.
+    See also
+    --------
+    cheb2ord.
     """
     return iirfilter(N, Wn, rs=rs, btype=btype, analog=analog, output=output, ftype='cheby2')
 
 def ellip(N, rp, rs, Wn, btype='low', analog=0, output='ba'):
     """Elliptic (Cauer) digital and analog filter design.
 
-    Description:
+    Design an Nth order lowpass digital or analog elliptic filter and return
+    the filter coefficients in (B,A) or (Z,P,K) form.
 
-      Design an Nth order lowpass digital or analog elliptic filter
-      and return the filter coefficients in (B,A) or (Z,P,K) form.
-
-    See also ellipord.
+    See also
+    --------
+    ellipord.
     """
     return iirfilter(N, Wn, rs=rs, rp=rp, btype=btype, analog=analog, output=output, ftype='elliptic')
 
 def bessel(N, Wn, btype='low', analog=0, output='ba'):
     """Bessel digital and analog filter design.
 
-    Description:
-
-      Design an Nth order lowpass digital or analog Bessel filter
-      and return the filter coefficients in (B,A) or (Z,P,K) form.
+    Design an Nth order lowpass digital or analog Bessel filter and return the
+    filter coefficients in (B,A) or (Z,P,K) form.
 
     """
     return iirfilter(N, Wn, btype=btype, analog=analog, output=output, ftype='bessel')
@@ -616,25 +649,31 @@ def yulewalk():
 
 
 def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
-    """Band Stop Objective Function for order minimization
+    """Band Stop Objective Function for order minimization.
 
-    Description:
-
-      Returns the non-integer order for an analog band stop filter.
+    Returns the non-integer order for an analog band stop filter.
 
     Parameters
     ----------
-    wp -- passb edge
-    ind -- index specifying which passb edge to vary (0 or 1).
-    passb -- two element vector of fixed passband edges.
-    stopb -- two element vector of fixed stopband edges.
-    gstop -- amount in dB of attenuation in stopband.
-    gpass -- amount in dB of ripple in the passband.
-    type -- 'butter', 'cheby', or 'ellip':
+    wp :
+        Edge of passband `passb`.
+    ind : int
+        Index specifying which `passb` edge to vary (0 or 1).
+    passb : array_like
+        Two element sequence of fixed passband edges.
+    stopb : array_like
+        Two element sequence of fixed stopband edges.
+    gstop : float
+        Amount of attenuation in stopband in dB.
+    gpass : float
+        Amount of ripple in the passband in dB.
+    type : ['butter', 'cheby', 'ellip']
+        Type of filter.
 
     Returns
     -------
-    n -- filter order (possibly non-integer)
+    n : scalar
+        Filter order (possibly non-integer).
     """
 
     passbC = passb.copy()
@@ -666,27 +705,35 @@ def buttord(wp, ws, gpass, gstop, analog=0):
     """Butterworth filter order selection.
 
     Return the order of the lowest order digital Butterworth filter that loses
-    no more than gpass dB in the passband and has at least gstop dB attenuation
-    in the stopband.
+    no more than `gpass` dB in the passband and has at least `gstop` dB
+    attenuation in the stopband.
 
     Parameters
     ----------
-    wp, ws -- Passband and stopband edge frequencies, normalized from 0
-              to 1 (1 corresponds to pi radians / sample).  For example:
-                 Lowpass:   wp = 0.2,          ws = 0.3
-                 Highpass:  wp = 0.3,          ws = 0.2
-                 Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
-                 Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
-    gpass -- The maximum loss in the passband (dB).
-    gstop -- The minimum attenuation in the stopband (dB).
-    analog -- Non-zero to design an analog filter (in this case wp and
-              ws are in radians / second).
+    wp, ws : float
+        Passband and stopband edge frequencies, normalized from 0 to 1 (1
+        corresponds to pi radians / sample).  For example:
+
+            - Lowpass:   wp = 0.2,          ws = 0.3
+            - Highpass:  wp = 0.3,          ws = 0.2
+            - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
+            - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
+
+    gpass : float
+        The maximum loss in the passband (dB).
+    gstop : float
+        The minimum attenuation in the stopband (dB).
+    analog : int, optional
+        Non-zero to design an analog filter (in this case `wp` and `ws` are in
+        radians / second).
 
     Returns
     -------
-    ord -- The lowest order for a Butterworth filter which meets specs.
-    Wn -- The Butterworth natural frequency (i.e. the "3dB frequency").
-          Should be used with scipy.signal.butter to give filter results.
+    ord : int
+        The lowest order for a Butterworth filter which meets specs.
+    wn : ndarray or float
+        The Butterworth natural frequency (i.e. the "3dB frequency").  Should
+        be used with `butter` to give filter results.
 
     """
 
@@ -772,27 +819,35 @@ def cheb1ord(wp, ws, gpass, gstop, analog=0):
     """Chebyshev type I filter order selection.
 
     Return the order of the lowest order digital Chebyshev Type I filter that
-    loses no more than gpass dB in the passband and has at least gstop dB
+    loses no more than `gpass` dB in the passband and has at least `gstop` dB
     attenuation in the stopband.
 
     Parameters
     ----------
-    wp, ws -- Passband and stopband edge frequencies, normalized from 0
-              to 1 (1 corresponds to pi radians / sample).  For example:
-                 Lowpass:   wp = 0.2,          ws = 0.3
-                 Highpass:  wp = 0.3,          ws = 0.2
-                 Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
-                 Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
-    gpass -- The maximum loss in the passband (dB).
-    gstop -- The minimum attenuation in the stopband (dB).
-    analog -- Non-zero to design an analog filter (in this case wp and
-              ws are in radians / second).
+    wp, ws : float
+        Passband and stopband edge frequencies, normalized from 0 to 1 (1
+        corresponds to pi radians / sample).  For example:
+
+            - Lowpass:   wp = 0.2,          ws = 0.3
+            - Highpass:  wp = 0.3,          ws = 0.2
+            - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
+            - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
+
+    gpass : float
+        The maximum loss in the passband (dB).
+    gstop : float
+        The minimum attenuation in the stopband (dB).
+    analog : int, optional
+        Non-zero to design an analog filter (in this case `wp` and `ws` are in
+        radians / second).
 
     Returns
     -------
-    ord -- The lowest order for a Chebyshev type I filter that meets specs.
-    Wn -- The Chebyshev natural frequency (the "3dB frequency") for
-          use with scipy.signal.cheby1 to give filter results.
+    ord : int
+        The lowest order for a Chebyshev type I filter that meets specs.
+    wn : ndarray or float
+        The Chebyshev natural frequency (the "3dB frequency") for use with
+        `cheby1` to give filter results.
 
     """
     wp = atleast_1d(wp)
@@ -854,22 +909,30 @@ def cheb2ord(wp, ws, gpass, gstop, analog=0):
 
     Parameters
     ----------
-    wp, ws -- Passband and stopband edge frequencies, normalized from 0
-              to 1 (1 corresponds to pi radians / sample).  For example:
-                 Lowpass:   wp = 0.2,          ws = 0.3
-                 Highpass:  wp = 0.3,          ws = 0.2
-                 Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
-                 Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
-    gpass -- The maximum loss in the passband (dB).
-    gstop -- The minimum attenuation in the stopband (dB).
-    analog -- Non-zero to design an analog filter (in this case wp and
-              ws are in radians / second).
+    wp, ws : float
+        Passband and stopband edge frequencies, normalized from 0 to 1 (1
+        corresponds to pi radians / sample).  For example:
+
+            - Lowpass:   wp = 0.2,          ws = 0.3
+            - Highpass:  wp = 0.3,          ws = 0.2
+            - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
+            - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
+
+    gpass : float
+        The maximum loss in the passband (dB).
+    gstop : float
+        The minimum attenuation in the stopband (dB).
+    analog : int, optional
+        Non-zero to design an analog filter (in this case `wp` and `ws` are in
+        radians / second).
 
     Returns
     -------
-    ord -- The lowest order for a Chebyshev type II filter that meets specs.
-    Wn -- The Chebyshev natural frequency for
-          use with scipy.signal.cheby2 to give the filter.
+    ord : int
+        The lowest order for a Chebyshev type II filter that meets specs.
+    wn : ndarray or float
+        The Chebyshev natural frequency (the "3dB frequency") for use with
+        `cheby2` to give filter results.
 
     """
     wp = atleast_1d(wp)
@@ -953,22 +1016,30 @@ def ellipord(wp, ws, gpass, gstop, analog=0):
 
     Parameters
     ----------
-    wp, ws -- Passband and stopband edge frequencies, normalized from 0
-              to 1 (1 corresponds to pi radians / sample).  For example:
-                 Lowpass:   wp = 0.2,          ws = 0.3
-                 Highpass:  wp = 0.3,          ws = 0.2
-                 Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
-                 Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
-    gpass -- The maximum loss in the passband (dB).
-    gstop -- The minimum attenuation in the stopband (dB).
-    analog -- Non-zero to design an analog filter (in this case wp and
-              ws are in radians / second).
+    wp, ws : float
+        Passband and stopband edge frequencies, normalized from 0 to 1 (1
+        corresponds to pi radians / sample).  For example:
+
+            - Lowpass:   wp = 0.2,          ws = 0.3
+            - Highpass:  wp = 0.3,          ws = 0.2
+            - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
+            - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
+
+    gpass : float
+        The maximum loss in the passband (dB).
+    gstop : float
+        The minimum attenuation in the stopband (dB).
+    analog : int, optional
+        Non-zero to design an analog filter (in this case `wp` and `ws` are in
+        radians / second).
 
     Returns
-    -------
-    ord -- The lowest order for an Elliptic (Cauer) filter that meets specs.
-    Wn  -- The natural frequency for use with scipy.signal.ellip
-             to give the filter.
+    ------
+    ord : int
+        The lowest order for  an Elliptic (Cauer) filter that meets specs.
+    wn : ndarray or float
+        The Chebyshev natural frequency (the "3dB frequency") for use with
+        `ellip` to give filter results.-
 
     """
     wp = atleast_1d(wp)
@@ -1031,10 +1102,9 @@ def buttap(N):
     k = 1
     return z, p, k
 
-def cheb1ap(N,rp):
-    """Return (z,p,k) zero, pole, gain for Nth order Chebyshev type I
-    lowpass analog filter prototype with rp decibels of ripple
-    in the passband.
+def cheb1ap(N, rp):
+    """Return (z,p,k) zero, pole, gain for Nth order Chebyshev type I lowpass
+    analog filter prototype with `rp` decibels of ripple in the passband.
     """
     z = []
     eps = numpy.sqrt(10**(0.1*rp)-1.0)
@@ -1048,10 +1118,9 @@ def cheb1ap(N,rp):
     return z, p, k
     pass
 
-def cheb2ap(N,rs):
-    """Return (z,p,k) zero, pole, gain for Nth order Chebyshev type II
-    lowpass analog filter prototype with rs decibels of ripple
-    in the stopband.
+def cheb2ap(N, rs):
+    """Return (z,p,k) zero, pole, gain for Nth order Chebyshev type II lowpass
+    analog filter prototype with `rs` decibels of ripple in the stopband.
     """
     de = 1.0/sqrt(10**(0.1*rs)-1)
     mu = arcsinh(1.0/de)/N
@@ -1093,13 +1162,16 @@ def kratio(m, k_ratio):
         r = 1e20
     return abs(r)
 
-def ellipap(N,rp,rs):
+def ellipap(N, rp, rs):
     """Return (z,p,k) zeros, poles, and gain of an Nth order normalized
-    prototype elliptic analog lowpass filter with rp decibels of ripple
-    in the passband and a stopband rs decibels down.
+    prototype elliptic analog lowpass filter with `rp` decibels of ripple in
+    the passband and a stopband `rs` decibels down.
 
-    See Chapter 12 and Chapter 5 of "Filter Design for Signal Processing",
-    by Lutova, Tosic, and Evans.  This is
+    References
+    ----------
+    Lutova, Tosic, and Evans, "Filter Design for Signal Processing", Chapters 5
+    and 12.
+
     """
     if N == 1:
         p = -sqrt(1.0/(10**(0.1*rp)-1.0))
@@ -1160,8 +1232,8 @@ def ellipap(N,rp,rs):
 
 
 def besselap(N):
-    """Return (z,p,k) zero, pole, gain for analog prototype of an Nth
-    order Bessel filter."""
+    """Return (z,p,k) zero, pole, gain for analog prototype of an Nth order
+    Bessel filter."""
     z = []
     k = 1
     if N == 0:

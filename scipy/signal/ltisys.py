@@ -127,7 +127,7 @@ def ss2tf(A, B, C, D, input=0):
     ----------
     A, B, C, D : ndarray
         State-space representation of linear system.
-    input : int
+    input : int, optional
         For multiple-input systems, the input to use.
 
     Returns
@@ -174,7 +174,7 @@ def ss2tf(A, B, C, D, input=0):
 
     return num, den
 
-def zpk2ss(z,p,k):
+def zpk2ss(z, p, k):
     """Zero-pole-gain representation to state-space representation
 
     Parameters
@@ -192,17 +192,23 @@ def zpk2ss(z,p,k):
     """
     return tf2ss(*zpk2tf(z,p,k))
 
-def ss2zpk(A,B,C,D,input=0):
+def ss2zpk(A, B, C, D, input=0):
     """State-space representation to zero-pole-gain representation.
 
-    Inputs:
+    Parameters
+    ----------
+    A, B, C, D : ndarray
+        State-space representation of linear system.
+    input : int, optional
+        For multiple-input systems, the input to use.
 
-      A, B, C, D -- state-space matrices.
-      input -- for multiple-input systems, the input to use.
+    Returns
+    -------
+    z, p : sequence
+        Zeros and poles.
+    k : float
+        System gain.
 
-    Outputs:
-
-      z, p, k -- zeros and poles in sequences and gain constant.
     """
     return tf2zpk(*ss2tf(A,B,C,D,input=input))
 
@@ -501,21 +507,21 @@ def lsim(system, U, T, X0=None, interp=1):
 def _default_response_times(A, n):
     """Compute a reasonable set of time samples for the response time.
 
-    This function is used by impulse(), impulse2(), step() and step2()
+    This function is used by `impulse`, `impulse2`, `step` and `step2`
     to compute the response time when the `T` argument to the function
     is None.
 
     Parameters
     ----------
-    A : square ndarray
-        The system matrix.
+    A : ndarray
+        The system matrix, which is square.
     n : int
         The number of time samples to generate.
 
     Returns
     -------
-    t : ndarray, 1D
-        The 1D array of length `n` of time samples at which the response
+    t : ndarray
+        The 1-D array of length `n` of time samples at which the response
         is to be computed.
     """
     # Create a reasonable time interval.  This could use some more work.
@@ -546,10 +552,11 @@ def impulse(system, X0=None, T=None, N=None):
 
     Returns
     -------
-    T : 1D ndarray
-        Time points.
-    yout : 1D ndarray
-        Impulse response of the system (except for singularities at zero).
+    T : ndarray
+        A 1-D array of time points.
+    yout : ndarray
+        A 1-D array containing the impulse response of the system (except for
+        singularities at zero).
 
     """
     if isinstance(system, lti):
@@ -686,7 +693,7 @@ def step(system, X0=None, T=None, N=None):
 
 def step2(system, X0=None, T=None, N=None, **kwargs):
     """Step response of continuous-time system.
-    
+
     This function is functionally the same as `scipy.signal.step`, but
     it uses the function `scipy.signal.lsim2` to compute the step
     response.
