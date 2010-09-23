@@ -302,7 +302,7 @@ def order_filter(a, domain, rank):
     return sigtools._order_filterND(a, domain, rank)
 
 
-def medfilt(volume,kernel_size=None):
+def medfilt(volume, kernel_size=None):
     """
     Perform a median filter on an N-dimensional array.
 
@@ -345,7 +345,7 @@ def medfilt(volume,kernel_size=None):
     return sigtools._order_filterND(volume,domain,order)
 
 
-def wiener(im,mysize=None,noise=None):
+def wiener(im, mysize=None, noise=None):
     """
     Perform a Wiener filter on an N-dimensional array.
 
@@ -396,32 +396,40 @@ def wiener(im,mysize=None,noise=None):
 def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0, old_behavior=True):
     """Convolve two 2-dimensional arrays.
 
-  Description:
+    Convolve `in1` and `in2` with output size determined by mode and boundary
+    conditions determined by `boundary` and `fillvalue`.
 
-     Convolve in1 and in2 with output size determined by mode and boundary
-     conditions determined by boundary and fillvalue.
+    Parameters
+    ----------
+    in1, in2 : ndarray
+        Two-dimensional input arrays to be convolved.
+    mode: str, optional
+        A string indicating the size of the output:
 
-  Inputs:
+        ``valid`` : the output consists only of those elements that do not
+           rely on the zero-padding.
 
-    in1 -- a 2-dimensional array.
-    in2 -- a 2-dimensional array.
-    mode -- a flag indicating the size of the output
-            'valid'  (0): The output consists only of those elements that
-                            do not rely on the zero-padding.
-            'same'   (1): The output is the same size as the input centered
-                            with respect to the 'full' output.
-            'full'   (2): The output is the full discrete linear convolution
-                            of the inputs. (*Default*)
-    boundary -- a flag indicating how to handle boundaries
-                'fill' : pad input arrays with fillvalue. (*Default*)
-                'wrap' : circular boundary conditions.
-                'symm' : symmetrical boundary conditions.
-    fillvalue -- value to fill pad input arrays with (*Default* = 0)
+        ``same`` : the output is the same size as the largest input centered
+           with respect to the 'full' output.
 
-  Outputs:  (out,)
+        ``full`` : the output is the full discrete linear cross-correlation
+           of the inputs. (Default)
 
-    out -- a 2-dimensional array containing a subset of the discrete linear
-           convolution of in1 with in2.
+    boundary : str, optional
+        A flag indicating how to handle boundaries:
+
+          - 'fill' : pad input arrays with fillvalue. (default)
+          - 'wrap' : circular boundary conditions.
+          - 'symm' : symmetrical boundary conditions.
+
+    fillvalue : scalar, optional
+        Value to fill pad input arrays with. Default is 0.
+
+    Returns
+    -------
+    out : ndarray
+        A 2-dimensional array containing a subset of the discrete linear
+        convolution of `in1` with `in2`.
 
     """
     if old_behavior:
@@ -450,32 +458,40 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0, old_behavior
 def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0, old_behavior=True):
     """Cross-correlate two 2-dimensional arrays.
 
-  Description:
+    Cross correlate in1 and in2 with output size determined by mode and
+    boundary conditions determined by `boundary` and `fillvalue`.
 
-     Cross correlate in1 and in2 with output size determined by mode
-     and boundary conditions determined by boundary and fillvalue.
+    Parameters
+    ----------
+    in1, in2 : ndarray
+        Two-dimensional input arrays to be convolved.
+    mode: str, optional
+        A string indicating the size of the output:
 
-  Inputs:
+        ``valid`` : the output consists only of those elements that do not
+           rely on the zero-padding.
 
-    in1 -- a 2-dimensional array.
-    in2 -- a 2-dimensional array.
-    mode -- a flag indicating the size of the output
-            'valid'  (0): The output consists only of those elements that
-                            do not rely on the zero-padding.
-            'same'   (1): The output is the same size as the input centered
-                            with respect to the 'full' output.
-            'full'   (2): The output is the full discrete linear convolution
-                            of the inputs. (*Default*)
-    boundary -- a flag indicating how to handle boundaries
-                'fill' : pad input arrays with fillvalue. (*Default*)
-                'wrap' : circular boundary conditions.
-                'symm' : symmetrical boundary conditions.
-    fillvalue -- value to fill pad input arrays with (*Default* = 0)
+        ``same`` : the output is the same size as the largest input centered
+           with respect to the 'full' output.
 
-  Outputs:  (out,)
+        ``full`` : the output is the full discrete linear cross-correlation
+           of the inputs. (Default)
 
-    out -- a 2-dimensional array containing a subset of the discrete linear
-           cross-correlation of in1 with in2.
+    boundary : str, optional
+        A flag indicating how to handle boundaries:
+
+          - 'fill' : pad input arrays with fillvalue. (default)
+          - 'wrap' : circular boundary conditions.
+          - 'symm' : symmetrical boundary conditions.
+
+    fillvalue : scalar, optional
+        Value to fill pad input arrays with. Default is 0.
+
+    Returns
+    -------
+    out : ndarray
+        A 2-dimensional array containing a subset of the discrete linear
+        cross-correlation of `in1` with `in2`.
 
     """
     if old_behavior:
@@ -490,7 +506,7 @@ def medfilt2d(input, kernel_size=3):
     Median filter a 2-dimensional array.
 
     Apply a median filter to the input array using a local window-size
-    given by kernel_size (must be odd).
+    given by `kernel_size` (must be odd).
 
     Parameters
     ----------
@@ -706,8 +722,8 @@ def lfiltic(b,a,y,x=None):
     If M=len(b)-1 and N=len(a)-1.  Then, the initial conditions are given
     in the vectors x and y as::
 
-     x = {x[-1],x[-2],...,x[-M]}
-     y = {y[-1],y[-2],...,y[-N]}
+      x = {x[-1],x[-2],...,x[-M]}
+      y = {y[-1],y[-2],...,y[-N]}
 
     If x is not given, its inital conditions are assumed zero.
     If either vector is too short, then zeros are added
@@ -715,7 +731,7 @@ def lfiltic(b,a,y,x=None):
 
     The output vector zi contains::
 
-     zi = {z_0[-1], z_1[-1], ..., z_K-1[-1]}  where K=max(M,N).
+      zi = {z_0[-1], z_1[-1], ..., z_K-1[-1]}  where K=max(M,N).
 
     """
     N = np.size(a)-1
@@ -823,7 +839,7 @@ def hilbert(x, N=None, axis=-1):
     x = ifft(Xf*h, axis=axis)
     return x
 
-def hilbert2(x,N=None):
+def hilbert2(x, N=None):
     """
     Compute the '2-D' analytic signal of `x`
 
@@ -889,7 +905,7 @@ def cmplx_sort(p):
         indx = argsort(p)
     return take(p,indx,0), indx
 
-def unique_roots(p,tol=1e-3,rtype='min'):
+def unique_roots(p, tol=1e-3, rtype='min'):
     """
     Determine unique roots and their multiplicities from a list of roots.
 
@@ -961,7 +977,7 @@ def unique_roots(p,tol=1e-3,rtype='min'):
     return array(pout), array(mult)
 
 
-def invres(r,p,k,tol=1e-3,rtype='avg'):
+def invres(r, p, k, tol=1e-3, rtype='avg'):
     """Compute b(s) and a(s) from partial fraction expansion: r,p,k
 
     If M = len(b) and N = len(a)
@@ -1014,7 +1030,7 @@ def invres(r,p,k,tol=1e-3,rtype='avg'):
         b = b[1:]
     return b, a
 
-def residue(b,a,tol=1e-3,rtype='avg'):
+def residue(b, a, tol=1e-3, rtype='avg'):
     """
     Compute partial-fraction expansion of b(s) / a(s).
 
@@ -1085,7 +1101,7 @@ def residue(b,a,tol=1e-3,rtype='avg'):
         indx += sig
     return r/rscale, p, k
 
-def residuez(b,a,tol=1e-3,rtype='avg'):
+def residuez(b, a, tol=1e-3, rtype='avg'):
     """Compute partial-fraction expansion of b(z) / a(z).
 
     If M = len(b) and N = len(a)
@@ -1105,7 +1121,10 @@ def residuez(b,a,tol=1e-3,rtype='avg'):
           -------------- + ------------------ + ... + ------------------
           (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
 
-    See also:  invresz, poly, polyval, unique_roots
+    See also
+    --------
+    invresz, poly, polyval, unique_roots
+
     """
     b,a = map(asarray,(b,a))
     gain = a[0]
@@ -1150,7 +1169,7 @@ def residuez(b,a,tol=1e-3,rtype='avg'):
         indx += sig
     return r/gain, p, k
 
-def invresz(r,p,k,tol=1e-3,rtype='avg'):
+def invresz(r, p, k, tol=1e-3, rtype='avg'):
     """Compute b(z) and a(z) from partial fraction expansion: r,p,k
 
     If M = len(b) and N = len(a)
@@ -1170,7 +1189,10 @@ def invresz(r,p,k,tol=1e-3,rtype='avg'):
           -------------- + ------------------ + ... + ------------------
           (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
 
-    See also:  residuez, poly, polyval, unique_roots
+    See also
+    --------
+    residuez, poly, polyval, unique_roots
+
     """
     extra = asarray(k)
     p, indx = cmplx_sort(p)
@@ -1201,13 +1223,13 @@ def invresz(r,p,k,tol=1e-3,rtype='avg'):
     return b, a
 
 
-def resample(x,num,t=None,axis=0,window=None):
+def resample(x, num, t=None, axis=0, window=None):
     """
     Resample `x` to `num` samples using Fourier method along the given axis.
 
     The resampled signal starts at the same value as `x` but is sampled
-    with a spacing of `len(x) / num * (spacing of x)`.  Because a
-    Fourier method is used, the signal is assumed periodic.
+    with a spacing of ``len(x) / num * (spacing of x)``.  Because a
+    Fourier method is used, the signal is assumed to be periodic.
 
     Parameters
     ----------
@@ -1226,7 +1248,6 @@ def resample(x,num,t=None,axis=0,window=None):
 
     Returns
     -------
-
     resampled_x or (resampled_x, resampled_t)
         Either the resampled array, or, if `t` was given, a tuple
         containing the resampled array and the corresponding resampled
@@ -1373,7 +1394,7 @@ def detrend(data, axis=-1, type='linear', bp=0):
         ret = transpose(ret,tuple(olddims))
         return ret
 
-def lfilter_zi(b,a):
+def lfilter_zi(b, a):
     #compute the zi state from the filter parameters. see [Gust96].
 
     #Based on:
@@ -1398,7 +1419,7 @@ def lfilter_zi(b,a):
 
     return array(zi_return)
 
-def filtfilt(b,a,x):
+def filtfilt(b, a, x):
     b, a, x = map(asarray, [b, a, x])
     # FIXME:  For now only accepting 1d arrays
     ntaps=max(len(a),len(b))
@@ -1460,7 +1481,9 @@ def decimate(x, q, n=None, ftype='iir', axis=-1):
     y : N-d array
       the down-sampled signal
 
-    See also:  resample
+    See also
+    --------
+    resample
     """
 
     if not isinstance(q, int):
