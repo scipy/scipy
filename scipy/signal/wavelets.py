@@ -72,33 +72,46 @@ def qmf(hk):
     asgn = [{0:1,1:-1}[k%2] for k in range(N+1)]
     return hk[::-1]*np.array(asgn)
 
-def wavedec(amn,hk):
+def wavedec(amn, hk):
     gk = qmf(hk)
     return NotImplemented
 
-def cascade(hk,J=7):
-    """(x,phi,psi) at dyadic points K/2**J from filter coefficients.
+def cascade(hk, J=7):
+    """Return (x, phi, psi) at dyadic points K/2**J from filter coefficients.
 
-    Inputs:
-      hk  -- coefficients of low-pass filter
-      J   -- values will be computed at grid points $K/2^J$
+    Parameters
+    ----------
+    hk :
+        Coefficients of low-pass filter.
+    J : int. optional
+        Values will be computed at grid points ``K/2**J``.
 
-    Outputs:
-      x   -- the dyadic points $K/2^J$ for $K=0...N*(2^J)-1$
-              where len(hk)=len(gk)=N+1
-      phi -- the scaling function phi(x) at x
-               $\phi(x) = \sum_{k=0}^{N} h_k \phi(2x-k)$
-      psi -- the wavelet function psi(x) at x
-               $\psi(x) = \sum_{k=0}^N g_k \phi(2x-k)$
-             Only returned if gk is not None
+    Returns
+    -------
+    x :
+        The dyadic points K/2**J for ``K=0...N * (2**J)-1`` where
+        ``len(hk) = len(gk) = N+1``
+    phi :
+        The scaling function ``phi(x)`` at `x`:
 
-    Algorithm:
+                     N
+          phi(x) = sum   hk * phi(2x-k)
+                     k=0
+    psi :
+        The wavelet function ``psi(x)`` at `x`:
 
-      Uses the vector cascade algorithm described by Strang and Nguyen in
-      "Wavelets and Filter Banks"
+                     N
+          phi(x) = sum   gk * phi(2x-k)
+                     k=0
 
-      Builds a dictionary of values and slices for quick reuse.
-      Then inserts vectors into final vector at then end
+        `psi` is only returned if `gk` is not None.
+
+    Notes
+    -----
+    The algorithm uses the vector cascade algorithm described by Strang and
+    Nguyen in "Wavelets and Filter Banks".  It builds a dictionary of values
+    and slices for quick reuse.  Then inserts vectors into final vector at the
+    end.
 
     """
 

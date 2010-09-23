@@ -262,9 +262,8 @@ def gaussian(M, std, sym=True):
 def general_gaussian(M, p, sig, sym=True):
     """Return a window with a generalized Gaussian shape.
 
-    exp(-0.5*(x/sig)**(2*p))
-
-    half power point is at (2*log(2)))**(1/(2*p))*sig
+    The Gaussian shape is defined as ``exp(-0.5*(x/sig)**(2*p))``, the
+    half-power point is at ``(2*log(2)))**(1/(2*p)) * sig``.
 
     """
     if M < 1:
@@ -286,13 +285,13 @@ def general_gaussian(M, p, sig, sym=True):
 def chebwin(M, at, sym=True):
     """Dolph-Chebyshev window.
 
-    INPUTS:
-
-      M : int
-        Window size
-      at : float
-        Attenuation (in dB)
-      sym : bool
+    Parameters
+    ----------
+    M : int
+        Window size.
+    at : float
+        Attenuation (in dB).
+    sym : bool
         Generates symmetric window if True.
 
     """

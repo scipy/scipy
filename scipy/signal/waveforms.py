@@ -381,8 +381,9 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True,
 
 def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
     """
-    Calculate the phase used by chirp_phase to generate its output.  See
-    chirp_phase for a description of the arguments.
+    Calculate the phase used by chirp_phase to generate its output.
+
+    See `chirp_phase` for a description of the arguments.
 
     """
     f0 = float(f0)
@@ -477,8 +478,9 @@ def sweep_poly(t, poly, phi=0):
 
 def _sweep_poly_phase(t, poly):
     """
-    Calculate the phase used by sweep_poly to generate its output.  See
-    sweep_poly for a description of the arguments.
+    Calculate the phase used by sweep_poly to generate its output.
+
+    See `sweep_poly` for a description of the arguments.
 
     """
     # polyint handles lists, ndarrays and instances of poly1d automatically.
