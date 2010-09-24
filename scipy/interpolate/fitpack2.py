@@ -57,21 +57,21 @@ class UnivariateSpline(object):
     """
     One-dimensional smoothing spline fit to a given set of data points.
 
-    Fits a spline y=s(x) of degree `k` to the provided `x`,`y` data.  `s`
+    Fits a spline y=s(x) of degree `k` to the provided `x`, `y` data.  `s`
     specifies the number of knots by specifying a smoothing condition.
 
     Parameters
     ----------
-    x : sequence
-        input dimension of data points -- must be increasing
-    y : sequence
-         input dimension of data points
-    w : sequence or None, optional
-        weights for spline fitting.  Must be positive.  If None (default),
+    x : array_like
+        1-D array of independent input data. Must be increasing.
+    y : array_like
+        1-D array of dependent input data, of the same length as `x`.
+    w : array_like, optional
+        Weights for spline fitting.  Must be positive.  If None (default),
         weights are all equal.
-    bbox : sequence or None, optional
+    bbox : array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
-        None (default), bbox=[x[0],x[-1]].
+        None (default), ``bbox=[x[0], x[-1]]``.
     k : int, optional
         Degree of the smoothing spline.  Must be <= 5.
     s : float or None, optional
@@ -84,7 +84,6 @@ class UnivariateSpline(object):
         an estimate of the standard deviation of y[i].  If 0, spline will
         interpolate through all data points.
 
-
     See Also
     --------
     InterpolatedUnivariateSpline : Subclass with smoothing forced to 0
@@ -94,20 +93,22 @@ class UnivariateSpline(object):
     splev, sproot, splint, spalde
     BivariateSpline : A similar class for two-dimensional spline interpolation
 
-
+    Notes
+    -----
+    The number of data points must be larger than the spline degree `k`.
 
     Examples
     --------
     >>> from numpy import linspace,exp
     >>> from numpy.random import randn
     >>> from scipy.interpolate import UnivariateSpline
-    >>> x = linspace(-3,3,100)
+    >>> x = linspace(-3, 3, 100)
     >>> y = exp(-x**2) + randn(100)/10
-    >>> s = UnivariateSpline(x,y,s=1)
-    >>> xs = linspace(-3,3,1000)
+    >>> s = UnivariateSpline(x, y, s=1)
+    >>> xs = linspace(-3, 3, 1000)
     >>> ys = s(xs)
 
-    xs,ys is now a smoothed, super-sampled version of the noisy gaussian x,y
+    xs,ys is now a smoothed, super-sampled version of the noisy gaussian x,y.
 
     """
 
@@ -272,25 +273,24 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     """
     One-dimensional interpolating spline for a given set of data points.
 
-    Fits a spline y=s(x) of degree `k` to the provided `x`,`y` data. Spline
+    Fits a spline y=s(x) of degree `k` to the provided `x`, `y` data. Spline
     function passes through all provided points. Equivalent to
     `UnivariateSpline` with  s=0.
 
     Parameters
     ----------
-    x : sequence
+    x : array_like
         input dimension of data points -- must be increasing
-    y : sequence
-         input dimension of data points
-    w : sequence or None, optional
-        weights for spline fitting.  Must be positive.  If None (default),
+    y : array_like
+        input dimension of data points
+    w : array_like, optional
+        Weights for spline fitting.  Must be positive.  If None (default),
         weights are all equal.
-    bbox : sequence or None, optional
+    bbox : array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
         None (default), bbox=[x[0],x[-1]].
     k : int, optional
         Degree of the smoothing spline.  Must be <= 5.
-
 
     See Also
     --------
@@ -301,17 +301,19 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     splev, sproot, splint, spalde
     BivariateSpline : A similar class for two-dimensional spline interpolation
 
-
+    Notes
+    -----
+    The number of data points must be larger than the spline degree `k`.
 
     Examples
     --------
     >>> from numpy import linspace,exp
     >>> from numpy.random import randn
     >>> from scipy.interpolate import UnivariateSpline
-    >>> x = linspace(-3,3,100)
+    >>> x = linspace(-3, 3, 100)
     >>> y = exp(-x**2) + randn(100)/10
-    >>> s = UnivariateSpline(x,y,s=1)
-    >>> xs = linspace(-3,3,1000)
+    >>> s = UnivariateSpline(x, y, s=1)
+    >>> xs = linspace(-3, 3, 1000)
     >>> ys = s(xs)
 
     xs,ys is now a smoothed, super-sampled version of the noisy gaussian x,y
@@ -340,22 +342,22 @@ class LSQUnivariateSpline(UnivariateSpline):
     """
     One-dimensional spline with explicit internal knots.
 
-    Fits a spline y=s(x) of degree `k` to the provided `x`,`y` data.  `t`
+    Fits a spline y=s(x) of degree `k` to the provided `x`, `y` data.  `t`
     specifies the internal knots of the spline
 
     Parameters
     ----------
-    x : sequence
+    x : array_like
         input dimension of data points -- must be increasing
-    y : sequence
+    y : array_like
         input dimension of data points
-    t: sequence
+    t: array_like
         interior knots of the spline.  Must be in ascending order
         and bbox[0]<t[0]<...<t[-1]<bbox[-1]
-    w : sequence or None, optional
+    w : array_like, optional
         weights for spline fitting.  Must be positive.  If None (default),
         weights are all equal.
-    bbox : sequence or None, optional
+    bbox : array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
         None (default), bbox=[x[0],x[-1]].
     k : int, optional
@@ -363,7 +365,6 @@ class LSQUnivariateSpline(UnivariateSpline):
 
     Raises
     ------
-
     ValueError
         If the interior knots do not satisfy the Schoenberg-Whitney conditions
 
@@ -376,7 +377,9 @@ class LSQUnivariateSpline(UnivariateSpline):
     splev, sproot, splint, spalde
     BivariateSpline : A similar class for two-dimensional spline interpolation
 
-
+    Notes
+    -----
+    The number of data points must be larger than the spline degree `k`.
 
     Examples
     --------

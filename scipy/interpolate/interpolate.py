@@ -144,55 +144,68 @@ class interp2d(object):
 
 
 class interp1d(object):
-    """ Interpolate a 1D function.
+    """
+    interp1d(x, y, kind='linear', axis=-1, copy=True, bounds_error=True,
+             fill_value=np.nan)
+
+    Interpolate a 1D function.
+
+    `x` and `y` are arrays of values used to approximate some function f:
+        y = f(x)
+    This class returns a function whose call method uses linear interpolation
+    to find the value of new points.
+
+    Parameters
+    ----------
+    x : array_like
+        A 1-D array of monotonically increasing real values.
+    y : array_like
+        A N-D array of real values. The length of `y` along the interpolation
+        axis must be equal to the length of `x`.
+    kind : str or int, optional
+        Specifies the kind of interpolation as a string
+        ('linear','nearest', 'zero', 'slinear', 'quadratic, 'cubic')
+        or as an integer specifying the order of the spline interpolator
+        to use. Default is 'linear'.
+    axis : int, optional
+        Specifies the axis of `y` along which to interpolate.
+        Interpolation defaults to the last axis of `y`.
+    copy : bool, optional
+        If True, the class makes internal copies of x and y.
+        If False, references to `x` and `y` are used. The default is to copy.
+    bounds_error : bool, optional
+        If True, an error is thrown any time interpolation is attempted on
+        a value outside of the range of x (where extrapolation is
+        necessary). If False, out of bounds values are assigned `fill_value`.
+        By default, an error is raised.
+    fill_value : float, optional
+        If provided, then this value will be used to fill in for requested
+        points outside of the data range. If not provided, then the default
+        is NaN.
 
     See Also
     --------
-    splrep, splev - spline interpolation based on FITPACK
-    UnivariateSpline - a more recent wrapper of the FITPACK routines
+    UnivariateSpline : A more recent wrapper of the FITPACK routines.
+    splrep, splev
+        Spline interpolation based on FITPACK.
+
+    Examples
+    --------
+    >>> import scipy.interpolate
+
+    >>> x = np.arange(0, 10)
+    >>> y = np.exp(-x/3.0)
+    >>> f = sp.interpolate.interp1d(x, y)
+
+    >>> xnew = np.arange(0,9, 0.1)
+    >>> ynew = f(xnew)
+    >>> plt.plot(x, y, 'o', xnew, ynew, '-')
+
     """
 
     def __init__(self, x, y, kind='linear', axis=-1,
                  copy=True, bounds_error=True, fill_value=np.nan):
-        """ Initialize a 1D linear interpolation class.
-
-        Description
-        -----------
-        x and y are arrays of values used to approximate some function f:
-            y = f(x)
-        This class returns a function whose call method uses linear
-        interpolation to find the value of new points.
-
-        Parameters
-        ----------
-        x : array
-            A 1D array of monotonically increasing real values.  x cannot
-            include duplicate values (otherwise f is overspecified)
-        y : array
-            An N-D array of real values.  y's length along the interpolation
-            axis must be equal to the length of x.
-        kind : str or int
-            Specifies the kind of interpolation as a string ('linear',
-            'nearest', 'zero', 'slinear', 'quadratic, 'cubic') or as an integer
-            specifying the order of the spline interpolator to use.
-        axis : int
-            Specifies the axis of y along which to interpolate. Interpolation
-            defaults to the last axis of y.
-        copy : bool
-            If True, the class makes internal copies of x and y.
-            If False, references to x and y are used.
-            The default is to copy.
-        bounds_error : bool
-            If True, an error is thrown any time interpolation is attempted on
-            a value outside of the range of x (where extrapolation is
-            necessary).
-            If False, out of bounds values are assigned fill_value.
-            By default, an error is raised.
-        fill_value : float
-            If provided, then this value will be used to fill in for requested
-            points outside of the data range.
-            If not provided, then the default is NaN.
-        """
+        """ Initialize a 1D linear interpolation class."""
 
         self.copy = copy
         self.bounds_error = bounds_error
