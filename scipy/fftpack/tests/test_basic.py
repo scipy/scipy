@@ -12,7 +12,8 @@ Run tests if fftpack is not installed:
 """
 
 from numpy.testing import assert_, assert_equal, assert_array_almost_equal, \
-        assert_array_almost_equal_nulp, assert_raises, run_module_suite, TestCase
+        assert_array_almost_equal_nulp, assert_raises, run_module_suite, \
+        TestCase, dec
 from scipy.fftpack import ifft,fft,fftn,ifftn,rfft,irfft, fft2
 from scipy.fftpack import _fftpack as fftpack
 
@@ -20,6 +21,25 @@ from numpy import arange, add, array, asarray, zeros, dot, exp, pi,\
      swapaxes, double, cdouble
 import numpy as np
 import numpy.fft
+
+# "large" composite numbers supported by FFTPACK
+LARGE_COMPOSITE_SIZES = [
+    2**13,
+    2**5 * 3**5,
+    2**3 * 3**3 * 5**2,
+]
+SMALL_COMPOSITE_SIZES = [
+    2,
+    2*3*5,
+    2*2*3*3,
+]
+# prime
+LARGE_PRIME_SIZES = [
+    2011
+]
+SMALL_PRIME_SIZES = [
+    29
+]
 
 from numpy.random import rand
 def random(size):
@@ -136,7 +156,6 @@ class _TestFFTBase(TestCase):
             y = fftpack.zrfft(x)
             assert_array_almost_equal(y,y2)
 
-
 class TestDoubleFFT(_TestFFTBase):
     def setUp(self):
         self.cdt = np.cdouble
@@ -146,6 +165,10 @@ class TestSingleFFT(_TestFFTBase):
     def setUp(self):
         self.cdt = np.complex64
         self.rdt = np.float32
+
+    @dec.knownfailureif(True, "single-precision FFT implementation is partially disabled, until accuracy issues with large prime powers are resolved")
+    def test_notice(self):
+        pass
 
 class _TestIFFTBase(TestCase):
     def setUp(self):
@@ -209,6 +232,31 @@ class _TestIFFTBase(TestCase):
                     "Output dtype is %s, expected %s" % (y2.dtype, self.cdt))
             assert_array_almost_equal (y1, x)
             assert_array_almost_equal (y2, x)
+
+    def test_size_accuracy(self):
+        # Sanity check for the accuracy for prime and non-prime sized inputs
+        if self.rdt == np.float32:
+            rtol = 1e-5
+        elif self.rdt == np.float64:
+            rtol = 1e-10
+
+        for size in LARGE_COMPOSITE_SIZES + LARGE_PRIME_SIZES:
+            np.random.seed(1234)
+            x = np.random.rand(size).astype(self.rdt)
+            y = ifft(fft(x))
+            self.failUnless(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
+                            (size, self.rdt))
+            y = fft(ifft(x))
+            self.failUnless(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
+                            (size, self.rdt))
+
+            x = (x + 1j*np.random.rand(size)).astype(self.cdt)
+            y = ifft(fft(x))
+            self.failUnless(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
+                            (size, self.rdt))
+            y = fft(ifft(x))
+            self.failUnless(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
+                            (size, self.rdt))
 
 class TestDoubleIFFT(_TestIFFTBase):
     def setUp(self):
@@ -303,8 +351,27 @@ class _TestIRFFTBase(TestCase):
                     "Output dtype is %s, expected %s" % (y1.dtype, self.rdt))
             self.assertTrue(y2.dtype == self.rdt,
                     "Output dtype is %s, expected %s" % (y2.dtype, self.rdt))
-            assert_array_almost_equal (y1, x, decimal=self.ndec)
-            assert_array_almost_equal (y2, x, decimal=self.ndec)
+            assert_array_almost_equal (y1, x, decimal=self.ndec,
+                                       err_msg="size=%d" % size)
+            assert_array_almost_equal (y2, x, decimal=self.ndec,
+                                       err_msg="size=%d" % size)
+
+    def test_size_accuracy(self):
+        # Sanity check for the accuracy for prime and non-prime sized inputs
+        if self.rdt == np.float32:
+            rtol = 1e-5
+        elif self.rdt == np.float64:
+            rtol = 1e-10
+
+        for size in LARGE_COMPOSITE_SIZES + LARGE_PRIME_SIZES:
+            np.random.seed(1234)
+            x = np.random.rand(size).astype(self.rdt)
+            y = irfft(rfft(x))
+            self.failUnless(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
+                            (size, self.rdt))
+            y = rfft(irfft(x))
+            self.failUnless(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
+                            (size, self.rdt))
 
 # self.ndec is bogus; we should have a assert_array_approx_equal for number of
 # significant digits
@@ -345,6 +412,25 @@ class TestFftnSingle(TestCase):
 
         y_r = np.array(fftn(x), np.complex64)
         assert_array_almost_equal_nulp(y, y_r)
+
+    def test_size_accuracy(self):
+        for size in SMALL_COMPOSITE_SIZES + SMALL_PRIME_SIZES:
+            np.random.seed(1234)
+            x = np.random.rand(size, size) + 1j*np.random.rand(size, size)
+            y1 = fftn(x.astype(np.float32))
+            y2 = fftn(x.astype(np.float64)).astype(np.complex64)
+
+            self.failUnless(y1.dtype == np.complex64)
+            assert_array_almost_equal_nulp(y1, y2, 2000)
+
+        for size in LARGE_COMPOSITE_SIZES + LARGE_PRIME_SIZES:
+            np.random.seed(1234)
+            x = np.random.rand(size, 3) + 1j*np.random.rand(size, 3)
+            y1 = fftn(x.astype(np.float32))
+            y2 = fftn(x.astype(np.float64)).astype(np.complex64)
+
+            self.failUnless(y1.dtype == np.complex64)
+            assert_array_almost_equal_nulp(y1, y2, 2000)
 
 class TestFftn(TestCase):
     def setUp(self):
@@ -529,7 +615,7 @@ class TestIfftnDouble(_TestIfftn):
 class TestIfftnSingle(_TestIfftn):
     dtype = np.float32
     cdtype = np.complex64
-    maxnlp = 2000
+    maxnlp = 3500
 
 class TestLongDoubleFailure(TestCase):
     def setUp(self):

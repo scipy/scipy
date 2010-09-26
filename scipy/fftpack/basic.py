@@ -22,22 +22,73 @@ del atexit
 def istype(arr, typeclass):
     return issubclass(arr.dtype.type, typeclass)
 
+# XXX: single precision FFTs partially disabled due to accuracy issues
+#      for large prime-sized inputs.
+#
+#      See http://permalink.gmane.org/gmane.comp.python.scientific.devel/13834
+#      ("fftpack test failures for 0.8.0b1", Ralf Gommers, 17 Jun 2010,
+#       @ scipy-dev)
+#
+#      These should be re-enabled once the problems are resolved
+
+def _is_safe_size(n):
+    """
+    Is the size of FFT such that FFTPACK can handle it in single precision
+    with sufficient accuracy?
+
+    Composite numbers of 2, 3, and 5 are accepted, as FFTPACK has those
+    """
+    n = int(n)
+    for c in (2, 3, 5):
+        while n % c == 0:
+            n /= c
+    return (n <= 1)
+
+def _fake_crfft(x, n, *a, **kw):
+    if _is_safe_size(n):
+        return _fftpack.crfft(x, n, *a, **kw)
+    else:
+        return _fftpack.zrfft(x, n, *a, **kw).astype(numpy.complex64)
+
+def _fake_cfft(x, n, *a, **kw):
+    if _is_safe_size(n):
+        return _fftpack.cfft(x, n, *a, **kw)
+    else:
+        return _fftpack.zfft(x, n, *a, **kw).astype(numpy.complex64)
+
+def _fake_rfft(x, n, *a, **kw):
+    if _is_safe_size(n):
+        return _fftpack.rfft(x, n, *a, **kw)
+    else:
+        return _fftpack.drfft(x, n, *a, **kw).astype(numpy.float32)
+
+def _fake_cfftnd(x, shape, *a, **kw):
+    if numpy.all(map(_is_safe_size, shape)):
+        return _fftpack.cfftnd(x, shape, *a, **kw)
+    else:
+        return _fftpack.zfftnd(x, shape, *a, **kw).astype(numpy.complex64)
+
 _DTYPE_TO_FFT = {
-        numpy.dtype(numpy.float32): _fftpack.crfft,
+#        numpy.dtype(numpy.float32): _fftpack.crfft,
+        numpy.dtype(numpy.float32): _fake_crfft,
         numpy.dtype(numpy.float64): _fftpack.zrfft,
-        numpy.dtype(numpy.complex64): _fftpack.cfft,
+#        numpy.dtype(numpy.complex64): _fftpack.cfft,
+        numpy.dtype(numpy.complex64): _fake_cfft,
         numpy.dtype(numpy.complex128): _fftpack.zfft,
 }
 
 _DTYPE_TO_RFFT = {
-        numpy.dtype(numpy.float32): _fftpack.rfft,
+#        numpy.dtype(numpy.float32): _fftpack.rfft,
+        numpy.dtype(numpy.float32): _fake_rfft,
         numpy.dtype(numpy.float64): _fftpack.drfft,
 }
 
 _DTYPE_TO_FFTN = {
-        numpy.dtype(numpy.complex64): _fftpack.cfftnd,
+#        numpy.dtype(numpy.complex64): _fftpack.cfftnd,
+        numpy.dtype(numpy.complex64): _fake_cfftnd,
         numpy.dtype(numpy.complex128): _fftpack.zfftnd,
-        numpy.dtype(numpy.float32): _fftpack.cfftnd,
+#        numpy.dtype(numpy.float32): _fftpack.cfftnd,
+        numpy.dtype(numpy.float32): _fake_cfftnd,
         numpy.dtype(numpy.float64): _fftpack.zfftnd,
 }
 
