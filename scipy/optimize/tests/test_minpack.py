@@ -8,7 +8,8 @@ import numpy as np
 from numpy import array, float64
 
 from scipy import optimize
-from scipy.optimize.minpack import leastsq, curve_fit
+from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
+
 
 class TestFSolve(object):
     def pressure_network(self, flow_rates, Qtot, k):
@@ -82,6 +83,7 @@ class TestFSolve(object):
             fprime=self.pressure_network_jacobian)
         assert_array_almost_equal(final_flows, np.ones(4))
 
+
 class TestLeastSq(TestCase):
     def setUp(self):
         x = np.linspace(0, 10, 40)
@@ -123,6 +125,7 @@ class TestLeastSq(TestCase):
         assert_(ier in (1,2,3,4), 'solution not found: %s'%mesg)
         assert_array_equal(p0, p0_copy)
 
+
 class TestCurveFit(TestCase):
     def setUp(self):
         self.y = array([1.0, 3.2, 9.5, 13.7])
@@ -147,6 +150,56 @@ class TestCurveFit(TestCase):
         assert_array_almost_equal(pcov, [[0.0852, -0.1260],[-0.1260, 0.1912]], decimal=4)
 
 
+class TestFixedPoint(TestCase):
+
+    def text_scalar_trivial(self):
+        """f(x) = 2x; fixed point should be x=0"""
+        def func(x):
+            return 2.0*x
+        x0 = 1.0
+        x = fixed_point(func, x0)
+        assert_almost_equal(x, 0.0)
+
+    def test_scalar_basic1(self):
+        """f(x) = x**2; x0=1.05; fixed point should be x=1"""
+        def func(x):
+            return x**2
+        x0 = 1.05
+        x = fixed_point(func, x0)
+        assert_almost_equal(x, 1.0)
+
+    def test_scalar_basic2(self):
+        """f(x) = x**0.5; x0=1.05; fixed point should be x=1"""
+        def func(x):
+            return x**0.5
+        x0 = 1.05
+        x = fixed_point(func, x0)
+        assert_almost_equal(x, 1.0)
+
+    def test_array_trivial(self):
+        def func(x):
+            return 2.0*x
+        x0 = [0.3, 0.15]
+        x = fixed_point(func, x0)
+        assert_almost_equal(x, [0.0, 0.0])
+
+    def test_array_basic1(self):
+        """f(x) = c * x**2; fixed point should be x=1/c"""
+        def func(x, c):
+            return c * x**2
+        c = array([0.75, 1.0, 1.25])
+        x0 = [1.1, 1.15, 0.9]
+        x = fixed_point(func, x0, args=(c,))
+        assert_almost_equal(x, 1.0/c)
+
+    def test_array_basic2(self):
+        """f(x) = c * x**0.5; fixed point should be x=c**2"""
+        def func(x, c):
+            return c * x**0.5
+        c = array([0.75, 1.0, 1.25])
+        x0 = [0.8, 1.1, 1.1]
+        x = fixed_point(func, x0, args=(c,))
+        assert_almost_equal(x, c**2)
 
 
 if __name__ == "__main__":

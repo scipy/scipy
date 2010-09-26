@@ -3,7 +3,7 @@ import _minpack
 
 from numpy import atleast_1d, dot, take, triu, shape, eye, \
                   transpose, zeros, product, greater, array, \
-                  all, where, isscalar, asarray, inf
+                  all, where, isscalar, asarray, inf, abs
 
 error = _minpack.error
 
@@ -480,7 +480,7 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
             d = p2 - 2.0 * p1 + p0
             p = where(d == 0, p2, p0 - (p1 - p0)*(p1 - p0) / d)
             relerr = where(p0 == 0, p, (p-p0)/p0)
-            if all(relerr < xtol):
+            if all(abs(relerr) < xtol):
                 return p
             p0 = p
     else:
@@ -497,7 +497,7 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
                 relerr = p
             else:
                 relerr = (p - p0)/p0
-            if relerr < xtol:
+            if abs(relerr) < xtol:
                 return p
             p0 = p
     msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
