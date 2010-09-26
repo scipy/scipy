@@ -3,12 +3,31 @@ Unit tests for optimization routines from minpack.py.
 """
 
 from numpy.testing import assert_, assert_almost_equal, assert_array_equal, \
-        assert_array_almost_equal, TestCase, run_module_suite
+        assert_array_almost_equal, TestCase, run_module_suite, assert_raises
 import numpy as np
 from numpy import array, float64
 
 from scipy import optimize
 from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
+
+
+class ReturnShape(object):
+    """This class exists to create a callable that does not have a 'func_name' attribute.
+    
+    __init__ takes the argument 'shape', which should be a tuple of ints.  When an instance
+    it called with a single argument 'x', it returns numpy.ones(shape). 
+    """
+    def __init__(self, shape):
+        self.shape = shape
+
+    def __call__(self, x):
+        return np.ones(self.shape)
+
+def dummy_func(x, shape):
+    """A function that returns an array of ones of the given shape.
+    `x` is ignored.
+    """
+    return np.ones(shape)
 
 
 class TestFSolve(object):
@@ -83,6 +102,31 @@ class TestFSolve(object):
             fprime=self.pressure_network_jacobian)
         assert_array_almost_equal(final_flows, np.ones(4))
 
+    def test_wrong_shape_func_callable(self):
+        """The callable 'func' has no 'func_name' attribute."""
+        func = ReturnShape(1)
+        # x0 is a list of two elements, but func will return an array with
+        # length 1, so this should result in a TypeError.
+        x0 = [1.5, 2.0]
+        assert_raises(TypeError, optimize.fsolve, func, x0)
+
+    def test_wrong_shape_func_function(self):
+        # x0 is a list of two elements, but func will return an array with
+        # length 1, so this should result in a TypeError.
+        x0 = [1.5, 2.0]
+        assert_raises(TypeError, optimize.fsolve, dummy_func, x0, args=((1,),))
+
+    def test_wrong_shape_fprime_callable(self):
+        """The callables 'func' and 'deriv_func' have no 'func_name' attribute."""
+        func = ReturnShape(1)
+        deriv_func = ReturnShape((2,2))
+        assert_raises(TypeError, optimize.fsolve, func, x0=[0,1], fprime=deriv_func)
+
+    def test_wrong_shape_fprime_function(self):
+        func = lambda x: dummy_func(x, (2,))
+        deriv_func = lambda x: dummy_func(x, (3,3))
+        assert_raises(TypeError, optimize.fsolve, func, x0=[0,1], fprime=deriv_func)
+
 
 class TestLeastSq(TestCase):
     def setUp(self):
@@ -124,6 +168,31 @@ class TestLeastSq(TestCase):
         params_fit, cov_x, infodict, mesg, ier = full_output
         assert_(ier in (1,2,3,4), 'solution not found: %s'%mesg)
         assert_array_equal(p0, p0_copy)
+
+    def test_wrong_shape_func_callable(self):
+        """The callable 'func' has no 'func_name' attribute."""
+        func = ReturnShape(1)
+        # x0 is a list of two elements, but func will return an array with
+        # length 1, so this should result in a TypeError.
+        x0 = [1.5, 2.0]
+        assert_raises(TypeError, optimize.leastsq, func, x0)
+
+    def test_wrong_shape_func_function(self):
+        # x0 is a list of two elements, but func will return an array with
+        # length 1, so this should result in a TypeError.
+        x0 = [1.5, 2.0]
+        assert_raises(TypeError, optimize.leastsq, dummy_func, x0, args=((1,),))
+
+    def test_wrong_shape_Dfun_callable(self):
+        """The callables 'func' and 'deriv_func' have no 'func_name' attribute."""
+        func = ReturnShape(1)
+        deriv_func = ReturnShape((2,2))
+        assert_raises(TypeError, optimize.leastsq, func, x0=[0,1], Dfun=deriv_func)
+
+    def test_wrong_shape_Dfun_function(self):
+        func = lambda x: dummy_func(x, (2,))
+        deriv_func = lambda x: dummy_func(x, (3,3))
+        assert_raises(TypeError, optimize.leastsq, func, x0=[0,1], Dfun=deriv_func)
 
 
 class TestCurveFit(TestCase):

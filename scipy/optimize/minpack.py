@@ -9,15 +9,20 @@ error = _minpack.error
 
 __all__ = ['fsolve', 'leastsq', 'fixed_point', 'curve_fit']
 
-def check_func(thefunc, x0, args, numinputs, output_shape=None):
-    res = atleast_1d(thefunc(*((x0[:numinputs],)+args)))
+def _check_func(checker, argname, thefunc, x0, args, numinputs, output_shape=None):
+    res = atleast_1d(thefunc(*((x0[:numinputs],) + args)))
     if (output_shape is not None) and (shape(res) != output_shape):
         if (output_shape[0] != 1):
             if len(output_shape) > 1:
                 if output_shape[1] == 1:
                     return shape(res)
-            msg = "There is a mismatch between the input and output " \
-                  "shape of %s." % thefunc.func_name
+            msg = "%s: there is a mismatch between the input and output " \
+                  "shape of the '%s' argument" % (checker, argname)
+            func_name = getattr(thefunc, 'func_name', None)
+            if func_name:
+                msg += " '%s'." % func_name
+            else:
+                msg += "."
             raise TypeError(msg)
     return shape(res)
 
@@ -107,7 +112,8 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     x0 = array(x0, ndmin=1)
     n = len(x0)
     if type(args) != type(()): args = (args,)
-    check_func(func, x0, args, n, (n,))
+    _check_func('fsolve', 'func', func, x0, args, n, (n,))
+    #check_func(func, x0, args, n, (n,))
     Dfun = fprime
     if Dfun is None:
         if band is None:
@@ -119,7 +125,8 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
         retval = _minpack._hybrd(func, x0, args, full_output, xtol,
                 maxfev, ml, mu, epsfcn, factor, diag)
     else:
-        check_func(Dfun,x0,args,n,(n,n))
+        _check_func('fsolve', 'fprime', Dfun, x0, args, n, (n,n))
+        # check_func(Dfun,x0,args,n,(n,n))
         if (maxfev == 0):
             maxfev = 100*(n + 1)
         retval = _minpack._hybrj(func, Dfun, x0, args, full_output,
@@ -253,7 +260,8 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     n = len(x0)
     if type(args) != type(()):
         args = (args,)
-    m = check_func(func, x0, args, n)[0]
+    m = _check_func('leastsq', 'func', func, x0, args, n)[0]
+    # m = check_func(func, x0, args, n)[0]
     if n > m:
         raise TypeError('Improper input: N=%s must not exceed M=%s' % (n,m))
     if Dfun is None:
@@ -263,9 +271,11 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
                 gtol, maxfev, epsfcn, factor, diag)
     else:
         if col_deriv:
-            check_func(Dfun, x0, args, n, (n,m))
+            _check_func('leastsq', 'Dfun', Dfun, x0, args, n, (n,m))
+            # check_func(Dfun, x0, args, n, (n,m))
         else:
-            check_func(Dfun, x0, args, n, (m,n))
+            _check_func('leastsq', 'Dfun', Dfun, x0, args, n, (m,n))
+            # check_func(Dfun, x0, args, n, (m,n))
         if (maxfev == 0):
             maxfev = 100*(n + 1)
         retval = _minpack._lmder(func, Dfun, x0, args, full_output, col_deriv,
