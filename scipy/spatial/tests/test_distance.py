@@ -828,7 +828,7 @@ class TestPdist(TestCase):
 
     def test_pdist_minkowski_3_2_iris_float32(self):
         "Tests pdist(X, 'minkowski') on iris data. (float32)"
-        eps = 1e-07
+        eps = 1e-06
         # Get the data: the input matrix and the right output.
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-minkowski-3.2-iris']
