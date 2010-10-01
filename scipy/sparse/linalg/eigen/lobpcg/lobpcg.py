@@ -158,7 +158,6 @@ def lobpcg( A, X,
     This function implements the Locally Optimal Block Preconditioned
     Conjugate Gradient Method (LOBPCG).
 
-
     Parameters
     ----------
     A : {sparse matrix, dense matrix, LinearOperator}
@@ -167,6 +166,17 @@ def lobpcg( A, X,
     X : array_like
         Initial approximation to the k eigenvectors. If A has
         shape=(n,n) then X should have shape shape=(n,k).
+    B : {dense matrix, sparse matrix, LinearOperator}, optional
+        the right hand side operator in a generalized eigenproblem.
+        by default, B = Identity
+        often called the "mass matrix"
+    M : {dense matrix, sparse matrix, LinearOperator}, optional
+        preconditioner to A; by default M = Identity
+        M should approximate the inverse of A
+    Y : array_like, optional
+        n-by-sizeY matrix of constraints, sizeY < n
+        The iterations will be performed in the B-orthogonal complement
+        of the column-space of Y. Y must be full rank.
 
     Returns
     -------
@@ -175,36 +185,21 @@ def lobpcg( A, X,
     v : array
         An array of k eigenvectors.  V has the same shape as X.
 
-
-    Optional Parameters
-    -------------------
-    B : {dense matrix, sparse matrix, LinearOperator}
-        the right hand side operator in a generalized eigenproblem.
-        by default, B = Identity
-        often called the "mass matrix"
-    M : {dense matrix, sparse matrix, LinearOperator}
-        preconditioner to A; by default M = Identity
-        M should approximate the inverse of A
-    Y : array_like
-        n-by-sizeY matrix of constraints, sizeY < n
-        The iterations will be performed in the B-orthogonal complement
-        of the column-space of Y. Y must be full rank.
-
     Other Parameters
     ----------------
-    tol : scalar
+    tol : scalar, optional
         Solver tolerance (stopping criterion)
         by default: tol=n*sqrt(eps)
-    maxiter: integer
+    maxiter: integer, optional
         maximum number of iterations
         by default: maxiter=min(n,20)
-    largest : boolean
+    largest : boolean, optional
         when True, solve for the largest eigenvalues, otherwise the smallest
-    verbosityLevel : integer
+    verbosityLevel : integer, optional
         controls solver output.  default: verbosityLevel = 0.
-    retLambdaHistory : boolean
+    retLambdaHistory : boolean, optional
         whether to return eigenvalue history
-    retResidualNormsHistory : boolean
+    retResidualNormsHistory : boolean, optional
         whether to return history of residual norms
 
 

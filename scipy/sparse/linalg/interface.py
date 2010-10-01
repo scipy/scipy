@@ -21,8 +21,8 @@ class LinearOperator:
     matvec : callable f(v)
         Returns returns A * v.
 
-    Optional Parameters
-    -------------------
+    Other Parameters
+    ----------------
     rmatvec : callable f(v)
         Returns A^H * v, where A^H is the conjugate transpose of A.
     matmat : callable f(V)

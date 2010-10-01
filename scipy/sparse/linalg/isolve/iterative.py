@@ -21,8 +21,18 @@ A : {sparse matrix, dense matrix, LinearOperator}
 b : {array, matrix}
     Right hand side of the linear system. Has shape (N,) or (N,1).
 
-Optional Parameters
--------------------
+Returns
+-------
+x : {array, matrix}
+    The converged solution.
+info : integer
+    Provides convergence information:
+        0  : successful exit
+        >0 : convergence to tolerance not achieved, number of iterations
+        <0 : illegal input or breakdown
+
+Other Parameters
+----------------
 x0  : {array, matrix}
     Starting guess for the solution.
 tol : float
@@ -39,26 +49,16 @@ M : {sparse matrix, dense matrix, LinearOperator}
 callback : function
     User-supplied function to call after each iteration.  It is called
     as callback(xk), where xk is the current solution vector.
-
-Outputs
--------
-x : {array, matrix}
-    The converged solution.
-info : integer
-    Provides convergence information:
-        0  : successful exit
-        >0 : convergence to tolerance not achieved, number of iterations
-        <0 : illegal input or breakdown
-
-Deprecated Parameters
-----------------------
 xtype : {'f','d','F','D'}
+    This parameter is deprecated -- avoid using it.
+
     The type of the result.  If None, then it will be determined from
     A.dtype.char and b.  If A does not have a typecode method then it
     will compute A.matvec(x0) to get a typecode.   To save the extra
     computation when A does not have a typecode attribute use xtype=0
     for the same type as b or use xtype='f','d','F',or 'D'.
     This parameter has been superceeded by LinearOperator.
+
 """
 
 
@@ -314,8 +314,18 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
     b : {array, matrix}
         Right hand side of the linear system. Has shape (N,) or (N,1).
 
-    Optional Parameters
-    -------------------
+    Returns
+    -------
+    x : {array, matrix}
+        The converged solution.
+    info : integer
+        Provides convergence information:
+            0  : successful exit
+            >0 : convergence to tolerance not achieved, number of iterations
+            <0 : illegal input or breakdown
+
+    Other Parameters
+    ----------------
     x0  : {array, matrix}
         Starting guess for the solution.
     tol : float
@@ -336,30 +346,19 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
     callback : function
         User-supplied function to call after each iteration.  It is called
         as callback(rk), where rk is the current residual vector.
-
-    Outputs
-    -------
-    x : {array, matrix}
-        The converged solution.
-    info : integer
-        Provides convergence information:
-            0  : successful exit
-            >0 : convergence to tolerance not achieved, number of iterations
-            <0 : illegal input or breakdown
-
-    See Also
-    --------
-    LinearOperator
-
-    Deprecated Parameters
-    ---------------------
     xtype : {'f','d','F','D'}
+        This parameter is DEPRECATED --- avoid using it.
+
         The type of the result.  If None, then it will be determined from
         A.dtype.char and b.  If A does not have a typecode method then it
         will compute A.matvec(x0) to get a typecode.   To save the extra
         computation when A does not have a typecode attribute use xtype=0
         for the same type as b or use xtype='f','d','F',or 'D'.
         This parameter has been superceeded by LinearOperator.
+
+    See Also
+    --------
+    LinearOperator
 
     """
 
@@ -460,8 +459,18 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
     b : {array, matrix}
         Right hand side of the linear system. Has shape (N,) or (N,1).
 
-    Optional Parameters
-    -------------------
+    Returns
+    -------
+    x : {array, matrix}
+        The converged solution.
+    info : integer
+        Provides convergence information:
+            0  : successful exit
+            >0 : convergence to tolerance not achieved, number of iterations
+            <0 : illegal input or breakdown
+
+    Other Parameters
+    ----------------
     x0  : {array, matrix}
         Starting guess for the solution.
     tol : float
@@ -479,30 +488,19 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
     callback : function
         User-supplied function to call after each iteration.  It is called
         as callback(xk), where xk is the current solution vector.
-
-    Outputs
-    -------
-    x : {array, matrix}
-        The converged solution.
-    info : integer
-        Provides convergence information:
-            0  : successful exit
-            >0 : convergence to tolerance not achieved, number of iterations
-            <0 : illegal input or breakdown
-
-    See Also
-    --------
-    LinearOperator
-
-    Deprecated Parameters
-    ---------------------
     xtype : {'f','d','F','D'}
+        This parameter is DEPRECATED -- avoid using it.
+
         The type of the result.  If None, then it will be determined from
         A.dtype.char and b.  If A does not have a typecode method then it
         will compute A.matvec(x0) to get a typecode.   To save the extra
         computation when A does not have a typecode attribute use xtype=0
         for the same type as b or use xtype='f','d','F',or 'D'.
         This parameter has been superceeded by LinearOperator.
+
+    See Also
+    --------
+    LinearOperator
 
     """
     A_ = A
