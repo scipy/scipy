@@ -9,7 +9,7 @@ global test_dir
 test_dir = ''
 
 import numpy
-from numpy.testing import *
+from numpy.testing import TestCase, dec, assert_
 
 from scipy.weave import inline_tools,ext_tools
 from scipy.weave.build_tools import msvc_exists, gcc_exists
@@ -33,6 +33,7 @@ def remove_whitespace(in_str):
 #----------------------------------------------------------------------------
 
 class NumpyComplexScalarConverter(TestCase):
+
     compiler = ''
 
     def setUp(self):
@@ -40,16 +41,19 @@ class NumpyComplexScalarConverter(TestCase):
 
     @dec.slow
     def test_type_match_string(self):
-        assert( not self.converter.type_match('string') )
+        assert_( not self.converter.type_match('string') )
+
     @dec.slow
     def test_type_match_int(self):
-        assert( not self.converter.type_match(5))
+        assert_( not self.converter.type_match(5))
+
     @dec.slow
     def test_type_match_float(self):
-        assert( not self.converter.type_match(5.))
+        assert_( not self.converter.type_match(5.))
+
     @dec.slow
     def test_type_match_complex128(self):
-        assert(self.converter.type_match(numpy.complex128(5.+1j)))
+        assert_(self.converter.type_match(numpy.complex128(5.+1j)))
 
     @dec.slow
     def test_complex_var_in(self):
@@ -91,13 +95,13 @@ class NumpyComplexScalarConverter(TestCase):
         exec 'from ' + mod_name + ' import test'
         b=1.+1j
         c = test(b)
-        assert( c == 3.+3j)
+        assert_( c == 3.+3j)
 
     @dec.slow
     def test_inline(self):
         a = numpy.complex128(1+1j)
         result = inline_tools.inline("return_val=1.0/a;",['a'])
-        assert( result==.5-.5j)
+        assert_( result==.5-.5j)
 
 # class TestMsvcNumpyComplexScalarConverter(
 #                   TestNumpyComplexScalarConverter):
@@ -149,6 +153,7 @@ else:
 if not (gcc_exists() and msvc_exists() and sys.platform == 'win32'):
     for _n in dir():
         if _n[:7]=='TestGcc': exec 'del '+_n
+
 
 if __name__ == "__main__":
     import nose

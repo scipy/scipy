@@ -1,7 +1,7 @@
-from numpy.testing import *
+from numpy.testing import TestCase, assert_equal
 
 from scipy.weave import ast_tools
-from weave_test_utils import *
+
 
 class TestHarvestVariables(TestCase):
     """ Not much testing going on here, but

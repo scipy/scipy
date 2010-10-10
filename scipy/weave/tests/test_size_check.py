@@ -1,8 +1,8 @@
 import numpy as np
-from numpy.testing import *
+from numpy.testing import TestCase, assert_array_equal, run_module_suite
 
 from scipy.weave import size_check
-from scipy.weave.ast_tools import *
+from scipy.weave.ast_tools import harvest_variables
 
 empty = np.array(())
 
@@ -316,14 +316,14 @@ class TestExpressions(TestCase):
         except:
             print 'EXPR:',expr
             print 'ACTUAL:',actual
-            print 'DEISRED:',desired
+            print 'DESIRED:',desired
     def generic_wrap(self,expr,**kw):
         try:
             x = np.array(eval(expr,kw))
             try:
                 desired = x.shape
             except:
-                desired = zeros(())
+                desired = np.zeros(())
         except:
             desired = 'failed'
         self.generic_check(expr,desired,**kw)
@@ -365,5 +365,4 @@ class TestExpressions(TestCase):
 
 
 if __name__ == "__main__":
-    import nose
     run_module_suite()

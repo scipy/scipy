@@ -3,7 +3,7 @@
 
 import sys
 
-from numpy.testing import *
+from numpy.testing import TestCase, dec, assert_, assert_raises
 
 from scipy.weave import inline_tools
 
@@ -21,11 +21,12 @@ class TestDictConstruct(TestCase):
                return_val = val;
                """
         res = inline_tools.inline(code)
-        assert sys.getrefcount(res) == 2
-        assert res == {}
+        assert_(sys.getrefcount(res) == 2)
+        assert_(res == {})
 
 
 class TestDictHasKey(TestCase):
+
     @dec.slow
     def test_obj(self):
         class Foo:
@@ -37,7 +38,8 @@ class TestDictHasKey(TestCase):
                return_val =  a.has_key(key);
                """
         res = inline_tools.inline(code,['a','key'])
-        assert res
+        assert_(res)
+
     @dec.slow
     def test_int(self):
         a = {}
@@ -46,7 +48,8 @@ class TestDictHasKey(TestCase):
                return_val = a.has_key(1234);
                """
         res = inline_tools.inline(code,['a'])
-        assert res
+        assert_(res)
+
     @dec.slow
     def test_double(self):
         a = {}
@@ -55,7 +58,8 @@ class TestDictHasKey(TestCase):
                return_val = a.has_key(1234.);
                """
         res = inline_tools.inline(code,['a'])
-        assert res
+        assert_(res)
+
     @dec.slow
     def test_complex(self):
         a = {}
@@ -65,7 +69,7 @@ class TestDictHasKey(TestCase):
                return_val = a.has_key(key);
                """
         res = inline_tools.inline(code,['a','key'])
-        assert res
+        assert_(res)
 
     @dec.slow
     def test_string(self):
@@ -75,7 +79,8 @@ class TestDictHasKey(TestCase):
                return_val = a.has_key("b");
                """
         res = inline_tools.inline(code,['a'])
-        assert res
+        assert_(res)
+
     @dec.slow
     def test_std_string(self):
         a = {}
@@ -85,7 +90,8 @@ class TestDictHasKey(TestCase):
                return_val = a.has_key(key_name);
                """
         res = inline_tools.inline(code,['a','key_name'])
-        assert res
+        assert_(res)
+
     @dec.slow
     def test_string_fail(self):
         a = {}
@@ -94,7 +100,8 @@ class TestDictHasKey(TestCase):
                return_val = a.has_key("c");
                """
         res = inline_tools.inline(code,['a'])
-        assert not res
+        assert_(not res)
+
 
 class TestDictGetItemOp(TestCase):
 
@@ -103,7 +110,7 @@ class TestDictGetItemOp(TestCase):
         a['b'] = 12345
 
         res = inline_tools.inline(code,args)
-        assert res == a['b']
+        assert_(res == a['b'])
 
     @dec.slow
     def test_char(self):
@@ -114,10 +121,7 @@ class TestDictGetItemOp(TestCase):
     def test_char_fail(self):
         # We can't through a KeyError for dicts on RHS of
         # = but not on LHS.  Not sure how to deal with this.
-        try:
-            self.generic_get('return_val = a["c"];')
-        except KeyError:
-            pass
+        assert_raises(KeyError, self.generic_get, 'return_val = a["c"];')
 
     @dec.slow
     def test_string(self):
@@ -137,16 +141,15 @@ class TestDictGetItemOp(TestCase):
     def test_obj_fail(self):
         # We can't through a KeyError for dicts on RHS of
         # = but not on LHS.  Not sure how to deal with this.
-        try:
-            code = """
-                   py::object name = "c";
-                   return_val = a[name];
-                   """
-            self.generic_get(code,['a'])
-        except KeyError:
-            pass
+        code = """
+               py::object name = "c";
+               return_val = a[name];
+               """
+        assert_raises(KeyError, self.generic_get, code, ['a'])
+
 
 class TestDictSetOperator(TestCase):
+
     def generic_new(self,key,val):
         # test that value is set correctly and that reference counts
         # on dict, key, and val are being handled correctly.
@@ -154,12 +157,13 @@ class TestDictSetOperator(TestCase):
         # call once to handle mysterious addition of one ref count
         # on first call to inline.
         inline_tools.inline("a[key] = val;",['a','key','val'])
-        assert a[key] == val
+        assert_(a[key] == val)
         before = sys.getrefcount(a), sys.getrefcount(key), sys.getrefcount(val)
         inline_tools.inline("a[key] = val;",['a','key','val'])
-        assert a[key] == val
+        assert_(a[key] == val)
         after = sys.getrefcount(a), sys.getrefcount(key), sys.getrefcount(val)
-        assert before == after
+        assert_(before == after)
+
     def generic_overwrite(self,key,val):
         a = {}
         overwritten = 1
@@ -168,31 +172,35 @@ class TestDictSetOperator(TestCase):
         # on first call to inline.
         before_overwritten = sys.getrefcount(overwritten)
         inline_tools.inline("a[key] = val;",['a','key','val'])
-        assert a[key] == val
+        assert_(a[key] == val)
         before = sys.getrefcount(a), sys.getrefcount(key), sys.getrefcount(val)
         inline_tools.inline("a[key] = val;",['a','key','val'])
-        assert a[key] == val
+        assert_(a[key] == val)
         after = sys.getrefcount(a), sys.getrefcount(key), sys.getrefcount(val)
         after_overwritten = sys.getrefcount(overwritten)
-        assert before == after
-        assert before_overwritten == after_overwritten
+        assert_(before == after)
+        assert_(before_overwritten == after_overwritten)
 
     @dec.slow
     def test_new_int_int(self):
         key,val = 1234,12345
         self.generic_new(key,val)
+
     @dec.slow
     def test_new_double_int(self):
         key,val = 1234.,12345
         self.generic_new(key,val)
+
     @dec.slow
     def test_new_std_string_int(self):
         key,val = "hello",12345
         self.generic_new(key,val)
+
     @dec.slow
     def test_new_complex_int(self):
         key,val = 1+1j,12345
         self.generic_new(key,val)
+
     @dec.slow
     def test_new_obj_int(self):
         class Foo:
@@ -204,18 +212,22 @@ class TestDictSetOperator(TestCase):
     def test_overwrite_int_int(self):
         key,val = 1234,12345
         self.generic_overwrite(key,val)
+
     @dec.slow
     def test_overwrite_double_int(self):
         key,val = 1234.,12345
         self.generic_overwrite(key,val)
+
     @dec.slow
     def test_overwrite_std_string_int(self):
         key,val = "hello",12345
         self.generic_overwrite(key,val)
+
     @dec.slow
     def test_overwrite_complex_int(self):
         key,val = 1+1j,12345
         self.generic_overwrite(key,val)
+
     @dec.slow
     def test_overwrite_obj_int(self):
         class Foo:
@@ -223,7 +235,9 @@ class TestDictSetOperator(TestCase):
         key,val = Foo(),12345
         self.generic_overwrite(key,val)
 
+
 class TestDictDel(TestCase):
+
     def generic(self,key):
         # test that value is set correctly and that reference counts
         # on dict, key, are being handled correctly. after deletion,
@@ -231,30 +245,35 @@ class TestDictDel(TestCase):
         a = {}
         a[key] = 1
         inline_tools.inline("a.del(key);",['a','key'])
-        assert key not in a
+        assert_(key not in a)
         a[key] = 1
         before = sys.getrefcount(a), sys.getrefcount(key)
         inline_tools.inline("a.del(key);",['a','key'])
-        assert key not in a
+        assert_(key not in a)
         after = sys.getrefcount(a), sys.getrefcount(key)
-        assert before[0] == after[0]
-        assert before[1] == after[1] + 1
+        assert_(before[0] == after[0])
+        assert_(before[1] == after[1] + 1)
+
     @dec.slow
     def test_int(self):
         key = 1234
         self.generic(key)
+
     @dec.slow
     def test_double(self):
         key = 1234.
         self.generic(key)
+
     @dec.slow
     def test_std_string(self):
         key = "hello"
         self.generic(key)
+
     @dec.slow
     def test_complex(self):
         key = 1+1j
         self.generic(key)
+
     @dec.slow
     def test_obj(self):
         class Foo:
@@ -262,38 +281,45 @@ class TestDictDel(TestCase):
         key = Foo()
         self.generic(key)
 
+
 class TestDictOthers(TestCase):
+
     @dec.slow
     def test_clear(self):
         a = {}
         a["hello"] = 1
         inline_tools.inline("a.clear();",['a'])
-        assert not a
+        assert_(not a)
+
     @dec.slow
     def test_items(self):
         a = {}
         a["hello"] = 1
         items = inline_tools.inline("return_val = a.items();",['a'])
-        assert items == a.items()
+        assert_(items == a.items())
+
     @dec.slow
     def test_values(self):
         a = {}
         a["hello"] = 1
         values = inline_tools.inline("return_val = a.values();",['a'])
-        assert values == a.values()
+        assert_(values == a.values())
+
     @dec.slow
     def test_keys(self):
         a = {}
         a["hello"] = 1
         keys = inline_tools.inline("return_val = a.keys();",['a'])
-        assert keys == a.keys()
+        assert_(keys == a.keys())
+
     @dec.slow
     def test_update(self):
         a,b = {},{}
         a["hello"] = 1
         b["hello"] = 2
         inline_tools.inline("a.update(b);",['a','b'])
-        assert a == b
+        assert_(a == b)
+
 
 if __name__ == "__main__":
     import nose

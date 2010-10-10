@@ -1,7 +1,8 @@
-from numpy import *
-from numpy.testing import *
+
+from numpy.testing import TestCase, dec, assert_
 
 from scipy.weave import inline_tools
+
 
 class TestInline(TestCase):
     """ These are long running tests...
@@ -19,7 +20,7 @@ class TestInline(TestCase):
                    return_val = PyInt_FromLong(a+1);
                """
         result = inline_tools.inline(code,['a'])
-        assert(result == 4)
+        assert_(result == 4)
 
 ## Unfortunately, it is not always possible to catch distutils compiler
 ## errors, since SystemExit is used.  Until that is fixed, these tests
@@ -28,7 +29,7 @@ class TestInline(TestCase):
 ##         try:
 ##             a = 1
 ##             result = inline_tools.inline(code,['a'])
-##             assert(1) # should've thrown a ValueError
+##             assert_(1) # should've thrown a ValueError
 ##         except ValueError:
 ##             pass
 
@@ -36,7 +37,7 @@ class TestInline(TestCase):
 ##         try:
 ##             a = 'string'
 ##             result = inline_tools.inline(code,['a'])
-##             assert(1) # should've gotten an error
+##             assert_(1) # should've gotten an error
 ##         except:
 ##             # ?CompileError is the error reported, but catching it doesn't work
 ##             pass

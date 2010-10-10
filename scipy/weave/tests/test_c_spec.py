@@ -8,7 +8,7 @@ import sys
 global test_dir
 test_dir = ''
 
-from numpy.testing import *
+from numpy.testing import TestCase, dec, assert_
 
 from scipy.weave import inline_tools,ext_tools,c_spec
 from scipy.weave.build_tools import msvc_exists, gcc_exists
@@ -48,23 +48,29 @@ def remove_whitespace(in_str):
 
 
 class IntConverter(TestCase):
+
     compiler = ''
+
     @dec.slow
     def test_type_match_string(self):
         s = c_spec.int_converter()
-        assert( not s.type_match('string') )
+        assert_( not s.type_match('string') )
+
     @dec.slow
     def test_type_match_int(self):
         s = c_spec.int_converter()
-        assert(s.type_match(5))
+        assert_(s.type_match(5))
+
     @dec.slow
     def test_type_match_float(self):
         s = c_spec.int_converter()
-        assert(not s.type_match(5.))
+        assert_(not s.type_match(5.))
+
     @dec.slow
     def test_type_match_complex(self):
         s = c_spec.int_converter()
-        assert(not s.type_match(5.+1j))
+        assert_(not s.type_match(5.+1j))
+
     @dec.slow
     def test_var_in(self):
         mod_name = 'int_var_in' + self.compiler
@@ -106,26 +112,33 @@ class IntConverter(TestCase):
         b=1
         c = test(b)
 
-        assert( c == 3)
+        assert_( c == 3)
+
 
 class FloatConverter(TestCase):
+
     compiler = ''
+
     @dec.slow
     def test_type_match_string(self):
         s = c_spec.float_converter()
-        assert( not s.type_match('string'))
+        assert_( not s.type_match('string'))
+
     @dec.slow
     def test_type_match_int(self):
         s = c_spec.float_converter()
-        assert(not s.type_match(5))
+        assert_(not s.type_match(5))
+
     @dec.slow
     def test_type_match_float(self):
         s = c_spec.float_converter()
-        assert(s.type_match(5.))
+        assert_(s.type_match(5.))
+
     @dec.slow
     def test_type_match_complex(self):
         s = c_spec.float_converter()
-        assert(not s.type_match(5.+1j))
+        assert_(not s.type_match(5.+1j))
+
     @dec.slow
     def test_float_var_in(self):
         mod_name = sys._getframe().f_code.co_name + self.compiler
@@ -150,7 +163,6 @@ class FloatConverter(TestCase):
         except TypeError:
             pass
 
-
     @dec.slow
     def test_float_return(self):
         mod_name = sys._getframe().f_code.co_name + self.compiler
@@ -167,26 +179,33 @@ class FloatConverter(TestCase):
         exec 'from ' + mod_name + ' import test'
         b=1.
         c = test(b)
-        assert( c == 3.)
+        assert_( c == 3.)
+
 
 class ComplexConverter(TestCase):
+
     compiler = ''
+
     @dec.slow
     def test_type_match_string(self):
         s = c_spec.complex_converter()
-        assert( not s.type_match('string') )
+        assert_( not s.type_match('string') )
+
     @dec.slow
     def test_type_match_int(self):
         s = c_spec.complex_converter()
-        assert(not s.type_match(5))
+        assert_(not s.type_match(5))
+
     @dec.slow
     def test_type_match_float(self):
         s = c_spec.complex_converter()
-        assert(not s.type_match(5.))
+        assert_(not s.type_match(5.))
+
     @dec.slow
     def test_type_match_complex(self):
         s = c_spec.complex_converter()
-        assert(s.type_match(5.+1j))
+        assert_(s.type_match(5.+1j))
+
     @dec.slow
     def test_complex_var_in(self):
         mod_name = sys._getframe().f_code.co_name + self.compiler
@@ -227,14 +246,17 @@ class ComplexConverter(TestCase):
         exec 'from ' + mod_name + ' import test'
         b=1.+1j
         c = test(b)
-        assert( c == 3.+3j)
+        assert_( c == 3.+3j)
+
 
 #----------------------------------------------------------------------------
 # File conversion tests
 #----------------------------------------------------------------------------
 
 class FileConverter(TestCase):
+
     compiler = ''
+
     @dec.slow
     def test_py_to_file(self):
         import tempfile
@@ -246,7 +268,8 @@ class FileConverter(TestCase):
         inline_tools.inline(code,['file'],compiler=self.compiler,force=1)
         file.close()
         file = open(file_name,'r')
-        assert(file.read() == "hello bob")
+        assert_(file.read() == "hello bob")
+
     @dec.slow
     def test_file_to_py(self):
         import tempfile
@@ -263,7 +286,8 @@ class FileConverter(TestCase):
         file.write("hello fred")
         file.close()
         file = open(file_name,'r')
-        assert(file.read() == "hello fred")
+        assert_(file.read() == "hello fred")
+
 
 #----------------------------------------------------------------------------
 # Instance conversion tests
@@ -272,12 +296,15 @@ class FileConverter(TestCase):
 class InstanceConverter(TestCase):
     pass
 
+
 #----------------------------------------------------------------------------
 # Callable object conversion tests
 #----------------------------------------------------------------------------
 
 class CallableConverter(TestCase):
+
     compiler=''
+
     @dec.slow
     def test_call_function(self):
         import string
@@ -295,45 +322,58 @@ class CallableConverter(TestCase):
         actual = inline_tools.inline(code,['func','search_str','sub_str'],
                                      compiler=self.compiler,force=1)
         desired = func(search_str,sub_str)
-        assert(desired == actual)
+        assert_(desired == actual)
+
 
 class SequenceConverter(TestCase):
+
     compiler = ''
+
     @dec.slow
     def test_convert_to_dict(self):
         d = {}
         inline_tools.inline("",['d'],compiler=self.compiler,force=1)
+
     @dec.slow
     def test_convert_to_list(self):
         l = []
         inline_tools.inline("",['l'],compiler=self.compiler,force=1)
+
     @dec.slow
     def test_convert_to_string(self):
         s = 'hello'
         inline_tools.inline("",['s'],compiler=self.compiler,force=1)
+
     @dec.slow
     def test_convert_to_tuple(self):
         t = ()
         inline_tools.inline("",['t'],compiler=self.compiler,force=1)
 
+
 class StringConverter(TestCase):
+
     compiler = ''
+
     @dec.slow
     def test_type_match_string(self):
         s = c_spec.string_converter()
-        assert( s.type_match('string') )
+        assert_( s.type_match('string') )
+
     @dec.slow
     def test_type_match_int(self):
         s = c_spec.string_converter()
-        assert(not s.type_match(5))
+        assert_(not s.type_match(5))
+
     @dec.slow
     def test_type_match_float(self):
         s = c_spec.string_converter()
-        assert(not s.type_match(5.))
+        assert_(not s.type_match(5.))
+
     @dec.slow
     def test_type_match_complex(self):
         s = c_spec.string_converter()
-        assert(not s.type_match(5.+1j))
+        assert_(not s.type_match(5.+1j))
+
     @dec.slow
     def test_var_in(self):
         mod_name = 'string_var_in'+self.compiler
@@ -375,20 +415,25 @@ class StringConverter(TestCase):
         exec 'from ' + mod_name + ' import test'
         b='bub'
         c = test(b)
-        assert( c == 'hello')
+        assert_( c == 'hello')
+
 
 class ListConverter(TestCase):
+
     compiler = ''
+
     @dec.slow
     def test_type_match_bad(self):
         s = c_spec.list_converter()
         objs = [{},(),'',1,1.,1+1j]
         for i in objs:
-            assert( not s.type_match(i) )
+            assert_( not s.type_match(i) )
+
     @dec.slow
     def test_type_match_good(self):
         s = c_spec.list_converter()
-        assert(s.type_match([]))
+        assert_(s.type_match([]))
+
     @dec.slow
     def test_var_in(self):
         mod_name = 'list_var_in'+self.compiler
@@ -430,7 +475,7 @@ class ListConverter(TestCase):
         exec 'from ' + mod_name + ' import test'
         b=[1,2]
         c = test(b)
-        assert( c == ['hello'])
+        assert_( c == ['hello'])
 
     @dec.slow
     def test_speed(self):
@@ -491,20 +536,25 @@ class ListConverter(TestCase):
                 sum3 -= i
         t2 = time.time()
         print 'python:', t2 - t1
-        assert( sum1 == sum2 and sum1 == sum3)
+        assert_( sum1 == sum2 and sum1 == sum3)
+
 
 class TupleConverter(TestCase):
+
     compiler = ''
+
     @dec.slow
     def test_type_match_bad(self):
         s = c_spec.tuple_converter()
         objs = [{},[],'',1,1.,1+1j]
         for i in objs:
-            assert( not s.type_match(i) )
+            assert_( not s.type_match(i) )
+
     @dec.slow
     def test_type_match_good(self):
         s = c_spec.tuple_converter()
-        assert(s.type_match((1,)))
+        assert_(s.type_match((1,)))
+
     @dec.slow
     def test_var_in(self):
         mod_name = 'tuple_var_in'+self.compiler
@@ -547,7 +597,7 @@ class TupleConverter(TestCase):
         exec 'from ' + mod_name + ' import test'
         b=(1,2)
         c = test(b)
-        assert( c == ('hello',None))
+        assert_( c == ('hello',None))
 
 
 class DictConverter(TestCase):
@@ -565,11 +615,13 @@ class DictConverter(TestCase):
         s = c_spec.dict_converter()
         objs = [[],(),'',1,1.,1+1j]
         for i in objs:
-            assert( not s.type_match(i) )
+            assert_( not s.type_match(i) )
+
     @dec.slow
     def test_type_match_good(self):
         s = c_spec.dict_converter()
-        assert(s.type_match({}))
+        assert_(s.type_match({}))
+
     @dec.slow
     def test_var_in(self):
         mod_name = 'dict_var_in'+self.compiler
@@ -611,7 +663,8 @@ class DictConverter(TestCase):
         exec 'from ' + mod_name + ' import test'
         b = {'z':2}
         c = test(b)
-        assert( c['hello'] == 5)
+        assert_( c['hello'] == 5)
+
 
 # for compiler in compilers:
     # for name,klass in globals().iteritems():
@@ -739,6 +792,7 @@ def remove_file(name):
 #     for _n in dir():
 #         if _n[:7]=='TestGcc': exec 'del '+_n
 #
+
 if __name__ == "__main__":
     import nose
     nose.run(argv=['', __file__])

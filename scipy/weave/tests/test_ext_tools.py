@@ -1,5 +1,5 @@
-import nose
-from numpy.testing import *
+
+from numpy.testing import TestCase, dec, assert_equal, assert_
 
 from scipy.weave import ext_tools, c_spec
 try:
@@ -7,19 +7,22 @@ try:
 except ImportError:
     pass # requires numpy.numerix
 
-
-from weave_test_utils import *
+from weave_test_utils import empty_temp_dir
 
 build_dir = empty_temp_dir()
 
+
 class TestExtModule(TestCase):
+
     #should really do some testing of where modules end up
+
     @dec.slow
     def test_simple(self):
         """ Simplest possible module """
         mod = ext_tools.ext_module('simple_ext_module')
         mod.compile(location = build_dir)
         import simple_ext_module
+
     @dec.slow
     def test_multi_functions(self):
         mod = ext_tools.ext_module('module_multi_function')
@@ -33,6 +36,7 @@ class TestExtModule(TestCase):
         import module_multi_function
         module_multi_function.test()
         module_multi_function.test2()
+
     @dec.slow
     def test_with_include(self):
         # decalaring variables
@@ -72,7 +76,7 @@ class TestExtModule(TestCase):
         mod.compile(location = build_dir)
         import ext_string_and_int
         c = ext_string_and_int.test(a,b)
-        assert(c == len(b))
+        assert_(c == len(b))
 
     @dec.slow
     def test_return_tuple(self):
@@ -94,10 +98,13 @@ class TestExtModule(TestCase):
         mod.compile(location = build_dir)
         import ext_return_tuple
         c,d = ext_return_tuple.test(a)
-        assert(c==a and d == a+1)
+        assert_(c==a and d == a+1)
+
 
 class TestExtFunction(TestCase):
+
     #should really do some testing of where modules end up
+
     @dec.slow
     def test_simple(self):
         """ Simplest possible function """
@@ -110,7 +117,9 @@ class TestExtFunction(TestCase):
         import simple_ext_function
         simple_ext_function.test()
 
+
 class TestAssignVariableTypes(TestCase):
+
     def test_assign_variable_types(self):
         try:
             from numpy.numerix import arange, Float32, Float64
@@ -135,6 +144,7 @@ class TestAssignVariableTypes(TestCase):
         cd.name, cd.var_type = 'c', types.IntType
         desired = [ad,bd,cd]
         assert_equal(actual,desired)
+
 
 if __name__ == "__main__":
     import nose

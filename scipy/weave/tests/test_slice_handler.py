@@ -1,8 +1,9 @@
-from numpy.testing import *
+from numpy.testing import TestCase, assert_equal
 
 from scipy.weave import slice_handler
 from scipy.weave.slice_handler import indexed_array_pattern
-from scipy.weave.ast_tools import *
+from scipy.weave.ast_tools import ast_to_string, find_first_pattern
+
 
 class TestBuildSliceAtom(TestCase):
     def generic_check(self,slice_vars,desired):
@@ -117,6 +118,7 @@ def replace_whitespace(in_str):
     return out
 
 class TestTransformSlices(TestCase):
+
     def generic_check(self,suite_string,desired):
         import parser
         ast_list = parser.suite(suite_string).tolist()
@@ -128,12 +130,13 @@ class TestTransformSlices(TestCase):
         desired = replace_whitespace(desired)
         assert_equal(actual,desired,suite_string)
 
-    def test_simple_expr(self):
+    def test_simple_expr1(self):
         """transform a[:] to slice notation"""
         test ="a[:]"
-        desired = 'a[slice(_beg,_end,_stp)]'
+        desired = 'a[slice(_beg,_end)]'
         self.generic_check(test,desired)
-    def test_simple_expr(self):
+
+    def test_simple_expr2(self):
         """transform a[:,:] = b[:,1:1+2:3] *(c[1-2+i:,:] - c[:,:])"""
         test ="a[:,:] = b[:,1:1+2:3] *(c[1-2+i:,:] - c[:,:])"
         desired = " a[slice(_beg,_end),slice(_beg,_end)] = "\

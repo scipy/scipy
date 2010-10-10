@@ -4,11 +4,11 @@ import time
 from numpy import float32, float64, complex64, complex128, \
      zeros, random, array, sum, abs, allclose
 
-from numpy.testing import *
+from numpy.testing import TestCase, dec, assert_equal, assert_
 
 from scipy.weave import blitz_tools
 from scipy.weave.ast_tools import harvest_variables
-from weave_test_utils import *
+from weave_test_utils import empty_temp_dir, cleanup_temp_dir, remove_whitespace
 
 
 class TestAstToBlitzExpr(TestCase):
@@ -80,7 +80,7 @@ class TestBlitz(TestCase):
         try:
             # this isn't very stringent.  Need to tighten this up and
             # learn where failures are occuring.
-            assert(allclose(abs(actual.ravel()),abs(desired.ravel()),1e-4,1e-6))
+            assert_(allclose(abs(actual.ravel()),abs(desired.ravel()),1e-4,1e-6))
         except:
             diff = actual-desired
             print diff[:4,:4]
@@ -127,10 +127,12 @@ class TestBlitz(TestCase):
             print "2nd run(numpy.numerix,compiled,speed up):  %3.4f, %3.4f, " \
                   "%3.4f" % (standard,compiled,speed_up)
         cleanup_temp_dir(mod_location)
+
     #def test_simple_2d(self):
     #    """ result = a + b"""
     #    expr = "result = a + b"
     #    self.generic_2d(expr)
+
     @dec.slow
     def test_5point_avg_2d_float(self):
         """ result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]
@@ -176,6 +178,7 @@ class TestBlitz(TestCase):
         expr = "result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]" \
                                   "+ b[1:-1,2:] + b[1:-1,:-2]) / 5."
         self.generic_2d(expr,complex128)
+
 
 if __name__ == "__main__":
     import nose
