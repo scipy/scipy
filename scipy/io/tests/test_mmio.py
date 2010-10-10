@@ -2,11 +2,12 @@
 
 from tempfile import mktemp
 from numpy import array,transpose
-from numpy.testing import *
-from numpy.compat import asbytes, asbytes_nested
+from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal, \
+            assert_equal, rand
 
 import scipy.sparse
 from scipy.io.mmio import mminfo,mmread,mmwrite
+
 
 class TestMMIOArray(TestCase):
 
