@@ -460,8 +460,15 @@ class TestLstsq(TestCase):
         a = [[1,2],[4,5],[3,4]]
         b = [1,2,3]
         x,res,r,s = lstsq(a,b)
-        #XXX: check defintion of res
         assert_array_almost_equal(x,direct_lstsq(a,b))
+        assert_almost_equal((abs(dot(a,x) - b)**2).sum(axis=0), res)
+
+    def test_simple_overdet_complex(self):
+        a = [[1+2j,2],[4,5],[3,4]]
+        b = [1,2+4j,3]
+        x,res,r,s = lstsq(a,b)
+        assert_array_almost_equal(x,direct_lstsq(a,b,cmplx=1))
+        assert_almost_equal(res, (abs(dot(a,x) - b)**2).sum(axis=0))
 
     def test_simple_underdet(self):
         a = [[1,2,3],[4,5,6]]

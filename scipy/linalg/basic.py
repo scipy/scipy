@@ -387,7 +387,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
     if n < m:
         x1 = x[:n]
         if rank == n:
-            resids = sum(x[n:]**2, axis=0)
+            resids = sum(abs(x[n:])**2, axis=0)
         x = x1
     return x, resids, rank, s
 
