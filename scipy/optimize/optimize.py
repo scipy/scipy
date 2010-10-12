@@ -23,7 +23,7 @@ __all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fmin_cg',
 __docformat__ = "restructuredtext en"
 
 import numpy
-from numpy import atleast_1d, eye, mgrid, argmin, zeros, shape, empty, \
+from numpy import atleast_1d, eye, mgrid, argmin, zeros, shape, \
      squeeze, vectorize, asarray, absolute, sqrt, Inf, asfarray, isinf
 from linesearch import \
      line_search_BFGS, line_search_wolfe1, line_search_wolfe2, \
@@ -64,11 +64,47 @@ def vecnorm(x, ord=2):
     else:
         return numpy.sum(abs(x)**ord,axis=0)**(1.0/ord)
 
-def rosen(x):  # The Rosenbrock function
+def rosen(x):
+    """The Rosenbrock function.
+    
+    The function computed is
+
+        sum(100.0*(x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0
+    
+    Parameters
+    ----------
+    x : array_like, 1D
+        The point at which the Rosenbrock function is to be computed.
+
+    Returns
+    -------
+    f : float
+        The value of the Rosenbrock function
+
+    See Also
+    --------
+    rosen_der, rosen_hess, rosen_hess_prod
+    """
     x = asarray(x)
     return numpy.sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0,axis=0)
 
 def rosen_der(x):
+    """The derivative (i.e. gradient) of the Rosenbrock function.
+
+    Parameters
+    ----------
+    x : array_like, 1D
+        The point at which the derivative is to be computed.
+
+    Returns
+    -------
+    der : 1D numpy array
+        The gradient of the Rosenbrock function at `x`.
+
+    See Also
+    --------
+    rosen, rosen_hess, rosen_hess_prod
+    """
     x = asarray(x)
     xm = x[1:-1]
     xm_m1 = x[:-2]
@@ -80,16 +116,51 @@ def rosen_der(x):
     return der
 
 def rosen_hess(x):
+    """The Hessian matrix of the Rosenbrock function.
+
+    Parameters
+    ----------
+    x : array_like, 1D
+        The point at which the Hessian matrix is to be computed.
+
+    Returns
+    -------
+    hess : 2D numpy array
+        The Hessian matrix of the Rosenbrock function at `x`.
+
+    See Also
+    --------
+    rosen, rosen_der, rosen_hess_prod
+    """
     x = atleast_1d(x)
     H = numpy.diag(-400*x[:-1],1) - numpy.diag(400*x[:-1],-1)
     diagonal = numpy.zeros(len(x), dtype=x.dtype)
-    diagonal[0] = 1200*x[0]-400*x[1]+2
+    diagonal[0] = 1200*x[0]**2 - 400*x[1] + 2
     diagonal[-1] = 200
     diagonal[1:-1] = 202 + 1200*x[1:-1]**2 - 400*x[2:]
     H = H + numpy.diag(diagonal)
     return H
 
 def rosen_hess_prod(x,p):
+    """Product of the Hessian matrix of the Rosenbrock function with a vector.
+
+    Parameters
+    ----------
+    x : array_like, 1D
+        The point at which the Hessian matrix is to be computed.
+    p : array_like, 1D, same size as `x`.
+        The vector to be multiplied by the Hessian matrix.
+
+    Returns
+    -------
+    v : 1D numpy array
+        The Hessian matrix of the Rosenbrock function at `x` multiplied
+        by the vector `p`.
+
+    See Also
+    --------
+    rosen, rosen_der, rosen_hess
+    """
     x = atleast_1d(x)
     Hp = numpy.zeros(len(x), dtype=x.dtype)
     Hp[0] = (1200*x[0]**2 - 400*x[1] + 2)*p[0] - 400*x[0]*p[1]

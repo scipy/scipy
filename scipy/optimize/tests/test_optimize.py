@@ -11,7 +11,7 @@ To run it in its simplest form::
 """
 
 from numpy.testing import assert_raises, assert_almost_equal, \
-        assert_, TestCase, run_module_suite
+        assert_equal, assert_, TestCase, run_module_suite
 
 from scipy import optimize
 from numpy import array, zeros, float64, dot, log, exp, inf, sin, cos
@@ -344,6 +344,18 @@ class TestTnc(TestCase):
         ef = abs(fg(xopt)[0] - fg(x)[0])
         if ef > 1e-8:
             raise err
+
+
+class TestRosen(TestCase):
+    
+    def test_hess(self):
+        """Compare rosen_hess(x) times p with rosen_hess_prod(x,p) (ticket #1248)"""
+        x = array([3, 4, 5])
+        p = array([2, 2, 2])
+        hp = optimize.rosen_hess_prod(x, p)
+        dothp = np.dot(optimize.rosen_hess(x), p)
+        assert_equal(hp, dothp)
+
 
 if __name__ == "__main__":
     run_module_suite()
