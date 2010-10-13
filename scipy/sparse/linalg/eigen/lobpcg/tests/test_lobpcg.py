@@ -5,7 +5,7 @@
 import numpy
 from numpy.testing import assert_almost_equal, run_module_suite
 
-from scipy import arange, ones, rand, set_printoptions, r_, diag, linalg
+from scipy import arange, ones, rand, set_printoptions, r_, diag, linalg, eye
 from scipy.linalg import eig
 from scipy.sparse.linalg.eigen.lobpcg import lobpcg
 
@@ -77,6 +77,11 @@ def test_MikotaPair():
     A,B = MikotaPair(100)
     compare_solutions(A,B,20)
 
+def test_trivial():
+    n = 5
+    X = ones((n, 1))
+    A = eye(n)
+    compare_solutions(A, None, n)
 
 if __name__ == "__main__":
     run_module_suite()

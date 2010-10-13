@@ -206,6 +206,8 @@ def inv(a, overwrite_a=False):
     ----------
     a : array-like, shape (M, M)
         Matrix to be inverted
+    overwrite_a : bool, optional
+        Discard data in ``a`` (may improve performance)
 
     Returns
     -------

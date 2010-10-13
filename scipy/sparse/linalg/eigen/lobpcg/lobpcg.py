@@ -137,7 +137,7 @@ def b_orthonormalize( B, blockVectorV,
             blockVectorBV = blockVectorV # Shared data!!!
     gramVBV = sp.dot( blockVectorV.T, blockVectorBV )
     gramVBV = sla.cholesky( gramVBV )
-    sla.inv( gramVBV, overwrite_a = True )
+    gramVBV = sla.inv( gramVBV, overwrite_a = True )
     # gramVBV is now R^{-1}.
     blockVectorV = sp.dot( blockVectorV, gramVBV )
     if B is not None:
