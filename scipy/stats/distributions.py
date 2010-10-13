@@ -324,43 +324,59 @@ class general_cont_ppf(object):
 
 # Frozen RV class
 class rv_frozen(object):
+
     def __init__(self, dist, *args, **kwds):
         self.args = args
         self.kwds = kwds
         self.dist = dist
-    def pdf(self,x):    #raises AttributeError in frozen discrete distribution
-        return self.dist.pdf(x,*self.args,**self.kwds)
-    def cdf(self,x):
-        return self.dist.cdf(x,*self.args,**self.kwds)
-    def ppf(self,q):
-        return self.dist.ppf(q,*self.args,**self.kwds)
-    def isf(self,q):
-        return self.dist.isf(q,*self.args,**self.kwds)
+
+    def pdf(self, x):    #raises AttributeError in frozen discrete distribution
+        return self.dist.pdf(x, *self.args, **self.kwds)
+
+    def cdf(self, x):
+        return self.dist.cdf(x, *self.args, **self.kwds)
+
+    def ppf(self, q):
+        return self.dist.ppf(q, *self.args, **self.kwds)
+
+    def isf(self, q):
+        return self.dist.isf(q, *self.args, **self.kwds)
+
     def rvs(self, size=None):
-        kwds = self.kwds
+        kwds = self.kwds.copy()
         kwds.update({'size':size})
-        return self.dist.rvs(*self.args,**kwds)
-    def sf(self,x):
-        return self.dist.sf(x,*self.args,**self.kwds)
-    def stats(self,moments='mv'):
-        kwds = self.kwds
+        return self.dist.rvs(*self.args, **kwds)
+
+    def sf(self, x):
+        return self.dist.sf(x, *self.args, **self.kwds)
+
+    def stats(self, moments='mv'):
+        kwds = self.kwds.copy()
         kwds.update({'moments':moments})
-        return self.dist.stats(*self.args,**kwds)
+        return self.dist.stats(*self.args, **kwds)
+
     def median(self):
         return self.dist.median(*self.args, **self.kwds)
+
     def mean(self):
-        return self.dist.mean(*self.args,**self.kwds)
+        return self.dist.mean(*self.args, **self.kwds)
+
     def var(self):
         return self.dist.var(*self.args, **self.kwds)
+
     def std(self):
         return self.dist.std(*self.args, **self.kwds)
-    def moment(self,n):
-        return self.dist.moment(n,*self.args,**self.kwds)
+
+    def moment(self, n):
+        return self.dist.moment(n, *self.args)
+
     def entropy(self):
-        return self.dist.entropy(*self.args,**self.kwds)
+        return self.dist.entropy(*self.args, **self.kwds)
+
     def pmf(self,k):
-        return self.dist.pmf(k,*self.args,**self.kwds)
-    def interval(self,alpha):
+        return self.dist.pmf(k, *self.args, **self.kwds)
+
+    def interval(self, alpha):
         return self.dist.interval(alpha, *self.args, **self.kwds)
 
 

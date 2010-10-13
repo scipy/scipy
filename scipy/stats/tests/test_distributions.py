@@ -436,5 +436,125 @@ class TestFitMethod(TestCase):
                 assert_(len(vals5) == 2+len(args)) 
                 assert_(vals5[2] == args[2])
 
+class TestFrozen(TestCase):
+    """Test that a frozen distribution gives the same results as the original object.
+
+    Only tested for the normal distribution (with loc and scale specified) and for the
+    gamma distribution (with a shape parameter specified).
+    """
+    def test_norm(self):
+        dist = stats.norm
+        frozen = stats.norm(loc=10.0, scale=3.0)
+
+        result_f = frozen.pdf(20.0)
+        result = dist.pdf(20.0, loc=10.0, scale=3.0)
+        assert_equal(result_f, result)
+
+        result_f = frozen.cdf(20.0)
+        result = dist.cdf(20.0, loc=10.0, scale=3.0)
+        assert_equal(result_f, result)
+
+        result_f = frozen.ppf(0.25)
+        result = dist.ppf(0.25, loc=10.0, scale=3.0)
+        assert_equal(result_f, result)
+
+        result_f = frozen.isf(0.25)
+        result = dist.isf(0.25, loc=10.0, scale=3.0)
+        assert_equal(result_f, result)
+
+        result_f = frozen.sf(10.0)
+        result = dist.sf(10.0, loc=10.0, scale=3.0)
+        assert_equal(result_f, result)
+
+        result_f = frozen.median()
+        result = dist.median(loc=10.0, scale=3.0)
+        assert_equal(result_f, result)
+
+        result_f = frozen.mean()
+        result = dist.mean(loc=10.0, scale=3.0)
+        assert_equal(result_f, result)
+
+        result_f = frozen.var()
+        result = dist.var(loc=10.0, scale=3.0)
+        assert_equal(result_f, result)
+
+        result_f = frozen.std()
+        result = dist.std(loc=10.0, scale=3.0)
+        assert_equal(result_f, result)
+
+        result_f = frozen.entropy()
+        result = dist.entropy(loc=10.0, scale=3.0)
+        assert_equal(result_f, result)
+
+        result_f = frozen.moment(2)
+        result = dist.moment(2)
+        assert_equal(result_f, result)
+
+    def test_gamma(self):
+        a = 2.0
+        dist = stats.gamma
+        frozen = stats.gamma(a)
+
+        result_f = frozen.pdf(20.0)
+        result = dist.pdf(20.0, a)
+        assert_equal(result_f, result)
+
+        result_f = frozen.cdf(20.0)
+        result = dist.cdf(20.0, a)
+        assert_equal(result_f, result)
+
+        result_f = frozen.ppf(0.25)
+        result = dist.ppf(0.25, a)
+        assert_equal(result_f, result)
+
+        result_f = frozen.isf(0.25)
+        result = dist.isf(0.25, a)
+        assert_equal(result_f, result)
+
+        result_f = frozen.sf(10.0)
+        result = dist.sf(10.0, a)
+        assert_equal(result_f, result)
+
+        result_f = frozen.median()
+        result = dist.median(a)
+        assert_equal(result_f, result)
+
+        result_f = frozen.mean()
+        result = dist.mean(a)
+        assert_equal(result_f, result)
+
+        result_f = frozen.var()
+        result = dist.var(a)
+        assert_equal(result_f, result)
+
+        result_f = frozen.std()
+        result = dist.std(a)
+        assert_equal(result_f, result)
+
+        result_f = frozen.entropy()
+        result = dist.entropy(a)
+        assert_equal(result_f, result)
+
+        result_f = frozen.moment(2)
+        result = dist.moment(2, a)
+        assert_equal(result_f, result)
+
+    def test_regression_02(self):
+        """Regression test for ticket #1293."""
+        # Create a frozen distribution.
+        frozen = stats.lognorm(1)
+        # Call one of its methods that does not take any keyword arguments.
+        m1 = frozen.moment(2)
+        # Now call a method that takes a keyword argument.
+        s = frozen.stats(moments='mvsk')
+        # Call moment(2) again.
+        # After calling stats(), the following was raising an exception.
+        # So this test passes if the following does not raise an exception.
+        m2 = frozen.moment(2)
+        # The following should also be true, of course.  But it is not
+        # the focus of this test.
+        assert_equal(m1, m2)
+
+
 if __name__ == "__main__":
     run_module_suite()
