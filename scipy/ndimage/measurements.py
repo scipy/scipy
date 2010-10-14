@@ -309,8 +309,8 @@ def _stats(input, labels=None, index=None, centered=False):
     # remap labels to unique integers if necessary, or if the largest
     # label is larger than the number of values.
 
-    if ((not numpy.issubdtype(labels.dtype, numpy.int)) or
-        (labels.min() < 0) or (labels.max() > labels.size)):
+    if not numpy.issubdtype(labels.dtype, (numpy.int, np.unsignedinteger)) or \
+           (labels.min() < 0) or (labels.max() > labels.size):
         unique_labels, new_labels = numpy.unique1d(labels, return_inverse=True)
 
         if centered:
