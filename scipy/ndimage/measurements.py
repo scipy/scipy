@@ -279,7 +279,7 @@ def _stats(input, labels=None, index=None, centered=False):
 
     def single_group(vals):
         if centered:
-            vals_c = vals# - vals.mean()
+            vals_c = vals - vals.mean()
             return vals.size, vals.sum(), (vals_c * vals_c.conjugate()).sum()
         else:
             return vals.size, vals.sum()
@@ -301,7 +301,7 @@ def _stats(input, labels=None, index=None, centered=False):
 
     def _sum_centered(labels):
         means = sums / counts
-        centered_input = input# - means[labels]
+        centered_input = input - means[labels]
         return numpy.bincount(labels,
                               weights=(centered_input * \
                                        centered_input.conjugate()).ravel())
@@ -408,11 +408,9 @@ def variance(input, labels = None, index = None):
     none, all values where label is greater than zero are used.
     """
 
-    count, sum, sum_c = _stats(input, labels, index, centered=True)
-    mean = sum / numpy.asanyarray(count).astype(numpy.float)
-    mean2 = sum_c / numpy.asanyarray(count).astype(numpy.float)
+    count, sum, sum_c_sq = _stats(input, labels, index, centered=True)
 
-    return mean2 - (mean * mean.conjugate())
+    return sum_c_sq / np.asanyarray(count).astype(float)
 
 def standard_deviation(input, labels = None, index = None):
     """Calculate the standard deviation of the values of an array at labels.
