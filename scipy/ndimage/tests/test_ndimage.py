@@ -39,32 +39,8 @@ import scipy.ndimage as ndimage
 
 eps = 1e-12
 
-###
-### TODO: Remove this helper function and replace by functionality
-###       inside numpy.testing.
-###
-def diff(a, b):
-    if not isinstance(a, numpy.ndarray):
-        a = numpy.asarray(a)
-    if not isinstance(b, numpy.ndarray):
-        b = numpy.asarray(b)
-    if (0 in a.shape) and (0 in b.shape):
-        return 0.0
-    if (a.dtype in [numpy.complex64, numpy.complex128] or
-        b.dtype in [numpy.complex64, numpy.complex128]):
-        a = numpy.asarray(a, numpy.complex128)
-        b = numpy.asarray(b, numpy.complex128)
-        t = ((a.real - b.real)**2).sum() + ((a.imag - b.imag)**2).sum()
-    if (a.dtype == numpy.object or b.dtype == numpy.object):
-        t = sum([diff(c,d)**2 for c,d in zip(a,b)])
-    else:
-        a = numpy.asarray(a)
-        a = a.astype(numpy.float64)
-        b = numpy.asarray(b)
-        b = b.astype(numpy.float64)
-        t = ((a - b)**2).sum()
-    return math.sqrt(t)
-
+def sumsq(a, b):
+    return math.sqrt(((a - b)**2).sum())
 
 class TestNdimage:
 
@@ -490,7 +466,7 @@ class TestNdimage:
         assert_equal(input.shape, output.shape)
 
         assert_almost_equal(output.sum(), input.sum())
-        assert_(diff(input, output) > 1.0)
+        assert_(sumsq(input, output) > 1.0)
 
     def test_gauss04(self):
         "gaussian filter 4"
@@ -501,7 +477,7 @@ class TestNdimage:
                                                             output=otype)
         assert_equal(output.dtype.type, numpy.float64)
         assert_equal(input.shape, output.shape)
-        assert_(diff(input, output) > 1.0)
+        assert_(sumsq(input, output) > 1.0)
 
     def test_gauss05(self):
         "gaussian filter 5"
@@ -512,7 +488,7 @@ class TestNdimage:
                                                  order=1, output=otype)
         assert_equal(output.dtype.type, numpy.float64)
         assert_equal(input.shape, output.shape)
-        assert_(diff(input, output) > 1.0)
+        assert_(sumsq(input, output) > 1.0)
 
     def test_gauss06(self):
         "gaussian filter 6"
@@ -1742,10 +1718,9 @@ class TestNdimage:
             return (x[0] * 2, x[1] * 2)
         for order in range(0, 6):
             out = ndimage.geometric_transform(data, mapping1,
-                                                      (6, 8),  order=order)
+                                              (6, 8),  order=order)
             out = ndimage.geometric_transform(out, mapping2,
-                                                       (3, 4), order=order)
-            error = diff(out, data)
+                                              (3, 4), order=order)
             assert_array_almost_equal(out, data)
 
     def test_geometric_transform23(self):
