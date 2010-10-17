@@ -11,8 +11,13 @@ import orthogonal
 def sinc(x):
     """Returns sin(pi*x)/(pi*x) at all points of array x.
     """
-    w = asarray(asarray(x)*pi)
-    return where(x==0, 1.0, sin(w)/w)
+    w = pi * asarray(x)
+    # w might contain 0, and so temporarily turn off warnings
+    # while calculating sin(w)/w.
+    old_settings = seterr(all='ignore')
+    s = sin(w) / w
+    seterr(**old_settings)
+    return where(x==0, 1.0, s)
 
 def diric(x,n):
     """Returns the periodic sinc function also called the dirichlet function:
