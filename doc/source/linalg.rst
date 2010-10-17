@@ -14,6 +14,7 @@ Basics
    solve
    solve_banded
    solveh_banded
+   solve_triangular
    det
    norm
    lstsq

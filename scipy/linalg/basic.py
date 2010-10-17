@@ -3,7 +3,7 @@
 #
 # w/ additions by Travis Oliphant, March 2002
 
-__all__ = ['solve', 'solveh_banded', 'solve_banded',
+__all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
             'inv', 'det', 'lstsq', 'pinv', 'pinv2']
 
 from warnings import warn
@@ -72,6 +72,66 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False
         raise LinAlgError("singular matrix")
     raise ValueError('illegal value in %d-th argument of internal gesv|posv'
                                                                     % -info)
+
+def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
+                     overwrite_b=False, debug=False):
+    """Solve the equation `a x = b` for `x`, assuming a is a triangular matrix.
+
+    Parameters
+    ----------
+    a : array, shape (M, M)
+    b : array, shape (M,) or (M, N)
+    lower : boolean
+        Use only data contained in the lower triangle of a.
+        Default is to use upper triangle.
+    trans : {0, 1, 2, 'N', 'T', 'C'}
+        Type of system to solve:
+
+        ========  =========
+        trans     system
+        ========  =========
+        0 or 'N'  a x   = b
+        1 or 'T'  a^T x = b
+        2 or 'C'  a^H x = b
+        ========  =========
+
+    unit_diagonal : boolean
+        If True, diagonal elements of A are assumed to be 1 and
+        will not be referenced.
+
+    overwrite_b : boolean
+        Allow overwriting data in b (may enhance performance)
+
+    Returns
+    -------
+    x : array, shape (M,) or (M, N) depending on b
+        Solution to the system a x = b
+
+    Raises
+    ------
+    LinAlgError
+        If a is singular
+
+    """
+
+    a1, b1 = map(asarray_chkfinite,(a,b))
+    if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
+        raise ValueError, 'expected square matrix'
+    if a1.shape[0] != b1.shape[0]:
+        raise ValueError, 'incompatible dimensions'
+    overwrite_b = overwrite_b or (b1 is not b and not hasattr(b,'__array__'))
+    if debug:
+        print 'solve:overwrite_b=',overwrite_b
+    trans = {'N': 0, 'T': 1, 'C': 2}.get(trans, trans)
+    trtrs, = get_lapack_funcs(('trtrs',), (a1,b1))
+    x, info = trtrs(a1, b1, overwrite_b=overwrite_b, lower=lower,
+                    trans=trans, unitdiag=unit_diagonal)
+
+    if info == 0:
+        return x
+    if info > 0:
+        raise LinAlgError("singular matrix: resolution failed at diagonal %s" % (info-1))
+    raise ValueError('illegal value in %d-th argument of internal trtrs')
 
 def solve_banded((l, u), ab, b, overwrite_ab=False, overwrite_b=False,
           debug=False):

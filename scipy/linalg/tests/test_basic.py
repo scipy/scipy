@@ -29,7 +29,7 @@ from numpy.testing import TestCase, rand, run_module_suite, assert_raises, \
     assert_equal, assert_almost_equal, assert_array_almost_equal, assert_
 
 from scipy.linalg import solve, inv, det, lstsq, pinv, pinv2, norm,\
-        solve_banded, solveh_banded
+        solve_banded, solveh_banded, solve_triangular
 
 
 def random(size):
@@ -362,6 +362,40 @@ class TestSolve(TestCase):
         for i in range(2):
             x = solve(a,b,sym_pos=1)
             assert_array_almost_equal(dot(a,x),b)
+
+
+class TestSolveTriangular(TestCase):
+
+    def test_simple(self):
+        """
+        solve_triangular on a simple 2x2 matrix.
+        """
+        A = array([[1,0], [1,2]])
+        b = [1, 1]
+        sol = solve_triangular(A, b, lower=True)
+        assert_array_almost_equal(sol, [1, 0])
+
+        # check that it works also for non-contiguous matrices
+        sol = solve_triangular(A.T, b, lower=False)
+        assert_array_almost_equal(sol, [.5, .5])
+
+        # and that it gives the same result as trans=1
+        sol = solve_triangular(A, b, lower=True, trans=1)
+        assert_array_almost_equal(sol, [.5, .5])
+
+        b = identity(2)
+        sol = solve_triangular(A, b, lower=True, trans=1)
+        assert_array_almost_equal(sol, [[1., -.5], [0, 0.5]])
+
+    def test_simple_complex(self):
+        """
+        solve_triangular on a simple 2x2 complex matrix
+        """
+        A = array([[1+1j, 0], [1j, 2]])
+        b = identity(2)
+        sol = solve_triangular(A, b, lower=True, trans=1)
+        assert_array_almost_equal(sol, [[.5-.5j, -.25-.25j], [0, 0.5]])
+
 
 
 class TestInv(TestCase):

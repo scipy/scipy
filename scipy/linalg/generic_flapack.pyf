@@ -8,7 +8,7 @@
 ! Additions by Travis Oliphant
 ! Additions by Tiziano Zito
 ! Usage:
-!   f2py -c flapack.pyf -L/usr/local/lib/atlas -llapack -lf77blas -lcblas -latlas -lg2c
+!   f2py -c generic_flapack.pyf -L/usr/local/lib/atlas -llapack -lf77blas -lcblas -latlas -lg2c
 
 python module flapack
 interface
@@ -106,6 +106,29 @@ interface
      integer intent(out) :: info
      
    end subroutine <tchar=c,z>pbtrs
+
+
+   subroutine <tchar=s,d,c,z>trtrs(lower, trans, unitdiag, n, nrhs, a, lda, b, ldb, info)
+
+     ! Solve a system of linear equations A*X = B with a triangular
+     ! matrix A.
+
+     callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(unitdiag?"U":"N"),&n,&nrhs,a,&lda,b,&ldb,&info); 
+     callprotoargument char*,char*,char*,int*,int*,<type_in_c>*,int*,<type_in_c>*,int*,int*
+
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+     integer optional,intent(in),check(trans>=0 && trans <=2) :: trans = 0
+     integer optional,intent(in),check(unitdiag==0||unitdiag==1) :: unitdiag = 0
+     integer optional,check(shape(a,0)==lda),depend(a) :: lda=shape(a,0)
+     integer intent(hide),depend(a) :: n=shape(a,1)
+     integer intent(hide),depend(b) :: ldb=shape(b,0)
+     integer intent(hide),depend(b) :: nrhs=shape(b,1)
+
+     <type_in> dimension(ldb, nrhs),intent(in,out,copy,out=x) :: b
+     <type_in> dimension(lda,n),intent(in) :: a
+     integer intent(out) :: info
+   end subroutine <tchar=s,d,c,z>trtrs
+
 
    subroutine <tchar=s,d>pbsv(lower,n,kd,nrhs,ab,ldab,b,ldb,info)
    
