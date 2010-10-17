@@ -348,7 +348,8 @@ class BaseGemv(object):
         mult = array(1, dtype = self.dtype)
         if self.dtype in [complex64, complex128]:
             mult = array(1+1j, dtype = self.dtype)
-        from numpy.random import normal
+        from numpy.random import normal, seed
+        seed(1234)
         alpha = array(1., dtype = self.dtype) * mult
         beta = array(1.,dtype = self.dtype) * mult
         a = normal(0.,1.,(3,3)).astype(self.dtype) * mult
@@ -390,7 +391,7 @@ class BaseGemv(object):
         alpha,beta,a,x,y = self.get_data(x_stride=2)
         desired_y = alpha*matrixmultiply(transpose(a),x[::2])+beta*y
         y = self.blas_func(alpha,a,x,beta,y,trans=1,incx=2)
-        assert_array_almost_equal(desired_y,y)
+        assert_array_almost_equal(desired_y, y)
 
     def test_x_stride_assert(self):
         # What is the use of this test?
@@ -463,7 +464,8 @@ class TestZgemv(TestCase, BaseGemv):
 
 class BaseGer(TestCase):
     def get_data(self,x_stride=1,y_stride=1):
-        from numpy.random import normal
+        from numpy.random import normal, seed
+        seed(1234)
         alpha = array(1., dtype = self.dtype)
         a = normal(0.,1.,(3,3)).astype(self.dtype)
         x = arange(shape(a)[0]*x_stride,dtype=self.dtype)
@@ -515,7 +517,8 @@ class TestDger(BaseGer):
 """
 class BaseGerComplex(BaseGer):
     def get_data(self,x_stride=1,y_stride=1):
-        from numpy.random import normal
+        from numpy.random import normal, seed
+        seed(1234)
         alpha = array(1+1j, dtype = self.dtype)
         a = normal(0.,1.,(3,3)).astype(self.dtype)
         a = a + normal(0.,1.,(3,3)) * array(1j, dtype = self.dtype)
