@@ -2159,10 +2159,12 @@ class fisk_gen(burr_gen):
         return burr_gen._stats(self, c, 1.0)
     def _entropy(self, c):
         return 2 - log(c)
-fisk = fisk_gen(a=0.0, name='fink', longname="A funk",
+fisk = fisk_gen(a=0.0, name='fisk', longname="Fisk",
                 shapes='c', extradoc="""
 
-Fink distribution.
+Fisk distribution.
+
+Also known as the log-logistic distribution.
 
 Burr distribution with d=1.
 """
