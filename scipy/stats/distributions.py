@@ -971,6 +971,10 @@ class rv_continuous(rv_generic):
 
     def _construct_default_doc(self, longname=None, extradoc=None):
         """Construct instance docstring from the default template."""
+        if longname is None:
+            longname = 'A'
+        if extradoc is None:
+            extradoc = ''
         if extradoc.startswith('\n\n'):
             extradoc = extradoc[2:]
         self.__doc__ = ''.join(['%s continuous random variable.'%longname,

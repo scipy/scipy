@@ -556,5 +556,12 @@ class TestFrozen(TestCase):
         assert_equal(m1, m2)
 
 
+def test_regression_ticket_1316():
+    """Regression test for ticket #1316."""
+    # The following was raising an exception, because _construct_default_doc()
+    # did not handle the default keyword extradoc=None.  See ticket #1316.
+    g = stats.distributions.gamma_gen(name='gamma')
+
+
 if __name__ == "__main__":
     run_module_suite()
