@@ -22,6 +22,7 @@ import os
 import sys
 import warnings
 import subprocess
+import shutil
 import re
 
 CLASSIFIERS = """\
