@@ -6075,7 +6075,7 @@ dlaplace = dlaplace_gen(a=-inf,
 
 Discrete Laplacian distribution.
 
-dlapacle.pmf(k,a) = tanh(a/2) * exp(-a*abs(k))
+dlaplace.pmf(k,a) = tanh(a/2) * exp(-a*abs(k))
 for a > 0.
 """
                         )
