@@ -353,7 +353,7 @@ c
      &           mode  , msglvl, outncv, ritzr   ,
      &           ritzi , wri   , wrr   , irr     ,
      &           iri   , ibd   , ishift, numcnv  ,
-     &           np    , jj 
+     &           np    , jj    , nconv2
       logical    reord
       Real 
      &           conds  , rnorm, sep  , temp,
@@ -661,11 +661,15 @@ c
      &                   workl(iuptri), ldh          , 
      &                   workl(invsub), ldq          , 
      &                   workl(iheigr), workl(iheigi), 
-     &                   nconv        , conds        ,
+     &                   nconv2       , conds        ,
      &                   sep          , workl(ihbds) , 
      &                   ncv          , iwork        ,
      &                   1            , ierr)
 c
+            if (nconv2 .lt. nconv) then
+               nconv = nconv2
+            end if
+
             if (ierr .eq. 1) then
                info = 1
                go to 9000

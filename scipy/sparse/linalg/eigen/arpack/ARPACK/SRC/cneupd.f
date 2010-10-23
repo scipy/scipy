@@ -301,7 +301,7 @@ c
      &           invsub, iuptri, iwev  , j    , ldh   , ldq   ,
      &           mode  , msglvl, ritz  , wr   , k     , irz   ,
      &           ibd   , outncv, iq    , np   , numcnv, jj    ,
-     &           ishift
+     &           ishift, nconv2
       Complex
      &           rnorm, temp, vl(1)
       Real
@@ -592,9 +592,13 @@ c
             call ctrsen('None'       , 'V'          , select      ,
      &                   ncv          , workl(iuptri), ldh         ,
      &                   workl(invsub), ldq          , workl(iheig),
-     &                   nconv        , conds        , sep         , 
+     &                   nconv2       , conds        , sep         , 
      &                   workev       , ncv          , ierr)
 c
+            if (nconv2 .lt. nconv) then
+               nconv = nconv2
+            end if
+
             if (ierr .eq. 1) then
                info = 1
                go to 9000
