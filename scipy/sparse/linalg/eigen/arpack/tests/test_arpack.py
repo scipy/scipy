@@ -52,6 +52,13 @@ class TestArpack(TestCase):
                [ 0.,  0.,  0.,  0.,  1., -1.],
                [-1., -1., -1., -1., -1.,  5.]])
 
+        S1['v0']= array([0.39574246391875789,
+                         0.00086496039750016962,
+                         -0.9227205789982591,
+                         -0.9165671495278005,
+                         0.1175963848841306,
+                         -0.29962625203712179])
+
         S1['eval']=array([0,1,2,2,5,6])
         self.symmetric.append(S1)
 
@@ -63,15 +70,18 @@ class TestArpack(TestCase):
                    [ 1.,  6.,  1.,  0., -4.],
                    [ 2., -6.,  4.,  9., -3]])
 
+        N1['v0'] = array([0.39574246391875789,
+                          0.00086496039750016962,
+                          -0.9227205789982591,
+                          -0.9165671495278005,
+                          0.1175963848841306])
+
         N1['eval']=\
             array([ -5.4854094033782888+0.0j,
                      -2.2169058544873783+8.5966096591588261j,
                      -2.2169058544873783-8.5966096591588261j,
                      4.4596105561765107+3.8007839204319454j,
                      4.4596105561765107-3.8007839204319454j],'D')
-
-
-
         self.nonsymmetric.append(N1)
 
 
@@ -93,10 +103,12 @@ class TestEigenSymmetric(TestArpack):
             high=range(len(eval))[-h:]
             return eval[low+high]
 
-    def eval_evec(self,d,typ,k,which,**kwds):
+    def eval_evec(self,d,typ,k,which,v0=None):
         a=d['mat'].astype(typ)
+        if v0 == None:
+            v0 = d['v0']
         exact_eval=self.get_exact_eval(d,typ,k,which)
-        eval,evec=eigen_symmetric(a,k,which=which,**kwds)
+        eval,evec=eigen_symmetric(a,k,which=which,v0=v0)
         # check eigenvalues
         assert_array_almost_equal(eval,exact_eval,decimal=_ndigits[typ])
         # check eigenvectors A*evec=eval*evec
@@ -132,14 +144,16 @@ class TestEigenComplexSymmetric(TestArpack):
         if which=='SM' or which=='SR':
             return ind[:k]
 
-    def eval_evec(self,d,typ,k,which):
+    def eval_evec(self,d,typ,k,which,v0=None):
         a=d['mat'].astype(typ)
+        if v0 == None:
+            v0 = d['v0']
         # get exact eigenvalues
         exact_eval=d['eval'].astype(typ)
         ind=self.sort_choose(exact_eval,typ,k,which)
         exact_eval=exact_eval[ind]
         # compute eigenvalues
-        eval,evec=eigen(a,k,which=which)
+        eval,evec=eigen(a,k,which=which,v0=v0)
         ind=self.sort_choose(eval,typ,k,which)
         eval=eval[ind]
         evec=evec[:,ind]
@@ -156,7 +170,7 @@ class TestEigenComplexSymmetric(TestArpack):
         k=2
         for typ in 'FD':
             for which in ['LM','SM','LR','SR']:
-                self.eval_evec(self.symmetric[0],typ,k,which)        
+                self.eval_evec(self.symmetric[0],typ,k,which)
 
 
 class TestEigenNonSymmetric(TestArpack):
@@ -178,14 +192,16 @@ class TestEigenNonSymmetric(TestArpack):
             return ind[:k]
 
 
-    def eval_evec(self,d,typ,k,which,**kwds):
+    def eval_evec(self,d,typ,k,which,v0=None):
         a=d['mat'].astype(typ)
+        if v0 == None:
+            v0 = d['v0']
         # get exact eigenvalues
         exact_eval=d['eval'].astype(typ.upper())
         ind=self.sort_choose(exact_eval,typ,k,which)
         exact_eval=exact_eval[ind]
         # compute eigenvalues
-        eval,evec=eigen(a,k,which=which,**kwds)
+        eval,evec=eigen(a,k,which=which,v0=v0)
         ind=self.sort_choose(eval,typ,k,which)
         eval=eval[ind]
         evec=evec[:,ind]
@@ -235,8 +251,10 @@ class TestEigenComplexNonSymmetric(TestArpack):
         if which in ['SR','SI','SM']:
             return ind[:k]
 
-    def eval_evec(self,d,typ,k,which):
+    def eval_evec(self,d,typ,k,which,v0=None):
         a=d['mat'].astype(typ)
+        if v0 == None:
+            v0 = d['v0']
         # get exact eigenvalues
         exact_eval=d['eval'].astype(typ.upper())
         ind=self.sort_choose(exact_eval,typ,k,which)
@@ -247,7 +265,7 @@ class TestEigenComplexNonSymmetric(TestArpack):
 
 
         # compute eigenvalues
-        eval,evec=eigen(a,k,which=which)
+        eval,evec=eigen(a,k,which=which,v0=v0)
         ind=self.sort_choose(eval,typ,k,which)
         eval=eval[ind]
         evec=evec[:,ind]
