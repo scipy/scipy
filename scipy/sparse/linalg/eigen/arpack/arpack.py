@@ -82,9 +82,6 @@ class _ArpackParams(object):
             ncv = 2 * k + 1
         ncv = min(ncv, n)
 
-        if ncv > n or ncv < k:
-            raise ValueError("ncv must be k<=ncv<=n, ncv=%s" % ncv)
-
         self.v = np.zeros((n, ncv), tp) # holds Ritz vectors
         self.iparam = np.zeros(11, "int")
 
@@ -118,6 +115,9 @@ class _SymmetricArpackParams(_ArpackParams):
 
         _ArpackParams.__init__(self, n, k, tp, matvec, sigma,
                  ncv, v0, maxiter, which, tol)
+
+        if self.ncv > n or self.ncv <= k:
+            raise ValueError("ncv must be k<ncv<=n, ncv=%s" % self.ncv)
 
         self.workd = np.zeros(3 * n, self.tp)
         self.workl = np.zeros(self.ncv * (self.ncv + 8), self.tp)
@@ -181,6 +181,9 @@ class _UnsymmetricArpackParams(_ArpackParams):
 
         _ArpackParams.__init__(self, n, k, tp, matvec, sigma,
                  ncv, v0, maxiter, which, tol)
+
+        if self.ncv > n or self.ncv <= k+1:
+            raise ValueError("ncv must be k+1<ncv<=n, ncv=%s" % self.ncv)
 
         self.workd = np.zeros(3 * n, self.tp)
         self.workl = np.zeros(3 * self.ncv * self.ncv + 6 * self.ncv, self.tp)
