@@ -68,7 +68,8 @@ class _ArpackParams(object):
             raise ValueError("matrix type must be 'f', 'd', 'F', or 'D'")
 
         if v0 is not None:
-            self.resid = v0
+            # ARPACK overwrites its initial resid,  make a copy
+            self.resid = np.array(v0, copy=True)
             info = 1
         else:
             self.resid = np.zeros(n, tp)
