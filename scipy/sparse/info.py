@@ -33,10 +33,12 @@ Example 1
 ---------
 Construct a 1000x1000 lil_matrix and add some values to it:
 
->>> from scipy import sparse, linsolve
->>> from numpy import linalg
+>>> from scipy.sparse import lil_matrix
+>>> from scipy.sparse.linalg import spsolve
+>>> from numpy.linalg import solve, norm
 >>> from numpy.random import rand
->>> A = sparse.lil_matrix((1000, 1000))
+
+>>> A = lil_matrix((1000, 1000))
 >>> A[0, :100] = rand(100)
 >>> A[1, 100:200] = A[0, :100]
 >>> A.setdiag(rand(1000))
@@ -45,16 +47,16 @@ Now convert it to CSR format and solve A x = b for x:
 
 >>> A = A.tocsr()
 >>> b = rand(1000)
->>> x = linsolve.spsolve(A, b)
+>>> x = spsolve(A, b)
 
 Convert it to a dense matrix and solve, and check that the result
 is the same:
 
->>> x_ = linalg.solve(A.todense(), b)
+>>> x_ = solve(A.todense(), b)
 
 Now we can compute norm of the error with:
 
->>> err = linalg.norm(x-x_)
+>>> err = norm(x-x_)
 >>> err < 1e-10
 True
 
