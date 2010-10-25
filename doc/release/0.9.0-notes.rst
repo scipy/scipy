@@ -37,9 +37,7 @@ about our function's call signatures.
 Python 3
 ========
 
-.. note:: This is the goal, we aren't there yet!
-
-Scipy 0.9.0 is the first release to have full support for Python 3.
+Scipy 0.9.0 has full support for Python 3.
 
 Deprecated features
 ===================
@@ -101,6 +99,14 @@ in ``scipy.optimize``.  The following methods are implemented:
 
 The ``scipy.optimize.nonlin`` module was completely rewritten, and
 some of the functions were deprecated (see above).
+
+
+New linear algebra routines (``scipy.linalg``)
+----------------------------------------------
+
+Scipy now contains routines for effectively solving triangular
+equation systems (``scipy.linalg.solve_triangular``).
+
 
 Removed features
 ================
