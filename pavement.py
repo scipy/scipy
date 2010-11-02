@@ -77,22 +77,26 @@ DMG_DIR = "dmg-source"
 if sys.platform == "win32":
     WINE_PY25 = [r"C:\Python25\python.exe"]
     WINE_PY26 = [r"C:\Python26\python26.exe"]
+    WINE_PY27 = [r"C:\Python27\python27.exe"]
     MAKENSIS = ["makensis"]
 elif sys.platform == "darwin":
     WINE_PY25 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python25/python.exe"]
     WINE_PY26 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python26/python.exe"]
+    WINE_PY27 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python27/python.exe"]
     MAKENSIS = ["wine", "makensis"]
 else:
     WINE_PY25 = [os.environ['HOME'] + "/.wine/drive_c/Python25/python.exe"]
     WINE_PY26 = [os.environ['HOME'] + "/.wine/drive_c/Python26/python.exe"]
+    WINE_PY27 = [os.environ['HOME'] + "/.wine/drive_c/Python27/python.exe"]
     MAKENSIS = ["wine", "makensis"]
-WINE_PYS = {'2.6' : WINE_PY26, '2.5': WINE_PY25}
+WINE_PYS = {'2.7' : WINE_PY27, '2.6' : WINE_PY26, '2.5': WINE_PY25}
 SUPERPACK_BUILD = 'build-superpack'
 SUPERPACK_BINDIR = os.path.join(SUPERPACK_BUILD, 'binaries')
 
 # XXX: fix this in a sane way
 MPKG_PYTHON = {"2.5": "/Library/Frameworks/Python.framework/Versions/2.5/bin/python",
-        "2.6": "/Library/Frameworks/Python.framework/Versions/2.6/bin/python"}
+        "2.6": "/Library/Frameworks/Python.framework/Versions/2.6/bin/python",
+        "2.7": "/Library/Frameworks/Python.framework/Versions/2.7/bin/python"}
 # Full path to the *static* gfortran runtime
 LIBGFORTRAN_A_PATH = "/usr/local/lib/libgfortran.a"
 
@@ -106,10 +110,10 @@ DOC_BLD = DOC_ROOT / "build"
 DOC_BLD_LATEX = DOC_BLD / "latex"
 
 # Source of the release notes
-RELEASE = 'doc/release/0.8.0-notes.rst'
+RELEASE = 'doc/release/0.9.0-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'svn/tags/0.7.0'
+LOG_START = 'svn/tags/0.8.0'
 LOG_END = 'master'
 
 # Virtualenv bootstrap stuff
@@ -124,7 +128,7 @@ INSTALLERS_DIR = os.path.join(RELEASE_DIR, 'installers')
 
 options(sphinx=Bunch(builddir="build", sourcedir="source", docroot='doc'),
         virtualenv=Bunch(script_name=BOOTSTRAP_SCRIPT,
-        packages_to_install=["sphinx==0.6.5"]),
+        packages_to_install=["sphinx==1.0.4"]),
         wininst=Bunch(pyver=PYVER, scratch=True))
 
 def parse_numpy_version(pyexec):
