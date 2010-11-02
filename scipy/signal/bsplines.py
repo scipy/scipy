@@ -4,10 +4,15 @@ from numpy import logical_and, asarray, pi, zeros_like, \
      piecewise, array, arctan2, tan, zeros, arange, floor
 from numpy.core.umath import sqrt, exp, greater, less, cos, add, sin, \
      less_equal, greater_equal
-from spline import *      # C-modules
+
+# From splinemodule.c
+from spline import cspline2d, qspline2d, sepfir2d, symiirorder1, symiirorder2
+
 from scipy.misc import comb
 
+
 gamma = scipy.special.gamma
+
 def factorial(n):
     return gamma(n+1)
 
@@ -31,7 +36,7 @@ def spline_filter(Iin, lmbda=5.0):
         out = sepfir2d(ckr, hcol, hcol)
         out = out.astype(intype)
     else:
-        raise TypeError;
+        raise TypeError("Invalid data type for Iin")
     return out
 
 _splinefunc_cache = {}
@@ -181,7 +186,7 @@ def c0_P(order):
         c0 = 5040
         P = array([1,120,1191,2416,1191, 120, 1])
     else:
-        raise ValueError, "Unknown order."
+        raise ValueError("Unknown order %d" % order)
 
 def _coeff_smooth(lam):
     xi = 1 - 96*lam + 24*lam * sqrt(3 + 144*lam)
@@ -302,7 +307,7 @@ def qspline1d(signal, lamb=0.0):
         Cubic spline coefficients.
     """
     if lamb != 0.0:
-        raise ValueError, "Smoothing quadratic splines not supported yet."
+        raise ValueError("Smoothing quadratic splines not supported yet.")
     else:
         return _quadratic_coeff(signal)
 
