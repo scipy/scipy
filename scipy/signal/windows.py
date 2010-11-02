@@ -1,7 +1,5 @@
 """The suite of window functions."""
 
-import types
-
 import numpy as np
 from scipy import special, linalg
 from scipy.fftpack import fft
@@ -340,8 +338,8 @@ def slepian(M, width, sym=True):
 
     """
     if (M*width > 27.38):
-        raise ValueError, "Cannot reliably obtain slepian sequences for"\
-              " M*width > 27.38."
+        raise ValueError("Cannot reliably obtain slepian sequences for"
+              " M*width > 27.38.")
     if M < 1:
         return np.array([])
     if M == 1:
@@ -473,7 +471,7 @@ def get_window(window, Nx, fftbins=True):
         elif winstr in ['chebwin', 'cheb']:
             winfunc = chebwin
         else:
-            raise ValueError, "Unknown window type."
+            raise ValueError("Unknown window type.")
 
         params = (Nx,) + args + (sym,)
     else:
