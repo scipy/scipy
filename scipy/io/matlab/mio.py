@@ -123,6 +123,12 @@ def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
     %(append_arg)s
     %(load_args)s
     %(struct_arg)s
+    variable_names : None or sequence
+        If None (the default) - read all variables in file. Otherwise
+        `variable_names` should be a sequence of strings, giving names of the
+        matlab variables to read from the file.  The reader will skip any
+        variable with a name not in this sequence, possibly saving some read
+        processing.
 
     Returns
     -------
@@ -138,8 +144,13 @@ def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
     files.  Because scipy does not supply one, we do not implement the
     HDF5 / 7.3 interface here.
     '''
+    if 'variable_names' in kwargs:
+        variable_names = kwargs['variable_names']
+        del kwargs['variable_names']
+    else:
+        variable_names = None
     MR = mat_reader_factory(file_name, appendmat, **kwargs)
-    matfile_dict = MR.get_variables()
+    matfile_dict = MR.get_variables(variable_names)
     if mdict is not None:
         mdict.update(matfile_dict)
     else:
