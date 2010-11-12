@@ -124,6 +124,16 @@ cdef class VarHeader5:
     cdef public int is_global
     cdef size_t nzmax
 
+    def set_dims(self, dims):
+        """ Allow setting of dimensions from python
+
+        This is for constructing headers for tests
+        """
+        self.dims = dims
+        self.n_dims = len(dims)
+        for i, dim in enumerate(dims):
+            self.dims_ptr[i] = <cnp.int32_t>int(dim)
+
 
 cdef class VarReader5:
     cdef public int is_swapped, little_endian
@@ -571,6 +581,7 @@ cdef class VarReader5:
         '''
         # calculate number of items in array from dims product
         cdef size_t size = 1
+        cdef int i
         for i in range(header.n_dims):
             size *= header.dims_ptr[i]
         return size
