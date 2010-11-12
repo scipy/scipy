@@ -636,12 +636,12 @@ def test_save_object():
     savemat_future(stream, {'c': c})
     d = loadmat(stream, struct_as_record=False)
     c2 = d['c'][0,0]
-    yield assert_equal, c2.field1, 1
-    yield assert_equal, c2.field2, 'a string'
+    assert_equal(c2.field1, 1)
+    assert_equal(c2.field2, 'a string')
     d = loadmat(stream, struct_as_record=True)
     c2 = d['c'][0,0]
-    yield assert_equal, c2['field1'], 1
-    yield assert_equal, c2['field2'], 'a string'
+    assert_equal(c2['field1'], 1)
+    assert_equal(c2['field2'], 'a string')
 
 
 def test_read_opts():
@@ -789,6 +789,16 @@ def test_str_round():
     savemat_future(stream, {'a': in_arr_u})
     res = loadmat(stream)
     assert_array_equal(res['a'], out_arr_u)
+
+
+def test_fieldnames():
+    # Check that field names are as expected
+    stream = BytesIO()
+    savemat_future(stream, {'a': {'a':1, 'b':2}})
+    res = loadmat(stream)
+    field_names = res['a'].dtype.names
+    assert_equal(set(field_names), set(('a', 'b')))
+
 
 if __name__ == "__main__":
     run_module_suite()

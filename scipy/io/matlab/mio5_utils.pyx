@@ -16,6 +16,9 @@ import sys
 
 from copy import copy as pycopy
 
+from libc.stdlib cimport calloc, free
+from libc.string cimport strcmp, strlen
+
 from cpython cimport Py_INCREF, Py_DECREF
 from cpython cimport PyObject
 
@@ -833,14 +836,34 @@ cdef class VarReader5:
         cdef object names = self.read_int8_string()
         field_names = []
         n_names = PyBytes_Size(names) // namelength
-        cdef char *n_ptr = names
+        # Make n_duplicates and pointer arrays
+        cdef:
+            int *n_duplicates
+            char **name_ptrs
+        n_duplicates = <int *>calloc(n_names, sizeof(int))
+        name_ptrs = <char **>calloc(n_names, sizeof(char *))
+        cdef:
+            char *n_ptr = names
+            int j, dup_no
         for i in range(n_names):
-            name = PyBytes_FromString(n_ptr)
-            field_names.append(asstr(name))
+            name = asstr(PyBytes_FromString(n_ptr))
+            # Check if this is a duplicate field, rename if so
+            name_ptrs[i] = n_ptr
+            dup_no = 0
+            for j in range(i):
+                if strcmp(n_ptr, name_ptrs[j]) == 0: # the same
+                    n_duplicates[j] += 1
+                    dup_no = n_duplicates[j]
+                    break
+            if dup_no != 0:
+                name = '_%d_%s' % (dup_no, name)
+            field_names.append(name)
             n_ptr += namelength
+        free(n_duplicates)
+        free(name_ptrs)
         n_names_ptr[0] = n_names
         return field_names
-        
+
     cpdef cnp.ndarray read_struct(self, VarHeader5 header):
         ''' Read struct or object array from stream
 

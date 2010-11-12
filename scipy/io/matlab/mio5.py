@@ -270,6 +270,12 @@ class MatFile5Reader(MatFileReader):
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
             name = asstr(hdr.name)
+            if name in mdict:
+                warnings.warn('Duplicate variable name "%s" in stream'
+                              ' - replacing previous with new\n'
+                              'Consider mio5.varmats_from_mat to split '
+                              'file into single variable files' % name,
+                              UserWarning, stacklevel=2)
             if name == '':
                 # can only be a matlab 7 function workspace
                 name = '__function_workspace__'
