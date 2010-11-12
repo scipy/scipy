@@ -633,6 +633,8 @@ class VarWriter5(object):
         try:
             mclass = NP_TO_MXTYPES[arr.dtype.str[1:]]
         except KeyError:
+            # No matching matlab type, probably complex256 / float128 / float96
+            # Cast data to complex128 / float64.
             if imagf:
                 arr = arr.astype('c128')
             else:

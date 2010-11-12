@@ -695,7 +695,13 @@ cdef class VarReader5:
             # avoid array copy to save memory
             res = self.read_numeric(False)
             res_j = self.read_numeric(False)
-            res = res + (res_j * 1j)
+            # Use c8 for f4s and c16 for f8 input. Just ``res = res + res_j *
+            # 1j`` upcasts to c16 regardless of input type.
+            if res.itemsize == 4:
+                res = res.astype('c8')
+            else:
+                res = res.astype('c16')
+            res.imag = res_j
         else:
             res = self.read_numeric()
         return res.reshape(header.dims[::-1]).T
