@@ -705,7 +705,7 @@ cdef class VarReader5:
         return scipy.sparse.csc_matrix(
             (data,rowind,indptr),
             shape=(M,N))
-                
+
     cpdef cnp.ndarray read_char(self, VarHeader5 header):
         ''' Read char matrices from stream as arrays
 
@@ -713,7 +713,7 @@ cdef class VarReader5:
         string by later processing in ``array_from_header``
         '''
         '''Notes to friendly fellow-optimizer
-        
+
         This routine is not much optimized.  If I was going to do it,
         I'd store the codecs as an object pointer array, as for the
         .dtypes, I might use python_string.PyBytes_Decode for decoding,
@@ -724,7 +724,7 @@ cdef class VarReader5:
         deals with unicode strings passed as memory,
 
         My own unicode introduction here:
-        https://cirl.berkeley.edu/mb312/pydagogue/python_unicode.html
+        http://matthew-brett.github.com/pydagogue/python_unicode.html
         '''
         cdef:
             cnp.uint32_t mdtype, byte_count
@@ -732,14 +732,23 @@ cdef class VarReader5:
             size_t el_count
             object data, res, codec
             cnp.ndarray arr
+            cnp.dtype dt
         cdef size_t length = self.size_from_header(header)
         data = self.read_element(
             &mdtype, &byte_count, <void **>&data_ptr, True)
+        # There are mat files in the wild that have 0 byte count strings, but
+        # maybe with non-zero length.
+        if byte_count == 0:
+            arr = np.array(' ' * length, dtype='U')
+            return np.ndarray(shape=header.dims,
+                              dtype=self.U1_dtype,
+                              buffer=arr,
+                              order='F')
         # Character data can be of apparently numerical types,
         # specifically np.uint8, np.int8, np.uint16.  np.unit16 can have
         # a length 1 type encoding, like ascii, or length 2 type
         # encoding
-        cdef cnp.dtype dt = <cnp.dtype>self.dtypes[mdtype]
+        dt = <cnp.dtype>self.dtypes[mdtype]
         if mdtype == miUINT16:
             codec = self.uint16_codec
             if self.codecs['uint16_len'] == 1: # need LSBs only
@@ -759,14 +768,13 @@ cdef class VarReader5:
         uc_str = data.decode(codec)
         # cast to array to deal with 2, 4 byte width characters
         arr = np.array(uc_str, dtype='U')
-        dt = self.U1_dtype
         # could take this to numpy C-API level, but probably not worth
         # it
         return np.ndarray(shape=header.dims,
-                          dtype=dt,
+                          dtype=self.U1_dtype,
                           buffer=arr,
                           order='F')
-                             
+
     cpdef cnp.ndarray read_cells(self, VarHeader5 header):
         ''' Read cell array from stream '''
         cdef:
