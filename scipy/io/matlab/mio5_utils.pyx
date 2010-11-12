@@ -135,8 +135,6 @@ cdef class VarReader5:
     cdef PyObject* dtypes[_N_MIS]
     # pointers to stuff in preader.class_dtypes
     cdef PyObject* class_dtypes[_N_MXS]
-    # necessary to keep memory alive for .dtypes, .class_dtypes
-    cdef object preader
     # cached here for convenience in later array creation
     cdef cnp.dtype U1_dtype
     cdef cnp.dtype bool_dtype
@@ -145,9 +143,22 @@ cdef class VarReader5:
         int mat_dtype
         int squeeze_me
         int chars_as_strings
-        
+
+    """ Initialize from file reader object
+
+    preader needs the following fields defined:
+
+    * mat_stream (file-like)
+    * byte_order (str)
+    * uint16_codec (str)
+    * struct_as_record (bool)
+    * chars_as_strings (bool)
+    * mat_dtype (bool)
+    * squeeze_me (bool)
+    """
     def __new__(self, preader):
-        self.is_swapped = preader.byte_order == swapped_code
+        byte_order = preader.byte_order
+        self.is_swapped = byte_order == swapped_code
         if self.is_swapped:
             self.little_endian = not sys_is_le
         else:
@@ -155,24 +166,27 @@ cdef class VarReader5:
         # option affecting reading of matlab struct arrays
         self.struct_as_record = preader.struct_as_record
         # store codecs for text matrix reading
-        self.codecs = preader.codecs
+        self.codecs = mio5p.MDTYPES[byte_order]['codecs'].copy()
         self.uint16_codec = preader.uint16_codec
+        uint16_codec = self.uint16_codec
+        # Set length of miUINT16 char encoding
+        self.codecs['uint16_len'] = len("  ".encode(uint16_codec)) \
+                - len(" ".encode(uint16_codec))
+        self.codecs['uint16_codec'] = uint16_codec
         # set c-optimized stream object from python file-like object
         self.set_stream(preader.mat_stream)
         # options for element processing
         self.mat_dtype = preader.mat_dtype
         self.chars_as_strings = preader.chars_as_strings
         self.squeeze_me = preader.squeeze_me
-        # copy refs to dtypes into object pointer array. Store preader
-        # to keep preader.dtypes, class_dtypes alive. We only need the
+        # copy refs to dtypes into object pointer array. We only need the
         # integer-keyed dtypes
-        self.preader = preader
-        for key, dt in preader.dtypes.items():
+        for key, dt in mio5p.MDTYPES[byte_order]['dtypes'].items():
             if isinstance(key, str):
                 continue
             self.dtypes[key] = <PyObject*>dt
         # copy refs to class_dtypes into object pointer array
-        for key, dt in preader.class_dtypes.items():
+        for key, dt in mio5p.MDTYPES[byte_order]['classes'].items():
             if isinstance(key, str):
                 continue
             self.class_dtypes[key] = <PyObject*>dt
