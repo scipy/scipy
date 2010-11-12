@@ -90,7 +90,7 @@ import byteordercodes as boc
 
 from miobase import MatFileReader, docfiller, matdims, \
      read_dtype, arr_to_chars, arr_dtype_number, \
-     MatWriteError, MatReadError
+     MatWriteError, MatReadError, MatReadWarning
 
 # Reader object for matlab 5 format variables
 from mio5_utils import VarReader5
@@ -275,7 +275,7 @@ class MatFile5Reader(MatFileReader):
                               ' - replacing previous with new\n'
                               'Consider mio5.varmats_from_mat to split '
                               'file into single variable files' % name,
-                              UserWarning, stacklevel=2)
+                              MatReadWarning, stacklevel=2)
             if name == '':
                 # can only be a matlab 7 function workspace
                 name = '__function_workspace__'
@@ -806,10 +806,10 @@ class MatFile5Writer(object):
         Parameters
         ----------
         mdict : mapping
-           mapping with method ``items`` return name, contents pairs
-           where ``name`` which will appeak in the matlab workspace in
-           file load, and ``contents`` is something writeable to a
-           matlab file, such as a numpy array.
+           mapping with method ``items`` returns name, contents pairs where
+           ``name`` which will appear in the matlab workspace in file load, and
+           ``contents`` is something writeable to a matlab file, such as a numpy
+           array.
         write_header : {None, True, False}
            If True, then write the matlab file header before writing the
            variables.  If None (the default) then write the file header

@@ -20,6 +20,8 @@ class MatReadError(Exception): pass
 
 class MatWriteError(Exception): pass
 
+class MatReadWarning(UserWarning): pass
+
 doc_dict = \
     {'file_arg':
          '''file_name : string

@@ -40,7 +40,7 @@ from scipy.io.matlab.miobase import matdims, MatFileReader, \
 from scipy.io.matlab.mio import find_mat_file, mat_reader_factory, \
     loadmat, savemat
 from scipy.io.matlab.mio5 import MatlabObject, MatFile5Writer, \
-      MatFile5Reader, MatlabFunction
+      MatFile5Reader, MatlabFunction, varmats_from_mat
 
 # Use future defaults to silence unwanted test warnings
 savemat_future = partial(savemat, oned_as='row')
@@ -825,6 +825,26 @@ def test_round_types():
         savemat_future(stream, {'arr': arr.astype(dts)})
         vars = loadmat(stream)
         assert_equal(np.dtype(dts), vars['arr'].dtype)
+
+
+def test_varmats_from_mat():
+    # Make a mat file with several variables, write it, read it back
+    names_vars = (('arr', mlarr(np.arange(10))),
+                  ('mystr', mlarr('a string')),
+                  ('mynum', mlarr(10)))
+    # Dict like thing to give variables in defined order
+    class C(object):
+        def items(self): return names_vars
+    stream = BytesIO()
+    savemat_future(stream, C())
+    varmats = varmats_from_mat(stream)
+    assert_equal(len(varmats), 3)
+    for i in range(3):
+        name, var_stream = varmats[i]
+        exp_name, exp_res = names_vars[i]
+        assert_equal(name, exp_name)
+        res = loadmat(var_stream)
+        assert_array_equal(res[name], exp_res)
 
 
 if __name__ == "__main__":
