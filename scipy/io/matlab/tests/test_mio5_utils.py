@@ -78,11 +78,12 @@ def _write_stream(stream, *strings):
     stream.seek(0)
 
 
-def _make_readerlike():
+def _make_readerlike(stream, byte_order=boc.native_code):
     class R(object):
         pass
     r = R()
-    r.byte_order = boc.native_code
+    r.mat_stream = stream
+    r.byte_order = byte_order
     r.struct_as_record = True
     r.uint16_codec = sys.getdefaultencoding()
     r.chars_as_strings = False
@@ -95,8 +96,7 @@ def test_read_tag():
     # mainly to test errors
     # make reader-like thing
     str_io = BytesIO()
-    r = _make_readerlike()
-    r.mat_stream = str_io
+    r = _make_readerlike(str_io)
     c_reader = m5u.VarReader5(r)
     # This works for StringIO but _not_ cStringIO
     yield assert_raises, IOError, c_reader.read_tag
@@ -119,8 +119,7 @@ def test_read_stream():
 def test_read_numeric():
     # make reader-like thing
     str_io = cStringIO()
-    r = _make_readerlike()
-    r.mat_stream = str_io
+    r = _make_readerlike(str_io)
     # check simplest of tags
     for base_dt, val, mdtype in (
         ('u2', 30, mio5p.miUINT16),
@@ -128,7 +127,6 @@ def test_read_numeric():
         ('i2', -1, mio5p.miINT16)):
         for byte_code in ('<', '>'):
             r.byte_order = byte_code
-            r.dtypes = mio5p.MDTYPES[byte_code]['dtypes']
             c_reader = m5u.VarReader5(r)
             yield assert_equal, c_reader.little_endian, byte_code == '<'
             yield assert_equal, c_reader.is_swapped, byte_code != boc.native_code
@@ -150,9 +148,7 @@ def test_read_numeric():
 def test_read_numeric_writeable():
     # make reader-like thing
     str_io = cStringIO()
-    r = _make_readerlike()
-    r.mat_stream = str_io
-    r.byte_order = '<'
+    r = _make_readerlike(str_io, '<')
     c_reader = m5u.VarReader5(r)
     dt = np.dtype('<u2')
     a = _make_tag(dt, 30, mio5p.miUINT16, 0)
