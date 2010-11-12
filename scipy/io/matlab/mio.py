@@ -144,11 +144,7 @@ def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
     files.  Because scipy does not supply one, we do not implement the
     HDF5 / 7.3 interface here.
     '''
-    if 'variable_names' in kwargs:
-        variable_names = kwargs['variable_names']
-        del kwargs['variable_names']
-    else:
-        variable_names = None
+    variable_names = kwargs.pop('variable_names', None)
     MR = mat_reader_factory(file_name, appendmat, **kwargs)
     matfile_dict = MR.get_variables(variable_names)
     if mdict is not None:
