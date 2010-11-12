@@ -411,8 +411,8 @@ def to_writeable(source):
     array([], dtype=float64)
     >>> to_writeable(None)
 
-    >>> to_writeable('a string').dtype
-    dtype('|S8')
+    >>> to_writeable('a string').dtype.type == np.str_
+    True
     >>> to_writeable(1)
     array(1)
     >>> to_writeable([1])

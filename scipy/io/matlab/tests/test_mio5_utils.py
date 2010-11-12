@@ -12,6 +12,8 @@ else:
 
 import numpy as np
 
+from numpy.compat import asbytes
+
 from nose.tools import assert_true, assert_false, \
      assert_equal, assert_raises
 
@@ -171,7 +173,7 @@ def test_zero_byte_string():
     hdr = m5u.VarHeader5()
     # Try when string is 1 length
     hdr.set_dims([1,])
-    _write_stream(str_io, tag.tostring() + '        ')
+    _write_stream(str_io, tag.tostring() + asbytes('        '))
     str_io.seek(0)
     val = c_reader.read_char(hdr)
     assert_equal(val, u' ')
