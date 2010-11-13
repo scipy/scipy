@@ -238,9 +238,9 @@ def normalize(b, a):
     """
     b,a = map(atleast_1d,(b,a))
     if len(a.shape) != 1:
-        raise ValueError, "Denominator polynomial must be rank-1 array."
+        raise ValueError("Denominator polynomial must be rank-1 array.")
     if len(b.shape) > 2:
-        raise ValueError, "Numerator polynomial must be rank-1 or rank-2 array."
+        raise ValueError("Numerator polynomial must be rank-1 or rank-2 array.")
     if len(b.shape) == 1:
         b = asarray([b],b.dtype.char)
     while a[0] == 0.0 and len(a) > 1:
@@ -451,9 +451,9 @@ def iirdesign(wp, ws, gpass, gstop, analog=0, ftype='ellip', output='ba'):
     try:
         ordfunc = filter_dict[ftype][1]
     except KeyError:
-        raise ValueError, "Invalid IIR filter type."
+        raise ValueError("Invalid IIR filter type: %s" % ftype)
     except IndexError:
-        raise ValueError, "%s does not have order selection use iirfilter function." % ftype
+        raise ValueError("%s does not have order selection use iirfilter function." % ftype)
 
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
@@ -515,15 +515,15 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=0, ftype='butter', o
     try:
         btype = band_dict[btype]
     except KeyError:
-        raise ValueError, "%s is an invalid bandtype for filter." % btype
+        raise ValueError("%s is an invalid bandtype for filter." % btype)
 
     try:
         typefunc = filter_dict[ftype][0]
     except KeyError:
-        raise ValueError, "%s is not a valid basic iir filter." % ftype
+        raise ValueError("%s is not a valid basic iir filter." % ftype)
 
     if output not in ['ba', 'zpk']:
-        raise ValueError, "%s is not a valid output form." % output
+        raise ValueError("%s is not a valid output form." % output)
 
     #pre-warp frequencies for digital filter design
     if not analog:
@@ -544,15 +544,15 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=0, ftype='butter', o
         z, p, k = typefunc(N)
     elif typefunc == cheb1ap:
         if rp is None:
-            raise ValueError, "passband ripple (rp) must be provided to design a Chebyshev I filter."
+            raise ValueError("passband ripple (rp) must be provided to design a Chebyshev I filter.")
         z, p, k = typefunc(N, rp)
     elif typefunc == cheb2ap:
         if rs is None:
-            raise ValueError, "stopband atteunatuion (rs) must be provided to design an Chebyshev II filter."
+            raise ValueError("stopband atteunatuion (rs) must be provided to design an Chebyshev II filter.")
         z, p, k = typefunc(N, rs)
     else:  # Elliptic filters
         if rs is None or rp is None:
-            raise ValueError, "Both rp and rs must be provided to design an elliptic filter."
+            raise ValueError("Both rp and rs must be provided to design an elliptic filter.")
         z, p, k = typefunc(N, rp, rs)
 
     b, a = zpk2tf(z,p,k)
@@ -694,7 +694,7 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
         d1 = special.ellipk([arg1**2, 1-arg1**2])
         n = (d0[0]*d1[1] / (d0[1]*d1[0]))
     else:
-        raise ValueError, "Incorrect type: ", type
+        raise ValueError("Incorrect type: %s" % type)
     return n
 
 def buttord(wp, ws, gpass, gstop, analog=0):
@@ -800,7 +800,7 @@ def buttord(wp, ws, gpass, gstop, analog=0):
                                               passb[0]*passb[1])
         WN = numpy.sort(abs(WN))
     else:
-        raise ValueError, "Bad type."
+        raise ValueError("Bad type: %s" % filter_type)
 
     if not analog:
         wn = (2.0/pi)*arctan(WN)
@@ -1179,7 +1179,7 @@ def ellipap(N, rp, rs):
     ck1 = eps / numpy.sqrt(10**(0.1*rs)-1)
     ck1p = numpy.sqrt(1-ck1*ck1)
     if ck1p == 1:
-        raise ValueError, "Cannot design a filter with given rp and rs specifications."
+        raise ValueError("Cannot design a filter with given rp and rs specifications.")
 
     wp = 1
     val = special.ellipk([ck1*ck1,ck1p*ck1p])
@@ -1585,7 +1585,7 @@ def besselap(N):
              -.2373280669322028974199184-1.211476658382565356579418*1j,
              -.2373280669322028974199184+1.211476658382565356579418*1j]
     else:
-        raise ValueError, "Bessel Filter not supported for order %d" % N
+        raise ValueError("Bessel Filter not supported for order %d" % N)
 
     return z, p, k
 

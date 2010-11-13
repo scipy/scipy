@@ -50,7 +50,7 @@ def tf2ss(num, den):
     M = num.shape[1]
     K = len(den)
     if (M > K):
-        raise ValueError, "Improper transfer function."
+        raise ValueError("Improper transfer function.")
     if (M == 0 or K == 0):  # Null system
         return array([],float), array([], float), array([], float), \
                array([], float)
@@ -87,7 +87,7 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
 
     if ((len(A.shape) > 2) or (len(B.shape) > 2) or \
         (len(C.shape) > 2) or (len(D.shape) > 2)):
-        raise ValueError, "A, B, C, D arrays can be no larger than rank-2."
+        raise ValueError("A, B, C, D arrays can be no larger than rank-2.")
 
     MA, NA = A.shape
     MB, NB = B.shape
@@ -108,15 +108,15 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
         A = zeros(MA, NA)
 
     if MA != NA:
-        raise ValueError, "A must be square."
+        raise ValueError("A must be square.")
     if MA != MB:
-        raise ValueError, "A and B must have the same number of rows."
+        raise ValueError("A and B must have the same number of rows.")
     if NA != NC:
-        raise ValueError, "A and C must have the same number of columns."
+        raise ValueError("A and C must have the same number of columns.")
     if MD != MC:
-        raise ValueError, "C and D must have the same number of rows."
+        raise ValueError("C and D must have the same number of rows.")
     if ND != NB:
-        raise ValueError, "B and D must have the same number of columns."
+        raise ValueError("B and D must have the same number of columns.")
 
     return A, B, C, D
 
@@ -145,7 +145,7 @@ def ss2tf(A, B, C, D, input=0):
 
     nout, nin = D.shape
     if input >= nin:
-        raise ValueError, "System does not have the input specified."
+        raise ValueError("System does not have the input specified.")
 
     # make MOSI from possibly MOMI system.
     if B.shape[-1] != 0:
@@ -256,7 +256,7 @@ class lti(object):
             self.inputs = self.B.shape[-1]
             self.outputs = self.C.shape[0]
         else:
-            raise ValueError, "Needs 2, 3, or 4 arguments."
+            raise ValueError("Needs 2, 3, or 4 arguments.")
 
     def __setattr__(self, attr, val):
         if attr in ['num','den']:
@@ -368,7 +368,7 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
 
     T = atleast_1d(T)
     if len(T.shape) != 1:
-        raise ValueError, "T must be a rank-1 array."
+        raise ValueError("T must be a rank-1 array.")
 
     if U is not None:
         U = atleast_1d(U)
@@ -459,12 +459,12 @@ def lsim(system, U, T, X0=None, interp=1):
         U = U.reshape((U.shape[0],1))
     sU = U.shape
     if len(T.shape) != 1:
-        raise ValueError, "T must be a rank-1 array."
+        raise ValueError("T must be a rank-1 array.")
     if sU[0] != len(T):
         raise ValueError("U must have the same number of rows "
                          "as elements in T.")
     if sU[1] != sys.inputs:
-        raise ValueError, "System does not define that many inputs."
+        raise ValueError("System does not define that many inputs.")
 
     if X0 is None:
         X0 = zeros(sys.B.shape[0], sys.A.dtype)
@@ -634,7 +634,7 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
         sys = lti(*system)
     B = sys.B
     if B.shape[-1] != 1:
-        raise ValueError, "impulse2() requires a single-input system."
+        raise ValueError("impulse2() requires a single-input system.")
     B = B.squeeze()
     if X0 is None:
         X0 = zeros_like(B)

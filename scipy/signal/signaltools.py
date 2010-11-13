@@ -39,8 +39,8 @@ def _valfrommode(mode):
         val = _modedict[mode]
     except KeyError:
         if mode not in [0,1,2]:
-            raise ValueError, "Acceptable mode flags are 'valid' (0)," \
-                  "'same' (1), or 'full' (2)."
+            raise ValueError("Acceptable mode flags are 'valid' (0),"
+                    " 'same' (1), or 'full' (2).")
         val = mode
     return val
 
@@ -49,8 +49,8 @@ def _bvalfromboundary(boundary):
         val = _boundarydict[boundary] << 2
     except KeyError:
         if val not in [0,1,2] :
-            raise ValueError, "Acceptable boundary flags are 'fill', 'wrap'" \
-                  " (or 'circular'), \n  and 'symm' (or 'symmetric')."
+            raise ValueError("Acceptable boundary flags are 'fill', 'wrap'"
+                    " (or 'circular'), \n  and 'symm' (or 'symmetric').")
         val = boundary << 2
     return val
 
@@ -297,8 +297,8 @@ def order_filter(a, domain, rank):
     size = domain.shape
     for k in range(len(size)):
         if (size[k] % 2) != 1:
-            raise ValueError, "Each dimension of domain argument " \
-                  "should have an odd number of elements."
+            raise ValueError("Each dimension of domain argument "
+                    " should have an odd number of elements.")
     return sigtools._order_filterND(a, domain, rank)
 
 
@@ -336,7 +336,7 @@ def medfilt(volume, kernel_size=None):
 
     for k in range(len(volume.shape)):
         if (kernel_size[k] % 2) != 1:
-            raise ValueError, "Each element of kernel_size should be odd."
+            raise ValueError("Each element of kernel_size should be odd.")
 
     domain = ones(kernel_size)
 
@@ -536,7 +536,7 @@ def medfilt2d(input, kernel_size=3):
 
     for size in kernel_size:
         if (size % 2) != 1:
-            raise ValueError, "Each element of kernel_size should be odd."
+            raise ValueError("Each element of kernel_size should be odd.")
 
     return sigtools._medfilt2d(image, kernel_size)
 
@@ -724,7 +724,7 @@ def hilbert(x, N=None, axis=-1):
     if N is None:
         N = x.shape[axis]
     if N <=0:
-        raise ValueError, "N must be positive."
+        raise ValueError("N must be positive.")
     if iscomplexobj(x):
         print "Warning: imaginary part of x ignored."
         x = real(x)
@@ -773,7 +773,7 @@ def hilbert2(x, N=None):
         N = x.shape
     if len(N) < 2:
         if N <=0:
-            raise ValueError, "N must be positive."
+            raise ValueError("N must be positive.")
         N = (N,N)
     if iscomplexobj(x):
         print "Warning: imaginary part of x ignored."
@@ -1257,7 +1257,7 @@ def detrend(data, axis=-1, type='linear', bp=0):
 
     """
     if type not in ['linear','l','constant','c']:
-        raise ValueError, "Trend type must be linear or constant"
+        raise ValueError("Trend type must be 'linear' or 'constant'.")
     data = asarray(data)
     dtype = data.dtype.char
     if dtype not in 'dfDF':
@@ -1270,8 +1270,8 @@ def detrend(data, axis=-1, type='linear', bp=0):
         N = dshape[axis]
         bp = sort(unique(r_[0,bp,N]))
         if any(bp > N):
-            raise ValueError, "Breakpoints must be less than length " \
-                  "of data along given axis."
+            raise ValueError("Breakpoints must be less than length "
+                    "of data along given axis.")
         Nreg = len(bp) - 1
         # Restructure data so that axis is along first dimension and
         #  all other dimensions are collapsed into second dimension
@@ -1331,12 +1331,12 @@ def filtfilt(b, a, x):
     edge=ntaps*3
 
     if x.ndim != 1:
-        raise ValueError, "filtfilt only accepts 1-d arrays."
+        raise ValueError("filtfilt only accepts 1-d arrays.")
 
     #x must be bigger than edge
     if x.size < edge:
-        raise ValueError, "Input vector needs to be bigger than " \
-              "3 * max(len(a),len(b)."
+        raise ValueError("Input vector needs to be bigger than "
+              "3 * max(len(a),len(b).")
 
     if len(a) < ntaps:
         a=r_[a,zeros(len(b)-len(a))]
@@ -1392,7 +1392,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1):
     """
 
     if not isinstance(q, int):
-        raise TypeError, "q must be an integer"
+        raise TypeError("q must be an integer")
 
     if n is None:
         if ftype == 'fir':
