@@ -82,6 +82,11 @@ Signal Processing Tools
         IIR filter design given order and critical frequencies.
     invres:
         Inverse partial fraction expansion.
+    kaiser_beta:
+        Compute the Kaiser parameter beta, given the desired FIR filter attenuation.
+    kaiser_atten:
+        Compute the attenuation of a Kaiser FIR filter, given the number of taps
+        and the transition width at discontinuities in the frequency response.
     kaiserord:
         Design a Kaiser window to limit ripple and width of transition region.
     remez:

@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 from numpy.testing import TestCase, assert_array_almost_equal, assert_
 
-from scipy.signal import tf2zpk, bessel, BadCoefficients, kaiserord, firwin, freqz, remez
+from scipy.signal import tf2zpk, bessel, BadCoefficients, freqz, remez
 
 
 class TestTf2zpk(TestCase):
@@ -39,16 +39,6 @@ class TestTf2zpk(TestCase):
             warnings.simplefilter("always", BadCoefficients)
 
 
-class TestFirWin(TestCase):
-
-    def test_lowpass(self):
-        width = 0.04
-        ntaps, beta = kaiserord(120, width)
-        taps = firwin(ntaps, cutoff=0.5, window=('kaiser', beta))
-        freq_samples = np.array([0.0, 0.25, 0.5-width/2, 0.5+width/2, 0.75, 1.0])
-        freqs, response = freqz(taps, worN=np.pi*freq_samples)
-        assert_array_almost_equal(np.abs(response),
-                                    [1.0, 1.0, 1.0, 0.0, 0.0, 0.0], decimal=5)
 
 class TestRemez(TestCase):
 

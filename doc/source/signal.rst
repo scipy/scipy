@@ -68,6 +68,8 @@ Filter design
    freqz
    iirdesign
    iirfilter
+   kaiser_atten
+   kaiser_beta
    kaiserord
    remez
 

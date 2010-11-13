@@ -108,5 +108,15 @@ Scipy now contains routines for effectively solving triangular
 equation systems (``scipy.linalg.solve_triangular``).
 
 
+Improved FIR filter design functions (``scipy.signal``)
+-------------------------------------------------------
+
+The function ``scipy.signal.firwin`` was enhanced to allow the
+design of highpass, bandpass, bandstop and multi-band FIR filters.
+
+The functions ``scipy.signal.kaiser_atten`` and ``scipy.signal.kaiser_beta``
+were added. 
+
+
 Removed features
 ================
