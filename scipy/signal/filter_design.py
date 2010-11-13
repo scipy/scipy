@@ -215,10 +215,6 @@ def zpk2tf(z, p, k):
     a : ndarray
         Numerator and denominator polynomials.
 
-    Note
-    ----
-    If some values of b are too close to 0, they are removed. In that case, a
-    BadCoefficients warning is emitted.
     """
     z = atleast_1d(z)
     k = atleast_1d(k)
