@@ -1,8 +1,11 @@
+
+import warnings
+
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, run_module_suite
 
 from scipy.signal.ltisys import ss2tf, lsim2, impulse2, step2, lti
-
+from scipy.signal.filter_design import BadCoefficients
 
 class TestSS2TF:
     def tst_matrix_shapes(self, p, q, r):
@@ -61,9 +64,10 @@ class Test_lsim2(object):
         assert_almost_equal(x[:,0], expected_x)
 
     def test_05(self):
-        # This test triggers a "BadCoefficients" warning from scipy.signal.filter_design,
-        # but the test passes.  I think the warning is related to the incomplete handling
-        # of multi-input systems in scipy.signal.
+        # The call to lsim2 triggers a "BadCoefficients" warning from
+        # scipy.signal.filter_design, but the test passes.  I think the warning
+        # is related to the incomplete handling of multi-input systems in
+        # scipy.signal.
 
         # A system with two state variables, two inputs, and one output.
         A = np.array([[-1.0, 0.0], [0.0, -2.0]])
@@ -72,7 +76,11 @@ class Test_lsim2(object):
         D = np.zeros((1,2))
 
         t = np.linspace(0, 10.0, 101)
-        tout, y, x = lsim2((A,B,C,D), T=t, X0=[1.0, 1.0])
+        warnings.simplefilter("ignore", BadCoefficients)
+        try:
+            tout, y, x = lsim2((A,B,C,D), T=t, X0=[1.0, 1.0])
+        finally:
+            del warnings.filters[0]
         expected_y = np.exp(-tout)
         expected_x0 = np.exp(-tout)
         expected_x1 = np.exp(-2.0*tout)
