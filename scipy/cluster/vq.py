@@ -1,70 +1,76 @@
-""" K-means Clustering and Vector Quantization Module
+"""
+K-means Clustering and Vector Quantization Module
 
-    Provides routines for k-means clustering, generating code books
-    from k-means models, and quantizing vectors by comparing them with
-    centroids in a code book.
+Provides routines for k-means clustering, generating code books
+from k-means models, and quantizing vectors by comparing them with
+centroids in a code book.
 
-    The k-means algorithm takes as input the number of clusters to
-    generate, k, and a set of observation vectors to cluster.  It
-    returns a set of centroids, one for each of the k clusters.  An
-    observation vector is classified with the cluster number or
-    centroid index of the centroid closest to it.
+The k-means algorithm takes as input the number of clusters to
+generate, k, and a set of observation vectors to cluster.  It
+returns a set of centroids, one for each of the k clusters.  An
+observation vector is classified with the cluster number or
+centroid index of the centroid closest to it.
 
-    A vector v belongs to cluster i if it is closer to centroid i than
-    any other centroids. If v belongs to i, we say centroid i is the
-    dominating centroid of v. Common variants of k-means try to
-    minimize distortion, which is defined as the sum of the distances
-    between each observation vector and its dominating centroid.  Each
-    step of the k-means algorithm refines the choices of centroids to
-    reduce distortion. The change in distortion is often used as a
-    stopping criterion: when the change is lower than a threshold, the
-    k-means algorithm is not making sufficient progress and
-    terminates.
+A vector v belongs to cluster i if it is closer to centroid i than
+any other centroids. If v belongs to i, we say centroid i is the
+dominating centroid of v. The k-means algorithm tries to
+minimize distortion, which is defined as the sum of the squared distances
+between each observation vector and its dominating centroid.  Each
+step of the k-means algorithm refines the choices of centroids to
+reduce distortion. The change in distortion is used as a
+stopping criterion: when the change is lower than a threshold, the
+k-means algorithm is not making sufficient progress and
+terminates. One can also define a maximum number of iterations.
 
-    Since vector quantization is a natural application for k-means,
-    information theory terminology is often used.  The centroid index
-    or cluster index is also referred to as a "code" and the table
-    mapping codes to centroids and vice versa is often referred as a
-    "code book". The result of k-means, a set of centroids, can be
-    used to quantize vectors. Quantization aims to find an encoding of
-    vectors that reduces the expected distortion.
+Since vector quantization is a natural application for k-means,
+information theory terminology is often used.  The centroid index
+or cluster index is also referred to as a "code" and the table
+mapping codes to centroids and vice versa is often referred as a
+"code book". The result of k-means, a set of centroids, can be
+used to quantize vectors. Quantization aims to find an encoding of
+vectors that reduces the expected distortion.
 
-    For example, suppose we wish to compress a 24-bit color image
-    (each pixel is represented by one byte for red, one for blue, and
-    one for green) before sending it over the web.  By using a smaller
-    8-bit encoding, we can reduce the amount of data by two
-    thirds. Ideally, the colors for each of the 256 possible 8-bit
-    encoding values should be chosen to minimize distortion of the
-    color. Running k-means with k=256 generates a code book of 256
-    codes, which fills up all possible 8-bit sequences.  Instead of
-    sending a 3-byte value for each pixel, the 8-bit centroid index
-    (or code word) of the dominating centroid is transmitted. The code
-    book is also sent over the wire so each 8-bit code can be
-    translated back to a 24-bit pixel value representation. If the
-    image of interest was of an ocean, we would expect many 24-bit
-    blues to be represented by 8-bit codes. If it was an image of a
-    human face, more flesh tone colors would be represented in the
-    code book.
+All routines expect obs to be a M by N array where the rows are
+the observation vectors. The codebook is a k by N array where the
+i'th row is the centroid of code word i. The observation vectors
+and centroids have the same feature dimension.
 
-    All routines expect obs to be a M by N array where the rows are
-    the observation vectors. The codebook is a k by N array where the
-    i'th row is the centroid of code word i. The observation vectors
-    and centroids have the same feature dimension.
+As an example, suppose we wish to compress a 24-bit color image
+(each pixel is represented by one byte for red, one for blue, and
+one for green) before sending it over the web.  By using a smaller
+8-bit encoding, we can reduce the amount of data by two
+thirds. Ideally, the colors for each of the 256 possible 8-bit
+encoding values should be chosen to minimize distortion of the
+color. Running k-means with k=256 generates a code book of 256
+codes, which fills up all possible 8-bit sequences.  Instead of
+sending a 3-byte value for each pixel, the 8-bit centroid index
+(or code word) of the dominating centroid is transmitted. The code
+book is also sent over the wire so each 8-bit code can be
+translated back to a 24-bit pixel value representation. If the
+image of interest was of an ocean, we would expect many 24-bit
+blues to be represented by 8-bit codes. If it was an image of a
+human face, more flesh tone colors would be represented in the
+code book.
 
-    whiten(obs) --
-        Normalize a group of observations so each feature has unit
-        variance.
-    vq(obs,code_book) --
-        Calculate code book membership of a set of observation
-        vectors.
-    kmeans(obs,k_or_guess,iter=20,thresh=1e-5) --
-        Clusters a set of observation vectors. Learns centroids with
-        the k-means algorithm, trying to minimize distortion.  A code
-        book is generated that can be used to quantize vectors.
-    kmeans2 --
-        A different implementation of k-means with more methods for
-        initializing centroids.  Uses maximum number of iterations as
-        opposed to a distortion threshold as its stopping criterion.
+Functions
+---------
+`whiten` :
+    Normalize a group of observations so each feature has unit
+    variance.
+
+`vq` :
+    Calculate code book membership of a set of observation
+    vectors.
+
+`kmeans` :
+    Clusters a set of observation vectors. Learns centroids with
+    the k-means algorithm, trying to minimize distortion.  A code
+    book is generated that can be used to quantize vectors.
+
+`kmeans2` :
+    A different implementation of k-means with more methods for
+    initializing centroids.  Uses maximum number of iterations as
+    opposed to a distortion threshold as its stopping criterion.
 
 """
 __docformat__ = 'restructuredtext'
@@ -393,62 +399,68 @@ def _kmeans(obs, guess, thresh=1e-5):
     return code_book, avg_dist[-1]
 
 def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
-    """Performs k-means on a set of observation vectors forming k
-       clusters. This yields a code book mapping centroids to codes
-       and vice versa. The k-means algorithm adjusts the centroids
-       until sufficient progress cannot be made, i.e. the change in
-       distortion since the last iteration is less than some
-       threshold.
+    """
+    Performs k-means on a set of observation vectors forming k clusters.
 
-    :Parameters:
-        obs : ndarray
-            Each row of the M by N array is an observation vector. The
-            columns are the features seen during each observation.
-            The features must be whitened first with the whiten
-            function.
+    The k-means algorithm adjusts the centroids until sufficient
+    progress cannot be made, i.e. the change in distortion since
+    the last iteration is less than some threshold. This yields
+    a code book mapping centroids to codes and vice versa.
 
-        k_or_guess : int or ndarray
-            The number of centroids to generate. A code is assigned to
-            each centroid, which is also the row index of the centroid
-            in the code_book matrix generated.
+    Distortion is defined as the sum of the squared differences
+    between the observations and the corresponding centroid.
 
-            The initial k centroids are chosen by randomly selecting
-            observations from the observation matrix. Alternatively,
-            passing a k by N array specifies the initial k centroids.
+    Parameters
+    ----------
+    obs : ndarray
+       Each row of the M by N array is an observation vector. The
+       columns are the features seen during each observation.
+       The features must be whitened first with the `whiten` function.
 
-        iter : int
-            The number of times to run k-means, returning the codebook
-            with the lowest distortion. This argument is ignored if
-            initial centroids are specified with an array for the
-            k_or_guess paramter. This parameter does not represent the
-            number of iterations of the k-means algorithm.
+    k_or_guess : int or ndarray
+       The number of centroids to generate. A code is assigned to
+       each centroid, which is also the row index of the centroid
+       in the code_book matrix generated.
 
-        thresh : float
-            Terminates the k-means algorithm if the change in
-            distortion since the last k-means iteration is less than
-            thresh.
+       The initial k centroids are chosen by randomly selecting
+       observations from the observation matrix. Alternatively,
+       passing a k by N array specifies the initial k centroids.
 
-    :Returns:
-        codebook : ndarray
-            A k by N array of k centroids. The i'th centroid
-            codebook[i] is represented with the code i. The centroids
-            and codes generated represent the lowest distortion seen,
-            not necessarily the globally minimal distortion.
+    iter : int, optional
+       The number of times to run k-means, returning the codebook
+       with the lowest distortion. This argument is ignored if
+       initial centroids are specified with an array for the
+       ``k_or_guess`` parameter. This parameter does not represent the
+       number of iterations of the k-means algorithm.
 
-        distortion : float
-           The distortion between the observations passed and the
-           centroids generated.
+    thresh : float, optional
+       Terminates the k-means algorithm if the change in
+       distortion since the last k-means iteration is less than
+       or equal to thresh.
 
-    :SeeAlso:
-        - kmeans2: a different implementation of k-means clustering
-          with more methods for generating initial centroids but without
-          using a distortion change threshold as a stopping criterion.
-        - whiten: must be called prior to passing an observation matrix
-          to kmeans.
+    Returns
+    -------
+    codebook : ndarray
+       A k by N array of k centroids. The i'th centroid
+       codebook[i] is represented with the code i. The centroids
+       and codes generated represent the lowest distortion seen,
+       not necessarily the globally minimal distortion.
+
+    distortion : float
+       The distortion between the observations passed and the
+       centroids generated.
+
+    See Also
+    --------
+    kmeans2 : a different implementation of k-means clustering
+       with more methods for generating initial centroids but without
+       using a distortion change threshold as a stopping criterion.
+
+    whiten : must be called prior to passing an observation matrix
+       to kmeans.
 
     Examples
     --------
-
     >>> from numpy import array
     >>> from scipy.cluster.vq import vq, kmeans, whiten
     >>> features  = array([[ 1.9,2.3],
