@@ -790,7 +790,9 @@ class model(basemodel):
 class conditionalmodel(model):
     """
     A conditional maximum-entropy (exponential-form) model p(x|w) on a
-    discrete sample space.  This is useful for classification problems:
+    discrete sample space.
+
+    This is useful for classification problems:
     given the context w, what is the probability of each class x?
 
     The form of such a model is::

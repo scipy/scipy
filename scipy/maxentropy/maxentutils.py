@@ -1,5 +1,7 @@
-"""maxentutils.py: Utility routines for the maximum entropy module.  Most
-of them are either Python replacements for the corresponding Fortran
+"""
+Utility routines for the maximum entropy module.
+
+Most of them are either Python replacements for the corresponding Fortran
 routines or wrappers around matrices to allow the maxent module to
 manipulate ndarrays, scipy sparse matrices, and PySparse matrices a
 common interface.
@@ -9,6 +11,7 @@ modules can access it more easily.
 
 Copyright: Ed Schofield, 2003-2006
 License: BSD-style (see LICENSE.txt in main source directory)
+
 """
 
 # Future imports must come before any code in 2.5
@@ -121,12 +124,15 @@ def _robustarraylog(x):
 
 
 def arrayexp(x):
-    """Returns the elementwise antilog of the real array x.  We try to
-    exponentiate with numpy.exp() and, if that fails, with python's
-    math.exp().  numpy.exp() is about 10 times faster but throws an
-    OverflowError exception for numerical underflow (e.g. exp(-800),
+    """
+    Returns the elementwise antilog of the real array x.
+
+    We try to exponentiate with numpy.exp() and, if that fails, with
+    python's math.exp().  numpy.exp() is about 10 times faster but throws
+    an OverflowError exception for numerical underflow (e.g. exp(-800),
     whereas python's math.exp() just returns zero, which is much more
     helpful.
+
     """
     try:
         ex = numpy.exp(x)
@@ -139,12 +145,15 @@ def arrayexp(x):
     return ex
 
 def arrayexpcomplex(x):
-    """Returns the elementwise antilog of the vector x.  We try to
-    exponentiate with numpy.exp() and, if that fails, with python's
+    """
+    Returns the elementwise antilog of the vector x.
+
+    We try to exponentiate with numpy.exp() and, if that fails, with python's
     math.exp().  numpy.exp() is about 10 times faster but throws an
     OverflowError exception for numerical underflow (e.g. exp(-800),
     whereas python's math.exp() just returns zero, which is much more
     helpful.
+
     """
     try:
         ex = numpy.exp(x).real
@@ -272,12 +281,15 @@ def sparsefeaturematrix(f, sample, format='csc_matrix'):
 
 
 def dotprod(u,v):
-    """This is a wrapper around general dense or sparse dot products.
+    """
+    This is a wrapper around general dense or sparse dot products.
+
     It is not necessary except as a common interface for supporting
     ndarray, scipy spmatrix, and PySparse arrays.
 
     Returns the dot product of the (1 x m) sparse array u with the
     (m x 1) (dense) numpy array v.
+
     """
     #print "Taking the dot product u.v, where"
     #print "u has shape " + str(u.shape)
@@ -294,7 +306,9 @@ def dotprod(u,v):
 
 
 def innerprod(A,v):
-    """This is a wrapper around general dense or sparse dot products.
+    """
+    This is a wrapper around general dense or sparse dot products.
+
     It is not necessary except as a common interface for supporting
     ndarray, scipy spmatrix, and PySparse arrays.
 
@@ -302,6 +316,7 @@ def innerprod(A,v):
     with the n-element dense array v.  This is a wrapper for A.dot(v) for
     dense arrays and spmatrix objects, and for A.matvec(v, result) for
     PySparse matrices.
+
     """
 
     # We assume A is sparse.
@@ -337,7 +352,9 @@ def innerprod(A,v):
 
 
 def innerprodtranspose(A,v):
-    """This is a wrapper around general dense or sparse dot products.
+    """
+    This is a wrapper around general dense or sparse dot products.
+
     It is not necessary except as a common interface for supporting
     ndarray, scipy spmatrix, and PySparse arrays.
 
@@ -346,6 +363,7 @@ def innerprodtranspose(A,v):
     function is efficient for large matrices A.  This is a wrapper for
     u.T.dot(v) for dense arrays and spmatrix objects, and for
     u.matvec_transp(v, result) for pysparse matrices.
+
     """
 
     (m, n) = A.shape
@@ -382,8 +400,10 @@ def innerprodtranspose(A,v):
 
 
 def rowmeans(A):
-    """This is a wrapper for general dense or sparse dot products.  It is
-    only necessary as a common interface for supporting ndarray,
+    """
+    This is a wrapper for general dense or sparse dot products.
+
+    It is only necessary as a common interface for supporting ndarray,
     scipy spmatrix, and PySparse arrays.
 
     Returns a dense (m x 1) vector representing the mean of the rows of A,
@@ -392,6 +412,7 @@ def rowmeans(A):
     >>> a = numpy.array([[1,2],[3,4]], float)
     >>> rowmeans(a)
     array([ 1.5,  3.5])
+
     """
     if type(A) is numpy.ndarray:
         return A.mean(1)
@@ -406,8 +427,10 @@ def rowmeans(A):
         return rowsum / float(n)
 
 def columnmeans(A):
-    """This is a wrapper for general dense or sparse dot products.  It is
-    only necessary as a common interface for supporting ndarray,
+    """
+    This is a wrapper for general dense or sparse dot products.
+
+    It is only necessary as a common interface for supporting ndarray,
     scipy spmatrix, and PySparse arrays.
 
     Returns a dense (1 x n) vector with the column averages of A, which can
@@ -416,6 +439,7 @@ def columnmeans(A):
     >>> a = numpy.array([[1,2],[3,4]],'d')
     >>> columnmeans(a)
     array([ 2.,  3.])
+
     """
     if type(A) is numpy.ndarray:
         return A.mean(0)
@@ -430,8 +454,10 @@ def columnmeans(A):
         return columnsum / float(m)
 
 def columnvariances(A):
-    """This is a wrapper for general dense or sparse dot products.  It
-    is not necessary except as a common interface for supporting ndarray,
+    """
+    This is a wrapper for general dense or sparse dot products.
+
+    It is not necessary except as a common interface for supporting ndarray,
     scipy spmatrix, and PySparse arrays.
 
     Returns a dense (1 x n) vector with unbiased estimators for the column
@@ -441,6 +467,7 @@ def columnvariances(A):
     >>> a = numpy.array([[1,2], [3,4]], 'd')
     >>> columnvariances(a)
     array([ 2.,  2.])
+
     """
     if type(A) is numpy.ndarray:
         return numpy.std(A,0)**2
