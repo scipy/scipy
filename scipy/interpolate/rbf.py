@@ -72,9 +72,9 @@ class Rbf(object):
             'quintic': r**5
             'thin_plate': r**2 * log(r)
 
-        If callable, then it must take 2 arguments (self, r).  The epsilon parameter
-        will be available as self.epsilon.  Other keyword arguments passed in will
-        be available as well.
+        If callable, then it must take 2 arguments (self, r).  The epsilon
+        parameter will be available as self.epsilon.  Other keyword
+        arguments passed in will be available as well.
 
     epsilon : float, optional
         Adjustable constant for gaussian or multiquadrics functions
@@ -93,13 +93,14 @@ class Rbf(object):
                 return sqrt( ((x1 - x2)**2).sum(axis=0) )
 
         which is called with x1=x1[ndims,newaxis,:] and
-        x2=x2[ndims,:,newaxis] such that the result is a matrix of the distances
-        from each point in x1 to each point in x2.
+        x2=x2[ndims,:,newaxis] such that the result is a matrix of the
+        distances from each point in x1 to each point in x2.
 
     Examples
     --------
     >>> rbfi = Rbf(x, y, z, d)  # radial basis function interpolator instance
     >>> di = rbfi(xi, yi, zi)   # interpolated values
+
     """
 
     def _euclidean_norm(self, x1, x2):
