@@ -1,4 +1,5 @@
-""" Python wrappers for Orthogonal Distance Regression (ODRPACK).
+"""
+Python wrappers for Orthogonal Distance Regression (ODRPACK).
 
 Classes
 =======
@@ -28,42 +29,51 @@ Use
 
 Basic use:
 
-1) Define the function you want to fit against:
+1) Define the function you want to fit against.
+::
 
   def f(B, x):
+      ''' Linear function y = m*x + b '''
       return B[0]*x + B[1]
 
-  B is a vector of the parameters.
-  x is an array of the current x values. (Same format as the x passed to Data or
-      RealData. Return an array in the same format as y passed to Data or
-      RealData.)
+      # B is a vector of the parameters.
+      # x is an array of the current x values.
+      # x is same format as the x passed to Data or RealData.
+
+      # Return an array in the same format as y passed to Data or RealData.
 
 2) Create a Model.
+::
 
   linear = Model(f)
 
 3) Create a Data or RealData instance.
+::
 
   mydata = Data(x, y, wd=1./power(sx,2), we=1./power(sy,2))
 
-    or
+or
+
+::
 
   mydata = RealData(x, y, sx=sx, sy=sy)
 
 4) Instantiate ODR with your data, model and initial parameter estimate.
+::
 
   myodr = ODR(mydata, linear, beta0=[1., 2.])
 
 5) Run the fit.
+::
 
   myoutput = myodr.run()
 
 6) Examine output.
+::
 
   myoutput.pprint()
 
 Read the docstrings and the accompanying tests for more advanced usage.
-
 
 Notes
 =====
@@ -97,6 +107,7 @@ Credits
 
 Robert Kern
 robert.kern@gmail.com
+
 """
 
 import numpy
@@ -414,67 +425,72 @@ class RealData(Data):
 
 
 class Model(object):
-    """ The Model class stores information about the function you wish to fit.
+    """
+    The Model class stores information about the function you wish to fit.
 
-    It stores the function itself, at the least, and optionally stores functions
-    which compute the Jacobians used during fitting. Also, one can provide
-    a function that will provide reasonable starting values for the fit
-    parameters possibly given the set of data.
+    It stores the function itself, at the least, and optionally stores
+    functions which compute the Jacobians used during fitting. Also, one
+    can provide a function that will provide reasonable starting values
+    for the fit parameters possibly given the set of data.
 
-    The initialization method stores these into members of the
-    same name.
+    The initialization method stores these into members of the same name.
 
-      fcn -- fit function: fcn(beta, x) --> y
+      fcn -- fit function
+          fcn(beta, x) --> y
 
-      fjacb -- Jacobian of fcn wrt the fit parameters beta:
+      fjacb -- Jacobian of fcn wrt the fit parameters beta
           fjacb(beta, x) --> @f_i(x,B)/@B_j
 
-      fjacd -- Jacobian of fcn wrt the (possibly multidimensional) input variable:
+      fjacd -- Jacobian of fcn wrt the (possibly multidimensional) input
+          variable
           fjacd(beta, x) --> @f_i(x,B)/@x_j
 
       extra_args -- if specified, extra_args should be a tuple of extra
-          arguments to pass to fcn, fjacb, and fjacd. Each will be called like
-          the following: apply(fcn, (beta, x) + extra_args)
+          arguments to pass to fcn, fjacb, and fjacd. Each will be called
+          like the following: apply(fcn, (beta, x) + extra_args)
 
       estimate -- provide estimates of the fit parameters from the data:
           estimate(data) --> estbeta
 
       implicit -- boolean variable which, if TRUE, specifies that the model
           is implicit; i.e fcn(beta, x) ~= 0 and there is no y data to fit
-          against.
+          against
 
-      meta -- an optional, freeform dictionary of metadata for the model
+      meta -- optional
+          freeform dictionary of metadata for the model
 
     Note that the fcn, fjacb, and fjacd operate on NumPy arrays and return
-    a NumPy array. estimate takes an instance of the Data class.
+    a NumPy array. The `estimate` object takes an instance of the Data class.
 
     Here are the rules for the shapes of the argument and return arrays:
 
       x -- if the input data is single-dimensional, then x is rank-1
         array; i.e. x = array([1, 2, 3, ...]); x.shape = (n,)
-        If the input data is multi-dimensional, then x is a rank-2 array; i.e.
-        x = array([[1, 2, ...], [2, 4, ...]]); x.shape = (m, n) In all cases, it
-        has the same shape as the input data array passed to odr(). m is the
-        dimensionality of the input data, n is the number of observations.
+        If the input data is multi-dimensional, then x is a rank-2 array;
+        i.e., x = array([[1, 2, ...], [2, 4, ...]]); x.shape = (m, n) In
+        all cases, it has the same shape as the input data array passed to
+        odr(). m is the dimensionality of the input data, n is the number
+        of observations.
 
-      y -- if the response variable is single-dimensional, then y is a rank-1
-        array; i.e. y = array([2, 4, ...]); y.shape = (n,)
-        If the response variable is multi-dimensional, then y is a rank-2 array;
-        i.e.  y = array([[2, 4, ...], [3, 6, ...]]); y.shape = (q, n) where q is
-        the dimensionality of the response variable.
+      y -- if the response variable is single-dimensional, then y is a
+        rank-1 array, i.e., y = array([2, 4, ...]); y.shape = (n,)
+        If the response variable is multi-dimensional, then y is a rank-2
+        array, i.e.,  y = array([[2, 4, ...], [3, 6, ...]]); y.shape =
+        (q, n) where q is the dimensionality of the response variable.
 
       beta -- rank-1 array of length p where p is the number of parameters;
         i.e. beta = array([B_1, B_2, ..., B_p])
 
-      fjacb -- if the response variable is multi-dimensional, then the return
-        array's shape is (q, p, n) such that
-        fjacb(x,beta)[l,k,i] = @f_l(X,B)/@B_k evaluated at the i'th data point.
-        If q == 1, then the return array is only rank-2 and with shape (p, n).
+      fjacb -- if the response variable is multi-dimensional, then the
+        return array's shape is (q, p, n) such that fjacb(x,beta)[l,k,i] =
+        @f_l(X,B)/@B_k evaluated at the i'th data point.  If q == 1, then
+        the return array is only rank-2 and with shape (p, n).
 
-      fjacd -- as with fjacb, only the return array's shape is (q, m, n) such that
-        fjacd(x,beta)[l,j,i] = @f_l(X,B)/@X_j at the i'th data point.
-        If q == 1, then the return array's shape is (m, n). If m == 1, the shape
-        is (q, n). If m == q == 1, the shape is (n,).
+      fjacd -- as with fjacb, only the return array's shape is (q, m, n)
+        such that fjacd(x,beta)[l,j,i] = @f_l(X,B)/@X_j at the i'th data
+        point.  If q == 1, then the return array's shape is (m, n). If
+        m == 1, the shape is (q, n). If m == q == 1, the shape is (n,).
+
     """
 
     def __init__(self, fcn, fjacb=None, fjacd=None,
@@ -516,56 +532,58 @@ class Model(object):
 
 
 class Output(object):
-    """ The Output class stores the output of an ODR run.
+    """
+    The Output class stores the output of an ODR run.
 
-    Takes one argument for initialization: the return value from the
-    function odr().
+    Takes one argument for initialization, the return value from the
+    function odr.
 
     Attributes
     ----------
-      beta -- estimated parameter values [beta.shape == (q,)]
-
-      sd_beta -- standard errors of the estimated parameters
+    beta :
+        estimated parameter values [beta.shape == (q,)]
+    sd_beta :
+        standard errors of the estimated parameters
                  [sd_beta.shape == (p,)]
-
-      cov_beta -- covariance matrix of the estimated parameters
+    cov_beta :
+        covariance matrix of the estimated parameters
                   [cov_beta.shape == (p, p)]
 
-    Optional Attributes
-    -------------------
-    Present if odr() was run with "full_output=1".
+    Following are present if odr() was run with "full_output=1".
 
-      delta -- array of estimated errors in input variables
+    delta :
+        array of estimated errors in input variables
                [delta.shape == data.x.shape]
-
-      eps -- array of estimated errors in response variables
+    eps :
+        array of estimated errors in response variables
              [eps.shape == data.y.shape]
-
-      xplus -- array of x + delta [xplus.shape == data.x.shape]
-
-      y -- array of y = fcn(x + delta) [y.shape == data.y.shape]
-
-      res_var -- residual variance [scalar]
-
-      sum_sqare -- sum of squares error [scalar]
-
-      sum_square_delta -- sum of squares of delta error [scalar]
-
-      sum_square_eps -- sum of squares of eps error [scalar]
-
-      inv_condnum -- inverse condition number [scalar] (cf. ODRPACK UG p. 77)
-
-      rel_error -- relative error in function values computed within fcn [scalar]
-
-      work -- final work array [array]
-
-      work_ind -- indices into work for drawing out values [dictionary]
+    xplus :
+        array of x + delta [xplus.shape == data.x.shape]
+    y :
+        array of y = fcn(x + delta) [y.shape == data.y.shape]
+    res_var : float
+        residual variance
+    sum_sqare : float
+        sum of squares error
+    sum_square_delta : float
+        sum of squares of delta error
+    sum_square_eps : float
+        sum of squares of eps error
+    inv_condnum : float
+        inverse condition number (cf. ODRPACK UG p. 77)
+    rel_error : float
+        relative error in function values computed within fcn
+    work : ndarray
+        final work array
+    work_ind : dictionary
+        indices into work for drawing out values
                   (cf. ODRPACK UG p. 83)
-
-      info -- reason for returning (as output by ODRPACK) [integer]
+    info : int
+        reason for returning (as output by ODRPACK)
               (cf. ODRPACK UG p. 38)
+    stopreason : list of strings
+        "info" interpreted into English
 
-      stopreason -- "info" interpreted into English [list of strings]
     """
 
     def __init__(self, output):
@@ -595,7 +613,8 @@ class Output(object):
 
 
 class ODR(object):
-    """ The ODR class gathers all information and coordinates the running of the
+    """
+    The ODR class gathers all information and coordinates the running of the
     main fitting routine.
 
     Members of instances of the ODR class have the same names as the arguments
@@ -603,93 +622,92 @@ class ODR(object):
 
     Parameters
     ----------
-     Required:
-      data -- instance of the Data class
-
-      model -- instance of the Model class
-
-      beta0 -- a rank-1 sequence of initial parameter values. Optional if
+    data:
+        instance of the Data class
+    model:
+        instance of the Model class
+    beta0:
+        a rank-1 sequence of initial parameter values. Optional if
         model provides an "estimate" function to estimate these values.
-
-     Optional:
-      delta0 -- a (double-precision) float array to hold the initial values of
-        the errors in the input variables. Must be same shape as data.x .
-
-      ifixb -- sequence of integers with the same length as beta0 that determines
+    delta0: optional
+        a (double-precision) float array to hold the initial values of
+        the errors in the input variables. Must be same shape as data.x
+    ifixb: optional
+        sequence of integers with the same length as beta0 that determines
         which parameters are held fixed. A value of 0 fixes the parameter,
         a value > 0 makes the parameter free.
-
-      ifixx -- an array of integers with the same shape as data.x that determines
-        which input observations are treated as fixed. One can use a sequence of
-        length m (the dimensionality of the input observations) to fix some
+    ifixx: optional
+        an array of integers with the same shape as data.x that determines
+        which input observations are treated as fixed. One can use a sequence
+        of length m (the dimensionality of the input observations) to fix some
         dimensions for all observations. A value of 0 fixes the observation,
         a value > 0 makes it free.
-
-      job -- an integer telling ODRPACK what tasks to perform. See p. 31 of the
+    job: optional
+        an integer telling ODRPACK what tasks to perform. See p. 31 of the
         ODRPACK User's Guide if you absolutely must set the value here. Use the
         method set_job post-initialization for a more readable interface.
-
-      iprint -- an integer telling ODRPACK what to print. See pp. 33-34 of the
+    iprint: optional
+        an integer telling ODRPACK what to print. See pp. 33-34 of the
         ODRPACK User's Guide if you absolutely must set the value here. Use the
         method set_iprint post-initialization for a more readable interface.
-
-      errfile -- string with the filename to print ODRPACK errors to. *Do Not Open
+    errfile: optional
+        string with the filename to print ODRPACK errors to. *Do Not Open
         This File Yourself!*
-
-      rptfile -- string with the filename to print ODRPACK summaries to. *Do Not
+    rptfile: optional
+        string with the filename to print ODRPACK summaries to. *Do Not
         Open This File Yourself!*
-
-      ndigit -- integer specifying the number of reliable digits in the computation
+    ndigit: optional
+        integer specifying the number of reliable digits in the computation
         of the function.
-
-      taufac -- float specifying the initial trust region. The default value is 1.
+    taufac: optional
+        float specifying the initial trust region. The default value is 1.
         The initial trust region is equal to taufac times the length of the
         first computed Gauss-Newton step. taufac must be less than 1.
-
-      sstol -- float specifying the tolerance for convergence based on the relative
+    sstol: optional
+        float specifying the tolerance for convergence based on the relative
         change in the sum-of-squares. The default value is eps**(1/2) where eps
         is the smallest value such that 1 + eps > 1 for double precision
         computation on the machine. sstol must be less than 1.
-
-      partol -- float specifying the tolerance for convergence based on the relative
+    partol: optional
+        float specifying the tolerance for convergence based on the relative
         change in the estimated parameters. The default value is eps**(2/3) for
         explicit models and eps**(1/3) for implicit models. partol must be less
         than 1.
-
-      maxit -- integer specifying the maximum number of iterations to perform. For
+    maxit: optional
+        integer specifying the maximum number of iterations to perform. For
         first runs, maxit is the total number of iterations performed and
         defaults to 50.  For restarts, maxit is the number of additional
         iterations to perform and defaults to 10.
-
-      stpb -- sequence (len(stpb) == len(beta0)) of relative step sizes to compute
+    stpb: optional
+        sequence (len(stpb) == len(beta0)) of relative step sizes to compute
         finite difference derivatives wrt the parameters.
-
-      stpd -- array (stpd.shape == data.x.shape or stpd.shape == (m,)) of relative
+    stpd: optional
+        array (stpd.shape == data.x.shape or stpd.shape == (m,)) of relative
         step sizes to compute finite difference derivatives wrt the input
         variable errors. If stpd is a rank-1 array with length m (the
         dimensionality of the input variable), then the values are broadcast to
         all observations.
-
-      sclb -- sequence (len(stpb) == len(beta0)) of scaling factors for the
+    sclb: optional
+        sequence (len(stpb) == len(beta0)) of scaling factors for the
         parameters.  The purpose of these scaling factors are to scale all of
-        the parameters to around unity. Normally appropriate scaling factors are
-        computed if this argument is not specified. Specify them yourself if the
-        automatic procedure goes awry.
-
-      scld -- array (scld.shape == data.x.shape or scld.shape == (m,)) of scaling
+        the parameters to around unity. Normally appropriate scaling factors
+        are computed if this argument is not specified. Specify them yourself
+        if the automatic procedure goes awry.
+    scld: optional
+        array (scld.shape == data.x.shape or scld.shape == (m,)) of scaling
         factors for the *errors* in the input variables. Again, these factors
         are automatically computed if you do not provide them. If scld.shape ==
         (m,), then the scaling factors are broadcast to all observations.
-
-      work -- array to hold the double-valued working data for ODRPACK. When
-        restarting, takes the value of self.output.work .
-
-      iwork -- array to hold the integer-valued working data for ODRPACK. When
-        restarting, takes the value of self.output.iwork .
-
-     Other Members (not supplied as initialization arguments):
-      output -- an instance if the Output class containing all of the returned
+    work: optional
+        array to hold the double-valued working data for ODRPACK. When
+        restarting, takes the value of self.output.work.
+    iwork: optional
+        array to hold the integer-valued working data for ODRPACK. When
+        restarting, takes the value of self.output.iwork.
+    output:
+        an instance if the Output class containing all of the returned
         data from an invocation of ODR.run() or ODR.restart()
+
     """
 
     def __init__(self, data, model, beta0=None, delta0=None, ifixb=None,
@@ -867,47 +885,58 @@ class ODR(object):
 
     def set_job(self, fit_type=None, deriv=None, var_calc=None,
         del_init=None, restart=None):
-        """ Sets the "job" parameter is a hopefully comprehensible way.
+        """
+        Sets the "job" parameter is a hopefully comprehensible way.
 
         If an argument is not specified, then the value is left as is. The
         default value from class initialization is for all of these options set
         to 0.
 
-        =========  =====  =====================================================
-        Parameter  Value  Meaning
-        =========  =====  =====================================================
-        fit_type     0    explicit ODR
-                     1    implicit ODR
-                     2    ordinary least-squares
+        Parameters
+        ----------
+        fit_type : {0, 1, 2} int
+            0 -> explicit ODR
 
-        deriv        0    forward finite differences
-                     1    central finite differences
-                     2    user-supplied derivatives (Jacobians) with results
-                          checked by ODRPACK
-                     3    user-supplied derivatives, no checking
+            1 -> implicit ODR
 
-        var_calc     0    calculate asymptotic covariance matrix and fit
-                          parameter uncertainties (V_B, s_B) using derivatives
-                          recomputed at the final solution
-                     1    calculate V_B and s_B using derivatives from last
-                          iteration
-                     2    do not calculate V_B and s_B
+            2 -> ordinary least-squares
+        deriv : {0, 1, 2, 3} int
+            0 -> forward finite differences
 
-        del_init     0    initial input variable offsets set to 0
-                     1    initial offsets provided by user in variable "work"
+            1 -> central finite differences
 
-        restart      0    fit is not a restart
-                     1    fit is a restart
-        =========  =====  =====================================================
+            2 -> user-supplied derivatives (Jacobians) with results
+              checked by ODRPACK
 
+            3 -> user-supplied derivatives, no checking
+        var_calc : {0, 1, 2} int
+            0 -> calculate asymptotic covariance matrix and fit
+                 parameter uncertainties (V_B, s_B) using derivatives
+                 recomputed at the final solution
+
+            1 -> calculate V_B and s_B using derivatives from last iteration
+
+            2 -> do not calculate V_B and s_B
+        del_init : {0, 1} int
+            0 -> initial input variable offsets set to 0
+
+            1 -> initial offsets provided by user in variable "work"
+        restart : {0, 1} int
+            0 -> fit is not a restart
+
+            1 -> fit is a restart
+
+        Notes
+        -----
         The permissible values are different from those given on pg. 31 of the
-        ODRPACK User's Guide only in that one cannot specify numbers greater than the
-        last value for each variable.
+        ODRPACK User's Guide only in that one cannot specify numbers greater than
+        the last value for each variable.
 
         If one does not supply functions to compute the Jacobians, the fitting
         procedure will change deriv to 0, finite differences, as a default. To
         initialize the input variable offsets by yourself, set del_init to 1 and
         put the offsets into the "work" variable correctly.
+
         """
 
         if self.job is None:
