@@ -219,17 +219,27 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
     return swapaxes(tmp, axis, -1)
 
 def ifft(x, n=None, axis=-1, overwrite_x=0):
-    """ ifft(x, n=None, axis=-1, overwrite_x=0) -> y
+    """
+    Return discrete inverse Fourier transform of real or complex sequence.
 
-    Return inverse discrete Fourier transform of arbitrary type
-    sequence x.
+    The returned complex array contains ``y(0), y(1),..., y(n-1)`` where
 
-    The returned complex array contains
-      [y(0),y(1),...,y(n-1)]
-    where
-      y(j) = 1/n sum[k=0..n-1] x[k] * exp(sqrt(-1)*j*k* 2*pi/n)
+    ``y(j) = (x * exp(2*pi*sqrt(-1)*j*np.arange(n)/n)).mean()``.
 
-    Optional input: see fft.__doc__
+    Parameters
+    ----------
+    x : array_like
+        Transformed data to invert.
+    n : int, optional
+        Length of the inverse Fourier transform.  If ``n < x.shape[axis]``,
+        `x` is truncated.  If ``n > x.shape[axis]``, `x` is zero-padded.
+        The default results in ``n = x.shape[axis]``.
+    axis : int, optional
+        Axis along which the ifft's are computed; the default is over the
+        last axis (i.e., ``axis=-1``).
+    overwrite_x : bool, optional
+        If True the contents of `x` can be destroyed; the default is False.
+
     """
     tmp = _asfarray(x)
 
@@ -263,31 +273,45 @@ def ifft(x, n=None, axis=-1, overwrite_x=0):
 
 
 def rfft(x, n=None, axis=-1, overwrite_x=0):
-    """ rfft(x, n=None, axis=-1, overwrite_x=0) -> y
+    """
+    Discrete Fourier transform of a real sequence.
 
-    Return discrete Fourier transform of real sequence x.
+    The returned real arrays contains::
 
-    The returned real arrays contains
       [y(0),Re(y(1)),Im(y(1)),...,Re(y(n/2))]              if n is even
       [y(0),Re(y(1)),Im(y(1)),...,Re(y(n/2)),Im(y(n/2))]   if n is odd
+
     where
-      y(j) = sum[k=0..n-1] x[k] * exp(-sqrt(-1)*j*k* 2*pi/n)
+    ::
+
+      y(j) = sum[k=0..n-1] x[k] * exp(-sqrt(-1)*j*k*2*pi/n)
       j = 0..n-1
-    Note that y(-j) = y(n-j).conjugate().
 
-    Optional input:
-      n
-        Defines the length of the Fourier transform. If n is not
-        specified then n=x.shape[axis] is set. If n<x.shape[axis],
-        x is truncated. If n>x.shape[axis], x is zero-padded.
-      axis
-        The transform is applied along the given axis of the input
-        array (or the newly constructed array if n argument was used).
-      overwrite_x
-        If set to true, the contents of x can be destroyed.
+    Note that ``y(-j) == y(n-j).conjugate()``.
 
-    Notes:
-      y == rfft(irfft(y)) within numerical accuracy.
+    Parameters
+    ----------
+    x : array_like, real-valued
+        The data to tranform.
+    n : int, optional
+        Defines the length of the Fourier transform.  If `n` is not specified
+        (the default) then ``n = x.shape[axis]``.  If ``n < x.shape[axis]``,
+        `x` is truncated, if ``n > x.shape[axis]``, `x` is zero-padded.
+    axis : int, optional
+        The axis along which the transform is applied.  The default is the
+        last axis.
+    overwrite_x : bool, optional
+        If set to true, the contents of `x` can be overwritten. Default is
+        False.
+
+    See also
+    --------
+    fft, irfft, scipy.fftpack.basic
+
+    Notes
+    -----
+    Within numerical accuracy, ``y == rfft(irfft(y))``.
+
     """
     tmp = _asfarray(x)
 
@@ -479,11 +503,17 @@ def fft2(x, shape=None, axes=(-2,-1), overwrite_x=0):
 
 
 def ifft2(x, shape=None, axes=(-2,-1), overwrite_x=0):
-    """ ifft2(x, shape=None, axes=(-2,-1), overwrite_x=0) -> y
+    """
+    2-D discrete inverse Fourier transform of real or complex sequence.
 
     Return inverse two-dimensional discrete Fourier transform of
     arbitrary type sequence x.
 
-    See ifftn.__doc__ for more information.
+    See `ifft` for more information.
+
+    See also
+    --------
+    fft2, ifft
+
     """
     return ifftn(x,shape,axes,overwrite_x)

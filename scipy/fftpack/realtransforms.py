@@ -19,7 +19,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None):
 
     Parameters
     ----------
-    x : array-like
+    x : array_like
         The input array.
     type : {1, 2, 3}, optional
         Type of the DCT (see Notes). Default type is 2.
@@ -42,7 +42,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None):
     Notes
     -----
     For a single dimension array ``x``, ``dct(x, norm='ortho')`` is equal to
-    matlab ``dct(x)``.
+    MATLAB ``dct(x)``.
 
     There are theoretically 8 types of the DCT, only the first 3 types are
     implemented in scipy. 'The' DCT generally refers to DCT type 2, and 'the'
@@ -115,11 +115,11 @@ def dct(x, type=2, n=None, axis=-1, norm=None):
 
 def idct(x, type=2, n=None, axis=-1, norm=None):
     """
-    Return the Inverse Discrete Cosine Transform of arbitrary type sequence x.
+    Return the Inverse Discrete Cosine Transform of an arbitrary type sequence.
 
     Parameters
     ----------
-    x : array-like
+    x : array_like
         The input array.
     type : {1, 2, 3}, optional
         Type of the DCT (see Notes). Default type is 2.
