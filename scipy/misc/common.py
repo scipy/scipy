@@ -13,14 +13,38 @@ __all__ = ['factorial','factorial2','factorialk','comb',
 # to numpy perhaps?
 
 def factorial(n,exact=0):
-    """n! = special.gamma(n+1)
+    """
+    The factorial function, n! = special.gamma(n+1).
 
-    If exact==0, then floating point precision is used, otherwise
+    If exact is 0, then floating point precision is used, otherwise
     exact long integer is computed.
 
-    Notes:
-      - Array argument accepted only for exact=0 case.
-      - If n<0, the return value is 0.
+    - Array argument accepted only for exact=0 case.
+    - If n<0, the return value is 0.
+
+    Parameters
+    ----------
+    n : int or array_like of ints
+        Calculate ``n!``.  Arrays are only supported with `exact` set
+        to False.  If ``n < 0``, the return value is 0.
+    exact : bool, optional
+        The result can be approximated rapidly using the gamma-formula
+        above.  If `exact` is set to True, calculate the
+        answer exactly using integer arithmetic. Default is False.
+
+    Returns
+    -------
+    nf : float or int
+        Factorial of `n`, as an integer or a float depending on `exact`.
+
+    Examples
+    --------
+    >>> arr = np.array([3,4,5])
+    >>> sc.factorial(arr, exact=False)
+    array([   6.,   24.,  120.])
+    >>> sc.factorial(5, exact=True)
+    120L
+
     """
     if exact:
         if n < 0:
@@ -39,9 +63,10 @@ def factorial(n,exact=0):
 
 
 def factorial2(n, exact=False):
-    """Double factorial.
+    """
+    Double factorial.
 
-    This is the factorial with every second value is skipped, i.e.,
+    This is the factorial with every second value skipped, i.e.,
     ``7!! = 7 * 5 * 3 * 1``.  It can be approximated numerically as::
 
       n!! = special.gamma(n/2+1)*2**((m+1)/2)/sqrt(pi)  n odd
@@ -49,7 +74,7 @@ def factorial2(n, exact=False):
 
     Parameters
     ----------
-    n : int, array-like
+    n : int or array_like
         Calculate ``n!!``.  Arrays are only supported with `exact` set
         to False.  If ``n < 0``, the return value is 0.
     exact : bool, optional
@@ -63,10 +88,12 @@ def factorial2(n, exact=False):
         Double factorial of `n`, as an int or a float depending on
         `exact`.
 
-    References
-    ----------
-    .. [1] Wikipedia, "Double Factorial",
-           http://en.wikipedia.org/wiki/Factorial#Double_factorial
+    Examples
+    --------
+    >>> factorial2(7, exact=False)
+    array(105.00000000000001)
+    >>> factorial2(7, exact=True)
+    105L
 
     """
     if exact:
@@ -100,7 +127,7 @@ def factorialk(n,k,exact=1):
 
     Parameters
     ----------
-    n : int, array-like
+    n : int, array_like
         Calculate multifactorial. Arrays are only supported with exact
         set to False. If n < 0, the return value is 0.
     exact : bool, optional
@@ -116,6 +143,13 @@ def factorialk(n,k,exact=1):
     ------
     NotImplementedError
         Raises when exact is False
+
+    Examples
+    --------
+    >>> sc.factorialk(5, 1, exact=True)
+    120L
+    >>> sc.factorialk(5, 3, exact=True)
+    10L
 
     """
     if exact:
@@ -133,14 +167,15 @@ def factorialk(n,k,exact=1):
 
 def comb(N,k,exact=0):
     """
-    Combinations of N things taken k at a time.
+    The number of combinations of N things taken k at a time.
+    This is often expressed as "N choose k".
 
     Parameters
     ----------
     N : int, array
-        Nunmber of things.
+        Number of things.
     k : int, array
-        Numner of elements taken.
+        Number of elements taken.
     exact : int, optional
         If exact is 0, then floating point precision is used, otherwise
         exact long integer is computed.
@@ -154,6 +189,15 @@ def comb(N,k,exact=0):
     -----
     - Array arguments accepted only for exact=0 case.
     - If k > N, N < 0, or k < 0, then a 0 is returned.
+
+    Examples
+    --------
+    >>> k = np.array([3, 4])
+    >>> n = np.array([10, 10])
+    >>> sc.comb(n, k, exact=False)
+    array([ 120.,  210.])
+    >>> sc.comb(10, 3, exact=True)
+    120L
 
     """
     if exact:
@@ -224,6 +268,14 @@ def derivative(func,x0,dx=1.0,n=1,args=(),order=3):
     -----
     Decreasing the step size too small can result in round-off error.
 
+    Examples
+    --------
+    >>> def x2(x):
+    ...     return x*x
+    ...
+    >>> derivative(x2, 2)
+    4.0
+
     """
     assert (order >= n+1), "Number of points must be at least the derivative order + 1."
     assert (order % 2 == 1), "Odd number of points only."
@@ -282,6 +334,36 @@ def pade(an, m):
     return poly1d(p[::-1]), poly1d(q[::-1])
 
 def lena():
+    """
+    Get classic image processing example image, Lena, at 8-bit grayscale
+    bit-depth, 512 x 512 size.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    lena : ndarray
+        Lena image
+
+    Examples
+    --------
+    >>> import scipy.misc
+    >>> lena = scipy.misc.lena()
+    >>> lena.shape
+    (512, 512)
+    >>> lena.max()
+    245
+    >>> lena.dtype
+    dtype('int32')
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.gray()
+    >>> plt.imshow(lena)
+    >>> plt.show()
+
+    """
     import cPickle, os
     fname = os.path.join(os.path.dirname(__file__),'lena.dat')
     f = open(fname,'rb')
