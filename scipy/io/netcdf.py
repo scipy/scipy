@@ -1,52 +1,57 @@
 """
 NetCDF reader/writer module.
 
+This module is used to read and create NetCDF files. NetCDF files are
+accessed through the `netcdf_file` object. Data written to and from NetCDF
+files are contained in `netcdf_variable` objects. Attributes are given
+as member variables of the `netcdf_file` and `netcdf_variable` objects.
+
+Notes
+-----
+NetCDF files are a self-describing binary data format. The file contains
+metadata that describes the dimensions and variables in the file. More
+details about NetCDF files can be found `here
+<http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html>`_. There
+are three main sections to a NetCDF data structure:
+
+1. Dimensions
+2. Variables
+3. Attributes
+
+The dimensions section records the name and length of each dimension used
+by the variables. The variables would then indicate which dimensions it
+uses and any attributes such as data units, along with containing the data
+values for the variable. It is good practice to include a
+variable that is the same name as a dimension to provide the values for
+that axes. Lastly, the attributes section would contain additional
+information such as the name of the file creator or the instrument used to
+collect the data.
+
+When writing data to a NetCDF file, there is often the need to indicate the
+'record dimension'. A record dimension is the unbounded dimension for a
+variable. For example, a temperature variable may have dimensions of
+latitude, longitude and time. If one wants to add more temperature data to
+the NetCDF file as time progresses, then the temperature variable should
+have the time dimension flagged as the record dimension.
+
 This module implements the Scientific.IO.NetCDF API to read and create
 NetCDF files. The same API is also used in the PyNIO and pynetcdf
-modules, allowing these modules to be used interchangebly when working
-with NetCDF files. The major advantage of ``scipy.io.netcdf`` over other
+modules, allowing these modules to be used interchangeably when working
+with NetCDF files. The major advantage of this module over other
 modules is that it doesn't require the code to be linked to the NetCDF
-libraries as the other modules do.
+libraries.
 
-The code is based on the `NetCDF file format specification
-<http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html>`_. A
-NetCDF file is a self-describing binary format, with a header followed
-by data. The header contains metadata describing dimensions, variables
-and the position of the data in the file, so access can be done in an
-efficient manner without loading unnecessary data into memory. We use
-the ``mmap`` module to create Numpy arrays mapped to the data on disk,
-for the same purpose.
+In addition, the NetCDF file header contains the position of the data in
+the file, so access can be done in an efficient manner without loading
+unnecessary data into memory. It uses the ``mmap`` module to create
+Numpy arrays mapped to the data on disk, for the same purpose.
 
-The structure of a NetCDF file is as follows:
+Examples
+--------
+To create a NetCDF file:
 
-    C D F <VERSION BYTE> <NUMBER OF RECORDS>
-    <DIMENSIONS> <GLOBAL ATTRIBUTES> <VARIABLES METADATA>
-    <NON-RECORD DATA> <RECORD DATA>
-
-Record data refers to data where the first axis can be expanded at
-will. All record variables share a same dimension at the first axis,
-and they are stored at the end of the file per record, ie
-
-    A[0], B[0], ..., A[1], B[1], ..., etc,
-
-so that new data can be appended to the file without changing its original
-structure. Non-record data are padded to a 4n bytes boundary. Record data
-are also padded, unless there is exactly one record variable in the file,
-in which case the padding is dropped.  All data is stored in big endian
-byte order.
-
-The Scientific.IO.NetCDF API allows attributes to be added directly to
-instances of ``netcdf_file`` and ``netcdf_variable``. To differentiate
-between user-set attributes and instance attributes, user-set attributes
-are automatically stored in the ``_attributes`` attribute by overloading
-``__setattr__``. This is the reason why the code sometimes uses
-``obj.__dict__['key'] = value``, instead of simply ``obj.key = value``;
-otherwise the key would be inserted into userspace attributes.
-
-To create a NetCDF file::
-
-    >>> import time
-    >>> f = netcdf_file('simple.nc', 'w')
+    >>> from scipy.io import netcdf
+    >>> f = netcdf.netcdf_file('simple.nc', 'w')
     >>> f.history = 'Created for a test'
     >>> f.createDimension('time', 10)
     >>> time = f.createVariable('time', 'i', ('time',))
@@ -54,9 +59,14 @@ To create a NetCDF file::
     >>> time.units = 'days since 2008-01-01'
     >>> f.close()
 
-To read the NetCDF file we just created::
+Note the assignment of ``range(10)`` to ``time[:]``.  Exposing the slice
+of the time variable allows for the data to be set in the object, rather
+than letting ``range(10)`` overwrite the ``time`` variable.
 
-    >>> f = netcdf_file('simple.nc', 'r')
+To read the NetCDF file we just created:
+
+    >>> from scipy.io import netcdf
+    >>> f = netcdf.netcdf_file('simple.nc', 'r')
     >>> print f.history
     Created for a test
     >>> time = f.variables['time']
@@ -68,12 +78,22 @@ To read the NetCDF file we just created::
     9
     >>> f.close()
 
-TODO:
- * properly implement ``_FillValue``.
- * implement Jeff Whitaker's patch for masked variables.
- * fix character variables.
- * implement PAGESIZE for Python 2.6?
 """
+
+#TODO:
+# * properly implement ``_FillValue``.
+# * implement Jeff Whitaker's patch for masked variables.
+# * fix character variables.
+# * implement PAGESIZE for Python 2.6?
+
+#The Scientific.IO.NetCDF API allows attributes to be added directly to
+#instances of ``netcdf_file`` and ``netcdf_variable``. To differentiate
+#between user-set attributes and instance attributes, user-set attributes
+#are automatically stored in the ``_attributes`` attribute by overloading
+#``__setattr__``. This is the reason why the code sometimes uses
+#``obj.__dict__['key'] = value``, instead of simply ``obj.key = value``;
+#otherwise the key would be inserted into userspace attributes.
+
 
 __all__ = ['netcdf_file', 'netcdf_variable']
 
@@ -122,35 +142,37 @@ REVERSE = { 'b': NC_BYTE,
 
 class netcdf_file(object):
     """
-    A ``netcdf_file`` object has two standard attributes: ``dimensions`` and
-    ``variables``. The values of both are dictionaries, mapping dimension
+    A file object for NetCDF data.
+
+    A `netcdf_file` object has two standard attributes: `dimensions` and
+    `variables`. The values of both are dictionaries, mapping dimension
     names to their associated lengths and variable names to variables,
     respectively. Application programs should never modify these
     dictionaries.
 
     All other attributes correspond to global attributes defined in the
     NetCDF file. Global file attributes are created by assigning to an
-    attribute of the ``netcdf_file`` object.
+    attribute of the `netcdf_file` object.
+
+    Parameters
+    ----------
+    filename : string or file-like
+        string -> filename
+    mode : {'r', 'w'}, optional
+        read-write mode, default is 'r'
+    mmap : None or bool, optional
+        Whether to mmap `filename` when reading.  Default is True
+        when `filename` is a file name, False when `filename` is a
+        file-like object
+    version : {1, 2}, optional
+        version of netcdf to read / write, where 1 means *Classic
+        format* and 2 means *64-bit offset format*.  Default is 1.  See
+        `here <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf/Which-Format.html>`_
+        for more info.
 
     """
     def __init__(self, filename, mode='r', mmap=None, version=1):
-        ''' Initialize netcdf_file from fileobj (string or file-like)
-
-        Parameters
-        ----------
-        filename : string or file-like
-           string -> filename
-        mode : {'r', 'w'}, optional
-           read-write mode, default is 'r'
-        mmap : None or bool, optional
-           Whether to mmap `filename` when reading.  Default is True
-           when `filename` is a file name, False when `filename` is a
-           file-like object
-        version : {1, 2}, optional
-           version of netcdf to read / write, where 1 means *Classic
-           format* and 2 means *64-bit offset format*.  Default is 1.  See
-           http://www.unidata.ucar.edu/software/netcdf/docs/netcdf/Which-Format.html#Which-Format
-        '''
+        """Initialize netcdf_file from fileobj (str or file-like)."""
         if hasattr(filename, 'seek'): # file-like
             self.fp = filename
             self.filename = 'None'
@@ -192,6 +214,7 @@ class netcdf_file(object):
         self.__dict__[attr] = value
 
     def close(self):
+        """Closes the NetCDF file."""
         if not self.fp.closed:
             try:
                self.flush()
@@ -200,10 +223,59 @@ class netcdf_file(object):
     __del__ = close
 
     def createDimension(self, name, length):
+        """
+        Adds a dimension to the Dimension section of the NetCDF data structure.
+
+        Note that this function merely adds a new dimension that the variables can
+        reference.  The values for the dimension, if desired, should be added as
+        a variable using `createVariable`, referring to this dimension.
+
+        Parameters
+        ----------
+        name : str
+            Name of the dimension (Eg, 'lat' or 'time').
+        length : int
+            Length of the dimension.
+
+        See Also
+        --------
+        createVariable
+
+        """
         self.dimensions[name] = length
         self._dims.append(name)
 
     def createVariable(self, name, type, dimensions):
+        """
+        Create an empty variable for the `netcdf_file` object, specifying its data
+        type and the dimensions it uses.
+
+        Parameters
+        ----------
+        name : str
+            Name of the new variable.
+        type : dtype or str
+            Data type of the variable.
+        dimensions : sequence of str
+            List of the dimension names used by the variable, in the desired order.
+
+        Returns
+        -------
+        variable : netcdf_variable
+            The newly created ``netcdf_variable`` object.
+            This object has also been added to the `netcdf_file` object as well.
+
+        See Also
+        --------
+        createDimension
+
+        Notes
+        -----
+        Any dimensions to be used by the variable should already exist in the
+        NetCDF data structure or should be created by `createDimension` prior to
+        creating the NetCDF variable.
+
+        """
         shape = tuple([self.dimensions[dim] for dim in dimensions])
         shape_ = tuple([dim or 0 for dim in shape])  # replace None with 0 for numpy
 
@@ -217,6 +289,14 @@ class netcdf_file(object):
         return self.variables[name]
 
     def flush(self):
+        """
+        Perform a sync-to-disk flush if the `netcdf_file` object is in write mode.
+
+        See Also
+        --------
+        sync : Identical function
+
+        """
         if hasattr(self, 'mode') and self.mode is 'w':
             self._write()
     sync = flush
@@ -649,12 +729,47 @@ class netcdf_variable(object):
     shape = property(shape)
 
     def getValue(self):
+        """
+        Retrieve a scalar value from a `netcdf_variable` of length one.
+
+        Raises
+        ------
+        ValueError
+            If the netcdf variable is an array of length greater than one,
+            this exception will be raised.
+
+        """
         return self.data.item()
 
     def assignValue(self, value):
+        """
+        Assign a scalar value to a `netcdf_variable` of length one.
+
+        Parameters
+        ----------
+        value : scalar
+            Scalar value (of compatible type) to assign to a length-one netcdf
+            variable. This value will be written to file.
+
+        Raises
+        ------
+        ValueError
+            If the input is not a scalar, or if the destination is not a length-one
+            netcdf variable.
+
+        """
         self.data.itemset(value)
 
     def typecode(self):
+        """
+        Return the typecode of the variable.
+
+        Returns
+        -------
+        typecode : char
+            The character typecode of the variable (eg, 'i' for int).
+
+        """
         return self._typecode
 
     def __getitem__(self, index):

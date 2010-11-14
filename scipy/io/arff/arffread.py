@@ -455,7 +455,14 @@ class MetaData(object):
 
 
 def loadarff(filename):
-    """Read an arff file.
+    """
+    Read an arff file.
+
+    The data is returned as a record array, which can be accessed much like
+    a dictionary of numpy arrays.  For example, if one of the attributes is
+    called 'pressure', then its first 10 data points can be accessed from the
+    ``data`` record array like so: ``data['pressure'][0:10]``
+
 
     Parameters
     ----------
@@ -465,22 +472,32 @@ def loadarff(filename):
     Returns
     -------
     data : record array
-       the data of the arff file. Each record corresponds to one attribute.
-    meta : MetaData
-       this contains information about the arff file, like type and
-       names of attributes, the relation (name of the dataset), etc...
+       The data of the arff file, accessible by attribute names.
+    meta : `MetaData`
+       Contains information about the arff file such as name and
+       type of attributes, the relation (name of the dataset), etc...
+
+    Raises
+    ------
+    `ParseArffError`
+        This is raised if the given file is not ARFF-formatted.
+    NotImplementedError
+        The ARFF file has an attribute which is not supported yet.
 
     Notes
     -----
 
     This function should be able to read most arff files. Not
-    implemented functionalities include:
+    implemented functionality include:
 
     * date type attributes
     * string type attributes
 
-    It can read files with numeric and nominal attributes.  It can read
-    files with sparse data (? in the file).
+    It can read files with numeric and nominal attributes.  It cannot read
+    files with sparse data ({} in the file).  However, this function can
+    read files with missing data (? in the file), representing the data
+    points as NaNs.
+
     """
     ofile = open(filename)
 

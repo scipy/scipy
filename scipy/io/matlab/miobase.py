@@ -24,55 +24,55 @@ class MatReadWarning(UserWarning): pass
 
 doc_dict = \
     {'file_arg':
-         '''file_name : string
+         '''file_name : str
    Name of the mat file (do not need .mat extension if
-   appendmat==True) Can also pass open file-like object''',
+   appendmat==True) Can also pass open file-like object.''',
      'append_arg':
-         '''appendmat : {True, False} optional
+         '''appendmat : bool, optional
    True to append the .mat extension to the end of the given
-   filename, if not already present''',
+   filename, if not already present.''',
      'load_args':
-         '''byte_order : {None, string}, optional
+         '''byte_order : str or None, optional
    None by default, implying byte order guessed from mat
    file. Otherwise can be one of ('native', '=', 'little', '<',
-   'BIG', '>')
-mat_dtype : {False, True} optional
+   'BIG', '>').
+mat_dtype : bool, optional
    If True, return arrays in same dtype as would be loaded into
-   matlab (instead of the dtype with which they are saved)
-squeeze_me : {False, True} optional
-   whether to squeeze unit matrix dimensions or not
-chars_as_strings : {True, False} optional
-   whether to convert char arrays to string arrays
-matlab_compatible : {False, True}
-   returns matrices as would be loaded by matlab (implies
+   MATLAB (instead of the dtype with which they are saved).
+squeeze_me : bool, optional
+   Whether to squeeze unit matrix dimensions or not.
+chars_as_strings : bool, optional
+   Whether to convert char arrays to string arrays.
+matlab_compatible : bool, optional
+   Returns matrices as would be loaded by MATLAB (implies
    squeeze_me=False, chars_as_strings=False, mat_dtype=True,
-   struct_as_record=True)''',
+   struct_as_record=True).''',
      'struct_arg':
-         '''struct_as_record : {True, False} optional
-   Whether to load matlab structs as numpy record arrays, or as
+         '''struct_as_record : bool, optional
+   Whether to load MATLAB structs as numpy record arrays, or as
    old-style numpy arrays with dtype=object.  Setting this flag to
    False replicates the behaviour of scipy version 0.7.x (returning
    numpy object arrays).  The default setting is True, because it
-   allows easier round-trip load and save of matlab files.''',
+   allows easier round-trip load and save of MATLAB files.''',
      'matstream_arg':
          '''mat_stream : file-like
-   object with file API, open for reading''',
+   Object with file API, open for reading.''',
      'long_fields':
-         '''long_field_names : boolean, optional, default=False
+         '''long_field_names : bool, optional
    * False - maximum field name length in a structure is 31 characters
-     which is the documented maximum length
+     which is the documented maximum length. This is the default.
    * True - maximum field name length in a structure is 63 characters
      which works for Matlab 7.6''',
      'do_compression':
-         '''do_compression : {False, True} bool, optional
-   Whether to compress matrices on write. Default is False''',
+         '''do_compression : bool, optional
+   Whether to compress matrices on write. Default is False.''',
      'oned_as':
-         '''oned_as : {'column', 'row'} string, optional
-   If 'column', write 1D numpy arrays as column vectors
-   If 'row', write 1D numpy arrays as row vectors''',
+         '''oned_as : {'column', 'row'}, optional
+   If 'column', write 1-D numpy arrays as column vectors.
+   If 'row', write 1D numpy arrays as row vectors.''',
      'unicode_strings':
-         '''unicode_strings : {True, False} boolean, optional
-   If True, write strings as Unicode, else matlab usual encoding'''}
+         '''unicode_strings : bool, optional
+   If True, write strings as Unicode, else matlab usual encoding.'''}
 
 docfiller = doccer.filldoc(doc_dict)
 

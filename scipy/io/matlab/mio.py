@@ -22,7 +22,7 @@ def find_mat_file(file_name, appendmat=True):
 
     Parameters
     ----------
-    file_name : string
+    file_name : str
        file name for mat file
     %(append_arg)s
 
@@ -113,13 +113,14 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
 
 @docfiller
 def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
-    ''' Load Matlab(tm) file
+    """
+    Load MATLAB file
 
     Parameters
     ----------
     %(file_arg)s
     m_dict : dict, optional
-        dictionary in which to insert matfile variables
+        Dictionary in which to insert matfile variables.
     %(append_arg)s
     %(load_args)s
     %(struct_arg)s
@@ -143,7 +144,8 @@ def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
     You will need an HDF5 python library to read matlab 7.3 format mat
     files.  Because scipy does not supply one, we do not implement the
     HDF5 / 7.3 interface here.
-    '''
+
+    """
     variable_names = kwargs.pop('variable_names', None)
     MR = mat_reader_factory(file_name, appendmat, **kwargs)
     matfile_dict = MR.get_variables(variable_names)
@@ -154,31 +156,53 @@ def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
     return mdict
 
 @docfiller
-def savemat(file_name, mdict, 
-            appendmat=True, 
-            format='5', 
+def savemat(file_name, mdict,
+            appendmat=True,
+            format='5',
             long_field_names=False,
             do_compression=False,
             oned_as=None):
-    """Save a dictionary of names and arrays into the MATLAB-style .mat file.
+    """
+    Save a dictionary of names and arrays into a MATLAB-style .mat file.
 
-    This saves the arrayobjects in the given dictionary to a matlab
+    This saves the array objects in the given dictionary to a MATLAB-
     style .mat file.
 
     Parameters
     ----------
-    file_name : {string, file-like object}
-        Name of the mat file (do not need .mat extension if
-        appendmat==True) Can also pass open file-like object
+    file_name : str or file-like object
+        Name of the .mat file (.mat extension not needed if ``appendmat ==
+        True``).
+        Can also pass open file_like object.
     m_dict : dict
-        dictionary from which to save matfile variables
+        Dictionary from which to save matfile variables.
     %(append_arg)s
-    format : {'5', '4'} string, optional
-        '5' for matlab 5 (up to matlab 7.2)
-        '4' for matlab 4 mat files
+    format : {'5', '4'}, string, optional
+        '5' (the default) for MATLAB 5 and up (to 7.2),
+        '4' for MATLAB 4 .mat files
     %(long_fields)s
     %(do_compression)s
     %(oned_as)s
+
+    See also
+    --------
+    mio4.MatFile4Writer
+    mio5.MatFile5Writer
+
+    Notes
+    -----
+    If ``format == '4'``, `mio4.MatFile4Writer` is called, which sets
+    `oned_as` to 'row' if it had been None.  If ``format == '5'``,
+    `mio5.MatFile5Writer` is called, which sets `oned_as` to 'column' if
+    it had been None, but first it executes:
+
+    ``warnings.warn("Using oned_as default value ('column')" +``
+                  ``" This will change to 'row' in future versions",``
+                  ``FutureWarning, stacklevel=2)``
+
+    without being more specific as to precisely when the change will take
+    place.
+
     """
     file_is_string = isinstance(file_name, basestring)
     if file_is_string:
