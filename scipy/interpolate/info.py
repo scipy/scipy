@@ -7,28 +7,45 @@ interpolation classes, Lagrange and Taylor polynomial interpolators, and
 wrappers for `FITPACK <http://www.cisl.ucar.edu/softlib/FITPACK.html>`_
 and DFITPACK functions.
 
-Spline Functions
-----------------
+Univariate interpolation
+========================
 
 .. autosummary::
    :toctree: generated/
 
-   bisplev
-   bisplrep
-   insert
-   spalde
-   splev
-   spleval
-   splint
-   spline
-   splmake
-   splprep
-   splrep
-   spltopp
-   sproot
+   interp1d
+   BarycentricInterpolator
+   KroghInterpolator
+   PiecewisePolynomial
+   barycentric_interpolate
+   krogh_interpolate
+   piecewise_polynomial_interpolate
 
-Spline Classes
---------------
+
+Multivariate interpolation
+==========================
+
+Unstructured data:
+
+.. autosummary::
+   :toctree: generated/
+
+   griddata
+   LinearNDInterpolator
+   NearestNDInterpolator
+   CloughTocher2DInterpolator
+   Rbf
+
+Data given on a regular grid:
+
+.. autosummary::
+   :toctree: generated/
+
+   interp2d
+
+
+1-D Splines
+===========
 
 .. autosummary::
    :toctree: generated/
@@ -36,35 +53,60 @@ Spline Classes
    UnivariateSpline
    InterpolatedUnivariateSpline
    LSQUnivariateSpline
+
+The above univariate spline classes have the following methods:
+
+
+.. autosummary::
+   :toctree: generated/
+
+   UnivariateSpline.__call__
+   UnivariateSpline.derivatives
+   UnivariateSpline.integral
+   UnivariateSpline.roots
+   UnivariateSpline.get_coeffs
+   UnivariateSpline.get_knots
+   UnivariateSpline.get_residual
+   UnivariateSpline.set_smoothing_factor
+
+
+Low-level interface to FITPACK functions:
+
+.. autosummary::
+   :toctree: generated/
+
+   splrep
+   splprep
+   splev
+   splint
+   sproot
+   spalde
+   bisplrep
+   bisplev
+
+
+2-D Splines
+===========
+
+.. seealso:: scipy.ndimage.map_coordinates
+
+.. autosummary::
+   :toctree: generated/
+
    BivariateSpline
    SmoothBivariateSpline
+   LSQBivariateSpline
 
-Interpolation Classes (univariate)
-----------------------------------
-
-.. autosummary::
-   :toctree: generated/
-
-   interp1d
-   BarycentricInterpolator
-   barycentric_interpolate
-   KroghInterpolator
-   krogh_interpolate
-   PiecewisePolynomial
-   piecewise_polynomial_interpolate
-   ppform
-
-Interpolation Classes (multivariate)
-------------------------------------
+Low-level interface to FITPACK functions:
 
 .. autosummary::
    :toctree: generated/
 
-   interp2d
-   Rbf
+   bisplrep
+   bisplev
 
 Additional tools
-----------------
+================
 
 .. autosummary::
    :toctree: generated/
@@ -72,48 +114,7 @@ Additional tools
    lagrange
    approximate_taylor_polynomial
 
-Wrappers around FITPACK functions
----------------------------------
-
-.. autosummary::
-   :toctree: generated/
-
-   fitpack.bisplev
-   fitpack.bisplrep
-   fitpack.insert
-   fitpack.spalde
-   fitpack.splev
-   fitpack.splint
-   fitpack.splprep
-   fitpack.splrep
-   fitpack.sproot
-
-Wrappers around DFITPACK functions
-----------------------------------
-
-   `dfitpack.bispeu`
-   `dfitpack.bispev`
-   `dfitpack.curfit`
-   `dfitpack.dblint`
-   `dfitpack.fpcurf0`
-   `dfitpack.fpcurf1`
-   `dfitpack.fpcurfm1`
-   `dfitpack.parcur`
-   `dfitpack.percur`
-   `dfitpack.regrid_smth`
-   `dfitpack.spalde`
-   `dfitpack.splder`
-   `dfitpack.splev`
-   `dfitpack.splint`
-   `dfitpack.sproot`
-   `dfitpack.surfit_lsq`
-   `dfitpack.surfit_smth`
-
-See Also
---------
-
-.. autosummary::
-   :toctree: generated/
+.. seealso::
 
    ndimage.map_coordinates
    ndimage.spline_filter
