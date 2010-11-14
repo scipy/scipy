@@ -75,7 +75,7 @@ def label(input, structure = None, output = None):
         An array-like object where each unique feature has a unique value
 
     num_features : int
-
+        How many objects were found
 
     If `output` is None or a data type, this function returns a tuple,
     (`labeled_array`, `num_features`).
@@ -486,13 +486,52 @@ def sum(input, labels = None, index = None):
     return sum
 
 def mean(input, labels = None, index = None):
-    """Calculate the mean of the values of an array at labels.
+    """
+    Calculate the mean of the values of an array at labels.
 
-    Labels must be None or an array that can be broadcast to the input.
+    Parameters
+    ----------
+    input : array_like
+        Array on which to compute the mean of elements over distinct
+        regions.
+    labels : array_like, optional
+        Array of labels of same shape, or broadcastable to the same shape as
+        `input`. All elements sharing the same label form one region over
+        which the mean of the elements is computed.
+    index : int or sequence of ints, optional
+        Labels of the objects over which the mean is to be computed.
+        Default is None, in which case the mean for all values where label is
+        greater than 0 is calculated.
 
-    Index must be None, a single label or sequence of labels.  If
-    None, the mean for all values where label is greater than 0 is
-    calculated.
+    Returns
+    -------
+    out : list
+        Sequence of same length as ``index``, with the mean of the different
+        regions labeled by the labels in ``index``.
+
+    See also
+    --------
+    ndimage.variance, ndimage.standard_deviation, ndimage.minimum,
+    ndimage.maximum, ndimage.sum
+    ndimage.label
+
+    Examples
+    --------
+    >>> a = np.arange(25).reshape((5,5))
+    >>> labels = np.zeros_like(a)
+    >>> labels[3:5,3:5] = 1
+    >>> index = np.unique(labels)
+    >>> labels
+    array([[0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 1],
+           [0, 0, 0, 1, 1]])
+    >>> index
+    array([0, 1])
+    >>> ndimage.mean(a, labels=labels, index=index)
+    [10.285714285714286, 21.0]
+
     """
 
     count, sum = _stats(input, labels, index)
@@ -693,17 +732,17 @@ def minimum(input, labels = None, index = None):
     Parameters
     ----------
 
-    input: array-like
-        Array-like of values. For each region specified by `labels`, the
+    input: array_like
+        Array_like of values. For each region specified by `labels`, the
         minimal values of `input` over the region is computed.
 
-    labels: array-like, optional
-        An array-like of integers marking different regions over which the
+    labels: array_like, optional
+        An array_like of integers marking different regions over which the
         minimum value of `input` is to be computed. `labels` must have the
         same shape as `input`. If `labels` is not specified, the minimum
         over the whole array is returned.
 
-    index: array-like, optional
+    index: array_like, optional
         A list of region labels that are taken into account for computing the
         minima. If index is None, the minimum over all elements where `labels`
         is non-zero is returned.
