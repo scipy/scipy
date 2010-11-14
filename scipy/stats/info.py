@@ -6,8 +6,8 @@ This module contains a large number of probability distributions as
 well as a growing library of statistical functions.
 
 Each included distribution is an instance of the class rv_continous.
-For each given name the following methods are available.  See docstring for
-rv_continuous for more information
+For each given name the following methods are available.  See docstring
+for rv_continuous for more information
 
 :rvs:
    random variates with the distribution
@@ -32,91 +32,94 @@ Distributions
 
 The distributions available with the above methods are:
 
-=============== ==============================================================
+
 Continuous  (Total == 81 distributions)
-==============================================================================
-norm              Normal (Gaussian)
-alpha             Alpha
-anglit            Anglit
-arcsine           Arcsine
-beta              Beta
-betaprime         Beta Prime
-bradford          Bradford
-burr              Burr
-fisk              Fisk
-cauchy            Cauchy
-chi               Chi
-chi2              Chi-squared
-cosine            Cosine
-dgamma            Double Gamma
-dweibull          Double Weibull
-erlang            Erlang
-expon             Exponential
-exponweib         Exponentiated Weibull
-exponpow          Exponential Power
-fatiguelife       Fatigue Life (Birnbaum-Sanders)
-foldcauchy        Folded Cauchy
-f                 F (Snecdor F)
-foldnorm          Folded Normal
-frechet_r         Frechet Right Sided, Extreme Value Type II (Extreme LB) or weibull_min
-frechet_l         Frechet Left Sided, Weibull_max
-genlogistic       Generalized Logistic
-genpareto         Generalized Pareto
-genexpon          Generalized Exponential
-genextreme        Generalized Extreme Value
-gausshyper        Gauss Hypergeometric
-gamma             Gamma
-gengamma          Generalized gamma
-genhalflogistic   Generalized Half Logistic
-gompertz          Gompertz (Truncated Gumbel)
-gumbel_r          Right Sided Gumbel, Log-Weibull, Fisher-Tippett, Extreme Value Type I
-gumbel_l          Left Sided Gumbel, etc.
-halfcauchy        Half Cauchy
-halflogistic      Half Logistic
-halfnorm          Half Normal
-hypsecant         Hyperbolic Secant
-invgamma          Inverse Gamma
-invnorm           Inverse Normal
-invweibull        Inverse Weibull
-johnsonsb         Johnson SB
-johnsonsu         Johnson SU
-laplace           Laplace
-logistic          Logistic
-loggamma          Log-Gamma
-loglaplace        Log-Laplace (Log Double Exponential)
-lognorm           Log-Normal
-gilbrat           Gilbrat
-lomax             Lomax (Pareto of the second kind)
-maxwell           Maxwell
-mielke            Mielke's Beta-Kappa
-nakagami          Nakagami
-ncx2              Non-central chi-squared
-ncf               Non-central F
-t                 Student's T
-nct               Non-central Student's T
-pareto            Pareto
-powerlaw          Power-function
-powerlognorm      Power log normal
-powernorm         Power normal
-rdist             R distribution
-reciprocal        Reciprocal
-rayleigh          Rayleigh
-rice              Rice
-recipinvgauss     Reciprocal Inverse Gaussian
-semicircular      Semicircular
-triang            Triangular
-truncexpon        Truncated Exponential
-truncnorm         Truncated Normal
-tukeylambda       Tukey-Lambda
-uniform           Uniform
-von_mises         Von-Mises (Circular)
-wald              Wald
-weibull_min       Minimum Weibull (see Frechet)
-weibull_max       Maximum Weibull (see Frechet)
-wrapcauchy        Wrapped Cauchy
-ksone             Kolmogorov-Smirnov one-sided (no stats)
-kstwobign         Kolmogorov-Smirnov two-sided test for Large N (no stats)
-=============== ==============================================================
+---------------------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   norm              Normal (Gaussian)
+   alpha             Alpha
+   anglit            Anglit
+   arcsine           Arcsine
+   beta              Beta
+   betaprime         Beta Prime
+   bradford          Bradford
+   burr              Burr
+   cauchy            Cauchy
+   chi               Chi
+   chi2              Chi-squared
+   cosine            Cosine
+   dgamma            Double Gamma
+   dweibull          Double Weibull
+   erlang            Erlang
+   expon             Exponential
+   exponweib         Exponentiated Weibull
+   exponpow          Exponential Power
+   f                 F (Snecdor F)
+   fatiguelife       Fatigue Life (Birnbaum-Sanders)
+   fisk              Fisk
+   foldcauchy        Folded Cauchy
+   foldnorm          Folded Normal
+   frechet_r         Frechet Right Sided, Extreme Value Type II (Extreme LB) or weibull_min
+   frechet_l         Frechet Left Sided, Weibull_max
+   genlogistic       Generalized Logistic
+   genpareto         Generalized Pareto
+   genexpon          Generalized Exponential
+   genextreme        Generalized Extreme Value
+   gausshyper        Gauss Hypergeometric
+   gamma             Gamma
+   gengamma          Generalized gamma
+   genhalflogistic   Generalized Half Logistic
+   gompertz          Gompertz (Truncated Gumbel)
+   gumbel_r          Right Sided Gumbel, Log-Weibull, Fisher-Tippett, Extreme Value Type I
+   gumbel_l          Left Sided Gumbel, etc.
+   halfcauchy        Half Cauchy
+   halflogistic      Half Logistic
+   halfnorm          Half Normal
+   hypsecant         Hyperbolic Secant
+   invgamma          Inverse Gamma
+   invnorm           Inverse Normal
+   invweibull        Inverse Weibull
+   johnsonsb         Johnson SB
+   johnsonsu         Johnson SU
+   ksone             Kolmogorov-Smirnov one-sided (no stats)
+   kstwobign         Kolmogorov-Smirnov two-sided test for Large N (no stats)
+   laplace           Laplace
+   logistic          Logistic
+   loggamma          Log-Gamma
+   loglaplace        Log-Laplace (Log Double Exponential)
+   lognorm           Log-Normal
+   gilbrat           Gilbrat
+   lomax             Lomax (Pareto of the second kind)
+   maxwell           Maxwell
+   mielke            Mielke's Beta-Kappa
+   nakagami          Nakagami
+   ncx2              Non-central chi-squared
+   ncf               Non-central F
+   nct               Non-central Student's T
+   pareto            Pareto
+   powerlaw          Power-function
+   powerlognorm      Power log normal
+   powernorm         Power normal
+   rdist             R distribution
+   reciprocal        Reciprocal
+   rayleigh          Rayleigh
+   rice              Rice
+   recipinvgauss     Reciprocal Inverse Gaussian
+   semicircular      Semicircular
+   t                 Student's T
+   triang            Triangular
+   truncexpon        Truncated Exponential
+   truncnorm         Truncated Normal
+   tukeylambda       Tukey-Lambda
+   uniform           Uniform
+   von_mises         Von-Mises (Circular)
+   wald              Wald
+   weibull_min       Minimum Weibull (see Frechet)
+   weibull_max       Maximum Weibull (see Frechet)
+   wrapcauchy        Wrapped Cauchy
 
 
 =============== ==============================================================

@@ -1,45 +1,57 @@
 # This file is executed by __init__.py and ppimport hooks.
 """
-Discrete Fourier Transform algorithms
-=====================================
+Discrete Fourier transform algorithms
 
-Fast Fourier Transforms:
+Modules
+=======
 
-  fft       --- FFT of arbitrary type periodic sequences
-  ifft      --- Inverse of fft
-  fftn      --- Multi-dimensional FFT
-  ifftn     --- Inverse of fftn
-  fft2      --- Two-dimensional FFT
-  ifft2     --- Inverse of fft2
-  rfft      --- FFT of real periodic sequences
-  irfft     --- Inverse of rfft
+.. autosummary::
+   :toctree: generated/
 
-Differential and pseudo-differential operators:
+   basic - Basic discrete Fourier transform operators
+   convolve - Convolution functions
+   helper - TODO
+   pseudo_diffs - Differential and pseudo-differential operators
+   realtransforms - Real spectrum tranforms (DCT, DST, MDCT)
 
-  diff      --- Differentiation and integration of periodic sequences
-  tilbert   --- Tilbert transform:         cs_diff(x,h,h)
-  itilbert  --- Inverse Tilbert transform: sc_diff(x,h,h)
-  hilbert   --- Hilbert transform:         cs_diff(x,inf,inf)
-  ihilbert  --- Inverse Hilbert transform: sc_diff(x,inf,inf)
-  cs_diff   --- cosh/sinh pseudo-derivative of periodic sequences
-  sc_diff   --- sinh/cosh pseudo-derivative of periodic sequences
-  ss_diff   --- sinh/sinh pseudo-derivative of periodic sequences
-  cc_diff   --- cosh/cosh pseudo-derivative of periodic sequences
-  shift     --- Shift periodic sequences
+Functions
+=========
 
-Helper functions:
+Fast Fourier Transforms (FFTs)
+------------------------------
 
-  fftshift  --- Shift zero-frequency component to center of spectrum
-  ifftshift --- Inverse of freqshift
-  dftfreq   --- DFT sample frequencies
-  rfftfreq  --- DFT sample frequencies (specific to rfft,irfft)
+.. autosummary::
+   :toctree: generated/
 
-Extension modules:
+   fft - Fast (discrete) Fourier Transform (FFT)
+   ifft - Inverse FFT
+   fft2 - Two dimensional FFT
+   ifft2 - Two dimensional inverse FFT
+   fftn - n-dimensional FFT
+   ifftn - n-dimensional inverse FFT
+   rfft - FFT of strictly real-valued sequence
+   irfft - Inverse of rfft
+   rfftfreq - DFT sample frequencies (specific to rfft and irfft)
+   dct - Discrete cosine transform
+   idct - Inverse discrete cosine transform
 
-  _fftpack   --- Provides functions zfft, drfft, zrfft, zfftnd,
-                destroy_*_cache
-  convolve  --- Provides functions convolve, convolve_z,
-                init_convolution_kernel, destroy_convolve_cache
+Differential and pseudo-differential operators
+----------------------------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   diff - Differentiation and integration of periodic sequences
+   tilbert - Tilbert transform:         cs_diff(x,h,h)
+   itilbert - Inverse Tilbert transform: sc_diff(x,h,h)
+   hilbert - Hilbert transform:         cs_diff(x,inf,inf)
+   ihilbert - Inverse Hilbert transform: sc_diff(x,inf,inf)
+   cs_diff - cosh/sinh pseudo-derivative of periodic sequences
+   sc_diff - sinh/cosh pseudo-derivative of periodic sequences
+   ss_diff - sinh/sinh pseudo-derivative of periodic sequences
+   cc_diff - cosh/cosh pseudo-derivative of periodic sequences
+   shift - Shift periodic sequences
+
 """
 
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',

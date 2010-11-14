@@ -2,100 +2,119 @@
 Optimization Tools
 ==================
 
-A collection of general-purpose optimization routines.::
+General-purpose Optimization Routines
+-------------------------------------
 
-   fmin        --  Nelder-Mead Simplex algorithm
-                     (uses only function calls)
-   fmin_powell --  Powell's (modified) level set method (uses only
-                     function calls)
-   fmin_cg     --  Non-linear (Polak-Ribiere) conjugate gradient algorithm
-                     (can use function and gradient).
-   fmin_bfgs   --  Quasi-Newton method (Broydon-Fletcher-Goldfarb-Shanno);
-                     (can use function and gradient)
-   fmin_ncg    --  Line-search Newton Conjugate Gradient (can use
-                     function, gradient and Hessian).
-   leastsq     --  Minimize the sum of squares of M equations in
-                     N unknowns given a starting estimate.
+.. autosummary::
+   :toctree: generated/
 
-Constrained Optimizers (multivariate)::
+   fmin - Nelder-Mead Simplex algorithm
+   fmin_powell - Powell's (modified) level set method
+   fmin_cg - Non-linear (Polak-Ribiere) conjugate gradient algorithm
+   fmin_bfgs - Quasi-Newton method (Broydon-Fletcher-Goldfarb-Shanno)
+   fmin_ncg - Line-search Newton Conjugate Gradient
+   leastsq - Minimize the sum of squares of M equations in N unknowns
 
-   fmin_l_bfgs_b -- Zhu, Byrd, and Nocedal's L-BFGS-B constrained optimizer
-                      (if you use this please quote their papers -- see help)
+Constrained Optimizers (Multivariate)
+-------------------------------------
 
-   fmin_tnc      -- Truncated Newton Code originally written by Stephen Nash and
-                      adapted to C by Jean-Sebastien Roy.
+.. autosummary::
+   :toctree: generated/
 
-   fmin_cobyla   -- Constrained Optimization BY Linear Approximation
+   fmin_l_bfgs_b - Zhu, Byrd, and Nocedal's constrained optimizer
+   fmin_tnc - Truncated Newton code
+   fmin_cobyla - Constrained optimization by linear approximation
+   fmin_slsqp - Minimization using sequential least-squares programming
+   nnls - Linear least-squares problem with non-negativity constraint
 
-   fmin_slsqp    -- Minimize a function using Sequential Least SQuares Programming
+Global Optimizers
+-----------------
 
-   nnls          -- Solve linear least squares problem with non-negativity
-                      constraint
+.. autosummary::
+   :toctree: generated/
 
-Global Optimizers::
+   anneal - Simulated annealing
+   brute - Brute force searching optimizer
 
-   anneal      --  Simulated Annealing
-   brute       --  Brute force searching optimizer
+Scalar Function Minimizers
+--------------------------
 
-Scalar function minimizers::
+.. autosummary::
+   :toctree: generated/
 
-   fminbound   --  Bounded minimization of a scalar function.
-   brent       --  1-D function minimization using Brent method.
-   golden      --  1-D function minimization using Golden Section method
-   bracket     --  Bracket a minimum (given two starting points)
+   fminbound - Bounded minimization of a scalar function
+   brent - 1-D function minimization using Brent method
+   golden - 1-D function minimization using Golden Section method
+   bracket - Bracket a minimum, given two starting points
 
-Also a collection of general-purpose root-finding routines::
+Fitting
+=======
 
-   fsolve      --  Non-linear multi-variable equation solver.
+.. autosummary::
+   :toctree: generated/
 
-Scalar function solvers::
+   curve_fit
 
-   brentq      --  quadratic interpolation Brent method
-   brenth      --  Brent method (modified by Harris with hyperbolic
-                     extrapolation)
-   ridder      --  Ridder's method
-   bisect      --  Bisection method
-   newton      --  Secant method or Newton's method
+Root finding
+============
 
-   fixed_point --  Single-variable fixed-point solver.
+Scalar functions
+----------------
 
-A collection of general-purpose nonlinear multidimensional solvers::
+.. autosummary::
+   :toctree: generated/
 
-   broyden1            --  Broyden's first method - is a quasi-Newton-Raphson
-                           method for updating an approximate Jacobian and then
-                           inverting it
-   broyden2            --  Broyden's second method - the same as broyden1, but
-                           updates the inverse Jacobian directly
-   broyden3            --  Broyden's second method - the same as broyden2, but
-                           instead of directly computing the inverse Jacobian,
-                           it remembers how to construct it using vectors, and
-                           when computing inv(J)*F, it uses those vectors to
-                           compute this product, thus avoding the expensive NxN
-                           matrix multiplication.
-   broyden_generalized --  Generalized Broyden's method, the same as broyden2,
-                           but instead of approximating the full NxN Jacobian,
-                           it construct it at every iteration in a way that
-                           avoids the NxN matrix multiplication.  This is not
-                           as precise as broyden3.
-   anderson            --  extended Anderson method, the same as the
-                           broyden_generalized, but added w_0^2*I to before
-                           taking inversion to improve the stability
-   anderson2           --  the Anderson method, the same as anderson, but
-                           formulated differently
+   brentq - quadratic interpolation Brent method
+   brenth - Brent method, modified by Harris with hyperbolic extrapolation
+   ridder - Ridder's method
+   bisect - Bisection method
+   newton - Secant method or Newton's method
 
-Utility Functions::
+Fixed point finding:
 
-   line_search --  Return a step that satisfies the strong Wolfe conditions.
-   check_grad  --  Check the supplied derivative using finite difference
-                     techniques.
+.. autosummary::
+   :toctree: generated/
 
-Related Software::
+   fixed_point - Single-variable fixed-point solver
 
-   OpenOpt -- A BSD-licensed optimisation framework (see http://openopt.org), 
-              which includes a number of constrained and unconstrained 
-              solvers from and beyond scipy.optimize module, 
-              unified text and graphical output of convergence
-              and automatic differentiation.
+
+Multidimensional
+----------------
+
+General nonlinear solvers:
+
+.. autosummary::
+   :toctree: generated/
+
+   fsolve - Non-linear multi-variable equation solver
+   broyden1 - Broyden's first method
+   broyden2 - Broyden's second method
+
+Large-scale nonlinear solvers:
+
+.. autosummary::
+   :toctree: generated/
+
+   newton_krylov
+   anderson
+
+Simple iterations:
+
+.. autosummary::
+   :toctree: generated/
+
+   excitingmixing
+   linearmixing
+   diagbroyden
+
+Utility Functions
+=================
+
+.. autosummary::
+   :toctree: generated/
+
+   line_search - Return a step that satisfies the strong Wolfe conditions
+   check_grad - Check the supplied derivative using finite differences
 
 """
 

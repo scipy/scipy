@@ -1,44 +1,88 @@
-"""Orthogonal Distance Regression
+"""
+Orthogonal Distance Regression (:mod:`scipy.odr`)
+=================================================
 
 Introduction
-============
+------------
 
-Why Orthogonal Distance Regression (ODR)? Sometimes one has measurement errors
-in the explanatory variable, not just the response variable. Ordinary Least
-Squares (OLS) fitting procedures treat the data for explanatory variables as
-fixed. Furthermore, OLS procedures require that the response variable be an
-explicit function of the explanatory variables; sometimes making the equation
-explicit is unwieldy and introduces errors. ODR can handle both of these cases
-with ease and can even reduce to the OLS case if necessary.
+Why Orthogonal Distance Regression (ODR)?  Sometimes one has
+measurement errors in the explanatory (a.k.a., "independent")
+variable(s), not just the response (a.k.a., "dependent") variable(s).
+Ordinary Least Squares (OLS) fitting procedures treat the data for
+explanatory variables as fixed, i.e., not subject to error of any kind.
+Furthermore, OLS procedures require that the response variables be an
+explicit function of the explanatory variables; sometimes making the
+equation explicit is impractical and/or introduces errors.  ODR can
+handle both of these cases with ease, and can even reduce to the OLS
+case if that is sufficient for the problem.
 
-ODRPACK is a FORTRAN-77 library for performing ODR with possibly non-linear
-fitting functions. It uses a modified trust-region Levenberg-Marquardt-type
-algorithm to estimate the function parameters. The fitting functions are
-provided by Python functions operating on NumPy arrays. The required derivatives
-may be provided by Python functions as well or may be numerically estimated.
-ODRPACK can do explicit or implicit ODR fits or can do OLS. Input and output
-variables may be multi-dimensional. Weights can be provided to account for
-different variances of the observations (even covariances between dimensions of
-the variables).
+ODRPACK is a FORTRAN-77 library for performing ODR with possibly
+non-linear fitting functions.  It uses a modified trust-region
+Levenberg-Marquardt-type algorithm [1]_ to estimate the function
+parameters.  The fitting functions are provided by Python functions
+operating on NumPy arrays.  The required derivatives may be provided
+by Python functions as well, or may be estimated numerically.  ODRPACK
+can do explicit or implicit ODR fits, or it can do OLS.  Input and
+output variables may be multi-dimensional.  Weights can be provided to
+account for different variances of the observations, and even
+covariances between dimensions of the variables.
 
-odr provides two interfaces: a single function and a set of high-level classes
-that wrap that function. Please refer to their docstrings for more information.
-While the docstring of the function, odr, does not have a full explanation of
-its arguments, the classes do, and the arguments with the same name usually have
-the same requirements. Furthermore, it is highly suggested that one at least
-skim the ODRPACK User's Guide.  Know Thy Algorithm.
-
+odr provides two interfaces: a single function, and a set of
+high-level classes that wrap that function; please refer to their
+docstrings for more information.  While the docstring of the function
+odr does not have a full explanation of its arguments, the classes do,
+and arguments of the same name usually have the same requirements.
+Furthermore, the user is urged to at least skim the `ODRPACK User's
+Guide <http://docs.scipy.org/doc/external/odrpack_guide.pdf>`_ -
+"Know Thy Algorithm."
 
 Use
-===
+---
 
-See the docstrings of odr.odrpack and the functions and classes for
-usage instructions. The ODRPACK User's Guide is also quite helpful. It can be
-found on one of the ODRPACK's original author's website:
+See the docstrings of `odr.odrpack` and the functions and classes for
+usage instructions.  The ODRPACK User's Guide (linked above) is also
+quite helpful.
 
-    http://www.boulder.nist.gov/mcsd/Staff/JRogers/odrpack.html
+References
+----------
+.. [1] P. T. Boggs and J. E. Rogers, "Orthogonal Distance Regression,"
+   in "Statistical analysis of measurement error models and
+   applications: proceedings of the AMS-IMS-SIAM joint summer research
+   conference held June 10-16, 1989," Contemporary Mathematics,
+   vol. 112, pg. 186, 1990.
 
-Robert Kern
-robert.kern@gmail.com
+.. currentmodule:: scipy.odr
+
+Modules
+-------
+
+.. autosummary::
+   :toctree: generated/
+
+   odrpack       Python wrappers for FORTRAN77 ODRPACK.
+   models        Model instances for use with odrpack.
+
+Classes
+-------
+
+.. autosummary::
+   :toctree: generated/
+
+   ODR           Gathers all info & manages the main fitting routine.
+   Data          Stores the data to fit.
+   Model         Stores information about the function to be fit.
+   Output
+   RealData      Weights as actual std. dev.s and/or covariances.
+   odr_error
+   odr_stop
+
+Functions
+---------
+
+.. autosummary::
+   :toctree: generated/
+
+   odr
+
 """
 postpone_import = 1
