@@ -43,7 +43,7 @@ Helper functions
 
    fftshift
    ifftshift
-   dftfreq
+   fftfreq
    rfftfreq
 
 Convolutions (:mod:`scipy.fftpack.convolve`)

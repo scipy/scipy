@@ -10,7 +10,7 @@ significant power to the interactive Python session by exposing the
 user to high-level commands and classes for the manipulation and
 visualization of data. With SciPy, an interactive Python session
 becomes a data-processing and system-prototyping environment rivaling
-sytems such as Matlab, IDL, Octave, R-Lab, and SciLab.
+sytems such as MATLAB, IDL, Octave, R-Lab, and SciLab.
 
 The additional power of using SciPy within Python, however, is that a
 powerful programming language is also available for use in developing

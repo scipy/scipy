@@ -86,7 +86,7 @@ functionality to provide efficient means for array construction. This
 part will discuss the operation of :obj:`sp.mgrid` , :obj:`sp.ogrid` ,
 :obj:`sp.r_` , and :obj:`sp.c_` for quickly constructing arrays.
 
-One familiar with Matlab may complain that it is difficult to
+One familiar with MATLAB (R) may complain that it is difficult to
 construct arrays from the interactive session with Python. Suppose,
 for example that one wants to construct an array that begins with 3
 followed by 5 zeros and then contains 10 numbers spanning the range -1

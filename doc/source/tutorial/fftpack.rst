@@ -47,7 +47,7 @@ Discrete Cosine Transforms
 Return the Discrete Cosine Transform [Mak]_ of arbitrary type sequence ``x``.
 
 For a single dimension array ``x``, ``dct(x, norm='ortho')`` is equal to
-matlab ``dct(x)``.
+MATLAB ``dct(x)``.
 
 There are theoretically 8 types of the DCT [WP]_, only the first 3 types are
 implemented in scipy. 'The' DCT generally refers to DCT type 2, and 'the'

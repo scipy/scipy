@@ -197,6 +197,7 @@ which work for masked arrays.
    z
    zs
    zmap
+   zscore
 
 .. autosummary::
    :toctree: generated/
