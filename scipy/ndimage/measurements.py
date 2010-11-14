@@ -165,14 +165,55 @@ def label(input, structure = None, output = None):
         return return_value, max_label
 
 def find_objects(input, max_label = 0):
-    """Find objects in a labeled array.
+    """
+    Find objects in a labeled array.
 
-    The input must be an array with labeled objects. A list of slices
-    into the array is returned that contain the objects. The list
-    represents a sequence of the numbered objects. If a number is
-    missing, None is returned instead of a slice. If max_label > 0, it
-    gives the largest object number that is searched for, otherwise
-    all are returned.
+    Parameters
+    ----------
+    input : ndarray of ints
+        Array containing objects defined by different labels.
+    max_label : int, optional
+        Maximum label to be searched for in `input`. If max_label is not
+        given, the positions of all objects are returned.
+
+    Returns
+    -------
+    object_slices : list of slices
+        A list of slices, one for the extent of each labeled object.
+        Slices correspond to the minimal parallelepiped that contains
+        the object. If a number is missing, None is returned instead
+        of a slice.
+
+    See Also
+    --------
+    label, center_of_mass
+
+    Notes
+    -----
+    This function is very useful for isolating a volume of interest inside
+    a 3-D array, that cannot be "seen through".
+
+    Examples
+    --------
+    >>> a = np.zeros((6,6), dtype=np.int)
+    >>> a[2:4, 2:4] = 1
+    >>> a[4, 4] = 1
+    >>> a[:2, :3] = 2
+    >>> a[0, 5] = 3
+    >>> a
+    array([[2, 2, 2, 0, 0, 3],
+           [2, 2, 2, 0, 0, 0],
+           [0, 0, 1, 1, 0, 0],
+           [0, 0, 1, 1, 0, 0],
+           [0, 0, 0, 0, 1, 0],
+           [0, 0, 0, 0, 0, 0]])
+    >>> ndimage.find_objects(a)
+    [(slice(2, 5, None), slice(2, 5, None)), (slice(0, 2, None), slice(0, 3, None)), (slice(0, 1, None), slice(5, 6, None))]
+    >>> ndimage.find_objects(a, max_label=2)
+    [(slice(2, 5, None), slice(2, 5, None)), (slice(0, 2, None), slice(0, 3, None))]
+    >>> ndimage.find_objects(a == 1, max_label=2)
+    [(slice(2, 5, None), slice(2, 5, None)), None]
+
     """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
@@ -182,15 +223,73 @@ def find_objects(input, max_label = 0):
     return _nd_image.find_objects(input, max_label)
 
 def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_positions=False):
-    '''Roughly equivalent to [func(input[labels == i]) for i in index].
+    """
+    Roughly equivalent to [func(input[labels == i]) for i in index].
 
-    Special cases:
-      - index a scalar: returns a single value
-      - index is None: returns func(inputs[labels > 0])
+    Sequentially applies an arbitrary function (that works on array_like input)
+    to subsets of an n-D image array specified by `labels` and `index`.
+    The option exists to provide the function with positional parameters as the
+    second argument.
 
-    func will be called with linear indices as a second argument if
-    pass_positions is True.
-    '''
+    Parameters
+    ----------
+    input : array_like
+        Data from which to select `labels` to process.
+    labels : array_like, or None
+        Labels to objects in `input`.
+        If not None, array must be same shape as `input`.
+        If None, `func` is applied to raveled `input`.
+    index : int, sequence of int, or None
+        Subset of `labels` to which to apply `func`.
+        If a scalar, a single value is returned.
+        If None, `func` is applied to all non-zero values of `labels`.
+    func : callable
+        Python function to apply to `labels` from `input`.
+    out_dtype : dtype
+        Dtype to use for `result`.
+    default : int, float, or None
+        Default return value when a element of `index` does not exist
+        in `labels`.
+    pass_positions : bool, optional
+        If True, pass linear indices to `func` as a second argument.
+        Default is False.
+
+    Returns
+    -------
+    result : ndarray
+        Result of applying `func` to each of `labels` to `input` in `index`.
+
+    Examples
+    --------
+    >>> a = np.array([[1, 2, 0, 0],
+                      [5, 3, 0, 4],
+                      [0, 0, 0, 7],
+                      [9, 3, 0, 0]])
+    >>> from scipy import ndimage
+    >>> lbl, nlbl = ndimage.label(a)
+    >>> lbls = np.arange(1, nlbl+1)
+    >>> ndimage.labeled_comprehension(a, lbl, lbls, np.mean, float, 0)
+    array([ 2.75,  5.5 ,  6.  ])
+
+    Falling back to `default`:
+
+    >>> lbls = np.arange(1, nlbl+2)
+    >>> ndimage.labeled_comprehension(a, lbl, lbls, np.mean, float, -1)
+    array([ 2.75,  5.5 ,  6.  , -1.  ])
+
+    Passing positions:
+
+    >>> def fn(val, pos):
+    ...     print "fn says:", val, ":", pos
+    ...     return (val.sum()) if (pos.sum() % 2 == 0) else (-val.sum())
+    ...
+    >>> ndimage.labeled_comprehension(a, lbl, lbls, fn, float, 0, True)
+    fn says: [1 2 5 3] : [0 1 4 5]
+    fn says: [4 7] : [7 11]
+    fn says: [9 3] : [12 13]
+    array([ 11.,  11., -12.])
+
+    """
 
     as_scalar = numpy.isscalar(index)
     input = numpy.asarray(input)
@@ -400,12 +499,52 @@ def mean(input, labels = None, index = None):
     return sum / numpy.asanyarray(count).astype(numpy.float)
 
 def variance(input, labels = None, index = None):
-    """Calculate the variance of the values of an array at labels.
+    """
+    Calculate the variance of the values of an n-D image array, optionally at
+    specified sub-regions.
 
-    Labels must be None or an array of the same dimensions as the input.
+    Parameters
+    ----------
+    input : array_like
+        Nd-image data to process.
+    labels : array_like, or None, optional
+        Labels defining sub-regions in `input`.
+        If not None, must be same shape as `input`.
+    index : None, int, or sequence of int, optional
+        `labels` to include in output.
+        If None, all values where `labels` is non-zero are used.
 
-    Index must be None, a single label or sequence of labels.  If
-    none, all values where label is greater than zero are used.
+    Returns
+    -------
+    vars : float or ndarray
+        Values of variance, for each sub-region if `labels` and `index` are
+        specified.
+
+    See Also
+    --------
+    label, standard_deviation, maximum, minimum, extrema
+
+    Examples
+    --------
+    >>> a = np.array([[1, 2, 0, 0],
+                      [5, 3, 0, 4],
+                      [0, 0, 0, 7],
+                      [9, 3, 0, 0]])
+    >>> from scipy import ndimage
+    >>> ndimage.variance(a)
+    7.609375
+
+    Features to process can be specified using `labels` and `index`:
+
+    >>> lbl, nlbl = ndimage.label(a)
+    >>> ndimage.variance(a, lbl, index=np.arange(1, nlbl+1))
+    array([ 2.1875,  2.25  ,  9.    ])
+
+    If no index is given, all non-zero `labels` are processed:
+
+    >>> ndimage.variance(a, lbl)
+    6.1875
+
     """
 
     count, sum, sum_c_sq = _stats(input, labels, index, centered=True)
@@ -413,12 +552,52 @@ def variance(input, labels = None, index = None):
     return sum_c_sq / np.asanyarray(count).astype(float)
 
 def standard_deviation(input, labels = None, index = None):
-    """Calculate the standard deviation of the values of an array at labels.
+    """
+    Calculate the standard deviation of the values of an n-D image array,
+    optionally at specified sub-regions.
 
-    Labels must be None or an array of the same dimensions as the input.
+    Parameters
+    ----------
+    input : array_like
+        Nd-image data to process.
+    labels : array_like, or None, optional
+        Labels to identify sub-regions in `input`.
+        If not None, must be same shape as `input`.
+    index : None, int, or sequence of int, optional
+        `labels` to include in output.
+        If None, all values where `labels` is non-zero are used.
 
-    Index must be None, a single label or sequence of labels.  If
-    none, all values where label is greater than zero are used.
+    Returns
+    -------
+    std : float or ndarray
+        Values of standard deviation, for each sub-region if `labels` and
+        `index` are specified.
+
+    See Also
+    --------
+    label, variance, maximum, minimum, extrema
+
+    Examples
+    --------
+    >>> a = np.array([[1, 2, 0, 0],
+                      [5, 3, 0, 4],
+                      [0, 0, 0, 7],
+                      [9, 3, 0, 0]])
+    >>> from scipy import ndimage
+    >>> ndimage.standard_deviation(a)
+    2.7585095613392387
+
+    Features to process can be specified using `labels` and `index`:
+
+    >>> lbl, nlbl = ndimage.label(a)
+    >>> ndimage.standard_deviation(a, lbl, index=np.arange(1, nlbl+1))
+    array([ 1.479,  1.5  ,  3.   ])
+
+    If no index is given, non-zero `labels` are processed:
+
+    >>> ndimage.standard_deviation(a, lbl)
+    2.4874685927665499
+
     """
 
     return numpy.sqrt(variance(input, labels, index))
@@ -580,7 +759,7 @@ def maximum(input, labels = None, index = None):
     Parameters
     ----------
     input : array_like
-        Array-like of values. For each region specified by `labels`, the
+        Array_like of values. For each region specified by `labels`, the
         maximal values of `input` over the region is computed.
     labels : array_like, optional
         An array of integers marking different regions over which the
@@ -693,15 +872,57 @@ def maximum_position(input, labels = None, index = None):
     return [tuple(v) for v in (result.reshape(-1, 1) // dim_prod) % dims]
 
 def extrema(input, labels = None, index = None):
-    """Calculate the minimums and maximums of the values of an array
+    """
+    Calculate the minimums and maximums of the values of an array
     at labels, along with their positions.
 
-    Labels must be None or an array of the same dimensions as the input.
+    Parameters
+    ----------
+    input : ndarray
+        Nd-image data to process.
+    labels : ndarray, or None, optional
+        Labels of features in input.
+        If not None, must be same shape as `input`.
+    index : None, int, or sequence of int, optional
+        Labels to include in output.
+        If None, all values where non-zero `labels` are used.
 
-    Index must be None, a single label or sequence of labels.  If
-    none, all values where label is greater than zero are used.
+    Returns
+    -------
+    minimums, maximums : int or ndarray
+        Values of minimums and maximums in each feature.
+    min_positions, max_positions : tuple or list of tuples
+        Each tuple gives the n-D coordinates of the corresponding minimum
+        or maximum.
 
-    Returns: minimums, maximums, min_positions, max_positions
+    See Also
+    --------
+    maximum, minimum, maximum_position, minimum_position, center_of_mass
+
+    Examples
+    --------
+    >>> a = np.array([[1, 2, 0, 0],
+                      [5, 3, 0, 4],
+                      [0, 0, 0, 7],
+                      [9, 3, 0, 0]])
+    >>> from scipy import ndimage
+    >>> ndimage.extrema(a)
+    (0, 9, (0, 2), (3, 0))
+
+    Features to process can be specified using `labels` and `index`:
+
+    >>> lbl, nlbl = ndimage.label(a)
+    >>> ndimage.extrema(a, lbl, index=np.arange(1, nlbl+1))
+    (array([1, 4, 3]),
+     array([5, 7, 9]),
+     [(0.0, 0.0), (1.0, 3.0), (3.0, 1.0)],
+     [(1.0, 0.0), (2.0, 3.0), (3.0, 0.0)])
+
+    If no index is given, non-zero `labels` are processed:
+
+    >>> ndimage.extrema(a, lbl)
+    (1, 9, (0, 0), (3, 0))
+
     """
 
     dims = numpy.array(numpy.asarray(input).shape)
@@ -722,12 +943,46 @@ def extrema(input, labels = None, index = None):
     return minimums, maximums, min_positions, max_positions
 
 def center_of_mass(input, labels = None, index = None):
-    """Calculate the center of mass of the values of an array at labels.
+    """
+    Calculate the center of mass of the values of an array at labels.
 
-    Labels must be None or an array of the same dimensions as the input.
+    Parameters
+    ----------
+    input : ndarray
+        Data from which to calculate center-of-mass.
+    labels : ndarray or None, optional
+        Labels for objects in `input`, as generated by ndimage.labels.
+        Dimensions must be the same as `input`.
+    index : int, sequence of int, or None, optional
+        Labels for which to calculate centers-of-mass. If not specified,
+        all labels greater than zero are used.
 
-    Index must be None, a single label or sequence of labels.  If
-    none, all values where label is greater than zero are used.
+    Returns
+    -------
+    centerofmass : tuple, or list of tuples
+        Co-ordinates of centers-of-masses.
+
+    Examples
+    --------
+    >>> a = np.array(([0,0,0,0],
+                      [0,1,1,0],
+                      [0,1,1,0],
+                      [0,1,1,0]))
+    >>> from scipy import ndimage
+    >>> ndimage.measurements.center_of_mass(a)
+    (2.0, 1.5)
+
+    Calculation of multiple objects in an image
+
+    >>> b = np.array(([0,1,1,0],
+                      [0,1,0,0],
+                      [0,0,0,0],
+                      [0,0,1,1],
+                      [0,0,1,1]))
+    >>> lbl = ndimage.label(b)[0]
+    >>> ndimage.measurements.center_of_mass(b, lbl, [1,2])
+    [(0.33333333333333331, 1.3333333333333333), (3.5, 2.5)]
+
     """
 
     normalizer = sum(input, labels, index)
@@ -741,15 +996,55 @@ def center_of_mass(input, labels = None, index = None):
     return [tuple(v) for v in numpy.array(results).T]
 
 def histogram(input, min, max, bins, labels = None, index = None):
-    """Calculate the histogram of the values of an array at labels.
+    """
+    Calculate the histogram of the values of an array, optionally at labels.
 
-    Labels must be None or an array of the same dimensions as the input.
+    Histogram calculates the frequency of values in an array within bins
+    determined by `min`, `max`, and `bins`. `Labels` and `index` can limit
+    the scope of the histogram to specified sub-regions within the array.
 
-    The histograms are defined by the minimum and maximum values and the
-    number of bins.
+    Parameters
+    ----------
+    input : array_like
+        Data for which to calculate histogram.
+    min, max : int
+        Minimum and maximum values of range of histogram bins.
+    bins : int
+        Number of bins.
+    labels : array_like or None, optional
+        Labels for objects in `input`.
+        If not None, must be same shape as `input`.
+    index : int, sequence of int, or None, optional
+        Label or labels for which to calculate histogram. If None, all values
+        where label is greater than zero are used
 
-    Index must be None, a single label or sequence of labels.  If
-    none, all values where label is greater than zero are used.
+    Returns
+    -------
+    hist : ndarray
+        Histogram counts.
+
+    Examples
+    --------
+    >>> a = np.array([[ 0.    ,  0.2146,  0.5962,  0.    ],
+                      [ 0.    ,  0.7778,  0.    ,  0.    ],
+                      [ 0.    ,  0.    ,  0.    ,  0.    ],
+                      [ 0.    ,  0.    ,  0.7181,  0.2787],
+                      [ 0.    ,  0.    ,  0.6573,  0.3094]])
+    >>> from scipy import ndimage
+    >>> ndimage.measurements.histogram(a, 0, 1, 10)
+    array([13,  0,  2,  1,  0,  1,  1,  2,  0,  0])
+
+    With labels and no indices, non-zero elements are counted:
+
+    >>> lbl, nlbl = ndimage.label(a)
+    >>> ndimage.measurements.histogram(a, 0, 1, 10, lbl)
+    array([0, 0, 2, 1, 0, 1, 1, 2, 0, 0])
+
+    Indices can be used to count only certain objects:
+
+    >>> ndimage.measurements.histogram(a, 0, 1, 10, lbl, 2)
+    array([0, 0, 1, 1, 0, 0, 1, 1, 0, 0])
+
     """
 
     _bins = numpy.linspace(min, max, bins + 1)

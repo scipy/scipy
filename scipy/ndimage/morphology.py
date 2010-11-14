@@ -2039,24 +2039,112 @@ def distance_transform_cdt(input, metric = 'chessboard',
 def distance_transform_edt(input, sampling = None,
                         return_distances = True, return_indices = False,
                         distances = None, indices = None):
-    """Exact euclidean distance transform.
+    """
+    Exact euclidean distance transform.
 
     In addition to the distance transform, the feature transform can
     be calculated. In this case the index of the closest background
     element is returned along the first axis of the result.
 
-    The return_distances, and return_indices flags can be used to
-    indicate if the distance transform, the feature transform, or both
-    must be returned.
+    Parameters
+    ----------
+    input : array_like
+        Input data to transform. Can be any type but will be converted
+        into binary: 1 wherever input equates to True, 0 elsewhere.
+    sampling : float or int, or sequence of same, optional
+        Spacing of elements along each dimension. If a sequence, must be of
+        length equal to the input rank; if a single number, this is used for
+        all axes. If not specified, a grid spacing of unity is implied.
+    return_distances : bool, optional
+        Whether to return distance matrix. At least one of
+        return_distances/return_indices must be True. Default is True.
+    return_indices : bool, optional
+        Whether to return indices matrix. Default is False.
+    distance : ndarray, optional
+        Used for output of distance array, must be of type float64.
+    indices : ndarray, optional
+        Used for output of indices, must be of type int32.
 
-    Optionally the sampling along each axis can be given by the
-    sampling parameter which should be a sequence of length equal to
-    the input rank, or a single number in which the sampling is assumed
-    to be equal along all axes.
+    Returns
+    -------
+    result : ndarray or list of ndarray
+        Either distance matrix, index matrix, or a list of the two,
+        depending on `return_x` flags and `distance` and `indices`
+        input parameters.
 
-    the distances and indices arguments can be used to give optional
-    output arrays that must be of the correct size and type (float64
-    and int32).
+    Notes
+    -----
+    The euclidean distance transform gives values of the euclidean
+    distance::
+
+                    n
+      y_i = sqrt(sum (x[i]-b[i])**2)
+                    i
+
+    where b[i] is the background point (value 0) with the smallest
+    Euclidean distance to input points x[i], and n is the
+    number of dimensions.
+
+    Examples
+    --------
+    >>> a = np.array(([0,1,1,1,1],
+                      [0,0,1,1,1],
+                      [0,1,1,1,1],
+                      [0,1,1,1,0],
+                      [0,1,1,0,0]))
+    >>> from scipy import ndimage
+    >>> ndimage.distance_transform_edt(a)
+    array([[ 0.    ,  1.    ,  1.4142,  2.2361,  3.    ],
+           [ 0.    ,  0.    ,  1.    ,  2.    ,  2.    ],
+           [ 0.    ,  1.    ,  1.4142,  1.4142,  1.    ],
+           [ 0.    ,  1.    ,  1.4142,  1.    ,  0.    ],
+           [ 0.    ,  1.    ,  1.    ,  0.    ,  0.    ]])
+
+    With a sampling of 2 units along x, 1 along y:
+
+    >>> ndimage.distance_transform_edt(a, sampling=[2,1])
+    array([[ 0.    ,  1.    ,  2.    ,  2.8284,  3.6056],
+           [ 0.    ,  0.    ,  1.    ,  2.    ,  3.    ],
+           [ 0.    ,  1.    ,  2.    ,  2.2361,  2.    ],
+           [ 0.    ,  1.    ,  2.    ,  1.    ,  0.    ],
+           [ 0.    ,  1.    ,  1.    ,  0.    ,  0.    ]])
+
+    Asking for indices as well:
+
+    >>> edt, inds = ndimage.distance_transform_edt(a, return_indices=True)
+    >>> inds
+    array([[[0, 0, 1, 1, 3],
+            [1, 1, 1, 1, 3],
+            [2, 2, 1, 3, 3],
+            [3, 3, 4, 4, 3],
+            [4, 4, 4, 4, 4]],
+           [[0, 0, 1, 1, 4],
+            [0, 1, 1, 1, 4],
+            [0, 0, 1, 4, 4],
+            [0, 0, 3, 3, 4],
+            [0, 0, 3, 3, 4]]])
+
+    With arrays provided for inplace outputs:
+
+    >>> indices = np.zeros(((np.rank(a),) + a.shape), dtype=np.int32)
+    >>> ndimage.distance_transform_edt(a, return_indices=True, indices=indices)
+    array([[ 0.    ,  1.    ,  1.4142,  2.2361,  3.    ],
+           [ 0.    ,  0.    ,  1.    ,  2.    ,  2.    ],
+           [ 0.    ,  1.    ,  1.4142,  1.4142,  1.    ],
+           [ 0.    ,  1.    ,  1.4142,  1.    ,  0.    ],
+           [ 0.    ,  1.    ,  1.    ,  0.    ,  0.    ]])
+    >>> indices
+    array([[[0, 0, 1, 1, 3],
+            [1, 1, 1, 1, 3],
+            [2, 2, 1, 3, 3],
+            [3, 3, 4, 4, 3],
+            [4, 4, 4, 4, 4]],
+           [[0, 0, 1, 1, 4],
+            [0, 1, 1, 1, 4],
+            [0, 0, 1, 4, 4],
+            [0, 0, 3, 3, 4],
+            [0, 0, 3, 3, 4]]])
+
     """
     if (not return_distances) and (not return_indices):
         msg = 'at least one of distances/indices must be specified'
