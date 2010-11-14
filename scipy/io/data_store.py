@@ -1,18 +1,29 @@
-""" Load or save values to a file.
+"""
+Load or save values to a file.
 
-    Shelves work well for storing data, but they are slow to access
-    repeatedly - especially for large data sets.  This module allows
-    you to store data to a file and then load it back into the workspace.
-    When the data is stored, a python module is also created as the
-    "namespace for the data"
-    >>> import scipy.io
-    >>> import os
-    >>> a = 1
-    >>> scipy.io.save_as_module('c:/temp/junker',{'a':a})
-    >>> os.chdir('c:/temp')
-    >>> import junker
-    >>> junker.a
-    1
+Shelves work well for storing data, but they are slow to access
+repeatedly - especially for large data sets.  This module allows
+you to store data to a file and then load it back into the workspace.
+When the data is stored, a python module is also created as the
+"namespace for the data"
+
+
+Examples
+--------
+
+Saving the data to a data store:
+
+>>> import scipy.io
+>>> import os
+>>> a = 1
+>>> scipy.io.save_as_module('junker', {'a':a})
+
+Loading the data saved to a data store in the same directory:
+
+>>> import junker
+>>> print junker.a
+1
+
 """
 
 __all__ = ['save_as_module']

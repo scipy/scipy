@@ -684,21 +684,50 @@ class netcdf_file(object):
 
 class netcdf_variable(object):
     """
-    ``netcdf_variable`` objects are constructed by calling the method
-    ``createVariable`` on the netcdf_file object.
+    A data object for the `netcdf` module.
 
-    ``netcdf_variable`` objects behave much like array objects defined in
-    Numpy, except that their data resides in a file. Data is read by
-    indexing and written by assigning to an indexed subset; the entire
-    array can be accessed by the index ``[:]`` or using the methods
-    ``getValue`` and ``assignValue``. ``netcdf_variable`` objects also
-    have attribute ``shape`` with the same meaning as for arrays, but
-    the shape cannot be modified. There is another read-only attribute
-    ``dimensions``, whose value is the tuple of dimension names.
+    `netcdf_variable` objects are constructed by calling the method
+    `netcdf_file.createVariable` on the `netcdf_file` object. `netcdf_variable`
+    objects behave much like array objects defined in numpy, except that their
+    data resides in a file. Data is read by indexing and written by assigning
+    to an indexed subset; the entire array can be accessed by the index ``[:]``
+    or (for scalars) by using the methods `getValue` and `assignValue`.
+    `netcdf_variable` objects also have attribute `shape` with the same meaning
+    as for arrays, but the shape cannot be modified. There is another read-only
+    attribute `dimensions`, whose value is the tuple of dimension names.
 
     All other attributes correspond to variable attributes defined in
     the NetCDF file. Variable attributes are created by assigning to an
-    attribute of the ``netcdf_variable`` object.
+    attribute of the `netcdf_variable` object.
+
+    Parameters
+    ----------
+    data : array_like
+        The data array that holds the values for the variable.
+        Typically, this is initialized as empty, but with the proper shape.
+    typecode : dtype character code
+        Desired data-type for the data array.
+    shape : sequence of ints
+        The shape of the array.  This should match the lengths of the
+        variable's dimensions.
+    dimensions : sequence of strings
+        The names of the dimensions used by the variable.  Must be in the
+        same order of the dimension lengths given by `shape`.
+    attributes : dict, optional
+        Attribute values (any type) keyed by string names.  These attributes
+        become attributes for the netcdf_variable object.
+
+
+    Attributes
+    ----------
+    dimensions : list of str
+        List of names of dimensions used by the variable object.
+    isrec, shape
+        Properties
+
+    See also
+    --------
+    isrec, shape
 
     """
     def __init__(self, data, typecode, shape, dimensions, attributes=None):

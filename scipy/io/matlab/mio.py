@@ -1,3 +1,4 @@
+"""Module for reading and writing MATLAB .mat files"""
 # Authors: Travis Oliphant, Matthew Brett
 
 """

@@ -3,9 +3,9 @@ Module to read / write wav files using numpy arrays
 
 Functions
 ---------
-read: Return the sample rate (in samples/sec) and data from a WAV file.
+`read`: Return the sample rate (in samples/sec) and data from a WAV file.
 
-write: Write a numpy array as a WAV file.
+`write`: Write a numpy array as a WAV file.
 
 """
 import numpy
