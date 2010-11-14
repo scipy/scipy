@@ -120,3 +120,6 @@ were added.
 
 Removed features
 ================
+
+The deprecated modules ``helpdmod``, ``pexec`` and ``ppimport`` were removed
+from ``scipy.misc``.
