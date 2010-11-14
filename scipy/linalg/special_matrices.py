@@ -118,27 +118,26 @@ def toeplitz(c, r=None):
     """
     Construct a Toeplitz matrix.
 
-    The Toepliz matrix has constant diagonals, with c as its first column
-    and r as its first row.  If r is not given, r == conjugate(c) is
+    The Toeplitz matrix has constant diagonals, with c as its first column
+    and r as its first row.  If r is not given, ``r == conjugate(c)`` is
     assumed.
 
     Parameters
     ----------
-    c : array-like, 1D
+    c : array_like
         First column of the matrix.  Whatever the actual shape of `c`, it
-        will be converted to a 1D array.
-    r : array-like, 1D
-        First row of the matrix. If None, `r = conjugate(c)` is assumed; in
-        this case, if `c[0]` is real, the result is a Hermitian matrix.
-        `r[0]` is ignored; the first row of the returned matrix is
-        `[c[0], r[1:]]`.  Whatever the actual shape of `r`, it will be
-        converted to a 1D array.
+        will be converted to a 1-D array.
+    r : array_like
+        First row of the matrix. If None, ``r = conjugate(c)`` is assumed;
+        in this case, if c[0] is real, the result is a Hermitian matrix.
+        r[0] is ignored; the first row of the returned matrix is
+        ``[c[0], r[1:]]``.  Whatever the actual shape of `r`, it will be
+        converted to a 1-D array.
 
     Returns
     -------
     A : array, shape (len(c), len(r))
-        The Toeplitz matrix.
-        dtype is the same as `(c[0] + r[0]).dtype`.
+        The Toeplitz matrix. Dtype is the same as ``(c[0] + r[0]).dtype``.
 
     See also
     --------
@@ -184,8 +183,8 @@ def circulant(c):
 
     Parameters
     ----------
-    c : array-like, 1D
-        First column of the matrix.
+    c : array_like
+        1-D array, the first column of the matrix.
 
     Returns
     -------
@@ -227,20 +226,19 @@ def hankel(c, r=None):
 
     Parameters
     ----------
-    c : array-like, 1D
+    c : array_like
         First column of the matrix.  Whatever the actual shape of `c`, it
-        will be converted to a 1D array.
-    r : array-like, 1D
-        Last row of the matrix. If None, `r = zeros_like(c)` is assumed.
-        `r[0]` is ignored; the last row of the returned matrix is
-        `[c[-1], r[1:]]`.  Whatever the actual shape of `r`, it will be
-        converted to a 1D array.
+        will be converted to a 1-D array.
+    r : array_like, 1D
+        Last row of the matrix. If None, ``r = zeros_like(c)`` is assumed.
+        r[0] is ignored; the last row of the returned matrix is
+        ``[c[-1], r[1:]]``.  Whatever the actual shape of `r`, it will be
+        converted to a 1-D array.
 
     Returns
     -------
     A : array, shape (len(c), len(r))
-        The Hankel matrix.
-        dtype is the same as `(c[0] + r[0]).dtype`.
+        The Hankel matrix. Dtype is the same as ``(c[0] + r[0]).dtype``.
 
     See also
     --------
@@ -331,27 +329,46 @@ def hadamard(n, dtype=int):
 
 
 def leslie(f, s):
-    """Create a Leslie matrix.
-    
+    """
+    Create a Leslie matrix.
+
+    Given the length n array of fecundity coefficients `f` and the length
+    n-1 array of survival coefficents `s`, return the associated Leslie matrix.
+
     Parameters
     ----------
-    f : array-like, 1D
-        The "fecundity" coefficients.
-    s : array-like, 1D
-        The "survival" coefficients.  The length of `s` must be one less
-        than the length of `f`, and it must be at least 1.
+    f : array_like
+        The "fecundity" coefficients, has to be 1-D.
+    s : array_like
+        The "survival" coefficients, has to be 1-D.  The length of `s`
+        must be one less than the length of `f`, and it must be at least 1.
 
     Returns
     -------
-    L : ndarray, 2D
-        Returns a 2D numpy ndarray with shape `(n,n)`, where `n` is the
+    L : ndarray
+        Returns a 2-D ndarray of shape ``(n, n)``, where `n` is the
         length of `f`.  The array is zero except for the first row,
-        which is `f`, and the first subdiagonal, which is `s`.
-        The data type of the array will be the data type of `f[0]+s[0]`.
+        which is `f`, and the first sub-diagonal, which is `s`.
+        The data-type of the array will be the data-type of ``f[0]+s[0]``.
 
     Notes
     -----
     .. versionadded:: 0.8.0
+
+    The Leslie matrix is used to model discrete-time, age-structured
+    population growth [1]_ [2]_. In a population with `n` age classes, two sets
+    of parameters define a Leslie matrix: the `n` "fecundity coefficients",
+    which give the number of offspring per-capita produced by each age
+    class, and the `n` - 1 "survival coefficients", which give the
+    per-capita survival rate of each age class.
+
+    References
+    ----------
+    .. [1] P. H. Leslie, On the use of matrices in certain population
+           mathematics, Biometrika, Vol. 33, No. 3, 183--212 (Nov. 1945)
+    .. [2] P. H. Leslie, Some further notes on the use of matrices in
+           population mathematics, Biometrika, Vol. 35, No. 3/4, 213--245
+           (Dec. 1948)
 
     Examples
     --------
@@ -360,6 +377,7 @@ def leslie(f, s):
            [ 0.2,  0. ,  0. ,  0. ],
            [ 0. ,  0.8,  0. ,  0. ],
            [ 0. ,  0. ,  0.7,  0. ]])
+
     """
     f = np.atleast_1d(f)
     s = np.atleast_1d(s)
@@ -421,7 +439,8 @@ def kron(a,b):
     return np.concatenate(np.concatenate(o, axis=1), axis=1)
 
 def block_diag(*arrs):
-    """Create a block diagonal matrix from the provided arrays.
+    """
+    Create a block diagonal matrix from provided arrays.
 
     Given the inputs `A`, `B` and `C`, the output will have these
     arrays arranged on the diagonal::
@@ -430,14 +449,11 @@ def block_diag(*arrs):
          [0, B, 0],
          [0, 0, C]]
 
-    If all the input arrays are square, the output is known as a
-    block diagonal matrix.
-
     Parameters
     ----------
-    A, B, C, ... : array-like, up to 2D
-        Input arrays.  A 1D array or array-like sequence with length n is
-        treated as a 2D array with shape (1,n).
+    A, B, C, ... : array_like, up to 2-D
+        Input arrays.  A 1-D array or array_like sequence of length `n`is
+        treated as a 2-D array with shape ``(1,n)``.
 
     Returns
     -------
@@ -445,10 +461,10 @@ def block_diag(*arrs):
         Array with `A`, `B`, `C`, ... on the diagonal.  `D` has the
         same dtype as `A`.
 
-    References
-    ----------
-    .. [1] Wikipedia, "Block matrix",
-           http://en.wikipedia.org/wiki/Block_diagonal_matrix
+    Notes
+    -----
+    If all the input arrays are square, the output is known as a
+    block diagonal matrix.
 
     Examples
     --------
@@ -457,7 +473,7 @@ def block_diag(*arrs):
     >>> B = [[3, 4, 5],
     ...      [6, 7, 8]]
     >>> C = [[7]]
-    >>> print(block_diag(A, B, C))
+    >>> block_diag(A, B, C)
     [[1 0 0 0 0 0]
      [0 1 0 0 0 0]
      [0 0 3 4 5 0]
@@ -490,35 +506,49 @@ def block_diag(*arrs):
     return out
 
 def companion(a):
-    """Create a companion matrix.
+    """
+    Create a companion matrix.
 
-    Create the companion matrix associated with the polynomial whose
+    Create the companion matrix [1]_ associated with the polynomial whose
     coefficients are given in `a`.
 
     Parameters
     ----------
-    a : array-like, 1D
-        Polynomial coefficients.  The length of `a` must be at least two,
-        and `a[0]` must not be zero.
+    a : array_like
+        1-D array of polynomial coefficients.  The length of `a` must be
+        at least two, and ``a[0]`` must not be zero.
 
     Returns
     -------
     c : ndarray
-        A square ndarray with shape `(n-1, n-1)`, where `n` is the length
-        of `a`. The first row of `c` is `-a[1:]/a[0]`, and the first
-        subdiagonal is all ones.  The data type of the array is the same
-        as the data type of `1.0*a[0]`.
+        A square array of shape ``(n-1, n-1)``, where `n` is the length
+        of `a`.  The first row of `c` is ``-a[1:]/a[0]``, and the first
+        sub-diagonal is all ones.  The data-type of the array is the same
+        as the data-type of ``1.0*a[0]``.
+
+    Raises
+    ------
+    ValueError
+        If any of the following are true: a) ``a.ndim != 1``;
+        b) ``a.size < 2``; c) ``a[0] == 0``.
 
     Notes
     -----
     .. versionadded:: 0.8.0
-    
+
+    References
+    ----------
+    .. [1] R. A. Horn & C. R. Johnson, *Matrix Analysis*.  Cambridge, UK:
+        Cambridge University Press, 1999, pp. 146-7.
+
     Examples
     --------
-    >>> companion([1, -10, 31, -30]) 
+    >>> from scipy.linalg import companion
+    >>> companion([1, -10, 31, -30])
     array([[ 10., -31.,  30.],
            [  1.,   0.,   0.],
            [  0.,   1.,   0.]])
+
     """
     a = np.atleast_1d(a)
 

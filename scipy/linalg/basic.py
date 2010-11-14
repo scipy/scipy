@@ -260,29 +260,35 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False):
 
 # matrix inversion
 def inv(a, overwrite_a=False):
-    """Compute the inverse of a matrix.
+    """
+    Compute the inverse of a matrix.
 
     Parameters
     ----------
-    a : array-like, shape (M, M)
-        Matrix to be inverted
+    a : array_like
+        Square matrix to be inverted.
     overwrite_a : bool, optional
-        Discard data in ``a`` (may improve performance)
+        Discard data in `a` (may improve performance). Default is False.
 
     Returns
     -------
-    ainv : array-like, shape (M, M)
-        Inverse of the matrix a
+    ainv : ndarray
+        Inverse of the matrix `a`.
 
-    Raises LinAlgError if a is singular
+    Raises
+    ------
+    LinAlgError :
+        If `a` is singular.
+    ValueError :
+        If `a` is not square, or not 2-dimensional.
 
     Examples
     --------
-    >>> a = array([[1., 2.], [3., 4.]])
-    >>> inv(a)
+    >>> a = np.array([[1., 2.], [3., 4.]])
+    >>> sp.linalg.inv(a)
     array([[-2. ,  1. ],
            [ 1.5, -0.5]])
-    >>> dot(a, inv(a))
+    >>> np.dot(a, sp.linalg.inv(a))
     array([[ 1.,  0.],
            [ 0.,  1.]])
 
