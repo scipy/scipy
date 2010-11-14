@@ -1,4 +1,4 @@
-# This file is executed by __init__.py and ppimport hooks.
+# This file is executed by __init__.py.
 """
 Discrete Fourier transform algorithms
 

@@ -12,10 +12,7 @@ Modules
 
    common     - Common functions requiring SciPy Base and Level 1 SciPy
    doccer     - Docstring fragment insertion utilities
-   helpmod    -
-   pexec      -
    pilutil    - Image utilities using the Python Imaging Library (PIL)
-   ppimport   - Postpone module import to future
    setup      -
    setupscons -
 
