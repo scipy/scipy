@@ -24,8 +24,6 @@ Several helper functions are provided:
 
 """
 
-import warnings
-import string
 from math import pi, sqrt
 __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find']
 
@@ -467,14 +465,9 @@ def precision(key) :
     """
     return physical_constants[key][2] / physical_constants[key][0]
 
-def find(sub=None, disp=True) :
+def find(sub=None, disp=False):
     """
     Return list of codata.physical_constant keys containing a given string
-
-    Deprecation Warning
-    -------------------
-    In Scipy version 0.8.0, the keyword argument 'disp' was added to find(),
-    with the default value True.  In 0.9.0, the default will be False.
 
     Parameters
     ----------
@@ -496,9 +489,6 @@ def find(sub=None, disp=True) :
         dictionary literal object, does not itself possess a docstring.
 
     """
-    warnings.warn("In Scipy version 0.8.0, the keyword argument 'disp' was added to "
-                  "find(), with the default value True.  In 0.9.0, the default will be False.",
-                  DeprecationWarning)
     if sub is None:
         result = physical_constants.keys()
     else:
