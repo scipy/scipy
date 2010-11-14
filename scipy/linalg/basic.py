@@ -6,8 +6,6 @@
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
             'inv', 'det', 'lstsq', 'pinv', 'pinv2']
 
-from warnings import warn
-
 from numpy import asarray, zeros, sum, conjugate, dot, transpose, \
         asarray_chkfinite,  single
 import numpy
@@ -227,19 +225,10 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False):
 
     Returns
     -------
-    c : array, shape (u+1, M)
-        Cholesky factorization of a, in the same banded format as ab
     x : array, shape (M,) or (M, K)
         The solution to the system a x = b
-        
-    Notes
-    -----
-    The inclusion of `c` in the return value is deprecated.  In SciPy
-    version 0.9, the return value will be the solution `x` only.
 
     """
-    warn("In SciPy 0.9, the return value of solveh_banded will be "
-            "the solution x only.", DeprecationWarning)
 
     ab, b = map(asarray_chkfinite, (ab, b))
 
@@ -255,7 +244,7 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False):
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal pbsv'
                                                                     % -info)
-    return c, x
+    return x
 
 
 # matrix inversion
