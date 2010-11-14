@@ -1465,21 +1465,45 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
 kurtosis.__doc__ = stats.kurtosis.__doc__
 
 def describe(a, axis=0):
-    """Computes several descriptive statistics of the passed array.
+    """
+    Computes several descriptive statistics of the passed array.
 
     Parameters
     ----------
     a : array
+
     axis : int or None
 
     Returns
     -------
-    (size of the data (discarding missing values),
-     (min, max),
-     arithmetic mean,
-     unbiased variance,
-     biased skewness,
-     biased kurtosis)
+    n : int
+        (size of the data (discarding missing values)
+    mm : (int, int)
+        min, max
+
+    arithmetic mean : float
+
+    unbiased variance : float
+
+    biased skewness : float
+
+    biased kurtosis : float
+
+    Examples
+    --------
+
+    >>> ma = np.ma.array(range(6), mask=[0, 0, 0, 1, 1, 1])
+    >>> describe(ma)
+    (array(3),
+     (0, 2),
+     1.0,
+     1.0,
+     masked_array(data = 0.0,
+                 mask = False,
+           fill_value = 1e+20)
+    ,
+     -1.5)
+
     """
     a, axis = _chk_asarray(a, axis)
     n = a.count(axis)
@@ -1523,6 +1547,30 @@ median along the given axis. masked values are discarded.
 #####--------------------------------------------------------------------------
 
 def skewtest(a, axis=0):
+    """
+    Tests whether the skew is different from the normal distribution.
+
+    This function tests the null hypothesis that the skewness of
+    the population that the sample was drawn from is the same
+    as that of a corresponding normal distribution.
+
+    Parameters
+    ----------
+    a : array
+    axis : int or None
+
+    Returns
+    -------
+    z-score : float
+
+    p-value : float
+        a 2-sided p-value for the hypothesis test
+
+    Notes
+    -----
+    The sample size should be at least 8.
+
+    """
     a, axis = _chk_asarray(a, axis)
     if axis is None:
         a = a.ravel()
@@ -1544,6 +1592,33 @@ def skewtest(a, axis=0):
 skewtest.__doc__ = stats.skewtest.__doc__
 
 def kurtosistest(a, axis=0):
+    """
+    Tests whether a dataset has normal kurtosis
+
+    This function tests the null hypothesis that the kurtosis
+    of the population from which the sample was drawn is that
+    of the normal distribution: kurtosis=3(n-1)/(n+1).
+
+    Parameters
+    ----------
+    a : array
+        array of the sample data
+    axis : int or None
+        the axis to operate along, or None to work on the whole array.
+        The default is the first axis.
+
+    Returns
+    -------
+    z-score : float
+
+    p-value : float
+        The 2-sided p-value for the hypothesis test
+
+    Notes
+    -----
+    Valid only for n>20.  The Z-score is set to 0 for bad entries.
+
+    """
     a, axis = _chk_asarray(a, axis)
     n = a.count(axis=axis).astype(float)
     if np.min(n) < 20:
@@ -1610,9 +1685,9 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
 
     Parameters
     ----------
-    a : array-like
+    a : array_like
         Input data, as a sequence or array of dimension at most 2.
-    prob : array-like, optional
+    prob : array_like, optional
         List of quantiles to compute.
     alpha : float, optional
         Plotting positions parameter, default is 0.4.

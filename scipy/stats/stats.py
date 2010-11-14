@@ -996,13 +996,16 @@ def moment(a, moment=1, axis=0):
 
 
 def variation(a, axis=0):
-    """Computes the coefficient of variation, the ratio of the biased standard
+    """
+    Computes the coefficient of variation, the ratio of the biased standard
     deviation to the mean.
 
     Parameters
     ----------
-    a : array
+    a : array_like
+        Input array.
     axis : int or None
+        Axis along which to calculate the coefficient of variation.
 
     References
     ----------
@@ -1586,12 +1589,30 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
 
 def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """
-Returns a cumulative frequency histogram, using the histogram function.
-Defaultreallimits can be None (use all data), or a 2-sequence containing
-lower and upper limits on values to include.
+    Returns a cumulative frequency histogram, using the histogram function.
 
-Returns: array of cumfreq bin values, lowerreallimit, binsize, extrapoints
-"""
+    Parameters
+    ----------
+    a : array_like
+        Input array.
+    numbins : int, optional
+        Number of bins.
+    defaultreallimits : 2-sequence or None, optional
+        None (use all data), or a 2-sequence containing lower and upper limits
+        on values to include.
+
+    Returns
+    -------
+    cumfreq : ndarray
+        Binned values of cumulative frequency.
+    lowerreallimit : float
+        Lower real limit
+    binsize : float
+        Width of each bin.
+    extrapoints : int
+        Extra points.
+
+    """
     h,l,b,e = histogram(a, numbins, defaultreallimits, weights=weights)
     cumhist = np.cumsum(h*1, axis=0)
     return cumhist,l,b,e
@@ -2099,12 +2120,27 @@ def trimboth(a, proportiontocut):
 
 def trim1(a, proportiontocut, tail='right'):
     """
-    Slices off the passed proportion of items from ONE end of the passed
-    array (i.e., if proportiontocut=0.1, slices off 'leftmost' or 'rightmost'
-    10% of scores).  Slices off LESS if proportion results in a non-integer
-    slice index (i.e., conservatively slices off proportiontocut).
+    Slices off a proportion of items from ONE end of the passed array
+    distribution.
 
-    Returns: trimmed version of array a
+    If `proportiontocut` = 0.1, slices off 'leftmost' or 'rightmost'
+    10% of scores.  Slices off LESS if proportion results in a non-integer
+    slice index (i.e., conservatively slices off `proportiontocut` ).
+
+    Parameters
+    ----------
+    a : array_like
+        Input array
+    proportiontocut : float
+        Fraction to cut off of 'left' or 'right' of distribution
+    tail : string, {'left', 'right'}, optional
+        Defaults to 'right'.
+
+    Returns
+    -------
+    trim1 : ndarray
+        Trimmed version of array `a`
+
     """
     a = asarray(a)
     if tail.lower() == 'right':
@@ -2116,8 +2152,26 @@ def trim1(a, proportiontocut, tail='right'):
     return a[lowercut:uppercut]
 
 def trim_mean(a, proportiontocut):
-    """Return mean with proportiontocut chopped from each of the lower and
-    upper tails.
+    """
+    Return mean of array after trimming distribution from both lower and upper
+    tails.
+
+    If `proportiontocut` = 0.1, slices off 'leftmost' and 'rightmost' 10% of
+    scores. Slices off LESS if proportion results in a non-integer slice
+    index (i.e., conservatively slices off `proportiontocut` ).
+
+    Parameters
+    ----------
+    a : array_like
+        Input array
+    proportiontocut : float
+        Fraction to cut off of both tails of the distribution
+
+    Returns
+    -------
+    trim_mean : ndarray
+        Mean of trimmed array.
+
     """
     newa = trimboth(np.sort(a),proportiontocut)
     return np.mean(newa,axis=0)
@@ -3466,20 +3520,23 @@ erfc = np.lib.deprecate(special.erfc, old_name="scipy.stats.erfc",
                                       new_name="scipy.special.erfc")
 
 def chisqprob(chisq, df):
-    """Returns the (1-tail) probability value associated with the provided
-    chi-square value and degrees of freedom.
+    """
+    Probability value (1-tail) for the Chi^2 probability distribution.
 
     Broadcasting rules apply.
 
     Parameters
     ----------
-    chisq : array or float > 0
-    df : array or float, probably int >= 1
+    chisq : array_like or float > 0
+
+    df : array_like or float, probably int >= 1
 
     Returns
     -------
-    The area from chisq to infinity under the Chi^2 probability distribution
-    with degrees of freedom df.
+    chisqprob : ndarray
+        The area from `chisq` to infinity under the Chi^2 probability
+        distribution with degrees of freedom `df`.
+
     """
     return special.chdtrc(df,chisq)
 
@@ -3487,7 +3544,8 @@ ksprob = special.kolmogorov
 fprob = special.fdtrc
 
 def betai(a, b, x):
-    """Returns the incomplete beta function.
+    """
+    Returns the incomplete beta function.
 
     I_x(a,b) = 1/B(a,b)*(Integral(0,x) of t^(a-1)(1-t)^(b-1) dt)
 
@@ -3498,13 +3556,17 @@ def betai(a, b, x):
 
     Parameters
     ----------
-    a : array or float > 0
-    b : array or float > 0
-    x : array or float
+    a : array_like or float > 0
+
+    b : array_like or float > 0
+
+    x : array_like or float
         x will be clipped to be no greater than 1.0 .
 
     Returns
     -------
+    betai : ndarray
+        Incomplete beta function.
 
     """
     x = np.asarray(x)

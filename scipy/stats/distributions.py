@@ -1637,40 +1637,49 @@ class rv_continuous(rv_generic):
             
     def fit(self, data, *args, **kwds):
         """
-        Return max like estimators to shape, location, and scale from data
+        Return MLEs for shape, location, and scale parameters from data.
 
-        Starting points for the fit are given by input arguments.  For any 
-        arguments not given starting points, self._fitstart(data) is called 
-        to get the starting estimates.
+        MLE stands for Maximum Likelihood Estimate.  Starting estimates for
+        the fit are given by input arguments; for any arguments not provided
+        with starting estimates, ``self._fitstart(data)`` is called to generate
+        such.
 
-        You can hold some parameters fixed to specific values by passing in 
-        keyword arguments f0..fn for shape paramters and floc, fscale for 
-        location and scale parameters.
+        One can hold some parameters fixed to specific values by passing in
+        keyword arguments ``f0``..[is this supposed to be an ellipsis?] ``fn``
+        (for shape parameters) and ``floc`` and ``fscale`` (for location and
+        scale parameters, respectively).
 
         Parameters
         ----------
-        data : array-like
-            Data to use in calculating the MLE
-        args : optional
-            Starting values for any shape arguments (those not specified 
-            will be determined by _fitstart(data))
-        kwds : loc, scale
-            Starting values for the location and scale parameters 
-            Special keyword arguments are recognized as holding certain 
-              parameters fixed:
-               f0..fn : hold respective shape paramters fixed
-               floc : hold location parameter fixed to specified value
-               fscale : hold scale parameter fixed to specified value
-            optimizer : The optimizer to use.  The optimizer must take func, 
-                         and starting position as the first two arguments, 
-                         plus args (for extra arguments to pass to the 
-                         function to be optimized) and disp=0 to suppress
-                         output as keyword arguments.
-              
-        Return
-        ------
-        shape, loc, scale : tuple of float
-            MLE estimates for any shape arguments followed by location and scale
+        data : array_like
+            Data to use in calculating the MLEs
+        args : floats, optional
+            Starting value(s) for any shape-characterizing arguments (those not
+            provided will be determined by a call to ``_fitstart(data)``).
+            No default value.
+        kwds : floats, optional
+            Starting values for the location and scale parameters; no default.
+            Special keyword arguments are recognized as holding certain
+            parameters fixed:
+
+            f0..fn : hold respective shape parameters fixed.
+
+            floc : hold location parameter fixed to specified value.
+
+            fscale : hold scale parameter fixed to specified value.
+
+            optimizer : The optimizer to use.  The optimizer must take func,
+                        and starting position as the first two arguments,
+                        plus args (for extra arguments to pass to the
+                        function to be optimized) and disp=0 to suppress
+                        output as keyword arguments.
+
+        Returns
+        -------
+        shape, loc, scale : tuple of floats
+            MLEs for any shape statistics, followed by those for location and
+            scale.
+
         """
         Narg = len(args)
         if Narg > self.numargs:

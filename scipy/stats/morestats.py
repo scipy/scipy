@@ -196,10 +196,24 @@ def mvsdist(data):
 ##
 
 def kstat(data,n=2):
-    """Return the nth k-statistic (1<=n<=4 so far).
+    """
+    Return the nth k-statistic (1<=n<=4 so far).
 
     The nth k-statistic is the unique symmetric unbiased estimator of the nth
-    cumulant kappa_n
+    cumulant kappa_n.
+
+    Parameters
+    ----------
+    data : array_like
+        Input array.
+    n : int, {1, 2, 3, 4}, optional
+        Default is equal to 2.
+
+    Returns
+    -------
+    kstat : float
+        The nth k-statistic.
+
     """
     if n > 4 or n < 1:
         raise ValueError("k-statistics only supported for 1<=n<=4")
@@ -223,7 +237,21 @@ def kstat(data,n=2):
         raise ValueError("Should not be here.")
 
 def kstatvar(data,n=2):
-    """Returns an unbiased estimator of the variance of the k-statistic:  n=1 or 2
+    """
+    Returns an unbiased estimator of the variance of the k-statistic.
+
+    Parameters
+    ----------
+    data : array_like
+        Input array.
+    n : int, {1, 2}, optional
+        Default is equal to 2.
+
+    Returns
+    -------
+    kstatvar : float
+        The nth k-statistic variance.
+
     """
     data = ravel(data)
     N = len(data)
@@ -1343,7 +1371,24 @@ def pdfapprox(samples):
     #return pdf_fromgamma(g1, g2, g3, g4)
 
 def circmean(samples, high=2*pi, low=0):
-    """Compute the circular mean for samples assumed to be in the range [low to high]
+    """
+    Compute the circular mean for samples assumed to be in the range
+    [low to high].
+
+    Parameters
+    ----------
+    samples : array_like
+        Input array.
+    low : float or int, optional
+        Low boundary for circular mean range.  Default is 0.
+    high : float or int, optional
+        High boundary for circular mean range.  Default is 2*pi.
+
+    Returns
+    -------
+    circmean : float
+        Circular mean.
+
     """
     ang = (samples - low)*2*pi / (high-low)
     res = angle(np.mean(exp(1j*ang), axis=0))
@@ -1352,7 +1397,24 @@ def circmean(samples, high=2*pi, low=0):
     return res*(high-low)/2.0/pi + low
 
 def circvar(samples, high=2*pi, low=0):
-    """Compute the circular variance for samples assumed to be in the range [low to high]
+    """
+    Compute the circular variance for samples assumed to be in the range
+    [low to high].
+
+    Parameters
+    ----------
+    samples : array_like
+        Input array.
+    low : float or int, optional
+        Low boundary for circular variance range.  Default is 0.
+    high : float or int, optional
+        High boundary for circular variance range.  Default is 2*pi.
+
+    Returns
+    -------
+    circvar : float
+        Circular variance.
+
     """
     ang = (samples - low)*2*pi / (high-low)
     res = np.mean(exp(1j*ang), axis=0)
@@ -1360,7 +1422,24 @@ def circvar(samples, high=2*pi, low=0):
     return ((high-low)/2.0/pi)**2 * V
 
 def circstd(samples, high=2*pi, low=0):
-    """Compute the circular standard deviation for samples assumed to be in the range [low to high]
+    """
+    Compute the circular standard deviation for samples assumed to be in the
+    range [low to high].
+
+    Parameters
+    ----------
+    samples : array_like
+        Input array.
+    low : float or int, optional
+        Low boundary for circular standard deviation range.  Default is 0.
+    high : float or int, optional
+        High boundary for circular standard deviation range.  Default is 2*pi.
+
+    Returns
+    -------
+    circstd : float
+        Circular standard deviation.
+
     """
     ang = (samples - low)*2*pi / (high-low)
     res = np.mean(exp(1j*ang), axis=0)
