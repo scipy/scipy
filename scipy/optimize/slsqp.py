@@ -66,14 +66,14 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
     ----------
     func : callable f(x,*args)
         Objective function.
-    x0 : ndarray of float
+    x0 : 1-D ndarray of float
         Initial guess for the independent variable(s).
     eqcons : list
         A list of functions of length n such that
         eqcons[j](x0,*args) == 0.0 in a successfully optimized
         problem.
     f_eqcons : callable f(x,*args)
-        Returns an array in which each element must equal 0.0 in a
+        Returns a 1-D array in which each element must equal 0.0 in a
         successfully optimized problem.  If f_eqcons is specified,
         eqcons is ignored.
     ieqcons : list
@@ -81,7 +81,7 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
         ieqcons[j](x0,*args) >= 0.0 in a successfully optimized
         problem.
     f_ieqcons : callable f(x0,*args)
-        Returns an array in which each element must be greater or
+        Returns a 1-D ndarray in which each element must be greater or
         equal to 0.0 in a successfully optimized problem.  If
         f_ieqcons is specified, ieqcons is ignored.
     bounds : list

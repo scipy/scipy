@@ -178,7 +178,8 @@ def wrap_function(function, args):
 
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
          full_output=0, disp=1, retall=0, callback=None):
-    """Minimize a function using the downhill simplex algorithm.
+    """
+    Minimize a function using the downhill simplex algorithm.
 
     Parameters
     ----------
@@ -208,7 +209,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     allvecs : list
         Solution at each iteration.
 
-    Other Parameters
+    Other parameters
     ----------------
     xtol : float
         Relative error in xopt acceptable for convergence.
@@ -219,7 +220,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     maxfun : number
         Maximum number of function evaluations to make.
     full_output : bool
-        Set to True if fval and warnflag outputs are desired.
+        Set to True if fopt and warnflag outputs are desired.
     disp : bool
         Set to True to print convergence messages.
     retall : bool
@@ -227,8 +228,8 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
     Notes
     -----
-    Uses a Nelder-Mead simplex algorithm to find the minimum of
-    a function of one or more variables.
+    Uses a Nelder-Mead simplex algorithm to find the minimum of function of
+    one or more variables.
 
     """
     fcalls, func = wrap_function(func, args)
@@ -1422,7 +1423,8 @@ def _linesearch_powell(func, p, xi, tol=1e-3):
 def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
                 maxfun=None, full_output=0, disp=1, retall=0, callback=None,
                 direc=None):
-    """Minimize a function using modified Powell's method.
+    """
+    Minimize a function using modified Powell's method.
 
     Parameters
     ----------
@@ -1431,7 +1433,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     x0 : ndarray
         Initial guess.
     args : tuple
-        Eextra arguments passed to func.
+        Extra arguments passed to func.
     callback : callable
         An optional user-supplied function, called after each
         iteration.  Called as ``callback(xk)``, where ``xk`` is the

@@ -83,21 +83,22 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
              messages=MSG_ALL, maxCGit=-1, maxfun=None, eta=-1,
              stepmx=0, accuracy=0, fmin=0, ftol=-1, xtol=-1, pgtol=-1,
              rescale=-1, disp=None):
-    """Minimize a function with variables subject to bounds, using
+    """
+    Minimize a function with variables subject to bounds, using
     gradient information.
 
     Parameters
     ----------
-    func : callable func(x, *args)
+    func : callable ``func(x, *args)``
         Function to minimize.  Should return f and g, where f is
         the value of the function and g its gradient (a list of
         floats).  If the function returns None, the minimization
         is aborted.
     x0 : list of floats
         Initial estimate of minimum.
-    fprime : callable fprime(x, *args)
+    fprime : callable ``fprime(x, *args)``
         Gradient of func. If None, then func must return the
-        function value and the gradient (f,g = func(x, *args)).
+        function value and the gradient (``f,g = func(x, *args)``).
     args : tuple
         Arguments to pass to function.
     approx_grad : bool
@@ -164,7 +165,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         The solution.
     nfeval : int
         The number of function evaluations.
-    rc :
+    rc : int
         Return code as defined in the RCSTRINGS dict.
 
     """

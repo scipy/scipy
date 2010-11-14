@@ -79,8 +79,9 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         calculating the gradient
     iprint : int
         Controls the frequency of output. ``iprint < 0`` means no output.
-    disp : int
-        If zero, then no output.  If positive number, then this over-rides iprint
+    disp : int, optional
+        If zero, then no output.  If positive number, then this over-rides
+        `iprint`.
     maxfun : int
         Maximum number of function evaluations.
 
@@ -93,35 +94,34 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     d : dict
         Information dictionary.
 
-        d['warnflag'] is
-            0 if converged,
-            1 if too many function evaluations,
-            2 if stopped for another reason, given in d['task']
-        d['grad'] is the gradient at the minimum (should be 0 ish)
-        d['funcalls'] is the number of function calls made.
+        * d['warnflag'] is
+          - 0 if converged,
+          - 1 if too many function evaluations,
+          - 2 if stopped for another reason, given in d['task']
 
+        * d['grad'] is the gradient at the minimum (should be 0 ish)
+        * d['funcalls'] is the number of function calls made.
 
-   Notes
-   -----
+    Notes
+    -----
+    License of L-BFGS-B (Fortran code):
 
-   License of L-BFGS-B (Fortran code):
+    The version included here (in fortran code) is 2.1 (released in 1997).
+    It was written by Ciyou Zhu, Richard Byrd, and Jorge Nocedal
+    <nocedal@ece.nwu.edu>. It carries the following condition for use:
 
-   The version included here (in fortran code) is 2.1 (released in
-   1997). It was written by Ciyou Zhu, Richard Byrd, and Jorge Nocedal
-   <nocedal@ece.nwu.edu>. It carries the following condition for use:
+    This software is freely available, but we expect that all publications
+    describing work using this software , or all commercial products using it,
+    quote at least one of the references given below.
 
-   This software is freely available, but we expect that all
-   publications describing work using this software, or all
-   commercial products using it, quote at least one of the references
-   given below.
-
-   References
-     * R. H. Byrd, P. Lu and J. Nocedal. A Limited Memory Algorithm for Bound
-       Constrained Optimization, (1995), SIAM Journal on Scientific and
-       Statistical Computing , 16, 5, pp. 1190-1208.
-     * C. Zhu, R. H. Byrd and J. Nocedal. L-BFGS-B: Algorithm 778: L-BFGS-B,
-       FORTRAN routines for large scale bound constrained optimization (1997),
-       ACM Transactions on Mathematical Software, Vol 23, Num. 4, pp. 550 - 560.
+    References
+    ----------
+    * R. H. Byrd, P. Lu and J. Nocedal. A Limited Memory Algorithm for Bound
+      Constrained Optimization, (1995), SIAM Journal on Scientific and
+      Statistical Computing , 16, 5, pp. 1190-1208.
+    * C. Zhu, R. H. Byrd and J. Nocedal. L-BFGS-B: Algorithm 778: L-BFGS-B,
+      FORTRAN routines for large scale bound constrained optimization (1997),
+      ACM Transactions on Mathematical Software, Vol 23, Num. 4, pp. 550 - 560.
 
     """
     n = len(x0)

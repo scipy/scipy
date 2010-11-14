@@ -18,13 +18,14 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
 
     Parameters
     ----------
-    func : callable f(x, *args)
-        Function to minimize.
+    func : callable
+        Function to minimize. In the form func(x, \\*args).
     x0 : ndarray
         Initial guess.
     cons : sequence
         Constraint functions; must all be ``>=0`` (a single function
-        if only 1 constraint).
+        if only 1 constraint). Each function takes the parameters `x`
+        as its first argument.
     args : tuple
         Extra arguments to pass to function.
     consargs : tuple
@@ -36,7 +37,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
     rhoend :
         Final accuracy in the optimization (not precisely guaranteed).
     iprint : {0, 1, 2, 3}
-        Controls the frequency of output; 0 implies no output.  Deprecated
+        Controls the frequency of output; 0 implies no output.  Deprecated.
     disp : {0, 1, 2, 3}
         Over-rides the iprint interface.  Preferred.
     maxfun : int
@@ -46,6 +47,30 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
     -------
     x : ndarray
         The argument that minimises `f`.
+
+    Examples
+    --------
+    Minimize the objective function f(x,y) = x*y subject
+    to the constraints x**2 + y**2 < 1 and y > 0::
+
+        >>> def objective(x):
+        ...     return x[0]*x[1]
+        ...
+        >>> def constr1(x):
+        ...     return 1 - (x[0]**2 + x[1]**2)
+        ...
+        >>> def constr2(x):
+        ...     return x[1]
+        ...
+        >>> fmin_cobyla(objective, [0.0, 0.1], [constr1, constr2], rhoend=1e-7)
+
+           Normal return from subroutine COBYLA
+
+           NFVALS =   64   F =-5.000000E-01    MAXCV = 1.998401E-14
+           X =-7.071069E-01   7.071067E-01
+        array([-0.70710685,  0.70710671])
+
+    The exact solution is (-sqrt(2)/2, sqrt(2)/2).
 
     """
     err = "cons must be a sequence of callable functions or a single"\

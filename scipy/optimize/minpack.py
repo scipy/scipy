@@ -168,7 +168,8 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
 def leastsq(func, x0, args=(), Dfun=None, full_output=0,
             col_deriv=0, ftol=1.49012e-8, xtol=1.49012e-8,
             gtol=0.0, maxfev=0, epsfcn=0.0, factor=100, diag=None):
-    """Minimize the sum of squares of a set of equations.
+    """
+    Minimize the sum of squares of a set of equations.
 
     ::
 
@@ -226,7 +227,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         residual standard deviation to get the covariance of the
         parameter estimates -- see curve_fit.
     infodict : dict
-        a dictionary of optional outputs with the keys::
+        a dictionary of optional outputs with the key s::
 
             - 'nfev' : the number of function calls
             - 'fvec' : the function evaluated at the output
@@ -242,6 +243,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
                      magnitude. Column j of p is column ipvt(j)
                      of the identity matrix.
             - 'qtf'  : the vector (transpose(q) * fvec).
+
     mesg : str
         A string message giving information about the cause of failure.
     ier : int
@@ -252,6 +254,19 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     Notes
     -----
     "leastsq" is a wrapper around MINPACK's lmdif and lmder algorithms.
+
+    cov_x is a Jacobian approximation to the Hessian of the least squares
+    objective function.
+    This approximation assumes that the objective function is based on the
+    difference between some observed target data (ydata) and a (non-linear)
+    function of the parameters `f(xdata, params)` ::
+
+           func(params) = ydata - f(xdata, params)
+
+    so that the objective function is ::
+
+           min   sum((ydata - f(xdata, params))**2, axis=0)
+         params
 
     """
     x0 = array(x0, ndmin=1)
