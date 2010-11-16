@@ -1,4 +1,9 @@
-                    Qhull, Copyright (c) 1993-2003
+                    Qhull, Copyright (c) 1993-2010
+                    
+                            C.B. Barber
+                           Arlington, MA 
+                          
+                               and
 
        The National Science and Technology Research Center for
         Computation and Visualization of Geometric Structures
@@ -7,9 +12,9 @@
 
                        email: qhull@qhull.org
 
-This software includes Qhull from The Geometry Center.  Qhull is 
-copyrighted as noted above.  Qhull is free software and may be obtained 
-via http from www.qhull.org.  It may be freely copied, modified, 
+This software includes Qhull from C.B. Barber and The Geometry Center.  
+Qhull is copyrighted as noted above.  Qhull is free software and may 
+be obtained via http from www.qhull.org.  It may be freely copied, modified, 
 and redistributed under the following conditions:
 
 1. All copyright notices must remain intact in all files.
@@ -31,4 +36,3 @@ and redistributed under the following conditions:
    provided solely "as is".  Bug reports or fixes may be sent to 
    qhull_bug@qhull.org; the authors may or may not act on them as 
    they desire.
-

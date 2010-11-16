@@ -5,22 +5,26 @@
      header file for qset.c that implements set
 
    see qh-set.htm and qset.c
-   
+
    only uses mem.c, malloc/free
 
    for error handling, writes message and calls
-      qh_errexit (qhmem_ERRqhull, NULL, NULL);
-   
+      qh_errexit(qhmem_ERRqhull, NULL, NULL);
+
    set operations satisfy the following properties:
     - sets have a max size, the actual size (if different) is stored at the end
     - every set is NULL terminated
     - sets may be sorted or unsorted, the caller must distinguish this
-   
-   copyright (c) 1993-2003, The Geometry Center
+
+   copyright (c) 1993-2010 The Geometry Center.
+   $Id: //product/qhull/main/rel/src/qset.h#20 $$Change: 1164 $
+   $DateTime: 2010/01/07 21:52:00 $$Author: bbarber $
 */
 
 #ifndef qhDEFset
 #define qhDEFset 1
+
+#include <stdio.h>
 
 /*================= -structures- ===============*/
 
@@ -31,38 +35,38 @@ typedef struct setT setT;   /* a set is a sorted or unsorted array of pointers *
 
 /*-<a                                      href="qh-set.htm#TOC"
 >----------------------------------------</a><a name="setT">-</a>
-   
+
 setT
   a set or list of pointers with maximum size and actual size.
 
 variations:
   unsorted, unique   -- a list of unique pointers with NULL terminator
-  			   user guarantees uniqueness
-  sorted	     -- a sorted list of unique pointers with NULL terminator
-  			   qset.c guarantees uniqueness
+                           user guarantees uniqueness
+  sorted             -- a sorted list of unique pointers with NULL terminator
+                           qset.c guarantees uniqueness
   unsorted           -- a list of pointers terminated with NULL
-  indexed  	     -- an array of pointers with NULL elements 
+  indexed            -- an array of pointers with NULL elements
 
 structure for set of n elements:
 
-	--------------
-	|  maxsize 
-	--------------
-	|  e[0] - a pointer, may be NULL for indexed sets
-	--------------
-	|  e[1]
-	
-	--------------
-	|  ...
-	--------------
-	|  e[n-1]
-	--------------
-	|  e[n] = NULL
-	--------------
-	|  ...
-	--------------
-	|  e[maxsize] - n+1 or NULL (determines actual size of set)
-	--------------
+        --------------
+        |  maxsize
+        --------------
+        |  e[0] - a pointer, may be NULL for indexed sets
+        --------------
+        |  e[1]
+
+        --------------
+        |  ...
+        --------------
+        |  e[n-1]
+        --------------
+        |  e[n] = NULL
+        --------------
+        |  ...
+        --------------
+        |  e[maxsize] - n+1 or NULL (determines actual size of set)
+        --------------
 
 */
 
@@ -77,38 +81,38 @@ union setelemT {
 struct setT {
   int maxsize;          /* maximum number of elements (except NULL) */
   setelemT e[1];        /* array of pointers, tail is NULL */
-                        /* last slot (unless NULL) is actual size+1 
+                        /* last slot (unless NULL) is actual size+1
                            e[maxsize]==NULL or e[e[maxsize]-1]==NULL */
                         /* this may generate a warning since e[] contains
-			   maxsize elements */
+                           maxsize elements */
 };
 
 /*=========== -constants- =========================*/
 
 /*-<a                                 href="qh-set.htm#TOC"
   >-----------------------------------</a><a name="SETelemsize">-</a>
-   
+
   SETelemsize
     size of a set element in bytes
 */
-#define SETelemsize sizeof(setelemT) 
+#define SETelemsize ((int)sizeof(setelemT))
 
 
 /*=========== -macros- =========================*/
 
 /*-<a                                 href="qh-set.htm#TOC"
   >-----------------------------------</a><a name="FOREACHsetelement_">-</a>
-   
+
    FOREACHsetelement_(type, set, variable)
      define FOREACH iterator
 
-   declare:  
+   declare:
      assumes *variable and **variablep are declared
      no space in "variable)" [DEC Alpha cc compiler]
 
    each iteration:
      variable is set element
-     variablep is one beyond variable.  
+     variablep is one beyond variable.
 
    to repeat an element:
      variablep--; / *repeat* /
@@ -116,22 +120,22 @@ struct setT {
    at exit:
      variable is NULL at end of loop
 
-   example:  
+   example:
      #define FOREACHfacet_( facets ) FOREACHsetelement_( facetT, facets, facet )
 
    notes:
      use FOREACHsetelement_i_() if need index or include NULLs
 
-   WARNING: 
+   WARNING:
      nested loops can't use the same variable (define another FOREACH)
-   
+
      needs braces if nested inside another FOREACH
      this includes intervening blocks, e.g. FOREACH...{ if () FOREACH...} )
 */
 #define FOREACHsetelement_(type, set, variable) \
-        if (((variable= NULL), set)) for(\
+        if (((variable= NULL), set)) for (\
           variable##p= (type **)&((set)->e[0].p); \
-	  (variable= *variable##p++);)
+          (variable= *variable##p++);)
 
 /*-<a                                      href="qh-set.htm#TOC"
   >----------------------------------------</a><a name="FOREACHsetelement_i_">-</a>
@@ -139,7 +143,7 @@ struct setT {
    FOREACHsetelement_i_(type, set, variable)
      define indexed FOREACH iterator
 
-   declare:  
+   declare:
      type *variable, variable_n, variable_i;
 
    each iteration:
@@ -154,10 +158,10 @@ struct setT {
 
    example:
      #define FOREACHfacet_i_( facets ) FOREACHsetelement_i_( facetT, facets, facet )
-   
-   WARNING: 
+
+   WARNING:
      nested loops can't use the same variable (define another FOREACH)
-   
+
      needs braces if nested inside another FOREACH
      this includes intervening blocks, e.g. FOREACH...{ if () FOREACH...} )
 */
@@ -171,10 +175,10 @@ struct setT {
 /*-<a                                    href="qh-set.htm#TOC"
   >--------------------------------------</a><a name="FOREACHsetelementreverse_">-</a>
 
-   FOREACHsetelementreverse_(type, set, variable)- 
+   FOREACHsetelementreverse_(type, set, variable)-
      define FOREACH iterator in reverse order
 
-   declare:  
+   declare:
      assumes *variable and **variablep are declared
      also declare 'int variabletemp'
 
@@ -189,36 +193,36 @@ struct setT {
 
    example:
      #define FOREACHvertexreverse_( vertices ) FOREACHsetelementreverse_( vertexT, vertices, vertex )
-  
+
    notes:
      use FOREACHsetelementreverse12_() to reverse first two elements
      WARNING: needs braces if nested inside another FOREACH
 */
 #define FOREACHsetelementreverse_(type, set, variable) \
-        if (((variable= NULL), set)) for(\
-	   variable##temp= qh_setsize(set)-1, variable= qh_setlast(set);\
-	   variable; variable= \
-	   ((--variable##temp >= 0) ? SETelemt_(set, variable##temp, type) : NULL))
+        if (((variable= NULL), set)) for (\
+           variable##temp= qh_setsize(set)-1, variable= qh_setlast(set);\
+           variable; variable= \
+           ((--variable##temp >= 0) ? SETelemt_(set, variable##temp, type) : NULL))
 
 /*-<a                                 href="qh-set.htm#TOC"
   >-----------------------------------</a><a name="FOREACHsetelementreverse12_">-</a>
 
-   FOREACHsetelementreverse12_(type, set, variable)- 
+   FOREACHsetelementreverse12_(type, set, variable)-
      define FOREACH iterator with e[1] and e[0] reversed
 
-   declare:  
+   declare:
      assumes *variable and **variablep are declared
 
    each iteration:
      variable is set element
-     variablep is one after variable.  
+     variablep is one after variable.
 
    to repeat an element:
      variablep--; / *repeat* /
 
    at exit:
      variable is NULL at end of loop
-  
+
    example
      #define FOREACHvertexreverse12_( vertices ) FOREACHsetelementreverse12_( vertexT, vertices, vertex )
 
@@ -226,19 +230,19 @@ struct setT {
      WARNING: needs braces if nested inside another FOREACH
 */
 #define FOREACHsetelementreverse12_(type, set, variable) \
-        if (((variable= NULL), set)) for(\
+        if (((variable= NULL), set)) for (\
           variable##p= (type **)&((set)->e[1].p); \
-	  (variable= *variable##p); \
+          (variable= *variable##p); \
           variable##p == ((type **)&((set)->e[0].p))?variable##p += 2: \
-	      (variable##p == ((type **)&((set)->e[1].p))?variable##p--:variable##p++))
+              (variable##p == ((type **)&((set)->e[1].p))?variable##p--:variable##p++))
 
 /*-<a                                 href="qh-set.htm#TOC"
   >-----------------------------------</a><a name="FOREACHelem_">-</a>
 
-   FOREACHelem_( set )- 
+   FOREACHelem_( set )-
      iterate elements in a set
 
-   declare:  
+   declare:
      void *elem, *elemp;
 
    each iteration:
@@ -250,10 +254,10 @@ struct setT {
 
    at exit:
      elem == NULL at end of loop
-  
+
    example:
      FOREACHelem_(set) {
-     
+
    notes:
      WARNING: needs braces if nested inside another FOREACH
 */
@@ -262,10 +266,10 @@ struct setT {
 /*-<a                                 href="qh-set.htm#TOC"
   >-----------------------------------</a><a name="FOREACHset_">-</a>
 
-   FOREACHset_( set )- 
+   FOREACHset_( set )-
      iterate a set of sets
 
-   declare:  
+   declare:
      setT *set, **setp;
 
    each iteration:
@@ -277,10 +281,10 @@ struct setT {
 
    at exit:
      set == NULL at end of loop
-  
+
    example
      FOREACHset_(sets) {
-     
+
    notes:
      WARNING: needs braces if nested inside another FOREACH
 */
@@ -292,13 +296,14 @@ struct setT {
    SETindex_( set, elem )
      return index of elem in set
 
-   notes:   
+   notes:
      for use with FOREACH iteration
+     WARN64 -- Maximum set size is 2G
 
    example:
      i= SETindex_(ridges, ridge)
 */
-#define SETindex_(set, elem) ((void **)elem##p - (void **)&(set)->e[1].p)
+#define SETindex_(set, elem) ((int)((void **)elem##p - (void **)&(set)->e[1].p))
 
 /*-<a                                     href="qh-set.htm#TOC"
   >---------------------------------------</a><a name="SETref_">-</a>
@@ -316,7 +321,7 @@ struct setT {
 
    SETelem_(set, n)
      return the n'th element of set
-   
+
    notes:
       assumes that n is valid [0..size] and that set is defined
       use SETelemt_() for type cast
@@ -328,7 +333,7 @@ struct setT {
 
    SETelemt_(set, n, type)
      return the n'th element of set as a type
-   
+
    notes:
       assumes that n is valid [0..size] and that set is defined
 */
@@ -339,9 +344,9 @@ struct setT {
 
    SETelemaddr_(set, n, type)
      return address of the n'th element of a set
-   
+
    notes:
-      assumes that n is valid [0..size] and set is defined 
+      assumes that n is valid [0..size] and set is defined
 */
 #define SETelemaddr_(set, n, type) ((type **)(&((set)->e[n].p)))
 
@@ -350,7 +355,7 @@ struct setT {
 
    SETfirst_(set)
      return first element of set
-   
+
 */
 #define SETfirst_(set)             ((set)->e[0].p)
 
@@ -359,7 +364,7 @@ struct setT {
 
    SETfirstt_(set, type)
      return first element of set as a type
-   
+
 */
 #define SETfirstt_(set, type)      ((type*)((set)->e[0].p))
 
@@ -368,7 +373,7 @@ struct setT {
 
    SETsecond_(set)
      return second element of set
-   
+
 */
 #define SETsecond_(set)            ((set)->e[1].p)
 
@@ -386,14 +391,14 @@ struct setT {
    SETaddr_(set, type)
        return address of set's elements
 */
-#define SETaddr_(set,type)	   ((type **)(&((set)->e[0].p)))
+#define SETaddr_(set,type)         ((type **)(&((set)->e[0].p)))
 
 /*-<a                                     href="qh-set.htm#TOC"
   >---------------------------------------</a><a name="SETreturnsize_">-</a>
 
-   SETreturnsize_(set, size) 
+   SETreturnsize_(set, size)
      return size of a set
-   
+
    notes:
       set must be defined
       use qh_setsize(set) unless speed is critical
@@ -403,13 +408,24 @@ struct setT {
 /*-<a                                     href="qh-set.htm#TOC"
   >---------------------------------------</a><a name="SETempty_">-</a>
 
-   SETempty_(set) 
-     return true (1) if set is empty
-   
+   SETempty_(set)
+     return true(1) if set is empty
+
    notes:
       set may be NULL
 */
-#define SETempty_(set) 	          (!set || (SETfirst_(set) ? 0:1))
+#define SETempty_(set)            (!set || (SETfirst_(set) ? 0 : 1))
+
+/*-<a                             href="qh-set.htm#TOC"
+  >-------------------------------<a name="SETsizeaddr_">-</a>
+
+  SETsizeaddr_(set)
+    return pointer to 'actual size+1' of set (set CANNOT be NULL!!)
+
+  notes:
+    *SETsizeaddr==NULL or e[*SETsizeaddr-1].p==NULL
+*/
+#define SETsizeaddr_(set) (&((set)->e[(set)->maxsize].i))
 
 /*-<a                                     href="qh-set.htm#TOC"
   >---------------------------------------</a><a name="SETtruncate_">-</a>
@@ -419,7 +435,7 @@ struct setT {
 
    see:
      qh_settruncate()
-   
+
 */
 #define SETtruncate_(set, size) {set->e[set->maxsize].i= size+1; /* maybe overwritten */ \
       set->e[size].p= NULL;}
@@ -431,7 +447,7 @@ void  qh_setaddnth(setT **setp, int nth, void *newelem);
 void  qh_setappend(setT **setp, void *elem);
 void  qh_setappend_set(setT **setp, setT *setA);
 void  qh_setappend2ndlast(setT **setp, void *elem);
-void  qh_setcheck(setT *set, char *tname, int id);
+void  qh_setcheck(setT *set, const char *tname, unsigned id);
 void  qh_setcompact(setT *set);
 setT *qh_setcopy(setT *set, int extra);
 void *qh_setdel(setT *set, void *elem);
@@ -441,8 +457,8 @@ void *qh_setdelnthsorted(setT *set, int nth);
 void *qh_setdelsorted(setT *set, void *newelem);
 setT *qh_setduplicate( setT *set, int elemsize);
 int   qh_setequal(setT *setA, setT *setB);
-int   qh_setequal_except (setT *setA, void *skipelemA, setT *setB, void *skipelemB);
-int   qh_setequal_skip (setT *setA, int skipA, setT *setB, int skipB);
+int   qh_setequal_except(setT *setA, void *skipelemA, setT *setB, void *skipelemB);
+int   qh_setequal_skip(setT *setA, int skipA, setT *setB, int skipB);
 void  qh_setfree(setT **set);
 void  qh_setfree2( setT **setp, int elemsize);
 void  qh_setfreelong(setT **set);
@@ -452,7 +468,7 @@ void  qh_setlarger(setT **setp);
 void *qh_setlast(setT *set);
 setT *qh_setnew(int size);
 setT *qh_setnew_delnthsorted(setT *set, int size, int nth, int prepend);
-void  qh_setprint(FILE *fp, char* string, setT *set);
+void  qh_setprint(FILE *fp, const char* string, setT *set);
 void  qh_setreplace(setT *set, void *oldelem, void *newelem);
 int   qh_setsize(setT *set);
 setT *qh_settemp(int setsize);
@@ -460,9 +476,9 @@ void  qh_settempfree(setT **set);
 void  qh_settempfree_all(void);
 setT *qh_settemppop(void);
 void  qh_settemppush(setT *set);
-void  qh_settruncate (setT *set, int size);
-int   qh_setunique (setT **set, void *elem);
-void  qh_setzero (setT *set, int index, int size);
+void  qh_settruncate(setT *set, int size);
+int   qh_setunique(setT **set, void *elem);
+void  qh_setzero(setT *set, int idx, int size);
 
 
 #endif /* qhDEFset */

@@ -10,9 +10,10 @@ def configuration(parent_package = '', top_path = None):
 
     config.add_data_dir('tests')
 
-    qhull_src = ['geom.c', 'geom2.c', 'global.c', 'io.c', 'mem.c',
-                 'merge.c', 'poly.c', 'poly2.c', 'qset.c', 'user.c',
-                 'stat.c', 'qhull.c']
+    qhull_src = ['geom2.c', 'geom.c', 'global.c', 'io.c', 'libqhull.c', 
+                 'mem.c', 'merge.c', 'poly2.c', 'poly.c', 'qset.c', 
+                 'random.c', 'rboxlib.c', 'stat.c', 'user.c', 'usermem.c',
+                 'userprintf.c']
 
     config.add_library('qhull',
                        sources=[join('qhull', 'src', x) for x in qhull_src],

@@ -36,8 +36,9 @@ env.NumpyPythonExtension('_distance_wrap',
 
 # Build qhull
 src = [join('qhull', 'src', s) for s in [
-    'geom.c', 'geom2.c', 'global.c', 'io.c', 'mem.c',
-    'merge.c', 'poly.c', 'poly2.c', 'qset.c', 'user.c',
-    'stat.c', 'qhull.c']]
+    'geom2.c', 'geom.c', 'global.c', 'io.c', 'libqhull.c', 
+    'mem.c', 'merge.c', 'poly2.c', 'poly.c', 'qset.c', 
+    'random.c', 'rboxlib.c', 'stat.c', 'user.c', 'usermem.c',
+    'userprintf.c']]
 
 env.NumpyPythonExtension('qhull', source = ['qhull.c'] + src)
