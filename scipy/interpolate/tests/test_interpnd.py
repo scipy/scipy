@@ -15,6 +15,15 @@ class TestLinearNDInterpolation(object):
         yi = interpnd.LinearNDInterpolator(x, y)(x)
         assert_almost_equal(y, yi)
 
+    def test_smoketest_alternate(self):
+        # Test at single points, alternate calling convention
+        x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
+                     dtype=np.double)
+        y = np.arange(x.shape[0], dtype=np.double)
+
+        yi = interpnd.LinearNDInterpolator((x[:,0], x[:,1]), y)(x[:,0], x[:,1])
+        assert_almost_equal(y, yi)
+
     def test_complex_smoketest(self):
         # Test at single points
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
@@ -95,7 +104,7 @@ class TestEstimateGradients2DGlobal(object):
 
 class TestCloughTocher2DInterpolator(object):
 
-    def _check_accuracy(self, func, x=None, tol=1e-6, **kw):
+    def _check_accuracy(self, func, x=None, tol=1e-6, alternate=False, **kw):
         np.random.seed(1234)
         if x is None:
             x = np.array([(0, 0), (0, 1),
@@ -103,11 +112,20 @@ class TestCloughTocher2DInterpolator(object):
                           (0.5, 0.2)],
                          dtype=float)
 
-        ip = interpnd.CloughTocher2DInterpolator(x, func(x[:,0], x[:,1]),
-                                                 tol=1e-6)
+        if not alternate:
+            ip = interpnd.CloughTocher2DInterpolator(x, func(x[:,0], x[:,1]),
+                                                     tol=1e-6)
+        else:
+            ip = interpnd.CloughTocher2DInterpolator((x[:,0], x[:,1]),
+                                                     func(x[:,0], x[:,1]),
+                                                     tol=1e-6)
+
         p = np.random.rand(50, 2)
 
-        a = ip(p)
+        if not alternate:
+            a = ip(p)
+        else:
+            a = ip(p[:,0], p[:,1])
         b = func(p[:,0], p[:,1])
 
         try:
@@ -129,6 +147,9 @@ class TestCloughTocher2DInterpolator(object):
         for j, func in enumerate(funcs):
             self._check_accuracy(func, tol=1e-13, atol=1e-7, rtol=1e-7,
                                  err_msg="Function %d" % j)
+            self._check_accuracy(func, tol=1e-13, atol=1e-7, rtol=1e-7,
+                                 alternate=True,
+                                 err_msg="Function (alternate) %d" % j)
 
     def test_quadratic_smoketest(self):
         # Should be reasonably accurate for quadratic functions

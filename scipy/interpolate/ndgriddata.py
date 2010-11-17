@@ -45,7 +45,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
         self.points = x
         self.values = y
 
-    def __call__(self, xi):
+    def __call__(self, *args):
         """
         Evaluate interpolator at given points.
 
@@ -55,6 +55,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
             Points where to interpolate data at.
 
         """
+        xi = _ndim_coords_from_arrays(args)
         xi = self._check_call_shape(xi)
         dist, i = self.tree.query(xi)
         return self.values[i]
@@ -164,8 +165,9 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan):
     if ndim == 1 and method in ('nearest', 'linear', 'cubic'):
         from interpolate import interp1d
         points = points.ravel()
-        if (isinstance(xi, tuple) or isinstance(xi, list)) \
-               and xi and isinstance(xi[0], np.ndarray):
+        if isinstance(xi, tuple):
+            if len(xi) != 1:
+                raise ValueError("invalid number of dimensions in xi")
             xi, = xi
         ip = interp1d(points, values, kind=method, axis=0, bounds_error=False,
                       fill_value=fill_value)

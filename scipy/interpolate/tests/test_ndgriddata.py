@@ -11,7 +11,7 @@ class TestGriddata(object):
         y = [1, 2, 3]
 
         yi = griddata(x, y, [(1,1), (1,2), (0,0)], fill_value=-1)
-        assert_array_equal(yi, [-1, -1, 1])
+        assert_array_equal(yi, [-1., -1, 1])
 
         yi = griddata(x, y, [(1,1), (1,2), (0,0)])
         assert_array_equal(yi, [np.nan, np.nan, 1])

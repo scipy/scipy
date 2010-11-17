@@ -109,7 +109,7 @@ class NDInterpolatorBase(object):
             raise ValueError("number of dimensions in xi does not match x")
         return xi
 
-    def __call__(self, xi):
+    def __call__(self, *args):
         """
         interpolator(xi)
 
@@ -121,7 +121,7 @@ class NDInterpolatorBase(object):
             Points where to interpolate data at.
 
         """
-        xi = _ndim_coords_from_arrays(xi)
+        xi = _ndim_coords_from_arrays(args)
         xi = self._check_call_shape(xi)
         xi = np.ascontiguousarray(xi.astype(np.double))
         shape = xi.shape
@@ -139,8 +139,10 @@ def _ndim_coords_from_arrays(points):
     Convert a tuple of coordinate arrays to a (..., ndim)-shaped array.
 
     """
-    if (isinstance(points, tuple) or isinstance(points, list)) \
-           and points and isinstance(points[0], np.ndarray):
+    if isinstance(points, tuple) and len(points) == 1:
+        # handle argument tuple
+        points = points[0]
+    if isinstance(points, tuple):
         p = np.broadcast_arrays(*points)
         for j in xrange(1, len(p)):
             if p[j].shape != p[0].shape:
@@ -150,6 +152,8 @@ def _ndim_coords_from_arrays(points):
             points[...,j] = item
     else:
         points = np.asanyarray(points)
+        if points.ndim == 1:
+            points = points.reshape(-1, 1)
     return points
 
 #------------------------------------------------------------------------------
@@ -189,7 +193,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
     def __init__(self, points, values, fill_value=np.nan):
         NDInterpolatorBase.__init__(self, points, values, fill_value=fill_value)
-        self.tri = qhull.Delaunay(points)
+        self.tri = qhull.Delaunay(self.points)
 
 % for DTYPE, CDTYPE in zip(["double", "complex"], ["double", "double complex"]):
     @cython.boundscheck(False)
@@ -798,7 +802,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
                  tol=1e-6, maxiter=400):
         NDInterpolatorBase.__init__(self, points, values, ndim=2,
                                     fill_value=fill_value)
-        self.tri = qhull.Delaunay(points)
+        self.tri = qhull.Delaunay(self.points)
         self.grad = estimate_gradients_2d_global(self.tri, self.values,
                                                  tol=tol, maxiter=maxiter)
 
