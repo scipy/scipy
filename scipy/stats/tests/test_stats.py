@@ -368,6 +368,90 @@ class TestCorrPearsonr(TestCase):
         assert_approx_equal(r,1.0)
 
 
+def test_fisher_exact():
+    """Some tests to show that fisher_exact() works correctly.
+
+    Testing the hypergeometric survival function against R's, showing that one
+    of them (probably Scipy's) is slightly defective (see the test with
+    significant=1).  This is probably because, in distributions.py, Scipy
+    uses 1.0 - cdf as the sf instead of calculating the sf more directly
+    for improved numerical accuracy.
+
+    Also note that R and Scipy have different argument formats for their
+    hypergeometric distrib functions.
+
+    R:
+    > phyper(18999, 99000, 110000, 39000, lower.tail = FALSE)
+    [1] 1.701815e-09
+    """
+    fisher_exact = stats.fisher_exact
+
+    res = fisher_exact([[18000, 80000], [20000, 90000]])[1]
+    assert_approx_equal(res, 0.2751, significant=4)
+    res = fisher_exact([[14500, 20000], [30000, 40000]])[1]
+    assert_approx_equal(res, 0.01106, significant=4)
+    res = fisher_exact([[100, 2], [1000, 5]])[1]
+    assert_approx_equal(res, 0.1301, significant=4)
+    res = fisher_exact([[2, 7], [8, 2]])[1]
+    assert_approx_equal(res, 0.0230141, significant=6)
+    res = fisher_exact([[5, 1], [10, 10]])[1]
+    assert_approx_equal(res, 0.1973244, significant=6)
+    res = fisher_exact([[5, 15], [20, 20]])[1]
+    assert_approx_equal(res, 0.0958044, significant=6)
+    res = fisher_exact([[5, 16], [20, 25]])[1]
+    assert_approx_equal(res, 0.1725862, significant=6)
+    res = fisher_exact([[10, 5], [10, 1]])[1]
+    assert_approx_equal(res, 0.1973244, significant=6)
+    res = fisher_exact([[5, 0], [1, 4]])[1]
+    assert_approx_equal(res, 0.04761904, significant=6)
+    res = fisher_exact([[0, 1], [3, 2]])[1]
+    assert_approx_equal(res, 1.0)
+    res = fisher_exact([[0, 2], [6, 4]])[1]
+    assert_approx_equal(res, 0.4545454545)
+    res = fisher_exact([[2, 7], [8, 2]])
+    assert_approx_equal(res[1], 0.0230141, significant=6)
+    assert_approx_equal(res[0], 4.0 / 56)
+
+    # High tolerance due to survival function inaccuracy.
+    res = fisher_exact([[19000, 80000], [20000, 90000]])[1]
+    assert_approx_equal(res, 3.319e-9, significant=1)
+
+    tablelist = ( [[100, 2], [1000, 5]],
+                  [[2, 7], [8, 2]],
+                  [[5, 1], [10, 10]],
+                  [[5, 15], [20, 20]],
+                  [[5, 16], [20, 25]],
+                  [[10, 5], [10, 1]],
+                  [[10, 5], [10, 0]],
+                  [[5,0], [1, 4]],
+                  [[0,5], [1, 4]],
+                  [[5,1], [0, 4]],
+                  [[0, 1], [3, 2]] )
+    for table in tablelist:
+        # results from R
+        #
+        # R defines oddsratio differently (see Notes section of fisher_exact
+        # docstring), so those will not match.  We leave them in anyway, in
+        # case they will be useful later on. We test only the p-value.
+        tablist = [
+            ([[100, 2], [1000, 5]], (2.505583993422285e-001,  1.300759363430016e-001)),
+            ([[2, 7], [8, 2]], (8.586235135736206e-002,  2.301413756522114e-002)),
+            ([[5, 1], [10, 10]], (4.725646047336584e+000,  1.973244147157190e-001)),
+            ([[5, 15], [20, 20]], (3.394396617440852e-001,  9.580440012477637e-002)),
+            ([[5, 16], [20, 25]], (3.960558326183334e-001,  1.725864953812994e-001)),
+            ([[10, 5], [10, 1]], (2.116112781158483e-001,  1.973244147157190e-001)),
+            ([[10, 5], [10, 0]], (0.000000000000000e+000,  6.126482213438734e-002)),
+            ([[5, 0], [1, 4]], (np.inf,  4.761904761904762e-002)),
+            ([[0, 5], [1, 4]], (0.000000000000000e+000,  1.000000000000000e+000)),
+            ([[5, 1], [0, 4]], (np.inf,  4.761904761904758e-002)),
+            ([[0, 1], [3, 2]], (0.000000000000000e+000,  1.000000000000000e+000))
+            ]
+    for table, res_r in tablist:
+        res = fisher_exact(np.asarray(table))
+        np.testing.assert_almost_equal(res[1], res_r[1], decimal=11,
+                                       verbose=True)
+
+
 class TestCorrSpearmanr(TestCase):
     """ W.II.D. Compute a correlation matrix on all the variables.
 

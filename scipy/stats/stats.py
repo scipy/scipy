@@ -86,6 +86,7 @@ TRIMMING FCNS:  threshold (for arrays only)
 
 CORRELATION FCNS:  paired
                    pearsonr
+                   fisher_exact
                    spearmanr
                    pointbiserialr
                    kendalltau
@@ -219,8 +220,8 @@ __all__ = ['gmean', 'hmean', 'mean', 'cmedian', 'median', 'mode',
            'obrientransform', 'samplevar', 'samplestd', 'signaltonoise',
            'var', 'std', 'stderr', 'sem', 'z', 'zs', 'zmap', 'zscore',
            'threshold', 'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
-           'cov', 'corrcoef', 'f_oneway', 'pearsonr', 'spearmanr',
-           'pointbiserialr', 'kendalltau', 'linregress',
+           'cov', 'corrcoef', 'f_oneway', 'pearsonr', 'fisher_exact',
+           'spearmanr', 'pointbiserialr', 'kendalltau', 'linregress',
            'ttest_1samp', 'ttest_ind', 'ttest_rel',
            'kstest', 'chisquare', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
@@ -2371,6 +2372,127 @@ def pearsonr(x, y):
     t = r*np.sqrt(df/((1.0-r+TINY)*(1.0+r+TINY)))
     prob = betai(0.5*df,0.5,df/(df+t*t))
     return r,prob
+
+
+def fisher_exact(c) :
+    """Performs a Fisher exact test on a 2x2 contingency table.
+
+    Parameters
+    ----------
+    c : array_like of ints
+        A 2x2 contingency table.
+
+    Returns
+    -------
+    oddsratio : float
+        This is prior odds ratio and not a posterior estimate.
+    p_value : float
+        P-value for 2-sided hypothesis of independence.
+
+    Notes
+    -----
+    The calculated odds ratio is different from the one R uses. In R language,
+    this implementation returns the (more common) "unconditional Maximum
+    Likelihood Estimate", while R uses the "conditional Maximum Likelihood
+    Estimate".
+
+    Examples
+    --------
+    >>> fisher_exact([[100, 2], [1000, 5]])
+    (0.25, 0.13007593634330314)
+    """
+    hypergeom = distributions.hypergeom
+    c = np.asarray(c, dtype=np.int64)  # int32 is not enough for the algorithm
+
+    if c[1,0] > 0 and c[0,1] > 0:
+        odssratio = c[0,0] * c[1,1] / float(c[1,0] * c[0,1])
+    else:
+        odssratio = np.inf
+
+    n1 = c[0,0] + c[0,1]
+    n2 = c[1,0] + c[1,1]
+    n  = c[0,0] + c[1,0]
+
+    mode = int(float((n + 1) * (n1 + 1)) / (n1 + n2 + 2))
+    pexact = hypergeom.pmf(c[0,0], n1 + n2, n1, n)
+    pmode = hypergeom.pmf(mode, n1 + n2, n1, n)
+
+    epsilon = 1 - 1e-4
+    if float(np.abs(pexact - pmode)) / np.abs(np.max(pexact, pmode)) <= 1 - epsilon:
+        return odssratio, 1
+
+    elif c[0,0] < mode:
+        plower = hypergeom.cdf(c[0,0], n1 + n2, n1, n)
+
+        if hypergeom.pmf(n, n1 + n2, n1, n) > pexact / epsilon:
+            return odssratio, plower
+
+        # Binary search for where to begin upper half.
+        minval = mode
+        maxval = n
+        guess = -1
+        while maxval - minval > 1:
+            if maxval == minval + 1 and guess == minval:
+                guess = maxval
+            else:
+                guess = (maxval + minval) / 2
+
+            pguess = hypergeom.pmf(guess, n1 + n2, n1, n)
+            if pguess <= pexact and hypergeom.pmf(guess - 1, n1 + n2, n1, n) > pexact:
+                break
+            elif pguess < pexact:
+                maxval = guess
+            else:
+                minval = guess
+
+        if guess == -1:
+            guess = minval
+
+        while guess > 0 and hypergeom.pmf(guess, n1 + n2, n1, n) < pexact * epsilon:
+            guess -= 1
+
+        while hypergeom.pmf(guess, n1 + n2, n1, n) > pexact / epsilon:
+            guess += 1
+
+        p = plower + hypergeom.sf(guess - 1, n1 + n2, n1, n)
+        if p > 1.0:
+            p = 1.0
+        return odssratio, p
+    else:
+        pupper = hypergeom.sf(c[0,0] - 1, n1 + n2, n1, n)
+        if hypergeom.pmf(0, n1 + n2, n1, n) > pexact / epsilon:
+            return odssratio, pupper
+
+        # Binary search for where to begin lower half.
+        minval = 0
+        maxval = mode
+        guess = -1
+        while maxval - minval > 1:
+            if maxval == minval + 1 and guess == minval:
+                guess = maxval
+            else:
+                guess = (maxval + minval) / 2
+            pguess = hypergeom.pmf(guess, n1 + n2, n1, n)
+            if pguess <= pexact and hypergeom.pmf(guess + 1, n1 + n2, n1, n) > pexact:
+                break
+            elif pguess <= pexact:
+                minval = guess
+            else:
+                maxval = guess
+
+        if guess == -1:
+            guess = minval
+
+        while hypergeom.pmf(guess, n1 + n2, n1, n) < pexact * epsilon:
+            guess += 1
+
+        while guess > 0 and hypergeom.pmf(guess, n1 + n2, n1, n) > pexact / epsilon:
+            guess -= 1
+
+        p = pupper + hypergeom.cdf(guess, n1 + n2, n1, n)
+        if p > 1.0:
+            p = 1.0
+        return odssratio, p
 
 
 def spearmanr(a, b=None, axis=0):
