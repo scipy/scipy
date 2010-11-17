@@ -155,11 +155,18 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan):
     """
 
     points = _ndim_coords_from_arrays(points)
-    xi = _ndim_coords_from_arrays(xi)
 
-    ndim = points.shape[-1]
+    if points.ndim < 2:
+        ndim = points.ndim
+    else:
+        ndim = points.shape[-1]
 
     if ndim == 1 and method in ('nearest', 'linear', 'cubic'):
+        from interpolate import interp1d
+        points = points.ravel()
+        if (isinstance(xi, tuple) or isinstance(xi, list)) \
+               and xi and isinstance(xi[0], np.ndarray):
+            xi, = xi
         ip = interp1d(points, values, kind=method, axis=0, bounds_error=False,
                       fill_value=fill_value)
         return ip(xi)
