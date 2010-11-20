@@ -489,8 +489,8 @@ class basemodel(object):
         return np.exp(self.lognormconst())
 
 
-    def setsmooth(sigma):
-        """Speficies that the entropy dual and gradient should be
+    def setsmooth(self, sigma):
+        """Specifies that the entropy dual and gradient should be
         computed with a quadratic penalty term on magnitude of the
         parameters.  This 'smooths' the model to account for noise in the
         target expectation values or to improve robustness when using
@@ -888,7 +888,7 @@ class conditionalmodel(model):
                 if counts.shape[0] > 1:
                     try:
                         # Try converting to a row vector
-                        p_tilde = count.reshape((1, size))
+                        p_tilde = counts.reshape((1, counts.size))
                     except AttributeError:
                         raise ValueError("the 'counts' object needs to be a"
                             " row vector (1 x n) rank-2 array/matrix) or have"
