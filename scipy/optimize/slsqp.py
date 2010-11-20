@@ -256,13 +256,13 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
     if len(bounds) == 0:
         bounds = [(-1.0E12, 1.0E12) for i in range(n)]
     elif len(bounds) != n:
-        raise IndexError, \
-        'SLSQP Error:  If bounds is specified, len(bounds) == len(x0)'
+        raise IndexError('SLSQP Error:  If bounds is specified, '
+                            'len(bounds) == len(x0)')
     else:
         for i in range(len(bounds)):
             if bounds[i][0] > bounds[i][1]:
-                raise ValueError, \
-                'SLSQP Error: lb > ub in bounds[' + str(i) +']  ' + str(bounds[4])
+                raise ValueError('SLSQP Error: lb > ub in bounds[' + str(i)
+                                    + ']  ' + str(bounds[4]))
 
     xl = array( [ b[0] for b in bounds ] )
     xu = array( [ b[1] for b in bounds ] )

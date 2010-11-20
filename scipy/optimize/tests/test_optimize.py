@@ -39,7 +39,7 @@ class TestOptimize(TestCase):
     def func(self, x):
         self.funccalls += 1
         if self.funccalls > 6000:
-            raise RuntimeError, "too many iterations in optimization routine"
+            raise RuntimeError("too many iterations in optimization routine")
         log_pdot = dot(self.F, x)
         logZ = log(sum(exp(log_pdot)))
         f = logZ - dot(self.K, x)
