@@ -68,10 +68,10 @@ def spline_filter1d(input, order = 3, axis = -1, output = numpy.float64,
 
     """
     if order < 0 or order > 5:
-        raise RuntimeError, 'spline order not supported'
+        raise RuntimeError('spline order not supported')
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
-        raise TypeError, 'Complex type not supported'
+        raise TypeError('Complex type not supported')
     output, return_value = _ni_support._get_output(output, input,
                                                     output_type)
     if order in [0, 1]:
@@ -103,10 +103,10 @@ def spline_filter(input, order = 3, output = numpy.float64,
 
     """
     if order < 2 or order > 5:
-        raise RuntimeError, 'spline order not supported'
+        raise RuntimeError('spline order not supported')
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
-        raise TypeError, 'Complex type not supported'
+        raise TypeError('Complex type not supported')
     output, return_value = _ni_support._get_output(output, input,
                                                     output_type)
     if order not in [0, 1] and input.ndim > 0:
@@ -188,14 +188,14 @@ def geometric_transform(input, mapping, output_shape = None,
 
     """
     if order < 0 or order > 5:
-        raise RuntimeError, 'spline order not supported'
+        raise RuntimeError('spline order not supported')
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
-        raise TypeError, 'Complex type not supported'
+        raise TypeError('Complex type not supported')
     if output_shape is None:
         output_shape = input.shape
     if input.ndim < 1 or len(output_shape) < 1:
-        raise RuntimeError, 'input and output rank must be > 0'
+        raise RuntimeError('input and output rank must be > 0')
     mode = _extend_mode_to_code(mode)
     if prefilter and order > 1:
         filtered = spline_filter(input, order, output = numpy.float64)
@@ -285,18 +285,18 @@ def map_coordinates(input, coordinates, output_type = None, output = None,
 
     """
     if order < 0 or order > 5:
-        raise RuntimeError, 'spline order not supported'
+        raise RuntimeError('spline order not supported')
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
-        raise TypeError, 'Complex type not supported'
+        raise TypeError('Complex type not supported')
     coordinates = numpy.asarray(coordinates)
     if numpy.iscomplexobj(coordinates):
-        raise TypeError, 'Complex type not supported'
+        raise TypeError('Complex type not supported')
     output_shape = coordinates.shape[1:]
     if input.ndim < 1 or len(output_shape) < 1:
-        raise RuntimeError, 'input and output rank must be > 0'
+        raise RuntimeError('input and output rank must be > 0')
     if coordinates.shape[0] != input.ndim:
-        raise RuntimeError, 'invalid shape for coordinate array'
+        raise RuntimeError('invalid shape for coordinate array')
     mode = _extend_mode_to_code(mode)
     if prefilter and order > 1:
         filtered = spline_filter(input, order, output = numpy.float64)
@@ -366,14 +366,14 @@ def affine_transform(input, matrix, offset = 0.0, output_shape = None,
 
     """
     if order < 0 or order > 5:
-        raise RuntimeError, 'spline order not supported'
+        raise RuntimeError('spline order not supported')
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
-        raise TypeError, 'Complex type not supported'
+        raise TypeError('Complex type not supported')
     if output_shape is None:
         output_shape = input.shape
     if input.ndim < 1 or len(output_shape) < 1:
-        raise RuntimeError, 'input and output rank must be > 0'
+        raise RuntimeError('input and output rank must be > 0')
     mode = _extend_mode_to_code(mode)
     if prefilter and order > 1:
         filtered = spline_filter(input, order, output = numpy.float64)
@@ -383,17 +383,17 @@ def affine_transform(input, matrix, offset = 0.0, output_shape = None,
                                         output_type, shape = output_shape)
     matrix = numpy.asarray(matrix, dtype = numpy.float64)
     if matrix.ndim not in [1, 2] or matrix.shape[0] < 1:
-        raise RuntimeError, 'no proper affine matrix provided'
+        raise RuntimeError('no proper affine matrix provided')
     if matrix.shape[0] != input.ndim:
-        raise RuntimeError, 'affine matrix has wrong number of rows'
+        raise RuntimeError('affine matrix has wrong number of rows')
     if matrix.ndim == 2 and matrix.shape[1] != output.ndim:
-        raise RuntimeError, 'affine matrix has wrong number of columns'
+        raise RuntimeError('affine matrix has wrong number of columns')
     if not matrix.flags.contiguous:
         matrix = matrix.copy()
     offset = _ni_support._normalize_sequence(offset, input.ndim)
     offset = numpy.asarray(offset, dtype = numpy.float64)
     if offset.ndim != 1 or offset.shape[0] < 1:
-        raise RuntimeError, 'no proper offset provided'
+        raise RuntimeError('no proper offset provided')
     if not offset.flags.contiguous:
         offset = offset.copy()
     if matrix.ndim == 1:
@@ -450,12 +450,12 @@ def shift(input, shift, output_type = None, output = None, order = 3,
 
     """
     if order < 0 or order > 5:
-        raise RuntimeError, 'spline order not supported'
+        raise RuntimeError('spline order not supported')
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
-        raise TypeError, 'Complex type not supported'
+        raise TypeError('Complex type not supported')
     if input.ndim < 1:
-        raise RuntimeError, 'input and output rank must be > 0'
+        raise RuntimeError('input and output rank must be > 0')
     mode = _extend_mode_to_code(mode)
     if prefilter and order > 1:
         filtered = spline_filter(input, order, output = numpy.float64)
@@ -515,12 +515,12 @@ def zoom(input, zoom, output_type = None, output = None, order = 3,
 
     """
     if order < 0 or order > 5:
-        raise RuntimeError, 'spline order not supported'
+        raise RuntimeError('spline order not supported')
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
-        raise TypeError, 'Complex type not supported'
+        raise TypeError('Complex type not supported')
     if input.ndim < 1:
-        raise RuntimeError, 'input and output rank must be > 0'
+        raise RuntimeError('input and output rank must be > 0')
     mode = _extend_mode_to_code(mode)
     if prefilter and order > 1:
         filtered = spline_filter(input, order, output = numpy.float64)
@@ -604,7 +604,7 @@ def rotate(input, angle, axes = (1, 0), reshape = True,
     if axes[1] < 0:
         axes[1] += rank
     if axes[0] < 0 or axes[1] < 0 or axes[0] > rank or axes[1] > rank:
-        raise RuntimeError, 'invalid rotation plane specified'
+        raise RuntimeError('invalid rotation plane specified')
     if axes[0] > axes[1]:
         axes = axes[1], axes[0]
     angle = numpy.pi / 180 * angle

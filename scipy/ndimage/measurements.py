@@ -141,20 +141,20 @@ def label(input, structure = None, output = None):
     """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
-        raise TypeError, 'Complex type not supported'
+        raise TypeError('Complex type not supported')
     if structure is None:
         structure = morphology.generate_binary_structure(input.ndim, 1)
     structure = numpy.asarray(structure, dtype = bool)
     if structure.ndim != input.ndim:
-        raise RuntimeError, 'structure and input must have equal rank'
+        raise RuntimeError('structure and input must have equal rank')
     for ii in structure.shape:
         if ii != 3:
-            raise  RuntimeError, 'structure dimensions must be equal to 3'
+            raise  RuntimeError('structure dimensions must be equal to 3')
     if not structure.flags.contiguous:
         structure = structure.copy()
     if isinstance(output, numpy.ndarray):
         if output.dtype.type != numpy.int32:
-            raise RuntimeError, 'output type must be int32'
+            raise RuntimeError('output type must be int32')
     else:
         output = numpy.int32
     output, return_value = _ni_support._get_output(output, input)
@@ -217,7 +217,7 @@ def find_objects(input, max_label = 0):
     """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
-        raise TypeError, 'Complex type not supported'
+        raise TypeError('Complex type not supported')
     if max_label < 1:
         max_label = input.max()
     return _nd_image.find_objects(input, max_label)
@@ -299,7 +299,7 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
 
     if labels is None:
         if index is not None:
-            raise ValueError, "index without defined labels"
+            raise ValueError("index without defined labels")
         if not pass_positions:
             return func(input.ravel())
         else:
@@ -308,7 +308,8 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
     try:
         input, labels = numpy.broadcast_arrays(input, labels)
     except ValueError:
-        raise ValueError, "input and labels must have the same shape (excepting dimensions with width 1)"
+        raise ValueError("input and labels must have the same shape "
+                            "(excepting dimensions with width 1)")
 
     if index is None:
         if not pass_positions:
@@ -318,7 +319,9 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
 
     index = numpy.atleast_1d(index)
     if np.any(index.astype(labels.dtype).astype(index.dtype) != index):
-        raise ValueError, "Cannot convert index values from <%s> to <%s> (labels' type) without loss of precision"%(index.dtype, labels.dtype)
+        raise ValueError("Cannot convert index values from <%s> to <%s> "
+                            "(labels' type) without loss of precision" %
+                            (index.dtype, labels.dtype))
     index = index.astype(labels.dtype)
 
     # optimization: find min/max in index, and select those parts of labels, input, and positions
@@ -1105,20 +1108,20 @@ def watershed_ift(input, markers, structure = None, output = None):
     """
     input = numpy.asarray(input)
     if input.dtype.type not in [numpy.uint8, numpy.uint16]:
-        raise TypeError, 'only 8 and 16 unsigned inputs are supported'
+        raise TypeError('only 8 and 16 unsigned inputs are supported')
     if structure is None:
         structure = morphology.generate_binary_structure(input.ndim, 1)
     structure = numpy.asarray(structure, dtype = bool)
     if structure.ndim != input.ndim:
-        raise RuntimeError, 'structure and input must have equal rank'
+        raise RuntimeError('structure and input must have equal rank')
     for ii in structure.shape:
         if ii != 3:
-            raise  RuntimeError, 'structure dimensions must be equal to 3'
+            raise  RuntimeError('structure dimensions must be equal to 3')
     if not structure.flags.contiguous:
         structure = structure.copy()
     markers = numpy.asarray(markers)
     if input.shape != markers.shape:
-        raise RuntimeError, 'input and markers must have equal shape'
+        raise RuntimeError('input and markers must have equal shape')
 
     integral_types = [numpy.int0,
                       numpy.int8,
@@ -1130,10 +1133,10 @@ def watershed_ift(input, markers, structure = None, output = None):
                       numpy.intp]
 
     if markers.dtype.type not in integral_types:
-        raise RuntimeError, 'marker should be of integer type'
+        raise RuntimeError('marker should be of integer type')
     if isinstance(output, numpy.ndarray):
         if output.dtype.type not in integral_types:
-            raise RuntimeError, 'output should be of integer type'
+            raise RuntimeError('output should be of integer type')
     else:
         output = markers.dtype
     output, return_value = _ni_support._get_output(output, input)

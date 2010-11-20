@@ -44,12 +44,12 @@ def _get_output_fourier(output, input):
     elif type(output) is types.TypeType:
         if output not in [numpy.complex64, numpy.complex128,
                           numpy.float32, numpy.float64]:
-            raise RuntimeError, "output type not supported"
+            raise RuntimeError("output type not supported")
         output = numpy.zeros(input.shape, dtype = output)
         return_value = output
     else:
         if output.shape != input.shape:
-            raise RuntimeError, "output shape not correct"
+            raise RuntimeError("output shape not correct")
         return_value = None
     return output, return_value
 
@@ -62,12 +62,12 @@ def _get_output_fourier_complex(output, input):
         return_value = output
     elif type(output) is types.TypeType:
         if output not in [numpy.complex64, numpy.complex128]:
-            raise RuntimeError, "output type not supported"
+            raise RuntimeError("output type not supported")
         output = numpy.zeros(input.shape, dtype = output)
         return_value = output
     else:
         if output.shape != input.shape:
-            raise RuntimeError, "output shape not correct"
+            raise RuntimeError("output shape not correct")
         return_value = None
     return output, return_value
 
