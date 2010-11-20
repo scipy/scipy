@@ -214,7 +214,7 @@ def gaussian_filter1d(input, sigma, axis = -1, order = 0, output = None,
         sd2 = sd * sd
         for ii in range(1, lw + 1):
             x = float(ii)
-            tmp = (3.0 - x * x / sd) * x * weights[lw + ii] / sd / sd
+            tmp = (3.0 - x * x / sd) * x * weights[lw + ii] / sd2
             weights[lw + ii] = -tmp
             weights[lw - ii] = tmp
     return correlate1d(input, weights, axis, output, mode, cval, 0)
