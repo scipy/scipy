@@ -34,7 +34,7 @@ class TestSygv(TestCase):
                 assert_array_almost_equal(np.dot(b,np.dot(a,v[:,i])),
                                           w[i]*v[:,i], decimal=PREC[tp] - 1)
             else:
-                raise ValueError, `itype`
+                raise ValueError(itype)
 
     @dec.skipif(FLAPACK_IS_EMPTY, "Flapack empty, skip flapack test")
     def test_ssygv_1(self):
