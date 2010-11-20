@@ -316,7 +316,7 @@ class Data(object):
         if attr in self.meta.keys():
             return self.meta[attr]
         else:
-            raise AttributeError, "'%s' not in metadata" % attr
+            raise AttributeError("'%s' not in metadata" % attr)
 
 
 class RealData(Data):
@@ -355,9 +355,9 @@ class RealData(Data):
     def __init__(self, x, y=None, sx=None, sy=None, covx=None, covy=None,
                  fix=None, meta={}):
         if (sx is not None) and (covx is not None):
-            raise ValueError, "cannot set both sx and covx"
+            raise ValueError("cannot set both sx and covx")
         if (sy is not None) and (covy is not None):
-            raise ValueError, "cannot set both sy and covy"
+            raise ValueError("cannot set both sy and covy")
 
         # Set flags for __getattr__
         self._ga_flags = {}
@@ -414,7 +414,7 @@ class RealData(Data):
             if attr in self.meta.keys():
                 return self.meta[attr]
             else:
-                raise AttributeError, "'%s' not in metadata" % attr
+                raise AttributeError("'%s' not in metadata" % attr)
         else:
             func, arg = lookup_tbl[(attr, self._ga_flags[attr])]
 
@@ -528,7 +528,7 @@ class Model(object):
         if attr in self.meta.keys():
             return self.meta[attr]
         else:
-            raise AttributeError, "'%s' not in metadata" % attr
+            raise AttributeError("'%s' not in metadata" % attr)
 
 
 class Output(object):
@@ -1101,7 +1101,7 @@ class ODR(object):
         """
 
         if self.output is None:
-            raise odr_error, "cannot restart: run() has not been called before"
+            raise odr_error("cannot restart: run() has not been called before")
 
         self.set_job(restart=1)
         self.work = self.output.work
