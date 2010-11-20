@@ -228,7 +228,7 @@ class bsr_matrix(_cs_matrix):
                     raise ValueError("column index values must be < %d" % (N//C))
                 if self.indices.min() < 0:
                     raise ValueError("column index values must be >= 0")
-                if diff(self.indptr).min() < 0:
+                if np.diff(self.indptr).min() < 0:
                     raise ValueError("index pointer values must form a "
                                         "non-decreasing sequence")
 

@@ -11,7 +11,7 @@ import numpy as np
 from sparsetools import coo_tocsr, coo_todense, coo_matvec
 from base import isspmatrix
 from data import _data_matrix
-from sputils import upcast, to_native, isshape, getdtype
+from sputils import upcast, to_native, isshape, getdtype, isintlike
 
 class coo_matrix(_data_matrix):
     """

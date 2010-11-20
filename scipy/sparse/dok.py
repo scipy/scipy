@@ -448,7 +448,7 @@ class dok_matrix(spmatrix, dict):
         M, N = self.shape
         new = dok_matrix((N, M), dtype=self.dtype)
         for key, value in self.iteritems():
-            new[key[1], key[0]] = conj(value)
+            new[key[1], key[0]] = np.conj(value)
         return new
 
     def copy(self):
@@ -464,13 +464,13 @@ class dok_matrix(spmatrix, dict):
         N = len(cols_or_rows)
         if indx: # columns
             for key in self.keys():
-                num = searchsorted(cols_or_rows, key[1])
+                num = np.searchsorted(cols_or_rows, key[1])
                 if num < N:
                     newkey = (key[0], num)
                     new[newkey] = self[key]
         else:
             for key in self.keys():
-                num = searchsorted(cols_or_rows, key[0])
+                num = np.searchsorted(cols_or_rows, key[0])
                 if num < N:
                     newkey = (num, key[1])
                     new[newkey] = self[key]
@@ -484,7 +484,7 @@ class dok_matrix(spmatrix, dict):
         indx = int((columns == 1))
         if indx:
             for key in self.keys():
-                num = searchsorted(cols_or_rows, key[1])
+                num = np.searchsorted(cols_or_rows, key[1])
                 if cols_or_rows[num] == key[1]:
                     newkey = (key[0], num)
                     ext[newkey] = self[key]
@@ -493,7 +493,7 @@ class dok_matrix(spmatrix, dict):
                     base[newkey] = self[key]
         else:
             for key in self.keys():
-                num = searchsorted(cols_or_rows, key[0])
+                num = np.searchsorted(cols_or_rows, key[0])
                 if cols_or_rows[num] == key[0]:
                     newkey = (num, key[1])
                     ext[newkey] = self[key]
