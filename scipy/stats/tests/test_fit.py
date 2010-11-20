@@ -47,7 +47,7 @@ def check_cont_fit(distname,arg):
     diffthreshold[-2] = np.max([np.abs(rvs.mean())*thresh_percent,thresh_min])
     
     if np.any(np.isnan(est)):
-        raise AssertionError, 'nan returned in fit'
+        raise AssertionError('nan returned in fit')
     else:  
         if np.any((np.abs(diff) - diffthreshold) > 0.0):
 ##            txt = 'WARNING - diff too large with small sample'
@@ -60,7 +60,7 @@ def check_cont_fit(distname,arg):
                 txt  = 'parameter: %s\n' % str(truearg)
                 txt += 'estimated: %s\n' % str(est)
                 txt += 'diff     : %s\n' % str(diff)
-                raise AssertionError, 'fit not very good in %s\n' % distfn.name + txt
+                raise AssertionError('fit not very good in %s\n' % distfn.name + txt)
                 
 
 

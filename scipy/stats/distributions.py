@@ -566,7 +566,7 @@ class rv_generic(object):
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
         cond = logical_and(self._argcheck(*args),(scale >= 0))
         if not all(cond):
-            raise ValueError, "Domain error in arguments."
+            raise ValueError("Domain error in arguments.")
 
         # self._size is total size of all output values
         self._size = product(size, axis=0)
@@ -713,7 +713,7 @@ class rv_generic(object):
         """
         alpha = arr(alpha)
         if any((alpha > 1) | (alpha < 0)):
-            raise ValueError, "alpha must be between 0 and 1 inclusive"
+            raise ValueError("alpha must be between 0 and 1 inclusive")
         q1 = (1.0-alpha)/2
         q2 = (1.0+alpha)/2
         a = self.ppf(q1, *args, **kwds)
@@ -1536,8 +1536,8 @@ class rv_continuous(rv_generic):
 
         """
         if (floor(n) != n):
-            raise ValueError, "Moment must be an integer."
-        if (n < 0): raise ValueError, "Moment must be positive."
+            raise ValueError("Moment must be an integer.")
+        if (n < 0): raise ValueError("Moment must be positive.")
         if (n == 0): return 1.0
         if (n > 0) and (n < 5):
             signature = inspect.getargspec(self._stats.im_func)
@@ -1581,7 +1581,7 @@ class rv_continuous(rv_generic):
             scale = theta[-1]
             args = tuple(theta[:-2])
         except IndexError:
-            raise ValueError, "Not enough input arguments."
+            raise ValueError("Not enough input arguments.")
         if not self._argcheck(*args) or scale <= 0:
             return inf
         x = arr((x-loc) / scale)
@@ -1616,7 +1616,7 @@ class rv_continuous(rv_generic):
             restore = None
         else:
             if len(fixedn) == len(index):
-                raise ValueError, "All parameters fixed. There is nothing to optimize."
+                raise ValueError("All parameters fixed. There is nothing to optimize.")
             def restore(args, theta):
                 # Replace with theta for all numbers not in fixedn
                 # This allows the non-fixed values to vary, but
@@ -1683,7 +1683,7 @@ class rv_continuous(rv_generic):
         """
         Narg = len(args)
         if Narg > self.numargs:
-                raise ValueError, "Too many input arguments."
+                raise ValueError("Too many input arguments.")
         start = [None]*2
         if (Narg < self.numargs) or not (kwds.has_key('loc') and
                                          kwds.has_key('scale')):
@@ -1704,7 +1704,7 @@ class rv_continuous(rv_generic):
             try:
                 optimizer = getattr(optimize, optimizer)
             except AttributeError:
-                raise ValueError, "%s is not a valid optimizer" % optimizer
+                raise ValueError("%s is not a valid optimizer" % optimizer)
         vals = optimizer(func,x0,args=(ravel(data),),disp=0)
         vals = tuple(vals)
         if restore is not None:
@@ -4504,7 +4504,7 @@ def entropy(pk,qk=None):
     else:
         qk = arr(qk)
         if len(qk) != len(pk):
-            raise ValueError, "qk and pk must have same length."
+            raise ValueError("qk and pk must have same length.")
         qk = 1.0*qk / sum(qk,axis=0)
         # If qk is zero anywhere, then unless pk is zero at those places
         #   too, the relative entropy is infinite.
@@ -5400,8 +5400,8 @@ class rv_discrete(rv_generic):
 
         """
         if (floor(n) != n):
-            raise ValueError, "Moment must be an integer."
-        if (n < 0): raise ValueError, "Moment must be positive."
+            raise ValueError("Moment must be an integer.")
+        if (n < 0): raise ValueError("Moment must be positive.")
         if (n == 0): return 1.0
         if (n > 0) and (n < 5):
             signature = inspect.getargspec(self._stats.im_func)

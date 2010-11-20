@@ -298,11 +298,11 @@ def probplot(x, sparams=(), dist='norm', fit=1, plot=None):
     res = inspect.getargspec(ppf_func)
     if not ('loc' == res[0][-2] and 'scale' == res[0][-1] and \
             0.0==res[-1][-2] and 1.0==res[-1][-1]):
-        raise ValueError, "Function has does not have default location", \
-              "and scale parameters\n  that are 0.0 and 1.0 respectively."
+        raise ValueError("Function has does not have default location "
+              "and scale parameters\n  that are 0.0 and 1.0 respectively.")
     if (len(sparams) < len(res[0])-len(res[-1])-1) or \
        (len(sparams) > len(res[0])-3):
-        raise ValueError, "Incorrect number of shape parameters."
+        raise ValueError("Incorrect number of shape parameters.")
     """
     osm = ppf_func(Ui,*sparams)
     osr = sort(x)
@@ -340,11 +340,11 @@ def ppcc_max(x, brack=(0.0,1.0), dist='tukeylambda'):
     res = inspect.getargspec(ppf_func)
     if not ('loc' == res[0][-2] and 'scale' == res[0][-1] and \
             0.0==res[-1][-2] and 1.0==res[-1][-1]):
-        raise ValueError, "Function has does not have default location", \
-              "and scale parameters\n  that are 0.0 and 1.0 respectively."
+        raise ValueError("Function has does not have default location "
+              "and scale parameters\n  that are 0.0 and 1.0 respectively.")
     if (1 < len(res[0])-len(res[-1])-1) or \
        (1 > len(res[0])-3):
-        raise ValueError, "Must be a one-parameter family."
+        raise ValueError("Must be a one-parameter family.")
     """
     N = len(x)
     # compute uniform median statistics

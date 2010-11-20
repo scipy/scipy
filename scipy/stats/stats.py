@@ -1491,7 +1491,7 @@ def percentileofscore(a, score, kind='rank'):
     elif kind == 'mean':
         return (sum(a < score) + sum(a <= score)) * 50 / float(n)
     else:
-        raise ValueError, "kind can only be 'rank', 'strict', 'weak' or 'mean'"
+        raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
 
 
 def histogram2(a, bins):
@@ -1668,7 +1668,7 @@ Returns: transformed data for use in an ANOVA
         if v[j] - np.mean(nargs[j]) > TINY:
             check = 0
     if check != 1:
-        raise ValueError, 'Lack of convergence in obrientransform.'
+        raise ValueError('Lack of convergence in obrientransform.')
     else:
         return array(nargs)
 
@@ -2115,7 +2115,7 @@ def trimboth(a, proportiontocut):
     lowercut = int(proportiontocut*len(a))
     uppercut = len(a) - lowercut
     if (lowercut >= uppercut):
-        raise ValueError, "Proportion too big."
+        raise ValueError("Proportion too big.")
     return a[lowercut:uppercut]
 
 
@@ -2218,7 +2218,7 @@ Please note that:
         y = np.transpose(y)
     N = m.shape[0]
     if (y.shape[0] != N):
-        raise ValueError, "x and y must have the same number of observations."
+        raise ValueError("x and y must have the same number of observations.")
     m = m - np.mean(m,axis=0)
     y = y - np.mean(y,axis=0)
     if bias:
@@ -3050,7 +3050,7 @@ def ttest_rel(a,b,axis=0):
     """
     a, b, axis = _chk2_asarray(a, b, axis)
     if a.shape[axis] != b.shape[axis]:
-        raise ValueError, 'unequal length arrays'
+        raise ValueError('unequal length arrays')
     n = a.shape[axis]
     df = float(n-1)
 
@@ -3201,7 +3201,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
             cdf = getattr(distributions, rvs).cdf
             rvs = getattr(distributions, rvs).rvs
         else:
-            raise AttributeError, 'if rvs is string, cdf has to be the same distribution'
+            raise AttributeError('if rvs is string, cdf has to be the same distribution')
 
 
     if isinstance(cdf, basestring):
@@ -3427,7 +3427,7 @@ def mannwhitneyu(x, y, use_continuity=True):
     #T = np.sqrt(tiecorrect(ranked))  # correction factor for tied scores
     T = tiecorrect(ranked)
     if T == 0:
-        raise ValueError, 'All numbers are identical in amannwhitneyu'
+        raise ValueError('All numbers are identical in amannwhitneyu')
     sd = np.sqrt(T*n1*n2*(n1+n2+1)/12.0)
 
     if use_continuity:
@@ -3565,7 +3565,7 @@ def kruskal(*args):
     h = 12.0 / (totaln*(totaln+1)) * ssbn - 3*(totaln+1)
     df = len(args) - 1
     if T == 0:
-        raise ValueError, 'All numbers are identical in kruskal'
+        raise ValueError('All numbers are identical in kruskal')
     h = h / float(T)
     return h, chisqprob(h,df)
 
@@ -3608,11 +3608,11 @@ def friedmanchisquare(*args):
     """
     k = len(args)
     if k < 3:
-        raise ValueError, '\nLess than 3 levels.  Friedman test not appropriate.\n'
+        raise ValueError('\nLess than 3 levels.  Friedman test not appropriate.\n')
     n = len(args[0])
     for i in range(1,k):
         if len(args[i]) <> n:
-            raise ValueError, 'Unequal N in friedmanchisquare.  Aborting.'
+            raise ValueError('Unequal N in friedmanchisquare.  Aborting.')
 
     # Rank data
     data = apply(_support.abut,args)

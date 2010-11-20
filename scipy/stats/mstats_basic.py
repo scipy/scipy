@@ -686,7 +686,7 @@ def theilslopes(y, x=None, alpha=0.05):
     else:
         x = ma.asarray(x).flatten()
         if len(x) != n:
-            raise ValueError, "Incompatible lengths ! (%s<>%s)" % (n,len(x))
+            raise ValueError("Incompatible lengths ! (%s<>%s)" % (n,len(x)))
     m = ma.mask_or(ma.getmask(x), ma.getmask(y))
     y._mask = x._mask = m
     ny = y.count()
@@ -760,7 +760,7 @@ ttest_ind.__doc__ = stats.ttest_ind.__doc__
 def ttest_rel(a,b,axis=None):
     a, b, axis = _chk2_asarray(a, b, axis)
     if len(a)!=len(b):
-        raise ValueError, 'unequal length arrays'
+        raise ValueError('unequal length arrays')
     (x1, x2) = (a.mean(axis), b.mean(axis))
     (v1, v2) = (a.var(axis=axis, ddof=1), b.var(axis=axis, ddof=1))
     n = a.count(axis)
@@ -840,7 +840,7 @@ def kruskalwallis(*args):
     ties = count_tied_groups(ranks)
     T = 1. - np.sum(v*(k**3-k) for (k,v) in ties.iteritems())/float(ntot**3-ntot)
     if T == 0:
-        raise ValueError, 'All numbers are identical in kruskal'
+        raise ValueError('All numbers are identical in kruskal')
     H /= T
     #
     df = len(output) - 1
