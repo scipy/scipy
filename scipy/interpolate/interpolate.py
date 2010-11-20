@@ -687,8 +687,8 @@ def _get_spline3_Bb(xk, yk, kind, conds):
 def _find_user(xk, yk, order, conds, B):
     lh = conds[0]
     rh = conds[1]
-    B = concatenate((B,lh),axis=0)
-    w = concatenate((yk,rh),axis=0)
+    B = np.concatenate((B,lh),axis=0)
+    w = np.concatenate((yk,rh),axis=0)
     M,N = B.shape
     if (M>N):
         raise ValueError("over-specification of conditions")
