@@ -14,7 +14,7 @@ def configuration (parent_package=''):
     if not atlas_info:
         atlas_info = get_info('atlas')
     if not atlas_info:
-        raise AtlasNotFoundError,AtlasNotFoundError.__doc__
+        raise AtlasNotFoundError(AtlasNotFoundError.__doc__)
     ext = Extension('atlas_version',
                     sources=[os.path.join(local_path,'atlas_version.c')],
                     libraries=[atlas_info['libraries'][-1]],

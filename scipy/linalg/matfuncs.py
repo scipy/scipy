@@ -302,7 +302,7 @@ def funm(A, func, disp=True):
     # Perform Shur decomposition (lapack ?gees)
     A = asarray(A)
     if len(A.shape)!=2:
-        raise ValueError, "Non-matrix input to matrix function."
+        raise ValueError("Non-matrix input to matrix function.")
     if A.dtype.char in ['F', 'D', 'G']:
         cmplx_type = 1
     else:
@@ -502,7 +502,7 @@ def sqrtm(A, disp=True):
     """
     A = asarray(A)
     if len(A.shape)!=2:
-        raise ValueError, "Non-matrix input to matrix function."
+        raise ValueError("Non-matrix input to matrix function.")
     T, Z = schur(A)
     T, Z = rsf2csf(T,Z)
     n,n = T.shape

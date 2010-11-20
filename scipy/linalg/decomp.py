@@ -492,7 +492,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
             select = 2
             vl, vu, il, iu = 0.0, 0.0, min(select_range), max(select_range)
             if min(il, iu) < 0 or max(il, iu) >= a1.shape[1]:
-                raise ValueError, 'select_range out of bounds'
+                raise ValueError('select_range out of bounds')
             max_ev = iu - il + 1
         else:  # 1, 'v', 'value'
             select = 1

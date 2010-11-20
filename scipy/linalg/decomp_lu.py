@@ -47,7 +47,7 @@ def lu_factor(a, overwrite_a=False):
     """
     a1 = asarray(a)
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
-        raise ValueError, 'expected square matrix'
+        raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or (_datanotshared(a1, a))
     getrf, = get_lapack_funcs(('getrf',), (a1,))
     lu, piv, info = getrf(a, overwrite_a=overwrite_a)

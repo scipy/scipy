@@ -51,10 +51,10 @@ def schur(a, output='real', lwork=None, overwrite_a=False):
 
     """
     if not output in ['real','complex','r','c']:
-        raise ValueError, "argument must be 'real', or 'complex'"
+        raise ValueError("argument must be 'real', or 'complex'")
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
-        raise ValueError, 'expected square matrix'
+        raise ValueError('expected square matrix')
     typ = a1.dtype.char
     if output in ['complex','c'] and typ not in ['F','D']:
         if typ in _double_precision:

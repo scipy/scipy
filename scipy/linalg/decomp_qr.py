@@ -159,7 +159,7 @@ def qr_old(a, overwrite_a=False, lwork=None):
     """
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2:
-        raise ValueError, 'expected matrix'
+        raise ValueError('expected matrix')
     M,N = a1.shape
     overwrite_a = overwrite_a or (_datanotshared(a1, a))
     geqrf, = get_lapack_funcs(('geqrf',), (a1,))

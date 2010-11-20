@@ -46,9 +46,9 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False
     """
     a1, b1 = map(asarray_chkfinite,(a,b))
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
-        raise ValueError, 'expected square matrix'
+        raise ValueError('expected square matrix')
     if a1.shape[0] != b1.shape[0]:
-        raise ValueError, 'incompatible dimensions'
+        raise ValueError('incompatible dimensions')
     overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
     overwrite_b = overwrite_b or (b1 is not b and not hasattr(b,'__array__'))
     if debug:
@@ -114,9 +114,9 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
 
     a1, b1 = map(asarray_chkfinite,(a,b))
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
-        raise ValueError, 'expected square matrix'
+        raise ValueError('expected square matrix')
     if a1.shape[0] != b1.shape[0]:
-        raise ValueError, 'incompatible dimensions'
+        raise ValueError('incompatible dimensions')
     overwrite_b = overwrite_b or (b1 is not b and not hasattr(b,'__array__'))
     if debug:
         print 'solve:overwrite_b=',overwrite_b
@@ -408,7 +408,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
     """
     a1, b1 = map(asarray_chkfinite, (a, b))
     if len(a1.shape) != 2:
-        raise ValueError, 'expected matrix'
+        raise ValueError('expected matrix')
     m, n = a1.shape
     if len(b1.shape) == 2:
         nrhs = b1.shape[1]
