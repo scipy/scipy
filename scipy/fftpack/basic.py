@@ -6,7 +6,7 @@ Discrete Fourier Transforms - basic.py
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2']
 
-from numpy import zeros, swapaxes, integer, array
+from numpy import zeros, swapaxes
 import numpy
 import _fftpack
 
@@ -316,7 +316,7 @@ def rfft(x, n=None, axis=-1, overwrite_x=0):
     tmp = _asfarray(x)
 
     if not numpy.isrealobj(tmp):
-        raise TypeError,"1st argument must be real sequence"
+        raise TypeError("1st argument must be real sequence")
 
     try:
         work_function = _DTYPE_TO_RFFT[tmp.dtype]
@@ -349,7 +349,7 @@ def irfft(x, n=None, axis=-1, overwrite_x=0):
     """
     tmp = _asfarray(x)
     if not numpy.isrealobj(tmp):
-        raise TypeError,"1st argument must be real sequence"
+        raise TypeError("1st argument must be real sequence")
 
     try:
         work_function = _DTYPE_TO_RFFT[tmp.dtype]

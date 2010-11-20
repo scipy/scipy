@@ -180,7 +180,7 @@ def _dct(x, type, n=None, axis=-1, overwrite_x=0, normalize=None):
     """
     tmp = np.asarray(x)
     if not np.isrealobj(tmp):
-        raise TypeError,"1st argument must be real sequence"
+        raise TypeError("1st argument must be real sequence")
 
     if n is None:
         n = tmp.shape[axis]
