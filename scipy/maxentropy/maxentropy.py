@@ -71,9 +71,12 @@ variances.
 
 import math, types, cPickle
 import numpy as np
+from numpy import exp, asarray
 from scipy import optimize
 from scipy.linalg import norm
-from scipy.maxentropy.maxentutils import *
+from scipy.maxentropy.maxentutils import logsumexp, arrayexp, \
+        innerprod, innerprodtranspose, columnmeans, columnvariances, \
+        flatten, DivergenceError, sparsefeaturematrix
 
 
 class basemodel(object):
