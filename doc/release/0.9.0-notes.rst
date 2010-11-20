@@ -123,3 +123,6 @@ Removed features
 
 The deprecated modules ``helpdmod``, ``pexec`` and ``ppimport`` were removed
 from ``scipy.misc``.
+
+The ``save`` method of the ``spmatrix`` class in ``scipy.sparse``, which has
+been deprecated since version 0.7, was removed.

@@ -587,25 +587,6 @@ class spmatrix(object):
             for i,v in enumerate(values[:max_index]):
                 self[i, i + k] = v
 
-    def save(self, file_name, format = '%d %d %f\n'):
-        #deprecated on Dec 14 2007
-        #remove after 0.7 release
-        warn('save() is deprecated, consider using mmwrite() or savemat()' \
-                ' provided by scipy.io instead',
-                DeprecationWarning)
-        try:
-            fd = open(file_name, 'w')
-        except Exception, e:
-            raise e, file_name
-
-        fd.write('%d %d\n' % self.shape)
-        fd.write('%d\n' % self.size)
-        for ii in xrange(self.size):
-            ir, ic = self.rowcol(ii)
-            data = self.getdata(ii)
-            fd.write(format % (ir, ic, data))
-        fd.close()
-
 
 from sputils import _isinstance
 
