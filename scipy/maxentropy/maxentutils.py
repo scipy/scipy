@@ -261,7 +261,7 @@ def sparsefeaturematrix(f, sample, format='csc_matrix'):
     elif format in ('dok_matrix', 'csc_matrix', 'csr_matrix'):
         sparseF = sparse.dok_matrix((m, n))
     else:
-        raise ValueError, "sparse matrix format not recognized"
+        raise ValueError("sparse matrix format not recognized")
 
     for i in xrange(m):
         f_i = f[i]
@@ -327,7 +327,7 @@ def innerprod(A,v):
     except ValueError:
         (p, q) = vshape
     if n != p:
-        raise TypeError, "matrix dimensions are incompatible"
+        raise TypeError("matrix dimensions are incompatible")
     if isinstance(v, ndarray):
         try:
             # See if A is sparse
@@ -348,7 +348,7 @@ def innerprod(A,v):
     elif sparse.isspmatrix(v):
         return A * v
     else:
-        raise TypeError, "unsupported types for inner product"
+        raise TypeError("unsupported types for inner product")
 
 
 def innerprodtranspose(A,v):
@@ -374,8 +374,8 @@ def innerprodtranspose(A,v):
             innerprod = numpy.empty(n, float)
             A.matvec_transp(v, innerprod)
         else:
-            raise TypeError, "innerprodtranspose(A,v) requires that v be " \
-                    "a vector (rank-1 dense array) if A is sparse."
+            raise TypeError("innerprodtranspose(A,v) requires that v be "
+                    "a vector (rank-1 dense array) if A is sparse.")
         return innerprod
     elif sparse.isspmatrix(A):
         return A.rmatvec(v).transpose()
@@ -396,7 +396,7 @@ def innerprodtranspose(A,v):
                 x = numpy.dot(numpy.transpose(v), A)
                 return numpy.transpose(x)
         else:
-            raise TypeError, "unsupported types for inner product"
+            raise TypeError("unsupported types for inner product")
 
 
 def rowmeans(A):
@@ -421,8 +421,8 @@ def rowmeans(A):
         try:
             n = A.shape[1]
         except AttributeError:
-            raise TypeError, \
-                    "rowmeans() only works with sparse and dense arrays"
+            raise TypeError("rowmeans() only works with sparse and dense "
+                            "arrays")
         rowsum = innerprod(A, numpy.ones(n, float))
         return rowsum / float(n)
 
@@ -448,8 +448,8 @@ def columnmeans(A):
         try:
             m = A.shape[0]
         except AttributeError:
-            raise TypeError, \
-                    "columnmeans() only works with sparse and dense arrays"
+            raise TypeError("columnmeans() only works with sparse and dense "
+                            "arrays")
         columnsum = innerprodtranspose(A, numpy.ones(m, float))
         return columnsum / float(m)
 
@@ -475,8 +475,8 @@ def columnvariances(A):
         try:
             m = A.shape[0]
         except AttributeError:
-            raise TypeError, \
-                    "columnvariances() only works with sparse and dense arrays"
+            raise TypeError("columnvariances() only works with sparse "
+                            "and dense arrays")
         means = columnmeans(A)
         return columnmeans((A-means)**2) * (m/(m-1.0))
 
