@@ -295,7 +295,7 @@ def get_catalog(module_path,mode='r'):
     """
     if mode not in ['c','r','w','n']:
         msg = " mode must be 'c', 'n', 'r', or 'w'.  See anydbm for more info"
-        raise ValueError, msg
+        raise ValueError(msg)
     catalog_file = catalog_path(module_path)
     if (catalog_file is not None) \
            and ((dumb and os.path.exists(catalog_file+'.dat')) \
@@ -680,7 +680,7 @@ class catalog(object):
                 os.remove(f)
             cat = get_catalog(cat_dir,mode)
         if cat is None:
-            raise ValueError, 'Failed to access a catalog for storing functions'
+            raise ValueError('Failed to access a catalog for storing functions')
         # Prabhu was getting some corrupt catalog errors.  I'll put a try/except
         # to protect against this, but should really try and track down the issue.
         function_list = [function]

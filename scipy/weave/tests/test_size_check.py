@@ -124,7 +124,7 @@ class TestDummyArrayIndexing(TestCase):
             if 0 not in desired:
                 msg = '%s raised IndexError in dummy_array, but forms\n' \
                       'valid array shape -> %s' % (expr, str(desired))
-                raise AttributeError, msg
+                raise AttributeError(msg)
     def generic_1d(self,expr):
         a = np.arange(10)
         self.generic_wrap(a,expr)

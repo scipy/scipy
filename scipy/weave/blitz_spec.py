@@ -101,7 +101,7 @@ class array_converter(standard_array_spec.array_converter):
         if new_spec.dims > 11:
             msg = "Error converting variable '" + name + "'.  " \
                   "blitz only supports arrays up to 11 dimensions."
-            raise ValueError, msg
+            raise ValueError(msg)
         return new_spec
 
     def template_vars(self,inline=0):

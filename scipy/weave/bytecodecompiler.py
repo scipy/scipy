@@ -987,7 +987,7 @@ class CXXCoder(ByteCodeMeaning):
             if module and id(module.__dict__) == myHash:
                 break
         else:
-            raise ValueError,'Cannot locate module owning %s'%var_name
+            raise ValueError('Cannot locate module owning %s' % var_name)
         return module_name,var_name
 
 
@@ -1157,7 +1157,7 @@ class CXXCoder(ByteCodeMeaning):
         for VV,TT in map(None, self.stack, self.types):
             print VV,':',TT
         if t is None:
-            raise TypeError,'%s used before set?'%v
+            raise TypeError('%s used before set?' % v)
             print self.__body
             print 'PC',pc
         self.push(v,t)
@@ -1288,7 +1288,7 @@ class CXXCoder(ByteCodeMeaning):
             self.types[var_num] = t
             return
 
-        raise TypeError,(t,saveT)
+        raise TypeError((t,saveT))
 
     ##################################################################
     #                      MEMBER STORE_GLOBAL                       #
@@ -1364,7 +1364,7 @@ class CXXCoder(ByteCodeMeaning):
             )
         self.post(pc+delta,action)
         if not isinstance(t, int):
-            raise TypeError, 'Invalid comparison type %s'%t
+            raise TypeError('Invalid comparison type %s' % t)
         self.emit('if (%s) {\n'%v)
 
 
@@ -1386,7 +1386,7 @@ class CXXCoder(ByteCodeMeaning):
         if hasattr(self,'rtype'):
             if t is None:
                 return # just the extra return
-            raise ValueError,'multiple returns: (v=%s, t=%s)' % (v, t)
+            raise ValueError('multiple returns: (v=%s, t=%s)' % (v, t))
         self.rtype = t
         if t is None:
             self.emit('return;')

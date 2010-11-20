@@ -113,7 +113,7 @@ def get_compiler_dir(compiler_name):
     exe_name = compiler_exe_name(compiler_obj)
     exe_path = compiler_exe_path(exe_name)
     if not exe_path:
-        raise ValueError, "The '%s' compiler was not found." % compiler_name
+        raise ValueError("The '%s' compiler was not found." % compiler_name)
     chk_sum = check_sum(exe_path)
     restore_sys_argv()
 

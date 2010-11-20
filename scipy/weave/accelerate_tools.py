@@ -265,7 +265,7 @@ def lookup_type(x):
         elif issubclass(T, InstanceType):
             return Instance(x)
         else:
-            raise NotImplementedError,T
+            raise NotImplementedError(T)
 
 ##################################################################
 #                        class ACCELERATE                        #
@@ -332,7 +332,7 @@ class accelerate(object):
         weave.build_tools.build_extension(self.module.__name__+'_weave.cpp',verbose=2)
 
         if accelerated_module:
-            raise NotImplementedError,'Reload'
+            raise NotImplementedError('Reload')
         else:
             accelerated_module = __import__(self.module.__name__+'_weave')
 
@@ -356,10 +356,10 @@ class accelerate(object):
 
     def code(self,*args):
         if len(args) != self.function.func_code.co_argcount:
-            raise TypeError,'%s() takes exactly %d arguments (%d given)'%(
-                self.function.__name__,
-                self.function.func_code.co_argcount,
-                len(args))
+            raise TypeError('%s() takes exactly %d arguments (%d given)' %
+                        (self.function.__name__,
+                         self.function.func_code.co_argcount,
+                         len(args)))
         signature = tuple( map(lookup_type,args) )
         ident = self.function.__name__
         return self.accelerate(signature,ident).function_code()

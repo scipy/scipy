@@ -327,13 +327,13 @@ def inline(code,arg_names=[],local_dict = None, global_dict = None,
             if msg[:16] == "Conversion Error":
                 pass
             else:
-                raise TypeError, msg
+                raise TypeError(msg)
         except NameError, msg:
             msg = str(msg).strip()
             if msg[:16] == "Conversion Error":
                 pass
             else:
-                raise NameError, msg
+                raise NameError(msg)
         except KeyError:
             pass
         # 2. try function catalog
@@ -372,13 +372,13 @@ def attempt_function_call(code,local_dict,global_dict):
         if msg[:16] == "Conversion Error":
             pass
         else:
-            raise TypeError, msg
+            raise TypeError(msg)
     except NameError, msg:
         msg = str(msg).strip()
         if msg[:16] == "Conversion Error":
             pass
         else:
-            raise NameError, msg
+            raise NameError(msg)
     except KeyError:
         pass
     # 2. try catalog cache.
@@ -397,13 +397,13 @@ def attempt_function_call(code,local_dict,global_dict):
             if msg[:16] == "Conversion Error":
                 pass
             else:
-                raise TypeError, msg
+                raise TypeError(msg)
         except NameError, msg:
             msg = str(msg).strip()
             if msg[:16] == "Conversion Error":
                 pass
             else:
-                raise NameError, msg
+                raise NameError(msg)
     # 3. try persistent catalog
     module_dir = global_dict.get('__file__',None)
     function_list = function_catalog.get_functions(code,module_dir)
@@ -416,7 +416,7 @@ def attempt_function_call(code,local_dict,global_dict):
         except: # should specify argument types here.
             pass
     # if we get here, the function wasn't found
-    raise ValueError, 'function with correct signature not found'
+    raise ValueError('function with correct signature not found')
 
 def inline_function_code(code,arg_names,local_dict=None,
                          global_dict=None,auto_downcast = 1,

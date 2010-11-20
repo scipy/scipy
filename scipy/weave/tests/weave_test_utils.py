@@ -108,20 +108,17 @@ def move_file (src, dst,
         return dst
 
     if not isfile(src):
-        raise DistutilsFileError, \
-              "can't move '%s': not a regular file" % src
+        raise DistutilsFileError("can't move '%s': not a regular file" % src)
 
     if isdir(dst):
         dst = os.path.join(dst, basename(src))
     elif exists(dst):
-        raise DistutilsFileError, \
-              "can't move '%s': destination '%s' already exists" % \
-              (src, dst)
+        raise DistutilsFileError("can't move '%s': destination '%s' already "
+                                    "exists" % (src, dst))
 
     if not isdir(dirname(dst)):
-        raise DistutilsFileError, \
-              "can't move '%s': destination '%s' not a valid path" % \
-              (src, dst)
+        raise DistutilsFileError("can't move '%s': destination '%s' not a "
+                                    "valid path" % (src, dst))
 
     copy_it = 0
     try:
@@ -130,8 +127,8 @@ def move_file (src, dst,
         if num == errno.EXDEV:
             copy_it = 1
         else:
-            raise DistutilsFileError, \
-                  "couldn't move '%s' to '%s': %s" % (src, dst, msg)
+            raise DistutilsFileError("couldn't move '%s' to '%s': %s" %
+                                        (src, dst, msg))
 
     if copy_it:
         distutils.file_util.copy_file(src, dst)
@@ -142,9 +139,7 @@ def move_file (src, dst,
                 os.unlink(dst)
             except os.error:
                 pass
-            raise DistutilsFileError, \
-                  ("couldn't move '%s' to '%s' by copy/delete: " +
-                   "delete '%s' failed: %s") % \
-                  (src, dst, src, msg)
+            raise DistutilsFileError("couldn't move '%s' to '%s' by copy/delete: "
+                            "delete '%s' failed: %s" % (src, dst, src, msg))
 
     return dst

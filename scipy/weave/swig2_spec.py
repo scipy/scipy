@@ -266,7 +266,7 @@ class swig2_converter(common_base_converter):
         elif rv == 3:
             self.support_code.append(swigptr2.swigptr2_code_v3)
         else:
-            raise AssertionError, "Unsupported version of the SWIG runtime:", rv
+            raise AssertionError("Unsupported version of the SWIG runtime: %s" % rv)
 
         self.support_code.append(swig2_common_code)
 
@@ -339,7 +339,7 @@ class swig2_converter(common_base_converter):
         elif swig_ob_type == 'pyswig':
             pycobj = 2
         else:
-            raise AssertionError, "Does not look like a SWIG object: %s"%value
+            raise AssertionError("Does not look like a SWIG object: %s" % value)
 
         if pycobj:
             class_name = value.__class__.__name__

@@ -30,7 +30,7 @@ class base_converter(object):
     def set_compiler(self,compiler):
         self.compiler = compiler
     def type_match(self,value):
-        raise NotImplementedError, "You must override method in derived class"
+        raise NotImplementedError("You must override method in derived class")
     def build_information(self):
         return self._build_information
     def type_spec(self,name,value):

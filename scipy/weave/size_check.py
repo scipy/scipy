@@ -98,7 +98,7 @@ def binary_op_size(xx,yy):
             res[i] = x[i]
         else:
             # offer more information here about which variables.
-            raise ValueError, "frames are not aligned"
+            raise ValueError("frames are not aligned")
     return res
 
 class dummy_array(object):
@@ -170,14 +170,14 @@ class dummy_array(object):
         if not isinstance(indices, tuple):
             indices = (indices,)
         if Ellipsis in indices:
-            raise IndexError, "Ellipsis not currently supported"
+            raise IndexError("Ellipsis not currently supported")
         new_dims = []
         dim = 0
         for index in indices:
             try:
                 dim_len = self.shape[dim]
             except IndexError:
-                raise IndexError, "To many indices specified"
+                raise IndexError("To many indices specified")
 
             #if (type(index) is SliceType and index.start == index.stop == index.step):
             if (index is empty_slice):
@@ -237,11 +237,11 @@ class dummy_array(object):
                     #this reduces the array dimensions by one
                     pass
                 else:
-                    raise IndexError, "Index out of range"
+                    raise IndexError("Index out of range")
             dim += 1
         new_dims.extend(self.shape[dim:])
         if 0 in new_dims:
-            raise IndexError, "Zero length slices not currently supported"
+            raise IndexError("Zero length slices not currently supported")
         return dummy_array(new_dims,1)
     def __repr__(self):
         val = str((self.name, str(self.shape)))
@@ -269,7 +269,7 @@ def reduction(ary,axis=0):
     if axis < 0:
         axis += len(ary.shape)
     if axis < 0 or axis >= len(ary.shape):
-        raise ValueError, "Dimension not in array"
+        raise ValueError("Dimension not in array")
     new_dims = list(ary.shape[:axis]) + list(ary.shape[axis+1:])
     return dummy_array(new_dims,1)
 

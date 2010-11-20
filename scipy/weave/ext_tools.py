@@ -366,7 +366,7 @@ extern "C" {
                                               compiler_name = compiler,
                                               verbose = verbose, **kw)
         if not success:
-            raise SystemError, 'Compilation failed'
+            raise SystemError('Compilation failed')
 
 def generate_file_name(module_name,module_location):
     module_file = os.path.join(module_location,module_name)
@@ -420,7 +420,7 @@ def assign_variable_types(variables,local_dict = {}, global_dict = {},
             errors[var] = ("Unable to convert variable '"+ var +
                            "' to a C++ type.")
     if errors:
-        raise TypeError, format_error_msg(errors)
+        raise TypeError(format_error_msg(errors))
 
     if auto_downcast:
         variable_specs = downcast(variable_specs)

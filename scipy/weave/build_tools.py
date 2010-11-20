@@ -407,7 +407,7 @@ def configure_temp_dir(temp_dir=None):
     if not os.access(temp_dir,os.W_OK):
         msg = "Either the temp or build directory wasn't writable. Check" \
               " these locations: '%s'" % temp_dir
-        raise ValueError, msg
+        raise ValueError(msg)
     return temp_dir
 
 def configure_build_dir(build_dir=None):
@@ -434,7 +434,7 @@ def configure_build_dir(build_dir=None):
     if not os.access(build_dir,os.W_OK):
         msg = "The build directory wasn't writable. Check" \
               " this location: '%s'" % build_dir
-        raise ValueError, msg
+        raise ValueError(msg)
 
     return os.path.abspath(build_dir)
 
