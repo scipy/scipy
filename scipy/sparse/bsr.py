@@ -119,7 +119,7 @@ class bsr_matrix(_cs_matrix):
 
                 R,C = blocksize
                 if (M % R) != 0 or (N % C) != 0:
-                    raise ValueError, 'shape must be multiple of blocksize'
+                    raise ValueError('shape must be multiple of blocksize')
 
                 self.indptr  = np.zeros(M//R + 1, dtype=np.intc )
 
@@ -200,25 +200,23 @@ class bsr_matrix(_cs_matrix):
 
         # check array shapes
         if np.rank(self.indices) != 1 or np.rank(self.indptr) != 1:
-            raise ValueError,"indices, and indptr should be rank 1"
+            raise ValueError("indices, and indptr should be rank 1")
         if np.rank(self.data) != 3:
-            raise ValueError,"data should be rank 3"
+            raise ValueError("data should be rank 3")
 
         # check index pointer
         if (len(self.indptr) != M//R + 1 ):
-            raise ValueError, \
-                "index pointer size (%d) should be (%d)" % \
-                 (len(self.indptr), M//R + 1)
+            raise ValueError("index pointer size (%d) should be (%d)" %
+                                (len(self.indptr), M//R + 1))
         if (self.indptr[0] != 0):
-            raise ValueError,"index pointer should start with 0"
+            raise ValueError("index pointer should start with 0")
 
         # check index and data arrays
         if (len(self.indices) != len(self.data)):
-            raise ValueError,"indices and data should have the same size"
+            raise ValueError("indices and data should have the same size")
         if (self.indptr[-1] > len(self.indices)):
-            raise ValueError, \
-                  "Last value of index pointer should be less than "\
-                  "the size of index and data arrays"
+            raise ValueError("Last value of index pointer should be less than "
+                                "the size of index and data arrays")
 
         self.prune()
 
@@ -227,12 +225,12 @@ class bsr_matrix(_cs_matrix):
             if self.nnz > 0:
                 if self.indices.max() >= N//C:
                     print "max index",self.indices.max()
-                    raise ValueError, "column index values must be < %d" % (N//C)
+                    raise ValueError("column index values must be < %d" % (N//C))
                 if self.indices.min() < 0:
-                    raise ValueError, "column index values must be >= 0"
+                    raise ValueError("column index values must be >= 0")
                 if diff(self.indptr).min() < 0:
-                    raise ValueError,'index pointer values must form a " \
-                                        "non-decreasing sequence'
+                    raise ValueError("index pointer values must form a "
+                                        "non-decreasing sequence")
 
         #if not self.has_sorted_indices():
         #    warn('Indices were not in sorted order. Sorting indices.')
@@ -475,14 +473,14 @@ class bsr_matrix(_cs_matrix):
         M,N = self.shape
 
         if len(self.indptr) != M//R + 1:
-            raise ValueError, "index pointer has invalid length"
+            raise ValueError("index pointer has invalid length")
 
         bnnz = self.indptr[-1]
 
         if len(self.indices) < bnnz:
-            raise ValueError, "indices array has too few elements"
+            raise ValueError("indices array has too few elements")
         if len(self.data) < bnnz:
-            raise ValueError, "data array has too few elements"
+            raise ValueError("data array has too few elements")
 
         self.data    = self.data[:bnnz]
         self.indices = self.indices[:bnnz]

@@ -57,16 +57,16 @@ class _cs_matrix(_data_matrix):
                     self.indptr  = np.array(indptr, copy=copy)
                     self.data    = np.array(data, copy=copy, dtype=getdtype(dtype, data))
                 else:
-                    raise ValueError, "unrecognized %s_matrix constructor usage" %\
-                            self.format
+                    raise ValueError("unrecognized %s_matrix constructor usage" %
+                            self.format)
 
         else:
             #must be dense
             try:
                 arg1 = np.asarray(arg1)
             except:
-                raise ValueError, "unrecognized %s_matrix constructor usage" % \
-                        self.format
+                raise ValueError("unrecognized %s_matrix constructor usage" %
+                        self.format)
             from coo import coo_matrix
             self._set_self( self.__class__(coo_matrix(arg1, dtype=dtype)) )
 
@@ -80,7 +80,7 @@ class _cs_matrix(_data_matrix):
                     major_dim = len(self.indptr) - 1
                     minor_dim = self.indices.max() + 1
                 except:
-                    raise ValueError,'unable to infer matrix dimensions'
+                    raise ValueError('unable to infer matrix dimensions')
                 else:
                     self.shape = self._swap((major_dim,minor_dim))
 
@@ -139,19 +139,17 @@ class _cs_matrix(_data_matrix):
 
         # check index pointer
         if (len(self.indptr) != major_dim + 1 ):
-            raise ValueError, \
-                "index pointer size (%d) should be (%d)" % \
-                 (len(self.indptr), major_dim + 1)
+            raise ValueError("index pointer size (%d) should be (%d)" %
+                                (len(self.indptr), major_dim + 1))
         if (self.indptr[0] != 0):
-            raise ValueError,"index pointer should start with 0"
+            raise ValueError("index pointer should start with 0")
 
         # check index and data arrays
         if (len(self.indices) != len(self.data)):
-            raise ValueError,"indices and data should have the same size"
+            raise ValueError("indices and data should have the same size")
         if (self.indptr[-1] > len(self.indices)):
-            raise ValueError, \
-                  "Last value of index pointer should be less than "\
-                  "the size of index and data arrays"
+            raise ValueError("Last value of index pointer should be less than "
+                                "the size of index and data arrays")
 
         self.prune()
 
@@ -159,14 +157,14 @@ class _cs_matrix(_data_matrix):
             #check format validity (more expensive)
             if self.nnz > 0:
                 if self.indices.max() >= minor_dim:
-                    raise ValueError, "%s index values must be < %d" % \
-                            (minor_name,minor_dim)
+                    raise ValueError("%s index values must be < %d" %
+                                        (minor_name,minor_dim))
                 if self.indices.min() < 0:
-                    raise ValueError, "%s index values must be >= 0" % \
-                            minor_name
+                    raise ValueError("%s index values must be >= 0" %
+                                        minor_name)
                 if np.diff(self.indptr).min() < 0:
-                    raise ValueError,'index pointer values must form a " \
-                                        "non-decreasing sequence'
+                    raise ValueError("index pointer values must form a "
+                                        "non-decreasing sequence")
 
         #if not self.has_sorted_indices():
         #    warn('Indices were not in sorted order.  Sorting indices.')
@@ -179,11 +177,11 @@ class _cs_matrix(_data_matrix):
         # First check if argument is a scalar
         if isscalarlike(other):
             # Now we would add this scalar to every element.
-            raise NotImplementedError, 'adding a scalar to a CSC or CSR ' \
-                  'matrix is not supported'
+            raise NotImplementedError('adding a scalar to a CSC or CSR '
+                                        'matrix is not supported')
         elif isspmatrix(other):
             if (other.shape != self.shape):
-                raise ValueError, "inconsistent shapes"
+                raise ValueError("inconsistent shapes")
 
             return self._binopt(other,'_plus_')
         elif isdense(other):
@@ -199,11 +197,11 @@ class _cs_matrix(_data_matrix):
         # First check if argument is a scalar
         if isscalarlike(other):
             # Now we would add this scalar to every element.
-            raise NotImplementedError, 'adding a scalar to a sparse ' \
-                  'matrix is not supported'
+            raise NotImplementedError('adding a scalar to a sparse '
+                                        'matrix is not supported')
         elif isspmatrix(other):
             if (other.shape != self.shape):
-                raise ValueError, "inconsistent shapes"
+                raise ValueError("inconsistent shapes")
 
             return self._binopt(other,'_minus_')
         elif isdense(other):
@@ -216,8 +214,8 @@ class _cs_matrix(_data_matrix):
         #note: this can't be replaced by other + (-self) for unsigned types
         if isscalarlike(other):
             # Now we would add this scalar to every element.
-            raise NotImplementedError, 'adding a scalar to a sparse ' \
-                  'matrix is not supported'
+            raise NotImplementedError('adding a scalar to a sparse '
+                                        'matrix is not supported')
         elif isdense(other):
             # Convert this matrix to a dense matrix and subtract them
             return other - self.todense()
@@ -330,7 +328,7 @@ class _cs_matrix(_data_matrix):
             return self.data.sum()
         else:
             return spmatrix.sum(self,axis)
-            raise ValueError, "axis out of bounds"
+            raise ValueError("axis out of bounds")
 
     #######################
     # Getting and Setting #
@@ -361,7 +359,7 @@ class _cs_matrix(_data_matrix):
         elif isintlike(key):
             return self[key, :]
         else:
-            raise IndexError, "invalid index"
+            raise IndexError("invalid index")
 
 
     def _get_single_element(self,row,col):
@@ -395,9 +393,9 @@ class _cs_matrix(_data_matrix):
             [start:stop:string, i] for column-oriented matrices
         """
         if stride != 1:
-            raise ValueError, "slicing with step != 1 not supported"
+            raise ValueError("slicing with step != 1 not supported")
         if stop <= start:
-            raise ValueError, "slice width must be >= 1"
+            raise ValueError("slice width must be >= 1")
 
         #TODO make [i,:] faster
         #TODO implement [i,x:y:z]
@@ -445,9 +443,8 @@ class _cs_matrix(_data_matrix):
 
         def _in_bounds( i0, i1, num ):
             if not (0<=i0<num) or not (0<i1<=num) or not (i0<i1):
-                raise IndexError,\
-                      "index out of bounds: 0<=%d<%d, 0<=%d<%d, %d<%d" %\
-                      (i0, num, i1, num, i0, i1)
+                raise IndexError("index out of bounds: 0<=%d<%d, 0<=%d<%d, %d<%d" %
+                                    (i0, num, i1, num, i0, i1))
 
         i0, i1 = _process_slice( slice0, shape0 )
         j0, j1 = _process_slice( slice1, shape1 )
@@ -477,7 +474,7 @@ class _cs_matrix(_data_matrix):
             if (col < 0):
                 col += N
             if not (0<=row<M) or not (0<=col<N):
-                raise IndexError, "index out of bounds"
+                raise IndexError("index out of bounds")
 
             major_index, minor_index = self._swap((row,col))
 
@@ -519,12 +516,13 @@ class _cs_matrix(_data_matrix):
                 self.data[start:end][indxs[0]] = val
             else:
                 #entry appears more than once
-                raise ValueError,'nonzero entry (%d,%d) occurs more than once' % (row,col)
+                raise ValueError('nonzero entry (%d,%d) occurs more than once'
+                                % (row,col))
 
             self.check_format(full_check=True)
         else:
             # We should allow slices here!
-            raise IndexError, "invalid index"
+            raise IndexError("invalid index")
 
     ######################
     # Conversion methods #

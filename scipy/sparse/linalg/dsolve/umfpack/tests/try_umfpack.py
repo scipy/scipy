@@ -83,7 +83,7 @@ def readMatrix( matrixName, options ):
     try:
         readMatrix = formatMap[options.format]
     except:
-        raise ValueError, 'unsupported format: %s' % options.format
+        raise ValueError('unsupported format: %s' % options.format)
 
     print 'format:', options.format
 
@@ -180,7 +180,7 @@ def main():
         try:
             import pylab
         except ImportError:
-            raise ImportError, "could not import pylab"
+            raise ImportError("could not import pylab")
         times = np.array( times )
         print times
         pylab.plot( times[:,0], 'b-o' )

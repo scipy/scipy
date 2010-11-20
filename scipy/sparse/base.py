@@ -52,8 +52,8 @@ class spmatrix(object):
         self.format = self.__class__.__name__[:3]
         self._shape = None
         if self.format == 'spm':
-            raise ValueError, "This class is not intended" \
-                  " to be instantiated directly."
+            raise ValueError("This class is not intended"
+                            " to be instantiated directly.")
         self.maxprint = maxprint
 
     def set_shape(self,shape):
@@ -101,8 +101,8 @@ class spmatrix(object):
                 if self.dtype <= np.dtype(fp_type):
                     return self.astype(fp_type)
 
-            raise TypeError,'cannot upcast [%s] to a floating \
-                             point format' % self.dtype.name
+            raise TypeError('cannot upcast [%s] to a floating '
+                             'point format' % self.dtype.name)
 
     def __iter__(self):
         for r in xrange(self.shape[0]):
@@ -126,7 +126,7 @@ class spmatrix(object):
         try:
             return self.nnz
         except AttributeError:
-            raise AttributeError, "nnz not defined"
+            raise AttributeError("nnz not defined")
 
     def getformat(self):
         try:
@@ -187,8 +187,8 @@ class spmatrix(object):
     # non-zeros is more important.  For now, raise an exception!
     def __len__(self):
         # return self.getnnz()
-        raise TypeError, "sparse matrix length is ambiguous; use getnnz()" \
-                         " or shape[0]"
+        raise TypeError("sparse matrix length is ambiguous; use getnnz()"
+                         " or shape[0]")
 
     def asformat(self, format):
         """Return this matrix in a given sparse format
@@ -426,7 +426,7 @@ class spmatrix(object):
         elif attr == 'size':
             return self.getnnz()
         else:
-            raise AttributeError, attr + " not found"
+            raise AttributeError(attr + " not found")
 
     def transpose(self):
         return self.tocsr().transpose()
@@ -541,7 +541,7 @@ class spmatrix(object):
             # sum over rows and columns
             return ( self * np.asmatrix(np.ones((n, 1), dtype=self.dtype)) ).sum()
         else:
-            raise ValueError, "axis out of bounds"
+            raise ValueError("axis out of bounds")
 
     def mean(self, axis=None):
         """Average the matrix over the given axis.  If the axis is None,
@@ -558,7 +558,7 @@ class spmatrix(object):
         elif axis is None:
             return self.sum(None) * 1.0 / (self.shape[0]*self.shape[1])
         else:
-            raise ValueError, "axis out of bounds"
+            raise ValueError("axis out of bounds")
 
     def diagonal(self):
         """Returns the main diagonal of the matrix
@@ -577,7 +577,7 @@ class spmatrix(object):
         """
         M, N = self.shape
         if (k > 0 and k >= N) or (k < 0 and -k >= M):
-            raise ValueError, "k exceedes matrix dimensions"
+            raise ValueError("k exceedes matrix dimensions")
         if k < 0:
             max_index = min(M+k, N, len(values))
             for i,v in enumerate(values[:max_index]):

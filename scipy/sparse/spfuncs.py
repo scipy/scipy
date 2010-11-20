@@ -41,7 +41,7 @@ def estimate_blocksize(A,efficiency=0.7):
         return (1,1)
 
     if not 0 < efficiency < 1.0:
-        raise ValueError,'efficiency must satisfy 0.0 < efficiency < 1.0'
+        raise ValueError('efficiency must satisfy 0.0 < efficiency < 1.0')
 
     high_efficiency = (1.0 + efficiency) / 2.0
     nnz = float(A.nnz)
@@ -85,7 +85,7 @@ def count_blocks(A,blocksize):
     """
     r,c = blocksize
     if r < 1 or c < 1:
-        raise ValueError,'r and c must be positive'
+        raise ValueError('r and c must be positive')
 
     if isspmatrix_csr(A):
         M,N = A.shape

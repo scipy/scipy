@@ -174,8 +174,8 @@ class dok_matrix(spmatrix, dict):
                     ###################################
                     # We should reshape the new matrix here!
                     ###################################
-                    raise NotImplementedError, "fancy indexing supported over" \
-                            " one axis only"
+                    raise NotImplementedError("fancy indexing supported over"
+                            " one axis only")
                 return new
 
             # Below here, j is a sequence, but i is an integer
@@ -186,14 +186,14 @@ class dok_matrix(spmatrix, dict):
                 seq = j
             else:
                 # j is not an integer
-                raise TypeError, "index must be a pair of integers or slices"
+                raise TypeError("index must be a pair of integers or slices")
 
             # Create a new matrix of the correct dimensions
             first = seq[0]
             last = seq[-1]
             if first < 0 or first >= self.shape[1] or last < 0 \
                          or last >= self.shape[1]:
-                raise IndexError, "index out of bounds"
+                raise IndexError("index out of bounds")
             newshape = (1, last-first+1)
             new = dok_matrix(newshape)
             # ** This uses linear time in the size n of dimension 1:
@@ -212,7 +212,7 @@ class dok_matrix(spmatrix, dict):
         try:
             i, j = key
         except (ValueError, TypeError):
-            raise TypeError, "index must be a pair of integers or slices"
+            raise TypeError("index must be a pair of integers or slices")
 
         # First deal with the case where both i and j are integers
         if isintlike(i) and isintlike(j):
@@ -222,7 +222,7 @@ class dok_matrix(spmatrix, dict):
                 j += self.shape[1]
 
             if i < 0 or i >= self.shape[0] or j < 0 or j >= self.shape[1]:
-                raise IndexError, "index out of bounds"
+                raise IndexError("index out of bounds")
 
             if np.isscalar(value):
                 if value==0 and self.has_key((i,j)):
@@ -243,7 +243,7 @@ class dok_matrix(spmatrix, dict):
             else:
                 # Make sure i is an integer. (But allow it to be a subclass of int).
                 if not isintlike(i):
-                    raise TypeError, "index must be a pair of integers or slices"
+                    raise TypeError("index must be a pair of integers or slices")
                 seq = None
             if seq is not None:
                 # First see if 'value' is another dok_matrix of the appropriate
@@ -253,8 +253,8 @@ class dok_matrix(spmatrix, dict):
                         for element in seq:
                             self[element, j] = value[element, 0]
                     else:
-                        raise NotImplementedError, "setting a 2-d slice of" \
-                                " a dok_matrix is not yet supported"
+                        raise NotImplementedError("setting a 2-d slice of"
+                                " a dok_matrix is not yet supported")
                 elif np.isscalar(value):
                     for element in seq:
                         self[element, j] = value
@@ -262,12 +262,12 @@ class dok_matrix(spmatrix, dict):
                     # See if value is a sequence
                     try:
                         if len(seq) != len(value):
-                            raise ValueError, "index and value ranges must" \
-                                              " have the same length"
+                            raise ValueError("index and value ranges must"
+                                              " have the same length")
                     except TypeError:
                         # Not a sequence
-                        raise TypeError, "unsupported type for" \
-                                         " dok_matrix.__setitem__"
+                        raise TypeError("unsupported type for"
+                                         " dok_matrix.__setitem__")
 
                     # Value is a sequence
                     for element, val in izip(seq, value):
@@ -283,7 +283,7 @@ class dok_matrix(spmatrix, dict):
                     seq = j
                 else:
                     # j is not an integer
-                    raise TypeError, "index must be a pair of integers or slices"
+                    raise TypeError("index must be a pair of integers or slices")
 
                 # First see if 'value' is another dok_matrix of the appropriate
                 # dimensions
@@ -292,8 +292,8 @@ class dok_matrix(spmatrix, dict):
                         for element in seq:
                             self[i, element] = value[0, element]
                     else:
-                        raise NotImplementedError, "setting a 2-d slice of" \
-                                " a dok_matrix is not yet supported"
+                        raise NotImplementedError("setting a 2-d slice of"
+                                " a dok_matrix is not yet supported")
                 elif np.isscalar(value):
                     for element in seq:
                         self[i, element] = value
@@ -301,11 +301,11 @@ class dok_matrix(spmatrix, dict):
                     # See if value is a sequence
                     try:
                         if len(seq) != len(value):
-                            raise ValueError, "index and value ranges must have" \
-                                              " the same length"
+                            raise ValueError("index and value ranges must have"
+                                              " the same length")
                     except TypeError:
                         # Not a sequence
-                        raise TypeError, "unsupported type for dok_matrix.__setitem__"
+                        raise TypeError("unsupported type for dok_matrix.__setitem__")
                     else:
                         for element, val in izip(seq, value):
                             self[i, element] = val
@@ -325,7 +325,7 @@ class dok_matrix(spmatrix, dict):
             #new.dtype.char = self.dtype.char
         elif isinstance(other, dok_matrix):
             if other.shape != self.shape:
-                raise ValueError, "matrix dimensions are not equal"
+                raise ValueError("matrix dimensions are not equal")
             # We could alternatively set the dimensions to the the largest of
             # the two matrices to be summed.  Would this be a good idea?
             new = dok_matrix(self.shape, dtype=self.dtype)
@@ -338,7 +338,7 @@ class dok_matrix(spmatrix, dict):
         elif isdense(other):
             new = self.todense() + other
         else:
-            raise TypeError, "data type not understood"
+            raise TypeError("data type not understood")
         return new
 
     def __radd__(self, other):
@@ -354,7 +354,7 @@ class dok_matrix(spmatrix, dict):
                         new[i, j] = aij
         elif isinstance(other, dok_matrix):
             if other.shape != self.shape:
-                raise ValueError, "matrix dimensions are not equal"
+                raise ValueError("matrix dimensions are not equal")
             new = dok_matrix(self.shape, dtype=self.dtype)
             new.update(self)
             for key in other:
@@ -365,7 +365,7 @@ class dok_matrix(spmatrix, dict):
         elif isdense(other):
             new = other + self.todense()
         else:
-            raise TypeError, "data type not understood"
+            raise TypeError("data type not understood")
         return new
 
     def __neg__(self):
@@ -534,8 +534,8 @@ class dok_matrix(spmatrix, dict):
         non-zero elements that lie outside.
         """
         if not isshape(shape):
-            raise TypeError, "dimensions must be a 2-tuple of positive"\
-                             " integers"
+            raise TypeError("dimensions must be a 2-tuple of positive"
+                             " integers")
         newM, newN = shape
         M, N = self.shape
         if newM < M or newN < N:

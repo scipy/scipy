@@ -315,9 +315,9 @@ class csr_matrix(_cs_matrix):
         start, stop, stride = cslice.indices(self.shape[1])
 
         if stride != 1:
-            raise ValueError, "slicing with step != 1 not supported"
+            raise ValueError("slicing with step != 1 not supported")
         if stop <= start:
-            raise ValueError, "slice width must be >= 1"
+            raise ValueError("slice width must be >= 1")
 
         #TODO make [i,:] faster
         #TODO implement [i,x:y:z]

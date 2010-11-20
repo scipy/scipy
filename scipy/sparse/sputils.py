@@ -44,7 +44,7 @@ def upcast(*args):
         if np.can_cast(sample.dtype,t):
             return t
 
-    raise TypeError,'no supported conversion for types: %s' % args
+    raise TypeError('no supported conversion for types: %s' % args)
 
 
 def to_native(A):
@@ -68,7 +68,7 @@ def getdtype(dtype, a=None, default=None):
                 newdtype = np.dtype(default)
                 canCast = False
             else:
-                raise TypeError, "could not interpret data type"
+                raise TypeError("could not interpret data type")
     else:
         newdtype = np.dtype(dtype)
 

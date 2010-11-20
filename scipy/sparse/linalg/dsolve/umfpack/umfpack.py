@@ -277,7 +277,7 @@ class UmfpackContext( Struct ):
         Struct.__init__( self, **kwargs )
 
         if family not in umfFamilyTypes.keys():
-            raise TypeError, 'wrong family: %s' % family
+            raise TypeError('wrong family: %s' % family)
 
         self.family = family
         self.control = np.zeros( (UMFPACK_CONTROL, ), dtype = np.double )
@@ -328,25 +328,25 @@ class UmfpackContext( Struct ):
             indx = mtx.indices
             self.isCSR = 1
         else:
-            raise TypeError, 'must be a CSC/CSR matrix (is %s)' % mtx.__class__
+            raise TypeError('must be a CSC/CSR matrix (is %s)' % mtx.__class__)
 
         ##
         # Should check types of indices to correspond to familyTypes.
         if self.family[1] == 'i':
             if (indx.dtype != np.dtype('i')) \
                    or mtx.indptr.dtype != np.dtype('i'):
-                raise ValueError, 'matrix must have int indices'
+                raise ValueError('matrix must have int indices')
         else:
             if (indx.dtype != np.dtype('l')) \
                    or mtx.indptr.dtype != np.dtype('l'):
-                raise ValueError, 'matrix must have long indices'
+                raise ValueError('matrix must have long indices')
 
         if self.isReal:
             if mtx.data.dtype != np.dtype('<f8'):
-                raise ValueError, 'matrix must have float64 values'
+                raise ValueError('matrix must have float64 values')
         else:
             if mtx.data.dtype != np.dtype('<c16'):
-                raise ValueError, 'matrix must have complex128 values'
+                raise ValueError('matrix must have complex128 values')
 
         return indx
 
@@ -379,8 +379,8 @@ class UmfpackContext( Struct ):
 ##         print status, self._symbolic
 
         if status != UMFPACK_OK:
-            raise RuntimeError, '%s failed with %s' % (self.funs.symbolic,
-                                                       umfStatus[status])
+            raise RuntimeError('%s failed with %s' % (self.funs.symbolic,
+                                                       umfStatus[status]))
 
         self.mtx = mtx
 
@@ -432,8 +432,8 @@ class UmfpackContext( Struct ):
             else:
                 break
             if failCount >= 2:
-                raise RuntimeError, '%s failed with %s' % (self.funs.numeric,
-                                                           umfStatus[status])
+                raise RuntimeError('%s failed with %s' % (self.funs.numeric,
+                                                           umfStatus[status]))
 
     ##
     # 14.12.2005, c
@@ -507,7 +507,7 @@ class UmfpackContext( Struct ):
                       assumes CSC internally
         """
         if sys not in umfSys:
-            raise ValueError, 'sys must be in' % umfSys
+            raise ValueError('sys must be in' % umfSys)
 
         if autoTranspose and self.isCSR:
             ##
@@ -517,13 +517,13 @@ class UmfpackContext( Struct ):
             if sys in umfSys_transposeMap[ii]:
                 sys = umfSys_transposeMap[ii][sys]
             else:
-                raise RuntimeError, 'autoTranspose ambiguous, switch it off'
+                raise RuntimeError('autoTranspose ambiguous, switch it off')
 
         if self._numeric is not None:
             if self.mtx is not mtx:
-                raise ValueError, 'must be called with same matrix as numeric()'
+                raise ValueError('must be called with same matrix as numeric()')
         else:
-            raise RuntimeError, 'numeric() not called'
+            raise RuntimeError('numeric() not called')
 
         indx = self._getIndx( mtx )
 
@@ -551,8 +551,8 @@ class UmfpackContext( Struct ):
                 print 'zeroing nan and inf entries...'
                 sol[~np.isfinite( sol )] = 0.0
             else:
-                raise RuntimeError, '%s failed with %s' % (self.funs.solve,
-                                                           umfStatus[status])
+                raise RuntimeError('%s failed with %s' % (self.funs.solve,
+                                                           umfStatus[status]))
         econd = 1.0 / self.info[UMFPACK_RCOND]
         if econd > self.maxCond:
             print 'warning: (almost) singular matrix! '\
@@ -581,7 +581,7 @@ class UmfpackContext( Struct ):
 
 #        print self.family
         if sys not in umfSys:
-            raise ValueError, 'sys must be in' % umfSys
+            raise ValueError('sys must be in' % umfSys)
 
         if self._numeric is None:
             self.numeric( mtx )
@@ -646,8 +646,8 @@ class UmfpackContext( Struct ):
                  = self.funs.get_lunz( self._numeric )
 
         if status != UMFPACK_OK:
-            raise RuntimeError, '%s failed with %s' % (self.funs.get_lunz,
-                                                       umfStatus[status])
+            raise RuntimeError('%s failed with %s' % (self.funs.get_lunz,
+                                                       umfStatus[status]))
 
         #allocate storage for decomposition data
         i_type = mtx.indptr.dtype
@@ -673,8 +673,8 @@ class UmfpackContext( Struct ):
                                                        self._numeric )
 
             if status != UMFPACK_OK:
-                raise RuntimeError, '%s failed with %s'\
-                      % (self.funs.get_numeric, umfStatus[status])
+                raise RuntimeError('%s failed with %s'
+                        % (self.funs.get_numeric, umfStatus[status]))
 
             L = sp.csr_matrix((Lx,Lj,Lp),(n_row,min(n_row,n_col)))
             U = sp.csc_matrix((Ux,Ui,Up),(min(n_row,n_col),n_col))
@@ -693,8 +693,8 @@ class UmfpackContext( Struct ):
                                                       self._numeric)
 
             if status != UMFPACK_OK:
-                raise RuntimeError, '%s failed with %s'\
-                      % (self.funs.get_numeric, umfStatus[status])
+                raise RuntimeError('%s failed with %s'
+                        % (self.funs.get_numeric, umfStatus[status]))
 
 
             Lxz = np.zeros( (lnz,), dtype = np.complex128 )
