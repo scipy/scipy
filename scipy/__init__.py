@@ -77,7 +77,7 @@ __all__ = ['pkgload','test']
 
 from numpy import show_config as show_numpy_config
 if show_numpy_config is None:
-    raise ImportError,"Cannot import scipy when running from numpy source directory."
+    raise ImportError("Cannot import scipy when running from numpy source directory.")
 from numpy import __version__ as __numpy_version__
 
 # Import numpy symbols to scipy name space
