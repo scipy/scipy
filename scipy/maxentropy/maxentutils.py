@@ -24,7 +24,7 @@ import random
 import math
 import cmath
 import numpy
-from numpy import log, exp, asarray, ndarray
+from numpy import log, exp, asarray, ndarray, empty
 from scipy import sparse
 
 def logsumexp(a):
@@ -102,7 +102,7 @@ def robustlog(x):
 def _robustarraylog(x):
     """ An array version of robustlog.  Operates on a real array x.
     """
-    arraylog = emptyarray(len(x), numpy.Complex64)
+    arraylog = empty(len(x), numpy.complex64)
     for i in range(len(x)):
         xi = x[i]
         if xi > 0:
