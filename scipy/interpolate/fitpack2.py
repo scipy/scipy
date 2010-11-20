@@ -266,8 +266,8 @@ class UnivariateSpline(object):
             z,m,ier = dfitpack.sproot(*self._eval_args[:2])
             assert ier==0,`ier`
             return z[:m]
-        raise NotImplementedError,\
-              'finding roots unsupported for non-cubic splines'
+        raise NotImplementedError('finding roots unsupported for '
+                                    'non-cubic splines')
 
 class InterpolatedUnivariateSpline(UnivariateSpline):
     """
@@ -422,8 +422,8 @@ class LSQUnivariateSpline(UnivariateSpline):
         t = concatenate(([xb]*(k+1),t,[xe]*(k+1)))
         n = len(t)
         if not alltrue(t[k+1:n-k]-t[k:n-k-1] > 0,axis=0):
-            raise ValueError,\
-                  'Interior knots t must satisfy Schoenberg-Whitney conditions'
+            raise ValueError('Interior knots t must satisfy '
+                            'Schoenberg-Whitney conditions')
         data = dfitpack.fpcurfm1(x,y,k,t,w=w,xb=xb,xe=xe)
         self._data = data[:-3] + (None,None,data[-1])
         self._reset_class()
@@ -520,7 +520,7 @@ class BivariateSpline(object):
             z,ier = dfitpack.bispev(tx,ty,c,kx,ky,x,y)
             assert ier==0,'Invalid input: ier='+`ier`
             return z
-        raise NotImplementedError
+        raise NotImplementedError('unknown method mth=%s' % mth)
 
     def ev(self, xi, yi):
         """
@@ -707,19 +707,19 @@ class RectBivariateSpline(BivariateSpline):
     def __init__(self, x, y, z, bbox = [None]*4, kx=3, ky=3, s=0):
         x,y = ravel(x),ravel(y)
         if not all(diff(x) > 0.0):
-            raise TypeError,'x must be strictly increasing'
+            raise TypeError('x must be strictly increasing')
         if not all(diff(y) > 0.0):
-            raise TypeError,'y must be strictly increasing'
+            raise TypeError('y must be strictly increasing')
         if not ((x.min() == x[0]) and (x.max() == x[-1])):
-            raise TypeError, 'x must be strictly ascending'
+            raise TypeError('x must be strictly ascending')
         if not ((y.min() == y[0]) and (y.max() == y[-1])):
-            raise TypeError, 'y must be strictly ascending'
+            raise TypeError('y must be strictly ascending')
         if not x.size == z.shape[0]:
-            raise TypeError,\
-                  'x dimension of z must have same number of elements as x'
+            raise TypeError('x dimension of z must have same number of '
+                            'elements as x')
         if not y.size == z.shape[1]:
-            raise TypeError,\
-                  'y dimension of z must have same number of elements as y'
+            raise TypeError('y dimension of z must have same number of '
+                            'elements as y')
         z = ravel(z)
         xb,xe,yb,ye = bbox
         nx,tx,ny,ty,c,fp,ier = dfitpack.regrid_smth(x,y,z,

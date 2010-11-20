@@ -6,7 +6,7 @@
 __all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
            'ppform', 'lagrange']
 
-from numpy import shape, sometrue, rank, array, transpose, searchsorted, \
+from numpy import shape, sometrue, array, transpose, searchsorted, \
                   ones, logical_or, atleast_1d, atleast_2d, meshgrid, ravel, \
                   dot, poly1d, asarray, intp
 import numpy as np
@@ -679,7 +679,7 @@ def _get_spline3_Bb(xk, yk, kind, conds):
         b *= 6.0
         return B, b, None, None
     else:
-        raise ValueError, "%s not supported" % kind
+        raise ValueError("%s not supported" % kind)
 
 # conds is a tuple of an array and a vector
 #  giving the left-hand and the right-hand side

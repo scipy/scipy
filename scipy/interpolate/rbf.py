@@ -138,8 +138,8 @@ class Rbf(object):
                self._function = getattr(self, func_name)
            else:
                functionlist = [x[3:] for x in dir(self) if x.startswith('_h_')]
-               raise ValueError, "function must be a callable or one of ", \
-                   ", ".join(functionlist)               
+               raise ValueError("function must be a callable or one of " +
+                                    ", ".join(functionlist))
            self._function = getattr(self, "_h_"+self.function)
         elif callable(self.function):
             allow_one = False
@@ -152,8 +152,8 @@ class Rbf(object):
             elif hasattr(self.function, "__call__"):
                 val = self.function.__call__.im_func
             else:
-                raise ValueError, "Cannot determine number of arguments to function"
-            
+                raise ValueError("Cannot determine number of arguments to function")
+
             argcount = val.func_code.co_argcount
             if allow_one and argcount == 1:
                 self._function = self.function
@@ -165,11 +165,11 @@ class Rbf(object):
                     self._function = new.instancemethod(self.function, self,
                                                         Rbf)
             else:
-                raise ValueError, "Function argument must take 1 or 2 arguments."
+                raise ValueError("Function argument must take 1 or 2 arguments.")
                 
         a0 = self._function(r)
         if a0.shape != r.shape:
-            raise ValueError, "Callable must take array and return array of the same shape"
+            raise ValueError("Callable must take array and return array of the same shape")
         return a0
 
     def __init__(self, *args, **kwargs):

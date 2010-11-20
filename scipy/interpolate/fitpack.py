@@ -60,7 +60,7 @@ _iermess = {0:["""\
                10:["""\
     Error on input data""",ValueError],
                'unknown':["""\
-    An error occured""",TypeError]}
+    An error occurred""",TypeError]}
 
 _iermess2 = {0:["""\
     The spline has a residual sum of squares fp such that abs(fp-s)/s<=0.001""",None],
@@ -212,10 +212,13 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
             if x[i][0]!=x[i][-1]:
                 if quiet<2:print 'Warning: Setting x[%d][%d]=x[%d][0]'%(i,m,i)
                 x[i][-1]=x[i][0]
-    if not 0<idim<11: raise TypeError,'0<idim<11 must hold'
-    if w is None: w=ones(m,float)
-    else: w=myasarray(w)
-    ipar=(u is not None)
+    if not 0 < idim < 11:
+        raise TypeError('0 < idim < 11 must hold')
+    if w is None:
+        w = ones(m, float)
+    else:
+        w = myasarray(w)
+    ipar = (u is not None)
     if ipar:
         _parcur_cache['u']=u
         if ub is None: _parcur_cache['ub']=u[0]
@@ -223,18 +226,22 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
         if ue is None: _parcur_cache['ue']=u[-1]
         else: _parcur_cache['ue']=ue
     else: _parcur_cache['u']=zeros(m,float)
-    if not (1<=k<=5): raise TypeError, '1<=k=%d<=5 must hold'%(k)
-    if not (-1<=task<=1): raise TypeError, 'task must be either -1,0, or 1'
+    if not (1 <= k <= 5):
+        raise TypeError('1 <= k= %d <=5 must hold' % k)
+    if not (-1 <= task <=1):
+        raise TypeError('task must be -1, 0 or 1')
     if (not len(w)==m) or (ipar==1 and (not len(u)==m)):
-        raise TypeError,'Mismatch of input dimensions'
+        raise TypeError('Mismatch of input dimensions')
     if s is None: s=m-sqrt(2*m)
-    if t is None and task==-1: raise TypeError, 'Knots must be given for task=-1'
+    if t is None and task == -1:
+        raise TypeError('Knots must be given for task=-1')
     if t is not None:
         _parcur_cache['t']=myasarray(t)
     n=len(_parcur_cache['t'])
     if task==-1 and n<2*k+2:
-        raise TypeError, 'There must be at least 2*k+2 knots for task=-1'
-    if m<=k: raise TypeError, 'm>k must hold'
+        raise TypeError('There must be at least 2*k+2 knots for task=-1')
+    if m <= k:
+        raise TypeError('m > k must hold')
     if nest is None: nest=m+2*k
 
     if (task>=0 and s==0) or (nest<0):
@@ -267,9 +274,9 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
             print "Warning: "+_iermess[ier][0]
         else:
             try:
-                raise _iermess[ier][1],_iermess[ier][0]
+                raise _iermess[ier][1](_iermess[ier][0])
             except KeyError:
-                raise _iermess['unknown'][1],_iermess['unknown'][0]
+                raise _iermess['unknown'][1](_iermess['unknown'][0])
     if full_output:
         try:
             return tcku,fp,ier,_iermess[ier][0]
@@ -403,19 +410,23 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
     else:
         w=myasarray(w)
         if s is None: s = m-sqrt(2*m)
-    if not len(w) == m: raise TypeError,' len(w)=%d is not equal to m=%d'%(len(w),m)
+    if not len(w) == m:
+        raise TypeError('len(w)=%d is not equal to m=%d' % (len(w),m))
     if (m != len(y)) or (m != len(w)):
-        raise TypeError, 'Lengths of the first three arguments (x,y,w) must be equal'
-    if not (1<=k<=5):
-        raise TypeError, 'Given degree of the spline (k=%d) is not supported. (1<=k<=5)'%(k)
-    if m<=k: raise TypeError, 'm>k must hold'
+        raise TypeError('Lengths of the first three arguments (x,y,w) must be equal')
+    if not (1 <= k <= 5):
+        raise TypeError('Given degree of the spline (k=%d) is not supported. (1<=k<=5)' % k)
+    if m <= k:
+        raise TypeError('m > k must hold')
     if xb is None: xb=x[0]
     if xe is None: xe=x[-1]
-    if not (-1<=task<=1): raise TypeError, 'task must be either -1,0, or 1'
+    if not (-1 <= task <= 1):
+        raise TypeError('task must be -1, 0 or 1')
     if t is not None:
         task = -1
     if task == -1:
-        if t is None: raise TypeError, 'Knots must be given for task=-1'
+        if t is None:
+            raise TypeError('Knots must be given for task=-1')
         numknots = len(t)
         _curfit_cache['t'] = empty((numknots + 2*k+2,),float)
         _curfit_cache['t'][k+1:-k-1] = t
@@ -436,8 +447,8 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
         wrk=_curfit_cache['wrk']
         iwrk=_curfit_cache['iwrk']
     except KeyError:
-        raise TypeError, "must call with task=1 only after"\
-              " call with task=0,-1"
+        raise TypeError("must call with task=1 only after"
+                        " call with task=0,-1")
     if not per:
         n,c,fp,ier = dfitpack.curfit(task, x, y, w, t, wrk, iwrk, xb, xe, k, s)
     else:
@@ -451,9 +462,9 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
             print "Warning: "+_iermess[ier][0]
         else:
             try:
-                raise _iermess[ier][1],_iermess[ier][0]
+                raise _iermess[ier][1](_iermess[ier][0])
             except KeyError:
-                raise _iermess['unknown'][1],_iermess['unknown'][0]
+                raise _iermess['unknown'][1](_iermess['unknown'][0])
     if full_output:
         try:
             return tck,fp,ier,_iermess[ier][0]
@@ -648,15 +659,15 @@ def sproot(tck,mest=10):
         return _ntlist(map(lambda c,t=t,k=k,mest=mest:sproot([t,c,k],mest),c))
     else:
         if len(t)<8:
-            raise TypeError,"The number of knots %d>=8"%(len(t))
+            raise TypeError("The number of knots %d>=8" % len(t))
         z,ier=_fitpack._sproot(t,c,k,mest)
         if ier==10:
-            raise TypeError,"Invalid input data. t1<=..<=t4<t5<..<tn-3<=..<=tn must hold."
+            raise TypeError("Invalid input data. t1<=..<=t4<t5<..<tn-3<=..<=tn must hold.")
         if ier==0: return z
         if ier==1:
             print "Warning: the number of zeros exceeds mest"
             return z
-        raise TypeError,"Unknown error"
+        raise TypeError("Unknown error")
 
 def spalde(x,tck):
     """
@@ -710,8 +721,8 @@ def spalde(x,tck):
         d,ier=_fitpack._spalde(t,c,k,x[0])
         if ier==0: return d
         if ier==10:
-            raise TypeError,"Invalid input data. t(k)<=x<=t(n-k+1) must hold."
-        raise TypeError,"Unknown error"
+            raise TypeError("Invalid input data. t(k)<=x<=t(n-k+1) must hold.")
+        raise TypeError("Unknown error")
 
 #def _curfit(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
 #           full_output=0,nest=None,per=0,quiet=1):
@@ -808,29 +819,35 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
     x,y,z=map(myasarray,[x,y,z])
     x,y,z=map(ravel,[x,y,z])  # ensure 1-d arrays.
     m=len(x)
-    if not (m==len(y)==len(z)): raise TypeError, 'len(x)==len(y)==len(z) must hold.'
+    if not (m==len(y)==len(z)):
+        raise TypeError('len(x)==len(y)==len(z) must hold.')
     if w is None: w=ones(m,float)
     else: w=myasarray(w)
-    if not len(w) == m: raise TypeError,' len(w)=%d is not equal to m=%d'%(len(w),m)
+    if not len(w) == m:
+        raise TypeError('len(w)=%d is not equal to m=%d' % (len(w), m))
     if xb is None: xb=x.min()
     if xe is None: xe=x.max()
     if yb is None: yb=y.min()
     if ye is None: ye=y.max()
-    if not (-1<=task<=1): raise TypeError, 'task must be either -1,0, or 1'
+    if not (-1<=task<=1):
+        raise TypeError('task must be -1, 0 or 1')
     if s is None: s=m-sqrt(2*m)
-    if tx is None and task==-1: raise TypeError, 'Knots_x must be given for task=-1'
+    if tx is None and task==-1:
+        raise TypeError('Knots_x must be given for task=-1')
     if tx is not None: _surfit_cache['tx']=myasarray(tx)
     nx=len(_surfit_cache['tx'])
-    if ty is None and task==-1: raise TypeError, 'Knots_y must be given for task=-1'
+    if ty is None and task==-1:
+        raise TypeError('Knots_y must be given for task=-1')
     if ty is not None: _surfit_cache['ty']=myasarray(ty)
     ny=len(_surfit_cache['ty'])
     if task==-1 and nx<2*kx+2:
-        raise TypeError, 'There must be at least 2*kx+2 knots_x for task=-1'
+        raise TypeError('There must be at least 2*kx+2 knots_x for task=-1')
     if task==-1 and ny<2*ky+2:
-        raise TypeError, 'There must be at least 2*ky+2 knots_x for task=-1'
+        raise TypeError('There must be at least 2*ky+2 knots_x for task=-1')
     if not ((1<=kx<=5) and (1<=ky<=5)):
-        raise TypeError, 'Given degree of the spline (kx,ky=%d,%d) is not supported. (1<=k<=5)'%(kx,ky)
-    if m<(kx+1)*(ky+1): raise TypeError, 'm>=(kx+1)(ky+1) must hold'
+        raise TypeError('Given degree of the spline (kx,ky=%d,%d) is not supported. (1<=k<=5)' % (kx,ky))
+    if m<(kx+1)*(ky+1):
+        raise TypeError('m >= (kx+1)(ky+1) must hold')
     if nxest is None: nxest=kx+sqrt(m/2)
     if nyest is None: nyest=ky+sqrt(m/2)
     nxest,nyest=max(nxest,2*kx+3),max(nyest,2*ky+3)
@@ -872,9 +889,9 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
                                                            len(ty),m,fp,s)
         else:
             try:
-                raise _iermess2[ierm][1],_iermess2[ierm][0]
+                raise _iermess2[ierm][1](_iermess2[ierm][0])
             except KeyError:
-                raise _iermess2['unknown'][1],_iermess2['unknown'][0]
+                raise _iermess2['unknown'][1](_iermess2['unknown'][0])
     if full_output:
         try:
             return tck,fp,ier,_iermess2[ierm][0]
@@ -932,14 +949,18 @@ def bisplev(x,y,tck,dx=0,dy=0):
 
     """
     tx,ty,c,kx,ky=tck
-    if not (0<=dx<kx): raise ValueError,"0<=dx=%d<kx=%d must hold"%(dx,kx)
-    if not (0<=dy<ky): raise ValueError,"0<=dy=%d<ky=%d must hold"%(dy,ky)
+    if not (0<=dx<kx):
+        raise ValueError("0 <= dx = %d < kx = %d must hold" % (dx,kx))
+    if not (0<=dy<ky):
+        raise ValueError("0 <= dy = %d < ky = %d must hold" % (dy,ky))
     x,y=map(myasarray,[x,y])
     if (len(x.shape) != 1) or (len(y.shape) != 1):
-        raise ValueError, "First two entries should be rank-1 arrays."
+        raise ValueError("First two entries should be rank-1 arrays.")
     z,ier=_fitpack._bispev(tx,ty,c,kx,ky,x,y,dx,dy)
-    if ier==10: raise ValueError,"Invalid input data"
-    if ier: raise TypeError,"An error occurred"
+    if ier==10:
+        raise ValueError("Invalid input data")
+    if ier:
+        raise TypeError("An error occurred")
     z.shape=len(x),len(y)
     if len(z)>1: return z
     if len(z[0])>1: return z[0]
@@ -1026,8 +1047,10 @@ def insert(x,tck,m=1,per=0):
         return (tt, cc, kk)
     else:
         tt, cc, ier = _fitpack._insert(per, t, c, k, x, m)
-        if ier==10: raise ValueError,"Invalid input data"
-        if ier: raise TypeError,"An error occurred"
+        if ier==10:
+            raise ValueError("Invalid input data")
+        if ier:
+            raise TypeError("An error occurred")
         return (tt, cc, k)
 
 if __name__ == "__main__":

@@ -3,7 +3,6 @@
 """
 
 import numpy as np
-import sys
 import _interpolate # C extension.  Does all the real work.
 
 def atleast_1d_and_contiguous(ary, dtype = np.float64):
@@ -114,7 +113,7 @@ def block_average_above(x, y, new_x):
         msg = "block_average_above cannot extrapolate and new_x[%d]=%f "\
               "is out of the x range (%f, %f)" % \
               (bad_index, new_x[bad_index], x[0], x[-1])
-        raise ValueError, msg
+        raise ValueError(msg)
 
     return new_y
 
