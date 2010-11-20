@@ -167,7 +167,7 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
     """
     data = asarray(arr)
     if iscomplexobj(data):
-        raise ValueError, "Cannot convert a complex-valued array."
+        raise ValueError("Cannot convert a complex-valued array.")
     shape = list(data.shape)
     valid = len(shape)==2 or ((len(shape)==3) and \
                               ((3 in shape) or (4 in shape)))
@@ -202,7 +202,7 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
             data32 = data.astype(numpy.uint32)
             image = Image.fromstring(mode,shape,data32.tostring())
         else:
-            raise ValueError, _errstr
+            raise ValueError(_errstr)
         return image
 
     # if here then 3-d array with a 3 or a 4 in the shape length.
@@ -215,13 +215,13 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
             if len(ca):
                 ca = ca[0]
             else:
-                raise ValueError, "Could not find channel dimension."
+                raise ValueError("Could not find channel dimension.")
     else:
         ca = channel_axis
 
     numch = shape[ca]
     if numch not in [3,4]:
-        raise ValueError, "Channel axis dimension is not valid."
+        raise ValueError("Channel axis dimension is not valid.")
 
     bytedata = bytescale(data,high=high,low=low,cmin=cmin,cmax=cmax)
     if ca == 2:
@@ -239,7 +239,7 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
 
 
     if mode not in ['RGB','RGBA','YCbCr','CMYK']:
-        raise ValueError, _errstr
+        raise ValueError(_errstr)
 
     if mode in ['RGB', 'YCbCr']:
         assert numch == 3, "Invalid array shape for mode."
@@ -405,7 +405,7 @@ def imfilter(arr,ftype):
 
     im = toimage(arr)
     if ftype not in _tdict.keys():
-        raise ValueError, "Unknown filter type."
+        raise ValueError("Unknown filter type.")
     return fromimage(im.filter(_tdict[ftype]))
 
 
