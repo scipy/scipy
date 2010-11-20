@@ -457,7 +457,7 @@ class TestNdimage:
         assert_equal(input.shape, output.shape)
 
     def test_gauss03(self):
-        "gaussian filter 3"
+        "gaussian filter 3 - single precision data"
         input = numpy.arange(100 * 100).astype(numpy.float32)
         input.shape = (100, 100)
         output = ndimage.gaussian_filter(input, [1.0, 1.0])
@@ -465,7 +465,9 @@ class TestNdimage:
         assert_equal(input.dtype, output.dtype)
         assert_equal(input.shape, output.shape)
 
-        assert_almost_equal(output.sum(), input.sum())
+        # input.sum() is 49995000.0.  With single precision floats, we can't
+        # expect more than 8 digits of accuracy, so use decimal=0 in this test.
+        assert_almost_equal(output.sum(dtype='d'), input.sum(dtype='d'), decimal=0)
         assert_(sumsq(input, output) > 1.0)
 
     def test_gauss04(self):
