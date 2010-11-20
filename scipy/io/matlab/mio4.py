@@ -105,7 +105,7 @@ class VarReader4(object):
         P,rest = divmod(rest,10)
         T = rest
         if O != 0:
-            raise ValueError, 'O in MOPT integer should be 0, wrong format?'
+            raise ValueError('O in MOPT integer should be 0, wrong format?')
         dims = (data['mrows'], data['ncols'])
         is_complex = data['imagf'] == 1
         dtype = self.dtypes[P]
@@ -128,7 +128,7 @@ class VarReader4(object):
             # no current processing (below) makes sense for sparse
             return self.read_sparse_array(hdr)
         else:
-            raise TypeError, 'No reader for class code %s' % mclass
+            raise TypeError('No reader for class code %s' % mclass)
         if process and self.squeeze_me:
             return squeeze_element(arr)
         return arr
@@ -400,9 +400,9 @@ class VarWriter4(object):
             arr = arr.astype(dt.newbyteorder('='))
         dtt = dt.type
         if dtt is np.object_:
-            raise TypeError, 'Cannot save object arrays in Mat4'
+            raise TypeError('Cannot save object arrays in Mat4')
         elif dtt is np.void:
-            raise TypeError, 'Cannot save void type arrays'
+            raise TypeError('Cannot save void type arrays')
         elif dtt in (np.unicode_, np.string_):
             self.write_char(arr, name)
             return

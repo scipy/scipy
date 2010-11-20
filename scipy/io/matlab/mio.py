@@ -214,8 +214,8 @@ def savemat(file_name, mdict,
         try:
             file_name.write(asbytes(''))
         except AttributeError:
-            raise IOError, 'Writer needs file name or writeable '\
-                           'file-like object'
+            raise IOError('Writer needs file name or writeable '
+                           'file-like object')
         file_stream = file_name
 
     if format == '4':

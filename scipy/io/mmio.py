@@ -127,8 +127,8 @@ class MMFile (object):
     @classmethod
     def _validate_format(self, format):
         if format not in self.FORMAT_VALUES:
-            raise ValueError,'unknown format type %s, must be one of %s'% \
-              (`format`, `self.FORMAT_VALUES`)
+            raise ValueError('unknown format type %s, must be one of %s' %
+                                (format, self.FORMAT_VALUES))
 
     # field values
     FIELD_INTEGER = 'integer'
@@ -140,8 +140,8 @@ class MMFile (object):
     @classmethod
     def _validate_field(self, field):
         if field not in self.FIELD_VALUES:
-            raise ValueError,'unknown field type %s, must be one of %s'% \
-              (`field`, `self.FIELD_VALUES`)
+            raise ValueError('unknown field type %s, must be one of %s' %
+                                (field, self.FIELD_VALUES))
 
     # symmetry values
     SYMMETRY_GENERAL        = 'general'
@@ -154,8 +154,8 @@ class MMFile (object):
     @classmethod
     def _validate_symmetry(self, symmetry):
         if symmetry not in self.SYMMETRY_VALUES:
-            raise ValueError,'unknown symmetry type %s, must be one of %s'% \
-              (`symmetry`, `self.SYMMETRY_VALUES`)
+            raise ValueError('unknown symmetry type %s, must be one of %s' %
+                                (symmetry, self.SYMMETRY_VALUES))
 
     DTYPES_BY_FIELD = {
       FIELD_INTEGER: 'i',
@@ -183,7 +183,7 @@ class MMFile (object):
             mmid, matrix, format, field, symmetry  = \
               [asstr(part.strip().lower()) for part in line.split()]
             if not mmid.startswith('%%matrixmarket'):
-                raise ValueError,'source is not in Matrix Market format'
+                raise ValueError('source is not in Matrix Market format')
 
             assert matrix == 'matrix',`line`
 
@@ -322,9 +322,8 @@ class MMFile (object):
         invalid_keys = set(kwargs.keys()) - set(public_attrs)
 
         if invalid_keys:
-            raise ValueError, \
-              'found %s invalid keyword arguments, please only use %s' % \
-              (`tuple(invalid_keys)`, `public_attrs`)
+            raise ValueError('found %s invalid keyword arguments, please only use %s' %
+                                (tuple(invalid_keys), public_attrs))
 
         for attr in attrs: setattr(self, attr, kwargs.get(attr[1:], None))
 
@@ -465,7 +464,7 @@ class MMFile (object):
 
             a = coo_matrix((V, (I, J)), shape=(rows, cols), dtype=dtype)
         else:
-            raise NotImplementedError,`format`
+            raise NotImplementedError(format)
 
         return a
 
@@ -476,7 +475,7 @@ class MMFile (object):
             rep = self.FORMAT_ARRAY
             a = asarray(a)
             if len(a.shape) != 2:
-                raise ValueError, 'expected matrix'
+                raise ValueError('expected matrix')
             rows,cols = a.shape
             entries = rows*cols
 
@@ -494,7 +493,7 @@ class MMFile (object):
         else:
             from scipy.sparse import spmatrix
             if not isinstance(a,spmatrix):
-                raise ValueError,'unknown matrix type ' + `type(a)`
+                raise ValueError('unknown matrix type: %s' % type(a))
             rep = 'coordinate'
             rows, cols = a.shape
             entries = a.getnnz()
@@ -569,10 +568,10 @@ class MMFile (object):
                             stream.write(asbytes(template % (real(aij),imag(aij))))
 
             elif field == self.FIELD_PATTERN:
-                raise ValueError,'pattern type inconsisted with dense format'
+                raise ValueError('pattern type inconsisted with dense format')
 
             else:
-                raise TypeError,'Unknown field type %s'% `field`
+                raise TypeError('Unknown field type %s' % field)
 
         # write sparse format
         else:
@@ -594,7 +593,7 @@ class MMFile (object):
             elif field == self.FIELD_COMPLEX:
                 IJV = vstack((coo.row, coo.col, coo.data.real, coo.data.imag)).T
             else:
-                raise TypeError('Unknown field type %s' % `field`)
+                raise TypeError('Unknown field type %s' % field)
 
             IJV[:,:2] += 1 # change base 0 -> base 1
 
