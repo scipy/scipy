@@ -2,8 +2,11 @@
 # Author:  Travis Oliphant, 2002
 #
 
-from numpy import *
-from _cephes import *
+from numpy import pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt, \
+        where, mgrid, cos, sin, exp, place, seterr, issubdtype, extract, \
+        complexfloating, less, vectorize, inexact, nan, zeros, sometrue
+from _cephes import ellipk, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta, \
+        hankel1, hankel2, yv, kv, gammaln, errprint, ndtri
 import types
 import specfun
 import orthogonal

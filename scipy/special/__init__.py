@@ -5,6 +5,8 @@
 from info import __doc__, __docformat__
 #from special_version import special_version as __version__
 
+from _cephes import *
+from numpy import *
 from basic import *
 import specfun
 import orthogonal
