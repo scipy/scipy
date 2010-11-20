@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 
-import os
-import sys
-import re
 from distutils.dep_util import newer_group, newer
-from glob import glob
 from os.path import join
 
 #-------------------
