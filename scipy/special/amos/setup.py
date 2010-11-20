@@ -23,7 +23,7 @@ class f90_compiler:
         print cmd
         failure = os.system(cmd)
         if failure:
-            raise ValueError, 'failure during compile'
+            raise ValueError('failure during compile')
     def object_to_library(self,library_name,object_files):
         objects = " ".join(object_files)
         cmd = 'ar -cr lib%s.a %s' % (library_name,objects)

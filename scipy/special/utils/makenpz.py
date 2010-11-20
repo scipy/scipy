@@ -52,7 +52,7 @@ def savez_compress(file, *args, **kwds):
     for i, val in enumerate(args):
         key = 'arr_%d' % i
         if key in namedict.keys():
-            raise ValueError, "Cannot use un-named variables and keyword %s" % key
+            raise ValueError("Cannot use un-named variables and keyword %s" % key)
         namedict[key] = val
 
     zip = zipfile.ZipFile(file, mode="w", compression=zipfile.ZIP_DEFLATED)
