@@ -52,8 +52,8 @@ def fixed_quad(func,a,b,args=(),n=5):
     x = real(x)
     ainf, binf = map(isinf,(a,b))
     if ainf or binf:
-        raise ValueError, "Gaussian quadrature is only available for " \
-              "finite limits."
+        raise ValueError("Gaussian quadrature is only available for "
+                "finite limits.")
     y = (b-a)*(x+1)/2.0 + a
     return (b-a)/2.0*sum(w*func(y,*args),0), None
 
@@ -317,19 +317,18 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
             returnshape = 1
             x=x.reshape(tuple(shapex))
         elif len(x.shape) != len(y.shape):
-            raise ValueError, "If given, shape of x must be 1-d or the " \
-                  "same as y."
+            raise ValueError("If given, shape of x must be 1-d or the "
+                    "same as y.")
         if x.shape[axis] != N:
-            raise ValueError, "If given, length of x along axis must be the " \
-                  "same as y."
+            raise ValueError("If given, length of x along axis must be the "
+                    "same as y.")
     if N % 2 == 0:
         val = 0.0
         result = 0.0
         slice1 = (slice(None),)*nd
         slice2 = (slice(None),)*nd
         if not even in ['avg', 'last', 'first']:
-            raise ValueError, \
-                  "Parameter 'even' must be 'avg', 'last', or 'first'."
+            raise ValueError("Parameter 'even' must be 'avg', 'last', or 'first'.")
         # Compute using Simpson's rule on first intervals
         if even in ['avg', 'first']:
             slice1 = tupleset(slice1, axis, -1)
@@ -400,8 +399,8 @@ def romb(y, dx=1.0, axis=-1, show=False):
         n <<= 1
         k += 1
     if n != Ninterv:
-        raise ValueError, \
-              "Number of samples must be one plus a non-negative power of 2."
+        raise ValueError("Number of samples must be one plus a "
+                "non-negative power of 2.")
 
     R = {}
     all = (slice(None),) * nd
@@ -737,8 +736,8 @@ def newton_cotes(rn, equal=0):
         return na*np.array(vi,float)/da, float(nb)/db
 
     if (rn[0] != 0) or (rn[-1] != N):
-        raise ValueError, "The sample positions must start at 0"\
-              " and end at N"
+        raise ValueError("The sample positions must start at 0"
+                " and end at N")
     yi = rn / float(N)
     ti = 2.0*yi - 1
     nvec = np.arange(0,N+1)

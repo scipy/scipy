@@ -285,7 +285,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
             print "Warning: " + msg
             return retval[:-1]
     else:
-        raise ValueError, msg
+        raise ValueError(msg)
 
 
 def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
@@ -302,7 +302,7 @@ def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
         infbounds = -1
         bound = b
     else:
-        raise RuntimeError, "Infinity comparisons don't work for you."
+        raise RuntimeError("Infinity comparisons don't work for you.")
 
     if points is None:
         if infbounds == 0:
@@ -311,7 +311,7 @@ def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
             return _quadpack._qagie(func,bound,infbounds,args,full_output,epsabs,epsrel,limit)
     else:
         if infbounds !=0:
-            raise ValueError, "Infinity inputs cannot be used with break points."
+            raise ValueError("Infinity inputs cannot be used with break points.")
         else:
             nl = len(points)
             the_points = numpy.zeros((nl+2,), float)
@@ -322,7 +322,7 @@ def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
 def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weight,wvar,wopts):
 
     if weight not in ['cos','sin','alg','alg-loga','alg-logb','alg-log','cauchy']:
-        raise ValueError, "%s not a recognized weighting function." % weight
+        raise ValueError("%s not a recognized weighting function." % weight)
 
     strdict = {'cos':1,'sin':2,'alg':1,'alg-loga':2,'alg-logb':3,'alg-log':4}
 
@@ -354,10 +354,10 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
             args = (func,) + args
             return _quadpack._qawfe(thefunc,-b,wvar,integr,args,full_output,epsabs,limlst,limit,maxp1)
         else:
-            raise ValueError, "Cannot integrate with this weight from -Inf to +Inf."
+            raise ValueError("Cannot integrate with this weight from -Inf to +Inf.")
     else:
         if a in [-Inf,Inf] or b in [-Inf,Inf]:
-            raise ValueError, "Cannot integrate with this weight over an infinite interval."
+            raise ValueError("Cannot integrate with this weight over an infinite interval.")
 
         if weight[:3] == 'alg':
             integr = strdict[weight]
