@@ -488,7 +488,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
 
     """
     if int(iter) < 1:
-        raise ValueError, 'iter must be >= to 1.'
+        raise ValueError('iter must be at least 1.')
     if type(k_or_guess) == type(array([])):
         guess = k_or_guess
         if guess.size < 1:
@@ -584,8 +584,8 @@ def _missing_warn():
 
 def _missing_raise():
     """raise a ClusterError when called."""
-    raise ClusterError, "One of the clusters is empty. "\
-                        "Re-run kmean with a different initialization."
+    raise ClusterError("One of the clusters is empty. "
+                        "Re-run kmean with a different initialization.")
 
 _valid_miss_meth = {'warn': _missing_warn, 'raise': _missing_raise}
 
