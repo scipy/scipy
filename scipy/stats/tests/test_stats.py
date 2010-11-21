@@ -254,6 +254,14 @@ class TestNanFunc(TestCase):
         m = stats.nanmedian(self.Xall)
         assert_(np.isnan(m))
 
+    def test_nanmedian_scalars(self):
+        """Check nanmedian for scalar inputs. See ticket #1098."""
+        assert_equal(stats.nanmedian(1), np.median(1))
+        assert_equal(stats.nanmedian(True), np.median(True))
+        assert_equal(stats.nanmedian(np.array(1)), np.median(np.array(1)))
+        assert_equal(stats.nanmedian(np.nan), np.median(np.nan))
+
+
 class TestCorrPearsonr(TestCase):
     """ W.II.D. Compute a correlation matrix on all the variables.
 

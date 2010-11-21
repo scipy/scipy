@@ -408,9 +408,14 @@ def nanmedian(x, axis=0):
     array([  2. ,   9. ,  15. ,  20.5,  26. ])
 
     """
-    x, axis = _chk_asarray(x,axis)
+    x, axis = _chk_asarray(x, axis)
+    if x.ndim == 0:
+        return float(x.item())
     x = x.copy()
-    return np.apply_along_axis(_nanmedian,axis,x)
+    x = np.apply_along_axis(_nanmedian, axis, x)
+    if x.ndim == 0:
+        x = float(x.item())
+    return x
 
 
 #####################################
