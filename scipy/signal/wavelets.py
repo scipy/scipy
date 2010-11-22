@@ -19,7 +19,8 @@ def daub(p):
 
     """
     sqrt = np.sqrt
-    assert(p>=1)
+    if p < 1:
+        raise ValueError("p must be at least 1.")
     if p==1:
         c = 1/sqrt(2)
         return np.array([c,c])
