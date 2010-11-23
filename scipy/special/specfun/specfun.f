@@ -1,15 +1,15 @@
 C       COMPUTATION OF SPECIAL FUNCTIONS
-C 
+C
 C          Shanjie Zhang and Jianming Jin
 C
-C       Copyrighted but permission granted to use code in programs. 
+C       Copyrighted but permission granted to use code in programs.
 C       Buy their book "Computation of Special Functions", 1996, John Wiley & Sons, Inc.
 C
 C
 C      Compiled into a single source file and changed REAL To DBLE throughout.
 C
 C      Changed according to ERRATA also.
-C      
+C
 C      Changed GAMMA to GAMMA2 and PSI to PSI_SPEC to avoid potential conflicts.
 C
 
@@ -65,7 +65,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CFS(Z,ZF,ZD)
@@ -135,7 +135,7 @@ C
 C       ==========================================================
 C       Purpose: Compute the associated Legendre functions of the
 C                second kind, Qmn(x) and Qmn'(x)
-C       Input :  x  --- Argument of Qmn(x) 
+C       Input :  x  --- Argument of Qmn(x)
 C                m  --- Order of Qmn(x)  ( m = 0,1,2,… )
 C                n  --- Degree of Qmn(x) ( n = 0,1,2,… )
 C                mm --- Physical dimension of QM and QD
@@ -224,8 +224,8 @@ C       **********************************
         SUBROUTINE CLPMN(MM,M,N,X,Y,CPM,CPD)
 C
 C       =========================================================
-C       Purpose: Compute the associated Legendre functions Pmn(z)   
-C                and their derivatives Pmn'(z) for a complex 
+C       Purpose: Compute the associated Legendre functions Pmn(z)
+C                and their derivatives Pmn'(z) for a complex
 C                argument
 C       Input :  x  --- Real part of z
 C                y  --- Imaginary part of z
@@ -336,7 +336,7 @@ C
         END
 
 
-        
+
 C       **********************************
 C       SciPy: Changed P from a character array to an integer array.
         SUBROUTINE JDZO(NT,N,M,P,ZO)
@@ -357,9 +357,9 @@ C                            zeros of Jn(x) and Jn'(x) )
 C                P(L)  --- 0 (TM) or 1 (TE), a code for designating the
 C                          zeros of Jn(x)  or Jn'(x).
 C                          In the waveguide applications, the zeros
-C                          of Jn(x) correspond to TM modes and 
+C                          of Jn(x) correspond to TM modes and
 C                          those of Jn'(x) correspond to TE modes
-C       Routine called:    BJNDD for computing Jn(x), Jn'(x) and  
+C       Routine called:    BJNDD for computing Jn(x), Jn'(x) and
 C                          Jn''(x)
 C       =============================================================
 C
@@ -449,7 +449,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CBK(M,N,C,CV,QT,CK,BK)
@@ -519,13 +519,13 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CJY01(Z,CBJ0,CDJ0,CBJ1,CDJ1,CBY0,CDY0,CBY1,CDY1)
 C
 C       =======================================================
-C       Purpose: Compute Bessel functions J0(z), J1(z), Y0(z), 
+C       Purpose: Compute Bessel functions J0(z), J1(z), Y0(z),
 C                Y1(z), and their derivatives for a complex
 C                argument
 C       Input :  z --- Complex argument
@@ -670,9 +670,9 @@ C       Purpose: Compute prolate spheroidal radial function
 C                of the second kind with a small argument
 C       Routines called:
 C            (1) LPMNS for computing the associated Legendre
-C                functions of the first kind    
+C                functions of the first kind
 C            (2) LQMNS for computing the associated Legendre
-C                functions of the second kind  
+C                functions of the second kind
 C            (3) KMN for computing expansion coefficients
 C                and joining factors
 C       ======================================================
@@ -767,7 +767,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE BERNOB(N,BN)
@@ -780,7 +780,7 @@ C       ======================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         DIMENSION BN(0:N)
-        TPI=6.283185307179586D0 
+        TPI=6.283185307179586D0
         BN(0)=1.0D0
         BN(1)=-0.5D0
         BN(2)=1.0D0/6.0D0
@@ -847,7 +847,7 @@ C
 10               SK=SK+CK(K+1)*CK(L-K+1)
 15            S=S+SK*AP(I-L+1)
 20      AP(I+1)=-R*S
-        QS0=AP(M+1)     
+        QS0=AP(M+1)
         DO 30 L=1,M
            R=1.0D0
            DO 25 K=1,L
@@ -859,7 +859,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CV0(KD,M,Q,A0)
@@ -1026,7 +1026,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CVQM(M,Q,A0)
@@ -1083,7 +1083,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CSPHJY(N,Z,NM,CSJ,CDJ,CSY,CDY)
@@ -1169,12 +1169,12 @@ C
         INTEGER FUNCTION MSTA1(X,MP)
 C
 C       ===================================================
-C       Purpose: Determine the starting point for backward  
-C                recurrence such that the magnitude of    
+C       Purpose: Determine the starting point for backward
+C                recurrence such that the magnitude of
 C                Jn(x) at that point is about 10^(-MP)
 C       Input :  x     --- Argument of Jn(x)
 C                MP    --- Value of magnitude
-C       Output:  MSTA1 --- Starting point   
+C       Output:  MSTA1 --- Starting point
 C       ===================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -1183,8 +1183,8 @@ C
         F0=ENVJ(N0,A0)-MP
         N1=N0+5
         F1=ENVJ(N1,A0)-MP
-        DO 10 IT=1,20             
-           NN=N1-(N1-N0)/(1.0D0-F0/F1)                  
+        DO 10 IT=1,20
+           NN=N1-(N1-N0)/(1.0D0-F0/F1)
            F=ENVJ(NN,A0)-MP
            IF(ABS(NN-N1).LT.1) GO TO 20
            N0=N1
@@ -1442,7 +1442,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE RMN2L(M,N,C,X,DF,KD,R2F,R2D,ID)
@@ -1453,7 +1453,7 @@ C                functions of the second kind for given m, n,
 C                c and a large cx
 C       Routine called:
 C                SPHY for computing the spherical Bessel
-C                functions of the second kind      
+C                functions of the second kind
 C       ========================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -1471,7 +1471,7 @@ C
         R0=REG
         DO 10 J=1,2*M+IP
 10         R0=R0*J
-        R=R0    
+        R=R0
         SUC=R*DF(1)
         SW=0.0D0
         DO 15 K=2,NM
@@ -1503,7 +1503,7 @@ C
            ID=10
            RETURN
         ENDIF
-        B0=KD*M/X**3.0D0/(1.0-KD/(X*X))*R2F                
+        B0=KD*M/X**3.0D0/(1.0-KD/(X*X))*R2F
         SUD=0.0D0
         EPS2=0.0D0
         DO 60 K=1,NM
@@ -1520,14 +1520,14 @@ C
            EPS2=DABS(SUD-SW)
            IF (K.GT.NM1.AND.EPS2.LT.DABS(SUD)*EPS) GO TO 65
 60         SW=SUD
-65      R2D=B0+A0*C*SUD       
+65      R2D=B0+A0*C*SUD
         ID2=INT(LOG10(EPS2/DABS(SUD)+EPS))
         ID=MAX(ID1,ID2)
         RETURN
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE PSI_SPEC(X,PS)
@@ -1667,7 +1667,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE LPMNS(M,N,X,PM,PD)
@@ -1719,7 +1719,7 @@ C
            PM(K)=PM2
            PMK=PM1
 25         PM1=PM2
-        PD(0)=((1.0D0-M)*PM(1)-X*PM(0))/(X*X-1.0)  
+        PD(0)=((1.0D0-M)*PM(1)-X*PM(0))/(X*X-1.0)
         DO 30 K=1,N
 30         PD(K)=(K*X*PM(K)-(K+M)*PM(K-1))/(X*X-1.0D0)
         DO 35 K=1,N
@@ -1822,11 +1822,11 @@ C                R2D --- Derivative of the radial function of
 C                        the second kind
 C       Routines called:
 C            (1) SDMN for computing expansion coefficients dk
-C            (2) RMN1 for computing prolate and oblate radial 
+C            (2) RMN1 for computing prolate and oblate radial
 C                functions of the first kind
 C            (3) RMN2L for computing prolate and oblate radial
 C                functions of the second kind for a large argument
-C            (4) RMN2SP for computing the prolate radial function 
+C            (4) RMN2SP for computing the prolate radial function
 C                of the second kind for a small argument
 C       ==============================================================
 C
@@ -1847,14 +1847,14 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
 C
 C       ===========================================================
 C       Purpose: Compute Bessel functions Jn(x) and Yn(x), and
-C                their first and second derivatives 
+C                their first and second derivatives
 C       Input:   x   ---  Argument of Jn(x) and Yn(x) ( x > 0 )
 C                n   ---  Order of Jn(x) and Yn(x)
 C       Output:  BJN ---  Jn(x)
@@ -2012,7 +2012,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CISIA(X,CI,SI)
@@ -2314,7 +2314,7 @@ C                KF    --- Function code
 C                          KF=1 for Ai(x) and Ai'(x)
 C                          KF=2 for Bi(x) and Bi'(x)
 C       Output:  XA(m) --- a, the m-th zero of Ai(x) or
-C                          b, the m-th zero of Bi(x) 
+C                          b, the m-th zero of Bi(x)
 C                XB(m) --- a', the m-th zero of Ai'(x) or
 C                          b', the m-th zero of Bi'(x)
 C                XC(m) --- Ai(a') or Bi(b')
@@ -2395,7 +2395,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE ERROR(X,ERR)
@@ -2473,8 +2473,8 @@ C
               IF (CDABS(CR/CS).LT.1.0D-15) GO TO 15
 10         CONTINUE
 15         CER=2.0D0*C0*CS/DSQRT(PI)
-        ELSE                              
-           CL=1.0D0/Z1              
+        ELSE
+           CL=1.0D0/Z1
            CR=CL
 C
 C          Asymptotic series; maximum K must be at most ~ R^2.
@@ -2535,7 +2535,7 @@ C       **********************************
 C
 C       ============================================================
 C       Purpose: Compute a sequence of characteristic values of
-C                Mathieu functions 
+C                Mathieu functions
 C       Input :  M  --- Maximum order of Mathieu functions
 C                q  --- Parameter of Mathieu functions
 C                KD --- Case code
@@ -2778,10 +2778,10 @@ C       **********************************
 C
 C       ========================================================
 C       Purpose: Compute the expansion coefficients for the
-C                asymptotic expansion of Bessel functions 
+C                asymptotic expansion of Bessel functions
 C                with large orders
 C       Input :  Km   --- Maximum k
-C       Output:  A(L) --- Cj(k) where j and k are related to L 
+C       Output:  A(L) --- Cj(k) where j and k are related to L
 C                         by L=j+1+[k*(k+1)]/2; j,k=0,1,...,Km
 C       ========================================================
 C
@@ -2887,12 +2887,12 @@ C       =========================================================
 C       Purpose: Compute lambda function with arbitrary order v,
 C                and their derivative
 C       Input :  x --- Argument of lambda function
-C                v --- Order of lambda function 
+C                v --- Order of lambda function
 C       Output:  VL(n) --- Lambda function of order n+v0
-C                DL(n) --- Derivative of lambda function 
+C                DL(n) --- Derivative of lambda function
 C                VM --- Highest order computed
 C       Routines called:
-C            (1) MSTA1 and MSTA2 for computing the starting 
+C            (1) MSTA1 and MSTA2 for computing the starting
 C                point for backward recurrence
 C            (2) GAM0 for computing gamma function (|x| ≤ 1)
 C       =========================================================
@@ -3014,7 +3014,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CHGUIT(A,B,X,HU,ID)
@@ -3116,7 +3116,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE KMN(M,N,C,CV,KD,DF,DN,CK1,CK2)
@@ -3136,7 +3136,7 @@ C
         IP=1
         IF (N-M.EQ.2*INT((N-M)/2)) IP=0
         K=0
-        DO 10 I=1,NN+3     
+        DO 10 I=1,NN+3
            IF (IP.EQ.0) K=-2*(I-1)
            IF (IP.EQ.1) K=-(2*I-3)
            GK0=2.0D0*M+K
@@ -3204,7 +3204,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE LAGZO(N,X,W)
@@ -3298,13 +3298,13 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CJYVA(V,Z,VM,CBJ,CDJ,CBY,CDY)
 C
 C       ===========================================================
-C       Purpose: Compute Bessel functions Jv(z), Yv(z) and their 
+C       Purpose: Compute Bessel functions Jv(z), Yv(z) and their
 C                derivatives for a complex argument
 C       Input :  z --- Complex argument
 C                v --- Order of Jv(z) and Yv(z)
@@ -3345,7 +3345,7 @@ C
            ELSE
               CDJ(0)=(1.0D+300,0.0D0)
            ENDIF
-           VM=V                     
+           VM=V
            RETURN
         ENDIF
         LB0=0.0D0
@@ -3554,13 +3554,13 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CJYVB(V,Z,VM,CBJ,CDJ,CBY,CDY)
 C
 C       ===========================================================
-C       Purpose: Compute Bessel functions Jv(z), Yv(z) and their 
+C       Purpose: Compute Bessel functions Jv(z), Yv(z) and their
 C                derivatives for a complex argument
 C       Input :  z --- Complex argument
 C                v --- Order of Jv(z) and Yv(z)
@@ -3716,7 +3716,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE JY01A(X,BJ0,DJ0,BJ1,DJ1,BY0,DY0,BY1,DY1)
@@ -3852,7 +3852,7 @@ C       ===================================================
 C       Purpose: Compute the incomplete gamma function
 C                r(a,x), Г(a,x) and P(a,x)
 C       Input :  a   --- Parameter ( a ≤ 170 )
-C                x   --- Argument 
+C                x   --- Argument
 C       Output:  GIN --- r(a,x)
 C                GIM --- Г(a,x)
 C                GIP --- P(a,x)
@@ -3895,7 +3895,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE ITIKB(X,TI,TK)
@@ -4075,7 +4075,7 @@ C
            ELSE
               DJ(0)=1.0D+300
            ENDIF
-           VM=V  
+           VM=V
            RETURN
         ENDIF
         BJV0=0.0D0
@@ -4225,7 +4225,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE JYNB(N,X,NM,BJ,DJ,BY,DY)
@@ -4253,7 +4253,7 @@ C       Compute derivatives by differentiation formulas
               DJ(K) = 0.0D0
  10           DY(K) = 1.0D+300
            DJ(1)=0.5D0
-        ELSE   
+        ELSE
            DJ(0)=-BJ(1)
            DO 40 K=1,NM
  40           DJ(K)=BJ(K-1)-K/X*BJ(K)
@@ -4278,7 +4278,7 @@ C       Output:  BJ(n-NMIN) --- Jn(x)   ; if indexing starts at 0
 C                BY(n-NMIN) --- Yn(x)   ; if indexing starts at 0
 C                NM --- Highest order computed
 C       Routines called:
-C                MSTA1 and MSTA2 to calculate the starting 
+C                MSTA1 and MSTA2 to calculate the starting
 C                point for backward recurrence
 C       =====================================================
 C
@@ -4544,7 +4544,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE JYNA(N,X,NM,BJ,DJ,BY,DY)
@@ -4561,7 +4561,7 @@ C                DY(n) --- Yn'(x)
 C                NM --- Highest order computed
 C       Routines called:
 C            (1) JY01B to calculate J0(x), J1(x), Y0(x) & Y1(x)
-C            (2) MSTA1 and MSTA2 to calculate the starting 
+C            (2) MSTA1 and MSTA2 to calculate the starting
 C                point for backward recurrence
 C       =========================================================
 C
@@ -4632,7 +4632,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE PBDV(V,X,DV,DP,PDF,PDD)
@@ -4644,7 +4644,7 @@ C       Input:   x --- Argument of Dv(x)
 C                v --- Order of Dv(x)
 C       Output:  DV(na) --- Dn+v0(x)
 C                DP(na) --- Dn+v0'(x)
-C                ( na = |n|, v0 = v-n, |v0| < 1, 
+C                ( na = |n|, v0 = v-n, |v0| < 1,
 C                  n = 0,±1,±2,… )
 C                PDF --- Dv(x)
 C                PDD --- Dv'(x)
@@ -4748,7 +4748,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE ITSH0(X,TH0)
@@ -4763,7 +4763,7 @@ C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         DIMENSION A(25)
         PI=3.141592653589793D0
-        R=1.0D0            
+        R=1.0D0
         IF (X.LE.30.0) THEN
            S=0.5D0
            DO 10 K=1,100
@@ -4857,7 +4857,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE GAMMA2(X,GA)
@@ -4992,7 +4992,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE LAMN(N,X,NM,BL,DL)
@@ -5042,7 +5042,7 @@ C
 35         DL(N)=-0.5D0*X/(N+1.0D0)*UK
            RETURN
         ENDIF
-        IF (N.EQ.0) NM=1          
+        IF (N.EQ.0) NM=1
         M=MSTA1(X,200)
         IF (M.LT.NM) THEN
            NM=M
@@ -5150,7 +5150,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CVF(KD,M,Q,A,MJ,F)
@@ -5199,7 +5199,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CLPN(N,X,Y,CPN,CPD)
@@ -5412,7 +5412,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE ELIT(HK,PHI,FE,EE)
@@ -5710,7 +5710,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE STVH0(X,SH0)
@@ -5952,7 +5952,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CCHG(A,B,Z,CHG)
@@ -6069,13 +6069,13 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE HYGFZ(A,B,C,Z,ZHF)
 C
 C       ======================================================
-C       Purpose: Compute the hypergeometric function for a 
+C       Purpose: Compute the hypergeometric function for a
 C                complex argument, F(a,b,c,z)
 C       Input :  a --- Parameter
 C                b --- Parameter
@@ -6146,7 +6146,7 @@ C           WRITE(*,*)'The hypergeometric series is divergent'
         ELSE IF (A0.LE.1.0D0) THEN
            IF (X.LT.0.0D0) THEN
               Z1=Z/(Z-1.0D0)
-              IF (C.GT.A.AND.B.LT.A.AND.B.GT.0.0) THEN  
+              IF (C.GT.A.AND.B.LT.A.AND.B.GT.0.0) THEN
                  A=BB
                  B=AA
               ENDIF
@@ -6360,7 +6360,7 @@ C           WRITE(*,*)'The hypergeometric series is divergent'
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE ITAIRY(X,APT,BPT,ANT,BNT)
@@ -6481,7 +6481,7 @@ C                DK(n) --- Kn'(x)
 C                NM --- Highest order computed
 C       Routines called:
 C            (1) IK01A for computing I0(x),I1(x),K0(x) & K1(x)
-C            (2) MSTA1 and MSTA2 for computing the starting 
+C            (2) MSTA1 and MSTA2 for computing the starting
 C                point for backward recurrence
 C       ========================================================
 C
@@ -6549,7 +6549,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CJYNA(N,Z,NM,CBJ,CDJ,CBY,CDY)
@@ -6566,7 +6566,7 @@ C                CDY(n) --- Yn'(z)
 C                NM --- Highest order computed
 C       Rouitines called:
 C            (1) CJY01 to calculate J0(z), J1(z), Y0(z), Y1(z)
-C            (2) MSTA1 and MSTA2 to calculate the starting 
+C            (2) MSTA1 and MSTA2 to calculate the starting
 C                point for backward recurrence
 C       =======================================================
 C
@@ -6635,7 +6635,7 @@ C
         CG1=CBY1
         DO 90 K=2,NM
            CYK=2.0D0*(K-1.0D0)/Z*CG1-CG0
-           IF (CDABS(CYK).GT.1.0D+290) GO TO 90            
+           IF (CDABS(CYK).GT.1.0D+290) GO TO 90
            YAK=CDABS(CYK)
            YA1=CDABS(CG0)
            IF (YAK.LT.YA0.AND.YAK.LT.YA1) LB=K
@@ -6696,7 +6696,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CJYNB(N,Z,NM,CBJ,CDJ,CBY,CDY)
@@ -6833,7 +6833,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE IKNB(N,X,NM,BI,DI,BK,DK)
@@ -6849,7 +6849,7 @@ C                BK(n) --- Kn(x)
 C                DK(n) --- Kn'(x)
 C                NM --- Highest order computed
 C       Routines called:
-C                MSTA1 and MSTA2 for computing the starting point 
+C                MSTA1 and MSTA2 for computing the starting point
 C                for backward recurrence
 C       ===========================================================
 C
@@ -6931,7 +6931,7 @@ C       **********************************
         SUBROUTINE LPMN(MM,M,N,X,PM,PD)
 C
 C       =====================================================
-C       Purpose: Compute the associated Legendre functions 
+C       Purpose: Compute the associated Legendre functions
 C                Pmn(x) and their derivatives Pmn'(x)
 C       Input :  x  --- Argument of Pmn(x)
 C                m  --- Order of Pmn(x),  m = 0,1,2,...,n
@@ -7056,7 +7056,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CY01(KF,Z,ZF,ZD)
@@ -7207,7 +7207,7 @@ C       **********************************
         SUBROUTINE FFK(KS,X,FR,FI,FM,FA,GR,GI,GM,GA)
 C
 C       =======================================================
-C       Purpose: Compute modified Fresnel integrals F±(x) 
+C       Purpose: Compute modified Fresnel integrals F±(x)
 C                and K±(x)
 C       Input :  x   --- Argument of F±(x) and K±(x)
 C                KS  --- Sign code
@@ -7378,7 +7378,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE AIRYB(X,AI,BI,AD,BD)
@@ -7599,7 +7599,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE SCKB(M,N,C,DF,CK)
@@ -7649,10 +7649,10 @@ C
 30            R1=R1*I
 35         CK(K+1)=FAC*SUM/R1
         RETURN
-        END 
+        END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CPDLA(N,Z,CDN)
@@ -7680,7 +7680,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE FCSZO(KF,NT,ZO)
@@ -7692,7 +7692,7 @@ C       Input :  KF  --- Function code
 C                        KF=1 for C(z) or KF=2 for S(z)
 C                NT  --- Total number of zeros
 C       Output:  ZO(L) --- L-th zero of C(z) or S(z)
-C       Routines called: 
+C       Routines called:
 C            (1) CFC for computing Fresnel integral C(z)
 C            (2) CFS for computing Fresnel integral S(z)
 C       ==============================================================
@@ -7740,14 +7740,14 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE E1XA(X,E1)
 C
 C       ============================================
 C       Purpose: Compute exponential integral E1(x)
-C       Input :  x  --- Argument of E1(x) 
+C       Input :  x  --- Argument of E1(x)
 C       Output:  E1 --- E1(x) ( x > 0 )
 C       ============================================
 C
@@ -7773,7 +7773,7 @@ C       **********************************
 C
 C       =======================================================
 C       Purpose: Compute the associated Legendre function
-C                Pmv(x) with an integer order and an arbitrary 
+C                Pmv(x) with an integer order and an arbitrary
 C                nonnegative degree v
 C       Input :  x   --- Argument of Pm(x)  ( -1 ≤ x ≤ 1 )
 C                m   --- Order of Pmv(x)
@@ -7865,7 +7865,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CGAMA(X,Y,KF,GR,GI)
@@ -7998,7 +7998,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CHGUS(A,B,X,HU,ID)
@@ -8047,7 +8047,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE ITTH0(X,TTH)
@@ -8185,7 +8185,7 @@ C             (2) GAMMA2 for computing Г(x)
 C       ====================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        PI=3.141592653589793D0           
+        PI=3.141592653589793D0
         EPS=1.0D-12
         EP=DEXP(-.25*X*X)
         A0=DABS(X)**VA*EP
@@ -8207,7 +8207,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE IK01A(X,BI0,DI0,BI1,DI1,BK0,DK0,BK1,DK1)
@@ -8322,7 +8322,7 @@ C       **********************************
         SUBROUTINE CPBDN(N,Z,CPB,CPD)
 C
 C       ==================================================
-C       Purpose: Compute the parabolic cylinder functions 
+C       Purpose: Compute the parabolic cylinder functions
 C                 Dn(z) and Dn'(z) for a complex argument
 C       Input:   z --- Complex argument of Dn(z)
 C                n --- Order of Dn(z)  ( n=0,±1,±2,… )
@@ -8410,7 +8410,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE IK01B(X,BI0,DI0,BI1,DI1,BK0,DK0,BK1,DK1)
@@ -8508,7 +8508,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE LPN(N,X,PN,PD)
@@ -8730,13 +8730,13 @@ C
         ENDIF
 85      IF (FC(1).LT.0.0D0) THEN
            DO 90 J=1,KM
-90            FC(J)=-FC(J)             
+90            FC(J)=-FC(J)
         ENDIF
         RETURN
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE SPHI(N,X,NM,SI,DI)
@@ -8892,7 +8892,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE RMN1(M,N,C,X,DF,KD,R1F,R1D)
@@ -8904,7 +8904,7 @@ C                c and x
 C       Routines called:
 C            (1) SCKB for computing expansion coefficients c2k
 C            (2) SPHJ for computing the spherical Bessel
-C                functions of the first kind     
+C                functions of the first kind
 C       =======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -8919,7 +8919,7 @@ C
         R0=REG
         DO 10 J=1,2*M+IP
 10         R0=R0*J
-        R=R0    
+        R=R0
         SUC=R*DF(1)
         SW=0.0D0
         DO 15 K=2,NM
@@ -8958,7 +8958,7 @@ C
         CX=C*X
         NM2=2*NM+M
         CALL SPHJ(NM2,CX,NM2,SJ,DJ)
-        A0=(1.0D0-KD/(X*X))**(0.5D0*M)/SUC  
+        A0=(1.0D0-KD/(X*X))**(0.5D0*M)/SUC
         R1F=0.0D0
         SW=0.0D0
         LG=0
@@ -8976,7 +8976,7 @@ C
            IF (K.GT.NM1.AND.DABS(R1F-SW).LT.DABS(R1F)*EPS) GO TO 55
 50         SW=R1F
 55      R1F=R1F*A0
-        B0=KD*M/X**3.0D0/(1.0-KD/(X*X))*R1F    
+        B0=KD*M/X**3.0D0/(1.0-KD/(X*X))*R1F
         SUD=0.0D0
         SW=0.0D0
         DO 60 K=1,NM
@@ -8997,7 +8997,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE DVSA(VA,X,PD)
@@ -9049,7 +9049,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE E1Z(Z,CE1)
@@ -9193,7 +9193,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE GMN(M,N,C,X,BK,GF,GD)
@@ -9232,7 +9232,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE ITJYA(X,TJ,TY)
@@ -9388,7 +9388,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE RCTY(N,X,NM,RY,DY)
@@ -9751,14 +9751,14 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CYZO(NT,KF,KC,ZO,ZV)
 C
 C       ===========================================================
 C       Purpose : Compute the complex zeros of Y0(z), Y1(z) and
-C                 Y1'(z), and their associated values at the zeros 
+C                 Y1'(z), and their associated values at the zeros
 C                 using the modified Newton's iteration method
 C       Input:    NT --- Total number of zeros/roots
 C                 KF --- Function choice code
@@ -9833,7 +9833,7 @@ C       ===========================================================
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE KLVNB(X,BER,BEI,GER,GEI,DER,DEI,HER,HEI)
@@ -10009,7 +10009,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CSPHIK(N,Z,NM,CSI,CDI,CSK,CDK)
@@ -10033,7 +10033,7 @@ C
         DOUBLE PRECISION A0,PI
         DIMENSION CSI(0:N),CDI(0:N),CSK(0:N),CDK(0:N)
         PI=3.141592653589793D0
-        A0=CDABS(Z)            
+        A0=CDABS(Z)
         NM=N
         IF (A0.LT.1.0D-60) THEN
            DO 10 K=0,N
@@ -10199,7 +10199,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE OTHPL(KF,N,X,PL,DPL)
@@ -10323,7 +10323,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE RSWFO(M,N,C,X,CV,KF,R1F,R1D,R2F,R2D)
@@ -10376,7 +10376,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CH12N(N,Z,NM,CHF1,CHD1,CHF2,CHD2)
@@ -10441,7 +10441,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE JYZO(N,NT,RJ0,RJ1,RY0,RY1)
@@ -10520,7 +10520,7 @@ C       -- Newton method for y_{N,L}
            X=1.19477+1.08933*N
         ELSE
            X=N+0.93158*N**0.33333+0.26035/N**0.33333
-        ENDIF           
+        ENDIF
         L=0
         XGUESS=X
 20      X0=X
@@ -10544,7 +10544,7 @@ C       -- Newton method for y_{N,L}'
            X=2.67257+1.16099*N
         ELSE
            X=N+1.8211*N**0.33333+0.94001/N**0.33333
-        ENDIF  
+        ENDIF
         L=0
         XGUESS=X
 25      X0=X
@@ -10565,7 +10565,7 @@ C       XXX: should have a better initial guess for large N ~> 100 here
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE IKV(V,X,VM,BI,DI,BK,DK)
@@ -10714,7 +10714,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE SDMN(M,N,C,CV,KD,DF)
@@ -10742,7 +10742,7 @@ C
 5             DF(I)=0D0
            DF((N-M)/2+1)=1.0D0
            RETURN
-        ENDIF   
+        ENDIF
         CS=C*C*KD
         IP=1
         K=0
@@ -10776,7 +10776,7 @@ C
 12                  DF(K1)=DF(K1)*1.0D-100
                  F1=F1*1.0D-100
                  F0=F0*1.0D-100
-              ENDIF  
+              ENDIF
            ELSE
               KB=K
               FL=DF(K+1)
@@ -10788,7 +10788,7 @@ C
               ELSE IF (KB.EQ.2) THEN
                  DF(2)=F2
                  FS=-((D(2)-CV)*F2+G(2)*F1)/A(2)
-              ELSE 
+              ELSE
                  DF(2)=F2
                  DO 20 J=3,KB+1
                     F=-((D(J-1)-CV)*F2+G(J-1)*F1)/A(J-1)
@@ -10798,7 +10798,7 @@ C
 15                        DF(K1)=DF(K1)*1.0D-100
                        F=F*1.0D-100
                        F2=F2*1.0D-100
-                    ENDIF  
+                    ENDIF
                     F1=F2
 20                  F2=F
                  FS=F
@@ -10837,7 +10837,7 @@ C
 
 
 
-        
+
 C       **********************************
 
         SUBROUTINE AJYIK(X,VJ1,VJ2,VY1,VY2,VI1,VI2,VK1,VK2)
@@ -11168,7 +11168,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CIKVA(V,Z,VM,CBI,CDI,CBK,CDK)
@@ -11187,7 +11187,7 @@ C                CDK(n) --- Kn+v0'(z)
 C                VM --- Highest order computed
 C       Routines called:
 C            (1) GAMMA2 for computing the gamma function
-C            (2) MSTA1 and MSTA2 for computing the starting 
+C            (2) MSTA1 and MSTA2 for computing the starting
 C                point for backward recurrence
 C       ============================================================
 C
@@ -11336,7 +11336,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CFC(Z,ZF,ZD)
@@ -11399,7 +11399,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE FCS(X,C,S)
@@ -11808,7 +11808,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE GAIH(X,GA)
@@ -11958,7 +11958,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CLQMN(MM,M,N,X,Y,CQM,CQD)
@@ -12081,7 +12081,7 @@ C
            DO 5 I=1,N-M+1
 5             EG(I)=(I+M)*(I+M-1.0D0)
            GO TO 70
-        ENDIF                                           
+        ENDIF
         ICM=(N-M+2)/2
         NM=10+INT(0.5*(N-M)+C)
         CS=C*C*KD
@@ -12339,7 +12339,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE MTU12(KF,KC,M,Q,X,F1R,D1R,F2R,D2R)
@@ -12385,7 +12385,7 @@ C
         ELSE
            QM=17.0+3.1*SQRT(Q)-.126*Q+.0037*SQRT(Q)*Q
         ENDIF
-        KM=INT(QM+0.5*M)              
+        KM=INT(QM+0.5*M)
         CALL FCOEF(KD,M,Q,A,FG)
         IC=INT(M/2)+1
         IF (KD.EQ.4) IC=M/2
@@ -12465,14 +12465,14 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE CIK01(Z,CBI0,CDI0,CBI1,CDI1,CBK0,CDK0,CBK1,CDK1)
 C
 C       ==========================================================
-C       Purpose: Compute modified Bessel functions I0(z), I1(z), 
-C                K0(z), K1(z), and their derivatives for a 
+C       Purpose: Compute modified Bessel functions I0(z), I1(z),
+C                K0(z), K1(z), and their derivatives for a
 C                complex argument
 C       Input :  z --- Complex argument
 C       Output:  CBI0 --- I0(z)
@@ -12682,7 +12682,7 @@ C
         SY(0)=-DCOS(X)/X
         F0=SY(0)
         DY(0)=(DSIN(X)+DCOS(X)/X)/X
-        IF (N.LT.1) THEN 
+        IF (N.LT.1) THEN
            RETURN
         ENDIF
         SY(1)=(SY(0)-DSIN(X))/X
@@ -12690,7 +12690,7 @@ C
         DO 15 K=2,N
            F=(2.0D0*K-1.0D0)*F1/X-F0
            SY(K)=F
-           IF (DABS(F).GE.1.0D+300) GO TO 20              
+           IF (DABS(F).GE.1.0D+300) GO TO 20
            F0=F1
 15         F1=F
 20      NM=K-1
@@ -12700,7 +12700,7 @@ C
         END
 
 
-        
+
 C       **********************************
 
         SUBROUTINE JELP(U,HK,ESN,ECN,EDN,EPH)
@@ -12862,7 +12862,7 @@ C                Compute J_(|v|-N) (Abm & Stg 9.2.5)
                  BJ0=SR*(PU0*DCOS(T0)-QU0*DSIN(T0))
                  BJ1=SR*(PU1*DCOS(T1)-QU1*DSIN(T1))
 C                Forward recurrence for J_|v| (Abm & Stg 9.1.27)
-C                It's OK for the limited range -8.0 ≤ v ≤ 12.5, 
+C                It's OK for the limited range -8.0 ≤ v ≤ 12.5,
 C                since x >= 20 here; but would be unstable for v <~ -20
                  BF0=BJ0
                  BF1=BJ1
