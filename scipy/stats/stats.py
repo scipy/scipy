@@ -2379,12 +2379,12 @@ def pearsonr(x, y):
     return r,prob
 
 
-def fisher_exact(c) :
+def fisher_exact(table) :
     """Performs a Fisher exact test on a 2x2 contingency table.
 
     Parameters
     ----------
-    c : array_like of ints
+    table : array_like of ints
         A 2x2 contingency table.
 
     Returns
@@ -2407,7 +2407,9 @@ def fisher_exact(c) :
     (0.25, 0.13007593634330314)
     """
     hypergeom = distributions.hypergeom
-    c = np.asarray(c, dtype=np.int64)  # int32 is not enough for the algorithm
+    c = np.asarray(table, dtype=np.int64)  # int32 is not enough for the algorithm
+    if not c.shape == (2, 2):
+        raise ValueError("The input `table` must be of shape (2, 2).")
 
     if c[1,0] > 0 and c[0,1] > 0:
         odssratio = c[0,0] * c[1,1] / float(c[1,0] * c[0,1])

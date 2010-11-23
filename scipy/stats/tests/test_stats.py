@@ -447,6 +447,9 @@ def test_fisher_exact():
         np.testing.assert_almost_equal(res[1], res_r[1], decimal=11,
                                        verbose=True)
 
+    # test we raise an error for wrong shape of input.
+    assert_raises(ValueError, fisher_exact, np.arange(6).reshape(2, 3))
+
 
 class TestCorrSpearmanr(TestCase):
     """ W.II.D. Compute a correlation matrix on all the variables.
