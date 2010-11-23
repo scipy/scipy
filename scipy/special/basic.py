@@ -74,7 +74,7 @@ def jnjnp_zeros(nt):
         raise ValueError("Number must be integer <= 1200.")
     nt = int(nt)
     n,m,t,zo = specfun.jdzo(nt)
-    return zo[:nt],n[:nt],m[:nt],t[:nt]
+    return zo[1:nt+1],n[:nt],m[:nt],t[:nt]
 
 def jnyn_zeros(n,nt):
     """Compute nt zeros of the Bessel functions Jn(x), Jn'(x), Yn(x), and

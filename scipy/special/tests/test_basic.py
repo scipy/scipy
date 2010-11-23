@@ -8,7 +8,6 @@
 #8   Means test runs forever
 
 ###  test_besselpoly
-###  test_jnjnp_zeros
 ###  test_mathieu_a
 ###  test_mathieu_even_coef
 ###  test_mathieu_odd_coef
@@ -27,7 +26,7 @@ from numpy import array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp, log, 
 
 from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal, \
         assert_array_almost_equal, assert_approx_equal, assert_, \
-        rand, dec, TestCase, run_module_suite
+        rand, dec, TestCase, run_module_suite, assert_allclose
 from scipy import special
 import scipy.special._cephes as cephes
 
@@ -1347,11 +1346,18 @@ class TestBessel(TestCase):
                                         3101.86438139042]), rtol=1e-8)
 
     def test_jnjnp_zeros(self):
-        pass
-        #jnjp = jnjnp(3)
-        #assert_array_almost_equal(jnjp,(array([
-        #I don't think specfun jdzo is working properly the outputs do not seem to correlate
-        #to the inputs
+        jn = special.jn
+        def jnp(n, x):
+            return (jn(n-1,x) - jn(n+1,x))/2
+        for nt in range(1, 30):
+            z, n, m, t = special.jnjnp_zeros(nt)
+            for zz, nn, tt in zip(z, n, t):
+                if tt == 0:
+                    assert_allclose(jn(nn, zz), 0, atol=1e-6)
+                elif tt == 1:
+                    assert_allclose(jnp(nn, zz), 0, atol=1e-6)
+                else:
+                    raise AssertionError("Invalid t return for nt=%d" % nt)
 
     def test_jnp_zeros(self):
         jnp = special.jnp_zeros(1,5)
