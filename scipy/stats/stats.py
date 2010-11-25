@@ -2442,7 +2442,7 @@ def fisher_exact(table) :
             if maxval == minval + 1 and guess == minval:
                 guess = maxval
             else:
-                guess = (maxval + minval) / 2
+                guess = (maxval + minval) // 2
 
             pguess = hypergeom.pmf(guess, n1 + n2, n1, n)
             if pguess <= pexact and hypergeom.pmf(guess - 1, n1 + n2, n1, n) > pexact:
@@ -2478,7 +2478,7 @@ def fisher_exact(table) :
             if maxval == minval + 1 and guess == minval:
                 guess = maxval
             else:
-                guess = (maxval + minval) / 2
+                guess = (maxval + minval) // 2
             pguess = hypergeom.pmf(guess, n1 + n2, n1, n)
             if pguess <= pexact and hypergeom.pmf(guess + 1, n1 + n2, n1, n) > pexact:
                 break
