@@ -225,8 +225,9 @@ class dok_matrix(spmatrix, dict):
                 raise IndexError("index out of bounds")
 
             if np.isscalar(value):
-                if value==0 and self.has_key((i,j)):
-                    del self[(i,j)]
+                if value == 0:
+                    if self.has_key((i,j)):
+                        del self[(i,j)]
                 else:
                     dict.__setitem__(self, (i,j), self.dtype.type(value))
             else:

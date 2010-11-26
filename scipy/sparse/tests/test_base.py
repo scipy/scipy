@@ -1298,6 +1298,19 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
         c = csr_matrix(b)
         assert_equal(A.todense(), c.todense())
 
+    def test_ticket1160(self):
+        """Regression test for ticket #1160."""
+        a = dok_matrix((3,3))
+        a[0,0] = 0
+        # This assert would fail, because the above assignment would
+        # incorrectly call __set_item__ even though the value was 0.
+        assert_((0,0) not in a.keys(), "Unexpected entry (0,0) in keys")
+        
+        # Slice assignments were also affected.
+        b = dok_matrix((3,3))
+        b[:,0] = 0
+        assert_(len(b.keys())==0, "Unexpected entries in keys")
+
 
 
 class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
