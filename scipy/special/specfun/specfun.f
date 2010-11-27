@@ -5675,7 +5675,7 @@ C
               DO 15 J=1,500
                  RG=RG*(A+J-1.0D0)/(J*(B+J-1.0D0))*X
                  HG=HG+RG
-                 IF (DABS(RG/HG).LT.1.0D-15) GO TO 25
+                 IF (HG.NE.0D0.AND.DABS(RG/HG).LT.1.0D-15) GO TO 25
 15            CONTINUE
            ELSE
               CALL GAMMA2(A,TA)

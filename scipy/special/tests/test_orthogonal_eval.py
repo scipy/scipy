@@ -1,5 +1,3 @@
-#from numpy.testing import 
-
 import numpy as np
 from numpy.testing import assert_
 import scipy.special.orthogonal as orth
@@ -13,6 +11,18 @@ def test_eval_chebyt():
     v1 = np.cos(n*np.arccos(x))
     v2 = orth.eval_chebyt(n, x)
     assert_(np.allclose(v1, v2, rtol=1e-15))
+
+
+def test_warnings():
+    # ticket 1334
+    olderr = np.seterr(all='raise')
+    try:
+        # these should raise no fp warnings
+        orth.eval_legendre(1, 0)
+        orth.eval_laguerre(1, 1)
+        orth.eval_gegenbauer(1, 1, 0)
+    finally:
+        np.seterr(**olderr)
 
 
 class TestPolys(object):
@@ -47,9 +57,13 @@ class TestPolys(object):
             p = (p[0].astype(int),) + p[1:]
             return func(*p)
 
-        ds = FuncData(polyfunc, dataset, range(len(param_ranges)+2), -1,
-                      rtol=rtol)
-        ds.check()
+        olderr = np.seterr(all='raise')
+        try:
+            ds = FuncData(polyfunc, dataset, range(len(param_ranges)+2), -1,
+                          rtol=rtol)
+            ds.check()
+        finally:
+            np.seterr(**olderr)
 
     def test_jacobi(self):
         self.check_poly(orth.eval_jacobi, orth.jacobi,

@@ -381,9 +381,13 @@ double *loss;
                 p *= s * (a + t + d1) / (t + 1.0);
                 p *= (b + t + d1) / (t + 1.0 + e);
                 t += 1.0;
+                if (t > 10000) {      /* should never happen */
+                    mtherr("hyp2f1", TOOMANY);
+                    *loss = 1.0;
+                    return NPY_NAN;
+                }
             }
-            while (fabs(q / y) > EPS);
-
+            while (y == 0 || fabs(q / y) > EPS);
 
             if (id == 0.0) {
                 y *= gamma(c) / (gamma(a) * gamma(b));
@@ -498,7 +502,7 @@ double *loss;                   /* estimates loss of significance */
             return (s);
         }
     }
-    while (fabs(u / s) > MACHEP);
+    while (s == 0 || fabs(u / s) > MACHEP);
 
     /* return estimated relative error */
     *loss = (MACHEP * umax) / fabs(s) + (MACHEP * i);
