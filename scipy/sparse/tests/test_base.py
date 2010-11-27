@@ -1298,6 +1298,21 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
         c = csr_matrix(b)
         assert_equal(A.todense(), c.todense())
 
+    def test_resize(self):
+        """A couple basic tests of the resize() method.
+        
+        resize(shape) resizes the array in-place.
+        """
+        a = dok_matrix((5,5))
+        a[:,0] = 1
+        a.resize((2,2))
+        expected1 = array([[1,0],[1,0]])
+        assert_array_equal(a.todense(), expected1)
+        a.resize((3,2))
+        expected2 = array([[1,0],[1,0],[0,0]])
+        assert_array_equal(a.todense(), expected2)
+
+
     def test_ticket1160(self):
         """Regression test for ticket #1160."""
         a = dok_matrix((3,3))
