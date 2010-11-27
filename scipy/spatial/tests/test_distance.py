@@ -37,7 +37,8 @@
 import os.path
 
 import numpy as np
-from numpy.testing import verbose, TestCase, run_module_suite
+from numpy.testing import verbose, TestCase, run_module_suite, \
+        assert_raises
 from scipy.spatial.distance import squareform, pdist, cdist, matching, \
                                    jaccard, dice, sokalsneath, rogerstanimoto, \
                                    russellrao, yule, num_obs_y, num_obs_dm, \
@@ -1699,6 +1700,12 @@ class TestIsValidY(TestCase):
     def correct_n_by_n(self, n):
         y = np.random.rand(n*(n-1)/2)
         return y
+
+
+def test_sokalsneath_all_false():
+    """Regression test for ticket #876"""
+    assert_raises(ValueError, sokalsneath, [False, False, False], [False, False, False])
+
 
 if __name__=="__main__":
     run_module_suite()

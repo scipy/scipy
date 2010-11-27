@@ -739,8 +739,8 @@ def sokalmichener(u, v):
 
     .. math::
 
-       \frac{2R}
-            {S + 2R}
+       \frac{R}
+            {S + R}
 
     where :math:`c_{ij}` is the number of occurrences of
     :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
@@ -775,8 +775,8 @@ def sokalsneath(u, v):
 
     .. math::
 
-       \frac{2R}
-            {c_{TT} + 2R}
+       \frac{R}
+            {c_{TT} + R}
 
     where :math:`c_{ij}` is the number of occurrences of
     :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
@@ -799,7 +799,11 @@ def sokalsneath(u, v):
     else:
         ntt = (u * v).sum()
     (nft, ntf) = _nbool_correspond_ft_tf(u, v)
-    return float(2.0 * (ntf + nft))/float(ntt + 2.0 * (ntf + nft))
+    denom = ntt + 2.0 * (ntf + nft)
+    if denom == 0:
+        raise ValueError('Sokal-Sneath dissimilarity is not defined for '
+                            'vectors that are entirely false.')
+    return float(2.0 * (ntf + nft)) / denom
 
 
 def pdist(X, metric='euclidean', p=2, V=None, VI=None):
