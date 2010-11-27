@@ -38,11 +38,11 @@ import os.path
 
 import numpy as np
 from numpy.testing import verbose, TestCase, run_module_suite, \
-        assert_raises
+        assert_raises, assert_array_equal
 from scipy.spatial.distance import squareform, pdist, cdist, matching, \
                                    jaccard, dice, sokalsneath, rogerstanimoto, \
                                    russellrao, yule, num_obs_y, num_obs_dm, \
-                                   is_valid_dm, is_valid_y
+                                   is_valid_dm, is_valid_y, wminkowski
 
 _filenames = ["iris.txt",
               "cdist-X1.txt",
@@ -876,6 +876,32 @@ class TestPdist(TestCase):
         Y_right = eo['pdist-minkowski-5.8-iris']
         Y_test2 = pdist(X, 'test_minkowski', 5.8)
         self.assertTrue(within_tol(Y_test2, Y_right, eps))
+
+    ################# wminkowski
+
+    def test_pdist_wminkowski(self):
+        x = np.array([[0.0, 0.0, 0.0],
+                      [1.0, 0.0, 0.0],
+                      [0.0, 1.0, 0.0],
+                      [1.0, 1.0, 1.0]])
+
+        p2_expected = [1.0, 1.0, np.sqrt(3),
+                       np.sqrt(2), np.sqrt(2),
+                       np.sqrt(2)]
+        p1_expected = [0.5, 1.0, 3.5,
+                       1.5, 3.0,
+                       2.5]
+        dist = pdist(x, metric=wminkowski, w=[1.0, 1.0, 1.0])
+        assert_array_equal(dist, p2_expected)
+
+        dist = pdist(x, metric=wminkowski, w=[0.5, 1.0, 2.0], p=1)
+        assert_array_equal(dist, p1_expected)
+
+        dist = pdist(x, metric='wminkowski', w=[1.0, 1.0, 1.0])
+        assert_array_equal(dist, p2_expected)
+
+        dist = pdist(x, metric='wminkowski', w=[0.5, 1.0, 2.0], p=1)
+        assert_array_equal(dist, p1_expected)
 
     ################### pdist: hamming
     def test_pdist_hamming_random(self):

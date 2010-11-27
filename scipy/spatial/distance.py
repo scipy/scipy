@@ -110,9 +110,11 @@ Copyright (C) Damian Eads, 2007-2008. New BSD License.
 
 """
 
+import warnings
 import numpy as np
+
 import _distance_wrap
-import types
+
 
 def _copy_array_if_base_present(a):
     """
@@ -121,7 +123,7 @@ def _copy_array_if_base_present(a):
     if a.base is not None:
         return a.copy()
     elif np.issubsctype(a, np.float32):
-        return array(a, dtype=np.double)
+        return np.array(a, dtype=np.double)
     else:
         return a
 
@@ -201,6 +203,7 @@ def wminkowski(u, v, p, w):
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
+    w = np.asarray(w)
     if p < 1:
         raise ValueError("p must be at least 1")
     return ((w * abs(u-v))**p).sum() ** (1.0 / p)
@@ -570,10 +573,8 @@ def _nbool_correspond_ft_tf(u, v):
     if u.dtype == np.int or u.dtype == np.float_ or u.dtype == np.double:
         not_u = 1.0 - u
         not_v = 1.0 - v
-        nff = (not_u * not_v).sum()
         nft = (not_u * v).sum()
         ntf = (u * not_v).sum()
-        ntt = (u * v).sum()
     else:
         not_u = ~u
         not_v = ~v
@@ -806,7 +807,7 @@ def sokalsneath(u, v):
     return float(2.0 * (ntf + nft)) / denom
 
 
-def pdist(X, metric='euclidean', p=2, V=None, VI=None):
+def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
     r"""
     Computes the pairwise distances between m original observations in
     n-dimensional space. Returns a condensed distance matrix Y.  For
@@ -1038,49 +1039,38 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
 
     X = np.asarray(X, order='c')
 
-    #if np.issubsctype(X, np.floating) and not np.issubsctype(X, np.double):
-    #    raise TypeError('Floating point arrays must be 64-bit (got %r).' %
-    #    (X.dtype.type,))
-
     # The C code doesn't do striding.
     [X] = _copy_arrays_if_base_present([_convert_to_double(X)])
 
     s = X.shape
-
     if len(s) != 2:
         raise ValueError('A 2-dimensional array must be passed.');
 
-    m = s[0]
-    n = s[1]
+    m, n = s
     dm = np.zeros((m * (m - 1) / 2,), dtype=np.double)
 
+    wmink_names = ['wminkowski', 'wmi', 'wm', 'wpnorm']
+    if w is None and (metric == wminkowski or metric in wmink_names):
+        raise ValueError('weighted minkowski requires a weight '
+                            'vector `w` to be given.')
+
     if callable(metric):
-        k = 0
         if metric == minkowski:
-            for i in xrange(0, m - 1):
-                for j in xrange(i+1, m):
-                    dm[k] = minkowski(X[i, :], X[j, :], p)
-                    k = k + 1
+            def dfun(u,v): return minkowski(u, v, p)
         elif metric == wminkowski:
-            for i in xrange(0, m - 1):
-                for j in xrange(i+1, m):
-                    dm[k] = wminkowski(X[i, :], X[j, :], p, w)
-                    k = k + 1
+            def dfun(u,v): return wminkowski(u, v, p, w)
         elif metric == seuclidean:
-            for i in xrange(0, m - 1):
-                for j in xrange(i+1, m):
-                    dm[k] = seuclidean(X[i, :], X[j, :], V)
-                    k = k + 1
+            def dfun(u,v): return seuclidean(u, v, V)
         elif metric == mahalanobis:
-            for i in xrange(0, m - 1):
-                for j in xrange(i+1, m):
-                    dm[k] = mahalanobis(X[i, :], X[j, :], V)
-                    k = k + 1
+            def dfun(u,v): return mahalanobis(u, v, V)
         else:
-            for i in xrange(0, m - 1):
-                for j in xrange(i+1, m):
-                    dm[k] = metric(X[i, :], X[j, :])
-                    k = k + 1
+            dfun = metric
+
+        k = 0
+        for i in xrange(0, m - 1):
+            for j in xrange(i+1, m):
+                dm[k] = dfun(X[i], X[j])
+                k = k + 1
 
     elif isinstance(metric,basestring):
         mstr = metric.lower()
@@ -1109,9 +1099,9 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
             _distance_wrap.pdist_chebyshev_wrap(_convert_to_double(X), dm)
         elif mstr in set(['minkowski', 'mi', 'm']):
             _distance_wrap.pdist_minkowski_wrap(_convert_to_double(X), dm, p)
-        elif mstr in set(['wminkowski', 'wmi', 'wm', 'wpnorm']):
-            _distance_wrap.cdist_weighted_minkowski_wrap(_convert_to_double(X),
-                                                         dm, p, w)
+        elif mstr in wmink_names:
+            _distance_wrap.pdist_weighted_minkowski_wrap(_convert_to_double(X),
+                                                         dm, p, np.asarray(w))
         elif mstr in set(['seuclidean', 'se', 's']):
             if V is not None:
                 V = np.asarray(V, order='c')
@@ -1122,7 +1112,9 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
                 if len(V.shape) != 1:
                     raise ValueError('Variance vector V must be one-dimensional.')
                 if V.shape[0] != n:
-                    raise ValueError('Variance vector V must be of the same dimension as the vectors on which the distances are computed.')
+                    raise ValueError('Variance vector V must be of the same '
+                            'dimension as the vectors on which the distances '
+                            'are computed.')
                 # The C code doesn't do striding.
                 [VV] = _copy_arrays_if_base_present([_convert_to_double(V)])
             else:
@@ -1432,7 +1424,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
         if throw:
             raise
         if warning:
-            _warning(str(e))
+            warnings.warn(str(e))
         valid = False
     return valid
 
@@ -1492,7 +1484,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
         if throw:
             raise
         if warning:
-            _warning(str(e))
+            warnings.warn(str(e))
         valid = False
     return valid
 
