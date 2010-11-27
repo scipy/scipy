@@ -4,23 +4,52 @@
 
 """
 Fundamental Physical Constants
+------------------------------
+These constants are taken from CODATA Recommended Values of the Fundamental
+Physical Constants 2006.
 
-These constants are taken from CODATA Recommended Values of the
-Fundamental Physical Constants. They may be found at
+Object
+------
+physical_constants : dict
+    A dictionary containing physical constants. Keys are the names
+    of physical constants, values are tuples (value, units, precision).
 
+Functions
+---------
+value(key):
+    Returns the value of the physical constant(key).
+unit(key):
+    Returns the units of the physical constant(key).
+precision(key):
+    Returns the relative precision of the physical constant(key).
+find(sub):
+    Prints or returns list of keys containing the string sub,
+    default is all.
+
+Source
+------
+CODATA internationally recommended values are recommended for international
+use by CODATA and are the latest available. Termed the "2006 CODATA
+recommended values," they are generally recognized worldwide for use in all
+fields of science and technology. The values became available in March 2007
+and replaced the 2002 CODATA set. They are based on all of the data
+available through 31 December 2006. The 2006 adjustment was carried out
+under the auspices of the CODATA Task Group on Fundamental Constants. Also
+available is an Introduction to the constants for non-experts.
+
+Website
+-------
 http://physics.nist.gov/cuu/Constants/index.html
 
-The values are stored in the dictionary physical_constants as a tuple
-containing the value, the units, and the relative precision, in that
-order.  All constants are in SI units unless otherwise stated.
+References
+----------
+Theoretical and experimental publications relevant to the
+fundamental constants and closely related precision measurements
+published since the mid 1980s, but also including many older
+papers of particular interest, some of which date back to the
+1800s. To search bibliography visit
 
-Several helper functions are provided:
-
-    value(key) : Returns the value of the physical constant.
-    unit(key) : Returns the units of the physical constant.
-    precision(key) : Returns the relative precision of the physical constant.
-    find(sub) : Prints a list of keys containing the string sub.
-                If sub is not specified, returns all keys.
+http://physics.nist.gov/cuu/Constants/Citations/Search.html
 
 """
 
@@ -400,11 +429,11 @@ def value(key) :
     codata : Contains the description of `physical_constants`, which, as a
         dictionary literal object, does not itself possess a docstring.
 
-    Examples
+        Examples
     --------
     >>> from scipy.constants import codata
     >>> codata.value('elementary charge')
-    1.60217653e-019
+        1.602176487e-019
 
     """
     return physical_constants[key][0]
@@ -460,7 +489,7 @@ def precision(key) :
     --------
     >>> from scipy.constants import codata
     >>> codata.precision(u'proton mass')
-    1.7338050694080732e-007
+    4.96226989798e-08
 
     """
     return physical_constants[key][2] / physical_constants[key][0]

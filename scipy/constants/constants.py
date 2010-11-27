@@ -177,17 +177,17 @@ def C2K(C):
 
     Parameters
     ----------
-    C : float-like scalar or array-like
-        Celsius temperature(s) to be converted
+    C : array_like
+        Celsius temperature(s) to be converted.
 
     Returns
     -------
-    K : float or a numpy array of floats, corresponding to type of Parameters
-        Equivalent Kelvin temperature(s)
+    K : float or array of floats
+        Equivalent Kelvin temperature(s).
 
     Notes
     -----
-    Computes `K = C +` `zero_Celsius` where `zero_Celsius` = 273.15, i.e.,
+    Computes ``K = C + zero_Celsius`` where `zero_Celsius` = 273.15, i.e.,
     (the absolute value of) temperature "absolute zero" as measured in Celsius.
 
     Examples
@@ -205,17 +205,17 @@ def K2C(K):
 
     Parameters
     ----------
-    K : float-like scalar or array-like
-        Kelvin temperature(s) to be converted
+    K : array_like
+        Kelvin temperature(s) to be converted.
 
     Returns
     -------
-    C : float or a numpy array of floats, corresponding to type of Parameters
-        Equivalent Celsius temperature(s)
+    C : float or array of floats
+        Equivalent Celsius temperature(s).
 
     Notes
     -----
-    Computes `C = K -` `zero_Celsius` where `zero_Celsius` = 273.15, i.e.,
+    Computes ``C = K - zero_Celsius`` where `zero_Celsius` = 273.15, i.e.,
     (the absolute value of) temperature "absolute zero" as measured in Celsius.
 
     Examples
@@ -233,17 +233,17 @@ def F2C(F):
 
     Parameters
     ----------
-    F : float-like scalar or array-like
-        Fahrenheit temperature(s) to be converted
+    F : array_like
+        Fahrenheit temperature(s) to be converted.
 
     Returns
     -------
-    C : float or a numpy array of floats, corresponding to type of Parameters
-        Equivalent Celsius temperature(s)
+    C : float or array of floats
+        Equivalent Celsius temperature(s).
 
     Notes
     -----
-    Computes `C = (F - 32) / 1.8`
+    Computes ``C = (F - 32) / 1.8``.
 
     Examples
     --------
@@ -260,17 +260,17 @@ def C2F(C):
 
     Parameters
     ----------
-    C : float-like scalar or array-like
-        Celsius temperature(s) to be converted
+    C : array_like
+        Celsius temperature(s) to be converted.
 
     Returns
     -------
-    F : float or a numpy array of floats, corresponding to type of Parameters
-        Equivalent Fahrenheit temperature(s)
+    F : float or array of floats
+        Equivalent Fahrenheit temperature(s).
 
     Notes
     -----
-    Computes `F = 1.8 * C + 32`
+    Computes ``F = 1.8 * C + 32``.
 
     Examples
     --------
@@ -287,17 +287,17 @@ def F2K(F):
 
     Parameters
     ----------
-    F : float-like scalar or array-like
-        Fahrenheit temperature(s) to be converted
+    F : array_like
+        Fahrenheit temperature(s) to be converted.
 
     Returns
     -------
-    K : float or a numpy array of floats, corresponding to type of Parameters
-        Equivalent Kelvin temperature(s)
+    K : float or array of floats
+        Equivalent Kelvin temperature(s).
 
     Notes
     -----
-    Computes `K = (F - 32)/1.8 +` `zero_Celsius` where `zero_Celsius` =
+    Computes ``K = (F - 32)/1.8 + zero_Celsius`` where `zero_Celsius` =
     273.15, i.e., (the absolute value of) temperature "absolute zero" as
     measured in Celsius.
 
@@ -316,17 +316,17 @@ def K2F(K):
 
     Parameters
     ----------
-    K : float-like scalar or array-like
-        Kelvin temperature(s) to be converted
+    K : array_like
+        Kelvin temperature(s) to be converted.
 
     Returns
     -------
-    F : float or a numpy array of floats, corresponding to type of Parameters
-        Equivalent Fahrenheit temperature(s)
+    F : float or array of floats
+        Equivalent Fahrenheit temperature(s).
 
     Notes
     -----
-    Computes `F = 1.8 * (K -` `zero_Celsius` `) + 32` where `zero_Celsius` =
+    Computes ``F = 1.8 * (K - zero_Celsius) + 32`` where `zero_Celsius` =
     273.15, i.e., (the absolute value of) temperature "absolute zero" as
     measured in Celsius.
 
@@ -347,17 +347,17 @@ def lambda2nu(lambda_):
 
     Parameters
     ----------
-    lambda : float-like scalar or array-like
-        Wavelength(s) to be converted
+    lambda : array_like
+        Wavelength(s) to be converted.
 
     Returns
     -------
-    nu : float or a numpy array of floats, corresponding to type of Parameters
-        Equivalent optical frequency(ies)
+    nu : float or array of floats
+        Equivalent optical frequency.
 
     Notes
     -----
-    Computes :math:`\\nu = c / \\lambda` where `c` = 299792458.0, i.e., the
+    Computes ``nu = c / lambda`` where c = 299792458.0, i.e., the
     (vacuum) speed of light in meters/second.
 
     Examples
@@ -375,17 +375,17 @@ def nu2lambda(nu):
 
     Parameters
     ----------
-    nu : float-like scalar or array-like
-        Optical frequency(ies) to be converted
+    nu : array_like
+        Optical frequency to be converted.
 
     Returns
     -------
-    lambda : float or a numpy array of floats, corresp. to type of Parameters
-        Equivalent wavelength(s)
+    lambda : float or array of floats
+        Equivalent wavelength(s).
 
     Notes
     -----
-    Computes :math:`\\lambda = c / \\nu` where `c` = 299792458.0, i.e., the
+    Computes ``lambda = c / nu`` where c = 299792458.0, i.e., the
     (vacuum) speed of light in meters/second.
 
     Examples
