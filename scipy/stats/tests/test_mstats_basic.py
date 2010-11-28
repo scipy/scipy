@@ -15,25 +15,25 @@ from numpy.ma.testutils import assert_equal, assert_almost_equal, \
 
 
 class TestMquantiles(TestCase):
-    """Regression tests for mstats module.""" 
-    def test_mquantiles_limit_keyword(self): 
-        """Ticket #867""" 
-        data = np.array([[   6.,    7.,    1.], 
-                         [  47.,   15.,    2.], 
-                         [  49.,   36.,    3.], 
-                         [  15.,   39.,    4.], 
-                         [  42.,   40., -999.], 
-                         [  41.,   41., -999.], 
-                         [   7., -999., -999.], 
-                         [  39., -999., -999.], 
-                         [  43., -999., -999.], 
-                         [  40., -999., -999.], 
+    """Regression tests for mstats module."""
+    def test_mquantiles_limit_keyword(self):
+        """Ticket #867"""
+        data = np.array([[   6.,    7.,    1.],
+                         [  47.,   15.,    2.],
+                         [  49.,   36.,    3.],
+                         [  15.,   39.,    4.],
+                         [  42.,   40., -999.],
+                         [  41.,   41., -999.],
+                         [   7., -999., -999.],
+                         [  39., -999., -999.],
+                         [  43., -999., -999.],
+                         [  40., -999., -999.],
                          [  36., -999., -999.]])
-        desired = [[19.2, 14.6, 1.45], 
-                   [40.0, 37.5, 2.5 ], 
-                   [42.8, 40.05, 3.55]] 
-        quants = mstats.mquantiles(data, axis=0, limit=(0, 50)) 
-        assert_almost_equal(quants, desired) 
+        desired = [[19.2, 14.6, 1.45],
+                   [40.0, 37.5, 2.5 ],
+                   [42.8, 40.05, 3.55]]
+        quants = mstats.mquantiles(data, axis=0, limit=(0, 50))
+        assert_almost_equal(quants, desired)
 
 
 
@@ -526,6 +526,12 @@ class TestMisc(TestCase):
         result = mstats.friedmanchisquare(*x)
         assert_almost_equal(result[0], 2.0156, 4)
         assert_almost_equal(result[1], 0.5692, 4)
+
+
+def test_plotting_positions():
+    """Regression test for #1256"""
+    pos = mstats.plotting_positions(np.arange(3), 0, 0)
+    assert_array_almost_equal(pos.data, np.array([0.25, 0.5, 0.75]))
 
 
 if __name__ == "__main__":
