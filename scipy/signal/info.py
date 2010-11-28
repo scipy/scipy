@@ -71,7 +71,9 @@ Signal Processing Tools
     bilinear:
         Return a digital filter from an analog filter using the bilinear transform.
     firwin:
-        Windowed FIR filter design.
+        Windowed FIR filter design, with frequency response defined as pass and stop bands.
+    firwin2:
+        Windowed FIR filter design, with arbitrary frequency response.
     freqs:
         Analog filter frequency response.
     freqz:

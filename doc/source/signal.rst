@@ -64,6 +64,7 @@ Filter design
 
    bilinear
    firwin
+   firwin2
    freqs
    freqz
    iirdesign

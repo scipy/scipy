@@ -114,6 +114,10 @@ Improved FIR filter design functions (``scipy.signal``)
 The function ``scipy.signal.firwin`` was enhanced to allow the
 design of highpass, bandpass, bandstop and multi-band FIR filters.
 
+The function ``scipy.signal.firwin2`` was added.  This function
+uses the window method to create a linear phase FIR filter with
+an arbitrary frequency response.
+
 The functions ``scipy.signal.kaiser_atten`` and ``scipy.signal.kaiser_beta``
 were added. 
 
@@ -131,7 +135,7 @@ The function ``scipy.stats.kendalltau`` was rewritten to make it much faster
 Removed features
 ================
 
-The deprecated modules ``helpdmod``, ``pexec`` and ``ppimport`` were removed
+The deprecated modules ``helpmod``, ``pexec`` and ``ppimport`` were removed
 from ``scipy.misc``.
 
 The ``save`` method of the ``spmatrix`` class in ``scipy.sparse``, which has
