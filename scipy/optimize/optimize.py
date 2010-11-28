@@ -66,11 +66,11 @@ def vecnorm(x, ord=2):
 
 def rosen(x):
     """The Rosenbrock function.
-    
+
     The function computed is
 
         sum(100.0*(x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0
-    
+
     Parameters
     ----------
     x : array_like, 1D
@@ -453,7 +453,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     Optimization', 1999, pg. 198.
 
     """
-    x0 = asarray(x0).squeeze()
+    x0 = asarray(x0).flatten()
     if x0.ndim == 0:
         x0.shape = (1,)
     if maxiter is None:
