@@ -97,7 +97,7 @@ def bayes_mvs(data,alpha=0.90):
         return _gauss_mvs(x, n, alpha)
     xbar = x.mean()
     C = x.var()
-    # mean 
+    # mean
     fac = sqrt(C/(n-1))
     tval = distributions.t.ppf((1+alpha)/2.0,n-1)
     delta = fac*tval
@@ -135,11 +135,11 @@ def bayes_mvs(data,alpha=0.90):
 
 def mvsdist(data):
     """Return 'frozen' distributions for mean, variance, and standard deviation of data.
-    
+
     Parameters
     ----------
     data : array-like (raveled to 1-d)
-    
+
     Returns
     -------
     mdist : "frozen" distribution object
@@ -1101,7 +1101,7 @@ def fligner(*args,**kwds):
     for i in range(k):
         allZij.extend(list(Zij[i]))
         g.append(len(allZij))
-    
+
     ranks = stats.rankdata(allZij)
     a = distributions.norm.ppf(ranks/(2*(Ntot+1.0)) + 0.5)
 
@@ -1159,13 +1159,13 @@ def mood(x,y):
     mnM = n*(N*N-1.0)/12
     varM = m*n*(N+1.0)*(N+2)*(N-2)/180
     z = (M-mnM)/sqrt(varM)
-    
+
     # Numerically better than p = norm.cdf(x); p = min(p, 1 - p)
     if z > 0:
         pval = distributions.norm.sf(z)
     else:
         pval = distributions.norm.cdf(z)
-    
+
     # Account for two-sidedness
     pval *= 2.
     return z, pval

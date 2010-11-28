@@ -1,7 +1,7 @@
 # Functions to implement several important functions for
 #   various Continous and Discrete Probability Distributions
 #
-# Author:  Travis Oliphant  2002-2010 with contributions from 
+# Author:  Travis Oliphant  2002-2010 with contributions from
 #          SciPy Developers 2004-2010
 #
 
@@ -418,7 +418,7 @@ class rv_frozen(object):
 ## pdf -- PDF
 ## logpdf -- log PDF (more  numerically accurate if possible)
 ## cdf -- CDF
-## logcdf -- log of CDF 
+## logcdf -- log of CDF
 ## sf  -- Survival Function (1-CDF)
 ## logsf --- log of SF
 ## ppf -- Percent Point Function (Inverse of CDF)
@@ -450,7 +450,7 @@ class rv_frozen(object):
 ##
 ##     _cdf, _ppf, _rvs, _isf, _sf
 ##
-##   Rarely would you override _isf  and _sf but you could for numerical precision. 
+##   Rarely would you override _isf  and _sf but you could for numerical precision.
 ##
 ##   Statistics are computed using numerical integration by default.
 ##     For speed you can redefine this using
@@ -697,7 +697,7 @@ class rv_generic(object):
         Parameters
         ----------
         alpha : array-like float in [0,1]
-            Probability that an rv will be drawn from the returned range        
+            Probability that an rv will be drawn from the returned range
         arg1, arg2, ... : array-like
             The shape parameter(s) for the distribution (see docstring of the instance
             object for more information)
@@ -709,7 +709,7 @@ class rv_generic(object):
         Returns
         -------
         a, b: array-like (float)
-            end-points of range that contain alpha % of the rvs   
+            end-points of range that contain alpha % of the rvs
         """
         alpha = arr(alpha)
         if any((alpha > 1) | (alpha < 0)):
@@ -1032,7 +1032,7 @@ class rv_continuous(rv_generic):
     def _pdf(self,x,*args):
         return derivative(self._cdf,x,dx=1e-5,args=args,order=5)
 
-    ## Could also define any of these 
+    ## Could also define any of these
     def _logpdf(self, x, *args):
         return log(self._pdf(x, *args))
 
@@ -1116,8 +1116,8 @@ class rv_continuous(rv_generic):
     def logpdf(self, x, *args, **kwds):
         """
         Log of the probability density function at x of the given RV.
-        
-        This uses more numerically accurate calculation if available. 
+
+        This uses more numerically accurate calculation if available.
 
         Parameters
         ----------
@@ -1154,7 +1154,7 @@ class rv_continuous(rv_generic):
         if output.ndim == 0:
             return output[()]
         return output
-        
+
 
     def cdf(self,x,*args,**kwds):
         """
@@ -1636,7 +1636,7 @@ class rv_continuous(rv_generic):
 
         return x0, func, restore, args
 
-            
+
     def fit(self, data, *args, **kwds):
         """
         Return MLEs for shape, location, and scale parameters from data.
@@ -1701,7 +1701,7 @@ class rv_continuous(rv_generic):
         if not callable(optimizer) and isinstance(optimizer, (str, unicode)):
             if not optimizer.startswith('fmin_'):
                 optimizer = "fmin_"+optimizer
-            if optimizer == 'fmin_': 
+            if optimizer == 'fmin_':
                 optimizer = 'fmin'
             try:
                 optimizer = getattr(optimize, optimizer)
@@ -1727,7 +1727,7 @@ class rv_continuous(rv_generic):
     @np.deprecate
     def est_loc_scale(self, data, *args):
         """This function is deprecated, use self.fit_loc_scale(data) instead. """
-        return self.fit_loc_scale(data, *args)        
+        return self.fit_loc_scale(data, *args)
 
     def freeze(self,*args,**kwds):
         return rv_frozen(self,*args,**kwds)
@@ -1785,8 +1785,8 @@ class rv_continuous(rv_generic):
         else:
             place(output,cond0,self.vecentropy(*goodargs)+log(scale))
         return output
-   
-    def expect(self, func=None, args=(), loc=0, scale=1, lb=None, ub=None, 
+
+    def expect(self, func=None, args=(), loc=0, scale=1, lb=None, ub=None,
                conditional=False, **kwds):
         """calculate expected value of a function with respect to the distribution
 
@@ -1810,11 +1810,11 @@ class rv_continuous(rv_generic):
         Returns
         -------
         expected value : float
-        
+
         Notes
         -----
         This function has not been checked for it's behavior when the integral is
-        not finite. The integration behavior is inherited from integrate.quad.           
+        not finite. The integration behavior is inherited from integrate.quad.
         """
         if func is None:
             def fun(x, *args):
@@ -1833,7 +1833,7 @@ class rv_continuous(rv_generic):
         kwds['args'] = args
         return integrate.quad(fun, lb, ub, **kwds)[0] / invfac
 
- 
+
 _EULER = 0.577215664901532860606512090082402431042  # -special.psi(1)
 _ZETA3 = 1.202056903159594285399738161511449990765  # special.zeta(3,1)  Apery's constant
 
@@ -2019,7 +2019,7 @@ class beta_gen(rv_continuous):
             ku = a**3 - a**2*(2*b-1) + b**2*(b+1) - 2*a*b*(b+2)
             ku /= a*b*(a+b+2)*(a+b+3)
             ku *= 6
-            return [sk-g1, ku-g2]            
+            return [sk-g1, ku-g2]
         a, b = optimize.fsolve(func, (1.0, 1.0))
         return super(beta_gen, self)._fitstart(data, args=(a,b))
     def fit(self, data, *args, **kwds):
@@ -2256,7 +2256,7 @@ class chi2_gen(rv_continuous):
         return (df/2.-1)*log(x)-x/2.-gamln(df/2.)-(log(2)*df)/2.
 ##        Px = x**(df/2.0-1)*exp(-x/2.0)
 ##        Px /= special.gamma(df/2.0)* 2**(df/2.0)
-##        return log(Px)        
+##        return log(Px)
     def _cdf(self, x, df):
         return special.chdtr(df, x)
     def _sf(self, x, df):
@@ -2763,7 +2763,7 @@ class genpareto_gen(rv_continuous):
         else:
             self.b = -1.0 / c
             return rv_continuous._entropy(self, c)
-    
+
 genpareto = genpareto_gen(a=0.0,name='genpareto',
                           longname="A generalized Pareto",
                           shapes='c',extradoc="""
@@ -4267,7 +4267,7 @@ class truncnorm_gen(rv_continuous):
         self._logdelta = log(self._delta)
         return (a != b)
     # All of these assume that _argcheck is called first
-    #  and no other thread calls _pdf before. 
+    #  and no other thread calls _pdf before.
     def _pdf(self, x, a, b):
         return _norm_pdf(x) / self._delta
     def _logpdf(self, x, a, b):
@@ -5563,7 +5563,7 @@ class rv_discrete(rv_generic):
 
         #handle cases with infinite support
 
-        while (pos <= ub) and (diff > self.moment_tol) and count <= maxcount: 
+        while (pos <= ub) and (diff > self.moment_tol) and count <= maxcount:
             diff = fun(pos)
             tot += diff
             pos += self.inc
@@ -5572,7 +5572,7 @@ class rv_discrete(rv_generic):
         if self.a < 0: #handle case when self.a = -inf
             diff = 1e100
             pos = low - self.inc
-            while (pos >= lb) and (diff > self.moment_tol) and count <= maxcount: 
+            while (pos >= lb) and (diff > self.moment_tol) and count <= maxcount:
                 diff = fun(pos)
                 tot += diff
                 pos -= self.inc
@@ -5581,7 +5581,7 @@ class rv_discrete(rv_generic):
             # fixme: replace with proper warning
             print 'sum did not converge'
         return tot/invfac
-    
+
 
 # Binomial
 
