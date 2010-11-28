@@ -39,8 +39,6 @@ both list and array versions but were deemed useful
 
 CENTRAL TENDENCY:  gmean    (geometric mean)
                    hmean    (harmonic mean)
-                   mean
-                   median
                    medianscore
                    mode
 
@@ -72,8 +70,6 @@ VARIABILITY:  obrientransform
               samplevar
               samplestd
               signaltonoise (for arrays only)
-              var
-              std
               stderr
               sem
               z
@@ -211,16 +207,16 @@ import distributions
 import _support
 from _support import _chk_asarray, _chk2_asarray
 
-__all__ = ['gmean', 'hmean', 'mean', 'cmedian', 'median', 'mode',
+__all__ = ['gmean', 'hmean', 'cmedian', 'mode',
            'tmean', 'tvar', 'tmin', 'tmax', 'tstd', 'tsem',
            'moment', 'variation', 'skew', 'kurtosis', 'describe',
            'skewtest', 'kurtosistest', 'normaltest',
            'itemfreq', 'scoreatpercentile', 'percentileofscore',
            'histogram', 'histogram2', 'cumfreq', 'relfreq',
            'obrientransform', 'samplevar', 'samplestd', 'signaltonoise',
-           'var', 'std', 'stderr', 'sem', 'z', 'zs', 'zmap', 'zscore',
+           'stderr', 'sem', 'z', 'zs', 'zmap', 'zscore',
            'threshold', 'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
-           'cov', 'corrcoef', 'f_oneway', 'pearsonr', 'fisher_exact',
+           'f_oneway', 'pearsonr', 'fisher_exact',
            'spearmanr', 'pointbiserialr', 'kendalltau', 'linregress',
            'ttest_1samp', 'ttest_ind', 'ttest_rel',
            'kstest', 'chisquare', 'ks_2samp', 'mannwhitneyu',
@@ -535,48 +531,6 @@ def hmean(a, axis=0, dtype=None):
         raise ValueError("Harmonic mean only defined if all elements greater than zero")
 
 
-
-def mean(a, axis=0):
-    """
-    Returns the arithmetic mean of m along the given dimension.
-
-    That is: (x1 + x2 + .. + xn) / n
-
-    Parameters
-    ----------
-    a : array
-    axis : int or None
-
-    Returns
-    -------
-    The arithmetic mean computed over a single dimension of the input array or
-    all values in the array if axis=None. The return value will have a floating
-    point dtype even if the input data are integers.
-
-
-    Notes
-    -----
-    scipy.stats.mean is deprecated; please update your code to use numpy.mean.
-
-    Please note that:
-        - numpy.mean axis argument defaults to None, not 0
-        - numpy.mean has a ddof argument to replace bias in a more general
-          manner.
-        - scipy.stats.mean(a, bias=True) can be replaced by ::
-
-             numpy.mean(x, axis=0, ddof=1)
-
-    removed in scipy 0.8.0
-
-    """
-    raise DeprecationWarning("""\
-scipy.stats.mean is deprecated; please update your code to use numpy.mean.
-Please note that:
-    - numpy.mean axis argument defaults to None, not 0
-    - numpy.mean has a ddof argument to replace bias in a more general manner.
-      scipy.stats.mean(a, bias=True) can be replaced by numpy.mean(x,
-axis=0, ddof=1).""")
-
 def cmedian(a, numbins=1000):
     # fixme: numpy.median() always seems to be a better choice.
     # A better version of this function would take already-histogrammed data
@@ -632,31 +586,6 @@ def cmedian(a, numbins=1000):
     median = LRL + ((n/2.0-cfbelow)/float(freq))*binsize # MEDIAN
     return median
 
-def median(a, axis=0):
-    # fixme: This would be redundant with numpy.median() except that the latter
-    # does not deal with arbitrary axes.
-    """Returns the median of the passed array along the given axis.
-
-    If there is an even number of entries, the mean of the
-    2 middle values is returned.
-
-    Parameters
-    ----------
-    a : array
-    axis=0 : int
-
-    Returns
-    -------
-    The median of each remaining axis, or of all of the values in the array
-    if axis is None.
-    """
-    raise DeprecationWarning("""\
-scipy.stats.median is deprecated; please update your code to use numpy.median.
-Please note that:
-    - numpy.median axis argument defaults to None, not 0
-    - numpy.median has a ddof argument to replace bias in a more general manner.
-      scipy.stats.median(a, bias=True) can be replaced by numpy.median(x,
-axis=0, ddof=1).""")
 
 def mode(a, axis=0):
     """
@@ -1741,35 +1670,6 @@ def signaltonoise(a, axis=0, ddof=0):
     sd = a.std(axis=axis, ddof=ddof)
     return np.where(sd == 0, 0, m/sd)
 
-def var(a, axis=0, bias=False):
-    """
-Returns the estimated population variance of the values in the passed
-array (i.e., N-1).  Axis can equal None (ravel array first), or an
-integer (the axis over which to operate).
-"""
-    raise DeprecationWarning("""\
-scipy.stats.var is deprecated; please update your code to use numpy.var.
-Please note that:
-    - numpy.var axis argument defaults to None, not 0
-    - numpy.var has a ddof argument to replace bias in a more general manner.
-      scipy.stats.var(a, bias=True) can be replaced by numpy.var(x,
-      axis=0, ddof=0), scipy.stats.var(a, bias=False) by var(x, axis=0,
-      ddof=1).""")
-
-def std(a, axis=0, bias=False):
-    """
-Returns the estimated population standard deviation of the values in
-the passed array (i.e., N-1).  Axis can equal None (ravel array
-first), or an integer (the axis over which to operate).
-"""
-    raise DeprecationWarning("""\
-scipy.stats.std is deprecated; please update your code to use numpy.std.
-Please note that:
-    - numpy.std axis argument defaults to None, not 0
-    - numpy.std has a ddof argument to replace bias in a more general manner.
-      scipy.stats.std(a, bias=True) can be replaced by numpy.std(x,
-      axis=0, ddof=0), scipy.stats.std(a, bias=False) by numpy.std(x, axis=0,
-      ddof=1).""")
 
 @np.lib.deprecate(message="""
 scipy.stats.stderr is deprecated; please update your code to use
@@ -2184,81 +2084,6 @@ def trim_mean(a, proportiontocut):
     """
     newa = trimboth(np.sort(a),proportiontocut)
     return np.mean(newa,axis=0)
-
-
-
-#####################################
-#####  CORRELATION FUNCTIONS  ######
-#####################################
-
-#  Cov is more flexible than the original
-#    covariance and computes an unbiased covariance matrix
-#    by default.
-def cov(m, y=None, rowvar=False, bias=False):
-    """Estimate the covariance matrix.
-
-    If m is a vector, return the variance.  For matrices where each row
-    is an observation, and each column a variable, return the covariance
-    matrix.  Note that in this case diag(cov(m)) is a vector of
-    variances for each column.
-
-    cov(m) is the same as cov(m, m)
-
-    Normalization is by (N-1) where N is the number of observations
-    (unbiased estimate).  If bias is True then normalization is by N.
-
-    If rowvar is False, then each row is a variable with
-    observations in the columns.
-    """
-    warnings.warn("""\
-scipy.stats.cov is deprecated; please update your code to use numpy.cov.
-Please note that:
-    - numpy.cov rowvar argument defaults to true, not false
-    - numpy.cov bias argument defaults to false, not true
-""", DeprecationWarning)
-    m = asarray(m)
-    if y is None:
-        y = m
-    else:
-        y = asarray(y)
-    if rowvar:
-        m = np.transpose(m)
-        y = np.transpose(y)
-    N = m.shape[0]
-    if (y.shape[0] != N):
-        raise ValueError("x and y must have the same number of observations.")
-    m = m - np.mean(m,axis=0)
-    y = y - np.mean(y,axis=0)
-    if bias:
-        fact = N*1.0
-    else:
-        fact = N-1.0
-    val = np.squeeze(np.dot(np.transpose(m),np.conjugate(y))) / fact
-    return val
-
-def corrcoef(x, y=None, rowvar=False, bias=True):
-    """The correlation coefficients formed from 2-d array x, where the
-    rows are the observations, and the columns are variables.
-
-    corrcoef(x,y) where x and y are 1d arrays is the same as
-    corrcoef(transpose([x,y]))
-
-    If rowvar is True, then each row is a variables with
-    observations in the columns.
-    """
-    warnings.warn("""\
-scipy.stats.corrcoef is deprecated; please update your code to use numpy.corrcoef.
-Please note that:
-    - numpy.corrcoef rowvar argument defaults to true, not false
-    - numpy.corrcoef bias argument defaults to false, not true
-""", DeprecationWarning)
-    if y is not None:
-        x = np.transpose([x,y])
-        y = None
-    c = cov(x, y, rowvar=rowvar, bias=bias)
-    d = np.diag(c)
-    return c/np.sqrt(np.multiply.outer(d,d))
-
 
 
 def f_oneway(*args):

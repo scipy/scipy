@@ -114,14 +114,6 @@ class TestBasicStats(TestCase):
         II. C. Basic Statistics
     """
 
-    def test_meanX(self):
-        y = np.mean(X)
-        assert_almost_equal(y, 5.0)
-
-    def test_stdX(self):
-        y = np.std(X, ddof=1)
-        assert_almost_equal(y, 2.738612788)
-
     def test_tmeanX(self):
         y = stats.tmean(X, (2, 8), (True, True))
         assert_almost_equal(y, 5.0)
@@ -134,14 +126,6 @@ class TestBasicStats(TestCase):
         y = stats.tstd(X, (2, 8), (True, True))
         assert_almost_equal(y, 2.1602468994692865)
 
-    def test_meanZERO(self):
-        y = np.mean(ZERO)
-        assert_almost_equal(y, 0.0)
-
-    def test_stdZERO(self):
-        y = np.std(ZERO, ddof=1)
-        assert_almost_equal(y, 0.0)
-
 ##    Really need to write these tests to handle missing values properly
 ##    def test_meanMISS(self):
 ##        y = np.mean(MISS)
@@ -151,46 +135,6 @@ class TestBasicStats(TestCase):
 ##        y = stats.stdev(MISS)
 ##        assert_almost_equal(y, 0.0)
 
-    def test_meanBIG(self):
-        y = np.mean(BIG)
-
-        assert_almost_equal(y, 99999995.00)
-
-    def test_stdBIG(self):
-        y = np.std(BIG, ddof=1)
-        assert_almost_equal(y, 2.738612788)
-
-    def test_meanLITTLE(self):
-        y = np.mean(LITTLE)
-        assert_approx_equal(y, 0.999999950)
-
-    def test_stdLITTLE(self):
-        y = np.std(LITTLE, ddof=1)
-        assert_approx_equal(y, 2.738612788e-8)
-
-    def test_meanHUGE(self):
-        y = np.mean(HUGE)
-        assert_approx_equal(y, 5.00000e+12)
-
-    def test_stdHUGE(self):
-        y = np.std(HUGE, ddof=1)
-        assert_approx_equal(y, 2.738612788e12)
-
-    def test_meanTINY(self):
-        y = np.mean(TINY)
-        assert_almost_equal(y, 0.0)
-
-    def test_stdTINY(self):
-        y = np.std(TINY, ddof=1)
-        assert_almost_equal(y, 0.0)
-
-    def test_meanROUND(self):
-        y = np.mean(ROUND)
-        assert_approx_equal(y, 4.500000000)
-
-    def test_stdROUND(self):
-        y = np.std(ROUND, ddof=1)
-        assert_approx_equal(y, 2.738612788)
 
 class TestNanFunc(TestCase):
     def __init__(self, *args, **kw):
@@ -924,54 +868,11 @@ class TestHMean(TestCase):
         assert_array_almost_equal(actual1, desired1, decimal=14)
 
 
-class TestMean(TestCase):
-    def test_basic(self):
-        a = [3,4,5,10,-3,-5,6]
-        af = [3.,4,5,10,-3,-5,-6]
-        Na = len(a)
-        Naf = len(af)
-        mn1 = 0.0
-        for el in a:
-            mn1 += el / float(Na)
-        assert_almost_equal(np.mean(a),mn1,11)
-        mn2 = 0.0
-        for el in af:
-            mn2 += el / float(Naf)
-        assert_almost_equal(np.mean(af),mn2,11)
-
-    def test_2d(self):
-        a = [[1.0, 2.0, 3.0],
-             [2.0, 4.0, 6.0],
-             [8.0, 12.0, 7.0]]
-        A = array(a)
-        N1, N2 = (3, 3)
-        mn1 = zeros(N2, dtype=float)
-        for k in range(N1):
-            mn1 += A[k,:] / N1
-        assert_almost_equal(np.mean(a, axis=0), mn1, decimal=13)
-        mn2 = zeros(N1, dtype=float)
-        for k in range(N2):
-            mn2 += A[:,k]
-        mn2 /= N2
-        assert_almost_equal(np.mean(a, axis=1), mn2, decimal=13)
-
-    def test_ravel(self):
-        a = rand(5,3,5)
-        A = 0
-        for val in ravel(a):
-            A += val
-        assert_almost_equal(np.mean(a,axis=None),A/(5*3.0*5))
-
 class TestPercentile(TestCase):
     def setUp(self):
         self.a1 = [3,4,5,10,-3,-5,6]
         self.a2 = [3,-6,-2,8,7,4,2,1]
         self.a3 = [3.,4,5,10,-3,-5,-6,7.0]
-
-    def test_median(self):
-        assert_equal(np.median(self.a1), 4)
-        assert_equal(np.median(self.a2), 2.5)
-        assert_equal(np.median(self.a3), 3.5)
 
     def test_percentile(self):
         x = arange(8) * 0.5
@@ -989,24 +890,6 @@ class TestPercentile(TestCase):
                            [1,1,1])
 
 
-class TestStd(TestCase):
-    def test_basic(self):
-        a = [3,4,5,10,-3,-5,6]
-        b = [3,4,5,10,-3,-5,-6]
-        assert_almost_equal(np.std(a, ddof=1),5.2098807225172772,11)
-        assert_almost_equal(np.std(b, ddof=1),5.9281411203561225,11)
-
-    def test_2d(self):
-        a = [[1.0, 2.0, 3.0],
-             [2.0, 4.0, 6.0],
-             [8.0, 12.0, 7.0]]
-        b1 = array((3.7859388972001824, 5.2915026221291814,
-                    2.0816659994661335))
-        b2 = array((1.0,2.0,2.64575131106))
-        assert_array_almost_equal(np.std(a,ddof=1,axis=0),b1,11)
-        assert_array_almost_equal(np.std(a,ddof=1,axis=1),b2,11)
-
-
 class TestCMedian(TestCase):
     def test_basic(self):
         data = [1,2,3,1,5,3,6,4,3,2,4,3,5,2.0]
@@ -1014,27 +897,6 @@ class TestCMedian(TestCase):
         assert_almost_equal(stats.cmedian(data,3),3.083333333333333)
         assert_almost_equal(stats.cmedian(data),3.0020020020020022)
 
-class TestMedian(TestCase):
-    def test_basic(self):
-        data1 = [1,3,5,2,3,1,19,-10,2,4.0]
-        data2 = [3,5,1,10,23,-10,3,-2,6,8,15]
-        assert_almost_equal(np.median(data1),2.5)
-        assert_almost_equal(np.median(data2),5)
-
-    def test_basic2(self):
-        a1 = [3,4,5,10,-3,-5,6]
-        a2 = [3,-6,-2,8,7,4,2,1]
-        a3 = [3.,4,5,10,-3,-5,-6,7.0]
-        assert_equal(np.median(a1),4)
-        assert_equal(np.median(a2),2.5)
-        assert_equal(np.median(a3),3.5)
-
-    def test_axis(self):
-        """Regression test for #760."""
-        a1 = np.array([[3,4,5], [10,-3,-5]])
-        assert_equal(np.median(a1), 3.5)
-        assert_equal(np.median(a1, axis=0), np.array([6.5, 0.5, 0.]))
-        assert_equal(np.median(a1, axis=-1), np.array([4., -3]))
 
 class TestMode(TestCase):
     def test_basic(self):
@@ -1049,19 +911,6 @@ class TestVariability(TestCase):
          note that length(testcase) = 4
     """
     testcase = [1,2,3,4]
-    def test_std(self):
-        y = np.std(self.testcase, ddof=1)
-        assert_approx_equal(y,1.290994449)
-
-    def test_var(self):
-        """
-        var(testcase) = 1.666666667 """
-        #y = stats.var(self.shoes[0])
-        #assert_approx_equal(y,6.009)
-        y = np.var(self.testcase)
-        assert_approx_equal(y,1.25)
-        y = np.var(self.testcase, ddof=1)
-        assert_approx_equal(y,1.666666667)
 
     def test_samplevar(self):
         """

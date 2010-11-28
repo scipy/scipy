@@ -1921,11 +1921,11 @@ def samplestd(data, axis=0):
 
 def var(a,axis=None):
     return ma.asarray(a).var(axis=axis,ddof=1)
-var.__doc__ = stats.var.__doc__
+var.__doc__ = np.var.__doc__
 
 def std(a,axis=None):
     return ma.asarray(a).std(axis=axis,ddof=1)
-std.__doc__ = stats.std.__doc__
+std.__doc__ = np.std.__doc__
 
 def stderr(a, axis=0):
     a, axis = _chk_asarray(a, axis)
