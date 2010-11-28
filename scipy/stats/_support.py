@@ -89,47 +89,6 @@ def colex(a, indices, axis=1):
         cols = np.take(a,indices,axis)
     return cols
 
-def printcc(lst, extra=2):
-    """\nPrints a list of lists in columns, customized by the max size of items
-within the columns (max size of items in col, plus 'extra' number of spaces).
-Use 'dashes' or '\n' in the list(oflists) to print dashes or blank lines,
-respectively.
-
-Format:  printcc (lst,extra=2)
-Returns: None\n"""
-
-    def makestr (x):
-        if type(x) != StringType:
-            x = str(x)
-        return x
-
-    if type(lst[0]) not in [ListType,TupleType]:
-        lst = [lst]
-    rowstokill = []
-    list2print = copy.deepcopy(lst)
-    for i in range(len(lst)):
-        if lst[i] == ['\n'] or lst[i]=='\n' or lst[i]=='dashes':
-            rowstokill = rowstokill + [i]
-    rowstokill.reverse()   # delete blank rows from the end
-    for row in rowstokill:
-        del list2print[row]
-    maxsize = [0]*len(list2print[0])
-    for col in range(len(list2print[0])):
-        items = colex(list2print,col)
-        items = map(makestr,items)
-        maxsize[col] = max(map(len,items)) + extra
-    for row in lst:
-        if row == ['\n'] or row == '\n':
-            print
-        elif row == ['dashes'] or row == 'dashes':
-            dashes = [0]*len(maxsize)
-            for j in range(len(maxsize)):
-                dashes[j] = '-'*(maxsize[j]-2)
-            print lineincustcols(dashes,maxsize)
-        else:
-            print lineincustcols(row,maxsize)
-    return None
-
 def adm(a, criterion):
     """\nReturns rows from the passed list of lists that meet the criteria in
 the passed criterion expression (a string).
@@ -274,42 +233,3 @@ def compute_stderr(a, axis=0, ddof=1):
     a, axis = _chk_asarray(a, axis)
     return np.std(a,axis,ddof=1) / float(np.sqrt(a.shape[axis]))
 
-def makestr(item):
-    if type(item) != StringType:
-        item = str(item)
-    return item
-
-def lineincustcols(inlist, colsizes):
-    """\nReturns a string composed of elements in inlist, with each element
-right-aligned in a column of width specified by a sequence colsizes.  The
-length of colsizes must be greater than or equal to the number of columns in
-inlist.
-
-Format:  lineincustcols (inlist,colsizes)
-Returns: formatted string created from inlist\n"""
-
-    outstr = ''
-    for i in range(len(inlist)):
-        if type(inlist[i]) != StringType:
-            item = str(inlist[i])
-        else:
-            item = inlist[i]
-        size = len(item)
-        if size <= colsizes[i]:
-            for j in range(colsizes[i]-size):
-                outstr = outstr + ' '
-            outstr = outstr + item
-        else:
-            outstr = outstr + item[0:colsizes[i]+1]
-    return outstr
-
-
-def list2string(inlist):
-    """\nConverts a 1D list to a single long string for file output, using
-the string.join function.
-
-Format:  list2string (inlist)
-Returns: the string created from inlist\n"""
-
-    stringlist = map(makestr,inlist)
-    return "".join(stringlist)
