@@ -19,3 +19,5 @@ The following changes have been made to the original SuperLU 4.0 sources:
 4) BUG: sparse.linalg.dsolve/SuperLU: patch SuperLU sources to eliminate a crash for singular matrices for which pivoting fails
 
 5) BUG: parse.linalg.dsolve/SuperLU: patch SuperLU sources to not exit(1) when ILU decomposition encounters singularity; instead, raise a Python exception
+
+6) BUG: sparse/superlu: fix build on msvc (closes #1176)
