@@ -154,6 +154,8 @@ def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
         mdict.update(matfile_dict)
     else:
         mdict = matfile_dict
+    if isinstance(file_name, basestring):
+        MR.mat_stream.close()
     return mdict
 
 @docfiller
