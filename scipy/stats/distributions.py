@@ -956,8 +956,10 @@ class rv_continuous(rv_generic):
         # of _mom0_sc, vectorize cannot count the number of arguments correctly.
 
         if longname is None:
-            if name[0] in ['aeiouAEIOU']: hstr = "An "
-            else: hstr = "A "
+            if name[0] in ['aeiouAEIOU']:
+                hstr = "An "
+            else:
+                hstr = "A "
             longname = hstr + name
 
         # generate docstring for subclass instances
@@ -4843,6 +4845,12 @@ class rv_discrete(rv_generic):
         self._cdfvec.nin = self.numargs + 1
 
         # generate docstring for subclass instances
+        if longname is None:
+            if name[0] in ['aeiouAEIOU']:
+                hstr = "An "
+            else:
+                hstr = "A "
+            longname = hstr + name
         if self.__doc__ is None:
             self._construct_default_doc(longname=longname, extradoc=extradoc)
         else:
@@ -4853,6 +4861,8 @@ class rv_discrete(rv_generic):
 
     def _construct_default_doc(self, longname=None, extradoc=None):
         """Construct instance docstring from the rv_discrete template."""
+        if extradoc is None:
+            extradoc = ''
         if extradoc.startswith('\n\n'):
             extradoc = extradoc[2:]
         self.__doc__ = ''.join(['%s discrete random variable.'%longname,
