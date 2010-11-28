@@ -528,6 +528,17 @@ class TestMisc(TestCase):
         assert_almost_equal(result[1], 0.5692, 4)
 
 
+def test_regress_simple():
+    """Regress a line with sinusoidal noise. Test for #1273."""
+    x = np.linspace(0, 100, 100)
+    y = 0.2 * np.linspace(0, 100, 100) + 10
+    y += np.sin(np.linspace(0, 20, 100))
+
+    slope, intercept, r_value, p_value, sterr = mstats.linregress(x, y)
+    assert_almost_equal(slope, 0.19644990055858422)
+    assert_almost_equal(intercept, 10.211269918932341)
+
+
 def test_plotting_positions():
     """Regression test for #1256"""
     pos = mstats.plotting_positions(np.arange(3), 0, 0)

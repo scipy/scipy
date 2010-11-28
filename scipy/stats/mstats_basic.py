@@ -647,7 +647,7 @@ def linregress(*args):
     slope = Sxy / Sxx
     intercept = ymean - slope*xmean
     sterrest = ma.sqrt(1.-r*r) * y.std()
-    return slope, intercept, r, prob, sterrest, Syy/Sxx
+    return slope, intercept, r, prob, sterrest
 
 if stats.linregress.__doc__:
     linregress.__doc__ = stats.linregress.__doc__ + genmissingvaldoc
