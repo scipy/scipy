@@ -1888,6 +1888,11 @@ class TestLegendreFunctions(TestCase):
         lp = special.lpmv(0,40,.001)
         assert_almost_equal(lp,0.1252678976534484,7)
 
+        # XXX: this is outside the domain of the current implementation,
+        #      so ensure it returns a NaN rather than a wrong answer.
+        lp = special.lpmv(-1,-1,.001)
+        assert_(lp != 0 or np.isnan(lp))
+
     def test_lqmn(self):
         lqmnf = special.lqmn(0,2,.5)
         lqmnf = special.lqmn(0,2,.5)

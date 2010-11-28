@@ -7893,7 +7893,7 @@ C
            VX=-VX-1
         ENDIF
         NEG_M=0
-        IF (M.LT.0.AND.(VX+M+1).GE.0D0) THEN
+        IF (M.LT.0.AND.(VX+M+1).GT.0D0) THEN
 C          XXX: does not handle the cases where AMS 8.2.5
 C               does not help
            NEG_M=1
