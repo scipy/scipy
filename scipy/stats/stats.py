@@ -67,10 +67,7 @@ FREQUENCY STATS:  freqtable
                   relfreq
 
 VARIABILITY:  obrientransform
-              samplevar
-              samplestd
               signaltonoise (for arrays only)
-              stderr
               sem
 
 TRIMMING FCNS:  threshold (for arrays only)
@@ -98,7 +95,6 @@ INFERENTIAL STATS:  ttest_1samp
                     friedmanchisquare
 
 PROBABILITY CALCS:  chisqprob
-                    erfcc
                     zprob
                     fprob
                     betai
@@ -211,15 +207,14 @@ __all__ = ['gmean', 'hmean', 'cmedian', 'mode',
            'skewtest', 'kurtosistest', 'normaltest',
            'itemfreq', 'scoreatpercentile', 'percentileofscore',
            'histogram', 'histogram2', 'cumfreq', 'relfreq',
-           'obrientransform', 'samplevar', 'samplestd', 'signaltonoise',
-           'stderr', 'sem', 'zmap', 'zscore',
+           'obrientransform', 'signaltonoise', 'sem', 'zmap', 'zscore',
            'threshold', 'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
            'f_oneway', 'pearsonr', 'fisher_exact',
            'spearmanr', 'pointbiserialr', 'kendalltau', 'linregress',
            'ttest_1samp', 'ttest_ind', 'ttest_rel',
            'kstest', 'chisquare', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
-           'zprob', 'erfc', 'chisqprob', 'ksprob', 'fprob', 'betai',
+           'zprob', 'chisqprob', 'ksprob', 'fprob', 'betai',
            'glm', 'f_value_wilks_lambda',
            'f_value', 'f_value_multivariate',
            'ss', 'square_of_sums',
@@ -1696,39 +1691,6 @@ Returns: transformed data for use in an ANOVA
         return array(nargs)
 
 
-@np.lib.deprecate(message="""
-scipy.stats.samplevar is deprecated; please update your code to use
-numpy.var.
-
-Please note that `numpy.var` axis argument defaults to None, not 0.
-""")
-def samplevar(a, axis=0):
-    """
-    Returns the sample standard deviation of the values in the passed
-    array (i.e., using N).  Axis can equal None (ravel array first),
-    an integer (the axis over which to operate)
-    """
-    a, axis = _chk_asarray(a, axis)
-    mn = np.expand_dims(np.mean(a, axis), axis)
-    deviations = a - mn
-    n = a.shape[axis]
-    svar = ss(deviations,axis) / float(n)
-    return svar
-
-@np.lib.deprecate(message="""
-scipy.stats.samplestd is deprecated; please update your code to use
-numpy.std.
-
-Please note that `numpy.std` axis argument defaults to None, not 0.
-""")
-def samplestd(a, axis=0):
-    """Returns the sample standard deviation of the values in the passed
-array (i.e., using N).  Axis can equal None (ravel array first),
-an integer (the axis over which to operate).
-"""
-    return np.sqrt(samplevar(a,axis))
-
-
 def signaltonoise(a, axis=0, ddof=0):
     """
     Calculates the signal-to-noise ratio, defined as the ratio between the mean
@@ -1756,19 +1718,6 @@ def signaltonoise(a, axis=0, ddof=0):
     sd = a.std(axis=axis, ddof=ddof)
     return np.where(sd == 0, 0, m/sd)
 
-
-@np.lib.deprecate(message="""
-scipy.stats.stderr is deprecated; please update your code to use
-scipy.stats.sem.
-""")
-def stderr(a, axis=0, ddof=1):
-    """
-Returns the estimated population standard error of the values in the
-passed array (i.e., N-1).  Axis can equal None (ravel array
-first), or an integer (the axis over which to operate).
-"""
-    a, axis = _chk_asarray(a, axis)
-    return np.std(a,axis,ddof=1) / float(np.sqrt(a.shape[axis]))
 
 def sem(a, axis=0, ddof=1):
     """
@@ -1815,7 +1764,6 @@ def sem(a, axis=0, ddof=1):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    #s = samplestd(a,axis) / np.sqrt(n-1)
     s = np.std(a,axis=axis, ddof=ddof) / np.sqrt(n) #JP check normalization
     return s
 
@@ -3633,8 +3581,6 @@ def friedmanchisquare(*args):
 #####################################
 
 zprob = special.ndtr
-erfc = np.lib.deprecate(special.erfc, old_name="scipy.stats.erfc",
-                                      new_name="scipy.special.erfc")
 
 def chisqprob(chisq, df):
     """

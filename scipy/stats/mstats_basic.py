@@ -29,7 +29,6 @@ __all__ = ['argstoarray',
            'rankdata',
            'samplestd','samplevar','scoreatpercentile','sem','std',
            'sen_seasonal_slopes','signaltonoise','skew','skewtest','spearmanr',
-           'stderr',
            'theilslopes','threshold','tmax','tmean','tmin','trim','trimboth',
            'trimtail','trima','trimr','trimmed_mean','trimmed_std',
            'trimmed_stde','trimmed_var','tsem','ttest_1samp','ttest_onesamp',
@@ -1926,11 +1925,6 @@ var.__doc__ = np.var.__doc__
 def std(a,axis=None):
     return ma.asarray(a).std(axis=axis,ddof=1)
 std.__doc__ = np.std.__doc__
-
-def stderr(a, axis=0):
-    a, axis = _chk_asarray(a, axis)
-    return a.std(axis=axis, ddof=1) / ma.sqrt(a.count(axis=axis))
-stderr.__doc__ = stats.stderr.__doc__
 
 def sem(a, axis=0):
     a, axis = _chk_asarray(a, axis)

@@ -441,16 +441,6 @@ class TestVariability(TestCase):
         y = mstats.signaltonoise(self.testcase)
         assert_almost_equal(y,2.236067977)
 
-    def test_stderr(self):
-        """
-        this is not in R, so used
-        sqrt(var(testcase))/sqrt(4)
-        """
-##        y = stats.stderr(self.shoes[0])
-##        assert_approx_equal(y,0.775177399)
-        y = mstats.stderr(self.testcase)
-        assert_almost_equal(y,0.6454972244)
-
     def test_sem(self):
         """
         this is not in R, so used

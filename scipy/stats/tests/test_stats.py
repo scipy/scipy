@@ -962,22 +962,6 @@ class TestVariability(TestCase):
     """
     testcase = [1,2,3,4]
 
-    def test_samplevar(self):
-        """
-        R does not have 'samplevar' so the following was used
-        var(testcase)*(4-1)/4  where 4 = length(testcase)
-        """
-        #y = stats.samplevar(self.shoes[0])
-        #assert_approx_equal(y,5.4081)
-        y = stats.samplevar(self.testcase)
-        assert_approx_equal(y,1.25)
-
-    def test_samplestd(self):
-        #y = stats.samplestd(self.shoes[0])
-        #assert_approx_equal(y,2.325532197)
-        y = stats.samplestd(self.testcase)
-        assert_approx_equal(y,1.118033989)
-
     def test_signaltonoise(self):
         """
         this is not in R, so used
@@ -987,15 +971,6 @@ class TestVariability(TestCase):
         y = stats.signaltonoise(self.testcase)
         assert_approx_equal(y,2.236067977)
 
-    def test_stderr(self):
-        """
-        this is not in R, so used
-        sqrt(var(testcase))/sqrt(4)
-        """
-##        y = stats.stderr(self.shoes[0])
-##        assert_approx_equal(y,0.775177399)
-        y = stats.stderr(self.testcase)
-        assert_approx_equal(y,0.6454972244)
     def test_sem(self):
         """
         this is not in R, so used
