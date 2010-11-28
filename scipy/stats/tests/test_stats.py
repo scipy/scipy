@@ -1006,28 +1006,10 @@ class TestVariability(TestCase):
         y = stats.sem(self.testcase)
         assert_approx_equal(y,0.6454972244)
 
-    def test_z(self):
-        """
-        not in R, so used
-        (10-mean(testcase,axis=0))/sqrt(var(testcase)*3/4)
-        """
-        y = stats.z(self.testcase,np.mean(self.testcase, axis=0))
-        assert_almost_equal(y,0.0)
-
-    def test_zs(self):
-        """
-        not in R, so tested by using
-        (testcase[i]-mean(testcase,axis=0))/sqrt(var(testcase)*3/4)
-        """
-        y = stats.zs(self.testcase)
-        desired = ([-1.3416407864999, -0.44721359549996 , 0.44721359549996 , 1.3416407864999])
-        assert_array_almost_equal(desired,y,decimal=12)
-
     def test_zmap(self):
         """
         not in R, so tested by using
         (testcase[i]-mean(testcase,axis=0))/sqrt(var(testcase)*3/4)
-        copied from test_zs
         """
         y = stats.zmap(self.testcase,self.testcase)
         desired = ([-1.3416407864999, -0.44721359549996 , 0.44721359549996 , 1.3416407864999])
@@ -1037,7 +1019,6 @@ class TestVariability(TestCase):
         """
         not in R, so tested by using
         (testcase[i]-mean(testcase,axis=0))/sqrt(var(testcase)*3/4)
-        copied from test_zs as regression test for new function
         """
         y = stats.zscore(self.testcase)
         desired = ([-1.3416407864999, -0.44721359549996 , 0.44721359549996 , 1.3416407864999])

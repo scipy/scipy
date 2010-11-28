@@ -1943,14 +1943,15 @@ def z(a, score):
     a = ma.asarray(a)
     z = (score-a.mean(None)) / a.std(axis=None, ddof=1)
     return z
-z.__doc__ = stats.z.__doc__
+# where do we get the doc from? stats.z has been removed
+# z.__doc__ = stats.zscore_compare.__doc__
 
 def zs(a):
     a = ma.asarray(a)
     mu = a.mean(axis=0)
     sigma = a.std(axis=0,ddof=0)
     return (a-mu)/sigma
-zs.__doc__ = stats.zs.__doc__
+zs.__doc__ = stats.zscore.__doc__
 
 def zmap(scores, compare, axis=0):
     (scores, compare) = (ma.asarray(scores), ma.asarray(compare))

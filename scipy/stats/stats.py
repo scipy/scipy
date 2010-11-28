@@ -72,8 +72,6 @@ VARIABILITY:  obrientransform
               signaltonoise (for arrays only)
               stderr
               sem
-              z
-              zs
 
 TRIMMING FCNS:  threshold (for arrays only)
                 trimboth
@@ -214,7 +212,7 @@ __all__ = ['gmean', 'hmean', 'cmedian', 'mode',
            'itemfreq', 'scoreatpercentile', 'percentileofscore',
            'histogram', 'histogram2', 'cumfreq', 'relfreq',
            'obrientransform', 'samplevar', 'samplestd', 'signaltonoise',
-           'stderr', 'sem', 'z', 'zs', 'zmap', 'zscore',
+           'stderr', 'sem', 'zmap', 'zscore',
            'threshold', 'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
            'f_oneway', 'pearsonr', 'fisher_exact',
            'spearmanr', 'pointbiserialr', 'kendalltau', 'linregress',
@@ -1821,34 +1819,6 @@ def sem(a, axis=0, ddof=1):
     s = np.std(a,axis=axis, ddof=ddof) / np.sqrt(n) #JP check normalization
     return s
 
-@np.lib.deprecate(message="""
-scipy.stats.z is deprecated; please update your code to use
-scipy.stats.zscore_compare.
-""")
-def z(a, score):
-    """
-Returns the z-score of a given input score, given thearray from which
-that score came.  Not appropriate for population calculations, nor for
-arrays > 1D.
-
-"""
-    z = (score-np.mean(a,None)) / samplestd(a)
-    return z
-
-@np.lib.deprecate(message="""
-scipy.stats.zs is deprecated; please update your code to use
-scipy.stats.zscore.
-""")
-def zs(a):
-    """
-Returns a 1D array of z-scores, one for each score in the passed array,
-computed relative to the passed array.
-
-"""
-    mu = np.mean(a,None)
-    sigma = samplestd(a)
-    return (array(a)-mu)/sigma
-
 
 def zscore(a, axis=0, ddof=0):
     """
@@ -1911,7 +1881,6 @@ def zscore(a, axis=0, ddof=0):
                  np.expand_dims(sstd,axis=axis)))
     else:
         return (a - mns) / sstd
-
 
 
 def zmap(scores, compare, axis=0, ddof=0):
