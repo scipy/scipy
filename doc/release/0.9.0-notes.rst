@@ -118,6 +118,16 @@ The functions ``scipy.signal.kaiser_atten`` and ``scipy.signal.kaiser_beta``
 were added. 
 
 
+Improved statistical tests (``scipy.stats``)
+--------------------------------------------
+
+A new function ``scipy.stats.fisher_exact`` was added, that provides Fisher's
+exact test for 2x2 contingency tables.
+
+The function ``scipy.stats.kendalltau`` was rewritten to make it much faster
+(O(n log(n)) vs O(n^2)).
+
+
 Removed features
 ================
 
@@ -126,3 +136,7 @@ from ``scipy.misc``.
 
 The ``save`` method of the ``spmatrix`` class in ``scipy.sparse``, which has
 been deprecated since version 0.7, was removed.
+
+Several functions in ``scipy.stats`` that are available from numpy and have
+been deprecated since version 0.7 have been removed: ``std``, ``var``,
+``mean``, ``median``, ``cov`` and ``corrcoef``.
