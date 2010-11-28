@@ -176,3 +176,48 @@ def test_erf_complex():
                           vectorized=False, rtol=2e-8)
     finally:
         mpmath.mp.dps, mpmath.mp.prec = old_dps, old_prec
+
+
+
+#------------------------------------------------------------------------------
+# lpmv
+#------------------------------------------------------------------------------
+
+@mpmath_check('0.15')
+def test_lpmv():
+    pts = []
+    for x in [-0.99, -0.557, 1e-6, 0.132, 1]:
+        pts.extend([
+            (1, 1, x),
+            (1, -1, x),
+            (-1, 1, x),
+            (-1, -2, x),
+            (1, 1.7, x),
+            (1, -1.7, x),
+            (-1, 1.7, x),
+            (-1, -2.7, x),
+            (1, 10, x),
+            (1, 11, x),
+            (3, 8, x),
+            (5, 11, x),
+            (-3, 8, x),
+            (-5, 11, x),
+            (3, -8, x),
+            (5, -11, x),
+            (-3, -8, x),
+            (-5, -11, x),
+            (3, 8.3, x),
+            (5, 11.3, x),
+            (-3, 8.3, x),
+            (-5, 11.3, x),
+            (3, -8.3, x),
+            (5, -11.3, x),
+            (-3, -8.3, x),
+            (-5, -11.3, x),
+        ])
+
+    dataset = [p + (mpmath.legenp(p[1], p[0], p[2]),) for p in pts]
+    dataset = np.array(dataset, dtype=np.float_)
+
+    evf = lambda mu,nu,x: sc.lpmv(mu.astype(int), nu, x)
+    FuncData(evf, dataset, (0,1,2), 3, rtol=1e-10, atol=1e-14).check()

@@ -5,7 +5,7 @@ from scipy.special import (
     arccosh, arcsinh, arctanh, erf, erfc, log1p, expm1,
     jn, jv, yn, yv, iv, kv, kn, gamma, gammaln, digamma, beta, cbrt,
     ellipe, ellipeinc, ellipk, ellipj, erfinv, erfcinv, exp1, expi, expn,
-    zeta, gammaincinv,
+    zeta, gammaincinv, lpmv
 )
 
 from testutils import FuncData
@@ -27,6 +27,11 @@ def ellipj_(k):
     return ellipj(k*k)
 def zeta_(x):
     return zeta(x, 1.)
+def assoc_legendre_p_boost_(nu, mu, x):
+    # the boost test data is for integer orders only
+    return lpmv(mu, nu.astype(int), x)
+def legendre_p_via_assoc_(nu, x):
+    return lpmv(0, nu, x)
 
 def test_boost():
     TESTS = [
@@ -38,6 +43,11 @@ def test_boost():
 
         data(arctanh, 'atanh_data_ipp-atanh_data', 0, 1, rtol=1e-11),
         data(arctanh, 'atanh_data_ipp-atanh_data', 0j, 1, rtol=1e-11),
+
+        data(assoc_legendre_p_boost_, 'assoc_legendre_p_ipp-assoc_legendre_p',
+             (0,1,2), 3, rtol=1e-11),
+        data(legendre_p_via_assoc_, 'legendre_p_ipp-legendre_p',
+             (0,1), 2, rtol=1e-11),
 
         data(beta, 'beta_exp_data_ipp-beta_exp_data', (0,1), 2, rtol=1e-13),
         data(beta, 'beta_exp_data_ipp-beta_exp_data', (0,1), 2, rtol=1e-13),

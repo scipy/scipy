@@ -104,7 +104,7 @@
 #define kv_doc "y=kv(v,z) returns the modified Bessel function of the second kind (sometimes called the third kind) for\nreal order v at complex z."
 #define kve_doc "y=kve(v,z) returns the exponentially scaled, modified Bessel function\nof the second kind (sometimes called the third kind) for real order v at complex z: kve(v,z) = kv(v,z) * exp(z)"
 #define log1p_doc "y=log1p(x) calculates log(1+x) for use when x is near zero."
-#define lpmv_doc "y=lpmv(m,v,x) returns the associated legendre function of integer order\nm and nonnegative degree v: |x|<=1."
+#define lpmv_doc "y=lpmv(m,v,x) returns the associated legendre function of integer order\nm and real degree v (s.t. v>-m-1 or v<m): |x|<=1."
 #define mathieu_a_doc "lmbda=mathieu_a(m,q) returns the characteristic value for the even solution, \nce_m(z,q), of Mathieu's equation"
 #define mathieu_b_doc "lmbda=mathieu_b(m,q) returns the characteristic value for the odd solution, \nse_m(z,q), of Mathieu's equation"
 #define mathieu_cem_doc "(y,yp)=mathieu_cem(m,q,x) returns the even Mathieu function, ce_m(x,q), \nof order m and parameter q evaluated at x (given in degrees).\nAlso returns the derivative with respect to x of ce_m(x,q)"

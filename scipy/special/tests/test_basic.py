@@ -1884,7 +1884,9 @@ class TestLegendreFunctions(TestCase):
 
     def test_lpmv(self):
         lp = special.lpmv(0,2,.5)
-        assert_almost_equal(lp,-0.125,3)
+        assert_almost_equal(lp,-0.125,7)
+        lp = special.lpmv(0,40,.001)
+        assert_almost_equal(lp,0.1252678976534484,7)
 
     def test_lqmn(self):
         lqmnf = special.lqmn(0,2,.5)

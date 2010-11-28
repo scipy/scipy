@@ -608,6 +608,7 @@ double pmv_wrap(double m, double v, double x){
   if (m != floor(m)) return NPY_NAN;
   int_m = (int ) m;
   F_FUNC(lpmv,LPMV)(&v, &int_m, &x, &out);
+  CONVINF(out);
   return out;
 }
 

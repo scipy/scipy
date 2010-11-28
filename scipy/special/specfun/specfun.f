@@ -7771,7 +7771,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE LPMV(V,M,X,PMV)
+        SUBROUTINE LPMV0(V,M,X,PMV)
 C
 C       =======================================================
 C       Purpose: Compute the associated Legendre function
@@ -7866,6 +7866,61 @@ C
         RETURN
         END
 
+C       **********************************
+
+        SUBROUTINE LPMV(V,M,X,PMV)
+C
+C       =======================================================
+C       Purpose: Compute the associated Legendre function
+C                Pmv(x) with an integer order and an arbitrary
+C                degree v, using down-recursion for large degrees
+C       Input :  x   --- Argument of Pm(x)  ( -1 ≤ x ≤ 1 )
+C                m   --- Order of Pmv(x)
+C                v   --- Degree of Pmv(x)
+C       Output:  PMV --- Pmv(x)
+C       Routine called:  LPMV0
+C       =======================================================
+C
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        IF (X.EQ.-1.0D0.AND.V.NE.INT(V)) THEN
+           IF (M.EQ.0) PMV=-1.0D+300
+           IF (M.NE.0) PMV=1.0D+300
+           RETURN
+        ENDIF
+        VX=V
+        MX=M
+        IF (V.LT.0) THEN
+           VX=-VX-1
+        ENDIF
+        NEG_M=0
+        IF (M.LT.0.AND.(VX+M+1).GE.0D0) THEN
+C          XXX: does not handle the cases where AMS 8.2.5
+C               does not help
+           NEG_M=1
+           MX=-M
+        ENDIF
+        NV=INT(VX)
+        V0=VX-NV
+        IF (NV.GT.2.AND.NV.GT.MX) THEN
+C          Up-recursion on degree, AMS 8.5.3
+           CALL LPMV0(V0+MX, MX, X, P0)
+           CALL LPMV0(V0+MX+1, MX, X, P1)
+           PMV = P1
+           DO 10 J=MX+2,NV
+              PMV = ((2*(V0+J)-1)*X*P1 - (V0+J-1+MX)*P0) / (V0+J-MX)
+              P0 = P1
+              P1 = PMV
+10         CONTINUE
+        ELSE
+           CALL LPMV0(VX, MX, X, PMV)
+        ENDIF
+        IF (NEG_M.NE.0.AND.ABS(PMV).LT.1.0D+300) THEN
+C          AMS 8.2.5, for integer order
+           CALL GAMMA2(VX-MX+1, G1)
+           CALL GAMMA2(VX+MX+1, G2)
+           PMV = PMV*G1/G2 * (-1)**MX
+        ENDIF
+        END
 
 
 C       **********************************
