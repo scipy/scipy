@@ -688,7 +688,7 @@ class rv_generic(object):
 
         """
         kwds['moments'] = 'v'
-        res = math.sqrt(self.stats(*args, **kwds))
+        res = sqrt(self.stats(*args, **kwds))
         return res
 
     def interval(self, alpha, *args, **kwds):

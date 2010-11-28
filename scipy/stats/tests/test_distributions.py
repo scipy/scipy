@@ -242,6 +242,10 @@ class TestDLaplace(TestCase):
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
+def test_rvgeneric_std():
+    """Regression test for #1191"""
+    assert_array_almost_equal(stats.t.std([5, 6]), [1.29099445, 1.22474487])
+
 class TestRvDiscrete(TestCase):
     def test_rvs(self):
         states = [-1,0,1,2,3,4]
@@ -260,7 +264,7 @@ class TestRvDiscrete(TestCase):
 class TestExpon(TestCase):
     def test_zero(self):
         assert_equal(stats.expon.pdf(0),1)
-        
+
     def test_tail(self):  # Regression test for ticket 807
         assert_equal(stats.expon.cdf(1e-18),  1e-18)
         assert_equal(stats.expon.isf(stats.expon.sf(40)),  40)
@@ -277,7 +281,7 @@ class TestGenExpon(TestCase):
         # CDF should always be positive
         cdf = stats.genexpon.cdf(numpy.arange(0, 10, 0.01), 0.5, 0.5, 2.0)
         assert_(numpy.all((0 <= cdf) & (cdf <= 1)))
-        
+
 class TestExponpow(TestCase):
     def test_tail(self):
         assert_almost_equal(stats.exponpow.cdf(1e-10,  2.),  1e-20)
@@ -303,9 +307,9 @@ class TestSkellam(TestCase):
                     4.3268692953013159e-002, 3.0248159818374226e-002,
                     1.9991434305603021e-002, 1.2516877303301180e-002,
                     7.4389876226229707e-003])
-        
+
         assert_almost_equal(stats.skellam.pmf(k, mu1, mu2), skpmfR, decimal=15)
-        
+
     def test_cdf(self):
         #comparison to R, only 5 decimals
         k = numpy.arange(-10, 15)
@@ -407,7 +411,7 @@ class TestFitMethod(TestCase):
             else:
                 assert_(len(vals) == 2+len(args))
                 assert_(len(vals2)==2+len(args))
-                
+
     @dec.slow
     def test_fix_fit(self):
         for func, dist, args, alpha in test_all_distributions():
@@ -425,15 +429,15 @@ class TestFitMethod(TestCase):
             assert_(len(vals2) == 2+len(args))
             if len(args) > 0:
                 vals3 = distfunc.fit(res, f0=args[0])
-                assert_(len(vals3) == 2+len(args)) 
+                assert_(len(vals3) == 2+len(args))
                 assert_(vals3[0] == args[0])
             if len(args) > 1:
                 vals4 = distfunc.fit(res, f1=args[1])
-                assert_(len(vals4) == 2+len(args)) 
+                assert_(len(vals4) == 2+len(args))
                 assert_(vals4[1] == args[1])
             if len(args) > 2:
                 vals5 = distfunc.fit(res, f2=args[2])
-                assert_(len(vals5) == 2+len(args)) 
+                assert_(len(vals5) == 2+len(args))
                 assert_(vals5[2] == args[2])
 
 class TestFrozen(TestCase):
