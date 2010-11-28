@@ -804,6 +804,25 @@ class TestHistogram(TestCase):
                                     decimal=2)
 
 
+def test_cumfreq():
+    x = [1, 4, 2, 1, 3, 1]
+    cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=4)
+    assert_array_almost_equal(cumfreqs, np.array([ 3.,  4.,  5.,  6.]))
+    cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=4,
+                                                      defaultreallimits=(1.5, 5))
+    assert_(extrapoints==3)
+
+
+def test_relfreq():
+    a = np.array([1, 4, 2, 1, 3, 1])
+    relfreqs, lowlim, binsize, extrapoints = stats.relfreq(a, numbins=4)
+    assert_array_almost_equal(relfreqs, array([0.5, 0.16666667, 0.16666667, 0.16666667]))
+
+    # check array_like input is accepted
+    relfreqs2, lowlim, binsize, extrapoints = stats.relfreq([1, 4, 2, 1, 3, 1], numbins=4)
+    assert_array_almost_equal(relfreqs, relfreqs2)
+
+
 # Utility
 
 def compare_results(res,desired):
