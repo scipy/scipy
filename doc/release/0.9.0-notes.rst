@@ -144,4 +144,4 @@ been deprecated since version 0.7, was removed.
 Many functions in ``scipy.stats`` that are either available from numpy or have
 been superseded, and have been deprecated since version 0.7, have been removed:
 `std`, `var`, `mean`, `median`, `cov`, `corrcoef`, `z`, `zs`, `stderr`,
-`samplestd`, `samplevar` and `erfc`.
+`samplestd`, `samplevar`, `pdfapprox`, `pdf_moments` and `erfc`.

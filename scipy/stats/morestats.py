@@ -26,8 +26,7 @@ __all__ = ['find_repeats', 'mvsdist',
            'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
            'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
            'fligner', 'mood', 'oneway', 'wilcoxon',
-           'pdf_moments', 'pdf_fromgamma', 'pdfapprox',
-           'circmean', 'circvar', 'circstd',
+           'pdf_fromgamma', 'circmean', 'circvar', 'circstd',
           ]
 
 
@@ -1287,42 +1286,6 @@ def _hermnorm(N):
         plist[n] = plist[n-1].deriv() - poly1d([1,0])*plist[n-1]
     return plist
 
-@np.lib.deprecate(message="""
-scipy.stats.pdf_moments is broken. It will be removed from scipy in 0.9
-unless it is fixed.
-""")
-def pdf_moments(cnt):
-    """Return the Gaussian expanded pdf function given the list of central
-    moments (first one is mean).
-    """
-    N = len(cnt)
-    if N < 2:
-        raise ValueError("At least two moments must be given to " +
-              "approximate the pdf.")
-    totp = poly1d(1)
-    sig = sqrt(cnt[1])
-    mu = cnt[0]
-    if N > 2:
-        Dvals = _hermnorm(N+1)
-    for k in range(3,N+1):
-        # Find Ck
-        Ck = 0.0
-        for n in range((k-3)/2):
-            m = k-2*n
-            if m % 2: # m is odd
-                momdiff = cnt[m-1]
-            else:
-                momdiff = cnt[m-1] - sig*sig*scipy.factorial2(m-1)
-            Ck += Dvals[k][m] / sig**m * momdiff
-        # Add to totp
-        totp = totp +  Ck*Dvals[k]
-
-    def thisfunc(x):
-        xn = (x-mu)/sig
-        return totp(xn)*exp(-xn*xn/2.0)/sqrt(2*pi)/sig
-    return thisfunc
-
-
 def pdf_fromgamma(g1,g2,g3=0.0,g4=None):
     if g4 is None:
         g4 = 3*g2*g2
@@ -1345,30 +1308,6 @@ def pdf_fromgamma(g1,g2,g3=0.0,g4=None):
         xn = (x-mu)/sig
         return totp(xn)*exp(-xn*xn/2.0)
     return thefunc
-
-@np.lib.deprecate(message="""
-scipy.stats.pdfapprox is broken. It will be removed from scipy in 0.9
-unless it is fixed.
-""")
-def pdfapprox(samples):
-    """Return a function that approximates the pdf of a set of samples
-    using a Gaussian expansion computed from the mean, variance, skewness
-    and Fisher's kurtosis.
-    """
-    # Estimate mean, variance, skewness and kurtosis
-    mu,sig,sk,kur = stats.describe(samples)[2:]
-    # Get central moments
-    cnt = [None]*4
-    cnt[0] = mu
-    cnt[1] = sig*sig
-    cnt[2] = sk * sig**1.5
-    cnt[3] = (kur+3.0) * sig**2.0
-    return pdf_moments(cnt)
-    #g2 = (1.0/sig)**2.0
-    #g1 = mu / sig**3.0
-    #g3 = sk / sig**3.5
-    #g4 = (kur+3.0) / sig**4.0
-    #return pdf_fromgamma(g1, g2, g3, g4)
 
 def circmean(samples, high=2*pi, low=0):
     """
