@@ -78,7 +78,8 @@ def wavedec(amn, hk):
     return NotImplemented
 
 def cascade(hk, J=7):
-    """Return (x, phi, psi) at dyadic points K/2**J from filter coefficients.
+    """
+    Return (x, phi, psi) at dyadic points K/2**J from filter coefficients.
 
     Parameters
     ----------
@@ -98,6 +99,7 @@ def cascade(hk, J=7):
                      N
           phi(x) = sum   hk * phi(2x-k)
                      k=0
+
     psi :
         The wavelet function ``psi(x)`` at `x`:
 

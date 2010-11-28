@@ -532,27 +532,27 @@ def hmean(a, axis=0, dtype=None):
 
 
 def cmedian(a, numbins=1000):
-    # fixme: numpy.median() always seems to be a better choice.
-    # A better version of this function would take already-histogrammed data
-    # and compute the median from that.
-    # fixme: the wording of the docstring is a bit wonky.
-    """Returns the computed median value of an array.
+    """
+    Returns the computed median value of an array.
 
     All of the values in the input array are used. The input array is first
-    histogrammed using numbins bins. The bin containing the median is
+    histogrammed using `numbins` bins. The bin containing the median is
     selected by searching for the halfway point in the cumulative histogram.
-    The median value is then computed by linearly interpolating across that bin.
+    The median value is then computed by linearly interpolating across that
+    bin.
 
     Parameters
     ----------
-    a : array
+    a : array_like
+        Input array.
     numbins : int
         The number of bins used to histogram the data. More bins give greater
         accuracy to the approximation of the median.
 
     Returns
     -------
-    A floating point value approximating the median.
+    cmedian : float
+        An approximation of the median.
 
     References
     ----------
@@ -563,6 +563,9 @@ def cmedian(a, numbins=1000):
        York. 2000.
 
     """
+    # TODO: numpy.median() always seems to be a better choice.
+    # A better version of this function would take already-histogrammed data
+    # and compute the median from that.
     a = np.ravel(a)
     n = float(len(a))
 
@@ -965,7 +968,7 @@ def skew(a, axis=0, bias=True):
 
     For normally distributed data, the skewness should be about 0. A skewness
     value > 0 means that there is more weight in the left tail of the
-    distribution. The function skewtest() can be used to determine if the
+    distribution. The function `skewtest` can be used to determine if the
     skewness value is close enough to 0, statistically speaking.
 
     Parameters
@@ -1020,7 +1023,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
     If bias is False then the kurtosis is calculated using k statistics to
     eliminate bias coming from biased moment estimators
 
-    Use kurtosistest() to see if result is close enough to normal.
+    Use `kurtosistest` to see if result is close enough to normal.
 
     Parameters
     ----------
@@ -1137,6 +1140,8 @@ def skewtest(a, axis=0):
 
     Returns
     -------
+    z-score : float
+        The computed z-score for this test.
     p-value : float
         a 2-sided p-value for the hypothesis test
 
@@ -1170,7 +1175,7 @@ def kurtosistest(a, axis=0):
 
     This function tests the null hypothesis that the kurtosis
     of the population from which the sample was drawn is that
-    of the normal distribution: kurtosis=3(n-1)/(n+1).
+    of the normal distribution: ``kurtosis = 3(n-1)/(n+1)``.
 
     Parameters
     ----------
@@ -1182,6 +1187,8 @@ def kurtosistest(a, axis=0):
 
     Returns
     -------
+    z-score : float
+        The computed z-score for this test.
     p-value : float
         The 2-sided p-value for the hypothesis test
 
@@ -1260,22 +1267,51 @@ def normaltest(a, axis=0):
 #####################################
 
 def itemfreq(a):
-    # fixme: I'm not sure I understand what this does. The docstring is
-    # internally inconsistent.
-    # comment: fortunately, this function doesn't appear to be used elsewhere
-    """Returns a 2D array of item frequencies.
-
-    Column 1 contains item values, column 2 contains their respective counts.
-    Assumes a 1D array is passed.
+    """
+    Returns a 2D array of item frequencies.
 
     Parameters
     ----------
-    a : array
+    a : array_like of rank 1
+        Input array.
 
     Returns
     -------
-    A 2D frequency table (col [0:n-1]=scores, col n=frequencies)
+    itemfreq : ndarray of rank 2
+        A 2D frequency table (col [0:n-1]=scores, col n=frequencies).
+        Column 1 contains item values, column 2 contains their respective
+        counts.
+
+    Notes
+    -----
+    This uses a loop that is only reasonably fast if the number of unique
+    elements is not large. For integers, numpy.bincount is much faster.
+    This function currently does not support strings or multi-dimensional
+    scores.
+
+    Examples
+    --------
+    >>> a = np.array([1, 1, 5, 0, 1, 2, 2, 0, 1, 4])
+    >>> stats.itemfreq(a)
+    array([[ 0.,  2.],
+           [ 1.,  4.],
+           [ 2.,  2.],
+           [ 4.,  1.],
+           [ 5.,  1.]])
+    >>> np.bincount(a)
+    array([2, 4, 2, 0, 1, 1])
+
+    >>> stats.itemfreq(a/10.)
+    array([[ 0. ,  2. ],
+           [ 0.1,  4. ],
+           [ 0.2,  2. ],
+           [ 0.4,  1. ],
+           [ 0.5,  1. ]])
+
     """
+    # TODO: I'm not sure I understand what this does. The docstring is
+    # internally inconsistent.
+    # comment: fortunately, this function doesn't appear to be used elsewhere
     scores = _support.unique(a)
     scores = np.sort(scores)
     freq = zeros(len(scores))
@@ -1432,29 +1468,31 @@ def percentileofscore(a, score, kind='rank'):
 
 
 def histogram2(a, bins):
-    # comment: probably obsoleted by numpy.histogram()
-    """ histogram2(a,bins) -- Compute histogram of a using divisions in bins
+    """
+    Compute histogram using divisions in bins.
 
-         Description:
-            Count the number of times values from array a fall into
-            numerical ranges defined by bins.  Range x is given by
-            bins[x] <= range_x < bins[x+1] where x =0,N and N is the
-            length of the bins array.  The last range is given by
-            bins[N] <= range_N < infinity.  Values less than bins[0] are
-            not included in the histogram.
-         Arguments:
-            a -- 1D array.  The array of values to be divied into bins
-            bins -- 1D array.  Defines the ranges of values to use during
-                    histogramming.
-         Returns:
-            1D array.  Each value represents the occurences for a given
-            bin (range) of values.
+    Count the number of times values from array `a` fall into
+    numerical ranges defined by `bins`.  Range x is given by
+    bins[x] <= range_x < bins[x+1] where x =0,N and N is the
+    length of the `bins` array.  The last range is given by
+    bins[N] <= range_N < infinity.  Values less than bins[0] are
+    not included in the histogram.
 
-         Caveat:
-            This should probably have an axis argument that would histogram
-            along a specific axis (kinda like matlab)
+    Parameters
+    ----------
+    a : array_like of rank 1
+        The array of values to be assigned into bins
+    bins : array_like of rank 1
+        Defines the ranges of values to use during histogramming.
+
+    Returns
+    -------
+    histogram2 : ndarray of rank 1
+        Each value represents the occurrences for a given bin (range) of
+        values.
 
     """
+    # comment: probably obsoleted by numpy.histogram()
     n = np.searchsorted(np.sort(a), bins)
     n = np.concatenate([ n, [len(a)]])
     return n[ 1:]-n[:-1]
@@ -1558,12 +1596,30 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
 
 def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """
-Returns a relative frequency histogram, using the histogram function.
-Defaultreallimits can be None (use all data), or a 2-sequence containing
-lower and upper limits on values to include.
+    Returns a relative frequency histogram, using the histogram function.
 
-Returns: array of cumfreq bin values, lowerreallimit, binsize, extrapoints
-"""
+    Parameters
+    ----------
+    a : ndarray
+        Input array.
+    numbins : int, optional
+        Number of bins.
+    defaultreallimits : 2-sequence or None, optional
+        None (use all data), or a 2-sequence containing lower and upper limits
+        on values to include.
+
+    Returns
+    -------
+    relfreq : ndarray
+        Binned values of relative frequency.
+    lowerreallimit : float
+        Lower real limit
+    binsize : float
+        Width of each bin.
+    extrapoints : int
+        Extra points.
+
+    """
     h,l,b,e = histogram(a,numbins,defaultreallimits, weights=weights)
     h = array(h/float(a.shape[0]))
     return h,l,b,e
@@ -3718,12 +3774,27 @@ def f_value(ER, EF, dfR, dfF):
 
 
 def f_value_multivariate(ER, EF, dfnum, dfden):
-    """Returns an F-statistic given the following:
-        ER  = error associated with the null hypothesis (the Restricted model)
-        EF  = error associated with the alternate hypothesis (the Full model)
-        dfR = degrees of freedom the Restricted model
-        dfF = degrees of freedom associated with the Restricted model
-    where ER and EF are matrices from a multivariate F calculation.
+    """
+    Returns a multivariate F-statistic.
+
+    Parameters
+    ----------
+    ER : ndarray
+        Error associated with the null hypothesis (the Restricted model).
+        From a multivariate F calculation.
+    EF : ndarray
+        Error associated with the alternate hypothesis (the Full model)
+        From a multivariate F calculation.
+    dfnum : int
+        Degrees of freedom the Restricted model.
+    dfden : int
+        Degrees of freedom associated with the Restricted model.
+
+    Returns
+    -------
+    fstat : float
+        The computed F-statistic.
+
     """
     if isinstance(ER, (int, float)):
         ER = array([[ER]])
@@ -3817,19 +3888,21 @@ def square_of_sums(a, axis=0):
 
 
 def fastsort(a):
-    # fixme: the wording in the docstring is nonsense.
-    """Sort an array and provide the argsort.
+    """
+    Sort an array and provide the argsort.
 
     Parameters
     ----------
-    a : array
+    a : array_like
+        Input array.
 
     Returns
     -------
-    (sorted array,
-     indices into the original array,
-    )
+    fastsort : ndarray of type int
+        sorted indices into the original array
+
     """
+    # TODO: the wording in the docstring is nonsense.
     it = np.argsort(a)
     as_ = a[it]
     return as_, it

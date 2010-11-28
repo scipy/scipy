@@ -305,7 +305,8 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None
 
 
 def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=None, callback=None, restrt=None):
-    """Use Generalized Minimal RESidual iteration to solve A x = b
+    """
+    Use Generalized Minimal RESidual iteration to solve A x = b.
 
     Parameters
     ----------
@@ -318,34 +319,54 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
     -------
     x : {array, matrix}
         The converged solution.
-    info : integer
+    info : int
         Provides convergence information:
-            0  : successful exit
-            >0 : convergence to tolerance not achieved, number of iterations
-            <0 : illegal input or breakdown
+          * 0  : successful exit
+          * >0 : convergence to tolerance not achieved, number of iterations
+          * <0 : illegal input or breakdown
 
-    Other Parameters
+    Other parameters
     ----------------
-    x0  : {array, matrix}
-        Starting guess for the solution.
+    x0 : {array, matrix}
+        Starting guess for the solution (a vector of zeros by default).
     tol : float
         Tolerance to achieve. The algorithm terminates when either the relative
         or the absolute residual is below `tol`.
-    restart : integer
+    restart : int, optional
         Number of iterations between restarts. Larger values increase
         iteration cost, but may be necessary for convergence.
-        (Default: 20)
-    maxiter : integer, optional
+        Default is 20.
+    maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse matrix, dense matrix, LinearOperator}
-        Preconditioner for A.  The preconditioner should approximate the
-        inverse of A.  Effective preconditioning dramatically improves the
-        rate of convergence, which implies that fewer iterations are needed
-        to reach a given error tolerance.
+        Inverse of the preconditioner of A.  M should approximate the
+        inverse of A and be easy to solve for (see Notes).  Effective
+        preconditioning dramatically improves the rate of convergence,
+        which implies that fewer iterations are needed to reach a given
+        error tolerance.  By default, no preconditioner is used.
     callback : function
         User-supplied function to call after each iteration.  It is called
         as callback(rk), where rk is the current residual vector.
+
+    See Also
+    --------
+    LinearOperator
+
+    Notes
+    -----
+    A preconditioner, P, is chosen such that P is close to A but easy to solve for.
+    The preconditioner parameter required by this routine is ``M = P^-1``.
+    The inverse should preferably not be calculated explicitly.  Rather, use the
+    following template to produce M::
+
+      # Construct a linear operator that computes P^-1 * x.
+      import scipy.sparse.linalg as spla
+      M_x = lambda x: spla.spsolve(P, x)
+      M = spla.LinearOperator((n, n), M_x)
+
+    Deprecated Parameters
+    ---------------------
     xtype : {'f','d','F','D'}
         This parameter is DEPRECATED --- avoid using it.
 

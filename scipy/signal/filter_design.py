@@ -34,14 +34,15 @@ def findfreqs(num, den, N):
     return w
 
 def freqs(b, a, worN=None, plot=None):
-    """Compute frequency response of analog filter.
+    """
+    Compute frequency response of analog filter.
 
     Given the numerator (b) and denominator (a) of a filter compute its
-    frequency response.
+    frequency response::
 
-            b[0]*(jw)**(nb-1) + b[1]*(jw)**(nb-2) + ... + b[nb-1]
-    H(w) = --------------------------------------------------------
-            a[0]*(jw)**(na-1) + a[1]*(jw)**(na-2) + ... + a[na-1]
+             b[0]*(jw)**(nb-1) + b[1]*(jw)**(nb-2) + ... + b[nb-1]
+     H(w) = -------------------------------------------------------
+             a[0]*(jw)**(na-1) + a[1]*(jw)**(na-2) + ... + a[na-1]
 
     Parameters
     ----------
@@ -54,6 +55,10 @@ def freqs(b, a, worN=None, plot=None):
         of the response curve (determined by pole-zero locations).  If a single
         integer, the compute at that many frequencies.  Otherwise, compute the
         response at frequencies given in worN.
+    plot : callable
+        A callable that takes two arguments. If given, the return parameters
+        `w` and `h` are passed to plot. Useful for plotting the frequency
+        response inside `freqz`.
 
     Returns
     -------
@@ -61,6 +66,17 @@ def freqs(b, a, worN=None, plot=None):
         The frequencies at which h was computed.
     h : ndarray
         The frequency response.
+
+    See Also
+    --------
+    freqz : Compute the frequency response of a digital filter.
+
+    Notes
+    -----
+    Using Matplotlib's "plot" function as the callable for `plot` produces
+    unexpected results,  this plots the real part of the complex transfer
+    function, not the magnitude.
+
     """
     if worN is None:
         w = findfreqs(b,a,200)
