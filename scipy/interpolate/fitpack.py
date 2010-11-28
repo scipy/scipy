@@ -848,8 +848,8 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
         raise TypeError('Given degree of the spline (kx,ky=%d,%d) is not supported. (1<=k<=5)' % (kx,ky))
     if m<(kx+1)*(ky+1):
         raise TypeError('m >= (kx+1)(ky+1) must hold')
-    if nxest is None: nxest=kx+sqrt(m/2)
-    if nyest is None: nyest=ky+sqrt(m/2)
+    if nxest is None: nxest=int(kx+sqrt(m/2))
+    if nyest is None: nyest=int(ky+sqrt(m/2))
     nxest,nyest=max(nxest,2*kx+3),max(nyest,2*ky+3)
     if task>=0 and s==0:
         nxest=int(kx+sqrt(3*m))
