@@ -1,3 +1,5 @@
+import warnings
+
 import numpy.testing as npt
 import numpy as np
 import nose
@@ -15,7 +17,7 @@ These tests currently check only/mostly for serious errors and exceptions,
 not for numerically exact results.
 
 
-TODO: 
+TODO:
 * make functioning test for skew and kurtosis
   still known failures - skip for now
 
@@ -70,6 +72,7 @@ distcont = [
     ['hypsecant', ()],
     ['invgamma', (2.0668996136993067,)],
     ['invnorm', (0.14546264555347513,)],
+    ['invgauss', (0.14546264555347513,)],
     ['invweibull', (10.58,)], # sample mean test fails at(0.58847112119264788,)]
     ['johnsonsb', (4.3172675099141058, 3.1837781130785063)],
     ['johnsonsu', (2.554395574161155, 2.2482281679651965)],
@@ -144,7 +147,7 @@ distmissing = ['wald', 'gausshyper', 'genexpon', 'rv_continuous',
     'loglaplace', 'rdist', 'semicircular', 'invweibull', 'ksone',
     'cosine', 'kstwobign', 'truncnorm', 'mielke', 'recipinvgauss', 'levy',
     'johnsonsu', 'levy_l', 'powernorm', 'wrapcauchy',
-    'johnsonsb', 'truncexpon', 'rice', 'invnorm', 'invgamma',
+    'johnsonsb', 'truncexpon', 'rice', 'invnorm', 'invgauss', 'invgamma',
     'powerlognorm']
 
 distmiss = [[dist,args] for dist,args in distcont if dist in distmissing]
@@ -166,7 +169,7 @@ def test_cont_basic():
         skurt = stats.kurtosis(rvs)
         sskew = stats.skew(rvs)
         m,v = distfn.stats(*arg)
-        
+
         yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
               'sample mean test'
         # the sample skew kurtosis test has known failures, not very good distance measure
@@ -219,14 +222,14 @@ def check_moment(distfn, arg, m, v, msg):
     if not np.isinf(m):
         npt.assert_almost_equal(m1, m, decimal=10, err_msg= msg + \
                             ' - 1st moment')
-    else:                     # or np.isnan(m1), 
-        npt.assert_(np.isinf(m1), 
+    else:                     # or np.isnan(m1),
+        npt.assert_(np.isinf(m1),
                msg + ' - 1st moment -infinite, m1=%s' % str(m1))
         #np.isnan(m1) temporary special treatment for loggamma
     if not np.isinf(v):
         npt.assert_almost_equal(m2-m1*m1, v, decimal=10, err_msg= msg + \
                             ' - 2ndt moment')
-    else:                     #or np.isnan(m2), 
+    else:                     #or np.isnan(m2),
         npt.assert_(np.isinf(m2),
                msg + ' - 2nd moment -infinite, m2=%s' % str(m2))
         #np.isnan(m2) temporary special treatment for loggamma
@@ -355,6 +358,10 @@ def check_distribution_rvs(dist, args, alpha, rvs):
         D,pval = stats.kstest(dist,'',args=args, N=1000)
         npt.assert_(pval > alpha, "D = " + str(D) + "; pval = " + str(pval) +
                "; alpha = " + str(alpha) + "\nargs = " + str(args))
+
+
+warnings.filterwarnings('ignore', message="The `invnorm` distribution")
+
 
 if __name__ == "__main__":
     #nose.run(argv=['', __file__])

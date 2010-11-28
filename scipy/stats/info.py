@@ -81,6 +81,7 @@ Continuous  (Total == 81 distributions)
    hypsecant         Hyperbolic Secant
    invgamma          Inverse Gamma
    invnorm           Inverse Normal
+   invgauss          Inverse Gaussian
    invweibull        Inverse Weibull
    johnsonsb         Johnson SB
    johnsonsu         Johnson SU

@@ -6,6 +6,7 @@
 #
 
 import math
+import warnings
 from copy import copy
 
 from scipy.misc import comb, derivative
@@ -57,10 +58,10 @@ __all__ = [
            'weibull_max', 'genlogistic', 'genpareto', 'genexpon', 'genextreme',
            'gamma', 'gengamma', 'genhalflogistic', 'gompertz', 'gumbel_r',
            'gumbel_l', 'halfcauchy', 'halflogistic', 'halfnorm', 'hypsecant',
-           'gausshyper', 'invgamma', 'invnorm', 'invweibull', 'johnsonsb',
-           'johnsonsu', 'laplace', 'levy', 'levy_l', 'levy_stable',
-           'logistic', 'loggamma', 'loglaplace', 'lognorm', 'gilbrat',
-           'maxwell', 'mielke', 'nakagami', 'ncx2', 'ncf', 't',
+           'gausshyper', 'invgamma', 'invnorm', 'invgauss', 'invweibull',
+           'johnsonsb', 'johnsonsu', 'laplace', 'levy', 'levy_l',
+           'levy_stable', 'logistic', 'loggamma', 'loglaplace', 'lognorm',
+           'gilbrat', 'maxwell', 'mielke', 'nakagami', 'ncx2', 'ncf', 't',
            'nct', 'pareto', 'lomax', 'powerlaw', 'powerlognorm', 'powernorm',
            'rdist', 'rayleigh', 'reciprocal', 'rice', 'recipinvgauss',
            'semicircular', 'triang', 'truncexpon', 'truncnorm',
@@ -3247,7 +3248,43 @@ for x > 0, a > 0.
 ## Inverse Normal Distribution
 # scale is gamma from DATAPLOT and B from Regress
 
+_invnorm_msg = \
+"""The `invnorm` distribution will be renamed to `invgauss` after scipy 0.9"""
 class invnorm_gen(rv_continuous):
+    def _rvs(self, mu):
+        warnings.warn(_invnorm_msg, DeprecationWarning)
+        return mtrand.wald(mu, 1.0, size=self._size)
+    def _pdf(self, x, mu):
+        warnings.warn(_invnorm_msg, DeprecationWarning)
+        return 1.0/sqrt(2*pi*x**3.0)*exp(-1.0/(2*x)*((x-mu)/mu)**2)
+    def _logpdf(self, x, mu):
+        warnings.warn(_invnorm_msg, DeprecationWarning)
+        return -0.5*log(2*pi) - 1.5*log(x) - ((x-mu)/mu)**2/(2*x)
+    def _cdf(self, x, mu):
+        warnings.warn(_invnorm_msg, DeprecationWarning)
+        fac = sqrt(1.0/x)
+        C1 = norm.cdf(fac*(x-mu)/mu)
+        C1 += exp(2.0/mu)*norm.cdf(-fac*(x+mu)/mu)
+        return C1
+    def _stats(self, mu):
+        warnings.warn(_invnorm_msg, DeprecationWarning)
+        return mu, mu**3.0, 3*sqrt(mu), 15*mu
+invnorm = invnorm_gen(a=0.0, name='invnorm', longname="An inverse normal",
+                      shapes="mu",extradoc="""
+
+Inverse normal distribution
+
+NOTE: `invnorm` will be renamed to `invgauss` after scipy 0.9
+
+invnorm.pdf(x,mu) = 1/sqrt(2*pi*x**3) * exp(-(x-mu)**2/(2*x*mu**2))
+for x > 0.
+"""
+                      )
+
+## Inverse Gaussian Distribution (used to be called 'invnorm'
+# scale is gamma from DATAPLOT and B from Regress
+
+class invgauss_gen(rv_continuous):
     def _rvs(self, mu):
         return mtrand.wald(mu, 1.0, size=self._size)
     def _pdf(self, x, mu):
@@ -3261,15 +3298,16 @@ class invnorm_gen(rv_continuous):
         return C1
     def _stats(self, mu):
         return mu, mu**3.0, 3*sqrt(mu), 15*mu
-invnorm = invnorm_gen(a=0.0, name='invnorm', longname="An inverse normal",
-                      shapes="mu",extradoc="""
+invgauss = invgauss_gen(a=0.0, name='invgauss', longname="An inverse Gaussian",
+                        shapes="mu",extradoc="""
 
-Inverse normal distribution
+Inverse Gaussian distribution
 
-invnorm.pdf(x,mu) = 1/sqrt(2*pi*x**3) * exp(-(x-mu)**2/(2*x*mu**2))
+invgauss.pdf(x,mu) = 1/sqrt(2*pi*x**3) * exp(-(x-mu)**2/(2*x*mu**2))
 for x > 0.
 """
                       )
+
 
 ## Inverted Weibull
 
@@ -4136,7 +4174,7 @@ for x > 0, b > 0.
 
 # FIXME: PPF does not work.
 class recipinvgauss_gen(rv_continuous):
-    def _rvs(self, mu): #added, taken from invnorm
+    def _rvs(self, mu): #added, taken from invgauss
         return 1.0/mtrand.wald(mu, 1.0, size=self._size)
     def _pdf(self, x, mu):
         return 1.0/sqrt(2*pi*x)*exp(-(1-mu*x)**2.0 / (2*x*mu**2.0))
@@ -4403,7 +4441,7 @@ Von Mises distribution
 
 ## Wald distribution (Inverse Normal with shape parameter mu=1.0)
 
-class wald_gen(invnorm_gen):
+class wald_gen(invgauss_gen):
     """A Wald continuous random variable.
 
     %(before_notes)s
@@ -4418,11 +4456,11 @@ class wald_gen(invnorm_gen):
     def _rvs(self):
         return mtrand.wald(1.0, 1.0, size=self._size)
     def _pdf(self, x):
-        return invnorm._pdf(x, 1.0)
+        return invgauss._pdf(x, 1.0)
     def _logpdf(self, x):
-        return invnorm._logpdf(x, 1.0)
+        return invgauss._logpdf(x, 1.0)
     def _cdf(self, x):
-        return invnorm._cdf(x, 1.0)
+        return invgauss._cdf(x, 1.0)
     def _stats(self):
         return 1.0, 1.0, 3.0, 15.0
 wald = wald_gen(a=0.0, name="wald", extradoc="""
