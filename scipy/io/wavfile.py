@@ -120,7 +120,11 @@ def read(file):
         else:
             warnings.warn("chunk not understood", WavFileWarning)
             data = fid.read(4)
-            size = struct.unpack('I',data)[0]
+            if _big_endian:
+                fmt = '>i'
+            else:
+                fmt = '<i'
+            size = struct.unpack(fmt, data)[0]
             fid.seek(size, 1)
     fid.close()
     return rate, data
