@@ -137,7 +137,7 @@ double a, b, c, x;
     if (d <= -1 && !(fabs(d-id) > EPS && s < 0) && !(neg_int_a || neg_int_b)) {
         return pow(s, d) * hyp2f1(c - a, c - b, c, x);
     }
-    if (d <= 0 && x == 1)
+    if (d <= 0 && x == 1 && !(neg_int_a || neg_int_b))
         goto hypdiv;
 
     if (ax < 1.0 || x == -1.0) {
