@@ -816,7 +816,7 @@ class TestQR(TestCase):
     def test_simple_tall_e(self):
         # economy version
         a = [[8,2],[2,9],[5,3]]
-        q,r = qr(a,econ=True)
+        q,r = qr(a, mode='economic')
         assert_array_almost_equal(dot(transpose(q),q),identity(2))
         assert_array_almost_equal(dot(q,r),a)
         assert_equal(q.shape, (3,2))
@@ -852,7 +852,7 @@ class TestQR(TestCase):
         n = 100
         for k in range(2):
             a = random([m,n])
-            q,r = qr(a,econ=True)
+            q,r = qr(a, mode='economic')
             assert_array_almost_equal(dot(transpose(q),q),identity(n))
             assert_array_almost_equal(dot(q,r),a)
             assert_equal(q.shape, (m,n))

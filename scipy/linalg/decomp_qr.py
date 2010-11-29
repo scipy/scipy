@@ -12,7 +12,7 @@ from lapack import get_lapack_funcs, find_best_lapack_type
 from misc import _datanotshared
 
 
-def qr(a, overwrite_a=False, lwork=None, econ=None, mode='qr'):
+def qr(a, overwrite_a=False, lwork=None, mode='full'):
     """Compute QR decomposition of a matrix.
 
     Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
@@ -22,27 +22,23 @@ def qr(a, overwrite_a=False, lwork=None, econ=None, mode='qr'):
     ----------
     a : array, shape (M, N)
         Matrix to be decomposed
-    overwrite_a : boolean
+    overwrite_a : bool, optional
         Whether data in a is overwritten (may improve performance)
-    lwork : integer
+    lwork : int, optional
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
-    econ : boolean
-        Whether to compute the economy-size QR decomposition, making shapes
-        of Q and R (M, K) and (K, N) instead of (M,M) and (M,N). K=min(M,N).
-        Default is False.
-    mode : {'qr', 'r'}
+    mode : {'full', 'r', 'economic'}
         Determines what information is to be returned: either both Q and R
-        or only R.
+        ('full', default), only R ('r') or both Q and R but computed in
+        economy-size ('economic', see Notes).
 
     Returns
     -------
-    (if mode == 'qr')
-    Q : double or complex array, shape (M, M) or (M, K) for econ==True
-
-    (for any mode)
-    R : double or complex array, shape (M, N) or (K, N) for econ==True
-        Size K = min(M, N)
+    Q : double or complex ndarray
+        Of shape (M, M), or (M, K) for ``mode='economic'``.  Not returned if
+        ``mode='r'``.
+    R : double or complex ndarray
+        Of shape (M, N), or (K, N) for ``mode='economic'``.  ``K = min(M, N)``.
 
     Raises LinAlgError if decomposition fails
 
@@ -50,6 +46,9 @@ def qr(a, overwrite_a=False, lwork=None, econ=None, mode='qr'):
     -----
     This is an interface to the LAPACK routines dgeqrf, zgeqrf,
     dorgqr, and zungqr.
+
+    If ``mode=economic``, the shapes of Q and R are (M, K) and (K, N) instead
+    of (M,M) and (M,N), with ``K=min(M,N)``.
 
     Examples
     --------
@@ -64,17 +63,18 @@ def qr(a, overwrite_a=False, lwork=None, econ=None, mode='qr'):
     >>> r2 = linalg.qr(a, mode='r')
     >>> allclose(r, r2)
 
-    >>> q3, r3 = linalg.qr(a, econ=True)
+    >>> q3, r3 = linalg.qr(a, mode='economic')
     >>> q3.shape, r3.shape
     ((9, 6), (6, 6))
 
     """
-    if econ is None:
-        econ = False
-    else:
-        warn("qr econ argument will be removed after scipy 0.7. "
-             "The economy transform will then be available through "
-             "the mode='economic' argument.", DeprecationWarning)
+    if mode == 'qr':
+        # 'qr' was the old default, equivalent to 'full'. Neither 'full' nor
+        # 'qr' are used below, but set to 'full' anyway to be sure
+        mode = 'full'
+    if not mode in ['full', 'qr', 'r', 'economic']:
+        raise ValueError(\
+                 "Mode argument should be one of ['full', 'r', 'economic']")
 
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2:
@@ -92,7 +92,7 @@ def qr(a, overwrite_a=False, lwork=None, econ=None, mode='qr'):
     if info < 0:
         raise ValueError("illegal value in %d-th argument of internal geqrf"
                                                                     % -info)
-    if not econ or M < N:
+    if not mode == 'economic' or M < N:
         R = special_matrices.triu(qr)
     else:
         R = special_matrices.triu(qr[0:N, 0:N])
@@ -111,7 +111,7 @@ def qr(a, overwrite_a=False, lwork=None, econ=None, mode='qr'):
         Q, work, info = gor_un_gqr(qr[:,0:M], tau, lwork=-1, overwrite_a=1)
         lwork = work[0]
         Q, work, info = gor_un_gqr(qr[:,0:M], tau, lwork=lwork, overwrite_a=1)
-    elif econ:
+    elif mode == 'economic':
         # get optimal work array
         Q, work, info = gor_un_gqr(qr, tau, lwork=-1, overwrite_a=1)
         lwork = work[0]
@@ -201,13 +201,11 @@ def rq(a, overwrite_a=False, lwork=None):
     lwork : integer
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
-    econ : boolean
 
     Returns
     -------
-    R : double array, shape (M, N) or (K, N) for econ==True
-        Size K = min(M, N)
-    Q : double or complex array, shape (M, M) or (M, K) for econ==True
+    R : double array, shape (M, N)
+    Q : double or complex array, shape (M, M)
 
     Raises LinAlgError if decomposition fails
 

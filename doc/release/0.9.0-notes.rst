@@ -144,6 +144,9 @@ been deprecated since version 0.7, was removed.
 The ``output_type`` keyword in many ``scipy.ndimage`` interpolation functions
 has been removed.
 
+The ``econ`` keyword in ``scipy.linalg.qr`` has been removed. The same
+functionality is still available by specifying ``mode='economic'``.
+
 
 ``scipy.stats``
 ---------------
