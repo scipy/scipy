@@ -677,34 +677,6 @@ def anderson(x,dist='norm'):
     return A2, critical, sig
 
 
-def _find_repeats(arr):
-    """Find repeats in the array and return (repeats, repeat_count)
-    """
-    arr = sort(arr)
-    lastval = arr[0]
-    howmany = 0
-    ind = 1
-    N = len(arr)
-    repeat = 0
-    replist = []
-    repnum = []
-    while ind < N:
-        if arr[ind] != lastval:
-            if repeat:
-                repnum.append(howmany+1)
-                repeat = 0
-                howmany = 0
-        else:
-            howmany += 1
-            repeat = 1
-            if (howmany == 1):
-                replist.append(arr[ind])
-        lastval = arr[ind]
-        ind += 1
-    if repeat:
-        repnum.append(howmany+1)
-    return replist, repnum
-
 def ansari(x,y):
     """
     Perform the Ansari-Bradley test for equal scale parameters
