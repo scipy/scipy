@@ -165,6 +165,25 @@ class TestFirWinMore(TestCase):
                 [1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0],
                 decimal=5)
 
+    def test_nyq(self):
+        """Test the nyq keyword."""
+        nyquist = 1000
+        width = 40.0
+        relative_width = width/nyquist
+        ntaps, beta = kaiserord(120, relative_width)
+        taps = firwin(ntaps, cutoff=[300, 700], window=('kaiser', beta),
+                        pass_zero=False, scale=False, nyq=nyquist)
+
+        # Check the symmetry of taps.
+        assert_array_almost_equal(taps[:ntaps/2], taps[ntaps:ntaps-ntaps/2-1:-1])
+
+        # Check the gain at a few samples where we know it should be approximately 0 or 1.
+        freq_samples = np.array([0.0, 200, 300-width/2, 300+width/2, 500,
+                                700-width/2, 700+width/2, 800, 1000])
+        freqs, response = freqz(taps, worN=np.pi*freq_samples/nyquist)
+        assert_array_almost_equal(np.abs(response),
+                [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0], decimal=5)
+
     def test_bad_cutoff(self):
         """Test that invalid cutoff argument raises ValueError."""
         # cutoff values must be greater than 0 and less than 1.
@@ -180,13 +199,16 @@ class TestFirWinMore(TestCase):
         assert_raises(ValueError, firwin, 99, [])
         # 2D array not allowed.
         assert_raises(ValueError, firwin, 99, [[0.1, 0.2],[0.3, 0.4]])               
-
+        # cutoff values must be less than nyq.
+        assert_raises(ValueError, firwin, 99, 50.0, nyq=40)
+        assert_raises(ValueError, firwin, 99, [10, 20, 30], nyq=25)
 
     def test_even_highpass_raises_value_error(self):
         """Test that attempt to create a highpass filter with an even number
         of taps raises a ValueError exception."""
         assert_raises(ValueError, firwin, 40, 0.5, pass_zero=False)
         assert_raises(ValueError, firwin, 40, [.25, 0.5])
+
 
 
 

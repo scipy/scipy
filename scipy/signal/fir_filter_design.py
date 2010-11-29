@@ -129,7 +129,8 @@ def kaiserord(ripple, width):
     return int(ceil(numtaps)), beta
 
 
-def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True, scale=True):
+def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
+                                                        scale=True, nyq=1.0):
     """
     FIR filter design using the window method.
     
@@ -145,25 +146,25 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True, scale=
     ----------
     numtaps : int
         Length of the filter (number of coefficients, i.e. the filter
-        order + 1).  `numtaps` must be even if a passband includes the Nyquist
-        frequency.
+        order + 1).  `numtaps` must be even if a passband includes the
+        Nyquist frequency.
 
     cutoff : float or 1D array_like
-        Cutoff frequency of filter (normalized so that 1 corresponds to
-        Nyquist or pi radians / sample) OR an array of cutoff frequencies
-        (that is, band edges). In the latter case, the frequencies in 
-        `cutoff` should be positive and monotonically increasing between
-        0 and 1.  The values 0 and 1 must not be included in `cutoff`.
+        Cutoff frequency of filter (expressed in the same units as `nyq`)
+        OR an array of cutoff frequencies (that is, band edges). In the
+        latter case, the frequencies in `cutoff` should be positive and
+        monotonically increasing between 0 and `nyq`.  The values 0 and
+        `nyq` must not be included in `cutoff`.
 
     width : float or None
-        If `width` is not None, then assume it is the approximate width of
-        the transition region (normalized so that 1 corresponds to pi)
+        If `width` is not None, then assume it is the approximate width
+        of the transition region (expressed in the same units as `nyq`)
         for use in Kaiser FIR filter design.  In this case, the `window`
         argument is ignored.
 
     window : string or tuple of string and parameter values
-        Desired window to use. See `scipy.signal.get_window` for a list of
-        windows and required parameters.
+        Desired window to use. See `scipy.signal.get_window` for a list
+        of windows and required parameters.
 
     pass_zero : bool
         If True, the gain at the frequency 0 (i.e. the "DC gain") is 1.
@@ -175,9 +176,13 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True, scale=
         That frequency is either:
             0 (DC) if the first passband starts at 0 (i.e. pass_zero
                 is True);
-            1 (Nyquist) if the first passband ends at 1 (i.e the
-                filter is a single band highpass filter);
+            `nyq` (the Nyquist rate) if the first passband ends at
+                `nyq` (i.e the filter is a single band highpass filter);
             center of first passband otherwise.
+
+    nyq : float
+        Nyquist frequency.  Each frequency in `cutoff` must be between 0
+        and `nyq`.
 
     Returns
     -------
@@ -187,8 +192,8 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True, scale=
     Raises
     ------
     ValueError
-        If any value in cutoff is less than or equal to 0 or greater
-        than or equal to 1, if the values in cutoff are not strictly
+        If any value in `cutoff` is less than or equal to 0 or greater
+        than or equal to `nyq`, if the values in `cutoff` are not strictly
         monotonically increasing, or if `numtaps` is even but a passband
         includes the Nyquist frequency.
 
@@ -232,28 +237,24 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True, scale=
     # The major enhancements to this function added in November 2010 were
     # developed by Tom Krauss (see ticket #902).
 
-    cutoff = np.atleast_1d(cutoff)
-    
+    cutoff = np.atleast_1d(cutoff) / float(nyq)
+
     # Check for invalid input.
     if cutoff.ndim > 1:
         raise ValueError("The cutoff argument must be at most one-dimensional.")
     if cutoff.size == 0:
         raise ValueError("At least one cutoff frequency must be given.")
     if cutoff.min() <= 0 or cutoff.max() >= 1:
-        raise ValueError("Invalid cutoff frequency: frequencies must be greater than 0 and less than 1.")
+        raise ValueError("Invalid cutoff frequency: frequencies must be greater than 0 and less than nyq.")
     if np.any(np.diff(cutoff) <= 0):
         raise ValueError("Invalid cutoff frequencies: the frequencies must be strictly increasing.")
 
     if width is not None:
-        # A width was given.  Verify that it is a float, find the beta parameter
-        # of the Kaiser window, and set `window`.  This overrides the value of
-        # `window` passed in.
-        if isinstance(width, float):
-            atten = kaiser_atten(numtaps, width)
-            beta = kaiser_beta(atten)
-            window = ('kaiser', beta)
-        else:
-            raise ValueError("Invalid value for width: %s", width)
+        # A width was given.  Find the beta parameter of the Kaiser window
+        # and set `window`.  This overrides the value of `window` passed in.
+        atten = kaiser_atten(numtaps, float(width)/nyq)
+        beta = kaiser_beta(atten)
+        window = ('kaiser', beta)
 
     pass_nyquist = bool(cutoff.size & 1) ^ pass_zero
     if pass_nyquist and numtaps % 2 == 0:
