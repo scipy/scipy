@@ -175,37 +175,6 @@ class TestConstructUtils(TestCase):
 
         #TODO test failure cases
 
-    def test_lil_diags(self):
-        assert_array_equal(construct.lil_diags([[1,2,3],[4,5],[6]],
-                                     [0,1,2],(3,3)).todense(),
-                           [[1,4,6],
-                            [0,2,5],
-                            [0,0,3]])
-
-        assert_array_equal(construct.lil_diags([[6],[4,5],[1,2,3]],
-                                     [2,1,0],(3,3)).todense(),
-                           [[1,4,6],
-                            [0,2,5],
-                            [0,0,3]])
-
-        assert_array_equal(construct.lil_diags([[6,7,8],[4,5],[1,2,3]],
-                                     [2,1,0],(3,3)).todense(),
-                           [[1,4,6],
-                            [0,2,5],
-                            [0,0,3]])
-
-        assert_array_equal(construct.lil_diags([[1,2,3],[4,5],[6]],
-                                     [0,-1,-2],(3,3)).todense(),
-                           [[1,0,0],
-                            [4,2,0],
-                            [6,5,3]])
-
-        assert_array_equal(construct.lil_diags([[6,7,8],[4,5]],
-                                     [-2,-1],(3,3)).todense(),
-                           [[0,0,0],
-                            [4,0,0],
-                            [6,5,0]])
-
     def test_rand(self):
         # Simple sanity checks for sparse.rand
         for t in [np.float32, np.float64, np.longdouble]:
@@ -223,6 +192,7 @@ class TestConstructUtils(TestCase):
 
         assert_raises(ValueError, lambda: sprand(5, 10, 1.1))
         assert_raises(ValueError, lambda: sprand(5, 10, -0.1))
+
 
 if __name__ == "__main__":
     run_module_suite()

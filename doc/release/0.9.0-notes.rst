@@ -138,9 +138,6 @@ Removed features
 The deprecated modules ``helpmod``, ``pexec`` and ``ppimport`` were removed
 from ``scipy.misc``.
 
-The ``save`` method of the ``spmatrix`` class in ``scipy.sparse``, which has
-been deprecated since version 0.7, was removed.
-
 The ``output_type`` keyword in many ``scipy.ndimage`` interpolation functions
 has been removed.
 
@@ -156,3 +153,18 @@ been superseded, and have been deprecated since version 0.7, have been removed:
 `std`, `var`, `mean`, `median`, `cov`, `corrcoef`, `z`, `zs`, `stderr`,
 `samplestd`, `samplevar`, `pdfapprox`, `pdf_moments` and `erfc`.  These changes
 are mirrored in ``scipy.stats.mstats``.
+
+
+``scipy.sparse``
+----------------
+
+The ``save`` method of the ``spmatrix`` class in ``scipy.sparse``, which has
+been deprecated since version 0.7, was removed.
+
+The functions ``spkron``, ``speye``, ``spidentity``, ``lil_eye`` and
+``lil_diags`` were removed from ``scipy.sparse``.  The first three functions
+are still available as ``scipy.sparse.kron``, ``scipy.sparse.eye`` and 
+``scipy.sparse.identity``.
+
+The `dims` and `nzmax` keywords were removed from the sparse matrix
+constructor.
