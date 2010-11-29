@@ -37,8 +37,7 @@ def _extend_mode_to_code(mode):
     mode = _ni_support._extend_mode_to_code(mode)
     return mode
 
-def spline_filter1d(input, order = 3, axis = -1, output = numpy.float64,
-                    output_type = None):
+def spline_filter1d(input, order=3, axis=-1, output=numpy.float64):
     """
     Calculates a one-dimensional spline filter along the given axis.
 
@@ -57,8 +56,6 @@ def spline_filter1d(input, order = 3, axis = -1, output = numpy.float64,
     output : ndarray or dtype, optional
         The array in which to place the output, or the dtype of the returned
         array. Default is `numpy.float64`.
-    output_type : dtype, optional
-        DEPRECATED, DO NOT USE. If used, a RuntimeError is raised.
 
     Returns
     -------
@@ -72,8 +69,7 @@ def spline_filter1d(input, order = 3, axis = -1, output = numpy.float64,
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
-    output, return_value = _ni_support._get_output(output, input,
-                                                    output_type)
+    output, return_value = _ni_support._get_output(output, input)
     if order in [0, 1]:
         output[...] = numpy.array(input)
     else:
@@ -82,8 +78,7 @@ def spline_filter1d(input, order = 3, axis = -1, output = numpy.float64,
     return return_value
 
 
-def spline_filter(input, order = 3, output = numpy.float64,
-                  output_type = None):
+def spline_filter(input, order=3, output = numpy.float64):
     """
     Multi-dimensional spline filter.
 
@@ -107,8 +102,7 @@ def spline_filter(input, order = 3, output = numpy.float64,
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
-    output, return_value = _ni_support._get_output(output, input,
-                                                    output_type)
+    output, return_value = _ni_support._get_output(output, input)
     if order not in [0, 1] and input.ndim > 0:
         for axis in range(input.ndim):
             spline_filter1d(input, order, axis, output = output)
@@ -117,10 +111,10 @@ def spline_filter(input, order = 3, output = numpy.float64,
         output[...] = input[...]
     return return_value
 
-def geometric_transform(input, mapping, output_shape = None,
-                        output_type = None, output = None, order = 3,
-                        mode = 'constant', cval = 0.0, prefilter = True,
-                        extra_arguments = (), extra_keywords = {}):
+def geometric_transform(input, mapping, output_shape=None,
+                        output=None, order=3,
+                        mode='constant', cval=0.0, prefilter=True,
+                        extra_arguments=(), extra_keywords={}):
     """
     Apply an arbritrary geometric transform.
 
@@ -142,8 +136,6 @@ def geometric_transform(input, mapping, output_shape = None,
     output : ndarray or dtype, optional
         The array in which to place the output, or the dtype of the returned
         array.
-    output_type : dtype, optional
-        DEPRECATED, DO NOT USE. If used, a RuntimeError is raised.
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
@@ -202,14 +194,14 @@ def geometric_transform(input, mapping, output_shape = None,
     else:
         filtered = input
     output, return_value = _ni_support._get_output(output, input,
-                                        output_type, shape = output_shape)
+                                                   shape=output_shape)
     _nd_image.geometric_transform(filtered, mapping, None, None, None,
                output, order, mode, cval, extra_arguments, extra_keywords)
     return return_value
 
 
-def map_coordinates(input, coordinates, output_type = None, output = None,
-                order = 3, mode = 'constant', cval = 0.0, prefilter = True):
+def map_coordinates(input, coordinates, output=None, order=3,
+                    mode='constant', cval=0.0, prefilter=True):
     """
     Map the input array to new coordinates by interpolation.
 
@@ -232,8 +224,6 @@ def map_coordinates(input, coordinates, output_type = None, output = None,
     output : ndarray or dtype, optional
         The array in which to place the output, or the dtype of the returned
         array.
-    output_type : dtype, optional
-        DEPRECATED, DO NOT USE. If used, a RuntimeError is raised.
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
@@ -303,15 +293,15 @@ def map_coordinates(input, coordinates, output_type = None, output = None,
     else:
         filtered = input
     output, return_value = _ni_support._get_output(output, input,
-                                        output_type, shape = output_shape)
+                                                   shape=output_shape)
     _nd_image.geometric_transform(filtered, None, coordinates, None, None,
                output, order, mode, cval, None, None)
     return return_value
 
 
-def affine_transform(input, matrix, offset = 0.0, output_shape = None,
-                     output_type = None, output = None, order = 3,
-                     mode = 'constant', cval = 0.0, prefilter = True):
+def affine_transform(input, matrix, offset=0.0, output_shape=None,
+                     output=None, order=3,
+                     mode='constant', cval=0.0, prefilter=True):
     """
     Apply an affine transformation.
 
@@ -340,8 +330,6 @@ def affine_transform(input, matrix, offset = 0.0, output_shape = None,
     output : ndarray or dtype, optional
         The array in which to place the output, or the dtype of the returned
         array.
-    output_type : dtype, optional
-        DEPRECATED, DO NOT USE. If used, a RuntimeError is raised.
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
@@ -380,7 +368,7 @@ def affine_transform(input, matrix, offset = 0.0, output_shape = None,
     else:
         filtered = input
     output, return_value = _ni_support._get_output(output, input,
-                                        output_type, shape = output_shape)
+                                                   shape=output_shape)
     matrix = numpy.asarray(matrix, dtype = numpy.float64)
     if matrix.ndim not in [1, 2] or matrix.shape[0] < 1:
         raise RuntimeError('no proper affine matrix provided')
@@ -405,8 +393,8 @@ def affine_transform(input, matrix, offset = 0.0, output_shape = None,
     return return_value
 
 
-def shift(input, shift, output_type = None, output = None, order = 3,
-          mode = 'constant', cval = 0.0, prefilter = True):
+def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
+          prefilter=True):
     """
     Shift an array.
 
@@ -424,8 +412,6 @@ def shift(input, shift, output_type = None, output = None, order = 3,
     output : ndarray or dtype, optional
         The array in which to place the output, or the dtype of the returned
         array.
-    output_type : dtype, optional
-        DEPRECATED, DO NOT USE. If used, a RuntimeError is raised.
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
@@ -461,8 +447,7 @@ def shift(input, shift, output_type = None, output = None, order = 3,
         filtered = spline_filter(input, order, output = numpy.float64)
     else:
         filtered = input
-    output, return_value = _ni_support._get_output(output, input,
-                                                    output_type)
+    output, return_value = _ni_support._get_output(output, input)
     shift = _ni_support._normalize_sequence(shift, input.ndim)
     shift = [-ii for ii in shift]
     shift = numpy.asarray(shift, dtype = numpy.float64)
@@ -472,8 +457,8 @@ def shift(input, shift, output_type = None, output = None, order = 3,
     return return_value
 
 
-def zoom(input, zoom, output_type = None, output = None, order = 3,
-         mode = 'constant', cval = 0.0, prefilter = True):
+def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
+         prefilter=True):
     """
     Zoom an array.
 
@@ -489,8 +474,6 @@ def zoom(input, zoom, output_type = None, output = None, order = 3,
     output : ndarray or dtype, optional
         The array in which to place the output, or the dtype of the returned
         array.
-    output_type : dtype, optional
-        DEPRECATED, DO NOT USE. If used, a RuntimeError is raised.
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
@@ -530,7 +513,7 @@ def zoom(input, zoom, output_type = None, output = None, order = 3,
     output_shape = tuple([int(ii * jj) for ii, jj in zip(input.shape, zoom)])
     zoom = (numpy.array(input.shape)-1)/(numpy.array(output_shape,float)-1)
     output, return_value = _ni_support._get_output(output, input,
-                                        output_type, shape = output_shape)
+                                                   shape=output_shape)
     zoom = numpy.asarray(zoom, dtype = numpy.float64)
     zoom = numpy.ascontiguousarray(zoom)
     _nd_image.zoom_shift(filtered, zoom, None, output, order, mode, cval)
@@ -547,9 +530,9 @@ def _minmax(coor, minc, maxc):
         maxc[1] = coor[1]
     return minc, maxc
 
-def rotate(input, angle, axes = (1, 0), reshape = True,
-           output_type = None, output = None, order = 3,
-           mode = 'constant', cval = 0.0, prefilter = True):
+def rotate(input, angle, axes=(1, 0), reshape=True,
+           output=None, order=3,
+           mode='constant', cval=0.0, prefilter=True):
     """
     Rotate an array.
 
@@ -571,8 +554,6 @@ def rotate(input, angle, axes = (1, 0), reshape = True,
     output : ndarray or dtype, optional
         The array in which to place the output, or the dtype of the returned
         array.
-    output_type : dtype, optional
-        DEPRECATED, DO NOT USE. If used, a RuntimeError is raised.
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
@@ -645,9 +626,9 @@ def rotate(input, angle, axes = (1, 0), reshape = True,
     output_shape[axes[1]] = ox
     output_shape = tuple(output_shape)
     output, return_value = _ni_support._get_output(output, input,
-                                        output_type, shape = output_shape)
+                                                   shape=output_shape)
     if input.ndim <= 2:
-        affine_transform(input, matrix, offset, output_shape, None, output,
+        affine_transform(input, matrix, offset, output_shape, output,
                          order, mode, cval, prefilter)
     else:
         coordinates = []
@@ -667,7 +648,7 @@ def rotate(input, angle, axes = (1, 0), reshape = True,
         for ii in range(size):
             ia = input[tuple(coordinates)]
             oa = output[tuple(coordinates)]
-            affine_transform(ia, matrix, offset, os, None, oa, order, mode,
+            affine_transform(ia, matrix, offset, os, oa, order, mode,
                              cval, prefilter)
             for jj in iter_axes:
                 if coordinates[jj] < input.shape[jj] - 1:

@@ -141,6 +141,9 @@ from ``scipy.misc``.
 The ``save`` method of the ``spmatrix`` class in ``scipy.sparse``, which has
 been deprecated since version 0.7, was removed.
 
+The ``output_type`` keyword in many ``scipy.ndimage`` interpolation functions
+has been removed.
+
 
 ``scipy.stats``
 ---------------
