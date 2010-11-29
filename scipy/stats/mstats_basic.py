@@ -13,7 +13,6 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['argstoarray',
            'betai',
-           'cov',  # from np.ma
            'chisquare','count_tied_groups',
            'describe',
            'f_oneway','f_value_wilks_lambda','find_repeats','friedmanchisquare',
@@ -27,13 +26,13 @@ __all__ = ['argstoarray',
            'obrientransform',
            'pearsonr','plotting_positions','pointbiserialr',
            'rankdata',
-           'samplestd','samplevar','scoreatpercentile','sem','std',
+           'scoreatpercentile','sem',
            'sen_seasonal_slopes','signaltonoise','skew','skewtest','spearmanr',
            'theilslopes','threshold','tmax','tmean','tmin','trim','trimboth',
            'trimtail','trima','trimr','trimmed_mean','trimmed_std',
            'trimmed_stde','trimmed_var','tsem','ttest_1samp','ttest_onesamp',
            'ttest_ind','ttest_rel','tvar',
-           'var','variation',
+           'variation',
            'winsorize',
            'zmap', 'zscore'
            ]
@@ -301,9 +300,6 @@ def msign(x):
     """Returns the sign of x, or 0 if x is masked."""
     return ma.filled(np.sign(x), 0)
 
-cov = ma.cov
-
-corrcoef = ma.corrcoef
 
 
 def pearsonr(x,y):
@@ -1882,49 +1878,6 @@ def signaltonoise(data, axis=0):
     sd = data.std(axis, ddof=0)
     return m/sd
 
-
-def samplevar(data, axis=0):
-    """Returns a biased estimate of the variance of the data, as the average
-    of the squared deviations from the mean.
-
-    Parameters
-    ----------
-        data : sequence
-            Input data
-        axis : {0, int} optional
-            Axis along which to compute. If None, the computation is performed
-            on a flat version of the array.
-    """
-    return ma.asarray(data).var(axis=axis,ddof=0)
-
-
-def samplestd(data, axis=0):
-    """Returns a biased estimate of the standard deviation of the data, as the
-    square root of the average squared deviations from the mean.
-
-    Parameters
-    ----------
-        data : sequence
-            Input data
-        axis : {0,int} optional
-            Axis along which to compute. If None, the computation is performed
-            on a flat version of the array.
-
-    Notes
-    -----
-        samplestd(a) is equivalent to a.std(ddof=0)
-
-    """
-    return ma.asarray(data).std(axis=axis,ddof=0)
-
-
-def var(a,axis=None):
-    return ma.asarray(a).var(axis=axis,ddof=1)
-var.__doc__ = np.var.__doc__
-
-def std(a,axis=None):
-    return ma.asarray(a).std(axis=axis,ddof=1)
-std.__doc__ = np.std.__doc__
 
 def sem(a, axis=0):
     a, axis = _chk_asarray(a, axis)

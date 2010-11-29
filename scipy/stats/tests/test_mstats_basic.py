@@ -193,34 +193,6 @@ class TestCorr(TestCase):
              2.8,2.8,2.5,2.4,2.3,2.1,1.7,1.7,1.5,1.3,1.3,1.2,1.2,1.1,
              0.8,0.7,0.6,0.5,0.2,0.2,0.1,np.nan]
         assert_almost_equal(mstats.pointbiserialr(x, y)[0], 0.36149, 5)
-    #
-    def test_cov(self):
-        "Tests the cov function."
-        x = ma.array([[1,2,3],[4,5,6]], mask=[[1,0,0],[0,0,0]])
-        c = mstats.cov(x[0])
-        assert_equal(c, x[0].var(ddof=1))
-        c = mstats.cov(x[1])
-        assert_equal(c, x[1].var(ddof=1))
-        c = mstats.cov(x)
-        assert_equal(c[1,0], (x[0].anom()*x[1].anom()).sum())
-        #
-        x = [[nan,nan,  4,  2, 16, 26,  5,  1,  5,  1,  2,  3,  1],
-             [  4,  3,  5,  3,  2,  7,  3,  1,  1,  2,  3,  5,  3],
-             [  3,  2,  5,  6, 18,  4,  9,  1,  1,nan,  1,  1,nan],
-             [nan,  6, 11,  4, 17,nan,  6,  1,  1,  2,  5,  1,  1]]
-        x = ma.fix_invalid(x).T
-        (winter,spring,summer,fall) = x.T
-        #
-        assert_almost_equal(mstats.cov(winter,winter,bias=True),
-                            winter.var(ddof=0))
-        assert_almost_equal(mstats.cov(winter,winter,bias=False),
-                            winter.var(ddof=1))
-        assert_almost_equal(mstats.cov(winter,spring)[0,1], 7.7)
-        assert_almost_equal(mstats.cov(winter,spring)[1,0], 7.7)
-        assert_almost_equal(mstats.cov(winter,summer)[0,1], 19.1111111, 7)
-        assert_almost_equal(mstats.cov(winter,summer)[1,0], 19.1111111, 7)
-        assert_almost_equal(mstats.cov(winter,fall)[0,1], 20)
-        assert_almost_equal(mstats.cov(winter,fall)[1,0], 20)
 
 
 class TestTrimming(TestCase):
@@ -403,34 +375,6 @@ class TestVariability(TestCase):
          note that length(testcase) = 4
     """
     testcase = ma.fix_invalid([1,2,3,4,np.nan])
-    #
-    def test_std(self):
-        y = mstats.std(self.testcase)
-        assert_almost_equal(y,1.290994449)
-
-    def test_var(self):
-        """
-        var(testcase) = 1.666666667 """
-        #y = stats.var(self.shoes[0])
-        #assert_approx_equal(y,6.009)
-        y = mstats.var(self.testcase)
-        assert_almost_equal(y,1.666666667)
-
-    def test_samplevar(self):
-        """
-        R does not have 'samplevar' so the following was used
-        var(testcase)*(4-1)/4  where 4 = length(testcase)
-        """
-        #y = stats.samplevar(self.shoes[0])
-        #assert_approx_equal(y,5.4081)
-        y = mstats.samplevar(self.testcase)
-        assert_almost_equal(y,1.25)
-
-    def test_samplestd(self):
-        #y = stats.samplestd(self.shoes[0])
-        #assert_approx_equal(y,2.325532197)
-        y = mstats.samplestd(self.testcase)
-        assert_almost_equal(y,1.118033989)
 
     def test_signaltonoise(self):
         """
