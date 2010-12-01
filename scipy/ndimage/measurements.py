@@ -374,6 +374,13 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
 
     return output
 
+def _safely_castable_to_int(dt):
+    """Test whether the numpy data type `dt` can be safely cast to an int."""
+    int_size = np.dtype(int).itemsize
+    safe = ((np.issubdtype(dt, int) and dt.itemsize <= int_size) or
+            (np.issubdtype(dt, np.unsignedinteger) and dt.itemsize < int_size))
+    return safe
+
 def _stats(input, labels=None, index=None, centered=False):
     '''returns count, sum, and optionally (sum - centre)^2 by label'''
 
@@ -396,36 +403,35 @@ def _stats(input, labels=None, index=None, centered=False):
     if numpy.isscalar(index):
         return single_group(input[labels == index])
 
-    counts = numpy.bincount(labels.ravel())
-    sums = numpy.bincount(labels.ravel(), weights=input.ravel())
-
     def _sum_centered(labels):
         means = sums / counts
         centered_input = input - means[labels]
-        return numpy.bincount(labels,
+        bc = numpy.bincount(labels,
                               weights=(centered_input * \
                                        centered_input.conjugate()).ravel())
+        return bc
 
-    # remap labels to unique integers if necessary, or if the largest
+    # Remap labels to unique integers if necessary, or if the largest
     # label is larger than the number of values.
 
-    if not numpy.issubdtype(labels.dtype, (numpy.int, np.unsignedinteger)) or \
-           (labels.min() < 0) or (labels.max() > labels.size):
-        unique_labels, new_labels = numpy.unique1d(labels, return_inverse=True)
-
+    if (not _safely_castable_to_int(labels.dtype) or
+            labels.min() < 0 or labels.max() > labels.size):
+        unique_labels, new_labels = numpy.unique(labels, return_inverse=True)
+        counts = numpy.bincount(new_labels) 
+        sums = numpy.bincount(new_labels, weights=input.ravel())
         if centered:
-            sums_c, sums, counts = _sum_centered(new_labels)
-
+            sums_c = _sum_centered(new_labels)
         idxs = numpy.searchsorted(unique_labels, index)
         # make all of idxs valid
         idxs[idxs >= unique_labels.size] = 0
         found = (unique_labels[idxs] == index)
     else:
-        # labels are an integer type, and there aren't too many, so
-        # call bincount directly.
+        # labels are an integer type allowed by bincount, and there aren't too
+        # many, so call bincount directly.
+        counts = numpy.bincount(labels.ravel())
+        sums = numpy.bincount(labels.ravel(), weights=input.ravel())
         if centered:
             sums_c = _sum_centered(labels.ravel())
-
         # make sure all index values are valid
         idxs = numpy.asanyarray(index, numpy.int).copy()
         found = (idxs >= 0) & (idxs < counts.size)
@@ -645,6 +651,7 @@ def standard_deviation(input, labels = None, index = None):
 def _select(input, labels = None, index = None, find_min=False, find_max=False, find_min_positions=False, find_max_positions=False):
     '''returns min, max, or both, plus positions if requested'''
 
+    input = numpy.asanyarray(input)
 
     find_positions = find_min_positions or find_max_positions
     positions = None
@@ -691,10 +698,10 @@ def _select(input, labels = None, index = None, find_min=False, find_max=False, 
 
     # remap labels to unique integers if necessary, or if the largest
     # label is larger than the number of values.
-    if ((not numpy.issubdtype(labels.dtype, numpy.int)) or
-        (labels.min() < 0) or (labels.max() > labels.size)):
+    if (_safely_castable_to_int(labels.dtype) or
+            labels.min() < 0 or labels.max() > labels.size):
         # remap labels, and indexes
-        unique_labels, labels = numpy.unique1d(labels, return_inverse=True)
+        unique_labels, labels = numpy.unique(labels, return_inverse=True)
         idxs = numpy.searchsorted(unique_labels, index)
 
         # make all of idxs valid

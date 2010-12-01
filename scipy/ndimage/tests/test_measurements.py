@@ -1,6 +1,6 @@
 from numpy.testing import assert_, assert_array_almost_equal, assert_equal, \
-                          assert_almost_equal, \
-                          run_module_suite
+                          assert_almost_equal, assert_array_equal, \
+                          run_module_suite, TestCase
 import numpy as np
 
 import scipy.ndimage as ndimage
@@ -9,6 +9,90 @@ types = [np.int8, np.uint8, np.int16,
          np.uint16, np.int32, np.uint32,
          np.int64, np.uint64,
          np.float32, np.float64]
+
+
+class Test_measurements_stats(TestCase):
+    """ndimage.measurements._stats() is a utility function used by other functions."""
+
+    def test_a(self):
+        x = [0,1,2,6]
+        labels = [0,0,1,1]
+        index = [0,1]
+        counts, sums = ndimage.measurements._stats(x, labels=labels, index=index)
+        assert_array_equal(counts, [2, 2])
+        assert_array_equal(sums, [1.0, 8.0])
+
+    def test_b(self):
+        # Same data as test_a, but different labels.  The label 9 exceeds the
+        # length of 'labels', so this test will follow a different code path.
+        x = [0,1,2,6]
+        labels = [0,0,9,9]
+        index = [0,9]
+        counts, sums = ndimage.measurements._stats(x, labels=labels, index=index)
+        assert_array_equal(counts, [2, 2])
+        assert_array_equal(sums, [1.0, 8.0])
+
+    def test_a_centered(self):
+        x = [0,1,2,6]
+        labels = [0,0,1,1]
+        index = [0,1]
+        counts, sums, centers = ndimage.measurements._stats(x, labels=labels,
+                                    index=index, centered=True)
+        assert_array_equal(counts, [2, 2])
+        assert_array_equal(sums, [1.0, 8.0])
+        assert_array_equal(centers, [0.5, 8.0])
+
+    def test_b_centered(self):
+        x = [0,1,2,6]
+        labels = [0,0,9,9]
+        index = [0,9]
+        counts, sums, centers = ndimage.measurements._stats(x, labels=labels,
+                                    index=index, centered=True)
+        assert_array_equal(counts, [2, 2])
+        assert_array_equal(sums, [1.0, 8.0])
+        assert_array_equal(centers, [0.5, 8.0])
+
+    def test_nonint_labels(self):
+        x = [0,1,2,6]
+        labels = [0.0, 0.0, 9.0, 9.0]
+        index = [0.0, 9.0]
+        counts, sums, centers = ndimage.measurements._stats(x, labels=labels,
+                                    index=index, centered=True)
+        assert_array_equal(counts, [2, 2])
+        assert_array_equal(sums, [1.0, 8.0])
+        assert_array_equal(centers, [0.5, 8.0])
+
+
+class Test_measurements_select(TestCase):
+    """ndimage.measurements._select() is a utility function used by other functions."""
+
+    def test_basic(self):
+        x = [0,1,6,2]
+        cases = [
+            ([0,0,1,1], [0,1]),                 # "Small" integer labels
+            ([0,0,9,9], [0,9]),                 # A label larger than len(labels)
+            ([0.0,0.0,7.0,7.0], [0.0, 7.0]),    # Non-integer labels
+        ]
+        for labels, index in cases:
+            result = ndimage.measurements._select(x, labels=labels, index=index)
+            assert_(len(result) == 0)
+            result = ndimage.measurements._select(x, labels=labels, index=index, find_max=True)
+            assert_(len(result) == 1)
+            assert_array_equal(result[0], [1, 6])
+            result = ndimage.measurements._select(x, labels=labels, index=index, find_min=True)
+            assert_(len(result) == 1)
+            assert_array_equal(result[0], [0, 2])
+            result = ndimage.measurements._select(x, labels=labels, index=index,
+                                find_min=True, find_min_positions=True)
+            assert_(len(result) == 2)
+            assert_array_equal(result[0], [0, 2])
+            assert_array_equal(result[1], [0, 3])
+            result = ndimage.measurements._select(x, labels=labels, index=index,
+                                find_max=True, find_max_positions=True)
+            assert_(len(result) == 2)
+            assert_array_equal(result[0], [1, 6])
+            assert_array_equal(result[1], [1, 2])        
+
 
 def test_label01():
     "label 1"
