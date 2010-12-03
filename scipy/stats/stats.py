@@ -2198,18 +2198,16 @@ def pearsonr(x, y):
     r_den = n*np.sqrt(ss(xm)*ss(ym))
     r = (r_num / r_den)
 
-    # Presumably, if r > 1, then it is only some small artifact of floating
+    # Presumably, if abs(r) > 1, then it is only some small artifact of floating
     # point arithmetic.
-    r = min(r, 1.0)
+    r = max(min(r, 1.0), -1.0)
     df = n-2
-
-    # Use a small floating point value to prevent divide-by-zero nonsense
-    # fixme: TINY is probably not the right value and this is probably not
-    # the way to be robust. The scheme used in spearmanr is probably better.
-    TINY = 1.0e-20
-    t = r*np.sqrt(df/((1.0-r+TINY)*(1.0+r+TINY)))
-    prob = betai(0.5*df,0.5,df/(df+t*t))
-    return r,prob
+    if abs(r) == 1.0:
+        prob = 0.0
+    else:
+        t = r * np.sqrt(df / ((1.0 - r) * (1.0 + r)))
+        prob = betai(0.5*df, 0.5, df / (df + t*t))
+    return r, prob
 
 
 def fisher_exact(table) :

@@ -319,6 +319,19 @@ class TestCorrPearsonr(TestCase):
         r = y[0]
         assert_approx_equal(r,1.0)
 
+    def test_r_exactly_pos1(self):
+        a = arange(3.0)
+        b = a
+        r, prob = stats.pearsonr(a,b)
+        assert_equal(r, 1.0)
+        assert_equal(prob, 0.0)
+
+    def test_r_exactly_neg1(self):
+        a = arange(3.0)
+        b = -a
+        r, prob = stats.pearsonr(a,b)
+        assert_equal(r, -1.0)
+        assert_equal(prob, 0.0)
 
 def test_fisher_exact():
     """Some tests to show that fisher_exact() works correctly.
