@@ -2205,8 +2205,8 @@ def pearsonr(x, y):
     if abs(r) == 1.0:
         prob = 0.0
     else:
-        t = r * np.sqrt(df / ((1.0 - r) * (1.0 + r)))
-        prob = betai(0.5*df, 0.5, df / (df + t*t))
+        t_squared = r*r * (df / ((1.0 - r) * (1.0 + r)))
+        prob = betai(0.5*df, 0.5, df / (df + t_squared))
     return r, prob
 
 
