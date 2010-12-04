@@ -43,8 +43,8 @@ __all___=['eigs', 'eigsh', 'svds', 'ArpackNoConvergence']
 
 import _arpack
 import numpy as np
-from scipy.sparse.linalg.interface import aslinearoperator
-from scipy.sparse import csc_matrix, csr_matrix
+from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
+from scipy.sparse import csc_matrix, csr_matrix, isspmatrix
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 _ndigits = {'f':5, 'd':12, 'F':5, 'D':12}
@@ -656,70 +656,62 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     return params.extract(return_eigenvectors)
 
-def svds(A, k=6):
+def svds(A, k=6, ncv=None, tol=0):
     """Compute a few singular values/vectors for a sparse matrix using ARPACK.
 
     Parameters
     ----------
-    A: sparse matrix
-        Array to compute the SVD on.
-    k: int
+    A : sparse matrix
+        Array to compute the SVD on
+    k : int, optional
         Number of singular values and vectors to compute.
+    ncv : integer
+        The number of Lanczos vectors generated
+        ncv must be greater than k+1 and smaller than n;
+        it is recommended that ncv > 2*k
+    tol : float, optional
+        Tolerance for singular values. Zero (default) means machine precision.
 
     Note
     ----
-    This is a naive implementation using the symmetric eigensolver on A.T * A
-    or A * A.T, depending on which one is more efficient.
+    This is a naive implementation using an eigensolver on A.H * A or
+    A * A.H, depending on which one is more efficient.
 
-    Complex support is not implemented yet
     """
-    # TODO: implement complex support once ARPACK-based eigen_hermitian is
-    # available
+    if not (isinstance(A, np.ndarray) or isspmatrix(A)):
+        A = np.asarray(A)
+
     n, m = A.shape
 
-    if np.iscomplexobj(A):
-        raise NotImplementedError("Complex support for sparse SVD not "
-                                  "implemented yet")
-        op = lambda x: x.T.conjugate()
+    if np.issubdtype(A.dtype, np.complexfloating):
+        herm = lambda x: x.T.conjugate()
+        eigensolver = eigs
     else:
-        op = lambda x: x.T
-
-    tp = A.dtype.char
-    linear_at = aslinearoperator(op(A))
-    linear_a = aslinearoperator(A)
-
-    def _left(x, sz):
-        x = csc_matrix(x)
-
-        matvec = lambda x: linear_at.matvec(linear_a.matvec(x))
-        params = _SymmetricArpackParams(sz, k, tp, matvec)
-
-        while not params.converged:
-            params.iterate()
-        eigvals, eigvec = params.extract(True)
-        s = np.sqrt(eigvals)
-
-        v = eigvec
-        u = (x * v) / s
-        return u, s, op(v)
-
-    def _right(x, sz):
-        x = csr_matrix(x)
-
-        matvec = lambda x: linear_a.matvec(linear_at.matvec(x))
-        params = _SymmetricArpackParams(sz, k, tp, matvec)
-
-        while not params.converged:
-            params.iterate()
-        eigvals, eigvec = params.extract(True)
-
-        s = np.sqrt(eigvals)
-
-        u = eigvec
-        vh = (op(u) * x) / s[:, None]
-        return u, s, vh
+        herm = lambda x: x.T
+        eigensolver = eigsh
 
     if n > m:
-        return _left(A, m)
+        X = A
+        XH = herm(A)
     else:
-        return _right(A, n)
+        XH = A
+        X = herm(A)
+
+    def matvec_XH_X(x):
+        return XH.dot(X.dot(x))
+
+    XH_X = LinearOperator(matvec=matvec_XH_X, dtype=X.dtype,
+                          shape=(X.shape[1], X.shape[1]))
+
+    eigvals, eigvec = eigensolver(XH_X, k=k, tol=tol**2)
+    s = np.sqrt(eigvals)
+
+    if n > m:
+        v = eigvec
+        u = X.dot(v) / s
+        vh = herm(v)
+    else:
+        u = eigvec
+        vh = herm(X.dot(u) / s)
+
+    return u, s, vh

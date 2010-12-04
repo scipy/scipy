@@ -356,6 +356,8 @@ def test_eigen_bad_shapes():
 def sorted_svd(m, k):
     """Compute svd of a dense matrix m, and return singular vectors/values
     sorted."""
+    if isspmatrix(m):
+        m = m.todense()
     u, s, vh = svd(m)
     ii = np.argsort(s)[-k:]
 
@@ -370,9 +372,14 @@ class TestSparseSvd(TestCase):
                       [3, 4, 3],
                       [1, 0, 2],
                       [0, 0, 1]], np.float)
+        y = np.array([[1, 2, 3, 8],
+                      [3, 4, 3, 5],
+                      [1, 0, 2, 3],
+                      [0, 0, 1, 0]], np.float)
+        z = csc_matrix(x)
 
-        for m in [x.T, x]:
-            for k in range(1, 3):
+        for m in [x.T, x, y, z, z.T]:
+            for k in range(1, min(m.shape)):
                 u, s, vh = sorted_svd(m, k)
                 su, ss, svh = svds(m, k)
 
@@ -381,16 +388,19 @@ class TestSparseSvd(TestCase):
 
                 assert_array_almost_equal_nulp(m_hat, sm_hat, nulp=1000)
 
-    @dec.knownfailureif(True, "Complex sparse SVD not implemented (depends on "
-                              "Hermitian support in eigsh")
     def test_simple_complex(self):
         x = np.array([[1, 2, 3],
                       [3, 4, 3],
                       [1+1j, 0, 2],
                       [0, 0, 1]], np.complex)
+        y = np.array([[1, 2, 3, 8+5j],
+                      [3-2j, 4, 3, 5],
+                      [1, 0, 2, 3],
+                      [0, 0, 1, 0]], np.complex)
+        z = csc_matrix(x)
 
-        for m in [x, x.T.conjugate()]:
-            for k in range(1, 3):
+        for m in [x, x.T.conjugate(), x.T, y, y.conjugate(), z, z.T]:
+            for k in range(1, min(m.shape)-1):
                 u, s, vh = sorted_svd(m, k)
                 su, ss, svh = svds(m, k)
 
