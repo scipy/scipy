@@ -39,9 +39,7 @@ Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
 
 __docformat__ = "restructuredtext en"
 
-__all___=['eigen','eigen_symmetric', 'svd']
-
-import warnings
+__all___=['eigen','eigen_symmetric', 'svd', 'ArpackNoConvergence']
 
 import _arpack
 import numpy as np
@@ -51,13 +49,123 @@ from scipy.sparse import csc_matrix, csr_matrix
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 _ndigits = {'f':5, 'd':12, 'F':5, 'D':12}
 
+_NAUPD_ERRORS = {
+    0: "Normal exit.",
+    1: "Maximum number of iterations taken. "
+       "All possible eigenvalues of OP has been found.",
+    2: "No longer an informational error. Deprecated starting with "
+       "release 2 of ARPACK.",
+    3: "No shifts could be applied during a cycle of the Implicitly "
+       "restarted Arnoldi iteration. One possibility is to increase "
+       "the size of NCV relative to NEV. ",
+    -1: "N must be positive.",
+    -2: "NEV must be positive.",
+    -3: "NCV must be greater than NEV and less than or equal to N.",
+    -4: "The maximum number of Arnoldi update iterations allowed "
+        "must be greater than zero.",
+    -5: "WHICH must be one of 'LM', 'SM', 'LA', 'SA' or 'BE'.",
+    -6: "BMAT must be one of 'I' or 'G'.",
+    -7: "Length of private work array WORKL is not sufficient.",
+    -8: "Error return from trid. eigenvalue calculation; "
+        "Informational error from LAPACK routine dsteqr .",
+    -9: "Starting vector is zero.",
+    -10: "IPARAM(7) must be 1,2,3,4,5.",
+    -11: "IPARAM(7) = 1 and BMAT = 'G' are incompatable.",
+    -12: "IPARAM(1) must be equal to 0 or 1.",
+    -13: "NEV and WHICH = 'BE' are incompatable. ",
+    -9999: "Could not build an Arnoldi factorization. "
+           "IPARAM(5) returns the size of the current Arnoldi "
+           "factorization. The user is advised to check that "
+           "enough workspace and array storage has been allocated.",
+}
+
+_NEUPD_ERRORS = {
+    0: "Normal exit.",
+    1: "The Schur form computed by LAPACK routine dlahqr "
+       "could not be reordered by LAPACK routine dtrsen. "
+       "Re-enter subroutine dneupd  with IPARAM(5)NCV and "
+       "increase the size of the arrays DR and DI to have "
+       "dimension at least dimension NCV and allocate at least NCV "
+       "columns for Z. NOTE: Not necessary if Z and V share "
+       "the same space. Please notify the authors if this error"
+       "occurs.",
+    -1: "N must be positive.",
+    -2: "NEV must be positive.",
+    -3: "NCV-NEV >= 2 and less than or equal to N.",
+    -5: "WHICH must be one of 'LM', 'SM', 'LR', 'SR', 'LI', 'SI'",
+    -6: "BMAT must be one of 'I' or 'G'.",
+    -7: "Length of private work WORKL array is not sufficient.",
+    -8: "Error return from calculation of a real Schur form. "
+        "Informational error from LAPACK routine dlahqr .",
+    -9: "Error return from calculation of eigenvectors. "
+        "Informational error from LAPACK routine dtrevc.",
+    -10: "IPARAM(7) must be 1,2,3,4.",
+    -11: "IPARAM(7) = 1 and BMAT = 'G' are incompatible.",
+    -12: "HOWMNY = 'S' not yet implemented",
+    -13: "HOWMNY must be one of 'A' or 'P' if RVEC = .true.",
+    -14: "DNAUPD  did not find any eigenvalues to sufficient "
+         "accuracy.",
+    -15: "DNEUPD got a different count of the number of converged "
+         "Ritz values than DNAUPD got.  This indicates the user "
+         "probably made an error in passing data from DNAUPD to "
+         "DNEUPD or that the data was modified before entering "
+         "DNEUPD",
+}
+
+_SEUPD_ERRORS = {
+    0: "Normal exit.",
+    -1: "N must be positive.",
+    -2: "NEV must be positive.",
+    -3: "NCV must be greater than NEV and less than or equal to N.",
+    -5: "WHICH must be one of 'LM', 'SM', 'LA', 'SA' or 'BE'.",
+    -6: "BMAT must be one of 'I' or 'G'.",
+    -7: "Length of private work WORKL array is not sufficient.",
+    -8: ("Error return from trid. eigenvalue calculation; "
+         "Information error from LAPACK routine dsteqr."),
+    -9: "Starting vector is zero.",
+    -10: "IPARAM(7) must be 1,2,3,4,5.",
+    -11: "IPARAM(7) = 1 and BMAT = 'G' are incompatible.",
+    -12: "NEV and WHICH = 'BE' are incompatible.",
+    -14: "DSAUPD  did not find any eigenvalues to sufficient accuracy.",
+    -15: "HOWMNY must be one of 'A' or 'S' if RVEC = .true.",
+    -16: "HOWMNY = 'S' not yet implemented",
+    -17: ("DSEUPD  got a different count of the number of converged "
+          "Ritz values than DSAUPD  got.  This indicates the user "
+          "probably made an error in passing data from DSAUPD  to "
+          "DSEUPD  or that the data was modified before entering  "
+          "DSEUPD.")
+}
+
+class ArpackError(RuntimeError):
+    """
+    ARPACK error
+    """
+    def __init__(self, info, infodict=_NAUPD_ERRORS):
+        msg = infodict.get(info, "Unknown error")
+        RuntimeError.__init__(self, "ARPACK error %d: %s" % (info, msg))
+
+class ArpackNoConvergence(ArpackError):
+    """
+    ARPACK iteration did not converge
+
+    Attributes
+    ----------
+    eigenvalues : ndarray
+        Partial result. Converged eigenvalues.
+    eigenvectors : ndarray
+        Partial result. Converged eigenvectors.
+
+    """
+    def __init__(self, msg, eigenvalues, eigenvectors):
+        ArpackError.__init__(self, -1, {-1: msg})
+        self.eigenvalues = eigenvalues
+        self.eigenvectors = eigenvectors
+
 class _ArpackParams(object):
     def __init__(self, n, k, tp, matvec, sigma=None,
                  ncv=None, v0=None, maxiter=None, which="LM", tol=0):
         if k <= 0:
             raise ValueError("k must be positive, k=%d" % k)
-        if k == n:
-            raise ValueError("k must be less than rank(A), k=%d" % k)
 
         if maxiter is None:
             maxiter = n * 10
@@ -107,11 +215,26 @@ class _ArpackParams(object):
         self.converged = False
         self.ido = 0
 
+    def _raise_no_convergence(self):
+        msg = "No convergence (%d iterations, %d/%d eigenvectors converged)"
+        k_ok = self.iparam[4]
+        num_iter = self.iparam[2]
+        try:
+            ev, vec = self.extract(True)
+        except ArpackError, err:
+            msg = "%s [%s]" % (msg, err)
+            ev = np.zeros((0,))
+            vec = np.zeros((self.n, 0))
+            k_ok = 0
+        raise ArpackNoConvergence(msg % (num_iter, k_ok, self.k), ev, vec)
+
 class _SymmetricArpackParams(_ArpackParams):
     def __init__(self, n, k, tp, matvec, sigma=None,
                  ncv=None, v0=None, maxiter=None, which="LM", tol=0):
         if not which in ['LM', 'SM', 'LA', 'SA', 'BE']:
             raise ValueError("which must be one of %s" % ' '.join(whiches))
+        if k >= n:
+            raise ValueError("k must be less than rank(A), k=%d" % k)
 
         _ArpackParams.__init__(self, n, k, tp, matvec, sigma,
                  ncv, v0, maxiter, which, tol)
@@ -145,13 +268,12 @@ class _SymmetricArpackParams(_ArpackParams):
         else:
             self.converged = True
 
-            if self.info < -1 :
-                raise RuntimeError("Error info=%d in arpack" % self.info)
-            elif self.info == -1:
-                warnings.warn("Maximum number of iterations taken: %s" % self.iparam[2])
-
-            if self.iparam[4] < self.k:
-                warnings.warn("Only %d/%d eigenvectors converged" % (self.iparam[4], self.k))
+            if self.info == 0:
+                pass
+            elif self.info == 1:
+                self._raise_no_convergence()
+            else:
+                raise ArpackError(self.info)
 
     def extract(self, return_eigenvectors):
         rvec = return_eigenvectors
@@ -160,13 +282,17 @@ class _SymmetricArpackParams(_ArpackParams):
         sselect = np.zeros(self.ncv, 'int') # unused
         sigma = 0.0 # no shifts, not implemented
 
-        d, z, info = self._arpack_extract(rvec, howmny, sselect, sigma, self.bmat,
+        d, z, ierr = self._arpack_extract(rvec, howmny, sselect, sigma, self.bmat,
                 self.which, self.k, self.tol, self.resid, self.v,
                 self.iparam[0:7], self.ipntr, self.workd[0:2*self.n],
                 self.workl,ierr)
 
         if ierr != 0:
-            raise RuntimeError("Error info=%d in arpack" % params.info)
+            raise ArpackError(ierr, infodict=_SEUPD_ERRORS)
+
+        k_ok = self.iparam[4]
+        d = d[:k_ok]
+        z = z[:,:k_ok]
 
         if return_eigenvectors:
             return d, z
@@ -178,6 +304,8 @@ class _UnsymmetricArpackParams(_ArpackParams):
                  ncv=None, v0=None, maxiter=None, which="LM", tol=0):
         if not which in ["LM", "SM", "LR", "SR", "LI", "SI"]:
             raise ValueError("Parameter which must be one of %s" % ' '.join(whiches))
+        if k >= n-1:
+            raise ValueError("k must be less than rank(A)-1, k=%d" % k)
 
         _ArpackParams.__init__(self, n, k, tp, matvec, sigma,
                  ncv, v0, maxiter, which, tol)
@@ -222,10 +350,12 @@ class _UnsymmetricArpackParams(_ArpackParams):
         else:
             self.converged = True
 
-            if self.info < -1 :
-                raise RuntimeError("Error info=%d in arpack" % self.info)
-            elif self.info == -1:
-                warnings.warn("Maximum number of iterations taken: %s" % self.iparam[2])
+            if self.info == 0:
+                pass
+            elif self.info == 1:
+                self._raise_no_convergence()
+            else:
+                raise ArpackError(self.info)
 
     def extract(self, return_eigenvectors):
         k, n = self.k, self.n
@@ -241,12 +371,15 @@ class _UnsymmetricArpackParams(_ArpackParams):
             dr = np.zeros(k+1, self.tp)
             di = np.zeros(k+1, self.tp)
             zr = np.zeros((n, k+1), self.tp)
-            dr, di, zr, self.info=\
+            dr, di, zr, ierr=\
                 self._arpack_extract(return_eigenvectors,
                        howmny, sselect, sigmar, sigmai, workev,
                        self.bmat, self.which, k, self.tol, self.resid,
                        self.v, self.iparam, self.ipntr,
                        self.workd, self.workl, self.info)
+
+            if ierr != 0:
+                raise ArpackError(ierr, infodict=_NEUPD_ERRORS)
 
             # The ARPACK nonsymmetric real and double interface (s,d)naupd return
             # eigenvalues and eigenvectors in real (float,double) arrays.
@@ -294,15 +427,20 @@ class _UnsymmetricArpackParams(_ArpackParams):
 
         else:
             # complex is so much simpler...
-            d, z, self.info =\
+            d, z, ierr =\
                     self._arpack_extract(return_eigenvectors,
                            howmny, sselect, sigmar, workev,
                            self.bmat, self.which, k, self.tol, self.resid,
                            self.v, self.iparam, self.ipntr,
                            self.workd, self.workl, self.rwork, ierr)
 
-        if ierr != 0:
-            raise RuntimeError("Error info=%d in arpack" % info)
+            if ierr != 0:
+                raise ArpackError(ierr, infodict=_NEUPD_ERRORS)
+
+            k_ok = self.iparam[4]
+            d = d[:k_ok]
+            z = z[:,:k_ok]
+
 
         if return_eigenvectors:
             return d, z
@@ -325,7 +463,9 @@ def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
         the matrix vector product A * x.  The sparse matrix formats
         in scipy.sparse are appropriate for A.
     k : integer
-        The number of eigenvalues and eigenvectors desired
+        The number of eigenvalues and eigenvectors desired.
+        `k` must be smaller than N. It is not possible to compute all
+        eigenvectors of a matrix.
 
     Returns
     -------
@@ -363,8 +503,18 @@ def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
         Maximum number of Arnoldi update iterations allowed
     tol : float
         Relative accuracy for eigenvalues (stopping criterion)
+        The default value of 0 implies machine precision.
     return_eigenvectors : boolean
         Return eigenvectors (True) in addition to eigenvalues
+
+    Raises
+    ------
+    ArpackNoConvergence
+        When the requested convergence is obtained.
+
+        The currently converged eigenvalues and eigenvectors can be found
+        as ``eigenvalues`` and ``eigenvectors`` attributes of the exception
+        objed.
 
     See Also
     --------
@@ -445,7 +595,8 @@ def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     ncv : integer
         The number of Lanczos vectors generated
-        ncv must be greater than k; it is recommended that ncv > 2*k
+        ncv must be greater than k and smaller than n;
+        it is recommended that ncv > 2*k
 
     which : string
         Which k eigenvectors and eigenvalues to find:
@@ -460,10 +611,20 @@ def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM', v0=None,
         Maximum number of Arnoldi update iterations allowed
 
     tol : float
-        Relative accuracy for eigenvalues (stopping criterion)
+        Relative accuracy for eigenvalues (stopping criterion).
+        The default value of 0 implies machine precision.
 
     return_eigenvectors : boolean
         Return eigenvectors (True) in addition to eigenvalues
+
+    Raises
+    ------
+    ArpackNoConvergence
+        When the requested convergence is obtained.
+
+        The currently converged eigenvalues and eigenvectors can be found
+        as ``eigenvalues`` and ``eigenvectors`` attributes of the exception
+        objed.
 
     See Also
     --------

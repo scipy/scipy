@@ -11,8 +11,9 @@ from numpy.testing import assert_almost_equal, assert_array_almost_equal, \
         assert_raises, verbose
 
 from numpy import array, finfo, argsort, dot, round, conj, random
-from scipy.sparse import csc_matrix
-from scipy.sparse.linalg.eigen.arpack import eigen_symmetric, eigen, svd
+from scipy.sparse import csc_matrix, isspmatrix
+from scipy.sparse.linalg.eigen.arpack import eigen_symmetric, eigen, svd, \
+     ArpackNoConvergence
 
 from scipy.linalg import svd as dsvd
 
@@ -132,6 +133,23 @@ class TestEigenSymmetric(TestArpack):
             self.eval_evec(self.symmetric[0],typ,k,which='LM',v0=v0)
 
 
+    def test_no_convergence(self):
+        np.random.seed(1234)
+        m = np.random.rand(30, 30)
+        m = m + m.T
+        try:
+            w, v = eigen_symmetric(m, 4, which='LM', v0=m[:,0], maxiter=5)
+            raise AssertionError("Spurious no-error exit")
+        except ArpackNoConvergence, err:
+            k = len(err.eigenvalues)
+            if k <= 0:
+                raise AssertionError("Spurious no-eigenvalues-found case")
+            w, v = err.eigenvalues, err.eigenvectors
+            for ww, vv in zip(w, v.T):
+                assert_array_almost_equal(dot(m, vv), ww*vv,
+                                          decimal=_ndigits['d'])
+
+
 class TestEigenComplexSymmetric(TestArpack):
 
     def sort_choose(self,eval,typ,k,which):
@@ -172,6 +190,21 @@ class TestEigenComplexSymmetric(TestArpack):
             for which in ['LM','SM','LR','SR']:
                 self.eval_evec(self.symmetric[0],typ,k,which)
 
+
+    def test_no_convergence(self):
+        np.random.seed(1234)
+        m = np.random.rand(30, 30) + 1j*np.random.rand(30, 30)
+        try:
+            w, v = eigen(m, 3, which='LM', v0=m[:,0], maxiter=30)
+            raise AssertionError("Spurious no-error exit")
+        except ArpackNoConvergence, err:
+            k = len(err.eigenvalues)
+            if k <= 0:
+                raise AssertionError("Spurious no-eigenvalues-found case")
+            w, v = err.eigenvalues, err.eigenvectors
+            for ww, vv in zip(w, v.T):
+                assert_array_almost_equal(dot(m, vv), ww*vv,
+                                          decimal=_ndigits['D'])
 
 class TestEigenNonSymmetric(TestArpack):
 
@@ -231,8 +264,20 @@ class TestEigenNonSymmetric(TestArpack):
             v0 = random.rand(n).astype(typ)
             self.eval_evec(self.symmetric[0],typ,k,which='LM',v0=v0)
 
-
-
+    def test_no_convergence(self):
+        np.random.seed(1234)
+        m = np.random.rand(30, 30)
+        try:
+            w, v = eigen(m, 3, which='LM', v0=m[:,0], maxiter=30)
+            raise AssertionError("Spurious no-error exit")
+        except ArpackNoConvergence, err:
+            k = len(err.eigenvalues)
+            if k <= 0:
+                raise AssertionError("Spurious no-eigenvalues-found case")
+            w, v = err.eigenvalues, err.eigenvectors
+            for ww, vv in zip(w, v.T):
+                assert_array_almost_equal(dot(m, vv), ww*vv,
+                                          decimal=_ndigits['d'])
 
 class TestEigenComplexNonSymmetric(TestArpack):
 
@@ -286,6 +331,21 @@ class TestEigenComplexNonSymmetric(TestArpack):
                 for m in self.nonsymmetric:
                     self.eval_evec(m,typ,k,which)
 
+
+    def test_no_convergence(self):
+        np.random.seed(1234)
+        m = np.random.rand(30, 30) + 1j*np.random.rand(30, 30)
+        try:
+            w, v = eigen(m, 3, which='LM', v0=m[:,0], maxiter=30)
+            raise AssertionError("Spurious no-error exit")
+        except ArpackNoConvergence, err:
+            k = len(err.eigenvalues)
+            if k <= 0:
+                raise AssertionError("Spurious no-eigenvalues-found case")
+            w, v = err.eigenvalues, err.eigenvectors
+            for ww, vv in zip(w, v.T):
+                assert_array_almost_equal(dot(m, vv), ww*vv,
+                                          decimal=_ndigits['D'])
 
 def test_eigen_bad_shapes():
     # A is not square.
