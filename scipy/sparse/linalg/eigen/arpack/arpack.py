@@ -383,8 +383,8 @@ class _UnsymmetricArpackParams(_ArpackParams):
             if ierr != 0:
                 raise ArpackError(ierr, infodict=_NEUPD_ERRORS)
 
-            # The ARPACK nonsymmetric real and double interface (s,d)naupd return
-            # eigenvalues and eigenvectors in real (float,double) arrays.
+            # The ARPACK nonsymmetric real and double interface (s,d)naupd
+            # return eigenvalues and eigenvectors in real (float,double) arrays.
 
             # Build complex eigenvalues from real and imaginary parts
             d = dr + 1.0j * di
@@ -417,7 +417,8 @@ class _UnsymmetricArpackParams(_ArpackParams):
                 if self.which in ['LR','SR']:
                     ind = np.argsort(rd.real)
                 elif self.which in ['LI','SI']:
-                    # for LI,SI ARPACK returns largest,smallest abs(imaginary) why?
+                    # for LI,SI ARPACK returns largest,smallest
+                    # abs(imaginary) why?
                     ind = np.argsort(abs(rd.imag))
                 else:
                     ind = np.argsort(abs(rd))
@@ -517,11 +518,17 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
         The currently converged eigenvalues and eigenvectors can be found
         as ``eigenvalues`` and ``eigenvectors`` attributes of the exception
-        objed.
+        object.
 
     See Also
     --------
     eigsh : eigenvalues and eigenvectors for symmetric matrix A
+
+    Notes
+    -----
+    This function is a wrapper to the ARPACK [1]_ SNEUPD, DNEUPD, CNEUPD,
+    ZNEUPD, functions which use the Implicitly Restarted Arnoldi Method to
+    find the eigenvalues and eigenvectors [2]_.
 
     Examples
     --------
@@ -534,6 +541,12 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     >>> vecs.shape
     (13, 6)
 
+    References
+    ----------
+    .. [1] ARPACK Software, http://www.caam.rice.edu/software/ARPACK/
+    .. [2] R. B. Lehoucq, D. C. Sorensen, and C. Yang,  ARPACK USERS GUIDE:
+       Solution of Large Scale Eigenvalue Problems by Implicitly Restarted
+       Arnoldi Methods. SIAM, Philadelphia, PA, 1998.
     """
     A = aslinearoperator(A)
     if A.shape[0] != A.shape[1]:
@@ -561,14 +574,12 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     Solves A * x[i] = w[i] * x[i], the standard eigenvalue problem for
     w[i] eigenvalues with corresponding eigenvectors x[i].
 
-
     Parameters
     ----------
     A : matrix or array with real entries or object with matvec(x) method
         An N x N real symmetric matrix or array or an object with matvec(x)
         method to perform the matrix vector product A * x.  The sparse
         matrix formats in scipy.sparse are appropriate for A.
-
     k : integer
         The number of eigenvalues and eigenvectors desired.
 
@@ -576,7 +587,6 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     -------
     w : array
         Array of k eigenvalues
-
     v : array
        An array of k eigenvectors
        The v[i] is the eigenvector corresponding to the eigenvector w[i]
@@ -587,20 +597,15 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         (Not implemented)
         A symmetric positive-definite matrix for the generalized
         eigenvalue problem A * x = w * M * x
-
-
     sigma : real
         (Not implemented)
         Find eigenvalues near sigma.  Shift spectrum by sigma.
-
     v0 : array
         Starting vector for iteration.
-
     ncv : integer
         The number of Lanczos vectors generated
         ncv must be greater than k and smaller than n;
         it is recommended that ncv > 2*k
-
     which : string
         Which k eigenvectors and eigenvalues to find:
          - 'LA' : Largest (algebraic) eigenvalues
@@ -609,14 +614,11 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
          - 'SM' : Smallest (in magnitude) eigenvalues
          - 'BE' : Half (k/2) from each end of the spectrum
                   When k is odd, return one more (k/2+1) from the high end
-
     maxiter : integer
         Maximum number of Arnoldi update iterations allowed
-
     tol : float
         Relative accuracy for eigenvalues (stopping criterion).
         The default value of 0 implies machine precision.
-
     return_eigenvectors : boolean
         Return eigenvectors (True) in addition to eigenvalues
 
@@ -627,7 +629,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
         The currently converged eigenvalues and eigenvectors can be found
         as ``eigenvalues`` and ``eigenvectors`` attributes of the exception
-        objed.
+        object.
 
     See Also
     --------
@@ -635,9 +637,25 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     Notes
     -----
+    This function is a wrapper to the ARPACK [1]_ SSEUPD and DSEUPD
+    functions which use the Implicitly Restarted Lanczos Method to
+    find the eigenvalues and eigenvectors [2]_.
 
     Examples
     --------
+    >>> id = np.identity(13)
+    >>> vals, vecs = sp.sparse.linalg.eigsh(id, k=6)
+    >>> vals
+    array([ 1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j])
+    >>> vecs.shape
+    (13, 6)
+
+    References
+    ----------
+    .. [1] ARPACK Software, http://www.caam.rice.edu/software/ARPACK/
+    .. [2] R. B. Lehoucq, D. C. Sorensen, and C. Yang,  ARPACK USERS GUIDE:
+       Solution of Large Scale Eigenvalue Problems by Implicitly Restarted
+       Arnoldi Methods. SIAM, Philadelphia, PA, 1998.
     """
     A = aslinearoperator(A)
     if A.shape[0] != A.shape[1]:
@@ -657,7 +675,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     return params.extract(return_eigenvectors)
 
 def svds(A, k=6, ncv=None, tol=0):
-    """Compute a few singular values/vectors for a sparse matrix using ARPACK.
+    """Compute k singular values/vectors for a sparse matrix using ARPACK.
 
     Parameters
     ----------
