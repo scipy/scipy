@@ -390,12 +390,11 @@ class _UnsymmetricArpackParams(_ArpackParams):
             # Arrange the eigenvectors: complex eigenvectors are stored as
             # real,imaginary in consecutive columns
             z = zr.astype(self.tp.upper())
-            eps = np.finfo(self.tp).eps
             i = 0
             while i<=k:
                 # check if complex
-                if abs(d[i].imag) > eps:
-                    # assume this is a complex conjugate pair with eigenvalues
+                if abs(d[i].imag) != 0:
+                    # this is a complex conjugate pair with eigenvalues
                     # in consecutive columns
                     z[:,i] = zr[:,i] + 1.0j * zr[:,i+1]
                     z[:,i+1] = z[:,i].conjugate()
@@ -405,10 +404,12 @@ class _UnsymmetricArpackParams(_ArpackParams):
             # Now we have k+1 possible eigenvalues and eigenvectors
             # Return the ones specified by the keyword "which"
             nreturned = self.iparam[4] # number of good eigenvalues returned
-            if nreturned == k:    # we got exactly how many eigenvalues we wanted
-                d = d[:k]
-                z = z[:,:k]
-            else:   # we got one extra eigenvalue (likely a cc pair, but which?)
+            if nreturned <= k:
+                # we got less or equal as many eigenvalues we wanted
+                d = d[:nreturned]
+                z = z[:,:nreturned]
+            else:
+                # we got one extra eigenvalue (likely a cc pair, but which?)
                 # cut at approx precision for sorting
                 rd = np.round(d, decimals = _ndigits[self.tp])
                 if self.which in ['LR','SR']:
