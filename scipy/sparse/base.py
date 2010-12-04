@@ -247,7 +247,6 @@ class spmatrix(object):
     def matmat(self,other):
         return self * other
 
-    @np.deprecate
     def dot(self, other):
         return self * other
 
