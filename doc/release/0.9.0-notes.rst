@@ -39,23 +39,6 @@ Python 3
 
 Scipy 0.9.0 has full support for Python 3.
 
-Deprecated features
-===================
-
-Obsolete nonlinear solvers (in ``scipy.optimize``)
---------------------------------------------------
-
-The following nonlinear solvers from ``scipy.optimize`` are
-deprecated:
-
-- ``broyden_modified`` (bad performance)
-- ``broyden1_modified`` (bad performance)
-- ``broyden_generalized`` (equivalent to ``anderson``)
-- ``anderson2`` (equivalent to ``anderson``)
-- ``broyden3`` (obsoleted by new limited-memory broyden methods)
-- ``vackar`` (renamed to ``diagbroyden``)
-
-
 New features
 ============
 
@@ -119,7 +102,24 @@ uses the window method to create a linear phase FIR filter with
 an arbitrary frequency response.
 
 The functions ``scipy.signal.kaiser_atten`` and ``scipy.signal.kaiser_beta``
-were added. 
+were added.
+
+
+Deprecated features
+===================
+
+Obsolete nonlinear solvers (in ``scipy.optimize``)
+--------------------------------------------------
+
+The following nonlinear solvers from ``scipy.optimize`` are
+deprecated:
+
+- ``broyden_modified`` (bad performance)
+- ``broyden1_modified`` (bad performance)
+- ``broyden_generalized`` (equivalent to ``anderson``)
+- ``anderson2`` (equivalent to ``anderson``)
+- ``broyden3`` (obsoleted by new limited-memory broyden methods)
+- ``vackar`` (renamed to ``diagbroyden``)
 
 
 Improved statistical tests (``scipy.stats``)
@@ -163,8 +163,45 @@ been deprecated since version 0.7, was removed.
 
 The functions ``spkron``, ``speye``, ``spidentity``, ``lil_eye`` and
 ``lil_diags`` were removed from ``scipy.sparse``.  The first three functions
-are still available as ``scipy.sparse.kron``, ``scipy.sparse.eye`` and 
+are still available as ``scipy.sparse.kron``, ``scipy.sparse.eye`` and
 ``scipy.sparse.identity``.
 
 The `dims` and `nzmax` keywords were removed from the sparse matrix
 constructor.
+
+``scipy.sparse.linalg.arpack.speigs``
+-------------------------------------
+
+A duplicated interface to the ARPACK library was removed.
+
+
+Other changes
+=============
+
+ARPACK interface changes
+------------------------
+
+The interface to the ARPACK eigenvalue routines in
+``scipy.sparse.linalg`` was changed for more robustness.
+
+The eigenvalue and SVD routines now raise ``ArpackNoConvergence`` if
+the eigenvalue iteration fails to converge. If partially converged results
+are desired, they can be accessed as follows::
+
+    import numpy as np
+    from scipy.sparse.linalg import eigs, ArpackNoConvergence
+
+    m = np.random.randn(30, 30)
+    try:
+        w, v = eigs(m, 6)
+    except ArpackNoConvergence, err:
+        partially_converged_w = err.eigenvalues
+        partially_converged_v = err.eigenvectors
+
+Several bugs were also fixed.
+
+The routines were moreover renamed as follows:
+
+    - eigen --> eigs
+    - eigen_symmetric --> eigsh
+    - svd --> svds
