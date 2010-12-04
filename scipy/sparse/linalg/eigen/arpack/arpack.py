@@ -451,6 +451,13 @@ class _UnsymmetricArpackParams(_ArpackParams):
         else:
             return d
 
+def _aslinearoperator_with_dtype(m):
+    m = aslinearoperator(m)
+    if not hasattr(m, 'dtype'):
+        x = np.zeros(m.shape[1])
+        m.dtype = (m*x).dtype
+    return m
+
 def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
          ncv=None, maxiter=None, tol=0,
          return_eigenvectors=True):
@@ -548,7 +555,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
        Solution of Large Scale Eigenvalue Problems by Implicitly Restarted
        Arnoldi Methods. SIAM, Philadelphia, PA, 1998.
     """
-    A = aslinearoperator(A)
+    A = _aslinearoperator_with_dtype(A)
     if A.shape[0] != A.shape[1]:
         raise ValueError('expected square matrix (shape=%s)' % (A.shape,))
     n = A.shape[0]
@@ -657,7 +664,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
        Solution of Large Scale Eigenvalue Problems by Implicitly Restarted
        Arnoldi Methods. SIAM, Philadelphia, PA, 1998.
     """
-    A = aslinearoperator(A)
+    A = _aslinearoperator_with_dtype(A)
     if A.shape[0] != A.shape[1]:
         raise ValueError('expected square matrix (shape=%s)' % (A.shape,))
     n = A.shape[0]

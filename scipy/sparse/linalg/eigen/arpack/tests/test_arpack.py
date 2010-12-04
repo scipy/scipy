@@ -8,10 +8,11 @@ import numpy as np
 
 from numpy.testing import assert_almost_equal, assert_array_almost_equal, \
         assert_array_almost_equal_nulp, TestCase, run_module_suite, dec, \
-        assert_raises, verbose
+        assert_raises, verbose, assert_equal
 
 from numpy import array, finfo, argsort, dot, round, conj, random
 from scipy.sparse import csc_matrix, isspmatrix
+from scipy.sparse.linalg import LinearOperator
 from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
      ArpackNoConvergence
 
@@ -352,6 +353,11 @@ def test_eigen_bad_shapes():
     A = csc_matrix(np.zeros((2,3)))
     assert_raises(ValueError, eigs, A)
 
+def test_eigs_operator():
+    # Check inferring LinearOperator dtype
+    fft_op = LinearOperator((6, 6), np.fft.fft)
+    w, v = eigs(fft_op, k=3)
+    assert_equal(w.dtype, np.complex_)
 
 def sorted_svd(m, k):
     """Compute svd of a dense matrix m, and return singular vectors/values
