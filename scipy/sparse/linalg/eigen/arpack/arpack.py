@@ -246,6 +246,8 @@ class _SymmetricArpackParams(_ArpackParams):
         self.workl = np.zeros(self.ncv * (self.ncv + 8), self.tp)
 
         ltr = _type_conv[self.tp]
+        if ltr not in ["s", "d"]:
+            raise ValueError("Input matrix is not real-valued.")
         self._arpack_solver = _arpack.__dict__[ltr + 'saupd']
         self._arpack_extract = _arpack.__dict__[ltr + 'seupd']
 
