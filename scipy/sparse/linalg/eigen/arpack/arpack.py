@@ -12,11 +12,11 @@ Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
 # The entry points to ARPACK are
 # - (s,d)seupd : single and double precision symmetric matrix
 # - (s,d,c,z)neupd: single,double,complex,double complex general matrix
-# This wrapper puts the *neupd (general matrix) interfaces in eigen()
-# and the *seupd (symmetric matrix) in eigen_symmetric().
+# This wrapper puts the *neupd (general matrix) interfaces in eigs()
+# and the *seupd (symmetric matrix) in eigsh().
 # There is no Hermetian complex/double complex interface.
 # To find eigenvalues of a Hermetian matrix you
-# must use eigen() and not eigen_symmetric()
+# must use eigs() and not eigsh()
 # It might be desirable to handle the Hermetian case differently
 # and, for example, return real eigenvalues.
 
@@ -39,7 +39,7 @@ Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
 
 __docformat__ = "restructuredtext en"
 
-__all___=['eigen','eigen_symmetric', 'svd', 'ArpackNoConvergence']
+__all___=['eigs', 'eigsh', 'svds', 'ArpackNoConvergence']
 
 import _arpack
 import numpy as np
@@ -450,9 +450,9 @@ class _UnsymmetricArpackParams(_ArpackParams):
         else:
             return d
 
-def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
-          ncv=None, maxiter=None, tol=0,
-          return_eigenvectors=True):
+def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
+         ncv=None, maxiter=None, tol=0,
+         return_eigenvectors=True):
     """
     Find k eigenvalues and eigenvectors of the square matrix A.
 
@@ -521,14 +521,14 @@ def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     See Also
     --------
-    eigen_symmetric : eigenvalues and eigenvectors for symmetric matrix A
+    eigsh : eigenvalues and eigenvectors for symmetric matrix A
 
     Examples
     --------
     Find 6 eigenvectors of the identity matrix:
 
     >>> id = np.identity(13)
-    >>> vals, vecs = sp.sparse.linalg.eigen(id, k=6)
+    >>> vals, vecs = sp.sparse.linalg.eigs(id, k=6)
     >>> vals
     array([ 1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j])
     >>> vecs.shape
@@ -552,11 +552,11 @@ def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     return params.extract(return_eigenvectors)
 
-def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM', v0=None,
-                    ncv=None, maxiter=None, tol=0,
-                    return_eigenvectors=True):
-    """Find k eigenvalues and eigenvectors of the real symmetric
-    square matrix A.
+def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
+          ncv=None, maxiter=None, tol=0,
+          return_eigenvectors=True):
+    """
+    Find k eigenvalues and eigenvectors of the real symmetric square matrix A.
 
     Solves A * x[i] = w[i] * x[i], the standard eigenvalue problem for
     w[i] eigenvalues with corresponding eigenvectors x[i].
@@ -570,7 +570,7 @@ def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM', v0=None,
         matrix formats in scipy.sparse are appropriate for A.
 
     k : integer
-        The number of eigenvalues and eigenvectors desired
+        The number of eigenvalues and eigenvectors desired.
 
     Returns
     -------
@@ -631,7 +631,7 @@ def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     See Also
     --------
-    eigen : eigenvalues and eigenvectors for a general (nonsymmetric) matrix A
+    eigs : eigenvalues and eigenvectors for a general (nonsymmetric) matrix A
 
     Notes
     -----
@@ -656,7 +656,7 @@ def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     return params.extract(return_eigenvectors)
 
-def svd(A, k=6):
+def svds(A, k=6):
     """Compute a few singular values/vectors for a sparse matrix using ARPACK.
 
     Parameters
