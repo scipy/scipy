@@ -114,26 +114,23 @@ class TestBasicStats(TestCase):
         II. C. Basic Statistics
     """
 
+    dprec = np.finfo(np.float64).precision
+
+    # Really need to write these tests to handle missing values properly
     def test_tmeanX(self):
         y = stats.tmean(X, (2, 8), (True, True))
-        assert_almost_equal(y, 5.0)
+        assert_approx_equal(y, 5.0, significant=TestBasicStats.dprec)
 
     def test_tvarX(self):
         y = stats.tvar(X, (2, 8), (True, True))
-        assert_almost_equal(y, 4.6666666666666661)
+        assert_approx_equal(y, 4.6666666666666661,
+                            significant=TestBasicStats.dprec)
 
     def test_tstdX(self):
         y = stats.tstd(X, (2, 8), (True, True))
-        assert_almost_equal(y, 2.1602468994692865)
+        assert_approx_equal(y, 2.1602468994692865,
+                            significant=TestBasicStats.dprec)
 
-##    Really need to write these tests to handle missing values properly
-##    def test_meanMISS(self):
-##        y = np.mean(MISS)
-##        assert_almost_equal(y, 0.0)
-##
-##    def test_stdMISS(self):
-##        y = stats.stdev(MISS)
-##        assert_almost_equal(y, 0.0)
 
 
 class TestNanFunc(TestCase):
