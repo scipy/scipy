@@ -81,14 +81,6 @@ class csc_matrix(_cs_matrix):
 
     """
 
-    def __getattr__(self, attr):
-        if attr == 'rowind':
-            warn("rowind attribute no longer in use. Use .indices instead",
-                    DeprecationWarning)
-            return self.indices
-        else:
-            return _cs_matrix.__getattr__(self, attr)
-
     def transpose(self, copy=False):
         from csr import csr_matrix
         M,N = self.shape
@@ -98,13 +90,6 @@ class csc_matrix(_cs_matrix):
         csr = self.tocsr()
         for r in xrange(self.shape[0]):
             yield csr[r,:]
-
-    @np.deprecate
-    def rowcol(self, ind):
-        #TODO remove after 0.7
-        row = self.indices[ind]
-        col = np.searchsorted(self.indptr, ind+1) - 1
-        return (row, col)
 
     def tocsc(self, copy=False):
         if copy:

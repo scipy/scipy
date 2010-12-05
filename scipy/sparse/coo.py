@@ -93,12 +93,8 @@ class coo_matrix(_data_matrix):
 
     """
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False, dims=None):
+    def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
-
-        if dims is not None:
-            warn("dims is deprecated, use shape instead", DeprecationWarning)
-            shape=dims
 
         if isinstance(arg1, tuple):
             if isshape(arg1):
@@ -214,14 +210,6 @@ class coo_matrix(_data_matrix):
             if self.col.min() < 0:
                 raise ValueError('negative column index found')
 
-
-    @np.deprecate
-    def rowcol(self, num):
-        return (self.row[num], self.col[num])
-
-    @np.deprecate
-    def getdata(self, num):
-        return self.data[num]
 
     def transpose(self, copy=False):
         M,N = self.shape

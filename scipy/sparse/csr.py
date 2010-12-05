@@ -81,26 +81,10 @@ class csr_matrix(_cs_matrix):
 
     """
 
-    def __getattr__(self, attr):
-        if attr == 'colind':
-            warn("colind attribute no longer in use. Use .indices instead",
-                    DeprecationWarning)
-            return self.indices
-        else:
-            return _cs_matrix.__getattr__(self, attr)
-
     def transpose(self, copy=False):
         from csc import csc_matrix
         M,N = self.shape
         return csc_matrix((self.data,self.indices,self.indptr), shape=(N,M), copy=copy)
-
-    @np.deprecate
-    def rowcol(self, ind):
-        #TODO remove after 0.7
-        col = self.indices[ind]
-        row = np.searchsorted(self.indptr, ind+1)-1
-        return (row, col)
-
 
     def tolil(self):
         from lil import lil_matrix
@@ -200,7 +184,7 @@ class csr_matrix(_cs_matrix):
             slicing of the form self[[1,2,3],:]
             """
             indices = asindices(indices)
-    
+
             (min_indx,max_indx) = check_bounds(indices,N)
 
             if min_indx < 0:

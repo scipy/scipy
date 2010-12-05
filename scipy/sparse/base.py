@@ -135,21 +135,6 @@ class spmatrix(object):
             format = 'und'
         return format
 
-    @np.deprecate
-    def rowcol(self, num):
-        return (None, None)
-
-    @np.deprecate
-    def getdata(self, num):
-        return None
-
-    @np.deprecate
-    def listprint(self, start, stop):
-        """Provides a way to print over a single index.
-        """
-        return '\n'.join(['  %s\t%s' % (self.rowcol(ind), self.getdata(ind))
-                         for ind in xrange(start,stop)]) + '\n'
-
     def __repr__(self):
         nnz = self.getnnz()
         format = self.getformat()
@@ -222,6 +207,9 @@ class spmatrix(object):
         """
         return self.tocsr().multiply(other)
 
+    def dot(self, other):
+        return self * other
+
     def __abs__(self):
         return abs(self.tocsr())
 
@@ -237,34 +225,6 @@ class spmatrix(object):
 
     def __rsub__(self, other):  # other - self
         return self.tocsr().__rsub__(other)
-
-    # old __mul__ interfaces
-    @np.deprecate
-    def matvec(self,other):
-        return self * other
-
-    @np.deprecate
-    def matmat(self,other):
-        return self * other
-
-    def dot(self, other):
-        return self * other
-
-    @np.deprecate
-    def rmatvec(self, other, conjugate=True):
-        """Multiplies the vector 'other' by the sparse matrix, returning a
-        dense vector as a result.
-
-        If 'conjugate' is True:
-            - returns A.transpose().conj() * other
-        Otherwise:
-            - returns A.transpose() * other.
-
-        """
-        if conjugate:
-            return self.conj().transpose() * other
-        else:
-            return self.transpose() * other
 
     def __mul__(self, other):
         """interpret other and call one of the following
@@ -403,10 +363,6 @@ class spmatrix(object):
                 return result
         elif isscalarlike(other):
             raise ValueError('exponent must be an integer')
-        elif isspmatrix(other):
-            warn('Using ** for elementwise multiplication is deprecated.'\
-                    'Use .multiply() instead', DeprecationWarning)
-            return self.multiply(other)
         else:
             raise NotImplementedError
 

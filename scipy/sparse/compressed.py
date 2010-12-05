@@ -298,10 +298,6 @@ class _cs_matrix(_data_matrix):
         return self.__class__((data,indices,indptr),shape=(M,N))
 
 
-    @np.deprecate
-    def getdata(self, ind):
-        return self.data[ind]
-
     def diagonal(self):
         """Returns the main diagonal of the matrix
         """
@@ -622,19 +618,6 @@ class _cs_matrix(_data_matrix):
             fn = sparsetools.csr_sort_indices
             fn( len(self.indptr) - 1, self.indptr, self.indices, self.data)
             self.has_sorted_indices = True
-
-    #TODO remove after 0.7
-    def ensure_sorted_indices(self, inplace=False):
-        """Return a copy of this matrix where the column indices are sorted
-        """
-        warn('ensure_sorted_indices is deprecated, ' \
-                'use sorted_indices() or sort_indices() instead', \
-                DeprecationWarning)
-
-        if inplace:
-            self.sort_indices()
-        else:
-            return self.sorted_indices()
 
     def prune(self):
         """Remove empty space after all non-zero elements.
