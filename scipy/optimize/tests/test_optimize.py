@@ -174,7 +174,8 @@ class TestOptimize(TestCase):
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 7, self.funccalls)
-        assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
+        assert_(self.gradcalls <= 18, self.gradcalls) # 0.9.0
+        #assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
         #assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
@@ -347,7 +348,7 @@ class TestTnc(TestCase):
 
 
 class TestRosen(TestCase):
-    
+
     def test_hess(self):
         """Compare rosen_hess(x) times p with rosen_hess_prod(x,p) (ticket #1248)"""
         x = array([3, 4, 5])
