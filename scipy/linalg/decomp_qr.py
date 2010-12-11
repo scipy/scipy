@@ -100,8 +100,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full'):
     if mode == 'r':
         return R
 
-    if find_best_lapack_type((a1,))[0] == 's' or \
-                find_best_lapack_type((a1,))[0] == 'd':
+    if find_best_lapack_type((a1,))[0] in ('s', 'd'):
         gor_un_gqr, = get_lapack_funcs(('orgqr',), (qr,))
     else:
         gor_un_gqr, = get_lapack_funcs(('ungqr',), (qr,))
