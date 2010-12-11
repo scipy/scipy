@@ -1,7 +1,8 @@
 # Scipy imports.
 import numpy as np
 from numpy import pi
-from numpy.testing import assert_array_almost_equal, TestCase, run_module_suite
+from numpy.testing import assert_array_almost_equal, TestCase, \
+     run_module_suite, assert_equal
 from scipy.odr import Data, Model, ODR, RealData, odr_stop
 
 
@@ -305,6 +306,21 @@ class TestODR(TestCase):
                [ -3.1236953270424990e-05,   3.6133261832722601e-08,
                   2.7261220025171730e-08]]),
         )
+
+
+    def test_ticket_1253(self):
+        def linear(c, x):
+            return c[0]*x+c[1]
+
+        c = [2.0, 3.0]
+        x = np.linspace(0, 10)
+        y = linear(c, x)
+
+        model = Model(linear)
+        data = Data(x, y, wd=1.0, we=1.0)
+        job = ODR(data, model, beta0=[1.0, 1.0])
+        result = job.run()
+        assert_equal(result.info, 2)
 
 
 if __name__ == "__main__":
