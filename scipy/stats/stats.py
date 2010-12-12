@@ -2600,7 +2600,7 @@ def kendalltau(x, y, initial_lexsort=True):
             perm[offs] = perm[offs+1]
             perm[offs+1] = t
             return 1
-        length0 = length / 2
+        length0 = length // 2
         length1 = length - length0
         middle = offs + length0
         exchcnt += mergesort(offs, length0)
@@ -2632,25 +2632,25 @@ def kendalltau(x, y, initial_lexsort=True):
     else:
         # sort implemented as quicksort, 30% faster but with worst case: O(n^2)
         perm = range(n)
-        perm.sort(lambda a,b: cmp(x[a],x[b]) or cmp(y[a],y[b]))
+        perm.sort(key=lambda a: (x[a], y[a]))
 
     # compute joint ties
     first = 0
     t = 0
     for i in xrange(1, n):
         if x[perm[first]] != x[perm[i]] or y[perm[first]] != y[perm[i]]:
-            t += ((i - first) * (i - first - 1)) / 2
+            t += ((i - first) * (i - first - 1)) // 2
             first = i
-    t += ((n - first) * (n - first - 1)) / 2
+    t += ((n - first) * (n - first - 1)) // 2
 
     # compute ties in x
     first = 0
     u = 0
     for i in xrange(1,n):
         if x[perm[first]] != x[perm[i]]:
-            u += ((i - first) * (i - first - 1)) / 2
+            u += ((i - first) * (i - first - 1)) // 2
             first = i
-    u += ((n - first) * (n - first - 1)) / 2
+    u += ((n - first) * (n - first - 1)) // 2
 
     # count exchanges
     exchanges = mergesort(0, n)
@@ -2659,11 +2659,11 @@ def kendalltau(x, y, initial_lexsort=True):
     v = 0
     for i in xrange(1,n):
         if y[perm[first]] != y[perm[i]]:
-            v += ((i - first) * (i - first - 1)) / 2
+            v += ((i - first) * (i - first - 1)) // 2
             first = i
-    v += ((n - first) * (n - first - 1)) / 2
+    v += ((n - first) * (n - first - 1)) // 2
 
-    tot = (n * (n - 1)) / 2
+    tot = (n * (n - 1)) // 2
     if tot == u and tot == v:
         return 1    # Special case for all ties in both ranks
 
