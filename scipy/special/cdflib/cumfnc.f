@@ -65,7 +65,7 @@ C     ..
 C     .. Local Scalars ..
       DOUBLE PRECISION dsum,dummy,prod,xx,yy
       DOUBLE PRECISION adn,aup,b,betdn,betup,centwt,dnterm,eps,sum,
-     +                 upterm,xmult,xnonc,x
+     +                 upterm,xmult,xnonc,x,abstol
       INTEGER i,icent,ierr
 C     ..
 C     .. External Functions ..
@@ -89,9 +89,10 @@ C     .. Parameters ..
 C     ..
 C     .. Data statements ..
       DATA eps/1.0D-4/
+      DATA abstol/1.0D-300/
 C     ..
 C     .. Statement Function definitions ..
-      qsmall(x) = sum .LT. 1.0D-20 .OR. x .LT. eps*sum
+      qsmall(x) = sum .LT. abstol .OR. x .LT. eps*sum
 C     ..
 C     .. Executable Statements ..
 C
