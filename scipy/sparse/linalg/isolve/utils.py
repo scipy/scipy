@@ -6,7 +6,8 @@ from warnings import warn
 
 from numpy import asanyarray, asarray, asmatrix, array, matrix, zeros
 
-from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
+from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator, \
+     IdentityOperator
 
 _coerce_rules = {('f','f'):'f', ('f','d'):'d', ('f','F'):'F',
                  ('f','D'):'D', ('d','f'):'d', ('d','d'):'d',
@@ -116,7 +117,11 @@ def make_system(A, M, x0, b, xtype=None):
             rpsolve = A_.rpsolve
         else:
             rpsolve = id
-        M = LinearOperator(A.shape, matvec=psolve, rmatvec=rpsolve, dtype=A.dtype)
+        if psolve is id and rpsolve is id:
+            M = IdentityOperator(shape=A.shape, dtype=A.dtype)
+        else:
+            M = LinearOperator(A.shape, matvec=psolve, rmatvec=rpsolve,
+                               dtype=A.dtype)
     else:
         M = aslinearoperator(M)
         if A.shape != M.shape:

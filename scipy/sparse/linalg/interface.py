@@ -200,6 +200,38 @@ class LinearOperator:
 
         return '<%dx%d LinearOperator with %s>' % (M,N,dt)
 
+class MatrixLinearOperator(LinearOperator):
+    def __init__(self, A):
+        LinearOperator.__init__(self, shape=A.shape, dtype=A.dtype,
+                                matvec=None, rmatvec=self.rmatvec)
+        self.matvec = A.dot
+        self.matmat = A.dot
+        self.__mul__ = A.dot
+        self.A = A
+        self.A_conj = None
+
+    def rmatvec(self, x):
+        if self.A_conj is None:
+            self.A_conj = self.A.T.conj()
+        return self.A_conj.dot(x)
+
+class IdentityOperator(LinearOperator):
+    def __init__(self, shape, dtype):
+        LinearOperator.__init__(self, shape=shape, dtype=dtype, matvec=None,
+                                rmatvec=self.rmatvec)
+
+    def matvec(self, x):
+        return x
+
+    def rmatvec(self, x):
+        return x
+
+    def matmat(self, x):
+        return x
+
+    def __mul__(self, x):
+        return x
+
 def aslinearoperator(A):
     """Return A as a LinearOperator.
 
@@ -226,27 +258,11 @@ def aslinearoperator(A):
     elif isinstance(A, np.ndarray) or isinstance(A, np.matrix):
         if A.ndim > 2:
             raise ValueError('array must have rank <= 2')
-
         A = np.atleast_2d(np.asarray(A))
-
-        def matvec(v):
-            return np.dot(A, v)
-        def rmatvec(v):
-            return np.dot(A.conj().transpose(), v)
-        def matmat(V):
-            return np.dot(A, V)
-        return LinearOperator(A.shape, matvec, rmatvec=rmatvec,
-                              matmat=matmat, dtype=A.dtype)
+        return MatrixLinearOperator(A)
 
     elif isspmatrix(A):
-        def matvec(v):
-            return A * v
-        def rmatvec(v):
-            return A.conj().transpose() * v
-        def matmat(V):
-            return A * V
-        return LinearOperator(A.shape, matvec, rmatvec=rmatvec,
-                              matmat=matmat, dtype=A.dtype)
+        return MatrixLinearOperator(A)
 
     else:
         if hasattr(A, 'shape') and hasattr(A, 'matvec'):
