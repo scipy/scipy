@@ -78,25 +78,29 @@ if sys.platform == "win32":
     WINE_PY25 = [r"C:\Python25\python.exe"]
     WINE_PY26 = [r"C:\Python26\python26.exe"]
     WINE_PY27 = [r"C:\Python27\python27.exe"]
+    WINE_PY31 = [r"C:\Python31\python.exe"]
     MAKENSIS = ["makensis"]
 elif sys.platform == "darwin":
     WINE_PY25 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python25/python.exe"]
     WINE_PY26 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python26/python.exe"]
     WINE_PY27 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python27/python.exe"]
+    WINE_PY31 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python31/python.exe"]
     MAKENSIS = ["wine", "makensis"]
 else:
     WINE_PY25 = [os.environ['HOME'] + "/.wine/drive_c/Python25/python.exe"]
     WINE_PY26 = [os.environ['HOME'] + "/.wine/drive_c/Python26/python.exe"]
     WINE_PY27 = [os.environ['HOME'] + "/.wine/drive_c/Python27/python.exe"]
+    WINE_PY31 = [os.environ['HOME'] + "/.wine/drive_c/Python31/python.exe"],
     MAKENSIS = ["wine", "makensis"]
-WINE_PYS = {'2.7' : WINE_PY27, '2.6' : WINE_PY26, '2.5': WINE_PY25}
+WINE_PYS = {'3.1':WINE_PY31, '2.7':WINE_PY27, '2.6':WINE_PY26, '2.5':WINE_PY25}
 SUPERPACK_BUILD = 'build-superpack'
 SUPERPACK_BINDIR = os.path.join(SUPERPACK_BUILD, 'binaries')
 
 # XXX: fix this in a sane way
 MPKG_PYTHON = {"2.5": "/Library/Frameworks/Python.framework/Versions/2.5/bin/python",
         "2.6": "/Library/Frameworks/Python.framework/Versions/2.6/bin/python",
-        "2.7": "/Library/Frameworks/Python.framework/Versions/2.7/bin/python"}
+        "2.7": "/Library/Frameworks/Python.framework/Versions/2.7/bin/python",
+        "3.1": "/Library/Frameworks/Python.framework/Versions/3.1/bin/python3"}
 # Full path to the *static* gfortran runtime
 LIBGFORTRAN_A_PATH = "/usr/local/lib/libgfortran.a"
 
@@ -114,7 +118,7 @@ RELEASE = 'doc/release/0.9.0-notes.rst'
 
 # Start/end of the log (from git)
 LOG_START = 'svn/tags/0.8.0'
-LOG_END = 'master'
+LOG_END = 'svn/0.9.x'
 
 # Virtualenv bootstrap stuff
 BOOTSTRAP_DIR = "bootstrap"
@@ -447,10 +451,8 @@ def bdist_mpkg():
 def _build_mpkg(pyver):
     numver = parse_numpy_version(MPKG_PYTHON[pyver])
     numverstr = ".".join(["%i" % i for i in numver])
-    if pyver == "2.5" and not numver[:2] == (1, 2):
-        raise ValueError("Scipy 0.7.x should be built against numpy 1.2.x for python 2.5 (detected %s)" % numverstr)
-    elif pyver == "2.6" and not numver[:2] == (1, 3):
-        raise ValueError("Scipy 0.7.x should be built against numpy 1.3.x for python 2.6 (detected %s)" % numverstr)
+    if not numver == (1, 5, 1):
+        raise ValueError("Scipy 0.9.x should be built against numpy 1.5.1, (detected %s)" % numverstr)
 
     prepare_static_gfortran_runtime("build")
     ldflags = "-undefined dynamic_lookup -bundle -arch i386 -arch ppc -Wl,-search_paths_first"
