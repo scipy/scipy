@@ -4,7 +4,8 @@ Unit tests for optimization routines from minpack.py.
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import assert_, assert_almost_equal, assert_array_equal, \
-        assert_array_almost_equal, TestCase, run_module_suite, assert_raises
+        assert_array_almost_equal, TestCase, run_module_suite, assert_raises, \
+        assert_allclose
 import numpy as np
 from numpy import array, float64
 
@@ -135,6 +136,11 @@ class TestFSolve(TestCase):
         deriv_func = lambda x: dummy_func(x, (3,3))
         assert_raises(TypeError, optimize.fsolve, func, x0=[0,1], fprime=deriv_func)
 
+    def test_float32(self):
+        func = lambda x: np.array([x[0] - 1000, x[1] - 10000], dtype=np.float32)**2
+        p = optimize.fsolve(func, np.array([1, 1], np.float32))
+        assert_allclose(func(p), [0, 0], atol=1e-3)
+
 class TestRootHybr(TestCase):
     def test_pressure_network_no_gradient(self):
         """root/hybr without gradient, equal pipes -> equal flows"""
@@ -242,6 +248,21 @@ class TestLeastSq(TestCase):
         deriv_func = lambda x: dummy_func(x, (3,3))
         assert_raises(TypeError, optimize.leastsq, func, x0=[0,1], Dfun=deriv_func)
 
+    def test_float32(self):
+        # From Track ticket #920
+        def func(p,x,y):
+            q = p[0]*np.exp(-(x-p[1])**2/(2.0*p[2]**2))+p[3]
+            return q - y
+
+        x = np.array([ 1.475,1.429,1.409,1.419,1.455,1.519,1.472, 1.368,1.286,
+                       1.231], dtype=np.float32)
+        y = np.array([0.0168,0.0193,0.0211,0.0202,0.0171,0.0151,0.0185,0.0258,
+                      0.034,0.0396], dtype=np.float32)
+        p0 = np.array([1.0,1.0,1.0,1.0])
+        p1, success = optimize.leastsq(func, p0, args=(x,y))
+
+        assert_(success in [1,2,3,4])
+        assert_((func(p1,x,y)**2).sum() < 1e-4 * (func(p0,x,y)**2).sum())
 
 class TestCurveFit(TestCase):
     def setUp(self):
