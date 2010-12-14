@@ -37,7 +37,9 @@ about our function's call signatures.
 Python 3
 ========
 
-Scipy 0.9.0 has full support for Python 3.
+Scipy 0.9.0 is the first SciPy release to support Python 3. The only module
+that is not yet ported is ``scipy.weave``.
+
 
 New features
 ============
