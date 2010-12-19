@@ -114,7 +114,7 @@ PYVER="2.6"
 # Paver options object, holds all default dirs
 options(bootstrap=Bunch(bootstrap_dir="bootstrap"),
         virtualenv=Bunch(packages_to_install=["sphinx==1.0.4", "numpydoc"],
-                         no_site_packages=True),
+                         no_site_packages=False),
         sphinx=Bunch(builddir="build", sourcedir="source", docroot='doc'),
         superpack=Bunch(builddir="build-superpack",
                         bindir=os.path.join("build-superpack","binaries")),
@@ -196,24 +196,39 @@ def parse_numpy_version(pyexec):
 @task
 def bootstrap():
     """create virtualenv in ./install"""
-    install = paver.path.path(options.bootstrap.bootstrap_dir)
-    if not install.exists():
-        install.mkdir()
+    try:
+        import virtualenv
+    except ImportError, e:
+        raise RuntimeError("virtualenv is needed for bootstrap")
+
+    bdir = options.bootstrap_dir
+    if not os.path.exists(bdir):
+        os.makedirs(bdir)
+    bscript = "boostrap.py"
+
+    options.virtualenv.script_name = os.path.join(options.bootstrap_dir,
+                                                  bscript)
+    options.bootstrap.no_site_packages = False
     call_task('paver.virtual.bootstrap')
-    sh('cd %s; %s bootstrap.py' % (options.bootstrap.bootstrap_dir, sys.executable))
+    sh('cd %s; %s %s' % (bdir, sys.executable, bscript))
 
 @task
 def clean():
     """Remove build, dist, egg-info garbage."""
     d = ['build', 'dist', 'scipy.egg-info']
     for i in d:
-        paver.path.path(i).rmtree()
+        if os.path.exists(i):
+            shutil.rmtree(i)
 
-    (paver.path.path('doc') / options.sphinx.builddir).rmtree()
+    bdir = os.path.join('doc', options.sphinx.builddir)
+    if os.path.exists(bdir):
+        shutil.rmtree(bdir)
 
 @task
 def clean_bootstrap():
-    paver.path.path('bootstrap').rmtree()
+    bdir = os.path.join(options.bootstrap.bootstrap_dir)
+    if os.path.exists(bdir):
+        shutil.rmtree(bdir)
 
 @task
 @needs('clean', 'clean_bootstrap')
@@ -329,17 +344,17 @@ def prepare_nsis_script(pyver, numver):
 @task
 def bdist_wininst_nosse(options):
     """Build the nosse wininst installer."""
-    bdist_wininst_arch(options.wininst.pyver, 'nosse')
+    bdist_wininst_arch(options.python_version, 'nosse')
 
 @task
 def bdist_wininst_sse2(options):
     """Build the sse2 wininst installer."""
-    bdist_wininst_arch(options.wininst.pyver, 'sse2')
+    bdist_wininst_arch(options.python_version, 'sse2')
 
 @task
 def bdist_wininst_sse3(options):
     """Build the sse3 wininst installer."""
-    bdist_wininst_arch(options.wininst.pyver, 'sse3')
+    bdist_wininst_arch(options.python_version, 'sse3')
 
 @task
 @cmdopts([("python-version=", "p", "python version")])
