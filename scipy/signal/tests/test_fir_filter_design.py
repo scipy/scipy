@@ -104,7 +104,7 @@ class TestFirWinMore(TestCase):
         taps = firwin(ntaps, cutoff=0.5, window=('kaiser', beta), scale=False)
 
         # Check the symmetry of taps.
-        assert_array_almost_equal(taps[:ntaps/2], taps[ntaps:ntaps-ntaps/2-1:-1])
+        assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
 
         # Check the gain at a few samples where we know it should be approximately 0 or 1.
         freq_samples = np.array([0.0, 0.25, 0.5-width/2, 0.5+width/2, 0.75, 1.0])
@@ -123,7 +123,7 @@ class TestFirWinMore(TestCase):
                         pass_zero=False, scale=False)
 
         # Check the symmetry of taps.
-        assert_array_almost_equal(taps[:ntaps/2], taps[ntaps:ntaps-ntaps/2-1:-1])
+        assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
 
         # Check the gain at a few samples where we know it should be approximately 0 or 1.
         freq_samples = np.array([0.0, 0.25, 0.5-width/2, 0.5+width/2, 0.75, 1.0])
@@ -138,7 +138,7 @@ class TestFirWinMore(TestCase):
                         pass_zero=False, scale=False)
 
         # Check the symmetry of taps.
-        assert_array_almost_equal(taps[:ntaps/2], taps[ntaps:ntaps-ntaps/2-1:-1])
+        assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
 
         # Check the gain at a few samples where we know it should be approximately 0 or 1.
         freq_samples = np.array([0.0, 0.2, 0.3-width/2, 0.3+width/2, 0.5,
@@ -154,7 +154,7 @@ class TestFirWinMore(TestCase):
                         pass_zero=True, scale=False)
 
         # Check the symmetry of taps.
-        assert_array_almost_equal(taps[:ntaps/2], taps[ntaps:ntaps-ntaps/2-1:-1])
+        assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
 
         # Check the gain at a few samples where we know it should be approximately 0 or 1.
         freq_samples = np.array([0.0, 0.1, 0.2-width/2, 0.2+width/2, 0.35,
@@ -175,7 +175,7 @@ class TestFirWinMore(TestCase):
                         pass_zero=False, scale=False, nyq=nyquist)
 
         # Check the symmetry of taps.
-        assert_array_almost_equal(taps[:ntaps/2], taps[ntaps:ntaps-ntaps/2-1:-1])
+        assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
 
         # Check the gain at a few samples where we know it should be approximately 0 or 1.
         freq_samples = np.array([0.0, 200, 300-width/2, 300+width/2, 500,
@@ -288,8 +288,8 @@ class TestRemez(TestCase):
         # make sure the filter has correct # of taps
         assert_(len(h) == N, "Number of Taps")
 
-        # make sure it is type III (anti-symmtric tap coefficients)
-        assert_array_almost_equal(h[:(N-1)/2], -h[:-(N-1)/2-1:-1])
+        # make sure it is type III (anti-symmetric tap coefficients)
+        assert_array_almost_equal(h[:(N-1)//2], -h[:-(N-1)//2-1:-1])
 
         # Since the requested response is symmetric, all even coeffcients
         # should be zero (or in this case really small)
