@@ -467,6 +467,9 @@ def test_onetree_query():
     yield check_onetree_query, T, 0.00001
     yield check_onetree_query, T, 1e-6
 
+def test_query_pairs_single_node():
+    tree = KDTree([[0, 1]])
+    assert_equal(tree.query_pairs(0.5), set())
 
 if __name__=="__main__":
     run_module_suite()

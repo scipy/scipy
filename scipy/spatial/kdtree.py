@@ -592,12 +592,8 @@ class KDTree(object):
                 # This node pair will be visited in the other order
                 #return
                 pass
-            if rect1.min_distance_rectangle(rect2, p)>r/(1.+eps):
-                return
-            elif rect1.max_distance_rectangle(rect2, p)<r*(1.+eps):
-                traverse_no_checking(node1.less, node2)
-                traverse_no_checking(node1.greater, node2)
-            elif isinstance(node1, KDTree.leafnode):
+
+            if isinstance(node1, KDTree.leafnode):
                 if isinstance(node2, KDTree.leafnode):
                     d = self.data[node2.idx]
                     for i in node1.idx:
@@ -614,6 +610,11 @@ class KDTree(object):
                 less, greater = rect1.split(node1.split_dim, node1.split)
                 traverse_checking(node1.less,less,node2,rect2)
                 traverse_checking(node1.greater,greater,node2,rect2)
+            elif rect1.min_distance_rectangle(rect2, p)>r/(1.+eps):
+                return
+            elif rect1.max_distance_rectangle(rect2, p)<r*(1.+eps):
+                traverse_no_checking(node1.less, node2)
+                traverse_no_checking(node1.greater, node2)
             else:
                 less1, greater1 = rect1.split(node1.split_dim, node1.split)
                 less2, greater2 = rect2.split(node2.split_dim, node2.split)
