@@ -436,7 +436,7 @@ PyObject *gen_output(int n, int m, int np, int nq, int ldwe, int ld2we,
 
       work_ind =
         Py_BuildValue
-        ("{s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l}",
+        ("{s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i}",
          "delta", delta, "eps", eps, "xplus", xplus, "fn", fn, "sd", sd, "sd",
          vcv, "rvar", rvar, "wss", wss, "wssde", wssde, "wssep", wssep,
          "rcond", rcond, "eta", eta, "olmav", olmav, "tau", tau, "alpha",
@@ -499,7 +499,7 @@ PyObject *gen_output(int n, int m, int np, int nq, int ldwe, int ld2we,
 
       retobj =
         Py_BuildValue
-        ("OOO{s:O,s:O,s:O,s:O,s:d,s:d,s:d,s:d,s:d,s:d,s:O,s:O,s:O,s:l}",
+        ("OOO{s:O,s:O,s:O,s:O,s:d,s:d,s:d,s:d,s:d,s:d,s:O,s:O,s:O,s:i}",
          PyArray_Return(beta), PyArray_Return(sd_beta),
          PyArray_Return(cov_beta), "delta", PyArray_Return(deltaA), "eps",
          PyArray_Return(epsA), "xplus", PyArray_Return(xplusA), "y",
@@ -551,7 +551,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
 
   if (kwds == NULL)
     {
-      if (!PyArg_ParseTuple(args, "OOOO|OOOOOOOllz#z#ldddlOOOOOOi:odr",
+      if (!PyArg_ParseTuple(args, "OOOO|OOOOOOOiiz#z#idddiOOOOOOi:odr",
                             &fcn, &initbeta, &py, &px, &pwe, &pwd,
                             &fjacb, &fjacd, &extra_args, &pifixb, &pifixx,
                             &job, &iprint, &errfile, &lerrfile, &rptfile,
@@ -565,7 +565,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
   else
     {
       if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                       "OOOO|OOOOOOOllz#z#ldddlOOOOOOi:odr",
+                                       "OOOO|OOOOOOOiiz#z#idddiOOOOOOi:odr",
                                        kw_list, &fcn, &initbeta, &py, &px,
                                        &pwe, &pwd, &fjacb, &fjacd,
                                        &extra_args, &pifixb, &pifixx, &job,
@@ -1326,7 +1326,7 @@ static void check_args(int n, int m, int np, int nq,
 
   printdict =
     Py_BuildValue
-    ("{s:l,s:l,s:l,s:l,s:O,s:O,s:l,s:O,s:l,s:O,s:l,s:l,s:O,s:l,s:l,s:O,s:O,s:l,s:l,s:l,s:d,s:d,s:d,s:l,s:O,s:O,s:l,s:O,s:O,s:l,s:O,s:l,s:O,s:l,s:l}",
+    ("{s:i,s:i,s:i,s:i,s:O,s:O,s:i,s:O,s:i,s:O,s:i,s:i,s:O,s:i,s:i,s:O,s:O,s:i,s:i,s:i,s:d,s:d,s:d,s:i,s:O,s:O,s:i,s:O,s:O,s:i,s:O,s:i,s:O,s:i,s:i}",
      "n", n, "m", m, "np", np, "nq", nq, "beta", (PyObject *) beta, "y",
      (PyObject *) y, "ldy", ldy, "x", (PyObject *) x, "ldx", ldx, "we",
      (PyObject *) we, "ldwe", ldwe, "ld2we", ld2we, "wd", (PyObject *) wd,
