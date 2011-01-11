@@ -132,7 +132,7 @@ class TestEigVals(TestCase):
         assert_array_almost_equal(w,exact_w)
 
 
-class TestEig(TestCase):
+class TestEig(object):
 
     def test_simple(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
@@ -154,6 +154,16 @@ class TestEig(TestCase):
         for i in range(3):
             assert_array_almost_equal(dot(transpose(a),v[:,i]),w[i]*v[:,i])
 
+    def test_simple_complex_eig(self):
+        a = [[1,2],[-2,1]]
+        w,vl,vr = eig(a,left=1,right=1)
+        assert_array_almost_equal(w, array([1+2j, 1-2j]))
+        for i in range(2):
+            assert_array_almost_equal(dot(a,vr[:,i]),w[i]*vr[:,i])
+        for i in range(2):
+            assert_array_almost_equal(dot(conjugate(transpose(a)),vl[:,i]),
+                                      conjugate(w[i])*vl[:,i])
+
     def test_simple_complex(self):
         a = [[1,2,3],[1,2,3],[2,5,6+1j]]
         w,vl,vr = eig(a,left=1,right=1)
@@ -163,16 +173,9 @@ class TestEig(TestCase):
             assert_array_almost_equal(dot(conjugate(transpose(a)),vl[:,i]),
                                       conjugate(w[i])*vl[:,i])
 
-    def test_singular(self):
-        """Test singular pair"""
-        # Example taken from
-        # http://www.cs.umu.se/research/nla/singular_pairs/guptri/matlab.html
-        A = array(( [22,34,31,31,17], [45,45,42,19,29], [39,47,49,26,34],
-            [27,31,26,21,15], [38,44,44,24,30]))
-
-        B = array(( [13,26,25,17,24], [31,46,40,26,37], [26,40,19,25,25],
-            [16,25,27,14,23], [24,35,18,21,22]))
-
+    def _check_gen_eig(self, A, B):
+        A, B = asarray(A), asarray(B)
+        msg = "\n%r\n%r" % (A, B)
         w, vr = eig(A,B)
         wt = eigvals(A,B)
         val1 = dot(A, vr)
@@ -180,11 +183,21 @@ class TestEig(TestCase):
         res = val1 - val2
         for i in range(res.shape[1]):
             if all(isfinite(res[:, i])):
-                assert_array_almost_equal(res[:, i], 0)
+                assert_array_almost_equal(res[:, i], 0, err_msg=msg)
 
-        # Disable this test, which fails now, and is not really necessary if the above
-        # succeeds ?
-        #assert_array_almost_equal(w[isfinite(w)], wt[isfinite(w)])
+        assert_array_almost_equal(sort(w[isfinite(w)]), sort(wt[isfinite(wt)]),
+                                  err_msg=msg)
+
+    def test_singular(self):
+        """Test singular pair"""
+        # Example taken from
+        # http://www.cs.umu.se/research/nla/singular_pairs/guptri/matlab.html
+        A = array(( [22,34,31,31,17], [45,45,42,19,29], [39,47,49,26,34],
+            [27,31,26,21,15], [38,44,44,24,30]))
+        B = array(( [13,26,25,17,24], [31,46,40,26,37], [26,40,19,25,25],
+            [16,25,27,14,23], [24,35,18,21,22]))
+
+        self._check_gen_eig(A, B)
 
     def test_falker(self):
         """Test matrices giving some Nan generalized eigen values."""
@@ -195,16 +208,30 @@ class TestEig(TestCase):
         I = identity(3)
         A = bmat([[I,Z],[Z,-K]])
         B = bmat([[Z,I],[M,D]])
-        A = asarray(A)
-        B = asarray(B)
 
-        w, vr = eig(A,B)
-        val1 = dot(A, vr)
-        val2 = dot(B, vr) * w
-        res = val1 - val2
-        for i in range(res.shape[1]):
-            if all(isfinite(res[:, i])):
-                assert_array_almost_equal(res[:, i], 0)
+        self._check_gen_eig(A, B)
+
+    def test_bad_geneig(self):
+        # Ticket #709 (strange return values from DGGEV)
+
+        def matrices(omega):
+            c1 = -9 + omega**2
+            c2 = 2*omega
+            A = [[1, 0,  0,  0],
+                 [0, 1,  0,  0],
+                 [0, 0,  c1, 0],
+                 [0, 0,  0, c1]]
+            B = [[0, 0,  1,   0],
+                 [0, 0,  0,   1],
+                 [1, 0,  0, -c2],
+                 [0, 1, c2,   0]]
+            return A, B
+
+        # With a buggy LAPACK, this can fail for different omega on different
+        # machines -- so we need to test several values
+        for k in xrange(100):
+            A, B = matrices(omega=k*5./100)
+            self._check_gen_eig(A, B)
 
     def test_not_square_error(self):
         """Check that passing a non-square array raises a ValueError."""
