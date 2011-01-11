@@ -1,11 +1,11 @@
 /* This file should be included into the _multipackmodule file */
 /* $Revision$ */
 /* module_methods:
-  {"_qagse", quadpack_qagse, METH_VARARGS, doc_qagse},   
+  {"_qagse", quadpack_qagse, METH_VARARGS, doc_qagse},
   {"_qagie", quadpack_qagie, METH_VARARGS, doc_qagie},
-  {"_qagpe", quadpack_qagpe, METH_VARARGS, doc_qagpe},   
-  {"_qawoe", quadpack_qawoe, METH_VARARGS, doc_qawoe},   
-  {"_qawfe", quadpack_qawfe, METH_VARARGS, doc_qawfe},   
+  {"_qagpe", quadpack_qagpe, METH_VARARGS, doc_qagpe},
+  {"_qawoe", quadpack_qawoe, METH_VARARGS, doc_qawoe},
+  {"_qawfe", quadpack_qawfe, METH_VARARGS, doc_qawfe},
   {"_qawse", quadpack_qawse, METH_VARARGS, doc_qawse},
   {"_qawce", quadpack_qawce, METH_VARARGS, doc_qawce},
  */
@@ -76,16 +76,16 @@ double quad_function(double *x) {
   /* Build argument list */
   if ((arg1 = PyTuple_New(1)) == NULL) goto fail;
 
-  PyTuple_SET_ITEM(arg1, 0, PyFloat_FromDouble(*x)); 
+  PyTuple_SET_ITEM(arg1, 0, PyFloat_FromDouble(*x));
                 /* arg1 now owns reference to Float object*/
   if ((arglist = PySequence_Concat( arg1, quadpack_extra_arguments)) == NULL) goto fail;
-    
+
   /* Call function object --- stored as a global variable.  Extra
           arguments are in another global variable.
    */
   if ((result = PyEval_CallObject(quadpack_python_function, arglist))==NULL) goto fail;
 
-  /* Have to do own error checking because PyFloat_AsDouble returns -1 on 
+  /* Have to do own error checking because PyFloat_AsDouble returns -1 on
      error -- making that return value from the function unusable.
 
      No; Solution is to test for Python Error Occurrence if -1 is return of PyFloat_AsDouble.
@@ -119,7 +119,8 @@ static PyObject *quadpack_qagse(PyObject *dummy, PyObject *args) {
   PyObject *extra_args = NULL;
   PyObject *fcn;
 
-  npy_intp limit=50;
+  int      limit=50;
+  npy_intp limit_shape[1];
   int      full_output = 0;
   double   a, b, epsabs=1.49e-8, epsrel=1.49e-8;
   int      neval=0, ier=6, last=0, *iord;
@@ -129,19 +130,20 @@ static PyObject *quadpack_qagse(PyObject *dummy, PyObject *args) {
   STORE_VARS();
 
   if (!PyArg_ParseTuple(args, "Odd|Oiddi", &fcn, &a, &b, &extra_args, &full_output, &epsabs, &epsrel, &limit)) return NULL;
+  limit_shape[0] = limit;
 
   /* Need to check that limit is bigger than 1 */
-  if (limit < 1) 
+  if (limit < 1)
     return Py_BuildValue("ddi",result,abserr,ier);
 
   QUAD_INIT_FUNC(fcn,extra_args)
 
   /* Setup iwork and work arrays */
-  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_INT);
-  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
+  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_INT);
+  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
   if (ap_iord == NULL || ap_alist == NULL || ap_blist == NULL || ap_rlist == NULL || ap_elist == NULL) goto fail;
   iord = (int *)ap_iord->data;
   alist = (double *)ap_alist->data;
@@ -167,7 +169,7 @@ static PyObject *quadpack_qagse(PyObject *dummy, PyObject *args) {
   if (full_output) {
     return Py_BuildValue("dd{s:i,s:i,s:N,s:N,s:N,s:N,s:N}i", result, abserr, "neval", neval, "last", last, "iord", PyArray_Return(ap_iord), "alist", PyArray_Return(ap_alist), "blist", PyArray_Return(ap_blist), "rlist", PyArray_Return(ap_rlist), "elist", PyArray_Return(ap_elist),ier);
   }
-  else {    
+  else {
     Py_DECREF(ap_alist);
     Py_DECREF(ap_blist);
     Py_DECREF(ap_rlist);
@@ -198,16 +200,18 @@ static PyObject *quadpack_qagie(PyObject *dummy, PyObject *args) {
   PyObject *extra_args = NULL;
   PyObject *fcn;
 
-  npy_intp limit=50;
+  int      limit=50;
+  npy_intp limit_shape[1];
   int      full_output = 0;
   double   bound, epsabs=1.49e-8, epsrel=1.49e-8;
   int      inf, neval=0, ier=6, last=0, *iord;
   double   result=0.0, abserr=0.0;
   double   *alist, *blist, *rlist, *elist;
-  
+
   STORE_VARS();
-  
+
   if (!PyArg_ParseTuple(args, "Odi|Oiddi", &fcn, &bound, &inf, &extra_args, &full_output, &epsabs, &epsrel, &limit)) return NULL;
+  limit_shape[0] = limit;
 
   /* Need to check that limit is bigger than 1 */
   if (limit < 1)
@@ -216,11 +220,11 @@ static PyObject *quadpack_qagie(PyObject *dummy, PyObject *args) {
   QUAD_INIT_FUNC(fcn,extra_args);
 
   /* Setup iwork and work arrays */
-  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_INT);
-  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
+  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_INT);
+  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
   if (ap_iord == NULL || ap_alist == NULL || ap_blist == NULL || ap_rlist == NULL || ap_elist == NULL) goto fail;
   iord = (int *)ap_iord->data;
   alist = (double *)ap_alist->data;
@@ -247,7 +251,7 @@ static PyObject *quadpack_qagie(PyObject *dummy, PyObject *args) {
   if (full_output) {
     return Py_BuildValue("dd{s:i,s:i,s:N,s:N,s:N,s:N,s:N}i", result, abserr, "neval", neval, "last", last, "iord", PyArray_Return(ap_iord), "alist", PyArray_Return(ap_alist), "blist", PyArray_Return(ap_blist), "rlist", PyArray_Return(ap_rlist), "elist", PyArray_Return(ap_elist),ier);
   }
-  else {    
+  else {
     Py_DECREF(ap_alist);
     Py_DECREF(ap_blist);
     Py_DECREF(ap_rlist);
@@ -281,7 +285,8 @@ static PyObject *quadpack_qagpe(PyObject *dummy, PyObject *args) {
   PyObject *extra_args = NULL;
   PyObject *fcn, *o_points;
 
-  npy_intp limit=50, npts2;
+  int      limit=50, npts2;
+  npy_intp limit_shape[1], npts2_shape[1];
   int      full_output = 0;
   double   a, b, epsabs=1.49e-8, epsrel=1.49e-8;
   int      neval=0, ier=6, last=0, *iord;
@@ -293,6 +298,7 @@ static PyObject *quadpack_qagpe(PyObject *dummy, PyObject *args) {
   STORE_VARS();
 
   if (!PyArg_ParseTuple(args, "OddO|Oiddi", &fcn, &a, &b, &o_points, &extra_args, &full_output, &epsabs, &epsrel, &limit)) return NULL;
+  limit_shape[0] = limit;
 
   /* Need to check that limit is bigger than 1 */
   if (limit < 1)
@@ -303,17 +309,18 @@ static PyObject *quadpack_qagpe(PyObject *dummy, PyObject *args) {
   ap_points = (PyArrayObject *)PyArray_ContiguousFromObject(o_points, PyArray_DOUBLE, 1, 1);
   if (ap_points == NULL) goto fail;
   npts2 = ap_points->dimensions[0];
+  npts2_shape[0] = npts2;
   points = (double *)ap_points->data;
 
   /* Setup iwork and work arrays */
-  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_INT);
-  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_pts = (PyArrayObject *)PyArray_SimpleNew(1,&npts2,PyArray_DOUBLE);
-  ap_level = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_ndin = (PyArrayObject *)PyArray_SimpleNew(1,&npts2,PyArray_DOUBLE);
+  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_INT);
+  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_pts = (PyArrayObject *)PyArray_SimpleNew(1,npts2_shape,PyArray_DOUBLE);
+  ap_level = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_ndin = (PyArrayObject *)PyArray_SimpleNew(1,npts2_shape,PyArray_DOUBLE);
   if (ap_iord == NULL || ap_alist == NULL || ap_blist == NULL || ap_rlist == NULL || ap_elist == NULL || ap_pts == NULL || ap_level == NULL || ap_ndin == NULL) goto fail;
   iord = (int *)ap_iord->data;
   alist = (double *)ap_alist->data;
@@ -327,7 +334,7 @@ static PyObject *quadpack_qagpe(PyObject *dummy, PyObject *args) {
   if (setjmp(quadpack_jmpbuf)) {
     goto fail;
   }
-  else {    
+  else {
     DQAGPE(quad_function, &a, &b, &npts2, points, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, pts, iord, level, ndin, &last);
   }
 
@@ -343,7 +350,7 @@ static PyObject *quadpack_qagpe(PyObject *dummy, PyObject *args) {
   if (full_output) {
     return Py_BuildValue("dd{s:i,s:i,s:N,s:N,s:N,s:N,s:N,s:N,s:N,s:N}i", result, abserr, "neval", neval, "last", last, "iord", PyArray_Return(ap_iord), "alist", PyArray_Return(ap_alist), "blist", PyArray_Return(ap_blist), "rlist", PyArray_Return(ap_rlist), "elist", PyArray_Return(ap_elist), "pts", PyArray_Return(ap_pts), "level", PyArray_Return(ap_level), "ndin", PyArray_Return(ap_ndin),ier);
   }
-  else {    
+  else {
     Py_DECREF(ap_alist);
     Py_DECREF(ap_blist);
     Py_DECREF(ap_rlist);
@@ -383,7 +390,8 @@ static PyObject *quadpack_qawoe(PyObject *dummy, PyObject *args) {
   PyObject *extra_args = NULL, *o_chebmo = NULL;
   PyObject *fcn;
 
-  npy_intp limit=50, sz[2];
+  int      limit=50;
+  npy_intp limit_shape[1], sz[2];
   int      full_output = 0, maxp1=50, icall=1;
   double   a, b, epsabs=1.49e-8, epsrel=1.49e-8;
   int      neval=0, ier=6, integr=1, last=0, momcom=0, *iord;
@@ -391,10 +399,11 @@ static PyObject *quadpack_qawoe(PyObject *dummy, PyObject *args) {
   double   result=0.0, abserr=0.0, omega=0.0;
   double   *chebmo;
   double   *alist, *blist, *rlist, *elist;
-  
+
   STORE_VARS();
 
   if (!PyArg_ParseTuple(args, "Odddi|OiddiiiiO", &fcn, &a, &b, &omega, &integr, &extra_args, &full_output, &epsabs, &epsrel, &limit, &maxp1, &icall, &momcom, &o_chebmo)) return NULL;
+  limit_shape[0] = limit;
 
   /* Need to check that limit is bigger than 1 */
   if (limit < 1)
@@ -417,12 +426,12 @@ static PyObject *quadpack_qawoe(PyObject *dummy, PyObject *args) {
   chebmo = (double *) ap_chebmo->data;
 
   /* Setup iwork and work arrays */
-  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_INT);
-  ap_nnlog = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_INT);
-  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
+  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_INT);
+  ap_nnlog = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_INT);
+  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
   if (ap_iord == NULL || ap_nnlog == NULL || ap_alist == NULL || ap_blist == NULL || ap_rlist == NULL || ap_elist == NULL) goto fail;
   iord = (int *)ap_iord->data;
   nnlog = (int *)ap_nnlog->data;
@@ -449,7 +458,7 @@ static PyObject *quadpack_qawoe(PyObject *dummy, PyObject *args) {
   if (full_output) {
     return Py_BuildValue("dd{s:i,s:i,s:N,s:N,s:N,s:N,s:N,s:N,s:i,s:N}i", result, abserr, "neval", neval, "last", last, "iord", PyArray_Return(ap_iord), "alist", PyArray_Return(ap_alist), "blist", PyArray_Return(ap_blist), "rlist", PyArray_Return(ap_rlist), "elist", PyArray_Return(ap_elist), "nnlog", PyArray_Return(ap_nnlog), "momcom", momcom, "chebmo", PyArray_Return(ap_chebmo),ier);
   }
-  else {    
+  else {
     Py_DECREF(ap_alist);
     Py_DECREF(ap_blist);
     Py_DECREF(ap_rlist);
@@ -487,7 +496,8 @@ static PyObject *quadpack_qawfe(PyObject *dummy, PyObject *args) {
   PyObject *extra_args = NULL;
   PyObject *fcn;
 
-  npy_intp limlst = 50, limit=50, sz[2];
+  int      limlst = 50, limit=50;
+  npy_intp limlst_shape[1], limit_shape[1], sz[2];
   int      full_output = 0, maxp1=50;
   double   a, epsabs=1.49e-8;
   int      neval=0, ier=6, integr=1, *iord;
@@ -499,6 +509,8 @@ static PyObject *quadpack_qawfe(PyObject *dummy, PyObject *args) {
   STORE_VARS();
 
   if (!PyArg_ParseTuple(args, "Oddi|Oidiii", &fcn, &a, &omega, &integr, &extra_args, &full_output, &epsabs, &limlst, &limit, &maxp1)) return NULL;
+  limit_shape[0] = limit;
+  limlst_shape[0] = limlst;
 
   /* Need to check that limit is bigger than 1 */
   if (limit < 1)
@@ -513,15 +525,15 @@ static PyObject *quadpack_qawfe(PyObject *dummy, PyObject *args) {
   chebmo = (double *) ap_chebmo->data;
 
   /* Setup iwork and work arrays */
-  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_INT);
-  ap_nnlog = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_INT);
-  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_rslst = (PyArrayObject *)PyArray_SimpleNew(1,&limlst,PyArray_DOUBLE);
-  ap_erlst = (PyArrayObject *)PyArray_SimpleNew(1,&limlst,PyArray_DOUBLE);
-  ap_ierlst = (PyArrayObject *)PyArray_SimpleNew(1,&limlst,PyArray_INT);
+  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_INT);
+  ap_nnlog = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_INT);
+  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_rslst = (PyArrayObject *)PyArray_SimpleNew(1,limlst_shape,PyArray_DOUBLE);
+  ap_erlst = (PyArrayObject *)PyArray_SimpleNew(1,limlst_shape,PyArray_DOUBLE);
+  ap_ierlst = (PyArrayObject *)PyArray_SimpleNew(1,limlst_shape,PyArray_INT);
   if (ap_iord == NULL || ap_nnlog == NULL || ap_alist == NULL || ap_blist == NULL || ap_rlist == NULL || ap_elist == NULL || ap_rslst == NULL || ap_erlst == NULL || ap_ierlst == NULL) goto fail;
   iord = (int *)ap_iord->data;
   nnlog = (int *)ap_nnlog->data;
@@ -558,7 +570,7 @@ static PyObject *quadpack_qawfe(PyObject *dummy, PyObject *args) {
   if (full_output) {
     return Py_BuildValue("dd{s:i,s:i,s:N,s:N,s:N}i", result, abserr, "neval", neval, "lst", lst, "rslst", PyArray_Return(ap_rslst), "erlst", PyArray_Return(ap_erlst), "ierlst", PyArray_Return(ap_ierlst), ier);
   }
-  else {    
+  else {
     Py_DECREF(ap_rslst);
     Py_DECREF(ap_erlst);
     Py_DECREF(ap_ierlst);
@@ -593,7 +605,8 @@ static PyObject *quadpack_qawce(PyObject *dummy, PyObject *args) {
   PyObject *extra_args = NULL;
   PyObject *fcn;
 
-  npy_intp limit=50;
+  int      limit;
+  npy_intp limit_shape[1];
   int      full_output = 0;
   double   a, b, c, epsabs=1.49e-8, epsrel=1.49e-8;
   int      neval=0, ier=6, last=0, *iord;
@@ -601,8 +614,9 @@ static PyObject *quadpack_qawce(PyObject *dummy, PyObject *args) {
   double   *alist, *blist, *rlist, *elist;
 
   STORE_VARS();
-  
+
   if (!PyArg_ParseTuple(args, "Oddd|Oiddi", &fcn, &a, &b, &c, &extra_args, &full_output, &epsabs, &epsrel, &limit)) return NULL;
+  limit_shape[0] = limit;
 
   /* Need to check that limit is bigger than 1 */
   if (limit < 1)
@@ -611,11 +625,11 @@ static PyObject *quadpack_qawce(PyObject *dummy, PyObject *args) {
   QUAD_INIT_FUNC(fcn,extra_args)
 
   /* Setup iwork and work arrays */
-  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_INT);
-  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
+  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_INT);
+  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
   if (ap_iord == NULL || ap_alist == NULL || ap_blist == NULL || ap_rlist == NULL || ap_elist == NULL) goto fail;
   iord = (int *)ap_iord->data;
   alist = (double *)ap_alist->data;
@@ -641,7 +655,7 @@ static PyObject *quadpack_qawce(PyObject *dummy, PyObject *args) {
   if (full_output) {
     return Py_BuildValue("dd{s:i,s:i,s:N,s:N,s:N,s:N,s:N}i", result, abserr, "neval", neval, "last", last, "iord", PyArray_Return(ap_iord), "alist", PyArray_Return(ap_alist), "blist", PyArray_Return(ap_blist), "rlist", PyArray_Return(ap_rlist), "elist", PyArray_Return(ap_elist),ier);
   }
-  else {    
+  else {
     Py_DECREF(ap_alist);
     Py_DECREF(ap_blist);
     Py_DECREF(ap_rlist);
@@ -674,7 +688,8 @@ static PyObject *quadpack_qawse(PyObject *dummy, PyObject *args) {
   PyObject *fcn;
 
   int      full_output = 0, integr;
-  npy_intp limit=50;
+  int      limit=50;
+  npy_intp limit_shape[1];
   double   a, b, epsabs=1.49e-8, epsrel=1.49e-8;
   double   alfa, beta;
   int      neval=0, ier=6, last=0, *iord;
@@ -682,8 +697,9 @@ static PyObject *quadpack_qawse(PyObject *dummy, PyObject *args) {
   double   *alist, *blist, *rlist, *elist;
 
   STORE_VARS();
-  
+
   if (!PyArg_ParseTuple(args, "Odd(dd)i|Oiddi", &fcn, &a, &b, &alfa, &beta, &integr, &extra_args, &full_output, &epsabs, &epsrel, &limit)) return NULL;
+  limit_shape[0] = limit;
 
   /* Need to check that limit is bigger than 1 */
   if (limit < 1)
@@ -692,11 +708,11 @@ static PyObject *quadpack_qawse(PyObject *dummy, PyObject *args) {
   QUAD_INIT_FUNC(fcn,extra_args)
 
   /* Setup iwork and work arrays */
-  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_INT);
-  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
-  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,&limit,PyArray_DOUBLE);
+  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_INT);
+  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
   if (ap_iord == NULL || ap_alist == NULL || ap_blist == NULL || ap_rlist == NULL || ap_elist == NULL) goto fail;
   iord = (int *)ap_iord->data;
   alist = (double *)ap_alist->data;
@@ -722,7 +738,7 @@ static PyObject *quadpack_qawse(PyObject *dummy, PyObject *args) {
   if (full_output) {
     return Py_BuildValue("dd{s:i,s:i,s:N,s:N,s:N,s:N,s:N}i", result, abserr, "neval", neval, "last", last, "iord", PyArray_Return(ap_iord), "alist", PyArray_Return(ap_alist), "blist", PyArray_Return(ap_blist), "rlist", PyArray_Return(ap_rlist), "elist", PyArray_Return(ap_elist),ier);
   }
-  else {    
+  else {
     Py_DECREF(ap_alist);
     Py_DECREF(ap_blist);
     Py_DECREF(ap_rlist);
