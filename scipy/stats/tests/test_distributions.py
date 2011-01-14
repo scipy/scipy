@@ -560,9 +560,11 @@ class TestFrozen(TestCase):
         assert_equal(m1, m2)
 
 class TestExpect(TestCase):
-    """Test for expect method, continuous distributions only.
+    """Test for expect method.
 
-    Uses normal distribution and beta distribution for finite bounds.
+    Uses normal distribution and beta distribution for finite bounds, and
+    hypergeom for discrete distribution with finite support
+
     """
     def test_norm(self):
         v = stats.norm.expect(lambda x: (x-5)*(x-5), loc=5, scale=2)
@@ -601,6 +603,54 @@ class TestExpect(TestCase):
         prob90c = stats.beta.expect(lambda x: 1, args=(10,10), loc=5,
                                     scale=2, lb=lb, ub=ub, conditional=True)
         assert_almost_equal(prob90c, 1., decimal=14)
+
+
+    def test_hypergeom(self):
+        #test case with finite bounds
+
+        #without specifying bounds
+        m_true, v_true = stats.hypergeom.stats(20, 10, 8, loc=5.)
+        m = stats.hypergeom.expect(lambda x: x, args=(20, 10, 8), loc=5.)
+        assert_almost_equal(m, m_true, decimal=14)
+        
+        v = stats.hypergeom.expect(lambda x: (x-9.)**2, args=(20, 10, 8),
+                                   loc=5.)
+        assert_almost_equal(v, v_true, decimal=14)
+
+        #with bounds, bounds equal to shifted support
+        v_bounds = stats.hypergeom.expect(lambda x: (x-9.)**2, args=(20, 10, 8),
+                                          loc=5., lb=5, ub=13)
+        assert_almost_equal(v_bounds, v_true, decimal=14)
+
+        #drop boundary points
+        prob_true = 1-stats.hypergeom.pmf([5, 13], 20, 10, 8, loc=5).sum()
+        prob_bounds = stats.hypergeom.expect(lambda x: 1, args=(20, 10, 8),
+                                          loc=5., lb=6, ub=12)
+        assert_almost_equal(prob_bounds, prob_true, decimal=14)
+
+        #conditional
+        prob_bc = stats.hypergeom.expect(lambda x: 1, args=(20, 10, 8), loc=5.,
+                                           lb=6, ub=12, conditional=True)
+        assert_almost_equal(prob_bc, 1, decimal=14)
+
+        #check simple integral
+        prob_b = stats.hypergeom.expect(lambda x: 1, args=(20, 10, 8),
+                                        lb=0, ub=8)
+        assert_almost_equal(prob_b, 1, decimal=14)
+
+    def test_poisson(self):
+        #poisson, use lower bound only
+        prob_bounds = stats.poisson.expect(lambda x: 1, args=(2,), lb=3,
+                                      conditional=False)
+        prob_b_true = 1-stats.poisson.cdf(2,2)
+        assert_almost_equal(prob_bounds, prob_b_true, decimal=14)
+        
+
+        prob_lb = stats.poisson.expect(lambda x: 1, args=(2,), lb=2,
+                                       conditional=True)
+        assert_almost_equal(prob_lb, 1, decimal=14)
+
+        
 
 
 

@@ -5582,10 +5582,18 @@ class rv_discrete(rv_generic):
         self._argcheck(*args) # (re)generate scalar self.a and self.b
         if lb is None:
             lb = (self.a)
+        else:
+            lb = lb - loc   #convert bound for standardized distribution
         if ub is None:
             ub = (self.b)
+        else:
+            ub = ub - loc   #convert bound for standardized distribution
         if conditional:
-            invfac = self.sf(lb,*args) - self.sf(ub+1,*args)
+            if np.isposinf(ub)[()]:
+                #work around bug: stats.poisson.sf(stats.poisson.b, 2) is nan
+                invfac = 1 - self.cdf(lb-1,*args)
+            else:
+                invfac = 1 - self.cdf(lb-1,*args) - self.sf(ub,*args)
         else:
             invfac = 1.0
 
