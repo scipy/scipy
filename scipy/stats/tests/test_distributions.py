@@ -559,6 +559,50 @@ class TestFrozen(TestCase):
         # the focus of this test.
         assert_equal(m1, m2)
 
+class TestExpect(TestCase):
+    """Test for expect method, continuous distributions only.
+
+    Uses normal distribution and beta distribution for finite bounds.
+    """
+    def test_norm(self):
+        v = stats.norm.expect(lambda x: (x-5)*(x-5), loc=5, scale=2)
+        assert_almost_equal(v, 4, decimal=14)
+
+        m = stats.norm.expect(lambda x: (x), loc=5, scale=2)
+        assert_almost_equal(m, 5, decimal=14)
+
+        lb = stats.norm.ppf(0.05, loc=5, scale=2)
+        ub = stats.norm.ppf(0.95, loc=5, scale=2)
+        prob90 = stats.norm.expect(lambda x: 1, loc=5, scale=2, lb=lb, ub=ub)
+        assert_almost_equal(prob90, 0.9, decimal=14)
+        
+        prob90c = stats.norm.expect(lambda x: 1, loc=5, scale=2, lb=lb, ub=ub,
+                                    conditional=True)
+        assert_almost_equal(prob90c, 1., decimal=14)
+
+    def test_beta(self):
+        #case with finite support interval
+##        >>> mtrue, vtrue = stats.beta.stats(10,5, loc=5., scale=2.)
+##        >>> mtrue, vtrue
+##        (array(6.333333333333333), array(0.055555555555555552))
+        v = stats.beta.expect(lambda x: (x-19/3.)*(x-19/3.), args=(10,5),
+                              loc=5, scale=2)
+        assert_almost_equal(v, 1./18., decimal=14)
+
+        m = stats.beta.expect(lambda x: x, args=(10,5), loc=5., scale=2.)
+        assert_almost_equal(m, 19/3., decimal=14)
+
+        ub = stats.beta.ppf(0.95, 10, 10, loc=5, scale=2)
+        lb = stats.beta.ppf(0.05, 10, 10, loc=5, scale=2)
+        prob90 = stats.beta.expect(lambda x: 1., args=(10,10), loc=5.,
+                                   scale=2.,lb=lb, ub=ub, conditional=False)
+        assert_almost_equal(prob90, 0.9, decimal=14)
+        
+        prob90c = stats.beta.expect(lambda x: 1, args=(10,10), loc=5,
+                                    scale=2, lb=lb, ub=ub, conditional=True)
+        assert_almost_equal(prob90c, 1., decimal=14)
+
+
 
 def test_regression_ticket_1316():
     """Regression test for ticket #1316."""
