@@ -158,33 +158,40 @@ distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
 
 def test_cont_basic():
     # this test skips slow distributions
-    for distname, arg in distcont[:]:
-        if distname in distslow: continue
-        distfn = getattr(stats, distname)
-        np.random.seed(765456)
-        sn = 1000
-        rvs = distfn.rvs(size=sn,*arg)
-        sm = rvs.mean()
-        sv = rvs.var()
-        skurt = stats.kurtosis(rvs)
-        sskew = stats.skew(rvs)
-        m,v = distfn.stats(*arg)
+    olderr = np.seterr(all='ignore')
+    try:
+        for distname, arg in distcont[:]:
+            if distname in distslow:
+                continue
+            distfn = getattr(stats, distname)
+            np.random.seed(765456)
+            sn = 1000
+            rvs = distfn.rvs(size=sn,*arg)
+            sm = rvs.mean()
+            sv = rvs.var()
+            skurt = stats.kurtosis(rvs)
+            sskew = stats.skew(rvs)
+            m,v = distfn.stats(*arg)
 
-        yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
-              'sample mean test'
-        # the sample skew kurtosis test has known failures, not very good distance measure
-        #yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
-        yield check_moment, distfn, arg, m, v, distname
-        yield check_cdf_ppf, distfn, arg, distname
-        yield check_sf_isf, distfn, arg, distname
-        yield check_pdf, distfn, arg, distname
-        if distname in ['wald']: continue
-        yield check_pdf_logpdf, distfn, arg, distname
-        yield check_cdf_logcdf, distfn, arg, distname
-        yield check_sf_logsf, distfn, arg, distname
-        if distname in distmissing:
-            alpha = 0.01
-            yield check_distribution_rvs, distname, arg, alpha, rvs
+            yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
+                  'sample mean test'
+            # the sample skew kurtosis test has known failures, not very good distance measure
+            #yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
+            yield check_moment, distfn, arg, m, v, distname
+            yield check_cdf_ppf, distfn, arg, distname
+            yield check_sf_isf, distfn, arg, distname
+            yield check_pdf, distfn, arg, distname
+            if distname in ['wald']:
+                continue
+            yield check_pdf_logpdf, distfn, arg, distname
+            yield check_cdf_logcdf, distfn, arg, distname
+            yield check_sf_logsf, distfn, arg, distname
+            if distname in distmissing:
+                alpha = 0.01
+                yield check_distribution_rvs, distname, arg, alpha, rvs
+    finally:
+        np.seterr(**olderr)
+
 
 @npt.dec.slow
 def test_cont_basic_slow():

@@ -21,8 +21,8 @@ distdiscrete = [
     ['planck',   (0.51,)],   #4.1
     ['poisson',  (0.6,)],
     ['randint',  (7, 31)],
-    ['skellam',  (15, 8)],
-    ['zipf',     (4,)] ]   # arg=4 is ok,
+    ['skellam',  (15, 8)]]
+#    ['zipf',     (4,)] ]   # arg=4 is ok,
                            # Zipf broken for arg = 2, e.g. weird .stats
                            # looking closer, mean, var should be inf for arg=2
 
@@ -43,15 +43,23 @@ def test_discrete_basic():
         yield check_cdf_ppf, distfn, arg, distname + ' cdf_ppf'
         yield check_cdf_ppf2, distfn, arg, supp, distname + ' cdf_ppf'
         yield check_pmf_cdf, distfn, arg, distname + ' pmf_cdf'
-        yield check_oth, distfn, arg, distname + ' oth'
-        skurt = stats.kurtosis(rvs)
-        sskew = stats.skew(rvs)
-        yield check_sample_skew_kurt, distfn, arg, skurt, sskew, \
-                      distname + ' skew_kurt'
-        if not distname in ['']:#['logser']:  #known failure, fixed
+
+        # zipf doesn't fail, but generates floating point warnings.
+        # Should be checked.
+        if not distname in ['zipf']:
+            yield check_oth, distfn, arg, distname + ' oth'
+            skurt = stats.kurtosis(rvs)
+            sskew = stats.skew(rvs)
+            yield check_sample_skew_kurt, distfn, arg, skurt, sskew, \
+                          distname + ' skew_kurt'
+
+        # dlaplace doesn't fail, but generates lots of floating point warnings.
+        # Should be checked.
+        if not distname in ['dlaplace']: #['logser']:  #known failure, fixed
             alpha = 0.01
             yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
                           distname + ' chisquare'
+
 
 @npt.dec.slow
 def test_discrete_extra():
@@ -252,7 +260,7 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
     cdfs = distfn.cdf(distsupp,*arg)
     (chis,pval) = stats.chisquare(np.array(freq),n*distmass)
 
-    npt.assert_(pval > alpha, 'chisquare - test for %s' 
+    npt.assert_(pval > alpha, 'chisquare - test for %s'
            ' at arg = %s with pval = %s' % (msg,str(arg),str(pval)))
 
 

@@ -3,6 +3,8 @@
 # Further enhancements and tests added by numerous SciPy developers.
 #
 
+import warnings
+
 from numpy.testing import TestCase, run_module_suite, assert_array_equal, \
     assert_almost_equal, assert_array_less, assert_array_almost_equal, \
     assert_raises
@@ -62,7 +64,11 @@ class TestAnderson(TestCase):
         x2 = rs.standard_normal(size=50)
         A,crit,sig = stats.anderson(x1,'expon')
         assert_array_less(A, crit[-2:])
-        A,crit,sig = stats.anderson(x2,'expon')
+        olderr = np.seterr(all='ignore')
+        try:
+            A,crit,sig = stats.anderson(x2,'expon')
+        finally:
+            np.seterr(**olderr)
         assert_array_less(crit[:-1], A)
 
     def test_bad_arg(self):
@@ -96,6 +102,9 @@ class TestAnsari(TestCase):
         assert_raises(ValueError, stats.ansari, [], [1])
         assert_raises(ValueError, stats.ansari, [1], [])
 
+warnings.filterwarnings('ignore',
+                        message="Ties preclude use of exact statistic.")
+
 
 class TestBartlett(TestCase):
 
@@ -124,7 +133,7 @@ class TestLevene(TestCase):
         W2, pval2 = stats.levene(g1, g2, g3, center='trimmed', proportiontocut=0.0)
         assert_almost_equal(W1, W2)
         assert_almost_equal(pval1, pval2)
-    
+
     def test_trimmed2(self):
         x = [1.2, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 100.0]
         y = [0.0, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 200.0]
@@ -141,7 +150,7 @@ class TestLevene(TestCase):
         y = x**3
         W1, pval1 = stats.levene(x, y, center='mean')
         W2, pval2 = stats.levene(x, y, center='median')
-        assert_almost_equal(W1, W2)        
+        assert_almost_equal(W1, W2)
         assert_almost_equal(pval1, pval2)
 
     def test_bad_keyword(self):
@@ -151,7 +160,7 @@ class TestLevene(TestCase):
     def test_bad_center_value(self):
         x = np.linspace(-1,1,21)
         assert_raises(ValueError, stats.levene, x, x, center='trim')
-        
+
     def test_too_few_args(self):
         assert_raises(ValueError, stats.levene, [1])
 
@@ -203,7 +212,7 @@ class TestFligner(TestCase):
         Xsq2, pval2 = stats.fligner(g1, g2, g3, center='trimmed', proportiontocut=0.0)
         assert_almost_equal(Xsq1, Xsq2)
         assert_almost_equal(pval1, pval2)
-        
+
     def test_trimmed2(self):
         x = [1.2, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 100.0]
         y = [0.0, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 200.0]
@@ -213,7 +222,7 @@ class TestFligner(TestCase):
         Xsq2, pval2 = stats.fligner(x[1:-1], y[1:-1], center='mean')
         # Result should be the same.
         assert_almost_equal(Xsq1, Xsq2)
-        assert_almost_equal(pval1, pval2) 
+        assert_almost_equal(pval1, pval2)
 
     # The following test looks reasonable at first, but fligner() uses the
     # function stats.rankdata(), and in one of the cases in this test,

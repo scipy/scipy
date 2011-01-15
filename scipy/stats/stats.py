@@ -2437,7 +2437,11 @@ def spearmanr(a, b=None, axis=0):
     n = a.shape[axisout]
     rs = np.corrcoef(ar,br,rowvar=axisout)
 
-    t = rs * np.sqrt((n-2) / ((rs+1.0)*(1.0-rs)))
+    olderr = np.seterr(divide='ignore')  # rs can have elements equal to 1
+    try:
+        t = rs * np.sqrt((n-2) / ((rs+1.0)*(1.0-rs)))
+    finally:
+        np.seterr(**olderr)
     prob = distributions.t.sf(np.abs(t),n-2)*2
 
     if rs.shape == (2,2):

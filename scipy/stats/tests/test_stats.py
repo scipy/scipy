@@ -158,7 +158,11 @@ class TestNanFunc(TestCase):
 
     def test_nanmean_all(self):
         """Check nanmean when all values are nan."""
-        m = stats.nanmean(self.Xall)
+        olderr = np.seterr(all='ignore')
+        try:
+            m = stats.nanmean(self.Xall)
+        finally:
+            np.seterr(**olderr)
         assert_(np.isnan(m))
 
     def test_nanstd_none(self):
@@ -173,7 +177,11 @@ class TestNanFunc(TestCase):
 
     def test_nanstd_all(self):
         """Check nanstd when all values are nan."""
-        s = stats.nanstd(self.Xall)
+        olderr = np.seterr(all='ignore')
+        try:
+            s = stats.nanstd(self.Xall)
+        finally:
+            np.seterr(**olderr)
         assert_(np.isnan(s))
 
     def test_nanstd_negative_axis(self):
@@ -1349,14 +1357,18 @@ def test_ttest_rel():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (3, 2))
 
-    #test zero division problem
-    t,p = stats.ttest_rel([0,0,0],[1,1,1])
-    assert_equal((np.abs(t),p), (np.inf, 0))
-    assert_almost_equal(stats.ttest_rel([0,0,0], [0,0,0]), (1.0, 0.42264973081037421))
+    olderr = np.seterr(all='ignore')
+    try:
+        #test zero division problem
+        t,p = stats.ttest_rel([0,0,0],[1,1,1])
+        assert_equal((np.abs(t),p), (np.inf, 0))
+        assert_almost_equal(stats.ttest_rel([0,0,0], [0,0,0]), (1.0, 0.42264973081037421))
 
-    #check that nan in input array result in nan output
-    anan = np.array([[1,np.nan],[-1,1]])
-    assert_equal(stats.ttest_ind(anan, np.zeros((2,2))),([0, np.nan], [1,np.nan]))
+        #check that nan in input array result in nan output
+        anan = np.array([[1,np.nan],[-1,1]])
+        assert_equal(stats.ttest_ind(anan, np.zeros((2,2))),([0, np.nan], [1,np.nan]))
+    finally:
+        np.seterr(**olderr)
 
 
 def test_ttest_ind():
@@ -1390,16 +1402,18 @@ def test_ttest_ind():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (3, 2))
 
-    #test zero division problem
-    t,p = stats.ttest_ind([0,0,0],[1,1,1])
-    assert_equal((np.abs(t),p), (np.inf, 0))
-    assert_almost_equal(stats.ttest_ind([0,0,0], [0,0,0]), (1.0, 0.37390096630005898))
+    olderr = np.seterr(all='ignore')
+    try:
+        #test zero division problem
+        t,p = stats.ttest_ind([0,0,0],[1,1,1])
+        assert_equal((np.abs(t),p), (np.inf, 0))
+        assert_almost_equal(stats.ttest_ind([0,0,0], [0,0,0]), (1.0, 0.37390096630005898))
 
-    #check that nan in input array result in nan output
-    anan = np.array([[1,np.nan],[-1,1]])
-    assert_equal(stats.ttest_ind(anan, np.zeros((2,2))),([0, np.nan], [1,np.nan]))
-
-
+        #check that nan in input array result in nan output
+        anan = np.array([[1,np.nan],[-1,1]])
+        assert_equal(stats.ttest_ind(anan, np.zeros((2,2))),([0, np.nan], [1,np.nan]))
+    finally:
+        np.seterr(**olderr)
 
 
 def test_ttest_1samp_new():
@@ -1429,14 +1443,19 @@ def test_ttest_1samp_new():
     assert_almost_equal(t1[0,0],t3, decimal=14)
     assert_equal(t1.shape, (n1,n2))
 
-    #test zero division problem
-    t,p = stats.ttest_1samp([0,0,0], 1)
-    assert_equal((np.abs(t),p), (np.inf, 0))
-    assert_almost_equal(stats.ttest_1samp([0,0,0], 0), (1.0, 0.42264973081037421))
+    olderr = np.seterr(all='ignore')
+    try:
+        #test zero division problem
+        t,p = stats.ttest_1samp([0,0,0], 1)
+        assert_equal((np.abs(t),p), (np.inf, 0))
+        assert_almost_equal(stats.ttest_1samp([0,0,0], 0), (1.0, 0.42264973081037421))
 
-    #check that nan in input array result in nan output
-    anan = np.array([[1,np.nan],[-1,1]])
-    assert_equal(stats.ttest_1samp(anan, 0),([0, np.nan], [1,np.nan]))
+        #check that nan in input array result in nan output
+        anan = np.array([[1,np.nan],[-1,1]])
+        assert_equal(stats.ttest_1samp(anan, 0),([0, np.nan], [1,np.nan]))
+    finally:
+        np.seterr(**olderr)
+
 
 def test_describe():
     x = np.vstack((np.ones((3,4)),2*np.ones((2,4))))
@@ -1663,22 +1682,41 @@ class GeoMeanTestCase:
         ''' Test a 1d list with zero element'''
         a=[10, 20, 30, 40, 50, 60, 70, 80, 90, 0]
         b = 0.0 # due to exp(-inf)=0
-        self.do(a, b)
+        olderr = np.seterr(all='ignore')
+        try:
+            self.do(a, b)
+        finally:
+            np.seterr(**olderr)
+
     def test_1darray0(self):
         ''' Test a 1d array with zero element'''
         a=np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
         b = 0.0 # due to exp(-inf)=0
-        self.do(a, b)
+        olderr = np.seterr(all='ignore')
+        try:
+            self.do(a, b)
+        finally:
+            np.seterr(**olderr)
+
     def test_1dma0(self):
         ''' Test a 1d masked array with zero element'''
         a=np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
         b = 41.4716627439
-        self.do(a, b)
+        olderr = np.seterr(all='ignore')
+        try:
+            self.do(a, b)
+        finally:
+            np.seterr(**olderr)
+
     def test_1dmainf(self):
         ''' Test a 1d masked array with negative element'''
         a=np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, -1])
         b = 41.4716627439
-        self.do(a, b)
+        olderr = np.seterr(all='ignore')
+        try:
+            self.do(a, b)
+        finally:
+            np.seterr(**olderr)
 
 class TestGeoMean(GeoMeanTestCase, TestCase):
     def do(self, a, b, axis=None, dtype=None):
