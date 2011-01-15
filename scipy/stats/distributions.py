@@ -2267,7 +2267,10 @@ class chi2_gen(rv_continuous):
     def _pdf(self, x, df):
         return exp(self._logpdf(x, df))
     def _logpdf(self, x, df):
-        return (df/2.-1)*log(x)-x/2.-gamln(df/2.)-(log(2)*df)/2.
+        #term1 = (df/2.-1)*log(x)
+        #term1[(df==2)*(x==0)] = 0
+        #avoid 0*log(0)==nan
+        return (df/2.-1)*log(x+1e-300) - x/2. - gamln(df/2.) - (log(2)*df)/2.
 ##        Px = x**(df/2.0-1)*exp(-x/2.0)
 ##        Px /= special.gamma(df/2.0)* 2**(df/2.0)
 ##        return log(Px)
