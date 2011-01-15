@@ -131,12 +131,15 @@ def create_dir(p):
 def is_writable(dir):
     """Determine whether a given directory is writable in a portable manner.
 
-    :Parameters:
-     - dir: string
-       A string represeting a path to a directory on the filesystem.
+    Parameters
+    ----------
+    dir: str
+        A string represeting a path to a directory on the filesystem.
 
-    :Returns:
-      True or False.
+    Returns
+    -------
+    res : bool
+        True or False.
     """
 
     # Do NOT use a hardcoded name here due to the danger from race conditions

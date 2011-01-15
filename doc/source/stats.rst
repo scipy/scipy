@@ -1,8 +1,8 @@
-.. module:: scipy.stats
-
 ==========================================
 Statistical functions (:mod:`scipy.stats`)
 ==========================================
+
+.. module:: scipy.stats
 
 This module contains a large number of probability distributions as
 well as a growing library of statistical functions.
@@ -62,8 +62,6 @@ Continuous distributions
    foldcauchy
    f
    foldnorm
-   fretchet_r
-   fretcher_l
    genlogistic
    genpareto
    genexpon
@@ -113,7 +111,7 @@ Continuous distributions
    truncnorm
    tukeylambda
    uniform
-   von_mises
+   vonmises
    wald
    weibull_min
    weibull_max
@@ -151,9 +149,7 @@ which work for masked arrays.
 
    gmean
    hmean
-   mean
    cmedian
-   median
    mode
    tmean
    tvar
@@ -186,16 +182,9 @@ which work for masked arrays.
    :toctree: generated/
 
    obrientransform
-   samplevar
-   samplestd
    signaltonoise
    bayes_mvs
-   var
-   std
-   stderr
    sem
-   z
-   zs
    zmap
    zscore
 
@@ -205,8 +194,6 @@ which work for masked arrays.
    threshold
    trimboth
    trim1
-   cov
-   corrcoef
 
 .. autosummary::
    :toctree: generated/
@@ -252,7 +239,6 @@ which work for masked arrays.
    :toctree: generated/
 
    glm
-   anova
 
 Plot-tests
 ==========

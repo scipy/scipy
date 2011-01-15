@@ -46,16 +46,12 @@ is a relatively new package, some API changes are still possible.
    plotting_positions
    pointbiserialr
    rankdata
-   samplestd
-   samplevar
    scoreatpercentile
    sem
    signaltonoise
    skew
    skewtest
    spearmanr
-   std
-   stderr
    theilslopes
    threshold
    tmax
@@ -73,9 +69,7 @@ is a relatively new package, some API changes are still possible.
    ttest_onesamp
    ttest_rel
    tvar
-   var
    variation
    winsorize
-   z
    zmap
-   zs
+   zscore

@@ -66,6 +66,8 @@ Models
 Utilities
 =========
 
+.. automodule:: scipy.maxentropy.maxentutils
+
 .. autosummary::
    :toctree: generated/
 

@@ -160,17 +160,19 @@ def minkowski(u, v, p):
 
        {||u-v||}_p = (\sum{|u_i - v_i|^p})^{1/p}.
 
-    :Parameters:
-       u : ndarray
-           An n-dimensional vector.
-       v : ndarray
-           An n-dimensional vector.
-       p : ndarray
-           The norm of the difference :math:`{||u-v||}_p`.
+    Parameters
+    ----------
+    u : ndarray
+        An n-dimensional vector.
+    v : ndarray
+        An n-dimensional vector.
+    p : ndarray
+        The norm of the difference :math:`{||u-v||}_p`.
 
-    :Returns:
-       d : double
-           The Minkowski distance between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The Minkowski distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -187,19 +189,21 @@ def wminkowski(u, v, p, w):
 
        \left(\sum{(w_i |u_i - v_i|^p)}\right)^{1/p}.
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
-       p : ndarray
-           The norm of the difference :math:`{||u-v||}_p`.
-       w : ndarray
-           The weight vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
+    p : ndarray
+        The norm of the difference :math:`{||u-v||}_p`.
+    w : ndarray
+        The weight vector.
 
-    :Returns:
-       d : double
-           The Minkowski distance between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The Minkowski distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -217,15 +221,17 @@ def euclidean(u, v):
 
        {||u-v||}_2
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
 
-    :Returns:
-       d : double
-           The Euclidean distance between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The Euclidean distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -242,15 +248,17 @@ def sqeuclidean(u, v):
        {||u-v||}_2^2.
 
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
 
-    :Returns:
-       d : double
-           The squared Euclidean distance between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The squared Euclidean distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -266,15 +274,17 @@ def cosine(u, v):
        \frac{1-uv^T}
             {||u||_2 ||v||_2}.
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
 
-    :Returns:
-       d : double
-           The Cosine distance between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The Cosine distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -294,15 +304,17 @@ def correlation(u, v):
     where :math:`\bar{u}` is the mean of a vectors elements and ``n``
     is the common dimensionality of ``u`` and ``v``.
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
 
-    :Returns:
-       d : double
-           The correlation distance between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The correlation distance between vectors ``u`` and ``v``.
     """
     umu = u.mean()
     vmu = v.mean()
@@ -327,15 +339,17 @@ def hamming(u, v):
     :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
     :math:`k < n`.
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
 
-    :Returns:
-       d : double
-           The Hamming distance between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The Hamming distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -355,15 +369,17 @@ def jaccard(u, v):
     :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
     :math:`k < n`.
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
 
-    :Returns:
-       d : double
-           The Jaccard distance between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The Jaccard distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -385,15 +401,17 @@ def kulsinski(u, v):
     :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
     :math:`k < n`.
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
 
-    :Returns:
-       d : double
-           The Kulsinski distance between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The Kulsinski distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -409,15 +427,17 @@ def seuclidean(u, v, V):
     variances. It is usually computed among a larger collection
     vectors.
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
 
-    :Returns:
-       d : double
-           The standardized Euclidean distance between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The standardized Euclidean distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -435,15 +455,17 @@ def cityblock(u, v):
 
        \sum_i {(u_i-v_i)}.
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
 
-    :Returns:
-       d : double
-           The City Block distance between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The City Block distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -460,15 +482,17 @@ def mahalanobis(u, v, VI):
 
     where ``VI`` is the inverse covariance matrix :math:`V^{-1}`.
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
 
-    :Returns:
-       d : double
-           The Mahalanobis distance between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The Mahalanobis distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -484,15 +508,17 @@ def chebyshev(u, v):
 
        \max_i {|u_i-v_i|}.
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
 
-    :Returns:
-       d : double
-           The Chebyshev distance between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The Chebyshev distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -507,15 +533,17 @@ def braycurtis(u, v):
 
        \sum{|u_i-v_i|} / \sum{|u_i+v_i|}.
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
 
-    :Returns:
-       d : double
-           The Bray-Curtis distance between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The Bray-Curtis distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -532,15 +560,17 @@ def canberra(u, v):
             {\sum_i {|u_i|+|v_i|}}.
 
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
 
-    :Returns:
-       d : double
-           The Canberra distance between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The Canberra distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -596,15 +626,17 @@ def yule(u, v):
     :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
     :math:`k < n` and :math:`R = 2.0 * (c_{TF} + c_{FT})`.
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
 
-    :Returns:
-       d : double
-           The Yule dissimilarity between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The Yule dissimilarity between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -624,15 +656,17 @@ def matching(u, v):
     :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
     :math:`k < n`.
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
 
-    :Returns:
-       d : double
-           The Matching dissimilarity between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The Matching dissimilarity between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -653,15 +687,17 @@ def dice(u, v):
     :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
     :math:`k < n`.
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
 
-    :Returns:
-       d : double
-           The Dice dissimilarity between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The Dice dissimilarity between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -685,16 +721,18 @@ def rogerstanimoto(u, v):
     :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
     :math:`k < n` and :math:`R = 2(c_{TF} + c_{FT})`.
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
 
-    :Returns:
-       d : double
-           The Rogers-Tanimoto dissimilarity between vectors
-           ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The Rogers-Tanimoto dissimilarity between vectors
+        `u` and `v`.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -715,15 +753,17 @@ def russellrao(u, v):
     :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
     :math:`k < n`.
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
 
-    :Returns:
-       d : double
-           The Russell-Rao dissimilarity between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The Russell-Rao dissimilarity between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -748,15 +788,17 @@ def sokalmichener(u, v):
     :math:`k < n`, :math:`R = 2 * (c_{TF} + c_{FT})` and
     :math:`S = c_{FF} + c_{TT}`.
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
 
-    :Returns:
-       d : double
-           The Sokal-Michener dissimilarity between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The Sokal-Michener dissimilarity between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -783,15 +825,17 @@ def sokalsneath(u, v):
     :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
     :math:`k < n` and :math:`R = 2(c_{TF} + c_{FT})`.
 
-    :Parameters:
-       u : ndarray
-           An :math:`n`-dimensional vector.
-       v : ndarray
-           An :math:`n`-dimensional vector.
+    Parameters
+    ----------
+    u : ndarray
+        An :math:`n`-dimensional vector.
+    v : ndarray
+        An :math:`n`-dimensional vector.
 
-    :Returns:
-       d : double
-           The Sokal-Sneath dissimilarity between vectors ``u`` and ``v``.
+    Returns
+    -------
+    d : double
+        The Sokal-Sneath dissimilarity between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
@@ -999,34 +1043,36 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
          dm = pdist(X, 'sokalsneath')
 
-    :Parameters:
-       X : ndarray
-           An m by n array of m original observations in an
-           n-dimensional space.
-       metric : string or function
-           The distance metric to use. The distance function can
-           be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
-           'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
-           'jaccard', 'kulsinski', 'mahalanobis', 'matching',
-           'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
-           'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'.
-       w : ndarray
-           The weight vector (for weighted Minkowski).
-       p : double
-           The p-norm to apply (for Minkowski, weighted and unweighted)
-       V : ndarray
-           The variance vector (for standardized Euclidean).
-       VI : ndarray
-           The inverse of the covariance matrix (for Mahalanobis).
+    Parameters
+    ----------
+    X : ndarray
+        An m by n array of m original observations in an
+        n-dimensional space.
+    metric : string or function
+        The distance metric to use. The distance function can
+        be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
+        'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
+        'jaccard', 'kulsinski', 'mahalanobis', 'matching',
+        'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
+        'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'.
+    w : ndarray
+        The weight vector (for weighted Minkowski).
+    p : double
+        The p-norm to apply (for Minkowski, weighted and unweighted)
+    V : ndarray
+            The variance vector (for standardized Euclidean).
+    VI : ndarray
+        The inverse of the covariance matrix (for Mahalanobis).
 
-    :Returns:
-       Y : ndarray
-           A condensed distance matrix.
+    Returns
+    -------
+    Y : ndarray
+        A condensed distance matrix.
 
-    :SeeAlso:
-
-       squareform : converts between condensed distance matrices and
-                    square distance matrices.
+    See Also
+    --------
+    squareform : converts between condensed distance matrices and
+                 square distance matrices.
     """
 
 
@@ -1239,11 +1285,13 @@ def squareform(X, force="no", checks=True):
     Converts a vector-form distance vector to a square-form distance
     matrix, and vice-versa.
 
-    :Parameters:
+    Parameters
+    ----------
        X : ndarray
            Either a condensed or redundant distance matrix.
 
-    :Returns:
+    Returns
+    -------
        Y : ndarray
            If a condensed distance matrix is passed, a redundant
            one is returned, or if a redundant one is passed, a
@@ -1358,31 +1406,33 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     Distance matrices must be 2-dimensional numpy arrays containing
     doubles. They must have a zero-diagonal, and they must be symmetric.
 
-    :Parameters:
-       D : ndarray
-           The candidate object to test for validity.
-       tol : double
-           The distance matrix should be symmetric. tol is the maximum
-           difference between the :math:`ij`th entry and the
-           :math:`ji`th entry for the distance metric to be
-           considered symmetric.
-       throw : bool
-           An exception is thrown if the distance matrix passed is not
-           valid.
-       name : string
-           the name of the variable to checked. This is useful ifa
-           throw is set to ``True`` so the offending variable can be
-           identified in the exception message when an exception is
-           thrown.
-       warning : boolx
-           Instead of throwing an exception, a warning message is
-           raised.
+    Parameters
+    ----------
+    D : ndarray
+        The candidate object to test for validity.
+    tol : double
+        The distance matrix should be symmetric. tol is the maximum
+        difference between the :math:`ij`th entry and the
+        :math:`ji`th entry for the distance metric to be
+        considered symmetric.
+    throw : bool
+        An exception is thrown if the distance matrix passed is not
+        valid.
+    name : string
+        the name of the variable to checked. This is useful ifa
+        throw is set to ``True`` so the offending variable can be
+        identified in the exception message when an exception is
+        thrown.
+    warning : boolx
+        Instead of throwing an exception, a warning message is
+        raised.
 
-    :Returns:
-       Returns ``True`` if the variable ``D`` passed is a valid
-       distance matrix.  Small numerical differences in ``D`` and
-       ``D.T`` and non-zeroness of the diagonal are ignored if they are
-       within the tolerance specified by ``tol``.
+    Returns
+    -------
+    Returns ``True`` if the variable ``D`` passed is a valid
+    distance matrix.  Small numerical differences in ``D`` and
+    ``D.T`` and non-zeroness of the diagonal are ignored if they are
+    within the tolerance specified by ``tol``.
     """
     D = np.asarray(D, order='c')
     valid = True
@@ -1436,23 +1486,21 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     coefficient :math:`{n \choose 2}` for some positive integer n.
 
 
-    :Parameters:
-       y : ndarray
-           The condensed distance matrix.
-
-       warning : bool
-           Invokes a warning if the variable passed is not a valid
-           condensed distance matrix. The warning message explains why
-           the distance matrix is not valid.  'name' is used when
-           referencing the offending variable.
-
-       throws : throw
-           Throws an exception if the variable passed is not a valid
-           condensed distance matrix.
-
-       name : bool
-           Used when referencing the offending variable in the
-           warning or exception message.
+    Parameters
+    ----------
+    y : ndarray
+        The condensed distance matrix.
+    warning : bool, optional
+        Invokes a warning if the variable passed is not a valid
+        condensed distance matrix. The warning message explains why
+        the distance matrix is not valid.  'name' is used when
+        referencing the offending variable.
+    throws : throw, optional
+        Throws an exception if the variable passed is not a valid
+        condensed distance matrix.
+    name : bool, optional
+        Used when referencing the offending variable in the
+        warning or exception message.
 
     """
     y = np.asarray(y, order='c')
@@ -1493,12 +1541,15 @@ def num_obs_dm(d):
     Returns the number of original observations that correspond to a
     square, redudant distance matrix ``D``.
 
-    :Parameters:
-       d : ndarray
-           The target distance matrix.
+    Parameters
+    ----------
+    d : ndarray
+        The target distance matrix.
 
-    :Returns:
-       The number of observations in the redundant distance matrix.
+    Returns
+    -------
+    numobs : int
+        The number of observations in the redundant distance matrix.
     """
     d = np.asarray(d, order='c')
     is_valid_dm(d, tol=np.inf, throw=True, name='d')
@@ -1509,15 +1560,17 @@ def num_obs_y(Y):
     Returns the number of original observations that correspond to a
     condensed distance matrix ``Y``.
 
-    :Parameters:
-       Y : ndarray
-           The number of original observations in the condensed
-           observation ``Y``.
+    Parameters
+    ----------
+    Y : ndarray
+        The number of original observations in the condensed
+        observation ``Y``.
 
-    :Returns:
-       n : int
-           The number of observations in the condensed distance matrix
-           passed.
+    Returns
+    -------
+    n : int
+        The number of observations in the condensed distance matrix
+        passed.
     """
     Y = np.asarray(Y, order='c')
     is_valid_y(Y, throw=True, name='Y')
@@ -1727,34 +1780,36 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
          dm = cdist(XA, XB, 'sokalsneath')
 
-    :Parameters:
-       XA : ndarray
-           An :math:`m_A` by :math:`n` array of :math:`m_A`
-           original observations in an :math:`n`-dimensional space.
-       XB : ndarray
-           An :math:`m_B` by :math:`n` array of :math:`m_B`
-           original observations in an :math:`n`-dimensional space.
-       metric : string or function
-           The distance metric to use. The distance function can
-           be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
-           'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
-           'jaccard', 'kulsinski', 'mahalanobis', 'matching',
-           'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
-           'sokalmichener', 'sokalsneath', 'sqeuclidean', 'wminkowski',
-           'yule'.
-       w : ndarray
-           The weight vector (for weighted Minkowski).
-       p : double
-           The p-norm to apply (for Minkowski, weighted and unweighted)
-       V : ndarray
-           The variance vector (for standardized Euclidean).
-       VI : ndarray
-           The inverse of the covariance matrix (for Mahalanobis).
+    Parameters
+    ----------
+    XA : ndarray
+        An :math:`m_A` by :math:`n` array of :math:`m_A`
+        original observations in an :math:`n`-dimensional space.
+    XB : ndarray
+        An :math:`m_B` by :math:`n` array of :math:`m_B`
+        original observations in an :math:`n`-dimensional space.
+    metric : string or function
+        The distance metric to use. The distance function can
+        be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
+        'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
+        'jaccard', 'kulsinski', 'mahalanobis', 'matching',
+        'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
+        'sokalmichener', 'sokalsneath', 'sqeuclidean', 'wminkowski',
+        'yule'.
+    w : ndarray
+        The weight vector (for weighted Minkowski).
+    p : double
+        The p-norm to apply (for Minkowski, weighted and unweighted)
+    V : ndarray
+        The variance vector (for standardized Euclidean).
+    VI : ndarray
+        The inverse of the covariance matrix (for Mahalanobis).
 
 
-    :Returns:
-       Y : ndarray
-           A :math:`m_A` by :math:`m_B` distance matrix.
+    Returns
+    -------
+    Y : ndarray
+        A :math:`m_A` by :math:`m_B` distance matrix.
     """
 
 

@@ -32,7 +32,6 @@ Other
    :toctree: generated/
 
    save_as_module
-   npfile
 
 Wav sound files (:mod:`scipy.io.wavfile`)
 =========================================
