@@ -1824,11 +1824,12 @@ class rv_continuous(rv_generic):
             def fun(x, *args):
                 return func(x)*self.pdf(x, *args, **{'loc':loc, 'scale':scale})
         if lb is None:
-            lb = (self.a - loc)/(1.0*scale)
+            lb = loc + self.a * scale
         if ub is None:
-            ub = (self.b - loc)/(1.0*scale)
+            ub = loc + self.b * scale
         if conditional:
-            invfac = self.sf(lb,*args) - self.sf(ub,*args)
+            invfac = (self.sf(lb, *args, **{'loc':loc, 'scale':scale})
+                      - self.sf(ub, *args, **{'loc':loc, 'scale':scale}))
         else:
             invfac = 1.0
         kwds['args'] = args
