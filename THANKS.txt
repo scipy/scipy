@@ -65,6 +65,12 @@ Ondrej Certik for Debian packaging.
 Paul Ivanov for porting Numeric-style C code to the new NumPy API.
 Ariel Rokem for contributions on percentileofscore fixes and tests.
 Yosef Meller for tests in the optimization module.
+Ralf Gommers for release management, code clean up and improvements 
+    to doc-string generation.
+Bruce Southey for bug-fixes and improvements to scipy.stats.
+Ernest Adrogué for the Skellam distribution.
+Enzo Michelangeli a fast kendall tau test.
+David Simcha for a fisher exact test.
 
 Institutions
 ------------
