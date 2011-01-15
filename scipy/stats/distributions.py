@@ -5464,6 +5464,8 @@ class rv_discrete(rv_generic):
             instance object for more information)
 
         """
+        if not self._argcheck(*args):
+            return nan
         if (floor(n) != n):
             raise ValueError("Moment must be an integer.")
         if (n < 0): raise ValueError("Moment must be positive.")
