@@ -91,7 +91,7 @@ def expm2(A):
         t = 'd'
     s,vr = eig(A)
     vri = inv(vr)
-    return dot(dot(vr,diag(exp(s))),vri).astype(t)
+    return dot(dot(vr,diag(exp(s))),vri).real.astype(t)
 
 def expm3(A, q=20):
     """Compute the matrix exponential using Taylor series.

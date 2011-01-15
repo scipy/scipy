@@ -417,8 +417,8 @@ class TestFftnSingle(TestCase):
         for size in SMALL_COMPOSITE_SIZES + SMALL_PRIME_SIZES:
             np.random.seed(1234)
             x = np.random.rand(size, size) + 1j*np.random.rand(size, size)
-            y1 = fftn(x.astype(np.float32))
-            y2 = fftn(x.astype(np.float64)).astype(np.complex64)
+            y1 = fftn(x.real.astype(np.float32))
+            y2 = fftn(x.real.astype(np.float64)).astype(np.complex64)
 
             self.failUnless(y1.dtype == np.complex64)
             assert_array_almost_equal_nulp(y1, y2, 2000)
@@ -426,8 +426,8 @@ class TestFftnSingle(TestCase):
         for size in LARGE_COMPOSITE_SIZES + LARGE_PRIME_SIZES:
             np.random.seed(1234)
             x = np.random.rand(size, 3) + 1j*np.random.rand(size, 3)
-            y1 = fftn(x.astype(np.float32))
-            y2 = fftn(x.astype(np.float64)).astype(np.complex64)
+            y1 = fftn(x.real.astype(np.float32))
+            y2 = fftn(x.real.astype(np.float64)).astype(np.complex64)
 
             self.failUnless(y1.dtype == np.complex64)
             assert_array_almost_equal_nulp(y1, y2, 2000)
