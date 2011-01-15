@@ -197,7 +197,11 @@ class TestEig(object):
         B = array(( [13,26,25,17,24], [31,46,40,26,37], [26,40,19,25,25],
             [16,25,27,14,23], [24,35,18,21,22]))
 
-        self._check_gen_eig(A, B)
+        olderr = np.seterr(all='ignore')
+        try:
+            self._check_gen_eig(A, B)
+        finally:
+            np.seterr(**olderr)
 
     def test_falker(self):
         """Test matrices giving some Nan generalized eigen values."""
@@ -209,7 +213,11 @@ class TestEig(object):
         A = bmat([[I,Z],[Z,-K]])
         B = bmat([[Z,I],[M,D]])
 
-        self._check_gen_eig(A, B)
+        olderr = np.seterr(all='ignore')
+        try:
+            self._check_gen_eig(A, B)
+        finally:
+            np.seterr(**olderr)
 
     def test_bad_geneig(self):
         # Ticket #709 (strange return values from DGGEV)
@@ -229,9 +237,13 @@ class TestEig(object):
 
         # With a buggy LAPACK, this can fail for different omega on different
         # machines -- so we need to test several values
-        for k in xrange(100):
-            A, B = matrices(omega=k*5./100)
-            self._check_gen_eig(A, B)
+        olderr = np.seterr(all='ignore')
+        try:
+            for k in xrange(100):
+                A, B = matrices(omega=k*5./100)
+                self._check_gen_eig(A, B)
+        finally:
+            np.seterr(**olderr)
 
     def test_not_square_error(self):
         """Check that passing a non-square array raises a ValueError."""

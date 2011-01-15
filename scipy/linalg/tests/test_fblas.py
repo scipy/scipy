@@ -90,7 +90,7 @@ class BaseAxpy(object):
         assert_(0)
 
     def test_y_bad_size(self):
-        x = arange(12.,dtype=complex64)
+        x = arange(12.,dtype=self.dtype)
         y = zeros(6,x.dtype)
         try:
             self.blas_func(x,y,n=3,incy=5)
@@ -214,7 +214,7 @@ class BaseCopy(object):
         assert_(0)
 
     def test_y_bad_size(self):
-        x = arange(12.,dtype=complex64)
+        x = arange(12.,dtype=self.dtype)
         y = zeros(6,x.dtype)
         try:
             self.blas_func(x,y,n=3,incy=5)
@@ -306,7 +306,7 @@ class BaseSwap(object):
         assert_(0)
 
     def test_y_bad_size(self):
-        x = arange(12.,dtype=complex64)
+        x = arange(12.,dtype=self.dtype)
         y = zeros(6,x.dtype)
         try:
             self.blas_func(x,y,n=3,incy=5)
