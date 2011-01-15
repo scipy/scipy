@@ -99,8 +99,12 @@ class TestPolys(object):
                    param_ranges=[], x_range=[-2, 2])
 
     def test_sh_chebyt(self):
-        self.check_poly(orth.eval_sh_chebyt, orth.sh_chebyt,
-                   param_ranges=[], x_range=[0, 1])
+        olderr = np.seterr(all='ignore')
+        try:
+            self.check_poly(orth.eval_sh_chebyt, orth.sh_chebyt,
+                            param_ranges=[], x_range=[0, 1])
+        finally:
+            np.seterr(**olderr)
 
     def test_sh_chebyu(self):
         self.check_poly(orth.eval_sh_chebyu, orth.sh_chebyu,
@@ -111,8 +115,12 @@ class TestPolys(object):
                    param_ranges=[], x_range=[-1, 1])
 
     def test_sh_legendre(self):
-        self.check_poly(orth.eval_sh_legendre, orth.sh_legendre,
-                   param_ranges=[], x_range=[0, 1])
+        olderr = np.seterr(all='ignore')
+        try:
+            self.check_poly(orth.eval_sh_legendre, orth.sh_legendre,
+                            param_ranges=[], x_range=[0, 1])
+        finally:
+            np.seterr(**olderr)
 
     def test_genlaguerre(self):
         self.check_poly(orth.eval_genlaguerre, orth.genlaguerre,
