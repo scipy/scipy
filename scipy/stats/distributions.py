@@ -2017,7 +2017,7 @@ class beta_gen(rv_continuous):
         g2 = _kurtosis(data)
         def func(x):
             a, b = x
-            sk = 2*(b-a)*math.sqrt(a + b + 1) / (a + b + 2) / math.sqrt(a*b)
+            sk = 2*(b-a)*sqrt(a + b + 1) / (a + b + 2) / sqrt(a*b)
             ku = a**3 - a**2*(2*b-1) + b**2*(b+1) - 2*a*b*(b+2)
             ku /= a*b*(a+b+2)*(a+b+3)
             ku *= 6
