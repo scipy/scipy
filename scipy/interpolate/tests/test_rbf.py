@@ -2,6 +2,7 @@
 # Created by John Travers, Robert Hetland, 2007
 """ Test functions for rbf module """
 
+import numpy as np
 from numpy.testing import assert_, assert_array_almost_equal, assert_almost_equal
 from numpy import linspace, sin, random, exp, allclose
 from scipy.interpolate.rbf import Rbf
@@ -40,10 +41,14 @@ def check_rbf3d_interpolation(function):
     assert_array_almost_equal(di, d)
 
 def test_rbf_interpolation():
-    for function in FUNCTIONS:
-        yield check_rbf1d_interpolation, function
-        yield check_rbf2d_interpolation, function
-        yield check_rbf3d_interpolation, function
+    olderr = np.seterr(all="ignore")
+    try:
+        for function in FUNCTIONS:
+            yield check_rbf1d_interpolation, function
+            yield check_rbf2d_interpolation, function
+            yield check_rbf3d_interpolation, function
+    finally:
+        np.seterr(**olderr)
 
 def check_rbf1d_regularity(function, atol):
     """Check that the Rbf function approximates a smooth function well away
@@ -71,8 +76,12 @@ def test_rbf_regularity():
         'thin-plate': 0.1,
         'linear': 0.2
     }
-    for function in FUNCTIONS:
-        yield check_rbf1d_regularity, function, tolerances.get(function, 1e-2)
+    olderr = np.seterr(all="ignore")
+    try:
+        for function in FUNCTIONS:
+            yield check_rbf1d_regularity, function, tolerances.get(function, 1e-2)
+    finally:
+        np.seterr(**olderr)
 
 def test_default_construction():
     """Check that the Rbf class can be constructed with the default
