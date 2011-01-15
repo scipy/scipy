@@ -198,7 +198,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     dwell : int
         The number of times to search the space at each temperature.
 
-    Outputs
+    Returns
     -------
     xmin : ndarray
         Point giving smallest value found.

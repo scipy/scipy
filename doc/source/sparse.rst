@@ -32,8 +32,6 @@ Building sparse matrices:
    identity
    kron
    kronsum
-   lil_eye
-   lil_diags
    spdiags
    tril
    triu

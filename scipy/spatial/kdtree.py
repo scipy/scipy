@@ -116,13 +116,12 @@ class KDTree(object):
     def __init__(self, data, leafsize=10):
         """Construct a kd-tree.
 
-        Parameters:
-        ===========
-
-        data : array-like, shape (n,k)
+        Parameters
+        ----------
+        data : array_like, shape (n,k)
             The data points to be indexed. This array is not copied, and
             so modifying this data will result in bogus results.
-        leafsize : positive integer
+        leafsize : positive int
             The number of points at which the algorithm switches over to
             brute-force.
         """

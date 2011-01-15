@@ -59,16 +59,22 @@ def jnjnp_zeros(nt):
     """Compute nt (<=1200) zeros of the bessel functions Jn and Jn'
     and arange them in order of their magnitudes.
 
-    Outputs (all are arrays of length nt):
+    Returns
+    -------
+    zo[l-1] : ndarray
+        Value of the lth zero of of Jn(x) and Jn'(x). Of length `nt`.
+    n[l-1] : ndarray
+        Order of the Jn(x) or Jn'(x) associated with lth zero. Of length `nt`.
+    m[l-1] : ndarray
+        Serial number of the zeros of Jn(x) or Jn'(x) associated
+        with lth zero. Of length `nt`.
+    t[l-1] : ndarray
+        0 if lth zero in zo is zero of Jn(x), 1 if it is a zero of Jn'(x). Of
+        length `nt`.
 
-       zo[l-1] -- Value of the lth zero of of Jn(x) and Jn'(x)
-       n[l-1]  -- Order of the Jn(x) or Jn'(x) associated with lth zero
-       m[l-1]  -- Serial number of the zeros of Jn(x) or Jn'(x) associated
-                    with lth zero.
-       t[l-1]  -- 0 if lth zero in zo is zero of Jn(x), 1 if it is a zero
-                    of Jn'(x)
-
-    See jn_zeros, jnp_zeros to get separated arrays of zeros.
+    See Also
+    --------
+    jn_zeros, jnp_zeros : to get separated arrays of zeros.
     """
     if not isscalar(nt) or (floor(nt)!=nt) or (nt>1200):
         raise ValueError("Number must be integer <= 1200.")
@@ -521,7 +527,7 @@ def lpmn(m,n,z):
     Pmn_z : (m+1, n+1) array
        Values for all orders 0..m and degrees 0..n
     Pmn_d_z : (m+1, n+1) array
-       Derivatives for all orders 0..m and degrees 0..n       
+       Derivatives for all orders 0..m and degrees 0..n
     """
     if not isscalar(m) or (abs(m)>n):
         raise ValueError("m must be <= n.")
@@ -636,12 +642,12 @@ def ai_zeros(nt):
     """Compute the zeros of Airy Functions Ai(x) and Ai'(x), a and a'
     respectively, and the associated values of Ai(a') and Ai'(a).
 
-    Outputs:
-
-      a[l-1]   -- the lth zero of Ai(x)
-      ap[l-1]  -- the lth zero of Ai'(x)
-      ai[l-1]  -- Ai(ap[l-1])
-      aip[l-1] -- Ai'(a[l-1])
+    Returns
+    -------
+    a[l-1]   -- the lth zero of Ai(x)
+    ap[l-1]  -- the lth zero of Ai'(x)
+    ai[l-1]  -- Ai(ap[l-1])
+    aip[l-1] -- Ai'(a[l-1])
     """
     kf = 1
     if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
@@ -652,12 +658,12 @@ def bi_zeros(nt):
     """Compute the zeros of Airy Functions Bi(x) and Bi'(x), b and b'
     respectively, and the associated values of Ai(b') and Ai'(b).
 
-    Outputs:
-
-      b[l-1]   -- the lth zero of Bi(x)
-      bp[l-1]  -- the lth zero of Bi'(x)
-      bi[l-1]  -- Bi(bp[l-1])
-      bip[l-1] -- Bi'(b[l-1])
+    Returns
+    -------
+    b[l-1]   -- the lth zero of Bi(x)
+    bp[l-1]  -- the lth zero of Bi'(x)
+    bi[l-1]  -- Bi(bp[l-1])
+    bip[l-1] -- Bi'(b[l-1])
     """
     kf = 2
     if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
