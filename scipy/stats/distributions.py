@@ -1107,9 +1107,10 @@ class rv_continuous(rv_generic):
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
         putmask(output,(1-cond0)*array(cond1,bool),self.badvalue)
-        goodargs = argsreduce(cond, *((x,)+args+(scale,)))
-        scale, goodargs = goodargs[-1], goodargs[:-1]
-        place(output,cond,self._pdf(*goodargs) / scale)
+        if any(cond):
+            goodargs = argsreduce(cond, *((x,)+args+(scale,)))
+            scale, goodargs = goodargs[-1], goodargs[:-1]
+            place(output,cond,self._pdf(*goodargs) / scale)
         if output.ndim == 0:
             return output[()]
         return output
@@ -1149,9 +1150,10 @@ class rv_continuous(rv_generic):
         output = empty(shape(cond),'d')
         output.fill(NINF)
         putmask(output,(1-cond0)*array(cond1,bool),self.badvalue)
-        goodargs = argsreduce(cond, *((x,)+args+(scale,)))
-        scale, goodargs = goodargs[-1], goodargs[:-1]
-        place(output,cond,self._logpdf(*goodargs) - log(scale))
+        if any(cond):
+            goodargs = argsreduce(cond, *((x,)+args+(scale,)))
+            scale, goodargs = goodargs[-1], goodargs[:-1]
+            place(output,cond,self._logpdf(*goodargs) - log(scale))
         if output.ndim == 0:
             return output[()]
         return output
@@ -1274,8 +1276,9 @@ class rv_continuous(rv_generic):
         output = zeros(shape(cond),'d')
         place(output,(1-cond0)*(cond1==cond1),self.badvalue)
         place(output,cond2,1.0)
-        goodargs = argsreduce(cond, *((x,)+args))
-        place(output,cond,self._sf(*goodargs))
+        if any(cond):
+            goodargs = argsreduce(cond, *((x,)+args))
+            place(output,cond,self._sf(*goodargs))
         if output.ndim == 0:
             return output[()]
         return output
@@ -1314,8 +1317,9 @@ class rv_continuous(rv_generic):
         output.fill(NINF)
         place(output,(1-cond0)*(cond1==cond1),self.badvalue)
         place(output,cond2,0.0)
-        goodargs = argsreduce(cond, *((x,)+args))
-        place(output,cond,self._logsf(*goodargs))
+        if any(cond):
+            goodargs = argsreduce(cond, *((x,)+args))
+            place(output,cond,self._logsf(*goodargs))
         if output.ndim == 0:
             return output[()]
         return output
@@ -5029,8 +5033,9 @@ class rv_discrete(rv_generic):
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
         place(output,(1-cond0)*(cond1==cond1),self.badvalue)
-        goodargs = argsreduce(cond, *((k,)+args))
-        place(output,cond,self._pmf(*goodargs))
+        if any(cond):
+            goodargs = argsreduce(cond, *((k,)+args))
+            place(output,cond,self._pmf(*goodargs))
         if output.ndim == 0:
             return output[()]
         return output
@@ -5067,8 +5072,9 @@ class rv_discrete(rv_generic):
         output = empty(shape(cond),'d')
         output.fill(NINF)
         place(output,(1-cond0)*(cond1==cond1),self.badvalue)
-        goodargs = argsreduce(cond, *((k,)+args))
-        place(output,cond,self._logpmf(*goodargs))
+        if any(cond):
+            goodargs = argsreduce(cond, *((k,)+args))
+            place(output,cond,self._logpmf(*goodargs))
         if output.ndim == 0:
             return output[()]
         return output
@@ -5186,8 +5192,9 @@ class rv_discrete(rv_generic):
         output = zeros(shape(cond),'d')
         place(output,(1-cond0)*(cond1==cond1),self.badvalue)
         place(output,cond2,1.0)
-        goodargs = argsreduce(cond, *((k,)+args))
-        place(output,cond,self._sf(*goodargs))
+        if any(cond):
+            goodargs = argsreduce(cond, *((k,)+args))
+            place(output,cond,self._sf(*goodargs))
         if output.ndim == 0:
             return output[()]
         return output
@@ -5225,8 +5232,9 @@ class rv_discrete(rv_generic):
         output.fill(NINF)
         place(output,(1-cond0)*(cond1==cond1),self.badvalue)
         place(output,cond2,0.0)
-        goodargs = argsreduce(cond, *((k,)+args))
-        place(output,cond,self._logsf(*goodargs))
+        if any(cond):
+            goodargs = argsreduce(cond, *((k,)+args))
+            place(output,cond,self._logsf(*goodargs))
         if output.ndim == 0:
             return output[()]
         return output
