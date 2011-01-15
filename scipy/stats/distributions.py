@@ -1470,58 +1470,64 @@ class rv_continuous(rv_generic):
         output = []
 
         # Use only entries that are valid in calculation
-        goodargs = argsreduce(cond, *(args+(scale,loc)))
-        scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
-        if 'm' in moments:
-            if mu is None:
-                mu = self._munp(1.0,*goodargs)
-            out0 = default.copy()
-            place(out0,cond,mu*scale+loc)
-            output.append(out0)
-
-        if 'v' in moments:
-            if mu2 is None:
-                mu2p = self._munp(2.0,*goodargs)
+        if any(cond):
+            goodargs = argsreduce(cond, *(args+(scale,loc)))
+            scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
+            if 'm' in moments:
                 if mu is None:
                     mu = self._munp(1.0,*goodargs)
-                mu2 = mu2p - mu*mu
-            if np.isinf(mu):
-                #if mean is inf then var is also inf
-                mu2 = np.inf
-            out0 = default.copy()
-            place(out0,cond,mu2*scale*scale)
-            output.append(out0)
+                out0 = default.copy()
+                place(out0,cond,mu*scale+loc)
+                output.append(out0)
 
-        if 's' in moments:
-            if g1 is None:
-                mu3p = self._munp(3.0,*goodargs)
-                if mu is None:
-                    mu = self._munp(1.0,*goodargs)
+            if 'v' in moments:
                 if mu2 is None:
                     mu2p = self._munp(2.0,*goodargs)
+                    if mu is None:
+                        mu = self._munp(1.0,*goodargs)
                     mu2 = mu2p - mu*mu
-                mu3 = mu3p - 3*mu*mu2 - mu**3
-                g1 = mu3 / mu2**1.5
-            out0 = default.copy()
-            place(out0,cond,g1)
-            output.append(out0)
+                if np.isinf(mu):
+                    #if mean is inf then var is also inf
+                    mu2 = np.inf
+                out0 = default.copy()
+                place(out0,cond,mu2*scale*scale)
+                output.append(out0)
 
-        if 'k' in moments:
-            if g2 is None:
-                mu4p = self._munp(4.0,*goodargs)
-                if mu is None:
-                    mu = self._munp(1.0,*goodargs)
-                if mu2 is None:
-                    mu2p = self._munp(2.0,*goodargs)
-                    mu2 = mu2p - mu*mu
-                if mu3 is None:
+            if 's' in moments:
+                if g1 is None:
                     mu3p = self._munp(3.0,*goodargs)
+                    if mu is None:
+                        mu = self._munp(1.0,*goodargs)
+                    if mu2 is None:
+                        mu2p = self._munp(2.0,*goodargs)
+                        mu2 = mu2p - mu*mu
                     mu3 = mu3p - 3*mu*mu2 - mu**3
-                mu4 = mu4p - 4*mu*mu3 - 6*mu*mu*mu2 - mu**4
-                g2 = mu4 / mu2**2.0 - 3.0
-            out0 = default.copy()
-            place(out0,cond,g2)
-            output.append(out0)
+                    g1 = mu3 / mu2**1.5
+                out0 = default.copy()
+                place(out0,cond,g1)
+                output.append(out0)
+
+            if 'k' in moments:
+                if g2 is None:
+                    mu4p = self._munp(4.0,*goodargs)
+                    if mu is None:
+                        mu = self._munp(1.0,*goodargs)
+                    if mu2 is None:
+                        mu2p = self._munp(2.0,*goodargs)
+                        mu2 = mu2p - mu*mu
+                    if mu3 is None:
+                        mu3p = self._munp(3.0,*goodargs)
+                        mu3 = mu3p - 3*mu*mu2 - mu**3
+                    mu4 = mu4p - 4*mu*mu3 - 6*mu*mu*mu2 - mu**4
+                    g2 = mu4 / mu2**2.0 - 3.0
+                out0 = default.copy()
+                place(out0,cond,g2)
+                output.append(out0)
+        else: #no valid args
+            output = []
+            for _ in moments:
+                out0 = default.copy()
+                output.append(out0)
 
         if len(output) == 1:
             return output[0]
@@ -1542,6 +1548,8 @@ class rv_continuous(rv_generic):
             instance object for more information)
 
         """
+        if not self._argcheck(*args):
+            return nan
         if (floor(n) != n):
             raise ValueError("Moment must be an integer.")
         if (n < 0): raise ValueError("Moment must be positive.")
