@@ -128,11 +128,15 @@ class TestCorr(TestCase):
     def test_pearsonr(self):
         "Tests some computations of Pearson's r"
         x = ma.arange(10)
-        assert_almost_equal(mstats.pearsonr(x,x)[0], 1.0)
-        assert_almost_equal(mstats.pearsonr(x,x[::-1])[0], -1.0)
-        #
-        x = ma.array(x, mask=True)
-        pr = mstats.pearsonr(x,x)
+        olderr = np.seterr(all='ignore')
+        try:
+            assert_almost_equal(mstats.pearsonr(x,x)[0], 1.0)
+            assert_almost_equal(mstats.pearsonr(x,x[::-1])[0], -1.0)
+
+            x = ma.array(x, mask=True)
+            pr = mstats.pearsonr(x,x)
+        finally:
+            np.seterr(**olderr)
         assert_(pr[0] is masked)
         assert_(pr[1] is masked)
     #
