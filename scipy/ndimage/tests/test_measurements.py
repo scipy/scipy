@@ -91,7 +91,7 @@ class Test_measurements_select(TestCase):
                                 find_max=True, find_max_positions=True)
             assert_(len(result) == 2)
             assert_array_equal(result[0], [1, 6])
-            assert_array_equal(result[1], [1, 2])        
+            assert_array_equal(result[1], [1, 2])
 
 
 def test_label01():
@@ -440,12 +440,16 @@ def test_mean03():
 def test_mean04():
     "mean 4"
     labels = np.array([[1, 2], [2, 4]], np.int8)
-    for type in types:
-        input = np.array([[1, 2], [3, 4]], type)
-        output = ndimage.mean(input, labels=labels,
-                                        index=[4, 8, 2])
-        assert_array_almost_equal(output[[0,2]], [4.0, 2.5])
-        assert_(np.isnan(output[1]))
+    olderr = np.seterr(all='ignore')
+    try:
+        for type in types:
+            input = np.array([[1, 2], [3, 4]], type)
+            output = ndimage.mean(input, labels=labels,
+                                            index=[4, 8, 2])
+            assert_array_almost_equal(output[[0,2]], [4.0, 2.5])
+            assert_(np.isnan(output[1]))
+    finally:
+        np.seterr(**olderr)
 
 def test_minimum01():
     "minimum 1"
@@ -520,10 +524,14 @@ def test_maximum05():
 
 def test_variance01():
     "variance 1"
-    for type in types:
-        input = np.array([], type)
-        output = ndimage.variance(input)
-        assert_(np.isnan(output))
+    olderr = np.seterr(all='ignore')
+    try:
+        for type in types:
+            input = np.array([], type)
+            output = ndimage.variance(input)
+            assert_(np.isnan(output))
+    finally:
+        np.seterr(**olderr)
 
 def test_variance02():
     "variance 2"
@@ -556,17 +564,25 @@ def test_variance05():
 def test_variance06():
     "variance 6"
     labels = [2, 2, 3, 3, 4]
-    for type in types:
-        input = np.array([1, 3, 8, 10, 8], type)
-        output = ndimage.variance(input, labels, [2, 3, 4])
-        assert_array_almost_equal(output, [1.0, 1.0, 0.0])
+    olderr = np.seterr(all='ignore')
+    try:
+        for type in types:
+            input = np.array([1, 3, 8, 10, 8], type)
+            output = ndimage.variance(input, labels, [2, 3, 4])
+            assert_array_almost_equal(output, [1.0, 1.0, 0.0])
+    finally:
+        np.seterr(**olderr)
 
 def test_standard_deviation01():
     "standard deviation 1"
-    for type in types:
-        input = np.array([], type)
-        output = ndimage.standard_deviation(input)
-        assert_(np.isnan(output))
+    olderr = np.seterr(all='ignore')
+    try:
+        for type in types:
+            input = np.array([], type)
+            output = ndimage.standard_deviation(input)
+            assert_(np.isnan(output))
+    finally:
+        np.seterr(**olderr)
 
 def test_standard_deviation02():
     "standard deviation 2"
@@ -599,27 +615,33 @@ def test_standard_deviation05():
 def test_standard_deviation06():
     "standard deviation 6"
     labels = [2, 2, 3, 3, 4]
-    for type in types:
-        input = np.array([1, 3, 8, 10, 8], type)
-        output = ndimage.standard_deviation(input, labels,
-                                                      [2, 3, 4])
-        assert_array_almost_equal(output, [1.0, 1.0, 0.0])
+    olderr = np.seterr(all='ignore')
+    try:
+        for type in types:
+            input = np.array([1, 3, 8, 10, 8], type)
+            output = ndimage.standard_deviation(input, labels, [2, 3, 4])
+            assert_array_almost_equal(output, [1.0, 1.0, 0.0])
+    finally:
+        np.seterr(**olderr)
 
 def test_standard_deviation07():
     "standard deviation 7"
     labels = [1]
-    for type in types:
-        input = np.array([-0.00619519], type)
-        output = ndimage.standard_deviation(input, labels, [1])
-        assert_array_almost_equal(output, [0])
+    olderr = np.seterr(all='ignore')
+    try:
+        for type in types:
+            input = np.array([-0.00619519], type)
+            output = ndimage.standard_deviation(input, labels, [1])
+            assert_array_almost_equal(output, [0])
+    finally:
+        np.seterr(**olderr)
 
 def test_minimum_position01():
     "minimum position 1"
     labels = np.array([1, 0], bool)
     for type in types:
         input = np.array([[1, 2], [3, 4]], type)
-        output = ndimage.minimum_position(input,
-                                                    labels=labels)
+        output = ndimage.minimum_position(input, labels=labels)
         assert_equal(output, (0, 0))
 
 def test_minimum_position02():
