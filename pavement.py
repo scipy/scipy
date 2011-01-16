@@ -238,7 +238,6 @@ def nuke():
         if os.path.exists(d):
             shutil.rmtree(d)
 
-
 #--------------------
 # Documentation tasks
 #--------------------
@@ -431,7 +430,7 @@ def dmg_name(fullversion, pyver, osxver=None):
     # (should be done in the release script).
     if not osxver:
         osxver = os.environ.get('MACOSX_DEPLOYMENT_TARGET', '10.3')
-    return "numpy-%s-py%s-python.org-macosx%s.dmg" % (fullversion, pyver,
+    return "scipy-%s-py%s-python.org-macosx%s.dmg" % (fullversion, pyver,
                                                       osxver)
 
 def macosx_version():
@@ -486,7 +485,7 @@ def _build_mpkg(pyver):
 
 
 @task
-@cmdopts([("python-version=", "p", "python version")])
+@cmdopts([("python_version=", "p", "python version")])
 def dmg():
     try:
         pyver = options.dmg.python_version
