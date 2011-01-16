@@ -907,8 +907,12 @@ class TestEuler(TestCase):
                 correct[2*k] = -float(mathworld[k])
             else:
                 correct[2*k] = float(mathworld[k])
-        err = nan_to_num((eu24-correct)/correct)
-        errmax = max(err)
+        olderr = np.seterr(all='ignore')
+        try:
+            err = nan_to_num((eu24-correct)/correct)
+            errmax = max(err)
+        finally:
+            np.seterr(**olderr)
         assert_almost_equal(errmax, 0.0, 14)
 
 class TestExp(TestCase):
@@ -1034,7 +1038,7 @@ class TestGamma(TestCase):
         assert_almost_equal(rgam,rlgam,8)
 
 class TestHankel(TestCase):
-    
+
     def test_negv1(self):
         assert_almost_equal(special.hankel1(-3,2), -special.hankel1(3,2), 14)
 
@@ -1319,7 +1323,7 @@ class TestBessel(TestCase):
                                        123.70194191713507279,
                                        129.02417238949092824,
                                        134.00114761868422559]), rtol=1e-13)
-        
+
         jn301 = special.jn_zeros(301,5)
         assert_tol_equal(jn301, array([313.59097866698830153,
                                        323.21549776096288280,
@@ -1332,7 +1336,7 @@ class TestBessel(TestCase):
         assert_tol_equal(jn0[260-1], 816.02884495068867280, rtol=1e-13)
         assert_tol_equal(jn0[280-1], 878.86068707124422606, rtol=1e-13)
         assert_tol_equal(jn0[300-1], 941.69253065317954064, rtol=1e-13)
-        
+
         jn10 = special.jn_zeros(10, 300)
         assert_tol_equal(jn10[260-1], 831.67668514305631151, rtol=1e-13)
         assert_tol_equal(jn10[280-1], 894.51275095371316931, rtol=1e-13)
@@ -1516,7 +1520,7 @@ class TestBessel(TestCase):
         an = special.yn_zeros(4,2)
         assert_array_almost_equal(an,array([ 5.64515,  9.36162]),5)
         an = special.yn_zeros(443,5)
-        assert_tol_equal(an, [450.13573091578090314, 463.05692376675001542, 
+        assert_tol_equal(an, [450.13573091578090314, 463.05692376675001542,
                               472.80651546418663566, 481.27353184725625838,
                               488.98055964441374646], rtol=1e-15)
 
@@ -1570,7 +1574,7 @@ class TestBessel(TestCase):
             for z in [-1300, -11, -10, -1, 1., 10., 200.5, 401., 600.5,
                       700.6, 1300, 10003]:
                 yield v, z
-                
+
         # check half-integers; these are problematic points at least
         # for cephes/iv
         for v in 0.5 + arange(-60, 60):
@@ -1605,7 +1609,11 @@ class TestBessel(TestCase):
         self.check_cephes_vs_amos(special.yv, special.yn, rtol=1e-11, atol=1e-305, skip=skipper)
 
     def test_iv_cephes_vs_amos(self):
-        self.check_cephes_vs_amos(special.iv, special.iv, rtol=5e-9, atol=1e-305)
+        olderr = np.seterr(all='ignore')
+        try:
+            self.check_cephes_vs_amos(special.iv, special.iv, rtol=5e-9, atol=1e-305)
+        finally:
+            np.seterr(**olderr)
 
     @dec.slow
     def test_iv_cephes_vs_amos_mass_test(self):
@@ -1667,12 +1675,12 @@ class TestBessel(TestCase):
         assert_tol_equal(special.iv(-2,   1+0j), 0.1357476697670383)
         assert_tol_equal(special.kv(-1,   1+0j), 0.6019072301972347)
         assert_tol_equal(special.kv(-2,   1+0j), 1.624838898635178)
-        
+
         assert_tol_equal(special.jv(-0.5, 1+0j), 0.43109886801837607952)
         assert_tol_equal(special.jv(-0.5, 1+1j), 0.2628946385649065-0.827050182040562j)
         assert_tol_equal(special.yv(-0.5, 1+0j), 0.6713967071418031)
         assert_tol_equal(special.yv(-0.5, 1+1j), 0.967901282890131+0.0602046062142816j)
-        
+
         assert_tol_equal(special.iv(-0.5, 1+0j), 1.231200214592967)
         assert_tol_equal(special.iv(-0.5, 1+1j), 0.77070737376928+0.39891821043561j)
         assert_tol_equal(special.kv(-0.5, 1+0j), 0.4610685044478945)
@@ -1799,7 +1807,7 @@ class TestBessel(TestCase):
         y=(special.iv(0,2) + special.iv(2,2))/2
         x = special.ivp(1,2)
         assert_almost_equal(x,y,10)
-    
+
 
 class TestLaguerre(TestCase):
     def test_laguerre(self):
@@ -1890,7 +1898,11 @@ class TestLegendreFunctions(TestCase):
 
         # XXX: this is outside the domain of the current implementation,
         #      so ensure it returns a NaN rather than a wrong answer.
-        lp = special.lpmv(-1,-1,.001)
+        olderr = np.seterr(all='ignore')
+        try:
+            lp = special.lpmv(-1,-1,.001)
+        finally:
+            np.seterr(**olderr)
         assert_(lp != 0 or np.isnan(lp))
 
     def test_lqmn(self):
@@ -1978,7 +1990,7 @@ class TestParabolicCylinder(TestCase):
         eps = 1e-7 + 1e-7*abs(x)
         dp = (special.pbdv(eta, x + eps)[0] - special.pbdv(eta, x - eps)[0]) / eps / 2.
         assert_tol_equal(p[1], dp, rtol=1e-6, atol=1e-6)
-        
+
     def test_pbvv_gradient(self):
         x = np.linspace(-4, 4, 8)[:,None]
         eta = np.linspace(-10, 10, 5)[None,:]
@@ -1987,7 +1999,7 @@ class TestParabolicCylinder(TestCase):
         eps = 1e-7 + 1e-7*abs(x)
         dp = (special.pbvv(eta, x + eps)[0] - special.pbvv(eta, x - eps)[0]) / eps / 2.
         assert_tol_equal(p[1], dp, rtol=1e-6, atol=1e-6)
-        
+
 
 class TestPolygamma(TestCase):
     # from Table 6.2 (pg. 271) of A&S
@@ -2041,7 +2053,7 @@ class TestRound(TestCase):
         # correctly written.
         rndrl = (10,10,10,11)
         assert_array_equal(rnd,rndrl)
-        
+
 
 def test_sph_harm():
     # Tests derived from tables in
@@ -2076,7 +2088,7 @@ class TestSpherical(TestCase):
     def test_sph_harm(self):
         # see test_sph_harm function
         pass
-    
+
     def test_sph_in(self):
         i1n = special.sph_in(1,.2)
         inp0 = (i1n[0][1])
