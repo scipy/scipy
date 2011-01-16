@@ -2,7 +2,7 @@
 Tests for line search routines
 """
 
-from numpy.testing import assert_, assert_equal
+from numpy.testing import assert_, assert_equal, assert_array_almost_equal
 import scipy.optimize.linesearch as ls
 import numpy as np
 
@@ -82,7 +82,7 @@ class TestLineSearch(object):
         def bind_index(func, idx):
             # Remember Python's closure semantics!
             return lambda *a, **kw: func(*a, **kw)[idx]
-        
+
         for name in sorted(dir(self)):
             if name.startswith('_scalar_func_'):
                 value = getattr(self, name)
@@ -162,7 +162,7 @@ class TestLineSearch(object):
             if s is None:
                 continue
             assert_equal(fv, f(x + s*p))
-            assert_equal(gv, fprime(x + s*p))
+            assert_array_almost_equal(gv, fprime(x + s*p), decimal=14)
             if s < smax:
                 c += 1
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
@@ -183,7 +183,7 @@ class TestLineSearch(object):
             assert_equal(ofv, f(x))
             assert_equal(fv, f(x + s*p))
             if gv is not None:
-                assert_equal(gv, fprime(x + s*p))
+                assert_array_almost_equal(gv, fprime(x + s*p), decimal=14)
             if s < smax:
                 c += 1
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
