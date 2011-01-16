@@ -13,9 +13,9 @@ from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
 
 class ReturnShape(object):
     """This class exists to create a callable that does not have a 'func_name' attribute.
-    
+
     __init__ takes the argument 'shape', which should be a tuple of ints.  When an instance
-    it called with a single argument 'x', it returns numpy.ones(shape). 
+    it called with a single argument 'x', it returns numpy.ones(shape).
     """
     def __init__(self, shape):
         self.shape = shape
@@ -221,7 +221,7 @@ class TestCurveFit(TestCase):
 
 class TestFixedPoint(TestCase):
 
-    def text_scalar_trivial(self):
+    def test_scalar_trivial(self):
         """f(x) = 2x; fixed point should be x=0"""
         def func(x):
             return 2.0*x
@@ -249,7 +249,11 @@ class TestFixedPoint(TestCase):
         def func(x):
             return 2.0*x
         x0 = [0.3, 0.15]
-        x = fixed_point(func, x0)
+        olderr = np.seterr(all='ignore')
+        try:
+            x = fixed_point(func, x0)
+        finally:
+            np.seterr(**olderr)
         assert_almost_equal(x, [0.0, 0.0])
 
     def test_array_basic1(self):
@@ -258,7 +262,11 @@ class TestFixedPoint(TestCase):
             return c * x**2
         c = array([0.75, 1.0, 1.25])
         x0 = [1.1, 1.15, 0.9]
-        x = fixed_point(func, x0, args=(c,))
+        olderr = np.seterr(all='ignore')
+        try:
+            x = fixed_point(func, x0, args=(c,))
+        finally:
+            np.seterr(**olderr)
         assert_almost_equal(x, 1.0/c)
 
     def test_array_basic2(self):

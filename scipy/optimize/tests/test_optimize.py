@@ -67,7 +67,6 @@ class TestOptimize(TestCase):
         err = abs(self.func(params) - self.func(self.solution))
         #print "CG: Difference is: " + str(err)
         assert_(err < 1e-6)
-        print self.funccalls, self.gradcalls
 
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
