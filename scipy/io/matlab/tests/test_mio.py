@@ -358,16 +358,15 @@ def test_multiple_open():
         fname = pjoin(tmpdir, "a.mat")
 
         # Check that file is not left open
-        savemat(fname, x)
+        savemat(fname, x, oned_as='row')
         os.unlink(fname)
-        savemat(fname, x)
-
+        savemat(fname, x, oned_as='row')
         loadmat(fname)
         os.unlink(fname)
 
         # Check that stream is left open
         f = open(fname, 'wb')
-        savemat(f, x)
+        savemat(f, x, oned_as='column')
         f.seek(0)
         f.close()
 
