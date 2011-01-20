@@ -576,16 +576,16 @@ class _TestCorrelateReal(TestCase):
         self.assertTrue(y.dtype == self.dt)
 
 
-def _get_testcorrelate_class(i, base):
+def _get_testcorrelate_class(datatype, base):
     class TestCorrelateX(base):
-        dt = i
-    TestCorrelateX.__name__ = "TestCorrelate%s" % i.__name__.title()
+        dt = datatype
+    TestCorrelateX.__name__ = "TestCorrelate%s" % datatype.__name__.title()
     return TestCorrelateX
 
-for i in [np.ubyte, np.byte, np.ushort, np.short, np.uint, np.int,
+for datatype in [np.ubyte, np.byte, np.ushort, np.short, np.uint, np.int,
         np.ulonglong, np.ulonglong, np.float32, np.float64, np.longdouble,
         Decimal]:
-    cls = _get_testcorrelate_class(i, _TestCorrelateReal)
+    cls = _get_testcorrelate_class(datatype, _TestCorrelateReal)
     globals()[cls.__name__] = cls
 
 
@@ -683,13 +683,11 @@ class _TestCorrelateComplex(TestCase):
         self.assertTrue(y.dtype == self.dt)
 
 
-# Create three classes, one for each complex data type: TestCorrelateComplex64,
-# TestCorrelateComplex128 and TestCorrelateComplex256.
-# The second number in the pairs is used in the 'decimal' keyword argument of
-# the  array comparisons in the tests.
-for i, decimal in [(np.csingle, 5), (np.cdouble, 10), (np.clongdouble, 15)]:
-    cls = _get_testcorrelate_class(i, _TestCorrelateComplex)
-    cls.decimal = decimal
+# Create three classes, one for each complex data type. The actual class
+# name will be TestCorrelateComplex###, where ### is the number of bits.
+for datatype in [np.csingle, np.cdouble, np.clongdouble]:
+    cls = _get_testcorrelate_class(datatype, _TestCorrelateComplex)
+    cls.decimal = int(2 * np.finfo(datatype).precision / 3)
     globals()[cls.__name__] = cls
 
 
