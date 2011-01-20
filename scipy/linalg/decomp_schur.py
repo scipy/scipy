@@ -68,8 +68,8 @@ def schur(a, output='real', lwork=None, overwrite_a=False):
     if lwork is None or lwork == -1:
         # get optimal work array
         result = gees(lambda x: None, a, lwork=-1)
-        lwork = result[-2][0]
-    result = gees(lambda x: None, a, lwork=result[-2][0], overwrite_a=overwrite_a)
+        lwork = result[-2][0].real.astype(numpy.int)
+    result = gees(lambda x: None, a, lwork=lwork, overwrite_a=overwrite_a)
     info = result[-1]
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal gees'

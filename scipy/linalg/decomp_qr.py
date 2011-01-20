@@ -86,7 +86,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full'):
     if lwork is None or lwork == -1:
         # get optimal work array
         qr, tau, work, info = geqrf(a1, lwork=-1, overwrite_a=1)
-        lwork = work[0]
+        lwork = work[0].real.astype(numpy.int)
 
     qr, tau, work, info = geqrf(a1, lwork=lwork, overwrite_a=overwrite_a)
     if info < 0:
@@ -108,12 +108,12 @@ def qr(a, overwrite_a=False, lwork=None, mode='full'):
     if M < N:
         # get optimal work array
         Q, work, info = gor_un_gqr(qr[:,0:M], tau, lwork=-1, overwrite_a=1)
-        lwork = work[0]
+        lwork = work[0].real.astype(numpy.int)
         Q, work, info = gor_un_gqr(qr[:,0:M], tau, lwork=lwork, overwrite_a=1)
     elif mode == 'economic':
         # get optimal work array
         Q, work, info = gor_un_gqr(qr, tau, lwork=-1, overwrite_a=1)
-        lwork = work[0]
+        lwork = work[0].real.astype(numpy.int)
         Q, work, info = gor_un_gqr(qr, tau, lwork=lwork, overwrite_a=1)
     else:
         t = qr.dtype.char
@@ -121,7 +121,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full'):
         qqr[:,0:N] = qr
         # get optimal work array
         Q, work, info = gor_un_gqr(qqr, tau, lwork=-1, overwrite_a=1)
-        lwork = work[0]
+        lwork = work[0].real.astype(numpy.int)
         Q, work, info = gor_un_gqr(qqr, tau, lwork=lwork, overwrite_a=1)
 
     if info < 0:
@@ -223,7 +223,7 @@ def rq(a, overwrite_a=False, lwork=None):
     if lwork is None or lwork == -1:
         # get optimal work array
         rq, tau, work, info = gerqf(a1, lwork=-1, overwrite_a=1)
-        lwork = work[0]
+        lwork = work[0].real.astype(numpy.int)
     rq, tau, work, info = gerqf(a1, lwork=lwork, overwrite_a=overwrite_a)
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal geqrf'
