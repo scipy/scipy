@@ -8,5 +8,4 @@ The wrappers are generated with the following commands:
    swig -c++ -python coo.i
    swig -c++ -python dia.i
    swig -c++ -python bsr.i
-
-
+   swig -c++ -python csgraph.i
