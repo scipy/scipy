@@ -1045,8 +1045,6 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
     n1 = PyArray_Size((PyObject *)ain1);
     n2 = PyArray_Size((PyObject *)ain2);
     
-    /* Swap if first argument is not the largest */
-    if (n1 < n2) { aout = ain1; ain1 = ain2; ain2 = aout; aout = NULL; }
     aout_dimens = malloc(ain1->nd*sizeof(intp));
     switch(mode & OUTSIZE_MASK) {
     case VALID:

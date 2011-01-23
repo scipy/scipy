@@ -105,6 +105,16 @@ The functions ``scipy.signal.kaiser_atten`` and ``scipy.signal.kaiser_beta``
 were added.
 
 
+Improved statistical tests (``scipy.stats``)
+--------------------------------------------
+
+A new function ``scipy.stats.fisher_exact`` was added, that provides Fisher's
+exact test for 2x2 contingency tables.
+
+The function ``scipy.stats.kendalltau`` was rewritten to make it much faster
+(O(n log(n)) vs O(n^2)).
+
+
 Deprecated features
 ===================
 
@@ -122,16 +132,6 @@ deprecated:
 - ``vackar`` (renamed to ``diagbroyden``)
 
 
-Improved statistical tests (``scipy.stats``)
---------------------------------------------
-
-A new function ``scipy.stats.fisher_exact`` was added, that provides Fisher's
-exact test for 2x2 contingency tables.
-
-The function ``scipy.stats.kendalltau`` was rewritten to make it much faster
-(O(n log(n)) vs O(n^2)).
-
-
 Removed features
 ================
 
@@ -143,6 +143,18 @@ has been removed.
 
 The ``econ`` keyword in ``scipy.linalg.qr`` has been removed. The same
 functionality is still available by specifying ``mode='economic'``.
+
+
+Old correlate/convolve behavior (in ``scipy.signal``)
+-----------------------------------------------------
+
+The old behavior for ``scipy.signal.convolve``, ``scipy.signal.convolve2d``,
+``scipy.signal.correlate`` and ``scipy.signal.correlate2d`` was deprecated in
+0.8.0 and has now been removed.  Convolve and correlate used to swap their
+arguments if the second argument has dimensions larger than the first one, and
+the mode was relative to the input with the largest dimension. The current
+behavior is to never swap the inputs, which is what most people expect, and is
+how correlation is usually defined.
 
 
 ``scipy.stats``
