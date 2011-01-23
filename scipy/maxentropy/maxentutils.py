@@ -378,7 +378,7 @@ def innerprodtranspose(A,v):
                     "a vector (rank-1 dense array) if A is sparse.")
         return innerprod
     elif sparse.isspmatrix(A):
-        return A.rmatvec(v).transpose()
+        return (A.conj().transpose() * v).transpose()
     else:
         # Assume A is dense
         if isinstance(v, numpy.ndarray):
