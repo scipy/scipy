@@ -2,11 +2,9 @@
 SciPy 0.9.0 Release Notes
 =========================
 
-.. note:: Scipy 0.9.0 is not released yet!
-
 .. contents::
 
-SciPy 0.9.0 is the culmination of XXX months of hard work. It contains
+SciPy 0.9.0 is the culmination of 6 months of hard work. It contains
 many new features, numerous bug-fixes, improved test coverage and
 better documentation.  There have been a number of deprecations and
 API changes in this release, which are documented below.  All users
@@ -22,9 +20,7 @@ we work toward a SciPy 1.0.0 release.  The 1.0.0 release will mark a
 major milestone in the development of SciPy, after which changing the
 package structure or API will be much more difficult.  Whilst these
 pre-1.0 releases are considered to have "Beta" status, we are
-committed to making them as bug-free as possible.  For example, in
-addition to fixing numerous bugs in this release, we have also doubled
-the number of unit tests since the last release.
+committed to making them as bug-free as possible.  
 
 However, until the 1.0 release, we are aggressively reviewing and
 refining the functionality, organization, and interface. This is being
@@ -33,6 +29,7 @@ useful as possible.  To achieve this, we need help from the community
 of users.  Specifically, we need feedback regarding all aspects of the
 project - everything - from which algorithms we implement, to details
 about our function's call signatures.
+
 
 Python 3
 ========
