@@ -577,7 +577,7 @@ class TestExpect(TestCase):
         ub = stats.norm.ppf(0.95, loc=5, scale=2)
         prob90 = stats.norm.expect(lambda x: 1, loc=5, scale=2, lb=lb, ub=ub)
         assert_almost_equal(prob90, 0.9, decimal=14)
-        
+
         prob90c = stats.norm.expect(lambda x: 1, loc=5, scale=2, lb=lb, ub=ub,
                                     conditional=True)
         assert_almost_equal(prob90c, 1., decimal=14)
@@ -599,7 +599,7 @@ class TestExpect(TestCase):
         prob90 = stats.beta.expect(lambda x: 1., args=(10,10), loc=5.,
                                    scale=2.,lb=lb, ub=ub, conditional=False)
         assert_almost_equal(prob90, 0.9, decimal=14)
-        
+
         prob90c = stats.beta.expect(lambda x: 1, args=(10,10), loc=5,
                                     scale=2, lb=lb, ub=ub, conditional=True)
         assert_almost_equal(prob90c, 1., decimal=14)
@@ -611,8 +611,8 @@ class TestExpect(TestCase):
         #without specifying bounds
         m_true, v_true = stats.hypergeom.stats(20, 10, 8, loc=5.)
         m = stats.hypergeom.expect(lambda x: x, args=(20, 10, 8), loc=5.)
-        assert_almost_equal(m, m_true, decimal=14)
-        
+        assert_almost_equal(m, m_true, decimal=13)
+
         v = stats.hypergeom.expect(lambda x: (x-9.)**2, args=(20, 10, 8),
                                    loc=5.)
         assert_almost_equal(v, v_true, decimal=14)
@@ -626,7 +626,7 @@ class TestExpect(TestCase):
         prob_true = 1-stats.hypergeom.pmf([5, 13], 20, 10, 8, loc=5).sum()
         prob_bounds = stats.hypergeom.expect(lambda x: 1, args=(20, 10, 8),
                                           loc=5., lb=6, ub=12)
-        assert_almost_equal(prob_bounds, prob_true, decimal=14)
+        assert_almost_equal(prob_bounds, prob_true, decimal=13)
 
         #conditional
         prob_bc = stats.hypergeom.expect(lambda x: 1, args=(20, 10, 8), loc=5.,
@@ -636,7 +636,7 @@ class TestExpect(TestCase):
         #check simple integral
         prob_b = stats.hypergeom.expect(lambda x: 1, args=(20, 10, 8),
                                         lb=0, ub=8)
-        assert_almost_equal(prob_b, 1, decimal=14)
+        assert_almost_equal(prob_b, 1, decimal=13)
 
     def test_poisson(self):
         #poisson, use lower bound only
@@ -644,13 +644,13 @@ class TestExpect(TestCase):
                                       conditional=False)
         prob_b_true = 1-stats.poisson.cdf(2,2)
         assert_almost_equal(prob_bounds, prob_b_true, decimal=14)
-        
+
 
         prob_lb = stats.poisson.expect(lambda x: 1, args=(2,), lb=2,
                                        conditional=True)
         assert_almost_equal(prob_lb, 1, decimal=14)
 
-        
+
 
 
 
