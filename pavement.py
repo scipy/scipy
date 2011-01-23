@@ -380,7 +380,7 @@ def bdist_superpack(options):
     bdist_wininst_arch(pyver, 'sse3')
     copy_bdist("sse3")
 
-    prepare_nsis_script(options.wininst.pyver, FULLVERSION)
+    prepare_nsis_script(pyver, FULLVERSION)
     subprocess.check_call(MAKENSIS + ['scipy-superinstaller.nsi'],
                           cwd=options.superpack.builddir)
 
