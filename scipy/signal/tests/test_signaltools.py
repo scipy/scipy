@@ -17,25 +17,25 @@ class _TestConvolve(TestCase):
     def test_basic(self):
         a = [3,4,5,6,5,4]
         b = [1,2,3]
-        c = convolve(a,b, old_behavior=self.old_behavior)
+        c = convolve(a,b)
         assert_array_equal(c,array([3,10,22,28,32,32,23,12]))
 
     def test_complex(self):
         x = array([1+1j, 2+1j, 3+1j])
         y = array([1+1j, 2+1j])
-        z = convolve(x, y,old_behavior=self.old_behavior)
+        z = convolve(x, y)
         assert_array_equal(z, array([2j, 2+6j, 5+8j, 5+5j]))
 
     def test_zero_order(self):
         a = 1289
         b = 4567
-        c = convolve(a,b,old_behavior=self.old_behavior)
+        c = convolve(a,b)
         assert_array_equal(c,a*b)
 
     def test_2d_arrays(self):
         a = [[1,2,3],[3,4,5]]
         b = [[2,3,4],[4,5,6]]
-        c = convolve(a,b,old_behavior=self.old_behavior)
+        c = convolve(a,b)
         d = array(  [[2 ,7 ,16,17,12],\
                      [10,30,62,58,38],\
                      [12,31,58,49,30]])
@@ -44,57 +44,24 @@ class _TestConvolve(TestCase):
     def test_valid_mode(self):
         a = [1,2,3,6,5,3]
         b = [2,3,4,5,3,4,2,2,1]
-        c = convolve(a,b,'valid',old_behavior=self.old_behavior)
+        c = convolve(a,b,'valid')
         assert_array_equal(c,array([70,78,73,65]))
 
-class OldTestConvolve(_TestConvolve):
-    old_behavior = True
-    @dec.deprecated()
-    def test_basic(self):
-        _TestConvolve.test_basic(self)
-
-    @dec.deprecated()
-    def test_complex(self):
-        _TestConvolve.test_complex(self)
-
-    @dec.deprecated()
-    def test_2d_arrays(self):
-        _TestConvolve.test_2d_arrays(self)
-
-    @dec.deprecated()
-    def test_same_mode(self):
-        _TestConvolve.test_same_mode(self)
-
-    @dec.deprecated()
-    def test_valid_mode(self):
-        a = [1,2,3,6,5,3]
-        b = [2,3,4,5,3,4,2,2,1]
-        c = convolve(a,b,'valid',old_behavior=self.old_behavior)
-        assert_array_equal(c,array([70,78,73,65]))
-
-    @dec.deprecated()
-    def test_same_mode(self):
-        a = [1,2,3,3,1,2]
-        b = [1,4,3,4,5,6,7,4,3,2,1,1,3]
-        c = convolve(a,b,'same',old_behavior=self.old_behavior)
-        d = array([14,25,35,43,57,61,63,57,45,36,25,20,17])
-        assert_array_equal(c,d)
 
 class TestConvolve(_TestConvolve):
-    old_behavior = False
     def test_valid_mode(self):
         # 'valid' mode if b.size > a.size does not make sense with the new
         # behavior
         a = [1,2,3,6,5,3]
         b = [2,3,4,5,3,4,2,2,1]
         def _test():
-            convolve(a,b,'valid',old_behavior=self.old_behavior)
+            convolve(a,b,'valid')
         self.assertRaises(ValueError, _test)
 
     def test_same_mode(self):
         a = [1,2,3,3,1,2]
         b = [1,4,3,4,5,6,7,4,3,2,1,1,3]
-        c = convolve(a,b,'same',old_behavior=self.old_behavior)
+        c = convolve(a,b,'same')
         d = array([57,61,63,57,45,36])
         assert_array_equal(c,d)
 
@@ -105,13 +72,13 @@ class _TestConvolve2d(TestCase):
         d = array(  [[2 ,7 ,16,17,12],\
                      [10,30,62,58,38],\
                      [12,31,58,49,30]])
-        e = convolve2d(a,b,old_behavior=self.old_behavior)
+        e = convolve2d(a,b)
         assert_array_equal(e,d)
 
     def test_valid_mode(self):
         e = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
         f = [[1,2,3],[3,4,5]]
-        g = convolve2d(e,f,'valid',old_behavior=self.old_behavior)
+        g = convolve2d(e,f,'valid')
         h = array([[62,80,98,116,134]])
         assert_array_equal(g,h)
 
@@ -119,7 +86,7 @@ class _TestConvolve2d(TestCase):
         a = [[1,2,3],[3,4,5]]
         b = [[2,3,4],[4,5,6]]
         fillval = 1
-        c = convolve2d(a,b,'full','fill',fillval,old_behavior=self.old_behavior)
+        c = convolve2d(a,b,'full','fill',fillval)
         d = array([[24,26,31,34,32],\
                    [28,40,62,64,52],\
                    [32,46,67,62,48]])
@@ -128,7 +95,7 @@ class _TestConvolve2d(TestCase):
     def test_wrap_boundary(self):
         a = [[1,2,3],[3,4,5]]
         b = [[2,3,4],[4,5,6]]
-        c = convolve2d(a,b,'full','wrap',old_behavior=self.old_behavior)
+        c = convolve2d(a,b,'full','wrap')
         d = array([[80,80,74,80,80],\
                    [68,68,62,68,68],\
                    [80,80,74,80,80]])
@@ -137,60 +104,18 @@ class _TestConvolve2d(TestCase):
     def test_sym_boundary(self):
         a = [[1,2,3],[3,4,5]]
         b = [[2,3,4],[4,5,6]]
-        c = convolve2d(a,b,'full','symm',old_behavior=self.old_behavior)
+        c = convolve2d(a,b,'full','symm')
         d = array([[34,30,44, 62, 66],\
                    [52,48,62, 80, 84],\
                    [82,78,92,110,114]])
         assert_array_equal(c,d)
 
 
-class OldTestConvolve2d(_TestConvolve2d):
-    old_behavior = True
-    @dec.deprecated()
-    def test_2d_arrays(self):
-        _TestConvolve2d.test_2d_arrays(self)
-
-    @dec.deprecated()
-    def test_same_mode(self):
-        e = [[1,2,3],[3,4,5]]
-        f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
-        g = convolve2d(e,f,'same',old_behavior=self.old_behavior)
-        h = array([[ 7,16,22,28, 34, 40, 37],\
-                   [30,62,80,98,116,134,114]])
-        assert_array_equal(g,h)
-
-    @dec.deprecated()
-    def test_valid_mode(self):
-        _TestConvolve2d.test_valid_mode(self)
-
-    @dec.deprecated()
-    def test_fillvalue(self):
-        _TestConvolve2d.test_fillvalue(self)
-
-    @dec.deprecated()
-    def test_wrap_boundary(self):
-        _TestConvolve2d.test_wrap_boundary(self)
-
-    @dec.deprecated()
-    def test_sym_boundary(self):
-        _TestConvolve2d.test_sym_boundary(self)
-
-    @dec.deprecated()
-    def test_valid_mode2(self):
-        # Test when in2.size > in1.size: old behavior is to do so that
-        # convolve2d(in2, in1) == convolve2d(in1, in2)
-        e = [[1,2,3],[3,4,5]]
-        f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
-        g = convolve2d(e,f,'valid',old_behavior=self.old_behavior)
-        h = array([[62,80,98,116,134]])
-        assert_array_equal(g,h)
-
 #class TestConvolve2d(_TestConvolve2d):
-#    old_behavior = False
 #    def test_same_mode(self):
 #        e = [[1,2,3],[3,4,5]]
 #        f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
-#        g = convolve2d(e,f,'same',old_behavior=self.old_behavior)
+#        g = convolve2d(e,f,'same')
 #        h = array([[80,98,116],\
 #                   [70,82,94]])
 #        assert_array_equal(g,h)
@@ -200,7 +125,7 @@ class OldTestConvolve2d(_TestConvolve2d):
 #        e = [[1,2,3],[3,4,5]]
 #        f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
 #        def _test():
-#            convolve2d(e,f,'valid',old_behavior=self.old_behavior)
+#            convolve2d(e,f,'valid')
 #        self.assertRaises(ValueError, _test)
 
 class TestFFTConvolve(TestCase):
@@ -468,43 +393,19 @@ class _TestCorrelateReal(TestCase):
 
     def test_rank1_valid(self):
         a, b, y_r = self._setup_rank1()
-        y = correlate(a, b, 'valid', old_behavior=False)
+        y = correlate(a, b, 'valid')
         assert_array_almost_equal(y, y_r[1:4])
         self.assertTrue(y.dtype == self.dt)
 
     def test_rank1_same(self):
         a, b, y_r = self._setup_rank1()
-        y = correlate(a, b, 'same', old_behavior=False)
+        y = correlate(a, b, 'same')
         assert_array_almost_equal(y, y_r[:-1])
         self.assertTrue(y.dtype == self.dt)
 
     def test_rank1_full(self):
         a, b, y_r = self._setup_rank1()
-        y = correlate(a, b, 'full', old_behavior=False)
-        assert_array_almost_equal(y, y_r)
-        self.assertTrue(y.dtype == self.dt)
-
-    @dec.deprecated()
-    def test_rank1_valid_old(self):
-        # This test assume a.size > b.size
-        a, b, y_r = self._setup_rank1()
-        y = correlate(b, a, 'valid')
-        assert_array_almost_equal(y, y_r[1:4])
-        self.assertTrue(y.dtype == self.dt)
-
-    @dec.deprecated()
-    def test_rank1_same_old(self):
-        # This test assume a.size > b.size
-        a, b, y_r = self._setup_rank1()
-        y = correlate(b, a, 'same')
-        assert_array_almost_equal(y, y_r[:-1])
-        self.assertTrue(y.dtype == self.dt)
-
-    @dec.deprecated()
-    def test_rank1_full_old(self):
-        # This test assume a.size > b.size
-        a, b, y_r = self._setup_rank1()
-        y = correlate(b, a, 'full')
+        y = correlate(a, b, 'full')
         assert_array_almost_equal(y, y_r)
         self.assertTrue(y.dtype == self.dt)
 
@@ -538,40 +439,19 @@ class _TestCorrelateReal(TestCase):
 
     def test_rank3_valid(self):
         a, b, y_r = self._setup_rank3()
-        y = correlate(a, b, "valid", old_behavior=False)
+        y = correlate(a, b, "valid")
         assert_array_almost_equal(y, y_r[1:2,2:4,3:5])
         self.assertTrue(y.dtype == self.dt)
 
     def test_rank3_same(self):
         a, b, y_r = self._setup_rank3()
-        y = correlate(a, b, "same", old_behavior=False)
+        y = correlate(a, b, "same")
         assert_array_almost_equal(y, y_r[0:-1,1:-1,1:-2])
         self.assertTrue(y.dtype == self.dt)
 
     def test_rank3_all(self):
         a, b, y_r = self._setup_rank3()
-        y = correlate(a, b, old_behavior=False)
-        assert_array_almost_equal(y, y_r)
-        self.assertTrue(y.dtype == self.dt)
-
-    @dec.deprecated()
-    def test_rank3_valid_old(self):
-        a, b, y_r = self._setup_rank3()
-        y = correlate(b, a, "valid")
-        assert_array_almost_equal(y, y_r[1:2,2:4,3:5])
-        self.assertTrue(y.dtype == self.dt)
-
-    @dec.deprecated()
-    def test_rank3_same_old(self):
-        a, b, y_r = self._setup_rank3()
-        y = correlate(b, a, "same")
-        assert_array_almost_equal(y, y_r[0:-1,1:-1,1:-2])
-        self.assertTrue(y.dtype == self.dt)
-
-    @dec.deprecated()
-    def test_rank3_all_old(self):
-        a, b, y_r = self._setup_rank3()
-        y = correlate(b, a)
+        y = correlate(a, b)
         assert_array_almost_equal(y, y_r)
         self.assertTrue(y.dtype == self.dt)
 
@@ -593,7 +473,7 @@ class _TestCorrelateComplex(TestCase):
 
     # The numpy data type to use.
     dt = None
-    
+
     # The decimal precision to be used for comparing results.
     # This value will be passed as the 'decimal' keyword argument of
     # assert_array_almost_equal().
@@ -606,27 +486,27 @@ class _TestCorrelateComplex(TestCase):
         b = np.random.randn(8).astype(self.dt)
         b += 1j * np.random.randn(8).astype(self.dt)
 
-        y_r = (correlate(a.real, b.real, mode=mode, old_behavior=False) +
-               correlate(a.imag, b.imag, mode=mode, old_behavior=False)).astype(self.dt)
-        y_r += 1j * (-correlate(a.real, b.imag, mode=mode, old_behavior=False) +
-                correlate(a.imag, b.real, mode=mode, old_behavior=False))
+        y_r = (correlate(a.real, b.real, mode=mode) +
+               correlate(a.imag, b.imag, mode=mode)).astype(self.dt)
+        y_r += 1j * (-correlate(a.real, b.imag, mode=mode) +
+                correlate(a.imag, b.real, mode=mode))
         return a, b, y_r
 
     def test_rank1_valid(self):
         a, b, y_r = self._setup_rank1('valid')
-        y = correlate(a, b, 'valid', old_behavior=False)
+        y = correlate(a, b, 'valid')
         assert_array_almost_equal(y, y_r, decimal=self.decimal)
         self.assertTrue(y.dtype == self.dt)
 
     def test_rank1_same(self):
         a, b, y_r = self._setup_rank1('same')
-        y = correlate(a, b, 'same', old_behavior=False)
+        y = correlate(a, b, 'same')
         assert_array_almost_equal(y, y_r, decimal=self.decimal)
         self.assertTrue(y.dtype == self.dt)
 
     def test_rank1_full(self):
         a, b, y_r = self._setup_rank1('full')
-        y = correlate(a, b, 'full', old_behavior=False)
+        y = correlate(a, b, 'full')
         assert_array_almost_equal(y, y_r, decimal=self.decimal)
         self.assertTrue(y.dtype == self.dt)
 
@@ -636,49 +516,11 @@ class _TestCorrelateComplex(TestCase):
         b = np.random.randn(8, 6, 4).astype(self.dt)
         b += 1j * np.random.randn(8, 6, 4).astype(self.dt)
 
-        y_r = (correlate(a.real, b.real, old_behavior=False)
-                + correlate(a.imag, b.imag, old_behavior=False)).astype(self.dt)
-        y_r += 1j * (-correlate(a.real, b.imag, old_behavior=False) +
-                correlate(a.imag, b.real, old_behavior=False))
+        y_r = (correlate(a.real, b.real)
+                + correlate(a.imag, b.imag)).astype(self.dt)
+        y_r += 1j * (-correlate(a.real, b.imag) + correlate(a.imag, b.real))
 
-        y = correlate(a, b, 'full', old_behavior=False)
-        assert_array_almost_equal(y, y_r, decimal=self.decimal-1)
-        self.assertTrue(y.dtype == self.dt)
-
-    @dec.deprecated()
-    def test_rank1_valid_old(self):
-        a, b, y_r = self._setup_rank1('valid')
-        y = correlate(b, a.conj(), 'valid')
-        assert_array_almost_equal(y, y_r, decimal=self.decimal)
-        self.assertTrue(y.dtype == self.dt)
-
-    @dec.deprecated()
-    def test_rank1_same_old(self):
-        a, b, y_r = self._setup_rank1('same')
-        y = correlate(b, a.conj(), 'same')
-        assert_array_almost_equal(y, y_r, decimal=self.decimal)
-        self.assertTrue(y.dtype == self.dt)
-
-    @dec.deprecated()
-    def test_rank1_full_old(self):
-        a, b, y_r = self._setup_rank1('full')
-        y = correlate(b, a.conj(), 'full')
-        assert_array_almost_equal(y, y_r, decimal=self.decimal)
-        self.assertTrue(y.dtype == self.dt)
-
-    @dec.deprecated()
-    def test_rank3_old(self):
-        a = np.random.randn(10, 8, 6).astype(self.dt)
-        a += 1j * np.random.randn(10, 8, 6).astype(self.dt)
-        b = np.random.randn(8, 6, 4).astype(self.dt)
-        b += 1j * np.random.randn(8, 6, 4).astype(self.dt)
-
-        y_r = (correlate(a.real, b.real, old_behavior=False)
-                + correlate(a.imag, b.imag, old_behavior=False)).astype(self.dt)
-        y_r += 1j * (-correlate(a.real, b.imag, old_behavior=False) +
-                correlate(a.imag, b.real, old_behavior=False))
-
-        y = correlate(b, a.conj(), 'full')
+        y = correlate(a, b, 'full')
         assert_array_almost_equal(y, y_r, decimal=self.decimal-1)
         self.assertTrue(y.dtype == self.dt)
 
