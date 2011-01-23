@@ -10,7 +10,8 @@ Run tests if scipy is installed:
 Run tests if interpolate is not installed:
   python tests/test_fitpack.py [<level>]
 """
-#import libwadpy
+
+import warnings
 
 from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal, \
         assert_array_almost_equal, TestCase, run_module_suite
@@ -194,6 +195,14 @@ class TestRectBivariateSpline(TestCase):
         zi2 = array([lut(xp, yp)[0,0] for xp, yp in zip(xi, yi)])
 
         assert_almost_equal(zi, zi2)
+
+
+warnings.filterwarnings("ignore",
+                        message="\\nThe coefficients of the spline returned",
+                        module="scipy.interpolate")
+warnings.filterwarnings("ignore",
+                        message="\\nThe required storage space exceeds",
+                        module="scipy.interpolate")
 
 if __name__ == "__main__":
     run_module_suite()
