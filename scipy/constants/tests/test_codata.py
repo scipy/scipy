@@ -1,7 +1,8 @@
 import warnings
 
 from scipy.constants import constants, codata, find
-from numpy.testing import assert_equal, assert_, run_module_suite
+from numpy.testing import assert_equal, assert_, run_module_suite, \
+                          assert_almost_equal
 
 def test_find():
 
@@ -41,6 +42,10 @@ def test_find_all():
 def test_find_single():
     assert_equal(codata.find('Wien freq', disp=False)[0],
                  'Wien frequency displacement law constant')
+
+def test_2002_vs_2006():
+    assert_almost_equal(codata.value('magn. flux quantum'),
+                        codata.value('mag. flux quantum'))
 
 if __name__ == "__main__":
     run_module_suite()
