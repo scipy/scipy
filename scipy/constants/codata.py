@@ -72,6 +72,67 @@ Group on Fundamental Constants.
 """
 Quantity                                               Value                 Uncertainty          Unit
 """
+txt2002 = """Wien displacement law constant                         2.897 7685e-3         0.000 0051e-3         m K
+atomic unit of 1st hyperpolarizablity                  3.206 361 51e-53      0.000 000 28e-53      C^3 m^3 J^-2
+atomic unit of 2nd hyperpolarizablity                  6.235 3808e-65        0.000 0011e-65        C^4 m^4 J^-3
+atomic unit of electric dipole moment                  8.478 353 09e-30      0.000 000 73e-30      C m
+atomic unit of electric polarizablity                  1.648 777 274e-41     0.000 000 016e-41     C^2 m^2 J^-1
+atomic unit of electric quadrupole moment              4.486 551 24e-40      0.000 000 39e-40      C m^2
+atomic unit of magn. dipole moment                     1.854 801 90e-23      0.000 000 16e-23      J T^-1
+atomic unit of magn. flux density                      2.350 517 42e5        0.000 000 20e5        T
+deuteron magn. moment                                  0.433 073 482e-26     0.000 000 038e-26     J T^-1
+deuteron magn. moment to Bohr magneton ratio           0.466 975 4567e-3     0.000 000 0050e-3
+deuteron magn. moment to nuclear magneton ratio        0.857 438 2329        0.000 000 0092
+deuteron-electron magn. moment ratio                   -4.664 345 548e-4     0.000 000 050e-4
+deuteron-proton magn. moment ratio                     0.307 012 2084        0.000 000 0045
+deuteron-neutron magn. moment ratio                    -0.448 206 52         0.000 000 11
+electron gyromagn. ratio                               1.760 859 74e11       0.000 000 15e11       s^-1 T^-1
+electron gyromagn. ratio over 2 pi                     28 024.9532           0.0024                MHz T^-1
+electron magn. moment                                  -928.476 412e-26      0.000 080e-26         J T^-1
+electron magn. moment to Bohr magneton ratio           -1.001 159 652 1859   0.000 000 000 0038
+electron magn. moment to nuclear magneton ratio        -1838.281 971 07      0.000 000 85
+electron magn. moment anomaly                          1.159 652 1859e-3     0.000 000 0038e-3
+electron to shielded proton magn. moment ratio         -658.227 5956         0.000 0071
+electron to shielded helion magn. moment ratio         864.058 255           0.000 010
+electron-deuteron magn. moment ratio                   -2143.923 493         0.000 023
+electron-muon magn. moment ratio                       206.766 9894          0.000 0054
+electron-neutron magn. moment ratio                    960.920 50            0.000 23
+electron-proton magn. moment ratio                     -658.210 6862         0.000 0066
+magn. constant                                         12.566 370 614...e-7  0                     N A^-2
+magn. flux quantum                                     2.067 833 72e-15      0.000 000 18e-15      Wb
+muon magn. moment                                      -4.490 447 99e-26     0.000 000 40e-26      J T^-1
+muon magn. moment to Bohr magneton ratio               -4.841 970 45e-3      0.000 000 13e-3
+muon magn. moment to nuclear magneton ratio            -8.890 596 98         0.000 000 23
+muon-proton magn. moment ratio                         -3.183 345 118        0.000 000 089
+neutron gyromagn. ratio                                1.832 471 83e8        0.000 000 46e8        s^-1 T^-1
+neutron gyromagn. ratio over 2 pi                      29.164 6950           0.000 0073            MHz T^-1
+neutron magn. moment                                   -0.966 236 45e-26     0.000 000 24e-26      J T^-1
+neutron magn. moment to Bohr magneton ratio            -1.041 875 63e-3      0.000 000 25e-3
+neutron magn. moment to nuclear magneton ratio         -1.913 042 73         0.000 000 45
+neutron to shielded proton magn. moment ratio          -0.684 996 94         0.000 000 16
+neutron-electron magn. moment ratio                    1.040 668 82e-3       0.000 000 25e-3
+neutron-proton magn. moment ratio                      -0.684 979 34         0.000 000 16
+proton gyromagn. ratio                                 2.675 222 05e8        0.000 000 23e8        s^-1 T^-1
+proton gyromagn. ratio over 2 pi                       42.577 4813           0.000 0037            MHz T^-1
+proton magn. moment                                    1.410 606 71e-26      0.000 000 12e-26      J T^-1
+proton magn. moment to Bohr magneton ratio             1.521 032 206e-3      0.000 000 015e-3
+proton magn. moment to nuclear magneton ratio          2.792 847 351         0.000 000 028
+proton magn. shielding correction                      25.689e-6             0.015e-6
+proton-neutron magn. moment ratio                      -1.459 898 05         0.000 000 34
+shielded helion gyromagn. ratio                        2.037 894 70e8        0.000 000 18e8        s^-1 T^-1
+shielded helion gyromagn. ratio over 2 pi              32.434 1015           0.000 0028            MHz T^-1
+shielded helion magn. moment                           -1.074 553 024e-26    0.000 000 093e-26     J T^-1
+shielded helion magn. moment to Bohr magneton ratio    -1.158 671 474e-3     0.000 000 014e-3
+shielded helion magn. moment to nuclear magneton ratio -2.127 497 723        0.000 000 025
+shielded helion to proton magn. moment ratio           -0.761 766 562        0.000 000 012
+shielded helion to shielded proton magn. moment ratio  -0.761 786 1313       0.000 000 0033
+shielded helion gyromagn. ratio                        2.037 894 70e8        0.000 000 18e8        s^-1 T^-1
+shielded helion gyromagn. ratio over 2 pi              32.434 1015           0.000 0028            MHz T^-1
+shielded proton magn. moment                           1.410 570 47e-26      0.000 000 12e-26      J T^-1
+shielded proton magn. moment to Bohr magneton ratio    1.520 993 132e-3      0.000 000 016e-3
+shielded proton magn. moment to nuclear magneton ratio 2.792 775 604         0.000 000 030
+{220} lattice spacing of silicon                       192.015 5965e-12      0.000 0070e-12        m"""
+
 txt2006 = """lattice spacing of silicon                             192.015 5762 e-12     0.000 0050 e-12       m
 alpha particle-electron mass ratio                     7294.299 5365         0.000 0031
 alpha particle mass                                    6.644 656 20 e-27     0.000 000 33 e-27     kg
@@ -401,14 +462,22 @@ Wien wavelength displacement law constant              2.897 7685 e-3        0.0
 
 #parse into a dict
 physical_constants = {}
-for line in txt2006.split('\n'):
-    name = line[:55].rstrip()
-    val = line[55:77].replace(' ','').replace('...','')
-    val = float(val)
-    uncert = line[77:99].replace(' ','').replace('(exact)', '0')
-    uncert = float(uncert)
-    units = line[99:].rstrip()
-    physical_constants[name] = (val, units, uncert)
+
+def parse_constants(d):
+    for line in d.split('\n'):
+        name = line[:55].rstrip()
+        val = line[55:77].replace(' ','').replace('...','')
+        val = float(val)
+        uncert = line[77:99].replace(' ','').replace('(exact)', '0')
+        uncert = float(uncert)
+        units = line[99:].rstrip()
+        physical_constants[name] = (val, units, uncert)
+
+# These values should be deprecated in due course
+parse_constants(txt2002)
+
+# This is the newest data-set
+parse_constants(txt2006)
 
 def value(key) :
     """
