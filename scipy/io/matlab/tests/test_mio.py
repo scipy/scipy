@@ -875,5 +875,13 @@ def test_varmats_from_mat():
         assert_array_equal(res[name], exp_res)
 
 
+def test_one_by_zero():
+    ''' Test 1x0 chars get read correctly '''
+    func_eg = pjoin(test_data_path, 'one_by_zero_char.mat')
+    rdr = MatFile5Reader_future(open(func_eg, 'rb'))
+    d = rdr.get_variables()
+    assert_equal(d['var'].shape, (0,))
+
+
 if __name__ == "__main__":
     run_module_suite()
