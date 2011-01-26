@@ -1,9 +1,7 @@
 """QR decomposition functions."""
 
-from warnings import warn
-
 import numpy
-from numpy import asarray_chkfinite, complexfloating
+from numpy import asarray_chkfinite
 
 # Local imports
 import special_matrices
@@ -52,17 +50,16 @@ def qr(a, overwrite_a=False, lwork=None, mode='full'):
 
     Examples
     --------
-    >>> from scipy import random, linalg, dot
+    >>> from scipy import random, linalg, dot, allclose
     >>> a = random.randn(9, 6)
     >>> q, r = linalg.qr(a)
     >>> allclose(a, dot(q, r))
     True
     >>> q.shape, r.shape
     ((9, 9), (9, 6))
-
     >>> r2 = linalg.qr(a, mode='r')
     >>> allclose(r, r2)
-
+    True
     >>> q3, r3 = linalg.qr(a, mode='economic')
     >>> q3.shape, r3.shape
     ((9, 6), (6, 6))
@@ -185,7 +182,7 @@ def qr_old(a, overwrite_a=False, lwork=None):
     return Q, R
 
 
-def rq(a, overwrite_a=False, lwork=None):
+def rq(a, overwrite_a=False, lwork=None, mode='full'):
     """Compute RQ decomposition of a square real matrix.
 
     Calculate the decomposition :lm:`A = R Q` where Q is unitary/orthogonal
@@ -194,12 +191,16 @@ def rq(a, overwrite_a=False, lwork=None):
     Parameters
     ----------
     a : array, shape (M, M)
-        Square real matrix to be decomposed
+        Matrix to be decomposed
     overwrite_a : boolean
         Whether data in a is overwritten (may improve performance)
     lwork : integer
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
+    mode : {'full', 'r', 'economic'}
+        Determines what information is to be returned: either both Q and R
+        ('full', default), only R ('r') or both Q and R but computed in
+        economy-size ('economic', see Notes).
 
     Returns
     -------
@@ -208,17 +209,34 @@ def rq(a, overwrite_a=False, lwork=None):
 
     Raises LinAlgError if decomposition fails
 
+    Examples
+    --------
+    >>> from scipy import linalg
+    >>> from numpy import random, dot, allclose
+    >>> a = random.randn(6, 9)
+    >>> r, q = linalg.rq(a)
+    >>> allclose(a, dot(r, q))
+    True
+    >>> r.shape, q.shape
+    ((6, 9), (9, 9))
+    >>> r2 = linalg.rq(a, mode='r')
+    >>> allclose(r, r2)
+    True
+    >>> r3, q3 = linalg.rq(a, mode='economic')
+    >>> r3.shape, q3.shape
+    ((6, 6), (6, 9))
+
     """
-    # TODO: implement support for non-square and complex arrays
+    if not mode in ['full', 'r', 'economic']:
+        raise ValueError(\
+                 "Mode argument should be one of ['full', 'r', 'economic']")
+
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
-    M,N = a1.shape
-    if M != N:
-        raise ValueError('expected square matrix')
-    if issubclass(a1.dtype.type, complexfloating):
-        raise ValueError('expected real (non-complex) matrix')
+    M, N = a1.shape
     overwrite_a = overwrite_a or (_datanotshared(a1, a))
+
     gerqf, = get_lapack_funcs(('gerqf',), (a1,))
     if lwork is None or lwork == -1:
         # get optimal work array
@@ -226,20 +244,40 @@ def rq(a, overwrite_a=False, lwork=None):
         lwork = work[0].real.astype(numpy.int)
     rq, tau, work, info = gerqf(a1, lwork=lwork, overwrite_a=overwrite_a)
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal geqrf'
+        raise ValueError('illegal value in %d-th argument of internal gerqf'
                                                                     % -info)
-    gemm, = get_blas_funcs(('gemm',), (rq,))
-    t = rq.dtype.char
-    R = special_matrices.triu(rq)
-    Q = numpy.identity(M, dtype=t)
-    ident = numpy.identity(M, dtype=t)
-    zeros = numpy.zeros
+    if not mode == 'economic' or N < M:
+        R = special_matrices.triu(rq, N-M)
+    else:
+        R = special_matrices.triu(rq[-M:, -M:])
 
-    k = min(M, N)
-    for i in range(k):
-        v = zeros((M,), t)
-        v[N-k+i] = 1
-        v[0:N-k+i] = rq[M-k+i, 0:N-k+i]
-        H = gemm(-tau[i], v, v, 1+0j, ident, trans_b=2)
-        Q = gemm(1, Q, H)
+    if mode == 'r':
+        return R
+
+    if find_best_lapack_type((a1,))[0] in ('s', 'd'):
+        gor_un_grq, = get_lapack_funcs(('orgrq',), (rq,))
+    else:
+        gor_un_grq, = get_lapack_funcs(('ungrq',), (rq,))
+
+    if N < M:
+        # get optimal work array
+        Q, work, info = gor_un_grq(rq[-N:], tau, lwork=-1, overwrite_a=1)
+        lwork = work[0].real.astype(numpy.int)
+        Q, work, info = gor_un_grq(rq[-N:], tau, lwork=lwork, overwrite_a=1)
+    elif mode == 'economic':
+        # get optimal work array
+        Q, work, info = gor_un_grq(rq, tau, lwork=-1, overwrite_a=1)
+        lwork = work[0].real.astype(numpy.int)
+        Q, work, info = gor_un_grq(rq, tau, lwork=lwork, overwrite_a=1)
+    else:
+        rq1 = numpy.empty((N, N), dtype=rq.dtype)
+        rq1[-M:] = rq
+        # get optimal work array
+        Q, work, info = gor_un_grq(rq1, tau, lwork=-1, overwrite_a=1)
+        lwork = work[0].real.astype(numpy.int)
+        Q, work, info = gor_un_grq(rq1, tau, lwork=lwork, overwrite_a=1)
+
+    if info < 0:
+        raise ValueError("illegal value in %d-th argument of internal orgrq"
+                                                                    % -info)
     return R, Q

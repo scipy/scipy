@@ -919,7 +919,7 @@ class TestRQ(TestCase):
     def test_simple(self):
         a = [[8,2,3],[2,9,3],[5,3,6]]
         r,q = rq(a)
-        assert_array_almost_equal(dot(transpose(q),q),identity(3))
+        assert_array_almost_equal(dot(q, transpose(q)),identity(3))
         assert_array_almost_equal(dot(r,q),a)
 
     def test_random(self):
@@ -927,54 +927,63 @@ class TestRQ(TestCase):
         for k in range(2):
             a = random([n,n])
             r,q = rq(a)
-            assert_array_almost_equal(dot(transpose(q),q),identity(n))
+            assert_array_almost_equal(dot(q, transpose(q)),identity(n))
             assert_array_almost_equal(dot(r,q),a)
 
-# TODO: implement support for non-square and complex arrays
+    def test_simple_trap(self):
+        a = [[8,2,3],[2,9,3]]
+        r,q = rq(a)
+        assert_array_almost_equal(dot(transpose(q),q),identity(3))
+        assert_array_almost_equal(dot(r,q),a)
 
-##    def test_simple_trap(self):
-##        a = [[8,2,3],[2,9,3]]
-##        r,q = rq(a)
-##        assert_array_almost_equal(dot(transpose(q),q),identity(2))
-##        assert_array_almost_equal(dot(r,q),a)
+    def test_simple_tall(self):
+        a = [[8,2],[2,9],[5,3]]
+        r,q = rq(a)
+        assert_array_almost_equal(dot(transpose(q),q),identity(2))
+        assert_array_almost_equal(dot(r,q),a)
 
-##    def test_simple_tall(self):
-##        a = [[8,2],[2,9],[5,3]]
-##        r,q = rq(a)
-##        assert_array_almost_equal(dot(transpose(q),q),identity(3))
-##        assert_array_almost_equal(dot(r,q),a)
+    def test_simple_complex(self):
+        a = [[3,3+4j,5],[5,2,2+7j],[3,2,7]]
+        r,q = rq(a)
+        assert_array_almost_equal(dot(q, conj(transpose(q))),identity(3))
+        assert_array_almost_equal(dot(r,q),a)
 
-##    def test_simple_complex(self):
-##        a = [[3,3+4j,5],[5,2,2+7j],[3,2,7]]
-##        r,q = rq(a)
-##        assert_array_almost_equal(dot(conj(transpose(q)),q),identity(3))
-##        assert_array_almost_equal(dot(r,q),a)
+    def test_random_tall(self):
+        m = 200
+        n = 100
+        for k in range(2):
+            a = random([m,n])
+            r,q = rq(a)
+            assert_array_almost_equal(dot(q, transpose(q)),identity(n))
+            assert_array_almost_equal(dot(r,q),a)
 
-##    def test_random_tall(self):
-##        m = 200
-##        n = 100
-##        for k in range(2):
-##            a = random([m,n])
-##            r,q = rq(a)
-##            assert_array_almost_equal(dot(transpose(q),q),identity(m))
-##            assert_array_almost_equal(dot(r,q),a)
+    def test_random_trap(self):
+        m = 100
+        n = 200
+        for k in range(2):
+            a = random([m,n])
+            r,q = rq(a)
+            assert_array_almost_equal(dot(q, transpose(q)),identity(n))
+            assert_array_almost_equal(dot(r,q),a)
 
-##    def test_random_trap(self):
-##        m = 100
-##        n = 200
-##        for k in range(2):
-##            a = random([m,n])
-##            r,q = rq(a)
-##            assert_array_almost_equal(dot(transpose(q),q),identity(m))
-##            assert_array_almost_equal(dot(r,q),a)
+    def test_random_trap_economic(self):
+        m = 100
+        n = 200
+        for k in range(2):
+            a = random([m,n])
+            r,q = rq(a, mode='economic')
+            assert_array_almost_equal(dot(q,transpose(q)),identity(m))
+            assert_array_almost_equal(dot(r,q),a)
+            assert_equal(q.shape, (m, n))
+            assert_equal(r.shape, (m, m))
 
-##    def test_random_complex(self):
-##        n = 20
-##        for k in range(2):
-##            a = random([n,n])+1j*random([n,n])
-##            r,q = rq(a)
-##            assert_array_almost_equal(dot(conj(transpose(q)),q),identity(n))
-##            assert_array_almost_equal(dot(r,q),a)
+    def test_random_complex(self):
+        n = 20
+        for k in range(2):
+            a = random([n,n])+1j*random([n,n])
+            r,q = rq(a)
+            assert_array_almost_equal(dot(q, conj(transpose(q))),identity(n))
+            assert_array_almost_equal(dot(r,q),a)
 
 transp = transpose
 any = sometrue
