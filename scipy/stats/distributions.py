@@ -4362,7 +4362,7 @@ class tukeylambda_gen(rv_continuous):
         Fx = arr(special.tklmbda(x,lam))
         Px = Fx**(lam-1.0) + (arr(1-Fx))**(lam-1.0)
         Px = 1.0/arr(Px)
-        return where((lam > 0) & (abs(x) < 1.0/lam), Px, 0.0)
+        return where((lam <= 0) | (abs(x) < 1.0/arr(lam)), Px, 0.0)
     def _cdf(self, x, lam):
         return special.tklmbda(x, lam)
     def _ppf(self, q, lam):
