@@ -4358,6 +4358,9 @@ Truncated Normal distribution.
 
 # FIXME: RVS does not work.
 class tukeylambda_gen(rv_continuous):
+    def _argcheck(self, lam):
+        # lam in RR.
+        return np.ones(np.shape(lam), dtype=bool)
     def _pdf(self, x, lam):
         Fx = arr(special.tklmbda(x,lam))
         Px = Fx**(lam-1.0) + (arr(1-Fx))**(lam-1.0)
