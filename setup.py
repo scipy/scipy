@@ -32,6 +32,7 @@ Intended Audience :: Developers
 License :: OSI Approved
 Programming Language :: C
 Programming Language :: Python
+Programming Language :: Python :: 3
 Topic :: Software Development
 Topic :: Scientific/Engineering
 Operating System :: Microsoft :: Windows
