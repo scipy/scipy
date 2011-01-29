@@ -147,8 +147,9 @@ def fromimage(im, flatten=0):
     return array(im)
 
 _errstr = "Mode is unknown or incompatible with input array shape."
-def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
-            mode=None,channel_axis=None):
+
+def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
+            mode=None, channel_axis=None):
     """Takes a numpy array and returns a PIL image.  The mode of the
     PIL image depends on the array shape, the pal keyword, and the mode
     keyword.
@@ -171,7 +172,8 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
     shape = list(data.shape)
     valid = len(shape)==2 or ((len(shape)==3) and \
                               ((3 in shape) or (4 in shape)))
-    assert valid, "Not a suitable array shape for any mode."
+    if not valid:
+        raise ValueError("'arr' does not have a suitable array shape for any mode.")
     if len(shape) == 2:
         shape = (shape[1],shape[0]) # columns show up first
         if mode == 'F':
@@ -242,11 +244,13 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
         raise ValueError(_errstr)
 
     if mode in ['RGB', 'YCbCr']:
-        assert numch == 3, "Invalid array shape for mode."
+        if numch != 3:
+            raise ValueError("Invalid array shape for mode.")
     if mode in ['RGBA', 'CMYK']:
-        assert numch == 4, "Invalid array shape for mode."
+        if numch != 4:
+            raise ValueError("Invalid array shape for mode.")
 
-    # Here we know data and mode is coorect
+    # Here we know data and mode is correct
     image = Image.fromstring(mode, shape, strdata)
     return image
 

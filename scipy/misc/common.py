@@ -217,7 +217,7 @@ def comb(N,k,exact=0):
         sv = special.errprint(sv)
         return where(cond, vals, 0.0)
 
-def central_diff_weights(Np,ndiv=1):
+def central_diff_weights(Np, ndiv=1):
     """
     Return weights for an Np-point central derivative of order ndiv
     assuming equally-spaced function points.
@@ -230,8 +230,10 @@ def central_diff_weights(Np,ndiv=1):
     Can be inaccurate for large number of points.
 
     """
-    assert (Np >= ndiv+1), "Number of points must be at least the derivative order + 1."
-    assert (Np % 2 == 1), "Odd-number of points only."
+    if Np < ndiv + 1:
+        raise ValueError("Number of points must be at least the derivative order + 1.")
+    if Np % 2 == 0:
+        raise ValueError("The number of points must be odd.")
     from scipy import linalg
     ho = Np >> 1
     x = arange(-ho,ho+1.0)
@@ -242,7 +244,7 @@ def central_diff_weights(Np,ndiv=1):
     w = product(arange(1,ndiv+1),axis=0)*linalg.inv(X)[ndiv]
     return w
 
-def derivative(func,x0,dx=1.0,n=1,args=(),order=3):
+def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     """
     Find the n-th derivative of a function at point x0.
 
@@ -277,8 +279,12 @@ def derivative(func,x0,dx=1.0,n=1,args=(),order=3):
     4.0
 
     """
-    assert (order >= n+1), "Number of points must be at least the derivative order + 1."
-    assert (order % 2 == 1), "Odd number of points only."
+    if order < n + 1:
+        raise ValueError("'order' (the number of points used to compute the derivative), "
+                         "must be at least the derivative order 'n' + 1.")
+    if order % 2 == 0:
+        raise ValueError("'order' (the number of points used to compute the derivative) "
+                         "must be odd.")
     # pre-computed for n=1 and 2 and low-order for speed.
     if n==1:
         if order == 3:
