@@ -42504,21 +42504,27 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_1(PyObject *SWIGUNUSEDPARM(se
   {
     npy_intp length = (arg10)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    }
     delete arg10; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg11)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    }
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg12)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_BYTE); 
-    memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(signed char)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(signed char)*length);
+    }
     delete arg12; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -42681,21 +42687,27 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_2(PyObject *SWIGUNUSEDPARM(se
   {
     npy_intp length = (arg10)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    }
     delete arg10; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg11)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    }
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg12)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_UBYTE); 
-    memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(unsigned char)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(unsigned char)*length);
+    }
     delete arg12; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -42858,21 +42870,27 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_3(PyObject *SWIGUNUSEDPARM(se
   {
     npy_intp length = (arg10)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    }
     delete arg10; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg11)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    }
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg12)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_SHORT); 
-    memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(short)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(short)*length);
+    }
     delete arg12; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -43035,21 +43053,27 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_4(PyObject *SWIGUNUSEDPARM(se
   {
     npy_intp length = (arg10)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    }
     delete arg10; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg11)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    }
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg12)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_USHORT); 
-    memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(unsigned short)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(unsigned short)*length);
+    }
     delete arg12; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -43212,21 +43236,27 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_5(PyObject *SWIGUNUSEDPARM(se
   {
     npy_intp length = (arg10)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    }
     delete arg10; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg11)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    }
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg12)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(int)*length);
+    }
     delete arg12; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -43389,21 +43419,27 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_6(PyObject *SWIGUNUSEDPARM(se
   {
     npy_intp length = (arg10)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    }
     delete arg10; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg11)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    }
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg12)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_UINT); 
-    memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(unsigned int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(unsigned int)*length);
+    }
     delete arg12; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -43566,21 +43602,27 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_7(PyObject *SWIGUNUSEDPARM(se
   {
     npy_intp length = (arg10)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    }
     delete arg10; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg11)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    }
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg12)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_LONGLONG); 
-    memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(long long)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(long long)*length);
+    }
     delete arg12; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -43743,21 +43785,27 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_8(PyObject *SWIGUNUSEDPARM(se
   {
     npy_intp length = (arg10)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    }
     delete arg10; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg11)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    }
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg12)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_ULONGLONG); 
-    memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(unsigned long long)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(unsigned long long)*length);
+    }
     delete arg12; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -43920,21 +43968,27 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_9(PyObject *SWIGUNUSEDPARM(se
   {
     npy_intp length = (arg10)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    }
     delete arg10; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg11)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    }
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg12)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_FLOAT); 
-    memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(float)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(float)*length);
+    }
     delete arg12; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -44097,21 +44151,27 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_10(PyObject *SWIGUNUSEDPARM(s
   {
     npy_intp length = (arg10)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    }
     delete arg10; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg11)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    }
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg12)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_DOUBLE); 
-    memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(double)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(double)*length);
+    }
     delete arg12; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -44274,21 +44334,27 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_11(PyObject *SWIGUNUSEDPARM(s
   {
     npy_intp length = (arg10)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    }
     delete arg10; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg11)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    }
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg12)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_LONGDOUBLE); 
-    memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(long double)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(long double)*length);
+    }
     delete arg12; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -44451,21 +44517,27 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_12(PyObject *SWIGUNUSEDPARM(s
   {
     npy_intp length = (arg10)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    }
     delete arg10; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg11)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    }
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg12)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(npy_cfloat_wrapper)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(npy_cfloat_wrapper)*length);
+    }
     delete arg12; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -44628,21 +44700,27 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_13(PyObject *SWIGUNUSEDPARM(s
   {
     npy_intp length = (arg10)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    }
     delete arg10; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg11)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    }
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg12)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(npy_cdouble_wrapper)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(npy_cdouble_wrapper)*length);
+    }
     delete arg12; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -44805,21 +44883,27 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_14(PyObject *SWIGUNUSEDPARM(s
   {
     npy_intp length = (arg10)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg10))[0]), sizeof(int)*length);
+    }
     delete arg10; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg11)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_INT); 
-    memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg11))[0]), sizeof(int)*length);
+    }
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     npy_intp length = (arg12)->size(); 
     PyObject *obj = PyArray_SimpleNew(1, &length,PyArray_CLONGDOUBLE); 
-    memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(npy_clongdouble_wrapper)*length);
+    if (length > 0) {
+      memcpy(PyArray_DATA(obj), &((*(arg12))[0]), sizeof(npy_clongdouble_wrapper)*length);
+    }
     delete arg12; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }

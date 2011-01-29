@@ -524,7 +524,9 @@ PyObject *helper_appendToTuple( PyObject *where, PyObject *what ) {
 %typemap( argout ) std::vector<ctype>* array_argout { 
   npy_intp length = ($1)->size(); 
   PyObject *obj = PyArray_SimpleNew(1, &length, ##atype); 
-  memcpy(PyArray_DATA(obj), &((*($1))[0]), sizeof(ctype)*length);
+  if (length > 0) {
+    memcpy(PyArray_DATA(obj), &((*($1))[0]), sizeof(ctype)*length);
+  }
   delete $1; 
   $result = helper_appendToTuple( $result, (PyObject *)obj ); 
 }; 
