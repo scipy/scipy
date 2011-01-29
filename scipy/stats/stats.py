@@ -3490,7 +3490,8 @@ def kruskal(*args):
     .. [1] http://en.wikipedia.org/wiki/Kruskal-Wallis_one-way_analysis_of_variance
 
     """
-    assert len(args) >= 2, "Need at least 2 groups in stats.kruskal()"
+    if len(args) < 2:
+        raise ValueError("Need at least two groups in stats.kruskal()")
     n = map(len,args)
     all = []
     for i in range(len(args)):

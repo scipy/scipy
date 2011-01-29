@@ -92,7 +92,8 @@ Notes
     if (axis is None) or (data.ndim == 1):
         result = _hd_1D(data, p, var)
     else:
-        assert data.ndim <= 2, "Array should be 2D at most !"
+        if data.ndim > 2:
+            raise ValueError("Array 'data' must be at most two dimensional, but got data.ndim = %d" % data.ndim)
         result = ma.apply_along_axis(_hd_1D, axis, data, p, var)
     #
     return ma.fix_invalid(result, copy=False)
@@ -162,7 +163,8 @@ Notes
     if (axis is None):
         result = _hdsd_1D(data, p)
     else:
-        assert data.ndim <= 2, "Array should be 2D at most !"
+        if data.ndim > 2:
+            raise ValueError("Array 'data' must be at most two dimensional, but got data.ndim = %d" % data.ndim)
         result = ma.apply_along_axis(_hdsd_1D, axis, data, p)
     #
     return ma.fix_invalid(result, copy=False).ravel()
@@ -236,7 +238,8 @@ Parameters
         return mj
     #
     data = ma.array(data, copy=False)
-    assert data.ndim <= 2, "Array should be 2D at most !"
+    if data.ndim > 2:
+        raise ValueError("Array 'data' must be at most two dimensional, but got data.ndim = %d" % data.ndim)
     p = np.array(prob, copy=False, ndmin=1)
     # Computes quantiles along axis (or globally)
     if (axis is None):
@@ -305,7 +308,8 @@ Parameters
     if (axis is None):
         result = _cihs_1D(data.compressed(), alpha)
     else:
-        assert data.ndim <= 2, "Array should be 2D at most !"
+        if data.ndim > 2:
+            raise ValueError("Array 'data' must be at most two dimensional, but got data.ndim = %d" % data.ndim)
         result = ma.apply_along_axis(_cihs_1D, axis, data, alpha)
     #
     return result

@@ -1286,7 +1286,8 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
         shp = a.shape
         return _trimmed_stde_1D(a.ravel(),lolim,uplim,loinc,upinc)
     else:
-        assert a.ndim <= 2, "Array should be 2D at most !"
+        if a.ndim > 2:
+            raise ValueError("Array 'a' must be at most two dimensional, but got a.ndim = %d" % a.ndim)
         return ma.apply_along_axis(_trimmed_stde_1D, axis, a,
                                    lolim,uplim,loinc,upinc)
 
@@ -1534,7 +1535,8 @@ median along the given axis. masked values are discarded.
     if (axis is None):
         return _stdemed_1D(data)
     else:
-        assert data.ndim <= 2, "Array should be 2D at most !"
+        if data.ndim > 2:
+            raise ValueError("Array 'data' must be at most two dimensional, but got data.ndim = %d" % data.ndim)
         return ma.apply_along_axis(_stdemed_1D, axis, data)
 
 #####--------------------------------------------------------------------------

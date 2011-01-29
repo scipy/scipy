@@ -72,7 +72,7 @@ def _gauss_mvs(x, n, alpha):
 ##  Returns alpha confidence interval for the mean, variance,
 ##      and std.
 
-def bayes_mvs(data,alpha=0.90):
+def bayes_mvs(data, alpha=0.90):
     """Return Bayesian confidence intervals for the mean, var, and std.
 
     Assumes 1-d data all has same mean and variance and uses Jeffrey's prior
@@ -89,8 +89,10 @@ def bayes_mvs(data,alpha=0.90):
     """
     x = ravel(data)
     n = len(x)
-    assert(n > 1)
-    assert(alpha < 1 and alpha > 0)
+    if n < 2:
+        raise ValueError("data must contain at least two values.")
+    if alpha >= 1 or alpha <= 0:
+        raise ValueError("0 < alpha < 1 is required, but alpha=%s was given." % alpha)
     n = float(n)
     if (n > 1000): # just a guess.  The curves look very similar at this point.
         return _gauss_mvs(x, n, alpha)
@@ -533,10 +535,11 @@ def shapiro(x,a=None,reta=0):
         a = zeros(N,'f')
         init = 0
     else:
-        assert(len(a) == N/2), "a must be == len(x)/2"
+        if len(a) != N//2:
+            raise ValueError("len(a) must equal len(x)/2")
         init = 1
     y = sort(x)
-    a,w,pw,ifault = statlib.swilk(y,a[:N/2],init)
+    a, w, pw, ifault = statlib.swilk(y, a[:N//2], init)
     if not ifault in [0,2]:
         warnings.warn(str(ifault))
     if N > 5000:
