@@ -682,7 +682,9 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit = 'random',
             raise ValueError("unknown init method %s" % str(minit))
         clusters = init(data, k)
 
-    assert not iter == 0
+    if int(iter) < 1:
+        raise ValueError("iter = %s is not valid.  iter must be a positive integer." % iter)
+
     return _kmeans2(data, clusters, iter, nc, _valid_miss_meth[missing])
 
 def _kmeans2(data, code, niter, nc, missing):
