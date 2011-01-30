@@ -2,6 +2,7 @@
 from os.path import join, dirname
 import sys
 import os
+import glob
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -17,10 +18,15 @@ def configuration(parent_package='',top_path=None):
         superlu_defs = []
     superlu_defs.append(('USE_VENDOR_BLAS',1))
 
-    superlu_src = os.path.join(dirname(__file__), 'SuperLU', 'SRC')
+    superlu_src = join(dirname(__file__), 'SuperLU', 'SRC')
+
+    sources = list(glob.glob(join(superlu_src, '*.c')))
+    if os.name == 'nt' and 'FPATH' in os.environ:
+        # when using MSVC + MKL, lsame is already in MKL
+        sources.remove(join(superlu_src, 'lsame.c'))
 
     config.add_library('superlu_src',
-                       sources = [join(superlu_src,'*.c')],
+                       sources = sources,
                        macros = superlu_defs,
                        include_dirs=[superlu_src],
                        )

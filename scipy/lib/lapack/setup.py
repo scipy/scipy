@@ -96,9 +96,15 @@ def configuration(parent_package='',top_path=None):
                          )
 
     # atlas_version:
+    if os.name == 'nt' and 'FPATH' in os.environ:
+        define_macros = [('NO_ATLAS_INFO', 1)]
+    else:
+        define_macros = []
+
     config.add_extension('atlas_version',
                          sources = ['atlas_version.c'],
-                         extra_info = lapack_opt
+                         extra_info = lapack_opt,
+                         define_macros = define_macros
                          )
 
     config.add_data_dir('tests')
