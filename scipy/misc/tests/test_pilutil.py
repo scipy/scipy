@@ -21,7 +21,8 @@ class TestPILUtil(TestCase):
     def test_imresize(self):
         im = np.random.random((10,20))
         for T in np.sctypes['float'] + [float]:
-            im1 = pilutil.imresize(im,T(1.1))
+            # 1.1 rounds to below 1.1 for float16, 1.101 works
+            im1 = pilutil.imresize(im,T(1.101))
             assert_equal(im1.shape,(11,22))
 
     def test_imresize2(self):
