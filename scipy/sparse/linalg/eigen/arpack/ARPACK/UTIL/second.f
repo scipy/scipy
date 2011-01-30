@@ -11,23 +11,10 @@
 *  =======
 *
 *  SECOND returns the user time for a process in seconds.
-*  This version gets the time from the system function ETIME.
-*
-*     .. Local Scalars ..
-      REAL               T1
-*     ..
-*     .. Local Arrays ..
-      REAL               TARRAY( 2 )
-*     ..
-*     .. External Functions ..
-      REAL               ETIME
-*      EXTERNAL           ETIME
-*     ..
-*     .. Executable Statements ..
+*  This version gets the time from the system function CPU_TIME.
 *
 
-      T1 = ETIME( TARRAY )
-      T  = TARRAY( 1 )
+      CALL CPU_TIME(T)
 
       RETURN
 *

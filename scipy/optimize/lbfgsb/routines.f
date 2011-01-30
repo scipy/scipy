@@ -3824,6 +3824,7 @@ c====================== The end of dcstep ==============================
 
       subroutine timer(ttime)
       double precision ttime
+      real t1
 c     *********
 c
 c     Subroutine timer
@@ -3846,15 +3847,9 @@ c
 c     Modified October 1990 by Brett M. Averick.
 c
 c     **********
-      real temp
-      real tarray(2)
-      real etime
 
-c     The first element of the array tarray specifies user time
-
-      temp = etime(tarray) 
-
-      ttime = dble(tarray(1))
+      call cpu_time(t1)
+      ttime = t1
  
       return
 
