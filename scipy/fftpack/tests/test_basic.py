@@ -652,5 +652,109 @@ class TestLongDoubleFailure(TestCase):
             except ValueError:
                 pass
 
+
+
+class TestOverwrite(object):
+    """
+    Check input overwrite behavior of the FFT functions
+    """
+
+    real_dtypes = [np.float32, np.float64]
+    dtypes = real_dtypes + [np.complex64, np.complex128]
+
+    def _check(self, x, routine, fftsize, axis):
+        x2 = x.copy()
+        y = routine(x2, fftsize, axis)
+
+        sig = "%s(%s%r, %r, axis=%r)" % (routine.__name__, x.dtype, x.shape,
+                                         fftsize, axis)
+        assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
+
+    def _check_1d(self, routine, dtype, shape, axis):
+        np.random.seed(1234)
+        if np.issubdtype(dtype, np.complexfloating):
+            data = np.random.randn(*shape) + 1j*np.random.randn(*shape)
+        else:
+            data = np.random.randn(*shape)
+        data = data.astype(dtype)
+
+        for fftsize in [8, 16, 32]:
+            self._check(data, routine, fftsize, axis)
+
+    def test_fft(self):
+        for dtype in self.dtypes:
+            self._check_1d(fft, dtype, (16,), -1)
+            self._check_1d(fft, dtype, (16, 2), 0)
+            self._check_1d(fft, dtype, (2, 16), 1)
+
+    def test_ifft(self):
+        for dtype in self.dtypes:
+            self._check_1d(ifft, dtype, (16,), -1)
+            self._check_1d(ifft, dtype, (16, 2), 0)
+            self._check_1d(ifft, dtype, (2, 16), 1)
+
+    def test_rfft(self):
+        for dtype in self.real_dtypes:
+            self._check_1d(rfft, dtype, (16,), -1)
+            self._check_1d(rfft, dtype, (16, 2), 0)
+            self._check_1d(rfft, dtype, (2, 16), 1)
+
+    def test_irfft(self):
+        for dtype in self.real_dtypes:
+            self._check_1d(irfft, dtype, (16,), -1)
+            self._check_1d(irfft, dtype, (16, 2), 0)
+            self._check_1d(irfft, dtype, (2, 16), 1)
+
+    def _check_nd_one(self, routine, dtype, shape, axes):
+        np.random.seed(1234)
+        if np.issubdtype(dtype, np.complexfloating):
+            data = np.random.randn(*shape) + 1j*np.random.randn(*shape)
+        else:
+            data = np.random.randn(*shape)
+        data = data.astype(dtype)
+
+        def fftshape_iter(shp):
+            if len(shp) <= 0:
+                yield ()
+            else:
+                for j in (shp[0]//2, shp[0], shp[0]*2):
+                    for rest in fftshape_iter(shp[1:]):
+                        yield (j,) + rest
+
+        if axes is None:
+            part_shape = shape
+        else:
+            part_shape = tuple(np.take(shape, axes))
+
+        for fftshape in fftshape_iter(part_shape):
+            self._check(data, routine, fftshape, axes)
+            if data.ndim > 1:
+                # check fortran order: it never overwrites
+                self._check(data.T, routine, fftshape, axes)
+
+    def _check_nd(self, routine, dtype):
+        self._check_nd_one(routine, dtype, (16,), None)
+        self._check_nd_one(routine, dtype, (16,), (0,))
+        self._check_nd_one(routine, dtype, (16, 2), (0,))
+        self._check_nd_one(routine, dtype, (2, 16), (1,))
+        self._check_nd_one(routine, dtype, (8, 16), None)
+        self._check_nd_one(routine, dtype, (8, 16), (0, 1))
+        self._check_nd_one(routine, dtype, (8, 16, 2), (0, 1))
+        self._check_nd_one(routine, dtype, (8, 16, 2), (1, 2))
+        self._check_nd_one(routine, dtype, (8, 16, 2), (0,))
+        self._check_nd_one(routine, dtype, (8, 16, 2), (1,))
+        self._check_nd_one(routine, dtype, (8, 16, 2), (2,))
+        self._check_nd_one(routine, dtype, (8, 16, 2), None)
+        self._check_nd_one(routine, dtype, (8, 16, 2), (0,1,2))
+
+    def test_fftn(self):
+        for dtype in self.dtypes:
+            self._check_nd(fftn, dtype)
+
+    def test_ifftn(self):
+        for dtype in self.dtypes:
+            self._check_nd(ifftn, dtype)
+
+
 if __name__ == "__main__":
     run_module_suite()

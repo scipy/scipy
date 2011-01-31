@@ -3,7 +3,7 @@ from os.path import join, dirname
 
 import numpy as np
 from numpy.fft import fft as numfft
-from numpy.testing import assert_array_almost_equal, TestCase
+from numpy.testing import assert_array_almost_equal, assert_equal, TestCase
 
 from scipy.fftpack.realtransforms import dct, idct
 
@@ -47,8 +47,8 @@ class _TestDCTBase(TestCase):
             # XXX: we divide by np.max(y) because the tests fail otherwise. We
             # should really use something like assert_array_approx_equal. The
             # difference is due to fftw using a better algorithm w.r.t error
-            # propagation compared to the ones from fftpack. 
-            assert_array_almost_equal(y / np.max(y), yr / np.max(y), decimal=self.dec, 
+            # propagation compared to the ones from fftpack.
+            assert_array_almost_equal(y / np.max(y), yr / np.max(y), decimal=self.dec,
                     err_msg="Size %d failed" % i)
 
     def test_axis(self):
@@ -144,8 +144,8 @@ class _TestIDCTBase(TestCase):
             # XXX: we divide by np.max(y) because the tests fail otherwise. We
             # should really use something like assert_array_approx_equal. The
             # difference is due to fftw using a better algorithm w.r.t error
-            # propagation compared to the ones from fftpack. 
-            assert_array_almost_equal(x / np.max(x), xr / np.max(x), decimal=self.dec, 
+            # propagation compared to the ones from fftpack.
+            assert_array_almost_equal(x / np.max(x), xr / np.max(x), decimal=self.dec,
                     err_msg="Size %d failed" % i)
 
 class TestIDCTIDouble(_TestIDCTBase):
@@ -183,6 +183,47 @@ class TestIDCTIIIFloat(_TestIDCTBase):
         self.rdt = np.float32
         self.dec = 5
         self.type = 3
+
+class TestOverwrite(object):
+    """
+    Check input overwrite behavior
+    """
+
+    real_dtypes = [np.float32, np.float64]
+
+    def _check(self, x, routine, type, fftsize, axis, norm):
+        x2 = x.copy()
+        y = routine(x2, type, fftsize, axis, norm)
+
+        sig = "%s(%s%r, %r, axis=%r)" % (
+            routine.__name__, x.dtype, x.shape, fftsize, axis)
+        assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
+
+    def _check_1d(self, routine, dtype, shape, axis):
+        np.random.seed(1234)
+        if np.issubdtype(dtype, np.complexfloating):
+            data = np.random.randn(*shape) + 1j*np.random.randn(*shape)
+        else:
+            data = np.random.randn(*shape)
+        data = data.astype(dtype)
+
+        for type in [1, 2, 3]:
+            for norm in [None, 'ortho']:
+                if type == 1 and norm == 'ortho':
+                    continue
+                self._check(data, routine, type, None, axis, norm)
+
+    def test_dct(self):
+        for dtype in self.real_dtypes:
+            self._check_1d(dct, dtype, (16,), -1)
+            self._check_1d(dct, dtype, (16, 2), 0)
+            self._check_1d(dct, dtype, (2, 16), 1)
+
+    def test_idct(self):
+        for dtype in self.real_dtypes:
+            self._check_1d(idct, dtype, (16,), -1)
+            self._check_1d(idct, dtype, (16, 2), 0)
+            self._check_1d(idct, dtype, (2, 16), 1)
 
 if __name__ == "__main__":
     np.testing.run_module_suite()

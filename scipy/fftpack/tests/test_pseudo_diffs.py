@@ -13,8 +13,10 @@ Run tests if fftpack is not installed:
 
 from numpy.testing import *
 from scipy.fftpack import diff, fft, ifft, tilbert, itilbert, hilbert, \
-                          ihilbert, shift, fftfreq
+                          ihilbert, shift, fftfreq, cs_diff, sc_diff, \
+                          ss_diff, cc_diff
 
+import numpy as np
 from numpy import arange, sin, cos, pi, exp, tanh, sum, sign
 
 def random(size):
@@ -311,6 +313,69 @@ class TestShift(TestCase):
             assert_array_almost_equal(shift(sin(x),pi),-sin(x))
             assert_array_almost_equal(shift(sin(x),pi/2),cos(x))
 
+
+class TestOverwrite(object):
+    """
+    Check input overwrite behavior
+    """
+
+    real_dtypes = [np.float32, np.float64]
+    dtypes = real_dtypes + [np.complex64, np.complex128]
+
+    def _check(self, x, routine, *args, **kwargs):
+        x2 = x.copy()
+        y = routine(x2, *args, **kwargs)
+        sig = routine.__name__
+        if args:
+            sig += repr(args)
+        if kwargs:
+            sig += repr(kwargs)
+        assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
+
+    def _check_1d(self, routine, dtype, shape, *args, **kwargs):
+        np.random.seed(1234)
+        if np.issubdtype(dtype, np.complexfloating):
+            data = np.random.randn(*shape) + 1j*np.random.randn(*shape)
+        else:
+            data = np.random.randn(*shape)
+        data = data.astype(dtype)
+        self._check(data, routine, *args, **kwargs)
+
+    def test_diff(self):
+        for dtype in self.dtypes:
+            self._check_1d(diff, dtype, (16,))
+
+    def test_tilbert(self):
+        for dtype in self.dtypes:
+            self._check_1d(tilbert, dtype, (16,), 1.6)
+
+    def test_itilbert(self):
+        for dtype in self.dtypes:
+            self._check_1d(itilbert, dtype, (16,), 1.6)
+
+    def test_hilbert(self):
+        for dtype in self.dtypes:
+            self._check_1d(hilbert, dtype, (16,))
+
+    def test_cs_diff(self):
+        for dtype in self.dtypes:
+            self._check_1d(cs_diff, dtype, (16,), 1.0, 4.0)
+
+    def test_sc_diff(self):
+        for dtype in self.dtypes:
+            self._check_1d(sc_diff, dtype, (16,), 1.0, 4.0)
+
+    def test_ss_diff(self):
+        for dtype in self.dtypes:
+            self._check_1d(ss_diff, dtype, (16,), 1.0, 4.0)
+
+    def test_cc_diff(self):
+        for dtype in self.dtypes:
+            self._check_1d(cc_diff, dtype, (16,), 1.0, 4.0)
+
+    def test_shift(self):
+        for dtype in self.dtypes:
+            self._check_1d(shift, dtype, (16,), 1.0)
 
 if __name__ == "__main__":
     run_module_suite()
