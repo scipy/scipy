@@ -30,7 +30,7 @@ from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal,
 from scipy import special
 import scipy.special._cephes as cephes
 
-from testutils import assert_tol_equal, with_special_errors
+from scipy.special._testutils import assert_tol_equal, with_special_errors
 
 class TestCephes(TestCase):
     def test_airy(self):

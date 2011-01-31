@@ -7,7 +7,7 @@ import numpy as np
 from numpy.testing import dec
 import scipy.special as sc
 
-from testutils import FuncData, assert_func_equal
+from scipy.special._testutils import FuncData, assert_func_equal
 
 try:
     import mpmath

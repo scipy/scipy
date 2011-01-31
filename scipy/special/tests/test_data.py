@@ -8,7 +8,7 @@ from scipy.special import (
     zeta, gammaincinv, lpmv
 )
 
-from testutils import FuncData
+from scipy.special._testutils import FuncData
 
 DATASETS = np.load(os.path.join(os.path.dirname(__file__),
                                 "data", "boost.npz"))

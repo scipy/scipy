@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_
 import scipy.special.orthogonal as orth
 
-from testutils import FuncData
+from scipy.special._testutils import FuncData
 
 
 def test_eval_chebyt():

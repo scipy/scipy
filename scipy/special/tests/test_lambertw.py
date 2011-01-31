@@ -11,7 +11,7 @@ from numpy.testing import assert_, assert_equal, assert_array_almost_equal
 from scipy.special import lambertw
 from numpy import nan, inf, pi, e, isnan, log, r_, array, complex_
 
-from testutils import FuncData
+from scipy.special._testutils import FuncData
 
 
 def test_values():
