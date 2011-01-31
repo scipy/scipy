@@ -5,7 +5,7 @@ from numpy import asarray_chkfinite, single
 
 # Local imports.
 import misc
-from misc import LinAlgError, _datanotshared
+from misc import LinAlgError, _datacopied
 from lapack import get_lapack_funcs
 from decomp import eigvals
 
@@ -63,13 +63,13 @@ def schur(a, output='real', lwork=None, overwrite_a=False):
         else:
             a1 = a1.astype('F')
             typ = 'F'
-    overwrite_a = overwrite_a or (_datanotshared(a1, a))
+    overwrite_a = overwrite_a or (_datacopied(a1, a))
     gees, = get_lapack_funcs(('gees',), (a1,))
     if lwork is None or lwork == -1:
         # get optimal work array
-        result = gees(lambda x: None, a, lwork=-1)
+        result = gees(lambda x: None, a1, lwork=-1)
         lwork = result[-2][0].real.astype(numpy.int)
-    result = gees(lambda x: None, a, lwork=lwork, overwrite_a=overwrite_a)
+    result = gees(lambda x: None, a1, lwork=lwork, overwrite_a=overwrite_a)
     info = result[-1]
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal gees'

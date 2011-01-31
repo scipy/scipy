@@ -20,7 +20,7 @@ from numpy.testing import TestCase, assert_equal, assert_array_almost_equal, \
 
 from scipy.linalg import eig, eigvals, lu, svd, svdvals, cholesky, qr, \
      schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq, \
-     eig_banded, eigvals_banded, eigh
+     eig_banded, eigvals_banded, eigh, eigvalsh
 from scipy.linalg.flapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
      dsbev, dsbevd, dsbevx, zhbevd, zhbevx
 
@@ -31,6 +31,8 @@ from numpy import array, transpose, sometrue, diag, ones, linalg, \
      triu, tril
 
 from numpy.random import rand, normal, seed
+
+from scipy.linalg._testutils import assert_no_overwrite
 
 # digit precision to use in asserts for different types
 DIGITS = {'d':11, 'D':11, 'f':4, 'F':4}
@@ -1101,22 +1103,34 @@ class TestHessenberg(TestCase):
 
 
 
-class TestDataNotShared(TestCase):
+class TestDatacopied(TestCase):
 
-    def test_datanotshared(self):
-        from scipy.linalg.decomp import _datanotshared
+    def test_datacopied(self):
+        from scipy.linalg.decomp import _datacopied
 
         M = matrix([[0,1],[2,3]])
         A = asarray(M)
         L = M.tolist()
         M2 = M.copy()
 
-        assert_equal(_datanotshared(M,M),False)
-        assert_equal(_datanotshared(M,A),False)
+        class Fake1:
+            def __array__(self):
+                return A
 
-        assert_equal(_datanotshared(M,L),True)
-        assert_equal(_datanotshared(M,M2),True)
-        assert_equal(_datanotshared(A,M2),True)
+        class Fake2:
+            __array_interface__ = A.__array_interface__
+
+        F1 = Fake1()
+        F2 = Fake2()
+
+        AF1 = asarray(F1)
+        AF2 = asarray(F2)
+
+        for item, status in [(M, False), (A, False), (L, True),
+                             (M2, False), (F1, False), (F2, False)]:
+            arr = asarray(item)
+            assert_equal(_datacopied(arr, item), status,
+                         err_msg=repr(item))
 
 
 def test_aligned_mem_float():
@@ -1206,6 +1220,46 @@ def test_lapack_misaligned():
         yield check_lapack_misaligned, func, args, kwargs
 # not properly tested
 # cholesky, rsf2csf, lu_solve, solve, eig_banded, eigvals_banded, eigh, diagsvd
+
+
+class TestOverwrite(object):
+    def test_eig(self):
+        assert_no_overwrite(eig, [(3,3)])
+        assert_no_overwrite(eig, [(3,3), (3,3)])
+    def test_eigh(self):
+        assert_no_overwrite(eigh, [(3,3)])
+        assert_no_overwrite(eigh, [(3,3), (3,3)])
+    def test_eig_banded(self):
+        assert_no_overwrite(eig_banded, [(3,2)])
+    def test_eigvals(self):
+        assert_no_overwrite(eigvals, [(3,3)])
+    def test_eigvalsh(self):
+        assert_no_overwrite(eigvalsh, [(3,3)])
+    def test_eigvals_banded(self):
+        assert_no_overwrite(eigvals_banded, [(3,2)])
+    def test_hessenberg(self):
+        assert_no_overwrite(hessenberg, [(3,3)])
+    def test_lu_factor(self):
+        assert_no_overwrite(lu_factor, [(3,3)])
+    def test_lu_solve(self):
+        x = np.array([[1,2,3], [4,5,6], [7,8,8]])
+        xlu = lu_factor(x)
+        assert_no_overwrite(lambda b: lu_solve(xlu, b), [(3,)])
+    def test_lu(self):
+        assert_no_overwrite(lu, [(3,3)])
+    def test_qr(self):
+        assert_no_overwrite(qr, [(3,3)])
+    def test_rq(self):
+        assert_no_overwrite(rq, [(3,3)])
+    def test_schur(self):
+        assert_no_overwrite(schur, [(3,3)])
+    def test_schur_complex(self):
+        assert_no_overwrite(lambda a: schur(a, 'complex'), [(3,3)],
+                            dtypes=[np.float32, np.float64])
+    def test_svd(self):
+        assert_no_overwrite(svd, [(3,3)])
+    def test_svdvals(self):
+        assert_no_overwrite(svdvals, [(3,3)])
 
 if __name__ == "__main__":
     run_module_suite()

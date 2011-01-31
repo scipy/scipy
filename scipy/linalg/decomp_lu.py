@@ -5,7 +5,7 @@ from warnings import warn
 from numpy import asarray, asarray_chkfinite
 
 # Local imports
-from misc import _datanotshared
+from misc import _datacopied
 from lapack import get_lapack_funcs
 from flinalg import get_flinalg_funcs
 
@@ -48,9 +48,9 @@ def lu_factor(a, overwrite_a=False):
     a1 = asarray(a)
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
         raise ValueError('expected square matrix')
-    overwrite_a = overwrite_a or (_datanotshared(a1, a))
+    overwrite_a = overwrite_a or (_datacopied(a1, a))
     getrf, = get_lapack_funcs(('getrf',), (a1,))
-    lu, piv, info = getrf(a, overwrite_a=overwrite_a)
+    lu, piv, info = getrf(a1, overwrite_a=overwrite_a)
     if info < 0:
         raise ValueError('illegal value in %d-th argument of '
                                 'internal getrf (lu_factor)' % -info)
@@ -91,7 +91,7 @@ def lu_solve((lu, piv), b, trans=0, overwrite_b=False):
 
     """
     b1 = asarray_chkfinite(b)
-    overwrite_b = overwrite_b or (b1 is not b and not hasattr(b, '__array__'))
+    overwrite_b = overwrite_b or _datacopied(b1, b)
     if lu.shape[0] != b1.shape[0]:
         raise ValueError("incompatible dimensions.")
 
@@ -148,7 +148,7 @@ def lu(a, permute_l=False, overwrite_a=False):
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
-    overwrite_a = overwrite_a or (_datanotshared(a1, a))
+    overwrite_a = overwrite_a or (_datacopied(a1, a))
     flu, = get_flinalg_funcs(('lu',), (a1,))
     p, l, u, info = flu(a1, permute_l=permute_l, overwrite_a=overwrite_a)
     if info < 0:

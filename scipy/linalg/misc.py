@@ -9,13 +9,14 @@ def norm(a, ord=None):
     return np.linalg.norm(np.asarray_chkfinite(a), ord=ord)
 norm.__doc__ = np.linalg.norm.__doc__
 
+def _datacopied(arr, original):
+    """
+    Strict check for `arr` not sharing any data with `original`,
+    under the assumption that arr = asarray(original)
 
-def _datanotshared(a1,a):
-    if a1 is a:
+    """
+    if arr is original:
         return False
-    else:
-        #try comparing data pointers
-        try:
-            return a1.__array_interface__['data'][0] != a.__array_interface__['data'][0]
-        except:
-            return True
+    if not isinstance(original, np.ndarray) and hasattr(original, '__array__'):
+        return False
+    return arr.base is None

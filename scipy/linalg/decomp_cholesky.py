@@ -3,7 +3,7 @@
 from numpy import asarray_chkfinite
 
 # Local imports
-from misc import LinAlgError, _datanotshared
+from misc import LinAlgError, _datacopied
 from lapack import get_lapack_funcs
 
 __all__ = ['cholesky', 'cho_factor', 'cho_solve', 'cholesky_banded',
@@ -17,7 +17,7 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True):
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
 
-    overwrite_a = overwrite_a or _datanotshared(a1, a)
+    overwrite_a = overwrite_a or _datacopied(a1, a)
     potrf, = get_lapack_funcs(('potrf',), (a1,))
     c, info = potrf(a1, lower=lower, overwrite_a=overwrite_a, clean=clean)
     if info > 0:
@@ -104,7 +104,7 @@ def cho_factor(a, lower=False, overwrite_a=False):
 
     See also
     --------
-    cho_solve : Solve a linear set equations using the Cholesky factorization 
+    cho_solve : Solve a linear set equations using the Cholesky factorization
                 of a matrix.
 
     """
@@ -140,7 +140,7 @@ def cho_solve((c, lower), b, overwrite_b=False):
     if c.shape[1] != b1.shape[0]:
         raise ValueError("incompatible dimensions.")
 
-    overwrite_b = overwrite_b or (b1 is not b and not hasattr(b,'__array__'))
+    overwrite_b = overwrite_b or _datacopied(b1, b)
 
     potrs, = get_lapack_funcs(('potrs',), (c, b1))
     x, info = potrs(c, b1, lower=lower, overwrite_b=overwrite_b)
@@ -208,7 +208,7 @@ def cho_solve_banded((cb, lower), b, overwrite_b=False):
     b : array
         Right-hand side
     overwrite_b : bool
-        If True, the function will overwrite the values in `b`.    
+        If True, the function will overwrite the values in `b`.
 
     Returns
     -------
@@ -221,7 +221,7 @@ def cho_solve_banded((cb, lower), b, overwrite_b=False):
 
     Notes
     -----
-    
+
     .. versionadded:: 0.8.0
 
     """

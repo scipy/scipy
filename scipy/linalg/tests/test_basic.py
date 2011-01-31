@@ -29,6 +29,7 @@ from numpy.testing import TestCase, rand, run_module_suite, assert_raises, \
 from scipy.linalg import solve, inv, det, lstsq, pinv, pinv2, norm,\
         solve_banded, solveh_banded, solve_triangular
 
+from scipy.linalg._testutils import assert_no_overwrite
 
 def random(size):
     return rand(*size)
@@ -560,6 +561,27 @@ class TestNorm(object):
     def test_zero_norm(self):
         assert_equal(norm([1,0,3], 0), 2)
         assert_equal(norm([1,2,3], 0), 3)
+
+class TestOverwrite(object):
+    def test_solve(self):
+        assert_no_overwrite(solve, [(3,3), (3,)])
+    def test_solve_triangular(self):
+        assert_no_overwrite(solve_triangular, [(3,3), (3,)])
+    def test_solve_banded(self):
+        assert_no_overwrite(lambda ab, b: solve_banded((2,1), ab, b),
+                            [(4,6), (6,)])
+    def test_solveh_banded(self):
+        assert_no_overwrite(solveh_banded, [(2,6), (6,)])
+    def test_inv(self):
+        assert_no_overwrite(inv, [(3,3)])
+    def test_det(self):
+        assert_no_overwrite(det, [(3,3)])
+    def test_lstsq(self):
+        assert_no_overwrite(lstsq, [(3,2), (3,)])
+    def test_pinv(self):
+        assert_no_overwrite(pinv, [(3,3)])
+    def test_pinv2(self):
+        assert_no_overwrite(pinv2, [(3,3)])
 
 if __name__ == "__main__":
     run_module_suite()

@@ -4,8 +4,10 @@ from numpy.testing import TestCase, assert_array_almost_equal
 
 from numpy import array, transpose, dot, conjugate, zeros_like
 from numpy.random import rand
-from scipy.linalg import cholesky, cholesky_banded, cho_solve_banded
+from scipy.linalg import cholesky, cholesky_banded, cho_solve_banded, \
+     cho_factor, cho_solve
 
+from scipy.linalg._testutils import assert_no_overwrite
 
 def random(size):
     return rand(*size)
@@ -138,3 +140,20 @@ class TestCholeskyBanded(TestCase):
         b = array([0.0, 0.5j, 3.8j, 3.8])
         x = cho_solve_banded((c, True), b)
         assert_array_almost_equal(x, [0.0, 0.0, 1.0j, 1.0])
+
+class TestOverwrite(object):
+    def test_cholesky(self):
+        assert_no_overwrite(cholesky, [(3,3)])
+    def test_cho_factor(self):
+        assert_no_overwrite(cho_factor, [(3,3)])
+    def test_cho_solve(self):
+        x = array([[2,-1,0], [-1,2,-1], [0,-1,2]])
+        xcho = cho_factor(x)
+        assert_no_overwrite(lambda b: cho_solve(xcho, b), [(3,)])
+    def test_cholesky_banded(self):
+        assert_no_overwrite(cholesky_banded, [(2,3)])
+    def test_cho_solve_banded(self):
+        x = array([[0, -1, -1], [2, 2, 2]])
+        xcho = cholesky_banded(x)
+        assert_no_overwrite(lambda b: cho_solve_banded((xcho, False), b),
+                            [(3,)])

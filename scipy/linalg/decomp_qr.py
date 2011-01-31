@@ -7,7 +7,7 @@ from numpy import asarray_chkfinite
 import special_matrices
 from blas import get_blas_funcs
 from lapack import get_lapack_funcs, find_best_lapack_type
-from misc import _datanotshared
+from misc import _datacopied
 
 
 def qr(a, overwrite_a=False, lwork=None, mode='full'):
@@ -77,7 +77,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full'):
     if len(a1.shape) != 2:
         raise ValueError("expected 2D array")
     M, N = a1.shape
-    overwrite_a = overwrite_a or (_datanotshared(a1, a))
+    overwrite_a = overwrite_a or (_datacopied(a1, a))
 
     geqrf, = get_lapack_funcs(('geqrf',), (a1,))
     if lwork is None or lwork == -1:
@@ -157,7 +157,7 @@ def qr_old(a, overwrite_a=False, lwork=None):
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     M,N = a1.shape
-    overwrite_a = overwrite_a or (_datanotshared(a1, a))
+    overwrite_a = overwrite_a or (_datacopied(a1, a))
     geqrf, = get_lapack_funcs(('geqrf',), (a1,))
     if lwork is None or lwork == -1:
         # get optimal work array
@@ -235,7 +235,7 @@ def rq(a, overwrite_a=False, lwork=None, mode='full'):
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     M, N = a1.shape
-    overwrite_a = overwrite_a or (_datanotshared(a1, a))
+    overwrite_a = overwrite_a or (_datacopied(a1, a))
 
     gerqf, = get_lapack_funcs(('gerqf',), (a1,))
     if lwork is None or lwork == -1:
