@@ -6,6 +6,7 @@ __all__ = ['dct', 'idct']
 
 import numpy as np
 from scipy.fftpack import _fftpack
+from scipy.fftpack.basic import _datacopied
 
 import atexit
 atexit.register(_fftpack.destroy_ddct1_cache)
@@ -13,7 +14,7 @@ atexit.register(_fftpack.destroy_ddct2_cache)
 atexit.register(_fftpack.destroy_dct1_cache)
 atexit.register(_fftpack.destroy_dct2_cache)
 
-def dct(x, type=2, n=None, axis=-1, norm=None):
+def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
     """
     Return the Discrete Cosine Transform of arbitrary type sequence x.
 
@@ -29,6 +30,8 @@ def dct(x, type=2, n=None, axis=-1, norm=None):
         Axis over which to compute the transform.
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
+    overwrite_x : bool, optional
+        If True the contents of x can be destroyed. (default=False)
 
     Returns
     -------
@@ -111,9 +114,9 @@ def dct(x, type=2, n=None, axis=-1, norm=None):
     if type == 1 and norm is not None:
         raise NotImplementedError(
               "Orthonormalization not yet supported for DCT-I")
-    return _dct(x, type, n, axis, normalize=norm)
+    return _dct(x, type, n, axis, normalize=norm, overwrite_x=overwrite_x)
 
-def idct(x, type=2, n=None, axis=-1, norm=None):
+def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
     """
     Return the Inverse Discrete Cosine Transform of an arbitrary type sequence.
 
@@ -129,6 +132,8 @@ def idct(x, type=2, n=None, axis=-1, norm=None):
         Axis over which to compute the transform.
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
+    overwrite_x : bool, optional
+        If True the contents of x can be destroyed. (default=False)
 
     Returns
     -------
@@ -156,7 +161,7 @@ def idct(x, type=2, n=None, axis=-1, norm=None):
               "Orthonormalization not yet supported for IDCT-I")
     # Inverse/forward type table
     _TP = {1:1, 2:3, 3:2}
-    return _dct(x, _TP[type], n, axis, normalize=norm)
+    return _dct(x, _TP[type], n, axis, normalize=norm, overwrite_x=overwrite_x)
 
 def _dct(x, type, n=None, axis=-1, overwrite_x=0, normalize=None):
     """
@@ -218,6 +223,8 @@ def _dct(x, type, n=None, axis=-1, overwrite_x=0, normalize=None):
 
     if type == 1 and n < 2:
         raise ValueError("DCT-I is not defined for size < 2")
+
+    overwrite_x = overwrite_x or _datacopied(tmp, x)
 
     if axis == -1 or axis == len(tmp.shape) - 1:
         return f(tmp, n, nm, overwrite_x)

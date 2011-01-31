@@ -11,6 +11,8 @@ __all__ = ['diff',
 from numpy import pi, asarray, sin, cos, sinh, cosh, tanh, iscomplexobj
 import convolve
 
+from scipy.fftpack.basic import _datacopied
+
 import atexit
 atexit.register(convolve.destroy_convolve_cache)
 del atexit
@@ -63,7 +65,7 @@ def diff(x,order=1,period=None,
         omega = convolve.init_convolution_kernel(n,kernel,d=order,
                                                  zero_nyquist=1)
         _cache[(n,order,c)] = omega
-    overwrite_x = tmp is not x and not hasattr(x,'__array__')
+    overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=order%2,
                              overwrite_x=overwrite_x)
 del _cache
@@ -112,7 +114,7 @@ def tilbert(x,h,period=None,
             return 0
         omega = convolve.init_convolution_kernel(n,kernel,d=1)
         _cache[(n,h)] = omega
-    overwrite_x = tmp is not x and not hasattr(x,'__array__')
+    overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
 del _cache
 
@@ -148,7 +150,7 @@ def itilbert(x,h,period=None,
             return 0
         omega = convolve.init_convolution_kernel(n,kernel,d=1)
         _cache[(n,h)] = omega
-    overwrite_x = tmp is not x and not hasattr(x,'__array__')
+    overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
 del _cache
 
@@ -185,7 +187,7 @@ def hilbert(x,
             return 0.0
         omega = convolve.init_convolution_kernel(n,kernel,d=1)
         _cache[n] = omega
-    overwrite_x = tmp is not x and not hasattr(x,'__array__')
+    overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
 del _cache
 
@@ -244,7 +246,7 @@ def cs_diff(x, a, b, period=None,
             return 0
         omega = convolve.init_convolution_kernel(n,kernel,d=1)
         _cache[(n,a,b)] = omega
-    overwrite_x = tmp is not x and not hasattr(x,'__array__')
+    overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
 del _cache
 
@@ -294,7 +296,7 @@ def sc_diff(x, a, b, period=None,
             return 0
         omega = convolve.init_convolution_kernel(n,kernel,d=1)
         _cache[(n,a,b)] = omega
-    overwrite_x = tmp is not x and not hasattr(x,'__array__')
+    overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
 del _cache
 
@@ -339,7 +341,7 @@ def ss_diff(x, a, b, period=None,
             return float(a)/b
         omega = convolve.init_convolution_kernel(n,kernel)
         _cache[(n,a,b)] = omega
-    overwrite_x = tmp is not x and not hasattr(x,'__array__')
+    overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,overwrite_x=overwrite_x)
 del _cache
 
@@ -384,7 +386,7 @@ def cc_diff(x, a, b, period=None,
             return cosh(a*k)/cosh(b*k)
         omega = convolve.init_convolution_kernel(n,kernel)
         _cache[(n,a,b)] = omega
-    overwrite_x = tmp is not x and not hasattr(x,'__array__')
+    overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,overwrite_x=overwrite_x)
 del _cache
 
@@ -423,7 +425,7 @@ def shift(x, a, period=None,
         _cache[(n,a)] = omega_real,omega_imag
     else:
         omega_real,omega_imag = omega
-    overwrite_x = tmp is not x and not hasattr(x,'__array__')
+    overwrite_x = _datacopied(tmp, x)
     return convolve.convolve_z(tmp,omega_real,omega_imag,
                                overwrite_x=overwrite_x)
 

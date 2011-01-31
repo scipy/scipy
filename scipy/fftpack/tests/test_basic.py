@@ -654,6 +654,17 @@ class TestLongDoubleFailure(TestCase):
 
 
 
+class FakeArray(object):
+    def __init__(self, data):
+        self._data = data
+        self.__array_interface__ = data.__array_interface__
+
+class FakeArray2(object):
+    def __init__(self, data):
+        self._data = data
+    def __array__(self):
+        return self._data
+
 class TestOverwrite(object):
     """
     Check input overwrite behavior of the FFT functions
@@ -662,15 +673,20 @@ class TestOverwrite(object):
     real_dtypes = [np.float32, np.float64]
     dtypes = real_dtypes + [np.complex64, np.complex128]
 
-    def _check(self, x, routine, fftsize, axis):
+    def _check(self, x, routine, fftsize, axis, overwrite_x, should_overwrite):
         x2 = x.copy()
-        y = routine(x2, fftsize, axis)
+        for fake in [lambda x: x, FakeArray, FakeArray2]:
+            y = routine(fake(x2), fftsize, axis, overwrite_x=overwrite_x)
 
-        sig = "%s(%s%r, %r, axis=%r)" % (routine.__name__, x.dtype, x.shape,
-                                         fftsize, axis)
-        assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
+            sig = "%s(%s%r, %r, axis=%r, overwrite_x=%r)" % (
+                routine.__name__, x.dtype, x.shape, fftsize, axis, overwrite_x)
+            if not should_overwrite:
+                assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
+            else:
+                if (x2 == x).all():
+                    raise AssertionError("no overwrite in %s" % sig)
 
-    def _check_1d(self, routine, dtype, shape, axis):
+    def _check_1d(self, routine, dtype, shape, axis, overwritable_dtypes):
         np.random.seed(1234)
         if np.issubdtype(dtype, np.complexfloating):
             data = np.random.randn(*shape) + 1j*np.random.randn(*shape)
@@ -679,33 +695,46 @@ class TestOverwrite(object):
         data = data.astype(dtype)
 
         for fftsize in [8, 16, 32]:
-            self._check(data, routine, fftsize, axis)
+            for overwrite_x in [True, False]:
+                should_overwrite = (overwrite_x
+                                    and dtype in overwritable_dtypes
+                                    and fftsize <= shape[axis]
+                                    and (len(shape) == 1 or
+                                         (axis % len(shape) == len(shape)-1
+                                          and fftsize == shape[axis])))
+                self._check(data, routine, fftsize, axis,
+                            overwrite_x=overwrite_x,
+                            should_overwrite=should_overwrite)
 
     def test_fft(self):
+        overwritable = (np.complex128, np.complex64)
         for dtype in self.dtypes:
-            self._check_1d(fft, dtype, (16,), -1)
-            self._check_1d(fft, dtype, (16, 2), 0)
-            self._check_1d(fft, dtype, (2, 16), 1)
+            self._check_1d(fft, dtype, (16,), -1, overwritable)
+            self._check_1d(fft, dtype, (16, 2), 0, overwritable)
+            self._check_1d(fft, dtype, (2, 16), 1, overwritable)
 
     def test_ifft(self):
+        overwritable = (np.complex128, np.complex64)
         for dtype in self.dtypes:
-            self._check_1d(ifft, dtype, (16,), -1)
-            self._check_1d(ifft, dtype, (16, 2), 0)
-            self._check_1d(ifft, dtype, (2, 16), 1)
+            self._check_1d(ifft, dtype, (16,), -1, overwritable)
+            self._check_1d(ifft, dtype, (16, 2), 0, overwritable)
+            self._check_1d(ifft, dtype, (2, 16), 1, overwritable)
 
     def test_rfft(self):
+        overwritable = self.real_dtypes
         for dtype in self.real_dtypes:
-            self._check_1d(rfft, dtype, (16,), -1)
-            self._check_1d(rfft, dtype, (16, 2), 0)
-            self._check_1d(rfft, dtype, (2, 16), 1)
+            self._check_1d(rfft, dtype, (16,), -1, overwritable)
+            self._check_1d(rfft, dtype, (16, 2), 0, overwritable)
+            self._check_1d(rfft, dtype, (2, 16), 1, overwritable)
 
     def test_irfft(self):
+        overwritable = self.real_dtypes
         for dtype in self.real_dtypes:
-            self._check_1d(irfft, dtype, (16,), -1)
-            self._check_1d(irfft, dtype, (16, 2), 0)
-            self._check_1d(irfft, dtype, (2, 16), 1)
+            self._check_1d(irfft, dtype, (16,), -1, overwritable)
+            self._check_1d(irfft, dtype, (16, 2), 0, overwritable)
+            self._check_1d(irfft, dtype, (2, 16), 1, overwritable)
 
-    def _check_nd_one(self, routine, dtype, shape, axes):
+    def _check_nd_one(self, routine, dtype, shape, axes, overwritable_dtypes):
         np.random.seed(1234)
         if np.issubdtype(dtype, np.complexfloating):
             data = np.random.randn(*shape) + 1j*np.random.randn(*shape)
@@ -726,34 +755,45 @@ class TestOverwrite(object):
         else:
             part_shape = tuple(np.take(shape, axes))
 
-        for fftshape in fftshape_iter(part_shape):
-            self._check(data, routine, fftshape, axes)
-            if data.ndim > 1:
-                # check fortran order: it never overwrites
-                self._check(data.T, routine, fftshape, axes)
+        for overwrite_x in [True, False]:
+            for fftshape in fftshape_iter(part_shape):
+                should_overwrite = (overwrite_x
+                                    and data.ndim == 1
+                                    and np.all([x < y for x, y in zip(fftshape, part_shape)])
+                                    and dtype in overwritable_dtypes)
+                self._check(data, routine, fftshape, axes,
+                            overwrite_x=overwrite_x,
+                            should_overwrite=should_overwrite)
+                if data.ndim > 1:
+                    # check fortran order: it never overwrites
+                    self._check(data.T, routine, fftshape, axes,
+                                overwrite_x=overwrite_x,
+                                should_overwrite=False)
 
-    def _check_nd(self, routine, dtype):
-        self._check_nd_one(routine, dtype, (16,), None)
-        self._check_nd_one(routine, dtype, (16,), (0,))
-        self._check_nd_one(routine, dtype, (16, 2), (0,))
-        self._check_nd_one(routine, dtype, (2, 16), (1,))
-        self._check_nd_one(routine, dtype, (8, 16), None)
-        self._check_nd_one(routine, dtype, (8, 16), (0, 1))
-        self._check_nd_one(routine, dtype, (8, 16, 2), (0, 1))
-        self._check_nd_one(routine, dtype, (8, 16, 2), (1, 2))
-        self._check_nd_one(routine, dtype, (8, 16, 2), (0,))
-        self._check_nd_one(routine, dtype, (8, 16, 2), (1,))
-        self._check_nd_one(routine, dtype, (8, 16, 2), (2,))
-        self._check_nd_one(routine, dtype, (8, 16, 2), None)
-        self._check_nd_one(routine, dtype, (8, 16, 2), (0,1,2))
+    def _check_nd(self, routine, dtype, overwritable):
+        self._check_nd_one(routine, dtype, (16,), None, overwritable)
+        self._check_nd_one(routine, dtype, (16,), (0,), overwritable)
+        self._check_nd_one(routine, dtype, (16, 2), (0,), overwritable)
+        self._check_nd_one(routine, dtype, (2, 16), (1,), overwritable)
+        self._check_nd_one(routine, dtype, (8, 16), None, overwritable)
+        self._check_nd_one(routine, dtype, (8, 16), (0, 1), overwritable)
+        self._check_nd_one(routine, dtype, (8, 16, 2), (0, 1), overwritable)
+        self._check_nd_one(routine, dtype, (8, 16, 2), (1, 2), overwritable)
+        self._check_nd_one(routine, dtype, (8, 16, 2), (0,), overwritable)
+        self._check_nd_one(routine, dtype, (8, 16, 2), (1,), overwritable)
+        self._check_nd_one(routine, dtype, (8, 16, 2), (2,), overwritable)
+        self._check_nd_one(routine, dtype, (8, 16, 2), None, overwritable)
+        self._check_nd_one(routine, dtype, (8, 16, 2), (0,1,2), overwritable)
 
     def test_fftn(self):
+        overwritable = (np.complex128, np.complex64)
         for dtype in self.dtypes:
-            self._check_nd(fftn, dtype)
+            self._check_nd(fftn, dtype, overwritable)
 
     def test_ifftn(self):
+        overwritable = (np.complex128, np.complex64)
         for dtype in self.dtypes:
-            self._check_nd(ifftn, dtype)
+            self._check_nd(ifftn, dtype, overwritable)
 
 
 if __name__ == "__main__":

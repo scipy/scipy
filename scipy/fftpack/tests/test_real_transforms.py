@@ -191,15 +191,20 @@ class TestOverwrite(object):
 
     real_dtypes = [np.float32, np.float64]
 
-    def _check(self, x, routine, type, fftsize, axis, norm):
+    def _check(self, x, routine, type, fftsize, axis, norm, overwrite_x,
+               should_overwrite, **kw):
         x2 = x.copy()
-        y = routine(x2, type, fftsize, axis, norm)
+        y = routine(x2, type, fftsize, axis, norm, overwrite_x=overwrite_x)
 
-        sig = "%s(%s%r, %r, axis=%r)" % (
-            routine.__name__, x.dtype, x.shape, fftsize, axis)
-        assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
+        sig = "%s(%s%r, %r, axis=%r, overwrite_x=%r)" % (
+            routine.__name__, x.dtype, x.shape, fftsize, axis, overwrite_x)
+        if not should_overwrite:
+            assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
+        else:
+            if (x2 == x).all():
+                raise AssertionError("no overwrite in %s" % sig)
 
-    def _check_1d(self, routine, dtype, shape, axis):
+    def _check_1d(self, routine, dtype, shape, axis, overwritable_dtypes):
         np.random.seed(1234)
         if np.issubdtype(dtype, np.complexfloating):
             data = np.random.randn(*shape) + 1j*np.random.randn(*shape)
@@ -208,22 +213,32 @@ class TestOverwrite(object):
         data = data.astype(dtype)
 
         for type in [1, 2, 3]:
-            for norm in [None, 'ortho']:
-                if type == 1 and norm == 'ortho':
-                    continue
-                self._check(data, routine, type, None, axis, norm)
+            for overwrite_x in [True, False]:
+                for norm in [None, 'ortho']:
+                    if type == 1 and norm == 'ortho':
+                        continue
+
+                    should_overwrite = (overwrite_x
+                                        and dtype in overwritable_dtypes
+                                        and (len(shape) == 1 or
+                                             (axis % len(shape) == len(shape)-1
+                                              )))
+                    self._check(data, routine, type, None, axis, norm,
+                                overwrite_x, should_overwrite)
 
     def test_dct(self):
+        overwritable = self.real_dtypes
         for dtype in self.real_dtypes:
-            self._check_1d(dct, dtype, (16,), -1)
-            self._check_1d(dct, dtype, (16, 2), 0)
-            self._check_1d(dct, dtype, (2, 16), 1)
+            self._check_1d(dct, dtype, (16,), -1, overwritable)
+            self._check_1d(dct, dtype, (16, 2), 0, overwritable)
+            self._check_1d(dct, dtype, (2, 16), 1, overwritable)
 
     def test_idct(self):
+        overwritable = self.real_dtypes
         for dtype in self.real_dtypes:
-            self._check_1d(idct, dtype, (16,), -1)
-            self._check_1d(idct, dtype, (16, 2), 0)
-            self._check_1d(idct, dtype, (2, 16), 1)
+            self._check_1d(idct, dtype, (16,), -1, overwritable)
+            self._check_1d(idct, dtype, (16, 2), 0, overwritable)
+            self._check_1d(idct, dtype, (2, 16), 1, overwritable)
 
 if __name__ == "__main__":
     np.testing.run_module_suite()
