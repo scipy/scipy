@@ -113,14 +113,14 @@ def _fix_shape(x, n, axis):
         index = [slice(None)]*len(s)
         index[axis] = slice(0,n)
         x = x[index]
+        return x, False
     else:
         index = [slice(None)]*len(s)
         index[axis] = slice(0,s[axis])
         s[axis] = n
         z = zeros(s,x.dtype.char)
         z[index] = x
-        x = z
-    return x
+        return z, True
 
 
 def _raw_fft(x, n, axis, direction, overwrite_x, work_function):
@@ -128,8 +128,8 @@ def _raw_fft(x, n, axis, direction, overwrite_x, work_function):
     if n is None:
         n = x.shape[axis]
     elif n != x.shape[axis]:
-        x = _fix_shape(x,n,axis)
-        overwrite_x = 1
+        x, copy_made = _fix_shape(x,n,axis)
+        overwrite_x = overwrite_x or copy_made
     if axis == -1 or axis == len(x.shape)-1:
         r = work_function(x,n,direction,overwrite_x=overwrite_x)
     else:
@@ -208,8 +208,8 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
     if n is None:
         n = tmp.shape[axis]
     elif n != tmp.shape[axis]:
-        tmp = _fix_shape(tmp,n,axis)
-        overwrite_x = 1
+        tmp, copy_made = _fix_shape(tmp,n,axis)
+        overwrite_x = overwrite_x or copy_made
 
     if axis == -1 or axis == len(tmp.shape) - 1:
         return work_function(tmp,n,1,0,overwrite_x)
@@ -261,8 +261,8 @@ def ifft(x, n=None, axis=-1, overwrite_x=0):
     if n is None:
         n = tmp.shape[axis]
     elif n != tmp.shape[axis]:
-        tmp = _fix_shape(tmp,n,axis)
-        overwrite_x = 1
+        tmp, copy_made = _fix_shape(tmp,n,axis)
+        overwrite_x = overwrite_x or copy_made
 
     if axis == -1 or axis == len(tmp.shape) - 1:
         return work_function(tmp,n,-1,1,overwrite_x)
@@ -379,7 +379,7 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
     # No need to swap axes, array is in C order
     if noaxes:
         for i in axes:
-            x = _fix_shape(x, s[i], i)
+            x, copy_made = _fix_shape(x, s[i], i)
         #print x.shape, s
         return work_function(x,s,direction,overwrite_x=overwrite_x)
 
@@ -403,7 +403,7 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
     shape[waxes] = s
 
     for i in range(len(waxes)):
-        x = _fix_shape(x, s[i], waxes[i])
+        x, copy_made = _fix_shape(x, s[i], waxes[i])
 
     r = work_function(x, shape, direction, overwrite_x=overwrite_x)
 
