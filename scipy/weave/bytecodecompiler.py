@@ -238,10 +238,7 @@ class ByteCodeMeaning(object):
         elif goto is None:
             return next # Normal
         else:
-            if sys.version_info < (2, 6):
-                raise "Executing code failed."
-            else:
-                raise ValueError("Executing code failed.")
+            raise ValueError("Executing code failed.")
 
     symbols = { 0: 'less', 1: 'lesseq', 2: 'equal', 3: 'notequal',
                 4: 'greater', 5: 'greatereq', 6: 'in', 7: 'not in',
