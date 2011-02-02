@@ -2,7 +2,8 @@
 Tests for line search routines
 """
 
-from numpy.testing import assert_, assert_equal, assert_array_almost_equal
+from numpy.testing import assert_, assert_equal, \
+     assert_array_almost_equal, assert_array_almost_equal_nulp
 import scipy.optimize.linesearch as ls
 import numpy as np
 
@@ -36,6 +37,12 @@ def assert_line_wolfe(x, p, s, f, fprime, **kw):
 def assert_line_armijo(x, p, s, f, **kw):
     assert_armijo(s, phi=lambda sp: f(x + p*sp), **kw)
 
+def assert_fp_equal(x, y, err_msg="", nulp=50):
+    """Assert two arrays are equal, up to some floating-point rounding error"""
+    try:
+        assert_array_almost_equal_nulp(x, y, nulp)
+    except AssertionError, e:
+        raise AssertionError("%s\n%s" % (e, err_msg))
 
 class TestLineSearch(object):
     # -- scalar functions; must have dphi(0.) < 0
@@ -123,8 +130,8 @@ class TestLineSearch(object):
             c += 1
             s, phi1, phi0 = ls.scalar_search_wolfe1(phi, derphi, phi(0),
                                                     old_phi0, derphi(0))
-            assert_equal(phi0, phi(0), name)
-            assert_equal(phi1, phi(s), name)
+            assert_fp_equal(phi0, phi(0), name)
+            assert_fp_equal(phi1, phi(s), name)
             assert_wolfe(s, phi, derphi, err_msg=name)
 
         assert_(c > 3) # check that the iterator really works...
@@ -133,16 +140,16 @@ class TestLineSearch(object):
         for name, phi, derphi, old_phi0 in self.scalar_iter():
             s, phi1, phi0, derphi1 = ls.scalar_search_wolfe2(
                 phi, derphi, phi(0), old_phi0, derphi(0))
-            assert_equal(phi0, phi(0), name)
-            assert_equal(phi1, phi(s), name)
+            assert_fp_equal(phi0, phi(0), name)
+            assert_fp_equal(phi1, phi(s), name)
             if derphi1 is not None:
-                assert_equal(derphi1, derphi(s), name)
+                assert_fp_equal(derphi1, derphi(s), name)
             assert_wolfe(s, phi, derphi, err_msg="%s %g" % (name, old_phi0))
 
     def test_scalar_search_armijo(self):
         for name, phi, derphi, old_phi0 in self.scalar_iter():
             s, phi1 = ls.scalar_search_armijo(phi, phi(0), derphi(0))
-            assert_equal(phi1, phi(s), name)
+            assert_fp_equal(phi1, phi(s), name)
             assert_armijo(s, phi, err_msg="%s %g" % (name, old_phi0))
 
     # -- Generic line searches
@@ -158,10 +165,10 @@ class TestLineSearch(object):
                                                            g0, f0, old_f,
                                                            amax=smax)
             assert_equal(self.fcount, fc+gc)
-            assert_equal(ofv, f(x))
+            assert_fp_equal(ofv, f(x))
             if s is None:
                 continue
-            assert_equal(fv, f(x + s*p))
+            assert_fp_equal(fv, f(x + s*p))
             assert_array_almost_equal(gv, fprime(x + s*p), decimal=14)
             if s < smax:
                 c += 1
@@ -180,8 +187,8 @@ class TestLineSearch(object):
                                                            g0, f0, old_f,
                                                            amax=smax)
             assert_equal(self.fcount, fc+gc)
-            assert_equal(ofv, f(x))
-            assert_equal(fv, f(x + s*p))
+            assert_fp_equal(ofv, f(x))
+            assert_fp_equal(fv, f(x + s*p))
             if gv is not None:
                 assert_array_almost_equal(gv, fprime(x + s*p), decimal=14)
             if s < smax:
@@ -198,7 +205,7 @@ class TestLineSearch(object):
             s, fc, fv = ls.line_search_armijo(f, x, p, g0, f0)
             c += 1
             assert_equal(self.fcount, fc)
-            assert_equal(fv, f(x + s*p))
+            assert_fp_equal(fv, f(x + s*p))
             assert_line_armijo(x, p, s, f, err_msg=name)
         assert_(c >= 9)
 
