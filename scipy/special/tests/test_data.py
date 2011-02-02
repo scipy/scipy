@@ -206,13 +206,13 @@ def test_boost():
         # tgamma_ratio_data.txt
     ]
 
-    olderr = np.seterr(all='ignore')
-    try:
-        for test in TESTS:
-            yield _test_factory, test
-    finally:
-        np.seterr(**olderr)
+    for test in TESTS:
+        yield _test_factory, test
 
 def _test_factory(test, dtype=np.double):
     """Boost test"""
-    test.check(dtype=dtype)
+    olderr = np.seterr(all='ignore')
+    try:
+        test.check(dtype=dtype)
+    finally:
+        np.seterr(**olderr)

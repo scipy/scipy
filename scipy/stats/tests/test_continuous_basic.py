@@ -156,42 +156,47 @@ distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
             'powerlognorm', 'johnsonsu', 'kstwobign']
 #distslow are sorted by speed (very slow to slow)
 
+def _silence_fp_errors(func):
+    def wrap(*a, **kw):
+        olderr = np.seterr(all='ignore')
+        try:
+            return func(*a, **kw)
+        finally:
+            np.seterr(**olderr)
+    wrap.__name__ = func.__name__
+    return wrap
+
 def test_cont_basic():
     # this test skips slow distributions
-    olderr = np.seterr(all='ignore')
-    try:
-        for distname, arg in distcont[:]:
-            if distname in distslow:
-                continue
-            distfn = getattr(stats, distname)
-            np.random.seed(765456)
-            sn = 1000
-            rvs = distfn.rvs(size=sn,*arg)
-            sm = rvs.mean()
-            sv = rvs.var()
-            skurt = stats.kurtosis(rvs)
-            sskew = stats.skew(rvs)
-            m,v = distfn.stats(*arg)
+    for distname, arg in distcont[:]:
+        if distname in distslow:
+            continue
+        distfn = getattr(stats, distname)
+        np.random.seed(765456)
+        sn = 1000
+        rvs = distfn.rvs(size=sn,*arg)
+        sm = rvs.mean()
+        sv = rvs.var()
+        skurt = stats.kurtosis(rvs)
+        sskew = stats.skew(rvs)
+        m,v = distfn.stats(*arg)
 
-            yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
-                  'sample mean test'
-            # the sample skew kurtosis test has known failures, not very good distance measure
-            #yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
-            yield check_moment, distfn, arg, m, v, distname
-            yield check_cdf_ppf, distfn, arg, distname
-            yield check_sf_isf, distfn, arg, distname
-            yield check_pdf, distfn, arg, distname
-            if distname in ['wald']:
-                continue
-            yield check_pdf_logpdf, distfn, arg, distname
-            yield check_cdf_logcdf, distfn, arg, distname
-            yield check_sf_logsf, distfn, arg, distname
-            if distname in distmissing:
-                alpha = 0.01
-                yield check_distribution_rvs, distname, arg, alpha, rvs
-    finally:
-        np.seterr(**olderr)
-
+        yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
+              'sample mean test'
+        # the sample skew kurtosis test has known failures, not very good distance measure
+        #yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
+        yield check_moment, distfn, arg, m, v, distname
+        yield check_cdf_ppf, distfn, arg, distname
+        yield check_sf_isf, distfn, arg, distname
+        yield check_pdf, distfn, arg, distname
+        if distname in ['wald']:
+            continue
+        yield check_pdf_logpdf, distfn, arg, distname
+        yield check_cdf_logcdf, distfn, arg, distname
+        yield check_sf_logsf, distfn, arg, distname
+        if distname in distmissing:
+            alpha = 0.01
+            yield check_distribution_rvs, distname, arg, alpha, rvs
 
 @npt.dec.slow
 def test_cont_basic_slow():
@@ -223,6 +228,7 @@ def test_cont_basic_slow():
             alpha = 0.01
             yield check_distribution_rvs, distname, arg, alpha, rvs
 
+@_silence_fp_errors
 def check_moment(distfn, arg, m, v, msg):
     m1  = distfn.moment(1,*arg)
     m2  = distfn.moment(2,*arg)
@@ -241,6 +247,7 @@ def check_moment(distfn, arg, m, v, msg):
                msg + ' - 2nd moment -infinite, m2=%s' % str(m2))
         #np.isnan(m2) temporary special treatment for loggamma
 
+@_silence_fp_errors
 def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
     #this did not work, skipped silently by nose
     #check_sample_meanvar, sm, m, msg + 'sample mean test'
@@ -296,11 +303,13 @@ def check_sample_meanvar(sm,m,msg):
 ##    else:
 ##        assert abs(sm) > 10000, 'infinite moment, sm = ' + str(sm)
 
+@_silence_fp_errors
 def check_cdf_ppf(distfn,arg,msg):
     npt.assert_almost_equal(distfn.cdf(distfn.ppf([0.001,0.5,0.999], *arg), *arg),
                             [0.001,0.5,0.999], decimal=DECIMAL, err_msg= msg + \
                             ' - cdf-ppf roundtrip')
 
+@_silence_fp_errors
 def check_sf_isf(distfn,arg,msg):
     npt.assert_almost_equal(distfn.sf(distfn.isf([0.1,0.5,0.9], *arg), *arg),
                             [0.1,0.5,0.9], decimal=DECIMAL, err_msg= msg + \
@@ -310,6 +319,7 @@ def check_sf_isf(distfn,arg,msg):
                             decimal=DECIMAL, err_msg= msg + \
                             ' - cdf-sf relationship')
 
+@_silence_fp_errors
 def check_pdf(distfn, arg, msg):
     # compares pdf at median with numerical derivative of cdf
     median = distfn.ppf(0.5, *arg)
@@ -326,6 +336,7 @@ def check_pdf(distfn, arg, msg):
     npt.assert_almost_equal(pdfv, cdfdiff,
                 decimal=DECIMAL, err_msg= msg + ' - cdf-pdf relationship')
 
+@_silence_fp_errors
 def check_pdf_logpdf(distfn, args, msg):
     # compares pdf at several points with the log of the pdf
     points = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
@@ -336,6 +347,7 @@ def check_pdf_logpdf(distfn, args, msg):
     logpdf = logpdf[np.isfinite(logpdf)]
     npt.assert_almost_equal(np.log(pdf), logpdf, decimal=7, err_msg=msg + " - logpdf-log(pdf) relationship")
 
+@_silence_fp_errors
 def check_sf_logsf(distfn, args, msg):
     # compares sf at several points with the log of the sf
     points = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
@@ -346,6 +358,7 @@ def check_sf_logsf(distfn, args, msg):
     logsf = logsf[np.isfinite(logsf)]
     npt.assert_almost_equal(np.log(sf), logsf, decimal=7, err_msg=msg + " - logsf-log(sf) relationship")
 
+@_silence_fp_errors
 def check_cdf_logcdf(distfn, args, msg):
     # compares cdf at several points with the log of the cdf
     points = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
@@ -357,6 +370,7 @@ def check_cdf_logcdf(distfn, args, msg):
     npt.assert_almost_equal(np.log(cdf), logcdf, decimal=7, err_msg=msg + " - logcdf-log(cdf) relationship")
 
 
+@_silence_fp_errors
 def check_distribution_rvs(dist, args, alpha, rvs):
     #test from scipy.stats.tests
     #this version reuses existing random variables

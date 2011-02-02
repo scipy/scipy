@@ -12,59 +12,71 @@ FUNCTIONS = ('multiquadric', 'inverse multiquadric', 'gaussian',
 
 def check_rbf1d_interpolation(function):
     """Check that the Rbf function interpolates throught the nodes (1D)"""
-    x = linspace(0,10,9)
-    y = sin(x)
-    rbf = Rbf(x, y, function=function)
-    yi = rbf(x)
-    assert_array_almost_equal(y, yi)
-    assert_almost_equal(rbf(float(x[0])), y[0])
+    olderr = np.seterr(all="ignore")
+    try:
+        x = linspace(0,10,9)
+        y = sin(x)
+        rbf = Rbf(x, y, function=function)
+        yi = rbf(x)
+        assert_array_almost_equal(y, yi)
+        assert_almost_equal(rbf(float(x[0])), y[0])
+    finally:
+        np.seterr(**olderr)
 
 def check_rbf2d_interpolation(function):
     """Check that the Rbf function interpolates throught the nodes (2D)"""
-    x = random.rand(50,1)*4-2
-    y = random.rand(50,1)*4-2
-    z = x*exp(-x**2-1j*y**2)
-    rbf = Rbf(x, y, z, epsilon=2, function=function)
-    zi = rbf(x, y)
-    zi.shape = x.shape
-    assert_array_almost_equal(z, zi)
+    olderr = np.seterr(all="ignore")
+    try:
+        x = random.rand(50,1)*4-2
+        y = random.rand(50,1)*4-2
+        z = x*exp(-x**2-1j*y**2)
+        rbf = Rbf(x, y, z, epsilon=2, function=function)
+        zi = rbf(x, y)
+        zi.shape = x.shape
+        assert_array_almost_equal(z, zi)
+    finally:
+        np.seterr(**olderr)
 
 def check_rbf3d_interpolation(function):
     """Check that the Rbf function interpolates throught the nodes (3D)"""
-    x = random.rand(50,1)*4-2
-    y = random.rand(50,1)*4-2
-    z = random.rand(50,1)*4-2
-    d = x*exp(-x**2-y**2)
-    rbf = Rbf(x, y, z, d, epsilon=2, function=function)
-    di = rbf(x, y, z)
-    di.shape = x.shape
-    assert_array_almost_equal(di, d)
-
-def test_rbf_interpolation():
     olderr = np.seterr(all="ignore")
     try:
-        for function in FUNCTIONS:
-            yield check_rbf1d_interpolation, function
-            yield check_rbf2d_interpolation, function
-            yield check_rbf3d_interpolation, function
+        x = random.rand(50,1)*4-2
+        y = random.rand(50,1)*4-2
+        z = random.rand(50,1)*4-2
+        d = x*exp(-x**2-y**2)
+        rbf = Rbf(x, y, z, d, epsilon=2, function=function)
+        di = rbf(x, y, z)
+        di.shape = x.shape
+        assert_array_almost_equal(di, d)
     finally:
         np.seterr(**olderr)
+
+def test_rbf_interpolation():
+    for function in FUNCTIONS:
+        yield check_rbf1d_interpolation, function
+        yield check_rbf2d_interpolation, function
+        yield check_rbf3d_interpolation, function
 
 def check_rbf1d_regularity(function, atol):
     """Check that the Rbf function approximates a smooth function well away
     from the nodes."""
-    x = linspace(0, 10, 9)
-    y = sin(x)
-    rbf = Rbf(x, y, function=function)
-    xi = linspace(0, 10, 100)
-    yi = rbf(xi)
-    #import matplotlib.pyplot as plt
-    #plt.figure()
-    #plt.plot(x, y, 'o', xi, sin(xi), ':', xi, yi, '-')
-    #plt.title(function)
-    #plt.show()
-    msg = "abs-diff: %f" % abs(yi - sin(xi)).max()
-    assert_(allclose(yi, sin(xi), atol=atol), msg)
+    olderr = np.seterr(all="ignore")
+    try:
+        x = linspace(0, 10, 9)
+        y = sin(x)
+        rbf = Rbf(x, y, function=function)
+        xi = linspace(0, 10, 100)
+        yi = rbf(xi)
+        #import matplotlib.pyplot as plt
+        #plt.figure()
+        #plt.plot(x, y, 'o', xi, sin(xi), ':', xi, yi, '-')
+        #plt.title(function)
+        #plt.show()
+        msg = "abs-diff: %f" % abs(yi - sin(xi)).max()
+        assert_(allclose(yi, sin(xi), atol=atol), msg)
+    finally:
+        np.seterr(**olderr)
 
 def test_rbf_regularity():
     tolerances = {
@@ -76,12 +88,8 @@ def test_rbf_regularity():
         'thin-plate': 0.1,
         'linear': 0.2
     }
-    olderr = np.seterr(all="ignore")
-    try:
-        for function in FUNCTIONS:
-            yield check_rbf1d_regularity, function, tolerances.get(function, 1e-2)
-    finally:
-        np.seterr(**olderr)
+    for function in FUNCTIONS:
+        yield check_rbf1d_regularity, function, tolerances.get(function, 1e-2)
 
 def test_default_construction():
     """Check that the Rbf class can be constructed with the default
