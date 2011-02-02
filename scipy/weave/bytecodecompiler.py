@@ -147,7 +147,7 @@ byName = {
 # Build one in the reverse sense
 # -----------------------------------------------
 byOpcode = {}
-for name,op in map(None, byName.keys(), byName.values()):
+for name, op in byName.items():
     byOpcode[op] = name
     del name
     del op
@@ -1151,7 +1151,7 @@ class CXXCoder(ByteCodeMeaning):
         v = self.stack[var_num]
         t = self.types[var_num]
         print 'LOADFAST',var_num,v,t
-        for VV,TT in map(None, self.stack, self.types):
+        for VV, TT in zip(self.stack, self.types):
             print VV,':',TT
         if t is None:
             raise TypeError('%s used before set?' % v)

@@ -180,7 +180,7 @@ def match(pattern, data, vars=None):
         return (pattern == data), vars
     if len(data) != len(pattern):
         return 0, vars
-    for pattern, data in map(None, pattern, data):
+    for pattern, data in zip(pattern, data):
         same, vars = match(pattern, data, vars)
         if not same:
             break
