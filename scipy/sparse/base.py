@@ -434,9 +434,12 @@ class spmatrix(object):
         # except for a_j = 1
         from csc import csc_matrix
         n = self.shape[1]
-        a = csc_matrix((n, 1), dtype=self.dtype)
-        a[j, 0] = 1
-        return self * a
+        if j < 0:
+            j += n
+        if j < 0 or j >= n:
+            raise IndexError("index out of bounds")
+        col_selector = csc_matrix(([1], [[j], [0]]), shape=(n,1), dtype=self.dtype)
+        return self * col_selector
 
     def getrow(self, i):
         """Returns a copy of row i of the matrix, as a (1 x n) sparse
@@ -447,9 +450,12 @@ class spmatrix(object):
         # except for a_i = 1
         from csr import csr_matrix
         m = self.shape[0]
-        a = csr_matrix((1, m), dtype=self.dtype)
-        a[0, i] = 1
-        return a * self
+        if i < 0:
+            i += m
+        if i < 0 or i >= m:
+            raise IndexError("index out of bounds")
+        row_selector = csr_matrix(([1], [[0], [i]]), shape=(1,m), dtype=self.dtype)
+        return row_selector * self
 
     #def __array__(self):
     #    return self.toarray()
