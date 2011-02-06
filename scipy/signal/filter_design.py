@@ -243,7 +243,7 @@ def zpk2tf(z, p, k):
             b[i] = k[i] * poly(z[i])
     else:
         b = k * poly(z)
-    a = poly(p)
+    a = atleast_1d(poly(p))
     return b, a
 
 def normalize(b, a):
