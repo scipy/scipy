@@ -186,9 +186,9 @@ def tf2zpk(b, a):
     Parameters
     ----------
     b : ndarray
-        numerator polynomial.
+        Numerator polynomial.
     a : ndarray
-        numerator and denominator polynomials.
+        Denominator polynomial.
 
     Returns
     -------
@@ -229,7 +229,7 @@ def zpk2tf(z, p, k):
     b : ndarray
         Numerator polynomial.
     a : ndarray
-        Numerator and denominator polynomials.
+        Denominator polynomial.
 
     """
     z = atleast_1d(z)
