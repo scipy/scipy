@@ -13,12 +13,20 @@ Each included continuous distribution is an instance of the class rv_continous:
    :toctree: generated/
 
    rv_continuous
+   rv_continuous.rvs
    rv_continuous.pdf
+   rv_continuous.logpdf
    rv_continuous.cdf
+   rv_continuous.logcdf
    rv_continuous.sf
+   rv_continuous.logsf
    rv_continuous.ppf
    rv_continuous.isf
+   rv_continuous.moment
    rv_continuous.stats
+   rv_continuous.entropy
+   rv_continuous.fit
+   rv_continuous.expect
 
 Each discrete distribution is an instance of the class rv_discrete:
 
@@ -26,12 +34,19 @@ Each discrete distribution is an instance of the class rv_discrete:
    :toctree: generated/
 
    rv_discrete
+   rv_discrete.rvs
    rv_discrete.pmf
+   rv_discrete.logpmf
    rv_discrete.cdf
+   rv_discrete.logcdf
    rv_discrete.sf
+   rv_discrete.logsf
    rv_discrete.ppf
    rv_discrete.isf
    rv_discrete.stats
+   rv_discrete.moment
+   rv_discrete.entropy
+   rv_discrete.expect
 
 Continuous distributions
 ========================
