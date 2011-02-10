@@ -1,8 +1,9 @@
-#LyX 1.5.1 created this file. For more info see http://www.lyx.org/
-\lyxformat 276
+#LyX 1.6.6.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 345
 \begin_document
 \begin_header
 \textclass article
+\use_default_options false
 \language english
 \inputencoding auto
 \font_roman default
@@ -13,9 +14,11 @@
 \font_osf false
 \font_sf_scale 100
 \font_tt_scale 100
+
 \graphics default
 \paperfontsize default
 \spacing single
+\use_hyperref false
 \papersize default
 \use_geometry true
 \use_amsmath 2
@@ -37,6 +40,7 @@
 \paperpagestyle default
 \tracking_changes false
 \output_changes false
+\author "" 
 \author "" 
 \end_header
 
@@ -78,43 +82,43 @@ All distributions will have location (L) and Scale (S) parameters along
 \begin_inset Tabular
 <lyxtabular version="3" rows="16" columns="3">
 <features>
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" rightline="true" width="0pt">
-<row topline="true" bottomline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<column alignment="center" valignment="top" width="0pt">
+<column alignment="center" valignment="top" width="0pt">
+<column alignment="center" valignment="top" width="0pt">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Function Name
 \end_layout
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Standard Function
 \end_layout
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Transformation
 \end_layout
 
 \end_inset
 </cell>
 </row>
-<row topline="true">
+<row>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Cumulative Distribution Function (CDF)
 \end_layout
 
@@ -123,7 +127,7 @@ Cumulative Distribution Function (CDF)
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $F\left(x\right)$
 \end_inset
 
@@ -135,7 +139,7 @@ Cumulative Distribution Function (CDF)
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $F\left(x;L,S\right)=F\left(\frac{\left(x-L\right)}{S}\right)$
 \end_inset
 
@@ -145,11 +149,11 @@ Cumulative Distribution Function (CDF)
 \end_inset
 </cell>
 </row>
-<row topline="true">
+<row>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Probability Density Function (PDF)
 \end_layout
 
@@ -158,7 +162,7 @@ Probability Density Function (PDF)
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $f\left(x\right)=F^{\prime}\left(x\right)$
 \end_inset
 
@@ -170,7 +174,7 @@ Probability Density Function (PDF)
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $f\left(x;L,S\right)=\frac{1}{S}f\left(\frac{\left(x-L\right)}{S}\right)$
 \end_inset
 
@@ -180,11 +184,11 @@ Probability Density Function (PDF)
 \end_inset
 </cell>
 </row>
-<row topline="true">
+<row>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Percent Point Function (PPF)
 \end_layout
 
@@ -193,7 +197,7 @@ Percent Point Function (PPF)
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $G\left(q\right)=F^{-1}\left(q\right)$
 \end_inset
 
@@ -205,7 +209,7 @@ Percent Point Function (PPF)
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $G\left(q;L,S\right)=L+SG\left(q\right)$
 \end_inset
 
@@ -215,11 +219,11 @@ Percent Point Function (PPF)
 \end_inset
 </cell>
 </row>
-<row topline="true">
+<row>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Probability Sparsity Function (PSF)
 \end_layout
 
@@ -228,7 +232,7 @@ Probability Sparsity Function (PSF)
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $g\left(q\right)=G^{\prime}\left(q\right)$
 \end_inset
 
@@ -240,7 +244,7 @@ Probability Sparsity Function (PSF)
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $g\left(q;L,S\right)=Sg\left(q\right)$
 \end_inset
 
@@ -250,11 +254,11 @@ Probability Sparsity Function (PSF)
 \end_inset
 </cell>
 </row>
-<row topline="true">
+<row>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Hazard Function (HF)
 \end_layout
 
@@ -263,7 +267,7 @@ Hazard Function (HF)
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $h_{a}\left(x\right)=\frac{f\left(x\right)}{1-F\left(x\right)}$
 \end_inset
 
@@ -275,7 +279,7 @@ Hazard Function (HF)
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $h_{a}\left(x;L,S\right)=\frac{1}{S}h_{a}\left(\frac{\left(x-L\right)}{S}\right)$
 \end_inset
 
@@ -285,11 +289,11 @@ Hazard Function (HF)
 \end_inset
 </cell>
 </row>
-<row topline="true">
+<row>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Cumulative Hazard Functon (CHF)
 \end_layout
 
@@ -298,7 +302,7 @@ Cumulative Hazard Functon (CHF)
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $H_{a}\left(x\right)=$
 \end_inset
 
@@ -314,7 +318,7 @@ Cumulative Hazard Functon (CHF)
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $H_{a}\left(x;L,S\right)=H_{a}\left(\frac{\left(x-L\right)}{S}\right)$
 \end_inset
 
@@ -324,11 +328,11 @@ Cumulative Hazard Functon (CHF)
 \end_inset
 </cell>
 </row>
-<row topline="true">
+<row>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Survival Function (SF)
 \end_layout
 
@@ -337,7 +341,7 @@ Survival Function (SF)
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $S\left(x\right)=1-F\left(x\right)$
 \end_inset
 
@@ -349,7 +353,7 @@ Survival Function (SF)
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $S\left(x;L,S\right)=S\left(\frac{\left(x-L\right)}{S}\right)$
 \end_inset
 
@@ -359,11 +363,11 @@ Survival Function (SF)
 \end_inset
 </cell>
 </row>
-<row topline="true">
+<row>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Inverse Survival Function (ISF)
 \end_layout
 
@@ -372,7 +376,7 @@ Inverse Survival Function (ISF)
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $Z\left(\alpha\right)=S^{-1}\left(\alpha\right)=G\left(1-\alpha\right)$
 \end_inset
 
@@ -384,7 +388,7 @@ Inverse Survival Function (ISF)
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $Z\left(\alpha;L,S\right)=L+SZ\left(\alpha\right)$
 \end_inset
 
@@ -394,11 +398,11 @@ Inverse Survival Function (ISF)
 \end_inset
 </cell>
 </row>
-<row topline="true">
+<row>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Moment Generating Function (MGF) 
 \end_layout
 
@@ -407,7 +411,7 @@ Moment Generating Function (MGF)
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $M_{Y}\left(t\right)=E\left[e^{Yt}\right]$
 \end_inset
 
@@ -419,7 +423,7 @@ Moment Generating Function (MGF)
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $M_{X}\left(t\right)=e^{Lt}M_{Y}\left(St\right)$
 \end_inset
 
@@ -429,11 +433,11 @@ Moment Generating Function (MGF)
 \end_inset
 </cell>
 </row>
-<row topline="true">
+<row>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Random Variates
 \end_layout
 
@@ -442,7 +446,7 @@ Random Variates
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $Y=G\left(U\right)$
 \end_inset
 
@@ -454,7 +458,7 @@ Random Variates
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $X=L+SY$
 \end_inset
 
@@ -464,11 +468,11 @@ Random Variates
 \end_inset
 </cell>
 </row>
-<row topline="true">
+<row>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 (Differential) Entropy
 \end_layout
 
@@ -477,7 +481,7 @@ Random Variates
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $h\left[Y\right]=-\int f\left(y\right)\log f\left(y\right)dy$
 \end_inset
 
@@ -489,7 +493,7 @@ Random Variates
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $h\left[X\right]=h\left[Y\right]+\log S$
 \end_inset
 
@@ -499,11 +503,11 @@ Random Variates
 \end_inset
 </cell>
 </row>
-<row topline="true">
+<row>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 (Non-central) Moments
 \end_layout
 
@@ -512,7 +516,7 @@ Random Variates
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $\mu_{n}^{\prime}=E\left[Y^{n}\right]$
 \end_inset
 
@@ -524,7 +528,7 @@ Random Variates
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $E\left[X^{n}\right]=L^{n}\sum_{k=0}^{N}\left(\begin{array}{c}
 n\\
 k\end{array}\right)\left(\frac{S}{L}\right)^{k}\mu_{k}^{\prime}$
@@ -536,11 +540,11 @@ k\end{array}\right)\left(\frac{S}{L}\right)^{k}\mu_{k}^{\prime}$
 \end_inset
 </cell>
 </row>
-<row topline="true">
+<row>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Central Moments 
 \end_layout
 
@@ -549,8 +553,8 @@ Central Moments
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
-\begin_inset Formula $\mu_{n}=E\left[\left(Y-\mu\right)^{n}\right]$
+\begin_layout Plain Layout
+\begin_inset Formula $\mu_{Y^{n}}=E\left[\left(Y-\mu_{Y}\right)^{n}\right]$
 \end_inset
 
 
@@ -561,8 +565,8 @@ Central Moments
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
-\begin_inset Formula $E\left[\left(X-\mu_{X}\right)^{n}\right]=S^{n}\mu_{n}$
+\begin_layout Plain Layout
+\begin_inset Formula $E\left[\left(X-\mu_{X}\right)^{n}\right]=S^{n}\mu_{X^{n}}=S^{n}\mu_{n}$
 \end_inset
 
 
@@ -571,11 +575,11 @@ Central Moments
 \end_inset
 </cell>
 </row>
-<row topline="true">
+<row>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 mean (mode, median), var
 \end_layout
 
@@ -584,8 +588,8 @@ mean (mode, median), var
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
-\begin_inset Formula $\mu,\,\mu_{2}$
+\begin_layout Plain Layout
+\begin_inset Formula $\mu_{Y},\,\mu_{Y^{2}}$
 \end_inset
 
 
@@ -596,30 +600,30 @@ mean (mode, median), var
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $L+S\mu,\, S^{2}\mu_{2}$
 \end_inset
 
-  
+ 
 \end_layout
 
 \end_inset
 </cell>
 </row>
-<row topline="true" bottomline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 skewness, kurtosis
 \end_layout
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $\gamma_{1}=\frac{\mu_{3}}{\left(\mu_{2}\right)^{3/2}},\,$
 \end_inset
 
@@ -632,10 +636,10 @@ skewness, kurtosis
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Formula $\gamma_{1},\,\gamma_{2}$
 \end_inset
 
@@ -653,7 +657,9 @@ skewness, kurtosis
 \end_layout
 
 \begin_layout Standard
-\InsetSpace ~
+\begin_inset space ~
+\end_inset
+
 
 \end_layout
 
@@ -858,16 +864,49 @@ l_{\mathbf{x}}\left(L,S;\boldsymbol{\theta}\right) & = & N\log S-\sum_{i=1}^{N}\
 
 \end_inset
 
- If desired, sample estimates for 
-\begin_inset Formula $L$
+
+\end_layout
+
+\begin_layout Subsection
+Method of Moments
+\end_layout
+
+\begin_layout Standard
+Another approach to finding parameters of a distribution that explain a
+ collection of data is to match the expected moments of the distribution
+ with the computed moments and the relevant equations solved for the parameters
+ of the distribution.
+ In particular, for a distribution with no shape parameters, the following
+ equations can be solved for location and scale
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \begin{align*}
+\mu_{Y} & =S\mu+L\\
+\mu_{Y^{2}} & =S^{2}\mu_{2}.\end{align*}
+
+\end_inset
+
+ Estimating 
+\begin_inset Formula $\mu_{Y}$
+\end_inset
+
+ as 
+\begin_inset Formula $\hat{\mu}$
 \end_inset
 
  and 
-\begin_inset Formula $S$
+\begin_inset Formula $\mu_{Y^{2}}$
 \end_inset
 
- (not necessarily maximum likelihood estimates) can be obtained from samples
- estimates of the mean and variance using 
+ as 
+\begin_inset Formula $\hat{\mu}_{2}$
+\end_inset
+
+ gives the estimates
+\end_layout
+
+\begin_layout Standard
 \begin_inset Formula \begin{eqnarray*}
 \hat{S} & = & \sqrt{\frac{\hat{\mu}_{2}}{\mu_{2}}}\\
 \hat{L} & = & \hat{\mu}-\hat{S}\mu\end{eqnarray*}
@@ -897,11 +936,64 @@ untransformed
 ) and 
 \begin_inset Formula \begin{eqnarray*}
 \hat{\mu} & = & \frac{1}{N}\sum_{i=1}^{N}x_{i}=\bar{\mathbf{x}}\\
-\hat{\mu}_{2} & = & \frac{1}{N-1}\sum_{i=1}^{N}\left(x_{i}-\hat{\mu}\right)^{2}=\frac{N}{N-1}\overline{\left(\mathbf{x}-\bar{\mathbf{x}}\right)^{2}}\end{eqnarray*}
+\hat{\mu}_{2} & = & \frac{1}{N}\sum_{i=1}^{N}\left(x_{i}-\hat{\mu}\right)^{2}=\overline{\left(\mathbf{x}-\bar{\mathbf{x}}\right)^{2}}.\end{eqnarray*}
 
 \end_inset
 
+In general, if the distribution has 
+\begin_inset Formula $M$
+\end_inset
 
+ shape parameters, then to find the parameters of the distribution, we need
+ to add 
+\begin_inset Formula $M$
+\end_inset
+
+ additional equations.
+ It is straightforward to add the central moment equations: 
+\begin_inset Formula \[
+\mu_{Y^{n}}=S^{n}\mu_{n}\left(\boldsymbol{\theta}\right)\]
+
+\end_inset
+
+for 
+\begin_inset Formula $n=2\ldots M+2$
+\end_inset
+
+.
+ If we can estimate the 
+\begin_inset Formula $n^{\mbox{th}}$
+\end_inset
+
+ central moment of 
+\begin_inset Formula $Y$
+\end_inset
+
+ as 
+\begin_inset Formula \[
+\hat{\mu}_{n}=\frac{1}{N}\sum_{i=1}^{N}\left(x_{i}-\hat{\mu}\right)^{n}=\overline{\left(\mathbf{x}-\bar{\mathbf{x}}\right)^{n}},\]
+
+\end_inset
+
+then these data-computed statistics can be used to estimate 
+\begin_inset Formula $S$
+\end_inset
+
+ and the parameter vector 
+\begin_inset Formula $\boldsymbol{\theta}$
+\end_inset
+
+ by solving this set of potentially non-linear equations.
+ Then, the location parameter can be found by solving the equation 
+\begin_inset Formula $\mu_{Y}=S\mu\left(\boldsymbol{\theta}\right)+L$
+\end_inset
+
+, for 
+\begin_inset Formula $L$
+\end_inset
+
+.
+ 
 \end_layout
 
 \begin_layout Subsection
@@ -923,7 +1015,8 @@ We will use
 \begin_inset Formula $x_{i}$
 \end_inset
 
-
+.
+ 
 \end_layout
 
 \begin_layout Section

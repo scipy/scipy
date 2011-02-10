@@ -27,6 +27,11 @@ Each included continuous distribution is an instance of the class rv_continous:
    rv_continuous.entropy
    rv_continuous.fit
    rv_continuous.expect
+   rv_continuous.median
+   rv_continuous.mean
+   rv_continuous.var
+   rv_continuous.std
+   rv_continuous.interval
 
 Each discrete distribution is an instance of the class rv_discrete:
 
@@ -47,6 +52,11 @@ Each discrete distribution is an instance of the class rv_discrete:
    rv_discrete.moment
    rv_discrete.entropy
    rv_discrete.expect
+   rv_discrete.median
+   rv_discrete.mean
+   rv_discrete.var
+   rv_discrete.std
+   rv_discrete.interval
 
 Continuous distributions
 ========================
