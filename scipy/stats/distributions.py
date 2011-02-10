@@ -217,7 +217,7 @@ _doc_std = \
 """
 _doc_interval = \
 """interval(alpha, %(shapes)s, loc=0, scale=1)
-    Endpoints of the range that contains alpha % of the distribution
+    Endpoints of the range that contains alpha %% of the distribution
 """
 _doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
                            _doc_logpdf, _doc_cdf, _doc_logcdf, _doc_sf, 
@@ -1663,7 +1663,8 @@ class rv_continuous(rv_generic):
             scale parameter (default=1)
 
         """
-        loc, scale = map(kwds.get,['loc','scale'])
+        loc = kwds.get('loc', 0)
+        scale = kwds.get('scale', 1)
         if not (self._argcheck(*args) and (scale > 0)):
             return nan
         if (floor(n) != n):
@@ -1685,7 +1686,7 @@ class rv_continuous(rv_generic):
             return scale**n * val
         else:
             result = 0
-            fac = scale / loc
+            fac = float(scale) / float(loc)
             for k in range(n):
                 valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, args)
                 result += comb(n,k,exact=True)*(fac**k) * valk
@@ -5590,7 +5591,8 @@ class rv_discrete(rv_generic):
             scale parameter (default=1)
 
         """
-        loc, scale = map(kwds.get,['loc','scale'])
+        loc = kwds.get('loc', 0)
+        scale = kwds.get('scale', 1)
         if not (self._argcheck(*args) and (scale > 0)):
             return nan
         if (floor(n) != n):
@@ -5612,7 +5614,7 @@ class rv_discrete(rv_generic):
             return scale**n * val
         else:
             result = 0
-            fac = scale / loc
+            fac = float(scale) / float(loc)
             for k in range(n):
                 valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, args)
                 result += comb(n,k,exact=True)*(fac**k) * valk
