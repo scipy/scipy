@@ -120,7 +120,14 @@ class TestOptimize(TestCase):
 
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
-        assert_(self.funccalls == 116, self.funccalls)
+        #
+        # However, some leeway must be added: the exact evaluation
+        # count is sensitive to numerical error, and floating-point
+        # computations are not bit-for-bit reproducible across
+        # machines, and when using e.g. MKL, data alignment
+        # etc. affect the rounding error.
+        #
+        assert_(self.funccalls <= 116 + 20, self.funccalls)
         assert_(self.gradcalls == 0, self.gradcalls)
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
