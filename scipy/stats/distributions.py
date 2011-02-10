@@ -1,8 +1,8 @@
 # Functions to implement several important functions for
 #   various Continous and Discrete Probability Distributions
 #
-# Author:  Travis Oliphant  2002-2010 with contributions from
-#          SciPy Developers 2004-2010
+# Author:  Travis Oliphant  2002-2011 with contributions from
+#          SciPy Developers 2004-2011
 #
 
 import math
@@ -33,6 +33,38 @@ def _moment(data, n, mu=None):
     if mu is None:
         mu = data.mean()
     return ((data - mu)**n).mean()
+
+def _moment_from_stats(n, mu, mu2, g1, g2, moment_func, args):
+    if (n==0):
+        return 1.0
+    elif (n==1):
+        if mu is None: 
+            val = moment_func(1,*args)
+        else:
+            val = mu
+    elif (n==2):
+        if mu2 is None or mu is None:
+            val = moment_func(2,*args)
+        else: 
+            val = mu2 + mu*mu
+    elif (n==3):
+        if g1 is None or mu2 is None or mu is None:
+            val = moment_func(3,*args)
+        else:
+            mu3 = g1*(mu2**1.5) # 3rd central moment
+            val = mu3+3*mu*mu2+mu**3 # 3rd non-central moment
+    elif (n==4):
+        if g1 is None or g2 is None or mu2 is None or mu is None:
+            val = moment_func(4,*args)
+        else:
+            mu4 = (g2+3.0)*(mu2**2.0) # 4th central moment
+            mu3 = g1*(mu2**1.5) # 3rd central moment
+            val = mu4+4*mu*mu3+6*mu*mu*mu2+mu**4
+    else:
+        val = moment_func(n, *args)
+
+    return val
+
 
 def _skew(data):
     data = np.ravel(data)
@@ -107,17 +139,33 @@ _doc_pdf = \
 """pdf(x, %(shapes)s, loc=0, scale=1)
     Probability density function.
 """
+_doc_logpdf = \
+"""logpdf(x, %(shapes)s, loc=0, scale=1)
+    Log of the probability density function.
+"""
 _doc_pmf = \
 """pmf(x, %(shapes)s, loc=0, scale=1)
     Probability mass function.
+"""
+_doc_logpmf = \
+"""logpmf(x, %(shapes)s, loc=0, scale=1)
+    Log of the probability mass function.
 """
 _doc_cdf = \
 """cdf(x, %(shapes)s, loc=0, scale=1)
     Cumulative density function.
 """
+_doc_logcdf = \
+"""logcdf(x, %(shapes)s, loc=0, scale=1)
+    Log of the cumulative density function.
+"""
 _doc_sf = \
 """sf(x, %(shapes)s, loc=0, scale=1)
     Survival function (1-cdf --- sometimes more accurate).
+"""
+_doc_logsf = \
+"""logsf(x, %(shapes)s, loc=0, scale=1)
+    Log of the survival function.
 """
 _doc_ppf = \
 """ppf(q, %(shapes)s, loc=0, scale=1)
@@ -126,6 +174,10 @@ _doc_ppf = \
 _doc_isf = \
 """isf(q, %(shapes)s, loc=0, scale=1)
     Inverse survival function (inverse of sf).
+"""
+_doc_moment = \
+"""moment(n, %(shapes)s, loc=0, scale=1)
+    Non-central moment of order n
 """
 _doc_stats = \
 """stats(%(shapes)s, loc=0, scale=1, moments='mv')
@@ -139,9 +191,40 @@ _doc_fit = \
 """fit(data, %(shapes)s, loc=0, scale=1)
     Parameter estimates for generic data.
 """
+_doc_expect = \
+"""expect(func, %(shapes)s, loc=0, scale=1, lb=None, ub=None, conditional=False, **kwds)
+    Expected value of a function (of one argument) with respect to the distribution.
+"""
+_doc_expect_discrete = \
+"""expect(func, %(shapes)s, loc=0, lb=None, ub=None, conditional=False)
+    Expected value of a function (of one argument) with respect to the distribution.
+"""
+_doc_median = \
+"""median(%(shapes)s, loc=0, scale=1)
+    Median of the distribution.
+"""
+_doc_mean = \
+"""mean(%(shapes)s, loc=0, scale=1)
+    Mean of the distribution.
+"""
+_doc_var = \
+"""var(%(shapes)s, loc=0, scale=1)
+    Variance of the distribution.
+"""
+_doc_std = \
+"""std(%(shapes)s, loc=0, scale=1)
+    Standard deviation of the distribution.
+"""
+_doc_interval = \
+"""interval(alpha, %(shapes)s, loc=0, scale=1)
+    Endpoints of the range that contains alpha % of the distribution
+"""
 _doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
-                           _doc_cdf, _doc_sf, _doc_ppf, _doc_isf,
-                           _doc_stats, _doc_entropy, _doc_fit])
+                           _doc_logpdf, _doc_cdf, _doc_logcdf, _doc_sf, 
+                           _doc_logsf, _doc_ppf, _doc_isf, _doc_moment,
+                           _doc_stats, _doc_entropy, _doc_fit, 
+                           _doc_expect, _doc_median,
+                           _doc_mean, _doc_var, _doc_std, _doc_interval])
 
 # Note that the two lines for %(shapes) are searched for and replaced in
 # rv_continuous and rv_discrete - update there if the exact string changes
@@ -217,13 +300,23 @@ _doc_default_before_notes = ''.join([_doc_default_longsummary,
 
 docdict = {'rvs':_doc_rvs,
            'pdf':_doc_pdf,
+           'logpdf':_doc_logpdf,
            'cdf':_doc_cdf,
+           'logcdf':_doc_logcdf,
            'sf':_doc_sf,
+           'logsf':_doc_logsf,
            'ppf':_doc_ppf,
            'isf':_doc_isf,
            'stats':_doc_stats,
            'entropy':_doc_entropy,
            'fit':_doc_fit,
+           'moment':_doc_moment,
+           'expect':_doc_expect,
+           'interval':_doc_interval,
+           'mean':_doc_mean,
+           'std':_doc_std,
+           'var':_doc_var,
+           'median':_doc_median,
            'allmethods':_doc_allmethods,
            'callparams':_doc_default_callparams,
            'longsummary':_doc_default_longsummary,
@@ -237,11 +330,15 @@ docdict = {'rvs':_doc_rvs,
 docdict_discrete = docdict.copy()
 
 docdict_discrete['pmf'] = _doc_pmf
-_doc_disc_methods = ['rvs', 'pmf', 'cdf', 'sf', 'ppf', 'isf', 'stats',
-                     'entropy', 'fit']
+docdict_discrete['logpmf'] = _doc_logpmf
+docdict_discrete['expect'] = _doc_expect_discrete
+_doc_disc_methods = ['rvs', 'pmf', 'logpmf', 'cdf', 'logcdf', 'sf', 'logsf', 
+                     'ppf', 'isf', 'stats', 'entropy', 'fit', 'expect', 'median',
+                     'mean', 'var', 'std', 'interval']
 for obj in _doc_disc_methods:
     docdict_discrete[obj] = docdict_discrete[obj].replace(', scale=1', '')
 docdict_discrete.pop('pdf')
+docdict_discrete.pop('logpdf')
 
 _doc_allmethods = ''.join([docdict_discrete[obj] for obj in
                                               _doc_disc_methods])
@@ -334,8 +431,14 @@ class rv_frozen(object):
     def pdf(self, x):    #raises AttributeError in frozen discrete distribution
         return self.dist.pdf(x, *self.args, **self.kwds)
 
+    def logpdf(self, x):
+        return self.dist.logpdf(x, *self.args, **self.kwds)
+
     def cdf(self, x):
         return self.dist.cdf(x, *self.args, **self.kwds)
+    
+    def logcdf(self, x):
+        return self.dist.logcdf(x, *self.args, **self.kwds)
 
     def ppf(self, q):
         return self.dist.ppf(q, *self.args, **self.kwds)
@@ -350,6 +453,9 @@ class rv_frozen(object):
 
     def sf(self, x):
         return self.dist.sf(x, *self.args, **self.kwds)
+
+    def logsf(self, x):
+        return self.dist.logsf(x, *self.args, **self.kwds)
 
     def stats(self, moments='mv'):
         kwds = self.kwds.copy()
@@ -369,13 +475,16 @@ class rv_frozen(object):
         return self.dist.std(*self.args, **self.kwds)
 
     def moment(self, n):
-        return self.dist.moment(n, *self.args)
+        return self.dist.moment(n, *self.args, **self.kwds)
 
     def entropy(self):
         return self.dist.entropy(*self.args, **self.kwds)
 
     def pmf(self,k):
         return self.dist.pmf(k, *self.args, **self.kwds)
+
+    def logpmf(self,k):
+        return self.dist.logpmf(k, *self.args, **self.kwds)
 
     def interval(self, alpha):
         return self.dist.interval(alpha, *self.args, **self.kwds)
@@ -860,8 +969,9 @@ class rv_continuous(rv_generic):
     New random variables can be defined by subclassing rv_continuous class
     and re-defining at least the
 
-    _pdf or the cdf method which will be given clean arguments (in between a
-    and b) and passing the argument check method
+    _pdf or the _cdf method (normalized to location 0 and scale 1)
+    which will be given clean arguments (in between a and b) and 
+    passing the argument check method
 
     If postive argument checking is not correct for your RV
     then you will also need to re-define ::
@@ -871,9 +981,9 @@ class rv_continuous(rv_generic):
     Correct, but potentially slow defaults exist for the remaining
     methods but for speed and/or accuracy you can over-ride ::
 
-      _cdf, _ppf, _rvs, _isf, _sf
+      _logpdf, _cdf, _logcdf, _ppf, _rvs, _isf, _sf, _logsf
 
-    Rarely would you override _isf  and _sf but you could.
+    Rarely would you override _isf, _sf, and _logsf but you could.
 
     Statistics are computed using numerical integration by default.
     For speed you can redefine this using
@@ -1119,7 +1229,7 @@ class rv_continuous(rv_generic):
         """
         Log of the probability density function at x of the given RV.
 
-        This uses more numerically accurate calculation if available.
+        This uses a more numerically accurate calculation if available.
 
         Parameters
         ----------
@@ -1534,7 +1644,7 @@ class rv_continuous(rv_generic):
         else:
             return tuple(output)
 
-    def moment(self, n, *args):
+    def moment(self, n, *args, **kwds):
         """
         n'th order non-central moment of distribution
 
@@ -1543,17 +1653,23 @@ class rv_continuous(rv_generic):
         n: int, n>=1
             order of moment
 
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : float
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
 
+        loc : float, optional
+            location parameter (default=0)
+        scale : float, optional
+            scale parameter (default=1)
+
         """
-        if not self._argcheck(*args):
+        loc, scale = map(kwds.get,['loc','scale'])
+        if not (self._argcheck(*args) and (scale > 0)):
             return nan
         if (floor(n) != n):
             raise ValueError("Moment must be an integer.")
         if (n < 0): raise ValueError("Moment must be positive.")
-        if (n == 0): return 1.0
+        mu, mu2, g1, g2 = None, None, None, None
         if (n > 0) and (n < 5):
             signature = inspect.getargspec(self._stats.im_func)
             if (signature[2] is not None) or ('moments' in signature[0]):
@@ -1561,28 +1677,20 @@ class rv_continuous(rv_generic):
             else:
                 mdict = {}
             mu, mu2, g1, g2 = self._stats(*args,**mdict)
-            if (n==1):
-                if mu is None: return self._munp(1,*args)
-                else: return mu
-            elif (n==2):
-                if mu2 is None or mu is None:
-                    return self._munp(2,*args)
-                else: return mu2 + mu*mu
-            elif (n==3):
-                if g1 is None or mu2 is None:
-                    return self._munp(3,*args)
-                else:
-                    mu3 = g1*(mu2**1.5) # 3rd central moment
-                    return mu3+3*mu*mu2+mu**3 # 3rd non-central moment
-            else: # (n==4)
-                if g2 is None or mu2 is None:
-                    return self._munp(4,*args)
-                else:
-                    mu4 = (g2+3.0)*(mu2**2.0) # 4th central moment
-                    mu3 = g1*(mu2**1.5) # 3rd central moment
-                    return mu4+4*mu*mu3+6*mu*mu*mu2+mu**4
+        val = _moment_from_stats(n, mu, mu2, g1, g2, self._munp, args)
+
+        # Convert to transformed  X = L + S*Y
+        # so E[X^n] = E[(L+S*Y)^n] = L^n sum(comb(n,k)*(S/L)^k E[Y^k],k=0...n)
+        if loc == 0:
+            return scale**n * val
         else:
-            return self._munp(n,*args)
+            result = 0
+            fac = scale / loc
+            for k in range(n):
+                valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, args)
+                result += comb(n,k,exact=True)*(fac**k) * valk
+            result += fac**n * val
+            return result * loc**n                
 
     def _nnlf(self, x, *args):
         return -sum(self._logpdf(x, *args),axis=0)
@@ -1613,6 +1721,8 @@ class rv_continuous(rv_generic):
             args = (1.0,)*self.numargs
         return args + self.fit_loc_scale(data, *args)
 
+    # Return the (possibly reduced) function to optimize in order to find MLE 
+    #  estimates for the .fit method
     def _reduce_func(self, args, kwds):
         args = list(args)
         Nargs = len(args) - 2
@@ -1660,9 +1770,9 @@ class rv_continuous(rv_generic):
         such.
 
         One can hold some parameters fixed to specific values by passing in
-        keyword arguments ``f0``..[is this supposed to be an ellipsis?] ``fn``
-        (for shape parameters) and ``floc`` and ``fscale`` (for location and
-        scale parameters, respectively).
+        keyword arguments ``f0``, ``f1``, ..., ``fn`` (for shape parameters) 
+        and ``floc`` and ``fscale`` (for location and scale parameters, 
+        respectively).
 
         Parameters
         ----------
@@ -1677,7 +1787,7 @@ class rv_continuous(rv_generic):
             Special keyword arguments are recognized as holding certain
             parameters fixed:
 
-            f0..fn : hold respective shape parameters fixed.
+            f0...fn : hold respective shape parameters fixed.
 
             floc : hold location parameter fixed to specified value.
 
@@ -1721,9 +1831,9 @@ class rv_continuous(rv_generic):
             except AttributeError:
                 raise ValueError("%s is not a valid optimizer" % optimizer)
         vals = optimizer(func,x0,args=(ravel(data),),disp=0)
-        vals = tuple(vals)
         if restore is not None:
             vals = restore(args, vals)
+        vals = tuple(vals)
         return vals
 
     def fit_loc_scale(self, data, *args):
@@ -1820,6 +1930,9 @@ class rv_continuous(rv_generic):
            of the integration interval. The return value is the expectation
            of the function, conditional on being in the given interval.
 
+        Additional keyword arguments are passed to the integration routine.
+          
+
         Returns
         -------
         expected value : float
@@ -1829,19 +1942,21 @@ class rv_continuous(rv_generic):
         This function has not been checked for it's behavior when the integral is
         not finite. The integration behavior is inherited from integrate.quad.
         """
+        lockwds = {'loc': loc, 
+                   'scale':scale}
         if func is None:
             def fun(x, *args):
-                return x*self.pdf(x, *args, **{'loc':loc, 'scale':scale})
+                return x*self.pdf(x, *args, **lockwds)
         else:
             def fun(x, *args):
-                return func(x)*self.pdf(x, *args, **{'loc':loc, 'scale':scale})
+                return func(x)*self.pdf(x, *args, **lockwds)
         if lb is None:
             lb = loc + self.a * scale
         if ub is None:
             ub = loc + self.b * scale
         if conditional:
-            invfac = (self.sf(lb, *args, **{'loc':loc, 'scale':scale})
-                      - self.sf(ub, *args, **{'loc':loc, 'scale':scale}))
+            invfac = (self.sf(lb, *args, **lockwds)
+                      - self.sf(ub, *args, **lockwds))
         else:
             invfac = 1.0
         kwds['args'] = args
@@ -5465,17 +5580,23 @@ class rv_discrete(rv_generic):
         ----------
         n: int, n>=1
             order of moment
-        arg1, arg2, arg3,...: array-like
+        arg1, arg2, arg3,...: float
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
 
+        loc : float, optional
+            location parameter (default=0)
+        scale : float, optional
+            scale parameter (default=1)
+
         """
-        if not self._argcheck(*args):
+        loc, scale = map(kwds.get,['loc','scale'])
+        if not (self._argcheck(*args) and (scale > 0)):
             return nan
         if (floor(n) != n):
             raise ValueError("Moment must be an integer.")
         if (n < 0): raise ValueError("Moment must be positive.")
-        if (n == 0): return 1.0
+        mu, mu2, g1, g2 = None, None, None, None
         if (n > 0) and (n < 5):
             signature = inspect.getargspec(self._stats.im_func)
             if (signature[2] is not None) or ('moments' in signature[0]):
@@ -5483,27 +5604,21 @@ class rv_discrete(rv_generic):
             else:
                 dict = {}
             mu, mu2, g1, g2 = self._stats(*args,**dict)
-            if (n==1):
-                if mu is None: return self._munp(1,*args)
-                else: return mu
-            elif (n==2):
-                if mu2 is None or mu is None: return self._munp(2,*args)
-                else: return mu2 + mu*mu
-            elif (n==3):
-                if (g1 is None) or (mu2 is None) or (mu is None):
-                    return self._munp(3,*args)
-                else:
-                    mu3 = g1*(mu2**1.5) # 3rd central moment
-                    return mu3+3*mu*mu2+mu**3 # 3rd non-central moment
-            else: # (n==4)
-                if (g2 is None) or (g1 is None) or (mu is None) or (mu2 is None):
-                    return self._munp(4,*args)
-                else:
-                    mu4 = (g2+3.0)*(mu2**2.0) # 4th central moment
-                    mu3 = g1*(mu2**1.5) # 3rd central moment
-                    return mu4+4*mu*mu3+6*mu*mu*mu2+mu**4
+        val = _moment_from_stats(n, mu, mu2, g1, g2, self._munp, args)
+
+        # Convert to transformed  X = L + S*Y
+        # so E[X^n] = E[(L+S*Y)^n] = L^n sum(comb(n,k)*(S/L)^k E[Y^k],k=0...n)
+        if loc == 0:
+            return scale**n * val
         else:
-            return self._munp(n,*args)
+            result = 0
+            fac = scale / loc
+            for k in range(n):
+                valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, args)
+                result += comb(n,k,exact=True)*(fac**k) * valk
+            result += fac**n * val
+            return result * loc**n                
+
 
     def freeze(self, *args, **kwds):
         return rv_frozen(self, *args, **kwds)
@@ -5550,7 +5665,7 @@ class rv_discrete(rv_generic):
         Parameters
         ----------
         fn : function (default: identity mapping)
-               Function for which integral is calculated. Takes only one argument.
+               Function for which sum is calculated. Takes only one argument.
         args : tuple
                argument (parameters) of the distribution
         optional keyword parameters

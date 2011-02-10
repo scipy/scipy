@@ -40,32 +40,6 @@ __all__ = ['find_repeats', 'mvsdist',
 ##    at http://dspace.byu.edu/bitstream/1877/438/1/bayes_mvs.pdf
 ##    (Permanent link at http://hdl.handle.net/1877/438 )
 
-# assume distributions are gaussian with given means and variances.
-def _gauss_mvs(x, n, alpha):
-    xbar = x.mean()
-    C = x.var()
-    val = distributions.norm.ppf((1+alpha)/2.0)
-    # mean is a Gaussian with mean xbar and variance C/n
-    mp = xbar
-    fac0 = sqrt(C/n)
-    term = fac0*val
-    ma = mp - term
-    mb = mp + term
-    # var is a Gaussian with mean C and variance 2*C*C/n
-    vp = C
-    fac1 = sqrt(2.0/n)*C
-    term = fac1*val
-    va = vp - term
-    vb = vp + term
-    # std is a Gaussian with mean sqrt(C) and variance C/(2*n)
-    st = sqrt(C)
-    fac2 = sqrt(0.5)*fac0
-    term = fac2*val
-    sta = st - term
-    stb = st + term
-    return (mp, (ma, mb)), (vp, (va, vb)), (st, (sta, stb))
-
-
 ##  Assumes all is known is that mean, and std (variance,axis=0) exist
 ##   and are the same for all the data.  Uses Jeffrey's prior
 ##
@@ -73,73 +47,51 @@ def _gauss_mvs(x, n, alpha):
 ##      and std.
 
 def bayes_mvs(data, alpha=0.90):
-    """Return Bayesian confidence intervals for the mean, var, and std.
-
-    Assumes 1-d data all has same mean and variance and uses Jeffrey's prior
-    for variance and std.
-
-    alpha gives the probability that the returned confidence interval contains
-    the true parameter.
-
-    Uses mean of conditional pdf as center estimate
-    (but centers confidence interval on the median)
-
-    Returns (center, (a, b)) for each of mean, variance and standard deviation.
-    Requires 2 or more data-points.
-    """
-    x = ravel(data)
-    n = len(x)
-    if n < 2:
-        raise ValueError("data must contain at least two values.")
-    if alpha >= 1 or alpha <= 0:
-        raise ValueError("0 < alpha < 1 is required, but alpha=%s was given." % alpha)
-    n = float(n)
-    if (n > 1000): # just a guess.  The curves look very similar at this point.
-        return _gauss_mvs(x, n, alpha)
-    xbar = x.mean()
-    C = x.var()
-    # mean
-    fac = sqrt(C/(n-1))
-    tval = distributions.t.ppf((1+alpha)/2.0,n-1)
-    delta = fac*tval
-    ma = xbar - delta
-    mb = xbar + delta
-    mp = xbar
-    # var
-    fac = n*C/2.0
-    a = (n-1)/2
-    if (n < 4):
-        peak = distributions.invgamma.ppf(0.5,a)
-    else:
-        peak = 2.0/(n-3.0)
-    q1 = (1-alpha)/2.0
-    q2 = (1+alpha)/2.0
-    va = fac*distributions.invgamma.ppf(q1,a)
-    vb = fac*distributions.invgamma.ppf(q2,a)
-    vp = peak*fac
-    # std
-    fac = sqrt(fac)
-    if (n < 3):
-        peak = distributions.gengamma.ppf(0.5,a,-2)
-        stp = fac*peak
-    else:
-        ndiv2 = (n-1)/2.0
-        term = special.gammaln(ndiv2-0.5)-special.gammaln(ndiv2)
-        term += (log(n)+log(C)-log(2.0))*0.5
-        stp = exp(term)
-    q1 = (1-alpha)/2.0
-    q2 = (1+alpha)/2.0
-    sta = fac*distributions.gengamma.ppf(q1,a,-2)
-    stb = fac*distributions.gengamma.ppf(q2,a,-2)
-
-    return (mp,(ma,mb)),(vp,(va,vb)),(stp,(sta,stb))
-
-def mvsdist(data):
-    """Return 'frozen' distributions for mean, variance, and standard deviation of data.
+    """Bayesian confidence intervals for the mean, var, and std.
 
     Parameters
     ----------
-    data : array-like (raveled to 1-d)
+    data : array-like
+       Converted to 1-d using ravel.  Requires 2 or more data-points
+    alpha : float, optional
+       Probability that the returned confidence interval contains 
+       the true parameter
+
+    Returns
+    -------
+    Returns a 3 output arguments for each of mean, variance, and standard deviation.
+       Each of the outputs is a pair:
+          (center, (lower, upper))
+       with center the mean of the conditional pdf of the value given the data
+       and (lower, upper) is a confidence interval centered on the median, 
+       containing the estimate to a probability alpha.
+    
+    mctr, (ma, mb) : 
+       Estimates for mean
+    vctr, (va, vb) : 
+       Estimates for variance
+    sctr, (sa, sb) : 
+       Estimates for standard deviation
+  
+    Notes
+    -----
+    Converts data to 1-d and assumes all data has the same mean and variance.
+    Uses Jeffrey's prior for variance and std.
+
+    Equivalent to tuple((x.mean(), x.interval(alpha)) for x in mvsdist(dat))
+    """
+    res = mvsdist(data)
+    if alpha >= 1 or alpha <= 0:
+        raise ValueError("0 < alpha < 1 is required, but alpha=%s was given." % alpha)
+    return tuple((x.mean(), x.interval(alpha)) for x in res)
+
+def mvsdist(data):
+    """'frozen' distributions for mean, variance, and standard deviation of data.
+
+    Parameters
+    ----------
+    data : array-like
+       Converted to 1-d using ravel.  Requires 2 or more data-points
 
     Returns
     -------
@@ -149,6 +101,15 @@ def mvsdist(data):
         Distribution object representing the variance of the data
     sdist : "frozen" distribution object
         Distribution object representing the standard deviation of the data
+
+    Notes
+    -----
+    The return values from bayes_mvs(data) is equivalent to
+    tuple((x.mean(), x.interval(0.90)) for x in mvsdist(data))
+    
+    In other words, calling <dist>.mean() and <dist>.interval(0.90) on the 
+    three distribution objects returned from this function will give the same 
+    results that are returned from bayes_mvs    
     """
     x = ravel(data)
     n = len(x)
