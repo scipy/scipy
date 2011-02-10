@@ -291,7 +291,7 @@ def _read_array(f, typecode, array_desc):
 
     # Reshape array if needed
     if array_desc['ndims'] > 1:
-        dims = array_desc['dims'][:array_desc['ndims']]
+        dims = array_desc['dims'][:int(array_desc['ndims'])]
         dims.reverse()
         array = array.reshape(dims)
 
