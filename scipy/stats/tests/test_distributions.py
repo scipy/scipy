@@ -491,7 +491,7 @@ class TestFrozen(TestCase):
         assert_equal(result_f, result)
 
         result_f = frozen.moment(2)
-        result = dist.moment(2)
+        result = dist.moment(2,loc=10.0, scale=3.0)
         assert_equal(result_f, result)
 
     def test_gamma(self):
