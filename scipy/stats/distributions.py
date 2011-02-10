@@ -842,7 +842,7 @@ class rv_continuous(rv_generic):
     Parameters
     ----------
     momtype : int, optional
-        The type of generic moment calculation to use (check this).
+        The type of generic moment calculation to use: 0 for pdf, 1 (default) for ppf.
     a : float, optional
         Lower bound of the support of the distribution, default is minus
         infinity.
@@ -869,7 +869,7 @@ class rv_continuous(rv_generic):
         The shape of the distribution. For example ``"m, n"`` for a
         distribution that takes two integers as the two shape arguments for all
         its methods.
-    extradoc :  str, optional
+    extradoc :  str, optional, deprecated
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility, do not use for new subclasses.
@@ -882,11 +882,20 @@ class rv_continuous(rv_generic):
     pdf(x, <shape(s)>, loc=0, scale=1)
         probability density function
 
+    logpdf(x, <shape(s)>, loc=0, scale=1)
+        log of the probability density function
+
     cdf(x, <shape(s)>, loc=0, scale=1)
         cumulative density function
 
+    logcdf(x, <shape(s)>, loc=0, scale=1)
+        log of the cumulative density function
+
     sf(x, <shape(s)>, loc=0, scale=1)
         survival function (1-cdf --- sometimes more accurate)
+
+    logsf(x, <shape(s)>, loc=0, scale=1)
+        log of the survival function
 
     ppf(q, <shape(s)>, loc=0, scale=1)
       percent point function (inverse of cdf --- quantiles)
@@ -894,8 +903,8 @@ class rv_continuous(rv_generic):
     isf(q, <shape(s)>, loc=0, scale=1)
         inverse survival function (inverse of sf)
 
-    moments(n, <shape(s)>)
-        non-central n-th moment of the standard distribution (oc=0, scale=1)
+    moment(n, <shape(s)>, loc=0, scale=1)
+        non-central n-th moment of the distribution.  May not work for array arguments.
 
     stats(<shape(s)>, loc=0, scale=1, moments='mv')
         mean('m'), variance('v'), skew('s'), and/or kurtosis('k')
@@ -905,6 +914,27 @@ class rv_continuous(rv_generic):
 
     fit(data, <shape(s)>, loc=0, scale=1)
         Parameter estimates for generic data
+
+    expect(func=None, args=(), loc=0, scale=1, lb=None, ub=None, 
+             conditional=False, **kwds)
+        Expected value of a function with respect to the distribution.
+        Additional kwd arguments passed to integrate.quad
+
+    median(<shape(s)>, loc=0, scale=1)
+        Median of the distribution.
+
+    mean(<shape(s)>, loc=0, scale=1)
+        Mean of the distribution.
+    
+    std(<shape(s)>, loc=0, scale=1)
+        Standard deviation of the distribution.
+
+    var(<shape(s)>, loc=0, scale=1)
+        Variance of the distribution.
+        
+    interval(alpha, <shape(s)>, loc=0, scale=1)
+        Interval that with (alpha)% probability contains a random realization
+        of this distribution.
 
     __call__(<shape(s)>, loc=0, scale=1)
         calling a distribution instance creates a frozen RV object with the
@@ -4867,11 +4897,20 @@ class rv_discrete(rv_generic):
     generic.pmf(x, <shape(s)>, loc=0)
         probability mass function
 
+    logpmf(x, <shape(s)>, loc=0)
+        log of the probability density function
+
     generic.cdf(x, <shape(s)>, loc=0)
         cumulative density function
 
+    generic.logcdf(x, <shape(s)>, loc=0)
+        log of the cumulative density function
+
     generic.sf(x, <shape(s)>, loc=0)
         survival function (1-cdf --- sometimes more accurate)
+
+    generic.logsf(x, <shape(s)>, loc=0, scale=1)
+        log of the survival function
 
     generic.ppf(q, <shape(s)>, loc=0)
         percent point function (inverse of cdf --- percentiles)
@@ -4879,11 +4918,37 @@ class rv_discrete(rv_generic):
     generic.isf(q, <shape(s)>, loc=0)
         inverse survival function (inverse of sf)
 
+    generic.moment(n, <shape(s)>, loc=0)
+        non-central n-th moment of the distribution.  May not work for array arguments.
+
     generic.stats(<shape(s)>, loc=0, moments='mv')
         mean('m', axis=0), variance('v'), skew('s'), and/or kurtosis('k')
 
     generic.entropy(<shape(s)>, loc=0)
         entropy of the RV
+
+    generic.fit(data, <shape(s)>, loc=0)
+        Parameter estimates for generic data
+
+    generic.expect(func=None, args=(), loc=0, lb=None, ub=None, conditional=False)
+        Expected value of a function with respect to the distribution.
+        Additional kwd arguments passed to integrate.quad
+
+    generic.median(<shape(s)>, loc=0)
+        Median of the distribution.
+
+    generic.mean(<shape(s)>, loc=0)
+        Mean of the distribution.
+    
+    generic.std(<shape(s)>, loc=0)
+        Standard deviation of the distribution.
+
+    generic.var(<shape(s)>, loc=0)
+        Variance of the distribution.
+        
+    generic.interval(alpha, <shape(s)>, loc=0)
+        Interval that with (alpha)% probability contains a random realization
+        of this distribution.
 
     generic(<shape(s)>, loc=0)
         calling a distribution instance returns a frozen distribution
