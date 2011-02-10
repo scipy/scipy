@@ -43,6 +43,7 @@ def setup():
 
 def teardown():
     global fname, fs
+    fs.close()
     del fs
     os.unlink(fname)
 
