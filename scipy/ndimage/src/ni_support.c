@@ -119,6 +119,41 @@ int NI_AllocateLineBuffer(PyArrayObject* array, int axis, npy_intp size1,
     return 1;
 }
 
+/* Some NumPy types are ambiguous */
+int NI_CanonicalType(int type_num)
+{
+    switch (type_num) {
+        case NPY_INT:
+            return NPY_INT32;
+
+        case NPY_LONG:
+#if NPY_SIZEOF_LONG == 4
+            return NPY_INT32;
+#else
+            return NPY_INT64;
+#endif
+
+        case NPY_LONGLONG:
+            return NPY_INT64;
+
+        case NPY_UINT:
+            return NPY_UINT32;
+
+        case NPY_ULONG:
+#if NPY_SIZEOF_LONG == 4
+            return NPY_UINT32;
+#else
+            return NPY_UINT64;
+#endif
+
+        case NPY_ULONGLONG:
+            return NPY_UINT64;
+
+        default:
+            return type_num;
+    }
+}
+
 /* Initialize a line buffer */
 int NI_InitLineBuffer(PyArrayObject *array, int axis, npy_intp size1,
         npy_intp size2, npy_intp buffer_lines, double *buffer_data,
@@ -147,7 +182,7 @@ int NI_InitLineBuffer(PyArrayObject *array, int axis, npy_intp size1,
     buffer->array_data = (void *)PyArray_DATA(array);
     buffer->buffer_data = buffer_data;
     buffer->buffer_lines = buffer_lines;
-    buffer->array_type = array->descr->type_num;
+    buffer->array_type = NI_CanonicalType(PyArray_DESCR(array)->type_num);
     buffer->array_lines = array_lines;
     buffer->next_line = 0;
     buffer->size1 = size1;
