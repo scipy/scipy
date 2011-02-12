@@ -38,6 +38,16 @@ Scipy 0.9.0 is the first SciPy release to support Python 3. The only module
 that is not yet ported is ``scipy.weave``.
 
 
+Scipy source code location to be changed
+========================================
+
+Soon after this release, Scipy will stop using SVN as the version control
+system, and move to Git. The development source code for Scipy can from then on
+be found at
+
+    http://github.com/scipy/scipy
+
+
 New features
 ============
 
