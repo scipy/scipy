@@ -46,7 +46,7 @@ MAJOR               = 0
 MINOR               = 9
 MICRO               = 0
 ISRELEASED          = True
-VERSION             = '%d.%d.%drc2' % (MAJOR, MINOR, MICRO)
+VERSION             = '%d.%d.%drc3' % (MAJOR, MINOR, MICRO)
 
 # BEFORE importing distutils, remove MANIFEST. distutils doesn't properly
 # update it when the contents of directories change.
