@@ -38,14 +38,14 @@ def _moment_from_stats(n, mu, mu2, g1, g2, moment_func, args):
     if (n==0):
         return 1.0
     elif (n==1):
-        if mu is None: 
+        if mu is None:
             val = moment_func(1,*args)
         else:
             val = mu
     elif (n==2):
         if mu2 is None or mu is None:
             val = moment_func(2,*args)
-        else: 
+        else:
             val = mu2 + mu*mu
     elif (n==3):
         if g1 is None or mu2 is None or mu is None:
@@ -217,12 +217,12 @@ _doc_std = \
 """
 _doc_interval = \
 """interval(alpha, %(shapes)s, loc=0, scale=1)
-    Endpoints of the range that contains alpha %% of the distribution
+    Endpoints of the range that contains alpha percent of the distribution
 """
 _doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
-                           _doc_logpdf, _doc_cdf, _doc_logcdf, _doc_sf, 
+                           _doc_logpdf, _doc_cdf, _doc_logcdf, _doc_sf,
                            _doc_logsf, _doc_ppf, _doc_isf, _doc_moment,
-                           _doc_stats, _doc_entropy, _doc_fit, 
+                           _doc_stats, _doc_entropy, _doc_fit,
                            _doc_expect, _doc_median,
                            _doc_mean, _doc_var, _doc_std, _doc_interval])
 
@@ -332,7 +332,7 @@ docdict_discrete = docdict.copy()
 docdict_discrete['pmf'] = _doc_pmf
 docdict_discrete['logpmf'] = _doc_logpmf
 docdict_discrete['expect'] = _doc_expect_discrete
-_doc_disc_methods = ['rvs', 'pmf', 'logpmf', 'cdf', 'logcdf', 'sf', 'logsf', 
+_doc_disc_methods = ['rvs', 'pmf', 'logpmf', 'cdf', 'logcdf', 'sf', 'logsf',
                      'ppf', 'isf', 'stats', 'entropy', 'fit', 'expect', 'median',
                      'mean', 'var', 'std', 'interval']
 for obj in _doc_disc_methods:
@@ -436,7 +436,7 @@ class rv_frozen(object):
 
     def cdf(self, x):
         return self.dist.cdf(x, *self.args, **self.kwds)
-    
+
     def logcdf(self, x):
         return self.dist.logcdf(x, *self.args, **self.kwds)
 
@@ -915,7 +915,7 @@ class rv_continuous(rv_generic):
     fit(data, <shape(s)>, loc=0, scale=1)
         Parameter estimates for generic data
 
-    expect(func=None, args=(), loc=0, scale=1, lb=None, ub=None, 
+    expect(func=None, args=(), loc=0, scale=1, lb=None, ub=None,
              conditional=False, **kwds)
         Expected value of a function with respect to the distribution.
         Additional kwd arguments passed to integrate.quad
@@ -925,21 +925,21 @@ class rv_continuous(rv_generic):
 
     mean(<shape(s)>, loc=0, scale=1)
         Mean of the distribution.
-    
+
     std(<shape(s)>, loc=0, scale=1)
         Standard deviation of the distribution.
 
     var(<shape(s)>, loc=0, scale=1)
         Variance of the distribution.
-        
+
     interval(alpha, <shape(s)>, loc=0, scale=1)
-        Interval that with (alpha)% probability contains a random realization
-        of this distribution.
+        Interval that with `alpha` percent probability contains a random
+        realization of this distribution.
 
     __call__(<shape(s)>, loc=0, scale=1)
-        calling a distribution instance creates a frozen RV object with the
+        Calling a distribution instance creates a frozen RV object with the
         same methods but holding the given shape, location, and scale fixed.
-        see Notes section
+        See Notes section.
 
     **Parameters for Methods**
 
@@ -1000,7 +1000,7 @@ class rv_continuous(rv_generic):
     and re-defining at least the
 
     _pdf or the _cdf method (normalized to location 0 and scale 1)
-    which will be given clean arguments (in between a and b) and 
+    which will be given clean arguments (in between a and b) and
     passing the argument check method
 
     If postive argument checking is not correct for your RV
@@ -1721,7 +1721,7 @@ class rv_continuous(rv_generic):
                 valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, args)
                 result += comb(n,k,exact=True)*(fac**k) * valk
             result += fac**n * val
-            return result * loc**n                
+            return result * loc**n
 
     def _nnlf(self, x, *args):
         return -sum(self._logpdf(x, *args),axis=0)
@@ -1752,7 +1752,7 @@ class rv_continuous(rv_generic):
             args = (1.0,)*self.numargs
         return args + self.fit_loc_scale(data, *args)
 
-    # Return the (possibly reduced) function to optimize in order to find MLE 
+    # Return the (possibly reduced) function to optimize in order to find MLE
     #  estimates for the .fit method
     def _reduce_func(self, args, kwds):
         args = list(args)
@@ -1801,8 +1801,8 @@ class rv_continuous(rv_generic):
         such.
 
         One can hold some parameters fixed to specific values by passing in
-        keyword arguments ``f0``, ``f1``, ..., ``fn`` (for shape parameters) 
-        and ``floc`` and ``fscale`` (for location and scale parameters, 
+        keyword arguments ``f0``, ``f1``, ..., ``fn`` (for shape parameters)
+        and ``floc`` and ``fscale`` (for location and scale parameters,
         respectively).
 
         Parameters
@@ -1962,7 +1962,7 @@ class rv_continuous(rv_generic):
            of the function, conditional on being in the given interval.
 
         Additional keyword arguments are passed to the integration routine.
-          
+
 
         Returns
         -------
@@ -1973,7 +1973,7 @@ class rv_continuous(rv_generic):
         This function has not been checked for it's behavior when the integral is
         not finite. The integration behavior is inherited from integrate.quad.
         """
-        lockwds = {'loc': loc, 
+        lockwds = {'loc': loc,
                    'scale':scale}
         if func is None:
             def fun(x, *args):
@@ -4939,16 +4939,16 @@ class rv_discrete(rv_generic):
 
     generic.mean(<shape(s)>, loc=0)
         Mean of the distribution.
-    
+
     generic.std(<shape(s)>, loc=0)
         Standard deviation of the distribution.
 
     generic.var(<shape(s)>, loc=0)
         Variance of the distribution.
-        
+
     generic.interval(alpha, <shape(s)>, loc=0)
-        Interval that with (alpha)% probability contains a random realization
-        of this distribution.
+        Interval that with `alpha` percent probability contains a random
+        realization of this distribution.
 
     generic(<shape(s)>, loc=0)
         calling a distribution instance returns a frozen distribution
@@ -5684,7 +5684,7 @@ class rv_discrete(rv_generic):
                 valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, args)
                 result += comb(n,k,exact=True)*(fac**k) * valk
             result += fac**n * val
-            return result * loc**n                
+            return result * loc**n
 
 
     def freeze(self, *args, **kwds):
