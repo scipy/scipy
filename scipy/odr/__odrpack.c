@@ -116,7 +116,7 @@ void fcn_callback(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
 
           str1 =
             PyString_FromString
-            ("Error occured while calling the Python function named ");
+            ("Error occurred while calling the Python function named ");
           if (str1 == NULL)
             {
               Py_DECREF(tmpobj);
@@ -171,7 +171,7 @@ void fcn_callback(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
 
           str1 =
             PyString_FromString
-            ("Error occured while calling the Python function named ");
+            ("Error occurred while calling the Python function named ");
           if (str1 == NULL)
             {
               Py_DECREF(tmpobj);
@@ -249,7 +249,7 @@ void fcn_callback(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
 
           str1 =
             PyString_FromString
-            ("Error occured while calling the Python function named ");
+            ("Error occurred while calling the Python function named ");
           if (str1 == NULL)
             {
               Py_DECREF(tmpobj);

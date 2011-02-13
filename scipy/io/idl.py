@@ -176,7 +176,7 @@ def _read_data(f, dtype):
     '''Read a variable with a specified data type'''
     if dtype==1:
         if _read_int32(f) <> 1:
-            raise Exception("Error occured while reading byte variable")
+            raise Exception("Error occurred while reading byte variable")
         return _read_byte(f)
     elif dtype==2:
         return _read_int16(f)
@@ -265,7 +265,7 @@ def _read_array(f, typecode, array_desc):
         if typecode == 1:
             nbytes = _read_int32(f)
             if nbytes <> array_desc['nbytes']:
-                raise Exception("Error occured while reading byte array")
+                raise Exception("Error occurred while reading byte array")
 
         # Read bytes as numpy array
         array = np.fromstring(f.read(array_desc['nbytes']), \

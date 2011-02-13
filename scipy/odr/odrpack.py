@@ -170,7 +170,7 @@ def report_error(info):
             if I[1] != 0:
                 problems.append('Derivatives possibly not correct')
             if I[2] != 0:
-                problems.append('Error occured in callback')
+                problems.append('Error occurred in callback')
             if I[3] != 0:
                 problems.append('Problem is not full rank at solution')
             problems.append(stopreason)
@@ -204,7 +204,7 @@ def report_error(info):
         elif I[0] == 4:
             problems.append('Error in derivatives')
         elif I[0] == 5:
-            problems.append('Error occured in callback')
+            problems.append('Error occurred in callback')
         elif I[0] == 6:
             problems.append('Numerical error detected')
 

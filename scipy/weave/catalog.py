@@ -248,7 +248,7 @@ def os_dependent_catalog_name():
         bases the name of the value returned by sys.platform and the
         version of python being run.  If this isn't enough to descriminate
         on some platforms, we can try to add other info.  It has
-        occured to me that if we get fancy enough to optimize for different
+        occurred to me that if we get fancy enough to optimize for different
         architectures, then chip type might be added to the catalog name also.
     """
     version = '%d%d' % sys.version_info[:2]

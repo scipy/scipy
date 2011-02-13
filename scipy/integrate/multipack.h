@@ -177,7 +177,7 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
     PyErr_Print();
     tmpobj = PyObject_GetAttrString(func, "func_name");
     if (tmpobj == NULL) goto fail;
-    str1 = PyString_FromString("Error occured while calling the Python function named ");
+    str1 = PyString_FromString("Error occurred while calling the Python function named ");
     if (str1 == NULL) { Py_DECREF(tmpobj); goto fail;}
     PyString_ConcatAndDel(&str1, tmpobj);
     PyErr_SetString(error_obj, PyString_AsString(str1));

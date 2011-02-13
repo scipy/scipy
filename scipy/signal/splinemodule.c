@@ -97,7 +97,7 @@ static PyObject *cspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
   }
 
   if (retval == -3) PYERR("Precision too high.  Error did not converge.");
-  if (retval < 0) PYERR("Problem occured inside routine");
+  if (retval < 0) PYERR("Problem occurred inside routine");
 
   Py_DECREF(a_image);
   return PyArray_Return(ck);
@@ -156,7 +156,7 @@ static PyObject *qspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
   }
 
   if (retval == -3) PYERR("Precision too high.  Error did not converge.");
-  if (retval < 0) PYERR("Problem occured inside routine");
+  if (retval < 0) PYERR("Problem occurred inside routine");
 
   Py_DECREF(a_image);
   return PyArray_Return(ck);
@@ -242,7 +242,7 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
     PYERR("Incorrect type.");
   }
   
-  if (ret < 0) PYERR("Problem occured inside routine.");
+  if (ret < 0) PYERR("Problem occurred inside routine.");
 
   Py_DECREF(a_image);
   Py_DECREF(a_hrow);
@@ -446,7 +446,7 @@ static PyObject *IIRsymorder2(PyObject *NPY_UNUSED(dummy), PyObject *args)
     PYERR("Incorrect type.");
   }
   
-  if (ret < 0) PYERR("Problem occured inside routine.");
+  if (ret < 0) PYERR("Problem occurred inside routine.");
 
   Py_DECREF(a_sig);
   return PyArray_Return(out);

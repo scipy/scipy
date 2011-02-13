@@ -98,7 +98,7 @@ _iermess2 = {0:["""\
     the minimal least-squares solution of a rank deficient system of linear
     equations.""",ValueError],
             'unknown':["""\
-    An error occured""",TypeError]}
+    An error occurred""",TypeError]}
 
 _parcur_cache = {'t': array([],float), 'wrk': array([],float),
                  'iwrk':array([],int32), 'u': array([],float),'ub':0,'ue':1}
