@@ -12,6 +12,7 @@ from fir_filter_design import *
 from ltisys import *
 from windows import *
 from signaltools import *
+from spectral import *
 from wavelets import *
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())

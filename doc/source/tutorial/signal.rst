@@ -3,6 +3,10 @@ Signal Processing (signal)
 
 .. sectionauthor:: Travis E. Oliphant
 
+.. sectionauthor:: Pim Schellart
+
+.. currentmodule:: scipy.signal
+
 The signal processing toolbox currently contains some filtering
 functions, a limited set of filter design tools, and a few B-spline
 interpolation algorithms for one- and two-dimensional data. While the
@@ -19,25 +23,29 @@ B-splines
 
 A B-spline is an approximation of a continuous function over a finite-
 domain in terms of B-spline coefficients and knot points. If the knot-
-points are equally spaced with spacing :math:`\Delta x` , then the B-spline approximation to a 1-dimensional function is the
-finite-basis expansion.
+points are equally spaced with spacing :math:`\Delta x` , then the B-spline
+approximation to a 1-dimensional function is the finite-basis expansion.
 
 .. math::
    :nowrap:
 
     \[ y\left(x\right)\approx\sum_{j}c_{j}\beta^{o}\left(\frac{x}{\Delta x}-j\right).\]
 
-In two dimensions with knot-spacing :math:`\Delta x` and :math:`\Delta y` , the function representation is
+In two dimensions with knot-spacing :math:`\Delta x` and :math:`\Delta y` , the
+function representation is
 
 .. math::
    :nowrap:
 
     \[ z\left(x,y\right)\approx\sum_{j}\sum_{k}c_{jk}\beta^{o}\left(\frac{x}{\Delta x}-j\right)\beta^{o}\left(\frac{y}{\Delta y}-k\right).\]
 
-In these expressions, :math:`\beta^{o}\left(\cdot\right)` is the space-limited B-spline basis function of order, :math:`o` . The requirement of equally-spaced knot-points and equally-spaced
-data points, allows the development of fast (inverse-filtering)
-algorithms for determining the coefficients, :math:`c_{j}` , from sample-values, :math:`y_{n}` . Unlike the general spline interpolation algorithms, these algorithms
-can quickly find the spline coefficients for large images.
+In these expressions, :math:`\beta^{o}\left(\cdot\right)` is the space-limited
+B-spline basis function of order, :math:`o` . The requirement of equally-spaced
+knot-points and equally-spaced data points, allows the development of fast
+(inverse-filtering) algorithms for determining the coefficients, :math:`c_{j}`
+, from sample-values, :math:`y_{n}` . Unlike the general spline interpolation
+algorithms, these algorithms can quickly find the spline coefficients for large
+images.
 
 The advantage of representing a set of samples via B-spline basis
 functions is that continuous-domain operators (derivatives, re-
@@ -179,7 +187,9 @@ constructed from knowledge of one row (or column) of the matrix alone.
 In this case, the matrix multiplication can be accomplished using
 Fourier transforms.
 
-Let :math:`x\left[n\right]` define a one-dimensional signal indexed by the integer :math:`n.` Full convolution of two one-dimensional signals can be expressed as
+Let :math:`x\left[n\right]` define a one-dimensional signal indexed by the
+integer :math:`n.` Full convolution of two one-dimensional signals can be
+expressed as
 
 .. math::
    :nowrap:
@@ -199,14 +209,17 @@ then the discrete convolution expression is
 
     \[ y\left[n\right]=\sum_{k=\max\left(n-M,0\right)}^{\min\left(n,K\right)}x\left[k\right]h\left[n-k\right].\]
 
-For convenience assume :math:`K\geq M.` Then, more explicitly the output of this operation is
+For convenience assume :math:`K\geq M.` Then, more explicitly the output of
+this operation is
 
 .. math::
    :nowrap:
 
     \begin{eqnarray*} y\left[0\right] & = & x\left[0\right]h\left[0\right]\\ y\left[1\right] & = & x\left[0\right]h\left[1\right]+x\left[1\right]h\left[0\right]\\ y\left[2\right] & = & x\left[0\right]h\left[2\right]+x\left[1\right]h\left[1\right]+x\left[2\right]h\left[0\right]\\ \vdots & \vdots & \vdots\\ y\left[M\right] & = & x\left[0\right]h\left[M\right]+x\left[1\right]h\left[M-1\right]+\cdots+x\left[M\right]h\left[0\right]\\ y\left[M+1\right] & = & x\left[1\right]h\left[M\right]+x\left[2\right]h\left[M-1\right]+\cdots+x\left[M+1\right]h\left[0\right]\\ \vdots & \vdots & \vdots\\ y\left[K\right] & = & x\left[K-M\right]h\left[M\right]+\cdots+x\left[K\right]h\left[0\right]\\ y\left[K+1\right] & = & x\left[K+1-M\right]h\left[M\right]+\cdots+x\left[K\right]h\left[1\right]\\ \vdots & \vdots & \vdots\\ y\left[K+M-1\right] & = & x\left[K-1\right]h\left[M\right]+x\left[K\right]h\left[M-1\right]\\ y\left[K+M\right] & = & x\left[K\right]h\left[M\right].\end{eqnarray*}
 
-Thus, the full discrete convolution of two finite sequences of lengths :math:`K+1` and :math:`M+1` respectively results in a finite sequence of length :math:`K+M+1=\left(K+1\right)+\left(M+1\right)-1.`
+Thus, the full discrete convolution of two finite sequences of lengths
+:math:`K+1` and :math:`M+1` respectively results in a finite sequence of length
+:math:`K+M+1=\left(K+1\right)+\left(M+1\right)-1.`
 
 One dimensional convolution is implemented in SciPy with the function
 ``signal.convolve`` . This function takes as inputs the signals
@@ -237,7 +250,10 @@ becomes a plus sign. Thus
 
     \[ w\left[n\right]=\sum_{k=-\infty}^{\infty}y\left[k\right]x\left[n+k\right]\]
 
-is the (cross) correlation of the signals :math:`y` and :math:`x.` For finite-length signals with :math:`y\left[n\right]=0` outside of the range :math:`\left[0,K\right]` and :math:`x\left[n\right]=0` outside of the range :math:`\left[0,M\right],` the summation can simplify to
+is the (cross) correlation of the signals :math:`y` and :math:`x.` For
+finite-length signals with :math:`y\left[n\right]=0` outside of the range
+:math:`\left[0,K\right]` and :math:`x\left[n\right]=0` outside of the range
+:math:`\left[0,M\right],` the summation can simplify to
 
 .. math::
    :nowrap:
@@ -299,7 +315,8 @@ class of linear filter allows initial conditions to be placed on
 :math:`y\left[n\right]` for :math:`n<0` resulting in a filter that
 cannot be expressed using convolution.
 
-The difference equation filter can be thought of as finding :math:`y\left[n\right]` recursively in terms of it's previous values
+The difference equation filter can be thought of as finding
+:math:`y\left[n\right]` recursively in terms of it's previous values
 
 .. math::
    :nowrap:
@@ -352,7 +369,10 @@ is not difficult to show that for :math:`0\leq m<K,`
 
     \[ z_{m}\left[n\right]=\sum_{p=0}^{K-m-1}\left(b_{m+p+1}x\left[n-p\right]-a_{m+p+1}y\left[n-p\right]\right).\]
 
-Using this formula we can find the intial condition vector :math:`z_{0}\left[-1\right]` to :math:`z_{K-1}\left[-1\right]` given initial conditions on :math:`y` (and :math:`x` ). The command :obj:`signal.lfiltic` performs this function.
+Using this formula we can find the intial condition vector
+:math:`z_{0}\left[-1\right]` to :math:`z_{K-1}\left[-1\right]` given initial
+conditions on :math:`y` (and :math:`x` ). The command :obj:`signal.lfiltic`
+performs this function.
 
 
 Other filters
@@ -433,7 +453,82 @@ the hilbert transform performs
 
     \[ Y=X\cdot H\]
 
-where :math:`H` is 2 for positive frequencies, :math:`0` for negative frequencies and :math:`1` for zero-frequencies.
+where :math:`H` is 2 for positive frequencies, :math:`0` for negative
+frequencies and :math:`1` for zero-frequencies.
+
+
+Least-Squares Spectral Analysis (:mod:`spectral`)
+-------------------------------------------------
+
+Least-squares spectral analysis (LSSA) is a method of estimating a frequency
+spectrum, based on a least squares fit of sinusoids to data samples, similar to
+Fourier analysis. Fourier analysis, the most used spectral method in science,
+generally boosts long-periodic noise in long gapped records; LSSA mitigates
+such problems.
+
+
+Lomb-Scargle Periodograms (:func:`spectral.lombscargle`)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Lomb-Scargle method performs spectral analysis on unevenly sampled data and
+is known to be a powerful way to find, and test the significance of, weak
+periodic signals.
+
+For a time series comprising :math:`N_{t}` measurements
+:math:`X_{j}\equiv X(t_{j})` sampled at times :math:`t_{j}` where
+:math:`(j = 1, \ldots, N_{t})`, assumed to have been scaled and shifted
+such that its mean is zero and its variance is unity, the normalized
+Lomb-Scargle periodogram at frequency :math:`f` is
+
+.. math::
+
+    P_{n}(f) \frac{1}{2}\left\{\frac{\left[\sum_{j}^{N_{t}}X_{j}\cos\omega(t_{j}-\tau)\right]^{2}}{\sum_{j}^{N_{t}}\cos^{2}\omega(t_{j}-\tau)}+\frac{\left[\sum_{j}^{N_{t}}X_{j}\sin\omega(t_{j}-\tau)\right]^{2}}{\sum_{j}^{N_{t}}\sin^{2}\omega(t_{j}-\tau)}\right\}.
+
+Here, :math:`\omega \equiv 2\pi f` is the angular frequency.
+The frequency dependent time offset :math:`\tau` is given by
+
+.. math::
+
+    \tan 2\omega\tau = \frac{\sum_{j}^{N_{t}}\sin 2\omega t_{j}}{\sum_{j}^{N_{t}}\cos 2\omega t_{j}}.
+
+The :func:`~scipy.signal.spectral.lombscargle` function
+calculates the periodogram using a slightly
+modified algorithm due to Townsend [3]_ which allows the
+periodogram to be calculated using only a single pass through
+the input arrays for each frequency.
+
+The equation is refactored as:
+
+.. math::
+
+    P_{n}(f) = \frac{1}{2}\left[\frac{(c_{\tau}XC + s_{\tau}XS)^{2}}{c_{\tau}^{2}CC + 2c_{\tau}s_{\tau}CS + s_{\tau}^{2}SS} + \frac{(c_{\tau}XS - s_{\tau}XC)^{2}}{c_{\tau}^{2}SS - 2c_{\tau}s_{\tau}CS + s_{\tau}^{2}CC}\right]
+
+and
+
+.. math::
+
+    \tan 2\omega\tau = \frac{2CS}{CC-SS}.
+
+Here,
+
+.. math::
+
+    c_{\tau} = \cos\omega\tau,\qquad s_{\tau} = \sin\omega\tau
+
+while the sums are
+
+.. math::
+
+    XC &= \sum_{j}^{N_{t}} X_{j}\cos\omega t_{j}\\
+    XS &= \sum_{j}^{N_{t}} X_{j}\sin\omega t_{j}\\
+    CC &= \sum_{j}^{N_{t}} \cos^{2}\omega t_{j}\\
+    SS &= \sum_{j}^{N_{t}} \sin^{2}\omega t_{j}\\
+    CS &= \sum_{j}^{N_{t}} \cos\omega t_{j}\sin\omega t_{j}.
+
+This requires :math:`N_{f}(2N_{t}+3)` trigonometric function
+evaluations giving a factor of :math:`\sim 2` speed increase over the
+straightforward implementation.
+
 
 .. XXX: TODO
 ..
@@ -542,3 +637,20 @@ where :math:`H` is 2 for positive frequencies, :math:`0` for negative frequencie
 ..
 .. Tilbert transform
 .. -----------------
+
+
+.. rubric:: References
+
+Some further reading and related software:
+
+.. [1] N.R. Lomb "Least-squares frequency analysis of unequally spaced
+data", Astrophysics and Space Science, vol 39, pp. 447-462, 1976
+
+.. [2] J.D. Scargle "Studies in astronomical time series analysis. II - 
+Statistical aspects of spectral analysis of unevenly spaced data",
+The Astrophysical Journal, vol 263, pp. 835-853, 1982
+
+.. [3] R.H.D. Townsend, "Fast calculation of the Lomb-Scargle
+periodogram using graphics processing units.", The Astrophysical
+Journal Supplement Series, vol 191, pp. 247-253, 2010
+

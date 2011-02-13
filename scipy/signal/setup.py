@@ -15,6 +15,8 @@ def configuration(parent_package='',top_path=None):
                          include_dirs=['.']
     )
 
+    config.add_extension('spectral', sources=['spectral.c'])
+
     config.add_extension('spline',
         sources = ['splinemodule.c','S_bspline_util.c','D_bspline_util.c',
                    'C_bspline_util.c','Z_bspline_util.c','bspline_util.c'],
