@@ -323,19 +323,19 @@ def pade(an, m):
     from scipy import linalg
     an = asarray(an)
     N = len(an) - 1
-    n = N-m
-    if (n < 0):
+    n = N - m
+    if n < 0:
         raise ValueError("Order of q <m> must be smaller than len(an)-1.")
-    Akj = eye(N+1,n+1)
-    Bkj = zeros((N+1,m),'d')
-    for row in range(1,m+1):
+    Akj = eye(N+1, n+1)
+    Bkj = zeros((N+1, m), 'd')
+    for row in range(1, m+1):
         Bkj[row,:row] = -(an[:row])[::-1]
-    for row in range(m+1,N+1):
+    for row in range(m+1, N+1):
         Bkj[row,:] = -(an[row-m:row])[::-1]
-    C = hstack((Akj,Bkj))
-    pq = dot(linalg.inv(C),an)
+    C = hstack((Akj, Bkj))
+    pq = linalg.solve(C, an)
     p = pq[:n+1]
-    q = r_[1.0,pq[n+1:]]
+    q = r_[1.0, pq[n+1:]]
     return poly1d(p[::-1]), poly1d(q[::-1])
 
 def lena():
