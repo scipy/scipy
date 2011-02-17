@@ -87,6 +87,15 @@ Low-level interface to FITPACK functions:
 
 .. seealso:: scipy.ndimage.map_coordinates
 
+For data on a grid:
+
+.. autosummary::
+   :toctree: generated/
+
+   RectBivariateSpline
+
+For unstructured data:
+
 .. autosummary::
    :toctree: generated/
 
