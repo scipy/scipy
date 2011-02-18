@@ -53,6 +53,10 @@ def get_blas_funcs(names,arrays=(),debug=0):
         if name=='ger' and typecode in 'FD':
             name = 'gerc'
         func_name = required_prefix + name
+        if name == 'nrm2' and typecode == 'D':
+            func_name = 'dznrm2'
+        elif name == 'nrm2' and typecode == 'F':
+            func_name = 'scnrm2'
         func = getattr(m1,func_name,None)
         if func is None:
             func = getattr(m2,func_name)
