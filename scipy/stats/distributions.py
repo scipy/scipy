@@ -267,7 +267,7 @@ rv = %(name)s(%(shapes)s, loc=0, scale=1)
 _doc_default_example = \
 """Examples
 --------
->>> import matplotlib.pyplot as plt
+>>> from scipy.stats import %(name)s
 >>> numargs = %(name)s.numargs
 >>> [ %(shapes)s ] = [0.9,] * numargs
 >>> rv = %(name)s(%(shapes)s)

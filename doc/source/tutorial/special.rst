@@ -33,6 +33,7 @@ the vibrational modes of a thin drum head.  Here is an example of a circular
 drum head anchored at the edge:
 
 .. plot::
+
    >>> from scipy import *
    >>> from scipy.special import jn, jn_zeros
    >>> def drumhead_height(n, k, distance, angle, t):

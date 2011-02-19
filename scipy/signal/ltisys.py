@@ -634,8 +634,9 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
 
     Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = u(t)
 
+    >>> import scipy.signal
     >>> system = ([1.0], [1.0, 2.0, 1.0])
-    >>> t, y = impulse2(system)
+    >>> t, y = sp.signal.impulse2(system)
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(t, y)
 

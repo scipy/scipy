@@ -138,8 +138,9 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
 
     Examples
     --------
-    >>> b = firwin(80, 0.5, window=('kaiser', 8))
-    >>> h, w = freqz(b)
+    >>> import scipy.signal
+    >>> b = sp.signal.firwin(80, 0.5, window=('kaiser', 8))
+    >>> h, w = sp.signal.freqz(b)
 
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
