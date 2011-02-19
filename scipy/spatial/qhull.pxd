@@ -9,10 +9,6 @@ Qhull shared definitions, for use by other Cython modules
 # Distributed under the same BSD license as Scipy.
 #
 
-cdef extern from "stdlib.h":
-    void *malloc(int size)
-    void free(void *ptr)
-
 cdef extern from "numpy/ndarrayobject.h":
     cdef enum:
         NPY_MAXDIMS
@@ -32,8 +28,9 @@ ctypedef struct DelaunayInfo_t:
     double *max_bound
     double *min_bound
 
-cdef DelaunayInfo_t *_get_delaunay_info(obj, int compute_transform,
-                                        int compute_vertex_to_simplex)
+cdef void _get_delaunay_info(DelaunayInfo_t *, obj,
+                             int compute_transform,
+                             int compute_vertex_to_simplex)
 
 #
 # N-D geometry

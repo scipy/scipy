@@ -31,10 +31,6 @@ import warnings
 # Numpy etc.
 #------------------------------------------------------------------------------
 
-cdef extern from "stdlib.h":
-    void *malloc(int size) nogil
-    void free(void *ptr) nogil
-
 cdef extern from "math.h":
     double sqrt(double x) nogil
     double fabs(double a) nogil
@@ -164,7 +160,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
     """
     LinearNDInterpolator(points, values)
 
-    Piecewise linear interpolant in N dimensions. 
+    Piecewise linear interpolant in N dimensions.
 
     .. versionadded:: 0.9
 
@@ -205,13 +201,13 @@ class LinearNDInterpolator(NDInterpolatorBase):
         cdef double c[NPY_MAXDIMS]
         cdef ${CDTYPE} fill_value
         cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
-        cdef qhull.DelaunayInfo_t *info
+        cdef qhull.DelaunayInfo_t info
 
         ndim = xi.shape[1]
         start = 0
         fill_value = self.fill_value
 
-        info = qhull._get_delaunay_info(self.tri, 1, 0)
+        qhull._get_delaunay_info(&info, self.tri, 1, 0)
 
         out = np.zeros((xi.shape[0], self.values.shape[1]), dtype=np.${DTYPE})
         nvalues = out.shape[1]
@@ -223,7 +219,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
                 # 1) Find the simplex
 
-                isimplex = qhull._find_simplex(info, c,
+                isimplex = qhull._find_simplex(&info, c,
                                                (<double*>xi.data) + i*ndim,
                                                &start, eps)
 
@@ -258,7 +254,6 @@ class LinearNDInterpolator(NDInterpolatorBase):
                         out[i,k].imag += c[j] * values[m, k].imag
 % endif
 
-        free(<void*>info)
         return out
 % endfor
 
@@ -431,7 +426,7 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
 
             change = max(fabs(y[it.vertex*2 + 0] + r[0]),
                          fabs(y[it.vertex*2 + 1] + r[1]))
-            
+
             y[it.vertex*2 + 0] = -r[0]
             y[it.vertex*2 + 1] = -r[1]
 
@@ -448,7 +443,7 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
 def estimate_gradients_2d_global(tri, y, maxiter=400, tol=1e-6):
     cdef np.ndarray[np.double_t, ndim=2] data
     cdef np.ndarray[np.double_t, ndim=3] grad
-    cdef qhull.DelaunayInfo_t *info
+    cdef qhull.DelaunayInfo_t info
     cdef int k, ret, nvalues
 
     y = np.asanyarray(y)
@@ -476,13 +471,13 @@ def estimate_gradients_2d_global(tri, y, maxiter=400, tol=1e-6):
     data = y
     grad = yi
 
-    info = qhull._get_delaunay_info(tri, 0, 1)
+    qhull._get_delaunay_info(&info, tri, 0, 1)
     nvalues = data.shape[0]
 
     for k in xrange(nvalues):
         with nogil:
             ret = _estimate_gradients_2d_global(
-                info,
+                &info,
                 <double*>data.data + info.npoints*k,
                 maxiter,
                 tol,
@@ -493,7 +488,6 @@ def estimate_gradients_2d_global(tri, y, maxiter=400, tol=1e-6):
                           "the results may be inaccurate",
                           GradientEstimationWarning)
 
-    free(info)
     return yi.transpose(1, 0, 2).reshape(y_shape + (2,))
 
 
@@ -742,7 +736,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     """
     CloughTocher2DInterpolator(points, values, tol=1e-6)
 
-    Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D. 
+    Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
 
     .. versionadded:: 0.9
 
@@ -821,13 +815,13 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         cdef ${CDTYPE} w
         cdef ${CDTYPE} fill_value
         cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
-        cdef qhull.DelaunayInfo_t *info
+        cdef qhull.DelaunayInfo_t info
 
         ndim = xi.shape[1]
         start = 0
         fill_value = self.fill_value
 
-        info = qhull._get_delaunay_info(self.tri, 1, 1)
+        qhull._get_delaunay_info(&info, self.tri, 1, 1)
 
         out = np.zeros((xi.shape[0], self.values.shape[1]), dtype=np.${DTYPE})
         nvalues = out.shape[1]
@@ -838,7 +832,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
             for i in xrange(xi.shape[0]):
                 # 1) Find the simplex
 
-                isimplex = qhull._find_simplex(info, c,
+                isimplex = qhull._find_simplex(&info, c,
                                                (<double*>xi.data) + i*ndim,
                                                &start, eps)
 
@@ -870,7 +864,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
                         df[2*j+1].imag = grad[vertices[isimplex,j],k,1].imag
 % endif
 
-                    w = _clough_tocher_2d_single_${DTYPE}(info, isimplex, c,
+                    w = _clough_tocher_2d_single_${DTYPE}(&info, isimplex, c,
                                                           f, df)
 % if DTYPE == "double":
                     out[i,k] = w
@@ -879,7 +873,6 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
                     out[i,k].imag = w.imag
 % endif
 
-        free(<void*>info)
         return out
 
 % endfor

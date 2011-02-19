@@ -593,21 +593,14 @@ cdef void _RidgeIter2D_next(RidgeIter2D_t *it) nogil:
 cdef class RidgeIter2D(object):
     cdef RidgeIter2D_t it
     cdef object delaunay
-    cdef DelaunayInfo_t *info
+    cdef DelaunayInfo_t info
 
     def __init__(self, delaunay, ivertex):
-        self.info = NULL
         if delaunay.ndim != 2:
             raise ValueError("RidgeIter2D supports only 2-D")
         self.delaunay = delaunay
-        self.info = _get_delaunay_info(delaunay, 0, 1)
-        _RidgeIter2D_init(&self.it, self.info, ivertex)
-
-    def __del__(self):
-        if self.info != NULL:
-            free(self.info)
-            self.info = NULL
-        self.delaunay = None
+        _get_delaunay_info(&self.info, delaunay, 0, 1)
+        _RidgeIter2D_init(&self.it, &self.info, ivertex)
 
     def __iter__(self):
         return self
@@ -1067,7 +1060,7 @@ class Delaunay(object):
         directed search in N dimensions.
 
         """
-        cdef DelaunayInfo_t *info
+        cdef DelaunayInfo_t info
         cdef int isimplex
         cdef double c[NPY_MAXDIMS]
         cdef double eps
@@ -1090,22 +1083,20 @@ class Delaunay(object):
         eps = np.finfo(np.double).eps * 10
         out = np.zeros((xi.shape[0],), dtype=np.intc)
         out_ = out
-        info = _get_delaunay_info(self, 1, 0)
+        _get_delaunay_info(&info, self, 1, 0)
 
         if bruteforce:
             for k in xrange(x.shape[0]):
                 isimplex = _find_simplex_bruteforce(
-                    info, c,
+                    &info, c,
                     <double*>x.data + info.ndim*k,
                     eps)
                 out_[k] = isimplex
         else:
             for k in xrange(x.shape[0]):
-                isimplex = _find_simplex(info, c, <double*>x.data + info.ndim*k,
+                isimplex = _find_simplex(&info, c, <double*>x.data + info.ndim*k,
                                          &start, eps)
                 out_[k] = isimplex
-
-        free(info)
 
         return out.reshape(xi_shape[:-1])
 
@@ -1118,7 +1109,7 @@ class Delaunay(object):
         """
         cdef np.ndarray[np.double_t, ndim=2] x
         cdef np.ndarray[np.double_t, ndim=2] out_
-        cdef DelaunayInfo_t *info
+        cdef DelaunayInfo_t info
         cdef double z[NPY_MAXDIMS+1]
         cdef int i, j, k
 
@@ -1130,17 +1121,15 @@ class Delaunay(object):
         xi = xi.reshape(np.prod(xi.shape[:-1]), xi.shape[-1])
         x = np.ascontiguousarray(xi.astype(np.double))
 
-        info = _get_delaunay_info(self, 0, 0)
+        _get_delaunay_info(&info, self, 0, 0)
 
         out = np.zeros((x.shape[0], info.nsimplex), dtype=np.double)
         out_ = out
 
         for i in xrange(x.shape[0]):
             for j in xrange(info.nsimplex):
-                _lift_point(info, (<double*>x.data) + info.ndim*i, z)
-                out_[i,j] = _distplane(info, j, z)
-
-        free(info)
+                _lift_point(&info, (<double*>x.data) + info.ndim*i, z)
+                out_[i,j] = _distplane(&info, j, z)
 
         return out.reshape(xi_shape[:-1] + (self.nsimplex,))
 
@@ -1180,10 +1169,10 @@ def tsearch(tri, xi):
 # Delaunay triangulation interface, for low-level C
 #------------------------------------------------------------------------------
 
-cdef DelaunayInfo_t *_get_delaunay_info(obj,
-                                        int compute_transform,
-                                        int compute_vertex_to_simplex):
-    cdef DelaunayInfo_t *info
+cdef void _get_delaunay_info(DelaunayInfo_t *info,
+                             obj,
+                             int compute_transform,
+                             int compute_vertex_to_simplex):
     cdef np.ndarray[np.double_t, ndim=3] transform
     cdef np.ndarray[np.npy_int, ndim=1] vertex_to_simplex
     cdef np.ndarray[np.double_t, ndim=2] points = obj.points
@@ -1193,7 +1182,6 @@ cdef DelaunayInfo_t *_get_delaunay_info(obj,
     cdef np.ndarray[np.double_t, ndim=1] min_bound = obj.min_bound
     cdef np.ndarray[np.double_t, ndim=1] max_bound = obj.max_bound
 
-    info = <DelaunayInfo_t*>malloc(sizeof(DelaunayInfo_t))
     info.ndim = points.shape[1]
     info.npoints = points.shape[0]
     info.nsimplex = vertices.shape[0]
@@ -1215,5 +1203,3 @@ cdef DelaunayInfo_t *_get_delaunay_info(obj,
         info.vertex_to_simplex = NULL
     info.min_bound = <double*>min_bound.data
     info.max_bound = <double*>max_bound.data
-
-    return info
