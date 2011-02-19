@@ -106,13 +106,13 @@ from mio5_params import MatlabObject, MatlabFunction, \
 class MatFile5Reader(MatFileReader):
     ''' Reader for Mat 5 mat files
     Adds the following attribute to base class
-    
+
     uint16_codec - char codec to use for uint16 char arrays
         (defaults to system default codec)
 
     Uses variable reader that has the following stardard interface (see
     abstract class in ``miobase``::
-    
+
        __init__(self, file_reader)
        read_header(self)
        array_from_header(self)
@@ -121,7 +121,7 @@ class MatFile5Reader(MatFileReader):
 
        set_stream(self, stream)
        read_full_tag(self)
-       
+
     '''
     @docfiller
     def __init__(self,
@@ -188,7 +188,7 @@ class MatFile5Reader(MatFileReader):
         # reader because we use the matrix_reader object to contain
         # compressed matrices (so they have their own stream)
         self._file_reader = VarReader5(self)
-        # reader for matrix streams 
+        # reader for matrix streams
         self._matrix_reader = VarReader5(self)
 
     def read_var_header(self):
@@ -232,7 +232,7 @@ class MatFile5Reader(MatFileReader):
             raise TypeError('Expecting miMATRIX type here, got %d' %  mdtype)
         header = self._matrix_reader.read_header()
         return header, next_pos
-            
+
     def read_var_array(self, header, process=True):
         ''' Read array, given `header`
 
@@ -242,13 +242,13 @@ class MatFile5Reader(MatFileReader):
            object with fields defining variable header
         process : {True, False} bool, optional
            If True, apply recursive post-processing during loading of
-           array. 
-        
+           array.
+
         Returns
         -------
         arr : array
            array with post-processing applied or not according to
-           `process`. 
+           `process`.
         '''
         return self._matrix_reader.array_from_header(header, process)
 
@@ -333,8 +333,8 @@ def varmats_from_mat(file_obj):
         file with something like ``open('test.mat',
         'wb').write(var_file_obj.read())``
 
-    Example
-    -------
+    Examples
+    --------
     >>> import scipy.io
 
     BytesIO is from the ``io`` module in python 3, and is ``cStringIO`` for
@@ -445,7 +445,7 @@ def to_writeable(source):
         dtype = []
         values = []
         for field, value in source.items():
-            if (isinstance(field, basestring) and 
+            if (isinstance(field, basestring) and
                 not field[0] in '_0123456789'):
                 dtype.append((field,object))
                 values.append(value)
@@ -520,7 +520,7 @@ class VarWriter5(object):
             self.file_stream.write(asbytes('\x00') * (8-bc_mod_8))
 
     def write_header(self,
-                     shape, 
+                     shape,
                      mclass,
                      is_complex=False,
                      is_logical=False,
@@ -561,7 +561,7 @@ class VarWriter5(object):
         # reset the one-shot store to defaults
         self._var_name = ''
         self._var_is_global = False
-        
+
     def update_matrix_tag(self, start_pos):
         curr_pos = self.file_stream.tell()
         self.file_stream.seek(start_pos)
@@ -571,7 +571,7 @@ class VarWriter5(object):
 
     def write_top(self, arr, name, is_global):
         """ Write variable at top level of mat file
-        
+
         Parameters
         ----------
         arr : array-like
@@ -588,7 +588,7 @@ class VarWriter5(object):
         self._var_name = name
         # write the header and data
         self.write(arr)
-        
+
     def write(self, arr):
         ''' Write `arr` to stream at top and sub levels
 
@@ -760,7 +760,7 @@ class MatFile5Writer(object):
                  global_vars=None,
                  long_field_names=False,
                  oned_as=None):
-        ''' Initialize writer for matlab 5 format files 
+        ''' Initialize writer for matlab 5 format files
 
         Parameters
         ----------

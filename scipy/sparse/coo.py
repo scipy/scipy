@@ -226,8 +226,8 @@ class coo_matrix(_data_matrix):
 
         Duplicate entries will be summed together.
 
-        Example
-        -------
+        Examples
+        --------
         >>> from numpy import array
         >>> from scipy.sparse import coo_matrix
         >>> row  = array([0,0,1,3,1,0,0])
@@ -264,8 +264,8 @@ class coo_matrix(_data_matrix):
 
         Duplicate entries will be summed together.
 
-        Example
-        -------
+        Examples
+        --------
         >>> from numpy import array
         >>> from scipy.sparse import coo_matrix
         >>> row  = array([0,0,1,3,1,0,0])

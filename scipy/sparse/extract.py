@@ -23,8 +23,8 @@ def find(A):
         of the nonzero matrix entries.
 
 
-    Example
-    -------
+    Examples
+    --------
     >>> from scipy.sparse import csr_matrix
     >>> A = csr_matrix([[7.0, 8.0, 0],[0, 0, 9.0]])
     >>> find(A)

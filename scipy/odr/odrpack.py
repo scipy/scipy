@@ -301,8 +301,8 @@ class Data(object):
         """ Update the metadata dictionary with the keywords and data provided
         by keywords.
 
-        Example
-        -------
+        Examples
+        --------
         data.set_meta(lab="Ph 7; Lab 26", title="Ag110 + Ag108 Decay")
         """
 
@@ -513,8 +513,8 @@ class Model(object):
         """ Update the metadata dictionary with the keywords and data provided
         here.
 
-        Example
-        -------
+        Examples
+        --------
         set_meta(name="Exponential", equation="y = a exp(b x) + c")
         """
 

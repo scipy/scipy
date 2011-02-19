@@ -23,7 +23,7 @@ import sigtools
 
 def kaiser_beta(a):
     """Compute the Kaiser parameter `beta`, given the attenuation `a`.
-    
+
     Parameters
     ----------
     a : float
@@ -34,7 +34,7 @@ def kaiser_beta(a):
     -------
     beta : float
         The `beta` parameter to be used in the formula for a Kaiser window.
-    
+
     References
     ----------
     Oppenheim, Schafer, "Discrete-Time Signal Processing", p.475-476.
@@ -50,7 +50,7 @@ def kaiser_beta(a):
 
 def kaiser_atten(numtaps, width):
     """Compute the attenuation of a Kaiser FIR filter.
-    
+
     Given the number of taps `N` and the transition width `width`, compute the
     attenuation `a` in dB, given by Kaiser's formula:
 
@@ -68,7 +68,7 @@ def kaiser_atten(numtaps, width):
     -------
     a : float
         The attenuation of the ripple, in dB.
-        
+
     See Also
     --------
     kaiserord, kaiser_beta
@@ -123,7 +123,7 @@ def kaiserord(ripple, width):
     beta = kaiser_beta(A)
 
     # Kaiser's formula (as given in Oppenheim and Schafer) is for the filter
-    # order, so we have to add 1 to get the number of taps.  
+    # order, so we have to add 1 to get the number of taps.
     numtaps = (A - 7.95) / 2.285 / (np.pi * width) + 1
 
     return int(ceil(numtaps)), beta
@@ -133,11 +133,11 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
                                                         scale=True, nyq=1.0):
     """
     FIR filter design using the window method.
-    
+
     This function computes the coefficients of a finite impulse response filter.
     The filter will have linear phase; it will be Type I if `numtaps` is odd and
     Type II if `numtaps` is even.
-    
+
     Type II filters always have zero response at the Nyquist rate, so a
     ValueError exception is raised if firwin is called with `numtaps` even and
     having a passband whose right end is at the Nyquist rate.
@@ -199,33 +199,33 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
 
     Examples
     --------
-    
+
     Low-pass from 0 to f::
-    
+
     >>> firwin(numtaps, f)
-    
+
     Use a specific window function::
-    
+
     >>> firwin(numtaps, f, window='nuttall')
-    
+
     High-pass ('stop' from 0 to f)::
-     
+
     >>> firwin(numtaps, f, pass_zero=False)
 
     Band-pass::
-    
+
     >>> firwin(numtaps, [f1, f2], pass_zero=False)
-    
+
     Band-stop::
-    
-    >>> firwin(numtaps, [f1, f2]) 
+
+    >>> firwin(numtaps, [f1, f2])
 
     Multi-band (passbands are [0, f1], [f2, f3] and [f4, 1])::
 
     >>>firwin(numtaps, [f1, f2, f3, f4])
-    
+
     Multi-band (passbands are [f1, f2] and [f3,f4])::
-    
+
     >>> firwin(numtaps, [f1, f2, f3, f4], pass_zero=False)
 
     See also
@@ -280,7 +280,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
     from signaltools import get_window
     win = get_window(window, numtaps, fftbins=False)
     h *= win
-        
+
     # Now handle scaling if desired.
     if scale:
         # Get the first passband.
@@ -294,7 +294,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
         c = np.cos(np.pi * m * scale_frequency)
         s = np.sum(h * c)
         h /= s
- 
+
     return h
 
 
@@ -320,7 +320,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0):
         The frequency sampling points. Typically 0.0 to 1.0 with 1.0 being
         Nyquist.  The Nyquist frequency can be redefined with the argument
         `nyq`.
-        
+
         The values in `freq` must be nondecreasing.  A value can be repeated
         once to implement a discontinuity.  The first value in `freq` must
         be 0, and the last value must be `nyq`.
@@ -349,8 +349,8 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0):
     taps : numpy 1D array of length `numtaps`
         The filter coefficients of the FIR filter.
 
-    Example
-    -------
+    Examples
+    --------
     A lowpass FIR filter with a response that is 1 on [0.0, 0.5], and
     that decreases linearly on [0.5, 1.0] from 1 to 0:
 
@@ -375,7 +375,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0):
     is odd and Type II if `numtaps` is even.  Because Type II filters always
     have a zero at the Nyquist frequency, `numtaps` must be odd if `gain[-1]`
     is not zero.
-    
+
     .. versionadded:: 0.9.0
 
     References
@@ -383,7 +383,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0):
     .. [1] Oppenheim, A. V. and Schafer, R. W., "Discrete-Time Signal
        Processing", Prentice-Hall, Englewood Cliffs, New Jersey (1989).
        (See, for example, Section 7.4.)
-       
+
     .. [2] Smith, Steven W., "The Scientist and Engineer's Guide to Digital
        Signal Processing", Ch. 17. http://www.dspguide.com/ch17/1.htm
 
@@ -393,7 +393,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0):
         raise ValueError('freq and gain must be of same length.')
 
     if nfreqs is not None and numtaps >= nfreqs:
-        raise ValueError('ntaps must be less than nfreqs, but firwin2 was ' 
+        raise ValueError('ntaps must be less than nfreqs, but firwin2 was '
                             'called with ntaps=%d and nfreqs=%s' % (numtaps, nfreqs))
 
     if freq[0] != 0 or freq[-1] != nyq:
@@ -437,7 +437,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0):
         wind = get_window(window, numtaps, fftbins=False)
     else:
         wind = 1
-        
+
     # Keep only the first `numtaps` coefficients in `out`, and multiply by
     # the window.
     out = out_full[:numtaps] * wind

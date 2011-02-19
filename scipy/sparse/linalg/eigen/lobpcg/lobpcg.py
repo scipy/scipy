@@ -91,9 +91,8 @@ def makeOperator( operatorInput, expectedShape ):
     a function and makes an operator performing matrix * blockvector
     products.
 
-    Example
-    -------
-
+    Examples
+    --------
     >>> A = makeOperator( arrayA, (n, n) )
     >>> vectorB = A( vectorX )
 

@@ -41,14 +41,12 @@ def cs_graph_components(x):
 
     Notes
     ------
-
     The matrix is assumed to be symmetric and the upper triangular part
     of the matrix is used. The matrix is converted to a CSR matrix unless
     it is already a CSR.
 
-    Example
-    -------
-
+    Examples
+    --------
     >>> from scipy.sparse import cs_graph_components
     >>> import numpy as np
     >>> D = np.eye(4)
@@ -64,7 +62,7 @@ def cs_graph_components(x):
         shape = x.shape
     except AttributeError:
         raise ValueError(_msg0)
-    
+
     if not ((len(x.shape) == 2) and (x.shape[0] == x.shape[1])):
         raise ValueError(_msg1 % x.shape)
 
@@ -72,7 +70,7 @@ def cs_graph_components(x):
         x = x.tocsr()
     else:
         x = csr_matrix(x)
-    
+
     label = np.empty((shape[0],), dtype=x.indptr.dtype)
 
     n_comp = _cs_graph_components(shape[0], x.indptr, x.indices, label)

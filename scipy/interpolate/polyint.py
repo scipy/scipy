@@ -68,7 +68,7 @@ class KroghInterpolator(object):
         is indicated by the repeated zero in the xi array; the corresponding
         yi values are 0, the function value, and 2, the derivative value.
 
-        For another example, given xi, yi, and a derivative ypi for each 
+        For another example, given xi, yi, and a derivative ypi for each
         point, appropriate arrays can be constructed as:
 
         >>> xi_k, yi_k = np.repeat(xi, 2), np.ravel(np.dstack((yi,ypi)))
@@ -180,8 +180,8 @@ class KroghInterpolator(object):
             the middle dimension will be dropped; if R is 1 then the
             last dimension will be dropped.
 
-        Example
-        -------
+        Examples
+        --------
         >>> KroghInterpolator([0,0,0],[1,2,3]).derivatives(0)
         array([1.0,2.0,3.0])
         >>> KroghInterpolator([0,0,0],[1,2,3]).derivatives([0,0])
@@ -893,7 +893,7 @@ def _find_derivatives(x, y):
     w1 = 2*hk[1:] + hk[:-1]
     w2 = hk[1:] + 2*hk[:-1]
     whmean = 1.0/(w1+w2)*(w1/mk[1:] + w2/mk[:-1])
-    
+
     dk = np.zeros_like(y)
     dk[1:-1][condition] = 0.0
     dk[1:-1][~condition] = 1.0/whmean[~condition]
@@ -904,16 +904,16 @@ def _find_derivatives(x, y):
     dk[0] = _edge_case(mk[0],dk[1])
     dk[-1] = _edge_case(mk[-1],dk[-2])
     return dk
-    
+
 
 def pchip(x, y):
-    """PCHIP 1-d monotonic cubic interpolation 
-    
+    """PCHIP 1-d monotonic cubic interpolation
+
     Description
     -----------
     x and y are arrays of values used to approximate some function f:
        y = f(x)
-    This class factory function returns a callable class whose __call__ method 
+    This class factory function returns a callable class whose __call__ method
     uses monotonic cubic, interpolation to find the value of new points.
 
     Parameters
@@ -924,10 +924,10 @@ def pchip(x, y):
     y : array
         A 1-D array of real values.  y's length along the interpolation
         axis must be equal to the length of x.
- 
+
     Assumes x is sorted in monotonic order (e.g. x[1] > x[0])
     """
     derivs = _find_derivatives(x,y)
     return PiecewisePolynomial(x, zip(y, derivs), orders=3, direction=None)
 
-    
+

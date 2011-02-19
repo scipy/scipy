@@ -479,8 +479,8 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
     Uses Steffensen's Method using Aitken's Del^2 convergence acceleration.
     See Burden, Faires, "Numerical Analysis", 5th edition, pg. 80
 
-    Example
-    -------
+    Examples
+    --------
     >>> from numpy import sqrt, array
     >>> from scipy.optimize import fixed_point
     >>> def func(x, c1, c2):

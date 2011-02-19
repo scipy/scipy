@@ -119,7 +119,7 @@ def maxnomlen(atrv):
     -------
     slen : int
        length of longest component
-    
+
     Examples
     --------
     maxnomlen("{floup, bouga, fl, ratata}") returns 6 (the size of
@@ -176,7 +176,7 @@ def tokenize_attribute(iterable, attribute):
 
     Given a raw string attribute, try to get the name and type of the
     attribute. Constraints:
-    
+
     * The first line must start with @attribute (case insensitive, and
       space like characters before @attribute are allowed)
     * Works also if the attribute is spread on multilines.
@@ -204,7 +204,7 @@ def tokenize_attribute(iterable, attribute):
     >>> iterable = iter([0] * 10) # dummy iterator
     >>> tokenize_attribute(iterable, r"@attribute floupi real")
     ('floupi', 'real', 0)
-     
+
     If attribute is r"'floupi 2' real", will return 'floupi 2' as name,
     and real as value.
 
@@ -397,8 +397,8 @@ class MetaData(object):
 
     Knows about attributes names and types.
 
-    Example
-    -------
+    Examples
+    --------
     data, meta = loadarff('iris.arff')
     # This will print the attributes names of the iris.arff dataset
     for i in meta:
@@ -644,7 +644,7 @@ def test_weka(filename):
 
 # make sure nose does not find this as a test
 test_weka.__test__ = False
-        
+
 
 def floupi(filename):
     data, meta = loadarff(filename)
