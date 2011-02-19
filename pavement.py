@@ -4,40 +4,62 @@ possible. It relies on virtualenv to generate 'bootstrap' environments as
 independent from the user system as possible (e.g. to make sure the sphinx doc
 is built against the built scipy, not an installed one).
 
-Building a simple (no-superpack) windows installer from wine
-============================================================
+The release is assumed to be done on OS X. See release.sh for a script that
+employs the Paver tasks defined in this file, and builds everything required
+for a release at once.
 
-It assumes that blas/lapack are in c:\local\lib inside drive_c. Build python
-2.5 and python 2.6 installers.
+
+Building a Windows installer from Wine
+======================================
+
+The Python version the installer is for can be specified with the ``-p 2.6``
+switch (this works for all installer tasks). To build a simple (no SSE
+instructions) installer, do::
 
     paver bdist_wininst_simple
 
-You will have to configure your wine python locations (WINE_PYS).
+This assumes that blas/lapack are in c:\local\lib inside drive_c.  You will
+have to make sure your Wine python locations (WINE_PYS) are configured
+correctly.
 
-The superpack requires all the atlas libraries for every arch to be installed
+The superpack requires all the Atlas libraries for every arch to be installed
 (see SITECFG), and can then be built as follows::
 
     paver bdist_superpack
+
+
+Building an installer for OS X
+==============================
+
+For a simple installer, which is just an mpkg inside a dmg, do::
+
+  paver simple_dmg
+
+For a more fancy installer which includes documentation and looks better, do::
+
+  paver pdf  # needs to be done only once
+  paver dmg
+
 
 Building changelog + notes
 ==========================
 
 Assumes you have git and the binaries/tarballs in installers/::
 
-    paver write_release
-    paver write_note
+    paver write_release_and_log
 
 This automatically put the checksum into NOTES.txt, and write the Changelog
 which can be uploaded to sourceforge.
 
+
 TODO
 ====
-    - the script is messy, lots of global variables
     - make it more easily customizable (through command line args)
     - missing targets: install & test, sdist test, debian packaging
     - fix bdist_mpkg: we build the same source twice -> how to make sure we use
       the same underlying python for egg install in venv and for bdist_mpkg
 """
+
 import os
 import sys
 import subprocess
@@ -69,67 +91,87 @@ try:
 finally:
     sys.path.pop(0)
 
-# Default python version
-PYVER="2.5"
-DMG_DIR = "dmg-source"
 
-# Wine config for win32 builds
-if sys.platform == "win32":
-    WINE_PY25 = [r"C:\Python25\python.exe"]
-    WINE_PY26 = [r"C:\Python26\python26.exe"]
-    WINE_PY27 = [r"C:\Python27\python27.exe"]
-    MAKENSIS = ["makensis"]
-elif sys.platform == "darwin":
-    WINE_PY25 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python25/python.exe"]
-    WINE_PY26 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python26/python.exe"]
-    WINE_PY27 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python27/python.exe"]
-    MAKENSIS = ["wine", "makensis"]
-else:
-    WINE_PY25 = [os.environ['HOME'] + "/.wine/drive_c/Python25/python.exe"]
-    WINE_PY26 = [os.environ['HOME'] + "/.wine/drive_c/Python26/python.exe"]
-    WINE_PY27 = [os.environ['HOME'] + "/.wine/drive_c/Python27/python.exe"]
-    MAKENSIS = ["wine", "makensis"]
-WINE_PYS = {'2.7' : WINE_PY27, '2.6' : WINE_PY26, '2.5': WINE_PY25}
-SUPERPACK_BUILD = 'build-superpack'
-SUPERPACK_BINDIR = os.path.join(SUPERPACK_BUILD, 'binaries')
-
-# XXX: fix this in a sane way
-MPKG_PYTHON = {"2.5": "/Library/Frameworks/Python.framework/Versions/2.5/bin/python",
-        "2.6": "/Library/Frameworks/Python.framework/Versions/2.6/bin/python",
-        "2.7": "/Library/Frameworks/Python.framework/Versions/2.7/bin/python"}
-# Full path to the *static* gfortran runtime
-LIBGFORTRAN_A_PATH = "/usr/local/lib/libgfortran.a"
-
-# Where to put built documentation (where it will picked up for copy to
-# binaries)
-PDF_DESTDIR = paver.path.path('build') / 'pdf'
-HTML_DESTDIR = paver.path.path('build') / 'html'
-DOC_ROOT = paver.path.path("doc")
-DOC_SRC = DOC_ROOT / "source"
-DOC_BLD = DOC_ROOT / "build"
-DOC_BLD_LATEX = DOC_BLD / "latex"
+#-----------------------------------
+# Things to be changed for a release
+#-----------------------------------
 
 # Source of the release notes
 RELEASE = 'doc/release/0.9.0-notes.rst'
 
 # Start/end of the log (from git)
 LOG_START = 'svn/tags/0.8.0'
-LOG_END = 'master'
-
-# Virtualenv bootstrap stuff
-BOOTSTRAP_DIR = "bootstrap"
-BOOTSTRAP_PYEXEC = "%s/bin/python" % BOOTSTRAP_DIR
-BOOTSTRAP_SCRIPT = "%s/bootstrap.py" % BOOTSTRAP_DIR
-
-# Where to put the final installers, as put on sourceforge
-RELEASE_DIR = 'release'
-INSTALLERS_DIR = os.path.join(RELEASE_DIR, 'installers')
+LOG_END = 'svn/0.9.x'
 
 
-options(sphinx=Bunch(builddir="build", sourcedir="source", docroot='doc'),
-        virtualenv=Bunch(script_name=BOOTSTRAP_SCRIPT,
-        packages_to_install=["sphinx==1.0.4"]),
-        wininst=Bunch(pyver=PYVER, scratch=True))
+#-------------------------------------------------------
+# Hardcoded build/install dirs, virtualenv options, etc.
+#-------------------------------------------------------
+
+# Default python version
+PYVER="2.6"
+
+# Paver options object, holds all default dirs
+options(bootstrap=Bunch(bootstrap_dir="bootstrap"),
+        virtualenv=Bunch(packages_to_install=["sphinx==1.0.4", "numpydoc"],
+                         no_site_packages=False),
+        sphinx=Bunch(builddir="build", sourcedir="source", docroot='doc'),
+        superpack=Bunch(builddir="build-superpack",
+                        bindir=os.path.join("build-superpack","binaries")),
+        installers=Bunch(releasedir="release",
+                         installersdir=os.path.join("release", "installers")),
+        doc=Bunch(doc_root="doc",
+            sdir=os.path.join("doc", "source"),
+            bdir=os.path.join("doc", "build"),
+            bdir_latex=os.path.join("doc", "build", "latex"),
+            destdir_pdf=os.path.join("build_doc", "pdf")),
+        html=Bunch(builddir=os.path.join("build", "html")),
+        dmg=Bunch(python_version=PYVER),
+        bdist_wininst_simple=Bunch(python_version=PYVER),)
+
+# Where we can find BLAS/LAPACK/ATLAS on Windows/Wine
+SITECFG = {"sse3" : {'BLAS': 'None', 'LAPACK': 'None', 'ATLAS': r'C:\local\lib\yop\sse3'},
+           "sse2" : {'BLAS': 'None', 'LAPACK': 'None', 'ATLAS': r'C:\local\lib\yop\sse2'},
+           "nosse" : {'ATLAS': 'None', 'BLAS': r'C:\local\lib\yop\nosse',
+                      'LAPACK': r'C:\local\lib\yop\nosse'}}
+
+# Wine config for win32 builds
+if sys.platform == "win32":
+    WINE_PY25 = [r"C:\Python25\python.exe"]
+    WINE_PY26 = [r"C:\Python26\python26.exe"]
+    WINE_PY27 = [r"C:\Python27\python27.exe"]
+    WINE_PY31 = [r"C:\Python31\python.exe"]
+    WINDOWS_ENV = os.environ
+    MAKENSIS = ["makensis"]
+elif sys.platform == "darwin":
+    WINE_PY25 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python25/python.exe"]
+    WINE_PY26 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python26/python.exe"]
+    WINE_PY27 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python27/python.exe"]
+    WINE_PY31 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python31/python.exe"]
+    WINDOWS_ENV = os.environ
+    WINDOWS_ENV["DYLD_FALLBACK_LIBRARY_PATH"] = "/usr/X11/lib:/usr/lib"
+    MAKENSIS = ["wine", "makensis"]
+else:
+    WINE_PY25 = [os.environ['HOME'] + "/.wine/drive_c/Python25/python.exe"]
+    WINE_PY26 = [os.environ['HOME'] + "/.wine/drive_c/Python26/python.exe"]
+    WINE_PY27 = [os.environ['HOME'] + "/.wine/drive_c/Python27/python.exe"]
+    WINE_PY31 = [os.environ['HOME'] + "/.wine/drive_c/Python31/python.exe"],
+    WINDOWS_ENV = os.environ
+    MAKENSIS = ["wine", "makensis"]
+WINE_PYS = {'3.1':WINE_PY31, '2.7':WINE_PY27, '2.6':WINE_PY26, '2.5':WINE_PY25}
+
+# Framework Python locations on OS X
+MPKG_PYTHON = {"2.5": "/Library/Frameworks/Python.framework/Versions/2.5/bin/python",
+        "2.6": "/Library/Frameworks/Python.framework/Versions/2.6/bin/python",
+        "2.7": "/Library/Frameworks/Python.framework/Versions/2.7/bin/python",
+        "3.1": "/Library/Frameworks/Python.framework/Versions/3.1/bin/python3"}
+# Full path to the *static* gfortran runtime
+LIBGFORTRAN_A_PATH = "/usr/local/lib/libgfortran.a"
+
+
+#--------------------------------------
+# Utility functions and bootstrap stuff
+#--------------------------------------
 
 def parse_numpy_version(pyexec):
     if isinstance(pyexec, str):
@@ -151,90 +193,63 @@ def parse_numpy_version(pyexec):
     else:
         raise ValueError("Could not parse version (%s)" % out)
 
-# Bootstrap stuff
 @task
 def bootstrap():
     """create virtualenv in ./install"""
-    install = paver.path.path(BOOTSTRAP_DIR)
-    if not install.exists():
-        install.mkdir()
+    try:
+        import virtualenv
+    except ImportError, e:
+        raise RuntimeError("virtualenv is needed for bootstrap")
+
+    bdir = options.bootstrap_dir
+    if not os.path.exists(bdir):
+        os.makedirs(bdir)
+    bscript = "boostrap.py"
+
+    options.virtualenv.script_name = os.path.join(options.bootstrap_dir,
+                                                  bscript)
+    options.bootstrap.no_site_packages = False
     call_task('paver.virtual.bootstrap')
-    sh('cd %s; %s bootstrap.py' % (BOOTSTRAP_DIR, sys.executable))
+    sh('cd %s; %s %s' % (bdir, sys.executable, bscript))
 
 @task
 def clean():
     """Remove build, dist, egg-info garbage."""
     d = ['build', 'dist', 'scipy.egg-info']
     for i in d:
-        paver.path.path(i).rmtree()
+        if os.path.exists(i):
+            shutil.rmtree(i)
 
-    (paver.path.path('doc') / options.sphinx.builddir).rmtree()
+    bdir = os.path.join('doc', options.sphinx.builddir)
+    if os.path.exists(bdir):
+        shutil.rmtree(bdir)
 
 @task
 def clean_bootstrap():
-    paver.path.path('bootstrap').rmtree()
+    bdir = os.path.join(options.bootstrap.bootstrap_dir)
+    if os.path.exists(bdir):
+        shutil.rmtree(bdir)
 
 @task
 @needs('clean', 'clean_bootstrap')
 def nuke():
     """Remove everything: build dir, installers, bootstrap dirs, etc..."""
-    d = [SUPERPACK_BUILD, INSTALLERS_DIR, DMG_DIR]
-    for i in d:
-        paver.path.path(i).rmtree()
+    for d in [options.superpack.builddir, options.installers.releasedir]:
+        if os.path.exists(d):
+            shutil.rmtree(d)
 
-# NOTES/Changelog stuff
-def compute_md5():
-    released = paver.path.path(INSTALLERS_DIR).listdir()
-    checksums = []
-    for f in released:
-        m = md5.md5(open(f, 'r').read())
-        checksums.append('%s  %s' % (m.hexdigest(), f))
+#--------------------
+# Documentation tasks
+#--------------------
 
-    return checksums
-
-def write_release_task(filename='NOTES.txt'):
-    source = paver.path.path(RELEASE)
-    target = paver.path.path(filename)
-    if target.exists():
-        target.remove()
-    source.copy(target)
-    ftarget = open(str(target), 'a')
-    ftarget.writelines("""
-Checksums
-=========
-
-""")
-    ftarget.writelines(['%s\n' % c for c in compute_md5()])
-
-def write_log_task(filename='Changelog'):
-    st = subprocess.Popen(
-            ['git', 'svn', 'log',  '%s..%s' % (LOG_START, LOG_END)],
-            stdout=subprocess.PIPE)
-
-    out = st.communicate()[0]
-    a = open(filename, 'w')
-    a.writelines(out)
-    a.close()
-
-@task
-def write_release():
-    write_release_task()
-
-@task
-def write_log():
-    write_log_task()
-
-#------------
-# Doc tasks
-#------------
 @task
 def html(options):
     """Build scipy documentation and put it into build/docs"""
     # Don't use paver html target because of scipy bootstrapping problems
     subprocess.check_call(["make", "html"], cwd="doc")
     builtdocs = paver.path.path("doc") / options.sphinx.builddir / "html"
-    HTML_DESTDIR.rmtree()
-    builtdocs.copytree(HTML_DESTDIR)
+    options.html.builddir.rmtree()
+    builtdocs.copytree(options.html.builddir)
 
 @task
 def latex():
@@ -244,17 +259,21 @@ def latex():
 @task
 @needs('latex')
 def pdf():
+    sdir = options.doc.sdir
+    bdir = options.doc.bdir
+    bdir_latex = options.doc.bdir_latex
+    destdir_pdf = options.doc.destdir_pdf
+
     def build_pdf():
-        subprocess.check_call(["make", "all-pdf"], cwd=str(DOC_BLD_LATEX))
+        subprocess.check_call(["make", "all-pdf"], cwd=str(bdir_latex))
     dry("Build pdf doc", build_pdf)
 
-    PDF_DESTDIR.rmtree()
-    PDF_DESTDIR.makedirs()
+    if os.path.exists(destdir_pdf):
+        shutil.rmtree(destdir_pdf)
+    os.makedirs(destdir_pdf)
 
-    user = DOC_BLD_LATEX / "scipy-user.pdf"
-    user.copy(PDF_DESTDIR / "userguide.pdf")
-    ref =  DOC_BLD_LATEX / "scipy-ref.pdf"
-    ref.copy(PDF_DESTDIR / "reference.pdf")
+    ref = os.path.join(bdir_latex, "scipy-ref.pdf")
+    shutil.copy(ref, os.path.join(destdir_pdf, "reference.pdf"))
 
 def tarball_name(type='gztar'):
     root = 'scipy-%s' % FULLVERSION
@@ -271,71 +290,47 @@ def sdist():
     sh('python setup.py sdist --formats=gztar,zip')
 
     # Copy the superpack into installers dir
-    if not os.path.exists(INSTALLERS_DIR):
-        os.makedirs(INSTALLERS_DIR)
+    if not os.path.exists(options.installers.installersdir):
+        os.makedirs(options.installers.installersdir)
 
     for t in ['gztar', 'zip']:
         source = os.path.join('dist', tarball_name(t))
-        target = os.path.join(INSTALLERS_DIR, tarball_name(t))
+        target = os.path.join(options.installers.installersdir, tarball_name(t))
         shutil.copy(source, target)
 
-#------------------
-# Wine-based builds
-#------------------
-SSE3_CFG = {'BLAS': 'None', 'LAPACK': 'None', 'ATLAS': r'C:\local\lib\yop\sse3'}
-SSE2_CFG = {'BLAS': 'None', 'LAPACK': 'None', 'ATLAS': r'C:\local\lib\yop\sse2'}
-NOSSE_CFG = {'ATLAS': 'None', 'BLAS': r'C:\local\lib\yop\nosse', 'LAPACK': r'C:\local\lib\yop\nosse'}
 
-SITECFG = {"sse2" : SSE2_CFG, "sse3" : SSE3_CFG, "nosse" : NOSSE_CFG}
-
-def internal_wininst_name(arch, ismsi=False):
-    """Return the name of the wininst as it will be inside the superpack (i.e.
-    with the arch encoded."""
-    if ismsi:
-        ext = '.msi'
-    else:
-        ext = '.exe'
-    return "scipy-%s-%s%s" % (FULLVERSION, arch, ext)
-
-def wininst_name(pyver, ismsi=False):
-    """Return the name of the installer built by wininst command."""
-    # Yeah, the name logic is harcoded in distutils. We have to reproduce it
-    # here
-    if ismsi:
-        ext = '.msi'
-    else:
-        ext = '.exe'
-    name = "scipy-%s.win32-py%s%s" % (FULLVERSION, pyver, ext)
-    return name
-
-def bdist_wininst_arch(pyver, arch, scratch=True):
-    """Arch specific wininst build."""
-    if scratch:
-        paver.path.path('build').rmtree()
-
-    if not os.path.exists(SUPERPACK_BINDIR):
-        os.makedirs(SUPERPACK_BINDIR)
-    env = os.environ.copy()
-    for k, v in SITECFG[arch].items():
-        env[k] = v
-    _bdist_wininst(pyver, env)
-    source = os.path.join('dist', wininst_name(pyver))
-    target = os.path.join(SUPERPACK_BINDIR, internal_wininst_name(arch))
-    if os.path.exists(target):
-        os.remove(target)
-    os.rename(source, target)
+#---------------------------------------
+# Windows installers (Wine-based builds)
+#---------------------------------------
 
 def superpack_name(pyver, numver):
     """Return the filename of the superpack installer."""
     return 'scipy-%s-win32-superpack-python%s.exe' % (numver, pyver)
 
+def internal_wininst_name(arch):
+    """Return the name of the wininst as it will be inside the superpack (i.e.
+    with the arch encoded."""
+    ext = '.exe'
+    return "scipy-%s-%s%s" % (FULLVERSION, arch, ext)
+
+def wininst_name(pyver):
+    """Return the name of the installer built by wininst command."""
+    ext = '.exe'
+    return "scipy-%s.win32-py%s%s" % (FULLVERSION, pyver, ext)
+
+def bdist_wininst_arch(pyver, arch):
+    """Arch specific wininst build."""
+    if os.path.exists("build"):
+        shutil.rmtree("build")
+    _bdist_wininst(pyver, SITECFG[arch])
+
 def prepare_nsis_script(pyver, numver):
-    if not os.path.exists(SUPERPACK_BUILD):
-        os.makedirs(SUPERPACK_BUILD)
+    if not os.path.exists(options.superpack.builddir):
+        os.makedirs(options.superpack.builddir)
 
     tpl = os.path.join('tools/win32/build_scripts/nsis_scripts', 'scipy-superinstaller.nsi.in')
     source = open(tpl, 'r')
-    target = open(os.path.join(SUPERPACK_BUILD, 'scipy-superinstaller.nsi'), 'w')
+    target = open(os.path.join(options.superpack.builddir, 'scipy-superinstaller.nsi'), 'w')
 
     installer_name = superpack_name(pyver, numver)
     cnt = "".join(source.readlines())
@@ -343,40 +338,58 @@ def prepare_nsis_script(pyver, numver):
     for arch in ['nosse', 'sse2', 'sse3']:
         cnt = cnt.replace('@%s_BINARY@' % arch.upper(),
                           internal_wininst_name(arch))
-
     target.write(cnt)
 
 @task
 def bdist_wininst_nosse(options):
     """Build the nosse wininst installer."""
-    bdist_wininst_arch(options.wininst.pyver, 'nosse', scratch=options.wininst.scratch)
+    bdist_wininst_arch(options.python_version, 'nosse')
 
 @task
 def bdist_wininst_sse2(options):
     """Build the sse2 wininst installer."""
-    bdist_wininst_arch(options.wininst.pyver, 'sse2', scratch=options.wininst.scratch)
+    bdist_wininst_arch(options.python_version, 'sse2')
 
 @task
 def bdist_wininst_sse3(options):
     """Build the sse3 wininst installer."""
-    bdist_wininst_arch(options.wininst.pyver, 'sse3', scratch=options.wininst.scratch)
+    bdist_wininst_arch(options.python_version, 'sse3')
 
 @task
-@needs('bdist_wininst_nosse', 'bdist_wininst_sse2', 'bdist_wininst_sse3')
+@cmdopts([("python-version=", "p", "python version")])
 def bdist_superpack(options):
     """Build all arch specific wininst installers."""
-    prepare_nsis_script(options.wininst.pyver, FULLVERSION)
+    pyver = options.python_version
+    def copy_bdist(arch):
+        # Copy the wininst in dist into the release directory
+        if int(pyver[0]) >= 3:
+            source = os.path.join('build', 'py3k', 'dist', wininst_name(pyver))
+        else:
+            source = os.path.join('dist', wininst_name(pyver))
+        target = os.path.join(options.superpack.bindir, internal_wininst_name(arch))
+        if os.path.exists(target):
+            os.remove(target)
+        if not os.path.exists(os.path.dirname(target)):
+            os.makedirs(os.path.dirname(target))
+        os.rename(source, target)
+
+    bdist_wininst_arch(pyver, 'nosse')
+    copy_bdist("nosse")
+    bdist_wininst_arch(pyver, 'sse2')
+    copy_bdist("sse2")
+    bdist_wininst_arch(pyver, 'sse3')
+    copy_bdist("sse3")
+
+    prepare_nsis_script(pyver, FULLVERSION)
     subprocess.check_call(MAKENSIS + ['scipy-superinstaller.nsi'],
-                          cwd=SUPERPACK_BUILD)
+                          cwd=options.superpack.builddir)
 
     # Copy the superpack into installers dir
-    if not os.path.exists(INSTALLERS_DIR):
-        os.makedirs(INSTALLERS_DIR)
+    if not os.path.exists(options.installers.installersdir):
+        os.makedirs(options.installers.installersdir)
 
-    source = os.path.join(SUPERPACK_BUILD,
-                superpack_name(options.wininst.pyver, FULLVERSION))
-    target = os.path.join(INSTALLERS_DIR,
-                superpack_name(options.wininst.pyver, FULLVERSION))
+    source = os.path.join(options.superpack.builddir, superpack_name(pyver, FULLVERSION))
+    target = os.path.join(options.installers.installersdir, superpack_name(pyver, FULLVERSION))
     shutil.copy(source, target)
 
 @task
@@ -389,20 +402,37 @@ def bdist_wininst_simple():
         env[k] = v
     _bdist_wininst(options.bdist_wininst_simple.python_version, env)
 
-def _bdist_wininst(pyver, cfg_env):
-    log = open('build.log', 'w')
-    try:
-        ret = subprocess.call(WINE_PYS[pyver] + ['setup.py', 'build', '-c', 'mingw32', 'bdist_wininst'],
-                env=cfg_env, stdout=log, stderr=subprocess.STDOUT)
-    finally:
-        log.close()
+def _bdist_wininst(pyver, cfg_env=None):
+    cmd = WINE_PYS[pyver] + ['setup.py', 'build', '-c', 'mingw32', 'bdist_wininst']
+    if cfg_env:
+        for k, v in WINDOWS_ENV.items():
+            cfg_env[k] = v
+    else:
+        cfg_env = WINDOWS_ENV
+    subprocess.check_call(cmd, env=cfg_env)
 
-    if ret:
-        raise RuntimeError("Error while building windows installer, see build.log")
 
-#-------------------
-# Mac OS X installer
-#-------------------
+#--------------------
+# Mac OS X installers
+#--------------------
+
+def dmg_name(fullversion, pyver, osxver=None):
+    """Return name for dmg installer.
+
+    Notes
+    -----
+    Python 2.7 has two binaries, one for 10.3 (ppc, i386) and one for 10.6
+    (i386, x86_64). All other Python versions at python.org at the moment
+    have binaries for 10.3 only. The "macosx%s" part of the dmg name should
+    correspond to the python.org naming scheme.
+    """
+    # assume that for the py2.7/osx10.6 build the deployment target is set
+    # (should be done in the release script).
+    if not osxver:
+        osxver = os.environ.get('MACOSX_DEPLOYMENT_TARGET', '10.3')
+    return "scipy-%s-py%s-python.org-macosx%s.dmg" % (fullversion, pyver,
+                                                      osxver)
+
 def macosx_version():
     if not sys.platform == 'darwin':
         raise ValueError("Not darwin ??")
@@ -416,16 +446,7 @@ def macosx_version():
 
 def mpkg_name(pyver):
     maj, min = macosx_version()[:2]
-    return "scipy-%s-py%s-macosx%s.%s.mpkg" % \
-            (FULLVERSION, pyver, maj, min)
-
-def dmg_name(pyver):
-    #maj, min = macosx_version()[:2]
-    #pyver = ".".join([str(i) for i in sys.version_info[:2]])
-    #return "scipy-%s-py%s-macosx%s.%s.dmg" % \
-    #        (FULLVERSION, pyver, maj, min)
-    return "scipy-%s-py%s-python.org.dmg" % \
-            (FULLVERSION, pyver)
+    return "scipy-%s-py%s-macosx%s.%s.mpkg" % (FULLVERSION, pyver, maj, min)
 
 def prepare_static_gfortran_runtime(d):
     if not os.path.exists(d):
@@ -447,58 +468,78 @@ def bdist_mpkg():
 def _build_mpkg(pyver):
     numver = parse_numpy_version(MPKG_PYTHON[pyver])
     numverstr = ".".join(["%i" % i for i in numver])
-    if pyver == "2.5" and not numver[:2] == (1, 2):
-        raise ValueError("Scipy 0.7.x should be built against numpy 1.2.x for python 2.5 (detected %s)" % numverstr)
-    elif pyver == "2.6" and not numver[:2] == (1, 3):
-        raise ValueError("Scipy 0.7.x should be built against numpy 1.3.x for python 2.6 (detected %s)" % numverstr)
+    if not numver == (1, 5, 1):
+        raise ValueError("Scipy 0.9.x should be built against numpy 1.5.1, (detected %s)" % numverstr)
 
     prepare_static_gfortran_runtime("build")
-    ldflags = "-undefined dynamic_lookup -bundle -arch i386 -arch ppc -Wl,-search_paths_first"
+    # account for differences between Python 2.7.1 versions from python.org
+    if os.environ.get('MACOSX_DEPLOYMENT_TARGET', None) == "10.6":
+        ldflags = "-undefined dynamic_lookup -bundle -arch i386 -arch x86_64 -Wl,-search_paths_first"
+    else:
+        ldflags = "-undefined dynamic_lookup -bundle -arch i386 -arch ppc -Wl,-search_paths_first"
     ldflags += " -L%s" % os.path.join(os.path.dirname(__file__), "build")
+
+    if pyver == "2.5":
+        sh("CC=gcc-4.0 LDFLAGS='%s' %s setupegg.py bdist_mpkg" % (ldflags, MPKG_PYTHON[pyver]))
     sh("LDFLAGS='%s' %s setupegg.py bdist_mpkg" % (ldflags, MPKG_PYTHON[pyver]))
 
-@task
-@needs("bdist_mpkg", "pdf")
-def dmg():
-    pyver = ".".join([str(i) for i in sys.version_info[:2]])
 
-    dmg_n = dmg_name()
+@task
+@cmdopts([("python_version=", "p", "python version")])
+def dmg():
+    try:
+        pyver = options.dmg.python_version
+    except:
+        pyver = PYVER
+    idirs = options.installers.installersdir
+
+    # Check if doc exists. If not, say so and quit.
+    ref = os.path.join(options.doc.destdir_pdf, "reference.pdf")
+    if not os.path.exists(ref):
+        warnings.warn("Docs need to be built first! \n%s not found." % docpath)
+
+    dmg_n = dmg_name(FULLVERSION, pyver)
     dmg = paver.path.path('scipy-macosx-installer') / dmg_n
     if dmg.exists():
         dmg.remove()
 
+    call_task("clean")
+    _build_mpkg(pyver)
+
+    macosx_installer_dir = "tools/scipy-macosx-installer"
+    dmg = os.path.join(macosx_installer_dir, dmg_name(FULLVERSION, pyver))
+    if os.path.exists(dmg):
+        os.remove(dmg)
+
     # Clean the image source
-    content = DMG_CONTENT
-    content.rmtree()
-    content.mkdir()
+    content = os.path.join(macosx_installer_dir, 'content')
+    if os.path.exists(content):
+        shutil.rmtree(content)
+    os.makedirs(content)
 
     # Copy mpkg into image source
-    mpkg_n = mpkg_name()
-    mpkg_tn = "scipy-%s-py%s.mpkg" % (FULLVERSION, pyver)
-    mpkg_source = paver.path.path("dist") / mpkg_n
-    mpkg_target = content / mpkg_tn
-    mpkg_source.copytree(content / mpkg_tn)
+    mpkg_source = os.path.join("dist", mpkg_name(pyver))
+    mpkg_target = os.path.join(content, "scipy-%s-py%s.mpkg" % (FULLVERSION, pyver))
+    shutil.copytree(mpkg_source, mpkg_target)
 
     # Copy docs into image source
-
-    #html_docs = HTML_DESTDIR
-    #html_docs.copytree(content / "Documentation" / "html")
-
-    pdf_docs = DMG_CONTENT / "Documentation"
-    pdf_docs.rmtree()
-    pdf_docs.makedirs()
-
-    user = PDF_DESTDIR / "userguide.pdf"
-    user.copy(pdf_docs / "userguide.pdf")
-    ref = PDF_DESTDIR / "reference.pdf"
-    ref.copy(pdf_docs / "reference.pdf")
+    pdf_docs = os.path.join(content, "Documentation")
+    if os.path.exists(pdf_docs):
+        shutil.rmtree(pdf_docs)
+    os.makedirs(pdf_docs)
+    shutil.copy(ref, os.path.join(pdf_docs, "reference.pdf"))
 
     # Build the dmg
-    cmd = ["./create-dmg", "--window-size", "500", "500", "--background",
-        "art/dmgbackground.png", "--icon-size", "128", "--icon", mpkg_tn,
-        "125", "320", "--icon", "Documentation", "375", "320", "--volname", "scipy",
-        dmg_n, "./content"]
-    subprocess.check_call(cmd, cwd="scipy-macosx-installer")
+    cmd = ["./new-create-dmg", "--pkgname", os.path.basename(mpkg_target),
+        "--volname", "scipy", os.path.basename(dmg), "./content"]
+    st = subprocess.check_call(cmd, cwd=macosx_installer_dir)
+
+    source = dmg
+    target = os.path.join(idirs, os.path.basename(dmg))
+    if not os.path.exists(os.path.dirname(target)):
+        os.makedirs(os.path.dirname(target))
+    shutil.copy(source, target)
+
 
 @task
 @cmdopts([('python_version=', 'p', 'Python version to build the installer against')])
@@ -508,7 +549,7 @@ def simple_dmg():
     except AttributeError:
         pyver = PYVER
 
-    src_dir = DMG_DIR
+    src_dir = "dmg-source"
 
     # Clean the source dir
     if os.path.exists(src_dir):
@@ -526,7 +567,7 @@ def simple_dmg():
 
 def _create_dmg(pyver, src_dir, volname=None):
     # Build the dmg
-    image_name = dmg_name(pyver)
+    image_name = dmg_name(FULLVERSION, pyver)
     image = paver.path.path(image_name)
     image.remove()
     cmd = ["hdiutil", "create", image_name, "-srcdir", src_dir]
@@ -534,7 +575,55 @@ def _create_dmg(pyver, src_dir, volname=None):
         cmd.extend(["-volname", "'%s'" % volname])
     sh(" ".join(cmd))
 
+
+#----------------------------
+# Release notes and Changelog
+#----------------------------
+
+def compute_md5():
+    released = paver.path.path(options.installers.installersdir).listdir()
+    checksums = []
+    for f in released:
+        if not f.endswith('DS_Store'):
+            m = md5.md5(open(f, 'r').read())
+            checksums.append('%s  %s' % (m.hexdigest(), f))
+
+    return checksums
+
+def write_release_task(filename='NOTES.txt'):
+    source = paver.path.path(RELEASE)
+    target = paver.path.path(filename)
+    if target.exists():
+        target.remove()
+    source.copy(target)
+    ftarget = open(str(target), 'a')
+    ftarget.writelines("""
+Checksums
+=========
+
+""")
+    ftarget.writelines(['%s\n' % c for c in compute_md5()])
+
+
+def write_log_task(filename='Changelog'):
+    st = subprocess.Popen(
+            ['git', 'svn', 'log',  '%s..%s' % (LOG_START, LOG_END)],
+            stdout=subprocess.PIPE)
+
+    out = st.communicate()[0]
+    a = open(filename, 'w')
+    a.writelines(out)
+    a.close()
+
 @task
-def write_note_changelog():
-    write_release_task(os.path.join(RELEASE_DIR, 'NOTES.txt'))
-    write_log_task(os.path.join(RELEASE_DIR, 'Changelog'))
+def write_release():
+    write_release_task()
+
+@task
+def write_log():
+    write_log_task()
+
+@task
+def write_release_and_log():
+    write_release_task(os.path.join(options.installers.releasedir, 'NOTES.txt'))
+    write_log_task(os.path.join(options.installers.releasedir, 'Changelog'))
