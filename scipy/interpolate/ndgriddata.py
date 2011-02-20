@@ -76,6 +76,9 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan):
     points : ndarray of floats, shape (npoints, ndims)
         Data point coordinates. Can either be a ndarray of
         size (npoints, ndim), or a tuple of `ndim` arrays.
+
+        For interpolation of 1-D data, the points *must* be sorted
+        in ascending order.
     values : ndarray of float or complex, shape (npoints, ...)
         Data values.
     xi : ndarray of float, shape (..., ndim)
