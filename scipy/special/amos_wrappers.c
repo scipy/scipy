@@ -27,7 +27,7 @@
 extern int F_FUNC(zairy,ZAIRY)
      (double*, double*, int*, int*, double*, double*, int*, int*);
 extern int F_FUNC(zbiry,ZBIRY)
-     (double*, double*, int*, int*, double*, double*, int*, int*);
+     (double*, double*, int*, int*, double*, double*, int*);
 extern int F_FUNC(zbesi,ZBESI)
      (double*, double*, double*, int*, int*, double*, double*, int*, int*);
 extern int F_FUNC(zbesj,ZBESJ)
@@ -135,13 +135,15 @@ int cairy_wrap(Py_complex z, Py_complex *ai, Py_complex *aip, Py_complex *bi, Py
 
   F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(ai), &nz, &ierr);
   DO_MTHERR("airy:", ai);
-  F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bi), &nz, &ierr);
+  nz = 0;
+  F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bi), &ierr);
   DO_MTHERR("airy:", bi);
   
   id = 1;
   F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(aip), &nz, &ierr);
   DO_MTHERR("airy:", aip);
-  F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bip), &nz, &ierr);
+  nz = 0;
+  F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bip), &ierr);
   DO_MTHERR("airy:", bip);
   return 0;
 }
@@ -153,13 +155,15 @@ int cairy_wrap_e(Py_complex z, Py_complex *ai, Py_complex *aip, Py_complex *bi, 
 
   F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(ai), &nz, &ierr);
   DO_MTHERR("airye:", ai);
-  F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bi), &nz, &ierr);
+  nz = 0;
+  F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bi), &ierr);
   DO_MTHERR("airye:", bi);
   
   id = 1;
   F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(aip), &nz, &ierr);
   DO_MTHERR("airye:", aip);
-  F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bip), &nz, &ierr);
+  nz = 0;
+  F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bip), &ierr);
   DO_MTHERR("airye:", bip);
   return 0;
 }
@@ -180,7 +184,8 @@ int cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip
       DO_MTHERR("airye:", &cai);
       *ai = cai.real;
   }
-  F_FUNC(zbiry,ZBIRY)(CADDR(cz), &id, &kode, CADDR(cbi), &nz, &ierr);
+  nz = 0;
+  F_FUNC(zbiry,ZBIRY)(CADDR(cz), &id, &kode, CADDR(cbi), &ierr);
   DO_MTHERR("airye:", &cbi);
   *bi = cbi.real;
   
@@ -192,7 +197,8 @@ int cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip
       DO_MTHERR("airye:", &caip);
       *aip = caip.real;
   }
-  F_FUNC(zbiry,ZBIRY)(CADDR(cz), &id, &kode, CADDR(cbip), &nz, &ierr);
+  nz = 0;
+  F_FUNC(zbiry,ZBIRY)(CADDR(cz), &id, &kode, CADDR(cbip), &ierr);
   DO_MTHERR("airye:", &cbip);
   *bip = cbip.real;
   return 0;
