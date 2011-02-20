@@ -45,7 +45,7 @@ Operating System :: MacOS
 MAJOR               = 0
 MINOR               = 9
 MICRO               = 0
-ISRELEASED          = False
+ISRELEASED          = True
 VERSION             = '%d.%d.%drc5' % (MAJOR, MINOR, MICRO)
 
 # BEFORE importing distutils, remove MANIFEST. distutils doesn't properly
