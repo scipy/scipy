@@ -34,8 +34,10 @@ def imread(fname, flatten=False):
                           " http://pypi.python.org/pypi/PIL/ for installation"
                           " instructions.")
 
-    im = Image.open(fname)
+    fp = open(fname, "rb")
+    im = Image.open(fp)
     if flatten:
         im = im.convert('F')
-    return array(im)
-
+    result = array(im)
+    fp.close()
+    return result

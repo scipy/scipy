@@ -42,7 +42,9 @@ class TestPILUtil(TestCase):
         assert_equal(pilutil.bytescale(y),[0,127,255])
 
 def tst_fromimage(filename, irange):
-    img = pilutil.fromimage(PIL.Image.open(filename))
+    fp = open(filename, "rb")
+    img = pilutil.fromimage(PIL.Image.open(fp))
+    fp.close()
     imin,imax = irange
     assert_(img.min() >= imin)
     assert_(img.max() <= imax)
