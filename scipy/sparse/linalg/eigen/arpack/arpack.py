@@ -136,6 +136,13 @@ _SEUPD_ERRORS = {
           "DSEUPD.")
 }
 
+# accepted values of parameter WHICH in _SEUPD
+_SEUPD_WHICH = ['LM', 'SM', 'LA', 'SA', 'BE']
+
+# accepted values of parameter WHICH in _NAUPD
+_NEUPD_WHICH = ['LM', 'SM', 'LR', 'SR', 'LI', 'SI']
+
+
 class ArpackError(RuntimeError):
     """
     ARPACK error
@@ -231,8 +238,8 @@ class _ArpackParams(object):
 class _SymmetricArpackParams(_ArpackParams):
     def __init__(self, n, k, tp, matvec, sigma=None,
                  ncv=None, v0=None, maxiter=None, which="LM", tol=0):
-        if not which in ['LM', 'SM', 'LA', 'SA', 'BE']:
-            raise ValueError("which must be one of %s" % ' '.join(whiches))
+        if which not in _SEUPD_WHICH:
+            raise ValueError("which must be one of %s" % ' '.join(_SEUPD_WHICH))
         if k >= n:
             raise ValueError("k must be less than rank(A), k=%d" % k)
 
@@ -304,8 +311,8 @@ class _SymmetricArpackParams(_ArpackParams):
 class _UnsymmetricArpackParams(_ArpackParams):
     def __init__(self, n, k, tp, matvec, sigma=None,
                  ncv=None, v0=None, maxiter=None, which="LM", tol=0):
-        if not which in ["LM", "SM", "LR", "SR", "LI", "SI"]:
-            raise ValueError("Parameter which must be one of %s" % ' '.join(whiches))
+        if which not in _NEUPD_WHICH:
+            raise ValueError("Parameter which must be one of %s" % ' '.join(_NEUPD_WHICH))
         if k >= n-1:
             raise ValueError("k must be less than rank(A)-1, k=%d" % k)
 

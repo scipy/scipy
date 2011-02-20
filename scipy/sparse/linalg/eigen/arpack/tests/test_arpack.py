@@ -353,6 +353,13 @@ def test_eigen_bad_shapes():
     A = csc_matrix(np.zeros((2,3)))
     assert_raises(ValueError, eigs, A)
 
+
+def test_eigen_bad_kwargs():
+    # Test eigen on wrong keyword argument
+    A = csc_matrix(np.zeros((2,2)))
+    assert_raises(ValueError, eigs, A, which='XX')
+
+
 def test_eigs_operator():
     # Check inferring LinearOperator dtype
     fft_op = LinearOperator((6, 6), np.fft.fft)
