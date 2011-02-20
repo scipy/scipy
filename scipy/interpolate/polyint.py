@@ -380,7 +380,6 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
     return np.poly1d((d/factorial(np.arange(degree+1)))[::-1])
 
 
-
 class BarycentricInterpolator(object):
     """The interpolating polynomial for a set of points
 
