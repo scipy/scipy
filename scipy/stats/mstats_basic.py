@@ -907,8 +907,12 @@ ks_2samp = ks_twosamp
 
 def ks_twosamp_old(data1, data2):
     """ Computes the Kolmogorov-Smirnov statistic on 2 samples.
-    Returns: KS D-value, p-value
-    #"""
+
+    Returns
+    -------
+    KS D-value, p-value
+
+    """
     (data1, data2) = [ma.asarray(d).compressed() for d in (data1,data2)]
     return stats.ks_2samp(data1,data2)
 
@@ -920,12 +924,12 @@ def ks_twosamp_old(data1, data2):
 def threshold(a, threshmin=None, threshmax=None, newval=0):
     """Clip array to a given value.
 
-Similar to numpy.clip(), except that values less than threshmin or
-greater than threshmax are replaced by newval, instead of by
-threshmin and threshmax respectively.
+    Similar to numpy.clip(), except that values less than threshmin or
+    greater than threshmax are replaced by newval, instead of by
+    threshmin and threshmax respectively.
 
-Parameters
-----------
+    Parameters
+    ----------
     a : ndarray
         Input data
     threshmin : {None, float} optional
@@ -935,11 +939,11 @@ Parameters
     newval : {0, float} optional
         Value outside the thresholds.
 
-Returns
--------
+    Returns
+    -------
     a, with values less (greater) than threshmin (threshmax) replaced with newval.
 
-"""
+    """
     a = ma.array(a, copy=True)
     mask = np.zeros(a.shape, dtype=bool)
     if threshmin is not None:
@@ -1082,6 +1086,7 @@ trimdoc = """
 
 def trim(a, limits=None, inclusive=(True,True), relative=False, axis=None):
     """Trims an array by masking the data outside some given limits.
+
     Returns a masked version of the input array.
    %s
 

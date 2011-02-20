@@ -216,17 +216,21 @@ def single(y):
     matrix ``y``. See ``linkage`` for more information on the return
     structure and algorithm.
 
-    :Parameters:
-        y : ndarray
-            The upper triangular of the distance matrix. The result of
-            ``pdist`` is returned in this form.
+    Parameters
+    ----------
+    y : ndarray
+        The upper triangular of the distance matrix. The result of
+        ``pdist`` is returned in this form.
 
-    :Returns:
-        Z : ndarray
-            The linkage matrix.
+    Returns
+    -------
+    Z : ndarray
+        The linkage matrix.
 
-    :SeeAlso:
-       - linkage: for advanced creation of hierarchical clusterings.
+    See Also
+    --------
+    linkage: for advanced creation of hierarchical clusterings.
+
     """
     return linkage(y, method='single', metric='euclidean')
 
@@ -236,16 +240,19 @@ def complete(y):
     condensed distance matrix ``y``. See ``linkage`` for more
     information on the return structure and algorithm.
 
-    :Parameters:
-        y : ndarray
-            The upper triangular of the distance matrix. The result of
-            ``pdist`` is returned in this form.
+    Parameters
+    ----------
+    y : ndarray
+        The upper triangular of the distance matrix. The result of
+        ``pdist`` is returned in this form.
 
-    :Returns:
-        Z : ndarray
-            A linkage matrix containing the hierarchical clustering. See
-            the ``linkage`` function documentation for more information
-            on its structure.
+    Returns
+    -------
+    Z : ndarray
+        A linkage matrix containing the hierarchical clustering. See
+        the ``linkage`` function documentation for more information
+        on its structure.
+
     """
     return linkage(y, method='complete', metric='euclidean')
 
@@ -255,19 +262,23 @@ def average(y):
     ``y``. See ``linkage`` for more information on the return
     structure and algorithm.
 
-    :Parameters:
-        y : ndarray
-            The upper triangular of the distance matrix. The result of
-            ``pdist`` is returned in this form.
+    Parameters
+    ----------
+    y : ndarray
+        The upper triangular of the distance matrix. The result of
+        ``pdist`` is returned in this form.
 
-    :Returns:
-        Z : ndarray
-            A linkage matrix containing the hierarchical clustering. See
-            the ``linkage`` function documentation for more information
-            on its structure.
+    Returns
+    -------
+    Z : ndarray
+        A linkage matrix containing the hierarchical clustering. See
+        the ``linkage`` function documentation for more information
+        on its structure.
 
-    :SeeAlso:
-       - linkage: for advanced creation of hierarchical clusterings.
+    See Also
+    --------
+    linkage: for advanced creation of hierarchical clusterings.
+
     """
     return linkage(y, method='average', metric='euclidean')
 
@@ -277,19 +288,23 @@ def weighted(y):
     ``y``.  See ``linkage`` for more information on the return
     structure and algorithm.
 
-    :Parameters:
-        y : ndarray
-            The upper triangular of the distance matrix. The result of
-            ``pdist`` is returned in this form.
+    Parameters
+    ----------
+    y : ndarray
+        The upper triangular of the distance matrix. The result of
+        ``pdist`` is returned in this form.
 
-    :Returns:
-        Z : ndarray
-            A linkage matrix containing the hierarchical clustering. See
-            the ``linkage`` function documentation for more information
-            on its structure.
+    Returns
+    -------
+    Z : ndarray
+        A linkage matrix containing the hierarchical clustering. See
+        the ``linkage`` function documentation for more information
+        on its structure.
 
-    :SeeAlso:
-       - linkage: for advanced creation of hierarchical clusterings.
+    See Also
+    --------
+    linkage: for advanced creation of hierarchical clusterings.
+
     """
     return linkage(y, method='weighted', metric='euclidean')
 
@@ -312,23 +327,27 @@ def centroid(y):
        using Euclidean distance as the distance metric. See ``linkage``
        for more information on the return structure and algorithm.
 
-    :Parameters:
-        Q : ndarray
-            A condensed or redundant distance matrix. A condensed
-            distance matrix is a flat array containing the upper
-            triangular of the distance matrix. This is the form that
-            ``pdist`` returns. Alternatively, a collection of
-            m observation vectors in n dimensions may be passed as
-            a m by n array.
+    Parameters
+    ----------
+    Q : ndarray
+        A condensed or redundant distance matrix. A condensed
+        distance matrix is a flat array containing the upper
+        triangular of the distance matrix. This is the form that
+        ``pdist`` returns. Alternatively, a collection of
+        m observation vectors in n dimensions may be passed as
+        a m by n array.
 
-    :Returns:
-        Z : ndarray
-            A linkage matrix containing the hierarchical clustering. See
-            the ``linkage`` function documentation for more information
-            on its structure.
+    Returns
+    -------
+    Z : ndarray
+        A linkage matrix containing the hierarchical clustering. See
+        the ``linkage`` function documentation for more information
+        on its structure.
 
-    :SeeAlso:
-       - linkage: for advanced creation of hierarchical clusterings.
+    See Also
+    --------
+    linkage: for advanced creation of hierarchical clusterings.
+
     """
     return linkage(y, method='centroid', metric='euclidean')
 
@@ -351,21 +370,25 @@ def median(y):
        using Euclidean distance as the distance metric. See linkage
        for more information on the return structure and algorithm.
 
-    :Parameters:
-        Q : ndarray
-            A condensed or redundant distance matrix. A condensed
-            distance matrix is a flat array containing the upper
-            triangular of the distance matrix. This is the form that
-            ``pdist`` returns. Alternatively, a collection of
-            m observation vectors in n dimensions may be passed as
-            a m by n array.
+    Parameters
+    ----------
+    Q : ndarray
+        A condensed or redundant distance matrix. A condensed
+        distance matrix is a flat array containing the upper
+        triangular of the distance matrix. This is the form that
+        ``pdist`` returns. Alternatively, a collection of
+        m observation vectors in n dimensions may be passed as
+        a m by n array.
 
-    :Returns:
-       - Z : ndarray
-           The hierarchical clustering encoded as a linkage matrix.
+    Returns
+    -------
+   Z : ndarray
+       The hierarchical clustering encoded as a linkage matrix.
 
-    :SeeAlso:
-       - linkage: for advanced creation of hierarchical clusterings.
+   See Also
+   --------
+    linkage: for advanced creation of hierarchical clusterings.
+
     """
     return linkage(y, method='median', metric='euclidean')
 
@@ -387,21 +410,25 @@ def ward(y):
        Euclidean distance as the distance metric. See linkage for more
        information on the return structure and algorithm.
 
-    :Parameters:
-        Q : ndarray
-            A condensed or redundant distance matrix. A condensed
-            distance matrix is a flat array containing the upper
-            triangular of the distance matrix. This is the form that
-            ``pdist`` returns. Alternatively, a collection of
-            m observation vectors in n dimensions may be passed as
-            a m by n array.
+    Parameters
+    ----------
+    Q : ndarray
+        A condensed or redundant distance matrix. A condensed
+        distance matrix is a flat array containing the upper
+        triangular of the distance matrix. This is the form that
+        ``pdist`` returns. Alternatively, a collection of
+        m observation vectors in n dimensions may be passed as
+        a m by n array.
 
-    :Returns:
-       - Z : ndarray
-           The hierarchical clustering encoded as a linkage matrix.
+    Returns
+    -------
+    Z : ndarray
+        The hierarchical clustering encoded as a linkage matrix.
 
-    :SeeAlso:
-       - linkage: for advanced creation of hierarchical clusterings.
+    See Also
+    --------
+    linkage: for advanced creation of hierarchical clusterings.
+
     """
     return linkage(y, method='ward', metric='euclidean')
 
@@ -532,25 +559,26 @@ def linkage(y, method='single', metric='euclidean'):
      implementation may chose a different minimum than the MATLAB(TM)
      version.
 
-     :Parameters:
-        - y : ndarray
-            A condensed or redundant distance matrix. A condensed
-            distance matrix is a flat array containing the upper
-            triangular of the distance matrix. This is the form that
-            ``pdist`` returns. Alternatively, a collection of
-            :math:`m` observation vectors in n dimensions may be passed as
-            an :math:`m` by :math:`n` array.
-        - method : string
-            The linkage algorithm to use. See the ``Linkage Methods``
-            section below for full descriptions.
-        - metric : string
-            The distance metric to use. See the ``distance.pdist``
-            function for a list of valid distance metrics.
+     Parameters
+     ----------
+     y : ndarray
+         A condensed or redundant distance matrix. A condensed
+         distance matrix is a flat array containing the upper
+         triangular of the distance matrix. This is the form that
+         ``pdist`` returns. Alternatively, a collection of
+         :math:`m` observation vectors in n dimensions may be passed as
+         an :math:`m` by :math:`n` array.
+     method : str
+         The linkage algorithm to use. See the ``Linkage Methods``
+         section below for full descriptions.
+     metric : str
+         The distance metric to use. See the ``distance.pdist``
+         function for a list of valid distance metrics.
 
-    :Returns:
-
-        - Z : ndarray
-            The hierarchical clustering encoded as a linkage matrix.
+    Returns
+    -------
+    Z : ndarray
+        The hierarchical clustering encoded as a linkage matrix.
 
     """
     if not isinstance(method, str):
@@ -599,9 +627,10 @@ class ClusterNode:
     The to_tree function converts a matrix returned by the linkage
     function into an easy-to-use tree representation.
 
-    :SeeAlso:
+    See Also
+    --------
+    to_tree: for converting a linkage matrix ``Z`` into a tree object.
 
-       - to_tree: for converting a linkage matrix ``Z`` into a tree object.
     """
 
     def __init__(self, id, left=None, right=None, dist=0, count=1):
@@ -624,17 +653,17 @@ class ClusterNode:
             self.count = left.count + right.count
 
     def get_id(self):
-        r"""
+        """
         The identifier of the target node. For :math:`0 \leq i < n`,
         :math:`i` corresponds to original observation
         :math:`i`. For :math:`n \leq i` < :math:`2n-1`,
         :math:`i` corresponds to non-singleton cluster formed at
         iteration :math:`i-n`.
 
-        :Returns:
-
-           id : int
-                The identifier of the target node.
+        Returns
+        -------
+        id : int
+            The identifier of the target node.
 
         """
         return self.id
@@ -645,10 +674,11 @@ class ClusterNode:
         the cluster node nd. If the target node is a leaf, 1 is
         returned.
 
-        :Returns:
+        Returns
+        -------
+        c : int
+            The number of leaf nodes below the target node.
 
-           c : int
-               The number of leaf nodes below the target node.
         """
         return self.count
 
@@ -657,9 +687,11 @@ class ClusterNode:
         Returns a reference to the left child tree object. If the node
         is a leaf, None is returned.
 
-        :Returns:
-           left : ClusterNode
-                  The left child of the target node.
+        Returns
+        -------
+        left : ClusterNode
+            The left child of the target node.
+
         """
         return self.left
 
@@ -668,9 +700,10 @@ class ClusterNode:
         Returns a reference to the right child tree object. If the node
         is a leaf, None is returned.
 
-        :Returns:
-           right : ClusterNode
-                   The left child of the target node.
+        Returns
+        -------
+        right : ClusterNode
+            The left child of the target node.
         """
         return self.right
 
@@ -678,9 +711,10 @@ class ClusterNode:
         """
         Returns True iff the target node is a leaf.
 
-        :Returns:
-           leafness : bool
-                      True if the target node is a leaf node.
+        Returns
+        -------
+        leafness : bool
+            True if the target node is a leaf node.
         """
         return self.left is None
 
@@ -698,18 +732,20 @@ class ClusterNode:
         returns a list of the node ids corresponding to the leaf nodes
         of the tree as they appear from left to right.
 
-        :Parameters:
+        Parameters
+        ----------
+        func : function
+            Applied to each leaf ClusterNode object in the pre-order
+            traversal. Given the i'th leaf node in the pre-order
+            traversal ``n[i]``, the result of func(n[i]) is stored in
+            L[i]. If not provided, the index of the original observation
+            to which the node corresponds is used.
 
-           - func : function
-             Applied to each leaf ClusterNode object in the pre-order
-             traversal. Given the i'th leaf node in the pre-order
-             traversal ``n[i]``, the result of func(n[i]) is stored in
-             L[i]. If not provided, the index of the original observation
-             to which the node corresponds is used.
+        Returns
+        -------
+        L : list
+            The pre-order traversal.
 
-        :Returns:
-           - L : list
-             The pre-order traversal.
         """
 
         # Do a preorder traversal, caching the result. To avoid having to do
@@ -763,24 +799,25 @@ def to_tree(Z, rd=False):
     user. ClusterNodes are not used as input to any of the functions in this
     library.
 
-    :Parameters:
+    Parameters
+    ----------
+    Z : ndarray
+        The linkage matrix in proper form (see the ``linkage``
+        function documentation).
 
-       - Z : ndarray
-         The linkage matrix in proper form (see the ``linkage``
-         function documentation).
+    rd : bool, optional
+        When ``False``, a reference to the root ClusterNode object is
+        returned.  Otherwise, a tuple (r,d) is returned. ``r`` is a
+        reference to the root node while ``d`` is a dictionary
+        mapping cluster ids to ClusterNode references. If a cluster id is
+        less than n, then it corresponds to a singleton cluster
+        (leaf node). See ``linkage`` for more information on the
+        assignment of cluster ids to clusters.
 
-       - r : bool
-         When ``False``, a reference to the root ClusterNode object is
-         returned.  Otherwise, a tuple (r,d) is returned. ``r`` is a
-         reference to the root node while ``d`` is a dictionary
-         mapping cluster ids to ClusterNode references. If a cluster id is
-         less than n, then it corresponds to a singleton cluster
-         (leaf node). See ``linkage`` for more information on the
-         assignment of cluster ids to clusters.
-
-    :Returns:
-        - L : list
-          The pre-order traversal.
+    Returns
+    -------
+    L : list
+        The pre-order traversal.
 
     """
 
@@ -845,26 +882,31 @@ def cophenet(Z, Y=None):
     ``i`` and ``j`` is simply the distance between
     clusters ``s`` and ``t``.
 
-    :Parameters:
-       - Z : ndarray
-         The hierarchical clustering encoded as an array
-         (see ``linkage`` function).
+    Parameters
+    ----------
+    Z : ndarray
+        The hierarchical clustering encoded as an array
+        (see ``linkage`` function).
 
-       - Y : ndarray (optional)
-         Calculates the cophenetic correlation coefficient ``c`` of a
-         hierarchical clustering defined by the linkage matrix ``Z``
-         of a set of :math:`n` observations in :math:`m`
-         dimensions. ``Y`` is the condensed distance matrix from which
-         ``Z`` was generated.
+    Y : ndarray (optional)
+        Calculates the cophenetic correlation coefficient ``c`` of a
+        hierarchical clustering defined by the linkage matrix ``Z``
+        of a set of :math:`n` observations in :math:`m`
+        dimensions. ``Y`` is the condensed distance matrix from which
+        ``Z`` was generated.
 
-    :Returns: (c, {d})
-       - c : ndarray
-         The cophentic correlation distance (if ``y`` is passed).
+    Returns
+    -------
+    res : tuple
+        A tuple (c, {d}):
 
-       - d : ndarray
-         The cophenetic distance matrix in condensed form. The
-         :math:`ij` th entry is the cophenetic distance between
-         original observations :math:`i` and :math:`j`.
+            - c : ndarray
+                  The cophentic correlation distance (if ``y`` is passed).
+
+             - d : ndarray
+                  The cophenetic distance matrix in condensed form. The
+                  :math:`ij` th entry is the cophenetic distance between
+                  original observations :math:`i` and :math:`j`.
 
     """
 
@@ -899,38 +941,38 @@ def cophenet(Z, Y=None):
     return (c, zz)
 
 def inconsistent(Z, d=2):
-    r"""
+    """
     Calculates inconsistency statistics on a linkage.
 
     Note: This function behaves similarly to the MATLAB(TM)
     inconsistent function.
 
-    :Parameters:
-       - d : int
-           The number of links up to ``d`` levels below each
-           non-singleton cluster
+    Parameters
+    ----------
+    d : int
+        The number of links up to ``d`` levels below each
+        non-singleton cluster.
+    Z : ndarray
+        The :math:`(n-1)` by 4 matrix encoding the linkage
+        (hierarchical clustering).  See ``linkage`` documentation
+        for more information on its form.
 
-       - Z : ndarray
-           The :math:`(n-1)` by 4 matrix encoding the linkage
-           (hierarchical clustering).  See ``linkage`` documentation
-           for more information on its form.
+    Returns
+    -------
+    R : ndarray
+        A :math:`(n-1)` by 5 matrix where the ``i``'th row
+        contains the link statistics for the non-singleton cluster
+        ``i``. The link statistics are computed over the link
+        heights for links :math:`d` levels below the cluster
+        ``i``. ``R[i,0]`` and ``R[i,1]`` are the mean and standard
+        deviation of the link heights, respectively; ``R[i,2]`` is
+        the number of links included in the calculation; and
+        ``R[i,3]`` is the inconsistency coefficient,
 
+        .. math::
 
-    :Returns:
-       - R : ndarray
-           A :math:`(n-1)` by 5 matrix where the ``i``'th row
-           contains the link statistics for the non-singleton cluster
-           ``i``. The link statistics are computed over the link
-           heights for links :math:`d` levels below the cluster
-           ``i``. ``R[i,0]`` and ``R[i,1]`` are the mean and standard
-           deviation of the link heights, respectively; ``R[i,2]`` is
-           the number of links included in the calculation; and
-           ``R[i,3]`` is the inconsistency coefficient,
+            \frac{\mathtt{Z[i,2]}-\mathtt{R[i,0]}} {R[i,1]}.
 
-           .. math::
-
-               \frac{\mathtt{Z[i,2]}-\mathtt{R[i,0]}}
-                    {R[i,1]}.
     """
     Z = np.asarray(Z, order='c')
 
@@ -967,15 +1009,16 @@ def from_mlab_linkage(Z):
     This function is useful when loading in linkages from legacy data
     files generated by MATLAB.
 
-    :Arguments:
+    Parameters
+    ----------
+    Z : ndarray
+        A linkage matrix generated by MATLAB(TM).
 
-       - Z : ndarray
-           A linkage matrix generated by MATLAB(TM)
+    Returns
+    -------
+    ZS : ndarray
+        A linkage matrix compatible with this library.
 
-    :Returns:
-
-       - ZS : ndarray
-           A linkage matrix compatible with this library.
     """
     Z = np.asarray(Z, dtype=np.double, order='c')
     Zs = Z.shape
@@ -1006,14 +1049,17 @@ def to_mlab_linkage(Z):
     matrix has the last column removed and the cluster indices are
     converted to ``1..N`` indexing.
 
-    :Arguments:
-       - Z : ndarray
-           A linkage matrix generated by this library.
+    Parameters
+    ----------
+    Z : ndarray
+        A linkage matrix generated by this library.
 
-    :Returns:
-       - ZM : ndarray
-           A linkage matrix compatible with MATLAB(TM)'s hierarchical
-           clustering functions.
+    Returns
+    -------
+    ZM : ndarray
+        A linkage matrix compatible with MATLAB(TM)'s hierarchical
+        clustering functions.
+
     """
     Z = np.asarray(Z, order='c', dtype=np.double)
     Zs = Z.shape
@@ -1033,13 +1079,16 @@ def is_monotonic(Z):
     joined, the distance between them is no less than the distance
     between any previously joined clusters.
 
-    :Arguments:
-        - Z : ndarray
-          The linkage matrix to check for monotonicity.
+    Parameters
+    ----------
+    Z : ndarray
+        The linkage matrix to check for monotonicity.
 
-    :Returns:
-        - b : bool
-          A boolean indicating whether the linkage is monotonic.
+    Returns
+    -------
+    b : bool
+        A boolean indicating whether the linkage is monotonic.
+
     """
     Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
@@ -1048,32 +1097,31 @@ def is_monotonic(Z):
     return (Z[1:,2]>=Z[:-1,2]).all()
 
 def is_valid_im(R, warning=False, throw=False, name=None):
-    """
+    """Returns True if the inconsistency matrix passed is valid.
 
-    Returns True if the inconsistency matrix passed is valid. It must
-    be a :math:`n` by 4 numpy array of doubles. The standard
+    It must be a :math:`n` by 4 numpy array of doubles. The standard
     deviations ``R[:,1]`` must be nonnegative. The link counts
     ``R[:,2]`` must be positive and no greater than :math:`n-1`.
 
-    :Arguments:
-         - R : ndarray
-           The inconsistency matrix to check for validity.
+    Parameters
+    ----------
+    R : ndarray
+        The inconsistency matrix to check for validity.
+    warning : bool, optional
+         When ``True``, issues a Python warning if the linkage
+         matrix passed is invalid.
+    throw : bool, optional
+         When ``True``, throws a Python exception if the linkage
+         matrix passed is invalid.
+    name : str, optional
+         This string refers to the variable name of the invalid
+         linkage matrix.
 
-         - warning : bool
-           When ``True``, issues a Python warning if the linkage
-           matrix passed is invalid.
+    Returns
+    -------
+    b : bool
+        True if the inconsistency matrix is valid.
 
-         - throw : bool
-           When ``True``, throws a Python exception if the linkage
-           matrix passed is invalid.
-
-         - name : string
-           This string refers to the variable name of the invalid
-           linkage matrix.
-
-    :Returns:
-         - b : bool
-           True iff the inconsistency matrix is valid.
     """
     R = np.asarray(R, order='c')
     valid = True
@@ -1127,7 +1175,7 @@ def is_valid_im(R, warning=False, throw=False, name=None):
     return valid
 
 def is_valid_linkage(Z, warning=False, throw=False, name=None):
-    r"""
+    """
     Checks the validity of a linkage matrix. A linkage matrix is valid
     if it is a two dimensional nd-array (type double) with :math:`n`
     rows and 4 columns.  The first two columns must contain indices
@@ -1137,23 +1185,24 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
     (i.e. a cluster cannot join another cluster unless the cluster
     being joined has been generated.)
 
-    :Arguments:
-
-         - warning : bool
-           When ``True``, issues a Python warning if the linkage
-           matrix passed is invalid.
-
-         - throw : bool
-           When ``True``, throws a Python exception if the linkage
-           matrix passed is invalid.
-
-         - name : string
+    Parameters
+    ----------
+    Z : array_like
+        Linkage matrix.
+    warning : bool, optional
+        When ``True``, issues a Python warning if the linkage
+        matrix passed is invalid.
+    throw : bool, optional
+        When ``True``, throws a Python exception if the linkage
+        matrix passed is invalid.
+    name : str, optional
            This string refers to the variable name of the invalid
            linkage matrix.
 
-    :Returns:
-         - b : bool
-            True iff the inconsistency matrix is valid.
+    Returns
+    -------
+    b : bool
+        True iff the inconsistency matrix is valid.
 
     """
     Z = np.asarray(Z, order='c')
@@ -1253,13 +1302,16 @@ def num_obs_linkage(Z):
     Returns the number of original observations of the linkage matrix
     passed.
 
-    :Arguments:
-        - Z : ndarray
-            The linkage matrix on which to perform the operation.
+    Parameters
+    ----------
+    Z : ndarray
+        The linkage matrix on which to perform the operation.
 
-    :Returns:
-        - n : int
-            The number of original observations in the linkage.
+    Returns
+    -------
+    n : int
+        The number of original observations in the linkage.
+
     """
     Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
@@ -1277,17 +1329,19 @@ def correspond(Z, Y):
     extensive use of linkage and distance matrices that must
     correspond to the same set of original observations.
 
-    :Arguments:
-        - Z : ndarray
-            The linkage matrix to check for correspondance.
+    Parameters
+    ----------
+    Z : ndarray
+        The linkage matrix to check for correspondance.
+    Y : ndarray
+        The condensed distance matrix to check for correspondance.
 
-        - Y : ndarray
-            The condensed distance matrix to check for correspondance.
+    Returns
+    -------
+    b : bool
+        A boolean indicating whether the linkage matrix and distance
+        matrix could possibly correspond to one another.
 
-    :Returns:
-        - b : bool
-            A boolean indicating whether the linkage matrix and distance
-            matrix could possibly correspond to one another.
     """
     is_valid_linkage(Z, throw=True)
     distance.is_valid_y(Y, throw=True)
@@ -1483,14 +1537,17 @@ def leaves_list(Z):
     vector index) as they appear in the tree from left to right. Z is
     a linkage matrix.
 
-    :Arguments:
-        - Z : ndarray
-            The hierarchical clustering encoded as a matrix. See
-            ``linkage`` for more information.
+    Parameters
+    ----------
+    Z : ndarray
+        The hierarchical clustering encoded as a matrix. See
+        ``linkage`` for more information.
 
-    :Returns:
-        - L : ndarray
-            The list of leaf node ids.
+    Returns
+    -------
+    L : ndarray
+        The list of leaf node ids.
+
     """
     Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
@@ -1712,8 +1769,9 @@ def set_link_color_palette(palette):
     Changes the list of matplotlib color codes to use when coloring
     links with the dendrogram color_threshold feature.
 
-    :Arguments:
-        - palette : A list of matplotlib color codes. The order of
+    Parameters
+    ----------
+    palette : A list of matplotlib color codes. The order of
         the color codes is the order in which the colors are cycled
         through when color thresholding in the dendrogram.
 
@@ -1737,7 +1795,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
                leaf_font_size=None, leaf_rotation=None, leaf_label_func=None,
                no_leaves=False, show_contracted=False,
                link_color_func=None):
-    r"""
+    """
     Plots the hiearchical clustering defined by the linkage Z as a
     dendrogram. The dendrogram illustrates how each cluster is
     composed by drawing a U-shaped link between a non-singleton
@@ -1747,14 +1805,15 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     children clusters. It is expected that the distances in Z[:,2] be
     monotonic, otherwise crossings appear in the dendrogram.
 
-    :Arguments:
-
-      - Z : ndarray
+    Parameters
+    ----------
+    Z : ndarray
         The linkage matrix encoding the hierarchical clustering to
         render as a dendrogram. See the ``linkage`` function for more
         information on the format of ``Z``.
-
-      - truncate_mode : string
+    p : int, optional
+        The ``p`` parameter for ``truncate_mode``.
+    truncate_mode : str, optional
         The dendrogram can be hard to read when the original
         observation matrix from which the linkage is derived is
         large. Truncation is used to condense the dendrogram. There
@@ -1773,161 +1832,145 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
            * 'level'/'mtica': no more than ``p`` levels of the
            dendrogram tree are displayed. This corresponds to
            Mathematica(TM) behavior.
+    color_threshold : double, optional
+        For brevity, let :math:`t` be the ``color_threshold``.
+        Colors all the descendent links below a cluster node
+        :math:`k` the same color if :math:`k` is the first node below
+        the cut threshold :math:`t`. All links connecting nodes with
+        distances greater than or equal to the threshold are colored
+        blue. If :math:`t` is less than or equal to zero, all nodes
+        are colored blue. If ``color_threshold`` is ``None`` or
+        'default', corresponding with MATLAB(TM) behavior, the
+        threshold is set to ``0.7*max(Z[:,2])``.
+    get_leaves : bool, optional
+        Includes a list ``R['leaves']=H`` in the result
+        dictionary. For each :math:`i`, ``H[i] == j``, cluster node
+        :math:`j` appears in the :math:`i` th position in the
+        left-to-right traversal of the leaves, where :math:`j < 2n-1`
+        and :math:`i < n`.
+    orientation : str, optional
+        The direction to plot the dendrogram, which can be any
+        of the following strings
 
-       - p : int
-         The ``p`` parameter for ``truncate_mode``.
-`
-       - color_threshold : double
-         For brevity, let :math:`t` be the ``color_threshold``.
-         Colors all the descendent links below a cluster node
-         :math:`k` the same color if :math:`k` is the first node below
-         the cut threshold :math:`t`. All links connecting nodes with
-         distances greater than or equal to the threshold are colored
-         blue. If :math:`t` is less than or equal to zero, all nodes
-         are colored blue. If ``color_threshold`` is ``None`` or
-         'default', corresponding with MATLAB(TM) behavior, the
-         threshold is set to ``0.7*max(Z[:,2])``.
+          * 'top': plots the root at the top, and plot descendent
+          links going downwards. (default).
 
-       - get_leaves : bool
-         Includes a list ``R['leaves']=H`` in the result
-         dictionary. For each :math:`i`, ``H[i] == j``, cluster node
-         :math:`j` appears in the :math:`i` th position in the
-         left-to-right traversal of the leaves, where :math:`j < 2n-1`
-         and :math:`i < n`.
+          * 'bottom': plots the root at the bottom, and plot descendent
+          links going upwards.
 
-       - orientation : string
-         The direction to plot the dendrogram, which can be any
-         of the following strings
+          * 'left': plots the root at the left, and plot descendent
+          links going right.
 
-           * 'top': plots the root at the top, and plot descendent
-           links going downwards. (default).
-
-           * 'bottom': plots the root at the bottom, and plot descendent
-           links going upwards.
-
-           * 'left': plots the root at the left, and plot descendent
-           links going right.
-
-           * 'right': plots the root at the right, and plot descendent
+          * 'right': plots the root at the right, and plot descendent
            links going left.
 
-       - labels : ndarray
-         By default ``labels`` is ``None`` so the index of the
-         original observation is used to label the leaf nodes.
+    labels : ndarray, optional
+        By default ``labels`` is ``None`` so the index of the
+        original observation is used to label the leaf nodes.
+        Otherwise, this is an :math:`n` -sized list (or tuple). The
+        ``labels[i]`` value is the text to put under the :math:`i` th
+        leaf node only if it corresponds to an original observation
+        and not a non-singleton cluster.
+    count_sort : str or bool, optional
+        For each node n, the order (visually, from left-to-right) n's
+        two descendent links are plotted is determined by this
+        parameter, which can be any of the following values:
 
-         Otherwise, this is an :math:`n` -sized list (or tuple). The
-         ``labels[i]`` value is the text to put under the :math:`i` th
-         leaf node only if it corresponds to an original observation
-         and not a non-singleton cluster.
+           * False: nothing is done.
 
-       - count_sort : string/bool
-         For each node n, the order (visually, from left-to-right) n's
-         two descendent links are plotted is determined by this
-         parameter, which can be any of the following values:
+           * 'ascending'/True: the child with the minimum number of
+           original objects in its cluster is plotted first.
 
-            * False: nothing is done.
+           * 'descendent': the child with the maximum number of
+           original objects in its cluster is plotted first.
 
-            * 'ascending'/True: the child with the minimum number of
-            original objects in its cluster is plotted first.
+        Note ``distance_sort`` and ``count_sort`` cannot both be
+        ``True``.
 
-            * 'descendent': the child with the maximum number of
-            original objects in its cluster is plotted first.
+    distance_sort : str or bool, optional
+        For each node n, the order (visually, from left-to-right) n's
+        two descendent links are plotted is determined by this
+        parameter, which can be any of the following values:
 
-         Note ``distance_sort`` and ``count_sort`` cannot both be
-         ``True``.
+           * False: nothing is done.
 
-       - distance_sort : string/bool
-         For each node n, the order (visually, from left-to-right) n's
-         two descendent links are plotted is determined by this
-         parameter, which can be any of the following values:
+           * 'ascending'/True: the child with the minimum distance
+           between its direct descendents is plotted first.
 
-            * False: nothing is done.
+           * 'descending': the child with the maximum distance
+           between its direct descendents is plotted first.
 
-            * 'ascending'/True: the child with the minimum distance
-            between its direct descendents is plotted first.
+        Note ``distance_sort`` and ``count_sort`` cannot both be
+        ``True``.
 
-            * 'descending': the child with the maximum distance
-            between its direct descendents is plotted first.
-
-         Note ``distance_sort`` and ``count_sort`` cannot both be
-         ``True``.
-
-       - show_leaf_counts : bool
-
+    show_leaf_counts : bool, optional
          When ``True``, leaf nodes representing :math:`k>1` original
          observation are labeled with the number of observations they
          contain in parentheses.
+    no_plot : bool, optional
+        When ``True``, the final rendering is not performed. This is
+        useful if only the data structures computed for the rendering
+        are needed or if matplotlib is not available.
+    no_labels : bool, optional
+        When ``True``, no labels appear next to the leaf nodes in the
+        rendering of the dendrogram.
+    leaf_label_rotation : double, optional
+        Specifies the angle (in degrees) to rotate the leaf
+        labels. When unspecified, the rotation based on the number of
+        nodes in the dendrogram. (Default=0)
+    leaf_font_size : int, optional
+        Specifies the font size (in points) of the leaf labels. When
+        unspecified, the size based on the number of nodes in the
+        dendrogram.
+    leaf_label_func : lambda or function, optional
+        When leaf_label_func is a callable function, for each
+        leaf with cluster index :math:`k < 2n-1`. The function
+        is expected to return a string with the label for the
+        leaf.
 
-       - no_plot : bool
-         When ``True``, the final rendering is not performed. This is
-         useful if only the data structures computed for the rendering
-         are needed or if matplotlib is not available.
+        Indices :math:`k < n` correspond to original observations
+        while indices :math:`k \geq n` correspond to non-singleton
+        clusters.
 
-       - no_labels : bool
-         When ``True``, no labels appear next to the leaf nodes in the
-         rendering of the dendrogram.
+        For example, to label singletons with their node id and
+        non-singletons with their id, count, and inconsistency
+        coefficient, simply do::
 
-       - leaf_label_rotation : double
+          # First define the leaf label function.
+          def llf(id):
+              if id < n:
+                  return str(id)
+              else:
+                  return '[%d %d %1.2f]' % (id, count, R[n-id,3])
 
-         Specifies the angle (in degrees) to rotate the leaf
-         labels. When unspecified, the rotation based on the number of
-         nodes in the dendrogram. (Default=0)
+          # The text for the leaf nodes is going to be big so force
+          # a rotation of 90 degrees.
+          dendrogram(Z, leaf_label_func=llf, leaf_rotation=90)
 
-       - leaf_font_size : int
-         Specifies the font size (in points) of the leaf labels. When
-         unspecified, the size based on the number of nodes in the
-         dendrogram.
+    show_contracted : bool
+        When ``True`` the heights of non-singleton nodes contracted
+        into a leaf node are plotted as crosses along the link
+        connecting that leaf node.  This really is only useful when
+        truncation is used (see ``truncate_mode`` parameter).
+    link_color_func : lambda/function
+        When a callable function,
+        link_color_function is called with each non-singleton id
+        corresponding to each U-shaped link it will paint. The
+        function is expected to return the color to paint the link,
+        encoded as a matplotlib color string code.
 
-       - leaf_label_func : lambda or function
+        For example::
 
-         When leaf_label_func is a callable function, for each
-         leaf with cluster index :math:`k < 2n-1`. The function
-         is expected to return a string with the label for the
-         leaf.
+            dendrogram(Z, link_color_func=lambda k: colors[k])
 
-         Indices :math:`k < n` correspond to original observations
-         while indices :math:`k \geq n` correspond to non-singleton
-         clusters.
+        colors the direct links below each untruncated non-singleton node
+        ``k`` using ``colors[k]``.
 
-         For example, to label singletons with their node id and
-         non-singletons with their id, count, and inconsistency
-         coefficient, simply do::
-
-           # First define the leaf label function.
-           def llf(id):
-               if id < n:
-                   return str(id)
-               else:
-                   return '[%d %d %1.2f]' % (id, count, R[n-id,3])
-
-           # The text for the leaf nodes is going to be big so force
-           # a rotation of 90 degrees.
-           dendrogram(Z, leaf_label_func=llf, leaf_rotation=90)
-
-       - show_contracted : bool
-         When ``True`` the heights of non-singleton nodes contracted
-         into a leaf node are plotted as crosses along the link
-         connecting that leaf node.  This really is only useful when
-         truncation is used (see ``truncate_mode`` parameter).
-
-       - link_color_func : lambda/function When a callable function,
-         link_color_function is called with each non-singleton id
-         corresponding to each U-shaped link it will paint. The
-         function is expected to return the color to paint the link,
-         encoded as a matplotlib color string code.
-
-         For example::
-
-           dendrogram(Z, link_color_func=lambda k: colors[k])
-
-         colors the direct links below each untruncated non-singleton node
-         ``k`` using ``colors[k]``.
-
-    :Returns:
-
-       - R : dict
-         A dictionary of data structures computed to render the
-         dendrogram. Its has the following keys:
+    Returns
+    -------
+    R : dict
+        A dictionary of data structures computed to render the
+        dendrogram. Its has the following keys:
 
            - 'icoords': a list of lists ``[I1, I2, ..., Ip]`` where
            ``Ik`` is a list of 4 independent variable coordinates
@@ -1948,6 +1991,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
            :math:`i` th leaf node corresponds to an original
            observation.  Otherwise, it corresponds to a non-singleton
            cluster.
+
     """
 
     # Features under consideration.
@@ -2110,7 +2154,9 @@ def _dendrogram_calculate_info(Z, p, truncate_mode, \
     i is non-singleton, otherwise the independent coordinate of the leaf
     node if i is a leaf node.
 
-    Returns a tuple (left, w, h, md)
+    Returns
+    -------
+    A tuple (left, w, h, md), where:
 
       * left is the independent variable coordinate of the center of the
         the U of the subtree
@@ -2319,24 +2365,23 @@ def _dendrogram_calculate_info(Z, p, truncate_mode, \
     return ( ((uiva + uivb) / 2), uwa+uwb, h, max_dist)
 
 def is_isomorphic(T1, T2):
-    r"""
+    """
 
       Determines if two different cluster assignments ``T1`` and
       ``T2`` are equivalent.
 
-      :Arguments:
-          - T1 : ndarray
-            An assignment of singleton cluster ids to flat cluster
-            ids.
+    Parameters
+    ----------
+    T1 : ndarray
+        An assignment of singleton cluster ids to flat cluster ids.
+    T2 : ndarray
+        An assignment of singleton cluster ids to flat cluster ids.
 
-          - T2 : ndarray
-            An assignment of singleton cluster ids to flat cluster
-            ids.
-
-       :Returns:
-          - b : boolean
-            Whether the flat cluster assignments ``T1`` and ``T2`` are
-            equivalent.
+    Returns
+    -------
+    b : bool
+        Whether the flat cluster assignments ``T1`` and ``T2`` are
+        equivalent.
 
     """
     T1 = np.asarray(T1, order='c')
@@ -2367,24 +2412,27 @@ def is_isomorphic(T1, T2):
     return True
 
 def maxdists(Z):
-    r"""
+    """
     MD = maxdists(Z)
 
-      Returns the maximum distance between any cluster for each
-      non-singleton cluster.
+    Returns the maximum distance between any cluster for each
+    non-singleton cluster.
 
-    :Arguments:
-        - Z : ndarray
-            The hierarchical clustering encoded as a matrix. See
-            ``linkage`` for more information.
+    Parameters
+    ----------
+    Z : ndarray
+        The hierarchical clustering encoded as a matrix. See
+        ``linkage`` for more information.
 
-    :Returns:
-        - MD : ndarray
-          A ``(n-1)`` sized numpy array of doubles; ``MD[i]`` represents
-          the maximum distance between any cluster (including
-          singletons) below and including the node with index i. More
-          specifically, ``MD[i] = Z[Q(i)-n, 2].max()`` where ``Q(i)`` is the
-          set of all node indices below and including node i.
+    Returns
+    -------
+    MD : ndarray
+        A ``(n-1)`` sized numpy array of doubles; ``MD[i]`` represents
+        the maximum distance between any cluster (including
+        singletons) below and including the node with index i. More
+        specifically, ``MD[i] = Z[Q(i)-n, 2].max()`` where ``Q(i)`` is the
+        set of all node indices below and including node i.
+
     """
     Z = np.asarray(Z, order='c', dtype=np.double)
     is_valid_linkage(Z, throw=True, name='Z')
@@ -2396,21 +2444,23 @@ def maxdists(Z):
     return MD
 
 def maxinconsts(Z, R):
-    r"""
+    """
     Returns the maximum inconsistency coefficient for each
     non-singleton cluster and its descendents.
 
-    :Arguments:
-        - Z : ndarray
-            The hierarchical clustering encoded as a matrix. See
-            ``linkage`` for more information.
+    Parameters
+    ----------
+    Z : ndarray
+        The hierarchical clustering encoded as a matrix. See
+        ``linkage`` for more information.
+    R : ndarray
+        The inconsistency matrix.
 
-        - R : ndarray
-            The inconsistency matrix.
+    Returns
+    -------
+    MI : ndarray
+        A monotonic ``(n-1)``-sized numpy array of doubles.
 
-    :Returns:
-        - MI : ndarray
-            A monotonic ``(n-1)``-sized numpy array of doubles.
     """
     Z = np.asarray(Z, order='c')
     R = np.asarray(R, order='c')
@@ -2426,29 +2476,29 @@ def maxinconsts(Z, R):
     return MI
 
 def maxRstat(Z, R, i):
-    r"""
+    """
     Returns the maximum statistic for each non-singleton cluster and
     its descendents.
 
-    :Arguments:
-        - Z : ndarray
-            The hierarchical clustering encoded as a matrix. See
-            ``linkage`` for more information.
+    Parameters
+    ----------
+    Z : ndarray
+        The hierarchical clustering encoded as a matrix. See
+        ``linkage`` for more information.
+    R : ndarray
+        The inconsistency matrix.
+    i : int
+        The column of ``R`` to use as the statistic.
 
-        - R : ndarray
-            The inconsistency matrix.
+    Returns
+    -------
+    MR : ndarray
+        Calculates the maximum statistic for the i'th column of the
+        inconsistency matrix ``R`` for each non-singleton cluster
+        node. ``MR[j]`` is the maximum over ``R[Q(j)-n, i]`` where
+        ``Q(j)`` the set of all node ids corresponding to nodes below
+        and including ``j``.
 
-        - i : int
-            The column of ``R`` to use as the statistic.
-
-    :Returns:
-
-       - MR : ndarray
-         Calculates the maximum statistic for the i'th column of the
-         inconsistency matrix ``R`` for each non-singleton cluster
-         node. ``MR[j]`` is the maximum over ``R[Q(j)-n, i]`` where
-         ``Q(j)`` the set of all node ids corresponding to nodes below
-         and including ``j``.
     """
     Z = np.asarray(Z, order='c')
     R = np.asarray(R, order='c')
@@ -2469,7 +2519,7 @@ def maxRstat(Z, R, i):
     return MR
 
 def leaders(Z, T):
-    r"""
+    """
     (L, M) = leaders(Z, T):
 
     Returns the root nodes in a hierarchical clustering corresponding
@@ -2492,35 +2542,37 @@ def leaders(Z, T):
         this condition is violated, ``T`` is not a valid cluster
         assignment vector, and an exception will be thrown.
 
+    Parameters
+    ----------
+    Z : ndarray
+        The hierarchical clustering encoded as a matrix. See
+        ``linkage`` for more information.
+    T : ndarray
+        The flat cluster assignment vector.
 
-    :Arguments:
-        - Z : ndarray
-            The hierarchical clustering encoded as a matrix. See
-            ``linkage`` for more information.
+    Returns
+    -------
+    A tuple (L, M) with
 
-        - T : ndarray
-            The flat cluster assignment vector.
+    L : ndarray
+        The leader linkage node id's stored as a k-element 1D
+        array where :math:`k` is the number of flat clusters found
+        in ``T``.
 
-    :Returns: (L, M)
+        ``L[j]=i`` is the linkage cluster node id that is the
+        leader of flat cluster with id M[j].  If ``i < n``, ``i``
+        corresponds to an original observation, otherwise it
+        corresponds to a non-singleton cluster.
 
-         - L : ndarray
-            The leader linkage node id's stored as a k-element 1D
-            array where :math:`k` is the number of flat clusters found
-            in ``T``.
+        For example: if ``L[3]=2`` and ``M[3]=8``, the flat cluster with
+        id 8's leader is linkage node 2.
 
-            ``L[j]=i`` is the linkage cluster node id that is the
-            leader of flat cluster with id M[j].  If ``i < n``, ``i``
-            corresponds to an original observation, otherwise it
-            corresponds to a non-singleton cluster.
+    M : ndarray
+        The leader linkage node id's stored as a k-element 1D
+        array where :math:`k` is the number of flat clusters found
+        in ``T``. This allows the set of flat cluster ids to be
+        any arbitrary set of :math:`k` integers.
 
-            For example: if ``L[3]=2`` and ``M[3]=8``, the flat cluster with
-            id 8's leader is linkage node 2.
-
-         - M : ndarray
-            The leader linkage node id's stored as a k-element 1D
-            array where :math:`k` is the number of flat clusters found
-            in ``T``. This allows the set of flat cluster ids to be
-            any arbitrary set of :math:`k` integers.
     """
     Z = np.asarray(Z, order='c')
     T = np.asarray(T, order='c')

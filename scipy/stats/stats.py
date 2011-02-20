@@ -1656,14 +1656,18 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 
 def obrientransform(*args):
     """
-Computes a transform on input data (any number of columns).  Used to
-test for homogeneity of variance prior to running one-way stats.  Each
-array in *args is one level of a factor.  If an F_oneway() run on the
-transformed data and found significant, variances are unequal.   From
-Maxwell and Delaney, p.112.
+    Computes a transform on input data (any number of columns).
 
-Returns: transformed data for use in an ANOVA
-"""
+    Used to test for homogeneity of variance prior to running one-way stats.
+    Each array in *args is one level of a factor.  If an F_oneway() run on the
+    transformed data and found significant, variances are unequal.   From
+    Maxwell and Delaney, p.112.
+
+    Returns
+    -------
+    Transformed data for use in an ANOVA
+
+    """
     TINY = 1e-10
     k = len(args)
     n = zeros(k)
@@ -1696,7 +1700,6 @@ def signaltonoise(a, axis=0, ddof=0):
     Calculates the signal-to-noise ratio, defined as the ratio between the mean
     and the standard deviation.
 
-
     Parameters
     ----------
     a: array-like
@@ -1706,7 +1709,6 @@ def signaltonoise(a, axis=0, ddof=0):
         integer, this is the axis over which to operate. Defaults to None???0
     ddof : integer, optional, default 0
         degrees of freedom correction for standard deviation
-
 
     Returns
     -------
@@ -3389,7 +3391,10 @@ def tiecorrect(rankvals):
     Sciences.  New York: McGraw-Hill.  Code adapted from |Stat rankind.c
     code.
 
-    Returns: T correction factor for U or H
+    Returns
+    -------
+    T correction factor for U or H
+
     """
     sorted,posn = fastsort(asarray(rankvals))
     n = len(sorted)
@@ -3651,7 +3656,10 @@ def glm(data, para):
     I. Non-inferential methods and statistical models.  Phil Trans Royal Soc
     Lond B 354: 1239-1260.
 
-    Returns: statistic, p-value ???
+    Returns
+    -------
+    statistic, p-value ???
+
     """
     if len(para) != len(data):
         raise ValueError("data and para must be same length in aglm")

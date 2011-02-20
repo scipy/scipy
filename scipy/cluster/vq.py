@@ -102,28 +102,29 @@ def whiten(obs):
     divided by its standard deviation across all observations to give
     it unit variance.
 
-    :Parameters:
-        obs : ndarray
-            Each row of the array is an observation.  The
-            columns are the features seen during each observation.
-            ::
+    Parameters
+    ----------
+    obs : ndarray
+        Each row of the array is an observation.  The
+        columns are the features seen during each observation.
+        ::
 
-                      #   f0    f1    f2
-                obs = [[  1.,   1.,   1.],  #o0
-                       [  2.,   2.,   2.],  #o1
-                       [  3.,   3.,   3.],  #o2
-                       [  4.,   4.,   4.]]) #o3
+                  #   f0    f1    f2
+            obs = [[  1.,   1.,   1.],  #o0
+                   [  2.,   2.,   2.],  #o1
+                   [  3.,   3.,   3.],  #o2
+                   [  4.,   4.,   4.]]) #o3
 
-            XXX perhaps should have an axis variable here.
+        XXX perhaps should have an axis variable here.
 
-    :Returns:
-        result : ndarray
-            Contains the values in obs scaled by the standard devation
-            of each column.
+    Returns
+    -------
+    result : ndarray
+        Contains the values in `obs` scaled by the standard devation
+        of each column.
 
     Examples
     --------
-
     >>> from numpy import array
     >>> from scipy.cluster.vq import whiten
     >>> features  = array([[  1.9,2.3,1.7],
@@ -151,29 +152,31 @@ def vq(obs, code_book):
     book can be created with the k-means algorithm or a different
     encoding algorithm.
 
-    :Parameters:
-        obs : ndarray
-            Each row of the NxM array is an observation.  The columns are the
-            "features" seen during each observation. The features must be
-            whitened first using the whiten function or something equivalent.
-        code_book : ndarray.
-            The code book is usually generated using the k-means algorithm.
-            Each row of the array holds a different code, and the columns are
-            the features of the code.
+    Parameters
+    ----------
+    obs : ndarray
+        Each row of the NxM array is an observation.  The columns are the
+        "features" seen during each observation. The features must be
+        whitened first using the whiten function or something equivalent.
+    code_book : ndarray
+        The code book is usually generated using the k-means algorithm.
+        Each row of the array holds a different code, and the columns are
+        the features of the code.
 
-            ::
+        ::
 
-                            #   f0    f1    f2   f3
-                code_book = [[  1.,   2.,   3.,   4.],  #c0
-                             [  1.,   2.,   3.,   4.],  #c1
-                             [  1.,   2.,   3.,   4.]]) #c2
+                        #   f0    f1    f2   f3
+            code_book = [[  1.,   2.,   3.,   4.],  #c0
+                         [  1.,   2.,   3.,   4.],  #c1
+                         [  1.,   2.,   3.,   4.]]) #c2
 
-    :Returns:
-        code : ndarray
-            A length N array holding the code book index for each observation.
-        dist : ndarray
-            The distortion (distance) between the observation and its nearest
-            code.
+    Returns
+    -------
+    code : ndarray
+        A length N array holding the code book index for each observation.
+    dist : ndarray
+        The distortion (distance) between the observation and its nearest
+        code.
 
     Notes
     -----
@@ -214,27 +217,30 @@ def py_vq(obs, code_book):
     The algorithm computes the euclidian distance between each
     observation and every frame in the code_book.
 
-    :Parameters:
-        obs : ndarray
-            Expects a rank 2 array. Each row is one observation.
-        code_book : ndarray
-            Code book to use. Same format than obs. Should have same number of
-            features (eg columns) than obs.
+    Parameters
+    ----------
+    obs : ndarray
+        Expects a rank 2 array. Each row is one observation.
+    code_book : ndarray
+        Code book to use. Same format than obs. Should have same number of
+        features (eg columns) than obs.
 
-    :Note:
-        This function is slower than the C version but works for
-        all input types.  If the inputs have the wrong types for the
-        C versions of the function, this one is called as a last resort.
+    Returns
+    -------
+    code : ndarray
+        code[i] gives the label of the ith obversation, that its code is
+        code_book[code[i]].
+    mind_dist : ndarray
+        min_dist[i] gives the distance between the ith observation and its
+        corresponding code.
 
-        It is about 20 times slower than the C version.
+    Notes
+    -----
+    This function is slower than the C version but works for
+    all input types.  If the inputs have the wrong types for the
+    C versions of the function, this one is called as a last resort.
 
-    :Returns:
-        code : ndarray
-            code[i] gives the label of the ith obversation, that its code is
-            code_book[code[i]].
-        mind_dist : ndarray
-            min_dist[i] gives the distance between the ith observation and its
-            corresponding code.
+    It is about 20 times slower than the C version.
 
     """
     # n = number of observations
@@ -269,19 +275,21 @@ def py_vq(obs, code_book):
 def _py_vq_1d(obs, code_book):
     """ Python version of vq algorithm for rank 1 only.
 
-    :Parameters:
-        obs : ndarray
-            Expects a rank 1 array. Each item is one observation.
-        code_book : ndarray
-            Code book to use. Same format than obs. Should rank 1 too.
+    Parameters
+    ----------
+    obs : ndarray
+        Expects a rank 1 array. Each item is one observation.
+    code_book : ndarray
+        Code book to use. Same format than obs. Should rank 1 too.
 
-    :Returns:
-        code : ndarray
-            code[i] gives the label of the ith obversation, that its code is
-            code_book[code[i]].
-        mind_dist : ndarray
-            min_dist[i] gives the distance between the ith observation and its
-            corresponding code.
+    Returns
+    -------
+    code : ndarray
+        code[i] gives the label of the ith obversation, that its code is
+        code_book[code[i]].
+    mind_dist : ndarray
+        min_dist[i] gives the distance between the ith observation and its
+        corresponding code.
 
     """
     raise RuntimeError("_py_vq_1d buggy, do not use rank 1 arrays for now")
@@ -302,26 +310,29 @@ def py_vq2(obs, code_book):
     The algorithm simply computes the euclidian distance between each
     observation and every frame in the code_book/
 
-    :Parameters:
-        obs : ndarray
-            Expect a rank 2 array. Each row is one observation.
-        code_book : ndarray
-            Code book to use. Same format than obs. Should have same number of
-            features (eg columns) than obs.
+    Parameters
+    ----------
+    obs : ndarray
+        Expect a rank 2 array. Each row is one observation.
+    code_book : ndarray
+        Code book to use. Same format than obs. Should have same number of
+        features (eg columns) than obs.
 
-    :Note:
-        This could be faster when number of codebooks is small, but it
-        becomes a real memory hog when codebook is large. It requires
-        N by M by O storage where N=number of obs, M = number of
-        features, and O = number of codes.
+    Returns
+    -------
+    code : ndarray
+        code[i] gives the label of the ith obversation, that its code is
+        code_book[code[i]].
+    mind_dist : ndarray
+        min_dist[i] gives the distance between the ith observation and its
+        corresponding code.
 
-    :Returns:
-        code : ndarray
-            code[i] gives the label of the ith obversation, that its code is
-            code_book[code[i]].
-        mind_dist : ndarray
-            min_dist[i] gives the distance between the ith observation and its
-            corresponding code.
+    Notes
+    -----
+    This could be faster when number of codebooks is small, but it
+    becomes a real memory hog when codebook is large. It requires
+    N by M by O storage where N=number of obs, M = number of
+    features, and O = number of codes.
 
     """
     d = shape(obs)[1]
@@ -344,21 +355,22 @@ def py_vq2(obs, code_book):
 def _kmeans(obs, guess, thresh=1e-5):
     """ "raw" version of k-means.
 
-    :Returns:
-        code_book :
-            the lowest distortion codebook found.
-        avg_dist :
-            the average distance a observation is from a code in the book.
-            Lower means the code_book matches the data better.
+    Returns
+    -------
+    code_book :
+        the lowest distortion codebook found.
+    avg_dist :
+        the average distance a observation is from a code in the book.
+        Lower means the code_book matches the data better.
 
-    :SeeAlso:
-        - kmeans : wrapper around k-means
+    See Also
+    --------
+    kmeans : wrapper around k-means
 
     XXX should have an axis variable here.
 
     Examples
     --------
-
     Note: not whitened in this example.
 
     >>> from numpy import array
@@ -518,13 +530,14 @@ def _kpoints(data, k):
     This is done by taking the k first values of a random permutation of 1..N
     where N is the number of observation.
 
-    :Parameters:
-        data : ndarray
-            Expect a rank 1 or 2 array. Rank 1 are assumed to describe one
-            dimensional data, rank 2 multidimensional data, in which case one
-            row is one observation.
-        k : int
-            Number of samples to generate.
+    Parameters
+    ----------
+    data : ndarray
+        Expect a rank 1 or 2 array. Rank 1 are assumed to describe one
+        dimensional data, rank 2 multidimensional data, in which case one
+        row is one observation.
+    k : int
+        Number of samples to generate.
 
     """
     if data.ndim > 1:
@@ -543,13 +556,14 @@ def _krandinit(data, k):
     More precisely, it returns k observations sampled from a Gaussian random
     variable which mean and covariances are the one estimated from data.
 
-    :Parameters:
-        data : ndarray
-            Expect a rank 1 or 2 array. Rank 1 are assumed to describe one
-            dimensional data, rank 2 multidimensional data, in which case one
-            row is one observation.
-        k : int
-            Number of samples to generate.
+    Parameters
+    ----------
+    data : ndarray
+        Expect a rank 1 or 2 array. Rank 1 are assumed to describe one
+        dimensional data, rank 2 multidimensional data, in which case one
+        row is one observation.
+    k : int
+        Number of samples to generate.
 
     """
     def init_rank1(data):
@@ -598,44 +612,47 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit = 'random',
     observations and centroids. Several initialization methods are
     included.
 
-    :Parameters:
-        data : ndarray
-            A M by N array of M observations in N dimensions or a length
-            M array of M one-dimensional observations.
-        k : int or ndarray
-            The number of clusters to form as well as the number of
-            centroids to generate. If minit initialization string is
-            'matrix', or if a ndarray is given instead, it is
-            interpreted as initial cluster to use instead.
-        iter : int
-            Number of iterations of the k-means algrithm to run. Note
-            that this differs in meaning from the iters parameter to
-            the kmeans function.
-        thresh : float
-            (not used yet).
-        minit : string
-            Method for initialization. Available methods are 'random',
-            'points', 'uniform', and 'matrix':
+    Parameters
+    ----------
+    data : ndarray
+        A M by N array of M observations in N dimensions or a length
+        M array of M one-dimensional observations.
+    k : int or ndarray
+        The number of clusters to form as well as the number of
+        centroids to generate. If minit initialization string is
+        'matrix', or if a ndarray is given instead, it is
+        interpreted as initial cluster to use instead.
+    iter : int
+        Number of iterations of the k-means algrithm to run. Note
+        that this differs in meaning from the iters parameter to
+        the kmeans function.
+    thresh : float
+        (not used yet).
+    minit : string
+        Method for initialization. Available methods are 'random',
+        'points', 'uniform', and 'matrix':
 
-            'random': generate k centroids from a Gaussian with mean and
-            variance estimated from the data.
+        'random': generate k centroids from a Gaussian with mean and
+        variance estimated from the data.
 
-            'points': choose k observations (rows) at random from data for
-            the initial centroids.
+        'points': choose k observations (rows) at random from data for
+        the initial centroids.
 
-            'uniform': generate k observations from the data from a uniform
-            distribution defined by the data set (unsupported).
+        'uniform': generate k observations from the data from a uniform
+        distribution defined by the data set (unsupported).
 
-            'matrix': interpret the k parameter as a k by M (or length k
-            array for one-dimensional data) array of initial centroids.
+        'matrix': interpret the k parameter as a k by M (or length k
+        array for one-dimensional data) array of initial centroids.
 
-    :Returns:
-        centroid : ndarray
-            A k by N array of centroids found at the last iteration of
-            k-means.
-        label : ndarray
-            label[i] is the code or index of the centroid the
-            i'th observation is closest to.
+    Returns
+    -------
+    centroid : ndarray
+        A k by N array of centroids found at the last iteration of
+        k-means.
+    label : ndarray
+        label[i] is the code or index of the centroid the
+        i'th observation is closest to.
+
     """
     if missing not in _valid_miss_meth.keys():
         raise ValueError("Unkown missing method: %s" % str(missing))
@@ -690,7 +707,9 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit = 'random',
 def _kmeans2(data, code, niter, nc, missing):
     """ "raw" version of kmeans2. Do not use directly.
 
-    Run k-means with a given initial codebook.  """
+    Run k-means with a given initial codebook.
+
+    """
     for i in range(niter):
         # Compute the nearest neighbour for each obs
         # using the current code book

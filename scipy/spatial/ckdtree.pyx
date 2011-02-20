@@ -179,6 +179,18 @@ cdef class cKDTree:
     For large dimensions (20 is already large) do not expect this to run 
     significantly faster than brute force. High-dimensional nearest-neighbor
     queries are a substantial open problem in computer science.
+
+    Parameters
+    ----------
+    data : array-like, shape (n,m)
+        The n data points of dimension mto be indexed. This array is 
+        not copied unless this is necessary to produce a contiguous 
+        array of doubles, and so modifying this data will result in 
+        bogus results.
+    leafsize : positive integer
+        The number of points at which the algorithm switches over to
+        brute-force.
+
     """
 
     cdef innernode* tree 
@@ -193,20 +205,6 @@ cdef class cKDTree:
     cdef object indices
     cdef np.int32_t* raw_indices
     def __init__(cKDTree self, data, int leafsize=10):
-        """Construct a kd-tree.
-
-        Parameters:
-        ===========
-
-        data : array-like, shape (n,m)
-            The n data points of dimension mto be indexed. This array is 
-            not copied unless this is necessary to produce a contiguous 
-            array of doubles, and so modifying this data will result in 
-            bogus results.
-        leafsize : positive integer
-            The number of points at which the algorithm switches over to
-            brute-force.
-        """
         cdef np.ndarray[double, ndim=2] inner_data
         cdef np.ndarray[double, ndim=1] inner_maxes
         cdef np.ndarray[double, ndim=1] inner_mins
@@ -515,14 +513,13 @@ cdef class cKDTree:
 
     def query(cKDTree self, object x, int k=1, double eps=0, double p=2, 
             double distance_upper_bound=infinity):
-        """query the kd-tree for nearest neighbors
+        """Query the kd-tree for nearest neighbors.
 
-        Parameters:
-        ===========
-
-        x : array-like, last dimension self.m
+        Parameters
+        ----------
+        x : array_like, last dimension self.m
             An array of points to query.
-        k : integer
+        k : int
             The number of nearest neighbors to return.
         eps : nonnegative float
             Return approximate nearest neighbors; the kth returned value 
@@ -539,17 +536,17 @@ cdef class cKDTree:
             queries, it may help to supply the distance to the nearest neighbor
             of the most recent point.
 
-        Returns:
-        ========
-        
-        d : array of floats
+        Returns
+        -------
+        d : ndarray of floats
             The distances to the nearest neighbors. 
             If x has shape tuple+(self.m,), then d has shape tuple+(k,).
             Missing neighbors are indicated with infinite distances.
-        i : array of integers
+        i : ndarray of ints
             The locations of the neighbors in self.data.
             If x has shape tuple+(self.m,), then i has shape tuple+(k,).
             Missing neighbors are indicated with self.n.
+
         """
         cdef np.ndarray[int, ndim=2] ii
         cdef np.ndarray[double, ndim=2] dd

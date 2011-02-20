@@ -385,16 +385,21 @@ The following script shows examples for how constraints can be specified.
     from numpy import array, asfarray, finfo,ones, sqrt, zeros
 
 
-    def testfunc(d,*args):
+    def testfunc(d, *args):
         """
-        Arguments:
-        d     - A list of two elements, where d[0] represents x and
-                d[1] represents y in the following equation.
-        sign - A multiplier for f.  Since we want to optimize it, and the scipy
-               optimizers can only minimize functions, we need to multiply it by
-               -1 to achieve the desired solution
-        Returns:
-        2*x*y + 2*x - x**2 - 2*y**2
+        Parameters
+        ----------
+        d : list 
+            A list of two elements, where d[0] represents x and
+            d[1] represents y in the following equation.
+        sign : float
+            A multiplier for f.  Since we want to optimize it, and the scipy
+            optimizers can only minimize functions, we need to multiply it by
+            -1 to achieve the desired solution.
+        Returns
+        -------
+        res : float
+            The result, equal to ``2*x*y + 2*x - x**2 - 2*y**2``.
 
         """
         try:
