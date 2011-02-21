@@ -332,6 +332,17 @@ class TestSkellam(TestCase):
         assert_almost_equal(stats.skellam.cdf(k, mu1, mu2), skcdfR, decimal=5)
 
 
+class TestGamma(TestCase):
+
+    def test_pdf(self):
+        # a few test cases to compare with R
+        pdf = stats.gamma.pdf(90, 394, scale=1./5)
+        assert_almost_equal(pdf, 0.002312341)
+
+        pdf = stats.gamma.pdf(3, 10, scale=1./5)
+        assert_almost_equal(pdf, 0.1620358)
+
+
 class TestHypergeom(TestCase):
     def test_precision(self):
         # comparison number from mpmath
