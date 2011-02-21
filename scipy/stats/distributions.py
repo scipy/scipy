@@ -3061,7 +3061,7 @@ class gamma_gen(rv_continuous):
     def _rvs(self, a):
         return mtrand.standard_gamma(a, self._size)
     def _pdf(self, x, a):
-        return x**(a-1)*exp(-x)/special.gamma(a)
+        return exp(self._logpdf(x, a))
     def _logpdf(self, x, a):
         return (a-1)*log(x) - x - gamln(a)
     def _cdf(self, x, a):
