@@ -104,8 +104,9 @@ class TestGetCatalog(TestCase):
     def test_create_catalog(self):
         pardir = self.get_test_dir(erase=1)
         cat = catalog.get_catalog(pardir,'c')
-        self.remove_dir(pardir)
         assert_(cat is not None)
+        cat.close()
+        self.remove_dir(pardir)
 
 
 class TestCatalog(TestCase):
