@@ -8,7 +8,7 @@ import kdtree
 
 cdef double infinity = np.inf
 
-
+__all__ = ['cKDTree']
 
 
 # priority queue
