@@ -2245,9 +2245,9 @@ def fisher_exact(table) :
         raise ValueError("The input `table` must be of shape (2, 2).")
 
     if c[1,0] > 0 and c[0,1] > 0:
-        odssratio = c[0,0] * c[1,1] / float(c[1,0] * c[0,1])
+        oddsratio = c[0,0] * c[1,1] / float(c[1,0] * c[0,1])
     else:
-        odssratio = np.inf
+        oddsratio = np.inf
 
     n1 = c[0,0] + c[0,1]
     n2 = c[1,0] + c[1,1]
@@ -2259,13 +2259,13 @@ def fisher_exact(table) :
 
     epsilon = 1 - 1e-4
     if float(np.abs(pexact - pmode)) / np.abs(np.max(pexact, pmode)) <= 1 - epsilon:
-        return odssratio, 1
+        return oddsratio, 1
 
     elif c[0,0] < mode:
         plower = hypergeom.cdf(c[0,0], n1 + n2, n1, n)
 
         if hypergeom.pmf(n, n1 + n2, n1, n) > pexact / epsilon:
-            return odssratio, plower
+            return oddsratio, plower
 
         # Binary search for where to begin upper half.
         minval = mode
@@ -2297,11 +2297,11 @@ def fisher_exact(table) :
         p = plower + hypergeom.sf(guess - 1, n1 + n2, n1, n)
         if p > 1.0:
             p = 1.0
-        return odssratio, p
+        return oddsratio, p
     else:
         pupper = hypergeom.sf(c[0,0] - 1, n1 + n2, n1, n)
         if hypergeom.pmf(0, n1 + n2, n1, n) > pexact / epsilon:
-            return odssratio, pupper
+            return oddsratio, pupper
 
         # Binary search for where to begin lower half.
         minval = 0
@@ -2332,7 +2332,7 @@ def fisher_exact(table) :
         p = pupper + hypergeom.cdf(guess, n1 + n2, n1, n)
         if p > 1.0:
             p = 1.0
-        return odssratio, p
+        return oddsratio, p
 
 
 def spearmanr(a, b=None, axis=0):

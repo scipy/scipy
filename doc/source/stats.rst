@@ -226,6 +226,7 @@ which work for masked arrays.
    f_oneway
    pearsonr
    spearmanr
+   fisher_exact
    pointbiserialr
    kendalltau
    linregress
