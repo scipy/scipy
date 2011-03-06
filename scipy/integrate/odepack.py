@@ -55,7 +55,7 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
 
     Returns
     -------
-    y : array, shape (len(y0), len(t))
+    y : array, shape (len(t), len(y0))
         Array containing the value of y for each desired time in t,
         with the initial value y0 in the first row.
 
