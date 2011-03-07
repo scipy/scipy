@@ -32,13 +32,15 @@ Unstructured data:
    NearestNDInterpolator
    CloughTocher2DInterpolator
    Rbf
+   interp2d
 
-Data given on a regular grid:
+For data on a grid:
 
 .. autosummary::
-   :toctree: generated/
 
-   interp2d
+   RectBivariateSpline
+
+.. seealso:: `scipy.ndimage.map_coordinates`
 
 
 1-D Splines
@@ -84,8 +86,6 @@ Low-level interface to FITPACK functions:
 
 2-D Splines
 ===========
-
-.. seealso:: scipy.ndimage.map_coordinates
 
 For data on a grid:
 

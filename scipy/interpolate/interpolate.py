@@ -65,20 +65,22 @@ class interp2d(object):
     Parameters
     ----------
     x, y : 1D arrays
-        Arrays defining the coordinates of a 2D grid.  If the
-        points lie on a regular grid, `x` can specify the column coordinates
-        and `y` the row coordinates, for example:
+        Arrays defining the data point coordinates.
 
-            x = [0,1,2];  y = [0,3,7]
+        If the points lie on a regular grid, `x` can specify the column
+        coordinates and `y` the row coordinates, for example::
 
-        otherwise x and y must specify the full coordinates, for example:
+            x = [0,1,2];  y = [0,3]; z = [[1,2,3], [4,5,6]]
 
-            x = [0,1,2,0,1,2,0,1,2];  y = [0,0,0,3,3,3,7,7,7]
+        Otherwise, x and y must specify the full coordinates for each point,
+        for example::
+
+            x = [0,1,2,0,1,2];  y = [0,0,0,3,3,3]; z = [1,2,3,4,5,6]
 
         If `x` and `y` are multi-dimensional, they are flattened before use.
 
     z : 1D array
-        The values of the interpolated function on the grid points. If
+        The values of the function to interpolate at the data points. If
         z is a multi-dimensional array, it is flattened before use.
     kind : {'linear', 'cubic', 'quintic'}
         The kind of interpolation to use.
