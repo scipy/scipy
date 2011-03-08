@@ -9,6 +9,9 @@ from blas import get_blas_funcs
 from lapack import get_lapack_funcs, find_best_lapack_type
 from misc import _datacopied
 
+# XXX: what is qr_old, should it be kept?
+__all__ = ['qr', 'rq', 'qr_old']
+
 
 def qr(a, overwrite_a=False, lwork=None, mode='full'):
     """Compute QR decomposition of a matrix.

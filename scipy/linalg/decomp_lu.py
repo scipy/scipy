@@ -9,6 +9,8 @@ from misc import _datacopied
 from lapack import get_lapack_funcs
 from flinalg import get_flinalg_funcs
 
+__all__ = ['lu', 'lu_solve', 'lu_factor']
+
 
 def lu_factor(a, overwrite_a=False):
     """Compute pivoted LU decomposition of a matrix.
