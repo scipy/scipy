@@ -171,6 +171,16 @@ _cpy_euclid_methods = {'centroid': 3, 'median': 4, 'ward': 5}
 _cpy_linkage_methods = set(_cpy_non_euclid_methods.keys()).union(
     set(_cpy_euclid_methods.keys()))
 
+__all__ = ['ClusterNode', 'average', 'centroid', 'complete', 'cophenet',
+           'correspond', 'dendrogram', 'fcluster', 'fclusterdata',
+           'from_mlab_linkage', 'inconsistent', 'is_isomorphic',
+           'is_monotonic', 'is_valid_im', 'is_valid_linkage', 'leaders',
+           'leaves_list', 'linkage', 'maxRstat', 'maxdists', 'maxinconsts',
+           'median', 'num_obs_linkage', 'set_link_color_palette', 'single',
+           'to_mlab_linkage', 'to_tree', 'ward', 'warnings', 'weighted',
+           'distance']
+
+
 try:
     import warnings
     def _warning(s):
