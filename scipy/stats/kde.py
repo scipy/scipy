@@ -31,8 +31,7 @@ from numpy.random import randint, multivariate_normal
 import stats
 import mvn
 
-__all__ = ['gaussian_kde',
-]
+__all__ = ['gaussian_kde']
 
 
 class gaussian_kde(object):
