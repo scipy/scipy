@@ -34,6 +34,12 @@ import _ni_support
 import _nd_image
 import morphology
 
+__all__ = ['label', 'find_objects', 'labeled_comprehension', 'sum', 'mean',
+           'variance', 'standard_deviation', 'minimum', 'maximum',
+           'minimum_position', 'maximum_position', 'extrema', 'center_of_mass',
+           'histogram', 'watershed_ift']
+
+
 def label(input, structure = None, output = None):
     """
     Label features in an array.
@@ -417,7 +423,7 @@ def _stats(input, labels=None, index=None, centered=False):
     if (not _safely_castable_to_int(labels.dtype) or
             labels.min() < 0 or labels.max() > labels.size):
         unique_labels, new_labels = numpy.unique(labels, return_inverse=True)
-        counts = numpy.bincount(new_labels) 
+        counts = numpy.bincount(new_labels)
         sums = numpy.bincount(new_labels, weights=input.ravel())
         if centered:
             sums_c = _sum_centered(new_labels)
