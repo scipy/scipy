@@ -39,7 +39,7 @@ Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
 
 __docformat__ = "restructuredtext en"
 
-__all___=['eigs', 'eigsh', 'svds', 'ArpackNoConvergence']
+__all__ =['eigs', 'eigsh', 'svds', 'ArpackNoConvergence']
 
 import _arpack
 import numpy as np
