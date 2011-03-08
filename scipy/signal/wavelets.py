@@ -5,6 +5,9 @@ from numpy.dual import eig
 from scipy.misc import comb
 from scipy import linspace, pi, exp
 
+__all__ = ['daub', 'qmf', 'wavedec', 'cascade', 'morlet']
+
+
 def daub(p):
     """
     The coefficients for the FIR low-pass filter producing Daubechies wavelets.

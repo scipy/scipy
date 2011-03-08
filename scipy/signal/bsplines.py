@@ -10,6 +10,8 @@ from spline import cspline2d, qspline2d, sepfir2d, symiirorder1, symiirorder2
 
 from scipy.misc import comb
 
+__all__ = ['spline_filter', 'bspline', 'gauss_spline', 'cubic', 'quadratic',
+           'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval']
 
 gamma = scipy.special.gamma
 

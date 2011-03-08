@@ -8,6 +8,9 @@
 from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
      exp, cos, sin, polyval, polyint
 
+__all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly']
+
+
 def sawtooth(t, width=1):
     """
     Return a periodic sawtooth waveform.
