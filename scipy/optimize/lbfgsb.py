@@ -29,6 +29,9 @@ import _lbfgsb
 import optimize
 from numpy.compat import asbytes
 
+__all__ = ['fmin_l_bfgs_b']
+
+
 approx_fprime = optimize.approx_fprime
 
 def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
