@@ -113,6 +113,10 @@ robert.kern@gmail.com
 import numpy
 from scipy.odr import __odrpack
 
+__all__ = ['odr', 'odr_error', 'odr_stop', 'Data', 'RealData', 'Model',
+           'Output', 'ODR']
+
+
 odr = __odrpack.odr
 odr_error = __odrpack.odr_error
 odr_stop = __odrpack.odr_stop
@@ -1106,5 +1110,3 @@ class ODR(object):
         self.maxit = iter
 
         return self.run()
-
-#### EOF #######################################################################
