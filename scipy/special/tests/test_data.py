@@ -1,8 +1,9 @@
 import os
 
 import numpy as np
+from numpy import arccosh, arcsinh, arctanh
 from scipy.special import (
-    arccosh, arcsinh, arctanh, erf, erfc, log1p, expm1,
+    erf, erfc, log1p, expm1,
     jn, jv, yn, yv, iv, kv, kn, gamma, gammaln, digamma, beta, cbrt,
     ellipe, ellipeinc, ellipk, ellipj, erfinv, erfcinv, exp1, expi, expn,
     zeta, gammaincinv, lpmv

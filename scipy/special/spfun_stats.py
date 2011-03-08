@@ -36,6 +36,9 @@ analysis."""
 import numpy as np
 from scipy.special import gammaln as loggam
 
+__all__ = ['multigammln']
+
+
 def multigammaln(a, d):
     """returns the log of multivariate gamma, also sometimes called the
     generalized gamma.
