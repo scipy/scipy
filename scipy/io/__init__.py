@@ -8,12 +8,11 @@ from numpy import deprecate
 
 
 # matfile read and write
-from matlab import loadmat, savemat
+from matlab import loadmat, savemat, byteordercodes
 
 # netCDF file support
 from netcdf import netcdf_file, netcdf_variable
 
-from matlab import byteordercodes
 from data_store import save_as_module
 from mmio import mminfo, mmread, mmwrite
 from idl import readsav
