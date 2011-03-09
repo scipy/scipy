@@ -159,22 +159,25 @@ class KroghInterpolator(object):
                 return p
 
     def derivatives(self,x,der=None):
-        """Evaluate many derivatives of the polynomial at the point x
+        """
+        Evaluate many derivatives of the polynomial at the point x
 
         Produce an array of all derivative values at the point x.
 
         Parameters
         ----------
-        x : scalar or array-like of length N
+        x : scalar or array_like of length N
             Point or points at which to evaluate the derivatives
+
         der : None or integer
             How many derivatives to extract; None for all potentially
             nonzero derivatives (that is a number equal to the number
             of points). This number includes the function value as 0th
             derivative.
+
         Returns
         -------
-        d : array
+        d : ndarray
             If the interpolator's values are R-dimensional then the
             returned array will be der by N by R. If x is a scalar,
             the middle dimension will be dropped; if R is 1 then the
@@ -188,6 +191,7 @@ class KroghInterpolator(object):
         array([[1.0,1.0],
                [2.0,2.0],
                [3.0,3.0]])
+
         """
         if _isscalar(x):
             scalar = True
@@ -235,18 +239,21 @@ class KroghInterpolator(object):
             else:
                 return cn[:der]
     def derivative(self,x,der):
-        """Evaluate one derivative of the polynomial at the point x
+        """
+        Evaluate one derivative of the polynomial at the point x
 
         Parameters
         ----------
-        x : scalar or array-like of length N
+        x : scalar or array_like of length N
             Point or points at which to evaluate the derivatives
+
         der : None or integer
             Which derivative to extract. This number includes the
             function value as 0th derivative.
+
         Returns
         -------
-        d : array
+        d : ndarray
             If the interpolator's values are R-dimensional then the
             returned array will be N by R. If x is a scalar,
             the middle dimension will be dropped; if R is 1 then the
@@ -256,11 +263,13 @@ class KroghInterpolator(object):
         -----
         This is computed by evaluating all derivatives up to the desired
         one (using self.derivatives()) and then discarding the rest.
+
         """
         return self.derivatives(x,der=der+1)[der]
 
 def krogh_interpolate(xi,yi,x,der=0):
-    """Convenience function for polynomial interpolation.
+    """
+    Convenience function for polynomial interpolation.
 
     Constructs a polynomial that passes through a given set of points,
     optionally with specified derivatives at those points.
@@ -288,21 +297,22 @@ def krogh_interpolate(xi,yi,x,der=0):
 
     Parameters
     ----------
-    xi : array-like, length N
+    xi : array_like, length N
         known x-coordinates
-    yi : array-like, N by R
+    yi : array_like, N by R
         known y-coordinates, interpreted as vectors of length R,
         or scalars if R=1
-    x : scalar or array-like of length N
+    x : scalar or array_like of length N
         Point or points at which to evaluate the derivatives
     der : integer or list
         How many derivatives to extract; None for all potentially
         nonzero derivatives (that is a number equal to the number
         of points), or a list of derivatives to extract. This number
         includes the function value as 0th derivative.
+
     Returns
     -------
-    d : array
+    d : ndarray
         If the interpolator's values are R-dimensional then the
         returned array will be the number of derivatives by N by R.
         If x is a scalar, the middle dimension will be dropped; if
@@ -313,6 +323,7 @@ def krogh_interpolate(xi,yi,x,der=0):
     Construction of the interpolating polynomial is a relatively expensive
     process. If you want to evaluate it repeatedly consider using the class
     KroghInterpolator (which is what this function uses).
+
     """
     P = KroghInterpolator(xi, yi)
     if der==0:
@@ -428,7 +439,8 @@ class BarycentricInterpolator(object):
         self.wi**=-1
 
     def set_yi(self, yi):
-        """Update the y values to be interpolated
+        """
+        Update the y values to be interpolated
 
         The barycentric interpolation algorithm requires the calculation
         of weights, but these depend only on the xi. The yi can be changed
@@ -436,10 +448,11 @@ class BarycentricInterpolator(object):
 
         Parameters
         ----------
-        yi : array-like N by R
+        yi : array_like N by R
             The y coordinates of the points the polynomial should pass through;
             if R>1 the polynomial is vector-valued. If None the y values
             will be supplied later.
+
         """
         if yi is None:
             self.yi = None
@@ -461,20 +474,22 @@ class BarycentricInterpolator(object):
 
 
     def add_xi(self, xi, yi=None):
-        """Add more x values to the set to be interpolated
+        """
+        Add more x values to the set to be interpolated
 
         The barycentric interpolation algorithm allows easy updating by
         adding more points for the polynomial to pass through.
 
         Parameters
         ----------
-        xi : array-like of length N1
+        xi : array_like of length N1
             The x coordinates of the points the polynomial should pass through
-        yi : array-like N1 by R or None
+        yi : array_like N1 by R or None
             The y coordinates of the points the polynomial should pass through;
             if R>1 the polynomial is vector-valued. If None the y values
             will be supplied later. The yi should be specified if and only if
             the interpolator has y values specified.
+
         """
         if yi is not None:
             if self.yi is None:
@@ -546,7 +561,8 @@ class BarycentricInterpolator(object):
             else:
                 return p
 def barycentric_interpolate(xi, yi, x):
-    """Convenience function for polynomial interpolation
+    """
+    Convenience function for polynomial interpolation
 
     Constructs a polynomial that passes through a given set of points,
     then evaluates the polynomial. For reasons of numerical stability,
@@ -562,20 +578,23 @@ def barycentric_interpolate(xi, yi, x):
 
     Based on Berrut and Trefethen 2004, "Barycentric Lagrange Interpolation".
 
+
     Parameters
     ----------
-    xi : array-like of length N
+    xi : array_like of length N
         The x coordinates of the points the polynomial should pass through
-    yi : array-like N by R
+    yi : array_like N by R
         The y coordinates of the points the polynomial should pass through;
         if R>1 the polynomial is vector-valued.
-    x : scalar or array-like of length M
+    x : scalar or array_like of length M
+
 
     Returns
     -------
-    y : scalar or array-like of length R or length M or M by R
+    y : scalar or array_like of length R or length M or M by R
         The shape of y depends on the shape of x and whether the
         interpolator is vector-valued or scalar-valued.
+
 
     Notes
     -----
@@ -584,6 +603,7 @@ def barycentric_interpolate(xi, yi, x):
     If you want to call this many times with the same xi (but possibly
     varying yi or x) you should use the class BarycentricInterpolator.
     This is what this function uses internally.
+
     """
     return BarycentricInterpolator(xi, yi)(x)
 
@@ -679,16 +699,20 @@ class PiecewisePolynomial(object):
         return KroghInterpolator(xi,yi)
 
     def append(self, xi, yi, order=None):
-        """Append a single point with derivatives to the PiecewisePolynomial
+        """
+        Append a single point with derivatives to the PiecewisePolynomial
 
         Parameters
         ----------
         xi : float
-        yi : array-like
+
+        yi : array_like
             yi is the list of derivatives known at xi
+
         order : integer or None
             a polynomial order, or instructions to use the highest
             possible order
+
         """
 
         yi = np.asarray(yi)
@@ -723,11 +747,12 @@ class PiecewisePolynomial(object):
 
 
     def extend(self, xi, yi, orders=None):
-        """Extend the PiecewisePolynomial by a list of points
+        """
+        Extend the PiecewisePolynomial by a list of points
 
         Parameters
         ----------
-        xi : array-like of length N1
+        xi : array_like of length N1
             a sorted list of x-coordinates
         yi : list of lists of length N1
             yi[i] is the list of derivatives known at xi[i]
@@ -738,6 +763,7 @@ class PiecewisePolynomial(object):
             +1 indicates increasing
             -1 indicates decreasing
             None indicates that it should be deduced from the first two xi
+
         """
 
         for i in xrange(len(xi)):
@@ -774,37 +800,43 @@ class PiecewisePolynomial(object):
         return y
 
     def derivative(self, x, der):
-        """Evaluate a derivative of the piecewise polynomial
+        """
+        Evaluate a derivative of the piecewise polynomial
 
         Parameters
         ----------
-        x : scalar or array-like of length N
+        x : scalar or array_like of length N
+
         der : integer
             which single derivative to extract
 
         Returns
         -------
-        y : scalar or array-like of length R or length N or N by R
+        y : scalar or array_like of length R or length N or N by R
 
         Notes
         -----
         This currently computes (using self.derivatives()) all derivatives
         of the curve segment containing each x but returns only one.
+
         """
         return self.derivatives(x,der=der+1)[der]
 
     def derivatives(self, x, der):
-        """Evaluate a derivative of the piecewise polynomial
+        """
+        Evaluate a derivative of the piecewise polynomial
+
         Parameters
         ----------
-        x : scalar or array-like of length N
+        x : scalar or array_like of length N
+
         der : integer
             how many derivatives (including the function value as
             0th derivative) to extract
 
         Returns
         -------
-        y : array-like of shape der by R or der by N or der by N by R
+        y : array_like of shape der by R or der by N or der by N by R
 
         """
         if _isscalar(x):
@@ -825,23 +857,26 @@ class PiecewisePolynomial(object):
 
 
 def piecewise_polynomial_interpolate(xi,yi,x,orders=None,der=0):
-    """Convenience function for piecewise polynomial interpolation
+    """
+    Convenience function for piecewise polynomial interpolation
 
     Parameters
     ----------
-    xi : array-like of length N
-        a sorted list of x-coordinates
-    yi : list of lists of length N
-        yi[i] is the list of derivatives known at xi[i]
-    x : scalar or array-like of length M
-    orders : list of integers, or integer
+    xi : array_like
+        A sorted list of x-coordinates, of length N.
+    yi : list of lists
+        yi[i] is the list of derivatives known at xi[i]. Of length N.
+    x : scalar or array_like
+        Of length M.
+    orders : int or list of ints
         a list of polynomial orders, or a single universal order
-    der : integer
-        which single derivative to extract
+    der : int
+        Which single derivative to extract.
 
     Returns
     -------
-    y : scalar or array-like of length R or length M or M by R
+    y : scalar or array_like
+        The result, of length R or length M or M by R,
 
     Notes
     -----
@@ -856,6 +891,7 @@ def piecewise_polynomial_interpolate(xi,yi,x,orders=None,der=0):
     Construction of these piecewise polynomials can be an expensive process;
     if you repeatedly evaluate the same polynomial, consider using the class
     PiecewisePolynomial (which is what this function does).
+
     """
 
     P = PiecewisePolynomial(xi, yi, orders)

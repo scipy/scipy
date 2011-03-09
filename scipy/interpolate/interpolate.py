@@ -60,48 +60,81 @@ class interp2d(object):
     interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
              fill_value=nan)
 
-    Interpolate over a 2D grid.
+    Interpolate over a 2-D grid.
+
+    `x`, `y` and `z` are arrays of values used to approximate some function
+    f: ``z = f(x, y)``. This class returns a function whose call method uses
+    spline interpolation to find the value of new points.
+
+    Methods
+    -------
+    __call__
 
     Parameters
     ----------
-    x, y : 1D arrays
+    x, y : 1-D ndarrays
         Arrays defining the data point coordinates.
 
         If the points lie on a regular grid, `x` can specify the column
         coordinates and `y` the row coordinates, for example::
 
-            x = [0,1,2];  y = [0,3]; z = [[1,2,3], [4,5,6]]
+          >>> x = [0,1,2];  y = [0,3]; z = [[1,2,3], [4,5,6]]
 
         Otherwise, x and y must specify the full coordinates for each point,
         for example::
 
-            x = [0,1,2,0,1,2];  y = [0,0,0,3,3,3]; z = [1,2,3,4,5,6]
+          >>> x = [0,1,2,0,1,2];  y = [0,0,0,3,3,3]; z = [1,2,3,4,5,6]
 
         If `x` and `y` are multi-dimensional, they are flattened before use.
 
-    z : 1D array
+    z : 1-D ndarray
         The values of the function to interpolate at the data points. If
-        z is a multi-dimensional array, it is flattened before use.
-    kind : {'linear', 'cubic', 'quintic'}
-        The kind of interpolation to use.
-    copy : bool
+        `z` is a multi-dimensional array, it is flattened before use.
+    kind : {'linear', 'cubic', 'quintic'}, optional
+        The kind of spline interpolation to use. Default is 'linear'.
+    copy : bool, optional
         If True, then data is copied, otherwise only a reference is held.
-    bounds_error : bool
+    bounds_error : bool, optional
         If True, when interpolated values are requested outside of the
         domain of the input data, an error is raised.
         If False, then `fill_value` is used.
-    fill_value : number
+    fill_value : number, optional
         If provided, the value to use for points outside of the
         interpolation domain. Defaults to NaN.
 
-    Raises
-    ------
-    ValueError when inputs are invalid.
-
     See Also
     --------
-    bisplrep, bisplev : spline interpolation based on FITPACK
+    bisplrep, bisplev
+        Spline interpolation based on FITPACK
     BivariateSpline : a more recent wrapper of the FITPACK routines
+    interp1d
+
+    Notes
+    -----
+    The minimum number of data points required along the interpolation
+    axis is ``(k+1)**2``, with k=1 for linear, k=3 for cubic and k=5 for
+    quintic interpolation.
+
+    The interpolator is constructed by `bisplrep`, with a smoothing factor
+    of 0. If more control over smoothing is needed, `bisplrep` should be
+    used directly.
+
+    Examples
+    --------
+    Construct a 2-D grid and interpolate on it:
+
+    >>> x = np.arange(-5.01, 5.01, 0.25)
+    >>> y = np.arange(-5.01, 5.01, 0.25)
+    >>> xx, yy = np.meshgrid(x, y)
+    >>> z = np.sin(xx**2+yy**2)
+    >>> f = sp.interpolate.interp2d(x, y, z, kind='cubic')
+
+    Now use the obtained interpolation function and plot the result:
+
+    >>> xnew = np.arange(-5.01, 5.01, 1e-2)
+    >>> ynew = np.arange(-5.01, 5.01, 1e-2)
+    >>> znew = f(xnew, ynew)
+    >>> plt.plot(x, z[:, 0], 'ro-', xnew, znew[:, 0], 'b-')
 
     """
 
@@ -162,12 +195,11 @@ class interp1d(object):
     interp1d(x, y, kind='linear', axis=-1, copy=True, bounds_error=True,
              fill_value=np.nan)
 
-    Interpolate a 1D function.
+    Interpolate a 1-D function.
 
     `x` and `y` are arrays of values used to approximate some function f:
-        y = f(x)
-    This class returns a function whose call method uses linear interpolation
-    to find the value of new points.
+    ``y = f(x)``.  This class returns a function whose call method uses
+    interpolation to find the value of new points.
 
     Parameters
     ----------
@@ -202,17 +234,17 @@ class interp1d(object):
     UnivariateSpline : A more recent wrapper of the FITPACK routines.
     splrep, splev
         Spline interpolation based on FITPACK.
+    interp2d
 
     Examples
     --------
     >>> import scipy.interpolate
-
     >>> x = np.arange(0, 10)
     >>> y = np.exp(-x/3.0)
     >>> f = sp.interpolate.interp1d(x, y)
 
     >>> xnew = np.arange(0,9, 0.1)
-    >>> ynew = f(xnew)
+    >>> ynew = f(xnew)   # use interpolation function returned by `interp1d`
     >>> plt.plot(x, y, 'o', xnew, ynew, '-')
 
     """
