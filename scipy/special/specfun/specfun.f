@@ -10545,7 +10545,7 @@ C       3) initial guess for j_{N,L+1}
         L=L+1
         RJ0(L)=X
 C       XXX: should have a better initial guess for large N ~> 100 here
-        X=X+PI+MAX((0.0972+0.0679*N-0.000354*N**2)/L, 0d0)
+        X=X+PI+MAX((0.0972d0+0.0679*N-0.000354*N**2)/L, 0d0)
         IF (L.LT.NT) GO TO 10
 C       -- Newton method for j_{N,L}'
         IF (N.LE.20) THEN
@@ -10570,7 +10570,7 @@ C       -- Newton method for j_{N,L}'
         L=L+1
         RJ1(L)=X
 C       XXX: should have a better initial guess for large N ~> 100 here
-        X=X+PI+MAX((0.4955+0.0915*N-0.000435*N**2)/L,0d0)
+        X=X+PI+MAX((0.4955d0+0.0915*N-0.000435*N**2)/L, 0d0)
         IF (L.LT.NT) GO TO 15
 C       -- Newton method for y_{N,L}
         IF (N.LE.20) THEN
@@ -10594,7 +10594,7 @@ C       -- Newton method for y_{N,L}
         L=L+1
         RY0(L)=X
 C       XXX: should have a better initial guess for large N ~> 100 here
-        X=X+PI+MAX((0.312+0.0852*N-0.000403*N**2)/L,0d0)
+        X=X+PI+MAX((0.312d0+0.0852*N-0.000403*N**2)/L,0d0)
         IF (L.LT.NT) GO TO 20
 C       -- Newton method for y_{N,L}'
         IF (N.LE.20) THEN
@@ -10616,7 +10616,7 @@ C       -- Newton method for y_{N,L}'
         L=L+1
         RY1(L)=X
 C       XXX: should have a better initial guess for large N ~> 100 here
-        X=X+PI+MAX((0.197+0.0643*N-0.000286*N**2)/L,0d0)
+        X=X+PI+MAX((0.197d0+0.0643*N-0.000286*N**2)/L,0d0)
         IF (L.LT.NT) GO TO 25
         RETURN
         END
