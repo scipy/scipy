@@ -74,7 +74,8 @@ import numpy as np
 from numpy import exp, asarray
 from scipy import optimize
 from scipy.linalg import norm
-from scipy.maxentropy.maxentutils import logsumexp, arrayexp, \
+from scipy.misc import logsumexp
+from scipy.maxentropy.maxentutils import arrayexp, \
         innerprod, innerprodtranspose, columnmeans, columnvariances, \
         flatten, DivergenceError, sparsefeaturematrix
 

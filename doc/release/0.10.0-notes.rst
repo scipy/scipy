@@ -43,6 +43,14 @@ New features
 Deprecated features
 ===================
 
+``scipy.maxentropy``
+--------------------
+
+The maxentropy module is unmaintained, rarely used and has not been functioning
+well for several releases.  Therefore it has been deprecated for this release,
+and will be removed for scipy 0.11.  Logistic regression in scikits.learn is a
+good alternative for this functionality.  The ``scipy.maxentropy.logsumexp``
+function has been moved to ``scipy.misc``.
 
 
 Removed features

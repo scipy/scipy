@@ -26,14 +26,7 @@ import cmath
 import numpy
 from numpy import log, exp, asarray, ndarray, empty
 from scipy import sparse
-
-def logsumexp(a):
-    """Compute the log of the sum of exponentials log(e^{a_1}+...e^{a_n})
-    of the components of the array a, avoiding numerical overflow.
-    """
-    a = asarray(a)
-    a_max = a.max()
-    return a_max + log((exp(a-a_max)).sum())
+from scipy.misc import logsumexp
 
 
 def _logsumexpcomplex(values):
