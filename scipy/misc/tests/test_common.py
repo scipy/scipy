@@ -1,7 +1,8 @@
+import numpy as np
+from numpy.testing import assert_array_equal, assert_almost_equal, \
+                          assert_array_almost_equal
 
-from numpy.testing import assert_array_equal,  assert_array_almost_equal
-
-from scipy.misc import pade
+from scipy.misc import pade, logsumexp
 
 
 def test_pade_trivial():
@@ -30,3 +31,18 @@ def test_pade_4term_exp():
     assert_array_almost_equal(nump.c, [1.0])
     assert_array_almost_equal(denomp.c, [-1.0/6, 0.5,  -1.0, 1.0])
 
+def test_logsumexp():
+    """Test whether logsumexp() function correctly handles large inputs."""
+    a = np.arange(200)
+    desired = np.log(np.sum(np.exp(a)))
+    assert_almost_equal(logsumexp(a), desired)
+
+    # Now test with large numbers
+    b = [1000,1000]
+    desired = 1000.0 + np.log(2.0)
+    assert_almost_equal(logsumexp(b), desired)
+
+    n = 1000
+    b = np.ones(n)*10000
+    desired = 10000.0 + np.log(n)
+    assert_almost_equal(logsumexp(b), desired)
