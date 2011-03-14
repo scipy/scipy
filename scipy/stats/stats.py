@@ -3236,19 +3236,35 @@ def chisquare(f_obs, f_exp=None, ddof=0):
     return chisq, chisqprob(chisq, k-1-ddof)
 
 
-def ks_2samp(data1, data2):
+def ks_2samp(data1, data2, signed=False):
     """
-    Computes the Kolmogorov-Smirnof statistic on 2 samples.
+    Computes the Kolmogorov-Smirnov statistic on two samples, as well
+    as its two-sided p-value.
 
-    This is a two-sided test for the null hypothesis that 2 independent samples
-    are drawn from the same continuous distribution.
+    The two-sample Kolmogorov-Smirnov statistic is 
+
+        D = sup_x |A(x) - B(x)|,
+
+    where A and B are the empirical distribution functions of
+    parameters `a` and `b`, respectively. This is a two-sided test for
+    the null hypothesis that two independent samples are drawn from the
+    same continuous distribution.
 
     Parameters
     ----------
     a, b : sequence of 1-D ndarrays
-        two arrays of sample observations assumed to be drawn from a continuous
-        distribution, sample sizes can be different
+        Two arrays of sample observations assumed to be drawn from a continuous
+        distribution. The sample sizes can be different.
+    signed : {False, True}, optional
+        This flag determines whether the returned value `D` should 
+        be signed to indicate which distribution function is largest 
+        at the point where the two distribution functions differ the most.
+        When `signed` is true, `D` will be
 
+            A(x) - B(x)   where   x = arg sup_x |A(x) - B(x)|.
+
+        With the default value, False, `D` will be sup_x |A(X) - B(x)|
+        and therefore always in [0, 1].
 
     Returns
     -------
@@ -3308,6 +3324,13 @@ def ks_2samp(data1, data2):
     >>> ks_2samp(rvs1,rvs4)
     (0.07999999999999996, 0.41126949729859719)
 
+    When `signed` is true, the KS-statistic will be negative if the
+    second distribution function is the largest at the point where the
+    distribution functions differ the most.
+
+    >>> ks_2samp(rvs1,rvs4,signed=True)
+    (-0.07999999999999996, 0.41126949729859719)
+
     """
     data1, data2 = map(asarray, (data1, data2))
     n1 = data1.shape[0]
@@ -3319,14 +3342,19 @@ def ks_2samp(data1, data2):
     data_all = np.concatenate([data1,data2])
     cdf1 = np.searchsorted(data1,data_all,side='right')/(1.0*n1)
     cdf2 = (np.searchsorted(data2,data_all,side='right'))/(1.0*n2)
-    d = np.max(np.absolute(cdf1-cdf2))
-    #Note: d absolute not signed distance
+    diff = cdf1-cdf2
+    ind = np.argmax(np.absolute(diff))
+    d = diff[ind]
+    absd = np.absolute(d)
     en = np.sqrt(n1*n2/float(n1+n2))
     try:
-        prob = ksprob((en+0.12+0.11/en)*d)
+        prob = ksprob((en+0.12+0.11/en)*absd)
     except:
         prob = 1.0
-    return d, prob
+    if signed:
+        return d, prob
+    else:
+        return absd, prob
 
 
 def mannwhitneyu(x, y, use_continuity=True):

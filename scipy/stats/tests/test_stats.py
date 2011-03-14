@@ -1327,6 +1327,25 @@ def test_ks_2samp():
                               np.linspace(1,100,110)+20-0.1)),
         np.array((0.20818181818181825, 0.017981441789762638)))
 
+def test_ks_2samp_signed():
+    #exact small sample solution
+    data1 = np.array([1.0,2.0])
+    data2 = np.array([1.0,2.0,3.0])
+    assert_almost_equal(np.array(stats.ks_2samp(data1+0.01,data2,signed=True)),
+                np.array((0.33333333333333337, 0.99062316386915694)))
+    assert_almost_equal(np.array(stats.ks_2samp(data1-0.01,data2,signed=True)),
+                np.array((0.66666666666666674, 0.42490954988801982)))
+    assert_almost_equal(np.array(stats.ks_2samp(data2,data1+0.01,signed=True)),
+                np.array((-0.33333333333333337, 0.99062316386915694)))
+    assert_almost_equal(np.array(stats.ks_2samp(data2,data1-0.01,signed=True)),
+                np.array((-0.66666666666666674, 0.42490954988801982)))
+    # Verify that signed=False does the same as no onesided keyword argument
+    assert_almost_equal(np.array(stats.ks_2samp(data1+0.01,data2,signed=False)),
+                        np.array(stats.ks_2samp(data1+0.01,data2)))
+    assert_almost_equal(np.array(stats.ks_2samp(data1-0.01,data2,signed=False)),
+                        np.array(stats.ks_2samp(data1-0.01,data2)))
+
+
 def test_ttest_rel():
     #regression test
     tr,pr = 0.81248591389165692, 0.41846234511362157
