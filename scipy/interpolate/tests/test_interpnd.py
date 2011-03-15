@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_almost_equal, \
-        run_module_suite
+        run_module_suite, assert_raises
 
 import scipy.interpolate.interpnd as interpnd
 import scipy.spatial.qhull as qhull
@@ -181,6 +181,11 @@ class TestCloughTocher2DInterpolator(object):
         for j, func in enumerate(funcs):
             self._check_accuracy(func, x=grid, tol=1e-9, atol=5e-3, rtol=1e-2,
                                  err_msg="Function %d" % j)
+
+    def test_wrong_ndim(self):
+        x = np.random.randn(30, 3)
+        y = np.random.randn(30)
+        assert_raises(ValueError, interpnd.CloughTocher2DInterpolator, x, y)
 
 if __name__ == "__main__":
     run_module_suite()

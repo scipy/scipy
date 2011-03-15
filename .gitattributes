@@ -1,0 +1,2 @@
+* text=auto
+tools/win32/build_scripts/nsis_scripts/*.nsi.in eol=crlf

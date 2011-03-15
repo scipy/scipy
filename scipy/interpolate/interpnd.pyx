@@ -97,7 +97,7 @@ class NDInterpolatorBase(object):
             raise ValueError("input data must be at least 2-D")
         if ndim is not None and points.shape[1] != ndim:
             raise ValueError("this mode of interpolation available only for "
-                             "%-D data" % ndim)
+                             "%d-D data" % ndim)
 
     def _check_call_shape(self, xi):
         xi = np.asanyarray(xi)
