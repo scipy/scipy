@@ -2000,30 +2000,30 @@ _ZETA3 = 1.202056903159594285399738161511449990765  # special.zeta(3,1)  Apery's
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
 
 class ksone_gen(rv_continuous):
+    """General Kolmogorov-Smirnov one-sided test.
+
+    %(default)s
+
+    """
     def _cdf(self,x,n):
         return 1.0-special.smirnov(n,x)
     def _ppf(self,q,n):
         return special.smirnovi(n,1.0-q)
-ksone = ksone_gen(a=0.0,name='ksone', longname="Kolmogorov-Smirnov "\
-                  "A one-sided test statistic.", shapes="n",
-                  extradoc="""
-
-General Kolmogorov-Smirnov one-sided test.
-"""
-                  )
+ksone = ksone_gen(a=0.0, name='ksone', shapes="n")
 
 class kstwobign_gen(rv_continuous):
+    """Kolmogorov-Smirnov two-sided test for large N.
+
+    %(default)s
+
+    """
     def _cdf(self,x):
         return 1.0-special.kolmogorov(x)
     def _sf(self,x):
         return special.kolmogorov(x)
     def _ppf(self,q):
         return special.kolmogi(1.0-q)
-kstwobign = kstwobign_gen(a=0.0,name='kstwobign', longname='Kolmogorov-Smirnov two-sided (for large N)', extradoc="""
-
-Kolmogorov-Smirnov two-sided test for large N
-"""
-                          )
+kstwobign = kstwobign_gen(a=0.0, name='kstwobign')
 
 
 ## Normal distribution
@@ -2044,6 +2044,22 @@ def _norm_logcdf(x):
 def _norm_ppf(q):
     return special.ndtri(q)
 class norm_gen(rv_continuous):
+    """A normal continuous random variable.
+
+    The location (loc) keyword specifies the mean.
+    The scale (scale) keyword specifies the standard deviation.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability distribution for `norm` is::
+
+        norm.pdf(x) = exp(-x**2/2)/sqrt(2*pi)
+
+    %(example)s
+
+    """
     def _rvs(self):
         return mtrand.standard_normal(self._size)
     def _pdf(self,x):
@@ -2066,20 +2082,27 @@ class norm_gen(rv_continuous):
         return 0.0, 1.0, 0.0, 0.0
     def _entropy(self):
         return 0.5*(log(2*pi)+1)
-norm = norm_gen(name='norm',longname='A normal',extradoc="""
-
-Normal distribution
-
-The location (loc) keyword specifies the mean.
-The scale (scale) keyword specifies the standard deviation.
-
-normal.pdf(x) = exp(-x**2/2)/sqrt(2*pi)
-""")
+norm = norm_gen(name='norm')
 
 
 ## Alpha distribution
 ##
 class alpha_gen(rv_continuous):
+    """An alpha continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability distribution for `alpha` is::
+
+        alpha.pdf(x,a) = 1/(x**2*Phi(a)*sqrt(2*pi)) * exp(-1/2 * (a-1/x)**2),
+
+    where ``Phi(alpha)`` is the normal CDF, ``x > 0``, and ``a > 0``.
+
+    %(example)s
+
+    """
     def _pdf(self, x, a):
         return 1.0/(x**2)/special.ndtr(a)*_norm_pdf(a-1.0/x)
     def _logpdf(self, x, a):
@@ -2090,17 +2113,27 @@ class alpha_gen(rv_continuous):
         return 1.0/arr(a-special.ndtri(q*special.ndtr(a)))
     def _stats(self, a):
         return [inf]*2 + [nan]*2
-alpha = alpha_gen(a=0.0,name='alpha',shapes='a',extradoc="""
+alpha = alpha_gen(a=0.0, name='alpha', shapes='a')
 
-Alpha distribution
-
-alpha.pdf(x,a) = 1/(x**2*Phi(a)*sqrt(2*pi)) * exp(-1/2 * (a-1/x)**2)
-where Phi(alpha) is the normal CDF, x > 0, and a > 0.
-""")
 
 ## Anglit distribution
 ##
 class anglit_gen(rv_continuous):
+    """An anglit continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability distribution for `anglit` is::
+
+        anglit.pdf(x) = sin(2*x + pi/2) = cos(2*x),
+
+    for ``-pi/4 <= x <= pi/4``.
+
+    %(example)s
+
+    """
     def _pdf(self, x):
         return cos(2*x)
     def _cdf(self, x):
@@ -2111,17 +2144,26 @@ class anglit_gen(rv_continuous):
         return 0.0, pi*pi/16-0.5, 0.0, -2*(pi**4 - 96)/(pi*pi-8)**2
     def _entropy(self):
         return 1-log(2)
-anglit = anglit_gen(a=-pi/4,b=pi/4,name='anglit', extradoc="""
-
-Anglit distribution
-
-anglit.pdf(x) = sin(2*x+pi/2) = cos(2*x)    for -pi/4 <= x <= pi/4
-""")
+anglit = anglit_gen(a=-pi/4, b=pi/4, name='anglit')
 
 
 ## Arcsine distribution
 ##
 class arcsine_gen(rv_continuous):
+    """An arcsine continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability distribution for `arcsine` is::
+
+        arcsine.pdf(x) = 1/(pi*sqrt(x*(1-x)))
+        for 0 < x < 1.
+
+    %(example)s
+
+    """
     def _pdf(self, x):
         return 1.0/pi/sqrt(x*(1-x))
     def _cdf(self, x):
@@ -2137,18 +2179,28 @@ class arcsine_gen(rv_continuous):
         return mu, mu2, g1, g2
     def _entropy(self):
         return -0.24156447527049044468
-arcsine = arcsine_gen(a=0.0,b=1.0,name='arcsine',extradoc="""
-
-Arcsine distribution
-
-arcsine.pdf(x) = 1/(pi*sqrt(x*(1-x)))
-for 0 < x < 1.
-""")
+arcsine = arcsine_gen(a=0.0, b=1.0, name='arcsine')
 
 
 ## Beta distribution
 ##
 class beta_gen(rv_continuous):
+    """
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability distribution for `beta` is::
+
+        beta.pdf(x, a, b) = gamma(a+b)/(gamma(a)*gamma(b)) * x**(a-1) *
+        (1-x)**(b-1),
+
+    for ``0 < x < 1``, ``a > 0``, ``b > 0``.
+
+    %(example)s
+
+    """
     def _rvs(self, a, b):
         return mtrand.beta(a,b,self._size)
     def _pdf(self, x, a, b):
@@ -2196,13 +2248,8 @@ class beta_gen(rv_continuous):
             return a, b, floc, fscale
         else: # do general fit
             return super(beta_gen, self).fit(data, *args, **kwds)
-beta = beta_gen(a=0.0, b=1.0, name='beta',shapes='a, b',extradoc="""
+beta = beta_gen(a=0.0, b=1.0, name='beta', shapes='a, b')
 
-Beta distribution
-
-beta.pdf(x, a, b) = gamma(a+b)/(gamma(a)*gamma(b)) * x**(a-1) * (1-x)**(b-1)
-for 0 < x < 1, a, b > 0.
-""")
 
 ## Beta Prime
 class betaprime_gen(rv_continuous):
