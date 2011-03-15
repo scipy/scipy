@@ -232,15 +232,15 @@ _doc_default_callparams = \
 """
 Parameters
 ----------
-x : array-like
+x : array_like
     quantiles
-q : array-like
+q : array_like
     lower or upper tail probability
-%(shapes)s : array-like
+%(shapes)s : array_like
     shape parameters
-loc : array-like, optional
+loc : array_like, optional
     location parameter (default=0)
-scale : array-like, optional
+scale : array_like, optional
     scale parameter (default=1)
 size : int or tuple of ints, optional
     shape of random variates (default computed from input arguments )
@@ -653,19 +653,19 @@ class rv_generic(object):
 
         Parameters
         ----------
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
-        scale : array-like, optional
+        scale : array_like, optional
             scale parameter (default=1)
         size : int or tuple of ints, optional
             defining number of random variates (default=1)
 
         Returns
         -------
-        rvs : array-like
+        rvs : array_like
             random variates of given `size`
 
         """
@@ -707,12 +707,12 @@ class rv_generic(object):
 
         Parameters
         ----------
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
-        scale : array-like, optional
+        scale : array_like, optional
             scale parameter (default=1)
 
         Returns
@@ -732,12 +732,12 @@ class rv_generic(object):
 
         Parameters
         ----------
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
-        scale : array-like, optional
+        scale : array_like, optional
             scale parameter (default=1)
 
         Returns
@@ -757,12 +757,12 @@ class rv_generic(object):
 
         Parameters
         ----------
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
-        scale : array-like, optional
+        scale : array_like, optional
             scale parameter (default=1)
 
         Returns
@@ -783,12 +783,12 @@ class rv_generic(object):
 
         Parameters
         ----------
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
-        scale : array-like, optional
+        scale : array_like, optional
             scale parameter (default=1)
 
         Returns
@@ -806,19 +806,19 @@ class rv_generic(object):
 
         Parameters
         ----------
-        alpha : array-like float in [0,1]
+        alpha : array_like float in [0,1]
             Probability that an rv will be drawn from the returned range
-        arg1, arg2, ... : array-like
+        arg1, arg2, ... : array_like
             The shape parameter(s) for the distribution (see docstring of the instance
             object for more information)
-        loc: array-like, optioal
+        loc: array_like, optioal
             location parameter (deafult = 0)
-        scale : array-like, optional
+        scale : array_like, optional
             scale paramter (default = 1)
 
         Returns
         -------
-        a, b: array-like (float)
+        a, b: array_like (float)
             end-points of range that contain alpha % of the rvs
         """
         alpha = arr(alpha)
@@ -943,15 +943,15 @@ class rv_continuous(rv_generic):
 
     **Parameters for Methods**
 
-    x : array-like
+    x : array_like
         quantiles
-    q : array-like
+    q : array_like
         lower or upper tail probability
-    <shape(s)> : array-like
+    <shape(s)> : array_like
         shape parameters
-    loc : array-like, optional
+    loc : array_like, optional
         location parameter (default=0)
-    scale : array-like, optional
+    scale : array_like, optional
         scale parameter (default=1)
     size : int or tuple of ints, optional
         shape of random variates (default computed from input arguments )
@@ -1135,7 +1135,7 @@ class rv_continuous(rv_generic):
             # remove shapes from call parameters if there are none
             for item in ['callparams', 'default', 'before_notes']:
                 tempdict[item] = tempdict[item].replace(\
-                        "\n%(shapes)s : array-like\n    shape parameters", "")
+                        "\n%(shapes)s : array_like\n    shape parameters", "")
         for i in range(2):
             if self.shapes is None:
                 # necessary because we use %(shapes)s in two forms (w w/o ", ")
@@ -1221,19 +1221,19 @@ class rv_continuous(rv_generic):
 
         Parameters
         ----------
-        x : array-like
+        x : array_like
             quantiles
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
-        scale : array-like, optional
+        scale : array_like, optional
             scale parameter (default=1)
 
         Returns
         -------
-        pdf : array-like
+        pdf : array_like
             Probability density function evaluated at x
 
         """
@@ -1263,19 +1263,19 @@ class rv_continuous(rv_generic):
 
         Parameters
         ----------
-        x : array-like
+        x : array_like
             quantiles
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
-        scale : array-like, optional
+        scale : array_like, optional
             scale parameter (default=1)
 
         Returns
         -------
-        logpdf : array-like
+        logpdf : array_like
             Log of the probability density function evaluated at x
 
         """
@@ -1305,19 +1305,19 @@ class rv_continuous(rv_generic):
 
         Parameters
         ----------
-        x : array-like
+        x : array_like
             quantiles
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
-        scale : array-like, optional
+        scale : array_like, optional
             scale parameter (default=1)
 
         Returns
         -------
-        cdf : array-like
+        cdf : array_like
             Cumulative distribution function evaluated at x
 
         """
@@ -1346,19 +1346,19 @@ class rv_continuous(rv_generic):
 
         Parameters
         ----------
-        x : array-like
+        x : array_like
             quantiles
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
-        scale : array-like, optional
+        scale : array_like, optional
             scale parameter (default=1)
 
         Returns
         -------
-        logcdf : array-like
+        logcdf : array_like
             Log of the cumulative distribution function evaluated at x
 
         """
@@ -1388,19 +1388,19 @@ class rv_continuous(rv_generic):
 
         Parameters
         ----------
-        x : array-like
+        x : array_like
             quantiles
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
-        scale : array-like, optional
+        scale : array_like, optional
             scale parameter (default=1)
 
         Returns
         -------
-        sf : array-like
+        sf : array_like
             Survival function evaluated at x
 
         """
@@ -1429,19 +1429,19 @@ class rv_continuous(rv_generic):
 
         Parameters
         ----------
-        x : array-like
+        x : array_like
             quantiles
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
-        scale : array-like, optional
+        scale : array_like, optional
             scale parameter (default=1)
 
         Returns
         -------
-        logsf : array-like
+        logsf : array_like
             Log of the survival function evaluated at x
         """
         loc,scale=map(kwds.get,['loc','scale'])
@@ -1470,19 +1470,19 @@ class rv_continuous(rv_generic):
 
         Parameters
         ----------
-        q : array-like
+        q : array_like
             lower tail probability
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
-        scale : array-like, optional
+        scale : array_like, optional
             scale parameter (default=1)
 
         Returns
         -------
-        x : array-like
+        x : array_like
             quantile corresponding to the lower tail probability q.
 
         """
@@ -1511,19 +1511,19 @@ class rv_continuous(rv_generic):
 
         Parameters
         ----------
-        q : array-like
+        q : array_like
             upper tail probability
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
-        scale : array-like, optional
+        scale : array_like, optional
             scale parameter (default=1)
 
         Returns
         -------
-        x : array-like
+        x : array_like
             quantile corresponding to the upper tail probability q.
 
         """
@@ -1553,12 +1553,12 @@ class rv_continuous(rv_generic):
 
         Parameters
         ----------
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
-        scale : array-like, optional
+        scale : array_like, optional
             scale parameter (default=1)
 
         moments : string, optional
@@ -1917,12 +1917,12 @@ class rv_continuous(rv_generic):
 
         Parameters
         ----------
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
-        scale : array-like, optional
+        scale : array_like, optional
             scale parameter (default=1)
 
         """
@@ -5165,7 +5165,7 @@ class rv_discrete(rv_generic):
             # remove shapes from call parameters if there are none
             for item in ['callparams', 'default', 'before_notes']:
                 tempdict[item] = tempdict[item].replace(\
-                        "\n%(shapes)s : array-like\n    shape parameters", "")
+                        "\n%(shapes)s : array_like\n    shape parameters", "")
         for i in range(2):
             if self.shapes is None:
                 # necessary because we use %(shapes)s in two forms (w w/o ", ")
@@ -5227,17 +5227,17 @@ class rv_discrete(rv_generic):
 
         Parameters
         ----------
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
         size : int or tuple of ints, optional
             defining number of random variates (default=1)
 
         Returns
         -------
-        rvs : array-like
+        rvs : array_like
             random variates of given `size`
 
         """
@@ -5251,17 +5251,17 @@ class rv_discrete(rv_generic):
 
         Parameters
         ----------
-        k : array-like
+        k : array_like
             quantiles
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
 
         Returns
         -------
-        pmf : array-like
+        pmf : array_like
             Probability mass function evaluated at k
 
         """
@@ -5289,17 +5289,17 @@ class rv_discrete(rv_generic):
 
         Parameters
         ----------
-        k : array-like
+        k : array_like
             quantiles
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
 
         Returns
         -------
-        logpmf : array-like
+        logpmf : array_like
             Log of the probability mass function evaluated at k
 
         """
@@ -5327,17 +5327,17 @@ class rv_discrete(rv_generic):
 
         Parameters
         ----------
-        k : array-like, int
+        k : array_like, int
             quantiles
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
 
         Returns
         -------
-        cdf : array-like
+        cdf : array_like
             Cumulative distribution function evaluated at k
 
         """
@@ -5367,17 +5367,17 @@ class rv_discrete(rv_generic):
 
         Parameters
         ----------
-        k : array-like, int
+        k : array_like, int
             quantiles
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
 
         Returns
         -------
-        logcdf : array-like
+        logcdf : array_like
             Log of the cumulative distribution function evaluated at k
 
         """
@@ -5408,17 +5408,17 @@ class rv_discrete(rv_generic):
 
         Parameters
         ----------
-        k : array-like
+        k : array_like
             quantiles
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
 
         Returns
         -------
-        sf : array-like
+        sf : array_like
             Survival function evaluated at k
 
         """
@@ -5447,17 +5447,17 @@ class rv_discrete(rv_generic):
 
         Parameters
         ----------
-        k : array-like
+        k : array_like
             quantiles
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
 
         Returns
         -------
-        sf : array-like
+        sf : array_like
             Survival function evaluated at k
 
         """
@@ -5487,19 +5487,19 @@ class rv_discrete(rv_generic):
 
         Parameters
         ----------
-        q : array-like
+        q : array_like
             lower tail probability
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
-        scale: array-like, optional
+        scale: array_like, optional
             scale parameter (default=1)
 
         Returns
         -------
-        k : array-like
+        k : array_like
             quantile corresponding to the lower tail probability, q.
 
         """
@@ -5530,17 +5530,17 @@ class rv_discrete(rv_generic):
 
         Parameters
         ----------
-        q : array-like
+        q : array_like
             upper tail probability
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
 
         Returns
         -------
-        k : array-like
+        k : array_like
             quantile corresponding to the upper tail probability, q.
 
         """
@@ -5582,10 +5582,10 @@ class rv_discrete(rv_generic):
 
         Parameters
         ----------
-        arg1, arg2, arg3,... : array-like
+        arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
-        loc : array-like, optional
+        loc : array_like, optional
             location parameter (default=0)
         moments : string, optional
             composed of letters ['mvsk'] defining which moments to compute:
