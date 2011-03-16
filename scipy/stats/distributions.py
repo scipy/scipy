@@ -2053,7 +2053,7 @@ class norm_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `norm` is::
+    The probability density function for `norm` is::
 
         norm.pdf(x) = exp(-x**2/2)/sqrt(2*pi)
 
@@ -2094,7 +2094,7 @@ class alpha_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `alpha` is::
+    The probability density function for `alpha` is::
 
         alpha.pdf(x,a) = 1/(x**2*Phi(a)*sqrt(2*pi)) * exp(-1/2 * (a-1/x)**2),
 
@@ -2125,7 +2125,7 @@ class anglit_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `anglit` is::
+    The probability density function for `anglit` is::
 
         anglit.pdf(x) = sin(2*x + pi/2) = cos(2*x),
 
@@ -2156,7 +2156,7 @@ class arcsine_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `arcsine` is::
+    The probability density function for `arcsine` is::
 
         arcsine.pdf(x) = 1/(pi*sqrt(x*(1-x)))
         for 0 < x < 1.
@@ -2191,7 +2191,7 @@ class beta_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `beta` is::
+    The probability density function for `beta` is::
 
         beta.pdf(x, a, b) = gamma(a+b)/(gamma(a)*gamma(b)) * x**(a-1) *
         (1-x)**(b-1),
@@ -2259,7 +2259,7 @@ class betaprime_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `betaprime` is::
+    The probability density function for `betaprime` is::
 
         betaprime.pdf(x, a, b) =
             gamma(a+b) / (gamma(a)*gamma(b)) * x**(a-1) * (1-x)**(-a-b)
@@ -2308,7 +2308,7 @@ class bradford_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `bradford` is::
+    The probability density function for `bradford` is::
 
         bradford.pdf(x, c) = c / (k * (1+c*x)),
 
@@ -2353,7 +2353,7 @@ class burr_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `burr` is::
+    The probability density function for `burr` is::
 
         burr.pdf(x, c, d) = c * d * x**(-c-1) * (1+x**(-c))**(-d-1)
 
@@ -2433,7 +2433,7 @@ class cauchy_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `cauchy` is::
+    The probability density function for `cauchy` is::
 
         cauchy.pdf(x) = 1 / (pi * (1 + x**2))
 
@@ -2470,7 +2470,7 @@ class chi_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `chi` is::
+    The probability density function for `chi` is::
 
         chi.pdf(x,df) = x**(df-1) * exp(-x**2/2) / (2**(df/2-1) * gamma(df/2))
 
@@ -2505,7 +2505,7 @@ class chi2_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `chi2` is::
+    The probability density function for `chi2` is::
 
         chi2.pdf(x,df) = 1 / (2*gamma(df/2)) * (x/2)**(df/2-1) * exp(-x/2)
 
@@ -2550,7 +2550,7 @@ class cosine_gen(rv_continuous):
     Notes
     -----
     The cosine distribution is an approximation to the normal distribution.
-    The probability distribution for `cosine` is::
+    The probability density function for `cosine` is::
 
         cosine.pdf(x) = 1/(2*pi) * (1+cos(x))
 
@@ -2578,7 +2578,7 @@ class dgamma_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `dgamma` is::
+    The probability density function for `dgamma` is::
 
         dgamma.pdf(x, a) = 1 / (2*gamma(a)) * abs(x)**(a-1) * exp(-abs(x))
 
@@ -2621,7 +2621,7 @@ class dweibull_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `dweibull` is::
+    The probability density function for `dweibull` is::
 
         dweibull.pdf(x, c) = c / 2 * abs(x)**(c-1) * exp(-abs(x)**c)
 
@@ -2701,7 +2701,7 @@ class expon_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `expon` is::
+    The probability density function for `expon` is::
 
         expon.pdf(x) = exp(-x)
 
@@ -2743,7 +2743,7 @@ class exponweib_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `exponweib` is::
+    The probability density function for `exponweib` is::
 
         exponweib.pdf(x, a, c) =
             a * c * (1-exp(-x**c))**(a-1) * exp(-x**c)*x**(c-1)
@@ -2776,7 +2776,7 @@ class exponpow_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `exponpow` is::
+    The probability density function for `exponpow` is::
 
         exponpow.pdf(x, b) = b * x**(b-1) * exp(1+x**b - exp(x**b))
 
@@ -2813,7 +2813,7 @@ class fatiguelife_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `fatiguelife` is::
+    The probability density function for `fatiguelife` is::
 
         fatiguelife.pdf(x,c) =
             (x+1) / (2*c*sqrt(2*pi*x**3)) * exp(-(x-1)**2/(2*x*c**2))
@@ -2858,7 +2858,7 @@ class foldcauchy_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `foldcauchy` is::
+    The probability density function for `foldcauchy` is::
 
         foldcauchy.pdf(x, c) = 1/(pi*(1+(x-c)**2)) + 1/(pi*(1+(x+c)**2))
 
@@ -2888,7 +2888,7 @@ class f_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `f` is::
+    The probability density function for `f` is::
 
                              df2**(df2/2) * df1**(df1/2) * x**(df1/2-1)
         F.pdf(x, df1, df2) = --------------------------------------------
@@ -2948,7 +2948,7 @@ class foldnorm_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `foldnorm` is::
+    The probability density function for `foldnorm` is::
 
         foldnormal.pdf(x, c) = sqrt(2/pi) * cosh(c*x) * exp(-(x**2+c**2)/2)
 
@@ -2996,7 +2996,7 @@ class frechet_r_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `frechet_r` is::
+    The probability density function for `frechet_r` is::
 
         frechet_r.pdf(x, c) = c * x**(c-1) * exp(-x**c)
 
@@ -3034,7 +3034,7 @@ class frechet_l_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `frechet_l` is::
+    The probability density function for `frechet_l` is::
 
         frechet_l.pdf(x, c) = c * (-x)**(c-1) * exp(-(-x)**c)
 
@@ -3071,7 +3071,7 @@ class genlogistic_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `genlogistic` is::
+    The probability density function for `genlogistic` is::
 
         genlogistic.pdf(x, c) = c * exp(-x) / (1 + exp(-x))**(c+1)
 
@@ -3111,7 +3111,7 @@ class genpareto_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `genpareto` is::
+    The probability density function for `genpareto` is::
 
         genpareto.pdf(x, c) = (1 + c * x)**(-1 - 1/c)
 
@@ -3158,7 +3158,7 @@ class genexpon_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `genexpon` is::
+    The probability density function for `genexpon` is::
 
         genexpon.pdf(x, a, b, c) = (a + b * (1 - exp(-c*x))) * \
                                    exp(-a*x - b*x + b/c * (1-exp(-c*x)))
@@ -3206,7 +3206,7 @@ class genextreme_gen(rv_continuous):
     Notes
     -----
     For ``c=0``, `genextreme` is equal to `gumbel_r`.
-    The probability distribution for `genextreme` is::
+    The probability density function for `genextreme` is::
 
         genextreme.pdf(x, c) =
             exp(-exp(-x))*exp(-x),                    for c==0
@@ -3302,7 +3302,7 @@ class gamma_gen(rv_continuous):
     When ``a`` is an integer, this is the Erlang distribution, and for ``a=1``
     it is the exponential distribution.
 
-    The probability distribution for `gamma` is::
+    The probability density function for `gamma` is::
 
         gamma.pdf(x, a) = x**(a-1) * exp(-x) / gamma(a)
 
@@ -3355,7 +3355,7 @@ class gengamma_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `gengamma` is::
+    The probability density function for `gengamma` is::
 
         gengamma.pdf(x, a, c) = abs(c) * x**(c*a-1) * exp(-x**c) / gamma(a)
 
@@ -3396,7 +3396,7 @@ class genhalflogistic_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `genhalflogistic` is::
+    The probability density function for `genhalflogistic` is::
 
         genhalflogistic.pdf(x, c) = 2 * (1-c*x)**(1/c-1) / (1+(1-c*x)**(1/c))**2
 
@@ -3437,7 +3437,7 @@ class gompertz_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `gompertz` is::
+    The probability density function for `gompertz` is::
 
         gompertz.pdf(x, c) = c * exp(x) * exp(-c*(exp(x)-1))
 
@@ -3473,7 +3473,7 @@ class gumbel_r_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `gumbel_r` is::
+    The probability density function for `gumbel_r` is::
 
         gumbel_r.pdf(x) = exp(-(x + exp(-x)))
 
@@ -3514,7 +3514,7 @@ class gumbel_l_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `gumbel_l` is::
+    The probability density function for `gumbel_l` is::
 
         gumbel_l.pdf(x) = exp(x - exp(x))
 
@@ -3551,7 +3551,7 @@ class halfcauchy_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `halfcauchy` is::
+    The probability density function for `halfcauchy` is::
 
         halfcauchy.pdf(x) = 2 / (pi * (1 + x**2))
 
@@ -3585,7 +3585,7 @@ class halflogistic_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `halflogistic` is::
+    The probability density function for `halflogistic` is::
 
         halflogistic.pdf(x) = 2 * exp(-x) / (1+exp(-x))**2 = 1/2 * sech(x/2)**2
 
@@ -3620,7 +3620,7 @@ class halfnorm_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `halfnorm` is::
+    The probability density function for `halfnorm` is::
 
         halfnorm.pdf(x) = sqrt(2/pi) * exp(-x**2/2)
 
@@ -3656,7 +3656,7 @@ class hypsecant_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `FILL` is::
+    The probability density function for `hypsecant` is::
 
         hypsecant.pdf(x) = 1/pi * sech(x)
 
@@ -3685,7 +3685,7 @@ class gausshyper_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `gausshyper` is::
+    The probability density function for `gausshyper` is::
 
         gausshyper.pdf(x, a, b, c, z) =
             C * x**(a-1) * (1-x)**(b-1) * (1+z*x)**(-c)
@@ -3721,7 +3721,7 @@ class invgamma_gen(rv_continuous):
 
     Notes
     -----
-    The probability distribution for `invgamma` is::
+    The probability density function for `invgamma` is::
 
         invgamma.pdf(x, a) = x**(-a-1) / gamma(a) * exp(-1/x)
 
@@ -3749,6 +3749,21 @@ invgamma = invgamma_gen(a=0.0, name='invgamma', shapes='a')
 # scale is gamma from DATAPLOT and B from Regress
 
 class invgauss_gen(rv_continuous):
+    """An inverse Gaussian continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `invgauss` is::
+
+        invgauss.pdf(x, mu) = 1 / sqrt(2*pi*x**3) * exp(-(x-mu)**2/(2*x*mu**2))
+
+    for ``x > 0``.
+
+    %(example)s
+
+    """
     def _rvs(self, mu):
         return mtrand.wald(mu, 1.0, size=self._size)
     def _pdf(self, x, mu):
@@ -3762,20 +3777,27 @@ class invgauss_gen(rv_continuous):
         return C1
     def _stats(self, mu):
         return mu, mu**3.0, 3*sqrt(mu), 15*mu
-invgauss = invgauss_gen(a=0.0, name='invgauss', longname="An inverse Gaussian",
-                        shapes="mu",extradoc="""
-
-Inverse Gaussian distribution
-
-invgauss.pdf(x,mu) = 1/sqrt(2*pi*x**3) * exp(-(x-mu)**2/(2*x*mu**2))
-for x > 0.
-"""
-                      )
+invgauss = invgauss_gen(a=0.0, name='invgauss', shapes="mu")
 
 
 ## Inverted Weibull
 
 class invweibull_gen(rv_continuous):
+    """An inverted Weibull continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `invweibull` is::
+
+        invweibull.pdf(x, c) = c * x**(-c-1) * exp(-x**(-c))
+
+    for ``x > 0``, ``c > 0``.
+
+    %(example)s
+
+    """
     def _pdf(self, x, c):
         xc1 = x**(-c-1.0)
         #xc2 = xc1*x
@@ -3789,20 +3811,31 @@ class invweibull_gen(rv_continuous):
         return pow(-log(q),arr(-1.0/c))
     def _entropy(self, c):
         return 1+_EULER + _EULER / c - log(c)
-invweibull = invweibull_gen(a=0,name='invweibull',
-                            longname="An inverted Weibull",
-                            shapes='c',extradoc="""
+invweibull = invweibull_gen(a=0, name='invweibull', shapes='c')
 
-Inverted Weibull distribution
-
-invweibull.pdf(x,c) = c*x**(-c-1)*exp(-x**(-c))
-for x > 0, c > 0.
-"""
-                            )
 
 ## Johnson SB
 
 class johnsonsb_gen(rv_continuous):
+    """A Johnson SB continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    johnsonsu
+
+    Notes
+    -----
+    The probability density function for `johnsonsb` is::
+
+        johnsonsb.pdf(x, a, b) = b / (x*(1-x)) * phi(a + b * log(x/(1-x)))
+
+    for ``0 < x < 1`` and ``a,b > 0``, and ``phi`` is the normal pdf.
+
+    %(example)s
+
+    """
     def _argcheck(self, a, b):
         return (b > 0) & (a==a)
     def _pdf(self, x, a, b):
@@ -3812,19 +3845,31 @@ class johnsonsb_gen(rv_continuous):
         return norm.cdf(a+b*log(x/(1.0-x)))
     def _ppf(self, q, a, b):
         return 1.0/(1+exp(-1.0/b*(norm.ppf(q)-a)))
-johnsonsb = johnsonsb_gen(a=0.0,b=1.0,name='johnsonb',
-                          longname="A Johnson SB",
-                          shapes="a, b",extradoc="""
+johnsonsb = johnsonsb_gen(a=0.0, b=1.0, name='johnsonb', shapes="a, b")
 
-Johnson SB distribution
-
-johnsonsb.pdf(x,a,b) = b/(x*(1-x)) * phi(a + b*log(x/(1-x)))
-for 0 < x < 1 and a,b > 0, and phi is the normal pdf.
-"""
-                          )
 
 ## Johnson SU
 class johnsonsu_gen(rv_continuous):
+    """A Johnson SU continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    johnsonsb
+
+    Notes
+    -----
+    The probability density function for `johnsonsu` is::
+
+        johnsonsu.pdf(x, a, b) = b / sqrt(x**2 + 1) *
+                                 phi(a + b * log(x + sqrt(x**2 + 1)))
+
+    for all ``x, a, b > 0``, and `phi` is the normal pdf.
+
+    %(example)s
+
+    """
     def _argcheck(self, a, b):
         return (b > 0) & (a==a)
     def _pdf(self, x, a, b):
@@ -3835,20 +3880,25 @@ class johnsonsu_gen(rv_continuous):
         return norm.cdf(a+b*log(x+sqrt(x*x+1)))
     def _ppf(self, q, a, b):
         return sinh((norm.ppf(q)-a)/b)
-johnsonsu = johnsonsu_gen(name='johnsonsu',longname="A Johnson SU",
-                          shapes="a, b", extradoc="""
-
-Johnson SU distribution
-
-johnsonsu.pdf(x,a,b) = b/sqrt(x**2+1) * phi(a + b*log(x+sqrt(x**2+1)))
-for all x, a,b > 0, and phi is the normal pdf.
-"""
-                          )
+johnsonsu = johnsonsu_gen(name='johnsonsu', shapes="a, b")
 
 
 ## Laplace Distribution
 
 class laplace_gen(rv_continuous):
+    """A Laplace continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `laplace` is::
+
+        laplace.pdf(x) = 1/2 * exp(-abs(x))
+
+    %(example)s
+
+    """
     def _rvs(self):
         return mtrand.laplace(0, 1, size=self._size)
     def _pdf(self, x):
@@ -3861,19 +3911,33 @@ class laplace_gen(rv_continuous):
         return 0, 2, 0, 3
     def _entropy(self):
         return log(2)+1
-laplace = laplace_gen(name='laplace', longname="A Laplace",
-                      extradoc="""
-
-Laplacian distribution
-
-laplace.pdf(x) = 1/2*exp(-abs(x))
-"""
-                      )
+laplace = laplace_gen(name='laplace')
 
 
 ## Levy Distribution
 
 class levy_gen(rv_continuous):
+    """A Levy continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    levy_stable, levy_l
+
+    Notes
+    -----
+    The probability density function for `levy` is::
+
+        levy.pdf(x) = 1 / (x * sqrt(2*pi*x)) * exp(-1/(2*x))
+
+    for ``x > 0``.
+
+    This is the same as the Levy-stable distribution with a=1/2 and b=1.
+
+    %(example)s
+
+    """
     def _pdf(self, x):
         return 1/sqrt(2*pi*x)/x*exp(-1/(2*x))
     def _cdf(self, x):
@@ -3883,20 +3947,33 @@ class levy_gen(rv_continuous):
         return 1.0/(val*val)
     def _stats(self):
         return inf, inf, nan, nan
-levy = levy_gen(a=0.0,name="levy", longname = "A Levy", extradoc="""
+levy = levy_gen(a=0.0,name="levy")
 
-Levy distribution
-
-levy.pdf(x) = 1/(x*sqrt(2*pi*x)) * exp(-1/(2*x))
-for x > 0.
-
-This is the same as the Levy-stable distribution with a=1/2 and b=1.
-"""
-                )
 
 ## Left-skewed Levy Distribution
 
 class levy_l_gen(rv_continuous):
+    """A left-skewed Levy continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    levy, levy_stable
+
+    Notes
+    -----
+    The probability density function for `levy_l` is::
+
+        levy_l.pdf(x) = 1 / (abs(x) * sqrt(2*pi*abs(x))) * exp(-1/(2*abs(x)))
+
+    for ``x < 0``.
+
+    This is the same as the Levy-stable distribution with a=1/2 and b=-1.
+
+    %(example)s
+
+    """
     def _pdf(self, x):
         ax = abs(x)
         return 1/sqrt(2*pi*ax)/ax*exp(-1/(2*ax))
@@ -3908,20 +3985,28 @@ class levy_l_gen(rv_continuous):
         return -1.0/(val*val)
     def _stats(self):
         return inf, inf, nan, nan
-levy_l = levy_l_gen(b=0.0,name="levy_l", longname = "A left-skewed Levy", extradoc="""
+levy_l = levy_l_gen(b=0.0, name="levy_l")
 
-Left-skewed Levy distribution
-
-levy_l.pdf(x) = 1/(abs(x)*sqrt(2*pi*abs(x))) * exp(-1/(2*abs(x)))
-for x < 0.
-
-This is the same as the Levy-stable distribution with a=1/2 and b=-1.
-"""
-                )
 
 ## Levy-stable Distribution (only random variates)
 
 class levy_stable_gen(rv_continuous):
+    """A Levy-stable continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    levy, levy_l
+
+    Notes
+    -----
+    Levy-stable distribution (only random variates available -- ignore other
+    docs)
+
+    %(example)s
+
+    """
     def _rvs(self, alpha, beta):
         sz = self._size
         TH = uniform.rvs(loc=-pi/2.0,scale=pi,size=sz)
@@ -3950,18 +4035,26 @@ class levy_stable_gen(rv_continuous):
     def _pdf(self, x, alpha, beta):
         raise NotImplementedError
 
-levy_stable = levy_stable_gen(name='levy_stable', longname="A Levy-stable",
-                    shapes="alpha, beta", extradoc="""
-
-Levy-stable distribution (only random variates available -- ignore other docs)
-"""
-                    )
+levy_stable = levy_stable_gen(name='levy_stable', shapes="alpha, beta")
 
 
 ## Logistic (special case of generalized logistic with c=1)
 ## Sech-squared
 
 class logistic_gen(rv_continuous):
+    """A logistic continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `logistic` is::
+
+        logistic.pdf(x) = exp(-x) / (1+exp(-x))**2
+
+    %(example)s
+
+    """
     def _rvs(self):
         return mtrand.logistic(size=self._size)
     def _pdf(self, x):
@@ -3975,19 +4068,27 @@ class logistic_gen(rv_continuous):
         return 0, pi*pi/3.0, 0, 6.0/5.0
     def _entropy(self):
         return 1.0
-logistic = logistic_gen(name='logistic', longname="A logistic",
-                        extradoc="""
-
-Logistic distribution
-
-logistic.pdf(x) = exp(-x)/(1+exp(-x))**2
-"""
-                        )
+logistic = logistic_gen(name='logistic')
 
 
 ## Log Gamma
 #
 class loggamma_gen(rv_continuous):
+    """A log gamma continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `loggamma` is::
+
+        loggamma.pdf(x, c) = exp(c*x-exp(x)) / gamma(c)
+
+    for all ``x, c > 0``.
+
+    %(example)s
+
+    """
     def _rvs(self, c):
         return log(mtrand.gamma(c, size=self._size))
     def _pdf(self, x, c):
@@ -3999,19 +4100,28 @@ class loggamma_gen(rv_continuous):
     def _munp(self,n,*args):
         # use generic moment calculation using ppf
         return self._mom0_sc(n,*args)
-loggamma = loggamma_gen(name='loggamma', longname="A log gamma", shapes='c',
-                        extradoc="""
+loggamma = loggamma_gen(name='loggamma', shapes='c')
 
-Log gamma distribution
-
-loggamma.pdf(x,c) = exp(c*x-exp(x)) / gamma(c)
-for all x, c > 0.
-"""
-                        )
 
 ## Log-Laplace  (Log Double Exponential)
 ##
 class loglaplace_gen(rv_continuous):
+    """A log-Laplace continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `loglaplace` is::
+
+    loglaplace.pdf(x, c) = c / 2 * x**(c-1),   for 0 < x < 1
+                         = c / 2 * x**(-c-1),  for x >= 1
+
+    for ``c > 0``.
+
+    %(example)s
+
+    """
     def _pdf(self, x, c):
         cd2 = c/2.0
         c = where(x < 1, c, -c)
@@ -4022,17 +4132,8 @@ class loglaplace_gen(rv_continuous):
         return where(q < 0.5, (2.0*q)**(1.0/c), (2*(1.0-q))**(-1.0/c))
     def _entropy(self, c):
         return log(2.0/c) + 1.0
-loglaplace = loglaplace_gen(a=0.0, name='loglaplace',
-                            longname="A log-Laplace",shapes='c',
-                            extradoc="""
+loglaplace = loglaplace_gen(a=0.0, name='loglaplace', shapes='c')
 
-Log-Laplace distribution (Log Double Exponential)
-
-loglaplace.pdf(x,c) = c/2*x**(c-1) for 0 < x < 1
-                    = c/2*x**(-c-1) for x >= 1
-for c > 0.
-"""
-                            )
 
 ## Lognormal (Cobb-Douglass)
 ## std is a shape parameter and is the variance of the underlying
@@ -4040,6 +4141,25 @@ for c > 0.
 ## the mean of the underlying distribution is log(scale)
 
 class lognorm_gen(rv_continuous):
+    """A lognormal continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `lognorm` is::
+
+        lognorm.pdf(x, s) = 1 / (s*x*sqrt(2*pi)) * exp(-1/2*(log(x)/s)**2)
+
+    for ``x > 0``, ``s > 0``.
+
+    If log x is normally distributed with mean mu and variance sigma**2,
+    then x is log-normally distributed with shape paramter sigma and scale
+    parameter exp(mu).
+
+    %(example)s
+
+    """
     def _rvs(self, s):
         return exp(s * norm.rvs(size=self._size))
     def _pdf(self, x, s):
@@ -4058,24 +4178,25 @@ class lognorm_gen(rv_continuous):
         return mu, mu2, g1, g2
     def _entropy(self, s):
         return 0.5*(1+log(2*pi)+2*log(s))
-lognorm = lognorm_gen(a=0.0, name='lognorm',
-                      longname='A lognormal', shapes='s',
-                      extradoc="""
+lognorm = lognorm_gen(a=0.0, name='lognorm', shapes='s')
 
-Lognormal distribution
-
-lognorm.pdf(x,s) = 1/(s*x*sqrt(2*pi)) * exp(-1/2*(log(x)/s)**2)
-for x > 0, s > 0.
-
-If log x is normally distributed with mean mu and variance sigma**2,
-then x is log-normally distributed with shape paramter sigma and scale
-parameter exp(mu).
-"""
-                      )
 
 # Gibrat's distribution is just lognormal with s=1
 
 class gilbrat_gen(lognorm_gen):
+    """A Gilbrat continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `gilbrat` is::
+
+        gilbrat.pdf(x) = 1/(x*sqrt(2*pi)) * exp(-1/2*(log(x))**2)
+
+    %(example)s
+
+    """
     def _rvs(self):
         return lognorm_gen._rvs(self, 1.0)
     def _pdf(self, x):
@@ -4088,14 +4209,7 @@ class gilbrat_gen(lognorm_gen):
         return lognorm_gen._stats(self, 1.0)
     def _entropy(self):
         return 0.5*log(2*pi) + 0.5
-gilbrat = gilbrat_gen(a=0.0, name='gilbrat', longname='A Gilbrat',
-                      extradoc="""
-
-Gilbrat distribution
-
-gilbrat.pdf(x) = 1/(x*sqrt(2*pi)) * exp(-1/2*(log(x))**2)
-"""
-                      )
+gilbrat = gilbrat_gen(a=0.0, name='gilbrat')
 
 
 # MAXWELL
@@ -4111,7 +4225,10 @@ class maxwell_gen(rv_continuous):
     and given ``scale = 1.0 / sqrt(a)``, where a is the parameter used in
     the Mathworld description [1]_.
 
-    Probability density function. Given by :math:`\sqrt(2/\pi)x^2 exp(-x^2/2)`
+    The probability density function for `maxwell` is::
+
+        maxwell.pdf(x, a) = sqrt(2/pi)x**2 * exp(-x**2/2)
+
     for ``x > 0``.
 
     References
@@ -4134,19 +4251,27 @@ class maxwell_gen(rv_continuous):
                (-12*pi*pi + 160*pi - 384) / val**2.0
     def _entropy(self):
         return _EULER + 0.5*log(2*pi)-0.5
-maxwell = maxwell_gen(a=0.0, name='maxwell', extradoc="""
-
-Maxwell distribution
-
-maxwell.pdf(x) = sqrt(2/pi) * x**2 * exp(-x**2/2)
-for x > 0.
-"""
-                      )
+maxwell = maxwell_gen(a=0.0, name='maxwell')
 
 
 # Mielke's Beta-Kappa
 
 class mielke_gen(rv_continuous):
+    """A Mielke's Beta-Kappa continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `mielke` is::
+
+        mielke.pdf(x, k, s) = k * x**(k-1) / (1+x**s)**(1+k/s)
+
+    for ``x > 0``.
+
+    %(example)s
+
+    """
     def _pdf(self, x, k, s):
         return k*x**(k-1.0) / (1.0+x**s)**(1.0+k*1.0/s)
     def _cdf(self, x, k, s):
@@ -4154,19 +4279,28 @@ class mielke_gen(rv_continuous):
     def _ppf(self, q, k, s):
         qsk = pow(q,s*1.0/k)
         return pow(qsk/(1.0-qsk),1.0/s)
-mielke = mielke_gen(a=0.0, name='mielke', longname="A Mielke's Beta-Kappa",
-                    shapes="k, s", extradoc="""
+mielke = mielke_gen(a=0.0, name='mielke', shapes="k, s")
 
-Mielke's Beta-Kappa distribution
-
-mielke.pdf(x,k,s) = k*x**(k-1) / (1+x**s)**(1+k/s)
-for x > 0.
-"""
-                    )
 
 # Nakagami (cf Chi)
 
 class nakagami_gen(rv_continuous):
+    """A Nakagami continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `nakagami` is::
+
+        nakagami.pdf(x, nu) = 2 * nu**nu / gamma(nu) *
+                              x**(2*nu-1) * exp(-nu*x**2)
+
+    for ``x > 0``, ``nu > 0``.
+
+    %(example)s
+
+    """
     def _pdf(self, x, nu):
         return 2*nu**nu/gam(nu)*(x**(2*nu-1.0))*exp(-nu*x*x)
     def _cdf(self, x, nu):
@@ -4180,21 +4314,29 @@ class nakagami_gen(rv_continuous):
         g2 = -6*mu**4*nu + (8*nu-2)*mu**2-2*nu + 1
         g2 /= nu*mu2**2.0
         return mu, mu2, g1, g2
-nakagami = nakagami_gen(a=0.0, name="nakagami", longname="A Nakagami",
-                        shapes='nu', extradoc="""
-
-Nakagami distribution
-
-nakagami.pdf(x,nu) = 2*nu**nu/gamma(nu) * x**(2*nu-1) * exp(-nu*x**2)
-for x > 0, nu > 0.
-"""
-                        )
+nakagami = nakagami_gen(a=0.0, name="nakagami", shapes='nu')
 
 
 # Non-central chi-squared
 # nc is lambda of definition, df is nu
 
 class ncx2_gen(rv_continuous):
+    """A non-central chi-squared continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `ncx2` is::
+
+        ncx2.pdf(x, df, nc) = exp(-(nc+df)/2) * 1/2 * (x/nc)**((df-2)/4)
+                              * I[(df-2)/2](sqrt(nc*x))
+
+    for ``x > 0``.
+
+    %(example)s
+
+    """
     def _rvs(self, df, nc):
         return mtrand.noncentral_chisquare(df,nc,self._size)
     def _pdf(self, x, df, nc):
@@ -4210,20 +4352,32 @@ class ncx2_gen(rv_continuous):
         val = df + 2.0*nc
         return df + nc, 2*val, sqrt(8)*(val+nc)/val**1.5, \
                12.0*(val+2*nc)/val**2.0
-ncx2 = ncx2_gen(a=0.0, name='ncx2', longname="A non-central chi-squared",
-                shapes="df, nc", extradoc="""
+ncx2 = ncx2_gen(a=0.0, name='ncx2', shapes="df, nc")
 
-Non-central chi-squared distribution
-
-ncx2.pdf(x,df,nc) = exp(-(nc+df)/2)*1/2*(x/nc)**((df-2)/4)
-                        * I[(df-2)/2](sqrt(nc*x))
-for x > 0.
-"""
-                )
 
 # Non-central F
 
 class ncf_gen(rv_continuous):
+    """A non-central F distribution continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `ncf` is::
+
+    ncf.pdf(x, df1, df2, nc) = exp(nc/2 + nc*df1*x/(2*(df1*x+df2)))
+                    * df1**(df1/2) * df2**(df2/2) * x**(df1/2-1)
+                    * (df2+df1*x)**(-(df1+df2)/2)
+                    * gamma(df1/2)*gamma(1+df2/2)
+                    * L^{v1/2-1}^{v2/2}(-nc*v1*x/(2*(v1*x+v2)))
+                    / (B(v1/2, v2/2) * gamma((v1+v2)/2))
+
+    for ``df1, df2, nc > 0``.
+
+    %(example)s
+
+    """
     def _rvs(self, dfn, dfd, nc):
         return mtrand.noncentral_f(dfn,dfd,nc,self._size)
     def _pdf_skip(self, x, dfn, dfd, nc):
@@ -4253,20 +4407,8 @@ class ncf_gen(rv_continuous):
                     ((dfn+nc/2.0)**2.0 + (dfn+nc)*(dfd-2.0)) / \
                     ((dfd-2.0)**2.0 * (dfd-4.0)))
         return mu, mu2, None, None
-ncf = ncf_gen(a=0.0, name='ncf', longname="A non-central F distribution",
-              shapes="dfn, dfd, nc", extradoc="""
+ncf = ncf_gen(a=0.0, name='ncf', shapes="dfn, dfd, nc")
 
-Non-central F distribution
-
-ncf.pdf(x,df1,df2,nc) = exp(nc/2 + nc*df1*x/(2*(df1*x+df2)))
-                * df1**(df1/2) * df2**(df2/2) * x**(df1/2-1)
-                * (df2+df1*x)**(-(df1+df2)/2)
-                * gamma(df1/2)*gamma(1+df2/2)
-                * L^{v1/2-1}^{v2/2}(-nc*v1*x/(2*(v1*x+v2)))
-                / (B(v1/2, v2/2) * gamma((v1+v2)/2))
-for df1, df2, nc > 0.
-"""
-              )
 
 ## Student t distribution
 
