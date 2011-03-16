@@ -3294,6 +3294,7 @@ class gamma_gen(rv_continuous):
     %(before_notes)s
 
     See Also
+    --------
     erlang, expon
 
     Notes
@@ -3462,6 +3463,27 @@ gompertz = gompertz_gen(a=0.0, name='gompertz', shapes='c')
 ## and right-skewed are available as gumbel_l  and gumbel_r
 
 class gumbel_r_gen(rv_continuous):
+    """A right-skewed Gumbel continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    gumbel_l, gompertz, genextreme
+
+    Notes
+    -----
+    The probability distribution for `gumbel_r` is::
+
+        gumbel_r.pdf(x) = exp(-(x + exp(-x)))
+
+    The Gumbel distribution is sometimes referred to as a type I Fisher-Tippett
+    distribution.  It is also related to the extreme value distribution,
+    log-Weibull and Gompertz distributions.
+
+    %(example)s
+
+    """
     def _pdf(self, x):
         ex = exp(-x)
         return ex*exp(-ex)
@@ -3478,15 +3500,31 @@ class gumbel_r_gen(rv_continuous):
                12*sqrt(6)/pi**3 * _ZETA3, 12.0/5
     def _entropy(self):
         return 1.0608407169541684911
-gumbel_r = gumbel_r_gen(name='gumbel_r',longname="A (right-skewed) Gumbel",
-                        extradoc="""
+gumbel_r = gumbel_r_gen(name='gumbel_r')
 
-Right-skewed Gumbel (Log-Weibull, Fisher-Tippett, Gompertz) distribution
 
-gumbel_r.pdf(x) = exp(-(x+exp(-x)))
-"""
-                        )
 class gumbel_l_gen(rv_continuous):
+    """A left-skewed Gumbel continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    gumbel_r, gompertz, genextreme
+
+    Notes
+    -----
+    The probability distribution for `gumbel_l` is::
+
+        gumbel_l.pdf(x) = exp(x - exp(x))
+
+    The Gumbel distribution is sometimes referred to as a type I Fisher-Tippett
+    distribution.  It is also related to the extreme value distribution,
+    log-Weibull and Gompertz distributions.
+
+    %(example)s
+
+    """
     def _pdf(self, x):
         ex = exp(x)
         return ex*exp(-ex)
@@ -3501,18 +3539,27 @@ class gumbel_l_gen(rv_continuous):
                -12*sqrt(6)/pi**3 * _ZETA3, 12.0/5
     def _entropy(self):
         return 1.0608407169541684911
-gumbel_l = gumbel_l_gen(name='gumbel_l',longname="A left-skewed Gumbel",
-                        extradoc="""
+gumbel_l = gumbel_l_gen(name='gumbel_l')
 
-Left-skewed Gumbel distribution
-
-gumbel_l.pdf(x) = exp(x - exp(x))
-"""
-                        )
 
 # Half-Cauchy
 
 class halfcauchy_gen(rv_continuous):
+    """A Half-Cauchy continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability distribution for `halfcauchy` is::
+
+        halfcauchy.pdf(x) = 2 / (pi * (1 + x**2))
+
+    for ``x >= 0``.
+
+    %(example)s
+
+    """
     def _pdf(self, x):
         return 2.0/pi/(1.0+x*x)
     def _logpdf(self, x):
@@ -3525,21 +3572,28 @@ class halfcauchy_gen(rv_continuous):
         return inf, inf, nan, nan
     def _entropy(self):
         return log(2*pi)
-halfcauchy = halfcauchy_gen(a=0.0,name='halfcauchy',
-                            longname="A Half-Cauchy",extradoc="""
-
-Half-Cauchy distribution
-
-halfcauchy.pdf(x) = 2/(pi*(1+x**2))
-for x >= 0.
-"""
-                            )
+halfcauchy = halfcauchy_gen(a=0.0, name='halfcauchy')
 
 
 ## Half-Logistic
 ##
 
 class halflogistic_gen(rv_continuous):
+    """A half-logistic continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability distribution for `halflogistic` is::
+
+        halflogistic.pdf(x) = 2 * exp(-x) / (1+exp(-x))**2 = 1/2 * sech(x/2)**2
+
+    for ``x >= 0``.
+
+    %(example)s
+
+    """
     def _pdf(self, x):
         return 0.5/(cosh(x/2.0))**2.0
     def _cdf(self, x):
@@ -3554,21 +3608,27 @@ class halflogistic_gen(rv_continuous):
         return 2*(1-pow(2.0,1-n))*special.gamma(n+1)*special.zeta(n,1)
     def _entropy(self):
         return 2-log(2)
-halflogistic = halflogistic_gen(a=0.0, name='halflogistic',
-                                longname="A half-logistic",
-                                extradoc="""
-
-Half-logistic distribution
-
-halflogistic.pdf(x) = 2*exp(-x)/(1+exp(-x))**2 = 1/2*sech(x/2)**2
-for x >= 0.
-"""
-                                )
+halflogistic = halflogistic_gen(a=0.0, name='halflogistic')
 
 
 ## Half-normal = chi(1, loc, scale)
 
 class halfnorm_gen(rv_continuous):
+    """A half-normal continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability distribution for `halfnorm` is::
+
+        halfnorm.pdf(x) = sqrt(2/pi) * exp(-x**2/2)
+
+    for ``x > 0``.
+
+    %(example)s
+
+    """
     def _rvs(self):
         return abs(norm.rvs(size=self._size))
     def _pdf(self, x):
@@ -3584,20 +3644,25 @@ class halfnorm_gen(rv_continuous):
                8*(pi-3)/(pi-2)**2
     def _entropy(self):
         return 0.5*log(pi/2.0)+0.5
-halfnorm = halfnorm_gen(a=0.0, name='halfnorm',
-                        longname="A half-normal",
-                        extradoc="""
+halfnorm = halfnorm_gen(a=0.0, name='halfnorm')
 
-Half-normal distribution
-
-halfnorm.pdf(x) = sqrt(2/pi) * exp(-x**2/2)
-for x > 0.
-"""
-                        )
 
 ## Hyperbolic Secant
 
 class hypsecant_gen(rv_continuous):
+    """A hyperbolic secant continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability distribution for `FILL` is::
+
+        hypsecant.pdf(x) = 1/pi * sech(x)
+
+    %(example)s
+
+    """
     def _pdf(self, x):
         return 1.0/(pi*cosh(x))
     def _cdf(self, x):
@@ -3608,18 +3673,29 @@ class hypsecant_gen(rv_continuous):
         return 0, pi*pi/4, 0, 2
     def _entropy(self):
         return log(2*pi)
-hypsecant = hypsecant_gen(name='hypsecant',longname="A hyperbolic secant",
-                          extradoc="""
+hypsecant = hypsecant_gen(name='hypsecant')
 
-Hyperbolic secant distribution
-
-hypsecant.pdf(x) = 1/pi * sech(x)
-"""
-                          )
 
 ## Gauss Hypergeometric
 
 class gausshyper_gen(rv_continuous):
+    """A Gauss hypergeometric continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability distribution for `gausshyper` is::
+
+        gausshyper.pdf(x, a, b, c, z) =
+            C * x**(a-1) * (1-x)**(b-1) * (1+z*x)**(-c)
+
+    for ``0 <= x <= 1``, ``a > 0``, ``b > 0``, and
+    ``C = 1 / (B(a,b) F[2,1](c, a; a+b; -z))``
+
+    %(example)s
+
+    """
     def _argcheck(self, a, b, c, z):
         return (a > 0) & (b > 0) & (c==c) & (z==z)
     def _pdf(self, x, a, b, c, z):
@@ -3631,23 +3707,29 @@ class gausshyper_gen(rv_continuous):
         den = special.hyp2f1(c,a,a+b,-z)
         return fac*num / den
 gausshyper = gausshyper_gen(a=0.0, b=1.0, name='gausshyper',
-                            longname="A Gauss hypergeometric",
-                            shapes="a, b, c, z",
-                            extradoc="""
+                            shapes="a, b, c, z")
 
-Gauss hypergeometric distribution
-
-gausshyper.pdf(x,a,b,c,z) = C * x**(a-1) * (1-x)**(b-1) * (1+z*x)**(-c)
-for 0 <= x <= 1, a > 0, b > 0, and
-C = 1/(B(a,b)F[2,1](c,a;a+b;-z))
-"""
-                            )
 
 ##  Inverted Gamma
 #     special case of generalized gamma with c=-1
 #
 
 class invgamma_gen(rv_continuous):
+    """An inverted gamma continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability distribution for `invgamma` is::
+
+        invgamma.pdf(x, a) = x**(-a-1) / gamma(a) * exp(-1/x)
+
+    for x > 0, a > 0.
+
+    %(example)s
+
+    """
     def _pdf(self, x, a):
         return exp(self._logpdf(x,a))
     def _logpdf(self, x, a):
@@ -3660,15 +3742,7 @@ class invgamma_gen(rv_continuous):
         return exp(gamln(a-n) - gamln(a))
     def _entropy(self, a):
         return a - (a+1.0)*special.psi(a) + gamln(a)
-invgamma = invgamma_gen(a=0.0, name='invgamma',longname="An inverted gamma",
-                        shapes='a',extradoc="""
-
-Inverted gamma distribution
-
-invgamma.pdf(x,a) = x**(-a-1)/gamma(a) * exp(-1/x)
-for x > 0, a > 0.
-"""
-                        )
+invgamma = invgamma_gen(a=0.0, name='invgamma', shapes='a')
 
 
 ## Inverse Normal Distribution
