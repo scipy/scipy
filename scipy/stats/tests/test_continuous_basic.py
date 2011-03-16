@@ -71,7 +71,6 @@ distcont = [
     ['halfnorm', ()],
     ['hypsecant', ()],
     ['invgamma', (2.0668996136993067,)],
-    ['invnorm', (0.14546264555347513,)],
     ['invgauss', (0.14546264555347513,)],
     ['invweibull', (10.58,)], # sample mean test fails at(0.58847112119264788,)]
     ['johnsonsb', (4.3172675099141058, 3.1837781130785063)],
@@ -147,7 +146,7 @@ distmissing = ['wald', 'gausshyper', 'genexpon', 'rv_continuous',
     'loglaplace', 'rdist', 'semicircular', 'invweibull', 'ksone',
     'cosine', 'kstwobign', 'truncnorm', 'mielke', 'recipinvgauss', 'levy',
     'johnsonsu', 'levy_l', 'powernorm', 'wrapcauchy',
-    'johnsonsb', 'truncexpon', 'rice', 'invnorm', 'invgauss', 'invgamma',
+    'johnsonsb', 'truncexpon', 'rice', 'invgauss', 'invgamma',
     'powerlognorm']
 
 distmiss = [[dist,args] for dist,args in distcont if dist in distmissing]
@@ -379,9 +378,6 @@ def check_distribution_rvs(dist, args, alpha, rvs):
         D,pval = stats.kstest(dist,'',args=args, N=1000)
         npt.assert_(pval > alpha, "D = " + str(D) + "; pval = " + str(pval) +
                "; alpha = " + str(alpha) + "\nargs = " + str(args))
-
-
-warnings.filterwarnings('ignore', message="The `invnorm` distribution")
 
 
 if __name__ == "__main__":

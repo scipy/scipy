@@ -90,7 +90,7 @@ __all__ = [
            'weibull_max', 'genlogistic', 'genpareto', 'genexpon', 'genextreme',
            'gamma', 'gengamma', 'genhalflogistic', 'gompertz', 'gumbel_r',
            'gumbel_l', 'halfcauchy', 'halflogistic', 'halfnorm', 'hypsecant',
-           'gausshyper', 'invgamma', 'invnorm', 'invgauss', 'invweibull',
+           'gausshyper', 'invgamma', 'invgauss', 'invweibull',
            'johnsonsb', 'johnsonsu', 'laplace', 'levy', 'levy_l',
            'levy_stable', 'logistic', 'loggamma', 'loglaplace', 'lognorm',
            'gilbrat', 'maxwell', 'mielke', 'nakagami', 'ncx2', 'ncf', 't',
@@ -3744,42 +3744,6 @@ class invgamma_gen(rv_continuous):
         return a - (a+1.0)*special.psi(a) + gamln(a)
 invgamma = invgamma_gen(a=0.0, name='invgamma', shapes='a')
 
-
-## Inverse Normal Distribution
-# scale is gamma from DATAPLOT and B from Regress
-
-_invnorm_msg = \
-"""The `invnorm` distribution will be renamed to `invgauss` after scipy 0.9"""
-class invnorm_gen(rv_continuous):
-    def _rvs(self, mu):
-        warnings.warn(_invnorm_msg, DeprecationWarning)
-        return mtrand.wald(mu, 1.0, size=self._size)
-    def _pdf(self, x, mu):
-        warnings.warn(_invnorm_msg, DeprecationWarning)
-        return 1.0/sqrt(2*pi*x**3.0)*exp(-1.0/(2*x)*((x-mu)/mu)**2)
-    def _logpdf(self, x, mu):
-        warnings.warn(_invnorm_msg, DeprecationWarning)
-        return -0.5*log(2*pi) - 1.5*log(x) - ((x-mu)/mu)**2/(2*x)
-    def _cdf(self, x, mu):
-        warnings.warn(_invnorm_msg, DeprecationWarning)
-        fac = sqrt(1.0/x)
-        C1 = norm.cdf(fac*(x-mu)/mu)
-        C1 += exp(2.0/mu)*norm.cdf(-fac*(x+mu)/mu)
-        return C1
-    def _stats(self, mu):
-        warnings.warn(_invnorm_msg, DeprecationWarning)
-        return mu, mu**3.0, 3*sqrt(mu), 15*mu
-invnorm = invnorm_gen(a=0.0, name='invnorm', longname="An inverse normal",
-                      shapes="mu",extradoc="""
-
-Inverse normal distribution
-
-NOTE: `invnorm` will be renamed to `invgauss` after scipy 0.9
-
-invnorm.pdf(x,mu) = 1/sqrt(2*pi*x**3) * exp(-(x-mu)**2/(2*x*mu**2))
-for x > 0.
-"""
-                      )
 
 ## Inverse Gaussian Distribution (used to be called 'invnorm'
 # scale is gamma from DATAPLOT and B from Regress

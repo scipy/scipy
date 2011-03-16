@@ -48,6 +48,8 @@ Deprecated features
 Removed features
 ================
 
+The deprecated name `invnorm` was removed from ``scipy.stats.distributions``,
+this distribution is available as `invgauss`.
 
 
 Other changes
