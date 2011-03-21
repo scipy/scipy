@@ -435,48 +435,50 @@ def ward(y):
 
 def linkage(y, method='single', metric='euclidean'):
     """
-    Performs hierarchical/agglomerative clustering on the
-     condensed distance matrix y. y must be a :math:`{n \\choose 2}` sized
-     vector where n is the number of original observations paired
-     in the distance matrix. The behavior of this function is very
-     similar to the MATLAB(TM) linkage function.
+    Performs hierarchical/agglomerative clustering on the condensed
+    distance matrix y.
 
-     A 4 by :math:`(n-1)` matrix ``Z`` is returned. At the
-     :math:`i`-th iteration, clusters with indices ``Z[i, 0]`` and
-     ``Z[i, 1]`` are combined to form cluster :math:`n + i`. A
-     cluster with an index less than :math:`n` corresponds to one of
-     the :math:`n` original observations. The distance between
-     clusters ``Z[i, 0]`` and ``Z[i, 1]`` is given by ``Z[i, 2]``. The
-     fourth value ``Z[i, 3]`` represents the number of original
-     observations in the newly formed cluster.
+    y must be a :math:`{n \\choose 2}` sized
+    vector where n is the number of original observations paired
+    in the distance matrix. The behavior of this function is very
+    similar to the MATLAB linkage function.
 
-     The following linkage methods are used to compute the distance
-     :math:`d(s, t)` between two clusters :math:`s` and
-     :math:`t`. The algorithm begins with a forest of clusters that
-     have yet to be used in the hierarchy being formed. When two
-     clusters :math:`s` and :math:`t` from this forest are combined
-     into a single cluster :math:`u`, :math:`s` and :math:`t` are
-     removed from the forest, and :math:`u` is added to the
-     forest. When only one cluster remains in the forest, the algorithm
-     stops, and this cluster becomes the root.
+    A 4 by :math:`(n-1)` matrix ``Z`` is returned. At the
+    :math:`i`-th iteration, clusters with indices ``Z[i, 0]`` and
+    ``Z[i, 1]`` are combined to form cluster :math:`n + i`. A
+    cluster with an index less than :math:`n` corresponds to one of
+    the :math:`n` original observations. The distance between
+    clusters ``Z[i, 0]`` and ``Z[i, 1]`` is given by ``Z[i, 2]``. The
+    fourth value ``Z[i, 3]`` represents the number of original
+    observations in the newly formed cluster.
 
-     A distance matrix is maintained at each iteration. The ``d[i,j]``
-     entry corresponds to the distance between cluster :math:`i` and
-     :math:`j` in the original forest.
+    The following linkage methods are used to compute the distance
+    :math:`d(s, t)` between two clusters :math:`s` and
+    :math:`t`. The algorithm begins with a forest of clusters that
+    have yet to be used in the hierarchy being formed. When two
+    clusters :math:`s` and :math:`t` from this forest are combined
+    into a single cluster :math:`u`, :math:`s` and :math:`t` are
+    removed from the forest, and :math:`u` is added to the
+    forest. When only one cluster remains in the forest, the algorithm
+    stops, and this cluster becomes the root.
 
-     At each iteration, the algorithm must update the distance matrix
-     to reflect the distance of the newly formed cluster u with the
-     remaining clusters in the forest.
+    A distance matrix is maintained at each iteration. The ``d[i,j]``
+    entry corresponds to the distance between cluster :math:`i` and
+    :math:`j` in the original forest.
 
-     Suppose there are :math:`|u|` original observations
-     :math:`u[0], \\ldots, u[|u|-1]` in cluster :math:`u` and
-     :math:`|v|` original objects :math:`v[0], \\ldots, v[|v|-1]` in
-     cluster :math:`v`. Recall :math:`s` and :math:`t` are
-     combined to form cluster :math:`u`. Let :math:`v` be any
-     remaining cluster in the forest that is not :math:`u`.
+    At each iteration, the algorithm must update the distance matrix
+    to reflect the distance of the newly formed cluster u with the
+    remaining clusters in the forest.
 
-     The following are methods for calculating the distance between the
-     newly formed cluster :math:`u` and each :math:`v`.
+    Suppose there are :math:`|u|` original observations
+    :math:`u[0], \\ldots, u[|u|-1]` in cluster :math:`u` and
+    :math:`|v|` original objects :math:`v[0], \\ldots, v[|v|-1]` in
+    cluster :math:`v`. Recall :math:`s` and :math:`t` are
+    combined to form cluster :math:`u`. Let :math:`v` be any
+    remaining cluster in the forest that is not :math:`u`.
+
+    The following are methods for calculating the distance between the
+    newly formed cluster :math:`u` and each :math:`v`.
 
       * method='single' assigns
 
@@ -554,26 +556,25 @@ def linkage(y, method='single', metric='euclidean'):
         :math:`|*|` is the cardinality of its argument. This is also
         known as the incremental algorithm.
 
-     Warning: When the minimum distance pair in the forest is chosen, there may
-     be two or more pairs with the same minimum distance. This
-     implementation may chose a different minimum than the MATLAB(TM)
-     version.
+    Warning: When the minimum distance pair in the forest is chosen, there
+    may be two or more pairs with the same minimum distance. This
+    implementation may chose a different minimum than the MATLAB
+    version.
 
-     Parameters
-     ----------
-     y : ndarray
-         A condensed or redundant distance matrix. A condensed
-         distance matrix is a flat array containing the upper
-         triangular of the distance matrix. This is the form that
-         ``pdist`` returns. Alternatively, a collection of
-         :math:`m` observation vectors in n dimensions may be passed as
-         an :math:`m` by :math:`n` array.
-     method : str
-         The linkage algorithm to use. See the ``Linkage Methods``
-         section below for full descriptions.
-     metric : str
-         The distance metric to use. See the ``distance.pdist``
-         function for a list of valid distance metrics.
+    Parameters
+    ----------
+    y : ndarray
+        A condensed or redundant distance matrix. A condensed distance matrix
+        is a flat array containing the upper triangular of the distance matrix.
+        This is the form that ``pdist`` returns. Alternatively, a collection of
+        :math:`m` observation vectors in n dimensions may be passed as an
+        :math:`m` by :math:`n` array.
+    method : str, optional
+        The linkage algorithm to use. See the ``Linkage Methods`` section below
+        for full descriptions.
+    metric : str, optional
+        The distance metric to use. See the ``distance.pdist`` function for a
+        list of valid distance metrics.
 
     Returns
     -------
@@ -620,9 +621,10 @@ def linkage(y, method='single', metric='euclidean'):
 
 class ClusterNode:
     """
-    A tree node class for representing a cluster. Leaf nodes correspond
-    to original observations, while non-leaf nodes correspond to
-    non-singleton clusters.
+    A tree node class for representing a cluster.
+
+    Leaf nodes correspond to original observations, while non-leaf nodes
+    correspond to non-singleton clusters.
 
     The to_tree function converts a matrix returned by the linkage
     function into an easy-to-use tree representation.
@@ -654,11 +656,11 @@ class ClusterNode:
 
     def get_id(self):
         """
-        The identifier of the target node. For :math:`0 \leq i < n`,
-        :math:`i` corresponds to original observation
-        :math:`i`. For :math:`n \leq i` < :math:`2n-1`,
-        :math:`i` corresponds to non-singleton cluster formed at
-        iteration :math:`i-n`.
+        The identifier of the target node.
+
+        For ``0 <= i < n``, `i` corresponds to original observation i.
+        For ``n <= i < 2n-1``, `i` corresponds to non-singleton cluster formed
+        at iteration ``i-n``.
 
         Returns
         -------
@@ -684,48 +686,51 @@ class ClusterNode:
 
     def get_left(self):
         """
-        Returns a reference to the left child tree object. If the node
-        is a leaf, None is returned.
+        Return a reference to the left child tree object.
 
         Returns
         -------
         left : ClusterNode
-            The left child of the target node.
+            The left child of the target node.  If the node is a leaf,
+            None is returned.
 
         """
         return self.left
 
     def get_right(self):
         """
-        Returns a reference to the right child tree object. If the node
-        is a leaf, None is returned.
+        Returns a reference to the right child tree object.
 
         Returns
         -------
         right : ClusterNode
-            The left child of the target node.
+            The left child of the target node.  If the node is a leaf,
+            None is returned.
+
         """
         return self.right
 
     def is_leaf(self):
         """
-        Returns True iff the target node is a leaf.
+        Returns True if the target node is a leaf.
 
         Returns
         -------
         leafness : bool
             True if the target node is a leaf node.
+
         """
         return self.left is None
 
     def pre_order(self, func=(lambda x: x.id)):
         """
-        Performs preorder traversal without recursive function calls.
+        Performs pre-order traversal without recursive function calls.
+
         When a leaf node is first encountered, ``func`` is called with
         the leaf node as its argument, and its result is appended to
         the list.
 
-        For example, the statement:
+        For example, the statement::
 
            ids = root.pre_order(lambda x: x.id)
 
@@ -735,11 +740,10 @@ class ClusterNode:
         Parameters
         ----------
         func : function
-            Applied to each leaf ClusterNode object in the pre-order
-            traversal. Given the i'th leaf node in the pre-order
-            traversal ``n[i]``, the result of func(n[i]) is stored in
-            L[i]. If not provided, the index of the original observation
-            to which the node corresponds is used.
+            Applied to each leaf ClusterNode object in the pre-order traversal.
+            Given the i'th leaf node in the pre-ordeR traversal ``n[i]``, the
+            result of func(n[i]) is stored in L[i]. If not provided, the index
+            of the original observation to which the node corresponds is used.
 
         Returns
         -------
@@ -1390,10 +1394,11 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
 
               For example, to threshold on the maximum mean distance
               as computed in the inconsistency matrix R with a
-              threshold of 0.8 do::
+              threshold of 0.8 do:
 
-                MR = maxRstat(Z, R, 3)
-                cluster(Z, t=0.8, criterion='monocrit', monocrit=MR)
+                ``MR = maxRstat(Z, R, 3)``
+
+                ``cluster(Z, t=0.8, criterion='monocrit', monocrit=MR)``
 
           'maxclust_monocrit':
               Forms a flat cluster from a
@@ -1403,10 +1408,11 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
               flat clusters are formed. monocrit must be
               monotonic. For example, to minimize the threshold t on
               maximum inconsistency values so that no more than 3 flat
-              clusters are formed, do::
+              clusters are formed, do:
 
-                MI = maxinconsts(Z, R)
-                cluster(Z, t=3, criterion='maxclust_monocrit', monocrit=MI)
+                ``MI = maxinconsts(Z, R)``
+
+                ``cluster(Z, t=3, criterion='maxclust_monocrit', monocrit=MI)``
 
     depth : int, optional
         The maximum depth to perform the inconsistency calculation.

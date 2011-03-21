@@ -305,6 +305,7 @@ def qspline1d(signal, lamb=0.0):
     -------
     c : ndarray
         Cubic spline coefficients.
+
     """
     if lamb != 0.0:
         raise ValueError("Smoothing quadratic splines not supported yet.")
@@ -352,7 +353,7 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
 
     `dx` is the old sample-spacing while `x0` was the old origin.  In
     other-words the old-sample points (knot-points) for which the `cj`
-    represent spline coefficients were at equally-spaced points of:
+    represent spline coefficients were at equally-spaced points of::
 
       oldx = x0 + j*dx  j=0...N-1, with N=len(cj)
 

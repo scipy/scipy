@@ -1615,7 +1615,7 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
         Input array.
     numbins: int, optional
         The number of bins to use for the histogram. Default is 10.
-    defaultlimits: tuple (lower, upper), optional
+    defaultreallimits: tuple (lower, upper), optional
         The lower and upper values for the range of the histogram.
         If no value is given, a range slightly larger then the range of the
         values in a is used. Specifically ``(a.min() - s, a.max() + s)``,
@@ -1697,23 +1697,27 @@ def obrientransform(*args):
 
 def signaltonoise(a, axis=0, ddof=0):
     """
-    Calculates the signal-to-noise ratio, defined as the ratio between the mean
-    and the standard deviation.
+    The signal-to-noise ratio of the input data.
+
+    Returns the signal-to-noise ratio of `a`, here defined as the mean
+    divided by the standard deviation.
 
     Parameters
     ----------
-    a: array-like
-        An array like object containing the sample data
+    a: array_like
+        An array_like object containing the sample data.
     axis: int or None, optional
         If axis is equal to None, the array is first ravel'd. If axis is an
-        integer, this is the axis over which to operate. Defaults to None???0
-    ddof : integer, optional, default 0
-        degrees of freedom correction for standard deviation
+        integer, this is the axis over which to operate. Default is 0.
+    ddof : int, optional
+        Degrees of freedom correction for standard deviation. Default is 0.
 
     Returns
     -------
-    array containing the value of the ratio of the mean to the standard
-    deviation along axis, or 0, when the standard deviation is equal to 0
+    s2n : ndarray
+        The mean to standard deviation ratio(s) along `axis`, or 0 where the
+        standard deviation is 0.
+
     """
     a = np.asanyarray(a)
     m = a.mean(axis)

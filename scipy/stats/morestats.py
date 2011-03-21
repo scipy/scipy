@@ -86,12 +86,14 @@ def bayes_mvs(data, alpha=0.90):
     return tuple((x.mean(), x.interval(alpha)) for x in res)
 
 def mvsdist(data):
-    """'frozen' distributions for mean, variance, and standard deviation of data.
+    """
+    'Frozen' distributions for mean, variance, and standard deviation of data.
 
     Parameters
     ----------
-    data : array-like
-       Converted to 1-d using ravel.  Requires 2 or more data-points
+    data : array_like
+        Input array. Converted to 1-D using ravel.
+        Requires 2 or more data-points.
 
     Returns
     -------
@@ -105,11 +107,12 @@ def mvsdist(data):
     Notes
     -----
     The return values from bayes_mvs(data) is equivalent to
-    tuple((x.mean(), x.interval(0.90)) for x in mvsdist(data))
+    ``tuple((x.mean(), x.interval(0.90)) for x in mvsdist(data))``.
 
-    In other words, calling <dist>.mean() and <dist>.interval(0.90) on the
-    three distribution objects returned from this function will give the same
-    results that are returned from bayes_mvs
+    In other words, calling ``<dist>.mean()`` and ``<dist>.interval(0.90)``
+    on the three distribution objects returned from this function will give
+    the same results that are returned from `bayes_mvs`.
+
     """
     x = ravel(data)
     n = len(x)

@@ -1558,13 +1558,16 @@ def skewtest(a, axis=0):
 
     Parameters
     ----------
-    a : array
-    axis : int or None
+    a : array_like
+        The input array.
+    axis : int or None, optional
+        The axis along which to perform the skew test. Default is 0.
+        If `axis` is None, the array is first flattened.
 
     Returns
     -------
     z-score : float
-
+        The computed z-score for this test.
     p-value : float
         a 2-sided p-value for the hypothesis test
 
@@ -1595,24 +1598,24 @@ skewtest.__doc__ = stats.skewtest.__doc__
 
 def kurtosistest(a, axis=0):
     """
-    Tests whether a dataset has normal kurtosis
+    Tests whether a dataset has normal kurtosis.
 
     This function tests the null hypothesis that the kurtosis
     of the population from which the sample was drawn is that
-    of the normal distribution: kurtosis=3(n-1)/(n+1).
+    of the normal distribution: ``kurtosis = 3(n-1)/(n+1)``.
 
     Parameters
     ----------
-    a : array
-        array of the sample data
-    axis : int or None
-        the axis to operate along, or None to work on the whole array.
-        The default is the first axis.
+    a : array_like
+        Array of the sample data.
+    axis : int or None, optional
+        The axis to operate along, or None to work on the whole array.
+        The default is 0 (the first axis).
 
     Returns
     -------
     z-score : float
-
+        The computed z-score for this test.
     p-value : float
         The 2-sided p-value for the hypothesis test
 
@@ -1792,7 +1795,7 @@ def plotting_positions(data, alpha=0.4, beta=0.4):
     """
     Returns plotting positions (or empirical percentile points) for the data.
 
-    Plotting positions are defined as ``(i-alpha)/(n-alpha-beta)``, where:
+    Plotting positions are defined as ``(i-alpha)/(n+1-alpha-beta)``, where:
         - i is the rank order statistics
         - n is the number of unmasked values along the given axis
         - alpha and beta are two parameters.
@@ -1813,6 +1816,7 @@ def plotting_positions(data, alpha=0.4, beta=0.4):
           if x is normally distributed (R type 9)
         - (.4,.4)  : approximately quantile unbiased (Cunnane)
         - (.35,.35): APL, used with PWM
+        - (.3175, .3175): used in scipy.stats.probplot
 
     Parameters
     ----------

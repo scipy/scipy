@@ -6,11 +6,27 @@ from heapq import heappush, heappop
 import scipy.sparse
 
 def minkowski_distance_p(x,y,p=2):
-    """Compute the pth power of the L**p distance between x and y
+    """
+    Compute the p-th power of the L**p distance between x and y.
 
     For efficiency, this function computes the L**p distance but does
     not extract the pth root. If p is 1 or infinity, this is equal to
     the actual L**p distance.
+
+    Parameters
+    ----------
+    x : array_like, M by K
+
+    y : array_like, N by K
+
+    p : float, 1 <= p <= infinity
+        Which Minkowski p-norm to use.
+
+    Examples
+    --------
+    >>> minkowski_distance_p([[0,0],[0,0]], [[1,1],[0,1]])
+    array([2, 1])
+
     """
     x = np.asarray(x)
     y = np.asarray(y)
@@ -21,7 +37,24 @@ def minkowski_distance_p(x,y,p=2):
     else:
         return np.sum(np.abs(y-x)**p,axis=-1)
 def minkowski_distance(x,y,p=2):
-    """Compute the L**p distance between x and y"""
+    """
+    Compute the L**p distance between x and y.
+
+    Parameters
+    ----------
+    x : array_like, M by K
+
+    y : array_like, N by K
+
+    p : float, 1 <= p <= infinity
+        Which Minkowski p-norm to use.
+
+    Examples
+    --------
+    >>> minkowski_distance([[0,0],[0,0]], [[1,1],[0,1]])
+    array([ 1.41421356,  1.        ])
+
+    """
     x = np.asarray(x)
     y = np.asarray(y)
     if p==np.inf or p==1:
@@ -286,7 +319,7 @@ class KDTree(object):
         Parameters
         ----------
 
-        x : array-like, last dimension self.m
+        x : array_like, last dimension self.m
             An array of points to query.
         k : integer
             The number of nearest neighbors to return.
@@ -779,26 +812,32 @@ class KDTree(object):
 
 
 def distance_matrix(x,y,p=2,threshold=1000000):
-    """Compute the distance matrix.
+    """
+    Compute the distance matrix.
 
-    Computes the matrix of all pairwise distances.
+    Returns the matrix of all pair-wise distances.
 
     Parameters
-    ==========
-
-    x : array-like, m by k
-    y : array-like, n by k
-    p : float 1<=p<=infinity
+    ----------
+    x : array_like, `M` by `K`
+        TODO: description needed
+    y : array_like, `N` by `K`
+        TODO: description needed
+    p : float, 1 <= p <= infinity
         Which Minkowski p-norm to use.
     threshold : positive integer
-        If m*n*k>threshold use a python loop instead of creating
-        a very large temporary.
+        If `M * N * K` > threshold, use a Python loop instead of creating
+        a very large temporary [what?  array?].
 
     Returns
-    =======
+    -------
+    result : array_like, `M` by `N`
 
-    result : array-like, m by n
-
+    Examples
+    --------
+    >>> distance_matrix([[0,0],[0,1]], [[1,0],[1,1]])
+    array([[ 1.        ,  1.41421356],
+           [ 1.41421356,  1.        ]])
 
     """
 
