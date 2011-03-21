@@ -30,32 +30,17 @@ __all__ = ['find_repeats', 'mvsdist',
           ]
 
 
-##########################################################
-###  Bayesian confidence intervals for mean, variance, std
-##########################################################
-
-##  See the paper "A Bayesian perspective on estimating
-##    mean, variance, and standard-deviation from data" by
-##    Travis E. Oliphant
-##    at http://dspace.byu.edu/bitstream/1877/438/1/bayes_mvs.pdf
-##    (Permanent link at http://hdl.handle.net/1877/438 )
-
-##  Assumes all is known is that mean, and std (variance,axis=0) exist
-##   and are the same for all the data.  Uses Jeffrey's prior
-##
-##  Returns alpha confidence interval for the mean, variance,
-##      and std.
-
 def bayes_mvs(data, alpha=0.90):
     """Bayesian confidence intervals for the mean, var, and std.
 
     Parameters
     ----------
-    data : array-like
-       Converted to 1-d using ravel.  Requires 2 or more data-points
+    data : array_like
+       Input data, if multi-dimensional it is flattened to 1-D by `bayes_mvs`.
+       Requires 2 or more data points.
     alpha : float, optional
        Probability that the returned confidence interval contains
-       the true parameter
+       the true parameter.
 
     Returns
     -------
@@ -75,10 +60,16 @@ def bayes_mvs(data, alpha=0.90):
 
     Notes
     -----
-    Converts data to 1-d and assumes all data has the same mean and variance.
+    Converts data to 1-D and assumes all data has the same mean and variance.
     Uses Jeffrey's prior for variance and std.
 
     Equivalent to tuple((x.mean(), x.interval(alpha)) for x in mvsdist(dat))
+
+    References
+    ----------
+    T.E. Oliphant, "A Bayesian perspective on estimating mean, variance, and
+    standard-deviation from data", http://hdl.handle.net/1877/438, 2006.
+
     """
     res = mvsdist(data)
     if alpha >= 1 or alpha <= 0:
@@ -113,6 +104,22 @@ def mvsdist(data):
     on the three distribution objects returned from this function will give
     the same results that are returned from `bayes_mvs`.
 
+    Examples
+    --------
+    >>> from scipy.stats import mvsdist
+    >>> data = [6, 9, 12, 7, 8, 8, 13]
+    >>> mean, var, std = mvsdist(data)
+
+    We now have frozen distribution objects "mean", "var" and "std" that we can
+    examine:
+
+    >>> mean.mean()
+    9.0
+    >>> mean.interval(0.95)
+    (6.6120585482655692, 11.387941451734431)
+    >>> mean.std()
+    1.1952286093343936
+
     """
     x = ravel(data)
     n = len(x)
@@ -134,32 +141,6 @@ def mvsdist(data):
     return mdist, vdist, sdist
 
 
-################################
-##  K-Statistic
-################################
-
-###
-## The n-th k-statistic is the unique symmetric unbiased estimator of
-##   the n-th cumulant kappa_n
-## The cumulants are related to central moments but are specifically defined
-##   using a power series expansion of the logarithm of the characteristic
-##   function (which is the Fourier transform of the PDF).
-##   In particular let phi(t) be the characteristic function, then
-##                     _
-##         ln phi(t) = > kappa_n (it)^n / n!    (sum from n=0 to inf)
-##                     -
-##
-##   The first few cumulants (kappa_n)  in terms of central moments (mu_n) are
-##    kappa_1 = mu_1
-##    kappa_2 = mu_2
-##    kappa_3 = mu_3
-##    kappa_4 = mu_4 - 3*mu_2**2
-##    kappa_5 = mu_5 - 10*mu_2 * mu_3
-##
-## Source:  http://mathworld.wolfram.com/Cumulant.html
-##          http://mathworld.wolfram.com/k-Statistic.html
-##
-
 def kstat(data,n=2):
     """
     Return the nth k-statistic (1<=n<=4 so far).
@@ -178,6 +159,33 @@ def kstat(data,n=2):
     -------
     kstat : float
         The nth k-statistic.
+
+    See Also
+    --------
+    kstatvar: Returns an unbiased estimator of the variance of the k-statistic.
+
+    Notes
+    -----
+    The cumulants are related to central moments but are specifically defined
+    using a power series expansion of the logarithm of the characteristic
+    function (which is the Fourier transform of the PDF).
+    In particular let phi(t) be the characteristic function, then::
+
+        ln phi(t) = > kappa_n (it)^n / n!    (sum from n=0 to inf)
+
+    The first few cumulants (kappa_n)  in terms of central moments (mu_n) are::
+
+        kappa_1 = mu_1
+        kappa_2 = mu_2
+        kappa_3 = mu_3
+        kappa_4 = mu_4 - 3*mu_2**2
+        kappa_5 = mu_5 - 10*mu_2 * mu_3
+
+    References
+    ----------
+    http://mathworld.wolfram.com/k-Statistic.html
+
+    http://mathworld.wolfram.com/Cumulant.html
 
     """
     if n > 4 or n < 1:
@@ -205,6 +213,8 @@ def kstatvar(data,n=2):
     """
     Returns an unbiased estimator of the variance of the k-statistic.
 
+    See `kstat` for more details of the k-statistic.
+
     Parameters
     ----------
     data : array_like
@@ -216,6 +226,10 @@ def kstatvar(data,n=2):
     -------
     kstatvar : float
         The nth k-statistic variance.
+
+    See Also
+    --------
+    kstat
 
     """
     data = ravel(data)
@@ -518,7 +532,7 @@ def boxcox_normplot(x,la,lb,plot=None,N=80):
         plot.ylabel('Transformation parameter')
     return svals, ppcc
 
-def shapiro(x,a=None,reta=0):
+def shapiro(x,a=None,reta=False):
     """
     Perform the Shapiro-Wilk test for normality.
 
@@ -528,21 +542,21 @@ def shapiro(x,a=None,reta=0):
     Parameters
     ----------
     x : array_like
-        array of sample data
+        Array of sample data.
     a : array_like, optional
-        array of internal parameters used in the calculation.  If these
+        Array of internal parameters used in the calculation.  If these
         are not given, they will be computed internally.  If x has length
         n, then a must have length n/2.
-    reta : {True, False}
-        whether or not to return the internally computed a values.  The
+    reta : bool, optional
+        Whether or not to return the internally computed a values.  The
         default is False.
 
     Returns
     -------
     W : float
-        The test statistic
+        The test statistic.
     p-value : float
-        The p-value for the hypothesis test
+        The p-value for the hypothesis test.
     a : array_like, optional
         If `reta` is True, then these are the internally computed "a"
         values that may be passed into this function on future calls.
@@ -813,13 +827,12 @@ def bartlett(*args):
     Returns
     -------
     T : float
-        the test statistic
+        The test statistic.
     p-value : float
-        the p-value of the test
+        The p-value of the test.
 
     References
     ----------
-
     .. [1]  http://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
 
     .. [2]  Snedecor, George W. and Cochran, William G. (1989), Statistical
@@ -845,11 +858,11 @@ def bartlett(*args):
 
 def levene(*args,**kwds):
     """
-    Perform Levene test for equal variances
+    Perform Levene test for equal variances.
 
     The Levene test tests the null hypothesis that all input samples
     are from populations with equal variances.  Levene's test is an
-    alternative to Bartlett's test `bartlett`_ in the case where
+    alternative to Bartlett's test `bartlett` in the case where
     there are significant deviations from normality.
 
     Parameters
@@ -867,21 +880,18 @@ def levene(*args,**kwds):
     Returns
     -------
     W : float
-        the test statistic
+        The test statistic.
     p-value : float
-        the p-value for the test
+        The p-value for the test.
 
     Notes
     -----
     Three variations of Levene's test are possible.  The possibilities
     and their recommended usages are:
 
-    'median'
-       Recommended for skewed (non-normal) distributions
-    'mean'
-       Recommended for symmetric, moderate-tailed distributions
-    'trimmed'
-       Recommended for heavy-tailed distributions
+      * 'median' : Recommended for skewed (non-normal) distributions>
+      * 'mean' : Recommended for symmetric, moderate-tailed distributions.
+      * 'trimmed' : Recommended for heavy-tailed distributions.
 
     References
     ----------
@@ -1023,12 +1033,12 @@ def _apply_func(x,g,func):
 
 def fligner(*args,**kwds):
     """
-    Perform Fligner's test for equal variances
+    Perform Fligner's test for equal variances.
 
     Fligner's test tests the null hypothesis that all input samples
     are from populations with equal variances.  Fligner's test is
-    non-parametric in contrast to Bartlett's test bartlett_ and
-    Levene's test levene_.
+    non-parametric in contrast to Bartlett's test `bartlett` and
+    Levene's test `levene`.
 
     Parameters
     ----------
@@ -1054,11 +1064,10 @@ def fligner(*args,**kwds):
     -----
     As with Levene's test there are three variants
     of Fligner's test that differ by the measure of central
-    tendency used in the test.  See levene_ for more information.
+    tendency used in the test.  See `levene` for more information.
 
     References
     ----------
-
     .. [1] http://www.stat.psu.edu/~bgl/center/tr/TR993.ps
 
     .. [2] Fligner, M.A. and Killeen, T.J. (1976). Distribution-free two-sample
@@ -1118,7 +1127,7 @@ def fligner(*args,**kwds):
 
 def mood(x,y):
     """
-    Perform Mood's test for equal scale parameters
+    Perform Mood's test for equal scale parameters.
 
     Mood's two-sample test for scale parameters is a non-parametric
     test for the null hypothesis that two samples are drawn from the
@@ -1127,12 +1136,12 @@ def mood(x,y):
     Parameters
     ----------
     x, y : array_like
-        arrays of sample data
+        Arrays of sample data.
 
     Returns
     -------
     p-value : float
-        The p-value for the hypothesis test
+        The p-value for the hypothesis test.
 
     See Also
     --------
@@ -1214,7 +1223,7 @@ def oneway(*args,**kwds):
 
 def wilcoxon(x,y=None):
     """
-    Calculate the Wilcoxon signed-rank test
+    Calculate the Wilcoxon signed-rank test.
 
     The Wilcoxon signed-rank test tests the null hypothesis that two
     related samples come from the same distribution. It is a a
@@ -1223,8 +1232,8 @@ def wilcoxon(x,y=None):
     Parameters
     ----------
     x : array_like
-        The first set of measurements
-    y : array_like, optional, default None
+        The first set of measurements.
+    y : array_like, optional
         The second set of measurements.  If y is not given, then the x array
         is considered to be the differences between the two sets of
         measurements.
@@ -1235,7 +1244,7 @@ def wilcoxon(x,y=None):
         The test statistic under the large-sample approximation that the
         signed-rank statistic is normally distributed.
     p-value : float
-        The two-sided p-value for the test
+        The two-sided p-value for the test.
 
     Notes
     -----
