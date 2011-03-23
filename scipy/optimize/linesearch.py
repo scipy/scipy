@@ -23,12 +23,12 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
         Function `f(x)`
     fprime : callable
         Gradient of `f`
-    xk : array-like
+    xk : array_like
         Current point
-    pk : array-like
+    pk : array_like
         Search direction
 
-    gfk : array-like, optional
+    gfk : array_like, optional
         Gradient of `f` at point `xk`
     old_fval : float, optional
         Value of `f` at point `xk`
@@ -212,7 +212,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     fc = [0]
     gc = [0]
     gval = [None]
-    
+
     def phi(alpha):
         fc[0] += 1
         return f(xk + alpha * pk, *args)
@@ -375,9 +375,9 @@ def _cubicmin(a,fa,fpa,b,fb,c,fc):
     """
     Finds the minimizer for a cubic polynomial that goes through the
     points (a,fa), (b,fb), and (c,fc) with derivative at a of fpa.
-    
+
     If no minimizer can be found return None
-    
+
     """
     # f(x) = A *(x-a)^3 + B*(x-a)^2 + C*(x-a) + D
 
@@ -501,14 +501,35 @@ def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
 def line_search_armijo(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
     """Minimize over alpha, the function ``f(xk+alpha pk)``.
 
-    Uses the interpolation algorithm (Armijo backtracking) as suggested by
-    Wright and Nocedal in 'Numerical Optimization', 1999, pg. 56-57
+    Parameters
+    ----------
+    f : callable
+        Function to be minimized.
+    xk : array_like
+        Current point.
+    pk : array_like
+        Search direction.
+    gfk : array_like, optional
+        Gradient of `f` at point `xk`.
+    old_fval : float
+        Value of `f` at point `xk`.
+    args : tuple, optional
+        Optional arguments.
+    c1 : float, optional
+        Value to control stopping criterion.
+    alpha0 : scalar, optional
+        Value of `alpha` at start of the optimization.
 
     Returns
     -------
     alpha
     f_count
     f_val_at_alpha
+
+    Notes
+    -----
+    Uses the interpolation algorithm (Armijo backtracking) as suggested by
+    Wright and Nocedal in 'Numerical Optimization', 1999, pg. 56-57
 
     """
     xk = np.atleast_1d(xk)

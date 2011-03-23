@@ -58,9 +58,9 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
     x0 : float
         An initial estimate of the zero that should be somewhere near the
         actual zero.
-    fprime : {None, function}, optional
+    fprime : function, optional
         The derivative of the function when available and convenient. If it
-        is None, then the secant method is used. The default is None.
+        is None (default), then the secant method is used.
     args : tuple, optional
         Extra arguments to be used in the function call.
     tol : float, optional
@@ -75,8 +75,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
 
     See Also
     --------
-    brentq, brenth, ridder, bisect -- find zeroes in one dimension.
-    fsolve -- find zeroes in n dimensions.
+    brentq, brenth, ridder, bisect : find zeroes in one dimension.
+    fsolve : find zeroes in n dimensions.
 
     Notes
     -----
@@ -168,7 +168,7 @@ def bisect(f, a, b, args=(),
         If `full_output` is False, the root is returned.  If `full_output` is
         True, the return value is ``(x, r)``, where `x` is the root, and `r` is
         a RootResults object.
-    disp : {True, bool} optional
+    disp : bool, optional
         If True, raise RuntimeError if the algorithm didn't converge.
 
     Returns
@@ -181,9 +181,9 @@ def bisect(f, a, b, args=(),
 
     See Also
     --------
-        brentq, brenth, bisect, newton : one-dimensional root-finding
-        fixed_point : scalar fixed-point finder
-        fsolve -- n-dimensional root-finding
+    brentq, brenth, bisect, newton : one-dimensional root-finding
+    fixed_point : scalar fixed-point finder
+    fsolve : n-dimensional root-finding
 
     """
     if type(args) != type(()) :
@@ -221,7 +221,7 @@ def ridder(f, a, b, args=(),
         If `full_output` is False, the root is returned.  If `full_output` is
         True, the return value is ``(x, r)``, where `x` is the root, and `r` is
         a RootResults object.
-    disp : {True, bool} optional
+    disp : bool, optional
         If True, raise RuntimeError if the algorithm didn't converge.
 
     Returns
@@ -311,7 +311,7 @@ def brentq(f, a, b, args=(),
         If `full_output` is False, the root is returned.  If `full_output` is
         True, the return value is ``(x, r)``, where `x` is the root, and `r` is
         a RootResults object.
-    disp : {True, bool} optional
+    disp : bool, optional
         If True, raise RuntimeError if the algorithm didn't converge.
 
     Returns
@@ -343,10 +343,11 @@ def brentq(f, a, b, args=(),
 
     Notes
     -----
+    `f` must be continuous.  f(a) and f(b) must have opposite signs.
 
-    f must be continuous.  f(a) and f(b) must have opposite signs.
 
-
+    References
+    ----------
     .. [Brent1973]
        Brent, R. P.,
        *Algorithms for Minimization Without Derivatives*.
@@ -401,7 +402,7 @@ def brenth(f, a, b, args=(),
         If `full_output` is False, the root is returned.  If `full_output` is
         True, the return value is ``(x, r)``, where `x` is the root, and `r` is
         a RootResults object.
-    disp : {True, bool} optional
+    disp : bool, optional
         If True, raise RuntimeError if the algorithm didn't converge.
 
     Returns
@@ -414,22 +415,22 @@ def brenth(f, a, b, args=(),
 
     See Also
     --------
-      fmin, fmin_powell, fmin_cg,
-             fmin_bfgs, fmin_ncg -- multivariate local optimizers
-      leastsq -- nonlinear least squares minimizer
+    fmin, fmin_powell, fmin_cg,
+           fmin_bfgs, fmin_ncg : multivariate local optimizers
 
-      fmin_l_bfgs_b, fmin_tnc,
-             fmin_cobyla -- constrained multivariate optimizers
+    leastsq : nonlinear least squares minimizer
 
-      anneal, brute -- global optimizers
+    fmin_l_bfgs_b, fmin_tnc, fmin_cobyla : constrained multivariate optimizers
 
-      fminbound, brent, golden, bracket -- local scalar minimizers
+    anneal, brute : global optimizers
 
-      fsolve -- n-dimensional root-finding
+    fminbound, brent, golden, bracket : local scalar minimizers
 
-      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+    fsolve : n-dimensional root-finding
 
-      fixed_point -- scalar fixed-point finder
+    brentq, brenth, ridder, bisect, newton : one-dimensional root-finding
+
+    fixed_point : scalar fixed-point finder
 
     """
     if type(args) != type(()) :
