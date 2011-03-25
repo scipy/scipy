@@ -12,10 +12,26 @@ Run tests if scipy is installed:
 
 import math
 
+import numpy
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_almost_equal, assert_array_almost_equal
     
-from scipy.linalg import fblas, cblas
+from scipy.linalg import fblas, cblas, get_blas_funcs
+
+
+def test_blas_funcs_order():
+    # check that it returns Fortran code for arrays that are
+    # fortran-ordered
+    f1, f2, f3 = get_blas_funcs(
+        ('axpy', 'axpy', 'axpy'),
+        (numpy.empty((2,2), dtype=numpy.complex64, order='F'),
+         numpy.empty((2,2), dtype=numpy.complex128, order='C'))
+        )
+
+    assert_equal(f1.typecode, 'F')
+    assert_equal(f1.module_name, 'fblas')
+    assert_equal(f2.typecode, 'D')
+    assert_equal(f2.module_name, 'cblas')
 
 
 class TestCBLAS1Simple(TestCase):

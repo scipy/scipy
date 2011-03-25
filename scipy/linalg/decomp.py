@@ -753,7 +753,7 @@ def hessenberg(a, calc_q=False, overwrite_a=False):
         return hq
 
     # XXX: Use ORGHR routines to compute q.
-    ger,gemm = get_blas_funcs(('ger','gemm'), (hq,))
+    ger,gemm = get_blas_funcs(('ger','gemm'), (hq,hq))
     typecode = hq.dtype.char
     q = None
     for i in range(lo, hi):
