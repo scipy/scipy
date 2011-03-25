@@ -12,10 +12,39 @@ Run tests if scipy is installed:
 
 import math
 
+import numpy
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_almost_equal, assert_array_almost_equal
     
-from scipy.linalg import fblas, cblas
+from scipy.linalg import fblas, cblas, get_blas_funcs
+
+def test_get_blas_funcs():
+    # check that it returns Fortran code for arrays that are
+    # fortran-ordered
+    f1, f2, f3 = get_blas_funcs(
+        ('axpy', 'axpy', 'axpy'),
+        (numpy.empty((2,2), dtype=numpy.complex64, order='F'),
+         numpy.empty((2,2), dtype=numpy.complex128, order='C'))
+        )
+
+    # get_blas_funcs will choose libraries depending on most generic
+    # array
+    assert_equal(f1.typecode, 'z')
+    assert_equal(f1.module_name, 'cblas')
+    assert_equal(f2.typecode, 'z')
+    assert_equal(f2.module_name, 'cblas')
+
+    # check defaults.
+    f1 = get_blas_funcs('rotg')
+    assert_equal(f1.typecode, 'd')
+
+    # check also dtype interface
+    f1 = get_blas_funcs('gemm', dtype=numpy.complex64)
+    assert_equal(f1.typecode, 'c')
+    f1 = get_blas_funcs('gemm', dtype='F')
+    assert_equal(f1.typecode, 'c')
+
+#    assert_raises(
 
 
 class TestCBLAS1Simple(TestCase):

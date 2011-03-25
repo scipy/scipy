@@ -1,65 +1,98 @@
 #
 # Author: Pearu Peterson, March 2002
+#         refactoring by Fabian Pedregosa, March 2010
 #
 
 __all__ = ['get_blas_funcs']
 
-
+import numpy
 # The following ensures that possibly missing flavor (C or Fortran) is
 # replaced with the available one. If none is available, exception
 # is raised at the first attempt to use the resources.
 
-from scipy.linalg import fblas
-from scipy.linalg import cblas
+from scipy.linalg import cblas, fblas
 if hasattr(cblas,'empty_module'):
     cblas = fblas
 elif hasattr(fblas,'empty_module'):
     fblas = cblas
 
-_type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'} # 'd' will be default for 'i',..
-_inv_type_conv = {'s':'f','d':'d','c':'F','z':'D'}
+ # 'd' will be default for 'i',..
+_type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 
-def has_column_major_storage(arr):
-    """Is array stored in column-major format"""
-    return arr.flags['FORTRAN']
 
-def get_blas_funcs(names,arrays=(),debug=0):
-    """Return available BLAS function objects with names.
-    arrays are used to determine the optimal prefix of
-    BLAS routines.
+def get_blas_funcs(names, arrays=(), dtype=None):
+    """Return available BLAS function objects from names.
 
+    Arrays are used to determine the optimal prefix of BLAS routines.
+
+    Parameters
+    ----------
+    names : str or sequence of str
+        Name(s) of BLAS functions withouth type prefix.
+
+    arrays : sequency of ndarrays, optional
+        Arrays can be given to determine optiomal prefix of BLAS
+        routines. If not given, double-precision routines will be
+        used, otherwise the most generic type in arrays will be used.
+
+    dtype : str or dtype, optional
+        Data-type specifier. Not used if `arrays` is non-empty.
+
+
+    Returns
+    -------
+    funcs : list
+        List containing the found function(s).
+
+
+    Notes
+    -----
+    This routines automatically chooses between Fortran/C
+    interfaces. Fortran code is used whenever possible for arrays with
+    column major order. In all other cases, C code is preferred.
+
+    In BLAS, the naming convention is that all functions start with a
+    type prefix, which depends on the type of the principal
+    matrix. These can be one of {'s', 'd', 'c', 'z'} for the numpy
+    types {float32, float64, complex64, complex128} respectevely, and
+    are stored in attribute `typecode` of the returned functions.
     """
-    ordering = []
-    for i in range(len(arrays)):
-        t = arrays[i].dtype.char
-        if t not in _type_conv:
-            t = 'd'
-        ordering.append((t,i))
-    if ordering:
-        ordering.sort()
-        required_prefix = _type_conv[ordering[0][0]]
-    else:
-        required_prefix = 'd'
-    typecode = _inv_type_conv[required_prefix]
-    # Default lookup:
-    if ordering and has_column_major_storage(arrays[ordering[0][1]]):
-        # prefer Fortran code for leading array with column major order
-        m1,m2 = fblas,cblas
-    else:
-        # in all other cases, C code is preferred
-        m1,m2 = cblas,fblas
-    funcs = []
-    for name in names:
-        if name=='ger' and typecode in 'FD':
-            name = 'gerc'
-        func_name = required_prefix + name
-        func = getattr(m1,func_name,None)
+
+    blas_funcs = []
+    unpack = False
+    dtype = numpy.dtype(dtype)
+    module1 = (cblas, 'cblas')
+    module2 = (fblas, 'fblas')
+
+    if isinstance(names, str):
+        names = (names,)
+        unpack = True
+
+    if arrays:
+        # use the most generic type in arrays
+        dtype, index = max(
+            [(ar.dtype, i) for i, ar in enumerate(arrays)])
+        if arrays[index].flags['FORTRAN']:
+            # prefer Fortran for leading array with column major order
+            module1, module2 = module2, module1
+
+    prefix = _type_conv.get(dtype.char, 'd')
+
+    for i, name in enumerate(names):
+        func_name = prefix + name
+        func = getattr(module1[0], func_name, None)
+        module_name = module1[1]
         if func is None:
-            func = getattr(m2,func_name)
-            func.module_name = m2.__name__.split('.')[-1]
-        else:
-            func.module_name = m1.__name__.split('.')[-1]
-        func.prefix = required_prefix
-        func.typecode = typecode
-        funcs.append(func)
-    return tuple(funcs)
+            func = getattr(module2[0], func_name, None)
+            module_name = module2[1]
+        if func is None:
+            raise ValueError(
+                'BLAS function %s could not be found' % func_name)
+        func.module_name = module_name
+        func.typecode = prefix
+        blas_funcs.append(func)
+
+    if unpack:
+        return blas_funcs[0]
+    else:
+        return blas_funcs
