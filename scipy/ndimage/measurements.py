@@ -751,7 +751,7 @@ def _select(input, labels = None, index = None, find_min=False, find_max=False, 
         step = (hi - lo) // 2
         lo += step
         hi -= step
-        result += [(input[lo] + input[hi]) / 2]
+        result += [(input[lo] + input[hi]) / 2.0]
 
     return result
 
@@ -951,19 +951,19 @@ def median(input, labels = None, index = None):
     ...               [9, 3, 0, 0]])
     >>> labels, labels_nb = ndimage.label(a)
     >>> labels
-    array([[1, 1, 0, 0],
+    array([[1, 1, 0, 2],
            [1, 1, 0, 2],
            [0, 0, 0, 2],
            [3, 3, 0, 0]])
     >>> ndimage.median(a, labels=labels, index=np.arange(1, labels_nb + 1))
     [2.5, 4.0, 6.0]
     >>> ndimage.median(a)
-    0.0
-    >>> ndimage.median(a, labels=labels)
     1.0
+    >>> ndimage.median(a, labels=labels)
+    3.0
 
     """
-    return _select(input, labels, index, find_min=True)[0]
+    return _select(input, labels, index, find_median=True)[0]
 
 def minimum_position(input, labels = None, index = None):
     """Find the positions of the minimums of the values of an array at labels.

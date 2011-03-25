@@ -524,6 +524,41 @@ def test_maximum05():
     x = np.array([-3,-2,-1])
     assert_equal(ndimage.maximum(x),-1)
 
+def test_median01():
+    "median 1"
+    a = np.array([[1, 2, 0, 1],
+                  [5, 3, 0, 4],
+                  [0, 0, 0, 7],
+                  [9, 3, 0, 0]])
+    labels = np.array([[1, 1, 0, 2],
+                       [1, 1, 0, 2],
+                       [0, 0, 0, 2],
+                       [3, 3, 0, 0]])
+    output = ndimage.median(a, labels=labels, index=[1, 2, 3])
+    assert_array_almost_equal(output, [2.5, 4.0, 6.0])
+
+def test_median02():
+    "median 2"
+    a = np.array([[1, 2, 0, 1],
+                  [5, 3, 0, 4],
+                  [0, 0, 0, 7],
+                  [9, 3, 0, 0]])
+    output = ndimage.median(a)
+    assert_almost_equal(output, 1.0)
+
+def test_median03():
+    "median 3"
+    a = np.array([[1, 2, 0, 1],
+                  [5, 3, 0, 4],
+                  [0, 0, 0, 7],
+                  [9, 3, 0, 0]])
+    labels = np.array([[1, 1, 0, 2],
+                       [1, 1, 0, 2],
+                       [0, 0, 0, 2],
+                       [3, 3, 0, 0]])
+    output = ndimage.median(a, labels=labels)
+    assert_almost_equal(output, 3.0)
+
 def test_variance01():
     "variance 1"
     olderr = np.seterr(all='ignore')
