@@ -648,8 +648,8 @@ def standard_deviation(input, labels = None, index = None):
 
     return numpy.sqrt(variance(input, labels, index))
 
-def _select(input, labels = None, index = None, find_min=False, find_max=False, find_min_positions=False, find_max_positions=False):
-    '''returns min, max, or both, plus positions if requested'''
+def _select(input, labels = None, index = None, find_min=False, find_max=False, find_min_positions=False, find_max_positions=False, find_median=False):
+    '''returns min, max, or both, plus their positions (if requsted), and median'''
 
     input = numpy.asanyarray(input)
 
@@ -668,6 +668,8 @@ def _select(input, labels = None, index = None, find_min=False, find_max=False, 
             result += [vals.max()]
         if find_max_positions:
             result += [positions[vals == vals.max()][0]]
+        if find_median:
+            result += [numpy.median(vals)]
         return result
 
     if labels is None:
@@ -690,12 +692,6 @@ def _select(input, labels = None, index = None, find_min=False, find_max=False, 
             masked_positions = positions[mask]
         return single_group(input[mask], masked_positions)
 
-    order = input.ravel().argsort()
-    input = input.ravel()[order]
-    labels = labels.ravel()[order]
-    if find_positions:
-        positions = positions.ravel()[order]
-
     # remap labels to unique integers if necessary, or if the largest
     # label is larger than the number of values.
     if (_safely_castable_to_int(labels.dtype) or
@@ -714,6 +710,15 @@ def _select(input, labels = None, index = None, find_min=False, find_max=False, 
 
     idxs[~ found] = labels.max() + 1
 
+    if find_median:
+        order = numpy.lexsort((input.ravel(), labels.ravel()))
+    else:
+        order = input.ravel().argsort()
+    input = input.ravel()[order]
+    labels = labels.ravel()[order]
+    if find_positions:
+        positions = positions.ravel()[order]
+
     result = []
     if find_min:
         mins = numpy.zeros(labels.max() + 2, input.dtype)
@@ -731,6 +736,23 @@ def _select(input, labels = None, index = None, find_min=False, find_max=False, 
         maxpos = numpy.zeros(labels.max() + 2)
         maxpos[labels] = positions
         result += [maxpos[idxs]]
+    if find_median:
+        locs = numpy.arange(len(labels))
+        lo = numpy.zeros(labels.max() + 2, numpy.int)
+        lo[labels[::-1]] = locs[::-1]
+        hi = numpy.zeros(labels.max() + 2, numpy.int)
+        hi[labels] = locs
+        lo = lo[idxs]
+        hi = hi[idxs]
+        # lo is an index to the lowest value in input for each label,
+        # hi is an index to the largest value.
+        # move them to be either the same ((hi - lo) % 2 == 0) or next
+        # to each other ((hi - lo) % 2 == 1), then average.
+        step = (hi - lo) // 2
+        lo += step
+        hi -= step
+        result += [(input[lo] + input[hi]) / 2]
+
     return result
 
 def minimum(input, labels = None, index = None):
@@ -767,7 +789,7 @@ def minimum(input, labels = None, index = None):
     See also
     --------
 
-    label, maximum, minimum_position, extrema, sum, mean, variance,
+    label, maximum, median, minimum_position, extrema, sum, mean, variance,
     standard_deviation
 
     Notes
@@ -829,7 +851,7 @@ def maximum(input, labels = None, index = None):
 
     See also
     --------
-    label, minimum, maximum_position, extrema, sum, mean, variance,
+    label, minimum, median, maximum_position, extrema, sum, mean, variance,
     standard_deviation
 
     Notes
@@ -877,6 +899,71 @@ def maximum(input, labels = None, index = None):
 
     """
     return _select(input, labels, index, find_max=True)[0]
+
+def median(input, labels = None, index = None):
+    """
+    Calculate the median of the values of an array over labeled regions.
+
+    Parameters
+    ----------
+
+    input: array_like
+        Array_like of values. For each region specified by `labels`, the
+        median value of `input` over the region is computed.
+
+    labels: array_like, optional
+        An array_like of integers marking different regions over which the
+        median value of `input` is to be computed. `labels` must have the
+        same shape as `input`. If `labels` is not specified, the median
+        over the whole array is returned.
+
+    index: array_like, optional
+        A list of region labels that are taken into account for computing the
+        medians. If index is None, the minimum over all elements where `labels`
+        is non-zero is returned.
+
+    Returns
+    -------
+    output : float or list of floats
+        List of medians of `input` over the regions determined by `labels` and
+        whose index is in `index`. If `index` or `labels` are not specified, a
+        float is returned: the median value of `input` if `labels` is None,
+        and the median value of elements where `labels` is greater than zero
+        if `index` is None.
+
+    See also
+    --------
+
+    label, minimum, maximum, extrema, sum, mean, variance, standard_deviation
+
+    Notes
+    -----
+
+    The function returns a Python list and not a Numpy array, use
+    `np.array` to convert the list to an array.
+
+    Examples
+    --------
+
+    >>> a = np.array([[1, 2, 0, 1],
+    ...               [5, 3, 0, 4],
+    ...               [0, 0, 0, 7],
+    ...               [9, 3, 0, 0]])
+    >>> labels, labels_nb = ndimage.label(a)
+    >>> labels
+    array([[1, 1, 0, 0],
+           [1, 1, 0, 2],
+           [0, 0, 0, 2],
+           [3, 3, 0, 0]])
+    >>> ndimage.median(a, labels=labels, index=np.arange(1, labels_nb + 1))
+    [2.5, 4.0, 6.0]
+    >>> ndimage.median(a)
+    0.0
+    >>> ndimage.median(a, labels=labels)
+    1.0
+
+    """
+    return _select(input, labels, index, find_min=True)[0]
 
 def minimum_position(input, labels = None, index = None):
     """Find the positions of the minimums of the values of an array at labels.
