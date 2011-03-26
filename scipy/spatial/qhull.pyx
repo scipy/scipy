@@ -686,8 +686,12 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
     6) If all barycentric coordinates are non-negative but 5) is not true,
        we are in an inconsistent situation -- this should never happen.
 
+    This may however enter an infinite loop due to rounding errors in
+    the computation of the barycentric coordinates, so the iteration
+    count needs to be limited, and a fallback to brute force provided.
+
     """
-    cdef int k, m, ndim, inside, isimplex
+    cdef int k, m, ndim, inside, isimplex, cycle_k
     cdef double *transform
     cdef double v
 
@@ -697,7 +701,15 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
     if isimplex < 0 or isimplex >= d.nsimplex:
         isimplex = 0
 
-    while isimplex != -1:
+    # The maximum iteration count: it should be large enough so that
+    # the algorithm usually succeeds, but smaller than nsimplex so
+    # that for the cases where the algorithm fails, the main cost
+    # still comes from the brute force search.
+
+    for cycle_k in range(1 + d.nsimplex//4):
+        if isimplex == -1:
+            break
+
         transform = d.transform + isimplex*ndim*(ndim+1)
 
         inside = 1
@@ -733,6 +745,9 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
             # fall back to brute force
             isimplex = _find_simplex_bruteforce(d, c, x, eps)
             break
+    else:
+        # the algorithm failed to converge -- fall back to brute force
+        isimplex = _find_simplex_bruteforce(d, c, x, eps)
 
     start[0] = isimplex
     return isimplex
