@@ -94,25 +94,25 @@ cdef extern from "qhull/src/qhull.h":
     extern int qh_PRINToff
     extern int qh_ALL
 
-    void qh_init_A(void *inp, void *out, void *err, int argc, char **argv)
-    void qh_init_B(realT *points, int numpoints, int dim, boolT ismalloc)
-    void qh_checkflags(char *, char *)
-    void qh_initflags(char *)
-    void qh_option(char *, char*, char* )
-    void qh_freeqhull(boolT)
-    void qh_memfreeshort(int *curlong, int *totlong)
-    void qh_qhull()
-    void qh_check_output()
-    void qh_produce_output()
-    void qh_triangulate()
-    void qh_checkpolygon()
-    void qh_findgood_all()
-    void qh_appendprint(int format)
-    realT *qh_readpoints(int* num, int *dim, boolT* ismalloc)
+    void qh_init_A(void *inp, void *out, void *err, int argc, char **argv) nogil
+    void qh_init_B(realT *points, int numpoints, int dim, boolT ismalloc) nogil
+    void qh_checkflags(char *, char *) nogil
+    void qh_initflags(char *) nogil
+    void qh_option(char *, char*, char* ) nogil
+    void qh_freeqhull(boolT) nogil
+    void qh_memfreeshort(int *curlong, int *totlong) nogil
+    void qh_qhull() nogil
+    void qh_check_output() nogil
+    void qh_produce_output() nogil
+    void qh_triangulate() nogil
+    void qh_checkpolygon() nogil
+    void qh_findgood_all() nogil
+    void qh_appendprint(int format) nogil
+    realT *qh_readpoints(int* num, int *dim, boolT* ismalloc) nogil
     int qh_new_qhull(int dim, int numpoints, realT *points,
                      boolT ismalloc, char* qhull_cmd, void *outfile,
-                     void *errfile)
-    int qh_pointid(pointT *point)
+                     void *errfile) nogil
+    int qh_pointid(pointT *point) nogil
 
 # Qhull is not threadsafe: needs locking
 _qhull_lock = threading.Lock()
@@ -124,7 +124,7 @@ _qhull_lock = threading.Lock()
 
 cdef extern from "qhull_blas.h":
     void qh_dgesv(int *n, int *nrhs, double *a, int *lda, int *ipiv,
-                  double *b, int *ldb, int *info)
+                  double *b, int *ldb, int *info) nogil
 
 
 #------------------------------------------------------------------------------
@@ -163,13 +163,16 @@ def _construct_delaunay(np.ndarray[np.double_t, ndim=2] points):
     _qhull_lock.acquire()
     try:
         qh_qh.NOerrexit = 1
-        exitcode = qh_new_qhull(dim, numpoints, <realT*>points.data, 0,
-                                options, NULL, stderr)
+        with nogil:
+            exitcode = qh_new_qhull(dim, numpoints, <realT*>points.data, 0,
+                                    options, NULL, stderr)
+
         try:
             if exitcode != 0:
                 raise RuntimeError("Qhull error")
 
-            qh_triangulate() # get rid of non-simplical facets
+            with nogil:
+                qh_triangulate() # get rid of non-simplical facets
 
             if qh_qh.SCALElast:
                 paraboloid_scale = qh_qh.last_newhigh / (
@@ -185,8 +188,9 @@ def _construct_delaunay(np.ndarray[np.double_t, ndim=2] points):
             return (vertices, neighbors, equations,
                     paraboloid_scale, paraboloid_shift)
         finally:
-            qh_freeqhull(0)
-            qh_memfreeshort(&curlong, &totlong)
+            with nogil:
+                qh_freeqhull(0)
+                qh_memfreeshort(&curlong, &totlong)
             if curlong != 0 or totlong != 0:
                 raise RuntimeError("qhull: did not free %d bytes (%d pieces)" %
                                    (totlong, curlong))
@@ -194,6 +198,8 @@ def _construct_delaunay(np.ndarray[np.double_t, ndim=2] points):
         _qhull_lock.release()
 
 
+@cython.boundscheck(False)
+@cython.cdivision(True)
 def _qhull_get_facet_array(int ndim, int numpoints):
     """
     Return array of simplical facets currently in Qhull.
@@ -214,7 +220,7 @@ def _qhull_get_facet_array(int ndim, int numpoints):
     cdef facetT* facet
     cdef facetT* neighbor
     cdef vertexT *vertex
-    cdef int i, j, point
+    cdef int i, j, point, error_non_simplical
     cdef np.ndarray[np.npy_int, ndim=2] vertices
     cdef np.ndarray[np.npy_int, ndim=2] neighbors
     cdef np.ndarray[np.double_t, ndim=2] equations
@@ -238,34 +244,41 @@ def _qhull_get_facet_array(int ndim, int numpoints):
     equations = np.zeros((j, ndim+2), dtype=np.double)
 
     # Retrieve facet information
-    facet = qh_qh.facet_list
-    j = 0
-    while facet and facet.next:
-        if not facet.simplicial:
-            raise ValueError("non-simplical facet encountered")
+    error_non_simplical = 0
 
-        if facet.upperdelaunay:
+    with nogil:
+        facet = qh_qh.facet_list
+        j = 0
+        while facet and facet.next:
+            if not facet.simplicial:
+                error_non_simplical = 1
+                break
+
+            if facet.upperdelaunay:
+                facet = facet.next
+                continue
+
+            # Save vertex info
+            for i in xrange(ndim+1):
+                vertex = <vertexT*>facet.vertices.e[i].p
+                point = qh_pointid(vertex.point)
+                vertices[j, i] = point
+
+            # Save neighbor info
+            for i in xrange(ndim+1):
+                neighbor = <facetT*>facet.neighbors.e[i].p
+                neighbors[j,i] = id_map[neighbor.id]
+
+            # Save simplex equation info
+            for i in xrange(ndim+1):
+                equations[j,i] = facet.normal[i]
+            equations[j,ndim+1] = facet.offset
+
+            j += 1
             facet = facet.next
-            continue
 
-        # Save vertex info
-        for i in xrange(ndim+1):
-            vertex = <vertexT*>facet.vertices.e[i].p
-            point = qh_pointid(vertex.point)
-            vertices[j, i] = point
-
-        # Save neighbor info
-        for i in xrange(ndim+1):
-            neighbor = <facetT*>facet.neighbors.e[i].p
-            neighbors[j,i] = id_map[neighbor.id]
-
-        # Save simplex equation info
-        for i in xrange(ndim+1):
-            equations[j,i] = facet.normal[i]
-        equations[j,ndim+1] = facet.offset
-
-        j += 1
-        facet = facet.next
+    if error_non_simplical:
+        raise ValueError("non-simplical facet encountered")
 
     return vertices, neighbors, equations
 
@@ -275,6 +288,7 @@ def _qhull_get_facet_array(int ndim, int numpoints):
 #------------------------------------------------------------------------------
 
 @cython.boundscheck(False)
+@cython.cdivision(True)
 def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
                                 np.ndarray[np.npy_int, ndim=2] vertices):
     """
@@ -328,62 +342,64 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     T = np.zeros((ndim, ndim), dtype=np.double)
     Tinvs = np.zeros((nvertex, ndim+1, ndim), dtype=np.double)
 
-    for ivertex in xrange(nvertex):
-        if ndim == 2:
-            # Manual unrolling of the generic barycentric transform
-            # code below. This is roughly 3.5x faster than the generic
-            # implementation; however, the time taken here is in any
-            # case a small fraction of `qh_new_qhull`, so optimization
-            # here is probably not very important.
+    with nogil:
+        for ivertex in xrange(nvertex):
+            if ndim == 2:
+                # Manual unrolling of the generic barycentric transform
+                # code below. This is roughly 3.5x faster than the generic
+                # implementation; however, the time taken here is in any
+                # case a small fraction of `qh_new_qhull`, so optimization
+                # here is probably not very important.
 
-            x1 = points[vertices[ivertex,0],0]
-            x2 = points[vertices[ivertex,1],0]
-            x3 = points[vertices[ivertex,2],0]
+                x1 = points[vertices[ivertex,0],0]
+                x2 = points[vertices[ivertex,1],0]
+                x3 = points[vertices[ivertex,2],0]
 
-            y1 = points[vertices[ivertex,0],1]
-            y2 = points[vertices[ivertex,1],1]
-            y3 = points[vertices[ivertex,2],1]
+                y1 = points[vertices[ivertex,0],1]
+                y2 = points[vertices[ivertex,1],1]
+                y3 = points[vertices[ivertex,2],1]
 
-            x1 -= x3
-            x2 -= x3
+                x1 -= x3
+                x2 -= x3
 
-            y1 -= y3
-            y2 -= y3
+                y1 -= y3
+                y2 -= y3
 
-            det = x1*y2 - x2*y1
+                det = x1*y2 - x2*y1
 
-            if det == 0:
-                info = 1
+                if det == 0:
+                    info = 1
+                else:
+                    info = 0
+                    Tinvs[ivertex,0,0] = y2/det
+                    Tinvs[ivertex,0,1] = -x2/det
+                    Tinvs[ivertex,1,0] = -y1/det
+                    Tinvs[ivertex,1,1] = x1/det
+                    Tinvs[ivertex,2,0] = x3
+                    Tinvs[ivertex,2,1] = y3
             else:
-                info = 0
-                Tinvs[ivertex,0,0] = y2/det
-                Tinvs[ivertex,0,1] = -x2/det
-                Tinvs[ivertex,1,0] = -y1/det
-                Tinvs[ivertex,1,1] = x1/det
-                Tinvs[ivertex,2,0] = x3
-                Tinvs[ivertex,2,1] = y3
-        else:
-            # General dimensions
+                # General dimensions
 
-            for i in xrange(ndim):
-                Tinvs[ivertex,ndim,i] = points[vertices[ivertex,ndim],i]
-                for j in xrange(ndim):
-                    T[i,j] = (points[vertices[ivertex,j],i]
-                              - Tinvs[ivertex,ndim,i])
-                Tinvs[ivertex,i,i] = 1
+                for i in xrange(ndim):
+                    Tinvs[ivertex,ndim,i] = points[vertices[ivertex,ndim],i]
+                    for j in xrange(ndim):
+                        T[i,j] = (points[vertices[ivertex,j],i]
+                                  - Tinvs[ivertex,ndim,i])
+                    Tinvs[ivertex,i,i] = 1
 
-            n = ndim
-            nrhs = ndim
-            lda = ndim
-            ldb = ndim
-            qh_dgesv(&n, &nrhs, <double*>T.data, &lda, ipiv,
-                     (<double*>Tinvs.data) + ndim*(ndim+1)*ivertex, &ldb, &info)
+                n = ndim
+                nrhs = ndim
+                lda = ndim
+                ldb = ndim
+                qh_dgesv(&n, &nrhs, <double*>T.data, &lda, ipiv,
+                         (<double*>Tinvs.data) + ndim*(ndim+1)*ivertex,
+                         &ldb, &info)
 
-        if info != 0:
-            # degenerate simplex
-            for i in xrange(ndim+1):
-                for j in xrange(ndim):
-                    Tinvs[ivertex,i,j] = nan
+            if info != 0:
+                # degenerate simplex
+                for i in xrange(ndim+1):
+                    for j in xrange(ndim):
+                        Tinvs[ivertex,i,j] = nan
 
     return Tinvs
 
@@ -969,6 +985,7 @@ class Delaunay(object):
         return self._transform
 
     @property
+    @cython.boundscheck(False)
     def vertex_to_simplex(self):
         """
         Lookup array, from a vertex, to some simplex which it is a part of.
@@ -989,11 +1006,12 @@ class Delaunay(object):
             nsimplex = self.nsimplex
             ndim = self.ndim
 
-            for isimplex in xrange(nsimplex):
-                for k in xrange(ndim+1):
-                    ivertex = vertices[isimplex, k]
-                    if arr[ivertex] == -1:
-                        arr[ivertex] = isimplex
+            with nogil:
+                for isimplex in xrange(nsimplex):
+                    for k in xrange(ndim+1):
+                        ivertex = vertices[isimplex, k]
+                        if arr[ivertex] == -1:
+                            arr[ivertex] = isimplex
 
         return self._vertex_to_simplex
 
@@ -1045,6 +1063,7 @@ class Delaunay(object):
         out.resize(m, ndim)
         return out
 
+    @cython.boundscheck(False)
     def find_simplex(self, xi, bruteforce=False):
         """
         find_simplex(xi, bruteforce=False)
@@ -1101,20 +1120,24 @@ class Delaunay(object):
         _get_delaunay_info(&info, self, 1, 0)
 
         if bruteforce:
-            for k in xrange(x.shape[0]):
-                isimplex = _find_simplex_bruteforce(
-                    &info, c,
-                    <double*>x.data + info.ndim*k,
-                    eps)
-                out_[k] = isimplex
+            with nogil:
+                for k in xrange(x.shape[0]):
+                    isimplex = _find_simplex_bruteforce(
+                        &info, c,
+                        <double*>x.data + info.ndim*k,
+                        eps)
+                    out_[k] = isimplex
         else:
-            for k in xrange(x.shape[0]):
-                isimplex = _find_simplex(&info, c, <double*>x.data + info.ndim*k,
-                                         &start, eps)
-                out_[k] = isimplex
+            with nogil:
+                for k in xrange(x.shape[0]):
+                    isimplex = _find_simplex(&info, c,
+                                             <double*>x.data + info.ndim*k,
+                                             &start, eps)
+                    out_[k] = isimplex
 
         return out.reshape(xi_shape[:-1])
 
+    @cython.boundscheck(False)
     def plane_distance(self, xi):
         """
         plane_distance(xi)
@@ -1141,10 +1164,11 @@ class Delaunay(object):
         out = np.zeros((x.shape[0], info.nsimplex), dtype=np.double)
         out_ = out
 
-        for i in xrange(x.shape[0]):
-            for j in xrange(info.nsimplex):
-                _lift_point(&info, (<double*>x.data) + info.ndim*i, z)
-                out_[i,j] = _distplane(&info, j, z)
+        with nogil:
+            for i in xrange(x.shape[0]):
+                for j in xrange(info.nsimplex):
+                    _lift_point(&info, (<double*>x.data) + info.ndim*i, z)
+                    out_[i,j] = _distplane(&info, j, z)
 
         return out.reshape(xi_shape[:-1] + (self.nsimplex,))
 
