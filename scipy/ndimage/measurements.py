@@ -34,36 +34,29 @@ import _ni_support
 import _nd_image
 import morphology
 
-def label(input, structure = None, output = None):
+def label(input, structure=None, output=None):
     """
     Label features in an array.
 
     Parameters
     ----------
-
     input : array_like
         An array-like object to be labeled.  Any non-zero values in `input` are
         counted as features and zero values are considered the background.
-
-
     structure : array_like, optional
         A structuring element that defines feature connections.
-
         `structure` must be symmetric.  If no structuring element is provided,
         one is automatically generated with a squared connectivity equal to
-        one.
-
-        That is, for a 2D `input` array, the default structuring element is::
+        one.  That is, for a 2-D `input` array, the default structuring element
+        is::
 
             [[0,1,0],
              [1,1,1],
              [0,1,0]]
 
-
     output : (None, data-type, array_like), optional
         If `output` is a data type, it specifies the type of the resulting
         labeled feature array
-
         If `output` is an array-like object, then `output` will be updated
         with the labeled features from this function
 
@@ -71,7 +64,6 @@ def label(input, structure = None, output = None):
     -------
     labeled_array : array_like
         An array-like object where each unique feature has a unique value
-
     num_features : int
         How many objects were found
 
@@ -162,7 +154,7 @@ def label(input, structure = None, output = None):
     else:
         return return_value, max_label
 
-def find_objects(input, max_label = 0):
+def find_objects(input, max_label=0):
     """
     Find objects in a labeled array.
 
@@ -417,7 +409,7 @@ def _stats(input, labels=None, index=None, centered=False):
     if (not _safely_castable_to_int(labels.dtype) or
             labels.min() < 0 or labels.max() > labels.size):
         unique_labels, new_labels = numpy.unique(labels, return_inverse=True)
-        counts = numpy.bincount(new_labels) 
+        counts = numpy.bincount(new_labels)
         sums = numpy.bincount(new_labels, weights=input.ravel())
         if centered:
             sums_c = _sum_centered(new_labels)
@@ -450,39 +442,34 @@ def _stats(input, labels=None, index=None, centered=False):
         return (counts, sums, sums_c)
 
 
-def sum(input, labels = None, index = None):
+def sum(input, labels=None, index=None):
     """
     Calculate the sum of the values of the array.
 
     Parameters
     ----------
-
     input : array_like
         Values of `input` inside the regions defined by `labels`
         are summed together.
-
-    labels : array of integers, same shape as input
-        Assign labels to the values of the array.
-
-    index : scalar or array
+    labels : array_like of ints, optional
+        Assign labels to the values of the array. Has to have the same shape as
+        `input`.
+    index : scalar or array_like, optional
         A single label number or a sequence of label numbers of
         the objects to be measured.
 
     Returns
     -------
-
     output : list
         A list of the sums of the values of `input` inside the regions
         defined by `labels`.
 
     See also
     --------
-
-    mean
+    mean, median
 
     Examples
     --------
-
     >>> input =  [0,1,2,3]
     >>> labels = [1,1,2,2]
     >>> sum(input, labels, index=[1,2])
@@ -492,7 +479,7 @@ def sum(input, labels = None, index = None):
     count, sum = _stats(input, labels, index)
     return sum
 
-def mean(input, labels = None, index = None):
+def mean(input, labels=None, index=None):
     """
     Calculate the mean of the values of an array at labels.
 
@@ -513,8 +500,8 @@ def mean(input, labels = None, index = None):
     Returns
     -------
     out : list
-        Sequence of same length as ``index``, with the mean of the different
-        regions labeled by the labels in ``index``.
+        Sequence of same length as `index`, with the mean of the different
+        regions labeled by the labels in `index`.
 
     See also
     --------
@@ -544,7 +531,7 @@ def mean(input, labels = None, index = None):
     count, sum = _stats(input, labels, index)
     return sum / numpy.asanyarray(count).astype(numpy.float)
 
-def variance(input, labels = None, index = None):
+def variance(input, labels=None, index=None):
     """
     Calculate the variance of the values of an n-D image array, optionally at
     specified sub-regions.
@@ -553,12 +540,12 @@ def variance(input, labels = None, index = None):
     ----------
     input : array_like
         Nd-image data to process.
-    labels : array_like, or None, optional
+    labels : array_like, optional
         Labels defining sub-regions in `input`.
         If not None, must be same shape as `input`.
-    index : None, int, or sequence of int, optional
-        `labels` to include in output.
-        If None, all values where `labels` is non-zero are used.
+    index : int or sequence of ints, optional
+        `labels` to include in output.  If None (default), all values where
+        `labels` is non-zero are used.
 
     Returns
     -------
@@ -597,7 +584,7 @@ def variance(input, labels = None, index = None):
 
     return sum_c_sq / np.asanyarray(count).astype(float)
 
-def standard_deviation(input, labels = None, index = None):
+def standard_deviation(input, labels=None, index=None):
     """
     Calculate the standard deviation of the values of an n-D image array,
     optionally at specified sub-regions.
@@ -606,12 +593,12 @@ def standard_deviation(input, labels = None, index = None):
     ----------
     input : array_like
         Nd-image data to process.
-    labels : array_like, or None, optional
+    labels : array_like, optional
         Labels to identify sub-regions in `input`.
         If not None, must be same shape as `input`.
-    index : None, int, or sequence of int, optional
-        `labels` to include in output.
-        If None, all values where `labels` is non-zero are used.
+    index : int or sequence of ints, optional
+        `labels` to include in output.  If None (default), all values where
+        `labels` is non-zero are used.
 
     Returns
     -------
@@ -648,8 +635,11 @@ def standard_deviation(input, labels = None, index = None):
 
     return numpy.sqrt(variance(input, labels, index))
 
-def _select(input, labels = None, index = None, find_min=False, find_max=False, find_min_positions=False, find_max_positions=False, find_median=False):
-    '''returns min, max, or both, plus their positions (if requsted), and median'''
+def _select(input, labels=None, index=None, find_min=False, find_max=False,
+            find_min_positions=False, find_max_positions=False,
+            find_median=False):
+    """Returns min, max, or both, plus their positions (if requested), and
+    median."""
 
     input = numpy.asanyarray(input)
 
@@ -755,23 +745,20 @@ def _select(input, labels = None, index = None, find_min=False, find_max=False, 
 
     return result
 
-def minimum(input, labels = None, index = None):
+def minimum(input, labels=None, index=None):
     """
     Calculate the minimum of the values of an array over labeled regions.
 
     Parameters
     ----------
-
     input: array_like
         Array_like of values. For each region specified by `labels`, the
         minimal values of `input` over the region is computed.
-
     labels: array_like, optional
         An array_like of integers marking different regions over which the
         minimum value of `input` is to be computed. `labels` must have the
         same shape as `input`. If `labels` is not specified, the minimum
         over the whole array is returned.
-
     index: array_like, optional
         A list of region labels that are taken into account for computing the
         minima. If index is None, the minimum over all elements where `labels`
@@ -788,19 +775,16 @@ def minimum(input, labels = None, index = None):
 
     See also
     --------
-
     label, maximum, median, minimum_position, extrema, sum, mean, variance,
     standard_deviation
 
     Notes
     -----
-
     The function returns a Python list and not a Numpy array, use
     `np.array` to convert the list to an array.
 
     Examples
     --------
-
     >>> a = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -821,7 +805,7 @@ def minimum(input, labels = None, index = None):
     """
     return _select(input, labels, index, find_min=True)[0]
 
-def maximum(input, labels = None, index = None):
+def maximum(input, labels=None, index=None):
     """
     Calculate the maximum of the values of an array over labeled regions.
 
@@ -861,7 +845,6 @@ def maximum(input, labels = None, index = None):
 
     Examples
     --------
-
     >>> a = np.arange(16).reshape((4,4))
     >>> a
     array([[ 0,  1,  2,  3],
@@ -900,23 +883,20 @@ def maximum(input, labels = None, index = None):
     """
     return _select(input, labels, index, find_max=True)[0]
 
-def median(input, labels = None, index = None):
+def median(input, labels=None, index=None):
     """
     Calculate the median of the values of an array over labeled regions.
 
     Parameters
     ----------
-
     input: array_like
         Array_like of values. For each region specified by `labels`, the
         median value of `input` over the region is computed.
-
     labels: array_like, optional
         An array_like of integers marking different regions over which the
         median value of `input` is to be computed. `labels` must have the
         same shape as `input`. If `labels` is not specified, the median
         over the whole array is returned.
-
     index: array_like, optional
         A list of region labels that are taken into account for computing the
         medians. If index is None, the minimum over all elements where `labels`
@@ -933,18 +913,15 @@ def median(input, labels = None, index = None):
 
     See also
     --------
-
     label, minimum, maximum, extrema, sum, mean, variance, standard_deviation
 
     Notes
     -----
-
     The function returns a Python list and not a Numpy array, use
     `np.array` to convert the list to an array.
 
     Examples
     --------
-
     >>> a = np.array([[1, 2, 0, 1],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -965,7 +942,7 @@ def median(input, labels = None, index = None):
     """
     return _select(input, labels, index, find_median=True)[0]
 
-def minimum_position(input, labels = None, index = None):
+def minimum_position(input, labels=None, index=None):
     """Find the positions of the minimums of the values of an array at labels.
 
     Labels must be None or an array of the same dimensions as the input.
@@ -985,7 +962,7 @@ def minimum_position(input, labels = None, index = None):
 
     return [tuple(v) for v in (result.reshape(-1, 1) // dim_prod) % dims]
 
-def maximum_position(input, labels = None, index = None):
+def maximum_position(input, labels=None, index=None):
     """Find the positions of the maximums of the values of an array at labels.
 
     Labels must be None or an array of the same dimensions as the input.
@@ -1005,7 +982,7 @@ def maximum_position(input, labels = None, index = None):
 
     return [tuple(v) for v in (result.reshape(-1, 1) // dim_prod) % dims]
 
-def extrema(input, labels = None, index = None):
+def extrema(input, labels=None, index=None):
     """
     Calculate the minimums and maximums of the values of an array
     at labels, along with their positions.
@@ -1014,12 +991,12 @@ def extrema(input, labels = None, index = None):
     ----------
     input : ndarray
         Nd-image data to process.
-    labels : ndarray, or None, optional
+    labels : ndarray, optional
         Labels of features in input.
         If not None, must be same shape as `input`.
-    index : None, int, or sequence of int, optional
-        Labels to include in output.
-        If None, all values where non-zero `labels` are used.
+    index : int or sequence of ints, optional
+        Labels to include in output.  If None (default), all values where
+        non-zero `labels` are used.
 
     Returns
     -------
@@ -1076,7 +1053,7 @@ def extrema(input, labels = None, index = None):
 
     return minimums, maximums, min_positions, max_positions
 
-def center_of_mass(input, labels = None, index = None):
+def center_of_mass(input, labels=None, index=None):
     """
     Calculate the center of mass of the values of an array at labels.
 
@@ -1084,10 +1061,10 @@ def center_of_mass(input, labels = None, index = None):
     ----------
     input : ndarray
         Data from which to calculate center-of-mass.
-    labels : ndarray or None, optional
+    labels : ndarray, optional
         Labels for objects in `input`, as generated by ndimage.labels.
         Dimensions must be the same as `input`.
-    index : int, sequence of int, or None, optional
+    index : int or sequence of ints, optional
         Labels for which to calculate centers-of-mass. If not specified,
         all labels greater than zero are used.
 
@@ -1129,7 +1106,7 @@ def center_of_mass(input, labels = None, index = None):
 
     return [tuple(v) for v in numpy.array(results).T]
 
-def histogram(input, min, max, bins, labels = None, index = None):
+def histogram(input, min, max, bins, labels=None, index=None):
     """
     Calculate the histogram of the values of an array, optionally at labels.
 
@@ -1145,10 +1122,10 @@ def histogram(input, min, max, bins, labels = None, index = None):
         Minimum and maximum values of range of histogram bins.
     bins : int
         Number of bins.
-    labels : array_like or None, optional
+    labels : array_like, optional
         Labels for objects in `input`.
         If not None, must be same shape as `input`.
-    index : int, sequence of int, or None, optional
+    index : int or sequence of ints, optional
         Label or labels for which to calculate histogram. If None, all values
         where label is greater than zero are used
 
@@ -1188,7 +1165,7 @@ def histogram(input, min, max, bins, labels = None, index = None):
 
     return labeled_comprehension(input, labels, index, _hist, object, None, pass_positions=False)
 
-def watershed_ift(input, markers, structure = None, output = None):
+def watershed_ift(input, markers, structure=None, output=None):
     """Apply watershed from markers using a iterative forest transform
     algorithm.
 
