@@ -11,6 +11,7 @@ def configuration(parent_package='',top_path=None):
     config.add_data_dir('docs')
     config.add_subpackage('matlab')
     config.add_subpackage('arff')
+    config.add_subpackage('harwell_boeing')
     return config
 
 if __name__ == '__main__':
