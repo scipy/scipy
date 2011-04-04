@@ -18,8 +18,7 @@ from numpy.testing import TestCase, run_module_suite, assert_equal, \
     
 from scipy.linalg import fblas, cblas, get_blas_funcs
 
-
-def test_blas_funcs_order():
+def test_get_blas_funcs():
     # check that it returns Fortran code for arrays that are
     # fortran-ordered
     f1, f2, f3 = get_blas_funcs(
@@ -28,10 +27,22 @@ def test_blas_funcs_order():
          numpy.empty((2,2), dtype=numpy.complex128, order='C'))
         )
 
-    assert_equal(f1.typecode, 'F')
+    assert_equal(f1.typecode, 'c')
     assert_equal(f1.module_name, 'fblas')
-    assert_equal(f2.typecode, 'D')
+    assert_equal(f2.typecode, 'z')
     assert_equal(f2.module_name, 'cblas')
+
+    # check defaults.
+    f1 = get_blas_funcs('rotg')
+    assert_equal(f1.typecode, 'd')
+
+    # check also dtype interface
+    f1 = get_blas_funcs('gemm', dtype=numpy.complex64)
+    assert_equal(f1.typecode, 'c')
+    f1 = get_blas_funcs('gemm', dtype='F')
+    assert_equal(f1.typecode, 'c')
+
+#    assert_raises(
 
 
 class TestCBLAS1Simple(TestCase):
