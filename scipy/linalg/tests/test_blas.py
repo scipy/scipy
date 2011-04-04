@@ -42,8 +42,6 @@ def test_get_blas_funcs():
     f1 = get_blas_funcs('gemm', dtype='F')
     assert_equal(f1.typecode, 'c')
 
-#    assert_raises(
-
 
 class TestCBLAS1Simple(TestCase):
 

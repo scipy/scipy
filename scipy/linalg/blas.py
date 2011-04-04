@@ -87,8 +87,7 @@ def get_blas_funcs(names, arrays=(), dtype=None):
         if func is None:
             raise ValueError(
                 'BLAS function %s could not be found' % func_name)
-        func.module_name = module_name
-        func.typecode = prefix
+        func.module_name, func.typecode = module_name, prefix
         blas_funcs.append(func)
 
     if unpack:
