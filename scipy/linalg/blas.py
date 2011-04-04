@@ -5,7 +5,7 @@
 
 __all__ = ['get_blas_funcs']
 
-import numpy
+import numpy as np
 # The following ensures that possibly missing flavor (C or Fortran) is
 # replaced with the available one. If none is available, exception
 # is raised at the first attempt to use the resources.
@@ -60,7 +60,7 @@ def get_blas_funcs(names, arrays=(), dtype=None):
 
     blas_funcs = []
     unpack = False
-    dtype = numpy.dtype(dtype)
+    dtype = np.dtype(dtype)
     module1 = (cblas, 'cblas')
     module2 = (fblas, 'fblas')
 
@@ -88,8 +88,7 @@ def get_blas_funcs(names, arrays=(), dtype=None):
         if func is None:
             raise ValueError(
                 'BLAS function %s could not be found' % func_name)
-        func.module_name = module_name
-        func.typecode = prefix
+        func.module_name, func.typecode = module_name, prefix
         blas_funcs.append(func)
 
     if unpack:
