@@ -5,7 +5,7 @@
 
 __all__ = ['get_blas_funcs']
 
-import numpy
+import numpy as np
 # The following ensures that possibly missing flavor (C or Fortran) is
 # replaced with the available one. If none is available, exception
 # is raised at the first attempt to use the resources.
@@ -61,7 +61,7 @@ def get_blas_funcs(names, arrays=(), dtype=None):
     n_arrays = len(arrays)
     blas_funcs = []
     unpack = False
-    dtype = numpy.dtype(dtype)
+    dtype = np.dtype(dtype)
 
     if isinstance(names, str):
         names = (names,)

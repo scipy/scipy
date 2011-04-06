@@ -12,7 +12,7 @@ Run tests if scipy is installed:
 
 import math
 
-import numpy
+import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_almost_equal, assert_array_almost_equal
     
@@ -23,8 +23,8 @@ def test_get_blas_funcs():
     # fortran-ordered
     f1, f2, f3 = get_blas_funcs(
         ('axpy', 'axpy', 'axpy'),
-        (numpy.empty((2,2), dtype=numpy.complex64, order='F'),
-         numpy.empty((2,2), dtype=numpy.complex128, order='C'))
+        (np.empty((2,2), dtype=np.complex64, order='F'),
+         np.empty((2,2), dtype=np.complex128, order='C'))
         )
 
     assert_equal(f1.typecode, 'c')
@@ -37,11 +37,10 @@ def test_get_blas_funcs():
     assert_equal(f1.typecode, 'd')
 
     # check also dtype interface
-    f1 = get_blas_funcs('gemm', dtype=numpy.complex64)
+    f1 = get_blas_funcs('gemm', dtype=np.complex64)
     assert_equal(f1.typecode, 'c')
     f1 = get_blas_funcs('gemm', dtype='F')
     assert_equal(f1.typecode, 'c')
-
 
 class TestCBLAS1Simple(TestCase):
 
