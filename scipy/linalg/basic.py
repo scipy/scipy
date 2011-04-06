@@ -6,9 +6,7 @@
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
             'inv', 'det', 'lstsq', 'pinv', 'pinv2']
 
-from numpy import asarray, zeros, sum, conjugate, dot, transpose, \
-        asarray_chkfinite,  single
-import numpy
+import numpy as np
 
 from flinalg import get_flinalg_funcs
 from lapack import get_lapack_funcs
@@ -44,7 +42,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False
     Raises LinAlgError if a is singular
 
     """
-    a1, b1 = map(asarray_chkfinite,(a,b))
+    a1, b1 = map(np.asarray_chkfinite,(a,b))
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     if a1.shape[0] != b1.shape[0]:
@@ -112,7 +110,7 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
 
     """
 
-    a1, b1 = map(asarray_chkfinite,(a,b))
+    a1, b1 = map(np.asarray_chkfinite,(a,b))
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     if a1.shape[0] != b1.shape[0]:
@@ -165,7 +163,7 @@ def solve_banded((l, u), ab, b, overwrite_ab=False, overwrite_b=False,
         The solution to the system a x = b
 
     """
-    a1, b1 = map(asarray_chkfinite, (ab, b))
+    a1, b1 = map(np.asarray_chkfinite, (ab, b))
 
     # Validate shapes.
     if a1.shape[-1] != b1.shape[0]:
@@ -177,7 +175,7 @@ def solve_banded((l, u), ab, b, overwrite_ab=False, overwrite_b=False,
     overwrite_b = overwrite_b or _datacopied(b1, b)
 
     gbsv, = get_lapack_funcs(('gbsv',), (a1, b1))
-    a2 = zeros((2*l+u+1, a1.shape[1]), dtype=gbsv.dtype)
+    a2 = np.zeros((2*l+u+1, a1.shape[1]), dtype=gbsv.dtype)
     a2[l:,:] = a1
     lu, piv, x, info = gbsv(l, u, a2, b1, overwrite_ab=True,
                                                 overwrite_b=overwrite_b)
@@ -230,7 +228,7 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False):
 
     """
 
-    ab, b = map(asarray_chkfinite, (ab, b))
+    ab, b = map(np.asarray_chkfinite, (ab, b))
 
     # Validate shapes.
     if ab.shape[-1] != b.shape[0]:
@@ -282,7 +280,7 @@ def inv(a, overwrite_a=False):
            [ 0.,  1.]])
 
     """
-    a1 = asarray_chkfinite(a)
+    a1 = np.asarray_chkfinite(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or _datacopied(a1, a)
@@ -302,9 +300,9 @@ def inv(a, overwrite_a=False):
     #     to do that.
     if getrf.module_name[:7] == 'clapack' != getri.module_name[:7]:
         # ATLAS 3.2.1 has getrf but not getri.
-        lu, piv, info = getrf(transpose(a1), rowmajor=0,
+        lu, piv, info = getrf(np.transpose(a1), rowmajor=0,
                                                 overwrite_a=overwrite_a)
-        lu = transpose(lu)
+        lu = np.transpose(lu)
     else:
         lu, piv, info = getrf(a1, overwrite_a=overwrite_a)
     if info == 0:
@@ -347,7 +345,7 @@ def det(a, overwrite_a=False):
     -----
     The determinant is computed via LU factorization, LAPACK routine z/dgetrf.
     """
-    a1 = asarray_chkfinite(a)
+    a1 = np.asarray_chkfinite(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or _datacopied(a1, a)
@@ -406,7 +404,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
     optimize.nnls : linear least squares with non-negativity constraint
 
     """
-    a1, b1 = map(asarray_chkfinite, (a, b))
+    a1, b1 = map(np.asarray_chkfinite, (a, b))
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     m, n = a1.shape
@@ -420,7 +418,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
     if n > m:
         # need to extend b matrix as it will be filled with
         # a larger solution matrix
-        b2 = zeros((n, nrhs), dtype=gelss.dtype)
+        b2 = np.zeros((n, nrhs), dtype=gelss.dtype)
         if len(b1.shape) == 2:
             b2[:m,:] = b1
         else:
@@ -440,11 +438,11 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal gelss'
                                                                     % -info)
-    resids = asarray([], dtype=x.dtype)
+    resids = np.asarray([], dtype=x.dtype)
     if n < m:
         x1 = x[:n]
         if rank == n:
-            resids = sum(abs(x[n:])**2, axis=0)
+            resids = np.sum(np.abs(x[n:])**2, axis=0)
         x = x1
     return x, resids, rank, s
 
@@ -481,8 +479,8 @@ def pinv(a, cond=None, rcond=None):
     True
 
     """
-    a = asarray_chkfinite(a)
-    b = numpy.identity(a.shape[0], dtype=a.dtype)
+    a = np.asarray_chkfinite(a)
+    b = np.identity(a.shape[0], dtype=a.dtype)
     if rcond is not None:
         cond = rcond
     return lstsq(a, b, cond=cond)[0]
@@ -523,21 +521,21 @@ def pinv2(a, cond=None, rcond=None):
     True
 
     """
-    a = asarray_chkfinite(a)
+    a = np.asarray_chkfinite(a)
     u, s, vh = decomp_svd.svd(a)
     t = u.dtype.char
     if rcond is not None:
         cond = rcond
     if cond in [None,-1]:
-        eps = numpy.finfo(float).eps
-        feps = numpy.finfo(single).eps
+        eps = np.finfo(np.float).eps
+        feps = np.finfo(np.single).eps
         _array_precision = {'f': 0, 'd': 1, 'F': 0, 'D': 1}
         cond = {0: feps*1e3, 1: eps*1e6}[_array_precision[t]]
     m, n = a.shape
-    cutoff = cond*numpy.maximum.reduce(s)
-    psigma = zeros((m, n), t)
+    cutoff = cond*np.maximum.reduce(s)
+    psigma = np.zeros((m, n), t)
     for i in range(len(s)):
         if s[i] > cutoff:
-            psigma[i,i] = 1.0/conjugate(s[i])
+            psigma[i,i] = 1.0/np.conjugate(s[i])
     #XXX: use lapack/blas routines for dot
-    return transpose(conjugate(dot(dot(u,psigma),vh)))
+    return np.transpose(np.conjugate(np.dot(np.dot(u,psigma),vh)))
