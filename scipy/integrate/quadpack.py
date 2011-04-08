@@ -282,7 +282,8 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
             else:
                 return retval[:-1] + (msg,)
         else:
-            print "Warning: " + msg
+            import warnings
+            warnings.warn(msg)
             return retval[:-1]
     else:
         raise ValueError(msg)
