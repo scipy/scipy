@@ -22,7 +22,7 @@ from numpy import array, asarray_chkfinite, asarray, diag, zeros, ones, \
 # Local imports
 from scipy.linalg import calc_lwork
 from misc import LinAlgError, _datacopied
-from lapack import get_lapack_funcs, find_best_lapack_type
+from lapack import get_lapack_funcs
 from blas import get_blas_funcs
 
 
@@ -754,10 +754,7 @@ def hessenberg(a, calc_q=False, overwrite_a=False):
 
     # XXX: Use ORGHR routines to compute q.
     typecode = hq.dtype
-    if find_best_lapack_type((hq,))[0] in ('s', 'd'):
-        ger, gemm = get_blas_funcs(('ger','gemm'), dtype=typecode)
-    else:
-        ger, gemm = get_blas_funcs(('gerc', 'gemm'), dtype=typecode)
+    ger,gemm = get_blas_funcs(('ger','gemm'), dtype=typecode)
     q = None
     for i in range(lo, hi):
         if tau[i]==0.0:
