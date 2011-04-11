@@ -27,8 +27,10 @@ def test_get_blas_funcs():
          np.empty((2,2), dtype=np.complex128, order='C'))
         )
 
-    assert_equal(f1.typecode, 'c')
-    assert_equal(f1.module_name, 'fblas')
+    # get_blas_funcs will choose libraries depending on most generic
+    # array
+    assert_equal(f1.typecode, 'z')
+    assert_equal(f1.module_name, 'cblas')
     assert_equal(f2.typecode, 'z')
     assert_equal(f2.module_name, 'cblas')
 

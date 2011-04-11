@@ -33,7 +33,7 @@ def get_blas_funcs(names, arrays=(), dtype=None):
     arrays : sequency of ndarrays, optional
         Arrays can be given to determine optiomal prefix of BLAS
         routines. If not given, double-precision routines will be
-        used.
+        used, otherwise the most generic type in arrays will be used.
 
     dtype : str or dtype, optional
         Data-type specifier. Not used if `arrays` is non-empty.
@@ -58,26 +58,27 @@ def get_blas_funcs(names, arrays=(), dtype=None):
     are stored in attribute `typecode` of the returned functions.
     """
 
-    n_arrays = len(arrays)
     blas_funcs = []
     unpack = False
     dtype = np.dtype(dtype)
+    module1 = (cblas, 'cblas')
+    module2 = (fblas, 'fblas')
 
     if isinstance(names, str):
         names = (names,)
         unpack = True
 
+    if arrays:
+        # use the most generic type in arrays
+        dtype, index = max(
+            [(ar.dtype, i) for i, ar in enumerate(arrays)])
+        if arrays[index].flags['FORTRAN']:
+            # prefer Fortran for leading array with column major order
+            module1, module2 = module2, module1
+
+    prefix = _type_conv.get(dtype.char, 'd')
+
     for i, name in enumerate(names):
-        module1 = (cblas, 'cblas')
-        module2 = (fblas, 'fblas')
-
-        if i < n_arrays:
-            prefix = _type_conv.get(arrays[i].dtype.char, 'd')
-            if arrays[i].flags['FORTRAN']:
-                module1, module2 = module2, module1
-        else:
-            prefix = _type_conv.get(dtype.char, 'd')
-
         func_name = prefix + name
         func = getattr(module1[0], func_name, None)
         module_name = module1[1]
