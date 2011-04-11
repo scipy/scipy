@@ -2125,6 +2125,16 @@ class TestNdimage:
                                                      (6, 8), order=order)
             assert_array_almost_equal(out[::2, ::2], data)
 
+    def test_zoom_infinity(self):
+        """Ticket #1419"""
+        err = numpy.seterr(divide='ignore')
+
+        try:
+            dim = 8
+            ndimage.zoom(numpy.zeros((dim, dim)), 1./dim, mode='nearest')
+        finally:
+            numpy.seterr(**err)
+
     def test_rotate01(self):
         "rotate 1"
         data = numpy.array([[0, 0, 0, 0],

@@ -511,7 +511,14 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
         filtered = input
     zoom = _ni_support._normalize_sequence(zoom, input.ndim)
     output_shape = tuple([int(ii * jj) for ii, jj in zip(input.shape, zoom)])
-    zoom = (numpy.array(input.shape)-1)/(numpy.array(output_shape,float)-1)
+
+    zoom_div = numpy.array(output_shape, float) - 1
+    zoom = (numpy.array(input.shape) - 1) / zoom_div
+
+    # Zooming to infinity is unpredictable, so just choose
+    # zoom factor 1 instead
+    zoom[numpy.isinf(zoom)] = 1
+
     output, return_value = _ni_support._get_output(output, input,
                                                    shape=output_shape)
     zoom = numpy.asarray(zoom, dtype = numpy.float64)
