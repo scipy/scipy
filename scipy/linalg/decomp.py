@@ -51,7 +51,7 @@ def _geneig(a1, b, left, right, overwrite_a, overwrite_b):
     if ggev.module_name[:7] == 'clapack':
         raise NotImplementedError('calling ggev from %s' % ggev.module_name)
     res = ggev(a1, b1, lwork=-1)
-    lwork = res[-2][0]
+    lwork = res[-2][0].real.astype(numpy.int)
     if ggev.prefix in 'cz':
         alpha, beta, vl, vr, work, info = ggev(a1, b1, cvl, cvr, lwork,
                                                     overwrite_a, overwrite_b)
