@@ -428,10 +428,13 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
     overwrite_a = overwrite_a or _datacopied(a1, a)
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if gelss.module_name[:7] == 'flapack':
-        lwork = calc_lwork.gelss(gelss.prefix, m, n, nrhs)[1]
-        v, x, s, rank, info = gelss(a1, b1, cond=cond, lwork=lwork,
-                                                overwrite_a=overwrite_a,
-                                                overwrite_b=overwrite_b)
+        # get optimal work array
+        work = gelss(a1, b1, lwork=-1)[4]
+        lwork = work[0].real.astype(np.int)
+        v, x, s, rank, work, info = gelss(
+            a1, b1, cond=cond, lwork=lwork, overwrite_a=overwrite_a,
+            overwrite_b=overwrite_b)
+
     else:
         raise NotImplementedError('calling gelss from %s' % gelss.module_name)
     if info > 0:

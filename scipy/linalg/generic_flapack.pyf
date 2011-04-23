@@ -437,7 +437,7 @@ interface
 
    subroutine <tchar=s,d>gelss(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,lwork,info)
 
-   ! v,x,s,rank,info = gelss(a,b,cond=-1.0,overwrite_a=0,overwrite_b=0)
+   ! v,x,s,rank,work,info = gelss(a,b,cond=-1.0,overwrite_a=0,overwrite_b=0)
    ! Solve Minimize 2-norm(A * X - B).
 
      callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,s,&cond,&r,work,&lwork,&info)
@@ -453,23 +453,22 @@ interface
      <type_in> dimension(maxmn,nrhs),check(maxmn==shape(b,0)),depend(maxmn) :: b
      intent(in,out,copy,out=x) b
 
-     integer intent(out)::info
-
-     integer optional,intent(in),depend(nrhs,minmn,maxmn), &
-          check(lwork>=1) &
-          :: lwork=3*minmn+MAX(2*minmn,MAX(maxmn,nrhs))
-          !check(lwork>=3*minmn+MAX(2*minmn,MAX(maxmn,nrhs)))
-     <type_in> dimension(lwork),intent(hide),depend(lwork) :: work
-
      <type_in> intent(in),optional :: cond = -1.0
      integer intent(out,out=rank) :: r
      <type_in> intent(out),dimension(minmn),depend(minmn) :: s
+
+     integer optional,intent(in),depend(nrhs,minmn,maxmn),&
+          check(lwork>=1||lwork==-1) &
+          :: lwork=3*minmn+MAX(2*minmn,MAX(maxmn,nrhs))
+          !check(lwork>=3*minmn+MAX(2*minmn,MAX(maxmn,nrhs)))
+     <type_in> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
+     integer intent(out)::info
 
    end subroutine <tchar=s,d>gelss
 
    subroutine <tchar=c,z>gelss(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,rwork,lwork,info)
 
-   ! v,x,s,rank,info = gelss(a,b,cond=-1.0,overwrite_a=0,overwrite_b=0)
+   ! v,x,s,rank,work,info = gelss(a,b,cond=-1.0,overwrite_a=0,overwrite_b=0)
    ! Solve Minimize 2-norm(A * X - B).
 
      callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,s,&cond,&r,work,&lwork,rwork,&info)
@@ -485,18 +484,17 @@ interface
      <type_in> dimension(maxmn,nrhs),check(maxmn==shape(b,0)),depend(maxmn) :: b
      intent(in,out,copy,out=x) b
 
-     integer intent(out)::info
-
-     integer optional,intent(in),depend(nrhs,minmn,maxmn), &
-          check(lwork>=1) &
-          :: lwork=2*minmn+MAX(maxmn,nrhs)
-          ! check(lwork>=2*minmn+MAX(maxmn,nrhs))
-     <type_in> dimension(lwork),intent(hide),depend(lwork) :: work
-     <rtype_in> dimension(5*minmn-1),intent(hide),depend(lwork) :: rwork
-
      <rtype_in> intent(in),optional :: cond = -1.0
      integer intent(out,out=rank) :: r
      <rtype_in> intent(out),dimension(minmn),depend(minmn) :: s
+
+     integer optional,intent(in),depend(nrhs,minmn,maxmn),&
+          check(lwork>=1||lwork==-1) &
+          :: lwork=2*minmn+MAX(maxmn,nrhs)
+          ! check(lwork>=2*minmn+MAX(maxmn,nrhs))
+     <type_in> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
+     <type_in> dimension(5*minmn-1),intent(hide),depend(lwork) :: rwork
+     integer intent(out)::info
 
    end subroutine <tchar=c,z>gelss
 
