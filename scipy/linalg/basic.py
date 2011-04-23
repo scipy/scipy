@@ -13,6 +13,7 @@ import numpy
 from flinalg import get_flinalg_funcs
 from lapack import get_lapack_funcs
 from misc import LinAlgError, _datacopied
+from scipy.linalg import calc_lwork
 import decomp_svd
 
 
