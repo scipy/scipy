@@ -147,27 +147,14 @@ subroutine <tchar=c,z>geru(m,n,alpha,x,incx,y,incy,a,lda)
     integer intent(hide), depend(m) :: lda=m
 end subroutine <tchar=c,z>geru
 
-
-subroutine <tchar=c,z>ger(m,n,alpha,x,incx,y,incy,a,lda)
-! a = ger(alpha,x,y,incx=1,incy=1,a=0,overwrite_x=1,overwrite_y=1,overwrite_a=0)
-! Calculate a <- alpha*x*y^H + a
-! This is just an alias for gerc when array is complex
-    fortranname <tchar=c,z>gerc
-    integer intent(hide),depend(x) :: m = len(x)
-    integer intent(hide),depend(y) :: n = len(y)
-    <type_in> intent(in) :: alpha
-    <type_in> dimension(m),intent(in,overwrite) :: x
-    integer optional,intent(in),check(incx==1||incx==-1) :: incx = 1
-    <type_in> dimension(n),intent(in,overwrite) :: y
-    integer optional,intent(in),check(incy==1||incy==-1) :: incy = 1
-    <type_in> dimension(m,n),intent(in,out,copy),optional :: a = <type_convert=0>
-    integer intent(hide), depend(m) :: lda=m
-end subroutine <tchar=c,z>ger
-
-
 subroutine <tchar=c,z>gerc(m,n,alpha,x,incx,y,incy,a,lda)
 ! a = ger(alpha,x,y,incx=1,incy=1,a=0,overwrite_x=1,overwrite_y=1,overwrite_a=0)
 ! Calculate a <- alpha*x*y^H + a
+
+    ! alias ger --> gerc when array is complex
+    entry <tchar=c,z>ger(m,n,alpha,x,incx,y,incy,a,lda)
+
+    fortranname <tchar>gerc
     integer intent(hide),depend(x) :: m = len(x)
     integer intent(hide),depend(y) :: n = len(y)
     <type_in> intent(in) :: alpha
