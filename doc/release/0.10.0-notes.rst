@@ -46,6 +46,12 @@ filter the data in a given axis of an n-dimensional numpy array.
 (Previously it only handled a 1-dimensional array.)  Options have been
 added to allow more control over how the data is extended before filtering.
 
+Additional decomposition options (``scipy.linalg``)
+---------------------------------------------------
+
+A sort keyword has been added to the Schur decomposition routine 
+(``scipy.linalg.schur``) to allow the sorting of eigenvalues in
+the resultant Schur form.
 
 Deprecated features
 ===================

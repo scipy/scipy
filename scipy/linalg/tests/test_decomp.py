@@ -20,7 +20,7 @@ from numpy.testing import TestCase, assert_equal, assert_array_almost_equal, \
 
 from scipy.linalg import eig, eigvals, lu, svd, svdvals, cholesky, qr, \
      schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq, \
-     eig_banded, eigvals_banded, eigh, eigvalsh
+     eig_banded, eigvals_banded, eigh, eigvalsh, LinAlgError
 from scipy.linalg.flapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
      dsbev, dsbevd, dsbevx, zhbevd, zhbevx
 
@@ -1053,6 +1053,79 @@ class TestSchur(TestCase):
         assert_array_almost_equal(dot(dot(zc,tc),transp(conj(zc))),a)
         tc2,zc2 = rsf2csf(tc,zc)
         assert_array_almost_equal(dot(dot(zc2,tc2),transp(conj(zc2))),a)
+        
+    def test_sort(self):
+        a = [[4.,3.,1.,-1.],[-4.5,-3.5,-1.,1.],[9.,6.,-4.,4.5],[6.,4.,-3.,3.5]]
+        s,u,sdim = schur(a,sort='lhp')
+        assert_array_almost_equal([[0.1134,0.5436,0.8316,0.], 
+                                   [-0.1134,-0.8245,0.5544,0.], 
+                                   [-0.8213,0.1308,0.0265,-0.5547], 
+                                   [-0.5475,0.0872,0.0177,0.8321]],
+                                  u,3)
+        assert_array_almost_equal([[-1.4142,0.1456,-11.5816,-7.7174], 
+                                   [0.,-0.5000,9.4472,-0.7184], 
+                                   [0.,0.,1.4142,-0.1456], 
+                                   [0.,0.,0.,0.5]],
+                                  s,3)
+        assert_equal(2,sdim)
+                                  
+        s,u,sdim = schur(a,sort='rhp')
+        assert_array_almost_equal([[0.4862,-0.4930,0.1434,-0.7071],
+                                   [-0.4862,0.4930,-0.1434,-0.7071],
+                                   [0.6042,0.3944,-0.6924,0.],
+                                   [0.4028,0.5986,0.6924,0.]],
+                                  u,3)
+        assert_array_almost_equal([[1.4142,-0.9270,4.5368,-14.4130],
+                                   [0.,0.5,6.5809,-3.1870],
+                                   [0.,0.,-1.4142,0.9270],
+                                   [0.,0.,0.,-0.5]],
+                                  s,3)
+        assert_equal(2,sdim)
+                                  
+        s,u,sdim = schur(a,sort='iuc')
+        assert_array_almost_equal([[0.5547,0.,-0.5721,-0.6042],
+                                   [-0.8321,0.,-0.3814,-0.4028],
+                                   [0.,0.7071,-0.5134,0.4862],
+                                   [0.,0.7071,0.5134,-0.4862]],
+                                  u,3)
+        assert_array_almost_equal([[-0.5000,0.0000,-6.5809,-4.0974],
+                                   [0.,0.5000,-3.3191,-14.4130],
+                                   [0.,0.,1.4142,2.1573],
+                                   [0.,0.,0.,-1.4142]],
+                                  s,3)
+        assert_equal(2,sdim)
+                                  
+        s,u,sdim = schur(a,sort='ouc')
+        assert_array_almost_equal([[0.4862,-0.5134,0.7071,0.],
+                                   [-0.4862,0.5134,0.7071,0.],
+                                   [0.6042,0.5721,0.,-0.5547],
+                                   [0.4028,0.3814,0.,0.8321]],
+                                  u,3)
+        assert_array_almost_equal([[1.4142,-2.1573,14.4130,4.0974],
+                                   [0.,-1.4142,3.3191,6.5809],
+                                   [0.,0.,-0.5000,0.],
+                                   [0.,0.,0.,0.5000]],
+                                  s,3)
+        assert_equal(2,sdim)
+                                  
+        rhp_function = lambda x: x >= 0.0
+        s,u,sdim = schur(a,sort=rhp_function)
+        assert_array_almost_equal([[0.4862,-0.4930,0.1434,-0.7071],
+                                   [-0.4862,0.4930,-0.1434,-0.7071],
+                                   [0.6042,0.3944,-0.6924,0.],
+                                   [0.4028,0.5986,0.6924,0.]],
+                                  u,3)
+        assert_array_almost_equal([[1.4142,-0.9270,4.5368,-14.4130],
+                                   [0.,0.5,6.5809,-3.1870],
+                                   [0.,0.,-1.4142,0.9270],
+                                   [0.,0.,0.,-0.5]],
+                                  s,3)
+        assert_equal(2,sdim)
+                                  
+    def test_sort_errors(self):
+        a = [[4.,3.,1.,-1.],[-4.5,-3.5,-1.,1.],[9.,6.,-4.,4.5],[6.,4.,-3.,3.5]]
+        assert_raises(ValueError, schur, a, sort='unsupported')
+        assert_raises(ValueError, schur, a, sort=1)
 
 class TestHessenberg(TestCase):
 

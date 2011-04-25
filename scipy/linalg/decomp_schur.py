@@ -14,7 +14,7 @@ __all__ = ['schur', 'rsf2csf']
 
 _double_precision = ['i','l','d']
 
-def schur(a, output='real', lwork=None, overwrite_a=False):
+def schur(a, output='real', lwork=None, overwrite_a=False, sort=None):
     """Compute Schur decomposition of a matrix.
 
     The Schur decomposition is
@@ -36,6 +36,16 @@ def schur(a, output='real', lwork=None, overwrite_a=False):
         Work array size. If None or -1, it is automatically computed.
     overwrite_a : boolean
         Whether to overwrite data in a (may improve performance)
+    sort : {None, callable, 'lhp', 'rhp', 'iuc', 'ouc'}
+        Specifies whether the upper eigenvalues should be sorted.  A callable
+        may be passed that, given a eigenvalue, returns a boolean denoting
+        whether the eigenvalue should be sorted to the top-left (True).
+        Alternatively, string parameters may be used:
+            'lhp'   Left-hand plane (x.real < 0.0)
+            'rhp'   Right-hand plane (x.real > 0.0)
+            'iuc'   Inside the unit circle (x*x.conjugate() <= 1.0)
+            'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
+        Defaults to None (no sorting).
 
     Returns
     -------
@@ -44,6 +54,21 @@ def schur(a, output='real', lwork=None, overwrite_a=False):
     Z : array, shape (M, M)
         An unitary Schur transformation matrix for A.
         It is real-valued for the real Schur decomposition.
+    sdim : integer
+        If and only if sorting was requested, a third return value will
+        contain the number of eigenvalues satisfying the sort condition.
+
+    Raises
+    ------
+    LinAlgError
+        Error raised under three conditions:
+        1. The algorithm failed due to a failure of the QR algorithm to 
+           compute all eigenvalues
+        2. If eigenvalue sorting was requested, the eigenvalues could not be
+           reordered due to a failure to separate eigenvalues, usually because
+           of poor conditioning
+        3. If eigenvalue sorting was requested, roundoff errors caused the
+           leading eigenvalues to no longer satisfy the sorting condition
 
     See also
     --------
@@ -69,14 +94,44 @@ def schur(a, output='real', lwork=None, overwrite_a=False):
         # get optimal work array
         result = gees(lambda x: None, a1, lwork=-1)
         lwork = result[-2][0].real.astype(numpy.int)
-    result = gees(lambda x: None, a1, lwork=lwork, overwrite_a=overwrite_a)
+    
+    if sort is None:
+        sort_t = 0
+        sfunction = lambda x: None
+    else:
+        sort_t = 1
+        if callable(sort):
+            sfunction = sort
+        elif sort == 'lhp':
+            sfunction = lambda x: (x.real < 0.0)
+        elif sort == 'rhp':
+            sfunction = lambda x: (x.real >= 0.0)
+        elif sort == 'iuc':
+            sfunction = lambda x: (abs(x) <= 1.0)
+        elif sort == 'ouc':
+            sfunction = lambda x: (abs(x) > 1.0)
+        else:
+            raise ValueError("sort parameter must be None, a callable, or " +
+                "one of ('lhp','rhp','iuc','ouc')")
+        
+    result = gees(sfunction, a1, lwork=lwork, overwrite_a=overwrite_a, 
+        sort_t=sort_t)
+    
     info = result[-1]
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal gees'
                                                                     % -info)
+    elif info == a1.shape[0] + 1:
+        raise LinAlgError('Eigenvalues could not be separated for reordering.')
+    elif info == a1.shape[0] + 2:
+        raise LinAlgError('Leading eigenvalues do not satisfy sort condition.')
     elif info > 0:
         raise LinAlgError("Schur form not found.  Possibly ill-conditioned.")
-    return result[0], result[-3]
+        
+    if sort_t == 0:
+        return result[0], result[-3]
+    else:
+        return result[0], result[-3], result[1]
 
 
 eps = numpy.finfo(float).eps
