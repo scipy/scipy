@@ -1053,7 +1053,33 @@ class TestSchur(TestCase):
         assert_array_almost_equal(dot(dot(zc,tc),transp(conj(zc))),a)
         tc2,zc2 = rsf2csf(tc,zc)
         assert_array_almost_equal(dot(dot(zc2,tc2),transp(conj(zc2))),a)
-
+        
+    def test_sort(self):
+        a = [[4.,3.,1.,-1.],[-4.5,-3.5,-1.,1.],[9.,6.,-4.,4.5],[6.,4.,-3.,3.5]]
+        s,u = schur(a,sort='lhp')
+        assert_array_almost_equal([[0.1134,0.5436,0.8316,0.], \
+                                   [-0.1134,-0.8245,0.5544,0.], \
+                                   [-0.8213,0.1308,0.0265,-0.5547], \
+                                   [-0.5475,0.0872,0.0177,0.8321]],
+                                  u,3)
+        assert_array_almost_equal([[-1.4142,0.1456,-11.5816,-7.7174], \
+                                   [0.,-0.5000,9.4472,-0.7184], \
+                                   [0.,0.,1.4142,-0.1456], \
+                                   [0.,0.,0.,0.5]],
+                                  s,3)
+                                  
+        s,u = schur(a,sort='rhp')
+        assert_array_almost_equal([[0.4862,-0.4930,0.1434,-0.7071], \
+                                   [-0.4862,0.4930,-0.1434,-0.7071], \
+                                   [0.6042,0.3944,-0.6924,0.], \
+                                   [0.4028,0.5986,0.6924,0.]], \
+                                  u,3)
+        assert_array_almost_equal([[1.4142,-0.9270,4.5368,-14.4130], \
+                                   [0.,0.5,6.5809,-3.1870], \
+                                   [0.,0.,-1.4142,0.9270], \
+                                   [0.,0.,0.,-0.5]],
+                                  s,3)
+        
 class TestHessenberg(TestCase):
 
     def test_simple(self):

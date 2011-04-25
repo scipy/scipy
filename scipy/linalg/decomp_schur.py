@@ -14,7 +14,7 @@ __all__ = ['schur', 'rsf2csf']
 
 _double_precision = ['i','l','d']
 
-def schur(a, output='real', lwork=None, overwrite_a=False):
+def schur(a, output='real', lwork=None, overwrite_a=False, sort=None):
     """Compute Schur decomposition of a matrix.
 
     The Schur decomposition is
@@ -36,6 +36,10 @@ def schur(a, output='real', lwork=None, overwrite_a=False):
         Work array size. If None or -1, it is automatically computed.
     overwrite_a : boolean
         Whether to overwrite data in a (may improve performance)
+    sort : {None, 'lhp', 'rhp'}
+        Specifies whether the upper eigenvalues should be sorted into the 
+        left-hand plane ('lhp') or right-hand plane ('rhp').  Defaults to None 
+        (no sorting).
 
     Returns
     -------
@@ -69,7 +73,19 @@ def schur(a, output='real', lwork=None, overwrite_a=False):
         # get optimal work array
         result = gees(lambda x: None, a1, lwork=-1)
         lwork = result[-2][0].real.astype(numpy.int)
-    result = gees(lambda x: None, a1, lwork=lwork, overwrite_a=overwrite_a)
+    
+    if sort is None:
+        sort_t = 0
+        sfunction = lambda x: None
+    elif sort == 'lhp':
+        sort_t = 1
+        sfunction = lambda x: (x.real < 0.0)
+    elif sort == 'rhp':
+        sort_t = 1
+        sfunction = lambda x: (x.real > 0.0)
+    
+    result = gees(sfunction, a1, lwork=lwork, overwrite_a=overwrite_a, sort_t=sort_t)
+    
     info = result[-1]
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal gees'
