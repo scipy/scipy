@@ -608,7 +608,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
         lastresult = resmat[i-1][i-1]
 
         err = abs(result - lastresult)
-        if err < tol or err < rtol*abs(result):
+        if np.all(err < tol) or np.all(err < rtol*abs(result)):
             break
     else:
         warnings.warn(
