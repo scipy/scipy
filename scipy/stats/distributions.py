@@ -349,7 +349,7 @@ docdict_discrete['longsummary'] = _doc_default_longsummary.replace(\
 _doc_default_frozen_note = \
 """
 Alternatively, the object may be called (as a function) to fix the shape and
-location parameters returning a "frozen" continuous RV object:
+location parameters returning a "frozen" discrete RV object:
 
 rv = %(name)s(%(shapes)s, loc=0)
     - Frozen RV object with the same methods but holding the given shape and
