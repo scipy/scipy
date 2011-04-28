@@ -201,7 +201,7 @@ import distributions
 import _support
 from _support import _chk_asarray, _chk2_asarray
 
-__all__ = ['gmean', 'hmean', 'cmedian', 'mode',
+__all__ = ['find_repeats', 'gmean', 'hmean', 'cmedian', 'mode',
            'tmean', 'tvar', 'tmin', 'tmax', 'tstd', 'tsem',
            'moment', 'variation', 'skew', 'kurtosis', 'describe',
            'skewtest', 'kurtosistest', 'normaltest',
