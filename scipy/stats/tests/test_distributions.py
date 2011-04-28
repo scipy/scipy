@@ -682,5 +682,11 @@ def test_regression_tukey_lambda():
     assert_((p[2] != 0.0).any())
     assert_((p[2] == 0.0).any())
 
+def test_regression_ticket_1421():
+    """Regression test for ticket #1421 - correction discrete docs."""
+    assert_('pdf(x, mu, loc=0, scale=1)' not in stats.poisson.__doc__)
+    assert_('poisson.pmf(x,' in stats.poisson.__doc__)
+
+
 if __name__ == "__main__":
     run_module_suite()
