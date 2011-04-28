@@ -360,6 +360,13 @@ docdict_discrete['frozennote'] = _doc_default_frozen_note
 docdict_discrete['example'] = _doc_default_example.replace('[0.9,]',
                                   'Replace with reasonable value')
 
+_doc_default_before_notes = ''.join([_doc_default_longsummary,
+                                     _doc_allmethods,
+                                     _doc_default_callparams,
+                                     _doc_default_frozen_note])
+
+docdict_discrete['before_notes'] = _doc_default_before_notes
+
 _doc_default_disc = ''.join([docdict_discrete['longsummary'],
                              docdict_discrete['allmethods'],
                              docdict_discrete['frozennote'],
