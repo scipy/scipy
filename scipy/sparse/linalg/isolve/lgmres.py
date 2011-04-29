@@ -2,7 +2,7 @@
 # Distributed under the same license as Scipy.
 
 import numpy as np
-import scipy.lib.blas as blas
+from scipy.linalg import get_blas_funcs
 from iterative import set_docstring
 from utils import make_system
 
@@ -10,7 +10,7 @@ __all__ = ['lgmres']
 
 def norm2(q):
     q = np.asarray(q)
-    nrm2, = blas.get_blas_funcs(['nrm2'], [q])
+    nrm2 = get_blas_funcs('nrm2', dtype=q.dtype)
     return nrm2(q)
 
 def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
@@ -113,7 +113,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     if outer_v is None:
         outer_v = []
 
-    axpy, dotc, scal = None, None, None
+    axpy, dot, scal = None, None, None
 
     b_norm = norm2(b)
     if b_norm == 0:
@@ -130,8 +130,8 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         if axpy is None:
             if np.iscomplexobj(r_outer) and not np.iscomplexobj(x):
                 x = x.astype(r_outer.dtype)
-            axpy, dotc, scal = blas.get_blas_funcs(['axpy', 'dotc', 'scal'],
-                                                   (x, r_outer))
+            axpy, dot, scal = get_blas_funcs(['axpy', 'dot', 'scal'],
+                                              (x, r_outer))
 
         # -- check stopping condition
         r_norm = norm2(r_outer)
@@ -208,7 +208,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
             #     ++ orthogonalize
             hcur = []
             for v in vs:
-                alpha = dotc(v, v_new)
+                alpha = dot(v, v_new)
                 hcur.append(alpha)
                 v_new = axpy(v, v_new, v.shape[0], -alpha) # v_new -= alpha*v
             hcur.append(norm2(v_new))

@@ -67,6 +67,7 @@ class TestFBLAS1Simple(TestCase):
             f = getattr(fblas,p+'axpy',None)
             if f is None: continue
             assert_array_almost_equal(f([1,2j,3],[2,-1,3],a=5),[7,10j-1,18])
+
     def test_copy(self):
         for p in 'sd':
             f = getattr(fblas,p+'copy',None)
@@ -76,6 +77,7 @@ class TestFBLAS1Simple(TestCase):
             f = getattr(fblas,p+'copy',None)
             if f is None: continue
             assert_array_almost_equal(f([3,4j,5+3j],[8]*3),[3,4j,5+3j])
+
     def test_asum(self):
         for p in 'sd':
             f = getattr(fblas,p+'asum',None)
@@ -85,11 +87,18 @@ class TestFBLAS1Simple(TestCase):
             f = getattr(fblas,p+'asum',None)
             if f is None: continue
             assert_almost_equal(f([3j,-4,3-4j]),14)
+
     def test_dot(self):
         for p in 'sd':
             f = getattr(fblas,p+'dot',None)
             if f is None: continue
             assert_almost_equal(f([3,-4,5],[2,5,1]),-9)
+        for p in 'cz':
+            # alias {c,z}dot --> {c,z}dotc
+            f = getattr(fblas,p+'dot',None)
+            if f is None: continue
+            assert_almost_equal(f([3j,-4,3-4j],[2,3j,1]),3-14j)
+
     def test_complex_dotu(self):
         for p in 'cz':
             f = getattr(fblas,p+'dotu',None)
@@ -107,10 +116,11 @@ class TestFBLAS1Simple(TestCase):
             f = getattr(fblas,p+'nrm2',None)
             if f is None: continue
             assert_almost_equal(f([3,-4,5]),math.sqrt(50))
-        for p in ['sc','dz']:
+        for p in ['c', 'z', 'sc','dz']:
             f = getattr(fblas,p+'nrm2',None)
             if f is None: continue
             assert_almost_equal(f([3j,-4,3-4j]),math.sqrt(50))
+
     def test_scal(self):
         for p in 'sd':
             f = getattr(fblas,p+'scal',None)
@@ -124,6 +134,7 @@ class TestFBLAS1Simple(TestCase):
             f = getattr(fblas,p+'scal',None)
             if f is None: continue
             assert_array_almost_equal(f(3,[3j,-4,3-4j]),[9j,-12,9-12j])
+
     def test_swap(self):
         for p in 'sd':
             f = getattr(fblas,p+'swap',None)
@@ -139,6 +150,7 @@ class TestFBLAS1Simple(TestCase):
             x1,y1 = f(x,y)
             assert_array_almost_equal(x1,y)
             assert_array_almost_equal(y1,x)
+
     def test_amax(self):
         for p in 'sd':
             f = getattr(fblas,'i'+p+'amax')
@@ -188,13 +200,14 @@ class TestFBLAS2Simple(TestCase):
                                            3j],[3j,4j]),[[6,8],[12,16],[18,24]])
 
         for p in 'cz':
-            f = getattr(fblas,p+'gerc',None)
-            if f is None: continue
-            assert_array_almost_equal(f(1,[1j,
-                                           2],[3,4]),[[3j,4j],[6,8]])
-            assert_array_almost_equal(f(2,[1j,
-                                           2j,
-                                           3j],[3j,4j]),[[6,8],[12,16],[18,24]])
+            for name in ('ger', 'gerc'):
+                f = getattr(fblas,p+name,None)
+                if f is None: continue
+                assert_array_almost_equal(f(1,[1j,
+                                               2],[3,4]),[[3j,4j],[6,8]])
+                assert_array_almost_equal(f(2,[1j,
+                                               2j,
+                                               3j],[3j,4j]),[[6,8],[12,16],[18,24]])
 
 class TestFBLAS3Simple(TestCase):
 
