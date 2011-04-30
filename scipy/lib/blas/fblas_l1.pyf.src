@@ -143,14 +143,11 @@ subroutine <prefix>scal(n,a,x,offx,incx)
   ! Calculate y = a*x
 
   <ftype> intent(in):: a
-
   callstatement (*f2py_func)(&n,&a,x+offx,&incx)
   callprotoargument int*,<ctype>*,<ctype>*,int*
 
   <ftype> dimension(*),intent(in,out) :: x
-
   integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
-
   integer optional,intent(in),depend(x) :: offx=0
   check(offx>=0 && offx<len(x)) :: offx
 
@@ -158,6 +155,7 @@ subroutine <prefix>scal(n,a,x,offx,incx)
   check(len(x)-offx>(n-1)*abs(incx)) :: n
 
 end subroutine <prefix>scal
+
 
 subroutine <_prefix2=cs,zd>scal(n,a,x,offx,incx)
 
@@ -179,6 +177,7 @@ subroutine <_prefix2=cs,zd>scal(n,a,x,offx,incx)
   check(len(x)-offx>(n-1)*abs(incx)) :: n
 
 end subroutine <_prefix2>scal
+
 
 subroutine <prefix>copy(n,x,offx,incx,y,offy,incy)
 
@@ -248,7 +247,8 @@ function <prefix2>dot(n,x,offx,incx,y,offy,incy) result (xy)
   check(offx>=0 && offx<len(x)) :: offx
   check(offy>=0 && offy<len(y)) :: offy
 
-  integer optional,intent(in),depend(x,incx,offx,y,incy,offy) :: n = (len(x)-offx)/abs(incx)
+  integer optional,intent(in),depend(x,incx,offx,y,incy,offy) :: &
+       n = (len(x)-offx)/abs(incx)
   check(len(x)-offx>(n-1)*abs(incx)) :: n
   check(len(y)-offy>(n-1)*abs(incy)) :: n
 
@@ -257,7 +257,7 @@ end function <prefix2>dot
 ! <prefix2c=c,z> <ftype2c=complex,double complex> <ctype2c=complex_float,complex_double>
 subroutine <prefix2c>dotu(xy,n,x,offx,incx,y,offy,incy)
 
-  <ftype2c> intent(out):: xy
+  <ftype2c> intent(out) :: xy
   fortranname w<prefix2c>dotu
   
   callstatement (*f2py_func)(&xy,&n,x+offx,&incx,y+offy,&incy)
@@ -274,7 +274,8 @@ subroutine <prefix2c>dotu(xy,n,x,offx,incx,y,offy,incy)
   check(offx>=0 && offx<len(x)) :: offx
   check(offy>=0 && offy<len(y)) :: offy
 
-  integer optional,intent(in),depend(x,incx,offx,y,incy,offy) :: n = (len(x)-offx)/abs(incx)
+  integer optional,intent(in),depend(x,incx,offx,y,incy,offy) &
+       :: n = (len(x)-offx)/abs(incx)
   check(len(x)-offx>(n-1)*abs(incx)) :: n
   check(len(y)-offy>(n-1)*abs(incy)) :: n
 
