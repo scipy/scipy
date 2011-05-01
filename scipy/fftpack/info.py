@@ -10,7 +10,7 @@ Modules
 
    basic - Basic discrete Fourier transform operators
    convolve - Convolution functions
-   helper - TODO
+   helper - Helper functions, frequency shifts and sample frequencies
    pseudo_diffs - Differential and pseudo-differential operators
    realtransforms - Real spectrum tranforms (DCT, DST, MDCT)
 
@@ -31,7 +31,6 @@ Fast Fourier Transforms (FFTs)
    ifftn - n-dimensional inverse FFT
    rfft - FFT of strictly real-valued sequence
    irfft - Inverse of rfft
-   rfftfreq - DFT sample frequencies (specific to rfft and irfft)
    dct - Discrete cosine transform
    idct - Inverse discrete cosine transform
 
@@ -51,6 +50,17 @@ Differential and pseudo-differential operators
    ss_diff - sinh/sinh pseudo-derivative of periodic sequences
    cc_diff - cosh/cosh pseudo-derivative of periodic sequences
    shift - Shift periodic sequences
+
+Helper functions
+----------------
+
+.. autosummary::
+   :toctree: generated/
+
+   fftshift - Shift the zero-frequency component to the center of the spectrum
+   ifftshift - The inverse of `fftshift`
+   fftfreq - Return the Discrete Fourier Transform sample frequencies
+   rfftfreq - DFT sample frequencies (for usage with rfft, irfft)
 
 """
 

@@ -4,9 +4,7 @@ from numpy import array
 from numpy.fft.helper import fftshift, ifftshift, fftfreq
 
 def rfftfreq(n, d=1.0):
-    """ rfftfreq(n, d=1.0) -> f
-
-    DFT sample frequencies (for usage with rfft,irfft).
+    """DFT sample frequencies (for usage with rfft, irfft).
 
     The returned float array contains the frequency bins in
     cycles/unit (with zero at the start) given a window length n and a

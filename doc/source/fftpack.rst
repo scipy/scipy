@@ -17,6 +17,8 @@ Fast Fourier transforms
    ifft2
    rfft
    irfft
+   dct
+   idct
 
 Differential and pseudo-differential operators
 ----------------------------------------------
