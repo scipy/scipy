@@ -20,23 +20,16 @@
 ! Level 1 BLAS
 
 subroutine <prefix>rotg(a,b,c,s)
-  ! a,b are elements of a direction vector of rotated x-axis.
-
-  ! if abs(a) + abs(b)>0:
-  !     roe = abs(a)<abs(b) ? b : a
-  !     r = sign(roe) * sqrt(a^2 + b^2)
-  !     c = a/r
-  !     s = b/r
-  ! else:
-  !     c = 1
-  !     s = r = 0
-  ! a = r
-  ! if 0 < abs(c) <= s: b = 1/c  ! XXX: what is b when returned
-  ! else: b = s
-
+  ! Computes the parameters for a Givens rotation.
+  !
+  ! Given the Cartesian coordinates (a, b) of a point p, these routines return
+  ! the parameters a, b, c, and s associated with the Givens rotation that zeros
+  ! the y-coordinate of the point.
+  !
+  ! FIXME: parameters a, b are not returned.
+  !
   callprotoargument <ctype>*,<ctype>*,<ctype>*,<ctype>*
 
-  ! XXX: a and b get new values. Are they relevant?
   <ftype> intent(in) :: a, b
   <ftype> intent(out,out=c) :: c
   <ftype> intent(out,out=s) :: s
@@ -100,6 +93,15 @@ end subroutine <tchar=s,d,cs,zd>rot
 
 subroutine <prefix2>rotm(n,x,offx,incx,y,offy,incy,param)
   ! Performs rotation of points in the modified plane
+  !
+  ! Given two complex vectors x and y, each vector element of these vectors is
+  ! replaced as follows:
+  !
+  !      x(i) = H*x(i) + H*y(i)
+  !      y(i) = H*y(i) - H*x(i)
+  !
+  ! where H is a modified Givens transformation matrix whose values are stored
+  ! in the param(2) through param(5) array.
 
   callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy,param)
   callprotoargument int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*
@@ -200,12 +202,10 @@ end subroutine <prefix>copy
 
 
 subroutine <prefix>axpy(n,a,x,offx,incx,y,offy,incy)
-
   ! Calculate z = a*x+y, where a is scalar.
 
   callstatement (*f2py_func)(&n,&a,x+offx,&incx,y+offy,&incy)
   callprotoargument int*,<ctype>*,<ctype>*,int*,<ctype>*,int*
-
 
   <ftype> dimension(*), intent(in) :: x
   <ftype> dimension(*), intent(in,out,out=z) :: y
@@ -225,6 +225,7 @@ end subroutine <prefix>axpy
 
 
 function <prefix2>dot(n,x,offx,incx,y,offy,incy) result (xy)
+  ! Computes a vector-vector dot product.
 
   callstatement (*f2py_func)(&<prefix2>dot,&n,x+offx,&incx,y+offy,&incy)
   callprotoargument <ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*
