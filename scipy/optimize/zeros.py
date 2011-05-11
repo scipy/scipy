@@ -42,12 +42,13 @@ def results_c(full_output, r):
 
 
 # Newton-Raphson method
-def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
+def newton(func, x0, fprime=None, fsec=None, args=(), tol=1.48e-8, maxiter=50):
     """Find a zero using the Newton-Raphson or secant method.
 
     Find a zero of the function `func` given a nearby starting point `x0`.
     The Newton-Rapheson method is used if the derivative `fprime` of `func`
-    is provided, otherwise the secant method is used.
+    is provided, otherwise the secant method is used. If the second order
+    derivate `fsec` of `func` is provided, an extended method is used.
 
     Parameters
     ----------
@@ -61,6 +62,10 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
     fprime : function, optional
         The derivative of the function when available and convenient. If it
         is None (default), then the secant method is used.
+    fsec : function, optional
+        The second order derivative of the function when available and
+        convenient. If it is None (default), then the normal Newton-Raphson
+        or the secant method is used.
     args : tuple, optional
         Extra arguments to be used in the function call.
     tol : float, optional
@@ -98,6 +103,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
         # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
         # so it still works if x0 is complex.
         p0 = 1.0 * x0
+        fder2 = 0
         for iter in range(maxiter):
             myargs = (p0,) + args
             fder = fprime(*myargs)
@@ -105,7 +111,17 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
                 msg = "derivative was zero."
                 warnings.warn(msg, RuntimeWarning)
                 return p0
-            p = p0 - func(*myargs) / fder
+            fval = func(*myargs)
+            if fsec is not None:
+                fder2 = fsec(*myargs)
+            if fder2 == 0:
+                p = p0 - fval / fder
+            else:
+                root = fder ** 2 - 2 * fval * fder2
+                if root < 0:
+                    p = p0 - fder / fder2
+                else:
+                    p = p0 - (fder - sign(fder) * (root ** 0.5)) / fder2
             if abs(p - p0) < tol:
                 return p
             p0 = p
