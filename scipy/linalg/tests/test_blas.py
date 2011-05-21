@@ -15,7 +15,7 @@ import math
 import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_almost_equal, assert_array_almost_equal
-    
+
 from scipy.linalg import fblas, cblas, get_blas_funcs
 
 def test_get_blas_funcs():
@@ -43,6 +43,12 @@ def test_get_blas_funcs():
     assert_equal(f1.typecode, 'c')
     f1 = get_blas_funcs('gemm', dtype='F')
     assert_equal(f1.typecode, 'c')
+
+def test_get_blas_funcs_alias():
+    # check alias for get_blas_funcs
+    f, g = get_blas_funcs(('nrm2', 'dot'), dtype=np.complex64)
+    assert f.typecode == 'c'
+    assert g.typecode == 'c'
 
 class TestCBLAS1Simple(TestCase):
 
@@ -93,11 +99,6 @@ class TestFBLAS1Simple(TestCase):
             f = getattr(fblas,p+'dot',None)
             if f is None: continue
             assert_almost_equal(f([3,-4,5],[2,5,1]),-9)
-        for p in 'cz':
-            # alias {c,z}dot --> {c,z}dotc
-            f = getattr(fblas,p+'dot',None)
-            if f is None: continue
-            assert_almost_equal(f([3j,-4,3-4j],[2,3j,1]),3-14j)
 
     def test_complex_dotu(self):
         for p in 'cz':
