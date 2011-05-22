@@ -8,6 +8,7 @@
 from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
      exp, cos, sin, polyval, polyint
 
+
 def sawtooth(t, width=1):
     """
     Return a periodic sawtooth waveform.
@@ -35,36 +36,36 @@ def sawtooth(t, width=1):
     >>> plt.plot(x, sp.signal.sawtooth(x))
 
     """
-    t,w = asarray(t), asarray(width)
-    w = asarray(w + (t-t))
-    t = asarray(t + (w-w))
+    t, w = asarray(t), asarray(width)
+    w = asarray(w + (t - t))
+    t = asarray(t + (w - w))
     if t.dtype.char in ['fFdD']:
         ytype = t.dtype.char
     else:
         ytype = 'd'
-    y = zeros(t.shape,ytype)
+    y = zeros(t.shape, ytype)
 
     # width must be between 0 and 1 inclusive
     mask1 = (w > 1) | (w < 0)
-    place(y,mask1,nan)
+    place(y, mask1, nan)
 
     # take t modulo 2*pi
-    tmod = mod(t,2*pi)
+    tmod = mod(t, 2 * pi)
 
     # on the interval 0 to width*2*pi function is
     #  tmod / (pi*w) - 1
-    mask2 = (1-mask1) & (tmod < w*2*pi)
-    tsub = extract(mask2,tmod)
-    wsub = extract(mask2,w)
-    place(y,mask2,tsub / (pi*wsub) - 1)
+    mask2 = (1 - mask1) & (tmod < w * 2 * pi)
+    tsub = extract(mask2, tmod)
+    wsub = extract(mask2, w)
+    place(y, mask2, tsub / (pi * wsub) - 1)
 
     # on the interval width*2*pi to 2*pi function is
     #  (pi*(w+1)-tmod) / (pi*(1-w))
 
-    mask3 = (1-mask1) & (1-mask2)
-    tsub = extract(mask3,tmod)
-    wsub = extract(mask3,w)
-    place(y,mask3, (pi*(wsub+1)-tsub)/(pi*(1-wsub)))
+    mask3 = (1 - mask1) & (1 - mask2)
+    tsub = extract(mask3, tmod)
+    wsub = extract(mask3, w)
+    place(y, mask3, (pi * (wsub + 1) - tsub) / (pi * (1 - wsub)))
     return y
 
 
@@ -88,37 +89,38 @@ def square(t, duty=0.5):
         The output square wave.
 
     """
-    t,w = asarray(t), asarray(duty)
-    w = asarray(w + (t-t))
-    t = asarray(t + (w-w))
+    t, w = asarray(t), asarray(duty)
+    w = asarray(w + (t - t))
+    t = asarray(t + (w - w))
     if t.dtype.char in ['fFdD']:
         ytype = t.dtype.char
     else:
         ytype = 'd'
-    y = zeros(t.shape,ytype)
+    y = zeros(t.shape, ytype)
 
     # width must be between 0 and 1 inclusive
     mask1 = (w > 1) | (w < 0)
-    place(y,mask1,nan)
+    place(y, mask1, nan)
 
     # take t modulo 2*pi
-    tmod = mod(t,2*pi)
+    tmod = mod(t, 2 * pi)
 
     # on the interval 0 to duty*2*pi function is
     #  1
-    mask2 = (1-mask1) & (tmod < w*2*pi)
-    tsub = extract(mask2,tmod)
-    wsub = extract(mask2,w)
-    place(y,mask2,1)
+    mask2 = (1 - mask1) & (tmod < w * 2 * pi)
+    tsub = extract(mask2, tmod)
+    wsub = extract(mask2, w)
+    place(y, mask2, 1)
 
     # on the interval duty*2*pi to 2*pi function is
     #  (pi*(w+1)-tmod) / (pi*(1-w))
 
-    mask3 = (1-mask1) & (1-mask2)
-    tsub = extract(mask3,tmod)
-    wsub = extract(mask3,w)
-    place(y,mask3,-1)
+    mask3 = (1 - mask1) & (1 - mask2)
+    tsub = extract(mask3, tmod)
+    wsub = extract(mask3, w)
+    place(y, mask3, -1)
     return y
+
 
 def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False, retenv=False):
     """
@@ -166,19 +168,19 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False, retenv=False)
     # fdel = fc*bw/2:  g(fdel) = ref --- solve this for a
     #
     # pi^2/a * fc^2 * bw^2 /4=-log(ref)
-    a = -(pi*fc*bw)**2 / (4.0*log(ref))
+    a = -(pi * fc * bw) ** 2 / (4.0 * log(ref))
 
-    if t == 'cutoff': # compute cut_off point
+    if t == 'cutoff':  # compute cut_off point
         #  Solve exp(-a tc**2) = tref  for tc
         #   tc = sqrt(-log(tref) / a) where tref = 10^(tpr/20)
         if tpr >= 0:
             raise ValueError("Reference level for time cutoff must be < 0 dB")
         tref = pow(10.0, tpr / 20.0)
-        return sqrt(-log(tref)/a)
+        return sqrt(-log(tref) / a)
 
-    yenv = exp(-a*t*t)
-    yI = yenv * cos(2*pi*fc*t)
-    yQ = yenv * sin(2*pi*fc*t)
+    yenv = exp(-a * t * t)
+    yI = yenv * cos(2 * pi * fc * t)
+    yQ = yenv * sin(2 * pi * fc * t)
     if not retquad and not retenv:
         return yI
     if not retquad and retenv:
@@ -295,31 +297,31 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
     f1 = float(f1)
     if method in ['linear', 'lin', 'li']:
         beta = (f1 - f0) / t1
-        phase = 2*pi * (f0*t + 0.5*beta*t*t)
+        phase = 2 * pi * (f0 * t + 0.5 * beta * t * t)
 
-    elif method in ['quadratic','quad','q']:
-        beta = (f1 - f0)/(t1**2)
+    elif method in ['quadratic', 'quad', 'q']:
+        beta = (f1 - f0) / (t1 ** 2)
         if vertex_zero:
-            phase = 2*pi * (f0*t + beta * t**3/3)
+            phase = 2 * pi * (f0 * t + beta * t ** 3 / 3)
         else:
-            phase = 2*pi * (f1*t + beta * ((t1 - t)**3 - t1**3)/3)
+            phase = 2 * pi * (f1 * t + beta * ((t1 - t) ** 3 - t1 ** 3) / 3)
 
     elif method in ['logarithmic', 'log', 'lo']:
-        if f0*f1 <= 0.0:
+        if f0 * f1 <= 0.0:
             raise ValueError("For a geometric chirp, f0 and f1 must be nonzero " \
                                 "and have the same sign.")
         if f0 == f1:
-            phase = 2*pi * f0 * t
+            phase = 2 * pi * f0 * t
         else:
-            beta = t1 / log(f1/f0)
-            phase = 2*pi * beta * f0 * (pow(f1/f0, t/t1) - 1.0)
+            beta = t1 / log(f1 / f0)
+            phase = 2 * pi * beta * f0 * (pow(f1 / f0, t / t1) - 1.0)
 
     elif method in ['hyperbolic', 'hyp']:
         if f1 <= 0.0 or f0 <= f1:
             raise ValueError("hyperbolic chirp requires f0 > f1 > 0.0.")
-        c = f1*t1
+        c = f1 * t1
         df = f0 - f1
-        phase = 2*pi * (f0 * c / df) * log((df*t + c)/c)
+        phase = 2 * pi * (f0 * c / df) * log((df * t + c) / c)
 
     else:
         raise ValueError("method must be 'linear', 'quadratic', 'logarithmic', "
@@ -380,6 +382,7 @@ def sweep_poly(t, poly, phi=0):
     phi *= pi / 180
     return cos(phase + phi)
 
+
 def _sweep_poly_phase(t, poly):
     """
     Calculate the phase used by sweep_poly to generate its output.
@@ -389,5 +392,5 @@ def _sweep_poly_phase(t, poly):
     """
     # polyint handles lists, ndarrays and instances of poly1d automatically.
     intpoly = polyint(poly)
-    phase = 2*pi * polyval(intpoly, t)
+    phase = 2 * pi * polyval(intpoly, t)
     return phase
