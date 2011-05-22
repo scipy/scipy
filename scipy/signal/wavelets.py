@@ -1,9 +1,10 @@
-__all__ = ['daub','qmf','cascade','morlet']
+__all__ = ['daub', 'qmf', 'cascade', 'morlet']
 
 import numpy as np
 from numpy.dual import eig
 from scipy.misc import comb
 from scipy import linspace, pi, exp
+
 
 def daub(p):
     """
@@ -21,15 +22,15 @@ def daub(p):
     sqrt = np.sqrt
     if p < 1:
         raise ValueError("p must be at least 1.")
-    if p==1:
-        c = 1/sqrt(2)
-        return np.array([c,c])
-    elif p==2:
-        f = sqrt(2)/8
+    if p == 1:
+        c = 1 / sqrt(2)
+        return np.array([c, c])
+    elif p == 2:
+        f = sqrt(2) / 8
         c = sqrt(3)
-        return f*np.array([1+c,3+c,3-c,1-c])
-    elif p==3:
-        tmp  = 12*sqrt(10)
+        return f * np.array([1+c, 3+c, 3-c, 1-c])
+    elif p == 3:
+        tmp = 12 * sqrt(10)
         z1 = 1.5 + sqrt(15+tmp)/6 - 1j*(sqrt(15)+sqrt(tmp-15))/6
         z1c = np.conj(z1)
         f = sqrt(2)/8
@@ -37,26 +38,26 @@ def daub(p):
         a0 = np.real(z1*z1c)
         a1 = 2*np.real(z1)
         return f/d0*np.array([a0, 3*a0-a1, 3*a0-3*a1+1, a0-3*a1+3, 3-a1, 1])
-    elif p<35:
+    elif p < 35:
         # construct polynomial and factor it
-        if p<35:
-            P = [comb(p-1+k,k,exact=1) for k in range(p)][::-1]
+        if p < 35:
+            P = [comb(p-1+k, k, exact=1) for k in range(p)][::-1]
             yj = np.roots(P)
         else:  # try different polynomial --- needs work
-            P = [comb(p-1+k,k,exact=1)/4.0**k for k in range(p)][::-1]
+            P = [comb(p-1+k, k, exact=1)/4.0**k for k in range(p)][::-1]
             yj = np.roots(P) / 4
         # for each root, compute two z roots, select the one with |z|>1
         # Build up final polynomial
-        c = np.poly1d([1,1])**p
+        c = np.poly1d([1, 1])**p
         q = np.poly1d([1])
         for k in range(p-1):
             yval = yj[k]
             part = 2*sqrt(yval*(yval-1))
-            const = 1-2*yval
+            const = 1 - 2*yval
             z1 = const + part
             if (abs(z1)) < 1:
                 z1 = const - part
-            q = q * [1,-z1]
+            q = q * [1, -z1]
 
         q = c * np.real(q)
         # Normalize result
@@ -66,16 +67,19 @@ def daub(p):
         raise ValueError("Polynomial factorization does not work "
               "well for p too large.")
 
+
 def qmf(hk):
     """Return high-pass qmf filter from low-pass
     """
-    N = len(hk)-1
-    asgn = [{0:1,1:-1}[k%2] for k in range(N+1)]
+    N = len(hk) - 1
+    asgn = [{0:1, 1:-1}[k%2] for k in range(N+1)]
     return hk[::-1]*np.array(asgn)
+
 
 def wavedec(amn, hk):
     gk = qmf(hk)
     return NotImplemented
+
 
 def cascade(hk, J=7):
     """
@@ -125,36 +129,35 @@ def cascade(hk, J=7):
     if (J < 1):
         raise ValueError("Too few levels.")
 
-
     # construct matrices needed
-    nn,kk = np.ogrid[:N,:N]
+    nn, kk = np.ogrid[:N, :N]
     s2 = np.sqrt(2)
     # append a zero so that take works
-    thk = np.r_[hk,0]
+    thk = np.r_[hk, 0]
     gk = qmf(hk)
-    tgk = np.r_[gk,0]
+    tgk = np.r_[gk, 0]
 
-    indx1 = np.clip(2*nn-kk,-1,N+1)
-    indx2 = np.clip(2*nn-kk+1,-1,N+1)
-    m = np.zeros((2,2,N,N),'d')
-    m[0,0] = np.take(thk,indx1,0)
-    m[0,1] = np.take(thk,indx2,0)
-    m[1,0] = np.take(tgk,indx1,0)
-    m[1,1] = np.take(tgk,indx2,0)
+    indx1 = np.clip(2*nn-kk, -1, N+1)
+    indx2 = np.clip(2*nn-kk+1, -1, N+1)
+    m = np.zeros((2, 2, N, N), 'd')
+    m[0, 0] = np.take(thk, indx1, 0)
+    m[0, 1] = np.take(thk, indx2, 0)
+    m[1, 0] = np.take(tgk, indx1, 0)
+    m[1, 1] = np.take(tgk, indx2, 0)
     m *= s2
 
     # construct the grid of points
-    x = np.arange(0,N*(1<<J),dtype=np.float) / (1<<J)
+    x = np.arange(0, N*(1 << J), dtype=np.float) / (1 << J)
     phi = 0*x
 
     psi = 0*x
 
     # find phi0, and phi1
-    lam, v = eig(m[0,0])
+    lam, v = eig(m[0, 0])
     ind = np.argmin(np.absolute(lam-1))
     # a dictionary with a binary representation of the
     #   evaluation points x < 1 -- i.e. position is 0.xxxx
-    v = np.real(v[:,ind])
+    v = np.real(v[:, ind])
     # need scaling function to integrate to 1 so find
     #  eigenvector normalized to sum(v,axis=0)=1
     sm = np.sum(v)
@@ -163,35 +166,36 @@ def cascade(hk, J=7):
         sm = -sm
     bitdic = {}
     bitdic['0'] = v / sm
-    bitdic['1'] = np.dot(m[0,1],bitdic['0'])
-    step = 1<<J
+    bitdic['1'] = np.dot(m[0, 1], bitdic['0'])
+    step = 1 << J
     phi[::step] = bitdic['0']
     phi[(1<<(J-1))::step] = bitdic['1']
-    psi[::step] = np.dot(m[1,0],bitdic['0'])
-    psi[(1<<(J-1))::step] = np.dot(m[1,1],bitdic['0'])
+    psi[::step] = np.dot(m[1, 0], bitdic['0'])
+    psi[(1 << (J-1))::step] = np.dot(m[1, 1], bitdic['0'])
     # descend down the levels inserting more and more values
     #  into bitdic -- store the values in the correct location once we
     #  have computed them -- stored in the dictionary
     #  for quicker use later.
     prevkeys = ['1']
-    for level in range(2,J+1):
-        newkeys = ['%d%s' % (xx,yy) for xx in [0,1] for yy in prevkeys]
-        fac = 1<<(J-level)
+    for level in range(2, J+1):
+        newkeys = ['%d%s' % (xx, yy) for xx in [0, 1] for yy in prevkeys]
+        fac = 1 << (J-level)
         for key in newkeys:
             # convert key to number
             num = 0
             for pos in range(level):
                 if key[pos] == '1':
-                    num += (1<<(level-1-pos))
+                    num += (1 << (level-1-pos))
             pastphi = bitdic[key[1:]]
             ii = int(key[0])
-            temp = np.dot(m[0,ii],pastphi)
+            temp = np.dot(m[0, ii], pastphi)
             bitdic[key] = temp
             phi[num*fac::step] = temp
-            psi[num*fac::step] = np.dot(m[1,ii],pastphi)
+            psi[num*fac::step] = np.dot(m[1, ii], pastphi)
         prevkeys = newkeys
 
     return x, phi, psi
+
 
 def morlet(M, w=5.0, s=1.0, complete=True):
     """
@@ -231,7 +235,7 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     by f = 2*s*w*r / M where r is the sampling rate.
 
     """
-    x = linspace(-s*2*pi,s*2*pi,M)
+    x = linspace(-s*2*pi, s*2*pi, M)
     output = exp(1j*w*x)
 
     if complete:
