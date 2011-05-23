@@ -140,7 +140,7 @@ def _conv(obj, dtype=None):
             return obj
 
 
-def report_error(info):
+def _report_error(info):
     """ Interprets the return code of the odr routine.
 
     Parameters
@@ -594,7 +594,7 @@ class Output(object):
         if len(output) == 4:
             # full output
             self.__dict__.update(output[3])
-            self.stopreason = report_error(self.info)
+            self.stopreason = _report_error(self.info)
 
 
     def pprint(self):

@@ -39,12 +39,13 @@ Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
 
 __docformat__ = "restructuredtext en"
 
-__all__ =['eigs', 'eigsh', 'svds', 'ArpackNoConvergence']
-
 import _arpack
 import numpy as np
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
 from scipy.sparse import csc_matrix, csr_matrix, isspmatrix
+
+__all__ =['eigs', 'eigsh', 'svds', 'ArpackError', 'ArpackNoConvergence']
+
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 _ndigits = {'f':5, 'd':12, 'F':5, 'D':12}

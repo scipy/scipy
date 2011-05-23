@@ -177,8 +177,7 @@ __all__ = ['ClusterNode', 'average', 'centroid', 'complete', 'cophenet',
            'is_monotonic', 'is_valid_im', 'is_valid_linkage', 'leaders',
            'leaves_list', 'linkage', 'maxRstat', 'maxdists', 'maxinconsts',
            'median', 'num_obs_linkage', 'set_link_color_palette', 'single',
-           'to_mlab_linkage', 'to_tree', 'ward', 'warnings', 'weighted',
-           'distance']
+           'to_mlab_linkage', 'to_tree', 'ward', 'weighted', 'distance']
 
 
 try:
