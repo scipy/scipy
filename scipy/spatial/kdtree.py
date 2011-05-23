@@ -5,6 +5,11 @@ import numpy as np
 from heapq import heappush, heappop
 import scipy.sparse
 
+__all__ = ['minkowski_distance_p', 'minkowski_distance',
+           'distance_matrix',
+           'Rectangle', 'KDTree']
+
+
 def minkowski_distance_p(x,y,p=2):
     """
     Compute the p-th power of the L**p distance between x and y.

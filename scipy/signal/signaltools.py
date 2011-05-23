@@ -17,6 +17,13 @@ import numpy as np
 from scipy.misc import factorial
 from windows import get_window
 
+__all__ = ['correlate', 'fftconvolve', 'convolve', 'convolve2d', 'correlate2d',
+           'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
+           'lfiltic', 'deconvolve', 'hilbert', 'hilbert2', 'cmplx_sort',
+           'unique_roots', 'invres', 'invresz', 'residue', 'residuez',
+           'resample', 'detrend', 'lfilter_zi', 'filtfilt', 'decimate']
+
+
 _modedict = {'valid':0, 'same':1, 'full':2}
 
 _boundarydict = {'fill':0, 'pad':0, 'wrap':2, 'circular':2, 'symm':1,

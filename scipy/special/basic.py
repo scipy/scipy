@@ -11,6 +11,23 @@ import types
 import specfun
 import orthogonal
 
+__all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
+           'ber_zeros', 'bernoulli', 'berp_zeros', 'bessel_diff_formula',
+           'bi_zeros', 'digamma', 'diric', 'ellipk', 'erf_zeros', 'erfcinv',
+           'erfinv', 'errprint', 'euler', 'fresnel_zeros',
+           'fresnelc_zeros', 'fresnels_zeros', 'gamma', 'gammaln', 'h1vp',
+           'h2vp', 'hankel1', 'hankel2', 'hyp0f1', 'iv', 'ivp', 'jn_zeros',
+           'jnjnp_zeros', 'jnp_zeros', 'jnyn_zeros', 'jv', 'jvp', 'kei_zeros',
+           'keip_zeros', 'kelvin_zeros', 'ker_zeros', 'kerp_zeros', 'kv',
+           'kvp', 'lmbda', 'lpmn', 'lpn', 'lqmn', 'lqn', 'mathieu_a',
+           'mathieu_b', 'mathieu_even_coef', 'mathieu_odd_coef', 'ndtri',
+           'obl_cv_seq', 'pbdn_seq', 'pbdv_seq', 'pbvv_seq',
+           'polygamma', 'pro_cv_seq', 'psi', 'riccati_jn', 'riccati_yn',
+           'sinc', 'sph_harm', 'sph_in', 'sph_inkn',
+           'sph_jn', 'sph_jnyn', 'sph_kn', 'sph_yn', 'y0_zeros', 'y1_zeros',
+           'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta']
+
+
 def sinc(x):
     """Returns sin(pi*x)/(pi*x) at all points of array x.
     """

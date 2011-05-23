@@ -29,57 +29,6 @@ import numpy.random as mtrand
 from numpy import flatnonzero as nonzero
 import vonmises_cython
 
-def _moment(data, n, mu=None):
-    if mu is None:
-        mu = data.mean()
-    return ((data - mu)**n).mean()
-
-def _moment_from_stats(n, mu, mu2, g1, g2, moment_func, args):
-    if (n==0):
-        return 1.0
-    elif (n==1):
-        if mu is None:
-            val = moment_func(1,*args)
-        else:
-            val = mu
-    elif (n==2):
-        if mu2 is None or mu is None:
-            val = moment_func(2,*args)
-        else:
-            val = mu2 + mu*mu
-    elif (n==3):
-        if g1 is None or mu2 is None or mu is None:
-            val = moment_func(3,*args)
-        else:
-            mu3 = g1*(mu2**1.5) # 3rd central moment
-            val = mu3+3*mu*mu2+mu**3 # 3rd non-central moment
-    elif (n==4):
-        if g1 is None or g2 is None or mu2 is None or mu is None:
-            val = moment_func(4,*args)
-        else:
-            mu4 = (g2+3.0)*(mu2**2.0) # 4th central moment
-            mu3 = g1*(mu2**1.5) # 3rd central moment
-            val = mu4+4*mu*mu3+6*mu*mu*mu2+mu**4
-    else:
-        val = moment_func(n, *args)
-
-    return val
-
-
-def _skew(data):
-    data = np.ravel(data)
-    mu = data.mean()
-    m2 = ((data - mu)**2).mean()
-    m3 = ((data - mu)**3).mean()
-    return m3 / m2**1.5
-
-def _kurtosis(data):
-    data = np.ravel(data)
-    mu = data.mean()
-    m2 = ((data - mu)**2).mean()
-    m4 = ((data - mu)**4).mean()
-    return m4 / m2**2 - 3
-
 __all__ = [
            'rv_continuous',
            'ksone', 'kstwobign', 'norm', 'alpha', 'anglit', 'arcsine',
@@ -383,6 +332,58 @@ try:
 except NameError:
     # in Python 3, loop variables are not visible after the loop
     pass
+
+
+def _moment(data, n, mu=None):
+    if mu is None:
+        mu = data.mean()
+    return ((data - mu)**n).mean()
+
+def _moment_from_stats(n, mu, mu2, g1, g2, moment_func, args):
+    if (n==0):
+        return 1.0
+    elif (n==1):
+        if mu is None:
+            val = moment_func(1,*args)
+        else:
+            val = mu
+    elif (n==2):
+        if mu2 is None or mu is None:
+            val = moment_func(2,*args)
+        else:
+            val = mu2 + mu*mu
+    elif (n==3):
+        if g1 is None or mu2 is None or mu is None:
+            val = moment_func(3,*args)
+        else:
+            mu3 = g1*(mu2**1.5) # 3rd central moment
+            val = mu3+3*mu*mu2+mu**3 # 3rd non-central moment
+    elif (n==4):
+        if g1 is None or g2 is None or mu2 is None or mu is None:
+            val = moment_func(4,*args)
+        else:
+            mu4 = (g2+3.0)*(mu2**2.0) # 4th central moment
+            mu3 = g1*(mu2**1.5) # 3rd central moment
+            val = mu4+4*mu*mu3+6*mu*mu*mu2+mu**4
+    else:
+        val = moment_func(n, *args)
+
+    return val
+
+
+def _skew(data):
+    data = np.ravel(data)
+    mu = data.mean()
+    m2 = ((data - mu)**2).mean()
+    m3 = ((data - mu)**3).mean()
+    return m3 / m2**1.5
+
+def _kurtosis(data):
+    data = np.ravel(data)
+    mu = data.mean()
+    m2 = ((data - mu)**2).mean()
+    m4 = ((data - mu)**4).mean()
+    return m4 / m2**2 - 3
 
 
 

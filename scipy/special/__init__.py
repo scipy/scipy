@@ -5,7 +5,6 @@
 from info import __doc__, __docformat__
 #from special_version import special_version as __version__
 
-from numpy import *
 from _cephes import *
 
 from basic import *

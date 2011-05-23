@@ -3,6 +3,10 @@ parameters into function and method docstrings'''
 
 import sys
 
+__all__ = ['docformat', 'indentcount_lines', 'filldoc',
+           'unindent_dict', 'unindent_string']
+
+
 def docformat(docstring, docdict=None):
     ''' Fill a function docstring from variables in dictionary
 

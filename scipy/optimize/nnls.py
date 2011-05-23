@@ -1,6 +1,9 @@
 import _nnls
 from numpy import asarray_chkfinite, zeros, double
 
+__all__ = ['nnls']
+
+
 def nnls(A,b):
     """
     Solve ``argmin_x || Ax - b ||_2`` for ``x>=0``.
@@ -46,4 +49,3 @@ def nnls(A,b):
         raise RuntimeError("too many iterations")
 
     return x, rnorm
-

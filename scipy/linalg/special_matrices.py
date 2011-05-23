@@ -2,6 +2,10 @@
 import math
 import numpy as np
 
+__all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
+           'hadamard', 'leslie', 'all_mat', 'kron', 'block_diag', 'companion']
+
+
 #-----------------------------------------------------------------------------
 # matrix construction functions
 #-----------------------------------------------------------------------------
@@ -308,7 +312,7 @@ def hadamard(n, dtype=int):
            [ 1, -1, -1,  1]])
 
     """
-    
+
     # This function is a slightly modified version of the
     # function contributed by Ivo in ticket #675.
 
@@ -322,7 +326,7 @@ def hadamard(n, dtype=int):
     H = np.array([[1]], dtype=dtype)
 
     # Sylvester's construction
-    for i in range(0, lg2): 
+    for i in range(0, lg2):
         H = np.vstack((np.hstack((H, H)), np.hstack((H, -H))))
 
     return H
@@ -493,7 +497,7 @@ def block_diag(*arrs):
     bad_args = [k for k in range(len(arrs)) if arrs[k].ndim > 2]
     if bad_args:
         raise ValueError("arguments in the following positions have dimension "
-                            "greater than 2: %s" % bad_args) 
+                            "greater than 2: %s" % bad_args)
 
     shapes = np.array([a.shape for a in arrs])
     out = np.zeros(np.sum(shapes, axis=0), dtype=arrs[0].dtype)

@@ -34,6 +34,9 @@ value of the function, and whose second argument is the gradient of the function
 from scipy.optimize import moduleTNC
 from numpy import asarray, inf, array
 
+__all__ = ['fmin_tnc']
+
+
 MSG_NONE = 0 # No messages
 MSG_ITER = 1 # One line per iteration
 MSG_INFO = 2 # Informational messages
@@ -178,7 +181,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         raise ValueError('length of x0 != length of bounds')
 
     if disp is not None:
-        messages = {0:MSG_NONE, 1:MSG_ITER, 2:MSG_INFO, 3:MSG_VERS, 
+        messages = {0:MSG_NONE, 1:MSG_ITER, 2:MSG_INFO, 3:MSG_VERS,
                     4:MSG_EXIT, 5:MSG_ALL}.get(disp, MSG_ALL)
 
     if approx_grad:

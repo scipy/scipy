@@ -6,6 +6,10 @@ from numpy.fft import irfft
 from scipy.special import sinc
 import sigtools
 
+__all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
+           'firwin', 'firwin2', 'remez']
+
+
 # Some notes on function parameters:
 #
 # `cutoff` and `width` are given as a numbers between 0 and 1.  These

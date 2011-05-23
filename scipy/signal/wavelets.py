@@ -1,9 +1,9 @@
-__all__ = ['daub', 'qmf', 'cascade', 'morlet']
-
 import numpy as np
 from numpy.dual import eig
 from scipy.misc import comb
 from scipy import linspace, pi, exp
+
+__all__ = ['daub', 'qmf', 'cascade', 'morlet']
 
 
 def daub(p):

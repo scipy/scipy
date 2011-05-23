@@ -48,6 +48,8 @@ from numpy import (sqrt, log, asarray, newaxis, all, dot, exp, eye,
                    float_)
 from scipy import linalg
 
+__all__ = ['Rbf']
+
 
 class Rbf(object):
     """
@@ -130,7 +132,7 @@ class Rbf(object):
            self.function = self.function.lower()
            _mapped = {'inverse': 'inverse_multiquadric',
                       'inverse multiquadric': 'inverse_multiquadric',
-                      'thin-plate': 'thin_plate'}                   
+                      'thin-plate': 'thin_plate'}
            if self.function in _mapped:
                self.function = _mapped[self.function]
 
@@ -167,7 +169,7 @@ class Rbf(object):
                                                         Rbf)
             else:
                 raise ValueError("Function argument must take 1 or 2 arguments.")
-                
+
         a0 = self._function(r)
         if a0.shape != r.shape:
             raise ValueError("Callable must take array and return array of the same shape")
@@ -190,11 +192,11 @@ class Rbf(object):
         self.function = kwargs.pop('function', 'multiquadric')
 
         # attach anything left in kwargs to self
-        #  for use by any user-callable function or 
+        #  for use by any user-callable function or
         #  to save on the object returned.
         for item, value in kwargs.items():
             setattr(self, item, value)
-   
+
         self.A = self._init_function(r) - eye(self.N)*self.smooth
         self.nodes = linalg.solve(self.A, self.di)
 

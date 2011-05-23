@@ -8,6 +8,8 @@ from scipy.linalg import calc_lwork
 from misc import LinAlgError, _datacopied
 from lapack import get_lapack_funcs
 
+__all__ = ['svd', 'svdvals', 'diagsvd', 'orth']
+
 
 def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False):
     """Singular Value Decomposition.

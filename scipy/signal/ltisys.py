@@ -20,6 +20,9 @@ import scipy.linalg as linalg
 from numpy import r_, eye, real, atleast_1d, atleast_2d, poly, \
      squeeze, diag, asarray
 
+__all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
+           'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2']
+
 
 def tf2ss(num, den):
     """Transfer function to state-space representation.

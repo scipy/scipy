@@ -18,7 +18,7 @@ The ones without any suffix should be the most common one.
 
 import math as _math
 from codata import value as _cd
-import numpy as np
+import numpy as _np
 
 #mathematical constants
 pi = _math.pi
@@ -193,11 +193,11 @@ def C2K(C):
     Examples
     --------
     >>> from scipy.constants.constants import C2K
-    >>> C2K(np.array([-40, 40.0]))
+    >>> C2K(_np.array([-40, 40.0]))
     array([ 233.15,  313.15])
 
     """
-    return np.asanyarray(C) + zero_Celsius
+    return _np.asanyarray(C) + zero_Celsius
 
 def K2C(K):
     """
@@ -221,11 +221,11 @@ def K2C(K):
     Examples
     --------
     >>> from scipy.constants.constants import K2C
-    >>> K2C(np.array([233.15, 313.15]))
+    >>> K2C(_np.array([233.15, 313.15]))
     array([-40.,  40.])
 
     """
-    return np.asanyarray(K) - zero_Celsius
+    return _np.asanyarray(K) - zero_Celsius
 
 def F2C(F):
     """
@@ -248,11 +248,11 @@ def F2C(F):
     Examples
     --------
     >>> from scipy.constants.constants import F2C
-    >>> F2C(np.array([-40, 40.0]))
+    >>> F2C(_np.array([-40, 40.0]))
     array([-40.        ,   4.44444444])
 
     """
-    return (np.asanyarray(F) - 32) / 1.8
+    return (_np.asanyarray(F) - 32) / 1.8
 
 def C2F(C):
     """
@@ -275,11 +275,11 @@ def C2F(C):
     Examples
     --------
     >>> from scipy.constants.constants import C2F
-    >>> C2F(np.array([-40, 40.0]))
+    >>> C2F(_np.array([-40, 40.0]))
     array([ -40.,  104.])
 
     """
-    return 1.8 * np.asanyarray(C) + 32
+    return 1.8 * _np.asanyarray(C) + 32
 
 def F2K(F):
     """
@@ -304,11 +304,11 @@ def F2K(F):
     Examples
     --------
     >>> from scipy.constants.constants import F2K
-    >>> F2K(np.array([-40, 104]))
+    >>> F2K(_np.array([-40, 104]))
     array([ 233.15,  313.15])
 
     """
-    return C2K(F2C(np.asanyarray(F)))
+    return C2K(F2C(_np.asanyarray(F)))
 
 def K2F(K):
     """
@@ -333,11 +333,11 @@ def K2F(K):
     Examples
     --------
     >>> from scipy.constants.constants import K2F
-    >>> K2F(np.array([233.15,  313.15]))
+    >>> K2F(_np.array([233.15,  313.15]))
     array([ -40.,  104.])
 
     """
-    return C2F(K2C(np.asanyarray(K)))
+    return C2F(K2C(_np.asanyarray(K)))
 
 #optics
 
@@ -363,11 +363,11 @@ def lambda2nu(lambda_):
     Examples
     --------
     >>> from scipy.constants.constants import lambda2nu
-    >>> lambda2nu(np.array((1, speed_of_light)))
+    >>> lambda2nu(_np.array((1, speed_of_light)))
     array([  2.99792458e+08,   1.00000000e+00])
 
     """
-    return np.asanyarray(c) / lambda_
+    return _np.asanyarray(c) / lambda_
 
 def nu2lambda(nu):
     """
@@ -391,9 +391,9 @@ def nu2lambda(nu):
     Examples
     --------
     >>> from scipy.constants.constants import nu2lambda
-    >>> nu2lambda(np.array((1, speed_of_light)))
+    >>> nu2lambda(_np.array((1, speed_of_light)))
     array([  2.99792458e+08,   1.00000000e+00])
 
     """
-    return c / np.asanyarray(nu)
+    return c / _np.asanyarray(nu)
 

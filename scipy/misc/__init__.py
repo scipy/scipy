@@ -1,7 +1,8 @@
 from info import __doc__
 
-__all__ = ['who', 'source', 'info']
+__all__ = ['who', 'source', 'info', 'doccer']
 
+import doccer
 from common import *
 from numpy import who, source, info as _info
 

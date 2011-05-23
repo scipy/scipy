@@ -4,6 +4,9 @@
 import numpy as np
 from scipy.odr.odrpack import Model
 
+__all__ = ['Model', 'exponential', 'multilinear', 'unilinear', 'quadratic',
+           'polynomial']
+
 
 def _lin_fcn(B, x):
     a, b = B[0], B[1:]
@@ -156,5 +159,3 @@ quadratic = Model(_quadratic, fjacd=_quad_fjd, fjacb=_quad_fjb,
                   estimate=_quad_est, meta={'name': 'Quadratic',
                   'equ': 'y = B_0*x**2 + B_1*x + B_2',
                   'TeXequ': '$y = \\beta_0 x^2 + \\beta_1 x + \\beta_2'})
-
-#### EOF #######################################################################

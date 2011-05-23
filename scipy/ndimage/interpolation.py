@@ -33,6 +33,10 @@ import numpy
 import _ni_support
 import _nd_image
 
+__all__ = ['spline_filter1d', 'spline_filter', 'geometric_transform',
+           'map_coordinates', 'affine_transform', 'shift', 'zoom', 'rotate']
+
+
 def _extend_mode_to_code(mode):
     mode = _ni_support._extend_mode_to_code(mode)
     return mode

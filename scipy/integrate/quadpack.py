@@ -1,10 +1,12 @@
 # Author: Travis Oliphant 2001
 
-__all__ = ['quad', 'dblquad', 'tplquad', 'quad_explain', 'Inf','inf']
 import _quadpack
 import sys
 import numpy
 from numpy import inf, Inf
+
+__all__ = ['quad', 'dblquad', 'tplquad', 'quad_explain']
+
 
 error = _quadpack.error
 

@@ -12,6 +12,14 @@ from numpy import mintypecode
 from scipy import special, optimize
 from scipy.misc import comb
 
+__all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
+           'lp2lp', 'lp2hp', 'lp2bp', 'lp2bs', 'bilinear', 'iirdesign',
+           'iirfilter', 'butter', 'cheby1', 'cheby2', 'ellip', 'bessel',
+           'band_stop_obj', 'buttord', 'cheb1ord', 'cheb2ord', 'ellipord',
+           'buttap', 'cheb1ap', 'cheb2ap', 'ellipap', 'besselap',
+           'filter_dict', 'band_dict', 'BadCoefficients']
+
+
 class BadCoefficients(UserWarning):
     pass
 
@@ -1155,12 +1163,12 @@ def cheb2ap(N, rs):
 
 EPSILON = 2e-16
 
-def vratio(u, ineps, mp):
+def _vratio(u, ineps, mp):
     [s,c,d,phi] = special.ellipj(u,mp)
     ret = abs(ineps - s/c)
     return ret
 
-def kratio(m, k_ratio):
+def _kratio(m, k_ratio):
     m = float(m)
     if m < 0:
         m = 0.0
@@ -1205,10 +1213,10 @@ def ellipap(N, rp, rs):
     else:
         krat = N*val[0] / val[1]
 
-    m = optimize.fmin(kratio, [0.5], args=(krat,), maxfun=250, maxiter=250,
+    m = optimize.fmin(_kratio, [0.5], args=(krat,), maxfun=250, maxiter=250,
                       disp=0)
     if m < 0 or m > 1:
-        m = optimize.fminbound(kratio, 0, 1, args=(krat,), maxfun=250,
+        m = optimize.fminbound(_kratio, 0, 1, args=(krat,), maxfun=250,
                                maxiter=250, disp=0)
 
     capk = special.ellipk(m)
@@ -1224,7 +1232,7 @@ def ellipap(N, rp, rs):
     z = 1j*z
     z = numpy.concatenate((z,conjugate(z)))
 
-    r = optimize.fmin(vratio, special.ellipk(m), args=(1./eps, ck1p*ck1p),
+    r = optimize.fmin(_vratio, special.ellipk(m), args=(1./eps, ck1p*ck1p),
                       maxfun=250, maxiter=250, disp=0)
     v0 = capk * r / (N*val[0])
 

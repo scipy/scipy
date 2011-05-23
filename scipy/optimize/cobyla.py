@@ -10,6 +10,10 @@ fmin_coblya(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
 
 import _cobyla
 from numpy import copy
+
+__all__ = ['fmin_cobyla']
+
+
 def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
                 iprint=1, maxfun=1000, disp=None):
     """

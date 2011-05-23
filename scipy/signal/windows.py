@@ -4,6 +4,11 @@ import numpy as np
 from scipy import special, linalg
 from scipy.fftpack import fft
 
+__all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
+           'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
+           'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'chebwin',
+           'slepian', 'get_window']
+
 
 def boxcar(M, sym=True):
     """The M-point boxcar window.

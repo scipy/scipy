@@ -33,6 +33,10 @@ import numpy
 import _ni_support
 import _nd_image
 
+__all__ = ['fourier_gaussian', 'fourier_uniform', 'fourier_ellipsoid',
+           'fourier_shift']
+
+
 def _get_output_fourier(output, input):
     if output is None:
         if input.dtype.type in [numpy.complex64, numpy.complex128,
