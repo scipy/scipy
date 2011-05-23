@@ -1,9 +1,36 @@
 
 import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_raises, \
-        assert_array_almost_equal, assert_
+        assert_almost_equal, assert_array_almost_equal, assert_equal, \
+        assert_
+from scipy.special import sinc
 
-from scipy.signal import firwin, firwin2, kaiserord, freqz, remez
+from scipy.signal import kaiser_beta, kaiser_atten, kaiserord, \
+        firwin, firwin2, freqz, remez
+
+
+def test_kaiser_beta():
+    b = kaiser_beta(58.7)
+    assert_almost_equal(b, 0.1102 * 50.0)
+    b = kaiser_beta(22.0)
+    assert_almost_equal(b, 0.5842 + 0.07886)
+    b = kaiser_beta(21.0)
+    assert_equal(b, 0.0)
+    b = kaiser_beta(10.0)
+    assert_equal(b, 0.0)
+
+
+def test_kaiser_atten():
+    a = kaiser_atten(1, 1.0)
+    assert_equal(a, 7.95)
+    a = kaiser_atten(2, 1/np.pi)
+    assert_equal(a, 2.285 + 7.95)
+
+
+def test_kaiserord():
+    assert_raises(ValueError, kaiserord, 1.0, 1.0)
+    numtaps, beta = kaiserord(2.285 + 7.95 - 0.001, 1/np.pi)
+    assert_equal((numtaps, beta), (2, 0.0))
 
 
 class TestFirwin(TestCase):
@@ -222,10 +249,13 @@ class TestFirwin2(TestCase):
         # Decreasing value in `freq`
         assert_raises(ValueError, firwin2, 50, [0, 0.5, 0.4, 1.0], [0, .25, .5, 1.0])
         # Value in `freq` repeated more than once.
-        assert_raises(ValueError, firwin2, 50, [  0,   .1, .1,   .1, 1.0],
-                                             [0.0, 0.5, 0.75, 1.0, 1.0])
+        assert_raises(ValueError, firwin2, 50, [  0,   .1,   .1,   .1, 1.0],
+                                               [0.0,  0.5, 0.75,  1.0, 1.0])
         # `freq` does not start at 0.0.
         assert_raises(ValueError, firwin2, 50, [0.5, 1.0], [0.0, 1.0])
+
+        # Even number of taps, but the gain at 1 is not zero.
+        assert_raises(ValueError, firwin2, 16, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0])
 
     def test01(self):
         width = 0.04
@@ -270,6 +300,18 @@ class TestFirwin2(TestCase):
         assert_array_almost_equal(np.abs(response),
                     [1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0], decimal=5)
 
+    def test04(self):
+        """Test firwin2 when window=None."""
+        ntaps = 5
+        # Ideal lowpass: gain is 1 on [0,0.5], and 0 on [0.5, 1.0]
+        freq = [0.0, 0.5, 0.5, 1.0]
+        gain = [1.0, 1.0, 0.0, 0.0] 
+        taps = firwin2(ntaps, freq, gain, window=None, nfreqs=8193)
+        alpha = 0.5 * (ntaps - 1)
+        m = np.arange(0, ntaps) - alpha
+        h = 0.5 * sinc(0.5 * m)
+        assert_array_almost_equal(h, taps)
+
     def test_nyq(self):
         taps1 = firwin2(80, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0])
         taps2 = firwin2(80, [0.0, 30.0, 60.0], [1.0, 1.0, 0.0], nyq=60.0)
@@ -277,6 +319,9 @@ class TestFirwin2(TestCase):
 
 
 class TestRemez(TestCase):
+
+    def test_bad_args(self):
+        assert_raises(ValueError, remez, 11, [0.1, 0.4], [1], type='pooka')
 
     def test_hilbert(self):
         N = 11 # number of taps in the filter
