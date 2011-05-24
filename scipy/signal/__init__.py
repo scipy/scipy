@@ -6,6 +6,11 @@ from info import __doc__
 
 import sigtools
 from waveforms import *
+
+# The spline module (a C extension) provides:
+#     cspline2d, qspline2d, sepfir2d, symiirord1, symiirord2
+from spline import *
+
 from bsplines import *
 from filter_design import *
 from fir_filter_design import *
