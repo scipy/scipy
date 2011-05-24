@@ -384,8 +384,8 @@ The signal processing package provides many more filters as well.
 Median Filter
 """""""""""""
 
-A median filter is commonly applied when noise is markedly non-
-Gaussian or when it is desired to preserve edges. The median filter
+A median filter is commonly applied when noise is markedly non-Gaussian
+or when it is desired to preserve edges. The median filter
 works by sorting all of the array pixel values in a rectangular region
 surrounding the point of interest. The sample median of this list of
 neighborhood pixel values is used as the value for the output array.
@@ -429,9 +429,9 @@ Let :math:`x` be the input signal, then the output is
 .. math::
    :nowrap:
 
-    \[ y=\left\{ \begin{array}{cc} \frac{\sigma^{2}}{\sigma_{x}^{2}}m_{x}+\left(1-\frac{\sigma^{2}}{\sigma_{x}^{2}}\right)x & \sigma_{x}^{2}\geq\sigma^{2},\\ m_{x} & \sigma_{x}^{2}<\sigma^{2}.\end{array}\right.\]
+    \[ y=\left\{ \begin{array}{cc} \frac{\sigma^{2}}{\sigma_{x}^{2}}m_{x}+\left(1-\frac{\sigma^{2}}{\sigma_{x}^{2}}\right)x & \sigma_{x}^{2}\geq\sigma^{2},\\ m_{x} & \sigma_{x}^{2}<\sigma^{2},\end{array}\right.\]
 
-Where :math:`m_{x}` is the local estimate of the mean and
+where :math:`m_{x}` is the local estimate of the mean and
 :math:`\sigma_{x}^{2}` is the local estimate of the variance. The
 window for these estimates is an optional input parameter (default is
 :math:`3\times3` ). The parameter :math:`\sigma^{2}` is a threshold
@@ -644,13 +644,13 @@ straightforward implementation.
 Some further reading and related software:
 
 .. [1] N.R. Lomb "Least-squares frequency analysis of unequally spaced
-data", Astrophysics and Space Science, vol 39, pp. 447-462, 1976
+       data", Astrophysics and Space Science, vol 39, pp. 447-462, 1976
 
 .. [2] J.D. Scargle "Studies in astronomical time series analysis. II - 
-Statistical aspects of spectral analysis of unevenly spaced data",
-The Astrophysical Journal, vol 263, pp. 835-853, 1982
+       Statistical aspects of spectral analysis of unevenly spaced data",
+       The Astrophysical Journal, vol 263, pp. 835-853, 1982
 
 .. [3] R.H.D. Townsend, "Fast calculation of the Lomb-Scargle
-periodogram using graphics processing units.", The Astrophysical
-Journal Supplement Series, vol 191, pp. 247-253, 2010
+       periodogram using graphics processing units.", The Astrophysical
+       Journal Supplement Series, vol 191, pp. 247-253, 2010
 
