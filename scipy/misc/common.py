@@ -3,14 +3,41 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 (special, linalg)
 """
 
-from numpy import exp, asarray, arange, newaxis, hstack, product, array, \
+from numpy import exp, log, asarray, arange, newaxis, hstack, product, array, \
                   where, zeros, extract, place, pi, sqrt, eye, poly1d, dot, r_
 
-__all__ = ['factorial','factorial2','factorialk','comb',
+__all__ = ['logsumexp', 'factorial','factorial2','factorialk','comb',
            'central_diff_weights', 'derivative', 'pade', 'lena']
 
 # XXX: the factorial functions could move to scipy.special, and the others
 # to numpy perhaps?
+
+def logsumexp(a):
+    """Compute the log of the sum of exponentials of input elements.
+
+    Parameters
+    ----------
+    a : array_like
+        Input array.
+
+    Returns
+    -------
+    res : ndarray
+        The result, ``np.log(np.sum(np.exp(a)))`` calculated in a numerically
+        more stable way.
+
+    See Also
+    --------
+    numpy.logaddexp, numpy.logaddexp2
+
+    Notes
+    -----
+    Numpy has a logaddexp function which is very similar to `logsumexp`.
+
+    """
+    a = asarray(a)
+    a_max = a.max()
+    return a_max + log((exp(a-a_max)).sum())
 
 def factorial(n,exact=0):
     """

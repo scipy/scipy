@@ -2,6 +2,10 @@
 Routines for fitting maximum entropy models
 ===========================================
 
+.. warning:: This module is deprecated in scipy 0.10, and will be removed in
+             0.11. Do not use this module in your new code. For questions about
+             this deprecation, please ask on the scipy-dev mailing list.
+
 Contains two classes for fitting maximum entropy models (also known
 as "exponential family" models) subject to linear constraints on the
 expectations of arbitrary feature statistics.  One class, "model", is
