@@ -7,7 +7,7 @@ from scipy.fftpack import fft
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
            'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'chebwin',
-           'slepian', 'get_window']
+           'slepian', 'hann', 'get_window']
 
 
 def boxcar(M, sym=True):
