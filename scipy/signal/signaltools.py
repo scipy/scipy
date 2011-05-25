@@ -11,7 +11,7 @@ from numpy import polyadd, polymul, polydiv, polysub, roots, \
         ones, real, real_if_close, zeros, array, arange, where, rank, \
         newaxis, product, ravel, sum, r_, iscomplexobj, take, \
         argsort, allclose, expand_dims, unique, prod, sort, reshape, \
-        transpose, dot, any, mean, flipud, ndarray
+        transpose, dot, mean, flipud, ndarray, atleast_2d
 import numpy as np
 from scipy.misc import factorial
 from windows import get_window
@@ -685,13 +685,13 @@ def hilbert(x, N=None, axis=-1):
 
     """
     x = asarray(x)
+    if iscomplexobj(x):
+        raise ValueError("x must be real.")
     if N is None:
         N = x.shape[axis]
     if N <= 0:
         raise ValueError("N must be positive.")
-    if iscomplexobj(x):
-        print "Warning: imaginary part of x ignored."
-        x = real(x)
+
     Xf = fft(x, N, axis=axis)
     h = zeros(N)
     if N % 2 == 0:
@@ -713,12 +713,11 @@ def hilbert2(x, N=None):
     """
     Compute the '2-D' analytic signal of `x`
 
-
     Parameters
     ----------
     x : array_like
         2-D signal data.
-    N : int, optional
+    N : int or tuple of two ints, optional
         Number of Fourier components. Default is ``x.shape``
 
     Returns
@@ -732,17 +731,21 @@ def hilbert2(x, N=None):
         http://en.wikipedia.org/wiki/Analytic_signal
 
     """
-    x = asarray(x)
-    x = asarray(x)
+    x = atleast_2d(x)
+    if len(x.shape) > 2:
+        raise ValueError("x must be rank 2.")
+    if iscomplexobj(x):
+        raise ValueError("x must be real.")        
     if N is None:
         N = x.shape
-    if len(N) < 2:
+    elif isinstance(N, int):
         if N <= 0:
             raise ValueError("N must be positive.")
         N = (N, N)
-    if iscomplexobj(x):
-        print "Warning: imaginary part of x ignored."
-        x = real(x)
+    elif len(N) != 2 or any(n <= 0 for n in N):
+        raise ValueError("When given as a tuple, N must hold exactly "
+                         "two positive integers")
+
     Xf = fft2(x, N, axes=(0, 1))
     h1 = zeros(N[0], 'd')
     h2 = zeros(N[1], 'd')
@@ -1240,7 +1243,7 @@ def detrend(data, axis=-1, type='linear', bp=0):
         dshape = data.shape
         N = dshape[axis]
         bp = sort(unique(r_[0, bp, N]))
-        if any(bp > N):
+        if np.any(bp > N):
             raise ValueError("Breakpoints must be less than length "
                     "of data along given axis.")
         Nreg = len(bp) - 1

@@ -3,10 +3,11 @@ from decimal import Decimal
 
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_almost_equal, assert_array_equal, assert_array_almost_equal, \
-    assert_, dec
+    assert_raises, assert_, dec
 
 import scipy.signal as signal
-from scipy.signal import lfilter, correlate, convolve, convolve2d, hilbert
+from scipy.signal import lfilter, correlate, convolve, convolve2d, hilbert, \
+     hilbert2
 
 
 from numpy import array, arange
@@ -538,13 +539,21 @@ class TestFiltFilt:
         out = signal.filtfilt([1,2,3], [1,2,3], np.arange(12))
         assert_equal(out, arange(12))
 
+
 class TestDecimate:
     def test_basic(self):
         x = np.arange(6)
         assert_array_equal(signal.decimate(x, 2, n=1).round(), x[::2])
 
 
-class TestHilbert:
+class TestHilbert(object):
+
+    def test_bad_args(self):
+        x = np.array([1.0+0.0j])
+        assert_raises(ValueError, hilbert, x)
+        x = np.arange(8.0)
+        assert_raises(ValueError, hilbert, x, N=0)
+
     def test_hilbert_theoretical(self):
         #test cases by Ariel Rokem
         decimal = 14
@@ -619,6 +628,25 @@ class TestHilbert:
                              8.881784197001253e-17-0.751023775297729j,
                              9.444121133484362e-17-0.79252210110103j ])
         yield assert_almost_equal, aan[0], a0hilb, 14, 'N regression'
+
+
+class TestHilbert2(object):
+
+    def test_bad_args(self):
+
+        # x must be real.
+        x = np.array([[1.0 + 0.0j]])
+        assert_raises(ValueError, hilbert2, x)
+
+        # x must be rank 2.
+        x = np.arange(24).reshape(2, 3, 4)
+        assert_raises(ValueError, hilbert2, x)
+
+        # Bad value for N.
+        x = np.arange(16).reshape(4, 4)
+        assert_raises(ValueError, hilbert2, x, N=0)
+        assert_raises(ValueError, hilbert2, x, N=(2,0))
+        assert_raises(ValueError, hilbert2, x, N=(2,))
 
 
 if __name__ == "__main__":
