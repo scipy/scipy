@@ -43,8 +43,10 @@ class TestArpack(TestCase):
 
     def setUp(self):
         self.symmetric=[]
+        self.generalized_symmetric=[]
         self.nonsymmetric=[]
-
+        
+        #standard symmetric test case A*x = w*x
         S1={}
         S1['mat']=\
         array([[ 2.,  0.,  0., -1.,  0., -1.],
@@ -63,6 +65,32 @@ class TestArpack(TestCase):
 
         S1['eval']=array([0,1,2,2,5,6])
         self.symmetric.append(S1)
+        
+        #generalized symmetric test case A*x = w*M*x
+        GS1={}
+        GS1['mat'] = S1['mat']
+
+        GS1['bmat'] = array([[ 15., -2., -8., -1., -3., -7.],
+                             [ -2., 10., -2.,  0.,  3.,  1.],
+                             [ -8., -2., 20., -6.,  4., -2.],
+                             [ -1.,  0., -6., 12.,  3.,  8.],
+                             [ -3.,  3.,  4.,  3.,  5.,  1.],
+                             [ -7.,  1., -2.,  8.,  1., 14.]])
+
+        GS1['v0']= array([0.39574246391875789,
+                          0.00086496039750016962,
+                          -0.9227205789982591,
+                          -0.9165671495278005,
+                          0.1175963848841306,
+                          -0.29962625203712179])
+
+        GS1['eval'] = array( [0, 
+                              0.075962794805133169,
+                              0.17591368395508336,
+                              0.31668444692674252,   
+                              0.69905548427573028,   
+                              5.7488864874925927] )
+        self.generalized_symmetric.append(GS1)
 
         N1={}
         N1['mat']=\
@@ -85,7 +113,7 @@ class TestArpack(TestCase):
                      4.4596105561765107+3.8007839204319454j,
                      4.4596105561765107-3.8007839204319454j],'D')
         self.nonsymmetric.append(N1)
-
+        
 
 class TestEigenSymmetric(TestArpack):
 
@@ -132,6 +160,70 @@ class TestEigenSymmetric(TestArpack):
             n=A.shape[0]
             v0 = random.rand(n).astype(typ)
             self.eval_evec(self.symmetric[0],typ,k,which='LM',v0=v0)
+
+
+    def test_no_convergence(self):
+        np.random.seed(1234)
+        m = np.random.rand(30, 30)
+        m = m + m.T
+        try:
+            w, v = eigsh(m, 4, which='LM', v0=m[:,0], maxiter=5)
+            raise AssertionError("Spurious no-error exit")
+        except ArpackNoConvergence, err:
+            k = len(err.eigenvalues)
+            if k <= 0:
+                raise AssertionError("Spurious no-eigenvalues-found case")
+            w, v = err.eigenvalues, err.eigenvectors
+            for ww, vv in zip(w, v.T):
+                assert_array_almost_equal(dot(m, vv), ww*vv,
+                                          decimal=_ndigits['d'])
+
+
+class TestEigenGeneralSymmetric(TestArpack):
+    def get_exact_eval(self,d,typ,k,which):
+        eval=d['eval'].astype(typ)
+        ind=argsort(eval)
+        eval=eval[ind]
+        if which=='LM':
+            return eval[-k:]
+        if which=='SM':
+            return eval[:k]
+        if which=='BE':
+            # one ev from each end - if k is odd, extra ev on high end
+            l=k//2
+            h=k//2+k%2
+            low=range(len(eval))[:l]
+            high=range(len(eval))[-h:]
+            return eval[low+high]
+
+    def eval_evec(self,d,typ,k,which,v0=None):
+        a=d['mat'].astype(typ)
+        b=d['bmat'].astype(typ)
+        if v0 == None:
+            v0 = d['v0']
+        exact_eval=self.get_exact_eval(d,typ,k,which)
+        eval,evec=eigsh(a,k,b,which=which,v0=v0)
+        # check eigenvalues
+        assert_array_almost_equal(eval,exact_eval,decimal=_ndigits[typ])
+        # check eigenvectors A*evec=eval*evec
+        for i in range(k):
+            assert_array_almost_equal(dot(a,evec[:,i]),
+                                      eval[i]*dot(b,evec[:,i]),
+                                      decimal=_ndigits[typ])
+
+    def test_symmetric_modes(self):
+        k=2
+        for typ in 'fd':
+            for which in ['LM','SM','BE']:
+                self.eval_evec(self.generalized_symmetric[0],typ,k,which)
+
+    def test_starting_vector(self):
+        k=2
+        for typ in 'fd':
+            A=self.symmetric[0]['mat']
+            n=A.shape[0]
+            v0 = random.rand(n).astype(typ)
+            self.eval_evec(self.generalized_symmetric[0],typ,k,which='LM',v0=v0)
 
 
     def test_no_convergence(self):

@@ -45,6 +45,7 @@ import _arpack
 import numpy as np
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
 from scipy.sparse import csc_matrix, csr_matrix, isspmatrix
+from scipy.linalg import lu_factor, lu_solve
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 _ndigits = {'f':5, 'd':12, 'F':5, 'D':12}
@@ -169,7 +170,7 @@ class ArpackNoConvergence(ArpackError):
         self.eigenvectors = eigenvectors
 
 class _ArpackParams(object):
-    def __init__(self, n, k, tp, matvec, sigma=None,
+    def __init__(self, n, k, tp, mode=1, sigma=None,
                  ncv=None, v0=None, maxiter=None, which="LM", tol=0):
         if k <= 0:
             raise ValueError("k must be positive, k=%d" % k)
@@ -201,15 +202,14 @@ class _ArpackParams(object):
         self.iparam = np.zeros(11, "int")
 
         # set solver mode and parameters
-        # only supported mode is 1: Ax=lx
         ishfts = 1
-        mode1 = 1
+        self.mode = mode
         self.iparam[0] = ishfts
         self.iparam[2] = maxiter
-        self.iparam[6] = mode1
+        self.iparam[3] = 1
+        self.iparam[6] = mode
 
         self.n = n
-        self.matvec = matvec
         self.tol = tol
         self.k = k
         self.maxiter = maxiter
@@ -217,7 +217,7 @@ class _ArpackParams(object):
         self.which = which
         self.tp = tp
         self.info = info
-        self.bmat = 'I'
+        self.bmat = 'I' if (self.mode==1) else 'G'
 
         self.converged = False
         self.ido = 0
@@ -236,15 +236,78 @@ class _ArpackParams(object):
         raise ArpackNoConvergence(msg % (num_iter, k_ok, self.k), ev, vec)
 
 class _SymmetricArpackParams(_ArpackParams):
-    def __init__(self, n, k, tp, matvec, sigma=None,
+    def __init__(self, n, k, tp, matvec, mode=1, M_matvec=None,
+                 Minv_matvec=None, sigma=None,
                  ncv=None, v0=None, maxiter=None, which="LM", tol=0):
+        # The following modes are supported:
+        #  mode = 1:
+        #    Solve the standard eigenvalue problem:
+        #      A*x = lambda*x : 
+        #       A - symmetric
+        #    Arguments should be   
+        #       matvec      = left multiplication by A
+        #       M_matvec    = None [not used]
+        #       Minv_matvec = None [not used]
+        #
+        #  mode = 2:
+        #    Solve the general eigenvalue problem:
+        #      A*x = lambda*M*x
+        #       A - symmetric
+        #       M - symmetric, positive definite
+        #    Arguments should be
+        #       matvec      = left multiplication by A
+        #       M_matvec    = left multiplication by M
+        #       Minv_matvec = left multiplication by M^-1
+        #
+        #  mode = 3:
+        #    Solve the general eigenvalue problem in shift-invert mode:
+        #      A*x = lambda*M*x
+        #       A - symmetric
+        #       M - symmetric, positive semi-definite
+        #    Arguments should be
+        #       matvec      = None [not used]
+        #       M_matvec    = left multiplication by M
+        #       Minv_matvec = left multiplication by [A-sigma*M]^-1
+        
+        if mode==1:
+            assert matvec is not None
+            assert M_matvec is None
+            assert Minv_matvec is None
+
+            self.OP   = matvec
+            self.B    = lambda x: x
+            self.bmat = 'I'
+
+        elif mode==2:
+            assert matvec is not None
+            assert M_matvec is not None
+            assert Minv_matvec is not None
+            
+            self.OP   = lambda x: Minv_matvec(matvec(x))
+            self.OPa  = Minv_matvec
+            self.OPb  = matvec
+            self.B    = M_matvec
+            self.bmat = 'G'
+
+        elif mode==3:
+            assert matvec is None
+            assert M_matvec is not None
+            assert Minv_matvec is not None
+
+            self.OP   = lambda x: Minv_matvec(M_matvec(x))
+            self.OPa  = Minv_matvec
+            self.B    = M_matvec
+            self.bmat = 'G'
+        else:
+            raise ValueError("mode=%i not implemented" % mode)
+        
         if which not in _SEUPD_WHICH:
             raise ValueError("which must be one of %s" % ' '.join(_SEUPD_WHICH))
         if k >= n:
             raise ValueError("k must be less than rank(A), k=%d" % k)
 
-        _ArpackParams.__init__(self, n, k, tp, matvec, sigma,
-                 ncv, v0, maxiter, which, tol)
+        _ArpackParams.__init__(self, n, k, tp, mode, sigma,
+                               ncv, v0, maxiter, which, tol)
 
         if self.ncv > n or self.ncv <= k:
             raise ValueError("ncv must be k<ncv<=n, ncv=%s" % self.ncv)
@@ -270,10 +333,21 @@ class _SymmetricArpackParams(_ArpackParams):
         yslice = slice(self.ipntr[1]-1, self.ipntr[1]-1+self.n)
         if self.ido == -1:
             # initialization
-            self.workd[yslice] = self.matvec(self.workd[xslice])
+            self.workd[yslice] = self.OP(self.workd[xslice])
         elif self.ido == 1:
-            # compute y=Ax
-            self.workd[yslice] = self.matvec(self.workd[xslice])
+            # compute y = Op*x
+            if self.mode==1:
+                self.workd[yslice] = self.OP(self.workd[xslice])
+            elif self.mode==2:
+                self.workd[xslice] = self.OPb(self.workd[xslice])
+                self.workd[yslice] = self.OPa(self.workd[xslice])
+            else:
+                Bxslice = slice(self.ipntr[2]-1, self.ipntr[2]-1+n)
+                self.workd[yslice] = self.OPa(self.workd[Bxslice])
+        elif self.ido == 2:
+            self.workd[yslice] = self.B(self.workd[xslice])
+        elif self.ido == 3:
+            raise ValueError("ARPACK requested user shifts.  Assure ISHIFT==0")
         else:
             self.converged = True
 
@@ -309,15 +383,27 @@ class _SymmetricArpackParams(_ArpackParams):
             return d
 
 class _UnsymmetricArpackParams(_ArpackParams):
-    def __init__(self, n, k, tp, matvec, sigma=None,
+    def __init__(self, n, k, tp, matvec, mode=1, M_matvec=None, 
+                 Minv_matvec=None, sigma=None,
                  ncv=None, v0=None, maxiter=None, which="LM", tol=0):
+        # The following modes are supported:
+        #  mode = 1:
+        #    Solve the standard eigenvalue problem:
+        #      A*x = lambda*x
+        #    Arguments should be   
+        #       matvec      = left multiplication by A
+        #       M_matvec    = None [not used]
+        #       Minv_matvec = None [not used]
+        if mode not in (1,):
+            raise ValueError("mode=%i not implemented" % mode)
         if which not in _NEUPD_WHICH:
             raise ValueError("Parameter which must be one of %s" % ' '.join(_NEUPD_WHICH))
         if k >= n-1:
             raise ValueError("k must be less than rank(A)-1, k=%d" % k)
 
-        _ArpackParams.__init__(self, n, k, tp, matvec, sigma,
-                 ncv, v0, maxiter, which, tol)
+        _ArpackParams.__init__(self, n, k, tp, mode, sigma,
+                               ncv, v0, maxiter, which, tol)
+        self.matvec = matvec
 
         if self.ncv > n or self.ncv <= k+1:
             raise ValueError("ncv must be k+1<ncv<=n, ncv=%s" % self.ncv)
@@ -339,9 +425,10 @@ class _UnsymmetricArpackParams(_ArpackParams):
     def iterate(self):
         if self.tp in 'fd':
             self.ido, self.resid, self.v, self.iparam, self.ipntr, self.info = \
-                self._arpack_solver(self.ido, self.bmat, self.which, self.k, self.tol,
-                        self.resid, self.v, self.iparam, self.ipntr,
-                        self.workd, self.workl, self.info)
+                self._arpack_solver(self.ido, self.bmat, self.which, self.k, 
+                                    self.tol, self.resid, self.v, self.iparam, 
+                                    self.ipntr,  self.workd, self.workl, 
+                                    self.info)
         else:
             self.ido, self.resid, self.v, self.iparam, self.ipntr, self.info =\
                 self._arpack_solver(self.ido, self.bmat, self.which, self.k, self.tol,
@@ -465,6 +552,18 @@ def _aslinearoperator_with_dtype(m):
         m.dtype = (m*x).dtype
     return m
 
+class _eigs_Minv(object):
+    """
+    _eigs_Minv:
+       helper class to repeatedly solve M*x=b
+       using an LU-decomposition of M
+    """
+    def __init__(self,M):
+        self.M_lu = lu_factor(M)
+    def __call__(self,x):
+        return lu_solve(self.M_lu,x)
+
+
 def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
          ncv=None, maxiter=None, tol=0,
          return_eigenvectors=True):
@@ -568,8 +667,14 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     n = A.shape[0]
 
     matvec = lambda x : A.matvec(x)
-    params = _UnsymmetricArpackParams(n, k, A.dtype.char, matvec, sigma,
-                           ncv, v0, maxiter, which, tol)
+    
+    mode = 1
+    M_matvec = None
+    Minv_matvec = None
+
+    params = _UnsymmetricArpackParams(n, k, A.dtype.char, matvec, mode,
+                                      M_matvec, Minv_matvec, sigma,
+                                      ncv, v0, maxiter, which, tol)
 
     if M is not None:
         raise NotImplementedError("generalized eigenproblem not supported yet")
@@ -580,7 +685,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     return params.extract(return_eigenvectors)
 
 def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
-          ncv=None, maxiter=None, tol=0,
+          ncv=None, maxiter=None, tol=0, Minv=None,
           return_eigenvectors=True):
     """
     Find k eigenvalues and eigenvectors of the real symmetric square matrix A.
@@ -608,9 +713,11 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     Other Parameters
     ----------------
     M : matrix or array
-        (Not implemented)
         A symmetric positive-definite matrix for the generalized
-        eigenvalue problem A * x = w * M * x
+        eigenvalue problem A * x = w * M * x.  eigsh internally
+        computes the LU decomposition of M for repeated solutions 
+        of M*x = b.  Alternatively, the user can supply the function
+        Minv, which returns x given b
     sigma : real
         (Not implemented)
         Find eigenvalues near sigma.  Shift spectrum by sigma.
@@ -635,11 +742,13 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         The default value of 0 implies machine precision.
     return_eigenvectors : boolean
         Return eigenvectors (True) in addition to eigenvalues
+    Minv : function
+        See notes in M, above
 
     Raises
     ------
     ArpackNoConvergence
-        When the requested convergence is obtained.
+        When the requested convergence is not obtained.
 
         The currently converged eigenvalues and eigenvectors can be found
         as ``eigenvalues`` and ``eigenvectors`` attributes of the exception
@@ -676,12 +785,22 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         raise ValueError('expected square matrix (shape=%s)' % (A.shape,))
     n = A.shape[0]
 
-    if M is not None:
-        raise NotImplementedError("generalized eigenproblem not supported yet")
+    if M is None:
+        mode        = 1
+        matvec      = lambda x: A.matvec(x)
+        M_matvec    = None
+        Minv_matvec = None
+        if Minv is not None:
+            print "Warning: eigsh: user supplied Minv but not M.  Ignoring it"
+    else:
+        mode        = 2
+        matvec      = lambda x: A.matvec(x)
+        M_matvec    = lambda x: np.dot(M,x)
+        Minv_matvec = _eigs_Minv(M) if Minv is None else Minv
 
-    matvec = lambda x : A.matvec(x)
-    params = _SymmetricArpackParams(n, k, A.dtype.char, matvec, sigma,
-                           ncv, v0, maxiter, which, tol)
+    params = _SymmetricArpackParams(n, k, A.dtype.char, matvec, mode,
+                                    M_matvec, Minv_matvec, sigma,
+                                    ncv, v0, maxiter, which, tol)
 
     while not params.converged:
         params.iterate()
