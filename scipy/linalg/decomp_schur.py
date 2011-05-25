@@ -36,10 +36,16 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None):
         Work array size. If None or -1, it is automatically computed.
     overwrite_a : boolean
         Whether to overwrite data in a (may improve performance)
-    sort : {None, 'lhp', 'rhp'}
-        Specifies whether the upper eigenvalues should be sorted into the 
-        left-hand plane ('lhp') or right-hand plane ('rhp').  Defaults to None 
-        (no sorting).
+    sort : {None, callable, 'lhp', 'rhp', 'iuc', 'ouc'}
+        Specifies whether the upper eigenvalues should be sorted.  A callable
+        may be passed that, given a eigenvalue, returns a boolean denoting
+        whether the eigenvalue should be sorted to the top-left (True).
+        Alternatively, string parameters may be used:
+            'lhp'   Left-hand plane (x.real < 0.0)
+            'rhp'   Right-hand plane (x.real > 0.0)
+            'iuc'   Inside the unit circle (x*x.conjugate() <= 1.0)
+            'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
+        Defaults to None (no sorting).
 
     Returns
     -------
@@ -77,19 +83,33 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None):
     if sort is None:
         sort_t = 0
         sfunction = lambda x: None
-    elif sort == 'lhp':
+    else:
         sort_t = 1
-        sfunction = lambda x: (x.real < 0.0)
-    elif sort == 'rhp':
-        sort_t = 1
-        sfunction = lambda x: (x.real > 0.0)
-    
-    result = gees(sfunction, a1, lwork=lwork, overwrite_a=overwrite_a, sort_t=sort_t)
+        if callable(sort):
+            sfunction = sort
+        elif sort == 'lhp':
+            sfunction = lambda x: (x.real < 0.0)
+        elif sort == 'rhp':
+            sfunction = lambda x: (x.real >= 0.0)
+        elif sort == 'iuc':
+            sfunction = lambda x: (abs(x*x.conjugate()) <= 1.0)
+        elif sort == 'ouc':
+            sfunction = lambda x: (abs(x*x.conjugate()) > 1.0)
+        else:
+            raise ValueError("sort parameter must be None, a callable, or " +
+                "one of ('lhp','rhp','iuc','ouc')")
+        
+    result = gees(sfunction, a1, lwork=lwork, overwrite_a=overwrite_a, 
+        sort_t=sort_t)
     
     info = result[-1]
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal gees'
                                                                     % -info)
+    elif info == a1.shape[0] + 1:
+        raise LinAlgError('Eigenvalues could not be separated for reordering.')
+    elif info == a1.shape[0] + 2:
+        raise LinAlgError('Leading eigenvalues do not satisfy sort condition.')
     elif info > 0:
         raise LinAlgError("Schur form not found.  Possibly ill-conditioned.")
     return result[0], result[-3]
