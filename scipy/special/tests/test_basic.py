@@ -997,10 +997,23 @@ class TestGamma(TestCase):
         gama = special.gammainc(.5,.5)
         assert_almost_equal(gama,.7,1)
 
+    def test_gammaincnan(self):
+        gama = special.gammainc(-1,1)
+        assert_(isnan(gama))
+
+    def test_gammainczero(self):
+        # bad arg but zero integration limit
+        gama = special.gammainc(-1,0) 
+        assert_equal(gama,0.0)
+
     def test_gammaincc(self):
         gicc = special.gammaincc(.5,.5)
         greal = 1 - special.gammainc(.5,.5)
         assert_almost_equal(gicc,greal,8)
+
+    def test_gammainccnan(self):
+        gama = special.gammaincc(-1,1)
+        assert_(isnan(gama))
 
     def test_gammainccinv(self):
         gccinv = special.gammainccinv(.5,.5)
