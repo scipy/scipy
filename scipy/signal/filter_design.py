@@ -175,10 +175,10 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
         lastpoint = pi
     if worN is None:
         N = 512
-        w = numpy.arange(0,lastpoint,lastpoint/N)
+        w = numpy.linspace(0, lastpoint, N, endpoint=False)
     elif isinstance(worN, types.IntType):
         N = worN
-        w = numpy.arange(0,lastpoint,lastpoint/N)
+        w = numpy.linspace(0, lastpoint, N, endpoint=False)
     else:
         w = worN
     w = atleast_1d(w)
