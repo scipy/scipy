@@ -55,6 +55,18 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None):
         An unitary Schur transformation matrix for A.
         It is real-valued for the real Schur decomposition.
 
+    Raises
+    ------
+    LinAlgError
+        Error raised under three conditions:
+        1. The algorithm failed due to a failure of the QR algorithm to 
+           compute all eigenvalues
+        2. If eigenvalue sorting was requested, the eigenvalues could not be
+           reordered due to a failure to separate eigenvalues, usually because
+           of poor conditioning
+        3. If eigenvalue sorting was requested, roundoff errors caused the
+           leading eigenvalues to satisfy the sorting condition
+
     See also
     --------
     rsf2csf : Convert real Schur form to complex Schur form
