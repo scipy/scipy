@@ -66,7 +66,7 @@ def freqs(b, a, worN=None, plot=None):
     plot : callable
         A callable that takes two arguments. If given, the return parameters
         `w` and `h` are passed to plot. Useful for plotting the frequency
-        response inside `freqz`.
+        response inside `freqs`.
 
     Returns
     -------
@@ -125,7 +125,7 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
         Otherwise, compute the response at frequencies given in worN
     whole : bool, optional
         Normally, frequencies are computed from 0 to pi (upper-half of
-        unit-circle.  If whole is False, compute frequencies from 0 to 2*pi.
+        unit-circle.  If whole is True, compute frequencies from 0 to 2*pi.
     plot : callable
         A callable that takes two arguments. If given, the return parameters
         `w` and `h` are passed to plot. Useful for plotting the frequency
@@ -175,10 +175,10 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
         lastpoint = pi
     if worN is None:
         N = 512
-        w = numpy.arange(0,lastpoint,lastpoint/N)
+        w = numpy.linspace(0, lastpoint, N, endpoint=False)
     elif isinstance(worN, types.IntType):
         N = worN
-        w = numpy.arange(0,lastpoint,lastpoint/N)
+        w = numpy.linspace(0, lastpoint, N, endpoint=False)
     else:
         w = worN
     w = atleast_1d(w)

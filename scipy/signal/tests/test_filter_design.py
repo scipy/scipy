@@ -2,9 +2,10 @@ import warnings
 
 import numpy as np
 from numpy.testing import TestCase, assert_array_almost_equal, \
-        assert_array_equal, assert_raises, assert_
+        assert_array_equal, assert_raises, assert_equal, assert_, \
+        run_module_suite
 
-from scipy.signal import tf2zpk, zpk2tf, bessel, BadCoefficients
+from scipy.signal import tf2zpk, zpk2tf, BadCoefficients, freqz
 
 
 class TestTf2zpk(TestCase):
@@ -52,3 +53,39 @@ class TestZpk2Tf(TestCase):
         assert_(isinstance(b, np.ndarray))
         assert_array_equal(a, a_r)
         assert_(isinstance(a, np.ndarray))
+
+
+class TestFreqz(TestCase):
+
+    def test_ticket1441(self):
+        """Regression test for ticket 1441."""
+        # Because freqz previously used arange instead of linspace,
+        # when N was large, it would return one more point than
+        # requested.
+        N = 100000
+        w, h = freqz([1.0], worN=N)
+        assert_equal(w.shape, (N,))
+
+    def test_basic(self):
+        w, h = freqz([1.0], worN=8)
+        assert_array_almost_equal(w, np.pi * np.arange(8.0) / 8)
+        assert_array_almost_equal(h, np.ones(8))
+
+    def test_basic_whole(self):
+        w, h = freqz([1.0], worN=8, whole=True)
+        assert_array_almost_equal(w, 2 * np.pi * np.arange(8.0) / 8)
+        assert_array_almost_equal(h, np.ones(8))
+
+    def test_plot(self):
+
+        def plot(w, h):
+            assert_array_almost_equal(w, np.pi * np.arange(8.0) / 8)
+            assert_array_almost_equal(h, np.ones(8))
+
+        assert_raises(ZeroDivisionError,
+                      freqz, [1.0], worN=8, plot=lambda w, h: 1 / 0)
+        freqz([1.0], worN=8, plot=plot)
+
+
+if __name__ == "__main__":
+    run_module_suite()
