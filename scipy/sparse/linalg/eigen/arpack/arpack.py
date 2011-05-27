@@ -217,7 +217,6 @@ class _ArpackParams(object):
         self.which = which
         self.tp = tp
         self.info = info
-        self.bmat = 'I' if (self.mode==1) else 'G'
 
         self.converged = False
         self.ido = 0
@@ -270,6 +269,13 @@ class _SymmetricArpackParams(_ArpackParams):
         #       Minv_matvec = left multiplication by [A-sigma*M]^-1
         
         if mode==1:
+            if matvec is None:
+                raise ValueError("matvec must be specified for mode=1")
+            if M_matvec is not None:
+                raise ValueError("M_matvec cannot be specified for mode=1")
+            if Minv_matvec is not None:
+                raise ValueError("Minv_matvec cannot be specified for mode=1")
+                
             assert matvec is not None
             assert M_matvec is None
             assert Minv_matvec is None
@@ -279,9 +285,12 @@ class _SymmetricArpackParams(_ArpackParams):
             self.bmat = 'I'
 
         elif mode==2:
-            assert matvec is not None
-            assert M_matvec is not None
-            assert Minv_matvec is not None
+            if matvec is None:
+                raise ValueError("matvec must be specified for mode=2")
+            if M_matvec is None:
+                raise ValueError("M_matvec must be specified for mode=2")
+            if Minv_matvec is None:
+                raise ValueError("Minv_matvec must be specified for mode=2")
             
             self.OP   = lambda x: Minv_matvec(matvec(x))
             self.OPa  = Minv_matvec
@@ -290,9 +299,12 @@ class _SymmetricArpackParams(_ArpackParams):
             self.bmat = 'G'
 
         elif mode==3:
-            assert matvec is None
-            assert M_matvec is not None
-            assert Minv_matvec is not None
+            if matvec is not None:
+                raise ValueError("matvec must not be specified for mode=3")
+            if M_matvec is None:
+                raise ValueError("M_matvec must be specified for mode=3")
+            if Minv_matvec is None:
+                raise ValueError("Minv_matvec must be specified for mode=3")
 
             self.OP   = lambda x: Minv_matvec(M_matvec(x))
             self.OPa  = Minv_matvec
@@ -394,7 +406,37 @@ class _UnsymmetricArpackParams(_ArpackParams):
         #       matvec      = left multiplication by A
         #       M_matvec    = None [not used]
         #       Minv_matvec = None [not used]
-        if mode not in (1,):
+        if mode==1:
+            if matvec is None:
+                raise ValueError("matvec must be specified for mode=1")
+            if M_matvec is not None:
+                raise ValueError("M_matvec cannot be specified for mode=1")
+            if Minv_matvec is not None:
+                raise ValueError("Minv_matvec cannot be specified for mode=1")
+                
+            assert matvec is not None
+            assert M_matvec is None
+            assert Minv_matvec is None
+
+            self.OP   = matvec
+            self.B    = lambda x: x
+            self.bmat = 'I'
+
+        elif mode==2:
+            if matvec is None:
+                raise ValueError("matvec must be specified for mode=2")
+            if M_matvec is None:
+                raise ValueError("M_matvec must be specified for mode=2")
+            if Minv_matvec is None:
+                raise ValueError("Minv_matvec must be specified for mode=2")
+            
+            self.OP   = lambda x: Minv_matvec(matvec(x))
+            self.OPa  = Minv_matvec
+            self.OPb  = matvec
+            self.B    = M_matvec
+            self.bmat = 'G'
+        
+        else:
             raise ValueError("mode=%i not implemented" % mode)
         if which not in _NEUPD_WHICH:
             raise ValueError("Parameter which must be one of %s" % ' '.join(_NEUPD_WHICH))
@@ -438,11 +480,22 @@ class _UnsymmetricArpackParams(_ArpackParams):
         xslice = slice(self.ipntr[0]-1, self.ipntr[0]-1+self.n)
         yslice = slice(self.ipntr[1]-1, self.ipntr[1]-1+self.n)
         if self.ido == -1:
-            # initialization
-            self.workd[yslice] = self.matvec(self.workd[xslice])
+            # initialization2
+            self.workd[yslice] = self.OP(self.workd[xslice])
         elif self.ido == 1:
-            # compute y=Ax
-            self.workd[yslice] = self.matvec(self.workd[xslice])
+            # compute y = Op*x
+            if self.mode in (1,2):
+                self.workd[yslice] = self.OP(self.workd[xslice])
+            #elif self.mode==2:
+            #    self.workd[xslice] = self.OPb(self.workd[xslice])
+            #    self.workd[yslice] = self.OPa(self.workd[xslice])
+            else:
+                Bxslice = slice(self.ipntr[2]-1, self.ipntr[2]-1+n)
+                self.workd[yslice] = self.OPa(self.workd[Bxslice])
+        elif self.ido == 2:
+            self.workd[yslice] = self.B(self.workd[xslice])
+        elif self.ido == 3:
+            raise ValueError("ARPACK requested user shifts.  Assure ISHIFT==0")
         else:
             self.converged = True
 
@@ -552,26 +605,32 @@ def _aslinearoperator_with_dtype(m):
         m.dtype = (m*x).dtype
     return m
 
-class _eigs_Minv(object):
+
+class LU_inv(LinearOperator):
     """
-    _eigs_Minv:
+    LU_inv:
        helper class to repeatedly solve M*x=b
        using an LU-decomposition of M
     """
     def __init__(self,M):
         self.M_lu = lu_factor(M)
-    def __call__(self,x):
+        LinearOperator.__init__(self, M.shape, self._matvec)
+    def _matvec(self,x):
         return lu_solve(self.M_lu,x)
 
 
 def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
-         ncv=None, maxiter=None, tol=0,
+         ncv=None, maxiter=None, tol=0, Minv=None,
          return_eigenvectors=True):
     """
     Find k eigenvalues and eigenvectors of the square matrix A.
 
     Solves ``A * x[i] = w[i] * x[i]``, the standard eigenvalue problem
     for w[i] eigenvalues with corresponding eigenvectors x[i].
+
+    If M is specified, solves ``A * x[i] = w[i] * M * x[i]``, the 
+    generalized eigenvalue problem for w[i] eigenvalues 
+    with corresponding eigenvectors x[i]
 
     Parameters
     ----------
@@ -595,9 +654,11 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     Other Parameters
     ----------------
     M : matrix or array
-        (Not implemented)
         A symmetric positive-definite matrix for the generalized
-        eigenvalue problem ``A * x = w * M * x``.
+        eigenvalue problem ``A * x = w * M * x``.  
+        eigsh internally computes the LU decomposition of M for repeated 
+        solutions of M*x = b.  Alternatively, the user can supply the 
+        function Minv, which returns x given b
     sigma : real or complex
         (Not implemented)
         Find eigenvalues near sigma.  Shift spectrum by sigma.
@@ -623,6 +684,8 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         The default value of 0 implies machine precision.
     return_eigenvectors : boolean
         Return eigenvectors (True) in addition to eigenvalues
+    Minv : function
+        See notes in M, above
 
     Raises
     ------
@@ -667,17 +730,26 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     n = A.shape[0]
 
     matvec = lambda x : A.matvec(x)
-    
-    mode = 1
-    M_matvec = None
-    Minv_matvec = None
+
+    if M is None:
+        mode = 1
+        matvec = A.matvec
+        M_matvec = None
+        Minv_matvec = None
+        if Minv is not None:
+            print "Warning: eigsh: user supplied Minv but not M.  Ignoring it"
+    else:
+        mode = 2
+        matvec = A.matvec
+        M_matvec    = lambda x: np.dot(M,x)
+        if Minv is None:
+            Minv_matvec = LU_inv(M).matvec 
+        else: 
+            Minv_matvec = Minv
 
     params = _UnsymmetricArpackParams(n, k, A.dtype.char, matvec, mode,
                                       M_matvec, Minv_matvec, sigma,
                                       ncv, v0, maxiter, which, tol)
-
-    if M is not None:
-        raise NotImplementedError("generalized eigenproblem not supported yet")
 
     while not params.converged:
         params.iterate()
@@ -690,8 +762,12 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     """
     Find k eigenvalues and eigenvectors of the real symmetric square matrix A.
 
-    Solves A * x[i] = w[i] * x[i], the standard eigenvalue problem for
+    Solves ``A * x[i] = w[i] * x[i]``, the standard eigenvalue problem for
     w[i] eigenvalues with corresponding eigenvectors x[i].
+
+    If M is specified, solves ``A * x[i] = w[i] * M * x[i]``, the 
+    generalized eigenvalue problem for w[i] eigenvalues 
+    with corresponding eigenvectors x[i]
 
     Parameters
     ----------
@@ -714,10 +790,10 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     ----------------
     M : matrix or array
         A symmetric positive-definite matrix for the generalized
-        eigenvalue problem A * x = w * M * x.  eigsh internally
-        computes the LU decomposition of M for repeated solutions 
-        of M*x = b.  Alternatively, the user can supply the function
-        Minv, which returns x given b
+        eigenvalue problem ``A * x = w * M * x``.  
+        eigsh internally computes the LU decomposition of M for repeated 
+        solutions of M*x = b.  Alternatively, the user can supply the 
+        function Minv, which returns x given b
     sigma : real
         (Not implemented)
         Find eigenvalues near sigma.  Shift spectrum by sigma.
@@ -787,7 +863,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     if M is None:
         mode        = 1
-        matvec      = lambda x: A.matvec(x)
+        matvec      = A.matvec
         M_matvec    = None
         Minv_matvec = None
         if Minv is not None:
@@ -796,7 +872,10 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         mode        = 2
         matvec      = lambda x: A.matvec(x)
         M_matvec    = lambda x: np.dot(M,x)
-        Minv_matvec = _eigs_Minv(M) if Minv is None else Minv
+        if Minv is None:
+            Minv_matvec = LU_inv(M).matvec 
+        else: 
+            Minv_matvec = Minv
 
     params = _SymmetricArpackParams(n, k, A.dtype.char, matvec, mode,
                                     M_matvec, Minv_matvec, sigma,

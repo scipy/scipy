@@ -45,6 +45,7 @@ class TestArpack(TestCase):
         self.symmetric=[]
         self.generalized_symmetric=[]
         self.nonsymmetric=[]
+        self.generalized_nonsymmetric=[]
         
         #standard symmetric test case A*x = w*x
         S1={}
@@ -66,7 +67,7 @@ class TestArpack(TestCase):
         S1['eval']=array([0,1,2,2,5,6])
         self.symmetric.append(S1)
         
-        #generalized symmetric test case A*x = w*M*x
+        #generalized symmetric test case A*x = w*B*x
         GS1={}
         GS1['mat'] = S1['mat']
 
@@ -92,6 +93,7 @@ class TestArpack(TestCase):
                               5.7488864874925927] )
         self.generalized_symmetric.append(GS1)
 
+        #standard nonsymmetric test case A*x = w*x
         N1={}
         N1['mat']=\
             array([[-2., -8.,  1.,  2., -5.],
@@ -113,6 +115,35 @@ class TestArpack(TestCase):
                      4.4596105561765107+3.8007839204319454j,
                      4.4596105561765107-3.8007839204319454j],'D')
         self.nonsymmetric.append(N1)
+
+        #general nonsymmetric test case A*x = w*B*x
+        GN1={}
+        GN1['mat'] =  array([[-2., -8.,  1.,  2., -5.],
+                             [ 6.,  6.,  0.,  2.,  1.],
+                             [ 0.,  4., -2., 11.,  0.],
+                             [ 1.,  6.,  1.,  0., -4.],
+                             [ 2., -6.,  4.,  9., -3.]])
+
+        GN1['bmat'] = array([[ 3.,  1., -1.,  1.,  0.],
+                             [ 1., 11., -1.,  8.,  4.],
+                             [-1., -1.,  5., -2.,  1.],
+                             [ 1.,  8., -2.,  8.,  3.],
+                             [ 0.,  4.,  1.,  3.,  3.]])
+        
+        GN1['v0'] = array([0.39574246391875789,
+                           0.00086496039750016962,
+                           -0.9227205789982591,
+                           -0.9165671495278005,
+                           0.1175963848841306])
+
+        GN1['eval'] = array([-1.3679863347125234+7.1308076390812118j,
+                              -1.3679863347125234-7.1308076390812118j,
+                              0.3250391033748413+0.811851223838731j,
+                              0.3250391033748413-0.811851223838731j,
+                              -1.2739671290201331+0.j])
+
+        self.generalized_nonsymmetric.append(GN1)
+
         
 
 class TestEigenSymmetric(TestArpack):
@@ -352,10 +383,11 @@ class TestEigenNonSymmetric(TestArpack):
     def test_starting_vector(self):
         k=2
         for typ in 'fd':
-            A=self.symmetric[0]['mat']
+            A=self.nonsymmetric[0]['mat']
             n=A.shape[0]
             v0 = random.rand(n).astype(typ)
-            self.eval_evec(self.symmetric[0],typ,k,which='LM',v0=v0)
+            self.eval_evec(self.nonsymmetric[0],
+                           typ,k,which='LM',v0=v0)
 
     def test_no_convergence(self):
         np.random.seed(1234)
@@ -371,6 +403,83 @@ class TestEigenNonSymmetric(TestArpack):
             for ww, vv in zip(w, v.T):
                 assert_array_almost_equal(dot(m, vv), ww*vv,
                                           decimal=_ndigits['d'])
+
+
+class TestEigenGeneralNonSymmetric(TestArpack):
+
+
+    def sort_choose(self,eval,typ,k,which):
+        reval=round(eval,decimals=_ndigits[typ])
+        if which in ['LR','SR']:
+            ind=argsort(reval.real)
+        elif which in ['LI','SI']:
+            # for LI,SI ARPACK returns largest,smallest abs(imaginary) why?
+            ind=argsort(abs(reval.imag))
+        else:
+            ind=argsort(abs(reval))
+
+        if which in ['LR','LM','LI']:
+            return ind[-k:]
+        if which in ['SR','SM','SI']:
+            return ind[:k]
+
+
+    def eval_evec(self,d,typ,k,which,v0=None):
+        a=d['mat'].astype(typ)
+        b=d['bmat'].astype(typ)
+        if v0 == None:
+            v0 = d['v0']
+        # get exact eigenvalues
+        exact_eval=d['eval'].astype(typ.upper())
+        ind=self.sort_choose(exact_eval,typ,k,which)
+        exact_eval=exact_eval[ind]
+        # compute eigenvalues
+        eval,evec=eigs(a,k,b,which=which,v0=v0)
+        ind=self.sort_choose(eval,typ,k,which)
+        eval=eval[ind]
+        evec=evec[:,ind]
+        # check eigenvalues
+        # check eigenvectors A*evec=eval*evec
+        for i in range(k):
+            assert_almost_equal_cc(eval[i],exact_eval[i],decimal=_ndigits[typ])
+            assert_array_almost_equal_cc(dot(a,evec[:,i]),
+                                      eval[i]*np.dot(b,evec[:,i]),
+                                      decimal=_ndigits[typ])
+
+
+    def test_nonsymmetric_modes(self):
+        k=2
+        for typ in 'fd':
+            for which in ['LI','LR','LM','SM','SR','SI']:
+                for m in self.generalized_nonsymmetric:
+                    self.eval_evec(m,typ,k,which)
+
+
+
+    def test_starting_vector(self):
+        k=2
+        for typ in 'fd':
+            A=self.symmetric[0]['mat']
+            n=A.shape[0]
+            v0 = random.rand(n).astype(typ)
+            self.eval_evec(self.generalized_symmetric[0],
+                           typ,k,which='LM',v0=v0)
+
+    def test_no_convergence(self):
+        np.random.seed(1234)
+        m = np.random.rand(30, 30)
+        try:
+            w, v = eigs(m, 3, which='LM', v0=m[:,0], maxiter=30)
+            raise AssertionError("Spurious no-error exit")
+        except ArpackNoConvergence, err:
+            k = len(err.eigenvalues)
+            if k <= 0:
+                raise AssertionError("Spurious no-eigenvalues-found case")
+            w, v = err.eigenvalues, err.eigenvectors
+            for ww, vv in zip(w, v.T):
+                assert_array_almost_equal(dot(m, vv), ww*vv,
+                                          decimal=_ndigits['d'])
+
 
 class TestEigenComplexNonSymmetric(TestArpack):
 
