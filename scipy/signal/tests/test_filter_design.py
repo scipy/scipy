@@ -71,6 +71,21 @@ class TestFreqz(TestCase):
         assert_array_almost_equal(w, np.pi * np.arange(8.0) / 8)
         assert_array_almost_equal(h, np.ones(8))
 
+    def test_basic_whole(self):
+        w, h = freqz([1.0], worN=8, whole=True)
+        assert_array_almost_equal(w, 2 * np.pi * np.arange(8.0) / 8)
+        assert_array_almost_equal(h, np.ones(8))
+
+    def test_plot(self):
+
+        def plot(w, h):
+            assert_array_almost_equal(w, np.pi * np.arange(8.0) / 8)
+            assert_array_almost_equal(h, np.ones(8))
+
+        assert_raises(ZeroDivisionError,
+                      freqz, [1.0], worN=8, plot=lambda w, h: 1 / 0)
+        freqz([1.0], worN=8, plot=plot)
+
 
 if __name__ == "__main__":
     run_module_suite()
