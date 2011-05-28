@@ -38,7 +38,17 @@ about our function's call signatures.
 New features
 ============
 
+Basic support for Harwell-Boeing file format for sparse matrices
+----------------------------------------------------------------
 
+Both read and write are support through a simple function-based API, as well as
+a more complete API to control number format. The functions may be found in
+scipy.sparse.io.
+
+The following features are supported:
+
+    * Read and write sparse matrices in the CSC format
+    * Only real, symmetric, assembled matrix are supported (RUA format)
 
 Deprecated features
 ===================
