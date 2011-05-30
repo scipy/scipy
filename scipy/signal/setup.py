@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-def configuration(parent_package='',top_path=None):
+
+def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
 
     config = Configuration('signal', parent_package, top_path)
@@ -8,21 +9,22 @@ def configuration(parent_package='',top_path=None):
     config.add_data_dir('tests')
 
     config.add_extension('sigtools',
-                         sources=['sigtoolsmodule.c',
-                                  'firfilter.c','medianfilter.c', 'lfilter.c.src',
+                         sources=['sigtoolsmodule.c', 'firfilter.c',
+                                  'medianfilter.c', 'lfilter.c.src',
                                   'correlate_nd.c.src'],
-                         depends = ['sigtools.h'],
+                         depends=['sigtools.h'],
                          include_dirs=['.']
     )
 
     config.add_extension('spectral', sources=['spectral.c'])
 
     config.add_extension('spline',
-        sources = ['splinemodule.c','S_bspline_util.c','D_bspline_util.c',
-                   'C_bspline_util.c','Z_bspline_util.c','bspline_util.c'],
+        sources=['splinemodule.c', 'S_bspline_util.c', 'D_bspline_util.c',
+                 'C_bspline_util.c', 'Z_bspline_util.c', 'bspline_util.c'],
     )
 
     return config
+
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup

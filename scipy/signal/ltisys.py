@@ -52,34 +52,36 @@ def tf2ss(num, den):
         num = asarray([num], num.dtype)
     M = num.shape[1]
     K = len(den)
-    if (M > K):
+    if M > K:
         raise ValueError("Improper transfer function.")
-    if (M == 0 or K == 0):  # Null system
-        return array([],float), array([], float), array([], float), \
+    if M == 0 or K == 0:  # Null system
+        return array([], float), array([], float), array([], float), \
                array([], float)
 
     # pad numerator to have same number of columns has denominator
-    num = r_['-1',zeros((num.shape[0],K-M), num.dtype), num]
+    num = r_['-1', zeros((num.shape[0], K - M), num.dtype), num]
 
     if num.shape[-1] > 0:
-        D = num[:,0]
+        D = num[:, 0]
     else:
-        D = array([],float)
+        D = array([], float)
 
     if K == 1:
         return array([], float), array([], float), array([], float), D
 
     frow = -array([den[1:]])
-    A = r_[frow, eye(K-2, K-1)]
-    B = eye(K-1, 1)
-    C = num[:,1:] - num[:,0] * den[1:]
+    A = r_[frow, eye(K - 2, K - 1)]
+    B = eye(K - 1, 1)
+    C = num[:, 1:] - num[:, 0] * den[1:]
     return A, B, C, D
+
 
 def _none_to_empty(arg):
     if arg is None:
         return []
     else:
         return arg
+
 
 def abcd_normalize(A=None, B=None, C=None, D=None):
     """Check state-space matrices and ensure they are rank-2.
@@ -123,6 +125,7 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
 
     return A, B, C, D
 
+
 def ss2tf(A, B, C, D, input=0):
     """State-space to transfer function.
 
@@ -152,30 +155,31 @@ def ss2tf(A, B, C, D, input=0):
 
     # make MOSI from possibly MOMI system.
     if B.shape[-1] != 0:
-        B = B[:,input]
-    B.shape = (B.shape[0],1)
+        B = B[:, input]
+    B.shape = (B.shape[0], 1)
     if D.shape[-1] != 0:
-        D = D[:,input]
+        D = D[:, input]
 
     try:
         den = poly(A)
     except ValueError:
         den = 1
 
-    if (product(B.shape,axis=0) == 0) and (product(C.shape,axis=0) == 0):
+    if (product(B.shape, axis=0) == 0) and (product(C.shape, axis=0) == 0):
         num = numpy.ravel(D)
-        if (product(D.shape,axis=0) == 0) and (product(A.shape,axis=0) == 0):
+        if (product(D.shape, axis=0) == 0) and (product(A.shape, axis=0) == 0):
             den = []
         return num, den
 
     num_states = A.shape[0]
-    type_test = A[:,0] + B[:,0] + C[0,:] + D
-    num = numpy.zeros((nout, num_states+1), type_test.dtype)
+    type_test = A[:, 0] + B[:, 0] + C[0, :] + D
+    num = numpy.zeros((nout, num_states + 1), type_test.dtype)
     for k in range(nout):
-        Ck = atleast_2d(C[k,:])
-        num[k] = poly(A - dot(B,Ck)) + (D[k]-1)*den
+        Ck = atleast_2d(C[k, :])
+        num[k] = poly(A - dot(B, Ck)) + (D[k] - 1) * den
 
     return num, den
+
 
 def zpk2ss(z, p, k):
     """Zero-pole-gain representation to state-space representation
@@ -193,7 +197,8 @@ def zpk2ss(z, p, k):
         State-space matrices.
 
     """
-    return tf2ss(*zpk2tf(z,p,k))
+    return tf2ss(*zpk2tf(z, p, k))
+
 
 def ss2zpk(A, B, C, D, input=0):
     """State-space representation to zero-pole-gain representation.
@@ -213,12 +218,13 @@ def ss2zpk(A, B, C, D, input=0):
         System gain.
 
     """
-    return tf2zpk(*ss2tf(A,B,C,D,input=input))
+    return tf2zpk(*ss2tf(A, B, C, D, input=input))
+
 
 class lti(object):
     """Linear Time Invariant class which simplifies representation.
     """
-    def __init__(self,*args,**kwords):
+    def __init__(self, *args, **kwords):
         """Initialize the LTI system using either:
            (numerator, denominator)
            (zeros, poles, gain)
@@ -262,7 +268,7 @@ class lti(object):
             raise ValueError("Needs 2, 3, or 4 arguments.")
 
     def __setattr__(self, attr, val):
-        if attr in ['num','den']:
+        if attr in ['num', 'den']:
             self.__dict__[attr] = val
             self.__dict__['zeros'], self.__dict__['poles'], \
                                     self.__dict__['gain'] = \
@@ -358,7 +364,7 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
         sys = lti(*system)
 
     if X0 is None:
-        X0 = zeros(sys.B.shape[0],sys.A.dtype)
+        X0 = zeros(sys.B.shape[0], sys.A.dtype)
 
     if T is None:
         # XXX T should really be a required argument, but U was
@@ -376,7 +382,7 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     if U is not None:
         U = atleast_1d(U)
         if len(U.shape) == 1:
-            U = U.reshape(-1,1)
+            U = U.reshape(-1, 1)
         sU = U.shape
         if sU[0] != len(T):
             raise ValueError("U must have the same number of rows "
@@ -393,15 +399,15 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
 
         def fprime(x, t, sys, ufunc):
             """The vector field of the linear system."""
-            return dot(sys.A,x) + squeeze(dot(sys.B,nan_to_num(ufunc([t]))))
+            return dot(sys.A, x) + squeeze(dot(sys.B, nan_to_num(ufunc([t]))))
         xout = integrate.odeint(fprime, X0, T, args=(sys, ufunc), **kwargs)
-        yout = dot(sys.C,transpose(xout)) + dot(sys.D,transpose(U))
+        yout = dot(sys.C, transpose(xout)) + dot(sys.D, transpose(U))
     else:
         def fprime(x, t, sys):
             """The vector field of the linear system."""
-            return dot(sys.A,x)
+            return dot(sys.A, x)
         xout = integrate.odeint(fprime, X0, T, args=(sys,), **kwargs)
-        yout = dot(sys.C,transpose(xout))
+        yout = dot(sys.C, transpose(xout))
 
     return T, squeeze(transpose(yout)), xout
 
@@ -459,7 +465,7 @@ def lsim(system, U, T, X0=None, interp=1):
     U = atleast_1d(U)
     T = atleast_1d(T)
     if len(U.shape) == 1:
-        U = U.reshape((U.shape[0],1))
+        U = U.reshape((U.shape[0], 1))
     sU = U.shape
     if len(T.shape) != 1:
         raise ValueError("T must be a rank-1 array.")
@@ -472,38 +478,40 @@ def lsim(system, U, T, X0=None, interp=1):
     if X0 is None:
         X0 = zeros(sys.B.shape[0], sys.A.dtype)
 
-    xout = zeros((len(T),sys.B.shape[0]), sys.A.dtype)
+    xout = zeros((len(T), sys.B.shape[0]), sys.A.dtype)
     xout[0] = X0
     A = sys.A
     AT, BT = transpose(sys.A), transpose(sys.B)
-    dt = T[1]-T[0]
+    dt = T[1] - T[0]
     lam, v = linalg.eig(A)
     vt = transpose(v)
     vti = linalg.inv(vt)
-    GT = dot(dot(vti,diag(numpy.exp(dt*lam))),vt).astype(xout.dtype)
+    GT = dot(dot(vti, diag(numpy.exp(dt * lam))), vt).astype(xout.dtype)
     ATm1 = linalg.inv(AT)
-    ATm2 = dot(ATm1,ATm1)
-    I = eye(A.shape[0],dtype=A.dtype)
-    GTmI = GT-I
-    F1T = dot(dot(BT,GTmI),ATm1)
+    ATm2 = dot(ATm1, ATm1)
+    I = eye(A.shape[0], dtype=A.dtype)
+    GTmI = GT - I
+    F1T = dot(dot(BT, GTmI), ATm1)
     if interp:
-        F2T = dot(BT,dot(GTmI,ATm2)/dt - ATm1)
+        F2T = dot(BT, dot(GTmI, ATm2) / dt - ATm1)
 
-    for k in xrange(1,len(T)):
-        dt1 = T[k] - T[k-1]
+    for k in xrange(1, len(T)):
+        dt1 = T[k] - T[k - 1]
         if dt1 != dt:
             dt = dt1
-            GT = dot(dot(vti,diag(numpy.exp(dt*lam))),vt).astype(xout.dtype)
-            GTmI = GT-I
-            F1T = dot(dot(BT,GTmI),ATm1)
+            GT = dot(dot(vti, diag(numpy.exp(dt * lam))),
+                     vt).astype(xout.dtype)
+            GTmI = GT - I
+            F1T = dot(dot(BT, GTmI), ATm1)
             if interp:
-                F2T = dot(BT,dot(GTmI,ATm2)/dt - ATm1)
+                F2T = dot(BT, dot(GTmI, ATm2) / dt - ATm1)
 
-        xout[k] = dot(xout[k-1],GT) + dot(U[k-1],F1T)
+        xout[k] = dot(xout[k - 1], GT) + dot(U[k - 1], F1T)
         if interp:
-            xout[k] = xout[k] + dot((U[k]-U[k-1]),F2T)
+            xout[k] = xout[k] + dot((U[k] - U[k - 1]), F2T)
 
-    yout = squeeze(dot(U,transpose(sys.D))) + squeeze(dot(xout,transpose(sys.C)))
+    yout = (squeeze(dot(U, transpose(sys.D))) +
+            squeeze(dot(xout, transpose(sys.C))))
     return T, squeeze(yout), squeeze(xout)
 
 
@@ -534,7 +542,7 @@ def _default_response_times(A, n):
     if r == 0.0:
         r = 1.0
     tc = 1.0 / r
-    t = linspace(0.0, 7*tc, n)
+    t = linspace(0.0, 7 * tc, n)
     return t
 
 
@@ -575,13 +583,13 @@ def impulse(system, X0=None, T=None, N=None):
     if T is None:
         T = _default_response_times(sys.A, N)
     h = zeros(T.shape, sys.A.dtype)
-    s,v = linalg.eig(sys.A)
+    s, v = linalg.eig(sys.A)
     vi = linalg.inv(v)
     C = sys.C
     for k in range(len(h)):
-        es = diag(numpy.exp(s*T[k]))
-        eA = (dot(dot(v,es),vi)).astype(h.dtype)
-        h[k] = squeeze(dot(dot(C,eA),B))
+        es = diag(numpy.exp(s * T[k]))
+        eA = (dot(dot(v, es), vi)).astype(h.dtype)
+        h[k] = squeeze(dot(dot(C, eA), B))
     return T, h
 
 
@@ -706,6 +714,7 @@ def step(system, X0=None, T=None, N=None):
     U = ones(T.shape, sys.A.dtype)
     vals = lsim(sys, U, T, X0=X0)
     return vals[0], vals[1]
+
 
 def step2(system, X0=None, T=None, N=None, **kwargs):
     """Step response of continuous-time system.

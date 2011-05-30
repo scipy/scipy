@@ -69,9 +69,11 @@ Signal Processing Tools
  Filter design:
 
     bilinear:
-        Return a digital filter from an analog filter using the bilinear transform.
+        Return a digital filter from an analog filter using the bilinear
+        transform.
     firwin:
-        Windowed FIR filter design, with frequency response defined as pass and stop bands.
+        Windowed FIR filter design, with frequency response defined as
+        pass and stop bands.
     firwin2:
         Windowed FIR filter design, with arbitrary frequency response.
     freqs:
@@ -85,10 +87,12 @@ Signal Processing Tools
     invres:
         Inverse partial fraction expansion.
     kaiser_beta:
-        Compute the Kaiser parameter beta, given the desired FIR filter attenuation.
+        Compute the Kaiser parameter beta, given the desired FIR filter
+        attenuation.
     kaiser_atten:
-        Compute the attenuation of a Kaiser FIR filter, given the number of taps
-        and the transition width at discontinuities in the frequency response.
+        Compute the attenuation of a Kaiser FIR filter, given the number of
+        taps and the transition width at discontinuities in the frequency
+        response.
     kaiserord:
         Design a Kaiser window to limit ripple and width of transition region.
     remez:

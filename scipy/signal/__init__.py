@@ -20,6 +20,6 @@ from signaltools import *
 from spectral import *
 from wavelets import *
 
-__all__ = filter(lambda s:not s.startswith('_'),dir())
+__all__ = filter(lambda s: not s.startswith('_'), dir())
 from numpy.testing import Tester
 test = Tester().test

@@ -8,7 +8,7 @@ from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2, fftn, \
         ifftn, fftfreq
 from numpy import polyadd, polymul, polydiv, polysub, roots, \
         poly, polyval, polyder, cast, asarray, isscalar, atleast_1d, \
-        ones, real, real_if_close, zeros, array, arange, where, rank, \
+        ones, real_if_close, zeros, array, arange, where, rank, \
         newaxis, product, ravel, sum, r_, iscomplexobj, take, \
         argsort, allclose, expand_dims, unique, prod, sort, reshape, \
         transpose, dot, mean, flipud, ndarray, atleast_2d
@@ -735,7 +735,7 @@ def hilbert2(x, N=None):
     if len(x.shape) > 2:
         raise ValueError("x must be rank 2.")
     if iscomplexobj(x):
-        raise ValueError("x must be real.")        
+        raise ValueError("x must be real.")
     if N is None:
         N = x.shape
     elif isinstance(N, int):

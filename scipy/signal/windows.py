@@ -28,12 +28,12 @@ def triang(M, sym=True):
     odd = M % 2
     if not sym and not odd:
         M = M + 1
-    n = np.arange(1, int((M+1)/2)+1)
+    n = np.arange(1, int((M + 1) / 2) + 1)
     if M % 2 == 0:
-        w = (2*n-1.0)/M
+        w = (2 * n - 1.0) / M
         w = np.r_[w, w[::-1]]
     else:
-        w = 2*n/(M+1.0)
+        w = 2 * n / (M + 1.0)
         w = np.r_[w, w[-2::-1]]
 
     if not sym and not odd:
@@ -52,11 +52,12 @@ def parzen(M, sym=True):
     odd = M % 2
     if not sym and not odd:
         M = M + 1
-    n = np.arange(-(M-1)/2.0, (M-1)/2.0+0.5, 1.0)
-    na = np.extract(n < -(M-1)/4.0, n)
-    nb = np.extract(abs(n) <= (M-1)/4.0, n)
-    wa = 2*(1-np.abs(na)/(M/2.0))**3.0
-    wb = 1-6*(np.abs(nb)/(M/2.0))**2.0 + 6*(np.abs(nb)/(M/2.0))**3.0
+    n = np.arange(-(M - 1) / 2.0, (M - 1) / 2.0 + 0.5, 1.0)
+    na = np.extract(n < -(M - 1) / 4.0, n)
+    nb = np.extract(abs(n) <= (M - 1) / 4.0, n)
+    wa = 2 * (1 - np.abs(na) / (M / 2.0)) ** 3.0
+    wb = (1 - 6 * (np.abs(nb) / (M / 2.0)) ** 2.0 +
+          6 * (np.abs(nb) / (M / 2.0)) ** 3.0)
     w = np.r_[wa, wb, wa[::-1]]
     if not sym and not odd:
         w = w[:-1]
@@ -75,7 +76,7 @@ def bohman(M, sym=True):
     if not sym and not odd:
         M = M + 1
     fac = np.abs(np.linspace(-1, 1, M)[1:-1])
-    w = (1 - fac) * np.cos(np.pi*fac) + 1.0/np.pi*np.sin(np.pi*fac)
+    w = (1 - fac) * np.cos(np.pi * fac) + 1.0 / np.pi * np.sin(np.pi * fac)
     w = np.r_[0, w, 0]
     if not sym and not odd:
         w = w[:-1]
@@ -94,7 +95,8 @@ def blackman(M, sym=True):
     if not sym and not odd:
         M = M + 1
     n = np.arange(0, M)
-    w = 0.42-0.5*np.cos(2.0*np.pi*n/(M-1)) + 0.08*np.cos(4.0*np.pi*n/(M-1))
+    w = (0.42 - 0.5 * np.cos(2.0 * np.pi * n / (M - 1)) +
+         0.08 * np.cos(4.0 * np.pi * n / (M - 1)))
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -113,8 +115,9 @@ def nuttall(M, sym=True):
         M = M + 1
     a = [0.3635819, 0.4891775, 0.1365995, 0.0106411]
     n = np.arange(0, M)
-    fac = n*2*np.pi/(M-1.0)
-    w = a[0] - a[1]*np.cos(fac) + a[2]*np.cos(2*fac) - a[3]*np.cos(3*fac)
+    fac = n * 2 * np.pi / (M - 1.0)
+    w = (a[0] - a[1] * np.cos(fac) +
+         a[2] * np.cos(2 * fac) - a[3] * np.cos(3 * fac))
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -133,8 +136,9 @@ def blackmanharris(M, sym=True):
         M = M + 1
     a = [0.35875, 0.48829, 0.14128, 0.01168]
     n = np.arange(0, M)
-    fac = n*2*np.pi/(M-1.0)
-    w = a[0] - a[1]*np.cos(fac) + a[2]*np.cos(2*fac) - a[3]*np.cos(3*fac)
+    fac = n * 2 * np.pi / (M - 1.0)
+    w = (a[0] - a[1] * np.cos(fac) +
+         a[2] * np.cos(2 * fac) - a[3] * np.cos(3 * fac))
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -153,9 +157,10 @@ def flattop(M, sym=True):
         M = M + 1
     a = [0.2156, 0.4160, 0.2781, 0.0836, 0.0069]
     n = np.arange(0, M)
-    fac = n*2*np.pi/(M-1.0)
-    w = a[0] - a[1]*np.cos(fac) + a[2]*np.cos(2*fac) - a[3]*np.cos(3*fac) + \
-        a[4]*np.cos(4*fac)
+    fac = n * 2 * np.pi / (M - 1.0)
+    w = (a[0] - a[1] * np.cos(fac) +
+         a[2] * np.cos(2 * fac) - a[3] * np.cos(3 * fac) +
+         a[4] * np.cos(4 * fac))
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -173,7 +178,8 @@ def bartlett(M, sym=True):
     if not sym and not odd:
         M = M + 1
     n = np.arange(0, M)
-    w = np.where(np.less_equal(n, (M-1)/2.0), 2.0*n/(M-1), 2.0-2.0*n/(M-1))
+    w = np.where(np.less_equal(n, (M - 1) / 2.0),
+                 2.0 * n / (M - 1), 2.0 - 2.0 * n / (M - 1))
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -191,7 +197,7 @@ def hanning(M, sym=True):
     if not sym and not odd:
         M = M + 1
     n = np.arange(0, M)
-    w = 0.5-0.5*np.cos(2.0*np.pi*n/(M-1))
+    w = 0.5 - 0.5 * np.cos(2.0 * np.pi * n / (M - 1))
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -211,8 +217,8 @@ def barthann(M, sym=True):
     if not sym and not odd:
         M = M + 1
     n = np.arange(0, M)
-    fac = np.abs(n/(M-1.0)-0.5)
-    w = 0.62 - 0.48*fac + 0.38*np.cos(2*np.pi*fac)
+    fac = np.abs(n / (M - 1.0) - 0.5)
+    w = 0.62 - 0.48 * fac + 0.38 * np.cos(2 * np.pi * fac)
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -230,7 +236,7 @@ def hamming(M, sym=True):
     if not sym and not odd:
         M = M + 1
     n = np.arange(0, M)
-    w = 0.54-0.46*np.cos(2.0*np.pi*n/(M-1))
+    w = 0.54 - 0.46 * np.cos(2.0 * np.pi * n / (M - 1))
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -248,8 +254,9 @@ def kaiser(M, beta, sym=True):
     if not sym and not odd:
         M = M + 1
     n = np.arange(0, M)
-    alpha = (M-1)/2.0
-    w = special.i0(beta * np.sqrt(1-((n-alpha)/alpha)**2.0))/special.i0(beta)
+    alpha = (M - 1) / 2.0
+    w = (special.i0(beta * np.sqrt(1 - ((n - alpha) / alpha) ** 2.0)) /
+         special.i0(beta))
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -266,9 +273,9 @@ def gaussian(M, std, sym=True):
     odd = M % 2
     if not sym and not odd:
         M = M + 1
-    n = np.arange(0, M) - (M-1.0)/2.0
-    sig2 = 2*std*std
-    w = np.exp(-n**2 / sig2)
+    n = np.arange(0, M) - (M - 1.0) / 2.0
+    sig2 = 2 * std * std
+    w = np.exp(-n ** 2 / sig2)
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -288,8 +295,8 @@ def general_gaussian(M, p, sig, sym=True):
     odd = M % 2
     if not sym and not odd:
         M = M + 1
-    n = np.arange(0, M) - (M-1.0)/2.0
-    w = np.exp(-0.5*(n/sig)**(2*p))
+    n = np.arange(0, M) - (M - 1.0) / 2.0
+    w = np.exp(-0.5 * (n / sig) ** (2 * p))
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -321,15 +328,15 @@ def chebwin(M, at, sym=True):
 
     # compute the parameter beta
     order = M - 1.0
-    beta = np.cosh(1.0/order * np.arccosh(10**(np.abs(at)/20.)))
-    k = np.r_[0:M]*1.0
-    x = beta * np.cos(np.pi*k/M)
-    #find the window's DFT coefficients
+    beta = np.cosh(1.0 / order * np.arccosh(10 ** (np.abs(at) / 20.)))
+    k = np.r_[0:M] * 1.0
+    x = beta * np.cos(np.pi * k / M)
+    # Find the window's DFT coefficients
     # Use analytic definition of Chebyshev polynomial instead of expansion
     # from scipy.special. Using the expansion in scipy.special leads to errors.
     p = np.zeros(x.shape)
     p[x > 1] = np.cosh(order * np.arccosh(x[x > 1]))
-    p[x < -1] = (1 - 2*(order%2)) * np.cosh(order * np.arccosh(-x[x < -1]))
+    p[x < -1] = (1 - 2 * (order % 2)) * np.cosh(order * np.arccosh(-x[x < -1]))
     p[np.abs(x) <= 1] = np.cos(order * np.arccos(x[np.abs(x) <= 1]))
 
     # Appropriate IDFT and filling up
@@ -340,7 +347,7 @@ def chebwin(M, at, sym=True):
         w = w[:n] / w[0]
         w = np.concatenate((w[n - 1:0:-1], w))
     else:
-        p = p * np.exp(1.j*np.pi / M * np.r_[0:M])
+        p = p * np.exp(1.j * np.pi / M * np.r_[0:M])
         w = np.real(fft(p))
         n = M / 2 + 1
         w = w / w[1]
@@ -354,7 +361,7 @@ def slepian(M, width, sym=True):
     """Return the M-point slepian window.
 
     """
-    if (M*width > 27.38):
+    if (M * width > 27.38):
         raise ValueError("Cannot reliably obtain slepian sequences for"
               " M*width > 27.38.")
     if M < 1:
@@ -365,12 +372,12 @@ def slepian(M, width, sym=True):
     if not sym and not odd:
         M = M + 1
 
-    twoF = width/2.0
-    alpha = (M-1)/2.0
+    twoF = width / 2.0
+    alpha = (M - 1) / 2.0
     m = np.arange(0, M) - alpha
     n = m[:, np.newaxis]
     k = m[np.newaxis, :]
-    AF = twoF*special.sinc(twoF*(n-k))
+    AF = twoF * special.sinc(twoF * (n - k))
     [lam, vec] = linalg.eig(AF)
     ind = np.argmax(abs(lam), axis=-1)
     w = np.abs(vec[:, ind])

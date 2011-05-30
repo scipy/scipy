@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-def configuration(parent_package='',top_path=None):
+
+def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
 
     config = Configuration('signal', parent_package, top_path)
@@ -9,6 +10,7 @@ def configuration(parent_package='',top_path=None):
     config.add_data_dir('tests')
 
     return config
+
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup

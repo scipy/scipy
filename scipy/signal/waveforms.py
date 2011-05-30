@@ -124,7 +124,8 @@ def square(t, duty=0.5):
     return y
 
 
-def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False, retenv=False):
+def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
+               retenv=False):
     """
     Return a gaussian modulated sinusoid: exp(-a t^2) exp(1j*2*pi*fc*t).
 
@@ -310,8 +311,8 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
 
     elif method in ['logarithmic', 'log', 'lo']:
         if f0 * f1 <= 0.0:
-            raise ValueError("For a geometric chirp, f0 and f1 must be nonzero " \
-                                "and have the same sign.")
+            raise ValueError("For a geometric chirp, f0 and f1 must be "
+                             "nonzero and have the same sign.")
         if f0 == f1:
             phase = 2 * pi * f0 * t
         else:
@@ -326,8 +327,8 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
         phase = 2 * pi * (f0 * c / df) * log((df * t + c) / c)
 
     else:
-        raise ValueError("method must be 'linear', 'quadratic', 'logarithmic', "
-                "or 'hyperbolic', but a value of %r was given." % method)
+        raise ValueError("method must be 'linear', 'quadratic', 'logarithmic',"
+                " or 'hyperbolic', but a value of %r was given." % method)
 
     return phase
 
