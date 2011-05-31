@@ -1056,7 +1056,7 @@ class TestSchur(TestCase):
         
     def test_sort(self):
         a = [[4.,3.,1.,-1.],[-4.5,-3.5,-1.,1.],[9.,6.,-4.,4.5],[6.,4.,-3.,3.5]]
-        s,u = schur(a,sort='lhp')
+        s,u,sdim = schur(a,sort='lhp')
         assert_array_almost_equal([[0.1134,0.5436,0.8316,0.], 
                                    [-0.1134,-0.8245,0.5544,0.], 
                                    [-0.8213,0.1308,0.0265,-0.5547], 
@@ -1067,8 +1067,9 @@ class TestSchur(TestCase):
                                    [0.,0.,1.4142,-0.1456], 
                                    [0.,0.,0.,0.5]],
                                   s,3)
+        assert_equal(2,sdim)
                                   
-        s,u = schur(a,sort='rhp')
+        s,u,sdim = schur(a,sort='rhp')
         assert_array_almost_equal([[0.4862,-0.4930,0.1434,-0.7071],
                                    [-0.4862,0.4930,-0.1434,-0.7071],
                                    [0.6042,0.3944,-0.6924,0.],
@@ -1079,8 +1080,9 @@ class TestSchur(TestCase):
                                    [0.,0.,-1.4142,0.9270],
                                    [0.,0.,0.,-0.5]],
                                   s,3)
+        assert_equal(2,sdim)
                                   
-        s,u = schur(a,sort='iuc')
+        s,u,sdim = schur(a,sort='iuc')
         assert_array_almost_equal([[0.5547,0.,-0.5721,-0.6042],
                                    [-0.8321,0.,-0.3814,-0.4028],
                                    [0.,0.7071,-0.5134,0.4862],
@@ -1091,8 +1093,9 @@ class TestSchur(TestCase):
                                    [0.,0.,1.4142,2.1573],
                                    [0.,0.,0.,-1.4142]],
                                   s,3)
+        assert_equal(2,sdim)
                                   
-        s,u = schur(a,sort='ouc')
+        s,u,sdim = schur(a,sort='ouc')
         assert_array_almost_equal([[0.4862,-0.5134,0.7071,0.],
                                    [-0.4862,0.5134,0.7071,0.],
                                    [0.6042,0.5721,0.,-0.5547],
@@ -1103,9 +1106,10 @@ class TestSchur(TestCase):
                                    [0.,0.,-0.5000,0.],
                                    [0.,0.,0.,0.5000]],
                                   s,3)
+        assert_equal(2,sdim)
                                   
         rhp_function = lambda x: x >= 0.0
-        s,u = schur(a,sort=rhp_function)
+        s,u,sdim = schur(a,sort=rhp_function)
         assert_array_almost_equal([[0.4862,-0.4930,0.1434,-0.7071],
                                    [-0.4862,0.4930,-0.1434,-0.7071],
                                    [0.6042,0.3944,-0.6924,0.],
@@ -1116,6 +1120,7 @@ class TestSchur(TestCase):
                                    [0.,0.,-1.4142,0.9270],
                                    [0.,0.,0.,-0.5]],
                                   s,3)
+        assert_equal(2,sdim)
                                   
     def test_sort_errors(self):
         a = [[4.,3.,1.,-1.],[-4.5,-3.5,-1.,1.],[9.,6.,-4.,4.5],[6.,4.,-3.,3.5]]
@@ -1133,12 +1138,15 @@ class TestSchur(TestCase):
                       
         # Test with a matrix with enormous scaling issues to attempt to cause
         # Schur ordering to fail due to roundoff issues
-        poorly_scaled = [[0.7365, 0.9383, 0.5741, 0.9796],
-                         [0.3980, 0.6419, 0.5199, 0.7424]]
-        poorly_scaled = np.vstack((poorly_scaled,
-                                   (-1.0E+32)*np.asarray(poorly_scaled)))
-        assert_raises(LinAlgError, schur, poorly_scaled, sort='rhp', 
-                      output='real')
+        #
+        # NOTE: This test case relies on rounding errors.  It may fail on many
+        #       platforms, and, therefore, is commented out.
+        #poorly_scaled = [[0.7365, 0.9383, 0.5741, 0.9796],
+        #                 [0.3980, 0.6419, 0.5199, 0.7424]]
+        #poorly_scaled = np.vstack((poorly_scaled,
+        #                           (-1.0E+32)*np.asarray(poorly_scaled)))
+        #assert_raises(LinAlgError, schur, poorly_scaled, sort='rhp', 
+        #              output='real')
         
 class TestHessenberg(TestCase):
 

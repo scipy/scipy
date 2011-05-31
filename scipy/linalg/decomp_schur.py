@@ -54,6 +54,9 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None):
     Z : array, shape (M, M)
         An unitary Schur transformation matrix for A.
         It is real-valued for the real Schur decomposition.
+    sdim : integer
+        If and only if sorting was requested, a third return value will
+        contain the number of eigenvalues satisfying the sort condition.
 
     Raises
     ------
@@ -65,7 +68,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None):
            reordered due to a failure to separate eigenvalues, usually because
            of poor conditioning
         3. If eigenvalue sorting was requested, roundoff errors caused the
-           leading eigenvalues to satisfy the sorting condition
+           leading eigenvalues to no longer satisfy the sorting condition
 
     See also
     --------
@@ -104,9 +107,9 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None):
         elif sort == 'rhp':
             sfunction = lambda x: (x.real >= 0.0)
         elif sort == 'iuc':
-            sfunction = lambda x: (abs(x*x.conjugate()) <= 1.0)
+            sfunction = lambda x: (abs(x) <= 1.0)
         elif sort == 'ouc':
-            sfunction = lambda x: (abs(x*x.conjugate()) > 1.0)
+            sfunction = lambda x: (abs(x) > 1.0)
         else:
             raise ValueError("sort parameter must be None, a callable, or " +
                 "one of ('lhp','rhp','iuc','ouc')")
@@ -124,7 +127,11 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None):
         raise LinAlgError('Leading eigenvalues do not satisfy sort condition.')
     elif info > 0:
         raise LinAlgError("Schur form not found.  Possibly ill-conditioned.")
-    return result[0], result[-3]
+        
+    if sort_t == 0:
+        return result[0], result[-3]
+    else:
+        return result[0], result[-3], result[1]
 
 
 eps = numpy.finfo(float).eps
