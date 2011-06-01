@@ -41,6 +41,14 @@ Recurse:
     scipy/cluster,
     scipy/fftpack
 
+DataFiles: tests
+    TargetDir: $sitedir/scipy
+    SourceDir: scipy
+    Files:
+        cluster/tests/*.py,
+        constants/tests/*.py,
+        fftpack/tests/*.py
+
 Library:
     Packages:
         scipy,
