@@ -690,7 +690,7 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
 
     # remap labels to unique integers if necessary, or if the largest
     # label is larger than the number of values.
-    if (_safely_castable_to_int(labels.dtype) or
+    if (not _safely_castable_to_int(labels.dtype) or
             labels.min() < 0 or labels.max() > labels.size):
         # remap labels, and indexes
         unique_labels, labels = numpy.unique(labels, return_inverse=True)
