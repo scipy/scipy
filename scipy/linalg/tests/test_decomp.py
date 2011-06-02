@@ -1127,27 +1127,6 @@ class TestSchur(TestCase):
         assert_raises(ValueError, schur, a, sort='unsupported')
         assert_raises(ValueError, schur, a, sort=1)
 
-        # Attempt to capture an ill-conditioned matrix that will cause an
-        # eigenvalue ordering error (cond = Inf)
-        ill_conditioned = [[0.6712, 0.3562, 0.3482, 0.8289],
-                           [0.2901, 0.0732, 0.9824, 0.4673],
-                           [0.6712, 0.3562, 0.3482, 0.8289],
-                           [0.2901, 0.0732, 0.9824, 0.4673]]
-        assert_raises(LinAlgError, schur, ill_conditioned, sort='rhp', 
-                      output='real')
-                      
-        # Test with a matrix with enormous scaling issues to attempt to cause
-        # Schur ordering to fail due to roundoff issues
-        #
-        # NOTE: This test case relies on rounding errors.  It may fail on many
-        #       platforms, and, therefore, is commented out.
-        #poorly_scaled = [[0.7365, 0.9383, 0.5741, 0.9796],
-        #                 [0.3980, 0.6419, 0.5199, 0.7424]]
-        #poorly_scaled = np.vstack((poorly_scaled,
-        #                           (-1.0E+32)*np.asarray(poorly_scaled)))
-        #assert_raises(LinAlgError, schur, poorly_scaled, sort='rhp', 
-        #              output='real')
-        
 class TestHessenberg(TestCase):
 
     def test_simple(self):
