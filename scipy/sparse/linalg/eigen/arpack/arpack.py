@@ -35,15 +35,16 @@ Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
 # ------------
 # ARPACK and handle shifted and shift-inverse computations
 # for eigenvalues by providing a shift (sigma) and a solver.
-# This is currently not implemented
 
 __docformat__ = "restructuredtext en"
 
 import _arpack
 import numpy as np
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
-from scipy.sparse import csc_matrix, csr_matrix, isspmatrix
+from scipy.sparse import identity, csc_matrix, csr_matrix, isspmatrix, isspmatrix_csr
 from scipy.linalg import lu_factor, lu_solve
+from scipy.sparse.sputils import isdense
+from scipy.sparse.linalg import cg, cgs, minres, gmres, factorized
 
 __all__ =['eigs', 'eigsh', 'svds', 'ArpackError', 'ArpackNoConvergence']
 
@@ -51,7 +52,44 @@ __all__ =['eigs', 'eigsh', 'svds', 'ArpackError', 'ArpackNoConvergence']
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 _ndigits = {'f':5, 'd':12, 'F':5, 'D':12}
 
-_NAUPD_ERRORS = {
+DNAUPD_ERRORS = {
+    0: "Normal exit.",
+    1: "Maximum number of iterations taken. "
+       "All possible eigenvalues of OP has been found. IPARAM(5) "
+       "returns the number of wanted converged Ritz values.",
+    2: "No longer an informational error. Deprecated starting "
+       "with release 2 of ARPACK.",
+    3: "No shifts could be applied during a cycle of the "
+       "Implicitly restarted Arnoldi iteration. One possibility "
+       "is to increase the size of NCV relative to NEV. ",
+    -1: "N must be positive.",
+    -2: "NEV must be positive.",
+    -3: "NCV-NEV >= 2 and less than or equal to N.",
+    -4: "The maximum number of Arnoldi update iterations allowed "
+        "must be greater than zero.",
+    -5: " WHICH must be one of 'LM', 'SM', 'LR', 'SR', 'LI', 'SI'",
+    -6: "BMAT must be one of 'I' or 'G'.",
+    -7: "Length of private work array WORKL is not sufficient.",
+    -8: "Error return from LAPACK eigenvalue calculation;",
+    -9: "Starting vector is zero.",
+    -10: "IPARAM(7) must be 1,2,3,4.",
+    -11: "IPARAM(7) = 1 and BMAT = 'G' are incompatable.",
+    -12: "IPARAM(1) must be equal to 0 or 1.",
+    -13: "NEV and WHICH = 'BE' are incompatable.",
+    -9999: "Could not build an Arnoldi factorization. "
+           "IPARAM(5) returns the size of the current Arnoldi "
+           "factorization. The user is advised to check that "
+           "enough workspace and array storage has been allocated."
+}
+
+SNAUPD_ERRORS = DNAUPD_ERRORS
+
+ZNAUPD_ERRORS = DNAUPD_ERRORS.copy()
+ZNAUPD_ERRORS[-10] = "IPARAM(7) must be 1,2,3."
+
+CNAUPD_ERRORS = ZNAUPD_ERRORS
+
+DSAUPD_ERRORS = {
     0: "Normal exit.",
     1: "Maximum number of iterations taken. "
        "All possible eigenvalues of OP has been found.",
@@ -81,7 +119,9 @@ _NAUPD_ERRORS = {
            "enough workspace and array storage has been allocated.",
 }
 
-_NEUPD_ERRORS = {
+SSAUPD_ERRORS = DSAUPD_ERRORS
+
+DNEUPD_ERRORS = {
     0: "Normal exit.",
     1: "The Schur form computed by LAPACK routine dlahqr "
        "could not be reordered by LAPACK routine dtrsen. "
@@ -114,7 +154,65 @@ _NEUPD_ERRORS = {
          "DNEUPD",
 }
 
-_SEUPD_ERRORS = {
+SNEUPD_ERRORS = DNEUPD_ERRORS.copy()
+SNEUPD_ERRORS[1] = ("The Schur form computed by LAPACK routine slahqr "
+                    "could not be reordered by LAPACK routine strsen . "
+                    "Re-enter subroutine dneupd  with IPARAM(5)=NCV and "
+                    "increase the size of the arrays DR and DI to have "
+                    "dimension at least dimension NCV and allocate at least "
+                    "NCV columns for Z. NOTE: Not necessary if Z and V share "
+                    "the same space. Please notify the authors if this error "
+                    "occurs.")
+SNEUPD_ERRORS[-14] = ("SNAUPD did not find any eigenvalues to sufficient "
+                      "accuracy.")
+SNEUPD_ERRORS[-15] = ("SNEUPD got a different count of the number of converged "
+                      "Ritz values than SNAUPD got.  This indicates the user "
+                      "probably made an error in passing data from SNAUPD to "
+                      "SNEUPD or that the data was modified before entering "
+                      "SNEUPD")
+
+ZNEUPD_ERRORS = {0: "Normal exit.",
+                 1: "The Schur form computed by LAPACK routine csheqr "
+                    "could not be reordered by LAPACK routine ztrsen. "
+                    "Re-enter subroutine zneupd with IPARAM(5)=NCV and "
+                    "increase the size of the array D to have "
+                    "dimension at least dimension NCV and allocate at least "
+                    "NCV columns for Z. NOTE: Not necessary if Z and V share "
+                    "the same space. Please notify the authors if this error "
+                    "occurs.",
+                 -1: "N must be positive.",
+                 -2: "NEV must be positive.",
+                 -3: "NCV-NEV >= 1 and less than or equal to N.",
+                 -5: "WHICH must be one of 'LM', 'SM', 'LR', 'SR', 'LI', 'SI'",
+                 -6: "BMAT must be one of 'I' or 'G'.",
+                 -7: "Length of private work WORKL array is not sufficient.",
+                 -8: "Error return from LAPACK eigenvalue calculation. "
+                     "This should never happened.",
+                 -9: "Error return from calculation of eigenvectors. "
+                     "Informational error from LAPACK routine ztrevc.",
+                 -10: "IPARAM(7) must be 1,2,3",
+                 -11: "IPARAM(7) = 1 and BMAT = 'G' are incompatible.",
+                 -12: "HOWMNY = 'S' not yet implemented",
+                 -13: "HOWMNY must be one of 'A' or 'P' if RVEC = .true.",
+                 -14: "ZNAUPD did not find any eigenvalues to sufficient "
+                      "accuracy.",
+                 -15: "ZNEUPD got a different count of the number of converged "
+                      "Ritz values than ZNAUPD got.  This indicates the user "
+                      "probably made an error in passing data from ZNAUPD to "
+                      "ZNEUPD or that the data was modified before entering "
+                      "ZNEUPD"
+}
+
+CNEUPD_ERRORS = ZNEUPD_ERRORS.copy()
+CNEUPD_ERRORS[-14] = ("CNAUPD did not find any eigenvalues to sufficient "
+                      "accuracy.")
+CNEUPD_ERRORS[-15] = ("CNEUPD got a different count of the number of converged "
+                      "Ritz values than CNAUPD got.  This indicates the user "
+                      "probably made an error in passing data from CNAUPD to "
+                      "CNEUPD or that the data was modified before entering "
+                      "CNEUPD")
+
+DSEUPD_ERRORS = {
     0: "Normal exit.",
     -1: "N must be positive.",
     -2: "NEV must be positive.",
@@ -137,6 +235,29 @@ _SEUPD_ERRORS = {
           "DSEUPD  or that the data was modified before entering  "
           "DSEUPD.")
 }
+
+SSEUPD_ERRORS = DSEUPD_ERRORS.copy()
+SSEUPD_ERRORS[-14] = ("SSAUPD  did not find any eigenvalues "
+                      "to sufficient accuracy.")
+SSEUPD_ERRORS[-17] = ("SSEUPD  got a different count of the number of "
+                      "converged "
+                      "Ritz values than SSAUPD  got.  This indicates the user "
+                      "probably made an error in passing data from SSAUPD  to "
+                      "SSEUPD  or that the data was modified before entering  "
+                      "SSEUPD.")
+
+_SAUPD_ERRORS = {'d': DSAUPD_ERRORS,
+                 's': SSAUPD_ERRORS}
+_NAUPD_ERRORS = {'d': DNAUPD_ERRORS,
+                 's': SNAUPD_ERRORS,
+                 'z': ZNAUPD_ERRORS,
+                 'c': CNAUPD_ERRORS}
+_SEUPD_ERRORS = {'d': DSEUPD_ERRORS,
+                 's': SSEUPD_ERRORS}
+_NEUPD_ERRORS = {'d': DNEUPD_ERRORS,
+                 's': SNEUPD_ERRORS,
+                 'z': ZNEUPD_ERRORS,
+                 'c': CNEUPD_ERRORS}
 
 # accepted values of parameter WHICH in _SEUPD
 _SEUPD_WHICH = ['LM', 'SM', 'LA', 'SA', 'BE']
@@ -192,8 +313,11 @@ class _ArpackParams(object):
             self.resid = np.zeros(n, tp)
             info = 0
 
-        if sigma is not None:
-            raise NotImplementedError("shifted eigenproblem not supported yet")
+        if sigma is None:
+            #sigma not used
+            self.sigma = 0
+        else:
+            self.sigma = sigma
 
         if ncv is None:
             ncv = 2 * k + 1
@@ -267,8 +391,8 @@ class _SymmetricArpackParams(_ArpackParams):
         #    Arguments should be
         #       matvec      = None [not used]
         #       M_matvec    = left multiplication by M
+        #                     or None, if M is the identity
         #       Minv_matvec = left multiplication by [A-sigma*M]^-1
-        
         if mode==1:
             if matvec is None:
                 raise ValueError("matvec must be specified for mode=1")
@@ -284,7 +408,6 @@ class _SymmetricArpackParams(_ArpackParams):
             self.OP   = matvec
             self.B    = lambda x: x
             self.bmat = 'I'
-
         elif mode==2:
             if matvec is None:
                 raise ValueError("matvec must be specified for mode=2")
@@ -298,19 +421,22 @@ class _SymmetricArpackParams(_ArpackParams):
             self.OPb  = matvec
             self.B    = M_matvec
             self.bmat = 'G'
-
         elif mode==3:
             if matvec is not None:
                 raise ValueError("matvec must not be specified for mode=3")
-            if M_matvec is None:
-                raise ValueError("M_matvec must be specified for mode=3")
             if Minv_matvec is None:
                 raise ValueError("Minv_matvec must be specified for mode=3")
-
-            self.OP   = lambda x: Minv_matvec(M_matvec(x))
-            self.OPa  = Minv_matvec
-            self.B    = M_matvec
-            self.bmat = 'G'
+            
+            if M_matvec is None:
+                self.OP = Minv_matvec
+                self.OPa = Minv_matvec
+                self.B = lambda x: x
+                self.bmat = 'I'
+            else:
+                self.OP   = lambda x: Minv_matvec(M_matvec(x))
+                self.OPa  = Minv_matvec
+                self.B    = M_matvec
+                self.bmat = 'G'
         else:
             raise ValueError("mode=%i not implemented" % mode)
         
@@ -331,8 +457,12 @@ class _SymmetricArpackParams(_ArpackParams):
         ltr = _type_conv[self.tp]
         if ltr not in ["s", "d"]:
             raise ValueError("Input matrix is not real-valued.")
+
         self._arpack_solver = _arpack.__dict__[ltr + 'saupd']
         self._arpack_extract = _arpack.__dict__[ltr + 'seupd']
+
+        self.iterate_infodict = _SAUPD_ERRORS[ltr]
+        self.extract_infodict = _SEUPD_ERRORS[ltr]
 
         self.ipntr = np.zeros(11, "int")
 
@@ -355,7 +485,7 @@ class _SymmetricArpackParams(_ArpackParams):
                 self.workd[xslice] = self.OPb(self.workd[xslice])
                 self.workd[yslice] = self.OPa(self.workd[xslice])
             else:
-                Bxslice = slice(self.ipntr[2]-1, self.ipntr[2]-1+n)
+                Bxslice = slice(self.ipntr[2]-1, self.ipntr[2]-1+self.n)
                 self.workd[yslice] = self.OPa(self.workd[Bxslice])
         elif self.ido == 2:
             self.workd[yslice] = self.B(self.workd[xslice])
@@ -369,22 +499,23 @@ class _SymmetricArpackParams(_ArpackParams):
             elif self.info == 1:
                 self._raise_no_convergence()
             else:
-                raise ArpackError(self.info)
+                raise ArpackError(self.info, infodict=self.iterate_infodict)
 
     def extract(self, return_eigenvectors):
         rvec = return_eigenvectors
         ierr = 0
         howmny = 'A' # return all eigenvectors
         sselect = np.zeros(self.ncv, 'int') # unused
-        sigma = 0.0 # no shifts, not implemented
-
-        d, z, ierr = self._arpack_extract(rvec, howmny, sselect, sigma, self.bmat,
-                self.which, self.k, self.tol, self.resid, self.v,
-                self.iparam[0:7], self.ipntr, self.workd[0:2*self.n],
-                self.workl,ierr)
+        
+        d, z, ierr = self._arpack_extract(rvec, howmny, sselect, self.sigma, 
+                                          self.bmat, self.which, self.k, 
+                                          self.tol, self.resid, self.v,
+                                          self.iparam[0:7], self.ipntr, 
+                                          self.workd[0:2*self.n],
+                                          self.workl, ierr)
 
         if ierr != 0:
-            raise ArpackError(ierr, infodict=_SEUPD_ERRORS)
+            raise ArpackError(ierr, infodict=self.extract_infodict)
 
         k_ok = self.iparam[4]
         d = d[:k_ok]
@@ -403,10 +534,35 @@ class _UnsymmetricArpackParams(_ArpackParams):
         #  mode = 1:
         #    Solve the standard eigenvalue problem:
         #      A*x = lambda*x
+        #       A - square matrix
         #    Arguments should be   
         #       matvec      = left multiplication by A
         #       M_matvec    = None [not used]
         #       Minv_matvec = None [not used]
+        #
+        #  mode = 2:
+        #    Solve the generalized eigenvalue problem:
+        #      A*x = lambda*M*x
+        #       A - square matrix
+        #       M - symmetric, positive semi-definite
+        #    Arguments should be   
+        #       matvec      = left multiplication by A
+        #       M_matvec    = left multiplication by M
+        #       Minv_matvec = left multiplication by M^-1
+        #
+        #  mode = 3,4:
+        #    Solve the general eigenvalue problem in shift-invert mode:
+        #      A*x = lambda*M*x
+        #       A - square matrix
+        #       M - symmetric, positive semi-definite
+        #    Arguments should be
+        #       matvec      = None [not used]
+        #       M_matvec    = left multiplication by M
+        #                     or None, if M is the identity
+        #       Minv_matvec = left multiplication by [A-sigma*M]^-1
+        #    if A is real and mode==3, use the real part of Minv_matvec
+        #    if A is real and mode==4, use the imag part of Minv_matvec
+        #    if A is complex and mode==3, use real and imag parts of Minv_matvec
         if mode==1:
             if matvec is None:
                 raise ValueError("matvec must be specified for mode=1")
@@ -422,7 +578,6 @@ class _UnsymmetricArpackParams(_ArpackParams):
             self.OP   = matvec
             self.B    = lambda x: x
             self.bmat = 'I'
-
         elif mode==2:
             if matvec is None:
                 raise ValueError("matvec must be specified for mode=2")
@@ -435,10 +590,36 @@ class _UnsymmetricArpackParams(_ArpackParams):
             self.OPa  = Minv_matvec
             self.OPb  = matvec
             self.B    = M_matvec
-            self.bmat = 'G'
-        
+            self.bmat = 'G'        
+        elif mode in (3,4):
+            if matvec is not None:
+                raise ValueError("matvec must not be specified "
+                                 "for mode in (3,4)")
+            if Minv_matvec is None:
+                raise ValueError("Minv_matvec must be specified "
+                                 "for mode in (3,4)")
+
+            if tp in 'DF': #complex type
+                if mode==3:
+                    self.OPa = Minv_matvec
+                else:
+                    raise ValueError("mode=4 invalid for complex A")
+            else:
+                if mode==3:
+                    self.OPa = lambda x: np.real(Minv_matvec(x))
+                else:
+                    self.OPa = lambda x: np.imag(Minv_matvec(x))
+            if M_matvec is None:
+                self.B = lambda x: x
+                self.bmat = 'I'
+                self.OP = self.OPa
+            else:
+                self.B = M_matvec
+                self.bmat = 'G'
+                self.OP = lambda x: self.OPa(M_matvec(x))
         else:
             raise ValueError("mode=%i not implemented" % mode)
+        
         if which not in _NEUPD_WHICH:
             raise ValueError("Parameter which must be one of %s" % ' '.join(_NEUPD_WHICH))
         if k >= n-1:
@@ -458,6 +639,9 @@ class _UnsymmetricArpackParams(_ArpackParams):
         self._arpack_solver = _arpack.__dict__[ltr + 'naupd']
         self._arpack_extract = _arpack.__dict__[ltr + 'neupd']
 
+        self.iterate_infodict = _NAUPD_ERRORS[ltr]
+        self.extract_infodict = _NEUPD_ERRORS[ltr]
+
         self.ipntr = np.zeros(14, "int")
 
         if self.tp in 'FD':
@@ -466,6 +650,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
             self.rwork = None
 
     def iterate(self):
+        #print "resid:",self.resid
         if self.tp in 'fd':
             self.ido, self.resid, self.v, self.iparam, self.ipntr, self.info = \
                 self._arpack_solver(self.ido, self.bmat, self.which, self.k, 
@@ -474,9 +659,11 @@ class _UnsymmetricArpackParams(_ArpackParams):
                                     self.info)
         else:
             self.ido, self.resid, self.v, self.iparam, self.ipntr, self.info =\
-                self._arpack_solver(self.ido, self.bmat, self.which, self.k, self.tol,
-                        self.resid, self.v, self.iparam, self.ipntr,
-                        self.workd, self.workl, self.rwork, self.info)
+                self._arpack_solver(self.ido, self.bmat, self.which, self.k, 
+                                    self.tol, self.resid, self.v, self.iparam, 
+                                    self.ipntr, self.workd, self.workl, 
+                                    self.rwork, self.info)
+        #print "   ",self.resid,self.ido
 
         xslice = slice(self.ipntr[0]-1, self.ipntr[0]-1+self.n)
         yslice = slice(self.ipntr[1]-1, self.ipntr[1]-1+self.n)
@@ -487,11 +674,8 @@ class _UnsymmetricArpackParams(_ArpackParams):
             # compute y = Op*x
             if self.mode in (1,2):
                 self.workd[yslice] = self.OP(self.workd[xslice])
-            #elif self.mode==2:
-            #    self.workd[xslice] = self.OPb(self.workd[xslice])
-            #    self.workd[yslice] = self.OPa(self.workd[xslice])
             else:
-                Bxslice = slice(self.ipntr[2]-1, self.ipntr[2]-1+n)
+                Bxslice = slice(self.ipntr[2]-1, self.ipntr[2]-1+self.n)
                 self.workd[yslice] = self.OPa(self.workd[Bxslice])
         elif self.ido == 2:
             self.workd[yslice] = self.B(self.workd[xslice])
@@ -505,7 +689,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
             elif self.info == 1:
                 self._raise_no_convergence()
             else:
-                raise ArpackError(self.info)
+                raise ArpackError(self.info, infodict=self.iterate_infodict)
 
     def extract(self, return_eigenvectors):
         k, n = self.k, self.n
@@ -513,8 +697,8 @@ class _UnsymmetricArpackParams(_ArpackParams):
         ierr = 0
         howmny = 'A' # return all eigenvectors
         sselect = np.zeros(self.ncv, 'int') # unused
-        sigmai = 0.0 # no shifts, not implemented
-        sigmar = 0.0 # no shifts, not implemented
+        sigmar = np.real(self.sigma)
+        sigmai = np.imag(self.sigma)
         workev = np.zeros(3 * self.ncv, self.tp)
 
         if self.tp in 'fd':
@@ -529,7 +713,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
                        self.workd, self.workl, self.info)
 
             if ierr != 0:
-                raise ArpackError(ierr, infodict=_NEUPD_ERRORS)
+                raise ArpackError(ierr, infodict=self.extract_infodict)
 
             # The ARPACK nonsymmetric real and double interface (s,d)naupd
             # return eigenvalues and eigenvectors in real (float,double) arrays.
@@ -540,20 +724,28 @@ class _UnsymmetricArpackParams(_ArpackParams):
             # Arrange the eigenvectors: complex eigenvectors are stored as
             # real,imaginary in consecutive columns
             z = zr.astype(self.tp.upper())
+            nreturned = self.iparam[4] # number of good eigenvalues returned
             i = 0
+
             while i<=k:
                 # check if complex
                 if abs(d[i].imag) != 0:
                     # this is a complex conjugate pair with eigenvalues
                     # in consecutive columns
-                    z[:,i] = zr[:,i] + 1.0j * zr[:,i+1]
-                    z[:,i+1] = z[:,i].conjugate()
-                    i +=1
+                    if i<k:
+                        z[:,i] = zr[:,i] + 1.0j * zr[:,i+1]
+                        z[:,i+1] = z[:,i].conjugate()
+                        i +=1
+                    else:
+                        #last eigenvalue is complex: the imaginary part of
+                        # the eigenvector has not been returned
+                        #this can only happen if nreturned > k, so we'll
+                        # throw out this case.
+                        nreturned-=1
                 i += 1
 
             # Now we have k+1 possible eigenvalues and eigenvectors
             # Return the ones specified by the keyword "which"
-            nreturned = self.iparam[4] # number of good eigenvalues returned
             if nreturned <= k:
                 # we got less or equal as many eigenvalues we wanted
                 d = d[:nreturned]
@@ -587,7 +779,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
                            self.workd, self.workl, self.rwork, ierr)
 
             if ierr != 0:
-                raise ArpackError(ierr, infodict=_NEUPD_ERRORS)
+                raise ArpackError(ierr, infodict=self.extract_infodict)
 
             k_ok = self.iparam[4]
             d = d[:k_ok]
@@ -615,14 +807,122 @@ class LU_inv(LinearOperator):
     """
     def __init__(self,M):
         self.M_lu = lu_factor(M)
-        LinearOperator.__init__(self, M.shape, self._matvec)
+        if hasattr(M,'dtype'):
+            dtype = M.dtype
+        else:
+            x = np.zeros(M.shape[1])
+            dtype = (M*x).dtype
+        LinearOperator.__init__(self, M.shape, self._matvec, dtype=dtype)
     def _matvec(self,x):
         return lu_solve(self.M_lu,x)
 
+class iter_inv(LinearOperator):
+    """
+    iter_inv:
+       helper class to repeatedly solve M*x=b
+       using an iterative method.
+    """
+    def __init__(self, M, ifunc=gmres):
+        self.M = M
+        self.ifunc = ifunc
+        if hasattr(M,'dtype'):
+            dtype = M.dtype
+        else:
+            x = np.zeros(M.shape[1])
+            dtype = (M*x).dtype
+        LinearOperator.__init__(self, M.shape, self._matvec, dtype=dtype)
+    def _matvec(self,x):
+        b,info = self.ifunc(self.M,x)
+        if info != 0:
+            raise ValueError("Error in inverting M: function "
+                             "%s did not converge (info = %i)." 
+                             % (self.ifunc.__name__,info))
+        return b
+
+class iter_OPinv(LinearOperator):
+    """
+    iter_OPinv:
+       helper class to repeatedly solve [A-sigma*M]*x = b
+       using an iterative method
+    """
+    def __init__(self, A, M, sigma, ifunc=gmres):
+        self.A = A
+        self.M = M
+        self.sigma = sigma
+        self.ifunc = ifunc
+        
+        x = np.zeros(A.shape[1])
+        if M is None:
+            dtype = self.mult_func_M_None(x).dtype
+            self.OP = LinearOperator(self.A.shape,
+                                     self.mult_func_M_None,
+                                     dtype = dtype)
+        else:
+            dtype = self.mult_func(x).dtype
+            self.OP = LinearOperator(self.A.shape,
+                                     self.mult_func,
+                                     dtype = dtype)
+        LinearOperator.__init__(self, A.shape, self._matvec, dtype=dtype)
+    
+    def mult_func(self,x):
+        return self.A.matvec(x) - self.sigma*self.M.matvec(x)
+    
+    def mult_func_M_None(self,x):
+        return self.A.matvec(x) - self.sigma*x
+
+    def _matvec(self,x):
+        b,info = self.ifunc(self.OP,x)
+        if info != 0:
+            raise ValueError("Error in inverting [A-sigma*M]: function "
+                             "%s did not converge (info = %i)." 
+                             % (self.ifunc.__name__,info))
+        return b
+
+def get_inv_matvec(M):
+    if isdense(M):
+        return LU_inv(M).matvec 
+    elif isspmatrix(M):
+        if isspmatrix_csr(M):
+            M = M.T
+        return factorized(M)
+    else:
+        return iter_inv(M).matvec
+
+def get_OPinv_matvec(A,M,sigma,symmetric=False):
+    if sigma==0:
+        return get_inv_matvec(A)
+
+    if M is None:
+        #M is the identity matrix
+        if isdense(A):
+            A = np.copy(A)
+            A.flat[::A.shape[1]+1] -= sigma
+            return LU_inv(A).matvec
+        elif isspmatrix(A):
+            A = A - sigma * identity(A.shape[0])
+            if symmetric and isspmatrix_csr(A):
+                A = A.T
+            return factorized(A.tocsc())
+        else:
+            return iter_OPinv(_aslinearoperator_with_dtype(A), 
+                              M, sigma).matvec
+    else:
+        if ((not isdense(A) and not isspmatrix(A)) or 
+            (not isdense(M) and not isspmatrix(M))):
+            return iter_OPinv(_aslinearoperator_with_dtype(A),
+                              _aslinearoperator_with_dtype(M),
+                              sigma).matvec
+        elif isdense(A) or isdense(M):
+            return LU_inv(A - sigma * M).matvec
+        else:
+            OP = A - sigma * M
+            if symmetric and isspmatrix_csr(OP): 
+                OP = OP.T
+            return factorized(OP.tocsc())
 
 def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
-         ncv=None, maxiter=None, tol=0, Minv=None,
-         return_eigenvectors=True):
+         ncv=None, maxiter=None, tol=0, Minv=None, OPinv=None,
+         OPpart = None, return_eigenvectors=True):
     """
     Find k eigenvalues and eigenvectors of the square matrix A.
 
@@ -635,10 +935,9 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     Parameters
     ----------
-    A : matrix, array, or object with matvec(x) method
-        An N x N matrix, array, or an object with matvec(x) method to perform
-        the matrix vector product A * x.  The sparse matrix formats
-        in scipy.sparse are appropriate for A.
+    A : An N x N real or complex matrix, array, or an object with matvec(x) 
+        method to perform the matrix vector product A * x.  The sparse 
+        matrix formats in scipy.sparse are appropriate for A.
     k : integer
         The number of eigenvalues and eigenvectors desired.
         `k` must be smaller than N. It is not possible to compute all
@@ -654,15 +953,36 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     Other Parameters
     ----------------
-    M : matrix or array
-        A symmetric positive-definite matrix for the generalized
-        eigenvalue problem ``A * x = w * M * x``.  
-        eigsh internally computes the LU decomposition of M for repeated 
-        solutions of M*x = b.  Alternatively, the user can supply the 
-        function Minv, which returns x given b
+    M : An N x N matrix, array, sparse matrix, or linear operator representing 
+        a real symmetric positive-definite matrix (for sigma==None) or
+        a real symmetric positive semi-definite matrix (for sigma!=None)
+        for the generalized eigenvalue problem ``A * x = w * M * x``.  
+        When sigma==None, eigs requires an operator to compute the 
+        solution of the linear equation M * x = b.  
+        This is done internally via a (sparse) LU decomposition for an 
+        explicit matrix, or via an iterative solver for a general 
+        linear operator.  Alternatively, the user can supply the matrix 
+        or operator Minv, which gives Minv(b) = M^-1 * b 
     sigma : real or complex
-        (Not implemented)
-        Find eigenvalues near sigma.  Shift spectrum by sigma.
+        (not implemented for real A)
+        Find eigenvalues near sigma using shift-invert mode.  This requires
+        an operator to compute the solution of the linear system 
+        [A - sigma * M] * x = b, where M is the identity matrix if unspecified.
+        This is performed internally via a (sparse) LU decomposition for 
+        explicit matrices A & M, or via an iterative solver if either A
+        or M is a general linear operator.  Alternatively, the user can 
+        supply the matrix or operator OPinv, which gives 
+        OPinv * b = [A - sigma * M]^-1 * b.
+        For a real matrix A, shift-invert can either be done in imaginary 
+        mode or real mode, specified by the parameter OPpart ('r' or 'i').  
+        If OPpart == 'r' (default), the keyword 'which' refers to the 
+        shifted values
+          mu = 1/2 * [ 1/(v-sigma) + 1/(v-conjg(sigma)) ]
+        If OPpart == 'i', the keyword 'which' refers to the shifted values
+          mu = 1/2i * [ 1/(v-sigma) - 1/(v-conjg(sigma)) ]
+        For a complex matrix A, shift invert is done in complex mode, and
+        'which' refers to the shifted values
+          mu = 1/(v-sigma)
     v0 : array
         Starting vector for iteration.
     ncv : integer
@@ -678,6 +998,9 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
          - 'LI' : largest imaginary part
          - 'SI' : smallest imaginary part
 
+        When sigma != None, 'which' refers to the shifted eigenvalues
+         (see discussion in 'sigma', above)
+
     maxiter : integer
         Maximum number of Arnoldi update iterations allowed
     tol : float
@@ -685,8 +1008,13 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         The default value of 0 implies machine precision.
     return_eigenvectors : boolean
         Return eigenvectors (True) in addition to eigenvalues
-    Minv : function
-        See notes in M, above
+    Minv : N x N matrix, array, sparse matrix, or linear operator
+        See notes in M, above.
+    OPinv : N x N matrix, array, sparse matrix, or linear operator
+        See notes in sigma, above.
+    OPpart : 'r' or 'i'.  
+        (Not implemented)
+        See notes in sigma, above
 
     Raises
     ------
@@ -700,6 +1028,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     See Also
     --------
     eigsh : eigenvalues and eigenvectors for symmetric matrix A
+    svds : singular value decomposition for a matrix A
 
     Notes
     -----
@@ -725,28 +1054,79 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
        Solution of Large Scale Eigenvalue Problems by Implicitly Restarted
        Arnoldi Methods. SIAM, Philadelphia, PA, 1998.
     """
-    A = _aslinearoperator_with_dtype(A)
     if A.shape[0] != A.shape[1]:
         raise ValueError('expected square matrix (shape=%s)' % (A.shape,))
+    if (M is not None) and (M.shape != A.shape):
+        raise ValueError('wrong M dimensions %s, should be %s' 
+                         % (M.shape,A.shape) )
     n = A.shape[0]
 
-    matvec = lambda x : A.matvec(x)
+    if k<=0 or k>=n:
+        raise ValueError("k must be between 1 and rank(A)-1")
 
-    if M is None:
-        mode = 1
+    if sigma is None:
+        A = _aslinearoperator_with_dtype(A)
         matvec = A.matvec
-        M_matvec = None
-        Minv_matvec = None
-        if Minv is not None:
-            print "Warning: eigsh: user supplied Minv but not M.  Ignoring it"
+
+        if OPinv is not None:
+            raise ValueError("OPinv should not be specified "
+                             "with sigma = None.")
+        if OPpart is not None:
+            raise ValueError("OPpart should not be specified with "
+                             "sigma = None or complex A")
+        
+        if M is None:
+            #standard eigenvalue problem
+            mode = 1
+            M_matvec = None
+            Minv_matvec = None
+            if Minv is not None:
+                raise ValueError("Minv should not be "
+                                 "specified with M = None.")
+        else:
+            #general eigenvalue problem
+            mode = 2
+            if Minv is None:
+                Minv_matvec = get_inv_matvec(M)
+            else:
+                Minv = _aslinearoperator_with_dtype(Minv)
+                Minv_matvec = Minv.matvec
+            M_matvec = _aslinearoperator_with_dtype(M).matvec
     else:
-        mode = 2
-        matvec = A.matvec
-        M_matvec    = lambda x: np.dot(M,x)
-        if Minv is None:
-            Minv_matvec = LU_inv(M).matvec 
-        else: 
-            Minv_matvec = Minv
+        #sigma is not None: shift-invert mode
+        if np.issubdtype(A.dtype, np.complexfloating):
+            if OPpart is not None:
+                raise ValueError("OPpart should not be specified with "
+                                 "sigma = None or complex A")
+            mode = 3
+        else:
+            raise ValueError("Nonsymmetric real shift-invert is not "
+                             "yet available.  Try converting matrix "
+                             "to complex")
+        #JTV: shifts for real A lead to segmentation faults and other
+        # hard-to-track memory errors.  I'm going to leave them out
+        # for now.
+        
+        #elif OPpart is None or OPpart.lower() == 'r':
+        #    mode = 3
+        #elif OPpart.lower() == 'i':
+        #    mode = 4
+        #else:
+        #    raise ValueError("OPpart must be one of ('r','i')")
+        
+        matvec = None
+        if Minv is not None:
+            raise ValueError("Minv should not be specified when sigma is")
+        if OPinv is None:
+            Minv_matvec = get_OPinv_matvec(A, M, sigma, symmetric=False)
+        else:
+            OPinv = _aslinearoperator_with_dtype(OPinv)
+            Minv_matvec = OPinv.matvec
+        if M is None:
+            M_matvec = None
+        else:
+            M = _aslinearoperator_with_dtype(M)
+            M_matvec = M.matvec        
 
     params = _UnsymmetricArpackParams(n, k, A.dtype.char, matvec, mode,
                                       M_matvec, Minv_matvec, sigma,
@@ -758,7 +1138,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     return params.extract(return_eigenvectors)
 
 def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
-          ncv=None, maxiter=None, tol=0, Minv=None,
+          ncv=None, maxiter=None, tol=0, Minv=None, OPinv=None,
           return_eigenvectors=True):
     """
     Find k eigenvalues and eigenvectors of the real symmetric square matrix A.
@@ -772,12 +1152,13 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     Parameters
     ----------
-    A : matrix or array with real entries or object with matvec(x) method
-        An N x N real symmetric matrix or array or an object with matvec(x)
+    A : An N x N real symmetric matrix or array or an object with matvec(x)
         method to perform the matrix vector product A * x.  The sparse
         matrix formats in scipy.sparse are appropriate for A.
     k : integer
         The number of eigenvalues and eigenvectors desired.
+        `k` must be smaller than N. It is not possible to compute all
+        eigenvectors of a matrix.
 
     Returns
     -------
@@ -789,15 +1170,27 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     Other Parameters
     ----------------
-    M : matrix or array
-        A symmetric positive-definite matrix for the generalized
-        eigenvalue problem ``A * x = w * M * x``.  
-        eigsh internally computes the LU decomposition of M for repeated 
-        solutions of M*x = b.  Alternatively, the user can supply the 
-        function Minv, which returns x given b
-    sigma : real
-        (Not implemented)
-        Find eigenvalues near sigma.  Shift spectrum by sigma.
+    M : An N x N matrix, array, sparse matrix, or linear operator representing
+        a real symmetric positive-definite matrix (for sigma==None) or
+        a real symmetric positive semi-definite matrix (for sigma!=None)
+        for the generalized eigenvalue problem ``A * x = w * M * x``.  
+        If sigma==None, eigsh requires an operator to compute the 
+        solution of the linear equation M*x = b.  
+        This is done internally via a (sparse) LU decomposition for an 
+        explicit matrix, or via an iterative solver for a general linear 
+        operator.  Alternatively, the user can supply the matrix or 
+        operator Minv, which yields x = Minv*b 
+    sigma : real or complex
+        Find eigenvalues near sigma using shift-invert mode.  This requires
+        an operator to compute the solution of the linear system 
+        [A - sigma * M] x = b, where M is the identity matrix if unspecified.
+        This is done internally via a (sparse) LU decomposition for 
+        explicit matrices A & M, or via an iterative solver if either A
+        or M is a general linear operator.  Alternatively, the user can 
+        supply the matrix or operator OPinv, which gives 
+        OPinv * b = [A - sigma * M]^-1 * b .
+        Note that when sigma is specified, the keyword "which" (below) refers
+        to the shifted eigenvalues 1/(v-sigma).
     v0 : array
         Starting vector for iteration.
     ncv : integer
@@ -812,6 +1205,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
          - 'SM' : Smallest (in magnitude) eigenvalues
          - 'BE' : Half (k/2) from each end of the spectrum
                   When k is odd, return one more (k/2+1) from the high end
+        When sigma != None, 'which' refers to the 
+          shifted eigenvalues 1/(v-sigma)
     maxiter : integer
         Maximum number of Arnoldi update iterations allowed
     tol : float
@@ -819,8 +1214,10 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         The default value of 0 implies machine precision.
     return_eigenvectors : boolean
         Return eigenvectors (True) in addition to eigenvalues
-    Minv : function
+    Minv : N x N matrix, array, sparse matrix, or linear operator
         See notes in M, above
+    OPinv : N x N matrix, array, sparse matrix, or linear operator
+        See notes in sigma, above.
 
     Raises
     ------
@@ -834,6 +1231,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     See Also
     --------
     eigs : eigenvalues and eigenvectors for a general (nonsymmetric) matrix A
+    svds : singular value decomposition for a matrix A
 
     Notes
     -----
@@ -857,26 +1255,56 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
        Solution of Large Scale Eigenvalue Problems by Implicitly Restarted
        Arnoldi Methods. SIAM, Philadelphia, PA, 1998.
     """
-    A = _aslinearoperator_with_dtype(A)
     if A.shape[0] != A.shape[1]:
         raise ValueError('expected square matrix (shape=%s)' % (A.shape,))
+    if (M is not None) and (M.shape != A.shape):
+        raise ValueError('wrong M dimensions %s, should be %s' 
+                         % (M.shape,A.shape) )
     n = A.shape[0]
+    
+    if k<=0 or k>=n:
+        raise ValueError("k must be between 1 and rank(A)-1")
 
-    if M is None:
-        mode        = 1
-        matvec      = A.matvec
-        M_matvec    = None
-        Minv_matvec = None
-        if Minv is not None:
-            print "Warning: eigsh: user supplied Minv but not M.  Ignoring it"
+    if sigma is None:
+        A = _aslinearoperator_with_dtype(A)
+        matvec = A.matvec
+        
+        if OPinv is not None:
+            raise ValueError("OPinv should not be specified "
+                             "with sigma = None.")
+        if M is None:
+            #standard eigenvalue problem
+            mode = 1
+            M_matvec = None
+            Minv_matvec = None
+            if Minv is not None:
+                raise ValueError("Minv should not be "
+                                 "specified with M = None.")
+        else:
+            #general eigenvalue problem
+            mode = 2
+            if Minv is None:
+                Minv_matvec = get_inv_matvec(M)
+            else:
+                Minv = _aslinearoperator_with_dtype(Minv)
+                Minv_matvec = Minv.matvec
+            M_matvec = _aslinearoperator_with_dtype(M).matvec
     else:
-        mode        = 2
-        matvec      = lambda x: A.matvec(x)
-        M_matvec    = lambda x: np.dot(M,x)
-        if Minv is None:
-            Minv_matvec = LU_inv(M).matvec 
-        else: 
-            Minv_matvec = Minv
+        #sigma is not None: shift-invert mode
+        mode = 3
+        matvec = None
+        if Minv is not None:
+            raise ValueError("Minv should not be specified when sigma is")
+        if OPinv is None:
+            Minv_matvec = get_OPinv_matvec(A, M, sigma, symmetric=True)
+        else:
+            OPinv = _aslinearoperator_with_dtype(OPinv)
+            Minv_matvec = OPinv.matvec
+        if M is None:
+            M_matvec = None
+        else:
+            M = _aslinearoperator_with_dtype(M)
+            M_matvec = M.matvec
 
     params = _SymmetricArpackParams(n, k, A.dtype.char, matvec, mode,
                                     M_matvec, Minv_matvec, sigma,
