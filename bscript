@@ -40,6 +40,32 @@ def c_template(self, node):
     if "c" in self.features:
         self.source.append(outs[0])
 
+# FIXME: abstract those module gen tasks...
+class write_module(waflib.Task.Task):
+    color = "CYAN"
+    vars = ["CONTENT"]
+    def run(self):
+        # FIXME: put actual data here
+        self.outputs[0].write(self.env.CONTENT)
+
+@waflib.TaskGen.feature("gen_pymodule")
+def process_write_config(self):
+    if not hasattr(self, "content"):
+        raise ValueError("task gen %r expects a 'content' argument" % self.name)
+    else:
+        self.env.CONTENT = self.content
+    output = self.path.find_or_declare(self.target)
+    name = getattr(self, "name", None) or self.target
+
+    bento_context = self.bld.bento_context
+    b_output = bento_context.build_node.make_node(output.bldpath())
+    bento_context.outputs_registry.register_outputs(
+        "gen_pymodule", name, [b_output], bento_context.build_node, "$sitedir")
+
+    tsk = self.create_task("write_module")
+    tsk.set_outputs(output)
+    return tsk
+
 @hooks.startup
 def startup(context):
     context.register_context("configure", ConfigureWafContext)
@@ -59,6 +85,9 @@ def pre_configure(context):
     conf = context.waf_context
     conf.load("compiler_fc")
     conf.load("f2py")
+
+    conf.check_fortran_verbose_flag()
+    conf.check_fortran_clib()
 
 def remove_flag(name, flag):
     while True:
@@ -115,31 +144,29 @@ def post_configure(context):
 
         conf.env.MACOSX_DEPLOYMENT_TARGET = "10.4"
 
-# FIXME: abstract those module gen tasks...
-class write_module(waflib.Task.Task):
-    color = "CYAN"
-    vars = ["CONTENT"]
-    def run(self):
-        # FIXME: put actual data here
-        self.outputs[0].write(self.env.CONTENT)
+    conf.env.HAS_FBLAS = False
+    conf.env.HAS_CBLAS = False
+    conf.env.HAS_FLAPACK = False
+    conf.env.HAS_CLAPACK = False
 
-@waflib.TaskGen.feature("gen_pymodule")
-def process_write_config(self):
-    if not hasattr(self, "content"):
-        raise ValueError("task gen %r expects a 'content' argument" % self.name)
-    else:
-        self.env.CONTENT = self.content
-    output = self.path.find_or_declare(self.target)
-    name = getattr(self, "name", None) or self.target
+    if sys.platform == "darwin":
+        try:
+            conf.check(framework="Accelerate", msg="Checking for framework Accelerate", uselib_store="CBLAS")
+            conf.env.HAS_CBLAS = True
 
-    bento_context = self.bld.bento_context
-    b_output = bento_context.build_node.make_node(output.bldpath())
-    bento_context.outputs_registry.register_outputs(
-        "gen_pymodule", name, [b_output], bento_context.build_node, "$sitedir")
+            conf.check(framework="Accelerate", msg="Checking for framework Accelerate", uselib_store="FLAPACK")
+            conf.env.HAS_FLAPACK = True
 
-    tsk = self.create_task("write_module")
-    tsk.set_outputs(output)
-    return tsk
+            conf.check(framework="Accelerate", msg="Checking for framework Accelerate", uselib_store="FBLAS")
+            conf.env.HAS_FBLAS = True
+
+        except waflib.Errors.ConfigurationError:
+            pass
+        # FIXME: bug in waf ?
+        conf.env.FRAMEWORK_ST = ["-framework"]
+
+    if not (conf.env.HAS_FBLAS and conf.env.HAS_FLAPACK):
+        raise waflib.Errors.ConfigurationError("You need blas and lapack")
 
 @hooks.pre_build()
 def pre_build(context):

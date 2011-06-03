@@ -1,0 +1,20 @@
+Library:
+    Extension: fblas
+        Sources:
+            generic_fblas.pyf,
+            src/fblaswrap.f
+    Extension: cblas
+        Sources:
+            generic_cblas.pyf
+    Extension: flapack
+        Sources:
+            generic_flapack.pyf
+    Extension: clapack
+        Sources:
+            generic_clapack.pyf
+    Extension: _flinalg
+        Sources:
+            src/det.f, src/lu.f
+    Extension: calc_lwork
+        Sources:
+            src/calc_lwork.f

@@ -1,0 +1,59 @@
+import sys
+
+from bento.commands import hooks
+
+@hooks.pre_build()
+def pre_build(context):
+    bld = context.waf_context
+
+    def builder(extension):
+        source = extension.sources[:]
+        if sys.platform == "darwin":
+            source.pop(source.index("src/fblaswrap.f"))
+            source.append("src/fblaswrap_veclib_c.c")
+        bld(features="c pyext bento cshlib f2py",
+            source=source,
+            target=extension.name,
+            use="FBLAS")
+    context.register_builder("fblas", builder)
+
+    def builder(extension):
+        bld(features="c pyext bento cshlib f2py",
+            source=extension.sources,
+            target=extension.name,
+            use="CBLAS")
+    context.register_builder("cblas", builder)
+
+    def builder(extension):
+        bld(features="c pyext bento cshlib f2py f2py_interface_gen",
+            source=extension.sources,
+            target=extension.name,
+            use="FLAPACK")
+    context.register_builder("flapack", builder)
+
+    def builder(extension):
+        if bld.env.HAS_CLAPACK:
+            bld(features="c pyext bento cshlib f2py f2py_interface_gen",
+                source=extension.sources,
+                target=extension.name,
+                use="CLAPACK")
+        else:
+            bld(features="c pyext bento cshlib f2py f2py_fake_interface_gen",
+                source=extension.sources,
+                target=extension.name,
+                )
+    context.register_builder("clapack", builder)
+
+    def builder(extension):
+        bld(features="c pyext bento cshlib f2py",
+            source=extension.sources,
+            target=extension.name,
+            use="FLAPACK")
+    context.register_builder("_flinalg", builder)
+
+    def builder(extension):
+        bld(features="c pyext bento cshlib f2py",
+            source=extension.sources,
+            target=extension.name,
+            use="FBLAS CLIB")
+    context.register_builder("calc_lwork", builder)
