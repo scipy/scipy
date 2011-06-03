@@ -3,7 +3,7 @@ import os.path as op
 
 from numpy.distutils.misc_util \
     import \
-        get_numpy_include_dirs
+        get_numpy_include_dirs, get_pkg_info
 from numpy.distutils.conv_template \
     import \
         process_str as process_c_str
@@ -189,6 +189,9 @@ def post_configure(context):
 
     if not (conf.env.HAS_FBLAS and conf.env.HAS_FLAPACK):
         raise waflib.Errors.ConfigurationError("You need blas and lapack")
+
+    npymath_info = get_pkg_info("npymath")
+    conf.parse_flags(npymath_info.cflags() + " " + npymath_info.libs(), "NPYMATH")
 
 @hooks.pre_build()
 def pre_build(context):
