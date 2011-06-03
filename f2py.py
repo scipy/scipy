@@ -137,7 +137,7 @@ def add_f2py_extra(task_gen, module_node, module_name):
     fortranobject_node.write(fortranobject_source_node.read())
 
     # FIXME: race condition 
-    fwrapper_node = parent_node.make_node(FWRAP_TEMPLATE % module_name)
+    fwrapper_node = parent_node.find_or_declare(FWRAP_TEMPLATE % module_name)
     fwrapper_node.write("")
     # XXX: evil hack to make get_bld_sig work here. Find out how to do this properly
     fwrapper_node.is_bld = lambda : False
