@@ -53,7 +53,9 @@ DataFiles: tests
         fftpack/tests/*.py,
         fftpack/tests/*.npz,
         linalg/tests/*.py,
-        special/tests/*.py
+        special/tests/*.py,
+        special/tests/*.dat,
+        special/tests/data/*.npz
 
 Library:
     Packages:

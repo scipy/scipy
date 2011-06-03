@@ -18,3 +18,10 @@ def pre_build(context):
             target=extension.name,
             use="sc_specfunlib NPYMATH CLIB")
     context.register_builder("specfun", builder)
+
+    def builder(extension):
+        bld(features="c pyext cshlib bento",
+            source=extension.sources,
+            target=extension.name,
+            use="sc_amos sc_toms sc_c_misc sc_cephes sc_mach sc_cdf sc_specfunlib NPYMATH CLIB")
+    context.register_builder("_cephes", builder)
