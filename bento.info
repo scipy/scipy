@@ -49,6 +49,7 @@ DataFiles: tests
     Files:
         constants/tests/*.py,
         fftpack/tests/*.py,
+        fftpack/tests/*.npz,
         linalg/tests/*.py
 
 Library:
