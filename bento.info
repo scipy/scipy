@@ -36,12 +36,14 @@ Classifiers:
 HookFile:
     bscript,
     scipy/fftpack/bscript,
-    scipy/linalg/bscript
+    scipy/linalg/bscript,
+    scipy/special/bscript
 
 Recurse:
     scipy/cluster,
     scipy/fftpack,
-    scipy/linalg
+    scipy/linalg,
+    scipy/special
 
 DataFiles: tests
     TargetDir: $sitedir/scipy
@@ -50,7 +52,8 @@ DataFiles: tests
         constants/tests/*.py,
         fftpack/tests/*.py,
         fftpack/tests/*.npz,
-        linalg/tests/*.py
+        linalg/tests/*.py,
+        special/tests/*.py
 
 Library:
     Packages:
@@ -58,4 +61,5 @@ Library:
         scipy.cluster,
         scipy.constants,
         scipy.fftpack,
-        scipy.linalg
+        scipy.linalg,
+        scipy.special

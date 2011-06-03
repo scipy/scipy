@@ -1,0 +1,20 @@
+from bento.commands import hooks
+
+@hooks.pre_build()
+def pre_build(context):
+    bld = context.waf_context
+
+    def builder(extension):
+        bld(features="c pyext cshlib bento",
+            source=extension.sources,
+            target=extension.name,
+            use="NPYMATH")
+    context.register_builder("orthogonal_eval", builder)
+    context.register_builder("lambertw", builder)
+
+    def builder(extension):
+        bld(features="c pyext cshlib bento f2py",
+            source=extension.sources,
+            target=extension.name,
+            use="sc_specfunlib NPYMATH CLIB")
+    context.register_builder("specfun", builder)
