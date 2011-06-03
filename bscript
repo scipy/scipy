@@ -164,6 +164,28 @@ def post_configure(context):
             pass
         # FIXME: bug in waf ?
         conf.env.FRAMEWORK_ST = ["-framework"]
+    else:
+        try:
+            conf.check_cc(lib=["f77blas", "cblas", "atlas"], uselib_store="FBLAS")
+            conf.env.HAS_FBLAS = True
+
+            conf.check_cc(lib=["cblas", "atlas"], uselib_store="CBLAS")
+            conf.env.HAS_CBLAS = True
+
+            conf.check_cc(lib=["lapack", "f77blas", "cblas", "atlas"], uselib_store="FLAPACK")
+            conf.env.HAS_FLAPACK = True
+
+            conf.check_cc(lib=["lapack", "f77blas", "cblas", "atlas"], uselib_store="CLAPACK")
+
+            conf.env.HAS_CLAPACK = True
+        except waflib.Errors.ConfigurationError:
+            pass
+
+        # FIXME: waf bug ? Did not find a way to compile both fortran and c
+        # files with -fPIC
+        fcflags = conf.env.FCFLAGS
+        fcflags.append("-fPIC")
+        conf.env.FCFLAGS = fcflags
 
     if not (conf.env.HAS_FBLAS and conf.env.HAS_FLAPACK):
         raise waflib.Errors.ConfigurationError("You need blas and lapack")
