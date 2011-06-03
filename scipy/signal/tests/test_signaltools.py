@@ -6,8 +6,8 @@ from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_raises, assert_, dec
 
 import scipy.signal as signal
-from scipy.signal import lfilter, correlate, convolve, convolve2d, hilbert, \
-     hilbert2
+from scipy.signal import lfilter, lfilter_zi, correlate, convolve, convolve2d, \
+     hilbert, hilbert2
 
 
 from numpy import array, arange
@@ -534,7 +534,18 @@ for datatype in [np.csingle, np.cdouble, np.clongdouble]:
     globals()[cls.__name__] = cls
 
 
-class TestFiltFilt:
+class TestLFilterZI(TestCase):
+
+    def test_basic(self):
+        a = np.array([1.0, -1.0, 0.5])
+        b = np.array([1.0,  0.0, 2.0])
+        zi_expected = np.array([5.0, -1.0])
+        zi = lfilter_zi(b, a)
+        assert_array_almost_equal(zi, zi_expected)
+
+
+class TestFiltFilt(TestCase):
+    # XXX Add more tests.
     def test_basic(self):
         out = signal.filtfilt([1,2,3], [1,2,3], np.arange(12))
         assert_equal(out, arange(12))
