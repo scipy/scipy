@@ -38,6 +38,13 @@ about our function's call signatures.
 New features
 ============
 
+Enhanced filtfilt function in ``scipy.signal``
+----------------------------------------------
+
+The forward-backward filter function `scipy.signal.filtfilt` can now
+filter the data in a given axis of an n-dimensional numpy array.
+(Previously it only handled a 1-dimensional array.)  Options have been
+added to allow more control over how the data is extended before filtering.
 
 
 Deprecated features
