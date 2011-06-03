@@ -55,5 +55,5 @@ def pre_build(context):
         bld(features="c pyext bento cshlib f2py",
             source=extension.sources,
             target=extension.name,
-            use="FBLAS CLIB")
+            use="FLAPACK CLIB")
     context.register_builder("calc_lwork", builder)
