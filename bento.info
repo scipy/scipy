@@ -37,12 +37,16 @@ HookFile:
     bscript,
     scipy/fftpack/bscript,
     scipy/linalg/bscript,
+    scipy/optimize/bscript,
+    scipy/signal/bscript,
     scipy/special/bscript
 
 Recurse:
     scipy/cluster,
     scipy/fftpack,
     scipy/linalg,
+    scipy/optimize,
+    scipy/signal,
     scipy/special
 
 DataFiles: tests
@@ -53,6 +57,9 @@ DataFiles: tests
         fftpack/tests/*.py,
         fftpack/tests/*.npz,
         linalg/tests/*.py,
+        misc/tests/*.py,
+        optimize/tests/*.py,
+        signal/tests/*.py,
         special/tests/*.py,
         special/tests/*.dat,
         special/tests/data/*.npz
@@ -64,4 +71,7 @@ Library:
         scipy.constants,
         scipy.fftpack,
         scipy.linalg,
+        scipy.misc,
+        scipy.optimize,
+        scipy.signal,
         scipy.special
