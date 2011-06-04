@@ -10,6 +10,8 @@ import sys
 import inspect
 import accelerate_tools
 
+from numpy.testing import assert_
+
 ##################################################################
 #                       CLASS __DESCRIPTOR                       #
 ##################################################################
@@ -180,7 +182,7 @@ def opcodize(s):
 ##################################################################
 def listing(f):
     "Pretty print the internals of your function"
-    assert inspect.isfunction(f)
+    assert_(inspect.isfunction(f))
     filename = f.func_code.co_filename
     try:
         lines = open(filename).readlines()
@@ -688,8 +690,9 @@ class CXXCoder(ByteCodeMeaning):
     #                        MEMBER __INIT__                         #
     ##################################################################
     def __init__(self,function,signature,name=None):
-        assert inspect.isfunction(function)
-        assert not function.func_defaults ,"Function cannot have default args (yet)"
+        assert_(inspect.isfunction(function))
+        assert_(not function.func_defaults,
+                msg="Function cannot have default args (yet)")
         if name is None: name = function.func_name
         self.name = name
         self.function = function
@@ -903,10 +906,10 @@ class CXXCoder(ByteCodeMeaning):
     ##################################################################
     def pop(self):
         v = self.stack[-1]
-        assert isinstance(v, tuple)
+        assert_(isinstance(v, tuple))
         del self.stack[-1]
         t = self.types[-1]
-        assert isinstance(t, tuple)
+        assert_(isinstance(t, tuple))
         del self.types[-1]
         return v,t
 
@@ -914,9 +917,9 @@ class CXXCoder(ByteCodeMeaning):
     #                        MEMBER PUSHTUPLE                        #
     ##################################################################
     def pushTuple(self,V,T):
-        assert isinstance(V, tuple)
+        assert_(isinstance(V, tuple))
         self.stack.append(V)
-        assert isinstance(T, tuple)
+        assert_(isinstance(T, tuple))
         self.types.append(T)
         return
 
@@ -926,10 +929,10 @@ class CXXCoder(ByteCodeMeaning):
     ##################################################################
     def popTuple(self):
         v = self.stack[-1]
-        assert isinstance(v, tuple)
+        assert_(isinstance(v, tuple))
         del self.stack[-1]
         t = self.types[-1]
-        assert isinstance(t, tuple)
+        assert_(isinstance(t, tuple))
         del self.types[-1]
         return v,t
     ##################################################################
@@ -1054,7 +1057,7 @@ class CXXCoder(ByteCodeMeaning):
         v0,t0 = self.pop()
 
         rhs,rhs_type = t1.setitem(v1,v2,t2)
-        assert rhs_type == t0,"Store the right thing"
+        assert_(rhs_type == t0,"Store the right thing")
         self.emit('%s = %s;'%(rhs,v0))
         return
 
@@ -1191,7 +1194,7 @@ class CXXCoder(ByteCodeMeaning):
         aType,aCode = t.set_attribute(attr_name)
         print 'ATTR',aType
         print aCode
-        assert t2 is aType
+        assert_(t2 is aType)
         rhs = v2
         lhs = v
         self.emit(aCode%locals())

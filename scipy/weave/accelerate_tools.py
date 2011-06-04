@@ -13,6 +13,7 @@ from types import InstanceType, XRangeType
 import inspect
 import scipy.weave.md5_load as md5
 import scipy.weave as weave
+from numpy.testing import assert_
 
 from bytecodecompiler import CXXCoder,Type_Descriptor,Function_Descriptor
 
@@ -20,7 +21,7 @@ def CStr(s):
     "Hacky way to get legal C string from Python string"
     if s is None:
         return '""'
-    assert isinstance(s, str), "only None and string allowed"
+    assert_(isinstance(s, str), msg="only None and string allowed")
     r = repr('"'+s) # Better for embedded quotes
     return '"'+r[2:-1]+'"'
 
@@ -78,7 +79,7 @@ class Basic_Number(Basic):
     def literalizer(self,s):
         return str(s)
     def binop(self,symbol,a,b):
-        assert symbol in ['+','-','*','/'],symbol
+        assert_(symbol in ['+','-','*','/'], msg=symbol)
         return '%s %s %s'%(a,symbol,b),self
 
 class Integer(Basic_Number):
@@ -133,7 +134,7 @@ class Vector(Type_Descriptor):
         return "%s(%s)"%(self.outbounder,s),self.owned
 
     def getitem(self,A,v,t):
-        assert self.dims == len(v),'Expect dimension %d'%self.dims
+        assert_(self.dims == len(v), msg='Expect dimension %d'%self.dims)
         code = '*((%s*)(%s->data'%(self.cxxbase,A)
         for i in range(self.dims):
             # assert that ''t[i]'' is an integer
@@ -273,7 +274,7 @@ def lookup_type(x):
 class accelerate(object):
 
     def __init__(self, function, *args, **kw):
-        assert inspect.isfunction(function)
+        assert_(inspect.isfunction(function))
         self.function = function
         self.module = inspect.getmodule(function)
         if self.module is None:
@@ -383,12 +384,12 @@ class Python2CXX(CXXCoder):
 
     def __init__(self,f,signature,name=None):
         # Make sure function is a function
-        assert inspect.isfunction(f)
+        assert_(inspect.isfunction(f))
         # and check the input type signature
-        assert reduce(lambda x,y: x and y,
+        assert_(reduce(lambda x,y: x and y,
                       map(lambda x: isinstance(x,Type_Descriptor),
                           signature),
-                      1),'%s not all type objects'%signature
+                      1), msg='%s not all type objects'%signature)
         self.arg_specs = []
         self.customize = weave.base_info.custom_info()
 
