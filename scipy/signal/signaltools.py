@@ -15,7 +15,7 @@ from numpy import polyadd, polymul, polydiv, polysub, roots, \
 import numpy as np
 from scipy.misc import factorial
 from windows import get_window
-from array_tools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
+from _arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
 
 __all__ = ['correlate', 'fftconvolve', 'convolve', 'convolve2d', 'correlate2d',
            'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
@@ -1287,42 +1287,17 @@ def lfilter_zi(b, a):
 
     Parameters
     ----------
-    b, a : array_like (1d)
+    b, a : array_like (1-D)
         The IIR filter coefficients. See `scipy.signal.lfilter` for more
         information.
 
-    Examples
-    --------
-
-    The following code creates a lowpass Butterworth filter. Then it
-    applies that filter to an array whose values are all 1.0; the
-    output is also all 1.0, as expected for a lowpass filter.  If the
-    `zi` argument of `lfilter` had not been given, the output would have
-    shown the transient signal.
-
-    >>> from numpy import array, ones
-    >>> from scipy.signal import lfilter, lfilter_zi, butter
-    >>> b, a = butter(5, 0.25)
-    >>> zi = lfilter_zi(b, a)
-    >>> y, zo = lfilter(b, a, ones(10), zi=zi)
-    >>> y
-    array([1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.])
-
-    Another example:
-
-    >>> x = array([0.5, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0])
-    >>> y, zf = lfilter(b, a, x, zi=zi*x[0])
-    >>> y
-    array([ 0.5       ,  0.5       ,  0.5       ,  0.49836039,  0.48610528,
-        0.44399389,  0.35505241])
-
-    Note that the `zi` argument to `lfilter` was computed using `lfilter_zi`
-    and scaled by `x[0]`.  Then the output `y` has no transient until the
-    input drops from 0.5 to 0.0.
+    Returns
+    -------
+    zi : 1-D ndarray
+        The initial state for the filter.
 
     Notes
     -----
-
     A linear filter with order m has a state space representation (A, B, C, D),
     for which the output y of the filter can be expressed as::
 
@@ -1347,6 +1322,35 @@ def lfilter_zi(b, a):
 
     assuming `a[0]` is 1.0; if `a[0]` is not 1, `a` and `b` are first
     divided by a[0].
+
+    Examples
+    --------
+    The following code creates a lowpass Butterworth filter. Then it
+    applies that filter to an array whose values are all 1.0; the
+    output is also all 1.0, as expected for a lowpass filter.  If the
+    `zi` argument of `lfilter` had not been given, the output would have
+    shown the transient signal.
+
+    >>> from numpy import array, ones
+    >>> from scipy.signal import lfilter, lfilter_zi, butter
+    >>> b, a = butter(5, 0.25)
+    >>> zi = lfilter_zi(b, a)
+    >>> y, zo = lfilter(b, a, ones(10), zi=zi)
+    >>> y
+    array([1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.])
+
+    Another example:
+
+    >>> x = array([0.5, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0])
+    >>> y, zf = lfilter(b, a, x, zi=zi*x[0])
+    >>> y
+    array([ 0.5       ,  0.5       ,  0.5       ,  0.49836039,  0.48610528,
+        0.44399389,  0.35505241])
+
+    Note that the `zi` argument to `lfilter` was computed using
+    `lfilter_zi` and scaled by `x[0]`.  Then the output `y` has no
+    transient until the input drops from 0.5 to 0.0.
+
     """
 
     # FIXME: Can this function be replaced with an appropriate
@@ -1408,31 +1412,78 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
     This function applies a linear filter twice, once forward
     and once backwards.  The combined filter has linear phase.
 
-    b : array_like, 1-d
+    Before applying the filter, the function can pad the data along the
+    given axis in one of three ways: odd, even or constant.  The odd
+    and even extensions have the corresponding symmetry about the end point
+    of the data.  The constant extension extends the data with the values
+    at end points.  On both the forward and backwards passes, the
+    initial condition of the filter is found by using lfilter_zi and
+    scaling it by the end point of the extended data.
+
+    Parameters
+    ----------
+    b : array_like, 1-D
         The numerator coefficient vector of the filter.
-    a : array_like, 1-d
+    a : array_like, 1-D
         The denominator coefficient vector of the filter.  If a[0]
         is not 1, then both a and b are normalized by a[0].
     x : array_like
         The array of data to be filtered.
-    axis : int
+    axis : int, optional
         The axis of `x` to which the filter is applied.
         Default is -1.
-    padtype : str or None
-        Must be 'odd', 'even', 'constant', 'none' or None.  ('none' and None
-        are equivalent.)  This determines the type of extension to use for
-        the padded signal to which the filter is applied.  If `padtype` is
-        'none' or None, no padding is used.  Default is 'odd'.
-    padlen : int or None
+    padtype : str or None, optional
+        Must be 'odd', 'even', 'constant', or None.  This determines the
+        type of extension to use for the padded signal to which the filter
+        is applied.  If `padtype` is None, no padding is used.  The default
+        is 'odd'.
+    padlen : int or None, optional
         The number of elements by which to extend `x` at both ends of
         `axis` before applying the filter. This value must be less than
         `x.shape[axis]-1`.  `padlen=0` implies no padding.
         The default value is 3*max(len(a),len(b)).
+
+    Returns
+    -------
+    y : ndarray
+        The filtered output, an array of type numpy.float64 with the same
+        shape as `x`.
+
+    See Also
+    --------
+    lfilter_zi
+    lfilter
+
+    Examples
+    --------
+    First we create a one second signal that is the sum of two pure sine
+    waves, with frequencies 5 Hz and 250 Hz, sampled at 2000 Hz.
+
+    >>> t = np.linspace(0, 1.0, 2001)
+    >>> xlow = np.sin(2 * np.pi * 5 * t)
+    >>> xhigh = np.sin(2 * np.pi * 250 * t)
+    >>> x = xlow + xhigh
+
+    Now create a lowpass Butterworth filter with a cutoff of 0.125 times
+    the Nyquist rate, or 125 Hz, and apply it to x with filtfilt.  The
+    result should be approximately xlow, with no phase shift.
+
+    >>> from scipy.signal import butter
+    >>> b, a = butter(8, 0.125)
+    >>> y = filtfilt(b, a, x, padlen=150)
+    >>> np.abs(y - xlow).max()
+    9.1086182074789912e-06
+
+    We get a fairly clean result for this artificial example because
+    the odd extension is exact, and with the moderately long padding,
+    the filter's transients have dissipated by the time the actual data
+    is reached.  In general, transient effects at the edges are
+    unavoidable.
     """
 
-    if padtype not in ['even', 'odd', 'constant', 'none', None]:
+    if padtype not in ['even', 'odd', 'constant', None]:
         raise ValueError(("Unknown value '%s' given to padtype.  padtype must "
-                         "be 'even', 'odd', 'constant', 'none' or None.") %
+                         "be 'even', 'odd', 'constant', or None.") %
                             padtype)
 
     b = np.asarray(b)
@@ -1441,7 +1492,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
 
     ntaps = max(len(a), len(b))
 
-    if padtype == 'none' or padtype is None:
+    if padtype is None:
         padlen = 0
 
     if padlen is None:
@@ -1455,7 +1506,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
         raise ValueError("The length of the input vector x must be at least "
                          "padlen, which is %d." % edge)
 
-    if padtype in ['even', 'odd', 'constant'] and edge > 0:
+    if padtype is not None and edge > 0:
         # Make an extension of length `edge` at each
         # end of the input array.
         if padtype == 'even':

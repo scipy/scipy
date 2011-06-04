@@ -552,10 +552,10 @@ class TestFiltFilt(TestCase):
 
     def test_sine(self):
         rate = 2000
-        t = np.linspace(0, 1.0, rate)
+        t = np.linspace(0, 1.0, rate + 1)
         # A signal with low frequency and a high frequency.
-        xlow = np.sin(2 * np.pi * t)
-        xhigh = 2 * np.sin(250 * 2 * np.pi * t)
+        xlow = np.sin(5 * 2 * np.pi * t)
+        xhigh = np.sin(250 * 2 * np.pi * t)
         x = xlow + xhigh
 
         b, a = butter(8, 0.125)
@@ -571,6 +571,13 @@ class TestFiltFilt(TestCase):
         y = filtfilt(b, a, x, padlen=n)
         # Result should be just xlow.
         err = np.abs(y - xlow).max()
+        assert_(err < 1e-4)
+
+        # A 2D case.
+        x2d = np.vstack([xlow, xlow + xhigh])
+        y2d = filtfilt(b, a, x2d, padlen=n, axis=1)
+        assert_equal(y2d.shape, x2d.shape)
+        err = np.abs(y2d - xlow).max()
         assert_(err < 1e-4)
 
 
