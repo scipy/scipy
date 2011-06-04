@@ -6,8 +6,8 @@ from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_raises, assert_, dec
 
 import scipy.signal as signal
-from scipy.signal import lfilter, lfilter_zi, correlate, convolve, convolve2d, \
-     hilbert, hilbert2
+from scipy.signal import correlate, convolve, convolve2d, \
+     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, tf2zpk
 
 
 from numpy import array, arange
@@ -545,10 +545,33 @@ class TestLFilterZI(TestCase):
 
 
 class TestFiltFilt(TestCase):
-    # XXX Add more tests.
+
     def test_basic(self):
-        out = signal.filtfilt([1,2,3], [1,2,3], np.arange(12))
+        out = signal.filtfilt([1, 2, 3], [1, 2, 3], np.arange(12))
         assert_equal(out, arange(12))
+
+    def test_sine(self):
+        rate = 2000
+        t = np.linspace(0, 1.0, rate)
+        # A signal with low frequency and a high frequency.
+        xlow = np.sin(2 * np.pi * t)
+        xhigh = 2 * np.sin(250 * 2 * np.pi * t)
+        x = xlow + xhigh
+
+        b, a = butter(8, 0.125)
+        z, p, k = tf2zpk(b, a)
+        # r is the magnitude of the largest pole.
+        r = np.abs(p).max()
+        eps = 1e-5
+        # n estimates the number of steps for the
+        # transient to decay by a factor of eps.
+        n = int(np.ceil(np.log(eps) / np.log(r)))
+
+        # High order lowpass filter...
+        y = filtfilt(b, a, x, padlen=n)
+        # Result should be just xlow.
+        err = np.abs(y - xlow).max()
+        assert_(err < 1e-4)
 
 
 class TestDecimate:
