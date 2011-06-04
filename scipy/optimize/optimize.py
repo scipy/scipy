@@ -389,7 +389,7 @@ def approx_fhess_p(x0,p,fprime,epsilon,*args):
 
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
-              retall=0, callback=None):
+              retall=0, callback=None, xtol=1e-6):
     """Minimize a function using the BFGS algorithm.
 
     Parameters
@@ -403,7 +403,10 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     args : tuple
         Extra arguments passed to f and fprime.
     gtol : float
-        Gradient norm must be less than gtol before succesful termination.
+        Terminate successfully if gradient norm is less than gtol.
+    xtol : float
+        Terminate successfully if step size is less than ``xk * xtol``,
+        where xk is the current parameter vector.
     norm : float
         Order of norm (Inf is max, -Inf is min)
     epsilon : int or ndarray
@@ -493,10 +496,10 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
                 # This line search also failed to find a better solution.
                 warnflag = 2
                 break
-        xkp1 = xk + alpha_k * pk
+        sk = alpha_k * pk
+        xkp1 = xk + sk
         if retall:
             allvecs.append(xkp1)
-        sk = xkp1 - xk
         xk = xkp1
         if gfkp1 is None:
             gfkp1 = myfprime(xkp1)
@@ -509,18 +512,25 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         gnorm = vecnorm(gfk,ord=norm)
         if (gnorm <= gtol):
             break
+        # stopping criteria following http://www2.imm.dtu.dk/~hbn/Software/#GO
+        #  See Chapter 5 in  P.E. Frandsen, K. Jonasson, H.B. Nielsen,
+        #  O. Tingleff: "Unconstrained Optimization", IMM, DTU.  1999.
+        #  These notes are available here:
+        #   http://www2.imm.dtu.dk/documents/ftp/publlec.html
+        if (alpha_k*vecnorm(pk) <= xtol*(xtol + vecnorm(xkp1))):
+            break
 
-        try: # this was handled in numeric, let it remaines for more safety
-            rhok = 1.0 / (numpy.dot(yk,sk))
-        except ZeroDivisionError:
-            rhok = 1000.0
-            print "Divide-by-zero encountered: rhok assumed large"
-        if isinf(rhok): # this is patch for numpy
-            rhok = 1000.0
-            print "Divide-by-zero encountered: rhok assumed large"
-        A1 = I - sk[:,numpy.newaxis] * yk[numpy.newaxis,:] * rhok
-        A2 = I - yk[:,numpy.newaxis] * sk[numpy.newaxis,:] * rhok
-        Hk = numpy.dot(A1,numpy.dot(Hk,A2)) + rhok * sk[:,numpy.newaxis] \
+        # The inner product dot(yk,sk) must be strictly positive otherwise
+        # we destroy the positive definiteness of Hk during the update
+        # below. On the other hand, if dot(yk, sk) <= 0, there is no need
+        # to abort, we simply skip the update of Hk this iteration.
+        #  See Chapter 5, p.75 of the above reference for details.
+        yksk = numpy.dot(yk,sk)
+        if yksk > _epsilon * vecnorm(yk) * vecnorm(sk):
+            rhok = 1.0 / yksk
+            A1 = I - sk[:,numpy.newaxis] * yk[numpy.newaxis,:] * rhok
+            A2 = I - yk[:,numpy.newaxis] * sk[numpy.newaxis,:] * rhok
+            Hk = numpy.dot(A1,numpy.dot(Hk,A2)) + rhok * sk[:,numpy.newaxis] \
                  * sk[numpy.newaxis,:]
 
     if disp or full_output:
