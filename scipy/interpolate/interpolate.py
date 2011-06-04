@@ -540,7 +540,8 @@ def _find_smoothest(xk, yk, order, conds=None, B=None):
     return _dot0(tmp, yk)
 
 def _setdiag(a, k, v):
-    assert (a.ndim==2)
+    if not a.ndim == 2:
+        raise ValueError("Input array should be 2-D.")
     M,N = a.shape
     if k > 0:
         start = k

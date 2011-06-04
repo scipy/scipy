@@ -181,8 +181,8 @@ class Rbf(object):
         self.N = self.xi.shape[-1]
         self.di = asarray(args[-1]).flatten()
 
-        assert [x.size==self.di.size for x in self.xi], \
-               'All arrays must be equal length'
+        if not all([x.size==self.di.size for x in self.xi]):
+            raise ValueError("All arrays must be equal length.")
 
         self.norm = kwargs.pop('norm', self._euclidean_norm)
         r = self._call_norm(self.xi, self.xi)
@@ -211,9 +211,8 @@ class Rbf(object):
 
     def __call__(self, *args):
         args = [asarray(x) for x in args]
-        assert all([x.shape == y.shape \
-                    for x in args \
-                    for y in args]), 'Array lengths must be equal'
+        if not all([x.shape == y.shape for x in args for y in args]):
+            raise ValueError("Array lengths must be equal")
         shp = args[0].shape
         self.xa = asarray([a.flatten() for a in args], dtype=float_)
         r = self._call_norm(self.xa, self.xi)

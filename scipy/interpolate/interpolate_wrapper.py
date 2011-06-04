@@ -42,7 +42,8 @@ def linear(x, y, new_x):
     y = atleast_1d_and_contiguous(y, np.float64)
     new_x = atleast_1d_and_contiguous(new_x, np.float64)
 
-    assert len(y.shape) < 3, "function only works with 1D or 2D arrays"
+    if y.ndim > 2:
+        raise ValueError("`linear` only works with 1-D or 2-D arrays.")
     if len(y.shape) == 2:
         new_y = np.zeros((y.shape[0], len(new_x)), np.float64)
         for i in range(len(new_y)): # for each row
@@ -69,7 +70,8 @@ def logarithmic(x, y, new_x):
     y = atleast_1d_and_contiguous(y, np.float64)
     new_x = atleast_1d_and_contiguous(new_x, np.float64)
 
-    assert len(y.shape) < 3, "function only works with 1D or 2D arrays"
+    if y.ndim > 2:
+        raise ValueError("`linear` only works with 1-D or 2-D arrays.")
     if len(y.shape) == 2:
         new_y = np.zeros((y.shape[0], len(new_x)), np.float64)
         for i in range(len(new_y)):
@@ -97,7 +99,8 @@ def block_average_above(x, y, new_x):
     y = atleast_1d_and_contiguous(y, np.float64)
     new_x = atleast_1d_and_contiguous(new_x, np.float64)
 
-    assert len(y.shape) < 3, "function only works with 1D or 2D arrays"
+    if y.ndim > 2:
+        raise ValueError("`linear` only works with 1-D or 2-D arrays.")
     if len(y.shape) == 2:
         new_y = np.zeros((y.shape[0], len(new_x)), np.float64)
         for i in range(len(new_y)):

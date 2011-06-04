@@ -109,7 +109,8 @@ class KroghInterpolator(object):
             s -= 1
             Vk[0] = yi[k]/float(factorial(s))
             for i in xrange(k-s):
-                assert xi[i]!=xi[k]
+                if xi[i] == xi[k]:
+                    raise ValueError("Elements if `xi` can't be equal.")
                 if s==0:
                     Vk[i+1] = (c[i]-Vk[i])/(xi[i]-xi[k])
                 else:
@@ -682,8 +683,8 @@ class PiecewisePolynomial(object):
         n1 = min(n-n2,len(y1))
         if n1+n2!=n:
             raise ValueError("Point %g has %d derivatives, point %g has %d derivatives, but order %d requested" % (x1, len(y1), x2, len(y2), order))
-        assert n1<=len(y1)
-        assert n2<=len(y2)
+        if not (n1 <= len(y1) and n2 <= len(y2)):
+            raise ValueError("`order` input incompatible with length y1 or y2.")
 
         xi = np.zeros(n)
         if self.vector_valued:
