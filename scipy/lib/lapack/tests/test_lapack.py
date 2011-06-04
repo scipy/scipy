@@ -26,13 +26,13 @@ class TestLapack(TestCase):
             raise ValueError("Lang %s ??" % lang)
 
         ba, lo, hi, pivscale, info = f(a)
-        assert not info, `info`
+        assert_(not info, msg=repr(info))
         assert_array_almost_equal(ba, a)
         assert_equal((lo,hi), (0, len(a[0])-1))
         assert_array_almost_equal(pivscale, np.ones(len(a)))
 
         ba, lo, hi, pivscale, info = f(a1,permute=1,scale=1)
-        assert not info, `info`
+        assert_(not info, msg=repr(info))
 
     def _test_gehrd_base(self, func, lang):
         tp = FUNCS_TP[func]
@@ -49,7 +49,7 @@ class TestLapack(TestCase):
             raise ValueError("Lang %s ??" % lang)
 
         ht, tau, info = f(a)
-        assert not info,`info`
+        assert_(not info, msg=repr(info))
 
     @dec.skipif(FLAPACK_IS_EMPTY, "Flapack empty, skip flapack test")
     def test_sgebal(self):

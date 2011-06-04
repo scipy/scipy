@@ -300,7 +300,7 @@ def check_sample_meanvar(sm,m,msg):
         npt.assert_almost_equal(sm, m, decimal=DECIMAL, err_msg= msg + \
                                 ' - finite moment')
 ##    else:
-##        assert abs(sm) > 10000, 'infinite moment, sm = ' + str(sm)
+##        npt.assert_(abs(sm) > 10000), msg='infinite moment, sm = ' + str(sm))
 
 @_silence_fp_errors
 def check_cdf_ppf(distfn,arg,msg):

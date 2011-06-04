@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import TestCase, assert_array_almost_equal, dec, \
-                          assert_equal
+                          assert_equal, assert_
 
 from common import FUNCS_TP, FLAPACK_IS_EMPTY, CLAPACK_IS_EMPTY, FUNCS_FLAPACK, \
                    FUNCS_CLAPACK, PREC
@@ -22,7 +22,7 @@ class TestEsv(TestCase):
 
         w, v, info = f(a)
 
-        assert not info, `info`
+        assert_(not info, msg=repr(info))
         assert_array_almost_equal(w, SYEV_REF, decimal=PREC[tp])
         for i in range(3):
             assert_array_almost_equal(np.dot(a,v[:,i]), w[i]*v[:,i],
@@ -41,7 +41,7 @@ class TestEsv(TestCase):
         w, v, info = f(a, irange=irange)
         rslice = slice(irange[0], irange[1]+1)
         m = irange[1] - irange[0] + 1
-        assert not info, `info`
+        assert_(not info, msg=repr(info))
 
         assert_equal(len(w),m)
         assert_array_almost_equal(w, SYEV_REF[rslice], decimal=PREC[tp])
@@ -63,7 +63,7 @@ class TestEsv(TestCase):
             raise ValueError("Lang %s ??" % lang)
 
         w, v, info = f(a, vrange=vrange)
-        assert not info, `info`
+        assert_(not info, msg=repr(info))
 
         assert_array_almost_equal(w, ew, decimal=PREC[tp])
 

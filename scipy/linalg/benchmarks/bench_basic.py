@@ -34,7 +34,7 @@ class TestSolve(TestCase):
             sys.stdout.flush()
 
             a = a[-1::-1,-1::-1] # turn into a non-contiguous array
-            assert not a.flags['CONTIGUOUS']
+            assert_(not a.flags['CONTIGUOUS'])
 
             print '| %6.2f ' % measure('solve(a,b)',repeat),
             sys.stdout.flush()
@@ -71,7 +71,7 @@ class TestInv(TestCase):
             sys.stdout.flush()
 
             a = a[-1::-1,-1::-1] # turn into a non-contiguous array
-            assert not a.flags['CONTIGUOUS']
+            assert_(not a.flags['CONTIGUOUS'])
 
             print '| %6.2f ' % measure('inv(a)',repeat),
             sys.stdout.flush()
@@ -107,7 +107,7 @@ class TestDet(TestCase):
             sys.stdout.flush()
 
             a = a[-1::-1,-1::-1] # turn into a non-contiguous array
-            assert not a.flags['CONTIGUOUS']
+            assert_(not a.flags['CONTIGUOUS'])
 
             print '| %6.2f ' % measure('det(a)',repeat),
             sys.stdout.flush()

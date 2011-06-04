@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import TestCase, assert_array_almost_equal, dec, \
-                          assert_equal
+                          assert_equal, assert_
 
 from common import FUNCS_TP, FLAPACK_IS_EMPTY, CLAPACK_IS_EMPTY, FUNCS_FLAPACK, \
                    FUNCS_CLAPACK, PREC
@@ -22,7 +22,7 @@ class TestSygv(TestCase):
 
         w, v, info = f(a, b, itype=itype)
 
-        assert not info, `info`
+        assert_(not info, msg=repr(info))
         for i in range(3):
             if itype == 1:
                 assert_array_almost_equal(np.dot(a,v[:,i]), w[i]*np.dot(b,v[:,i]),

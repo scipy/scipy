@@ -103,9 +103,7 @@ class dok_matrix(spmatrix, dict):
             assert isintlike(i) and isintlike(j)
         except (AssertionError, TypeError, ValueError):
             raise IndexError('index must be a pair of integers')
-        try:
-            assert not (i < 0 or i >= self.shape[0] or j < 0 or j >= self.shape[1])
-        except AssertionError:
+        if (i < 0 or i >= self.shape[0] or j < 0 or j >= self.shape[1]):
             raise IndexError('index out of bounds')
         return dict.get(self, key, default)
 
@@ -532,7 +530,7 @@ class dok_matrix(spmatrix, dict):
 
     def resize(self, shape):
         """ Resize the matrix in-place to dimensions given by 'shape'.
-        
+
         Any non-zero elements that lie outside the new shape are removed.
         """
         if not isshape(shape):
