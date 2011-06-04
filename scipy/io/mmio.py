@@ -184,24 +184,28 @@ class MMFile (object):
               [asstr(part.strip().lower()) for part in line.split()]
             if not mmid.startswith('%%matrixmarket'):
                 raise ValueError('source is not in Matrix Market format')
-
-            assert matrix == 'matrix',`line`
+            if not matrix == 'matrix':
+                raise ValueError("Problem reading file header: " + line)
 
             # ??? Is this necessary?  I don't see 'dense' or 'sparse' in the spec
             # http://math.nist.gov/MatrixMarket/formats.html
-            if format == 'dense': format = self.FORMAT_ARRAY
-            elif format == 'sparse': format = self.FORMAT_COORDINATE
+            if format == 'dense':
+                format = self.FORMAT_ARRAY
+            elif format == 'sparse':
+                format = self.FORMAT_COORDINATE
 
             # skip comments
             while line.startswith(asbytes('%')): line = source.readline()
 
             line = line.split()
             if format == self.FORMAT_ARRAY:
-                assert len(line)==2,`line`
+                if not len(line) == 2:
+                    raise ValueError("Header line not of length 2: " + line)
                 rows,cols = map(float, line)
                 entries = rows*cols
             else:
-                assert len(line)==3,`line`
+                if not len(line) == 3:
+                    raise ValueError("Header line not of length 3: " + line)
                 rows, cols, entries = map(float, line)
 
             return (rows, cols, entries, format, field, symmetry)
@@ -380,7 +384,8 @@ class MMFile (object):
                         i = 0
                     else:
                         i = j
-            assert i in [0,j] and j==cols,`i,j,rows,cols`
+            if not (i in [0,j] and j == cols):
+                raise ValueError("Parse error, did not read all lines.")
 
         elif format == self.FORMAT_COORDINATE and coo_matrix is None:
             # Read sparse matrix to dense when coo_matrix is not available.
@@ -407,11 +412,12 @@ class MMFile (object):
                     else:
                         a[j,i] = aij
                 k = k + 1
-            assert k==entries,`k,entries`
+            if not k == entries:
+                ValueError("Did not read all entries")
 
         elif format == self.FORMAT_COORDINATE:
             # Read sparse COOrdinate format
-            
+
             if entries == 0:
                 # empty matrix
                 return coo_matrix((rows, cols), dtype=dtype)

@@ -222,7 +222,8 @@ class KDTree(object):
                 greater_idx = np.nonzero(data>=split)[0]
             if len(less_idx)==0:
                 # _still_ zero? all must have the same value
-                assert np.all(data==data[0]), "Troublesome data array: %s" % data
+                if not np.all(data==data[0]):
+                    raise ValueError("Troublesome data array: %s" % data)
                 split = data[0]
                 less_idx = np.arange(len(data)-1)
                 greater_idx = np.array([len(data)-1])

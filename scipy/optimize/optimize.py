@@ -1094,11 +1094,13 @@ class Brent:
             xa,xb,xc = brack
             if (xa > xc):  # swap so xa < xc can be assumed
                 dum = xa; xa=xc; xc=dum
-            assert ((xa < xb) and (xb < xc)), "Not a bracketing interval."
+            if not ((xa < xb) and (xb < xc)):
+                raise ValueError("Not a bracketing interval.")
             fa = func(*((xa,)+args))
             fb = func(*((xb,)+args))
             fc = func(*((xc,)+args))
-            assert ((fb<fa) and (fb < fc)), "Not a bracketing interval."
+            if not ((fb<fa) and (fb < fc)):
+                raise ValueError("Not a bracketing interval.")
             funcalls = 3
         else:
             raise ValueError("Bracketing interval must be " \
@@ -1278,11 +1280,13 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
         xa,xb,xc = brack
         if (xa > xc):  # swap so xa < xc can be assumed
             dum = xa; xa=xc; xc=dum
-        assert ((xa < xb) and (xb < xc)), "Not a bracketing interval."
+        if not ((xa < xb) and (xb < xc)):
+            raise ValueError("Not a bracketing interval.")
         fa = func(*((xa,)+args))
         fb = func(*((xb,)+args))
         fc = func(*((xc,)+args))
-        assert ((fb<fa) and (fb < fc)), "Not a bracketing interval."
+        if not ((fb<fa) and (fb < fc)):
+            raise ValueError("Not a bracketing interval.")
         funcalls = 3
     else:
         raise ValueError("Bracketing interval must be length 2 or 3 sequence.")

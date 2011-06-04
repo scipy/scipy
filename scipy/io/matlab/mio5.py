@@ -209,7 +209,8 @@ class MatFile5Reader(MatFileReader):
            position in stream of next variable
         '''
         mdtype, byte_count = self._file_reader.read_full_tag()
-        assert byte_count > 0
+        if not byte_count > 0:
+            raise ValueError("Did not read any bytes")
         next_pos = self.mat_stream.tell() + byte_count
         if mdtype == miCOMPRESSED:
             # make new stream from compressed data
@@ -222,7 +223,8 @@ class MatFile5Reader(MatFileReader):
             dcor = zlib.decompressobj()
             stream = BytesIO(dcor.decompress(data))
             # Check the stream is not so broken as to leave cruft behind
-            assert dcor.flush() == asbytes('')
+            if not dcor.flush() == asbytes(''):
+                raise ValueError("Something wrong with byte stream.")
             del data
             self._matrix_reader.set_stream(stream)
             mdtype, byte_count = self._matrix_reader.read_full_tag()

@@ -496,7 +496,8 @@ class netcdf_file(object):
 
     def _read_dim_array(self):
         header = self.fp.read(4)
-        assert header in [ZERO, NC_DIMENSION]
+        if not header in [ZERO, NC_DIMENSION]:
+            raise ValueError("Unexpected header.")
         count = self._unpack_int()
 
         for dim in range(count):
@@ -511,7 +512,8 @@ class netcdf_file(object):
 
     def _read_att_array(self):
         header = self.fp.read(4)
-        assert header in [ZERO, NC_ATTRIBUTE]
+        if not header in [ZERO, NC_ATTRIBUTE]:
+            raise ValueError("Unexpected header.")
         count = self._unpack_int()
 
         attributes = {}
@@ -522,7 +524,8 @@ class netcdf_file(object):
 
     def _read_var_array(self):
         header = self.fp.read(4)
-        assert header in [ZERO, NC_VARIABLE]
+        if not header in [ZERO, NC_VARIABLE]:
+            raise ValueError("Unexpected header.")
 
         begin = 0
         dtypes = {'names': [], 'formats': []}

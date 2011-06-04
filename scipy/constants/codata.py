@@ -619,10 +619,7 @@ exact_values = {
 
 #sanity check
 for key in exact_values:
-    assert (exact_values[key][0]-value(key)) / value(key) < 1e-9
+    if not (exact_values[key][0]-value(key)) / value(key) < 1e-9:
+        raise ValueError("Constants.codata: exact values too far off.")
 
 physical_constants.update(exact_values)
-
-#check update
-for key in exact_values:
-    assert (exact_values[key][0]-value(key)) / value(key) == 0
