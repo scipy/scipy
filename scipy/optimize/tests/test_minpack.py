@@ -209,6 +209,11 @@ class TestCurveFit(TestCase):
         assert_almost_equal(popt[0], 1.9149, decimal=4)
         assert_almost_equal(pcov[0,0], 0.0016, decimal=4)
 
+        # Test if we get the same with full_output. Regression test for #1415.
+        res = curve_fit(func, self.x, self.y, full_output=1)
+        (popt2, pcov2, infodict, errmsg, ier) = res
+        assert_array_almost_equal(popt, popt2)
+
     def test_two_argument(self):
         def func(x, a, b):
             return b*x**a
