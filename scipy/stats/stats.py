@@ -2242,6 +2242,7 @@ def fisher_exact(table) :
     --------
     >>> fisher_exact([[100, 2], [1000, 5]])
     (0.25, 0.13007593634330314)
+
     """
     hypergeom = distributions.hypergeom
     c = np.asarray(table, dtype=np.int64)  # int32 is not enough for the algorithm
