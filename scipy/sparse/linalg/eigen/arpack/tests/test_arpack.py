@@ -69,7 +69,8 @@ class TestArpack(TestCase):
         if which in ['SR','SM','SI']:
             return ind[:k]
 
-    def eval_evec(self,d,typ,k,which,sigma=None,v0=None,conv=None):
+    def eval_evec(self,d,typ,k,which,sigma=None,v0=None,conv=None,
+                  mode='normal'):
         general = ('bmat' in d)
         a=d['mat'].astype(typ)
         if conv is not None:
@@ -81,20 +82,25 @@ class TestArpack(TestCase):
         ind=self.argsort_which(exact_eval,typ,k,which,sigma)
         exact_eval=exact_eval[ind]
         # compute eigenvalues
+        kwargs = dict(which=which, v0=v0, sigma=sigma)
+        if self.eigs is eigsh:
+            kwargs['mode'] = mode
+
         if general:
             b=d['bmat'].astype(typ)
             if conv is not None:
                 b = conv(b)
-            eval,evec=self.eigs(a,k,b,which=which,v0=v0,sigma=sigma)
+            eval,evec=self.eigs(a,k,b,**kwargs)
         else:
-            eval,evec=self.eigs(a,k,which=which,v0=v0,sigma=sigma)
+            eval,evec=self.eigs(a,k,**kwargs)
         ind=self.argsort_which(eval,typ,k,which,sigma)
         eval=eval[ind]
 
 class TestSymmetric(TestArpack):
     def setUp(self):
         self.eigs = eigsh
-        self.modes = ['LM','SM','BE']
+        self.which = ['LM','SM','BE']
+        self.modes = ['normal','buckling','cayley']
 
         # standard symmetric problem
         SS = {}
@@ -135,19 +141,33 @@ class TestSymmetric(TestArpack):
         k=2
         for d in self.standard:
             for typ in 'fd':
-                for which in self.modes:
-                    for sigma in (None,0.5):
-                        for conv in _mattypes:
-                            self.eval_evec(d,typ,k,which,sigma=sigma,conv=conv)
-    
+                for which in self.which:
+                    for conv in _mattypes:
+                        for sigma in (None,0.5):
+                            if sigma is None:
+                                self.eval_evec(d,typ,k,which,
+                                               sigma=sigma,conv=conv)
+                            else:
+                                for mode in self.modes:
+                                    self.eval_evec(d, typ, k, which, 
+                                                   sigma=sigma,conv=conv,
+                                                   mode=mode)
+                                    
     def test_general_symmetric_modes(self):
         k=2
         for d in self.general:
             for typ in 'fd':
-                for which in self.modes:
-                    for sigma in (None,0.5):
-                        for conv in _mattypes:
-                            self.eval_evec(d,typ,k,which,sigma=sigma,conv=conv)
+                for which in self.which:
+                    for conv in _mattypes:
+                        for sigma in (None,0.5):
+                            if sigma is None:
+                                self.eval_evec(d,typ,k,which,
+                                               sigma=sigma,conv=conv)
+                            else:
+                                for mode in self.modes:
+                                    self.eval_evec(d,typ,k,which,
+                                                   sigma=sigma,conv=conv,
+                                                   mode=mode)
 
     def test_standard_symmetric_starting_vector(self):
         k=2
@@ -186,7 +206,7 @@ class TestSymmetric(TestArpack):
 class TestNonSymmetric(TestArpack):
     def setUp(self):
         self.eigs = eigs
-        self.modes = ['LM','SM','LR', 'SR', 'LI', 'SI']
+        self.which = ['LM','SM','LR', 'SR', 'LI', 'SI']
 
         #standard nonsymmetric test case A*x = w*x
         NS={}
@@ -252,7 +272,7 @@ class TestNonSymmetric(TestArpack):
         sigma = None
         for d in self.standard:
             for typ in 'fd':
-                for which in self.modes:
+                for which in self.which:
                     for conv in _mattypes:
                         self.eval_evec(d,typ,k,which,sigma=sigma,conv=conv)
     
@@ -261,7 +281,7 @@ class TestNonSymmetric(TestArpack):
         sigma = None
         for d in self.general:
             for typ in 'fd':
-                for which in self.modes:
+                for which in self.which:
                     for conv in _mattypes:
                         self.eval_evec(d,typ,k,which,sigma=sigma,conv=conv)
 
@@ -270,7 +290,7 @@ class TestNonSymmetric(TestArpack):
         for d in self.standard_complex:
             for typ in 'FD':
                 for sigma in (None,0.1+0.1j):
-                    for which in self.modes:
+                    for which in self.which:
                         for conv in _mattypes:
                             self.eval_evec(d,typ,k,which,sigma=sigma,conv=conv)
 
@@ -279,7 +299,7 @@ class TestNonSymmetric(TestArpack):
         for d in self.general_complex:
             for typ in 'FD':
                 for sigma in (None,0.1+0.1j):
-                    for which in self.modes:
+                    for which in self.which:
                         for conv in _mattypes:
                             self.eval_evec(d,typ,k,which,sigma=sigma,conv=conv)
         

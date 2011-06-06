@@ -376,7 +376,7 @@ class _SymmetricArpackParams(_ArpackParams):
         #    Solve the general eigenvalue problem:
         #      A*x = lambda*M*x
         #       A - symmetric
-        #       M - symmetric, positive definite
+        #       M - symmetric positive definite
         #    Arguments should be
         #       matvec      = left multiplication by A
         #       M_matvec    = left multiplication by M
@@ -386,9 +386,30 @@ class _SymmetricArpackParams(_ArpackParams):
         #    Solve the general eigenvalue problem in shift-invert mode:
         #      A*x = lambda*M*x
         #       A - symmetric
-        #       M - symmetric, positive semi-definite
+        #       M - symmetric positive semi-definite
         #    Arguments should be
         #       matvec      = None [not used]
+        #       M_matvec    = left multiplication by M
+        #                     or None, if M is the identity
+        #       Minv_matvec = left multiplication by [A-sigma*M]^-1
+        #
+        #  mode = 4:
+        #    Solve the general eigenvalue problem in Buckling mode:
+        #      A*x = lambda*AG*x
+        #       A  - symmetric positive semi-definite
+        #       AG - symmetric indefinite
+        #    Arguments should be
+        #       matvec      = left multiplication by A
+        #       M_matvec    = None [not used]
+        #       Minv_matvec = left multiplication by [A-sigma*AG]^-1
+        #
+        #  mode = 5:
+        #    Solve the general eigenvalue problem in Cayley-transformed mode:
+        #      A*x = lambda*M*x
+        #       A - symmetric
+        #       M - symmetric positive semi-definite
+        #    Arguments should be
+        #       matvec      = left multiplication by A
         #       M_matvec    = left multiplication by M
         #                     or None, if M is the identity
         #       Minv_matvec = left multiplication by [A-sigma*M]^-1
@@ -436,6 +457,36 @@ class _SymmetricArpackParams(_ArpackParams):
                 self.OPa  = Minv_matvec
                 self.B    = M_matvec
                 self.bmat = 'G'
+        elif mode==4:
+            if matvec is None:
+                raise ValueError("matvec must be specified for mode=4")
+            if M_matvec is not None:
+                raise ValueError("M_matvec must not be specified for mode=4")
+            if Minv_matvec is None:
+                raise ValueError("Minv_matvec must be specified for mode=4")
+            self.OPa = Minv_matvec
+            self.OP  = lambda x: self.OPa(matvec(x))
+            self.B   = matvec
+            self.bmat = 'G'
+        elif mode==5:
+            if matvec is None:
+                raise ValueError("matvec must be specified for mode=5")
+            if Minv_matvec is None:
+                raise ValueError("Minv_matvec must be specified for mode=5")
+
+            self.OPa = Minv_matvec
+            self.A_matvec = matvec
+            
+            if M_matvec is None:
+                self.OP = lambda x: Minv_matvec(matvec(x) + sigma * x)
+                self.B = lambda x: x
+                self.bmat = 'I'
+            else:
+                self.OP   = lambda x: Minv_matvec(matvec(x) 
+                                                  + sigma * M_matvec(x))
+                self.B    = M_matvec
+                self.bmat = 'G'
+            
         else:
             raise ValueError("mode=%i not implemented" % mode)
         
@@ -483,6 +534,11 @@ class _SymmetricArpackParams(_ArpackParams):
             elif self.mode==2:
                 self.workd[xslice] = self.OPb(self.workd[xslice])
                 self.workd[yslice] = self.OPa(self.workd[xslice])
+            elif self.mode==5:
+                Bxslice = slice(self.ipntr[2]-1, self.ipntr[2]-1+self.n)
+                Ax = self.A_matvec(self.workd[xslice])
+                self.workd[yslice] = self.OPa(Ax + 
+                                              self.sigma * self.workd[Bxslice])
             else:
                 Bxslice = slice(self.ipntr[2]-1, self.ipntr[2]-1+self.n)
                 self.workd[yslice] = self.OPa(self.workd[Bxslice])
@@ -934,9 +990,8 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     Parameters
     ----------
-    A : An N x N real or complex matrix, array, or an object with matvec(x) 
-        method to perform the matrix vector product A * x.  The sparse 
-        matrix formats in scipy.sparse are appropriate for A.
+    A : An N x N matrix, array, sparse matrix, or LinearOperator representing
+        the operation A * x, where A is a real or complex square matrix.
     k : integer
         The number of eigenvalues and eigenvectors desired.
         `k` must be smaller than N. It is not possible to compute all
@@ -952,36 +1007,38 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     Other Parameters
     ----------------
-    M : An N x N matrix, array, sparse matrix, or linear operator representing 
-        a real symmetric positive-definite matrix (for sigma==None) or
-        a real symmetric positive semi-definite matrix (for sigma!=None)
-        for the generalized eigenvalue problem ``A * x = w * M * x``.  
-        When sigma==None, eigs requires an operator to compute the 
-        solution of the linear equation M * x = b.  
-        This is done internally via a (sparse) LU decomposition for an 
-        explicit matrix, or via an iterative solver for a general 
-        linear operator.  Alternatively, the user can supply the matrix 
-        or operator Minv, which gives Minv(b) = M^-1 * b 
+    M : An N x N matrix, array, sparse matrix, or LinearOperator representing 
+        the operation M*x for the generalized eigenvalue problem
+          ``A * x = w * M * x``
+        M must represent a real symmetric matrix.  Additionally:
+         * If sigma==None, M must be positive definite
+         * If sigma is specified, M must be positive semi-definite
+        If sigma==None, eigs requires an operator to compute the solution 
+        of the linear equation `M * x = b`. This is done internally via a 
+        (sparse) LU decomposition for an explicit matrix M, or via an 
+        iterative solver for a general linear operator.  Alternatively, 
+        the user can supply the matrix or operator Minv, which gives 
+        x = Minv * b = M^-1 * b 
     sigma : real or complex
-        (not implemented for real A)
+        [not implemented for real A]
         Find eigenvalues near sigma using shift-invert mode.  This requires
         an operator to compute the solution of the linear system 
-        [A - sigma * M] * x = b, where M is the identity matrix if unspecified.
-        This is performed internally via a (sparse) LU decomposition for 
-        explicit matrices A & M, or via an iterative solver if either A
-        or M is a general linear operator.  Alternatively, the user can 
-        supply the matrix or operator OPinv, which gives 
-        OPinv * b = [A - sigma * M]^-1 * b.
+        `[A - sigma * M] * x = b`, where M is the identity matrix if 
+        unspecified. This is computed internally via a (sparse) LU 
+        decomposition for explicit matrices A & M, or via an iterative 
+        solver if either A or M is a general linear operator.  
+        Alternatively, the user can supply the matrix or operator OPinv, 
+        which gives x = OPinv * b = [A - sigma * M]^-1 * b.
         For a real matrix A, shift-invert can either be done in imaginary 
-        mode or real mode, specified by the parameter OPpart ('r' or 'i').  
-        If OPpart == 'r' (default), the keyword 'which' refers to the 
-        shifted values
-          mu = 1/2 * [ 1/(v-sigma) + 1/(v-conjg(sigma)) ]
-        If OPpart == 'i', the keyword 'which' refers to the shifted values
-          mu = 1/2i * [ 1/(v-sigma) - 1/(v-conjg(sigma)) ]
-        For a complex matrix A, shift invert is done in complex mode, and
-        'which' refers to the shifted values
-          mu = 1/(v-sigma)
+        mode or real mode, specified by the parameter OPpart ('r' or 'i'). \
+        Note that when sigma is specified, the keyword 'which' (below)
+        refers to the shifted eigenvalues w'[i] where:
+         * If A is real and OPpart == 'r' (default), 
+            w'[i] = 1/2 * [ 1/(w[i]-sigma) + 1/(w[i]-conj(sigma)) ]
+         * If A is real and OPpart == 'i', 
+            w'[i] = 1/2i * [ 1/(w[i]-sigma) - 1/(w[i]-conj(sigma)) ]
+         * If A is complex,
+            w'[i] = 1/(w[i]-sigma)
     v0 : array
         Starting vector for iteration.
     ncv : integer
@@ -997,7 +1054,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
          - 'LI' : largest imaginary part
          - 'SI' : smallest imaginary part
 
-        When sigma != None, 'which' refers to the shifted eigenvalues
+        When sigma != None, 'which' refers to the shifted eigenvalues w'[i]
          (see discussion in 'sigma', above)
 
     maxiter : integer
@@ -1012,7 +1069,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     OPinv : N x N matrix, array, sparse matrix, or linear operator
         See notes in sigma, above.
     OPpart : 'r' or 'i'.  
-        (Not implemented)
+        [Not implemented]
         See notes in sigma, above
 
     Raises
@@ -1028,7 +1085,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     --------
     eigsh : eigenvalues and eigenvectors for symmetric matrix A
     svds : singular value decomposition for a matrix A
-
+    
     Notes
     -----
     This function is a wrapper to the ARPACK [1]_ SNEUPD, DNEUPD, CNEUPD,
@@ -1138,7 +1195,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
 def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
           ncv=None, maxiter=None, tol=0, Minv=None, OPinv=None,
-          return_eigenvectors=True):
+          return_eigenvectors=True, mode='normal'):
     """
     Find k eigenvalues and eigenvectors of the real symmetric square matrix A.
 
@@ -1149,11 +1206,12 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     generalized eigenvalue problem for w[i] eigenvalues 
     with corresponding eigenvectors x[i]
 
+
     Parameters
     ----------
-    A : An N x N real symmetric matrix or array or an object with matvec(x)
-        method to perform the matrix vector product A * x.  The sparse
-        matrix formats in scipy.sparse are appropriate for A.
+    A : An N x N matrix, array, sparse matrix, or LinearOperator representing
+        the operation A * x, where A is a real symmetric matrix
+        For buckling mode (see below) A must additionally be positive-definite
     k : integer
         The number of eigenvalues and eigenvectors desired.
         `k` must be smaller than N. It is not possible to compute all
@@ -1170,26 +1228,29 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     Other Parameters
     ----------------
     M : An N x N matrix, array, sparse matrix, or linear operator representing
-        a real symmetric positive-definite matrix (for sigma==None) or
-        a real symmetric positive semi-definite matrix (for sigma!=None)
-        for the generalized eigenvalue problem ``A * x = w * M * x``.  
-        If sigma==None, eigsh requires an operator to compute the 
-        solution of the linear equation M*x = b.  
-        This is done internally via a (sparse) LU decomposition for an 
-        explicit matrix, or via an iterative solver for a general linear 
-        operator.  Alternatively, the user can supply the matrix or 
-        operator Minv, which yields x = Minv*b 
-    sigma : real or complex
+        the operation M * x for the generalized eigenvalue problem 
+          ``A * x = w * M * x``.  
+        M must represent a real, symmetric matrix.  Additionally:
+         * If sigma==None, M must be symmetric positive definite
+         * If sigma is specified, M must be symmetric positive semi-definite
+         * In buckling mode, M must be symmetric indefinite.
+        If sigma==None, eigsh requires an operator to compute the solution 
+        of the linear equation `M * x = b`. This is done internally via a 
+        (sparse) LU decomposition for an explicit matrix M, or via an 
+        iterative solver for a general linear operator.  Alternatively, 
+        the user can supply the matrix or operator Minv, which gives
+        x = Minv * b = M^-1 * b
+    sigma : real
         Find eigenvalues near sigma using shift-invert mode.  This requires
         an operator to compute the solution of the linear system 
-        [A - sigma * M] x = b, where M is the identity matrix if unspecified.
-        This is done internally via a (sparse) LU decomposition for 
-        explicit matrices A & M, or via an iterative solver if either A
-        or M is a general linear operator.  Alternatively, the user can 
-        supply the matrix or operator OPinv, which gives 
-        OPinv * b = [A - sigma * M]^-1 * b .
-        Note that when sigma is specified, the keyword "which" (below) refers
-        to the shifted eigenvalues 1/(v-sigma).
+        `[A - sigma * M] x = b`, where M is the identity matrix if 
+        unspecified.  This is computed internally via a (sparse) LU 
+        decomposition for explicit matrices A & M, or via an iterative 
+        solver if either A or M is a general linear operator.  
+        Alternatively, the user can supply the matrix or operator OPinv, 
+        which gives x = OPinv * b = [A - sigma * M]^-1 * b .
+        Note that when sigma is specified, the keyword 'which' (below) 
+        refers to the shifted eigenvalues w'[i] = 1 / (w[i] - sigma).
     v0 : array
         Starting vector for iteration.
     ncv : integer
@@ -1204,20 +1265,32 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
          - 'SM' : Smallest (in magnitude) eigenvalues
          - 'BE' : Half (k/2) from each end of the spectrum
                   When k is odd, return one more (k/2+1) from the high end
-        When sigma != None, 'which' refers to the 
-          shifted eigenvalues 1/(v-sigma)
+        When sigma != None, 'which' refers to the shifted eigenvalues
+          w'[i] = 1 / (w[i] - sigma)
     maxiter : integer
         Maximum number of Arnoldi update iterations allowed
     tol : float
         Relative accuracy for eigenvalues (stopping criterion).
         The default value of 0 implies machine precision.
+    Minv : N x N matrix, array, sparse matrix, or LinearOperator
+        See notes in M, above
+    OPinv : N x N matrix, array, sparse matrix, or LinearOperator
+        See notes in sigma, above.
     return_eigenvectors : boolean
         Return eigenvectors (True) in addition to eigenvalues
-    Minv : N x N matrix, array, sparse matrix, or linear operator
-        See notes in M, above
-    OPinv : N x N matrix, array, sparse matrix, or linear operator
-        See notes in sigma, above.
-
+    mode : ['normal' | 'buckling' | 'cayley']
+        Specify strategy to use for shift-invert mode.  This argument applies
+        only if sigma != None.  For shift-invert mode, ARPACK internally
+        solves the eigenvalue problem ``OP * x[i] = w[i] * B * x[i]``
+          if mode=='normal'   : OP = [A - sigma * M]^-1 * M
+                                B = M
+          if mode=='buckling' : OP = [A - sigma * M]^-1 * A
+                                B = A
+          if mode=='cayley'   : OP = [A - sigma * M]^-1 * [A + sigma * M]
+                                B = M
+        ARPACK transforms the resulting eigenvectors into the desired solution
+        of the problem ``A * x[i] = w[i] * M * x[i]``.  The choice of mode
+        can affect the stability of convergence (see [2] for a discussion)
     Raises
     ------
     ArpackNoConvergence
@@ -1231,7 +1304,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     --------
     eigs : eigenvalues and eigenvectors for a general (nonsymmetric) matrix A
     svds : singular value decomposition for a matrix A
-
+    
     Notes
     -----
     This function is a wrapper to the ARPACK [1]_ SSEUPD and DSEUPD
@@ -1290,20 +1363,49 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             M_matvec = _aslinearoperator_with_dtype(M).matvec
     else:
         #sigma is not None: shift-invert mode
-        mode = 3
-        matvec = None
         if Minv is not None:
             raise ValueError("Minv should not be specified when sigma is")
-        if OPinv is None:
-            Minv_matvec = get_OPinv_matvec(A, M, sigma, symmetric=True)
-        else:
-            OPinv = _aslinearoperator_with_dtype(OPinv)
-            Minv_matvec = OPinv.matvec
-        if M is None:
+        
+        #normal mode
+        if mode == 'normal':
+            mode = 3
+            matvec = None
+            if OPinv is None:
+                Minv_matvec = get_OPinv_matvec(A, M, sigma, symmetric=True)
+            else:
+                OPinv = _aslinearoperator_with_dtype(OPinv)
+                Minv_matvec = OPinv.matvec
+            if M is None:
+                M_matvec = None
+            else:
+                M = _aslinearoperator_with_dtype(M)
+                M_matvec = M.matvec
+        
+        #buckling mode
+        elif mode == 'buckling':
+            mode = 4
+            if OPinv is None:
+                Minv_matvec = get_OPinv_matvec(A, M, sigma, symmetric=True)
+            else:
+                Minv_matvec = _aslinearoperator_with_dtype(OPinv).matvec
+            matvec = _aslinearoperator_with_dtype(A).matvec
             M_matvec = None
+
+        #cayley-transform mode
+        elif mode == 'cayley':
+            mode = 5
+            matvec = _aslinearoperator_with_dtype(A).matvec
+            if OPinv is None:
+                Minv_matvec = get_OPinv_matvec(A, M, sigma, symmetric=True)
+            else:
+                Minv_matvec = _aslinearoperator_with_dtype(OPinv).matvec
+            if M is None:
+                M_matvec = None
+            else:
+                M_matvec = _aslinearoperator_with_dtype(M).matvec  
+ 
         else:
-            M = _aslinearoperator_with_dtype(M)
-            M_matvec = M.matvec
+            raise ValueError("unrecognized mode '%s'" % mode)
 
     params = _SymmetricArpackParams(n, k, A.dtype.char, matvec, mode,
                                     M_matvec, Minv_matvec, sigma,
