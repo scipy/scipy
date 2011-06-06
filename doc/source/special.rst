@@ -25,7 +25,6 @@ Example:
    :toctree: generated/
 
    errprint
-   errstate
 
 Available functions
 ===================
