@@ -38,7 +38,12 @@ about our function's call signatures.
 New features
 ============
 
+Additional decomposition options (``scipy.linalg``)
+---------------------------------------------------
 
+A sort keyword has been added to the Schur decomposition routine 
+(``scipy.linalg.schur``) to allow the sorting of eigenvalues in
+the resultant Schur form.
 
 Deprecated features
 ===================
