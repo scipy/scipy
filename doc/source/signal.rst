@@ -46,6 +46,8 @@ Filtering
    symiirorder2
    lfilter
    lfiltic
+   lfilter_zi
+   filtfilt
 
    deconvolve
 

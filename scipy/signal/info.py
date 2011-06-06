@@ -53,6 +53,11 @@ Signal Processing Tools
         1-dimensional FIR and IIR digital linear filtering.
     lfiltic:
         Construct initial conditions for `lfilter`.
+    lfilter_zi:
+        Compute an initial state zi for the lfilter function that
+        corresponds to the steady state of the step response.
+    filtfilt:
+        A forward-backward filter.
     deconvolve:
         1-d deconvolution using lfilter.
     hilbert:
