@@ -103,6 +103,7 @@ Continuous distributions
    halfnorm
    hypsecant
    invgamma
+   invgauss
    invweibull
    johnsonsb
    johnsonsu
