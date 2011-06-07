@@ -159,8 +159,6 @@ Functions
    isspmatrix_lil -
    kron - kronecker product of two sparse matrices
    kronsum - kronecker sum of sparse matrices
-   lil_diags - Generate a lil_matrix with the given diagonals
-   lil_eye - RxC lil_matrix whose k-th diagonal set to one
    rand - Random values in a given shape
    spdiags - Return a sparse matrix from diagonals
    tril - Lower triangular portion of a matrix in sparse format

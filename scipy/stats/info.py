@@ -80,7 +80,6 @@ Continuous  (Total == 81 distributions)
    halfnorm          Half Normal
    hypsecant         Hyperbolic Secant
    invgamma          Inverse Gamma
-   invnorm           Inverse Normal
    invgauss          Inverse Gaussian
    invweibull        Inverse Weibull
    johnsonsb         Johnson SB
