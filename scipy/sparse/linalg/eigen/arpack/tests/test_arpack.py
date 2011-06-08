@@ -207,6 +207,7 @@ class TestNonSymmetric(TestArpack):
     def setUp(self):
         self.eigs = eigs
         self.which = ['LM','SM','LR', 'SR', 'LI', 'SI']
+        self.sigmas = [None,0.1+0.1j]
 
         #standard nonsymmetric test case A*x = w*x
         NS={}
@@ -269,27 +270,27 @@ class TestNonSymmetric(TestArpack):
     
     def test_standard_nonsymmetric_modes(self):
         k=2
-        sigma = None
         for d in self.standard:
             for typ in 'fd':
-                for which in self.which:
-                    for conv in _mattypes:
-                        self.eval_evec(d,typ,k,which,sigma=sigma,conv=conv)
+                for sigma in self.sigmas:
+                    for which in self.which:
+                        for conv in _mattypes:
+                            self.eval_evec(d,typ,k,which,sigma=sigma,conv=conv)
     
     def test_general_nonsymmetric_modes(self):
         k=2
-        sigma = None
         for d in self.general:
             for typ in 'fd':
-                for which in self.which:
-                    for conv in _mattypes:
-                        self.eval_evec(d,typ,k,which,sigma=sigma,conv=conv)
+                for sigma in self.sigmas:
+                    for which in self.which:
+                        for conv in _mattypes:
+                            self.eval_evec(d,typ,k,which,sigma=sigma,conv=conv)
 
     def test_complex_standard_nonsymmetric_modes(self):
         k=2
         for d in self.standard_complex:
             for typ in 'FD':
-                for sigma in (None,0.1+0.1j):
+                for sigma in self.sigmas:
                     for which in self.which:
                         for conv in _mattypes:
                             self.eval_evec(d,typ,k,which,sigma=sigma,conv=conv)
@@ -298,7 +299,7 @@ class TestNonSymmetric(TestArpack):
         k=2
         for d in self.general_complex:
             for typ in 'FD':
-                for sigma in (None,0.1+0.1j):
+                for sigma in self.sigmas:
                     for which in self.which:
                         for conv in _mattypes:
                             self.eval_evec(d,typ,k,which,sigma=sigma,conv=conv)

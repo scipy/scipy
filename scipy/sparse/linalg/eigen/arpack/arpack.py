@@ -289,7 +289,7 @@ class ArpackNoConvergence(ArpackError):
         ArpackError.__init__(self, -1, {-1: msg})
         self.eigenvalues = eigenvalues
         self.eigenvectors = eigenvectors
-
+        
 class _ArpackParams(object):
     def __init__(self, n, k, tp, mode=1, sigma=None,
                  ncv=None, v0=None, maxiter=None, which="LM", tol=0):
@@ -510,7 +510,7 @@ class _SymmetricArpackParams(_ArpackParams):
 
         self._arpack_solver = _arpack.__dict__[ltr + 'saupd']
         self._arpack_extract = _arpack.__dict__[ltr + 'seupd']
-
+        
         self.iterate_infodict = _SAUPD_ERRORS[ltr]
         self.extract_infodict = _SEUPD_ERRORS[ltr]
 
@@ -647,19 +647,21 @@ class _UnsymmetricArpackParams(_ArpackParams):
             self.B    = M_matvec
             self.bmat = 'G'        
         elif mode in (3,4):
-            if matvec is not None:
-                raise ValueError("matvec must not be specified "
+            if matvec is None:
+                raise ValueError("matvec must be specified "
                                  "for mode in (3,4)")
             if Minv_matvec is None:
                 raise ValueError("Minv_matvec must be specified "
                                  "for mode in (3,4)")
+
+            self.matvec = matvec
 
             if tp in 'DF': #complex type
                 if mode==3:
                     self.OPa = Minv_matvec
                 else:
                     raise ValueError("mode=4 invalid for complex A")
-            else:
+            else: #real type
                 if mode==3:
                     self.OPa = lambda x: np.real(Minv_matvec(x))
                 else:
@@ -682,13 +684,12 @@ class _UnsymmetricArpackParams(_ArpackParams):
 
         _ArpackParams.__init__(self, n, k, tp, mode, sigma,
                                ncv, v0, maxiter, which, tol)
-        self.matvec = matvec
 
         if self.ncv > n or self.ncv <= k+1:
             raise ValueError("ncv must be k+1<ncv<=n, ncv=%s" % self.ncv)
-
+                                                 
         self.workd = np.zeros(3 * n, self.tp)
-        self.workl = np.zeros(3 * self.ncv * self.ncv + 6 * self.ncv, self.tp)
+        self.workl = np.zeros(3 * self.ncv * (self.ncv + 2), self.tp)
 
         ltr = _type_conv[self.tp]
         self._arpack_solver = _arpack.__dict__[ltr + 'naupd']
@@ -705,7 +706,6 @@ class _UnsymmetricArpackParams(_ArpackParams):
             self.rwork = None
 
     def iterate(self):
-        #print "resid:",self.resid
         if self.tp in 'fd':
             self.ido, self.resid, self.v, self.iparam, self.ipntr, self.info = \
                 self._arpack_solver(self.ido, self.bmat, self.which, self.k, 
@@ -718,12 +718,11 @@ class _UnsymmetricArpackParams(_ArpackParams):
                                     self.tol, self.resid, self.v, self.iparam, 
                                     self.ipntr, self.workd, self.workl, 
                                     self.rwork, self.info)
-        #print "   ",self.resid,self.ido
 
         xslice = slice(self.ipntr[0]-1, self.ipntr[0]-1+self.n)
         yslice = slice(self.ipntr[1]-1, self.ipntr[1]-1+self.n)
         if self.ido == -1:
-            # initialization2
+            # initialization
             self.workd[yslice] = self.OP(self.workd[xslice])
         elif self.ido == 1:
             # compute y = Op*x
@@ -766,41 +765,73 @@ class _UnsymmetricArpackParams(_ArpackParams):
                        self.bmat, self.which, k, self.tol, self.resid,
                        self.v, self.iparam, self.ipntr,
                        self.workd, self.workl, self.info)
-
+            
             if ierr != 0:
                 raise ArpackError(ierr, infodict=self.extract_infodict)
 
-            # The ARPACK nonsymmetric real and double interface (s,d)naupd
-            # return eigenvalues and eigenvectors in real (float,double) arrays.
-
+            nreturned = self.iparam[4] # number of good eigenvalues returned
+                
             # Build complex eigenvalues from real and imaginary parts
             d = dr + 1.0j * di
-
+            
             # Arrange the eigenvectors: complex eigenvectors are stored as
             # real,imaginary in consecutive columns
             z = zr.astype(self.tp.upper())
-            nreturned = self.iparam[4] # number of good eigenvalues returned
-            i = 0
 
-            while i<=k:
-                # check if complex
-                if abs(d[i].imag) != 0:
-                    # this is a complex conjugate pair with eigenvalues
-                    # in consecutive columns
-                    if i<k:
-                        z[:,i] = zr[:,i] + 1.0j * zr[:,i+1]
-                        z[:,i+1] = z[:,i].conjugate()
-                        i +=1
+            # The ARPACK nonsymmetric real and double interface (s,d)naupd
+            # return eigenvalues and eigenvectors in real (float,double) arrays.
+            if sigmai == 0:
+                i = 0
+                while i<=k:
+                    # check if complex
+                    if abs(d[i].imag) != 0:
+                        # this is a complex conjugate pair with eigenvalues
+                        # in consecutive columns
+                        if i<k:
+                            z[:,i] = zr[:,i] + 1.0j * zr[:,i+1]
+                            z[:,i+1] = z[:,i].conjugate()
+                            i +=1
+                        else:
+                            #last eigenvalue is complex: the imaginary part of
+                            # the eigenvector has not been returned
+                            #this can only happen if nreturned > k, so we'll
+                            # throw out this case.
+                            nreturned-=1
+                    i += 1
+
+            else: 
+                # real matrix, mode 3 or 4, imag(sigma) is nonzero: 
+                # see remark 3 in <s,d>neupd.f
+                # Build complex eigenvalues from real and imaginary parts
+                i = 0
+                while i<=k:
+                    if abs(d[i].imag)==0:
+                        d[i] = np.dot(zr[:,i], self.matvec(zr[:,i]))
                     else:
-                        #last eigenvalue is complex: the imaginary part of
-                        # the eigenvector has not been returned
-                        #this can only happen if nreturned > k, so we'll
-                        # throw out this case.
-                        nreturned-=1
-                i += 1
+                        if i<k:
+                            z[:,i] = zr[:,i] + 1.0j * zr[:,i+1]
+                            z[:,i+1] = z[:,i].conjugate()
+                            d[i] = ((np.dot(zr[:,i], 
+                                            self.matvec(zr[:, i]))
+                                     + np.dot(zr[:, i + 1], 
+                                              self.matvec(zr[:, i + 1])))
+                                    + 1j * (np.dot(zr[:, i],
+                                                   self.matvec(zr[:, i + 1]))
+                                            - np.dot(zr[:, i + 1], 
+                                                     self.matvec(zr[:, i]))))
+                            d[i+1] = d[i].conj()
+                            i += 1
+                        else:
+                            #last eigenvalue is complex: the imaginary part of
+                            # the eigenvector has not been returned
+                            #this can only happen if nreturned > k, so we'll
+                            # throw out this case.
+                            nreturned-=1
+                    i += 1
 
             # Now we have k+1 possible eigenvalues and eigenvectors
             # Return the ones specified by the keyword "which"
+
             if nreturned <= k:
                 # we got less or equal as many eigenvalues we wanted
                 d = d[:nreturned]
@@ -822,13 +853,12 @@ class _UnsymmetricArpackParams(_ArpackParams):
                     z = z[:,ind[-k:]]
                 if self.which in ['SR','SM','SI']:
                     d = d[ind[:k]]
-                    z = z[:,ind[:k]]
-
+                    z = z[:,ind[:k]]    
         else:
             # complex is so much simpler...
             d, z, ierr =\
                     self._arpack_extract(return_eigenvectors,
-                           howmny, sselect, sigmar, workev,
+                           howmny, sselect, self.sigma, workev,
                            self.bmat, self.which, k, self.tol, self.resid,
                            self.v, self.iparam, self.ipntr,
                            self.workd, self.workl, self.rwork, ierr)
@@ -950,7 +980,10 @@ def get_OPinv_matvec(A,M,sigma,symmetric=False):
     if M is None:
         #M is the identity matrix
         if isdense(A):
-            A = np.copy(A)
+            if np.issubdtype(A.dtype, np.complexfloating) or np.imag(sigma)==0:
+                A = np.copy(A)
+            else:
+                A = A + 0j
             A.flat[::A.shape[1]+1] -= sigma
             return LU_inv(A).matvec
         elif isspmatrix(A):
@@ -1121,8 +1154,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         raise ValueError("k must be between 1 and rank(A)-1")
 
     if sigma is None:
-        A = _aslinearoperator_with_dtype(A)
-        matvec = A.matvec
+        matvec = _aslinearoperator_with_dtype(A).matvec
 
         if OPinv is not None:
             raise ValueError("OPinv should not be specified "
@@ -1152,25 +1184,20 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         #sigma is not None: shift-invert mode
         if np.issubdtype(A.dtype, np.complexfloating):
             if OPpart is not None:
-                raise ValueError("OPpart should not be specified with "
-                                 "sigma = None or complex A")
+                raise ValueError("OPpart should not be specified "
+                                 "with sigma=None or complex A")
             mode = 3
+        elif OPpart is None or OPpart.lower() == 'r':
+            mode = 3
+        elif OPpart.lower() == 'i':
+            if np.imag(sigma)==0:
+                raise ValueError("OPpart cannot be 'i' if "
+                                 "sigma is real")
+            mode = 4
         else:
-            raise ValueError("Nonsymmetric real shift-invert is not "
-                             "yet available.  Try converting matrix "
-                             "to complex")
-        #JTV: shifts for real A lead to segmentation faults and other
-        # hard-to-track memory errors.  I'm going to leave them out
-        # for now.
+            raise ValueError("OPpart must be one of ('r','i')")
         
-        #elif OPpart is None or OPpart.lower() == 'r':
-        #    mode = 3
-        #elif OPpart.lower() == 'i':
-        #    mode = 4
-        #else:
-        #    raise ValueError("OPpart must be one of ('r','i')")
-        
-        matvec = None
+        matvec = _aslinearoperator_with_dtype(A).matvec
         if Minv is not None:
             raise ValueError("Minv should not be specified when sigma is")
         if OPinv is None:
@@ -1181,8 +1208,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         if M is None:
             M_matvec = None
         else:
-            M = _aslinearoperator_with_dtype(M)
-            M_matvec = M.matvec        
+            M_matvec = _aslinearoperator_with_dtype(M).matvec
 
     params = _UnsymmetricArpackParams(n, k, A.dtype.char, matvec, mode,
                                       M_matvec, Minv_matvec, sigma,
@@ -1333,6 +1359,14 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         raise ValueError('wrong M dimensions %s, should be %s' 
                          % (M.shape,A.shape) )
     n = A.shape[0]
+    
+    #complex hermitian matrices should be solved with eigs
+    if np.issubdtype(A.dtype, np.complexfloating):
+        if mode != 'normal': raise ValueError("mode=%s cannot be used with "
+                                              "complex matrix A" % mode)
+        return eigs(A, k, M=M, sigma=sigma, which=which, v0=v0,
+                    ncv=ncv, maxiter=maxiter, tol=tol, Minv=Minv,
+                    OPinv=OPinv, return_eigenvectors=return_eigenvectors)
     
     if k<=0 or k>=n:
         raise ValueError("k must be between 1 and rank(A)-1")
