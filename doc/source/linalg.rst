@@ -88,6 +88,8 @@ Special Matrices
    companion
    hadamard
    hankel
+   hilbert
+   invhilbert
    kron
    leslie
    toeplitz
