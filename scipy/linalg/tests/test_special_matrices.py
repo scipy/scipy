@@ -2,10 +2,11 @@
 
 from numpy import arange, add, array, eye, copy
 from numpy.testing import TestCase, run_module_suite, assert_raises, \
-    assert_equal, assert_array_equal
+    assert_equal, assert_array_equal, assert_array_almost_equal
 
 from scipy.linalg import toeplitz, hankel, circulant, hadamard, leslie, \
-                            companion, tri, triu, tril, kron, block_diag
+                            companion, tri, triu, tril, kron, block_diag, \
+                            hilbert
 
 
 def get_mat(n):
@@ -263,6 +264,20 @@ class TestKron:
                           [ 30, 40 ],
                           [ 33, 44 ]])
         assert_array_equal(a, expected)
+
+
+class TestHilbert(TestCase):
+
+    def test_basic(self):
+        h3 = array([[1.0,  1/2., 1/3.],
+                    [1/2., 1/3., 1/4.],
+                    [1/3., 1/4., 1/5.]])
+        assert_array_almost_equal(hilbert(3), h3)
+
+        assert_array_equal(hilbert(1), [[1.0]])
+        
+        h0 = hilbert(0)
+        assert_equal(h0.shape, (0,0))
 
 
 if __name__ == "__main__":

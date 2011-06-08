@@ -1,9 +1,11 @@
 
 import math
 import numpy as np
+from scipy.misc import comb
 
 __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
-           'hadamard', 'leslie', 'all_mat', 'kron', 'block_diag', 'companion']
+           'hadamard', 'leslie', 'all_mat', 'kron', 'block_diag', 'companion',
+           'hilbert']
 
 
 #-----------------------------------------------------------------------------
@@ -571,3 +573,36 @@ def companion(a):
     c[0] = first_row
     c[range(1,n-1), range(0, n-2)] = 1
     return c
+
+
+def hilbert(n):
+    """Create a Hilbert matrix of order n.
+    
+    Returns the `n` by `n` array with entries `h[i,j] = 1 / (i + j + 1)`.
+
+    Parameters
+    ----------
+    n : int
+        The size of the array to create.
+
+    Returns
+    -------
+    h : ndarray with shape (n, n)
+        The Hilber matrix.
+        
+    Notes
+    -----
+    
+    .. versionadded:: 0.10.0
+
+    Examples
+    --------
+    >>> hilbert(3)
+    array([[ 1.        ,  0.5       ,  0.33333333],
+           [ 0.5       ,  0.33333333,  0.25      ],
+           [ 0.33333333,  0.25      ,  0.2       ]])
+
+    """
+    values = 1.0 / (1.0 + np.arange(2 * n - 1))
+    h = hankel(values[:n], r=values[n-1:])
+    return h
