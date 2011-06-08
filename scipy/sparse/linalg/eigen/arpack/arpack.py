@@ -1053,7 +1053,6 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         the user can supply the matrix or operator Minv, which gives 
         x = Minv * b = M^-1 * b 
     sigma : real or complex
-        [not implemented for real A]
         Find eigenvalues near sigma using shift-invert mode.  This requires
         an operator to compute the solution of the linear system 
         `[A - sigma * M] * x = b`, where M is the identity matrix if 
@@ -1102,7 +1101,6 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     OPinv : N x N matrix, array, sparse matrix, or linear operator
         See notes in sigma, above.
     OPpart : 'r' or 'i'.  
-        [Not implemented]
         See notes in sigma, above
 
     Raises
