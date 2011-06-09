@@ -5,7 +5,7 @@ from scipy.misc import comb
 
 __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
            'hadamard', 'leslie', 'all_mat', 'kron', 'block_diag', 'companion',
-           'hilbert']
+           'hilbert', 'invhilbert']
 
 
 #-----------------------------------------------------------------------------
@@ -606,3 +606,63 @@ def hilbert(n):
     values = 1.0 / (1.0 + np.arange(2 * n - 1))
     h = hankel(values[:n], r=values[n-1:])
     return h
+
+
+def invhilbert(n, exact=False):
+    """Compute the inverse of the Hilbert matrix of order `n`.
+    
+    Parameters
+    ----------
+    n : int
+        The order of the Hilbert matrix.
+    exact : bool
+        If False, the data type of the array that is returned in np.float64,
+        and the array is an approximation of the inverse.
+        If True, the array is exact integer array.  To represent the exact
+        inverse when n > 14, the returned array is an object array of long
+        integers.  For n <= 14, the exact inverse is returned as an array
+        with data type np.int64.
+
+    Returns
+    -------
+    invh : ndarray with shape (n, n)
+        The data type of the array is np.float64 is exact is False.
+        If exact is True, the data type is either np.int64 (for n <= 14)
+        or object (for n > 14).  In the latter case, the objects in the
+        array will be long integers.
+
+    Examples
+    --------
+    >>> invhilbert(4)
+    array([[   16.,  -120.,   240.,  -140.],
+           [ -120.,  1200., -2700.,  1680.],
+           [  240., -2700.,  6480., -4200.],
+           [ -140.,  1680., -4200.,  2800.]])
+    >>> invhilbert(4, exact=True)
+    array([[   16,  -120,   240,  -140],
+           [ -120,  1200, -2700,  1680],
+           [  240, -2700,  6480, -4200],
+           [ -140,  1680, -4200,  2800]], dtype=int64)
+    >>> invhilbert(16)[7,7]
+    4.2475099528537506e+19
+    >>> invhilbert(16, exact=True)[7,7]
+    42475099528537378560L
+    """
+    if exact:
+        if n > 14:
+            dtype = object
+        else:
+            dtype = np.int64
+    else:
+        dtype = np.float64
+    invh = np.empty((n, n), dtype=dtype)
+    for i in xrange(n):
+        for j in xrange(0, i + 1):
+            s = i + j
+            invh[i, j] = ((-1)**s * (s + 1) *
+                          comb(n + i, n - j - 1, exact) *
+                          comb(n + j, n - i - 1, exact) *
+                          comb(s, i, exact) ** 2)
+            if i != j:
+                invh[j, i] = invh[i, j]
+    return invh

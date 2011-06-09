@@ -56,10 +56,8 @@ the resultant Schur form.
 Additional special matrices (``scipy.linalg``)
 ----------------------------------------------
 
-The following functions were added to ``scipy.linalg``::
+The functions ``hilbert`` and ``invhilbert`` were added to ``scipy.linalg``.
 
-    hilbert - Create a Hilbert matrix.
-    
 
 Deprecated features
 ===================
