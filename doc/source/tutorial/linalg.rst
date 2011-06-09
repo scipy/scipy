@@ -843,6 +843,10 @@ Hadamard              `scipy.linalg.hadamard`    Construct a Hadamard matrix.
 --------------------  -------------------------  ---------------------------------------------------------
 Hankel                `scipy.linalg.hankel`      Construct a Hankel matrix.
 --------------------  -------------------------  ---------------------------------------------------------
+Hilbert               `scipy.linalg.hilbert`     Construct a Hilbert matrix.
+--------------------  -------------------------  ---------------------------------------------------------
+Invert Hilbert        `scipy.linalg.invhilbert`  Construct the inverse of a Hilbert matrix.
+--------------------  -------------------------  ---------------------------------------------------------
 Leslie                `scipy.linalg.leslie`      Create a Leslie matrix.
 --------------------  -------------------------  ---------------------------------------------------------
 Toeplitz              `scipy.linalg.toeplitz`    Construct a Toeplitz matrix.

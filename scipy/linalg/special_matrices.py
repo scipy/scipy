@@ -592,7 +592,6 @@ def hilbert(n):
         
     Notes
     -----
-    
     .. versionadded:: 0.10.0
 
     Examples
@@ -630,6 +629,10 @@ def invhilbert(n, exact=False):
         If exact is True, the data type is either np.int64 (for n <= 14)
         or object (for n > 14).  In the latter case, the objects in the
         array will be long integers.
+
+    Notes
+    -----    
+    .. versionadded:: 0.10.0
 
     Examples
     --------
