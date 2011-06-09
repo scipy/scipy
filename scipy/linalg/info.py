@@ -85,6 +85,8 @@ Special Matrices
    companion - Companion matrix
    hadamard - Hadamard matrix of order 2**n
    hankel - Hankel matrix
+   hilbert - Hilbert matrix
+   invhilbert - Inverse Hilbert matrix
    kron - Kronecker product of two arrays
    leslie - Leslie matrix
    toeplitz - Toeplitz matrix

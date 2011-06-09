@@ -2,10 +2,11 @@
 
 from numpy import arange, add, array, eye, copy
 from numpy.testing import TestCase, run_module_suite, assert_raises, \
-    assert_equal, assert_array_equal
+    assert_equal, assert_array_equal, assert_array_almost_equal
 
 from scipy.linalg import toeplitz, hankel, circulant, hadamard, leslie, \
-                            companion, tri, triu, tril, kron, block_diag
+                            companion, tri, triu, tril, kron, block_diag, \
+                            hilbert, invhilbert
 
 
 def get_mat(n):
@@ -263,6 +264,56 @@ class TestKron:
                           [ 30, 40 ],
                           [ 33, 44 ]])
         assert_array_equal(a, expected)
+
+
+class TestHilbert(TestCase):
+
+    def test_basic(self):
+        h3 = array([[1.0,  1/2., 1/3.],
+                    [1/2., 1/3., 1/4.],
+                    [1/3., 1/4., 1/5.]])
+        assert_array_almost_equal(hilbert(3), h3)
+
+        assert_array_equal(hilbert(1), [[1.0]])
+        
+        h0 = hilbert(0)
+        assert_equal(h0.shape, (0,0))
+
+
+class TestInvHilbert(TestCase):
+
+    def test_basic(self):
+        invh1 = array([[1]])
+        assert_array_equal(invhilbert(1, exact=True), invh1)
+        assert_array_equal(invhilbert(1), invh1)
+
+        invh2 = array([[ 4, -6],
+                       [-6, 12]])
+        assert_array_equal(invhilbert(2, exact=True), invh2)
+        assert_array_almost_equal(invhilbert(2), invh2)
+
+        invh3 = array([[  9,  -36,  30],
+                       [-36,  192, -180],
+                        [30, -180,  180]])
+        assert_array_equal(invhilbert(3, exact=True), invh3)
+        assert_array_almost_equal(invhilbert(3), invh3)
+
+        invh4 = array([[  16,  -120,   240,  -140],
+                       [-120,  1200, -2700,  1680],
+                       [ 240, -2700,  6480, -4200],
+                       [-140,  1680, -4200,  2800]])
+        assert_array_equal(invhilbert(4, exact=True), invh4)
+        assert_array_almost_equal(invhilbert(4), invh4)
+
+        invh5 = array([[   25,   -300,    1050,  -1400,     630],
+                       [ -300,   4800,  -18900,   26880, -12600],
+                       [ 1050, -18900,   79380, -117600,  56700],
+                       [-1400,  26880, -117600,  179200, -88200],
+                       [  630, -12600,   56700,  -88200,  44100]])
+        assert_array_equal(invhilbert(5, exact=True), invh5)
+        assert_array_almost_equal(invhilbert(5), invh5)
+
+        # FIXME: Create a test for n > 14.
 
 
 if __name__ == "__main__":

@@ -53,6 +53,12 @@ A sort keyword has been added to the Schur decomposition routine
 (``scipy.linalg.schur``) to allow the sorting of eigenvalues in
 the resultant Schur form.
 
+Additional special matrices (``scipy.linalg``)
+----------------------------------------------
+
+The functions ``hilbert`` and ``invhilbert`` were added to ``scipy.linalg``.
+
+
 Deprecated features
 ===================
 
