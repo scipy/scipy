@@ -845,7 +845,7 @@ Hankel                `scipy.linalg.hankel`      Construct a Hankel matrix.
 --------------------  -------------------------  ---------------------------------------------------------
 Hilbert               `scipy.linalg.hilbert`     Construct a Hilbert matrix.
 --------------------  -------------------------  ---------------------------------------------------------
-Invert Hilbert        `scipy.linalg.invhilbert`  Construct the inverse of a Hilbert matrix.
+Inverse Hilbert       `scipy.linalg.invhilbert`  Construct the inverse of a Hilbert matrix.
 --------------------  -------------------------  ---------------------------------------------------------
 Leslie                `scipy.linalg.leslie`      Create a Leslie matrix.
 --------------------  -------------------------  ---------------------------------------------------------
