@@ -132,7 +132,7 @@ int NI_Label(PyArrayObject* input, PyArrayObject* strct,
             Int32 neighbor = 0;
             /* iterate over structuring element: */
             for(ll = 0; ll < filter_size; ll++) {
-                int offset = oo[ll];
+                npy_intp offset = oo[ll];
                 if (offset != mask_value) {
                     Int32 tt = *(Int32*)(po + offset);
                     if (tt > 0) {
