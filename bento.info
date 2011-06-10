@@ -41,6 +41,11 @@ HookFile:
     scipy/linalg/bscript,
     scipy/optimize/bscript,
     scipy/signal/bscript,
+    scipy/sparse/linalg/dsolve/bscript,
+    scipy/sparse/linalg/dsolve/umfpack/bscript,
+    scipy/sparse/linalg/eigen/arpack/bscript,
+    scipy/sparse/linalg/isolve/bscript,
+    scipy/sparse/sparsetools/bscript,
     scipy/special/bscript
 
 Recurse:
@@ -50,6 +55,7 @@ Recurse:
     scipy/linalg,
     scipy/optimize,
     scipy/signal,
+    scipy/sparse,
     scipy/special
 
 DataFiles: tests
@@ -65,6 +71,13 @@ DataFiles: tests
         misc/tests/*.py,
         optimize/tests/*.py,
         signal/tests/*.py,
+        sparse/linalg/dsolve/tests/*.py,
+        sparse/linalg/dsolve/umfpack/tests/*.py,
+        sparse/linalg/eigen/arpack/tests/*.py,
+        sparse/linalg/eigen/lobpcg/tests/*.py,
+        sparse/linalg/isolve/tests/*.py,
+        sparse/linalg/tests/*.py,
+        sparse/tests/*.py,
         special/tests/*.py,
         special/tests/*.dat,
         special/tests/data/*.npz
@@ -80,4 +93,5 @@ Library:
         scipy.misc,
         scipy.optimize,
         scipy.signal,
+        scipy.sparse,
         scipy.special
