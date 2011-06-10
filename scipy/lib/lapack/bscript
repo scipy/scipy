@@ -1,0 +1,27 @@
+import sys
+
+from bento.commands import hooks
+
+@hooks.pre_build()
+def pre_build(context):
+    bld = context.waf_context
+
+    def builder(extension):
+        bld(features="c fc pyext bento cshlib f2py",
+            source=extension.sources,
+            target=extension.name,
+            use="FLAPACK")
+    context.register_builder("flapack", builder)
+
+    def builder(extension):
+        if bld.env.HAS_CLAPACK:
+            bld(features="c fc pyext bento cshlib f2py",
+                source=extension.sources,
+                target=extension.name,
+                use="CLAPACK")
+        else:
+            bld(features="c fc pyext bento cshlib f2py",
+                source=["dummy_clapack.pyf"],
+                target=extension.name,
+                )
+    context.register_builder("clapack", builder)

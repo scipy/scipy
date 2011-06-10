@@ -1,0 +1,8 @@
+Recurse:
+    blas,
+    lapack
+
+Library:
+    Packages:
+        blas,
+        lapack

@@ -1,3 +1,4 @@
+import os
 import sys
 import os.path as op
 
@@ -7,6 +8,9 @@ from numpy.distutils.misc_util \
 from numpy.distutils.conv_template \
     import \
         process_str as process_c_str
+from numpy.distutils.from_template \
+    import \
+        process_str as process_f_str, resolve_includes
 
 from bento.commands import hooks
 from bento.commands.extras.waf \
@@ -22,7 +26,7 @@ from waflib import Options
 # FIXME: add this to numpy so that we can reuse it
 class CTemplateTask(waflib.Task.Task):
     color = 'BLUE'
-    before = ['c']
+    #ext_out = ['.c', '.pyf']
     def run(self):
         s = self.inputs[0]
         cnt = s.read()
@@ -30,15 +34,38 @@ class CTemplateTask(waflib.Task.Task):
         o = self.outputs[0]
         o.write(writestr)
 
-@waflib.TaskGen.feature("c_template")
+class FTemplateTask(waflib.Task.Task):
+    color = 'BLUE'
+    ext_out = ['.pyf']
+    def run(self):
+        s = self.inputs[0]
+        lines = resolve_includes(s.abspath())
+        writestr = process_f_str("".join(lines))
+        o = self.outputs[0]
+        o.write(writestr)
+        return 0
+
 @waflib.TaskGen.extension(".src")
 def c_template(self, node):
-    outs = []
-    outs.append(node.change_ext(""))
+    output_name = node.name.rsplit(".", 1)[0]
+    output = node.parent.find_or_declare(output_name)
+    assert output.is_bld()
 
-    tsk = self.create_task('CTemplateTask', node, outs)
-    if "c" in self.features:
-        self.source.append(outs[0])
+    ext = output.name.rsplit(".")[1]
+    if ext in ["f", "pyf", "ipyf"]:
+        tsk = self.create_task('FTemplateTask', node, output)
+        if "fc" in self.features:
+            self.source.append(output)
+        else:
+            raise ValueError("FTemplateTask without feature 'fc' ?")
+    elif ext in ["c"]:
+        tsk = self.create_task('CTemplateTask', node, output)
+        if "c" in self.features:
+            self.source.append(output)
+        else:
+            raise ValueError("FTemplateTask without feature 'c' ?")
+    else:
+        raise ValueError("Unknown extension in templating: %r" % ext)
 
 # FIXME: abstract those module gen tasks...
 class write_module(waflib.Task.Task):
@@ -78,11 +105,14 @@ def options(context):
 @hooks.pre_configure()
 def pre_configure(context):
     opts = context.waf_options_context
+    opts.load("compiler_cxx")
     opts.load("compiler_fc")
     opts.load("f2py")
     Options.options.check_fc = "gfortran"
+    Options.options.check_cxx_compiler = "g++"
 
     conf = context.waf_context
+    conf.load("compiler_cxx")
     conf.load("compiler_fc")
     conf.load("f2py")
 
@@ -133,16 +163,15 @@ def post_configure(context):
         # (cause crashes when importing the extension)
         name = "python%s" % ".".join([str(i) for i in sys.version_info[:2]])
         remove_flag(name, conf.env.LIB_PYEXT)
-        remove_flag("-dynamiclib", conf.env.LINKFLAGS_cshlib)
         remove_flag_postvalue("-compatibility_version", conf.env.CFLAGS_cshlib)
         remove_flag_postvalue("-current_version", conf.env.CFLAGS_cshlib)
         for flag in [conf.env.CFLAGS_PYEXT, conf.env.LINKFLAGS_PYEXT,
                      conf.env.CXXFLAGS_PYEXT, conf.env.FCFLAGS]:
             remove_flag_prevalue("ppc", flag)
-        conf.env.LINKFLAGS_cshlib.extend(["-undefined", "dynamic_lookup", "-bundle"])
+        for f in [conf.env.LINKFLAGS_cxxshlib, conf.env.LINKFLAGS_cshlib]:
+            remove_flag("-dynamiclib", f)
+            f.extend(["-undefined", "dynamic_lookup", "-bundle"])
         conf.env["MACOSX_DEPLOYMENT_TARGET"] = "10.4"
-
-        conf.env.MACOSX_DEPLOYMENT_TARGET = "10.4"
 
     conf.env.HAS_FBLAS = False
     conf.env.HAS_CBLAS = False

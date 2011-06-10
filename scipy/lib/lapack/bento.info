@@ -1,0 +1,5 @@
+Library:
+    Extension: flapack
+        Sources: flapack.pyf.src
+    Extension: clapack
+        Sources: clapack.pyf.src
