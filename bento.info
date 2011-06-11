@@ -48,7 +48,8 @@ HookFile:
     scipy/sparse/linalg/eigen/arpack/bscript,
     scipy/sparse/linalg/isolve/bscript,
     scipy/sparse/sparsetools/bscript,
-    scipy/special/bscript
+    scipy/special/bscript,
+    scipy/stats/bscript
 
 Recurse:
     scipy/cluster,
@@ -60,13 +61,17 @@ Recurse:
     scipy/optimize,
     scipy/signal,
     scipy/sparse,
-    scipy/special
+    scipy/spatial,
+    scipy/special,
+    scipy/stats
 
 DataFiles: tests
     TargetDir: $sitedir/scipy
     SourceDir: scipy
     Files:
         constants/tests/*.py,
+        cluster/tests/*.py,
+        cluster/tests/*.txt,
         fftpack/tests/*.py,
         fftpack/tests/*.npz,
         integrate/tests/*.py,
@@ -84,9 +89,12 @@ DataFiles: tests
         sparse/linalg/isolve/tests/*.py,
         sparse/linalg/tests/*.py,
         sparse/tests/*.py,
+        spatial/tests/*.py,
+        spatial/tests/*.txt,
         special/tests/*.py,
         special/tests/*.dat,
-        special/tests/data/*.npz
+        special/tests/data/*.npz,
+        stats/tests/*.py
 
 Library:
     Packages:
@@ -102,4 +110,6 @@ Library:
         scipy.optimize,
         scipy.signal,
         scipy.sparse,
-        scipy.special
+        scipy.spatial,
+        scipy.special,
+        scipy.stats
