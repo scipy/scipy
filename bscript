@@ -177,6 +177,7 @@ def post_configure(context):
     conf.env.HAS_CBLAS = False
     conf.env.HAS_FLAPACK = False
     conf.env.HAS_CLAPACK = False
+    conf.env.HAS_ATLAS = False
 
     if sys.platform == "darwin":
         try:

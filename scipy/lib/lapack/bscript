@@ -25,3 +25,10 @@ def pre_build(context):
                 target=extension.name,
                 )
     context.register_builder("clapack", builder)
+
+    def builder(extension):
+        bld(features="c pyext bento cshlib f2py f2py_fortran",
+            source=extension.sources,
+            target=extension.name,
+            use="FLAPACK CLIB")
+    context.register_builder("calc_lwork", builder)

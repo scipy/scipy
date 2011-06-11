@@ -63,3 +63,15 @@ def pre_build(context):
             target=extension.name,
             use="FLAPACK CLIB")
     context.register_builder("calc_lwork", builder)
+
+    def builder(extension):
+        defines = []
+        if bld.env.HAS_ATLAS:
+            raise NotImplementedError("Atlas not implemented yet")
+        else:
+            defines.append("NO_ATLAS_INFO=1")
+        bld(features="c pyext bento cshlib",
+            source=extension.sources,
+            target=extension.name,
+            defines=defines)
+    context.register_builder("atlas_version", builder)
