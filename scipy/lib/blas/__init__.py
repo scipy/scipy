@@ -10,6 +10,8 @@ __all__ = ['fblas','cblas','get_blas_funcs']
 import fblas
 import cblas
 
+from numpy import deprecate
+
 _use_force_cblas = 1
 if hasattr(cblas,'empty_module'):
     cblas = fblas
@@ -20,12 +22,15 @@ elif hasattr(fblas,'empty_module'):
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'} # 'd' will be default for 'i',..
 _inv_type_conv = {'s':'f','d':'d','c':'F','z':'D'}
 
+@deprecate
 def get_blas_funcs(names,arrays=(),debug=0):
-    """Return available BLAS function objects with names.
+    """
+    This function is deprecated, use scipy.linalg.get_blas_funcs instead.
+
+    Return available BLAS function objects with names.
     arrays are used to determine the optimal prefix of
-    BLAS routines."""
-    warn('This function is deprecated, use scipy.linalg.get_blas_funcs instead',
-         DeprecationWarning)
+    BLAS routines.
+    """
 
     ordering = []
     for i in range(len(arrays)):
