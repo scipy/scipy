@@ -1,0 +1,142 @@
+! -*- f90 -*-
+! Signatures for f2py-wrappers of FORTRAN LEVEL 2 BLAS functions.
+!
+! Author: Pearu Peterson
+! Created: Jan-Feb 2002
+! Modified: Fabian Pedregosa, 2011
+!
+! Implemented:
+!   gemv, hemv, symv, trmv, ger, geru, gerc
+!
+! Not implemented:
+!   gbmv, hbmv, hpmv, sbmv, spmv, tbmv, tpmv, trsv, tbsv, tpsv,
+!   her, hpr, her2, hpr2, syr, spr, syr2, spr2
+!
+
+subroutine <prefix>gemv(m,n,alpha,a,x,beta,y,offx,incx,offy,incy,trans,rows,cols,ly)
+  ! Computes a matrix-vector product using a general matrix
+  !
+  ! y = gemv(alpha,a,x,beta=0,y=0,offx=0,incx=1,offy=0,incy=0,trans=0)
+  ! Calculate y <- alpha * op(A) * x + beta * y
+
+  callstatement (*f2py_func)((trans?(trans==2?"C":"T"):"N"),&m,&n,&alpha,a,&m, &
+       x+offx,&incx,&beta,y+offy,&incy)
+  callprotoargument char*,int*,int*,<ctype>*,<ctype>*,int*,<ctype>*,int*,<ctype>*, &
+       <ctype>*,int*
+
+  integer optional, intent(in), check(trans>=0 && trans <=2) :: trans = 0
+  integer optional, intent(in), check(incx>0||incx<0) :: incx = 1
+  integer optional, intent(in), check(incy>0||incy<0) :: incy = 1
+  <ftype> intent(in) :: alpha
+  <ftype> intent(in), optional :: beta = <0.0,\0,(0.0\,0.0),\2>
+
+  <ftype> dimension(*), intent(in) :: x
+  <ftype> dimension(ly), intent(in,copy,out), depend(ly),optional :: y
+  integer intent(hide), depend(incy,rows,offy) :: ly = &
+       (y_capi==Py_None?1+offy+(rows-1)*abs(incy):-1)
+  <ftype> dimension(m,n), intent(in) :: a
+  integer depend(a), intent(hide):: m = shape(a,0)
+  integer depend(a), intent(hide):: n = shape(a,1)
+
+  integer optional, intent(in) :: offx=0
+  integer optional, intent(in) :: offy=0
+  check(offx>=0 && offx<len(x)) :: x
+  check(len(x)>offx+(cols-1)*abs(incx)) :: x
+  depend(offx,cols,incx) :: x
+
+  check(offy>=0 && offy<len(y)) :: y
+  check(len(y)>offy+(rows-1)*abs(incy)) :: y
+  depend(offy,rows,incy) :: y
+
+  integer depend(m,n,trans), intent(hide) :: rows = (trans?n:m)
+  integer depend(m,n,trans), intent(hide) :: cols = (trans?m:n)
+
+end subroutine <prefix>gemv
+
+
+subroutine <prefix><symv,\0,hemv,\2>(n,alpha,a,x,beta,y,offx,incx,offy,incy,lower,ly)
+  ! Computes a matrix-vector product for a symmetric/hermitian matrix
+  !
+  ! Calculate y <- alpha * A * x + beta * y, A is symmmetric/hermitian
+
+  callstatement (*f2py_func)((lower?"L":"U"),&n,&alpha,a,&n,x+offx,&incx,&beta, &
+       y+offy,&incy)
+  callprotoargument char*,int*,<ctype>*,<ctype>*,int*,<ctype>*,int*,<ctype>*, &
+       <ctype>*,int*
+
+  integer optional, intent(in),check(lower==0||lower==1) :: lower = 0
+  integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
+  integer optional, intent(in),check(incy>0||incy<0) :: incy = 1
+  <ftype> intent(in) :: alpha
+  <ftype> intent(in),optional :: beta = <0.0,\0,(0.0\,0.0),\2>
+
+  <ftype> dimension(*), intent(in) :: x
+  <ftype> dimension(ly), intent(in,copy,out),depend(ly),optional :: y
+  integer intent(hide),depend(incy,n,offy) :: ly = &
+       (y_capi==Py_None?1+offy+(n-1)*abs(incy):-1)
+  <ftype> dimension(n,n), intent(in),check(shape(a,0)==shape(a,1)) :: a
+  integer depend(a), intent(hide):: n = shape(a,0)
+
+  integer optional, intent(in) :: offx=0
+  integer optional, intent(in) :: offy=0
+  check(offx>=0 && offx<len(x)) :: x
+  check(len(x)>offx+(n-1)*abs(incx)) :: x
+  depend(offx,n,incx) :: x
+
+  check(offy>=0 && offy<len(y)) :: y
+  check(len(y)>offy+(n-1)*abs(incy)) :: y
+  depend(offy,n,incy) :: y
+
+end subroutine  <prefix><symv,\0,hemv,\2>
+
+
+subroutine <prefix>trmv(n,a,x,offx,incx,lower,trans,unitdiag)
+  ! Computes a matrix-vector product using a triangular matrix
+  !
+  ! x <- op(A) * x, A is triangular
+  !
+
+  callstatement (*f2py_func)((lower?"L":"U"), (trans?(trans==2?"C":"T"):"N"), &
+       (unitdiag?"U":"N"),&n,a,&n,x+offx,&incx)
+  callprotoargument char*,char*,char*,int*,<ctype>*,int*,<ctype>*,int*
+
+  integer optional, intent(in), check(trans>=0 && trans <=2) :: trans = 0
+  integer optional, intent(in), check(lower==0||lower==1) :: lower = 0
+  integer optional, intent(in), check(unitdiag==0||unitdiag==1) :: unitdiag = 0
+  integer optional, intent(in), check(incx>0||incx<0) :: incx = 1
+
+  <ftype> dimension(*), intent(in,out,copy) :: x
+  <ftype> dimension(n,n), intent(in),check(shape(a,0)==shape(a,1)) :: a
+  integer depend(a), intent(hide):: n = shape(a,0)
+
+  integer optional, intent(in), depend(x) :: offx=0
+  check(offx>=0 && offx<len(x)) :: offx
+
+  check(len(x)>offx+(n-1)*abs(incx)) :: n
+  depend(x,offx,incx) :: n
+
+end subroutine <prefix>trmv
+
+
+! <ftype6=real,double precision,complex,double complex,\2,\3>
+! <prefix6=s,d,c,z,c,z>
+subroutine <prefix6>ger<,,u,u,c,c>(m,n,alpha,x,incx,y,incy,a,lda)
+  ! Performs a rank-1 update of a general matrix.
+  !
+  ! Calculate a <- alpha*x*y^T + a
+  ! Calculate a <- alpha*x*y^H + a
+  !
+
+  integer intent(hide),depend(x) :: m = len(x)
+  integer intent(hide),depend(y) :: n = len(y)
+
+  <ftype6> intent(in) :: alpha
+  <ftype6> dimension(m), intent(in,overwrite) :: x
+  integer optional, intent(in),check(incx==1||incx==-1) :: incx = 1
+  <ftype6> dimension(n), intent(in,overwrite) :: y
+  integer optional, intent(in),check(incy==1||incy==-1) :: incy = 1
+  <ftype6> dimension(m,n), intent(in,out,copy),optional :: &
+       a = <0.0,\0,(0.0\,0.0),\2,\2,\2>
+  integer intent(hide), depend(m) :: lda=m
+
+end subroutine <prefix6>ger<,,u,u,c,c>
