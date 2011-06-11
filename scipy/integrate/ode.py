@@ -746,7 +746,7 @@ class dopri5(IntegratorBase):
         self.success = 1
 
     def run(self,f,jac,y0,t0,t1,f_params,jac_params):
-        x,y,iwork,idid = self.runner(*((f,t0,y0,t1) + tuple(self.call_args)))
+        x,y,iwork,idid = self.runner(*((f,t0,y0,t1) + tuple(self.call_args) + (f_params,)))
         if idid < 0:
             warnings.warn(self.name + ': ' +
                 self.messages.get(idid, 'Unexpected idid=%s'%idid))
