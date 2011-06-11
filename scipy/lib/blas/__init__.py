@@ -2,6 +2,7 @@
 # BLAS wrappers
 #
 
+from warnings import warn
 from info import __doc__
 
 __all__ = ['fblas','cblas','get_blas_funcs']
@@ -23,6 +24,9 @@ def get_blas_funcs(names,arrays=(),debug=0):
     """Return available BLAS function objects with names.
     arrays are used to determine the optimal prefix of
     BLAS routines."""
+    warn('This function is deprecated, use scipy.linalg.get_blas_funcs instead',
+         DeprecationWarning)
+
     ordering = []
     for i in range(len(arrays)):
         t = arrays[i].dtype.char
