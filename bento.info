@@ -36,6 +36,7 @@ Classifiers:
 HookFile:
     bscript,
     scipy/fftpack/bscript,
+    scipy/integrate/bscript,
     scipy/lib/blas/bscript,
     scipy/lib/lapack/bscript,
     scipy/linalg/bscript,
@@ -51,6 +52,7 @@ HookFile:
 Recurse:
     scipy/cluster,
     scipy/fftpack,
+    scipy/integrate,
     scipy/lib,
     scipy/linalg,
     scipy/optimize,
@@ -65,6 +67,7 @@ DataFiles: tests
         constants/tests/*.py,
         fftpack/tests/*.py,
         fftpack/tests/*.npz,
+        integrate/tests/*.py,
         lib/blas/tests/*.py,
         lib/lapack/tests/*.py,
         linalg/tests/*.py,
@@ -88,6 +91,7 @@ Library:
         scipy.cluster,
         scipy.constants,
         scipy.fftpack,
+        scipy.integrate,
         scipy.lib,
         scipy.linalg,
         scipy.misc,
