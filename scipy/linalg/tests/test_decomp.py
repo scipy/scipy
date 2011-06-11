@@ -685,6 +685,15 @@ class TestLU(TestCase):
         """Check lu decomposition on medium size, rectangular matrix."""
         self._test_common(self.cmed)
 
+    def test_simple_known(self):
+        # Ticket #1458
+        for order in ['C', 'F']:
+            A = np.array([[2, 1],[0, 1.]], order=order)
+            LU, P = lu_factor(A)
+            assert_array_almost_equal(LU, np.array([[2, 1], [0, 1]]))
+            assert_array_equal(P, np.array([0, 1]))
+
+
 class TestLUSingle(TestLU):
     """LU testers for single precision, real and double"""
     def __init__(self, *args, **kw):
@@ -709,15 +718,18 @@ class TestLUSolve(TestCase):
         seed(1234)
 
     def test_lu(self):
-        a = random((10,10))
+        a0 = random((10,10))
         b = random((10,))
 
-        x1 = solve(a,b)
+        for order in ['C', 'F']:
+            a = np.array(a0, order=order)
 
-        lu_a = lu_factor(a)
-        x2 = lu_solve(lu_a,b)
+            x1 = solve(a,b)
 
-        assert_array_equal(x1,x2)
+            lu_a = lu_factor(a)
+            x2 = lu_solve(lu_a,b)
+
+            assert_array_equal(x1,x2)
 
 class TestSVD(TestCase):
     def setUp(self):
