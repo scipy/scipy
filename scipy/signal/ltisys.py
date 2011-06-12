@@ -30,8 +30,8 @@ def tf2ss(num, den):
     Parameters
     ----------
     num, den : array_like
-        Sequences representing the numerator and denominator
-        polynomials.
+        Sequences representing the numerator and denominator polynomials.
+        The denominator needs to be at least as long as the numerator.
 
     Returns
     -------
@@ -53,7 +53,8 @@ def tf2ss(num, den):
     M = num.shape[1]
     K = len(den)
     if M > K:
-        raise ValueError("Improper transfer function.")
+        msg = "Improper transfer function. `num` is longer than `den`."
+        raise ValueError(msg)
     if M == 0 or K == 0:  # Null system
         return array([], float), array([], float), array([], float), \
                array([], float)
