@@ -415,7 +415,7 @@ def kulsinski(u, v):
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
-    n = len(u)
+    n = float(len(u))
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v)
 
     return (ntf + nft - ntt + n) / (ntf + nft + n)
@@ -441,7 +441,7 @@ def seuclidean(u, v, V):
     """
     u = np.asarray(u, order='c')
     v = np.asarray(v, order='c')
-    V = np.asarray(V, order='c')
+    V = np.asarray(V, order='c', dtype=np.float64)
     if len(V.shape) != 1 or V.shape[0] != u.shape[0] or u.shape[0] != v.shape[0]:
         raise TypeError('V must be a 1-D array of the same dimension as u and v.')
     return np.sqrt(((u-v)**2 / V).sum())
@@ -533,6 +533,9 @@ def braycurtis(u, v):
 
        \sum{|u_i-v_i|} / \sum{|u_i+v_i|}.
 
+    The Bray-Curtis distance is in the range [0, 1] if all coordinates are
+    positive, and is undefined if the inputs are of length zero.
+
     Parameters
     ----------
     u : ndarray
@@ -546,8 +549,8 @@ def braycurtis(u, v):
         The Bray-Curtis distance between vectors ``u`` and ``v``.
     """
     u = np.asarray(u, order='c')
-    v = np.asarray(v, order='c')
-    return abs(u-v).sum() / abs(u+v).sum()
+    v = np.asarray(v, order='c', dtype=np.float64)
+    return abs(u - v).sum() / abs(u + v).sum()
 
 def canberra(u, v):
     r"""
@@ -556,9 +559,8 @@ def canberra(u, v):
 
     .. math::
 
-       \frac{\sum_i {|u_i-v_i|}}
-            {\sum_i {|u_i|+|v_i|}}.
-
+         \sum_u \frac{|u_i-v_i|}
+                     {(|u_i|+|v_i|)}.
 
     Parameters
     ----------
@@ -571,10 +573,21 @@ def canberra(u, v):
     -------
     d : double
         The Canberra distance between vectors ``u`` and ``v``.
+
+    Notes
+    -----
+    Whe u[i] and v[i] are 0 for given i, then the fraction 0/0 = 0 is used in
+    the calculation.
+
     """
     u = np.asarray(u, order='c')
-    v = np.asarray(v, order='c')
-    return abs(u-v).sum() / (abs(u).sum() + abs(v).sum())
+    v = np.asarray(v, order='c', dtype=np.float64)
+    olderr = np.seterr(invalid='ignore')
+    try:
+        d = np.nansum(abs(u - v) / (abs(u) + abs(v)))
+    finally:
+        np.seterr(**olderr)
+    return d
 
 def _nbool_correspond_all(u, v):
     if u.dtype != v.dtype:

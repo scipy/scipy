@@ -38,11 +38,12 @@ import os.path
 
 import numpy as np
 from numpy.testing import verbose, TestCase, run_module_suite, \
-        assert_raises, assert_array_equal
+        assert_raises, assert_array_equal, assert_equal, assert_almost_equal
 from scipy.spatial.distance import squareform, pdist, cdist, matching, \
                                    jaccard, dice, sokalsneath, rogerstanimoto, \
                                    russellrao, yule, num_obs_y, num_obs_dm, \
-                                   is_valid_dm, is_valid_y, wminkowski
+                                   is_valid_dm, is_valid_y, wminkowski, \
+                                   canberra, braycurtis
 
 _filenames = ["iris.txt",
               "cdist-X1.txt",
@@ -118,7 +119,7 @@ class TestCdist(TestCase):
         if verbose > 2:
             print (Y1-Y2).max()
         self.assertTrue(within_tol(Y1, Y2, eps))
-        
+
     def test_cdist_euclidean_random_unicode(self):
         "Tests cdist(X, u'euclidean') using unicode metric string"
         eps = 1e-07
@@ -130,7 +131,7 @@ class TestCdist(TestCase):
         if verbose > 2:
             print (Y1-Y2).max()
         self.assertTrue(within_tol(Y1, Y2, eps))
-        
+
     def test_cdist_sqeuclidean_random(self):
         "Tests cdist(X, 'sqeuclidean') on random data."
         eps = 1e-07
@@ -477,7 +478,7 @@ class TestPdist(TestCase):
 
         Y_test1 = pdist(X, 'euclidean')
         self.assertTrue(within_tol(Y_test1, Y_right, eps))
-        
+
     def test_pdist_euclidean_random_u(self):
         "Tests pdist(X, 'euclidean') with unicode metric string"
         eps = 1e-07
@@ -487,7 +488,7 @@ class TestPdist(TestCase):
 
         Y_test1 = pdist(X, u'euclidean')
         self.assertTrue(within_tol(Y_test1, Y_right, eps))
-        
+
     def test_pdist_euclidean_random_float32(self):
         "Tests pdist(X, 'euclidean') on random data (float32)."
         eps = 1e-07
@@ -1733,6 +1734,16 @@ class TestIsValidY(TestCase):
 def test_sokalsneath_all_false():
     """Regression test for ticket #876"""
     assert_raises(ValueError, sokalsneath, [False, False, False], [False, False, False])
+
+def test_canberra():
+    """Regression test for ticket #1430."""
+    assert_equal(canberra([1,2,3], [2,4,6]), 1)
+    assert_equal(canberra([1,1,0,0], [1,0,1,0]), 2)
+
+def test_braycurtis():
+    """Regression test for ticket #1430."""
+    assert_almost_equal(braycurtis([1,2,3], [2,4,6]), 1./3, decimal=15)
+    assert_almost_equal(braycurtis([1,1,0,0], [1,0,1,0]), 0.5, decimal=15)
 
 
 if __name__=="__main__":
