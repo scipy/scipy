@@ -8,20 +8,5 @@ def pre_build(context):
         bld(features="c pyext bento cshlib",
             source=extension.sources,
             target=extension.name,
-            use="fitpack FBLAS CLIB")
-    context.register_builder("_fitpack", builder)
-    context.register_builder("interpnd", builder)
-
-    def builder(extension):
-        bld(features="c pyext bento cshlib f2py",
-            source=extension.sources,
-            target=extension.name,
-            use="fitpack FBLAS CLIB")
-    context.register_builder("dfitpack", builder)
-
-    def builder(extension):
-        bld(features="cxx pyext bento cxxshlib",
-            source=extension.sources,
-            target=extension.name,
-            use="FBLAS CLIB")
-    context.register_builder("_interpolate", builder)
+            use="FLAPACK CLIB")
+    context.register_builder("qhull", builder)

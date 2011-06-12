@@ -48,6 +48,7 @@ HookFile:
     scipy/sparse/linalg/eigen/arpack/bscript,
     scipy/sparse/linalg/isolve/bscript,
     scipy/sparse/sparsetools/bscript,
+    scipy/spatial/bscript,
     scipy/special/bscript,
     scipy/stats/bscript
 
