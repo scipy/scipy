@@ -173,9 +173,6 @@ def post_configure(context):
             f.extend(["-undefined", "dynamic_lookup", "-bundle"])
         conf.env["MACOSX_DEPLOYMENT_TARGET"] = "10.4"
 
-    conf.env.CFLAGS_cstlib = ["-fPIC"]
-    conf.env.FCLAGS_cstlib = ["-fPIC"]
-
     conf.env.HAS_FBLAS = False
     conf.env.HAS_CBLAS = False
     conf.env.HAS_FLAPACK = False
@@ -217,8 +214,11 @@ def post_configure(context):
         # FIXME: waf bug ? Did not find a way to compile both fortran and c
         # files with -fPIC
         fcflags = conf.env.FCFLAGS
-        fcflags.append("-fPIC")
+        fcflags.extend(["-fPIC"])
         conf.env.FCFLAGS = fcflags
+
+        conf.env.CFLAGS_cstlib = ["-fPIC"]
+        conf.env.FCFLAGS_cstlib = ["-fPIC"]
 
     if not (conf.env.HAS_FBLAS and conf.env.HAS_FLAPACK):
         raise waflib.Errors.ConfigurationError("You need blas and lapack")
