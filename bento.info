@@ -91,6 +91,7 @@ DataFiles: tests
         lib/lapack/tests/*.py,
         linalg/tests/*.py,
         misc/tests/*.py,
+        misc/tests/data/*.png,
         optimize/tests/*.py,
         signal/tests/*.py,
         sparse/linalg/dsolve/tests/*.py,
