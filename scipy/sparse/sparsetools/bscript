@@ -7,6 +7,7 @@ def pre_build(context):
     def builder(extension):
         bld(features="cxx cxxshlib pyext bento",
             source=extension.sources,
+            defines=('__STDC_FORMAT_MACROS',),
             target=extension.name)
     for e in ["_csr", "_csc", "_coo", "_bsr", "_dia", "_csgraph"]:
         context.register_builder(e, builder)
