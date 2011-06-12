@@ -97,7 +97,7 @@ write_info(fenv)
 #------------
 #   fblas
 #------------
-fenv.haha('fblas', 'generic_fblas.pyf')
+fenv.FromFTemplate('fblas.pyf', 'fblas.pyf.src')
 source = ['fblas.pyf']
 if IsVeclib(fenv, 'blas') or IsAccelerate(fenv, 'blas'):
     source.append(pjoin('src', 'fblaswrap_veclib_c.c'))
