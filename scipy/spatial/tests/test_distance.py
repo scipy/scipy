@@ -37,13 +37,16 @@
 import os.path
 
 import numpy as np
+from numpy.linalg import norm
 from numpy.testing import verbose, TestCase, run_module_suite, \
         assert_raises, assert_array_equal, assert_equal, assert_almost_equal
+
 from scipy.spatial.distance import squareform, pdist, cdist, matching, \
-                                   jaccard, dice, sokalsneath, rogerstanimoto, \
-                                   russellrao, yule, num_obs_y, num_obs_dm, \
-                                   is_valid_dm, is_valid_y, wminkowski, \
-                                   canberra, braycurtis
+        jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule, \
+        num_obs_y, num_obs_dm, is_valid_dm, is_valid_y, minkowski, wminkowski, \
+        euclidean, sqeuclidean, cosine, correlation, mahalanobis, \
+        canberra, braycurtis, sokalmichener, _validate_vector                                    
+
 
 _filenames = ["iris.txt",
               "cdist-X1.txt",
@@ -97,11 +100,6 @@ def load_testing_files():
 
 load_testing_files()
 
-#print eo.keys()
-
-
-#print np.abs(Y_test2 - Y_right).max()
-#print np.abs(Y_test1 - Y_right).max()
 
 class TestCdist(TestCase):
     """
@@ -462,6 +460,7 @@ class TestCdist(TestCase):
         if verbose > 2:
             print (Y1-Y2).max()
         self.assertTrue(within_tol(Y1, Y2, eps))
+
 
 class TestPdist(TestCase):
     """
@@ -1402,8 +1401,74 @@ class TestPdist(TestCase):
             print np.abs(pdist_y-right_y).max()
         self.assertTrue(within_tol(pdist_y, right_y, eps))
 
+
 def within_tol(a, b, tol):
     return np.abs(a - b).max() < tol
+
+
+class TestSomeDistanceFunctions(TestCase):
+
+    def setUp(self):
+        # 1D arrays
+        x = np.array([1.0, 2.0, 3.0])
+        y = np.array([1.0, 1.0, 5.0])
+        # 3x1 arrays
+        x31 = x[:,np.newaxis]
+        y31 = y[:,np.newaxis]
+        # 1x3 arrays
+        x13 = x31.T
+        y13 = y31.T
+
+        self.cases = [(x,y), (x31, y31), (x13, y13)]
+
+    def test_minkowski(self):
+        for x, y in self.cases:
+            dist1 = minkowski(x, y, p=1)
+            assert_almost_equal(dist1, 3.0)
+            dist1p5 = minkowski(x, y, p=1.5)
+            assert_almost_equal(dist1p5, (1.0+2.0**1.5)**(2./3))
+            dist2 = minkowski(x, y, p=2)
+            assert_almost_equal(dist2, np.sqrt(5))
+
+    def test_wminkowski(self):
+        w = np.array([1.0, 2.0, 0.5])
+        for x, y in self.cases:
+            dist1 = wminkowski(x, y, p=1, w=w)
+            assert_almost_equal(dist1, 3.0)
+            dist1p5 = wminkowski(x, y, p=1.5, w=w)
+            assert_almost_equal(dist1p5, (2.0**1.5+1.0)**(2./3))
+            dist2 = wminkowski(x, y, p=2, w=w)
+            assert_almost_equal(dist2, np.sqrt(5))
+
+    def test_euclidean(self):
+        for x, y in self.cases:
+            dist = euclidean(x, y)
+            assert_almost_equal(dist, np.sqrt(5))
+
+    def test_sqeuclidean(self):
+        for x, y in self.cases:
+            dist = sqeuclidean(x, y)
+            assert_almost_equal(dist, 5.0)
+
+    def test_cosine(self):
+        for x, y in self.cases:
+            dist = cosine(x, y)
+            assert_almost_equal(dist, 1.0 - 18.0/(np.sqrt(14)*np.sqrt(27)))
+
+    def test_correlation(self):
+        xm = np.array([-1.0, 0, 1.0])
+        ym = np.array([-4.0/3, -4.0/3, 5.0-7.0/3])
+        for x, y in self.cases:
+            dist = correlation(x, y)
+            assert_almost_equal(dist, 1.0 - np.dot(xm, ym)/(norm(xm)*norm(ym)))
+
+    def test_mahalanobis(self):
+        x = np.array([1.0, 2.0, 3.0])
+        y = np.array([1.0, 1.0, 5.0])
+        vi = np.array([[2.0, 1.0, 0.0],[1.0, 2.0, 1.0], [0.0, 1.0, 2.0]])
+        for x, y in self.cases:
+            dist = mahalanobis(x, y, vi)
+            assert_almost_equal(dist, np.sqrt(6.0))
 
 
 class TestSquareForm(TestCase):
@@ -1472,6 +1537,7 @@ class TestSquareForm(TestCase):
                 else:
                     self.assertTrue(A[i, j] == 0)
 
+
 class TestNumObsY(TestCase):
 
     def test_num_obs_y_multi_matrix(self):
@@ -1525,6 +1591,7 @@ class TestNumObsY(TestCase):
     def make_y(self, n):
         return np.random.rand((n*(n-1)/2))
 
+
 class TestNumObsDM(TestCase):
 
     ############## num_obs_dm
@@ -1564,8 +1631,10 @@ class TestNumObsDM(TestCase):
     def make_D(self, n):
         return np.random.rand(n, n)
 
+
 def is_valid_dm_throw(D):
     return is_valid_dm(D, throw=True)
+
 
 class TestIsValidDM(TestCase):
 
@@ -1658,8 +1727,10 @@ class TestIsValidDM(TestCase):
         D = squareform(y)
         self.assertTrue(is_valid_dm(D) == True)
 
+
 def is_valid_y_throw(y):
     return is_valid_y(y, throw=True)
+
 
 class TestIsValidY(TestCase):
 
@@ -1731,19 +1802,100 @@ class TestIsValidY(TestCase):
         return y
 
 
+def test_bad_p():
+    """Raise ValueError if p < 1."""
+    p = 0.5
+    assert_raises(ValueError, minkowski, [1, 2], [3, 4], p)
+    assert_raises(ValueError, wminkowski, [1, 2], [3, 4], p, [1, 1])
+
+
 def test_sokalsneath_all_false():
     """Regression test for ticket #876"""
     assert_raises(ValueError, sokalsneath, [False, False, False], [False, False, False])
+
 
 def test_canberra():
     """Regression test for ticket #1430."""
     assert_equal(canberra([1,2,3], [2,4,6]), 1)
     assert_equal(canberra([1,1,0,0], [1,0,1,0]), 2)
 
+
 def test_braycurtis():
     """Regression test for ticket #1430."""
     assert_almost_equal(braycurtis([1,2,3], [2,4,6]), 1./3, decimal=15)
     assert_almost_equal(braycurtis([1,1,0,0], [1,0,1,0]), 0.5, decimal=15)
+
+
+def test_euclideans():
+    """Regression test for ticket #1328."""
+    x1 = np.array([1, 1, 1])
+    x2 = np.array([0, 0, 0])
+    
+    # Basic test of the calculation.
+    assert_almost_equal(sqeuclidean(x1, x2), 3.0, decimal=14)
+    assert_almost_equal(euclidean(x1, x2), np.sqrt(3), decimal=14)
+
+    # Check flattening for (1, N) or (N, 1) inputs
+    assert_almost_equal(euclidean(x1[np.newaxis, :], x2[np.newaxis, :]),
+                        np.sqrt(3), decimal=14)
+    assert_almost_equal(sqeuclidean(x1[np.newaxis, :], x2[np.newaxis, :]),
+                        3.0, decimal=14)
+    assert_almost_equal(sqeuclidean(x1[:, np.newaxis], x2[:, np.newaxis]),
+                        3.0, decimal=14)
+
+    # Distance metrics only defined for vectors (= 1-D)
+    x = np.arange(4).reshape(2, 2)
+    assert_raises(ValueError, euclidean, x, x)
+    assert_raises(ValueError, sqeuclidean, x, x)
+
+    # Another check, with random data.
+    rs = np.random.RandomState(1234567890)
+    x = rs.rand(10)
+    y = rs.rand(10)
+    d1 = euclidean(x, y)
+    d2 = sqeuclidean(x, y)
+    assert_almost_equal(d1**2, d2, decimal=14)
+
+
+def test_sokalmichener():
+    """Test that sokalmichener has the same result for bool and int inputs."""
+    p = [True, True, False]
+    q = [True, False, True]
+    x = [int(b) for b in p]
+    y = [int(b) for b in q]
+    dist1 = sokalmichener(p, q)
+    dist2 = sokalmichener(x, y)
+    # These should be exactly the same.
+    assert_equal(dist1, dist2)
+
+
+def test__validate_vector():
+    """Assorted tests for _validate_vector."""
+    x = [1, 2, 3]
+    y = _validate_vector(x)
+    assert_array_equal(y, x)
+
+    y = _validate_vector(x, dtype=np.float64)
+    assert_array_equal(y, x)
+    assert_equal(y.dtype, np.float64)
+
+    x = [1]
+    y = _validate_vector(x)
+    assert_equal(y.ndim, 1)
+    assert_equal(y, x)
+
+    x = 1
+    y = _validate_vector(x)
+    assert_equal(y.ndim, 1)
+    assert_equal(y, [x])
+
+    x = np.arange(5).reshape(1, -1, 1)
+    y = _validate_vector(x)
+    assert_equal(y.ndim, 1)
+    assert_array_equal(y, x[0, :, 0])
+
+    x = [[1, 2], [3, 4]]
+    assert_raises(ValueError, _validate_vector, x)
 
 
 if __name__=="__main__":
