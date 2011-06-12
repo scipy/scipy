@@ -10,7 +10,7 @@ __all__ = ['minkowski_distance_p', 'minkowski_distance',
            'Rectangle', 'KDTree']
 
 
-def minkowski_distance_p(x,y,p=2):
+def minkowski_distance_p(x, y, p=2):
     """
     Compute the p-th power of the L**p distance between x and y.
 
@@ -35,13 +35,14 @@ def minkowski_distance_p(x,y,p=2):
     """
     x = np.asarray(x)
     y = np.asarray(y)
-    if p==np.inf:
-        return np.amax(np.abs(y-x),axis=-1)
-    elif p==1:
-        return np.sum(np.abs(y-x),axis=-1)
+    if p == np.inf:
+        return np.amax(np.abs(y-x), axis=-1)
+    elif p == 1:
+        return np.sum(np.abs(y-x), axis=-1)
     else:
-        return np.sum(np.abs(y-x)**p,axis=-1)
-def minkowski_distance(x,y,p=2):
+        return np.sum(np.abs(y-x)**p, axis=-1)
+
+def minkowski_distance(x, y, p=2):
     """
     Compute the L**p distance between x and y.
 
@@ -62,10 +63,10 @@ def minkowski_distance(x,y,p=2):
     """
     x = np.asarray(x)
     y = np.asarray(y)
-    if p==np.inf or p==1:
-        return minkowski_distance_p(x,y,p)
+    if p == np.inf or p == 1:
+        return minkowski_distance_p(x, y, p)
     else:
-        return minkowski_distance_p(x,y,p)**(1./p)
+        return minkowski_distance_p(x, y, p)**(1./p)
 
 class Rectangle(object):
     """Hyperrectangle class.
@@ -150,7 +151,6 @@ class KDTree(object):
     sort of calculation.
 
     """
-
     def __init__(self, data, leafsize=10):
         """Construct a kd-tree.
 
@@ -180,10 +180,12 @@ class KDTree(object):
             def __le__(self, other): id(self) <= id(other)
             def __ge__(self, other): id(self) >= id(other)
             def __eq__(self, other): id(self) == id(other)
+
     class leafnode(node):
         def __init__(self, idx):
             self.idx = idx
             self.children = len(idx)
+
     class innernode(node):
         def __init__(self, split_dim, split, less, greater):
             self.split_dim = split_dim
@@ -320,11 +322,10 @@ class KDTree(object):
 
     def query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf):
         """
-        query the kd-tree for nearest neighbors
+        Query the kd-tree for nearest neighbors
 
         Parameters
         ----------
-
         x : array_like, last dimension self.m
             An array of points to query.
         k : integer
@@ -346,7 +347,6 @@ class KDTree(object):
 
         Returns
         -------
-
         d : array of floats
             The distances to the nearest neighbors.
             If x has shape tuple+(self.m,), then d has shape tuple if
@@ -361,7 +361,6 @@ class KDTree(object):
 
         Examples
         --------
-
         >>> from scipy.spatial import KDTree
         >>> x, y = np.mgrid[0:5, 2:8]
         >>> tree = KDTree(zip(x.ravel(), y.ravel()))
@@ -463,62 +462,76 @@ class KDTree(object):
         R = Rectangle(self.maxes, self.mins)
 
         def traverse_checking(node, rect):
-            if rect.min_distance_point(x,p)>=r/(1.+eps):
+            if rect.min_distance_point(x, p) > r / (1. + eps):
                 return []
-            elif rect.max_distance_point(x,p)<r*(1.+eps):
+            elif rect.max_distance_point(x, p) < r * (1. + eps):
                 return traverse_no_checking(node)
             elif isinstance(node, KDTree.leafnode):
                 d = self.data[node.idx]
-                return node.idx[minkowski_distance(d,x,p)<=r].tolist()
+                return node.idx[minkowski_distance(d, x, p) <= r].tolist()
             else:
                 less, greater = rect.split(node.split_dim, node.split)
-                return traverse_checking(node.less, less)+traverse_checking(node.greater, greater)
+                return traverse_checking(node.less, less) + \
+                       traverse_checking(node.greater, greater)
+
         def traverse_no_checking(node):
             if isinstance(node, KDTree.leafnode):
-
                 return node.idx.tolist()
             else:
-                return traverse_no_checking(node.less)+traverse_no_checking(node.greater)
+                return traverse_no_checking(node.less) + \
+                       traverse_no_checking(node.greater)
 
         return traverse_checking(self.tree, R)
 
     def query_ball_point(self, x, r, p=2., eps=0):
-        """Find all points within r of x
+        """Find all points within distance r of point(s) x.
 
         Parameters
-        ==========
-
+        ----------
         x : array_like, shape tuple + (self.m,)
-            The point or points to search for neighbors of
+            The point or points to search for neighbors of.
         r : positive float
-            The radius of points to return
-        p : float 1<=p<=infinity
-            Which Minkowski p-norm to use
-        eps : nonnegative float
-            Approximate search. Branches of the tree are not explored
-            if their nearest points are further than r/(1+eps), and branches
-            are added in bulk if their furthest points are nearer than r*(1+eps).
+            The radius of points to return.
+        p : float, optional
+            Which Minkowski p-norm to use.  Should be in the range [1, inf].
+        eps : nonnegative float, optional
+            Approximate search. Branches of the tree are not explored if their
+            nearest points are further than ``r / (1 + eps)``, and branches are
+            added in bulk if their furthest points are nearer than
+            ``r * (1 + eps)``.
 
         Returns
-        =======
-
+        -------
         results : list or array of lists
-            If x is a single point, returns a list of the indices of the neighbors
-            of x. If x is an array of points, returns an object array of shape tuple
-            containing lists of neighbors.
+            If `x` is a single point, returns a list of the indices of the
+            neighbors of `x`. If `x` is an array of points, returns an object
+            array of shape tuple containing lists of neighbors.
 
+        Notes
+        -----
+        If you have many points whose neighbors you want to find, you may save
+        substantial amounts of time by putting them in a KDTree and using
+        query_ball_tree.
 
-        Note: if you have many points whose neighbors you want to find, you may save
-        substantial amounts of time by putting them in a KDTree and using query_ball_tree.
+        Examples
+        --------
+        >>> from scipy import spatial
+        >>> x, y = np.mgrid[0:4, 0:4]
+        >>> points = zip(x.ravel(), y.ravel())
+        >>> tree = spatial.KDTree(points)
+        >>> tree.query_ball_point([2, 0], 1)
+        [4, 8, 9, 12]
+
         """
         x = np.asarray(x)
-        if x.shape[-1]!=self.m:
-            raise ValueError("Searching for a %d-dimensional point in a %d-dimensional KDTree" % (x.shape[-1],self.m))
-        if len(x.shape)==1:
-            return self.__query_ball_point(x,r,p,eps)
+        if x.shape[-1] != self.m:
+            raise ValueError("Searching for a %d-dimensional point in a " \
+                             "%d-dimensional KDTree" % (x.shape[-1], self.m))
+        if len(x.shape) == 1:
+            return self.__query_ball_point(x, r, p, eps)
         else:
             retshape = x.shape[:-1]
-            result = np.empty(retshape,dtype=np.object)
+            result = np.empty(retshape, dtype=np.object)
             for c in np.ndindex(retshape):
                 result[c] = self.__query_ball_point(x[c], r, p=p, eps=eps)
             return result

@@ -471,5 +471,17 @@ def test_query_pairs_single_node():
     tree = KDTree([[0, 1]])
     assert_equal(tree.query_pairs(0.5), set())
 
+
+def test_ball_point_ints():
+    """Regression test for #1373."""
+    x, y = np.mgrid[0:4, 0:4]
+    points = zip(x.ravel(), y.ravel())
+    tree = KDTree(points)
+    assert_equal([4, 8, 9, 12], tree.query_ball_point((2, 0), 1))
+    points = np.asarray(points, dtype=np.float)
+    tree = KDTree(points)
+    assert_equal([4, 8, 9, 12], tree.query_ball_point((2, 0), 1))
+
+
 if __name__=="__main__":
     run_module_suite()
