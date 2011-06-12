@@ -4,7 +4,7 @@
 
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_array_equal, assert_almost_equal, assert_array_almost_equal, \
-    assert_, rand, dec
+    assert_allclose, assert_, rand, dec
 
 
 import numpy
@@ -195,6 +195,37 @@ class TestHypergeom(TestCase):
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
+    def test_precision(self):
+        # comparison number from mpmath
+        M = 2500
+        n = 50
+        N = 500
+        tot = M
+        good = n
+        hgpmf = stats.hypergeom.pmf(2, tot, good, N)
+        assert_almost_equal(hgpmf, 0.0010114963068932233, 11)
+
+    def test_precision2(self):
+        """Test hypergeom precision for large numbers.  See #1218."""
+        # Results compared with those from R.
+        oranges = 9.9e4
+        pears = 1.1e5
+        fruits_eaten = np.array([3, 3.8, 3.9, 4, 4.1, 4.2, 5]) * 1e4
+        quantile = 2e4
+        res = []
+        for eaten in fruits_eaten:
+            res.append(stats.hypergeom.sf(quantile, oranges + pears, oranges, eaten))
+        expected = np.array([0, 1.904153e-114, 2.752693e-66, 4.931217e-32,
+                             8.265601e-11, 0.1237904, 1])
+        assert_allclose(res, expected, atol=0, rtol=5e-7)
+
+        # Test with array_like first argument
+        quantiles = [1.9e4, 2e4, 2.1e4, 2.15e4]
+        res2 = stats.hypergeom.sf(quantiles, oranges + pears, oranges, 4.2e4)
+        expected2 = [1, 0.1237904, 6.511452e-34, 3.277667e-69]
+        assert_allclose(res2, expected2, atol=0, rtol=5e-7)
+
+
 class TestLogser(TestCase):
     def test_rvs(self):
         vals = stats.logser.rvs(0.75, size=(2, 50))
@@ -341,19 +372,6 @@ class TestGamma(TestCase):
 
         pdf = stats.gamma.pdf(3, 10, scale=1./5)
         assert_almost_equal(pdf, 0.1620358)
-
-
-class TestHypergeom(TestCase):
-    def test_precision(self):
-        # comparison number from mpmath
-        M = 2500
-        n = 50
-        N = 500
-        tot = M
-        good = n
-        hgpmf = stats.hypergeom.pmf(2, tot, good, N)
-
-        assert_almost_equal(hgpmf, 0.0010114963068932233, 11)
 
 
 class TestChi2(TestCase):

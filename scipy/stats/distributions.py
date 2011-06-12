@@ -309,11 +309,10 @@ docdict_discrete['frozennote'] = _doc_default_frozen_note
 docdict_discrete['example'] = _doc_default_example.replace('[0.9,]',
                                   'Replace with reasonable value')
 
-_doc_default_before_notes = ''.join([_doc_default_longsummary,
-                                     _doc_allmethods,
-                                     _doc_default_callparams,
-                                     _doc_default_frozen_note])
-
+_doc_default_before_notes = ''.join([docdict_discrete['longsummary'],
+                                     docdict_discrete['allmethods'],
+                                     docdict_discrete['callparams'],
+                                     docdict_discrete['frozennote']])
 docdict_discrete['before_notes'] = _doc_default_before_notes
 
 _doc_default_disc = ''.join([docdict_discrete['longsummary'],
@@ -5780,7 +5779,6 @@ class rv_discrete(rv_generic):
         """
         Probability mass function at k of the given RV.
 
-
         Parameters
         ----------
         k : array_like
@@ -6593,6 +6591,26 @@ for k >= 1
 ## Hypergeometric distribution
 
 class hypergeom_gen(rv_discrete):
+    """A hypergeometric discrete random variable.
+
+    The hypergeometric distribution models drawing objects from a bin.
+    M is the total number of objects, n is total number of Type I objects.
+    The random variate represents the number of Type I objects in N drawn
+    without replacement from the total population.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability mass function is defined as::
+
+        pmf(k, M, n, N) = choose(n, k) * choose(M - n, N - k) / choose(M, N),
+                                               for N - (M-n) <= k <= min(m,N)
+
+    %(example)s
+
+    """
+
     def _rvs(self, M, n, N):
         return mtrand.hypergeometric(n,M-n,N,size=self._size)
     def _argcheck(self, M, n, N):
@@ -6634,20 +6652,21 @@ class hypergeom_gen(rv_discrete):
         vals = self.pmf(k,M,n,N)
         lvals = where(vals==0.0,0.0,log(vals))
         return -sum(vals*lvals,axis=0)
-hypergeom = hypergeom_gen(name='hypergeom',longname="A hypergeometric",
-                          shapes="M, n, N", extradoc="""
+    def _sf(self, k, M, n, N):
+        """More precise calculation, 1 - cdf doesn't cut it."""
+        # This for loop is needed because `k` can be an array. If that's the
+        # case, the sf() method makes M, n and N arrays of the same shape. We
+        # therefore unpack all inputs args, so we can do the manual integration.
+        res = []
+        for quant, tot, good, draw in zip(k, M, n, N):
+            # Manual integration over probability mass function. More accurate
+            # than integrate.quad.
+            k2 = np.arange(quant + 1, draw + 1)
+            res.append(np.sum(self.pmf(k2, tot, good, draw)))
+        return np.asarray(res)
 
-Hypergeometric distribution
+hypergeom = hypergeom_gen(name='hypergeom', shapes="M, n, N")
 
-   Models drawing objects from a bin.
-   M is total number of objects, n is total number of Type I objects.
-   RV counts number of Type I objects in N drawn without replacement from
-   population.
-
-   hypergeom.pmf(k, M, n, N) = choose(n,k)*choose(M-n,N-k)/choose(M,N)
-   for N - (M-n) <= k <= min(m,N)
-"""
-                          )
 
 ## Logarithmic (Log-Series), (Series) distribution
 # FIXME: Fails _cdfvec

@@ -59,6 +59,12 @@ Additional special matrices (``scipy.linalg``)
 The functions ``hilbert`` and ``invhilbert`` were added to ``scipy.linalg``.
 
 
+``stats.fisher_exact``
+----------------------
+
+The one-sided form of Fisher's exact test is now also implemented. 
+
+
 Deprecated features
 ===================
 
