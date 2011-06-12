@@ -10,5 +10,5 @@ def pre_build(context):
         bld(features="c pyext fc bento cshlib f2py",
             source=extension.sources,
             target=extension.name,
-            use="FBLAS")
+            use="FLAPACK")
     context.register_builder("_iterative", builder)
