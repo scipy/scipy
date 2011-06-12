@@ -585,8 +585,8 @@ def test_kendalltau():
     # with some ties
     x1 = [12, 2, 1, 12, 2]
     x2 = [1, 4, 7, 1, 0]
-    res = (-0.47140452079103173, 0.24821309157521476)
-    expected = stats.kendalltau(x1, x2)
+    expected = (-0.47140452079103173, 0.24821309157521476)
+    res = stats.kendalltau(x1, x2)
     assert_approx_equal(res[0], expected[0])
     assert_approx_equal(res[1], expected[1])
 

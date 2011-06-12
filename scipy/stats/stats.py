@@ -2624,7 +2624,7 @@ def kendalltau(x, y, initial_lexsort=True):
 
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
-    n = len(x)
+    n = np.int64(len(x))
     temp = range(n) # support structure used by mergesort
     # this closure recursively sorts sections of perm[] by comparing
     # elements of y[perm[]] using temp[] as support
@@ -2707,8 +2707,9 @@ def kendalltau(x, y, initial_lexsort=True):
     if tot == u and tot == v:
         return 1    # Special case for all ties in both ranks
 
-    tau = ((tot - (v + u - t)) - 2.0 * exchanges) / \
-                    np.sqrt((tot - u) * (tot - v))
+    # Prevent overflow; equal to np.sqrt((tot - u) * (tot - v))
+    denom = np.exp(0.5 * (np.log(tot - u) + np.log(tot - v)))
+    tau = ((tot - (v + u - t)) - 2.0 * exchanges) / denom
 
     # what follows reproduces the ending of Gary Strangman's original
     # stats.kendalltau() in SciPy
