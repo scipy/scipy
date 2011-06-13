@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import TestCase, run_module_suite, \
     assert_array_equal, assert_raises
 
-from scipy.signal.array_tools import axis_slice, axis_reverse, \
+from scipy.signal._arraytools import axis_slice, axis_reverse, \
      odd_ext, even_ext, const_ext
 
 
