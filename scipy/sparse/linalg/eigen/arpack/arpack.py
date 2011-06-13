@@ -47,7 +47,7 @@ from scipy.sparse import identity, csc_matrix, csr_matrix, \
     isspmatrix, isspmatrix_csr
 from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse.sputils import isdense
-from scipy.sparse.linalg import cg, cgs, minres, gmres, splu
+from scipy.sparse.linalg import gmres, splu
 from scipy.linalg.lapack import get_lapack_funcs
 
 
@@ -936,7 +936,8 @@ class IterInv(LinearOperator):
         if tol <= 0:
             # when tol=0, ARPACK uses machine tolerance as calculated
             # by LAPACK's _LAMCH function.  We should match this
-            lamch, = get_lapack_funcs(('lamch',), np.array(0, dtype=M.dtype))
+            typ = M.dtype.char.lower()
+            lamch, = get_lapack_funcs(('lamch',), (np.array(0, dtype=typ),))
             tol = lamch('e')
         self.M = M
         self.ifunc = ifunc
@@ -967,7 +968,8 @@ class IterOpInv(LinearOperator):
         if tol <= 0:
             # when tol=0, ARPACK uses machine tolerance as calculated
             # by LAPACK's _LAMCH function.  We should match this
-            lamch, = get_lapack_funcs(('lamch',), np.array(0, dtype=A.dtype))
+            typ = A.dtype.char.lower()
+            lamch, = get_lapack_funcs(('lamch',), (np.array(0, dtype=typ),))
             tol = lamch('e')
         self.A = A
         self.M = M
@@ -1085,9 +1087,10 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     M : An N x N matrix, array, sparse matrix, or LinearOperator representing
         the operation M*x for the generalized eigenvalue problem
           ``A * x = w * M * x``
-        M must represent a real symmetric matrix.  Additionally:
-         * If sigma==None, M must be positive definite
-         * If sigma is specified, M must be positive semi-definite
+        M must represent a real symmetric matrix.  For best results, M should
+        be of the same type as A.  Additionally:
+         * If sigma==None, M is positive definite
+         * If sigma is specified, M is positive semi-definite
         If sigma==None, eigs requires an operator to compute the solution
         of the linear equation `M * x = b`. This is done internally via a
         (sparse) LU decomposition for an explicit matrix M, or via an
@@ -1118,19 +1121,18 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     ncv : integer
         The number of Lanczos vectors generated
         `ncv` must be greater than `k`; it is recommended that ``ncv > 2*k``.
-    which : string
+    which : string ['LM' | 'SM' | 'LR' | 'SR' | 'LI' | 'SI']
         Which `k` eigenvectors and eigenvalues to find:
-
          - 'LM' : largest magnitude
          - 'SM' : smallest magnitude
          - 'LR' : largest real part
          - 'SR' : smallest real part
          - 'LI' : largest imaginary part
          - 'SI' : smallest imaginary part
-
         When sigma != None, 'which' refers to the shifted eigenvalues w'[i]
-         (see discussion in 'sigma', above)
-
+        (see discussion in 'sigma', above).  ARPACK is generally better 
+        at finding large values than small values.  If small eigenvalues are
+        desired, consider using shift-invert mode for better performance.
     maxiter : integer
         Maximum number of Arnoldi update iterations allowed
     tol : float
@@ -1185,9 +1187,14 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     """
     if A.shape[0] != A.shape[1]:
         raise ValueError('expected square matrix (shape=%s)' % (A.shape,))
-    if (M is not None) and (M.shape != A.shape):
-        raise ValueError('wrong M dimensions %s, should be %s'
-                         % (M.shape, A.shape))
+    if M is not None:
+        if M.shape != A.shape:
+            raise ValueError('wrong M dimensions %s, should be %s'
+                             % (M.shape, A.shape))
+        if np.dtype(M.dtype).char.lower() != np.dtype(A.dtype).char.lower():
+            import warnings
+            warnings.warn('M does not have the same type precision as A. '
+                          'This may adversely affect ARPACK convergence')
     n = A.shape[0]
 
     if k <= 0 or k >= n:
@@ -1298,7 +1305,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     M : An N x N matrix, array, sparse matrix, or linear operator representing
         the operation M * x for the generalized eigenvalue problem
           ``A * x = w * M * x``.
-        M must represent a real, symmetric matrix.  Additionally:
+        M must represent a real, symmetric matrix.  For best results, M should
+        be of the same type as A.  Additionally:
          * If sigma == None, M is symmetric positive definite
          * If sigma is specified, M is symmetric positive semi-definite
          * In buckling mode, M is symmetric indefinite.
@@ -1317,8 +1325,15 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         solver if either A or M is a general linear operator.
         Alternatively, the user can supply the matrix or operator OPinv,
         which gives x = OPinv * b = [A - sigma * M]^-1 * b.
-        Note that when sigma is specified, the keyword 'which' (below)
-        refers to the shifted eigenvalues w'[i] = 1 / (w[i] - sigma).
+        Note that when sigma is specified, the keyword 'which' refers to 
+        the shifted eigenvalues w'[i] where:
+         - if mode == 'normal',
+             w'[i] = 1 / (w[i] - sigma)
+         - if mode == 'cayley',
+             w'[i] = (w[i] + sigma) / (w[i] - sigma)
+         - if mode == 'buckling',
+             w'[i] = w[i] / (w[i] - sigma)
+        (see further discussion in 'mode' below)
     v0 : array
         Starting vector for iteration.
     ncv : integer
@@ -1326,15 +1341,18 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         ncv must be greater than k and smaller than n;
         it is recommended that ncv > 2*k
     which : string ['LM' | 'SM' | 'LA' | 'SA' | 'BE']
-        Which k eigenvectors and eigenvalues to find:
+        If A is a complex hermitian matrix, 'BE' is invalid.
+        Which `k` eigenvectors and eigenvalues to find:
          - 'LM' : Largest (in magnitude) eigenvalues
          - 'SM' : Smallest (in magnitude) eigenvalues
          - 'LA' : Largest (algebraic) eigenvalues
          - 'SA' : Smallest (algebraic) eigenvalues
          - 'BE' : Half (k/2) from each end of the spectrum
                   When k is odd, return one more (k/2+1) from the high end
-        When sigma != None, 'which' refers to the shifted eigenvalues
-          w'[i] = 1 / (w[i] - sigma)
+        When sigma != None, 'which' refers to the shifted eigenvalues w'[i]
+        (see discussion in 'sigma', above).  ARPACK is generally better 
+        at finding large values than small values.  If small eigenvalues are
+        desired, consider using shift-invert mode for better performance.
     maxiter : integer
         Maximum number of Arnoldi update iterations allowed
     tol : float
@@ -1349,16 +1367,24 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     mode : string ['normal' | 'buckling' | 'cayley']
         Specify strategy to use for shift-invert mode.  This argument applies
         only if sigma != None.  For shift-invert mode, ARPACK internally
-        solves the eigenvalue problem ``OP * x[i] = w[i] * B * x[i]``
+        solves the eigenvalue problem ``OP * x'[i] = w'[i] * B * x'[i]``
+        and transforms the resulting Ritz vectors x'[i] and Ritz values
+        w'[i] into the desired eigenvectors and eigenvalues of the 
+        problem ``A * x[i] = w[i] * M * x[i]``.
+        The modes are as follows:
           - 'normal'   : OP = [A - sigma * M]^-1 * M
                          B = M
+                         w'[i] = 1 / (w[i] - sigma)
           - 'buckling' : OP = [A - sigma * M]^-1 * A
                          B = A
+                         w'[i] = w[i] / (w[i] - sigma)
           - 'cayley'   : OP = [A - sigma * M]^-1 * [A + sigma * M]
                          B = M
-        ARPACK transforms the resulting eigenvectors into the desired solution
-        of the problem ``A * x[i] = w[i] * M * x[i]``.  The choice of mode
-        can affect the stability of convergence (see [2] for a discussion)
+                         w'[i] = (w[i] + sigma) / (w[i] - sigma)
+        The choice of mode will affect which eigenvalues are selected by
+        the keyword 'which', and can also impact the stability of 
+        convergence (see [2] for a discussion)
+
     Raises
     ------
     ArpackNoConvergence
@@ -1400,6 +1426,12 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         if mode != 'normal':
             raise ValueError("mode=%s cannot be used with "
                              "complex matrix A" % mode)
+        if which == 'BE':
+            raise ValueError("which='BE' cannot be used with complex matrix A")
+        elif which == 'LA':
+            which = 'LR'
+        elif which == 'SA':
+            which = 'SR'
         ret = eigs(A, k, M=M, sigma=sigma, which=which, v0=v0,
                    ncv=ncv, maxiter=maxiter, tol=tol,
                    return_eigenvectors=return_eigenvectors, Minv=Minv,
@@ -1412,9 +1444,14 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     if A.shape[0] != A.shape[1]:
         raise ValueError('expected square matrix (shape=%s)' % (A.shape,))
-    if (M is not None) and (M.shape != A.shape):
-        raise ValueError('wrong M dimensions %s, should be %s'
-                         % (M.shape, A.shape))
+    if M is not None:
+        if M.shape != A.shape:
+            raise ValueError('wrong M dimensions %s, should be %s'
+                             % (M.shape, A.shape))
+        if np.dtype(M.dtype).char.lower() != np.dtype(A.dtype).char.lower():
+            import warnings
+            warnings.warn('M does not have the same type precision as A. '
+                          'This may adversely affect ARPACK convergence')
     n = A.shape[0]
 
     if k <= 0 or k >= n:
