@@ -1367,11 +1367,12 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         Return eigenvectors (True) in addition to eigenvalues
     mode : string ['normal' | 'buckling' | 'cayley']
         Specify strategy to use for shift-invert mode.  This argument applies
-        only if sigma != None.  For shift-invert mode, ARPACK internally
-        solves the eigenvalue problem ``OP * x'[i] = w'[i] * B * x'[i]``
-        and transforms the resulting Ritz vectors x'[i] and Ritz values
-        w'[i] into the desired eigenvectors and eigenvalues of the 
-        problem ``A * x[i] = w[i] * M * x[i]``.
+        only for real-valued A and sigma != None.  For shift-invert mode, 
+        ARPACK internally solves the eigenvalue problem 
+        ``OP * x'[i] = w'[i] * B * x'[i]`` 
+        and transforms the resulting Ritz vectors x'[i] and Ritz values w'[i] 
+        into the desired eigenvectors and eigenvalues of the problem 
+        ``A * x[i] = w[i] * M * x[i]``.
         The modes are as follows:
           - 'normal'   : OP = [A - sigma * M]^-1 * M
                          B = M
