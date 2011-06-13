@@ -76,7 +76,7 @@ def assert_array_almost_equal_cc(actual, desired, decimal=7,
                                   err_msg, verbose)
 
 # precision for tests
-_ndigits = {'f': 3, 'd': 11, 'F': 2, 'D': 8}
+_ndigits = {'f': 3, 'd': 11, 'F': 3, 'D': 11}
 
 class TestArpack(TestCase):
     def argsort_which(self, eval, typ, k, which, 
