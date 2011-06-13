@@ -108,7 +108,6 @@ class TestArpack(TestCase):
             ind = np.argsort(np.real(reval))
         elif which in ['LI', 'SI']:
             # for LI,SI ARPACK returns largest,smallest abs(imaginary) why?
-            print '-'
             if typ.islower():
                 ind = np.argsort(abs(np.imag(reval)))
             else:
@@ -172,15 +171,9 @@ class TestArpack(TestCase):
         evec = evec[:,ind]
         
         # check eigenvalues
-        try:
-            assert_array_almost_equal_cc(eval, exact_eval, 
-                                         decimal=_ndigits[typ],
-                                         err_msg=err)
-        except:
-            print err
-            print eval_a
-            print exact_eval_a
-            
+        assert_array_almost_equal_cc(eval, exact_eval, 
+                                     decimal=_ndigits[typ],
+                                     err_msg=err)
 
         # check eigenvectors
         LHS = np.dot(a, evec)
@@ -189,12 +182,10 @@ class TestArpack(TestCase):
         else:
             RHS = eval * evec
             
-        try:
-            assert_array_almost_equal(LHS, RHS,
-                                      decimal=_ndigits[typ],
-                                      err_msg=err)
-        except:
-            print err
+        assert_array_almost_equal(LHS, RHS,
+                                  decimal=_ndigits[typ],
+                                  err_msg=err)
+
 
 def modes(sigma):
     if sigma is None:
@@ -346,9 +337,6 @@ class TestNonSymmetric(TestArpack):
         self.real_test_cases = [SNR, GNR]
         self.complex_test_cases = [SNC, GNC]
 
-        for D in self.real_test_cases + self.complex_test_cases:
-            print D['eval']
-
     # This leads to memory errors.  Not sure the source...
     #
     #def test_real_nonsymmetric_modes(self):
@@ -361,7 +349,7 @@ class TestNonSymmetric(TestArpack):
     #                        for OPpart in OPparts:
     #                            self.eval_evec(D, typ, k, which, sigma=sigma,
     #                                           mattype=mattype, OPpart=OPpart)
-
+        
     def test_complex_nonsymmetric_modes(self):
         k = 2
         for D in self.complex_test_cases:
@@ -371,7 +359,6 @@ class TestNonSymmetric(TestArpack):
                         for sigma in self.sigmas_OPparts:
                             self.eval_evec(D, typ, k, which, sigma=sigma,
                                            mattype=mattype)
-
 
     def test_standard_nonsymmetric_starting_vector(self):
         k = 2
