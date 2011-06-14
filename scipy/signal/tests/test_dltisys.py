@@ -5,7 +5,7 @@
 import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
                           assert_array_almost_equal, assert_almost_equal
-from scipy.signal import dlsim, dstep, dimpulse
+from scipy.signal import dlsim, dstep, dimpulse, tf2zpk
 
 class TestDLTI(TestCase):
 
@@ -67,6 +67,17 @@ class TestDLTI(TestCase):
         
         assert_array_almost_equal(yout,yout_truth)
         assert_array_almost_equal(t_in, tout)
+        
+        # zeros-poles-gain representation
+        zd = np.array([0.5, -0.5])
+        pd = np.array([1.j / np.sqrt(2), -1.j / np.sqrt(2)])
+        k = 1.0
+        yout_truth = np.asmatrix([0.0, 1.0, 2.0, 2.25, 2.5]).transpose()
+
+        tout, yout = dlsim((zd, pd, k, 0.5), u[:,0], t_in)
+        
+        assert_array_almost_equal(yout,yout_truth)
+        assert_array_almost_equal(t_in, tout)
 
     def test_dstep(self):
     
@@ -96,6 +107,19 @@ class TestDLTI(TestCase):
         for i in range(0, len(yout)):
             assert_equal(yout[i].shape[0], 10)
             assert_array_almost_equal(yout[i].flatten(), yout_step_truth[i])
+            
+        # Check that the other two inputs (tf, zpk) will work as well
+        tfin = ([1.0,], [1.0, 1.0], 0.5)
+        yout_tfstep = np.asarray([0.0, 1.0, 0.0])
+        tout, yout = dstep(tfin, n=3)
+        assert_equal(len(yout), 1)
+        assert_array_almost_equal(yout[0].flatten(), yout_tfstep)
+        
+        zpkin = tf2zpk(tfin[0], tfin[1]) + (0.5,)
+        tout, yout = dstep(zpkin, n=3)
+        assert_equal(len(yout), 1)
+        assert_array_almost_equal(yout[0].flatten(), yout_tfstep)
+        
 
     def test_dimpulse(self):
         
@@ -124,3 +148,16 @@ class TestDLTI(TestCase):
         for i in range(0, len(yout)):
             assert_equal(yout[i].shape[0], 10)
             assert_array_almost_equal(yout[i].flatten(), yout_imp_truth[i])
+            
+        # Check that the other two inputs (tf, zpk) will work as well
+        tfin = ([1.0,], [1.0, 1.0], 0.5)
+        yout_tfimpulse = np.asarray([0.0, 1.0, -1.0])
+        tout, yout = dimpulse(tfin, n=3)
+        assert_equal(len(yout), 1)
+        assert_array_almost_equal(yout[0].flatten(), yout_tfimpulse)
+        
+        zpkin = tf2zpk(tfin[0], tfin[1]) + (0.5,)
+        tout, yout = dimpulse(tfin, n=3)
+        assert_equal(len(yout), 1)
+        assert_array_almost_equal(yout[0].flatten(), yout_tfimpulse)
+        

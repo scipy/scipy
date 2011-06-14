@@ -8,10 +8,9 @@ dltisys - Code related to discrete linear time-invariant systems
 import math
 import numpy as np
 from scipy.interpolate import interp1d
-from ltisys import tf2ss
+from ltisys import tf2ss, zpk2ss
 
 __all__ = ['dlsim', 'dstep', 'dimpulse']
-
 
 def dlsim(system, u, t=None, x0=None):
     """
@@ -22,11 +21,10 @@ def dlsim(system, u, t=None, x0=None):
     system : class instance or tuple
         An instance of the LTI class, or a tuple describing the system.
         The following gives the number of elements in the tuple and
-        the interpretation::
-
-          - 3: (num, den, dt)
-          - 5: (A, B, C, D, dt)
-
+        the interpretation:
+          * 3: (num, den, dt)
+          * 4: (zeros, poles, gain, dt)
+          * 5: (A, B, C, D, dt)
     u : array_like
         An input array describing the input at each time `t` (interpolation is
         assumed between given times).  If there are multiple inputs, then each
@@ -55,11 +53,15 @@ def dlsim(system, u, t=None, x0=None):
     if len(system) == 3:
         a, b, c, d = tf2ss(system[0], system[1])
         dt = system[2]
+    elif len(system) == 4:
+        a, b, c, d = zpk2ss(system[0], system[1], system[2])
+        dt = system[3]
     elif len(system) == 5:
         a, b, c, d, dt = system
     else:
-        raise ValueError("System argument should be a discrete transfer "
-                         "function or state-space system")
+        raise ValueError("System argument should be a discrete transfer " +
+                         "function, zeros-poles-gain specification, or " +
+                         "state-space system")
 
     if t is None:
         out_samples = max(u.shape)
@@ -94,11 +96,11 @@ def dlsim(system, u, t=None, x0=None):
     # Last point
     yout[out_samples-1,:] = np.dot(c, xout[out_samples-1,:]) + \
                             np.dot(d, u_dt[out_samples-1,:])
-
-    if len(system) == 3:
-        return tout, yout
-    elif len(system) == 5:
+    
+    if len(system) == 5:
         return tout, yout, xout
+    else:
+        return tout, yout
 
 def dimpulse(system, x0=None, t=None, n=None):
     """Impulse response of discrete-time system.
@@ -106,8 +108,11 @@ def dimpulse(system, x0=None, t=None, n=None):
     Parameters
     ----------
     system : tuple
-        If specified as a tuple, the system is described as
-        ``(num, den)``, ``(zero, pole, gain)``, or ``(A, B, C, D)``.
+        The following gives the number of elements in the tuple and
+        the interpretation.
+          * 3: (num, den, dt)
+          * 4: (zeros, poles, gain, dt)
+          * 5: (A, B, C, D, dt)
     x0 : array_like, optional
         Initial state-vector.  Defaults to zero.
     t : array_like, optional
@@ -132,10 +137,17 @@ def dimpulse(system, x0=None, t=None, n=None):
     if len(system) == 3:
         n_inputs = 1
         dt = system[2]
+    elif len(system) == 4:
+        n_inputs = 1
+        dt = system[3]
     elif len(system) == 5:
         n_inputs = system[1].shape[1]
         dt = system[4]
-
+    else:
+        raise ValueError("System argument should be a discrete transfer " +
+                         "function, zeros-poles-gain specification, or " +
+                         "state-space system")
+                         
     # Default to 100 samples if unspecified
     if n is None:
         n = 100
@@ -169,11 +181,10 @@ def dstep(system, x0=None, t=None, n=None):
     ----------
     system : a tuple describing the system.
         The following gives the number of elements in the tuple and
-        the interpretation::
-
-          - 3 (num, den, dt)
-          - 5 (A, B, C, D, dt)
-
+        the interpretation.
+          * 3: (num, den, dt)
+          * 4: (zeros, poles, gain, dt)
+          * 5: (A, B, C, D, dt)
     x0 : array_like, optional
         Initial state-vector (default is zero).
     t : array_like, optional
@@ -198,10 +209,17 @@ def dstep(system, x0=None, t=None, n=None):
     if len(system) == 3:
         n_inputs = 1
         dt = system[2]
+    elif len(system) == 4:
+        n_inputs = 1
+        dt = system[3]
     elif len(system) == 5:
         n_inputs = system[1].shape[1]
         dt = system[4]
-
+    else:
+        raise ValueError("System argument should be a discrete transfer " +
+                         "function, zeros-poles-gain specification, or " +
+                         "state-space system")
+    
     # Default to 100 samples if unspecified
     if n is None:
         n = 100

@@ -9,7 +9,7 @@ import numpy as np
 import numpy.linalg
 import scipy.linalg
 
-from ltisys import tf2ss, ss2tf
+from ltisys import tf2ss, ss2tf, zpk2ss, ss2zpk
 
 __all__ = ['cont2discrete']
 
@@ -26,11 +26,11 @@ def cont2discrete(sys, dt, method="zoh"):
     -----------
     sys : a tuple describing the system.
         The following gives the number of elements in the tuple and
-        the interpretation::
-
-          - 2: (num, den)    defining a transfer function
-          - 4: (A, B, C, D)  defining a state-space system
-
+        the interpretation:
+        * 2: (num, den)
+        * 3: (zeros, poles, gain)
+        * 4: (A, B, C, D)
+        
     dt : float
         The discretization time step.
     method : {"bilinear", "zoh"}
@@ -38,12 +38,12 @@ def cont2discrete(sys, dt, method="zoh"):
 
     Returns
     -------
-    sysd : tuple
-        containing the discrete system
-        Based on the input type, the output will be of the form::
-
-          (num, den, dt)   for transfer function input
-          (A, B, C, D, dt) for state-space system input
+    sysd : tuple containing the discrete system
+        Based on the input type, the output will be of the form
+        
+        (num, den, dt)   for transfer function input
+        (zeros, poles, gain, dt)   for zeros-poles-gain input
+        (A, B, C, D, dt) for state-space system input
 
     Notes
     -----
@@ -61,6 +61,9 @@ def cont2discrete(sys, dt, method="zoh"):
     if len(sys) == 2:
         sysd = cont2discrete(tf2ss(sys[0], sys[1]), dt, method=method)
         return ss2tf(sysd[0], sysd[1], sysd[2], sysd[3]) + (dt,)
+    elif len(sys) == 3:
+        sysd = cont2discrete(zpk2ss(sys[0], sys[1], sys[2]), dt, method=method)
+        return ss2zpk(sysd[0], sysd[1], sysd[2], sysd[3]) + (dt,)
     elif len(sys) == 4:
         a, b, c, d = sys
     else:
