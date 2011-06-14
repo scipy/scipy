@@ -1,3 +1,5 @@
+HookFile: bscript
+
 Library:
     CompiledLibrary: sc_c_misc
         Sources:

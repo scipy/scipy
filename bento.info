@@ -33,40 +33,6 @@ Classifiers:
     Operating System :: Unix,
     Operating System :: MacOS
 
-HookFile:
-    bscript,
-    scipy/fftpack/bscript,
-    scipy/integrate/bscript,
-    scipy/interpolate/bscript,
-    scipy/lib/blas/bscript,
-    scipy/lib/lapack/bscript,
-    scipy/linalg/bscript,
-    scipy/optimize/bscript,
-    scipy/signal/bscript,
-    scipy/sparse/linalg/dsolve/bscript,
-    scipy/sparse/linalg/dsolve/umfpack/bscript,
-    scipy/sparse/linalg/eigen/arpack/bscript,
-    scipy/sparse/linalg/isolve/bscript,
-    scipy/sparse/sparsetools/bscript,
-    scipy/spatial/bscript,
-    scipy/special/bscript,
-    scipy/stats/bscript
-
-Recurse:
-    scipy/cluster,
-    scipy/fftpack,
-    scipy/integrate,
-    scipy/interpolate,
-    scipy/io,
-    scipy/lib,
-    scipy/linalg,
-    scipy/optimize,
-    scipy/signal,
-    scipy/sparse,
-    scipy/spatial,
-    scipy/special,
-    scipy/stats
-
 DataFiles: tests
     TargetDir: $sitedir/scipy
     SourceDir: scipy
@@ -108,21 +74,10 @@ DataFiles: tests
         special/tests/data/*.npz,
         stats/tests/*.py
 
+Recurse: scipy
+
+HookFile: bscript
+
 Library:
     Packages:
-        scipy,
-        scipy.cluster,
-        scipy.constants,
-        scipy.fftpack,
-        scipy.integrate,
-        scipy.interpolate,
-        scipy.io,
-        scipy.lib,
-        scipy.linalg,
-        scipy.misc,
-        scipy.optimize,
-        scipy.signal,
-        scipy.sparse,
-        scipy.spatial,
-        scipy.special,
-        scipy.stats
+        scipy

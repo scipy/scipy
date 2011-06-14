@@ -1,0 +1,32 @@
+Recurse:
+    cluster,
+    fftpack,
+    integrate,
+    interpolate,
+    io,
+    lib,
+    linalg,
+    optimize,
+    signal,
+    sparse,
+    spatial,
+    special,
+    stats
+
+Library:
+    Packages:
+        cluster,
+        constants,
+        fftpack,
+        integrate,
+        interpolate,
+        io,
+        lib,
+        linalg,
+        misc,
+        optimize,
+        signal,
+        sparse,
+        spatial,
+        special,
+        stats
