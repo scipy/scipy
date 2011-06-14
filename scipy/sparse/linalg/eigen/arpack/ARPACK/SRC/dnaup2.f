@@ -664,6 +664,18 @@ c
             else if (nev .eq. 1 .and. kplusp .gt. 3) then
                nev = 2
             end if
+c
+c           %---- Scipy fix ------------------------------------------------
+c           | We must keep nev below this value, as otherwise we can get
+c           | np == 0 (note that dngets below can bump nev by 1). If np == 0,
+c           | the next call to `dnaitr` will write out-of-bounds.
+c           |
+            if (nev .gt. kplusp - 2) then
+               nev = kplusp - 2
+            end if
+c           |
+c           %---- Scipy fix end --------------------------------------------
+c
             np = kplusp - nev
 c     
 c           %---------------------------------------%

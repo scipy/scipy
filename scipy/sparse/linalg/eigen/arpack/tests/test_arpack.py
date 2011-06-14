@@ -359,6 +359,18 @@ def test_eigen_bad_kwargs():
     A = csc_matrix(np.zeros((2,2)))
     assert_raises(ValueError, eigs, A, which='XX')
 
+def test_ticket_1459_arpack_crash():
+    N = 6
+    k = 2
+
+    np.random.seed(2301)
+    A = np.random.random((N,N))
+    v0 = np.array([-0.71063568258907849895, -0.83185111795729227424,
+                   -0.34365925382227402451, 0.46122533684552280420,
+                   -0.58001341115969040629, -0.78844877570084292984e-01])
+
+    # Should not crash:
+    evals, evecs = eigs(A, k, v0=v0)
 
 def test_eigs_operator():
     # Check inferring LinearOperator dtype
