@@ -63,7 +63,7 @@ def _aslinearoperator_with_dtype(m):
 
 def assert_almost_equal_cc(actual, desired, decimal=7,
                            err_msg='', verbose=True):
-    # almost equal or complex conjugates almost equal
+    """Almost equal or complex conjugates almost equal"""
     try:
         assert_almost_equal(actual, desired, decimal, err_msg, verbose)
     except:
@@ -72,7 +72,7 @@ def assert_almost_equal_cc(actual, desired, decimal=7,
 
 def assert_array_almost_equal_cc(actual, desired, decimal=7,
                                  err_msg='', verbose=True):
-    # almost equal or complex conjugates almost equal
+    """Almost equal or complex conjugates almost equal"""
     try:
         assert_array_almost_equal(actual, desired, decimal, err_msg, verbose)
     except:
@@ -82,8 +82,8 @@ def assert_array_almost_equal_cc(actual, desired, decimal=7,
 
 def argsort_which(eval, typ, k, which, 
                   sigma=None, OPpart=None, mode=None):
-    # return sorted indices of eigenvalues using the "which" keyword
-    # from eigs and eigsh
+    """Return sorted indices of eigenvalues using the "which" keyword
+    from eigs and eigsh"""
     if sigma is None:
         reval = np.round(eval, decimals=_ndigits[typ])
     else:
@@ -204,6 +204,11 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
                               decimal=_ndigits[typ],
                               err_msg=err)
 
+class DictWithRepr(dict):
+    def __init__(self, name):
+        self.name = name
+    def __repr__(self):
+        return "<%s>" % self.name
 
 class SymmetricParams:
     def __init__(self):
@@ -227,26 +232,26 @@ class SymmetricParams:
         v0 = np.random.random(N)
 
         # standard symmetric problem
-        SS = {}
+        SS = DictWithRepr("std-symmetric")
         SS['mat'] = Ar
         SS['v0'] = v0
         SS['eval'] = eigh(SS['mat'], eigvals_only=True)
 
         # general symmetric problem
-        GS = {}
+        GS = DictWithRepr("gen-symmetric")
         GS['mat'] = Ar
         GS['bmat'] = M
         GS['v0'] = v0
         GS['eval'] = eigh(GS['mat'], GS['bmat'], eigvals_only=True)
 
         # standard hermitian problem
-        SH = {}
+        SH = DictWithRepr("std-hermitian")
         SH['mat'] = Ac
         SH['v0'] = v0
         SH['eval'] = eigh(SH['mat'], eigvals_only=True)
 
         # general hermitian problem
-        GH = {}
+        GH = DictWithRepr("gen-hermitian")
         GH['mat'] = Ac
         GH['bmat'] = M
         GH['v0'] = v0
@@ -276,26 +281,26 @@ class NonSymmetricParams:
         v0 = np.random.random(N)
 
         # standard real nonsymmetric problem
-        SNR = {}
+        SNR = DictWithRepr("std-real-nonsym")
         SNR['mat'] = Ar
         SNR['v0'] = v0
         SNR['eval'] = eig(SNR['mat'], left=False, right=False)
 
         # general real nonsymmetric problem
-        GNR = {}
+        GNR = DictWithRepr("gen-real-nonsym")
         GNR['mat'] = Ar
         GNR['bmat'] = M
         GNR['v0'] = v0
         GNR['eval'] = eig(GNR['mat'], GNR['bmat'], left=False, right=False)
         
         # standard complex nonsymmetric problem
-        SNC = {}
+        SNC = DictWithRepr("std-cmplx-nonsym")
         SNC['mat'] = Ac
         SNC['v0'] = v0
         SNC['eval'] = eig(SNC['mat'], left=False, right=False)
 
         # general complex nonsymmetric problem
-        GNC = {}
+        GNC = DictWithRepr("gen-cmplx-nonsym")
         GNC['mat'] = Ac
         GNC['bmat'] = M
         GNC['v0'] = v0
@@ -497,7 +502,7 @@ def test_svd_simple_real():
             assert_array_almost_equal_nulp(m_hat, sm_hat, nulp=1000)
 
 
-def test_simple_complex():
+def test_svd_simple_complex():
     x = np.array([[1, 2, 3],
                   [3, 4, 3],
                   [1 + 1j, 0, 2],
