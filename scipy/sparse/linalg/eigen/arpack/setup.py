@@ -41,7 +41,7 @@ def configuration(parent_package='',top_path=None):
     else:
         arpack_sources += [join('ARPACK', 'FWRAPPERS', 'dummy.f')]
 
-    config.add_library('arpack', sources=arpack_sources,
+    config.add_library('arpack_scipy', sources=arpack_sources,
                        include_dirs=[join('ARPACK', 'SRC')],
                        depends = [join('ARPACK', 'FWRAPPERS',
                                        'veclib_cabi_f.f'),
@@ -53,7 +53,7 @@ def configuration(parent_package='',top_path=None):
 
     config.add_extension('_arpack',
                          sources='arpack.pyf.src',
-                         libraries=['arpack'],
+                         libraries=['arpack_scipy'],
                          extra_info = lapack_opt
                         )
 
