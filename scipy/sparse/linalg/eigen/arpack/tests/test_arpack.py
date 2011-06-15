@@ -19,6 +19,9 @@ from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
 
 from scipy.linalg import svd
 
+# precision for tests
+_ndigits = {'f': 3, 'd': 11, 'F': 3, 'D': 11}
+
 def generate_matrix(N, complex=False, hermitian=False, 
                     pos_definite=False, sparse=False):
     M = np.random.random((N,N))
@@ -49,6 +52,7 @@ def generate_matrix(N, complex=False, hermitian=False,
             M[i,j] = 0
     return M
 
+
 def _aslinearoperator_with_dtype(m):
     m = aslinearoperator(m)
     if not hasattr(m, 'dtype'):
@@ -75,126 +79,134 @@ def assert_array_almost_equal_cc(actual, desired, decimal=7,
         assert_array_almost_equal(actual, conj(desired), decimal,
                                   err_msg, verbose)
 
-# precision for tests
-_ndigits = {'f': 3, 'd': 11, 'F': 3, 'D': 11}
 
-class TestArpack(TestCase):
-    def argsort_which(self, eval, typ, k, which, 
-                      sigma=None, OPpart=None, mode=None):
-        if sigma is None:
-            reval = np.round(eval, decimals=_ndigits[typ])
-        else:
-            if mode is None or mode=='normal':
-                if OPpart is None:
-                    reval = 1. / (eval - sigma)
-                elif OPpart == 'r':
-                    reval = 0.5 * (1. / (eval - sigma) 
-                                   + 1. / (eval - np.conj(sigma)))
-                elif OPpart == 'i':
-                    reval = -0.5j * (1. / (eval - sigma) 
-                                 - 1. / (eval - np.conj(sigma)))
-            elif mode=='cayley':
-                reval = (eval + sigma) / (eval - sigma)
-            elif mode=='buckling':
-                reval = eval / (eval - sigma)
-            else:
-                raise ValueError("mode='%s' not recognized" % mode)
-            
-            reval = np.round(reval, decimals=_ndigits[typ])
-
-        if which in ['LM', 'SM']:
-            ind = np.argsort(abs(reval))
-        elif which in ['LR', 'SR', 'LA', 'SA', 'BE']:
-            ind = np.argsort(np.real(reval))
-        elif which in ['LI', 'SI']:
-            # for LI,SI ARPACK returns largest,smallest abs(imaginary) why?
-            if typ.islower():
-                ind = np.argsort(abs(np.imag(reval)))
-            else:
-                ind = np.argsort(np.imag(reval))
-        else:
-            raise ValueError("which='%s' is unrecognized" % which)
-        
-        if which in ['LM', 'LA', 'LR', 'LI']:
-            return ind[-k:]
-        elif which in ['SM', 'SA', 'SR', 'SI']:
-            return ind[:k]
-        elif which == 'BE':
-            return np.concatenate((ind[:k/2], ind[k/2-k:]))
-
-    def eval_evec(self, d, typ, k, which, sigma=None, v0=None,
-                  mattype=np.asarray, OPpart=None, mode='normal'):
-        general = ('bmat' in d)
-        if general:
-            err = ("error for %s:general, typ=%s, which=%s, sigma=%s, "
-                   "mattype=%s, OPpart=%s, mode=%s" % (self.__class__.__name__,
-                                                       typ, which, sigma,
-                                                       mattype.__name__,
-                                                       OPpart, mode))
-        else:
-            err = ("error for %s:standard, typ=%s, which=%s, sigma=%s, "
-                   "mattype=%s, OPpart=%s, mode=%s" % (self.__class__.__name__,
-                                                       typ, which, sigma,
-                                                       mattype.__name__,
-                                                       OPpart, mode))
-
-        a = d['mat'].astype(typ)
-        ac = mattype(a)
-        
-        if general:
-            b = d['bmat'].astype(typ.lower())
-            bc = mattype(b)
-        
-        # get exact eigenvalues
-        exact_eval = d['eval'].astype(typ.upper())
-        ind = self.argsort_which(exact_eval, typ, k, which,
-                                 sigma, OPpart, mode)
-        exact_eval_a = exact_eval
-        exact_eval = exact_eval[ind]
-        
-        # compute arpack eigenvalues
-        kwargs = dict(which=which, v0=v0, sigma=sigma)
-        if self.eigs is eigsh:
-            kwargs['mode'] = mode
-        else:
-            kwargs['OPpart'] = OPpart
-            
-        if general:
-            eval, evec = self.eigs(ac, k, bc, **kwargs)
-        else:
-            eval, evec = self.eigs(ac, k, **kwargs)
-
-        ind = self.argsort_which(eval, typ, k, which,
-                                 sigma, OPpart, mode)
-        eval_a = eval
-        eval = eval[ind]
-        evec = evec[:,ind]
-        
-        # check eigenvalues
-        assert_array_almost_equal_cc(eval, exact_eval, 
-                                     decimal=_ndigits[typ],
-                                     err_msg=err)
-
-        # check eigenvectors
-        LHS = np.dot(a, evec)
-        if general:
-            RHS = eval * np.dot(b, evec)
-        else:
-            RHS = eval * evec
-            
-        assert_array_almost_equal(LHS, RHS,
-                                  decimal=_ndigits[typ],
-                                  err_msg=err)
-
-
-def modes(sigma):
+def argsort_which(eval, typ, k, which, 
+                  sigma=None, OPpart=None, mode=None):
+    # return sorted indices of eigenvalues using the "which" keyword
+    # from eigs and eigsh
     if sigma is None:
-        return ["normal"]
+        reval = np.round(eval, decimals=_ndigits[typ])
     else:
-        return ["normal", "cayley", "buckling"]
+        if mode is None or mode=='normal':
+            if OPpart is None:
+                reval = 1. / (eval - sigma)
+            elif OPpart == 'r':
+                reval = 0.5 * (1. / (eval - sigma) 
+                               + 1. / (eval - np.conj(sigma)))
+            elif OPpart == 'i':
+                reval = -0.5j * (1. / (eval - sigma) 
+                                 - 1. / (eval - np.conj(sigma)))
+        elif mode=='cayley':
+            reval = (eval + sigma) / (eval - sigma)
+        elif mode=='buckling':
+            reval = eval / (eval - sigma)
+        else:
+            raise ValueError("mode='%s' not recognized" % mode)
+            
+        reval = np.round(reval, decimals=_ndigits[typ])
 
-class TestSymmetric(TestArpack):
-    def setUp(self):
+    if which in ['LM', 'SM']:
+        ind = np.argsort(abs(reval))
+    elif which in ['LR', 'SR', 'LA', 'SA', 'BE']:
+        ind = np.argsort(np.real(reval))
+    elif which in ['LI', 'SI']:
+        # for LI,SI ARPACK returns largest,smallest abs(imaginary) why?
+        if typ.islower():
+            ind = np.argsort(abs(np.imag(reval)))
+        else:
+            ind = np.argsort(np.imag(reval))
+    else:
+        raise ValueError("which='%s' is unrecognized" % which)
+        
+    if which in ['LM', 'LA', 'LR', 'LI']:
+        return ind[-k:]
+    elif which in ['SM', 'SA', 'SR', 'SI']:
+        return ind[:k]
+    elif which == 'BE':
+        return np.concatenate((ind[:k/2], ind[k/2-k:]))
+
+
+def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
+              mattype=np.asarray, OPpart=None, mode='normal'):
+    general = ('bmat' in d)
+    
+    if symmetric:
+        eigs_func = eigsh
+    else:
+        eigs_func = eigs
+
+    if general:
+        err = ("error for %s:general, typ=%s, which=%s, sigma=%s, "
+               "mattype=%s, OPpart=%s, mode=%s" % (eigs_func.__name__,
+                                                   typ, which, sigma,
+                                                   mattype.__name__,
+                                                   OPpart, mode))
+    else:
+        err = ("error for %s:standard, typ=%s, which=%s, sigma=%s, "
+               "mattype=%s, OPpart=%s, mode=%s" % (eigs_func.__name__,
+                                                   typ, which, sigma,
+                                                   mattype.__name__,
+                                                   OPpart, mode))
+
+    a = d['mat'].astype(typ)
+    ac = mattype(a)
+    
+    if general:
+        b = d['bmat'].astype(typ.lower())
+        bc = mattype(b)
+        
+    # get exact eigenvalues
+    exact_eval = d['eval'].astype(typ.upper())
+    ind = argsort_which(exact_eval, typ, k, which,
+                        sigma, OPpart, mode)
+    exact_eval_a = exact_eval
+    exact_eval = exact_eval[ind]
+        
+    # compute arpack eigenvalues
+    kwargs = dict(which=which, v0=v0, sigma=sigma)
+    if eigs_func is eigsh:
+        kwargs['mode'] = mode
+    else:
+        kwargs['OPpart'] = OPpart
+            
+    if general:
+        try:
+            eval, evec = eigs_func(ac, k, bc, **kwargs)
+        except ArpackNoConvergence:
+            kwargs['maxiter'] = 20*a.shape[0]
+            eval, evec = eigs_func(ac, k, bc, **kwargs)
+    else:
+        try:
+            eval, evec = eigs_func(ac, k, **kwargs)
+        except ArpackNoConvergence:
+            kwargs['maxiter'] = 20*a.shape[0]
+            eval, evec = eigs_func(ac, k, **kwargs)
+
+    ind = argsort_which(eval, typ, k, which,
+                        sigma, OPpart, mode)
+    eval_a = eval
+    eval = eval[ind]
+    evec = evec[:,ind]
+    
+    # check eigenvalues
+    assert_array_almost_equal_cc(eval, exact_eval, 
+                                 decimal=_ndigits[typ],
+                                 err_msg=err)
+
+    # check eigenvectors
+    LHS = np.dot(a, evec)
+    if general:
+        RHS = eval * np.dot(b, evec)
+    else:
+        RHS = eval * evec
+        
+    assert_array_almost_equal(LHS, RHS,
+                              decimal=_ndigits[typ],
+                              err_msg=err)
+
+
+class SymmetricParams:
+    def __init__(self):
         self.eigs = eigsh
         self.which = ['LM', 'SM', 'LA', 'SA', 'BE']
         self.mattypes = [csr_matrix, aslinearoperator, np.asarray]
@@ -243,53 +255,8 @@ class TestSymmetric(TestArpack):
         self.real_test_cases = [SS, GS]
         self.complex_test_cases = [SH, GH]
     
-    def test_symmetric_modes(self):
-        k = 2
-        for D in self.real_test_cases:
-            for typ in 'fd':
-                for which in self.which:
-                    for mattype in self.mattypes:
-                        for (sigma, modes) in self.sigmas_modes.iteritems():
-                            for mode in modes:
-                                self.eval_evec(D, typ, k, which, sigma=sigma, 
-                                               mattype=mattype, mode=mode)
-    
-    def test_hermitian_modes(self):
-        k = 2
-        for D in self.complex_test_cases:
-            for typ in 'FD':
-                for which in self.which:
-                    if which == 'BE': continue
-                    for mattype in self.mattypes:
-                        for sigma in self.sigmas_modes:
-                            self.eval_evec(D, typ, k, which, 
-                                           sigma=sigma, mattype=mattype)
-
-    def test_symmetric_starting_vector(self):
-        k = 2
-        for D in self.real_test_cases:
-            for typ in 'fd':
-                v0 = random.rand(len(D['v0'])).astype(typ)
-                self.eval_evec(D, typ, k, which='LM', v0=v0)
-
-    def test_symmetric_no_convergence(self):
-        np.random.seed(1234)
-        m = generate_matrix(30, hermitian=True, pos_definite=True)
-
-        try:
-            w, v = eigsh(m, 4, which='LM', v0=m[:, 0], maxiter=5)
-            raise AssertionError("Spurious no-error exit")
-        except ArpackNoConvergence, err:
-            k = len(err.eigenvalues)
-            if k <= 0:
-                raise AssertionError("Spurious no-eigenvalues-found case")
-            w, v = err.eigenvalues, err.eigenvectors
-            assert_array_almost_equal(dot(m, v), w * v, decimal=_ndigits['d'])
-    
-
-
-class TestNonSymmetric(TestArpack):
-    def setUp(self):
+class NonSymmetricParams:
+    def __init__(self):
         self.eigs = eigs
         self.which = ['LM', 'LR', 'LI']#, 'SM', 'LR', 'SR', 'LI', 'SI']
         self.mattypes = [csr_matrix, aslinearoperator, np.asarray]
@@ -337,63 +304,127 @@ class TestNonSymmetric(TestArpack):
         self.real_test_cases = [SNR, GNR]
         self.complex_test_cases = [SNC, GNC]
 
-    # This leads to memory errors.  Not sure the source...
-    #
-    #def test_real_nonsymmetric_modes(self):
-    #    k = 2
-    #    for D in self.real_test_cases:
-    #        for typ in 'fd':
-    #            for which in self.which:
-    #                for mattype in self.mattypes:
-    #                    for sigma, OPparts in self.sigmas_OPparts.iteritems():
-    #                        for OPpart in OPparts:
-    #                            self.eval_evec(D, typ, k, which, sigma=sigma,
-    #                                           mattype=mattype, OPpart=OPpart)
-        
-    def test_complex_nonsymmetric_modes(self):
-        k = 2
-        for D in self.complex_test_cases:
-            for typ in 'DF':
-                for which in self.which:
-                    for mattype in self.mattypes:
-                        for sigma in self.sigmas_OPparts:
-                            self.eval_evec(D, typ, k, which, sigma=sigma,
-                                           mattype=mattype)
 
-    def test_standard_nonsymmetric_starting_vector(self):
-        k = 2
-        sigma = None
-        for d in self.complex_test_cases:
-            for typ in 'FD':
-                A = d['mat']
-                n = A.shape[0]
-                v0 = random.rand(n).astype(typ)
-                self.eval_evec(d, typ, k, which='LM', sigma=sigma, v0=v0)
+def test_symmetric_modes():
+    params = SymmetricParams()
+    k = 2
+    symmetric = True
+    for D in params.real_test_cases:
+        for typ in 'fd':
+            for which in params.which:
+                for mattype in params.mattypes:
+                    for (sigma, modes) in params.sigmas_modes.iteritems():
+                        for mode in modes:
+                            yield  (eval_evec, symmetric, D, typ, k, which,
+                                    None, sigma, mattype, None, mode)
 
-    def test_general_nonsymmetric_starting_vector(self):
-        k = 2
-        sigma = None
-        for d in self.complex_test_cases:
-            for typ in 'FD':
-                A = d['mat']
-                n = A.shape[0]
-                v0 = random.rand(n).astype(typ)
-                self.eval_evec(d, typ, k, which='LM', sigma=sigma, v0=v0)
 
-    def test_standard_nonsymmetric_no_convergence(self):
-        np.random.seed(1234)
-        m = generate_matrix(30, complex=True)
-        try:
-            w, v = eigs(m, 4, which='LM', v0=m[:, 0], maxiter=5)
-            raise AssertionError("Spurious no-error exit")
-        except ArpackNoConvergence, err:
-            k = len(err.eigenvalues)
-            if k <= 0:
-                raise AssertionError("Spurious no-eigenvalues-found case")
-            w, v = err.eigenvalues, err.eigenvectors
-            for ww, vv in zip(w, v.T):
-                assert_array_almost_equal(dot(m, vv), ww * vv,
-                                          decimal=_ndigits['d'])
+def test_hermitian_modes():
+    params = SymmetricParams()
+    k = 2
+    symmetric = True
+    for D in params.complex_test_cases:
+        for typ in 'FD':
+            for which in params.which:
+                if which == 'BE': continue  # BE invalid for complex
+                for mattype in params.mattypes:
+                    for sigma in params.sigmas_modes:
+                        yield  (eval_evec, symmetric, D, typ, k, which,
+                                None, sigma, mattype)
+
+
+def test_symmetric_starting_vector():
+    params = SymmetricParams()
+    k = 2
+    symmetric = True
+    for D in params.real_test_cases:
+        for typ in 'fd':
+            v0 = random.rand(len(D['v0'])).astype(typ)
+            yield (eval_evec, symmetric, D, typ, k, 'LM', v0)
+
+
+def test_symmetric_no_convergence():
+    np.random.seed(1234)
+    m = generate_matrix(30, hermitian=True, pos_definite=True)
+
+    try:
+        w, v = eigsh(m, 4, which='LM', v0=m[:, 0], maxiter=5)
+        raise AssertionError("Spurious no-error exit")
+    except ArpackNoConvergence, err:
+        k = len(err.eigenvalues)
+        if k <= 0:
+            raise AssertionError("Spurious no-eigenvalues-found case")
+        w, v = err.eigenvalues, err.eigenvectors
+        assert_array_almost_equal(dot(m, v), w * v, decimal=_ndigits['d'])
+    
+
+def test_real_nonsymmetric_modes():
+    params = NonSymmetricParams()
+    k = 2
+    symmetric = False
+    for D in params.real_test_cases:
+        for typ in 'fd':
+            for which in params.which:
+                for mattype in params.mattypes:
+                    for sigma, OPparts in params.sigmas_OPparts.iteritems():
+                        for OPpart in OPparts:
+                            yield (eval_evec, symmetric, D, typ, k, which,
+                                   None, sigma, mattype, OPpart)
+
+
+def test_complex_nonsymmetric_modes():
+    params = NonSymmetricParams()
+    k = 2
+    symmetric = False
+    for D in params.complex_test_cases:
+        for typ in 'DF':
+            for which in params.which:
+                for mattype in params.mattypes:
+                    for sigma in params.sigmas_OPparts:
+                        yield (eval_evec, symmetric, D, typ, k, which,
+                               None, sigma, mattype)
+
+
+def test_standard_nonsymmetric_starting_vector():
+    params = NonSymmetricParams()
+    k = 2
+    sigma = None
+    symmetric = False
+    for d in params.complex_test_cases:
+        for typ in 'FD':
+            A = d['mat']
+            n = A.shape[0]
+            v0 = random.rand(n).astype(typ)
+            yield (eval_evec, symmetric, d, typ, k, "LM", v0, sigma)
+
+
+def test_general_nonsymmetric_starting_vector():
+    params = NonSymmetricParams()
+    k = 2
+    sigma = None
+    symmetric = False
+    for d in params.complex_test_cases:
+        for typ in 'FD':
+            A = d['mat']
+            n = A.shape[0]
+            v0 = random.rand(n).astype(typ)
+            yield (eval_evec, symmetric, d, typ, k, "LM", v0, sigma)
+
+
+def test_standard_nonsymmetric_no_convergence():
+    np.random.seed(1234)
+    m = generate_matrix(30, complex=True)
+    try:
+        w, v = eigs(m, 4, which='LM', v0=m[:, 0], maxiter=5)
+        raise AssertionError("Spurious no-error exit")
+    except ArpackNoConvergence, err:
+        k = len(err.eigenvalues)
+        if k <= 0:
+            raise AssertionError("Spurious no-eigenvalues-found case")
+        w, v = err.eigenvalues, err.eigenvectors
+        for ww, vv in zip(w, v.T):
+            assert_array_almost_equal(dot(m, vv), ww * vv,
+                                      decimal=_ndigits['d'])
     
 
 def test_eigen_bad_shapes():
@@ -425,6 +456,10 @@ def test_ticket_1459_arpack_crash():
         # Should not crash:
         evals, evecs = eigs(A, k, v0=v0)
 
+
+#----------------------------------------------------------------------
+# sparse SVD tests
+
 def sorted_svd(m, k):
     #Compute svd of a dense matrix m, and return singular vectors/values
     #sorted.
@@ -440,48 +475,49 @@ def svd_estimate(u, s, vh):
     return np.dot(u, np.dot(np.diag(s), vh))
 
 
-class TestSparseSvd(TestCase):
-    def test_simple_real(self):
-        x = np.array([[1, 2, 3],
-                      [3, 4, 3],
-                      [1, 0, 2],
-                      [0, 0, 1]], np.float)
-        y = np.array([[1, 2, 3, 8],
-                      [3, 4, 3, 5],
-                      [1, 0, 2, 3],
-                      [0, 0, 1, 0]], np.float)
-        z = csc_matrix(x)
+def test_svd_simple_real():
+    x = np.array([[1, 2, 3],
+                  [3, 4, 3],
+                  [1, 0, 2],
+                  [0, 0, 1]], np.float)
+    y = np.array([[1, 2, 3, 8],
+                  [3, 4, 3, 5],
+                  [1, 0, 2, 3],
+                  [0, 0, 1, 0]], np.float)
+    z = csc_matrix(x)
 
-        for m in [x.T, x, y, z, z.T]:
-            for k in range(1, min(m.shape)):
-                u, s, vh = sorted_svd(m, k)
-                su, ss, svh = svds(m, k)
+    for m in [x.T, x, y, z, z.T]:
+        for k in range(1, min(m.shape)):
+            u, s, vh = sorted_svd(m, k)
+            su, ss, svh = svds(m, k)
 
-                m_hat = svd_estimate(u, s, vh)
-                sm_hat = svd_estimate(su, ss, svh)
+            m_hat = svd_estimate(u, s, vh)
+            sm_hat = svd_estimate(su, ss, svh)
 
-                assert_array_almost_equal_nulp(m_hat, sm_hat, nulp=1000)
+            assert_array_almost_equal_nulp(m_hat, sm_hat, nulp=1000)
 
-    def test_simple_complex(self):
-        x = np.array([[1, 2, 3],
-                      [3, 4, 3],
-                      [1 + 1j, 0, 2],
-                      [0, 0, 1]], np.complex)
-        y = np.array([[1, 2, 3, 8 + 5j],
-                      [3 - 2j, 4, 3, 5],
-                      [1, 0, 2, 3],
-                      [0, 0, 1, 0]], np.complex)
-        z = csc_matrix(x)
 
-        for m in [x, x.T.conjugate(), x.T, y, y.conjugate(), z, z.T]:
-            for k in range(1, min(m.shape) - 1):
-                u, s, vh = sorted_svd(m, k)
-                su, ss, svh = svds(m, k)
+def test_simple_complex():
+    x = np.array([[1, 2, 3],
+                  [3, 4, 3],
+                  [1 + 1j, 0, 2],
+                  [0, 0, 1]], np.complex)
+    y = np.array([[1, 2, 3, 8 + 5j],
+                  [3 - 2j, 4, 3, 5],
+                  [1, 0, 2, 3],
+                  [0, 0, 1, 0]], np.complex)
+    z = csc_matrix(x)
 
-                m_hat = svd_estimate(u, s, vh)
-                sm_hat = svd_estimate(su, ss, svh)
+    for m in [x, x.T.conjugate(), x.T, y, y.conjugate(), z, z.T]:
+        for k in range(1, min(m.shape) - 1):
+            u, s, vh = sorted_svd(m, k)
+            su, ss, svh = svds(m, k)
 
-                assert_array_almost_equal_nulp(m_hat, sm_hat, nulp=1000)
+            m_hat = svd_estimate(u, s, vh)
+            sm_hat = svd_estimate(su, ss, svh)
+
+            assert_array_almost_equal_nulp(m_hat, sm_hat, nulp=1000)
+
 
 if __name__ == "__main__":
     run_module_suite()
