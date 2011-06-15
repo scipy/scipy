@@ -2,7 +2,7 @@ import sys
 
 from bento.commands import hooks
 
-@hooks.pre_build()
+@hooks.pre_build
 def pre_build(context):
     bld = context.waf_context
     f2py = bld.tools["f2py"]
