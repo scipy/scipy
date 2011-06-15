@@ -454,11 +454,7 @@ class netcdf_file(object):
                 if isinstance(sample, class_): break
 
         typecode, size = TYPEMAP[nc_type]
-        if typecode is 'c':
-            dtype_ = '>c'
-        else:
-            dtype_ = '>%s' % typecode
-            if size > 1: dtype_ += str(size)
+        dtype_ = '>%s' % typecode
 
         values = asarray(values, dtype=dtype_)
 
@@ -627,11 +623,7 @@ class netcdf_file(object):
         begin = [self._unpack_int, self._unpack_int64][self.version_byte-1]()
 
         typecode, size = TYPEMAP[nc_type]
-        if typecode is 'c':
-            dtype_ = '>c'
-        else:
-            dtype_ = '>%s' % typecode
-            if size > 1: dtype_ += str(size)
+        dtype_ = '>%s' % typecode
 
         return name, dimensions, shape, attributes, typecode, size, dtype_, begin, vsize
 
@@ -646,7 +638,7 @@ class netcdf_file(object):
         self.fp.read(-count % 4)  # read padding
 
         if typecode is not 'c':
-            values = fromstring(values, dtype='>%s%d' % (typecode, size))
+            values = fromstring(values, dtype='>%s' % typecode)
             if values.shape == (1,): values = values[0]
         else:
             values = values.rstrip(asbytes('\x00'))
