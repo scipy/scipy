@@ -447,7 +447,11 @@ def generic_gradient_magnitude(input, derivative, output = None,
                              *extra_arguments, **extra_keywords)
             numpy.multiply(tmp, tmp, tmp)
             output += tmp
-        numpy.sqrt(output, output)
+        # This allows the sqrt to work with a different default casting
+        if numpy.version.short_version > '1.6.1':
+            numpy.sqrt(output, output, casting='unsafe')
+        else:
+            numpy.sqrt(output, output)
     else:
         output[...] = input[...]
     return return_value

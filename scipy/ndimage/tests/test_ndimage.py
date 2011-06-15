@@ -669,7 +669,7 @@ class TestNdimage:
             output = ndimage.gaussian_gradient_magnitude(array,
                                                                        1.0)
             expected = tmp1 * tmp1 + tmp2 * tmp2
-            numpy.sqrt(expected, expected)
+            expected = numpy.sqrt(expected).astype(type)
             assert_array_almost_equal(expected, output)
 
     def test_gaussian_gradient_magnitude02(self):
@@ -684,7 +684,7 @@ class TestNdimage:
             ndimage.gaussian_gradient_magnitude(array, 1.0,
                                                            output)
             expected = tmp1 * tmp1 + tmp2 * tmp2
-            numpy.sqrt(expected, expected)
+            expected = numpy.sqrt(expected).astype(type)
             assert_array_almost_equal(expected, output)
 
     def test_generic_gradient_magnitude01(self):
