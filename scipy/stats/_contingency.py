@@ -143,9 +143,9 @@ def chi2_contingency(observed, correction=True):
 
     See Also
     --------
-    scipy.stats.expected_freq
-    scipy.stats.fisher_exact
-    scipy.stats.chisquare
+    expected_freq
+    fisher_exact
+    chisquare
 
     Notes
     -----
