@@ -260,6 +260,18 @@ which work for masked arrays.
    mood
    oneway
 
+Contingency Tables
+------------------
+
+.. autosummary::
+   :toctree: generated/
+   
+   chi2_contingency
+   expected_freq
+   margins
+   
+General Linear Model
+--------------------
 
 .. autosummary::
    :toctree: generated/

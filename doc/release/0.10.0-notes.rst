@@ -58,12 +58,13 @@ Additional special matrices (``scipy.linalg``)
 
 The functions ``hilbert`` and ``invhilbert`` were added to ``scipy.linalg``.
 
+Enhancements to ``scipy.stats``
+-------------------------
 
-``stats.fisher_exact``
-----------------------
-
-The one-sided form of Fisher's exact test is now also implemented. 
-
+* ``stats.fisher_exact``: The one-sided form of Fisher's exact test is now also implemented. 
+* The function ``stats.chi2_contingency`` for computing the chi-square test of
+  independence of factors in a contingency table has been added, along with
+  the related utility functions ``stats.margins`` and ``stats.expected_freq``.
 
 Deprecated features
 ===================

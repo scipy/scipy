@@ -226,6 +226,12 @@ mood              _
 oneway            _
 ================= ==============================================================
 
+================= =======================================================================
+chi2_contingency  Chi-square test of independence of observations in a contingency table.
+expected_freq     Compute the expected frequencies from a contingency table.
+margins           Return a list of the marginal sums of the array `a`.
+================= =======================================================================
+
 ================= ==============================================================
 glm               _
 ================= ==============================================================
