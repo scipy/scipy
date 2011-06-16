@@ -936,9 +936,7 @@ class IterInv(LinearOperator):
         if tol <= 0:
             # when tol=0, ARPACK uses machine tolerance as calculated
             # by LAPACK's _LAMCH function.  We should match this
-            typ = M.dtype.char.lower()
-            lamch, = get_lapack_funcs(('lamch',), (np.array(0, dtype=typ),))
-            tol = lamch('e')
+            tol = np.finfo(M.dtype).eps
         self.M = M
         self.ifunc = ifunc
         self.tol = tol
@@ -963,14 +961,12 @@ class IterOpInv(LinearOperator):
     IterOpInv:
        helper class to repeatedly solve [A-sigma*M]*x = b
        using an iterative method
-    """ 
+    """
     def __init__(self, A, M, sigma, ifunc=gmres, tol=0):
         if tol <= 0:
             # when tol=0, ARPACK uses machine tolerance as calculated
             # by LAPACK's _LAMCH function.  We should match this
-            typ = A.dtype.char.lower()
-            lamch, = get_lapack_funcs(('lamch',), (np.array(0, dtype=typ),))
-            tol = lamch('e')
+            tol = np.finfo(A.dtype).eps
         self.A = A
         self.M = M
         self.sigma = sigma
