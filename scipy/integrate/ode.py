@@ -141,16 +141,16 @@ method of the ode class:
   Safety factor on new step selection (default 0.9)
 - ifactor : float
 - dfactor : float
-  Maximum factor to increase/decrease step sixe by in one step
+  Maximum factor to increase/decrease step size by in one step
 - beta : float
   Beta parameter for stabilised step size control.
 
 dop853
 ~~~~~~
 
-    Numerical solution of a system of first 0rder
+    Numerical solution of a system of first order
     ordinary differential equations  y'=f(x,y).
-    this is an explicit runge-kutta method of order 8(5,3)
+    This is an explicit runge-kutta method of order 8(5,3)
     due to Dormand & Prince (with stepsize control and
     dense output).
 
@@ -214,9 +214,11 @@ from numpy import asarray, array, zeros, int32, isscalar, real, imag
 import vode as _vode
 import _dop
 
+
 #------------------------------------------------------------------------------
 # User interface
 #------------------------------------------------------------------------------
+
 
 class ode(object):
     """\
@@ -231,7 +233,6 @@ Examples
 --------
 A problem to integrate and the corresponding jacobian:
 
->>> from scipy import eye
 >>> from scipy.integrate import ode
 >>>
 >>> y0, t0 = [1.0j, 2.0], 0
@@ -271,7 +272,7 @@ The integration:
         """
         self.stiff = 0
         self.f = f
-        self.jac  = jac
+        self.jac = jac
         self.f_params = ()
         self.jac_params = ()
         self.y = []
@@ -282,10 +283,10 @@ The integration:
             y = [y]
         n_prev = len(self.y)
         if not n_prev:
-            self.set_integrator('') # find first available integrator
+            self.set_integrator('')  # find first available integrator
         self.y = asarray(y, self._integrator.scalar)
         self.t = t
-        self._integrator.reset(len(self.y),self.jac is not None)
+        self._integrator.reset(len(self.y), self.jac is not None)
         return self
 
     def set_integrator(self, name, **integrator_params):
@@ -310,7 +311,7 @@ The integration:
             if not len(self.y):
                 self.t = 0.0
                 self.y = array([0.0], self._integrator.scalar)
-            self._integrator.reset(len(self.y),self.jac is not None)
+            self._integrator.reset(len(self.y), self.jac is not None)
         return self
 
     def integrate(self, t, step=0, relax=0):
@@ -321,9 +322,9 @@ The integration:
             mth = self._integrator.run_relax
         else:
             mth = self._integrator.run
-        self.y,self.t = mth(self.f,self.jac or (lambda :None),
-                            self.y,self.t,t,
-                            self.f_params,self.jac_params)
+        self.y, self.t = mth(self.f, self.jac or (lambda: None),
+                            self.y, self.t, t,
+                            self.f_params, self.jac_params)
         return self.y
 
     def successful(self):
@@ -332,17 +333,18 @@ The integration:
             self._integrator
         except AttributeError:
             self.set_integrator('')
-        return self._integrator.success==1
+        return self._integrator.success == 1
 
-    def set_f_params(self,*args):
+    def set_f_params(self, *args):
         """Set extra parameters for user-supplied function f."""
         self.f_params = args
         return self
 
-    def set_jac_params(self,*args):
+    def set_jac_params(self, *args):
         """Set extra parameters for user-supplied function jac."""
         self.jac_params = args
         return self
+
 
 class complex_ode(ode):
     """ A wrapper of ode for complex systems.
@@ -372,16 +374,16 @@ class complex_ode(ode):
             ode.__init__(self, self._wrap, None)
 
     def _wrap(self, t, y, *f_args):
-        f = self.cf(*((t, y[::2] + 1j*y[1::2]) + f_args))
+        f = self.cf(*((t, y[::2] + 1j * y[1::2]) + f_args))
         self.tmp[::2] = real(f)
         self.tmp[1::2] = imag(f)
         return self.tmp
 
     def _wrap_jac(self, t, y, *jac_args):
-        jac = self.cjac(*((t, y[::2] + 1j*y[1::2]) + jac_args))
-        self.jac_tmp[1::2,1::2] = self.jac_tmp[::2,::2] = real(jac)
-        self.jac_tmp[1::2,::2] = imag(jac)
-        self.jac_tmp[::2,1::2] = -self.jac_tmp[1::2,::2]
+        jac = self.cjac(*((t, y[::2] + 1j * y[1::2]) + jac_args))
+        self.jac_tmp[1::2, 1::2] = self.jac_tmp[::2, ::2] = real(jac)
+        self.jac_tmp[1::2, ::2] = imag(jac)
+        self.jac_tmp[::2, 1::2] = -self.jac_tmp[1::2, ::2]
         return self.jac_tmp
 
     def set_integrator(self, name, **integrator_params):
@@ -402,27 +404,30 @@ class complex_ode(ode):
     def set_initial_value(self, y, t=0.0):
         """Set initial conditions y(t) = y."""
         y = asarray(y)
-        self.tmp = zeros(y.size*2, 'float')
+        self.tmp = zeros(y.size * 2, 'float')
         self.tmp[::2] = real(y)
         self.tmp[1::2] = imag(y)
         if self.cjac is not None:
-            self.jac_tmp = zeros((y.size*2, y.size*2), 'float')
+            self.jac_tmp = zeros((y.size * 2, y.size * 2), 'float')
         return ode.set_initial_value(self, self.tmp, t)
 
     def integrate(self, t, step=0, relax=0):
         """Find y=y(t), set y as an initial condition, and return y."""
         y = ode.integrate(self, t, step, relax)
-        return y[::2] + 1j*y[1::2]
+        return y[::2] + 1j * y[1::2]
+
 
 #------------------------------------------------------------------------------
 # ODE integrators
 #------------------------------------------------------------------------------
 
+
 def find_integrator(name):
     for cl in IntegratorBase.integrator_classes:
-        if re.match(name,cl.__name__,re.I):
+        if re.match(name, cl.__name__, re.I):
             return cl
     return None
+
 
 class IntegratorBase(object):
 
@@ -433,63 +438,64 @@ class IntegratorBase(object):
     integrator_classes = []
     scalar = float
 
-    def reset(self,n,has_jac):
+    def reset(self, n, has_jac):
         """Prepare integrator for call: allocate memory, set flags, etc.
         n - number of equations.
         has_jac - if user has supplied function for evaluating Jacobian.
         """
 
-    def run(self,f,jac,y0,t0,t1,f_params,jac_params):
+    def run(self, f, jac, y0, t0, t1, f_params, jac_params):
         """Integrate from t=t0 to t=t1 using y0 as an initial condition.
         Return 2-tuple (y1,t1) where y1 is the result and t=t1
         defines the stoppage coordinate of the result.
         """
         raise NotImplementedError('all integrators must define '
-                'run(f,jac,t0,t1,y0,f_params,jac_params)')
+                'run(f, jac, t0, t1, y0, f_params, jac_params)')
 
-    def step(self,f,jac,y0,t0,t1,f_params,jac_params):
+    def step(self, f, jac, y0, t0, t1, f_params, jac_params):
         """Make one integration step and return (y1,t1)."""
         raise NotImplementedError('%s does not support step() method' %
                 self.__class__.__name__)
 
-    def run_relax(self,f,jac,y0,t0,t1,f_params,jac_params):
+    def run_relax(self, f, jac, y0, t0, t1, f_params, jac_params):
         """Integrate from t=t0 to t>=t1 and return (y1,t)."""
         raise NotImplementedError('%s does not support run_relax() method' %
                 self.__class__.__name__)
 
     #XXX: __str__ method for getting visual state of the integrator
 
+
 class vode(IntegratorBase):
 
-    runner = getattr(_vode,'dvode',None)
+    runner = getattr(_vode, 'dvode', None)
 
-    messages = {-1:'Excess work done on this call. (Perhaps wrong MF.)',
-                -2:'Excess accuracy requested. (Tolerances too small.)',
-                -3:'Illegal input detected. (See printed message.)',
-                -4:'Repeated error test failures. (Check all input.)',
-                -5:'Repeated convergence failures. (Perhaps bad'
+    messages = {-1: 'Excess work done on this call. (Perhaps wrong MF.)',
+                -2: 'Excess accuracy requested. (Tolerances too small.)',
+                -3: 'Illegal input detected. (See printed message.)',
+                -4: 'Repeated error test failures. (Check all input.)',
+                -5: 'Repeated convergence failures. (Perhaps bad'
                 ' Jacobian supplied or wrong choice of MF or tolerances.)',
-                -6:'Error weight became zero during problem. (Solution'
+                -6: 'Error weight became zero during problem. (Solution'
                 ' component i vanished, and ATOL or ATOL(i) = 0.)'
                 }
     supports_run_relax = 1
     supports_step = 1
 
     def __init__(self,
-                 method = 'adams',
-                 with_jacobian = 0,
-                 rtol=1e-6,atol=1e-12,
-                 lband=None,uband=None,
-                 order = 12,
-                 nsteps = 500,
-                 max_step = 0.0, # corresponds to infinite
-                 min_step = 0.0,
-                 first_step = 0.0, # determined by solver
+                 method='adams',
+                 with_jacobian=0,
+                 rtol=1e-6, atol=1e-12,
+                 lband=None, uband=None,
+                 order=12,
+                 nsteps=500,
+                 max_step=0.0,  # corresponds to infinite
+                 min_step=0.0,
+                 first_step=0.0,  # determined by solver
                  ):
 
-        if re.match(method,r'adams',re.I):
+        if re.match(method, r'adams', re.I):
             self.meth = 1
-        elif re.match(method,r'bdf',re.I):
+        elif re.match(method, r'bdf', re.I):
             self.meth = 2
         else:
             raise ValueError('Unknown integration method %s' % method)
@@ -506,14 +512,16 @@ class vode(IntegratorBase):
         self.first_step = first_step
         self.success = 1
 
-    def reset(self,n,has_jac):
+    def reset(self, n, has_jac):
         # Calculate parameters for Fortran subroutine dvode.
         if has_jac:
             if self.mu is None and self.ml is None:
                 miter = 1
             else:
-                if self.mu is None: self.mu = 0
-                if self.ml is None: self.ml = 0
+                if self.mu is None:
+                    self.mu = 0
+                if self.ml is None:
+                    self.ml = 0
                 miter = 4
         else:
             if self.mu is None and self.ml is None:
@@ -522,32 +530,34 @@ class vode(IntegratorBase):
                 else:
                     miter = 0
             else:
-                if self.mu is None: self.mu = 0
-                if self.ml is None: self.ml = 0
-                if self.ml==self.mu==0:
+                if self.mu is None:
+                    self.mu = 0
+                if self.ml is None:
+                    self.ml = 0
+                if self.ml == self.mu == 0:
                     miter = 3
                 else:
                     miter = 5
-        mf = 10*self.meth + miter
-        if mf==10:
-            lrw = 20 + 16*n
-        elif mf in [11,12]:
-            lrw = 22 + 16*n + 2*n*n
+        mf = 10 * self.meth + miter
+        if mf == 10:
+            lrw = 20 + 16 * n
+        elif mf in [11, 12]:
+            lrw = 22 + 16 * n + 2 * n * n
         elif mf == 13:
-            lrw = 22 + 17*n
-        elif mf in [14,15]:
-            lrw = 22 + 18*n + (3*self.ml+2*self.mu)*n
+            lrw = 22 + 17 * n
+        elif mf in [14, 15]:
+            lrw = 22 + 18 * n + (3 * self.ml + 2 * self.mu) * n
         elif mf == 20:
-            lrw =  20 +  9*n
-        elif mf in [21,22]:
-            lrw = 22 + 9*n + 2*n*n
+            lrw = 20 + 9 * n
+        elif mf in [21, 22]:
+            lrw = 22 + 9 * n + 2 * n * n
         elif mf == 23:
-            lrw = 22 + 10*n
-        elif mf in [24,25]:
-            lrw = 22 + 11*n + (3*self.ml+2*self.mu)*n
+            lrw = 22 + 10 * n
+        elif mf in [24, 25]:
+            lrw = 22 + 11 * n + (3 * self.ml + 2 * self.mu) * n
         else:
             raise ValueError('Unexpected mf=%s' % mf)
-        if miter in [0,3]:
+        if miter in [0, 3]:
             liw = 30
         else:
             liw = 30 + n
@@ -565,38 +575,43 @@ class vode(IntegratorBase):
         iwork[5] = self.nsteps
         iwork[6] = 2           # mxhnil
         self.iwork = iwork
-        self.call_args = [self.rtol,self.atol,1,1,self.rwork,self.iwork,mf]
+        self.call_args = [self.rtol, self.atol, 1, 1,
+                          self.rwork, self.iwork, mf]
         self.success = 1
 
-    def run(self,*args):
-        y1,t,istate = self.runner(*(args[:5]+tuple(self.call_args)+args[5:]))
-        if istate <0:
-            warnings.warn('vode: ' + self.messages.get(istate,'Unexpected istate=%s'%istate))
+    def run(self, *args):
+        y1, t, istate = self.runner(*(args[:5] + tuple(self.call_args) +
+                                      args[5:]))
+        if istate < 0:
+            warnings.warn('vode: ' +
+                          self.messages.get(istate,
+                                            'Unexpected istate=%s' % istate))
             self.success = 0
         else:
-            self.call_args[3] = 2 # upgrade istate from 1 to 2
-        return y1,t
+            self.call_args[3] = 2  # upgrade istate from 1 to 2
+        return y1, t
 
-    def step(self,*args):
+    def step(self, *args):
         itask = self.call_args[2]
         self.call_args[2] = 2
         r = self.run(*args)
         self.call_args[2] = itask
         return r
 
-    def run_relax(self,*args):
+    def run_relax(self, *args):
         itask = self.call_args[2]
         self.call_args[2] = 3
         r = self.run(*args)
         self.call_args[2] = itask
         return r
 
+
 if vode.runner is not None:
     IntegratorBase.integrator_classes.append(vode)
 
 
 class zvode(vode):
-    runner = getattr(_vode,'zvode',None)
+    runner = getattr(_vode, 'zvode', None)
 
     supports_run_relax = 1
     supports_step = 1
@@ -608,8 +623,10 @@ class zvode(vode):
             if self.mu is None and self.ml is None:
                 miter = 1
             else:
-                if self.mu is None: self.mu = 0
-                if self.ml is None: self.ml = 0
+                if self.mu is None:
+                    self.mu = 0
+                if self.ml is None:
+                    self.ml = 0
                 miter = 4
         else:
             if self.mu is None and self.ml is None:
@@ -618,39 +635,41 @@ class zvode(vode):
                 else:
                     miter = 0
             else:
-                if self.mu is None: self.mu = 0
-                if self.ml is None: self.ml = 0
-                if self.ml==self.mu==0:
+                if self.mu is None:
+                    self.mu = 0
+                if self.ml is None:
+                    self.ml = 0
+                if self.ml == self.mu == 0:
                     miter = 3
                 else:
                     miter = 5
 
-        mf = 10*self.meth + miter
+        mf = 10 * self.meth + miter
 
         if mf in (10,):
-            lzw = 15*n
+            lzw = 15 * n
         elif mf in (11, 12):
-            lzw = 15*n + 2*n**2
+            lzw = 15 * n + 2 * n ** 2
         elif mf in (-11, -12):
-            lzw = 15*n + n**2
+            lzw = 15 * n + n ** 2
         elif mf in (13,):
-            lzw = 16*n
-        elif mf in (14,15):
-            lzw = 17*n + (3*self.ml + 2*self.mu)*n
-        elif mf in (-14,-15):
-            lzw = 16*n + (2*self.ml + self.mu)*n
+            lzw = 16 * n
+        elif mf in (14, 15):
+            lzw = 17 * n + (3 * self.ml + 2 * self.mu) * n
+        elif mf in (-14, -15):
+            lzw = 16 * n + (2 * self.ml + self.mu) * n
         elif mf in (20,):
-            lzw = 8*n
+            lzw = 8 * n
         elif mf in (21, 22):
-            lzw = 8*n + 2*n**2
-        elif mf in (-21,-22):
-            lzw = 8*n + n**2
+            lzw = 8 * n + 2 * n ** 2
+        elif mf in (-21, -22):
+            lzw = 8 * n + n ** 2
         elif mf in (23,):
-            lzw = 9*n
+            lzw = 9 * n
         elif mf in (24, 25):
-            lzw = 10*n + (3*self.ml + 2*self.mu)*n
+            lzw = 10 * n + (3 * self.ml + 2 * self.mu) * n
         elif mf in (-24, -25):
-            lzw = 9*n + (2*self.ml + self.mu)*n
+            lzw = 9 * n + (2 * self.ml + self.mu) * n
 
         lrw = 20 + n
 
@@ -678,46 +697,49 @@ class zvode(vode):
         iwork[6] = 2           # mxhnil
         self.iwork = iwork
 
-        self.call_args = [self.rtol,self.atol,1,1,
-                          self.zwork,self.rwork,self.iwork,mf]
+        self.call_args = [self.rtol, self.atol, 1, 1,
+                          self.zwork, self.rwork, self.iwork, mf]
         self.success = 1
 
-    def run(self,*args):
-        y1,t,istate = self.runner(*(args[:5]+tuple(self.call_args)+args[5:]))
+    def run(self, *args):
+        y1, t, istate = self.runner(*(args[:5] + tuple(self.call_args) +
+                                    args[5:]))
         if istate < 0:
             warnings.warn('zvode: ' +
-                self.messages.get(istate, 'Unexpected istate=%s'%istate))
+                self.messages.get(istate, 'Unexpected istate=%s' % istate))
             self.success = 0
         else:
-            self.call_args[3] = 2 # upgrade istate from 1 to 2
+            self.call_args[3] = 2  # upgrade istate from 1 to 2
         return y1, t
+
 
 if zvode.runner is not None:
     IntegratorBase.integrator_classes.append(zvode)
 
+
 class dopri5(IntegratorBase):
 
-    runner = getattr(_dop,'dopri5',None)
+    runner = getattr(_dop, 'dopri5', None)
     name = 'dopri5'
 
-    messages = { 1 : 'computation successful',
-                 2 : 'comput. successful (interrupted by solout)',
-                -1 : 'input is not consistent',
-                -2 : 'larger nmax is needed',
-                -3 : 'step size becomes too small',
-                -4 : 'problem is probably stiff (interrupted)',
+    messages = {1: 'computation successful',
+                2: 'comput. successful (interrupted by solout)',
+                -1: 'input is not consistent',
+                -2: 'larger nmax is needed',
+                -3: 'step size becomes too small',
+                -4: 'problem is probably stiff (interrupted)',
                }
 
     def __init__(self,
-                 rtol=1e-6,atol=1e-12,
-                 nsteps = 500,
-                 max_step = 0.0,
-                 first_step = 0.0, # determined by solver
-                 safety = 0.9,
-                 ifactor = 10.0,
-                 dfactor = 0.2,
-                 beta = 0.0,
-                 method = None
+                 rtol=1e-6, atol=1e-12,
+                 nsteps=500,
+                 max_step=0.0,
+                 first_step=0.0,  # determined by solver
+                 safety=0.9,
+                 ifactor=10.0,
+                 dfactor=0.2,
+                 beta=0.0,
+                 method=None
                  ):
         self.rtol = rtol
         self.atol = atol
@@ -730,8 +752,8 @@ class dopri5(IntegratorBase):
         self.beta = beta
         self.success = 1
 
-    def reset(self,n,has_jac):
-        work = zeros((8*n+21,), float)
+    def reset(self, n, has_jac):
+        work = zeros((8 * n + 21,), float)
         work[1] = self.safety
         work[2] = self.dfactor
         work[3] = self.ifactor
@@ -742,39 +764,43 @@ class dopri5(IntegratorBase):
         iwork = zeros((21,), int32)
         iwork[0] = self.nsteps
         self.iwork = iwork
-        self.call_args = [self.rtol,self.atol,self._solout,self.work,self.iwork]
+        self.call_args = [self.rtol, self.atol, self._solout,
+                          self.work, self.iwork]
         self.success = 1
 
-    def run(self,f,jac,y0,t0,t1,f_params,jac_params):
-        x,y,iwork,idid = self.runner(*((f,t0,y0,t1) + tuple(self.call_args) + (f_params,)))
+    def run(self, f, jac, y0, t0, t1, f_params, jac_params):
+        x, y, iwork, idid = self.runner(*((f, t0, y0, t1) +
+                                          tuple(self.call_args) + (f_params,)))
         if idid < 0:
             warnings.warn(self.name + ': ' +
-                self.messages.get(idid, 'Unexpected idid=%s'%idid))
+                self.messages.get(idid, 'Unexpected idid=%s' % idid))
             self.success = 0
-        return y,x
+        return y, x
 
     def _solout(self, *args):
         # dummy solout function
         pass
 
+
 if dopri5.runner is not None:
     IntegratorBase.integrator_classes.append(dopri5)
 
+
 class dop853(dopri5):
 
-    runner = getattr(_dop,'dop853',None)
+    runner = getattr(_dop, 'dop853', None)
     name = 'dop853'
 
     def __init__(self,
-                 rtol=1e-6,atol=1e-12,
-                 nsteps = 500,
-                 max_step = 0.0,
-                 first_step = 0.0, # determined by solver
-                 safety = 0.9,
-                 ifactor = 6.0,
-                 dfactor = 0.3,
-                 beta = 0.0,
-                 method = None
+                 rtol=1e-6, atol=1e-12,
+                 nsteps=500,
+                 max_step=0.0,
+                 first_step=0.0,  # determined by solver
+                 safety=0.9,
+                 ifactor=6.0,
+                 dfactor=0.3,
+                 beta=0.0,
+                 method=None
                  ):
         self.rtol = rtol
         self.atol = atol
@@ -787,8 +813,8 @@ class dop853(dopri5):
         self.beta = beta
         self.success = 1
 
-    def reset(self,n,has_jac):
-        work = zeros((11*n+21,), float)
+    def reset(self, n, has_jac):
+        work = zeros((11 * n + 21,), float)
         work[1] = self.safety
         work[2] = self.dfactor
         work[3] = self.ifactor
@@ -799,8 +825,10 @@ class dop853(dopri5):
         iwork = zeros((21,), int32)
         iwork[0] = self.nsteps
         self.iwork = iwork
-        self.call_args = [self.rtol,self.atol,self._solout,self.work,self.iwork]
+        self.call_args = [self.rtol, self.atol, self._solout,
+                          self.work, self.iwork]
         self.success = 1
+
 
 if dop853.runner is not None:
     IntegratorBase.integrator_classes.append(dop853)
