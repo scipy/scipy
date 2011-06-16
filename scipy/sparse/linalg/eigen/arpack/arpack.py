@@ -890,12 +890,7 @@ class SpLuInv(LinearOperator):
     """
     def __init__(self, M):
         self.M_lu = splu(M)
-        if hasattr(M, 'dtype'):
-            dtype = M.dtype
-        else:
-            x = np.zeros(M.shape[1])
-            dtype = (M * x).dtype
-        LinearOperator.__init__(self, M.shape, self._matvec, dtype=dtype)
+        LinearOperator.__init__(self, M.shape, self._matvec, dtype=M.dtype)
         self.isreal = not np.issubdtype(self.dtype, np.complexfloating)
 
     def _matvec(self, x):
@@ -915,12 +910,7 @@ class LuInv(LinearOperator):
     """
     def __init__(self, M):
         self.M_lu = lu_factor(M)
-        if hasattr(M, 'dtype'):
-            dtype = M.dtype
-        else:
-            x = np.zeros(M.shape[1])
-            dtype = (M * x).dtype
-        LinearOperator.__init__(self, M.shape, self._matvec, dtype=dtype)
+        LinearOperator.__init__(self, M.shape, self._matvec, dtype=M.dtype)
 
     def _matvec(self, x):
         return lu_solve(self.M_lu, x)
@@ -1146,7 +1136,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     Raises
     ------
     ArpackNoConvergence
-        When the requested convergence is obtained.
+        When the requested convergence is not obtained.
 
         The currently converged eigenvalues and eigenvectors can be found
         as ``eigenvalues`` and ``eigenvectors`` attributes of the exception
