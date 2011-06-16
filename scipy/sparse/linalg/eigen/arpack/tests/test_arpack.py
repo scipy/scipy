@@ -340,12 +340,12 @@ def test_hermitian_modes():
 
 def test_symmetric_starting_vector():
     params = SymmetricParams()
-    k = 2
     symmetric = True
-    for D in params.real_test_cases:
-        for typ in 'fd':
-            v0 = random.rand(len(D['v0'])).astype(typ)
-            yield (eval_evec, symmetric, D, typ, k, 'LM', v0)
+    for k in [1, 2, 3, 4, 5]:
+        for D in params.real_test_cases:
+            for typ in 'fd':
+                v0 = random.rand(len(D['v0'])).astype(typ)
+                yield (eval_evec, symmetric, D, typ, k, 'LM', v0)
 
 
 def test_symmetric_no_convergence():
@@ -392,28 +392,28 @@ def test_complex_nonsymmetric_modes():
 
 def test_standard_nonsymmetric_starting_vector():
     params = NonSymmetricParams()
-    k = 2
     sigma = None
     symmetric = False
-    for d in params.complex_test_cases:
-        for typ in 'FD':
-            A = d['mat']
-            n = A.shape[0]
-            v0 = random.rand(n).astype(typ)
-            yield (eval_evec, symmetric, d, typ, k, "LM", v0, sigma)
+    for k in [1, 2, 3, 4]:
+        for d in params.complex_test_cases:
+            for typ in 'FD':
+                A = d['mat']
+                n = A.shape[0]
+                v0 = random.rand(n).astype(typ)
+                yield (eval_evec, symmetric, d, typ, k, "LM", v0, sigma)
 
 
 def test_general_nonsymmetric_starting_vector():
     params = NonSymmetricParams()
-    k = 2
     sigma = None
     symmetric = False
-    for d in params.complex_test_cases:
-        for typ in 'FD':
-            A = d['mat']
-            n = A.shape[0]
-            v0 = random.rand(n).astype(typ)
-            yield (eval_evec, symmetric, d, typ, k, "LM", v0, sigma)
+    for k in [1, 2, 3, 4]:
+        for d in params.complex_test_cases:
+            for typ in 'FD':
+                A = d['mat']
+                n = A.shape[0]
+                v0 = random.rand(n).astype(typ)
+                yield (eval_evec, symmetric, d, typ, k, "LM", v0, sigma)
 
 
 def test_standard_nonsymmetric_no_convergence():
