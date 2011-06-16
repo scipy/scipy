@@ -990,11 +990,11 @@ class IterOpInv(LinearOperator):
                              % (self.ifunc.__name__, info))
         return b
 
-def get_inv_matvec(M, tol=0):
+def get_inv_matvec(M, symmetric=False, tol=0):
     if isdense(M):
         return LuInv(M).matvec
     elif isspmatrix(M):
-        if isspmatrix_csr(M):
+        if isspmatrix_csr(M) and symmetric:
             M = M.T
         return SpLuInv(M).matvec
     else:
@@ -1003,7 +1003,7 @@ def get_inv_matvec(M, tol=0):
 
 def get_OPinv_matvec(A, M, sigma, symmetric=False, tol=0):
     if sigma == 0:
-        return get_inv_matvec(A, tol=tol)
+        return get_inv_matvec(A, symmetric=symmetric, tol=tol)
 
     if M is None:
         #M is the identity matrix
@@ -1208,7 +1208,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
             #general eigenvalue problem
             mode = 2
             if Minv is None:
-                Minv_matvec = get_inv_matvec(M, tol=tol)
+                Minv_matvec = get_inv_matvec(M, symmetric=True, tol=tol)
             else:
                 Minv = _aslinearoperator_with_dtype(Minv)
                 Minv_matvec = Minv.matvec
@@ -1463,7 +1463,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             #general eigenvalue problem
             mode = 2
             if Minv is None:
-                Minv_matvec = get_inv_matvec(M, tol=tol)
+                Minv_matvec = get_inv_matvec(M, symmetric=True, tol=tol)
             else:
                 Minv = _aslinearoperator_with_dtype(Minv)
                 Minv_matvec = Minv.matvec
