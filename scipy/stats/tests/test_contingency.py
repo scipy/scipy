@@ -3,7 +3,7 @@ import numpy as np
 from numpy.testing import run_module_suite, assert_equal, assert_array_equal, \
          assert_array_almost_equal, assert_approx_equal, assert_raises
 
-from scipy.stats import margins, expected_freq, conting_test_ind
+from scipy.stats import margins, expected_freq, chi2_contingency
 
 
 def test_margins():
@@ -50,11 +50,11 @@ def test_expected_freq():
     assert_array_almost_equal(e, correct)
 
 
-def test_conting_test_ind_trival():
-    """Some very simple tests for conting_test_ind."""
+def test_chi2_contingency_trival():
+    """Some very simple tests for chi2_contingency."""
     # A trivial case
     obs = np.array([[1, 2], [1, 2]])
-    chi2, p, dof, expected = conting_test_ind(obs)
+    chi2, p, dof, expected = chi2_contingency(obs, correction=False)
     assert_equal(chi2, 0.0)
     assert_equal(p, 1.0)
     assert_equal(dof, 1)
@@ -62,14 +62,14 @@ def test_conting_test_ind_trival():
 
     # A *really* trivial case: 1-D data.
     obs = np.array([1, 2, 3])
-    chi2, p, dof, expected = conting_test_ind(obs)
+    chi2, p, dof, expected = chi2_contingency(obs, correction=False)
     assert_equal(chi2, 0.0)
     assert_equal(p, 1.0)
     assert_equal(dof, 0)
     assert_array_equal(obs, expected)
 
 
-def test_conting_test_ind_R():
+def test_chi2_contingency_R():
     """Some test cases that were computed independently, using R."""
 
     Rcode = \
@@ -108,7 +108,7 @@ def test_conting_test_ind_R():
           [34, 10, 18],
           [18, 13, 19],
           [ 9, 33, 25]]])
-    chi2, p, dof, expected = conting_test_ind(obs)
+    chi2, p, dof, expected = chi2_contingency(obs)
     assert_approx_equal(chi2, 102.17, significant=5)
     assert_approx_equal(p, 3.514e-14, significant=4)
     assert_equal(dof, 17)
@@ -158,20 +158,20 @@ def test_conting_test_ind_R():
            [30, 22]],
           [[14, 17],
            [15, 16]]]])
-    chi2, p, dof, expected = conting_test_ind(obs)
+    chi2, p, dof, expected = chi2_contingency(obs)
     assert_approx_equal(chi2, 8.758, significant=4)
     assert_approx_equal(p,  0.6442, significant=4)
     assert_equal(dof, 11)
 
 
-def test_conting_test_ind_bad_args():
+def test_chi2_contingency_bad_args():
     # Negative value in the array of observed frequencies.
     obs = np.array([[-1, 10], [1, 2]])
-    assert_raises(ValueError, conting_test_ind, obs)
+    assert_raises(ValueError, chi2_contingency, obs)
     # The zeros in this will result in zeros in the array
     # of expected frequencies.
     obs = np.array([[0, 1], [0, 1]])
-    assert_raises(ValueError, conting_test_ind, obs)
+    assert_raises(ValueError, chi2_contingency, obs)
 
 
 if __name__ == "__main__":

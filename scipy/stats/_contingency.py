@@ -8,7 +8,7 @@ from scipy import special
 from numpy.testing.decorators import setastest
 
 
-__all__ = ['margins', 'expected_freq', 'conting_test_ind']
+__all__ = ['margins', 'expected_freq', 'chi2_contingency']
 
 
 def margins(a):
@@ -103,14 +103,18 @@ def expected_freq(observed):
     return expected
 
 
-@setastest(False)
-def conting_test_ind(observed, correction=False):
-    """chi-square hypothesis test for independence of observations.
+def chi2_contingency(observed, correction=True):
+    """chi-square test of independence of observations in a contingency table.
 
     This function computes the chi-square statistic and p-value for the
-    chi-square test of independence of the observed frequencies in the
+    hypothesis test of independence of the observed frequencies in the
     contingency table `observed`.  The expected frequencies are computed
-    based on the marginal sums under the assumption of independence.
+    based on the marginal sums under the assumption of independence;
+    see scipy.stats.expected_freq.  The number of degrees of freedom is
+    (expressed using numpy functions and attributes)::
+
+        dof = observed.size - sum(observed.shape) + observed.ndim - 1
+
 
     Parameters
     ----------
@@ -137,6 +141,12 @@ def conting_test_ind(observed, correction=False):
     expected : ndarray, same shape as `observed`
         The expected frequencies, based on the marginal sums of the table.
 
+    See Also
+    --------
+    scipy.stats.expected_freq
+    scipy.stats.fisher_exact
+    scipy.stats.chisquare
+
     Notes
     -----
     An often quoted guideline for the validity of this calculation is that
@@ -149,21 +159,28 @@ def conting_test_ind(observed, correction=False):
     table will always result in `expected` equal to `observed` and a
     chi-square statistic equal to 0.
 
-    This function does not handle masked array, because the calculation
+    This function does not handle masked arrays, because the calculation
     does not make sense with missing values.
+    
+    Like stats.chisquare, this function computes a chi-square statistic;
+    the convenience this function provides is to figure out the expected
+    frequencies and degrees of freedom from the given contingency table.
+    If these were already known, and if the Yates' correction was not
+    required, one could use stats.chisquare.  That is, if one calls::
+    
+        chi2, p, dof, ex = chi2_contingency(obs, correction=False)
 
-    See Also
-    --------
-    scipy.stats.expected_freq
-    scipy.stats.fisher_exact
-    scipy.stats.chisquare
+    then the following is true::
+    
+        (chi2, p) == stats.chisquare(obs.ravel(), f_exp=ex.ravel(),
+                                     ddof=obs.size - 1 - dof)
 
     Examples
     --------
     A two-way example (2 x 3):
 
     >>> obs = np.array([[10, 10, 20], [20, 20, 20]])
-    >>> indtest(obs)
+    >>> chi2_contingency(obs)
     (2.7777777777777777,
      0.24935220877729619,
      2,
@@ -181,7 +198,7 @@ def conting_test_ind(observed, correction=False):
     ...        [30, 22]],
     ...       [[14, 17],
     ...        [15, 16]]]])
-    >>> indtest(obs)
+    >>> chi2_contingency(obs)
     (8.7584514426741897,
      0.64417725029295503,
      11,
