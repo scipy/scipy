@@ -6,7 +6,7 @@ To run tests locally:
 
 import numpy as np
 
-from numpy.testing import assert_almost_equal, assert_array_almost_equal, \
+from numpy.testing import assert_allclose, \
         assert_array_almost_equal_nulp, TestCase, run_module_suite, dec, \
         assert_raises, verbose, assert_equal
 
@@ -21,6 +21,11 @@ from scipy.linalg import svd
 
 # precision for tests
 _ndigits = {'f': 3, 'd': 11, 'F': 3, 'D': 11}
+_rtol = {'f': 2000 * np.finfo(np.float32).eps,
+         'd': 1000 * np.finfo(np.float64).eps,
+         'F': 2000 * np.finfo(np.float32).eps,
+         'D': 1000 * np.finfo(np.float64).eps}
+_atol = _rtol
 
 def generate_matrix(N, complex=False, hermitian=False, 
                     pos_definite=False, sparse=False):
@@ -61,23 +66,12 @@ def _aslinearoperator_with_dtype(m):
     return m
 
 
-def assert_almost_equal_cc(actual, desired, decimal=7,
-                           err_msg='', verbose=True):
+def assert_allclose_cc(actual, desired, **kw):
     """Almost equal or complex conjugates almost equal"""
     try:
-        assert_almost_equal(actual, desired, decimal, err_msg, verbose)
+        assert_allclose(actual, desired, **kw)
     except:
-        assert_almost_equal(actual, conj(desired), decimal, err_msg, verbose)
-
-
-def assert_array_almost_equal_cc(actual, desired, decimal=7,
-                                 err_msg='', verbose=True):
-    """Almost equal or complex conjugates almost equal"""
-    try:
-        assert_array_almost_equal(actual, desired, decimal, err_msg, verbose)
-    except:
-        assert_array_almost_equal(actual, conj(desired), decimal,
-                                  err_msg, verbose)
+        assert_allclose(actual, conj(desired), **kw)
 
 
 def argsort_which(eval, typ, k, which, 
@@ -189,9 +183,8 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
     evec = evec[:,ind]
     
     # check eigenvalues
-    assert_array_almost_equal_cc(eval, exact_eval, 
-                                 decimal=_ndigits[typ],
-                                 err_msg=err)
+    assert_allclose_cc(eval, exact_eval, rtol=_rtol[typ], atol=_atol[typ],
+                       err_msg=err)
 
     # check eigenvectors
     LHS = np.dot(a, evec)
@@ -199,10 +192,8 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
         RHS = eval * np.dot(b, evec)
     else:
         RHS = eval * evec
-        
-    assert_array_almost_equal(LHS, RHS,
-                              decimal=_ndigits[typ],
-                              err_msg=err)
+
+    assert_allclose(LHS, RHS, rtol=_rtol[typ], atol=_atol[typ], err_msg=err)
 
 class DictWithRepr(dict):
     def __init__(self, name):
@@ -360,7 +351,7 @@ def test_symmetric_no_convergence():
         if k <= 0:
             raise AssertionError("Spurious no-eigenvalues-found case")
         w, v = err.eigenvalues, err.eigenvectors
-        assert_array_almost_equal(dot(m, v), w * v, decimal=_ndigits['d'])
+        assert_allclose(dot(m, v), w * v, rtol=_rtol['d'], atol=_atol['d'])
     
 
 def test_real_nonsymmetric_modes():
@@ -428,9 +419,9 @@ def test_standard_nonsymmetric_no_convergence():
             raise AssertionError("Spurious no-eigenvalues-found case")
         w, v = err.eigenvalues, err.eigenvectors
         for ww, vv in zip(w, v.T):
-            assert_array_almost_equal(dot(m, vv), ww * vv,
-                                      decimal=_ndigits['d'])
-    
+            assert_allclose(dot(m, vv), ww * vv,
+                            rtol=_rtol['d'], atol=_atol['d'])
+
 
 def test_eigen_bad_shapes():
     # A is not square.
