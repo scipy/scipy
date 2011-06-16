@@ -227,6 +227,7 @@ oneway            _
 ================= ==============================================================
 
 ================= =======================================================================
+fisher_exact      Performs a Fisher exact test on a 2x2 contingency table.
 chi2_contingency  Chi-square test of independence of observations in a contingency table.
 expected_freq     Compute the expected frequencies from a contingency table.
 margins           Return a list of the marginal sums of the array `a`.
