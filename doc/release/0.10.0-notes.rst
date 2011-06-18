@@ -38,6 +38,14 @@ about our function's call signatures.
 New features
 ============
 
+Generalized and shift-invert eigenvalue problems in ``scipy.sparse.linalg``
+---------------------------------------------------------------------------
+
+The sparse eigenvalue problem solver functions
+``scipy.sparse.eigs/eigh`` now support generalized eigenvalue
+problems, and all shift-invert modes available in ARPACK.
+
+
 Enhanced filtfilt function in ``scipy.signal``
 ----------------------------------------------
 
