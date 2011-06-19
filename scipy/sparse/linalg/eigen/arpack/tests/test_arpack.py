@@ -22,9 +22,9 @@ from scipy.linalg import svd
 # precision for tests
 _ndigits = {'f': 3, 'd': 11, 'F': 3, 'D': 11}
 _rtol = {'f': 2000 * np.finfo(np.float32).eps,
-         'd': 1000 * np.finfo(np.float64).eps,
+         'd': 2000 * np.finfo(np.float64).eps,
          'F': 2000 * np.finfo(np.float32).eps,
-         'D': 1000 * np.finfo(np.float64).eps}
+         'D': 2000 * np.finfo(np.float64).eps}
 _atol = _rtol
 
 def generate_matrix(N, complex=False, hermitian=False, 
