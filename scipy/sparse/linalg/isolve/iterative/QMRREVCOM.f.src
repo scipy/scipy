@@ -127,7 +127,7 @@
 
 
       <_t>   BETA, GAMMA, GAMMA1, DELTA, EPS, ETA, XI, 
-     $       RHO, RHO1, THETA, THETA1, C1,
+     $       RHO, RHO1, THETA, THETA1, C1, TMPVAL,
      $     <xdot=sdot,ddot,cdotc,zdotc>,
      $     toz
 *
@@ -347,12 +347,14 @@
      $      GO TO 25
 *
          CALL <_c>COPY( N, WORK(1,VTLD), 1, WORK(1,V), 1 )
-         CALL <_c>SCAL( N, ONE / RHO, WORK(1,V), 1 )
-         CALL <_c>SCAL( N, ONE / RHO, WORK(1,Y), 1 )
+         TMPVAL = ONE / RHO
+         CALL <_c>SCAL( N, TMPVAL, WORK(1,V), 1 )
+         CALL <_c>SCAL( N, TMPVAL, WORK(1,Y), 1 )
 *
+         TMPVAL = ONE / XI
          CALL <_c>COPY( N, WORK(1,WTLD), 1, WORK(1,W), 1 )
-         CALL <_c>SCAL( N, ONE / XI, WORK(1,W), 1 )
-         CALL <_c>SCAL( N, ONE / XI, WORK(1,Z), 1 )
+         CALL <_c>SCAL( N, TMPVAL, WORK(1,W), 1 )
+         CALL <_c>SCAL( N, TMPVAL, WORK(1,Z), 1 )
 *
          DELTA = <xdot>( N, WORK(1,Z), 1, WORK(1,Y), 1 )
          IF ( ABS( DELTA ).LT.DELTATOL ) GO TO 25
@@ -482,7 +484,8 @@
 *
 *        Compute current solution vector x.
 *
-         CALL <_c>AXPY( N, ONE, WORK(1,D), 1, X, 1 )
+         TMPVAL = ONE
+         CALL <_c>AXPY( N, TMPVAL, WORK(1,D), 1, X, 1 )
 *
 *        Compute residual vector rk, find norm,
 *        then check for tolerance.

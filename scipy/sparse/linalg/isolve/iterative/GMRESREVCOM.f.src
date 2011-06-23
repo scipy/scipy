@@ -415,6 +415,7 @@
      $     <rc=s,d,sc,dz>NRM2, ONE
       PARAMETER        ( ONE = 1.0D+0 )
       <_t>    <xdot=sdot,ddot,cdotc,zdotc>
+      <_t>    TMPVAL
       EXTERNAL         <_c>AXPY, <_c>COPY, <xdot>, <rc>NRM2, <_c>SCAL
 *
       DO 10 K = 1, I
@@ -423,7 +424,8 @@
    10 CONTINUE
       H( I+1 ) = <rc>NRM2( N, W, 1 )
       CALL <_c>COPY( N, W, 1, V( 1,I+1 ), 1 )
-      CALL <_c>SCAL( N, ONE / H( I+1 ), V( 1,I+1 ), 1 )
+      TMPVAL = ONE / H( I+1 )
+      CALL <_c>SCAL( N, TMPVAL, V( 1,I+1 ), 1 )
 *
       RETURN
 *

@@ -117,7 +117,7 @@
      $       <sdsd=s,d,s,d>GETBREAK, 
      $       <rc=s,d,sc,dz>NRM2
 
-      <_t>   ALPHA, BETA, RHO, RHO1,
+      <_t>   ALPHA, BETA, RHO, RHO1, TMPVAL,
      $     <xdot=sdot,ddot,cdotc,zdotc>
 *     ..
 *     indicates where to resume from. Only valid when IJOB = 2!
@@ -291,7 +291,8 @@
 *
             CALL <_c>SCAL( N, BETA**2, WORK(1,P), 1 )
             CALL <_c>AXPY( N, BETA, WORK(1,Q), 1, WORK(1,P), 1 )
-            CALL <_c>AXPY( N, ONE, WORK(1,U), 1, WORK(1,P), 1 )
+            TMPVAL = ONE
+            CALL <_c>AXPY( N, TMPVAL, WORK(1,U), 1, WORK(1,P), 1 )
          ELSE
             CALL <_c>COPY( N, WORK(1,R), 1, WORK(1,U), 1 )
             CALL <_c>COPY( N, WORK(1,U), 1, WORK(1,P), 1 )
@@ -336,7 +337,8 @@
 *        PHAT is being used as temporary storage here.
 *
          CALL <_c>COPY( N, WORK(1,Q), 1, WORK(1,PHAT), 1 ) 
-         CALL <_c>AXPY( N, ONE, WORK(1,U), 1, WORK(1,PHAT), 1 )
+         TMPVAL = ONE
+         CALL <_c>AXPY( N, TMPVAL, WORK(1,U), 1, WORK(1,PHAT), 1 )
 *********CALL PSOLVE( WORK(1,UHAT), WORK(1,PHAT) )
 *
          NDX1 = ((UHAT - 1) * LDW) + 1

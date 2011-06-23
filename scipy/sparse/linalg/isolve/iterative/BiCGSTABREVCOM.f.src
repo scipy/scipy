@@ -116,7 +116,7 @@
       <rt>   TOL, BNRM2, 
      $     RHOTOL, OMEGATOL, <sdsd=s,d,s,d>GETBREAK, 
      $     <rc=s,d,sc,dz>NRM2
-      <_t>   ALPHA, BETA, RHO, RHO1, OMEGA,
+      <_t>   ALPHA, BETA, RHO, RHO1, OMEGA, TMPVAL,
      $     <xdot=sdot,ddot,cdotc,zdotc>
 *     indicates where to resume from. Only valid when IJOB = 2!
       INTEGER RLBL
@@ -274,7 +274,8 @@
          BETA = ( RHO / RHO1 ) * ( ALPHA / OMEGA )
          CALL <_c>AXPY( N, -OMEGA, WORK(1,V), 1, WORK(1,P), 1 )
          CALL <_c>SCAL( N, BETA, WORK(1,P), 1 )
-         CALL <_c>AXPY( N, ONE, WORK(1,R), 1, WORK(1,P), 1 )
+         TMPVAL = ONE
+         CALL <_c>AXPY( N, TMPVAL, WORK(1,R), 1, WORK(1,P), 1 )
       ELSE
          CALL <_c>COPY( N, WORK(1,R), 1, WORK(1,P), 1 )
       ENDIF
