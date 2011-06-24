@@ -71,6 +71,10 @@ Bruce Southey for bug-fixes and improvements to scipy.stats.
 Ernest Adrogué for the Skellam distribution.
 Enzo Michelangeli a fast kendall tau test.
 David Simcha for a fisher exact test.
+Warren Weckesser for bug-fixes, cleanups, and several new features.
+Fabian Pedregosa for linear algebra bug-fixes, new features and refactoring.
+Jake Vanderplas for wrapping ARPACK's generalized and shift-invert modes
+    and improving its tests.
 
 Institutions
 ------------
