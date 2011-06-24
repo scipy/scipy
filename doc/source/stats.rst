@@ -226,7 +226,6 @@ which work for masked arrays.
    f_oneway
    pearsonr
    spearmanr
-   fisher_exact
    pointbiserialr
    kendalltau
    linregress
@@ -260,6 +259,19 @@ which work for masked arrays.
    mood
    oneway
 
+Contingency Tables
+------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   fisher_exact
+   chi2_contingency
+   expected_freq
+   margins
+   
+General Linear Model
+--------------------
 
 .. autosummary::
    :toctree: generated/

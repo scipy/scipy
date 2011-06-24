@@ -2238,8 +2238,8 @@ def fisher_exact(table, alternative='two-sided'):
 
     See Also
     --------
-    chisquare : inexact alternative that can be used when sample sizes are
-                large enough.
+    chi2_contingency : Chi-square test of independence of observations in a
+        contingency table.
 
     Notes
     -----
@@ -2254,7 +2254,7 @@ def fisher_exact(table, alternative='two-sided'):
     Examples
     --------
     Say we spend a few days counting whales and sharks in the Atlantic and
-    Indian oceans. In the Atlantic ocean we find 6 whales and 1 shark, in the
+    Indian oceans. In the Atlantic ocean we find 8 whales and 1 shark, in the
     Indian ocean 2 whales and 5 sharks. Then our contingency table is::
 
                 Atlantic  Indian
