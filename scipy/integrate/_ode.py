@@ -38,129 +38,6 @@ real valued system. It supports the real valued solvers (i.e not zvode) and is
 an alternative to ode with the zvode solver, sometimes performing better.
 """
 
-integrator_info = \
-"""
-Available integrators
----------------------
-
-vode
-~~~~
-
-Real-valued Variable-coefficient Ordinary Differential Equation
-solver, with fixed-leading-coefficient implementation. It provides
-implicit Adams method (for non-stiff problems) and a method based on
-backward differentiation formulas (BDF) (for stiff problems).
-
-Source: http://www.netlib.org/ode/vode.f
-
-This integrator accepts the following parameters in set_integrator()
-method of the ode class:
-
-- atol : float or sequence
-  absolute tolerance for solution
-- rtol : float or sequence
-  relative tolerance for solution
-- lband : None or int
-- rband : None or int
-  Jacobian band width, jac[i,j] != 0 for i-lband <= j <= i+rband.
-  Setting these requires your jac routine to return the jacobian
-  in packed format, jac_packed[i-j+lband, j] = jac[i,j].
-- method: 'adams' or 'bdf'
-  Which solver to use, Adams (non-stiff) or BDF (stiff)
-- with_jacobian : bool
-  Whether to use the jacobian
-- nsteps : int
-  Maximum number of (internally defined) steps allowed during one
-  call to the solver.
-- first_step : float
-- min_step : float
-- max_step : float
-  Limits for the step sizes used by the integrator.
-- order : int
-  Maximum order used by the integrator,
-  order <= 12 for Adams, <= 5 for BDF.
-
-zvode
-~~~~~
-
-Complex-valued Variable-coefficient Ordinary Differential Equation
-solver, with fixed-leading-coefficient implementation.  It provides
-implicit Adams method (for non-stiff problems) and a method based on
-backward differentiation formulas (BDF) (for stiff problems).
-
-Source: http://www.netlib.org/ode/zvode.f
-
-This integrator accepts the same parameters in set_integrator()
-as the "vode" solver.
-
-:Note:
-    When using ZVODE for a stiff system, it should only be used for
-    the case in which the function f is analytic, that is, when each f(i)
-    is an analytic function of each y(j).  Analyticity means that the
-    partial derivative df(i)/dy(j) is a unique complex number, and this
-    fact is critical in the way ZVODE solves the dense or banded linear
-    systems that arise in the stiff case.  For a complex stiff ODE system
-    in which f is not analytic, ZVODE is likely to have convergence
-    failures, and for this problem one should instead use DVODE on the
-    equivalent real system (in the real and imaginary parts of y).
-
-dopri5
-~~~~~~
-
-    Numerical solution of a system of first order
-    ordinary differential equations  y'=f(x,y).
-    this is an explicit runge-kutta method of order (4)5
-    due to Dormand & Prince (with stepsize control and
-    dense output).
-
-    Authors: E. Hairer and G. Wanner
-             Universite de Geneve, Dept. de Mathematiques
-             CH-1211 Geneve 24, Switzerland
-             e-mail:  ernst.hairer@math.unige.ch
-                      gerhard.wanner@math.unige.ch
-
-    This code is described in:
-          E. Hairer, S.P. Norsett and G. Wanner, Solving Ordinary
-          Differential Equations i. Nonstiff Problems. 2nd edition.
-          Springer Series in Computational Mathematics,
-          Springer-Verlag (1993)
-
-This integrator accepts the following parameters in set_integrator()
-method of the ode class:
-
-- atol : float or sequence
-  absolute tolerance for solution
-- rtol : float or sequence
-  relative tolerance for solution
-- nsteps : int
-  Maximum number of (internally defined) steps allowed during one
-  call to the solver.
-- first_step : float
-- max_step : float
-- safety : float
-  Safety factor on new step selection (default 0.9)
-- ifactor : float
-- dfactor : float
-  Maximum factor to increase/decrease step size by in one step
-- beta : float
-  Beta parameter for stabilised step size control.
-
-dop853
-~~~~~~
-
-    Numerical solution of a system of first order
-    ordinary differential equations  y'=f(x,y).
-    This is an explicit runge-kutta method of order 8(5,3)
-    due to Dormand & Prince (with stepsize control and
-    dense output).
-
-    Options and references the same as dopri5.
-
-"""
-
-if __doc__:
-    __doc__ += integrator_info
-
 # XXX: Integrators must have:
 # ===========================
 # cvode - C version of vode and vodpk with many improvements.
@@ -224,13 +101,149 @@ class ode(object):
     """\
 A generic interface class to numeric integrators.
 
+Solve an equation system :math:`y'(t) = f(t,y)` with (optional) ``jac = df/dy``.
+
+Parameters
+----------
+f : callable f(t, y, *f_args)
+    Rhs of the equation. t is a scalar, y.shape == (n,).
+    f_args is set by calling set_f_params(*args)
+jac : callable jac(t, y, *jac_args)
+    Jacobian of the rhs, jac[i,j] = d f[i] / d y[j]
+    jac_args is set by calling set_f_params(*args)
+
+Attributes
+----------
+t : float
+    Current time
+y : ndarray
+    Current variable values
+
 See also
 --------
 odeint : an integrator with a simpler interface based on lsoda from ODEPACK
 quad : for finding the area under a curve
 
+Notes
+-----
+
+Available integrators are listed below. They can be selected using
+the `set_integrator` method.
+
+"vode"
+
+    Real-valued Variable-coefficient Ordinary Differential Equation
+    solver, with fixed-leading-coefficient implementation. It provides
+    implicit Adams method (for non-stiff problems) and a method based on
+    backward differentiation formulas (BDF) (for stiff problems).
+
+    Source: http://www.netlib.org/ode/vode.f
+
+    .. warning::
+
+       This integrator is not re-entrant. You cannot have two `ode`
+       instances using the "vode" integrator at the same time.
+
+    This integrator accepts the following parameters in `set_integrator`
+    method of the `ode` class:
+
+    - atol : float or sequence
+      absolute tolerance for solution
+    - rtol : float or sequence
+      relative tolerance for solution
+    - lband : None or int
+    - rband : None or int
+      Jacobian band width, jac[i,j] != 0 for i-lband <= j <= i+rband.
+      Setting these requires your jac routine to return the jacobian
+      in packed format, jac_packed[i-j+lband, j] = jac[i,j].
+    - method: 'adams' or 'bdf'
+      Which solver to use, Adams (non-stiff) or BDF (stiff)
+    - with_jacobian : bool
+      Whether to use the jacobian
+    - nsteps : int
+      Maximum number of (internally defined) steps allowed during one
+      call to the solver.
+    - first_step : float
+    - min_step : float
+    - max_step : float
+      Limits for the step sizes used by the integrator.
+    - order : int
+      Maximum order used by the integrator,
+      order <= 12 for Adams, <= 5 for BDF.
+
+"zvode"
+
+    Complex-valued Variable-coefficient Ordinary Differential Equation
+    solver, with fixed-leading-coefficient implementation.  It provides
+    implicit Adams method (for non-stiff problems) and a method based on
+    backward differentiation formulas (BDF) (for stiff problems).
+
+    Source: http://www.netlib.org/ode/zvode.f
+
+    .. warning::
+
+       This integrator is not re-entrant. You cannot have two `ode`
+       instances using the "zvode" integrator at the same time.
+
+    This integrator accepts the same parameters in `set_integrator`
+    as the "vode" solver.
+
+    .. note::
+
+        When using ZVODE for a stiff system, it should only be used for
+        the case in which the function f is analytic, that is, when each f(i)
+        is an analytic function of each y(j).  Analyticity means that the
+        partial derivative df(i)/dy(j) is a unique complex number, and this
+        fact is critical in the way ZVODE solves the dense or banded linear
+        systems that arise in the stiff case.  For a complex stiff ODE system
+        in which f is not analytic, ZVODE is likely to have convergence
+        failures, and for this problem one should instead use DVODE on the
+        equivalent real system (in the real and imaginary parts of y).
+
+"dopri5"
+
+    This is an explicit runge-kutta method of order (4)5 due to Dormand &
+    Prince (with stepsize control and dense output).
+
+    Authors:
+
+        E. Hairer and G. Wanner
+        Universite de Geneve, Dept. de Mathematiques
+        CH-1211 Geneve 24, Switzerland
+        e-mail:  ernst.hairer@math.unige.ch, gerhard.wanner@math.unige.ch
+
+    This code is described in [HNW93]_.
+
+    This integrator accepts the following parameters in set_integrator()
+    method of the ode class:
+
+    - atol : float or sequence
+      absolute tolerance for solution
+    - rtol : float or sequence
+      relative tolerance for solution
+    - nsteps : int
+      Maximum number of (internally defined) steps allowed during one
+      call to the solver.
+    - first_step : float
+    - max_step : float
+    - safety : float
+      Safety factor on new step selection (default 0.9)
+    - ifactor : float
+    - dfactor : float
+      Maximum factor to increase/decrease step size by in one step
+    - beta : float
+      Beta parameter for stabilised step size control.
+
+"dop853"
+
+    This is an explicit runge-kutta method of order 8(5,3) due to Dormand
+    & Prince (with stepsize control and dense output).
+
+    Options and references the same as "dopri5".
+
 Examples
 --------
+
 A problem to integrate and the corresponding jacobian:
 
 >>> from scipy.integrate import ode
@@ -252,24 +265,17 @@ The integration:
 >>>     r.integrate(r.t+dt)
 >>>     print r.t, r.y
 
+References
+----------
+
+.. [HNW93] E. Hairer, S.P. Norsett and G. Wanner, Solving Ordinary
+    Differential Equations i. Nonstiff Problems. 2nd edition.
+    Springer Series in Computational Mathematics,
+    Springer-Verlag (1993)
+
 """
 
-    if __doc__:
-        __doc__ += integrator_info
-
     def __init__(self, f, jac=None):
-        """
-        Define equation y' = f(y,t) where (optional) jac = df/dy.
-
-        Parameters
-        ----------
-        f : f(t, y, *f_args)
-            Rhs of the equation. t is a scalar, y.shape == (n,).
-            f_args is set by calling set_f_params(*args)
-        jac : jac(t, y, *jac_args)
-            Jacobian of the rhs, jac[i,j] = d f[i] / d y[j]
-            jac_args is set by calling set_f_params(*args)
-        """
         self.stiff = 0
         self.f = f
         self.jac = jac
@@ -347,25 +353,35 @@ The integration:
 
 
 class complex_ode(ode):
-    """ A wrapper of ode for complex systems.
+    """
+    A wrapper of ode for complex systems.
 
+    This functions similarly as `ode`, but re-maps a complex-valued
+    equation system to a real-valued one before using the integrators.
+
+    Parameters
+    ----------
+    f : callable f(t, y, *f_args)
+        Rhs of the equation. t is a scalar, y.shape == (n,).
+        f_args is set by calling set_f_params(*args)
+    jac : jac(t, y, *jac_args)
+        Jacobian of the rhs, jac[i,j] = d f[i] / d y[j]
+        jac_args is set by calling set_f_params(*args)
+
+    Attributes
+    ----------
+    t : float
+        Current time
+    y : ndarray
+        Current variable values
+
+    Examples
+    --------
     For usage examples, see `ode`.
 
     """
 
     def __init__(self, f, jac=None):
-        """
-        Define equation y' = f(y,t), where y and f can be complex.
-
-        Parameters
-        ----------
-        f : f(t, y, *f_args)
-            Rhs of the equation. t is a scalar, y.shape == (n,).
-            f_args is set by calling set_f_params(*args)
-        jac : jac(t, y, *jac_args)
-            Jacobian of the rhs, jac[i,j] = d f[i] / d y[j]
-            jac_args is set by calling set_f_params(*args)
-        """
         self.cf = f
         self.cjac = jac
         if jac is not None:

@@ -43,6 +43,7 @@ Integrators of ODE systems
 
    odeint        -- General integration of ordinary differential equations.
    ode           -- Integrate ODE using VODE and ZVODE routines.
+   complex_ode   -- Convert a complex-valued ODE to real-valued and integrate.
 
 """
 
