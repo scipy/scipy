@@ -8,7 +8,7 @@ from numpy import arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp, \
                   allclose
 
 from numpy.testing import assert_, TestCase, run_module_suite, \
-        assert_array_almost_equal
+        assert_array_almost_equal, assert_raises, assert_allclose
 from scipy.integrate import odeint, ode, complex_ode
 
 #------------------------------------------------------------------------------
@@ -87,6 +87,55 @@ class TestOde(TestCase):
             if problem.stiff: continue
             if hasattr(problem, 'jac'): continue
             self._do_problem(problem, 'dop853')
+
+    def test_concurrent_fail(self):
+        for sol in ('vode', 'zvode'):
+            f = lambda t, y: 1.0
+
+            r = ode(f).set_integrator(sol)
+            r.set_initial_value(0, 0)
+
+            r2 = ode(f).set_integrator(sol)
+            r2.set_initial_value(0, 0)
+
+            r.integrate(r.t + 0.1)
+            r2.integrate(r2.t + 0.1)
+
+            assert_raises(RuntimeError, r.integrate, r.t + 0.1)
+
+    def test_concurrent_ok(self):
+        f = lambda t, y: 1.0
+
+        for k in xrange(3):
+            for sol in ('vode', 'zvode', 'dopri5', 'dop853'):
+                r = ode(f).set_integrator(sol)
+                r.set_initial_value(0, 0)
+
+                r2 = ode(f).set_integrator(sol)
+                r2.set_initial_value(0, 0)
+
+                r.integrate(r.t + 0.1)
+                r2.integrate(r2.t + 0.1)
+                r2.integrate(r2.t + 0.1)
+
+                assert_allclose(r.y, 0.1)
+                assert_allclose(r2.y, 0.2)
+
+            for sol in ('dopri5', 'dop853'):
+                r = ode(f).set_integrator(sol)
+                r.set_initial_value(0, 0)
+
+                r2 = ode(f).set_integrator(sol)
+                r2.set_initial_value(0, 0)
+
+                r.integrate(r.t + 0.1)
+                r.integrate(r.t + 0.1)
+                r2.integrate(r2.t + 0.1)
+                r.integrate(r.t + 0.1)
+                r2.integrate(r2.t + 0.1)
+
+                assert_allclose(r.y, 0.3)
+                assert_allclose(r2.y, 0.2)
 
 class TestComplexOde(TestCase):
     """

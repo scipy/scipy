@@ -437,13 +437,24 @@ class complex_ode(ode):
 # ODE integrators
 #------------------------------------------------------------------------------
 
-
 def find_integrator(name):
     for cl in IntegratorBase.integrator_classes:
         if re.match(name, cl.__name__, re.I):
             return cl
     return None
 
+class IntegratorConcurrencyError(RuntimeError):
+    """
+    Failure due to concurrent usage of an integrator that can be used
+    only for a single problem at a time.
+
+    """
+    def __init__(self, name):
+        msg = ("Integrator `%s` can be used to solve only a single problem "
+               "at a time. If you want to integrate multiple problems, "
+               "consider using a different integrator "
+               "(see `ode.set_integrator`)") % name
+        RuntimeError.__init__(self, msg)
 
 class IntegratorBase(object):
 
@@ -453,6 +464,17 @@ class IntegratorBase(object):
     supports_step = None
     integrator_classes = []
     scalar = float
+
+    def acquire_new_handle(self):
+        # Some of the integrators have internal state (ancient
+        # Fortran...), and so only one instance can use them at a time.
+        # We keep track of this, and fail when concurrent usage is tried.
+        self.__class__.active_global_handle += 1
+        self.handle = self.__class__.active_global_handle
+
+    def check_handle(self):
+        if self.handle is not self.__class__.active_global_handle:
+            raise IntegratorConcurrencyError(self.__class__.__name__)
 
     def reset(self, n, has_jac):
         """Prepare integrator for call: allocate memory, set flags, etc.
@@ -496,6 +518,7 @@ class vode(IntegratorBase):
                 }
     supports_run_relax = 1
     supports_step = 1
+    active_global_handle = 0
 
     def __init__(self,
                  method='adams',
@@ -527,6 +550,8 @@ class vode(IntegratorBase):
         self.min_step = min_step
         self.first_step = first_step
         self.success = 1
+
+        self.initialized = False
 
     def reset(self, n, has_jac):
         # Calculate parameters for Fortran subroutine dvode.
@@ -594,8 +619,14 @@ class vode(IntegratorBase):
         self.call_args = [self.rtol, self.atol, 1, 1,
                           self.rwork, self.iwork, mf]
         self.success = 1
+        self.initialized = False
 
     def run(self, *args):
+        if self.initialized:
+            self.check_handle()
+        else:
+            self.initialized = True
+            self.acquire_new_handle()
         y1, t, istate = self.runner(*(args[:5] + tuple(self.call_args) +
                                       args[5:]))
         if istate < 0:
@@ -632,6 +663,7 @@ class zvode(vode):
     supports_run_relax = 1
     supports_step = 1
     scalar = complex
+    active_global_handle = 0
 
     def reset(self, n, has_jac):
         # Calculate parameters for Fortran subroutine dvode.
@@ -716,8 +748,14 @@ class zvode(vode):
         self.call_args = [self.rtol, self.atol, 1, 1,
                           self.zwork, self.rwork, self.iwork, mf]
         self.success = 1
+        self.initialized = False
 
     def run(self, *args):
+        if self.initialized:
+            self.check_handle()
+        else:
+            self.initialized = True
+            self.acquire_new_handle()
         y1, t, istate = self.runner(*(args[:5] + tuple(self.call_args) +
                                     args[5:]))
         if istate < 0:
