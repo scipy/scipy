@@ -36,8 +36,23 @@ class dok_matrix(spmatrix, dict):
             create the matrix with initial shape (M,N)
             dtype is optional, defaulting to dtype='d'
 
+    Attributes
+    ----------
+    dtype : dtype
+        Data type of the matrix
+    shape : 2-tuple
+        Shape of the matrix
+    ndim : int
+        Number of dimensions (this is always 2)
+    nnz
+        Number of nonzero elements
+
     Notes
     -----
+
+    Sparse matrices can be used in arithmetic operations: they support
+    addition, subtraction, multiplication, division, and matrix power.
+
     Allows for efficient O(1) access of individual elements.
     Duplicates are not allowed.
     Can be efficiently converted to a coo_matrix once constructed.

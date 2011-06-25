@@ -29,8 +29,26 @@ class lil_matrix(spmatrix):
             to construct an empty matrix with shape (M, N)
             dtype is optional, defaulting to dtype='d'.
 
+    Attributes
+    ----------
+    dtype : dtype
+        Data type of the matrix
+    shape : 2-tuple
+        Shape of the matrix
+    ndim : int
+        Number of dimensions (this is always 2)
+    nnz
+        Number of nonzero elements
+    data
+        LIL format data array of the matrix
+    rows
+        LIL format row index array of the matrix
+
     Notes
     -----
+
+    Sparse matrices can be used in arithmetic operations: they support
+    addition, subtraction, multiplication, division, and matrix power.
 
     Advantages of the LIL format
         - supports flexible slicing

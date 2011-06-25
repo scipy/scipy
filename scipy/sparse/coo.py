@@ -39,9 +39,28 @@ class coo_matrix(_data_matrix):
             Where ``A[ij[0][k], ij[1][k] = data[k]``.  When shape is
             not specified, it is inferred from the index arrays
 
+    Attributes
+    ----------
+    dtype : dtype
+        Data type of the matrix
+    shape : 2-tuple
+        Shape of the matrix
+    ndim : int
+        Number of dimensions (this is always 2)
+    nnz
+        Number of nonzero elements
+    data
+        COO format data array of the matrix
+    row
+        COO format row index array of the matrix
+    col
+        COO format column index array of the matrix
 
     Notes
     -----
+
+    Sparse matrices can be used in arithmetic operations: they support
+    addition, subtraction, multiplication, division, and matrix power.
 
     Advantages of the COO format
         - facilitates fast conversion among sparse formats

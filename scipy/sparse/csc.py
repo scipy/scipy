@@ -19,6 +19,7 @@ class csc_matrix(_cs_matrix):
     Compressed Sparse Column matrix
 
     This can be instantiated in several ways:
+
         csc_matrix(D)
             with a dense matrix or rank-2 ndarray D
 
@@ -41,8 +42,31 @@ class csc_matrix(_cs_matrix):
             not supplied, the matrix dimensions are inferred from
             the index arrays.
 
+    Attributes
+    ----------
+    dtype : dtype
+        Data type of the matrix
+    shape : 2-tuple
+        Shape of the matrix
+    ndim : int
+        Number of dimensions (this is always 2)
+    nnz
+        Number of nonzero elements
+    data
+        Data array of the matrix
+    indices
+        CSC format index array
+    indptr
+        CSC format index pointer array
+    has_sorted_indices
+        Whether indices are sorted
+
     Notes
     -----
+
+    Sparse matrices can be used in arithmetic operations: they support
+    addition, subtraction, multiplication, division, and matrix power.
+
     Advantages of the CSC format
         - efficient arithmetic operations CSC + CSC, CSC * CSC, etc.
         - efficient column slicing
@@ -54,7 +78,7 @@ class csc_matrix(_cs_matrix):
 
 
     Examples
-    ========
+    --------
 
     >>> from scipy.sparse import *
     >>> from scipy import *

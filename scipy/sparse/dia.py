@@ -29,6 +29,26 @@ class dia_matrix(_data_matrix):
             where the ``data[k,:]`` stores the diagonal entries for
             diagonal ``offsets[k]`` (See example below)
 
+    Attributes
+    ----------
+    dtype : dtype
+        Data type of the matrix
+    shape : 2-tuple
+        Shape of the matrix
+    ndim : int
+        Number of dimensions (this is always 2)
+    nnz
+        Number of nonzero elements
+    data
+        DIA format data array of the matrix
+    offsets
+        DIA format offset array of the matrix
+
+    Notes
+    -----
+
+    Sparse matrices can be used in arithmetic operations: they support
+    addition, subtraction, multiplication, division, and matrix power.
 
     Examples
     --------

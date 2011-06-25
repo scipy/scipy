@@ -42,8 +42,31 @@ class csr_matrix(_cs_matrix):
             If the shape parameter is not supplied, the matrix dimensions
             are inferred from the index arrays.
 
+    Attributes
+    ----------
+    dtype : dtype
+        Data type of the matrix
+    shape : 2-tuple
+        Shape of the matrix
+    ndim : int
+        Number of dimensions (this is always 2)
+    nnz
+        Number of nonzero elements
+    data
+        CSR format data array of the matrix
+    indices
+        CSR format index array of the matrix
+    indptr
+        CSR format index pointer array of the matrix
+    has_sorted_indices
+        Whether indices are sorted
+
     Notes
     -----
+
+    Sparse matrices can be used in arithmetic operations: they support
+    addition, subtraction, multiplication, division, and matrix power.
+
     Advantages of the CSR format
       - efficient arithmetic operations CSR + CSR, CSR * CSR, etc.
       - efficient row slicing
