@@ -1,6 +1,29 @@
 """
-Orthogonal Distance Regression (:mod:`scipy.odr`)
 =================================================
+Orthogonal distance regression (:mod:`scipy.odr`)
+=================================================
+
+.. currentmodule:: scipy.odr
+
+Package Content
+===============
+
+.. autosummary::
+   :toctree: generated/
+
+   odr -- Perform orthogonal distance regression
+
+   ODR           -- Gathers all info & manages the main fitting routine.
+   Data          -- Stores the data to fit.
+   Model         -- Stores information about the function to be fit.
+   Output
+   RealData      -- Weights as actual std. dev.s and/or covariances.
+
+   odr_error
+   odr_stop
+
+Usage information
+=================
 
 Introduction
 ------------
@@ -50,39 +73,6 @@ References
    applications: proceedings of the AMS-IMS-SIAM joint summer research
    conference held June 10-16, 1989," Contemporary Mathematics,
    vol. 112, pg. 186, 1990.
-
-.. currentmodule:: scipy.odr
-
-Modules
--------
-
-.. autosummary::
-   :toctree: generated/
-
-   odrpack       Python wrappers for FORTRAN77 ODRPACK.
-   models        Model instances for use with odrpack.
-
-Classes
--------
-
-.. autosummary::
-   :toctree: generated/
-
-   ODR           Gathers all info & manages the main fitting routine.
-   Data          Stores the data to fit.
-   Model         Stores information about the function to be fit.
-   Output
-   RealData      Weights as actual std. dev.s and/or covariances.
-   odr_error
-   odr_stop
-
-Functions
----------
-
-.. autosummary::
-   :toctree: generated/
-
-   odr
 
 """
 postpone_import = 1

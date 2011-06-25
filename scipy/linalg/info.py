@@ -1,9 +1,22 @@
 """
-Linear Algebra
-==============
+====================================
+Linear algebra (:mod:`scipy.linalg`)
+====================================
+
+.. currentmodule:: scipy.linalg
+
+Linear algebra functions.
+
+.. seealso::
+
+   `numpy.linalg` for more linear algebra functions.  Note that
+   although `scipy.linalg` imports most of them, identically named
+   functions from `scipy.linalg` may offer more or slightly differing
+   functionality.
+
 
 Basics
-------
+======
 
 .. autosummary::
    :toctree: generated/
@@ -12,14 +25,18 @@ Basics
    solve - Solve a linear system of equations
    solve_banded - Solve a banded linear system
    solveh_banded - Solve a Hermitian or symmetric banded system
+   solve_triangular - Solve a triangular matrix
    det - Find the determinant of a square matrix
    norm - Matrix and vector norm
    lstsq - Solve a linear least-squares problem
    pinv - Pseudo-inverse (Moore-Penrose) using lstsq
    pinv2 - Pseudo-inverse using svd
+   kron - Kronecker product of two arrays
+   tril - Construct a lower-triangular matrix from a given matrix
+   triu - Construct an upper-triangular matrix from a given matrix
 
 Eigenvalue Problems
--------------------
+===================
 
 .. autosummary::
    :toctree: generated/
@@ -32,7 +49,7 @@ Eigenvalue Problems
    eigvals_banded - Find just the eigenvalues of a banded matrix
 
 Decompositions
---------------
+==============
 
 .. autosummary::
    :toctree: generated/
@@ -55,7 +72,7 @@ Decompositions
    hessenberg - Hessenberg form of a matrix
 
 Matrix Functions
-----------------
+================
 
 .. autosummary::
    :toctree: generated/
@@ -75,7 +92,7 @@ Matrix Functions
    funm - Evaluating an arbitrary matrix function
 
 Special Matrices
-----------------
+================
 
 .. autosummary::
    :toctree: generated/
@@ -87,12 +104,9 @@ Special Matrices
    hankel - Hankel matrix
    hilbert - Hilbert matrix
    invhilbert - Inverse Hilbert matrix
-   kron - Kronecker product of two arrays
    leslie - Leslie matrix
    toeplitz - Toeplitz matrix
    tri - Construct a matrix filled with ones at and below a given diagonal
-   tril - Construct a lower-triangular matrix from a given matrix
-   triu - Construct an upper-triangular matrix from a given matrix
 
 """
 

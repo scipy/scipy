@@ -41,4 +41,5 @@ Reference
    spatial
    special
    stats
+   stats.mstats
    weave

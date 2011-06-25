@@ -1,13 +1,86 @@
 """
-Sparse Matrices
-===============
+=====================================
+Sparse matrices (:mod:`scipy.sparse`)
+=====================================
+
+.. currentmodule:: scipy.sparse
 
 SciPy 2-D sparse matrix package.
 
-Original code by Travis Oliphant.
-Modified and extended by Ed Schofield, Robert Cimrman, and Nathan Bell.
+Contents
+========
+
+Sparse matrix classes
+---------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   bsr_matrix - Block Sparse Row matrix
+   coo_matrix - A sparse matrix in COOrdinate format
+   csc_matrix - Compressed Sparse Column matrix
+   csr_matrix - Compressed Sparse Row matrix
+   dia_matrix - Sparse matrix with DIAgonal storage
+   dok_matrix - Dictionary Of Keys based sparse matrix
+   lil_matrix - Row-based linked list sparse matrix
+
+Functions
+---------
+
+Building sparse matrices:
+
+.. autosummary::
+   :toctree: generated/
+
+   eye - Sparse MxN matrix whose k-th diagonal is all ones
+   identity - Identity matrix in sparse format
+   kron - kronecker product of two sparse matrices
+   kronsum - kronecker sum of sparse matrices
+   spdiags - Return a sparse matrix from diagonals
+   tril - Lower triangular portion of a matrix in sparse format
+   triu - Upper triangular portion of a matrix in sparse format
+   bmat - Build a sparse matrix from sparse sub-blocks
+   hstack - Stack sparse matrices horizontally (column wise)
+   vstack - Stack sparse matrices vertically (row wise)
+   rand - Random values in a given shape
+
+Identifying sparse matrices:
+
+.. autosummary::
+   :toctree: generated/
+
+   issparse
+   isspmatrix
+   isspmatrix_csc
+   isspmatrix_csr
+   isspmatrix_bsr
+   isspmatrix_lil
+   isspmatrix_dok
+   isspmatrix_coo
+   isspmatrix_dia
+
+Graph algorithms:
+
+.. autosummary::
+   :toctree: generated/
+
+   cs_graph_components -- Determine connected components of a graph
+
+Exceptions
+----------
+
+.. autosummary::
+   :toctree: generated/
+
+   SparseEfficiencyWarning
+   SparseWarning
+
+
+Usage information
+=================
 
 There are seven available sparse matrix types:
+
     1. csc_matrix: Compressed Sparse Column format
     2. csr_matrix: Compressed Sparse Row format
     3. bsr_matrix: Block Sparse Row format
@@ -93,79 +166,10 @@ CSR column indices are not necessarily sorted.  Likewise for CSC row
 indices.  Use the .sorted_indices() and .sort_indices() methods when
 sorted indices are required (e.g. when passing data to other libraries).
 
-Package Contents
-================
-
-Modules
--------
-
-.. autosummary::
-   :toctree: generated/
-
-   base - Base class for sparse matrices
-   bsr - Compressed Block Sparse Row matrix format
-   compressed - Sparse matrix base class using compressed storage
-   construct - Functions to construct sparse matrices
-   coo - A sparse matrix in COOrdinate or 'triplet' format
-   csc - Compressed Sparse Column matrix format
-   csgraph - Compressed Sparse graph algorithms
-   csr - Compressed Sparse Row matrix format
-   data - Base class for sparse matrice with a .data attribute
-   dia - Sparse DIAgonal format
-   dok - Dictionary Of Keys based matrix
-   extract - Functions to extract parts of sparse matrices
-   lil - LInked List sparse matrix class
-   linalg -
-   sparsetools - A collection of routines for sparse matrix operations
-   spfuncs - Functions that operate on sparse matrices
-   sputils - Utility functions for sparse matrix module
-
-Classes
--------
-
-.. autosummary::
-   :toctree: generated/
-
-   SparseEfficiencyWarning -
-   SparseWarning -
-   bsr_matrix - Block Sparse Row matrix
-   coo_matrix - A sparse matrix in COOrdinate format
-   csc_matrix - Compressed Sparse Column matrix
-   csr_matrix - Compressed Sparse Row matrix
-   dia_matrix - Sparse matrix with DIAgonal storage
-   dok_matrix - Dictionary Of Keys based sparse matrix
-   lil_matrix - Row-based linked list sparse matrix
-
-Functions
----------
-
-.. autosummary::
-   :toctree: generated/
-
-   bmat - Build a sparse matrix from sparse sub-blocks
-   cs_graph_components -
-   eye - Sparse MxN matrix whose k-th diagonal is all ones
-   find -
-   hstack - Stack sparse matrices horizontally (column wise)
-   identity - Identity matrix in sparse format
-   issparse -
-   isspmatrix -
-   isspmatrix_bsr -
-   isspmatrix_coo -
-   isspmatrix_csc -
-   isspmatrix_csr -
-   isspmatrix_dia -
-   isspmatrix_dok -
-   isspmatrix_lil -
-   kron - kronecker product of two sparse matrices
-   kronsum - kronecker sum of sparse matrices
-   rand - Random values in a given shape
-   spdiags - Return a sparse matrix from diagonals
-   tril - Lower triangular portion of a matrix in sparse format
-   triu - Upper triangular portion of a matrix in sparse format
-   vstack - Stack sparse matrices vertically (row wise)
-
 """
+
+# Original code by Travis Oliphant.
+# Modified and extended by Ed Schofield, Robert Cimrman, and Nathan Bell.
 
 __docformat__ = "restructuredtext en"
 

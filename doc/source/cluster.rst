@@ -1,10 +1,7 @@
-=========================================
-Clustering package (:mod:`scipy.cluster`)
-=========================================
+.. automodule:: scipy.cluster
 
 .. toctree::
+   :hidden:
 
-   cluster.hierarchy
    cluster.vq
-
-.. automodule:: scipy.cluster
+   cluster.hierarchy

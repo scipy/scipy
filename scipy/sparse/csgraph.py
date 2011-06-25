@@ -16,11 +16,13 @@ _msg1 = _msg0 + '(has shape %s)'
 
 def cs_graph_components(x):
     """
-    Determine connected compoments of a graph stored as a compressed
-    sparse row or column matrix. For speed reasons, the symmetry of the
-    matrix x is not checked. A nonzero at index `(i, j)` means that node
-    `i` is connected to node `j` by an edge. The number of rows/columns
-    of the matrix thus corresponds to the number of nodes in the graph.
+    Determine connected components of a graph stored as a compressed
+    sparse row or column matrix.
+
+    For speed reasons, the symmetry of the matrix x is not checked. A
+    nonzero at index `(i, j)` means that node `i` is connected to node
+    `j` by an edge. The number of rows/columns of the matrix thus
+    corresponds to the number of nodes in the graph.
 
     Parameters
     -----------

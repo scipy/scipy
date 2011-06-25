@@ -1,8 +1,15 @@
 """
-Integration routines
-====================
+=============================================
+Integration and ODEs (:mod:`scipy.integrate`)
+=============================================
 
- Methods for Integrating Functions given function object.
+.. currentmodule:: scipy.integrate
+
+Integrating functions, given function object
+============================================
+
+.. autosummary::
+   :toctree: generated/
 
    quad          -- General purpose integration.
    dblquad       -- General purpose double integration.
@@ -11,18 +18,28 @@ Integration routines
    quadrature    -- Integrate with given tolerance using Gaussian quadrature.
    romberg       -- Integrate func using Romberg integration.
 
- Methods for Integrating Functions given fixed samples.
+Integrating functions, given fixed samples
+==========================================
+
+.. autosummary::
+   :toctree: generated/
 
    trapz         -- Use trapezoidal rule to compute integral from samples.
    cumtrapz      -- Use trapezoidal rule to cumulatively compute integral.
    simps         -- Use Simpson's rule to compute integral from samples.
    romb          -- Use Romberg Integration to compute integral from
-                    (2**k + 1) evenly-spaced samples.
+                 -- (2**k + 1) evenly-spaced samples.
 
-   See the special module's orthogonal polynomials (special) for Gaussian
-      quadrature roots and weights for other weighting factors and regions.
+.. seealso::
 
- Interface to numerical integrators of ODE systems.
+   :mod:`scipy.special` for orthogonal polynomials (special) for Gaussian
+   quadrature roots and weights for other weighting factors and regions.
+
+Integrators of ODE systems
+==========================
+
+.. autosummary::
+   :toctree: generated/
 
    odeint        -- General integration of ordinary differential equations.
    ode           -- Integrate ODE using VODE and ZVODE routines.

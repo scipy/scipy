@@ -1,4 +1,10 @@
 """
+========================================
+Interpolation (:mod:`scipy.interpolate`)
+========================================
+
+.. currentmodule:: scipy.interpolate
+
 Sub-package for objects used in interpolation.
 
 As listed below, this sub-package contains spline functions and classes,
@@ -35,13 +41,15 @@ Unstructured data:
    NearestNDInterpolator
    CloughTocher2DInterpolator
    Rbf
+   interp2d
 
-Data given on a regular grid:
+For data on a grid:
 
 .. autosummary::
-   :toctree: generated/
 
-   interp2d
+   RectBivariateSpline
+
+.. seealso:: `scipy.ndimage.map_coordinates`
 
 
 1-D Splines
@@ -56,9 +64,7 @@ Data given on a regular grid:
 
 The above univariate spline classes have the following methods:
 
-
 .. autosummary::
-   :toctree: generated/
 
    UnivariateSpline.__call__
    UnivariateSpline.derivatives
@@ -88,7 +94,14 @@ Low-level interface to FITPACK functions:
 2-D Splines
 ===========
 
-.. seealso:: scipy.ndimage.map_coordinates
+For data on a grid:
+
+.. autosummary::
+   :toctree: generated/
+
+   RectBivariateSpline
+
+For unstructured data:
 
 .. autosummary::
    :toctree: generated/
@@ -116,17 +129,17 @@ Additional tools
 
 .. seealso::
 
-   ndimage.map_coordinates
-   ndimage.spline_filter
-   signal.resample
-   signal.bspline
-   signal.gauss_spline
-   signal.qspline1d
-   signal.cspline1d
-   signal.qspline1d_eval
-   signal.cspline1d_eval
-   signal.qspline2d
-   signal.cspline2d
+   `scipy.ndimage.map_coordinates`,
+   `scipy.ndimage.spline_filter`,
+   `scipy.signal.resample`,
+   `scipy.signal.bspline`,
+   `scipy.signal.gauss_spline`,
+   `scipy.signal.qspline1d`,
+   `scipy.signal.cspline1d`,
+   `scipy.signal.qspline1d_eval`,
+   `scipy.signal.cspline1d_eval`,
+   `scipy.signal.qspline2d`,
+   `scipy.signal.cspline2d`.
 
 """
 

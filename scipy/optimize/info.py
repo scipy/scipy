@@ -1,9 +1,15 @@
 """
-Optimization Tools
-==================
+=====================================================
+Optimization and root finding (:mod:`scipy.optimize`)
+=====================================================
 
-General-purpose Optimization Routines
--------------------------------------
+.. currentmodule:: scipy.optimize
+
+Optimization
+============
+
+General-purpose
+---------------
 
 .. autosummary::
    :toctree: generated/
@@ -15,8 +21,8 @@ General-purpose Optimization Routines
    fmin_ncg - Line-search Newton Conjugate Gradient
    leastsq - Minimize the sum of squares of M equations in N unknowns
 
-Constrained Optimizers (Multivariate)
--------------------------------------
+Constrained (multivariate)
+--------------------------
 
 .. autosummary::
    :toctree: generated/
@@ -27,8 +33,8 @@ Constrained Optimizers (Multivariate)
    fmin_slsqp - Minimization using sequential least-squares programming
    nnls - Linear least-squares problem with non-negativity constraint
 
-Global Optimizers
------------------
+Global
+------
 
 .. autosummary::
    :toctree: generated/
@@ -36,7 +42,7 @@ Global Optimizers
    anneal - Simulated annealing
    brute - Brute force searching optimizer
 
-Scalar Function Minimizers
+Scalar function minimizers
 --------------------------
 
 .. autosummary::
@@ -53,7 +59,7 @@ Fitting
 .. autosummary::
    :toctree: generated/
 
-   curve_fit
+   curve_fit -- Fit curve to a set of points
 
 Root finding
 ============
@@ -76,7 +82,6 @@ Fixed point finding:
    :toctree: generated/
 
    fixed_point - Single-variable fixed-point solver
-
 
 Multidimensional
 ----------------
@@ -106,6 +111,8 @@ Simple iterations:
    excitingmixing
    linearmixing
    diagbroyden
+
+:mod:`Additional information on the nonlinear solvers <scipy.optimize.nonlin>`
 
 Utility Functions
 =================

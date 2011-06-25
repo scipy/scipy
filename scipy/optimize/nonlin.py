@@ -1,4 +1,7 @@
 r"""
+.. module:: scipy.optimize.nonlin
+
+=================
 Nonlinear solvers
 =================
 
@@ -9,7 +12,7 @@ solvers.  These solvers find *x* for which *F(x) = 0*. Both *x*
 and *F* can be multidimensional.
 
 Routines
---------
+========
 
 Large-scale nonlinear solvers:
 

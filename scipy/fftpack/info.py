@@ -1,24 +1,11 @@
 # This file is executed by __init__.py.
 """
-Discrete Fourier transform algorithms
-
-Modules
-=======
-
-.. autosummary::
-   :toctree: generated/
-
-   basic - Basic discrete Fourier transform operators
-   convolve - Convolution functions
-   helper - Helper functions, frequency shifts and sample frequencies
-   pseudo_diffs - Differential and pseudo-differential operators
-   realtransforms - Real spectrum tranforms (DCT, DST, MDCT)
-
-Functions
-=========
+==================================================
+Discrete Fourier transforms (:mod:`scipy.fftpack`)
+==================================================
 
 Fast Fourier Transforms (FFTs)
-------------------------------
+==============================
 
 .. autosummary::
    :toctree: generated/
@@ -35,7 +22,7 @@ Fast Fourier Transforms (FFTs)
    idct - Inverse discrete cosine transform
 
 Differential and pseudo-differential operators
-----------------------------------------------
+==============================================
 
 .. autosummary::
    :toctree: generated/
@@ -52,7 +39,7 @@ Differential and pseudo-differential operators
    shift - Shift periodic sequences
 
 Helper functions
-----------------
+================
 
 .. autosummary::
    :toctree: generated/
@@ -61,6 +48,37 @@ Helper functions
    ifftshift - The inverse of `fftshift`
    fftfreq - Return the Discrete Fourier Transform sample frequencies
    rfftfreq - DFT sample frequencies (for usage with rfft, irfft)
+
+
+Convolutions (:mod:`scipy.fftpack.convolve`)
+============================================
+
+.. module:: scipy.fftpack.convolve
+
+.. autosummary::
+   :toctree: generated/
+
+   convolve
+   convolve_z
+   init_convolution_kernel
+   destroy_convolve_cache
+
+
+Other (:mod:`scipy.fftpack._fftpack`)
+=====================================
+
+.. module:: scipy.fftpack._fftpack
+
+.. autosummary::
+   :toctree: generated/
+
+   drfft
+   zfft
+   zrfft
+   zfftnd
+   destroy_drfft_cache
+   destroy_zfft_cache
+   destroy_zfftnd_cache
 
 """
 

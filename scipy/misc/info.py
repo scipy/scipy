@@ -1,23 +1,16 @@
 """
+==========================================
+Miscellaneous routines (:mod:`scipy.misc`)
+==========================================
+
+.. currentmodule:: scipy.misc
+
 Various utilities that don't have another home.
 
 Note that the Python Imaging Library (PIL) is not a dependency
 of SciPy and therefore the `pilutil` module is not available on
 systems that don't have PIL installed.
 
-Modules
--------
-.. autosummary::
-   :toctree: generated/
-
-   common     - Common functions requiring SciPy Base and Level 1 SciPy
-   doccer     - Docstring fragment insertion utilities
-   pilutil    - Image utilities using the Python Imaging Library (PIL)
-   setup      -
-   setupscons -
-
-Functions
----------
 .. autosummary::
    :toctree: generated/
 

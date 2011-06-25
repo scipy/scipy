@@ -2,16 +2,12 @@
 
 import sys, os, re
 
-# If your extensions are in another directory, add it here. If the directory
-# is relative to the documentation root, use os.path.abspath to make it
-# absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../sphinxext'))
-
 # Check Sphinx version
 import sphinx
-if sphinx.__version__ < "0.5":
-    raise RuntimeError("Sphinx 0.5.dev or newer required")
+if sphinx.__version__ < "1.0.1":
+    raise RuntimeError("Sphinx 1.0.1 or newer required")
 
+needs_sphinx = '1.0'
 
 # -----------------------------------------------------------------------------
 # General configuration
@@ -19,15 +15,29 @@ if sphinx.__version__ < "0.5":
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
+
+sys.path.insert(0, os.path.abspath('../sphinxext'))
+
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.pngmath', 'numpydoc',
-              'sphinx.ext.intersphinx', 'sphinx.ext.coverage', 'plot_directive']
+              'sphinx.ext.intersphinx', 'sphinx.ext.coverage',
+              'sphinx.ext.autosummary']
 
-if sphinx.__version__ >= "0.7":
-    extensions.append('sphinx.ext.autosummary')
+# Determine if the matplotlib has a recent enough version of the
+# plot_directive, otherwise use the local fork.
+try:
+    from matplotlib.sphinxext import plot_directive
+except ImportError:
+    use_matplotlib_plot_directive = False
 else:
-    extensions.append('autosummary')
-    extensions.append('only_directives')
+    try:
+        use_matplotlib_plot_directive = (plot_directive.__version__ >= 2)
+    except AttributeError:
+        use_matplotlib_plot_directive = False
 
+if use_matplotlib_plot_directive:
+    extensions.append('matplotlib.sphinxext.plot_directive')
+else:
+    extensions.append('plot_directive')
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

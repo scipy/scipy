@@ -1,9 +1,23 @@
 """
-K-means Clustering and Vector Quantization Module
+====================================================================
+K-means clustering and vector quantization (:mod:`scipy.cluster.vq`)
+====================================================================
 
 Provides routines for k-means clustering, generating code books
 from k-means models, and quantizing vectors by comparing them with
 centroids in a code book.
+
+.. autosummary::
+   :toctree: generated/
+
+   whiten -- Normalize a group of observations so each feature has unit variance
+   vq -- Calculate code book membership of a set of observation vectors
+   kmeans -- Performs k-means on a set of observation vectors forming k clusters
+   kmeans2 -- A different implementation of k-means with more methods
+           -- for initializing centroids
+
+Background information
+======================
 
 The k-means algorithm takes as input the number of clusters to
 generate, k, and a set of observation vectors to cluster.  It
@@ -51,26 +65,6 @@ image of interest was of an ocean, we would expect many 24-bit
 blues to be represented by 8-bit codes. If it was an image of a
 human face, more flesh tone colors would be represented in the
 code book.
-
-Functions
----------
-`whiten` :
-    Normalize a group of observations so each feature has unit
-    variance.
-
-`vq` :
-    Calculate code book membership of a set of observation
-    vectors.
-
-`kmeans` :
-    Clusters a set of observation vectors. Learns centroids with
-    the k-means algorithm, trying to minimize distortion.  A code
-    book is generated that can be used to quantize vectors.
-
-`kmeans2` :
-    A different implementation of k-means with more methods for
-    initializing centroids.  Uses maximum number of iterations as
-    opposed to a distortion threshold as its stopping criterion.
 
 """
 __docformat__ = 'restructuredtext'

@@ -1,6 +1,9 @@
 """
-Function Reference
-------------------
+========================================================
+Hierarchical clustering (:mod:`scipy.cluster.hierarchy`)
+========================================================
+
+.. currentmodule:: scipy.cluster.hierarchy
 
 These functions cut hierarchical clusterings into flat clusterings
 or find the roots of the forest formed by a cut by providing the flat
@@ -71,9 +74,12 @@ flat cluster assignments.
    correspond
    num_obs_linkage
 
-* MATLAB and MathWorks are registered trademarks of The MathWorks, Inc.
+Utility routines for plotting:
 
-* Mathematica is a registered trademark of The Wolfram Research, Inc.
+.. autosummary::
+   :toctree: generated/
+
+   set_link_color_palette
 
 References
 ----------
@@ -117,6 +123,11 @@ References
 
 .. [Fis36] Fisher, RA "The use of multiple measurements in taxonomic
    problems." Annals of Eugenics, 7(2): 179-188. 1936
+
+
+* MATLAB and MathWorks are registered trademarks of The MathWorks, Inc.
+
+* Mathematica is a registered trademark of The Wolfram Research, Inc.
 
 Copyright Notice
 ----------------
