@@ -463,7 +463,11 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0, antisym
     # Adjust the phases of the coefficients so that the first `ntaps` of the
     # inverse FFT are the desired filter coefficients.
     shift = np.exp(-(numtaps - 1) / 2. * 1.j * np.pi * x / nyq)
-    fx2 = fx * shift * (1j if ftype > 2 else 1.0)
+    if ftype > 2:
+        shift *= 1j
+        
+    fx2 = fx * shift
+                    
 
     # Use irfft to compute the inverse FFT.
     out_full = irfft(fx2)
@@ -480,7 +484,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0, antisym
     out = out_full[:numtaps] * wind
 
     if ftype == 3:
-        out[out.size / 2] = 0.0
+        out[out.size // 2] = 0.0
 
     return out
 
