@@ -1,8 +1,8 @@
-.. sectionauthor:: Eric Jones eric@enthought.com
+*********************
+Weave (`scipy.weave`)
+*********************
 
-*****
-Weave
-*****
+.. sectionauthor:: Eric Jones eric@enthought.com
 
 =======
 Outline

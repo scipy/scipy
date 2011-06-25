@@ -1,5 +1,5 @@
-Signal Processing (signal)
-==========================
+Signal Processing (`scipy.signal`)
+==================================
 
 .. sectionauthor:: Travis E. Oliphant
 

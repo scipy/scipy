@@ -1,5 +1,5 @@
-Linear Algebra
-==============
+Linear Algebra (`scipy.linalg`)
+===============================
 
 .. sectionauthor:: Travis E. Oliphant
 

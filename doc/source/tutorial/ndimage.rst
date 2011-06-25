@@ -1,5 +1,5 @@
-Multi-dimensional image processing (:mod:`ndimage`)
-===================================================
+Multi-dimensional image processing (`scipy.ndimage`)
+====================================================
 
 .. moduleauthor:: Peter Verveer <verveer@users.sourceforge.net>
 

@@ -1,5 +1,5 @@
-Statistics
-==========
+Statistics (`scipy.stats`)
+==========================
 
 .. sectionauthor:: Travis E. Oliphant
 

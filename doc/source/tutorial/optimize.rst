@@ -1,5 +1,5 @@
-Optimization (optimize)
-=======================
+Optimization (:mod:`scipy.optimize`)
+====================================
 
 .. sectionauthor:: Travis E. Oliphant
 
