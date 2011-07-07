@@ -120,7 +120,8 @@
 *     .. Local Scalars ..
       INTEGER          R, D, P, PTLD, Q, S, V, VTLD, W, WTLD, Y, YTLD,
      $                 Z, ZTLD, MAXIT, NEED1, NEED2
-      <rt>   TOL, BNRM2, RHOTOL, BETATOL, GAMMATOL, DELTATOL, 
+      <rt>   TOL, BNRM2, RHOTOL, BETATOL,
+     $       GAMMATOL, DELTATOL,
      $       EPSTOL, XITOL,
      $       <sdsd=s,d,s,d>GETBREAK, 
      $       <rc=s,d,sc,dz>NRM2

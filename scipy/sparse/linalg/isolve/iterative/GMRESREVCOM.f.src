@@ -106,6 +106,7 @@
      $                    NEED1, NEED2
       <_t>  <xdot=sdot,ddot,cdotc,zdotc>
       <_t>  toz
+      <_t>    TMPVAL
       <rt>    BNRM2, RNORM, TOL,  
      $     <rc=s,d,sc,dz>NRM2,
      $     <rc>APPROXRES
@@ -267,7 +268,8 @@
          RNORM = <rc>NRM2( N, WORK( 1,V ), 1 )
          toz = ONE/RNORM
          CALL <_c>SCAL( N, toz, WORK( 1,V ), 1 )
-         CALL <_c>ELEMVEC( 1, N, RNORM, WORK( 1,S ) )
+         TMPVAL = RNORM
+         CALL <_c>ELEMVEC( 1, N, TMPVAL, WORK( 1,S ) )
 *
 *         DO 50 I = 1, RESTRT
          i = 1
