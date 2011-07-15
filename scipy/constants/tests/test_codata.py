@@ -21,8 +21,8 @@ def test_find():
                                 'natural unit of mass',
                                 'natural unit of energy',
                                 'natural unit of energy in MeV',
-                                'natural unit of momentum',
-                                'natural unit of momentum in MeV/c',
+                                'natural unit of mom.um',
+                                'natural unit of mom.um in MeV/c',
                                 'natural unit of length',
                                 'natural unit of time']))
 
