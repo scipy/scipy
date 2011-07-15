@@ -56,6 +56,7 @@ constants.
    unit       -- Unit in physical_constants indexed by key
    precision  -- Relative precision in physical_constants indexed by key
    find       -- Return list of physical_constant keys with a given string
+   ConstantWarning -- Constant sought not in newest CODATA data set
 
 .. data:: physical_constants
 

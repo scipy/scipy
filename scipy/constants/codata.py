@@ -53,8 +53,10 @@ http://physics.nist.gov/cuu/Constants/Citations/Search.html
 
 """
 
+import warnings
 from math import pi, sqrt
-__all__ = ['physical_constants', 'value', 'unit', 'precision', 'find']
+__all__ = ['physical_constants', 'value', 'unit', 'precision', 'find',
+           'ConstantWarning']
 
 """
 Source:  http://physics.nist.gov/cuu/Constants/index.html
@@ -460,10 +462,10 @@ weak mixing angle                                      0.222 55              0.0
 Wien frequency displacement law constant               5.878 933 e10         0.000 010 e10         Hz K^-1
 Wien wavelength displacement law constant              2.897 7685 e-3        0.000 0051 e-3        m K"""
 
-#parse into a dict
 physical_constants = {}
 
 def parse_constants(d):
+    constants = {}
     for line in d.split('\n'):
         name = line[:55].rstrip()
         val = line[55:77].replace(' ','').replace('...','')
@@ -471,13 +473,37 @@ def parse_constants(d):
         uncert = line[77:99].replace(' ','').replace('(exact)', '0')
         uncert = float(uncert)
         units = line[99:].rstrip()
-        physical_constants[name] = (val, units, uncert)
+        constants[name] = (val, units, uncert)
+    return constants
 
-# These values should be deprecated in due course
-parse_constants(txt2002)
+_physical_constants_2002 = parse_constants(txt2002)
+_physical_constants_2006 = parse_constants(txt2006)
 
-# This is the newest data-set
-parse_constants(txt2006)
+physical_constants.update(_physical_constants_2002)
+physical_constants.update(_physical_constants_2006)
+_current_constants = _physical_constants_2006
+_current_codata = "CODATA 2006"
+
+# check obsolete values
+_obsolete_constants = {}
+for k in physical_constants.iterkeys():
+    if k not in _current_constants:
+        _obsolete_constants[k] = True
+
+# generate some additional aliases
+_aliases = {}
+for k in _physical_constants_2002.iterkeys():
+    if 'magn.' in k:
+        _aliases[k] = k.replace('magn.', 'mag.')
+
+class ConstantWarning(DeprecationWarning):
+    """Accessing a constant no longer in current CODATA data set"""
+    pass
+
+def _check_obsolete(key):
+    if key in _obsolete_constants and key not in _aliases:
+        warnings.warn("Constant '%s' is not in current %s data set" % (
+            key, _current_codata), ConstantWarning)
 
 def value(key) :
     """
@@ -505,6 +531,7 @@ def value(key) :
         1.602176487e-019
 
     """
+    _check_obsolete(key)
     return physical_constants[key][0]
 
 def unit(key) :
@@ -533,6 +560,7 @@ def unit(key) :
     'kg'
 
     """
+    _check_obsolete(key)
     return physical_constants[key][1]
 
 def precision(key) :
@@ -561,6 +589,7 @@ def precision(key) :
     4.96226989798e-08
 
     """
+    _check_obsolete(key)
     return physical_constants[key][2] / physical_constants[key][0]
 
 def find(sub=None, disp=False):
@@ -588,9 +617,9 @@ def find(sub=None, disp=False):
 
     """
     if sub is None:
-        result = physical_constants.keys()
+        result = _current_constants.keys()
     else:
-        result = [key for key in physical_constants \
+        result = [key for key in _current_constants \
                  if sub.lower() in key.lower()]
 
     result.sort()
@@ -601,8 +630,7 @@ def find(sub=None, disp=False):
     else:
         return result
 
-#table is lacking some digits for exact values: calculate from definition
-
+# Table is lacking some digits for exact values: calculate from definition
 c = value('speed of light in vacuum')
 mu0 = 4e-7*pi
 epsilon0 = 1/(mu0*c*c)
@@ -617,9 +645,18 @@ exact_values = {
 'hertz-inverse meter relationship': (1/c, 'm^-1', 0.0)
 }
 
-#sanity check
+# sanity check
 for key in exact_values:
-    if not (exact_values[key][0]-value(key)) / value(key) < 1e-9:
+    val = _current_constants[key][0]
+    if abs(exact_values[key][0] - val) / val > 1e-9:
         raise ValueError("Constants.codata: exact values too far off.")
 
 physical_constants.update(exact_values)
+
+# finally, insert aliases for values
+for k, v in list(_aliases.items()):
+    if v in _current_constants:
+        physical_constants[k] = physical_constants[v]
+    else:
+        del _aliases[k]
+
