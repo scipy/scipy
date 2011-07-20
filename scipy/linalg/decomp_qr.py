@@ -116,7 +116,7 @@ def qr(a, overwrite_a=False, lwork=None, pivoting=False, mode='full'):
 
         qr, jpvt, tau, work, info = geqp3(a1, lwork=lwork,
             overwrite_a=overwrite_a)
-        jpvt -= 1
+        jpvt -= 1 # geqp3 returns a 1-based index array, so subtract 1
         if info < 0:
             raise ValueError("illegal value in %d-th argument of internal geqp3"
                                                                         % -info)
