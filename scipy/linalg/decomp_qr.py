@@ -15,7 +15,7 @@ from misc import _datacopied
 __all__ = ['qr', 'rq', 'qr_old']
 
 
-def qr(a, overwrite_a=False, lwork=None, pivoted=False, mode='full'):
+def qr(a, overwrite_a=False, lwork=None, pivoting=False, mode='full'):
     """Compute QR decomposition of a matrix.
 
     Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
@@ -30,9 +30,9 @@ def qr(a, overwrite_a=False, lwork=None, pivoted=False, mode='full'):
     lwork : int, optional
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
-    pivoted : bool, optional
+    pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
-        qr decomposition. If pivoted, compute the decomposition
+        qr decomposition. If pivoting, compute the decomposition
         :lm:`A P = Q R` as above, but where P is chosen such that the diagonal
         of R is non-increasing.
     mode : {'full', 'r', 'economic'}
@@ -48,8 +48,7 @@ def qr(a, overwrite_a=False, lwork=None, pivoted=False, mode='full'):
     R : double or complex ndarray
         Of shape (M, N), or (K, N) for ``mode='economic'``.  ``K = min(M, N)``.
     P : double or complex ndarray
-        Of shape (N, 1) for ``pivoted=True``. Not returned if
-        ``pivoted=False``.
+        Of shape (N, 1) for ``pivoting=True``. Not returned if
 
     Raises LinAlgError if decomposition fails
 
@@ -63,19 +62,35 @@ def qr(a, overwrite_a=False, lwork=None, pivoted=False, mode='full'):
 
     Examples
     --------
-    >>> from scipy import random, linalg, dot, allclose
+    >>> from scipy import random, linalg, dot, diag, all, allclose
     >>> a = random.randn(9, 6)
+
     >>> q, r = linalg.qr(a)
     >>> allclose(a, dot(q, r))
     True
     >>> q.shape, r.shape
     ((9, 9), (9, 6))
+
     >>> r2 = linalg.qr(a, mode='r')
     >>> allclose(r, r2)
     True
+
     >>> q3, r3 = linalg.qr(a, mode='economic')
     >>> q3.shape, r3.shape
     ((9, 6), (6, 6))
+
+    >>> q4, r4, p4 = linalg.qr(a, pivoting=True)
+    >>> d = abs(diag(r4))
+    >>> all(d[1:] <= d[:-1])
+    True
+    >>> allclose(a[:, p4], dot(q4, r4))
+    True
+    >>> q4.shape, r4.shape, p4.shape
+    ((9, 9), (9, 6), (6,))
+
+    >>> q5, r5, p5 = linalg.qr(a, pivoting=True, mode='economic')
+    >>> q5.shape, r5.shape, p5.shape
+    ((9, 6), (6, 6), (6,))
 
     """
     if mode == 'qr':
@@ -92,7 +107,7 @@ def qr(a, overwrite_a=False, lwork=None, pivoted=False, mode='full'):
     M, N = a1.shape
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
-    if pivoted:
+    if pivoting:
         geqp3, = get_lapack_funcs(('geqp3',), (a1,))
         if lwork is None or lwork == -1:
             # get optimal work array
@@ -122,7 +137,7 @@ def qr(a, overwrite_a=False, lwork=None, pivoted=False, mode='full'):
         R = special_matrices.triu(qr[0:N, 0:N])
 
     if mode == 'r':
-        if pivoted:
+        if pivoting:
             return R, jpvt
         else:
             return R
@@ -154,7 +169,7 @@ def qr(a, overwrite_a=False, lwork=None, pivoted=False, mode='full'):
     if info < 0:
         raise ValueError("illegal value in %d-th argument of internal gorgqr"
                                                                     % -info)
-    if pivoted:
+    if pivoting:
         return Q, R, jpvt
     return Q, R
 
