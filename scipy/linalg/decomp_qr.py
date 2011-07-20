@@ -1,3 +1,5 @@
+# Additions by Collin Stocks, July 2011
+
 """QR decomposition functions."""
 
 import numpy
@@ -13,7 +15,7 @@ from misc import _datacopied
 __all__ = ['qr', 'rq', 'qr_old']
 
 
-def qr(a, overwrite_a=False, lwork=None, mode='full'):
+def qr(a, overwrite_a=False, lwork=None, pivoted=False, mode='full'):
     """Compute QR decomposition of a matrix.
 
     Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
@@ -28,6 +30,11 @@ def qr(a, overwrite_a=False, lwork=None, mode='full'):
     lwork : int, optional
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
+    pivoted : bool, optional
+        Whether or not factorization should include pivoting for rank-revealing
+        qr decomposition. If pivoted, compute the decomposition
+        :lm:`A P = Q R` as above, but where P is chosen such that the diagonal
+        of R is non-increasing.
     mode : {'full', 'r', 'economic'}
         Determines what information is to be returned: either both Q and R
         ('full', default), only R ('r') or both Q and R but computed in
@@ -40,13 +47,16 @@ def qr(a, overwrite_a=False, lwork=None, mode='full'):
         ``mode='r'``.
     R : double or complex ndarray
         Of shape (M, N), or (K, N) for ``mode='economic'``.  ``K = min(M, N)``.
+    P : double or complex ndarray
+        Of shape (N, 1) for ``pivoted=True``. Not returned if
+        ``pivoted=False``.
 
     Raises LinAlgError if decomposition fails
 
     Notes
     -----
     This is an interface to the LAPACK routines dgeqrf, zgeqrf,
-    dorgqr, and zungqr.
+    dorgqr, zungqr, and geqp3.
 
     If ``mode=economic``, the shapes of Q and R are (M, K) and (K, N) instead
     of (M,M) and (M,N), with ``K=min(M,N)``.
@@ -82,23 +92,40 @@ def qr(a, overwrite_a=False, lwork=None, mode='full'):
     M, N = a1.shape
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
-    geqrf, = get_lapack_funcs(('geqrf',), (a1,))
-    if lwork is None or lwork == -1:
-        # get optimal work array
-        qr, tau, work, info = geqrf(a1, lwork=-1, overwrite_a=1)
-        lwork = work[0].real.astype(numpy.int)
+    if pivoted:
+        geqp3, = get_lapack_funcs(('geqp3',), (a1,))
+        if lwork is None or lwork == -1:
+            # get optimal work array
+            qr, jpvt, tau, work, info = geqp3(a1, lwork=-1, overwrite_a=1)
+            lwork = work[0].real.astype(numpy.int)
 
-    qr, tau, work, info = geqrf(a1, lwork=lwork, overwrite_a=overwrite_a)
-    if info < 0:
-        raise ValueError("illegal value in %d-th argument of internal geqrf"
-                                                                    % -info)
+        qr, jpvt, tau, work, info = geqp3(a1, lwork=lwork,
+            overwrite_a=overwrite_a)
+        jpvt -= 1
+        if info < 0:
+            raise ValueError("illegal value in %d-th argument of internal geqp3"
+                                                                        % -info)
+    else:
+        geqrf, = get_lapack_funcs(('geqrf',), (a1,))
+        if lwork is None or lwork == -1:
+            # get optimal work array
+            qr, tau, work, info = geqrf(a1, lwork=-1, overwrite_a=1)
+            lwork = work[0].real.astype(numpy.int)
+
+        qr, tau, work, info = geqrf(a1, lwork=lwork, overwrite_a=overwrite_a)
+        if info < 0:
+            raise ValueError("illegal value in %d-th argument of internal geqrf"
+                                                                        % -info)
     if not mode == 'economic' or M < N:
         R = special_matrices.triu(qr)
     else:
         R = special_matrices.triu(qr[0:N, 0:N])
 
     if mode == 'r':
-        return R
+        if pivoted:
+            return R, jpvt
+        else:
+            return R
 
     if find_best_lapack_type((a1,))[0] in ('s', 'd'):
         gor_un_gqr, = get_lapack_funcs(('orgqr',), (qr,))
@@ -127,6 +154,8 @@ def qr(a, overwrite_a=False, lwork=None, mode='full'):
     if info < 0:
         raise ValueError("illegal value in %d-th argument of internal gorgqr"
                                                                     % -info)
+    if pivoted:
+        return Q, R, jpvt
     return Q, R
 
 
