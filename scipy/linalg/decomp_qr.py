@@ -55,7 +55,7 @@ def qr(a, overwrite_a=False, lwork=None, pivoting=False, mode='full'):
     Notes
     -----
     This is an interface to the LAPACK routines dgeqrf, zgeqrf,
-    dorgqr, zungqr, and geqp3.
+    dorgqr, zungqr, dgeqp3, and zgeqp3.
 
     If ``mode=economic``, the shapes of Q and R are (M, K) and (K, N) instead
     of (M,M) and (M,N), with ``K=min(M,N)``.

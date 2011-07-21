@@ -495,10 +495,10 @@ interface
 
    end subroutine <tchar=c,z>gelss
 
-   subroutine <tchar=s,d,c,z>geqp3(m,n,a,jpvt,tau,work,lwork,info)
+   subroutine <tchar=s,d>geqp3(m,n,a,jpvt,tau,work,lwork,info)
 
-   ! qr_a,jpvt,tau,work,info = geqp3(a,lwork=3*n,overwrite_a=0)
-   ! Compute a QR factorization of a general M-by-N matrix A with column pivoting:
+   ! qr_a,jpvt,tau,work,info = geqp3(a,lwork=3*(n+1),overwrite_a=0)
+   ! Compute a QR factorization of a real M-by-N matrix A with column pivoting:
    !   A * P = Q * R.
 
      callstatement (*f2py_func)(&m,&n,a,&m,jpvt,tau,work,&lwork,&info)
@@ -510,10 +510,31 @@ interface
      integer dimension(n),intent(out) :: jpvt
      <type_in> dimension(MIN(m,n)),intent(out) :: tau
 
-     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=3*n
+     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=3*(n+1)
      <type_in> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
      integer intent(out) :: info
-   end subroutine <tchar=s,d,c,z>geqp3
+   end subroutine <tchar=s,d>geqp3
+
+   subroutine <tchar=c,z>geqp3(m,n,a,jpvt,tau,work,lwork,rwork,info)
+
+   ! qr_a,jpvt,tau,work,info = geqp3(a,lwork,overwrite_a=0)
+   ! Compute a QR factorization of a complex M-by-N matrix A with column pivoting:
+   !   A * P = Q * R.
+
+     callstatement (*f2py_func)(&m,&n,a,&m,jpvt,tau,work,&lwork,rwork,&info)
+     callprotoargument int*,int*,<type_in_c>*,int*,int*,<type_in_c>*,<type_in_c>*,int*,<type_in_c>*,int*
+
+     integer intent(hide),depend(a):: m = shape(a,0)
+     integer intent(hide),depend(a):: n = shape(a,1)
+     <type_in> dimension(m,n),intent(in,out,copy,out=qr,aligned8) :: a
+     integer dimension(n),intent(out) :: jpvt
+     <type_in> dimension(MIN(m,n)),intent(out) :: tau
+
+     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=3*(n+1)
+     <type_in> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
+     <type_in> dimension(2*n),intent(hide),depend(n) :: rwork
+     integer intent(out) :: info
+   end subroutine <tchar=c,z>geqp3
 
    subroutine <tchar=s,d,c,z>geqrf(m,n,a,tau,work,lwork,info)
 
