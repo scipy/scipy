@@ -15,7 +15,7 @@ from misc import _datacopied
 __all__ = ['qr', 'rq', 'qr_old']
 
 
-def qr(a, overwrite_a=False, lwork=None, pivoting=False, mode='full'):
+def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     """Compute QR decomposition of a matrix.
 
     Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
@@ -30,15 +30,15 @@ def qr(a, overwrite_a=False, lwork=None, pivoting=False, mode='full'):
     lwork : int, optional
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
+    mode : {'full', 'r', 'economic'}
+        Determines what information is to be returned: either both Q and R
+        ('full', default), only R ('r') or both Q and R but computed in
+        economy-size ('economic', see Notes).
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
         qr decomposition. If pivoting, compute the decomposition
         :lm:`A P = Q R` as above, but where P is chosen such that the diagonal
         of R is non-increasing.
-    mode : {'full', 'r', 'economic'}
-        Determines what information is to be returned: either both Q and R
-        ('full', default), only R ('r') or both Q and R but computed in
-        economy-size ('economic', see Notes).
 
     Returns
     -------
@@ -88,7 +88,7 @@ def qr(a, overwrite_a=False, lwork=None, pivoting=False, mode='full'):
     >>> q4.shape, r4.shape, p4.shape
     ((9, 9), (9, 6), (6,))
 
-    >>> q5, r5, p5 = linalg.qr(a, pivoting=True, mode='economic')
+    >>> q5, r5, p5 = linalg.qr(a, mode='economic', pivoting=True)
     >>> q5.shape, r5.shape, p5.shape
     ((9, 6), (6, 6), (6,))
 
