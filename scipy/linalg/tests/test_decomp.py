@@ -988,6 +988,17 @@ class TestQR(TestCase):
         assert_array_almost_equal(dot(conj(transpose(q)),q),identity(3))
         assert_array_almost_equal(dot(q,r),a)
 
+    def test_simple_complex_pivoting(self):
+        a = np.asarray([[3,3+4j,5],[5,2,2+7j],[3,2,7]])
+        q,r,p = qr(a, pivoting=True)
+        d = abs(diag(r))
+        assert_(all(d[1:] <= d[:-1]))
+        assert_array_almost_equal(dot(conj(transpose(q)),q),identity(3))
+        assert_array_almost_equal(dot(q,r),a[:,p])
+        q2,r2 = qr(a[:,p])
+        assert_array_almost_equal(q,q2)
+        assert_array_almost_equal(r,r2)
+
     def test_random(self):
         n = 20
         for k in range(2):
@@ -1093,6 +1104,19 @@ class TestQR(TestCase):
             q,r = qr(a)
             assert_array_almost_equal(dot(conj(transpose(q)),q),identity(n))
             assert_array_almost_equal(dot(q,r),a)
+
+    def test_random_complex_pivoting(self):
+        n = 20
+        for k in range(2):
+            a = random([n,n])+1j*random([n,n])
+            q,r,p = qr(a, pivoting=True)
+            d = abs(diag(r))
+            assert_(all(d[1:] <= d[:-1]))
+            assert_array_almost_equal(dot(conj(transpose(q)),q),identity(n))
+            assert_array_almost_equal(dot(q,r),a[:,p])
+            q2,r2 = qr(a[:,p])
+            assert_array_almost_equal(q,q2)
+            assert_array_almost_equal(r,r2)
 
 class TestRQ(TestCase):
 
