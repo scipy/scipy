@@ -223,7 +223,6 @@ static void dneg1(int n, double v[]);
  *
  * where x is a vector of n real variables. The method used is
  * a truncated-newton algorithm (see "newton-type minimization via
- * the lanczos algorithm" by s.g. nash (technical report 378, math.
  * the lanczos method" by s.g. nash (siam j. numer. anal. 21 (1984),
  * pp. 770-778).  this algorithm finds a local minimum of f(x). It does
  * not assume that the function f is convex (and so cannot guarantee a
