@@ -5127,8 +5127,11 @@ class uniform_gen(rv_continuous):
     """A uniform continuous random variable.
 
     This distribution is constant between `loc` and ``loc = scale``.
+    
+    %(before_notes)s
 
-    %(default)s
+    %(example)s
+
     """
     def _rvs(self):
         return mtrand.uniform(0.0,1.0,self._size)
