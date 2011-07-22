@@ -1,8 +1,3 @@
-#!/usr/bin/env python
-#
-# Created by: Pearu Peterson, March 2002
-# Additions by Collin Stocks, July 2011
-#
 """ Test functions for linalg.decomp module
 
 """

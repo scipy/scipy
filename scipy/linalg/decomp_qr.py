@@ -1,5 +1,3 @@
-# Additions by Collin Stocks, July 2011
-
 """QR decomposition functions."""
 
 import numpy
@@ -48,9 +46,13 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     R : double or complex ndarray
         Of shape (M, N), or (K, N) for ``mode='economic'``.  ``K = min(M, N)``.
     P : double or complex ndarray
-        Of shape (N, 1) for ``pivoting=True``. Not returned if
+        Of shape (N, 1) for ``pivoting=True``.
+        Not returned if ``pivoting=False``.
 
-    Raises LinAlgError if decomposition fails
+    Raises
+    ------
+    LinAlgError
+        Raised if decomposition fails
 
     Notes
     -----
