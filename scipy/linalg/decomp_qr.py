@@ -1,4 +1,4 @@
-# Additions by Collin Stocks, July 2011
+# Additions by Collin RM Stocks, July 2011
 
 """QR decomposition functions."""
 

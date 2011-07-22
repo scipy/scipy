@@ -7,7 +7,7 @@
 !
 ! Additions by Travis Oliphant
 ! Additions by Tiziano Zito
-! Additions by Collin Stocks
+! Additions by Collin RM Stocks
 ! Usage:
 !   f2py -c generic_flapack.pyf -L/usr/local/lib/atlas -llapack -lf77blas -lcblas -latlas -lg2c
 
