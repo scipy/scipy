@@ -500,7 +500,13 @@ def loadarff(f):
 
     """
     ofile = f if hasattr(f, 'read') else open(f, 'rt')
+    try:
+        return _loadarff(ofile)
+    finally:
+        if ofile is not f:  # only close what we opened
+            ofile.close()
 
+def _loadarff(ofile):
     # Parse the header file
     try:
         rel, attr = read_header(ofile)

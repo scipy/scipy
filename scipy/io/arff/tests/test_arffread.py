@@ -53,7 +53,7 @@ class DataTest(TestCase):
         data1, meta1 = loadarff(f1)
         data2, meta2 = loadarff(f2)
         assert_(data1 == data2)
-        assert_(meta1 == meta2)
+        assert_(repr(meta1) == repr(meta2))
 
 
 class MissingDataTest(TestCase):
