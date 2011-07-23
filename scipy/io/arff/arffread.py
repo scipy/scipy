@@ -454,7 +454,7 @@ class MetaData(object):
         return attr_types
 
 
-def loadarff(filename):
+def loadarff(f):
     """
     Read an arff file.
 
@@ -466,8 +466,8 @@ def loadarff(filename):
 
     Parameters
     ----------
-    filename : str
-       the name of the file
+    f : file-like or str
+       File-like object to read from, or filename to open.
 
     Returns
     -------
@@ -499,8 +499,14 @@ def loadarff(filename):
     points as NaNs.
 
     """
-    ofile = open(filename)
+    ofile = f if hasattr(f, 'read') else open(f, 'rt')
+    try:
+        return _loadarff(ofile)
+    finally:
+        if ofile is not f:  # only close what we opened
+            ofile.close()
 
+def _loadarff(ofile):
     # Parse the header file
     try:
         rel, attr = read_header(ofile)
