@@ -12,6 +12,7 @@ Examples
 --------
 
 >>> from scipy.io import arff
+>>> from cStringIO import StringIO
 >>> content = \"\"\"
 ... @relation foo
 ... @attribute width  numeric
@@ -22,10 +23,8 @@ Examples
 ... 4.5,3.75,green
 ... 3.0,4.00,red
 ... \"\"\"
->>> f = open('testdata.arff', 'w')
->>> f.write(content)
->>> f.close()
->>> data, meta = arff.loadarff('testdata.arff')
+>>> f = StringIO(content)
+>>> data, meta = arff.loadarff(f)
 >>> data
 array([(5.0, 3.25, 'blue'), (4.5, 3.75, 'green'), (3.0, 4.0, 'red')],
       dtype=[('width', '<f8'), ('height', '<f8'), ('color', '|S6')])

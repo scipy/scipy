@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 from os.path import join as pjoin
+from cStringIO import StringIO
 
 import numpy as np
 
@@ -44,6 +45,15 @@ class DataTest(TestCase):
             for j in range(4):
                 assert_array_almost_equal(expect4_data[i][j], data[i][j])
         assert_equal(meta.types(), expected_types)
+
+    def test_filelike(self):
+        """Test reading from file-like object (StringIO)"""
+        f1 = open(test1)
+        f2 = StringIO(open(test1).read())
+        data1, meta1 = loadarff(f1)
+        data2, meta2 = loadarff(f2)
+        assert_(data1 == data2)
+        assert_(repr(meta1) == repr(meta2))
 
 
 class MissingDataTest(TestCase):
