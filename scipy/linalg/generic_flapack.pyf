@@ -360,30 +360,33 @@ interface
 
    end subroutine <tchar=s,d,c,z>getri
 
-   subroutine <tchar=s,d>gesdd(m,n,minmn,du,dvt,a,compute_uv,u,s,vt,work,lwork,iwork,info)
-   
+   subroutine <tchar=s,d>gesdd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,lwork,iwork,info)
+
    ! u,s,vt,info = gesdd(a,compute_uv=1,lwork=..,overwrite_a=0)
    ! Compute the singular value decomposition (SVD):
    !   A = U * SIGMA * transpose(V)
    ! A - M x N matrix
-   ! U - M x M matrix
-   ! SIGMA - M x N zero matrix with a main diagonal filled with min(M,N) 
-   !               singular values  
-   ! transpose(V) - N x N matrix
+   ! U - M x M matrix or min(M,N) x N if full_matrices=False
+   ! SIGMA - M x N zero matrix with a main diagonal filled with min(M,N)
+   !               singular values
+   ! transpose(V) - N x N matrix or N x min(M,N) if full_matrices=False
 
-   callstatement (*f2py_func)((compute_uv?"A":"N"),&m,&n,a,&m,s,u,&du,vt,&dvt,work,&lwork,iwork,&info)
+   callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,a,&m,s,u,&u0,vt,&vt0,work,&lwork,iwork,&info)
    callprotoargument char*,int*,int*,<type_in_c>*,int*,<type_in_c>*,<type_in_c>*,int*,<type_in_c>*,int*,<type_in_c>*,int*,int*,int*
 
    integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
+   integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
    integer intent(hide),depend(a):: m = shape(a,0)
    integer intent(hide),depend(a):: n = shape(a,1)
    integer intent(hide),depend(m,n):: minmn = MIN(m,n)
-   integer intent(hide),depend(compute_uv,minmn) :: du = (compute_uv?m:1)
-   integer intent(hide),depend(compute_uv,n) :: dvt = (compute_uv?n:1)
+   integer intent(hide),depend(compute_uv,minmn) :: u0 = (compute_uv?m:1)
+   integer intent(hide),depend(compute_uv,minmn, full_matrices) :: u1 = (compute_uv?(full_matrices?m:minmn):1)
+   integer intent(hide),depend(compute_uv,minmn, full_matrices) :: vt0 = (compute_uv?(full_matrices?n:minmn):1)
+   integer intent(hide),depend(compute_uv,minmn) :: vt1 = (compute_uv?n:1)
    <type_in> dimension(m,n),intent(in,copy,aligned8) :: a
    <type_in> dimension(minmn),intent(out),depend(minmn) :: s
-   <type_in> dimension(du,du),intent(out),depend(du) :: u
-   <type_in> dimension(dvt,dvt),intent(out),depend(dvt) :: vt
+   <type_in> dimension(u0,u1),intent(out),depend(u0, u1) :: u
+   <type_in> dimension(vt0,vt1),intent(out),depend(vt0, vt1) :: vt
    <type_in> dimension(lwork),intent(hide,cache),depend(lwork) :: work
    integer optional,intent(in),depend(minmn,compute_uv) &
         :: lwork = (compute_uv?4*minmn*minmn+MAX(m,n)+9*minmn:MAX(14*minmn+4,10*minmn+2+25*(25+8))+MAX(m,n))
@@ -394,30 +397,33 @@ interface
 
    end subroutine <tchar=s,d>gesdd
 
-   subroutine <tchar=c,z>gesdd(m,n,minmn,du,dvt,a,compute_uv,u,s,vt,work,rwork,lwork,iwork,info)
-   
+   subroutine <tchar=c,z>gesdd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,rwork,lwork,iwork,info)
+
    ! u,s,vt,info = gesdd(a,compute_uv=1,lwork=..,overwrite_a=0)
    ! Compute the singular value decomposition (SVD):
    !   A = U * SIGMA * conjugate-transpose(V)
    ! A - M x N matrix
-   ! U - M x M matrix
-   ! SIGMA - M x N zero matrix with a main diagonal filled with min(M,N) 
-   !               singular values  
-   ! conjugate-transpose(V) - N x N matrix
+   ! U - M x M matrix or min(M,N) x N if full_matrices=False
+   ! SIGMA - M x N zero matrix with a main diagonal filled with min(M,N)
+   !               singular values
+   ! transpose(V) - N x N matrix or N x min(M,N) if full_matrices=False
 
-   callstatement (*f2py_func)((compute_uv?"A":"N"),&m,&n,a,&m,s,u,&du,vt,&dvt,work,&lwork,rwork,iwork,&info)
+   callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,a,&m,s,u,&u0,vt,&vt0,work,&lwork,rwork,iwork,&info)
    callprotoargument char*,int*,int*,<type_in_c>*,int*,<rtype_in_c>*,<type_in_c>*,int*,<type_in_c>*,int*,<type_in_c>*,int*,<rtype_in_c>*,int*,int*
 
    integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
+   integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
    integer intent(hide),depend(a):: m = shape(a,0)
    integer intent(hide),depend(a):: n = shape(a,1)
    integer intent(hide),depend(m,n):: minmn = MIN(m,n)
-   integer intent(hide),depend(compute_uv,minmn) :: du = (compute_uv?m:1)
-   integer intent(hide),depend(compute_uv,n) :: dvt = (compute_uv?n:1)
+   integer intent(hide),depend(compute_uv,minmn) :: u0 = (compute_uv?m:1)
+   integer intent(hide),depend(compute_uv,minmn, full_matrices) :: u1 = (compute_uv?(full_matrices?m:minmn):1)
+   integer intent(hide),depend(compute_uv,minmn, full_matrices) :: vt0 = (compute_uv?(full_matrices?n:minmn):1)
+   integer intent(hide),depend(compute_uv,minmn) :: vt1 = (compute_uv?n:1)
    <type_in> dimension(m,n),intent(in,copy) :: a
    <rtype_in> dimension(minmn),intent(out),depend(minmn) :: s
-   <type_in> dimension(du,du),intent(out),depend(du) :: u
-   <type_in> dimension(dvt,dvt),intent(out),depend(dvt) :: vt
+   <type_in> dimension(u0,u1),intent(out),depend(u0,u1) :: u
+   <type_in> dimension(vt0,vt1),intent(out),depend(vt0,vt1) :: vt
    <type_in> dimension(lwork),intent(hide,cache),depend(lwork) :: work
    <rtype_in> dimension((compute_uv?5*minmn*minmn+7*minmn:5*minmn)),intent(hide,cache),depend(minmn,compute_uv) :: rwork
    integer optional,intent(in),depend(minmn,compute_uv) &
@@ -427,7 +433,6 @@ interface
    integer intent(out)::info
 
    end subroutine <tchar=c,z>gesdd
-
 
    subroutine <tchar=s,d>gelss(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,lwork,info)
 

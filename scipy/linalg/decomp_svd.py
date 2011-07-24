@@ -67,10 +67,6 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False):
     diagsvd : return the Sigma matrix, given the vector s
 
     """
-    # A hack until full_matrices == 0 support is fixed here.
-    if full_matrices == 0:
-        import numpy.linalg
-        return numpy.linalg.svd(a, full_matrices=0, compute_uv=compute_uv)
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
@@ -80,7 +76,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False):
     if gesdd.module_name[:7] == 'flapack':
         lwork = calc_lwork.gesdd(gesdd.prefix, m, n, compute_uv)[1]
         u,s,v,info = gesdd(a1,compute_uv = compute_uv, lwork = lwork,
-                                                overwrite_a = overwrite_a)
+                           full_matrices=full_matrices, overwrite_a = overwrite_a)
     else: # 'clapack'
         raise NotImplementedError('calling gesdd from %s' % gesdd.module_name)
     if info > 0:
