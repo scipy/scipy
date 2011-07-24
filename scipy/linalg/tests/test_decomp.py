@@ -737,74 +737,80 @@ class TestSVD(TestCase):
 
     def test_simple(self):
         a = [[1,2,3],[1,20,3],[2,5,6]]
-        u,s,vh = svd(a)
-        assert_array_almost_equal(dot(transpose(u),u),identity(3))
-        assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
-        sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
-        for i in range(len(s)): sigma[i,i] = s[i]
-        assert_array_almost_equal(dot(dot(u,sigma),vh),a)
+        for full_matrices in (True, False):
+            u,s,vh = svd(a, full_matrices=full_matrices)
+            assert_array_almost_equal(dot(transpose(u),u),identity(3))
+            assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
+            sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
+            for i in range(len(s)): sigma[i,i] = s[i]
+            assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
     def test_simple_singular(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
-        u,s,vh = svd(a)
-        assert_array_almost_equal(dot(transpose(u),u),identity(3))
-        assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
-        sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
-        for i in range(len(s)): sigma[i,i] = s[i]
-        assert_array_almost_equal(dot(dot(u,sigma),vh),a)
+        for full_matrices in (True, False):
+            u,s,vh = svd(a, full_matrices=full_matrices)
+            assert_array_almost_equal(dot(transpose(u),u),identity(3))
+            assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
+            sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
+            for i in range(len(s)): sigma[i,i] = s[i]
+            assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
     def test_simple_underdet(self):
         a = [[1,2,3],[4,5,6]]
-        u,s,vh = svd(a)
-        assert_array_almost_equal(dot(transpose(u),u),identity(2))
-        assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
-        sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
-        for i in range(len(s)): sigma[i,i] = s[i]
-        assert_array_almost_equal(dot(dot(u,sigma),vh),a)
+        for full_matrices in (True, False):
+            u,s,vh = svd(a, full_matrices=full_matrices)
+            assert_array_almost_equal(dot(transpose(u),u),identity(u.shape[0]))
+            sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
+            for i in range(len(s)): sigma[i,i] = s[i]
+            assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
     def test_simple_overdet(self):
         a = [[1,2],[4,5],[3,4]]
-        u,s,vh = svd(a)
-        assert_array_almost_equal(dot(transpose(u),u),identity(3))
-        assert_array_almost_equal(dot(transpose(vh),vh),identity(2))
-        sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
-        for i in range(len(s)): sigma[i,i] = s[i]
-        assert_array_almost_equal(dot(dot(u,sigma),vh),a)
+        for full_matrices in (True, False):
+            u,s,vh = svd(a, full_matrices=full_matrices)
+            assert_array_almost_equal(dot(transpose(u),u), identity(u.shape[1]))
+            assert_array_almost_equal(dot(transpose(vh),vh),identity(2))
+            sigma = zeros((u.shape[1],vh.shape[0]),s.dtype.char)
+            for i in range(len(s)): sigma[i,i] = s[i]
+            assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
     def test_random(self):
         n = 20
         m = 15
         for i in range(3):
             for a in [random([n,m]),random([m,n])]:
-                u,s,vh = svd(a)
-                assert_array_almost_equal(dot(transpose(u),u),identity(len(u)))
-                assert_array_almost_equal(dot(transpose(vh),vh),identity(len(vh)))
-                sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
-                for i in range(len(s)): sigma[i,i] = s[i]
-                assert_array_almost_equal(dot(dot(u,sigma),vh),a)
+                for full_matrices in (True, False):
+                    u,s,vh = svd(a, full_matrices=full_matrices)
+                    assert_array_almost_equal(dot(transpose(u),u),identity(u.shape[1]))
+                    assert_array_almost_equal(dot(vh, transpose(vh)),identity(vh.shape[0]))
+                    sigma = zeros((u.shape[1],vh.shape[0]),s.dtype.char)
+                    for i in range(len(s)): sigma[i,i] = s[i]
+                    assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
     def test_simple_complex(self):
         a = [[1,2,3],[1,2j,3],[2,5,6]]
-        u,s,vh = svd(a)
-        assert_array_almost_equal(dot(conj(transpose(u)),u),identity(3))
-        assert_array_almost_equal(dot(conj(transpose(vh)),vh),identity(3))
-        sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
-        for i in range(len(s)): sigma[i,i] = s[i]
-        assert_array_almost_equal(dot(dot(u,sigma),vh),a)
+        for full_matrices in (True, False):
+            u,s,vh = svd(a, full_matrices=full_matrices)
+            assert_array_almost_equal(dot(conj(transpose(u)),u),identity(u.shape[1]))
+            assert_array_almost_equal(dot(conj(transpose(vh)),vh),identity(vh.shape[0]))
+            sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
+            for i in range(len(s)): sigma[i,i] = s[i]
+            assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
     def test_random_complex(self):
         n = 20
         m = 15
         for i in range(3):
-            for a in [random([n,m]),random([m,n])]:
-                a = a + 1j*random(list(a.shape))
-                u,s,vh = svd(a)
-                assert_array_almost_equal(dot(conj(transpose(u)),u),identity(len(u)))
-                # This fails when [m,n]
-                #assert_array_almost_equal(dot(conj(transpose(vh)),vh),identity(len(vh),dtype=vh.dtype.char))
-                sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
-                for i in range(len(s)): sigma[i,i] = s[i]
-                assert_array_almost_equal(dot(dot(u,sigma),vh),a)
+            for full_matrices in (True, False):
+                for a in [random([n,m]),random([m,n])]:
+                    a = a + 1j*random(list(a.shape))
+                    u,s,vh = svd(a, full_matrices=full_matrices)
+                    assert_array_almost_equal(dot(conj(transpose(u)),u),identity(u.shape[1]))
+                    # This fails when [m,n]
+                    #assert_array_almost_equal(dot(conj(transpose(vh)),vh),identity(len(vh),dtype=vh.dtype.char))
+                    sigma = zeros((u.shape[1],vh.shape[0]),s.dtype.char)
+                    for i in range(len(s)): sigma[i,i] = s[i]
+                    assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
 class TestSVDVals(TestCase):
 
@@ -1065,22 +1071,22 @@ class TestSchur(TestCase):
         assert_array_almost_equal(dot(dot(zc,tc),transp(conj(zc))),a)
         tc2,zc2 = rsf2csf(tc,zc)
         assert_array_almost_equal(dot(dot(zc2,tc2),transp(conj(zc2))),a)
-        
+
     def test_sort(self):
         a = [[4.,3.,1.,-1.],[-4.5,-3.5,-1.,1.],[9.,6.,-4.,4.5],[6.,4.,-3.,3.5]]
         s,u,sdim = schur(a,sort='lhp')
-        assert_array_almost_equal([[0.1134,0.5436,0.8316,0.], 
-                                   [-0.1134,-0.8245,0.5544,0.], 
-                                   [-0.8213,0.1308,0.0265,-0.5547], 
+        assert_array_almost_equal([[0.1134,0.5436,0.8316,0.],
+                                   [-0.1134,-0.8245,0.5544,0.],
+                                   [-0.8213,0.1308,0.0265,-0.5547],
                                    [-0.5475,0.0872,0.0177,0.8321]],
                                   u,3)
-        assert_array_almost_equal([[-1.4142,0.1456,-11.5816,-7.7174], 
-                                   [0.,-0.5000,9.4472,-0.7184], 
-                                   [0.,0.,1.4142,-0.1456], 
+        assert_array_almost_equal([[-1.4142,0.1456,-11.5816,-7.7174],
+                                   [0.,-0.5000,9.4472,-0.7184],
+                                   [0.,0.,1.4142,-0.1456],
                                    [0.,0.,0.,0.5]],
                                   s,3)
         assert_equal(2,sdim)
-                                  
+
         s,u,sdim = schur(a,sort='rhp')
         assert_array_almost_equal([[0.4862,-0.4930,0.1434,-0.7071],
                                    [-0.4862,0.4930,-0.1434,-0.7071],
@@ -1093,7 +1099,7 @@ class TestSchur(TestCase):
                                    [0.,0.,0.,-0.5]],
                                   s,3)
         assert_equal(2,sdim)
-                                  
+
         s,u,sdim = schur(a,sort='iuc')
         assert_array_almost_equal([[0.5547,0.,-0.5721,-0.6042],
                                    [-0.8321,0.,-0.3814,-0.4028],
@@ -1106,7 +1112,7 @@ class TestSchur(TestCase):
                                    [0.,0.,0.,-1.4142]],
                                   s,3)
         assert_equal(2,sdim)
-                                  
+
         s,u,sdim = schur(a,sort='ouc')
         assert_array_almost_equal([[0.4862,-0.5134,0.7071,0.],
                                    [-0.4862,0.5134,0.7071,0.],
@@ -1119,7 +1125,7 @@ class TestSchur(TestCase):
                                    [0.,0.,0.,0.5000]],
                                   s,3)
         assert_equal(2,sdim)
-                                  
+
         rhp_function = lambda x: x >= 0.0
         s,u,sdim = schur(a,sort=rhp_function)
         assert_array_almost_equal([[0.4862,-0.4930,0.1434,-0.7071],
@@ -1133,7 +1139,7 @@ class TestSchur(TestCase):
                                    [0.,0.,0.,-0.5]],
                                   s,3)
         assert_equal(2,sdim)
-                                  
+
     def test_sort_errors(self):
         a = [[4.,3.,1.,-1.],[-4.5,-3.5,-1.,1.],[9.,6.,-4.,4.5],[6.,4.,-3.,3.5]]
         assert_raises(ValueError, schur, a, sort='unsupported')
