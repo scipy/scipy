@@ -499,7 +499,10 @@ def loadarff(f):
     points as NaNs.
 
     """
-    ofile = f if hasattr(f, 'read') else open(f, 'rt')
+    if hasattr(f, 'read'):
+        ofile = f
+    else:
+        ofile = open(f, 'rt')
     try:
         return _loadarff(ofile)
     finally:
