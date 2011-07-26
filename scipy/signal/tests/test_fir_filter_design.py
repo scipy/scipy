@@ -337,6 +337,20 @@ class TestFirwin2(TestCase):
         freqs, response = freqz(taps, worN=2048)
         assert_array_almost_equal(abs(response), freqs / np.pi, decimal=4)
 
+    def test06(self):
+        """Test firwin2 for calculating Type III filters"""
+        ntaps = 1501
+
+        freq = [0.0, 0.5, 0.55,  1.0]
+        gain = [0.0, 0.5, 0.0,   0.0] 
+        taps = firwin2(ntaps, freq, gain, window=None, antisymmetric=True)
+        assert_equal(taps[ntaps // 2], 0.0)
+        assert_array_almost_equal(taps[: ntaps // 2], -taps[ntaps // 2 + 1:][::-1])
+
+        freqs, response1 = freqz(taps, worN=2048)
+        response2        = np.interp(freqs / np.pi, freq, gain)
+        assert_array_almost_equal(abs(response1), response2, decimal=3)
+
 
     def test_nyq(self):
         taps1 = firwin2(80, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0])
