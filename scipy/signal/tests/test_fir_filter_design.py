@@ -254,8 +254,20 @@ class TestFirwin2(TestCase):
         # `freq` does not start at 0.0.
         assert_raises(ValueError, firwin2, 50, [0.5, 1.0], [0.0, 1.0])
 
-        # Even number of taps, but the gain at 1 is not zero.
+        # Type II filter, but the gain at nyquist rate is not zero.
         assert_raises(ValueError, firwin2, 16, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0])
+
+        # Type III filter, but the gains at nyquist and zero rate are not zero.
+        assert_raises(ValueError, firwin2, 17, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0], 
+                      antisymmetric=True)
+        assert_raises(ValueError, firwin2, 17, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0], 
+                      antisymmetric=True)
+        assert_raises(ValueError, firwin2, 17, [0.0, 0.5, 1.0], [1.0, 1.0, 1.0], 
+                      antisymmetric=True)
+
+        # Type VI filter, but the gain at zero rate is not zero.
+        assert_raises(ValueError, firwin2, 16, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0],
+                      antisymmetric=True)
 
     def test01(self):
         width = 0.04
@@ -311,6 +323,20 @@ class TestFirwin2(TestCase):
         m = np.arange(0, ntaps) - alpha
         h = 0.5 * sinc(0.5 * m)
         assert_array_almost_equal(h, taps)
+
+    def test05(self):
+        """Test firwin2 for calculating Type IV filters"""
+        ntaps = 1500
+
+        freq = [0.0, 1.0]
+        gain = [0.0, 1.0] 
+        taps = firwin2(ntaps, freq, gain, window=None, antisymmetric=True)
+        assert_array_almost_equal(taps[: ntaps // 2], -taps[ntaps // 2:][::-1])
+
+
+        freqs, response = freqz(taps, worN=2048)
+        assert_array_almost_equal(abs(response), freqs / np.pi, decimal=4)
+
 
     def test_nyq(self):
         taps1 = firwin2(80, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0])
