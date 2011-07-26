@@ -441,7 +441,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0, antisym
 
     if ftype == 2 and gain[-1] != 0.0:
         raise ValueError("A Type II filter must have zero gain at the Nyquist rate.")
-    elif ftype == 3 and gain[0] != gain[-1] != 0.0:
+    elif ftype == 3 and (gain[0] != 0.0 or gain[-1] != 0.0):
         raise ValueError("A Type III filter must have zero gain at zero and Nyquist rates.")
     elif ftype == 4 and gain[0] != 0.0:
         raise ValueError("A Type IV filter must have zero gain at zero rate.")
