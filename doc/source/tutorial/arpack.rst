@@ -192,9 +192,10 @@ the rest:
 
 The eigenvalues come out in a different order, but they're all there.
 Note that the shift-invert mode requires the internal solution of a matrix
-inverse.  This is taken care of automatically by ``eigsh``, but the operation
-can also be specified by the user.  See the docstring of ``eigsh`` for
-details.
+inverse.  This is taken care of automatically by ``eigsh`` and `eigs`, 
+but the operation can also be specified by the user.  See the docstring of 
+:func:`scipy.sparse.linalg.eigen.eigsh` and 
+:func:`scipy.sparse.linalg.eigen.eigs` for details.
 
 
 References
