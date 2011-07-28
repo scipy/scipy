@@ -202,15 +202,6 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     -------
     xmin : ndarray
         Point giving smallest value found.
-    retval : int
-        Flag indicating stopping condition::
-
-                0 : Cooled to global optimum
-                1 : Cooled to final temperature
-                2 : Maximum function evaluations
-                3 : Maximum cooling iterations reached
-                4 : Maximum accepted query locations reached
-
     Jmin : float
         Minimum value of function found.
     T : float
@@ -221,6 +212,70 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         Number of cooling iterations.
     accept : int
         Number of tests accepted.
+    retval : int
+        Flag indicating stopping condition::
+
+                0 : Points no longer changing
+                1 : Cooled to final temperature
+                2 : Maximum function evaluations
+                3 : Maximum cooling iterations reached
+                4 : Maximum accepted query locations reached
+                5 : Final point not the minimum amongst encountered points
+
+    Notes
+    -----
+    Simulated annealing is a random algorithm which uses no derivative
+    information from the function being optimized. In practice it has
+    been more useful in discrete optimization than continuous
+    optimization, as there are usually better algorithms for continuous
+    optimization problems.
+
+    Some experimentation by trying the difference temperature
+    schedules and altering their parameters is likely required to
+    obtain good performance.
+
+    The randomness in the algorithm comes from random sampling in numpy.
+    To obtain the same results you can call numpy.random.seed with the
+    same seed immediately before calling scipy.optimize.anneal.
+
+    We give a brief description of how the three temperature schedules
+    generate new points and vary their temperature. Temperatures are
+    only updated with iterations in the outer loop. The inner loop is
+    over loop over xrange(dwell), and new points are generated for
+    every iteration in the inner loop. (Though whether the proposed
+    new points are accepted is probabilistic.)
+
+    For readability, let d denote the dimension of the inputs to func.
+    Also, let x_old denote the previous state, and k denote the
+    iteration number of the outer loop. All other variables not
+    defined below are input variables to scipy.optimize.anneal itself.
+
+    In the 'fast' schedule the updates are ::
+
+        u ~ Uniform(0, 1, size=d)
+        y = sgn(u - 0.5) * T * ((1+ 1/T)**abs(2u-1) -1.0)
+        xc = y * (upper - lower)
+        x_new = x_old + xc
+
+        c = n * exp(-n * quench)
+        T_new = T0 * exp(-c * k**quench)
+
+
+    In the 'cauchy' schedule the updates are ::
+
+        u ~ Uniform(-pi/2, pi/2, size=d)
+        xc = learn_rate * T * tan(u)
+        x_new = x_old + xc
+
+        T_new = T0 / (1+k)
+
+    In the 'boltzmann' schedule the updates are ::
+
+        std = minimum( sqrt(T) * ones(d), (upper-lower) / (3*learn_rate) )
+        y ~ Normal(0, std, size=d)
+        x_new = x_old + learn_rate * y
+
+        T_new = T0 / log(1+k)
 
     """
     x0 = asarray(x0)
@@ -238,7 +293,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         x0 = schedule.getstart_temp(best_state)
     else:
         best_state.x = None
-        best_state.cost = 300e8
+        best_state.cost = numpy.Inf
 
     last_state.x = asarray(x0).copy()
     fval = func(x0,*args)
@@ -251,7 +306,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     fqueue = [100, 300, 500, 700]
     iters = 0
     while 1:
-        for n in range(dwell):
+        for n in xrange(dwell):
             current_state.x = schedule.update_guess(last_state.x)
             current_state.cost = func(current_state.x,*args)
             schedule.feval += 1

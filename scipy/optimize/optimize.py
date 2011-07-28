@@ -179,8 +179,10 @@ def wrap_function(function, args):
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
          full_output=0, disp=1, retall=0, callback=None):
     """
-    Minimize a function using the downhill simplex algorithm. This algorithm
-    only uses function values, not derivatives or second derivatives.
+    Minimize a function using the downhill simplex algorithm.
+
+    This algorithm only uses function values, not derivatives or second
+    derivatives.
 
     Parameters
     ----------
@@ -236,9 +238,9 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     But it will usually be slower than an algorithm that uses first or
     second derivative information. In practice it can have poor
     performance in high-dimensional problems and is not robust to
-    minimizing complicated functions. Additionally, there currently is not
-    a complete theory describing when the algorithm will successfully
-    find the minimum or the speed of convergence.
+    minimizing complicated functions. Additionally, there currently is no
+    complete theory describing when the algorithm will successfully
+    converge to the minimum, or how fast it will if it does.
 
     References
     ----------
@@ -398,7 +400,7 @@ def approx_fprime(xk,f,epsilon,*args):
     return grad
 
 def check_grad(func, grad, x0, *args):
-    """Check the correctness of a gradient function 
+    """Check the correctness of a gradient function
     by comparing it against a finite-difference approximation
     of the gradient.
 
@@ -409,7 +411,7 @@ def check_grad(func, grad, x0, *args):
     grad: callable grad(x0, *args)
         Gradient of func
     x0: ndarray
-        Points to check grad against finite difference 
+        Points to check grad against finite difference
         approximation of grad using func.
     args: optional
         Extra arguments passed to func and grad
@@ -418,9 +420,9 @@ def check_grad(func, grad, x0, *args):
     -------
     err: float
         The square root of the sum of squares (i.e. the 2-norm)
-        of the difference between grad(x0, *args) and the 
-        finite difference approximation of grad using func at the 
-        points x0. 
+        of the difference between grad(x0, *args) and the
+        finite difference approximation of grad using func at the
+        points x0.
 
     """
     return sqrt(sum((grad(x0,*args)-approx_fprime(x0,func,_epsilon,*args))**2))
@@ -493,8 +495,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     -----
     Optimize the function, f, whose gradient is given by fprime
     using the quasi-Newton method of Broyden, Fletcher, Goldfarb,
-    and Shanno (BFGS) 
-    
+    and Shanno (BFGS)
+
     References
     ----------
     Wright, and Nocedal 'Numerical Optimization', 1999, pg. 198.
@@ -768,7 +770,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
              epsilon=_epsilon, maxiter=None, full_output=0, disp=1, retall=0,
              callback=None):
     """Unconstrained minimization of a function using the Newton-CG method.
-    
+
 
     Parameters
     ----------
@@ -834,18 +836,18 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     approximated using finite differences on `fprime`. `fhess_p`
     must compute the hessian times an arbitrary vector. If it is not
     given, finite-differences on `fprime` are used to compute
-    it.  
+    it.
 
     Newton-CG methods are also called truncated Newton methods. This
     function differs from scipy.optimize.fmin_tnc because
-    
+
     1. scipy.optimize.fmin_ncg is written purely in python using numpy
         and scipy while scipy.optimize.fmin_tnc calls a C function.
     2. scipy.optimize.fmin_ncg is only for unconstrained minimization
-        while scipy.optimize.fmin_tnc is for unconstrained minimization 
+        while scipy.optimize.fmin_tnc is for unconstrained minimization
         or box constrained minimization. (Box constraints give
-        lower and upper bounds for each variable seperately.) 
-    
+        lower and upper bounds for each variable seperately.)
+
     References
     ----------
     Wright & Nocedal, 'Numerical Optimization', 1999, pg. 140.
@@ -1547,36 +1549,36 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     Notes
     -----
     Uses a modification of Powell's method to find the minimum of
-    a function of N variables. Powell's method is a conjugate 
-    direction method. 
-    
+    a function of N variables. Powell's method is a conjugate
+    direction method.
+
     The algorithm has two loops. The outer loop
     merely iterates over the inner loop. The inner loop minimizes
-    over each current direction in the direction set. At the end 
-    of the inner loop, if certain conditions are met, the direction 
-    that gave the largest decrease is dropped and replaced with 
-    the difference between the current estiamted x and the estimated 
-    x from the beginning of the inner-loop. 
-    
+    over each current direction in the direction set. At the end
+    of the inner loop, if certain conditions are met, the direction
+    that gave the largest decrease is dropped and replaced with
+    the difference between the current estiamted x and the estimated
+    x from the beginning of the inner-loop.
+
     The technical conditions for replacing the direction of greatest
-    increase amount to checking that 
-    
-    1. No further gain can be made along the 
-    direction of greatest increase from that iteration
+    increase amount to checking that
+
+    1. No further gain can be made along the
+        direction of greatest increase from that iteration
     2.The direction of greatest increase accounted for a large sufficient
-    fraction of the decrease in the function value from that
-    iteration of the inner loop. 
-    
+        fraction of the decrease in the function value from that
+        iteration of the inner loop.
+
 
     References
     ----------
     Powell M.J.D. (1964) An efficient method for finding the minimum of a
     function of several variables without calculating derivatives,
-    Computer Journal, 7 (2):155-162. 
+    Computer Journal, 7 (2):155-162.
 
-    Press W., Teukolsky S.A., Vetterling W.T., and Flannery B.P.: 
+    Press W., Teukolsky S.A., Vetterling W.T., and Flannery B.P.:
     Numerical Recipes (any edition), Cambridge University Press
-    
+
     """
     # we need to use a mutable object here that we can update in the
     # wrapper function
