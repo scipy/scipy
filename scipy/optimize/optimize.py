@@ -180,7 +180,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
          full_output=0, disp=1, retall=0, callback=None):
     """
     Minimize a function using the downhill simplex algorithm. This algorithm
-    only uses function values, not dervatives or second dervatives. 
+    only uses function values. No dervatives or second derivatives are used. 
 
     Parameters
     ----------
@@ -236,9 +236,9 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     But it will usually be slower than an algorithm that uses first or 
     second derivative information. In practice it can have poor 
     performance in high-dimensional problems and is not robust to 
-    minimizing complicated functions. Additionally, there currently is not
-    a complete theory describing when the algorithm will successfully 
-    find the minimum or the speed of convergence. 
+    minimizing complicated functions. Additionally, there currently is no
+    complete theory describing when the algorithm will successfully 
+    converge to the minimum, or how fast it will if it does.  
 
     References
     ----------
@@ -1562,10 +1562,10 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     increase amount to checking that 
     
     1. No further gain can be made along the 
-    direction of greatest increase from that iteration
+        direction of greatest increase from that iteration
     2.The direction of greatest increase accounted for a large sufficient
-    fraction of the decrease in the function value from that
-    iteration of the inner loop. 
+        fraction of the decrease in the function value from that
+        iteration of the inner loop. 
     
 
     References
