@@ -5,7 +5,6 @@ Sparse Eigenvalue Problems with ARPACK (:mod:`sparse.linalg.eigen.arpack`)
 
 .. currentmodule:: scipy.sparse.linalg.eigen.arpack
 
-.. _arpack-introduction
 
 Introduction
 ------------
@@ -17,13 +16,13 @@ result of this structure is that ARPACK is able to find eigenvalues and
 eigenvectors of any linear function mapping a vector to a vector.
 
 All of the functionality provided in ARPACK is contained within the two
-high-level interffaces :func:`sparse.linalg.eigs` and 
-:func:`sparse.linalg.eigsh`.  :func:`eigs` provides interfaces to find the 
+high-level interffaces :func:`scipy.sparse.linalg.eigs` and 
+:func:`scipy.sparse.linalg.eigsh`.  :func:`eigs` 
+provides interfaces to find the 
 eigenvalues/vectors of real or complex nonsymmetric square matrices, while 
 :func:`eigsh` provides interfaces for real-symmetric or complex-hermitian 
 matrices.
 
-.. _arpack-basic-functionality
 
 Basic Functionality
 -------------------
@@ -56,7 +55,6 @@ is, eigenvalues with large magnitudes.  In particular, using ``which = 'SM'``
 may lead to slow execution time and/or anomalous results.  A better approach
 is to use *shift-invert mode*.
 
-.. _arpack-shift-invert
 
 Shift-Invert Mode
 -----------------
@@ -76,13 +74,14 @@ where
 .. math::
    \nu = \frac{1}{\lambda - \sigma}
 
+
 Examples
 --------
 Imagine you'd like to find the smallest and largest eigenvalues and the
 corresponding eigenvectors for a large matrix.  ARPACK can handle many
-forms of input: dense matrices such as ``np.ndarray`` instances, sparse
-matrices such as ``scipy.sparse.csr_matrix``, or a general linear operator
-derived from ``scipy.sparse.linalg.LinearOperator``.  For this example, for
+forms of input: dense matrices such as :func:`numpy.ndarray` instances, sparse
+matrices such as :func:`scipy.sparse.csr_matrix`, or a general linear operator
+derived from :func:`scipy.sparse.linalg.LinearOperator`.  For this example, for
 simplicity, we'll construct a symmetric, positive-definite matrix.
 
     >>> import numpy as np
@@ -196,6 +195,7 @@ Note that the shift-invert mode requires the internal solution of a matrix
 inverse.  This is taken care of automatically by ``eigsh``, but the operation
 can also be specified by the user.  See the docstring of ``eigsh`` for
 details.
+
 
 References
 ----------
