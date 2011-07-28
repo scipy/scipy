@@ -1,6 +1,6 @@
 """Cholesky decomposition functions."""
 
-from numpy import asarray_chkfinite
+from numpy import asarray_chkfinite, asarray
 
 # Local imports
 from misc import LinAlgError, _datacopied
@@ -10,7 +10,7 @@ __all__ = ['cholesky', 'cho_factor', 'cho_solve', 'cholesky_banded',
             'cho_solve_banded']
 
 
-def _cholesky(a, lower=False, overwrite_a=False, clean=True):
+def _cholesky(a, lower=False, overwrite_a=False, clean=True, chkfinite=True):
     """Common code for cholesky() and cho_factor()."""
 
     a1 = asarray_chkfinite(a)
@@ -27,7 +27,7 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True):
                                                                     % -info)
     return c, lower
 
-def cholesky(a, lower=False, overwrite_a=False):
+def cholesky(a, lower=False, overwrite_a=False, chkfinite=True):
     """Compute the Cholesky decomposition of a matrix.
 
     Returns the Cholesky decomposition, :lm:`A = L L^*` or :lm:`A = U^* U`
@@ -42,6 +42,10 @@ def cholesky(a, lower=False, overwrite_a=False):
         (Default: upper-triangular)
     overwrite_a : boolean
         Whether to overwrite data in a (may improve performance)
+    chkfinite : boolean
+        If true checks the elements of a are finite numbers. If
+        false does no checking and passes matrix through to 
+        underlying algorithm.
 
     Returns
     -------
@@ -63,11 +67,12 @@ def cholesky(a, lower=False, overwrite_a=False):
            [ 0.+2.j,  5.+0.j]])
 
     """
-    c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True)
+    c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True,
+                            chkfinite=chkfinite)
     return c
 
 
-def cho_factor(a, lower=False, overwrite_a=False):
+def cho_factor(a, lower=False, overwrite_a=False, chkfinite=True):
     """Compute the Cholesky decomposition of a matrix, to use in cho_solve
 
     Returns a matrix containing the Cholesky decomposition,
@@ -88,6 +93,10 @@ def cho_factor(a, lower=False, overwrite_a=False):
         (Default: upper-triangular)
     overwrite_a : boolean
         Whether to overwrite data in a (may improve performance)
+    chkfinite : boolean
+        If true checks the elements of a are finite numbers. If
+        false does no checking and passes matrix through to 
+        underlying algorithm.
 
     Returns
     -------
@@ -108,11 +117,12 @@ def cho_factor(a, lower=False, overwrite_a=False):
                 of a matrix.
 
     """
-    c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=False)
+    c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=False,
+                            chkfinite=chkfinite)
     return c, lower
 
 
-def cho_solve((c, lower), b, overwrite_b=False):
+def cho_solve((c, lower), b, overwrite_b=False, chkfinite=True):
     """Solve the linear equations A x = b, given the Cholesky factorization of A.
 
     Parameters
@@ -120,7 +130,11 @@ def cho_solve((c, lower), b, overwrite_b=False):
     (c, lower) : tuple, (array, bool)
         Cholesky factorization of a, as given by cho_factor
     b : array
-        Right-hand side
+        Right-hand side    
+    chkfinite : boolean
+        If true checks the elements of c,b are finite numbers. If
+        false does no checking and passes matrices through to 
+        underlying algorithm.
 
     Returns
     -------
@@ -132,9 +146,13 @@ def cho_solve((c, lower), b, overwrite_b=False):
     cho_factor : Cholesky factorization of a matrix
 
     """
-
-    b1 = asarray_chkfinite(b)
-    c = asarray_chkfinite(c)
+    
+    if chkfinite:
+        b1 = asarray_chkfinite(b)
+        c = asarray_chkfinite(c)
+    else:
+        b1 = asarray(b)
+        c = asarray(c)
     if c.ndim != 2 or c.shape[0] != c.shape[1]:
         raise ValueError("The factored matrix c is not square.")
     if c.shape[1] != b1.shape[0]:
@@ -149,7 +167,7 @@ def cho_solve((c, lower), b, overwrite_b=False):
                                                                     % -info)
     return x
 
-def cholesky_banded(ab, overwrite_ab=False, lower=False):
+def cholesky_banded(ab, overwrite_ab=False, lower=False, chkfinite=True):
     """Cholesky decompose a banded Hermitian positive-definite matrix
 
     The matrix a is stored in ab either in lower diagonal or upper
@@ -178,6 +196,10 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False):
         Discard data in ab (may enhance performance)
     lower : boolean
         Is the matrix in the lower form. (Default is upper form)
+    chkfinite : boolean
+        If true checks the elements of ab are finite numbers. If
+        false does no checking and passes matrix through to 
+        underlying algorithm.
 
     Returns
     -------
@@ -185,7 +207,10 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False):
         Cholesky factorization of a, in the same banded format as ab
 
     """
-    ab = asarray_chkfinite(ab)
+    if chkfinite:
+        ab = asarray_chkfinite(ab)
+    else:
+        ab = asarray(ab)
 
     pbtrf, = get_lapack_funcs(('pbtrf',), (ab,))
     c, info = pbtrf(ab, lower=lower, overwrite_ab=overwrite_ab)
@@ -197,7 +222,7 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False):
     return c
 
 
-def cho_solve_banded((cb, lower), b, overwrite_b=False):
+def cho_solve_banded((cb, lower), b, overwrite_b=False, chkfinite=True):
     """Solve the linear equations A x = b, given the Cholesky factorization of A.
 
     Parameters
@@ -209,6 +234,10 @@ def cho_solve_banded((cb, lower), b, overwrite_b=False):
         Right-hand side
     overwrite_b : bool
         If True, the function will overwrite the values in `b`.
+    chkfinite : boolean
+        If true checks the elements of cb, b are finite numbers. If
+        false does no checking and passes matrices through to 
+        underlying algorithm.
 
     Returns
     -------
@@ -226,8 +255,12 @@ def cho_solve_banded((cb, lower), b, overwrite_b=False):
 
     """
 
-    cb = asarray_chkfinite(cb)
-    b = asarray_chkfinite(b)
+    if chkfinite:
+        cb = asarray_chkfinite(cb)
+        b = asarray_chkfinite(b)
+    else:
+        cb = asarray(cb)
+        b = asarray(b)
 
     # Validate shapes.
     if cb.shape[-1] != b.shape[0]:

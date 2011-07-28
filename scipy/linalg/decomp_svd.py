@@ -1,7 +1,7 @@
 """SVD decomposition functions."""
 
 import numpy
-from numpy import asarray_chkfinite, zeros, r_, diag
+from numpy import asarray_chkfinite, asarray, zeros, r_, diag
 from scipy.linalg import calc_lwork
 
 # Local imports.
@@ -11,7 +11,8 @@ from lapack import get_lapack_funcs
 __all__ = ['svd', 'svdvals', 'diagsvd', 'orth']
 
 
-def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False):
+def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
+            chkfinite=True):
     """Singular Value Decomposition.
 
     Factorizes the matrix a into two unitary matrices U and Vh and
@@ -30,6 +31,10 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False):
         Whether to compute also U, Vh in addition to s (Default: true)
     overwrite_a : boolean
         Whether data in a is overwritten (may improve performance)
+    chkfinite : boolean
+        If true checks the elements of a,b are finite numbers. If
+        false does no checking and passes matrices through to
+        underlying algorithm.
 
     Returns
     -------
@@ -67,7 +72,10 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False):
     diagsvd : return the Sigma matrix, given the vector s
 
     """
-    a1 = asarray_chkfinite(a)
+    if chkfinite:
+        a1 = asarray_chkfinite(a)
+    else:
+        a1 = asarray(a)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     m,n = a1.shape
@@ -89,7 +97,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False):
     else:
         return s
 
-def svdvals(a, overwrite_a=False):
+def svdvals(a, overwrite_a=False, chkfinite=True):
     """Compute singular values of a matrix.
 
     Parameters
@@ -98,6 +106,10 @@ def svdvals(a, overwrite_a=False):
         Matrix to decompose
     overwrite_a : boolean
         Whether data in a is overwritten (may improve performance)
+    chkfinite : boolean
+        If true checks the elements of a are finite numbers. If
+        false does no checking and passes matrix through to
+        underlying algorithm.
 
     Returns
     -------
@@ -112,7 +124,7 @@ def svdvals(a, overwrite_a=False):
     diagsvd : return the Sigma matrix, given the vector s
 
     """
-    return svd(a, compute_uv=0, overwrite_a=overwrite_a)
+    return svd(a, compute_uv=0, overwrite_a=overwrite_a, chkfinite=chkfinite)
 
 def diagsvd(s, M, N):
     """Construct the sigma matrix in SVD from singular values and size M,N.

@@ -24,7 +24,8 @@ def safecall(f, name, *args, **kwargs):
                          % (-ret[-1], name))
     return ret[:-2]
 
-def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
+def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
+        chkfinite=True):
     """Compute QR decomposition of a matrix.
 
     Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
@@ -50,6 +51,10 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
         qr decomposition. If pivoting, compute the decomposition
         :lm:`A P = Q R` as above, but where P is chosen such that the diagonal
         of R is non-increasing.
+    chkfinite : boolean
+        If true checks the elements of a are finite numbers. If
+        false does no checking and passes matrix through to
+        underlying algorithm.
 
     Returns
     -------
@@ -114,7 +119,10 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
         raise ValueError(
                  "Mode argument should be one of ['full', 'r', 'economic', 'raw']")
 
-    a1 = numpy.asarray_chkfinite(a)
+    if chkfinite:
+        a1 = numpy.asarray_chkfinite(a)
+    else:
+        a1 = numpy.asarray(a)
     if len(a1.shape) != 2:
         raise ValueError("expected 2D array")
     M, N = a1.shape
@@ -284,7 +292,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     return (cQ,) + raw[1:]
 
 @numpy.deprecate
-def qr_old(a, overwrite_a=False, lwork=None):
+def qr_old(a, overwrite_a=False, lwork=None, chkfinite=True):
     """Compute QR decomposition of a matrix.
 
     Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
@@ -299,6 +307,10 @@ def qr_old(a, overwrite_a=False, lwork=None):
     lwork : integer
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
+    chkfinite : boolean
+        If true checks the elements of a are finite numbers. If
+        false does no checking and passes matrix through to
+        underlying algorithm.
 
     Returns
     -------
@@ -309,7 +321,10 @@ def qr_old(a, overwrite_a=False, lwork=None):
     Raises LinAlgError if decomposition fails
 
     """
-    a1 = numpy.asarray_chkfinite(a)
+    if chkfinite:
+        a1 = numpy.asarray_chkfinite(a)
+    else:
+        a1 = numpy.asarray(a)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     M,N = a1.shape
@@ -338,7 +353,7 @@ def qr_old(a, overwrite_a=False, lwork=None):
     return Q, R
 
 
-def rq(a, overwrite_a=False, lwork=None, mode='full'):
+def rq(a, overwrite_a=False, lwork=None, mode='full', chkfinite=True):
     """Compute RQ decomposition of a square real matrix.
 
     Calculate the decomposition :lm:`A = R Q` where Q is unitary/orthogonal
@@ -357,6 +372,10 @@ def rq(a, overwrite_a=False, lwork=None, mode='full'):
         Determines what information is to be returned: either both Q and R
         ('full', default), only R ('r') or both Q and R but computed in
         economy-size ('economic', see Notes).
+    chkfinite : boolean
+        If true checks the elements of a are finite numbers. If
+        false does no checking and passes matrix through to
+        underlying algorithm.
 
     Returns
     -------
@@ -387,7 +406,10 @@ def rq(a, overwrite_a=False, lwork=None, mode='full'):
         raise ValueError(\
                  "Mode argument should be one of ['full', 'r', 'economic']")
 
-    a1 = numpy.asarray_chkfinite(a)
+    if chkfinite:
+        a1 = numpy.asarray_chkfinite(a)
+    else:
+        a1 = numpy.asarray(a)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     M, N = a1.shape
