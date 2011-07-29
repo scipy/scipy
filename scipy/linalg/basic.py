@@ -289,8 +289,8 @@ def inv(a, overwrite_a=False, chkfinite=True):
     overwrite_a : bool, optional
         Discard data in `a` (may improve performance). Default is False.
     chkfinite : boolean
-        If true checks the elements of a,b are finite numbers. If
-        false does no checking and passes through matrices to
+        If true checks the elements of a are finite numbers. If
+        false does no checking and passes matrix through to
         underlying algorithm.
 
     Returns
@@ -376,8 +376,8 @@ def det(a, overwrite_a=False, chkfinite=True):
     ----------
     a : array, shape (M, M)
     chkfinite : boolean
-        If true checks the elements of a,b are finite numbers. If
-        false does no checking and passes through matrices to
+        If true checks the elements of a are finite numbers. If
+        false does no checking and passes matrix through to
         underlying algorithm.
 
     Returns
@@ -526,8 +526,8 @@ def pinv(a, cond=None, rcond=None, chkfinite=True):
         Singular values smaller than rcond*largest_singular_value are
         considered zero.
     chkfinite : boolean
-        If true checks the elements of a,b are finite numbers. If
-        false does no checking and passes through matrices to
+        If true checks the elements of a are finite numbers. If
+        false does no checking and passes matrix through to
         underlying algorithm.
 
     Returns
@@ -575,8 +575,8 @@ def pinv2(a, cond=None, rcond=None, chkfinite=True):
 
         If None or -1, suitable machine precision is used.
     chkfinite : boolean
-        If true checks the elements of a,b are finite numbers. If
-        false does no checking and passes through matrices to
+        If true checks the elements of a are finite numbers. If
+        false does no checking and passes matrix through to
         underlying algorithm.
 
     Returns

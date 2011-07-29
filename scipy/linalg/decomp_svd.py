@@ -32,8 +32,8 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     overwrite_a : boolean
         Whether data in a is overwritten (may improve performance)
     chkfinite : boolean
-        If true checks the elements of a,b are finite numbers. If
-        false does no checking and passes matrices through to
+        If true checks the elements of a are finite numbers. If
+        false does no checking and passes matrix through to
         underlying algorithm.
 
     Returns
