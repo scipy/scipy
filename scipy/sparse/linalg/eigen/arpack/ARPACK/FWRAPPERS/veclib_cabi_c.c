@@ -1,3 +1,4 @@
+#include <complex.h>
 #include <vecLib/vecLib.h>
 
 #define WRAP_F77(a) a##_
