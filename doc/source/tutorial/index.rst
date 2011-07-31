@@ -16,6 +16,7 @@ SciPy Tutorial
    fftpack
    signal
    linalg
+   arpack
    stats
    ndimage
    io
