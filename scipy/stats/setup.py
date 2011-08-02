@@ -4,7 +4,7 @@ from os.path import join
 
 
 def configuration(parent_package='',top_path=None):
-    from numpy.distutils.misc_util import Configuration
+    from numpy.distutils.misc_util import Configuration, get_info
     config = Configuration('stats', parent_package, top_path)
 
     config.add_data_dir('tests')
@@ -23,6 +23,10 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('vonmises_cython',
         sources=['vonmises_cython.c'], # FIXME: use cython source
     )
+
+    # add logit module
+    info = get_info('npymath')
+    config.add_extension('logit', ['logit.c'], extra_info=info)
 
     # add futil module
     config.add_extension('futil',

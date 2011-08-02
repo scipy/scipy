@@ -274,6 +274,8 @@ which work for masked arrays.
    :toctree: generated/
 
    glm
+   logit
+   expit
 
 Plot-tests
 ==========
