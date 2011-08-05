@@ -1,23 +1,15 @@
 import numpy as np
 from numpy.testing import *
-from scipy.stats import logit, expit
+from scipy.special import logit, expit
 
 class TestLogit(TestCase):
     
-    def check_logit_out(self, dtype, expected_out):
+    def check_logit_out(self, dtype, expected):
         a = np.linspace(0,1,10)
         a = np.array(a, dtype=dtype)
-        actual_out = logit(a)
-        assert_almost_equal(actual_out, expected_out)
-        assert_equal(actual_out.dtype, np.dtype(dtype))
-
-    def test_float16(self):
-        expected = np.array([-np.inf, -2.08007812, 
-                            -1.25292969, -0.69335938, 
-                            -0.22363281, 0.22363281,  
-                            0.69238281,  1.25292969,  
-                            2.078125  , np.inf], dtype='float16')
-        self.check_logit_out('f2', expected)
+        actual = logit(a)
+        assert_almost_equal(actual, expected)
+        assert_equal(actual.dtype, np.dtype(dtype))
 
     def test_float32(self):
         expected = np.array([-np.inf, -2.07944155, 
@@ -35,21 +27,18 @@ class TestLogit(TestCase):
                             2.07944154,         np.inf])
         self.check_logit_out('f8', expected)
 
+    def test_nan(self):
+        expected = np.array([np.nan]*4)
+        actual = logit(np.array([-3., -2., 2., 3.]))
+        assert_equal(expected, actual)
+
 class TestExpit(TestCase):
-    def check_expit_out(self, dtype, expected_out):
+    def check_expit_out(self, dtype, expected):
         a = np.linspace(-4,4,10)
         a = np.array(a, dtype=dtype)
-        actual_out = expit(a)
-        assert_almost_equal(actual_out, expected_out)
-        assert_equal(actual_out.dtype, np.dtype(dtype))
-
-    def test_float16(self):
-        expected = np.array([ 0.01799011,  0.04263306,  
-                            0.09771729,  0.20861816,  
-                            0.390625  , 0.609375  ,  
-                            0.79150391,  0.90234375,  
-                            0.95751953,  0.98193359], dtype='float16')
-        self.check_expit_out('f2', expected)
+        actual = expit(a)
+        assert_almost_equal(actual, expected)
+        assert_equal(actual.dtype, np.dtype(dtype))
 
     def test_float32(self):
         expected = np.array([ 0.01798621,  0.04265125,  

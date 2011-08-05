@@ -729,7 +729,7 @@ class TestLUSolve(TestCase):
             lu_a = lu_factor(a)
             x2 = lu_solve(lu_a,b)
 
-            assert_array_equal(x1,x2)
+            assert_array_almost_equal(x1,x2)
 
 class TestSVD(TestCase):
     def setUp(self):

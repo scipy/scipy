@@ -10,7 +10,6 @@ from rv import *
 from morestats import *
 from kde import gaussian_kde
 import mstats
-from logit import logit, expit
 
 #remove vonmises_cython from __all__, I don't know why it is included
 __all__ = filter(lambda s:not (s.startswith('_') or s.endswith('cython')),dir())

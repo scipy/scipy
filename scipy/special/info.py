@@ -224,6 +224,8 @@ Raw Statistical Functions
    kolmogorov -- The complementary CDF of the (scaled) two-sided test statistic (Kn*) valid for large n.
    kolmogi    -- Inverse of kolmogorov
    tklmbda    -- Tukey-Lambda CDF
+   logit      --
+   expit      --
 
 Gamma and Related Functions
 ---------------------------
