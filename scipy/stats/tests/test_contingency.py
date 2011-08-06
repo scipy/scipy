@@ -3,7 +3,7 @@ import numpy as np
 from numpy.testing import run_module_suite, assert_equal, assert_array_equal, \
          assert_array_almost_equal, assert_approx_equal, assert_raises
 
-from scipy.stats import margins, expected_freq, chi2_contingency
+from scipy.stats.contingency import margins, expected_freq, chi2_contingency
 
 
 def test_margins():
