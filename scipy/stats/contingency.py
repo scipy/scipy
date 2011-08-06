@@ -104,7 +104,7 @@ def expected_freq(observed):
 
 
 def chi2_contingency(observed, correction=True):
-    """Chi-square test of independence of observations in a contingency table.
+    """Chi-square test of independence of variables in a contingency table.
 
     This function computes the chi-square statistic and p-value for the
     hypothesis test of independence of the observed frequencies in the
@@ -143,7 +143,7 @@ def chi2_contingency(observed, correction=True):
 
     See Also
     --------
-    expected_freq
+    scipy.stats.contingency.expected_freq
     fisher_exact
     chisquare
 
