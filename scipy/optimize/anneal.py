@@ -231,7 +231,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     optimization, as there are usually better algorithms for continuous
     optimization problems. 
 
-    Some experimentation by trying the difference temperature 
+    Some experimentation by trying different temperature 
     schedules and altering their parameters is likely required to
     obtain good performance. 
 
@@ -242,8 +242,8 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     We give a brief description of how the three temperature schedules
     generate new points and vary their temperature. Temperatures are
     only updated with iterations in the outer loop. The inner loop is
-    over loop over xrange(dwell), and new points are generated for
-    every iteration in the inner loop. (Though whether the proposed 
+    over xrange(dwell), and new points are generated for
+    every iteration in the inner loop. (Whether the proposed 
     new points are accepted is probabilistic.) 
     
 

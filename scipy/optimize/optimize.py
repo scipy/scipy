@@ -180,7 +180,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
          full_output=0, disp=1, retall=0, callback=None):
     """
     Minimize a function using the downhill simplex algorithm. This algorithm
-    only uses function values. No dervatives or second derivatives are used. 
+    only uses function values. No first or second derivatives are used. 
 
     Parameters
     ----------
