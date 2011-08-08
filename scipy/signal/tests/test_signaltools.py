@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_almost_equal, assert_array_equal, assert_array_almost_equal, \
-    assert_raises, assert_, dec
+    assert_raises, assert_
 
 import scipy.signal as signal
 from scipy.signal import correlate, convolve, convolve2d, \
@@ -582,9 +582,18 @@ class TestFiltFilt(TestCase):
 
 
 class TestDecimate:
+
     def test_basic(self):
         x = np.arange(6)
         assert_array_equal(signal.decimate(x, 2, n=1).round(), x[::2])
+
+    def test_shape(self):
+        """Regression test for ticket #1480."""
+        z = np.zeros((10, 10))
+        d0 = signal.decimate(z, 2, axis=0)
+        assert_equal(d0.shape, (5, 10))
+        d1 = signal.decimate(z, 2, axis=1)
+        assert_equal(d1.shape, (10, 5))
 
 
 class TestHilbert(object):
