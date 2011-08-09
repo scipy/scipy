@@ -619,6 +619,56 @@ interface
      integer intent(out) :: info
    end subroutine <tchar=c,z>ungqr
 
+   subroutine <tchar=s,d>ormqr(side,trans,m,n,k,a,lda,tau,c,ldc,work,lwork,info)
+
+   ! cq,work,info = ormqr(side,trans,a,tau,c,lwork)
+   ! multiplies the real matrix C with the real orthogonal matrix Q,
+   ! which is defined as the first N columns of a product of K elementary
+   ! reflectors of order M (e.g. output of geqrf)
+
+     callstatement (*f2py_func)(side,trans,&m,&n,&k,a,&lda,tau,c,&ldc,work,&lwork,&info)
+     callprotoargument char*,char*,int*,int*,int*,<type_in_c>*,int*,<type_in_c>*,<type_in_c>*,int*,<type_in_c>*,int*,int*
+
+     character intent(in),check(*side=='L'||*side=='R'):: side
+     character intent(in),check(*trans=='N'||*trans=='T'):: trans
+     integer intent(hide),depend(c):: m = shape(c,0)
+     integer intent(hide),depend(c):: n = shape(c,1)
+     integer intent(hide),depend(a):: k = shape(a,1)
+     <type_in> dimension(lda,k),intent(in):: a
+     integer intent(hide),depend(a):: lda = shape(a, 0)
+     <type_in> dimension(k),intent(in):: tau
+     <type_in> dimension(ldc,n),intent(in,out,copy,out=cq):: c
+     integer intent(hide),depend(c):: ldc = shape(c, 0)
+     <type_in> dimension(MAX(lwork,1)),intent(out):: work
+     integer intent(in):: lwork
+     integer intent(out) :: info
+   end subroutine <tchar=s,d>ormqr
+
+   subroutine <tchar=c,z>unmqr(side,trans,m,n,k,a,lda,tau,c,ldc,work,lwork,info)
+
+   ! cq,work,info = unmqr(side,trans,a,tau,c,lwork)
+   ! multiplies the complex matrix C with the complex unitary matrix Q,
+   ! which is defined as the first N columns of a product of K elementary
+   ! reflectors of order M (e.g. output of geqrf)
+
+     callstatement (*f2py_func)(side,trans,&m,&n,&k,a,&lda,tau,c,&ldc,work,&lwork,&info)
+     callprotoargument char*,char*,int*,int*,int*,<type_in_c>*,int*,<type_in_c>*,<type_in_c>*,int*,<type_in_c>*,int*,int*
+
+     character intent(in),check(*side=='L'||*side=='R'):: side
+     character intent(in),check(*trans=='N'||*trans=='C'):: trans
+     integer intent(hide),depend(c):: m = shape(c,0)
+     integer intent(hide),depend(c):: n = shape(c,1)
+     integer intent(hide),depend(a):: k = shape(a,1)
+     <type_in> dimension(lda,k),intent(in):: a
+     integer intent(hide),depend(a):: lda = shape(a, 0)
+     <type_in> dimension(k),intent(in):: tau
+     <type_in> dimension(ldc,n),intent(in,out,copy,out=cq):: c
+     integer intent(hide),depend(c):: ldc = shape(c, 0)
+     <type_in> dimension(MAX(lwork,1)),intent(out):: work
+     integer intent(in):: lwork
+     integer intent(out) :: info
+   end subroutine <tchar=c,z>unmqr
+
    subroutine <tchar=s,d>orgrq(m,n,k,a,tau,work,lwork,info)
 
    ! q,work,info = orgrq(a,lwork=3*n,overwrite_a=0)
