@@ -422,6 +422,16 @@ class TestFisherExact(TestCase):
         assert_raises(ValueError, stats.fisher_exact,
                       np.arange(6).reshape(2, 3))
 
+    def test_row_or_col_zero(self):
+        tables = ([[0, 0], [5, 10]],
+                  [[5, 10], [0, 0]],
+                  [[0, 5], [0, 10]],
+                  [[5, 0], [10, 0]])
+        for table in tables:
+            oddsratio, pval = stats.fisher_exact(table)
+            assert_equal(pval, 1.0)
+            assert_equal(oddsratio, np.nan)
+
     def test_less_greater(self):
         tables = ([[2, 7], [8, 2]],
                   [[200, 7], [8, 300]],

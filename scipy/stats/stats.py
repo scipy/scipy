@@ -2285,6 +2285,14 @@ def fisher_exact(table, alternative='two-sided'):
     if not c.shape == (2, 2):
         raise ValueError("The input `table` must be of shape (2, 2).")
 
+    if np.any(c < 0):
+        raise ValueError("All values in `table` must be nonnegative.")
+
+    if 0 in c.sum(axis=0) or 0 in c.sum(axis=1):
+        # If both values in a row or column are zero, the p-value is 1 and
+        # the odds ratio is NaN.
+        return np.nan, 1.0
+
     if c[1,0] > 0 and c[0,1] > 0:
         oddsratio = c[0,0] * c[1,1] / float(c[1,0] * c[0,1])
     else:
