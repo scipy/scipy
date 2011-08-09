@@ -28,10 +28,11 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     lwork : int, optional
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
-    mode : {'full', 'r', 'economic'}
+    mode : {'full', 'r', 'economic', 'reflectors'}
         Determines what information is to be returned: either both Q and R
-        ('full', default), only R ('r') or both Q and R but computed in
-        economy-size ('economic', see Notes).
+        ('full', default), only R ('r'), both Q and R but computed in
+        economy-size ('economic', see Notes), or the elementary
+        reflectors of Q, and R ('reflectors', see Notes).
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
         qr decomposition. If pivoting, compute the decomposition
@@ -60,6 +61,19 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
 
     If ``mode=economic``, the shapes of Q and R are (M, K) and (K, N) instead
     of (M,M) and (M,N), with ``K=min(M,N)``.
+
+    If ''mode=reflectors'', the matrix Q is represented as a product of
+    elementary reflectors
+
+      Q = H[1] H[2] . . . H[k], where k = min(m,n).
+
+    Each H[i] has the form
+
+     H[i] = I - tau * v * v.T
+
+    where tau is a real/complex scalar, and v is a real/complex vector
+    with v[:i] = 0 and v[i] = 1; v[i:m] is stored on exit in
+    A(i+1:m,i), and tau in TAU(i).
 
     Examples
     --------
@@ -98,7 +112,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
         # 'qr' was the old default, equivalent to 'full'. Neither 'full' nor
         # 'qr' are used below, but set to 'full' anyway to be sure
         mode = 'full'
-    if not mode in ['full', 'qr', 'r', 'economic']:
+    if not mode in ['full', 'qr', 'r', 'economic', 'reflectors']:
         raise ValueError(\
                  "Mode argument should be one of ['full', 'r', 'economic']")
 
@@ -142,6 +156,15 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
             return R, jpvt
         else:
             return R
+
+    if mode == 'reflectors':
+        Q = special_matrices.tril(qr, -1)
+        numpy.fill_diagonal(Q[:len(tau), :len(tau)], 1)
+        Q[:, :len(tau)] *= tau
+        if pivoting:
+            return Q, R, jpvt
+        else:
+            return Q, R
 
     if find_best_lapack_type((a1,))[0] in ('s', 'd'):
         gor_un_gqr, = get_lapack_funcs(('orgqr',), (qr,))
