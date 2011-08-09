@@ -12,6 +12,16 @@ from misc import _datacopied
 # XXX: what is qr_old, should it be kept?
 __all__ = ['qr', 'rq', 'qr_old']
 
+def safecall(f, name, *args, **kwargs):
+    lwork = kwargs.pop("lwork", None)
+    if lwork is None:
+        ret = f(*args, lwork=-1, **kwargs)
+        lwork = ret[-2][0].real.astype(numpy.int)
+    ret = f(*args, lwork=lwork, **kwargs)
+    if ret[-1] < 0:
+        raise ValueError("illegal value in %d-th argument of internal %s"
+                         % (-ret[-1], name))
+    return ret[:-2]
 
 def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
     overwrite_c=False):
@@ -145,28 +155,13 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
 
     if pivoting:
         geqp3, = get_lapack_funcs(('geqp3',), (a1,))
-        if lwork is None or lwork == -1:
-            # get optimal work array
-            qr, jpvt, tau, work, info = geqp3(a1, lwork=-1, overwrite_a=1)
-            lwork = work[0].real.astype(numpy.int)
-
-        qr, jpvt, tau, work, info = geqp3(a1, lwork=lwork,
-            overwrite_a=overwrite_a)
+        qr, jpvt, tau = safecall(geqp3, "geqp3", a1, overwrite_a=1)
         jpvt -= 1 # geqp3 returns a 1-based index array, so subtract 1
-        if info < 0:
-            raise ValueError("illegal value in %d-th argument of internal geqp3"
-                                                                        % -info)
     else:
         geqrf, = get_lapack_funcs(('geqrf',), (a1,))
-        if lwork is None or lwork == -1:
-            # get optimal work array
-            qr, tau, work, info = geqrf(a1, lwork=-1, overwrite_a=1)
-            lwork = work[0].real.astype(numpy.int)
+        qr, tau = safecall(geqrf, "geqrf", a1, lwork=lwork,
+            overwrite_a=overwrite_a)
 
-        qr, tau, work, info = geqrf(a1, lwork=lwork, overwrite_a=overwrite_a)
-        if info < 0:
-            raise ValueError("illegal value in %d-th argument of internal geqrf"
-                                                                        % -info)
     if not mode == 'economic' or M < N:
         R = numpy.triu(qr)
     else:
@@ -194,24 +189,17 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
             gor_un_gqr, = get_lapack_funcs(('ungqr',), (qr,))
 
         if M < N:
-            # get optimal work array
-            Q, work, info = gor_un_gqr(qr[:,0:M], tau, lwork=-1, overwrite_a=1)
-            lwork = work[0].real.astype(numpy.int)
-            Q, work, info = gor_un_gqr(qr[:,0:M], tau, lwork=lwork,
-                overwrite_a=1)
+            Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qr[:,0:M], tau,
+                lwork=lwork, overwrite_a=1)
         elif mode == 'economic':
-            # get optimal work array
-            Q, work, info = gor_un_gqr(qr, tau, lwork=-1, overwrite_a=1)
-            lwork = work[0].real.astype(numpy.int)
-            Q, work, info = gor_un_gqr(qr, tau, lwork=lwork, overwrite_a=1)
+            Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qr, tau, lwork=lwork,
+                overwrite_a=1)
         else:
             t = qr.dtype.char
             qqr = numpy.empty((M, M), dtype=t)
-            qqr[:,0:N] = qr
-            # get optimal work array
-            Q, work, info = gor_un_gqr(qqr, tau, lwork=-1, overwrite_a=1)
-            lwork = work[0].real.astype(numpy.int)
-            Q, work, info = gor_un_gqr(qqr, tau, lwork=lwork, overwrite_a=1)
+            qqr[:, :N] = qr
+            Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qqr, tau, lwork=lwork,
+                overwrite_a=1)
     else:
         if find_best_lapack_type((a1,))[0] in ('s', 'd'):
             gor_un_mqr, = get_lapack_funcs(('ormqr',), (qr,))
@@ -238,18 +226,13 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
             trans = "N"
             cc = c
             lr = "L" if mode == "left" else "R"
-        Q, work, info = gor_un_mqr(lr, trans, qr, tau, cc, lwork=-1)
-        lwork = work[0].real.astype(numpy.int)
-        Q, work, info = gor_un_mqr(lr, trans, qr, tau, cc, lwork=lwork,
-            overwrite_c=overwrite_c)
+        Q, = safecall(gor_un_mqr, "gormqr/gunmqr", lr, trans, qr, tau, cc,
+            lwork=lwork, overwrite_c=overwrite_c)
         if trans != "N":
             Q = Q.T.conjugate()
         if mode == "right":
             Q = Q[:, :min(M, N)]
 
-    if info < 0:
-        raise ValueError("illegal value in %d-th argument of internal gorgqr"
-                                                                    % -info)
     if pivoting:
         return Q, R, jpvt
     return Q, R
