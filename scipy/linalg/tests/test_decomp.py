@@ -863,6 +863,24 @@ class TestQR(TestCase):
         assert_array_almost_equal(dot(transpose(q),q),identity(3))
         assert_array_almost_equal(dot(q,r),a)
 
+    def test_simple_left(self):
+        a = [[8,2,3],[2,9,3],[5,3,6]]
+        q,r = qr(a)
+        c = [1, 2, 3]
+        qc,r = qr(a, mode="left", c=c)
+        assert_array_almost_equal(dot(q, c), qc[:, 0])
+        qc,r = qr(a, mode="left", c=identity(3))
+        assert_array_almost_equal(q, qc)
+
+    def test_simple_right(self):
+        a = [[8,2,3],[2,9,3],[5,3,6]]
+        q,r = qr(a)
+        c = [1, 2, 3]
+        qc,r = qr(a, mode="right", c=c)
+        assert_array_almost_equal(dot(c, q), qc[0, :])
+        qc,r = qr(a, mode="right", c=identity(3))
+        assert_array_almost_equal(q, qc)
+
     def test_simple_pivoting(self):
         a = np.asarray([[8,2,3],[2,9,3],[5,3,6]])
         q,r,p = qr(a, pivoting=True)
@@ -873,6 +891,20 @@ class TestQR(TestCase):
         q2,r2 = qr(a[:,p])
         assert_array_almost_equal(q,q2)
         assert_array_almost_equal(r,r2)
+
+    def test_simple_left_pivoting(self):
+        a = [[8,2,3],[2,9,3],[5,3,6]]
+        q,r,jpvt = qr(a, pivoting=True)
+        c = [1, 2, 3]
+        qc,r,jpvt = qr(a, mode="left", pivoting=True, c=c)
+        assert_array_almost_equal(dot(q, c), qc[:, 0])
+
+    def test_simple_right_pivoting(self):
+        a = [[8,2,3],[2,9,3],[5,3,6]]
+        q,r,jpvt = qr(a, pivoting=True)
+        c = [1, 2, 3]
+        qc,r,jpvt = qr(a, mode="right", pivoting=True, c=c)
+        assert_array_almost_equal(dot(c, q), qc[0, :])
 
     def test_simple_trap(self):
         a = [[8,2,3],[2,9,3]]
@@ -931,6 +963,42 @@ class TestQR(TestCase):
         assert_array_almost_equal(q,q2)
         assert_array_almost_equal(r,r2)
 
+    def test_simple_tall_left(self):
+        a = [[8,2],[2,9],[5,3]]
+        q,r = qr(a, mode="economic") 
+        c = [1, 2]
+        qc,r = qr(a, mode="left", c=c)
+        assert_array_almost_equal(dot(q, c), qc[:, 0])
+        qc,r = qr(a, mode="left", c=identity(2))
+        assert_array_almost_equal(qc, q)
+
+    def test_simple_tall_left_pivoting(self):
+        a = [[8,2],[2,9],[5,3]]
+        q,r,jpvt = qr(a, mode="economic", pivoting=True)
+        c = [1, 2]
+        qc,r,jpvt = qr(a, pivoting="True", mode="left", c=c)
+        assert_array_almost_equal(dot(q, c), qc[:, 0])
+        qc,r,jpvt = qr(a, pivoting="True", mode="left", c=identity(2))
+        assert_array_almost_equal(qc, q)
+
+    def test_simple_tall_right(self):
+        a = [[8,2],[2,9],[5,3]]
+        q,r = qr(a, mode="economic")
+        c = [1, 2, 3]
+        cq,r = qr(a, mode="right", c=c)
+        assert_array_almost_equal(dot(c, q), cq[0, :])
+        cq,r = qr(a, mode="right", c=identity(3))
+        assert_array_almost_equal(cq, q)
+
+    def test_simple_tall_right_pivoting(self):
+        a = [[8,2],[2,9],[5,3]]
+        q,r,jpvt = qr(a, pivoting=True, mode="economic")
+        c = [1, 2, 3]
+        cq,r,jpvt = qr(a, pivoting="True", mode="right", c=c)
+        assert_array_almost_equal(dot(c, q), cq[0, :])
+        cq,r,jpvt = qr(a, pivoting="True", mode="right", c=identity(3))
+        assert_array_almost_equal(cq, q)
+
     def test_simple_fat(self):
         # full version
         a = [[8,2,5],[2,9,3]]
@@ -977,11 +1045,65 @@ class TestQR(TestCase):
         assert_array_almost_equal(q,q2)
         assert_array_almost_equal(r,r2)
 
+    def test_simple_fat_left(self):
+        a = [[8,2,3],[2,9,5]]
+        q,r = qr(a, mode="economic") 
+        c = [1, 2]
+        qc,r = qr(a, mode="left", c=c)
+        assert_array_almost_equal(dot(q, c), qc[:, 0])
+        qc,r = qr(a, mode="left", c=identity(2))
+        assert_array_almost_equal(qc, q)
+
+    def test_simple_fat_left_pivoting(self):
+        a = [[8,2,3],[2,9,5]]
+        q,r,jpvt = qr(a, mode="economic", pivoting=True)
+        c = [1, 2]
+        qc,r,jpvt = qr(a, pivoting="True", mode="left", c=c)
+        assert_array_almost_equal(dot(q, c), qc[:, 0])
+        qc,r,jpvt = qr(a, pivoting="True", mode="left", c=identity(2))
+        assert_array_almost_equal(qc, q)
+
+    def test_simple_fat_right(self):
+        a = [[8,2,3],[2,9,5]]
+        q,r = qr(a, mode="economic")
+        c = [1, 2]
+        cq,r = qr(a, mode="right", c=c)
+        assert_array_almost_equal(dot(c, q), cq[0, :])
+        cq,r = qr(a, mode="right", c=identity(2))
+        assert_array_almost_equal(cq, q)
+
+    def test_simple_fat_right_pivoting(self):
+        a = [[8,2,3],[2,9,5]]
+        q,r,jpvt = qr(a, pivoting=True, mode="economic")
+        c = [1, 2]
+        cq,r,jpvt = qr(a, pivoting="True", mode="right", c=c)
+        assert_array_almost_equal(dot(c, q), cq[0, :])
+        cq,r,jpvt = qr(a, pivoting="True", mode="right", c=identity(2))
+        assert_array_almost_equal(cq, q)
+
     def test_simple_complex(self):
         a = [[3,3+4j,5],[5,2,2+7j],[3,2,7]]
         q,r = qr(a)
         assert_array_almost_equal(dot(conj(transpose(q)),q),identity(3))
         assert_array_almost_equal(dot(q,r),a)
+
+    def test_simple_complex_left(self):
+        a = [[3,3+4j,5],[5,2,2+7j],[3,2,7]]
+        q,r = qr(a)
+        c = [1, 2, 3+4j]
+        qc,r = qr(a, mode="left", c=c)
+        assert_array_almost_equal(dot(q, c), qc[:, 0])
+        qc,r = qr(a, mode="left", c=identity(3))
+        assert_array_almost_equal(q, qc)
+
+    def test_simple_complex_right(self):
+        a = [[3,3+4j,5],[5,2,2+7j],[3,2,7]]
+        q,r = qr(a)
+        c = [1, 2, 3+4j]
+        qc,r = qr(a, mode="right", c=c)
+        assert_array_almost_equal(dot(c, q), qc[0, :])
+        qc,r = qr(a, mode="right", c=identity(3))
+        assert_array_almost_equal(q, qc)
 
     def test_simple_complex_pivoting(self):
         a = np.asarray([[3,3+4j,5],[5,2,2+7j],[3,2,7]])
@@ -994,6 +1116,20 @@ class TestQR(TestCase):
         assert_array_almost_equal(q,q2)
         assert_array_almost_equal(r,r2)
 
+    def test_simple_complex_left_pivoting(self):
+        a = np.asarray([[3,3+4j,5],[5,2,2+7j],[3,2,7]])
+        q,r,jpvt = qr(a, pivoting=True)
+        c = [1, 2, 3+4j]
+        qc,r,jpvt = qr(a, mode="left", pivoting=True, c=c)
+        assert_array_almost_equal(dot(q, c), qc[:, 0])
+
+    def test_simple_complex_right_pivoting(self):
+        a = np.asarray([[3,3+4j,5],[5,2,2+7j],[3,2,7]])
+        q,r,jpvt = qr(a, pivoting=True)
+        c = [1, 2, 3+4j]
+        qc,r,jpvt = qr(a, mode="right", pivoting=True, c=c)
+        assert_array_almost_equal(dot(c, q), qc[0, :])
+
     def test_random(self):
         n = 20
         for k in range(2):
@@ -1001,6 +1137,28 @@ class TestQR(TestCase):
             q,r = qr(a)
             assert_array_almost_equal(dot(transpose(q),q),identity(n))
             assert_array_almost_equal(dot(q,r),a)
+
+    def test_random_left(self):
+        n = 20
+        for k in range(2):
+            a = random([n,n])
+            q,r = qr(a)
+            c = random([n])
+            qc,r = qr(a, mode="left", c=c)
+            assert_array_almost_equal(dot(q, c), qc[:, 0])
+            qc,r = qr(a, mode="left", c=identity(n))
+            assert_array_almost_equal(q, qc)
+
+    def test_random_right(self):
+        n = 20
+        for k in range(2):
+            a = random([n,n])
+            q,r = qr(a)
+            c = random([n])
+            cq,r = qr(a, mode="right", c=c)
+            assert_array_almost_equal(dot(c, q), cq[0, :])
+            cq,r = qr(a, mode="right", c=identity(n))
+            assert_array_almost_equal(q, cq)
 
     def test_random_pivoting(self):
         n = 20
@@ -1024,6 +1182,32 @@ class TestQR(TestCase):
             q,r = qr(a)
             assert_array_almost_equal(dot(transpose(q),q),identity(m))
             assert_array_almost_equal(dot(q,r),a)
+
+    def test_random_tall_left(self):
+        # full version
+        m = 200
+        n = 100
+        for k in range(2):
+            a = random([m,n])
+            q,r = qr(a, mode="economic") 
+            c = random([n])
+            qc,r = qr(a, mode="left", c=c)
+            assert_array_almost_equal(dot(q, c), qc[:, 0])
+            qc,r = qr(a, mode="left", c=identity(n))
+            assert_array_almost_equal(qc, q)
+
+    def test_random_tall_right(self):
+        # full version
+        m = 200
+        n = 100
+        for k in range(2):
+            a = random([m,n])
+            q,r = qr(a, mode="economic") 
+            c = random([m])
+            cq,r = qr(a, mode="right", c=c)
+            assert_array_almost_equal(dot(c, q), cq[0, :])
+            cq,r = qr(a, mode="right", c=identity(m))
+            assert_array_almost_equal(cq, q)
 
     def test_random_tall_pivoting(self):
         # full version pivoting
@@ -1099,6 +1283,28 @@ class TestQR(TestCase):
             q,r = qr(a)
             assert_array_almost_equal(dot(conj(transpose(q)),q),identity(n))
             assert_array_almost_equal(dot(q,r),a)
+
+    def test_random_complex_left(self):
+        n = 20
+        for k in range(2):
+            a = random([n,n])+1j*random([n,n])
+            q,r = qr(a)
+            c = random([n])+1j*random([n])
+            qc,r = qr(a, mode="left", c=c)
+            assert_array_almost_equal(dot(q, c), qc[:, 0])
+            qc,r = qr(a, mode="left", c=identity(n))
+            assert_array_almost_equal(q, qc)
+
+    def test_random_complex_right(self):
+        n = 20
+        for k in range(2):
+            a = random([n,n])+1j*random([n,n])
+            q,r = qr(a)
+            c = random([n])+1j*random([n])
+            cq,r = qr(a, mode="right", c=c)
+            assert_array_almost_equal(dot(c, q), cq[0, :])
+            cq,r = qr(a, mode="right", c=identity(n))
+            assert_array_almost_equal(q, cq)
 
     def test_random_complex_pivoting(self):
         n = 20
