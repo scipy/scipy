@@ -13,7 +13,8 @@ from misc import _datacopied
 __all__ = ['qr', 'rq', 'qr_old']
 
 
-def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
+def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
+    overwrite_c=False):
     """Compute QR decomposition of a matrix.
 
     Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
@@ -28,22 +29,36 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     lwork : int, optional
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
-    mode : {'full', 'r', 'economic', 'reflectors'}
+    mode : {'full', 'r', 'economic', 'reflectors'} if c is None,
+        or {'left', 'right'} if c is given.
         Determines what information is to be returned: either both Q and R
         ('full', default), only R ('r'), both Q and R but computed in
         economy-size ('economic', see Notes), or the elementary
         reflectors of Q, and R ('reflectors', see Notes).
+        In case c is given, dot(Q, c) is returned if mode is left,
+        dot(c, Q) is returned if mode is right.
+        
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
         qr decomposition. If pivoting, compute the decomposition
         :lm:`A P = Q R` as above, but where P is chosen such that the diagonal
         of R is non-increasing.
+    c : array, two-dimensional
+        calculate the product of c and q, depending on the mode:
+        'left': dot(Q, c)
+        'right': dot(c, Q)
+        the shape of c must be appropriate for the matrix multiplications
+    overwrite_c: bool, optional
+        Whether data in c is overwritten (may improve performance)
+        
 
     Returns
     -------
     Q : double or complex ndarray
         Of shape (M, M), or (M, K) for ``mode='economic'``.  Not returned if
         ``mode='r'``.
+    CQ : double or complex ndarray
+        the product of Q and c, as defined in mode
     R : double or complex ndarray
         Of shape (M, N), or (K, N) for ``mode='economic'``.  ``K = min(M, N)``.
     P : integer ndarray
@@ -112,9 +127,15 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
         # 'qr' was the old default, equivalent to 'full'. Neither 'full' nor
         # 'qr' are used below, but set to 'full' anyway to be sure
         mode = 'full'
-    if not mode in ['full', 'qr', 'r', 'economic', 'reflectors']:
-        raise ValueError(\
-                 "Mode argument should be one of ['full', 'r', 'economic']")
+    if (not mode in ['full', 'qr', 'r', 'economic', 'reflectors']
+                 ) and c is None:
+        raise ValueError(
+                 "Mode argument should be one of "
+                 "['full', 'r', 'economic', 'reflectors']")
+    if (not mode in ['left', 'right']
+                 ) and c is not None:
+        raise ValueError(
+                 "Mode argument should be one of ['left', 'right']")
 
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2:
@@ -166,29 +187,65 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
         else:
             return Q, R
 
-    if find_best_lapack_type((a1,))[0] in ('s', 'd'):
-        gor_un_gqr, = get_lapack_funcs(('orgqr',), (qr,))
-    else:
-        gor_un_gqr, = get_lapack_funcs(('ungqr',), (qr,))
+    if c is None:
+        if find_best_lapack_type((a1,))[0] in ('s', 'd'):
+            gor_un_gqr, = get_lapack_funcs(('orgqr',), (qr,))
+        else:
+            gor_un_gqr, = get_lapack_funcs(('ungqr',), (qr,))
 
-    if M < N:
-        # get optimal work array
-        Q, work, info = gor_un_gqr(qr[:,0:M], tau, lwork=-1, overwrite_a=1)
-        lwork = work[0].real.astype(numpy.int)
-        Q, work, info = gor_un_gqr(qr[:,0:M], tau, lwork=lwork, overwrite_a=1)
-    elif mode == 'economic':
-        # get optimal work array
-        Q, work, info = gor_un_gqr(qr, tau, lwork=-1, overwrite_a=1)
-        lwork = work[0].real.astype(numpy.int)
-        Q, work, info = gor_un_gqr(qr, tau, lwork=lwork, overwrite_a=1)
+        if M < N:
+            # get optimal work array
+            Q, work, info = gor_un_gqr(qr[:,0:M], tau, lwork=-1, overwrite_a=1)
+            lwork = work[0].real.astype(numpy.int)
+            Q, work, info = gor_un_gqr(qr[:,0:M], tau, lwork=lwork,
+                overwrite_a=1)
+        elif mode == 'economic':
+            # get optimal work array
+            Q, work, info = gor_un_gqr(qr, tau, lwork=-1, overwrite_a=1)
+            lwork = work[0].real.astype(numpy.int)
+            Q, work, info = gor_un_gqr(qr, tau, lwork=lwork, overwrite_a=1)
+        else:
+            t = qr.dtype.char
+            qqr = numpy.empty((M, M), dtype=t)
+            qqr[:,0:N] = qr
+            # get optimal work array
+            Q, work, info = gor_un_gqr(qqr, tau, lwork=-1, overwrite_a=1)
+            lwork = work[0].real.astype(numpy.int)
+            Q, work, info = gor_un_gqr(qqr, tau, lwork=lwork, overwrite_a=1)
     else:
-        t = qr.dtype.char
-        qqr = numpy.empty((M, M), dtype=t)
-        qqr[:,0:N] = qr
-        # get optimal work array
-        Q, work, info = gor_un_gqr(qqr, tau, lwork=-1, overwrite_a=1)
+        if find_best_lapack_type((a1,))[0] in ('s', 'd'):
+            gor_un_mqr, = get_lapack_funcs(('ormqr',), (qr,))
+            trans = "T"
+        else:
+            gor_un_mqr, = get_lapack_funcs(('unmqr',), (qr,))
+            trans = "C"
+
+        qr = qr[:, :min(M, N)]
+        if M > N and mode == "left":
+            if overwrite_c:
+                cc = c.T.conjugate()
+            else:
+                cc = numpy.zeros((c.shape[1], max(M, N)),
+                    dtype=c.dtype, order="F")
+                cc[:, :c.shape[0]] = c.T.conjugate()
+                overwrite_c = True
+            lr = "R"
+        elif c.flags["C_CONTIGUOUS"] and (
+                mode == "left" or M <= N) and trans == "T":
+            cc = c.T
+            lr = "R" if mode == "left" else "L"
+        else: 
+            trans = "N"
+            cc = c
+            lr = "L" if mode == "left" else "R"
+        Q, work, info = gor_un_mqr(lr, trans, qr, tau, cc, lwork=-1)
         lwork = work[0].real.astype(numpy.int)
-        Q, work, info = gor_un_gqr(qqr, tau, lwork=lwork, overwrite_a=1)
+        Q, work, info = gor_un_mqr(lr, trans, qr, tau, cc, lwork=lwork,
+            overwrite_c=overwrite_c)
+        if trans != "N":
+            Q = Q.T.conjugate()
+        if mode == "right":
+            Q = Q[:, :min(M, N)]
 
     if info < 0:
         raise ValueError("illegal value in %d-th argument of internal gorgqr"
