@@ -174,6 +174,12 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
             Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qqr, tau, lwork=lwork,
                 overwrite_a=1)
     else:
+        c = asarray_chkfinite(c)
+        if c.ndim == 1:
+            c = c.reshape(1, len(c))
+            if mode == "left":
+                c = c.T
+
         if find_best_lapack_type((a1,))[0] in ('s', 'd'):
             gor_un_mqr, = get_lapack_funcs(('ormqr',), (qr,))
             trans = "T"
