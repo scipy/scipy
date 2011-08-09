@@ -168,9 +168,9 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
             raise ValueError("illegal value in %d-th argument of internal geqrf"
                                                                         % -info)
     if not mode == 'economic' or M < N:
-        R = special_matrices.triu(qr)
+        R = numpy.triu(qr)
     else:
-        R = special_matrices.triu(qr[0:N, 0:N])
+        R = numpy.triu(qr[:N, :N])
 
     if mode == 'r':
         if pivoting:
@@ -179,7 +179,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
             return R
 
     if mode == 'reflectors':
-        Q = special_matrices.tril(qr, -1)
+        Q = numpy.tril(qr, -1)
         numpy.fill_diagonal(Q[:len(tau), :len(tau)], 1)
         Q[:, :len(tau)] *= tau
         if pivoting:
