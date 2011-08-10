@@ -3,122 +3,13 @@ import math
 import numpy as np
 from scipy.misc import comb
 
-__all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
-           'hadamard', 'leslie', 'all_mat', 'kron', 'block_diag', 'companion',
-           'hilbert', 'invhilbert']
+__all__ = ['toeplitz', 'circulant', 'hankel', 'hadamard', 'leslie', 'all_mat',
+           'kron', 'block_diag', 'companion', 'hilbert', 'invhilbert']
 
 
 #-----------------------------------------------------------------------------
 # matrix construction functions
 #-----------------------------------------------------------------------------
-
-def tri(N, M=None, k=0, dtype=None):
-    """
-    Construct (N, M) matrix filled with ones at and below the k-th diagonal.
-
-    The matrix has A[i,j] == 1 for i <= j + k
-
-    Parameters
-    ----------
-    N : integer
-        The size of the first dimension of the matrix.
-    M : integer or None
-        The size of the second dimension of the matrix. If `M` is None,
-        `M = N` is assumed.
-    k : integer
-        Number of subdiagonal below which matrix is filled with ones.
-        `k` = 0 is the main diagonal, `k` < 0 subdiagonal and `k` > 0
-        superdiagonal.
-    dtype : dtype
-        Data type of the matrix.
-
-    Returns
-    -------
-    A : array, shape (N, M)
-
-    Examples
-    --------
-    >>> from scipy.linalg import tri
-    >>> tri(3, 5, 2, dtype=int)
-    array([[1, 1, 1, 0, 0],
-           [1, 1, 1, 1, 0],
-           [1, 1, 1, 1, 1]])
-    >>> tri(3, 5, -1, dtype=int)
-    array([[0, 0, 0, 0, 0],
-           [1, 0, 0, 0, 0],
-           [1, 1, 0, 0, 0]])
-
-    """
-    if M is None: M = N
-    if type(M) == type('d'):
-        #pearu: any objections to remove this feature?
-        #       As tri(N,'d') is equivalent to tri(N,dtype='d')
-        dtype = M
-        M = N
-    m = np.greater_equal(np.subtract.outer(np.arange(N), np.arange(M)),-k)
-    if dtype is None:
-        return m
-    else:
-        return m.astype(dtype)
-
-def tril(m, k=0):
-    """Construct a copy of a matrix with elements above the k-th diagonal zeroed.
-
-    Parameters
-    ----------
-    m : array
-        Matrix whose elements to return
-    k : integer
-        Diagonal above which to zero elements.
-        k == 0 is the main diagonal, k < 0 subdiagonal and k > 0 superdiagonal.
-
-    Returns
-    -------
-    A : array, shape m.shape, dtype m.dtype
-
-    Examples
-    --------
-    >>> from scipy.linalg import tril
-    >>> tril([[1,2,3],[4,5,6],[7,8,9],[10,11,12]], -1)
-    array([[ 0,  0,  0],
-           [ 4,  0,  0],
-           [ 7,  8,  0],
-           [10, 11, 12]])
-
-    """
-    m = np.asarray(m)
-    out = tri(m.shape[0], m.shape[1], k=k, dtype=m.dtype.char)*m
-    return out
-
-def triu(m, k=0):
-    """Construct a copy of a matrix with elements below the k-th diagonal zeroed.
-
-    Parameters
-    ----------
-    m : array
-        Matrix whose elements to return
-    k : integer
-        Diagonal below which to zero elements.
-        k == 0 is the main diagonal, k < 0 subdiagonal and k > 0 superdiagonal.
-
-    Returns
-    -------
-    A : array, shape m.shape, dtype m.dtype
-
-    Examples
-    --------
-    >>> from scipy.linalg import tril
-    >>> triu([[1,2,3],[4,5,6],[7,8,9],[10,11,12]], -1)
-    array([[ 1,  2,  3],
-           [ 4,  5,  6],
-           [ 0,  8,  9],
-           [ 0,  0, 12]])
-
-    """
-    m = np.asarray(m)
-    out = (1-tri(m.shape[0], m.shape[1], k-1, m.dtype.char))*m
-    return out
-
 
 def toeplitz(c, r=None):
     """

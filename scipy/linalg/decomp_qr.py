@@ -1,10 +1,8 @@
 """QR decomposition functions."""
 
 import numpy
-from numpy import asarray_chkfinite
 
 # Local imports
-import special_matrices
 from blas import get_blas_funcs
 from lapack import get_lapack_funcs, find_best_lapack_type
 from misc import _datacopied
@@ -147,7 +145,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
         raise ValueError(
                  "Mode argument should be one of ['left', 'right']")
 
-    a1 = asarray_chkfinite(a)
+    a1 = numpy.asarray_chkfinite(a)
     if len(a1.shape) != 2:
         raise ValueError("expected 2D array")
     M, N = a1.shape
@@ -201,7 +199,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
             Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qqr, tau, lwork=lwork,
                 overwrite_a=1)
     else:
-        c = asarray_chkfinite(c)
+        c = numpy.asarray_chkfinite(c)
         if c.ndim == 1:
             if mode == "left":
                 c = c[:, numpy.newaxis]
@@ -270,7 +268,7 @@ def qr_old(a, overwrite_a=False, lwork=None):
     Raises LinAlgError if decomposition fails
 
     """
-    a1 = asarray_chkfinite(a)
+    a1 = numpy.asarray_chkfinite(a)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     M,N = a1.shape
@@ -286,7 +284,7 @@ def qr_old(a, overwrite_a=False, lwork=None):
                                                                     % -info)
     gemm, = get_blas_funcs(('gemm',), (qr,))
     t = qr.dtype.char
-    R = special_matrices.triu(qr)
+    R = numpy.triu(qr)
     Q = numpy.identity(M, dtype=t)
     ident = numpy.identity(M, dtype=t)
     zeros = numpy.zeros
@@ -348,7 +346,7 @@ def rq(a, overwrite_a=False, lwork=None, mode='full'):
         raise ValueError(\
                  "Mode argument should be one of ['full', 'r', 'economic']")
 
-    a1 = asarray_chkfinite(a)
+    a1 = numpy.asarray_chkfinite(a)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     M, N = a1.shape
@@ -364,9 +362,9 @@ def rq(a, overwrite_a=False, lwork=None, mode='full'):
         raise ValueError('illegal value in %d-th argument of internal gerqf'
                                                                     % -info)
     if not mode == 'economic' or N < M:
-        R = special_matrices.triu(rq, N-M)
+        R = numpy.triu(rq, N-M)
     else:
-        R = special_matrices.triu(rq[-M:, -M:])
+        R = numpy.triu(rq[-M:, -M:])
 
     if mode == 'r':
         return R
