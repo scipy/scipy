@@ -85,18 +85,16 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
     If ``mode=economic``, the shapes of Q and R are (M, K) and (K, N) instead
     of (M,M) and (M,N), with ``K=min(M,N)``.
 
-    If ''mode=reflectors'', the matrix Q is represented as a product of
+    If ``mode=reflectors``, the matrix Q is represented as a product of
     elementary reflectors
 
       Q = H[1] H[2] . . . H[k], where k = min(m,n).
 
     Each H[i] has the form
 
-     H[i] = I - tau * v * v.T
+     H[i] = I - (1 / v[i]) * v * v.T
 
-    where tau is a real/complex scalar, and v is a real/complex vector
-    with v[:i] = 0 and v[i] = 1; v[i:m] is stored on exit in
-    A(i+1:m,i), and tau in TAU(i).
+    where v is a vector with v[:i] = 0. v is returned as Q[:, i]
 
     Examples
     --------
