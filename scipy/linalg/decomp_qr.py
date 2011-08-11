@@ -170,9 +170,10 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
             return R
 
     if mode == 'reflectors':
-        Q = numpy.tril(qr, -1)
-        numpy.fill_diagonal(Q[:len(tau), :len(tau)], 1)
-        Q[:, :len(tau)] *= tau
+        K = min(M, N)
+        Q = numpy.tril(qr[:, :K], -1)
+        numpy.fill_diagonal(Q[:K, :K], 1)
+        Q *= tau
         if pivoting:
             return Q, R, jpvt
         else:
