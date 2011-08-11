@@ -5,7 +5,7 @@
 from numpy import pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt, \
         where, mgrid, cos, sin, exp, place, seterr, issubdtype, extract, \
         complexfloating, less, vectorize, inexact, nan, zeros, sometrue
-from _cephes import ellipk, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta, \
+from _cephes import ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta, \
         hankel1, hankel2, yv, kv, gammaln, errprint, ndtri
 import types
 import specfun
@@ -849,6 +849,14 @@ def obl_cv_seq(m,n,c):
         raise ValueError("Difference between n and m is too large.")
     maxL = n-m+1
     return specfun.segv(m,n,c,-1)[1][:maxL]
+
+def ellipk(m):
+    """y=ellipk(m) returns the complete integral of the first kind:
+    integral(1/sqrt(1-m*sin(t)**2),t=0..pi/2)
+
+    This function is rather unprecise around m==1. For more precision
+    around this point, use ellipkm1."""
+    return ellipkm1(1 - asarray(m))
 
 def agm(a,b):
     """Arithmetic, Geometric Mean

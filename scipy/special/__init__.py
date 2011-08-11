@@ -50,6 +50,7 @@ Elliptic Functions and Integrals
 
    ellipj    -- Jacobian elliptic functions
    ellipk    -- Complete elliptic integral of the first kind.
+   ellipkm1  -- ellipkm1(x) == ellipk(1 - x)
    ellipkinc -- Incomplete elliptic integral of the first kind.
    ellipe    -- Complete elliptic integral of the second kind.
    ellipeinc -- Incomplete elliptic integral of the second kind.

@@ -80,7 +80,7 @@ if( npio2 & 1 )
 	npio2 += 1;
 if( npio2 )
 	{
-	K = ellpk( m );  /* Changed */
+	K = ellpk( a ); 
 	phi = phi - npio2 * PIO2;
 	}
 else
@@ -103,7 +103,7 @@ if( fabs(t) > 10.0 )
 		{
 		e = atan(e);
 		if( npio2 == 0 )
-		    K = ellpk( m ); /* Changed */
+		    K = ellpk( a ); 
 		temp = K - ellik( e, m );
 		goto done;
 		}
