@@ -203,11 +203,10 @@ static double C1 = 1.3862943611198906188E0; /* log(4) */
 
 extern double MACHEP, MAXNUM;
 
-double ellpk(x)    /* Changed to use m argument rather than m1 = 1-m */
+double ellpk(x)
 double x;
 {
 
-x = 1.0-x;  
 if( (x < 0.0) || (x > 1.0) )
 	{
 	mtherr( "ellpk", DOMAIN );
