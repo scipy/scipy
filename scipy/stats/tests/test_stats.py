@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """ Test functions for stats module
 
     WRITTEN BY LOUIS LUANGKESORN <lluang@yahoo.com> FOR THE STATS MODULE
@@ -14,6 +15,7 @@ from numpy.testing import TestCase, rand, assert_, assert_equal, \
 from numpy import array, arange, zeros, ravel, float32, float64, power
 import numpy as np
 import sys
+import nose
 
 import scipy.stats as stats
 
@@ -34,13 +36,17 @@ import scipy.stats as stats
 ##  Somewhat acceptable, since this is still beta software.  It would count as a
 ##  good target for 1.0 status
 X = array([1,2,3,4,5,6,7,8,9],float)
+Y = array([4,3,2,5,2,7,2,2,6], float)
 ZERO= array([0,0,0,0,0,0,0,0,0], float)
 #MISS=array([.,.,.,.,.,.,.,.,.], float)
+XMODE = array([1,1,2,3,4,5], float)
+MISSLAST = array([1, 2, 3, ], float)
 BIG=array([99999991,99999992,99999993,99999994,99999995,99999996,99999997,99999998,99999999],float)
 LITTLE=array([0.99999991,0.99999992,0.99999993,0.99999994,0.99999995,0.99999996,0.99999997,0.99999998,0.99999999],float)
 HUGE=array([1e+12,2e+12,3e+12,4e+12,5e+12,6e+12,7e+12,8e+12,9e+12],float)
 TINY=array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12],float)
 ROUND=array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5],float)
+X2D = array([X, X])
 X2 = X * X
 X3 = X2 * X
 X4 = X3 * X
@@ -114,25 +120,112 @@ class TestBasicStats(TestCase):
         0 for ZERO, and 2.738612788 (times 10 to a power) for all the other variables.
         II. C. Basic Statistics
     """
-
+   
+    #Xsmallval = array([0.0,0.0,0.0,10.0**(-20)])
+    #XmissVal = array([1.0, 2.0, 3.0,])
+    #Xnan = array([1.0, 2.0, array([])])
+      
     dprec = np.finfo(np.float64).precision
 
     # Really need to write these tests to handle missing values properly
+    # test for mean(), tmean()
+    def test_mean(self):
+	y = stats.mean(X)
+	assert_approx_equal(y, 5.0, significant=TestBasicStats.dprec)
+    
+    def test_mean1stDim(self):
+	y = stats.mean(X2D,1)
+	assert_array_almost_equal(y, array([5.0, 5.0]), decimal=TestBasicStats.dprec)
+	
+    def test_mean0thDim(self):
+	y = stats.mean(X2D,0)
+	assert_array_almost_equal(y, X, decimal=11)
+    
+    
     def test_tmeanX(self):
+	y = stats.tmean(X)
+        assert_approx_equal(y, 5.0, significant=TestBasicStats.dprec)
+        
+    def test_tmeanXTwoSided(self):
         y = stats.tmean(X, (2, 8), (True, True))
         assert_approx_equal(y, 5.0, significant=TestBasicStats.dprec)
 
+    def test_tmeanXUpper(self):
+	y = stats.tmean(X, (2,8), (False, True))
+	assert_approx_equal(y, 5.5, significant=TestBasicStats.dprec)
+
+    def test_tmeanXLower(self):
+	y = stats.tmean(X, (2,8), (True, False))
+	assert_approx_equal(y, 4.5, significant=TestBasicStats.dprec)
+
+    def test_tmeanXNeitherSided(self):
+	y = stats.tmean(X, (2, 8), (False, False))
+	assert_approx_equal(y, 5.0, significant=TestBasicStats.dprec)
+
+    def test_tmeanXMissing(self):
+	y = stats.tmean(MISSLAST)
+	assert_approx_equal(y, 2.0, significant=TestBasicStats.dprec)
+
+    # median
+    def test_median(self):
+	y = stats.median(X)
+	assert_approx_equal(y, 5.0, significant=TestBasicStats.dprec)
+
+    def test_median0thDim(self):
+	y = stats.median(X2D,0)
+	assert_array_almost_equal(y, X, decimal=11)
+
+    def test_median1stDim(self):
+	y = stats.median(X2D,1)
+	assert_array_almost_equal(y, array([5.0, 5.0]), decimal=11)
+
+    # mode
+    def test_mode(self):
+	y = stats.mode(XMODE)
+	assert_array_almost_equal(y, (array([1.0]), array([2.0])), decimal=11)    
+	
+    # variance
+    def test_varX(self):
+	y = stats.var(X)
+	assert_approx_equal(y, 7.5, significant=TestBasicStats.dprec)
+
     def test_tvarX(self):
+	y = stats.tvar(X)
+	assert_approx_equal(y, 7.5, significant=TestBasicStats.dprec)
+
+    def test_tvarXTwoSided(self):
         y = stats.tvar(X, (2, 8), (True, True))
         assert_approx_equal(y, 4.6666666666666661,
                             significant=TestBasicStats.dprec)
 
-    def test_tstdX(self):
-        y = stats.tstd(X, (2, 8), (True, True))
-        assert_approx_equal(y, 2.1602468994692865,
+    def test_tvarXUpper(self):
+	y = stats.tvar(X, (2, 8), (False, True))
+        assert_approx_equal(y, 3.5,
                             significant=TestBasicStats.dprec)
 
+    def test_tvarXLower(self):
+	y = stats.tvar(X, (2, 8), (True, False))
+        assert_approx_equal(y, 3.5,
+                            significant=TestBasicStats.dprec)
 
+    def test_tvarXNeitherSided(self):
+	y = stats.tvar(X, (2, 8), (False, False))
+        assert_approx_equal(y, 2.5,
+                            significant=TestBasicStats.dprec)
+
+    # standard deviation
+    def test_tstdX(self):
+	y = stats.tstd(X, (2, 8), (True, True))
+	assert_approx_equal(y, 2.1602468994692865,
+                            significant=TestBasicStats.dprec)
+    # sum of squares
+    def test_squareOfSums(self):
+	s = stats.square_of_sums(X)
+	assert_approx_equal(s, 2025, significant=TestBasicStats.dprec)
+	
+    def test_squareOfSums2D(self):
+	s = stats.square_of_sums(X2D, 1)
+	assert_array_almost_equal(s, array([4, 16, 36, 64, 100, 144, 196, 256, 324]), digits=11)
 
 class TestNanFunc(TestCase):
     def __init__(self, *args, **kw):
@@ -211,7 +304,99 @@ class TestNanFunc(TestCase):
         assert_equal(stats.nanmedian(np.array(1)), np.median(np.array(1)))
         assert_equal(stats.nanmedian(np.nan), np.median(np.nan))
 
+class TestCorrcoef(TestCase):
+  """ W.II.D. Compute a Pearson correlation matrix on all the variables.
+    
+  """
+  #dprec = np.finfo(np.float64).precision 
+  
+  Rxy = array([[1, 0.164991582276861], [0.164991582276861, 1]], float)
+  Xrandom2D = np.random.rand(2,10)
+        
+  def test_computeVals(self):
+    R = stats.corrcoef(X,Y)
+    """ based on the Y above using indepedent calculations, 
+	the result should be array([1, 0.164991582276861], [0.164991582276861, 1.])
+    """
+    assert_array_almost_equal(self.Rxy, R, decimal=11)
 
+  def test_size(self):
+    R = stats.corrcoef(X,Y)
+    assert_equal(R.shape, (2,2))
+
+  def test_isMatrixSymmetric(self):
+    R = stats.corrcoef(self.Xrandom2D)
+    assert_array_almost_equal(R, R.transpose(), decimal=11)
+      
+  def test_Diag(self):
+    R = stats.corrcoef(self.Xrandom2D)
+    assert_equal(R[1][1], 1.0)
+    assert_equal(R[2][2], 1.0)
+    
+  def test_Range(self):
+    R = stats.corrcoef(self.Xrandom2D)
+    assert R.all() >= -1.0
+    assert R.all() <= 1.0
+    
+  def test_Identity(self):
+    R = stats.corrcoef(X,X)
+    assert_array_equal(R, np.ones((2,2)))
+  
+  def test_isFunctionReflexive(self):
+    assert_equal(stats.corrcoef(X,Y), stats.corrcoef(Y,X))
+    
+  def test_rescaling(self):
+    R = stats.corrcoef(2*X,X)
+    assert_array_equal(R, np.ones((2,2)))  
+    
+class TestCov(TestCase):
+  
+  """ W.II.D Compute the covariance between two arrays
+ 
+      Z = cov(X,Y)
+      
+      Note that scipy.stats.cov() is depreciated
+     
+  """	
+  
+  dprec = np.finfo(np.float64).precision 
+  
+  def test_computeVar(self):
+    S = stats.cov(X)
+    assert_approx_equal(S, 7.5, significant=self.dprec)
+    
+  def test_computeCov(self):
+    S = stats.cov(X,Y)
+    assert_approx_equal(S, 0.875, significant=self.dprec) 
+    
+  def test_array(self):
+    S = stats.cov([X,Y])
+    result = array([[4.50000, 1.50000, -1.50000, 1.50000, -4.50000,  1.50000, -7.50000, -9.00000,  -4.50000],
+      [1.50000,  0.50000,  -0.50000,  0.50000, -1.50000,  0.50000,  -2.50000, -3.00000, -1.50000],
+      [-1.50000,   -0.50000,    0.50000,   -0.50000,    1.50000,   -0.50000,    2.50000,    3.00000,    1.50000],
+      [1.50000,    0.50000,   -0.50000,    0.50000,   -1.50000,    0.50000,   -2.50000,   -3.00000,   -1.50000],
+      [-4.50000,   -1.50000,    1.50000,   -1.50000,    4.50000,   -1.50000,    7.50000,    9.00000,    4.50000],
+      [1.50000,    0.50000,   -0.50000,    0.50000,   -1.50000,    0.50000,   -2.50000,   -3.00000,   -1.50000],
+      [-7.50000,   -2.50000,    2.50000,   -2.50000,    7.50000,   -2.50000,   12.50000,   15.00000,    7.50000],
+      [-9.00000,   -3.00000,    3.00000,   -3.00000,    9.00000,   -3.00000,   15.00000,   18.00000,    9.00000],
+      [-4.50000,   -1.50000,    1.50000,   -1.50000,    4.50000,   -1.50000,    7.50000,   9.00000,    4.50000]], float)
+    assert_array_almost_equal(S, result, decimal=11)
+  
+  def test_bias(self):
+    S = stats.cov(X, None, False)
+    assert_approx_equal(S, 6.6667, significant=self.dprec)
+  
+  def test_Symmetric(self):
+    S = stats.cov([X,Y])
+    assert_array_equal(S, S.transpose())
+  
+  def test_Identity(self):
+    S = stats.cov([X,X])
+    assert_array_equal(S, np.ones((2,2)))
+  
+  def test_isFunctionReflexive(self):
+    assert_equal(stats.cov(X,Y), stats.cov(Y,X))
+  
 class TestCorrPearsonr(TestCase):
     """ W.II.D. Compute a correlation matrix on all the variables.
 
@@ -619,6 +804,22 @@ def test_kendalltau():
     # and do we get a tau of 1 for identical inputs?
     assert_approx_equal(stats.kendalltau([1,1,2], [1,1,2])[0], 1.0)
 
+class TestKruskal(TestCase):
+  
+  """ Testing Kruskal statistic for a nonparametric 1-way ANOVA
+  
+  """
+  def test_returnVals(self):
+      hstat, pval = stats.kruskal(np.random.randn(20,1), np.random.randn(20,1))
+      assert pval > 0 and pval <= 1
+      #assert hstat >= 0
+
+  def test_identicalData(self):
+      hstat, pval = stats.kruskal(X,X,X)
+      assert_approx_equal((hstat,pval), (0, 1) ,significant=14)
+      
+      
+  
 
 class TestRegression(TestCase):
     def test_linregressBIGX(self):
@@ -858,24 +1059,54 @@ class TestHistogram(TestCase):
                                     decimal=2)
 
 
-def test_cumfreq():
+class TestCumFreq(TestCase):
     x = [1, 4, 2, 1, 3, 1]
-    cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=4)
-    assert_array_almost_equal(cumfreqs, np.array([ 3.,  4.,  5.,  6.]))
-    cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=4,
-                                                      defaultreallimits=(1.5, 5))
-    assert_(extrapoints==3)
+    def test_cumfreq(self):
+      cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(self.x, numbins=4)
+      assert_array_almost_equal(cumfreqs, np.array([ 3.,  4.,  5.,  6.]))
+    
+    def test_realLimits(self):
+      cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(self.x, numbins=4, defaultreallimits=(1.5, 5))
+      assert (extrapoints==3)
 
 
-def test_relfreq():
+class TestRelFreq(TestCase):
     a = np.array([1, 4, 2, 1, 3, 1])
-    relfreqs, lowlim, binsize, extrapoints = stats.relfreq(a, numbins=4)
-    assert_array_almost_equal(relfreqs, array([0.5, 0.16666667, 0.16666667, 0.16666667]))
+    
+    def test_relfreq(self):
+      [relfreqs, lowlim, binsize, extrapoints] = stats.relfreq(self.a, numbins=4)
+      assert_array_almost_equal(relfreqs, array([0.5, 0.16666667, 0.16666667, 0.16666667]))
 
-    # check array_like input is accepted
-    relfreqs2, lowlim, binsize, extrapoints = stats.relfreq([1, 4, 2, 1, 3, 1], numbins=4)
-    assert_array_almost_equal(relfreqs, relfreqs2)
+    def test_arrayLike(self):
+      # check array_like input is accepted
+      [relfreqs2, lowlim, binsize, extrapoints] = stats.relfreq(self.a, numbins=4)
+      assert_array_almost_equal(relfreqs, relfreqs2)
 
+
+class TestItemFreq(TestCase):
+
+  """ Unit tests for itemfreq() which returns a 2D array of the frequencies of items in an array
+  
+  """
+  
+  x = array([1,2,3,5,2,1,4,1])
+  y = array([1,2,3,5,2, None,4,1])
+  
+  def test_itemfreq(self):
+    f = stats.itemfreq(self.x)
+    assert_array_almost_equal(f, array([[1,3],[2,2],[3,1],[4,1],[5,1]]), decimal=11)
+    
+  def test_shape(self):
+    f = stats.itemfreq(self.x)
+    assert f.shape == (5,2)
+
+  def test_missingVals(self):
+    f = stats.itemfreq(self.y)
+    assert_array_equal(f, array([[None,1.0],[1,2],[2,2],[3,1],[4,1],[5,1]], dtype=object))
+      
+    
+    
+    
 
 # Utility
 
