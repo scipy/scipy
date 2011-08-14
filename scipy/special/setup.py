@@ -73,6 +73,9 @@ def configuration(parent_package='',top_path=None):
                          define_macros=[],
                          extra_info=get_info("npymath"))
 
+    # Extension logit
+    config.add_extension('logit', ['logit.c'])
+
     config.add_data_files('tests/*.py')
     config.add_data_files('tests/data/README')
     config.add_data_files('tests/data/*.npz')
