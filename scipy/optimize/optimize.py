@@ -559,6 +559,12 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         if (gnorm <= gtol):
             break
 
+        if not numpy.isfinite(old_fval):
+            # We correctly found +-Inf as optimal value, or something went
+            # wrong.
+            warnflag = 2
+            break
+
         try: # this was handled in numeric, let it remaines for more safety
             rhok = 1.0 / (numpy.dot(yk,sk))
         except ZeroDivisionError:
@@ -1563,11 +1569,11 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     The technical conditions for replacing the direction of greatest
     increase amount to checking that
 
-    1. No further gain can be made along the
-        direction of greatest increase from that iteration
-    2.The direction of greatest increase accounted for a large sufficient
-        fraction of the decrease in the function value from that
-        iteration of the inner loop.
+    1. No further gain can be made along the direction of greatest increase
+       from that iteration.
+    2. The direction of greatest increase accounted for a large sufficient
+       fraction of the decrease in the function value from that iteration of
+       the inner loop.
 
 
     References
