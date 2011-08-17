@@ -151,7 +151,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
 
     if pivoting:
         geqp3, = get_lapack_funcs(('geqp3',), (a1,))
-        qr, jpvt, tau = safecall(geqp3, "geqp3", a1, overwrite_a=1)
+        qr, jpvt, tau = safecall(geqp3, "geqp3", a1, overwrite_a=overwrite_a)
         jpvt -= 1 # geqp3 returns a 1-based index array, so subtract 1
     else:
         geqrf, = get_lapack_funcs(('geqrf',), (a1,))
