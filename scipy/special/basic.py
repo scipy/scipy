@@ -854,7 +854,7 @@ def ellipk(m):
     """y=ellipk(m) returns the complete integral of the first kind:
     integral(1/sqrt(1-m*sin(t)**2),t=0..pi/2)
 
-    This function is rather unprecise around m==1. For more precision
+    This function is rather imprecise around m==1. For more precision
     around this point, use ellipkm1."""
     return ellipkm1(1 - asarray(m))
 
