@@ -95,8 +95,8 @@ Matlab-style IIR filter design
    ellipord
    bessel
 
-Linear Systems
-==============
+Continuous-Time Linear Systems
+==============================
 
 .. autosummary::
    :toctree: generated/
@@ -108,6 +108,16 @@ Linear Systems
    impulse2
    step
    step2
+
+Discrete-Time Linear Systems
+============================
+
+.. autosummary::
+   :toctree: generated/
+
+   dlsim
+   dimpulse
+   dstep
 
 LTI Representations
 ===================
@@ -121,6 +131,7 @@ LTI Representations
    ss2tf
    zpk2ss
    ss2zpk
+   cont2discrete
 
 Waveforms
 =========

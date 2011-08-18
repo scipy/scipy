@@ -113,7 +113,7 @@ Signal Processing Tools
     bessel:
         Bessel (no order selection available -- try butterod)
 
- Linear Systems:
+ Continuous-Time Linear Systems:
 
     lti:
         linear time invariant system object.
@@ -130,6 +130,15 @@ Signal Processing Tools
     step2:
         like step, but `scipy.integrate.odeint` is used.
 
+ Discrete-Time Linear Systems:
+
+    dlsim:
+        simulation of output to a discrete-time linear system.
+    dimpulse:
+        impulse response of a discrete-time LTI system.
+    dstep:
+        step response of a discrete-time LTI system.
+
  LTI Representations:
 
     tf2zpk:
@@ -144,6 +153,8 @@ Signal Processing Tools
         zero-pole-gain to state-space.
     ss2zpk:
         state-space to pole-zero-gain.
+    cont2discrete:
+        continuous-time to discrete-time LTI conversion.
 
  Waveforms:
 
