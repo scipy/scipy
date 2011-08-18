@@ -56,6 +56,10 @@ def cont2discrete(sys, dt, method="zoh"):
 
     Tustin's bilinear approximation is based on:
     http://techteach.no/publications/discretetime_signals_systems/discrete.pdf
+     and
+    G. Zhang, X. Chen, and T. Chen, “Digital redesign via the generalized bilinear
+    transformation,” Int. J. Control, vol. 82, no. 4, pp. 741–754, 2009.
+    (http://www.ece.ualberta.ca/~gfzhang/research/ZCC07_preprint.pdf)
 
     """
     if len(sys) == 2:
