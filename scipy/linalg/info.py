@@ -32,8 +32,6 @@ Basics
    pinv - Pseudo-inverse (Moore-Penrose) using lstsq
    pinv2 - Pseudo-inverse using svd
    kron - Kronecker product of two arrays
-   tril - Construct a lower-triangular matrix from a given matrix
-   triu - Construct an upper-triangular matrix from a given matrix
 
 Eigenvalue Problems
 ===================

@@ -8,14 +8,14 @@ __all__ = ['expm','expm2','expm3','cosm','sinm','tanm','coshm','sinhm',
 from numpy import asarray, Inf, dot, floor, eye, diag, exp, \
      product, logical_not, ravel, transpose, conjugate, \
      cast, log, ogrid, imag, real, absolute, amax, sign, \
-     isfinite, sqrt, identity, single
+     isfinite, sqrt, identity, single, triu
 from numpy import matrix as mat
 import numpy as np
 
 # Local imports
 from misc import norm
 from basic import solve, inv
-from special_matrices import triu, all_mat
+from special_matrices import all_mat
 from decomp import eig
 from decomp_svd import orth, svd
 from decomp_schur import schur, rsf2csf
