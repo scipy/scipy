@@ -1,8 +1,13 @@
-#
-# weave - C/C++ integration
-#
+"""
+C/C++ integration
+=================
 
-from info import __doc__
+        inline     -- a function for including C/C++ code within Python
+        blitz      -- a function for compiling Numeric expressions to C++
+        ext_tools  -- a module that helps construct C/C++ extension modules.
+        accelerate -- a module that inline accelerates Python functions
+"""
+
 from weave_version import weave_version as __version__
 
 try:
