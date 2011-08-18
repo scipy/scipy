@@ -1,5 +1,13 @@
+"""
+Python wrappers to external libraries
+=====================================
 
-from info import __doc__, __all__
+  lapack -- wrappers for LAPACK/ATLAS libraries
+  blas -- wrappers for BLAS/ATLAS libraries
+
+"""
+
+__all__ = ['lapack','blas']
 
 from numpy.testing import Tester
 test = Tester().test
