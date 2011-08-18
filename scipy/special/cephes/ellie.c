@@ -123,7 +123,7 @@ while( fabs(c/a) > MACHEP )
 	e += c * sin(lphi);
 	}
 
-temp = E / ellpk( m );  /* Changed */
+temp = E / ellpk( 1.0 - m ); 
 temp *= (atan(t) + mod * PI)/(d * a);
 temp += e;
 

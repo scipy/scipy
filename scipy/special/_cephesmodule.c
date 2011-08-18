@@ -504,8 +504,8 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	f = PyUFunc_FromFuncAndData(cephes1_functions, ellpe_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "ellipe", ellipe_doc, 0);
 	PyDict_SetItemString(dictionary, "ellipe", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes1_functions, ellpk_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "ellipk", ellipk_doc, 0);
-	PyDict_SetItemString(dictionary, "ellipk", f);
+	f = PyUFunc_FromFuncAndData(cephes1_functions, ellpk_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "ellipkm1", ellipkm1_doc, 0);
+	PyDict_SetItemString(dictionary, "ellipkm1", f);
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes1_functions, exp10_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "exp10", exp10_doc, 0);
 	PyDict_SetItemString(dictionary, "exp10", f);
