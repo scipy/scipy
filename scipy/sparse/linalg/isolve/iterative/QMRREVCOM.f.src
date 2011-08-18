@@ -129,7 +129,7 @@
 
       <_t>   BETA, GAMMA, GAMMA1, DELTA, EPS, ETA, XI, 
      $       RHO, RHO1, THETA, THETA1, C1, TMPVAL,
-     $     <xdot=sdot,ddot,cdotc,zdotc>,
+     $     <xdot=sdot,ddot,wcdotc,wzdotc>,
      $     toz
 *
 *     indicates where to resume from. Only valid when IJOB = 2!

@@ -6,7 +6,7 @@ from os.path import join as pjoin, splitext
 from numscons import GetNumpyEnvironment
 from numscons import CheckF77LAPACK
 
-from numscons import write_info
+from numscons import write_info, IsAccelerate, IsVeclib
 
 env = GetNumpyEnvironment(ARGUMENTS)
 env.Tool('f2py')
@@ -53,4 +53,21 @@ for method in raw_sources:
     res = env.FromFTemplate(target, pjoin('iterative', method))
     sources.append(res[0])
 
-env.NumpyPythonExtension('_iterative', source = sources)
+#--------------------------------------------------
+# BLAS wrapper to fix ABI incompatibilities on OS X
+# -------------------------------------------------
+use_c_calling = IsAccelerate(env, "lapack") or IsVeclib(env, "lapack") 
+
+if use_c_calling: 
+    blas_wrapper = ['veclib_cabi_c.c', 'veclib_cabi_f.f'] 
+else: 
+    blas_wrapper = ['dummy.f'] 
+
+blas_wrapper = [pjoin('iterative', 'FWRAPPERS', wrapper) \
+                for wrapper in blas_wrapper]
+
+env.AppendUnique(LIBPATH = ['.'])
+veclibwrap_lib = env.DistutilsStaticExtLibrary('_veclibwrap', source=blas_wrapper)
+env.Prepend(LIBS='_veclibwrap')
+
+env.NumpyPythonExtension('_iterative', source=sources)

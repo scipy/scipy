@@ -104,7 +104,7 @@
 *     .. Local Scalars ..
       INTEGER             I, MAXIT, AV, GIV, H, R, S, V, W, Y,
      $                    NEED1, NEED2
-      <_t>  <xdot=sdot,ddot,cdotc,zdotc>
+      <_t>  <xdot=sdot,ddot,wcdotc,wzdotc>
       <_t>  toz
       <_t>    TMPVAL
       <rt>    BNRM2, RNORM, TOL,  
@@ -416,7 +416,7 @@
       <rt=real,double precision,real,double precision>    
      $     <rc=s,d,sc,dz>NRM2, ONE
       PARAMETER        ( ONE = 1.0D+0 )
-      <_t>    <xdot=sdot,ddot,cdotc,zdotc>
+      <_t>    <xdot=sdot,ddot,wcdotc,wzdotc>
       <_t>    TMPVAL
       EXTERNAL         <_c>AXPY, <_c>COPY, <xdot>, <rc>NRM2, <_c>SCAL
 *
