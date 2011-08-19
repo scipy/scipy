@@ -3768,6 +3768,10 @@ class invgauss_gen(rv_continuous):
 
     for ``x > 0``.
 
+    When `mu` is too small, evaluating the cumulative density function will be
+    inaccurate due to ``cdf(mu -> 0) = inf * 0``.
+    NaNs are returned for ``mu <= 0.0028``.
+
     %(example)s
 
     """
@@ -3779,8 +3783,9 @@ class invgauss_gen(rv_continuous):
         return -0.5*log(2*pi) - 1.5*log(x) - ((x-mu)/mu)**2/(2*x)
     def _cdf(self, x, mu):
         fac = sqrt(1.0/x)
+        # Numerical accuracy for small `mu` is bad.  See #869.
         C1 = norm.cdf(fac*(x-mu)/mu)
-        C1 += exp(2.0/mu)*norm.cdf(-fac*(x+mu)/mu)
+        C1 += exp(1.0/mu) * norm.cdf(-fac*(x+mu)/mu) * exp(1.0/mu)
         return C1
     def _stats(self, mu):
         return mu, mu**3.0, 3*sqrt(mu), 15*mu
@@ -5127,7 +5132,7 @@ class uniform_gen(rv_continuous):
     """A uniform continuous random variable.
 
     This distribution is constant between `loc` and ``loc = scale``.
-    
+
     %(before_notes)s
 
     %(example)s
