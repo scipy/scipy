@@ -33,6 +33,10 @@ def assert_array_identical(a, b):
     assert_equal(a.dtype.type, b.dtype.type)
 
 
+# Define vectorized ID function for pointer arrays
+vect_id = np.vectorize(id)
+
+
 class TestIdict:
     '''Test the idict= argument to read'''
 
@@ -226,6 +230,99 @@ class TestPointers:
         assert_identical(s.c64_pointer2, np.complex128(1.1987253647623157e+112-5.1987258887729157e+307j))
         assert_true(s.c64_pointer1 is s.c64_pointer2)
 
+
+class TestPointerArray:
+    '''Test that pointers in arrays are correctly read in'''
+
+    def test_1d(self):
+        s = readsav(path.join(DATA_PATH, 'array_float32_pointer_1d.sav'), verbose=False)
+        assert_equal(s.array1d.shape, (123, ))
+        assert_true(np.all(s.array1d == np.float32(4.)))
+        assert_true(np.all(vect_id(s.array1d) == id(s.array1d[0])))
+
+    def test_2d(self):
+        s = readsav(path.join(DATA_PATH, 'array_float32_pointer_2d.sav'), verbose=False)
+        assert_equal(s.array2d.shape, (22, 12))
+        assert_true(np.all(s.array2d == np.float32(4.)))
+        assert_true(np.all(vect_id(s.array2d) == id(s.array2d[0,0])))
+
+    def test_3d(self):
+        s = readsav(path.join(DATA_PATH, 'array_float32_pointer_3d.sav'), verbose=False)
+        assert_equal(s.array3d.shape, (11, 22, 12))
+        assert_true(np.all(s.array3d == np.float32(4.)))
+        assert_true(np.all(vect_id(s.array3d) == id(s.array3d[0,0,0])))
+
+    def test_4d(self):
+        s = readsav(path.join(DATA_PATH, 'array_float32_pointer_4d.sav'), verbose=False)
+        assert_equal(s.array4d.shape, (4, 5, 8, 7))
+        assert_true(np.all(s.array4d == np.float32(4.)))
+        assert_true(np.all(vect_id(s.array4d) == id(s.array4d[0,0,0,0])))
+
+    def test_5d(self):
+        s = readsav(path.join(DATA_PATH, 'array_float32_pointer_5d.sav'), verbose=False)
+        assert_equal(s.array5d.shape, (4, 3, 4, 6, 5))
+        assert_true(np.all(s.array5d == np.float32(4.)))
+        assert_true(np.all(vect_id(s.array5d) == id(s.array5d[0,0,0,0,0])))
+
+    def test_6d(self):
+        s = readsav(path.join(DATA_PATH, 'array_float32_pointer_6d.sav'), verbose=False)
+        assert_equal(s.array6d.shape, (3, 6, 4, 5, 3, 4))
+        assert_true(np.all(s.array6d == np.float32(4.)))
+        assert_true(np.all(vect_id(s.array6d) == id(s.array6d[0,0,0,0,0,0])))
+
+    def test_7d(self):
+        s = readsav(path.join(DATA_PATH, 'array_float32_pointer_7d.sav'), verbose=False)
+        assert_equal(s.array7d.shape, (2, 1, 2, 3, 4, 3, 2))
+        assert_true(np.all(s.array7d == np.float32(4.)))
+        assert_true(np.all(vect_id(s.array7d) == id(s.array7d[0,0,0,0,0,0,0])))
+
+    def test_8d(self):
+        s = readsav(path.join(DATA_PATH, 'array_float32_pointer_8d.sav'), verbose=False)
+        assert_equal(s.array8d.shape, (4, 3, 2, 1, 2, 3, 5, 4))
+        assert_true(np.all(s.array8d == np.float32(4.)))
+        assert_true(np.all(vect_id(s.array8d) == id(s.array8d[0,0,0,0,0,0,0,0])))
+
+class TestPointerStructures:
+    '''Test that structures are correctly read in'''
+
+    def test_scalars(self):
+        s = readsav(path.join(DATA_PATH, 'struct_pointers.sav'), verbose=False)
+        assert_identical(s.pointers.g, np.array(np.float32(4.), dtype=np.object_))
+        assert_identical(s.pointers.h, np.array(np.float32(4.), dtype=np.object_))
+        assert_true(id(s.pointers.g[0]) == id(s.pointers.h[0]))
+
+    def test_pointers_replicated(self):
+        s = readsav(path.join(DATA_PATH, 'struct_pointers_replicated.sav'), verbose=False)
+        assert_identical(s.pointers_rep.g, np.repeat(np.float32(4.), 5).astype(np.object_))
+        assert_identical(s.pointers_rep.h, np.repeat(np.float32(4.), 5).astype(np.object_))
+        assert_true(np.all(vect_id(s.pointers_rep.g) == vect_id(s.pointers_rep.h)))
+
+    def test_arrays(self):
+        s = readsav(path.join(DATA_PATH, 'struct_pointer_arrays.sav'), verbose=False)
+        assert_array_identical(s.arrays.g[0], np.repeat(np.float32(4.), 2).astype(np.object_))
+        assert_array_identical(s.arrays.h[0], np.repeat(np.float32(4.), 3).astype(np.object_))
+        assert_true(np.all(vect_id(s.arrays.g[0]) == id(s.arrays.g[0][0])))
+        assert_true(np.all(vect_id(s.arrays.h[0]) == id(s.arrays.h[0][0])))
+        assert_true(id(s.arrays.g[0][0]) == id(s.arrays.h[0][0]))
+
+    def test_arrays_replicated(self):
+
+        s = readsav(path.join(DATA_PATH, 'struct_pointer_arrays_replicated.sav'), verbose=False)
+
+        # Check column types
+        assert_true(s.arrays_rep.g.dtype.type is np.object_)
+        assert_true(s.arrays_rep.h.dtype.type is np.object_)
+
+        # Check column shapes
+        assert_equal(s.arrays_rep.g.shape, (5, ))
+        assert_equal(s.arrays_rep.h.shape, (5, ))
+
+        # Check values
+        for i in range(5):
+            assert_array_identical(s.arrays_rep.g[i], np.repeat(np.float32(4.), 2).astype(np.object_))
+            assert_array_identical(s.arrays_rep.h[i], np.repeat(np.float32(4.), 3).astype(np.object_))
+            assert_true(np.all(vect_id(s.arrays_rep.g[i]) == id(s.arrays_rep.g[0][0])))
+            assert_true(np.all(vect_id(s.arrays_rep.h[i]) == id(s.arrays_rep.h[0][0])))
 
 if __name__ == "__main__":
     run_module_suite()

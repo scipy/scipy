@@ -45,6 +45,7 @@ DTYPE_DICT[6] = '>c8'
 DTYPE_DICT[7] = '|O'
 DTYPE_DICT[8] = '|O'
 DTYPE_DICT[9] = '>c16'
+DTYPE_DICT[10] = '|O'
 DTYPE_DICT[12] = '>u2'
 DTYPE_DICT[13] = '>u4'
 DTYPE_DICT[14] = '>i8'
@@ -558,6 +559,60 @@ def _read_tagdesc(f):
     return tagdesc
 
 
+def _replace_heap(variable, heap):
+
+    if isinstance(variable, Pointer):
+
+        while isinstance(variable, Pointer):
+
+            if variable.index == 0:
+                variable = None
+            else:
+                variable = heap[variable.index]
+
+        return True, variable
+
+    elif isinstance(variable, np.core.records.recarray):
+
+        # Loop over records
+        for ir, record in enumerate(variable):
+
+            replace, new = _replace_heap(record, heap)
+
+            if replace:
+                variable[ir] = new
+
+        return False, variable
+
+    elif isinstance(variable, np.core.records.record):
+
+        # Loop over values
+        for iv, value in enumerate(variable):
+
+            replace, new = _replace_heap(value, heap)
+
+            if replace:
+                variable[iv] = new
+
+        return False, variable
+
+    elif isinstance(variable, np.ndarray):
+
+        # Loop over values
+        for iv in range(variable.size):
+
+            replace, new = _replace_heap(variable.item(iv), heap)
+
+            if replace:
+                variable.itemset(iv, new)
+
+        return False, variable
+
+    else:
+
+        return False, variable
+
+
 class AttrDict(dict):
     '''
     A case-insensitive dictionary with access via item, attribute, and call
@@ -731,8 +786,9 @@ def readsav(file_name, idict=None, python_dict=False,
     # Find all variables
     for r in records:
         if r['rectype'] == "VARIABLE":
-            while isinstance(r['data'], Pointer):
-                r['data'] = heap[r['data'].index]
+            replace, new = _replace_heap(r['data'], heap)
+            if replace:
+                r['data'] = new
             variables[r['varname'].lower()] = r['data']
 
     if verbose:
