@@ -74,7 +74,7 @@ def _align_32(f):
     '''Align to the next 32-bit position in a file'''
 
     pos = f.tell()
-    if pos % 4 <> 0:
+    if pos % 4 != 0:
         f.seek(pos + 4 - pos % 4)
     return
 
@@ -175,7 +175,7 @@ def _read_string_data(f):
 def _read_data(f, dtype):
     '''Read a variable with a specified data type'''
     if dtype==1:
-        if _read_int32(f) <> 1:
+        if _read_int32(f) != 1:
             raise Exception("Error occurred while reading byte variable")
         return _read_byte(f)
     elif dtype==2:
@@ -264,7 +264,7 @@ def _read_array(f, typecode, array_desc):
 
         if typecode == 1:
             nbytes = _read_int32(f)
-            if nbytes <> array_desc['nbytes']:
+            if nbytes != array_desc['nbytes']:
                 raise Exception("Error occurred while reading byte array")
 
         # Read bytes as numpy array
@@ -330,7 +330,7 @@ def _read_record(f):
         rectypedesc = _read_typedesc(f)
 
         varstart = _read_long(f)
-        if varstart <> 7:
+        if varstart != 7:
             raise Exception("VARSTART is not 7")
 
         if rectypedesc['structure']:
@@ -467,7 +467,7 @@ def _read_arraydesc(f):
         arraydesc['dims'] = []
         for d in range(arraydesc['nmax']):
             v = _read_long(f)
-            if v <> 0:
+            if v != 0:
                 raise Exception("Expected a zero in ARRAY_DESC")
             arraydesc['dims'].append(_read_long(f))
 
@@ -484,7 +484,7 @@ def _read_structdesc(f):
     structdesc = {}
 
     structstart = _read_long(f)
-    if structstart <> 9:
+    if structstart != 9:
         raise Exception("STRUCTSTART should be 9")
 
     structdesc['name'] = _read_string(f)
@@ -629,7 +629,7 @@ def readsav(file_name, idict=None, python_dict=False,
 
     # Read the signature, which should be 'SR'
     signature = _read_bytes(f, 2)
-    if signature <> asbytes('SR'):
+    if signature != asbytes('SR'):
         raise Exception("Invalid SIGNATURE: %s" % signature)
 
     # Next, the record format, which is '\x00\x04' for normal .sav
@@ -763,7 +763,7 @@ def readsav(file_name, idict=None, python_dict=False,
         rectypes = [r['rectype'] for r in records]
 
         for rt in set(rectypes):
-            if rt <> 'END_MARKER':
+            if rt != 'END_MARKER':
                 print " - %i are of type %s" % (rectypes.count(rt), rt)
         print "-"*50
 
