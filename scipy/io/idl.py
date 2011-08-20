@@ -156,7 +156,7 @@ def _read_string(f):
         _align_32(f)
         chars = asstr(chars)
     else:
-        chars = None
+        chars = ''
     return chars
 
 
@@ -168,7 +168,7 @@ def _read_string_data(f):
         string = _read_bytes(f, length)
         _align_32(f)
     else:
-        string = None
+        string = ''
     return string
 
 
