@@ -209,6 +209,13 @@ class TestStructures:
             assert_array_identical(s.arrays_rep.c[i], np.array([np.complex64(1+2j), np.complex64(7+8j)]))
             assert_array_identical(s.arrays_rep.d[i], np.array(asbytes_nested(["cheese", "bacon", "spam"]), dtype=np.object))
 
+    def test_inheritance(self):
+        s = readsav(path.join(DATA_PATH, 'struct_inherit.sav'), verbose=False)
+        assert_identical(s.fc.x, np.array([0], dtype=np.int16))
+        assert_identical(s.fc.y, np.array([0], dtype=np.int16))
+        assert_identical(s.fc.r, np.array([0], dtype=np.int16))
+        assert_identical(s.fc.c, np.array([4], dtype=np.int16))
+
 
 class TestPointers:
     '''Check that pointers in .sav files produce references to the same object in Python'''

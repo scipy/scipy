@@ -488,11 +488,15 @@ def _read_structdesc(f):
         raise Exception("STRUCTSTART should be 9")
 
     structdesc['name'] = _read_string(f)
-    structdesc['predef'] = _read_long(f)
+    predef = _read_long(f)
     structdesc['ntags'] = _read_long(f)
     structdesc['nbytes'] = _read_long(f)
 
-    if structdesc['predef'] & 1 == 0:
+    structdesc['predef'] = predef & 1
+    structdesc['inherits'] = predef & 2
+    structdesc['is_super'] = predef & 4
+
+    if not structdesc['predef']:
 
         structdesc['tagtable'] = []
         for t in range(structdesc['ntags']):
@@ -511,18 +515,24 @@ def _read_structdesc(f):
             if tag['structure']:
                 structdesc['structtable'][tag['name']] = _read_structdesc(f)
 
-        STRUCT_DICT[structdesc['name']] = (structdesc['tagtable'], \
-                                           structdesc['arrtable'], \
-                                           structdesc['structtable'])
+        if structdesc['inherits'] or structdesc['is_super']:
+            structdesc['classname'] = _read_string(f)
+            structdesc['nsupclasses'] = _read_long(f)
+            structdesc['supclassnames'] = []
+            for s in range(structdesc['nsupclasses']):
+                structdesc['supclassnames'].append(_read_string(f))
+            structdesc['supclasstable'] = []
+            for s in range(structdesc['nsupclasses']):
+                structdesc['supclasstable'].append(_read_structdesc(f))
+
+        STRUCT_DICT[structdesc['name']] = structdesc
 
     else:
 
         if not structdesc['name'] in STRUCT_DICT:
             raise Exception("PREDEF=1 but can't find definition")
 
-        structdesc['tagtable'], \
-        structdesc['arrtable'], \
-        structdesc['structtable'] = STRUCT_DICT[structdesc['name']]
+        structdesc = STRUCT_DICT[structdesc['name']]
 
     return structdesc
 
