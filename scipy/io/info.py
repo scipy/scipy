@@ -20,6 +20,14 @@ MATLAB® files
    loadmat - Read a MATLAB style mat file (version 4 through 7.1)
    savemat - Write a MATLAB style mat file (version 4 through 7.1)
 
+IDL® save files
+===============
+
+.. autosummary::
+   :toctree: generated/
+
+   readsav - Read an IDL save file
+
 Matrix Market files
 ===================
 
