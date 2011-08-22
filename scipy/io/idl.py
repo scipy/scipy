@@ -172,11 +172,11 @@ def _read_string_data(f):
     length = _read_long(f)
     if length > 0:
         length = _read_long(f)
-        string = _read_bytes(f, length)
+        string_data = _read_bytes(f, length)
         _align_32(f)
     else:
-        string = ''
-    return string
+        string_data = ''
+    return string_data
 
 
 def _read_data(f, dtype):
@@ -762,16 +762,16 @@ def readsav(file_name, idict=None, python_dict=False,
             pos = f.tell()
 
             # Decompress record
-            string = zlib.decompress(f.read(nextrec-pos))
+            rec_string = zlib.decompress(f.read(nextrec-pos))
 
             # Find new position of next record
-            nextrec = fout.tell() + len(string) + 12
+            nextrec = fout.tell() + len(rec_string) + 12
 
             # Write out record
             fout.write(struct.pack('>I', int(nextrec % 2**32)))
             fout.write(struct.pack('>I', int((nextrec - (nextrec % 2**32)) / 2**32)))
             fout.write(unknown)
-            fout.write(string)
+            fout.write(rec_string)
 
         # Close the original compressed file
         f.close()
