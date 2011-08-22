@@ -46,6 +46,7 @@ DTYPE_DICT[7] = '|O'
 DTYPE_DICT[8] = '|O'
 DTYPE_DICT[9] = '>c16'
 DTYPE_DICT[10] = '|O'
+DTYPE_DICT[11] = '|O'
 DTYPE_DICT[12] = '>u2'
 DTYPE_DICT[13] = '>u4'
 DTYPE_DICT[14] = '>i8'
@@ -149,6 +150,11 @@ class Pointer(object):
         return
 
 
+class ObjectPointer(Pointer):
+    '''Class used to define object pointers'''
+    pass
+
+
 def _read_string(f):
     '''Read a string'''
     length = _read_long(f)
@@ -202,7 +208,7 @@ def _read_data(f, dtype):
     elif dtype==10:
         return Pointer(_read_int32(f))
     elif dtype==11:
-        raise Exception("Object reference type not implemented")
+        return ObjectPointer(_read_int32(f))
     elif dtype==12:
         return _read_uint16(f)
     elif dtype==13:
