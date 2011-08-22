@@ -1,4 +1,5 @@
 from os import path
+import warnings
 
 DATA_PATH = path.join(path.dirname(__file__), 'data')
 
@@ -9,6 +10,8 @@ from nose.tools import assert_true
 
 from scipy.io.idl import readsav
 
+warnings.filterwarnings('ignore', message="warning: multi-dimensional structures")
+warnings.filterwarnings('ignore', message="warning: empty strings")
 
 def object_array(*args):
     '''Constructs a numpy array of objects'''
