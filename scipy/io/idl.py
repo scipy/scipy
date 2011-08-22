@@ -576,6 +576,11 @@ def _replace_heap(variable, heap):
             else:
                 variable = heap[variable.index]
 
+        replace, new = _replace_heap(variable, heap)
+
+        if replace:
+            variable = new
+
         return True, variable
 
     elif isinstance(variable, np.core.records.recarray):
