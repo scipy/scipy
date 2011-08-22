@@ -1212,7 +1212,7 @@ class TestQR(TestCase):
             cq,r = qr(a, mode="right", c=identity(m))
             assert_array_almost_equal(cq, q)
 
-    def test_random_tall(self):
+    def test_random_tall_pivoting(self):
         # full version pivoting
         m = 200
         n = 100
@@ -1239,7 +1239,7 @@ class TestQR(TestCase):
             assert_equal(q.shape, (m,n))
             assert_equal(r.shape, (n,n))
 
-    def test_random_tall_e(self):
+    def test_random_tall_e_pivoting(self):
         # economy version pivoting
         m = 200
         n = 100
