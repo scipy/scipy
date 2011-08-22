@@ -45,6 +45,8 @@ DTYPE_DICT[6] = '>c8'
 DTYPE_DICT[7] = '|O'
 DTYPE_DICT[8] = '|O'
 DTYPE_DICT[9] = '>c16'
+DTYPE_DICT[10] = '|O'
+DTYPE_DICT[11] = '|O'
 DTYPE_DICT[12] = '>u2'
 DTYPE_DICT[13] = '>u4'
 DTYPE_DICT[14] = '>i8'
@@ -74,7 +76,7 @@ def _align_32(f):
     '''Align to the next 32-bit position in a file'''
 
     pos = f.tell()
-    if pos % 4 <> 0:
+    if pos % 4 != 0:
         f.seek(pos + 4 - pos % 4)
     return
 
@@ -148,6 +150,11 @@ class Pointer(object):
         return
 
 
+class ObjectPointer(Pointer):
+    '''Class used to define object pointers'''
+    pass
+
+
 def _read_string(f):
     '''Read a string'''
     length = _read_long(f)
@@ -156,7 +163,8 @@ def _read_string(f):
         _align_32(f)
         chars = asstr(chars)
     else:
-        chars = None
+        warnings.warn("warning: empty strings are now set to '' instead of None")
+        chars = ''
     return chars
 
 
@@ -165,17 +173,18 @@ def _read_string_data(f):
     length = _read_long(f)
     if length > 0:
         length = _read_long(f)
-        string = _read_bytes(f, length)
+        string_data = _read_bytes(f, length)
         _align_32(f)
     else:
-        string = None
-    return string
+        warnings.warn("warning: empty strings are now set to '' instead of None")
+        string_data = ''
+    return string_data
 
 
 def _read_data(f, dtype):
     '''Read a variable with a specified data type'''
     if dtype==1:
-        if _read_int32(f) <> 1:
+        if _read_int32(f) != 1:
             raise Exception("Error occurred while reading byte variable")
         return _read_byte(f)
     elif dtype==2:
@@ -201,7 +210,7 @@ def _read_data(f, dtype):
     elif dtype==10:
         return Pointer(_read_int32(f))
     elif dtype==11:
-        raise Exception("Object reference type not implemented")
+        return ObjectPointer(_read_int32(f))
     elif dtype==12:
         return _read_uint16(f)
     elif dtype==13:
@@ -251,6 +260,13 @@ def _read_structure(f, array_desc, struct_desc):
             else:
                 structure[col['name']][i] = _read_data(f, dtype)
 
+    # Reshape structure if needed
+    if array_desc['ndims'] > 1:
+        warnings.warn("warning: multi-dimensional structures are now correctly reshaped")
+        dims = array_desc['dims'][:int(array_desc['ndims'])]
+        dims.reverse()
+        structure = structure.reshape(dims)
+
     return structure
 
 
@@ -264,7 +280,7 @@ def _read_array(f, typecode, array_desc):
 
         if typecode == 1:
             nbytes = _read_int32(f)
-            if nbytes <> array_desc['nbytes']:
+            if nbytes != array_desc['nbytes']:
                 raise Exception("Error occurred while reading byte array")
 
         # Read bytes as numpy array
@@ -330,7 +346,7 @@ def _read_record(f):
         rectypedesc = _read_typedesc(f)
 
         varstart = _read_long(f)
-        if varstart <> 7:
+        if varstart != 7:
             raise Exception("VARSTART is not 7")
 
         if rectypedesc['structure']:
@@ -467,7 +483,7 @@ def _read_arraydesc(f):
         arraydesc['dims'] = []
         for d in range(arraydesc['nmax']):
             v = _read_long(f)
-            if v <> 0:
+            if v != 0:
                 raise Exception("Expected a zero in ARRAY_DESC")
             arraydesc['dims'].append(_read_long(f))
 
@@ -484,15 +500,19 @@ def _read_structdesc(f):
     structdesc = {}
 
     structstart = _read_long(f)
-    if structstart <> 9:
+    if structstart != 9:
         raise Exception("STRUCTSTART should be 9")
 
     structdesc['name'] = _read_string(f)
-    structdesc['predef'] = _read_long(f)
+    predef = _read_long(f)
     structdesc['ntags'] = _read_long(f)
     structdesc['nbytes'] = _read_long(f)
 
-    if structdesc['predef'] & 1 == 0:
+    structdesc['predef'] = predef & 1
+    structdesc['inherits'] = predef & 2
+    structdesc['is_super'] = predef & 4
+
+    if not structdesc['predef']:
 
         structdesc['tagtable'] = []
         for t in range(structdesc['ntags']):
@@ -511,18 +531,24 @@ def _read_structdesc(f):
             if tag['structure']:
                 structdesc['structtable'][tag['name']] = _read_structdesc(f)
 
-        STRUCT_DICT[structdesc['name']] = (structdesc['tagtable'], \
-                                           structdesc['arrtable'], \
-                                           structdesc['structtable'])
+        if structdesc['inherits'] or structdesc['is_super']:
+            structdesc['classname'] = _read_string(f)
+            structdesc['nsupclasses'] = _read_long(f)
+            structdesc['supclassnames'] = []
+            for s in range(structdesc['nsupclasses']):
+                structdesc['supclassnames'].append(_read_string(f))
+            structdesc['supclasstable'] = []
+            for s in range(structdesc['nsupclasses']):
+                structdesc['supclasstable'].append(_read_structdesc(f))
+
+        STRUCT_DICT[structdesc['name']] = structdesc
 
     else:
 
         if not structdesc['name'] in STRUCT_DICT:
             raise Exception("PREDEF=1 but can't find definition")
 
-        structdesc['tagtable'], \
-        structdesc['arrtable'], \
-        structdesc['structtable'] = STRUCT_DICT[structdesc['name']]
+        structdesc = STRUCT_DICT[structdesc['name']]
 
     return structdesc
 
@@ -546,6 +572,65 @@ def _read_tagdesc(f):
     # Assume '10'x is scalar
 
     return tagdesc
+
+
+def _replace_heap(variable, heap):
+
+    if isinstance(variable, Pointer):
+
+        while isinstance(variable, Pointer):
+
+            if variable.index == 0:
+                variable = None
+            else:
+                variable = heap[variable.index]
+
+        replace, new = _replace_heap(variable, heap)
+
+        if replace:
+            variable = new
+
+        return True, variable
+
+    elif isinstance(variable, np.core.records.recarray):
+
+        # Loop over records
+        for ir, record in enumerate(variable):
+
+            replace, new = _replace_heap(record, heap)
+
+            if replace:
+                variable[ir] = new
+
+        return False, variable
+
+    elif isinstance(variable, np.core.records.record):
+
+        # Loop over values
+        for iv, value in enumerate(variable):
+
+            replace, new = _replace_heap(value, heap)
+
+            if replace:
+                variable[iv] = new
+
+        return False, variable
+
+    elif isinstance(variable, np.ndarray):
+
+        # Loop over values
+        for iv in range(variable.size):
+
+            replace, new = _replace_heap(variable.item(iv), heap)
+
+            if replace:
+                variable.itemset(iv, new)
+
+        return False, variable
+
+    else:
+
+        return False, variable
 
 
 class AttrDict(dict):
@@ -629,7 +714,7 @@ def readsav(file_name, idict=None, python_dict=False,
 
     # Read the signature, which should be 'SR'
     signature = _read_bytes(f, 2)
-    if signature <> asbytes('SR'):
+    if signature != asbytes('SR'):
         raise Exception("Invalid SIGNATURE: %s" % signature)
 
     # Next, the record format, which is '\x00\x04' for normal .sav
@@ -680,16 +765,16 @@ def readsav(file_name, idict=None, python_dict=False,
             pos = f.tell()
 
             # Decompress record
-            string = zlib.decompress(f.read(nextrec-pos))
+            rec_string = zlib.decompress(f.read(nextrec-pos))
 
             # Find new position of next record
-            nextrec = fout.tell() + len(string) + 12
+            nextrec = fout.tell() + len(rec_string) + 12
 
             # Write out record
             fout.write(struct.pack('>I', int(nextrec % 2**32)))
             fout.write(struct.pack('>I', int((nextrec - (nextrec % 2**32)) / 2**32)))
             fout.write(unknown)
-            fout.write(string)
+            fout.write(rec_string)
 
         # Close the original compressed file
         f.close()
@@ -721,8 +806,9 @@ def readsav(file_name, idict=None, python_dict=False,
     # Find all variables
     for r in records:
         if r['rectype'] == "VARIABLE":
-            while isinstance(r['data'], Pointer):
-                r['data'] = heap[r['data'].index]
+            replace, new = _replace_heap(r['data'], heap)
+            if replace:
+                r['data'] = new
             variables[r['varname'].lower()] = r['data']
 
     if verbose:
@@ -763,7 +849,7 @@ def readsav(file_name, idict=None, python_dict=False,
         rectypes = [r['rectype'] for r in records]
 
         for rt in set(rectypes):
-            if rt <> 'END_MARKER':
+            if rt != 'END_MARKER':
                 print " - %i are of type %s" % (rectypes.count(rt), rt)
         print "-"*50
 
