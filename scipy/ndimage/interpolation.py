@@ -256,25 +256,25 @@ def map_coordinates(input, coordinates, output=None, order=3,
 
     Examples
     --------
-    >>> import scipy.ndimage
+    >>> from scipy import ndimage
     >>> a = np.arange(12.).reshape((4, 3))
     >>> a
     array([[  0.,   1.,   2.],
            [  3.,   4.,   5.],
            [  6.,   7.,   8.],
            [  9.,  10.,  11.]])
-    >>> sp.ndimage.map_coordinates(a, [[0.5, 2], [0.5, 1]], order=1)
+    >>> ndimage.map_coordinates(a, [[0.5, 2], [0.5, 1]], order=1)
     [ 2.  7.]
 
     Above, the interpolated value of a[0.5, 0.5] gives output[0], while
     a[2, 1] is output[1].
 
     >>> inds = np.array([[0.5, 2], [0.5, 4]])
-    >>> sp.ndimage.map_coordinates(a, inds, order=1, cval=-33.3)
+    >>> ndimage.map_coordinates(a, inds, order=1, cval=-33.3)
     array([  2. , -33.3])
-    >>> sp.ndimage.map_coordinates(a, inds, order=1, mode='nearest')
+    >>> ndimage.map_coordinates(a, inds, order=1, mode='nearest')
     array([ 2.,  8.])
-    >>> sp.ndimage.map_coordinates(a, inds, order=1, cval=0, output=bool)
+    >>> ndimage.map_coordinates(a, inds, order=1, cval=0, output=bool)
     array([ True, False], dtype=bool
 
     """

@@ -89,7 +89,8 @@ class ClusterError(Exception):
     pass
 
 def whiten(obs):
-    """ Normalize a group of observations on a per feature basis.
+    """
+    Normalize a group of observations on a per feature basis.
 
     Before running k-means, it is beneficial to rescale each feature
     dimension of the observation set with whitening. Each feature is
@@ -101,15 +102,12 @@ def whiten(obs):
     obs : ndarray
         Each row of the array is an observation.  The
         columns are the features seen during each observation.
-        ::
 
-                  #   f0    f1    f2
-            obs = [[  1.,   1.,   1.],  #o0
-                   [  2.,   2.,   2.],  #o1
-                   [  3.,   3.,   3.],  #o2
-                   [  4.,   4.,   4.]]) #o3
-
-        XXX perhaps should have an axis variable here.
+        >>> #         f0    f1    f2
+        >>> obs = [[  1.,   1.,   1.],  #o0
+        ...        [  2.,   2.,   2.],  #o1
+        ...        [  3.,   3.,   3.],  #o2
+        ...        [  4.,   4.,   4.]]) #o3
 
     Returns
     -------
@@ -134,14 +132,15 @@ def whiten(obs):
     return obs / std_dev
 
 def vq(obs, code_book):
-    """ Vector Quantization: assign codes from a code book to observations.
+    """
+    Assign codes from a code book to observations.
 
     Assigns a code from a code book to each observation. Each
-    observation vector in the M by N obs array is compared with the
+    observation vector in the 'M' by 'N' `obs` array is compared with the
     centroids in the code book and assigned the code of the closest
     centroid.
 
-    The features in obs should have unit variance, which can be
+    The features in `obs` should have unit variance, which can be
     acheived by passing them through the whiten function.  The code
     book can be created with the k-means algorithm or a different
     encoding algorithm.
@@ -149,20 +148,19 @@ def vq(obs, code_book):
     Parameters
     ----------
     obs : ndarray
-        Each row of the NxM array is an observation.  The columns are the
-        "features" seen during each observation. The features must be
+        Each row of the 'N' x 'M' array is an observation.  The columns are
+        the "features" seen during each observation. The features must be
         whitened first using the whiten function or something equivalent.
     code_book : ndarray
         The code book is usually generated using the k-means algorithm.
         Each row of the array holds a different code, and the columns are
         the features of the code.
 
-        ::
-
-                        #   f0    f1    f2   f3
-            code_book = [[  1.,   2.,   3.,   4.],  #c0
-                         [  1.,   2.,   3.,   4.],  #c1
-                         [  1.,   2.,   3.,   4.]]) #c2
+         >>> #              f0    f1    f2   f3
+         >>> code_book = [
+         ...             [  1.,   2.,   3.,   4.],  #c0
+         ...             [  1.,   2.,   3.,   4.],  #c1
+         ...             [  1.,   2.,   3.,   4.]]) #c2
 
     Returns
     -------
@@ -599,8 +597,8 @@ _valid_miss_meth = {'warn': _missing_warn, 'raise': _missing_raise}
 
 def kmeans2(data, k, iter = 10, thresh = 1e-5, minit = 'random',
         missing = 'warn'):
-    """Classify a set of observations into k clusters using the k-means
-       algorithm.
+    """
+    Classify a set of observations into k clusters using the k-means algorithm.
 
     The algorithm attempts to minimize the Euclidian distance between
     observations and centroids. Several initialization methods are
@@ -609,11 +607,11 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit = 'random',
     Parameters
     ----------
     data : ndarray
-        A M by N array of M observations in N dimensions or a length
-        M array of M one-dimensional observations.
+        A 'M' by 'N' array of 'M' observations in 'N' dimensions or a length
+        'M' array of 'M' one-dimensional observations.
     k : int or ndarray
         The number of clusters to form as well as the number of
-        centroids to generate. If minit initialization string is
+        centroids to generate. If `minit` initialization string is
         'matrix', or if a ndarray is given instead, it is
         interpreted as initial cluster to use instead.
     iter : int
@@ -621,7 +619,7 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit = 'random',
         that this differs in meaning from the iters parameter to
         the kmeans function.
     thresh : float
-        (not used yet).
+        (not used yet)
     minit : string
         Method for initialization. Available methods are 'random',
         'points', 'uniform', and 'matrix':
@@ -641,7 +639,7 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit = 'random',
     Returns
     -------
     centroid : ndarray
-        A k by N array of centroids found at the last iteration of
+        A 'k' by 'N' array of centroids found at the last iteration of
         k-means.
     label : ndarray
         label[i] is the code or index of the centroid the

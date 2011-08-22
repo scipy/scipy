@@ -1240,7 +1240,7 @@ class rv_continuous(rv_generic):
 
         Returns
         -------
-        pdf : array_like
+        pdf : ndarray
             Probability density function evaluated at x
 
         """
@@ -1432,7 +1432,10 @@ class rv_continuous(rv_generic):
 
     def logsf(self,x,*args,**kwds):
         """
-        Log of the Survival function log(1-cdf) at x of the given RV.
+        Log of the survival function of the given RV.
+
+        Returns the log of the "survival function," defined as (1 - `cdf`),
+        evaluated at `x`.
 
         Parameters
         ----------
@@ -1448,8 +1451,9 @@ class rv_continuous(rv_generic):
 
         Returns
         -------
-        logsf : array_like
-            Log of the survival function evaluated at x
+        logsf : ndarray
+            Log of the survival function evaluated at `x`.
+
         """
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
@@ -1688,16 +1692,13 @@ class rv_continuous(rv_generic):
         Parameters
         ----------
         n: int, n>=1
-            order of moment
-
+            Order of moment.
         arg1, arg2, arg3,... : float
             The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information)
-
-        loc : float, optional
-            location parameter (default=0)
-        scale : float, optional
-            scale parameter (default=1)
+            instance object for more information).
+        kwds : keyword arguments, optional
+            These can include "loc" and "scale", as well as other keyword
+            arguments relevant for a given distribution.
 
         """
         loc = kwds.get('loc', 0)
@@ -3768,6 +3769,10 @@ class invgauss_gen(rv_continuous):
 
     for ``x > 0``.
 
+    When `mu` is too small, evaluating the cumulative density function will be
+    inaccurate due to ``cdf(mu -> 0) = inf * 0``.
+    NaNs are returned for ``mu <= 0.0028``.
+
     %(example)s
 
     """
@@ -3779,8 +3784,9 @@ class invgauss_gen(rv_continuous):
         return -0.5*log(2*pi) - 1.5*log(x) - ((x-mu)/mu)**2/(2*x)
     def _cdf(self, x, mu):
         fac = sqrt(1.0/x)
+        # Numerical accuracy for small `mu` is bad.  See #869.
         C1 = norm.cdf(fac*(x-mu)/mu)
-        C1 += exp(2.0/mu)*norm.cdf(-fac*(x+mu)/mu)
+        C1 += exp(1.0/mu) * norm.cdf(-fac*(x+mu)/mu) * exp(1.0/mu)
         return C1
     def _stats(self, mu):
         return mu, mu**3.0, 3*sqrt(mu), 15*mu
@@ -4346,11 +4352,12 @@ class ncx2_gen(rv_continuous):
     """
     def _rvs(self, df, nc):
         return mtrand.noncentral_chisquare(df,nc,self._size)
-    def _pdf(self, x, df, nc):
+    def _logpdf(self, x, df, nc):
         a = arr(df/2.0)
-        Px = exp(-nc/2.0)*special.hyp0f1(a,nc*x/4.0)
-        Px *= exp(-x/2.0)*x**(a-1) / arr(2**a * special.gamma(a))
-        return Px
+        fac = -nc/2.0 - x/2.0 + (a-1)*np.log(x) - a*np.log(2) - special.gammaln(a)
+        return fac + np.nan_to_num(np.log(special.hyp0f1(a, nc * x/4.0)))
+    def _pdf(self, x, df, nc):
+        return np.exp(self._logpdf(x, df, nc))
     def _cdf(self, x, df, nc):
         return special.chndtr(x,df,nc)
     def _ppf(self, q, df, nc):
@@ -5127,7 +5134,7 @@ class uniform_gen(rv_continuous):
     """A uniform continuous random variable.
 
     This distribution is constant between `loc` and ``loc = scale``.
-    
+
     %(before_notes)s
 
     %(example)s
@@ -5819,7 +5826,6 @@ class rv_discrete(rv_generic):
         """
         Log of the probability mass function at k of the given RV.
 
-
         Parameters
         ----------
         k : array_like
@@ -5828,7 +5834,7 @@ class rv_discrete(rv_generic):
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
         loc : array_like, optional
-            location parameter (default=0)
+            Location parameter. Default is 0.
 
         Returns
         -------

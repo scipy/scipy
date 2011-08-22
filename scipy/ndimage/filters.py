@@ -602,7 +602,7 @@ def convolve(input, weights, output = None, mode = 'reflect', cval = 0.0,
     ....    [5, 3, 0, 4],
     ....    [0, 0, 0, 7],
     ....    [9, 3, 0, 0]])
-    >>> b = np.array([[1,1,1],[1,1,0],[1,0,0]])
+    >>> k = np.array([[1,1,1],[1,1,0],[1,0,0]])
     >>> from scipy import ndimage
     >>> ndimage.convolve(a, k, mode='constant', cval=0.0)
     array([[11, 10,  7,  4],
@@ -626,6 +626,7 @@ def convolve(input, weights, output = None, mode = 'reflect', cval = 0.0,
                       [1, 0, 0],
                       [0, 0, 0]])
     >>> k = np.array([[0,1,0],[0,1,0],[0,1,0]])
+    >>> ndimage.convolve(b, k, mode='reflect')
     array([[5, 0, 0],
            [3, 0, 0],
            [1, 0, 0]])

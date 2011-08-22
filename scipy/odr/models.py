@@ -80,7 +80,8 @@ multilinear = Model(_lin_fcn, fjacb=_lin_fjb,
                      'TeXequ':'$y=\\beta_0 + \sum_{i=1}^m \\beta_i x_i$'})
 
 def polynomial(order):
-    """ Factory function for a general polynomial model.
+    """
+    Factory function for a general polynomial model.
 
     Parameters
     ----------
@@ -93,7 +94,9 @@ def polynomial(order):
 
     Returns
     -------
-    model : Model instance
+    polynomial : Model instance
+        Model instance.
+
     """
 
     powers = np.asarray(order)

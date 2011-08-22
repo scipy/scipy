@@ -119,12 +119,35 @@ def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
 
     Parameters
     ----------
-    %(file_arg)s
+    file_name : str
+       Name of the mat file (do not need .mat extension if
+       appendmat==True) Can also pass open file-like object.
     m_dict : dict, optional
         Dictionary in which to insert matfile variables.
-    %(append_arg)s
-    %(load_args)s
-    %(struct_arg)s
+    appendmat : bool, optional
+       True to append the .mat extension to the end of the given
+       filename, if not already present.
+    byte_order : str or None, optional
+       None by default, implying byte order guessed from mat
+       file. Otherwise can be one of ('native', '=', 'little', '<',
+       'BIG', '>').
+    mat_dtype : bool, optional
+       If True, return arrays in same dtype as would be loaded into
+       MATLAB (instead of the dtype with which they are saved).
+    squeeze_me : bool, optional
+       Whether to squeeze unit matrix dimensions or not.
+    chars_as_strings : bool, optional
+       Whether to convert char arrays to string arrays.
+    matlab_compatible : bool, optional
+       Returns matrices as would be loaded by MATLAB (implies
+       squeeze_me=False, chars_as_strings=False, mat_dtype=True,
+       struct_as_record=True).
+    struct_as_record : bool, optional
+       Whether to load MATLAB structs as numpy record arrays, or as
+       old-style numpy arrays with dtype=object.  Setting this flag to
+       False replicates the behavior of scipy version 0.7.x (returning
+       numpy object arrays).  The default setting is True, because it
+       allows easier round-trip load and save of MATLAB files.
     variable_names : None or sequence
         If None (the default) - read all variables in file. Otherwise
         `variable_names` should be a sequence of strings, giving names of the
@@ -177,15 +200,26 @@ def savemat(file_name, mdict,
         Name of the .mat file (.mat extension not needed if ``appendmat ==
         True``).
         Can also pass open file_like object.
-    m_dict : dict
+    mdict : dict
         Dictionary from which to save matfile variables.
-    %(append_arg)s
+    appendmat : bool, optional
+        True (the default) to append the .mat extension to the end of the
+        given filename, if not already present.
     format : {'5', '4'}, string, optional
         '5' (the default) for MATLAB 5 and up (to 7.2),
         '4' for MATLAB 4 .mat files
-    %(long_fields)s
-    %(do_compression)s
-    %(oned_as)s
+    long_field_names : bool, optional
+        False (the default) - maximum field name length in a structure is
+        31 characters which is the documented maximum length.
+        True - maximum field name length in a structure is 63 characters
+        which works for MATLAB 7.6+
+    do_compression : bool, optional
+        Whether or not to compress matrices on write.  Default is False.
+    oned_as : {'column', 'row', None}, optional
+        If 'column', write 1-D numpy arrays as column vectors.
+        If 'row', write 1-D numpy arrays as row vectors.
+        If None (the default), the behavior depends on the value of `format`
+        (see Notes below).
 
     See also
     --------

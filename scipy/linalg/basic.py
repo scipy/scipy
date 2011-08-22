@@ -131,9 +131,10 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
 
 def solve_banded((l, u), ab, b, overwrite_ab=False, overwrite_b=False,
           debug=False):
-    """Solve the equation a x = b for x, assuming a is banded matrix.
+    """
+    Solve the equation a x = b for x, assuming a is banded matrix.
 
-    The matrix a is stored in ab using the matrix diagonal orded form::
+    The matrix a is stored in ab using the matrix diagonal ordered form::
 
         ab[u + i - j, j] == a[i,j]
 

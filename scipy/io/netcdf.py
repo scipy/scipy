@@ -745,10 +745,23 @@ class netcdf_variable(object):
         self.__dict__[attr] = value
 
     def isrec(self):
+        """Returns whether the variable has a record dimension or not.
+
+        A record dimension is a dimension along which additional data could be
+        easily appended in the netcdf data structure without much rewriting of
+        the data file. This attribute is a read-only property of the
+        `netcdf_variable`.
+
+        """
         return self.data.shape and not self._shape[0]
     isrec = property(isrec)
 
     def shape(self):
+        """Returns the shape tuple of the data variable.
+
+        This is a read-only attribute and can not be modified in the
+        same manner of other numpy arrays.
+        """
         return self.data.shape
     shape = property(shape)
 

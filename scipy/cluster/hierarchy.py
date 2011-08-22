@@ -1907,8 +1907,9 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
                no_leaves=False, show_contracted=False,
                link_color_func=None):
     """
-    Plots the hiearchical clustering defined by the linkage Z as a
-    dendrogram. The dendrogram illustrates how each cluster is
+    Plots the hierarchical clustering as a dendrogram.
+
+    The dendrogram illustrates how each cluster is
     composed by drawing a U-shaped link between a non-singleton
     cluster and its children. The height of the top of the U-link is
     the distance between its children clusters. It is also the
@@ -1930,19 +1931,17 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         large. Truncation is used to condense the dendrogram. There
         are several modes:
 
-           * None/'none': no truncation is performed (Default)
+        * None/'none': no truncation is performed (Default)
+        * 'lastp': the last ``p`` non-singleton formed in the linkage
+          are the only non-leaf nodes in the linkage; they correspond
+          to to rows ``Z[n-p-2:end]`` in ``Z``. All other
+          non-singleton clusters are contracted into leaf nodes.
+        * 'mlab': This corresponds to MATLAB(TM) behavior. (not
+          implemented yet)
+        * 'level'/'mtica': no more than ``p`` levels of the
+          dendrogram tree are displayed. This corresponds to
+          Mathematica(TM) behavior.
 
-           * 'lastp': the last ``p`` non-singleton formed in the linkage
-           are the only non-leaf nodes in the linkage; they correspond
-           to to rows ``Z[n-p-2:end]`` in ``Z``. All other
-           non-singleton clusters are contracted into leaf nodes.
-
-           * 'mlab': This corresponds to MATLAB(TM) behavior. (not
-           implemented yet)
-
-           * 'level'/'mtica': no more than ``p`` levels of the
-           dendrogram tree are displayed. This corresponds to
-           Mathematica(TM) behavior.
     color_threshold : double, optional
         For brevity, let :math:`t` be the ``color_threshold``.
         Colors all the descendent links below a cluster node
@@ -1961,19 +1960,16 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         and :math:`i < n`.
     orientation : str, optional
         The direction to plot the dendrogram, which can be any
-        of the following strings
+        of the following strings:
 
-          * 'top': plots the root at the top, and plot descendent
+        * 'top' plots the root at the top, and plot descendent
           links going downwards. (default).
-
-          * 'bottom': plots the root at the bottom, and plot descendent
+        * 'bottom'- plots the root at the bottom, and plot descendent
           links going upwards.
-
-          * 'left': plots the root at the left, and plot descendent
+        * 'left'- plots the root at the left, and plot descendent
           links going right.
-
-          * 'right': plots the root at the right, and plot descendent
-           links going left.
+        * 'right'- plots the root at the right, and plot descendent
+          links going left.
 
     labels : ndarray, optional
         By default ``labels`` is ``None`` so the index of the
@@ -1987,13 +1983,11 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         two descendent links are plotted is determined by this
         parameter, which can be any of the following values:
 
-           * False: nothing is done.
-
-           * 'ascending'/True: the child with the minimum number of
-           original objects in its cluster is plotted first.
-
-           * 'descendent': the child with the maximum number of
-           original objects in its cluster is plotted first.
+        * False: nothing is done.
+        * 'ascending'/True: the child with the minimum number of
+          original objects in its cluster is plotted first.
+        * 'descendent': the child with the maximum number of
+          original objects in its cluster is plotted first.
 
         Note ``distance_sort`` and ``count_sort`` cannot both be
         ``True``.
@@ -2003,13 +1997,11 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         two descendent links are plotted is determined by this
         parameter, which can be any of the following values:
 
-           * False: nothing is done.
-
-           * 'ascending'/True: the child with the minimum distance
-           between its direct descendents is plotted first.
-
-           * 'descending': the child with the maximum distance
-           between its direct descendents is plotted first.
+        * False: nothing is done.
+        * 'ascending'/True: the child with the minimum distance
+          between its direct descendents is plotted first.
+        * 'descending': the child with the maximum distance
+          between its direct descendents is plotted first.
 
         Note ``distance_sort`` and ``count_sort`` cannot both be
         ``True``.
@@ -2040,7 +2032,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         leaf.
 
         Indices :math:`k < n` correspond to original observations
-        while indices :math:`k \geq n` correspond to non-singleton
+        while indices :math:`k \\geq n` correspond to non-singleton
         clusters.
 
         For example, to label singletons with their node id and
@@ -2070,9 +2062,9 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         function is expected to return the color to paint the link,
         encoded as a matplotlib color string code.
 
-        For example::
+        For example:
 
-            dendrogram(Z, link_color_func=lambda k: colors[k])
+        >>> dendrogram(Z, link_color_func=lambda k: colors[k])
 
         colors the direct links below each untruncated non-singleton node
         ``k`` using ``colors[k]``.
