@@ -4351,11 +4351,12 @@ class ncx2_gen(rv_continuous):
     """
     def _rvs(self, df, nc):
         return mtrand.noncentral_chisquare(df,nc,self._size)
-    def _pdf(self, x, df, nc):
+    def _logpdf(self, x, df, nc):
         a = arr(df/2.0)
-        Px = exp(-nc/2.0)*special.hyp0f1(a,nc*x/4.0)
-        Px *= exp(-x/2.0)*x**(a-1) / arr(2**a * special.gamma(a))
-        return Px
+        fac = -nc/2.0 - x/2.0 + (a-1)*np.log(x) - a*np.log(2) - special.gammaln(a)
+        return fac + np.nan_to_num(np.log(special.hyp0f1(a, nc * x/4.0)))
+    def _pdf(self, x, df, nc):
+        return np.exp(self._logpdf(x, df, nc))
     def _cdf(self, x, df, nc):
         return special.chndtr(x,df,nc)
     def _ppf(self, q, df, nc):
