@@ -180,7 +180,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
          full_output=0, disp=1, retall=0, callback=None):
     """
     Minimize a function using the downhill simplex algorithm. This algorithm
-    only uses function values, not dervatives or second dervatives. 
+    only uses function values, not derivatives or second derivatives.
 
     Parameters
     ----------
@@ -230,23 +230,23 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     Notes
     -----
     Uses a Nelder-Mead simplex algorithm to find the minimum of function of
-    one or more variables. 
+    one or more variables.
 
     This algorithm has a long history of successful use in applications.
-    But it will usually be slower than an algorithm that uses first or 
-    second derivative information. In practice it can have poor 
-    performance in high-dimensional problems and is not robust to 
+    But it will usually be slower than an algorithm that uses first or
+    second derivative information. In practice it can have poor
+    performance in high-dimensional problems and is not robust to
     minimizing complicated functions. Additionally, there currently is not
-    a complete theory describing when the algorithm will successfully 
-    find the minimum or the speed of convergence. 
+    a complete theory describing when the algorithm will successfully
+    find the minimum or the speed of convergence.
 
     References
     ----------
     Nelder, J.A. and Mead, R. (1965), "A simplex method for function
     minimization", The Computer Journal, 7, pp. 308-313
-    Wright, M.H. (1996), "Direct Search Methods: Once Scorned, Now 
-    Respectable", in Numerical Analysis 1995, Proceedings of the 
-    1995 Dundee Biennial Conference in Numerical Analysis, D.F. 
+    Wright, M.H. (1996), "Direct Search Methods: Once Scorned, Now
+    Respectable", in Numerical Analysis 1995, Proceedings of the
+    1995 Dundee Biennial Conference in Numerical Analysis, D.F.
     Griffiths and G.A. Watson (Eds.), Addison Wesley Longman,
     Harlow, UK, pp. 191-208.
 

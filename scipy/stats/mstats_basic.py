@@ -1573,7 +1573,7 @@ def skewtest(a, axis=0):
 
     Notes
     -----
-    The sample size should be at least 8.
+    The sample size must be at least 8.
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -1668,9 +1668,9 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
     """
     Computes empirical quantiles for a data array.
 
-    Samples quantile are defined by :math:`Q(p) = (1-g).x[i] +g.x[i+1]`,
-    where :math:`x[j]` is the *j*th order statistic, and
-    `i = (floor(n*p+m))`, `m=alpha+p*(1-alpha-beta)` and `g = n*p + m - i`.
+    Samples quantile are defined by ``Q(p) = (1-g).x[i] +g.x[i+1]``,
+    where ``x[j]`` is the j-th order statistic, ``i = (floor(n*p+m))``,
+    ``m=alpha+p*(1-alpha-beta)`` and ``g = n*p + m - i``.
 
     Typical values of (alpha,beta) are:
         - (0,1)    : *p(k) = k/n* : linear interpolation of cdf (R, type 4)
@@ -1707,7 +1707,7 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
 
     Returns
     -------
-    quants : MaskedArray
+    mquantiles : MaskedArray
         An array containing the calculated quantiles.
 
     Examples

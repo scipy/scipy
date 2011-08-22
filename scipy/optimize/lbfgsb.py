@@ -44,15 +44,15 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     Parameters
     ----------
-    func : callable f(x, *args)
+    func : callable f(x,*args)
         Function to minimise.
     x0 : ndarray
         Initial guess.
-    fprime : callable fprime(x, *args)
+    fprime : callable fprime(x,*args)
         The gradient of `func`.  If None, then `func` returns the function
         value and the gradient (``f, g = func(x, *args)``), unless
         `approx_grad` is True in which case `func` returns only ``f``.
-    args : tuple
+    args : sequence
         Arguments to pass to `func` and `fprime`.
     approx_grad : bool
         Whether to approximate the gradient numerically (in which case
@@ -98,6 +98,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         Information dictionary.
 
         * d['warnflag'] is
+
           - 0 if converged,
           - 1 if too many function evaluations,
           - 2 if stopped for another reason, given in d['task']

@@ -84,8 +84,8 @@ def imread(name,flatten=0):
 
     Returns
     -------
-     : nd_array
-        The array obtained by reading image.
+    imread : ndarray
+        The array obtained by reading image from file `name`.
 
     Notes
     -----
@@ -99,22 +99,34 @@ def imread(name,flatten=0):
 
 def imsave(name, arr):
     """
-    Save an array to an image file.
+    Save an array as an image.
 
     Parameters
     ----------
-    im : PIL image
-         Input image.
+    filename : str
+        Output filename.
+    image : ndarray, MxN or MxNx3 or MxNx4
+        Array containing image values.  If the shape is ``MxN``, the array
+        represents a grey-level image.  Shape ``MxNx3`` stores the red, green
+        and blue bands along the last dimension.  An alpha layer may be
+        included, specified as the last colour band of an ``MxNx4`` array.
 
-    flatten : bool
-         If true, convert the output to grey-scale.
+    Examples
+    --------
+    Construct an array of gradient intensity values and save to file:
 
-    Returns
-    -------
-    img_array : ndarray
-                The different colour bands/channels are stored in the
-                third dimension, such that a grey-image is MxN, an
-                RGB-image MxNx3 and an RGBA-image MxNx4.
+    >>> x = np.zeros((255, 255))
+    >>> x = np.zeros((255, 255), dtype=np.uint8)
+    >>> x[:] = np.arange(255)
+    >>> imsave('/tmp/gradient.png', x)
+
+    Construct an array with three colour bands (R, G, B) and store to file:
+
+    >>> rgb = np.zeros((255, 255, 3), dtype=np.uint8)
+    >>> rgb[..., 0] = np.arange(255)
+    >>> rgb[..., 1] = 55
+    >>> rgb[..., 2] = 1 - np.arange(255)
+    >>> imsave('/tmp/rgb_gradient.png', rgb)
 
     """
     im = toimage(arr)
@@ -134,7 +146,7 @@ def fromimage(im, flatten=0):
 
     Returns
     -------
-    img_array : ndarray
+    fromimage : ndarray
         The different colour bands/channels are stored in the
         third dimension, such that a grey-image is MxN, an
         RGB-image MxNx3 and an RGBA-image MxNx4.
@@ -270,17 +282,17 @@ def imrotate(arr,angle,interp='bilinear'):
 
     Returns
     -------
-     : nd_array
+    imrotate : nd_array
         The rotated array of image.
 
     Notes
     -----
 
     Interpolation methods can be:
-    * 'nearest' :  for nearest neighbor
-    * 'bilinear' : for bilinear
-    * 'cubic' : cubic
-    * 'bicubic' : for bicubic
+     * 'nearest' :  for nearest neighbor
+     * 'bilinear' : for bilinear
+     * 'cubic' : cubic
+     * 'bicubic' : for bicubic
 
     """
     arr = asarray(arr)
@@ -344,16 +356,16 @@ def imresize(arr, size, interp='bilinear', mode=None):
         * float - Fraction of current size.
         * tuple - Size of the output image.
 
-    interp : string
-        interpolation to use for re-sizing ('nearest', 'bilinear', 'bicubic' or 'cubic')
+    interp : str
+        Interpolation to use for re-sizing ('nearest', 'bilinear', 'bicubic'
+        or 'cubic').
 
-    mode :
-        mode is the PIL image mode ('P', 'L', etc.)
+    mode : str
+        The PIL image mode ('P', 'L', etc.).
 
     Returns
     -------
-
-     : nd_array
+    imresize : ndarray
         The resized array of image.
 
     """
@@ -385,7 +397,7 @@ def imfilter(arr,ftype):
 
     Returns
     -------
-    res : nd_array
+    imfilter : ndarray
         The array with filter applied.
 
     Raises

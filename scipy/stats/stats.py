@@ -2607,12 +2607,6 @@ def kendalltau(x, y, initial_lexsort=True):
        The two-sided p-value for a hypothesis test whose null hypothesis is
        an absence of association, tau = 0.
 
-    References
-    ----------
-    W.R. Knight, "A Computer Method for Calculating Kendall's Tau with
-    Ungrouped Data", Journal of the American Statistical Association, Vol. 61,
-    No. 314, Part 1, pp. 436-439, 1966.
-
     Notes
     -----
     The definition of Kendall's tau that is used is::
@@ -2621,8 +2615,14 @@ def kendalltau(x, y, initial_lexsort=True):
 
     where P is the number of concordant pairs, Q the number of discordant
     pairs, T the number of ties only in `x`, and U the number of ties only in
-    `y`.  If a tie occurs for the same pair in both `x` and `y`, it is not added
-    to either T or U.
+    `y`.  If a tie occurs for the same pair in both `x` and `y`, it is not
+    added to either T or U.
+
+    References
+    ----------
+    W.R. Knight, "A Computer Method for Calculating Kendall's Tau with
+    Ungrouped Data", Journal of the American Statistical Association, Vol. 61,
+    No. 314, Part 1, pp. 436-439, 1966.
 
     Examples
     --------

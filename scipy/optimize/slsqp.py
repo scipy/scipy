@@ -17,17 +17,18 @@ __docformat__ = "restructuredtext en"
 _epsilon = sqrt(finfo(float).eps)
 
 def approx_jacobian(x,func,epsilon,*args):
-    """Approximate the Jacobian matrix of a callable function.
+    """
+    Approximate the Jacobian matrix of a callable function.
 
     Parameters
     ----------
     x : array_like
         The state vector at which to compute the Jacobian matrix.
-    func : callable f(x, *args)
+    func : callable f(x,*args)
         The vector-valued function.
-    epsilon : float\
-        The peturbation used to determine the partial derivatives.
-    *args : tuple
+    epsilon : float
+        The perturbation used to determine the partial derivatives.
+    args : sequence
         Additional arguments passed to func.
 
     Returns
@@ -70,7 +71,7 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
         Initial guess for the independent variable(s).
     eqcons : list
         A list of functions of length n such that
-        eqcons[j](x0,*args) == 0.0 in a successfully optimized
+        eqcons[j](x,*args) == 0.0 in a successfully optimized
         problem.
     f_eqcons : callable f(x,*args)
         Returns a 1-D array in which each element must equal 0.0 in a
@@ -78,9 +79,9 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
         eqcons is ignored.
     ieqcons : list
         A list of functions of length n such that
-        ieqcons[j](x0,*args) >= 0.0 in a successfully optimized
+        ieqcons[j](x,*args) >= 0.0 in a successfully optimized
         problem.
-    f_ieqcons : callable f(x0,*args)
+    f_ieqcons : callable f(x,*args)
         Returns a 1-D ndarray in which each element must be greater or
         equal to 0.0 in a successfully optimized problem.  If
         f_ieqcons is specified, ieqcons is ignored.
@@ -122,7 +123,7 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
 
     Returns
     -------
-    x : ndarray of float
+    out : ndarray of float
         The final minimizer of func.
     fx : ndarray of float, if full_output is true
         The final value of the objective function.

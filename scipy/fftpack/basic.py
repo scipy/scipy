@@ -153,26 +153,31 @@ def _raw_fft(x, n, axis, direction, overwrite_x, work_function):
 
 def fft(x, n=None, axis=-1, overwrite_x=0):
     """
-    Return discrete Fourier transform of arbitrary type sequence x.
+    Return discrete Fourier transform of real or complex sequence.
+
+    The returned complex array contains ``y(0), y(1),..., y(n-1)`` where
+
+    ``y(j) = (x * exp(-2*pi*sqrt(-1)*j*np.arange(n)/n)).sum()``.
 
     Parameters
     ----------
-    x : array-like
-        array to fourier transform.
+    x : array_like
+        Array to Fourier transform.
     n : int, optional
-        Length of the Fourier transform. If n<x.shape[axis],
-        x is truncated. If n>x.shape[axis], x is zero-padded.
-        (Default n=x.shape[axis]).
+        Length of the Fourier transform.  If ``n < x.shape[axis]``, `x` is
+        truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
+        default results in ``n = x.shape[axis]``.
     axis : int, optional
-        Axis along which the fft's are computed. (default=-1)
+        Axis along which the fft's are computed; the default is over the
+        last axis (i.e., ``axis=-1``).
     overwrite_x : bool, optional
-        If True the contents of x can be destroyed. (default=False)
+        If True the contents of `x` can be destroyed; the default is False.
 
     Returns
     -------
     z : complex ndarray
         with the elements:
-            [y(0),y(1),..,y(n/2-1),y(-n/2),...,y(-1)]        if n is even
+            [y(0),y(1),..,y(n/2),y(1-n/2),...,y(-1)]        if n is even
             [y(0),y(1),..,y((n-1)/2),y(-(n-1)/2),...,y(-1)]  if n is odd
         where
             y(j) = sum[k=0..n-1] x[k] * exp(-sqrt(-1)*j*k* 2*pi/n), j = 0..n-1
@@ -191,12 +196,16 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
     terms, in order of decreasingly negative frequency. So for an 8-point
     transform, the frequencies of the result are [ 0, 1, 2, 3, 4, -3, -2, -1].
 
+    For n even, A[n/2] contains the sum of the positive and negative-frequency
+    terms. For n even and x real, A[n/2] will always be real.
+
     This is most efficient for n a power of two.
 
     Examples
     --------
+    >>> from scipy.fftpack import fft, ifft
     >>> x = np.arange(5)
-    >>> np.all(np.abs(x-fft(ifft(x))<1.e-15) #within numerical accuracy.
+    >>> np.allclose(fft(ifft(x)), x, atol=1e-15) #within numerical accuracy.
     True
 
     """
@@ -423,35 +432,49 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
 
 
 def fftn(x, shape=None, axes=None, overwrite_x=0):
-    """ fftn(x, shape=None, axes=None, overwrite_x=0) -> y
+    """
+    Return multi-dimensional discrete Fourier transform of x.
 
-    Return multi-dimensional discrete Fourier transform of arbitrary
-    type sequence x.
-
-    The returned array contains
+    The returned array contains::
 
       y[j_1,..,j_d] = sum[k_1=0..n_1-1, ..., k_d=0..n_d-1]
          x[k_1,..,k_d] * prod[i=1..d] exp(-sqrt(-1)*2*pi/n_i * j_i * k_i)
 
     where d = len(x.shape) and n = x.shape.
-    Note that y[..., -j_i, ...] = y[..., n_i-j_i, ...].conjugate().
+    Note that ``y[..., -j_i, ...] = y[..., n_i-j_i, ...].conjugate()``.
 
-    Optional input:
-      shape
-        Defines the shape of the Fourier transform. If shape is not
-        specified then shape=take(x.shape,axes,axis=0).
-        If shape[i]>x.shape[i] then the i-th dimension is padded with
-        zeros. If shape[i]<x.shape[i], then the i-th dimension is
-        truncated to desired length shape[i].
-      axes
-        The transform is applied along the given axes of the input
-        array (or the newly constructed array if shape argument was
-        used).
-      overwrite_x
-        If set to true, the contents of x can be destroyed.
+    Parameters
+    ----------
+    x : array_like
+        The (n-dimensional) array to transform.
+    shape : tuple of ints, optional
+        The shape of the result.  If both `shape` and `axes` (see below) are
+        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
+        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
+        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
+        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
+        length ``shape[i]``.
+    axes : array_like of ints, optional
+        The axes of `x` (`y` if `shape` is not None) along which the
+        transform is applied.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed.  Default is False.
 
-    Notes:
-      y == fftn(ifftn(y)) within numerical accuracy.
+    Returns
+    -------
+    y : complex-valued n-dimensional numpy array
+        The (n-dimensional) DFT of the input array.
+
+    See Also
+    --------
+    ifftn
+
+    Examples
+    --------
+    >>> y = (-np.arange(16), 8 - np.arange(16), np.arange(16))
+    >>> np.allclose(y, fftn(ifftn(y)))
+    True
+
     """
     return _raw_fftn_dispatch(x, shape, axes, overwrite_x, 1)
 

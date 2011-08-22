@@ -912,7 +912,7 @@ def precision(key) :
 
 def find(sub=None, disp=False):
     """
-    Return list of codata.physical_constant keys containing a given string
+    Return list of codata.physical_constant keys containing a given string.
 
     Parameters
     ----------
@@ -924,9 +924,9 @@ def find(sub=None, disp=False):
 
     Returns
     -------
-    keys : None or list
-        If `disp` is False, the list of keys is returned. Otherwise, None
-        is returned.
+    keys : list or None
+        If `disp` is False, the list of keys is returned.
+        Otherwise, None is returned.
 
     See Also
     --------

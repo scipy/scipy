@@ -1240,7 +1240,7 @@ class rv_continuous(rv_generic):
 
         Returns
         -------
-        pdf : array_like
+        pdf : ndarray
             Probability density function evaluated at x
 
         """
@@ -1432,7 +1432,10 @@ class rv_continuous(rv_generic):
 
     def logsf(self,x,*args,**kwds):
         """
-        Log of the Survival function log(1-cdf) at x of the given RV.
+        Log of the survival function of the given RV.
+
+        Returns the log of the "survival function," defined as (1 - `cdf`),
+        evaluated at `x`.
 
         Parameters
         ----------
@@ -1448,8 +1451,9 @@ class rv_continuous(rv_generic):
 
         Returns
         -------
-        logsf : array_like
-            Log of the survival function evaluated at x
+        logsf : ndarray
+            Log of the survival function evaluated at `x`.
+
         """
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
@@ -1688,16 +1692,13 @@ class rv_continuous(rv_generic):
         Parameters
         ----------
         n: int, n>=1
-            order of moment
-
+            Order of moment.
         arg1, arg2, arg3,... : float
             The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information)
-
-        loc : float, optional
-            location parameter (default=0)
-        scale : float, optional
-            scale parameter (default=1)
+            instance object for more information).
+        kwds : keyword arguments, optional
+            These can include "loc" and "scale", as well as other keyword
+            arguments relevant for a given distribution.
 
         """
         loc = kwds.get('loc', 0)
@@ -5825,7 +5826,6 @@ class rv_discrete(rv_generic):
         """
         Log of the probability mass function at k of the given RV.
 
-
         Parameters
         ----------
         k : array_like
@@ -5834,7 +5834,7 @@ class rv_discrete(rv_generic):
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
         loc : array_like, optional
-            location parameter (default=0)
+            Location parameter. Default is 0.
 
         Returns
         -------
