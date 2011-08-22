@@ -513,7 +513,9 @@ cdef class cKDTree:
 
     def query(cKDTree self, object x, int k=1, double eps=0, double p=2, 
             double distance_upper_bound=infinity):
-        """Query the kd-tree for nearest neighbors.
+        """query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf)
+        
+        Query the kd-tree for nearest neighbors.
 
         Parameters
         ----------
@@ -521,17 +523,17 @@ cdef class cKDTree:
             An array of points to query.
         k : int
             The number of nearest neighbors to return.
-        eps : nonnegative float
-            Return approximate nearest neighbors; the kth returned value 
-            is guaranteed to be no further than (1+eps) times the 
-            distance to the real kth nearest neighbor.
-        p : float, 1<=p<=infinity
+        eps : non-negative float
+            Return approximate nearest neighbors; the k-th returned value 
+            is guaranteed to be no further than (1 + `eps`) times the 
+            distance to the real k-th nearest neighbor.
+        p : float, 1 <= p <= infinity
             Which Minkowski p-norm to use. 
-            1 is the sum-of-absolute-values "Manhattan" distance
-            2 is the usual Euclidean distance
-            infinity is the maximum-coordinate-difference distance
-        distance_upper_bound : nonnegative float
-            Return only neighbors within this distance. This is used to prune
+            1 is the sum-of-absolute-values "Manhattan" distance.
+            2 is the usual Euclidean distance.
+            infinity is the maximum-coordinate-difference distance.
+        distance_upper_bound : non-negative float
+            Return only neighbors within this distance.  This is used to prune
             tree searches, so if you are doing a series of nearest-neighbor
             queries, it may help to supply the distance to the nearest neighbor
             of the most recent point.
@@ -540,11 +542,11 @@ cdef class cKDTree:
         -------
         d : ndarray of floats
             The distances to the nearest neighbors. 
-            If x has shape tuple+(self.m,), then d has shape tuple+(k,).
+            If `x` has shape tuple+(self.m,), then `d` has shape tuple+(k,).
             Missing neighbors are indicated with infinite distances.
         i : ndarray of ints
             The locations of the neighbors in self.data.
-            If x has shape tuple+(self.m,), then i has shape tuple+(k,).
+            If `x` has shape tuple+(self.m,), then `i` has shape tuple+(k,).
             Missing neighbors are indicated with self.n.
 
         """
