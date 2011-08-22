@@ -258,6 +258,12 @@ def _read_structure(f, array_desc, struct_desc):
             else:
                 structure[col['name']][i] = _read_data(f, dtype)
 
+    # Reshape structure if needed
+    if array_desc['ndims'] > 1:
+        dims = array_desc['dims'][:int(array_desc['ndims'])]
+        dims.reverse()
+        structure = structure.reshape(dims)
+
     return structure
 
 
