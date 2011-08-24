@@ -10,11 +10,13 @@ __all__ = ['minres']
 header = \
 """Use MINimum RESidual iteration to solve Ax=b
 
-MINRES minimizes norm(A*x - b) for the symmetric matrix A.  Unlike
+MINRES minimizes norm(A*x - b) for a real symmetric matrix A.  Unlike
 the Conjugate Gradient method, A can be indefinite or singular.
 
 If shift != 0 then the method solves (A - shift*I)x = b
 """
+
+Ainfo = "The real symmetric N-by-N matrix of the linear system"
 
 footer = \
 """
@@ -33,7 +35,9 @@ This file is a translation of the following MATLAB implementation:
     http://www.stanford.edu/group/SOL/software/minres/matlab/
 """
 
-@set_docstring(header,footer)
+@set_docstring(header,
+               Ainfo,
+               footer)
 def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
            M=None, callback=None, show=False, check=False):
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
