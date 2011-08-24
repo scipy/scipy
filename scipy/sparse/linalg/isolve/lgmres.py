@@ -3,7 +3,6 @@
 
 import numpy as np
 from scipy.linalg import get_blas_funcs
-from iterative import set_docstring
 from utils import make_system
 
 __all__ = ['lgmres']

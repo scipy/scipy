@@ -12,13 +12,15 @@ _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 
 
 # Part of the docstring common to all iterative solvers
-common_doc = \
+common_doc1 = \
 """
 Parameters
 ----------
 A : {sparse matrix, dense matrix, LinearOperator}
-    The N-by-N matrix of the linear system.
-b : {array, matrix}
+    The N-by-N matrix of the linear system"""
+
+common_doc2 = \
+"""b : {array, matrix}
     Right hand side of the linear system. Has shape (N,) or (N,1).
 
 Returns
@@ -62,15 +64,19 @@ xtype : {'f','d','F','D'}
 """
 
 
-def set_docstring(header, footer):
+def set_docstring(header, Ainfo, footer):
     def combine(fn):
-        fn.__doc__ = header + '\n' + common_doc + '\n' + footer
+        fn.__doc__ = '\n'.join((header, common_doc1,
+                               '    ' + Ainfo,
+                               common_doc2, footer))
         return fn
     return combine
 
 
 
-@set_docstring('Use BIConjugate Gradient iteration to solve A x = b','')
+@set_docstring('Use BIConjugate Gradient iteration to solve A x = b',
+               'It is required that the linear operator can produce\n'
+               '    ``Ax`` and ``A^T x``.', '')
 def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
@@ -131,7 +137,9 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=Non
 
     return postprocess(x), info
 
-@set_docstring('Use BIConjugate Gradient STABilized iteration to solve A x = b','')
+@set_docstring('Use BIConjugate Gradient STABilized iteration to solve A x = b',
+               '``A`` must represent a hermitian, positive definite matrix',
+               '')
 def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
@@ -189,7 +197,9 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback
 
     return postprocess(x), info
 
-@set_docstring('Use Conjugate Gradient iteration to solve A x = b','')
+@set_docstring('Use Conjugate Gradient iteration to solve A x = b',
+               '``A`` must represent a hermitian, positive definite matrix',
+               '')
 def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
@@ -247,7 +257,9 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None)
     return postprocess(x), info
 
 
-@set_docstring('Use Conjugate Gradient Squared iteration to solve A x = b','')
+@set_docstring('Use Conjugate Gradient Squared iteration to solve A x = b',
+               '``A`` must represent a real-valued matrix',
+               '')
 def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
@@ -476,7 +488,9 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
     Parameters
     ----------
     A : {sparse matrix, dense matrix, LinearOperator}
-        The N-by-N matrix of the linear system.
+        The real-valued N-by-N matrix of the linear system.
+        It is required that the linear operator can produce
+        ``Ax`` and ``A^T x``.
     b : {array, matrix}
         Right hand side of the linear system. Has shape (N,) or (N,1).
 
