@@ -16,6 +16,8 @@ the Conjugate Gradient method, A can be indefinite or singular.
 If shift != 0 then the method solves (A - shift*I)x = b
 """
 
+Ainfo = "The real-valued N-by-N matrix of the linear system"
+
 footer = \
 """
 Notes
@@ -34,7 +36,7 @@ This file is a translation of the following MATLAB implementation:
 """
 
 @set_docstring(header,
-               '``A`` must represent a real-valued, symmetric matrix',
+               Ainfo,
                footer)
 def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
            M=None, callback=None, show=False, check=False):
