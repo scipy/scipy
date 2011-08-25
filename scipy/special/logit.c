@@ -174,6 +174,47 @@ void *data[3] = {NULL, NULL, NULL};
 
 /* Module init */
 
+#if PY_VERSION_HEX >= 0x03000000
+
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "logit",
+    NULL,
+    -1,
+    LogitMethods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyObject *PyInit_logit(void)
+{
+    PyObject *m, *f, *d;
+    m = PyModule_Create(&moduledef);
+    if(!m){
+        return NULL;
+    }
+
+    import_array();
+    import_umath();
+
+    f = PyUFunc_FromFuncAndData(logit_funcs,data, types, 3, 1, 1, 
+                                PyUFunc_None, "logit",NULL , 0);
+    PyDict_SetItemString(d , "logit", f);
+    Py_DECREF(f);
+
+
+    f = PyUFunc_FromFuncAndData(expit_funcs,data, types, 3, 1, 1, 
+                                PyUFunc_None, "expit",NULL , 0);
+    PyDict_SetItemString(d , "expit", f);
+    Py_DECREF(f);
+
+    return m;
+}
+
+#else
+
 PyMODINIT_FUNC initlogit(void){
     PyObject *m, *f,  *d;
     
@@ -198,6 +239,5 @@ PyMODINIT_FUNC initlogit(void){
                                 PyUFunc_None, "expit",NULL , 0);
     PyDict_SetItemString(d , "expit", f);
     Py_DECREF(f);
-
-
 }
+#endif
