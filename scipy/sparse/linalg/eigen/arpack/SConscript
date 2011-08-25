@@ -1,3 +1,4 @@
+# vim:syntax=python
 from os.path import join as pjoin
 
 from numscons import GetNumpyEnvironment
