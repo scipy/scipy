@@ -8,7 +8,7 @@ from lapack import get_lapack_funcs, find_best_lapack_type
 from misc import _datacopied
 
 # XXX: what is qr_old, should it be kept?
-__all__ = ['qr', 'rq', 'qr_old']
+__all__ = ['qr', 'qr_mult', 'rq', 'qr_old']
 
 def safecall(f, name, *args, **kwargs):
     lwork = kwargs.pop("lwork", None)
