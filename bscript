@@ -183,9 +183,10 @@ def post_configure(context):
 
     conf.env.INCLUDES = get_numpy_include_dirs()
 
-    cflags_pyext = conf.env.CFLAGS_PYEXT
-    cflags_pyext.append("-Wfatal-errors")
-    conf.env.CFLAGS_PYEXT = cflags_pyext
+    if conf.env.CC_NAME == 'gcc':
+        cflags_pyext = conf.env.CFLAGS_PYEXT
+        cflags_pyext.append("-Wfatal-errors")
+        conf.env.CFLAGS_PYEXT = cflags_pyext
 
     if sys.platform == "darwin":
         # FIXME: fix upstream waf tool to work on mac os X
