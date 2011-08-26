@@ -49,10 +49,10 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
 
     Returns
     -------
-    Q : double or complex ndarray
+    Q : float or complex ndarray
         Of shape (M, M), or (M, K) for ``mode='economic'``.  Not returned if
         ``mode='r'``.
-    R : double or complex ndarray
+    R : float or complex ndarray
         Of shape (M, N), or (K, N) for ``mode='economic'``.  ``K = min(M, N)``.
     P : integer ndarray
         Of shape (N,) for ``pivoting=True``. Not returned if ``pivoting=False``.
@@ -238,9 +238,9 @@ def qr_multiply(*args, **kwargs):
 
     Returns
     -------
-    CQ : double or complex ndarray
+    CQ : float or complex ndarray
         the product of Q and c, as defined in mode
-    R : double or complex ndarray
+    R : float or complex ndarray
         Of shape (K, N), ``K = min(M, N)``.
     P : integer ndarray
         Of shape (N,) for ``pivoting=True``. Not returned if ``pivoting=False``.
@@ -275,8 +275,8 @@ def qr_old(a, overwrite_a=False, lwork=None):
 
     Returns
     -------
-    Q : double or complex array, shape (M, M)
-    R : double or complex array, shape (M, N)
+    Q : float or complex array, shape (M, M)
+    R : float or complex array, shape (M, N)
         Size K = min(M, N)
 
     Raises LinAlgError if decomposition fails
@@ -333,8 +333,8 @@ def rq(a, overwrite_a=False, lwork=None, mode='full'):
 
     Returns
     -------
-    R : double array, shape (M, N)
-    Q : double or complex array, shape (M, M)
+    R : float array, shape (M, N)
+    Q : float or complex array, shape (M, M)
 
     Raises LinAlgError if decomposition fails
 
