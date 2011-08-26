@@ -1091,9 +1091,9 @@ class TestQR(TestCase):
         a = [[3,3+4j,5],[5,2,2+7j],[3,2,7]]
         q,r = qr(a)
         c = [1, 2, 3+4j]
-        qc,r = qr(a, mode="left", c=c)
+        qc,r = qr_multiply(a, c, "left")
         assert_array_almost_equal(dot(q, c), qc[:, 0])
-        qc,r = qr(a, mode="left", c=identity(3))
+        qc,r = qr_multiply(a, identity(3), "left")
         assert_array_almost_equal(q, qc)
 
     def test_simple_complex_right(self):
@@ -1144,9 +1144,9 @@ class TestQR(TestCase):
             a = random([n,n])
             q,r = qr(a)
             c = random([n])
-            qc,r = qr(a, mode="left", c=c)
+            qc,r = qr_multiply(a, c, "left")
             assert_array_almost_equal(dot(q, c), qc[:, 0])
-            qc,r = qr(a, mode="left", c=identity(n))
+            qc,r = qr_multiply(a, identity(n), "left")
             assert_array_almost_equal(q, qc)
 
     def test_random_right(self):
@@ -1155,9 +1155,9 @@ class TestQR(TestCase):
             a = random([n,n])
             q,r = qr(a)
             c = random([n])
-            cq,r = qr(a, mode="right", c=c)
+            cq,r = qr_multiply(a, c)
             assert_array_almost_equal(dot(c, q), cq[0, :])
-            cq,r = qr(a, mode="right", c=identity(n))
+            cq,r = qr_multiply(a, identity(n))
             assert_array_almost_equal(q, cq)
 
     def test_random_pivoting(self):
@@ -1290,9 +1290,9 @@ class TestQR(TestCase):
             a = random([n,n])+1j*random([n,n])
             q,r = qr(a)
             c = random([n])+1j*random([n])
-            qc,r = qr(a, mode="left", c=c)
+            qc,r = qr_multiply(a, c, "left")
             assert_array_almost_equal(dot(q, c), qc[:, 0])
-            qc,r = qr(a, mode="left", c=identity(n))
+            qc,r = qr_multiply(a, identity(n), "left")
             assert_array_almost_equal(q, qc)
 
     def test_random_complex_right(self):
@@ -1301,9 +1301,9 @@ class TestQR(TestCase):
             a = random([n,n])+1j*random([n,n])
             q,r = qr(a)
             c = random([n])+1j*random([n])
-            cq,r = qr(a, mode="right", c=c)
+            cq,r = qr_multiply(a, c)
             assert_array_almost_equal(dot(c, q), cq[0, :])
-            cq,r = qr(a, mode="right", c=identity(n))
+            cq,r = qr_multiply(a, identity(n))
             assert_array_almost_equal(q, cq)
 
     def test_random_complex_pivoting(self):

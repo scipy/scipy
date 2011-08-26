@@ -8,7 +8,7 @@ from lapack import get_lapack_funcs, find_best_lapack_type
 from misc import _datacopied
 
 # XXX: what is qr_old, should it be kept?
-__all__ = ['qr', 'rq', 'qr_old']
+__all__ = ['qr', 'qr_multiply', 'rq', 'qr_old']
 
 def safecall(f, name, *args, **kwargs):
     lwork = kwargs.pop("lwork", None)
@@ -46,22 +46,12 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
         qr decomposition. If pivoting, compute the decomposition
         :lm:`A P = Q R` as above, but where P is chosen such that the diagonal
         of R is non-increasing.
-    c : array, two-dimensional
-        calculate the product of c and q, depending on the mode:
-        'left': dot(Q, c)
-        'right': dot(c, Q)
-        the shape of c must be appropriate for the matrix multiplications
-    overwrite_c: bool, optional
-        Whether data in c is overwritten (may improve performance)
-        
 
     Returns
     -------
     Q : double or complex ndarray
         Of shape (M, M), or (M, K) for ``mode='economic'``.  Not returned if
         ``mode='r'``.
-    CQ : double or complex ndarray
-        the product of Q and c, as defined in mode
     R : double or complex ndarray
         Of shape (M, N), or (K, N) for ``mode='economic'``.  ``K = min(M, N)``.
     P : integer ndarray
@@ -213,7 +203,59 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
         return Q, R, jpvt
     return Q, R
 
+def qr_multiply(*args, **kwargs):
+    """Calculate the QR decomposition and multiply Q with a matrix.
 
+    Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
+    and R upper triangular.
+
+    Parameters
+    ----------
+    a : array, shape (M, N)
+        Matrix to be decomposed
+    overwrite_a : bool, optional
+        Whether data in a is overwritten (may improve performance)
+    lwork : int, optional
+        Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
+        is computed.
+    mode : {'left', 'right'} 
+        dot(Q, c) is returned if mode is 'left',
+        dot(c, Q) is returned if mode is 'right'.
+        
+    pivoting : bool, optional
+        Whether or not factorization should include pivoting for rank-revealing
+        qr decomposition. If pivoting, compute the decomposition
+        :lm:`A P = Q R` as above, but where P is chosen such that the diagonal
+        of R is non-increasing.
+    c : array, two-dimensional
+        calculate the product of c and q, depending on the mode:
+        'left': dot(Q, c)
+        'right': dot(c, Q)
+        the shape of c must be appropriate for the matrix multiplications
+    overwrite_c: bool, optional
+        Whether data in c is overwritten (may improve performance)
+        
+
+    Returns
+    -------
+    CQ : double or complex ndarray
+        the product of Q and c, as defined in mode
+    R : double or complex ndarray
+        Of shape (K, N), ``K = min(M, N)``.
+    P : integer ndarray
+        Of shape (N,) for ``pivoting=True``. Not returned if ``pivoting=False``.
+
+    Raises
+    ------
+    LinAlgError
+        Raised if decomposition fails
+
+    Notes
+    -----
+    This is an interface to the LAPACK routines dgeqrf, zgeqrf,
+    dormqr, zunmqr, dgeqp3, and zgeqp3.
+    """
+    return qr(*args, **kwargs)
 
 def qr_old(a, overwrite_a=False, lwork=None):
     """Compute QR decomposition of a matrix.
