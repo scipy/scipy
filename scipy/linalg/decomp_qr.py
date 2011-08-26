@@ -227,7 +227,8 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
         return Q, R, jpvt
     return Q, R
 
-def qr_mult(*args, **kwargs):
+def qr_mult(a, c, mode='right', pivoting=False, overwrite_a=False,
+    overwrite_c=False, lwork=None):
     """Calculate the QR decomposition and multiply Q with a matrix.
 
     Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
@@ -237,25 +238,25 @@ def qr_mult(*args, **kwargs):
     ----------
     a : array, shape (M, N)
         Matrix to be decomposed
-    overwrite_a : bool, optional
-        Whether data in a is overwritten (may improve performance)
-    lwork : int, optional
-        Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
-        is computed.
+    c : array, one- or two-dimensional
+        calculate the product of c and q, depending on the mode:
     mode : {'left', 'right'} 
         dot(Q, c) is returned if mode is 'left',
         dot(c, Q) is returned if mode is 'right'.
-        
+        the shape of c must be appropriate for the matrix multiplications,
+        if mode is 'left', min(a.shape) == c.shape[0],
+        if mode is 'right', a.shape[0].
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
         qr decomposition. If pivoting, compute the decomposition
         :lm:`A P = Q R` as above, but where P is chosen such that the diagonal
         of R is non-increasing.
-    c : array, two-dimensional
-        calculate the product of c and q, depending on the mode:
-        'left': dot(Q, c)
-        'right': dot(c, Q)
-        the shape of c must be appropriate for the matrix multiplications
+    overwrite_a : bool, optional
+        Whether data in a is overwritten (may improve performance)
+    lwork : int, optional
+        Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
+        is computed.
+        
     overwrite_c: bool, optional
         Whether data in c is overwritten (may improve performance)
         
@@ -279,7 +280,7 @@ def qr_mult(*args, **kwargs):
     This is an interface to the LAPACK routines dgeqrf, zgeqrf,
     dormqr, zunmqr, dgeqp3, and zgeqp3.
     """
-    return qr(*args, **kwargs)
+    return qr(a, overwrite_a, lwork, mode, pivoting, c, overwrite_c)
 
 def qr_old(a, overwrite_a=False, lwork=None):
     """Compute QR decomposition of a matrix.
