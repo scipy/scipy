@@ -118,6 +118,38 @@ def pre_configure(context):
 
     conf.check_fortran_verbose_flag()
     conf.check_fortran_clib()
+    u, du, c = conf.check_fortran_mangling()
+    _set_mangling_var(conf, u, du, c)
+
+def _set_mangling_var(conf, u, du, case, f2pycompat=True):
+    env = conf.env
+    macros = []
+
+    if du == '_':
+        env['F77_UNDERSCORE_G77'] = 1
+        macros.append('F77_UNDERSCORE_G77')
+        if f2pycompat:
+            macros.append('UNDERSCORE_G77')
+    else:
+        env['F77_UNDERSCORE_G77'] = 0
+
+    if u == '_':
+        env['F77_NO_APPEND_FORTRAN'] = 0
+    else:
+        env['F77_NO_APPEND_FORTRAN'] = 1
+        macros.append('F77_NO_APPEND_FORTRAN')
+        if f2pycompat:
+            macros.append('NO_APPEND_FORTRAN')
+
+    if case == 'upper':
+        env['F77_UPPERCASE_FORTRAN'] = 1
+        macros.append('F77_UPPERCASE_FORTRAN')
+        if f2pycompat:
+            macros.append('UPPERCASE_FORTRAN')
+    else:
+        env['F77_UPPERCASE_FORTRAN'] = 0
+
+    env.DEFINES.extend(macros)
 
 def remove_flag(name, flag):
     while True:
