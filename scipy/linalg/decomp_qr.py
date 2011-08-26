@@ -8,7 +8,7 @@ from lapack import get_lapack_funcs, find_best_lapack_type
 from misc import _datacopied
 
 # XXX: what is qr_old, should it be kept?
-__all__ = ['qr', 'qr_mult', 'rq', 'qr_old']
+__all__ = ['qr', 'qr_multiply', 'rq', 'qr_old']
 
 def safecall(f, name, *args, **kwargs):
     lwork = kwargs.pop("lwork", None)
@@ -227,7 +227,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
         return Q, R, jpvt
     return Q, R
 
-def qr_mult(a, c, mode='right', pivoting=False, overwrite_a=False,
+def qr_multiply(a, c, mode='right', pivoting=False, overwrite_a=False,
     overwrite_c=False, lwork=None):
     """Calculate the QR decomposition and multiply Q with a matrix.
 
