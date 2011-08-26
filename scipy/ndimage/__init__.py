@@ -173,7 +173,6 @@ from measurements import *
 from morphology import *
 from io import *
 
-from info import __doc__
 __version__ = '2.0'
 
 __all__ = filter(lambda s: not s.startswith('_'), dir())
