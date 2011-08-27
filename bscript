@@ -105,13 +105,17 @@ def options(context):
 @hooks.pre_configure
 def pre_configure(context):
     opts = context.waf_options_context
+    conf = context.waf_context
+
     opts.load("compiler_cxx")
     opts.load("compiler_fc")
     opts.load("f2py")
     Options.options.check_fc = "gfortran"
     Options.options.check_cxx_compiler = "g++"
+    if sys.platform == "win32" and conf.env.CC_NAME == "msvc":
+        Options.options.check_fc = "ifort"
+    Options.options.check_cxx_compiler = "msvc"
 
-    conf = context.waf_context
     conf.load("compiler_cxx")
     conf.load("compiler_fc")
     conf.load("f2py")
