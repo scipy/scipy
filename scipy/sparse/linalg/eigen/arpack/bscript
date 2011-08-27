@@ -24,7 +24,7 @@ def pre_build(context):
     context.register_compiled_library_builder("arpack", builder)
 
     def builder(extension):
-        bld(features="c fc pyext cshlib f2py bento",
+        bld(features="c fc pyext cloadable f2py bento",
             source=extension.sources,
             target=extension.name,
             use="arpack FLAPACK CLIB")

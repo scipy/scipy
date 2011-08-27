@@ -5,7 +5,7 @@ def pre_build(context):
     bld = context.waf_context
 
     def builder(extension):
-        bld(features="c pyext cshlib bento",
+        bld(features="c pyext cloadable bento",
             source=extension.sources,
             target=extension.name,
             use="NPYMATH")
@@ -13,14 +13,14 @@ def pre_build(context):
     context.register_builder("lambertw", builder)
 
     def builder(extension):
-        bld(features="c pyext cshlib bento f2py",
+        bld(features="c pyext cloadable bento f2py",
             source=extension.sources,
             target=extension.name,
             use="sc_specfunlib NPYMATH CLIB")
     context.register_builder("specfun", builder)
 
     def builder(extension):
-        bld(features="c pyext cshlib bento",
+        bld(features="c pyext cloadable bento",
             source=extension.sources,
             target=extension.name,
             use="sc_amos sc_toms sc_c_misc sc_cephes sc_mach sc_cdf sc_specfunlib NPYMATH CLIB")

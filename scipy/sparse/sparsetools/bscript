@@ -5,7 +5,7 @@ def pre_build(context):
     bld = context.waf_context
 
     def builder(extension):
-        bld(features="cxx cxxshlib pyext bento",
+        bld(features="cxx cxxloadable pyext bento",
             source=extension.sources,
             defines=('__STDC_FORMAT_MACROS',),
             target=extension.name)

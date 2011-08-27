@@ -5,27 +5,27 @@ def pre_build(context):
     bld = context.waf_context
 
     def builder(extension):
-        bld(features="c pyext bento cstlib",
+        bld(features="c cstlib pyext bento",
             source=extension.sources,
             target=extension.name)
     context.register_compiled_library_builder("statlibimp", builder)
 
     def builder(extension):
-        bld(features="c pyext bento cshlib f2py",
+        bld(features="c cloadable pyext bento f2py",
             source=extension.sources,
             target=extension.name,
             use="statlibimp CLIB")
     context.register_builder("statlib", builder)
 
     def builder(extension):
-        bld(features="c pyext bento cshlib f2py",
+        bld(features="c cloadable pyext bento f2py",
             source=extension.sources,
             target=extension.name,
             use="CLIB")
     context.register_builder("mvn", builder)
 
     def builder(extension):
-        bld(features="c pyext bento cshlib f2py f2py_fortran",
+        bld(features="c cloadable pyext bento f2py f2py_fortran",
             source=extension.sources,
             target=extension.name,
             use="CLIB")
