@@ -116,8 +116,8 @@ def pre_configure(context):
     conf.load("compiler_fc")
     conf.load("f2py")
 
-    conf.check_fortran_verbose_flag()
     conf.check_fortran_clib()
+    conf.check_fortran_dummy_main()
     u, du, c = conf.check_fortran_mangling()
     _set_mangling_var(conf, u, du, c)
 
