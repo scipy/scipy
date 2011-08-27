@@ -617,13 +617,11 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
             CASE_INTERP_OUT_UINT(po, t, UInt32, 0, MAX_UINT32);
             CASE_INTERP_OUT_UINT(po, t, uintp, 0, MAX_UINTP);
 #if HAS_UINT64
-            /* FIXME
-             * This next line should obviously end in MAX_UINT64
-             * but this generates a compiler error of form (gcc):
-             * error: ‘xULL’ undeclared (first use in this function)
-             * warning: integer constant is too large for ‘long’ type
+            /* There was a bug in numpy as of (at least) <= 1.6.1 such that
+             * MAX_UINT64 was incorrectly defined, leading to a compiler error.
+             * NPY_MAX_UINT64 is correctly defined
              */
-            CASE_INTERP_OUT_UINT(po, t, UInt64, 0, MAX_UINT32);
+            CASE_INTERP_OUT_UINT(po, t, UInt64, 0, NPY_MAX_UINT64);
 #endif
             CASE_INTERP_OUT_INT(po, t, Int8, MIN_INT8, MAX_INT8);
             CASE_INTERP_OUT_INT(po, t, Int16, MIN_INT16, MAX_INT16);
@@ -922,13 +920,11 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
             CASE_INTERP_OUT_UINT(po, t, UInt32, 0, MAX_UINT32);
             CASE_INTERP_OUT_UINT(po, t, uintp, 0, MAX_UINTP);
 #if HAS_UINT64
-            /* FIXME
-             * This next line should obviously end in MAX_UINT64
-             * but this generates a compiler error of form (gcc):
-             * error: ‘xULL’ undeclared (first use in this function)
-             * warning: integer constant is too large for ‘long’ type
+            /* There was a bug in numpy as of (at least) <= 1.6.1 such that
+             * MAX_UINT64 was incorrectly defined, leading to a compiler error.
+             * NPY_MAX_UINT64 is correctly defined
              */
-            CASE_INTERP_OUT_UINT(po, t, UInt64, 0, MAX_UINT32);
+            CASE_INTERP_OUT_UINT(po, t, UInt64, 0, NPY_MAX_UINT64);
 #endif
             CASE_INTERP_OUT_INT(po, t, Int8, MIN_INT8, MAX_INT8);
             CASE_INTERP_OUT_INT(po, t, Int16, MIN_INT16, MAX_INT16);
