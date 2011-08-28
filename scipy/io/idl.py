@@ -618,13 +618,15 @@ def _replace_heap(variable, heap):
 
     elif isinstance(variable, np.ndarray):
 
-        # Loop over values
-        for iv in range(variable.size):
+        # Loop over values if type is np.object_
+        if variable.dtype.type is np.object_:
 
-            replace, new = _replace_heap(variable.item(iv), heap)
+            for iv in range(variable.size):
 
-            if replace:
-                variable.itemset(iv, new)
+                replace, new = _replace_heap(variable.item(iv), heap)
+
+                if replace:
+                    variable.itemset(iv, new)
 
         return False, variable
 
