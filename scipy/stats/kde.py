@@ -54,18 +54,17 @@ class gaussian_kde(object):
     kde(points) : array
         same as kde.evaluate(points)
     kde.integrate_gaussian(mean, cov) : float
-        multiply pdf with a specified Gaussian and integrate over the whole domain
+        multiply pdf with a specified Gaussian and integrate over the whole
+        domain
     kde.integrate_box_1d(low, high) : float
         integrate pdf (1D only) between two bounds
     kde.integrate_box(low_bounds, high_bounds) : float
-        integrate pdf over a rectangular space between low_bounds and high_bounds
+        integrate pdf over a rectangular space between low_bounds and
+        high_bounds
     kde.integrate_kde(other_kde) : float
         integrate two kernel density estimates multiplied together
     kde.resample(size=None) : array
         randomly sample a dataset from the estimated pdf.
-
-    Internal Methods
-    ----------------
     kde.covariance_factor() : float
         computes the coefficient that multiplies the data covariance matrix to
         obtain the kernel covariance matrix. Set this method to

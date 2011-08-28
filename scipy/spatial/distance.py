@@ -480,13 +480,13 @@ def seuclidean(u, v, V):
 
 
 def cityblock(u, v):
-    r"""
+    """
     Computes the Manhattan distance between two n-vectors u and v,
     which is defined as
 
     .. math::
 
-       \sum_i {(u_i-v_i)}.
+       \\sum_i {\\left| u_i - v_i \\right|}.
 
     Parameters
     ----------
@@ -499,6 +499,7 @@ def cityblock(u, v):
     -------
     d : double
         The City Block distance between vectors ``u`` and ``v``.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)

@@ -103,9 +103,7 @@
 #   define QHULL_OS_WIN
 #endif
 #if defined(__INTEL_COMPILER) && !defined(QHULL_OS_WIN)
-template <typename T>
-inline void qhullUnused(T &x) { (void)x; }
-#  define QHULL_UNUSED(x) qhullUnused(x);
+#  define QHULL_UNUSED(x) (x)
 #else
 #  define QHULL_UNUSED(x) (void)x;
 #endif

@@ -73,7 +73,7 @@ Utility tools
 
 """
 
-__all__ = ['pkgload','test']
+__all__ = ['test']
 
 from numpy import show_config as show_numpy_config
 if show_numpy_config is None:
@@ -114,14 +114,6 @@ except ImportError:
     tree first, and relaunch your python intepreter."""
     raise ImportError(msg)
 from scipy.version import version as __version__
-
-# Load scipy packages and their global_symbols
-from numpy._import_tools import PackageLoader
-import os as _os
-SCIPY_IMPORT_VERBOSE = int(_os.environ.get('SCIPY_IMPORT_VERBOSE','-1'))
-del _os
-pkgload = PackageLoader()
-pkgload(verbose=SCIPY_IMPORT_VERBOSE,postpone=True)
 
 from numpy.testing import Tester
 test = Tester().test

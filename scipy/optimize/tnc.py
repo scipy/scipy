@@ -191,6 +191,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
     1. It wraps a C implementation of the algorithm
     2. It allows each variable to be given an upper and lower bound.
 
+
     The algorithm incoporates the bound constraints by determining
     the descent direction as in an unconstrained truncated Newton, 
     but never taking a step-size large enough to leave the space

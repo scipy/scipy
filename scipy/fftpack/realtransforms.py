@@ -147,13 +147,13 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
     Notes
     -----
     For a single dimension array `x`, ``idct(x, norm='ortho')`` is equal to
-    matlab ``idct(x)``.
+    MATLAB ``idct(x)``.
 
     'The' IDCT is the IDCT of type 2, which is the same as DCT of type 3.
 
-    IDCT of type 1 is the DCT of type 1, IDCT of type 2 is the DCT of type 3,
-    and IDCT of type 3 is the DCT of type 2. For the definition of these types,
-    see `dct`.
+    IDCT of type 1 is the DCT of type 1, IDCT of type 2 is the DCT of type
+    3, and IDCT of type 3 is the DCT of type 2. For the definition of these
+    types, see `dct`.
 
     """
     if type == 1 and norm is not None:

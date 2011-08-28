@@ -24,15 +24,13 @@
 
 ## Modifications by Travis Oliphant and Enthought, Inc.  for inclusion in SciPy
 
-from numpy import zeros, float64, array, int32
+from numpy import array, asarray, float64, int32, zeros
 import _lbfgsb
-import optimize
+from optimize import approx_fprime
 from numpy.compat import asbytes
 
 __all__ = ['fmin_l_bfgs_b']
 
-
-approx_fprime = optimize.approx_fprime
 
 def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
                   approx_grad=0,
@@ -44,15 +42,15 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     Parameters
     ----------
-    func : callable f(x, *args)
+    func : callable f(x,*args)
         Function to minimise.
     x0 : ndarray
         Initial guess.
-    fprime : callable fprime(x, *args)
+    fprime : callable fprime(x,*args)
         The gradient of `func`.  If None, then `func` returns the function
         value and the gradient (``f, g = func(x, *args)``), unless
         `approx_grad` is True in which case `func` returns only ``f``.
-    args : tuple
+    args : sequence
         Arguments to pass to `func` and `fprime`.
     approx_grad : bool
         Whether to approximate the gradient numerically (in which case
@@ -90,7 +88,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     Returns
     -------
-    x : ndarray
+    x : array_like
         Estimated position of the minimum.
     f : float
         Value of `func` at the minimum.
@@ -98,6 +96,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         Information dictionary.
 
         * d['warnflag'] is
+
           - 0 if converged,
           - 1 if too many function evaluations,
           - 2 if stopped for another reason, given in d['task']
@@ -127,7 +126,8 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
       ACM Transactions on Mathematical Software, Vol 23, Num. 4, pp. 550 - 560.
 
     """
-    n = len(x0)
+    x0 = asarray(x0).ravel()
+    n, = x0.shape
 
     if bounds is None:
         bounds = [(None,None)] * n
@@ -155,9 +155,9 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
             g = fprime(x, *args)
             return f, g
 
-    nbd = zeros((n,), int32)
-    low_bnd = zeros((n,), float64)
-    upper_bnd = zeros((n,), float64)
+    nbd = zeros(n, int32)
+    low_bnd = zeros(n, float64)
+    upper_bnd = zeros(n, float64)
     bounds_map = {(None, None): 0,
               (1, None) : 1,
               (1, 1) : 2,
@@ -175,13 +175,13 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     x = array(x0, float64)
     f = array(0.0, float64)
     g = zeros((n,), float64)
-    wa = zeros((2*m*n+4*n + 12*m**2 + 12*m,), float64)
-    iwa = zeros((3*n,), int32)
+    wa = zeros(2*m*n+4*n + 12*m**2 + 12*m, float64)
+    iwa = zeros(3*n, int32)
     task = zeros(1, 'S60')
     csave = zeros(1,'S60')
-    lsave = zeros((4,), int32)
-    isave = zeros((44,), int32)
-    dsave = zeros((29,), float64)
+    lsave = zeros(4, int32)
+    isave = zeros(44, int32)
+    dsave = zeros(29, float64)
 
     task[:] = 'START'
 

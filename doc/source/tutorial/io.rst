@@ -323,6 +323,13 @@ Saving to a MATLAB cell array just involves making a numpy object array:
      [2,1] = a string
    }
 
+IDL files
+---------
+
+.. autosummary::
+   :toctree: generated/
+
+   readsav
 
 Matrix Market files
 -------------------

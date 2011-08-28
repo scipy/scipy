@@ -1140,26 +1140,27 @@ def skewtest(a, axis=0):
 
     Notes
     -----
-    The sample size should be at least 8.
+    The sample size must be at least 8.
 
     """
     a, axis = _chk_asarray(a, axis)
     if axis is None:
         a = np.ravel(a)
         axis = 0
-    b2 = skew(a,axis)
+    b2 = skew(a, axis)
     n = float(a.shape[axis])
     if n < 8:
-        warnings.warn(
-            "skewtest only valid for n>=8 ... continuing anyway, n=%i" %
-            int(n))
-    y = b2 * math.sqrt(((n+1)*(n+3)) / (6.0*(n-2)) )
-    beta2 = ( 3.0*(n*n+27*n-70)*(n+1)*(n+3) ) / ( (n-2.0)*(n+5)*(n+7)*(n+9) )
-    W2 = -1 + math.sqrt(2*(beta2-1))
-    delta = 1/math.sqrt(0.5*math.log(W2))
-    alpha = math.sqrt(2.0/(W2-1))
-    y = np.where(y==0, 1, y)
-    Z = delta*np.log(y/alpha + np.sqrt((y/alpha)**2+1))
+        raise ValueError(
+            "skewtest is not valid with less than 8 samples; %i samples"
+            " were given." % int(n))
+    y = b2 * math.sqrt(((n + 1) * (n + 3)) / (6.0 * (n - 2)))
+    beta2 = (3.0 * (n * n + 27 * n - 70) * (n + 1) * (n + 3) /
+            ((n - 2.0) * (n + 5) * (n + 7) * (n + 9)))
+    W2 = -1 + math.sqrt(2 * (beta2 - 1))
+    delta = 1 / math.sqrt(0.5 * math.log(W2))
+    alpha = math.sqrt(2.0 / (W2 - 1))
+    y = np.where(y == 0, 1, y)
+    Z = delta * np.log(y / alpha + np.sqrt((y / alpha) ** 2 + 1))
     return Z, 2 * distributions.norm.sf(np.abs(Z))
 
 def kurtosistest(a, axis=0):
@@ -1218,7 +1219,7 @@ def kurtosistest(a, axis=0):
 
 def normaltest(a, axis=0):
     """
-    Tests whether a sample differs from a normal distribution
+    Tests whether a sample differs from a normal distribution.
 
     This function tests the null hypothesis that a sample comes
     from a normal distribution.  It is based on D'Agostino and
@@ -1228,22 +1229,27 @@ def normaltest(a, axis=0):
 
     Parameters
     ----------
-    a : array
+    a : array_like
+        The array containing the data to be tested.
     axis : int or None
+        If None, the array is treated as a single data set, regardless of
+        its shape.  Otherwise, each 1-d array along axis `axis` is tested. 
 
     Returns
     -------
-    p-value : float
-       A 2-sided chi squared probability for the hypothesis test
+    k2 : float or array
+        `s^2 + k^2`, where `s` is the z-score returned by `skewtest` and
+        `k` is the z-score returned by `kurtosistest`.
+    p-value : float or array
+       A 2-sided chi squared probability for the hypothesis test.
 
     References
     ----------
-    .. [1] D'Agostino, R. B. and Pearson, E. S. (1971), "An Omnibus Test of
-           Normality for Moderate and Large Sample Size,"
-           Biometrika, 58, 341-348
+    .. [1] D'Agostino, R. B. (1971), "An omnibus test of normality for
+           moderate and large sample size," Biometrika, 58, 341-348
 
-    .. [2] D'Agostino, R. B. and Pearson, E. S. (1973), "Testing for
-           departures from Normality," Biometrika, 60, 613-622
+    .. [2] D'Agostino, R. and Pearson, E. S. (1973), "Testing for
+           departures from normality," Biometrika, 60, 613-622
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -2238,8 +2244,8 @@ def fisher_exact(table, alternative='two-sided'):
 
     See Also
     --------
-    chisquare : inexact alternative that can be used when sample sizes are
-                large enough.
+    chi2_contingency : Chi-square test of independence of variables in a
+        contingency table.
 
     Notes
     -----
@@ -2248,13 +2254,13 @@ def fisher_exact(table, alternative='two-sided'):
     Likelihood Estimate", while R uses the "conditional Maximum Likelihood
     Estimate".
 
-    For tables with large numbers the (inexact) `chisquare` test can also be
-    used.
+    For tables with large numbers the (inexact) chi-square test implemented
+    in the function `chi2_contingency` can also be used.
 
     Examples
     --------
     Say we spend a few days counting whales and sharks in the Atlantic and
-    Indian oceans. In the Atlantic ocean we find 6 whales and 1 shark, in the
+    Indian oceans. In the Atlantic ocean we find 8 whales and 1 shark, in the
     Indian ocean 2 whales and 5 sharks. Then our contingency table is::
 
                 Atlantic  Indian
@@ -2278,6 +2284,14 @@ def fisher_exact(table, alternative='two-sided'):
     c = np.asarray(table, dtype=np.int64)  # int32 is not enough for the algorithm
     if not c.shape == (2, 2):
         raise ValueError("The input `table` must be of shape (2, 2).")
+
+    if np.any(c < 0):
+        raise ValueError("All values in `table` must be nonnegative.")
+
+    if 0 in c.sum(axis=0) or 0 in c.sum(axis=1):
+        # If both values in a row or column are zero, the p-value is 1 and
+        # the odds ratio is NaN.
+        return np.nan, 1.0
 
     if c[1,0] > 0 and c[0,1] > 0:
         oddsratio = c[0,0] * c[1,1] / float(c[1,0] * c[0,1])
@@ -2593,12 +2607,6 @@ def kendalltau(x, y, initial_lexsort=True):
        The two-sided p-value for a hypothesis test whose null hypothesis is
        an absence of association, tau = 0.
 
-    References
-    ----------
-    W.R. Knight, "A Computer Method for Calculating Kendall's Tau with
-    Ungrouped Data", Journal of the American Statistical Association, Vol. 61,
-    No. 314, Part 1, pp. 436-439, 1966.
-
     Notes
     -----
     The definition of Kendall's tau that is used is::
@@ -2607,8 +2615,14 @@ def kendalltau(x, y, initial_lexsort=True):
 
     where P is the number of concordant pairs, Q the number of discordant
     pairs, T the number of ties only in `x`, and U the number of ties only in
-    `y`.  If a tie occurs for the same pair in both `x` and `y`, it is not added
-    to either T or U.
+    `y`.  If a tie occurs for the same pair in both `x` and `y`, it is not
+    added to either T or U.
+
+    References
+    ----------
+    W.R. Knight, "A Computer Method for Calculating Kendall's Tau with
+    Ungrouped Data", Journal of the American Statistical Association, Vol. 61,
+    No. 314, Part 1, pp. 436-439, 1966.
 
     Examples
     --------

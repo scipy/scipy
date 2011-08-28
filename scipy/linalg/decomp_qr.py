@@ -45,9 +45,8 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
         ``mode='r'``.
     R : double or complex ndarray
         Of shape (M, N), or (K, N) for ``mode='economic'``.  ``K = min(M, N)``.
-    P : double or complex ndarray
-        Of shape (N, 1) for ``pivoting=True``.
-        Not returned if ``pivoting=False``.
+    P : integer ndarray
+        Of shape (N,) for ``pivoting=True``. Not returned if ``pivoting=False``.
 
     Raises
     ------

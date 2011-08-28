@@ -1,8 +1,21 @@
-#
-# weave - C/C++ integration
-#
+"""
+C/C++ integration
+=================
 
-from info import __doc__
+        inline     -- a function for including C/C++ code within Python
+        blitz      -- a function for compiling Numeric expressions to C++
+        ext_tools  -- a module that helps construct C/C++ extension modules.
+        accelerate -- a module that inline accelerates Python functions
+
+
+.. note:: On Linux one needs to have the Python development headers installed
+          in order to be able to compile things with the `weave` module.
+          Since this is a runtime dependency these headers (typically in a
+          pythonX.Y-dev package) are not always installed when installing
+          scipy.
+
+"""
+
 from weave_version import weave_version as __version__
 
 try:

@@ -219,77 +219,81 @@ def _report_error(info):
 
 
 class Data(object):
-    """ The Data class stores the data to fit.
+    """
+    scipy.odr.Data(x, y=None, we=None, wd=None, fix=None, meta={})
 
-    Each argument is attached to the member of the instance of the same name.
-    The structures of x and y are described in the Model class docstring. If
-    y is an integer, then the Data instance can only be used to fit with
-    implicit models where the dimensionality of the response is equal to the
-    specified value of y. The structures of wd and we are described below. meta
-    is an freeform dictionary for application-specific use.
+    The Data class stores the data to fit.
 
-    we weights the effect a deviation in the response variable has on the fit.
-    wd weights the effect a deviation in the input variable has on the fit. To
-    handle multidimensional inputs and responses easily, the structure of these
-    arguments has the n'th dimensional axis first. These arguments heavily use
-    the structured arguments feature of ODRPACK to conveniently and flexibly
-    support all options. See the ODRPACK User's Guide for a full explanation of
-    how these weights are used in the algorithm. Basically, a higher value of
-    the weight for a particular data point makes a deviation at that point more
-    detrimental to the fit.
-
-      we -- if we is a scalar, then that value is used for all data points (and
+    Parameters
+    ----------
+    x : array_like
+        Input data for regression.
+    y : array_like, optional
+        Input data for regression.
+    we : array_like, optional
+        If `we` is a scalar, then that value is used for all data points (and
         all dimensions of the response variable).
-
-        If we is a rank-1 array of length q (the dimensionality of the response
-        variable), then this vector is the diagonal of the covariant weighting
-        matrix for all data points.
-
-        If we is a rank-1 array of length n (the number of data points), then
+        If `we` is a rank-1 array of length q (the dimensionality of the
+        response variable), then this vector is the diagonal of the covariant
+        weighting matrix for all data points.
+        If `we` is a rank-1 array of length n (the number of data points), then
         the i'th element is the weight for the i'th response variable
         observation (single-dimensional only).
-
-        If we is a rank-2 array of shape (q, q), then this is the full covariant
-        weighting matrix broadcast to each observation.
-
-        If we is a rank-2 array of shape (q, n), then we[:,i] is the diagonal of
-        the covariant weighting matrix for the i'th observation.
-
-        If we is a rank-3 array of shape (q, q, n), then we[:,:,i] is the full
-        specification of the covariant weighting matrix for each observation.
-
+        If `we` is a rank-2 array of shape (q, q), then this is the full
+        covariant weighting matrix broadcast to each observation.
+        If `we` is a rank-2 array of shape (q, n), then `we[:,i]` is the
+        diagonal of the covariant weighting matrix for the i'th observation.
+        If `we` is a rank-3 array of shape (q, q, n), then `we[:,:,i]` is the
+        full specification of the covariant weighting matrix for each
+        observation.
         If the fit is implicit, then only a positive scalar value is used.
-
-      wd -- if wd is a scalar, then that value is used for all data points
-        (and all dimensions of the input variable). If wd = 0, then the
+    wd : array_like, optional
+        If `wd` is a scalar, then that value is used for all data points
+        (and all dimensions of the input variable). If `wd` = 0, then the
         covariant weighting matrix for each observation is set to the identity
         matrix (so each dimension of each observation has the same weight).
-
-        If wd is a rank-1 array of length m (the dimensionality of the input
+        If `wd` is a rank-1 array of length m (the dimensionality of the input
         variable), then this vector is the diagonal of the covariant weighting
         matrix for all data points.
-
-        If wd is a rank-1 array of length n (the number of data points), then
+        If `wd` is a rank-1 array of length n (the number of data points), then
         the i'th element is the weight for the i'th input variable observation
         (single-dimensional only).
+        If `wd` is a rank-2 array of shape (m, m), then this is the full
+        covariant weighting matrix broadcast to each observation.
+        If `wd` is a rank-2 array of shape (m, n), then `wd[:,i]` is the
+        diagonal of the covariant weighting matrix for the i'th observation.
+        If `wd` is a rank-3 array of shape (m, m, n), then `wd[:,:,i]` is the
+        full specification of the covariant weighting matrix for each
+        observation.
+    fix : array_like of ints, optional
+        The `fix` argument is the same as ifixx in the class ODR. It is an
+        array of integers with the same shape as data.x that determines which
+        input observations are treated as fixed. One can use a sequence of
+        length m (the dimensionality of the input observations) to fix some
+        dimensions for all observations. A value of 0 fixes the observation,
+        a value > 0 makes it free.
+    meta : dict, optional
+        Freeform dictionary for metadata.
 
-        If wd is a rank-2 array of shape (m, m), then this is the full covariant
-        weighting matrix broadcast to each observation.
+    Notes
+    -----
+    Each argument is attached to the member of the instance of the same name.
+    The structures of `x` and `y` are described in the Model class docstring.
+    If `y` is an integer, then the Data instance can only be used to fit with
+    implicit models where the dimensionality of the response is equal to the
+    specified value of `y`.
 
-        If wd is a rank-2 array of shape (m, n), then wd[:,i] is the diagonal of
-        the covariant weighting matrix for the i'th observation.
+    The `we` argument weights the effect a deviation in the response variable
+    has on the fit.  The `wd` argument weights the effect a deviation in the
+    input variable has on the fit. To handle multidimensional inputs and
+    responses easily, the structure of these arguments has the n'th
+    dimensional axis first. These arguments heavily use the structured
+    arguments feature of ODRPACK to conveniently and flexibly support all
+    options. See the ODRPACK User's Guide for a full explanation of how these
+    weights are used in the algorithm. Basically, a higher value of the weight
+    for a particular data point makes a deviation at that point more
+    detrimental to the fit.
 
-        If wd is a rank-3 array of shape (m, m, n), then wd[:,:,i] is the full
-        specification of the covariant weighting matrix for each observation.
-
-      fix -- fix is the same as ifixx in the class ODR. It is an array of integers
-        with the same shape as data.x that determines which input observations
-        are treated as fixed. One can use a sequence of length m (the
-        dimensionality of the input observations) to fix some dimensions for all
-        observations. A value of 0 fixes the observation, a value > 0 makes it
-        free.
-
-      meta -- optional, freeform dictionary for metadata
     """
 
     def __init__(self, x, y=None, we=None, wd=None, fix=None, meta={}):
@@ -437,36 +441,41 @@ class Model(object):
     can provide a function that will provide reasonable starting values
     for the fit parameters possibly given the set of data.
 
-    The initialization method stores these into members of the same name.
-
-      fcn -- fit function
+    Parameters
+    ----------
+    fcn : function
           fcn(beta, x) --> y
+    fjacb : function
+          Jacobian of fcn wrt the fit parameters beta.
 
-      fjacb -- Jacobian of fcn wrt the fit parameters beta
           fjacb(beta, x) --> @f_i(x,B)/@B_j
+    fjacd : function
+          Jacobian of fcn wrt the (possibly multidimensional) input
+          variable.
 
-      fjacd -- Jacobian of fcn wrt the (possibly multidimensional) input
-          variable
           fjacd(beta, x) --> @f_i(x,B)/@x_j
+    extra_args : tuple, optional
+          If specified, `extra_args` should be a tuple of extra
+          arguments to pass to `fcn`, `fjacb`, and `fjacd`. Each will be called
+          by `apply(fcn, (beta, x) + extra_args)`
+    estimate : array_like of rank-1
+          Provides estimates of the fit parameters from the data
 
-      extra_args -- if specified, extra_args should be a tuple of extra
-          arguments to pass to fcn, fjacb, and fjacd. Each will be called
-          like the following: apply(fcn, (beta, x) + extra_args)
-
-      estimate -- provide estimates of the fit parameters from the data:
           estimate(data) --> estbeta
-
-      implicit -- boolean variable which, if TRUE, specifies that the model
-          is implicit; i.e fcn(beta, x) ~= 0 and there is no y data to fit
+    implicit : boolean
+          If TRUE, specifies that the model
+          is implicit; i.e `fcn(beta, x)` ~= 0 and there is no y data to fit
           against
-
-      meta -- optional
+    meta : dict, optional
           freeform dictionary of metadata for the model
 
-    Note that the fcn, fjacb, and fjacd operate on NumPy arrays and return
-    a NumPy array. The `estimate` object takes an instance of the Data class.
+    Notes
+    -----
+    Note that the `fcn`, `fjacb`, and `fjacd` operate on NumPy arrays and
+    return a NumPy array. The `estimate` object takes an instance of the
+    Data class.
 
-    Here are the rules for the shapes of the argument and return arrays:
+    Here are the rules for the shapes of the argument and return arrays :
 
       x -- if the input data is single-dimensional, then x is rank-1
         array; i.e. x = array([1, 2, 3, ...]); x.shape = (n,)
@@ -622,89 +631,89 @@ class ODR(object):
 
     Parameters
     ----------
-    data:
+    data : Data class instance
         instance of the Data class
-    model:
+    model : Model class instance
         instance of the Model class
-    beta0:
+    beta0 : array_like of rank-1
         a rank-1 sequence of initial parameter values. Optional if
         model provides an "estimate" function to estimate these values.
-    delta0: optional
+    delta0 : array_like of floats of rank-1, optional
         a (double-precision) float array to hold the initial values of
         the errors in the input variables. Must be same shape as data.x
-    ifixb: optional
+    ifixb : array_like of ints of rank-1, optional
         sequence of integers with the same length as beta0 that determines
         which parameters are held fixed. A value of 0 fixes the parameter,
         a value > 0 makes the parameter free.
-    ifixx: optional
+    ifixx : array_like of ints with same shape as data.x, optional
         an array of integers with the same shape as data.x that determines
         which input observations are treated as fixed. One can use a sequence
         of length m (the dimensionality of the input observations) to fix some
         dimensions for all observations. A value of 0 fixes the observation,
         a value > 0 makes it free.
-    job: optional
+    job : int, optional
         an integer telling ODRPACK what tasks to perform. See p. 31 of the
         ODRPACK User's Guide if you absolutely must set the value here. Use the
         method set_job post-initialization for a more readable interface.
-    iprint: optional
+    iprint : int, optional
         an integer telling ODRPACK what to print. See pp. 33-34 of the
         ODRPACK User's Guide if you absolutely must set the value here. Use the
         method set_iprint post-initialization for a more readable interface.
-    errfile: optional
+    errfile : str, optional
         string with the filename to print ODRPACK errors to. *Do Not Open
         This File Yourself!*
-    rptfile: optional
+    rptfile : str, optional
         string with the filename to print ODRPACK summaries to. *Do Not
         Open This File Yourself!*
-    ndigit: optional
+    ndigit : int, optional
         integer specifying the number of reliable digits in the computation
         of the function.
-    taufac: optional
+    taufac : float, optional
         float specifying the initial trust region. The default value is 1.
         The initial trust region is equal to taufac times the length of the
         first computed Gauss-Newton step. taufac must be less than 1.
-    sstol: optional
+    sstol : float, optional
         float specifying the tolerance for convergence based on the relative
         change in the sum-of-squares. The default value is eps**(1/2) where eps
         is the smallest value such that 1 + eps > 1 for double precision
         computation on the machine. sstol must be less than 1.
-    partol: optional
+    partol : float, optional
         float specifying the tolerance for convergence based on the relative
         change in the estimated parameters. The default value is eps**(2/3) for
         explicit models and eps**(1/3) for implicit models. partol must be less
         than 1.
-    maxit: optional
+    maxit : int, optional
         integer specifying the maximum number of iterations to perform. For
         first runs, maxit is the total number of iterations performed and
         defaults to 50.  For restarts, maxit is the number of additional
         iterations to perform and defaults to 10.
-    stpb: optional
+    stpb : array_like, optional
         sequence (len(stpb) == len(beta0)) of relative step sizes to compute
         finite difference derivatives wrt the parameters.
-    stpd: optional
+    stpd : optional
         array (stpd.shape == data.x.shape or stpd.shape == (m,)) of relative
         step sizes to compute finite difference derivatives wrt the input
         variable errors. If stpd is a rank-1 array with length m (the
         dimensionality of the input variable), then the values are broadcast to
         all observations.
-    sclb: optional
+    sclb : array_like, optional
         sequence (len(stpb) == len(beta0)) of scaling factors for the
         parameters.  The purpose of these scaling factors are to scale all of
         the parameters to around unity. Normally appropriate scaling factors
         are computed if this argument is not specified. Specify them yourself
         if the automatic procedure goes awry.
-    scld: optional
+    scld : array_like, optional
         array (scld.shape == data.x.shape or scld.shape == (m,)) of scaling
         factors for the *errors* in the input variables. Again, these factors
         are automatically computed if you do not provide them. If scld.shape ==
         (m,), then the scaling factors are broadcast to all observations.
-    work: optional
+    work : ndarray, optional
         array to hold the double-valued working data for ODRPACK. When
         restarting, takes the value of self.output.work.
-    iwork: optional
+    iwork : ndarray, optional
         array to hold the integer-valued working data for ODRPACK. When
         restarting, takes the value of self.output.iwork.
-    output:
+    output : Output class instance
         an instance if the Output class containing all of the returned
         data from an invocation of ODR.run() or ODR.restart()
 

@@ -1178,7 +1178,7 @@ def watershed_ift(input, markers, structure=None, output=None):
     Negative markers are considered background markers which are
     processed after the other markers. A structuring element defining
     the connectivity of the object can be provided. If none is
-    provided an element is generated iwth a squared connecitiviy equal
+    provided, an element is generated with a squared connectivity equal
     to one. An output array can optionally be provided.
     """
     input = numpy.asarray(input)

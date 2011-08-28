@@ -105,6 +105,19 @@ class TestOptimize(TestCase):
                            atol=1e-14, rtol=1e-7), self.trace[6:8])
 
 
+    def test_bfgs_infinite(self):
+        """Test corner case where -Inf is the minimum.  See #1494."""
+        func = lambda x: -np.e**-x
+        fprime = lambda x: -func(x)
+        x0 = [0]
+        olderr = np.seterr(over='ignore')
+        try:
+            x = optimize.fmin_bfgs(func, x0, fprime, disp=False)
+            assert_(not np.isfinite(func(x)))
+        finally:
+            np.seterr(**olderr)
+
+
     def test_powell(self):
         """ Powell (direction set) optimization routine
         """

@@ -1552,10 +1552,10 @@ from scipy.signal.fir_filter_design import firwin
 
 
 def decimate(x, q, n=None, ftype='iir', axis=-1):
-    """downsample the signal x by an integer factor q, using an order n filter
+    """Downsample the signal x by an integer factor q, using an order n filter.
 
-    By default an order 8 Chebyshev type I filter is used or a 30 point FIR
-    filter with hamming window if ftype is 'fir'.
+    By default an order 8 Chebyshev type I filter is used.  A 30 point FIR
+    filter with hamming window is used if ftype is 'fir'.
 
     Parameters
     ----------
@@ -1597,6 +1597,6 @@ def decimate(x, q, n=None, ftype='iir', axis=-1):
 
     y = lfilter(b, a, x, axis=axis)
 
-    sl = [None] * y.ndim
+    sl = [slice(None)] * y.ndim
     sl[axis] = slice(None, None, q)
     return y[sl]

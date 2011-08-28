@@ -13,7 +13,7 @@ Run tests if interpolate is not installed:
 #import libwadpy
 
 from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal, \
-        assert_array_almost_equal, TestCase, run_module_suite
+        assert_array_almost_equal, assert_allclose, TestCase, run_module_suite
 from numpy import array, diff, shape
 from scipy.interpolate.fitpack2 import UnivariateSpline, LSQBivariateSpline, \
     SmoothBivariateSpline, RectBivariateSpline
@@ -64,6 +64,22 @@ class TestUnivariateSpline(TestCase):
         y = [0,4,9,12,21]
         spl = UnivariateSpline(x, y, k=3)
         assert_array_equal(spl([]), array([]))
+
+    def test_resize_regression(self):
+        """Regression test for #1375."""
+        x = [-1., -0.65016502, -0.58856235, -0.26903553, -0.17370892,
+             -0.10011001, 0., 0.10011001, 0.17370892, 0.26903553, 0.58856235,
+             0.65016502, 1.]
+        y = [1.,0.62928599, 0.5797223, 0.39965815, 0.36322694, 0.3508061,
+             0.35214793, 0.3508061, 0.36322694, 0.39965815, 0.5797223,
+             0.62928599, 1.]
+        w = [1.00000000e+12, 6.88875973e+02, 4.89314737e+02, 4.26864807e+02,
+             6.07746770e+02, 4.51341444e+02, 3.17480210e+02, 4.51341444e+02,
+             6.07746770e+02, 4.26864807e+02, 4.89314737e+02, 6.88875973e+02,
+             1.00000000e+12]
+        spl = UnivariateSpline(x=x, y=y, w=w, s=None)
+        desired = array([ 0.35100374,  0.51715855,  0.87789547,  0.98719344])
+        assert_allclose(spl([0.1, 0.5, 0.9, 0.99]), desired, atol=1e-7)
 
 
 class TestLSQBivariateSpline(TestCase):

@@ -43,10 +43,11 @@ def results_c(full_output, r):
 
 # Newton-Raphson method
 def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
-    """Find a zero using the Newton-Raphson or secant method.
+    """
+    Find a zero using the Newton-Raphson or secant method.
 
     Find a zero of the function `func` given a nearby starting point `x0`.
-    The Newton-Rapheson method is used if the derivative `fprime` of `func`
+    The Newton-Raphson method is used if the derivative `fprime` of `func`
     is provided, otherwise the secant method is used.
 
     Parameters
@@ -80,16 +81,16 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
 
     Notes
     -----
-    The convergence rate of the Newton-Rapheson method is quadratic while
+    The convergence rate of the Newton-Raphson method is quadratic while
     that of the secant method is somewhat less. This means that if the
     function is  well behaved the actual error in the estimated zero is
-    approximatly the square of the requested tolerance up to roundoff
+    approximately the square of the requested tolerance up to roundoff
     error. However, the stopping criterion used here is the step size and
-    there is no quarantee that a zero has been found. Consequently the
+    there is no guarantee that a zero has been found. Consequently the
     result should be verified. Safer algorithms are brentq, brenth, ridder,
     and bisect, but they all require that the root first be bracketed in an
     interval where the function changes sign. The brentq algorithm is
-    recommended for general use in one dimemsional problems when such an
+    recommended for general use in one dimensional problems when such an
     interval has been found.
 
     """

@@ -10,7 +10,7 @@
 from numpy.testing import TestCase, rand, assert_, assert_equal, \
     assert_almost_equal, assert_array_almost_equal, assert_array_equal, \
     assert_approx_equal, assert_raises, run_module_suite, \
-    assert_allclose
+    assert_allclose, dec
 from numpy import array, arange, zeros, ravel, float32, float64, power
 import numpy as np
 import sys
@@ -355,8 +355,6 @@ class TestFisherExact(TestCase):
     def test_basic(self):
         fisher_exact = stats.fisher_exact
 
-        res = fisher_exact([[18000, 80000], [20000, 90000]])[1]
-        assert_approx_equal(res, 0.2751, significant=4)
         res = fisher_exact([[14500, 20000], [30000, 40000]])[1]
         assert_approx_equal(res, 0.01106, significant=4)
         res = fisher_exact([[100, 2], [1000, 5]])[1]
@@ -380,9 +378,6 @@ class TestFisherExact(TestCase):
         res = fisher_exact([[2, 7], [8, 2]])
         assert_approx_equal(res[1], 0.0230141, significant=6)
         assert_approx_equal(res[0], 4.0 / 56)
-
-        res = fisher_exact([[19000, 80000], [20000, 90000]])[1]
-        assert_approx_equal(res, 3.319e-9, significant=4)
 
     def test_precise(self):
         fisher_exact = stats.fisher_exact
@@ -410,6 +405,7 @@ class TestFisherExact(TestCase):
             np.testing.assert_almost_equal(res[1], res_r[1], decimal=11,
                                            verbose=True)
 
+    @dec.slow
     def test_large_numbers(self):
         # Test with some large numbers. Regression test for #1401
         pvals = [5.56e-11, 2.666e-11, 1.363e-11]  # from R
@@ -417,10 +413,23 @@ class TestFisherExact(TestCase):
             res = stats.fisher_exact([[17704, 496], [1065, num]])[1]
             assert_approx_equal(res, pval, significant=4)
 
+        res = stats.fisher_exact([[18000, 80000], [20000, 90000]])[1]
+        assert_approx_equal(res, 0.2751, significant=4)
+
     def test_raises(self):
         # test we raise an error for wrong shape of input.
         assert_raises(ValueError, stats.fisher_exact,
                       np.arange(6).reshape(2, 3))
+
+    def test_row_or_col_zero(self):
+        tables = ([[0, 0], [5, 10]],
+                  [[5, 10], [0, 0]],
+                  [[0, 5], [0, 10]],
+                  [[5, 0], [10, 0]])
+        for table in tables:
+            oddsratio, pval = stats.fisher_exact(table)
+            assert_equal(pval, 1.0)
+            assert_equal(oddsratio, np.nan)
 
     def test_less_greater(self):
         tables = ([[2, 7], [8, 2]],
@@ -1514,6 +1523,13 @@ def test_normalitytests():
     yield assert_array_almost_equal, stats.skewtest(x), (st_skew, pv_skew)
     yield assert_array_almost_equal, stats.kurtosistest(x), (st_kurt, pv_kurt)
 
+def test_skewtest_too_few_samples():
+    """Regression test for ticket #1492.
+
+    skewtest requires at least 8 samples; 7 should raise a ValueError.
+    """
+    x = np.arange(7.0)
+    assert_raises(ValueError, stats.skewtest, x)
 
 def mannwhitneyu():
     x = np.array([ 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,

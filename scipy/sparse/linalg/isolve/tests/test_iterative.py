@@ -98,13 +98,15 @@ class IterativeParams(object):
         self.cases.append(Case("rand-cmplx-sym-pd", data, skip=real_solvers))
 
         # Non-symmetric and Positive Definite
-        # cgs fails to converge on this one -- algorithmic limitation apparently
+        #
+        # cgs, qmr, and bicg fail to converge on this one
+        #   -- algorithmic limitation apparently
         data = ones((2,10))
         data[0,:] =  2
         data[1,:] = -1
         A = spdiags( data, [0,-1], 10, 10, format='csr')
         self.cases.append(Case("nonsymposdef", A,
-                               skip=sym_solvers+[cgs]))
+                               skip=sym_solvers+[cgs, qmr, bicg]))
 
 def setup_module():
     global params
