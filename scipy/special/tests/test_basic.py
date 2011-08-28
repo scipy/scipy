@@ -1003,7 +1003,7 @@ class TestGamma(TestCase):
 
     def test_gammainczero(self):
         # bad arg but zero integration limit
-        gama = special.gammainc(-1,0) 
+        gama = special.gammainc(-1,0)
         assert_equal(gama,0.0)
 
     def test_gammaincc(self):

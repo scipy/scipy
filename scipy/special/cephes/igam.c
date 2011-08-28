@@ -96,10 +96,10 @@ double ans, ax, c, yc, r, t, y, z;
 double pk, pkm1, pkm2, qk, qkm1, qkm2;
 
 if( (x < 0) || ( a <= 0) )
-    {   
-    mtherr("gammaincc", DOMAIN);
-    return( NPY_NAN );
-    }
+	{
+	mtherr("gammaincc", DOMAIN);
+	return( NPY_NAN );
+	}
 
 if( (x < 1.0) || (x < a) )
 	return( 1.0 - igam(a,x) );
@@ -177,10 +177,10 @@ if( x == 0 )
     return ( 0.0 );
 
 if( (x < 0) || ( a <= 0) )
-    {
-    mtherr("gammainc", DOMAIN);
+	{
+	mtherr("gammainc", DOMAIN);
 	return( NPY_NAN );
-    }
+	}
 
 if( (x > 1.0) && (x > a ) )
 	return( 1.0 - igamc(a,x) );
