@@ -705,6 +705,8 @@ class netcdf_variable(object):
         Typically, this is initialized as empty, but with the proper shape.
     typecode : dtype character code
         Desired data-type for the data array.
+    size : int
+        Desired element size for the data array.
     shape : sequence of ints
         The shape of the array.  This should match the lengths of the
         variable's dimensions.
