@@ -114,12 +114,26 @@ def pre_configure(context):
     Options.options.check_cxx_compiler = "g++"
     if sys.platform == "win32" and conf.env.CC_NAME == "msvc":
         Options.options.check_fc = "ifort"
-    Options.options.check_cxx_compiler = "msvc"
+        Options.options.check_cxx_compiler = "msvc"
 
     conf.load("compiler_cxx")
     conf.load("compiler_fc")
     conf.load("f2py")
 
+    if conf.env.CC_NAME == 'gcc':
+        conf.env.append_value('CFLAGS_PYEXT', "-Wfatal-errors")
+        conf.env.append_value('CXXFLAGS_PYEXT', "-Wfatal-errors")
+
+    if sys.platform == "darwin":
+        # FIXME: fix upstream waf tool to work on mac os X
+        for flag in [conf.env.CFLAGS_PYEXT, conf.env.LINKFLAGS_PYEXT,
+                     conf.env.CXXFLAGS_PYEXT, conf.env.FCFLAGS]:
+            remove_flag_prevalue("ppc", flag)
+        conf.env.append_value('FCFLAGS', ['-arch', 'i386'])
+        conf.env.append_value('CFLAGS', ['-arch', 'i386'])
+        conf.env["MACOSX_DEPLOYMENT_TARGET"] = "10.4"
+
+    conf.check_fortran_verbose_flag()
     conf.check_fortran_clib()
     conf.check_fortran_dummy_main()
     u, du, c = conf.check_fortran_mangling()
@@ -186,29 +200,6 @@ def post_configure(context):
     conf = context.waf_context
 
     conf.env.INCLUDES = get_numpy_include_dirs()
-
-    if conf.env.CC_NAME == 'gcc':
-        cflags_pyext = conf.env.CFLAGS_PYEXT
-        cflags_pyext.append("-Wfatal-errors")
-        conf.env.CFLAGS_PYEXT = cflags_pyext
-
-    if sys.platform == "darwin":
-        # FIXME: fix upstream waf tool to work on mac os X
-        conf.env.CC = ["/usr/bin/gcc-4.0"]
-        conf.env.LINK_CC = ["/usr/bin/gcc-4.0"]
-        # FIXME: fix upstream waf tool to avoid linking against libpython2.6.so
-        # (cause crashes when importing the extension)
-        name = "python%s" % ".".join([str(i) for i in sys.version_info[:2]])
-        remove_flag(name, conf.env.LIB_PYEXT)
-        remove_flag_postvalue("-compatibility_version", conf.env.CFLAGS_cshlib)
-        remove_flag_postvalue("-current_version", conf.env.CFLAGS_cshlib)
-        for flag in [conf.env.CFLAGS_PYEXT, conf.env.LINKFLAGS_PYEXT,
-                     conf.env.CXXFLAGS_PYEXT, conf.env.FCFLAGS]:
-            remove_flag_prevalue("ppc", flag)
-        for f in [conf.env.LINKFLAGS_cxxshlib, conf.env.LINKFLAGS_cshlib]:
-            remove_flag("-dynamiclib", f)
-            f.extend(["-undefined", "dynamic_lookup", "-bundle"])
-        conf.env["MACOSX_DEPLOYMENT_TARGET"] = "10.4"
 
     conf.env.HAS_FBLAS = False
     conf.env.HAS_CBLAS = False
