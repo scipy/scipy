@@ -13,13 +13,7 @@ from ltisys import tf2ss, ss2tf, zpk2ss, ss2zpk
 
 __all__ = ['cont2discrete']
 
-
-def _mrdivide(b,a):
-    """Convenience function for matrix divides"""
-    s = np.linalg.solve(a.transpose(), b.transpose())
-    return s.transpose()
-
-def cont2discrete(sys, dt, method="zoh"):
+def cont2discrete(sys, dt, method="zoh", alpha=None):
     """Transform a continuous to a discrete state-space system.
 
     Parameters
@@ -33,8 +27,17 @@ def cont2discrete(sys, dt, method="zoh"):
         
     dt : float
         The discretization time step.
-    method : {"bilinear", "zoh"}
-        Which method to use, bilinear or zero-order hold ("zoh", the default).
+    method : {"gbt", "bilinear", "euler", "backward_diff", "zoh"}
+        Which method to use:
+            * gbt: generalized bilinear transformation
+            * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
+            * euler: Euler (or forward differencing) method ("gbt" with
+                     alpha=0)
+            * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
+            * zoh: zero-order hold (default).
+    alpha : float within [0, 1]
+        The generalized bilinear transformation weighting parameter, which
+        should only be specified with method="gbt", and is ignored otherwise
 
     Returns
     -------
@@ -48,13 +51,14 @@ def cont2discrete(sys, dt, method="zoh"):
     Notes
     -----
     By default, the routine uses a Zero-Order Hold (zoh) method to perform
-    the transformation.  Alternatively, Tustin's bilinear approximation can
-    be used.
+    the transformation.  Alternatively, a generalized bilinear transformation
+    may be used, which includes the common Tustin's bilinear approximation,
+    an Euler's method technique, or a backwards differencing technique.
 
     The Zero-Order Hold (zoh) method is based on:
     http://en.wikipedia.org/wiki/Discretization#Discretization_of_linear_state_space_models
 
-    Tustin's bilinear approximation is based on:
+    Generalize bilinear approximation is based on:
     http://techteach.no/publications/discretetime_signals_systems/discrete.pdf
      and
     G. Zhang, X. Chen, and T. Chen, “Digital redesign via the generalized bilinear
@@ -71,24 +75,43 @@ def cont2discrete(sys, dt, method="zoh"):
     elif len(sys) == 4:
         a, b, c, d = sys
     else:
-        raise ValueError("First argument must either be a tuple of 2 (tf) "
-                         "or 4 (ss) arrays.")
+        raise ValueError("First argument must either be a tuple of 2 (tf), "
+                         "3 (zpk), or 4 (ss) arrays.")
 
-    if method == 'bilinear':
-        # Compute the term (2/dt)*I
-        itv = 2.0 / dt * np.eye(a.shape[0])
+    if method == 'gbt':
+        if alpha is None:
+            raise ValueError("Alpha paramter must be specified for the "
+                             "generalized bilinear transform (gbt) method")
+        elif alpha < 0 or alpha > 1:
+            raise ValueError("Alpha paramter must be within the interval "
+                             "[0,1] for the gbt method")
 
-        # Solve for Ad
-        ad = _mrdivide((itv + a), (itv - a))
+    if method == 'gbt':
 
-        # Solve for Bd using a linear solver to avoid direct inversion
-        iab = np.linalg.solve((itv - a), b)
-        tk = 2.0 / dt
-        bd = tk * iab
+        # This parameter is used repeatedly - compute once here
+        ima = np.eye(a.shape[0]) - alpha*dt*a
+
+        ad = np.linalg.solve(ima, np.eye(a.shape[0]) + (1.0-alpha)*dt*a)
+
+        bd = np.linalg.solve(ima, dt*b)
 
         # Similarly solve for the output equation matrices
-        cd = 2.0 * _mrdivide(c, (itv - a))
-        dd = d + np.dot(c, iab)
+        cd = np.linalg.solve(ima.transpose(), c.transpose())
+        cd = cd.transpose()
+
+        dd = d + alpha*np.dot(c, bd)
+
+    elif method == 'bilinear' or method == 'tustin':
+
+        return cont2discrete(sys, dt, method="gbt", alpha=0.5)
+
+    elif method == 'euler' or method == 'forward_diff':
+
+        return cont2discrete(sys, dt, method="gbt", alpha=0.0)
+
+    elif method == 'backward_diff':
+
+        return cont2discrete(sys, dt, method="gbt", alpha=1.0)
 
     elif method == 'zoh':
         # Build an exponential matrix
