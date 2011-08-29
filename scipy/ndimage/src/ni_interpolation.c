@@ -307,10 +307,11 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
     return PyErr_Occurred() ? 0 : 1;
 }
 
+/* copy row of coordinate array from location at _p to _coor */
 #define CASE_MAP_COORDINATES(_p, _coor, _rank, _stride, _type) \
 case t ## _type:                                                    \
 {                                                              \
-    int _hh;                                                     \
+    npy_intp _hh;                                               \
     for(_hh = 0; _hh < _rank; _hh++) {                           \
         _coor[_hh] = *(_type*)_p;                                  \
         _p += _stride;                                             \
@@ -487,6 +488,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                 CASE_MAP_COORDINATES(p, icoor, irank, cstride, UInt8);
                 CASE_MAP_COORDINATES(p, icoor, irank, cstride, UInt16);
                 CASE_MAP_COORDINATES(p, icoor, irank, cstride, UInt32);
+                CASE_MAP_COORDINATES(p, icoor, irank, cstride, uintp);
 #if HAS_UINT64
                 CASE_MAP_COORDINATES(p, icoor, irank, cstride, UInt64);
 #endif
@@ -494,6 +496,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                 CASE_MAP_COORDINATES(p, icoor, irank, cstride, Int16);
                 CASE_MAP_COORDINATES(p, icoor, irank, cstride, Int32);
                 CASE_MAP_COORDINATES(p, icoor, irank, cstride, Int64);
+                CASE_MAP_COORDINATES(p, icoor, irank, cstride, intp);
                 CASE_MAP_COORDINATES(p, icoor, irank, cstride, Float32);
                 CASE_MAP_COORDINATES(p, icoor, irank, cstride, Float64);
             default:
@@ -580,6 +583,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                     CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt8);
                     CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt16);
                     CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt32);
+                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], uintp);
 #if HAS_UINT64
                     CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt64);
 #endif
@@ -587,6 +591,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                     CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int16);
                     CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int32);
                     CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int64);
+                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], intp);
                     CASE_INTERP_COEFF(coeff, pi, idxs[hh], Float32);
                     CASE_INTERP_COEFF(coeff, pi, idxs[hh], Float64);
                 default:
@@ -610,14 +615,19 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
             CASE_INTERP_OUT_UINT(po, t, UInt8, 0, MAX_UINT8);
             CASE_INTERP_OUT_UINT(po, t, UInt16, 0, MAX_UINT16);
             CASE_INTERP_OUT_UINT(po, t, UInt32, 0, MAX_UINT32);
+            CASE_INTERP_OUT_UINT(po, t, uintp, 0, MAX_UINTP);
 #if HAS_UINT64
-            /* FIXME */
-            CASE_INTERP_OUT_UINT(po, t, UInt64, 0, MAX_UINT32);
+            /* There was a bug in numpy as of (at least) <= 1.6.1 such that
+             * MAX_UINT64 was incorrectly defined, leading to a compiler error.
+             * NPY_MAX_UINT64 is correctly defined
+             */
+            CASE_INTERP_OUT_UINT(po, t, UInt64, 0, NPY_MAX_UINT64);
 #endif
             CASE_INTERP_OUT_INT(po, t, Int8, MIN_INT8, MAX_INT8);
             CASE_INTERP_OUT_INT(po, t, Int16, MIN_INT16, MAX_INT16);
             CASE_INTERP_OUT_INT(po, t, Int32, MIN_INT32, MAX_INT32);
             CASE_INTERP_OUT_INT(po, t, Int64, MIN_INT64, MAX_INT64);
+            CASE_INTERP_OUT_INT(po, t, intp, MIN_INTP, MAX_INTP);
             CASE_INTERP_OUT(po, t, Float32);
             CASE_INTERP_OUT(po, t, Float64);
         default:
@@ -876,6 +886,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                     CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt8);
                     CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt16);
                     CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt32);
+                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], uintp);
 #if HAS_UINT64
                     CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt64);
 #endif
@@ -883,6 +894,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                     CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int16);
                     CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int32);
                     CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int64);
+                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], intp);
                     CASE_INTERP_COEFF(coeff, pi, idxs[hh], Float32);
                     CASE_INTERP_COEFF(coeff, pi, idxs[hh], Float64);
                 default:
@@ -906,14 +918,19 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
             CASE_INTERP_OUT_UINT(po, t, UInt8, 0, MAX_UINT8);
             CASE_INTERP_OUT_UINT(po, t, UInt16, 0, MAX_UINT16);
             CASE_INTERP_OUT_UINT(po, t, UInt32, 0, MAX_UINT32);
+            CASE_INTERP_OUT_UINT(po, t, uintp, 0, MAX_UINTP);
 #if HAS_UINT64
-            /* FIXME */
-            CASE_INTERP_OUT_UINT(po, t, UInt64, 0, MAX_UINT32);
+            /* There was a bug in numpy as of (at least) <= 1.6.1 such that
+             * MAX_UINT64 was incorrectly defined, leading to a compiler error.
+             * NPY_MAX_UINT64 is correctly defined
+             */
+            CASE_INTERP_OUT_UINT(po, t, UInt64, 0, NPY_MAX_UINT64);
 #endif
             CASE_INTERP_OUT_INT(po, t, Int8, MIN_INT8, MAX_INT8);
             CASE_INTERP_OUT_INT(po, t, Int16, MIN_INT16, MAX_INT16);
             CASE_INTERP_OUT_INT(po, t, Int32, MIN_INT32, MAX_INT32);
             CASE_INTERP_OUT_INT(po, t, Int64, MIN_INT64, MAX_INT64);
+            CASE_INTERP_OUT_INT(po, t, intp, MIN_INTP, MAX_INTP);
             CASE_INTERP_OUT(po, t, Float32);
             CASE_INTERP_OUT(po, t, Float64);
         default:
