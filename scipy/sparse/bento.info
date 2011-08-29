@@ -1,0 +1,8 @@
+Recurse:
+    linalg,
+    sparsetools
+
+Library:
+    Packages:
+        linalg,
+        sparsetools

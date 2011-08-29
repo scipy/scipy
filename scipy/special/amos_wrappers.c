@@ -73,8 +73,8 @@ static Py_complex
 rotate(Py_complex z, double v)
 {
     Py_complex w;
-    double c = cos(v * M_PI);
-    double s = sin(v * M_PI);
+    double c = cos(v * NPY_PI);
+    double s = sin(v * NPY_PI);
     w.real = z.real*c - z.imag*s;
     w.imag = z.real*s + z.imag*c;
     return w;
@@ -84,8 +84,8 @@ static Py_complex
 rotate_jy(Py_complex j, Py_complex y, double v)
 {
     Py_complex w;
-    double c = cos(v * M_PI);
-    double s = sin(v * M_PI);
+    double c = cos(v * NPY_PI);
+    double s = sin(v * NPY_PI);
     w.real = j.real * c - y.real * s;
     w.imag = j.imag * c - y.imag * s;
     return w;
@@ -121,7 +121,7 @@ static Py_complex
 rotate_i(Py_complex i, Py_complex k, double v)
 {
     Py_complex w;
-    double s = sin(v * M_PI)*(2.0/M_PI);
+    double s = sin(v * NPY_PI)*(2.0/NPY_PI);
     w.real = i.real + s*k.real;
     w.imag = i.imag + s*k.imag;
     return w;
@@ -262,7 +262,7 @@ Py_complex cbesi_wrap_e( double v, Py_complex z) {
       F_FUNC(zbesk,ZBESK)(CADDR(z), &v,  &kode, &n, CADDR(cy_k), &nz, &ierr);
       DO_MTHERR("ive(kv):", &cy_k);
       /* adjust scaling to match zbesi */
-      cy_k = rotate(cy_k, -z.imag/M_PI);
+      cy_k = rotate(cy_k, -z.imag/NPY_PI);
       if (z.real > 0) {
           cy_k.real *= exp(-2*z.real);
           cy_k.imag *= exp(-2*z.real);

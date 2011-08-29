@@ -1,0 +1,77 @@
+import sys
+
+from bento.commands import hooks
+
+@hooks.pre_build
+def pre_build(context):
+    bld = context.waf_context
+    f2py = bld.tools["f2py"]
+
+    def builder(extension):
+        source = extension.sources[:]
+        if sys.platform == "darwin":
+            source.pop(source.index("src/fblaswrap.f"))
+            source.append("src/fblaswrap_veclib_c.c")
+        t = bld(features="c pyext bento cloadable f2py",
+                source=source,
+                target=extension.name,
+                use="FBLAS")
+        t.mappings[".pyf"] = f2py.interface_gen_callback
+    context.register_builder("fblas", builder)
+
+    def builder(extension):
+        t = bld(features="c pyext bento cloadable f2py",
+            source=extension.sources,
+            target=extension.name,
+            use="CBLAS")
+        t.mappings[".pyf"] = f2py.interface_gen_callback
+    context.register_builder("cblas", builder)
+
+    def builder(extension):
+        t = bld(features="c pyext bento cloadable f2py",
+            source=extension.sources,
+            target=extension.name,
+            use="FLAPACK")
+        t.mappings[".pyf"] = f2py.interface_gen_callback
+    context.register_builder("flapack", builder)
+
+    def builder(extension):
+        if bld.env.HAS_CLAPACK:
+            t = bld(features="c pyext bento cloadable f2py",
+                source=extension.sources,
+                target=extension.name,
+                use="CLAPACK")
+            t.mappings[".pyf"] = f2py.interface_gen_callback
+        else:
+            t = bld(features="c fc pyext bento cloadable f2py",
+                source=extension.sources,
+                target=extension.name,
+                )
+            t.mappings[".pyf"] = f2py.fake_interface_gen_callback
+    context.register_builder("clapack", builder)
+
+    def builder(extension):
+        bld(features="c pyext bento cloadable f2py f2py_fortran",
+            source=extension.sources,
+            target=extension.name,
+            use="FLAPACK")
+    context.register_builder("_flinalg", builder)
+
+    def builder(extension):
+        bld(features="c pyext bento cloadable f2py f2py_fortran",
+            source=extension.sources,
+            target=extension.name,
+            use="FLAPACK CLIB")
+    context.register_builder("calc_lwork", builder)
+
+    def builder(extension):
+        defines = []
+        if bld.env.HAS_ATLAS:
+            raise NotImplementedError("Atlas not implemented yet")
+        else:
+            defines.append("NO_ATLAS_INFO=1")
+        bld(features="c pyext bento cloadable",
+            source=extension.sources,
+            target=extension.name,
+            defines=defines)
+    context.register_builder("atlas_version", builder)

@@ -1,0 +1,14 @@
+import sys
+
+from bento.commands import hooks
+
+@hooks.pre_build
+def pre_build(context):
+    bld = context.waf_context
+
+    def builder(extension):
+        bld(features="c pyext fc bento cloadable f2py",
+            source=extension.sources,
+            target=extension.name,
+            use="FLAPACK")
+    context.register_builder("_iterative", builder)

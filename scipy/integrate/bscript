@@ -1,0 +1,43 @@
+from bento.commands import hooks
+
+@hooks.pre_build
+def pre_build(context):
+    bld = context.waf_context
+
+    #def builder(extension):
+    #    bld(features="c fc bento cthlib",
+    #        source=extension.sources,
+    #        target=extension.name)
+    #context.register_builder("linpack_lite", builder)
+    #context.register_builder("mach", builder)
+    #context.register_builder("quadpack", builder)
+    #context.register_builder("dop", builder)
+    #context.register_builder("odepack", builder)
+
+    def builder(extension):
+        bld(features="c pyext bento cloadable",
+            source=extension.sources,
+            target=extension.name,
+            use="quadpack linpack_lite mach FBLAS CLIB")
+    context.register_builder("_quadpack", builder)
+
+    def builder(extension):
+        bld(features="c pyext bento cloadable",
+            source=extension.sources,
+            target=extension.name,
+            use="odepack linpack_lite mach FBLAS CLIB")
+    context.register_builder("_odepack", builder)
+
+    def builder(extension):
+        bld(features="c pyext bento cloadable f2py",
+            source=extension.sources,
+            target=extension.name,
+            use="odepack linpack_lite mach FBLAS CLIB")
+    context.register_builder("vode", builder)
+
+    def builder(extension):
+        bld(features="c pyext bento cloadable f2py",
+            source=extension.sources,
+            target=extension.name,
+            use="dop FBLAS CLIB")
+    context.register_builder("_dop", builder)

@@ -1,0 +1,65 @@
+HookFile: bscript
+
+Library:
+    CompiledLibrary: fftpack
+        Sources: 
+            src/fftpack/cfftb.f,
+            src/fftpack/cfftb1.f,
+            src/fftpack/cfftf.f,
+            src/fftpack/cfftf1.f,
+            src/fftpack/cffti.f,
+            src/fftpack/cffti1.f,
+            src/fftpack/cosqb.f,
+            src/fftpack/cosqf.f,
+            src/fftpack/cosqi.f,
+            src/fftpack/cost.f,
+            src/fftpack/costi.f,
+            src/fftpack/rfftb.f,
+            src/fftpack/rfftb1.f,
+            src/fftpack/rfftf.f,
+            src/fftpack/rfftf1.f,
+            src/fftpack/rffti.f,
+            src/fftpack/rffti1.f,
+            src/fftpack/sinqb.f,
+            src/fftpack/sinqf.f,
+            src/fftpack/sinqi.f,
+            src/fftpack/sint.f,
+            src/fftpack/sint1.f,
+            src/fftpack/sinti.f
+    CompiledLibrary: dfftpack
+        Sources: 
+            src/dfftpack/dcosqb.f,
+            src/dfftpack/dcosqf.f,
+            src/dfftpack/dcosqi.f,
+            src/dfftpack/dcost.f,
+            src/dfftpack/dcosti.f,
+            src/dfftpack/dfftb.f,
+            src/dfftpack/dfftb1.f,
+            src/dfftpack/dfftf.f,
+            src/dfftpack/dfftf1.f,
+            src/dfftpack/dffti.f,
+            src/dfftpack/dffti1.f,
+            src/dfftpack/dsinqb.f,
+            src/dfftpack/dsinqf.f,
+            src/dfftpack/dsinqi.f,
+            src/dfftpack/dsint.f,
+            src/dfftpack/dsint1.f,
+            src/dfftpack/dsinti.f,
+            src/dfftpack/zfftb.f,
+            src/dfftpack/zfftb1.f,
+            src/dfftpack/zfftf.f,
+            src/dfftpack/zfftf1.f,
+            src/dfftpack/zffti.f,
+            src/dfftpack/zffti1.f
+    Extension: _fftpack
+        Sources:
+            src/zfft.c,
+            src/drfft.c,
+            src/zrfft.c,
+            src/zfftnd.c,
+            fftpack.pyf,
+            src/dct.c.src
+    Extension: convolve
+        Sources:
+            src/convolve.c,
+            convolve.pyf

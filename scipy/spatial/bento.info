@@ -1,0 +1,26 @@
+HookFile: bscript
+
+Library:
+    Extension: ckdtree
+        Sources: ckdtree.c
+    Extension: _distance_wrap
+        Sources: src/distance_wrap.c, src/distance.c
+    Extension: qhull
+        Sources:
+            qhull.c,
+            qhull/src/geom.c,
+            qhull/src/geom2.c,
+            qhull/src/global.c,
+            qhull/src/io.c,
+            qhull/src/libqhull.c,
+            qhull/src/mem.c,
+            qhull/src/merge.c,
+            qhull/src/poly.c,
+            qhull/src/poly2.c,
+            qhull/src/qset.c,
+            qhull/src/random.c,
+            qhull/src/rboxlib.c,
+            qhull/src/stat.c,
+            qhull/src/user.c,
+            qhull/src/usermem.c,
+            qhull/src/userprintf.c

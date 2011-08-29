@@ -1,0 +1,20 @@
+HookFile: bscript
+
+Library:
+    Extension: sigtools
+        Sources:
+            lfilter.c.src,
+            correlate_nd.c.src,
+            sigtoolsmodule.c,
+            firfilter.c,
+            medianfilter.c
+    Extension: spectral
+        Sources: spectral.c
+    Extension: spline
+        Sources:
+            splinemodule.c,
+            S_bspline_util.c,
+            D_bspline_util.c,
+            C_bspline_util.c,
+            Z_bspline_util.c,
+            bspline_util.c
