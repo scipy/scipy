@@ -24,7 +24,7 @@ def cont2discrete(sys, dt, method="zoh", alpha=None):
         * 2: (num, den)
         * 3: (zeros, poles, gain)
         * 4: (A, B, C, D)
-        
+
     dt : float
         The discretization time step.
     method : {"gbt", "bilinear", "euler", "backward_diff", "zoh"}
@@ -43,7 +43,7 @@ def cont2discrete(sys, dt, method="zoh", alpha=None):
     -------
     sysd : tuple containing the discrete system
         Based on the input type, the output will be of the form
-        
+
         (num, den, dt)   for transfer function input
         (zeros, poles, gain, dt)   for zeros-poles-gain input
         (A, B, C, D, dt) for state-space system input
@@ -61,8 +61,8 @@ def cont2discrete(sys, dt, method="zoh", alpha=None):
     Generalize bilinear approximation is based on:
     http://techteach.no/publications/discretetime_signals_systems/discrete.pdf
      and
-    G. Zhang, X. Chen, and T. Chen, “Digital redesign via the generalized bilinear
-    transformation,” Int. J. Control, vol. 82, no. 4, pp. 741–754, 2009.
+    G. Zhang, X. Chen, and T. Chen, Digital redesign via the generalized bilinear
+    transformation, Int. J. Control, vol. 82, no. 4, pp. 741-754, 2009.
     (http://www.ece.ualberta.ca/~gfzhang/research/ZCC07_preprint.pdf)
 
     """
@@ -87,30 +87,23 @@ def cont2discrete(sys, dt, method="zoh", alpha=None):
                              "[0,1] for the gbt method")
 
     if method == 'gbt':
-
         # This parameter is used repeatedly - compute once here
         ima = np.eye(a.shape[0]) - alpha*dt*a
-
         ad = np.linalg.solve(ima, np.eye(a.shape[0]) + (1.0-alpha)*dt*a)
-
         bd = np.linalg.solve(ima, dt*b)
 
         # Similarly solve for the output equation matrices
         cd = np.linalg.solve(ima.transpose(), c.transpose())
         cd = cd.transpose()
-
         dd = d + alpha*np.dot(c, bd)
 
     elif method == 'bilinear' or method == 'tustin':
-
         return cont2discrete(sys, dt, method="gbt", alpha=0.5)
 
     elif method == 'euler' or method == 'forward_diff':
-
         return cont2discrete(sys, dt, method="gbt", alpha=0.0)
 
     elif method == 'backward_diff':
-
         return cont2discrete(sys, dt, method="gbt", alpha=1.0)
 
     elif method == 'zoh':
