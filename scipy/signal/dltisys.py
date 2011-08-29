@@ -5,12 +5,12 @@ dltisys - Code related to discrete linear time-invariant systems
 # Author: Jeffrey Armstrong <jeff@approximatrix.com>
 # April 4, 2011
 
-import math
 import numpy as np
 from scipy.interpolate import interp1d
 from ltisys import tf2ss, zpk2ss
 
 __all__ = ['dlsim', 'dstep', 'dimpulse']
+
 
 def dlsim(system, u, t=None, x0=None):
     """
@@ -22,16 +22,19 @@ def dlsim(system, u, t=None, x0=None):
         An instance of the LTI class, or a tuple describing the system.
         The following gives the number of elements in the tuple and
         the interpretation:
-          * 3: (num, den, dt)
-          * 4: (zeros, poles, gain, dt)
-          * 5: (A, B, C, D, dt)
+
+          - 3: (num, den, dt)
+          - 4: (zeros, poles, gain, dt)
+          - 5: (A, B, C, D, dt)
+
     u : array_like
         An input array describing the input at each time `t` (interpolation is
         assumed between given times).  If there are multiple inputs, then each
         column of the rank-2 array represents an input.
     t : array_like, optional
-        The time steps at which the input is defined and at which the output is
-        desired.
+        The time steps at which the input is defined.  If `t` is given, the
+        final value in `t` determines the number of steps returned in the
+        output.
     x0 : arry_like, optional
         The initial conditions on the state vector (zero by default).
 
@@ -48,6 +51,19 @@ def dlsim(system, u, t=None, x0=None):
     See Also
     --------
     lsim, dstep, dimpulse, cont2discrete
+
+    Examples
+    --------
+    A simple integrator transfer function with a discrete time step of 1.0
+    could be implemented as:
+
+    >>> from import signal
+    >>> tf = ([1.0,], [1.0, -1.0], 1.0)
+    >>> t_in = [0.0, 1.0, 2.0, 3.0]
+    >>> u = np.asarray([0.0, 0.0, 1.0, 1.0])
+    >>> t_out, y = signal.dlsim(tf, u, t=t_in)
+    >>> y
+    array([ 0.,  0.,  0.,  1.])
 
     """
     if len(system) == 3:
@@ -68,7 +84,7 @@ def dlsim(system, u, t=None, x0=None):
         stoptime = (out_samples - 1) * dt
     else:
         stoptime = t[-1]
-        out_samples = int(math.floor(stoptime / dt)) + 1
+        out_samples = int(np.floor(stoptime / dt)) + 1
 
     # Pre-build output arrays
     xout = np.zeros((out_samples, a.shape[0]))
@@ -85,6 +101,9 @@ def dlsim(system, u, t=None, x0=None):
     if t is None:
         u_dt = u
     else:
+        if len(u.shape) == 1:
+            u = u[:, np.newaxis]
+
         u_dt_interp = interp1d(t, u.transpose(), copy=False, bounds_error=True)
         u_dt = u_dt_interp(tout).transpose()
 
@@ -96,11 +115,12 @@ def dlsim(system, u, t=None, x0=None):
     # Last point
     yout[out_samples-1,:] = np.dot(c, xout[out_samples-1,:]) + \
                             np.dot(d, u_dt[out_samples-1,:])
-    
+
     if len(system) == 5:
         return tout, yout, xout
     else:
         return tout, yout
+
 
 def dimpulse(system, x0=None, t=None, n=None):
     """Impulse response of discrete-time system.
@@ -147,7 +167,7 @@ def dimpulse(system, x0=None, t=None, n=None):
         raise ValueError("System argument should be a discrete transfer " +
                          "function, zeros-poles-gain specification, or " +
                          "state-space system")
-                         
+
     # Default to 100 samples if unspecified
     if n is None:
         n = 100
@@ -173,6 +193,7 @@ def dimpulse(system, x0=None, t=None, n=None):
         tout = one_output[0]
 
     return tout, yout
+
 
 def dstep(system, x0=None, t=None, n=None):
     """Step response of discrete-time system.
@@ -219,7 +240,7 @@ def dstep(system, x0=None, t=None, n=None):
         raise ValueError("System argument should be a discrete transfer " +
                          "function, zeros-poles-gain specification, or " +
                          "state-space system")
-    
+
     # Default to 100 samples if unspecified
     if n is None:
         n = 100
@@ -245,3 +266,4 @@ def dstep(system, x0=None, t=None, n=None):
         tout = one_output[0]
 
     return tout, yout
+

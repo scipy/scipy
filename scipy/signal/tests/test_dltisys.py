@@ -4,7 +4,7 @@
 
 import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
-                          assert_array_almost_equal, assert_almost_equal
+                          assert_array_almost_equal
 from scipy.signal import dlsim, dstep, dimpulse, tf2zpk
 
 class TestDLTI(TestCase):
@@ -64,10 +64,18 @@ class TestDLTI(TestCase):
                                   
         # Assume use of the first column of the control input built earlier
         tout, yout = dlsim((num, den, 0.5), u[:,0], t_in)
-        
+
         assert_array_almost_equal(yout,yout_truth)
         assert_array_almost_equal(t_in, tout)
-        
+
+        # Retest the same with a 1-D input vector
+        uflat = np.asarray(u[:,0])
+        uflat = uflat.reshape((5,))
+        tout, yout = dlsim((num, den, 0.5), uflat, t_in)
+
+        assert_array_almost_equal(yout,yout_truth)
+        assert_array_almost_equal(t_in, tout)
+
         # zeros-poles-gain representation
         zd = np.array([0.5, -0.5])
         pd = np.array([1.j / np.sqrt(2), -1.j / np.sqrt(2)])
@@ -148,7 +156,7 @@ class TestDLTI(TestCase):
         for i in range(0, len(yout)):
             assert_equal(yout[i].shape[0], 10)
             assert_array_almost_equal(yout[i].flatten(), yout_imp_truth[i])
-            
+
         # Check that the other two inputs (tf, zpk) will work as well
         tfin = ([1.0,], [1.0, 1.0], 0.5)
         yout_tfimpulse = np.asarray([0.0, 1.0, -1.0])
@@ -157,7 +165,9 @@ class TestDLTI(TestCase):
         assert_array_almost_equal(yout[0].flatten(), yout_tfimpulse)
         
         zpkin = tf2zpk(tfin[0], tfin[1]) + (0.5,)
-        tout, yout = dimpulse(tfin, n=3)
+        tout, yout = dimpulse(zpkin, n=3)
         assert_equal(len(yout), 1)
         assert_array_almost_equal(yout[0].flatten(), yout_tfimpulse)
-        
+
+if __name__ == "__main__":
+    run_module_suite()
