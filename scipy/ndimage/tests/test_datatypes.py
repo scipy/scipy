@@ -20,8 +20,9 @@ def test_map_coordinates_dts():
                              [0, 4, 1, 3],
                              [0, 7, 6, 8]])
     idx = np.indices(data.shape)
-    dts = (np.uint8, np.uint16, np.uint32, np.uint64, np.int8, np.int16,
-           np.int32, np.intp, np.int64, np.float32, np.float64)
+    dts = (np.uint8, np.uint16, np.uint32, np.uint64,
+           np.int8, np.int16, np.int32, np.int64,
+           np.intp, np.uintp, np.float32, np.float64)
     for order in range(0, 6):
         for data_dt in dts:
             these_data = data.astype(data_dt)

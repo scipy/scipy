@@ -56,8 +56,6 @@ typedef enum
          tInt32=PyArray_INT32,
          tUInt32=PyArray_UINT32,
          tInt64=PyArray_INT64,
-         tuintp=PyArray_UINTP,
-         tintp=PyArray_INTP,
          tUInt64=PyArray_UINT64,
          tFloat32=PyArray_FLOAT32,
          tFloat64=PyArray_FLOAT64,
@@ -65,8 +63,7 @@ typedef enum
          tComplex128=PyArray_COMPLEX128,
          tObject=PyArray_OBJECT,        /* placeholder... does nothing */
          tMaxType=PyArray_NTYPES,
-         tDefault=PyArray_FLOAT64,
-         tLong=PyArray_LONG,
+         tDefault=PyArray_FLOAT64
 } NumarrayType;
 
 #define NI_MAXDIM NPY_MAXDIMS
@@ -74,7 +71,6 @@ typedef enum
 #define MAXDIM NPY_MAXDIMS
 
 #define HAS_UINT64 1
-
 
 
 #ifdef ND_IMPORT_ARRAY
