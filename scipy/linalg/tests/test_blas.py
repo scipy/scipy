@@ -45,7 +45,7 @@ def test_get_blas_funcs():
     assert_equal(f1.typecode, 'c')
 
     # extended precision complex
-    f1 = get_blas_funcs('gemm', dtype=np.complex256)
+    f1 = get_blas_funcs('gemm', dtype=np.longcomplex)
     assert_equal(f1.typecode, 'z')
 
 def test_get_blas_funcs_alias():
