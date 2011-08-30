@@ -18,9 +18,11 @@ def pre_build(context):
             sources.append("ARPACK/FWRAPPERS/veclib_cabi_c.c")
         else:
             sources.append("ARPACK/FWRAPPERS/dummy.f")
-        bld(features="c fc cstlib",
+        bld(features="c fc cstlib pyext bento",
             source=sources,
-            target=extension.name)
+            target=extension.name,
+            # Hack to make use of claoadable flags for static archive
+            use="cloadable")
     context.register_compiled_library_builder("arpack", builder)
 
     def builder(extension):
