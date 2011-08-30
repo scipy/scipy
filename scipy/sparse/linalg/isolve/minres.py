@@ -16,7 +16,7 @@ the Conjugate Gradient method, A can be indefinite or singular.
 If shift != 0 then the method solves (A - shift*I)x = b
 """
 
-Ainfo = "The real-valued N-by-N matrix of the linear system"
+Ainfo = "The real symmetric N-by-N matrix of the linear system"
 
 footer = \
 """
