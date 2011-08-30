@@ -45,7 +45,7 @@ from scipy.spatial.distance import squareform, pdist, cdist, matching, \
         jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule, \
         num_obs_y, num_obs_dm, is_valid_dm, is_valid_y, minkowski, wminkowski, \
         euclidean, sqeuclidean, cosine, correlation, mahalanobis, \
-        canberra, braycurtis, sokalmichener, _validate_vector                                    
+        canberra, braycurtis, sokalmichener, _validate_vector
 
 
 _filenames = ["iris.txt",
@@ -1830,7 +1830,7 @@ def test_euclideans():
     """Regression test for ticket #1328."""
     x1 = np.array([1, 1, 1])
     x2 = np.array([0, 0, 0])
-    
+
     # Basic test of the calculation.
     assert_almost_equal(sqeuclidean(x1, x2), 3.0, decimal=14)
     assert_almost_equal(euclidean(x1, x2), np.sqrt(3), decimal=14)

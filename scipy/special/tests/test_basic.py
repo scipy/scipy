@@ -1746,9 +1746,9 @@ class TestBessel(TestCase):
             assert_tol_equal(special.i0(z), value, atol=err, err_msg=z)
 
     def test_i1_series(self):
-            for z in [1., 10., 200.5]:
-                value, err = self.iv_series(1, z)
-                assert_tol_equal(special.i1(z), value, atol=err, err_msg=z)
+        for z in [1., 10., 200.5]:
+            value, err = self.iv_series(1, z)
+            assert_tol_equal(special.i1(z), value, atol=err, err_msg=z)
 
     def test_iv_series(self):
         for v in [-20., -10., -1., 0., 1., 12.49, 120.]:

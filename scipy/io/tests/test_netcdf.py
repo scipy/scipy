@@ -123,4 +123,3 @@ def test_read_example_data():
     for fname in glob(pjoin(TEST_DATA_PATH, '*.nc')):
         f = netcdf_file(fname, 'r')
         f = netcdf_file(fname, 'r', mmap=False)
-

@@ -17,7 +17,7 @@ def make_structarr(n_vars, n_fields, n_structs):
     return var_dict
 
 
-def bench_run(): 
+def bench_run():
     str_io = StringIO()
     print
     print 'Read / writing matlab structs'

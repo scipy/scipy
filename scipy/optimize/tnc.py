@@ -88,8 +88,8 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
              rescale=-1, disp=None):
     """
     Minimize a function with variables subject to bounds, using
-    gradient information in a truncated Newton algorithm. This 
-    method wraps a C implementation of the algorithm. 
+    gradient information in a truncated Newton algorithm. This
+    method wraps a C implementation of the algorithm.
 
     Parameters
     ----------
@@ -97,7 +97,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         Function to minimize.  Must do one of
         1. Return f and g, where f is
         the value of the function and g its gradient (a list of
-        floats).  
+        floats).
         2. Return the function value but supply gradient function
         seperately as fprime
         3. Return the function value and set approx_grad=True.
@@ -119,7 +119,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         min or max when there is no bound in that direction.
     epsilon: float
         Used if approx_grad is True. The stepsize in a finite
-        difference approximation for fprime. 
+        difference approximation for fprime.
     scale : list of floats
         Scaling factors to apply to each variable.  If None, the
         factors are up-low for interval bounded variables and
@@ -184,29 +184,29 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
 
     Notes
     -----
-    The underlying algorithm is truncated Newton, also called 
-    Newton Conjugate-Gradient. This method differs from 
+    The underlying algorithm is truncated Newton, also called
+    Newton Conjugate-Gradient. This method differs from
     scipy.optimize.fmin_ncg in that
-    
+
     1. It wraps a C implementation of the algorithm
     2. It allows each variable to be given an upper and lower bound.
 
 
     The algorithm incoporates the bound constraints by determining
-    the descent direction as in an unconstrained truncated Newton, 
+    the descent direction as in an unconstrained truncated Newton,
     but never taking a step-size large enough to leave the space
-    of feasible x's. The algorithm keeps track of a set of 
-    currently active constraints, and ignores them when computing 
+    of feasible x's. The algorithm keeps track of a set of
+    currently active constraints, and ignores them when computing
     the minimum allowable step size. (The x's associated with the
-    active constraint are kept fixed.) If the maximum allowable 
+    active constraint are kept fixed.) If the maximum allowable
     step size is zero then a new constraint is added. At the end
-    of each iteration one of the constraints may be deemed no 
-    longer active and removed. A constraint is considered 
-    no longer active is if it is currently active 
-    but the gradient for that variable points inward from the 
+    of each iteration one of the constraints may be deemed no
+    longer active and removed. A constraint is considered
+    no longer active is if it is currently active
+    but the gradient for that variable points inward from the
     constraint. The specific constraint removed is the one
-    associated with the variable of largest index whose 
-    constraint is no longer active. 
+    associated with the variable of largest index whose
+    constraint is no longer active.
 
 
     References

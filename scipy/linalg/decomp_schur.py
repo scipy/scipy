@@ -62,7 +62,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None):
     ------
     LinAlgError
         Error raised under three conditions:
-        1. The algorithm failed due to a failure of the QR algorithm to 
+        1. The algorithm failed due to a failure of the QR algorithm to
            compute all eigenvalues
         2. If eigenvalue sorting was requested, the eigenvalues could not be
            reordered due to a failure to separate eigenvalues, usually because
@@ -94,7 +94,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None):
         # get optimal work array
         result = gees(lambda x: None, a1, lwork=-1)
         lwork = result[-2][0].real.astype(numpy.int)
-    
+
     if sort is None:
         sort_t = 0
         sfunction = lambda x: None
@@ -113,10 +113,10 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None):
         else:
             raise ValueError("sort parameter must be None, a callable, or " +
                 "one of ('lhp','rhp','iuc','ouc')")
-        
-    result = gees(sfunction, a1, lwork=lwork, overwrite_a=overwrite_a, 
+
+    result = gees(sfunction, a1, lwork=lwork, overwrite_a=overwrite_a,
         sort_t=sort_t)
-    
+
     info = result[-1]
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal gees'
@@ -127,7 +127,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None):
         raise LinAlgError('Leading eigenvalues do not satisfy sort condition.')
     elif info > 0:
         raise LinAlgError("Schur form not found.  Possibly ill-conditioned.")
-        
+
     if sort_t == 0:
         return result[0], result[-3]
     else:

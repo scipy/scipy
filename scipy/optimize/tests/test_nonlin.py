@@ -132,7 +132,7 @@ class TestSecant(TestCase):
 
     def test_broyden1(self):
         self._check_secant(nonlin.BroydenFirst)
-        
+
     def test_broyden2(self):
         self._check_secant(nonlin.BroydenSecond)
 
@@ -163,7 +163,7 @@ class TestSecant(TestCase):
             H += (dx - dot(H, df))[:,None] * df[None,:] / dot(df, df)
             jac.update(x, f)
             assert_(np.allclose(jac.todense(), inv(H), rtol=1e-10, atol=1e-13))
-            
+
     def test_anderson(self):
         # Anderson mixing (with w0=0) satisfies secant conditions
         # for the last M iterates, see [Ey]_
@@ -196,7 +196,7 @@ class TestLinear(TestCase):
         # Broyden methods solve linear systems exactly in 2*N steps
         self._check(nonlin.BroydenFirst(alpha=1.0), 20, 41, False)
         self._check(nonlin.BroydenFirst(alpha=1.0), 20, 41, True)
-        
+
     def test_broyden2(self):
         # Broyden methods solve linear systems exactly in 2*N steps
         self._check(nonlin.BroydenSecond(alpha=1.0), 20, 41, False)

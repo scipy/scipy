@@ -577,7 +577,7 @@ def companion(a):
 
 def hilbert(n):
     """Create a Hilbert matrix of order n.
-    
+
     Returns the `n` by `n` array with entries `h[i,j] = 1 / (i + j + 1)`.
 
     Parameters
@@ -589,7 +589,7 @@ def hilbert(n):
     -------
     h : ndarray with shape (n, n)
         The Hilber matrix.
-        
+
     Notes
     -----
     .. versionadded:: 0.10.0
@@ -609,7 +609,7 @@ def hilbert(n):
 
 def invhilbert(n, exact=False):
     """Compute the inverse of the Hilbert matrix of order `n`.
-    
+
     Parameters
     ----------
     n : int
@@ -631,7 +631,7 @@ def invhilbert(n, exact=False):
         array will be long integers.
 
     Notes
-    -----    
+    -----
     .. versionadded:: 0.10.0
 
     Examples

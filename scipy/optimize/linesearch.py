@@ -612,4 +612,3 @@ def scalar_search_armijo(phi, phi0, derphi0, c1=1e-4, alpha0=1, amin=0):
 
     # Failed to find a suitable step length
     return None, phi_a1
-

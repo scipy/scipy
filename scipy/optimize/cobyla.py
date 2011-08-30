@@ -18,8 +18,8 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
                 iprint=1, maxfun=1000, disp=None):
     """
     Minimize a function using the Constrained Optimization BY Linear
-    Approximation (COBYLA) method. This method wraps a FORTRAN 
-    implentation of the algorithm. 
+    Approximation (COBYLA) method. This method wraps a FORTRAN
+    implentation of the algorithm.
 
     Parameters
     ----------
@@ -38,9 +38,9 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
         use same extra arguments as those passed to func).
         Use ``()`` for no extra arguments.
     rhobeg :
-        Reasonable initial changes to the variables. 
+        Reasonable initial changes to the variables.
     rhoend :
-        Final accuracy in the optimization (not precisely guaranteed). This 
+        Final accuracy in the optimization (not precisely guaranteed). This
         is a lower bound on the size of the trust region.
     iprint : {0, 1, 2, 3}
         Controls the frequency of output; 0 implies no output.  Deprecated.
@@ -53,22 +53,22 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
     -------
     x : ndarray
         The argument that minimises `f`.
-    
+
     Notes
     -----
-    This algorithm is based on linear approximations to the objective 
+    This algorithm is based on linear approximations to the objective
     function and each constraint. We briefly describe the algorithm.
-    
-    Suppose the function is being minimized over k variables. At the 
+
+    Suppose the function is being minimized over k variables. At the
     jth iteration the algorithm has k+1 points v_1, ..., v_(k+1),
     an approximate solution x_j, and a radius RHO_j.
-    (i.e. linear plus a constant) approximations to the objective 
+    (i.e. linear plus a constant) approximations to the objective
     function and constraint functions such that their function values
     agree with the linear approximation on the k+1 points v_1,.., v_(k+1).
     This gives a linear program to solve (where the linear approximations
-    of the constraint functions are constrained to be non-negative). 
-    
-    However the linear approximations are likely only good 
+    of the constraint functions are constrained to be non-negative).
+
+    However the linear approximations are likely only good
     approximations near the current simplex, so the linear program is
     given the further requirement that the solution, which
     will become x_(j+1), must be within RHO_j from x_j. RHO_j only
@@ -77,16 +77,16 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
     like a trust region algorithm.
 
     Additionally, the linear program may be inconsistent, or the
-    approximation may give poor improvement. For details about 
-    how these issues are resolved, as well as how the points v_i are 
-    updated, refer to the source code or the references below. 
-    
+    approximation may give poor improvement. For details about
+    how these issues are resolved, as well as how the points v_i are
+    updated, refer to the source code or the references below.
+
 
     References
     ----------
     Powell M.J.D. (1994), "A direct search optimization method that models
-    the objective and constraint functions by linear interpolation.", in 
-    Advances in Optimization and Numerical Analysis, eds. S. Gomez and 
+    the objective and constraint functions by linear interpolation.", in
+    Advances in Optimization and Numerical Analysis, eds. S. Gomez and
     J-P Hennart, Kluwer Academic (Dordrecht), pp. 51-67
 
     Powell M.J.D. (1998), "Direct search algorithms for optimization

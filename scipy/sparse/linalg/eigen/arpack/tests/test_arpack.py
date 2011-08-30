@@ -27,7 +27,7 @@ _rtol = {'f': 2000 * np.finfo(np.float32).eps,
          'D': 2000 * np.finfo(np.float64).eps}
 _atol = _rtol
 
-def generate_matrix(N, complex=False, hermitian=False, 
+def generate_matrix(N, complex=False, hermitian=False,
                     pos_definite=False, sparse=False):
     M = np.random.random((N,N))
     if complex:
@@ -74,7 +74,7 @@ def assert_allclose_cc(actual, desired, **kw):
         assert_allclose(actual, conj(desired), **kw)
 
 
-def argsort_which(eval, typ, k, which, 
+def argsort_which(eval, typ, k, which,
                   sigma=None, OPpart=None, mode=None):
     """Return sorted indices of eigenvalues using the "which" keyword
     from eigs and eigsh"""
@@ -85,10 +85,10 @@ def argsort_which(eval, typ, k, which,
             if OPpart is None:
                 reval = 1. / (eval - sigma)
             elif OPpart == 'r':
-                reval = 0.5 * (1. / (eval - sigma) 
+                reval = 0.5 * (1. / (eval - sigma)
                                + 1. / (eval - np.conj(sigma)))
             elif OPpart == 'i':
-                reval = -0.5j * (1. / (eval - sigma) 
+                reval = -0.5j * (1. / (eval - sigma)
                                  - 1. / (eval - np.conj(sigma)))
         elif mode=='cayley':
             reval = (eval + sigma) / (eval - sigma)
@@ -96,7 +96,7 @@ def argsort_which(eval, typ, k, which,
             reval = eval / (eval - sigma)
         else:
             raise ValueError("mode='%s' not recognized" % mode)
-            
+
         reval = np.round(reval, decimals=_ndigits[typ])
 
     if which in ['LM', 'SM']:
@@ -111,7 +111,7 @@ def argsort_which(eval, typ, k, which,
             ind = np.argsort(np.imag(reval))
     else:
         raise ValueError("which='%s' is unrecognized" % which)
-        
+
     if which in ['LM', 'LA', 'LR', 'LI']:
         return ind[-k:]
     elif which in ['SM', 'SA', 'SR', 'SI']:
@@ -123,7 +123,7 @@ def argsort_which(eval, typ, k, which,
 def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
               mattype=np.asarray, OPpart=None, mode='normal'):
     general = ('bmat' in d)
-    
+
     if symmetric:
         eigs_func = eigsh
     else:
@@ -144,25 +144,25 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
 
     a = d['mat'].astype(typ)
     ac = mattype(a)
-    
+
     if general:
         b = d['bmat'].astype(typ.lower())
         bc = mattype(b)
-        
+
     # get exact eigenvalues
     exact_eval = d['eval'].astype(typ.upper())
     ind = argsort_which(exact_eval, typ, k, which,
                         sigma, OPpart, mode)
     exact_eval_a = exact_eval
     exact_eval = exact_eval[ind]
-        
+
     # compute arpack eigenvalues
     kwargs = dict(which=which, v0=v0, sigma=sigma)
     if eigs_func is eigsh:
         kwargs['mode'] = mode
     else:
         kwargs['OPpart'] = OPpart
-            
+
     if general:
         try:
             eval, evec = eigs_func(ac, k, bc, **kwargs)
@@ -181,7 +181,7 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
     eval_a = eval
     eval = eval[ind]
     evec = evec[:,ind]
-    
+
     # check eigenvalues
     assert_allclose_cc(eval, exact_eval, rtol=_rtol[typ], atol=_atol[typ],
                        err_msg=err)
@@ -250,14 +250,14 @@ class SymmetricParams:
 
         self.real_test_cases = [SS, GS]
         self.complex_test_cases = [SH, GH]
-    
+
 class NonSymmetricParams:
     def __init__(self):
         self.eigs = eigs
         self.which = ['LM', 'LR', 'LI']#, 'SM', 'LR', 'SR', 'LI', 'SI']
         self.mattypes = [csr_matrix, aslinearoperator, np.asarray]
         self.sigmas_OPparts = {None : [None],
-                               0.1 : ['r'], 
+                               0.1 : ['r'],
                                0.1 + 0.1j : ['r', 'i']}
 
         #generate matrices
@@ -283,7 +283,7 @@ class NonSymmetricParams:
         GNR['bmat'] = M
         GNR['v0'] = v0
         GNR['eval'] = eig(GNR['mat'], GNR['bmat'], left=False, right=False)
-        
+
         # standard complex nonsymmetric problem
         SNC = DictWithRepr("std-cmplx-nonsym")
         SNC['mat'] = Ac
@@ -296,7 +296,7 @@ class NonSymmetricParams:
         GNC['bmat'] = M
         GNC['v0'] = v0
         GNC['eval'] = eig(GNC['mat'], GNC['bmat'], left=False, right=False)
-        
+
         self.real_test_cases = [SNR, GNR]
         self.complex_test_cases = [SNC, GNC]
 
@@ -352,7 +352,7 @@ def test_symmetric_no_convergence():
             raise AssertionError("Spurious no-eigenvalues-found case")
         w, v = err.eigenvalues, err.eigenvectors
         assert_allclose(dot(m, v), w * v, rtol=_rtol['d'], atol=_atol['d'])
-    
+
 
 def test_real_nonsymmetric_modes():
     params = NonSymmetricParams()

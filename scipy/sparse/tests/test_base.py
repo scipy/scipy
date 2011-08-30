@@ -618,10 +618,10 @@ class _TestGetSet:
 
         for ij in [(0,4),(-1,4),(3,0),(3,4),(3,-1)]:
             assert_raises(IndexError, A.__setitem__, ij, 123.0)
-        
+
         for v in [[1,2,3], array([1,2,3])]:
             assert_raises(ValueError, A.__setitem__, (0,0), v)
-        
+
         for v in [3j]:
             assert_raises(TypeError, A.__setitem__, (0,0), v)
 
@@ -763,7 +763,7 @@ class _TestFancyIndexing:
             assert_almost_equal(A[i, j], 1)
 
         # [i,j]
-        for i, j in [(2, 3), (-1, 8), (-1, -2), (array(-1), -2), (-1, array(-2)), 
+        for i, j in [(2, 3), (-1, 8), (-1, -2), (array(-1), -2), (-1, array(-2)),
                      (array(-1), array(-2))]:
             _test_set(i, j, 1)
 
@@ -870,7 +870,7 @@ class _TestFancyIndexing:
         s = slice(int8(2),int8(4),None)
         assert_equal(A[s,:].todense(), B[2:4,:])
         assert_equal(A[:,s].todense(), B[:,2:4])
-    
+
     def test_fancy_indexing_randomized(self):
         random.seed(0) # make runs repeatable
 
@@ -883,9 +883,9 @@ class _TestFancyIndexing:
 
         I = np.random.random_integers(-M + 1, M - 1, size=NUM_SAMPLES)
         J = np.random.random_integers(-N + 1, N - 1, size=NUM_SAMPLES)
-        
+
         S = self.spmatrix(D)
-        
+
         assert_equal(S[I,J], D[I,J])
 
         I_bad = I + M
@@ -1302,7 +1302,7 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
 
     def test_resize(self):
         """A couple basic tests of the resize() method.
-        
+
         resize(shape) resizes the array in-place.
         """
         a = dok_matrix((5,5))
@@ -1322,7 +1322,7 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
         # This assert would fail, because the above assignment would
         # incorrectly call __set_item__ even though the value was 0.
         assert_((0,0) not in a.keys(), "Unexpected entry (0,0) in keys")
-        
+
         # Slice assignments were also affected.
         b = dok_matrix((3,3))
         b[:,0] = 0
@@ -1342,7 +1342,7 @@ class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
     B[2,1] = 3
     B[3,0] = 10
 
-    
+
     @dec.knownfailureif(True, "Fancy indexing is known to be broken for LIL" \
                               " matrices")
     def test_fancy_indexing_set(self):

@@ -160,17 +160,17 @@ def chi2_contingency(observed, correction=True):
 
     This function does not handle masked arrays, because the calculation
     does not make sense with missing values.
-    
+
     Like stats.chisquare, this function computes a chi-square statistic;
     the convenience this function provides is to figure out the expected
     frequencies and degrees of freedom from the given contingency table.
     If these were already known, and if the Yates' correction was not
     required, one could use stats.chisquare.  That is, if one calls::
-    
+
         chi2, p, dof, ex = chi2_contingency(obs, correction=False)
 
     then the following is true::
-    
+
         (chi2, p) == stats.chisquare(obs.ravel(), f_exp=ex.ravel(),
                                      ddof=obs.size - 1 - dof)
 

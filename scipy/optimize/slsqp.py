@@ -167,7 +167,7 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
                     7 : "Rank-deficient equality constraint subproblem HFTI",
                     8 : "Positive directional derivative for linesearch",
                     9 : "Iteration limit exceeded" }
-    
+
     if disp is not None:
         iprint = disp
 

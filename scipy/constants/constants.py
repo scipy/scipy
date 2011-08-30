@@ -396,4 +396,3 @@ def nu2lambda(nu):
 
     """
     return c / _np.asanyarray(nu)
-

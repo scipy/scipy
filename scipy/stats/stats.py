@@ -515,10 +515,10 @@ def hmean(a, axis=0, dtype=None):
             size = a.count(axis)
         else:
             if axis == None:
-               a=a.ravel()
-               size = a.shape[0]
+                a=a.ravel()
+                size = a.shape[0]
             else:
-               size = a.shape[axis]
+                size = a.shape[axis]
         return size / np.sum(1.0/a, axis=axis, dtype=dtype)
     else:
         raise ValueError("Harmonic mean only defined if all elements greater than zero")
@@ -1233,7 +1233,7 @@ def normaltest(a, axis=0):
         The array containing the data to be tested.
     axis : int or None
         If None, the array is treated as a single data set, regardless of
-        its shape.  Otherwise, each 1-d array along axis `axis` is tested. 
+        its shape.  Otherwise, each 1-d array along axis `axis` is tested.
 
     Returns
     -------
@@ -2333,7 +2333,7 @@ def fisher_exact(table, alternative='two-sided'):
             guess = minval
         if side == "upper":
             while guess > 0 and hypergeom.pmf(guess, n1 + n2, n1, n) < pexact * epsilon:
-               guess -= 1
+                guess -= 1
             while hypergeom.pmf(guess, n1 + n2, n1, n) > pexact / epsilon:
                 guess += 1
         else:

@@ -47,7 +47,7 @@ class TestLGMRES(TestCase):
 
     def test_outer_v(self):
         # Check that the augmentation vectors behave as expected
-        
+
         outer_v = []
         x0, count_0 = do_solve(outer_k=6, outer_v=outer_v)
         assert_(len(outer_v) > 0)

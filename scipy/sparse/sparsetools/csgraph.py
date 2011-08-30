@@ -68,7 +68,5 @@ except AttributeError:
 
 
 def cs_graph_components(*args):
-  """cs_graph_components(int n_nod, int Ap, int Aj, int flag) -> int"""
-  return _csgraph.cs_graph_components(*args)
-
-
+    """cs_graph_components(int n_nod, int Ap, int Aj, int flag) -> int"""
+    return _csgraph.cs_graph_components(*args)

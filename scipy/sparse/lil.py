@@ -250,7 +250,7 @@ class lil_matrix(spmatrix):
 
         if j < 0 or j >= self.shape[1]:
             raise IndexError('column index out of bounds')
-            
+
         if not np.isscalar(x):
             raise ValueError('setting an array element with a sequence')
 
@@ -280,11 +280,11 @@ class lil_matrix(spmatrix):
         if issequence(j):
             if xcols == len(j):
                 for jj, xi in zip(j, xrange(xcols)):
-                   pos = bisect_left(xrow, xi)
-                   if pos != len(xdata) and xrow[pos] == xi:
-                       self._insertat2(row, data, jj, xdata[pos])
-                   else:
-                       self._insertat2(row, data, jj, 0)
+                    pos = bisect_left(xrow, xi)
+                    if pos != len(xdata) and xrow[pos] == xi:
+                        self._insertat2(row, data, jj, xdata[pos])
+                    else:
+                        self._insertat2(row, data, jj, 0)
             elif xcols == 1:           # OK, broadcast across row
                 if len(xdata) > 0 and xrow[0] == 0:
                     val = xdata[0]
@@ -317,12 +317,12 @@ class lil_matrix(spmatrix):
 
         # shortcut for common case of full matrix assign:
         if isspmatrix(x):
-          if isinstance(i, slice) and i == slice(None) and \
-             isinstance(j, slice) and j == slice(None):
-               x = lil_matrix(x)
-               self.rows = x.rows
-               self.data = x.data
-               return
+            if isinstance(i, slice) and i == slice(None) and \
+               isinstance(j, slice) and j == slice(None):
+                x = lil_matrix(x)
+                self.rows = x.rows
+                self.data = x.data
+                return
 
         if isinstance(i, tuple):       # can't index lists with tuple
             i = list(i)

@@ -965,5 +965,3 @@ def pchip(x, y):
     """
     derivs = _find_derivatives(x,y)
     return PiecewisePolynomial(x, zip(y, derivs), orders=3, direction=None)
-
-

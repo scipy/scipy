@@ -78,5 +78,3 @@ def cs_graph_components(x):
     n_comp = _cs_graph_components(shape[0], x.indptr, x.indices, label)
 
     return n_comp, label
-
-

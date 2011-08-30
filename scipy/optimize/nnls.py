@@ -7,7 +7,7 @@ __all__ = ['nnls']
 def nnls(A,b):
     """
     Solve ``argmin_x || Ax - b ||_2`` for ``x>=0``. This is a wrapper
-    for a FORTAN non-negative least squares solver. 
+    for a FORTAN non-negative least squares solver.
 
     Parameters
     ----------
@@ -25,13 +25,13 @@ def nnls(A,b):
 
     Notes
     -----
-    The FORTRAN code was published in the book below. The algorithm 
-    is an active set method. It solves the KKT (Karush-Kuhn-Tucker) 
-    conditions for the non-negative least squares problem. 
-    
+    The FORTRAN code was published in the book below. The algorithm
+    is an active set method. It solves the KKT (Karush-Kuhn-Tucker)
+    conditions for the non-negative least squares problem.
+
     References
     ----------
-    Lawson C., Hanson R.J., (1987) Solving Least Squares Problems, SIAM 
+    Lawson C., Hanson R.J., (1987) Solving Least Squares Problems, SIAM
 
     """
 

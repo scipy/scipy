@@ -34,7 +34,7 @@ def test_kaiserord():
 
 
 class TestFirwin(TestCase):
-    
+
     def check_response(self, h, expected_response, tol=.05):
         N = len(h)
         alpha = 0.5 * (N-1)
@@ -44,44 +44,44 @@ class TestFirwin(TestCase):
             mse = abs(actual-expected)**2
             self.assertTrue(mse < tol, 'response not as expected, mse=%g > %g'\
                %(mse, tol))
-    
+
     def test_response(self):
         N = 51
         f = .5
         # increase length just to try even/odd
-        h = firwin(N, f) # low-pass from 0 to f 
+        h = firwin(N, f) # low-pass from 0 to f
         self.check_response(h, [(.25,1), (.75,0)])
 
-        h = firwin(N+1, f, window='nuttall') # specific window 
+        h = firwin(N+1, f, window='nuttall') # specific window
         self.check_response(h, [(.25,1), (.75,0)])
 
         h = firwin(N+2, f, pass_zero=False) # stop from 0 to f --> high-pass
         self.check_response(h, [(.25,0), (.75,1)])
-        
+
         f1, f2, f3, f4 = .2, .4, .6, .8
         h = firwin(N+3, [f1, f2], pass_zero=False) # band-pass filter
         self.check_response(h, [(.1,0), (.3,1), (.5,0)])
 
-        h = firwin(N+4, [f1, f2]) # band-stop filter 
+        h = firwin(N+4, [f1, f2]) # band-stop filter
         self.check_response(h, [(.1,1), (.3,0), (.5,1)])
-        
-        h = firwin(N+5, [f1, f2, f3, f4], pass_zero=False, scale=False) 
+
+        h = firwin(N+5, [f1, f2, f3, f4], pass_zero=False, scale=False)
         self.check_response(h, [(.1,0), (.3,1), (.5,0), (.7,1), (.9,0)])
 
         h = firwin(N+6, [f1, f2, f3, f4])  # multiband filter
         self.check_response(h, [(.1,1), (.3,0), (.5,1), (.7,0), (.9,1)])
 
-        h = firwin(N+7, 0.1, width=.03) # low-pass 
+        h = firwin(N+7, 0.1, width=.03) # low-pass
         self.check_response(h, [(.05,1), (.75,0)])
 
-        h = firwin(N+8, 0.1, pass_zero=False) # high-pass 
+        h = firwin(N+8, 0.1, pass_zero=False) # high-pass
         self.check_response(h, [(.05,0), (.75,1)])
 
     def mse(self, h, bands):
-        """Compute mean squared error versus ideal response across frequency 
+        """Compute mean squared error versus ideal response across frequency
         band.
           h -- coefficients
-          bands -- list of (left, right) tuples relative to 1==Nyquist of 
+          bands -- list of (left, right) tuples relative to 1==Nyquist of
             passbands
         """
         w, H = freqz(h, worN=1024)
@@ -92,10 +92,10 @@ class TestFirwin(TestCase):
         Hideal = np.where(passIndicator, 1, 0)
         mse = np.mean(abs(abs(H)-Hideal)**2)
         return mse
-        
+
     def test_scaling(self):
         """
-        For one lowpass, bandpass, and highpass example filter, this test 
+        For one lowpass, bandpass, and highpass example filter, this test
         checks two things:
           - the mean squared error over the frequency domain of the unscaled
             filter is smaller than the scaled filter (true for rectangular
@@ -117,7 +117,7 @@ class TestFirwin(TestCase):
                     cutoff = [0] + cutoff
                 else:
                     cutoff = cutoff + [1]
-            self.assertTrue(self.mse(h, [cutoff]) < self.mse(hs, [cutoff]), 
+            self.assertTrue(self.mse(h, [cutoff]) < self.mse(hs, [cutoff]),
                 'least squares violation')
             self.check_response(hs, [expected_response], 1e-12)
 
@@ -225,7 +225,7 @@ class TestFirWinMore(TestCase):
         # Must have at least one cutoff value.
         assert_raises(ValueError, firwin, 99, [])
         # 2D array not allowed.
-        assert_raises(ValueError, firwin, 99, [[0.1, 0.2],[0.3, 0.4]])               
+        assert_raises(ValueError, firwin, 99, [[0.1, 0.2],[0.3, 0.4]])
         # cutoff values must be less than nyq.
         assert_raises(ValueError, firwin, 99, 50.0, nyq=40)
         assert_raises(ValueError, firwin, 99, [10, 20, 30], nyq=25)
@@ -258,11 +258,11 @@ class TestFirwin2(TestCase):
         assert_raises(ValueError, firwin2, 16, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0])
 
         # Type III filter, but the gains at nyquist and zero rate are not zero.
-        assert_raises(ValueError, firwin2, 17, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0], 
+        assert_raises(ValueError, firwin2, 17, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0],
                       antisymmetric=True)
-        assert_raises(ValueError, firwin2, 17, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0], 
+        assert_raises(ValueError, firwin2, 17, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0],
                       antisymmetric=True)
-        assert_raises(ValueError, firwin2, 17, [0.0, 0.5, 1.0], [1.0, 1.0, 1.0], 
+        assert_raises(ValueError, firwin2, 17, [0.0, 0.5, 1.0], [1.0, 1.0, 1.0],
                       antisymmetric=True)
 
         # Type VI filter, but the gain at zero rate is not zero.
@@ -274,9 +274,9 @@ class TestFirwin2(TestCase):
         beta = 12.0
         ntaps = 400
         # Filter is 1 from w=0 to w=0.5, then decreases linearly from 1 to 0 as w
-        # increases from w=0.5 to w=1  (w=1 is the Nyquist frequency). 
+        # increases from w=0.5 to w=1  (w=1 is the Nyquist frequency).
         freq = [0.0, 0.5, 1.0]
-        gain = [1.0, 1.0, 0.0] 
+        gain = [1.0, 1.0, 0.0]
         taps = firwin2(ntaps, freq, gain, window=('kaiser', beta))
         freq_samples = np.array([0.0, 0.25, 0.5-width/2, 0.5+width/2,
                                                         0.75, 1.0-width/2])
@@ -306,7 +306,7 @@ class TestFirwin2(TestCase):
         freq = [0.0, 0.4, 0.4, 0.5, 0.5, 1.0]
         gain = [1.0, 1.0, 0.0, 0.0, 1.0, 1.0]
         taps = firwin2(ntaps, freq, gain, window=('kaiser', beta))
-        freq_samples = np.array([0.0, 0.4-width, 0.4+width, 0.45, 
+        freq_samples = np.array([0.0, 0.4-width, 0.4+width, 0.45,
                                     0.5-width, 0.5+width, 0.75, 1.0])
         freqs, response = freqz(taps, worN=np.pi*freq_samples)
         assert_array_almost_equal(np.abs(response),
@@ -317,7 +317,7 @@ class TestFirwin2(TestCase):
         ntaps = 5
         # Ideal lowpass: gain is 1 on [0,0.5], and 0 on [0.5, 1.0]
         freq = [0.0, 0.5, 0.5, 1.0]
-        gain = [1.0, 1.0, 0.0, 0.0] 
+        gain = [1.0, 1.0, 0.0, 0.0]
         taps = firwin2(ntaps, freq, gain, window=None, nfreqs=8193)
         alpha = 0.5 * (ntaps - 1)
         m = np.arange(0, ntaps) - alpha
@@ -329,7 +329,7 @@ class TestFirwin2(TestCase):
         ntaps = 1500
 
         freq = [0.0, 1.0]
-        gain = [0.0, 1.0] 
+        gain = [0.0, 1.0]
         taps = firwin2(ntaps, freq, gain, window=None, antisymmetric=True)
         assert_array_almost_equal(taps[: ntaps // 2], -taps[ntaps // 2:][::-1])
 
@@ -342,7 +342,7 @@ class TestFirwin2(TestCase):
         ntaps = 1501
 
         freq = [0.0, 0.5, 0.55,  1.0]
-        gain = [0.0, 0.5, 0.0,   0.0] 
+        gain = [0.0, 0.5, 0.0,   0.0]
         taps = firwin2(ntaps, freq, gain, window=None, antisymmetric=True)
         assert_equal(taps[ntaps // 2], 0.0)
         assert_array_almost_equal(taps[: ntaps // 2], -taps[ntaps // 2 + 1:][::-1])

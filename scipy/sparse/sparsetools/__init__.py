@@ -7,4 +7,3 @@ from coo import *
 from dia import *
 from bsr import *
 from csgraph import *
-

@@ -15,13 +15,13 @@ def test_kde_1d():
 
     # get kde for original sample
     gkde = stats.gaussian_kde(xn)
-    
+
     # evaluate the density funtion for the kde for some points
     xs = np.linspace(-7,7,501)
     kdepdf = gkde.evaluate(xs)
     normpdf = stats.norm.pdf(xs, loc=xnmean, scale=xnstd)
     intervall = xs[1] - xs[0]
-    
+
     assert_(np.sum((kdepdf - normpdf)**2)*intervall < 0.01)
     prob1 = gkde.integrate_box_1d(xnmean, np.inf)
     prob2 = gkde.integrate_box_1d(-np.inf, xnmean)
@@ -29,8 +29,8 @@ def test_kde_1d():
     assert_almost_equal(prob2, 0.5, decimal=1)
     assert_almost_equal(gkde.integrate_box(xnmean, np.inf), prob1, decimal=13)
     assert_almost_equal(gkde.integrate_box(-np.inf, xnmean), prob2, decimal=13)
-    
+
     assert_almost_equal(gkde.integrate_kde(gkde),
                         (kdepdf**2).sum()*intervall, decimal=2)
     assert_almost_equal(gkde.integrate_gaussian(xnmean, xnstd**2),
-                        (kdepdf*normpdf).sum()*intervall, decimal=2) 
+                        (kdepdf*normpdf).sum()*intervall, decimal=2)

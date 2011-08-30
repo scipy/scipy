@@ -110,11 +110,11 @@ class Rbf(object):
         return sqrt( ((x1 - x2)**2).sum(axis=0) )
 
     def _h_multiquadric(self, r):
-            return sqrt((1.0/self.epsilon*r)**2 + 1)
+        return sqrt((1.0/self.epsilon*r)**2 + 1)
     def _h_inverse_multiquadric(self, r):
-            return 1.0/sqrt((1.0/self.epsilon*r)**2 + 1)
+        return 1.0/sqrt((1.0/self.epsilon*r)**2 + 1)
     def _h_gaussian(self, r):
-            return exp(-(1.0/self.epsilon*r)**2)
+        return exp(-(1.0/self.epsilon*r)**2)
     def _h_linear(self, r):
         return r
     def _h_cubic(self, r):
@@ -129,21 +129,21 @@ class Rbf(object):
     # Setup self._function and do smoke test on initial r
     def _init_function(self, r):
         if isinstance(self.function, str):
-           self.function = self.function.lower()
-           _mapped = {'inverse': 'inverse_multiquadric',
-                      'inverse multiquadric': 'inverse_multiquadric',
-                      'thin-plate': 'thin_plate'}
-           if self.function in _mapped:
-               self.function = _mapped[self.function]
+            self.function = self.function.lower()
+            _mapped = {'inverse': 'inverse_multiquadric',
+                       'inverse multiquadric': 'inverse_multiquadric',
+                       'thin-plate': 'thin_plate'}
+            if self.function in _mapped:
+                self.function = _mapped[self.function]
 
-           func_name = "_h_" + self.function
-           if hasattr(self, func_name):
-               self._function = getattr(self, func_name)
-           else:
-               functionlist = [x[3:] for x in dir(self) if x.startswith('_h_')]
-               raise ValueError("function must be a callable or one of " +
-                                    ", ".join(functionlist))
-           self._function = getattr(self, "_h_"+self.function)
+            func_name = "_h_" + self.function
+            if hasattr(self, func_name):
+                self._function = getattr(self, func_name)
+            else:
+                functionlist = [x[3:] for x in dir(self) if x.startswith('_h_')]
+                raise ValueError("function must be a callable or one of " +
+                                     ", ".join(functionlist))
+            self._function = getattr(self, "_h_"+self.function)
         elif callable(self.function):
             allow_one = False
             if hasattr(self.function, 'func_code') or \

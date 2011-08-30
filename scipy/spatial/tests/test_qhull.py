@@ -87,7 +87,7 @@ class TestRidgeIter2D(object):
         # +
         # |\
         # | \
-        # |0 \ 
+        # |0 \
         # +---+
         # 0   2
 

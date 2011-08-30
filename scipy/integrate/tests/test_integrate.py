@@ -78,7 +78,7 @@ class TestOde(TestCase):
             if problem.stiff: continue
             if hasattr(problem, 'jac'): continue
             self._do_problem(problem, 'dopri5')
-            
+
     def test_dop853(self):
         """Check the dop853 solver"""
         for problem_cls in PROBLEMS:
@@ -175,7 +175,7 @@ class TestComplexOde(TestCase):
             if problem.stiff: continue
             if hasattr(problem, 'jac'): continue
             self._do_problem(problem, 'dopri5')
-            
+
     def test_dop853(self):
         """Check the dop853 solver"""
         for problem_cls in PROBLEMS:

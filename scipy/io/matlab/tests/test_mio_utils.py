@@ -1,4 +1,4 @@
-""" Testing 
+""" Testing
 
 """
 
@@ -32,8 +32,8 @@ def test_squeeze_element():
     # Unless it's a structured array
     sq_sa = squeeze_element(np.zeros((1,1),dtype=[('f1', 'f')]))
     yield assert_true, isinstance(sq_sa, np.ndarray)
-                                      
-    
+
+
 def test_chars_strings():
     # chars as strings
     strings = ['learn ', 'python', 'fast  ', 'here  ']
@@ -57,4 +57,3 @@ def test_chars_strings():
 
 if __name__ == "__main__":
     run_module_suite()
-

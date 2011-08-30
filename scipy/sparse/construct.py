@@ -448,4 +448,3 @@ greater than %d - this is not supported on this machine
     i = (id - j * m).astype(tp)
     vals = np.random.rand(k).astype(dtype)
     return coo_matrix((vals, (i, j)), shape=(m, n)).asformat(format)
-

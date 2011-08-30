@@ -171,10 +171,10 @@ class TestChirp(TestCase):
         f0 = 10.0
         f1 = 20.0
         t1 = 1.0
-        t = np.linspace(0, t1, 10)        
+        t = np.linspace(0, t1, 10)
         assert_raises(ValueError, waveforms.chirp, t, f0, t1, f1, method)
 
-    def test_integer_t1(self): 
+    def test_integer_t1(self):
         f0 = 10.0
         f1 = 20.0
         t = np.linspace(-1, 1, 11)
@@ -182,10 +182,10 @@ class TestChirp(TestCase):
         float_result = waveforms.chirp(t, f0, t1, f1)
         t1 = 3
         int_result = waveforms.chirp(t, f0, t1, f1)
-        err_msg = "Integer input 't1=3' gives wrong result" 
+        err_msg = "Integer input 't1=3' gives wrong result"
         assert_equal(int_result, float_result, err_msg=err_msg)
 
-    def test_integer_f0(self): 
+    def test_integer_f0(self):
         f1 = 20.0
         t1 = 3.0
         t = np.linspace(-1, 1, 11)
@@ -193,8 +193,8 @@ class TestChirp(TestCase):
         float_result = waveforms.chirp(t, f0, t1, f1)
         f0 = 10
         int_result = waveforms.chirp(t, f0, t1, f1)
-        err_msg = "Integer input 'f0=10' gives wrong result" 
-        assert_equal(int_result, float_result, err_msg=err_msg) 
+        err_msg = "Integer input 'f0=10' gives wrong result"
+        assert_equal(int_result, float_result, err_msg=err_msg)
 
     def test_integer_f1(self):
         f0 = 10.0
@@ -204,8 +204,8 @@ class TestChirp(TestCase):
         float_result = waveforms.chirp(t, f0, t1, f1)
         f1 = 20
         int_result = waveforms.chirp(t, f0, t1, f1)
-        err_msg = "Integer input 'f1=20' gives wrong result" 
-        assert_equal(int_result, float_result, err_msg=err_msg) 
+        err_msg = "Integer input 'f1=20' gives wrong result"
+        assert_equal(int_result, float_result, err_msg=err_msg)
 
     def test_integer_all(self):
         f0 = 10
@@ -214,8 +214,8 @@ class TestChirp(TestCase):
         t = np.linspace(-1, 1, 11)
         float_result = waveforms.chirp(t, float(f0), float(t1), float(f1))
         int_result = waveforms.chirp(t, f0, t1, f1)
-        err_msg = "Integer input 'f0=10, t1=3, f1=20' gives wrong result" 
-        assert_equal(int_result, float_result, err_msg=err_msg) 
+        err_msg = "Integer input 'f0=10, t1=3, f1=20' gives wrong result"
+        assert_equal(int_result, float_result, err_msg=err_msg)
 
 class TestSweepPoly(TestCase):
 
@@ -286,7 +286,7 @@ class TestSweepPoly(TestCase):
 
 
 class TestGaussPulse(TestCase):
-    
+
     def test_integer_fc(self):
         float_result = waveforms.gausspulse('cutoff', fc=1000.0)
         int_result = waveforms.gausspulse('cutoff', fc=1000)

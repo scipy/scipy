@@ -217,7 +217,7 @@ class netcdf_file(object):
         """Closes the NetCDF file."""
         if not self.fp.closed:
             try:
-               self.flush()
+                self.flush()
             finally:
                 self.fp.close()
     __del__ = close

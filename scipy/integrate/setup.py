@@ -35,7 +35,7 @@ def configuration(parent_package='',top_path=None):
                          depends=['quadpack.h','__quadpack.h'])
     # odepack
     libs = ['odepack','linpack_lite','mach']
-    
+
 
     # Remove libraries key from blas_opt
     if 'libraries' in blas_opt:    # key doesn't exist on OS X ...

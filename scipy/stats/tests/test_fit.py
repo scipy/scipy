@@ -32,23 +32,23 @@ def _est_cont_fit():
         yield check_cont_fit, distname,arg
 
 
-def check_cont_fit(distname,arg):        
+def check_cont_fit(distname,arg):
     distfn = getattr(stats, distname)
     rvs = distfn.rvs(size=n_repl1,*arg)
     est = distfn.fit(rvs)  #,*arg) # start with default values
 
     truearg = np.hstack([arg,[0.0,1.0]])
     diff = est-truearg
-        
+
     txt = ''
     diffthreshold = np.max(np.vstack([truearg*thresh_percent,
                     np.ones(distfn.numargs+2)*thresh_min]),0)
     # threshold for location
     diffthreshold[-2] = np.max([np.abs(rvs.mean())*thresh_percent,thresh_min])
-    
+
     if np.any(np.isnan(est)):
         raise AssertionError('nan returned in fit')
-    else:  
+    else:
         if np.any((np.abs(diff) - diffthreshold) > 0.0):
 ##            txt = 'WARNING - diff too large with small sample'
 ##            print 'parameter diff =', diff - diffthreshold, txt
@@ -61,7 +61,7 @@ def check_cont_fit(distname,arg):
                 txt += 'estimated: %s\n' % str(est)
                 txt += 'diff     : %s\n' % str(diff)
                 raise AssertionError('fit not very good in %s\n' % distfn.name + txt)
-                
+
 
 
 if __name__ == "__main__":

@@ -82,18 +82,18 @@ class VarHeader4(object):
         self.mclass = mclass
         self.dims = dims
         self.is_complex = is_complex
-    
+
 
 class VarReader4(object):
     ''' Class to read matlab 4 variables '''
-    
+
     def __init__(self, file_reader):
         self.file_reader = file_reader
         self.mat_stream = file_reader.mat_stream
         self.dtypes = file_reader.dtypes
         self.chars_as_strings = file_reader.chars_as_strings
         self.squeeze_me = file_reader.squeeze_me
-        
+
     def read_header(self):
         ''' Reads and return header for variable '''
         data = read_dtype(self.mat_stream, self.dtypes['header'])
@@ -115,7 +115,7 @@ class VarReader4(object):
             T,
             dims,
             is_complex)
-        
+
     def array_from_header(self, hdr, process=True):
         mclass = hdr.mclass
         if mclass == mxFULL_CLASS:
@@ -132,7 +132,7 @@ class VarReader4(object):
         if process and self.squeeze_me:
             return squeeze_element(arr)
         return arr
-    
+
     def read_sub_array(self, hdr, copy=True):
         ''' Mat4 read always uses header dtype and dims
         hdr : object
@@ -220,7 +220,7 @@ class MatFile4Reader(MatFileReader):
         '''
         super(MatFile4Reader, self).__init__(mat_stream, *args, **kwargs)
         self._matrix_reader = None
-        
+
     def guess_byte_order(self):
         self.mat_stream.seek(0)
         mopt = read_dtype(self.mat_stream, np.dtype('i4'))
@@ -236,7 +236,7 @@ class MatFile4Reader(MatFileReader):
         '''
         self.dtypes = convert_dtypes(mdtypes_template, self.byte_order)
         self._matrix_reader = VarReader4(self)
-    
+
     def read_var_header(self):
         ''' Read header, return header, next position
 
@@ -261,7 +261,7 @@ class MatFile4Reader(MatFileReader):
             remaining_bytes *= 2
         next_position = self.mat_stream.tell() + remaining_bytes
         return hdr, next_position
-    
+
     def read_var_array(self, header, process=True):
         ''' Read array, given `header`
 
@@ -271,13 +271,13 @@ class MatFile4Reader(MatFileReader):
            object with fields defining variable header
         process : {True, False} bool, optional
            If True, apply recursive post-processing during loading of
-           array. 
-        
+           array.
+
         Returns
         -------
         arr : array
            array with post-processing applied or not according to
-           `process`. 
+           `process`.
         '''
         return self._matrix_reader.array_from_header(header, process)
 
@@ -451,7 +451,7 @@ class VarWriter4(object):
 
     def write_sparse(self, arr, name):
         ''' Sparse matrices are 2D
-        
+
         See docstring for VarReader4.read_sparse_array
         '''
         A = arr.tocoo() #convert to sparse COO format (ijv)

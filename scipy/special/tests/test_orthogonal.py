@@ -258,4 +258,3 @@ class TestCall(object):
                 assert_almost_equal(p(0.315), np.poly1d(p)(0.315), err_msg=pstr)
         finally:
             np.seterr(**olderr)
-

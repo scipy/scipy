@@ -100,13 +100,13 @@ class TestTriu(TestCase):
 
 
 class TestToeplitz(TestCase):
-    
+
     def test_basic(self):
         y = toeplitz([1,2,3])
         assert_array_equal(y,[[1,2,3],[2,1,2],[3,2,1]])
         y = toeplitz([1,2,3],[1,4,5])
         assert_array_equal(y,[[1,4,5],[2,1,4],[3,2,1]])
-        
+
     def test_complex_01(self):
         data = (1.0 + arange(3.0)) * (1.0 + 1.0j)
         x = copy(data)
@@ -124,7 +124,7 @@ class TestToeplitz(TestCase):
         assert_array_equal(t, [[10]])
         t = toeplitz(10, 20)
         assert_array_equal(t, [[10]])
-        
+
     def test_scalar_01(self):
         c = array([1,2,3])
         t = toeplitz(c, 1)
@@ -170,7 +170,7 @@ class TestHadamard(TestCase):
         y = hadamard(2, dtype=float)
         assert_array_equal(y, [[1.0, 1.0], [1.0, -1.0]])
 
-        y = hadamard(4)        
+        y = hadamard(4)
         assert_array_equal(y, [[1,1,1,1], [1,-1,1,-1], [1,1,-1,-1], [1,-1,-1,1]])
 
         assert_raises(ValueError, hadamard, 0)
@@ -180,7 +180,7 @@ class TestHadamard(TestCase):
 class TestLeslie(TestCase):
 
     def test_bad_shapes(self):
-        assert_raises(ValueError, leslie, [[1,1],[2,2]], [3,4,5])        
+        assert_raises(ValueError, leslie, [[1,1],[2,2]], [3,4,5])
         assert_raises(ValueError, leslie, [3,4,5], [[1,1],[2,2]])
         assert_raises(ValueError, leslie, [1,2], [1,2])
         assert_raises(ValueError, leslie, [1], [])
@@ -197,7 +197,7 @@ class TestLeslie(TestCase):
 class TestCompanion(TestCase):
 
     def test_bad_shapes(self):
-        assert_raises(ValueError, companion, [[1,1],[2,2]])        
+        assert_raises(ValueError, companion, [[1,1],[2,2]])
         assert_raises(ValueError, companion, [0,4,5])
         assert_raises(ValueError, companion, [1])
         assert_raises(ValueError, companion, [])
@@ -232,12 +232,12 @@ class TestBlockDiag:
 
         x = block_diag([[True]])
         assert_equal(x.dtype, bool)
-        
+
     def test_scalar_and_1d_args(self):
         a = block_diag(1)
         assert_equal(a.shape, (1,1))
         assert_array_equal(a, [[1]])
-        
+
         a = block_diag([2,3], 4)
         assert_array_equal(a, [[2, 3, 0], [0, 0, 4]])
 
@@ -277,7 +277,7 @@ class TestHilbert(TestCase):
         assert_array_almost_equal(hilbert(3), h3)
 
         assert_array_equal(hilbert(1), [[1.0]])
-        
+
         h0 = hilbert(0)
         assert_equal(h0.shape, (0,0))
 

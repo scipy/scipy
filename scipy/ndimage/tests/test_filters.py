@@ -52,4 +52,3 @@ def test_valid_origins():
         # Just check this raises an error instead of silently accepting or
         # segfaulting.
         assert_raises(ValueError, filter, data, 3, origin=2)
-
