@@ -67,7 +67,7 @@ except AttributeError:
 
 
 def dia_matvec(*args):
-   """
+    """
     dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets,
         signed char diags, signed char Xx, signed char Yx)
     dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets,
