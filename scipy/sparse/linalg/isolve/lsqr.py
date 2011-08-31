@@ -126,7 +126,7 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     Parameters
     ----------
     A : {sparse matrix, ndarray, LinearOperatorLinear}
-        Representation of an mxn matrix.  It is required that
+        Representation of an m-by-n matrix.  It is required that
         the linear operator can produce ``Ax`` and ``A^T x``.
     b : (m,) ndarray
         Right-hand side vector ``b``.

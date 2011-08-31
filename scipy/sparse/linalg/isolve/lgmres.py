@@ -3,7 +3,6 @@
 
 import numpy as np
 from scipy.linalg import get_blas_funcs
-from iterative import set_docstring
 from utils import make_system
 
 __all__ = ['lgmres']
@@ -25,7 +24,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     Parameters
     ----------
     A : {sparse matrix, dense matrix, LinearOperator}
-        The N-by-N matrix of the linear system.
+        The real or complex N-by-N matrix of the linear system.
     b : {array, matrix}
         Right hand side of the linear system. Has shape (N,) or (N,1).
     x0  : {array, matrix}
