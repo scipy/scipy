@@ -108,6 +108,9 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     LinAlgError
         If a is singular
 
+    Notes
+    -----
+    .. versionadded:: 0.9.0
     """
 
     a1, b1 = map(np.asarray_chkfinite,(a,b))
