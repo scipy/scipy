@@ -1,0 +1,14 @@
+HookFile: bscript
+
+Library:
+    Extension: _iterative
+        Sources:
+            iterative/BiCGREVCOM.f.src,
+            iterative/BiCGSTABREVCOM.f.src,
+            iterative/CGREVCOM.f.src,
+            iterative/CGSREVCOM.f.src,
+            iterative/GMRESREVCOM.f.src,
+            iterative/QMRREVCOM.f.src,
+            iterative/STOPTEST2.f.src,
+            iterative/getbreak.f.src,
+            iterative/_iterative.pyf.src

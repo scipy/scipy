@@ -1,0 +1,24 @@
+HookFile: bscript
+
+Library:
+    Extension: fblas
+        Sources:
+            fblas.pyf.src,
+            src/fblaswrap.f
+    Extension: cblas
+        Sources:
+            generic_cblas.pyf
+    Extension: flapack
+        Sources:
+            generic_flapack.pyf
+    Extension: clapack
+        Sources:
+            generic_clapack.pyf
+    Extension: _flinalg
+        Sources:
+            src/det.f, src/lu.f
+    Extension: calc_lwork
+        Sources:
+            src/calc_lwork.f
+    Extension: atlas_version
+        Sources: atlas_version.c

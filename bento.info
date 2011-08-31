@@ -1,0 +1,83 @@
+Name: scipy
+Version: 0.10.0
+Summary: SciPy: Scientific Library for Python
+Url: http://www.scipy.org
+DownloadUrl: http://sourceforge.net/project/showfiles.php?group_id=27747&package_id=19531
+Description:
+    SciPy (pronounced "Sigh Pie") is open-source software for mathematics,
+    science, and engineering. The SciPy library depends on NumPy, which
+    provides convenient and fast N-dimensional array manipulation. The SciPy
+    library is built to work with NumPy arrays, and provides many user-friendly
+    and efficient numerical routines such as routines for numerical integration
+    and optimization.  Together, they run on all popular operating systems, are
+    quick to install, and are free of charge.  NumPy and SciPy are easy to use,
+    but powerful enough to be depended upon by some of the world's leading
+    scientists and engineers. If you need to manipulate numbers on a computer
+    and display or publish the results, give SciPy a try!
+Maintainer: SciPy Developers
+MaintainerEmail: scipy-dev@scipy.org
+License: BSD
+Platforms: Windows,Linux,Solaris,Mac OS-X,Unix
+Classifiers:
+    Development Status :: 4 - Beta,
+    Intended Audience :: Science/Research,
+    Intended Audience :: Developers,
+    License :: OSI Approved,
+    Programming Language :: C,
+    Programming Language :: Python,
+    Programming Language :: Python :: 3,
+    Topic :: Software Development,
+    Topic :: Scientific/Engineering,
+    Operating System :: Microsoft :: Windows,
+    Operating System :: POSIX,
+    Operating System :: Unix,
+    Operating System :: MacOS
+
+DataFiles: tests
+    TargetDir: $sitedir/scipy
+    SourceDir: scipy
+    Files:
+        constants/tests/*.py,
+        cluster/tests/*.py,
+        cluster/tests/*.txt,
+        fftpack/tests/*.py,
+        fftpack/tests/*.npz,
+        integrate/tests/*.py,
+        interpolate/tests/*.py,
+        io/arff/tests/*.py,
+        io/matlab/tests/*.py,
+        io/tests/*.py,
+        io/tests/data/*.nc,
+        io/tests/data/*.wav,
+        io/tests/data/*.sav,
+        io/matlab/tests/data/*.txt,
+        io/matlab/tests/data/*.mat,
+        io/arff/tests/data/*.arff,
+        lib/blas/tests/*.py,
+        lib/lapack/tests/*.py,
+        linalg/tests/*.py,
+        misc/tests/*.py,
+        misc/tests/data/*.png,
+        optimize/tests/*.py,
+        signal/tests/*.py,
+        sparse/linalg/dsolve/tests/*.py,
+        sparse/linalg/dsolve/umfpack/tests/*.py,
+        sparse/linalg/eigen/arpack/tests/*.py,
+        sparse/linalg/eigen/lobpcg/tests/*.py,
+        sparse/linalg/isolve/tests/*.py,
+        sparse/linalg/tests/*.py,
+        sparse/tests/*.py,
+        spatial/tests/*.py,
+        spatial/tests/*.txt,
+        special/tests/*.py,
+        special/tests/*.dat,
+        special/tests/data/*.npz,
+        stats/tests/*.py
+
+Recurse: scipy
+
+HookFile: bscript
+
+Library:
+    Packages:
+        scipy

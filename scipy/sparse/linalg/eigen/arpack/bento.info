@@ -1,0 +1,10 @@
+HookFile: bscript
+
+Library:
+    CompiledLibrary: arpack
+        Sources: 
+            ARPACK/SRC/*.f,
+            ARPACK/UTIL/*.f,
+            ARPACK/LAPACK/*.f
+    Extension: _arpack
+        Sources: arpack.pyf.src

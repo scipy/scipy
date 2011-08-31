@@ -1,0 +1,16 @@
+HookFile: bscript
+
+Library:
+    CompiledLibrary: statlibimp
+        Sources:
+            statlib/ansari.f,
+            statlib/spearman.f,
+            statlib/swilk.f
+    Extension: statlib
+        Sources: statlib.pyf
+    Extension: futil
+        Sources: futil.f
+    Extension: mvn
+        Sources: mvn.pyf, mvndst.f
+    Extension: vonmises_cython
+        Sources: vonmises_cython.c

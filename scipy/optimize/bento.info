@@ -1,0 +1,40 @@
+HookFile: bscript
+
+Library:
+    CompiledLibrary: minpack
+        Sources:
+            minpack/*.f
+    CompiledLibrary: rootfind
+        Sources:
+            Zeros/bisect.c,
+            Zeros/brenth.c,
+            Zeros/brentq.c,
+            Zeros/ridder.c
+    Extension: _minpack
+        Sources: _minpackmodule.c
+    Extension: _zeros
+        Sources: zeros.c
+    Extension: _lbfgsb
+        Sources: lbfgsb/lbfgsb.pyf, lbfgsb/routines.f
+    Extension: _cobyla
+        Sources:
+            cobyla/cobyla2.f,
+            cobyla/trstlp.f,
+            cobyla/cobyla.pyf
+    Extension: minpack2
+        Sources:
+            minpack2/dcsrch.f,
+            minpack2/dcstep.f,
+            minpack2/minpack2.pyf
+    Extension: _nnls
+        Sources:
+            nnls/nnls.f,
+            nnls/nnls.pyf
+    Extension: moduleTNC
+        Sources:
+            tnc/moduleTNC.c,
+            tnc/tnc.c
+    Extension: _slsqp
+        Sources:
+            slsqp/slsqp_optmz.f,
+            slsqp/slsqp.pyf

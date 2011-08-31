@@ -1,0 +1,305 @@
+import os
+import sys
+import os.path as op
+
+from numpy.distutils.misc_util \
+    import \
+        get_numpy_include_dirs, get_pkg_info
+from numpy.distutils.conv_template \
+    import \
+        process_str as process_c_str
+from numpy.distutils.from_template \
+    import \
+        process_str as process_f_str, resolve_includes
+
+from bento.commands import hooks
+from bento.commands.extras.waf \
+    import \
+        ConfigureWafContext, BuildWafContext, register_options
+from bento.installed_package_description \
+    import \
+        InstalledSection
+
+import waflib
+from waflib import Options
+
+# FIXME: add this to numpy so that we can reuse it
+class CTemplateTask(waflib.Task.Task):
+    color = 'BLUE'
+    #ext_out = ['.c', '.pyf']
+    def run(self):
+        s = self.inputs[0]
+        cnt = s.read()
+        writestr = process_c_str(cnt)
+        o = self.outputs[0]
+        o.write(writestr)
+
+class FTemplateTask(waflib.Task.Task):
+    color = 'BLUE'
+    ext_out = ['.pyf']
+    def run(self):
+        s = self.inputs[0]
+        lines = resolve_includes(s.abspath())
+        writestr = process_f_str("".join(lines))
+        o = self.outputs[0]
+        o.write(writestr)
+        return 0
+
+@waflib.TaskGen.extension(".src")
+def c_template(self, node):
+    output_name = node.name.rsplit(".", 1)[0]
+    output = node.parent.find_or_declare(output_name)
+    assert output.is_bld()
+
+    ext = output.name.rsplit(".")[1]
+    if ext in ["f", "pyf", "ipyf"]:
+        tsk = self.create_task('FTemplateTask', node, output)
+        if "fc" in self.features:
+            self.source.append(output)
+        else:
+            raise ValueError("FTemplateTask without feature 'fc' ?")
+    elif ext in ["c"]:
+        tsk = self.create_task('CTemplateTask', node, output)
+        if "c" in self.features:
+            self.source.append(output)
+        else:
+            raise ValueError("FTemplateTask without feature 'c' ?")
+    else:
+        raise ValueError("Unknown extension in templating: %r" % ext)
+
+# FIXME: abstract those module gen tasks...
+class write_module(waflib.Task.Task):
+    color = "CYAN"
+    vars = ["CONTENT"]
+    def run(self):
+        # FIXME: put actual data here
+        self.outputs[0].write(self.env.CONTENT)
+
+@waflib.TaskGen.feature("gen_pymodule")
+def process_write_config(self):
+    if not hasattr(self, "content"):
+        raise ValueError("task gen %r expects a 'content' argument" % self.name)
+    else:
+        self.env.CONTENT = self.content
+    output = self.path.find_or_declare(self.target)
+    name = getattr(self, "name", None) or self.target
+
+    bento_context = self.bld.bento_context
+    b_output = bento_context.build_node.make_node(output.bldpath())
+    bento_context.outputs_registry.register_outputs(
+        "gen_pymodule", name, [b_output], bento_context.build_node, "$sitedir")
+
+    tsk = self.create_task("write_module")
+    tsk.set_outputs(output)
+    return tsk
+
+@hooks.startup
+def startup(context):
+    context.register_context("configure", ConfigureWafContext)
+    context.register_context("build", BuildWafContext)
+
+@hooks.options
+def options(context):
+    register_options(context)
+
+@hooks.pre_configure
+def pre_configure(context):
+    opts = context.waf_options_context
+    conf = context.waf_context
+
+    opts.load("compiler_cxx")
+    opts.load("compiler_fc")
+    opts.load("f2py")
+    Options.options.check_fc = "gfortran"
+    Options.options.check_cxx_compiler = "g++"
+    if sys.platform == "win32" and conf.env.CC_NAME == "msvc":
+        Options.options.check_fc = "ifort"
+        Options.options.check_cxx_compiler = "msvc"
+
+    conf.load("compiler_cxx")
+    conf.load("compiler_fc")
+    conf.load("f2py")
+
+    if conf.env.CC_NAME == 'gcc':
+        conf.env.append_value('CFLAGS_PYEXT', "-Wfatal-errors")
+        conf.env.append_value('CXXFLAGS_PYEXT', "-Wfatal-errors")
+
+    if sys.platform == "darwin":
+        # FIXME: fix upstream waf tool to work on mac os X
+        for flag in [conf.env.CFLAGS_PYEXT, conf.env.LINKFLAGS_PYEXT,
+                     conf.env.CXXFLAGS_PYEXT, conf.env.FCFLAGS]:
+            remove_flag_prevalue("ppc", flag)
+        conf.env.append_value('FCFLAGS', ['-arch', 'i386'])
+        conf.env.append_value('CFLAGS', ['-arch', 'i386'])
+        conf.env["MACOSX_DEPLOYMENT_TARGET"] = "10.4"
+
+    conf.check_fortran_verbose_flag()
+    conf.check_fortran_clib()
+    conf.check_fortran_dummy_main()
+    u, du, c = conf.check_fortran_mangling()
+    _set_mangling_var(conf, u, du, c)
+
+def _set_mangling_var(conf, u, du, case, f2pycompat=True):
+    env = conf.env
+    macros = []
+
+    if du == '_':
+        env['F77_UNDERSCORE_G77'] = 1
+        macros.append('F77_UNDERSCORE_G77')
+        if f2pycompat:
+            macros.append('UNDERSCORE_G77')
+    else:
+        env['F77_UNDERSCORE_G77'] = 0
+
+    if u == '_':
+        env['F77_NO_APPEND_FORTRAN'] = 0
+    else:
+        env['F77_NO_APPEND_FORTRAN'] = 1
+        macros.append('F77_NO_APPEND_FORTRAN')
+        if f2pycompat:
+            macros.append('NO_APPEND_FORTRAN')
+
+    if case == 'upper':
+        env['F77_UPPERCASE_FORTRAN'] = 1
+        macros.append('F77_UPPERCASE_FORTRAN')
+        if f2pycompat:
+            macros.append('UPPERCASE_FORTRAN')
+    else:
+        env['F77_UPPERCASE_FORTRAN'] = 0
+
+    env.DEFINES.extend(macros)
+
+def remove_flag(name, flag):
+    while True:
+        if name in flag:
+            i = flag.index(name)
+            flag.pop(i)
+        else:
+            break
+
+def remove_flag_postvalue(name, flag):
+    while True:
+        if name in flag:
+            i = flag.index(name)
+            flag.pop(i)
+            flag.pop(i)
+        else:
+            break
+
+def remove_flag_prevalue(name, flag):
+    while True:
+        if name in flag:
+            i = flag.index(name)
+            flag.pop(i-1)
+            flag.pop(i-1)
+        else:
+            break
+
+@hooks.post_configure
+def post_configure(context):
+    conf = context.waf_context
+
+    conf.env.INCLUDES = get_numpy_include_dirs()
+
+    conf.env.HAS_FBLAS = False
+    conf.env.HAS_CBLAS = False
+    conf.env.HAS_FLAPACK = False
+    conf.env.HAS_CLAPACK = False
+    conf.env.HAS_ATLAS = False
+
+    if sys.platform == "win32":
+        mkl_libs = "mkl_lapack95,mkl_blas95,mkl_intel_c,mkl_intel_thread,mkl_core,libiomp5md".split(",")
+        mkl_base = r"C:\Program Files\Intel\Compiler\11.1\051"
+        conf.env.INCLUDES.append("%s\mkl\include" % mkl_base)
+        conf.env.LIBPATH.extend(["%s\mkl\ia32\lib" % mkl_base,
+                                 "%s\lib\ia32" % mkl_base])
+
+        try:
+            conf.check_cc(lib=mkl_libs, msg="Checking for MKL (CBLAS)",
+                          uselib_store="CBLAS")
+            conf.env.HAS_CBLAS = True
+
+            conf.check_cc(lib=mkl_libs, msg="Checking for MKL (FLAPACK)",
+                          uselib_store="FLAPACK")
+            conf.env.HAS_FLAPACK = True
+
+            conf.check_cc(lib=mkl_libs, msg="Checking for MKL (FBLAS)",
+                          uselib_store="FBLAS")
+            conf.env.HAS_FBLAS = True
+
+        except waflib.Errors.ConfigurationError:
+            pass
+        conf.env['FCFLAGS'] = []
+        conf.env['FCFLAGS'].extend(['/MD'])
+    elif sys.platform == "darwin":
+        try:
+            conf.check(framework="Accelerate", msg="Checking for framework Accelerate", uselib_store="CBLAS")
+            conf.env.HAS_CBLAS = True
+
+            conf.check(framework="Accelerate", msg="Checking for framework Accelerate", uselib_store="FLAPACK")
+            conf.env.HAS_FLAPACK = True
+
+            conf.check(framework="Accelerate", msg="Checking for framework Accelerate", uselib_store="FBLAS")
+            conf.env.HAS_FBLAS = True
+
+        except waflib.Errors.ConfigurationError:
+            pass
+        # FIXME: bug in waf ?
+        conf.env.FRAMEWORK_ST = ["-framework"]
+    else:
+        try:
+            conf.check_cc(lib=["f77blas", "cblas", "atlas"], uselib_store="FBLAS")
+            conf.env.HAS_FBLAS = True
+
+            conf.check_cc(lib=["cblas", "atlas"], uselib_store="CBLAS")
+            conf.env.HAS_CBLAS = True
+
+            conf.check_cc(lib=["lapack", "f77blas", "cblas", "atlas"], uselib_store="FLAPACK")
+            conf.env.HAS_FLAPACK = True
+
+            conf.check_cc(lib=["lapack", "f77blas", "cblas", "atlas"], uselib_store="CLAPACK")
+
+            conf.env.HAS_CLAPACK = True
+        except waflib.Errors.ConfigurationError:
+            pass
+
+        # FIXME: waf bug ? Did not find a way to compile both fortran and c
+        # files with -fPIC
+        fcflags = conf.env.FCFLAGS
+        fcflags.extend(["-fPIC"])
+        conf.env.FCFLAGS = fcflags
+
+        conf.env.CFLAGS_cstlib = ["-fPIC"]
+        conf.env.FCFLAGS_cstlib = ["-fPIC"]
+
+    if not (conf.env.HAS_FBLAS and conf.env.HAS_FLAPACK):
+        raise waflib.Errors.ConfigurationError("You need blas and lapack")
+
+    npymath_info = get_pkg_info("npymath")
+    conf.parse_flags(npymath_info.cflags() + " " + npymath_info.libs(), "NPYMATH")
+
+@hooks.pre_build
+def pre_build(context):
+    bld = context.waf_context
+
+    def iregistrer(category, name, nodes, from_node, target_dir):
+        source_dir = op.join("$_srcrootdir", from_node.bldpath())
+        files = [n.path_from(from_node) for n in nodes]
+        return InstalledSection.from_source_target_directories(category, name, source_dir, target_dir, files)
+    context.isection_registry.register_category("gen_pymodule", iregistrer)
+    context.outputs_registry.register_category("gen_pymodule", "pythonfiles")
+    bld(features="gen_pymodule",
+        target="scipy/__config__.py",
+        content="""\
+def show():
+    pass
+""",
+        always=True)
+    bld(features="gen_pymodule",
+        target="scipy/version.py",
+        content="""\
+version = '0.9.0'
+short_version = version
+is_released = True
+""",
+        always=True)

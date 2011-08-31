@@ -1,0 +1,10 @@
+HookFile: bscript
+
+Library:
+    Extension: fblas
+        Sources:
+            fblaswrap.f.src,
+            fblas.pyf.src
+    Extension: cblas
+        Sources:
+            cblas.pyf.src

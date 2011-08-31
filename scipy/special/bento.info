@@ -1,0 +1,46 @@
+HookFile: bscript
+
+Library:
+    CompiledLibrary: sc_c_misc
+        Sources:
+            c_misc/besselpoly.c,
+            c_misc/fsolve.c,
+            c_misc/gammaincinv.c
+    CompiledLibrary: sc_cephes
+        Sources:
+            cephes/*.c
+    CompiledLibrary: sc_mach
+        Sources:
+            mach/d1mach.f,
+            mach/i1mach.f,
+            mach/r1mach.f,
+            mach/xerror.f
+    CompiledLibrary: sc_toms
+        Sources:
+            toms/wofz.f
+    CompiledLibrary: sc_amos
+        Sources:
+            amos/*.f
+    CompiledLibrary: sc_cdf
+        Sources:
+            cdflib/*.f
+    CompiledLibrary: sc_specfunlib
+        Sources:
+            specfun/specfun.f
+    Extension: orthogonal_eval
+        Sources:
+            orthogonal_eval.c
+    Extension: lambertw
+        Sources:
+            lambertw.c
+    Extension: _cephes
+        Sources:
+            _cephesmodule.c,
+            amos_wrappers.c,
+            specfun_wrappers.c,
+            toms_wrappers.c,
+            cdf_wrappers.c,
+            ufunc_extras.c
+    Extension: specfun
+         Sources:
+            specfun.pyf

@@ -1,0 +1,21 @@
+HookFile: bscript
+
+Library:
+    CompiledLibrary: fftpack
+        Sources: 
+            src/fftpack/*.f
+    CompiledLibrary: dfftpack
+        Sources: 
+            src/dfftpack/*.f
+    Extension: _fftpack
+        Sources:
+            src/zfft.c,
+            src/drfft.c,
+            src/zrfft.c,
+            src/zfftnd.c,
+            fftpack.pyf,
+            src/dct.c.src
+    Extension: convolve
+        Sources:
+            src/convolve.c,
+            convolve.pyf

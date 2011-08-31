@@ -1,0 +1,14 @@
+HookFile: bscript
+
+Recurse: umfpack
+
+Library:
+    Packages: umfpack
+    CompiledLibrary: superlu_src
+        Sources:
+            SuperLU/SRC/*.c
+    Extension: _superlu
+        Sources:
+            _superlu_utils.c,
+            _superluobject.c,
+            _superlumodule.c

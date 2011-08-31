@@ -1,0 +1,11 @@
+HookFile: bscript
+
+Library:
+    Extension: flapack
+        Sources: flapack.pyf.src
+    Extension: clapack
+        Sources: clapack.pyf.src
+    Extension: calc_lwork
+        Sources: calc_lwork.f
+    Extension: atlas_version
+        Sources: atlas_version.c

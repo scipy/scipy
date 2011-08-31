@@ -1,0 +1,38 @@
+HookFile: bscript
+
+Library:
+    CompiledLibrary: linpack_lite
+        Sources: 
+            linpack_lite/dgbfa.f,
+            linpack_lite/dgbsl.f,
+            linpack_lite/dgefa.f,
+            linpack_lite/dgesl.f,
+            linpack_lite/dgtsl.f,
+            linpack_lite/zgbfa.f,
+            linpack_lite/zgbsl.f,
+            linpack_lite/zgefa.f,
+            linpack_lite/zgesl.f
+    CompiledLibrary: mach
+        Sources:
+            mach/d1mach.f,
+            mach/i1mach.f,
+            mach/r1mach.f,
+            mach/xerror.f
+    CompiledLibrary: quadpack
+        Sources:
+            quadpack/*.f
+    CompiledLibrary: dop
+        Sources:
+            dop/dop853.f,
+            dop/dopri5.f
+    CompiledLibrary: odepack
+        Sources:
+            odepack/*.f
+    Extension: _quadpack
+        Sources: _quadpackmodule.c
+    Extension: _odepack
+        Sources: _odepackmodule.c
+    Extension: vode
+        Sources: vode.pyf
+    Extension: _dop
+        Sources: dop.pyf

@@ -1,0 +1,11 @@
+import sys
+
+from bento.commands import hooks
+
+@hooks.pre_build
+def pre_build(context):
+    bld = context.waf_context
+
+    def builder(extension):
+        print "UMFPACK DISABLED"
+    context.register_builder("__umfpack", builder)
