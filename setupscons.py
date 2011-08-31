@@ -21,6 +21,7 @@ DOCLINES = __doc__.split("\n")
 import os
 import sys
 
+
 CLASSIFIERS = """\
 Development Status :: 4 - Beta
 Intended Audience :: Science/Research
@@ -37,19 +38,21 @@ Operating System :: MacOS
 
 """
 
+
 # BEFORE importing distutils, remove MANIFEST. distutils doesn't properly
 # update it when the contents of directories change.
-if os.path.exists('MANIFEST'): os.remove('MANIFEST')
+if os.path.exists('MANIFEST'):
+    os.remove('MANIFEST')
 
-os.environ['NO_SCIPY_IMPORT']='SciPy/setup.py'
+os.environ['NO_SCIPY_IMPORT'] = 'SciPy/setup.py'
 
 sys.path.insert(0, os.path.dirname(__file__))
 try:
     setup_py = __import__("setup")
-    FULLVERSION = setup_py.FULLVERSION
     write_version_py = setup_py.write_version_py
 finally:
     sys.path.pop(0)
+
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -66,6 +69,7 @@ def configuration(parent_package='',top_path=None):
 
     return config
 
+
 def setup_package():
 
     from numpy.distutils.core import setup
@@ -78,7 +82,9 @@ def setup_package():
     sys.path.insert(0,os.path.join(local_path,'scipy')) # to retrive version
 
     # Rewrite the version file everytime
-    if os.path.exists('scipy/version.py'): os.remove('scipy/version.py')
+    if os.path.exists('scipy/version.py'):
+        os.remove('scipy/version.py')
+
     write_version_py()
 
     try:
@@ -99,6 +105,7 @@ def setup_package():
         os.chdir(old_path)
 
     return
+
 
 if __name__ == '__main__':
     setup_package()
