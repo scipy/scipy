@@ -12,6 +12,11 @@ __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
 # matrix construction functions
 #-----------------------------------------------------------------------------
 
+#
+# *Note*: tri{,u,l} is implemented in numpy, but an important bug was fixed in
+# 2.0.0.dev-1af2f3, the following tri{,u,l} definitions are here for backwards
+# compatibility.
+
 def tri(N, M=None, k=0, dtype=None):
     """
     Construct (N, M) matrix filled with ones at and below the k-th diagonal.
