@@ -35,7 +35,7 @@ logit_loop@c@(char **args, npy_intp *dimensions,
     for(i = 0; i < n; i++) {
         tmp = *(@type@ *)in;
         tmp /= 1-tmp;
-        *((@type@ *)out) = log@c@(tmp);
+        *((@type@ *)out) = npy_log@c@(tmp);
         
         in += in_step;
         out += out_step;
@@ -56,11 +56,11 @@ expit_loop@c@(char **args, npy_intp *dimensions,
     for(i=0; i<n; i++) {
         tmp = *(@type@ *)in;
          if( tmp>0 ){
-            tmp = exp@c@(tmp);
+            tmp = npy_exp@c@(tmp);
             *((@type@ *)out) = tmp/(1+tmp);
         }
         else{
-            *((@type@ *)out) = 1/(1+exp@c@(-tmp));
+            *((@type@ *)out) = 1/(1+npy_exp@c@(-tmp));
         }
         in += in_step;
         out += out_step;
