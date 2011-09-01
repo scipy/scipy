@@ -95,7 +95,7 @@ class TestSplu(object):
     def test_splu_basic(self):
         # Test basic splu functionality.
         n = 30
-        a = random.random((n, n))
+        a = random.random_sample((n, n))
         a[a < 0.95] = 0
         # First test with a singular matrix
         a[:, 0] = 0
@@ -114,7 +114,7 @@ class TestSplu(object):
     def test_splu_perm(self):
         # Test the permutation vectors exposed by splu.
         n = 30
-        a = random.random((n, n))
+        a = random.random_sample((n, n))
         a[a < 0.95] = 0
         # Make a diagonal dominant, to make sure it is not singular
         a += 4*eye(n)
@@ -136,7 +136,7 @@ class TestSplu(object):
     def test_lu_refcount(self):
         # Test that we are keeping track of the reference count with splu.
         n = 30
-        a = random.random((n, n))
+        a = random.random_sample((n, n))
         a[a < 0.95] = 0
         # Make a diagonal dominant, to make sure it is not singular
         a += 4*eye(n)

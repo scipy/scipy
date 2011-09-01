@@ -1187,7 +1187,7 @@ class rv_continuous(rv_generic):
     ##(return 1-d using self._size to get number)
     def _rvs(self, *args):
         ## Use basic inverse cdf algorithm for RV generation as default.
-        U = mtrand.sample(self._size)
+        U = mtrand.random_sample(self._size)
         Y = self._ppf(U,*args)
         return Y
 

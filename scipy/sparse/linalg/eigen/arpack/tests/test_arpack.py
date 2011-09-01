@@ -29,9 +29,9 @@ _atol = _rtol
 
 def generate_matrix(N, complex=False, hermitian=False,
                     pos_definite=False, sparse=False):
-    M = np.random.random((N,N))
+    M = np.random.random_sample((N,N))
     if complex:
-        M = M + 1j * np.random.random((N,N))
+        M = M + 1j * np.random.random_sample((N,N))
 
     if hermitian:
         if pos_definite:
@@ -220,7 +220,7 @@ class SymmetricParams:
                             pos_definite=True).astype('f').astype('d')
         Ac = generate_matrix(N, hermitian=True, pos_definite=True,
                              complex=True).astype('F').astype('D')
-        v0 = np.random.random(N)
+        v0 = np.random.random_sample(N)
 
         # standard symmetric problem
         SS = DictWithRepr("std-symmetric")
@@ -269,7 +269,7 @@ class NonSymmetricParams:
         M = generate_matrix(N, hermitian=True,
                             pos_definite=True).astype('f').astype('d')
         Ac = generate_matrix(N, complex=True).astype('F').astype('D')
-        v0 = np.random.random(N)
+        v0 = np.random.random_sample(N)
 
         # standard real nonsymmetric problem
         SNR = DictWithRepr("std-real-nonsym")
@@ -443,7 +443,7 @@ def test_ticket_1459_arpack_crash():
         k = 2
 
         np.random.seed(2301)
-        A = np.random.random((N, N)).astype(dtype)
+        A = np.random.random_sample((N, N)).astype(dtype)
         v0 = np.array([-0.71063568258907849895, -0.83185111795729227424,
                        -0.34365925382227402451, 0.46122533684552280420,
                        -0.58001341115969040629, -0.78844877570084292984e-01],

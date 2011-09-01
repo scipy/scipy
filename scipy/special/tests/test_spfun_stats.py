@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.testing import assert_array_equal, TestCase, run_module_suite
+from numpy.testing import assert_array_almost_equal
 
 from scipy.special import gammaln, multigammaln
 
@@ -24,7 +25,8 @@ class TestMultiGammaLn(TestCase):
         tr = multigammaln(a, d)
         assert_array_equal(tr.shape, a.shape)
         for i in range(a.size):
-            assert_array_equal(tr.ravel()[i], multigammaln(a.ravel()[i], d))
+            assert_array_almost_equal(tr.ravel()[i],
+                                      multigammaln(a.ravel()[i], d))
 
     def test_bararg(self):
         try:
