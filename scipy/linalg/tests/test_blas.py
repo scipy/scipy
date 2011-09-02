@@ -23,8 +23,8 @@ def test_get_blas_funcs():
     # fortran-ordered
     f1, f2, f3 = get_blas_funcs(
         ('axpy', 'axpy', 'axpy'),
-        (np.empty((2,2), dtype=np.complex64, order='F'),
-         np.empty((2,2), dtype=np.complex128, order='C'))
+        (np.empty((2,2), dtype=np.singlecomplex, order='F'),
+         np.empty((2,2), dtype=np.doublecomplex, order='C'))
         )
 
     # get_blas_funcs will choose libraries depending on most generic
@@ -39,14 +39,18 @@ def test_get_blas_funcs():
     assert_equal(f1.typecode, 'd')
 
     # check also dtype interface
-    f1 = get_blas_funcs('gemm', dtype=np.complex64)
+    f1 = get_blas_funcs('gemm', dtype=np.singlecomplex)
     assert_equal(f1.typecode, 'c')
     f1 = get_blas_funcs('gemm', dtype='F')
     assert_equal(f1.typecode, 'c')
 
+    # extended precision complex
+    f1 = get_blas_funcs('gemm', dtype=np.longcomplex)
+    assert_equal(f1.typecode, 'z')
+
 def test_get_blas_funcs_alias():
     # check alias for get_blas_funcs
-    f, g = get_blas_funcs(('nrm2', 'dot'), dtype=np.complex64)
+    f, g = get_blas_funcs(('nrm2', 'dot'), dtype=np.singlecomplex)
     assert f.typecode == 'c'
     assert g.typecode == 'c'
 
