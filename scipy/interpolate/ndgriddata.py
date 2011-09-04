@@ -76,15 +76,12 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan):
     points : ndarray of floats, shape (npoints, ndims)
         Data point coordinates. Can either be a ndarray of
         size (npoints, ndim), or a tuple of `ndim` arrays.
-
-        For interpolation of 1-D data, the points *must* be sorted
-        in ascending order.
     values : ndarray of float or complex, shape (npoints, ...)
         Data values.
     xi : ndarray of float, shape (..., ndim)
         Points where to interpolate data at.
 
-    method : {'linear', 'nearest', 'cubic'}
+    method : {'linear', 'nearest', 'cubic'}, optional
         Method of interpolation. One of
 
         - ``nearest``: return the value at the data point closest to
@@ -172,6 +169,10 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan):
             if len(xi) != 1:
                 raise ValueError("invalid number of dimensions in xi")
             xi, = xi
+        # Sort points/values together, necessary as input for interp1d
+        idx = np.argsort(points)
+        points = points[idx]
+        values = values[idx]
         ip = interp1d(points, values, kind=method, axis=0, bounds_error=False,
                       fill_value=fill_value)
         return ip(xi)
