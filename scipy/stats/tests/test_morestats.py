@@ -7,7 +7,7 @@ import warnings
 
 from numpy.testing import TestCase, run_module_suite, assert_array_equal, \
     assert_almost_equal, assert_array_less, assert_array_almost_equal, \
-    assert_raises
+    assert_raises, assert_
 
 import scipy.stats as stats
 
@@ -69,7 +69,7 @@ class TestAnderson(TestCase):
             A,crit,sig = stats.anderson(x2,'expon')
         finally:
             np.seterr(**olderr)
-        assert_array_less(crit[:-1], A)
+        assert_(A > crit[-1])
 
     def test_bad_arg(self):
         assert_raises(ValueError, stats.anderson, [1], dist='plate_of_shrimp')
