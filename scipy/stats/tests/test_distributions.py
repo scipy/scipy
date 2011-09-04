@@ -393,6 +393,12 @@ class TestDocstring(TestCase):
         if stats.bernoulli.__doc__ is not None:
             self.assertTrue("bernoulli" in stats.bernoulli.__doc__.lower())
 
+    def test_no_name_arg(self):
+        """If name is not given, construction shouldn't fail.  See #1508."""
+        stats.rv_continuous()
+        stats.rv_discrete()
+
+
 class TestEntropy(TestCase):
     def test_entropy_positive(self):
         """See ticket #497"""

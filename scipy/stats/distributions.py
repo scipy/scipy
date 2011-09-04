@@ -1063,6 +1063,8 @@ class rv_continuous(rv_generic):
 
         if badvalue is None:
             badvalue = nan
+        if name is None:
+            name = 'Distribution'
         self.badvalue = badvalue
         self.name = name
         self.a = a
@@ -5609,6 +5611,8 @@ class rv_discrete(rv_generic):
 
         if badvalue is None:
             badvalue = nan
+        if name is None:
+            name = 'Distribution'
         self.badvalue = badvalue
         self.a = a
         self.b = b
