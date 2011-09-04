@@ -1710,6 +1710,11 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
         Default number of samples, if those are not provided.
     full_output : bool
         If True, return the evaluation grid.
+    finish : callable, optional
+        An optimization function that is called with the result of brute force
+        minimization as initial guess.  `finish` should take the initial guess
+        as positional argument, and take take `args`, `full_output` and `disp`
+        as keyword arguments.  See Notes for more details.
 
     Returns
     -------
@@ -1725,8 +1730,10 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
 
     Notes
     -----
-    Find the minimum of a function evaluated on a grid given by
-    the tuple ranges.
+    The range is respected by the brute force minimization, but if the `finish`
+    keyword specifies another optimization function (including the default
+    `fmin`), the returned value may still be (just) outside the range.  In
+    order to ensure the range is specified, use ``finish=None``.
 
     """
     N = len(ranges)
