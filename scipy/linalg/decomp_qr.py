@@ -21,8 +21,7 @@ def safecall(f, name, *args, **kwargs):
                          % (-ret[-1], name))
     return ret[:-2]
 
-def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
-    overwrite_c=False):
+def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     """Compute QR decomposition of a matrix.
 
     Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
@@ -107,15 +106,10 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
         # 'qr' was the old default, equivalent to 'full'. Neither 'full' nor
         # 'qr' are used below, but set to 'full' anyway to be sure
         mode = 'full'
-    if (not mode in ['full', 'qr', 'r', 'economic']
-                 ) and c is None:
+    # 'raw' is used only internally by qr_multiply, not documented on purpose
+    if mode not in ['full', 'qr', 'r', 'economic', 'raw']:
         raise ValueError(
-                 "Mode argument should be one of "
-                 "['full', 'r', 'economic']")
-    if (not mode in ['left', 'right']
-                 ) and c is not None:
-        raise ValueError(
-                 "Mode argument should be one of ['left', 'right']")
+                 "Mode argument should be one of ['full', 'r', 'economic']")
 
     a1 = numpy.asarray_chkfinite(a)
     if len(a1.shape) != 2:
@@ -132,7 +126,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
         qr, tau = safecall(geqrf, "geqrf", a1, lwork=lwork,
             overwrite_a=overwrite_a)
 
-    if not mode == 'economic' or M < N:
+    if mode not in ['economic', 'raw'] or M < N:
         R = numpy.triu(qr)
     else:
         R = numpy.triu(qr[:N, :N])
@@ -143,61 +137,29 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False, c=None,
         else:
             return R
 
-    if c is None:
-        if find_best_lapack_type((a1,))[0] in ('s', 'd'):
-            gor_un_gqr, = get_lapack_funcs(('orgqr',), (qr,))
+    if mode == 'raw':
+        if pivoting:
+            return qr, tau, R, jpvt
         else:
-            gor_un_gqr, = get_lapack_funcs(('ungqr',), (qr,))
+            return qr, tau, R
 
-        if M < N:
-            Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qr[:,0:M], tau,
-                lwork=lwork, overwrite_a=1)
-        elif mode == 'economic':
-            Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qr, tau, lwork=lwork,
-                overwrite_a=1)
-        else:
-            t = qr.dtype.char
-            qqr = numpy.empty((M, M), dtype=t)
-            qqr[:, :N] = qr
-            Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qqr, tau, lwork=lwork,
-                overwrite_a=1)
+    if find_best_lapack_type((a1,))[0] in ('s', 'd'):
+        gor_un_gqr, = get_lapack_funcs(('orgqr',), (qr,))
     else:
-        c = numpy.asarray_chkfinite(c)
-        if c.ndim == 1:
-            c = c.reshape(1, len(c))
-            if mode == "left":
-                c = c.T
+        gor_un_gqr, = get_lapack_funcs(('ungqr',), (qr,))
 
-        if find_best_lapack_type((a1,))[0] in ('s', 'd'):
-            gor_un_mqr, = get_lapack_funcs(('ormqr',), (qr,))
-            trans = "T"
-        else:
-            gor_un_mqr, = get_lapack_funcs(('unmqr',), (qr,))
-            trans = "C"
-
-        qr = qr[:, :min(M, N)]
-        if M > N and mode == "left":
-            if overwrite_c:
-                cc = c
-            else:
-                cc = numpy.zeros((M, c.shape[1]), dtype=c.dtype, order="F")
-                cc[:c.shape[0], :] = c
-                overwrite_c = True
-            lr = "L"
-            trans = "N"
-        elif c.flags["C_CONTIGUOUS"] and trans == "T":
-            cc = c.T
-            lr = "R" if mode == "left" else "L"
-        else: 
-            trans = "N"
-            cc = c
-            lr = "L" if mode == "left" else "R"
-        Q, = safecall(gor_un_mqr, "gormqr/gunmqr", lr, trans, qr, tau, cc,
-            lwork=lwork, overwrite_c=overwrite_c)
-        if trans != "N":
-            Q = Q.T.conjugate()
-        if mode == "right":
-            Q = Q[:, :min(M, N)]
+    if M < N:
+        Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qr[:,0:M], tau,
+            lwork=lwork, overwrite_a=1)
+    elif mode == 'economic':
+        Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qr, tau, lwork=lwork,
+            overwrite_a=1)
+    else:
+        t = qr.dtype.char
+        qqr = numpy.empty((M, M), dtype=t)
+        qqr[:, :N] = qr
+        Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qqr, tau, lwork=lwork,
+            overwrite_a=1)
 
     if pivoting:
         return Q, R, jpvt
@@ -224,15 +186,12 @@ def qr_multiply(a, c, mode='right', pivoting=False, overwrite_a=False,
         if mode is 'right', a.shape[0].
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
-        qr decomposition. If pivoting, compute the decomposition
-        :lm:`A P = Q R` as above, but where P is chosen such that the diagonal
-        of R is non-increasing.
+        qr decomposition, see the documentation of qr.
     overwrite_a : bool, optional
         Whether data in a is overwritten (may improve performance)
     lwork : int, optional
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
-        
     overwrite_c: bool, optional
         Whether data in c is overwritten (may improve performance)
         
@@ -256,7 +215,50 @@ def qr_multiply(a, c, mode='right', pivoting=False, overwrite_a=False,
     This is an interface to the LAPACK routines dgeqrf, zgeqrf,
     dormqr, zunmqr, dgeqp3, and zgeqp3.
     """
-    return qr(a, overwrite_a, lwork, mode, pivoting, c, overwrite_c)
+    if not mode in ['left', 'right']:
+        raise ValueError("Mode argument should be one of ['left', 'right']")
+    c = numpy.asarray_chkfinite(c)
+    if c.ndim == 1:
+        c = c.reshape(1, len(c))
+        if mode == "left":
+            c = c.T
+
+    raw = qr(a, overwrite_a, lwork, "raw", pivoting)
+    Q, tau = raw[:2]
+
+    if find_best_lapack_type((Q,))[0] in ('s', 'd'):
+        gor_un_mqr, = get_lapack_funcs(('ormqr',), (Q,))
+        trans = "T"
+    else:
+        gor_un_mqr, = get_lapack_funcs(('unmqr',), (Q,))
+        trans = "C"
+
+    M, N = Q.shape
+    Q = Q[:, :min(M, N)]
+    if M > N and mode == "left":
+        if overwrite_c:
+            cc = c
+        else:
+            cc = numpy.zeros((M, c.shape[1]), dtype=c.dtype, order="F")
+            cc[:c.shape[0], :] = c
+            overwrite_c = True
+        lr = "L"
+        trans = "N"
+    elif c.flags["C_CONTIGUOUS"] and trans == "T":
+        cc = c.T
+        lr = "R" if mode == "left" else "L"
+    else: 
+        trans = "N"
+        cc = c
+        lr = "L" if mode == "left" else "R"
+    cQ, = safecall(gor_un_mqr, "gormqr/gunmqr", lr, trans, Q, tau, cc,
+            lwork=lwork, overwrite_c=overwrite_c)
+    if trans != "N":
+        cQ = cQ.T.conjugate()
+    if mode == "right":
+        cQ = cQ[:, :min(M, N)]
+
+    return (cQ,) + raw[2:]
 
 def qr_old(a, overwrite_a=False, lwork=None):
     """Compute QR decomposition of a matrix.
