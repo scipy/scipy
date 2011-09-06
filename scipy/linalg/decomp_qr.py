@@ -127,7 +127,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
         qr, tau = safecall(geqrf, "geqrf", a1, lwork=lwork,
             overwrite_a=overwrite_a)
 
-    if not mode == 'economic' or M < N:
+    if mode not in ['economic', 'raw'] or M < N:
         R = numpy.triu(qr)
     else:
         R = numpy.triu(qr[:N, :N])
