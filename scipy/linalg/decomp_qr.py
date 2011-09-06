@@ -102,10 +102,8 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     ((9, 6), (6, 6), (6,))
 
     """
-    if mode == 'qr':
-        # 'qr' was the old default, equivalent to 'full'. Neither 'full' nor
-        # 'qr' are used below, but set to 'full' anyway to be sure
-        mode = 'full'
+    # 'qr' was the old default, equivalent to 'full'. Neither 'full' nor
+    # 'qr' are used below.
     # 'raw' is used only internally by qr_multiply, not documented on purpose
     if mode not in ['full', 'qr', 'r', 'economic', 'raw']:
         raise ValueError(
@@ -129,19 +127,17 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     if mode not in ['economic', 'raw'] or M < N:
         R = numpy.triu(qr)
     else:
-        R = numpy.triu(qr[:N, :N])
+        R = numpy.triu(qr[:, :N])
+
+    if pivoting:
+        Rj = R, jpvt
+    else:
+        Rj = R,
 
     if mode == 'r':
-        if pivoting:
-            return R, jpvt
-        else:
-            return R
-
-    if mode == 'raw':
-        if pivoting:
-            return qr, tau, R, jpvt
-        else:
-            return qr, tau, R
+        return Rj
+    elif mode == 'raw':
+        return (qr, tau) + Rj
 
     if find_best_lapack_type((a1,))[0] in ('s', 'd'):
         gor_un_gqr, = get_lapack_funcs(('orgqr',), (qr,))
@@ -149,7 +145,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
         gor_un_gqr, = get_lapack_funcs(('ungqr',), (qr,))
 
     if M < N:
-        Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qr[:,0:M], tau,
+        Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qr[:, :M], tau,
             lwork=lwork, overwrite_a=1)
     elif mode == 'economic':
         Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qr, tau, lwork=lwork,
@@ -161,9 +157,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
         Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qqr, tau, lwork=lwork,
             overwrite_a=1)
 
-    if pivoting:
-        return Q, R, jpvt
-    return Q, R
+    return (Q,) + Rj
 
 def qr_multiply(a, c, mode='right', pivoting=False, overwrite_a=False,
     overwrite_c=False, lwork=None):
