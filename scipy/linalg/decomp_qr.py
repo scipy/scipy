@@ -127,7 +127,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     if mode not in ['economic', 'raw'] or M < N:
         R = numpy.triu(qr)
     else:
-        R = numpy.triu(qr[:, :N])
+        R = numpy.triu(qr[:N, :])
 
     if pivoting:
         Rj = R, jpvt
