@@ -36,7 +36,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     lwork : int, optional
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
-    mode : {'full', 'r', 'economic'} if c is None,
+    mode : {'full', 'r', 'economic'}
         Determines what information is to be returned: either both Q and R
         ('full', default), only R ('r'), both Q and R but computed in
         economy-size ('economic', see Notes).
@@ -180,15 +180,12 @@ def qr_multiply(a, c, mode='right', pivoting=False, overwrite_a=False,
         if mode is 'right', a.shape[0].
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
-        qr decomposition. If pivoting, compute the decomposition
-        :lm:`A P = Q R` as above, but where P is chosen such that the diagonal
-        of R is non-increasing.
+        qr decomposition, see the documentation of qr.
     overwrite_a : bool, optional
         Whether data in a is overwritten (may improve performance)
     lwork : int, optional
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
-        
     overwrite_c: bool, optional
         Whether data in c is overwritten (may improve performance)
         
