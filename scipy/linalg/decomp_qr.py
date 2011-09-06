@@ -212,7 +212,8 @@ def qr_multiply(a, c, mode='right', pivoting=False, overwrite_a=False,
     if not mode in ['left', 'right']:
         raise ValueError("Mode argument should be one of ['left', 'right']")
     c = numpy.asarray_chkfinite(c)
-    if c.ndim == 1:
+    onedim = c.ndim == 1
+    if onedim:
         if mode == "left":
             c = c[:, numpy.newaxis]
         else:
@@ -253,6 +254,8 @@ def qr_multiply(a, c, mode='right', pivoting=False, overwrite_a=False,
         cQ = cQ.T.conjugate()
     if mode == "right":
         cQ = cQ[:, :min(M, N)]
+    if onedim:
+        cQ = cQ.ravel()
 
     return (cQ,) + raw[2:]
 
