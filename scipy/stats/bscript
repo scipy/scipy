@@ -11,21 +11,21 @@ def pre_build(context):
     context.register_compiled_library_builder("statlibimp", builder)
 
     def builder(extension):
-        bld(features="c cloadable pyext bento f2py",
+        bld(features="c cshlib pyext bento f2py",
             source=extension.sources,
             target=extension.name,
             use="statlibimp CLIB")
     context.register_builder("statlib", builder)
 
     def builder(extension):
-        bld(features="c cloadable pyext bento f2py",
+        bld(features="c cshlib pyext bento f2py",
             source=extension.sources,
             target=extension.name,
             use="CLIB")
     context.register_builder("mvn", builder)
 
     def builder(extension):
-        bld(features="c cloadable pyext bento f2py f2py_fortran",
+        bld(features="c cshlib pyext bento f2py f2py_fortran",
             source=extension.sources,
             target=extension.name,
             use="CLIB")

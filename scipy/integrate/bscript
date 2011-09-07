@@ -15,28 +15,28 @@ def pre_build(context):
     #context.register_builder("odepack", builder)
 
     def builder(extension):
-        bld(features="c pyext bento cloadable",
+        bld(features="c pyext bento cshlib",
             source=extension.sources,
             target=extension.name,
             use="quadpack linpack_lite mach FBLAS CLIB")
     context.register_builder("_quadpack", builder)
 
     def builder(extension):
-        bld(features="c pyext bento cloadable",
+        bld(features="c pyext bento cshlib",
             source=extension.sources,
             target=extension.name,
             use="odepack linpack_lite mach FBLAS CLIB")
     context.register_builder("_odepack", builder)
 
     def builder(extension):
-        bld(features="c pyext bento cloadable f2py",
+        bld(features="c pyext bento cshlib f2py",
             source=extension.sources,
             target=extension.name,
             use="odepack linpack_lite mach FBLAS CLIB")
     context.register_builder("vode", builder)
 
     def builder(extension):
-        bld(features="c pyext bento cloadable f2py",
+        bld(features="c pyext bento cshlib f2py",
             source=extension.sources,
             target=extension.name,
             use="dop FBLAS CLIB")

@@ -5,7 +5,7 @@ def pbuild(context):
     bld = context.waf_context
 
     def builder(extension):
-        bld(features="c cloadable bento f2py pyext",
+        bld(features="c cshlib bento f2py pyext",
             source=extension.sources,
             target=extension.name,
             includes="src",

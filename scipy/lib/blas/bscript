@@ -12,7 +12,7 @@ def pre_build(context):
         if sys.platform == "darwin":
             source.pop(source.index("fblaswrap.f.src"))
             source.append("fblaswrap_veclib_c.c.src")
-        bld(features="c fc pyext bento cloadable f2py",
+        bld(features="c fc pyext bento cshlib f2py",
             source=source,
             target=extension.name,
             use="FBLAS")
@@ -20,12 +20,12 @@ def pre_build(context):
 
     def builder(extension):
         if bld.env.HAS_CBLAS:
-            bld(features="c fc pyext bento cloadable f2py",
+            bld(features="c fc pyext bento cshlib f2py",
                 source=extension.sources,
                 target=extension.name,
                 use="CBLAS")
         else:
-            bld(features="c fc pyext bento cloadable f2py",
+            bld(features="c fc pyext bento cshlib f2py",
                 source=extension.sources,
                 target=extension.name,
                 )
