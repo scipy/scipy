@@ -4,7 +4,7 @@ from bento.commands import hooks
 
 @hooks.pre_build
 def pre_build(context):
-    bld = context.waf_context
+    default_builder = context.default_builder
 
     def builder(extension):
         if sys.platform == "darwin":
@@ -17,8 +17,8 @@ def pre_build(context):
             sources.append("iterative/FWRAPPERS/veclib_cabi_c.c")
         else:
             sources.append("iterative/FWRAPPERS/dummy.f")
-        bld(features="c pyext fc bento cshlib f2py",
-            source=sources,
-            target=extension.name,
-            use="FLAPACK")
+        return default_builder(extension,
+                               features="c pyext fc bento cshlib f2py",
+                               source=sources,
+                               use="FLAPACK")
     context.register_builder("_iterative", builder)

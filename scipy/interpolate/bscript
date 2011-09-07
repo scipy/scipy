@@ -2,26 +2,19 @@ from bento.commands import hooks
 
 @hooks.pre_build
 def pre_build(context):
-    bld = context.waf_context
+    default_builder = context.default_builder
 
-    def builder(extension):
-        bld(features="c pyext bento cshlib",
-            source=extension.sources,
-            target=extension.name,
-            use="fitpack FBLAS CLIB")
-    context.register_builder("_fitpack", builder)
-    context.register_builder("interpnd", builder)
+    def builder_factory(use):
+        use = "%s FBLAS CLIB" % use
+        return lambda e: default_builder(e, use=use)
 
-    def builder(extension):
-        bld(features="c pyext bento cshlib f2py",
-            source=extension.sources,
-            target=extension.name,
-            use="fitpack FBLAS CLIB")
-    context.register_builder("dfitpack", builder)
-
-    def builder(extension):
-        bld(features="cxx pyext bento cxxshlib",
-            source=extension.sources,
-            target=extension.name,
-            use="FBLAS CLIB")
-    context.register_builder("_interpolate", builder)
+    context.register_builder("_fitpack", builder_factory("fitpack"))
+    context.register_builder("interpnd", builder_factory("fitpack"))
+    context.register_builder("dfitpack",
+                             lambda e: default_builder(e,
+                                                       use="fitpack FBLAS CLIB",
+                                                       features="c cshlib pyext bento f2py"))
+    context.register_builder("_interpolate",
+                             lambda e: default_builder(e,
+                                                       use="FBLAS CLIB",
+                                                       features="cxx cxxshlib pyext bento"))

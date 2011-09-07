@@ -2,31 +2,26 @@ from bento.commands import hooks
 
 @hooks.pre_build
 def pre_build(context):
-    bld = context.waf_context
+    default_builder = context.default_builder
 
     def builder(extension):
-        bld(features="c cstlib pyext bento",
-            source=extension.sources,
-            target=extension.name)
+        return default_builder(extension, features="c cstlib pyext bento")
     context.register_compiled_library_builder("statlibimp", builder)
 
     def builder(extension):
-        bld(features="c cshlib pyext bento f2py",
-            source=extension.sources,
-            target=extension.name,
-            use="statlibimp CLIB")
+        return default_builder(extension,
+                               features="c cshlib pyext bento f2py",
+                               use="statlibimp CLIB")
     context.register_builder("statlib", builder)
 
     def builder(extension):
-        bld(features="c cshlib pyext bento f2py",
-            source=extension.sources,
-            target=extension.name,
-            use="CLIB")
+        return default_builder(extension,
+                               features="c cshlib pyext bento f2py",
+                               use="CLIB")
     context.register_builder("mvn", builder)
 
     def builder(extension):
-        bld(features="c cshlib pyext bento f2py f2py_fortran",
-            source=extension.sources,
-            target=extension.name,
-            use="CLIB")
+        return default_builder(extension,
+                               features="c cshlib pyext bento f2py f2py_fortran",
+                               use="CLIB")
     context.register_builder("futil", builder)

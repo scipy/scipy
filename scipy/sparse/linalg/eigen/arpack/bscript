@@ -4,7 +4,7 @@ from bento.commands import hooks
 
 @hooks.pre_build
 def pre_build(context):
-    bld = context.waf_context
+    default_builder = context.default_builder
 
     def builder(extension):
         # FIXME: detect this properly
@@ -18,16 +18,15 @@ def pre_build(context):
             sources.append("ARPACK/FWRAPPERS/veclib_cabi_c.c")
         else:
             sources.append("ARPACK/FWRAPPERS/dummy.f")
-        bld(features="c fc cstlib pyext bento",
-            source=sources,
-            target=extension.name,
-            # Hack to make use of claoadable flags for static archive
-            use="cshlib")
+        return default_builder(extension,
+                               features="c fc cstlib pyext bento",
+                               source=sources,
+                               # Hack to make use of claoadable flags for static archive
+                               use="cshlib")
     context.register_compiled_library_builder("arpack", builder)
 
     def builder(extension):
-        bld(features="c fc pyext cshlib f2py bento",
-            source=extension.sources,
-            target=extension.name,
-            use="arpack FLAPACK CLIB")
+        return default_builder(extension,
+                               features="c fc pyext cshlib f2py bento",
+                               use="arpack FLAPACK CLIB")
     context.register_builder("_arpack", builder)
