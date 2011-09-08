@@ -21,10 +21,10 @@ cpdef object squeeze_element(cnp.ndarray arr):
     ``arr.item`` to return a ``mat_struct`` object from a struct array '''
     if not arr.size:
         return np.array([])
-    arr = np.squeeze(arr)
-    if not arr.shape and arr.dtype.isbuiltin: # 0d coverted to scalar
-        return arr.item()
-    return arr
+    arr2 = np.squeeze(arr)
+    if (not arr2.shape) and arr2.dtype.isbuiltin: # 0d coverted to scalar
+        return arr2.item()
+    return arr2
 
 
 cpdef cnp.ndarray chars_to_strings(in_arr):
