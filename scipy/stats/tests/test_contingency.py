@@ -50,7 +50,7 @@ def test_expected_freq():
     assert_array_almost_equal(e, correct)
 
 
-def test_chi2_contingency_trival():
+def test_chi2_contingency_trivial():
     """Some very simple tests for chi2_contingency."""
     # A trivial case
     obs = np.array([[1, 2], [1, 2]])
@@ -171,6 +171,9 @@ def test_chi2_contingency_bad_args():
     # The zeros in this will result in zeros in the array
     # of expected frequencies.
     obs = np.array([[0, 1], [0, 1]])
+    assert_raises(ValueError, chi2_contingency, obs)
+    # A degenerate case: `observed` has size 0.
+    obs = np.empty((0, 8))
     assert_raises(ValueError, chi2_contingency, obs)
 
 

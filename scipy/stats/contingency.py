@@ -216,7 +216,9 @@ def chi2_contingency(observed, correction=True):
     """
     observed = np.asarray(observed)
     if np.any(observed < 0):
-        raise ValueError("All values in `table` must be nonnegative.")
+        raise ValueError("All values in `observed` must be nonnegative.")
+    if observed.size == 0:
+        raise ValueError("No data; `observed` has size 0.")
 
     expected = expected_freq(observed)
     if np.any(expected == 0):
@@ -229,11 +231,19 @@ def chi2_contingency(observed, correction=True):
     # The degrees of freedom
     dof = expected.size - sum(expected.shape) + expected.ndim - 1
 
-    if dof == 1 and correction:
-        # Use Yates' correction for continuity.
-        chi2 = ((np.abs(observed - expected) - 0.5) ** 2 / expected).sum()
+    if dof == 0:
+        # Degenerate case; this occurs when `observed` is 1D (or, more
+        # generally, when it has only one nontrivial dimension).  In this
+        # case, we also have observed == expected, so chi2 is 0.
+        chi2 = 0.0
+        p = 1.0
     else:
-        # Regular chi-square--no correction.
-        chi2 = ((observed - expected) ** 2 / expected).sum()
-    p = special.chdtrc(dof, chi2)
+        if dof == 1 and correction:
+            # Use Yates' correction for continuity.
+            chi2 = ((np.abs(observed - expected) - 0.5) ** 2 / expected).sum()
+        else:
+            # Regular chi-square--no correction.
+            chi2 = ((observed - expected) ** 2 / expected).sum()
+        p = special.chdtrc(dof, chi2)
+
     return chi2, p, dof, expected
