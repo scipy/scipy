@@ -8,6 +8,7 @@ def pre_build(context):
         return default_builder(extension,  use="NPYMATH")
     context.register_builder("orthogonal_eval", builder)
     context.register_builder("lambertw", builder)
+    context.register_builder("_logit", builder)
 
     def builder(extension):
         return default_builder(extension,

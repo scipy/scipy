@@ -33,6 +33,9 @@ Library:
     Extension: lambertw
         Sources:
             lambertw.c
+    Extension: _logit
+        Sources:
+            _logit.c.src
     Extension: _cephes
         Sources:
             _cephesmodule.c,
