@@ -5,7 +5,7 @@
 from numpy import pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt, \
         where, mgrid, cos, sin, exp, place, seterr, issubdtype, extract, \
         complexfloating, less, vectorize, inexact, nan, zeros, sometrue
-from _cephes import ellipk, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta, \
+from _cephes import ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta, \
         hankel1, hankel2, yv, kv, gammaln, errprint, ndtri
 import types
 import specfun
@@ -850,6 +850,14 @@ def obl_cv_seq(m,n,c):
     maxL = n-m+1
     return specfun.segv(m,n,c,-1)[1][:maxL]
 
+def ellipk(m):
+    """y=ellipk(m) returns the complete integral of the first kind:
+    integral(1/sqrt(1-m*sin(t)**2),t=0..pi/2)
+
+    This function is rather imprecise around m==1. For more precision
+    around this point, use ellipkm1."""
+    return ellipkm1(1 - asarray(m))
+
 def agm(a,b):
     """Arithmetic, Geometric Mean
 
@@ -864,7 +872,5 @@ def agm(a,b):
     agm(a,a) = a
     min(a,b) < agm(a,b) < max(a,b)
     """
-    res1 = a+b+0.0
-    res2 = a-b
-    k = res2 / res1
-    return res1*pi/4/ellipk(k**2)
+    s = a + b + 0.0
+    return (pi / 4) * s / ellipkm1(4 * a * b / s ** 2)

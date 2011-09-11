@@ -5,8 +5,8 @@ from numpy import arccosh, arcsinh, arctanh
 from scipy.special import (
     erf, erfc, log1p, expm1,
     jn, jv, yn, yv, iv, kv, kn, gamma, gammaln, digamma, beta, cbrt,
-    ellipe, ellipeinc, ellipk, ellipj, erfinv, erfcinv, exp1, expi, expn,
-    zeta, gammaincinv, lpmv
+    ellipe, ellipeinc, ellipk, ellipkm1, ellipj, erfinv, erfcinv, exp1, expi,
+    expn, zeta, gammaincinv, lpmv
 )
 
 from scipy.special._testutils import FuncData
@@ -66,6 +66,7 @@ def test_boost():
         data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0j, 1),
 
         data(ellipk_, 'ellint_k_data_ipp-ellint_k_data', 0, 1),
+        data(ellipkm1, '-ellipkm1', 0, 1),
         data(ellipe_, 'ellint_e_data_ipp-ellint_e_data', 0, 1),
         data(ellipeinc_, 'ellint_e2_data_ipp-ellint_e2_data', (0,1), 2, rtol=1e-14),
 

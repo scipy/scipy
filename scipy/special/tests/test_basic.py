@@ -29,6 +29,7 @@ from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal,
         rand, dec, TestCase, run_module_suite, assert_allclose
 from scipy import special
 import scipy.special._cephes as cephes
+from scipy.special import ellipk
 
 from scipy.special._testutils import assert_tol_equal, with_special_errors
 
@@ -116,7 +117,7 @@ class TestCephes(TestCase):
     def test_ellipj(self):
         cephes.ellipj(0,1)
     def test_ellipk(self):
-        cephes.ellipk(0)#==pi/2
+        assert_allclose(ellipk(0), pi/2)
     def test_ellipkinc(self):
         assert_equal(cephes.ellipkinc(0,0),0.0)
 
@@ -2192,6 +2193,9 @@ def test_chi2c_smalldf():
 def test_chi2_inv_smalldf():
     assert_almost_equal(special.chdtri(0.6,1-0.957890536704110), 3)
 
+def test_agm_simple():
+    assert_allclose(special.agm(24, 6), 13.4581714817)
+    assert_allclose(special.agm(1e30, 1), 2.2292230559453832047768593e28)
 
 if __name__ == "__main__":
     run_module_suite()

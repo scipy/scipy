@@ -76,6 +76,7 @@ Fabian Pedregosa for linear algebra bug-fixes, new features and refactoring.
 Jake Vanderplas for wrapping ARPACK's generalized and shift-invert modes
     and improving its tests.
 Collin RM Stocks for wrapping pivoted QR decomposition.
+Martin Teichmann for improving scipy.special.ellipk & agm accuracy.
 
 Institutions
 ------------
