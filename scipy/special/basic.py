@@ -872,5 +872,5 @@ def agm(a,b):
     agm(a,a) = a
     min(a,b) < agm(a,b) < max(a,b)
     """
-    s = a + b
+    s = a + b + 0.0
     return (pi / 4) * s / ellipkm1(4 * a * b / s ** 2)
