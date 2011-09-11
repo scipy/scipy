@@ -168,10 +168,29 @@ def hilbert(x,
       y_j = sqrt(-1)*sign(j) * x_j
       y_0 = 0
 
-    Notes:
-      If sum(x,axis=0)==0 then
-        hilbert(ihilbert(x)) == x
-      For even len(x), the Nyquist mode of x is taken zero.
+    Parameters
+    ----------
+    x : array_like
+        The input array, should be periodic.
+    _cache : dict, optional
+        Dictionary that contains the kernel used to do a convolution with.
+
+    Returns
+    -------
+    y : ndarray
+        The transformed input.
+
+    Notes
+    -----
+    If ``sum(x, axis=0) == 0`` then ``hilbert(ihilbert(x)) == x``.
+
+    For even len(x), the Nyquist mode of x is taken zero.
+
+    The sign of the returned transform does not have a factor -1 that is more
+    often than not found in the definition of the Hilbert transform.  Note also
+    that ``scipy.signal.hilbert`` does have an extra -1 factor compared to this
+    function.
+
     """
     tmp = asarray(x)
     if iscomplexobj(tmp):
