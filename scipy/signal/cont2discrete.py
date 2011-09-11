@@ -6,7 +6,6 @@ Continuous to discrete transformations for state-space and transfer function.
 # March 29, 2011
 
 import numpy as np
-import numpy.linalg
 import scipy.linalg
 
 from ltisys import tf2ss, ss2tf, zpk2ss, ss2zpk
@@ -67,10 +66,12 @@ def cont2discrete(sys, dt, method="zoh", alpha=None):
 
     """
     if len(sys) == 2:
-        sysd = cont2discrete(tf2ss(sys[0], sys[1]), dt, method=method)
+        sysd = cont2discrete(tf2ss(sys[0], sys[1]), dt, method=method,
+                             alpha=alpha)
         return ss2tf(sysd[0], sysd[1], sysd[2], sysd[3]) + (dt,)
     elif len(sys) == 3:
-        sysd = cont2discrete(zpk2ss(sys[0], sys[1], sys[2]), dt, method=method)
+        sysd = cont2discrete(zpk2ss(sys[0], sys[1], sys[2]), dt, method=method,
+                             alpha=alpha)
         return ss2zpk(sysd[0], sysd[1], sysd[2], sysd[3]) + (dt,)
     elif len(sys) == 4:
         a, b, c, d = sys
@@ -80,10 +81,10 @@ def cont2discrete(sys, dt, method="zoh", alpha=None):
 
     if method == 'gbt':
         if alpha is None:
-            raise ValueError("Alpha paramter must be specified for the "
+            raise ValueError("Alpha parameter must be specified for the "
                              "generalized bilinear transform (gbt) method")
         elif alpha < 0 or alpha > 1:
-            raise ValueError("Alpha paramter must be within the interval "
+            raise ValueError("Alpha parameter must be within the interval "
                              "[0,1] for the gbt method")
 
     if method == 'gbt':
@@ -127,6 +128,6 @@ def cont2discrete(sys, dt, method="zoh", alpha=None):
         dd = d
 
     else:
-        raise ValueError("Unknown transformation method.")
+        raise ValueError("Unknown transformation method '%s'" % method)
 
     return ad, bd, cd, dd, dt

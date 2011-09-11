@@ -30,8 +30,8 @@ def dlsim(system, u, t=None, x0=None):
         assumed between given times).  If there are multiple inputs, then each
         column of the rank-2 array represents an input.
     t : array_like, optional
-        The time steps at which the input is defined and at which the output is
-        desired.
+        The time steps at which the input is defined.  If t is given, the
+        final value in t determines the number of steps returned in the output.
     x0 : arry_like, optional
         The initial conditions on the state vector (zero by default).
 
@@ -48,6 +48,21 @@ def dlsim(system, u, t=None, x0=None):
     See Also
     --------
     lsim, dstep, dimpulse, cont2discrete
+
+    Examples
+    --------
+
+    A simple integrator transfer function with a discrete time step of 1.0
+    could be implemented as:
+    
+    >>> import numpy
+    >>> import scipy.signal
+    >>> tf = ([1.0,], [1.0, -1.0], 1.0)
+    >>> t_in = [0.0, 1.0, 2.0, 3.0]
+    >>> u = numpy.asarray([0.0, 0.0, 1.0, 1.0])
+    >>> t_out, y = scipy.signal.dlsim(tf, u, t=t_in)
+    >>> y
+    array([ 0.,  0.,  0.,  1.])
 
     """
     if len(system) == 3:
@@ -85,7 +100,11 @@ def dlsim(system, u, t=None, x0=None):
     if t is None:
         u_dt = u
     else:
-        u_dt_interp = interp1d(t, u.transpose(), copy=False, bounds_error=True)
+        if len(u.shape) == 1:
+            u_dt_interp = interp1d(t, np.reshape(u,(1,len(u))), copy=False, 
+                                   bounds_error=True)
+        else:
+            u_dt_interp = interp1d(t, u.transpose(), copy=False, bounds_error=True)
         u_dt = u_dt_interp(tout).transpose()
 
     # Simulate the system
