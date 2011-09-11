@@ -114,12 +114,30 @@ good alternative for this functionality.  The ``scipy.maxentropy.logsumexp``
 function has been moved to ``scipy.misc``.
 
 
+``scipy.lib.blas``
+------------------
+
+There are similar BLAS wrappers in ``scipy.linalg`` and ``scipy.lib``.  These
+have now been consolidated as ``scipy.linalg.blas``, and ``scipy.lib.blas`` is
+deprecated.
+
+
 Removed features
 ================
 
 The deprecated name `invnorm` was removed from ``scipy.stats.distributions``,
 this distribution is available as `invgauss`.
 
+The following deprecated nonlinear solvers from ``scipy.optimize`` have been
+removed::
+
+  - ``broyden_modified`` (bad performance)
+  - ``broyden1_modified`` (bad performance)
+  - ``broyden_generalized`` (equivalent to ``anderson``)
+  - ``anderson2`` (equivalent to ``anderson``)
+  - ``broyden3`` (obsoleted by new limited-memory broyden methods)
+  - ``vackar`` (renamed to ``diagbroyden``)
+ 
 
 Other changes
 =============

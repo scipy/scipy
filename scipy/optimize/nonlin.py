@@ -123,9 +123,7 @@ from linesearch import scalar_search_wolfe1, scalar_search_armijo
 
 __all__ = [
     'broyden1', 'broyden2', 'anderson', 'linearmixing',
-    'diagbroyden', 'excitingmixing', 'newton_krylov',
-    # Deprecated functions:
-    'broyden_generalized', 'anderson2', 'broyden3']
+    'diagbroyden', 'excitingmixing', 'newton_krylov']
 
 #------------------------------------------------------------------------------
 # Utility functions
@@ -1477,36 +1475,3 @@ diagbroyden = _nonlin_wrapper('diagbroyden', DiagBroyden)
 excitingmixing = _nonlin_wrapper('excitingmixing', ExcitingMixing)
 newton_krylov = _nonlin_wrapper('newton_krylov', KrylovJacobian)
 
-
-# Deprecated functions
-
-@np.deprecate
-def broyden_generalized(*a, **kw):
-    """Use *anderson(..., w0=0)* instead"""
-    kw.setdefault('w0', 0)
-    return anderson(*a, **kw)
-
-@np.deprecate
-def broyden1_modified(*a, **kw):
-    """Use `broyden1` instead"""
-    return broyden1(*a, **kw)
-
-@np.deprecate
-def broyden_modified(*a, **kw):
-    """Use `anderson` instead"""
-    return anderson(*a, **kw)
-
-@np.deprecate
-def anderson2(*a, **kw):
-    """Use `anderson` instead"""
-    return anderson(*a, **kw)
-
-@np.deprecate
-def broyden3(*a, **kw):
-    """Use `broyden2` instead"""
-    return broyden2(*a, **kw)
-
-@np.deprecate
-def vackar(*a, **kw):
-    """Use `diagbroyden` instead"""
-    return diagbroyden(*a, **kw)
