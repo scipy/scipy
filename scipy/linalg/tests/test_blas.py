@@ -54,6 +54,10 @@ def test_get_blas_funcs_alias():
     assert f.typecode == 'c'
     assert g.typecode == 'c'
 
+    f, g, h = get_blas_funcs(('dot', 'dotc', 'dotu'), dtype=np.float64)
+    assert f is g
+    assert f is h
+
 class TestCBLAS1Simple(TestCase):
 
     def test_axpy(self):

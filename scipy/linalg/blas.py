@@ -22,7 +22,9 @@ _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z', 'G':'z'}
 # some convenience alias for complex functions
 _blas_alias = {'cnrm2' : 'scnrm2', 'znrm2' : 'dznrm2',
                'cdot' : 'cdotc', 'zdot' : 'zdotc',
-               'cger' : 'cgerc', 'zger' : 'zgerc'}
+               'cger' : 'cgerc', 'zger' : 'zgerc',
+               'sdotc': 'sdot', 'sdotu': 'sdot',
+               'ddotc': 'ddot', 'ddotu': 'ddot'}
 
 
 def get_blas_funcs(names, arrays=(), dtype=None):
