@@ -51,6 +51,9 @@ env.PrependUnique(LIBPATH = ['.'])
 # orthogonal_eval extension
 env.NumpyPythonExtension('orthogonal_eval', source = 'orthogonal_eval.c')
 
+# logit extension
+env.NumpyPythonExtension('_logit', source = '_logit.c.src')
+
 # lambertw extension
 env.NumpyPythonExtension('lambertw', source = 'lambertw.c')
 
