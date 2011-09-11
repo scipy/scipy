@@ -2192,6 +2192,9 @@ def test_chi2c_smalldf():
 def test_chi2_inv_smalldf():
     assert_almost_equal(special.chdtri(0.6,1-0.957890536704110), 3)
 
+def test_agm_simple():
+    assert_allclose(special.agm(24, 6), 13.4581714817)
+    assert_allclose(special.agm(1e30, 1), 2.2292230559453832047768593e28)
 
 if __name__ == "__main__":
     run_module_suite()
