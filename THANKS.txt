@@ -69,7 +69,7 @@ Ralf Gommers for release management, code clean up and improvements
     to doc-string generation.
 Bruce Southey for bug-fixes and improvements to scipy.stats.
 Ernest Adrogué for the Skellam distribution.
-Enzo Michelangeli a fast kendall tau test.
+Enzo Michelangeli for a fast kendall tau test.
 David Simcha for a fisher exact test.
 Warren Weckesser for bug-fixes, cleanups, and several new features.
 Fabian Pedregosa for linear algebra bug-fixes, new features and refactoring.
@@ -77,7 +77,23 @@ Jake Vanderplas for wrapping ARPACK's generalized and shift-invert modes
     and improving its tests.
 Collin RM Stocks for wrapping pivoted QR decomposition.
 Martin Teichmann for improving scipy.special.ellipk & agm accuracy.
-Chris Jordan-Squire for scipy.special.logit & expit.
+Jeff Armstrong for discrete state-space and linear time-invariant functionality
+    in scipy.signal.
+Mark Wiebe for fixing type casting after changes in Numpy.
+Andrey Smirnov for improvements to FIR filter design.
+Anthony Scopatz for help with code review and merging.
+Lars Buitinck for improvements to io.arff.
+Scott Sinclair for documentation improvements and some bug fixes.
+Gael Varoquaux for cleanups in scipy.sparse.
+Skipper Seabold for a fix to special.gammainc.
+Wes McKinney for a fix to special.gamma.
+Thouis (Ray) Jones for bug fixes in ndimage.
+Yaroslav Halchenko for a bug fix in ndimage.
+Thomas Robitaille for the IDL 'save' reader.
+Fazlul Shahriar for fixes to the NetCDF3 I/O.
+Chris Jordan-Squire for bug fixes, documentation improvements and 
+    scipy.special.logit & expit.
+
 
 Institutions
 ------------
