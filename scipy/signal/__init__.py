@@ -106,8 +106,8 @@ Matlab-style IIR filter design
    ellipord
    bessel -- Bessel (no order selection available -- try butterod)
 
-Linear Systems
-==============
+Continuous-Time Linear Systems
+==============================
 
 .. autosummary::
    :toctree: generated/
@@ -120,18 +120,25 @@ Linear Systems
    step     -- step response of continous-time LTI system.
    step2    -- like step, but `scipy.integrate.odeint` is used.
 
+Discrete-Time Linear Systems
+============================
+   dlsim    -- simulation of output to a discrete-time linear system.
+   dimpulse -- impulse response of a discrete-time LTI system.
+   dstep    -- step response of a discrete-time LTI system.
+
 LTI Representations
 ===================
 
 .. autosummary::
    :toctree: generated/
 
-   tf2zpk  -- transfer function to zero-pole-gain.
-   zpk2tf  -- zero-pole-gain to transfer function.
-   tf2ss   -- transfer function to state-space.
-   ss2tf   -- state-pace to transfer function.
-   zpk2ss  -- zero-pole-gain to state-space.
-   ss2zpk  -- state-space to pole-zero-gain.
+   tf2zpk        -- transfer function to zero-pole-gain.
+   zpk2tf        -- zero-pole-gain to transfer function.
+   tf2ss         -- transfer function to state-space.
+   ss2tf         -- state-pace to transfer function.
+   zpk2ss        -- zero-pole-gain to state-space.
+   ss2zpk        -- state-space to pole-zero-gain.
+   cont2discrete -- continuous-time to discrete-time LTI conversion.
 
 Waveforms
 =========
@@ -191,6 +198,8 @@ from waveforms import *
 from spline import *
 
 from bsplines import *
+from cont2discrete import *
+from dltisys import *
 from filter_design import *
 from fir_filter_design import *
 from ltisys import *

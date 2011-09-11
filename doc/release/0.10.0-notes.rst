@@ -46,6 +46,16 @@ The sparse eigenvalue problem solver functions
 problems, and all shift-invert modes available in ARPACK.
 
 
+Discrete-Time Linear Systems (``scipy.signal``)
+-----------------------------------------------
+
+Support for simulating discrete-time linear systems, including
+``scipy.signal.dlsim``, ``scipy.signal.dimpulse``, and ``scipy.signal.dstep``,
+has been added to SciPy.  Conversion of linear systems from continuous-time to
+discrete-time representations is also present via the
+``scipy.signal.cont2discrete`` function.
+
+
 Enhanced filtfilt function in ``scipy.signal``
 ----------------------------------------------
 
