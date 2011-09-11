@@ -1,10 +1,14 @@
 """
 Implementation of Harwell-Boeing read/write.
+
+At the moment not the full Harwell-Boeing format is supported. Supported
+features are:
+
+    - assembled, non-symmetric, real matrices
+    - integer for pointer/indices
+    - exponential format for float values, and int format
+
 """
-# Really crude at the moment:
-#   - only support for assembled, non-symmetric, real matrices
-#   - only support integer for pointer/indices
-#   - only support exponential format for float values, and int format
 
 # TODO:
 #   - Add more support (symmetric/complex matrices, non-assembled matrices ?)
@@ -14,19 +18,18 @@ Implementation of Harwell-Boeing read/write.
 # write is not efficient. Although not a terribly exciting task,
 # having reusable facilities to efficiently read/write fortran-formatted files
 # would be useful outside this module.
+
 import warnings
 
 import numpy as np
-
-from scipy.sparse \
-    import \
-        csc_matrix
-from scipy.io.harwell_boeing._fortran_format_parser \
-    import\
+from scipy.sparse import csc_matrix
+from scipy.io.harwell_boeing._fortran_format_parser import \
         FortranFormatParser, IntFormat, ExpFormat
+
 
 __all__ = ["MalformedHeader", "read_hb", "write", "HBInfo", "HBFile",
            "HBMatrixType"]
+
 
 class MalformedHeader(Exception):
     pass
@@ -34,10 +37,12 @@ class MalformedHeader(Exception):
 class LineOverflow(Warning):
     pass
 
+
 def _nbytes_full(fmt, nlines):
     """Return the number of bytes to read to get every full lines for the
     given parsed fortran format."""
     return (fmt.repeat * fmt.width + 1) * (nlines - 1)
+
 
 class HBInfo(object):
     @classmethod
@@ -291,6 +296,7 @@ class HBInfo(object):
                       (pffmt.ljust(16), iffmt.ljust(16), vffmt.ljust(20)))
         return "\n".join(header)
 
+
 def _expect_int(value, msg=None):
     try:
         return int(value)
@@ -298,6 +304,7 @@ def _expect_int(value, msg=None):
         if msg is None:
             msg = "Expected an int, got %s"
         raise ValueError(msg % value)
+
 
 def _read_hb_data(content, header):
     # XXX: look at a way to reduce memory here (big string creation)
@@ -321,6 +328,7 @@ def _read_hb_data(content, header):
                           shape=(header.nrows, header.ncols))
     except ValueError, e:
         raise e
+
 
 def _write_data(m, fid, header):
     def write_array(f, ar, nlines, fmt):
@@ -347,6 +355,7 @@ def _write_data(m, fid, header):
                 header.indices_format)
     write_array(fid, m.data, header.values_nlines,
                 header.values_format)
+
 
 class HBMatrixType(object):
     """Class to hold the matrix type."""
@@ -408,6 +417,7 @@ class HBMatrixType(object):
         return "HBMatrixType(%s, %s, %s)" % \
                (self.value_type, self.structure, self.storage)
 
+
 class HBFile(object):
     def __init__(self, file, hb_info=None):
         """Create a HBFile instance.
@@ -454,14 +464,30 @@ class HBFile(object):
     def write_matrix(self, m):
         return _write_data(m, self._fid, self._hb_info)
 
-def read(file):
+
+def hb_read(file):
     """Read HB-format file.
 
     Parameters
     ----------
     file: str-like or file-like
-        if a string-like object, file is the name of the file to read. If a
+        If a string-like object, file is the name of the file to read. If a
         file-like object, the data are read from it.
+
+    Returns
+    -------
+    data : scipy.sparse.csc_matrix instance
+        The data read from the HB file as a sparse matrix.
+
+    Notes
+    -----
+    At the moment not the full Harwell-Boeing format is supported. Supported
+    features are:
+
+        - assembled, non-symmetric, real matrices
+        - integer for pointer/indices
+        - exponential format for float values, and int format
+
     """
     def _get_matrix(fid):
         hb = HBFile(fid)
@@ -476,7 +502,8 @@ def read(file):
     else:
         return _get_matrix(file)
 
-def write(file, m, hb_info=None):
+
+def hb_write(file, m, hb_info=None):
     """Write HB-format file.
 
     Parameters
@@ -488,6 +515,20 @@ def write(file, m, hb_info=None):
         the sparse matrix to write
     hb_info: HBInfo
         contains the meta-data for write
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    At the moment not the full Harwell-Boeing format is supported. Supported
+    features are:
+
+        - assembled, non-symmetric, real matrices
+        - integer for pointer/indices
+        - exponential format for float values, and int format
+
     """
     if hb_info is None:
         hb_info = HBInfo.from_data(m)
@@ -504,3 +545,4 @@ def write(file, m, hb_info=None):
             fid.close()
     else:
         return _set_matrix(file)
+

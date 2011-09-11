@@ -12,7 +12,9 @@ import warnings
 
 import numpy as np
 
+
 __all__ = ["BadFortranFormat", "FortranFormatParser", "IntFormat", "ExpFormat"]
+
 
 TOKENS = {
     "LPAR": r"\(",
@@ -23,11 +25,14 @@ TOKENS = {
     "DOT": r"\.",
 }
 
+
 class BadFortranFormat(SyntaxError):
     pass
 
+
 def number_digits(n):
     return int(np.floor(np.log10(np.abs(n))) + 1)
+
 
 class IntFormat(object):
     @classmethod
@@ -86,6 +91,7 @@ class IntFormat(object):
     @property
     def python_format(self):
         return "%" + str(self.width) + "d"
+
 
 class ExpFormat(object):
     @classmethod
@@ -158,6 +164,7 @@ class ExpFormat(object):
     def python_format(self):
         return "%" + str(self.width-1) + "." + str(self.significand) + "E"
 
+
 class Token(object):
     def __init__(self, type, value, pos):
         self.type = type
@@ -169,6 +176,7 @@ class Token(object):
 
     def __repr__(self):
         return self.__str__()
+
 
 class Tokenizer(object):
     def __init__(self):
@@ -195,6 +203,7 @@ class Tokenizer(object):
             else:
                 raise SyntaxError("Unknown character at position %d (%s)" \
                                   % (self.curpos, self.data[curpos]))
+
 
 # Grammar for fortran format:
 # format            : LPAR format_string RPAR
@@ -300,3 +309,4 @@ class FortranFormatParser(object):
         next = tokens.pop(0)
         self._expect(next, tp)
         return next
+

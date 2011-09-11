@@ -79,9 +79,6 @@ Netcdf (:mod:`scipy.io.netcdf`)
    netcdf_variable - A data object for the netcdf module
 
 """
-from numpy import deprecate
-
-
 # matfile read and write
 from matlab import loadmat, savemat, byteordercodes
 
@@ -91,7 +88,9 @@ from netcdf import netcdf_file, netcdf_variable
 from data_store import save_as_module
 from mmio import mminfo, mmread, mmwrite
 from idl import readsav
+from harwell_boeing import hb_read, hb_write
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
 from numpy.testing import Tester
 test = Tester().test
+

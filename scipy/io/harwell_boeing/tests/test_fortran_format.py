@@ -1,12 +1,11 @@
 import numpy as np
 
-from numpy.testing \
-    import \
-        TestCase, assert_equal, assert_raises
+from numpy.testing import TestCase, assert_equal, assert_raises
 
-from scipy.io.harwell_boeing._fortran_format_parser \
-    import \
-        FortranFormatParser, IntFormat, ExpFormat, BadFortranFormat, number_digits
+from scipy.io.harwell_boeing._fortran_format_parser import \
+        FortranFormatParser, IntFormat, ExpFormat, BadFortranFormat, \
+        number_digits
+
 
 class TestFortranFormatParser(TestCase):
     def setUp(self):
@@ -71,3 +70,4 @@ class TestExpFormat(TestCase):
         r_f = [ExpFormat(24, 16, repeat=3), ExpFormat(25, 16, repeat=3)]
         for i, j in zip(f, r_f):
             assert_equal(ExpFormat.from_number(i).__dict__, j.__dict__)
+

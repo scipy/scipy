@@ -1,21 +1,17 @@
 import os
-from cStringIO \
-    import \
-        StringIO
+from cStringIO import StringIO
 import tempfile
 
 import numpy as np
 
-from numpy.testing \
-    import \
-        TestCase, assert_equal, assert_array_almost_equal_nulp
-from scipy.sparse \
-    import \
-        coo_matrix, csc_matrix, rand
+from numpy.testing import TestCase, assert_equal, \
+    assert_array_almost_equal_nulp
 
-from scipy.io.harwell_boeing \
-    import \
-        HBFile, HBInfo, read, write
+from scipy.sparse import coo_matrix, csc_matrix, rand
+
+from scipy.io import hb_read, hb_write
+from scipy.io.harwell_boeing import HBFile, HBInfo
+
 
 SIMPLE = """\
 No Title                                                                |No Key
@@ -50,7 +46,7 @@ def assert_csc_almost_equal(r, l):
 
 class TestHBReader(TestCase):
     def test_simple(self):
-        m = read(StringIO(SIMPLE))
+        m = hb_read(StringIO(SIMPLE))
         assert_csc_almost_equal(m, SIMPLE_MATRIX)
 
 class TestRBRoundtrip(TestCase):
@@ -58,10 +54,11 @@ class TestRBRoundtrip(TestCase):
         rm = rand(100, 1000, 0.05).tocsc()
         fd, filename = tempfile.mkstemp(suffix="rb")
         try:
-            write(filename, rm, HBInfo.from_data(rm))
-            m = read(filename)
+            hb_write(filename, rm, HBInfo.from_data(rm))
+            m = hb_read(filename)
         finally:
             os.close(fd)
             os.remove(filename)
 
         assert_csc_almost_equal(m, rm)
+
