@@ -21,6 +21,19 @@ This release requires Python 2.4-2.7 or 3.1- and NumPy 1.5 or greater.
 New features
 ============
 
+Bento: new optional build system
+--------------------------------
+
+Scipy can now be built with `Bento <http://cournape.github.com/Bento/>`_.
+Bento has some nice features like parallel builds and partial rebuilds, that
+are not possible with the default build system (distutils).  For usage
+instructions see BENTO_BUILD.txt in the scipy top-level directory.
+
+Currently Scipy has three build systems, distutils, numscons and bento.
+Numscons is deprecated and is planned and will likely be removed in the next
+release.
+
+
 Generalized and shift-invert eigenvalue problems in ``scipy.sparse.linalg``
 ---------------------------------------------------------------------------
 
@@ -111,6 +124,13 @@ function has been moved to ``scipy.misc``.
 There are similar BLAS wrappers in ``scipy.linalg`` and ``scipy.lib``.  These
 have now been consolidated as ``scipy.linalg.blas``, and ``scipy.lib.blas`` is
 deprecated.
+
+
+Numscons build system
+---------------------
+
+The numscons build system is being replaced by Bento, and will be removed in
+one of the next scipy releases.
 
 
 Removed features
