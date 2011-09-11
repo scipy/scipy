@@ -15,24 +15,7 @@ of bug-fixes and optimizations.  Moreover, our development attention
 will now shift to bug-fix releases on the 0.10.x branch, and on adding
 new features on the development trunk.
 
-This release requires Python 2.4 - 2.7 or 3.1 - and NumPy 1.5 or greater.
-
-Please note that SciPy is still considered to have "Beta" status, as
-we work toward a SciPy 1.0.0 release.  The 1.0.0 release will mark a
-major milestone in the development of SciPy, after which changing the
-package structure or API will be much more difficult.  Whilst these
-pre-1.0 releases are considered to have "Beta" status, we are
-committed to making them as bug-free as possible.  For example, in
-addition to fixing numerous bugs in this release, we have also doubled
-the number of unit tests since the last release.
-
-However, until the 1.0 release, we are aggressively reviewing and
-refining the functionality, organization, and interface. This is being
-done in an effort to make the package as coherent, intuitive, and
-useful as possible.  To achieve this, we need help from the community
-of users.  Specifically, we need feedback regarding all aspects of the
-project - everything - from which algorithms we implement, to details
-about our function's call signatures.
+This release requires Python 2.4-2.7 or 3.1- and NumPy 1.5 or greater.
 
 
 New features
@@ -56,13 +39,21 @@ discrete-time representations is also present via the
 ``scipy.signal.cont2discrete`` function.
 
 
-Enhanced filtfilt function in ``scipy.signal``
-----------------------------------------------
+Enhancements to ``scipy.signal``
+--------------------------------
 
-The forward-backward filter function `scipy.signal.filtfilt` can now
+A Lomb-Scargle periodogram can now be computed with the new function
+``scipy.signal.lombscargle``.
+
+The forward-backward filter function ``scipy.signal.filtfilt`` can now
 filter the data in a given axis of an n-dimensional numpy array.
 (Previously it only handled a 1-dimensional array.)  Options have been
 added to allow more control over how the data is extended before filtering.
+
+FIR filter design with ``scipy.signal.firwin2`` now has options to create
+filters of type III (zero at zero and Nyquist frequencies) and IV (zero at zero
+frequency).
+
 
 Additional decomposition options (``scipy.linalg``)
 ---------------------------------------------------
@@ -141,4 +132,12 @@ removed::
 
 Other changes
 =============
+
+``scipy.constants`` has been updated with the CODATA 2010 constants.
+
+``__all__`` dicts have been added to all modules, which has cleaned up the
+namespaces (particularly useful for interactive work).
+
+An API section has been added to the documentation, giving recommended import
+guidelines and specifying which submodules are public and which aren't.
 
