@@ -190,13 +190,22 @@ class TestFBLAS3Simple(TestCase):
             assert_array_almost_equal(f(1,[[1,2]],[[3],[4]]),[[11]])
             assert_array_almost_equal(f(1,[[1,2],[1,2]],[[3],[4]]),[[11],[11]])
 
+
 class TestBLAS(TestCase):
 
     def test_blas(self):
         a = array([[1,1,1]])
         b = array([[1],[1],[1]])
+
+        # get_blas_funcs is deprecated, silence the warning
+        import warnings
+        warnings.simplefilter('ignore', DeprecationWarning)
         gemm, = get_blas_funcs(('gemm',),(a,b))
+        # remove filter again
+        warnings.filters.pop(0)
+
         assert_array_almost_equal(gemm(1,a,b),[[3]],15)
+
 
 if __name__ == "__main__":
     run_module_suite()
