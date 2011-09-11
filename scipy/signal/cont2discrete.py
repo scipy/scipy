@@ -6,11 +6,12 @@ Continuous to discrete transformations for state-space and transfer function.
 # March 29, 2011
 
 import numpy as np
-import scipy.linalg
+from scipy import linalg
 
 from ltisys import tf2ss, ss2tf, zpk2ss, ss2zpk
 
 __all__ = ['cont2discrete']
+
 
 def cont2discrete(sys, dt, method="zoh", alpha=None):
     """Transform a continuous to a discrete state-space system.
@@ -90,11 +91,11 @@ def cont2discrete(sys, dt, method="zoh", alpha=None):
     if method == 'gbt':
         # This parameter is used repeatedly - compute once here
         ima = np.eye(a.shape[0]) - alpha*dt*a
-        ad = np.linalg.solve(ima, np.eye(a.shape[0]) + (1.0-alpha)*dt*a)
-        bd = np.linalg.solve(ima, dt*b)
+        ad = linalg.solve(ima, np.eye(a.shape[0]) + (1.0-alpha)*dt*a)
+        bd = linalg.solve(ima, dt*b)
 
         # Similarly solve for the output equation matrices
-        cd = np.linalg.solve(ima.transpose(), c.transpose())
+        cd = linalg.solve(ima.transpose(), c.transpose())
         cd = cd.transpose()
         dd = d + alpha*np.dot(c, bd)
 
@@ -116,7 +117,7 @@ def cont2discrete(sys, dt, method="zoh", alpha=None):
                               np.zeros((b.shape[1], b.shape[1])) ))
 
         em = np.vstack((em_upper, em_lower))
-        ms = scipy.linalg.expm(dt * em)
+        ms = linalg.expm(dt * em)
 
         # Dispose of the lower rows
         ms = ms[:a.shape[0], :]
@@ -131,3 +132,4 @@ def cont2discrete(sys, dt, method="zoh", alpha=None):
         raise ValueError("Unknown transformation method '%s'" % method)
 
     return ad, bd, cd, dd, dt
+
