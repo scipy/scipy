@@ -15,6 +15,7 @@ science, and engineering.
 .. toctree::
    :maxdepth: 1
 
+   api
    release
 
 Reference
