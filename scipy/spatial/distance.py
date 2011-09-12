@@ -1407,6 +1407,9 @@ def squareform(X, force="no", checks=True):
     """
 
     X = _convert_to_double(np.asarray(X, order='c'))
+    # Check for a scalar (happens on conversion for non-double dtypes)
+    if np.isscalar(X):
+       X = np.array([X], order='c')
 
     if not np.issubsctype(X, np.double):
         raise TypeError('A double array must be passed.')
