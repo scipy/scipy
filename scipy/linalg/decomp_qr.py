@@ -177,7 +177,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
         dot(c, Q) is returned if mode is 'right'.
         the shape of c must be appropriate for the matrix multiplications,
         if mode is 'left', min(a.shape) == c.shape[0],
-        if mode is 'right', a.shape[0].
+        if mode is 'right', a.shape[0] == c.shape[1].
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
         qr decomposition, see the documentation of qr.
@@ -221,6 +221,13 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
         if mode == "left":
             c = c.T
 
+    a = numpy.asarray(a) # chkfinite done in qr
+    M, N = a.shape
+    if not (mode == "left" and (min(a.shape) == c.shape[0] or
+                    overwrite_c and M > N and M == c.shape[0]) or
+            mode == "right" and  a.shape[0] == c.shape[1]):
+        raise ValueError("objects are not aligned") 
+
     raw = qr(a, overwrite_a, lwork, "raw", pivoting)
     Q, tau = raw[:2]
 
@@ -231,7 +238,6 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
         gor_un_mqr, = get_lapack_funcs(('unmqr',), (Q,))
         trans = "C"
 
-    M, N = Q.shape
     Q = Q[:, :min(M, N)]
     if M > N and mode == "left" and not overwrite_c:
         if conjugate:
