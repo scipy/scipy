@@ -233,15 +233,14 @@ def qr_multiply(a, c, mode='right', pivoting=False, overwrite_a=False,
     Q = Q[:, :min(M, N)]
     if M > N and mode == "left":
         if overwrite_c:
-            cc = c.T.conjugate()
+            cc = c
         else:
-            cc = numpy.zeros((c.shape[1], max(M, N)),
-                dtype=c.dtype, order="F")
-            cc[:, :c.shape[0]] = c.T.conjugate()
+            cc = numpy.zeros((M, c.shape[1]), dtype=c.dtype, order="F")
+            cc[:c.shape[0], :] = c
             overwrite_c = True
-        lr = "R"
-    elif c.flags["C_CONTIGUOUS"] and (
-            mode == "left" or M <= N) and trans == "T":
+        lr = "L"
+        trans = "N"
+    elif c.flags["C_CONTIGUOUS"] and trans == "T":
         cc = c.T
         lr = "R" if mode == "left" else "L"
     else: 
