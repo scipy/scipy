@@ -159,8 +159,8 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
 
     return (Q,) + Rj
 
-def qr_multiply(a, c, mode='right', pivoting=False, overwrite_a=False,
-    overwrite_c=False, lwork=None):
+def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
+    overwrite_a=False, overwrite_c=False, lwork=None):
     """Calculate the QR decomposition and multiply Q with a matrix.
 
     Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
@@ -181,6 +181,9 @@ def qr_multiply(a, c, mode='right', pivoting=False, overwrite_a=False,
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
         qr decomposition, see the documentation of qr.
+    conjugate : bool, optional
+        Whether Q should be complex-conjugated. This might be faster
+        than explicit conjugation.
     overwrite_a : bool, optional
         Whether data in a is overwritten (may improve performance)
     lwork : int, optional
@@ -234,13 +237,20 @@ def qr_multiply(a, c, mode='right', pivoting=False, overwrite_a=False,
     if M > N and mode == "left":
         if overwrite_c:
             cc = c
+        elif conjugate:
+            cc = numpy.zeros((c.shape[1], M), dtype=c.dtype, order="F")
+            cc[:, :c.shape[0]] = c.T
+            lr = "R"
         else:
             cc = numpy.zeros((M, c.shape[1]), dtype=c.dtype, order="F")
             cc[:c.shape[0], :] = c
-            overwrite_c = True
-        lr = "L"
-        trans = "N"
+            lr = "L"
+            trans = "N"
+        overwrite_c = True
     elif c.flags["C_CONTIGUOUS"] and trans == "T":
+        cc = c.T
+        lr = "R" if mode == "left" else "L"
+    elif conjugate:
         cc = c.T
         lr = "R" if mode == "left" else "L"
     else: 
@@ -250,7 +260,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, overwrite_a=False,
     cQ, = safecall(gor_un_mqr, "gormqr/gunmqr", lr, trans, Q, tau, cc,
             lwork=lwork, overwrite_c=overwrite_c)
     if trans != "N":
-        cQ = cQ.T.conjugate()
+        cQ = cQ.T
     if mode == "right":
         cQ = cQ[:, :min(M, N)]
     if onedim:
