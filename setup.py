@@ -25,6 +25,11 @@ import subprocess
 import shutil
 import re
 
+if sys.version_info[0] < 3:
+    import __builtin__ as builtins
+else:
+    import builtins
+
 CLASSIFIERS = """\
 Development Status :: 4 - Beta
 Intended Audience :: Science/Research
@@ -79,7 +84,11 @@ def git_version():
 if os.path.exists('MANIFEST'):
     os.remove('MANIFEST')
 
-os.environ['NO_SCIPY_IMPORT'] = 'SciPy/setup.py'
+# This is a bit hackish: we are setting a global variable so that the main
+# scipy __init__ can detect if it is being loaded by the setup routine, to
+# avoid attempting to load components that aren't built yet.  While ugly, it's
+# a lot more robust than what was previously being used.
+builtins.__SCIPY_SETUP__ = True
 
 
 def write_version_py(filename='scipy/version.py'):
