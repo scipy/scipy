@@ -1121,8 +1121,8 @@ class TestQR(TestCase):
 
     def test_simple_complex_tall_left_conjugate(self):
         a = [[3,3+4j],[5,2+2j],[3,2]]
-        q,r = qr(a)
-        c = [1, 2, 3+4j]
+        q,r = qr(a, mode='economic')
+        c = [1, 3+4j]
         qc,r = qr_multiply(a, c, "left", conjugate=True)
         assert_array_almost_equal(dot(q.conjugate(), c), qc)
 
