@@ -898,7 +898,7 @@ class TestQR(TestCase):
         a = [[8,2,3],[2,9,3],[5,3,6]]
         q,r,jpvt = qr(a, pivoting=True)
         c = [1, 2, 3]
-        qc,r,jpvt = qr_multiply(a, c, "left", True)
+        qc,r,jpvt = qr_multiply(a, c, "left", pivoting=True)
         assert_array_almost_equal(dot(q, c), qc)
 
     def test_simple_right_pivoting(self):
@@ -982,10 +982,10 @@ class TestQR(TestCase):
         a = [[8,2],[2,9],[5,3]]
         q,r,jpvt = qr(a, mode="economic", pivoting=True)
         c = [1, 2]
-        qc,r,kpvt = qr_multiply(a, c, "left", True)
+        qc,r,kpvt = qr_multiply(a, c, "left", pivoting=True)
         assert_array_equal(jpvt, kpvt)
         assert_array_almost_equal(dot(q, c), qc)
-        qc,r,jpvt = qr_multiply(a, identity(2), "left", True)
+        qc,r,jpvt = qr_multiply(a, identity(2), "left", pivoting=True)
         assert_array_almost_equal(qc, q)
 
     def test_simple_tall_right(self):
@@ -1067,9 +1067,9 @@ class TestQR(TestCase):
         a = [[8,2,3],[2,9,5]]
         q,r,jpvt = qr(a, mode="economic", pivoting=True)
         c = [1, 2]
-        qc,r,jpvt = qr_multiply(a, c, "left", True)
+        qc,r,jpvt = qr_multiply(a, c, "left", pivoting=True)
         assert_array_almost_equal(dot(q, c), qc)
-        qc,r,jpvt = qr_multiply(a, identity(2), "left", True)
+        qc,r,jpvt = qr_multiply(a, identity(2), "left", pivoting=True)
         assert_array_almost_equal(qc, q)
 
     def test_simple_fat_right(self):
@@ -1151,7 +1151,7 @@ class TestQR(TestCase):
         a = np.asarray([[3,3+4j,5],[5,2,2+7j],[3,2,7]])
         q,r,jpvt = qr(a, pivoting=True)
         c = [1, 2, 3+4j]
-        qc,r,jpvt = qr_multiply(a, c, "left", True)
+        qc,r,jpvt = qr_multiply(a, c, "left", pivoting=True)
         assert_array_almost_equal(dot(q, c), qc)
 
     def test_simple_complex_right_pivoting(self):
