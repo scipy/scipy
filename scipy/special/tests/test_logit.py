@@ -1,14 +1,23 @@
 import numpy as np
-from numpy.testing import *
+from numpy.testing import TestCase, assert_equal, assert_almost_equal
 from scipy.special import logit, expit
 
-class TestLogit(TestCase):
 
+class TestLogit(TestCase):
     def check_logit_out(self, dtype, expected):
         a = np.linspace(0,1,10)
         a = np.array(a, dtype=dtype)
-        actual = logit(a)
-        assert_almost_equal(actual, expected)
+        olderr = np.seterr(divide='ignore')
+        try:
+            actual = logit(a)
+        finally:
+            np.seterr(**olderr)
+
+        if np.__version__ >= '1.6':
+            assert_almost_equal(actual, expected)
+        else:
+            assert_almost_equal(actual[1:-1], expected[1:-1])
+
         assert_equal(actual.dtype, np.dtype(dtype))
 
     def test_float32(self):
@@ -29,8 +38,14 @@ class TestLogit(TestCase):
 
     def test_nan(self):
         expected = np.array([np.nan]*4)
-        actual = logit(np.array([-3., -2., 2., 3.]))
+        olderr = np.seterr(invalid='ignore')
+        try:
+            actual = logit(np.array([-3., -2., 2., 3.]))
+        finally:
+            np.seterr(**olderr)
+
         assert_equal(expected, actual)
+
 
 class TestExpit(TestCase):
     def check_expit_out(self, dtype, expected):
