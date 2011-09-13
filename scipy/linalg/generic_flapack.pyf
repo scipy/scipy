@@ -658,7 +658,7 @@ interface
 
      character intent(in),check(*side=='L'||*side=='R'):: side
      character intent(in),check(*trans=='N'||*trans=='C'):: trans
-     integer intent(hide),depend(side,a,c):: m = (*side=='L')?shape(a,1):shape(c,0)
+     integer intent(hide),depend(c):: m = shape(c,0)
      integer intent(hide),depend(c):: n = shape(c,1)
      integer intent(hide),depend(a):: k = shape(a,1)
      <type_in> dimension(lda,k),intent(in):: a
