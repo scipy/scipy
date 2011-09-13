@@ -103,7 +103,7 @@ class HBInfo(object):
             raise ValueError("mxtype argument not handled yet.")
 
         def _nlines(fmt, size):
-            nlines = size / fmt.repeat
+            nlines = size // fmt.repeat
             if nlines * fmt.repeat != size:
                 nlines += 1
             return nlines

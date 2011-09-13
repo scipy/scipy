@@ -61,7 +61,7 @@ class IntFormat(object):
         width = number_digits(n) + 1
         if n < 0:
             width += 1
-        repeat = 80 / width
+        repeat = 80 // width
         return cls(width, min, repeat=repeat)
 
     def __init__(self, width, min=None, repeat=None):
