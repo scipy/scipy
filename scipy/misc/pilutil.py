@@ -14,11 +14,16 @@ from numpy import amin, amax, ravel, asarray, cast, arange, \
      ones, newaxis, transpose, mgrid, iscomplexobj, sum, zeros, uint8, \
      issubdtype, array
 
-import Image
-import ImageFilter
+try:
+    from PIL import Image, ImageFilter
+except ImportError:
+    import Image
+    import ImageFilter
+
 
 __all__ = ['fromimage','toimage','imsave','imread','bytescale',
            'imrotate','imresize','imshow','imfilter','radon']
+
 
 # Returns a byte-scaled image
 def bytescale(data, cmin=None, cmax=None, high=255, low=0):
