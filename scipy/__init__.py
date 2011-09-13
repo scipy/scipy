@@ -106,15 +106,28 @@ del _num
 del linalg
 __all__.remove('linalg')
 
+# We first need to detect if we're being called as part of the scipy
+# setup procedure itself in a reliable manner.
 try:
-    from scipy.__config__ import show as show_config
-except ImportError:
-    msg = """Error importing scipy: you cannot import scipy while
-    being in scipy source directory; please exit the scipy source
-    tree first, and relaunch your python intepreter."""
-    raise ImportError(msg)
-from scipy.version import version as __version__
+    __SCIPY_SETUP__
+except NameError:
+    __SCIPY_SETUP__ = False
 
-from numpy.testing import Tester
-test = Tester().test
-bench = Tester().bench
+
+if __SCIPY_SETUP__:
+    import sys as _sys
+    _sys.stderr.write('Running from scipy source directory.\n')
+    del _sys
+else:
+    try:
+        from scipy.__config__ import show as show_config
+    except ImportError:
+        msg = """Error importing scipy: you cannot import scipy while
+        being in scipy source directory; please exit the scipy source
+        tree first, and relaunch your python intepreter."""
+        raise ImportError(msg)
+    from scipy.version import version as __version__
+
+    from numpy.testing import Tester
+    test = Tester().test
+    bench = Tester().bench
