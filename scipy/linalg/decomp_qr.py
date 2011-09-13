@@ -217,10 +217,9 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     c = numpy.asarray_chkfinite(c)
     onedim = c.ndim == 1
     if onedim:
+        c = c.reshape(1, len(c))
         if mode == "left":
-            c = c[:, numpy.newaxis]
-        else:
-            c = c[numpy.newaxis, :]
+            c = c.T
 
     a = numpy.asarray(a) # chkfinite done in qr
     M, N = a.shape
