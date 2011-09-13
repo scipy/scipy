@@ -107,7 +107,7 @@ static PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *
+PyMODINIT_FUNC
 PyInit__logit()
 {
     PyObject *m, *f, *d;
@@ -118,6 +118,8 @@ PyInit__logit()
 
     import_array();
     import_umath();
+
+    d = PyModule_GetDict(m);
 
     f = PyUFunc_FromFuncAndData(logit_funcs,data, types, 3, 1, 1,
                                 PyUFunc_None, "logit",NULL , 0);

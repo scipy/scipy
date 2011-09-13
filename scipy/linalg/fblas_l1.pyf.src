@@ -347,7 +347,7 @@ function i<prefix>amax(n,x,offx,incx) result(k)
 
   ! This is to avoid Fortran wrappers.
   integer i<prefix>amax,k
-  fortranname F_FUNC(i<prefix>amax,I<S,D,C,Z>>AMAX)
+  fortranname F_FUNC(i<prefix>amax,I<S,D,C,Z>AMAX)
   intent(c) i<prefix>amax
   <ftype> dimension(*), intent(in) :: x
   integer optional, intent(in), check(incx>0||incx<0) :: incx = 1
