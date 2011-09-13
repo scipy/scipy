@@ -1115,6 +1115,19 @@ class TestQR(TestCase):
         qc,r = qr_multiply(a, identity(3))
         assert_array_almost_equal(q, qc)
 
+    def test_simple_tall_complex_left(self):
+        a = [[8,2+3j],[2,9],[5+7j,3]]
+        q,r = qr(a, mode="economic") 
+        c = [1, 2+2j]
+        qc,r2 = qr_multiply(a, c, "left")
+        assert_array_almost_equal(dot(q, c), qc)
+        assert_array_almost_equal(r, r2)
+        c = array([1,2,0])
+        qc,r2 = qr_multiply(a, c, "left", overwrite_c=True)
+        assert_array_almost_equal(dot(q, c[:2]), qc)
+        qc,r = qr_multiply(a, identity(2), "left")
+        assert_array_almost_equal(qc, q)
+
     def test_simple_complex_left_conjugate(self):
         a = [[3,3+4j,5],[5,2,2+7j],[3,2,7]]
         q,r = qr(a)
