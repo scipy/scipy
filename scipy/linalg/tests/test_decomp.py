@@ -972,6 +972,9 @@ class TestQR(TestCase):
         qc,r2 = qr_multiply(a, c, "left")
         assert_array_almost_equal(dot(q, c), qc)
         assert_array_almost_equal(r, r2)
+        c = array([1,2,0])
+        qc,r2 = qr_multiply(a, c, "left", overwrite_c=True)
+        assert_array_almost_equal(dot(q, c[:2]), qc)
         qc,r = qr_multiply(a, identity(2), "left")
         assert_array_almost_equal(qc, q)
 
