@@ -159,8 +159,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
 
     return (Q,) + Rj
 
-def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
-    overwrite_a=False, overwrite_c=False, lwork=None):
+def qr_multiply(a, c, mode='right', **kwargs):
     """Calculate the QR decomposition and multiply Q with a matrix.
 
     Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
@@ -214,6 +213,12 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     """
     if not mode in ['left', 'right']:
         raise ValueError("Mode argument should be one of ['left', 'right']")
+    pivoting = kwargs.get("pivoting", False)
+    conjugate = kwargs.get("conjugate", False)
+    overwrite_a = kwargs.get("overwrite_a", False)
+    overwrite_c = kwargs.get("overwrite_c", False)
+    lwork = kwargs.get("lwork", None)
+
     c = numpy.asarray_chkfinite(c)
     onedim = c.ndim == 1
     if onedim:
