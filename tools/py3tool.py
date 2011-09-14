@@ -201,7 +201,7 @@ def custom_mangling(filename):
 
     if any(filename.endswith(x) for x in import_mangling):
         print(filename)
-        f = open(filename, 'r')
+        f = open(filename, 'r', encoding='utf-8')
         text = f.read()
         f.close()
         for mod in ['_vq', '_hierarchy_wrap', '_fftpack', 'convolve',
@@ -228,7 +228,7 @@ def custom_mangling(filename):
                           r'\1from .%s import' % mod,
                           text, flags=re.M)
         #text = text.replace('from matrixlib', 'from .matrixlib')
-        f = open(filename, 'w')
+        f = open(filename, 'w', encoding='utf-8')
         f.write(text)
         f.close()
 
