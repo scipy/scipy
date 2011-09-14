@@ -917,7 +917,7 @@ class TestQR(TestCase):
         q,r,jpvt = qr(a, pivoting=True)
         c = [1, 2, 3]
         qc,r,jpvt = qr_multiply(a, c, "left", pivoting=True)
-        assert_array_almost_equal(dot(q, c), qc[:, 0])
+        assert_array_almost_equal(dot(q, c), qc)
 
     def test_simple_right_pivoting(self):
         a = [[8,2,3],[2,9,3],[5,3,6]]
