@@ -228,9 +228,10 @@ def qr_multiply(a, c, mode='right', **kwargs):
 
     a = numpy.asarray(a) # chkfinite done in qr
     M, N = a.shape
-    if not (mode == "left" and (min(a.shape) == c.shape[0] or
-                    overwrite_c and M > N and M == c.shape[0]) or
-            mode == "right" and  a.shape[0] == c.shape[1]):
+    if not (mode == "left" and
+                (not overwrite_c and min(M, N) == c.shape[0] or
+                     overwrite_c and M == c.shape[0]) or
+            mode == "right" and M == c.shape[1]):
         raise ValueError("objects are not aligned") 
 
     raw = qr(a, overwrite_a, lwork, "raw", pivoting)
