@@ -254,10 +254,7 @@ def qr_multiply(a, c, mode='right', **kwargs):
             trans = "N"
         lr = "R" if conjugate else "L"
         overwrite_c = True
-    elif c.flags["C_CONTIGUOUS"] and trans == "T":
-        cc = c.T
-        lr = "R" if mode == "left" else "L"
-    elif conjugate:
+    elif c.flags["C_CONTIGUOUS"] and trans == "T" or conjugate:
         cc = c.T
         lr = "R" if mode == "left" else "L"
     else: 
