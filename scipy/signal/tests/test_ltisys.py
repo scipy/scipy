@@ -4,8 +4,9 @@ import warnings
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, run_module_suite
 
-from scipy.signal.ltisys import ss2tf, lsim2, impulse2, step2, lti
+from scipy.signal.ltisys import ss2tf, lsim2, impulse2, step2
 from scipy.signal.filter_design import BadCoefficients
+
 
 class TestSS2TF:
     def tst_matrix_shapes(self, p, q, r):
@@ -98,6 +99,7 @@ class Test_lsim2(object):
         expected_x = (1.0 - tout) * np.exp(-tout)
         assert_almost_equal(x[:,0], expected_x)
 
+
 class Test_impulse2(object):
 
     def test_01(self):
@@ -150,12 +152,14 @@ class Test_impulse2(object):
         assert_almost_equal(y, expected_y)
 
     def test_06(self):
-        # Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = u(t)
+        # Second order system with a repeated root:
+        #     x''(t) + 2*x(t) + x(t) = u(t)
         # The exact impulse response is t*exp(-t).
         system = ([1.0], [1.0, 2.0, 1.0])
         tout, y = impulse2(system)
         expected_y = tout * np.exp(-tout)
         assert_almost_equal(y, expected_y)
+
 
 class Test_step2(object):
 
@@ -210,12 +214,14 @@ class Test_step2(object):
         assert_almost_equal(y, expected_y)
 
     def test_06(self):
-        # Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = u(t)
+        # Second order system with a repeated root:
+        #     x''(t) + 2*x(t) + x(t) = u(t)
         # The exact step response is 1 - (1 + t)*exp(-t).
         system = ([1.0], [1.0, 2.0, 1.0])
         tout, y = step2(system, atol=1e-10, rtol=1e-8)
         expected_y = 1 - (1 + tout) * np.exp(-tout)
         assert_almost_equal(y, expected_y)
+
 
 if __name__ == "__main__":
     run_module_suite()

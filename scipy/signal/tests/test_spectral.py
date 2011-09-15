@@ -2,9 +2,7 @@
 """
 
 import numpy as np
-from numpy.testing import dec, assert_raises, assert_equal, \
-                          assert_almost_equal, assert_array_equal, \
-                          assert_array_almost_equal, assert_approx_equal, \
+from numpy.testing import assert_raises, assert_approx_equal, \
                           assert_, run_module_suite
 
 from scipy.signal.spectral import lombscargle
