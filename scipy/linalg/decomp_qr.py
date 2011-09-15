@@ -163,7 +163,7 @@ def qr_multiply(a, c, mode='right', **kwargs):
     """Calculate the QR decomposition and multiply Q with a matrix.
 
     Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
-    and R upper triangular.
+    and R upper triangular. Multiply Q with a vector or a matrix c.
 
     Parameters
     ----------
@@ -189,7 +189,9 @@ def qr_multiply(a, c, mode='right', **kwargs):
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
     overwrite_c: bool, optional
-        Whether data in c is overwritten (may improve performance)
+        Whether data in c is overwritten (may improve performance).
+        If this is used, c must be big enough to keep the result,
+        i.e. c.shape[0] = a.shape[0] if mode is 'left'.
         
 
     Returns
