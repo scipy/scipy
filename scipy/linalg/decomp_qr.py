@@ -137,7 +137,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     if mode == 'r':
         return Rj
     elif mode == 'raw':
-        return (qr, tau) + Rj
+        return ((qr, tau),) + Rj
 
     if find_best_lapack_type((a1,))[0] in ('s', 'd'):
         gor_un_gqr, = get_lapack_funcs(('orgqr',), (qr,))
@@ -229,7 +229,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
         raise ValueError("objects are not aligned") 
 
     raw = qr(a, overwrite_a, None, "raw", pivoting)
-    Q, tau = raw[:2]
+    Q, tau = raw[0]
 
     if find_best_lapack_type((Q,))[0] in ('s', 'd'):
         gor_un_mqr, = get_lapack_funcs(('ormqr',), (Q,))
@@ -265,7 +265,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     if onedim:
         cQ = cQ.ravel()
 
-    return (cQ,) + raw[2:]
+    return (cQ,) + raw[1:]
 
 def qr_old(a, overwrite_a=False, lwork=None):
     """Compute QR decomposition of a matrix.
