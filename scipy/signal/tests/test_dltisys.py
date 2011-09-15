@@ -4,7 +4,8 @@
 
 import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
-                          assert_array_almost_equal
+                          assert_array_almost_equal, assert_array_equal, \
+                          assert_allclose
 from scipy.signal import dlsim, dstep, dimpulse, tf2zpk
 
 
@@ -168,6 +169,90 @@ class TestDLTI(TestCase):
         tout, yout = dimpulse(zpkin, n=3)
         assert_equal(len(yout), 1)
         assert_array_almost_equal(yout[0].flatten(), yout_tfimpulse)
+
+    def test_dlsim_trivial(self):
+        a = np.array([[0.0]])
+        b = np.array([[0.0]])
+        c = np.array([[0.0]])
+        d = np.array([[0.0]])
+        n = 5
+        u = np.zeros(n).reshape(-1, 1)
+        tout, yout, xout = dlsim((a, b, c, d, 1), u)
+        assert_array_equal(tout, np.arange(float(n)))
+        assert_array_equal(yout, np.zeros((n, 1)))
+        assert_array_equal(xout, np.zeros((n, 1)))
+
+    def test_dlsim_simple1d(self):
+        a = np.array([[0.5]])
+        b = np.array([[0.0]])
+        c = np.array([[1.0]])
+        d = np.array([[0.0]])
+        n = 5
+        u = np.zeros(n).reshape(-1, 1)
+        tout, yout, xout = dlsim((a, b, c, d, 1), u, x0=1)
+        assert_array_equal(tout, np.arange(float(n)))
+        expected = (0.5 ** np.arange(float(n))).reshape(-1, 1)
+        assert_array_equal(yout, expected)
+        assert_array_equal(xout, expected)
+
+    def test_dlsim_simple2d(self):
+        lambda1 = 0.5
+        lambda2 = 0.25
+        a = np.array([[lambda1,     0.0],
+                      [0.0,     lambda2]])
+        b = np.array([[0.0],
+                      [0.0]])
+        c = np.array([[1.0, 0.0],
+                      [0.0, 1.0]])
+        d = np.array([[0.0],
+                      [0.0]])
+        n = 5
+        u = np.zeros(n).reshape(-1, 1)
+        tout, yout, xout = dlsim((a, b, c, d, 1), u, x0=1)
+        assert_array_equal(tout, np.arange(float(n)))
+        # The analytical solution:
+        expected = (np.array([lambda1, lambda2]) **
+                                np.arange(float(n)).reshape(-1, 1))
+        assert_array_equal(yout, expected)
+        assert_array_equal(xout, expected)
+
+    def test_more_step_and_impulse(self):
+        lambda1 = 0.5
+        lambda2 = 0.75
+        a = np.array([[lambda1, 0.0],
+                      [0.0, lambda2]])
+        b = np.array([[1.0, 0.0],
+                      [0.0, 1.0]])
+        c = np.array([[1.0, 1.0]])
+        d = np.array([[0.0, 0.0]])
+
+        n = 10
+
+        # Check a step response.
+        ts, ys = dstep((a, b, c, d, 1), n=n)
+
+        # Create the exact step response.
+        stp0 = (1.0 / (1 - lambda1)) * (1.0 - lambda1 ** np.arange(n))
+        stp1 = (1.0 / (1 - lambda2)) * (1.0 - lambda2 ** np.arange(n))
+
+        assert_allclose(ys[0][:, 0], stp0)
+        assert_allclose(ys[1][:, 0], stp1)
+
+        # Check an impulse response with an initial condition.
+        x0 = np.array([1.0, 1.0])
+        ti, yi = dimpulse((a, b, c, d, 1), n=n, x0=x0)
+
+        # Create the exact impulse response.
+        imp = (np.array([lambda1, lambda2]) **
+                            np.arange(-1, n + 1).reshape(-1, 1))
+        imp[0, :] = 0.0
+        # Analytical solution to impulse response
+        y0 = imp[:n, 0] + np.dot(imp[1:n + 1, :], x0)
+        y1 = imp[:n, 1] + np.dot(imp[1:n + 1, :], x0)
+
+        assert_allclose(yi[0][:, 0], y0)
+        assert_allclose(yi[1][:, 0], y1)
+
 
 if __name__ == "__main__":
     run_module_suite()
