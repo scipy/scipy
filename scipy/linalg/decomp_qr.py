@@ -160,7 +160,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     return (Q,) + Rj
 
 def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
-    overwrite_a=False, overwrite_c=False, lwork=None):
+    overwrite_a=False, overwrite_c=False):
     """Calculate the QR decomposition and multiply Q with a matrix.
 
     Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
@@ -186,9 +186,6 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
         than explicit conjugation.
     overwrite_a : bool, optional
         Whether data in a is overwritten (may improve performance)
-    lwork : int, optional
-        Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
-        is computed.
     overwrite_c: bool, optional
         Whether data in c is overwritten (may improve performance).
         If this is used, c must be big enough to keep the result,
@@ -231,7 +228,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
             mode == "right" and M == c.shape[1]):
         raise ValueError("objects are not aligned") 
 
-    raw = qr(a, overwrite_a, lwork, "raw", pivoting)
+    raw = qr(a, overwrite_a, None, "raw", pivoting)
     Q, tau = raw[:2]
 
     if find_best_lapack_type((Q,))[0] in ('s', 'd'):
@@ -260,7 +257,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
         cc = c
         lr = "L" if mode == "left" else "R"
     cQ, = safecall(gor_un_mqr, "gormqr/gunmqr", lr, trans, Q, tau, cc,
-            lwork=lwork, overwrite_c=overwrite_c)
+            overwrite_c=overwrite_c)
     if trans != "N":
         cQ = cQ.T
     if mode == "right":
