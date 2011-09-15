@@ -394,8 +394,9 @@ def approx_fprime(xk,f,epsilon,*args):
     grad = numpy.zeros((len(xk),), float)
     ei = numpy.zeros((len(xk),), float)
     for k in range(len(xk)):
-        ei[k] = epsilon
-        grad[k] = (f(*((xk+ei,)+args)) - f0)/epsilon
+        ei[k] = 1.0
+        d = epsilon * ei
+        grad[k] = (f(*((xk+d,)+args)) - f0)/d[k]
         ei[k] = 0.0
     return grad
 
