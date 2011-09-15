@@ -250,10 +250,10 @@ def qr_multiply(a, c, mode='right', **kwargs):
     if M > N and mode == "left" and not overwrite_c:
         if conjugate:
             cc = numpy.zeros((c.shape[1], M), dtype=c.dtype, order="F")
-            cc[:, :c.shape[0]] = c.T
+            cc[:, :N] = c.T
         else:
             cc = numpy.zeros((M, c.shape[1]), dtype=c.dtype, order="F")
-            cc[:c.shape[0], :] = c
+            cc[:N, :] = c
             trans = "N"
         lr = "R" if conjugate else "L"
         overwrite_c = True
