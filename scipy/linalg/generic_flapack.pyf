@@ -504,6 +504,7 @@ interface
    ! Compute a QR factorization of a real M-by-N matrix A with column pivoting:
    !   A * P = Q * R.
 
+     threadsafe
      callstatement (*f2py_func)(&m,&n,a,&m,jpvt,tau,work,&lwork,&info)
      callprotoargument int*,int*,<type_in_c>*,int*,int*,<type_in_c>*,<type_in_c>*,int*,int*
 
@@ -524,6 +525,7 @@ interface
    ! Compute a QR factorization of a complex M-by-N matrix A with column pivoting:
    !   A * P = Q * R.
 
+     threadsafe
      callstatement (*f2py_func)(&m,&n,a,&m,jpvt,tau,work,&lwork,rwork,&info)
      callprotoargument int*,int*,<type_in_c>*,int*,int*,<type_in_c>*,<type_in_c>*,int*,<type_in_c>*,int*
 
@@ -545,6 +547,7 @@ interface
    ! Compute a QR factorization of a real M-by-N matrix A:
    !   A = Q * R.
 
+     threadsafe
      callstatement (*f2py_func)(&m,&n,a,&m,tau,work,&lwork,&info)
      callprotoargument int*,int*,<type_in_c>*,int*,<type_in_c>*,<type_in_c>*,int*,int*
 
@@ -564,6 +567,7 @@ interface
    ! Compute an RQ factorization of a real M-by-N matrix A:
    !   A = R * Q.
 
+     threadsafe
      callstatement (*f2py_func)(&m,&n,a,&m,tau,work,&lwork,&info)
      callprotoargument int*,int*,<type_in_c>*,int*,<type_in_c>*,<type_in_c>*,int*,int*
 
@@ -584,6 +588,7 @@ interface
    ! which is defined as the first N columns of a product of K elementary
    ! reflectors of order M (e.g. output of geqrf)
 
+     threadsafe
      callstatement (*f2py_func)(&m,&n,&k,a,&m,tau,work,&lwork,&info)
      callprotoargument int*,int*,int*,<type_in_c>*,int*,<type_in_c>*,<type_in_c>*,int*,int*
 
@@ -605,6 +610,7 @@ interface
    ! which is defined as the first N columns of a product of K elementary
    ! reflectors of order M (e.g. output of geqrf)
 
+     threadsafe
      callstatement (*f2py_func)(&m,&n,&k,a,&m,tau,work,&lwork,&info)
      callprotoargument int*,int*,int*,<type_in_c>*,int*,<type_in_c>*,<type_in_c>*,int*,int*
 
@@ -626,6 +632,7 @@ interface
    ! which is defined as the first N columns of a product of K elementary
    ! reflectors of order M (e.g. output of geqrf)
 
+     threadsafe
      callstatement (*f2py_func)(side,trans,&m,&n,&k,a,&lda,tau,c,&ldc,work,&lwork,&info)
      callprotoargument char*,char*,int*,int*,int*,<type_in_c>*,int*,<type_in_c>*,<type_in_c>*,int*,<type_in_c>*,int*,int*
 
@@ -651,6 +658,7 @@ interface
    ! which is defined as the first N columns of a product of K elementary
    ! reflectors of order M (e.g. output of geqrf)
 
+     threadsafe
      callstatement (*f2py_func)(side,trans,&m,&n,&k,a,&lda,tau,c,&ldc,work,&lwork,&info)
      callprotoargument char*,char*,int*,int*,int*,<type_in_c>*,int*,<type_in_c>*,<type_in_c>*,int*,<type_in_c>*,int*,int*
 
@@ -676,6 +684,7 @@ interface
    ! which is defined as the first N columns of a product of K elementary
    ! reflectors of order M (e.g. output of gerqf)
 
+     threadsafe
      callstatement (*f2py_func)(&m,&n,&k,a,&m,tau,work,&lwork,&info)
      callprotoargument int*,int*,int*,<type_in_c>*,int*,<type_in_c>*,<type_in_c>*,int*,int*
 
@@ -697,6 +706,7 @@ interface
    ! which is defined as the first N columns of a product of K elementary
    ! reflectors of order M (e.g. output of gerqf)
 
+     threadsafe
      callstatement (*f2py_func)(&m,&n,&k,a,&m,tau,work,&lwork,&info)
      callprotoargument int*,int*,int*,<type_in_c>*,int*,<type_in_c>*,<type_in_c>*,int*,int*
 
