@@ -1,0 +1,35 @@
+==========================
+SciPy 0.11.0 Release Notes
+==========================
+
+.. note:: Scipy 0.11.0 is not released yet!
+
+.. contents::
+
+SciPy 0.11.0 is the culmination of XXX months of hard work. It contains
+many new features, numerous bug-fixes, improved test coverage and
+better documentation.  There have been a number of deprecations and
+API changes in this release, which are documented below.  All users
+are encouraged to upgrade to this release, as there are a large number
+of bug-fixes and optimizations.  Moreover, our development attention
+will now shift to bug-fix releases on the 0.11.x branch, and on adding
+new features on the development trunk.
+
+This release requires Python 2.4-2.7 or 3.1- and NumPy 1.X.X or greater.
+
+
+New features
+============
+
+
+Deprecated features
+===================
+
+
+Removed features
+================
+ 
+
+Other changes
+=============
+
