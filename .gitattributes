@@ -1,2 +1,18 @@
 * text=auto
 tools/win32/build_scripts/nsis_scripts/*.nsi.in eol=crlf
+
+# Don't want to convert line endings of this file, causes test failure on
+# Windows
+scipy/io/matlab/tests/data/japanese_utf8.txt binary
+
+# Cython-generated files
+scipy/interpolate/interpnd.c binary
+scipy/io/matlab/mio_utils.c binary
+scipy/io/matlab/mio5_utils.c binary
+scipy/io/matlab/streams.c binary
+scipy/signal/spectral.c binary
+scipy/spatial/ckdtree.c binary
+scipy/spatial/qhull.c binary
+scipy/special/lambertw.c binary
+scipy/special/orthogonal_eval.c binary
+scipy/stats/vonmises_cython.c binary
