@@ -91,7 +91,12 @@ def test_hyp2f1_real_some_points():
     dataset = [p + (float(mpmath.hyp2f1(*p)),) for p in pts]
     dataset = np.array(dataset, dtype=np.float_)
 
-    FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
+    olderr = np.seterr(invalid='ignore')
+    try:
+        FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
+    finally:
+        np.seterr(**olderr)
+
 
 @mpmath_check('0.14')
 def test_hyp2f1_some_points_2():
@@ -127,7 +132,12 @@ def test_hyp2f1_real_some():
                         continue
                     dataset.append((a, b, c, z, v))
     dataset = np.array(dataset, dtype=np.float_)
-    FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-9).check()
+
+    olderr = np.seterr(invalid='ignore')
+    try:
+        FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-9).check()
+    finally:
+        np.seterr(**olderr)
 
 @mpmath_check('0.12')
 @dec.slow
@@ -220,4 +230,9 @@ def test_lpmv():
     dataset = np.array(dataset, dtype=np.float_)
 
     evf = lambda mu,nu,x: sc.lpmv(mu.astype(int), nu, x)
-    FuncData(evf, dataset, (0,1,2), 3, rtol=1e-10, atol=1e-14).check()
+
+    olderr = np.seterr(invalid='ignore')
+    try:
+        FuncData(evf, dataset, (0,1,2), 3, rtol=1e-10, atol=1e-14).check()
+    finally:
+        np.seterr(**olderr)
