@@ -1084,7 +1084,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
        Computes the weighted Minkowski distance between each pair of
        vectors. (see wminkowski function documentation)
 
-    22. ``Y = pdist(X, f)``
+    23. ``Y = pdist(X, f)``
 
        Computes the distance between all pairs of vectors in X
        using the user supplied 2-arity function f. For example,
@@ -1141,7 +1141,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 #         21. Y = pdist(X, 'test_Y')
 #
 #           Computes the distance between all pairs of vectors in X
-#           using the distance metric Y but with a more succint,
+#           using the distance metric Y but with a more succinct,
 #           verifiable, but less efficient implementation.
 
     X = np.asarray(X, order='c')
@@ -1497,11 +1497,11 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
         An exception is thrown if the distance matrix passed is not
         valid.
     name : string
-        the name of the variable to checked. This is useful ifa
+        the name of the variable to checked. This is useful if
         throw is set to ``True`` so the offending variable can be
         identified in the exception message when an exception is
         thrown.
-    warning : boolx
+    warning : bool
         Instead of throwing an exception, a warning message is
         raised.
 
@@ -1643,7 +1643,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
 def num_obs_dm(d):
     """
     Returns the number of original observations that correspond to a
-    square, redudant distance matrix ``D``.
+    square, redundant distance matrix ``D``.
 
     Parameters
     ----------
