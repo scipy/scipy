@@ -115,9 +115,13 @@ def configuration(parent_package='',top_path=None):
     else:
         sources = ['fblas.pyf.src', join('src', 'fblaswrap.f')]
 
+    # Note: `depends` needs to include fblaswrap(_veclib) for both files to be
+    # included by "python setup.py sdist"
     config.add_extension('fblas',
                          sources = sources,
-                         depends = ['fblas_l?.pyf.src'],
+                         depends = ['fblas_l?.pyf.src',
+                                    join('src', 'fblaswrap_veclib_c.c'),
+                                    join('src', 'fblaswrap.f')],
                          extra_info = lapack_opt
                          )
 
