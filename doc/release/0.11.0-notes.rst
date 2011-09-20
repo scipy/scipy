@@ -26,10 +26,14 @@ Deprecated features
 ===================
 
 
-Removed features
-================
+Backwards incompatible changes
+==============================
  
 
 Other changes
 =============
+
+
+Authors
+=======
 
