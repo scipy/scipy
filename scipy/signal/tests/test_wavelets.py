@@ -76,5 +76,35 @@ class TestWavelets(TestCase):
         y = wavelets.morlet(20000, w=7, s=20, complete=False)[5000:15000]
         assert_array_almost_equal(x, y, decimal=2)
 
+    def test_ricker(self):
+        w = wavelets.ricker(1.0, 1)
+        expected = 2 / (np.sqrt(3 * 1.0) * (np.pi ** 0.25))
+        assert_array_equal(w, expected)
+
+        lengths = [5, 11, 15, 51, 101]
+        for length in lengths:
+            w = wavelets.ricker(1.0, length)
+            assert_(len(w) == length)
+            max_loc = np.argmax(w)
+            assert_(max_loc == (length / 2))
+
+        points = 100
+        w = wavelets.ricker(2.0, points)
+        half_vec = np.arange(0, points / 2)
+        #Wavelet should be symmetric
+        assert_array_almost_equal(w[half_vec], w[-(half_vec + 1)])
+
+        #Check zeros
+        aas = [5, 10, 15, 20, 30]
+        points = 99
+        for a in aas:
+            w = wavelets.ricker(a, points)
+            vec = np.arange(0, points) - (points - 1.0) / 2
+            exp_zero1 = np.argmin(np.abs(vec - a))
+            exp_zero2 = np.argmin(np.abs(vec + a))
+            assert_array_almost_equal(w[exp_zero1], 0)
+            assert_array_almost_equal(w[exp_zero2], 0)
+
+
 if __name__ == "__main__":
     run_module_suite()

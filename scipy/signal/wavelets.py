@@ -3,7 +3,7 @@ from numpy.dual import eig
 from scipy.misc import comb
 from scipy import linspace, pi, exp
 
-__all__ = ['daub', 'qmf', 'cascade', 'morlet']
+__all__ = ['daub', 'qmf', 'cascade', 'morlet', 'ricker']
 
 
 def daub(p):
@@ -74,7 +74,7 @@ def qmf(hk):
     """Return high-pass qmf filter from low-pass
     """
     N = len(hk) - 1
-    asgn = [{0: 1, 1: -1}[k % 2] for k in range(N + 1)]
+    asgn = [{0: 1, 1:-1}[k % 2] for k in range(N + 1)]
     return hk[::-1] * np.array(asgn)
 
 
@@ -246,3 +246,35 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     output *= exp(-0.5 * (x ** 2)) * pi ** (-0.25)
 
     return output
+
+
+def ricker(a, points=None):
+    """
+    Also known as the "mexican hat wavelet",
+    models the function:
+    A ( 1 - x^2/a^2) exp(-t^2/a^2),
+    where A = 2/sqrt(3a)pi^1/3
+
+    Parameters
+    ------------
+        a: numeric
+            Width parameter of the wavelet.
+        points: integer, opt
+            Number of points in vector. Default is 10*a
+            Will be centered around 0.
+    Returns
+    -----------
+        vector: 1d array
+        array of length `points` in shape of ricker curve.
+    """
+
+    A = 2 / (np.sqrt(3 * a) * (np.pi ** 0.25))
+    wsq = a ** 2
+    if points is None:
+        points = 10 * a
+    vec = np.arange(0, points) - (points - 1.0) / 2
+    tsq = vec ** 2
+    mod = (1 - tsq / wsq)
+    gauss = np.exp(-tsq / (2 * wsq))
+    total = A * mod * gauss
+    return total
