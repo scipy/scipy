@@ -105,6 +105,28 @@ class TestWavelets(TestCase):
             assert_array_almost_equal(w[exp_zero1], 0)
             assert_array_almost_equal(w[exp_zero2], 0)
 
+    def test_cwt(self):
+        widths = [1.0]
+        delta_wavelet = lambda s, t: np.array([1])
+        len_data = 100
+        test_data = np.sin(np.pi * np.arange(0, len_data) / 10.0)
+
+        #Test delta function input gives same data as output
+        cwt_dat = wavelets.cwt(test_data, delta_wavelet, widths)
+        assert_(cwt_dat.shape == (len(widths), len_data))
+        assert_array_almost_equal(test_data, cwt_dat.flatten())
+
+        #Check proper shape on output
+        widths = [1, 3, 4, 5, 10]
+        cwt_dat = wavelets.cwt(test_data, wavelets.ricker, widths)
+        assert_(cwt_dat.shape == (len(widths), len_data))
+
+        widths = [len_data * 10]
+        #Note: this wavelet isn't defined quite right, but is fine for this test
+        flat_wavelet = lambda w, l: np.ones(w) / w
+        cwt_dat = wavelets.cwt(test_data, flat_wavelet, widths)
+        assert_array_almost_equal(cwt_dat, np.mean(test_data))
+
 
 if __name__ == "__main__":
     run_module_suite()
