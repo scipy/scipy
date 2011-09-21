@@ -267,6 +267,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
 
     return (cQ,) + raw[1:]
 
+@numpy.deprecate
 def qr_old(a, overwrite_a=False, lwork=None):
     """Compute QR decomposition of a matrix.
 
