@@ -2,8 +2,9 @@ import numpy as np
 from numpy.dual import eig
 from scipy.misc import comb
 from scipy import linspace, pi, exp
+from scipy.signal import convolve
 
-__all__ = ['daub', 'qmf', 'cascade', 'morlet', 'ricker']
+__all__ = ['daub', 'qmf', 'cascade', 'morlet', 'ricker', 'cwt']
 
 
 def daub(p):
@@ -278,3 +279,40 @@ def ricker(a, points=None):
     gauss = np.exp(-tsq / (2 * wsq))
     total = A * mod * gauss
     return total
+
+
+
+def cwt(data, wavelet, widths):
+    """
+    Performs a continuous wavelet transform on `data`,
+    using the wavelet function. A CWT performs a convolution
+    with `data` using the `wavelet` function, which is characterized
+    fully by a width parameter.
+
+    Parameters
+    -----------
+    data : 1D array_like
+        data on which to perform the transform.
+    wavelet : function
+        Wavelet function, which should take 2 arguments.
+        The first argument is a width parameter, defining
+        the size of the wavelet (e.g. standard deviation of a gaussian).
+        The second is the number of points that the returned vector will have
+    widths : iterable
+        Widths to use for transform.
+
+    Returns
+    --------
+    cwt: 2d ndarray
+        Will be len(widths) x len(data).
+    Notes
+    --------
+    cwt[a,:] = scipy.signal.convolve(data,wavelet[width[a]])
+    """
+
+    output = np.zeros([len(widths), len(data)])
+    for ind, width in enumerate(widths):
+        wavelet_data = wavelet(width, min(10 * width, len(data)))
+        output[ind, :] = convolve(data, wavelet_data,
+                                              mode='same')
+    return output
