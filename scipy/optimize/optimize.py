@@ -62,7 +62,7 @@ def vecnorm(x, ord=2):
     elif ord == -Inf:
         return numpy.amin(abs(x))
     else:
-        return numpy.sum(abs(x) ** ord, axis=0) ** (1.0 / ord)
+        return numpy.sum(abs(x)**ord, axis=0)**(1.0 / ord)
 
 def rosen(x):
     """The Rosenbrock function.
@@ -86,7 +86,7 @@ def rosen(x):
     rosen_der, rosen_hess, rosen_hess_prod
     """
     x = asarray(x)
-    return numpy.sum(100.0 * (x[1:] - x[:-1] ** 2.0) ** 2.0 + (1 - x[:-1]) ** 2.0, axis=0)
+    return numpy.sum(100.0*(x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0, axis=0)
 
 def rosen_der(x):
     """The derivative (i.e. gradient) of the Rosenbrock function.
@@ -110,9 +110,9 @@ def rosen_der(x):
     xm_m1 = x[:-2]
     xm_p1 = x[2:]
     der = numpy.zeros_like(x)
-    der[1:-1] = 200 * (xm - xm_m1 ** 2) - 400 * (xm_p1 - xm ** 2) * xm - 2 * (1 - xm)
-    der[0] = -400 * x[0] * (x[1] - x[0] ** 2) - 2 * (1 - x[0])
-    der[-1] = 200 * (x[-1] - x[-2] ** 2)
+    der[1:-1] = 200*(xm - xm_m1**2) - 400*(xm_p1 - xm**2)*xm - 2*(1 - xm)
+    der[0] = -400*x[0]*(x[1] - x[0]**2) - 2*(1 - x[0])
+    der[-1] = 200*(x[-1] - x[-2]**2)
     return der
 
 def rosen_hess(x):
@@ -133,11 +133,11 @@ def rosen_hess(x):
     rosen, rosen_der, rosen_hess_prod
     """
     x = atleast_1d(x)
-    H = numpy.diag(-400 * x[:-1], 1) - numpy.diag(400 * x[:-1], -1)
+    H = numpy.diag(-400*x[:-1], 1) - numpy.diag(400*x[:-1], -1)
     diagonal = numpy.zeros(len(x), dtype=x.dtype)
-    diagonal[0] = 1200 * x[0] ** 2 - 400 * x[1] + 2
+    diagonal[0] = 1200*x[0]**2 - 400*x[1] + 2
     diagonal[-1] = 200
-    diagonal[1:-1] = 202 + 1200 * x[1:-1] ** 2 - 400 * x[2:]
+    diagonal[1:-1] = 202 + 1200*x[1:-1]**2 - 400*x[2:]
     H = H + numpy.diag(diagonal)
     return H
 
@@ -163,10 +163,10 @@ def rosen_hess_prod(x, p):
     """
     x = atleast_1d(x)
     Hp = numpy.zeros(len(x), dtype=x.dtype)
-    Hp[0] = (1200 * x[0] ** 2 - 400 * x[1] + 2) * p[0] - 400 * x[0] * p[1]
-    Hp[1:-1] = -400 * x[:-2] * p[:-2] + (202 + 1200 * x[1:-1] ** 2 - 400 * x[2:]) * p[1:-1] \
-               - 400 * x[1:-1] * p[2:]
-    Hp[-1] = -400 * x[-2] * p[-2] + 200 * p[-1]
+    Hp[0] = (1200*x[0]**2 - 400*x[1] + 2)*p[0] - 400*x[0]*p[1]
+    Hp[1:-1] = -400*x[:-2]*p[:-2] + (202 + 1200*x[1:-1]**2 - 400*x[2:])*p[1:-1] \
+               - 400*x[1:-1]*p[2:]
+    Hp[-1] = -400*x[-2]*p[-2] + 200*p[-1]
     return Hp
 
 def wrap_function(function, args):
@@ -260,9 +260,9 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     if not - 1 < rank < 2:
         raise ValueError("Initial guess must be a scalar or rank-1 sequence.")
     if maxiter is None:
-        maxiter = N * 200
+        maxiter = N*200
     if maxfun is None:
-        maxfun = N * 200
+        maxfun = N*200
 
     rho = 1
     chi = 2
@@ -284,7 +284,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     for k in range(0, N):
         y = numpy.array(x0, copy=True)
         if y[k] != 0:
-            y[k] = (1 + nonzdelt) * y[k]
+            y[k] = (1 + nonzdelt)*y[k]
         else:
             y[k] = zdelt
 
@@ -305,12 +305,12 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             break
 
         xbar = numpy.add.reduce(sim[:-1], 0) / N
-        xr = (1 + rho) * xbar - rho * sim[-1]
+        xr = (1 + rho)*xbar - rho*sim[-1]
         fxr = func(xr)
         doshrink = 0
 
         if fxr < fsim[0]:
-            xe = (1 + rho * chi) * xbar - rho * chi * sim[-1]
+            xe = (1 + rho*chi)*xbar - rho*chi*sim[-1]
             fxe = func(xe)
 
             if fxe < fxr:
@@ -326,7 +326,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             else:  # fxr >= fsim[-2]
                 # Perform contraction
                 if fxr < fsim[-1]:
-                    xc = (1 + psi * rho) * xbar - psi * rho * sim[-1]
+                    xc = (1 + psi*rho)*xbar - psi*rho*sim[-1]
                     fxc = func(xc)
 
                     if fxc <= fxr:
@@ -336,7 +336,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
                         doshrink = 1
                 else:
                     # Perform an inside contraction
-                    xcc = (1 - psi) * xbar + psi * sim[-1]
+                    xcc = (1 - psi)*xbar + psi*sim[-1]
                     fxcc = func(xcc)
 
                     if fxcc < fsim[-1]:
@@ -347,7 +347,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
                 if doshrink:
                     for j in one2np1:
-                        sim[j] = sim[0] + sigma * (sim[j] - sim[0])
+                        sim[j] = sim[0] + sigma*(sim[j] - sim[0])
                         fsim[j] = func(sim[j])
 
         ind = numpy.argsort(fsim)
@@ -428,10 +428,10 @@ def check_grad(func, grad, x0, *args):
         points x0.
 
     """
-    return sqrt(sum((grad(x0, *args) - approx_fprime(x0, func, _epsilon, *args)) ** 2))
+    return sqrt(sum((grad(x0, *args) - approx_fprime(x0, func, _epsilon, *args))**2))
 
 def approx_fhess_p(x0, p, fprime, epsilon, *args):
-    f2 = fprime(*((x0 + epsilon * p,) + args))
+    f2 = fprime(*((x0 + epsilon*p,) + args))
     f1 = fprime(*((x0,) + args))
     return (f2 - f1) / epsilon
 
@@ -509,7 +509,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     if x0.ndim == 0:
         x0.shape = (1,)
     if maxiter is None:
-        maxiter = len(x0) * 200
+        maxiter = len(x0)*200
     func_calls, f = wrap_function(f, args)
     if fprime is None:
         grad_calls, myfprime = wrap_function(approx_fprime, (f, epsilon))
@@ -525,7 +525,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     xk = x0
     if retall:
         allvecs = [x0]
-    sk = [2 * gtol]
+    sk = [2*gtol]
     warnflag = 0
     gnorm = vecnorm(gfk, ord=norm)
     while (gnorm > gtol) and (k < maxiter):
@@ -545,7 +545,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
                 # This line search also failed to find a better solution.
                 warnflag = 2
                 break
-        xkp1 = xk + alpha_k * pk
+        xkp1 = xk + alpha_k*pk
         if retall:
             allvecs.append(xkp1)
         sk = xkp1 - xk
@@ -576,10 +576,10 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         if isinf(rhok):  #this is patch for numpy
             rhok = 1000.0
             print "Divide-by-zero encountered: rhok assumed large"
-        A1 = I - sk[:, numpy.newaxis] * yk[numpy.newaxis, :] * rhok
-        A2 = I - yk[:, numpy.newaxis] * sk[numpy.newaxis, :] * rhok
-        Hk = numpy.dot(A1, numpy.dot(Hk, A2)) + rhok * sk[:, numpy.newaxis] \
-                 * sk[numpy.newaxis, :]
+        A1 = I - sk[:, numpy.newaxis]*yk[numpy.newaxis, :]*rhok
+        A2 = I - yk[:, numpy.newaxis]*sk[numpy.newaxis, :]*rhok
+        Hk = numpy.dot(A1, numpy.dot(Hk, A2)) + rhok*sk[:, numpy.newaxis] \
+                *sk[numpy.newaxis, :]
 
     if disp or full_output:
         fval = old_fval
@@ -685,7 +685,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     """
     x0 = asarray(x0).flatten()
     if maxiter is None:
-        maxiter = len(x0) * 200
+        maxiter = len(x0)*200
     func_calls, f = wrap_function(f, args)
     if fprime is None:
         grad_calls, myfprime = wrap_function(approx_fprime, (f, epsilon))
@@ -700,7 +700,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
 
     if retall:
         allvecs = [xk]
-    sk = [2 * gtol]
+    sk = [2*gtol]
     warnflag = 0
     pk = -gfk
     gnorm = vecnorm(gfk, ord=norm)
@@ -722,14 +722,14 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
                 # This line search also failed to find a better solution.
                 warnflag = 2
                 break
-        xk = xk + alpha_k * pk
+        xk = xk + alpha_k*pk
         if retall:
             allvecs.append(xk)
         if gfkp1 is None:
             gfkp1 = myfprime(xk)
         yk = gfkp1 - gfk
         beta_k = pymax(0, numpy.dot(yk, gfkp1) / deltak)
-        pk = -gfkp1 + beta_k * pk
+        pk = -gfkp1 + beta_k*pk
         gfk = gfkp1
         gnorm = vecnorm(gfk, ord=norm)
         if callback is not None:
@@ -867,10 +867,10 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     gcalls, fprime = wrap_function(fprime, args)
     hcalls = 0
     if maxiter is None:
-        maxiter = len(x0) * 200
+        maxiter = len(x0)*200
 
-    xtol = len(x0) * avextol
-    update = [2 * xtol]
+    xtol = len(x0)*avextol
+    update = [2*xtol]
     xk = x0
     if retall:
         allvecs = [xk]
@@ -882,7 +882,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         b = -fprime(xk)
         maggrad = numpy.add.reduce(abs(b))
         eta = min([0.5, numpy.sqrt(maggrad)])
-        termcond = eta * maggrad
+        termcond = eta*maggrad
         xsupi = zeros(len(x0), dtype=x0.dtype)
         ri = -b
         psupi = -ri
@@ -905,20 +905,20 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             # check curvature
             Ap = asarray(Ap).squeeze() # get rid of matrices...
             curv = numpy.dot(psupi, Ap)
-            if 0 <= curv <= 3 * numpy.finfo(numpy.float64).eps:
+            if 0 <= curv <= 3*numpy.finfo(numpy.float64).eps:
                 break
             elif curv < 0:
                 if (i > 0):
                     break
                 else:
-                    xsupi = xsupi + dri0 / curv * psupi
+                    xsupi = xsupi + dri0 / curv*psupi
                     break
             alphai = dri0 / curv
-            xsupi = xsupi + alphai * psupi
-            ri = ri + alphai * Ap
+            xsupi = xsupi + alphai*psupi
+            ri = ri + alphai*Ap
             dri1 = numpy.dot(ri, ri)
             betai = dri1 / dri0
-            psupi = -ri + betai * psupi
+            psupi = -ri + betai*psupi
             i = i + 1
             dri0 = dri1          # update numpy.dot(ri,ri) for next time.
 
@@ -926,7 +926,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         gfk = -b    # gradient at xk
         alphak, fc, gc, old_fval = line_search_BFGS(f, xk, pk, gfk, old_fval)
 
-        update = alphak * pk
+        update = alphak*pk
         xk = xk + update        # upcast if necessary
         if callback is not None:
             callback(xk)
@@ -1026,9 +1026,9 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     step = '       initial'
 
     sqrt_eps = sqrt(2.2e-16)
-    golden_mean = 0.5 * (3.0 - sqrt(5.0))
+    golden_mean = 0.5*(3.0 - sqrt(5.0))
     a, b = x1, x2
-    fulc = a + golden_mean * (b - a)
+    fulc = a + golden_mean*(b - a)
     nfc, xf = fulc, fulc
     rat = e = 0.0
     x = xf
@@ -1037,9 +1037,9 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     fmin_data = (1, xf, fx)
 
     ffulc = fnfc = fx
-    xm = 0.5 * (a + b)
-    tol1 = sqrt_eps * abs(xf) + xtol / 3.0
-    tol2 = 2.0 * tol1
+    xm = 0.5*(a + b)
+    tol1 = sqrt_eps*abs(xf) + xtol / 3.0
+    tol2 = 2.0*tol1
 
     if disp > 2:
         print (" ")
@@ -1047,30 +1047,30 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
         print "%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,))
 
 
-    while (abs(xf - xm) > (tol2 - 0.5 * (b - a))):
+    while (abs(xf - xm) > (tol2 - 0.5*(b - a))):
         golden = 1
         # Check for parabolic fit
         if abs(e) > tol1:
             golden = 0
-            r = (xf - nfc) * (fx - ffulc)
-            q = (xf - fulc) * (fx - fnfc)
-            p = (xf - fulc) * q - (xf - nfc) * r
-            q = 2.0 * (q - r)
+            r = (xf - nfc)*(fx - ffulc)
+            q = (xf - fulc)*(fx - fnfc)
+            p = (xf - fulc)*q - (xf - nfc)*r
+            q = 2.0*(q - r)
             if q > 0.0: p = -p
             q = abs(q)
             r = e
             e = rat
 
             # Check for acceptability of parabola
-            if ((abs(p) < abs(0.5 * q * r)) and (p > q * (a - xf)) and \
-                 (p < q * (b - xf))):
+            if ((abs(p) < abs(0.5*q*r)) and (p > q*(a - xf)) and \
+                 (p < q*(b - xf))):
                 rat = (p + 0.0) / q
                 x = xf + rat
                 step = '       parabolic'
 
                 if ((x - a) < tol2) or ((b - x) < tol2):
                     si = numpy.sign(xm - xf) + ((xm - xf) == 0)
-                    rat = tol1 * si
+                    rat = tol1*si
             else:      # do a golden section step
                 golden = 1
 
@@ -1079,11 +1079,11 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
                 e = a - xf
             else:
                 e = b - xf
-            rat = golden_mean * e
+            rat = golden_mean*e
             step = '       golden'
 
         si = numpy.sign(rat) + (rat == 0)
-        x = xf + si * max([abs(rat), tol1])
+        x = xf + si*max([abs(rat), tol1])
         fu = func(x, *args)
         num += 1
         fmin_data = (num, x, fu)
@@ -1109,9 +1109,9 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
             elif (fu <= ffulc) or (fulc == xf) or (fulc == nfc):
                 fulc, ffulc = x, fu
 
-        xm = 0.5 * (a + b)
-        tol1 = sqrt_eps * abs(xf) + xtol / 3.0
-        tol2 = 2.0 * tol1
+        xm = 0.5*(a + b)
+        tol1 = sqrt_eps*abs(xf) + xtol / 3.0
+        tol2 = 2.0*tol1
 
         if num >= maxfun:
             flag = 1
@@ -1203,30 +1203,30 @@ class Brent:
         funcalls = 1
         iter = 0
         while (iter < self.maxiter):
-            tol1 = self.tol * abs(x) + _mintol
-            tol2 = 2.0 * tol1
-            xmid = 0.5 * (a + b)
-            if abs(x - xmid) < (tol2 - 0.5 * (b - a)):  # check for convergence
+            tol1 = self.tol*abs(x) + _mintol
+            tol2 = 2.0*tol1
+            xmid = 0.5*(a + b)
+            if abs(x - xmid) < (tol2 - 0.5*(b - a)):  # check for convergence
                 xmin = x
                 fval = fx
                 break
             if (abs(deltax) <= tol1):
                 if (x >= xmid): deltax = a - x       # do a golden section step
                 else: deltax = b - x
-                rat = _cg * deltax
+                rat = _cg*deltax
             else:                              # do a parabolic step
-                tmp1 = (x - w) * (fx - fv)
-                tmp2 = (x - v) * (fx - fw)
-                p = (x - v) * tmp2 - (x - w) * tmp1;
-                tmp2 = 2.0 * (tmp2 - tmp1)
+                tmp1 = (x - w)*(fx - fv)
+                tmp2 = (x - v)*(fx - fw)
+                p = (x - v)*tmp2 - (x - w)*tmp1;
+                tmp2 = 2.0*(tmp2 - tmp1)
                 if (tmp2 > 0.0):
                     p = -p
                 tmp2 = abs(tmp2)
                 dx_temp = deltax
                 deltax = rat
                 # check parabolic fit
-                if ((p > tmp2 * (a - x)) and (p < tmp2 * (b - x)) and (abs(p) < abs(0.5 * tmp2 * dx_temp))):
-                    rat = p * 1.0 / tmp2        # if parabolic step is useful.
+                if ((p > tmp2*(a - x)) and (p < tmp2*(b - x)) and (abs(p) < abs(0.5*tmp2*dx_temp))):
+                    rat = p*1.0 / tmp2        # if parabolic step is useful.
                     u = x + rat
                     if ((u - a) < tol2 or (b - u) < tol2):
                         if xmid - x >= 0: rat = tol1
@@ -1234,7 +1234,7 @@ class Brent:
                 else:
                     if (x >= xmid): deltax = a - x # if it's not do a golden section step
                     else: deltax = b - x
-                    rat = _cg * deltax
+                    rat = _cg*deltax
 
             if (abs(rat) < tol1):            # update by at least tol1
                 if rat >= 0: u = x + tol1
@@ -1373,19 +1373,19 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
     x0 = xa
     if (abs(xc - xb) > abs(xb - xa)):
         x1 = xb
-        x2 = xb + _gC * (xc - xb)
+        x2 = xb + _gC*(xc - xb)
     else:
         x2 = xb
-        x1 = xb - _gC * (xb - xa)
+        x1 = xb - _gC*(xb - xa)
     f1 = func(*((x1,) + args))
     f2 = func(*((x2,) + args))
     funcalls += 2
-    while (abs(x3 - x0) > tol * (abs(x1) + abs(x2))):
+    while (abs(x3 - x0) > tol*(abs(x1) + abs(x2))):
         if (f2 < f1):
-            x0 = x1; x1 = x2; x2 = _gR * x1 + _gC * x3
+            x0 = x1; x1 = x2; x2 = _gR*x1 + _gC*x3
             f1 = f2; f2 = func(*((x2,) + args))
         else:
-            x3 = x2; x2 = x1; x1 = _gR * x2 + _gC * x0
+            x3 = x2; x2 = x1; x1 = _gR*x2 + _gC*x0
             f2 = f1; f1 = func(*((x1,) + args))
         funcalls += 1
     if (f1 < f2):
@@ -1437,24 +1437,24 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     if (fa < fb):                      # Switch so fa > fb
         dum = xa; xa = xb; xb = dum
         dum = fa; fa = fb; fb = dum
-    xc = xb + _gold * (xb - xa)
+    xc = xb + _gold*(xb - xa)
     fc = func(*((xc,) + args))
     funcalls = 3
     iter = 0
     while (fc < fb):
-        tmp1 = (xb - xa) * (fb - fc)
-        tmp2 = (xb - xc) * (fb - fa)
+        tmp1 = (xb - xa)*(fb - fc)
+        tmp2 = (xb - xc)*(fb - fa)
         val = tmp2 - tmp1
         if abs(val) < _verysmall_num:
-            denom = 2.0 * _verysmall_num
+            denom = 2.0*_verysmall_num
         else:
-            denom = 2.0 * val
-        w = xb - ((xb - xc) * tmp2 - (xb - xa) * tmp1) / denom
-        wlim = xb + grow_limit * (xc - xb)
+            denom = 2.0*val
+        w = xb - ((xb - xc)*tmp2 - (xb - xa)*tmp1) / denom
+        wlim = xb + grow_limit*(xc - xb)
         if iter > maxiter:
             raise RuntimeError("Too many iterations.")
         iter += 1
-        if (w - xc) * (xb - w) > 0.0:
+        if (w - xc)*(xb - w) > 0.0:
             fw = func(*((w,) + args))
             funcalls += 1
             if (fw < fc):
@@ -1463,22 +1463,22 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
             elif (fw > fb):
                 xc = w; fc = fw
                 return xa, xb, xc, fa, fb, fc, funcalls
-            w = xc + _gold * (xc - xb)
+            w = xc + _gold*(xc - xb)
             fw = func(*((w,) + args))
             funcalls += 1
-        elif (w - wlim) * (wlim - xc) >= 0.0:
+        elif (w - wlim)*(wlim - xc) >= 0.0:
             w = wlim
             fw = func(*((w,) + args))
             funcalls += 1
-        elif (w - wlim) * (xc - w) > 0.0:
+        elif (w - wlim)*(xc - w) > 0.0:
             fw = func(*((w,) + args))
             funcalls += 1
             if (fw < fc):
-                xb = xc; xc = w; w = xc + _gold * (xc - xb)
+                xb = xc; xc = w; w = xc + _gold*(xc - xb)
                 fb = fc; fc = fw; fw = func(*((w,) + args))
                 funcalls += 1
         else:
-            w = xc + _gold * (xc - xb)
+            w = xc + _gold*(xc - xb)
             fw = func(*((w,) + args))
             funcalls += 1
         xa = xb; xb = xc; xc = w
@@ -1494,9 +1494,9 @@ def _linesearch_powell(func, p, xi, tol=1e-3):
 
     """
     def myfunc(alpha):
-        return func(p + alpha * xi)
+        return func(p + alpha*xi)
     alpha_min, fret, iter, num = brent(myfunc, full_output=1, tol=tol)
-    xi = alpha_min * xi
+    xi = alpha_min*xi
     return squeeze(fret), p + xi, xi
 
 
@@ -1604,9 +1604,9 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     if not - 1 < rank < 2:
         raise ValueError("Initial guess must be a scalar or rank-1 sequence.")
     if maxiter is None:
-        maxiter = N * 1000
+        maxiter = N*1000
     if maxfun is None:
-        maxfun = N * 1000
+        maxfun = N*1000
 
 
     if direc is None:
@@ -1625,7 +1625,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
         for i in ilist:
             direc1 = direc[i]
             fx2 = fval
-            fval, x, direc1 = _linesearch_powell(func, x, direc1, tol=xtol * 100)
+            fval, x, direc1 = _linesearch_powell(func, x, direc1, tol=xtol*100)
             if (fx2 - fval) > delta:
                 delta = fx2 - fval
                 bigind = i
@@ -1634,25 +1634,25 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             callback(x)
         if retall:
             allvecs.append(x)
-        if (2.0 * (fx - fval) <= ftol * (abs(fx) + abs(fval)) + 1e-20): break
+        if (2.0*(fx - fval) <= ftol*(abs(fx) + abs(fval)) + 1e-20): break
         if fcalls[0] >= maxfun: break
         if iter >= maxiter: break
 
         # Construct the extrapolated point
         direc1 = x - x1
-        x2 = 2 * x - x1
+        x2 = 2*x - x1
         x1 = x.copy()
         fx2 = squeeze(func(x2))
 
         if (fx > fx2):
-            t = 2.0 * (fx + fx2 - 2.0 * fval)
+            t = 2.0*(fx + fx2 - 2.0*fval)
             temp = (fx - fval - delta)
-            t *= temp * temp
+            t *= temp*temp
             temp = fx - fx2
-            t -= delta * temp * temp
+            t -= delta*temp*temp
             if t < 0.0:
                 fval, x, direc1 = _linesearch_powell(func, x, direc1,
-                                                     tol=xtol * 100)
+                                                     tol=xtol*100)
                 direc[bigind] = direc[-1]
                 direc[-1] = direc1
 
