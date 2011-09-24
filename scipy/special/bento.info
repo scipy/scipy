@@ -33,6 +33,9 @@ Library:
     Extension: lambertw
         Sources:
             lambertw.c
+    Extension: _polylog
+        Sources:
+            _polylog.c
     Extension: _logit
         Sources:
             _logit.c.src

@@ -530,6 +530,7 @@ import orthogonal
 from orthogonal import *
 from spfun_stats import multigammaln
 from lambertw import lambertw
+from _polylog import polylog
 from _logit import logit, expit
 import add_newdocs
 

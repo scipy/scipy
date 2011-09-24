@@ -24,10 +24,10 @@ def configuration(parent_package='',top_path=None):
         define_macros.append(('_USE_MATH_DEFINES',None))
 
     # C libraries
-    config.add_library('sc_c_misc',sources=[join('c_misc','*.c')],
+    config.add_library('sc_c_misc',sources=[join('c_misc','*.c'),'raise_warnings.c'],
                        include_dirs=[get_python_inc(), get_numpy_include_dirs()],
                        macros=define_macros)
-    config.add_library('sc_cephes',sources=[join('cephes','*.c')],
+    config.add_library('sc_cephes',sources=[join('cephes','*.c'),'raise_warnings.c'],
                        include_dirs=[get_python_inc(), get_numpy_include_dirs()],
                        macros=define_macros)
 
@@ -71,6 +71,13 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('lambertw',
                          sources=['lambertw.c'],
                          define_macros=[],
+                         extra_info=get_info("npymath"))
+
+    # Extension polylog
+    config.add_extension('_polylog',
+                         sources=['_polylog.c'],
+                         define_macros=[],
+                         libraries=['sc_cephes'],
                          extra_info=get_info("npymath"))
 
     # Extension _logit
