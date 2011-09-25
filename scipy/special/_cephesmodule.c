@@ -1047,8 +1047,6 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 
 }
 
-static PyObject *scipy_special_SpecialFunctionWarning = NULL;
-
 static char errprint_doc[] = \
 "errprint({flag}) sets the error printing flag for special functions\n" \
 "    (from the cephesmodule). The output is the previous state.\n" \
@@ -1111,14 +1109,6 @@ PyObject *PyInit__cephes(void)
     /* Load the cephes operators into the array module's namespace */
     Cephes_InitOperators(d);
 
-    /* Register and add the warning type object */
-    scipy_special_SpecialFunctionWarning = PyErr_NewException(
-            "scipy.special._cephes.SpecialFunctionWarning",
-            PyExc_RuntimeWarning,
-            NULL);
-    PyModule_AddObject(m, "SpecialFunctionWarning",
-            scipy_special_SpecialFunctionWarning);
-
     /* Check for errors */
     if (PyErr_Occurred())
         Py_FatalError("can't initialize module _cephes");
@@ -1147,14 +1137,6 @@ PyMODINIT_FUNC init_cephes(void) {
 
   /* Load the cephes operators into the array module's namespace */
   Cephes_InitOperators(d);
-
-  /* Register and add the warning type object */
-  scipy_special_SpecialFunctionWarning = PyErr_NewException(
-      "scipy.special._cephes.SpecialFunctionWarning",
-      PyExc_RuntimeWarning,
-      NULL);
-  PyModule_AddObject(m, "SpecialFunctionWarning",
-                     scipy_special_SpecialFunctionWarning);
 
   /* Check for errors */
   if (PyErr_Occurred())
