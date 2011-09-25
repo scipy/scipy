@@ -26,7 +26,6 @@ def configuration(parent_package='', top_path=None, setup_name='setupscons.py'):
     config.add_subpackage('stats')
     config.add_subpackage('ndimage')
     config.add_subpackage('weave')
-    config.make_svn_version_py()  # installs __svn_version__.py
 
     def add_config(*args, **kw):
         # Generate __config__, handle inplace issues.
