@@ -662,6 +662,62 @@ interface
    end subroutine <tchar=c,z>ungrq
 
 
+
+   subroutine <tchar=s,d>ormqr(side,trans,m,n,k,a,lda,tau,b,ldb,work,lwork,info)
+
+   ! q,work,info = ogmqr(a,b,lwork=3*n,overwrite_b=0)
+   ! Multiplies a real matrix by the orthogonal matrix
+   ! Q of the QR factorization formed by ?geqrf or
+   ! ?geqpf
+
+     callstatement (*f2py_func)((side?"R":"L"),(trans?(trans==2?"T":"T"):"N"),&m,&n,&k,a,&lda,tau,b,&ldb,work,&lwork,&info)
+     callprotoargument char*,char*,int*,int*,int*,<type_in_c>*,int*,<type_in_c>*,<type_in_c>*,int*,<type_in_c>*,int*,int*
+
+     integer intent(hide), depend(b):: m = shape(b,0)
+     integer intent(hide), depend(b) :: n = shape(b,1)
+     integer intent(hide), depend(tau) :: k = shape(tau,0)
+     integer optional, intent(hide), depend(a) :: lda = shape(a,0)
+     integer optional, intent(hide), depend(b) :: ldb = shape(b,0)
+     integer optional, intent(in), check(side==0||side==1) :: side = 0
+     integer optional, intent(in), check(trans>=0 && trans<=2) :: trans = 0
+
+     <type_in> dimension(lda,*), intent(in) :: a
+     <type_in> dimension(k), intent(in) :: tau
+     <type_in> dimension(m,n), intent(in,out,copy,out=x) :: b
+
+     integer optional, intent(in), depend(n), check(lwork>=n||lwork==-1) :: lwork=3*n
+     <type_in> dimension(MAX(lwork,1)), intent(out), depend(lwork) :: work
+     integer intent(out) :: info
+   end subroutine <tchar=s,d>ogmqr
+
+   subroutine <tchar=c,z>unmqr(side,trans,m,n,k,a,lda,tau,b,ldb,work,lwork,info)
+
+   ! q,work,info = unmqr(a,lwork=3*n,overwrite_a=0)
+   ! Multiplies a real matrix by the orthogonal matrix
+   ! Q of the QR factorization formed by ?geqrf or
+   ! ?geqpf
+
+     callstatement (*f2py_func)((side?"R":"L"),(trans?(trans==2?"C":"C"):"N"),&m,&n,&k,a,&lda,tau,b,&ldb,work,&lwork,&info)
+     callprotoargument char*,char*,int*,int*,int*,<type_in_c>*,int*,<type_in_c>*,<type_in_c>*,int*,<type_in_c>*,int*,int*
+
+     integer intent(hide), depend(b):: m = shape(b,0)
+     integer intent(hide), depend(b):: n = shape(b,1)
+     integer intent(hide), depend(tau):: k = shape(tau,0)
+     integer optional, intent(hide), depend(a) :: lda = (side?:shape(a,1), shape(a,0))
+     integer optional, intent(hide), depend(b) :: ldb = shape(b,0)
+     integer optional, intent(in), check(side==0||side==1) :: side = 0
+     integer optional, intent(in), check(trans==0||trans==1) :: trans = 0
+
+     <type_in> dimension(lda,k), intent(in) :: a
+     <type_in> dimension(k), intent(in) :: tau
+     <type_in> dimension(m,n), intent(in,out,copy,out=x) :: b
+
+     integer optional,intent(in), depend(n), check(lwork>=n||lwork==-1) :: lwork=3*n
+     <type_in> dimension(MAX(lwork,1)), intent(out), depend(lwork) :: work
+     integer intent(out) :: info
+   end subroutine <tchar=c,z>unmqr
+
+
    subroutine <tchar=s,d>geev(compute_vl,compute_vr,n,a,wr,wi,vl,ldvl,vr,ldvr,work,lwork,info)
 
      ! wr,wi,vl,vr,info = geev(a,compute_vl=1,compute_vr=1,lwork=4*n,overwrite_a=0)

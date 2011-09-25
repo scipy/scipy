@@ -10,7 +10,56 @@ from lapack import get_lapack_funcs, find_best_lapack_type
 from misc import _datacopied
 
 # XXX: what is qr_old, should it be kept?
-__all__ = ['qr', 'rq', 'qr_old']
+__all__ = ['qr', 'rq', 'qr_multiply', 'qr_old']
+
+def _raw_qr(a1, overwrite_a=False, lwork=None, mode='full', pivoting=False):
+    """encapsulates common blocks from qr and qr_multiply. Returns the qr
+    matrix as a product of elementary reflectors that can be used by both
+    {or,un}gqr and {or,un}mqr.
+    """
+    jpvt = None
+    M, N = a1.shape
+
+    if pivoting:
+        geqp3, = get_lapack_funcs(('geqp3',), (a1,))
+        if lwork is None or lwork == -1:
+            # get optimal work array
+            qr, jpvt, tau, work, info = geqp3(a1, lwork=-1, overwrite_a=1)
+            lwork = work[0].real.astype(numpy.int)
+
+        qr, jpvt, tau, work, info = geqp3(a1, lwork=lwork,
+            overwrite_a=overwrite_a)
+        jpvt -= 1 # geqp3 returns a 1-based index array, so subtract 1
+        if info < 0:
+            raise ValueError("illegal value in %d-th argument of internal geqp3"
+                                                                        % -info)
+    else:
+        geqrf, = get_lapack_funcs(('geqrf',), (a1,))
+        if lwork is None or lwork == -1:
+            # get optimal work array
+            qr, tau, work, info = geqrf(a1, lwork=-1, overwrite_a=1)
+            lwork = work[0].real.astype(numpy.int)
+
+        qr, tau, work, info = geqrf(a1, lwork=lwork, overwrite_a=overwrite_a)
+        if info < 0:
+            raise ValueError("illegal value in %d-th argument of internal geqrf"
+                                                                        % -info)
+
+    if mode != 'economic' or M < N:
+        R = special_matrices.triu(qr)
+    else:
+        R = special_matrices.triu(qr[0:N, 0:N])
+
+    if mode == 'r':
+        pass
+    elif M <= N:
+        qr = qr[:, :M]
+    elif mode == 'full':
+        tmp = numpy.empty((M, M), dtype=qr.dtype)
+        tmp[:,0:N] = qr
+        qr = tmp
+
+    return qr, R, jpvt, tau, work, info
 
 
 def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
@@ -108,34 +157,8 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     M, N = a1.shape
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
-    if pivoting:
-        geqp3, = get_lapack_funcs(('geqp3',), (a1,))
-        if lwork is None or lwork == -1:
-            # get optimal work array
-            qr, jpvt, tau, work, info = geqp3(a1, lwork=-1, overwrite_a=1)
-            lwork = work[0].real.astype(numpy.int)
-
-        qr, jpvt, tau, work, info = geqp3(a1, lwork=lwork,
-            overwrite_a=overwrite_a)
-        jpvt -= 1 # geqp3 returns a 1-based index array, so subtract 1
-        if info < 0:
-            raise ValueError("illegal value in %d-th argument of internal geqp3"
-                                                                        % -info)
-    else:
-        geqrf, = get_lapack_funcs(('geqrf',), (a1,))
-        if lwork is None or lwork == -1:
-            # get optimal work array
-            qr, tau, work, info = geqrf(a1, lwork=-1, overwrite_a=1)
-            lwork = work[0].real.astype(numpy.int)
-
-        qr, tau, work, info = geqrf(a1, lwork=lwork, overwrite_a=overwrite_a)
-        if info < 0:
-            raise ValueError("illegal value in %d-th argument of internal geqrf"
-                                                                        % -info)
-    if not mode == 'economic' or M < N:
-        R = special_matrices.triu(qr)
-    else:
-        R = special_matrices.triu(qr[0:N, 0:N])
+    qr, R, jpvt, tau, work, info = _raw_qr(
+        a1, overwrite_a=overwrite_a, lwork=lwork, mode=mode, pivoting=pivoting)
 
     if mode == 'r':
         if pivoting:
@@ -143,29 +166,15 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
         else:
             return R
 
+    # LAPACK requires to generate Q matrix from elementary reflectors
     if find_best_lapack_type((a1,))[0] in ('s', 'd'):
         gor_un_gqr, = get_lapack_funcs(('orgqr',), (qr,))
     else:
         gor_un_gqr, = get_lapack_funcs(('ungqr',), (qr,))
 
-    if M < N:
-        # get optimal work array
-        Q, work, info = gor_un_gqr(qr[:,0:M], tau, lwork=-1, overwrite_a=1)
-        lwork = work[0].real.astype(numpy.int)
-        Q, work, info = gor_un_gqr(qr[:,0:M], tau, lwork=lwork, overwrite_a=1)
-    elif mode == 'economic':
-        # get optimal work array
-        Q, work, info = gor_un_gqr(qr, tau, lwork=-1, overwrite_a=1)
-        lwork = work[0].real.astype(numpy.int)
-        Q, work, info = gor_un_gqr(qr, tau, lwork=lwork, overwrite_a=1)
-    else:
-        t = qr.dtype.char
-        qqr = numpy.empty((M, M), dtype=t)
-        qqr[:,0:N] = qr
-        # get optimal work array
-        Q, work, info = gor_un_gqr(qqr, tau, lwork=-1, overwrite_a=1)
-        lwork = work[0].real.astype(numpy.int)
-        Q, work, info = gor_un_gqr(qqr, tau, lwork=lwork, overwrite_a=1)
+    Q, work, info = gor_un_gqr(qr, tau, lwork=-1, overwrite_a=1)
+    lwork = work[0].real.astype(numpy.int)
+    Q, work, info = gor_un_gqr(qr, tau, lwork=lwork, overwrite_a=1)
 
     if info < 0:
         raise ValueError("illegal value in %d-th argument of internal gorgqr"
@@ -174,6 +183,102 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
         return Q, R, jpvt
     return Q, R
 
+
+def qr_multiply(a, *args, **kwargs):
+    """Perform dot(q, b), dot(q, c) ... where q is given by the QR-decompostion of a.
+
+    Parameters
+    ----------
+    a : array, shape (M, N)
+       array to perform the QR decomposition.
+
+    b, c, d ... : array, up to 2D
+       arrays to be multiplied by Q.
+
+    mode : {'full', 'economic'}, optional
+        Wether to compute Q and R in full (mode='full') or economy-size
+        (mode='economy'). If none given, 'full' will be used.
+
+    trans : boolean, optional.
+        Type of opeartion to perform. If a is a complex array, Q^H is used
+        instead of Q^T. If none given, False will be used
+
+        ========  ===========
+        trans     opeartion
+        ========  ===========
+        False     dot(Q, A)
+        True      dot(Q^T, A)
+        ========  ===========
+
+    Returns
+    -------
+    qb, qc, .. : sequence of arrays
+        Arrays dot(q, b), dot(q, c), ...
+
+    R : array, shape (M, N)
+        Triangular matrix from the qr decompostion of a.
+
+    P : integer array, shape (N,)
+        Pivoting matrix. Onlye returned if ``pivoting=True``.
+
+    Examples
+    --------
+    q_multiply can be used to compute the least squares solution ax = b:
+
+    >>> from scipy import linalg
+    >>> a = [[1, 1], [2, 1], [2, 2]]
+    >>> b = [0, 1, 2]
+    >>> qb, r = linalg.qr_multiply(a, b, trans=True, mode='economic')
+    >>> print linalg.solve_triangular(r, qb)
+    [[ 0.2],
+     [ 0.6]])
+    """
+    trans = kwargs.pop('trans', False)
+    overwrite_b = kwargs.pop('overwrite_b', False)
+    a1 = asarray_chkfinite(a)
+    result = []
+    if trans:
+        N, M = a1.shape
+    else:
+        M, N = a1.shape
+
+    q, R, jpvt, tau, work, info = _raw_qr(a1, **kwargs)
+
+    for b in args:
+        b = asarray_chkfinite(b)
+        if b.ndim == 1:
+            b = b[:, numpy.newaxis]
+
+        if b.dtype.char in numpy.typecodes['Complex'] or \
+           q.dtype.char in numpy.typecodes['Complex']:
+            ormqr, = get_lapack_funcs(('unmqr',), (q,b))
+        else:
+            ormqr, = get_lapack_funcs(('ormqr',), (q,b))
+
+        if (trans == False and q.shape[1] != b.shape[0]) or \
+           (trans == True and q.shape[0] != b.shape[0]):
+            raise ValueError("Incompatible dimensions in qr_multiply")
+
+        if b.shape[0] < M:
+            tmp = numpy.empty((M, b.shape[1]), dtype = q.dtype)
+            tmp[:b.shape[0]] = b
+            b = tmp
+            overwrite_b = True
+
+        c, work, info = ormqr(q, tau, b, lwork=-1)
+        lwork = work[0].real.astype(numpy.int32)
+        c, work, info = ormqr(q, tau, b, lwork=lwork, trans=trans,
+                              overwrite_b=overwrite_b)
+        if info < 0:
+            raise ValueError("illegal value in %d-th argument of internal gorgqr"
+                                                                        % -info)
+        result.append(c[:M])
+
+    if jpvt is not None:
+        result = result + [R, jpvt]
+    else:
+        result = result + [R]
+    return result
 
 
 def qr_old(a, overwrite_a=False, lwork=None):

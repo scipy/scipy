@@ -16,7 +16,7 @@ from numpy.testing import TestCase, assert_equal, assert_array_almost_equal, \
 
 from scipy.linalg import eig, eigvals, lu, svd, svdvals, cholesky, qr, \
      schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq, \
-     eig_banded, eigvals_banded, eigh, eigvalsh, LinAlgError
+     eig_banded, eigvals_banded, eigh, eigvalsh, LinAlgError, qr_multiply
 from scipy.linalg.flapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
      dsbev, dsbevd, dsbevx, zhbevd, zhbevx
 
@@ -1112,6 +1112,53 @@ class TestQR(TestCase):
             q2,r2 = qr(a[:,p])
             assert_array_almost_equal(q,q2)
             assert_array_almost_equal(r,r2)
+
+
+class TestQMultiply(TestCase):
+
+    def test_simple(self):
+
+        for x in (0, 1j):
+            # test for real and complex
+            a = [[8 + x,2,3],[2,9,3],[5,3 + x,6]]
+            q,r = qr(a)
+            qc, qc1, r = qr_multiply(a, identity(3), np.ones(3))
+            assert_array_almost_equal(q, qc)
+            assert_array_almost_equal(np.sum(q, axis=1), qc1.ravel())
+
+            qc, qc1, r = qr_multiply(a, identity(3), np.ones(3), trans=True)
+            assert_array_almost_equal(q.conjugate().T, qc)
+            assert_array_almost_equal(np.sum(q.conjugate().T, axis=1), qc1.ravel())
+
+        # test for empty args
+        a = [[8,2,3],[2,9,3],[5,3,6]]
+        q,r = qr(a)
+        r1, = qr_multiply(a)
+        assert_array_equal(r, r1)
+
+
+    def test_simple_tall(self):
+        a = [[8.,2],[2,9],[5,3]]
+        c = [[1.,2], [2, 1], [4,5]]
+        q,r = qr(a)
+        qc,r = qr_multiply(a, c)
+        assert_array_almost_equal(dot(q, c), qc)
+
+        c = [[1.,2], [3, 4]]
+        q,r = qr(a, mode='economic')
+        qc,r = qr_multiply(a, c, mode='economic')
+        assert_array_almost_equal(dot(q, c), qc)
+        assert_raises(ValueError, qr_multiply, a, c)
+
+    def test_simple_fat(self):
+        a = [[8,2,3],[2,9,5]]
+        q,r = qr(a, mode="economic")
+        c = [1, 2]
+        qc,r = qr_multiply(a, c)
+        assert_array_almost_equal(dot(q, c), qc.ravel())
+        qc,r = qr_multiply(a, identity(2))
+        assert_array_almost_equal(qc, q)
+
 
 class TestRQ(TestCase):
 
