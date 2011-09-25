@@ -1049,21 +1049,6 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 
 static PyObject *scipy_special_SpecialFunctionWarning = NULL;
 
-/* void scipy_special_raise_warning(char *fmt, ...) */
-/* { */
-/*     NPY_ALLOW_C_API_DEF */
-/*     char msg[1024]; */
-/*     va_list ap; */
-
-/*     va_start(ap, fmt); */
-/*     PyOS_vsnprintf(msg, 1024, fmt, ap); */
-/*     va_end(ap); */
-
-/*     NPY_ALLOW_C_API */
-/*     PyErr_Warn(scipy_special_SpecialFunctionWarning, msg); */
-/*     NPY_DISABLE_C_API */
-/* } */
-
 static char errprint_doc[] = \
 "errprint({flag}) sets the error printing flag for special functions\n" \
 "    (from the cephesmodule). The output is the previous state.\n" \

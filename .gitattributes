@@ -14,5 +14,6 @@ scipy/signal/spectral.c binary
 scipy/spatial/ckdtree.c binary
 scipy/spatial/qhull.c binary
 scipy/special/lambertw.c binary
+scipy/special/_polylog.c binary
 scipy/special/orthogonal_eval.c binary
 scipy/stats/vonmises_cython.c binary
