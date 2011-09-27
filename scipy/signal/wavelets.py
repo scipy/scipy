@@ -46,12 +46,12 @@ def daub(p):
             P = [comb(p - 1 + k, k, exact=1) for k in range(p)][::-1]
             yj = np.roots(P)
         else:  # try different polynomial --- needs work
-            P = [comb(p - 1 + k, k, exact=1) / 4.0 ** k
+            P = [comb(p - 1 + k, k, exact=1) / 4.0**k
                  for k in range(p)][::-1]
             yj = np.roots(P) / 4
         # for each root, compute two z roots, select the one with |z|>1
         # Build up final polynomial
-        c = np.poly1d([1, 1]) ** p
+        c = np.poly1d([1, 1])**p
         q = np.poly1d([1])
         for k in range(p - 1):
             yval = yj[k]
@@ -242,9 +242,9 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     output = exp(1j * w * x)
 
     if complete:
-        output -= exp(-0.5 * (w ** 2))
+        output -= exp(-0.5 * (w**2))
 
-    output *= exp(-0.5 * (x ** 2)) * pi ** (-0.25)
+    output *= exp(-0.5 * (x**2)) * pi**(-0.25)
 
     return output
 
@@ -254,32 +254,41 @@ def ricker(a, points=None):
     Also known as the "mexican hat wavelet",
     models the function:
     A ( 1 - x^2/a^2) exp(-t^2/a^2),
-    where A = 2/sqrt(3a)pi^1/3
+    where ``A = 2/sqrt(3a)pi^1/3``
 
     Parameters
-    ------------
-        a: numeric
-            Width parameter of the wavelet.
-        points: integer, opt
-            Number of points in vector. Default is 10*a
-            Will be centered around 0.
+    ----------
+    a: numeric
+        Width parameter of the wavelet.
+    points: integer, optional
+        Number of points in `vector`. Default is ``10*a``
+        Will be centered around 0.
     Returns
     -----------
-        vector: 1d array
+    vector: 1-D ndarray
         array of length `points` in shape of ricker curve.
+    Examples
+    --------
+    >>> import matplotlib.pyplot as plt
+    >>> points = 100
+    >>> a = 4.0
+    >>> vec2 = ricker(a,points)
+    >>> print len(vec2)
+    100
+    >>> plt.plot(vec2)
+    >>> plt.show()
     """
 
-    A = 2 / (np.sqrt(3 * a) * (np.pi ** 0.25))
-    wsq = a ** 2
+    A = 2 / (np.sqrt(3 * a) * (np.pi**0.25))
+    wsq = a**2
     if points is None:
         points = 10 * a
     vec = np.arange(0, points) - (points - 1.0) / 2
-    tsq = vec ** 2
+    tsq = vec**2
     mod = (1 - tsq / wsq)
     gauss = np.exp(-tsq / (2 * wsq))
     total = A * mod * gauss
     return total
-
 
 
 def cwt(data, wavelet, widths):
@@ -287,11 +296,11 @@ def cwt(data, wavelet, widths):
     Performs a continuous wavelet transform on `data`,
     using the wavelet function. A CWT performs a convolution
     with `data` using the `wavelet` function, which is characterized
-    fully by a width parameter.
+    by a width parameter and length parameter.
 
     Parameters
-    -----------
-    data : 1D array_like
+    ----------
+    data : 1-D ndarray
         data on which to perform the transform.
     wavelet : function
         Wavelet function, which should take 2 arguments.
@@ -302,12 +311,20 @@ def cwt(data, wavelet, widths):
         Widths to use for transform.
 
     Returns
-    --------
-    cwt: 2d ndarray
+    -------
+    cwt: 2-D ndarray
         Will be len(widths) x len(data).
+
     Notes
-    --------
+    ------
     cwt[a,:] = scipy.signal.convolve(data,wavelet[width[a]])
+
+    Examples
+    --------
+    >>> signal = np.random.rand(20) - 0.5
+    >>> wavelet = ricker
+    >>> widths = np.arange(1, 11)
+    >>> cwtmatr = cwt(signal, wavelet, widths)
     """
 
     output = np.zeros([len(widths), len(data)])
