@@ -225,10 +225,10 @@ class TestFindPeaks(TestCase):
         max_diffs = np.array(sigmas) / 5
         np.testing.assert_array_less(diffs, max_diffs, 'Maximum location differed' +
                                      'by more than %s' % (max_diffs))
-        
+
     def test_find_peaks_nopeak(self):
         """
-        Verify that no peak is found in 
+        Verify that no peak is found in
         data that's just noise.
         """
         noise_amp = 1.0
