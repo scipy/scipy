@@ -258,9 +258,9 @@ def ricker(a, points=None):
 
     Parameters
     ----------
-    a: numeric
+    a: scalar
         Width parameter of the wavelet.
-    points: integer, optional
+    points: int, optional
         Number of points in `vector`. Default is ``10*a``
         Will be centered around 0.
     Returns
@@ -306,8 +306,10 @@ def cwt(data, wavelet, widths):
         Wavelet function, which should take 2 arguments.
         The first argument is a width parameter, defining
         the size of the wavelet (e.g. standard deviation of a gaussian).
-        The second is the number of points that the returned vector will have
-    widths : iterable
+        The second is the number of points that the returned vector will have 
+        (len(wavelet(width,length)) == length). See `ricker`, which 
+        satisfies these requirements.
+    widths : sequence
         Widths to use for transform.
 
     Returns
@@ -317,7 +319,8 @@ def cwt(data, wavelet, widths):
 
     Notes
     ------
-    cwt[a,:] = scipy.signal.convolve(data,wavelet[width[a]])
+    cwt[ii,:] = scipy.signal.convolve(data,wavelet(width[ii], length), mode='same')
+    where length = min(10 * width[ii], len(data)). 
 
     Examples
     --------
