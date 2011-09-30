@@ -22,9 +22,9 @@ def argrelextrema(data, comparator,
     comparator: function
         function to use to compare two data points.
         Should take 2 numbers as arguments
-    axis: integer, optional
+    axis: int, optional
         axis over which to select from `data`
-    order: integer, optional
+    order: int, optional
         How many points on each side to require
         a `comparator`(n,n+x) = True.
     mode: string, optional
@@ -35,7 +35,7 @@ def argrelextrema(data, comparator,
 
     Returns
     -------
-    extrema: array-like
+    extrema: ndarray
         Indices of the extrema, as boolean array
         of same shape as data. True for an extrema,
         False else.
@@ -106,7 +106,7 @@ def identify_ridge_lines(matr, max_distances, gap_thresh):
         At each row, a ridge line is only connected
         if the relative max at row[n] is within
         `max_distances`[n] from the relative max at row[n+1].
-    gap_thresh: integer
+    gap_thresh: int
         If a relative maximum is not found within `max_distances`,
         there will be a gap. A ridge line is discontinued if
         there are more than `gap_thresh` points without connecting
@@ -286,7 +286,7 @@ def find_peaks(vector, widths, wavelet=None, max_distances=None, gap_thresh=None
     Parameters
     ----------
     vector: 1d ndarray
-    widths: 1d iterable
+    widths: 1d sequence
         Widths to use for calculating the CWT matrix. In general,
         this range should cover the expected width of peaks of interest.
     wavelet: function
@@ -312,7 +312,7 @@ def find_peaks(vector, widths, wavelet=None, max_distances=None, gap_thresh=None
     The algorithm is as follows:
     1. Perform a continuous wavelet transform on `vector`, for the supplied
     `widths`. This is a convolution of `vector` with `wavelet(width)` for
-    each width in `widths`. See scipy.signals.cwt
+    each width in `widths`. See `cwt`
     2. Identify "ridge lines" in the cwt matrix. These are relative maxima
     at each row, connected across adjacent rows. See identify_ridge_lines
     3. Filter the ridge_lines using filter_ridge_lines.
