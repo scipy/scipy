@@ -237,6 +237,15 @@ class spmatrix(object):
 
         M,N = self.shape
 
+        if other.__class__ is np.ndarray:
+            # Fast path for the most common case
+            if other.shape == (N,):
+                return self._mul_vector(other)
+            elif other.shape == (N, 1):
+                return self._mul_vector(other.ravel()).reshape(M, 1)
+            elif other.ndim == 2  and other.shape[0] == N:
+                return self._mul_multivector(other)
+
         if isscalarlike(other):
             # scalar value
             return self._mul_scalar(other)
@@ -548,9 +557,7 @@ class spmatrix(object):
                 self[i, i + k] = v
 
 
-from sputils import _isinstance
-
 def isspmatrix(x):
-    return _isinstance(x, spmatrix)
+    return isinstance(x, spmatrix)
 
 issparse = isspmatrix

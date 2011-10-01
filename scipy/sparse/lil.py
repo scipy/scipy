@@ -466,7 +466,5 @@ class lil_matrix(spmatrix):
         return self.tocsr().tocsc()
 
 
-from sputils import _isinstance
-
 def isspmatrix_lil( x ):
-    return _isinstance(x, lil_matrix)
+    return isinstance(x, lil_matrix)

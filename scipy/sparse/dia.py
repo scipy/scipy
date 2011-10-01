@@ -224,7 +224,5 @@ class dia_matrix(_data_matrix):
             return dia_matrix( (data,self.offsets), shape=self.shape)
 
 
-from sputils import _isinstance
-
 def isspmatrix_dia(x):
-    return _isinstance(x, dia_matrix)
+    return isinstance(x, dia_matrix)

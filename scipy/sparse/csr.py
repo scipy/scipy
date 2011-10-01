@@ -390,7 +390,5 @@ class csr_matrix(_cs_matrix):
 
 
 
-from sputils import _isinstance
-
 def isspmatrix_csr(x):
-    return _isinstance(x, csr_matrix)
+    return isinstance(x, csr_matrix)

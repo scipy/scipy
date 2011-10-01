@@ -376,7 +376,6 @@ class coo_matrix(_data_matrix):
     def _mul_multivector(self, other):
         return np.hstack( [ self._mul_vector(col).reshape(-1,1) for col in other.T ] )
 
-from sputils import _isinstance
 
 def isspmatrix_coo( x ):
-    return _isinstance(x, coo_matrix)
+    return isinstance(x, coo_matrix)

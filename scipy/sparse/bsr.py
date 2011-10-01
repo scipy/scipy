@@ -568,7 +568,5 @@ class bsr_matrix(_cs_matrix):
 #        return (x[0],x[1])
 
 
-from sputils import _isinstance
-
 def isspmatrix_bsr(x):
-    return _isinstance(x, bsr_matrix)
+    return isinstance(x, bsr_matrix)
