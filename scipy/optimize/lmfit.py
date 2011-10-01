@@ -678,6 +678,8 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0, col_deriv=0, **kwargs):
         ret = fit.fit(x0, *kwargs)
     except FitError as e:
         mesg = e.message
+    except ValueError as e: # make the minpack tests happy
+        raise TypeError(e.message)
     else:
         mesg = [
             "an unknown (typically user) error has occurred",

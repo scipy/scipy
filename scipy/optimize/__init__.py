@@ -126,8 +126,8 @@ Utility Functions
 """
 
 from optimize import *
-from lmfit import *
 from minpack import *
+from lmfit import *
 from zeros import *
 from anneal import *
 from lbfgsb import fmin_l_bfgs_b
