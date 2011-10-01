@@ -126,6 +126,7 @@ Utility Functions
 """
 
 from optimize import *
+from lmfit import *
 from minpack import *
 from zeros import *
 from anneal import *
