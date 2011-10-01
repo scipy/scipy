@@ -1193,6 +1193,10 @@ def kurtosistest(a, axis=0):
     """
     a, axis = _chk_asarray(a, axis)
     n = float(a.shape[axis])
+    if n < 5:
+        raise ValueError(
+            "kurtosistest requires at least 5 observations; %i observations"
+            " were given." % int(n))
     if n < 20:
         warnings.warn(
             "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" %
