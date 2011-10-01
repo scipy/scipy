@@ -8,7 +8,7 @@ import numpy as np
 
 from base import isspmatrix, _formats
 from data import _data_matrix
-from sputils import isshape, upcast, getdtype
+from sputils import isshape, upcast, upcast_char, getdtype
 from sparsetools import dia_matvec
 
 class dia_matrix(_data_matrix):
@@ -165,7 +165,8 @@ class dia_matrix(_data_matrix):
     def _mul_vector(self, other):
         x = other
 
-        y = np.zeros( self.shape[0], dtype=upcast(self.dtype,x.dtype))
+        y = np.zeros( self.shape[0], dtype=upcast_char(self.dtype.char,
+                                                       x.dtype.char))
 
         L = self.data.shape[1]
 

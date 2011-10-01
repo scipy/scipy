@@ -50,6 +50,14 @@ def upcast(*args):
 
     raise TypeError('no supported conversion for types: %s' % args)
 
+def upcast_char(*args):
+    """Same as `upcast` but taking dtype.char as input (faster)."""
+    t = _upcast_memo.get(args)
+    if t is not None:
+        return t
+    t = upcast(*map(np.dtype, args))
+    _upcast_memo[args] = t
+    return t
 
 def to_native(A):
     return np.asarray(A,dtype=A.dtype.newbyteorder('native'))

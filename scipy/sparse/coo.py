@@ -11,7 +11,7 @@ import numpy as np
 from sparsetools import coo_tocsr, coo_todense, coo_matvec
 from base import isspmatrix
 from data import _data_matrix
-from sputils import upcast, to_native, isshape, getdtype, isintlike
+from sputils import upcast, upcast_char, to_native, isshape, getdtype, isintlike
 
 class coo_matrix(_data_matrix):
     """
@@ -369,7 +369,8 @@ class coo_matrix(_data_matrix):
 
     def _mul_vector(self, other):
         #output array
-        result = np.zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
+        result = np.zeros( self.shape[0], dtype=upcast_char(self.dtype.char,
+                                                            other.dtype.char) )
         coo_matvec(self.nnz, self.row, self.col, self.data, other, result)
         return result
 
