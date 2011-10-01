@@ -1,3 +1,7 @@
+"""
+This is an internal module only, containing the inner loops
+for lmfit.py.
+"""
 cdef extern from "alloca.h":
     void *alloca(int) nogil
 
@@ -16,6 +20,7 @@ import numpy
 @cython.cdivision(True)
 cdef void qrsolv_float(numpy.ndarray[float, ndim=2] s,
            numpy.ndarray[float] diag) nogil:
+    """float32 version of qrsolv"""
     cdef unsigned int N
     cdef unsigned int j
     cdef unsigned int k
@@ -53,6 +58,7 @@ cdef void qrsolv_float(numpy.ndarray[float, ndim=2] s,
 @cython.cdivision(True)
 cdef void qrsolv_double(numpy.ndarray[double, ndim=2] s,
            numpy.ndarray[double] diag) nogil:
+    """float64 version of qrsolv"""
     cdef unsigned int N
     cdef unsigned int j
     cdef unsigned int k
@@ -87,6 +93,10 @@ cdef void qrsolv_double(numpy.ndarray[double, ndim=2] s,
                         ta[l] = -sin * tmp + cos * ta[l]
 
 def qrsolv(numpy.ndarray s, numpy.ndarray diag):
+    """Inner-loop of lmfit.Fit._qrsolv. This is an internal function only.
+
+    This function eliminates the diagonal matrix diag using a Givens rotation,
+    in order to meet the goals of lmfit.Fit._qrsolv. """
     if s.dtype == numpy.float64:
         qrsolv_double(s, diag)
     elif s.dtype == numpy.float32:
