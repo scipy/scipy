@@ -6,9 +6,7 @@ cdef extern from "string.h":
 
 cdef extern from "math.h":
     double sqrt(double) nogil
-    float sqrtf(float) nogil
     double fabs(double) nogil
-    float fabsf(float) nogil
 
 cimport numpy
 cimport cython
@@ -38,13 +36,13 @@ cdef void qrsolv_float(numpy.ndarray[float, ndim=2] s,
             ta[j] = diag[j]
             for j <= k < N:
                 if ta[k] != 0:
-                    if fabsf(s[k, k]) > fabsf(ta[k]):
+                    if fabs(s[k, k]) > fabs(ta[k]):
                         tan = ta[k] / s[k, k]
-                        cos = 1 / sqrtf(1 + tan * tan)
+                        cos = 1 / sqrt(1 + tan * tan)
                         sin = cos * tan
                     else:
                         cotan = s[k, k] / ta[k]
-                        sin = 1 / sqrtf(1 + cotan * cotan)
+                        sin = 1 / sqrt(1 + cotan * cotan)
                         cos = sin * cotan
                     for k <= l <= N:
                         tmp = s[k, l]
