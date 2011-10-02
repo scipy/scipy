@@ -32,5 +32,8 @@ env.NumpyPythonExtension('futil', source = futil_src + ['futil.f'])
 # mvn extension
 env.NumpyPythonExtension('mvn', source = ['mvn.pyf', 'mvndst.f'])
 
-# vonmisses_cython extension
+# vonmises_cython extension
 env.NumpyPythonExtension('vonmises_cython', source = ['vonmises_cython.c'])
+
+# _rank extension
+env.NumpyPythonExtension('_rank', source = ['_rank.c'])
