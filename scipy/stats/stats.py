@@ -2148,22 +2148,22 @@ def f_oneway(*args):
     .. [2] Heiman, G.W.  Research Methods in Statistics. 2002.
 
     """
-    args = map(np.asarray,args) # convert to an numpy array
+    args = map(np.asarray, args) # convert to an numpy array
     na = len(args)              # ANOVA on 'na' groups, each in it's own array
     alldata = np.concatenate(args)
     bign = len(alldata)
-    sstot = ss(alldata)-(square_of_sums(alldata)/float(bign))
+    sstot = ss(alldata) - (square_of_sums(alldata)/float(bign))
     ssbn = 0
     for a in args:
         ssbn += square_of_sums(a)/float(len(a))
     ssbn -= (square_of_sums(alldata)/float(bign))
-    sswn = sstot-ssbn
+    sswn = sstot - ssbn
     dfbn = na-1
     dfwn = bign - na
     msb = ssbn/float(dfbn)
     msw = sswn/float(dfwn)
     f = msb/msw
-    prob = fprob(dfbn,dfwn,f)
+    prob = fprob(dfbn, dfwn, f)
     return f, prob
 
 
@@ -3543,11 +3543,11 @@ def kruskal(*args):
     .. [1] http://en.wikipedia.org/wiki/Kruskal-Wallis_one-way_analysis_of_variance
 
     """
-    args = map(np.asarray,args) # convert to a numpy array
-    na = len(args)              # Kruskal-Wallis on 'na' groups, each in it's own array
+    args = map(np.asarray, args) # convert to a numpy array
+    na = len(args)               # Kruskal-Wallis on 'na' groups, each in it's own array
     if na < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
-    n = map(len,args)
+    n = np.asarray(map(len, args))
     
     alldata = np.concatenate(args)
 
@@ -3556,14 +3556,14 @@ def kruskal(*args):
     if T == 0:
         raise ValueError('All numbers are identical in kruskal')
 
-    j = np.insert(np.cumsum(n),0,0)
+    j = np.insert(np.cumsum(n), 0, 0)
     ssbn = 0
     for i in range(na):
         ssbn += square_of_sums(ranked[j[i]:j[i+1]])/float(n[i]) # Compute sum^2/n for each group
         
     totaln = np.sum(n)
     h = 12.0 / (totaln*(totaln+1)) * ssbn - 3*(totaln+1)
-    df = len(args) - 1
+    df = na - 1
     h = h / float(T)
     return h, chisqprob(h,df)
 
