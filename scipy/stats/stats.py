@@ -2152,17 +2152,17 @@ def f_oneway(*args):
     na = len(args)              # ANOVA on 'na' groups, each in it's own array
     alldata = np.concatenate(args)
     bign = len(alldata)
-    sstot = ss(alldata) - (square_of_sums(alldata)/float(bign))
+    sstot = ss(alldata) - (square_of_sums(alldata) / float(bign))
     ssbn = 0
     for a in args:
-        ssbn += square_of_sums(a)/float(len(a))
-    ssbn -= (square_of_sums(alldata)/float(bign))
+        ssbn += square_of_sums(a) / float(len(a))
+    ssbn -= (square_of_sums(alldata) / float(bign))
     sswn = sstot - ssbn
-    dfbn = na-1
+    dfbn = na - 1
     dfwn = bign - na
-    msb = ssbn/float(dfbn)
-    msw = sswn/float(dfwn)
-    f = msb/msw
+    msb = ssbn / float(dfbn)
+    msw = sswn / float(dfwn)
+    f = msb / msw
     prob = fprob(dfbn, dfwn, f)
     return f, prob
 
@@ -3555,17 +3555,18 @@ def kruskal(*args):
     T = tiecorrect(ranked)      # Correct for ties
     if T == 0:
         raise ValueError('All numbers are identical in kruskal')
-
+    
+    # Compute sum^2/n for each group and sum
     j = np.insert(np.cumsum(n), 0, 0)
     ssbn = 0
     for i in range(na):
-        ssbn += square_of_sums(ranked[j[i]:j[i+1]])/float(n[i]) # Compute sum^2/n for each group
+        ssbn += square_of_sums(ranked[j[i]:j[i+1]]) / float(n[i]) 
         
     totaln = np.sum(n)
-    h = 12.0 / (totaln*(totaln+1)) * ssbn - 3*(totaln+1)
+    h = 12.0 / (totaln * (totaln + 1)) * ssbn - 3 * (totaln + 1)
     df = na - 1
     h = h / float(T)
-    return h, chisqprob(h,df)
+    return h, chisqprob(h, df)
 
 
 
