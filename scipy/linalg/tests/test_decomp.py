@@ -867,18 +867,18 @@ class TestQR(TestCase):
         a = [[8,2,3],[2,9,3],[5,3,6]]
         q,r = qr(a)
         c = [1, 2, 3]
-        qc,r = qr(a, mode="left", c=c)
+        qc,r = qr_multiply(a, mode="left", c=c)
         assert_array_almost_equal(dot(q, c), qc[:, 0])
-        qc,r = qr(a, mode="left", c=identity(3))
+        qc,r = qr_multiply(a, mode="left", c=identity(3))
         assert_array_almost_equal(q, qc)
 
     def test_simple_right(self):
         a = [[8,2,3],[2,9,3],[5,3,6]]
         q,r = qr(a)
         c = [1, 2, 3]
-        qc,r = qr(a, mode="right", c=c)
+        qc,r = qr_multiply(a, mode="right", c=c)
         assert_array_almost_equal(dot(c, q), qc[0, :])
-        qc,r = qr(a, mode="right", c=identity(3))
+        qc,r = qr_multiply(a, mode="right", c=identity(3))
         assert_array_almost_equal(q, qc)
 
     def test_simple_left(self):
