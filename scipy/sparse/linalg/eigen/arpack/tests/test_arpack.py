@@ -21,11 +21,47 @@ from scipy.linalg import svd
 
 # precision for tests
 _ndigits = {'f': 3, 'd': 11, 'F': 3, 'D': 11}
-_rtol = {'f': 2000 * np.finfo(np.float32).eps,
-         'd': 2000 * np.finfo(np.float64).eps,
-         'F': 2000 * np.finfo(np.float32).eps,
-         'D': 2000 * np.finfo(np.float64).eps}
-_atol = _rtol
+
+def _get_test_tolerance(type_char, mattype=None):
+    """
+    Return tolerance values suitable for a given test:
+
+    Parameters
+    ----------
+    type_char : {'f', 'd', 'F', 'D'}
+        Data type in ARPACK eigenvalue problem
+    mattype : {csr_matrix, aslinearoperator, asarray}, optional
+        Linear operator type
+
+    Returns
+    -------
+    tol
+        Tolerance to pass to the ARPACK routine
+    rtol
+        Relative tolerance for outputs
+    atol
+        Absolute tolerance for outputs
+
+    """
+
+    rtol = {'f': 3000 * np.finfo(np.float32).eps,
+            'F': 3000 * np.finfo(np.float32).eps,
+            'd': 2000 * np.finfo(np.float64).eps,
+            'D': 2000 * np.finfo(np.float64).eps}[type_char]
+    atol = rtol
+    tol = 0
+
+    if mattype is aslinearoperator and type_char in ('f', 'F'):
+        # iterative methods in single precision: worse errors
+        # also: bump ARPACK tolerance so that the iterative method converges
+        tol = 30 * np.finfo(np.float32).eps
+        rtol *= 5
+
+    if mattype is csr_matrix and type_char in ('f', 'F'):
+        # sparse in single precision: worse errors
+        rtol *= 5
+
+    return tol, rtol, atol
 
 def generate_matrix(N, complex=False, hermitian=False,
                     pos_definite=False, sparse=False):
@@ -163,6 +199,10 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
     else:
         kwargs['OPpart'] = OPpart
 
+    # compute suitable tolerances
+    kwargs['tol'], rtol, atol = _get_test_tolerance(typ, mattype)
+
+    # solve
     if general:
         try:
             eval, evec = eigs_func(ac, k, bc, **kwargs)
@@ -183,8 +223,7 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
     evec = evec[:,ind]
 
     # check eigenvalues
-    assert_allclose_cc(eval, exact_eval, rtol=_rtol[typ], atol=_atol[typ],
-                       err_msg=err)
+    assert_allclose_cc(eval, exact_eval, rtol=rtol, atol=atol, err_msg=err)
 
     # check eigenvectors
     LHS = np.dot(a, evec)
@@ -193,7 +232,7 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
     else:
         RHS = eval * evec
 
-    assert_allclose(LHS, RHS, rtol=_rtol[typ], atol=_atol[typ], err_msg=err)
+    assert_allclose(LHS, RHS, rtol=rtol, atol=atol, err_msg=err)
 
 class DictWithRepr(dict):
     def __init__(self, name):
@@ -342,16 +381,16 @@ def test_symmetric_starting_vector():
 def test_symmetric_no_convergence():
     np.random.seed(1234)
     m = generate_matrix(30, hermitian=True, pos_definite=True)
-
+    tol, rtol, atol = _get_test_tolerance('d')
     try:
-        w, v = eigsh(m, 4, which='LM', v0=m[:, 0], maxiter=5)
+        w, v = eigsh(m, 4, which='LM', v0=m[:, 0], maxiter=5, tol=tol)
         raise AssertionError("Spurious no-error exit")
     except ArpackNoConvergence, err:
         k = len(err.eigenvalues)
         if k <= 0:
             raise AssertionError("Spurious no-eigenvalues-found case")
         w, v = err.eigenvalues, err.eigenvectors
-        assert_allclose(dot(m, v), w * v, rtol=_rtol['d'], atol=_atol['d'])
+        assert_allclose(dot(m, v), w * v, rtol=rtol, atol=atol)
 
 
 def test_real_nonsymmetric_modes():
@@ -410,8 +449,9 @@ def test_general_nonsymmetric_starting_vector():
 def test_standard_nonsymmetric_no_convergence():
     np.random.seed(1234)
     m = generate_matrix(30, complex=True)
+    tol, rtol, atol = _get_test_tolerance('d')
     try:
-        w, v = eigs(m, 4, which='LM', v0=m[:, 0], maxiter=5)
+        w, v = eigs(m, 4, which='LM', v0=m[:, 0], maxiter=5, tol=tol)
         raise AssertionError("Spurious no-error exit")
     except ArpackNoConvergence, err:
         k = len(err.eigenvalues)
@@ -419,8 +459,7 @@ def test_standard_nonsymmetric_no_convergence():
             raise AssertionError("Spurious no-eigenvalues-found case")
         w, v = err.eigenvalues, err.eigenvectors
         for ww, vv in zip(w, v.T):
-            assert_allclose(dot(m, vv), ww * vv,
-                            rtol=_rtol['d'], atol=_atol['d'])
+            assert_allclose(dot(m, vv), ww * vv, rtol=rtol, atol=atol)
 
 
 def test_eigen_bad_shapes():
