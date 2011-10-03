@@ -179,7 +179,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
         Matrix to be decomposed
     c : array, one- or two-dimensional
         calculate the product of c and q, depending on the mode:
-    mode : {'left', 'right'} 
+    mode : {'left', 'right'}
         dot(Q, c) is returned if mode is 'left',
         dot(c, Q) is returned if mode is 'right'.
         the shape of c must be appropriate for the matrix multiplications,
@@ -197,7 +197,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
         Whether data in c is overwritten (may improve performance).
         If this is used, c must be big enough to keep the result,
         i.e. c.shape[0] = a.shape[0] if mode is 'left'.
-        
+
 
     Returns
     -------
@@ -233,7 +233,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
                 (not overwrite_c and min(M, N) == c.shape[0] or
                      overwrite_c and M == c.shape[0]) or
             mode == "right" and M == c.shape[1]):
-        raise ValueError("objects are not aligned") 
+        raise ValueError("objects are not aligned")
 
     raw = qr(a, overwrite_a, None, "raw", pivoting)
     Q, tau = raw[0]
@@ -265,7 +265,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
             lr = "R"
         else:
             lr = "L"
-    else: 
+    else:
         trans = "N"
         cc = c
         if mode == "left":

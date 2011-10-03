@@ -885,7 +885,7 @@ class TestQR(TestCase):
         a = [[8,2,3],[2,9,3],[5,3,6]]
         q,r = qr(a)
         c = [1, 2, 3]
-        qc,r2 = qr_multiply(a, c, "left") 
+        qc,r2 = qr_multiply(a, c, "left")
         assert_array_almost_equal(dot(q, c), qc)
         assert_array_almost_equal(r, r2)
         qc,r2 = qr_multiply(a, identity(3), "left")
@@ -985,7 +985,7 @@ class TestQR(TestCase):
 
     def test_simple_tall_left(self):
         a = [[8,2],[2,9],[5,3]]
-        q,r = qr(a, mode="economic") 
+        q,r = qr(a, mode="economic")
         c = [1, 2]
         qc,r2 = qr_multiply(a, c, "left")
         assert_array_almost_equal(dot(q, c), qc)
@@ -1073,7 +1073,7 @@ class TestQR(TestCase):
 
     def test_simple_fat_left(self):
         a = [[8,2,3],[2,9,5]]
-        q,r = qr(a, mode="economic") 
+        q,r = qr(a, mode="economic")
         c = [1, 2]
         qc,r2 = qr_multiply(a, c, "left")
         assert_array_almost_equal(dot(q, c), qc)
@@ -1135,7 +1135,7 @@ class TestQR(TestCase):
 
     def test_simple_tall_complex_left(self):
         a = [[8,2+3j],[2,9],[5+7j,3]]
-        q,r = qr(a, mode="economic") 
+        q,r = qr(a, mode="economic")
         c = [1, 2+2j]
         qc,r2 = qr_multiply(a, c, "left")
         assert_array_almost_equal(dot(q, c), qc)
@@ -1251,7 +1251,7 @@ class TestQR(TestCase):
         n = 100
         for k in range(2):
             a = random([m,n])
-            q,r = qr(a, mode="economic") 
+            q,r = qr(a, mode="economic")
             c = random([n])
             qc,r = qr_multiply(a, c, "left")
             assert_array_almost_equal(dot(q, c), qc)
@@ -1264,7 +1264,7 @@ class TestQR(TestCase):
         n = 100
         for k in range(2):
             a = random([m,n])
-            q,r = qr(a, mode="economic") 
+            q,r = qr(a, mode="economic")
             c = random([m])
             cq,r = qr_multiply(a, c)
             assert_array_almost_equal(dot(c, q), cq)
