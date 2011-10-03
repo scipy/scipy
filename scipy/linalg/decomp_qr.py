@@ -11,6 +11,8 @@ from misc import _datacopied
 __all__ = ['qr', 'qr_multiply', 'rq', 'qr_old']
 
 def safecall(f, name, *args, **kwargs):
+    """Call a LAPACK routine, determining lwork automatically and handling
+    error return values"""
     lwork = kwargs.pop("lwork", None)
     if lwork is None:
         ret = f(*args, lwork=-1, **kwargs)
@@ -36,10 +38,12 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     lwork : int, optional
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
-    mode : {'full', 'r', 'economic'}
+    mode : {'full', 'r', 'economic', 'raw'}
         Determines what information is to be returned: either both Q and R
         ('full', default), only R ('r') or both Q and R but computed in
-        economy-size ('economic', see Notes).
+        economy-size ('economic', see Notes). The final option 'raw'
+        (added in Scipy 0.11) makes the function return two matrixes
+        (Q, TAU) in the internal format used by LAPACK.
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
         qr decomposition. If pivoting, compute the decomposition
@@ -104,10 +108,10 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     """
     # 'qr' was the old default, equivalent to 'full'. Neither 'full' nor
     # 'qr' are used below.
-    # 'raw' is used only internally by qr_multiply, not documented on purpose
+    # 'raw' is used internally by qr_multiply
     if mode not in ['full', 'qr', 'r', 'economic', 'raw']:
         raise ValueError(
-                 "Mode argument should be one of ['full', 'r', 'economic']")
+                 "Mode argument should be one of ['full', 'r', 'economic', 'raw']")
 
     a1 = numpy.asarray_chkfinite(a)
     if len(a1.shape) != 2:
@@ -165,6 +169,8 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
 
     Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
     and R upper triangular. Multiply Q with a vector or a matrix c.
+
+    .. versionadded:: 0.11
 
     Parameters
     ----------
