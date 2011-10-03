@@ -15,9 +15,10 @@ def safecall(f, name, *args, **kwargs):
     error return values"""
     lwork = kwargs.pop("lwork", None)
     if lwork is None:
-        ret = f(*args, lwork=-1, **kwargs)
-        lwork = ret[-2][0].real.astype(numpy.int)
-    ret = f(*args, lwork=lwork, **kwargs)
+        kwargs['lwork'] = -1
+        ret = f(*args, **kwargs)
+        kwargs['lwork'] = ret[-2][0].real.astype(numpy.int)
+    ret = f(*args, **kwargs)
     if ret[-1] < 0:
         raise ValueError("illegal value in %d-th argument of internal %s"
                          % (-ret[-1], name))
@@ -253,15 +254,24 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
             cc = numpy.zeros((M, c.shape[1]), dtype=c.dtype, order="F")
             cc[:N, :] = c
             trans = "N"
-        lr = "R" if conjugate else "L"
+        if conjugate:
+            lr = "R"
+        else:
+            lr = "L"
         overwrite_c = True
     elif c.flags["C_CONTIGUOUS"] and trans == "T" or conjugate:
         cc = c.T
-        lr = "R" if mode == "left" else "L"
+        if mode == "left":
+            lr = "R"
+        else:
+            lr = "L"
     else: 
         trans = "N"
         cc = c
-        lr = "L" if mode == "left" else "R"
+        if mode == "left":
+            lr = "L"
+        else:
+            lr = "R"
     cQ, = safecall(gor_un_mqr, "gormqr/gunmqr", lr, trans, Q, tau, cc,
             overwrite_c=overwrite_c)
     if trans != "N":
