@@ -83,13 +83,13 @@ class TestWavelets(TestCase):
 
         lengths = [5, 11, 15, 51, 101]
         for length in lengths:
-            w = wavelets.ricker(1.0, length)
+            w = wavelets.ricker(length, 1.0)
             assert_(len(w) == length)
             max_loc = np.argmax(w)
             assert_(max_loc == (length / 2))
 
         points = 100
-        w = wavelets.ricker(2.0, points)
+        w = wavelets.ricker(points, 2.0)
         half_vec = np.arange(0, points / 2)
         #Wavelet should be symmetric
         assert_array_almost_equal(w[half_vec], w[-(half_vec + 1)])
@@ -98,7 +98,7 @@ class TestWavelets(TestCase):
         aas = [5, 10, 15, 20, 30]
         points = 99
         for a in aas:
-            w = wavelets.ricker(a, points)
+            w = wavelets.ricker(points, a)
             vec = np.arange(0, points) - (points - 1.0) / 2
             exp_zero1 = np.argmin(np.abs(vec - a))
             exp_zero2 = np.argmin(np.abs(vec + a))
@@ -123,7 +123,7 @@ class TestWavelets(TestCase):
 
         widths = [len_data * 10]
         #Note: this wavelet isn't defined quite right, but is fine for this test
-        flat_wavelet = lambda w, l: np.ones(w) / w
+        flat_wavelet = lambda l, w: np.ones(w) / w
         cwt_dat = wavelets.cwt(test_data, flat_wavelet, widths)
         assert_array_almost_equal(cwt_dat, np.mean(test_data))
 

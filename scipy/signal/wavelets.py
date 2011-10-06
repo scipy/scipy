@@ -249,7 +249,7 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     return output
 
 
-def ricker(a, points=None):
+def ricker(points, a):
     """
     Also known as the "mexican hat wavelet",
     models the function:
@@ -281,8 +281,6 @@ def ricker(a, points=None):
 
     A = 2 / (np.sqrt(3 * a) * (np.pi**0.25))
     wsq = a**2
-    if points is None:
-        points = 10 * a
     vec = np.arange(0, points) - (points - 1.0) / 2
     tsq = vec**2
     mod = (1 - tsq / wsq)
@@ -332,7 +330,7 @@ def cwt(data, wavelet, widths):
 
     output = np.zeros([len(widths), len(data)])
     for ind, width in enumerate(widths):
-        wavelet_data = wavelet(width, min(10 * width, len(data)))
+        wavelet_data = wavelet(min(10 * width, len(data)), width)
         output[ind, :] = convolve(data, wavelet_data,
                                               mode='same')
     return output
