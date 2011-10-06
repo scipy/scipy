@@ -36,6 +36,7 @@ Building sparse matrices:
    identity - Identity matrix in sparse format
    kron - kronecker product of two sparse matrices
    kronsum - kronecker sum of sparse matrices
+   diags - Return a sparse matrix from diagonals
    spdiags - Return a sparse matrix from diagonals
    tril - Lower triangular portion of a matrix in sparse format
    triu - Upper triangular portion of a matrix in sparse format
