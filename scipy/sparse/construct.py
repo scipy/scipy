@@ -4,7 +4,7 @@
 __docformat__ = "restructuredtext en"
 
 __all__ = [ 'spdiags', 'eye', 'identity', 'kron', 'kronsum',
-            'hstack', 'vstack', 'bmat', 'rand']
+            'hstack', 'vstack', 'bmat', 'rand', 'diags']
 
 
 from warnings import warn
@@ -40,6 +40,7 @@ def spdiags(data, diags, m, n, format=None):
 
     See Also
     --------
+    diags : more convenient form of this function
     dia_matrix : the sparse DIAgonal format.
 
     Examples
@@ -54,6 +55,110 @@ def spdiags(data, diags, m, n, format=None):
 
     """
     return dia_matrix((data, diags), shape=(m,n)).asformat(format)
+
+def diags(diagonals, offsets, shape=None, format=None, dtype=None):
+    """
+    Construct a sparse matrix from diagonals.
+
+    .. versionadded:: 0.11
+
+    Parameters
+    ----------
+    diagonals : sequence of array_like
+        Sequence of arrays containing the matrix diagonals,
+        corresponding to `offsets`.
+    offsets  : sequence of int
+        Diagonals to set:
+          - k = 0  the main diagonal
+          - k > 0  the k-th upper diagonal
+          - k < 0  the k-th lower diagonal
+    shape : tuple of int, optional
+        Shape of the result. If omitted, a square matrix large enough
+        to contain the diagonals is returned.
+    format : {"dia", "csr", "csc", "lil", ...}, optional
+        Matrix format of the result.  By default (format=None) an
+        appropriate sparse matrix format is returned.  This choice is
+        subject to change.
+    dtype : dtype, optional
+        Data type of the matrix.
+
+    See Also
+    --------
+    spdiags : construct matrix from diagonals
+
+    Notes
+    -----
+    This function differs from `spdiags` in the way it handles
+    off-diagonals.
+
+    The result from `diags` is the sparse equivalent of::
+
+        np.diag(diagonals[0], offsets[0])
+        + ...
+        + np.diag(diagonals[k], offsets[k])
+
+    Repeated diagonal offsets are disallowed.
+
+    Examples
+    --------
+    >>> diagonals = [[1,2,3,4], [1,2,3], [1,2]]
+    >>> diags(diagonals, [0, -1, 2]).todense()
+    matrix([[1, 0, 1, 0],
+            [1, 2, 0, 2],
+            [0, 2, 3, 0],
+            [0, 0, 3, 4]])
+
+    Broadcasting of scalars is supported (but shape needs to be
+    specified):
+
+    >>> diags([1, -2, 1], [-1, 0, 1], shape=(4, 4)).todense()
+    matrix([[-2.,  1.,  0.,  0.],
+            [ 1., -2.,  1.,  0.],
+            [ 0.,  1., -2.,  1.],
+            [ 0.,  0.,  1., -2.]])
+
+    """
+    offsets = np.atleast_1d(offsets)
+    diagonals = map(np.atleast_1d, diagonals)
+
+    # Basic check
+    if len(diagonals) != len(offsets):
+        raise ValueError("Different number of diagonals and offsets.")
+
+    # Determine shape, if omitted
+    if shape is None:
+        m = len(diagonals[0]) + abs(int(offsets[0]))
+        shape = (m, m)
+
+    # Determine data type, if omitted
+    if dtype is None:
+        dtype = np.common_type(*diagonals)
+
+    # Construct data array
+    m, n = shape
+
+    M = max([min(m + offset, n - offset) + max(0, offset)
+             for offset in offsets])
+    M = max(0, M)
+    data_arr = np.zeros((len(offsets), M), dtype=dtype)
+
+    for j, diagonal in enumerate(diagonals):
+        offset = offsets[j]
+        k = max(0, offset)
+        length = min(m + offset, n - offset)
+        if length <= 0:
+            raise ValueError("Offset %d (index %d) out of bounds" % (offset, j))
+        try:
+            data_arr[j, k:k+length] = diagonal
+        except ValueError:
+            if len(diagonal) != length and len(diagonal) != 1:
+                raise ValueError(
+                    "Diagonal length (index %d: %d at offset %d) does not "
+                    "agree with matrix size (%d, %d)." % (
+                    j, len(diagonal), offset, m, n))
+            raise
+
+    return dia_matrix((data_arr, offsets), shape=(m, n)).asformat(format)
 
 def identity(n, dtype='d', format=None):
     """Identity matrix in sparse format
