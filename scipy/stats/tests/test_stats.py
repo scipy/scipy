@@ -1873,5 +1873,65 @@ class TestFOneWay(TestCase):
         # result in F being exactly 2.0.
         assert_equal(F, 2.0)
 
+
+class TestKruskal(TestCase):
+
+    def test_simple(self):
+        """A really simple case for stats.kruskal"""
+        x = [1]
+        y = [2]
+        h, p = stats.kruskal(x, y)
+        assert_equal(h, 1.0)
+        assert_approx_equal(p, stats.chisqprob(h, 1))
+        h, p = stats.kruskal(np.array(x), np.array(y))
+        assert_equal(h, 1.0)
+        assert_approx_equal(p, stats.chisqprob(h, 1))
+
+    def test_basic(self):
+        """A basic test, with no ties."""
+        x = [1, 3, 5, 7, 9]
+        y = [2, 4, 6, 8, 10]
+        h, p = stats.kruskal(x, y)
+        assert_approx_equal(h, 3./11, significant=10)
+        assert_approx_equal(p, stats.chisqprob(3./11, 1))
+        h, p = stats.kruskal(np.array(x), np.array(y))
+        assert_approx_equal(h, 3./11, significant=10)
+        assert_approx_equal(p, stats.chisqprob(3./11, 1))
+
+    def test_simple_tie(self):
+        """A simple case with a tie."""
+        x = [1]
+        y = [1, 2]
+        h_uncorr = 1.5**2 + 2*2.25**2 - 12
+        corr = 0.75
+        expected = h_uncorr / corr   # 0.5
+        h, p = stats.kruskal(x, y)
+        # Since the expression is simple and the exact answer is 0.5, it
+        # should be safe to use assert_equal().
+        assert_equal(h, expected)
+
+    def test_another_tie(self):
+        """Another test of stats.kruskal with a tie."""
+        x = [1, 1, 1, 2]
+        y = [2, 2, 2, 2]
+        h_uncorr = (12. / 8. / 9.) * 4 * (3**2 + 6**2) - 3 * 9
+        corr = 1 - float(3**3 - 3 + 5**3 - 5) / (8**3 - 8)
+        expected = h_uncorr / corr
+        h, p = stats.kruskal(x, y)
+        assert_approx_equal(h, expected)
+
+    def test_three_groups(self):
+        """A test of stats.kruskal with three groups, with ties."""
+        x = [1, 1, 1]
+        y = [2, 2, 2]
+        z = [2, 2]
+        h_uncorr = (12. / 8. / 9.) * (3*2**2 + 3*6**2 + 2*6**2) - 3 * 9  # 5.0
+        corr = 1 - float(3**3 - 3 + 5**3 - 5) / (8**3 - 8)
+        expected = h_uncorr / corr  # 7.0
+        h, p = stats.kruskal(x, y, z)
+        assert_approx_equal(h, expected)
+        assert_approx_equal(p, stats.chisqprob(h, 2))
+
+
 if __name__ == "__main__":
     run_module_suite()
