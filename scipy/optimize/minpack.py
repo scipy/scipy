@@ -407,7 +407,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
     >>> popt, pcov = curve_fit(func, x, yn)
 
     """
-    if p0 is None or isscalar(p0):
+    if p0 is None:
         # determine number of parameters by inspecting the function
         import inspect
         args, varargs, varkw, defaults = inspect.getargspec(f)
@@ -417,6 +417,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
         if p0 is None:
             p0 = 1.0
         p0 = [p0]*(len(args)-1)
+
+    if isscalar(p0):
+        p0 = array([p0])
 
     args = (xdata, ydata, f)
     if sigma is None:
