@@ -38,6 +38,16 @@
       return
       end
 
+      real function wsdot(n, x, incx, y, incy)
+      real x(*), y(*), s, sdot
+      integer n, incx, incy
+
+      s = sdot(n, x, incx, y, incy)
+      wsdot = s
+
+      return
+      end
+
       complex function wcladiv(x, y)
       complex x, y, z
       complex cladiv
