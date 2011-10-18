@@ -55,14 +55,24 @@ class TestOptimize(TestCase):
         return dot(self.F.transpose(), p) - self.K
 
 
-    def test_cg(self):
-        """ conjugate gradient optimization routine
-        """
-        retval = optimize.fmin_cg(self.func, self.startparams, self.grad, (), \
-                                  maxiter=self.maxiter, \
-                                  full_output=True, disp=False, retall=False)
+    def test_cg(self, use_wrapper=False):
+        """ conjugate gradient optimization routine """
+        if use_wrapper:
+            opts = {'maxit': self.maxiter, 'disp': False}
+            params, info = optimize.minimize(self.func, self.startparams,
+                                             args=(), method='CG',
+                                             jac=self.grad, options=opts,
+                                             full_output=True,
+                                             retall=False)
 
-        (params, fopt, func_calls, grad_calls, warnflag) = retval
+            fopt, func_calls, grad_calls, warnflag = \
+                    info['fun'], info['nfev'], info['njev'], info['status']
+        else:
+            retval = optimize.fmin_cg(self.func, self.startparams, self.grad, (),
+                                      maxiter=self.maxiter,
+                                      full_output=True, disp=False, retall=False)
+
+            (params, fopt, func_calls, grad_calls, warnflag) = retval
 
         err = abs(self.func(params) - self.func(self.solution))
         #print "CG: Difference is: " + str(err)
@@ -80,14 +90,25 @@ class TestOptimize(TestCase):
                            atol=1e-14, rtol=1e-7), self.trace[2:4])
 
 
-    def test_bfgs(self):
-        """ Broyden-Fletcher-Goldfarb-Shanno optimization routine
-        """
-        retval = optimize.fmin_bfgs(self.func, self.startparams, self.grad, \
-                                    args=(), maxiter=self.maxiter, \
-                                    full_output=True, disp=False, retall=False)
+    def test_bfgs(self, use_wrapper=False):
+        """ Broyden-Fletcher-Goldfarb-Shanno optimization routine """
+        if use_wrapper:
+            opts = {'maxit': self.maxiter, 'disp': False}
+            params, info = optimize.minimize(self.func, self.startparams,
+                                             jac=self.grad, method='BFGS',
+                                             args=(), options=opts,
+                                             full_output=True,
+                                             retall=False)
 
-        (params, fopt, gopt, Hopt, func_calls, grad_calls, warnflag) = retval
+            fopt, gopt, Hopt, func_calls, grad_calls, warnflag = \
+                    info['fun'], info['jac'], info['hess'], info['nfev'], \
+                    info['njev'], info['status']
+        else:
+            retval = optimize.fmin_bfgs(self.func, self.startparams, self.grad,
+                                        args=(), maxiter=self.maxiter,
+                                        full_output=True, disp=False, retall=False)
+
+            (params, fopt, gopt, Hopt, func_calls, grad_calls, warnflag) = retval
 
         err = abs(self.func(params) - self.func(self.solution))
         #print "BFGS: Difference is: " + str(err)
@@ -105,27 +126,43 @@ class TestOptimize(TestCase):
                            atol=1e-14, rtol=1e-7), self.trace[6:8])
 
 
-    def test_bfgs_infinite(self):
+    def test_bfgs_infinite(self, use_wrapper=False):
         """Test corner case where -Inf is the minimum.  See #1494."""
         func = lambda x: -np.e**-x
         fprime = lambda x: -func(x)
         x0 = [0]
         olderr = np.seterr(over='ignore')
         try:
-            x = optimize.fmin_bfgs(func, x0, fprime, disp=False)
+            if use_wrapper:
+                opts = {'disp': False}
+                x = optimize.minimize(func, x0, jac=fprime, method='BFGS',
+                                      args=(), options=opts)
+            else:
+                x = optimize.fmin_bfgs(func, x0, fprime, disp=False)
             assert_(not np.isfinite(func(x)))
         finally:
             np.seterr(**olderr)
 
 
-    def test_powell(self):
+    def test_powell(self, use_wrapper=False):
         """ Powell (direction set) optimization routine
         """
-        retval = optimize.fmin_powell(self.func, self.startparams, \
-                                    args=(), maxiter=self.maxiter, \
-                                    full_output=True, disp=False, retall=False)
+        if use_wrapper:
+            opts = {'maxit': self.maxiter, 'disp': False}
+            params, info = optimize.minimize(self.func, self.startparams,
+                                             args=(), method='Powell',
+                                             options=opts,
+                                             full_output=True,
+                                             retall=False)
+            fopt, direc, numiter, func_calls, warnflag = \
+                    info['fun'], info['direc'], info['nit'], info['nfev'], \
+                    info['status']
+        else:
+            retval = optimize.fmin_powell(self.func, self.startparams,
+                                        args=(), maxiter=self.maxiter,
+                                        full_output=True, disp=False, retall=False)
 
-        (params, fopt, direc, numiter, func_calls, warnflag) = retval
+            (params, fopt, direc, numiter, func_calls, warnflag) = retval
 
         err = abs(self.func(params) - self.func(self.solution))
         #print "Powell: Difference is: " + str(err)
@@ -152,14 +189,24 @@ class TestOptimize(TestCase):
                             [ 1.72949016, -0.44156936,  0.47576729]],
                            atol=1e-14, rtol=1e-7), self.trace[34:39])
 
-    def test_neldermead(self):
+    def test_neldermead(self, use_wrapper=False):
         """ Nelder-Mead simplex algorithm
         """
-        retval = optimize.fmin(self.func, self.startparams, \
-                                    args=(), maxiter=self.maxiter, \
-                                    full_output=True, disp=False, retall=False)
+        if use_wrapper:
+            opts = {'maxit': self.maxiter, 'disp': False}
+            params, info = optimize.minimize(self.func, self.startparams,
+                                             args=(), method='Nelder-mead',
+                                             options=opts,
+                                             full_output=True,
+                                             retall=False)
+            fopt, numiter, func_calls, warnflag = \
+                    info['fun'], info['nit'], info['nfev'], info['status']
+        else:
+            retval = optimize.fmin(self.func, self.startparams,
+                                        args=(), maxiter=self.maxiter,
+                                        full_output=True, disp=False, retall=False)
 
-        (params, fopt, numiter, func_calls, warnflag) = retval
+            (params, fopt, numiter, func_calls, warnflag) = retval
 
         err = abs(self.func(params) - self.func(self.solution))
         #print "Nelder-Mead: Difference is: " + str(err)
@@ -176,13 +223,20 @@ class TestOptimize(TestCase):
                             [0.19572515, -0.63648426,  0.35838135]],
                            atol=1e-14, rtol=1e-7), self.trace[76:78])
 
-    def test_ncg(self):
+    def test_ncg(self, use_wrapper=False):
         """ line-search Newton conjugate gradient optimization routine
         """
-        retval = optimize.fmin_ncg(self.func, self.startparams, self.grad,
-                                   args=(), maxiter=self.maxiter,
-                                   full_output=False, disp=False,
-                                   retall=False)
+        if use_wrapper:
+            opts = {'maxit': self.maxiter, 'disp': False}
+            retval = optimize.minimize(self.func, self.startparams,
+                                       method='Newton-CG', jac=self.grad,
+                                       args=(), options=opts,
+                                       full_output=False, retall=False)
+        else:
+            retval = optimize.fmin_ncg(self.func, self.startparams, self.grad,
+                                       args=(), maxiter=self.maxiter,
+                                       full_output=False, disp=False,
+                                       retall=False)
 
         params = retval
 
@@ -204,14 +258,22 @@ class TestOptimize(TestCase):
                            atol=1e-6, rtol=1e-7), self.trace[:5])
 
 
-    def test_l_bfgs_b(self):
+    def test_l_bfgs_b(self, use_wrapper=False):
         """ limited-memory bound-constrained BFGS algorithm
         """
-        retval = optimize.fmin_l_bfgs_b(self.func, self.startparams,
-                                        self.grad, args=(),
-                                        maxfun=self.maxiter)
+        if use_wrapper:
+            opts = {'maxfev': self.maxiter}
+            retval = optimize.fmincon(self.func, self.startparams,
+                                      method='l-BFGS-B', args=(),
+                                      jac=self.grad, options=opts,
+                                      full_output=True)
+            params = retval[0]
+        else:
+            retval = optimize.fmin_l_bfgs_b(self.func, self.startparams,
+                                            self.grad, args=(),
+                                            maxfun=self.maxiter)
 
-        (params, fopt, d) = retval
+            (params, fopt, d) = retval
 
         err = abs(self.func(params) - self.func(self.solution))
         #print "LBFGSB: Difference is: " + str(err)
@@ -227,6 +289,21 @@ class TestOptimize(TestCase):
                            [[0.        , -0.52489628,  0.48753042],
                             [0.        , -0.52489628,  0.48753042]],
                            atol=1e-14, rtol=1e-7), self.trace[3:5])
+
+    def test_minimize(self):
+        """Tests for the minimize wrapper."""
+        self.setUp()
+        self.test_bfgs(True)
+        self.setUp()
+        self.test_bfgs_infinite(True)
+        self.setUp()
+        self.test_cg(True)
+        self.setUp()
+        self.test_ncg(True)
+        self.setUp()
+        self.test_neldermead(True)
+        self.setUp()
+        self.test_powell(True)
 
     def test_brent(self):
         """ brent algorithm
