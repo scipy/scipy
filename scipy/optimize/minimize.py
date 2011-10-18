@@ -15,7 +15,8 @@ from warnings import warn
 from numpy import Inf
 from optimize import _epsilon
 # unconstrained minimization
-from optimize import fmin, fmin_powell, fmin_cg, fmin_bfgs, fmin_ncg
+from optimize import _minimize_neldermead, _minimize_powell, \
+        _minimize_cg, _minimize_bfgs, _minimize_ncg
 
 def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
              hessp=None, options=dict(), full_output=False, callback=None,
@@ -184,16 +185,8 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
         warn('retall is ignored since full_output=False.', RuntimeWarning)
 
     if method.lower() == 'nelder-mead':
-        # set default options and update using input values
-        opts = {'xtol': 1e-4,
-                'ftol': 1e-4,
-                'disp': 1}
-        opts.update(**options)
-
-        out = fmin(fun, x0, args=args, xtol=opts.get('xtol'),
-                   ftol=opts.get('ftol'), maxiter=opts.get('maxit'),
-                   maxfun=opts.get('maxfev'), full_output=full_output,
-                   disp=opts.get('disp'), retall=retall, callback=callback)
+        out = _minimize_neldermead(fun, x0, args, options, full_output,
+                                   retall, callback)
 
         if full_output:
             x, info['fun'], info['nit'], info['nfev'], info['status'] = \
@@ -207,16 +200,8 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
                 x = out
 
     elif method.lower() == 'powell':
-        # set default options and update using input values
-        opts = {'xtol': 1e-4,
-                'ftol': 1e-4,
-                'disp': 1}
-        opts.update(**options)
-        out = fmin_powell(fun, x0, args=args, xtol=opts.get('xtol'),
-                          ftol=opts.get('ftol'), maxiter=opts.get('maxit'),
-                          maxfun=opts.get('maxfev'),
-                          full_output=full_output, disp=opts.get('disp'),
-                          retall=retall, callback=callback)
+        out = _minimize_powell(fun, x0, args, options, full_output, retall,
+                               callback)
 
         if full_output:
             x, info['fun'], info['direc'], info['nit'], info['nfev'], \
@@ -230,17 +215,8 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
                 x = out
 
     elif method.lower() == 'cg':
-        # set default options and update using input values
-        opts = {'gtol': 1e-5,
-                'norm': Inf,
-                'eps': _epsilon,
-                'disp': 1}
-        opts.update(**options)
-        out = fmin_cg(fun, x0, fprime=jac, args=args,
-                      gtol=opts.get('gtol'), norm=opts.get('norm'),
-                      epsilon=opts.get('eps'), maxiter=opts.get('maxit'),
-                      full_output=full_output, disp=opts.get('disp'),
-                      retall=retall, callback=callback)
+        out = _minimize_cg(fun, x0, args, jac, options, full_output,
+                           retall, callback)
 
         if full_output:
             x, info['fun'], info['nfev'], info['njev'], info['status'] = \
@@ -254,17 +230,8 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
                 x = out
 
     elif method.lower() == 'bfgs':
-        # set default options and update using input values
-        opts = {'gtol': 1e-5,
-                'norm': Inf,
-                'eps': _epsilon,
-                'disp': 1}
-        opts.update(**options)
-        out = fmin_bfgs(fun, x0, fprime=jac, args=args,
-                        gtol=opts.get('gtol'), norm=opts.get('norm'),
-                        epsilon=opts.get('eps'), maxiter=opts.get('maxit'),
-                        full_output=full_output, disp=opts.get('disp'),
-                        retall=retall, callback=callback)
+        out = _minimize_bfgs(fun, x0, args, jac, options, full_output,
+                             retall, callback)
 
         if full_output:
             x, info['fun'], info['jac'], info['hess'], info['nfev'], \
@@ -280,16 +247,8 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
     elif method.lower() == 'newton-cg':
         if jac == None:
             raise ValueError('Jacobian is required for Newton-CG method')
-        # set default options and update using input values
-        opts = {'xtol': 1e-5,
-                'eps': _epsilon,
-                'disp': 1}
-        opts.update(**options)
-        out = fmin_ncg(fun, x0, jac, fhess_p=hessp, fhess=hess, args=args,
-                       avextol=opts.get('xtol'), epsilon=opts.get('eps'),
-                       maxiter=opts.get('maxit'), full_output=full_output,
-                       disp=opts.get('disp'), retall=retall,
-                       callback=callback)
+        out = _minimize_ncg(fun, x0, args, jac, hess, hessp, options,
+                            full_output, retall, callback)
 
         if full_output:
             x, info['fun'], info['nfev'], info['njev'], info['nhev'], \
