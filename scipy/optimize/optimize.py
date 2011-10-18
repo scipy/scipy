@@ -253,6 +253,25 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     Harlow, UK, pp. 191-208.
 
     """
+    opts = {'xtol': xtol,
+            'ftol': ftol,
+            'maxiter': maxiter,
+            'maxfev': maxfun,
+            'disp': disp}
+
+    return _minimize_neldermead(func, x0, args, opts, full_output, retall,
+                                callback)
+
+def _minimize_neldermead(func, x0, args=(), options={}, full_output=0,
+                         retall=0, callback=None):
+    """minimize: Nelder-Mead method"""
+    # retrieve useful options
+    xtol    = options.get('xtol', 1e-4)
+    ftol    = options.get('ftol', 1e-4)
+    maxiter = options.get('maxiter')
+    maxfun  = options.get('maxfev')
+    disp    = options.get('disp', 1)
+
     fcalls, func = wrap_function(func, args)
     x0 = asfarray(x0).flatten()
     N = len(x0)
@@ -505,6 +524,27 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     Wright, and Nocedal 'Numerical Optimization', 1999, pg. 198.
 
     """
+    opts = {'gtol': gtol,
+            'norm': norm,
+            'eps': epsilon,
+            'disp': disp,
+            'maxiter': maxiter}
+
+    return _minimize_bfgs(f, x0, args, fprime, opts, full_output, retall,
+                          callback)
+
+def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, full_output=0,
+                   retall=0, callback=None):
+    """minimize: BFGS method"""
+    f = fun
+    fprime = jac
+    # retrieve useful options
+    gtol    = options.get('gtol', 1e-5)
+    norm    = options.get('norm', Inf)
+    epsilon = options.get('eps', _epsilon)
+    maxiter = options.get('maxiter')
+    disp    = options.get('disp', 1)
+
     x0 = asarray(x0).flatten()
     if x0.ndim == 0:
         x0.shape = (1,)
@@ -683,6 +723,27 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     1999, pg. 120-122.
 
     """
+    opts = {'gtol': gtol,
+            'norm': norm,
+            'eps': epsilon,
+            'disp': disp,
+            'maxiter': maxiter}
+
+    return _minimize_cg(f, x0, args, fprime, opts, full_output, retall,
+                        callback)
+
+def _minimize_cg(fun, x0, args=(), jac=None, options={}, full_output=0,
+                 retall=0, callback=None):
+    """minimize: conjugate gradient method"""
+    f = fun
+    fprime = jac
+    # retrieve useful options
+    gtol    = options.get('gtol', 1e-5)
+    norm    = options.get('norm', Inf)
+    epsilon = options.get('eps', _epsilon)
+    maxiter = options.get('maxiter')
+    disp    = options.get('disp', 1)
+
     x0 = asarray(x0).flatten()
     if maxiter is None:
         maxiter = len(x0)*200
@@ -862,6 +923,29 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     Wright & Nocedal, 'Numerical Optimization', 1999, pg. 140.
 
     """
+    opts = {'xtol': avextol,
+            'epsilon': epsilon,
+            'maxiter': maxiter,
+            'disp': disp}
+
+    return _minimize_ncg(f, x0, args, fprime, fhess, fhess_p, opts,
+                         full_output, retall, callback)
+
+def _minimize_ncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
+                  options={}, full_output=0, retall=0, callback=None):
+    """minimize: Newton-CG method"""
+    if jac == None:
+        raise ValueError('Jacobian is required for Newton-CG method')
+    f = fun
+    fprime = jac
+    fhess_p = hessp
+    fhess = hess
+    # retrieve useful options
+    avextol = options.get('xtol', 1e-5)
+    epsilon = options.get('eps', _epsilon)
+    maxiter = options.get('maxiter')
+    disp    = options.get('disp', 1)
+
     x0 = asarray(x0).flatten()
     fcalls, f = wrap_function(f, args)
     gcalls, fprime = wrap_function(fprime, args)
@@ -1593,6 +1677,25 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     Numerical Recipes (any edition), Cambridge University Press
 
     """
+    opts = {'xtol': xtol,
+            'ftol': ftol,
+            'maxiter': maxiter,
+            'maxfev': maxfun,
+            'disp': disp}
+
+    return _minimize_powell(func, x0, args, opts, full_output, retall,
+                            callback)
+
+def _minimize_powell(func, x0, args=(), options={}, full_output=0,
+                     retall=0, callback=None):
+    """minimize: (modified) Powell method"""
+    # retrieve useful options
+    xtol    = options.get('xtol', 1e-4)
+    ftol    = options.get('ftol', 1e-4)
+    maxiter = options.get('maxiter')
+    maxfun  = options.get('maxfev')
+    disp    = options.get('disp', 1)
+    direc   = options.get('direc')
     # we need to use a mutable object here that we can update in the
     # wrapper function
     fcalls, func = wrap_function(func, args)
