@@ -179,92 +179,22 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
        Numerical Recipes (any edition), Cambridge University Press
     .. [6] Wright & Nocedal, 'Numerical Optimization', 1999.
     """
-    if full_output:
-        info = dict()
-    elif retall: # retall implies full_output, issue a warning otherwise
-        warn('retall is ignored since full_output=False.', RuntimeWarning)
-
     if method.lower() == 'nelder-mead':
-        out = _minimize_neldermead(fun, x0, args, options, full_output,
-                                   retall, callback)
-
-        if full_output:
-            x, info['fun'], info['nit'], info['nfev'], info['status'] = \
-                    out[:5]
-            if retall:
-                info['allvecs'] = out[5]
-        else:
-            if retall:
-                x = out[0]
-            else:
-                x = out
-
+        return _minimize_neldermead(fun, x0, args, options, full_output,
+                                    retall, callback)
     elif method.lower() == 'powell':
-        out = _minimize_powell(fun, x0, args, options, full_output, retall,
-                               callback)
-
-        if full_output:
-            x, info['fun'], info['direc'], info['nit'], info['nfev'], \
-                    info['status'] = out[:6]
-            if retall:
-                info['allvecs'] = out[6]
-        else:
-            if retall:
-                x = out[0]
-            else:
-                x = out
-
+        return _minimize_powell(fun, x0, args, options, full_output,
+                                retall, callback)
     elif method.lower() == 'cg':
-        out = _minimize_cg(fun, x0, args, jac, options, full_output,
-                           retall, callback)
-
-        if full_output:
-            x, info['fun'], info['nfev'], info['njev'], info['status'] = \
-                    out[:5]
-            if retall:
-                info['allvecs'] = out[5]
-        else:
-            if retall:
-                x = out[0]
-            else:
-                x = out
-
+        return _minimize_cg(fun, x0, args, jac, options, full_output,
+                            retall, callback)
     elif method.lower() == 'bfgs':
-        out = _minimize_bfgs(fun, x0, args, jac, options, full_output,
-                             retall, callback)
-
-        if full_output:
-            x, info['fun'], info['jac'], info['hess'], info['nfev'], \
-                    info['njev'], info['status'] = out[:7]
-            if retall:
-                info['allvecs'] = out[7]
-        else:
-            if retall:
-                x = out[0]
-            else:
-                x = out
-
+        return _minimize_bfgs(fun, x0, args, jac, options, full_output,
+                              retall, callback)
     elif method.lower() == 'newton-cg':
         if jac == None:
             raise ValueError('Jacobian is required for Newton-CG method')
-        out = _minimize_ncg(fun, x0, args, jac, hess, hessp, options,
-                            full_output, retall, callback)
-
-        if full_output:
-            x, info['fun'], info['nfev'], info['njev'], info['nhev'], \
-                    info['status'] = out[:6]
-            if retall:
-                info['allvecs'] = out[6]
-        else:
-            if retall:
-                x = out[0]
-            else:
-                x = out
-
+        return _minimize_ncg(fun, x0, args, jac, hess, hessp, options,
+                             full_output, retall, callback)
     else:
         raise ValueError('Unknown solver %s' % method)
-
-    if full_output:
-        return x, info
-    else:
-        return x
