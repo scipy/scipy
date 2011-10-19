@@ -904,6 +904,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, options={}, full_output=0,
 
     if full_output:
         info = {'fun': fval,
+                'jac': gfk,
                 'nfev': func_calls[0],
                 'njev': grad_calls[0],
                 'status': warnflag,
@@ -1142,6 +1143,7 @@ def _minimize_ncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
     if full_output:
         info = {'fun': fval,
+                'jac': gfk,
                 'nfev': fcalls[0],
                 'njev': gcalls[0],
                 'nhev': hcalls,
