@@ -192,8 +192,6 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
         return _minimize_bfgs(fun, x0, args, jac, options, full_output,
                               retall, callback)
     elif method.lower() == 'newton-cg':
-        if jac == None:
-            raise ValueError('Jacobian is required for Newton-CG method')
         return _minimize_ncg(fun, x0, args, jac, hess, hessp, options,
                              full_output, retall, callback)
     else:
