@@ -30,6 +30,16 @@ from linesearch import \
      line_search_BFGS, line_search_wolfe1, line_search_wolfe2, \
      line_search_wolfe2 as line_search
 
+
+# standard status messages of optimizers
+_status_message = {'success': 'Optimization terminated successfully.',
+                   'maxfev' : 'Maximum number of function evaluations has '
+                              'been exceeded.',
+                   'maxit'  : 'Maximum number of iterations has been '
+                              'exceeded.',
+                   'pr_loss': 'Desired error not necessarily achieved due '
+                              'to precision loss.'}
+
 # These have been copied from Numeric's MLab.py
 # I don't think they made the transition to scipy_core
 def max(m, axis=0):
@@ -393,16 +403,18 @@ def _minimize_neldermead(func, x0, args=(), options={}, full_output=0,
 
     if fcalls[0] >= maxfun:
         warnflag = 1
+        msg = _status_message['maxfev']
         if disp:
-            print "Warning: Maximum number of function evaluations has "\
-                  "been exceeded."
+            print 'Warning: ' + msg
     elif iterations >= maxiter:
         warnflag = 2
+        msg = _status_message['maxit']
         if disp:
-            print "Warning: Maximum number of iterations has been exceeded"
+            print 'Warning: ' + msg
     else:
+        msg = _status_message['success']
         if disp:
-            print "Optimization terminated successfully."
+            print msg
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % iterations
             print "         Function evaluations: %d" % fcalls[0]
@@ -412,7 +424,8 @@ def _minimize_neldermead(func, x0, args=(), options={}, full_output=0,
         info = {'fun': fval,
                 'nit': iterations,
                 'nfev': fcalls[0],
-                'status': warnflag}
+                'status': warnflag,
+                'message': msg}
         if retall:
             info['allvecs'] = allvecs
         return x, info
@@ -645,9 +658,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, full_output=0,
     if disp or full_output:
         fval = old_fval
     if warnflag == 2:
+        msg = _status_message['pr_loss']
         if disp:
-            print "Warning: Desired error not necessarily achieved" \
-                  "due to precision loss"
+            print "Warning: " + msg
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
             print "         Function evaluations: %d" % func_calls[0]
@@ -655,15 +668,17 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, full_output=0,
 
     elif k >= maxiter:
         warnflag = 1
+        msg = _status_message['maxit']
         if disp:
-            print "Warning: Maximum number of iterations has been exceeded"
+            print "Warning: " + msg
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
             print "         Function evaluations: %d" % func_calls[0]
             print "         Gradient evaluations: %d" % grad_calls[0]
     else:
+        msg = _status_message['success']
         if disp:
-            print "Optimization terminated successfully."
+            print msg
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
             print "         Function evaluations: %d" % func_calls[0]
@@ -675,7 +690,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, full_output=0,
                 'hess': Hk,
                 'nfev': func_calls[0],
                 'njev': grad_calls[0],
-                'status': warnflag}
+                'status': warnflag,
+                'message': msg}
         if retall:
             info['allvecs'] = allvecs
         if retall:
@@ -836,8 +852,9 @@ def _minimize_cg(fun, x0, args=(), jac=None, options={}, full_output=0,
     if disp or full_output:
         fval = old_fval
     if warnflag == 2:
+        msg = _status_message['pr_loss']
         if disp:
-            print "Warning: Desired error not necessarily achieved due to precision loss"
+            print "Warning: " + msg
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
             print "         Function evaluations: %d" % func_calls[0]
@@ -845,15 +862,17 @@ def _minimize_cg(fun, x0, args=(), jac=None, options={}, full_output=0,
 
     elif k >= maxiter:
         warnflag = 1
+        msg = _status_message['maxit']
         if disp:
-            print "Warning: Maximum number of iterations has been exceeded"
+            print "Warning: " + msg
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
             print "         Function evaluations: %d" % func_calls[0]
             print "         Gradient evaluations: %d" % grad_calls[0]
     else:
+        msg = _status_message['success']
         if disp:
-            print "Optimization terminated successfully."
+            print msg
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
             print "         Function evaluations: %d" % func_calls[0]
@@ -864,7 +883,8 @@ def _minimize_cg(fun, x0, args=(), jac=None, options={}, full_output=0,
         info = {'fun': fval,
                 'nfev': func_calls[0],
                 'njev': grad_calls[0],
-                'status': warnflag}
+                'status': warnflag,
+                'message': msg}
         if retall:
             info['allvecs'] = allvecs
         return xk, info
@@ -1069,8 +1089,9 @@ def _minimize_ncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         fval = old_fval
     if k >= maxiter:
         warnflag = 1
+        msg = _status_message['maxit']
         if disp:
-            print "Warning: Maximum number of iterations has been exceeded"
+            print "Warning: " + msg
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
             print "         Function evaluations: %d" % fcalls[0]
@@ -1078,8 +1099,9 @@ def _minimize_ncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             print "         Hessian evaluations: %d" % hcalls
     else:
         warnflag = 0
+        msg = _status_message['success']
         if disp:
-            print "Optimization terminated successfully."
+            print msg
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
             print "         Function evaluations: %d" % fcalls[0]
@@ -1091,7 +1113,8 @@ def _minimize_ncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                 'nfev': fcalls[0],
                 'njev': gcalls[0],
                 'nhev': hcalls,
-                'status': warnflag}
+                'status': warnflag,
+                'message': msg}
         if retall:
             info['allvecs'] = allvecs
         return xk, info
@@ -1821,16 +1844,18 @@ def _minimize_powell(func, x0, args=(), options={}, full_output=0,
     warnflag = 0
     if fcalls[0] >= maxfun:
         warnflag = 1
+        msg = _status_message['maxfev']
         if disp:
-            print "Warning: Maximum number of function evaluations has "\
-                  "been exceeded."
+            print "Warning: " + msg
     elif iter >= maxiter:
         warnflag = 2
+        msg = _status_message['maxit']
         if disp:
-            print "Warning: Maximum number of iterations has been exceeded"
+            print "Warning: " + msg
     else:
+        msg = _status_message['success']
         if disp:
-            print "Optimization terminated successfully."
+            print msg
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % iter
             print "         Function evaluations: %d" % fcalls[0]
@@ -1842,7 +1867,8 @@ def _minimize_powell(func, x0, args=(), options={}, full_output=0,
                 'direc': direc,
                 'nit': iter,
                 'nfev': fcalls[0],
-                'status': warnflag}
+                'status': warnflag,
+                'message': msg}
         if retall:
             info['allvecs'] = allvecs
         return x, info
