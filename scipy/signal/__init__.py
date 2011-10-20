@@ -187,6 +187,8 @@ Wavelets
    daub     -- return low-pass
    morlet   -- Complex Morlet wavelet.
    qmf      -- return quadrature mirror filter from low-pass
+   ricker   -- return ricker wavelet
+   cwt      -- perform continuous wavelet transform
 
 """
 
@@ -207,6 +209,7 @@ from windows import *
 from signaltools import *
 from spectral import *
 from wavelets import *
+from _peak_finding import *
 
 __all__ = filter(lambda s: not s.startswith('_'), dir())
 from numpy.testing import Tester
