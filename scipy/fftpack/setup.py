@@ -2,9 +2,15 @@
 # Created by Pearu Peterson, August 2002
 
 from os.path import join
+import os
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
+
+    try:
+        toss = os.environ.pop('FFLAGS')
+    except KeyError:
+        pass
 
     config = Configuration('fftpack',parent_package, top_path)
 
