@@ -1502,12 +1502,12 @@ class TestSquareForm(TestCase):
         self.assertTrue(rv[1,0] == 8.3)
 
     def test_squareform_one_binary_vector(self):
-	"""Tests squareform on a 1x1 binary matrix
-	(conversion to double was causing problems."""
-	v = np.ones((1,), dtype=np.bool)
-	rv = squareform(v)
-	self.assertTrue(rv.shape == (2,2))
-	self.assertTrue(rv[0,1])
+        """Tests squareform on a 1x1 binary matrix
+        (conversion to double was causing problems."""
+        v = np.ones((1,), dtype=np.bool)
+        rv = squareform(v)
+        self.assertTrue(rv.shape == (2,2))
+        self.assertTrue(rv[0,1])
 
     def test_squareform_2by2_matrix(self):
         "Tests squareform on a 2x2 matrix."
