@@ -69,7 +69,7 @@ def correlate(in1, in2, mode='full'):
         a string indicating the size of the output:
             - 'valid': the output consists only of those elements that do not
             rely on the zero-padding.
-            - 'same': the output is the same size as the largest input centered
+            - 'same': the output is the same size as ``in1`` centered
               with respect to the 'full' output.
             - 'full': the output is the full discrete linear cross-correlation
               of the inputs. (Default)
@@ -179,7 +179,7 @@ def convolve(in1, in2, mode='full'):
         ``valid`` : the output consists only of those elements that do not
            rely on the zero-padding.
 
-        ``same`` : the output is the same size as the largest input centered
+        ``same`` : the output is the same size as ``in1`` centered
            with respect to the 'full' output.
 
         ``full`` : the output is the full discrete linear cross-correlation
@@ -385,7 +385,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
         ``valid`` : the output consists only of those elements that do not
            rely on the zero-padding.
 
-        ``same`` : the output is the same size as the largest input centered
+        ``same`` : the output is the same size as ``in1`` centered
            with respect to the 'full' output.
 
         ``full`` : the output is the full discrete linear cross-correlation
@@ -437,7 +437,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
         ``valid`` : the output consists only of those elements that do not
            rely on the zero-padding.
 
-        ``same`` : the output is the same size as the largest input centered
+        ``same`` : the output is the same size as ``in1`` centered
            with respect to the 'full' output.
 
         ``full`` : the output is the full discrete linear cross-correlation

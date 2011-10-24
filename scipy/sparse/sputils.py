@@ -13,7 +13,9 @@ import numpy as np
 supported_dtypes = ['int8','uint8','short','ushort','intc','uintc',
         'longlong','ulonglong','single','double','longdouble',
         'csingle','cdouble','clongdouble']
-supported_dtypes = [ np.typeDict[x] for x in supported_dtypes]
+supported_dtypes = [np.typeDict[x] for x in supported_dtypes]
+
+_upcast_memo = {}
 
 def upcast(*args):
     """Returns the nearest supported sparse dtype for the
@@ -34,18 +36,28 @@ def upcast(*args):
     <type 'numpy.complex128'>
 
     """
-    sample = np.array([0],dtype=args[0])
-    for t in args[1:]:
-        sample = sample + np.array([0],dtype=t)
 
-    upcast = sample.dtype
+    t = _upcast_memo.get(hash(args))
+    if t is not None:
+        return t
+
+    upcast = np.find_common_type(args, [])
 
     for t in supported_dtypes:
-        if np.can_cast(sample.dtype,t):
+        if np.can_cast(upcast, t):
+            _upcast_memo[hash(args)] = t
             return t
 
     raise TypeError('no supported conversion for types: %s' % args)
 
+def upcast_char(*args):
+    """Same as `upcast` but taking dtype.char as input (faster)."""
+    t = _upcast_memo.get(args)
+    if t is not None:
+        return t
+    t = upcast(*map(np.dtype, args))
+    _upcast_memo[args] = t
+    return t
 
 def to_native(A):
     return np.asarray(A,dtype=A.dtype.newbyteorder('native'))
@@ -112,14 +124,5 @@ def issequence(t):
     return isinstance(t, (list, tuple))\
            or (isinstance(t, np.ndarray) and (t.ndim == 1))
 
-
-def _isinstance(x, _class):
-    ##
-    # This makes scipy.sparse.sparse.csc_matrix == __main__.csc_matrix.
-    c1 = ('%s' % x.__class__).split( '.' )
-    c2 = ('%s' % _class).split( '.' )
-    aux = c1[-1] == c2[-1]
-    return isinstance(x, _class) or aux
-
 def isdense(x):
-    return _isinstance(x, np.ndarray)
+    return isinstance(x, np.ndarray)

@@ -562,7 +562,5 @@ class dok_matrix(spmatrix, dict):
 
 
 
-from sputils import _isinstance
-
 def isspmatrix_dok(x):
-    return _isinstance(x, dok_matrix)
+    return isinstance(x, dok_matrix)

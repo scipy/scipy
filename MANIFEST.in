@@ -8,7 +8,7 @@ include setupscons.py
 include setupegg.py
 include setup.py
 include scipy/*.py
-# Adding scons build relateed files not found by distutils
+# Adding scons build related files not found by distutils
 recursive-include scipy SConstruct SConscript
 # Add py3tool
 include tools/py3tool.py

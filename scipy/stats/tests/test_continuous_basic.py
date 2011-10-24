@@ -165,6 +165,7 @@ def _silence_fp_errors(func):
     wrap.__name__ = func.__name__
     return wrap
 
+@_silence_fp_errors
 def test_cont_basic():
     # this test skips slow distributions
     for distname, arg in distcont[:]:

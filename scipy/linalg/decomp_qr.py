@@ -1,17 +1,28 @@
 """QR decomposition functions."""
 
 import numpy
-from numpy import asarray_chkfinite
 
 # Local imports
-import special_matrices
 from blas import get_blas_funcs
 from lapack import get_lapack_funcs, find_best_lapack_type
 from misc import _datacopied
 
 # XXX: what is qr_old, should it be kept?
-__all__ = ['qr', 'rq', 'qr_old']
+__all__ = ['qr', 'qr_multiply', 'rq', 'qr_old']
 
+def safecall(f, name, *args, **kwargs):
+    """Call a LAPACK routine, determining lwork automatically and handling
+    error return values"""
+    lwork = kwargs.pop("lwork", None)
+    if lwork is None:
+        kwargs['lwork'] = -1
+        ret = f(*args, **kwargs)
+        kwargs['lwork'] = ret[-2][0].real.astype(numpy.int)
+    ret = f(*args, **kwargs)
+    if ret[-1] < 0:
+        raise ValueError("illegal value in %d-th argument of internal %s"
+                         % (-ret[-1], name))
+    return ret[:-2]
 
 def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     """Compute QR decomposition of a matrix.
@@ -28,10 +39,12 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     lwork : int, optional
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
-    mode : {'full', 'r', 'economic'}
+    mode : {'full', 'r', 'economic', 'raw'}
         Determines what information is to be returned: either both Q and R
         ('full', default), only R ('r') or both Q and R but computed in
-        economy-size ('economic', see Notes).
+        economy-size ('economic', see Notes). The final option 'raw'
+        (added in Scipy 0.11) makes the function return two matrixes
+        (Q, TAU) in the internal format used by LAPACK.
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
         qr decomposition. If pivoting, compute the decomposition
@@ -40,10 +53,10 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
 
     Returns
     -------
-    Q : double or complex ndarray
+    Q : float or complex ndarray
         Of shape (M, M), or (M, K) for ``mode='economic'``.  Not returned if
         ``mode='r'``.
-    R : double or complex ndarray
+    R : float or complex ndarray
         Of shape (M, N), or (K, N) for ``mode='economic'``.  ``K = min(M, N)``.
     P : integer ndarray
         Of shape (N,) for ``pivoting=True``. Not returned if ``pivoting=False``.
@@ -94,15 +107,14 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     ((9, 6), (6, 6), (6,))
 
     """
-    if mode == 'qr':
-        # 'qr' was the old default, equivalent to 'full'. Neither 'full' nor
-        # 'qr' are used below, but set to 'full' anyway to be sure
-        mode = 'full'
-    if not mode in ['full', 'qr', 'r', 'economic']:
-        raise ValueError(\
-                 "Mode argument should be one of ['full', 'r', 'economic']")
+    # 'qr' was the old default, equivalent to 'full'. Neither 'full' nor
+    # 'qr' are used below.
+    # 'raw' is used internally by qr_multiply
+    if mode not in ['full', 'qr', 'r', 'economic', 'raw']:
+        raise ValueError(
+                 "Mode argument should be one of ['full', 'r', 'economic', 'raw']")
 
-    a1 = asarray_chkfinite(a)
+    a1 = numpy.asarray_chkfinite(a)
     if len(a1.shape) != 2:
         raise ValueError("expected 2D array")
     M, N = a1.shape
@@ -110,38 +122,27 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
 
     if pivoting:
         geqp3, = get_lapack_funcs(('geqp3',), (a1,))
-        if lwork is None or lwork == -1:
-            # get optimal work array
-            qr, jpvt, tau, work, info = geqp3(a1, lwork=-1, overwrite_a=1)
-            lwork = work[0].real.astype(numpy.int)
-
-        qr, jpvt, tau, work, info = geqp3(a1, lwork=lwork,
-            overwrite_a=overwrite_a)
+        qr, jpvt, tau = safecall(geqp3, "geqp3", a1, overwrite_a=overwrite_a)
         jpvt -= 1 # geqp3 returns a 1-based index array, so subtract 1
-        if info < 0:
-            raise ValueError("illegal value in %d-th argument of internal geqp3"
-                                                                        % -info)
     else:
         geqrf, = get_lapack_funcs(('geqrf',), (a1,))
-        if lwork is None or lwork == -1:
-            # get optimal work array
-            qr, tau, work, info = geqrf(a1, lwork=-1, overwrite_a=1)
-            lwork = work[0].real.astype(numpy.int)
+        qr, tau = safecall(geqrf, "geqrf", a1, lwork=lwork,
+            overwrite_a=overwrite_a)
 
-        qr, tau, work, info = geqrf(a1, lwork=lwork, overwrite_a=overwrite_a)
-        if info < 0:
-            raise ValueError("illegal value in %d-th argument of internal geqrf"
-                                                                        % -info)
-    if not mode == 'economic' or M < N:
-        R = special_matrices.triu(qr)
+    if mode not in ['economic', 'raw'] or M < N:
+        R = numpy.triu(qr)
     else:
-        R = special_matrices.triu(qr[0:N, 0:N])
+        R = numpy.triu(qr[:N, :])
+
+    if pivoting:
+        Rj = R, jpvt
+    else:
+        Rj = R,
 
     if mode == 'r':
-        if pivoting:
-            return R, jpvt
-        else:
-            return R
+        return Rj
+    elif mode == 'raw':
+        return ((qr, tau),) + Rj
 
     if find_best_lapack_type((a1,))[0] in ('s', 'd'):
         gor_un_gqr, = get_lapack_funcs(('orgqr',), (qr,))
@@ -149,33 +150,140 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
         gor_un_gqr, = get_lapack_funcs(('ungqr',), (qr,))
 
     if M < N:
-        # get optimal work array
-        Q, work, info = gor_un_gqr(qr[:,0:M], tau, lwork=-1, overwrite_a=1)
-        lwork = work[0].real.astype(numpy.int)
-        Q, work, info = gor_un_gqr(qr[:,0:M], tau, lwork=lwork, overwrite_a=1)
+        Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qr[:, :M], tau,
+            lwork=lwork, overwrite_a=1)
     elif mode == 'economic':
-        # get optimal work array
-        Q, work, info = gor_un_gqr(qr, tau, lwork=-1, overwrite_a=1)
-        lwork = work[0].real.astype(numpy.int)
-        Q, work, info = gor_un_gqr(qr, tau, lwork=lwork, overwrite_a=1)
+        Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qr, tau, lwork=lwork,
+            overwrite_a=1)
     else:
         t = qr.dtype.char
         qqr = numpy.empty((M, M), dtype=t)
-        qqr[:,0:N] = qr
-        # get optimal work array
-        Q, work, info = gor_un_gqr(qqr, tau, lwork=-1, overwrite_a=1)
-        lwork = work[0].real.astype(numpy.int)
-        Q, work, info = gor_un_gqr(qqr, tau, lwork=lwork, overwrite_a=1)
+        qqr[:, :N] = qr
+        Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qqr, tau, lwork=lwork,
+            overwrite_a=1)
 
-    if info < 0:
-        raise ValueError("illegal value in %d-th argument of internal gorgqr"
-                                                                    % -info)
-    if pivoting:
-        return Q, R, jpvt
-    return Q, R
+    return (Q,) + Rj
+
+def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
+    overwrite_a=False, overwrite_c=False):
+    """Calculate the QR decomposition and multiply Q with a matrix.
+
+    Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
+    and R upper triangular. Multiply Q with a vector or a matrix c.
+
+    .. versionadded:: 0.11
+
+    Parameters
+    ----------
+    a : array, shape (M, N)
+        Matrix to be decomposed
+    c : array, one- or two-dimensional
+        calculate the product of c and q, depending on the mode:
+    mode : {'left', 'right'}
+        dot(Q, c) is returned if mode is 'left',
+        dot(c, Q) is returned if mode is 'right'.
+        the shape of c must be appropriate for the matrix multiplications,
+        if mode is 'left', min(a.shape) == c.shape[0],
+        if mode is 'right', a.shape[0] == c.shape[1].
+    pivoting : bool, optional
+        Whether or not factorization should include pivoting for rank-revealing
+        qr decomposition, see the documentation of qr.
+    conjugate : bool, optional
+        Whether Q should be complex-conjugated. This might be faster
+        than explicit conjugation.
+    overwrite_a : bool, optional
+        Whether data in a is overwritten (may improve performance)
+    overwrite_c: bool, optional
+        Whether data in c is overwritten (may improve performance).
+        If this is used, c must be big enough to keep the result,
+        i.e. c.shape[0] = a.shape[0] if mode is 'left'.
 
 
+    Returns
+    -------
+    CQ : float or complex ndarray
+        the product of Q and c, as defined in mode
+    R : float or complex ndarray
+        Of shape (K, N), ``K = min(M, N)``.
+    P : integer ndarray
+        Of shape (N,) for ``pivoting=True``. Not returned if ``pivoting=False``.
 
+    Raises
+    ------
+    LinAlgError
+        Raised if decomposition fails
+
+    Notes
+    -----
+    This is an interface to the LAPACK routines dgeqrf, zgeqrf,
+    dormqr, zunmqr, dgeqp3, and zgeqp3.
+    """
+    if not mode in ['left', 'right']:
+        raise ValueError("Mode argument should be one of ['left', 'right']")
+    c = numpy.asarray_chkfinite(c)
+    onedim = c.ndim == 1
+    if onedim:
+        c = c.reshape(1, len(c))
+        if mode == "left":
+            c = c.T
+
+    a = numpy.asarray(a) # chkfinite done in qr
+    M, N = a.shape
+    if not (mode == "left" and
+                (not overwrite_c and min(M, N) == c.shape[0] or
+                     overwrite_c and M == c.shape[0]) or
+            mode == "right" and M == c.shape[1]):
+        raise ValueError("objects are not aligned")
+
+    raw = qr(a, overwrite_a, None, "raw", pivoting)
+    Q, tau = raw[0]
+
+    if find_best_lapack_type((Q,))[0] in ('s', 'd'):
+        gor_un_mqr, = get_lapack_funcs(('ormqr',), (Q,))
+        trans = "T"
+    else:
+        gor_un_mqr, = get_lapack_funcs(('unmqr',), (Q,))
+        trans = "C"
+
+    Q = Q[:, :min(M, N)]
+    if M > N and mode == "left" and not overwrite_c:
+        if conjugate:
+            cc = numpy.zeros((c.shape[1], M), dtype=c.dtype, order="F")
+            cc[:, :N] = c.T
+        else:
+            cc = numpy.zeros((M, c.shape[1]), dtype=c.dtype, order="F")
+            cc[:N, :] = c
+            trans = "N"
+        if conjugate:
+            lr = "R"
+        else:
+            lr = "L"
+        overwrite_c = True
+    elif c.flags["C_CONTIGUOUS"] and trans == "T" or conjugate:
+        cc = c.T
+        if mode == "left":
+            lr = "R"
+        else:
+            lr = "L"
+    else:
+        trans = "N"
+        cc = c
+        if mode == "left":
+            lr = "L"
+        else:
+            lr = "R"
+    cQ, = safecall(gor_un_mqr, "gormqr/gunmqr", lr, trans, Q, tau, cc,
+            overwrite_c=overwrite_c)
+    if trans != "N":
+        cQ = cQ.T
+    if mode == "right":
+        cQ = cQ[:, :min(M, N)]
+    if onedim:
+        cQ = cQ.ravel()
+
+    return (cQ,) + raw[1:]
+
+@numpy.deprecate
 def qr_old(a, overwrite_a=False, lwork=None):
     """Compute QR decomposition of a matrix.
 
@@ -194,14 +302,14 @@ def qr_old(a, overwrite_a=False, lwork=None):
 
     Returns
     -------
-    Q : double or complex array, shape (M, M)
-    R : double or complex array, shape (M, N)
+    Q : float or complex array, shape (M, M)
+    R : float or complex array, shape (M, N)
         Size K = min(M, N)
 
     Raises LinAlgError if decomposition fails
 
     """
-    a1 = asarray_chkfinite(a)
+    a1 = numpy.asarray_chkfinite(a)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     M,N = a1.shape
@@ -217,7 +325,7 @@ def qr_old(a, overwrite_a=False, lwork=None):
                                                                     % -info)
     gemm, = get_blas_funcs(('gemm',), (qr,))
     t = qr.dtype.char
-    R = special_matrices.triu(qr)
+    R = numpy.triu(qr)
     Q = numpy.identity(M, dtype=t)
     ident = numpy.identity(M, dtype=t)
     zeros = numpy.zeros
@@ -252,8 +360,8 @@ def rq(a, overwrite_a=False, lwork=None, mode='full'):
 
     Returns
     -------
-    R : double array, shape (M, N)
-    Q : double or complex array, shape (M, M)
+    R : float array, shape (M, N)
+    Q : float or complex array, shape (M, M)
 
     Raises LinAlgError if decomposition fails
 
@@ -279,7 +387,7 @@ def rq(a, overwrite_a=False, lwork=None, mode='full'):
         raise ValueError(\
                  "Mode argument should be one of ['full', 'r', 'economic']")
 
-    a1 = asarray_chkfinite(a)
+    a1 = numpy.asarray_chkfinite(a)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     M, N = a1.shape
@@ -295,9 +403,9 @@ def rq(a, overwrite_a=False, lwork=None, mode='full'):
         raise ValueError('illegal value in %d-th argument of internal gerqf'
                                                                     % -info)
     if not mode == 'economic' or N < M:
-        R = special_matrices.triu(rq, N-M)
+        R = numpy.triu(rq, N-M)
     else:
-        R = special_matrices.triu(rq[-M:, -M:])
+        R = numpy.triu(rq[-M:, -M:])
 
     if mode == 'r':
         return R

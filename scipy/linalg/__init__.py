@@ -67,6 +67,7 @@ Decompositions
    cho_solve - Solve previously factored linear system
    cho_solve_banded - Solve previously factored banded linear system
    qr - QR decomposition of a matrix
+   qr_multiply - QR decomposition and multiplication by Q
    schur - Schur decomposition of a matrix
    rsf2csf - Real to complex Schur form
    hessenberg - Hessenberg form of a matrix

@@ -111,18 +111,18 @@ For the latest information, see the web site:
   http://www.scipy.org
 
 
-Development version from Subversion (SVN)
------------------------------------------
+Development version from Git
+----------------------------
 Use the command::
 
-  svn co http://svn.scipy.org/svn/scipy/trunk scipy
+  git clone https://github.com/scipy/scipy.git
 
-Before building and installing from SVN, remove the old installation
+Before building and installing from git, remove the old installation
 (e.g. in /usr/lib/python2.4/site-packages/scipy or
 $HOME/lib/python2.4/site-packages/scipy).  Then type::
 
   cd scipy
-  rm -rf build
+  git clean -xdf
   python setup.py install
  
  

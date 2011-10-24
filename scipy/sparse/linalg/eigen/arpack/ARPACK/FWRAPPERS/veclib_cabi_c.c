@@ -24,3 +24,9 @@ void WRAP_F77(veclib_zdotu)(const int *N, const double complex *X, const int
 {
     cblas_zdotu_sub(*N, X, *incX, Y, *incY, dotu);
 }
+void WRAP_F77(veclib_sdot)(const int *N, const float *X, const int
+*incX, const float *Y, const int *incY, float *dot)
+{
+    *dot = cblas_sdot(*N, X, *incX, Y, *incY);
+}
+

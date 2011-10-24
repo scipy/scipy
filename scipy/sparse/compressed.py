@@ -10,8 +10,8 @@ import numpy as np
 from base import spmatrix, isspmatrix, SparseEfficiencyWarning
 from data import _data_matrix
 import sparsetools
-from sputils import upcast, to_native, isdense, isshape, getdtype, \
-        isscalarlike, isintlike
+from sputils import upcast, upcast_char, to_native, isdense, isshape, \
+     getdtype, isscalarlike, isintlike
 
 
 class _cs_matrix(_data_matrix):
@@ -250,8 +250,9 @@ class _cs_matrix(_data_matrix):
     def _mul_vector(self, other):
         M,N = self.shape
 
-        #output array
-        result = np.zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
+        # output array
+        result = np.zeros(M, dtype=upcast_char(self.dtype.char,
+                                               other.dtype.char))
 
         # csr_matvec or csc_matvec
         fn = getattr(sparsetools,self.format + '_matvec')
@@ -264,7 +265,8 @@ class _cs_matrix(_data_matrix):
         M,N = self.shape
         n_vecs = other.shape[1] #number of column vectors
 
-        result = np.zeros( (M,n_vecs), dtype=upcast(self.dtype,other.dtype) )
+        result = np.zeros((M,n_vecs), dtype=upcast_char(self.dtype.char,
+                                                        other.dtype.char))
 
         # csr_matvecs or csc_matvecs
         fn = getattr(sparsetools,self.format + '_matvecs')

@@ -245,7 +245,7 @@ c     strsen  LAPACK routine that re-orders the Schur form.
 c     strmm   Level 3 BLAS matrix times an upper triangular matrix.
 c     sger    Level 2 BLAS rank one update to a matrix.
 c     scopy   Level 1 BLAS that copies one vector to another .
-c     sdot    Level 1 BLAS that computes the scalar product of two vectors.
+c     wsdot   Level 1 BLAS that computes the scalar product of two vectors.
 c     snrm2   Level 1 BLAS that computes the norm of a vector.
 c     sscal   Level 1 BLAS that scales a vector.
 c
@@ -373,8 +373,8 @@ c     | External Functions |
 c     %--------------------%
 c
       Real 
-     &           slapy2, snrm2, slamch, sdot
-      external   slapy2, snrm2, slamch, sdot
+     &           slapy2, snrm2, slamch, wsdot
+      external   slapy2, snrm2, slamch, wsdot
 c
 c     %---------------------%
 c     | Intrinsic Functions |
