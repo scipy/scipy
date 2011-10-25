@@ -85,11 +85,17 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
         The solution.
     info : dict
         A dictionary of optional outputs with the keys:
+            solution : array
+                The solution (same as `x`).
+            success : bool
+                Boolean flag indicating if a solution was found.
             status : int
-                An integer flag. Set to 0 if a solution was found,
-                otherwise refer to message for more information.
+                An integer flag indicating the type of termination. Its
+                value depends on the underlying solver. Refer to message
+                for more information.
             message : str
-                If no solution is found, message details the cause of failure.
+                A string message giving information about the cause of the
+                termination.
             fun, jac, hess : ndarray
                 Values of objective function, Jacobian and Hessian (if
                 available).

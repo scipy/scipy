@@ -432,7 +432,9 @@ def _minimize_neldermead(func, x0, args=(), options={}, full_output=0,
                 'nit': iterations,
                 'nfev': fcalls[0],
                 'status': warnflag,
-                'message': msg}
+                'success': warnflag == 0,
+                'message': msg,
+                'solution': x}
         if retall:
             info['allvecs'] = allvecs
         return x, info
@@ -706,7 +708,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, full_output=0,
                 'nfev': func_calls[0],
                 'njev': grad_calls[0],
                 'status': warnflag,
-                'message': msg}
+                'success': warnflag == 0,
+                'message': msg,
+                'solution': xk}
         if retall:
             info['allvecs'] = allvecs
         if retall:
@@ -908,7 +912,9 @@ def _minimize_cg(fun, x0, args=(), jac=None, options={}, full_output=0,
                 'nfev': func_calls[0],
                 'njev': grad_calls[0],
                 'status': warnflag,
-                'message': msg}
+                'success': warnflag == 0,
+                'message': msg,
+                'solution': xk}
         if retall:
             info['allvecs'] = allvecs
         return xk, info
@@ -1148,7 +1154,9 @@ def _minimize_ncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                 'njev': gcalls[0],
                 'nhev': hcalls,
                 'status': warnflag,
-                'message': msg}
+                'success': warnflag == 0,
+                'message': msg,
+                'solution': xk}
         if retall:
             info['allvecs'] = allvecs
         return xk, info
@@ -1909,7 +1917,9 @@ def _minimize_powell(func, x0, args=(), options={}, full_output=0,
                 'nit': iter,
                 'nfev': fcalls[0],
                 'status': warnflag,
-                'message': msg}
+                'success': warnflag == 0,
+                'message': msg,
+                'solution': x}
         if retall:
             info['allvecs'] = allvecs
         return x, info
