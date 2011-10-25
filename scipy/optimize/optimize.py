@@ -283,7 +283,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         x, info = out
         retlist = x, info['fun'], info['nit'], info['nfev'], info['status']
         if retall:
-            retlist += info['allvecs']
+            retlist += (info['allvecs'], )
         return retlist
     else:
         return out
@@ -577,7 +577,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         retlist = x, info['fun'], info['jac'], info['hess'], \
                 info['nfev'], info['njev'], info['status']
         if retall:
-            retlist += info['allvecs']
+            retlist += (info['allvecs'], )
         return retlist
     else:
         return out
@@ -801,7 +801,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
         x, info = out
         retlist = x, info['fun'], info['nfev'], info['njev'], info['status']
         if retall:
-            retlist += info['allvecs']
+            retlist += (info['allvecs'], )
         return retlist
     else:
         return out
@@ -1026,7 +1026,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         retlist = x, info['fun'], info['nfev'], info['njev'], \
                 info['nhev'], info['status']
         if retall:
-            retlist += info['allvecs']
+            retlist += (info['allvecs'], )
         return retlist
     else:
         return out
@@ -1804,7 +1804,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
         retlist = x, info['fun'], info['direc'], info['nit'], \
                 info['nfev'], info['status']
         if retall:
-            retlist += info['allvecs']
+            retlist += (info['allvecs'], )
         return retlist
     else:
         return out
