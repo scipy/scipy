@@ -581,7 +581,7 @@ def companion(a):
 
 
 def hilbert(n):
-    """Create a Hilbert matrix of order n.
+    """Create a Hilbert matrix of order `n`.
 
     Returns the `n` by `n` array with entries `h[i,j] = 1 / (i + j + 1)`.
 
@@ -593,7 +593,11 @@ def hilbert(n):
     Returns
     -------
     h : ndarray with shape (n, n)
-        The Hilber matrix.
+        The Hilbert matrix.
+
+    See Also
+    --------
+    invhilbert : Compute the inverse of a Hilbert matrix.
 
     Notes
     -----
@@ -615,25 +619,34 @@ def hilbert(n):
 def invhilbert(n, exact=False):
     """Compute the inverse of the Hilbert matrix of order `n`.
 
+    The entries in the inverse of a Hilbert matrix are integers.  When `n`
+    is greater than 14, some entries in the inverse exceed the upper limit
+    of 64 bit integers.  The `exact` argument provides two options for
+    dealing with these large integers.
+
     Parameters
     ----------
     n : int
         The order of the Hilbert matrix.
     exact : bool
-        If False, the data type of the array that is returned in np.float64,
+        If False, the data type of the array that is returned is np.float64,
         and the array is an approximation of the inverse.
-        If True, the array is exact integer array.  To represent the exact
-        inverse when n > 14, the returned array is an object array of long
-        integers.  For n <= 14, the exact inverse is returned as an array
-        with data type np.int64.
+        If True, the array is the exact integer inverse array.  To represent
+        the exact inverse when n > 14, the returned array is an object array
+        of long integers.  For n <= 14, the exact inverse is returned as an
+        array with data type np.int64.
 
     Returns
     -------
     invh : ndarray with shape (n, n)
-        The data type of the array is np.float64 is exact is False.
-        If exact is True, the data type is either np.int64 (for n <= 14)
+        The data type of the array is np.float64 if `exact` is False.
+        If `exact` is True, the data type is either np.int64 (for n <= 14)
         or object (for n > 14).  In the latter case, the objects in the
         array will be long integers.
+
+    See Also
+    --------
+    hilbert : Create a Hilbert matrix.
 
     Notes
     -----

@@ -79,10 +79,13 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         Step size used when `approx_grad` is True, for numerically
         calculating the gradient
     iprint : int
-        Controls the frequency of output. ``iprint < 0`` means no output.
+        Controls the frequency of output. ``iprint < 0`` means no output;
+        ``iprint == 0`` means write messages to stdout; ``iprint > 1`` in
+        addition means write logging information to a file named
+        ``iterate.dat`` in the current working directory.
     disp : int, optional
-        If zero, then no output.  If positive number, then this over-rides
-        `iprint`.
+        If zero, then no output.  If a positive number, then this over-rides
+        `iprint` (i.e., `iprint` gets the value of `disp`).
     maxfun : int
         Maximum number of function evaluations.
 

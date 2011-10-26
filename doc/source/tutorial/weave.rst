@@ -73,11 +73,10 @@ etc.
 .. note::
 
   ``weave`` is actually part of the `SciPy`_ package. However, it
-  also works fine as a standalone package (you can check out the sources using
-  ``svn co http://svn.scipy.org/svn/scipy/trunk/Lib/weave weave`` and install as
-  python setup.py install). The examples here are given as if it is used as a
-  stand alone package. If you are using from within scipy, you can use `` from
-  scipy import weave`` and the examples will work identically.
+  also works fine as a standalone package (you can install from scipy/weave
+  with ``python setup.py install``). The examples here are given as if it is
+  used as a stand alone package. If you are using from within scipy, you can
+  use ``from scipy import weave`` and the examples will work identically.
 
 
 ==============

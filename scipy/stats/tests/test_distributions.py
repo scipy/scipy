@@ -701,21 +701,30 @@ def test_regression_ticket_1326():
     #adjust to avoid nan with 0*log(0)
     assert_almost_equal(stats.chi2.pdf(0.0, 2), 0.5, 14)
 
+
 def test_regression_tukey_lambda():
     """ Make sure that Tukey-Lambda distribution correctly handles non-positive lambdas.
     """
     x = np.linspace(-5.0, 5.0, 101)
-    for lam in [0.0, -1.0, -2.0, np.array([[-1.0], [0.0], [-2.0]])]:
+
+    olderr = np.seterr(divide='ignore')
+    try:
+        for lam in [0.0, -1.0, -2.0, np.array([[-1.0], [0.0], [-2.0]])]:
+            p = stats.tukeylambda.pdf(x, lam)
+            assert_((p != 0.0).all())
+            assert_(~np.isnan(p).all())
+
+        lam = np.array([[-1.0], [0.0], [2.0]])
         p = stats.tukeylambda.pdf(x, lam)
-        assert_((p != 0.0).all())
-        assert_(~np.isnan(p).all())
-    lam = np.array([[-1.0], [0.0], [2.0]])
-    p = stats.tukeylambda.pdf(x, lam)
+    finally:
+        np.seterr(**olderr)
+
     assert_(~np.isnan(p).all())
     assert_((p[0] != 0.0).all())
     assert_((p[1] != 0.0).all())
     assert_((p[2] != 0.0).any())
     assert_((p[2] == 0.0).any())
+
 
 def test_regression_ticket_1421():
     """Regression test for ticket #1421 - correction discrete docs."""
@@ -725,3 +734,4 @@ def test_regression_ticket_1421():
 
 if __name__ == "__main__":
     run_module_suite()
+

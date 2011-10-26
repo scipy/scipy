@@ -176,7 +176,5 @@ class csc_matrix(_cs_matrix):
         return (x[1],x[0])
 
 
-from sputils import _isinstance
-
 def isspmatrix_csc(x):
-    return _isinstance(x, csc_matrix)
+    return isinstance(x, csc_matrix)
