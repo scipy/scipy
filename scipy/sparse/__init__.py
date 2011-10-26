@@ -42,6 +42,7 @@ Building sparse matrices:
    bmat - Build a sparse matrix from sparse sub-blocks
    hstack - Stack sparse matrices horizontally (column wise)
    vstack - Stack sparse matrices vertically (row wise)
+   block_diag - Build a block diagonal sparse matrix
    rand - Random values in a given shape
 
 Identifying sparse matrices:
