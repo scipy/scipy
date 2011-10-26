@@ -38,6 +38,7 @@ Building sparse matrices:
    kronsum - kronecker sum of sparse matrices
    diags - Return a sparse matrix from diagonals
    spdiags - Return a sparse matrix from diagonals
+   block_diag - Build a block diagonal sparse matrix
    tril - Lower triangular portion of a matrix in sparse format
    triu - Upper triangular portion of a matrix in sparse format
    bmat - Build a sparse matrix from sparse sub-blocks

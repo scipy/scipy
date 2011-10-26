@@ -281,6 +281,19 @@ class TestConstructUtils(TestCase):
 
         #TODO test failure cases
 
+    def test_block_diag(self):
+        A = coo_matrix([[1,2],[3,4]])
+        B = coo_matrix([[5],[6]])
+        C = coo_matrix([[7]])
+
+        expected = matrix([[1, 2, 0, 0],
+                           [3, 4, 0, 0],
+                           [0, 0, 5, 0],
+                           [0, 0, 6, 0],
+                           [0, 0, 0, 7]])
+
+        assert_equal(construct.block_diag((A, B, C)).todense(), expected)
+
     def test_rand(self):
         # Simple sanity checks for sparse.rand
         for t in [np.float32, np.float64, np.longdouble]:
