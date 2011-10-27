@@ -52,7 +52,7 @@ def argrelextrema(data, comparator,
     """
 
     if((int(order) != order) or (order < 1)):
-        raise ValueError('Order must be an integer >= 1')
+        raise ValueError('Order must be an int >= 1')
 
     datalen = data.shape[axis]
     locs = np.arange(0, datalen)
@@ -102,7 +102,7 @@ def identify_ridge_lines(matr, max_distances, gap_thresh):
     ----------
     matr: 2-D ndarray
         Matrix in which to identify ridge lines.
-    max_distances: 1d sequence
+    max_distances: 1-D sequence
         At each row, a ridge line is only connected
         if the relative max at row[n] is within
         `max_distances`[n] from the relative max at row[n+1].
@@ -115,7 +115,7 @@ def identify_ridge_lines(matr, max_distances, gap_thresh):
     Returns
     -------
     ridge_lines: tuple
-        tuple of 2 1d sequences. `ridge_lines`[ii][0] are the rows of the ii-th
+        tuple of 2 1-D sequences. `ridge_lines`[ii][0] are the rows of the ii-th
         ridge-line, `ridge_lines`[ii][1] are the columns. Empty if none found.
         Each ridge-line will be sorted by row (increasing), but the order
         of the ridge lines is not specified
@@ -133,7 +133,7 @@ def identify_ridge_lines(matr, max_distances, gap_thresh):
 
     Notes:
     ------
-    This function is intended to be used in conjuction with signal.wavelets.cwt
+    This function is intended to be used in conjuction with `cwt`
     as part of find_peaks.
     """
 
@@ -223,7 +223,7 @@ def filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
     cwt : 2-D ndarray
         Continuous wavelet transform from which
         the ridge_lines were defined
-    ridge_lines: 1d sequence
+    ridge_lines: 1-D sequence
         Each element should contain 2 sequences, the rows and columns
         of the ridge line (respectively)
     window_size: int, optional
@@ -277,7 +277,7 @@ def filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
 def find_peaks(vector, widths, wavelet=None, max_distances=None, gap_thresh=None,
                min_length=None, min_snr=1, noise_perc=10):
     """
-    Attempt to find the peaks in the given 1d array `vector`.
+    Attempt to find the peaks in the given 1-D array `vector`.
 
     The general approach is to smooth `vector` by convolving it with `wavelet(width)`
     for each width in `widths`. Relative maxima which appear at enough length scales,
@@ -285,15 +285,15 @@ def find_peaks(vector, widths, wavelet=None, max_distances=None, gap_thresh=None
 
     Parameters
     ----------
-    vector: 1d ndarray
-    widths: 1d sequence
+    vector: 1-D ndarray
+    widths: 1-D sequence
         Widths to use for calculating the CWT matrix. In general,
         this range should cover the expected width of peaks of interest.
     wavelet: function
         Should take a single variable and return a 1d array to convolve
         with `vector`. Should be normalized to unit area. Default
         is the ricker wavelet
-    max_distances: 1d ndarray,optional
+    max_distances: 1-D ndarray,optional
         Default `widths`/4. See identify_ridge_lines
     gap_thresh: float, optional
         Default 2. See identify_ridge_lines
