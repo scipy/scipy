@@ -9,20 +9,22 @@ Functions
 
 """
 
+
 __all__ = ['minimize']
 
+
 from warnings import warn
-from numpy import Inf
-from optimize import _epsilon
+
 # unconstrained minimization
 from optimize import _minimize_neldermead, _minimize_powell, \
         _minimize_cg, _minimize_bfgs, _minimize_ncg
+
 
 def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
              hessp=None, options=dict(), full_output=False, callback=None,
              retall=False):
     """
-    Minimization of scalar function of several variables.
+    Minimization of scalar function of one or more variables.
 
     Parameters
     ----------
@@ -30,25 +32,25 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
         Objective function.
     x0 : ndarray
         Initial guess.
-    args : tuple
+    args : tuple, optional
         Extra arguments passed to the objective function and its
         derivatives (Jacobian, Hessian).
-    method : str
-        Type of solver amongst:
-            'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG'.
-    jac : callable
+    method : str, optional
+        Type of solver.  Should be one of:
+            {'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG'}.
+    jac : callable, optional
         Jacobian of objective function (if None, Jacobian will be
-        estimate numerically). Only for CG, BFGS, Newton-CG.
-    hess, hessp : callable
+        estimated numerically). Only for CG, BFGS, Newton-CG.
+    hess, hessp : callable, optional
         Hessian of objective function or Hessian of objective function
-        times and arbitrary vector p. Only for Newton-CG.
-        Only one of `hessp` or `hess` need to be given.  If `hess` is
+        times an arbitrary vector p.  Only for Newton-CG.
+        Only one of `hessp` or `hess` needs to be given.  If `hess` is
         provided, then `hessp` will be ignored.  If neither `hess` nor
         `hessp` is provided, then the hessian product will be approximated
-        using finite differences on `jac`. `hessp` must compute the hessian
-        times an arbitrary vector. If it is not given, finite-differences
+        using finite differences on `jac`.  `hessp` must compute the hessian
+        times an arbitrary vector.  If it is not given, finite-differences
         on `jac` are used to compute it.
-    options : dict
+    options : dict, optional
         A dictionary of solver options with the keys:
             disp : int
                 If positive, information on the progress of the
@@ -56,42 +58,42 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
                 available depending on the solver. Most solvers consider
                 either 0 or 1 (i.e. Boolean) values for `disp`.
             xtol : float
-                Relative error in xopt acceptable for convergence.
+                Relative error in solution `xopt` acceptable for convergence.
             ftol : float
-                Relative error in fun(xopt) acceptable for convergence.
+                Relative error in ``fun(xopt)`` acceptable for convergence.
             maxit : int
                 Maximum number of iterations to perform.
             maxfev : int
                 Maximum number of function evaluations to make.
             gtol : float
-                Gradient norm must be less than gtol before successful
+                Gradient norm must be less than `gtol` before successful
                 termination.
             norm : float
-                Order of norm (Inf is max, -Inf is min)
+                Order of norm (Inf is max, -Inf is min).
             eps : int or ndarray
                 If `jac` is approximated, use this value for the step size.
-    full_output : bool
-        If True, return optional outputs.
-    callback : callable
-        Called after each iteration, as callback(xk), where xk is the
+    full_output : bool, optional
+        If True, return optional outputs.  Default is False.
+    callback : callable, optional
+        Called after each iteration, as ``callback(xk)``, where ``xk`` is the
         current parameter vector.
-    retall : bool
-        If True, return a list of the solution at each iteration. (Implies
-        full_output=True, ignored otherwise.)
+    retall : bool, optional
+        If True, return a list of the solution at each iteration.  This is only
+        done if `full_output` is True.
 
     Returns
     -------
-    x : ndarray
+    xopt : ndarray
         The solution.
     info : dict
         A dictionary of optional outputs with the keys:
-            solution : array
-                The solution (same as `x`).
+            solution : ndarray
+                The solution (same as `xopt`).
             success : bool
                 Boolean flag indicating if a solution was found.
             status : int
-                An integer flag indicating the type of termination. Its
-                value depends on the underlying solver. Refer to message
+                An integer flag indicating the type of termination.  Its
+                value depends on the underlying solver.  Refer to `message`
                 for more information.
             message : str
                 A string message giving information about the cause of the
@@ -104,48 +106,48 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
                 jacobian and hessian.
             nit: int
                 Number of iterations.
-            direc: array
+            direc: ndarray
                 Current direction set.
             allvecs : list
-                Solution at each iteration (if retall==True).
+                Solution at each iteration (if ``retall == True``).
 
     Notes
     -----
-    This section describes the available solver to be selected by the
-    'method' parameter. Respective solver options are also listed here.
+    This section describes the available solvers that can be selected by the
+    'method' parameter.  Respective solver options are also listed here.
 
     By default, this function uses the *Nelder-Mead* simplex algorithm
-    [1]_,[2]_,[3]_ to find the a minimum of function of one or more
-    variables. This algorithm has a long history of successful use in
-    applications. But it will usually be slower than an algorithm that uses
-    first or second derivative information. In practice it can have poor
-    performance in high-dimensional problems and is not robust to
-    minimizing complicated functions. Additionally, there currently is no
+    [1]_, [2]_, [3]_ to find the minimum of a function of one or more
+    variables.  This algorithm has a long history of successful use in
+    applications.  However, it will usually be slower than an algorithm that
+    uses first or second derivative information.  In practice it can have poor
+    performance for high-dimensional problems and is not robust when
+    minimizing complicated functions.  Additionally, there currently is no
     complete theory describing when the algorithm will successfully
-    converge to the minimum, or how fast it will if it does.
+    converge to the global minimum, or how fast it will if it does.
 
     Relevant `options` are: `xtol`, `ftol`, `maxit`, `maxfev`, `disp`.
 
 
     Method *Powell* is a modification of Powell's method [4]_, [5]_ to find
-    the minimum of a function of N variables. Powell's method is a
+    the minimum of a function of N variables.  Powell's method is a
     conjugate direction method.
 
-    The algorithm has two loops. The outer loop merely iterates over the
-    inner loop. The inner loop minimizes over each current direction in the
-    direction set. At the end of the inner loop, if certain conditions are
+    The algorithm has two loops.  The outer loop merely iterates over the
+    inner loop.  The inner loop minimizes over each current direction in the
+    direction set.  At the end of the inner loop, if certain conditions are
     met, the direction that gave the largest decrease is dropped and
-    replaced with the difference between the current estiamted x and the
-    estimated x from the beginning of the inner-loop.
+    replaced with the difference between the current estimate of the solution
+    and the estimate from the beginning of the inner loop.
 
     The technical conditions for replacing the direction of greatest
-    increase amount to checking that
+    increase amount to checking that::
 
-    1. No further gain can be made along the direction of greatest increase
-       from that iteration.
-    2. The direction of greatest increase accounted for a large sufficient
-       fraction of the decrease in the function value from that iteration of
-       the inner loop.
+      1. No further gain can be made along the direction of greatest increase
+         from that iteration.
+      2. The direction of greatest increase accounted for a large sufficient
+         fraction of the decrease in the function value from that iteration of
+         the inner loop.
 
     Relevant `options` are: `xtol`, `ftol`, `maxit`, `maxfev`, `disp`.
 
@@ -184,6 +186,7 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
     .. [5] Press W., Teukolsky S.A., Vetterling W.T., and Flannery B.P.:
        Numerical Recipes (any edition), Cambridge University Press
     .. [6] Wright & Nocedal, 'Numerical Optimization', 1999.
+
     """
     if method.lower() == 'nelder-mead':
         return _minimize_neldermead(fun, x0, args, options, full_output,
