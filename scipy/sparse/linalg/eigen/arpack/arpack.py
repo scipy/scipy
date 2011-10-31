@@ -58,7 +58,7 @@ def _darwin_cast(typechar):
     # This check is required, for now, because we have unresolved crashes
     # occurring in single precision Veclib routines, on 64-bit OSX.
     # When these crashes are resolved, this restriction can be removed.
-    if sys.platform == 'darwin' or True:
+    if sys.platform == 'darwin':
         if typechar in ('f', 'F'):
             warnings.warn("Single-precision types in `eigs` and `eighs` "
                           "are not supported on the OSX platform currently. "
