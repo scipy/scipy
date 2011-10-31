@@ -1382,7 +1382,7 @@ class rv_continuous(rv_generic):
         cond = cond0 & cond1
         output = empty(shape(cond),'d')
         output.fill(NINF)
-        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
+        place(output,(1-cond0)*(cond1==cond1)+np.isnan(x),self.badvalue)
         place(output,cond2,0.0)
         if any(cond):  #call only if at least 1 entry
             goodargs = argsreduce(cond, *((x,)+args))

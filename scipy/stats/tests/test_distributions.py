@@ -741,14 +741,14 @@ def test_nan_arguments_ticket_835():
     assert_(np.isnan(stats.t.ppf(np.nan)))
     assert_(np.isnan(stats.t.isf(np.nan)))
 
-    assert_(np.isnan(stats.bernoulli.logcdf(np.nan)))
-    assert_(np.isnan(stats.bernoulli.cdf(np.nan)))
-    assert_(np.isnan(stats.bernoulli.logsf(np.nan)))
-    assert_(np.isnan(stats.bernoulli.sf(np.nan)))
-    assert_(np.isnan(stats.bernoulli.pdf(np.nan)))
-    assert_(np.isnan(stats.bernoulli.logpdf(np.nan)))
-    assert_(np.isnan(stats.bernoulli.ppf(np.nan)))
-    assert_(np.isnan(stats.bernoulli.isf(np.nan)))
+    assert_(np.isnan(stats.bernoulli.logcdf(np.nan, 0.5)))
+    assert_(np.isnan(stats.bernoulli.cdf(np.nan, 0.5)))
+    assert_(np.isnan(stats.bernoulli.logsf(np.nan, 0.5)))
+    assert_(np.isnan(stats.bernoulli.sf(np.nan, 0.5)))
+    assert_(np.isnan(stats.bernoulli.pmf(np.nan, 0.5)))
+    assert_(np.isnan(stats.bernoulli.logpmf(np.nan, 0.5)))
+    assert_(np.isnan(stats.bernoulli.ppf(np.nan, 0.5)))
+    assert_(np.isnan(stats.bernoulli.isf(np.nan, 0.5)))
 
 
 if __name__ == "__main__":
