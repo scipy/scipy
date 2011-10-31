@@ -296,7 +296,7 @@ def _minimize_neldermead(func, x0, args=(), options={}, full_output=0,
     ftol    = options.get('ftol', 1e-4)
     maxiter = options.get('maxiter')
     maxfun  = options.get('maxfev')
-    disp    = options.get('disp', 1)
+    disp    = options.get('disp', True)
 
     fcalls, func = wrap_function(func, args)
     x0 = asfarray(x0).flatten()
@@ -594,7 +594,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, full_output=0,
     norm    = options.get('norm', Inf)
     epsilon = options.get('eps', _epsilon)
     maxiter = options.get('maxiter')
-    disp    = options.get('disp', 1)
+    disp    = options.get('disp', True)
 
     x0 = asarray(x0).flatten()
     if x0.ndim == 0:
@@ -820,7 +820,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, options={}, full_output=0,
     norm    = options.get('norm', Inf)
     epsilon = options.get('eps', _epsilon)
     maxiter = options.get('maxiter')
-    disp    = options.get('disp', 1)
+    disp    = options.get('disp', True)
 
     x0 = asarray(x0).flatten()
     if maxiter is None:
@@ -1050,7 +1050,7 @@ def _minimize_ncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     avextol = options.get('xtol', 1e-5)
     epsilon = options.get('eps', _epsilon)
     maxiter = options.get('maxiter')
-    disp    = options.get('disp', 1)
+    disp    = options.get('disp', True)
 
     x0 = asarray(x0).flatten()
     fcalls, f = wrap_function(f, args)
@@ -1825,7 +1825,7 @@ def _minimize_powell(func, x0, args=(), options={}, full_output=0,
     ftol    = options.get('ftol', 1e-4)
     maxiter = options.get('maxiter')
     maxfun  = options.get('maxfev')
-    disp    = options.get('disp', 1)
+    disp    = options.get('disp', True)
     direc   = options.get('direc')
     # we need to use a mutable object here that we can update in the
     # wrapper function

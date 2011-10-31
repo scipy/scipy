@@ -52,11 +52,8 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
         on `jac` are used to compute it.
     options : dict, optional
         A dictionary of solver options with the keys:
-            disp : int
-                If positive, information on the progress of the
-                optimization is displayed. Different level of details are
-                available depending on the solver. Most solvers consider
-                either 0 or 1 (i.e. Boolean) values for `disp`.
+            disp : bool
+                Set to True to print convergence messages.
             xtol : float
                 Relative error in solution `xopt` acceptable for convergence.
             ftol : float
