@@ -5115,8 +5115,10 @@ class tukeylambda_gen(rv_continuous):
         vals2 = log(q/(1-q))
         return where((lam == 0)&(q==q), vals2, vals1)
     def _stats(self, lam):
-        mu2 = 2*gam(lam+1.5)-lam*pow(4,-lam)*sqrt(pi)*gam(lam)*(1-2*lam)
-        mu2 /= lam*lam*(1+2*lam)*gam(1+1.5)
+        mu2 = (2./(lam**2.))
+        mu2 *= (1./(1.+2.*lam) - gam(lam+1.)**2/gam(2.*lam+2.))
+##        mu2 = 2*gam(lam+1.5)-lam*pow(4,-lam)*sqrt(pi)*gam(lam)*(1-2*lam)
+##        mu2 /= lam*lam*(1+2*lam)*gam(1+1.5)
         mu4 = 3*gam(lam)*gam(lam+0.5)*pow(2,-2*lam) / lam**3 / gam(2*lam+1.5)
         mu4 += 2.0/lam**4 / (1+4*lam)
         mu4 -= 2*sqrt(3)*gam(lam)*pow(2,-6*lam)*pow(3,3*lam) * \

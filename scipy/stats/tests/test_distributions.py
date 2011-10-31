@@ -758,6 +758,19 @@ def test_regression_ticket_1530():
     expected = (0.045, 1.142)
     assert_almost_equal(params, expected, decimal=1)
 
+def test_tukeylambda_var_ticket_1545():
+    #this test can be removed again,
+    #when the generic tests verify variance correctly
+    mv = stats.tukeylambda.stats(3.13)
+    #expected from stats.tukeylambda._mom0_sc(2, 3.13)
+    expected = [0, 0.026922085994424357]
+    assert_almost_equal(mv, expected, decimal=9)
+
+    mv = stats.tukeylambda.stats(0.14)
+    #expected from stats.tukeylambda._mom0_sc(2, 0.14)
+    expected = [0, 2.1102970222056117]
+    assert_almost_equal(mv, expected, decimal=11)
+
 
 if __name__ == "__main__":
     run_module_suite()
