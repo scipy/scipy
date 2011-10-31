@@ -69,6 +69,8 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
                 Order of norm (Inf is max, -Inf is min).
             eps : int or ndarray
                 If `jac` is approximated, use this value for the step size.
+            direc : ndarray
+                Initial set of direction vectors for the Powell method.
     full_output : bool, optional
         If True, return optional outputs.  Default is False.
     callback : callable, optional
@@ -104,7 +106,7 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
             nit: int
                 Number of iterations.
             direc: ndarray
-                Current direction set.
+                Current set of direction vectors for the Powell method.
             allvecs : list
                 Solution at each iteration (if ``retall == True``).
 

@@ -1803,7 +1803,8 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             'ftol': ftol,
             'maxiter': maxiter,
             'maxfev': maxfun,
-            'disp': disp}
+            'disp': disp,
+            'direc': direc}
 
     out = _minimize_powell(func, x0, args, opts, full_output, retall,
                             callback)
