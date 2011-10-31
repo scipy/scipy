@@ -1766,10 +1766,10 @@ class rv_continuous(rv_generic):
     #  estimates for the .fit method
     def _reduce_func(self, args, kwds):
         args = list(args)
-        Nargs = len(args) - 2
+        Nargs = len(args)
         fixedn = []
-        index = range(Nargs) + [-2, -1]
-        names = ['f%d' % n for n in range(Nargs)] + ['floc', 'fscale']
+        index = range(Nargs)
+        names = ['f%d' % n for n in range(Nargs - 2)] + ['floc', 'fscale']
         x0 = args[:]
         for n, key in zip(index, names):
             if kwds.has_key(key):
