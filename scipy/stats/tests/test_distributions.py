@@ -750,6 +750,14 @@ def test_nan_arguments_ticket_835():
     assert_(np.isnan(stats.bernoulli.ppf(np.nan, 0.5)))
     assert_(np.isnan(stats.bernoulli.isf(np.nan, 0.5)))
 
+def test_regression_ticket_1530():
+    #just a regression test to check that the starting value works
+    np.random.seed(654321)
+    rvs = stats.cauchy.rvs(size=100)
+    params = stats.cauchy.fit(rvs)
+    expected = (0.045, 1.142)
+    assert_almost_equal(params, expected, decimal=1)
+
 
 if __name__ == "__main__":
     run_module_suite()
