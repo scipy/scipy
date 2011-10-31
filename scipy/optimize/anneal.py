@@ -154,7 +154,7 @@ class _state(object):
 def anneal(func, x0, args=(), schedule='fast', full_output=0,
            T0=None, Tf=1e-12, maxeval=None, maxaccept=None, maxiter=400,
            boltzmann=1.0, learn_rate=0.5, feps=1e-6, quench=1.0, m=1.0, n=1.0,
-           lower=-100, upper=100, dwell=50):
+           lower=-100, upper=100, dwell=50, disp=True):
     """Minimize a function using simulated annealing.
 
     Schedule is a schedule class implementing the annealing schedule.
@@ -197,6 +197,8 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         Lower and upper bounds on `x`.
     dwell : int
         The number of times to search the space at each temperature.
+    disp : bool
+        Set to True to print convergence messages.
 
     Returns
     -------
@@ -335,9 +337,11 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
             retval = 0
             if abs(af[-1]-best_state.cost) > feps*10:
                 retval = 5
-                print "Warning: Cooled to %f at %s but this is not" \
-                      % (squeeze(last_state.cost), str(squeeze(last_state.x))) \
-                      + " the smallest point found."
+                if disp:
+                    print "Warning: Cooled to %f at %s but this is not" \
+                          % (squeeze(last_state.cost),
+                             str(squeeze(last_state.x))) \
+                          + " the smallest point found."
             break
         if (Tf is not None) and (schedule.T < Tf):
             retval = 1
@@ -346,7 +350,8 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
             retval = 2
             break
         if (iters > maxiter):
-            print "Warning: Maximum number of iterations exceeded."
+            if disp:
+                print "Warning: Maximum number of iterations exceeded."
             retval = 3
             break
         if (maxaccept is not None) and (schedule.accepted > maxaccept):

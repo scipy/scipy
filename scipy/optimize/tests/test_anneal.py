@@ -30,7 +30,7 @@ class TestAnneal(TestCase):
         n = 0 # index of test function
         out = anneal(self.fun[n], self.x0[n], full_output=True,
                      upper=self.upper[n], lower=self.lower[n], feps=1e-3,
-                     maxiter=2000, schedule=schedule)
+                     maxiter=2000, schedule=schedule, disp=False)
         assert_almost_equal(out[0], self.sol[n], 2)
 
     def test_fast(self):
