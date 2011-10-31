@@ -731,6 +731,25 @@ def test_regression_ticket_1421():
     assert_('pdf(x, mu, loc=0, scale=1)' not in stats.poisson.__doc__)
     assert_('pmf(x,' in stats.poisson.__doc__)
 
+def test_nan_arguments_ticket_835():
+    assert_(np.isnan(stats.t.logcdf(np.nan)))
+    assert_(np.isnan(stats.t.cdf(np.nan)))
+    assert_(np.isnan(stats.t.logsf(np.nan)))
+    assert_(np.isnan(stats.t.sf(np.nan)))
+    assert_(np.isnan(stats.t.pdf(np.nan)))
+    assert_(np.isnan(stats.t.logpdf(np.nan)))
+    assert_(np.isnan(stats.t.ppf(np.nan)))
+    assert_(np.isnan(stats.t.isf(np.nan)))
+
+    assert_(np.isnan(stats.bernoulli.logcdf(np.nan)))
+    assert_(np.isnan(stats.bernoulli.cdf(np.nan)))
+    assert_(np.isnan(stats.bernoulli.logsf(np.nan)))
+    assert_(np.isnan(stats.bernoulli.sf(np.nan)))
+    assert_(np.isnan(stats.bernoulli.pdf(np.nan)))
+    assert_(np.isnan(stats.bernoulli.logpdf(np.nan)))
+    assert_(np.isnan(stats.bernoulli.ppf(np.nan)))
+    assert_(np.isnan(stats.bernoulli.isf(np.nan)))
+
 
 if __name__ == "__main__":
     run_module_suite()
