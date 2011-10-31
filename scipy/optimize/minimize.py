@@ -58,7 +58,7 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
                 Relative error in solution `xopt` acceptable for convergence.
             ftol : float
                 Relative error in ``fun(xopt)`` acceptable for convergence.
-            maxit : int
+            maxiter : int
                 Maximum number of iterations to perform.
             maxfev : int
                 Maximum number of function evaluations to make.
@@ -123,7 +123,7 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
     complete theory describing when the algorithm will successfully
     converge to the global minimum, or how fast it will if it does.
 
-    Relevant `options` are: `xtol`, `ftol`, `maxit`, `maxfev`, `disp`.
+    Relevant `options` are: `xtol`, `ftol`, `maxiter`, `maxfev`, `disp`.
 
 
     Method *Powell* is a modification of Powell's method [4]_, [5]_ to find
@@ -146,19 +146,19 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
          fraction of the decrease in the function value from that iteration of
          the inner loop.
 
-    Relevant `options` are: `xtol`, `ftol`, `maxit`, `maxfev`, `disp`.
+    Relevant `options` are: `xtol`, `ftol`, `maxiter`, `maxfev`, `disp`.
 
 
     Method *CG* uses a nonlinear conjugate gradient algorithm by Polak and
     Ribiere as described in [6]_ pp. 120-122.
 
-    Relevant `options` are: `gtol`, `norm`, `maxit`, `eps`, `disp`.
+    Relevant `options` are: `gtol`, `norm`, `maxiter`, `eps`, `disp`.
 
 
     Method *BFGS* uses the quasi-Newton method of Broyden, Fletcher,
     Goldfarb, and Shanno (BFGS) [6]_ pp. 198
 
-    Relevant `options` are: `gtol`, `norm`, `maxit`, `eps`, `disp`.
+    Relevant `options` are: `gtol`, `norm`, `maxiter`, `eps`, `disp`.
 
 
     Method *Newton-CG* uses a Newton-CG algorithm [6]_ pp.140. Newton-CG
@@ -166,7 +166,7 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
     with method='TNC' for a box-constrained minimization with a similar
     algorithm.
 
-    Relevant `options` are: `xtol`, `maxit`, `eps`, `disp`.
+    Relevant `options` are: `xtol`, `maxiter`, `eps`, `disp`.
 
     References
     ----------

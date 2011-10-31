@@ -35,7 +35,7 @@ from linesearch import \
 _status_message = {'success': 'Optimization terminated successfully.',
                    'maxfev' : 'Maximum number of function evaluations has '
                               'been exceeded.',
-                   'maxit'  : 'Maximum number of iterations has been '
+                   'maxiter': 'Maximum number of iterations has been '
                               'exceeded.',
                    'pr_loss': 'Desired error not necessarily achieved due '
                               'to precision loss.'}
@@ -415,7 +415,7 @@ def _minimize_neldermead(func, x0, args=(), options={}, full_output=0,
             print 'Warning: ' + msg
     elif iterations >= maxiter:
         warnflag = 2
-        msg = _status_message['maxit']
+        msg = _status_message['maxiter']
         if disp:
             print 'Warning: ' + msg
     else:
@@ -685,7 +685,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, full_output=0,
 
     elif k >= maxiter:
         warnflag = 1
-        msg = _status_message['maxit']
+        msg = _status_message['maxiter']
         if disp:
             print "Warning: " + msg
             print "         Current function value: %f" % fval
@@ -889,7 +889,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, options={}, full_output=0,
 
     elif k >= maxiter:
         warnflag = 1
-        msg = _status_message['maxit']
+        msg = _status_message['maxiter']
         if disp:
             print "Warning: " + msg
             print "         Current function value: %f" % fval
@@ -1128,7 +1128,7 @@ def _minimize_ncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         fval = old_fval
     if k >= maxiter:
         warnflag = 1
-        msg = _status_message['maxit']
+        msg = _status_message['maxiter']
         if disp:
             print "Warning: " + msg
             print "         Current function value: %f" % fval
@@ -1898,7 +1898,7 @@ def _minimize_powell(func, x0, args=(), options={}, full_output=0,
             print "Warning: " + msg
     elif iter >= maxiter:
         warnflag = 2
-        msg = _status_message['maxit']
+        msg = _status_message['maxiter']
         if disp:
             print "Warning: " + msg
     else:
