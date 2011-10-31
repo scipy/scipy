@@ -25,25 +25,35 @@ class TestAnneal(TestCase):
         self.upper = (3., [3., 3.])
         self.lower = (-3., [-3., -3.])
 
+        # 'fast' and 'cauchy' succeed with maxiter=1000 but 'boltzmann'
+        # exits with status=3 until very high values. Keep this value
+        # reasonable though.
+        self.maxiter = 1000
+
     def anneal_schedule(self, schedule='fast'):
         """ Call anneal algorithm using specified schedule """
         n = 0 # index of test function
-        out = anneal(self.fun[n], self.x0[n], full_output=True,
-                     upper=self.upper[n], lower=self.lower[n], feps=1e-3,
-                     maxiter=2000, schedule=schedule, disp=False)
-        assert_almost_equal(out[0], self.sol[n], 2)
+        x, retval = anneal(self.fun[n], self.x0[n], full_output=False,
+                           upper=self.upper[n], lower=self.lower[n],
+                           feps=1e-3, maxiter=self.maxiter, schedule=schedule,
+                           disp=False)
+        assert_almost_equal(x, self.sol[n], 2)
+        return retval
 
     def test_fast(self):
         """ Anneal: test for fast schedule """
-        self.anneal_schedule('fast')
+        retval = self.anneal_schedule('fast')
+        self.assertEqual(retval, 0)
 
     def test_boltzmann(self):
         """ Anneal: test for Boltzmann schedule """
-        self.anneal_schedule('boltzmann')
+        retval = self.anneal_schedule('boltzmann')
+        self.assertLessEqual(retval, 3) # usually 3
 
     def test_cauchy(self):
         """ Anneal: test for Cauchy schedule """
-        self.anneal_schedule('cauchy')
+        retval = self.anneal_schedule('cauchy')
+        self.assertEqual(retval, 0)
 
 if __name__ == "__main__":
     run_module_suite()

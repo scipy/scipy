@@ -280,6 +280,55 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         T_new = T0 / log(1+k)
 
     """
+
+    opts = {'schedule'  : schedule,
+            'T0'        : T0,
+            'Tf'        : Tf,
+            'maxfev'    : maxeval,
+            'maxaccept' : maxaccept,
+            'maxiter'   : maxiter,
+            'boltzmann' : boltzmann,
+            'learn_rate': learn_rate,
+            'ftol'      : feps,
+            'quench'    : quench,
+            'm'         : m,
+            'n'         : n,
+            'lower'     : lower,
+            'upper'     : upper,
+            'dwell'     : dwell,
+            'disp'      : disp}
+
+    # call _minimize_anneal full_output=True in order to always retrieve
+    # retval (aka info['status'])
+    x, info = _minimize_anneal(func, x0, args, opts, full_output=True)
+
+    if full_output:
+        return x, info['fun'], info['T'], info['nfev'], info['nit'], \
+            info['accept'], info['status']
+    else:
+        return x, info['status']
+
+def _minimize_anneal(func, x0, args=(), options={}, full_output=0):
+    """minimize: Anneal method"""
+    # retrieve useful options
+    schedule   = options.get('schedule', 'fast')
+    T0         = options.get('T0')
+    Tf         = options.get('Tf', 1e-12)
+    maxeval    = options.get('maxfev')
+    maxaccept  = options.get('maxaccept')
+    maxiter    = options.get('maxiter', 400)
+    boltzmann  = options.get('boltzmann', 1.0)
+    learn_rate = options.get('learn_rate', 0.5)
+    feps       = options.get('ftol', 1e-6)
+    quench     = options.get('quench', 1.0)
+    m          = options.get('m', 1.0)
+    n          = options.get('n', 1.0)
+    lower      = options.get('lower', -100)
+    upper      = options.get('upper', 100)
+    dwell      = options.get('dwell', 50)
+    disp       = options.get('disp', True)
+
+
     x0 = asarray(x0)
     lower = asarray(lower)
     upper = asarray(upper)
@@ -359,10 +408,24 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
             break
 
     if full_output:
-        return best_state.x, best_state.cost, schedule.T, \
-               schedule.feval, iters, schedule.accepted, retval
+        info = {'solution': best_state.x,
+                'fun'     : best_state.cost,
+                'T'       : schedule.T,
+                'nfev'    : schedule.feval,
+                'nit'     : iters,
+                'accept'  : schedule.accepted,
+                'status'  : retval,
+                'success' : retval <= 1}
+        info['message'] = {0: 'Points no longer changing',
+                           1: 'Cooled to final temperature',
+                           2: 'Maximum function evaluations',
+                           3: 'Maximum cooling iterations reached',
+                           4: 'Maximum accepted query locations reached',
+                           5: 'Final point not the minimum amongst '
+                              'encountered points'}[retval]
+        return best_state.x, info
     else:
-        return best_state.x, retval
+        return best_state.x
 
 
 
