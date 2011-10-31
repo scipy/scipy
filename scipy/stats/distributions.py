@@ -2464,6 +2464,8 @@ class cauchy_gen(rv_continuous):
         return inf, inf, nan, nan
     def _entropy(self):
         return log(4*pi)
+    def _fitstart(data, args=None):
+       return (0, 1)
 cauchy = cauchy_gen(name='cauchy')
 
 

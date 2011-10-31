@@ -757,6 +757,14 @@ def test_frozen_fit_ticket_1536():
     expected = np.array([floc, np.sqrt(((x-floc)**2).mean())])
     assert_almost_equal(params, expected, decimal=4)
 
+def test_regression_ticket_1530():
+    """Check the starting value works for Cauchy distribution fit."""
+    np.random.seed(654321)
+    rvs = stats.cauchy.rvs(size=100)
+    params = stats.cauchy.fit(rvs)
+    expected = (0.045, 1.142)
+    assert_almost_equal(params, expected, decimal=1)
+
 
 if __name__ == "__main__":
     run_module_suite()
