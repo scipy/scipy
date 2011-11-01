@@ -5,6 +5,7 @@ from iterative import *
 from minres import minres
 from lgmres import lgmres
 from lsqr import lsqr
+from lsmr import lsmr
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
 from numpy.testing import Tester
