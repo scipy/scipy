@@ -145,67 +145,50 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
     This section describes the available solvers that can be selected by the
     'method' parameter.  Respective solver options are also listed here.
 
-    By default, this function uses the *Nelder-Mead* simplex algorithm
-    [1]_, [2]_, [3]_ to find the minimum of a function of one or more
-    variables.  This algorithm has a long history of successful use in
-    applications.  However, it will usually be slower than an algorithm that
-    uses first or second derivative information.  In practice it can have poor
-    performance for high-dimensional problems and is not robust when
-    minimizing complicated functions.  Additionally, there currently is no
-    complete theory describing when the algorithm will successfully
-    converge to the global minimum, or how fast it will if it does.
+    Method *Nelder-Mead* uses the Simplex algorithm [1]_, [2]_. This
+    algorithm has been successful in many applications but other algorithms
+    using the first and/or second derivatives information might be preferred
+    for their better performances and robustness in general.
 
     Relevant `options` are: `xtol`, `ftol`, `maxiter`, `maxfev`, `disp`.
 
 
-    Method *Powell* is a modification of Powell's method [4]_, [5]_ to find
-    the minimum of a function of N variables.  Powell's method is a
-    conjugate direction method.
-
-    The algorithm has two loops.  The outer loop merely iterates over the
-    inner loop.  The inner loop minimizes over each current direction in the
-    direction set.  At the end of the inner loop, if certain conditions are
-    met, the direction that gave the largest decrease is dropped and
-    replaced with the difference between the current estimate of the solution
-    and the estimate from the beginning of the inner loop.
-
-    The technical conditions for replacing the direction of greatest
-    increase amount to checking that::
-
-      1. No further gain can be made along the direction of greatest increase
-         from that iteration.
-      2. The direction of greatest increase accounted for a large sufficient
-         fraction of the decrease in the function value from that iteration of
-         the inner loop.
+    Method *Powell* is a modification of Powell's method [3]_, [4]_ which
+    is a conjugate direction method. It performs sequential one-dimensional
+    minimizations along each vector of the directions set (`direc` field in
+    `options` and `info`), which is updated at each iteration of the main
+    minimization loop. The function need not be differentiable, and no
+    derivatives are taken.
 
     Relevant `options` are: `xtol`, `ftol`, `maxiter`, `maxfev`, `disp`.
 
 
     Method *CG* uses a nonlinear conjugate gradient algorithm by Polak and
-    Ribiere as described in [6]_ pp. 120-122.
+    Ribière, a variant of the Fletcher-Reeves method described in [5]_ pp.
+    120—122. Only the first derivatives are used.
 
     Relevant `options` are: `gtol`, `norm`, `maxiter`, `eps`, `disp`.
 
 
     Method *BFGS* uses the quasi-Newton method of Broyden, Fletcher,
-    Goldfarb, and Shanno (BFGS) [6]_ pp. 198.
+    Goldfarb, and Shanno (BFGS) [5]_ pp. 136. It uses the first derivatives
+    only. BFGS has proven good performance even for non-smooth
+    optimizations
 
     Relevant `options` are: `gtol`, `norm`, `maxiter`, `eps`, `disp`.
 
 
-    Method *Newton-CG* uses a Newton-CG algorithm [6]_ pp.140. Newton-CG
-    methods are also called truncated Newton methods. See also `fmin_tnc`
-    for a box-constrained minimization with a similar algorithm.
+    Method *Newton-CG* uses a Newton-CG algorithm [5]_ pp. 168 (also known
+    as the truncated Newton method). It uses a CG method to the compute the
+    search direction. See also `fmin_tnc` for a box-constrained
+    minimization with a similar algorithm.
 
     Relevant `options` are: `xtol`, `maxiter`, `eps`, `disp`.
 
 
     Method *Anneal* uses simulated annealing, which is a probabilistic
     metaheuristic algorithm for global optimization. It uses no derivative
-    information from the function being optimized. In practice it has been
-    more useful in discrete optimization than continuous optimization, as
-    there are usually better algorithms for continuous optimization
-    problems.
+    information from the function being optimized.
 
     Relevant `options` are: `schedule`, `T0`, `Tf`, `maxfev`, `maxaccept`,
     `maxiter`, `boltzmann`, `learn_rate`, `ftol`, `quench`, `m`, `n`,
@@ -213,19 +196,21 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
 
     References
     ----------
-    .. [1] Nelder, J.A. and Mead, R. (1965), "A simplex method for function
-       minimization", The Computer Journal, 7, pp. 308-313
-    .. [2] Wright, M.H. (1996), "Direct Search Methods: Once Scorned, Now
-       Respectable", in Numerical Analysis 1995, Proceedings of the
-       1995 Dundee Biennial Conference in Numerical Analysis, D.F.
-    .. [3] Griffiths and G.A. Watson (Eds.), Addison Wesley Longman,
-       Harlow, UK, pp. 191-208.
-    .. [4] Powell M.J.D. (1964) An efficient method for finding the minimum of a
-       function of several variables without calculating derivatives,
-       Computer Journal, 7 (2):155-162.
-    .. [5] Press W., Teukolsky S.A., Vetterling W.T., and Flannery B.P.:
-       Numerical Recipes (any edition), Cambridge University Press
-    .. [6] Wright & Nocedal, 'Numerical Optimization', 1999.
+    .. [1] Nelder, J A, and R Mead. 1965. A Simplex Method for Function
+        Minimization. The Computer Journal 7: 308–13.
+    .. [2] Wright M H. 1996. Direct search methods: Once scorned, now
+        respectable, in Numerical Analysis 1995: Proceedings of the 1995
+        Dundee Biennial Conference in Numerical Analysis (Eds. D F
+        Griffiths and G A Watson). Addison Wesley Longman, Harlow, UK.
+        191–208.
+    .. [3] Powell, M J D. 1964. An efficient method for finding the minimum of
+       a function of several variables without calculating derivatives. The
+       Computer Journal 7: 155—162.
+    .. [4] Press W, S A Teukolsky, W T Vetterling and B P Flannery.
+       Numerical Recipes (any edition), Cambridge University Press.
+    .. [5] Nocedal, J, and S J Wright. 2006. Numerical Optimization.
+       Springer New York.
+
 
     """
     if method.lower() == 'nelder-mead':
