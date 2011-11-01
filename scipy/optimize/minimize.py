@@ -5,7 +5,7 @@ Functions
 ---------
 - minimize : unconstrained minimization of a function of several variables.
 - con_minimize : constrained minimization of a function of several variables.
-- minimize1d: minimization of a scalar function.
+- minimize_scalar: minimization of a scalar function.
 
 """
 
@@ -18,6 +18,7 @@ from warnings import warn
 # unconstrained minimization
 from optimize import _minimize_neldermead, _minimize_powell, \
         _minimize_cg, _minimize_bfgs, _minimize_ncg
+from anneal import _minimize_anneal
 
 
 def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
@@ -71,6 +72,31 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
                 If `jac` is approximated, use this value for the step size.
             direc : ndarray
                 Initial set of direction vectors for the Powell method.
+            schedule : str
+                Annealing schedule to use. One of: 'fast', 'cauchy' or
+                'boltzmann'.
+            T0 : float
+                Initial Temperature for simulated annealing (estimated as
+                1.2 times the largest cost-function deviation over random
+                points in the range).
+            Tf : float
+                Final goal temperature for simulated annealing.
+            maxaccept : int
+                Maximum changes to accept for simulated annealing.
+            learn_rate : float
+                Scale constant for adjusting guesses for simulated
+                annealing.
+            boltzmann : float
+                Boltzmann constant in acceptance test for simulated
+                annealing (increase for less stringent test at each
+                temperature).
+            quench, m, n : float
+                Parameters to alter fast_sa schedule.
+            lower, upper : float or ndarray
+                Lower and upper bounds on `x`.
+            dwell : int
+                The number of times to search the space at each temperature.
+
     full_output : bool, optional
         If True, return optional outputs.  Default is False.
     callback : callable, optional
@@ -107,6 +133,10 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
                 Number of iterations.
             direc: ndarray
                 Current set of direction vectors for the Powell method.
+            T : float
+                Final temperature for simulated annealing.
+            accept : int
+                Number of tests accepted.
             allvecs : list
                 Solution at each iteration (if ``retall == True``).
 
@@ -158,17 +188,28 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
 
 
     Method *BFGS* uses the quasi-Newton method of Broyden, Fletcher,
-    Goldfarb, and Shanno (BFGS) [6]_ pp. 198
+    Goldfarb, and Shanno (BFGS) [6]_ pp. 198.
 
     Relevant `options` are: `gtol`, `norm`, `maxiter`, `eps`, `disp`.
 
 
     Method *Newton-CG* uses a Newton-CG algorithm [6]_ pp.140. Newton-CG
-    methods are also called truncated Newton methods. See also `fmincon`
-    with method='TNC' for a box-constrained minimization with a similar
-    algorithm.
+    methods are also called truncated Newton methods. See also `fmin_tnc`
+    for a box-constrained minimization with a similar algorithm.
 
     Relevant `options` are: `xtol`, `maxiter`, `eps`, `disp`.
+
+
+    Method *Anneal* uses simulated annealing, which is a probabilistic
+    metaheuristic algorithm for global optimization. It uses no derivative
+    information from the function being optimized. In practice it has been
+    more useful in discrete optimization than continuous optimization, as
+    there are usually better algorithms for continuous optimization
+    problems.
+
+    Relevant `options` are: `schedule`, `T0`, `Tf`, `maxfev`, `maxaccept`,
+    `maxiter`, `boltzmann`, `learn_rate`, `ftol`, `quench`, `m`, `n`,
+    `lower`, `upper`, `dwell`.
 
     References
     ----------
@@ -202,5 +243,13 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
     elif method.lower() == 'newton-cg':
         return _minimize_ncg(fun, x0, args, jac, hess, hessp, options,
                              full_output, retall, callback)
+    elif method.lower() == 'anneal':
+        if callback:
+            raise warn("Method 'Anneal' does not support callback.",
+                       RuntimeWarning)
+        if retall:
+            raise warn("Method 'Anneal' does not support retall option.",
+                       RuntimeWarning)
+        return _minimize_anneal(fun, x0, args, options, full_output)
     else:
         raise ValueError('Unknown solver %s' % method)

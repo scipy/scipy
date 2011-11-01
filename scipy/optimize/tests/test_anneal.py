@@ -6,7 +6,7 @@ from numpy.testing import TestCase, run_module_suite, assert_almost_equal
 
 import numpy as np
 
-from scipy.optimize import anneal
+from scipy.optimize import anneal, minimize
 
 class TestAnneal(TestCase):
     """ Tests for anneal """
@@ -30,30 +30,48 @@ class TestAnneal(TestCase):
         # reasonable though.
         self.maxiter = 1000
 
-    def anneal_schedule(self, schedule='fast'):
+    def anneal_schedule(self, schedule='fast', use_wrapper=False):
         """ Call anneal algorithm using specified schedule """
         n = 0 # index of test function
-        x, retval = anneal(self.fun[n], self.x0[n], full_output=False,
-                           upper=self.upper[n], lower=self.lower[n],
-                           feps=1e-3, maxiter=self.maxiter, schedule=schedule,
-                           disp=False)
+        if use_wrapper:
+            opts = {'upper'   : self.upper[n],
+                    'lower'   : self.lower[n],
+                    'ftol'    : 1e-3,
+                    'maxiter' : self.maxiter,
+                    'schedule': schedule,
+                    'disp'    : False}
+            x, info = minimize(self.fun[n], self.x0[n], method='anneal',
+                               options=opts, full_output=True)
+            retval = info['status']
+        else:
+            x, retval = anneal(self.fun[n], self.x0[n], full_output=False,
+                               upper=self.upper[n], lower=self.lower[n],
+                               feps=1e-3, maxiter=self.maxiter,
+                               schedule=schedule, disp=False)
+
         assert_almost_equal(x, self.sol[n], 2)
         return retval
 
-    def test_fast(self):
+    def test_fast(self, use_wrapper=False):
         """ Anneal: test for fast schedule """
-        retval = self.anneal_schedule('fast')
+        retval = self.anneal_schedule('fast', use_wrapper)
         self.assertEqual(retval, 0)
 
-    def test_boltzmann(self):
+    def test_boltzmann(self, use_wrapper=False):
         """ Anneal: test for Boltzmann schedule """
-        retval = self.anneal_schedule('boltzmann')
+        retval = self.anneal_schedule('boltzmann', use_wrapper)
         self.assertLessEqual(retval, 3) # usually 3
 
-    def test_cauchy(self):
+    def test_cauchy(self, use_wrapper=False):
         """ Anneal: test for Cauchy schedule """
-        retval = self.anneal_schedule('cauchy')
+        retval = self.anneal_schedule('cauchy', use_wrapper)
         self.assertEqual(retval, 0)
+
+    def test_minimize(self):
+        """ minimize with 'anneal' method """
+        self.test_fast(True)
+        self.test_cauchy(True)
+        self.test_cauchy(True)
 
 if __name__ == "__main__":
     run_module_suite()
