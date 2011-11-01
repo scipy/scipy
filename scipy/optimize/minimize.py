@@ -211,7 +211,42 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
     .. [5] Nocedal, J, and S J Wright. 2006. Numerical Optimization.
        Springer New York.
 
+    Examples
+    --------
+    Let us consider the problem of minimizing the Rosenbrock function. This
+    function (and its respective derivatives) is implemented in `rosen`
+    (resp. `rosen_der`, `rosen_hess`) in the `scipy.optimize`.
 
+    >>> from scipy.optimize import minimize, rosen, rosen_der
+
+    A simple application of the *Nelder-Mead* method is:
+
+    >>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
+    >>> xopt = minimize(rosen, x0, method='Nelder-Mead')
+    Optimization terminated successfully.
+         Current function value: 0.000066
+         Iterations: 141
+         Function evaluations: 243
+    >>> print xopt
+    [ 1.  1.  1.  1.  1.]
+
+    Now using the *BFGS* algorithm, using the first derivative and a few
+    options:
+
+    >>> xopt, info = minimize(rosen, x0, method='BFGS', jac=rosen_der,
+    ...                       options={'gtol': 1e-6, 'disp': False},
+    ...                       full_output=True)
+
+    >>> print info['message']
+    Optimization terminated successfully.
+    >>> print info['solution']
+    [ 1.  1.  1.  1.  1.]
+    >>> print info['hess']
+    [[ 0.00749589  0.01255155  0.02396251  0.04750988  0.09495377]
+     [ 0.01255155  0.02510441  0.04794055  0.09502834  0.18996269]
+     [ 0.02396251  0.04794055  0.09631614  0.19092151  0.38165151]
+     [ 0.04750988  0.09502834  0.19092151  0.38341252  0.7664427 ]
+     [ 0.09495377  0.18996269  0.38165151  0.7664427   1.53713523]]
     """
     if method.lower() == 'nelder-mead':
         return _minimize_neldermead(fun, x0, args, options, full_output,
