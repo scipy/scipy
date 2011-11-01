@@ -713,8 +713,6 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, full_output=0,
                 'solution': xk}
         if retall:
             info['allvecs'] = allvecs
-        if retall:
-            retlist += (allvecs,)
         return xk, info
     else:
         if retall:
