@@ -22,7 +22,6 @@ __all__ = ['fmin', 'fmin_powell', 'fmin_bfgs', 'fmin_ncg', 'fmin_cg',
 
 __docformat__ = "restructuredtext en"
 
-from warnings import warn
 import numpy
 from numpy import atleast_1d, eye, mgrid, argmin, zeros, shape, \
      squeeze, vectorize, asarray, absolute, sqrt, Inf, asfarray, isinf
@@ -277,8 +276,13 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             'maxfev': maxfun,
             'disp': disp}
 
-    out = _minimize_neldermead(func, x0, args, opts, full_output, retall,
-                               callback)
+    # force full_output if retall=True to preserve backwards compatibility
+    if retall and not full_output:
+        out = _minimize_neldermead(func, x0, args, opts, full_output=True,
+                                   retall=retall, callback=callback)
+    else:
+        out = _minimize_neldermead(func, x0, args, opts, full_output,
+                                   retall, callback)
     if full_output:
         x, info = out
         retlist = x, info['fun'], info['nit'], info['nfev'], info['status']
@@ -286,7 +290,11 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             retlist += (info['allvecs'], )
         return retlist
     else:
-        return out
+        if retall:
+            x, info = out
+            return x, info['allvecs']
+        else:
+            return out
 
 def _minimize_neldermead(func, x0, args=(), options={}, full_output=0,
                          retall=0, callback=None):
@@ -439,8 +447,6 @@ def _minimize_neldermead(func, x0, args=(), options={}, full_output=0,
             info['allvecs'] = allvecs
         return x, info
     else:
-        if retall:
-            warn('retall is ignored since full_output=False.', RuntimeWarning)
         return x
 
 
@@ -571,8 +577,13 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             'disp': disp,
             'maxiter': maxiter}
 
-    out = _minimize_bfgs(f, x0, args, fprime, opts, full_output, retall,
-                         callback)
+    # force full_output if retall=True to preserve backwards compatibility
+    if retall and not full_output:
+        out = _minimize_bfgs(f, x0, args, fprime, opts, full_output=True,
+                             retall=retall, callback=callback)
+    else:
+        out = _minimize_bfgs(f, x0, args, fprime, opts, full_output,
+                             retall, callback)
 
     if full_output:
         x, info = out
@@ -582,7 +593,11 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             retlist += (info['allvecs'], )
         return retlist
     else:
-        return out
+        if retall:
+            x, info = out
+            return x, info['allvecs']
+        else:
+            return out
 
 def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, full_output=0,
                    retall=0, callback=None):
@@ -715,8 +730,6 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, full_output=0,
             info['allvecs'] = allvecs
         return xk, info
     else:
-        if retall:
-            warn('retall is ignored since full_output=False.', RuntimeWarning)
         return xk
 
 
@@ -797,8 +810,13 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
             'disp': disp,
             'maxiter': maxiter}
 
-    out = _minimize_cg(f, x0, args, fprime, opts, full_output, retall,
-                       callback)
+    # force full_output if retall=True to preserve backwards compatibility
+    if retall and not full_output:
+        out = _minimize_cg(f, x0, args, fprime, opts, full_output=True,
+                           retall=retall, callback=callback)
+    else:
+        out = _minimize_cg(f, x0, args, fprime, opts, full_output, retall,
+                           callback)
     if full_output:
         x, info = out
         retlist = x, info['fun'], info['nfev'], info['njev'], info['status']
@@ -806,7 +824,11 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
             retlist += (info['allvecs'], )
         return retlist
     else:
-        return out
+        if retall:
+            x, info = out
+            return x, info['allvecs']
+        else:
+            return out
 
 def _minimize_cg(fun, x0, args=(), jac=None, options={}, full_output=0,
                  retall=0, callback=None):
@@ -917,8 +939,6 @@ def _minimize_cg(fun, x0, args=(), jac=None, options={}, full_output=0,
             info['allvecs'] = allvecs
         return xk, info
     else:
-        if retall:
-            warn('retall is ignored since full_output=False.', RuntimeWarning)
         return xk
 
 
@@ -1022,8 +1042,14 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             'maxiter': maxiter,
             'disp': disp}
 
-    out = _minimize_ncg(f, x0, args, fprime, fhess, fhess_p, opts,
-                        full_output, retall, callback)
+    # force full_output if retall=True to preserve backwards compatibility
+    if retall and not full_output:
+        out = _minimize_ncg(f, x0, args, fprime, fhess, fhess_p, opts,
+                            full_output=True, retall=retall,
+                            callback=callback)
+    else:
+        out = _minimize_ncg(f, x0, args, fprime, fhess, fhess_p, opts,
+                            full_output, retall, callback)
 
     if full_output:
         x, info = out
@@ -1033,7 +1059,11 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             retlist += (info['allvecs'], )
         return retlist
     else:
-        return out
+        if retall:
+            x, info = out
+            return x, info['allvecs']
+        else:
+            return out
 
 def _minimize_ncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                   options={}, full_output=0, retall=0, callback=None):
@@ -1159,8 +1189,6 @@ def _minimize_ncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             info['allvecs'] = allvecs
         return xk, info
     else:
-        if retall:
-            warn('retall is ignored since full_output=False.', RuntimeWarning)
         return xk
 
 
@@ -1804,8 +1832,13 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             'disp': disp,
             'direc': direc}
 
-    out = _minimize_powell(func, x0, args, opts, full_output, retall,
-                            callback)
+    # force full_output if retall=True to preserve backwards compatibility
+    if retall and not full_output:
+        out = _minimize_powell(func, x0, args, opts, full_output=True,
+                               retall=retall, callback=callback)
+    else:
+        out = _minimize_powell(func, x0, args, opts, full_output, retall,
+                               callback)
     if full_output:
         x, info = out
         retlist = x, info['fun'], info['direc'], info['nit'], \
@@ -1814,7 +1847,11 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             retlist += (info['allvecs'], )
         return retlist
     else:
-        return out
+        if retall:
+            x, info = out
+            return x, info['allvecs']
+        else:
+            return out
 
 def _minimize_powell(func, x0, args=(), options={}, full_output=0,
                      retall=0, callback=None):
@@ -1923,8 +1960,6 @@ def _minimize_powell(func, x0, args=(), options={}, full_output=0,
             info['allvecs'] = allvecs
         return x, info
     else:
-        if retall:
-            warn('retall is ignored since full_output=False.', RuntimeWarning)
         return x
 
 
