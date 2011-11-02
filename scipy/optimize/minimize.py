@@ -265,11 +265,11 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
                              full_output, retall, callback)
     elif method.lower() == 'anneal':
         if callback:
-            raise warn("Method 'Anneal' does not support callback.",
-                       RuntimeWarning)
+            warn("Method 'Anneal' does not support callback.",
+                 RuntimeWarning)
         if retall:
-            raise warn("Method 'Anneal' does not support retall option.",
-                       RuntimeWarning)
+            warn("Method 'Anneal' does not support retall option.",
+                 RuntimeWarning)
         return _minimize_anneal(fun, x0, args, options, full_output)
     else:
         raise ValueError('Unknown solver %s' % method)
