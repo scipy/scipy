@@ -359,16 +359,16 @@ class lil_matrix(spmatrix):
         else:
             new = self.copy()
             # Multiply this scalar by every element.
-            new.data = np.array([[val*other for val in rowvals] for
-                                  rowvals in new.data], dtype=object)
+            new.data[:] = [[val*other for val in rowvals] for
+                           rowvals in new.data]
         return new
 
     def __truediv__(self, other):           # self / other
         if isscalarlike(other):
             new = self.copy()
             # Divide every element by this scalar
-            new.data = np.array([[val/other for val in rowvals] for
-                                  rowvals in new.data], dtype=object)
+            new.data = [[val/other for val in rowvals] for
+                        rowvals in new.data]
             return new
         else:
             return self.tocsr() / other

@@ -1500,6 +1500,11 @@ class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
                             [0,0,9],
                             [0,16,0]])
 
+    def test_lil_multiply_removal(self):
+        """Ticket #1427."""
+        a = lil_matrix(np.ones((3,3)))
+        a *= 2.
+        a[0, :] = 0
 
 
 class TestCOO(_TestCommon, TestCase):
