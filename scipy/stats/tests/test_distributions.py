@@ -736,8 +736,14 @@ def test_regression_ticket_1421():
 def test_frozen_fit_ticket_1536():
     np.random.seed(5678)
     true = np.array([0.25, 0., 0.5])
-    x = stats.lognorm.rvs(*true, size=100)
-    params = np.array(stats.lognorm.fit(x, floc=0.))
+    x = stats.lognorm.rvs(true[0], true[1], true[2], size=100)
+
+    olderr = np.seterr(divide='ignore')
+    try:
+        params = np.array(stats.lognorm.fit(x, floc=0.))
+    finally:
+        np.seterr(**olderr)
+
     assert_almost_equal(params, true, decimal=2)
 
     params = np.array(stats.lognorm.fit(x, fscale=0.5, loc=0))
