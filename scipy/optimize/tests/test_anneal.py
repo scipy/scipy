@@ -2,7 +2,8 @@
 Unit tests for the simulated annealing minimization algorithm.
 """
 
-from numpy.testing import TestCase, run_module_suite, assert_almost_equal
+from numpy.testing import TestCase, run_module_suite, \
+    assert_almost_equal, assert_
 
 import numpy as np
 
@@ -60,7 +61,7 @@ class TestAnneal(TestCase):
     def test_boltzmann(self, use_wrapper=False):
         """ Anneal: test for Boltzmann schedule """
         retval = self.anneal_schedule('boltzmann', use_wrapper)
-        self.assertLessEqual(retval, 3) # usually 3
+        assert_(retval <= 3)  # usually 3
 
     def test_cauchy(self, use_wrapper=False):
         """ Anneal: test for Cauchy schedule """

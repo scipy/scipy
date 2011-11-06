@@ -164,8 +164,8 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
 
 
     Method *CG* uses a nonlinear conjugate gradient algorithm by Polak and
-    Ribière, a variant of the Fletcher-Reeves method described in [5]_ pp.
-    120—122. Only the first derivatives are used.
+    Ribiere, a variant of the Fletcher-Reeves method described in [5]_ pp.
+    120-122. Only the first derivatives are used.
 
     Relevant `options` are: `gtol`, `norm`, `maxiter`, `eps`, `disp`.
 
@@ -197,15 +197,15 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
     References
     ----------
     .. [1] Nelder, J A, and R Mead. 1965. A Simplex Method for Function
-        Minimization. The Computer Journal 7: 308–13.
+        Minimization. The Computer Journal 7: 308-13.
     .. [2] Wright M H. 1996. Direct search methods: Once scorned, now
         respectable, in Numerical Analysis 1995: Proceedings of the 1995
         Dundee Biennial Conference in Numerical Analysis (Eds. D F
         Griffiths and G A Watson). Addison Wesley Longman, Harlow, UK.
-        191–208.
+        191-208.
     .. [3] Powell, M J D. 1964. An efficient method for finding the minimum of
        a function of several variables without calculating derivatives. The
-       Computer Journal 7: 155—162.
+       Computer Journal 7: 155-162.
     .. [4] Press W, S A Teukolsky, W T Vetterling and B P Flannery.
        Numerical Recipes (any edition), Cambridge University Press.
     .. [5] Nocedal, J, and S J Wright. 2006. Numerical Optimization.
