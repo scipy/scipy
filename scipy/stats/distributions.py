@@ -28,6 +28,8 @@ import numpy as np
 import numpy.random as mtrand
 from numpy import flatnonzero as nonzero
 import vonmises_cython
+from _tukeylambda_stats import tukeylambda_variance as _tlvar, \
+                                tukeylambda_kurtosis as _tlkurt
 
 __all__ = [
            'rv_continuous',
@@ -5102,33 +5104,30 @@ class tukeylambda_gen(rv_continuous):
     def _argcheck(self, lam):
         # lam in RR.
         return np.ones(np.shape(lam), dtype=bool)
+
     def _pdf(self, x, lam):
         Fx = arr(special.tklmbda(x,lam))
         Px = Fx**(lam-1.0) + (arr(1-Fx))**(lam-1.0)
         Px = 1.0/arr(Px)
         return where((lam <= 0) | (abs(x) < 1.0/arr(lam)), Px, 0.0)
+
     def _cdf(self, x, lam):
         return special.tklmbda(x, lam)
+
     def _ppf(self, q, lam):
         q = q*1.0
         vals1 = (q**lam - (1-q)**lam)/lam
         vals2 = log(q/(1-q))
         return where((lam == 0)&(q==q), vals2, vals1)
-    def _stats(self, lam):
-        mu2 = 2*gam(lam+1.5)-lam*pow(4,-lam)*sqrt(pi)*gam(lam)*(1-2*lam)
-        mu2 /= lam*lam*(1+2*lam)*gam(1+1.5)
-        mu4 = 3*gam(lam)*gam(lam+0.5)*pow(2,-2*lam) / lam**3 / gam(2*lam+1.5)
-        mu4 += 2.0/lam**4 / (1+4*lam)
-        mu4 -= 2*sqrt(3)*gam(lam)*pow(2,-6*lam)*pow(3,3*lam) * \
-               gam(lam+1.0/3)*gam(lam+2.0/3) / (lam**3.0 * gam(2*lam+1.5) * \
-                                                gam(lam+0.5))
-        g2 = mu4 / mu2 / mu2 - 3.0
 
-        return 0, mu2, 0, g2
+    def _stats(self, lam):
+        return 0, _tlvar(lam), 0, _tlkurt(lam)
+
     def _entropy(self, lam):
         def integ(p):
             return log(pow(p,lam-1)+pow(1-p,lam-1))
         return integrate.quad(integ,0,1)[0]
+
 tukeylambda = tukeylambda_gen(name='tukeylambda', shapes="lam")
 
 
