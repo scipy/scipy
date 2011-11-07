@@ -136,10 +136,8 @@ def configuration(parent_package='',top_path=None):
 
     # flapack:
     config.add_extension('flapack',
-                         sources = [generate_pyf],
-                         depends = ['generic_flapack.pyf',
-                                    'flapack_user_routines.pyf',
-                                    'interface_gen.py'],
+                         sources = ['flapack.pyf.src'],
+                         depends = ['flapack_user.pyf.src'],
                          extra_info = lapack_opt
                          )
 
