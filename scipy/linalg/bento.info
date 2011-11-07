@@ -10,7 +10,7 @@ Library:
             generic_cblas.pyf
     Extension: flapack
         Sources:
-            generic_flapack.pyf
+            flapack.pyf.src
     Extension: clapack
         Sources:
             generic_clapack.pyf
