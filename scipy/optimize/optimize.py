@@ -186,16 +186,9 @@ def wrap_function(function, args):
         return function(x, *args)
     return ncalls, function_wrapper
 
-@numpy.deprecate
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
          full_output=0, disp=1, retall=0, callback=None):
     """
-    This function is deprecated, use
-
-        scipy.optimize.minimize(..., method='Nelder-Mead', ...)
-
-    instead.
-
     Minimize a function using the downhill simplex algorithm.
 
     This algorithm only uses function values, not derivatives or second
@@ -245,6 +238,12 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         Set to True to print convergence messages.
     retall : bool
         Set to True to return list of solutions at each iteration.
+
+    See also
+    --------
+    minimize: Interface to unconstrained minimization algorithms for
+        multivariate functions. See the 'Nelder-Mead' `method` in
+        particular.
 
     Notes
     -----
@@ -494,17 +493,10 @@ def approx_fhess_p(x0, p, fprime, epsilon, *args):
     return (f2 - f1) / epsilon
 
 
-@numpy.deprecate
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
               retall=0, callback=None):
     """
-    This function is deprecated, use
-
-        scipy.optimize.minimize(..., method='BFGS', ...)
-
-    instead.
-
     Minimize a function using the BFGS algorithm.
 
     Parameters
@@ -559,6 +551,11 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         Print convergence message if True.
     retall : bool
         Return a list of results at each iteration if True.
+
+    See also
+    --------
+    minimize: Interface to unconstrained minimization algorithms for
+        multivariate functions. See the 'BFGS' `method` in particular.
 
     Notes
     -----
@@ -733,16 +730,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, full_output=0,
         return xk
 
 
-@numpy.deprecate
 def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
               maxiter=None, full_output=0, disp=1, retall=0, callback=None):
     """
-    This function is deprecated, use
-
-        scipy.optimize.minimize(..., method='CG', ...)
-
-    instead.
-
     Minimize a function using a nonlinear conjugate gradient algorithm.
 
     Parameters
@@ -795,6 +785,11 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
         Print convergence message if True.
     retall : bool
         Return a list of results at each iteration if True.
+
+    See also
+    --------
+    minimize: Interface to unconstrained minimization algorithms for
+        multivariate functions. See the 'CG' `method` in particular.
 
     Notes
     -----
@@ -941,18 +936,10 @@ def _minimize_cg(fun, x0, args=(), jac=None, options={}, full_output=0,
     else:
         return xk
 
-
-@numpy.deprecate
 def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
              epsilon=_epsilon, maxiter=None, full_output=0, disp=1, retall=0,
              callback=None):
     """
-    This function is deprecated, use
-
-        scipy.optimize.minimize(..., method='Newton-CG', ...)
-
-    instead.
-
     Unconstrained minimization of a function using the Newton-CG method.
 
 
@@ -1011,6 +998,11 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         If True, print convergence message.
     retall : bool
         If True, return a list of results at each iteration.
+
+    See also
+    --------
+    minimize: Interface to unconstrained minimization algorithms for
+        multivariate functions. See the 'Newton-CG' `method` in particular.
 
     Notes
     -----
@@ -1725,17 +1717,10 @@ def _linesearch_powell(func, p, xi, tol=1e-3):
     return squeeze(fret), p + xi, xi
 
 
-@numpy.deprecate
 def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
                 maxfun=None, full_output=0, disp=1, retall=0, callback=None,
                 direc=None):
     """
-    This function is deprecated, use
-
-        scipy.optimize.minimize(..., method='Powell', ...)
-
-    instead.
-
     Minimize a function using modified Powell's method. This method
     only uses function values, not derivatives.
 
@@ -1790,6 +1775,11 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
         If True, print convergence messages.
     retall : bool
         If True, return a list of the solution at each iteration.
+
+    See also
+    --------
+    minimize: Interface to unconstrained minimization algorithms for
+        multivariate functions. See the 'Powell' `method` in particular.
 
     Notes
     -----
