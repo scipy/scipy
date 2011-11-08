@@ -137,6 +137,18 @@ class TestOptimize(TestCase):
         finally:
             np.seterr(**olderr)
 
+    def test_bfgs_numerical_jacobian(self):
+        """ BFGS with numerical jacobian and a vector epsilon parameter """
+        # define the epsilon parameter using a random vector
+        epsilon = np.sqrt(np.finfo(float).eps) * np.random.rand(len(self.solution))
+
+        params = optimize.fmin_bfgs(self.func, self.startparams,
+                                    epsilon=epsilon, args=(),
+                                    maxiter=self.maxiter, disp=False)
+
+        err = abs(self.func(params) - self.func(self.solution))
+        assert_(err < 1e-6, err)
+
     def test_bfgs_infinite(self, use_wrapper=False):
         """Test corner case where -Inf is the minimum.  See #1494."""
         func = lambda x: -np.e**-x
