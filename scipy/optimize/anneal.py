@@ -309,7 +309,44 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         return x, info['status']
 
 def _minimize_anneal(func, x0, args=(), options={}, full_output=0):
-    """minimize: Anneal method"""
+    """
+    Minimization of scalar function of one or more variables using the
+    simulated annealing algorithm.
+
+    Options for the simulated annealing algorithm are:
+        disp : bool
+            Set to True to print convergence messages.
+        schedule : str
+            Annealing schedule to use. One of: 'fast', 'cauchy' or
+            'boltzmann'.
+        T0 : float
+            Initial Temperature (estimated as 1.2 times the largest
+            cost-function deviation over random points in the range).
+        Tf : float
+            Final goal temperature.
+        maxfev : int
+            Maximum number of function evaluations to make.
+        maxaccept : int
+            Maximum changes to accept.
+        maxiter : int
+            Maximum number of iterations to perform.
+        boltzmann : float
+            Boltzmann constant in acceptance test (increase for less
+            stringent test at each temperature).
+        learn_rate : float
+            Scale constant for adjusting guesses.
+        ftol : float
+            Relative error in ``fun(x)`` acceptable for convergence.
+        quench, m, n : float
+            Parameters to alter fast_sa schedule.
+        lower, upper : float or ndarray
+            Lower and upper bounds on `x`.
+        dwell : int
+            The number of times to search the space at each temperature.
+
+    This function is called by the `minimize` function with
+    `method=anneal`. It is not supposed to be called directly.
+    """
     # retrieve useful options
     schedule   = options.get('schedule', 'fast')
     T0         = options.get('T0')

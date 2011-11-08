@@ -1,23 +1,22 @@
 """
-Interface to minimization algorithms
+Interfaces to minimization algorithms.
 
 Functions
 ---------
 - minimize : unconstrained minimization of a function of several variables.
-- con_minimize : constrained minimization of a function of several variables.
-- minimize_scalar: minimization of a scalar function.
-
 """
 
 
-__all__ = ['minimize']
+__all__ = ['minimize', '_minimize_neldermead', '_minimize_powell',
+           '_minimize_cg', '_minimize_bfgs', '_minimize_newtoncg',
+           '_minimize_anneal']
 
 
 from warnings import warn
 
 # unconstrained minimization
 from optimize import _minimize_neldermead, _minimize_powell, \
-        _minimize_cg, _minimize_bfgs, _minimize_ncg
+        _minimize_cg, _minimize_bfgs, _minimize_newtoncg
 from anneal import _minimize_anneal
 
 
@@ -38,7 +37,7 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
         derivatives (Jacobian, Hessian).
     method : str, optional
         Type of solver.  Should be one of:
-            {'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG'}.
+            {'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'Anneal'}.
     jac : callable, optional
         Jacobian of objective function (if None, Jacobian will be
         estimated numerically). Only for CG, BFGS, Newton-CG.
@@ -52,51 +51,16 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
         times an arbitrary vector.  If it is not given, finite-differences
         on `jac` are used to compute it.
     options : dict, optional
-        A dictionary of solver options with the keys:
-            disp : bool
-                Set to True to print convergence messages.
-            xtol : float
-                Relative error in solution `xopt` acceptable for convergence.
-            ftol : float
-                Relative error in ``fun(xopt)`` acceptable for convergence.
+        A dictionary of solver options. All methods accept the following
+        generic options:
             maxiter : int
                 Maximum number of iterations to perform.
-            maxfev : int
-                Maximum number of function evaluations to make.
-            gtol : float
-                Gradient norm must be less than `gtol` before successful
-                termination.
-            norm : float
-                Order of norm (Inf is max, -Inf is min).
-            eps : int or ndarray
-                If `jac` is approximated, use this value for the step size.
-            direc : ndarray
-                Initial set of direction vectors for the Powell method.
-            schedule : str
-                Annealing schedule to use. One of: 'fast', 'cauchy' or
-                'boltzmann'.
-            T0 : float
-                Initial Temperature for simulated annealing (estimated as
-                1.2 times the largest cost-function deviation over random
-                points in the range).
-            Tf : float
-                Final goal temperature for simulated annealing.
-            maxaccept : int
-                Maximum changes to accept for simulated annealing.
-            learn_rate : float
-                Scale constant for adjusting guesses for simulated
-                annealing.
-            boltzmann : float
-                Boltzmann constant in acceptance test for simulated
-                annealing (increase for less stringent test at each
-                temperature).
-            quench, m, n : float
-                Parameters to alter fast_sa schedule.
-            lower, upper : float or ndarray
-                Lower and upper bounds on `x`.
-            dwell : int
-                The number of times to search the space at each temperature.
-
+            disp : bool
+                Set to True to print convergence messages.
+        For method-specific options, refer to the documentation of
+        respective underlying functions `_minimize_METHOD` (where METHOD is
+        one of 'neldermead', 'powell', 'cg', 'bfgs', 'newtoncg' or
+        'anneal').
     full_output : bool, optional
         If True, return optional outputs.  Default is False.
     callback : callable, optional
@@ -111,7 +75,8 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
     xopt : ndarray
         The solution.
     info : dict
-        A dictionary of optional outputs with the keys:
+        A dictionary of optional outputs (depending on the chosen method)
+        with the keys:
             solution : ndarray
                 The solution (same as `xopt`).
             success : bool
@@ -261,8 +226,8 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
         return _minimize_bfgs(fun, x0, args, jac, options, full_output,
                               retall, callback)
     elif method.lower() == 'newton-cg':
-        return _minimize_ncg(fun, x0, args, jac, hess, hessp, options,
-                             full_output, retall, callback)
+        return _minimize_newtoncg(fun, x0, args, jac, hess, hessp, options,
+                                  full_output, retall, callback)
     elif method.lower() == 'anneal':
         if callback:
             warn("Method 'Anneal' does not support callback.",

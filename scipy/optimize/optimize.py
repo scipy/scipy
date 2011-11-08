@@ -297,7 +297,25 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
 def _minimize_neldermead(func, x0, args=(), options={}, full_output=0,
                          retall=0, callback=None):
-    """minimize: Nelder-Mead method"""
+    """
+    Minimization of scalar function of one or more variables using the
+    Nelder-Mead algorithm.
+
+    Options for the Nelder-Mead algorithm are:
+        disp : bool
+            Set to True to print convergence messages.
+        xtol : float
+            Relative error in solution `xopt` acceptable for convergence.
+        ftol : float
+            Relative error in ``fun(xopt)`` acceptable for convergence.
+        maxiter : int
+            Maximum number of iterations to perform.
+        maxfev : int
+            Maximum number of function evaluations to make.
+
+    This function is called by the `minimize` function with
+    `method=Nelder-Mead`. It is not supposed to be called directly.
+    """
     # retrieve useful options
     xtol    = options.get('xtol', 1e-4)
     ftol    = options.get('ftol', 1e-4)
@@ -598,7 +616,26 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 
 def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, full_output=0,
                    retall=0, callback=None):
-    """minimize: BFGS method"""
+    """
+    Minimization of scalar function of one or more variables using the
+    BFGS algorithm.
+
+    Options for the BFGS algorithm are:
+        disp : bool
+            Set to True to print convergence messages.
+        maxiter : int
+            Maximum number of iterations to perform.
+        gtol : float
+            Gradient norm must be less than `gtol` before successful
+            termination.
+        norm : float
+            Order of norm (Inf is max, -Inf is min).
+        eps : float or ndarray
+            If `jac` is approximated, use this value for the step size.
+
+    This function is called by the `minimize` function with `method=BFGS`.
+    It is not supposed to be called directly.
+    """
     f = fun
     fprime = jac
     # retrieve useful options
@@ -827,7 +864,26 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
 
 def _minimize_cg(fun, x0, args=(), jac=None, options={}, full_output=0,
                  retall=0, callback=None):
-    """minimize: conjugate gradient method"""
+    """
+    Minimization of scalar function of one or more variables using the
+    conjugate gradient algorithm.
+
+    Options for the conjugate gradient algorithm are:
+        disp : bool
+            Set to True to print convergence messages.
+        maxiter : int
+            Maximum number of iterations to perform.
+        gtol : float
+            Gradient norm must be less than `gtol` before successful
+            termination.
+        norm : float
+            Order of norm (Inf is max, -Inf is min).
+        eps : float or ndarray
+            If `jac` is approximated, use this value for the step size.
+
+    This function is called by the `minimize` function with `method=CG`. It
+    is not supposed to be called directly.
+    """
     f = fun
     fprime = jac
     # retrieve useful options
@@ -1036,12 +1092,12 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
 
     # force full_output if retall=True to preserve backwards compatibility
     if retall and not full_output:
-        out = _minimize_ncg(f, x0, args, fprime, fhess, fhess_p, opts,
-                            full_output=True, retall=retall,
-                            callback=callback)
+        out = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p, opts,
+                                 full_output=True, retall=retall,
+                                 callback=callback)
     else:
-        out = _minimize_ncg(f, x0, args, fprime, fhess, fhess_p, opts,
-                            full_output, retall, callback)
+        out = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p, opts,
+                                 full_output, retall, callback)
 
     if full_output:
         x, info = out
@@ -1057,9 +1113,28 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         else:
             return out
 
-def _minimize_ncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
-                  options={}, full_output=0, retall=0, callback=None):
-    """minimize: Newton-CG method"""
+def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
+                       options={}, full_output=0, retall=0, callback=None):
+    """
+    Minimization of scalar function of one or more variables using the
+    Newton-CG algorithm.
+
+    Options for the Newton-CG algorithm are:
+        disp : bool
+            Set to True to print convergence messages.
+        xtol : float
+            Average relative error in solution `xopt` acceptable for
+            convergence.
+        maxiter : int
+            Maximum number of iterations to perform.
+        eps : float or ndarray
+            If `jac` is approximated, use this value for the step size.
+
+    This function is called by the `minimize` function with
+    `method=Newton-CG`. It is not supposed to be called directly.
+
+    Also note that the `jac` parameter (Jacobian) is required.
+    """
     if jac == None:
         raise ValueError('Jacobian is required for Newton-CG method')
     f = fun
@@ -1845,7 +1920,27 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
 
 def _minimize_powell(func, x0, args=(), options={}, full_output=0,
                      retall=0, callback=None):
-    """minimize: (modified) Powell method"""
+    """
+    Minimization of scalar function of one or more variables using the
+    modified Powell algorithm.
+
+    Options for the Powell algorithm are:
+        disp : bool
+            Set to True to print convergence messages.
+        xtol : float
+            Relative error in solution `xopt` acceptable for convergence.
+        ftol : float
+            Relative error in ``fun(xopt)`` acceptable for convergence.
+        maxiter : int
+            Maximum number of iterations to perform.
+        maxfev : int
+            Maximum number of function evaluations to make.
+        direc : ndarray
+            Initial set of direction vectors for the Powell method.
+
+    This function is called by the `minimize` function with
+    `method=Powell`. It is not supposed to be called directly.
+    """
     # retrieve useful options
     xtol    = options.get('xtol', 1e-4)
     ftol    = options.get('ftol', 1e-4)
