@@ -103,9 +103,9 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None):
         if callable(sort):
             sfunction = sort
         elif sort == 'lhp':
-            sfunction = lambda x: (x.real < 0.0)
+            sfunction = lambda x: (numpy.real(x) < 0.0)
         elif sort == 'rhp':
-            sfunction = lambda x: (x.real >= 0.0)
+            sfunction = lambda x: (numpy.real(x) >= 0.0)
         elif sort == 'iuc':
             sfunction = lambda x: (abs(x) <= 1.0)
         elif sort == 'ouc':
