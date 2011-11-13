@@ -87,7 +87,21 @@ from paver.easy import options, Bunch, task, needs, dry, sh, call_task, cmdopts
 sys.path.insert(0, os.path.dirname(__file__))
 try:
     setup_py = __import__("setup")
-    FULLVERSION = setup_py.FULLVERSION
+    FULLVERSION = setup_py.VERSION
+    # This is duplicated from setup.py
+    if os.path.exists('.git'):
+        GIT_REVISION = setup_py.git_version()
+    elif os.path.exists('scipy/version.py'):
+        # must be a source distribution, use existing version file
+        from numpy.version import git_revision as GIT_REVISION
+    else:
+        GIT_REVISION = "Unknown"
+
+    if not setup_py.ISRELEASED:
+        if GIT_REVISION == "Unknown":
+            FULLVERSION += '.dev'
+        else:
+            FULLVERSION += '.dev-' + GIT_REVISION[:7]
 finally:
     sys.path.pop(0)
 
@@ -630,5 +644,5 @@ def write_log():
 
 @task
 def write_release_and_log():
-    write_release_task(os.path.join(options.installers.releasedir, 'NOTES.txt'))
+    write_release_task(os.path.join(options.installers.releasedir, 'README.txt'))
     write_log_task(os.path.join(options.installers.releasedir, 'Changelog'))
