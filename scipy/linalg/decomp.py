@@ -41,11 +41,7 @@ def _make_complex_eigvecs(w, vin, dtype):
         conj(v[:,i], v[:,i+1])
     return v
 
-def _geneig(a1, b, left, right, overwrite_a, overwrite_b):
-    b1 = asarray(b)
-    overwrite_b = overwrite_b or _datacopied(b1, b)
-    if len(b1.shape) != 2 or b1.shape[0] != b1.shape[1]:
-        raise ValueError('expected square matrix')
+def _geneig(a1, b1, left, right, overwrite_a, overwrite_b):
     ggev, = get_lapack_funcs(('ggev',), (a1, b1))
     cvl, cvr = left, right
     if ggev.module_name[:7] == 'clapack':
@@ -137,10 +133,13 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False, overwrite_b=False)
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     if b is not None:
-        b = asarray_chkfinite(b)
-        if b.shape != a1.shape:
+        b1 = asarray_chkfinite(b)
+        overwrite_b = overwrite_b or _datacopied(b1, b)
+        if len(b1.shape) != 2 or b1.shape[0] != b1.shape[1]:
+            raise ValueError('expected square matrix')
+        if b1.shape != a1.shape:
             raise ValueError('a and b must have the same shape')
-        return _geneig(a1, b, left, right, overwrite_a, overwrite_b)
+        return _geneig(a1, b1, left, right, overwrite_a, overwrite_b)
     geev, = get_lapack_funcs(('geev',), (a1,))
     compute_vl, compute_vr = left, right
     if geev.module_name[:7] == 'flapack':
