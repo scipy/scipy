@@ -1,53 +1,50 @@
 
+
 import numpy as np
-from numpy import array
+from numpy import array, poly1d
 from scipy.interpolate import interp1d
-from scipy.special import gamma
+from scipy.special import beta
 
 
-def _tukeylambda_var0(lam, order=3):
-    """Taylor polynomial for the variance of the Tukey Lambda distribution.
+# The following code was used to generate the Pade coefficients for the
+# Tukey Lambda variance function.  Version 0.17 of mpmath was used.
+#---------------------------------------------------------------------------
+# import mpmath as mp
+#
+# mp.mp.dps = 60
+#
+# one   = mp.mpf(1)
+# two   = mp.mpf(2)
+#
+# def mpvar(lam):
+#     if lam == 0:
+#         v = mp.pi**2 / three
+#     else:
+#         v = (two / lam**2) * (one / (one + two*lam) -
+#                               mp.beta(lam + one, lam + one))
+#     return v
+#
+# t = mp.taylor(mpvar, 0, 8)
+# p, q = mp.pade(t, 4, 4)
+# print "p =", [mp.fp.mpf(c) for c in p]
+# print "q =", [mp.fp.mpf(c) for c in q]
+#---------------------------------------------------------------------------
 
-    This function implements the Taylor polynomial (up to degree 3) at
-    lambda=0 of the variance of the Tukey Lambda distribution.
+# Pade coefficients for the Tukey Lambda variance function.
+_tukeylambda_var_pc = [3.289868133696453, 0.7306125098871127,
+                       -0.5370742306855439, 0.17292046290190008,
+                       -0.02371146284628187]
+_tukeylambda_var_qc = [1.0, 3.683605511659861, 4.184152498888124,
+                       1.7660926747377275, 0.2643989311168465]
 
-    Parameters
-    ----------
-    lam : scalar or ndarray
-        The values of lambda
-    order : int (0, 1, 2, or 3)
-        The order of the Taylor polynomial to compute.
-
-    Returns
-    -------
-    v : scalar or ndarray
-        Value of the Taylor polynomial of the variance.
-    """
-    if order < 0 or order > 3:
-        raise ValueError("order must be at least 0 and at most 3.")
-
-    # In the formulas in the comments, z3 = zeta(3) and z5 = zeta(5).
-    # c0 = pi**2 / 3
-    c0 =   3.28986813369645287
-    # c1 = - (2*pi**2 + 12*z3) / 3
-    c1 = -11.38796388003128288
-    # c2 = (pi**2*(3*pi**2 + 80) + 480*z3) / 60
-    c2 =  27.64638231176268763
-    # c3 = - (pi**2*(3*pi**2 + (-20*z3 + 80)) + 480*z3 + 360*z5) / 30
-    c3 = -59.82668028405662991
-    c = [c0, c1, c2, c3]
-
-    r = c[order]
-    for k in range(order - 1, -1, -1):
-        r = r * lam + c[k]
-    return r
+# numpy.poly1d instances for the numerator and denominator of the
+# Pade approximation to the Tukey Lambda variance.
+_tukeylambda_var_p = poly1d(_tukeylambda_var_pc[::-1])
+_tukeylambda_var_q = poly1d(_tukeylambda_var_qc[::-1])
 
 
 def tukeylambda_variance(lam):
     """Variance of the Tukey Lambda distribution.
-    
-    This implementation does not handle large values of lambda.  If `lam` is
-    greater than 98, a NotImplementedError exception is raised.
 
     Parameters
     ----------
@@ -60,35 +57,22 @@ def tukeylambda_variance(lam):
         The variance.  For lam < -0.5, the variance is not defined, so
         np.nan is returned.  For lam = 0.5, np.inf is returned.
 
-    Raises
-    ------
-    NotImplementedError if `lam` > 98.
-
     Notes
     -----
-    In an interval around lambda=0, this function uses the degree 3 Taylor
-    polynomial to compute the variance.  Otherwise it uses the standard
+    In an interval around lambda=0, this function uses the [4,4] Pade
+    approximation to compute the variance.  Otherwise it uses the standard
     formula (http://en.wikipedia.org/wiki/Tukey_lambda_distribution).  The
-    Taylor polynomial is used because the standard formula has a removable
-    discontinuity at lambda = 0, and does produce accurate numerical results
-    near lambda = 0.  The order of the Taylor polynomial and the interval
-    in which it is used were chosen to ensure an absolute error of less than
-    1e-9 in a neighborhood of lambda = 0.
+    Pade approximation is used because the standard formula has a removable
+    discontinuity at lambda = 0, and does not produce accurate numerical
+    results near lambda = 0.
     """
     lam = np.asarray(lam)
     shp = lam.shape
     lam = np.atleast_1d(lam).astype(np.float64)
 
-    if np.any(lam > 98):
-        raise NotImplementedError("this function cannot compute the "
-                                  "variance for lam > 98")
-
-    # For absolute values of lam less than threshold, use the third order
-    # Maclaurin series to evaluate the variance of the distribution.
-    # The threshold 1.61e-3 with the order=3 Taylor polynomial gives good
-    # a maximum absolute error of less than 1e-9 in the interval [-0.05, 0.05]
-    # (and, in fact, for most lambda).
-    threshold = 1.61e-3
+    # For absolute values of lam less than threshold, use the Pade
+    # approximation.
+    threshold = 0.075
 
     # Play games with masks to implement the conditional evaluation of
     # the distribution.
@@ -96,7 +80,7 @@ def tukeylambda_variance(lam):
     low_mask = lam < -0.5
     # lambda == -0.5: var = inf
     neghalf_mask = lam == -0.5
-    # abs(lambda) < threshold:  var = _tlvar0(lambda) (Taylor polynomial)
+    # abs(lambda) < threshold:  use Pade approximation
     small_mask = np.abs(lam) < threshold
     # else the "regular" case:  use the explicit formula.
     reg_mask = ~(low_mask | neghalf_mask | small_mask)
@@ -110,51 +94,57 @@ def tukeylambda_variance(lam):
     v[low_mask] = np.nan
     v[neghalf_mask] = np.inf
     if small.size > 0:
-        v[small_mask] = _tukeylambda_var0(small, order=3)
+        # Use the Pade approximation near lambda = 0.
+        v[small_mask] =  _tukeylambda_var_p(small) / _tukeylambda_var_q(small)
     if reg.size > 0:
-        v[reg_mask] = ( (2.0 / (reg**2))
-                        * (1.0 / (1 + 2*reg)
-                           - gamma(reg + 1)**2 / gamma(2*reg + 2)) )
+        v[reg_mask] = (2.0 / reg**2) * (1.0 / (1.0 + 2 * reg) -
+                                      beta(reg + 1, reg + 1))
     v.shape = shp
     return v
 
 
-_interp_lambda_values = \
-    array([-0.065000000000000002, -0.06459987106934198 , -0.063409336779592498,
-           -0.061457712036121957, -0.058793052317185797, -0.055480970388562798,
-           -0.051603020699505384, -0.047254691241535272, -0.042543052317185789,
-           -0.037584120113807504, -0.032500000000000008, -0.027415879886192512,
-           -0.022456947682814206, -0.01774530875846473 , -0.013396979300494632,
-           -0.009519029611437205, -0.006206947682814205, -0.003542287963878045,
-           -0.001590663220407504, -0.000400128930658022,  0.                  ,
-            0.000710202976151315,  0.002809772626615472,  0.006206947682814208,
-            0.010753255293337104,  0.016249999999999997,  0.022456947682814209,
-            0.029102824943801266,  0.035897175056198737,  0.042543052317185796,
-            0.048749999999999995,  0.054246744706662881,  0.058793052317185797,
-            0.062190227373384532,  0.064289797023848683,  0.065000000000000002])
+# The following code was used to generate the Pade coefficients for the
+# Tukey Lambda kurtosis function.  Version 0.17 of mpmath was used.
+#---------------------------------------------------------------------------
+# import mpmath as mp
+#
+# mp.mp.dps = 60
+#
+# one   = mp.mpf(1)
+# two   = mp.mpf(2)
+# three = mp.mpf(3)
+# four  = mp.mpf(4)
+#
+# def mpkurt(lam):
+#     if lam == 0:
+#         k = mp.mpf(6)/5
+#     else:
+#         numer = (one/(four*lam+one) - four*mp.beta(three*lam+one, lam+one) +
+#                  three*mp.beta(two*lam+one, two*lam+one))
+#         denom = two*(one/(two*lam+one) - mp.beta(lam+one,lam+one))**2
+#         k = numer / denom - three
+#     return k
+#
+# # There is a bug in mpmath 0.17: when we use the 'method' keyword of the
+# # taylor function and we request a degree 9 Taylor polynomial, we actually
+# # get degree 8.
+# t = mp.taylor(mpkurt, 0, 9, method='quad', radius=0.01)
+# t = [mp.chop(c, tol=1e-15) for c in t]
+# p, q = mp.pade(t, 4, 4)
+# print "p =", [mp.fp.mpf(c) for c in p]
+# print "q =", [mp.fp.mpf(c) for c in q]
+#---------------------------------------------------------------------------
 
-# These values were computed with mpmath.  These are the values of the
-# kurtosis of the Tukey Lambda distribution at the values of lambda given
-# in _interp_lambda_values.
-_interp_kurtosis_values = \
-    array([ 2.523045133845003285,  2.511668653927227268,  2.478142819737123581,
-            2.424210877953232757,  2.352566761905168669,  2.266581708755009306,
-            2.169995568242775175,  2.066620913287312344,  1.960096533678926667,
-            1.853710289571115499,  1.750295149431033481,  1.652190218317667325,
-            1.561251954554219834,  1.478898978728214075,  1.406175372864659989,
-            1.343820517594302766,  1.292337050298190348,  1.252051673452250435,
-            1.223165956380509289,  1.205795902428776323,  1.199999999999999956,
-            1.189764208874568352,  1.159884644242310747,  1.112711345736483004,
-            1.051755332560134981,  0.981198954722772632,  0.905396678790319709,
-            0.828462715224070445,  0.753996213621588418,  0.684948822710563787,
-            0.623608257360730001,  0.571658672469203544,  0.530279768797318307,
-            0.500254854328393672,  0.482067978778517481,  0.475978600169728649])
+# Pade coefficients for the Tukey Lambda kurtosis function.
+_tukeylambda_kurt_pc = [1.2, -5.853465139719495, -22.653447381131077,
+                        0.20601184383406815, 4.59796302262789]
+_tukeylambda_kurt_qc = [1.0, 7.171149192233599, 12.96663094361842,
+                        0.43075235247853005, -2.789746758009912]
 
-# Create the interpolator for the Tukey Lambda kurtosis for values of
-# lambda near 0.
-_tukeylambda_kurtosis_interp = interp1d(_interp_lambda_values,
-                                        _interp_kurtosis_values,
-                                        kind=5)
+# numpy.poly1d instances for the numerator and denominator of the
+# Pade approximation to the Tukey Lambda kurtosis.
+_tukeylambda_kurt_p = poly1d(_tukeylambda_kurt_pc[::-1])
+_tukeylambda_kurt_q = poly1d(_tukeylambda_kurt_qc[::-1])
 
 
 def tukeylambda_kurtosis(lam):
@@ -171,38 +161,22 @@ def tukeylambda_kurtosis(lam):
         The variance.  For lam < -0.25, the variance is not defined, so
         np.nan is returned.  For lam = 0.25, np.inf is returned.
 
-    Raises
-    ------
-    NotImplementedError if `lam` > 26.
-
-    Notes
-    -----
-    In the interval -0.065 < lambda < 0.065, this function uses interpolation
-    (based on accurate values that were previously computed) to compute the
-    kurtosis.  Otherwise it uses the standard formula, given at
-        http://en.wikipedia.org/wiki/Tukey_lambda_distribution).
-    The interpolation is implemented to give an absolute error of less than
-    1e-10 in this interval.
     """
-    # Note: interpolation was used rather than the Taylor polynomial because
-    # the Taylor polynomial diverged too from the exact formula too quickly.
     lam = np.asarray(lam)
     shp = lam.shape
     lam = np.atleast_1d(lam).astype(np.float64)
 
-    if np.any(lam) > 26:
-        raise NotImplementedError("this function cannot compute the "
-                                  "kurtosis for lam > 26")
-
+    # For absolute values of lam less than threshold, use the Pade
+    # approximation.
+    threshold = 0.055
 
     # Use masks to implement the conditional evaluation of the kurtosis.
     # lambda < -0.25:  kurtosis = nan
     low_mask = lam < -0.25
     # lambda == -0.25: kurtosis = inf
     negqrtr_mask = lam == -0.25
-    # lambda near 0:  var = _tukeylambda_kurtosis_interp(lambda)
-    small_mask = ((lam > _interp_lambda_values[0]) &
-                  (lam < _interp_lambda_values[-1]))
+    # lambda near 0:  use Pade approximation
+    small_mask = np.abs(lam) < threshold
     # else the "regular" case:  use the explicit formula.
     reg_mask = ~(low_mask | negqrtr_mask | small_mask)
 
@@ -215,14 +189,12 @@ def tukeylambda_kurtosis(lam):
     k[low_mask] = np.nan
     k[negqrtr_mask] = np.inf
     if small.size > 0:
-        k[small_mask] = _tukeylambda_kurtosis_interp(small)
+        k[small_mask] = _tukeylambda_kurt_p(small) / _tukeylambda_kurt_q(small)
     if reg.size > 0:
-        g1 = gamma(reg + 1)
-        g2 = gamma(2*reg + 1)
-        g3 = gamma(3*reg + 1)
-        g4 = gamma(4*reg + 1)
-        k[reg_mask] = ((2*reg + 1)**2 * g2**2 * (3*g2**2 - 4*g1*g3 + g4)
-                        / 2 / (4*reg + 1) / g4 / (g1**2 - g2)**2 - 3)
+        numer = (1.0 / (4 * reg + 1) - 4 * beta(3 * reg + 1, reg + 1) +
+                 3 * beta(2 * reg + 1, 2 * reg + 1))
+        denom = 2 * (1.0/(2 * reg + 1) - beta(reg + 1, reg + 1))**2
+        k[reg_mask] = numer / denom - 3
 
     # The return value will be a numpy array; resetting the shape ensures that
     # if `lam` was a scalar, the return value is a 0-d array.
