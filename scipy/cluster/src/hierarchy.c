@@ -69,6 +69,9 @@
 
 #include "hierarchy.h"
 
+#define safefree(p) if (p != NULL) {free(p); p = NULL;}
+
+
 static NPY_INLINE double euclidean_distance(const double *u, const double *v, int n) {
   int i = 0;
   double s = 0.0, d;
@@ -349,6 +352,7 @@ void print_vec(const double *d, int n) {
   CPY_DEBUG_MSG("]");
 }
 
+
 /**
  * notes to self:
  * dm:    The distance matrix.
@@ -358,34 +362,42 @@ void print_vec(const double *d, int n) {
  * ml:    A boolean indicating whether a list of objects in the forest
  *        clusters should be maintained.
  * kc:    Keep track of the centroids.
+ *
+ * Return values:
+ * 0:  success
+ * -1: out of memory--malloc() failed.
  */
-void linkage(double *dm, double *Z, double *X,
+int linkage(double *dm, double *Z, double *X,
 	     int m, int n, int ml, int kc, distfunc dfunc,
 	     int method) {
   int i, j, k, t, np, nid, mini, minj, npc2;
   double min, ln, rn, qn;
-  int *ind;
+  int *ind = NULL;
   /** An iterator through the distance matrix. */
-  double *dmit, *buf;
+  double *dmit, *buf = NULL;
 
-  int *rowsize;
+  int *rowsize = NULL;
 
   /** Temporary array to store modified distance matrix. */
-  double *dmt, **rows, *Zrow;
-  double *centroidsData;
-  double **centroids;
+  double *dmt = NULL, **rows = NULL, *Zrow;
+  double *centroidsData = NULL;
+  double **centroids = NULL;
   const double *centroidL, *centroidR;
   double *centroid;
-  clist *lists, *listL, *listR, *listC;
-  clnode *lnodes;
-  cnode *nodes, *node;
+  clist *lists = NULL, *listL, *listR, *listC;
+  clnode *lnodes = NULL;
+  cnode *nodes = NULL, *node;
 
   cinfo info;
+
+  int result = -1;
 
   /** The next two are only necessary for euclidean distance methods. */
   if (ml) {
     lists = (clist*)malloc(sizeof(clist) * (n-1));
+    if (!lists) goto finished;
     lnodes = (clnode*)malloc(sizeof(clnode) * n);
+    if (!lnodes) goto finished;
   }
   else {
     lists = 0;
@@ -393,7 +405,9 @@ void linkage(double *dm, double *Z, double *X,
   }
   if (kc) {
     centroids = (double**)malloc(sizeof(double*) * (2 * n));
+    if (!centroids) goto finished;
     centroidsData = (double*)malloc(sizeof(double) * n * m);
+    if (!centroidsData) goto finished;
     for (i = 0; i < n; i++) {
       centroids[i] = X + i * m;
     }
@@ -407,11 +421,17 @@ void linkage(double *dm, double *Z, double *X,
   }
 
   nodes = (cnode*)malloc(sizeof(cnode) * (n * 2) - 1);
+  if (!nodes) goto finished;
   ind = (int*)malloc(sizeof(int) * n);
+  if (!ind) goto finished;
   dmt = (double*)malloc(sizeof(double) * NCHOOSE2(n));
+  if (!dmt) goto finished;
   buf = (double*)malloc(sizeof(double) * n);
+  if (!buf) goto finished;
   rows = (double**)malloc(sizeof(double*) * n);
+  if (!rows) goto finished;
   rowsize = (int*)malloc(sizeof(int) * n);
+  if (!rowsize) goto finished;
   memcpy(dmt, dm, sizeof(double) * NCHOOSE2(n));
 
   info.X = X;
@@ -600,21 +620,29 @@ void linkage(double *dm, double *Z, double *X,
     ind[np - 2] = nid;
     /**    print_ind(ind, np - 1);**/
   }
-  free(lists);
-  free(lnodes);
-  free(nodes);
-  free(ind);
-  free(dmt);
-  free(buf);
-  free(rows);
-  free(rowsize);
-  free(centroidsData);
-  free(centroids);
+  result = 0;
+  
+finished:
+  safefree(lists);
+  safefree(lnodes);
+  safefree(nodes);
+  safefree(ind);
+  safefree(dmt);
+  safefree(buf);
+  safefree(rows);
+  safefree(rowsize);
+  safefree(centroidsData);
+  safefree(centroids);
+  return result;
 }
 
 /** Trying to reimplement so that output is consistent with MATLAB's in
     cases where there are is than one correct choice to make at each
-    iteration of the algorithm. This implementation is not active. */
+    iteration of the algorithm. This implementation is not active.
+
+    XXX linkage_alt is not used.  If it ever does get used, it needs to
+    be updated to check the results of any calls to malloc().
+*/
 
 void linkage_alt(double *dm, double *Z, double *X,
 	     int m, int n, int ml, int kc, distfunc dfunc,
