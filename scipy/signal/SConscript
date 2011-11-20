@@ -9,9 +9,10 @@ env = GetNumpyEnvironment(ARGUMENTS)
 src = env.FromCTemplate("lfilter.c.src")
 src += env.FromCTemplate("correlate_nd.c.src")
 env.NumpyPythonExtension('sigtools', 
-                         source = src + ['sigtoolsmodule.c',\
-                                   'firfilter.c', \
-                                   'medianfilter.c'])
+                         source = src + ['sigtoolsmodule.c',
+                                            'firfilter.c',
+                                            'medianfilter.c',
+                                            '_array_util.c'])
 
 env.NumpyPythonExtension('spectral', source='spectral.c')
 

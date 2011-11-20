@@ -129,6 +129,22 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
                                                    typenum);
     }
 
+    if (ara->descr->type_num == NPY_OBJECT) {
+        if (check_all_numbers(ara, "a") != 0) {
+            goto fail;
+        }
+    }
+    if (arb->descr->type_num == NPY_OBJECT) {
+        if (check_all_numbers(arb, "b") != 0) {
+            goto fail;
+        }
+    }
+    if (arX->descr->type_num == NPY_OBJECT) {
+        if (check_all_numbers(arX, "x") != 0) {
+            goto fail;
+        }
+    }
+
     if (arX->descr->type_num < 256) {
         basic_filter = BasicFilterFunctions[(int) (arX->descr->type_num)];
     }
@@ -515,6 +531,7 @@ static void C@NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
     }
 }
 /**end repeat**/
+
 
 static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
                         intp len_b, uintp len_x, intp stride_X,
