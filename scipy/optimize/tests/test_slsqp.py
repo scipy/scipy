@@ -1,7 +1,11 @@
-from numpy.testing import assert_array_almost_equal, TestCase, run_module_suite
+"""
+Unit test for SLSQP optimization.
+"""
+from numpy.testing import assert_, assert_array_almost_equal, TestCase, \
+                          run_module_suite
 import numpy as np
 
-from scipy.optimize import  fmin_slsqp
+from scipy.optimize import fmin_slsqp
 
 
 class TestSLSQP(TestCase):
@@ -12,7 +16,7 @@ class TestSLSQP(TestCase):
 
     """
 
-    def _testfunc(self,d,*args):
+    def fun(self, d, sign=1.0):
         """
         Arguments:
         d     - A list of two elements, where d[0] represents x and d[1] represents y
@@ -24,65 +28,107 @@ class TestSLSQP(TestCase):
         2*x*y + 2*x - x**2 - 2*y**2
 
         """
-        try:
-            sign = args[0]
-        except:
-            sign = 1.0
         x = d[0]
         y = d[1]
         return sign*(2*x*y + 2*x - x**2 - 2*y**2)
 
-    def _testfunc_deriv(self,d,*args):
+    def jac(self, d, sign=1.0):
         """
-        This is the derivative of testfunc, returning a numpy array
+        This is the derivative of fun, returning a numpy array
         representing df/dx and df/dy.
 
         """
-        try:
-            sign = args[0]
-        except:
-            sign = 1.0
         x = d[0]
         y = d[1]
         dfdx = sign*(-2*x + 2*y + 2)
         dfdy = sign*(2*x - 4*y)
-        return np.array([ dfdx, dfdy ],float)
+        return np.array([dfdx, dfdy], float)
+
+    def f_eqcon(self, x, sign=1.0):
+        """ Equality constraint """
+        return np.array([x[0] - x[1]])
+
+    def fprime_eqcon(self, x, sign=1.0):
+        """ Equality constraint, derivative """
+        return np.array([[1, -1]])
+
+    def f_ieqcon(self, x, sign=1.0):
+        """ Inequality constraint """
+        return np.array([x[0] - x[1] - 1.0])
+
+    def fprime_ieqcon(self, x, sign=1.0):
+        """ Inequality constraint, derivative """
+        return np.array([[1, -1]])
 
     def test_unbounded_approximated(self):
-        res =  fmin_slsqp(self._testfunc, [-1.0,1.0], args = (-1.0,),
-                          iprint = 0, full_output = 1)
-        x,fx,its,imode,smode = res
-        assert_array_almost_equal(x,[2,1])
+        """ SLSQP: unbounded, approximated jacobian. """
+        res = fmin_slsqp(self.fun, [-1.0, 1.0], args = (-1.0, ),
+                         iprint = 0, full_output = 1)
+        x, fx, its, imode, smode = res
+        assert_(imode == 0, imode)
+        assert_array_almost_equal(x, [2, 1])
 
     def test_unbounded_given(self):
-        res = fmin_slsqp(self._testfunc,[-1.0,1.0], args = (-1.0,),
-                       iprint = 0, full_output = 1)
-        x,fx,its,imode,smode = res
-        assert_array_almost_equal(x,[2,1])
+        """ SLSQP: unbounded, given jacobian. """
+        res = fmin_slsqp(self.fun, [-1.0, 1.0], args = (-1.0, ),
+                         fprime = self.jac, iprint = 0,
+                         full_output = 1)
+        x, fx, its, imode, smode = res
+        assert_(imode == 0, imode)
+        assert_array_almost_equal(x, [2, 1])
 
-    def test_bound_approximated(self):
-        res = fmin_slsqp(self._testfunc,[-1.0,1.0], args = (-1.0,),
-                         eqcons = [lambda x, y: x[0]-x[1] ],
+    def test_equality_approximated(self):
+        """ SLSQP: equality constraint, approximated jacobian. """
+        res = fmin_slsqp(self.fun,[-1.0,1.0], args = (-1.0,),
+                         eqcons = [self.f_eqcon],
                          iprint = 0, full_output = 1)
-        x,fx,its,imode,smode = res
-        assert_array_almost_equal(x,[1,1])
+        x, fx, its, imode, smode = res
+        assert_(imode == 0, imode)
+        assert_array_almost_equal(x, [1, 1])
 
-    def test_bound_equality_given(self):
-        res = fmin_slsqp(self._testfunc,[-1.0,1.0],
-                         fprime = self._testfunc_deriv,
-                         args = (-1.0,), eqcons = [lambda x, y: x[0]-x[1] ],
+    def test_equality_given(self):
+        """ SLSQP: equality constraint, given jacobian. """
+        res = fmin_slsqp(self.fun, [-1.0, 1.0],
+                         fprime = self.jac, args = (-1.0,),
+                         eqcons = [self.f_eqcon], iprint = 0,
+                         full_output = 1)
+        x, fx, its, imode, smode = res
+        assert_(imode == 0, imode)
+        assert_array_almost_equal(x, [1, 1])
+
+    def test_equality_given2(self):
+        """ SLSQP: equality constraint, given jacobian for fun and const. """
+        res = fmin_slsqp(self.fun, [-1.0, 1.0],
+                         fprime = self.jac, args = (-1.0,),
+                         f_eqcons = self.f_eqcon,
+                         fprime_eqcons = self.fprime_eqcon,
+                         iprint = 0,
+                         full_output = 1)
+        x, fx, its, imode, smode = res
+        assert_(imode == 0, imode)
+        assert_array_almost_equal(x, [1, 1])
+
+    def test_inequality_given(self):
+        """ SLSQP: inequality constraint, given jacobian. """
+        res = fmin_slsqp(self.fun, [-1.0, 1.0],
+                         fprime = self.jac, args = (-1.0, ),
+                         ieqcons = [self.f_ieqcon],
                          iprint = 0, full_output = 1)
-        x,fx,its,imode,smode = res
-        assert_array_almost_equal(x,[1,1])
+        x, fx, its, imode, smode = res
+        assert_(imode == 0, imode)
+        assert_array_almost_equal(x, [2, 1], decimal=3)
 
-    def test_bound_equality_inequality_given(self):
-        res = fmin_slsqp(self._testfunc,[-1.0,1.0],
-                         fprime = self._testfunc_deriv,
-                         args = (-1.0,),
-                         ieqcons = [lambda x, y: x[0]-x[1]-1.0],
-                         iprint=0, full_output=1)
-        x,fx,its,imode,smode = res
-        assert_array_almost_equal(x,[2,1],decimal=3)
+    def test_bound_equality_given2(self):
+        """ SLSQP: bounds, eq. const., given jac. for fun. and const. """
+        res = fmin_slsqp(self.fun, [-1.0, 1.0],
+                         fprime = self.jac, args = (-1.0, ),
+                         bounds = [(-0.8, 1.), (-1, 0.8)],
+                         f_eqcons = self.f_eqcon,
+                         fprime_eqcons = self.fprime_eqcon,
+                         iprint = 0, full_output = 1)
+        x, fx, its, imode, smode = res
+        assert_(imode == 0, imode)
+        assert_array_almost_equal(x, [0.8, 0.8], decimal=3)
 
 if __name__ == "__main__":
     run_module_suite()
