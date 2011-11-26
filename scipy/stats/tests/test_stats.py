@@ -432,15 +432,33 @@ class TestFisherExact(TestCase):
             assert_equal(oddsratio, np.nan)
 
     def test_less_greater(self):
-        tables = ([[2, 7], [8, 2]],
-                  [[200, 7], [8, 300]],
-                  [[28, 21], [6, 1957]],
-                  [[190, 800], [200, 900]])
-        # from R
-        pvals = ([0.018521725952066501, 0.9990149169715733],
-                 [1.0, 2.0056578803889148e-122],
-                 [1.0, 5.7284374608319831e-44],
-                 [0.7416227, 0.2959826])
+        tables = (
+            # Some tables to compare with R:
+            [[2, 7], [8, 2]],
+            [[200, 7], [8, 300]],
+            [[28, 21], [6, 1957]],
+            [[190, 800], [200, 900]],
+            # Some tables with simple exact values
+            # (includes regression test for ticket #1568):
+            [[0, 2], [3, 0]],
+            [[1, 1], [2, 1]],
+            [[2, 0], [1, 2]],
+            [[0, 1], [2, 3]],
+            [[1, 0], [1, 4]],
+            )
+        pvals = (
+            # from R:
+            [0.018521725952066501, 0.9990149169715733],
+            [1.0, 2.0056578803889148e-122],
+            [1.0, 5.7284374608319831e-44],
+            [0.7416227, 0.2959826],
+            # Exact:
+            [0.1, 1.0],
+            [0.7, 0.9],
+            [1.0, 0.3],
+            [2./3, 1.0],
+            [1.0, 1./3],
+            )
         for table, pval in zip(tables, pvals):
             res = []
             res.append(stats.fisher_exact(table, alternative="less")[1])
