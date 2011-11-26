@@ -2346,11 +2346,8 @@ def fisher_exact(table, alternative='two-sided'):
     if alternative == 'less':
         pvalue = hypergeom.cdf(c[0,0], n1 + n2, n1, n)
     elif alternative == 'greater':
-        if c[0, 0]:
-            x = c[0, 0] - 1
-        else:
-            x = c[0, 0]
-        pvalue = hypergeom.sf(x, n1 + n2, n1, n)
+        # Same formula as the 'less' case, but with the second column.
+        pvalue = hypergeom.cdf(c[0,1], n1 + n2, n1, c[0,1] + c[1,1])
     elif alternative == 'two-sided':
         mode = int(float((n + 1) * (n1 + 1)) / (n1 + n2 + 2))
         pexact = hypergeom.pmf(c[0,0], n1 + n2, n1, n)
