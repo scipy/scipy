@@ -20,9 +20,12 @@ class Test_measurements_stats(TestCase):
         x = [0,1,2,6]
         labels = [0,0,1,1]
         index = [0,1]
-        counts, sums = ndimage.measurements._stats(x, labels=labels, index=index)
-        assert_array_equal(counts, [2, 2])
-        assert_array_equal(sums, [1.0, 8.0])
+        for shp in [(4,), (2,2)]:
+            x = np.array(x).reshape(shp)
+            labels = np.array(labels).reshape(shp)
+            counts, sums = ndimage.measurements._stats(x, labels=labels, index=index)
+            assert_array_equal(counts, [2, 2])
+            assert_array_equal(sums, [1.0, 8.0])
 
     def test_b(self):
         # Same data as test_a, but different labels.  The label 9 exceeds the
@@ -30,39 +33,51 @@ class Test_measurements_stats(TestCase):
         x = [0,1,2,6]
         labels = [0,0,9,9]
         index = [0,9]
-        counts, sums = ndimage.measurements._stats(x, labels=labels, index=index)
-        assert_array_equal(counts, [2, 2])
-        assert_array_equal(sums, [1.0, 8.0])
+        for shp in [(4,), (2,2)]:
+            x = np.array(x).reshape(shp)
+            labels = np.array(labels).reshape(shp)
+            counts, sums = ndimage.measurements._stats(x, labels=labels, index=index)
+            assert_array_equal(counts, [2, 2])
+            assert_array_equal(sums, [1.0, 8.0])
 
     def test_a_centered(self):
         x = [0,1,2,6]
         labels = [0,0,1,1]
         index = [0,1]
-        counts, sums, centers = ndimage.measurements._stats(x, labels=labels,
-                                    index=index, centered=True)
-        assert_array_equal(counts, [2, 2])
-        assert_array_equal(sums, [1.0, 8.0])
-        assert_array_equal(centers, [0.5, 8.0])
+        for shp in [(4,), (2,2)]:
+            x = np.array(x).reshape(shp)
+            labels = np.array(labels).reshape(shp)
+            counts, sums, centers = ndimage.measurements._stats(x, labels=labels,
+                                        index=index, centered=True)
+            assert_array_equal(counts, [2, 2])
+            assert_array_equal(sums, [1.0, 8.0])
+            assert_array_equal(centers, [0.5, 8.0])
 
     def test_b_centered(self):
         x = [0,1,2,6]
         labels = [0,0,9,9]
         index = [0,9]
-        counts, sums, centers = ndimage.measurements._stats(x, labels=labels,
-                                    index=index, centered=True)
-        assert_array_equal(counts, [2, 2])
-        assert_array_equal(sums, [1.0, 8.0])
-        assert_array_equal(centers, [0.5, 8.0])
+        for shp in [(4,), (2,2)]:
+            x = np.array(x).reshape(shp)
+            labels = np.array(labels).reshape(shp)
+            counts, sums, centers = ndimage.measurements._stats(x, labels=labels,
+                                        index=index, centered=True)
+            assert_array_equal(counts, [2, 2])
+            assert_array_equal(sums, [1.0, 8.0])
+            assert_array_equal(centers, [0.5, 8.0])
 
     def test_nonint_labels(self):
         x = [0,1,2,6]
         labels = [0.0, 0.0, 9.0, 9.0]
         index = [0.0, 9.0]
-        counts, sums, centers = ndimage.measurements._stats(x, labels=labels,
-                                    index=index, centered=True)
-        assert_array_equal(counts, [2, 2])
-        assert_array_equal(sums, [1.0, 8.0])
-        assert_array_equal(centers, [0.5, 8.0])
+        for shp in [(4,), (2,2)]:
+            x = np.array(x).reshape(shp)
+            labels = np.array(labels).reshape(shp)
+            counts, sums, centers = ndimage.measurements._stats(x, labels=labels,
+                                        index=index, centered=True)
+            assert_array_equal(counts, [2, 2])
+            assert_array_equal(sums, [1.0, 8.0])
+            assert_array_equal(centers, [0.5, 8.0])
 
 
 class Test_measurements_select(TestCase):
@@ -974,6 +989,31 @@ def test_histogram03():
 
     assert_array_almost_equal(output[0], expected1)
     assert_array_almost_equal(output[1], expected2)
+
+
+def test_stat_funcs_2d():
+    """Apply the stat funcs to a 2-d array."""
+    a   = np.array([[5,6,0,0,0], [8,9,0,0,0], [0,0,0,3,5]])
+    lbl = np.array([[1,1,0,0,0], [1,1,0,0,0], [0,0,0,2,2]])
+
+    mean= ndimage.mean(a, labels=lbl, index=[1, 2])
+    assert_array_equal(mean, [7.0, 4.0])
+
+    var = ndimage.variance(a, labels=lbl, index=[1, 2])
+    assert_array_equal(var, [2.5, 1.0])
+
+    std = ndimage.standard_deviation(a, labels=lbl, index=[1, 2])
+    assert_array_almost_equal(std, np.sqrt([2.5, 1.0]))
+
+    med = ndimage.median(a, labels=lbl, index=[1, 2])
+    assert_array_equal(med, [7.0, 4.0])
+
+    min = ndimage.minimum(a, labels=lbl, index=[1, 2])
+    assert_array_equal(min, [5, 3])
+
+    max = ndimage.maximum(a, labels=lbl, index=[1, 2])
+    assert_array_equal(max, [9, 5])
+
 
 if __name__ == "__main__":
     run_module_suite()
