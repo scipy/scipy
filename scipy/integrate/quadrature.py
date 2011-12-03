@@ -1,6 +1,6 @@
 
 __all__ = ['fixed_quad','quadrature','romberg','trapz','simps','romb',
-           'cumtrapz','newton_cotes','composite']
+           'cumtrapz','newton_cotes']
 
 from scipy.special.orthogonal import p_roots
 from scipy.special import gammaln
@@ -762,8 +762,3 @@ def newton_cotes(rn, equal=0):
     fac = power*math.log(N) - gammaln(p1)
     fac = math.exp(fac)
     return ai, BN*fac
-
-
-# Should only use if samples are forced on you
-def composite(f,x=None,dx=1,axis=-1,n=5):
-    pass
