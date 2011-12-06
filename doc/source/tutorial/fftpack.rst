@@ -159,7 +159,7 @@ around n=N
    :nowrap:
 
     \[ y_k = 2 \sum_{n=0}^{N-1} x_n 
-    \sin\left {\pi (n+1/2)(k+1)} \over n \right
+    \sin\left {\pi (n+1/2)(k+1)} \over N \right
     \qqad 0 \le k < N. \]
 
 type III
@@ -173,7 +173,7 @@ and even around n=N-1
    :nowrap:
 
     \[ y_k = (-1)^k x_{N-1} + 2 \sum_{n=0}^{N-2} x_n
-    \sin \left {\pi (n+1)(k+1/2)} \over n \right
+    \sin \left {\pi (n+1)(k+1/2)} \over N \right
     \qqad 0 \le k < N. \]
 
 The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up
