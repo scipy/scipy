@@ -49,7 +49,7 @@ __all__ = [
            'rdist', 'rayleigh', 'reciprocal', 'rice', 'recipinvgauss',
            'semicircular', 'triang', 'truncexpon', 'truncnorm',
            'tukeylambda', 'uniform', 'vonmises', 'wald', 'wrapcauchy',
-           'entropy', 'rv_discrete',
+           'entropy', 'entropy2', 'rv_discrete',
            'binom', 'bernoulli', 'nbinom', 'geom', 'hypergeom', 'logser',
            'poisson', 'planck', 'boltzmann', 'randint', 'zipf', 'dlaplace',
            'skellam'
@@ -5292,6 +5292,10 @@ def entropy(pk,qk=None):
     S = sum(pk * log(pk / qk), axis=0)
 
     Routine will normalize pk and qk if they don't sum to 1
+
+    The logarithm is computed base e.
+
+    See also: entropy2
     """
     pk = arr(pk)
     pk = 1.0* pk / sum(pk,axis=0)
@@ -5308,6 +5312,24 @@ def entropy(pk,qk=None):
             return inf
         vec = where (pk == 0, 0.0, -pk*log(pk / qk))
     return -sum(vec,axis=0)
+
+
+def entropy2(pk,qk=None):
+    """S = entropy2(pk,qk=None)
+
+    calculate the entropy of a distribution given the p_k values
+    S = -sum(pk * log2(pk),axis=0)
+
+    If qk is not None, then compute a relative entropy
+    S = -sum(pk * log2(pk / qk),axis=0)
+
+    Routine will normalize pk and qk if they don't sum to 1
+
+    See also: entropy
+    """
+    return entropy(pk,qk)/log(2.0)
+
+
 
 
 ## Handlers for generic case where xk and pk are given
