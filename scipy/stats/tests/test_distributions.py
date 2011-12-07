@@ -409,6 +409,19 @@ class TestEntropy(TestCase):
         assert_(0.0 == eself)
         assert_(edouble >= 0.0)
 
+    def test_entropy_base(self):
+        pk = np.ones(16, float)
+        S = stats.entropy(pk, base=2.)
+        assert_(abs(S - 4.) < 1.e-5)
+
+        qk = np.ones(16, float)
+        qk[:8] = 2.
+        S = stats.entropy(pk, qk)
+        S2 = stats.entropy(pk, qk, base=2.)
+        assert_(abs(S/S2 - np.log(2.)) < 1.e-5)
+
+
+
 def TestArgsreduce():
     a = array([1,3,2,1,2,3,3])
     b,c = argsreduce(a > 1, a, 2)

@@ -49,10 +49,9 @@ __all__ = [
            'rdist', 'rayleigh', 'reciprocal', 'rice', 'recipinvgauss',
            'semicircular', 'triang', 'truncexpon', 'truncnorm',
            'tukeylambda', 'uniform', 'vonmises', 'wald', 'wrapcauchy',
-           'entropy', 'rv_discrete',
-           'binom', 'bernoulli', 'nbinom', 'geom', 'hypergeom', 'logser',
-           'poisson', 'planck', 'boltzmann', 'randint', 'zipf', 'dlaplace',
-           'skellam'
+           'entropy', 'rv_discrete', 'binom', 'bernoulli', 'nbinom', 'geom',
+           'hypergeom', 'logser', 'poisson', 'planck', 'boltzmann', 'randint',
+           'zipf', 'dlaplace', 'skellam'
           ]
 
 floatinfo = numpy.finfo(float)
@@ -5282,36 +5281,55 @@ wrapcauchy = wrapcauchy_gen(a=0.0, b=2*pi, name='wrapcauchy', shapes="c")
 ### DISCRETE DISTRIBUTIONS
 ###
 
-def entropy(pk,qk=None):
-    """S = entropy(pk,qk=None)
+def entropy(pk, qk=None, base=None):
+    """ Calculate the entropy of a distribution for given probability values.
 
-    calculate the entropy of a distribution given the p_k values
-    S = -sum(pk * log(pk), axis=0)
+    If only probabilities `pk` are given, the entropy is calculated as
+    ``S = -sum(pk * log(pk), axis=0)``.
 
-    If qk is not None, then compute a relative entropy
-    S = sum(pk * log(pk / qk), axis=0)
+    If `qk` is not None, then compute a relative entropy
+    ``S = sum(pk * log(pk / qk), axis=0)``.
 
-    Routine will normalize pk and qk if they don't sum to 1
+    This routine will normalize `pk` and `qk` if they don't sum to 1.
+
+    Parameters
+    ----------
+    pk : sequence
+        Defines the (discrete) distribution. ``pk[i]`` is the (possibly
+        unnormalized) probability of event ``i``.
+    qk : sequence, optional
+        Sequence against which the relative entropy is computed. Should be in
+        the same format as `pk`.
+    base : float, optional
+        The logarithmic base to use, defaults to ``e`` (natural logarithm).
+
+    Returns
+    -------
+    S : float
+        The calculated entropy.
+
     """
     pk = arr(pk)
-    pk = 1.0* pk / sum(pk,axis=0)
+    pk = 1.0* pk / sum(pk, axis=0)
     if qk is None:
         vec = where(pk == 0, 0.0, pk*log(pk))
     else:
         qk = arr(qk)
         if len(qk) != len(pk):
             raise ValueError("qk and pk must have same length.")
-        qk = 1.0*qk / sum(qk,axis=0)
+        qk = 1.0*qk / sum(qk, axis=0)
         # If qk is zero anywhere, then unless pk is zero at those places
         #   too, the relative entropy is infinite.
-        if any(take(pk,nonzero(qk==0.0),axis=0)!=0.0, 0):
+        if any(take(pk, nonzero(qk == 0.0), axis=0) != 0.0, 0):
             return inf
         vec = where (pk == 0, 0.0, -pk*log(pk / qk))
-    return -sum(vec,axis=0)
+    S = -sum(vec, axis=0)
+    if base is not None:
+        S /= log(base)
+    return S
 
 
 ## Handlers for generic case where xk and pk are given
-
 
 
 def _drv_pmf(self, xk, *args):
