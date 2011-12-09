@@ -1,3 +1,4 @@
+
 """
 Find a few eigenvectors and eigenvalues of a matrix.
 
@@ -1533,7 +1534,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
 
 def svds(A, k=6, ncv=None, tol=0):
-    """Compute k singular values/vectors for a sparse matrix using ARPACK.
+    """Compute the largest k singular values/vectors for a sparse matrix.
 
     Parameters
     ----------
@@ -1550,8 +1551,8 @@ def svds(A, k=6, ncv=None, tol=0):
 
     Note
     ----
-    This is a naive implementation using an eigensolver on A.H * A or
-    A * A.H, depending on which one is more efficient.
+    This is a naive implementation using an ARPACK as eigensolver on A.H * A
+    or A * A.H, depending on which one is more efficient.
 
     """
     if not (isinstance(A, np.ndarray) or isspmatrix(A)):
