@@ -2,8 +2,9 @@ import numpy as np
 from numpy.dual import eig
 from scipy.misc import comb
 from scipy import linspace, pi, exp
+from scipy.signal import convolve
 
-__all__ = ['daub', 'qmf', 'cascade', 'morlet']
+__all__ = ['daub', 'qmf', 'cascade', 'morlet', 'ricker', 'cwt']
 
 
 def daub(p):
@@ -45,12 +46,12 @@ def daub(p):
             P = [comb(p - 1 + k, k, exact=1) for k in range(p)][::-1]
             yj = np.roots(P)
         else:  # try different polynomial --- needs work
-            P = [comb(p - 1 + k, k, exact=1) / 4.0 ** k
+            P = [comb(p - 1 + k, k, exact=1) / 4.0**k
                  for k in range(p)][::-1]
             yj = np.roots(P) / 4
         # for each root, compute two z roots, select the one with |z|>1
         # Build up final polynomial
-        c = np.poly1d([1, 1]) ** p
+        c = np.poly1d([1, 1])**p
         q = np.poly1d([1])
         for k in range(p - 1):
             yval = yj[k]
@@ -74,7 +75,7 @@ def qmf(hk):
     """Return high-pass qmf filter from low-pass
     """
     N = len(hk) - 1
-    asgn = [{0: 1, 1: -1}[k % 2] for k in range(N + 1)]
+    asgn = [{0: 1, 1:-1}[k % 2] for k in range(N + 1)]
     return hk[::-1] * np.array(asgn)
 
 
@@ -241,8 +242,95 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     output = exp(1j * w * x)
 
     if complete:
-        output -= exp(-0.5 * (w ** 2))
+        output -= exp(-0.5 * (w**2))
 
-    output *= exp(-0.5 * (x ** 2)) * pi ** (-0.25)
+    output *= exp(-0.5 * (x**2)) * pi**(-0.25)
 
+    return output
+
+
+def ricker(points, a):
+    """
+    Also known as the "mexican hat wavelet",
+    models the function:
+    A ( 1 - x^2/a^2) exp(-t^2/a^2),
+    where ``A = 2/sqrt(3a)pi^1/3``
+
+    Parameters
+    ----------
+    a: scalar
+        Width parameter of the wavelet.
+    points: int, optional
+        Number of points in `vector`. Default is ``10*a``
+        Will be centered around 0.
+    Returns
+    -----------
+    vector: 1-D ndarray
+        array of length `points` in shape of ricker curve.
+    Examples
+    --------
+    >>> import matplotlib.pyplot as plt
+    >>> points = 100
+    >>> a = 4.0
+    >>> vec2 = ricker(a,points)
+    >>> print len(vec2)
+    100
+    >>> plt.plot(vec2)
+    >>> plt.show()
+    """
+
+    A = 2 / (np.sqrt(3 * a) * (np.pi**0.25))
+    wsq = a**2
+    vec = np.arange(0, points) - (points - 1.0) / 2
+    tsq = vec**2
+    mod = (1 - tsq / wsq)
+    gauss = np.exp(-tsq / (2 * wsq))
+    total = A * mod * gauss
+    return total
+
+
+def cwt(data, wavelet, widths):
+    """
+    Performs a continuous wavelet transform on `data`,
+    using the wavelet function. A CWT performs a convolution
+    with `data` using the `wavelet` function, which is characterized
+    by a width parameter and length parameter.
+
+    Parameters
+    ----------
+    data : 1-D ndarray
+        data on which to perform the transform.
+    wavelet : function
+        Wavelet function, which should take 2 arguments.
+        The first argument is a width parameter, defining
+        the size of the wavelet (e.g. standard deviation of a gaussian).
+        The second is the number of points that the returned vector will have 
+        (len(wavelet(width,length)) == length). See `ricker`, which 
+        satisfies these requirements.
+    widths : sequence
+        Widths to use for transform.
+
+    Returns
+    -------
+    cwt: 2-D ndarray
+        Will be len(widths) x len(data).
+
+    Notes
+    ------
+    cwt[ii,:] = scipy.signal.convolve(data,wavelet(width[ii], length), mode='same')
+    where length = min(10 * width[ii], len(data)). 
+
+    Examples
+    --------
+    >>> signal = np.random.rand(20) - 0.5
+    >>> wavelet = ricker
+    >>> widths = np.arange(1, 11)
+    >>> cwtmatr = cwt(signal, wavelet, widths)
+    """
+
+    output = np.zeros([len(widths), len(data)])
+    for ind, width in enumerate(widths):
+        wavelet_data = wavelet(min(10 * width, len(data)), width)
+        output[ind, :] = convolve(data, wavelet_data,
+                                              mode='same')
     return output
