@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_almost_equal, assert_array_equal, assert_array_almost_equal, \
     assert_raises, assert_
-from scipy.signal._peak_finding import argrelmax, find_peaks, identify_ridge_lines
+from scipy.signal._peak_finding import argrelmax, find_peaks_cwt, _identify_ridge_lines
 
 
 def _gen_gaussians(center_locs, sigmas, total_length):
@@ -72,18 +72,18 @@ class TestRidgeLines(TestCase):
 
     def test_empty(self):
         test_matr = np.zeros([20, 100])
-        lines = identify_ridge_lines(test_matr, 2*np.ones(20), 1)
+        lines = _identify_ridge_lines(test_matr, 2*np.ones(20), 1)
         assert_(len(lines) == 0)
 
     def test_minimal(self):
         test_matr = np.zeros([20, 100])
         test_matr[0, 10] = 1
-        lines = identify_ridge_lines(test_matr, 2*np.ones(20), 1)
+        lines = _identify_ridge_lines(test_matr, 2*np.ones(20), 1)
         assert_(len(lines) == 1)
 
         test_matr = np.zeros([20, 100])
         test_matr[0:2, 10] = 1
-        lines = identify_ridge_lines(test_matr, 2*np.ones(20), 1)
+        lines = _identify_ridge_lines(test_matr, 2*np.ones(20), 1)
         assert_(len(lines) == 1)
 
     def test_single_pass(self):
@@ -94,7 +94,7 @@ class TestRidgeLines(TestCase):
         line = _gen_ridge_line([0, 25], test_matr.shape, length, distances, gaps)
         test_matr[line[0], line[1]] = 1
         max_distances = max(distances)*np.ones(20)
-        identified_lines = identify_ridge_lines(test_matr, max_distances, max(gaps) + 1)
+        identified_lines = _identify_ridge_lines(test_matr, max_distances, max(gaps) + 1)
         assert_array_equal(identified_lines, [line])
 
     def test_single_bigdist(self):
@@ -107,7 +107,7 @@ class TestRidgeLines(TestCase):
         max_dist = 3
         max_distances = max_dist*np.ones(20)
         #This should get 2 lines, since the distance is too large
-        identified_lines = identify_ridge_lines(test_matr, max_distances, max(gaps) + 1)
+        identified_lines = _identify_ridge_lines(test_matr, max_distances, max(gaps) + 1)
         assert_(len(identified_lines) == 2)
 
         for iline in identified_lines:
@@ -128,7 +128,7 @@ class TestRidgeLines(TestCase):
         max_dist = 6
         max_distances = max_dist*np.ones(20)
         #This should get 2 lines, since the gap is too large
-        identified_lines = identify_ridge_lines(test_matr, max_distances, max_gap)
+        identified_lines = _identify_ridge_lines(test_matr, max_distances, max_gap)
         assert_(len(identified_lines) == 2)
 
         for iline in identified_lines:
@@ -149,7 +149,7 @@ class TestRidgeLines(TestCase):
         max_dist = 1
         max_distances = max_dist*np.ones(50)
         #This should get 3 lines, since the gaps are too large
-        identified_lines = identify_ridge_lines(test_matr, max_distances, max_gap)
+        identified_lines = _identify_ridge_lines(test_matr, max_distances, max_gap)
         assert_(len(identified_lines) == 3)
 
         for iline in identified_lines:
@@ -167,8 +167,8 @@ class TestArgrelmax(TestCase):
         test_data, act_locs = _gen_gaussians_even(sigmas, 500)
         test_data[act_locs + order] = test_data[act_locs]*0.99999
         test_data[act_locs - order] = test_data[act_locs]*0.99999
-        rel_max_matr = argrelmax(test_data, order=2, mode='clip')
-        rel_max_locs = np.where(rel_max_matr)[0]
+        rel_max_locs = argrelmax(test_data, order=2, mode='clip')[0]
+        #rel_max_locs = np.where(rel_max_matr)[0]
 
         assert_(len(rel_max_locs) == len(act_locs))
         assert_((rel_max_locs == act_locs).all())
@@ -179,8 +179,9 @@ class TestArgrelmax(TestCase):
         rot_factor = 20
         rot_range = np.arange(0, len(test_data)) - rot_factor
         test_data_2 = np.vstack([test_data, test_data[rot_range]])
-        rel_max_matr = argrelmax(test_data_2, axis=1, order=1)
-        rel_max_rows, rel_max_cols = np.where(rel_max_matr)
+        #rel_max_matr = argrelmax(test_data_2, axis=1, order=1)
+        #rel_max_rows, rel_max_cols = np.where(rel_max_matr)
+        rel_max_rows, rel_max_cols = argrelmax(test_data_2, axis=1, order=1)
 
         for rw in xrange(0, test_data_2.shape[0]):
             inds = (rel_max_rows == rw)
@@ -199,7 +200,7 @@ class TestFindPeaks(TestCase):
         num_points = 500
         test_data, act_locs = _gen_gaussians_even(sigmas, num_points)
         widths = np.arange(0.1, max(sigmas))
-        found_locs = find_peaks(test_data, widths, gap_thresh=2, min_snr=0,
+        found_locs = find_peaks_cwt(test_data, widths, gap_thresh=2, min_snr=0,
                                          min_length=None)
         np.testing.assert_array_equal(found_locs, act_locs,
                         "Found maximum locations did not equal those expected")
@@ -216,7 +217,7 @@ class TestFindPeaks(TestCase):
         noise_amp = 0.07
         np.random.seed(18181911)
         test_data += (np.random.rand(num_points) - 0.5)*(2*noise_amp)
-        found_locs = find_peaks(test_data, widths, min_length=15,
+        found_locs = find_peaks_cwt(test_data, widths, min_length=15,
                                          gap_thresh=1, min_snr=noise_amp / 5)
 
         np.testing.assert_equal(len(found_locs), len(act_locs), 'Different number' +
@@ -236,7 +237,7 @@ class TestFindPeaks(TestCase):
         np.random.seed(181819141)
         test_data = (np.random.rand(num_points) - 0.5)*(2*noise_amp)
         widths = np.arange(10, 50)
-        found_locs = find_peaks(test_data, widths, min_snr=5, noise_perc=30)
+        found_locs = find_peaks_cwt(test_data, widths, min_snr=5, noise_perc=30)
         np.testing.assert_equal(len(found_locs), 0)
 
 if __name__ == "__main__":
