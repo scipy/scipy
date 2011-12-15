@@ -8,7 +8,7 @@ from scipy.signal.wavelets import cwt, ricker
 from scipy.stats import scoreatpercentile
 
 
-def argrelextrema(data, comparator,
+def _boolrelextrema(data, comparator,
                   axis=0, order=1, mode='clip'):
     """
     Calculate the relative extrema of `data`.
@@ -66,8 +66,6 @@ def argrelextrema(data, comparator,
         results &= comparator(main, minus)
         if(~results.any()):
             return results
-            #return (np.array([]),)*2
-    #arglocs = np.where(results)
     return results
 
 
@@ -93,7 +91,31 @@ def argrelmax(data, axis=0, order=1, mode='clip'):
     return argrelextrema(data, np.greater, axis, order, mode)
 
 
-def identify_ridge_lines(matr, max_distances, gap_thresh):
+def argrelextrema(data, comparator,
+                  axis=0, order=1, mode='clip'):
+    """
+    Calculate the relative extrema of `data`
+
+    Returns
+    -------
+    extrema: ndarray
+        Indices of the extrema, as an array
+        of integers (same format as argmin, argmax
+
+    See also
+    --------
+    argrelmin, argrelmax
+
+    """
+    results = _boolrelextrema(data, comparator,
+                              axis, order, mode)
+    if ~results.any():
+        return (np.array([]),) * 2
+    else:
+        return np.where(results)
+
+
+def _identify_ridge_lines(matr, max_distances, gap_thresh):
     """
     Identify ridges in the 2D matrix. Expect that the width of
     the wavelet feature increases with increasing row number.
@@ -134,13 +156,13 @@ def identify_ridge_lines(matr, max_distances, gap_thresh):
     Notes:
     ------
     This function is intended to be used in conjuction with `cwt`
-    as part of find_peaks.
+    as part of find_peaks_cwt.
     """
 
     if(len(max_distances) < matr.shape[0]):
         raise ValueError('Max_distances must have at least as many rows as matr')
 
-    all_max_cols = argrelmax(matr, axis=1, order=1)
+    all_max_cols = _boolrelextrema(matr, np.greater, axis=1, order=1)
     #Highest row for which there are any relative maxima
     has_relmax = np.where(all_max_cols.any(axis=1))[0]
     if(len(has_relmax) == 0):
@@ -212,7 +234,7 @@ def identify_ridge_lines(matr, max_distances, gap_thresh):
     return out_lines
 
 
-def filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
+def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
                        min_snr=1, noise_perc=10):
     """
     Filter ridge lines according to prescribed criteria. Intended
@@ -274,7 +296,7 @@ def filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
     return filter(filt_func, ridge_lines)
 
 
-def find_peaks(vector, widths, wavelet=None, max_distances=None, gap_thresh=None,
+def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None, gap_thresh=None,
                min_length=None, min_snr=1, noise_perc=10):
     """
     Attempt to find the peaks in the given 1-D array `vector`.
@@ -326,7 +348,7 @@ def find_peaks(vector, widths, wavelet=None, max_distances=None, gap_thresh=None
     --------
     >>> xs = np.arange(0, np.pi, 0.05)
     >>> data = np.sin(xs)
-    >>> peakind = find_peaks(data, np.arange(1,10))
+    >>> peakind = find_peaks_cwt(data, np.arange(1,10))
     >>> peakind, xs[peakind],data[peakind]
     ([32], array([ 1.6]), array([ 0.9995736]))
     """
@@ -338,8 +360,8 @@ def find_peaks(vector, widths, wavelet=None, max_distances=None, gap_thresh=None
         wavelet = ricker
 
     cwt_dat = cwt(vector, wavelet, widths)
-    ridge_lines = identify_ridge_lines(cwt_dat, max_distances, gap_thresh)
-    filtered = filter_ridge_lines(cwt_dat, ridge_lines, min_length=min_length,
+    ridge_lines = _identify_ridge_lines(cwt_dat, max_distances, gap_thresh)
+    filtered = _filter_ridge_lines(cwt_dat, ridge_lines, min_length=min_length,
                                    min_snr=min_snr, noise_perc=noise_perc)
     max_locs = map(lambda x: x[1][0], filtered)
     return sorted(max_locs)
