@@ -1028,9 +1028,7 @@ class TestMode(TestCase):
 
 
 class TestVariability(TestCase):
-    """  Comparison numbers are found using R v.1.5.1
-         note that length(testcase) = 4
-    """
+
     testcase = [1,2,3,4]
 
     def test_signaltonoise(self):
@@ -1061,6 +1059,45 @@ class TestVariability(TestCase):
         desired = ([-1.3416407864999, -0.44721359549996 , 0.44721359549996 , 1.3416407864999])
         assert_array_almost_equal(desired,y,decimal=12)
 
+    def test_zmap_axis(self):
+        """Test use of 'axis' keyword in zmap."""        
+        x = np.array([[0.0, 0.0, 1.0, 1.0],
+                      [1.0, 1.0, 1.0, 2.0],
+                      [2.0, 0.0, 2.0, 0.0]])
+
+        t1 = 1.0/np.sqrt(2.0/3)
+        t2 = np.sqrt(3.)/3
+        t3 = np.sqrt(2.)
+
+        z0 = stats.zmap(x, x, axis=0)
+        z1 = stats.zmap(x, x, axis=1)
+
+        z0_expected = [[-t1, -t3/2, -t3/2, 0.0],
+                       [0.0,  t3,   -t3/2,  t1],
+                       [t1,  -t3/2,  t3,   -t1]]
+        z1_expected = [[-1.0, -1.0, 1.0, 1.0],
+                       [-t2, -t2, -t2, np.sqrt(3.)],
+                       [1.0, -1.0, 1.0, -1.0]]
+
+        assert_array_almost_equal(z0, z0_expected)
+        assert_array_almost_equal(z1, z1_expected)        
+
+    def test_zmap_ddof(self):
+        """Test use of 'ddof' keyword in zmap."""
+        x = np.array([[0.0, 0.0, 1.0, 1.0],
+                      [0.0, 1.0, 2.0, 3.0]])
+
+        t1 = 1.0/np.sqrt(2.0/3)
+        t2 = np.sqrt(3.)/3
+        t3 = np.sqrt(2.)
+
+        z = stats.zmap(x, x, axis=1, ddof=1)
+
+        z0_expected = np.array([-0.5, -0.5, 0.5, 0.5])/(1.0/np.sqrt(3))
+        z1_expected = np.array([-1.5, -0.5, 0.5, 1.5])/(np.sqrt(5./3))
+        assert_array_almost_equal(z[0], z0_expected)
+        assert_array_almost_equal(z[1], z1_expected)
+
     def test_zscore(self):
         """
         not in R, so tested by using
@@ -1069,6 +1106,46 @@ class TestVariability(TestCase):
         y = stats.zscore(self.testcase)
         desired = ([-1.3416407864999, -0.44721359549996 , 0.44721359549996 , 1.3416407864999])
         assert_array_almost_equal(desired,y,decimal=12)
+
+    def test_zscore_axis(self):
+        """Test use of 'axis' keyword in zscore."""
+        x = np.array([[0.0, 0.0, 1.0, 1.0],
+                      [1.0, 1.0, 1.0, 2.0],
+                      [2.0, 0.0, 2.0, 0.0]])
+
+        t1 = 1.0/np.sqrt(2.0/3)
+        t2 = np.sqrt(3.)/3
+        t3 = np.sqrt(2.)
+
+        z0 = stats.zscore(x, axis=0)
+        z1 = stats.zscore(x, axis=1)
+
+        z0_expected = [[-t1, -t3/2, -t3/2, 0.0],
+                       [0.0,  t3,   -t3/2,  t1],
+                       [t1,  -t3/2,  t3,   -t1]]
+        z1_expected = [[-1.0, -1.0, 1.0, 1.0],
+                       [-t2, -t2, -t2, np.sqrt(3.)],
+                       [1.0, -1.0, 1.0, -1.0]]
+
+        assert_array_almost_equal(z0, z0_expected)
+        assert_array_almost_equal(z1, z1_expected)
+
+    def test_zscore_ddof(self):
+        """Test use of 'ddof' keyword in zscore."""
+        x = np.array([[0.0, 0.0, 1.0, 1.0],
+                      [0.0, 1.0, 2.0, 3.0]])
+
+        t1 = 1.0/np.sqrt(2.0/3)
+        t2 = np.sqrt(3.)/3
+        t3 = np.sqrt(2.)
+
+        z = stats.zscore(x, axis=1, ddof=1)
+
+        z0_expected = np.array([-0.5, -0.5, 0.5, 0.5])/(1.0/np.sqrt(3))
+        z1_expected = np.array([-1.5, -0.5, 0.5, 1.5])/(np.sqrt(5./3))
+        assert_array_almost_equal(z[0], z0_expected)
+        assert_array_almost_equal(z[1], z1_expected)
+
 
 class TestMoments(TestCase):
     """
