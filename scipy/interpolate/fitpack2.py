@@ -15,7 +15,8 @@ __all__ = [
     'BivariateSpline',
     'LSQBivariateSpline',
     'SmoothBivariateSpline',
-    'RectBivariateSpline']
+    'RectBivariateSpline',
+    'RectSpherBivariateSpline']
 
 import warnings
 from numpy import zeros, concatenate, alltrue, ravel, all, diff, array
@@ -703,8 +704,8 @@ class RectBivariateSpline(BivariateSpline):
     SmoothBivariateSpline : a smoothing bivariate spline for scattered data
     bisplrep, bisplev : an older wrapping of FITPACK
     UnivariateSpline : a similar class for univariate spline interpolation
-    """
 
+    """
     def __init__(self, x, y, z, bbox = [None]*4, kx=3, ky=3, s=0):
         x,y = ravel(x),ravel(y)
         if not all(diff(x) > 0.0):
@@ -735,3 +736,172 @@ class RectBivariateSpline(BivariateSpline):
         self.fp = fp
         self.tck = tx[:nx],ty[:ny],c[:(nx-kx-1)*(ny-ky-1)]
         self.degrees = kx,ky
+
+
+_spfit_messages = {1:"""
+ERROR: the required storage space exceeds the available storage space, as 
+       specified by the parameters nuest and nvest.
+       probably causes : nuest or nvest too small. if these parameters are
+       already large, it may also indicate that s is too small.
+       the approximation returned is the least-squares spline according to the
+       current set of knots. the parameter fp gives the corresponding sum of
+       squared residuals (fp>s).""",
+                    2:"""
+ERROR: a theoretically impossible result was found during the iteration proces
+       for finding a smoothing spline with fp = s. 
+       probably causes : s too small.
+       there is an approximation returned but the corresponding sum of squared
+       residuals does not satisfy the condition abs(fp-s)/s < tol.""",
+                    3:"""
+ERROR: the maximal number of iterations maxit (set to 20 by the program)
+       allowed for finding a smoothing spline with fp=s has been reached.
+       probably causes : s too small
+       there is an approximation returned but the corresponding sum of squared
+       residuals does not satisfy the condition abs(fp-s)/s < tol.""",
+                    4:"""
+No more knots can be added because the number of b-spline coefficients
+(nx-kx-1)*(ny-ky-1) already exceeds the number of data points m: either s or m
+too small.
+The weighted least-squares spline corresponds to the current set of
+knots.""",
+                    5:"""
+No more knots can be added because the additional knot would (quasi)
+coincide with an old one: s too small or too large a weight to an
+inaccurate data point.
+The weighted least-squares spline corresponds to the current set of
+knots.""",
+                    10:"""
+ERROR: on entry, the input data are controlled on validity
+       the following restrictions must be satisfied.
+          -1<=iopt(1)<=1, 0<=iopt(2)<=1, 0<=iopt(3)<=1,
+          -1<=ider(1)<=1, 0<=ider(2)<=1, ider(2)=0 if iopt(2)=0.
+          -1<=ider(3)<=1, 0<=ider(4)<=1, ider(4)=0 if iopt(3)=0.
+          mu >= mumin (see above), mv >= 4, nuest >=8, nvest >= 8,
+          kwrk>=5+mu+mv+nuest+nvest,
+          lwrk >= 12+nuest*(mv+nvest+3)+nvest*24+4*mu+8*mv+max(nuest,mv+nvest)
+          0< u(i-1)<u(i)< pi,i=2,..,mu,
+          -pi<=v(1)< pi, v(1)<v(i-1)<v(i)<v(1)+2*pi, i=3,...,mv
+          if iopt(1)=-1: 8<=nu<=min(nuest,mu+6+iopt(2)+iopt(3))
+                         0<tu(5)<tu(6)<...<tu(nu-4)< pi
+                         8<=nv<=min(nvest,mv+7)
+                         v(1)<tv(5)<tv(6)<...<tv(nv-4)<v(1)+2*pi
+                         the schoenberg-whitney conditions, i.e. there must be
+                         subset of grid co-ordinates uu(p) and vv(q) such that
+                            tu(p) < uu(p) < tu(p+4) ,p=1,...,nu-4
+                            (iopt(2)=1 and iopt(3)=1 also count for a uu-value
+                            tv(q) < vv(q) < tv(q+4) ,q=1,...,nv-4
+                            (vv(q) is either a value v(j) or v(j)+2*pi)
+          if iopt(1)>=0: s>=0
+          if s=0: nuest>=mu+6+iopt(2)+iopt(3), nvest>=mv+7
+       if one of these conditions is found to be violated,control is
+       immediately repassed to the calling program. in that case there is no
+       approximation returned.""",
+                    }
+
+
+class RectSpherBivariateSpline(BivariateSpline):
+    """
+    Bivariate spline approximation over a rectangular mesh on a sphere.
+
+    Can be used for both smoothing and interpolating data.
+    
+    For more information, see the FITPACK_ site about this function.
+    
+    .. _FITPACK: http://www.netlib.org/dierckx/spgrid.f
+
+    Parameters
+    ----------
+    u : array_like
+        1-D array of latitude coordinates in strictly ascending order.
+        Coordinates must be given in radians and lie within the interval
+        (0, pi).
+    v : array_like
+        1-D array of longitude coordinates in strictly ascending order.
+        Coordinates must be given in radians.
+    r : array_like
+        2-D array of data with shape (u.size, v.size).
+    s : float, optional
+        Positive smoothing factor defined for estimation condition (s=0. is for
+        interpolation).
+    iopt : nd.array, optional
+        integer array of dimension 3, specifying different options.
+        iopt[0]: specify whether a least-squares spline (iopt[0]=-1) or a
+                 smoothing spline (iopt[0]=0 or 1) must be determined.
+        iopt[1]: iopt[1] must specify the requested order of continuity at the
+                 pole u=0. can have value 0 or 1
+        iopt[2]: iopt[2] must specify the requested order of continuity at the
+                 pole u=pi. can have value 0 or 1
+    ider : nd.array, optional
+        integer array of dimension 4, specifying different options.
+        ider[0]: specify whether (ider[0]=0 or 1) or not (ider[0]=-1) there is a
+                 data value r0 at the pole u=0. if ider[0]=1, r0 will be
+                 considered to be the right function value, and it will be
+                 fitted exactly (s(0,v)=r0). if ider[0]=0, r0 will be considered
+                 to be a data value just like the other data values r[i,j].
+        ider[1]: specify whether (ider[1]=1) or not (ider[1]=0) the
+                 approximation has vanishing derivatives dr(2) and dr(3) at the
+                 pole u=0  (in case iopt[1]=1).
+        ider[2]: specify whether (ider[2]=0 or 1) or not (ider[2]=-1) there is a
+                 data value r1 at the pole u=pi. if ider[2]=1, r1 will be
+                 considered to be the right function value, and it will be
+                 fitted exactly (s(pi,v)=r1). if ider[2]=0, r1 will be
+                 considered to be a data value just like the other data values
+                 r[i,j].
+        ider[3]: specify whether (ider[3]=1) or not (ider[3]=0) the
+                 approximation has vanishing derivatives dr(5) and dr(6) at the
+                 pole u=pi  (in case iopt[2]=1).
+    r0 : float, optional
+        specify the data value at the pole u=0
+    r1 : float, optional
+        specify the data value at the pole u=pi
+        
+    See Also from ``scipy.interpolate``
+    -----------------------------------
+    RectBivariateSpline : vivariate spline approximation over a rectangular mesh
+    bisplrep, bisplev : an older wrapping of FITPACK
+    
+    """
+    def __init__(self, u, v, r, s=0., iopt=np.array([0, 0, 0], dtype=int),
+                 ider=np.array([-1, 0, -1, 0], dtype=int), r0=None, r1=None):
+        u, v = np.ravel(u), np.ravel(v)
+        if not np.all(np.diff(u) > 0.0):
+            raise TypeError('u must be strictly increasing')
+        if not np.all(np.diff(v) > 0.0):
+            raise TypeError('v must be strictly increasing')
+        if not ((u.min() == u[0]) and (u.max() == u[-1])):
+            raise TypeError('u must be strictly ascending')
+        if not ((v.min() == v[0]) and (v.max() == v[-1])):
+            raise TypeError('v must be strictly ascending')
+        if not u.size == r.shape[0]:
+            raise TypeError('u dimension of r must have same number of '
+                            'elements as u')
+        if not v.size == r.shape[1]:
+            raise TypeError('v dimension of r must have same number of '
+                            'elements as v')
+        if not iopt.size == 3:
+            raise TypeError("iopt must be of shape (3,)")
+        if not ider.size == 4:
+            raise TypeError("ider must be of shape (4,)")
+        if ider[0] > -1 and r0 == None:
+            raise TypeError("if ider[0] > -1, you must give r0.")
+        if ider[2] > -1 and r1 == None:
+            raise TypeError("if ider[2] > -1, you must give r1.")
+        r = np.ravel(r)
+        print u
+        print v
+        print r
+        nu,tu,nv,tv,c,fp,ier = dfitpack.regrid_smth_spher(iopt,ider,u.copy(),
+                                                          v.copy(),r.copy(),r0,
+                                                          r1,s)
+        if ier in [0,-1,-2]: # normal return
+            pass
+        else:
+            message = _spfit_messages.get(ier, 'ier=%s' % (ier))
+            warnings.warn(message)
+            raise ValueError()
+
+        self.fp = fp
+        self.tck = tu[:nu], tv[:nv], c[:(nu - 4) * (nv-4)]
+        self.degrees = 3, 3
+
+
