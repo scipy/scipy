@@ -190,6 +190,17 @@ Wavelets
    ricker   -- return ricker wavelet
    cwt      -- perform continuous wavelet transform
 
+Peak finding
+============
+
+.. autosummary::
+   :toctree: generated/
+
+   find_peaks_cwt -- Attempt to find the peaks in the given 1-D array
+   argrelmin      -- Calculate the relative minima of data
+   argrelmax      -- Calculate the relative maxima of data
+   argrelextrema  -- Calculate the relative extrema of data
+
 """
 
 import sigtools
