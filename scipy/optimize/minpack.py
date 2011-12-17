@@ -416,7 +416,13 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
             raise ValueError(msg)
         if p0 is None:
             p0 = 1.0
-        p0 = [p0]*(len(args)-1)
+        if 'self' in args:
+            p0 = [p0]*(len(args)-2)
+        else:
+            p0 = [p0]*(len(args)-1)            
+
+    if isscalar(p0):
+        p0 = array([p0])
 
     if isscalar(p0):
         p0 = array([p0])
