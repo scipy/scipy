@@ -424,9 +424,6 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
     if isscalar(p0):
         p0 = array([p0])
 
-    if isscalar(p0):
-        p0 = array([p0])
-
     args = (xdata, ydata, f)
     if sigma is None:
         func = _general_function
