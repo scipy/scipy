@@ -221,7 +221,23 @@ class TestCurveFit(TestCase):
         assert_(len(popt) == 2)
         assert_(pcov.shape == (2,2))
         assert_array_almost_equal(popt, [1.7989, 1.1642], decimal=4)
-        assert_array_almost_equal(pcov, [[0.0852, -0.1260],[-0.1260, 0.1912]], decimal=4)
+        assert_array_almost_equal(pcov, [[0.0852, -0.1260],[-0.1260, 0.1912]],
+                                  decimal=4)
+
+    def test_func_is_classmethod(self):
+        class test_self(object):
+            """This class tests if curve_fit passes the correct number of
+               arguments when the model function is a class instance method.
+            """
+            def func(self, x, a, b):
+                return b * x**a
+
+        test_self_inst = test_self()
+        popt, pcov = curve_fit(test_self_inst.func, self.x, self.y)
+        assert_(pcov.shape == (2,2))
+        assert_array_almost_equal(popt, [1.7989, 1.1642], decimal=4)
+        assert_array_almost_equal(pcov, [[0.0852, -0.1260], [-0.1260, 0.1912]],
+                                  decimal=4)
 
 
 class TestFixedPoint(TestCase):
