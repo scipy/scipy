@@ -49,10 +49,9 @@ __all__ = [
            'rdist', 'rayleigh', 'reciprocal', 'rice', 'recipinvgauss',
            'semicircular', 'triang', 'truncexpon', 'truncnorm',
            'tukeylambda', 'uniform', 'vonmises', 'wald', 'wrapcauchy',
-           'entropy', 'entropy2', 'rv_discrete',
-           'binom', 'bernoulli', 'nbinom', 'geom', 'hypergeom', 'logser',
-           'poisson', 'planck', 'boltzmann', 'randint', 'zipf', 'dlaplace',
-           'skellam'
+           'entropy', 'rv_discrete', 'binom', 'bernoulli', 'nbinom', 'geom',
+           'hypergeom', 'logser', 'poisson', 'planck', 'boltzmann', 'randint',
+           'zipf', 'dlaplace', 'skellam'
           ]
 
 floatinfo = numpy.finfo(float)
@@ -5282,8 +5281,8 @@ wrapcauchy = wrapcauchy_gen(a=0.0, b=2*pi, name='wrapcauchy', shapes="c")
 ### DISCRETE DISTRIBUTIONS
 ###
 
-def entropy(pk,qk=None):
-    """S = entropy(pk,qk=None)
+def entropy(pk,qk=None,base=None):
+    """S = entropy(pk,qk=None,base=None)
 
     calculate the entropy of a distribution given the p_k values
     S = -sum(pk * log(pk), axis=0)
@@ -5293,9 +5292,24 @@ def entropy(pk,qk=None):
 
     Routine will normalize pk and qk if they don't sum to 1
 
-    The logarithm is computed base e.
+    The argument `base` specifies the base of the logarithm (default is natural
+    logarithm).
 
-    See also: entropy2
+    Parameters
+    ----------
+    pk : sequence
+        defines the (discrete) distribution. ``pk[i]`` is the (possibly
+        unnormalized) probability of event ``i``.
+    qk : sequence, optional
+        sequence against which the relative entropy is computed. Should be in
+        the same format as ``pk``.
+    base : float, optional
+        logarithmic base to use, defaults to ``e``.
+
+    Returns
+    -------
+    S : float
+        entropy
     """
     pk = arr(pk)
     pk = 1.0* pk / sum(pk,axis=0)
@@ -5311,23 +5325,10 @@ def entropy(pk,qk=None):
         if any(take(pk,nonzero(qk==0.0),axis=0)!=0.0, 0):
             return inf
         vec = where (pk == 0, 0.0, -pk*log(pk / qk))
-    return -sum(vec,axis=0)
-
-
-def entropy2(pk,qk=None):
-    """S = entropy2(pk,qk=None)
-
-    calculate the entropy of a distribution given the p_k values
-    S = -sum(pk * log2(pk),axis=0)
-
-    If qk is not None, then compute a relative entropy
-    S = -sum(pk * log2(pk / qk),axis=0)
-
-    Routine will normalize pk and qk if they don't sum to 1
-
-    See also: entropy
-    """
-    return entropy(pk,qk)/log(2.0)
+    S = -sum(vec,axis=0)
+    if base is not None:
+        S /= log(base)
+    return S
 
 
 
