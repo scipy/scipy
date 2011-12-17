@@ -187,6 +187,19 @@ Wavelets
    daub     -- return low-pass
    morlet   -- Complex Morlet wavelet.
    qmf      -- return quadrature mirror filter from low-pass
+   ricker   -- return ricker wavelet
+   cwt      -- perform continuous wavelet transform
+
+Peak finding
+============
+
+.. autosummary::
+   :toctree: generated/
+
+   find_peaks_cwt -- Attempt to find the peaks in the given 1-D array
+   argrelmin      -- Calculate the relative minima of data
+   argrelmax      -- Calculate the relative maxima of data
+   argrelextrema  -- Calculate the relative extrema of data
 
 """
 
@@ -207,6 +220,7 @@ from windows import *
 from signaltools import *
 from spectral import *
 from wavelets import *
+from _peak_finding import *
 
 __all__ = filter(lambda s: not s.startswith('_'), dir())
 from numpy.testing import Tester
