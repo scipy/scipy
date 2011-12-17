@@ -95,6 +95,7 @@ Fazlul Shahriar for fixes to the NetCDF3 I/O.
 Chris Jordan-Squire for bug fixes, documentation improvements and 
     scipy.special.logit & expit.
 Christoph Gohlke for many bug fixes and help with Windows specific issues.
+Andreas Hilboll for wrapping FITPACK's spgrid.f
 
 
 Institutions
