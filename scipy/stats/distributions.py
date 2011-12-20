@@ -5281,8 +5281,8 @@ wrapcauchy = wrapcauchy_gen(a=0.0, b=2*pi, name='wrapcauchy', shapes="c")
 ### DISCRETE DISTRIBUTIONS
 ###
 
-def entropy(pk,qk=None,base=None):
-    """S = entropy(pk,qk=None,base=None)
+def entropy(pk, qk=None, base=None):
+    """S = entropy(pk, qk=None, base=None)
 
     calculate the entropy of a distribution given the p_k values
     S = -sum(pk * log(pk), axis=0)
