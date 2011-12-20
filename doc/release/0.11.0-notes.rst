@@ -41,7 +41,13 @@ respectively.
 Pascal matrix function
 ----------------------
 
-A function for creating Pascal matrices, ``scipy.linalg.pascal``, was added. 
+A function for creating Pascal matrices, ``scipy.linalg.pascal``, was added.
+
+
+``scipy.misc.logsumexp``
+------------------------
+
+``misc.logsumexp`` now takes an optional ``axis`` keyword argument.
 
 
 Deprecated features
