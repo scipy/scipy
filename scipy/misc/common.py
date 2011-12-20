@@ -44,8 +44,8 @@ def logsumexp(a, axis=0):
     Notes
     -----
     Numpy has a logaddexp function which is very similar to `logsumexp`, but
-    only handles two arguments. `logsumexp.reduce` is similar to this
-    function, but less stable.
+    only handles two arguments. `logaddexp.reduce` is similar to this
+    function, but may be less stable.
 
     """
     a = asarray(a)
