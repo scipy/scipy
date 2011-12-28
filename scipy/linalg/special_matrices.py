@@ -691,7 +691,7 @@ def invhilbert(n, exact=False):
 
 
 def pascal(n, kind='symmetric', exact=True):
-    """Returns the (n+1) x (n+1) Pascal matrix.
+    """Returns the n x n Pascal matrix.
 
     The Pascal matrix is a matrix containing the binomial coefficients as
     its elements.
@@ -699,13 +699,14 @@ def pascal(n, kind='symmetric', exact=True):
     Parameters
     ----------
     n : int
-        One less than the size of the matrix.
+        The size of the matrix to create; that is, the result is an n x n
+        matrix.
     kind : str
         Must be one of 'symmetric', 'lower', or 'upper'.
         Default is 'symmetric'.
     exact : bool
         If exact is True, the result is either an array of type numpy.uint64
-        (if n <= 34) or an object array of Python long integers.
+        (if n <= 35) or an object array of Python long integers.
         If exact is False, the coefficients in the matrix are computed using
         scipy.misc.comb with exact=False.  The result will be a floating point
         array, and the values in the array will not be the exact coefficients,
@@ -713,7 +714,7 @@ def pascal(n, kind='symmetric', exact=True):
 
     Returns
     -------
-    p : 2-d ndarray
+    p : 2-D ndarray
         The Pascal matrix.
 
     Notes
@@ -725,37 +726,37 @@ def pascal(n, kind='symmetric', exact=True):
 
     Examples
     --------
-    >>> pascal(3)
+    >>> from scipy.linalg import pascal
+    >>> pascal(4)
     array([[ 1,  1,  1,  1],
            [ 1,  2,  3,  4],
            [ 1,  3,  6, 10],
            [ 1,  4, 10, 20]], dtype=uint64)
-
-    >>> pascal(3, kind='lower')
+    >>> pascal(4, kind='lower')
     array([[1, 0, 0, 0],
            [1, 1, 0, 0],
            [1, 2, 1, 0],
            [1, 3, 3, 1]], dtype=uint64)
     >>> pascal(50)[-1, -1]
-    100891344545564193334812497256L
+    25477612258980856902730428600L
     >>> from scipy.misc import comb
-    >>> comb(100, 50, exact=True)
-    100891344545564193334812497256L
+    >>> comb(98, 49, exact=True)
+    25477612258980856902730428600L
     """
 
     if kind not in ['symmetric', 'lower', 'upper']:
         raise ValueError("kind must be 'symmetric', 'lower', or 'upper'")
     if exact:
-        if n > 34:
-            L_n = np.empty((n+1, n+1), dtype=object)
+        if n > 35:
+            L_n = np.empty((n, n), dtype=object)
             L_n.fill(0L)
         else:
-            L_n = np.zeros((n+1, n+1), dtype=np.uint64)
-        for i in range(n+1):
+            L_n = np.zeros((n, n), dtype=np.uint64)
+        for i in range(n):
             for j in range(i+1):
                 L_n[i,j] = comb(i, j, exact=True)
     else:
-        L_n = comb(*np.ogrid[:n+1, :n+1])
+        L_n = comb(*np.ogrid[:n, :n])
     if kind is 'lower':
         p = L_n
     elif kind is 'upper':

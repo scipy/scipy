@@ -442,18 +442,18 @@ class TestInvHilbert(TestCase):
 class TestPascal(TestCase):
 
     cases = [
-        (0, array([[1]]), array([[1]])),
-        (1, array([[1, 1],
+        (1, array([[1]]), array([[1]])),
+        (2, array([[1, 1],
                    [1, 2]]),
             array([[1, 0],
                    [1, 1]])),
-        (2, array([[1, 1, 1],
+        (3, array([[1, 1, 1],
                    [1, 2, 3],
                    [1, 3, 6]]),
             array([[1, 0, 0],
                    [1, 1, 0],
                    [1, 2, 1]])),
-        (3, array([[1,  1,  1,  1],
+        (4, array([[1,  1,  1,  1],
                    [1,  2,  3,  4],
                    [1,  3,  6, 10],
                    [1,  4, 10, 20]]),
@@ -477,7 +477,7 @@ class TestPascal(TestCase):
 
     def test_big(self):
         p = pascal(50)
-        assert_equal(p[-1, -1], comb(100, 50, exact=True))
+        assert_equal(p[-1, -1], comb(98, 49, exact=True))
 
 
 if __name__ == "__main__":
