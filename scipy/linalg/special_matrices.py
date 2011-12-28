@@ -701,16 +701,16 @@ def pascal(n, kind='symmetric', exact=True):
     n : int
         The size of the matrix to create; that is, the result is an n x n
         matrix.
-    kind : str
+    kind : str, optional
         Must be one of 'symmetric', 'lower', or 'upper'.
         Default is 'symmetric'.
-    exact : bool
-        If exact is True, the result is either an array of type numpy.uint64
-        (if n <= 35) or an object array of Python long integers.
-        If exact is False, the coefficients in the matrix are computed using
-        scipy.misc.comb with exact=False.  The result will be a floating point
-        array, and the values in the array will not be the exact coefficients,
-        but this version is much faster than exact=True.
+    exact : bool, optional
+        If `exact` is True, the result is either an array of type
+        numpy.uint64 (if n <= 35) or an object array of Python long integers.
+        If `exact` is False, the coefficients in the matrix are computed using
+        `scipy.misc.comb` with `exact=False`.  The result will be a floating
+        point array, and the values in the array will not be the exact
+        coefficients, but this version is much faster than `exact=True`.
 
     Returns
     -------
@@ -746,6 +746,7 @@ def pascal(n, kind='symmetric', exact=True):
 
     if kind not in ['symmetric', 'lower', 'upper']:
         raise ValueError("kind must be 'symmetric', 'lower', or 'upper'")
+
     if exact:
         if n > 35:
             L_n = np.empty((n, n), dtype=object)
@@ -757,10 +758,12 @@ def pascal(n, kind='symmetric', exact=True):
                 L_n[i,j] = comb(i, j, exact=True)
     else:
         L_n = comb(*np.ogrid[:n, :n])
+
     if kind is 'lower':
         p = L_n
     elif kind is 'upper':
         p = L_n.T
     else:
         p = np.dot(L_n, L_n.T)
+
     return p
