@@ -4678,9 +4678,10 @@ class powerlaw_gen(rv_continuous):
     def _ppf(self, q, a):
         return pow(q, 1.0/a)
     def _stats(self, a):
-        return a/(a+1.0), a*(a+2.0)/(a+1.0)**2, \
-               2*(1.0-a)*sqrt((a+2.0)/(a*(a+3.0))), \
-               6*polyval([1,-1,-6,2],a)/(a*(a+3.0)*(a+4))
+        return (a / (a + 1.0),
+                a / (a + 2.0) / (a + 1.0) ** 2,
+                -2.0 * ((a - 1.0) / (a + 3.0)) * sqrt((a + 2.0) / a),
+                6 * polyval([1, -1, -6, 2], a) / (a * (a + 3.0) * (a + 4)))
     def _entropy(self, a):
         return 1 - 1.0/a - log(a)
 powerlaw = powerlaw_gen(a=0.0, b=1.0, name="powerlaw", shapes="a")
