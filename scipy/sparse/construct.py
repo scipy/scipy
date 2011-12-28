@@ -4,7 +4,7 @@
 __docformat__ = "restructuredtext en"
 
 __all__ = [ 'spdiags', 'eye', 'identity', 'kron', 'kronsum',
-            'hstack', 'vstack', 'bmat', 'rand']
+            'hstack', 'vstack', 'bmat', 'block_diag', 'rand']
 
 
 from warnings import warn
@@ -388,6 +388,38 @@ def bmat(blocks, format=None, dtype=None):
 
     shape = (np.sum(brow_lengths), np.sum(bcol_lengths))
     return coo_matrix((data, (row, col)), shape=shape).asformat(format)
+
+def block_diag(mats, format=None, dtype=None):
+    """
+    Build a block diagonal sparse matrix from provided matrices.
+
+    Parameters
+    ----------
+    A, B, ... : sequence of matrices
+        Input matrices.
+    format : sparse format of the result (e.g. "csr")
+        by default an appropriate sparse matrix format is returned.
+        This choice is subject to change.
+
+    Examples
+    --------
+    >>> A = coo_matrix([[1, 2], [3, 4]])
+    >>> B = coo_matrix([[5], [6]])
+    >>> C = coo_matrix([[7]])
+    >>> block_diag((A, B, C)).todense()
+    matrix([[1, 2, 0, 0],
+            [3, 4, 0, 0],
+            [0, 0, 5, 0],
+            [0, 0, 6, 0],
+            [0, 0, 0, 7]])
+    """
+    nmat = len(mats)
+    rows = []
+    for ia, a in enumerate(mats):
+        row = [None]*nmat
+        row[ia] = a
+        rows.append(row)
+    return bmat(rows, format=format, dtype=dtype)
 
 def rand(m, n, density=0.01, format="coo", dtype=None):
     """Generate a sparse matrix of the given shape and density with uniformely
