@@ -21,6 +21,13 @@ This release requires Python 2.4-2.7 or 3.1- and NumPy 1.X.X or greater.
 New features
 ============
 
+Constructing sparse matrices
+----------------------------
+
+Two new functions, ``scipy.sparse.diags`` and ``scipy.sparse.block_diag``, were
+added to easily construct diagonal and block-diagonal sparse matrices
+respectively.
+
 
 Deprecated features
 ===================

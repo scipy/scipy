@@ -406,9 +406,20 @@ def bmat(blocks, format=None, dtype=None):
     blocks
         grid of sparse matrices with compatible shapes
         an entry of None implies an all-zero matrix
-    format : sparse format of the result (e.g. "csr")
-        by default an appropriate sparse matrix format is returned.
-        This choice is subject to change.
+    format : str, optional
+        The sparse format of the result (e.g. "csr").  If not given, the matrix
+        is returned in "coo" format.
+    dtype : dtype specifier, optional
+        The data-type of the output matrix.  If not given, the dtype is
+        determined from that of `blocks`.
+
+    Returns
+    -------
+    res : sparse matrix
+
+    See Also
+    --------
+    block_diag, diags
 
     Examples
     --------
@@ -502,9 +513,20 @@ def block_diag(mats, format=None, dtype=None):
     ----------
     A, B, ... : sequence of matrices
         Input matrices.
-    format : sparse format of the result (e.g. "csr")
-        by default an appropriate sparse matrix format is returned.
-        This choice is subject to change.
+    format : str, optional
+        The sparse format of the result (e.g. "csr").  If not given, the matrix
+        is returned in "coo" format.
+    dtype : dtype specifier, optional
+        The data-type of the output matrix.  If not given, the dtype is
+        determined from that of `blocks`.
+
+    Returns
+    -------
+    res : sparse matrix
+
+    See Also
+    --------
+    bmat, diags
 
     Examples
     --------
