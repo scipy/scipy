@@ -311,6 +311,25 @@ class MatFile4Reader(MatFileReader):
                 if len(variable_names) == 0:
                     break
         return mdict
+    def list_variables(self):
+        ''' list variables from stream '''
+        self.mat_stream.seek(0)
+        # set up variable reader
+        self.initialize_read()
+        var_names = []
+        var_shape = []
+        # var_types = []
+        # var_bytesize = []
+        while not self.end_of_stream():
+            hdr, next_position = self.read_var_header()
+            name = asstr(hdr.name)
+            var_names.append(name)
+            var_shape.append(map(int,hdr.dims))
+            # var_types.append(hdr.mclass)
+            # var_bytesize.append(next_position-self.mat_stream.tell())
+            self.mat_stream.seek(next_position)
+        # return zip(var_names,var_shape,var_types,var_bytesize)
+        return zip(var_names,var_shape)
 
 
 def arr_to_2d(arr, oned_as='row'):
