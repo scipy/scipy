@@ -74,6 +74,39 @@ class gaussian_kde(object):
     dataset : (# of dims, # of data)-array
         Datapoints to estimate from.
 
+    Notes
+    -----
+    Bandwidth selection strongly influences the estimate obtained from the KDE
+    (much more so than the actual shape of the kernel).  Bandwidth selection
+    can be done by a "rule of thumb", by cross-validation, by "plug-in
+    methods" or by other means; see [3]_, [4]_ for reviews.  `gaussian_kde`
+    uses a rule of thumb, the default is Scott's Rule.  To instead select
+    Silverman's Rule, use:
+
+        kde.covariance_factor = silverman_factor
+        kde._compute_covariance()
+
+    Scott's Rule [1]_, implemented as `scotts_factor`, is:
+
+        n**(-1./(d+4)).
+
+    Silverman's Rule [2]_, implemented as `silverman_factor`, is:
+
+        n * (d + 2) / 4.)**(-1. / (d + 4)).
+
+    References
+    ----------
+    .. [1] D.W. Scott, "Multivariate Density Estimation: Theory, Practice, and
+           Visualization", John Wiley & Sons, New York, Chicester, 1992.
+    .. [2] B.W. Silverman, "Density Estimation for Statistics and Data
+           Analysis", Vol. 26, Monographs on Statistics and Applied Probability,
+           Chapman and Hall, London, 1986.
+    .. [3] B.A. Turlach, "Bandwidth Selection in Kernel Density Estimation: A
+           Review", CORE and Institut de Statistique, Vol. 19, pp. 1-33, 1993.
+    .. [4] D.M. Bashtannyk and R.J. Hyndman, "Bandwidth selection for kernel
+           conditional density estimation", Computational Statistics & Data
+           Analysis, Vol. 36, pp. 279-298, 2001.
+
     Examples
     --------
     Generate some random two-dimensional data::
