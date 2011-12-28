@@ -812,5 +812,17 @@ def test_tukeylambda_stats_ticket_1545():
     assert_almost_equal(mv, expected, decimal=10)
 
 
+def test_powerlaw_stats():
+    """Test the powerlaw stats function.
+    
+    This unit test is also a regression test for ticket 1548.
+    """
+    cases = [(1.0, (0.5, 1./12 , 0.0, -1.2)),
+             (2.0, (2./3, 2./36, -0.56568542494924734, -0.6))]
+    for a, exact_mvsk in cases: 
+        mvsk = stats.powerlaw.stats(a, moments="mvsk")
+        assert_array_almost_equal(mvsk, exact_mvsk)
+
+
 if __name__ == "__main__":
     run_module_suite()
