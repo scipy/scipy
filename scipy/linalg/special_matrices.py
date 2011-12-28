@@ -3,9 +3,10 @@ import math
 import numpy as np
 from scipy.misc import comb
 
+
 __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
            'hadamard', 'leslie', 'all_mat', 'kron', 'block_diag', 'companion',
-           'hilbert', 'invhilbert']
+           'hilbert', 'invhilbert', 'pascal']
 
 
 #-----------------------------------------------------------------------------
@@ -687,3 +688,78 @@ def invhilbert(n, exact=False):
             if i != j:
                 invh[j, i] = invh[i, j]
     return invh
+
+
+def pascal(n, kind='symmetric', exact=True):
+    """Returns the (n+1) x (n+1) Pascal matrix.
+
+    The Pascal matrix is a matrix containing the binomial coefficients as
+    its elements.
+
+    Parameters
+    ----------
+    n : int
+        One less than the size of the matrix.
+    kind : str
+        Must be one of 'symmetric', 'lower', or 'upper'.
+        Default is 'symmetric'.
+    exact : bool
+        If exact is True, the result is either an array of type numpy.uint64
+        (if n <= 34) or an object array of Python long integers.
+        If exact is False, the coefficients in the matrix are computed using
+        scipy.misc.comb with exact=False.  The result will be a floating point
+        array, and the values in the array will not be the exact coefficients,
+        but this version is much faster than exact=True.
+
+    Returns
+    -------
+    p : 2-d ndarray
+        The Pascal matrix.
+
+    Notes
+    -----
+    .. versionadded:: 0.11.0
+
+    See http://en.wikipedia.org/wiki/Pascal_matrix for more information
+    about Pascal matrices.
+
+    Examples
+    --------
+    >>> pascal(3)
+    array([[ 1,  1,  1,  1],
+           [ 1,  2,  3,  4],
+           [ 1,  3,  6, 10],
+           [ 1,  4, 10, 20]], dtype=uint64)
+
+    >>> pascal(3, kind='lower')
+    array([[1, 0, 0, 0],
+           [1, 1, 0, 0],
+           [1, 2, 1, 0],
+           [1, 3, 3, 1]], dtype=uint64)
+    >>> pascal(50)[-1, -1]
+    100891344545564193334812497256L
+    >>> from scipy.misc import comb
+    >>> comb(100, 50, exact=True)
+    100891344545564193334812497256L
+    """
+
+    if kind not in ['symmetric', 'lower', 'upper']:
+        raise ValueError("kind must be 'symmetric', 'lower', or 'upper'")
+    if exact:
+        if n > 34:
+            L_n = np.empty((n+1, n+1), dtype=object)
+            L_n.fill(0L)
+        else:
+            L_n = np.zeros((n+1, n+1), dtype=np.uint64)
+        for i in range(n+1):
+            for j in range(i+1):
+                L_n[i,j] = comb(i, j, exact=True)
+    else:
+        L_n = comb(*np.ogrid[:n+1, :n+1])
+    if kind is 'lower':
+        p = L_n
+    elif kind is 'upper':
+        p = L_n.T
+    else:
+        p = np.dot(L_n, L_n.T)
+    return p
