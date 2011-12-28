@@ -29,6 +29,16 @@ from linesearch import \
      line_search_BFGS, line_search_wolfe1, line_search_wolfe2, \
      line_search_wolfe2 as line_search
 
+
+# standard status messages of optimizers
+_status_message = {'success': 'Optimization terminated successfully.',
+                   'maxfev' : 'Maximum number of function evaluations has '
+                              'been exceeded.',
+                   'maxiter': 'Maximum number of iterations has been '
+                              'exceeded.',
+                   'pr_loss': 'Desired error not necessarily achieved due '
+                              'to precision loss.'}
+
 # These have been copied from Numeric's MLab.py
 # I don't think they made the transition to scipy_core
 def max(m, axis=0):
@@ -229,6 +239,12 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     retall : bool
         Set to True to return list of solutions at each iteration.
 
+    See also
+    --------
+    minimize: Interface to unconstrained minimization algorithms for
+        multivariate functions. See the 'Nelder-Mead' `method` in
+        particular.
+
     Notes
     -----
     Uses a Nelder-Mead simplex algorithm to find the minimum of function of
@@ -253,6 +269,60 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     Harlow, UK, pp. 191-208.
 
     """
+    opts = {'xtol': xtol,
+            'ftol': ftol,
+            'maxiter': maxiter,
+            'maxfev': maxfun,
+            'disp': disp}
+
+    # force full_output if retall=True to preserve backwards compatibility
+    if retall and not full_output:
+        out = _minimize_neldermead(func, x0, args, opts, full_output=True,
+                                   retall=retall, callback=callback)
+    else:
+        out = _minimize_neldermead(func, x0, args, opts, full_output,
+                                   retall, callback)
+    if full_output:
+        x, info = out
+        retlist = x, info['fun'], info['nit'], info['nfev'], info['status']
+        if retall:
+            retlist += (info['allvecs'], )
+        return retlist
+    else:
+        if retall:
+            x, info = out
+            return x, info['allvecs']
+        else:
+            return out
+
+def _minimize_neldermead(func, x0, args=(), options={}, full_output=0,
+                         retall=0, callback=None):
+    """
+    Minimization of scalar function of one or more variables using the
+    Nelder-Mead algorithm.
+
+    Options for the Nelder-Mead algorithm are:
+        disp : bool
+            Set to True to print convergence messages.
+        xtol : float
+            Relative error in solution `xopt` acceptable for convergence.
+        ftol : float
+            Relative error in ``fun(xopt)`` acceptable for convergence.
+        maxiter : int
+            Maximum number of iterations to perform.
+        maxfev : int
+            Maximum number of function evaluations to make.
+
+    This function is called by the `minimize` function with
+    `method=Nelder-Mead`. It is not supposed to be called directly.
+    """
+    # retrieve useful options
+    xtol    = options.get('xtol', 1e-4)
+    ftol    = options.get('ftol', 1e-4)
+    maxiter = options.get('maxiter')
+    maxfun  = options.get('maxfev')
+    disp    = options.get('disp', True)
+
     fcalls, func = wrap_function(func, args)
     x0 = asfarray(x0).flatten()
     N = len(x0)
@@ -365,31 +435,36 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
     if fcalls[0] >= maxfun:
         warnflag = 1
+        msg = _status_message['maxfev']
         if disp:
-            print "Warning: Maximum number of function evaluations has "\
-                  "been exceeded."
+            print 'Warning: ' + msg
     elif iterations >= maxiter:
         warnflag = 2
+        msg = _status_message['maxiter']
         if disp:
-            print "Warning: Maximum number of iterations has been exceeded"
+            print 'Warning: ' + msg
     else:
+        msg = _status_message['success']
         if disp:
-            print "Optimization terminated successfully."
+            print msg
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % iterations
             print "         Function evaluations: %d" % fcalls[0]
 
 
     if full_output:
-        retlist = x, fval, iterations, fcalls[0], warnflag
+        info = {'fun': fval,
+                'nit': iterations,
+                'nfev': fcalls[0],
+                'status': warnflag,
+                'success': warnflag == 0,
+                'message': msg,
+                'solution': x}
         if retall:
-            retlist += (allvecs,)
+            info['allvecs'] = allvecs
+        return x, info
     else:
-        retlist = x
-        if retall:
-            retlist = (x, allvecs)
-
-    return retlist
+        return x
 
 
 def approx_fprime(xk, f, epsilon, *args):
@@ -439,7 +514,8 @@ def approx_fhess_p(x0, p, fprime, epsilon, *args):
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
               retall=0, callback=None):
-    """Minimize a function using the BFGS algorithm.
+    """
+    Minimize a function using the BFGS algorithm.
 
     Parameters
     ----------
@@ -494,6 +570,11 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     retall : bool
         Return a list of results at each iteration if True.
 
+    See also
+    --------
+    minimize: Interface to unconstrained minimization algorithms for
+        multivariate functions. See the 'BFGS' `method` in particular.
+
     Notes
     -----
     Optimize the function, f, whose gradient is given by fprime
@@ -505,6 +586,65 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     Wright, and Nocedal 'Numerical Optimization', 1999, pg. 198.
 
     """
+    opts = {'gtol': gtol,
+            'norm': norm,
+            'eps': epsilon,
+            'disp': disp,
+            'maxiter': maxiter}
+
+    # force full_output if retall=True to preserve backwards compatibility
+    if retall and not full_output:
+        out = _minimize_bfgs(f, x0, args, fprime, opts, full_output=True,
+                             retall=retall, callback=callback)
+    else:
+        out = _minimize_bfgs(f, x0, args, fprime, opts, full_output,
+                             retall, callback)
+
+    if full_output:
+        x, info = out
+        retlist = x, info['fun'], info['jac'], info['hess'], \
+                info['nfev'], info['njev'], info['status']
+        if retall:
+            retlist += (info['allvecs'], )
+        return retlist
+    else:
+        if retall:
+            x, info = out
+            return x, info['allvecs']
+        else:
+            return out
+
+def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, full_output=0,
+                   retall=0, callback=None):
+    """
+    Minimization of scalar function of one or more variables using the
+    BFGS algorithm.
+
+    Options for the BFGS algorithm are:
+        disp : bool
+            Set to True to print convergence messages.
+        maxiter : int
+            Maximum number of iterations to perform.
+        gtol : float
+            Gradient norm must be less than `gtol` before successful
+            termination.
+        norm : float
+            Order of norm (Inf is max, -Inf is min).
+        eps : float or ndarray
+            If `jac` is approximated, use this value for the step size.
+
+    This function is called by the `minimize` function with `method=BFGS`.
+    It is not supposed to be called directly.
+    """
+    f = fun
+    fprime = jac
+    # retrieve useful options
+    gtol    = options.get('gtol', 1e-5)
+    norm    = options.get('norm', Inf)
+    epsilon = options.get('eps', _epsilon)
+    maxiter = options.get('maxiter')
+    disp    = options.get('disp', True)
+
     x0 = asarray(x0).flatten()
     if x0.ndim == 0:
         x0.shape = (1,)
@@ -584,9 +724,9 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     if disp or full_output:
         fval = old_fval
     if warnflag == 2:
+        msg = _status_message['pr_loss']
         if disp:
-            print "Warning: Desired error not necessarily achieved" \
-                  "due to precision loss"
+            print "Warning: " + msg
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
             print "         Function evaluations: %d" % func_calls[0]
@@ -594,35 +734,43 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 
     elif k >= maxiter:
         warnflag = 1
+        msg = _status_message['maxiter']
         if disp:
-            print "Warning: Maximum number of iterations has been exceeded"
+            print "Warning: " + msg
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
             print "         Function evaluations: %d" % func_calls[0]
             print "         Gradient evaluations: %d" % grad_calls[0]
     else:
+        msg = _status_message['success']
         if disp:
-            print "Optimization terminated successfully."
+            print msg
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
             print "         Function evaluations: %d" % func_calls[0]
             print "         Gradient evaluations: %d" % grad_calls[0]
 
     if full_output:
-        retlist = xk, fval, gfk, Hk, func_calls[0], grad_calls[0], warnflag
+        info = {'fun': fval,
+                'jac': gfk,
+                'hess': Hk,
+                'nfev': func_calls[0],
+                'njev': grad_calls[0],
+                'status': warnflag,
+                'success': warnflag == 0,
+                'message': msg,
+                'solution': xk}
         if retall:
-            retlist += (allvecs,)
+            info['allvecs'] = allvecs
+        return xk, info
     else:
-        retlist = xk
-        if retall:
-            retlist = (xk, allvecs)
-
-    return retlist
+        return xk
 
 
 def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
               maxiter=None, full_output=0, disp=1, retall=0, callback=None):
-    """Minimize a function using a nonlinear conjugate gradient algorithm.
+    """
+    Minimize a function using a nonlinear conjugate gradient algorithm.
 
     Parameters
     ----------
@@ -675,6 +823,11 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     retall : bool
         Return a list of results at each iteration if True.
 
+    See also
+    --------
+    minimize: Interface to unconstrained minimization algorithms for
+        multivariate functions. See the 'CG' `method` in particular.
+
     Notes
     -----
     Optimize the function, f, whose gradient is given by fprime
@@ -683,6 +836,63 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     1999, pg. 120-122.
 
     """
+    opts = {'gtol': gtol,
+            'norm': norm,
+            'eps': epsilon,
+            'disp': disp,
+            'maxiter': maxiter}
+
+    # force full_output if retall=True to preserve backwards compatibility
+    if retall and not full_output:
+        out = _minimize_cg(f, x0, args, fprime, opts, full_output=True,
+                           retall=retall, callback=callback)
+    else:
+        out = _minimize_cg(f, x0, args, fprime, opts, full_output, retall,
+                           callback)
+    if full_output:
+        x, info = out
+        retlist = x, info['fun'], info['nfev'], info['njev'], info['status']
+        if retall:
+            retlist += (info['allvecs'], )
+        return retlist
+    else:
+        if retall:
+            x, info = out
+            return x, info['allvecs']
+        else:
+            return out
+
+def _minimize_cg(fun, x0, args=(), jac=None, options={}, full_output=0,
+                 retall=0, callback=None):
+    """
+    Minimization of scalar function of one or more variables using the
+    conjugate gradient algorithm.
+
+    Options for the conjugate gradient algorithm are:
+        disp : bool
+            Set to True to print convergence messages.
+        maxiter : int
+            Maximum number of iterations to perform.
+        gtol : float
+            Gradient norm must be less than `gtol` before successful
+            termination.
+        norm : float
+            Order of norm (Inf is max, -Inf is min).
+        eps : float or ndarray
+            If `jac` is approximated, use this value for the step size.
+
+    This function is called by the `minimize` function with `method=CG`. It
+    is not supposed to be called directly.
+    """
+    f = fun
+    fprime = jac
+    # retrieve useful options
+    gtol    = options.get('gtol', 1e-5)
+    norm    = options.get('norm', Inf)
+    epsilon = options.get('eps', _epsilon)
+    maxiter = options.get('maxiter')
+    disp    = options.get('disp', True)
+
     x0 = asarray(x0).flatten()
     if maxiter is None:
         maxiter = len(x0)*200
@@ -740,8 +950,9 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     if disp or full_output:
         fval = old_fval
     if warnflag == 2:
+        msg = _status_message['pr_loss']
         if disp:
-            print "Warning: Desired error not necessarily achieved due to precision loss"
+            print "Warning: " + msg
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
             print "         Function evaluations: %d" % func_calls[0]
@@ -749,15 +960,17 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
 
     elif k >= maxiter:
         warnflag = 1
+        msg = _status_message['maxiter']
         if disp:
-            print "Warning: Maximum number of iterations has been exceeded"
+            print "Warning: " + msg
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
             print "         Function evaluations: %d" % func_calls[0]
             print "         Gradient evaluations: %d" % grad_calls[0]
     else:
+        msg = _status_message['success']
         if disp:
-            print "Optimization terminated successfully."
+            print msg
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
             print "         Function evaluations: %d" % func_calls[0]
@@ -765,20 +978,25 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
 
 
     if full_output:
-        retlist = xk, fval, func_calls[0], grad_calls[0], warnflag
+        info = {'fun': fval,
+                'jac': gfk,
+                'nfev': func_calls[0],
+                'njev': grad_calls[0],
+                'status': warnflag,
+                'success': warnflag == 0,
+                'message': msg,
+                'solution': xk}
         if retall:
-            retlist += (allvecs,)
+            info['allvecs'] = allvecs
+        return xk, info
     else:
-        retlist = xk
-        if retall:
-            retlist = (xk, allvecs)
-
-    return retlist
+        return xk
 
 def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
              epsilon=_epsilon, maxiter=None, full_output=0, disp=1, retall=0,
              callback=None):
-    """Unconstrained minimization of a function using the Newton-CG method.
+    """
+    Unconstrained minimization of a function using the Newton-CG method.
 
 
     Parameters
@@ -837,6 +1055,11 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     retall : bool
         If True, return a list of results at each iteration.
 
+    See also
+    --------
+    minimize: Interface to unconstrained minimization algorithms for
+        multivariate functions. See the 'Newton-CG' `method` in particular.
+
     Notes
     -----
     Only one of `fhess_p` or `fhess` need to be given.  If `fhess`
@@ -862,6 +1085,68 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     Wright & Nocedal, 'Numerical Optimization', 1999, pg. 140.
 
     """
+    opts = {'xtol': avextol,
+            'epsilon': epsilon,
+            'maxiter': maxiter,
+            'disp': disp}
+
+    # force full_output if retall=True to preserve backwards compatibility
+    if retall and not full_output:
+        out = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p, opts,
+                                 full_output=True, retall=retall,
+                                 callback=callback)
+    else:
+        out = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p, opts,
+                                 full_output, retall, callback)
+
+    if full_output:
+        x, info = out
+        retlist = x, info['fun'], info['nfev'], info['njev'], \
+                info['nhev'], info['status']
+        if retall:
+            retlist += (info['allvecs'], )
+        return retlist
+    else:
+        if retall:
+            x, info = out
+            return x, info['allvecs']
+        else:
+            return out
+
+def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
+                       options={}, full_output=0, retall=0, callback=None):
+    """
+    Minimization of scalar function of one or more variables using the
+    Newton-CG algorithm.
+
+    Options for the Newton-CG algorithm are:
+        disp : bool
+            Set to True to print convergence messages.
+        xtol : float
+            Average relative error in solution `xopt` acceptable for
+            convergence.
+        maxiter : int
+            Maximum number of iterations to perform.
+        eps : float or ndarray
+            If `jac` is approximated, use this value for the step size.
+
+    This function is called by the `minimize` function with
+    `method=Newton-CG`. It is not supposed to be called directly.
+
+    Also note that the `jac` parameter (Jacobian) is required.
+    """
+    if jac == None:
+        raise ValueError('Jacobian is required for Newton-CG method')
+    f = fun
+    fprime = jac
+    fhess_p = hessp
+    fhess = hess
+    # retrieve useful options
+    avextol = options.get('xtol', 1e-5)
+    epsilon = options.get('eps', _epsilon)
+    maxiter = options.get('maxiter')
+    disp    = options.get('disp', True)
+
     x0 = asarray(x0).flatten()
     fcalls, f = wrap_function(f, args)
     gcalls, fprime = wrap_function(fprime, args)
@@ -938,8 +1223,9 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         fval = old_fval
     if k >= maxiter:
         warnflag = 1
+        msg = _status_message['maxiter']
         if disp:
-            print "Warning: Maximum number of iterations has been exceeded"
+            print "Warning: " + msg
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
             print "         Function evaluations: %d" % fcalls[0]
@@ -947,8 +1233,9 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             print "         Hessian evaluations: %d" % hcalls
     else:
         warnflag = 0
+        msg = _status_message['success']
         if disp:
-            print "Optimization terminated successfully."
+            print msg
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
             print "         Function evaluations: %d" % fcalls[0]
@@ -956,15 +1243,20 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             print "         Hessian evaluations: %d" % hcalls
 
     if full_output:
-        retlist = xk, fval, fcalls[0], gcalls[0], hcalls, warnflag
+        info = {'fun': fval,
+                'jac': gfk,
+                'nfev': fcalls[0],
+                'njev': gcalls[0],
+                'nhev': hcalls,
+                'status': warnflag,
+                'success': warnflag == 0,
+                'message': msg,
+                'solution': xk}
         if retall:
-            retlist += (allvecs,)
+            info['allvecs'] = allvecs
+        return xk, info
     else:
-        retlist = xk
-        if retall:
-            retlist = (xk, allvecs)
-
-    return retlist
+        return xk
 
 
 def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
@@ -1559,6 +1851,11 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     retall : bool
         If True, return a list of the solution at each iteration.
 
+    See also
+    --------
+    minimize: Interface to unconstrained minimization algorithms for
+        multivariate functions. See the 'Powell' `method` in particular.
+
     Notes
     -----
     Uses a modification of Powell's method to find the minimum of
@@ -1593,6 +1890,64 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     Numerical Recipes (any edition), Cambridge University Press
 
     """
+    opts = {'xtol': xtol,
+            'ftol': ftol,
+            'maxiter': maxiter,
+            'maxfev': maxfun,
+            'disp': disp,
+            'direc': direc}
+
+    # force full_output if retall=True to preserve backwards compatibility
+    if retall and not full_output:
+        out = _minimize_powell(func, x0, args, opts, full_output=True,
+                               retall=retall, callback=callback)
+    else:
+        out = _minimize_powell(func, x0, args, opts, full_output, retall,
+                               callback)
+    if full_output:
+        x, info = out
+        retlist = x, info['fun'], info['direc'], info['nit'], \
+                info['nfev'], info['status']
+        if retall:
+            retlist += (info['allvecs'], )
+        return retlist
+    else:
+        if retall:
+            x, info = out
+            return x, info['allvecs']
+        else:
+            return out
+
+def _minimize_powell(func, x0, args=(), options={}, full_output=0,
+                     retall=0, callback=None):
+    """
+    Minimization of scalar function of one or more variables using the
+    modified Powell algorithm.
+
+    Options for the Powell algorithm are:
+        disp : bool
+            Set to True to print convergence messages.
+        xtol : float
+            Relative error in solution `xopt` acceptable for convergence.
+        ftol : float
+            Relative error in ``fun(xopt)`` acceptable for convergence.
+        maxiter : int
+            Maximum number of iterations to perform.
+        maxfev : int
+            Maximum number of function evaluations to make.
+        direc : ndarray
+            Initial set of direction vectors for the Powell method.
+
+    This function is called by the `minimize` function with
+    `method=Powell`. It is not supposed to be called directly.
+    """
+    # retrieve useful options
+    xtol    = options.get('xtol', 1e-4)
+    ftol    = options.get('ftol', 1e-4)
+    maxiter = options.get('maxiter')
+    maxfun  = options.get('maxfev')
+    disp    = options.get('disp', True)
+    direc   = options.get('direc')
     # we need to use a mutable object here that we can update in the
     # wrapper function
     fcalls, func = wrap_function(func, args)
@@ -1659,16 +2014,18 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     warnflag = 0
     if fcalls[0] >= maxfun:
         warnflag = 1
+        msg = _status_message['maxfev']
         if disp:
-            print "Warning: Maximum number of function evaluations has "\
-                  "been exceeded."
+            print "Warning: " + msg
     elif iter >= maxiter:
         warnflag = 2
+        msg = _status_message['maxiter']
         if disp:
-            print "Warning: Maximum number of iterations has been exceeded"
+            print "Warning: " + msg
     else:
+        msg = _status_message['success']
         if disp:
-            print "Optimization terminated successfully."
+            print msg
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % iter
             print "         Function evaluations: %d" % fcalls[0]
@@ -1676,17 +2033,19 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     x = squeeze(x)
 
     if full_output:
-        retlist = x, fval, direc, iter, fcalls[0], warnflag
+        info = {'fun': fval,
+                'direc': direc,
+                'nit': iter,
+                'nfev': fcalls[0],
+                'status': warnflag,
+                'success': warnflag == 0,
+                'message': msg,
+                'solution': x}
         if retall:
-            retlist += (allvecs,)
+            info['allvecs'] = allvecs
+        return x, info
     else:
-        retlist = x
-        if retall:
-            retlist = (x, allvecs)
-
-    return retlist
-
-
+        return x
 
 
 def _endprint(x, flag, fval, maxfun, xtol, disp):
