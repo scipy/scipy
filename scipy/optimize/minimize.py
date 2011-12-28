@@ -1,5 +1,5 @@
 """
-Interfaces to minimization algorithms.
+Unified interfaces to minimization algorithms.
 
 Functions
 ---------
@@ -7,9 +7,7 @@ Functions
 """
 
 
-__all__ = ['minimize', '_minimize_neldermead', '_minimize_powell',
-           '_minimize_cg', '_minimize_bfgs', '_minimize_newtoncg',
-           '_minimize_anneal']
+__all__ = ['minimize', 'show_minimize_options']
 
 
 from warnings import warn
@@ -57,10 +55,7 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
                 Maximum number of iterations to perform.
             disp : bool
                 Set to True to print convergence messages.
-        For method-specific options, refer to the documentation of
-        respective underlying functions `_minimize_METHOD` (where METHOD is
-        one of 'neldermead', 'powell', 'cg', 'bfgs', 'newtoncg' or
-        'anneal').
+        For method-specific options, see `show_minimize_options`.
     full_output : bool, optional
         If True, return optional outputs.  Default is False.
     callback : callable, optional
@@ -108,15 +103,12 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
     Notes
     -----
     This section describes the available solvers that can be selected by the
-    'method' parameter.  Respective solver options are also listed here.
+    'method' parameter.
 
     Method *Nelder-Mead* uses the Simplex algorithm [1]_, [2]_. This
     algorithm has been successful in many applications but other algorithms
     using the first and/or second derivatives information might be preferred
     for their better performances and robustness in general.
-
-    Relevant `options` are: `xtol`, `ftol`, `maxiter`, `maxfev`, `disp`.
-
 
     Method *Powell* is a modification of Powell's method [3]_, [4]_ which
     is a conjugate direction method. It performs sequential one-dimensional
@@ -125,39 +117,23 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
     minimization loop. The function need not be differentiable, and no
     derivatives are taken.
 
-    Relevant `options` are: `xtol`, `ftol`, `maxiter`, `maxfev`, `disp`.
-
-
     Method *CG* uses a nonlinear conjugate gradient algorithm by Polak and
     Ribiere, a variant of the Fletcher-Reeves method described in [5]_ pp.
     120-122. Only the first derivatives are used.
-
-    Relevant `options` are: `gtol`, `norm`, `maxiter`, `eps`, `disp`.
-
 
     Method *BFGS* uses the quasi-Newton method of Broyden, Fletcher,
     Goldfarb, and Shanno (BFGS) [5]_ pp. 136. It uses the first derivatives
     only. BFGS has proven good performance even for non-smooth
     optimizations
 
-    Relevant `options` are: `gtol`, `norm`, `maxiter`, `eps`, `disp`.
-
-
     Method *Newton-CG* uses a Newton-CG algorithm [5]_ pp. 168 (also known
     as the truncated Newton method). It uses a CG method to the compute the
     search direction. See also `fmin_tnc` for a box-constrained
     minimization with a similar algorithm.
 
-    Relevant `options` are: `xtol`, `maxiter`, `eps`, `disp`.
-
-
     Method *Anneal* uses simulated annealing, which is a probabilistic
     metaheuristic algorithm for global optimization. It uses no derivative
     information from the function being optimized.
-
-    Relevant `options` are: `schedule`, `T0`, `Tf`, `maxfev`, `maxaccept`,
-    `maxiter`, `boltzmann`, `learn_rate`, `ftol`, `quench`, `m`, `n`,
-    `lower`, `upper`, `dwell`.
 
     References
     ----------
@@ -212,6 +188,7 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
      [ 0.02396251  0.04794055  0.09631614  0.19092151  0.38165151]
      [ 0.04750988  0.09502834  0.19092151  0.38341252  0.7664427 ]
      [ 0.09495377  0.18996269  0.38165151  0.7664427   1.53713523]]
+
     """
     if method.lower() == 'nelder-mead':
         return _minimize_neldermead(fun, x0, args, options, full_output,
@@ -238,3 +215,102 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
         return _minimize_anneal(fun, x0, args, options, full_output)
     else:
         raise ValueError('Unknown solver %s' % method)
+
+
+def show_minimize_options(method=None):
+    """Show documentation for additional options of unconstrained minimisers.
+
+    These are method-specific options that can be supplied to `minimize` in the
+    ``options`` dict.
+
+    Parameters
+    ----------
+    method : str, optional
+        If not given, shows all methods.  Otherwise, show only the options for
+        the specified method.  Valid values are: 'BFGS', 'Newton-CG',
+        'Nelder-Mead', 'Powell', 'CG', 'Anneal'.
+
+    Notes
+    -----
+    * BFGS options:
+        gtol : float
+            Gradient norm must be less than `gtol` before successful
+            termination.
+        norm : float
+            Order of norm (Inf is max, -Inf is min).
+        eps : float or ndarray
+            If `jac` is approximated, use this value for the step size.
+
+    * Nelder-Mead options:
+        xtol : float
+            Relative error in solution `xopt` acceptable for convergence.
+        ftol : float
+            Relative error in ``fun(xopt)`` acceptable for convergence.
+        maxfev : int
+            Maximum number of function evaluations to make.
+
+    * Newton-CG options:
+        xtol : float
+            Average relative error in solution `xopt` acceptable for
+            convergence.
+        eps : float or ndarray
+            If `jac` is approximated, use this value for the step size.
+
+    * CG options:
+        gtol : float
+            Gradient norm must be less than `gtol` before successful
+            termination.
+        norm : float
+            Order of norm (Inf is max, -Inf is min).
+        eps : float or ndarray
+            If `jac` is approximated, use this value for the step size.
+
+    * Powell options:
+        xtol : float
+            Relative error in solution `xopt` acceptable for convergence.
+        ftol : float
+            Relative error in ``fun(xopt)`` acceptable for convergence.
+        maxfev : int
+            Maximum number of function evaluations to make.
+        direc : ndarray
+            Initial set of direction vectors for the Powell method.
+
+    * Anneal options:
+        schedule : str
+            Annealing schedule to use. One of: 'fast', 'cauchy' or
+            'boltzmann'.
+        T0 : float
+            Initial Temperature (estimated as 1.2 times the largest
+            cost-function deviation over random points in the range).
+        Tf : float
+            Final goal temperature.
+        maxfev : int
+            Maximum number of function evaluations to make.
+        maxaccept : int
+            Maximum changes to accept.
+        boltzmann : float
+            Boltzmann constant in acceptance test (increase for less
+            stringent test at each temperature).
+        learn_rate : float
+            Scale constant for adjusting guesses.
+        ftol : float
+            Relative error in ``fun(x)`` acceptable for convergence.
+        quench, m, n : float
+            Parameters to alter fast_sa schedule.
+        lower, upper : float or ndarray
+            Lower and upper bounds on `x`.
+        dwell : int
+            The number of times to search the space at each temperature.
+
+    """
+    if method is None:
+        notes_header = "Notes\n    -----"
+        sections = show_minimize_options.__doc__.split(notes_header)[1:]
+    else:
+        sections = show_minimize_options.__doc__.split('*')[1:]
+        sections = [s.strip() for s in sections]
+        sections = [s for s in sections if s.lower().startswith(method.lower())]
+
+    print '\n'.join(sections)
+
+    return

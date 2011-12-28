@@ -14,6 +14,8 @@ General-purpose
 .. autosummary::
    :toctree: generated/
 
+   minimize - Unified interface for unconstrained solvers
+   show_minimize_options - Show method-specific options for `minimize`
    fmin - Nelder-Mead Simplex algorithm
    fmin_powell - Powell's (modified) level set method
    fmin_cg - Non-linear (Polak-Ribiere) conjugate gradient algorithm
