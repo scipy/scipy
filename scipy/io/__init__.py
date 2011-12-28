@@ -80,7 +80,7 @@ Netcdf (:mod:`scipy.io.netcdf`)
 
 """
 # matfile read and write
-from matlab import loadmat, savemat, byteordercodes
+from matlab import loadmat, savemat, whosmat, byteordercodes
 
 # netCDF file support
 from netcdf import netcdf_file, netcdf_variable

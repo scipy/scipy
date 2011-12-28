@@ -15,7 +15,7 @@ from miobase import get_matfile_version, docfiller
 from mio4 import MatFile4Reader, MatFile4Writer
 from mio5 import MatFile5Reader, MatFile5Writer
 
-__all__ = ['find_mat_file', 'mat_reader_factory', 'loadmat', 'savemat']
+__all__ = ['find_mat_file', 'mat_reader_factory', 'loadmat', 'savemat','whosmat']
 
 @docfiller
 def find_mat_file(file_name, appendmat=True):
@@ -269,3 +269,33 @@ def savemat(file_name, mdict,
     MW.put_variables(mdict)
     if file_is_string:
         file_stream.close()
+@docfiller
+def whosmat(file_name, appendmat=True, **kwargs):
+    """
+    List variables inside a MATLAB file
+
+    Parameters
+    ----------
+    %(file_arg)s
+    %(append_arg)s
+
+    Returns
+    -------
+    variables : list
+       list with variable names
+
+    Notes
+    -----
+    v4 (Level 1.0), v6 and v7 to 7.2 matfiles are supported.
+
+    You will need an HDF5 python library to read matlab 7.3 format mat
+    files.  Because scipy does not supply one, we do not implement the
+    HDF5 / 7.3 interface here.
+
+    """
+    ML = mat_reader_factory(file_name,**kwargs)
+    variables = ML.list_variables()
+    if isinstance(file_name, basestring):
+        ML.mat_stream.close()
+    return variables
+
