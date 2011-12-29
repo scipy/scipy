@@ -38,6 +38,12 @@ added to easily construct diagonal and block-diagonal sparse matrices
 respectively.
 
 
+Pascal matrix function
+----------------------
+
+A function for creating Pascal matrices, ``scipy.linalg.pascal``, was added. 
+
+
 Deprecated features
 ===================
 
