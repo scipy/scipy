@@ -63,16 +63,20 @@ class gaussian_kde(object):
         Integrate two kernel density estimates multiplied together.
     kde.resample(size=None) : ndarray
         Randomly sample a dataset from the estimated pdf.
-    kde.covariance_factor() : float
-        Computes the coefficient that multiplies the data covariance matrix to
-        obtain the kernel covariance matrix.  Set this method to
-        ``kde.scotts_factor`` or ``kde.silverman_factor`` (or subclass to
-        provide your own).  The default is ``scotts_factor``.
+    kde.set_bandwidth(bw_method='scott') : None
+        Computes the bandwidth, i.e. the coefficient that multiplies the data
+        covariance matrix to obtain the kernel covariance matrix.
 
     Parameters
     ----------
-    dataset : (# of dims, # of data)-array
-        Datapoints to estimate from.
+    dataset : array_like
+        Datapoints to estimate from. In case of univariate data this is a 1-D
+        array, otherwise a 2-D array with shape (# of dims, # of data).
+    bw_method : str or callable, optional
+        The method used to calculate the estimator bandwidth.  This can be
+        'scott', 'silverman' or a callable.  If a callable, it should take a
+        `gaussian_kde` instance as only parameter and return a scalar.
+        See Notes for more details.
 
     Notes
     -----
@@ -80,17 +84,14 @@ class gaussian_kde(object):
     (much more so than the actual shape of the kernel).  Bandwidth selection
     can be done by a "rule of thumb", by cross-validation, by "plug-in
     methods" or by other means; see [3]_, [4]_ for reviews.  `gaussian_kde`
-    uses a rule of thumb, the default is Scott's Rule.  To instead select
-    Silverman's Rule, use:
+    uses a rule of thumb, the default is Scott's Rule.
 
-        kde.covariance_factor = silverman_factor
-        kde._compute_covariance()
+    Scott's Rule [1]_, implemented as `scotts_factor`, is::
 
-    Scott's Rule [1]_, implemented as `scotts_factor`, is:
+        n**(-1./(d+4)),
 
-        n**(-1./(d+4)).
-
-    Silverman's Rule [2]_, implemented as `silverman_factor`, is:
+    with ``n`` the number of data points and ``d`` the number of dimensions.
+    Silverman's Rule [2]_, implemented as `silverman_factor`, is::
 
         n * (d + 2) / 4.)**(-1. / (d + 4)).
 
@@ -144,10 +145,10 @@ class gaussian_kde(object):
     >>> plt.show()
 
     """
-    def __init__(self, dataset):
+    def __init__(self, dataset, bw_method='scott'):
         self.dataset = atleast_2d(dataset)
         self.d, self.n = self.dataset.shape
-        self._compute_covariance()
+        self.set_bandwidth(bw_method=bw_method)
 
     def evaluate(self, points):
         """Evaluate the estimated pdf on a set of points.
@@ -382,22 +383,31 @@ class gaussian_kde(object):
 
         return means + norm
 
-
     def scotts_factor(self):
         return power(self.n, -1./(self.d+4))
 
     def silverman_factor(self):
         return power(self.n*(self.d+2.0)/4.0, -1./(self.d+4))
 
-    # This can be replaced with silverman_factor if one wants to use Silverman's
-    # rule for choosing the bandwidth of the kernels.
-    covariance_factor = scotts_factor
+    def set_bandwidth(self, bw_method='scott'):
+        """Compute the estimator bandwidth with given method."""
+        if bw_method == 'scott':
+            self.factor = self.scotts_factor()
+        elif bw_method == 'silverman':
+            self.factor = self.silverman_factor()
+        elif callable(bw_method):
+            self.factor = bw_method(self)
+        else:
+            msg = "`bw_method` should be 'scott', 'silverman', or a callable."
+            raise ValueError(msg)
+
+        self._bw_method = bw_method
+        self._compute_covariance()
 
     def _compute_covariance(self):
         """Computes the covariance matrix for each Gaussian kernel using
-        covariance_factor
+        self.factor.
         """
-        self.factor = self.covariance_factor()
         self.covariance = atleast_2d(np.cov(self.dataset, rowvar=1, bias=False) *
             self.factor * self.factor)
         self.inv_cov = linalg.inv(self.covariance)
