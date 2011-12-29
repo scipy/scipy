@@ -1,9 +1,7 @@
-
-
-
 from scipy import stats
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_
+
 
 def test_kde_1d():
     #some basic tests comparing to normal distribution
@@ -34,3 +32,21 @@ def test_kde_1d():
                         (kdepdf**2).sum()*intervall, decimal=2)
     assert_almost_equal(gkde.integrate_gaussian(xnmean, xnstd**2),
                         (kdepdf*normpdf).sum()*intervall, decimal=2)
+
+def test_kde_bandwidth_method():
+    def scotts_factor(kde_obj):
+        """Same as default, just check that it works."""
+        return np.power(kde_obj.n, -1./(kde_obj.d+4))
+
+    np.random.seed(8765678)
+    n_basesample = 50
+    xn = np.random.randn(n_basesample)
+
+    gkde = stats.gaussian_kde(xn)
+    gkde2 = stats.gaussian_kde(xn, bw_method=scotts_factor)
+
+    xs = np.linspace(-7,7,51)
+    kdepdf = gkde.evaluate(xs)
+    kdepdf2 = gkde2.evaluate(xs)
+    assert_almost_equal(gkde(xs), gkde2(xs))
+
