@@ -22,11 +22,36 @@
 subroutine <prefix>rotg(a,b,c,s)
   ! Computes the parameters for a Givens rotation.
   !
-  ! Given the Cartesian coordinates (a, b) of a point p, these routines return
-  ! the parameters a, b, c, and s associated with the Givens rotation that zeros
-  ! the y-coordinate of the point.
+  ! Given the Cartesian coordinates (a, b) of a point, these routines return
+  ! the parameters c, s, r, and z associated with the Givens rotation. The
+  !  parameters c and s define a unitary matrix such that:
   !
-  ! FIXME: parameters a, b are not returned.
+  !                   ( c   s ) ( a )     ( r )
+  !                   (       ) (   )  =  (   )
+  !                   (-s   c ) ( b )  =  ( 0 )
+  !
+  ! The parameter z is defined such that if |a| > |b|, z is s; otherwise if c
+  ! is not 0 z is 1/c; otherwise z is 1.
+  !
+  !
+  ! Parameters
+  ! ----------
+  ! a : float or complex number
+  !    Provides the x-coordinate for the point.
+  !
+  ! b : float or complex number
+  !    Provides the y-coordinate.
+  !
+  ! Returns
+  ! -------
+  ! c, s :
+  !     Parameter c associated with the Givens rotation.
+  !
+  ! Notes
+  ! -----
+  !   Unlike the FORTRAN implementation, this function will not return
+  !   parameters r and z, as these can easily be computed from the
+  !   returned parameters.
   !
   callprotoargument <ctype>*,<ctype>*,<ctype>*,<ctype>*
 

@@ -409,6 +409,19 @@ class TestEntropy(TestCase):
         assert_(0.0 == eself)
         assert_(edouble >= 0.0)
 
+    def test_entropy_base(self):
+        pk = np.ones(16, float)
+        S = stats.entropy(pk, base=2.)
+        assert_(abs(S - 4.) < 1.e-5)
+
+        qk = np.ones(16, float)
+        qk[:8] = 2.
+        S = stats.entropy(pk, qk)
+        S2 = stats.entropy(pk, qk, base=2.)
+        assert_(abs(S/S2 - np.log(2.)) < 1.e-5)
+
+
+
 def TestArgsreduce():
     a = array([1,3,2,1,2,3,3])
     b,c = argsreduce(a > 1, a, 2)
@@ -731,7 +744,124 @@ def test_regression_ticket_1421():
     assert_('pdf(x, mu, loc=0, scale=1)' not in stats.poisson.__doc__)
     assert_('pmf(x,' in stats.poisson.__doc__)
 
+def test_nan_arguments_ticket_835():
+    assert_(np.isnan(stats.t.logcdf(np.nan)))
+    assert_(np.isnan(stats.t.cdf(np.nan)))
+    assert_(np.isnan(stats.t.logsf(np.nan)))
+    assert_(np.isnan(stats.t.sf(np.nan)))
+    assert_(np.isnan(stats.t.pdf(np.nan)))
+    assert_(np.isnan(stats.t.logpdf(np.nan)))
+    assert_(np.isnan(stats.t.ppf(np.nan)))
+    assert_(np.isnan(stats.t.isf(np.nan)))
+
+    assert_(np.isnan(stats.bernoulli.logcdf(np.nan, 0.5)))
+    assert_(np.isnan(stats.bernoulli.cdf(np.nan, 0.5)))
+    assert_(np.isnan(stats.bernoulli.logsf(np.nan, 0.5)))
+    assert_(np.isnan(stats.bernoulli.sf(np.nan, 0.5)))
+    assert_(np.isnan(stats.bernoulli.pmf(np.nan, 0.5)))
+    assert_(np.isnan(stats.bernoulli.logpmf(np.nan, 0.5)))
+    assert_(np.isnan(stats.bernoulli.ppf(np.nan, 0.5)))
+    assert_(np.isnan(stats.bernoulli.isf(np.nan, 0.5)))
+
+
+
+def test_frozen_fit_ticket_1536():
+    np.random.seed(5678)
+    true = np.array([0.25, 0., 0.5])
+    x = stats.lognorm.rvs(true[0], true[1], true[2], size=100)
+
+    olderr = np.seterr(divide='ignore')
+    try:
+        params = np.array(stats.lognorm.fit(x, floc=0.))
+    finally:
+        np.seterr(**olderr)
+
+    assert_almost_equal(params, true, decimal=2)
+
+    params = np.array(stats.lognorm.fit(x, fscale=0.5, loc=0))
+    assert_almost_equal(params, true, decimal=2)
+
+    params = np.array(stats.lognorm.fit(x, f0=0.25, loc=0))
+    assert_almost_equal(params, true, decimal=2)
+
+    params = np.array(stats.lognorm.fit(x, f0=0.25, floc=0))
+    assert_almost_equal(params, true, decimal=2)
+
+    np.random.seed(5678)
+    loc = 1
+    floc = 0.9
+    x = stats.norm.rvs(loc, 2., size=100)
+    params = np.array(stats.norm.fit(x, floc=floc))
+    expected = np.array([floc, np.sqrt(((x-floc)**2).mean())])
+    assert_almost_equal(params, expected, decimal=4)
+
+def test_regression_ticket_1530():
+    """Check the starting value works for Cauchy distribution fit."""
+    np.random.seed(654321)
+    rvs = stats.cauchy.rvs(size=100)
+    params = stats.cauchy.fit(rvs)
+    expected = (0.045, 1.142)
+    assert_almost_equal(params, expected, decimal=1)
+
+
+def test_tukeylambda_stats_ticket_1545():
+    """Some test for the variance and kurtosis of the Tukey Lambda distr."""
+
+    # See test_tukeylamdba_stats.py for more tests.
+
+    mv = stats.tukeylambda.stats(0, moments='mvsk')
+    # Known exact values:
+    expected = [0, np.pi**2/3, 0, 1.2]
+    assert_almost_equal(mv, expected, decimal=10)
+
+    mv = stats.tukeylambda.stats(3.13, moments='mvsk')
+    # 'expected' computed with mpmath.
+    expected = [0, 0.0269220858861465102, 0, -0.898062386219224104]
+    assert_almost_equal(mv, expected, decimal=10)
+
+    mv = stats.tukeylambda.stats(0.14, moments='mvsk')
+    # 'expected' computed with mpmath.
+    expected = [0, 2.11029702221450250, 0, -0.02708377353223019456]
+    assert_almost_equal(mv, expected, decimal=10)
+
+
+def test_powerlaw_stats():
+    """Test the powerlaw stats function.
+    
+    This unit test is also a regression test for ticket 1548.
+    
+    The exact values are:
+    mean:
+        mu = a / (a + 1)
+    variance:
+        sigma**2 = a / ((a + 2) * (a + 1) ** 2)
+    skewness:
+        One formula (see http://en.wikipedia.org/wiki/Skewness) is
+            gamma_1 = (E[X**3] - 3*mu*E[X**2] + 2*mu**3) / sigma**3
+        A short calculation shows that E[X**k] is a / (a + k), so gamma_1
+        can be implemented as
+            n = a/(a+3) - 3*(a/(a+1))*a/(a+2) + 2*(a/(a+1))**3
+            d = sqrt(a/((a+2)*(a+1)**2)) ** 3
+            gamma_1 = n/d
+        Either by simplifying, or by a direct calculation of mu_3 / sigma**3,
+        one gets the more concise formula:
+            gamma_1 = -2.0 * ((a - 1) / (a + 3)) * sqrt((a + 2) / a)
+    kurtosis: (See http://en.wikipedia.org/wiki/Kurtosis)
+        The excess kurtosis is
+            gamma_2 = mu_4 / sigma**4 - 3
+        A bit of calculus and algebra (sympy helps) shows that
+            mu_4 = 3*a*(3*a**2 - a + 2) / ((a+1)**4 * (a+2) * (a+3) * (a+4))
+        so
+            gamma_2 = 3*(3*a**2 - a + 2) * (a+2) / (a*(a+3)*(a+4)) - 3
+        which can be rearranged to
+            gamma_2 = 6 * (a**3 - a**2 - 6*a + 2) / (a*(a+3)*(a+4))
+    """
+    cases = [(1.0, (0.5, 1./12 , 0.0, -1.2)),
+             (2.0, (2./3, 2./36, -0.56568542494924734, -0.6))]
+    for a, exact_mvsk in cases: 
+        mvsk = stats.powerlaw.stats(a, moments="mvsk")
+        assert_array_almost_equal(mvsk, exact_mvsk)
+
 
 if __name__ == "__main__":
     run_module_suite()
-

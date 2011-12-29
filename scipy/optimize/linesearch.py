@@ -141,7 +141,8 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     dsave = np.zeros((13,), float)
     task = asbytes('START')
 
-    while 1:
+    maxiter=30
+    for i in xrange(maxiter):
         stp, phi1, derphi1, task = minpack2.dcsrch(alpha1, phi1, derphi1,
                                                    c1, c2, xtol, task,
                                                    amin, amax, isave, dsave)
@@ -151,6 +152,9 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
             derphi1 = derphi(stp)
         else:
             break
+    else:
+        # maxiter reached, the line search did not converge
+        stp=None
 
     if task[:5] == asbytes('ERROR') or task[:4] == asbytes('WARN'):
         stp = None  # failed
@@ -328,7 +332,7 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
 
     i = 1
     maxiter = 10
-    while 1:         # bracketing phase
+    for i in xrange(maxiter):
         if alpha1 == 0:
             break
         if (phi_a1 > phi0 + c1*alpha1*derphi0) or \
@@ -361,12 +365,11 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
         phi_a1 = phi(alpha1)
         derphi_a0 = derphi_a1
 
-        # stopping test if lower function not found
-        if i > maxiter:
-            alpha_star = alpha1
-            phi_star = phi_a1
-            derphi_star = None
-            break
+    else:
+        # stopping test maxiter reached
+        alpha_star = alpha1
+        phi_star = phi_a1
+        derphi_star = None
 
     return alpha_star, phi_star, phi0, derphi_star
 

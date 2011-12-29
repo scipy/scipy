@@ -41,11 +41,7 @@ def _make_complex_eigvecs(w, vin, dtype):
         conj(v[:,i], v[:,i+1])
     return v
 
-def _geneig(a1, b, left, right, overwrite_a, overwrite_b):
-    b1 = asarray(b)
-    overwrite_b = overwrite_b or _datacopied(b1, b)
-    if len(b1.shape) != 2 or b1.shape[0] != b1.shape[1]:
-        raise ValueError('expected square matrix')
+def _geneig(a1, b1, left, right, overwrite_a, overwrite_b):
     ggev, = get_lapack_funcs(('ggev',), (a1, b1))
     cvl, cvr = left, right
     if ggev.module_name[:7] == 'clapack':
@@ -137,10 +133,13 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False, overwrite_b=False)
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     if b is not None:
-        b = asarray_chkfinite(b)
-        if b.shape != a1.shape:
+        b1 = asarray_chkfinite(b)
+        overwrite_b = overwrite_b or _datacopied(b1, b)
+        if len(b1.shape) != 2 or b1.shape[0] != b1.shape[1]:
+            raise ValueError('expected square matrix')
+        if b1.shape != a1.shape:
             raise ValueError('a and b must have the same shape')
-        return _geneig(a1, b, left, right, overwrite_a, overwrite_b)
+        return _geneig(a1, b1, left, right, overwrite_a, overwrite_b)
     geev, = get_lapack_funcs(('geev',), (a1,))
     compute_vl, compute_vr = left, right
     if geev.module_name[:7] == 'flapack':
@@ -391,13 +390,15 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
         a v[:,i] = w[i] v[:,i]
         v.H v    = identity
 
-    The matrix a is stored in ab either in lower diagonal or upper
+    The matrix a is stored in a_band either in lower diagonal or upper
     diagonal ordered form:
 
-        ab[u + i - j, j] == a[i,j]        (if upper form; i <= j)
-        ab[    i - j, j] == a[i,j]        (if lower form; i >= j)
+        a_band[u + i - j, j] == a[i,j]        (if upper form; i <= j)
+        a_band[    i - j, j] == a[i,j]        (if lower form; i >= j)
 
-    Example of ab (shape of a is (6,6), u=2)::
+    where u is the number of bands above the diagonal.
+
+    Example of a_band (shape of a is (6,6), u=2)::
 
         upper form:
         *   *   a02 a13 a24 a35
@@ -413,8 +414,8 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
 
     Parameters
     ----------
-    a_band : array, shape (M, u+1)
-        Banded matrix whose eigenvalues to calculate
+    a_band : array, shape (u+1, M)
+        The bands of the M by M matrix a.
     lower : boolean
         Is the matrix in the lower form. (Default is upper form)
     eigvals_only : boolean
@@ -638,13 +639,15 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
         a v[:,i] = w[i] v[:,i]
         v.H v    = identity
 
-    The matrix a is stored in ab either in lower diagonal or upper
+    The matrix a is stored in a_band either in lower diagonal or upper
     diagonal ordered form:
 
-        ab[u + i - j, j] == a[i,j]        (if upper form; i <= j)
-        ab[    i - j, j] == a[i,j]        (if lower form; i >= j)
+        a_band[u + i - j, j] == a[i,j]        (if upper form; i <= j)
+        a_band[    i - j, j] == a[i,j]        (if lower form; i >= j)
 
-    Example of ab (shape of a is (6,6), u=2)::
+    where u is the number of bands above the diagonal.
+
+    Example of a_band (shape of a is (6,6), u=2)::
 
         upper form:
         *   *   a02 a13 a24 a35
@@ -660,8 +663,8 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
 
     Parameters
     ----------
-    a_band : array, shape (M, u+1)
-        Banded matrix whose eigenvalues to calculate
+    a_band : array, shape (u+1, M)
+        The bands of the M by M matrix a.
     lower : boolean
         Is the matrix in the lower form. (Default is upper form)
     overwrite_a_band:

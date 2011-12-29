@@ -5,9 +5,10 @@ from numpy.testing import TestCase, run_module_suite, assert_raises, \
     assert_equal, assert_array_equal, assert_array_almost_equal, \
     assert_allclose
 
+from scipy.misc import comb
 from scipy.linalg import toeplitz, hankel, circulant, hadamard, leslie, \
                             companion, tri, triu, tril, kron, block_diag, \
-                            hilbert, invhilbert
+                            hilbert, invhilbert, pascal
 from numpy.linalg import cond
 
 
@@ -436,6 +437,48 @@ class TestInvHilbert(TestCase):
             # so take that into account in the test
             c = cond(a)
             assert_allclose(a.dot(b), eye(n), atol=1e-15*c, rtol=1e-15*c)
+
+
+class TestPascal(TestCase):
+
+    cases = [
+        (1, array([[1]]), array([[1]])),
+        (2, array([[1, 1],
+                   [1, 2]]),
+            array([[1, 0],
+                   [1, 1]])),
+        (3, array([[1, 1, 1],
+                   [1, 2, 3],
+                   [1, 3, 6]]),
+            array([[1, 0, 0],
+                   [1, 1, 0],
+                   [1, 2, 1]])),
+        (4, array([[1,  1,  1,  1],
+                   [1,  2,  3,  4],
+                   [1,  3,  6, 10],
+                   [1,  4, 10, 20]]),
+            array([[1, 0, 0, 0],
+                   [1, 1, 0, 0],
+                   [1, 2, 1, 0],
+                   [1, 3, 3, 1]])),
+    ]
+
+    def check_case(self, n, sym, low):
+        assert_array_equal(pascal(n), sym)
+        assert_array_equal(pascal(n, kind='lower'), low)
+        assert_array_equal(pascal(n, kind='upper'), low.T)
+        assert_array_almost_equal(pascal(n, exact=False), sym)
+        assert_array_almost_equal(pascal(n, exact=False, kind='lower'), low)
+        assert_array_almost_equal(pascal(n, exact=False, kind='upper'), low.T)
+
+    def test_cases(self):
+        for n, sym, low in self.cases:
+            self.check_case(n, sym, low)
+
+    def test_big(self):
+        p = pascal(50)
+        assert_equal(p[-1, -1], comb(98, 49, exact=True))
+
 
 if __name__ == "__main__":
     run_module_suite()

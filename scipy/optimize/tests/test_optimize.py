@@ -125,6 +125,17 @@ class TestOptimize(TestCase):
                             [0, -5.24885582e-01,   4.87530347e-01]],
                            atol=1e-14, rtol=1e-7), self.trace[6:8])
 
+    def test_bfgs_nan(self):
+        """Test corner case where nan is fed to optimizer.  See #1542."""
+        func = lambda x: x
+        fprime = lambda x: np.ones_like(x)
+        x0 = [np.nan]
+        olderr = np.seterr(over='ignore')
+        try:
+            x = optimize.fmin_bfgs(func, x0, fprime, disp=False)
+            assert_(np.isnan(func(x)))
+        finally:
+            np.seterr(**olderr)
 
     def test_bfgs_infinite(self, use_wrapper=False):
         """Test corner case where -Inf is the minimum.  See #1494."""

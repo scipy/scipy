@@ -169,7 +169,7 @@ cdef class VarReader5:
     * mat_dtype (bool)
     * squeeze_me (bool)
     """
-    def __new__(self, preader):
+    def __cinit__(self, preader):
         byte_order = preader.byte_order
         self.is_swapped = byte_order == swapped_code
         if self.is_swapped:

@@ -79,7 +79,7 @@ class TestUnivariateSpline(TestCase):
              1.00000000e+12]
         spl = UnivariateSpline(x=x, y=y, w=w, s=None)
         desired = array([ 0.35100374,  0.51715855,  0.87789547,  0.98719344])
-        assert_allclose(spl([0.1, 0.5, 0.9, 0.99]), desired, atol=1e-7)
+        assert_allclose(spl([0.1, 0.5, 0.9, 0.99]), desired, atol=5e-4)
 
 
 class TestLSQBivariateSpline(TestCase):

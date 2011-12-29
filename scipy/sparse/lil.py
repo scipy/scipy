@@ -12,6 +12,10 @@ import numpy as np
 from base import spmatrix, isspmatrix
 from sputils import getdtype, isshape, issequence, isscalarlike
 
+from warnings import warn
+from base import SparseEfficiencyWarning
+
+
 class lil_matrix(spmatrix):
     """Row-based linked list sparse matrix
 
@@ -220,6 +224,11 @@ class lil_matrix(spmatrix):
         except (AssertionError, TypeError):
             raise IndexError('invalid index')
 
+        if not np.isscalar(i) and np.isscalar(j):
+            warn('Indexing into a lil_matrix with multiple indices is slow. '
+                 'Pre-converting to CSC or CSR beforehand is more efficient.',
+                 SparseEfficiencyWarning)
+
         if np.isscalar(i):
             if np.isscalar(j):
                 return self._get1(i, j)
@@ -359,16 +368,16 @@ class lil_matrix(spmatrix):
         else:
             new = self.copy()
             # Multiply this scalar by every element.
-            new.data = np.array([[val*other for val in rowvals] for
-                                  rowvals in new.data], dtype=object)
+            new.data[:] = [[val*other for val in rowvals] for
+                           rowvals in new.data]
         return new
 
     def __truediv__(self, other):           # self / other
         if isscalarlike(other):
             new = self.copy()
             # Divide every element by this scalar
-            new.data = np.array([[val/other for val in rowvals] for
-                                  rowvals in new.data], dtype=object)
+            new.data = [[val/other for val in rowvals] for
+                        rowvals in new.data]
             return new
         else:
             return self.tocsr() / other

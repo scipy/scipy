@@ -279,8 +279,7 @@ plot_html_show_formats = False
 import math
 phi = (math.sqrt(5) + 1)/2
 
-import matplotlib
-matplotlib.rcParams.update({
+plot_rcparams = {
     'font.size': 8,
     'axes.titlesize': 8,
     'axes.labelsize': 8,
@@ -294,4 +293,8 @@ matplotlib.rcParams.update({
     'figure.subplot.top': 0.85,
     'figure.subplot.wspace': 0.4,
     'text.usetex': False,
-})
+}
+
+if not use_matplotlib_plot_directive:
+    import matplotlib
+    matplotlib.rcParams.update(plot_rcparams)
