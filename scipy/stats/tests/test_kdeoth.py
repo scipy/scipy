@@ -87,11 +87,6 @@ class _kde_subclass3(stats.gaussian_kde):
         self._norm_factor = np.sqrt(np.linalg.det(2*np.pi * self.covariance)) \
                                    * self.n
 
-class _kde_subclass4(stats.gaussian_kde):
-    def __init__(self, dataset):
-        self.covariance_factor = self.silverman_factor
-        stats.gaussian_kde.__init__(self, dataset)
-
 
 def test_gaussian_kde_subclassing():
     x1 = np.array([-7, -5, 1, 4, 5], dtype=np.float)
@@ -116,21 +111,19 @@ def test_gaussian_kde_subclassing():
     y3 = kde3(xs)
     assert_array_almost_equal_nulp(ys, y3, nulp=10)
 
-    # subclass 4, decimal=2 due to scott vs. silverman
-    kde4 = _kde_subclass4(x1)
-    y4 = kde4(xs)
-    assert_array_almost_equal(ys, ys, decimal=2)
-
     # Not a subclass, but check for use of _compute_covariance()
-    kde5 = kde
-    kde5.covariance_factor = lambda: kde.factor
-    kde._compute_covariance()
-    assert_array_almost_equal_nulp(ys, y1, nulp=10)
+    kde4 = kde
+    kde4.covariance_factor = lambda: kde.factor
+    kde4._compute_covariance()
+    y4 = kde4(xs)
+    assert_array_almost_equal_nulp(ys, y4, nulp=10)
 
 
 def test_gaussian_kde_covariance_caching():
     x1 = np.array([-7, -5, 1, 4, 5], dtype=np.float)
     xs = np.linspace(-10, 10, num=5)
+    # These expected values are from scipy 0.10, before some changes to
+    # gaussian_kde.  They were not compared with any external reference.
     y_expected = [0.02463386, 0.04689208, 0.05395444, 0.05337754, 0.01664475]
 
     # Set the bandwidth, then reset it to the default.
@@ -140,4 +133,25 @@ def test_gaussian_kde_covariance_caching():
     y2 = kde(xs)
 
     assert_array_almost_equal(y_expected, y2, decimal=7)
+
+
+def test_gaussian_kde_monkeypatch():
+    """Ugly, but people may rely on this.  See scipy pull request 123,
+    specifically the linked ML thread "Width of the Gaussian in stats.kde".
+    If it is necessary to break this later on, that is to be discussed on ML.
+    """
+    x1 = np.array([-7, -5, 1, 4, 5], dtype=np.float)
+    xs = np.linspace(-10, 10, num=50)
+
+    # The old monkeypatched version to get at Silverman's Rule.
+    kde = stats.gaussian_kde(x1)
+    kde.covariance_factor = kde.silverman_factor
+    kde._compute_covariance()
+    y1 = kde(xs)
+
+    # The new saner version.
+    kde2 = stats.gaussian_kde(x1, bw_method='silverman')
+    y2 = kde2(xs)
+
+    assert_array_almost_equal_nulp(y1, y2, nulp=10)
 
