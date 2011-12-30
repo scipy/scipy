@@ -196,7 +196,7 @@ class gaussian_kde(object):
                      the dimensionality of the KDE.
 
         """
-        points = atleast_2d(points).astype(self.dataset.dtype)
+        points = atleast_2d(points)
 
         d, m = points.shape
         if d != self.d:
@@ -209,24 +209,24 @@ class gaussian_kde(object):
                     self.d)
                 raise ValueError(msg)
 
-        result = zeros((m,), points.dtype)
+        result = zeros((m,), dtype=np.float)
 
         if m >= self.n:
             # there are more points than data, so loop over data
             for i in range(self.n):
-                diff = self.dataset[:,i,newaxis] - points
+                diff = self.dataset[:, i, newaxis] - points
                 tdiff = dot(self.inv_cov, diff)
-                energy = sum(diff*tdiff,axis=0)/2.0
-                result += exp(-energy)
+                energy = sum(diff*tdiff,axis=0) / 2.0
+                result = result + exp(-energy)
         else:
             # loop over points
             for i in range(m):
-                diff = self.dataset - points[:,i,newaxis]
+                diff = self.dataset - points[:, i, newaxis]
                 tdiff = dot(self.inv_cov, diff)
-                energy = sum(diff*tdiff,axis=0)/2.0
-                result[i] = sum(exp(-energy),axis=0)
+                energy = sum(diff * tdiff, axis=0) / 2.0
+                result[i] = sum(exp(-energy), axis=0)
 
-        result /= self._norm_factor
+        result = result / self._norm_factor
 
         return result
 
@@ -263,15 +263,16 @@ class gaussian_kde(object):
             raise ValueError("covariance does not have dimension %s" % self.d)
 
         # make mean a column vector
-        mean = mean[:,newaxis]
+        mean = mean[:, newaxis]
 
         sum_cov = self.covariance + cov
 
         diff = self.dataset - mean
         tdiff = dot(linalg.inv(sum_cov), diff)
 
-        energies = sum(diff*tdiff,axis=0)/2.0
-        result = sum(exp(-energies),axis=0)/sqrt(linalg.det(2*pi*sum_cov))/self.n
+        energies = sum(diff * tdiff, axis=0) / 2.0
+        result = sum(exp(-energies), axis=0) / sqrt(linalg.det(2 * pi * \
+                                                        sum_cov)) / self.n
 
         return result
 
@@ -300,11 +301,11 @@ class gaussian_kde(object):
 
         stdev = ravel(sqrt(self.covariance))[0]
 
-        normalized_low = ravel((low - self.dataset)/stdev)
-        normalized_high = ravel((high - self.dataset)/stdev)
+        normalized_low = ravel((low - self.dataset) / stdev)
+        normalized_high = ravel((high - self.dataset) / stdev)
 
-        value = np.mean(special.ndtr(normalized_high) -
-                     special.ndtr(normalized_low))
+        value = np.mean(special.ndtr(normalized_high) - \
+                        special.ndtr(normalized_low))
         return value
 
 
@@ -332,10 +333,10 @@ class gaussian_kde(object):
             extra_kwds = {}
 
         value, inform = mvn.mvnun(low_bounds, high_bounds, self.dataset,
-            self.covariance, **extra_kwds)
+                                  self.covariance, **extra_kwds)
         if inform:
             msg = ('An integral in mvn.mvnun requires more points than %s' %
-                (self.d * 1000))
+                   (self.d * 1000))
             warnings.warn(msg)
 
         return value
@@ -373,14 +374,14 @@ class gaussian_kde(object):
         sum_cov = small.covariance + large.covariance
         result = 0.0
         for i in range(small.n):
-            mean = small.dataset[:,i,newaxis]
+            mean = small.dataset[:, i, newaxis]
             diff = large.dataset - mean
             tdiff = dot(linalg.inv(sum_cov), diff)
 
-            energies = sum(diff*tdiff,axis=0)/2.0
-            result += sum(exp(-energies),axis=0)
+            energies = sum(diff * tdiff, axis=0) / 2.0
+            result += sum(exp(-energies), axis=0)
 
-        result /= sqrt(linalg.det(2*pi*sum_cov))*large.n*small.n
+        result /= sqrt(linalg.det(2 * pi * sum_cov)) * large.n * small.n
 
         return result
 
@@ -403,9 +404,9 @@ class gaussian_kde(object):
             size = self.n
 
         norm = transpose(multivariate_normal(zeros((self.d,), float),
-            self.covariance, size=size))
+                         self.covariance, size=size))
         indices = randint(0, self.n, size=size)
-        means = self.dataset[:,indices]
+        means = self.dataset[:, indices]
 
         return means + norm
 
