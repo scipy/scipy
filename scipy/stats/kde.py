@@ -82,10 +82,11 @@ class gaussian_kde(object):
     dataset : array_like
         Datapoints to estimate from. In case of univariate data this is a 1-D
         array, otherwise a 2-D array with shape (# of dims, # of data).
-    bw_method : str or callable, optional
+    bw_method : str, scalar or callable, optional
         The method used to calculate the estimator bandwidth.  This can be
-        'scott', 'silverman' or a callable.  If a callable, it should take a
-        `gaussian_kde` instance as only parameter and return a scalar.
+        'scott', 'silverman', a scalar constant or a callable.  If a scalar,
+        this will be used directly as `kde.factor`.  If a callable, it should
+        take a `gaussian_kde` instance as only parameter and return a scalar.
         See Notes for more details.
 
     Notes
@@ -405,11 +406,15 @@ class gaussian_kde(object):
             self.covariance_factor = self.scotts_factor
         elif bw_method == 'silverman':
             self.covariance_factor = self.silverman_factor
+        elif np.isscalar(bw_method) and not isinstance(bw_method, basestring):
+            self._bw_method = 'use constant'
+            self.covariance_factor = lambda: bw_method
         elif callable(bw_method):
             self._bw_method = bw_method
             self.covariance_factor = lambda: self._bw_method(self)
         else:
-            msg = "`bw_method` should be 'scott', 'silverman', or a callable."
+            msg = "`bw_method` should be 'scott', 'silverman', a scalar " \
+                  "or a callable."
             raise ValueError(msg)
 
         self._compute_covariance()
