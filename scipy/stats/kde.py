@@ -159,6 +159,9 @@ class gaussian_kde(object):
     """
     def __init__(self, dataset, bw_method='scott'):
         self.dataset = atleast_2d(dataset)
+        if not self.dataset.size > 1:
+            raise ValueError("`dataset` input should have multiple elements.")
+
         self.d, self.n = self.dataset.shape
         self.set_bandwidth(bw_method=bw_method)
 
