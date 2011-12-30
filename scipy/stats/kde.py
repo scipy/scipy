@@ -392,22 +392,23 @@ class gaussian_kde(object):
     def set_bandwidth(self, bw_method='scott'):
         """Compute the estimator bandwidth with given method."""
         if bw_method == 'scott':
-            self.factor = self.scotts_factor()
+            self.covariance_factor = self.scotts_factor
         elif bw_method == 'silverman':
-            self.factor = self.silverman_factor()
+            self.covariance_factor = self.silverman_factor
         elif callable(bw_method):
-            self.factor = bw_method(self)
+            self._bw_method = bw_method
+            self.covariance_factor = lambda: self._bw_method(self)
         else:
             msg = "`bw_method` should be 'scott', 'silverman', or a callable."
             raise ValueError(msg)
 
-        self._bw_method = bw_method
         self._compute_covariance()
 
     def _compute_covariance(self):
         """Computes the covariance matrix for each Gaussian kernel using
-        self.factor.
+        covariance_factor().
         """
+        self.factor = self.covariance_factor()
         self.covariance = atleast_2d(np.cov(self.dataset, rowvar=1, bias=False) *
             self.factor * self.factor)
         self.inv_cov = linalg.inv(self.covariance)
