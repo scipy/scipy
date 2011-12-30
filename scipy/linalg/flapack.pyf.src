@@ -1084,6 +1084,44 @@ interface
      
    end subroutine <prefix>trtri
 
+   subroutine <prefix>trsyl(trana, tranb, isgn, m, n, a, lda, b, ldb, c, ldc, scale, info)
+   
+     ! x,info = trsyl(trana=0, tranb=0, isgn, a, b, c, scale, info)
+     !
+     ! Solves the real Sylvester matrix equation:
+     !
+     !    op(A)*X + X*op(B) = scale*C or op(A)*X - X*op(B) = scale*C
+     !
+     ! where A and B are both quasi-triangular matrices.  A and B must be in 
+     ! Schur canonical form.
+     
+     callstatement (*f2py_func)((trana?"T":"N"),(tranb?"T":"N"),&isgn,&m,&n,a,&lda,b,&ldb,c,&ldc,&scale,&info)
+     callprotoargument char*,char*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*
+
+     integer optional,intent(in),check(trana==0||trana==1) :: trana = 0
+     integer optional,intent(in),check(tranb==0||tranb==1) :: tranb = 0
+     
+     integer optional,intent(in),check(isgn==1||isgn==-1)::isgn=1
+     
+     integer depend(a),intent(hide):: m = shape(a,0)
+     integer depend(b),intent(hide):: n = shape(b,0)
+     
+     <ftype> dimension(m,m),intent(in) :: a
+     check(shape(a,0)==shape(a,1)) :: a
+     integer depend(a),intent(hide):: lda = shape(a,0)
+     
+     <ftype> dimension(n,n),intent(in) :: b
+     check(shape(b,0)==shape(b,1)) :: b
+     integer depend(b),intent(hide):: ldb = shape(b,0)
+     
+     <ftype> dimension(m,n),intent(in,out,copy,out=x) :: c
+     integer depend(c),intent(hide):: ldc = shape(c,0)
+     
+     <ftype> optional, dimension(1), intent(in) :: scale = 1.0
+     
+     integer intent(out) :: info
+     
+   end subroutine <prefix>trsyl
 
    subroutine <prefix>laswp(n,a,nrows,k1,k2,piv,off,inc,m)
 

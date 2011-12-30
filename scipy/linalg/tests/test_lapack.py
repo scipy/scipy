@@ -41,6 +41,18 @@ class TestFlapackSimple(TestCase):
             if f is None: continue
             ht,tau,info = f(a)
             assert_(not info,`info`)
+            
+    def test_trsyl(self):
+        a = [[1,2],[3,4]]
+        b = [[5,6],[7,8]]
+        c = [[9,10],[11,12]]
+        x_expected = [[0.5, 0.66667],
+                      [0.66667, 0.5]]
+        for p in 'ds':
+            f = getattr(flapack,p+'trsyl',None)
+            if f is None: continue
+            x, info = f(a,b,c)
+            assert_array_almost_equal(x,x_expected, decimal=4)
 
 class TestLapack(TestCase):
 
