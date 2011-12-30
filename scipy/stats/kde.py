@@ -76,6 +76,7 @@ class gaussian_kde(object):
     kde.set_bandwidth(bw_method='scott') : None
         Computes the bandwidth, i.e. the coefficient that multiplies the data
         covariance matrix to obtain the kernel covariance matrix.
+        .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -401,7 +402,46 @@ class gaussian_kde(object):
         return power(self.n*(self.d+2.0)/4.0, -1./(self.d+4))
 
     def set_bandwidth(self, bw_method='scott'):
-        """Compute the estimator bandwidth with given method."""
+        """Compute the estimator bandwidth with given method.
+
+        The new bandwidth calculated after a call to `set_bandwidth` is used
+        for subsequent evaluations of the estimated density.
+
+        Parameters
+        ----------
+        bw_method : str, scalar or callable, optional The method used to
+            calculate the estimator bandwidth.  This can be 'scott',
+            'silverman', a scalar constant or a callable.  If a scalar, this
+            will be used directly as `kde.factor`.  If a callable, it should
+            take a `gaussian_kde` instance as only parameter and return a
+            scalar.
+
+        Notes
+        -----
+        .. versionadded:: 0.11
+
+        Examples
+        --------
+        >>> x1 = np.array([-7, -5, 1, 4, 5.])
+        >>> kde = stats.gaussian_kde(x1)
+        >>> xs = np.linspace(-10, 10, num=50)
+        >>> y1 = kde(xs)
+        >>> kde.set_bandwidth(bw_method='silverman')
+        >>> y2 = kde(xs)
+        >>> kde.set_bandwidth(bw_method=kde.factor / 3.)
+        >>> y3 = kde(xs)
+
+        >>> fig = plt.figure()
+        >>> ax = fig.add_subplot(111)
+        >>> ax.plot(x1, np.ones(x1.shape) / (4. * x1.size), 'bo',
+        ...         label='Data points (rescaled)')
+        >>> ax.plot(xs, y1, label='Scott (default)')
+        >>> ax.plot(xs, y2, label='Silverman')
+        >>> ax.plot(xs, y3, label='Const (1/3 * Silverman)')
+        >>> ax.legend()
+        >>> plt.show()
+
+        """
         if bw_method == 'scott':
             self.covariance_factor = self.scotts_factor
         elif bw_method == 'silverman':
