@@ -1,6 +1,7 @@
 from scipy import stats
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_
+from numpy.testing import assert_almost_equal, assert_, \
+    assert_array_almost_equal, assert_array_almost_equal_nulp
 
 
 def test_kde_1d():
@@ -33,6 +34,7 @@ def test_kde_1d():
     assert_almost_equal(gkde.integrate_gaussian(xnmean, xnstd**2),
                         (kdepdf*normpdf).sum()*intervall, decimal=2)
 
+
 def test_kde_bandwidth_method():
     def scotts_factor(kde_obj):
         """Same as default, just check that it works."""
@@ -49,4 +51,71 @@ def test_kde_bandwidth_method():
     kdepdf = gkde.evaluate(xs)
     kdepdf2 = gkde2.evaluate(xs)
     assert_almost_equal(gkde(xs), gkde2(xs))
+
+
+# Subclasses that should stay working (extracted from various sources).
+# Unfortunately the earlier design of gaussian_kde made it necessary for users
+# to create these kinds of subclasses, or call _compute_covariance() directly.
+
+class _kde_subclass1(stats.gaussian_kde):
+    def __init__(self, dataset):
+        self.dataset = np.atleast_2d(dataset)
+        self.d, self.n = self.dataset.shape
+        self.covariance_factor = self.scotts_factor
+        self._compute_covariance()
+
+class _kde_subclass2(stats.gaussian_kde):
+    def __init__(self, dataset):
+        self.covariance_factor = self.scotts_factor
+        super(_kde_subclass2, self).__init__(dataset)
+
+class _kde_subclass3(stats.gaussian_kde):
+    def __init__(self, dataset, covariance):
+        self.covariance = covariance
+        stats.gaussian_kde.__init__(self, dataset)
+
+    def _compute_covariance(self):
+        self.inv_cov = np.linalg.inv(self.covariance)
+        self._norm_factor = np.sqrt(np.linalg.det(2*np.pi * self.covariance)) \
+                                   * self.n
+
+class _kde_subclass4(stats.gaussian_kde):
+    def __init__(self, dataset):
+        self.covariance_factor = self.silverman_factor
+        stats.gaussian_kde.__init__(self, dataset)
+
+
+def test_gaussian_kde_subclassing():
+    x1 = np.array([-7, -5, 1, 4, 5], dtype=np.float)
+    xs = np.linspace(-10, 10, num=50)
+
+    # gaussian_kde itself
+    kde = stats.gaussian_kde(x1)
+    ys = kde(xs)
+
+    # subclass 1
+    kde1 = _kde_subclass1(x1)
+    y1 = kde1(xs)
+    assert_array_almost_equal_nulp(ys, y1, nulp=10)
+
+    # subclass 2
+    kde2 = _kde_subclass2(x1)
+    y2 = kde2(xs)
+    assert_array_almost_equal_nulp(ys, y2, nulp=10)
+
+    # subclass 3
+    kde3 = _kde_subclass3(x1, kde.covariance)
+    y3 = kde3(xs)
+    assert_array_almost_equal_nulp(ys, y3, nulp=10)
+
+    # subclass 4, decimal=2 due to scott vs. silverman
+    kde4 = _kde_subclass4(x1)
+    y4 = kde4(xs)
+    assert_array_almost_equal(ys, ys, decimal=2)
+
+    # Not a subclass, but check for use of _compute_covariance()
+    kde5 = kde
+    kde5.covariance_factor = lambda: kde.factor
+    kde._compute_covariance()
+    assert_array_almost_equal_nulp(ys, y1, nulp=10)
 
