@@ -380,36 +380,36 @@ def _safely_castable_to_int(dt):
     return safe
 
 def _stats(input, labels=None, index=None, centered=False):
-    '''Count, sum, and optionally compute (sum - centre)^2 of input by label
+    """Count, sum, and optionally compute (sum - centre)^2 of input by label
 
     Parameters
     ----------
     input : array_like, n-dimensional
         The input data to be analyzed.
-    labels : array_like (n-dimensional) or None
+    labels : array_like (n-dimensional), optional
         The labels of the data in `input`.  This array must be broadcast
         compatible with `input`; typically it is the same shape as `input`.
         If `labels` is None, all nonzero values in `input` are treated as
         the single labeled group.
-    index: label, sequence of labels, or None
+    index: label or sequence of labels, optional
         These are the labels of the groups for which the stats are computed.
         If `index` is None, the stats are computed for the single group where
         `labels` is greater than 0.
-    centered: bool
+    centered: bool, optional
         If True, the centered sum of squares for each labeled group is
-        also returned.
+        also returned.  Default is False.
 
-    Return value
-    ------------
-    counts:
+    Returns
+    -------
+    counts: int or ndarray of ints
         The number of elements in each labeled group.
-    sums:
+    sums: scalar or ndarray of scalars
         The sums of the values in each labeled group.
-    sums_c:
+    sums_c: scalar or ndarray of scalars, optional
         The sums of mean-centered squares of the values in each labeled group.
         This is only returned if `centered` is True.
-    '''
 
+    """
     def single_group(vals):
         if centered:
             vals_c = vals - vals.mean()
