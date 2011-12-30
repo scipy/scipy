@@ -424,7 +424,12 @@ class gaussian_kde(object):
         covariance_factor().
         """
         self.factor = self.covariance_factor()
-        self.covariance = atleast_2d(np.cov(self.dataset, rowvar=1, bias=False) *
-            self.factor * self.factor)
-        self.inv_cov = linalg.inv(self.covariance)
+        # Cache covariance and inverse covariance of the data
+        if not hasattr(self, '_data_inv_cov'):
+            self._data_covariance = atleast_2d(np.cov(self.dataset, rowvar=1,
+                                               bias=False))
+            self._data_inv_cov = linalg.inv(self._data_covariance)
+
+        self.covariance = self._data_covariance * self.factor**2
+        self.inv_cov = self._data_inv_cov / self.factor**2
         self._norm_factor = sqrt(linalg.det(2*pi*self.covariance)) * self.n
