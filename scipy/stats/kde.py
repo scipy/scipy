@@ -40,10 +40,20 @@ class gaussian_kde(object):
 
     Attributes
     ----------
+    dataset : ndarray
+        The dataset with which `gaussian_kde` was initialized.
     d : int
         Number of dimensions.
     n : int
         Number of datapoints.
+    factor : float
+        The bandwidth factor, obtained from `kde.covariance_factor`, with which
+        the covariance matrix is multiplied.
+    covariance : ndarray
+        The covariance matrix of `dataset`, scaled by the calculated bandwidth
+        (`kde.factor`).
+    inv_cov : ndarray
+        The inverse of `covariance`.
 
     Methods
     -------
