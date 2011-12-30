@@ -1,6 +1,6 @@
 from scipy import stats
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_, \
+from numpy.testing import assert_almost_equal, assert_, assert_raises, \
     assert_array_almost_equal, assert_array_almost_equal_nulp
 
 
@@ -57,6 +57,8 @@ def test_kde_bandwidth_method():
     assert_almost_equal(kdepdf, kdepdf2)
     kdepdf3 = gkde3.evaluate(xs)
     assert_almost_equal(kdepdf, kdepdf3)
+
+    assert_raises(ValueError, stats.gaussian_kde, xn, bw_method='wrongstring')
 
 
 # Subclasses that should stay working (extracted from various sources).
@@ -124,4 +126,18 @@ def test_gaussian_kde_subclassing():
     kde5.covariance_factor = lambda: kde.factor
     kde._compute_covariance()
     assert_array_almost_equal_nulp(ys, y1, nulp=10)
+
+
+def test_gaussian_kde_covariance_caching():
+    x1 = np.array([-7, -5, 1, 4, 5], dtype=np.float)
+    xs = np.linspace(-10, 10, num=5)
+    y_expected = [0.02463386, 0.04689208, 0.05395444, 0.05337754, 0.01664475]
+
+    # Set the bandwidth, then reset it to the default.
+    kde = stats.gaussian_kde(x1)
+    kde.set_bandwidth(bw_method=0.5)
+    kde.set_bandwidth()
+    y2 = kde(xs)
+
+    assert_array_almost_equal(y_expected, y2, decimal=7)
 
