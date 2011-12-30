@@ -38,12 +38,41 @@ __all__ = ['gaussian_kde']
 class gaussian_kde(object):
     """Representation of a kernel-density estimate using Gaussian kernels.
 
+    Kernel density estimation is a way to estimate the probability density
+    function (PDF) of a random variable in a non-parametric way.
+    `gaussian_kde` works for both uni-variate and multi-variate data.   It
+    includes automatic bandwidth determination.  The estimation works best for
+    a unimodal distribution; bimodal or multi-modal distributions tend to be
+    oversmoothed.
+
+    Parameters
+    ----------
+    dataset : array_like
+        Datapoints to estimate from. In case of univariate data this is a 1-D
+        array, otherwise a 2-D array with shape (# of dims, # of data).
+    bw_method : str, scalar or callable, optional
+        The method used to calculate the estimator bandwidth.  This can be
+        'scott', 'silverman', a scalar constant or a callable.  If a scalar,
+        this will be used directly as `kde.factor`.  If a callable, it should
+        take a `gaussian_kde` instance as only parameter and return a scalar.
+        See Notes for more details.
+
     Attributes
     ----------
+    dataset : ndarray
+        The dataset with which `gaussian_kde` was initialized.
     d : int
         Number of dimensions.
     n : int
         Number of datapoints.
+    factor : float
+        The bandwidth factor, obtained from `kde.covariance_factor`, with which
+        the covariance matrix is multiplied.
+    covariance : ndarray
+        The covariance matrix of `dataset`, scaled by the calculated bandwidth
+        (`kde.factor`).
+    inv_cov : ndarray
+        The inverse of `covariance`.
 
     Methods
     -------
@@ -66,18 +95,7 @@ class gaussian_kde(object):
     kde.set_bandwidth(bw_method='scott') : None
         Computes the bandwidth, i.e. the coefficient that multiplies the data
         covariance matrix to obtain the kernel covariance matrix.
-
-    Parameters
-    ----------
-    dataset : array_like
-        Datapoints to estimate from. In case of univariate data this is a 1-D
-        array, otherwise a 2-D array with shape (# of dims, # of data).
-    bw_method : str, scalar or callable, optional
-        The method used to calculate the estimator bandwidth.  This can be
-        'scott', 'silverman', a scalar constant or a callable.  If a scalar,
-        this will be used directly as `kde.factor`.  If a callable, it should
-        take a `gaussian_kde` instance as only parameter and return a scalar.
-        See Notes for more details.
+        .. versionadded:: 0.11.0
 
     Notes
     -----
@@ -95,6 +113,10 @@ class gaussian_kde(object):
     Silverman's Rule [2]_, implemented as `silverman_factor`, is::
 
         n * (d + 2) / 4.)**(-1. / (d + 4)).
+
+    Good general descriptions of kernel density estimation can be found in [1]_
+    and [2]_, the mathematics for this multi-dimensional implementation can be
+    found in [1]_.
 
     References
     ----------
@@ -391,7 +413,46 @@ class gaussian_kde(object):
         return power(self.n*(self.d+2.0)/4.0, -1./(self.d+4))
 
     def set_bandwidth(self, bw_method='scott'):
-        """Compute the estimator bandwidth with given method."""
+        """Compute the estimator bandwidth with given method.
+
+        The new bandwidth calculated after a call to `set_bandwidth` is used
+        for subsequent evaluations of the estimated density.
+
+        Parameters
+        ----------
+        bw_method : str, scalar or callable, optional The method used to
+            calculate the estimator bandwidth.  This can be 'scott',
+            'silverman', a scalar constant or a callable.  If a scalar, this
+            will be used directly as `kde.factor`.  If a callable, it should
+            take a `gaussian_kde` instance as only parameter and return a
+            scalar.
+
+        Notes
+        -----
+        .. versionadded:: 0.11
+
+        Examples
+        --------
+        >>> x1 = np.array([-7, -5, 1, 4, 5.])
+        >>> kde = stats.gaussian_kde(x1)
+        >>> xs = np.linspace(-10, 10, num=50)
+        >>> y1 = kde(xs)
+        >>> kde.set_bandwidth(bw_method='silverman')
+        >>> y2 = kde(xs)
+        >>> kde.set_bandwidth(bw_method=kde.factor / 3.)
+        >>> y3 = kde(xs)
+
+        >>> fig = plt.figure()
+        >>> ax = fig.add_subplot(111)
+        >>> ax.plot(x1, np.ones(x1.shape) / (4. * x1.size), 'bo',
+        ...         label='Data points (rescaled)')
+        >>> ax.plot(xs, y1, label='Scott (default)')
+        >>> ax.plot(xs, y2, label='Silverman')
+        >>> ax.plot(xs, y3, label='Const (1/3 * Silverman)')
+        >>> ax.legend()
+        >>> plt.show()
+
+        """
         if bw_method == 'scott':
             self.covariance_factor = self.scotts_factor
         elif bw_method == 'silverman':
