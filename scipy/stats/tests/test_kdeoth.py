@@ -87,6 +87,9 @@ class _kde_subclass3(stats.gaussian_kde):
         self._norm_factor = np.sqrt(np.linalg.det(2*np.pi * self.covariance)) \
                                    * self.n
 
+class _kde_subclass4(stats.gaussian_kde):
+    def covariance_factor(self):
+        return 0.5 * self.silverman_factor()
 
 def test_gaussian_kde_subclassing():
     x1 = np.array([-7, -5, 1, 4, 5], dtype=np.float)
@@ -111,12 +114,19 @@ def test_gaussian_kde_subclassing():
     y3 = kde3(xs)
     assert_array_almost_equal_nulp(ys, y3, nulp=10)
 
+    # subclass 4
+    kde4 = _kde_subclass4(x1)
+    y4 = kde4(x1)
+    y_expected = [0.06292987, 0.06346938, 0.05860291, 0.08657652, 0.07904017]
+
+    assert_array_almost_equal(y_expected, y4, decimal=6)
+
     # Not a subclass, but check for use of _compute_covariance()
-    kde4 = kde
-    kde4.covariance_factor = lambda: kde.factor
-    kde4._compute_covariance()
-    y4 = kde4(xs)
-    assert_array_almost_equal_nulp(ys, y4, nulp=10)
+    kde5 = kde
+    kde5.covariance_factor = lambda: kde.factor
+    kde5._compute_covariance()
+    y5 = kde5(xs)
+    assert_array_almost_equal_nulp(ys, y5, nulp=10)
 
 
 def test_gaussian_kde_covariance_caching():
@@ -129,7 +139,7 @@ def test_gaussian_kde_covariance_caching():
     # Set the bandwidth, then reset it to the default.
     kde = stats.gaussian_kde(x1)
     kde.set_bandwidth(bw_method=0.5)
-    kde.set_bandwidth()
+    kde.set_bandwidth(bw_method='scott')
     y2 = kde(xs)
 
     assert_array_almost_equal(y_expected, y2, decimal=7)
