@@ -55,7 +55,7 @@ class gaussian_kde(object):
         'scott', 'silverman', a scalar constant or a callable.  If a scalar,
         this will be used directly as `kde.factor`.  If a callable, it should
         take a `gaussian_kde` instance as only parameter and return a scalar.
-        See Notes for more details.
+        If None (default), 'scott' is used.  See Notes for more details.
 
     Attributes
     ----------
@@ -96,6 +96,13 @@ class gaussian_kde(object):
         Computes the bandwidth, i.e. the coefficient that multiplies the data
         covariance matrix to obtain the kernel covariance matrix.
         .. versionadded:: 0.11.0
+    kde.covariance_factor : float
+        Computes the coefficient (`kde.factor`) that multiplies the data
+        covariance matrix to obtain the kernel covariance matrix.
+        The default is `scotts_factor`.  A subclass can overwrite this method
+        to provide a different method, or set it through a call to
+        `kde.set_bandwidth`.
+
 
     Notes
     -----
@@ -168,7 +175,7 @@ class gaussian_kde(object):
     >>> plt.show()
 
     """
-    def __init__(self, dataset, bw_method='scott'):
+    def __init__(self, dataset, bw_method=None):
         self.dataset = atleast_2d(dataset)
         if not self.dataset.size > 1:
             raise ValueError("`dataset` input should have multiple elements.")
@@ -416,7 +423,10 @@ class gaussian_kde(object):
     def silverman_factor(self):
         return power(self.n*(self.d+2.0)/4.0, -1./(self.d+4))
 
-    def set_bandwidth(self, bw_method='scott'):
+    #  Default method to calculate bandwidth, can be overwritten by subclass
+    covariance_factor = scotts_factor
+
+    def set_bandwidth(self, bw_method=None):
         """Compute the estimator bandwidth with given method.
 
         The new bandwidth calculated after a call to `set_bandwidth` is used
@@ -424,12 +434,13 @@ class gaussian_kde(object):
 
         Parameters
         ----------
-        bw_method : str, scalar or callable, optional The method used to
-            calculate the estimator bandwidth.  This can be 'scott',
-            'silverman', a scalar constant or a callable.  If a scalar, this
-            will be used directly as `kde.factor`.  If a callable, it should
-            take a `gaussian_kde` instance as only parameter and return a
-            scalar.
+        bw_method : str, scalar or callable, optional
+            The method used to calculate the estimator bandwidth.  This can be
+            'scott', 'silverman', a scalar constant or a callable.  If a
+            scalar, this will be used directly as `kde.factor`.  If a callable,
+            it should take a `gaussian_kde` instance as only parameter and
+            return a scalar.  If None (default), nothing happens; the current
+            `kde.covariance_factor` method is kept.
 
         Notes
         -----
@@ -457,7 +468,9 @@ class gaussian_kde(object):
         >>> plt.show()
 
         """
-        if bw_method == 'scott':
+        if bw_method is None:
+            pass
+        elif bw_method == 'scott':
             self.covariance_factor = self.scotts_factor
         elif bw_method == 'silverman':
             self.covariance_factor = self.silverman_factor
