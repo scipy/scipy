@@ -38,6 +38,25 @@ __all__ = ['gaussian_kde']
 class gaussian_kde(object):
     """Representation of a kernel-density estimate using Gaussian kernels.
 
+    Kernel density estimation is a way to estimate the probability density
+    function (PDF) of a random variable in a non-parametric way.
+    `gaussian_kde` works for both uni-variate and multi-variate data.   It
+    includes automatic bandwidth determination.  The estimation works best for
+    a unimodal distribution; bimodal or multi-modal distributions tend to be
+    oversmoothed.
+
+    Parameters
+    ----------
+    dataset : array_like
+        Datapoints to estimate from. In case of univariate data this is a 1-D
+        array, otherwise a 2-D array with shape (# of dims, # of data).
+    bw_method : str, scalar or callable, optional
+        The method used to calculate the estimator bandwidth.  This can be
+        'scott', 'silverman', a scalar constant or a callable.  If a scalar,
+        this will be used directly as `kde.factor`.  If a callable, it should
+        take a `gaussian_kde` instance as only parameter and return a scalar.
+        See Notes for more details.
+
     Attributes
     ----------
     dataset : ndarray
@@ -77,18 +96,6 @@ class gaussian_kde(object):
         Computes the bandwidth, i.e. the coefficient that multiplies the data
         covariance matrix to obtain the kernel covariance matrix.
         .. versionadded:: 0.11.0
-
-    Parameters
-    ----------
-    dataset : array_like
-        Datapoints to estimate from. In case of univariate data this is a 1-D
-        array, otherwise a 2-D array with shape (# of dims, # of data).
-    bw_method : str, scalar or callable, optional
-        The method used to calculate the estimator bandwidth.  This can be
-        'scott', 'silverman', a scalar constant or a callable.  If a scalar,
-        this will be used directly as `kde.factor`.  If a callable, it should
-        take a `gaussian_kde` instance as only parameter and return a scalar.
-        See Notes for more details.
 
     Notes
     -----
