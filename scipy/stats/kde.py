@@ -114,6 +114,10 @@ class gaussian_kde(object):
 
         n * (d + 2) / 4.)**(-1. / (d + 4)).
 
+    Good general descriptions of kernel density estimation can be found in [1]_
+    and [2]_, the mathematics for this multi-dimensional implementation can be
+    found in [1]_.
+
     References
     ----------
     .. [1] D.W. Scott, "Multivariate Density Estimation: Theory, Practice, and
