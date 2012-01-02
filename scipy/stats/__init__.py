@@ -158,18 +158,19 @@ Discrete distributions
 .. autosummary::
    :toctree: generated/
 
-    binom             -- Binomial
     bernoulli         -- Bernoulli
-    nbinom            -- Negative Binomial
+    binom             -- Binomial
+    boltzmann         -- Boltzmann (Truncated Discrete Exponential)
+    dlaplace          -- Discrete Laplacian
     geom              -- Geometric
     hypergeom         -- Hypergeometric
     logser            -- Logarithmic (Log-Series, Series)
-    poisson           -- Poisson
+    nbinom            -- Negative Binomial
     planck            -- Planck (Discrete Exponential)
-    boltzmann         -- Boltzmann (Truncated Discrete Exponential)
+    poisson           -- Poisson
     randint           -- Discrete Uniform
+    skellam           -- Skellam
     zipf              -- Zipf
-    dlaplace          -- Discrete Laplacian
 
 Statistical functions
 =====================
