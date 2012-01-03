@@ -1086,21 +1086,34 @@ interface
 
    subroutine <prefix>trsyl(trana, tranb, isgn, m, n, a, lda, b, ldb, c, ldc, scale, info)
    
-     ! x,info = trsyl(trana=0, tranb=0, isgn, a, b, c, scale, info)
+     ! x,scale,info = trsyl(trana='N', tranb='N', isgn, a, b, c)
      !
      ! Solves the real Sylvester matrix equation:
      !
      !    op(A)*X + X*op(B) = scale*C or op(A)*X - X*op(B) = scale*C
      !
      ! where A and B are both quasi-triangular matrices.  A and B must be in 
-     ! Schur canonical form.
+     ! Schur canonical form.  op(A) and op(B) are specified via trana and tranb
+     ! respectively, and may take the forms 'N' (no transpose), 'T' (transpose),
+     ! or 'C' (conjugate transpose, where applicable) to indicate the operation
+     ! to be performed.  The value of isgn (1 or -1) specifies the sign of the 
+     ! X*op(B) term in the equation.
+     !
+     ! Upon exit, x contains the solution, scale represnets scale factor, set
+     ! <= 1 to avoid overflow in the solution, and info contains the exit
+     ! status:
+     !
+     !      0: success
+     !      < 0: if info = -i, the i-th argument had an illegal value
+     !      1: A and B have common or very close eigenvalues; perturbed values 
+     !         were used to solve the equation
      
-     callstatement (*f2py_func)((trana?"T":"N"),(tranb?"T":"N"),&isgn,&m,&n,a,&lda,b,&ldb,c,&ldc,&scale,&info)
+     callstatement (*f2py_func)(trana,tranb,&isgn,&m,&n,a,&lda,b,&ldb,c,&ldc,&scale,&info)
      callprotoargument char*,char*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*
 
-     integer optional,intent(in),check(trana==0||trana==1) :: trana = 0
-     integer optional,intent(in),check(tranb==0||tranb==1) :: tranb = 0
-     
+     character optional,intent(in),check(*trana=='N'||*trana=='T'||*trana=='C'):: trana='N'
+     character optional,intent(in),check(*tranb=='N'||*tranb=='T'||*tranb=='C'):: tranb='N'
+
      integer optional,intent(in),check(isgn==1||isgn==-1)::isgn=1
      
      integer depend(a),intent(hide):: m = shape(a,0)
@@ -1117,7 +1130,7 @@ interface
      <ftype> dimension(m,n),intent(in,out,copy,out=x) :: c
      integer depend(c),intent(hide):: ldc = shape(c,0)
      
-     <ftype> optional, dimension(1), intent(in) :: scale = 1.0
+     <ftype> intent(out) :: scale
      
      integer intent(out) :: info
      
