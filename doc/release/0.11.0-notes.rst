@@ -21,6 +21,8 @@ This release requires Python 2.4-2.7 or 3.1- and NumPy 1.X.X or greater.
 New features
 ============
 
+* ``misc.logsumexp`` now takes an optional ``axis`` keyword argument.
+
 
 Deprecated features
 ===================

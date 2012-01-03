@@ -30,7 +30,7 @@ def logsumexp(a, axis=None):
         The result, ``np.log(np.sum(np.exp(a)))`` calculated in a numerically
         more stable way.
 
-    See also
+    See Also
     --------
     numpy.logaddexp, numpy.logaddexp2
 
