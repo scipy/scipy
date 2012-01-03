@@ -52,5 +52,6 @@ def test_logsumexp():
 
     X = np.vstack([x, x])
     logX = np.vstack([logx, logx])
+    assert_array_almost_equal(np.exp(logsumexp(logX)), X.sum())
     assert_array_almost_equal(np.exp(logsumexp(logX, axis=0)), X.sum(axis=0))
     assert_array_almost_equal(np.exp(logsumexp(logX, axis=1)), X.sum(axis=1))

@@ -13,13 +13,16 @@ __all__ = ['logsumexp', 'factorial','factorial2','factorialk','comb',
 # XXX: the factorial functions could move to scipy.special, and the others
 # to numpy perhaps?
 
-def logsumexp(a, axis=0):
+def logsumexp(a, axis=None):
     """Compute the log of the sum of exponentials of input elements.
 
     Parameters
     ----------
     a : array_like
         Input array.
+    axis : int, optional
+        Axis over which the sum is taken. By default `axis` is None,
+        and all elements are summed.
 
     Returns
     -------
@@ -49,7 +52,10 @@ def logsumexp(a, axis=0):
 
     """
     a = asarray(a)
-    a = rollaxis(a, axis)
+    if axis is None:
+        a = a.ravel()
+    else:
+        a = rollaxis(a, axis)
     a_max = a.max(axis=0)
     out = log(sum(exp(a - a_max), axis=0))
     out += a_max
