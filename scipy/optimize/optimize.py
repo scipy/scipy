@@ -468,39 +468,97 @@ def _minimize_neldermead(func, x0, args=(), options={}, full_output=0,
 
 
 def approx_fprime(xk, f, epsilon, *args):
+    """Finite-difference approximation of the gradient of a scalar function.
+
+    Parameters
+    ----------
+    xk : array_like
+        The coordinate vector at which to determine the gradient of `f`.
+    f : callable
+        The function of which to determine the gradient (partial derivatives).
+        Should take `xk` as first argument, other arguments to `f` can be
+        supplied in ``*args``.  Should return a scalar, the value of the
+        gradient at `xk`.
+    epsilon : array_like
+        Increment to `xk` to use for determining the function gradient.
+        If a scalar, uses the same finite difference delta for all partial
+        derivatives.  If an array, should contain one value per element of
+        `xk`.
+    \*args : args, optional
+        Any other arguments that are to be passed to `f`.
+
+    Returns
+    -------
+    grad : ndarray
+        The partial derivatives of `f` to `xk`.
+
+    See Also
+    --------
+    check_grad : Check correctness of gradient function against approx_fprime.
+
+    Notes
+    -----
+    The function gradient is determined by the forward finite difference
+    formula::
+
+                 f(xk[i] + epsilon[i]) - f(xk[i])
+        f'[i] = ---------------------------------
+                            epsilon[i]
+
+    The main use of `approx_fprime` is in scalar function optimizers like
+    `fmin_bfgs`, to determine numerically the Jacobian of a function.
+
+    Examples
+    --------
+    >>> from scipy import optimize
+    >>> def func(x, c0, c1):
+    ...     "Coordinate vector `x` should be an array of size two."
+    ...     return c0 * x[0]**2 + c1*x[1]**2
+
+    >>> x = np.ones(2)
+    >>> c0, c1 = (1, 200)
+    >>> eps = np.sqrt(np.finfo(np.float).eps)
+    >>> optimize.approx_fprime(x, func, [eps, np.sqrt(200) * eps], c0, c1)
+    array([   2.        ,  400.00004198])
+
+    """
     f0 = f(*((xk,) + args))
     grad = numpy.zeros((len(xk),), float)
     ei = numpy.zeros((len(xk),), float)
     for k in range(len(xk)):
-        ei[k] = epsilon
-        grad[k] = (f(*((xk + ei,) + args)) - f0) / epsilon
+        ei[k] = 1.0
+        d = epsilon * ei
+        grad[k] = (f(*((xk+d,)+args)) - f0) / d[k]
         ei[k] = 0.0
+
     return grad
 
 def check_grad(func, grad, x0, *args):
-    """Check the correctness of a gradient function
-    by comparing it against a finite-difference approximation
-    of the gradient.
+    """Check the correctness of a gradient function by comparing it against a
+    (forward) finite-difference approximation of the gradient.
 
     Parameters
     ----------
     func: callable func(x0,*args)
-        Function whose derivative is to be checked
+        Function whose derivative is to be checked.
     grad: callable grad(x0, *args)
-        Gradient of func
+        Gradient of `func`.
     x0: ndarray
-        Points to check grad against finite difference
-        approximation of grad using func.
-    args: optional
-        Extra arguments passed to func and grad
+        Points to check `grad` against forward difference approximation of grad
+        using `func`.
+    args: \*args, optional
+        Extra arguments passed to `func` and `grad`.
 
     Returns
     -------
     err: float
-        The square root of the sum of squares (i.e. the 2-norm)
-        of the difference between grad(x0, *args) and the
-        finite difference approximation of grad using func at the
-        points x0.
+        The square root of the sum of squares (i.e. the 2-norm) of the
+        difference between ``grad(x0, *args)`` and the finite difference
+        approximation of `grad` using func at the points `x0`.
+
+    See Also
+    --------
+    approx_fprime
 
     """
     return sqrt(sum((grad(x0, *args) - approx_fprime(x0, func, _epsilon, *args))**2))
@@ -523,17 +581,17 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         Objective function to be minimized.
     x0 : ndarray
         Initial guess.
-    fprime : callable f'(x,*args)
+    fprime : callable f'(x,*args), optional
         Gradient of f.
-    args : tuple
+    args : tuple, optional
         Extra arguments passed to f and fprime.
-    gtol : float
+    gtol : float, optional
         Gradient norm must be less than gtol before succesful termination.
-    norm : float
+    norm : float, optional
         Order of norm (Inf is max, -Inf is min)
-    epsilon : int or ndarray
+    epsilon : int or ndarray, optional
         If fprime is approximated, use this value for the step size.
-    callback : callable
+    callback : callable, optional
         An optional user-supplied function to call after each
         iteration.  Called as callback(xk), where xk is the
         current parameter vector.
@@ -778,18 +836,18 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
         Objective function to be minimized.
     x0 : ndarray
         Initial guess.
-    fprime : callable f'(x,*args)
+    fprime : callable f'(x,*args), optional
         Function which computes the gradient of f.
-    args : tuple
+    args : tuple, optional
         Extra arguments passed to f and fprime.
-    gtol : float
+    gtol : float, optional
         Stop when norm of gradient is less than gtol.
-    norm : float
+    norm : float, optional
         Order of vector norm to use.  -Inf is min, Inf is max.
-    epsilon : float or ndarray
+    epsilon : float or ndarray, optional
         If fprime is approximated, use this value for the step
         size (can be scalar or vector).
-    callback : callable
+    callback : callable, optional
         An optional user-supplied function, called after each
         iteration.  Called as callback(xk), where xk is the
         current parameter vector.
@@ -1007,18 +1065,18 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         Initial guess.
     fprime : callable f'(x,*args)
         Gradient of f.
-    fhess_p : callable fhess_p(x,p,*args)
+    fhess_p : callable fhess_p(x,p,*args), optional
         Function which computes the Hessian of f times an
         arbitrary vector, p.
-    fhess : callable fhess(x,*args)
+    fhess : callable fhess(x,*args), optional
         Function to compute the Hessian matrix of f.
-    args : tuple
+    args : tuple, optional
         Extra arguments passed to f, fprime, fhess_p, and fhess
         (the same set of extra arguments is supplied to all of
         these functions).
-    epsilon : float or ndarray
+    epsilon : float or ndarray, optional
         If fhess is approximated, use this value for the step size.
-    callback : callable
+    callback : callable, optional
         An optional user-supplied function which is called after
         each iteration.  Called as callback(xk), where xk is the
         current parameter vector.
@@ -1269,15 +1327,15 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
         Objective function to be minimized (must accept and return scalars).
     x1, x2 : float or array scalar
         The optimization bounds.
-    args : tuple
+    args : tuple, optional
         Extra arguments passed to function.
-    xtol : float
+    xtol : float, optional
         The convergence tolerance.
-    maxfun : int
+    maxfun : int, optional
         Maximum number of function evaluations allowed.
-    full_output : bool
+    full_output : bool, optional
         If True, return optional outputs.
-    disp : int
+    disp : int, optional
         If non-zero, print messages.
             0 : no message printing.
             1 : non-convergence notification messages only.
