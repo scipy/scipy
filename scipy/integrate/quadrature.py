@@ -173,29 +173,37 @@ def tupleset(t, i, value):
     l[i] = value
     return tuple(l)
 
-def cumtrapz(y, x=None, dx=1.0, axis=-1):
-    """
-    Cumulatively integrate y(x) using samples along the given axis
-    and the composite trapezoidal rule.  If x is None, spacing given by `dx`
-    is assumed.
+def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
+    """Cumulatively integrate y(x) using the composite trapezoidal rule.
 
     Parameters
     ----------
-    y : array
-
-    x : array, optional
-
+    y : array_like
+        Values to integrate.
+    x : array_like, optional
+        The coordinate to integrate along.  If None (default), use spacing `dx`
+        between consecutive elements in `y`.
     dx : int, optional
-
+        Spacing between elements of `y`.  Only used if `x` is None.
     axis : int, optional
-        Specifies the axis to cumulate:
+        Specifies the axis to cumulate.  Default is -1 (last axis).
+    initial : scalar, optional
+        If given, uses this value as the first value in the returned result.
+        Typically this value should be 0.  Default is None, which means no
+        value at ``x[0]`` is returned and `res` has one element less than `y`
+        along the axis of integration.
 
-          - -1 --> X axis
-          - 0  --> Z axis
-          - 1  --> Y axis
+    Returns
+    -------
+    res : ndarray
+        The result of cumulative integration of `y` along `axis`.
+        If `initial` is None, the shape is such that the axis of integration
+        has one less value then `y`.  If `initial` is given, the shape is equal
+        to that of `y`.
 
     See Also
     --------
+    numpy.cumsum, numpy.cumprod
     quad: adaptive quadrature using QUADPACK
     romberg: adaptive Romberg quadrature
     quadrature: adaptive Gaussian quadrature
@@ -204,20 +212,40 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1):
     tplquad: triple integrals
     romb: integrators for sampled data
     trapz: integrators for sampled data
-    cumtrapz: cumulative integration for sampled data
     ode: ODE integrators
     odeint: ODE integrators
 
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> x = np.linspace(-2, 2, num=20)
+    >>> y = x
+    >>> y_int = integrate.cumtrapz(y, x, initial=0)
+    >>> plt.plot(x, y_int, 'ro', x, y[0] + 0.5 * x**2, 'b-')
+    >>> plt.show()
+
     """
     y = asarray(y)
+    x = asarray(x)
     if x is None:
         d = dx
     else:
-        d = diff(x,axis=axis)
+        d = diff(x, axis=axis)
     nd = len(y.shape)
     slice1 = tupleset((slice(None),)*nd, axis, slice(1, None))
     slice2 = tupleset((slice(None),)*nd, axis, slice(None, -1))
-    return add.accumulate(d * (y[slice1]+y[slice2])/2.0,axis)
+    res = add.accumulate(d * (y[slice1] + y[slice2]) / 2.0, axis)
+    if initial is not None:
+        if not np.isscalar(initial):
+            raise ValueError("`initial` parameter should be a scalar.")
+
+        shape = list(res.shape)
+        shape[axis] = 1
+        res = np.concatenate([np.zeros(shape, dtype=res.dtype), res],
+                             axis=axis)
+
+    return res
+
 
 def _basic_simps(y,start,stop,x,dx,axis):
     nd = len(y.shape)
