@@ -419,42 +419,47 @@ class TestOptimize(TestCase):
         self.setUp()
         self.test_powell(True)
 
+class TestOptimizeScalar(TestCase):
+    """Tests for scalar optimizers"""
+    def setUp(self):
+        self.solution = 1.5
+
+    def fun(self, x):
+        """Objective function"""
+        return (x - 1.5)**2 - 0.8
+
     def test_brent(self):
-        """ brent algorithm
-        """
-        x = optimize.brent(lambda x: (x-1.5)**2-0.8)
-        err1 = abs(x - 1.5)
-        x = optimize.brent(lambda x: (x-1.5)**2-0.8, brack = (-3,-2))
-        err2 = abs(x - 1.5)
-        x = optimize.brent(lambda x: (x-1.5)**2-0.8, full_output=True)
-        err3 = abs(x[0] - 1.5)
-        x = optimize.brent(lambda x: (x-1.5)**2-0.8, brack = (-15,-1,15))
-        err4 = abs(x - 1.5)
+        """ brent algorithm """
+        x = optimize.brent(self.fun)
+        assert_allclose(x, self.solution, atol=1e-6)
 
-        assert_(max((err1,err2,err3,err4)) < 1e-6)
+        x = optimize.brent(self.fun, brack = (-3, -2))
+        assert_allclose(x, self.solution, atol=1e-6)
 
+        x = optimize.brent(self.fun, full_output=True)
+        assert_allclose(x[0], self.solution, atol=1e-6)
+
+        x = optimize.brent(self.fun, brack = (-15, -1, 15))
+        assert_allclose(x, self.solution, atol=1e-6)
 
     def test_fminbound(self):
-        """Test fminbound
-        """
-        x = optimize.fminbound(lambda x: (x - 1.5)**2 - 0.8, 0, 1)
-        assert_(abs(x - 1) < 1e-5)
-        x = optimize.fminbound(lambda x: (x - 1.5)**2 - 0.8, 1, 5)
-        assert_(abs(x - 1.5) < 1e-6)
-        x = optimize.fminbound(lambda x: (x - 1.5)**2 - 0.8,
-                               np.array([1]), np.array([5]))
-        assert_(abs(x - 1.5) < 1e-6)
-        assert_raises(ValueError,
-                optimize.fminbound, lambda x: (x - 1.5)**2 - 0.8, 5, 1)
+        """Test fminbound """
+        x = optimize.fminbound(self.fun, 0, 1)
+        assert_allclose(x, 1, atol=1e-4)
+
+        x = optimize.fminbound(self.fun, 1, 5)
+        assert_allclose(x, self.solution, atol=1e-6)
+
+        x = optimize.fminbound(self.fun, np.array([1]), np.array([5]))
+        assert_allclose(x, self.solution, atol=1e-6)
+        assert_raises(ValueError, optimize.fminbound, self.fun, 5, 1)
 
     def test_fminbound_scalar(self):
-        assert_raises(ValueError,
-                      optimize.fminbound, lambda x: (x - 1.5)**2 - 0.8,
+        assert_raises(ValueError, optimize.fminbound, self.fun,
                       np.zeros(2), 1)
 
-        assert_allclose(
-            optimize.fminbound(lambda x: (x - 1.5)**2 - 0.8, 1, np.array(5)),
-            1.5)
+        x = optimize.fminbound(self.fun, 1, np.array(5))
+        assert_allclose(x, self.solution, atol=1e-6)
 
 
 class TestTnc(TestCase):
