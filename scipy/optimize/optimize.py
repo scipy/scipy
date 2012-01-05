@@ -28,6 +28,7 @@ from numpy import atleast_1d, eye, mgrid, argmin, zeros, shape, \
 from linesearch import \
      line_search_BFGS, line_search_wolfe1, line_search_wolfe2, \
      line_search_wolfe2 as line_search
+import inspect
 
 
 # standard status messages of optimizers
@@ -1148,13 +1149,20 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             'maxiter': maxiter,
             'disp': disp}
 
+    if fhess is not None:
+        hess = fhess
+    elif fhess_p is not None:
+        hess = fhess_p
+    else:
+        hess = None
+
     # force full_output if retall=True to preserve backwards compatibility
     if retall and not full_output:
-        out = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p, opts,
+        out = _minimize_newtoncg(f, x0, args, fprime, hess, opts,
                                  full_output=True, retall=retall,
                                  callback=callback)
     else:
-        out = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p, opts,
+        out = _minimize_newtoncg(f, x0, args, fprime, hess, opts,
                                  full_output, retall, callback)
 
     if full_output:
@@ -1171,7 +1179,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         else:
             return out
 
-def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
+def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None,
                        options={}, full_output=0, retall=0, callback=None):
     """
     Minimization of scalar function of one or more variables using the
@@ -1197,8 +1205,23 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         raise ValueError('Jacobian is required for Newton-CG method')
     f = fun
     fprime = jac
-    fhess_p = hessp
-    fhess = hess
+    if hess is None:
+        fhess = None
+        fhess_p = None
+    else:
+        # check hessian type based on the number of arguments
+        fun_args = inspect.getargspec(fun)[0]
+        hess_args = inspect.getargspec(hess)[0]
+        if len(hess_args) == len(fun_args):
+            fhess = hess
+            fhess_p = None
+        elif len(hess_args) == len(fun_args) + 1:
+            fhess = None
+            fhess_p = hess
+        else:
+            raise ValueError('The number of arguments of the Hessian '
+                             'function does not agree with that of the '
+                             'objective function.')
     # retrieve useful options
     avextol = options.get('xtol', 1e-5)
     epsilon = options.get('eps', _epsilon)

@@ -14,10 +14,8 @@ from numpy.testing import assert_raises, assert_almost_equal, \
         assert_equal, assert_, TestCase, run_module_suite
 
 from scipy import optimize
-from numpy import array, zeros, float64, dot, log, exp, inf, sin, cos
 import numpy as np
 from scipy.optimize.tnc import RCSTRINGS, MSG_NONE
-import numpy.random
 from math import pow
 
 class TestOptimize(TestCase):
@@ -26,10 +24,10 @@ class TestOptimize(TestCase):
     Computational Linguistics, vol 22, num 1, pp 39--72, 1996.)
     """
     def setUp(self):
-        self.F = array([[1,1,1],[1,1,0],[1,0,1],[1,0,0],[1,0,0]])
-        self.K = array([1., 0.3, 0.5])
-        self.startparams = zeros(3, float64)
-        self.solution = array([0., -0.524869316, 0.487525860])
+        self.F = np.array([[1,1,1],[1,1,0],[1,0,1],[1,0,0],[1,0,0]])
+        self.K = np.array([1., 0.3, 0.5])
+        self.startparams = np.zeros(3, np.float64)
+        self.solution = np.array([0., -0.524869316, 0.487525860])
         self.maxiter = 1000
         self.funccalls = 0
         self.gradcalls = 0
@@ -40,19 +38,31 @@ class TestOptimize(TestCase):
         self.funccalls += 1
         if self.funccalls > 6000:
             raise RuntimeError("too many iterations in optimization routine")
-        log_pdot = dot(self.F, x)
-        logZ = log(sum(exp(log_pdot)))
-        f = logZ - dot(self.K, x)
+        log_pdot = np.dot(self.F, x)
+        logZ = np.log(sum(np.exp(log_pdot)))
+        f = logZ - np.dot(self.K, x)
         self.trace.append(x)
         return f
 
 
     def grad(self, x):
         self.gradcalls += 1
-        log_pdot = dot(self.F, x)
-        logZ = log(sum(exp(log_pdot)))
-        p = exp(log_pdot - logZ)
-        return dot(self.F.transpose(), p) - self.K
+        log_pdot = np.dot(self.F, x)
+        logZ = np.log(sum(np.exp(log_pdot)))
+        p = np.exp(log_pdot - logZ)
+        return np.dot(self.F.transpose(), p) - self.K
+
+
+    def hess(self, x):
+        log_pdot = np.dot(self.F, x)
+        logZ = np.log(sum(np.exp(log_pdot)))
+        p = np.exp(log_pdot - logZ)
+        return np.dot(self.F.T,
+                      np.dot(np.diag(p), self.F - np.dot(self.F.T, p)))
+
+
+    def hessp(self, x, p):
+        return np.dot(self.hess(x), p)
 
 
     def test_cg(self, use_wrapper=False):
@@ -280,6 +290,76 @@ class TestOptimize(TestCase):
                             [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                            atol=1e-6, rtol=1e-7), self.trace[:5])
 
+    def test_ncg_hess(self, use_wrapper=False):
+        """ Newton conjugate gradient with Hessian """
+        if use_wrapper:
+            opts = {'maxit': self.maxiter, 'disp': False}
+            retval = optimize.minimize(self.func, self.startparams,
+                                       method='Newton-CG', jac=self.grad,
+                                       hess = self.hess,
+                                       args=(), options=opts,
+                                       full_output=False, retall=False)
+        else:
+            retval = optimize.fmin_ncg(self.func, self.startparams, self.grad,
+                                       fhess = self.hess,
+                                       args=(), maxiter=self.maxiter,
+                                       full_output=False, disp=False,
+                                       retall=False)
+
+        params = retval
+
+        err = abs(self.func(params) - self.func(self.solution))
+        #print "NCG: Difference is: " + str(err)
+        assert_(err < 1e-6)
+
+        # Ensure that function call counts are 'known good'; these are from
+        # Scipy 0.7.0. Don't allow them to increase.
+        assert_(self.funccalls == 7, self.funccalls)
+        assert_(self.gradcalls <= 18, self.gradcalls) # 0.9.0
+        #assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
+        #assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
+
+        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        assert_(np.allclose(self.trace[3:5],
+                           [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
+                            [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
+                           atol=1e-6, rtol=1e-7), self.trace[:5])
+
+    def test_ncg_hessp(self, use_wrapper=False):
+        """ Newton conjugate gradient with Hessian times a vector p """
+        if use_wrapper:
+            opts = {'maxit': self.maxiter, 'disp': False}
+            retval = optimize.minimize(self.func, self.startparams,
+                                       method='Newton-CG', jac=self.grad,
+                                       hess = self.hessp,
+                                       args=(), options=opts,
+                                       full_output=False, retall=False)
+        else:
+            retval = optimize.fmin_ncg(self.func, self.startparams, self.grad,
+                                       fhess_p = self.hessp,
+                                       args=(), maxiter=self.maxiter,
+                                       full_output=False, disp=False,
+                                       retall=False)
+
+        params = retval
+
+        err = abs(self.func(params) - self.func(self.solution))
+        #print "NCG: Difference is: " + str(err)
+        assert_(err < 1e-6)
+
+        # Ensure that function call counts are 'known good'; these are from
+        # Scipy 0.7.0. Don't allow them to increase.
+        assert_(self.funccalls == 7, self.funccalls)
+        assert_(self.gradcalls <= 18, self.gradcalls) # 0.9.0
+        #assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
+        #assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
+
+        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        assert_(np.allclose(self.trace[3:5],
+                           [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
+                            [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
+                           atol=1e-6, rtol=1e-7), self.trace[:5])
+
 
     def test_l_bfgs_b(self, use_wrapper=False):
         """ limited-memory bound-constrained BFGS algorithm
@@ -324,6 +404,10 @@ class TestOptimize(TestCase):
         self.setUp()
         self.test_ncg(True)
         self.setUp()
+        self.test_ncg_hess(True)
+        self.setUp()
+        self.test_ncg_hessp(True)
+        self.setUp()
         self.test_neldermead(True)
         self.setUp()
         self.test_powell(True)
@@ -351,7 +435,7 @@ class TestOptimize(TestCase):
         x = optimize.fminbound(lambda x: (x - 1.5)**2 - 0.8, 1, 5)
         assert_(abs(x - 1.5) < 1e-6)
         x = optimize.fminbound(lambda x: (x - 1.5)**2 - 0.8,
-                               numpy.array([1]), numpy.array([5]))
+                               np.array([1]), np.array([5]))
         assert_(abs(x - 1.5) < 1e-6)
         assert_raises(ValueError,
                 optimize.fminbound, lambda x: (x - 1.5)**2 - 0.8, 5, 1)
@@ -384,7 +468,7 @@ class TestTnc(TestCase):
             dif[1] = 200.0*(x[1]-pow(x[0],2))
             dif[0] = -2.0*(x[0]*(dif[1]-1.0)+1.0)
             return f, dif
-        self.tests.append((test1fg, [-2,1], ([-inf,None],[-1.5,None]),
+        self.tests.append((test1fg, [-2,1], ([-np.inf,None],[-1.5,None]),
                            [1,1]))
         def test2fg(x):
             f = 100.0*pow((x[1]-pow(x[0],2)),2)+pow(1.0-x[0],2)
@@ -392,7 +476,7 @@ class TestTnc(TestCase):
             dif[1] = 200.0*(x[1]-pow(x[0],2))
             dif[0] = -2.0*(x[0]*(dif[1]-1.0)+1.0)
             return f, dif
-        self.tests.append((test2fg, [-2,1], [(-inf,None),(1.5,None)],
+        self.tests.append((test2fg, [-2,1], [(-np.inf,None),(1.5,None)],
                            [-1.2210262419616387,1.5]))
 
         def test3fg(x):
@@ -401,7 +485,7 @@ class TestTnc(TestCase):
             dif[0] = -2.0*(x[1]-x[0])*1.0e-5
             dif[1] = 1.0-dif[0]
             return f, dif
-        self.tests.append((test3fg, [10,1], [(-inf,None),(0.0, None)],
+        self.tests.append((test3fg, [10,1], [(-np.inf,None),(0.0, None)],
                            [0,0]))
 
         def test4fg(x):
@@ -414,9 +498,9 @@ class TestTnc(TestCase):
                            [1,0]))
 
         def test5fg(x):
-            f = sin(x[0]+x[1])+pow(x[0]-x[1],2)-1.5*x[0]+2.5*x[1]+1.0
+            f = np.sin(x[0]+x[1])+pow(x[0]-x[1],2)-1.5*x[0]+2.5*x[1]+1.0
             dif = [0,0]
-            v1 = cos(x[0]+x[1])
+            v1 = np.cos(x[0]+x[1])
             v2 = 2.0*(x[0]-x[1])
 
             dif[0] = v1+v2-1.5
@@ -439,7 +523,7 @@ class TestTnc(TestCase):
             dif[3] = (180.0*(x[3]-pow(x[2],2))+20.2\
                       *(x[3]-1.0)+19.8*(x[1]-1.0))*1.0e-5
             return f, dif
-        self.tests.append((test38fg, array([-3,-1,-3,-1]), [(-10,10)]*4, [1]*4))
+        self.tests.append((test38fg, np.array([-3,-1,-3,-1]), [(-10,10)]*4, [1]*4))
 
         def test45fg(x):
             f = 2.0-x[0]*x[1]*x[2]*x[3]*x[4]/120.0
@@ -470,8 +554,8 @@ class TestRosen(TestCase):
 
     def test_hess(self):
         """Compare rosen_hess(x) times p with rosen_hess_prod(x,p) (ticket #1248)"""
-        x = array([3, 4, 5])
-        p = array([2, 2, 2])
+        x = np.array([3, 4, 5])
+        p = np.array([2, 2, 2])
         hp = optimize.rosen_hess_prod(x, p)
         dothp = np.dot(optimize.rosen_hess(x), p)
         assert_equal(hp, dothp)
