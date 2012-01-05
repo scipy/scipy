@@ -53,6 +53,18 @@ class TestOptimize(TestCase):
         return np.dot(self.F.transpose(), p) - self.K
 
 
+    def hess(self, x):
+        log_pdot = np.dot(self.F, x)
+        logZ = np.log(sum(np.exp(log_pdot)))
+        p = np.exp(log_pdot - logZ)
+        return np.dot(self.F.T,
+                      np.dot(np.diag(p), self.F - np.dot(self.F.T, p)))
+
+
+    def hessp(self, x, p):
+        return np.dot(self.hess(x), p)
+
+
     def test_cg(self, use_wrapper=False):
         """ conjugate gradient optimization routine """
         if use_wrapper:
@@ -278,6 +290,76 @@ class TestOptimize(TestCase):
                             [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                            atol=1e-6, rtol=1e-7), self.trace[:5])
 
+    def test_ncg_hess(self, use_wrapper=False):
+        """ Newton conjugate gradient with Hessian """
+        if use_wrapper:
+            opts = {'maxit': self.maxiter, 'disp': False}
+            retval = optimize.minimize(self.func, self.startparams,
+                                       method='Newton-CG', jac=self.grad,
+                                       hess = self.hess,
+                                       args=(), options=opts,
+                                       full_output=False, retall=False)
+        else:
+            retval = optimize.fmin_ncg(self.func, self.startparams, self.grad,
+                                       fhess = self.hess,
+                                       args=(), maxiter=self.maxiter,
+                                       full_output=False, disp=False,
+                                       retall=False)
+
+        params = retval
+
+        err = abs(self.func(params) - self.func(self.solution))
+        #print "NCG: Difference is: " + str(err)
+        assert_(err < 1e-6)
+
+        # Ensure that function call counts are 'known good'; these are from
+        # Scipy 0.7.0. Don't allow them to increase.
+        assert_(self.funccalls == 7, self.funccalls)
+        assert_(self.gradcalls <= 18, self.gradcalls) # 0.9.0
+        #assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
+        #assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
+
+        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        assert_(np.allclose(self.trace[3:5],
+                           [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
+                            [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
+                           atol=1e-6, rtol=1e-7), self.trace[:5])
+
+    def test_ncg_hessp(self, use_wrapper=False):
+        """ Newton conjugate gradient with Hessian times a vector p """
+        if use_wrapper:
+            opts = {'maxit': self.maxiter, 'disp': False}
+            retval = optimize.minimize(self.func, self.startparams,
+                                       method='Newton-CG', jac=self.grad,
+                                       hessp = self.hessp,
+                                       args=(), options=opts,
+                                       full_output=False, retall=False)
+        else:
+            retval = optimize.fmin_ncg(self.func, self.startparams, self.grad,
+                                       fhess_p = self.hessp,
+                                       args=(), maxiter=self.maxiter,
+                                       full_output=False, disp=False,
+                                       retall=False)
+
+        params = retval
+
+        err = abs(self.func(params) - self.func(self.solution))
+        #print "NCG: Difference is: " + str(err)
+        assert_(err < 1e-6)
+
+        # Ensure that function call counts are 'known good'; these are from
+        # Scipy 0.7.0. Don't allow them to increase.
+        assert_(self.funccalls == 7, self.funccalls)
+        assert_(self.gradcalls <= 18, self.gradcalls) # 0.9.0
+        #assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
+        #assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
+
+        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        assert_(np.allclose(self.trace[3:5],
+                           [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
+                            [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
+                           atol=1e-6, rtol=1e-7), self.trace[:5])
+
 
     def test_l_bfgs_b(self, use_wrapper=False):
         """ limited-memory bound-constrained BFGS algorithm
@@ -321,6 +403,10 @@ class TestOptimize(TestCase):
         self.test_cg(True)
         self.setUp()
         self.test_ncg(True)
+        self.setUp()
+        self.test_ncg_hess(True)
+        self.setUp()
+        self.test_ncg_hessp(True)
         self.setUp()
         self.test_neldermead(True)
         self.setUp()
