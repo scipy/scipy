@@ -331,7 +331,7 @@ class TestOptimize(TestCase):
             opts = {'maxit': self.maxiter, 'disp': False}
             retval = optimize.minimize(self.func, self.startparams,
                                        method='Newton-CG', jac=self.grad,
-                                       hessp = self.hessp,
+                                       hess = self.hessp,
                                        args=(), options=opts,
                                        full_output=False, retall=False)
         else:
