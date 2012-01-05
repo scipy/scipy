@@ -360,22 +360,14 @@ class TestOptimize(TestCase):
                            atol=1e-6, rtol=1e-7), self.trace[:5])
 
 
-    def test_l_bfgs_b(self, use_wrapper=False):
+    def test_l_bfgs_b(self):
         """ limited-memory bound-constrained BFGS algorithm
         """
-        if use_wrapper:
-            opts = {'maxfev': self.maxiter}
-            retval = optimize.fmincon(self.func, self.startparams,
-                                      method='l-BFGS-B', args=(),
-                                      jac=self.grad, options=opts,
-                                      full_output=True)
-            params = retval[0]
-        else:
-            retval = optimize.fmin_l_bfgs_b(self.func, self.startparams,
-                                            self.grad, args=(),
-                                            maxfun=self.maxiter)
+        retval = optimize.fmin_l_bfgs_b(self.func, self.startparams,
+                                        self.grad, args=(),
+                                        maxfun=self.maxiter)
 
-            (params, fopt, d) = retval
+        (params, fopt, d) = retval
 
         err = abs(self.func(params) - self.func(self.solution))
         #print "LBFGSB: Difference is: " + str(err)
@@ -391,6 +383,32 @@ class TestOptimize(TestCase):
                            [[0.        , -0.52489628,  0.48753042],
                             [0.        , -0.52489628,  0.48753042]],
                            atol=1e-14, rtol=1e-7), self.trace[3:5])
+
+    def test_l_bfgs_b_numjac(self):
+        """ L-BFGS-B with numerical jacobian """
+        retval = optimize.fmin_l_bfgs_b(self.func, self.startparams,
+                                        approx_grad=True,
+                                        maxfun=self.maxiter)
+
+        (params, fopt, d) = retval
+
+        err = abs(self.func(params) - self.func(self.solution))
+        #print "LBFGSB: Difference is: " + str(err)
+        assert_(err < 1e-6)
+
+    def test_l_bfgs_b_funjac(self):
+        """ L-BFGS-B with combined objective function and jacobian """
+        def fun(x):
+            return self.func(x), self.grad(x)
+
+        retval = optimize.fmin_l_bfgs_b(fun, self.startparams,
+                                        maxfun=self.maxiter)
+
+        (params, fopt, d) = retval
+
+        err = abs(self.func(params) - self.func(self.solution))
+        #print "LBFGSB: Difference is: " + str(err)
+        assert_(err < 1e-6)
 
     def test_minimize(self):
         """Tests for the minimize wrapper."""
