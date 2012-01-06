@@ -1757,12 +1757,10 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-          \frac{1 - (u - n{|u|}_1){(v - n{|v|}_1)}^T}
-               {{|(u - n{|u|}_1)|}_2 {|(v - n{|v|}_1)|}^T}
+          1 - \frac{(u - \bar{u})(v - \bar{v})^T}
+                   {{|(u - \bar{u})|}{|(v - \bar{v})|}^T}
 
-       where :math:`|*|_1` is the Manhattan (or 1-norm) of its
-       argument, and :math:`n` is the common dimensionality of the
-       vectors.
+       where :math:`\bar{v}` is the mean of the elements of vector v.
 
     8. ``Y = cdist(XA, XB, 'hamming')``
 
