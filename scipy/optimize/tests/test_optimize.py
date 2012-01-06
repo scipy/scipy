@@ -548,16 +548,6 @@ class TestTnc(TestCase):
     def fg45(self, x):
         return self.f45(x), self.g45(x)
 
-    # error handling
-    def error(self, fun, x, xopt):
-        " Returns the error "
-        return abs(fun(xopt) - fun(x))
-
-    def error_msg(self, fun_name, nfev, rc):
-        " TNC exit message "
-        return "TNC failed (%s) after %d evaluation of %s." % \
-                (optimize.tnc.RCSTRINGS[rc], nfev, fun_name)
-
     # tests
     def test_tnc1(self):
         " TNC: test 1"
@@ -568,8 +558,9 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_(self.error(self.f1, x, xopt) < 1e-8,
-                self.error_msg(fg.__name__, nf, rc))
+        assert_almost_equal(self.f1(x), self.f1(xopt), 8,
+                            err_msg="TNC failed with status: " +
+                                    optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc2(self):
         " TNC: test 2"
@@ -580,8 +571,9 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_(self.error(self.f1, x, xopt) < 1e-8,
-                self.error_msg(fg.__name__, nf, rc))
+        assert_almost_equal(self.f1(x), self.f1(xopt), 8,
+                            err_msg="TNC failed with status: " +
+                                    optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc3(self):
         " TNC: test 3"
@@ -592,8 +584,9 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_(self.error(self.f3, x, xopt) < 1e-8,
-                self.error_msg(fg.__name__, nf, rc))
+        assert_almost_equal(self.f3(x), self.f3(xopt), 8,
+                            err_msg="TNC failed with status: " +
+                                    optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc4(self):
         " TNC: test 4"
@@ -604,8 +597,9 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_(self.error(self.f4, x, xopt) < 1e-8,
-                self.error_msg(fg.__name__, nf, rc))
+        assert_almost_equal(self.f4(x), self.f4(xopt), 8,
+                            err_msg="TNC failed with status: " +
+                                    optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc5(self):
         " TNC: test 5"
@@ -616,8 +610,9 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_(self.error(self.f5, x, xopt) < 1e-8,
-                self.error_msg(fg.__name__, nf, rc))
+        assert_almost_equal(self.f5(x), self.f5(xopt), 8,
+                            err_msg="TNC failed with status: " +
+                                    optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc38(self):
         " TNC: test 38"
@@ -628,8 +623,9 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_(self.error(self.f38, x, xopt) < 1e-8,
-                self.error_msg(fg.__name__, nf, rc))
+        assert_almost_equal(self.f38(x), self.f38(xopt), 8,
+                            err_msg="TNC failed with status: " +
+                                    optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc45(self):
         " TNC: test 45"
@@ -641,8 +637,9 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_(self.error(self.f45, x, xopt) < 1e-8,
-                self.error_msg(fg.__name__, nf, rc))
+        assert_almost_equal(self.f45(x), self.f45(xopt), 8,
+                            err_msg="TNC failed with status: " +
+                                    optimize.tnc.RCSTRINGS[rc])
 
 
 class TestRosen(TestCase):
