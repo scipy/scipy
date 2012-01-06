@@ -9,6 +9,7 @@ from numpy.testing import TestCase, run_module_suite, assert_equal, \
 import numpy as np
 
 from scipy.linalg import flapack, clapack
+from scipy.linalg.lapack import get_lapack_funcs
 
 
 class TestFlapackSimple(TestCase):
@@ -42,50 +43,31 @@ class TestFlapackSimple(TestCase):
             if f is None: continue
             ht,tau,info = f(a)
             assert_(not info,`info`)
-            
+
     def test_trsyl(self):
-        a = [[1, 2], [3, 4]]
-        b = [[5, 6], [7, 8]]
-        c = [[9, 10], [11, 12]]
-        
-        x_expected = [[0.5, 0.66667],
-                      [0.66667, 0.5]]
-                      
-        x_expected_t = [[0.5, 0.58333],
-                        [0.83333, 0.41667]]
-                        
-        x_expected_m = [[-1.125, -1.0],
-                        [-1.25, -1.875]]
-        
+        a = np.array([[1, 2], [0, 4]])
+        b = np.array([[5, 6], [0, 8]])
+        c = np.array([[9, 10], [11, 12]])
+        trans = 'T'
+
         # Test single and double implementations, including most
         # of the options
-        for p in 'ds':
-            f = getattr(flapack, p+'trsyl', None)
-                
-            x, scale, info = f(a, b, c)
-            assert_array_almost_equal(x, x_expected, decimal=4)
-            assert_equal(scale,1.0)
-            
-            x, scale, info = f(a, b, c, trana='T', tranb='T')
-            assert_array_almost_equal(x, x_expected_t, decimal=4)
-            
-            x, scale, info = f(a, b, c, isgn=-1)
-            assert_array_almost_equal(x, x_expected_m, decimal=4)
-        
-        # Test complex operation (a bit simpler...)
-        ac = [[0+2.j,],]
-        bc = [[0+4.j,],]
-        cc = [[0+12.j,],]
-        x_expected_c = [[2.0+0.j,],]
-        
-        for p in 'zc':
-            f = getattr(flapack, p+'trsyl', None)
-            
-            x, scale, info = f(ac, bc, cc)
-            assert_array_almost_equal(x, x_expected_c, decimal=4)
-            
-            x, scale, info = f(ac, bc, cc, trana='C', tranb='C')
-            assert_array_almost_equal(x, -1.0*np.asarray(x_expected_c), decimal=4)
+        for dtype in 'fdFD':
+            a1, b1, c1 = a.astype(dtype), b.astype(dtype), c.astype(dtype)
+            trsyl, = get_lapack_funcs(('trsyl',), (a1,))
+            if dtype.isupper(): # is complex dtype
+                a1[0] += 1j
+                trans = 'C'
+
+            x, scale, info = trsyl(a1, b1, c1)
+            assert_array_almost_equal(np.dot(a1, x) + np.dot(x, b1), scale * c1)
+
+            x, scale, info = trsyl(a1, b1, c1, trana=trans, tranb=trans)
+            assert_array_almost_equal(np.dot(a1.conjugate().T, x) + np.dot(x, b1.conjugate().T),
+                scale * c1, decimal=4)
+
+            x, scale, info = trsyl(a1, b1, c1, isgn=-1)
+            assert_array_almost_equal(np.dot(a1, x) - np.dot(x, b1), scale * c1, decimal=4)
 
 class TestLapack(TestCase):
 
