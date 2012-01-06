@@ -1109,7 +1109,7 @@ interface
      !         were used to solve the equation
      
      callstatement (*f2py_func)(trana,tranb,&isgn,&m,&n,a,&lda,b,&ldb,c,&ldc,&scale,&info)
-     callprotoargument char*,char*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*
+     callprotoargument char*,char*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctypereal>*,int*
 
      character optional,intent(in),check(*trana=='N'||*trana=='T'||*trana=='C'):: trana='N'
      character optional,intent(in),check(*tranb=='N'||*tranb=='T'||*tranb=='C'):: tranb='N'
@@ -1130,7 +1130,7 @@ interface
      <ftype> dimension(m,n),intent(in,out,copy,out=x) :: c
      integer depend(c),intent(hide):: ldc = shape(c,0)
      
-     <ftype> intent(out) :: scale
+     <ftypereal> intent(out) :: scale
      
      integer intent(out) :: info
      
