@@ -562,6 +562,34 @@ class TestTnc(TestCase):
                             err_msg="TNC failed with status: " +
                                     optimize.tnc.RCSTRINGS[rc])
 
+    def test_tnc1b(self):
+        " TNC: test 1 (approx. gradient)"
+        x, bounds = [-2, 1], ([-np.inf, None],[-1.5, None])
+        xopt = [1, 1]
+
+        x, nf, rc = optimize.fmin_tnc(self.f1, x, approx_grad=True,
+                                      bounds=bounds,
+                                      messages=optimize.tnc.MSG_NONE,
+                                      maxfun=200)
+
+        assert_almost_equal(self.f1(x), self.f1(xopt), 8,
+                            err_msg="TNC failed with status: " +
+                                    optimize.tnc.RCSTRINGS[rc])
+
+    def test_tnc1c(self):
+        " TNC: test 1 (separate fprime)"
+        x, bounds = [-2, 1], ([-np.inf, None],[-1.5, None])
+        xopt = [1, 1]
+
+        x, nf, rc = optimize.fmin_tnc(self.f1, x, fprime=self.g1,
+                                      bounds=bounds,
+                                      messages=optimize.tnc.MSG_NONE,
+                                      maxfun=200)
+
+        assert_almost_equal(self.f1(x), self.f1(xopt), 8,
+                            err_msg="TNC failed with status: " +
+                                    optimize.tnc.RCSTRINGS[rc])
+
     def test_tnc2(self):
         " TNC: test 2"
         fg, x, bounds = self.fg1, [-2, 1], ([-np.inf, None], [1.5, None])
