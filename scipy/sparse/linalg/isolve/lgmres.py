@@ -44,8 +44,8 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         User-supplied function to call after each iteration.  It is called
         as callback(xk), where xk is the current solution vector.
 
-    Additional parameters
-    ---------------------
+    Other Parameters
+    ----------------
     inner_m : int, optional
         Number of inner GMRES iterations per each outer iteration.
     outer_k : int, optional
