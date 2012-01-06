@@ -226,22 +226,23 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
 
     """
     y = asarray(y)
-    x = asarray(x)
     if x is None:
         d = dx
     else:
         d = diff(x, axis=axis)
+
     nd = len(y.shape)
     slice1 = tupleset((slice(None),)*nd, axis, slice(1, None))
     slice2 = tupleset((slice(None),)*nd, axis, slice(None, -1))
     res = add.accumulate(d * (y[slice1] + y[slice2]) / 2.0, axis)
+
     if initial is not None:
         if not np.isscalar(initial):
             raise ValueError("`initial` parameter should be a scalar.")
 
         shape = list(res.shape)
         shape[axis] = 1
-        res = np.concatenate([np.zeros(shape, dtype=res.dtype), res],
+        res = np.concatenate([np.ones(shape, dtype=res.dtype) * initial, res],
                              axis=axis)
 
     return res

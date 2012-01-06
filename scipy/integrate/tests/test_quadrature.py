@@ -123,6 +123,25 @@ class TestCumtrapz(TestCase):
             y_int = cumtrapz(y, x, initial=None, axis=axis)
             assert_equal(y_int.shape, shape)
 
+    def test_x_none(self):
+        y = np.linspace(-2, 2, num=5)
+
+        y_int = cumtrapz(y)
+        y_expected = [-1.5, -2., -1.5, 0.]
+        assert_allclose(y_int, y_expected)
+
+        y_int = cumtrapz(y, initial=1.23)
+        y_expected = [1.23, -1.5, -2., -1.5, 0.]
+        assert_allclose(y_int, y_expected)
+
+        y_int = cumtrapz(y, dx=3)
+        y_expected = [-4.5, -6., -4.5, 0.]
+        assert_allclose(y_int, y_expected)
+
+        y_int = cumtrapz(y, dx=3, initial=1.23)
+        y_expected = [1.23, -4.5, -6., -4.5, 0.]
+        assert_allclose(y_int, y_expected)
+
 
 if __name__ == "__main__":
     run_module_suite()
