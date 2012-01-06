@@ -599,8 +599,8 @@ def canberra(u, v):
 
     .. math::
 
-         \sum_u \frac{|u_i-v_i|}
-                     {(|u_i|+|v_i|)}.
+         d(u,v) = \frac{\sum_i|u_i-v_i|}
+                       {\sum_i(|u_i|+|v_i|)}.
 
     Parameters
     ----------
@@ -1016,8 +1016,8 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
        .. math::
 
-         d(u,v) = \sum_u \frac{|u_i-v_i|}
-                              {(|u_i|+|v_i|)}
+         d(u,v) = \frac{\sum_i|u_i-v_i|}
+                       {\sum_i(|u_i|+|v_i|)}.
 
 
     12. ``Y = pdist(X, 'braycurtis')``
@@ -1794,9 +1794,8 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-         d(u,v) = \sum_u \frac{|u_i-v_i|}
-                              {(|u_i|+|v_i|)}
-
+         d(u,v) = \frac{\sum_i|u_i-v_i|}
+                       {\sum_i(|u_i|+|v_i|)}.
 
     12. ``Y = cdist(XA, XB, 'braycurtis')``
 
