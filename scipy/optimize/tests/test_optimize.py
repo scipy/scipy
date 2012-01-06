@@ -558,7 +558,7 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_almost_equal(self.f1(x), self.f1(xopt), 8,
+        assert_almost_equal(self.f1(x), self.f1(xopt), decimal=8,
                             err_msg="TNC failed with status: " +
                                     optimize.tnc.RCSTRINGS[rc])
 
@@ -572,7 +572,7 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_almost_equal(self.f1(x), self.f1(xopt), 8,
+        assert_almost_equal(self.f1(x), self.f1(xopt), decimal=8,
                             err_msg="TNC failed with status: " +
                                     optimize.tnc.RCSTRINGS[rc])
 
@@ -586,7 +586,7 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_almost_equal(self.f1(x), self.f1(xopt), 8,
+        assert_almost_equal(self.f1(x), self.f1(xopt), decimal=8,
                             err_msg="TNC failed with status: " +
                                     optimize.tnc.RCSTRINGS[rc])
 
@@ -599,7 +599,7 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_almost_equal(self.f1(x), self.f1(xopt), 8,
+        assert_almost_equal(self.f1(x), self.f1(xopt), decimal=8,
                             err_msg="TNC failed with status: " +
                                     optimize.tnc.RCSTRINGS[rc])
 
@@ -612,7 +612,7 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_almost_equal(self.f3(x), self.f3(xopt), 8,
+        assert_almost_equal(self.f3(x), self.f3(xopt), decimal=8,
                             err_msg="TNC failed with status: " +
                                     optimize.tnc.RCSTRINGS[rc])
 
@@ -625,7 +625,7 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_almost_equal(self.f4(x), self.f4(xopt), 8,
+        assert_almost_equal(self.f4(x), self.f4(xopt), decimal=8,
                             err_msg="TNC failed with status: " +
                                     optimize.tnc.RCSTRINGS[rc])
 
@@ -638,7 +638,7 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_almost_equal(self.f5(x), self.f5(xopt), 8,
+        assert_almost_equal(self.f5(x), self.f5(xopt), decimal=8,
                             err_msg="TNC failed with status: " +
                                     optimize.tnc.RCSTRINGS[rc])
 
@@ -651,7 +651,7 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_almost_equal(self.f38(x), self.f38(xopt), 8,
+        assert_almost_equal(self.f38(x), self.f38(xopt), decimal=8,
                             err_msg="TNC failed with status: " +
                                     optimize.tnc.RCSTRINGS[rc])
 
@@ -665,7 +665,7 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_almost_equal(self.f45(x), self.f45(xopt), 8,
+        assert_almost_equal(self.f45(x), self.f45(xopt), decimal=8,
                             err_msg="TNC failed with status: " +
                                     optimize.tnc.RCSTRINGS[rc])
 
