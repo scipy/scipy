@@ -1746,7 +1746,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-          \frac{1 - uv^T}
+          1 - \frac{uv^T}
                {{|u|}_2 {|v|}_2}
 
        where :math:`|*|_2` is the 2-norm of its argument *.
