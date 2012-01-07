@@ -167,7 +167,8 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
 
 def leastsq(func, x0, args=(), Dfun=None, full_output=0,
             col_deriv=0, ftol=1.49012e-8, xtol=1.49012e-8,
-            gtol=0.0, maxfev=0, epsfcn=0.0, factor=100, diag=None):
+            gtol=0.0, maxfev=0, epsfcn=0.0, factor=100, diag=None,
+            m=None, skip_check=False):
     """
     Minimize the sum of squares of a set of equations.
 
@@ -213,6 +214,12 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         (``factor * || diag * x||``). Should be in interval ``(0.1, 100)``.
     diag : sequence
         N positive entries that serve as a scale factors for the variables.
+    m : number of equations to minimize. If None, automatically determined from
+        running the func once. If not None, make sure m is correct, or risk a
+        crash.
+    skip_check : if both m and Dfun is supplied, skip checking that Dfun complies
+        with the right sizes. Again, you risk a crash but gain in speed for small
+        problems that are solved repeatedly.
 
     Returns
     -------
@@ -273,23 +280,31 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     n = len(x0)
     if type(args) != type(()):
         args = (args,)
-    m = _check_func('leastsq', 'func', func, x0, args, n)[0]
+    
+    if m is None:
+        m = _check_func('leastsq', 'func', func, x0, args, n)[0]
     if n > m:
         raise TypeError('Improper input: N=%s must not exceed M=%s' % (n,m))
+    
+    # Switch between minpack routines for leastsq with/without Dfun.
     if Dfun is None:
         if (maxfev == 0):
             maxfev = 200*(n + 1)
         retval = _minpack._lmdif(func, x0, args, full_output, ftol, xtol,
                 gtol, maxfev, epsfcn, factor, diag)
     else:
-        if col_deriv:
-            _check_func('leastsq', 'Dfun', Dfun, x0, args, n, (n,m))
-        else:
-            _check_func('leastsq', 'Dfun', Dfun, x0, args, n, (m,n))
+        if not skip_check:
+            if col_deriv:
+                _check_func('leastsq', 'Dfun', Dfun, x0, args, n, (n,m))
+            else:
+                _check_func('leastsq', 'Dfun', Dfun, x0, args, n, (m,n))
+        
+        # Default maximal number of function evaluations:    
         if (maxfev == 0):
             maxfev = 100*(n + 1)
+        
         retval = _minpack._lmder(func, Dfun, x0, args, full_output, col_deriv,
-                ftol, xtol, gtol, maxfev, factor, diag)
+            ftol, xtol, gtol, maxfev, factor, diag)
 
     errors = {0:["Improper input parameters.", TypeError],
               1:["Both actual and predicted relative reductions "
