@@ -215,11 +215,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     diag : sequence
         N positive entries that serve as a scale factors for the variables.
     numeq : number of equations to minimize. If None, automatically determined 
-        from running the func once. If not None, make sure m is correct, or 
-        risk a crash.
+        from running the func once.
     skip_check : if Dfun is supplied, skip checking that Dfun complies with the
-        right sizes. Again, you risk a crash but gain in speed for small 
-        problems that are solved repeatedly.
+        right sizes.
 
     Returns
     -------
