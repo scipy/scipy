@@ -158,6 +158,9 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
     /* Skip over leading zeros in vector representing denominator (a) */
     /* XXX: handle this correctly */
     azero = PyArray_Zero(ara);
+    if (azero == NULL) {
+        goto fail;
+    }
     ara_ptr = ara->data;
     nal = PyArray_ITEMSIZE(ara);
     if (memcmp(ara_ptr, azero, nal) == 0) {
