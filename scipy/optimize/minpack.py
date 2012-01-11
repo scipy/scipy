@@ -168,7 +168,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
 def leastsq(func, x0, args=(), Dfun=None, full_output=0,
             col_deriv=0, ftol=1.49012e-8, xtol=1.49012e-8,
             gtol=0.0, maxfev=0, epsfcn=0.0, factor=100, diag=None,
-            m=None, skip_check=False):
+            numeq=None, skip_check=False):
     """
     Minimize the sum of squares of a set of equations.
 
@@ -214,11 +214,11 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         (``factor * || diag * x||``). Should be in interval ``(0.1, 100)``.
     diag : sequence
         N positive entries that serve as a scale factors for the variables.
-    m : number of equations to minimize. If None, automatically determined from
-        running the func once. If not None, make sure m is correct, or risk a
-        crash.
-    skip_check : if both m and Dfun is supplied, skip checking that Dfun complies
-        with the right sizes. Again, you risk a crash but gain in speed for small
+    numeq : number of equations to minimize. If None, automatically determined 
+        from running the func once. If not None, make sure m is correct, or 
+        risk a crash.
+    skip_check : if Dfun is supplied, skip checking that Dfun complies with the
+        right sizes. Again, you risk a crash but gain in speed for small 
         problems that are solved repeatedly.
 
     Returns
@@ -277,31 +277,31 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
 
     """
     x0 = array(x0, ndmin=1)
-    n = len(x0)
+    numvars = len(x0)
     if type(args) != type(()):
         args = (args,)
     
-    if m is None:
-        m = _check_func('leastsq', 'func', func, x0, args, n)[0]
-    if n > m:
-        raise TypeError('Improper input: N=%s must not exceed M=%s' % (n,m))
+    if numeq is None:
+        numeq = _check_func('leastsq', 'func', func, x0, args, numvars)[0]
+    if numvars > numeq:
+        raise TypeError('Improper input: N=%s must not exceed M=%s' % (numvars,numeq))
     
     # Switch between minpack routines for leastsq with/without Dfun.
     if Dfun is None:
         if (maxfev == 0):
-            maxfev = 200*(n + 1)
+            maxfev = 200*(numvars + 1)
         retval = _minpack._lmdif(func, x0, args, full_output, ftol, xtol,
                 gtol, maxfev, epsfcn, factor, diag)
     else:
         if not skip_check:
             if col_deriv:
-                _check_func('leastsq', 'Dfun', Dfun, x0, args, n, (n,m))
+                _check_func('leastsq', 'Dfun', Dfun, x0, args, numvars, (numvars,numeq))
             else:
-                _check_func('leastsq', 'Dfun', Dfun, x0, args, n, (m,n))
+                _check_func('leastsq', 'Dfun', Dfun, x0, args, numvars, (numeq,numvars))
         
         # Default maximal number of function evaluations:    
         if (maxfev == 0):
-            maxfev = 100*(n + 1)
+            maxfev = 100*(numvars + 1)
         
         retval = _minpack._lmder(func, Dfun, x0, args, full_output, col_deriv,
             ftol, xtol, gtol, maxfev, factor, diag)
@@ -346,8 +346,8 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         if info in [1,2,3,4]:
             from numpy.dual import inv
             from numpy.linalg import LinAlgError
-            perm = take(eye(n),retval[1]['ipvt']-1,0)
-            r = triu(transpose(retval[1]['fjac'])[:n,:])
+            perm = take(eye(numvars), retval[1]['ipvt']-1,0)
+            r = triu(transpose(retval[1]['fjac'])[:numvars,:])
             R = dot(r, perm)
             try:
                 cov_x = inv(dot(transpose(R),R))
