@@ -156,7 +156,6 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
     }
 
     /* Skip over leading zeros in vector representing denominator (a) */
-    /* XXX: handle this correctly */
     azero = PyArray_Zero(ara);
     if (azero == NULL) {
         goto fail;
@@ -352,6 +351,10 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
                     itx->dataptr, ity->dataptr, zfzfilled,
                     nfilt, PyArray_DIM(x, axis), itx->strides[axis],
                     ity->strides[axis]);
+	
+	if (PyErr_Occurred()) {
+	    goto clean_bzfilled; 
+	}
         PyArray_ITER_NEXT(itx);
         PyArray_ITER_NEXT(ity);
 
@@ -542,49 +545,69 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
             ptr_Z = ((PyObject **) Z);
             /* Calculate first delay (output) */
             tmp1 = PyNumber_Multiply(*ptr_b, *xn);
+	    if (tmp1 == NULL) return;
             tmp2 = PyNumber_Divide(tmp1, *a0);
+	    if (tmp2 == NULL) {
+		Py_DECREF(tmp1);
+		return;
+	    }
             tmp3 = PyNumber_Add(tmp2, *ptr_Z);
             Py_XDECREF(*yn);
-            *yn = tmp3;
+            *yn = tmp3; /* Steals the reference */
             Py_DECREF(tmp1);
             Py_DECREF(tmp2);
+	    if (tmp3 == NULL) return;
             ptr_b++;
             ptr_a++;
 
             /* Fill in middle delays */
             for (n = 0; n < len_b - 2; n++) {
                 tmp1 = PyNumber_Multiply(*xn, *ptr_b);
+		if (tmp1 == NULL) return;
                 tmp2 = PyNumber_Divide(tmp1, *a0);
+		if (tmp2 == NULL) {
+		    Py_DECREF(tmp1);
+		    return;
+		}
                 tmp3 = PyNumber_Add(tmp2, ptr_Z[1]);
                 Py_DECREF(tmp1);
                 Py_DECREF(tmp2);
                 tmp1 = PyNumber_Multiply(*yn, *ptr_a);
+		if (tmp1 == NULL || tmp3 == NULL) return;
                 tmp2 = PyNumber_Divide(tmp1, *a0);
                 Py_DECREF(tmp1);
+		if (tmp2 == NULL) return;
                 Py_XDECREF(*ptr_Z);
                 *ptr_Z = PyNumber_Subtract(tmp3, tmp2);
                 Py_DECREF(tmp2);
                 Py_DECREF(tmp3);
+		if (*ptr_Z == NULL) return;
                 ptr_b++;
                 ptr_a++;
                 ptr_Z++;
             }
             /* Calculate last delay */
             tmp1 = PyNumber_Multiply(*xn, *ptr_b);
+	    if (tmp1 == NULL) return;
             tmp3 = PyNumber_Divide(tmp1, *a0);
             Py_DECREF(tmp1);
+	    if (tmp3 == NULL) return;
             tmp1 = PyNumber_Multiply(*yn, *ptr_a);
+	    if (tmp1 == NULL) return;
             tmp2 = PyNumber_Divide(tmp1, *a0);
             Py_DECREF(tmp1);
+	    if (tmp2 == NULL) return;
             Py_XDECREF(*ptr_Z);
             *ptr_Z = PyNumber_Subtract(tmp3, tmp2);
             Py_DECREF(tmp2);
             Py_DECREF(tmp3);
         } else {
             tmp1 = PyNumber_Multiply(*xn, *ptr_b);
+	    if (tmp1 == NULL) return;
             Py_XDECREF(*yn);
             *yn = PyNumber_Divide(tmp1, *a0);
             Py_DECREF(tmp1);
+	    if (*yn == NULL) return;
         }
 
         ptr_y += stride_Y;      /* Move to next input/output point */
