@@ -321,8 +321,8 @@ def correlation(u, v):
 
     .. math::
 
-       1 - frac{(u - \bar{u}){(v - \bar{v})}^T}
-               {{||(u - \bar{u})||}_2 {||(v - \bar{v})||}_2^T}
+       1 - \frac{(u - \bar{u}){(v - \bar{v})}^T}
+               {{||(u - \bar{u})||}_2 {||(v - \bar{v})||}_2}
 
     where :math:`\bar{u}` is the mean of a vectors elements and ``n``
     is the common dimensionality of ``u`` and ``v``.
@@ -980,7 +980,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
        .. math::
 
           1 - \frac{(u - \bar{u})(v - \bar{v})^T}
-                   {{|(u - \bar{u})|}{|(v - \bar{v})|}^T}
+                   {{|(u - \bar{u})|}{|(v - \bar{v})|}}
 
        where :math:`\bar{v}` is the mean of the elements of vector v.
 
@@ -1758,7 +1758,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
        .. math::
 
           1 - \frac{(u - \bar{u})(v - \bar{v})^T}
-                   {{|(u - \bar{u})|}{|(v - \bar{v})|}^T}
+                   {{|(u - \bar{u})|}{|(v - \bar{v})|}}
 
        where :math:`\bar{v}` is the mean of the elements of vector v.
 
