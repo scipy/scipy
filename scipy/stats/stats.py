@@ -3261,15 +3261,16 @@ def chisquare(f_obs, f_exp=None, ddof=0):
     Notes
     -----
     This test is invalid when the observed or expected frequencies in each
-    category are too small.  A typical rule is that all of the observed
-    and expected frequencies should be at least 5.
-    The default degrees of freedom, k-1, are for the case when no parameters
-    of the distribution are estimated. If p parameters are estimated by
-    efficient maximum likelihood then the correct degrees of freedom are
-    k-1-p. If the parameters are estimated in a different way, then then
-    the dof can be between k-1-p and k-1. However, it is also possible that
-    the asymptotic distributions is not a chisquare, in which case this
-    test is not appropriate.
+    category are too small. A typical rule is that all of the observed and
+    expected frequencies should be at least 5.
+
+    The default degrees of freedom, or the number of independent observations,
+    are for the case when no parameters of the distribution are estimated. If p
+    parameters are estimated by efficient maximum likelihood then the correct
+    degrees of freedom are k-p. If the parameters are estimated in a different
+    way, then then the dof can be between k-p and k. However, it is also
+    possible that the asymptotic distributions is not a chisquare, in which
+    case this test is not appropriate.
 
     References
     ----------
@@ -3280,12 +3281,17 @@ def chisquare(f_obs, f_exp=None, ddof=0):
     """
 
     f_obs = asarray(f_obs)
-    k = len(f_obs)
+    rows, cols = f_obs.shape
+    dof = (rows-1) * (cols-1)
+    if dof < 1:
+        raise ValueError("At least one independent observation is required to \
+                perform a chi-squared test.")
+
     if f_exp is None:
-        f_exp = array([np.sum(f_obs,axis=0)/float(k)] * len(f_obs),float)
+        f_exp = array([np.sum(f_obs,axis=0)/float(dof)] * len(f_obs),float)
     f_exp = f_exp.astype(float)
     chisq = np.add.reduce((f_obs-f_exp)**2 / f_exp)
-    return chisq, chisqprob(chisq, k-1-ddof)
+    return chisq, chisqprob(chisq, dof-ddof)
 
 
 def ks_2samp(data1, data2):
