@@ -34,7 +34,7 @@ enum type {
         DST_I = 5,
         DST_II = 6,
         DST_III = 7,
-	DST_IV = 8,
+	    DST_IV = 8,
 };
 
 int gen(int type, int sz)
@@ -101,6 +101,7 @@ int gen(int type, int sz)
                 for(i=0; i < sz; ++i) {
                     a[i] = i;
                 }
+                break;
             default:
                 fprintf(stderr, "unknown type\n");
                 exit(EXIT_FAILURE);
