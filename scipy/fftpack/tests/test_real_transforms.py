@@ -340,8 +340,7 @@ class TestOverwrite(object):
 
         for type in [1, 2, 3]:
             for overwrite_x in [True, False]:
-#                for norm in [None, 'ortho']:
-                for norm in [None]:
+                for norm in [None, 'ortho']:
                     if type == 1 and norm == 'ortho':
                         continue
 

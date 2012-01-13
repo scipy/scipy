@@ -58,8 +58,8 @@ void @pref@dst1(@type@ * inout, int n, int howmany, int normalize)
 #if 0
         case DST_NORMALIZE_ORTHONORMAL:
             ptr = inout;
-            n1 = sqrt(0.5 / (n-1));
-            n2 = sqrt(1. / (n-1));
+            n1 = sqrt(0.5 / (n+1));
+            n2 = sqrt(1. / (n+1));
             for (i = 0; i < howmany; ++i, ptr+=n) {
                 ptr[0] *= n1;
                 for (j = 1; j < n-1; ++j) {

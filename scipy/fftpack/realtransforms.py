@@ -301,6 +301,11 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
       y[k] = 2* sum x[n]*sin(pi*(k+1)*(n+0.5)/N), 0 <= k < N.
                 n=0
 
+    if ``norm='ortho'``, ``y[k]`` is multiplied by a scaling factor `f`::
+
+        f = sqrt(1/(4*N)) if k == 0
+        f = sqrt(1/(2*N)) otherwise.
+
     type III
     ~~~~~~~~
 
@@ -313,15 +318,17 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
                                  n=0
 
     The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up
-    to a factor `2N`.
+    to a factor `2N`.  The orthonormalized DST-III is exactly the inverse of
+    the orthonormalized DST-II.
 
     References
     ----------
 
     http://en.wikipedia.org/wiki/Discrete_sine_transform
     """
-    if norm is not None:
-        raise NotImplementedError('DST Orthonormalization not yet implemented')
+    if type == 1 and norm is not None:
+        raise NotImplementedError(
+              "Orthonormalization not yet supported for IDCT-I")
     return _dst(x, type, n, axis, normalize=norm, overwrite_x=overwrite_x)
 
 def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
@@ -361,8 +368,9 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
     types, see `dst`.
 
     """
-    if norm is not None:
-        raise NotImplementedError('idst orthonormalization not yet supported')
+    if type == 1 and norm is not None:
+        raise NotImplementedError(
+              "Orthonormalization not yet supported for IDCT-I")
     # Inverse/forward type table
     _TP = {1:1, 2:3, 3:2}
     return _dst(x, _TP[type], n, axis, normalize=norm, overwrite_x=overwrite_x)
