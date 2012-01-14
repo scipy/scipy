@@ -11,7 +11,7 @@ python module _arpack ! in
             integer optional,check(len(resid)>=n),depend(resid) :: n=len(resid)
             character*2 :: which
             integer :: nev
-            <_rd> :: tol
+            <_rd>, intent(in,out) :: tol
             <_rd> dimension(n),intent(in,out) :: resid
             integer optional,check(shape(v,1)==ncv),depend(v) :: ncv=shape(v,1)
             <_rd> dimension(ldv,ncv),intent(in,out) :: v
@@ -55,7 +55,7 @@ python module _arpack ! in
             integer optional,check(len(resid)>=n),depend(resid) :: n=len(resid)
             character*2 :: which
             integer :: nev
-            <_rd> :: tol
+            <_rd>, intent(in,out) :: tol
             <_rd> dimension(n),intent(in,out) :: resid
             integer optional,check(shape(v,1)==ncv),depend(v) :: ncv=shape(v,1)
             <_rd> dimension(ldv,ncv),intent(in,out) :: v
@@ -102,7 +102,7 @@ python module _arpack ! in
             integer optional,check(len(resid)>=n),depend(resid) :: n=len(resid)
             character*2 :: which
             integer :: nev
-            <_rd> :: tol
+            <_rd>, intent(in,out) :: tol
             <_cd> dimension(n),intent(in,out) :: resid
             integer optional,check(shape(v,1)==ncv),depend(v) :: ncv=shape(v,1)
             <_cd> dimension(ldv,ncv),intent(in,out) :: v

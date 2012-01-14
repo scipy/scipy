@@ -520,7 +520,7 @@ class _SymmetricArpackParams(_ArpackParams):
         self.ipntr = np.zeros(11, "int")
 
     def iterate(self):
-        self.ido, self.resid, self.v, self.iparam, self.ipntr, self.info = \
+        self.ido, self.tol, self.resid, self.v, self.iparam, self.ipntr, self.info = \
             self._arpack_solver(self.ido, self.bmat, self.which, self.k,
                                 self.tol, self.resid, self.v, self.iparam,
                                 self.ipntr, self.workd, self.workl, self.info)
@@ -705,13 +705,13 @@ class _UnsymmetricArpackParams(_ArpackParams):
 
     def iterate(self):
         if self.tp in 'fd':
-            self.ido, self.resid, self.v, self.iparam, self.ipntr, self.info =\
+            self.ido, self.tol, self.resid, self.v, self.iparam, self.ipntr, self.info =\
                 self._arpack_solver(self.ido, self.bmat, self.which, self.k,
                                     self.tol, self.resid, self.v, self.iparam,
                                     self.ipntr,  self.workd, self.workl,
                                     self.info)
         else:
-            self.ido, self.resid, self.v, self.iparam, self.ipntr, self.info =\
+            self.ido, self.tol, self.resid, self.v, self.iparam, self.ipntr, self.info =\
                 self._arpack_solver(self.ido, self.bmat, self.which, self.k,
                                     self.tol, self.resid, self.v, self.iparam,
                                     self.ipntr, self.workd, self.workl,
