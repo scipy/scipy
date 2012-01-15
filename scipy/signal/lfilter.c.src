@@ -162,12 +162,13 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
     }
     ara_ptr = ara->data;
     nal = PyArray_ITEMSIZE(ara);
-    if (memcmp(ara_ptr, azero, nal) == 0) {
+    st = memcmp(ara_ptr, azero, nal);
+    PyDataMem_FREE(azero);
+    if (st == 0) {
         PyErr_SetString(PyExc_ValueError,
                         "BUG: filter coefficient a[0] == 0 not supported yet");
         goto fail;
     }
-    PyDataMem_FREE(azero);
 
     na = PyArray_SIZE(ara);
     nb = PyArray_SIZE(arb);
@@ -221,6 +222,7 @@ zfill(const PyArrayObject * x, intp nx, char *xzfilled, intp nxzfilled)
 
     /* PyArray_Zero does not take const pointer, hence the cast */
     xzero = PyArray_Zero((PyArrayObject *) x);
+    if (xzero == NULL) return -1;
 
     if (nx > 0) {
         for (i = 0; i < nx; ++i) {
@@ -323,8 +325,8 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
     memset(bzfilled, 0, nbl * nfilt);
     memset(zfzfilled, 0, nxl * (nfilt - 1));
 
-    zfill(a, na, azfilled, nfilt);
-    zfill(b, nb, bzfilled, nfilt);
+    if (zfill(a, na, azfilled, nfilt) == -1) goto clean_zfzfilled;
+    if (zfill(b, nb, bzfilled, nfilt) == -1) goto clean_zfzfilled;
 
     /* XXX: Check that zf and zi have same type ? */
     if (zf != NULL) {
@@ -344,7 +346,9 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
             }
             PyArray_ITER_NEXT(itzi);
         } else {
-            zfill(x, 0, zfzfilled, nfilt - 1);
+            if (zfill(x, 0, zfzfilled, nfilt - 1) == -1) {
+		goto clean_zfzfilled;
+	    };
         }
 
         filter_func(bzfilled, azfilled,
@@ -353,7 +357,7 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
                     ity->strides[axis]);
     
         if (PyErr_Occurred()) {
-            goto clean_bzfilled; 
+            goto clean_zfzfilled; 
         }
         PyArray_ITER_NEXT(itx);
         PyArray_ITER_NEXT(ity);
@@ -383,6 +387,8 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
 
     return 0;
 
+clean_zfzfilled:
+    free(zfzfilled);
 clean_bzfilled:
     free(bzfilled);
 clean_azfilled:
@@ -609,7 +615,7 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
             Py_DECREF(tmp1);
             if (*yn == NULL) return;
         }
-        
+
         ptr_y += stride_Y;      /* Move to next input/output point */
         ptr_x += stride_X;
     }
