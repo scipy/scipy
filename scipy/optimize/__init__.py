@@ -55,6 +55,17 @@ Scalar function minimizers
    golden - 1-D function minimization using Golden Section method
    bracket - Bracket a minimum, given two starting points
 
+Rosenbrock function
+-------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   rosen - The Rosenbrock function.
+   rosen_der - The derivative of the Rosenbrock function.
+   rosen_hess - The Hessian matrix of the Rosenbrock function.
+   rosen_hess_prod - Product of the Rosenbrock Hessian with a vector.
+
 Fitting
 =======
 
