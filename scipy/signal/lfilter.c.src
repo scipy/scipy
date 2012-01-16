@@ -346,9 +346,7 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
             }
             PyArray_ITER_NEXT(itzi);
         } else {
-            if (zfill(x, 0, zfzfilled, nfilt - 1) == -1) {
-		goto clean_zfzfilled;
-	    };
+            if (zfill(x, 0, zfzfilled, nfilt - 1) == -1) goto clean_zfzfilled;
         }
 
         filter_func(bzfilled, azfilled,
