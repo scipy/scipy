@@ -10,7 +10,7 @@ To run it in its simplest form::
 
 """
 
-from numpy.testing import assert_raises, assert_almost_equal, \
+from numpy.testing import assert_raises, assert_allclose, \
         assert_equal, assert_, TestCase, run_module_suite
 
 from scipy import optimize
@@ -83,9 +83,8 @@ class TestOptimize(TestCase):
 
             (params, fopt, func_calls, grad_calls, warnflag) = retval
 
-        err = abs(self.func(params) - self.func(self.solution))
-        #print "CG: Difference is: " + str(err)
-        assert_(err < 1e-6)
+        assert_allclose(self.func(params), self.func(self.solution),
+                        atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
@@ -93,10 +92,10 @@ class TestOptimize(TestCase):
         assert_(self.gradcalls == 7, self.gradcalls)
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
-        assert_(np.allclose(self.trace[2:4],
-                           [[0, -0.5, 0.5],
-                            [0, -5.05700028e-01, 4.95985862e-01]],
-                           atol=1e-14, rtol=1e-7), self.trace[2:4])
+        assert_allclose(self.trace[2:4],
+                        [[0, -0.5, 0.5],
+                         [0, -5.05700028e-01, 4.95985862e-01]],
+                        atol=1e-14, rtol=1e-7)
 
 
     def test_bfgs(self, use_wrapper=False):
@@ -119,9 +118,8 @@ class TestOptimize(TestCase):
 
             (params, fopt, gopt, Hopt, func_calls, grad_calls, warnflag) = retval
 
-        err = abs(self.func(params) - self.func(self.solution))
-        #print "BFGS: Difference is: " + str(err)
-        assert_(err < 1e-6)
+        assert_allclose(self.func(params), self.func(self.solution),
+                        atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
@@ -129,10 +127,10 @@ class TestOptimize(TestCase):
         assert_(self.gradcalls == 8, self.gradcalls)
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
-        assert_(np.allclose(self.trace[6:8],
-                           [[0, -5.25060743e-01,   4.87748473e-01],
-                            [0, -5.24885582e-01,   4.87530347e-01]],
-                           atol=1e-14, rtol=1e-7), self.trace[6:8])
+        assert_allclose(self.trace[6:8],
+                        [[0, -5.25060743e-01, 4.87748473e-01],
+                         [0, -5.24885582e-01, 4.87530347e-01]],
+                        atol=1e-14, rtol=1e-7)
 
     def test_bfgs_nan(self):
         """Test corner case where nan is fed to optimizer.  See #1542."""
@@ -155,8 +153,8 @@ class TestOptimize(TestCase):
                                     epsilon=epsilon, args=(),
                                     maxiter=self.maxiter, disp=False)
 
-        err = abs(self.func(params) - self.func(self.solution))
-        assert_(err < 1e-6, err)
+        assert_allclose(self.func(params), self.func(self.solution),
+                        atol=1e-6)
 
     def test_bfgs_infinite(self, use_wrapper=False):
         """Test corner case where -Inf is the minimum.  See #1494."""
@@ -196,9 +194,8 @@ class TestOptimize(TestCase):
 
             (params, fopt, direc, numiter, func_calls, warnflag) = retval
 
-        err = abs(self.func(params) - self.func(self.solution))
-        #print "Powell: Difference is: " + str(err)
-        assert_(err < 1e-6)
+        assert_allclose(self.func(params), self.func(self.solution),
+                        atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
@@ -213,13 +210,13 @@ class TestOptimize(TestCase):
         assert_(self.gradcalls == 0, self.gradcalls)
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
-        assert_(np.allclose(self.trace[34:39],
-                           [[ 0.72949016, -0.44156936,  0.47100962],
-                            [ 0.72949016, -0.44156936,  0.48052496],
-                            [ 1.45898031, -0.88313872,  0.95153458],
-                            [ 0.72949016, -0.44156936,  0.47576729],
-                            [ 1.72949016, -0.44156936,  0.47576729]],
-                           atol=1e-14, rtol=1e-7), self.trace[34:39])
+        assert_allclose(self.trace[34:39],
+                        [[ 0.72949016, -0.44156936,  0.47100962],
+                         [ 0.72949016, -0.44156936,  0.48052496],
+                         [ 1.45898031, -0.88313872,  0.95153458],
+                         [ 0.72949016, -0.44156936,  0.47576729],
+                         [ 1.72949016, -0.44156936,  0.47576729]],
+                        atol=1e-14, rtol=1e-7)
 
     def test_neldermead(self, use_wrapper=False):
         """ Nelder-Mead simplex algorithm
@@ -240,9 +237,8 @@ class TestOptimize(TestCase):
 
             (params, fopt, numiter, func_calls, warnflag) = retval
 
-        err = abs(self.func(params) - self.func(self.solution))
-        #print "Nelder-Mead: Difference is: " + str(err)
-        assert_(err < 1e-6)
+        assert_allclose(self.func(params), self.func(self.solution),
+                        atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
@@ -250,10 +246,10 @@ class TestOptimize(TestCase):
         assert_(self.gradcalls == 0, self.gradcalls)
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
-        assert_(np.allclose(self.trace[76:78],
-                           [[0.1928968 , -0.62780447,  0.35166118],
-                            [0.19572515, -0.63648426,  0.35838135]],
-                           atol=1e-14, rtol=1e-7), self.trace[76:78])
+        assert_allclose(self.trace[76:78],
+                        [[0.1928968 , -0.62780447,  0.35166118],
+                         [0.19572515, -0.63648426,  0.35838135]],
+                        atol=1e-14, rtol=1e-7)
 
     def test_ncg(self, use_wrapper=False):
         """ line-search Newton conjugate gradient optimization routine
@@ -272,9 +268,8 @@ class TestOptimize(TestCase):
 
         params = retval
 
-        err = abs(self.func(params) - self.func(self.solution))
-        #print "NCG: Difference is: " + str(err)
-        assert_(err < 1e-6)
+        assert_allclose(self.func(params), self.func(self.solution),
+                        atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
@@ -284,10 +279,10 @@ class TestOptimize(TestCase):
         #assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
-        assert_(np.allclose(self.trace[3:5],
-                           [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
-                            [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
-                           atol=1e-6, rtol=1e-7), self.trace[:5])
+        assert_allclose(self.trace[3:5],
+                        [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
+                         [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
+                        atol=1e-6, rtol=1e-7)
 
     def test_ncg_hess(self, use_wrapper=False):
         """ Newton conjugate gradient with Hessian """
@@ -307,9 +302,8 @@ class TestOptimize(TestCase):
 
         params = retval
 
-        err = abs(self.func(params) - self.func(self.solution))
-        #print "NCG: Difference is: " + str(err)
-        assert_(err < 1e-6)
+        assert_allclose(self.func(params), self.func(self.solution),
+                        atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
@@ -319,10 +313,10 @@ class TestOptimize(TestCase):
         #assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
-        assert_(np.allclose(self.trace[3:5],
-                           [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
-                            [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
-                           atol=1e-6, rtol=1e-7), self.trace[:5])
+        assert_allclose(self.trace[3:5],
+                        [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
+                         [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
+                        atol=1e-6, rtol=1e-7)
 
     def test_ncg_hessp(self, use_wrapper=False):
         """ Newton conjugate gradient with Hessian times a vector p """
@@ -342,9 +336,8 @@ class TestOptimize(TestCase):
 
         params = retval
 
-        err = abs(self.func(params) - self.func(self.solution))
-        #print "NCG: Difference is: " + str(err)
-        assert_(err < 1e-6)
+        assert_allclose(self.func(params), self.func(self.solution),
+                        atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
@@ -354,32 +347,23 @@ class TestOptimize(TestCase):
         #assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
-        assert_(np.allclose(self.trace[3:5],
-                           [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
-                            [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
-                           atol=1e-6, rtol=1e-7), self.trace[:5])
+        assert_allclose(self.trace[3:5],
+                        [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
+                         [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
+                        atol=1e-6, rtol=1e-7)
 
 
-    def test_l_bfgs_b(self, use_wrapper=False):
+    def test_l_bfgs_b(self):
         """ limited-memory bound-constrained BFGS algorithm
         """
-        if use_wrapper:
-            opts = {'maxfev': self.maxiter}
-            retval = optimize.fmincon(self.func, self.startparams,
-                                      method='l-BFGS-B', args=(),
-                                      jac=self.grad, options=opts,
-                                      full_output=True)
-            params = retval[0]
-        else:
-            retval = optimize.fmin_l_bfgs_b(self.func, self.startparams,
-                                            self.grad, args=(),
-                                            maxfun=self.maxiter)
+        retval = optimize.fmin_l_bfgs_b(self.func, self.startparams,
+                                        self.grad, args=(),
+                                        maxfun=self.maxiter)
 
-            (params, fopt, d) = retval
+        (params, fopt, d) = retval
 
-        err = abs(self.func(params) - self.func(self.solution))
-        #print "LBFGSB: Difference is: " + str(err)
-        assert_(err < 1e-6)
+        assert_allclose(self.func(params), self.func(self.solution),
+                        atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
@@ -387,10 +371,34 @@ class TestOptimize(TestCase):
         assert_(self.gradcalls == 5, self.gradcalls)
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
-        assert_(np.allclose(self.trace[3:5],
-                           [[0.        , -0.52489628,  0.48753042],
-                            [0.        , -0.52489628,  0.48753042]],
-                           atol=1e-14, rtol=1e-7), self.trace[3:5])
+        assert_allclose(self.trace[3:5],
+                        [[0.        , -0.52489628,  0.48753042],
+                         [0.        , -0.52489628,  0.48753042]],
+                        atol=1e-14, rtol=1e-7)
+
+    def test_l_bfgs_b_numjac(self):
+        """ L-BFGS-B with numerical jacobian """
+        retval = optimize.fmin_l_bfgs_b(self.func, self.startparams,
+                                        approx_grad=True,
+                                        maxfun=self.maxiter)
+
+        (params, fopt, d) = retval
+
+        assert_allclose(self.func(params), self.func(self.solution),
+                        atol=1e-6)
+
+    def test_l_bfgs_b_funjac(self):
+        """ L-BFGS-B with combined objective function and jacobian """
+        def fun(x):
+            return self.func(x), self.grad(x)
+
+        retval = optimize.fmin_l_bfgs_b(fun, self.startparams,
+                                        maxfun=self.maxiter)
+
+        (params, fopt, d) = retval
+
+        assert_allclose(self.func(params), self.func(self.solution),
+                        atol=1e-6)
 
     def test_minimize(self):
         """Tests for the minimize wrapper."""
@@ -411,42 +419,47 @@ class TestOptimize(TestCase):
         self.setUp()
         self.test_powell(True)
 
+class TestOptimizeScalar(TestCase):
+    """Tests for scalar optimizers"""
+    def setUp(self):
+        self.solution = 1.5
+
+    def fun(self, x):
+        """Objective function"""
+        return (x - 1.5)**2 - 0.8
+
     def test_brent(self):
-        """ brent algorithm
-        """
-        x = optimize.brent(lambda x: (x-1.5)**2-0.8)
-        err1 = abs(x - 1.5)
-        x = optimize.brent(lambda x: (x-1.5)**2-0.8, brack = (-3,-2))
-        err2 = abs(x - 1.5)
-        x = optimize.brent(lambda x: (x-1.5)**2-0.8, full_output=True)
-        err3 = abs(x[0] - 1.5)
-        x = optimize.brent(lambda x: (x-1.5)**2-0.8, brack = (-15,-1,15))
-        err4 = abs(x - 1.5)
+        """ brent algorithm """
+        x = optimize.brent(self.fun)
+        assert_allclose(x, self.solution, atol=1e-6)
 
-        assert_(max((err1,err2,err3,err4)) < 1e-6)
+        x = optimize.brent(self.fun, brack = (-3, -2))
+        assert_allclose(x, self.solution, atol=1e-6)
 
+        x = optimize.brent(self.fun, full_output=True)
+        assert_allclose(x[0], self.solution, atol=1e-6)
+
+        x = optimize.brent(self.fun, brack = (-15, -1, 15))
+        assert_allclose(x, self.solution, atol=1e-6)
 
     def test_fminbound(self):
-        """Test fminbound
-        """
-        x = optimize.fminbound(lambda x: (x - 1.5)**2 - 0.8, 0, 1)
-        assert_(abs(x - 1) < 1e-5)
-        x = optimize.fminbound(lambda x: (x - 1.5)**2 - 0.8, 1, 5)
-        assert_(abs(x - 1.5) < 1e-6)
-        x = optimize.fminbound(lambda x: (x - 1.5)**2 - 0.8,
-                               np.array([1]), np.array([5]))
-        assert_(abs(x - 1.5) < 1e-6)
-        assert_raises(ValueError,
-                optimize.fminbound, lambda x: (x - 1.5)**2 - 0.8, 5, 1)
+        """Test fminbound """
+        x = optimize.fminbound(self.fun, 0, 1)
+        assert_allclose(x, 1, atol=1e-4)
+
+        x = optimize.fminbound(self.fun, 1, 5)
+        assert_allclose(x, self.solution, atol=1e-6)
+
+        x = optimize.fminbound(self.fun, np.array([1]), np.array([5]))
+        assert_allclose(x, self.solution, atol=1e-6)
+        assert_raises(ValueError, optimize.fminbound, self.fun, 5, 1)
 
     def test_fminbound_scalar(self):
-        assert_raises(ValueError,
-                      optimize.fminbound, lambda x: (x - 1.5)**2 - 0.8,
+        assert_raises(ValueError, optimize.fminbound, self.fun,
                       np.zeros(2), 1)
 
-        assert_almost_equal(
-            optimize.fminbound(lambda x: (x - 1.5)**2 - 0.8, 1, np.array(5)),
-            1.5)
+        x = optimize.fminbound(self.fun, 1, np.array(5))
+        assert_allclose(x, self.solution, atol=1e-6)
 
 
 class TestTnc(TestCase):
@@ -558,9 +571,9 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_almost_equal(self.f1(x), self.f1(xopt), decimal=8,
-                            err_msg="TNC failed with status: " +
-                                    optimize.tnc.RCSTRINGS[rc])
+        assert_allclose(self.f1(x), self.f1(xopt), atol=1e-8,
+                        err_msg="TNC failed with status: " +
+                                optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc1b(self):
         " TNC: test 1 (approx. gradient)"
@@ -572,9 +585,9 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_almost_equal(self.f1(x), self.f1(xopt), decimal=8,
-                            err_msg="TNC failed with status: " +
-                                    optimize.tnc.RCSTRINGS[rc])
+        assert_allclose(self.f1(x), self.f1(xopt), atol=1e-8,
+                        err_msg="TNC failed with status: " +
+                                optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc1c(self):
         " TNC: test 1 (separate fprime)"
@@ -586,9 +599,9 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_almost_equal(self.f1(x), self.f1(xopt), decimal=8,
-                            err_msg="TNC failed with status: " +
-                                    optimize.tnc.RCSTRINGS[rc])
+        assert_allclose(self.f1(x), self.f1(xopt), atol=1e-8,
+                        err_msg="TNC failed with status: " +
+                                optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc2(self):
         " TNC: test 2"
@@ -599,9 +612,9 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_almost_equal(self.f1(x), self.f1(xopt), decimal=8,
-                            err_msg="TNC failed with status: " +
-                                    optimize.tnc.RCSTRINGS[rc])
+        assert_allclose(self.f1(x), self.f1(xopt), atol=1e-8,
+                        err_msg="TNC failed with status: " +
+                                optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc3(self):
         " TNC: test 3"
@@ -612,9 +625,9 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_almost_equal(self.f3(x), self.f3(xopt), decimal=8,
-                            err_msg="TNC failed with status: " +
-                                    optimize.tnc.RCSTRINGS[rc])
+        assert_allclose(self.f3(x), self.f3(xopt), atol=1e-8,
+                        err_msg="TNC failed with status: " +
+                                optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc4(self):
         " TNC: test 4"
@@ -625,9 +638,9 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_almost_equal(self.f4(x), self.f4(xopt), decimal=8,
-                            err_msg="TNC failed with status: " +
-                                    optimize.tnc.RCSTRINGS[rc])
+        assert_allclose(self.f4(x), self.f4(xopt), atol=1e-8,
+                        err_msg="TNC failed with status: " +
+                                optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc5(self):
         " TNC: test 5"
@@ -638,9 +651,9 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_almost_equal(self.f5(x), self.f5(xopt), decimal=8,
-                            err_msg="TNC failed with status: " +
-                                    optimize.tnc.RCSTRINGS[rc])
+        assert_allclose(self.f5(x), self.f5(xopt), atol=1e-8,
+                        err_msg="TNC failed with status: " +
+                                optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc38(self):
         " TNC: test 38"
@@ -651,9 +664,9 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_almost_equal(self.f38(x), self.f38(xopt), decimal=8,
-                            err_msg="TNC failed with status: " +
-                                    optimize.tnc.RCSTRINGS[rc])
+        assert_allclose(self.f38(x), self.f38(xopt), atol=1e-8,
+                        err_msg="TNC failed with status: " +
+                                optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc45(self):
         " TNC: test 45"
@@ -665,9 +678,9 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_almost_equal(self.f45(x), self.f45(xopt), decimal=8,
-                            err_msg="TNC failed with status: " +
-                                    optimize.tnc.RCSTRINGS[rc])
+        assert_allclose(self.f45(x), self.f45(xopt), atol=1e-8,
+                        err_msg="TNC failed with status: " +
+                                optimize.tnc.RCSTRINGS[rc])
 
 
 class TestRosen(TestCase):
