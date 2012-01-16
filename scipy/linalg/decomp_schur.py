@@ -15,7 +15,7 @@ __all__ = ['schur', 'rsf2csf']
 _double_precision = ['i','l','d']
 
 def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
-            chkfinite=True):
+            check_finite=True):
     """Compute Schur decomposition of a matrix.
 
     The Schur decomposition is
@@ -47,9 +47,9 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
             'iuc'   Inside the unit circle (x*x.conjugate() <= 1.0)
             'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
         Defaults to None (no sorting).
-    chkfinite : boolean
+    check_finite : boolean
         If true checks the elements of a are finite numbers. If
-        false does no checking and passes matrix through to 
+        false does no checking and passes matrix through to
         underlying algorithm.
 
     Returns
@@ -82,7 +82,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
     """
     if not output in ['real','complex','r','c']:
         raise ValueError("argument must be 'real', or 'complex'")
-    if chkfinite:
+    if check_finite:
         a1 = asarray_chkfinite(a)
     else:
         a1 = asarray(a)
@@ -171,7 +171,7 @@ def _castCopy(type, *arrays):
         return cast_arrays
 
 
-def rsf2csf(T, Z, chkfinite=True):
+def rsf2csf(T, Z, check_finite=True):
     """Convert real Schur form to complex Schur form.
 
     Convert a quasi-diagonal real-valued Schur form to the upper triangular
@@ -183,9 +183,9 @@ def rsf2csf(T, Z, chkfinite=True):
         Real Schur form of the original matrix
     Z : array, shape (M, M)
         Schur transformation matrix
-    chkfinite : boolean
+    check_finite : boolean
         If true checks the elements of T,Z are finite numbers. If
-        false does no checking and passes matrices through to 
+        false does no checking and passes matrices through to
         underlying algorithm.
 
     Returns
@@ -200,7 +200,7 @@ def rsf2csf(T, Z, chkfinite=True):
     schur : Schur decompose a matrix
 
     """
-    if chkfinite:
+    if check_finite:
         Z, T = map(asarray_chkfinite, (Z, T))
     else:
         Z,T = map(asarray, (Z,T))

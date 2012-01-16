@@ -12,7 +12,7 @@ __all__ = ['svd', 'svdvals', 'diagsvd', 'orth']
 
 
 def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
-            chkfinite=True):
+            check_finite=True):
     """Singular Value Decomposition.
 
     Factorizes the matrix a into two unitary matrices U and Vh and
@@ -31,7 +31,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         Whether to compute also U, Vh in addition to s (Default: true)
     overwrite_a : boolean
         Whether data in a is overwritten (may improve performance)
-    chkfinite : boolean
+    check_finite : boolean
         If true checks the elements of a are finite numbers. If
         false does no checking and passes matrix through to
         underlying algorithm.
@@ -72,7 +72,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     diagsvd : return the Sigma matrix, given the vector s
 
     """
-    if chkfinite:
+    if check_finite:
         a1 = asarray_chkfinite(a)
     else:
         a1 = asarray(a)
@@ -97,7 +97,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     else:
         return s
 
-def svdvals(a, overwrite_a=False, chkfinite=True):
+def svdvals(a, overwrite_a=False, check_finite=True):
     """Compute singular values of a matrix.
 
     Parameters
@@ -106,7 +106,7 @@ def svdvals(a, overwrite_a=False, chkfinite=True):
         Matrix to decompose
     overwrite_a : boolean
         Whether data in a is overwritten (may improve performance)
-    chkfinite : boolean
+    check_finite : boolean
         If true checks the elements of a are finite numbers. If
         false does no checking and passes matrix through to
         underlying algorithm.
@@ -124,7 +124,8 @@ def svdvals(a, overwrite_a=False, chkfinite=True):
     diagsvd : return the Sigma matrix, given the vector s
 
     """
-    return svd(a, compute_uv=0, overwrite_a=overwrite_a, chkfinite=chkfinite)
+    return svd(a, compute_uv=0, overwrite_a=overwrite_a,
+                check_finite=check_finite)
 
 def diagsvd(s, M, N):
     """Construct the sigma matrix in SVD from singular values and size M,N.

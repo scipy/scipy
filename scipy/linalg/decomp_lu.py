@@ -12,7 +12,7 @@ from flinalg import get_flinalg_funcs
 __all__ = ['lu', 'lu_solve', 'lu_factor']
 
 
-def lu_factor(a, overwrite_a=False, chkfinite=True):
+def lu_factor(a, overwrite_a=False, check_finite=True):
     """Compute pivoted LU decomposition of a matrix.
 
     The decomposition is::
@@ -28,9 +28,9 @@ def lu_factor(a, overwrite_a=False, chkfinite=True):
         Matrix to decompose
     overwrite_a : boolean
         Whether to overwrite data in A (may increase performance)
-    chkfinite : boolean
+    check_finite : boolean
         If true checks the elements of a are finite numbers. If
-        false does no checking and passes matrix through to 
+        false does no checking and passes matrix through to
         underlying algorithm.
 
     Returns
@@ -51,7 +51,7 @@ def lu_factor(a, overwrite_a=False, chkfinite=True):
     This is a wrapper to the *GETRF routines from LAPACK.
 
     """
-    if chkfinite:
+    if check_finite:
         a1 = asarray(a)
     else:
         a1 = asarray_chkfinite(a)
@@ -69,7 +69,7 @@ def lu_factor(a, overwrite_a=False, chkfinite=True):
     return lu, piv
 
 
-def lu_solve((lu, piv), b, trans=0, overwrite_b=False, chkfinite=True):
+def lu_solve((lu, piv), b, trans=0, overwrite_b=False, check_finite=True):
     """Solve an equation system, a x = b, given the LU factorization of a
 
     Parameters
@@ -88,9 +88,9 @@ def lu_solve((lu, piv), b, trans=0, overwrite_b=False, chkfinite=True):
         1      a^T x = b
         2      a^H x = b
         =====  =========
-    chkfinite : boolean
+    check_finite : boolean
         If true checks the elements of b are finite numbers. If
-        false does no checking and passes matrix through to 
+        false does no checking and passes matrix through to
         underlying algorithm.
 
     Returns
@@ -103,7 +103,7 @@ def lu_solve((lu, piv), b, trans=0, overwrite_b=False, chkfinite=True):
     lu_factor : LU factorize a matrix
 
     """
-    if chkfinite:
+    if check_finite:
         b1 = asarray_chkfinite(b)
     else:
         b1 = asarray(b)
@@ -119,7 +119,7 @@ def lu_solve((lu, piv), b, trans=0, overwrite_b=False, chkfinite=True):
                                                                     % -info)
 
 
-def lu(a, permute_l=False, overwrite_a=False, chkfinite=True):
+def lu(a, permute_l=False, overwrite_a=False, check_finite=True):
     """Compute pivoted LU decompostion of a matrix.
 
     The decomposition is::
@@ -137,9 +137,9 @@ def lu(a, permute_l=False, overwrite_a=False, chkfinite=True):
         Perform the multiplication P*L  (Default: do not permute)
     overwrite_a : boolean
         Whether to overwrite data in a (may improve performance)
-    chkfinite : boolean
+    check_finite : boolean
         If true checks the elements of a are finite numbers. If
-        false does no checking and passes matrix through to 
+        false does no checking and passes matrix through to
         underlying algorithm.
 
     Returns
@@ -165,7 +165,7 @@ def lu(a, permute_l=False, overwrite_a=False, chkfinite=True):
     This is a LU factorization routine written for Scipy.
 
     """
-    if chkfinite:
+    if check_finite:
         a1 = asarray_chkfinite(a)
     else:
         a1 = asarray(a)

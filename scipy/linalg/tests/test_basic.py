@@ -87,7 +87,7 @@ class TestSolveBanded(TestCase):
             x = solve_banded((l, u), ab, b)
             assert_array_almost_equal(dot(a, x), b)
 
-    def test_chkfinite(self):
+    def test_check_finite(self):
         a = array([[ 1.0, 20,  0,  0],
                    [ -30,  4,  6,  0],
                    [   2,  1, 20,  2],
@@ -98,7 +98,7 @@ class TestSolveBanded(TestCase):
                     [   2, -1,  0,  0]])
         l,u = 2,1
         b4 = array([10.0, 0.0, 2.0, 14.0])
-        x = solve_banded((l, u), ab, b4, chkfinite=False)
+        x = solve_banded((l, u), ab, b4, check_finite=False)
         assert_array_almost_equal(dot(a, x), b4)
 
     def test_bad_shape(self):
@@ -241,7 +241,7 @@ class TestSolveHBanded(TestCase):
                           [1.0,  1.0]])
         assert_array_almost_equal(x, expected)
 
-    def test_chkfinite(self):
+    def test_check_finite(self):
         # Solve
         # [ 4 1 0]     [1]
         # [ 1 4 1] X = [4]
@@ -249,7 +249,7 @@ class TestSolveHBanded(TestCase):
         # with the RHS as a 1D array.
         ab = array([[-99, 1.0, 1.0], [4.0, 4.0, 4.0]])
         b = array([1.0, 4.0, 1.0])
-        x = solveh_banded(ab, b, chkfinite=False)
+        x = solveh_banded(ab, b, check_finite=False)
         assert_array_almost_equal(x, [0.0, 1.0, 0.0])
 
     def test_bad_shapes(self):
@@ -364,11 +364,11 @@ class TestSolve(TestCase):
             x = solve(a,b,sym_pos=1)
             assert_array_almost_equal(dot(a,x),b)
 
-    def test_chkfinite(self):
+    def test_check_finite(self):
         a = [[1,20],[-30,4]]
         for b in ([[1,0],[0,1]],[1,0],
                   [[2,1],[-30,4]]):
-            x = solve(a,b, chkfinite=False)
+            x = solve(a,b, check_finite=False)
             assert_array_almost_equal(dot(a,x),b)
 
 
@@ -404,13 +404,13 @@ class TestSolveTriangular(TestCase):
         sol = solve_triangular(A, b, lower=True, trans=1)
         assert_array_almost_equal(sol, [[.5-.5j, -.25-.25j], [0, 0.5]])
 
-    def test_chkfinite(self):
+    def test_check_finite(self):
         """
         solve_triangular on a simple 2x2 matrix.
         """
         A = array([[1,0], [1,2]])
         b = [1, 1]
-        sol = solve_triangular(A, b, lower=True, chkfinite=False)
+        sol = solve_triangular(A, b, lower=True, check_finite=False)
         assert_array_almost_equal(sol, [1, 0])
 
 
@@ -449,9 +449,9 @@ class TestInv(TestCase):
             a_inv = inv(a)
             assert_array_almost_equal(dot(a,a_inv),
                                       identity(n))
-    def test_chkfinite(self):
+    def test_check_finite(self):
         a = [[1,2],[3,4]]
-        a_inv = inv(a, chkfinite=False)
+        a_inv = inv(a, check_finite=False)
         assert_array_almost_equal(dot(a,a_inv),
                                   [[1,0],[0,1]])
 
@@ -486,9 +486,9 @@ class TestDet(TestCase):
             d2 = basic_det(a)
             assert_almost_equal(d1,d2)
 
-    def test_chkfinite(self):
+    def test_check_finite(self):
         a = [[1,2],[3,4]]
-        a_det = det(a, chkfinite=False)
+        a_det = det(a, check_finite=False)
         assert_almost_equal(a_det,-2.0)
 
 
@@ -583,11 +583,11 @@ class TestLstsq(TestCase):
             #XXX: check definition of res
             assert_array_almost_equal(x,direct_lstsq(a,b,1))
 
-    def test_chkfinite(self):
+    def test_check_finite(self):
         a = [[1,20],[-30,4]]
         for b in ([[1,0],[0,1]],[1,0],
                   [[2,1],[-30,4]]):
-            x = lstsq(a,b, chkfinite=False)[0]
+            x = lstsq(a,b, check_finite=False)[0]
             assert_array_almost_equal(dot(a,x),b)
 
 
@@ -617,11 +617,11 @@ class TestPinv(TestCase):
         a_pinv2 = pinv2(a)
         assert_array_almost_equal(a_pinv,a_pinv2)
 
-    def test_chkfinite(self):
+    def test_check_finite(self):
         a=array([[1,2,3],[4,5,6.],[7,8,10]])
-        a_pinv = pinv(a, chkfinite=False)
+        a_pinv = pinv(a, check_finite=False)
         assert_array_almost_equal(dot(a,a_pinv),[[1,0,0],[0,1,0],[0,0,1]])
-        a_pinv = pinv2(a, chkfinite=False)
+        a_pinv = pinv2(a, check_finite=False)
         assert_array_almost_equal(dot(a,a_pinv),[[1,0,0],[0,1,0],[0,0,1]])
 
 class TestNorm(object):

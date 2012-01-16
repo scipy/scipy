@@ -79,7 +79,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b):
     return w, vr
 
 def eig(a, b=None, left=False, right=True, overwrite_a=False,
-            overwrite_b=False, chkfinite=True):
+            overwrite_b=False, check_finite=True):
     """Solve an ordinary or generalized eigenvalue problem of a square matrix.
 
     Find eigenvalues w and right or left eigenvectors of a general matrix::
@@ -106,7 +106,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         Whether to overwrite data in a (may improve performance)
     overwrite_b : boolean
         Whether to overwrite data in b (may improve performance)
-    chkfinite : boolean
+    check_finite : boolean
         If true checks the elements of a,b are finite numbers. If
         false does no checking and passes matrices through to
         underlying algorithm.
@@ -133,7 +133,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
 
     """
-    if chkfinite:
+    if check_finite:
         a1 = asarray_chkfinite(a)
     else:
         a1 = asarray(a)
@@ -141,11 +141,11 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     if b is not None:
-        if chkfinite:
+        if check_finite:
             b1 = asarray_chkfinite(b)
         else:
             b1 = asarray(b)
-       overwrite_b = overwrite_b or _datacopied(b1, b)
+        overwrite_b = overwrite_b or _datacopied(b1, b)
         if len(b1.shape) != 2 or b1.shape[0] != b1.shape[1]:
             raise ValueError('expected square matrix')
         if b1.shape != a1.shape:
@@ -205,7 +205,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
 
 def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
          overwrite_b=False, turbo=True, eigvals=None, type=1,
-         chkfinite=True):
+         check_finite=True):
     """Solve an ordinary or generalized eigenvalue problem for a complex
     Hermitian or real symmetric matrix.
 
@@ -247,7 +247,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         Whether to overwrite data in a (may improve performance)
     overwrite_b : boolean
         Whether to overwrite data in b (may improve performance)
-    chkfinite : boolean
+    check_finite : boolean
         If true checks the elements of a,b are finite numbers. If
         false does no checking and passes matrices through to
         underlying algorithm.
@@ -277,7 +277,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     eig : eigenvalues and right eigenvectors for non-symmetric arrays
 
     """
-    if chkfinite:
+    if check_finite:
         a1 = asarray_chkfinite(a)
     else:
         a1 = asarray(a)
@@ -289,7 +289,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     else:
         cplx = False
     if b is not None:
-        if chkfinite:
+        if check_finite:
             b1 = asarray_chkfinite(b)
         else:
             b1 = asarray(b)
@@ -404,7 +404,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
                           " computed." % (info-b1.shape[0]))
 
 def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
-               select='a', select_range=None, max_ev = 0, chkfinite=True):
+               select='a', select_range=None, max_ev = 0, check_finite=True):
     """Solve real symmetric or complex hermitian band matrix eigenvalue problem.
 
     Find eigenvalues w and optionally right eigenvectors v of a::
@@ -463,7 +463,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
 
         In doubt, leave this parameter untouched.
 
-    chkfinite : boolean
+    check_finite : boolean
         If true checks the elements of a_band are finite numbers. If
         false does no checking and passes matrix through to
         underlying algorithm.
@@ -482,7 +482,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
 
     """
     if eigvals_only or overwrite_a_band:
-        if chkfinite:
+        if check_finite:
             a1 = asarray_chkfinite(a_band)
         else:
             a1 = asarray(a_band)
@@ -563,7 +563,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
         return w
     return w, v
 
-def eigvals(a, b=None, overwrite_a=False, chkfinite=True):
+def eigvals(a, b=None, overwrite_a=False, check_finite=True):
     """Compute eigenvalues from an ordinary or generalized eigenvalue problem.
 
     Find eigenvalues of a general matrix::
@@ -580,7 +580,7 @@ def eigvals(a, b=None, overwrite_a=False, chkfinite=True):
         If omitted, identity matrix is assumed.
     overwrite_a : boolean
         Whether to overwrite data in a (may improve performance)
-    chkfinite : boolean
+    check_finite : boolean
         If true checks the elements of a,b are finite numbers. If
         false does no checking and passes matrices through to
         underlying algorithm.
@@ -601,11 +601,11 @@ def eigvals(a, b=None, overwrite_a=False, chkfinite=True):
 
     """
     return eig(a, b=b, left=0, right=0, overwrite_a=overwrite_a,
-                chkfinite=True)
+                check_finite=check_finite)
 
 def eigvalsh(a, b=None, lower=True, overwrite_a=False,
              overwrite_b=False, turbo=True, eigvals=None, type=1,
-             chkfinite=True):
+             check_finite=True):
     """Solve an ordinary or generalized eigenvalue problem for a complex
     Hermitian or real symmetric matrix.
 
@@ -643,7 +643,7 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
         Whether to overwrite data in a (may improve performance)
     overwrite_b : boolean
         Whether to overwrite data in b (may improve performance)
-    chkfinite : boolean
+    check_finite : boolean
         If true checks the elements of a,b are finite numbers. If
         false does no checking and passes matrices through to
         underlying algorithm.
@@ -668,10 +668,11 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
     """
     return eigh(a, b=b, lower=lower, eigvals_only=True,
                 overwrite_a=overwrite_a, overwrite_b=overwrite_b,
-                turbo=turbo, eigvals=eigvals, type=type, chkfinite=chkfinite)
+                turbo=turbo, eigvals=eigvals, type=type,
+                check_finite=check_finite)
 
 def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
-                   select='a', select_range=None, chkfinite=True):
+                   select='a', select_range=None, check_finite=True):
     """Solve real symmetric or complex hermitian band matrix eigenvalue problem.
 
     Find eigenvalues w of a::
@@ -721,7 +722,7 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
         ======  ========================================
     select_range : (min, max)
         Range of selected eigenvalues
-    chkfinite : boolean
+    check_finite : boolean
         If true checks the elements of a_band are finite numbers. If
         false does no checking and passes matrix through to
         underlying algorithm.
@@ -744,12 +745,12 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
     """
     return eig_banded(a_band, lower=lower, eigvals_only=1,
                       overwrite_a_band=overwrite_a_band, select=select,
-                      select_range=select_range, chkfinite=chkfinite)
+                      select_range=select_range, check_finite=check_finite)
 
 _double_precision = ['i','l','d']
 
 
-def hessenberg(a, calc_q=False, overwrite_a=False, chkfinite=True):
+def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     """Compute Hessenberg form of a matrix.
 
     The Hessenberg decomposition is
@@ -767,7 +768,7 @@ def hessenberg(a, calc_q=False, overwrite_a=False, chkfinite=True):
         Whether to compute the transformation matrix
     overwrite_a : boolean
         Whether to ovewrite data in a (may improve performance)
-    chkfinite : boolean
+    check_finite : boolean
         If true checks the elements of a are finite numbers. If
         false does no checking and passes matrix through to
         underlying algorithm.
@@ -782,7 +783,7 @@ def hessenberg(a, calc_q=False, overwrite_a=False, chkfinite=True):
         Unitary/orthogonal similarity transformation matrix s.t. A = Q H Q^H
 
     """
-    if chkfinite:
+    if check_finite:
         a1 = asarray_chkfinite(a)
     else:
         a1 = asarray(a)

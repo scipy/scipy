@@ -129,9 +129,9 @@ class TestEigVals(TestCase):
                    (9+1j-sqrt(92+6j))/2]
         assert_array_almost_equal(w,exact_w)
 
-    def test_chkfinite(self):
+    def test_check_finite(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
-        w = eigvals(a, chkfinite=False)
+        w = eigvals(a, check_finite=False)
         exact_w = [(9+sqrt(93))/2,0,(9-sqrt(93))/2]
         assert_array_almost_equal(w,exact_w)
 
@@ -248,9 +248,9 @@ class TestEig(object):
         finally:
             np.seterr(**olderr)
 
-    def test_chkfinite(self):
+    def test_check_finite(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
-        w,v = eig(a, chkfinite=False)
+        w,v = eig(a, check_finite=False)
         exact_w = [(9+sqrt(93))/2,0,(9-sqrt(93))/2]
         v0 = array([1,1,(1+sqrt(93)/3)/2])
         v1 = array([3.,0,-1])
@@ -456,7 +456,7 @@ class TestEigBanded(TestCase):
         assert_array_almost_equal(sort(w_herm_val),
                                   self.w_herm_lin[ind1:ind2+1])
 
-        w_sym = eigvals_banded(self.bandmat_sym, chkfinite=False)
+        w_sym = eigvals_banded(self.bandmat_sym, check_finite=False)
         w_sym = w_sym.real
         assert_array_almost_equal(sort(w_sym), self.w_sym_lin)
 
@@ -510,7 +510,7 @@ class TestEigBanded(TestCase):
         assert_array_almost_equal(abs(evec_herm_val),
                                   abs(self.evec_herm_lin[:,ind1:ind2+1]) )
 
-        w_sym, evec_sym = eig_banded(self.bandmat_sym, chkfinite=False)
+        w_sym, evec_sym = eig_banded(self.bandmat_sym, check_finite=False)
         evec_sym_ = evec_sym[:,argsort(w_sym.real)]
         assert_array_almost_equal(sort(w_sym), self.w_sym_lin)
         assert_array_almost_equal(abs(evec_sym_), abs(self.evec_sym_lin))
@@ -711,8 +711,8 @@ class TestLU(TestCase):
         """Check lu decomposition on medium size, rectangular matrix."""
         self._test_common(self.cmed)
 
-    def test_chkfinite(self):
-        p, l, u = lu(self.a, chkfinite=False)
+    def test_check_finite(self):
+        p, l, u = lu(self.a, check_finite=False)
         assert_array_almost_equal(dot(dot(p,l),u), self.a)
 
     def test_simple_known(self):
@@ -761,13 +761,13 @@ class TestLUSolve(TestCase):
 
             assert_array_almost_equal(x1,x2)
 
-    def test_chkfinite(self):
+    def test_check_finite(self):
         a = random((10,10))
         b = random((10,))
         x1 = solve(a,b)
 
-        lu_a = lu_factor(a, chkfinite=False)
-        x2 = lu_solve(lu_a,b, chkfinite=False)
+        lu_a = lu_factor(a, check_finite=False)
+        x2 = lu_solve(lu_a,b, check_finite=False)
 
         assert_array_almost_equal(x1,x2)
 
@@ -852,9 +852,9 @@ class TestSVD(TestCase):
                     for i in range(len(s)): sigma[i,i] = s[i]
                     assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
-    def test_chkfinite(self):
+    def test_check_finite(self):
         a = [[1,2,3],[1,20,3],[2,5,6]]
-        u,s,vh = svd(a, chkfinite=False)
+        u,s,vh = svd(a, check_finite=False)
         assert_array_almost_equal(dot(transpose(u),u),identity(3))
         assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
         sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
@@ -899,9 +899,9 @@ class TestSVDVals(TestCase):
         assert_(len(s) == 2)
         assert_(s[0] >= s[1])
 
-    def test_chkfinite(self):
+    def test_check_finite(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
-        s = svdvals(a, chkfinite=False)
+        s = svdvals(a, check_finite=False)
         assert_(len(s) == 3)
         assert_(s[0] >= s[1] >= s[2])
 
@@ -1440,9 +1440,9 @@ class TestQR(TestCase):
             assert_array_almost_equal(q,q2)
             assert_array_almost_equal(r,r2)
 
-    def test_chkfinite(self):
+    def test_check_finite(self):
         a = [[8,2,3],[2,9,3],[5,3,6]]
-        q,r = qr(a, chkfinite=False)
+        q,r = qr(a, check_finite=False)
         assert_array_almost_equal(dot(transpose(q),q),identity(3))
         assert_array_almost_equal(dot(q,r),a)
 
@@ -1543,9 +1543,9 @@ class TestRQ(TestCase):
             assert_equal(q.shape, (m, n))
             assert_equal(r.shape, (m, m))
 
-    def test_chkfinite(self):
+    def test_check_finite(self):
         a = [[8,2,3],[2,9,3],[5,3,6]]
-        r,q = rq(a, chkfinite=False)
+        r,q = rq(a, check_finite=False)
         assert_array_almost_equal(dot(q, transpose(q)),identity(3))
         assert_array_almost_equal(dot(r,q),a)
 
@@ -1638,9 +1638,9 @@ class TestSchur(TestCase):
         assert_raises(ValueError, schur, a, sort='unsupported')
         assert_raises(ValueError, schur, a, sort=1)
 
-    def test_chkfinite(self):
+    def test_check_finite(self):
         a = [[8,12,3],[2,9,3],[10,3,6]]
-        t,z = schur(a, chkfinite=False)
+        t,z = schur(a, check_finite=False)
         assert_array_almost_equal(dot(dot(z,t),transp(conj(z))),a)
 
 
@@ -1691,14 +1691,14 @@ class TestHessenberg(TestCase):
             h1 = dot(transp(conj(q)),dot(a,q))
             assert_array_almost_equal(h1,h)
 
-    def test_chkfinite(self):
+    def test_check_finite(self):
         a = [[-149, -50,-154],
              [ 537, 180, 546],
              [ -27,  -9, -25]]
         h1 = [[-149.0000,42.2037,-156.3165],
               [-537.6783,152.5511,-554.9272],
               [0,0.0728, 2.4489]]
-        h,q = hessenberg(a,calc_q=1, chkfinite=False)
+        h,q = hessenberg(a,calc_q=1, check_finite=False)
         assert_array_almost_equal(dot(transp(q),dot(a,q)),h)
         assert_array_almost_equal(h,h1,decimal=4)
 
