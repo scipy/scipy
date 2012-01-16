@@ -578,11 +578,18 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
                 tmp3 = PyNumber_Add(tmp2, ptr_Z[1]);
                 Py_DECREF(tmp1);
                 Py_DECREF(tmp2);
+		if (tmp3 == NULL) return;
                 tmp1 = PyNumber_Multiply(*yn, *ptr_a);
-                if (tmp1 == NULL || tmp3 == NULL) return;
+                if (tmp1 == NULL) {
+                    Py_DECREF(tmp3);
+                    return NULL;
+                }
                 tmp2 = PyNumber_Divide(tmp1, *a0);
                 Py_DECREF(tmp1);
-                if (tmp2 == NULL) return;
+                if (tmp2 == NULL) {
+                    Py_DECREF(tmp3);
+                    return;
+                }
                 Py_XDECREF(*ptr_Z);
                 *ptr_Z = PyNumber_Subtract(tmp3, tmp2);
                 Py_DECREF(tmp2);
@@ -599,10 +606,16 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
             Py_DECREF(tmp1);
             if (tmp3 == NULL) return;
             tmp1 = PyNumber_Multiply(*yn, *ptr_a);
-            if (tmp1 == NULL) return;
+            if (tmp1 == NULL) {
+                Py_DECREF(tmp3);
+                return;
+            }
             tmp2 = PyNumber_Divide(tmp1, *a0);
             Py_DECREF(tmp1);
-            if (tmp2 == NULL) return;
+            if (tmp2 == NULL) {
+                Py_DECREF(tmp3);
+                return;
+            }
             Py_XDECREF(*ptr_Z);
             *ptr_Z = PyNumber_Subtract(tmp3, tmp2);
             Py_DECREF(tmp2);
