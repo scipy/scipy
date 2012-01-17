@@ -428,6 +428,34 @@ class TestOptimize(TestCase):
         self.setUp()
         self.test_powell(True)
 
+class TestLBFGSBBounds(TestCase):
+    """ Tests for L-BFGS-B with bounds """
+    def setUp(self):
+        self.bounds = ((1, None), (None, None))
+        self.solution = (1, 0)
+
+    def fun(self, x):
+        return 0.5 * (x[0]**2 + x[1]**2)
+
+    def jac(self, x):
+        return x
+
+    def test_l_bfgs_b_bounds(self):
+        """ L-BFGS-B with bounds """
+        x, f, d = optimize.fmin_l_bfgs_b(self.fun, [0, -1],
+                                         fprime=self.jac,
+                                         bounds=self.bounds)
+        assert_(d['warnflag'] == 0, d['task'])
+        assert_allclose(x, self.solution, atol=1e-6)
+
+    def test_minimize_l_bfgs_b_bounds(self):
+        """ Minimize with method='L-BFGS-B' with bounds """
+        x, info = optimize.minimize(self.fun, [0, -1], method='L-BFGS-B',
+                                    jac=self.jac, bounds=self.bounds,
+                                    full_output=True)
+        assert_(info['success'], info['message'])
+        assert_allclose(x, self.solution, atol=1e-6)
+
 class TestOptimizeScalar(TestCase):
     """Tests for scalar optimizers"""
     def setUp(self):
