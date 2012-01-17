@@ -620,7 +620,7 @@ class TestTnc(TestCase):
         xopt = [1, 1]
         x = optimize.minimize(self.f1, x0, method='TNC',
                               bounds=bnds, options=self.opts)
-        assert_allclose(self.f1(x), self.f1(xopt), atol=1e-6)
+        assert_allclose(self.f1(x), self.f1(xopt), atol=1e-4)
 
     def test_minimize_tnc2(self):
         """Minimize, method=TNC, 2"""
