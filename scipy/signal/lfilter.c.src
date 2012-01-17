@@ -127,7 +127,7 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
         arVf = (PyArrayObject *) PyArray_SimpleNew(arVi->nd,
                                                    arVi->dimensions,
                                                    typenum);
-        if (arVF == NULL) {
+        if (arVf == NULL) {
             goto fail;
         }
     }
