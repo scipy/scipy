@@ -585,7 +585,7 @@ class TestTnc(TestCase):
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
-        assert_allclose(self.f1(x), self.f1(xopt), atol=1e-6,
+        assert_allclose(self.f1(x), self.f1(xopt), atol=1e-4,
                         err_msg="TNC failed with status: " +
                                 optimize.tnc.RCSTRINGS[rc])
 
