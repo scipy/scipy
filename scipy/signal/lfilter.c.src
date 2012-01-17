@@ -127,6 +127,9 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
         arVf = (PyArrayObject *) PyArray_SimpleNew(arVi->nd,
                                                    arVi->dimensions,
                                                    typenum);
+        if (arVF == NULL) {
+            goto fail;
+        }
     }
 
     if (arX->descr->type_num < 256) {
@@ -576,7 +579,7 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
                 tmp3 = PyNumber_Add(tmp2, ptr_Z[1]);
                 Py_DECREF(tmp1);
                 Py_DECREF(tmp2);
-		if (tmp3 == NULL) return;
+                if (tmp3 == NULL) return;
                 tmp1 = PyNumber_Multiply(*yn, *ptr_a);
                 if (tmp1 == NULL) {
                     Py_DECREF(tmp3);
