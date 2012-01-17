@@ -256,6 +256,28 @@ def minimize(fun, x0, method, args=(), jac=None, hess=None,
      [ 0.04750988  0.09502834  0.19092151  0.38341252  0.7664427 ]
      [ 0.09495377  0.18996269  0.38165151  0.7664427   1.53713523]]
 
+
+    Next, consider a minimization problem with several constraints (namely
+    Example 16.4 from [5]_). The objective function is:
+
+    >>> fun = lambda x: (x[0] - 1)**2 + (x[1] - 2.5)**2
+
+    There are three constraints defined as:
+
+    >>> cons = ({'type': 'ineq', 'fun': lambda x:  x[0] - 2 * x[1] + 2},
+    ...         {'type': 'ineq', 'fun': lambda x: -x[0] - 2 * x[1] + 6},
+    ...         {'type': 'ineq', 'fun': lambda x: -x[0] + 2 * x[1] + 2})
+
+    And variables must be positive, hence the following bounds:
+
+    >>> bnds = ((0, None), (0, None))
+
+    The optimization problem is solved using the SLSQP method as:
+
+    >>> xopt, info = minimize(fun, (2, 0), method='SLSQP', bounds=bnds,
+    ...                       constraints=cons, full_output=True)
+
+    It should converge to the theoretical solution (1.4 ,1.7).
     """
     meth = method.lower()
     # check if optional parameters are supported by the selected method
