@@ -153,9 +153,9 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     func : function
         A Python function or method to integrate.
     a : float
-        Lower limit of integration (use -scipy.integrate.Inf for -infinity).
+        Lower limit of integration (use -numpy.inf for -infinity).
     b : float
-        Upper limit of integration (use scipy.integrate.Inf for +infinity).
+        Upper limit of integration (use numpy.inf for +infinity).
     args : tuple, optional
         extra arguments to pass to func
     full_output : int
