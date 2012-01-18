@@ -308,7 +308,6 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, options={},
     else:
         return x
 
-    return x, f, d
 
 if __name__ == '__main__':
     def func(x):
