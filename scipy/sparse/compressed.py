@@ -243,6 +243,27 @@ class _cs_matrix(_data_matrix):
             return self._binopt(other,'_elmul_')
 
 
+    def sin(self):
+        """Element-wise sine."""
+        return self._apply_arith(np.sin)
+
+
+    def sqrt(self):
+        """Element-wise square root."""
+        return self._apply_arith(np.sqrt)
+
+
+    def tan(self):
+        """Element-wise tangent."""
+        return self._apply_arith(np.tan)
+
+
+    def _apply_arith(self, op):
+        X = self.copy()
+        op(X.data, X.data)  # out keyword not supported by older Numpy
+        return X
+
+
     ###########################
     # Multiplication handlers #
     ###########################

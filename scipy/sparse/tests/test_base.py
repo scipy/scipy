@@ -1075,6 +1075,11 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
         assert_array_equal(asp.data,[1, 2, 3])
         assert_array_equal(asp.todense(),bsp.todense())
 
+    def test_sqrt(self):
+        X = csr_matrix([[0., 1.], [2., 4.]])
+        assert_array_equal(np.sqrt(X).A,
+                           [[0., 1.], [1.4142135623730951, 2.]])
+
     def test_unsorted_arithmetic(self):
         data    = arange( 5 )
         indices = array( [7, 2, 1, 5, 4] )
@@ -1154,6 +1159,12 @@ class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
         assert_array_equal(asp.nnz, 3)
         assert_array_equal(asp.data,[1, 2, 3])
         assert_array_equal(asp.todense(),bsp.todense())
+
+    def test_sin(self):
+        X = csc_matrix([0., 1.], [2., 3.])
+        assert_array_equal(np.sin(X).A,
+                           [[0.,                  0.8414709848078965 ],
+                            [0.90929742682568171, 0.14112000805986721]])
 
     def test_sort_indices(self):
         data = arange( 5 )
