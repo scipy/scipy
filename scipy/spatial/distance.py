@@ -293,8 +293,11 @@ def cosine(u, v):
 
     .. math::
 
-       1 - \frac{uv^T}
+       1 - \frac{u \cdot v}
                 {||u||_2 ||v||_2}.
+
+    where :math:`u \cdot v` is the dot product of :math:`u` and
+    :math:`v`.
 
     Parameters
     ----------
@@ -321,11 +324,11 @@ def correlation(u, v):
 
     .. math::
 
-       1 - \frac{(u - \bar{u}){(v - \bar{v})}^T}
+       1 - \frac{(u - \bar{u}) \cdot (v - \bar{v})}
                {{||(u - \bar{u})||}_2 {||(v - \bar{v})||}_2}
 
-    where :math:`\bar{u}` is the mean of a vectors elements and ``n``
-    is the common dimensionality of ``u`` and ``v``.
+    where :math:`\bar{u}` is the mean of the elements of ``u``
+    and :math:`x \cdot y` is the dot product of :math:`x` and :math:`y`.
 
     Parameters
     ----------
@@ -382,14 +385,14 @@ def hamming(u, v):
 
 
 def jaccard(u, v):
-    """
+    r"""
     Computes the Jaccard-Needham dissimilarity between two boolean
     n-vectors u and v, which is
 
     .. math::
 
-         \frac{c_{TF} + c_{FT}}
-              {c_{TT} + c_{FT} + c_{TF}}
+       \frac{c_{TF} + c_{FT}}
+            {c_{TT} + c_{FT} + c_{TF}}
 
     where :math:`c_{ij}` is the number of occurrences of
     :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
@@ -416,7 +419,7 @@ def jaccard(u, v):
 
 
 def kulsinski(u, v):
-    """
+    r"""
     Computes the Kulsinski dissimilarity between two boolean n-vectors
     u and v, which is defined as
 
@@ -509,13 +512,14 @@ def cityblock(u, v):
 def mahalanobis(u, v, VI):
     r"""
     Computes the Mahalanobis distance between two n-vectors ``u`` and ``v``,
-    which is defiend as
+    which is defined as
 
     .. math::
 
        (u-v)V^{-1}(u-v)^T
 
-    where ``VI`` is the inverse covariance matrix :math:`V^{-1}`.
+    where ``V`` is the covariance matrix.  Note that the argument ``VI``
+    is the inverse of ``V``.
 
     Parameters
     ----------
@@ -523,6 +527,8 @@ def mahalanobis(u, v, VI):
         An :math:`n`-dimensional vector.
     v : ndarray
         An :math:`n`-dimensional vector.
+    VI : ndarray
+        The inverse of the covariance matrix.
 
     Returns
     -------
@@ -616,7 +622,7 @@ def canberra(u, v):
 
     Notes
     -----
-    Whe u[i] and v[i] are 0 for given i, then the fraction 0/0 = 0 is used in
+    When u[i] and v[i] are 0 for given i, then the fraction 0/0 = 0 is used in
     the calculation.
 
     """
@@ -954,8 +960,8 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
 
        V is the variance vector; V[i] is the variance computed over all
-          the i'th components of the points. If not passed, it is
-          automatically computed.
+       the i'th components of the points.  If not passed, it is
+       automatically computed.
 
     5. ``Y = pdist(X, 'sqeuclidean')``
 
@@ -968,10 +974,11 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
        .. math::
 
-          1 - \frac{uv^T}
-                   {{|u|}_2 {|v|}_2}
+          1 - \frac{u \cdot v}
+                   {{||u||}_2 {||v||}_2}
 
-       where |*|_2 is the 2 norm of its argument *.
+       where :math:`||*||_2` is the 2-norm of its argument *, and
+       :math:`u \cdot v` is the dot product of :math:`u` and :math:`v`.
 
     7. ``Y = pdist(X, 'correlation')``
 
@@ -979,10 +986,11 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
        .. math::
 
-          1 - \frac{(u - \bar{u})(v - \bar{v})^T}
-                   {{|(u - \bar{u})|}{|(v - \bar{v})|}}
+          1 - \frac{(u - \bar{u}) \cdot (v - \bar{v})}
+                   {{||(u - \bar{u})||}_2 {||(v - \bar{v})||}_2}
 
-       where :math:`\bar{v}` is the mean of the elements of vector v.
+       where :math:`\bar{v}` is the mean of the elements of vector v,
+       and :math:`x \cdot y` is the dot product of :math:`x` and :math:`y`.
 
     8. ``Y = pdist(X, 'hamming')``
 
@@ -1091,7 +1099,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
        Euclidean distance between the vectors could be computed
        as follows::
 
-         dm = pdist(X, (lambda u, v: np.sqrt(((u-v)*(u-v).T).sum())))
+         dm = pdist(X, lambda u, v: np.sqrt(((u-v)**2).sum()))
 
        Note that you should avoid passing a reference to one of
        the distance functions defined in this library. For example,::
@@ -1746,10 +1754,12 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-          1 - \frac{uv^T}
-               {{|u|}_2 {|v|}_2}
+          1 - \frac{u \cdot v}
+                   {{||u||}_2 {||v||}_2}
 
-       where :math:`|*|_2` is the 2-norm of its argument *.
+       where :math:`||*||_2` is the 2-norm of its argument *, and
+       :math:`u \cdot v` is the dot product of :math:`u` and :math:`v`.
+
 
     7. ``Y = cdist(XA, XB, 'correlation')``
 
@@ -1757,10 +1767,12 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-          1 - \frac{(u - \bar{u})(v - \bar{v})^T}
-                   {{|(u - \bar{u})|}{|(v - \bar{v})|}}
+          1 - \frac{(u - \bar{u}) \cdot (v - \bar{v})}
+                   {{||(u - \bar{u})||}_2 {||(v - \bar{v})||}_2}
 
-       where :math:`\bar{v}` is the mean of the elements of vector v.
+       where :math:`\bar{v}` is the mean of the elements of vector v,
+       and :math:`x \cdot y` is the dot product of :math:`x` and :math:`y`.
+
 
     8. ``Y = cdist(XA, XB, 'hamming')``
 
@@ -1869,7 +1881,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
        Euclidean distance between the vectors could be computed
        as follows::
 
-         dm = cdist(XA, XB, (lambda u, v: np.sqrt(((u-v)*(u-v).T).sum())))
+         dm = cdist(XA, XB, lambda u, v: np.sqrt(((u-v)**2).sum()))
 
        Note that you should avoid passing a reference to one of
        the distance functions defined in this library. For example,::
