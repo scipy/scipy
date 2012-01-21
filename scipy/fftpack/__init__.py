@@ -102,7 +102,7 @@ for k in ['fft', 'ifft', 'fftn', 'ifftn', 'fft2', 'ifft2']:
 del k, register_func
 
 from realtransforms import *
-__all__.extend(['dct', 'idct'])
+__all__.extend(['dct', 'idct', 'dst', 'idst'])
 
 from numpy.testing import Tester
 test = Tester().test
