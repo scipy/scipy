@@ -8,14 +8,38 @@
 
 __all__ = []
 
+import types
+import numpy as np
+
 from base import spmatrix
 from sputils import isscalarlike
+
 
 #TODO implement all relevant operations
 #use .data.__methods__() instead of /=, *=, etc.
 class _data_matrix(spmatrix):
     def __init__(self):
         spmatrix.__init__(self)
+
+        # Add the numpy unary ufuncs for which func(0) = 0
+        # to this class.
+        for npfunc in [np.sin, np.tan, np.arcsin, np.arctan,
+                       np.sinh, np.tanh, np.arcsinh, np.arctanh,
+                       np.rint, np.sign, np.expm1, np.log1p,
+                       np.deg2rad, np.rad2deg, np.floor, np.ceil,
+                       np.trunc]:
+            name = npfunc.__name__
+
+            def create_func(op):
+                def func(self):
+                    result = op(self.data)
+                    x = self._with_data(result, copy=True)
+                    return x
+                func.__doc__ = ("Element-wise %s\n\nSee numpy.%s "
+                                "for more information." % (name, name))
+                return func
+            setattr(self, name, types.MethodType(create_func(npfunc),
+                                                 self, self.__class__))
 
     def _get_dtype(self):
         return self.data.dtype
