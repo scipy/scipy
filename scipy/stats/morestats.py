@@ -1366,11 +1366,15 @@ def circvar(samples, high=2*pi, low=0):
     circvar : float
         Circular variance.
 
+    Notes
+    ------
+    This uses a definition of circular variance that in the limit of small angles
+    returns a number close to the 'linear' variance.
     """
     ang = (samples - low)*2*pi / (high-low)
     res = np.mean(exp(1j*ang), axis=0)
-    V = 1-abs(res)
-    return ((high-low)/2.0/pi)**2 * V
+    R = abs(res)
+    return ((high-low)/2.0/pi)**2 * 2 * log(1/R)
 
 def circstd(samples, high=2*pi, low=0):
     """
@@ -1391,11 +1395,15 @@ def circstd(samples, high=2*pi, low=0):
     circstd : float
         Circular standard deviation.
 
+    Notes
+    ------
+    This uses a definition of circular standard deviation that in the limit of
+    small angles returns a number close to the 'linear' standard deviation.
     """
     ang = (samples - low)*2*pi / (high-low)
     res = np.mean(exp(1j*ang), axis=0)
-    V = 1-abs(res)
-    return ((high-low)/2.0/pi) * sqrt(V)
+    R = abs(res)
+    return ((high-low)/2.0/pi) * sqrt(-2*log(R))
 
 
 

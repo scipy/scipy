@@ -301,5 +301,33 @@ def test_boxcox_bad_arg():
     x = np.array([-1])
     assert_raises(ValueError, stats.boxcox, x)
 
+def test_circstats():
+    x = np.array([355,5,2,359,10,350])
+    M = stats.circmean(x, high=360)
+    Mval = 0.167690146
+    assert_almost_equal(M, Mval, 7)
+    
+    V = stats.circvar(x, high=360)
+    Vval = 42.51955609
+    assert_almost_equal(V, Vval, 7)
+    
+    S = stats.circstd(x, high=360)
+    Sval = 6.520702116
+    assert_almost_equal(S, Sval, 7)
+
+def test_circstats_small():
+    x = np.array([20,21,22,18,19,20.5,19.2])
+    M1 = x.mean()
+    M2 = stats.circmean(x, high=360)
+    assert_almost_equal(M1, M2, 4)
+
+    V1 = x.var()
+    V2 = stats.circvar(x, high=360)
+    assert_almost_equal(V1, V2, 3)
+
+    S1 = x.std()
+    S2 = stats.circstd(x, high=360)
+    assert_almost_equal(S1, S2, 3)
+
 if __name__ == "__main__":
     run_module_suite()
