@@ -49,7 +49,7 @@ Return the Discrete Cosine Transform [Mak]_ of arbitrary type sequence ``x``.
 For a single dimension array ``x``, ``dct(x, norm='ortho')`` is equal to
 MATLAB ``dct(x)``.
 
-There are theoretically 8 types of the DCT [WP]_, only the first 3 types are
+There are theoretically 8 types of the DCT [WPC]_, only the first 3 types are
 implemented in scipy. 'The' DCT generally refers to DCT type 2, and 'the'
 Inverse DCT generally refers to DCT type 3.
 
@@ -97,7 +97,7 @@ Which makes the corresponding matrix of coefficients orthonormal
 type III
 ~~~~~~~~
 
-There are several definitions, we use the following
+There are several definitions of the DCT-III, we use the following
 (for ``norm=None``):
 
 .. math::
@@ -120,6 +120,65 @@ The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up
 to a factor `2N`. The orthonormalized DCT-III is exactly the inverse of the
 orthonormalized DCT-II.
 
+
+Discrete Sine Transforms
+--------------------------
+
+
+Return the Discrete Sine Transform [Mak]_ of arbitrary type sequence ``x``.
+
+There are theoretically 8 types of the DST for different combinations of even/odd
+boundary conditions and boundary off sets [WPS]_, only the first 3 types are
+implemented in scipy.
+
+type I
+~~~~~~
+
+There are several definitions of the DST-I; we use the following
+for ``norm=None``.  DST-I assumes the input is odd around n=-1 and n=N.
+
+.. math::
+   :nowrap:
+
+    \[ y_k = 2\sum_{n=0}^{N-1} x_n 
+    \sin\left( \pi {(n+1) (k+1)}\over{N+1} \right),
+    \qqad 0 \le k < N. \]
+
+Only None is supported as normalization mode for DST-I. Note also that the
+DCT-I is only supported for input size > 1.
+The (unnormalized) DCT-I is its own inverse, up to a factor `2(N+1)`.
+
+type II
+~~~~~~~
+
+There are several definitions of the DST-II; we use the following
+(for ``norm=None``).  DST-II assumes the input is odd around n=-1/2 and even
+around n=N
+
+.. math::
+   :nowrap:
+
+    \[ y_k = 2 \sum_{n=0}^{N-1} x_n 
+    \sin\left {\pi (n+1/2)(k+1)} \over N \right
+    \qqad 0 \le k < N. \]
+
+type III
+~~~~~~~~
+
+There are several definitions of the DST-III, we use the following
+(for ``norm=None``).  DST-III assumes the input is odd around n=-1
+and even around n=N-1
+
+.. math::
+   :nowrap:
+
+    \[ y_k = (-1)^k x_{N-1} + 2 \sum_{n=0}^{N-2} x_n
+    \sin \left {\pi (n+1)(k+1/2)} \over N \right
+    \qqad 0 \le k < N. \]
+
+The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up
+to a factor `2N`.
+
 References
 ~~~~~~~~~~
 
@@ -135,7 +194,9 @@ References
        `IEEE Transactions on acoustics, speech and signal processing`
        vol. 28(1), pp. 27-34, http://dx.doi.org/10.1109/TASSP.1980.1163351
 
-.. [WP] http://en.wikipedia.org/wiki/Discrete_cosine_transform
+.. [WPC] http://en.wikipedia.org/wiki/Discrete_cosine_transform
+
+.. [WPS] http://en.wikipedia.org/wiki/Discrete_sine_transform
 
 
 FFT convolution
@@ -143,3 +204,16 @@ FFT convolution
 
 scipy.fftpack.convolve performs a convolution of two one-dimensional
 arrays in frequency domain.
+
+Cache Destruction
+-----------------
+
+To accelerate repeat transforms on arrays of the same shape and dtype,
+scipy.fftpack keeps a cache of the prime factorization of length of the array
+and pre-computed trigonometric functions.  These caches can be destroyed by
+calling the appropriate function in scipy.fftpack._fftpack.  dst(type=1) and
+idst(type=1) share a cache (*dst1_cache).  As do dst(type=2), dst(type=3),
+idst(type=3), and idst(type=3) (*dst2_cache).
+
+
+

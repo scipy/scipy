@@ -31,6 +31,10 @@ enum type {
         DCT_II = 2,
         DCT_III = 3,
         DCT_IV = 4,
+        DST_I = 5,
+        DST_II = 6,
+        DST_III = 7,
+	    DST_IV = 8,
 };
 
 int gen(int type, int sz)
@@ -50,10 +54,6 @@ int gen(int type, int sz)
                 exit(EXIT_FAILURE);
         }
 
-        for(i=0; i < sz; ++i) {
-                a[i] = i;
-        }
-
         switch(type) {
                 case DCT_I:
                         tp = FFTW_REDFT00;
@@ -67,9 +67,44 @@ int gen(int type, int sz)
                 case DCT_IV:
                         tp = FFTW_REDFT11;
                         break;
+                case DST_I:
+                        tp = FFTW_RODFT00;
+                        break;
+                case DST_II:
+                        tp = FFTW_RODFT10;
+                        break;
+                case DST_III:
+                        tp = FFTW_RODFT01;
+                        break;
+                case DST_IV:
+                        tp = FFTW_RODFT11;
+                        break;
                 default:
                         fprintf(stderr, "unknown type\n");
                         exit(EXIT_FAILURE);
+        }
+
+        switch(type) {
+            case DCT_I:
+            case DCT_II:
+            case DCT_III:
+            case DCT_IV:
+                for(i=0; i < sz; ++i) {
+                    a[i] = i;
+                }
+                break;
+            case DST_I:
+            case DST_II:
+            case DST_III:
+            case DST_IV:
+/*                TODO: what should we do for dst's?*/
+                for(i=0; i < sz; ++i) {
+                    a[i] = i;
+                }
+                break;
+            default:
+                fprintf(stderr, "unknown type\n");
+                exit(EXIT_FAILURE);
         }
 
         p = FFTW_PLAN_CREATE(sz, a, b, tp, FFTW_ESTIMATE);
