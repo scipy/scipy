@@ -1395,7 +1395,7 @@ def circstd(samples, high=2*pi, low=0):
     ang = (samples - low)*2*pi / (high-low)
     res = np.mean(exp(1j*ang), axis=0)
     V = 1-abs(res)
-    return ((high-low)/2.0/pi) * sqrt(V)
+    return ((high-low)/2.0/pi) * sqrt(-2 * log(1 - V))
 
 
 
