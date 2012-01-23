@@ -23,7 +23,7 @@ from tnc import _minimize_tnc
 from cobyla import _minimize_cobyla
 from slsqp import _minimize_slsqp
 
-def minimize(fun, x0, method, args=(), jac=None, hess=None,
+def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
              bounds=None, constraints=(),
              options=dict(), full_output=False, callback=None,
              retall=False):
@@ -36,13 +36,13 @@ def minimize(fun, x0, method, args=(), jac=None, hess=None,
         Objective function.
     x0 : ndarray
         Initial guess.
-    method : str
-        Type of solver.  Should be one of:
-            {'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'Anneal',
-             'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP'}.
     args : tuple, optional
         Extra arguments passed to the objective function and its
         derivatives (Jacobian, Hessian).
+    method : str, optional
+        Type of solver.  Should be one of:
+            {'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'Anneal',
+             'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP'}.
     jac : callable, optional
         Jacobian of objective function (if None, Jacobian will be
         estimated numerically). Only for CG, BFGS, Newton-CG.
@@ -125,7 +125,7 @@ def minimize(fun, x0, method, args=(), jac=None, hess=None,
     Notes
     -----
     This section describes the available solvers that can be selected by the
-    'method' parameter.
+    'method' parameter. The default method is *BFGS*.
 
     Unconstrained minimization
     ~~~~~~~~~~~~~~~~~~~~~~~~~~
