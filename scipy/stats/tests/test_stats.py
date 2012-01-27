@@ -1266,13 +1266,25 @@ def test_scoreatpercentile():
     assert_equal(stats.scoreatpercentile(range(10), 50), 4.5)
     assert_equal(stats.scoreatpercentile(range(10), 50, (2,7)), 4.5)
     assert_equal(stats.scoreatpercentile(range(100), 50, (1,8)), 4.5)
-
-    assert_equal(stats.scoreatpercentile(np.array([1, 10 ,100]),
-                                         50, (10,100)),
-                 55)
-    assert_equal(stats.scoreatpercentile(np.array([1, 10 ,100]),
-                                         50, (1,10)),
-                 5.5)
+    assert_equal(stats.scoreatpercentile(np.array([1, 10 ,100]), 50, (10,100)),55)
+    assert_equal(stats.scoreatpercentile(np.array([1, 10 ,100]), 50, (1,10)),5.5)
+    # explicitly specify interpolation_method 'fraction' (the default)
+    assert_equal(stats.scoreatpercentile(range(10), 50, interpolation_method='fraction'), 4.5)
+    assert_equal(stats.scoreatpercentile(range(10), 50, (2,7), interpolation_method='fraction'), 4.5)
+    assert_equal(stats.scoreatpercentile(range(100), 50, (1,8), interpolation_method='fraction'), 4.5)
+    assert_equal(stats.scoreatpercentile(np.array([1, 10 ,100]), 50, (10,100), interpolation_method='fraction'), 55)
+    assert_equal(stats.scoreatpercentile(np.array([1, 10 ,100]), 50, (1,10), interpolation_method='fraction'), 5.5)
+    # interpolation_method 'lower'/'higher'
+    assert_equal(stats.scoreatpercentile(range(10), 50, interpolation_method='lower'), 4)
+    assert_equal(stats.scoreatpercentile(range(10), 50, interpolation_method='higher'), 5)
+    assert_equal(stats.scoreatpercentile(range(10), 50, (2,7), interpolation_method='lower'), 4)
+    assert_equal(stats.scoreatpercentile(range(10), 50, (2,7), interpolation_method='higher'), 5)
+    assert_equal(stats.scoreatpercentile(range(100), 50, (1,8), interpolation_method='lower'), 4)
+    assert_equal(stats.scoreatpercentile(range(100), 50, (1,8), interpolation_method='higher'), 5)
+    assert_equal(stats.scoreatpercentile(np.array([1, 10 ,100]), 50, (10,100), interpolation_method='lower'), 10)
+    assert_equal(stats.scoreatpercentile(np.array([1, 10 ,100]), 50, (10,100), interpolation_method='higher'), 100)
+    assert_equal(stats.scoreatpercentile(np.array([1, 10 ,100]), 50, (1,10), interpolation_method='lower'), 1)
+    assert_equal(stats.scoreatpercentile(np.array([1, 10 ,100]), 50, (1,10), interpolation_method='higher'), 10)
 
 def test_percentileofscore():
     pcos = stats.percentileofscore
