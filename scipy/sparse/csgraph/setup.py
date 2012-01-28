@@ -7,7 +7,7 @@ def configuration(parent_package='', top_path=None):
     import numpy
     from numpy.distutils.misc_util import Configuration
 
-    config = Configuration('graph', parent_package, top_path)
+    config = Configuration('csgraph', parent_package, top_path)
 
     config.add_extension('graph_shortest_path',
          sources=['graph_shortest_path.c'],

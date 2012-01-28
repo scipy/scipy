@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.testing import assert_array_almost_equal
-from scipy.sparse.graph import graph_shortest_path, dijkstra, floyd_warshall
+from scipy.sparse.csgraph import \
+    cs_graph_shortest_path, dijkstra, floyd_warshall
 
 
 def floyd_warshall_slow(graph, directed=False):
@@ -47,7 +48,7 @@ def test_floyd_warshall():
     dist_matrix = generate_graph(20)
 
     for directed in (True, False):
-        graph_FW = graph_shortest_path(dist_matrix, directed, 'FW')
+        graph_FW = cs_graph_shortest_path(dist_matrix, directed, 'FW')
         graph_py = floyd_warshall_slow(dist_matrix.copy(), directed)
 
         assert_array_almost_equal(graph_FW, graph_py)
@@ -57,7 +58,7 @@ def test_dijkstra():
     dist_matrix = generate_graph(20)
 
     for directed in (True, False):
-        graph_D = graph_shortest_path(dist_matrix, directed, 'D')
+        graph_D = cs_graph_shortest_path(dist_matrix, directed, 'D')
         graph_py = floyd_warshall_slow(dist_matrix.copy(), directed)
 
         assert_array_almost_equal(graph_D, graph_py)
@@ -69,7 +70,7 @@ def test_dijkstra_ind():
 
     for directed in (True, False):
         graph_D = dijkstra(dist_matrix, directed, indices=indices)
-        graph_FW = graph_shortest_path(dist_matrix, directed, 'FW')
+        graph_FW = cs_graph_shortest_path(dist_matrix, directed, 'FW')
 
         print graph_D
         print graph_FW[:5]

@@ -4,7 +4,7 @@
 import numpy as np
 from scipy import sparse
 
-from scipy.sparse.graph import graph_laplacian
+from scipy.sparse.csgraph import cs_graph_laplacian
 
 
 def test_graph_laplacian():
@@ -15,12 +15,13 @@ def test_graph_laplacian():
                ):
         sp_mat = sparse.csr_matrix(mat)
         for normed in (True, False):
-            laplacian = graph_laplacian(mat, normed=normed)
+            laplacian = cs_graph_laplacian(mat, normed=normed)
             n_nodes = mat.shape[0]
             if not normed:
                 np.testing.assert_array_almost_equal(laplacian.sum(axis=0),
-                                            np.zeros(n_nodes))
+                                                     np.zeros(n_nodes))
             np.testing.assert_array_almost_equal(laplacian.T,
-                                        laplacian)
-            np.testing.assert_array_almost_equal(laplacian,
-                            graph_laplacian(sp_mat, normed=normed).todense())
+                                                 laplacian)
+            np.testing.assert_array_almost_equal(\
+                laplacian,
+                cs_graph_laplacian(sp_mat, normed=normed).todense())

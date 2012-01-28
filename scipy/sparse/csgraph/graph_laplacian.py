@@ -10,7 +10,7 @@ sparse matrices.
 # License: BSD
 
 import numpy as np
-from scipy import sparse
+from scipy.sparse import isspmatrix
 
 ###############################################################################
 # Graph laplacian
@@ -68,13 +68,13 @@ def _graph_laplacian_dense(graph, normed=False, return_diag=False):
     return lap
 
 
-def graph_laplacian(graph, normed=False, return_diag=False):
+def cs_graph_laplacian(graph, normed=False, return_diag=False):
     """ Return the Laplacian of the given graph.
     """
     if normed and (np.issubdtype(graph.dtype, np.int)
                     or np.issubdtype(graph.dtype, np.uint)):
         graph = graph.astype(np.float)
-    if sparse.isspmatrix(graph):
+    if isspmatrix(graph):
         return _graph_laplacian_sparse(graph, normed=normed,
                                        return_diag=return_diag)
     else:

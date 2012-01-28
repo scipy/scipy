@@ -1,7 +1,7 @@
 """
 Routines for performing shortest-path graph searches
 
-The main interface is in the function `graph_shortest_path`.  This
+The main interface is in the function `cs_graph_shortest_path`.  This
 calls cython routines that compute the shortest path using either
 the Floyd-Warshall algorithm, or Dykstra's algorithm with Fibonacci Heaps.
 """
@@ -52,8 +52,8 @@ def _check_dist_matrix(dist_matrix,
     
 
 
-def graph_shortest_path(dist_matrix, directed=True,
-                        method='auto', overwrite=True):
+def cs_graph_shortest_path(dist_matrix, directed=True,
+                           method='auto', overwrite=True):
     """
     Perform a shortest-path graph search on a positive directed or
     undirected graph.
