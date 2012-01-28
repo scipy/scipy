@@ -245,6 +245,88 @@ python module _fftpack
          intent(c) destroy_dct1_cache
        end subroutine destroy_dct1_cache
 
+       subroutine ddst1(x,n,howmany,normalize)
+         ! y = ddst1(x[,n,normalize,overwrite_x])
+         intent(c) ddst1
+         real*8 intent(c,in,out,copy,out=y) :: x(*)
+         integer optional,depend(x),intent(c,in) :: n=size(x)
+         check(n>0&&n<=size(x)) n
+         integer depend(x,n),intent(c,hide) :: howmany = size(x)/n
+         check(n*howmany==size(x)) howmany
+         integer optional,intent(c,in) :: normalize = 0
+       end subroutine ddst1
+
+       subroutine ddst2(x,n,howmany,normalize)
+         ! y = ddst2(x[,n,normalize,overwrite_x])
+         intent(c) ddst2
+         real*8 intent(c,in,out,copy,out=y) :: x(*)
+         integer optional,depend(x),intent(c,in) :: n=size(x)
+         check(n>0&&n<=size(x)) n
+         integer depend(x,n),intent(c,hide) :: howmany = size(x)/n
+         check(n*howmany==size(x)) howmany
+         integer optional,intent(c,in) :: normalize = 0
+       end subroutine ddst2
+
+       subroutine ddst3(x,n,howmany,normalize)
+         ! y = ddst3(x[,n,normalize,overwrite_x])
+         intent(c) ddst3
+         real*8 intent(c,in,out,copy,out=y) :: x(*)
+         integer optional,depend(x),intent(c,in) :: n=size(x)
+         check(n>0&&n<=size(x)) n
+         integer depend(x,n),intent(c,hide) :: howmany = size(x)/n
+         check(n*howmany==size(x)) howmany
+         integer optional,intent(c,in) :: normalize = 0
+       end subroutine ddst3
+
+       subroutine dst1(x,n,howmany,normalize)
+         ! y = dst1(x[,n,normalize,overwrite_x])
+         intent(c) dst1
+         real*4 intent(c,in,out,copy,out=y) :: x(*)
+         integer optional,depend(x),intent(c,in) :: n=size(x)
+         check(n>0&&n<=size(x)) n
+         integer depend(x,n),intent(c,hide) :: howmany = size(x)/n
+         check(n*howmany==size(x)) howmany
+         integer optional,intent(c,in) :: normalize = 0
+       end subroutine dst1
+
+       subroutine dst2(x,n,howmany,normalize)
+         ! y = dst2(x[,n,normalize,overwrite_x])
+         intent(c) dst2
+         real*4 intent(c,in,out,copy,out=y) :: x(*)
+         integer optional,depend(x),intent(c,in) :: n=size(x)
+         check(n>0&&n<=size(x)) n
+         integer depend(x,n),intent(c,hide) :: howmany = size(x)/n
+         check(n*howmany==size(x)) howmany
+         integer optional,intent(c,in) :: normalize = 0
+       end subroutine dst2
+
+       subroutine dst3(x,n,howmany,normalize)
+         ! y = dst3(x[,n,normalize,overwrite_x])
+         intent(c) dst3
+         real*4 intent(c,in,out,copy,out=y) :: x(*)
+         integer optional,depend(x),intent(c,in) :: n=size(x)
+         check(n>0&&n<=size(x)) n
+         integer depend(x,n),intent(c,hide) :: howmany = size(x)/n
+         check(n*howmany==size(x)) howmany
+         integer optional,intent(c,in) :: normalize = 0
+       end subroutine dst3
+
+       subroutine destroy_ddst2_cache()
+         intent(c) destroy_ddst2_cache
+       end subroutine destroy_ddst2_cache
+
+       subroutine destroy_ddst1_cache()
+         intent(c) destroy_ddst1_cache
+       end subroutine destroy_ddst1_cache
+
+       subroutine destroy_dst2_cache()
+         intent(c) destroy_dst2_cache
+       end subroutine destroy_dst2_cache
+
+       subroutine destroy_dst1_cache()
+         intent(c) destroy_dst1_cache
+       end subroutine destroy_dst1_cache
+
     end interface 
 end python module _fftpack
 

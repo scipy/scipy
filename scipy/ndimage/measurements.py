@@ -380,8 +380,36 @@ def _safely_castable_to_int(dt):
     return safe
 
 def _stats(input, labels=None, index=None, centered=False):
-    '''returns count, sum, and optionally (sum - centre)^2 by label'''
+    """Count, sum, and optionally compute (sum - centre)^2 of input by label
 
+    Parameters
+    ----------
+    input : array_like, n-dimensional
+        The input data to be analyzed.
+    labels : array_like (n-dimensional), optional
+        The labels of the data in `input`.  This array must be broadcast
+        compatible with `input`; typically it is the same shape as `input`.
+        If `labels` is None, all nonzero values in `input` are treated as
+        the single labeled group.
+    index: label or sequence of labels, optional
+        These are the labels of the groups for which the stats are computed.
+        If `index` is None, the stats are computed for the single group where
+        `labels` is greater than 0.
+    centered: bool, optional
+        If True, the centered sum of squares for each labeled group is
+        also returned.  Default is False.
+
+    Returns
+    -------
+    counts: int or ndarray of ints
+        The number of elements in each labeled group.
+    sums: scalar or ndarray of scalars
+        The sums of the values in each labeled group.
+    sums_c: scalar or ndarray of scalars, optional
+        The sums of mean-centered squares of the values in each labeled group.
+        This is only returned if `centered` is True.
+
+    """
     def single_group(vals):
         if centered:
             vals_c = vals - vals.mean()
@@ -402,9 +430,13 @@ def _stats(input, labels=None, index=None, centered=False):
         return single_group(input[labels == index])
 
     def _sum_centered(labels):
+        # `labels` is expected to be an ndarray with the same shape as `input`.
+        # It must contain the label indices (which are not necessarily the labels
+        # themselves).
         means = sums / counts
         centered_input = input - means[labels]
-        bc = numpy.bincount(labels,
+        # bincount expects 1d inputs, so we ravel the arguments.
+        bc = numpy.bincount(labels.ravel(),
                               weights=(centered_input * \
                                        centered_input.conjugate()).ravel())
         return bc
@@ -414,11 +446,17 @@ def _stats(input, labels=None, index=None, centered=False):
 
     if (not _safely_castable_to_int(labels.dtype) or
             labels.min() < 0 or labels.max() > labels.size):
+        # Use numpy.unique to generate the label indices.  `new_labels` will
+        # be 1-d, but it should be interpreted as the flattened n-d array of
+        # label indices.
         unique_labels, new_labels = numpy.unique(labels, return_inverse=True)
         counts = numpy.bincount(new_labels)
         sums = numpy.bincount(new_labels, weights=input.ravel())
         if centered:
-            sums_c = _sum_centered(new_labels)
+            # Compute the sum of the mean-centered squares.
+            # We must reshape new_labels to the n-d shape of `input` before
+            # passing it _sum_centered.
+            sums_c = _sum_centered(new_labels.reshape(labels.shape))
         idxs = numpy.searchsorted(unique_labels, index)
         # make all of idxs valid
         idxs[idxs >= unique_labels.size] = 0
@@ -429,7 +467,7 @@ def _stats(input, labels=None, index=None, centered=False):
         counts = numpy.bincount(labels.ravel())
         sums = numpy.bincount(labels.ravel(), weights=input.ravel())
         if centered:
-            sums_c = _sum_centered(labels.ravel())
+            sums_c = _sum_centered(labels)
         # make sure all index values are valid
         idxs = numpy.asanyarray(index, numpy.int).copy()
         found = (idxs >= 0) & (idxs < counts.size)

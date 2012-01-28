@@ -36,7 +36,7 @@ class csc_matrix(_cs_matrix):
 
         csc_matrix((data, indices, indptr), [shape=(M, N)])
             is the standard CSC representation where the row indices for
-            column i are stored in ``indices[indptr[i]:indices[i+1]]``
+            column i are stored in ``indices[indptr[i]:indptr[i+1]]``
             and their corresponding values are stored in
             ``data[indptr[i]:indptr[i+1]]``.  If the shape parameter is
             not supplied, the matrix dimensions are inferred from

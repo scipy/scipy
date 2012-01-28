@@ -182,9 +182,7 @@ which work for masked arrays.
 
     gmean             -- Geometric mean
     hmean             -- Harmonic mean
-    mean              -- Arithmetic mean
     cmedian           -- Computed median
-    median            -- Median
     mode              -- Modal value
     tmean             -- Truncated arithmetic mean
     tvar              -- Truncated variance

@@ -8,7 +8,7 @@ Optimization (:mod:`scipy.optimize`)
 .. currentmodule:: scipy.optimize
 
 The :mod:`scipy.optimize` package provides several commonly used
-optimization algorithms. An detailed listing is available:
+optimization algorithms. A detailed listing is available:
 :mod:`scipy.optimize` (can also be found by ``help(scipy.optimize)``).
 
 The module contains:
@@ -17,6 +17,9 @@ The module contains:
    (e.g., :func:`fmin`: Nelder-Mead simplex, :func:`fmin_bfgs`:
    BFGS, :func:`fmin_ncg`: Newton Conjugate Gradient,
    :func:`leastsq`: Levenberg-Marquardt, :func:`fmin_cobyla`: COBYLA).
+
+   The unconstrained solvers also have a unified interface, :func:`minimize`,
+   which can be used to easily compare and switch between algorithms.
 
 2. Global (brute-force) optimization routines  (e.g., :func:`anneal`)
 

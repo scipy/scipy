@@ -4,7 +4,8 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 """
 
 from numpy import exp, log, asarray, arange, newaxis, hstack, product, array, \
-                  where, zeros, extract, place, pi, sqrt, eye, poly1d, dot, r_
+                  where, zeros, extract, place, pi, sqrt, eye, poly1d, dot, \
+                  r_, rollaxis, sum
 
 __all__ = ['logsumexp', 'factorial','factorial2','factorialk','comb',
            'central_diff_weights', 'derivative', 'pade', 'lena']
@@ -12,13 +13,16 @@ __all__ = ['logsumexp', 'factorial','factorial2','factorialk','comb',
 # XXX: the factorial functions could move to scipy.special, and the others
 # to numpy perhaps?
 
-def logsumexp(a):
+def logsumexp(a, axis=None):
     """Compute the log of the sum of exponentials of input elements.
 
     Parameters
     ----------
     a : array_like
         Input array.
+    axis : int, optional
+        Axis over which the sum is taken. By default `axis` is None,
+        and all elements are summed.
 
     Returns
     -------
@@ -30,14 +34,32 @@ def logsumexp(a):
     --------
     numpy.logaddexp, numpy.logaddexp2
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.misc import logsumexp
+    >>> a = np.arange(10)
+    >>> np.log(np.sum(np.exp(a)))
+    9.4586297444267107
+    >>> logsumexp(a)
+    9.4586297444267107
+
     Notes
     -----
-    Numpy has a logaddexp function which is very similar to `logsumexp`.
+    Numpy has a logaddexp function which is very similar to `logsumexp`, but
+    only handles two arguments. `logaddexp.reduce` is similar to this
+    function, but may be less stable.
 
     """
     a = asarray(a)
-    a_max = a.max()
-    return a_max + log((exp(a-a_max)).sum())
+    if axis is None:
+        a = a.ravel()
+    else:
+        a = rollaxis(a, axis)
+    a_max = a.max(axis=0)
+    out = log(sum(exp(a - a_max), axis=0))
+    out += a_max
+    return out
 
 def factorial(n,exact=0):
     """

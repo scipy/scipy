@@ -38,11 +38,20 @@ def test_logsumexp():
     assert_almost_equal(logsumexp(a), desired)
 
     # Now test with large numbers
-    b = [1000,1000]
+    b = [1000, 1000]
     desired = 1000.0 + np.log(2.0)
     assert_almost_equal(logsumexp(b), desired)
 
     n = 1000
-    b = np.ones(n)*10000
+    b = np.ones(n) * 10000
     desired = 10000.0 + np.log(n)
     assert_almost_equal(logsumexp(b), desired)
+
+    x = np.array([1e-40] * 1000000)
+    logx = np.log(x)
+
+    X = np.vstack([x, x])
+    logX = np.vstack([logx, logx])
+    assert_array_almost_equal(np.exp(logsumexp(logX)), X.sum())
+    assert_array_almost_equal(np.exp(logsumexp(logX, axis=0)), X.sum(axis=0))
+    assert_array_almost_equal(np.exp(logsumexp(logX, axis=1)), X.sum(axis=1))

@@ -849,6 +849,8 @@ Inverse Hilbert       `scipy.linalg.invhilbert`  Construct the inverse of a Hilb
 --------------------  -------------------------  ---------------------------------------------------------
 Leslie                `scipy.linalg.leslie`      Create a Leslie matrix.
 --------------------  -------------------------  ---------------------------------------------------------
+Pascal                `scipy.linalg.pascal`      Create a Pascal matrix.
+--------------------  -------------------------  ---------------------------------------------------------
 Toeplitz              `scipy.linalg.toeplitz`    Construct a Toeplitz matrix.
 --------------------  -------------------------  ---------------------------------------------------------
 Van der Monde         `numpy.vander`             Generate a Van der Monde matrix.

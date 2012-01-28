@@ -30,10 +30,11 @@ systems that don't have PIL installed.
    imshow - Simple showing of an image through an external viewer
    info - Get help information for a function, class, or module
    lena - Get classic image processing example image Lena
+   logsumexp - Compute the log of the sum of exponentials of input elements
    pade - Pade approximation to function as the ratio of two polynomials
    radon -
    toimage - Takes a numpy array and returns a PIL image
-
+   who - Print the Numpy arrays in the given dictionary
 """
 
 __all__ = ['who', 'source', 'info', 'doccer']

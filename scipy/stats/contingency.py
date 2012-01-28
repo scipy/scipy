@@ -18,8 +18,8 @@ def margins(a):
     a : ndarray
         The array for which to compute the marginal sums.
 
-    Return Value
-    ------------
+    Returns
+    -------
     margsums : list of ndarrays
         A list of length `a.ndim`.  `margsums[k]` is the result
         of summing `a` over all axes except `k`; it has the same

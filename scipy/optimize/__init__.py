@@ -14,6 +14,8 @@ General-purpose
 .. autosummary::
    :toctree: generated/
 
+   minimize - Unified interface for unconstrained solvers
+   show_minimize_options - Show method-specific options for `minimize`
    fmin - Nelder-Mead Simplex algorithm
    fmin_powell - Powell's (modified) level set method
    fmin_cg - Non-linear (Polak-Ribiere) conjugate gradient algorithm
@@ -52,6 +54,17 @@ Scalar function minimizers
    brent - 1-D function minimization using Brent method
    golden - 1-D function minimization using Golden Section method
    bracket - Bracket a minimum, given two starting points
+
+Rosenbrock function
+-------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   rosen - The Rosenbrock function.
+   rosen_der - The derivative of the Rosenbrock function.
+   rosen_hess - The Hessian matrix of the Rosenbrock function.
+   rosen_hess_prod - Product of the Rosenbrock Hessian with a vector.
 
 Fitting
 =======
@@ -126,6 +139,7 @@ Utility Functions
 """
 
 from optimize import *
+from minimize import *
 from minpack import *
 from zeros import *
 from anneal import *

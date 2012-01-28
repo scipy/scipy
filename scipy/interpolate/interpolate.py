@@ -123,11 +123,12 @@ class interp2d(object):
     --------
     Construct a 2-D grid and interpolate on it:
 
+    >>> from scipy import interpolate
     >>> x = np.arange(-5.01, 5.01, 0.25)
     >>> y = np.arange(-5.01, 5.01, 0.25)
     >>> xx, yy = np.meshgrid(x, y)
     >>> z = np.sin(xx**2+yy**2)
-    >>> f = sp.interpolate.interp2d(x, y, z, kind='cubic')
+    >>> f = interpolate.interp2d(x, y, z, kind='cubic')
 
     Now use the obtained interpolation function and plot the result:
 
@@ -135,6 +136,7 @@ class interp2d(object):
     >>> ynew = np.arange(-5.01, 5.01, 1e-2)
     >>> znew = f(xnew, ynew)
     >>> plt.plot(x, z[:, 0], 'ro-', xnew, znew[:, 0], 'b-')
+    >>> plt.show()
 
     """
 
@@ -238,14 +240,15 @@ class interp1d(object):
 
     Examples
     --------
-    >>> import scipy.interpolate
+    >>> from scipy import interpolate
     >>> x = np.arange(0, 10)
     >>> y = np.exp(-x/3.0)
-    >>> f = sp.interpolate.interp1d(x, y)
+    >>> f = interpolate.interp1d(x, y)
 
     >>> xnew = np.arange(0,9, 0.1)
     >>> ynew = f(xnew)   # use interpolation function returned by `interp1d`
     >>> plt.plot(x, y, 'o', xnew, ynew, '-')
+    >>> plt.show()
 
     """
 

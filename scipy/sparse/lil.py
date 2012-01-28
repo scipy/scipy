@@ -12,6 +12,10 @@ import numpy as np
 from base import spmatrix, isspmatrix
 from sputils import getdtype, isshape, issequence, isscalarlike
 
+from warnings import warn
+from base import SparseEfficiencyWarning
+
+
 class lil_matrix(spmatrix):
     """Row-based linked list sparse matrix
 
@@ -219,6 +223,11 @@ class lil_matrix(spmatrix):
             i, j = index
         except (AssertionError, TypeError):
             raise IndexError('invalid index')
+
+        if not np.isscalar(i) and np.isscalar(j):
+            warn('Indexing into a lil_matrix with multiple indices is slow. '
+                 'Pre-converting to CSC or CSR beforehand is more efficient.',
+                 SparseEfficiencyWarning)
 
         if np.isscalar(i):
             if np.isscalar(j):

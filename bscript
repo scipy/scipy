@@ -125,12 +125,20 @@ def pre_configure(context):
         conf.env.append_value('CXXFLAGS_PYEXT', "-Wfatal-errors")
 
     if sys.platform == "darwin":
+        conf.env.stash()
         # FIXME: fix upstream waf tool to work on mac os X
         for flag in [conf.env.CFLAGS_PYEXT, conf.env.LINKFLAGS_PYEXT,
                      conf.env.CXXFLAGS_PYEXT, conf.env.FCFLAGS]:
             remove_flag_prevalue("ppc", flag)
-        conf.env.append_value('FCFLAGS', ['-arch', 'i386'])
-        conf.env.append_value('CFLAGS', ['-arch', 'i386'])
+        try:
+            conf.env.append_value('FCFLAGS', ['-arch', 'i386'])
+            conf.env.append_value('CFLAGS', ['-arch', 'i386'])
+            conf.check_fortran()
+        except waflib.Errors.ConfigurationError:
+            # vanilla gcc (like the one provided by macports) does not
+            # support the -arch flag.
+            conf.env.revert()
+
         conf.env["MACOSX_DEPLOYMENT_TARGET"] = "10.4"
 
     conf.check_fortran_verbose_flag()
