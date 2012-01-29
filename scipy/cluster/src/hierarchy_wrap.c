@@ -69,8 +69,10 @@ extern PyObject *linkage_wrap(PyObject *self, PyObject *args) {
       df = 0;
       break;
     }
-    if (linkage((double*)dm->data, (double*)Z->data, 0, 0, n, 0, 0, df, method) == -1) {
-      PyErr_SetString(PyExc_MemoryError, "out of memory while computing linkage");
+    if (linkage((double*)dm->data, (double*)Z->data,
+                0, 0, n, 0, 0, df, method) == -1) {
+      PyErr_SetString(PyExc_MemoryError,
+                      "out of memory while computing linkage");
       return NULL;
     }
   }
@@ -110,8 +112,9 @@ extern PyObject *linkage_euclid_wrap(PyObject *self, PyObject *args) {
       break;
     }
     if (linkage((double*)dm->data, (double*)Z->data, (double*)X->data,
-	    m, n, 1, 1, df, method) == -1) {
-      PyErr_SetString(PyExc_MemoryError, "out of memory while computing linkage");
+	              m, n, 1, 1, df, method) == -1) {
+      PyErr_SetString(PyExc_MemoryError,
+                      "out of memory while computing linkage");
       return NULL;
     }
   }
