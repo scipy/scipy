@@ -69,8 +69,6 @@
 
 #include "hierarchy.h"
 
-#define safefree(p) if (p != NULL) {free(p); p = NULL;}
-
 
 static NPY_INLINE double euclidean_distance(const double *u, const double *v, int n) {
   int i = 0;
@@ -623,16 +621,16 @@ int linkage(double *dm, double *Z, double *X,
   result = 0;
   
 finished:
-  safefree(lists);
-  safefree(lnodes);
-  safefree(nodes);
-  safefree(ind);
-  safefree(dmt);
-  safefree(buf);
-  safefree(rows);
-  safefree(rowsize);
-  safefree(centroidsData);
-  safefree(centroids);
+  free(lists);
+  free(lnodes);
+  free(nodes);
+  free(ind);
+  free(dmt);
+  free(buf);
+  free(rows);
+  free(rowsize);
+  free(centroidsData);
+  free(centroids);
   return result;
 }
 
