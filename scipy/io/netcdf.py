@@ -801,6 +801,14 @@ class netcdf_variable(object):
             netcdf variable.
 
         """
+        if not self.data.flags.writeable:
+            # Work-around for a bug in NumPy.  Calling itemset() on a read-only
+            # memory-mapped array causes a seg. fault.
+            # See NumPy ticket #1622, and SciPy ticket #1202.
+            # This check for `writeable` can be removed when the oldest version
+            # of numpy still supported by scipy contains the fix for #1622.
+            raise RuntimeError("variable is not writeable")
+
         self.data.itemset(value)
 
     def typecode(self):
