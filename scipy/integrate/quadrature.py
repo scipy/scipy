@@ -198,7 +198,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     res : ndarray
         The result of cumulative integration of `y` along `axis`.
         If `initial` is None, the shape is such that the axis of integration
-        has one less value then `y`.  If `initial` is given, the shape is equal
+        has one less value than `y`.  If `initial` is given, the shape is equal
         to that of `y`.
 
     See Also
