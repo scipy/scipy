@@ -23,33 +23,6 @@ ctypedef np.float64_t DTYPE_t
 
 ITYPE = np.int32
 ctypedef np.int32_t ITYPE_t
-
-
-def _check_csgraph(csgraph,
-                   copy_if_array=False,
-                   convert_to_dense=False,
-                   convert_to_sparse=False):
-    """validation routine for sparse graph input"""
-    if isspmatrix(csgraph):
-        if convert_to_dense:
-            csgraph = csgraph.toarray().astype(DTYPE)
-        else:
-            csgraph = csgraph.tocsr()
-
-        if csgraph.dtype != DTYPE:
-            csgraph = csgraph.astype(DTYPE)
-    else:
-        if convert_to_sparse:
-            csgraph = csr_matrix(csgraph, dtype=DTYPE)
-        elif copy_if_array:
-            csgraph = np.array(csgraph, dtype=DTYPE)
-        else:
-            csgraph = np.asarray(csgraph, dtype=DTYPE)
-
-    if csgraph.ndim != 2 or csgraph.shape[0] != csgraph.shape[1]:
-        raise ValueError('csgraph should have shape (N, N)')
-    
-    return csgraph
     
 
 def cs_graph_shortest_path(csgraph, directed=True,
@@ -361,11 +334,15 @@ cdef np.ndarray _dijkstra(csgraph,
 #  This structure and the operations on it are the nodes of the
 #  Fibonacci heap.
 #
+cdef enum FibonacciState:
+    SCANNED
+    NOT_IN_HEAP
+    IN_HEAP
 
 cdef struct FibonacciNode:
     unsigned int index
     unsigned int rank
-    unsigned int state
+    FibonacciState state
     DTYPE_t val
     FibonacciNode* parent
     FibonacciNode* left_sibling
@@ -381,7 +358,7 @@ cdef void initialize_node(FibonacciNode* node,
     node.index = index
     node.val = val
     node.rank = 0
-    node.state = 0  # 0 -> NOT_IN_HEAP
+    node.state = NOT_IN_HEAP
 
     node.parent = NULL
     node.left_sibling = NULL
@@ -624,14 +601,14 @@ cdef void _dijkstra_directed_one_row(
 
     while heap.min_node:
         v = remove_min(heap)
-        v.state = 2  # 2 -> SCANNED
+        v.state = SCANNED
 
         for i from indptr[v.index] <= i < indptr[v.index + 1]:
             current_neighbor = &nodes[neighbors[i]]
-            if current_neighbor.state != 2:      # 2 -> SCANNED
+            if current_neighbor.state != SCANNED:
                 dist = distances[i]
-                if current_neighbor.state == 0:  # 0 -> NOT_IN_HEAP
-                    current_neighbor.state = 1   # 1 -> IN_HEAP
+                if current_neighbor.state == NOT_IN_HEAP:
+                    current_neighbor.state = IN_HEAP
                     current_neighbor.val = v.val + dist
                     insert_node(heap, current_neighbor)
                 elif current_neighbor.val > v.val + dist:
@@ -682,21 +659,21 @@ cdef void _dijkstra_one_row(unsigned int i_node,
     # rank should already be 0, index will already be set
     # we just need to re-set state and val
     for i from 0 <= i < N:
-        nodes[i].state = 0  # 0 -> NOT_IN_HEAP
+        nodes[i].state = NOT_IN_HEAP
         nodes[i].val = 0
 
     insert_node(heap, &nodes[i_node])
 
     while heap.min_node:
         v = remove_min(heap)
-        v.state = 2  # 2 -> SCANNED
+        v.state = SCANNED
 
         for i from indptr1[v.index] <= i < indptr1[v.index + 1]:
             current_neighbor = &nodes[neighbors1[i]]
-            if current_neighbor.state != 2:      # 2 -> SCANNED
+            if current_neighbor.state != SCANNED:
                 dist = distances1[i]
-                if current_neighbor.state == 0:  # 0 -> NOT_IN_HEAP
-                    current_neighbor.state = 1   # 1 -> IN_HEAP
+                if current_neighbor.state == NOT_IN_HEAP:
+                    current_neighbor.state = IN_HEAP
                     current_neighbor.val = v.val + dist
                     insert_node(heap, current_neighbor)
                 elif current_neighbor.val > v.val + dist:
@@ -705,10 +682,10 @@ cdef void _dijkstra_one_row(unsigned int i_node,
 
         for i from indptr2[v.index] <= i < indptr2[v.index + 1]:
             current_neighbor = &nodes[neighbors2[i]]
-            if current_neighbor.state != 2:      # 2 -> SCANNED
+            if current_neighbor.state != SCANNED:
                 dist = distances2[i]
-                if current_neighbor.state == 0:  # 0 -> NOT_IN_HEAP
-                    current_neighbor.state = 1   # 1 -> IN_HEAP
+                if current_neighbor.state == NOT_IN_HEAP:
+                    current_neighbor.state = IN_HEAP
                     current_neighbor.val = v.val + dist
                     insert_node(heap, current_neighbor)
                 elif current_neighbor.val > v.val + dist:
