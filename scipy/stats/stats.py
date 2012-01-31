@@ -1329,7 +1329,7 @@ def _interpolate(a, b, fraction):
     """
     return a + (b - a)*fraction;
 
-def scoreatpercentile(a, per, limit=(), interpolationmethod='fraction'):
+def scoreatpercentile(a, per, limit=(), interpolation_method='fraction'):
     """
     Calculate the score at the given `per` percentile of the sequence `a`.
 
@@ -1339,7 +1339,7 @@ def scoreatpercentile(a, per, limit=(), interpolationmethod='fraction'):
     should be a tuple (lower, upper) of two values. Values of `a` outside
     this (closed) interval will be ignored.
 
-    The `interpolationmethod` parameter supports three values, namely
+    The `interpolation_method` parameter supports three values, namely
     `fraction` (default), `lower` and `higher`. Interpolation is done only,
     if the desired quantile lies between two data points `i` and `j`. For
     `fraction`, the result is an interpolated value between `i` and `j`; 
@@ -1391,14 +1391,14 @@ def scoreatpercentile(a, per, limit=(), interpolationmethod='fraction'):
     if (idx % 1 == 0):
         return values[idx]
     else:
-        if interpolationmethod == 'fraction':
+        if interpolation_method == 'fraction':
             return _interpolate(values[int(idx)], values[int(idx) + 1], idx % 1)
-        elif interpolationmethod == 'lower':
+        elif interpolation_method == 'lower':
             return values[np.floor(idx)]
-        elif interpolationmethod == 'higher':
+        elif interpolation_method == 'higher':
             return values[np.ceil(idx)]
         else:
-            raise ValueError("interpolationmethod can only be 'fraction', 'lower' or 'higher'")
+            raise ValueError("interpolation_method can only be 'fraction', 'lower' or 'higher'")
 
 
 def percentileofscore(a, score, kind='rank'):
