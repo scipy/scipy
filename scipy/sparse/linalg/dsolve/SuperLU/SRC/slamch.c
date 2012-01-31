@@ -684,11 +684,13 @@ double slamc3_(float *a, float *b)
 
 /* >>Start of File<<   
        System generated locals */
-    float ret_val;
+    volatile float ret_val;
+    volatile float x;
+    volatile float y;
 
-
-
-    ret_val = *a + *b;
+    x = *a;
+    y = *b;
+    ret_val = x + y;
 
     return ret_val;
 

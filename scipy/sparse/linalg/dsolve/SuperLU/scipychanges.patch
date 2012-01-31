@@ -1,0 +1,347 @@
+    ENH: sparse/dsolve: re-apply patches on top of SuperLU 4.3
+
+    - Hook up USER_* routines to Scipy
+
+    - Fix a dubious format string
+
+    - Sprinkle volatile into dlamc/slamc implementation to avoid an infinite loop
+
+    - Eliminate a crash for singular matrices for which pivoting fails
+
+    - Do not exit(1) when ILU decomposition encounters singularity;
+      instead call ABORT (which is hooked up in Scipy)
+
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpivotL.c
+index a14ea72..f60c4dc 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpivotL.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpivotL.c
+@@ -125,7 +125,16 @@ if ( jcol == MIN_COL ) {
+     /* Test for singularity */
+     if ( pivmax == 0.0 ) {
+ #if 1
++#if SCIPY_FIX
++	if (pivptr < nsupr) {
++	    *pivrow = lsub_ptr[pivptr];
++	}
++	else {
++	    *pivrow = diagind;
++	}
++#else
+ 	*pivrow = lsub_ptr[pivptr];
++#endif
+ 	perm_r[*pivrow] = jcol;
+ #else
+ 	perm_r[diagind] = jcol;
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dlamch.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dlamch.c
+index 678ac35..e117915 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dlamch.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dlamch.c
+@@ -673,9 +673,13 @@ double dlamc3_(double *a, double *b)
+ {
+ /* >>Start of File<<   
+        System generated locals */
+-    double ret_val;
++    volatile double ret_val;
++    volatile double x;
++    volatile double y;
+ 
+-    ret_val = *a + *b;
++    x = *a;
++    y = *b;
++    ret_val = x + y;
+ 
+     return ret_val;
+ 
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dpivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dpivotL.c
+index bcfa96d..6a66068 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dpivotL.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dpivotL.c
+@@ -124,7 +124,16 @@ if ( jcol == MIN_COL ) {
+     /* Test for singularity */
+     if ( pivmax == 0.0 ) {
+ #if 1
++#if SCIPY_FIX
++	if (pivptr < nsupr) {
++	    *pivrow = lsub_ptr[pivptr];
++	}
++	else {
++	    *pivrow = diagind;
++	}
++#else
+ 	*pivrow = lsub_ptr[pivptr];
++#endif
+ 	perm_r[*pivrow] = jcol;
+ #else
+ 	perm_r[diagind] = jcol;
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cpivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cpivotL.c
+index d806485..98991d7 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cpivotL.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cpivotL.c
+@@ -136,9 +136,13 @@ ilu_cpivotL(
+ 
+     /* Test for singularity */
+     if (pivmax < 0.0) {
++#if SCIPY_FIX
++	ABORT("[0]: matrix is singular");
++#else
+ 	fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
+ 	fflush(stderr);
+ 	exit(1);
++#endif
+     }
+     if ( pivmax == 0.0 ) {
+ 	if (diag != EMPTY)
+@@ -151,9 +155,13 @@ ilu_cpivotL(
+ 	    for (icol = jcol; icol < n; icol++)
+ 		if (marker[swap[icol]] <= jcol) break;
+ 	    if (icol >= n) {
++#if SCIPY_FIX
++		ABORT("[1]: matrix is singular");
++#else
+ 		fprintf(stderr, "[1]: jcol=%d, SINGULAR!!!\n", jcol);
+ 		fflush(stderr);
+ 		exit(1);
++#endif
+ 	    }
+ 
+ 	    *pivrow = swap[icol];
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_dpivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_dpivotL.c
+index 33c316d..0cbb21d 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_dpivotL.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_dpivotL.c
+@@ -134,9 +134,13 @@ ilu_dpivotL(
+ 
+     /* Test for singularity */
+     if (pivmax < 0.0) {
++#if SCIPY_FIX
++	ABORT("[0]: matrix is singular");
++#else
+ 	fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
+ 	fflush(stderr);
+ 	exit(1);
++#endif
+     }
+     if ( pivmax == 0.0 ) {
+ 	if (diag != EMPTY)
+@@ -149,9 +153,13 @@ ilu_dpivotL(
+ 	    for (icol = jcol; icol < n; icol++)
+ 		if (marker[swap[icol]] <= jcol) break;
+ 	    if (icol >= n) {
++#if SCIPY_FIX
++		ABORT("[1]: matrix is singular");
++#else
+ 		fprintf(stderr, "[1]: jcol=%d, SINGULAR!!!\n", jcol);
+ 		fflush(stderr);
+ 		exit(1);
++#endif
+ 	    }
+ 
+ 	    *pivrow = swap[icol];
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_spivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_spivotL.c
+index 25b6b00..ff36657 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_spivotL.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_spivotL.c
+@@ -134,9 +134,13 @@ ilu_spivotL(
+ 
+     /* Test for singularity */
+     if (pivmax < 0.0) {
++#if SCIPY_FIX
++	ABORT("[0]: matrix is singular");
++#else
+ 	fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
+ 	fflush(stderr);
+ 	exit(1);
++#endif
+     }
+     if ( pivmax == 0.0 ) {
+ 	if (diag != EMPTY)
+@@ -149,9 +153,13 @@ ilu_spivotL(
+ 	    for (icol = jcol; icol < n; icol++)
+ 		if (marker[swap[icol]] <= jcol) break;
+ 	    if (icol >= n) {
++#if SCIPY_FIX
++		ABORT("[1]: matrix is singular");
++#else
+ 		fprintf(stderr, "[1]: jcol=%d, SINGULAR!!!\n", jcol);
+ 		fflush(stderr);
+ 		exit(1);
++#endif
+ 	    }
+ 
+ 	    *pivrow = swap[icol];
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zpivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zpivotL.c
+index dafea2b..4ea86b1 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zpivotL.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zpivotL.c
+@@ -136,9 +136,13 @@ ilu_zpivotL(
+ 
+     /* Test for singularity */
+     if (pivmax < 0.0) {
++#if SCIPY_FIX
++	ABORT("[0]: matrix is singular");
++#else
+ 	fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
+ 	fflush(stderr);
+ 	exit(1);
++#endif
+     }
+     if ( pivmax == 0.0 ) {
+ 	if (diag != EMPTY)
+@@ -151,9 +155,13 @@ ilu_zpivotL(
+ 	    for (icol = jcol; icol < n; icol++)
+ 		if (marker[swap[icol]] <= jcol) break;
+ 	    if (icol >= n) {
++#if SCIPY_FIX
++		ABORT("[1]: matrix is singular");
++#else
+ 		fprintf(stderr, "[1]: jcol=%d, SINGULAR!!!\n", jcol);
+ 		fflush(stderr);
+ 		exit(1);
++#endif
+ 	    }
+ 
+ 	    *pivrow = swap[icol];
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/scipy_slu_config.h b/scipy/sparse/linalg/dsolve/SuperLU/SRC/scipy_slu_config.h
+new file mode 100644
+index 0000000..5afc93b
+--- /dev/null
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/scipy_slu_config.h
+@@ -0,0 +1,36 @@
++#ifndef SCIPY_SLU_CONFIG_H
++#define SCIPY_SLU_CONFIG_H
++
++#include <stdlib.h>
++
++/*
++ * Support routines
++ */
++void superlu_python_module_abort(char *msg);
++void *superlu_python_module_malloc(size_t size);
++void superlu_python_module_free(void *ptr);
++
++#define USER_ABORT  superlu_python_module_abort
++#define USER_MALLOC superlu_python_module_malloc
++#define USER_FREE   superlu_python_module_free
++
++#define SCIPY_FIX 1
++
++/*
++ * Fortran configuration
++ */
++#if defined(NO_APPEND_FORTRAN)
++#if defined(UPPERCASE_FORTRAN)
++#define UpCase 1
++#else
++#define NoChange 1
++#endif
++#else
++#if defined(UPPERCASE_FORTRAN)
++#error Uppercase and trailing slash in Fortran names not supported
++#else
++#define Add_ 1
++#endif
++#endif
++
++#endif
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slamch.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slamch.c
+index ec3cd61..09cf6e2 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slamch.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slamch.c
+@@ -684,11 +684,13 @@ double slamc3_(float *a, float *b)
+ 
+ /* >>Start of File<<   
+        System generated locals */
+-    float ret_val;
+-
+-
++    volatile float ret_val;
++    volatile float x;
++    volatile float y;
+ 
+-    ret_val = *a + *b;
++    x = *a;
++    y = *b;
++    ret_val = x + y;
+ 
+     return ret_val;
+ 
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_Cnames.h b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_Cnames.h
+index 7bcd1bc..80b8aa1 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_Cnames.h
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_Cnames.h
+@@ -19,6 +19,7 @@
+ #ifndef __SUPERLU_CNAMES /* allow multiple inclusions */
+ #define __SUPERLU_CNAMES
+ 
++#include "scipy_slu_config.h"
+ 
+ #define ADD_       0
+ #define ADD__      1
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_util.h b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_util.h
+index 30b5f9b..f41b4ca 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_util.h
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_util.h
+@@ -22,6 +22,8 @@
+ #include <assert.h>
+ #include "superlu_enum_consts.h"
+ 
++#include "scipy_slu_config.h"
++
+ /***********************************************************************
+  * Macros
+  ***********************************************************************/
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/spivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/spivotL.c
+index 2a6950c..a9f0de5 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/spivotL.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/spivotL.c
+@@ -124,7 +124,16 @@ if ( jcol == MIN_COL ) {
+     /* Test for singularity */
+     if ( pivmax == 0.0 ) {
+ #if 1
++#if SCIPY_FIX
++	if (pivptr < nsupr) {
++	    *pivrow = lsub_ptr[pivptr];
++	}
++	else {
++	    *pivrow = diagind;
++	}
++#else
+ 	*pivrow = lsub_ptr[pivptr];
++#endif
+ 	perm_r[*pivrow] = jcol;
+ #else
+ 	perm_r[diagind] = jcol;
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/util.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/util.c
+index 858fbbc..4c19e77 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/util.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/util.c
+@@ -29,7 +29,7 @@
+ 
+ void superlu_abort_and_exit(char* msg)
+ {
+-    fprintf(stderr, msg);
++    fprintf(stderr, "%s\n", msg);
+     exit (-1);
+ }
+ 
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/zpivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/zpivotL.c
+index ce4f513..e134896 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/zpivotL.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/zpivotL.c
+@@ -125,7 +125,16 @@ if ( jcol == MIN_COL ) {
+     /* Test for singularity */
+     if ( pivmax == 0.0 ) {
+ #if 1
++#if SCIPY_FIX
++	if (pivptr < nsupr) {
++	    *pivrow = lsub_ptr[pivptr];
++	}
++	else {
++	    *pivrow = diagind;
++	}
++#else
+ 	*pivrow = lsub_ptr[pivptr];
++#endif
+ 	perm_r[*pivrow] = jcol;
+ #else
+ 	perm_r[diagind] = jcol;
