@@ -673,9 +673,13 @@ double dlamc3_(double *a, double *b)
 {
 /* >>Start of File<<   
        System generated locals */
-    double ret_val;
+    volatile double ret_val;
+    volatile double x;
+    volatile double y;
 
-    ret_val = *a + *b;
+    x = *a;
+    y = *b;
+    ret_val = x + y;
 
     return ret_val;
 
