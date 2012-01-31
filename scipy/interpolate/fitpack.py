@@ -119,7 +119,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     w : array_like
         Strictly positive rank-1 array of weights the same length as x.
         The weights are used in computing the weighted least-squares spline
-        fit. If the errors in the y values have standard-deviation given by the
+        fit. If the errors in the x values have standard-deviation given by the
         vector d, then w should be 1/d. Default is ones(len(x)).
     u : array_like, optional
         An array of parameter values. If not given, these values are
