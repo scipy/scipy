@@ -215,7 +215,7 @@ zLUMemInit(fact_t fact, void *work, int lwork, int m, int n, int annz,
 	}
 	
 #if ( PRNTlevel >= 1 )
-	printf("zLUMemInit() called: fill_ratio %ld, nzlmax %ld, nzumax %ld\n", 
+	printf("zLUMemInit() called: fill_ratio %.0f, nzlmax %ld, nzumax %ld\n", 
 	       fill_ratio, nzlmax, nzumax);
 	fflush(stdout);
 #endif	
@@ -332,7 +332,7 @@ zLUWorkInit(int m, int n, int panel_size, int **iworkptr,
 {
     int    isize, dsize, extra;
     doublecomplex *old_ptr;
-    int    maxsuper = sp_ienv(3),
+    int    maxsuper = SUPERLU_MAX( sp_ienv(3), sp_ienv(7) ),
            rowblk   = sp_ienv(4);
 
     isize = ( (2 * panel_size + 3 + NO_MARKER ) * m + n ) * sizeof(int);
@@ -381,7 +381,7 @@ zSetRWork(int m, int panel_size, doublecomplex *dworkptr,
 {
     doublecomplex zero = {0.0, 0.0};
 
-    int maxsuper = sp_ienv(3),
+    int maxsuper = SUPERLU_MAX( sp_ienv(3), sp_ienv(7) ),
         rowblk   = sp_ienv(4);
     *dense = dworkptr;
     *tempv = *dense + panel_size*m;

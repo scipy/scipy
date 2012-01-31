@@ -91,7 +91,6 @@ dlaqgs(SuperMatrix *A, double *r, double *c,
     double   *Aval;
     int i, j, irow;
     double large, small, cj;
-    extern double dlamch_(char *);
 
 
     /* Quick return if possible */

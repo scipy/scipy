@@ -134,13 +134,9 @@ ilu_spivotL(
 
     /* Test for singularity */
     if (pivmax < 0.0) {
-#if SCIPY_SPECIFIC_FIX
-        ABORT("[0]: matrix is singular");
-#else
 	fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
 	fflush(stderr);
 	exit(1);
-#endif
     }
     if ( pivmax == 0.0 ) {
 	if (diag != EMPTY)
@@ -153,13 +149,9 @@ ilu_spivotL(
 	    for (icol = jcol; icol < n; icol++)
 		if (marker[swap[icol]] <= jcol) break;
 	    if (icol >= n) {
-#if SCIPY_SPECIFIC_FIX
-                ABORT("[1]: matrix is singular");
-#else
 		fprintf(stderr, "[1]: jcol=%d, SINGULAR!!!\n", jcol);
 		fflush(stderr);
 		exit(1);
-#endif
 	    }
 
 	    *pivrow = swap[icol];

@@ -1,6 +1,6 @@
 
-/*! @file dreadrb.c
- * \brief Read a matrix stored in Rutherford-Boeing format
+/*! @file dreadtriple.c
+ * \brief Read a matrix stored in triplet (coordinate) format
  *
  * <pre>
  * -- SuperLU routine (version 4.0) --

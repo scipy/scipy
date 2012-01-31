@@ -3,10 +3,10 @@
  * \brief Drop small rows from L
  *
  * <pre>
- * -- SuperLU routine (version 4.0) --
+ * -- SuperLU routine (version 4.1) --
  * Lawrence Berkeley National Laboratory.
  * June 30, 2009
- * <\pre>
+ * </pre>
  */
 
 #include <math.h>
@@ -15,6 +15,11 @@
 
 extern void sswap_(int *, float [], int *, float [], int *);
 extern void saxpy_(int *, float *, float [], int *, float [], int *);
+extern void scopy_(int *, float [], int *, float [], int *);
+extern float sasum_(int *, float *, int *);
+extern float snrm2_(int *, float *, int *);
+extern double dnrm2_(int *, double [], int *);
+extern int isamax_(int *, float [], int *);
 
 static float *A;  /* used in _compare_ only */
 static int _compare_(const void *a, const void *b)
@@ -43,9 +48,11 @@ int ilu_sdrop_row(
 	double *fill_tol,   /* in/out - on exit, fill_tol=-num_zero_pivots,
 			     * does not change if options->ILU_MILU != SMILU1 */
 	GlobalLU_t *Glu,    /* modified */
-	float swork[],     /* working space with minimum size last-first+1 */
-	int    iwork[],     /* working space with minimum size m - n,
-			     * used by the second dropping rule */
+	float swork[],   /* working space
+	                     * the length of swork[] should be no less than
+			     * the number of rows in the supernode */
+	float swork2[], /* working space with the same size as swork[],
+			     * used only by the second dropping rule */
 	int    lastc	    /* if lastc == 0, there is nothing after the
 			     * working supernode [first:last];
 			     * if lastc == 1, there is one more column after
@@ -68,8 +75,10 @@ int ilu_sdrop_row(
     float zero = 0.0;
     float one = 1.0;
     float none = -1.0;
+    int i_1 = 1;
     int inc_diag; /* inc_diag = m + 1 */
     int nzp = 0;  /* number of zero pivots */
+    float alpha = pow((double)(Glu->n), -1.0 / options->ILU_MILU_Dim);
 
     xlusup_first = xlusup[first];
     xlsub_first = xlsub[first];
@@ -170,13 +179,18 @@ int ilu_sdrop_row(
 		d_max = 1.0 / d_max; d_min = 1.0 / d_min;
 		tol = 1.0 / (d_max + (d_min - d_max) * quota / (m - n - r));
 	    }
-	    else /* by quick sort */
+	    else /* by quick select */
 	    {
+		int len = m1 - n + 1;
+		scopy_(&len, swork, &i_1, swork2, &i_1);
+		tol = sqselect(len, swork2, quota - n);
+#if 0
 		register int *itemp = iwork - n;
 		A = temp;
 		for (i = n; i <= m1; i++) itemp[i] = i;
 		qsort(iwork, m1 - n + 1, sizeof(int), _compare_);
-		tol = temp[iwork[quota]];
+		tol = temp[itemp[quota]];
+#endif
 	    }
 	}
 
@@ -244,9 +258,17 @@ int ilu_sdrop_row(
     {
 	register int j;
 	float t;
+	float omega;
 	for (j = 0; j < n; j++)
 	{
-	    t = lusup[xlusup_first + (m - 1) + j * m] * MILU_ALPHA;
+	    t = lusup[xlusup_first + (m - 1) + j * m];
+            if (t == zero) continue;
+	    if (t > zero)
+		omega = SUPERLU_MIN(2.0 * (1.0 - alpha) / t, 1.0);
+	    else
+		omega = SUPERLU_MAX(2.0 * (1.0 - alpha) / t, -1.0);
+	    t *= omega;
+
  	    switch (milu)
 	    {
 		case SMILU_1:
