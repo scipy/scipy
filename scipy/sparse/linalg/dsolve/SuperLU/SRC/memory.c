@@ -133,7 +133,7 @@ user_bcopy(char *src, char *dest, int bytes)
 int *intMalloc(int n)
 {
     int *buf;
-    buf = (int *) SUPERLU_MALLOC(n * sizeof(int));
+    buf = (int *) SUPERLU_MALLOC((size_t) n * sizeof(int));
     if ( !buf ) {
 	ABORT("SUPERLU_MALLOC fails for buf in intMalloc()");
     }

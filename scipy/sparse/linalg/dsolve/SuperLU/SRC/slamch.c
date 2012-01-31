@@ -58,7 +58,7 @@
    ===================================================================== 
 </pre>
 */
-double slamch_(char *cmach)
+float slamch_(char *cmach)
 {
 /* >>Start of File<<   
        Initialized data */
@@ -684,13 +684,11 @@ double slamc3_(float *a, float *b)
 
 /* >>Start of File<<   
        System generated locals */
-    volatile float ret_val;
-    volatile float x;
-    volatile float y;
+    float ret_val;
 
-    x = *a;
-    y = *b;
-    ret_val = x + y;
+
+
+    ret_val = *a + *b;
 
     return ret_val;
 

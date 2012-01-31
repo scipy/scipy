@@ -58,7 +58,6 @@ sPivotGrowth(int ncols, SuperMatrix *A, int *perm_c,
     int      i, j, k, oldcol;
     int      *inv_perm_c;
     float   rpg, maxaj, maxuj;
-    extern   double slamch_(char *);
     float   smlnum;
     float   *luval;
    

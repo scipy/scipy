@@ -1,4 +1,4 @@
-		SuperLU (Version 4.0)
+		SuperLU (Version 4.1)
 		=====================
 
 Copyright (c) 2003, The Regents of the University of California, through
@@ -77,14 +77,14 @@ on your system setup:
    machine specific has been defined in this include file. 
 
    Example machine-specific make.inc include files are provided 
-   in the MAKE_INC/ directory for several systems, such as 
-   IBM RS/6000, DEC Alpha, SunOS 4.x, SunOS 5.x (Solaris), HP-PA and
-   SGI Iris 4.x.  When you have selected the machine to which you wish 
+   in the MAKE_INC/ directory for several systems, such as Linux,
+   IBM RS/6000, SunOS 5.x (Solaris), HP-PA and MacX.
+   When you have selected the machine to which you wish 
    to install SuperLU, copy the appropriate sample include file (if one 
    is present) into make.inc. For example, if you wish to run 
-   SuperLU on an IBM RS/6000, you can do
+   SuperLU on an linux, you can do
 
-       cp MAKE_INC/make.rs6k make.inc
+       cp MAKE_INC/make.linux make.inc
    
    For the systems other than listed above, slight modifications to the 
    make.inc file will need to be made.
@@ -154,3 +154,6 @@ The test results are in the files below:
     October 15,  2003  Version 3.0
     August 1,    2008  Version 3.1
     June 30,     2009  Version 4.0
+    November 23, 2010  Version 4.1
+    August 25,   2011  Version 4.2
+

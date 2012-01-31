@@ -389,10 +389,12 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
 #endif
 
     /* Test the input parameters */
-    if (!nofact && options->Fact != DOFACT && options->Fact != SamePattern &&
+    if (options->Fact != DOFACT && options->Fact != SamePattern &&
 	options->Fact != SamePattern_SameRowPerm &&
-	!notran && options->Trans != TRANS && options->Trans != CONJ &&
-	!equil && options->Equil != NO)
+	options->Fact != FACTORED &&
+	options->Trans != NOTRANS && options->Trans != TRANS && 
+	options->Trans != CONJ &&
+	options->Equil != NO && options->Equil != YES)
 	*info = -1;
     else if ( A->nrow != A->ncol || A->nrow < 0 ||
 	      (A->Stype != SLU_NC && A->Stype != SLU_NR) ||
@@ -428,15 +430,21 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
 	}
 	if (*info == 0) {
 	    if ( lwork < -1 ) *info = -12;
-	    else if ( B->ncol < 0 || Bstore->lda < SUPERLU_MAX(0, A->nrow) ||
+	    else if ( B->ncol < 0 ) *info = -13;
+	    else if ( B->ncol > 0 ) { /* no checking if B->ncol=0 */
+	         if ( Bstore->lda < SUPERLU_MAX(0, A->nrow) ||
 		      B->Stype != SLU_DN || B->Dtype != SLU_D || 
 		      B->Mtype != SLU_GE )
 		*info = -13;
-	    else if ( X->ncol < 0 || Xstore->lda < SUPERLU_MAX(0, A->nrow) ||
+            }
+	    if ( X->ncol < 0 ) *info = -14;
+            else if ( X->ncol > 0 ) { /* no checking if X->ncol=0 */
+                 if ( Xstore->lda < SUPERLU_MAX(0, A->nrow) ||
 		      (B->ncol != 0 && B->ncol != X->ncol) ||
                       X->Stype != SLU_DN ||
 		      X->Dtype != SLU_D || X->Mtype != SLU_GE )
 		*info = -14;
+            }
 	}
     }
     if (*info != 0) {
@@ -485,22 +493,6 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
 	utime[EQUIL] = SuperLU_timer_() - t0;
     }
 
-    if ( nrhs > 0 ) {
-        /* Scale the right hand side if equilibration was performed. */
-        if ( notran ) {
-	    if ( rowequ ) {
-	        for (j = 0; j < nrhs; ++j)
-		    for (i = 0; i < A->nrow; ++i) {
-		        Bmat[i + j*ldb] *= R[i];
-	            }
-	    }
-        } else if ( colequ ) {
-	    for (j = 0; j < nrhs; ++j)
-	        for (i = 0; i < A->nrow; ++i) {
-	            Bmat[i + j*ldb] *= C[i];
-	        }
-        }
-    }
 
     if ( nofact ) {
 	
@@ -566,6 +558,19 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
     }
     
     if ( nrhs > 0 ) {
+        /* Scale the right hand side if equilibration was performed. */
+        if ( notran ) {
+	    if ( rowequ ) {
+	        for (j = 0; j < nrhs; ++j)
+		    for (i = 0; i < A->nrow; ++i)
+		        Bmat[i + j*ldb] *= R[i];
+	    }
+        } else if ( colequ ) {
+	    for (j = 0; j < nrhs; ++j)
+	        for (i = 0; i < A->nrow; ++i)
+	            Bmat[i + j*ldb] *= C[i];
+        }
+
         /* Compute the solution matrix X. */
         for (j = 0; j < nrhs; j++)  /* Save a copy of the right hand sides */
             for (i = 0; i < B->nrow; i++)
@@ -590,15 +595,13 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
         if ( notran ) {
 	    if ( colequ ) {
 	        for (j = 0; j < nrhs; ++j)
-		    for (i = 0; i < A->nrow; ++i) {
+		    for (i = 0; i < A->nrow; ++i)
                         Xmat[i + j*ldx] *= C[i];
-	            }
 	    }
         } else if ( rowequ ) {
 	    for (j = 0; j < nrhs; ++j)
-	        for (i = 0; i < A->nrow; ++i) {
+	        for (i = 0; i < A->nrow; ++i)
 	            Xmat[i + j*ldx] *= R[i];
-                }
         }
     } /* end if nrhs > 0 */
 

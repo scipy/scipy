@@ -91,7 +91,6 @@ slaqgs(SuperMatrix *A, float *r, float *c,
     float   *Aval;
     int i, j, irow;
     float large, small, cj;
-    extern double slamch_(char *);
 
 
     /* Quick return if possible */

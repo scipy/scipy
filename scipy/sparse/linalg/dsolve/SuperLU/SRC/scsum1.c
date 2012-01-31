@@ -46,7 +46,7 @@ double scsum1_(int *n, complex *cx, int *incx)
     int i__1, i__2;
     float ret_val;
     /* Builtin functions */
-    double slu_c_abs(complex *);
+    double c_abs(complex *);
     /* Local variables */
     static int i, nincx;
     static float stemp;
@@ -73,7 +73,7 @@ double scsum1_(int *n, complex *cx, int *incx)
 
 /*        NEXT LINE MODIFIED. */
 
-	stemp += slu_c_abs(&CX(i));
+	stemp += c_abs(&CX(i));
 /* L10: */
     }
     ret_val = stemp;
@@ -87,7 +87,7 @@ L20:
 
 /*        NEXT LINE MODIFIED. */
 
-	stemp += slu_c_abs(&CX(i));
+	stemp += c_abs(&CX(i));
 /* L30: */
     }
     ret_val = stemp;

@@ -3,10 +3,10 @@
  * \brief Header file for real operations
  * 
  * <pre> 
- * -- SuperLU routine (version 4.0) --
+ * -- SuperLU routine (version 4.1) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
- * June 30, 2009
+ * November, 2010
  * 
  * Global data structures used in LU factorization -
  * 
@@ -204,13 +204,13 @@ extern int     ilu_ccolumn_dfs (const int, const int, int *, int *, int *,
 				GlobalLU_t *);
 extern int     ilu_ccopy_to_ucol (int, int, int *, int *, int *,
                                   complex *, int, milu_t, double, int,
-                                  complex *, int *, GlobalLU_t *, int *);
+                                  complex *, int *, GlobalLU_t *, float *);
 extern int     ilu_cpivotL (const int, const double, int *, int *, int, int *,
 			    int *, int *, int *, double, milu_t,
                             complex, GlobalLU_t *, SuperLUStat_t*);
 extern int     ilu_cdrop_row (superlu_options_t *, int, int, double,
                               int, int *, double *, GlobalLU_t *, 
-                              float *, int *, int);
+                              float *, float *, int);
 
 
 /*! \brief Driver related */
@@ -236,7 +236,7 @@ extern int     sp_cgemv (char *, complex, SuperMatrix *, complex *,
 extern int     sp_cgemm (char *, char *, int, int, int, complex,
 			SuperMatrix *, complex *, int, complex, 
 			complex *, int);
-extern         double slamch_(char *);
+extern         float slamch_(char *);
 
 
 /*! \brief Memory-related */
@@ -265,6 +265,8 @@ extern void    cfill (complex *, int, complex);
 extern void    cinf_norm_error (int, SuperMatrix *, complex *);
 extern void    PrintPerf (SuperMatrix *, SuperMatrix *, mem_usage_t *,
 			 complex, complex, complex *, complex *, char *);
+extern float  sqselect(int, float *, int);
+
 
 /*! \brief Routines for debugging */
 extern void    cPrint_CompCol_Matrix(char *, SuperMatrix *);

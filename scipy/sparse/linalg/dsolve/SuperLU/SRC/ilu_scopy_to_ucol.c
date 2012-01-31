@@ -4,9 +4,9 @@
  * and drop some small entries
  *
  * <pre>
- * -- SuperLU routine (version 4.0) --
+ * -- SuperLU routine (version 4.1) --
  * Lawrence Berkeley National Laboratory
- * June 30, 2009
+ * November, 2010
  * </pre>
  */
 
@@ -16,6 +16,9 @@
 int num_drop_U;
 #endif
 
+extern void scopy_(int *, float [], int *, float [], int *);
+
+#if 0
 static float *A;  /* used in _compare_ only */
 static int _compare_(const void *a, const void *b)
 {
@@ -25,7 +28,7 @@ static int _compare_(const void *a, const void *b)
     else if (xx < yy) return 1;
     else return 0;
 }
-
+#endif
 
 int
 ilu_scopy_to_ucol(
@@ -42,7 +45,7 @@ ilu_scopy_to_ucol(
 	      float	 *sum,	   /* out - the sum of dropped entries */
 	      int	 *nnzUj,   /* in - out */
 	      GlobalLU_t *Glu,	   /* modified */
-	      int	 *work	   /* working space with minimum size n,
+	      float	 *work	   /* working space with minimum size n,
 				    * used by the second dropping rule */
 	      )
 {
@@ -63,6 +66,7 @@ ilu_scopy_to_ucol(
     register float d_max = 0.0, d_min = 1.0 / dlamch_("Safe minimum");
     register double tmp;
     float zero = 0.0;
+    int i_1 = 1;
 
     xsup    = Glu->xsup;
     supno   = Glu->supno;
@@ -157,10 +161,14 @@ ilu_scopy_to_ucol(
 		d_max = 1.0 / d_max; d_min = 1.0 / d_min;
 		tol = 1.0 / (d_max + (d_min - d_max) * quota / m);
 	    } else {
+		scopy_(&m, &ucol[xusub[jcol]], &i_1, work, &i_1);
+		tol = sqselect(m, work, quota);
+#if 0
 		A = &ucol[xusub[jcol]];
 		for (i = 0; i < m; i++) work[i] = i;
 		qsort(work, m, sizeof(int), _compare_);
 		tol = fabs(usub[xusub[jcol] + work[quota]]);
+#endif
 	    }
 	}
 	for (i = xusub[jcol]; i <= m0; ) {
