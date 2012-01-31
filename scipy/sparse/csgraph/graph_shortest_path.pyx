@@ -25,34 +25,34 @@ ITYPE = np.int32
 ctypedef np.int32_t ITYPE_t
 
 
-def _check_dist_matrix(dist_matrix,
-                       copy_if_array=False,
-                       convert_to_dense=False,
-                       convert_to_sparse=False):
-    if isspmatrix(dist_matrix):
+def _check_csgraph(csgraph,
+                   copy_if_array=False,
+                   convert_to_dense=False,
+                   convert_to_sparse=False):
+    """validation routine for sparse graph input"""
+    if isspmatrix(csgraph):
         if convert_to_dense:
-            dist_matrix = dist_matrix.toarray().astype(DTYPE)
+            csgraph = csgraph.toarray().astype(DTYPE)
         else:
-            dist_matrix = dist_matrix.tocsr()
+            csgraph = csgraph.tocsr()
 
-        if dist_matrix.dtype != DTYPE:
-            dist_matrix = dist_matrix.astype(DTYPE)
+        if csgraph.dtype != DTYPE:
+            csgraph = csgraph.astype(DTYPE)
     else:
         if convert_to_sparse:
-            dist_matrix = csr_matrix(dist_matrix, dtype=DTYPE)
+            csgraph = csr_matrix(csgraph, dtype=DTYPE)
         elif copy_if_array:
-            dist_matrix = np.array(dist_matrix, dtype=DTYPE)
+            csgraph = np.array(csgraph, dtype=DTYPE)
         else:
-            dist_matrix = np.asarray(dist_matrix, dtype=DTYPE)
+            csgraph = np.asarray(csgraph, dtype=DTYPE)
 
-    if dist_matrix.ndim != 2 or dist_matrix.shape[0] != dist_matrix.shape[1]:
-        raise ValueError('dist_matrix should have shape (N, N)')
+    if csgraph.ndim != 2 or csgraph.shape[0] != csgraph.shape[1]:
+        raise ValueError('csgraph should have shape (N, N)')
     
-    return dist_matrix
+    return csgraph
     
 
-
-def cs_graph_shortest_path(dist_matrix, directed=True,
+def cs_graph_shortest_path(csgraph, directed=True,
                            method='auto', overwrite=True):
     """
     Perform a shortest-path graph search on a positive directed or
@@ -60,11 +60,11 @@ def cs_graph_shortest_path(dist_matrix, directed=True,
 
     Parameters
     ----------
-    dist_matrix : array, matrix, or sparse matrix, shape = (N,N)
+    csgraph : array, matrix, or sparse matrix, shape = (N,N)
         Array of non-negative distances.
-        If vertex i is connected to vertex j, then dist_matrix[i,j] gives
+        If vertex i is connected to vertex j, then csgraph[i,j] gives
         the distance between the vertices.
-        If vertex i is not connected to vertex j, then dist_matrix[i,j] = 0
+        If vertex i is not connected to vertex j, then csgraph[i,j] = 0
     directed : boolean
         if True, then find the shortest path on a directed graph: only
         progress from a point to its neighbors, not the other way around.
@@ -74,23 +74,23 @@ def cs_graph_shortest_path(dist_matrix, directed=True,
         method to use.  Options are
         'auto' : attempt to choose the best method for the current problem
         'FW' : Floyd-Warshall algorithm.  O[N^3]
-        'D' : Dijkstra's algorithm with Fibonacci stacks.  O[(k+log(N))N^2]
+        'D' : Dijkstra's algorithm with Fibonacci heaps.  O[(k+log(N))N^2]
     overwrite : bool, default=True
-        Overwrite dist_matrix with the result.  This applies only if
-        dist_matrix is a dense, c-ordered array with dtype=float64.
+        Overwrite csgraph with the result.  This applies only if
+        csgraph is a dense, c-ordered array with dtype=float64.
         Otherwise, a copy will be made.
 
     Returns
     -------
-    graph : np.ndarray, float, shape = [N,N]
-        graph[i,j] gives the shortest distance from point i to point j
+    dist_matrix : np.ndarray, float, shape = [N,N]
+        dist_matrix[i,j] gives the shortest distance from point i to point j
         along the graph.
 
     Notes
     -----
     As currently implemented, Dijkstra's algorithm does not work for
     graphs with direction-dependent distances when directed == False.
-    i.e., if dist_matrix[i,j] and dist_matrix[j,i] are not equal and
+    i.e., if csgraph[i,j] and csgraph[j,i] are not equal and
     both are nonzero, method='D' will not necessarily yield the correct
     result.
 
@@ -98,11 +98,11 @@ def cs_graph_shortest_path(dist_matrix, directed=True,
     distances.  Negative distances can lead to infinite cycles that must
     be handled by specialized algorithms.
     """
-    if not isspmatrix(dist_matrix):
-        dist_matrix = csr_matrix(dist_matrix)
+    if not isspmatrix(csgraph):
+        csgraph = csr_matrix(csgraph)
 
-    N = dist_matrix.shape[0]
-    Nk = len(dist_matrix.data)
+    N = csgraph.shape[0]
+    Nk = len(csgraph.data)
 
     if method == 'auto':
         if Nk < N * N / 4:
@@ -111,39 +111,39 @@ def cs_graph_shortest_path(dist_matrix, directed=True,
             method = 'FW'
 
     if method == 'FW':
-        graph = floyd_warshall(dist_matrix, directed, overwrite)
+        dist_matrix = floyd_warshall(csgraph, directed, overwrite)
     elif method == 'D':
-        graph = dijkstra(dist_matrix, directed)
+        dist_matrix = dijkstra(csgraph, directed)
     else:
         raise ValueError("unrecognized method '%s'" % method)
 
-    return graph
+    return dist_matrix
 
 
-def floyd_warshall(dist_matrix, directed=False, overwrite=True):
+def floyd_warshall(csgraph, directed=False, overwrite=True):
     """
     Compute the shortest path lengths using the Floyd-Warshall algorithm
 
     Parameters
     ----------
-    dist_matrix : array, matrix, or sparse matrix, shape=(N, N)
+    csgraph : array, matrix, or sparse matrix, shape=(N, N)
         Array of positive distances.
-        If vertex i is connected to vertex j, then dist_matrix[i,j] gives
+        If vertex i is connected to vertex j, then csgraph[i,j] gives
         the distance between the vertices.
-        If vertex i is not connected to vertex j, then dist_matrix[i,j] = 0
+        If vertex i is not connected to vertex j, then csgraph[i,j] = 0
     directed : bool, default = False
         if True, then find the shortest path on a directed graph: only
         progress from a point to its neighbors, not the other way around.
         if False, then find the shortest path on an undirected graph: the
         algorithm can progress from a point to its neighbors and vice versa.
     overwrite : bool, default=True
-        Overwrite dist_matrix with the result.  This applies only if
-        dist_matrix is a dense, c-ordered array with dtype=float64.
+        Overwrite csgraph with the result.  This applies only if
+        csgraph is a dense, c-ordered array with dtype=float64.
         Otherwise, a copy will be made.
 
     Returns
     -------
-    graph : ndarray, shape=[N, N]
+    dist_matrix : ndarray, shape=[N, N]
         the matrix of shortest paths between points.
         If no path exists, the path length is zero
 
@@ -152,31 +152,32 @@ def floyd_warshall(dist_matrix, directed=False, overwrite=True):
     Thes routine has not been tested for graphs with negative
     distances.  Negative distances can lead to unanticipated results.
     """
-    # graph needs to be a dense, C-ordered copy of dist_matrix with the
+    # graph needs to be a dense, C-ordered copy of csgraph with the
     # correct dtype.  Addisionally, if overwrite is False, we need to
     # assure that a copy is made.
-    if isspmatrix(dist_matrix):
-        graph = np.asarray(dist_matrix.toarray(), dtype=DTYPE, order='C')
+    if isspmatrix(csgraph):
+        dist_matrix = np.asarray(csgraph.toarray(), dtype=DTYPE, order='C')
     else:
         if overwrite:
-            graph = np.asarray(dist_matrix, dtype=DTYPE, order='C')
+            dist_matrix = np.asarray(csgraph, dtype=DTYPE, order='C')
         else:
-            graph = np.array(dist_matrix, dtype=DTYPE, order='C')
+            dist_matrix = np.array(csgraph, dtype=DTYPE, order='C')
 
-    if graph.ndim != 2 or graph.shape[0] != graph.shape[1]:
-        raise ValueError("dist_matrix must have shape (N, N)")
+    if dist_matrix.ndim != 2 or dist_matrix.shape[0] != dist_matrix.shape[1]:
+        raise ValueError("csgraph must have shape (N, N)")
 
-    return _floyd_warshall(graph, int(directed))
+    return _floyd_warshall(dist_matrix, int(directed))
 
 
 @cython.boundscheck(False)
-cdef np.ndarray _floyd_warshall(np.ndarray[DTYPE_t, ndim=2, mode='c'] graph,
-                                int directed=0):
-    # graph should be a [N,N] matrix, such that graph[i, j] is the distance
-    # from point i to point j.  Zero-distances imply that the points are
-    # not connected.
-    cdef int N = graph.shape[0]
-    assert graph.shape[1] == N
+cdef np.ndarray _floyd_warshall(
+                   np.ndarray[DTYPE_t, ndim=2, mode='c'] dist_matrix,
+                   int directed=0):
+    # dist_matrix should be a [N,N] matrix, such that dist_matrix[i, j]
+    # is the distance from point i to point j.  Zero-distances imply that
+    # the points are not connected.
+    cdef int N = dist_matrix.shape[0]
+    assert dist_matrix.shape[1] == N
 
     cdef unsigned int i, j, k, m
 
@@ -184,53 +185,53 @@ cdef np.ndarray _floyd_warshall(np.ndarray[DTYPE_t, ndim=2, mode='c'] graph,
     cdef DTYPE_t sum_ijk
 
     #initialize all distances to infinity
-    graph[np.where(graph == 0)] = infinity
+    dist_matrix[np.where(dist_matrix == 0)] = infinity
 
-    # ensure graph[i,i] is zero
-    graph.flat[::N + 1] = 0
+    # ensure dist_matrix[i,i] is zero
+    dist_matrix.flat[::N + 1] = 0
 
-    # for a non-directed graph, we need to symmetrize the distances
+    # for a non-directed dist_matrix, we need to symmetrize the distances
     if not directed:
         for i from 0 <= i < N:
             for j from i + 1 <= j < N:
-                if graph[j, i] <= graph[i, j]:
-                    graph[i, j] = graph[j, i]
+                if dist_matrix[j, i] <= dist_matrix[i, j]:
+                    dist_matrix[i, j] = dist_matrix[j, i]
                 else:
-                    graph[j, i] = graph[i, j]
+                    dist_matrix[j, i] = dist_matrix[i, j]
 
     #now perform the Floyd-Warshall algorithm
     for k from 0 <= k < N:
         for i from 0 <= i < N:
-            if graph[i, k] == infinity:
+            if dist_matrix[i, k] == infinity:
                 continue
             for j from 0 <= j < N:
-                sum_ijk = graph[i, k] + graph[k, j]
-                if sum_ijk < graph[i, j]:
-                    graph[i, j] = sum_ijk
+                sum_ijk = dist_matrix[i, k] + dist_matrix[k, j]
+                if sum_ijk < dist_matrix[i, j]:
+                    dist_matrix[i, j] = sum_ijk
 
-    graph[np.where(np.isinf(graph))] = 0
+    dist_matrix[np.where(np.isinf(dist_matrix))] = 0
 
-    return graph
+    return dist_matrix
 
 
-def dijkstra(dist_matrix, directed=False, indices=None):
+def dijkstra(csgraph, directed=False, indices=None):
     """
     Dijkstra algorithm using Fibonacci Heaps
 
     Parameters
     ----------
-    dist_matrix : array, matrix, or sparse matrix, shape=(N, N)
+    csgraph : array, matrix, or sparse matrix, shape=(N, N)
         Array of positive distances: this will be internally converted to
         a csr_matrix with dtype=np.float64.
-        If vertex i is connected to vertex j, then dist_matrix[i,j] gives
+        If vertex i is connected to vertex j, then csgraph[i,j] gives
         the distance between the vertices.
-        If vertex i is not connected to vertex j, then dist_matrix[i,j] = 0
+        If vertex i is not connected to vertex j, then csgraph[i,j] = 0
     directed : bool, default = False
         if True, then find the shortest path on a directed graph: only
         progress from a point to its neighbors, not the other way around.
         if False, then find the shortest path on an undirected graph: the
         algorithm can progress from a point to its neighbors and vice versa.
-        If directed == False, then dist_matrix must be of a certain form:
+        If directed == False, then csgraph must be of a certain form:
         see the notes below.
     indices : 1d array or None
         if specified, only compute the paths for the points at the given
@@ -238,7 +239,7 @@ def dijkstra(dist_matrix, directed=False, indices=None):
 
     Returns
     -------
-    graph : array, shape = (Nind, N)
+    dist_matrix : array, shape = (Nind, N)
         the matrix of shortest paths between points.
         If no path exists, the path length is zero.
         If indices == None, then Nind = N.
@@ -248,7 +249,7 @@ def dijkstra(dist_matrix, directed=False, indices=None):
     -----
     As currently implemented, Dijkstra's algorithm does not work for
     graphs with direction-dependent distances when directed == False.
-    i.e., if dist_matrix[i,j] and dist_matrix[j,i] are not equal and
+    i.e., if csgraph[i,j] and csgraph[j,i] are not equal and
     both are nonzero, setting directed=False will not yield the correct
     result.
 
@@ -256,25 +257,25 @@ def dijkstra(dist_matrix, directed=False, indices=None):
     distances.  Negative distances can lead to infinite cycles that must
     be handled by specialized algorithms.
     """
-    # We need to convert dist_matrix to a csr_matrix, and create
+    # We need to convert csgraph to a csr_matrix, and create
     # dense c-ordered float64 matrix to contain the result.
-    if isspmatrix_csr(dist_matrix):
+    if isspmatrix_csr(csgraph):
         pass
-    elif (not directed) and isspmatrix_csc(dist_matrix):
-        # if directed, then it's safe to assume that dist_matrix
-        # and dist_matrix.T can be treated equivalently.  We
+    elif (not directed) and isspmatrix_csc(csgraph):
+        # if directed, then it's safe to assume that csgraph
+        # and csgraph.T can be treated equivalently.  We
         # can get it into csr_matrix format very efficiently.
-        dist_matrix = dist_matrix.T
+        csgraph = csgraph.T
     else:
-        dist_matrix = csr_matrix(dist_matrix, dtype=DTYPE)
+        csgraph = csr_matrix(csgraph, dtype=DTYPE)
 
-    if np.any(dist_matrix.data < 0):
+    if np.any(csgraph.data < 0):
         raise ValueError("Negative distances are not supported")
 
-    if dist_matrix.ndim != 2 or dist_matrix.shape[0] != dist_matrix.shape[1]:
-        raise ValueError("dist_matrix must have shape (N, N)")
+    if csgraph.ndim != 2 or csgraph.shape[0] != csgraph.shape[1]:
+        raise ValueError("csgraph must have shape (N, N)")
 
-    N = dist_matrix.shape[0]
+    N = csgraph.shape[0]
 
     if indices is None:
         indices = np.arange(N, dtype=ITYPE)
@@ -283,28 +284,28 @@ def dijkstra(dist_matrix, directed=False, indices=None):
     
     return_shape = indices.shape + (N,)
     indices = np.atleast_1d(indices).reshape(-1)
-    graph = np.zeros((len(indices), N), dtype=DTYPE)
+    dist_matrix = np.zeros((len(indices), N), dtype=DTYPE)
 
-    graph = _dijkstra(dist_matrix, graph, indices, directed)
+    dist_matrix = _dijkstra(csgraph, dist_matrix, indices, directed)
 
-    return graph.reshape(return_shape)
+    return dist_matrix.reshape(return_shape)
 
 @cython.boundscheck(False)
-cdef np.ndarray _dijkstra(dist_matrix,
-                          np.ndarray[DTYPE_t, ndim=2, mode='c'] graph,
+cdef np.ndarray _dijkstra(csgraph,
+                          np.ndarray[DTYPE_t, ndim=2, mode='c'] dist_matrix,
                           np.ndarray[ITYPE_t, ndim=1, mode='c'] compute_ind,
                           int directed=0):
-    # dist_matrix is a square csr_matrix, or object with attributes `data`,
+    # csgraph is a square csr_matrix, or object with attributes `data`,
     # `indices`, and `indptr` which store a matrix in csr format.
     # `graph` is an uninitialized array which will store the output.
     # `compute_ind` gives the indices of paths to compute
-    # `graph` is assumed to be shape [Nind, N], where dist_matrix is shape
-    #   (N, N) and compute_ind is length Nind.as dist_matrix.  If this is
+    # `graph` is assumed to be shape [Nind, N], where csgraph is shape
+    #   (N, N) and compute_ind is length Nind.as csgraph.  If this is
     #   not the case, then a memory error/segfault could result.
     # if directed is false, we convert the csr matrix to a csc matrix
     #   in order to find bi-directional distances.
-    cdef unsigned int Nind = graph.shape[0]
-    cdef unsigned int N = graph.shape[1]
+    cdef unsigned int Nind = dist_matrix.shape[0]
+    cdef unsigned int N = dist_matrix.shape[1]
     cdef unsigned int i
 
     cdef FibonacciHeap heap
@@ -315,12 +316,12 @@ cdef np.ndarray _dijkstra(dist_matrix,
     cdef np.ndarray distances, neighbors, indptr
     cdef np.ndarray distances2, neighbors2, indptr2
 
-    if not isspmatrix_csr(dist_matrix):
-        dist_matrix = csr_matrix(dist_matrix)
+    if not isspmatrix_csr(csgraph):
+        csgraph = csr_matrix(csgraph)
 
-    distances = np.asarray(dist_matrix.data, dtype=DTYPE, order='C')
-    neighbors = np.asarray(dist_matrix.indices, dtype=ITYPE, order='C')
-    indptr = np.asarray(dist_matrix.indptr, dtype=ITYPE, order='C')
+    distances = np.asarray(csgraph.data, dtype=DTYPE, order='C')
+    neighbors = np.asarray(csgraph.indices, dtype=ITYPE, order='C')
+    indptr = np.asarray(csgraph.indptr, dtype=ITYPE, order='C')
 
     for i from 0 <= i < N:
         initialize_node(&nodes[i], i)
@@ -331,28 +332,28 @@ cdef np.ndarray _dijkstra(dist_matrix,
         for i from 0 <= i < Nind:
             _dijkstra_directed_one_row(compute_ind[i],
                                        neighbors, distances, indptr,
-                                       graph, &heap, nodes)
+                                       dist_matrix, &heap, nodes)
     else:
         #use the csr -> csc sparse matrix conversion to quickly get
         # both directions of neigbors
-        dist_matrix_T = dist_matrix.T.tocsr()
+        csgraph_T = csgraph.T.tocsr()
 
-        distances2 = np.asarray(dist_matrix_T.data,
+        distances2 = np.asarray(csgraph_T.data,
                                 dtype=DTYPE, order='C')
-        neighbors2 = np.asarray(dist_matrix_T.indices,
+        neighbors2 = np.asarray(csgraph_T.indices,
                                 dtype=ITYPE, order='C')
-        indptr2 = np.asarray(dist_matrix_T.indptr,
+        indptr2 = np.asarray(csgraph_T.indptr,
                              dtype=ITYPE, order='C')
 
         for i from 0 <= i < Nind:
             _dijkstra_one_row(compute_ind[i],
                               neighbors, distances, indptr,
                               neighbors2, distances2, indptr2,
-                              graph, &heap, nodes)
+                              dist_matrix, &heap, nodes)
 
     free(nodes)
 
-    return graph
+    return dist_matrix
 
 
 ######################################################################
@@ -564,7 +565,7 @@ cdef FibonacciNode* remove_min(FibonacciHeap* heap):
 
 
 ######################################################################
-# Debugging: Functions for printing the fibonacci heap
+# Debugging: Functions for printing the Fibonacci heap
 #
 #cdef void print_node(FibonacciNode* node, int level=0):
 #    print '%s(%i,%i) %i' % (level*'   ', node.index, node.val, node.rank)
