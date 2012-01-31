@@ -501,12 +501,14 @@ fail:
     PyErr_SetString(PyExc_ValueError, message); \
     return 0;
 
-#define ENUM_CHECK(name)                                \
-    if (my_strxcmp(s, #name) == 0 || i == (long)name) { \
+#define ENUM_CHECK_NAME(name, sname)                    \
+    if (my_strxcmp(s, sname) == 0 || i == (long)name) { \
         *value = name;                                  \
         Py_XDECREF(tmpobj);                             \
         return 1;                                       \
     }
+
+#define ENUM_CHECK(name) ENUM_CHECK_NAME(name, #name)
 
 /*
  * Compare strings ignoring case, underscores and whitespace
@@ -589,9 +591,12 @@ static int iterrefine_cvt(PyObject *input, IterRefine_t *value)
 {
     ENUM_CHECK_INIT;
     ENUM_CHECK(NOREFINE);
-    ENUM_CHECK(SINGLE);
-    ENUM_CHECK(DOUBLE);
-    ENUM_CHECK(EXTRA);
+    ENUM_CHECK(SLU_SINGLE);
+    ENUM_CHECK_NAME(SLU_SINGLE, "SINGLE");
+    ENUM_CHECK(SLU_DOUBLE);
+    ENUM_CHECK_NAME(SLU_DOUBLE, "DOUBLE");
+    ENUM_CHECK(SLU_EXTRA);
+    ENUM_CHECK_NAME(SLU_EXTRA, "EXTRA");
     ENUM_CHECK_FINISH("invalid value for 'IterRefine' parameter");
 }
 
