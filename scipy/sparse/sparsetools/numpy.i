@@ -26,37 +26,6 @@
 #define array_is_contiguous(a) (PyArray_ISCONTIGUOUS(a))
 #define array_is_native(a)     (PyArray_ISNOTSWAPPED(a))
 
-/* Support older NumPy data type names
-*/
-#if NDARRAY_VERSION < 0x01000000
-#define NPY_BOOL        PyArray_BOOL
-#define NPY_BYTE        PyArray_BYTE
-#define NPY_UBYTE       PyArray_UBYTE
-#define NPY_SHORT       PyArray_SHORT
-#define NPY_USHORT      PyArray_USHORT
-#define NPY_INT         PyArray_INT
-#define NPY_UINT        PyArray_UINT
-#define NPY_LONG        PyArray_LONG
-#define NPY_ULONG       PyArray_ULONG
-#define NPY_LONGLONG    PyArray_LONGLONG
-#define NPY_ULONGLONG   PyArray_ULONGLONG
-#define NPY_FLOAT       PyArray_FLOAT
-#define NPY_DOUBLE      PyArray_DOUBLE
-#define NPY_LONGDOUBLE  PyArray_LONGDOUBLE
-#define NPY_CFLOAT      PyArray_CFLOAT
-#define NPY_CDOUBLE     PyArray_CDOUBLE
-#define NPY_CLONGDOUBLE PyArray_CLONGDOUBLE
-#define NPY_OBJECT      PyArray_OBJECT
-#define NPY_STRING      PyArray_STRING
-#define NPY_UNICODE     PyArray_UNICODE
-#define NPY_VOID        PyArray_VOID
-#define NPY_NTYPES      PyArray_NTYPES
-#define NPY_NOTYPE      PyArray_NOTYPE
-#define NPY_CHAR        PyArray_CHAR
-#define NPY_USERDEF     PyArray_USERDEF
-#define npy_intp        intp
-#endif
-
 /* Given a PyObject, return a string describing its type.
  */
 const char* pytype_string(PyObject* py_obj) {
@@ -562,23 +531,23 @@ NPY_TYPECHECK(type, typecode)
 %enddef
 
 
-INSTANTIATE_TYPEMAPS(char,                    PyArray_CHAR       )
-INSTANTIATE_TYPEMAPS(unsigned char,           PyArray_UBYTE      )
-INSTANTIATE_TYPEMAPS(signed char,             PyArray_BYTE       )
-INSTANTIATE_TYPEMAPS(short,                   PyArray_SHORT      )
-INSTANTIATE_TYPEMAPS(unsigned short,          PyArray_USHORT     )
-INSTANTIATE_TYPEMAPS(int,                     PyArray_INT        )
-INSTANTIATE_TYPEMAPS(unsigned int,            PyArray_UINT       )
-INSTANTIATE_TYPEMAPS(long,                    PyArray_LONG       )
-INSTANTIATE_TYPEMAPS(long long,               PyArray_LONGLONG   )
-INSTANTIATE_TYPEMAPS(unsigned long long,      PyArray_ULONGLONG  )
-INSTANTIATE_TYPEMAPS(float,                   PyArray_FLOAT      )
-INSTANTIATE_TYPEMAPS(double,                  PyArray_DOUBLE     )
-INSTANTIATE_TYPEMAPS(long double,             PyArray_LONGDOUBLE )
-INSTANTIATE_TYPEMAPS(npy_cfloat_wrapper,      PyArray_CFLOAT     )
-INSTANTIATE_TYPEMAPS(npy_cdouble_wrapper,     PyArray_CDOUBLE    )
-INSTANTIATE_TYPEMAPS(npy_clongdouble_wrapper, PyArray_CLONGDOUBLE)
-INSTANTIATE_TYPEMAPS(PyObject,                PyArray_OBJECT     )
+INSTANTIATE_TYPEMAPS(char,                    NPY_CHAR       )
+INSTANTIATE_TYPEMAPS(unsigned char,           NPY_UBYTE      )
+INSTANTIATE_TYPEMAPS(signed char,             NPY_BYTE       )
+INSTANTIATE_TYPEMAPS(short,                   NPY_SHORT      )
+INSTANTIATE_TYPEMAPS(unsigned short,          NPY_USHORT     )
+INSTANTIATE_TYPEMAPS(int,                     NPY_INT        )
+INSTANTIATE_TYPEMAPS(unsigned int,            NPY_UINT       )
+INSTANTIATE_TYPEMAPS(long,                    NPY_LONG       )
+INSTANTIATE_TYPEMAPS(long long,               NPY_LONGLONG   )
+INSTANTIATE_TYPEMAPS(unsigned long long,      NPY_ULONGLONG  )
+INSTANTIATE_TYPEMAPS(float,                   NPY_FLOAT      )
+INSTANTIATE_TYPEMAPS(double,                  NPY_DOUBLE     )
+INSTANTIATE_TYPEMAPS(long double,             NPY_LONGDOUBLE )
+INSTANTIATE_TYPEMAPS(npy_cfloat_wrapper,      NPY_CFLOAT     )
+INSTANTIATE_TYPEMAPS(npy_cdouble_wrapper,     NPY_CDOUBLE    )
+INSTANTIATE_TYPEMAPS(npy_clongdouble_wrapper, NPY_CLONGDOUBLE)
+INSTANTIATE_TYPEMAPS(PyObject,                NPY_OBJECT     )
 
 
 
