@@ -132,12 +132,12 @@ int setup_extra_inputs(PyArrayObject **ap_rtol, PyObject *o_rtol, PyArrayObject 
 
   /* Setup tolerances */
   if (o_rtol == NULL) {
-    *ap_rtol = (PyArrayObject *)PyArray_SimpleNew(1, &one, PyArray_DOUBLE);
+    *ap_rtol = (PyArrayObject *)PyArray_SimpleNew(1, &one, NPY_DOUBLE);
     if (*ap_rtol == NULL) PYERR2(odepack_error,"Error constructing relative tolerance.");
     *(double *)(*ap_rtol)->data = tol;                /* Default */
   }
   else {
-    *ap_rtol = (PyArrayObject *)PyArray_ContiguousFromObject(o_rtol,PyArray_DOUBLE,0,1);
+    *ap_rtol = (PyArrayObject *)PyArray_ContiguousFromObject(o_rtol,NPY_DOUBLE,0,1);
     if (*ap_rtol == NULL) PYERR2(odepack_error,"Error converting relative tolerance.");
     if ((*ap_rtol)->nd == 0); /* rtol is scalar */
     else if ((*ap_rtol)->dimensions[0] == neq)
@@ -147,12 +147,12 @@ int setup_extra_inputs(PyArrayObject **ap_rtol, PyObject *o_rtol, PyArrayObject 
   }
 
   if (o_atol == NULL) {
-    *ap_atol = (PyArrayObject *)PyArray_SimpleNew(1,&one,PyArray_DOUBLE);
+    *ap_atol = (PyArrayObject *)PyArray_SimpleNew(1,&one,NPY_DOUBLE);
     if (*ap_atol == NULL) PYERR2(odepack_error,"Error constructing absolute tolerance");
     *(double *)(*ap_atol)->data = tol;
   }
   else {
-    *ap_atol = (PyArrayObject *)PyArray_ContiguousFromObject(o_atol,PyArray_DOUBLE,0,1);
+    *ap_atol = (PyArrayObject *)PyArray_ContiguousFromObject(o_atol,NPY_DOUBLE,0,1);
     if (*ap_atol == NULL) PYERR2(odepack_error,"Error converting absolute tolerance.");
     if ((*ap_atol)->nd == 0); /* atol is scalar */
     else if ((*ap_atol)->dimensions[0] == neq) 
@@ -165,7 +165,7 @@ int setup_extra_inputs(PyArrayObject **ap_rtol, PyObject *o_rtol, PyArrayObject 
 
   /* Setup t-critical */
   if (o_tcrit != NULL) {
-    *ap_tcrit = (PyArrayObject *)PyArray_ContiguousFromObject(o_tcrit,PyArray_DOUBLE,0,1);
+    *ap_tcrit = (PyArrayObject *)PyArray_ContiguousFromObject(o_tcrit,NPY_DOUBLE,0,1);
     if (*ap_tcrit == NULL) PYERR2(odepack_error,"Error constructing critical times.");
     *numcrit = PyArray_Size((PyObject *)(*ap_tcrit));
   }
@@ -193,7 +193,7 @@ int compute_lrw_liw(int *lrw, int *liw, int neq, int jt, int ml, int mu, int mxo
   lrn = 20 + nyh*(mxordn+1) + 3*neq;
   lrs = 20 + nyh*(mxords+1) + 3*neq + lmat;
 
-  *lrw = NPY_MAX(lrn,lrs);
+  *lrw = PyArray_MAX(lrn,lrs);
   *liw = 20 + neq;
   return 0;
 
@@ -252,14 +252,14 @@ static PyObject *odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdic
   if (mu < 0) mu = 0;
 
   /* Initial input vector */
-  ap_y = (PyArrayObject *)PyArray_ContiguousFromObject(y0, PyArray_DOUBLE, 0, 1);
+  ap_y = (PyArrayObject *)PyArray_ContiguousFromObject(y0, NPY_DOUBLE, 0, 1);
   if (ap_y == NULL) goto fail;
   y = (double *) ap_y->data;
   neq = PyArray_Size((PyObject *)ap_y);
   dims[1] = neq;
 
   /* Set of output times for integration */
-  ap_tout = (PyArrayObject *)PyArray_ContiguousFromObject(p_tout, PyArray_DOUBLE, 0, 1);
+  ap_tout = (PyArrayObject *)PyArray_ContiguousFromObject(p_tout, NPY_DOUBLE, 0, 1);
   if (ap_tout == NULL) goto fail;
   tout = (double *)ap_tout->data;
   ntimes = PyArray_Size((PyObject *)ap_tout);
@@ -267,7 +267,7 @@ static PyObject *odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdic
   t = tout[0];
 
   /* Setup array to hold the output evaluations*/
-  ap_yout= (PyArrayObject *)PyArray_SimpleNew(2,dims,PyArray_DOUBLE);
+  ap_yout= (PyArrayObject *)PyArray_SimpleNew(2,dims,NPY_DOUBLE);
   if (ap_yout== NULL) goto fail;
   yout = (double *) ap_yout->data;
   /* Copy initial vector into first row of output */
@@ -305,15 +305,15 @@ static PyObject *odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdic
   /* If full output make some useful output arrays */
   if (full_output) {
     out_sz = ntimes-1;
-    ap_hu = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,PyArray_DOUBLE);
-    ap_tcur = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,PyArray_DOUBLE);
-    ap_tolsf = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,PyArray_DOUBLE);
-    ap_tsw = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,PyArray_DOUBLE);
-    ap_nst = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,PyArray_INT);
-    ap_nfe = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,PyArray_INT);
-    ap_nje = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,PyArray_INT);
-    ap_nqu = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,PyArray_INT);
-    ap_mused = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,PyArray_INT);
+    ap_hu = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,NPY_DOUBLE);
+    ap_tcur = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,NPY_DOUBLE);
+    ap_tolsf = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,NPY_DOUBLE);
+    ap_tsw = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,NPY_DOUBLE);
+    ap_nst = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,NPY_INT);
+    ap_nfe = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,NPY_INT);
+    ap_nje = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,NPY_INT);
+    ap_nqu = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,NPY_INT);
+    ap_mused = (PyArrayObject *)PyArray_SimpleNew(1,&out_sz,NPY_INT);
     if (ap_hu == NULL || ap_tcur == NULL || ap_tolsf == NULL || ap_tsw == NULL || ap_nst == NULL || ap_nfe == NULL || ap_nje == NULL || ap_nqu == NULL || ap_mused == NULL) goto fail;
   }
 

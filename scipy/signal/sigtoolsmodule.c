@@ -1031,7 +1031,7 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
 	    newfill = (PyArrayObject *)PyArray_SimpleNewFromData(0, dims, typenum, zeros);
 	}
 	else {
-	    afill = (PyArrayObject *)PyArray_FromObject(fill_value, PyArray_CDOUBLE, 0, 0);
+	    afill = (PyArrayObject *)PyArray_FromObject(fill_value, NPY_CDOUBLE, 0, 0);
 	    if (afill == NULL) goto fail;
 	    newfill = (PyArrayObject *)PyArray_Cast(afill, typenum);
 	}
@@ -1166,11 +1166,11 @@ static PyObject *sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args) {
 	}
 	
 	
-	a_bands = (PyArrayObject *)PyArray_ContiguousFromObject(bands, PyArray_DOUBLE,1,1);
+	a_bands = (PyArrayObject *)PyArray_ContiguousFromObject(bands, NPY_DOUBLE,1,1);
 	if (a_bands == NULL) goto fail;
-	a_des = (PyArrayObject *)PyArray_ContiguousFromObject(des, PyArray_DOUBLE,1,1);
+	a_des = (PyArrayObject *)PyArray_ContiguousFromObject(des, NPY_DOUBLE,1,1);
 	if (a_des == NULL) goto fail;
-	a_weight = (PyArrayObject *)PyArray_ContiguousFromObject(weight, PyArray_DOUBLE,1,1);
+	a_weight = (PyArrayObject *)PyArray_ContiguousFromObject(weight, NPY_DOUBLE,1,1);
 	if (a_weight == NULL) goto fail;
 
 
@@ -1203,7 +1203,7 @@ static PyObject *sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args) {
 	}
 
 	ret_dimens = numtaps;
-	h = (PyArrayObject *)PyArray_SimpleNew(1, &ret_dimens, PyArray_DOUBLE);
+	h = (PyArrayObject *)PyArray_SimpleNew(1, &ret_dimens, NPY_DOUBLE);
 	if (h == NULL) goto fail;
 
 	err=pre_remez((double *)h->data, numtaps, numbands, (double *)a_bands->data, (double *)a_des->data, (double *)a_weight->data, type, maxiter, grid_density);
@@ -1270,13 +1270,13 @@ static PyObject *sigtools_median2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
     }
     else {
 	switch (typenum) {
-	case PyArray_UBYTE:
+	case NPY_UBYTE:
 	    b_medfilt2((unsigned char *)DATA(a_image), (unsigned char *)DATA(a_out), Nwin, DIMS(a_image));
 	    break;
-	case PyArray_FLOAT:
+	case NPY_FLOAT:
 	    f_medfilt2((float *)DATA(a_image), (float *)DATA(a_out), Nwin, DIMS(a_image));
 	    break;
-	case PyArray_DOUBLE:
+	case NPY_DOUBLE:
 	    d_medfilt2((double *)DATA(a_image), (double *)DATA(a_out), Nwin, DIMS(a_image));
 	    break;
 	default:

@@ -3366,7 +3366,7 @@ SWIGINTERN PyObject *_wrap_cs_graph_components(PyObject *SWIGUNUSEDPARM(self), P
     npy_intp size[1] = {
       -1
     };
-    array2 = obj_to_array_contiguous_allow_conversion(obj1, PyArray_INT, &is_new_object2);
+    array2 = obj_to_array_contiguous_allow_conversion(obj1, NPY_INT, &is_new_object2);
     if (!array2 || !require_dimensions(array2,1) || !require_size(array2,size,1)
       || !require_contiguous(array2)   || !require_native(array2)) SWIG_fail;
     
@@ -3376,14 +3376,14 @@ SWIGINTERN PyObject *_wrap_cs_graph_components(PyObject *SWIGUNUSEDPARM(self), P
     npy_intp size[1] = {
       -1
     };
-    array3 = obj_to_array_contiguous_allow_conversion(obj2, PyArray_INT, &is_new_object3);
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT, &is_new_object3);
     if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
       || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
     
     arg3 = (int*) array3->data;
   }
   {
-    temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
+    temp4 = obj_to_array_no_conversion(obj3,NPY_INT);
     if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
     arg4 = (int*) array_data(temp4);
   }

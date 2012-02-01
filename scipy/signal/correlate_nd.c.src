@@ -307,7 +307,7 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
 
         /* The object array case does not worth being optimized, since most of
            the cost is numerical operations, not iterators moving in this case ? */
-        case PyArray_OBJECT:
+        case NPY_OBJECT:
             _imp_correlate_nd_object(curx, curneighx, ity, itz);
             break;
         default:
