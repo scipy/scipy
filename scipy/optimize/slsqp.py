@@ -211,7 +211,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     iter    = options.get('maxiter', 100)
     acc     = options.get('ftol', 1.0E-6)
     iprint  = options.get('iprint', 1)
-    disp    = options.get('disp')
+    disp    = options.get('disp', False)
     epsilon = options.get('eps', _epsilon)
 
     if not disp:

@@ -231,13 +231,16 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         fun = func
         jac = fprime
 
+    if disp is not None: # disp takes precedence over messages
+        mesg_num = disp
+    else:
+        mesg_num = {0:MSG_NONE, 1:MSG_ITER, 2:MSG_INFO, 3:MSG_VERS,
+                    4:MSG_EXIT, 5:MSG_ALL}.get(messages, MSG_ALL)
     # build options
     opts = {'eps'  : epsilon,
             'scale': scale,
             'offset': offset,
-            'messages': messages,
-            'mesg_num': disp,
-            'disp': False, # for the two previous options to be considered
+            'mesg_num': mesg_num,
             'maxCGit': maxCGit,
             'maxfev': maxfun,
             'eta': eta,
@@ -319,8 +322,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options={},
     epsilon  = options.get('eps', 1e-8)
     scale    = options.get('scale')
     offset   = options.get('offset')
-    messages = options.get('messages', MSG_ALL)
-    mesg_num  = options.get('mesg_num')
+    mesg_num = options.get('mesg_num')
     maxCGit  = options.get('maxCGit', -1)
     maxfun   = options.get('maxfev')
     eta      = options.get('eta', -1)
@@ -331,7 +333,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options={},
     xtol     = options.get('xtol', -1)
     pgtol    = options.get('pgtol', -1)
     rescale  = options.get('rescale', -1)
-    disp     = options.get('disp', True)
+    disp     = options.get('disp', False)
 
     x0 = asarray(x0, dtype=float).tolist()
     n = len(x0)
@@ -341,9 +343,11 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options={},
     if len(bounds) != n:
         raise ValueError('length of x0 != length of bounds')
 
-    if disp or mesg_num is not None:
+    if mesg_num is not None:
         messages = {0:MSG_NONE, 1:MSG_ITER, 2:MSG_INFO, 3:MSG_VERS,
                     4:MSG_EXIT, 5:MSG_ALL}.get(mesg_num, MSG_ALL)
+    elif disp:
+        messages = MSG_ALL
     else:
         messages = MSG_NONE
 
