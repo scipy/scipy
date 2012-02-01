@@ -139,11 +139,11 @@ static PyObject *quadpack_qagse(PyObject *dummy, PyObject *args) {
   QUAD_INIT_FUNC(fcn,extra_args)
 
   /* Setup iwork and work arrays */
-  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_INT);
-  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
+  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
   if (ap_iord == NULL || ap_alist == NULL || ap_blist == NULL || ap_rlist == NULL || ap_elist == NULL) goto fail;
   iord = (int *)ap_iord->data;
   alist = (double *)ap_alist->data;
@@ -220,11 +220,11 @@ static PyObject *quadpack_qagie(PyObject *dummy, PyObject *args) {
   QUAD_INIT_FUNC(fcn,extra_args);
 
   /* Setup iwork and work arrays */
-  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_INT);
-  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
+  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
   if (ap_iord == NULL || ap_alist == NULL || ap_blist == NULL || ap_rlist == NULL || ap_elist == NULL) goto fail;
   iord = (int *)ap_iord->data;
   alist = (double *)ap_alist->data;
@@ -306,21 +306,21 @@ static PyObject *quadpack_qagpe(PyObject *dummy, PyObject *args) {
 
   QUAD_INIT_FUNC(fcn,extra_args)
 
-  ap_points = (PyArrayObject *)PyArray_ContiguousFromObject(o_points, PyArray_DOUBLE, 1, 1);
+  ap_points = (PyArrayObject *)PyArray_ContiguousFromObject(o_points, NPY_DOUBLE, 1, 1);
   if (ap_points == NULL) goto fail;
   npts2 = ap_points->dimensions[0];
   npts2_shape[0] = npts2;
   points = (double *)ap_points->data;
 
   /* Setup iwork and work arrays */
-  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_INT);
-  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_pts = (PyArrayObject *)PyArray_SimpleNew(1,npts2_shape,PyArray_DOUBLE);
-  ap_level = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_ndin = (PyArrayObject *)PyArray_SimpleNew(1,npts2_shape,PyArray_DOUBLE);
+  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
+  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_pts = (PyArrayObject *)PyArray_SimpleNew(1,npts2_shape,NPY_DOUBLE);
+  ap_level = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_ndin = (PyArrayObject *)PyArray_SimpleNew(1,npts2_shape,NPY_DOUBLE);
   if (ap_iord == NULL || ap_alist == NULL || ap_blist == NULL || ap_rlist == NULL || ap_elist == NULL || ap_pts == NULL || ap_level == NULL || ap_ndin == NULL) goto fail;
   iord = (int *)ap_iord->data;
   alist = (double *)ap_alist->data;
@@ -412,7 +412,7 @@ static PyObject *quadpack_qawoe(PyObject *dummy, PyObject *args) {
   QUAD_INIT_FUNC(fcn,extra_args)
 
   if (o_chebmo != NULL) {
-    ap_chebmo = (PyArrayObject *)PyArray_ContiguousFromObject(o_chebmo, PyArray_DOUBLE, 2, 2);
+    ap_chebmo = (PyArrayObject *)PyArray_ContiguousFromObject(o_chebmo, NPY_DOUBLE, 2, 2);
     if (ap_chebmo == NULL) goto fail;
     if (ap_chebmo->dimensions[1] != maxp1 || ap_chebmo->dimensions[0] != 25)
       PYERR(quadpack_error,"Chebyshev moment array has the wrong size.");
@@ -420,18 +420,18 @@ static PyObject *quadpack_qawoe(PyObject *dummy, PyObject *args) {
   else {
     sz[0] = 25;
     sz[1] = maxp1;
-    ap_chebmo = (PyArrayObject *)PyArray_SimpleNew(2,sz,PyArray_DOUBLE);
+    ap_chebmo = (PyArrayObject *)PyArray_SimpleNew(2,sz,NPY_DOUBLE);
     if (ap_chebmo == NULL) goto fail;
   }
   chebmo = (double *) ap_chebmo->data;
 
   /* Setup iwork and work arrays */
-  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_INT);
-  ap_nnlog = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_INT);
-  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
+  ap_nnlog = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
+  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
   if (ap_iord == NULL || ap_nnlog == NULL || ap_alist == NULL || ap_blist == NULL || ap_rlist == NULL || ap_elist == NULL) goto fail;
   iord = (int *)ap_iord->data;
   nnlog = (int *)ap_nnlog->data;
@@ -520,20 +520,20 @@ static PyObject *quadpack_qawfe(PyObject *dummy, PyObject *args) {
 
   sz[0] = 25;
   sz[1] = maxp1;
-  ap_chebmo = (PyArrayObject *)PyArray_SimpleNew(2,sz,PyArray_DOUBLE);
+  ap_chebmo = (PyArrayObject *)PyArray_SimpleNew(2,sz,NPY_DOUBLE);
   if (ap_chebmo == NULL) goto fail;
   chebmo = (double *) ap_chebmo->data;
 
   /* Setup iwork and work arrays */
-  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_INT);
-  ap_nnlog = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_INT);
-  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_rslst = (PyArrayObject *)PyArray_SimpleNew(1,limlst_shape,PyArray_DOUBLE);
-  ap_erlst = (PyArrayObject *)PyArray_SimpleNew(1,limlst_shape,PyArray_DOUBLE);
-  ap_ierlst = (PyArrayObject *)PyArray_SimpleNew(1,limlst_shape,PyArray_INT);
+  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
+  ap_nnlog = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
+  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_rslst = (PyArrayObject *)PyArray_SimpleNew(1,limlst_shape,NPY_DOUBLE);
+  ap_erlst = (PyArrayObject *)PyArray_SimpleNew(1,limlst_shape,NPY_DOUBLE);
+  ap_ierlst = (PyArrayObject *)PyArray_SimpleNew(1,limlst_shape,NPY_INT);
   if (ap_iord == NULL || ap_nnlog == NULL || ap_alist == NULL || ap_blist == NULL || ap_rlist == NULL || ap_elist == NULL || ap_rslst == NULL || ap_erlst == NULL || ap_ierlst == NULL) goto fail;
   iord = (int *)ap_iord->data;
   nnlog = (int *)ap_nnlog->data;
@@ -625,11 +625,11 @@ static PyObject *quadpack_qawce(PyObject *dummy, PyObject *args) {
   QUAD_INIT_FUNC(fcn,extra_args)
 
   /* Setup iwork and work arrays */
-  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_INT);
-  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
+  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
   if (ap_iord == NULL || ap_alist == NULL || ap_blist == NULL || ap_rlist == NULL || ap_elist == NULL) goto fail;
   iord = (int *)ap_iord->data;
   alist = (double *)ap_alist->data;
@@ -708,11 +708,11 @@ static PyObject *quadpack_qawse(PyObject *dummy, PyObject *args) {
   QUAD_INIT_FUNC(fcn,extra_args)
 
   /* Setup iwork and work arrays */
-  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_INT);
-  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
-  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,PyArray_DOUBLE);
+  ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
+  ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_rlist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
+  ap_elist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
   if (ap_iord == NULL || ap_alist == NULL || ap_blist == NULL || ap_rlist == NULL || ap_elist == NULL) goto fail;
   iord = (int *)ap_iord->data;
   alist = (double *)ap_alist->data;

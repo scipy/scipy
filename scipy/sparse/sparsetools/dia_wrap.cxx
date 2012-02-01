@@ -3383,7 +3383,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_1(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[1] = {
       -1
     };
-    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_INT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
       || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
     
@@ -3393,7 +3393,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_1(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[2] = {
       -1,-1
     };
-    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_BYTE, &is_new_object6);
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_BYTE, &is_new_object6);
     if (!array6 || !require_dimensions(array6,2) || !require_size(array6,size,1) 
       || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
     arg6 = (signed char*) array6->data;
@@ -3402,14 +3402,14 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_1(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[1] = {
       -1
     };
-    array7 = obj_to_array_contiguous_allow_conversion(obj6, PyArray_BYTE, &is_new_object7);
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_BYTE, &is_new_object7);
     if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
       || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
     
     arg7 = (signed char*) array7->data;
   }
   {
-    temp8 = obj_to_array_no_conversion(obj7,PyArray_BYTE);
+    temp8 = obj_to_array_no_conversion(obj7,NPY_BYTE);
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (signed char*) array_data(temp8);
   }
@@ -3510,7 +3510,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_2(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[1] = {
       -1
     };
-    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_INT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
       || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
     
@@ -3520,7 +3520,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_2(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[2] = {
       -1,-1
     };
-    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_UBYTE, &is_new_object6);
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_UBYTE, &is_new_object6);
     if (!array6 || !require_dimensions(array6,2) || !require_size(array6,size,1) 
       || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
     arg6 = (unsigned char*) array6->data;
@@ -3529,14 +3529,14 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_2(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[1] = {
       -1
     };
-    array7 = obj_to_array_contiguous_allow_conversion(obj6, PyArray_UBYTE, &is_new_object7);
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_UBYTE, &is_new_object7);
     if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
       || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
     
     arg7 = (unsigned char*) array7->data;
   }
   {
-    temp8 = obj_to_array_no_conversion(obj7,PyArray_UBYTE);
+    temp8 = obj_to_array_no_conversion(obj7,NPY_UBYTE);
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (unsigned char*) array_data(temp8);
   }
@@ -3637,7 +3637,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_3(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[1] = {
       -1
     };
-    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_INT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
       || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
     
@@ -3647,7 +3647,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_3(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[2] = {
       -1,-1
     };
-    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_SHORT, &is_new_object6);
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_SHORT, &is_new_object6);
     if (!array6 || !require_dimensions(array6,2) || !require_size(array6,size,1) 
       || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
     arg6 = (short*) array6->data;
@@ -3656,14 +3656,14 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_3(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[1] = {
       -1
     };
-    array7 = obj_to_array_contiguous_allow_conversion(obj6, PyArray_SHORT, &is_new_object7);
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_SHORT, &is_new_object7);
     if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
       || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
     
     arg7 = (short*) array7->data;
   }
   {
-    temp8 = obj_to_array_no_conversion(obj7,PyArray_SHORT);
+    temp8 = obj_to_array_no_conversion(obj7,NPY_SHORT);
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (short*) array_data(temp8);
   }
@@ -3764,7 +3764,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_4(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[1] = {
       -1
     };
-    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_INT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
       || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
     
@@ -3774,7 +3774,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_4(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[2] = {
       -1,-1
     };
-    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_USHORT, &is_new_object6);
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_USHORT, &is_new_object6);
     if (!array6 || !require_dimensions(array6,2) || !require_size(array6,size,1) 
       || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
     arg6 = (unsigned short*) array6->data;
@@ -3783,14 +3783,14 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_4(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[1] = {
       -1
     };
-    array7 = obj_to_array_contiguous_allow_conversion(obj6, PyArray_USHORT, &is_new_object7);
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_USHORT, &is_new_object7);
     if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
       || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
     
     arg7 = (unsigned short*) array7->data;
   }
   {
-    temp8 = obj_to_array_no_conversion(obj7,PyArray_USHORT);
+    temp8 = obj_to_array_no_conversion(obj7,NPY_USHORT);
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (unsigned short*) array_data(temp8);
   }
@@ -3891,7 +3891,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_5(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[1] = {
       -1
     };
-    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_INT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
       || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
     
@@ -3901,7 +3901,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_5(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[2] = {
       -1,-1
     };
-    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_INT, &is_new_object6);
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT, &is_new_object6);
     if (!array6 || !require_dimensions(array6,2) || !require_size(array6,size,1) 
       || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
     arg6 = (int*) array6->data;
@@ -3910,14 +3910,14 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_5(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[1] = {
       -1
     };
-    array7 = obj_to_array_contiguous_allow_conversion(obj6, PyArray_INT, &is_new_object7);
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT, &is_new_object7);
     if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
       || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
     
     arg7 = (int*) array7->data;
   }
   {
-    temp8 = obj_to_array_no_conversion(obj7,PyArray_INT);
+    temp8 = obj_to_array_no_conversion(obj7,NPY_INT);
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (int*) array_data(temp8);
   }
@@ -4018,7 +4018,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_6(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[1] = {
       -1
     };
-    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_INT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
       || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
     
@@ -4028,7 +4028,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_6(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[2] = {
       -1,-1
     };
-    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_UINT, &is_new_object6);
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_UINT, &is_new_object6);
     if (!array6 || !require_dimensions(array6,2) || !require_size(array6,size,1) 
       || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
     arg6 = (unsigned int*) array6->data;
@@ -4037,14 +4037,14 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_6(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[1] = {
       -1
     };
-    array7 = obj_to_array_contiguous_allow_conversion(obj6, PyArray_UINT, &is_new_object7);
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_UINT, &is_new_object7);
     if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
       || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
     
     arg7 = (unsigned int*) array7->data;
   }
   {
-    temp8 = obj_to_array_no_conversion(obj7,PyArray_UINT);
+    temp8 = obj_to_array_no_conversion(obj7,NPY_UINT);
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (unsigned int*) array_data(temp8);
   }
@@ -4145,7 +4145,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_7(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[1] = {
       -1
     };
-    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_INT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
       || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
     
@@ -4155,7 +4155,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_7(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[2] = {
       -1,-1
     };
-    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_LONGLONG, &is_new_object6);
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_LONGLONG, &is_new_object6);
     if (!array6 || !require_dimensions(array6,2) || !require_size(array6,size,1) 
       || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
     arg6 = (long long*) array6->data;
@@ -4164,14 +4164,14 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_7(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[1] = {
       -1
     };
-    array7 = obj_to_array_contiguous_allow_conversion(obj6, PyArray_LONGLONG, &is_new_object7);
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_LONGLONG, &is_new_object7);
     if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
       || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
     
     arg7 = (long long*) array7->data;
   }
   {
-    temp8 = obj_to_array_no_conversion(obj7,PyArray_LONGLONG);
+    temp8 = obj_to_array_no_conversion(obj7,NPY_LONGLONG);
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (long long*) array_data(temp8);
   }
@@ -4272,7 +4272,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_8(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[1] = {
       -1
     };
-    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_INT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
       || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
     
@@ -4282,7 +4282,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_8(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[2] = {
       -1,-1
     };
-    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_ULONGLONG, &is_new_object6);
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_ULONGLONG, &is_new_object6);
     if (!array6 || !require_dimensions(array6,2) || !require_size(array6,size,1) 
       || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
     arg6 = (unsigned long long*) array6->data;
@@ -4291,14 +4291,14 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_8(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[1] = {
       -1
     };
-    array7 = obj_to_array_contiguous_allow_conversion(obj6, PyArray_ULONGLONG, &is_new_object7);
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_ULONGLONG, &is_new_object7);
     if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
       || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
     
     arg7 = (unsigned long long*) array7->data;
   }
   {
-    temp8 = obj_to_array_no_conversion(obj7,PyArray_ULONGLONG);
+    temp8 = obj_to_array_no_conversion(obj7,NPY_ULONGLONG);
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (unsigned long long*) array_data(temp8);
   }
@@ -4399,7 +4399,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_9(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[1] = {
       -1
     };
-    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_INT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
       || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
     
@@ -4409,7 +4409,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_9(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[2] = {
       -1,-1
     };
-    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_FLOAT, &is_new_object6);
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_FLOAT, &is_new_object6);
     if (!array6 || !require_dimensions(array6,2) || !require_size(array6,size,1) 
       || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
     arg6 = (float*) array6->data;
@@ -4418,14 +4418,14 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_9(PyObject *SWIGUNUSEDPARM(self), Py
     npy_intp size[1] = {
       -1
     };
-    array7 = obj_to_array_contiguous_allow_conversion(obj6, PyArray_FLOAT, &is_new_object7);
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_FLOAT, &is_new_object7);
     if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
       || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
     
     arg7 = (float*) array7->data;
   }
   {
-    temp8 = obj_to_array_no_conversion(obj7,PyArray_FLOAT);
+    temp8 = obj_to_array_no_conversion(obj7,NPY_FLOAT);
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (float*) array_data(temp8);
   }
@@ -4526,7 +4526,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_10(PyObject *SWIGUNUSEDPARM(self), P
     npy_intp size[1] = {
       -1
     };
-    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_INT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
       || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
     
@@ -4536,7 +4536,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_10(PyObject *SWIGUNUSEDPARM(self), P
     npy_intp size[2] = {
       -1,-1
     };
-    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_DOUBLE, &is_new_object6);
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_DOUBLE, &is_new_object6);
     if (!array6 || !require_dimensions(array6,2) || !require_size(array6,size,1) 
       || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
     arg6 = (double*) array6->data;
@@ -4545,14 +4545,14 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_10(PyObject *SWIGUNUSEDPARM(self), P
     npy_intp size[1] = {
       -1
     };
-    array7 = obj_to_array_contiguous_allow_conversion(obj6, PyArray_DOUBLE, &is_new_object7);
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_DOUBLE, &is_new_object7);
     if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
       || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
     
     arg7 = (double*) array7->data;
   }
   {
-    temp8 = obj_to_array_no_conversion(obj7,PyArray_DOUBLE);
+    temp8 = obj_to_array_no_conversion(obj7,NPY_DOUBLE);
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (double*) array_data(temp8);
   }
@@ -4653,7 +4653,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_11(PyObject *SWIGUNUSEDPARM(self), P
     npy_intp size[1] = {
       -1
     };
-    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_INT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
       || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
     
@@ -4663,7 +4663,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_11(PyObject *SWIGUNUSEDPARM(self), P
     npy_intp size[2] = {
       -1,-1
     };
-    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_LONGDOUBLE, &is_new_object6);
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_LONGDOUBLE, &is_new_object6);
     if (!array6 || !require_dimensions(array6,2) || !require_size(array6,size,1) 
       || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
     arg6 = (long double*) array6->data;
@@ -4672,14 +4672,14 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_11(PyObject *SWIGUNUSEDPARM(self), P
     npy_intp size[1] = {
       -1
     };
-    array7 = obj_to_array_contiguous_allow_conversion(obj6, PyArray_LONGDOUBLE, &is_new_object7);
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_LONGDOUBLE, &is_new_object7);
     if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
       || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
     
     arg7 = (long double*) array7->data;
   }
   {
-    temp8 = obj_to_array_no_conversion(obj7,PyArray_LONGDOUBLE);
+    temp8 = obj_to_array_no_conversion(obj7,NPY_LONGDOUBLE);
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (long double*) array_data(temp8);
   }
@@ -4780,7 +4780,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_12(PyObject *SWIGUNUSEDPARM(self), P
     npy_intp size[1] = {
       -1
     };
-    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_INT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
       || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
     
@@ -4790,7 +4790,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_12(PyObject *SWIGUNUSEDPARM(self), P
     npy_intp size[2] = {
       -1,-1
     };
-    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_CFLOAT, &is_new_object6);
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_CFLOAT, &is_new_object6);
     if (!array6 || !require_dimensions(array6,2) || !require_size(array6,size,1) 
       || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
     arg6 = (npy_cfloat_wrapper*) array6->data;
@@ -4799,14 +4799,14 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_12(PyObject *SWIGUNUSEDPARM(self), P
     npy_intp size[1] = {
       -1
     };
-    array7 = obj_to_array_contiguous_allow_conversion(obj6, PyArray_CFLOAT, &is_new_object7);
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_CFLOAT, &is_new_object7);
     if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
       || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
     
     arg7 = (npy_cfloat_wrapper*) array7->data;
   }
   {
-    temp8 = obj_to_array_no_conversion(obj7,PyArray_CFLOAT);
+    temp8 = obj_to_array_no_conversion(obj7,NPY_CFLOAT);
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (npy_cfloat_wrapper*) array_data(temp8);
   }
@@ -4907,7 +4907,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_13(PyObject *SWIGUNUSEDPARM(self), P
     npy_intp size[1] = {
       -1
     };
-    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_INT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
       || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
     
@@ -4917,7 +4917,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_13(PyObject *SWIGUNUSEDPARM(self), P
     npy_intp size[2] = {
       -1,-1
     };
-    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_CDOUBLE, &is_new_object6);
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_CDOUBLE, &is_new_object6);
     if (!array6 || !require_dimensions(array6,2) || !require_size(array6,size,1) 
       || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
     arg6 = (npy_cdouble_wrapper*) array6->data;
@@ -4926,14 +4926,14 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_13(PyObject *SWIGUNUSEDPARM(self), P
     npy_intp size[1] = {
       -1
     };
-    array7 = obj_to_array_contiguous_allow_conversion(obj6, PyArray_CDOUBLE, &is_new_object7);
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_CDOUBLE, &is_new_object7);
     if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
       || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
     
     arg7 = (npy_cdouble_wrapper*) array7->data;
   }
   {
-    temp8 = obj_to_array_no_conversion(obj7,PyArray_CDOUBLE);
+    temp8 = obj_to_array_no_conversion(obj7,NPY_CDOUBLE);
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (npy_cdouble_wrapper*) array_data(temp8);
   }
@@ -5034,7 +5034,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_14(PyObject *SWIGUNUSEDPARM(self), P
     npy_intp size[1] = {
       -1
     };
-    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_INT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
       || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
     
@@ -5044,7 +5044,7 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_14(PyObject *SWIGUNUSEDPARM(self), P
     npy_intp size[2] = {
       -1,-1
     };
-    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_CLONGDOUBLE, &is_new_object6);
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_CLONGDOUBLE, &is_new_object6);
     if (!array6 || !require_dimensions(array6,2) || !require_size(array6,size,1) 
       || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
     arg6 = (npy_clongdouble_wrapper*) array6->data;
@@ -5053,14 +5053,14 @@ SWIGINTERN PyObject *_wrap_dia_matvec__SWIG_14(PyObject *SWIGUNUSEDPARM(self), P
     npy_intp size[1] = {
       -1
     };
-    array7 = obj_to_array_contiguous_allow_conversion(obj6, PyArray_CLONGDOUBLE, &is_new_object7);
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_CLONGDOUBLE, &is_new_object7);
     if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
       || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
     
     arg7 = (npy_clongdouble_wrapper*) array7->data;
   }
   {
-    temp8 = obj_to_array_no_conversion(obj7,PyArray_CLONGDOUBLE);
+    temp8 = obj_to_array_no_conversion(obj7,NPY_CLONGDOUBLE);
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (npy_clongdouble_wrapper*) array_data(temp8);
   }
@@ -5135,19 +5135,19 @@ SWIGINTERN PyObject *_wrap_dia_matvec(PyObject *self, PyObject *args) {
           }
           if (_v) {
             {
-              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_INT)) ? 1 : 0;
             }
             if (_v) {
               {
-                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_BYTE)) ? 1 : 0;
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_BYTE)) ? 1 : 0;
               }
               if (_v) {
                 {
-                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_BYTE)) ? 1 : 0;
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_BYTE)) ? 1 : 0;
                 }
                 if (_v) {
                   {
-                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),PyArray_BYTE)) ? 1 : 0;
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_BYTE)) ? 1 : 0;
                   }
                   if (_v) {
                     return _wrap_dia_matvec__SWIG_1(self, args);
@@ -5183,19 +5183,19 @@ SWIGINTERN PyObject *_wrap_dia_matvec(PyObject *self, PyObject *args) {
           }
           if (_v) {
             {
-              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_INT)) ? 1 : 0;
             }
             if (_v) {
               {
-                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_UBYTE)) ? 1 : 0;
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_UBYTE)) ? 1 : 0;
               }
               if (_v) {
                 {
-                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_UBYTE)) ? 1 : 0;
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_UBYTE)) ? 1 : 0;
                 }
                 if (_v) {
                   {
-                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),PyArray_UBYTE)) ? 1 : 0;
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_UBYTE)) ? 1 : 0;
                   }
                   if (_v) {
                     return _wrap_dia_matvec__SWIG_2(self, args);
@@ -5231,19 +5231,19 @@ SWIGINTERN PyObject *_wrap_dia_matvec(PyObject *self, PyObject *args) {
           }
           if (_v) {
             {
-              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_INT)) ? 1 : 0;
             }
             if (_v) {
               {
-                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_SHORT)) ? 1 : 0;
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_SHORT)) ? 1 : 0;
               }
               if (_v) {
                 {
-                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_SHORT)) ? 1 : 0;
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_SHORT)) ? 1 : 0;
                 }
                 if (_v) {
                   {
-                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),PyArray_SHORT)) ? 1 : 0;
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_SHORT)) ? 1 : 0;
                   }
                   if (_v) {
                     return _wrap_dia_matvec__SWIG_3(self, args);
@@ -5279,19 +5279,19 @@ SWIGINTERN PyObject *_wrap_dia_matvec(PyObject *self, PyObject *args) {
           }
           if (_v) {
             {
-              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_INT)) ? 1 : 0;
             }
             if (_v) {
               {
-                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_USHORT)) ? 1 : 0;
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_USHORT)) ? 1 : 0;
               }
               if (_v) {
                 {
-                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_USHORT)) ? 1 : 0;
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_USHORT)) ? 1 : 0;
                 }
                 if (_v) {
                   {
-                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),PyArray_USHORT)) ? 1 : 0;
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_USHORT)) ? 1 : 0;
                   }
                   if (_v) {
                     return _wrap_dia_matvec__SWIG_4(self, args);
@@ -5327,19 +5327,19 @@ SWIGINTERN PyObject *_wrap_dia_matvec(PyObject *self, PyObject *args) {
           }
           if (_v) {
             {
-              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_INT)) ? 1 : 0;
             }
             if (_v) {
               {
-                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_INT)) ? 1 : 0;
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT)) ? 1 : 0;
               }
               if (_v) {
                 {
-                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_INT)) ? 1 : 0;
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT)) ? 1 : 0;
                 }
                 if (_v) {
                   {
-                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),PyArray_INT)) ? 1 : 0;
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_INT)) ? 1 : 0;
                   }
                   if (_v) {
                     return _wrap_dia_matvec__SWIG_5(self, args);
@@ -5375,19 +5375,19 @@ SWIGINTERN PyObject *_wrap_dia_matvec(PyObject *self, PyObject *args) {
           }
           if (_v) {
             {
-              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_INT)) ? 1 : 0;
             }
             if (_v) {
               {
-                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_UINT)) ? 1 : 0;
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_UINT)) ? 1 : 0;
               }
               if (_v) {
                 {
-                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_UINT)) ? 1 : 0;
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_UINT)) ? 1 : 0;
                 }
                 if (_v) {
                   {
-                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),PyArray_UINT)) ? 1 : 0;
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_UINT)) ? 1 : 0;
                   }
                   if (_v) {
                     return _wrap_dia_matvec__SWIG_6(self, args);
@@ -5423,19 +5423,19 @@ SWIGINTERN PyObject *_wrap_dia_matvec(PyObject *self, PyObject *args) {
           }
           if (_v) {
             {
-              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_INT)) ? 1 : 0;
             }
             if (_v) {
               {
-                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_LONGLONG)) ? 1 : 0;
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_LONGLONG)) ? 1 : 0;
               }
               if (_v) {
                 {
-                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_LONGLONG)) ? 1 : 0;
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_LONGLONG)) ? 1 : 0;
                 }
                 if (_v) {
                   {
-                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),PyArray_LONGLONG)) ? 1 : 0;
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_LONGLONG)) ? 1 : 0;
                   }
                   if (_v) {
                     return _wrap_dia_matvec__SWIG_7(self, args);
@@ -5471,19 +5471,19 @@ SWIGINTERN PyObject *_wrap_dia_matvec(PyObject *self, PyObject *args) {
           }
           if (_v) {
             {
-              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_INT)) ? 1 : 0;
             }
             if (_v) {
               {
-                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_ULONGLONG)) ? 1 : 0;
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_ULONGLONG)) ? 1 : 0;
               }
               if (_v) {
                 {
-                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_ULONGLONG)) ? 1 : 0;
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_ULONGLONG)) ? 1 : 0;
                 }
                 if (_v) {
                   {
-                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),PyArray_ULONGLONG)) ? 1 : 0;
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_ULONGLONG)) ? 1 : 0;
                   }
                   if (_v) {
                     return _wrap_dia_matvec__SWIG_8(self, args);
@@ -5519,19 +5519,19 @@ SWIGINTERN PyObject *_wrap_dia_matvec(PyObject *self, PyObject *args) {
           }
           if (_v) {
             {
-              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_INT)) ? 1 : 0;
             }
             if (_v) {
               {
-                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_FLOAT)) ? 1 : 0;
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_FLOAT)) ? 1 : 0;
               }
               if (_v) {
                 {
-                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_FLOAT)) ? 1 : 0;
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_FLOAT)) ? 1 : 0;
                 }
                 if (_v) {
                   {
-                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),PyArray_FLOAT)) ? 1 : 0;
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_FLOAT)) ? 1 : 0;
                   }
                   if (_v) {
                     return _wrap_dia_matvec__SWIG_9(self, args);
@@ -5567,19 +5567,19 @@ SWIGINTERN PyObject *_wrap_dia_matvec(PyObject *self, PyObject *args) {
           }
           if (_v) {
             {
-              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_INT)) ? 1 : 0;
             }
             if (_v) {
               {
-                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_DOUBLE)) ? 1 : 0;
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_DOUBLE)) ? 1 : 0;
               }
               if (_v) {
                 {
-                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_DOUBLE)) ? 1 : 0;
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_DOUBLE)) ? 1 : 0;
                 }
                 if (_v) {
                   {
-                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),PyArray_DOUBLE)) ? 1 : 0;
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_DOUBLE)) ? 1 : 0;
                   }
                   if (_v) {
                     return _wrap_dia_matvec__SWIG_10(self, args);
@@ -5615,19 +5615,19 @@ SWIGINTERN PyObject *_wrap_dia_matvec(PyObject *self, PyObject *args) {
           }
           if (_v) {
             {
-              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_INT)) ? 1 : 0;
             }
             if (_v) {
               {
-                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_LONGDOUBLE)) ? 1 : 0;
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_LONGDOUBLE)) ? 1 : 0;
               }
               if (_v) {
                 {
-                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_LONGDOUBLE)) ? 1 : 0;
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_LONGDOUBLE)) ? 1 : 0;
                 }
                 if (_v) {
                   {
-                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),PyArray_LONGDOUBLE)) ? 1 : 0;
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_LONGDOUBLE)) ? 1 : 0;
                   }
                   if (_v) {
                     return _wrap_dia_matvec__SWIG_11(self, args);
@@ -5663,19 +5663,19 @@ SWIGINTERN PyObject *_wrap_dia_matvec(PyObject *self, PyObject *args) {
           }
           if (_v) {
             {
-              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_INT)) ? 1 : 0;
             }
             if (_v) {
               {
-                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_CFLOAT)) ? 1 : 0;
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_CFLOAT)) ? 1 : 0;
               }
               if (_v) {
                 {
-                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_CFLOAT)) ? 1 : 0;
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_CFLOAT)) ? 1 : 0;
                 }
                 if (_v) {
                   {
-                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),PyArray_CFLOAT)) ? 1 : 0;
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_CFLOAT)) ? 1 : 0;
                   }
                   if (_v) {
                     return _wrap_dia_matvec__SWIG_12(self, args);
@@ -5711,19 +5711,19 @@ SWIGINTERN PyObject *_wrap_dia_matvec(PyObject *self, PyObject *args) {
           }
           if (_v) {
             {
-              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_INT)) ? 1 : 0;
             }
             if (_v) {
               {
-                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_CDOUBLE)) ? 1 : 0;
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_CDOUBLE)) ? 1 : 0;
               }
               if (_v) {
                 {
-                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_CDOUBLE)) ? 1 : 0;
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_CDOUBLE)) ? 1 : 0;
                 }
                 if (_v) {
                   {
-                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),PyArray_CDOUBLE)) ? 1 : 0;
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_CDOUBLE)) ? 1 : 0;
                   }
                   if (_v) {
                     return _wrap_dia_matvec__SWIG_13(self, args);
@@ -5759,19 +5759,19 @@ SWIGINTERN PyObject *_wrap_dia_matvec(PyObject *self, PyObject *args) {
           }
           if (_v) {
             {
-              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_INT)) ? 1 : 0;
             }
             if (_v) {
               {
-                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_CLONGDOUBLE)) ? 1 : 0;
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_CLONGDOUBLE)) ? 1 : 0;
               }
               if (_v) {
                 {
-                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_CLONGDOUBLE)) ? 1 : 0;
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_CLONGDOUBLE)) ? 1 : 0;
                 }
                 if (_v) {
                   {
-                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),PyArray_CLONGDOUBLE)) ? 1 : 0;
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_CLONGDOUBLE)) ? 1 : 0;
                   }
                   if (_v) {
                     return _wrap_dia_matvec__SWIG_14(self, args);

@@ -248,7 +248,7 @@ static PyObject *minpack_hybrd(PyObject *dummy, PyObject *args) {
   INIT_FUNC(fcn,extra_args,minpack_error);
 
   /* Initial input vector */
-  ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x0, PyArray_DOUBLE, 1, 1);
+  ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x0, NPY_DOUBLE, 1, 1);
   if (ap_x == NULL) goto fail;
   x = (double *) ap_x->data;
   n = ap_x->dimensions[0];
@@ -270,9 +270,9 @@ static PyObject *minpack_hybrd(PyObject *dummy, PyObject *args) {
   SET_DIAG(ap_diag,o_diag,mode);
 
   dims[0] = n; dims[1] = n;
-  ap_r = (PyArrayObject *)PyArray_SimpleNew(1,&lr,PyArray_DOUBLE);
-  ap_qtf = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_DOUBLE);
-  ap_fjac = (PyArrayObject *)PyArray_SimpleNew(2,dims,PyArray_DOUBLE);
+  ap_r = (PyArrayObject *)PyArray_SimpleNew(1,&lr,NPY_DOUBLE);
+  ap_qtf = (PyArrayObject *)PyArray_SimpleNew(1,&n,NPY_DOUBLE);
+  ap_fjac = (PyArrayObject *)PyArray_SimpleNew(2,dims,NPY_DOUBLE);
 
   if (ap_r == NULL || ap_qtf == NULL || ap_fjac ==NULL) goto fail;
 
@@ -349,7 +349,7 @@ static PyObject *minpack_hybrj(PyObject *dummy, PyObject *args) {
   INIT_JAC_FUNC(fcn,Dfun,extra_args,col_deriv,minpack_error);
 
   /* Initial input vector */
-  ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x0, PyArray_DOUBLE, 1, 1);
+  ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x0, NPY_DOUBLE, 1, 1);
   if (ap_x == NULL) goto fail;
   x = (double *) ap_x->data;
   n = ap_x->dimensions[0];
@@ -369,9 +369,9 @@ static PyObject *minpack_hybrj(PyObject *dummy, PyObject *args) {
   SET_DIAG(ap_diag,o_diag,mode);
 
   dims[0] = n; dims[1] = n;
-  ap_r = (PyArrayObject *)PyArray_SimpleNew(1,&lr,PyArray_DOUBLE);
-  ap_qtf = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_DOUBLE);
-  ap_fjac = (PyArrayObject *)PyArray_SimpleNew(2,dims,PyArray_DOUBLE);
+  ap_r = (PyArrayObject *)PyArray_SimpleNew(1,&lr,NPY_DOUBLE);
+  ap_qtf = (PyArrayObject *)PyArray_SimpleNew(1,&n,NPY_DOUBLE);
+  ap_fjac = (PyArrayObject *)PyArray_SimpleNew(2,dims,NPY_DOUBLE);
 
   if (ap_r == NULL || ap_qtf == NULL || ap_fjac ==NULL) goto fail;
 
@@ -451,7 +451,7 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
   INIT_FUNC(fcn,extra_args,minpack_error);
 
   /* Initial input vector */
-  ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x0, PyArray_DOUBLE, 1, 1);
+  ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x0, NPY_DOUBLE, 1, 1);
   if (ap_x == NULL) goto fail;
   x = (double *) ap_x->data;
   n = ap_x->dimensions[0];
@@ -468,9 +468,9 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
   m = (ap_fvec->nd > 0 ? ap_fvec->dimensions[0] : 1);
 
   dims[0] = n; dims[1] = m;
-  ap_ipvt = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_INT);
-  ap_qtf = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_DOUBLE);
-  ap_fjac = (PyArrayObject *)PyArray_SimpleNew(2,dims,PyArray_DOUBLE);
+  ap_ipvt = (PyArrayObject *)PyArray_SimpleNew(1,&n,NPY_INT);
+  ap_qtf = (PyArrayObject *)PyArray_SimpleNew(1,&n,NPY_DOUBLE);
+  ap_fjac = (PyArrayObject *)PyArray_SimpleNew(2,dims,NPY_DOUBLE);
 
   if (ap_ipvt == NULL || ap_qtf == NULL || ap_fjac ==NULL) goto fail;
 
@@ -547,7 +547,7 @@ static PyObject *minpack_lmder(PyObject *dummy, PyObject *args) {
   INIT_JAC_FUNC(fcn,Dfun,extra_args,col_deriv,minpack_error);
 
   /* Initial input vector */
-  ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x0, PyArray_DOUBLE, 1, 1);
+  ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x0, NPY_DOUBLE, 1, 1);
   if (ap_x == NULL) goto fail;
   x = (double *) ap_x->data;
   n = ap_x->dimensions[0];
@@ -564,9 +564,9 @@ static PyObject *minpack_lmder(PyObject *dummy, PyObject *args) {
   m = (ap_fvec->nd > 0 ? ap_fvec->dimensions[0] : 1);
 
   dims[0] = n; dims[1] = m;
-  ap_ipvt = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_INT);
-  ap_qtf = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_DOUBLE);
-  ap_fjac = (PyArrayObject *)PyArray_SimpleNew(2,dims,PyArray_DOUBLE);
+  ap_ipvt = (PyArrayObject *)PyArray_SimpleNew(1,&n,NPY_INT);
+  ap_qtf = (PyArrayObject *)PyArray_SimpleNew(1,&n,NPY_DOUBLE);
+  ap_fjac = (PyArrayObject *)PyArray_SimpleNew(2,dims,NPY_DOUBLE);
 
   if (ap_ipvt == NULL || ap_qtf == NULL || ap_fjac ==NULL) goto fail;
 
@@ -632,12 +632,12 @@ static PyObject *minpack_chkder(PyObject *self, PyObject *args)
 
   if (!PyArg_ParseTuple(args,"iiOOOiO!OiO!",&m, &n, &o_x, &o_fvec, &o_fjac, &ldfjac, &PyArray_Type, (PyObject **)&ap_xp, &o_fvecp, &mode, &PyArray_Type, (PyObject **)&ap_err)) return NULL;
 
-  ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(o_x,PyArray_DOUBLE,1,1);
+  ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(o_x,NPY_DOUBLE,1,1);
   if (ap_x == NULL) goto fail;
   if (n != ap_x->dimensions[0])
      PYERR(minpack_error,"Input data array (x) must have length n");
   x = (double *) ap_x -> data;
-  if (!ISCONTIGUOUS(ap_xp) || (ap_xp->descr->type_num != PyArray_DOUBLE))
+  if (!ISCONTIGUOUS(ap_xp) || (ap_xp->descr->type_num != NPY_DOUBLE))
      PYERR(minpack_error,"Seventh argument (xp) must be contiguous array of type Float64.");
 
   if (mode == 1) {
@@ -649,11 +649,11 @@ static PyObject *minpack_chkder(PyObject *self, PyObject *args)
     CHKDER(&m, &n, x, fvec, fjac, &ldfjac, xp, fvecp, &mode, err);
   }
   else if (mode == 2) {
-    if (!ISCONTIGUOUS(ap_err) || (ap_err->descr->type_num != PyArray_DOUBLE))
+    if (!ISCONTIGUOUS(ap_err) || (ap_err->descr->type_num != NPY_DOUBLE))
        PYERR(minpack_error,"Last argument (err) must be contiguous array of type Float64.");
-    ap_fvec = (PyArrayObject *)PyArray_ContiguousFromObject(o_fvec,PyArray_DOUBLE,1,1);
-    ap_fjac = (PyArrayObject *)PyArray_ContiguousFromObject(o_fjac,PyArray_DOUBLE,2,2);
-    ap_fvecp = (PyArrayObject *)PyArray_ContiguousFromObject(o_fvecp,PyArray_DOUBLE,1,1);
+    ap_fvec = (PyArrayObject *)PyArray_ContiguousFromObject(o_fvec,NPY_DOUBLE,1,1);
+    ap_fjac = (PyArrayObject *)PyArray_ContiguousFromObject(o_fjac,NPY_DOUBLE,2,2);
+    ap_fvecp = (PyArrayObject *)PyArray_ContiguousFromObject(o_fvecp,NPY_DOUBLE,1,1);
     if (ap_fvec == NULL || ap_fjac == NULL || ap_fvecp == NULL) goto fail;
 
     fvec = (double *)ap_fvec -> data;
