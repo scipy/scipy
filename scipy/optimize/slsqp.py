@@ -406,10 +406,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         info = {'solution': x,
                 'fun'     : fx,
                 'jac'     : g,
-                'nit'     : majiter,
+                'nit'     : int(majiter),
                 'nfev'    : feval[0],
                 'njev'    : geval[0],
-                'status'  : mode,
+                'status'  : int(mode),
                 'message' : exit_modes[int(mode)],
                 'success' : mode == 0}
         return x, info
