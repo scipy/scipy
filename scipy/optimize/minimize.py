@@ -62,14 +62,16 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         Constraints definition (only for COBYLA and SLSQP).
         Each constraint is defined in a dictionary with fields:
             type: str
-                Constraint type (either 'ineq' or 'eq', only 'ineq' for
-                COBYLA).
+                Constraint type: 'eq' for equality, 'ineq' for inequality.
             fun: callable
                 The function defining the constraint.
             jac: callable, optional
                 The Jacobian of `fun` (only for SLSQP).
             args: sequence, optional
                 Extra arguments to be passed to the function and Jacobian.
+        Equality constraint means that the constraint function result is to
+        be zero whereas inequality means that it is to be non-negative.
+        Note that COBYLA only supports inequality constraints.
     options : dict, optional
         A dictionary of solver options. All methods accept the following
         generic options:
