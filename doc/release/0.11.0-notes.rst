@@ -21,13 +21,14 @@ This release requires Python 2.4-2.7 or 3.1- and NumPy 1.X.X or greater.
 New features
 ============
 
-Unified interface to unconstrained solvers (``scipy.optimize``)
----------------------------------------------------------------
+Unified interface to minimizers of multivariate functions (``scipy.optimize``)
+------------------------------------------------------------------------------
 
 A new function ``scipy.optimize.minimize`` was added to provide a common
-interface to the unconstrained minimizers (`fmin`, `fmin_powell`, `fmin_cg`,
-`fmin_ncg`, `fmin_bfgs` and `anneal`).  This allows for easier comparing and
-switching between solvers.
+interface to minimizers of multivariate functions (unconstrained: `fmin`,
+`fmin_powell`, `fmin_cg`, `fmin_ncg`, `fmin_bfgs` and `anneal` or
+constrained: `fmin_l_bfgs_b`, `fmin_tnc`, `fmin_cobyla` and `fmin_slsqp`).
+This allows for easier comparing and switching between solvers.
 
 
 Constructing sparse matrices
