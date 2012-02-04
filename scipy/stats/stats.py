@@ -3381,7 +3381,7 @@ def ks_2samp(data1, data2):
     return d, prob
 
 
-def mannwhitneyu(x, y, use_continuity=True):
+def mannwhitneyu(x, y, use_continuity=True, alternative="less"):
     """
     Computes the Mann-Whitney rank test on samples x and y.
 
@@ -3392,13 +3392,16 @@ def mannwhitneyu(x, y, use_continuity=True):
     use_continuity : bool, optional
             Whether a continuity correction (1/2.) should be taken into
             account. Default is True.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Which alternative hypothesis to the null hypothesis the test uses.
+        Default is 'less'.
 
     Returns
     -------
     u : float
         The Mann-Whitney statistics.
     prob : float
-        One-sided p-value assuming a asymptotic normal distribution.
+        The p-value assuming a asymptotic normal distribution.
 
     Notes
     -----
@@ -3408,8 +3411,6 @@ def mannwhitneyu(x, y, use_continuity=True):
     value of U.
 
     This test corrects for ties and by default uses a continuity correction.
-    The reported p-value is for a one-sided hypothesis, to get the two-sided
-    p-value multiply the returned p-value by 2.
 
     """
     x = asarray(x)
@@ -3417,24 +3418,38 @@ def mannwhitneyu(x, y, use_continuity=True):
     n1 = len(x)
     n2 = len(y)
     ranked = rankdata(np.concatenate((x,y)))
-    rankx = ranked[0:n1]       # get the x-ranks
-    #ranky = ranked[n1:]        # the rest are y-ranks
-    u1 = n1*n2 + (n1*(n1+1))/2.0 - np.sum(rankx,axis=0)  # calc U for x
-    u2 = n1*n2 - u1                            # remainder is U for y
-    bigu = max(u1,u2)
-    smallu = min(u1,u2)
-    #T = np.sqrt(tiecorrect(ranked))  # correction factor for tied scores
+    rankx = ranked[0:n1] # get the x-ranks
+
+    u1 = np.sum(rankx,axis=0) - (n1*n1+n1) * 0.5 # calc U for x
+
     T = tiecorrect(ranked)
     if T == 0:
-        raise ValueError('All numbers are identical in amannwhitneyu')
+        raise ValueError('All numbers are identical in mannwhitneyu')
     sd = np.sqrt(T*n1*n2*(n1+n2+1)/12.0)
+
+    z = u1 - n1*n2 * 0.5
+
+    if alternative == "less":
+        correction = -0.5
+        prob_func = distributions.norm.cdf
+    elif alternative == "greater":
+        correction = 0.5
+        prob_func = distributions.norm.sf
+    elif alternative == "two-sided":
+        correction = np.sign(z) * 0.5
+        prob_func = lambda v: 2.0 * min(distributions.norm.sf(v),
+            distributions.norm.cdf(v))
+    else:
+        msg = "`alternative` should be one of {'two-sided', 'less', 'greater'}"
+        raise ValueError(msg)
 
     if use_continuity:
         # normal approximation for prob calc with continuity correction
-        z = abs((bigu-0.5-n1*n2/2.0) / sd)
-    else:
-        z = abs((bigu-n1*n2/2.0) / sd)  # normal approximation for prob calc
-    return smallu, distributions.norm.sf(z)  #(1.0 - zprob(z))
+        z -= correction
+
+    z /= sd  # normal approximation for prob calc
+
+    return u1, prob_func(z)
 
 
 def tiecorrect(rankvals):
