@@ -6683,8 +6683,8 @@ class hypergeom_gen(rv_discrete):
     >>> ax.set_ylabel('hypergeom PMF')
     >>> plt.show()
 
-    Instead of using a frozen distribution we can also use class methods of
-    `hypergeom` directly.  To for example obtain the cumulative distribution
+    Instead of using a frozen distribution we can also use `hypergeom`
+    methods directly.  To for example obtain the cumulative distribution
     function, use:
 
     >>> prb = hypergeom.cdf(x, M, n, N)
