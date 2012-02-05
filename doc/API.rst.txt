@@ -104,8 +104,6 @@ change is made.
 
 * scipy.linalg
 
-* scipy.maxentropy
-
 * scipy.misc
 
 * scipy.ndimage

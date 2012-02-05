@@ -62,7 +62,6 @@ Subpackage          Description
 :mod:`interpolate`  Interpolation and smoothing splines
 :mod:`io`           Input and Output
 :mod:`linalg`       Linear algebra
-:mod:`maxentropy`   Maximum entropy methods
 :mod:`ndimage`      N-dimensional image processing
 :mod:`odr`          Orthogonal distance regression
 :mod:`optimize`     Optimization and root-finding routines
