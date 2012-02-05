@@ -1,0 +1,24 @@
+==========================
+SciPy 0.10.1 Release Notes
+==========================
+
+.. contents::
+
+SciPy 0.10.1 is a bug-fix release with no new features compared to 0.10.0.  
+
+Main changes
+------------
+
+The most important changes are::
+
+1. The single precision routines of ``eigs`` and ``eigsh`` in
+   ``scipy.sparse.linalg`` have been disabled (they internally use double
+   precision now).
+2. A compatibility issue related to changes in NumPy macros has been fixed, in
+   order to make scipy 0.10.1 compile with the upcoming numpy 1.7.0 release.
+
+
+Other issues fixed
+------------------
+
+
