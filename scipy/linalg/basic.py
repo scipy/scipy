@@ -17,7 +17,7 @@ import decomp_svd
 
 # Linear equations
 def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False,
-          debug=False):
+          debug=False, check_finite=True):
     """Solve the equation a x = b for x
 
     Parameters
@@ -33,6 +33,10 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False
         Allow overwriting data in a (may enhance performance)
     overwrite_b : boolean
         Allow overwriting data in b (may enhance performance)
+    check_finite : boolean
+        If true checks the elements of a,b are finite numbers. If
+        false does no checking and passes through matrices to
+        underlying algorithm.
 
     Returns
     -------
@@ -42,7 +46,10 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False
     Raises LinAlgError if a is singular
 
     """
-    a1, b1 = map(np.asarray_chkfinite,(a,b))
+    if check_finite:
+        a1, b1 = map(np.asarray_chkfinite,(a,b))
+    else:
+        a1, b1 = map(np.asarray, (a,b))
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     if a1.shape[0] != b1.shape[0]:
@@ -70,7 +77,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False
                                                                     % -info)
 
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
-                     overwrite_b=False, debug=False):
+                     overwrite_b=False, debug=False, check_finite=True):
     """Solve the equation `a x = b` for `x`, assuming a is a triangular matrix.
 
     Parameters
@@ -98,6 +105,11 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     overwrite_b : boolean
         Allow overwriting data in b (may enhance performance)
 
+    check_finite : boolean
+        If true checks the elements of a,b are finite numbers. If
+        false does no checking and passes through matrices to
+        underlying algorithm.
+
     Returns
     -------
     x : array, shape (M,) or (M, N) depending on b
@@ -113,7 +125,10 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     .. versionadded:: 0.9.0
     """
 
-    a1, b1 = map(np.asarray_chkfinite,(a,b))
+    if check_finite:
+        a1, b1 = map(np.asarray_chkfinite,(a,b))
+    else:
+        a1, b1 = map(np.asarray, (a,b))
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     if a1.shape[0] != b1.shape[0]:
@@ -133,10 +148,9 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     raise ValueError('illegal value in %d-th argument of internal trtrs')
 
 def solve_banded((l, u), ab, b, overwrite_ab=False, overwrite_b=False,
-          debug=False):
+                debug=False, check_finite=True):
     """
     Solve the equation a x = b for x, assuming a is banded matrix.
-
     The matrix a is stored in ab using the matrix diagonal ordered form::
 
         ab[u + i - j, j] == a[i,j]
@@ -160,6 +174,10 @@ def solve_banded((l, u), ab, b, overwrite_ab=False, overwrite_b=False,
         Discard data in ab (may enhance performance)
     overwrite_b : boolean
         Discard data in b (may enhance performance)
+    check_finite : boolean
+        If true checks the elements of ab, b are finite numbers. If
+        false does no checking and passes through matrices to
+        underlying algorithm.
 
     Returns
     -------
@@ -167,8 +185,11 @@ def solve_banded((l, u), ab, b, overwrite_ab=False, overwrite_b=False,
         The solution to the system a x = b
 
     """
-    a1, b1 = map(np.asarray_chkfinite, (ab, b))
 
+    if check_finite:
+        a1, b1 = map(np.asarray_chkfinite, (ab, b))
+    else:
+        a1, b1 = map(np.asarray, (ab,b))
     # Validate shapes.
     if a1.shape[-1] != b1.shape[0]:
         raise ValueError("shapes of ab and b are not compatible.")
@@ -189,7 +210,8 @@ def solve_banded((l, u), ab, b, overwrite_ab=False, overwrite_b=False,
         raise LinAlgError("singular matrix")
     raise ValueError('illegal value in %d-th argument of internal gbsv' % -info)
 
-def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False):
+def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
+                    check_finite=True):
     """Solve equation a x = b. a is Hermitian positive-definite banded matrix.
 
     The matrix a is stored in ab either in lower diagonal or upper
@@ -224,6 +246,10 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False):
         Discard data in b (may enhance performance)
     lower : boolean
         Is the matrix in the lower form. (Default is upper form)
+    check_finite : boolean
+        If true checks the elements of ab, b are finite numbers. If
+        false does no checking and passes through matrices to
+        underlying algorithm.
 
     Returns
     -------
@@ -232,8 +258,10 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False):
 
     """
 
-    ab, b = map(np.asarray_chkfinite, (ab, b))
-
+    if check_finite:
+        ab, b = map(np.asarray_chkfinite, (ab, b))
+    else:
+        ab, b = map(np.asarray, (ab,b))
     # Validate shapes.
     if ab.shape[-1] != b.shape[0]:
         raise ValueError("shapes of ab and b are not compatible.")
@@ -250,7 +278,7 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False):
 
 
 # matrix inversion
-def inv(a, overwrite_a=False):
+def inv(a, overwrite_a=False, check_finite=True):
     """
     Compute the inverse of a matrix.
 
@@ -260,6 +288,10 @@ def inv(a, overwrite_a=False):
         Square matrix to be inverted.
     overwrite_a : bool, optional
         Discard data in `a` (may improve performance). Default is False.
+    check_finite : boolean
+        If true checks the elements of a are finite numbers. If
+        false does no checking and passes matrix through to
+        underlying algorithm.
 
     Returns
     -------
@@ -284,7 +316,11 @@ def inv(a, overwrite_a=False):
            [ 0.,  1.]])
 
     """
-    a1 = np.asarray_chkfinite(a)
+
+    if check_finite:
+        a1 = np.asarray_chkfinite(a)
+    else:
+        a1 = np.asarray(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or _datacopied(a1, a)
@@ -333,12 +369,16 @@ def inv(a, overwrite_a=False):
 
 ### Determinant
 
-def det(a, overwrite_a=False):
+def det(a, overwrite_a=False, check_finite=True):
     """Compute the determinant of a matrix
 
     Parameters
     ----------
     a : array, shape (M, M)
+    check_finite : boolean
+        If true checks the elements of a are finite numbers. If
+        false does no checking and passes matrix through to
+        underlying algorithm.
 
     Returns
     -------
@@ -349,7 +389,10 @@ def det(a, overwrite_a=False):
     -----
     The determinant is computed via LU factorization, LAPACK routine z/dgetrf.
     """
-    a1 = np.asarray_chkfinite(a)
+    if check_finite:
+        a1 = np.asarray_chkfinite(a)
+    else:
+        a1 = np.asarray(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or _datacopied(a1, a)
@@ -362,7 +405,8 @@ def det(a, overwrite_a=False):
 
 ### Linear Least Squares
 
-def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
+def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
+            check_finite=True):
     """
     Compute least-squares solution to equation Ax = b.
 
@@ -382,6 +426,10 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
         Discard data in `a` (may enhance performance). Default is False.
     overwrite_b : bool, optional
         Discard data in `b` (may enhance performance). Default is False.
+    check_finite : boolean
+        If true checks the elements of a,b are finite numbers. If
+        false does no checking and passes through matrices to
+        underlying algorithm.
 
     Returns
     -------
@@ -408,7 +456,11 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
     optimize.nnls : linear least squares with non-negativity constraint
 
     """
-    a1, b1 = map(np.asarray_chkfinite, (a, b))
+
+    if check_finite:
+        a1,b1 = map(np.asarray_chkfinite, (a,b))
+    else:
+        a1,b1 = map(np.asarray, (a,b))
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     m, n = a1.shape
@@ -441,6 +493,11 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
     else:
         raise NotImplementedError('calling gelss from %s' % gelss.module_name)
     if info > 0:
+        print info
+        print v
+        print x
+        print s
+        print rank
         raise LinAlgError("SVD did not converge in Linear Least Squares")
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal gelss'
@@ -454,7 +511,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
     return x, resids, rank, s
 
 
-def pinv(a, cond=None, rcond=None):
+def pinv(a, cond=None, rcond=None, check_finite=True):
     """Compute the (Moore-Penrose) pseudo-inverse of a matrix.
 
     Calculate a generalized inverse of a matrix using a least-squares
@@ -468,6 +525,10 @@ def pinv(a, cond=None, rcond=None):
         Cutoff for 'small' singular values in the least-squares solver.
         Singular values smaller than rcond*largest_singular_value are
         considered zero.
+    check_finite : boolean
+        If true checks the elements of a are finite numbers. If
+        false does no checking and passes matrix through to
+        underlying algorithm.
 
     Returns
     -------
@@ -486,14 +547,17 @@ def pinv(a, cond=None, rcond=None):
     True
 
     """
-    a = np.asarray_chkfinite(a)
+    if check_finite:
+        a = np.asarray_chkfinite(a)
+    else:
+        a = np.asarray(a)
     b = np.identity(a.shape[0], dtype=a.dtype)
     if rcond is not None:
         cond = rcond
     return lstsq(a, b, cond=cond)[0]
 
 
-def pinv2(a, cond=None, rcond=None):
+def pinv2(a, cond=None, rcond=None, check_finite=True):
     """Compute the (Moore-Penrose) pseudo-inverse of a matrix.
 
     Calculate a generalized inverse of a matrix using its
@@ -510,6 +574,10 @@ def pinv2(a, cond=None, rcond=None):
         considered zero.
 
         If None or -1, suitable machine precision is used.
+    check_finite : boolean
+        If true checks the elements of a are finite numbers. If
+        false does no checking and passes matrix through to
+        underlying algorithm.
 
     Returns
     -------
@@ -528,7 +596,10 @@ def pinv2(a, cond=None, rcond=None):
     True
 
     """
-    a = np.asarray_chkfinite(a)
+    if check_finite:
+        a = np.asarray_chkfinite(a)
+    else:
+        a = np.asarray(a)
     u, s, vh = decomp_svd.svd(a)
     t = u.dtype.char
     if rcond is not None:
