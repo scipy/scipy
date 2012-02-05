@@ -1255,7 +1255,7 @@ class rv_continuous(rv_generic):
         cond1 = (scale > 0) & (x >= self.a) & (x <= self.b)
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
-        putmask(output,(1-cond0)*array(cond1,bool),self.badvalue)
+        putmask(output,(1-cond0)+np.isnan(x),self.badvalue)
         if any(cond):
             goodargs = argsreduce(cond, *((x,)+args+(scale,)))
             scale, goodargs = goodargs[-1], goodargs[:-1]
@@ -1298,7 +1298,7 @@ class rv_continuous(rv_generic):
         cond = cond0 & cond1
         output = empty(shape(cond),'d')
         output.fill(NINF)
-        putmask(output,(1-cond0)*array(cond1,bool),self.badvalue)
+        putmask(output,(1-cond0)+np.isnan(x),self.badvalue)
         if any(cond):
             goodargs = argsreduce(cond, *((x,)+args+(scale,)))
             scale, goodargs = goodargs[-1], goodargs[:-1]
@@ -1340,7 +1340,7 @@ class rv_continuous(rv_generic):
         cond2 = (x >= self.b) & cond0
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
-        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
+        place(output,(1-cond0)+np.isnan(x),self.badvalue)
         place(output,cond2,1.0)
         if any(cond):  #call only if at least 1 entry
             goodargs = argsreduce(cond, *((x,)+args))
@@ -1382,7 +1382,7 @@ class rv_continuous(rv_generic):
         cond = cond0 & cond1
         output = empty(shape(cond),'d')
         output.fill(NINF)
-        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
+        place(output,(1-cond0)*(cond1==cond1)+np.isnan(x),self.badvalue)
         place(output,cond2,0.0)
         if any(cond):  #call only if at least 1 entry
             goodargs = argsreduce(cond, *((x,)+args))
@@ -1423,7 +1423,7 @@ class rv_continuous(rv_generic):
         cond2 = cond0 & (x <= self.a)
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
-        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
+        place(output,(1-cond0)+np.isnan(x),self.badvalue)
         place(output,cond2,1.0)
         if any(cond):
             goodargs = argsreduce(cond, *((x,)+args))
@@ -1468,7 +1468,7 @@ class rv_continuous(rv_generic):
         cond = cond0 & cond1
         output = empty(shape(cond),'d')
         output.fill(NINF)
-        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
+        place(output,(1-cond0)+np.isnan(x),self.badvalue)
         place(output,cond2,0.0)
         if any(cond):
             goodargs = argsreduce(cond, *((x,)+args))
@@ -5820,7 +5820,7 @@ class rv_discrete(rv_generic):
         cond1 = (k >= self.a) & (k <= self.b) & self._nonzero(k,*args)
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
-        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
+        place(output,(1-cond0) + np.isnan(k),self.badvalue)
         if any(cond):
             goodargs = argsreduce(cond, *((k,)+args))
             place(output,cond,self._pmf(*goodargs))
@@ -5858,7 +5858,7 @@ class rv_discrete(rv_generic):
         cond = cond0 & cond1
         output = empty(shape(cond),'d')
         output.fill(NINF)
-        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
+        place(output,(1-cond0) + np.isnan(k),self.badvalue)
         if any(cond):
             goodargs = argsreduce(cond, *((k,)+args))
             place(output,cond,self._logpmf(*goodargs))
@@ -5896,7 +5896,7 @@ class rv_discrete(rv_generic):
         cond2 = (k >= self.b)
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
-        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
+        place(output,(1-cond0) + np.isnan(k),self.badvalue)
         place(output,cond2*(cond0==cond0), 1.0)
 
         if any(cond):
@@ -5937,7 +5937,7 @@ class rv_discrete(rv_generic):
         cond = cond0 & cond1
         output = empty(shape(cond),'d')
         output.fill(NINF)
-        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
+        place(output,(1-cond0) + np.isnan(k),self.badvalue)
         place(output,cond2*(cond0==cond0), 0.0)
 
         if any(cond):
@@ -5977,7 +5977,7 @@ class rv_discrete(rv_generic):
         cond2 = (k < self.a) & cond0
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
-        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
+        place(output,(1-cond0) + np.isnan(k),self.badvalue)
         place(output,cond2,1.0)
         if any(cond):
             goodargs = argsreduce(cond, *((k,)+args))
@@ -6017,7 +6017,7 @@ class rv_discrete(rv_generic):
         cond = cond0 & cond1
         output = empty(shape(cond),'d')
         output.fill(NINF)
-        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
+        place(output,(1-cond0) + np.isnan(k),self.badvalue)
         place(output,cond2,0.0)
         if any(cond):
             goodargs = argsreduce(cond, *((k,)+args))

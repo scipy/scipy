@@ -391,13 +391,15 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
         a v[:,i] = w[i] v[:,i]
         v.H v    = identity
 
-    The matrix a is stored in ab either in lower diagonal or upper
+    The matrix a is stored in a_band either in lower diagonal or upper
     diagonal ordered form:
 
-        ab[u + i - j, j] == a[i,j]        (if upper form; i <= j)
-        ab[    i - j, j] == a[i,j]        (if lower form; i >= j)
+        a_band[u + i - j, j] == a[i,j]        (if upper form; i <= j)
+        a_band[    i - j, j] == a[i,j]        (if lower form; i >= j)
 
-    Example of ab (shape of a is (6,6), u=2)::
+    where u is the number of bands above the diagonal.
+
+    Example of a_band (shape of a is (6,6), u=2)::
 
         upper form:
         *   *   a02 a13 a24 a35
@@ -413,8 +415,8 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
 
     Parameters
     ----------
-    a_band : array, shape (M, u+1)
-        Banded matrix whose eigenvalues to calculate
+    a_band : array, shape (u+1, M)
+        The bands of the M by M matrix a.
     lower : boolean
         Is the matrix in the lower form. (Default is upper form)
     eigvals_only : boolean
@@ -638,13 +640,15 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
         a v[:,i] = w[i] v[:,i]
         v.H v    = identity
 
-    The matrix a is stored in ab either in lower diagonal or upper
+    The matrix a is stored in a_band either in lower diagonal or upper
     diagonal ordered form:
 
-        ab[u + i - j, j] == a[i,j]        (if upper form; i <= j)
-        ab[    i - j, j] == a[i,j]        (if lower form; i >= j)
+        a_band[u + i - j, j] == a[i,j]        (if upper form; i <= j)
+        a_band[    i - j, j] == a[i,j]        (if lower form; i >= j)
 
-    Example of ab (shape of a is (6,6), u=2)::
+    where u is the number of bands above the diagonal.
+
+    Example of a_band (shape of a is (6,6), u=2)::
 
         upper form:
         *   *   a02 a13 a24 a35
@@ -660,8 +664,8 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
 
     Parameters
     ----------
-    a_band : array, shape (M, u+1)
-        Banded matrix whose eigenvalues to calculate
+    a_band : array, shape (u+1, M)
+        The bands of the M by M matrix a.
     lower : boolean
         Is the matrix in the lower form. (Default is upper form)
     overwrite_a_band:
