@@ -57,13 +57,13 @@ def c_template(self, node):
         if "fc" in self.features:
             self.source.append(output)
         else:
-            raise ValueError("FTemplateTask without feature 'fc' ?")
+            raise ValueError("FTemplateTask without feature 'fc': %r" % node)
     elif ext in ["c"]:
         tsk = self.create_task('CTemplateTask', node, output)
         if "c" in self.features:
             self.source.append(output)
         else:
-            raise ValueError("FTemplateTask without feature 'c' ?")
+            raise ValueError("CTemplateTask without feature 'c': %r" % node)
     else:
         raise ValueError("Unknown extension in templating: %r" % ext)
 
