@@ -101,7 +101,7 @@ static npy_intp
 NI_ObjectToLongSequenceAndLength(PyObject *object, npy_intp **sequence)
 {
     npy_intp *pa, ii;
-    PyArrayObject *array = NA_InputArray(object, PyArray_INTP, NPY_CARRAY);
+    PyArrayObject *array = NA_InputArray(object, NPY_INTP, NPY_CARRAY);
     npy_intp length = PyArray_SIZE(array);
 
     *sequence = (npy_intp*)malloc(length * sizeof(npy_intp));
@@ -306,8 +306,8 @@ static int Py_Filter1DFunc(double *iline, npy_intp ilen,
     double *po = NULL;
     NI_PythonCallbackData *cbdata = (NI_PythonCallbackData*)data;
 
-    py_ibuffer = NA_NewArray(iline, PyArray_DOUBLE, 1, &ilen);
-    py_obuffer = NA_NewArray(NULL, PyArray_DOUBLE, 1, &olen);
+    py_ibuffer = NA_NewArray(iline, NPY_DOUBLE, 1, &ilen);
+    py_obuffer = NA_NewArray(NULL, NPY_DOUBLE, 1, &olen);
     if (!py_ibuffer || !py_obuffer)
         goto exit;
     tmp = Py_BuildValue("(OO)", py_ibuffer, py_obuffer);
@@ -394,7 +394,7 @@ static int Py_FilterFunc(double *buffer, npy_intp filter_size,
     PyObject *rv = NULL, *args = NULL, *tmp = NULL;
     NI_PythonCallbackData *cbdata = (NI_PythonCallbackData*)data;
 
-    py_buffer = NA_NewArray(buffer, PyArray_DOUBLE, 1, &filter_size);
+    py_buffer = NA_NewArray(buffer, NPY_DOUBLE, 1, &filter_size);
     if (!py_buffer)
         goto exit;
     tmp = Py_BuildValue("(O)", py_buffer);

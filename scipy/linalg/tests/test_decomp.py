@@ -808,6 +808,15 @@ class TestSVD(TestCase):
                     for i in range(len(s)): sigma[i,i] = s[i]
                     assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
+    def test_crash_1580(self):
+        sizes = [(13, 23), (30, 50), (60, 100)]
+        np.random.seed(1234)
+        for sz in sizes:
+            for dt in [np.float32, np.float64, np.complex64, np.complex128]:
+                a = np.random.rand(*sz).astype(dt)
+                # should not crash
+                svd(a)
+
 class TestSVDVals(TestCase):
 
     def test_simple(self):

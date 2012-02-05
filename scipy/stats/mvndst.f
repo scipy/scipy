@@ -1063,7 +1063,7 @@
             BVN = -BVN/TWOPI
          ENDIF
          IF ( R .GT. 0 ) BVN =  BVN + MVNPHI( -MAX( H, K ) )
-         IF ( R .LT. 0 ) BVN = -BVN + MAX( ZERO, MVNPHI(-H)-MVNPHI(-K) )     
+         IF ( R .LT. 0 ) BVN = -BVN + MAX( ZERO, MVNPHI(-H)-MVNPHI(-K) )
       ENDIF
       BVU = BVN
       END
@@ -1089,8 +1089,8 @@
       PARAMETER ( INVMP1 = 4.656612873077392578125D-10 ) 
 *                 INVMP1 = 1/(M1+1)
       SAVE X10, X11, X12, X20, X21, X22
-      DATA       X10,      X11,      X12,      X20,      X21,      X22  
-     &    / 15485857, 17329489, 36312197, 55911127, 75906931, 96210113 /      
+      DATA       X10,      X11,      X12,      X20,      X21,      X22
+     &    / 15485857, 17329489, 36312197, 55911127, 75906931, 96210113 /
 *
 *     Component 1
 *

@@ -116,6 +116,11 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     ----------
     x : array_like
         A list of sample vector arrays representing the curve.
+    w : array_like
+        Strictly positive rank-1 array of weights the same length as x[0].
+        The weights are used in computing the weighted least-squares spline
+        fit. If the errors in the x values have standard-deviation given by the
+        vector d, then w should be 1/d. Default is ones(len(x[0])).
     u : array_like, optional
         An array of parameter values. If not given, these values are
         calculated automatically as ``M = len(x[0])``:

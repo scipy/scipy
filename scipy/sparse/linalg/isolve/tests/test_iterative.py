@@ -5,7 +5,7 @@
 import numpy as np
 
 from numpy.testing import TestCase, assert_equal, assert_array_equal, \
-     assert_, assert_allclose
+     assert_, assert_allclose, assert_raises
 
 from numpy import zeros, ones, arange, array, abs, max
 from numpy.linalg import cond
@@ -207,6 +207,29 @@ def test_gmres_basic():
     x_gm, err = gmres(A, b, restart=5, maxiter=1)
 
     assert_allclose(x_gm[0], 0.359, rtol=1e-2)
+
+def test_reentrancy():
+    non_reentrant = [cg, cgs, bicg, bicgstab, gmres, qmr]
+    reentrant = [lgmres, minres]
+    for solver in reentrant + non_reentrant:
+        yield _check_reentrancy, solver, solver in reentrant
+
+def _check_reentrancy(solver, is_reentrant):
+    def matvec(x):
+        A = np.array([[1.0, 0, 0], [0, 2.0, 0], [0, 0, 3.0]])
+        y, info = solver(A, x)
+        assert_equal(info, 0)
+        return y
+    b = np.array([1, 1./2, 1./3])
+    op = LinearOperator((3, 3), matvec=matvec, rmatvec=matvec,
+                        dtype=b.dtype)
+
+    if not is_reentrant:
+        assert_raises(RuntimeError, solver, op, b)
+    else:
+        y, info = solver(op, b)
+        assert_equal(info, 0)
+        assert_allclose(y, [1, 1, 1])
 
 
 #------------------------------------------------------------------------------

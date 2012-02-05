@@ -73,8 +73,8 @@ static PyObject *cspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
   if (!PyArg_ParseTuple(args, "O|dd", &image, &lambda, &precision)) return NULL;
 
-  thetype = PyArray_ObjectType(image, PyArray_FLOAT);
-  thetype = NPY_MIN(thetype, PyArray_DOUBLE);
+  thetype = PyArray_ObjectType(image, NPY_FLOAT);
+  thetype = PyArray_MIN(thetype, NPY_DOUBLE);
   a_image = (PyArrayObject *)PyArray_FromObject(image, thetype, 2, 2);
   if (a_image == NULL) goto fail;
  
@@ -87,11 +87,11 @@ static PyObject *cspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
   outstrides[0] = N;
   outstrides[1] = 1;
 
-  if (thetype == PyArray_FLOAT) {
+  if (thetype == NPY_FLOAT) {
     if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-3;
     retval = S_cubic_spline2D((float *)DATA(a_image), (float *)DATA(ck), M, N, lambda, instrides, outstrides, precision);
   }
-  else if (thetype == PyArray_DOUBLE) {
+  else if (thetype == NPY_DOUBLE) {
     if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;
     retval = D_cubic_spline2D((double *)DATA(a_image), (double *)DATA(ck), M, N, lambda, instrides, outstrides, precision);
   }
@@ -132,8 +132,8 @@ static PyObject *qspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
   if (lambda != 0.0) PYERR("Smoothing spline not yet implemented.");
 
-  thetype = PyArray_ObjectType(image, PyArray_FLOAT);
-  thetype = NPY_MIN(thetype, PyArray_DOUBLE);
+  thetype = PyArray_ObjectType(image, NPY_FLOAT);
+  thetype = PyArray_MIN(thetype, NPY_DOUBLE);
   a_image = (PyArrayObject *)PyArray_FromObject(image, thetype, 2, 2);
   if (a_image == NULL) goto fail;
  
@@ -146,11 +146,11 @@ static PyObject *qspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
   outstrides[0] = N;
   outstrides[1] = 1;
 
-  if (thetype == PyArray_FLOAT) {
+  if (thetype == NPY_FLOAT) {
     if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-3;
     retval = S_quadratic_spline2D((float *)DATA(a_image), (float *)DATA(ck), M, N, lambda, instrides, outstrides, precision);
   }
-  else if (thetype == PyArray_DOUBLE) {
+  else if (thetype == NPY_DOUBLE) {
     if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;
     retval = D_quadratic_spline2D((double *)DATA(a_image), (double *)DATA(ck), M, N, lambda, instrides, outstrides, precision);
   }
@@ -186,8 +186,8 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
   if (!PyArg_ParseTuple(args, "OOO", &image, &hrow, &hcol)) return NULL;
 
-  thetype = PyArray_ObjectType(image, PyArray_FLOAT);
-  thetype = NPY_MIN(thetype, PyArray_CDOUBLE);
+  thetype = PyArray_ObjectType(image, NPY_FLOAT);
+  thetype = PyArray_MIN(thetype, NPY_CDOUBLE);
   a_image = (PyArrayObject *)PyArray_FromObject(image, thetype, 2, 2);
   a_hrow = (PyArrayObject *)PyArray_ContiguousFromObject(hrow, thetype, 1, 1);
   a_hcol = (PyArrayObject *)PyArray_ContiguousFromObject(hcol, thetype, 1, 1);
@@ -204,7 +204,7 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
   outstrides[1] = 1;
 
   switch (thetype) {
-  case PyArray_FLOAT:
+  case NPY_FLOAT:
     ret = S_separable_2Dconvolve_mirror((float *)DATA(a_image), 
 					(float *)DATA(out), M, N,
 					(float *)DATA(a_hrow), 
@@ -212,7 +212,7 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 					DIMS(a_hrow)[0], DIMS(a_hcol)[0], 
 					instrides, outstrides);
     break;
-  case PyArray_DOUBLE:
+  case NPY_DOUBLE:
     ret = D_separable_2Dconvolve_mirror((double *)DATA(a_image), 
 					(double *)DATA(out), M, N, 
 					(double *)DATA(a_hrow), 
@@ -221,7 +221,7 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 					instrides, outstrides);
     break;
 #ifdef __GNUC__
-  case PyArray_CFLOAT:
+  case NPY_CFLOAT:
     ret = C_separable_2Dconvolve_mirror((__complex__ float *)DATA(a_image), 
 					(__complex__ float *)DATA(out), M, N, 
 					(__complex__ float *)DATA(a_hrow), 
@@ -229,7 +229,7 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 					DIMS(a_hrow)[0], DIMS(a_hcol)[0], 
 					instrides, outstrides);
     break;
-  case PyArray_CDOUBLE:
+  case NPY_CDOUBLE:
     ret = Z_separable_2Dconvolve_mirror((__complex__ double *)DATA(a_image), 
 					(__complex__ double *)DATA(out), M, N, 
 					(__complex__ double *)DATA(a_hrow), 
@@ -296,8 +296,8 @@ static PyObject *IIRsymorder1(PyObject *NPY_UNUSED(dummy), PyObject *args)
   if (!PyArg_ParseTuple(args, "ODD|d", &sig, &c0, &z1, &precision))
     return NULL;
 
-  thetype = PyArray_ObjectType(sig, PyArray_FLOAT);
-  thetype = NPY_MIN(thetype, PyArray_CDOUBLE);
+  thetype = PyArray_ObjectType(sig, NPY_FLOAT);
+  thetype = PyArray_MIN(thetype, NPY_CDOUBLE);
   a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 1);
   
   if ((a_sig == NULL)) goto fail;
@@ -310,7 +310,7 @@ static PyObject *IIRsymorder1(PyObject *NPY_UNUSED(dummy), PyObject *args)
   outstrides = 1;
 
   switch (thetype) {
-  case PyArray_FLOAT:
+  case NPY_FLOAT:
     {
       float rc0 = c0.real;
       float rz1 = z1.real;
@@ -321,7 +321,7 @@ static PyObject *IIRsymorder1(PyObject *NPY_UNUSED(dummy), PyObject *args)
 			    instrides, outstrides, (float )precision);
     }
     break;
-  case PyArray_DOUBLE:
+  case NPY_DOUBLE:
     {
       double rc0 = c0.real;
       double rz1 = z1.real;
@@ -333,7 +333,7 @@ static PyObject *IIRsymorder1(PyObject *NPY_UNUSED(dummy), PyObject *args)
     }
     break;
 #ifdef __GNUC__
-  case PyArray_CFLOAT:
+  case NPY_CFLOAT:
     {
       __complex__ float zc0 = c0.real + 1.0i*c0.imag;
       __complex__ float zz1 = z1.real + 1.0i*z1.imag;      
@@ -343,7 +343,7 @@ static PyObject *IIRsymorder1(PyObject *NPY_UNUSED(dummy), PyObject *args)
 			    instrides, outstrides, (float )precision);
     }
     break;
-  case PyArray_CDOUBLE:
+  case NPY_CDOUBLE:
     {
       __complex__ double zc0 = c0.real + 1.0i*c0.imag;
       __complex__ double zz1 = z1.real + 1.0i*z1.imag;      
@@ -416,8 +416,8 @@ static PyObject *IIRsymorder2(PyObject *NPY_UNUSED(dummy), PyObject *args)
   if (!PyArg_ParseTuple(args, "Odd|d", &sig, &r, &omega, &precision))
     return NULL;
 
-  thetype = PyArray_ObjectType(sig, PyArray_FLOAT);
-  thetype = NPY_MIN(thetype, PyArray_DOUBLE);
+  thetype = PyArray_ObjectType(sig, NPY_FLOAT);
+  thetype = PyArray_MIN(thetype, NPY_DOUBLE);
   a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 1);
   
   if ((a_sig == NULL)) goto fail;
@@ -430,13 +430,13 @@ static PyObject *IIRsymorder2(PyObject *NPY_UNUSED(dummy), PyObject *args)
   outstrides = 1;
 
   switch (thetype) {
-  case PyArray_FLOAT:
+  case NPY_FLOAT:
     if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;      
     ret = S_IIR_forback2 (r, omega, (float *)DATA(a_sig), 
 			  (float *)DATA(out), N,
 			  instrides, outstrides, precision);
     break;
-  case PyArray_DOUBLE:
+  case NPY_DOUBLE:
     if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-11;
     ret = D_IIR_forback2 (r, omega, (double *)DATA(a_sig), 
 			  (double *)DATA(out), N,
