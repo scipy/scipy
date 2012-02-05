@@ -13,7 +13,6 @@ Test status (as of 2010-09-10)
 * io OK
 * lib OK
 * linalg OK
-* maxentropy OK
 * misc OK
 * ndimage OK
 * odr OK

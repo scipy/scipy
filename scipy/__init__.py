@@ -30,8 +30,6 @@ Subpackages
  lib                          --- Python wrappers to external libraries
                                   [*]
  lib.lapack                   --- Wrappers to LAPACK library [*]
- maxentropy                   --- Routines for fitting maximum entropy
-                                  models [*]
  integrate                    --- Integration routines [*]
  ndimage                      --- n-dimensional image package [*]
  linalg                       --- Linear algebra routines [*]

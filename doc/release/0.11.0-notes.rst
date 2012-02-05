@@ -57,6 +57,13 @@ Deprecated features
 
 Backwards incompatible changes
 ==============================
+
+Removal of ``scipy.maxentropy``
+-------------------------------
+
+The ``scipy.maxentropy`` module, which was deprecated in the 0.10.0 release,
+has been removed.  Logistic regression in scikits.learn is a good and modern
+alternative for this functionality.  
  
 
 Other changes
