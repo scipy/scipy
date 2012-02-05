@@ -21,4 +21,13 @@ The most important changes are::
 Other issues fixed
 ------------------
 
+- #835: stats: nan propagation in stats.distributions
+- #1202: io: netcdf segfault
+- #1531: optimize: make curve_fit work with method as callable.
+- #1560: linalg: fixed mistake in eig_banded documentation.
+- #1565: ndimage: bug in ndimage.variance
+- #1457: ndimage: standard_deviation does not work with sequence of indexes
+- #1562: cluster: segfault in linkage function
+- #1568: stats: One-sided fisher_exact() returns `p` < 1 for 0 successful attempts
+- #1575: stats: zscore and zmap handle the axis keyword incorrectly
 
