@@ -13,17 +13,14 @@ optimization algorithms. A detailed listing is available:
 
 The module contains:
 
-1. Unconstrained and constrained minimization and least-squares algorithms
-   (e.g., :func:`fmin`: Nelder-Mead simplex, :func:`fmin_bfgs`:
-   BFGS, :func:`fmin_ncg`: Newton Conjugate Gradient,
-   :func:`leastsq`: Levenberg-Marquardt, :func:`fmin_cobyla`: COBYLA).
-
-   The unconstrained solvers also have a unified interface, :func:`minimize`,
-   which can be used to easily compare and switch between algorithms.
+1. Unconstrained and constrained minimization of multivariate scalar
+   functions (:func:`minimize`) using a variety of algorithms (e.g. BFGS,
+   Nelder-Mead simplex, Newton Conjugate Gradient, COBYLA or SLSQP)
 
 2. Global (brute-force) optimization routines  (e.g., :func:`anneal`)
 
-3. Curve fitting (:func:`curve_fit`)
+3. Least-squares minimization (:func:`leastsq`) and curve fitting
+   (:func:`curve_fit`) algorithms
 
 4. Scalar function minimizers and root finders (e.g., Brent's method
    :func:`fminbound`, and :func:`newton`)
