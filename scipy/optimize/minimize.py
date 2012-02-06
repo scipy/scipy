@@ -3,7 +3,7 @@ Unified interfaces to minimization algorithms.
 
 Functions
 ---------
-- minimize : unconstrained minimization of a function of several variables.
+- minimize : minimization of a function of several variables.
 """
 
 
@@ -17,8 +17,14 @@ from optimize import _minimize_neldermead, _minimize_powell, \
         _minimize_cg, _minimize_bfgs, _minimize_newtoncg
 from anneal import _minimize_anneal
 
+# contrained minimization
+from lbfgsb import _minimize_lbfgsb
+from tnc import _minimize_tnc
+from cobyla import _minimize_cobyla
+from slsqp import _minimize_slsqp
 
-def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
+def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
+             bounds=None, constraints=(),
              options=dict(), full_output=False, callback=None,
              retall=False):
     """
@@ -35,7 +41,8 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
         derivatives (Jacobian, Hessian).
     method : str, optional
         Type of solver.  Should be one of:
-            {'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'Anneal'}.
+            {'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'Anneal',
+             'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP'}.
     jac : callable, optional
         Jacobian of objective function (if None, Jacobian will be
         estimated numerically). Only for CG, BFGS, Newton-CG.
@@ -46,6 +53,25 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
         it accepts an extra argument `p` as `hess(x, p, *args)`.
         If `hess` is None, the Hessian will be approximated using finite
         differences on `jac`.
+    bounds : sequence, optional
+        Bounds for variables (only for L-BFGS-B, TNC, COBYLA and SLSQP).
+        ``(min, max)`` pairs for each element in ``x``, defining
+        the bounds on that parameter. Use None for one of ``min`` or
+        ``max`` when there is no bound in that direction.
+    constraints : dict or sequence of dict, optional
+        Constraints definition (only for COBYLA and SLSQP).
+        Each constraint is defined in a dictionary with fields:
+            type: str
+                Constraint type: 'eq' for equality, 'ineq' for inequality.
+            fun: callable
+                The function defining the constraint.
+            jac: callable, optional
+                The Jacobian of `fun` (only for SLSQP).
+            args: sequence, optional
+                Extra arguments to be passed to the function and Jacobian.
+        Equality constraint means that the constraint function result is to
+        be zero whereas inequality means that it is to be non-negative.
+        Note that COBYLA only supports inequality constraints.
     options : dict, optional
         A dictionary of solver options. All methods accept the following
         generic options:
@@ -101,8 +127,10 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
     Notes
     -----
     This section describes the available solvers that can be selected by the
-    'method' parameter.
+    'method' parameter. The default method is *BFGS*.
 
+    Unconstrained minimization
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~
     Method *Nelder-Mead* uses the Simplex algorithm [1]_, [2]_. This
     algorithm has been successful in many applications but other algorithms
     using the first and/or second derivatives information might be preferred
@@ -126,12 +154,34 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
 
     Method *Newton-CG* uses a Newton-CG algorithm [5]_ pp. 168 (also known
     as the truncated Newton method). It uses a CG method to the compute the
-    search direction. See also `fmin_tnc` for a box-constrained
+    search direction. See also *TNC* method for a box-constrained
     minimization with a similar algorithm.
 
     Method *Anneal* uses simulated annealing, which is a probabilistic
     metaheuristic algorithm for global optimization. It uses no derivative
     information from the function being optimized.
+
+    Constrained minimization
+    ~~~~~~~~~~~~~~~~~~~~~~~~
+    Method *L-BFGS-B* uses the L-BFGS-B algorithm [6]_, [7]_ for bound
+    constrained minimization.
+
+    Method *TNC* uses a truncated Newton algorithm [5]_, [8]_ to minimize a
+    function with variables subject to bounds. This algorithm is uses
+    gradient information; it is also called Newton Conjugate-Gradient. It
+    differs from the *Newton-CG* method described above as it wraps a C
+    implementation and allows each variable to be given upper and lower
+    bounds.
+
+    Method *COBYLA* uses the Constrained Optimization BY Linear
+    Approximation (COBYLA) method [9]_, [10]_, [11]_. The algorithm is
+    based on linear approximations to the objective function and each
+    constraint. The method wraps a FORTRAN implementation of the algorithm.
+
+    Method *SLSQP* uses Sequential Least SQuares Programming to minimize a
+    function of several variables with any combination of bounds, equality
+    and inequality constraints. The method wraps the SLSQP Optimization
+    subroutine originally implemented by Dieter Kraft [12]_.
 
     References
     ----------
@@ -149,6 +199,27 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
        Numerical Recipes (any edition), Cambridge University Press.
     .. [5] Nocedal, J, and S J Wright. 2006. Numerical Optimization.
        Springer New York.
+    .. [6] Byrd, R H and P Lu and J. Nocedal. 1995. A Limited Memory
+       Algorithm for Bound Constrained Optimization. SIAM Journal on
+       Scientific and Statistical Computing 16 (5): 1190-1208.
+    .. [7] Zhu, C and R H Byrd and J Nocedal. 1997. L-BFGS-B: Algorithm
+       778: L-BFGS-B, FORTRAN routines for large scale bound constrained
+       optimization. ACM Transactions on Mathematical Software 23 (4):
+       550-560.
+    .. [8] Nash, S G. Newton-Type Minimization Via the Lanczos Method.
+       1984. SIAM Journal of Numerical Analysis 21: 770-778.
+    .. [9] Powell, M J D. A direct search optimization method that models
+       the objective and constraint functions by linear interpolation.
+       1994. Advances in Optimization and Numerical Analysis, eds. S. Gomez
+       and J-P Hennart, Kluwer Academic (Dordrecht), 51-67.
+    .. [10] Powell M J D. Direct search algorithms for optimization
+       calculations. 1998. Acta Numerica 7: 287-336.
+    .. [11] Powell M J D. A view of algorithms for optimization without
+       derivatives. 2007.Cambridge University Technical Report DAMTP
+       2007/NA03
+    .. [12] Kraft, D. A software package for sequential quadratic
+       programming. 1988. Tech. Rep. DFVLR-FB 88-28, DLR German Aerospace
+       Center -- Institute for Flight Mechanics, Koln, Germany.
 
     Examples
     --------
@@ -187,36 +258,97 @@ def minimize(fun, x0, args=(), method='Nelder-Mead', jac=None, hess=None,
      [ 0.04750988  0.09502834  0.19092151  0.38341252  0.7664427 ]
      [ 0.09495377  0.18996269  0.38165151  0.7664427   1.53713523]]
 
+
+    Next, consider a minimization problem with several constraints (namely
+    Example 16.4 from [5]_). The objective function is:
+
+    >>> fun = lambda x: (x[0] - 1)**2 + (x[1] - 2.5)**2
+
+    There are three constraints defined as:
+
+    >>> cons = ({'type': 'ineq', 'fun': lambda x:  x[0] - 2 * x[1] + 2},
+    ...         {'type': 'ineq', 'fun': lambda x: -x[0] - 2 * x[1] + 6},
+    ...         {'type': 'ineq', 'fun': lambda x: -x[0] + 2 * x[1] + 2})
+
+    And variables must be positive, hence the following bounds:
+
+    >>> bnds = ((0, None), (0, None))
+
+    The optimization problem is solved using the SLSQP method as:
+
+    >>> xopt, info = minimize(fun, (2, 0), method='SLSQP', bounds=bnds,
+    ...                       constraints=cons, full_output=True)
+
+    It should converge to the theoretical solution (1.4 ,1.7).
     """
-    if method.lower() == 'nelder-mead':
+    meth = method.lower()
+    # check if optional parameters are supported by the selected method
+    # - jac
+    if meth in ['nelder-mead', 'powell', 'anneal', 'cobyla'] and \
+       jac is not None:
+        warn('Method %s does not use gradient information (jac).' % method,
+             RuntimeWarning)
+    # - hess
+    if meth != 'newton-cg' and hess is not None:
+        warn('Method %s does not use Hessian information (hess).' % method,
+             RuntimeWarning)
+    # - constraints or bounds
+    if meth in ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg'] and \
+        (bounds is not None or any(constraints)):
+        warn('Method %s cannot handle constraints nor bounds.' % method,
+             RuntimeWarning)
+    if meth in ['l-bfgs-b', 'tnc'] and any(constraints):
+        warn('Method %s cannot handle constraints.' % method,
+             RuntimeWarning)
+    if meth is 'cobyla' and bounds is not None:
+        warn('Method %s cannot handle bounds.' % method,
+             RuntimeWarning)
+    # - callback
+    if meth in ['anneal', 'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'] and \
+       callback is not None:
+        warn('Method %s does not support callback.' % method,
+             RuntimeWarning)
+    # - retall
+    if meth in ['anneal', 'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'] and \
+       retall:
+        warn('Method %s does not support retall.' % method,
+             RuntimeWarning)
+
+    if meth == 'nelder-mead':
         return _minimize_neldermead(fun, x0, args, options, full_output,
                                     retall, callback)
-    elif method.lower() == 'powell':
+    elif meth == 'powell':
         return _minimize_powell(fun, x0, args, options, full_output,
                                 retall, callback)
-    elif method.lower() == 'cg':
+    elif meth == 'cg':
         return _minimize_cg(fun, x0, args, jac, options, full_output,
                             retall, callback)
-    elif method.lower() == 'bfgs':
+    elif meth == 'bfgs':
         return _minimize_bfgs(fun, x0, args, jac, options, full_output,
                               retall, callback)
-    elif method.lower() == 'newton-cg':
+    elif meth == 'newton-cg':
         return _minimize_newtoncg(fun, x0, args, jac, hess, options,
                                   full_output, retall, callback)
-    elif method.lower() == 'anneal':
-        if callback:
-            warn("Method 'Anneal' does not support callback.",
-                 RuntimeWarning)
-        if retall:
-            warn("Method 'Anneal' does not support retall option.",
-                 RuntimeWarning)
+    elif meth == 'anneal':
         return _minimize_anneal(fun, x0, args, options, full_output)
+    elif meth == 'l-bfgs-b':
+        return _minimize_lbfgsb(fun, x0, args, jac, bounds, options,
+                                full_output)
+    elif meth == 'tnc':
+        return _minimize_tnc(fun, x0, args, jac, bounds, options,
+                             full_output)
+    elif meth == 'cobyla':
+        return _minimize_cobyla(fun, x0, args, constraints, options,
+                                full_output)
+    elif meth == 'slsqp':
+        return _minimize_slsqp(fun, x0, args, jac, bounds,
+                               constraints, options, full_output)
     else:
         raise ValueError('Unknown solver %s' % method)
 
 
 def show_minimize_options(method=None):
-    """Show documentation for additional options of unconstrained minimisers.
+    """Show documentation for additional options of minimize's methods.
 
     These are method-specific options that can be supplied to `minimize` in the
     ``options`` dict.
@@ -226,7 +358,8 @@ def show_minimize_options(method=None):
     method : str, optional
         If not given, shows all methods.  Otherwise, show only the options for
         the specified method.  Valid values are: 'BFGS', 'Newton-CG',
-        'Nelder-Mead', 'Powell', 'CG', 'Anneal'.
+        'Nelder-Mead', 'Powell', 'CG', 'Anneal', 'L-BFGS-B', 'TNC',
+        'COBYLA', 'SLSQP'.
 
     Notes
     -----
@@ -300,6 +433,87 @@ def show_minimize_options(method=None):
         dwell : int
             The number of times to search the space at each temperature.
 
+    * L-BFGS-B options:
+        maxcor : int
+            The maximum number of variable metric corrections used to
+            define the limited memory matrix. (The limited memory BFGS
+            method does not store the full hessian but uses this many terms
+            in an approximation to it.)
+        factr : float
+            The iteration stops when ``(f^k -
+            f^{k+1})/max{|f^k|,|f^{k+1}|,1} <= factr * eps``, where ``eps``
+            is the machine precision, which is automatically generated by
+            the code. Typical values for `factr` are: 1e12 for low
+            accuracy; 1e7 for moderate accuracy; 10.0 for extremely high
+            accuracy.
+        pgtol : float
+            The iteration will stop when ``max{|proj g_i | i = 1, ..., n}
+            <= pgtol`` where ``pg_i`` is the i-th component of the
+            projected gradient.
+        maxfev : int
+            Maximum number of function evaluations.
+
+    * TNC options:
+        scale : list of floats
+            Scaling factors to apply to each variable.  If None, the
+            factors are up-low for interval bounded variables and
+            1+|x] fo the others.  Defaults to None
+        offset : float
+            Value to substract from each variable.  If None, the
+            offsets are (up+low)/2 for interval bounded variables
+            and x for the others.
+        maxCGit : int
+            Maximum number of hessian*vector evaluations per main
+            iteration.  If maxCGit == 0, the direction chosen is
+            -gradient if maxCGit < 0, maxCGit is set to
+            max(1,min(50,n/2)).  Defaults to -1.
+        maxfev : int
+            Maximum number of function evaluation.  if None, `maxfev` is
+            set to max(100, 10*len(x0)).  Defaults to None.
+        eta : float
+            Severity of the line search. if < 0 or > 1, set to 0.25.
+            Defaults to -1.
+        stepmx : float
+            Maximum step for the line search.  May be increased during
+            call.  If too small, it will be set to 10.0.  Defaults to 0.
+        accuracy : float
+            Relative precision for finite difference calculations.  If
+            <= machine_precision, set to sqrt(machine_precision).
+            Defaults to 0.
+        minfev : float
+            Minimum function value estimate.  Defaults to 0.
+        ftol : float
+            Precision goal for the value of f in the stoping criterion.
+            If ftol < 0.0, ftol is set to 0.0 defaults to -1.
+        xtol : float
+            Precision goal for the value of x in the stopping
+            criterion (after applying x scaling factors).  If xtol <
+            0.0, xtol is set to sqrt(machine_precision).  Defaults to
+            -1.
+        pgtol : float
+            Precision goal for the value of the projected gradient in
+            the stopping criterion (after applying x scaling factors).
+            If pgtol < 0.0, pgtol is set to 1e-2 * sqrt(accuracy).
+            Setting it to 0.0 is not recommended.  Defaults to -1.
+        rescale : float
+            Scaling factor (in log10) used to trigger f value
+            rescaling.  If 0, rescale at each iteration.  If a large
+            value, never rescale.  If < 0, rescale is set to 1.3.
+
+    * COBYLA options:
+        rhobeg : float
+            Reasonable initial changes to the variables.
+        rhoend : float
+            Final accuracy in the optimization (not precisely guaranteed).
+            This is a lower bound on the size of the trust region.
+        maxfev : int
+            Maximum number of function evaluations.
+
+    * SLSQP options:
+        eps : float
+            Step size used for numerical approximation of the jacobian.
+        maxiter : int
+            Maximum number of iterations.
     """
     if method is None:
         notes_header = "Notes\n    -----"
