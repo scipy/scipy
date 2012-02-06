@@ -13,4 +13,8 @@ def configuration(parent_package='', top_path=None):
          sources=['graph_shortest_path.c'],
          include_dirs=[numpy.get_include()])
 
+    config.add_extension('graph_traversal',
+         sources=['graph_traversal.c'],
+         include_dirs=[numpy.get_include()])
+
     return config
