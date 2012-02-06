@@ -363,7 +363,7 @@ def _minimize_anneal(func, x0, args=(), options={}, full_output=0):
     lower      = options.get('lower', -100)
     upper      = options.get('upper', 100)
     dwell      = options.get('dwell', 50)
-    disp       = options.get('disp', True)
+    disp       = options.get('disp', False)
 
 
     x0 = asarray(x0)
