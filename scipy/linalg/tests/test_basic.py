@@ -29,7 +29,7 @@ from numpy.testing import TestCase, rand, run_module_suite, assert_raises, \
     assert_allclose
 
 from scipy.linalg import solve, inv, det, lstsq, pinv, pinv2, norm,\
-        solve_banded, solveh_banded, solve_triangular
+        solve_banded, solveh_banded, solve_triangular, solve_sylvester
 
 from scipy.linalg._testutils import assert_no_overwrite
 
@@ -558,6 +558,31 @@ class TestPinv(TestCase):
         a_pinv2 = pinv2(a)
         assert_array_almost_equal(a_pinv,a_pinv2)
 
+class TestSolveSylvester(TestCase):
+
+    def test_simple(self):
+        a = np.array([[1, 2], [0, 4]])
+        b = np.array([[5, 6], [0, 8]])
+        c = np.array([[9, 10], [11, 12]])
+
+        x = solve_sylvester(a, b, c)
+        assert_array_almost_equal(np.dot(a, x) + np.dot(x, b), c)
+
+        # Test with a complex form, but effectively same matrices
+        ac = complex(0, 1)*a
+        bc = complex(0, 1)*b
+        cc = complex(0, 1)*c
+
+        x = solve_sylvester(a, b, c)
+        assert_array_almost_equal(np.dot(ac, x) + np.dot(x, bc), cc)
+
+    def test_nonsquare(self):
+        a = np.array([[8, 1, 6], [3, 5, 7], [4, 9, 2]])
+        b = np.array([[2, 3], [4, 5]])
+        c = np.array([[1, 2], [3, 4], [5, 6]])
+
+        x = solve_sylvester(a, b, c)
+        assert_array_almost_equal(np.dot(a, x) + np.dot(x, b), c)
 
 class TestNorm(object):
 
