@@ -347,6 +347,8 @@ class csr_matrix(_cs_matrix):
 
         def process_slice( sl, num ):
             if isinstance( sl, slice ):
+                if sl.step not in (1, None):
+                    raise ValueError('slicing with step != 1 not supported')
                 i0, i1 = sl.start, sl.stop
                 if i0 is None:
                     i0 = 0

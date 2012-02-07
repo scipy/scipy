@@ -975,11 +975,20 @@ class _TestArithmetic:
                 assert_equal(S1.dtype,D1.dtype)
 
 
+class _Test2DSlicingRegression:
+    def test_non_unit_stride_2d_indexing_raises_exception(self):
+        # Regression test -- used to silently ignore the stride.
+        try:
+            self.spmatrix((500, 500))[0:100:2, 0:100:2]
+        except ValueError:
+            return
+        assert False  # Should not happen.
+
 
 class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
         _TestInplaceArithmetic, _TestArithmetic,
         _TestHorizSlicing, _TestVertSlicing, _TestBothSlicing,
-        _TestFancyIndexing, TestCase):
+        _TestFancyIndexing, _Test2DSlicingRegression, TestCase):
     spmatrix = csr_matrix
 
     @dec.knownfailureif(True, "Fancy indexing is known to be broken for CSR" \
@@ -1092,7 +1101,7 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
 class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
         _TestInplaceArithmetic, _TestArithmetic,
         _TestHorizSlicing, _TestVertSlicing, _TestBothSlicing,
-        _TestFancyIndexing, TestCase):
+        _TestFancyIndexing, _Test2DSlicingRegression, TestCase):
     spmatrix = csc_matrix
 
     @dec.knownfailureif(True, "Fancy indexing is known to be broken for CSC" \
