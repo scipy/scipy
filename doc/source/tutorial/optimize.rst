@@ -269,6 +269,94 @@ Rosenbrock function using :func:`minimize` follows:
     [ 1.  1.  1.  1.  1.]
 
 
+.. _tutorial-sqlsp:
+
+Constrained minimization of multivariate scalar functions (:func:`minimize`)
+----------------------------------------------------------------------------
+
+The :func:`minimize` function also provides an interface to several
+constrained minimization algorithm. As an example, the Sequential Least
+SQuares Programming optimization algorithm (SLSQP) will be considered here.
+This algorithm allows to deal with constrained minimization problems of the
+form:
+
+.. math::
+   :nowrap:
+
+     \begin{eqnarray*} \min F(x) \\ \text{subject to } & C_j(X) =  0  ,  &j = 1,...,\text{MEQ}\\
+            & C_j(x) \geq 0  ,  &j = \text{MEQ}+1,...,M\\
+           &  XL  \leq x \leq XU , &I = 1,...,N. \end{eqnarray*}
+
+
+As an example, let us consider the problem of maximizing the function:
+
+.. math::
+    :nowrap:
+
+    \[ f(x, y) = 2 x y + 2 x - x^2 - 2 y^2 \]
+
+subject to an equality and an inequality constraints defined as:
+
+.. math::
+    :nowrap:
+
+    \[ x^3 - y = 0 \]
+    \[ x - 1 \geq 0 \]
+
+
+
+The objective function and its derivative are defined as follows.
+
+    >>> def func(x, sign=1.0):
+    ...     """ Objective function """
+    ...     return sign*(2*x[0]*x[1] + 2*x[0] - x[0]**2 - 2*x[1]**2)
+
+    >>> def func_deriv(x, sign=1.0):
+    ...     """ Derivative of objective function """
+    ...     dfdx0 = sign*(-2*x[0] + 2*x[1] + 2)
+    ...     dfdx1 = sign*(2*x[0] - 4*x[1])
+    ...     return np.array([ dfdx0, dfdx1 ])
+
+Note that since :func:`minimize` only minimizes functions, the ``sign``
+parameter is introduced to multiply the objective function (and its
+derivative by -1) in order to perform a maximization.
+
+Then constraints are defined as a sequence of dictionaries, with keys
+``type``, ``fun`` and ``jac``.
+
+    >>> cons = ({'type': 'eq',
+    ...          'fun' : lambda x: np.array([x[0]**3 - x[1]]),
+    ...          'jac' : lambda x: np.array([3.0*(x[0]**2.0), -1.0])},
+    ...         {'type': 'ineq',
+    ...          'fun' : lambda x: np.array([x[1] - 1]),
+    ...          'jac' : lambda x: np.array([0.0, 1.0])})
+
+
+Now an unconstrained optimization can be performed as:
+
+    >>> xopt = minimize(func, [-1.0,1.0], args=(-1.0,), jac=func_deriv,
+    ...                 method='SLSQP', options={'disp': True})
+    Optimization terminated successfully.    (Exit mode 0)
+                Current function value: -2.0
+                Iterations: 4
+                Function evaluations: 5
+                Gradient evaluations: 4
+    >>> print xopt
+    [ 2.  1.]
+
+and a constrained optimization as:
+
+    >>> xopt = minimize(func, [-1.0,1.0], args=(-1.0,), jac=func_deriv,
+                        constraints=cons, method='SLSQP', options={'disp': True})
+    Optimization terminated successfully.    (Exit mode 0)
+                Current function value: -1.00000018311
+                Iterations: 9
+                Function evaluations: 14
+                Gradient evaluations: 9
+    >>> print xopt
+    [ 1.00000009  1.        ]
+
+
 Least-square fitting (:func:`leastsq`)
 --------------------------------------
 
@@ -364,157 +452,6 @@ This is shown in the following example:
 
 ..   :caption: Least-square fitting to noisy data using
 ..             :obj:`scipy.optimize.leastsq`
-
-
-.. _tutorial-sqlsp:
-
-Sequential Least-square fitting with constraints (:func:`fmin_slsqp`)
----------------------------------------------------------------------
-
-This module implements the Sequential Least SQuares Programming optimization algorithm (SLSQP).
-
-.. math::
-   :nowrap:
-
-     \begin{eqnarray*} \min F(x) \\ \text{subject to } & C_j(X) =  0  ,  &j = 1,...,\text{MEQ}\\
-            & C_j(x) \geq 0  ,  &j = \text{MEQ}+1,...,M\\
-           &  XL  \leq x \leq XU , &I = 1,...,N. \end{eqnarray*}
-
-The following script shows examples for how constraints can be specified.
-
-::
-
-    """
-    This script tests fmin_slsqp using Example 14.4 from Numerical Methods for
-    Engineers by Steven Chapra and Raymond Canale.  This example maximizes the
-    function f(x) = 2*x0*x1 + 2*x0 - x0**2 - 2*x1**2, which has a maximum
-    at x0=2, x1=1.
-    """
-
-    from scipy.optimize import fmin_slsqp
-    from numpy import array
-
-    def testfunc(x, *args):
-        """
-        Parameters
-        ----------
-        d : list
-            A list of two elements, where d[0] represents x and
-            d[1] represents y in the following equation.
-        args : tuple
-            First element of args is a multiplier for f.
-            Since the objective function should be maximized, and the scipy
-            optimizers can only minimize functions, it is nessessary to
-            multiply the objective function by -1 to achieve the desired
-            solution.
-        Returns
-        -------
-        res : float
-            The result, equal to ``2*x*y + 2*x - x**2 - 2*y**2``.
-
-        """
-        try:
-            sign = args[0]
-        except:
-            sign = 1.0
-        return sign*(2*x[0]*x[1] + 2*x[0] - x[0]**2 - 2*x[1]**2)
-
-    def testfunc_deriv(x,*args):
-        """ This is the derivative of testfunc, returning a numpy array
-        representing df/dx and df/dy """
-        try:
-            sign = args[0]
-        except:
-            sign = 1.0
-        dfdx0 = sign*(-2*x[0] + 2*x[1] + 2)
-        dfdx1 = sign*(2*x[0] - 4*x[1])
-        return array([ dfdx0, dfdx1 ])
-
-    def test_eqcons(x,*args):
-        """ Lefthandside of the equality constraint """
-        return array([ x[0]**3-x[1] ])
-
-    def test_ieqcons(x,*args):
-        """ Lefthandside of inequality constraint """
-        return array([ x[1]-1 ])
-
-    def test_fprime_eqcons(x,*args):
-        """ First derivative of equality constraint """
-        return array([ 3.0*(x[0]**2.0), -1.0 ])
-
-    def test_fprime_ieqcons(x,*args):
-        """ First derivative of inequality constraint """
-        return array([ 0.0, 1.0 ])
-
-    from time import time
-
-    print "Unbounded optimization."
-    print "Derivatives of objective function approximated."
-    t0 = time()
-    result = fmin_slsqp(testfunc, [-1.0,1.0], args=(-1.0,), iprint=2, full_output=1)
-    print "Elapsed time:", 1000*(time()-t0), "ms"
-    print "Results", result, "\n\n"
-
-    print "Unbounded optimization."
-    print "Derivatives of objective function provided."
-    t0 = time()
-    result = fmin_slsqp(testfunc, [-1.0,1.0], fprime=testfunc_deriv, args=(-1.0,),
-                   iprint=2, full_output=1)
-    print "Elapsed time:", 1000*(time()-t0), "ms"
-    print "Results", result, "\n\n"
-
-    print "Bound optimization (equality constraints)."
-    print "Constraints implemented via lambda function."
-    print "Derivatives of objective function approximated."
-    print "Derivatives of constraints approximated."
-    t0 = time()
-    result = fmin_slsqp(testfunc, [-1.0,1.0], args=(-1.0,),
-                   eqcons=[lambda x, args: x[0]-x[1] ], iprint=2, full_output=1)
-    print "Elapsed time:", 1000*(time()-t0), "ms"
-    print "Results", result, "\n\n"
-
-    print "Bound optimization (equality constraints)."
-    print "Constraints implemented via lambda."
-    print "Derivatives of objective function provided."
-    print "Derivatives of constraints approximated."
-    t0 = time()
-    result = fmin_slsqp(testfunc, [-1.0,1.0], fprime=testfunc_deriv, args=(-1.0,),
-                   eqcons=[lambda x, args: x[0]-x[1] ], iprint=2, full_output=1)
-    print "Elapsed time:", 1000*(time()-t0), "ms"
-    print "Results", result, "\n\n"
-
-    print "Bound optimization (equality and inequality constraints)."
-    print "Constraints implemented via lambda."
-    print "Derivatives of objective function provided."
-    print "Derivatives of constraints approximated."
-    t0 = time()
-    result = fmin_slsqp(testfunc,[-1.0,1.0], fprime=testfunc_deriv, args=(-1.0,),
-                   eqcons=[lambda x, args: x[0]-x[1] ],
-                   ieqcons=[lambda x, args: x[0]-.5], iprint=2, full_output=1)
-    print "Elapsed time:", 1000*(time()-t0), "ms"
-    print "Results", result, "\n\n"
-
-    print "Bound optimization (equality and inequality constraints)."
-    print "Constraints implemented via function."
-    print "Derivatives of objective function provided."
-    print "Derivatives of constraints approximated."
-    t0 = time()
-    result = fmin_slsqp(testfunc, [-1.0,1.0], fprime=testfunc_deriv, args=(-1.0,),
-                   f_eqcons=test_eqcons, f_ieqcons=test_ieqcons,
-                   iprint=2, full_output=1)
-    print "Elapsed time:", 1000*(time()-t0), "ms"
-    print "Results", result, "\n\n"
-
-    print "Bound optimization (equality and inequality constraints)."
-    print "Constraints implemented via function."
-    print "All derivatives provided."
-    t0 = time()
-    result = fmin_slsqp(testfunc,[-1.0,1.0], fprime=testfunc_deriv, args=(-1.0,),
-                   f_eqcons=test_eqcons, fprime_eqcons=test_fprime_eqcons,
-                   f_ieqcons=test_ieqcons, fprime_ieqcons=test_fprime_ieqcons,
-                   iprint=2, full_output=1)
-    print "Elapsed time:", 1000*(time()-t0), "ms"
-    print "Results", result, "\n\n"
 
 
 Scalar function minimizers
