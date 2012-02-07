@@ -32,31 +32,39 @@ The module contains:
 Below, several examples demonstrate their basic usage.
 
 
-Nelder-Mead Simplex algorithm (:func:`fmin`)
---------------------------------------------
+Unconstrained minimization of multivariate scalar functions (:func:`minimize`)
+------------------------------------------------------------------------------
 
-The simplex algorithm is probably the simplest way to minimize a
-fairly well-behaved function. The simplex algorithm requires only
-function evaluations and is a good choice for simple minimization
-problems. However, because it does not use any gradient evaluations,
-it may take longer to find the minimum. To demonstrate the
-minimization function consider the problem of minimizing the
-Rosenbrock function of :math:`N` variables:
+The :func:`minimize` function provides a common interface to unconstrained
+and constrained minimization algorithms for multivariate scalar functions
+in `scipy.optimize`. To demonstrate the minimization function consider the
+problem of minimizing the Rosenbrock function of :math:`N` variables:
 
 .. math::
    :nowrap:
 
     \[ f\left(\mathbf{x}\right)=\sum_{i=1}^{N-1}100\left(x_{i}-x_{i-1}^{2}\right)^{2}+\left(1-x_{i-1}\right)^{2}.\]
 
-The minimum value of this function is 0 which is achieved when :math:`x_{i}=1.` This minimum can be found using the :obj:`fmin` routine as shown in the example below:
+The minimum value of this function is 0 which is achieved when
+:math:`x_{i}=1.`
 
-    >>> from scipy.optimize import fmin
+Nelder-Mead Simplex algorithm (``method='Nelder-Mead'``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In the example below, the :func:`minimize` routine is used
+with the *Nelder-Mead* simplex algorithm (selected through the ``method``
+parameter):
+
+    >>> import numpy as np
+    >>> from scipy.optimize import minimize
+
     >>> def rosen(x):
     ...     """The Rosenbrock function"""
     ...     return sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
 
-    >>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
-    >>> xopt = fmin(rosen, x0, xtol=1e-8)
+    >>> x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
+    >>> xopt = minimize(rosen, x0, method='nelder-mead',
+    ...                 options={'xtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
              Iterations: 339
@@ -65,12 +73,18 @@ The minimum value of this function is 0 which is achieved when :math:`x_{i}=1.` 
     >>> print xopt
     [ 1.  1.  1.  1.  1.]
 
+The simplex algorithm is probably the simplest way to minimize a fairly
+well-behaved function. It requires only function evaluations and is a good
+choice for simple minimization problems. However, because it does not use
+any gradient evaluations, it may take longer to find the minimum.
+
 Another optimization algorithm that needs only function calls to find
-the minimum is Powell's method available as :func:`fmin_powell`.
+the minimum is *Powell*'s method available by setting ``method='powell'`` in
+:func:`minimize`.
 
 
-Broyden-Fletcher-Goldfarb-Shanno algorithm (:func:`fmin_bfgs`)
---------------------------------------------------------------
+Broyden-Fletcher-Goldfarb-Shanno algorithm (``method='BFGS'``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In order to converge more quickly to the solution, this routine uses
 the gradient of the objective function. If the gradient is not given
@@ -102,39 +116,36 @@ code-segment:
     ...     xm = x[1:-1]
     ...     xm_m1 = x[:-2]
     ...     xm_p1 = x[2:]
-    ...     der = zeros_like(x)
+    ...     der = np.zeros_like(x)
     ...     der[1:-1] = 200*(xm-xm_m1**2) - 400*(xm_p1 - xm**2)*xm - 2*(1-xm)
     ...     der[0] = -400*x[0]*(x[1]-x[0]**2) - 2*(1-x[0])
     ...     der[-1] = 200*(x[-1]-x[-2]**2)
     ...     return der
 
-The calling signature for the BFGS minimization algorithm is similar
-to :obj:`fmin` with the addition of the *fprime* argument. An example
-usage of :obj:`fmin_bfgs` is shown in the following example which
-minimizes the Rosenbrock function.
+This gradient information is specified in the :func:`minimize` function
+through the ``jac`` parameter as illustrated below.
 
-    >>> from scipy.optimize import fmin_bfgs
 
-    >>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
-    >>> xopt = fmin_bfgs(rosen, x0, fprime=rosen_der)
+    >>> xopt = minimize(rosen, x0, method='BFGS', jac=rosen_der,
+    ...                 options={'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
-             Iterations: 53
-             Function evaluations: 65
-             Gradient evaluations: 65
+             Iterations: 51
+             Function evaluations: 63
+             Gradient evaluations: 63
     >>> print xopt
     [ 1.  1.  1.  1.  1.]
 
 
-Newton-Conjugate-Gradient (:func:`fmin_ncg`)
---------------------------------------------
+Newton-Conjugate-Gradient algorithm (``method='Newton-CG'``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The method which requires the fewest function calls and is therefore
-often the fastest method to minimize functions of many variables is
-:obj:`fmin_ncg`. This method is a modified Newton's method and uses a
-conjugate gradient algorithm to (approximately) invert the local
-Hessian.  Newton's method is based on fitting the function locally to
-a quadratic form:
+The method which requires the fewest function calls and is therefore often
+the fastest method to minimize functions of many variables uses the
+Newton-Conjugate Gradient algorithm. This method is a modified Newton's
+method and uses a conjugate gradient algorithm to (approximately) invert
+the local Hessian.  Newton's method is based on fitting the function
+locally to a quadratic form:
 
 .. math::
    :nowrap:
@@ -150,10 +161,10 @@ by setting the gradient of the quadratic form to zero, resulting in
 
     \[ \mathbf{x}_{\textrm{opt}}=\mathbf{x}_{0}-\mathbf{H}^{-1}\nabla f.\]
 
-The inverse of the Hessian is evaluted using the conjugate-gradient
+The inverse of the Hessian is evaluated using the conjugate-gradient
 method. An example of employing this method to minimizing the
 Rosenbrock function is given below. To take full advantage of the
-NewtonCG method, a function which computes the Hessian must be
+Newton-CG method, a function which computes the Hessian must be
 provided. The Hessian matrix itself does not need to be constructed,
 only a vector which is the product of the Hessian with an arbitrary
 vector needs to be available to the minimization routine. As a result,
@@ -163,7 +174,7 @@ vector.
 
 
 Full Hessian example:
-^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""
 
 The Hessian of the Rosenbrock function is
 
@@ -187,75 +198,73 @@ For example, the Hessian when :math:`N=5` is
     \[ \mathbf{H}=\left[\begin{array}{ccccc} 1200x_{0}^{2}-400x_{1}+2 & -400x_{0} & 0 & 0 & 0\\ -400x_{0} & 202+1200x_{1}^{2}-400x_{2} & -400x_{1} & 0 & 0\\ 0 & -400x_{1} & 202+1200x_{2}^{2}-400x_{3} & -400x_{2} & 0\\ 0 &  & -400x_{2} & 202+1200x_{3}^{2}-400x_{4} & -400x_{3}\\ 0 & 0 & 0 & -400x_{3} & 200\end{array}\right].\]
 
 The code which computes this Hessian along with the code to minimize
-the function using :obj:`fmin_ncg` is shown in the following example:
+the function using Newton-CG method is shown in the following example:
 
-    >>> from scipy.optimize import fmin_ncg
     >>> def rosen_hess(x):
-    ...     x = asarray(x)
-    ...     H = diag(-400*x[:-1],1) - diag(400*x[:-1],-1)
-    ...     diagonal = zeros_like(x)
+    ...     x = np.asarray(x)
+    ...     H = np.diag(-400*x[:-1],1) - np.diag(400*x[:-1],-1)
+    ...     diagonal = np.zeros_like(x)
     ...     diagonal[0] = 1200*x[0]-400*x[1]+2
     ...     diagonal[-1] = 200
     ...     diagonal[1:-1] = 202 + 1200*x[1:-1]**2 - 400*x[2:]
-    ...     H = H + diag(diagonal)
+    ...     H = H + np.diag(diagonal)
     ...     return H
 
-    >>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
-    >>> xopt = fmin_ncg(rosen, x0, rosen_der, fhess=rosen_hess, avextol=1e-8)
+    >>> xopt = minimize(rosen, x0, method='Newton-CG', jac=rosen_der, hess=rosen_hess,
+    ...                 options={'avextol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
-             Iterations: 23
-             Function evaluations: 26
-             Gradient evaluations: 23
-             Hessian evaluations: 23
+             Iterations: 19
+             Function evaluations: 22
+             Gradient evaluations: 19
+             Hessian evaluations: 19
     >>> print xopt
     [ 1.  1.  1.  1.  1.]
 
 
 Hessian product example:
-^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""
 
-For larger minimization problems, storing the entire Hessian matrix
-can consume considerable time and memory. The Newton-CG algorithm only
-needs the product of the Hessian times an arbitrary vector. As a
-result, the user can supply code to compute this product rather than
-the full Hessian by setting the *fhess_p* keyword to the desired
-function. The *fhess_p* function should take the minimization vector as
-the first argument and the arbitrary vector as the second
-argument. Any extra arguments passed to the function to be minimized
-will also be passed to this function. If possible, using Newton-CG
-with the hessian product option is probably the fastest way to
+For larger minimization problems, storing the entire Hessian matrix can
+consume considerable time and memory. The Newton-CG algorithm only needs
+the product of the Hessian times an arbitrary vector. As a result, the user
+can supply code to compute this product rather than the full Hessian by
+giving a ``hess`` function which take the minimization vector as the first
+argument and the arbitrary vector as the second argument (along with extra
+arguments passed to the function to be minimized). If possible, using
+Newton-CG with the Hessian product option is probably the fastest way to
 minimize the function.
 
 In this case, the product of the Rosenbrock Hessian with an arbitrary
-vector is not difficult to compute. If :math:`\mathbf{p}` is the arbitrary vector, then :math:`\mathbf{H}\left(\mathbf{x}\right)\mathbf{p}` has elements:
+vector is not difficult to compute. If :math:`\mathbf{p}` is the arbitrary
+vector, then :math:`\mathbf{H}\left(\mathbf{x}\right)\mathbf{p}` has
+elements:
 
 .. math::
    :nowrap:
 
     \[ \mathbf{H}\left(\mathbf{x}\right)\mathbf{p}=\left[\begin{array}{c} \left(1200x_{0}^{2}-400x_{1}+2\right)p_{0}-400x_{0}p_{1}\\ \vdots\\ -400x_{i-1}p_{i-1}+\left(202+1200x_{i}^{2}-400x_{i+1}\right)p_{i}-400x_{i}p_{i+1}\\ \vdots\\ -400x_{N-2}p_{N-2}+200p_{N-1}\end{array}\right].\]
 
-Code which makes use of the *fhess_p* keyword to minimize the
-Rosenbrock function using :obj:`fmin_ncg` follows:
+Code which makes use of this Hessian product to minimize the
+Rosenbrock function using :func:`minimize` follows:
 
-    >>> from scipy.optimize import fmin_ncg
     >>> def rosen_hess_p(x,p):
-    ...     x = asarray(x)
-    ...     Hp = zeros_like(x)
+    ...     x = np.asarray(x)
+    ...     Hp = np.zeros_like(x)
     ...     Hp[0] = (1200*x[0]**2 - 400*x[1] + 2)*p[0] - 400*x[0]*p[1]
     ...     Hp[1:-1] = -400*x[:-2]*p[:-2]+(202+1200*x[1:-1]**2-400*x[2:])*p[1:-1] \
     ...                -400*x[1:-1]*p[2:]
     ...     Hp[-1] = -400*x[-2]*p[-2] + 200*p[-1]
     ...     return Hp
 
-    >>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
-    >>> xopt = fmin_ncg(rosen, x0, rosen_der, fhess_p=rosen_hess_p, avextol=1e-8)
+    >>> xopt = minimize(rosen, x0, method='Newton-CG', jac=rosen_der, hess=rosen_hess_p,
+    ...                 options={'avextol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
-             Iterations: 22
-             Function evaluations: 25
-             Gradient evaluations: 22
-             Hessian evaluations: 54
+             Iterations: 20
+             Function evaluations: 23
+             Gradient evaluations: 20
+             Hessian evaluations: 44
     >>> print xopt
     [ 1.  1.  1.  1.  1.]
 
