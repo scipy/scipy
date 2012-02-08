@@ -1,11 +1,12 @@
 
 /*! @file cgsisx.c
- * \brief Gives the approximate solutions of linear equations A*X=B or A'*X=B
+ * \brief Computes an approximate solutions of linear equations A*X=B or A'*X=B
  *
  * <pre>
- * -- SuperLU routine (version 4.0) --
+ * -- SuperLU routine (version 4.2) --
  * Lawrence Berkeley National Laboratory.
- * June 30, 2009
+ * November, 2010
+ * August, 2011
  * </pre>
  */
 #include "slu_cdefs.h"
@@ -16,9 +17,10 @@
  * Purpose
  * =======
  *
- * CGSISX gives the approximate solutions of linear equations A*X=B or A'*X=B,
- * using the ILU factorization from cgsitrf(). An estimation of
- * the condition number is provided. It performs the following steps:
+ * CGSISX computes an approximate solutions of linear equations
+ * A*X=B or A'*X=B, using the ILU factorization from cgsitrf().
+ * An estimation of the condition number is provided. 
+ * The routine performs the following steps:
  *
  *   1. If A is stored column-wise (A->Stype = SLU_NC):
  *  
@@ -71,50 +73,50 @@
  *		entries of modulus 1 on the diagonal and off-diagonal entries
  *		of modulus at most 1. If MC64 fails, dgsequ() is used to
  *		equilibrate the system.
+ *              ( Default: LargeDiag )
  *	     2) options->ILU_DropTol = tau is the threshold for dropping.
  *		For L, it is used directly (for the whole row in a supernode);
  *		For U, ||A(:,i)||_oo * tau is used as the threshold
  *	        for the	i-th column.
  *		If a secondary dropping rule is required, tau will
  *	        also be used to compute the second threshold.
+ *              ( Default: 1e-4 )
  *	     3) options->ILU_FillFactor = gamma, used as the initial guess
  *		of memory growth.
  *		If a secondary dropping rule is required, it will also
  *              be used as an upper bound of the memory.
+ *              ( Default: 10 )
  *	     4) options->ILU_DropRule specifies the dropping rule.
- *		Option		Explanation
- *		======		===========
- *		DROP_BASIC:	Basic dropping rule, supernodal based ILU.
- *		DROP_PROWS:	Supernodal based ILUTP, p = gamma * nnz(A) / n.
- *		DROP_COLUMN:	Variation of ILUTP, for j-th column,
- *				p = gamma * nnz(A(:,j)).
- *		DROP_AREA;	Variation of ILUTP, for j-th column, use
- *				nnz(F(:,1:j)) / nnz(A(:,1:j)) to control the
- *				memory.
- *		DROP_DYNAMIC:	Modify the threshold tau during the
- *				factorizaion.
- *				If nnz(L(:,1:j)) / nnz(A(:,1:j)) < gamma
- *				    tau_L(j) := MIN(1, tau_L(j-1) * 2);
- *				Otherwise
- *				    tau_L(j) := MIN(1, tau_L(j-1) * 2);
- *				tau_U(j) uses the similar rule.
- *				NOTE: the thresholds used by L and U are
- *				indenpendent.
- *		DROP_INTERP:	Compute the second dropping threshold by
- *				interpolation instead of sorting (default).
- *				In this case, the actual fill ratio is not
- *				guaranteed smaller than gamma.
+ *		Option	      Meaning
+ *		======	      ===========
+ *		DROP_BASIC:   Basic dropping rule, supernodal based ILUTP(tau).
+ *		DROP_PROWS:   Supernodal based ILUTP(p,tau), p = gamma*nnz(A)/n.
+ *		DROP_COLUMN:  Variant of ILUTP(p,tau), for j-th column,
+ *			      p = gamma * nnz(A(:,j)).
+ *		DROP_AREA:    Variation of ILUTP, for j-th column, use
+ *			      nnz(F(:,1:j)) / nnz(A(:,1:j)) to control memory.
+ *		DROP_DYNAMIC: Modify the threshold tau during factorizaion:
+ *			      If nnz(L(:,1:j)) / nnz(A(:,1:j)) > gamma
+ *				  tau_L(j) := MIN(tau_0, tau_L(j-1) * 2);
+ *			      Otherwise
+ *				  tau_L(j) := MAX(tau_0, tau_L(j-1) / 2);
+ *			      tau_U(j) uses the similar rule.
+ *			      NOTE: the thresholds used by L and U are separate.
+ *		DROP_INTERP:  Compute the second dropping threshold by
+ *			      interpolation instead of sorting (default).
+ *			      In this case, the actual fill ratio is not
+ *			      guaranteed smaller than gamma.
  *		DROP_PROWS, DROP_COLUMN and DROP_AREA are mutually exclusive.
- *		( The default option is DROP_BASIC | DROP_AREA. )
- *	     5) options->ILU_Norm is the criterion of computing the average
- *		value of a row in L.
- *		options->ILU_Norm	average(x[1:n])
+ *		( Default: DROP_BASIC | DROP_AREA )
+ *	     5) options->ILU_Norm is the criterion of measuring the magnitude
+ *		of a row in a supernode of L. ( Default is INF_NORM )
+ *		options->ILU_Norm	RowSize(x[1:n])
  *		=================	===============
  *		ONE_NORM		||x||_1 / n
  *		TWO_NORM		||x||_2 / sqrt(n)
  *		INF_NORM		max{|x[i]|}
  *	     6) options->ILU_MILU specifies the type of MILU's variation.
- *		= SILU (default): do not perform MILU;
+ *		= SILU: do not perform Modified ILU;
  *		= SMILU_1 (not recommended):
  *		    U(i,i) := U(i,i) + sum(dropped entries);
  *		= SMILU_2:
@@ -123,10 +125,12 @@
  *		    U(i,i) := U(i,i) + SGN(U(i,i)) * sum(|dropped entries|);
  *		NOTE: Even SMILU_1 does not preserve the column sum because of
  *		late dropping.
+ *              ( Default: SILU )
  *	     7) options->ILU_FillTol is used as the perturbation when
  *		encountering zero pivots. If some U(i,i) = 0, so that U is
  *		exactly singular, then
  *		   U(i,i) := ||A(:,i)|| * options->ILU_FillTol ** (1 - i / n).
+ *              ( Default: 1e-2 )
  *
  *   2. If A is stored row-wise (A->Stype = SLU_NR), apply the above algorithm
  *	to the transpose of A:
@@ -194,8 +198,11 @@
  *	   On entry, If options->Fact = FACTORED and equed is not 'N',
  *	   then A must have been equilibrated by the scaling factors in
  *	   R and/or C.
- *	   On exit, A is not modified if options->Equil = NO, or if
- *	   options->Equil = YES but equed = 'N' on exit.
+ *	   On exit, A is not modified
+ *         if options->Equil = NO, or
+ *         if options->Equil = YES but equed = 'N' on exit, or
+ *         if options->RowPerm = NO.
+ *
  *	   Otherwise, if options->Equil = YES and equed is not 'N',
  *	   A is scaled as follows:
  *	   If A->Stype = SLU_NC:
@@ -206,6 +213,16 @@
  *	     equed = 'R':  transpose(A) := diag(R) * transpose(A)
  *	     equed = 'C':  transpose(A) := transpose(A) * diag(C)
  *	     equed = 'B':  transpose(A) := diag(R) * transpose(A) * diag(C).
+ *
+ *         If options->RowPerm = LargeDiag, MC64 is used to scale and permute
+ *            the matrix to an I-matrix, that is A is modified as follows:
+ *            P*Dr*A*Dc has entries of modulus 1 on the diagonal and 
+ *            off-diagonal entries of modulus at most 1. P is a permutation
+ *            obtained from MC64.
+ *            If MC64 fails, cgsequ() is used to equilibrate the system,
+ *            and A is scaled as above, but no permutation is involved.
+ *            On exit, A is restored to the orginal row numbering, so
+ *            Dr*A*Dc is returned.
  *
  * perm_c  (input/output) int*
  *	   If A->Stype = SLU_NC, Column permutation vector of size A->ncol,
@@ -223,8 +240,8 @@
  * perm_r  (input/output) int*
  *	   If A->Stype = SLU_NC, row permutation vector of size A->nrow, 
  *	   which defines the permutation matrix Pr, and is determined
- *	   by partial pivoting.  perm_r[i] = j means row i of A is in 
- *	   position j in Pr*A.
+ *	   by MC64 first then followed by partial pivoting.
+ *         perm_r[i] = j means row i of A is in position j in Pr*A.
  *
  *	   If A->Stype = SLU_NR, permutation vector of size A->ncol, which
  *	   determines permutation of rows of transpose(A)
@@ -261,7 +278,7 @@
  *	   If equed = 'N' or 'C', R is not accessed.
  *	   If options->Fact = FACTORED, R is an input argument,
  *	       otherwise, R is output.
- *	   If options->zFact = FACTORED and equed = 'R' or 'B', each element
+ *	   If options->Fact = FACTORED and equed = 'R' or 'B', each element
  *	       of R must be positive.
  *
  * C	   (input/output) float*, dimension (A->ncol)
@@ -384,7 +401,7 @@ cgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 
     DNformat  *Bstore, *Xstore;
     complex    *Bmat, *Xmat;
-    int       ldb, ldx, nrhs;
+    int       ldb, ldx, nrhs, n;
     SuperMatrix *AA;/* A in SLU_NC format used by the factorization routine.*/
     SuperMatrix AC; /* Matrix postmultiplied by Pc */
     int       colequ, equil, nofact, notran, rowequ, permc_spec, mc64;
@@ -397,7 +414,7 @@ cgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     double    t0;      /* temporary time */
     double    *utime;
 
-    int *perm = NULL;
+    int *perm = NULL; /* permutation returned from MC64 */
 
     /* External functions */
     extern float clangs(char *, SuperMatrix *);
@@ -409,6 +426,7 @@ cgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     ldb    = Bstore->lda;
     ldx    = Xstore->lda;
     nrhs   = B->ncol;
+    n      = B->nrow;
 
     *info = 0;
     nofact = (options->Fact != FACTORED);
@@ -427,10 +445,12 @@ cgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     }
 
     /* Test the input parameters */
-    if (!nofact && options->Fact != DOFACT && options->Fact != SamePattern &&
+    if (options->Fact != DOFACT && options->Fact != SamePattern &&
 	options->Fact != SamePattern_SameRowPerm &&
-	!notran && options->Trans != TRANS && options->Trans != CONJ &&
-	!equil && options->Equil != NO)
+	options->Fact != FACTORED &&
+	options->Trans != NOTRANS && options->Trans != TRANS && 
+	options->Trans != CONJ &&
+	options->Equil != NO && options->Equil != YES)
 	*info = -1;
     else if ( A->nrow != A->ncol || A->nrow < 0 ||
 	      (A->Stype != SLU_NC && A->Stype != SLU_NR) ||
@@ -516,37 +536,46 @@ cgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	int *colptr = Astore->colptr;
 	int *rowind = Astore->rowind;
 	complex *nzval = (complex *)Astore->nzval;
-	int n = AA->nrow;
 
 	if ( mc64 ) {
-	    *equed = 'B';
-	    rowequ = colequ = 1;
 	    t0 = SuperLU_timer_();
 	    if ((perm = intMalloc(n)) == NULL)
 		ABORT("SUPERLU_MALLOC fails for perm[]");
 
 	    info1 = cldperm(5, n, nnz, colptr, rowind, nzval, perm, R, C);
 
-	    if (info1 > 0) { /* MC64 fails, call cgsequ() later */
+	    if (info1 != 0) { /* MC64 fails, call cgsequ() later */
 		mc64 = 0;
 		SUPERLU_FREE(perm);
 		perm = NULL;
 	    } else {
-		for (i = 0; i < n; i++) {
-		    R[i] = exp(R[i]);
-		    C[i] = exp(C[i]);
-		}
-		/* permute and scale the matrix */
+	        if ( equil ) {
+	            rowequ = colequ = 1;
+		    for (i = 0; i < n; i++) {
+		        R[i] = exp(R[i]);
+		        C[i] = exp(C[i]);
+		    }
+		    /* scale the matrix */
+		    for (j = 0; j < n; j++) {
+		        for (i = colptr[j]; i < colptr[j + 1]; i++) {
+                            cs_mult(&nzval[i], &nzval[i], R[rowind[i]] * C[j]);
+		        }
+		    }
+	            *equed = 'B';
+                }
+
+                /* permute the matrix */
 		for (j = 0; j < n; j++) {
 		    for (i = colptr[j]; i < colptr[j + 1]; i++) {
-                        cs_mult(&nzval[i], &nzval[i], R[rowind[i]] * C[j]);
+			/*nzval[i] *= R[rowind[i]] * C[j];*/
 			rowind[i] = perm[rowind[i]];
 		    }
 		}
 	    }
 	    utime[EQUIL] = SuperLU_timer_() - t0;
 	}
-	if ( !mc64 & equil ) {
+
+	if ( !mc64 & equil ) { /* Only perform equilibration, no row perm */
 	    t0 = SuperLU_timer_();
 	    /* Compute row and column scalings to equilibrate the matrix A. */
 	    cgsequ(AA, R, C, &rowcnd, &colcnd, &amax, &info1);
@@ -561,22 +590,6 @@ cgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	}
     }
 
-    if ( nrhs > 0 ) {
-	/* Scale the right hand side if equilibration was performed. */
-	if ( notran ) {
-	    if ( rowequ ) {
-		for (j = 0; j < nrhs; ++j)
-		    for (i = 0; i < A->nrow; ++i) {
-                        cs_mult(&Bmat[i+j*ldb], &Bmat[i+j*ldb], R[i]);
-		    }
-	    }
-	} else if ( colequ ) {
-	    for (j = 0; j < nrhs; ++j)
-		for (i = 0; i < A->nrow; ++i) {
-                    cs_mult(&Bmat[i+j*ldb], &Bmat[i+j*ldb], C[i]);
-		}
-	}
-    }
 
     if ( nofact ) {
 	
@@ -608,6 +621,26 @@ cgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	    mem_usage->total_needed = *info - A->ncol;
 	    return;
 	}
+
+	if ( mc64 ) { /* Fold MC64's perm[] into perm_r[]. */
+	    NCformat *Astore = AA->Store;
+	    int nnz = Astore->nnz, *rowind = Astore->rowind;
+	    int *perm_tmp, *iperm;
+	    if ((perm_tmp = intMalloc(2*n)) == NULL)
+		ABORT("SUPERLU_MALLOC fails for perm_tmp[]");
+	    iperm = perm_tmp + n;
+	    for (i = 0; i < n; ++i) perm_tmp[i] = perm_r[perm[i]];
+	    for (i = 0; i < n; ++i) {
+		perm_r[i] = perm_tmp[i];
+		iperm[perm[i]] = i;
+	    }
+
+	    /* Restore A's original row indices. */
+	    for (i = 0; i < nnz; ++i) rowind[i] = iperm[rowind[i]];
+
+	    SUPERLU_FREE(perm); /* MC64 permutation */
+	    SUPERLU_FREE(perm_tmp);
+	}
     }
 
     if ( options->PivotGrowth ) {
@@ -630,7 +663,24 @@ cgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	utime[RCOND] = SuperLU_timer_() - t0;
     }
 
-    if ( nrhs > 0 ) {
+    if ( nrhs > 0 ) { /* Solve the system */
+        complex *rhs_work;
+
+	/* Scale and permute the right-hand side if equilibration
+           and permutation from MC64 were performed. */
+	if ( notran ) {
+	    if ( rowequ ) {
+		for (j = 0; j < nrhs; ++j)
+		    for (i = 0; i < n; ++i)
+                        cs_mult(&Bmat[i+j*ldb], &Bmat[i+j*ldb], R[i]);
+	    }
+	} else if ( colequ ) {
+	    for (j = 0; j < nrhs; ++j)
+		for (i = 0; i < n; ++i) {
+                    cs_mult(&Bmat[i+j*ldb], &Bmat[i+j*ldb], C[i]);
+		}
+	}
+
 	/* Compute the solution matrix X. */
 	for (j = 0; j < nrhs; j++)  /* Save a copy of the right hand sides */
 	    for (i = 0; i < B->nrow; i++)
@@ -645,41 +695,25 @@ cgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	if ( notran ) {
 	    if ( colequ ) {
 		for (j = 0; j < nrhs; ++j)
-		    for (i = 0; i < A->nrow; ++i) {
+		    for (i = 0; i < n; ++i) {
                         cs_mult(&Xmat[i+j*ldx], &Xmat[i+j*ldx], C[i]);
                     }
 	    }
-	} else {
+	} else { /* transposed system */
 	    if ( rowequ ) {
-		if (perm) {
-		    complex *tmp;
-		    int n = A->nrow;
-
-                    if ((tmp = complexMalloc(n)) == NULL)
-			ABORT("SUPERLU_MALLOC fails for tmp[]");
-		    for (j = 0; j < nrhs; j++) {
-			for (i = 0; i < n; i++)
-			    tmp[i] = Xmat[i + j * ldx]; /*dcopy*/
-			for (i = 0; i < n; i++)
-                           cs_mult(&Xmat[i+j*ldx], &tmp[perm[i]], R[i]);
-		    }
-		    SUPERLU_FREE(tmp);
-		} else {
-		    for (j = 0; j < nrhs; ++j)
-			for (i = 0; i < A->nrow; ++i) {
-                           cs_mult(&Xmat[i+j*ldx], &Xmat[i+j*ldx], R[i]);
-                        }
-		}
+	        for (j = 0; j < nrhs; ++j)
+		    for (i = 0; i < A->nrow; ++i) {
+                        cs_mult(&Xmat[i+j*ldx], &Xmat[i+j*ldx], R[i]);
+                    }
 	    }
 	}
+
     } /* end if nrhs > 0 */
 
     if ( options->ConditionNumber ) {
-	/* Set INFO = A->ncol+1 if the matrix is singular to working precision. */
+	/* The matrix is singular to working precision. */
 	if ( *rcond < slamch_("E") && *info == 0) *info = A->ncol + 1;
     }
-
-    if (perm) SUPERLU_FREE(perm);
 
     if ( nofact ) {
 	ilu_cQuerySpace(L, U, mem_usage);

@@ -4,9 +4,9 @@
  * and drop some small entries
  *
  * <pre>
- * -- SuperLU routine (version 4.0) --
+ * -- SuperLU routine (version 4.1) --
  * Lawrence Berkeley National Laboratory
- * June 30, 2009
+ * November, 2010
  * </pre>
  */
 
@@ -16,6 +16,9 @@
 int num_drop_U;
 #endif
 
+extern void zcopy_(int *, doublecomplex [], int *, doublecomplex [], int *);
+
+#if 0
 static doublecomplex *A;  /* used in _compare_ only */
 static int _compare_(const void *a, const void *b)
 {
@@ -25,7 +28,7 @@ static int _compare_(const void *a, const void *b)
     else if (xx < yy) return 1;
     else return 0;
 }
-
+#endif
 
 int
 ilu_zcopy_to_ucol(
@@ -42,7 +45,7 @@ ilu_zcopy_to_ucol(
 	      doublecomplex	 *sum,	   /* out - the sum of dropped entries */
 	      int	 *nnzUj,   /* in - out */
 	      GlobalLU_t *Glu,	   /* modified */
-	      int	 *work	   /* working space with minimum size n,
+	      double	 *work	   /* working space with minimum size n,
 				    * used by the second dropping rule */
 	      )
 {
@@ -63,6 +66,7 @@ ilu_zcopy_to_ucol(
     register double d_max = 0.0, d_min = 1.0 / dlamch_("Safe minimum");
     register double tmp;
     doublecomplex zero = {0.0, 0.0};
+    int i_1 = 1;
 
     xsup    = Glu->xsup;
     supno   = Glu->supno;
@@ -157,10 +161,15 @@ ilu_zcopy_to_ucol(
 		d_max = 1.0 / d_max; d_min = 1.0 / d_min;
 		tol = 1.0 / (d_max + (d_min - d_max) * quota / m);
 	    } else {
+                i_1 = xusub[jcol];
+                for (i = 0; i < m; ++i, ++i_1) work[i] = z_abs1(&ucol[i_1]);
+		tol = dqselect(m, work, quota);
+#if 0
 		A = &ucol[xusub[jcol]];
 		for (i = 0; i < m; i++) work[i] = i;
 		qsort(work, m, sizeof(int), _compare_);
 		tol = fabs(usub[xusub[jcol] + work[quota]]);
+#endif
 	    }
 	}
 	for (i = xusub[jcol]; i <= m0; ) {

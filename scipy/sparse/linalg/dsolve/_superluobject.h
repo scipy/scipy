@@ -8,7 +8,13 @@
 #ifndef __SUPERLU_OBJECT
 #define __SUPERLU_OBJECT
 
-#include "Python.h"
+#include <Python.h>
+
+/* Undef a macro from Python which conflicts with superlu */
+#ifdef c_abs
+#undef c_abs
+#endif
+
 #include "SuperLU/SRC/slu_zdefs.h"
 #include "numpy/arrayobject.h"
 #include "SuperLU/SRC/slu_util.h"

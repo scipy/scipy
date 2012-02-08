@@ -376,40 +376,39 @@ get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
 
     t = SuperLU_timer_();
     switch ( ispec ) {
-        case 0: /* Natural ordering */
-	      for (i = 0; i < n; ++i) perm_c[i] = i;
+    case (NATURAL): /* Natural ordering */
+	for (i = 0; i < n; ++i) perm_c[i] = i;
 #if ( PRNTlevel>=1 )
-	      printf("Use natural column ordering.\n");
+	printf("Use natural column ordering.\n");
 #endif
-	      return;
-        case 1: /* Minimum degree ordering on A'*A */
-	      getata(m, n, Astore->nnz, Astore->colptr, Astore->rowind,
+	return;
+    case (MMD_ATA): /* Minimum degree ordering on A'*A */
+	getata(m, n, Astore->nnz, Astore->colptr, Astore->rowind,
 		     &bnz, &b_colptr, &b_rowind);
 #if ( PRNTlevel>=1 )
-	      printf("Use minimum degree ordering on A'*A.\n");
+	printf("Use minimum degree ordering on A'*A.\n");
 #endif
-	      t = SuperLU_timer_() - t;
-	      /*printf("Form A'*A time = %8.3f\n", t);*/
-	      break;
-        case 2: /* Minimum degree ordering on A'+A */
-	      if ( m != n ) ABORT("Matrix is not square");
-	      at_plus_a(n, Astore->nnz, Astore->colptr, Astore->rowind,
-			&bnz, &b_colptr, &b_rowind);
+	t = SuperLU_timer_() - t;
+	/*printf("Form A'*A time = %8.3f\n", t);*/
+	break;
+    case (MMD_AT_PLUS_A): /* Minimum degree ordering on A'+A */
+	if ( m != n ) ABORT("Matrix is not square");
+	at_plus_a(n, Astore->nnz, Astore->colptr, Astore->rowind,
+		  &bnz, &b_colptr, &b_rowind);
 #if ( PRNTlevel>=1 )
-	      printf("Use minimum degree ordering on A'+A.\n");
+	printf("Use minimum degree ordering on A'+A.\n");
 #endif
-	      t = SuperLU_timer_() - t;
-	      /*printf("Form A'+A time = %8.3f\n", t);*/
-	      break;
-        case 3: /* Approximate minimum degree column ordering. */
-	      get_colamd(m, n, Astore->nnz, Astore->colptr, Astore->rowind,
-			 perm_c);
+	t = SuperLU_timer_() - t;
+	/*printf("Form A'+A time = %8.3f\n", t);*/
+	break;
+    case (COLAMD): /* Approximate minimum degree column ordering. */
+	get_colamd(m, n, Astore->nnz, Astore->colptr, Astore->rowind, perm_c);
 #if ( PRNTlevel>=1 )
-	      printf(".. Use approximate minimum degree column ordering.\n");
+	printf(".. Use approximate minimum degree column ordering.\n");
 #endif
-	      return; 
-        default:
-	      ABORT("Invalid ISPEC");
+	return; 
+    default:
+	ABORT("Invalid ISPEC");
     }
 
     if ( bnz != 0 ) {

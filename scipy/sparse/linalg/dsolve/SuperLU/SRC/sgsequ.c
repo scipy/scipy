@@ -92,7 +92,7 @@ sgsequ(SuperMatrix *A, float *r, float *c, float *rowcnd,
     int i, j, irow;
     float rcmin, rcmax;
     float bignum, smlnum;
-    extern double slamch_(char *);
+    extern float slamch_(char *);
     
     /* Test the input parameters. */
     *info = 0;

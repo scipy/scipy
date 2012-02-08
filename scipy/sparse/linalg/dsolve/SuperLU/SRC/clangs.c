@@ -79,7 +79,7 @@ float clangs(char *norm, SuperMatrix *A)
 	value = 0.;
 	for (j = 0; j < A->ncol; ++j)
 	    for (i = Astore->colptr[j]; i < Astore->colptr[j+1]; i++)
-		value = SUPERLU_MAX( value, slu_c_abs( &Aval[i]) );
+		value = SUPERLU_MAX( value, c_abs( &Aval[i]) );
 	
     } else if (lsame_(norm, "O") || *(unsigned char *)norm == '1') {
 	/* Find norm1(A). */
@@ -87,7 +87,7 @@ float clangs(char *norm, SuperMatrix *A)
 	for (j = 0; j < A->ncol; ++j) {
 	    sum = 0.;
 	    for (i = Astore->colptr[j]; i < Astore->colptr[j+1]; i++) 
-		sum += slu_c_abs( &Aval[i] );
+		sum += c_abs( &Aval[i] );
 	    value = SUPERLU_MAX(value,sum);
 	}
 	
@@ -99,7 +99,7 @@ float clangs(char *norm, SuperMatrix *A)
 	for (j = 0; j < A->ncol; ++j)
 	    for (i = Astore->colptr[j]; i < Astore->colptr[j+1]; i++) {
 		irow = Astore->rowind[i];
-		rwork[irow] += slu_c_abs( &Aval[i] );
+		rwork[irow] += c_abs( &Aval[i] );
 	    }
 	value = 0.;
 	for (i = 0; i < A->nrow; ++i)

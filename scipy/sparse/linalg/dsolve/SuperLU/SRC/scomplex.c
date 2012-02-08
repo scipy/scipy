@@ -49,7 +49,7 @@ void c_div(complex *c, complex *a, complex *b)
 
 
 /*! \brief Returns sqrt(z.r^2 + z.i^2) */
-double slu_c_abs(complex *z)
+double c_abs(complex *z)
 {
     float temp;
     float real = z->r;
@@ -71,7 +71,7 @@ double slu_c_abs(complex *z)
 
 
 /*! \brief Approximates the abs. Returns abs(z.r) + abs(z.i) */
-double slu_c_abs1(complex *z)
+double c_abs1(complex *z)
 {
     float real = z->r;
     float imag = z->i;
@@ -109,7 +109,7 @@ double r_imag(complex *z)
 /*! \brief SIGN functions for complex number. Returns z/abs(z) */
 complex c_sgn(complex *z)
 {
-    register float t = slu_c_abs(z);
+    register float t = c_abs(z);
     register complex retval;
 
     if (t == 0.0) {

@@ -1,10 +1,10 @@
 /** @file slu_util.h
  * \brief Utility header file 
  *
- * -- SuperLU routine (version 3.1) --
+ * -- SuperLU routine (version 4.1) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
- * August 1, 2008
+ * November, 2010
  *
  */
 
@@ -20,6 +20,7 @@
 #endif
 */
 #include <assert.h>
+#include "superlu_enum_consts.h"
 
 #include "scipy_slu_config.h"
 
@@ -116,65 +117,13 @@
 
 
 /***********************************************************************
- * Enumerate types
- ***********************************************************************/
-typedef enum {NO, YES}                                          yes_no_t;
-typedef enum {DOFACT, SamePattern, SamePattern_SameRowPerm, FACTORED} fact_t;
-typedef enum {NOROWPERM, LargeDiag, MY_PERMR}                   rowperm_t;
-typedef enum {NATURAL, MMD_ATA, MMD_AT_PLUS_A, COLAMD, MY_PERMC}colperm_t;
-typedef enum {NOTRANS, TRANS, CONJ}                             trans_t;
-typedef enum {NOEQUIL, ROW, COL, BOTH}                          DiagScale_t;
-typedef enum {NOREFINE, SINGLE=1, DOUBLE, EXTRA}                IterRefine_t;
-typedef enum {LUSUP, UCOL, LSUB, USUB}                          MemType;
-typedef enum {HEAD, TAIL}                                       stack_end_t;
-typedef enum {SYSTEM, USER}                                     LU_space_t;
-typedef enum {ONE_NORM, TWO_NORM, INF_NORM}			norm_t;
-typedef enum {SILU, SMILU_1, SMILU_2, SMILU_3}			milu_t;
-#if 0
-typedef enum {NODROP		= 0x0000,
-	      DROP_BASIC	= 0x0001, /* ILU(tau) */
-	      DROP_PROWS	= 0x0002, /* ILUTP: keep p maximum rows */
-	      DROP_COLUMN	= 0x0004, /* ILUTP: for j-th column, 
-					     p = gamma * nnz(A(:,j)) */
-	      DROP_AREA 	= 0x0008, /* ILUTP: for j-th column, use
-					     nnz(F(:,1:j)) / nnz(A(:,1:j))
-					     to limit memory growth  */
-	      DROP_SECONDARY	= 0x000E, /* PROWS | COLUMN | AREA */
-	      DROP_DYNAMIC	= 0x0010,
-	      DROP_INTERP	= 0x0100}			rule_t;
-#endif
-
-
-/* 
- * The following enumerate type is used by the statistics variable 
- * to keep track of flop count and time spent at various stages.
- *
- * Note that not all of the fields are disjoint.
- */
-typedef enum {
-    COLPERM, /* find a column ordering that minimizes fills */
-    RELAX,   /* find artificial supernodes */
-    ETREE,   /* compute column etree */
-    EQUIL,   /* equilibrate the original matrix */
-    FACT,    /* perform LU factorization */
-    RCOND,   /* estimate reciprocal condition number */
-    SOLVE,   /* forward and back solves */
-    REFINE,  /* perform iterative refinement */
-    TRSV,    /* fraction of FACT spent in xTRSV */
-    GEMV,    /* fraction of FACT spent in xGEMV */
-    FERR,    /* estimate error bounds after iterative refinement */
-    NPHASES  /* total number of phases */
-} PhaseType;
-
-
-/***********************************************************************
  * Type definitions
  ***********************************************************************/
 typedef float    flops_t;
 typedef unsigned char Logical;
 
 /* 
- *-- This contains the options used to control the solve process.
+ *-- This contains the options used to control the solution process.
  *
  * Fact   (fact_t)
  *        Specifies whether or not the factored form of the matrix
@@ -209,7 +158,7 @@ typedef unsigned char Logical;
  *        = MMD_ATA: use minimum degree ordering on structure of A'*A
  *        = MMD_AT_PLUS_A: use minimum degree ordering on structure of A'+A
  *        = COLAMD: use approximate minimum degree column ordering
- *        = MY_PERMC: use the ordering specified in ScalePermstruct->perm_c[]
+ *        = MY_PERMC: use the ordering specified by the user
  *         
  * Trans  (trans_t)
  *        Specifies the form of the system of equations:
@@ -220,12 +169,18 @@ typedef unsigned char Logical;
  * IterRefine (IterRefine_t)
  *        Specifies whether to perform iterative refinement.
  *        = NO: no iterative refinement
- *        = WorkingPrec: perform iterative refinement in working precision
- *        = ExtraPrec: perform iterative refinement in extra precision
+ *        = SLU_SINGLE: perform iterative refinement in single precision
+ *        = SLU_DOUBLE: perform iterative refinement in double precision
+ *        = SLU_EXTRA: perform iterative refinement in extra precision
  *
  * DiagPivotThresh (double, in [0.0, 1.0]) (only for sequential SuperLU)
  *        Specifies the threshold used for a diagonal entry to be an
  *        acceptable pivot.
+ *
+ * SymmetricMode (yest_no_t)
+ *        Specifies whether to use symmetric mode. Symmetric mode gives 
+ *        preference to diagonal pivots, and uses an (A'+A)-based column
+ *        permutation algorithm.
  *
  * PivotGrowth (yes_no_t)
  *        Specifies whether to compute the reciprocal pivot growth.
@@ -237,13 +192,48 @@ typedef unsigned char Logical;
  *        Specifies whether to permute rows of the original matrix.
  *        = NO: not to permute the rows
  *        = LargeDiag: make the diagonal large relative to the off-diagonal
- *        = MY_PERMR: use the permutation given in ScalePermstruct->perm_r[]
- *           
- * SymmetricMode (yest_no_t)
- *        Specifies whether to use symmetric mode.
+ *        = MY_PERMR: use the permutation given by the user
  *
- * PrintStat (yes_no_t)
- *        Specifies whether to print the solver's statistics.
+ * ILU_DropRule (int)
+ *        Specifies the dropping rule:
+ *	  = DROP_BASIC:   Basic dropping rule, supernodal based ILUTP(tau).
+ *	  = DROP_PROWS:   Supernodal based ILUTP(p,tau), p = gamma * nnz(A)/n.
+ *	  = DROP_COLUMN:  Variant of ILUTP(p,tau), for j-th column,
+ *			      p = gamma * nnz(A(:,j)).
+ *	  = DROP_AREA:    Variation of ILUTP, for j-th column, use
+ *			      nnz(F(:,1:j)) / nnz(A(:,1:j)) to control memory.
+ *	  = DROP_DYNAMIC: Modify the threshold tau during factorizaion:
+ *			  If nnz(L(:,1:j)) / nnz(A(:,1:j)) > gamma
+ *				  tau_L(j) := MIN(tau_0, tau_L(j-1) * 2);
+ *			  Otherwise
+ *				  tau_L(j) := MAX(tau_0, tau_L(j-1) / 2);
+ *			  tau_U(j) uses the similar rule.
+ *			  NOTE: the thresholds used by L and U are separate.
+ *	  = DROP_INTERP:  Compute the second dropping threshold by
+ *	                  interpolation instead of sorting (default).
+ *  		          In this case, the actual fill ratio is not
+ *			  guaranteed to be smaller than gamma.
+ *   	  Note: DROP_PROWS, DROP_COLUMN and DROP_AREA are mutually exclusive.
+ *	  ( Default: DROP_BASIC | DROP_AREA )
+ *
+ * ILU_DropTol (double)
+ *        numerical threshold for dropping.
+ *
+ * ILU_FillFactor (double) 
+ *        Gamma in the secondary dropping.
+ *
+ * ILU_Norm (norm_t)
+ *        Specify which norm to use to measure the row size in a
+ *        supernode: infinity-norm, 1-norm, or 2-norm.
+ *
+ * ILU_FillTol (double)
+ *        numerical threshold for zero pivot perturbation.
+ *
+ * ILU_MILU (milu_t)
+ *        Specifies which version of MILU to use.
+ *
+ * ILU_MILU_Dim (double) 
+ *        Dimension of the PDE if available.
  *
  * ReplaceTinyPivot (yes_no_t) (only for SuperLU_DIST)
  *        Specifies whether to replace the tiny diagonals by
@@ -257,6 +247,9 @@ typedef unsigned char Logical;
  *        Specifies whether the initialization has been performed to the
  *        sparse matrix-vector multiplication routine needed in iterative
  *        refinement.
+ *
+ * PrintStat (yes_no_t)
+ *        Specifies whether to print the solver's statistics.
  */
 typedef struct {
     fact_t        Fact;
@@ -265,20 +258,27 @@ typedef struct {
     trans_t       Trans;
     IterRefine_t  IterRefine;
     double        DiagPivotThresh;
+    yes_no_t      SymmetricMode;
     yes_no_t      PivotGrowth;
     yes_no_t      ConditionNumber;
     rowperm_t     RowPerm;
-    yes_no_t      SymmetricMode;
-    yes_no_t      PrintStat;
-    yes_no_t      ReplaceTinyPivot;
+    int 	  ILU_DropRule;
+    double	  ILU_DropTol;    /* threshold for dropping */
+    double	  ILU_FillFactor; /* gamma in the secondary dropping */
+    norm_t	  ILU_Norm;       /* infinity-norm, 1-norm, or 2-norm */
+    double	  ILU_FillTol;    /* threshold for zero pivot perturbation */
+    milu_t	  ILU_MILU;
+    double	  ILU_MILU_Dim;   /* Dimension of PDE (if available) */
+    yes_no_t      ParSymbFact;
+    yes_no_t      ReplaceTinyPivot; /* used in SuperLU_DIST */
     yes_no_t      SolveInitialized;
     yes_no_t      RefineInitialized;
-    double	  ILU_DropTol;    /* threshold for dropping */
-    double	  ILU_FillTol;    /* threshold for zero pivot perturbation */
-    double	  ILU_FillFactor; /* gamma in the secondary dropping */
-    int 	  ILU_DropRule;
-    norm_t	  ILU_Norm;
-    milu_t	  ILU_MILU;
+    yes_no_t      PrintStat;
+    int           nnzL, nnzU;      /* used to store nnzs for now       */
+    int           num_lookaheads;  /* num of levels in look-ahead      */
+    yes_no_t      lookahead_etree; /* use etree computed from the
+				      serial symbolic factorization */
+    yes_no_t      SymPattern;      /* symmetric factorization          */
 } superlu_options_t;
 
 /*! \brief Headers for 4 types of dynamatically managed memory */

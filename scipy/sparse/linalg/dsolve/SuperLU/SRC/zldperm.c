@@ -11,8 +11,8 @@
 
 #include "slu_zdefs.h"
 
-extern void mc64id_(int_t*);
-extern void mc64ad_(int_t*, int_t*, int_t*, int_t [], int_t [], double [],
+extern int_t mc64id_(int_t*);
+extern int_t mc64ad_(int_t*, int_t*, int_t*, int_t [], int_t [], double [],
 		    int_t*, int_t [], int_t*, int_t[], int_t*, double [],
 		    int_t [], int_t []);
 
@@ -91,7 +91,7 @@ zldperm(int_t job, int_t n, int_t nnz, int_t colptr[], int_t adjncy[],
     double *nzval_d = (double *) SUPERLU_MALLOC(nnz * sizeof(double));
 
 #if ( DEBUGlevel>=1 )
-    CHECK_MALLOC(0, "Enter zldperm()");
+    CHECK_MALLOC("Enter zldperm()");
 #endif
     liw = 5*n;
     if ( job == 3 ) liw = 10*n + nnz;
@@ -161,7 +161,7 @@ zldperm(int_t job, int_t n, int_t nnz, int_t colptr[], int_t adjncy[],
     SUPERLU_FREE(nzval_d);
 
 #if ( DEBUGlevel>=1 )
-    CHECK_MALLOC(0, "Exit zldperm()");
+    CHECK_MALLOC("Exit zldperm()");
 #endif
 
     return info[0];
