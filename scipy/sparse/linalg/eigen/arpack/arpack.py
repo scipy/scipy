@@ -41,6 +41,9 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['eigs', 'eigsh', 'svds', 'ArpackError', 'ArpackNoConvergence']
 
+import sys
+import warnings
+
 import _arpack
 import numpy as np
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
@@ -50,6 +53,19 @@ from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse.sputils import isdense
 from scipy.sparse.linalg import gmres, splu
 from scipy.linalg.lapack import get_lapack_funcs
+
+
+def _single_precision_cast(typechar):
+    # This check is required, for now, because we have unresolved crashes
+    # occurring in single precision Veclib routines, on at least 64-bit OSX
+    # and some Linux systems.  When these crashes are resolved, this
+    # restriction can be removed.
+    if typechar in ('f', 'F'):
+        warnings.warn("Single-precision types in `eigs` and `eighs` "
+                      "are not supported currently. "
+                      "Double precision routines are used instead.")
+        return {'f': 'd', 'F': 'D'}[typechar]
+    return typechar
 
 
 _type_conv = {'f': 's', 'd': 'd', 'F': 'c', 'D': 'z'}
@@ -309,6 +325,8 @@ class _ArpackParams(object):
 
         if tp not in 'fdFD':
             raise ValueError("matrix type must be 'f', 'd', 'F', or 'D'")
+
+        tp = _single_precision_cast(tp)
 
         if v0 is not None:
             # ARPACK overwrites its initial resid,  make a copy
@@ -898,10 +916,10 @@ class SpLuInv(LinearOperator):
         # careful here: splu.solve will throw away imaginary
         # part of x if M is real
         if self.isreal and np.issubdtype(x.dtype, np.complexfloating):
-            return (self.M_lu.solve(np.real(x))
-                    + 1j * self.M_lu.solve(np.imag(x)))
+            return (self.M_lu.solve(np.real(x).astype(self.dtype))
+                    + 1j * self.M_lu.solve(np.imag(x).astype(self.dtype)))
         else:
-            return self.M_lu.solve(x)
+            return self.M_lu.solve(x.astype(self.dtype))
 
 class LuInv(LinearOperator):
     """
