@@ -1,3 +1,6 @@
+# Author: Jake Vanderplas  -- <vanderplas@astro.washington.edu>
+# License: BSD, (C) 2011
+
 import numpy as np
 cimport numpy as np
 
@@ -67,10 +70,10 @@ def cs_graph_minimum_spanning_tree(csgraph, overwrite=False):
     predecessors.fill(NULL_IDX)
 
     cdef np.ndarray i_sort = np.argsort(data)
-    cdef np.ndarray index1 = np.zeros(len(data), dtype=ITYPE)
+    cdef np.ndarray row_indices = np.zeros(len(data), dtype=ITYPE)
 
     _min_spanning_tree(data, indices, indptr, i_sort,
-                       index1, predecessors, components)
+                       row_indices, predecessors, components)
 
     sp_tree = csr_matrix((data, indices, indptr), (N, N))
     sp_tree.eliminate_zeros()
@@ -79,33 +82,42 @@ def cs_graph_minimum_spanning_tree(csgraph, overwrite=False):
 
 
 cdef _min_spanning_tree(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
-                        np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
+                        np.ndarray[ITYPE_t, ndim=1, mode='c'] col_indices,
                         np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr,
                         np.ndarray[ITYPE_t, ndim=1, mode='c'] i_sort,
-                        np.ndarray[ITYPE_t, ndim=1, mode='c'] index1,
+                        np.ndarray[ITYPE_t, ndim=1, mode='c'] row_indices,
                         np.ndarray[ITYPE_t, ndim=1, mode='c'] predecessors,
                         np.ndarray[ITYPE_t, ndim=1, mode='c'] components):
-    # Work-horse routine for computing minimum spanning tree.
-    # By separating this code here, we get more efficient indexing.
+    # Work-horse routine for computing minimum spanning tree using
+    #  Kruskal's algorithm.  By separating this code here, we get more
+    #  efficient indexing.
     global NULL_IDX
-    cdef unsigned int i, j, V1, V2, N = predecessors.shape[0]
+    cdef unsigned int i, j, V1, V2
     cdef DTYPE_t E
     
-    for i from 0 <= i < N:
+    # Arrange `row_indices` to contain the row index of each value in `data`.
+    # Note that the array `col_indices` already contains the column index.
+    for i from 0 <= i < predecessors.shape[0]:
         for j from indptr[i] <= j < indptr[i + 1]:
-            index1[j] = i
+            row_indices[j] = i
     
+    # step through the edges from smallest to largest.
+    #  V1 and V2 are the vertices, and E is the edge weight connecting them.
     for i from 0 <= i < i_sort.shape[0]:
         j = i_sort[i]
-        V1 = index1[j]
-        V2 = indices[j]
+        V1 = row_indices[j]
+        V2 = col_indices[j]
         E = data[j]
 
+        # progress upward to the head node of each subtree
         while predecessors[V1] != NULL_IDX:
             V1 = predecessors[V1]
         while predecessors[V2] != NULL_IDX:
             V2 = predecessors[V2]
 
+        # if the subtrees are different, then we connect them and keep the
+        # edge.  Otherwise, we remove the edge: it duplicates one already
+        # in the spanning tree.
         if components[V1] != components[V2]:
             predecessors[V2] = V1
         else:
