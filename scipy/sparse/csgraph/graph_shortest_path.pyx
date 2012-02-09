@@ -9,10 +9,17 @@ the Floyd-Warshall algorithm, or Dykstra's algorithm with Fibonacci Heaps.
 # Author: Jake Vanderplas  -- <vanderplas@astro.washington.edu>
 # License: BSD, (C) 2011
 
+# TODO: currently finding the distance with unweighted=True is sub-optimal
+#   with Dijkstra's algorithm: a set of weights equal to 1 are passed to
+#   the routine.  This can fail when there are zeros explicitly stored in
+#   the matrix, and is also less efficient than if we re-wrote the _dijkstra
+#   routines specifically for this purpose.
+
 import numpy as np
 cimport numpy as np
 
 from scipy.sparse import csr_matrix, isspmatrix, isspmatrix_csr, isspmatrix_csc
+from validation import validate_graph
 
 cimport cython
 
@@ -69,6 +76,7 @@ def construct_dist_matrix(np.ndarray[DTYPE_t, ndim=2] graph,
 def cs_graph_shortest_path(csgraph, method='auto',
                            directed=True,
                            return_predecessors=False,
+                           unweighted=False,
                            overwrite=False):
     """
     Perform a shortest-path graph search on a positive directed or
@@ -95,10 +103,14 @@ def cs_graph_shortest_path(csgraph, method='auto',
         if False, then find the shortest path on an undirected graph: the
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i]
-    overwrite : bool, default=False
-        Overwrite csgraph with the result.  This applies only if
+    overwrite : bool (optional)
+        If True, overwrite csgraph with the result.  This applies only if
         method == 'FW' and csgraph is a dense, c-ordered array with
         dtype=float64.  Otherwise, the input will not be overwritten.
+    unweighted : bool (optional)
+        If True, then find unweighted distances.  That is, rather than finding
+        the path between each point such that the sum of weights is minimized,
+        find the path such that the number of edges is minimized.
     return_predecessors : bool (optional)
         If True, return the size (N, N) predecesor matrix
 
@@ -129,14 +141,14 @@ def cs_graph_shortest_path(csgraph, method='auto',
     distances.  Negative distances can lead to infinite cycles that must
     be handled by specialized algorithms.
     """
+    validate_graph(csgraph, directed, DTYPE)
+
     if method == 'auto':
         # guess fastest method based on number of nodes and edges
+        N = csgraph.shape[0]
         if isspmatrix(csgraph):
-            N = csgraph.shape[0]
             Nk = csgraph.nnz
         else:
-            csgraph = np.asarray(csgraph, dtype=DTYPE, order='C')
-            N = csgraph.shape[0]
             Nk = np.sum(csgraph > 0)
 
         if Nk < N * N / 4:
@@ -145,17 +157,22 @@ def cs_graph_shortest_path(csgraph, method='auto',
             method = 'FW'
 
     if method == 'FW':
-        return floyd_warshall(csgraph, directed, overwrite,
-                              return_predecessors)
+        return floyd_warshall(csgraph, directed,
+                              return_predecessors=return_predecessors,
+                              unweighted=unweighted,
+                              overwrite=overwrite)
     elif method == 'D':
         return dijkstra(csgraph, directed,
-                        return_predecessors=return_predecessors)
+                        return_predecessors=return_predecessors,
+                        unweighted=unweighted)
     else:
         raise ValueError("unrecognized method '%s'" % method)
 
 
-def floyd_warshall(csgraph, directed=True, overwrite=False,
-                   return_predecessors=False):
+def floyd_warshall(csgraph, directed=True,
+                   return_predecessors=False,
+                   unweighted=False,
+                   overwrite=False):
     """
     Compute the shortest path lengths using the Floyd-Warshall algorithm
 
@@ -171,12 +188,16 @@ def floyd_warshall(csgraph, directed=True, overwrite=False,
         progress from a point to its neighbors, not the other way around.
         if False, then find the shortest path on an undirected graph: the
         algorithm can progress from a point to its neighbors and vice versa.
+    return_predecessors : bool (optional)
+        If True, return the size (N, N) predecesor matrix
+    unweighted : bool (optional)
+        If True, then find unweighted distances.  That is, rather than finding
+        the path between each point such that the sum of weights is minimized,
+        find the path such that the number of edges is minimized.
     overwrite : bool, default=True
         Overwrite csgraph with the result.  This applies only if
         csgraph is a dense, c-ordered array with dtype=float64.
         Otherwise, a copy will be made.
-    return_predecessors : bool (optional)
-        If True, return the size (N, N) predecesor matrix
 
     Returns
     -------
@@ -202,16 +223,13 @@ def floyd_warshall(csgraph, directed=True, overwrite=False,
     # graph needs to be a dense, C-ordered copy of csgraph with the
     # correct dtype.  Addisionally, if overwrite is False, we need to
     # assure that a copy is made.
-    if isspmatrix(csgraph):
-        dist_matrix = np.asarray(csgraph.toarray(), dtype=DTYPE, order='C')
-    else:
-        if overwrite:
-            dist_matrix = np.asarray(csgraph, dtype=DTYPE, order='C')
-        else:
-            dist_matrix = np.array(csgraph, dtype=DTYPE, order='C')
+    dist_matrix = validate_graph(csgraph, directed, DTYPE,
+                                 csr_output=False,
+                                 copy_if_dense= not overwrite)
 
-    if dist_matrix.ndim != 2 or dist_matrix.shape[0] != dist_matrix.shape[1]:
-        raise ValueError("csgraph must have shape (N, N)")
+    if unweighted:
+        nonzero = (dist_matrix != 0)
+        dist_matrix[nonzero] = 1
 
     if np.any(dist_matrix < 0):
         raise ValueError("Negative graph weights are not supported")
@@ -310,7 +328,8 @@ cdef void _floyd_warshall(
 
 
 def dijkstra(csgraph, directed=True, indices=None,
-             return_predecessors=False):
+             return_predecessors=False,
+             unweighted=False):
     """
     Dijkstra algorithm using Fibonacci Heaps
 
@@ -334,6 +353,10 @@ def dijkstra(csgraph, directed=True, indices=None,
         indices.
     return_predecessors : boolean (optional)
         If True, return the size (Nint, N) predecesor matrix
+    unweighted : bool (optional)
+        If True, then find unweighted distances.  That is, rather than finding
+        the path between each point such that the sum of weights is minimized,
+        find the path such that the number of edges is minimized.
 
     Returns
     -------
@@ -364,23 +387,11 @@ def dijkstra(csgraph, directed=True, indices=None,
     distances.  Negative distances can lead to infinite cycles that must
     be handled by specialized algorithms.
     """
-    # We need to convert csgraph to a csr_matrix, and create
-    # dense c-ordered float64 matrix to contain the result.
-    if isspmatrix_csr(csgraph):
-        pass
-    elif (not directed) and isspmatrix_csc(csgraph):
-        # if not directed, then it's safe to assume that csgraph
-        # and csgraph.T can be treated equivalently.  We
-        # can get it into csr_matrix format very efficiently.
-        csgraph = csgraph.T
-    else:
-        csgraph = csr_matrix(csgraph, dtype=DTYPE)
+    csgraph = validate_graph(csgraph, directed, DTYPE,
+                             dense_output=False)
 
     if np.any(csgraph.data < 0):
         raise ValueError("Negative graph weights are not supported")
-
-    if csgraph.ndim != 2 or csgraph.shape[0] != csgraph.shape[1]:
-        raise ValueError("csgraph must have shape (N, N)")
 
     N = csgraph.shape[0]
 
@@ -400,7 +411,7 @@ def dijkstra(csgraph, directed=True, indices=None,
         predecessor_matrix = np.empty((0, N), dtype=ITYPE)
 
     _dijkstra(csgraph, dist_matrix, indices,
-              predecessor_matrix, directed)
+              predecessor_matrix, directed, unweighted)
 
     if return_predecessors:
         return (dist_matrix.reshape(return_shape),
@@ -414,7 +425,8 @@ cdef void _dijkstra(csgraph,
                     np.ndarray[DTYPE_t, ndim=2, mode='c'] dist_matrix,
                     np.ndarray[ITYPE_t, ndim=1, mode='c'] compute_ind,
                     np.ndarray[ITYPE_t, ndim=2, mode='c'] pred_matrix,
-                    int directed=0):
+                    int directed=0,
+                    int unweighted=0):
     # `csgraph` is a square csr_matrix, or object with attributes `data`,
     #     `indices`, and `indptr` which store a matrix in csr format.
     # `dist_matrix` is an uninitialized array which will store the output.
@@ -427,6 +439,7 @@ cdef void _dijkstra(csgraph,
     #     not the case, then a memory error/segfault could result.
     # if directed is false, we convert the csr matrix to a csc matrix
     #     in order to find bi-directional distances.
+    # if unweighted is true, then we treat all edges as weight 1
     cdef unsigned int Nind = dist_matrix.shape[0]
     cdef unsigned int N = dist_matrix.shape[1]
     cdef unsigned int i
@@ -442,7 +455,10 @@ cdef void _dijkstra(csgraph,
     if not isspmatrix_csr(csgraph):
         csgraph = csr_matrix(csgraph)
 
-    distances = np.asarray(csgraph.data, dtype=DTYPE, order='C')
+    if unweighted:
+        distances = np.ones(csgraph.data.shape[0], dtype=DTYPE)
+    else:
+        distances = np.asarray(csgraph.data, dtype=DTYPE, order='C')
     neighbors = np.asarray(csgraph.indices, dtype=ITYPE, order='C')
     indptr = np.asarray(csgraph.indptr, dtype=ITYPE, order='C')
 
@@ -464,8 +480,11 @@ cdef void _dijkstra(csgraph,
             # both directions of neigbors
             csgraph_T = csgraph.T.tocsr()
 
-            distances2 = np.asarray(csgraph_T.data,
-                                    dtype=DTYPE, order='C')
+            if unweighted:
+                distances2 = np.ones(csgraph_T.data.shape[0], dtype=DTYPE)
+            else:
+                distances2 = np.asarray(csgraph_T.data,
+                                        dtype=DTYPE, order='C')
             neighbors2 = np.asarray(csgraph_T.indices,
                                     dtype=ITYPE, order='C')
             indptr2 = np.asarray(csgraph_T.indptr,
@@ -491,9 +510,12 @@ cdef void _dijkstra(csgraph,
             #use the csr -> csc sparse matrix conversion to quickly get
             # both directions of neigbors
             csgraph_T = csgraph.T.tocsr()
-
-            distances2 = np.asarray(csgraph_T.data,
-                                    dtype=DTYPE, order='C')
+            
+            if unweighted:
+                distances2 = np.ones(csgraph_T.data.shape[0], dtype=DTYPE)
+            else:
+                distances2 = np.asarray(csgraph_T.data,
+                                        dtype=DTYPE, order='C')
             neighbors2 = np.asarray(csgraph_T.indices,
                                     dtype=ITYPE, order='C')
             indptr2 = np.asarray(csgraph_T.indptr,
