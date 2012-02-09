@@ -17,4 +17,8 @@ def configuration(parent_package='', top_path=None):
          sources=['graph_traversal.c'],
          include_dirs=[numpy.get_include()])
 
+    config.add_extension('graph_min_spanning_tree',
+         sources=['graph_min_spanning_tree.c'],
+         include_dirs=[numpy.get_include()])
+
     return config

@@ -35,7 +35,7 @@ def cs_graph_breadth_first_tree(csgraph, i_start, directed=True):
         compressed sparse graph.
         csgraph will be converted to csr format for the calculation.
     i_start: integer
-        index of starting mode
+        index of starting node
     directed: bool (default=True)
         if True, then operate on a directed graph: only
         move from point i to point j along paths csgraph[i, j]
@@ -66,7 +66,7 @@ def cs_graph_depth_first_tree(csgraph, i_start, directed=True):
         compressed sparse graph.
         csgraph will be converted to csr format for the calculation.
     i_start: integer
-        index of starting mode
+        index of starting node
     directed: bool (default=True)
         if True, then operate on a directed graph: only
         move from point i to point j along paths csgraph[i, j]
@@ -120,7 +120,6 @@ def cs_graph_reconstruct_path(csgraph, predecessors, directed=True):
     assert len(predecessors) == N
 
     nnull = (predecessors < 0).sum()
-    nnz = N - nnull
 
     indices = np.argsort(predecessors)[nnull:]
     pind = predecessors[indices]
@@ -153,7 +152,7 @@ def cs_graph_breadth_first_order(csgraph, i_start,
         compressed sparse graph.  Will be converted to csr format for
         the calculation.
     i_start: integer
-        index of starting mode
+        index of starting node
     directed: bool (default=True)
         if True, then operate on a directed graph: only
         move from point i to point j along paths csgraph[i, j]
@@ -308,9 +307,6 @@ cdef unsigned int _breadth_first_undirected(
     return i_nl
 
 
-
-
-
 def cs_graph_depth_first_order(csgraph, i_start,
                                directed=True, return_predecessors=True):
     """Return a depth-first ordering starting with specified node.
@@ -325,7 +321,7 @@ def cs_graph_depth_first_order(csgraph, i_start,
         compressed sparse graph.  Will be converted to csr format for
         the calculation.
     i_start: integer
-        index of starting mode
+        index of starting node
     directed: bool (default=True)
         if True, then operate on a directed graph: only
         move from point i to point j along paths csgraph[i, j]
