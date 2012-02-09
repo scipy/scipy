@@ -9,6 +9,7 @@ import numpy as np
 cimport numpy as np
 
 from scipy.sparse import csr_matrix, isspmatrix, isspmatrix_csr, isspmatrix_csc
+from .validation import validate_graph
 
 cimport cython
 
@@ -108,16 +109,9 @@ def cs_graph_reconstruct_path(csgraph, predecessors, directed=True):
         the compressed-sparse representation of the tree drawn from csgraph
         which is represented by the predecessor list.
     """
-    if (not directed) and isspmatrix_csc(csgraph):
-        csgraph = csgraph.T
-    elif isspmatrix(csgraph):
-        csgraph = csgraph.tocsr()
-    else:
-        csgraph = csr_matrix(csgraph)
+    csgraph = validate_graph(csgraph, directed, dense_output=False)
 
     N = csgraph.shape[0]
-    assert csgraph.shape[1] == N
-    assert len(predecessors) == N
 
     nnull = (predecessors < 0).sum()
 
@@ -174,19 +168,8 @@ def cs_graph_breadth_first_order(csgraph, i_start,
         predecessors[i] = -9999
     """
     global NULL_IDX
-
-    # if csc matrix and the graph is nondirected, then we can convert to
-    # csr using a transpose.
-    if (not directed) and isspmatrix_csc(csgraph):
-        csgraph = csgraph.T
-    elif isspmatrix(csgraph):
-        csgraph = csgraph.tocsr()
-    else:
-        csgraph = csr_matrix(csgraph)
-
+    csgraph = validate_graph(csgraph, directed, dense_output=False)
     cdef int N = csgraph.shape[0]
-    if csgraph.shape[1] != N:
-        raise ValueError("csgraph must be a square matrix")
 
     cdef np.ndarray node_list = np.empty(N, dtype=ITYPE)
     cdef np.ndarray predecessors = np.empty(N, dtype=ITYPE)
@@ -343,19 +326,8 @@ def cs_graph_depth_first_order(csgraph, i_start,
         predecessors[i] = -9999
     """
     global NULL_IDX
-
-    # if csc matrix and the graph is nondirected, then we can convert to
-    # csr using a transpose.
-    if (not directed) and isspmatrix_csc(csgraph):
-        csgraph = csgraph.T
-    elif isspmatrix(csgraph):
-        csgraph = csgraph.tocsr()
-    else:
-        csgraph = csr_matrix(csgraph)
-
+    csgraph = validate_graph(csgraph, directed, dense_output=False)
     cdef int N = csgraph.shape[0]
-    if csgraph.shape[1] != N:
-        raise ValueError("csgraph must be a square matrix")
 
     cdef np.ndarray node_list = np.empty(N, dtype=ITYPE)
     cdef np.ndarray predecessors = np.empty(N, dtype=ITYPE)

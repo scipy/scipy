@@ -5,6 +5,7 @@ import numpy as np
 cimport numpy as np
 
 from scipy.sparse import csr_matrix, isspmatrix_csc, isspmatrix
+from validation import validate_graph
 
 DTYPE = np.float64
 ctypedef np.float64_t DTYPE_t
@@ -44,33 +45,21 @@ def cs_graph_minimum_spanning_tree(csgraph, overwrite=False):
     connected by the lowest nonzero value of the two.
     """
     global NULL_IDX
-    
-    if isspmatrix_csc(csgraph):
-        csgraph = csgraph.T
-    elif isspmatrix(csgraph):
-        csgraph = csgraph.tocsr()
-    else:
-        csgraph = csr_matrix(csgraph)
 
+    csgraph = validate_graph(csgraph, True, DTYPE, dense_output=False,
+                             copy_if_sparse=not overwrite)
     cdef int N = csgraph.shape[0]
-    if csgraph.shape[1] != N:
-        raise ValueError("csgraph must be square")
 
-    if overwrite:
-        data = csgraph.data
-        indices = csgraph.indices
-        indptr = csgraph.indptr
-    else:
-        data = csgraph.data.copy()
-        indices = csgraph.indices.copy()
-        indptr = csgraph.indptr.copy()
+    data = csgraph.data
+    indices = csgraph.indices
+    indptr = csgraph.indptr
 
-    cdef np.ndarray components = np.arange(N, dtype=ITYPE)
-    cdef np.ndarray predecessors = np.empty(N, dtype=ITYPE)
+    components = np.arange(N, dtype=ITYPE)
+    predecessors = np.empty(N, dtype=ITYPE)
     predecessors.fill(NULL_IDX)
 
-    cdef np.ndarray i_sort = np.argsort(data)
-    cdef np.ndarray row_indices = np.zeros(len(data), dtype=ITYPE)
+    i_sort = np.argsort(data)
+    row_indices = np.zeros(len(data), dtype=ITYPE)
 
     _min_spanning_tree(data, indices, indptr, i_sort,
                        row_indices, predecessors, components)
