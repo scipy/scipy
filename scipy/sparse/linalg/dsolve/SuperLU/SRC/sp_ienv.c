@@ -1,5 +1,12 @@
 /*! @file sp_ienv.c
- * \brief Chooses machine-dependent parameters for the local environment	 
+ * \brief Chooses machine-dependent parameters for the local environment.
+ *
+ * <pre>
+ * -- SuperLU routine (version 4.1) --
+ * Univ. of California Berkeley, Xerox Palo Alto Research Center,
+ * and Lawrence Berkeley National Lab.
+ * November, 2010
+ * </pre>
 */
 
 /*
@@ -35,10 +42,11 @@
 	         nodes (columns) in a subtree of the elimination tree is less
 		 than relax, this subtree is considered as one supernode,
 		 regardless of their row structures.
-            = 3: the maximum size for a supernode;
+            = 3: the maximum size for a supernode in complete LU;
 	    = 4: the minimum row dimension for 2-D blocking to be used;
 	    = 5: the minimum column dimension for 2-D blocking to be used;
 	    = 6: the estimated fills factor for L and U, compared with A;
+	    = 7: the maximum size for a supernode in ILU.
 	    
    (SP_IENV) (output) int
             >= 0: the value of the parameter specified by ISPEC   
@@ -53,12 +61,13 @@ sp_ienv(int ispec)
     int i;
 
     switch (ispec) {
-	case 1: return (10);
-	case 2: return (5);
+	case 1: return (12);
+	case 2: return (6);
 	case 3: return (100);
 	case 4: return (200);
-	case 5: return (40);
+	case 5: return (60);
         case 6: return (20);
+        case 7: return (10);
     }
 
     /* Invalid value for ISPEC */

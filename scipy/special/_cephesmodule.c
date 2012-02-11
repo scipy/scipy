@@ -288,27 +288,27 @@ static void * modfresnelp_data[] = {(void *)modified_fresnel_plus_wrap, (void *)
 static void * modfresnelm_data[] = {(void *)modified_fresnel_minus_wrap, (void *)modified_fresnel_minus_wrap};
 
 
-static char cephes_7_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE,};
-static char cephes_6_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE,};
-static char cephes_5_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE,};
+static char cephes_7_types[] = { NPY_FLOAT,  NPY_FLOAT,  NPY_FLOAT, NPY_FLOAT, NPY_FLOAT, NPY_FLOAT, NPY_FLOAT, NPY_DOUBLE,  NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE,};
+static char cephes_6_types[] = { NPY_FLOAT,  NPY_FLOAT,  NPY_FLOAT, NPY_FLOAT, NPY_FLOAT, NPY_FLOAT, NPY_DOUBLE,  NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE,};
+static char cephes_5_types[] = { NPY_FLOAT,  NPY_FLOAT,  NPY_FLOAT, NPY_FLOAT, NPY_FLOAT, NPY_DOUBLE,  NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE,};
 
-static char cephes_5b2_types[] = { PyArray_FLOAT,  PyArray_CFLOAT,  PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CFLOAT, PyArray_DOUBLE,  PyArray_CDOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE,};
+static char cephes_5b2_types[] = { NPY_FLOAT,  NPY_CFLOAT,  NPY_CFLOAT, NPY_CFLOAT, NPY_CFLOAT, NPY_DOUBLE,  NPY_CDOUBLE, NPY_CDOUBLE, NPY_CDOUBLE, NPY_CDOUBLE,};
 
-static char cephes_5c_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CDOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE, };
+static char cephes_5c_types[] = { NPY_FLOAT,  NPY_FLOAT,  NPY_FLOAT, NPY_FLOAT, NPY_FLOAT, NPY_DOUBLE,  NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_CFLOAT, NPY_CFLOAT, NPY_CFLOAT, NPY_CFLOAT, NPY_CFLOAT, NPY_CDOUBLE, NPY_CDOUBLE, NPY_CDOUBLE, NPY_CDOUBLE, NPY_CDOUBLE, };
 
-static char cephes_5c2_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_CFLOAT, PyArray_CFLOAT, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE, };
+static char cephes_5c2_types[] = { NPY_FLOAT,  NPY_FLOAT,  NPY_FLOAT, NPY_FLOAT, NPY_FLOAT, NPY_DOUBLE,  NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_FLOAT, NPY_FLOAT, NPY_FLOAT, NPY_CFLOAT, NPY_CFLOAT, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_CDOUBLE, NPY_CDOUBLE, };
 
-static char cephes_4_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE,};
+static char cephes_4_types[] = { NPY_FLOAT,  NPY_FLOAT,  NPY_FLOAT, NPY_FLOAT, NPY_DOUBLE,  NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE,};
 
-static char cephes_4c_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_FLOAT, PyArray_FLOAT, PyArray_CFLOAT, PyArray_CFLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE};
+static char cephes_4c_types[] = { NPY_FLOAT,  NPY_FLOAT,  NPY_FLOAT, NPY_FLOAT, NPY_DOUBLE,  NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_FLOAT, NPY_FLOAT, NPY_CFLOAT, NPY_CFLOAT, NPY_DOUBLE,  NPY_DOUBLE, NPY_CDOUBLE, NPY_CDOUBLE};
 
-static char cephes_3_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT,   PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, };
-static char cephes_3_cmplx_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT,   PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_CFLOAT,  PyArray_CFLOAT,  PyArray_CFLOAT,   PyArray_CDOUBLE,  PyArray_CDOUBLE, PyArray_CDOUBLE, };
-static char cephes_3c_types[] = { PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_FLOAT, PyArray_CFLOAT,  PyArray_CFLOAT, PyArray_DOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE, };
-static char cephes_3cp_types[] = { PyArray_FLOAT, PyArray_CFLOAT,  PyArray_CFLOAT, PyArray_DOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE, };
-static char cephes_2_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_DOUBLE,  PyArray_DOUBLE,  };
-static char cephes_1rc_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_DOUBLE,  PyArray_DOUBLE,  PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CDOUBLE, PyArray_CDOUBLE };
-static char cephes_1c_types[] = { PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CDOUBLE, PyArray_CDOUBLE, };
+static char cephes_3_types[] = { NPY_FLOAT,  NPY_FLOAT,  NPY_FLOAT,   NPY_DOUBLE,  NPY_DOUBLE, NPY_DOUBLE, };
+static char cephes_3_cmplx_types[] = { NPY_FLOAT,  NPY_FLOAT,  NPY_FLOAT,   NPY_DOUBLE,  NPY_DOUBLE, NPY_DOUBLE, NPY_CFLOAT,  NPY_CFLOAT,  NPY_CFLOAT,   NPY_CDOUBLE,  NPY_CDOUBLE, NPY_CDOUBLE, };
+static char cephes_3c_types[] = { NPY_FLOAT, NPY_FLOAT, NPY_FLOAT, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_FLOAT, NPY_CFLOAT,  NPY_CFLOAT, NPY_DOUBLE, NPY_CDOUBLE, NPY_CDOUBLE, };
+static char cephes_3cp_types[] = { NPY_FLOAT, NPY_CFLOAT,  NPY_CFLOAT, NPY_DOUBLE, NPY_CDOUBLE, NPY_CDOUBLE, };
+static char cephes_2_types[] = { NPY_FLOAT,  NPY_FLOAT,  NPY_DOUBLE,  NPY_DOUBLE,  };
+static char cephes_1rc_types[] = { NPY_FLOAT,  NPY_FLOAT,  NPY_DOUBLE,  NPY_DOUBLE,  NPY_CFLOAT, NPY_CFLOAT, NPY_CDOUBLE, NPY_CDOUBLE };
+static char cephes_1c_types[] = { NPY_CFLOAT, NPY_CFLOAT, NPY_CDOUBLE, NPY_CDOUBLE, };
 
 
 /* Some functions needed from ufunc object, so that Py_complex's aren't being returned
@@ -1051,7 +1051,7 @@ static PyObject *scipy_special_SpecialFunctionWarning = NULL;
 
 void scipy_special_raise_warning(char *fmt, ...)
 {
-    NPY_ALLOW_C_API_DEF
+    NPY_ALLOW_C_API_DEF;
     char msg[1024];
     va_list ap;
 
@@ -1059,9 +1059,9 @@ void scipy_special_raise_warning(char *fmt, ...)
     PyOS_vsnprintf(msg, 1024, fmt, ap);
     va_end(ap);
 
-    NPY_ALLOW_C_API
+    NPY_ALLOW_C_API;
     PyErr_Warn(scipy_special_SpecialFunctionWarning, msg);
-    NPY_DISABLE_C_API
+    NPY_DISABLE_C_API;
 }
 
 static char errprint_doc[] = \

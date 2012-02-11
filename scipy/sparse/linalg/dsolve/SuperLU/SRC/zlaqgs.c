@@ -91,7 +91,6 @@ zlaqgs(SuperMatrix *A, double *r, double *c,
     doublecomplex   *Aval;
     int i, j, irow;
     double large, small, cj;
-    extern double dlamch_(char *);
     double temp;
 
 

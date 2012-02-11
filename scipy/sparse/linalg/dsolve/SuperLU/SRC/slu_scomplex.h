@@ -59,8 +59,8 @@ extern "C" {
 
 /* Prototypes for functions in scomplex.c */
 void c_div(complex *, complex *, complex *);
-double slu_c_abs(complex *);     /* exact */
-double slu_c_abs1(complex *);    /* approximate */
+double c_abs(complex *);     /* exact */
+double c_abs1(complex *);    /* approximate */
 void c_exp(complex *, complex *);
 void r_cnjg(complex *, complex *);
 double r_imag(complex *);

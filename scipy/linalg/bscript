@@ -29,9 +29,8 @@ def pre_build(context):
 
     def builder(extension):
         t = default_builder(extension,
-                            features="c pyext bento cshlib f2py",
+                            features="c fc pyext bento cshlib f2py",
                             use="FLAPACK")
-        t.mappings[".pyf"] = f2py.interface_gen_callback
         return t
     context.register_builder("flapack", builder)
 

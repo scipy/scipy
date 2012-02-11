@@ -1,6 +1,6 @@
 
-/*! @file sreadrb.c
- * \brief Read a matrix stored in Rutherford-Boeing format
+/*! @file sreadtriple.c
+ * \brief Read a matrix stored in triplet (coordinate) format
  *
  * <pre>
  * -- SuperLU routine (version 4.0) --

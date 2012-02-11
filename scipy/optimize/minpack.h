@@ -89,13 +89,13 @@ the result tuple when the full_output argument is non-zero.
 
 #define SET_DIAG(ap_diag,o_diag,mode) { /* Set the diag vector from input */ \
   if (o_diag == NULL || o_diag == Py_None) { \
-    ap_diag = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_DOUBLE); \
+    ap_diag = (PyArrayObject *)PyArray_SimpleNew(1,&n,NPY_DOUBLE); \
     if (ap_diag == NULL) goto fail; \
     diag = (double *)ap_diag -> data; \
     mode = 1; \
   } \
   else { \
-    ap_diag = (PyArrayObject *)PyArray_ContiguousFromObject(o_diag, PyArray_DOUBLE, 1, 1); \
+    ap_diag = (PyArrayObject *)PyArray_ContiguousFromObject(o_diag, NPY_DOUBLE, 1, 1); \
     if (ap_diag == NULL) goto fail; \
     diag = (double *)ap_diag -> data; \
     mode = 2; } }
@@ -133,7 +133,7 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
   PyArrayObject *result_array = NULL;
 
   /* Build sequence argument from inputs */
-  sequence = (PyArrayObject *)PyArray_SimpleNewFromData(1, &n, PyArray_DOUBLE, (char *)x);
+  sequence = (PyArrayObject *)PyArray_SimpleNewFromData(1, &n, NPY_DOUBLE, (char *)x);
   if (sequence == NULL) PYERR2(error_obj,"Internal failure to make an array of doubles out of first\n                 argument to function call.");
 
   /* Build argument list */
@@ -164,7 +164,7 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
     goto fail;
   }
 
-  if ((result_array = (PyArrayObject *)PyArray_ContiguousFromObject(result, PyArray_DOUBLE, dim-1, dim))==NULL) 
+  if ((result_array = (PyArrayObject *)PyArray_ContiguousFromObject(result, NPY_DOUBLE, dim-1, dim))==NULL) 
     PYERR2(error_obj,"Result from function call is not a proper array of floats.");
 
   Py_DECREF(result);

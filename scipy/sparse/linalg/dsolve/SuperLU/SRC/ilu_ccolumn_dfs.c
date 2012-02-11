@@ -85,7 +85,7 @@ ilu_ccolumn_dfs(
     nzlmax  = Glu->nzlmax;
 
     if ( first ) {
-	maxsuper = sp_ienv(3);
+	maxsuper = sp_ienv(7);
 	first = 0;
     }
     jcolp1  = jcol + 1;

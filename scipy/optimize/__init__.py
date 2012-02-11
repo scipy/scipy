@@ -14,7 +14,7 @@ General-purpose
 .. autosummary::
    :toctree: generated/
 
-   minimize - Unified interface for unconstrained solvers
+   minimize - Unified interface for minimizers of multivariate functions
    show_minimize_options - Show method-specific options for `minimize`
    fmin - Nelder-Mead Simplex algorithm
    fmin_powell - Powell's (modified) level set method

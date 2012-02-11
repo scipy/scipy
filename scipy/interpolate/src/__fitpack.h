@@ -124,11 +124,11 @@ fitpack_bispev(PyObject *dummy, PyObject *args)
                 &x_py,&y_py,&nux,&nuy)) {
         return NULL;
     }
-    ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x_py, PyArray_DOUBLE, 0, 1);
-    ap_y = (PyArrayObject *)PyArray_ContiguousFromObject(y_py, PyArray_DOUBLE, 0, 1);
-    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, PyArray_DOUBLE, 0, 1);
-    ap_tx = (PyArrayObject *)PyArray_ContiguousFromObject(tx_py, PyArray_DOUBLE, 0, 1);
-    ap_ty = (PyArrayObject *)PyArray_ContiguousFromObject(ty_py, PyArray_DOUBLE, 0, 1);
+    ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x_py, NPY_DOUBLE, 0, 1);
+    ap_y = (PyArrayObject *)PyArray_ContiguousFromObject(y_py, NPY_DOUBLE, 0, 1);
+    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, NPY_DOUBLE, 0, 1);
+    ap_tx = (PyArrayObject *)PyArray_ContiguousFromObject(tx_py, NPY_DOUBLE, 0, 1);
+    ap_ty = (PyArrayObject *)PyArray_ContiguousFromObject(ty_py, NPY_DOUBLE, 0, 1);
     if (ap_x == NULL
             || ap_y == NULL
             || ap_c == NULL
@@ -146,7 +146,7 @@ fitpack_bispev(PyObject *dummy, PyObject *args)
     mx = ap_x->dimensions[0];
     my = ap_y->dimensions[0];
     mxy = mx*my;
-    ap_z = (PyArrayObject *)PyArray_SimpleNew(1,&mxy,PyArray_DOUBLE);
+    ap_z = (PyArrayObject *)PyArray_SimpleNew(1,&mxy,NPY_DOUBLE);
     z = (double *) ap_z->data;
     if (nux || nuy) {
         lwrk = mx*(kx + 1 - nux) + my*(ky + 1 - nuy) + (nx - kx - 1)*(ny - ky - 1);
@@ -216,12 +216,12 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
                 &nyest, &wrk_py, &lwrk1, &lwrk2)) {
         return NULL;
     }
-    ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x_py, PyArray_DOUBLE, 0, 1);
-    ap_y = (PyArrayObject *)PyArray_ContiguousFromObject(y_py, PyArray_DOUBLE, 0, 1);
-    ap_z = (PyArrayObject *)PyArray_ContiguousFromObject(z_py, PyArray_DOUBLE, 0, 1);
-    ap_w = (PyArrayObject *)PyArray_ContiguousFromObject(w_py, PyArray_DOUBLE, 0, 1);
-    ap_wrk=(PyArrayObject *)PyArray_ContiguousFromObject(wrk_py, PyArray_DOUBLE, 0, 1);
-    /*ap_iwrk=(PyArrayObject *)PyArray_ContiguousFromObject(iwrk_py, PyArray_INT, 0, 1);*/
+    ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x_py, NPY_DOUBLE, 0, 1);
+    ap_y = (PyArrayObject *)PyArray_ContiguousFromObject(y_py, NPY_DOUBLE, 0, 1);
+    ap_z = (PyArrayObject *)PyArray_ContiguousFromObject(z_py, NPY_DOUBLE, 0, 1);
+    ap_w = (PyArrayObject *)PyArray_ContiguousFromObject(w_py, NPY_DOUBLE, 0, 1);
+    ap_wrk=(PyArrayObject *)PyArray_ContiguousFromObject(wrk_py, NPY_DOUBLE, 0, 1);
+    /*ap_iwrk=(PyArrayObject *)PyArray_ContiguousFromObject(iwrk_py, NPY_INT, 0, 1);*/
     if (ap_x == NULL
             || ap_y == NULL
             || ap_z == NULL
@@ -252,8 +252,8 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
     iwrk = (int *)(wrk1 + lwrk1);
     wrk2 = (double *)(iwrk + kwrk);
     if (iopt) {
-        ap_tx = (PyArrayObject *)PyArray_ContiguousFromObject(tx_py, PyArray_DOUBLE, 0, 1);
-        ap_ty = (PyArrayObject *)PyArray_ContiguousFromObject(ty_py, PyArray_DOUBLE, 0, 1);
+        ap_tx = (PyArrayObject *)PyArray_ContiguousFromObject(tx_py, NPY_DOUBLE, 0, 1);
+        ap_ty = (PyArrayObject *)PyArray_ContiguousFromObject(ty_py, NPY_DOUBLE, 0, 1);
         if (ap_tx == NULL || ap_ty == NULL) {
             goto fail;
         }
@@ -291,9 +291,9 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
     lc = (nx - kx - 1)*(ny - ky - 1);
     Py_XDECREF(ap_tx);
     Py_XDECREF(ap_ty);
-    ap_tx = (PyArrayObject *)PyArray_SimpleNew(1, &nx, PyArray_DOUBLE);
-    ap_ty = (PyArrayObject *)PyArray_SimpleNew(1, &ny, PyArray_DOUBLE);
-    ap_c = (PyArrayObject *)PyArray_SimpleNew(1, &lc, PyArray_DOUBLE);
+    ap_tx = (PyArrayObject *)PyArray_SimpleNew(1, &nx, NPY_DOUBLE);
+    ap_ty = (PyArrayObject *)PyArray_SimpleNew(1, &ny, NPY_DOUBLE);
+    ap_c = (PyArrayObject *)PyArray_SimpleNew(1, &lc, NPY_DOUBLE);
     if (ap_tx == NULL
             || ap_ty == NULL
             || ap_c == NULL) {
@@ -301,15 +301,15 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
     }
     if ((iopt == 0)||(nx > nxo)||(ny > nyo)) {
         Py_XDECREF(ap_wrk);
-        ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1, &lc, PyArray_DOUBLE);
+        ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1, &lc, NPY_DOUBLE);
         if (ap_wrk == NULL) {
             goto fail;
         }
-        /*ap_iwrk = (PyArrayObject *)PyArray_SimpleNew(1,&n,PyArray_INT);*/
+        /*ap_iwrk = (PyArrayObject *)PyArray_SimpleNew(1,&n,NPY_INT);*/
     }
     if (ap_wrk->dimensions[0] < lc) {
         Py_XDECREF(ap_wrk);
-        ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1, &lc, PyArray_DOUBLE);
+        ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1, &lc, NPY_DOUBLE);
         if (ap_wrk == NULL) {
             goto fail;
         }
@@ -367,11 +367,11 @@ fitpack_parcur(PyObject *dummy, PyObject *args)
                 &k, &iopt, &ipar, &s, &t_py, &nest, &wrk_py, &iwrk_py, &per)) {
         return NULL;
     }
-    ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x_py, PyArray_DOUBLE, 0, 1);
-    ap_u = (PyArrayObject *)PyArray_ContiguousFromObject(u_py, PyArray_DOUBLE, 0, 1);
-    ap_w = (PyArrayObject *)PyArray_ContiguousFromObject(w_py, PyArray_DOUBLE, 0, 1);
-    ap_wrk=(PyArrayObject *)PyArray_ContiguousFromObject(wrk_py, PyArray_DOUBLE, 0, 1);
-    ap_iwrk=(PyArrayObject *)PyArray_ContiguousFromObject(iwrk_py, PyArray_INT, 0, 1);
+    ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x_py, NPY_DOUBLE, 0, 1);
+    ap_u = (PyArrayObject *)PyArray_ContiguousFromObject(u_py, NPY_DOUBLE, 0, 1);
+    ap_w = (PyArrayObject *)PyArray_ContiguousFromObject(w_py, NPY_DOUBLE, 0, 1);
+    ap_wrk=(PyArrayObject *)PyArray_ContiguousFromObject(wrk_py, NPY_DOUBLE, 0, 1);
+    ap_iwrk=(PyArrayObject *)PyArray_ContiguousFromObject(iwrk_py, NPY_INT, 0, 1);
     if (ap_x == NULL
             || ap_u == NULL
             || ap_w == NULL
@@ -402,7 +402,7 @@ fitpack_parcur(PyObject *dummy, PyObject *args)
     wrk = c + nc;
     iwrk = (int *)(wrk + lwrk);
     if (iopt) {
-        ap_t=(PyArrayObject *)PyArray_ContiguousFromObject(t_py, PyArray_DOUBLE, 0, 1);
+        ap_t=(PyArrayObject *)PyArray_ContiguousFromObject(t_py, NPY_DOUBLE, 0, 1);
         if (ap_t == NULL) {
             goto fail;
         }
@@ -428,14 +428,14 @@ fitpack_parcur(PyObject *dummy, PyObject *args)
         n = 1;
     }
     lc = (n - k - 1)*idim;
-    ap_t = (PyArrayObject *)PyArray_SimpleNew(1, &n, PyArray_DOUBLE);
-    ap_c = (PyArrayObject *)PyArray_SimpleNew(1, &lc, PyArray_DOUBLE);
+    ap_t = (PyArrayObject *)PyArray_SimpleNew(1, &n, NPY_DOUBLE);
+    ap_c = (PyArrayObject *)PyArray_SimpleNew(1, &lc, NPY_DOUBLE);
     if (ap_t == NULL || ap_c == NULL) {
         goto fail;
     }
     if (iopt == 0|| n > no) {
-        ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1, &n, PyArray_DOUBLE);
-        ap_iwrk = (PyArrayObject *)PyArray_SimpleNew(1, &n, PyArray_INT);
+        ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1, &n, NPY_DOUBLE);
+        ap_iwrk = (PyArrayObject *)PyArray_SimpleNew(1, &n, NPY_INT);
         if (ap_wrk == NULL || ap_iwrk == NULL) {
             goto fail;
         }
@@ -483,11 +483,11 @@ fitpack_curfit(PyObject *dummy, PyObject *args)
                 &k, &iopt, &s, &t_py, &nest, &wrk_py, &iwrk_py, &per)) {
         return NULL;
     }
-    ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x_py, PyArray_DOUBLE, 0, 1);
-    ap_y = (PyArrayObject *)PyArray_ContiguousFromObject(y_py, PyArray_DOUBLE, 0, 1);
-    ap_w = (PyArrayObject *)PyArray_ContiguousFromObject(w_py, PyArray_DOUBLE, 0, 1);
-    ap_wrk = (PyArrayObject *)PyArray_ContiguousFromObject(wrk_py, PyArray_DOUBLE, 0, 1);
-    ap_iwrk = (PyArrayObject *)PyArray_ContiguousFromObject(iwrk_py, PyArray_INT, 0, 1);
+    ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x_py, NPY_DOUBLE, 0, 1);
+    ap_y = (PyArrayObject *)PyArray_ContiguousFromObject(y_py, NPY_DOUBLE, 0, 1);
+    ap_w = (PyArrayObject *)PyArray_ContiguousFromObject(w_py, NPY_DOUBLE, 0, 1);
+    ap_wrk = (PyArrayObject *)PyArray_ContiguousFromObject(wrk_py, NPY_DOUBLE, 0, 1);
+    ap_iwrk = (PyArrayObject *)PyArray_ContiguousFromObject(iwrk_py, NPY_INT, 0, 1);
     if (ap_x == NULL
             || ap_y == NULL
             || ap_w == NULL
@@ -515,7 +515,7 @@ fitpack_curfit(PyObject *dummy, PyObject *args)
     wrk = c + nest;
     iwrk = (int *)(wrk + lwrk);
     if (iopt) {
-        ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, PyArray_DOUBLE, 0, 1);
+        ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, NPY_DOUBLE, 0, 1);
         if (ap_t == NULL) {
             goto fail;
         }
@@ -539,20 +539,20 @@ fitpack_curfit(PyObject *dummy, PyObject *args)
     }
     lc = n - k - 1;
     if (!iopt) {
-        ap_t = (PyArrayObject *)PyArray_SimpleNew(1, &n, PyArray_DOUBLE);
+        ap_t = (PyArrayObject *)PyArray_SimpleNew(1, &n, NPY_DOUBLE);
         if (ap_t == NULL) {
             goto fail;
         }
     }
-    ap_c = (PyArrayObject *)PyArray_SimpleNew(1, &lc, PyArray_DOUBLE);
+    ap_c = (PyArrayObject *)PyArray_SimpleNew(1, &lc, NPY_DOUBLE);
     if (ap_c == NULL) {
         goto fail;
     }
     if (iopt == 0 || n > no) {
         Py_XDECREF(ap_wrk);
         Py_XDECREF(ap_iwrk);
-        ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1, &n, PyArray_DOUBLE);
-        ap_iwrk = (PyArrayObject *)PyArray_SimpleNew(1, &n, PyArray_INT);
+        ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1, &n, NPY_DOUBLE);
+        ap_iwrk = (PyArrayObject *)PyArray_SimpleNew(1, &n, NPY_INT);
         if (ap_wrk == NULL || ap_iwrk == NULL) {
             goto fail;
         }
@@ -597,9 +597,9 @@ fitpack_spl_(PyObject *dummy, PyObject *args)
     if (!PyArg_ParseTuple(args, "OiOOii", &x_py, &nu, &t_py, &c_py, &k, &e)) {
         return NULL;
     }
-    ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x_py, PyArray_DOUBLE, 0, 1);
-    ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, PyArray_DOUBLE, 0, 1);
-    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, PyArray_DOUBLE, 0, 1);
+    ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x_py, NPY_DOUBLE, 0, 1);
+    ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, NPY_DOUBLE, 0, 1);
+    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, NPY_DOUBLE, 0, 1);
     if ((ap_x == NULL || ap_t == NULL || ap_c == NULL)) {
         goto fail;
     }
@@ -608,7 +608,7 @@ fitpack_spl_(PyObject *dummy, PyObject *args)
     t = (double *)ap_t->data;
     c = (double *)ap_c->data;
     n = ap_t->dimensions[0];
-    ap_y = (PyArrayObject *)PyArray_SimpleNew(1,&m,PyArray_DOUBLE);
+    ap_y = (PyArrayObject *)PyArray_SimpleNew(1,&m,NPY_DOUBLE);
     if (ap_y == NULL) {
         goto fail;
     }
@@ -655,15 +655,15 @@ fitpack_splint(PyObject *dummy, PyObject *args)
     if (!PyArg_ParseTuple(args, "OOidd",&t_py,&c_py,&k,&a,&b)) {
         return NULL;
     }
-    ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, PyArray_DOUBLE, 0, 1);
-    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, PyArray_DOUBLE, 0, 1);
+    ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, NPY_DOUBLE, 0, 1);
+    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, NPY_DOUBLE, 0, 1);
     if ((ap_t == NULL || ap_c == NULL)) {
         goto fail;
     }
     t = (double *)ap_t->data;
     c = (double *)ap_c->data;
     n = ap_t->dimensions[0];
-    ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1, &n, PyArray_DOUBLE);
+    ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1, &n, NPY_DOUBLE);
     if (ap_wrk == NULL) {
         goto fail;
     }
@@ -693,8 +693,8 @@ fitpack_sproot(PyObject *dummy, PyObject *args)
     if (!PyArg_ParseTuple(args, "OOii",&t_py,&c_py,&k,&mest)) {
         return NULL;
     }
-    ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, PyArray_DOUBLE, 0, 1);
-    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, PyArray_DOUBLE, 0, 1);
+    ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, NPY_DOUBLE, 0, 1);
+    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, NPY_DOUBLE, 0, 1);
     if ((ap_t == NULL || ap_c == NULL)) {
         goto fail;
     }
@@ -709,7 +709,7 @@ fitpack_sproot(PyObject *dummy, PyObject *args)
     if (ier==10) {
         m = 0;
     }
-    ap_z = (PyArrayObject *)PyArray_SimpleNew(1, &m, PyArray_DOUBLE);
+    ap_z = (PyArrayObject *)PyArray_SimpleNew(1, &m, NPY_DOUBLE);
     if (ap_z == NULL) {
         goto fail;
     }
@@ -743,8 +743,8 @@ fitpack_spalde(PyObject *dummy, PyObject *args)
     if (!PyArg_ParseTuple(args, "OOid",&t_py,&c_py,&k,&x)) {
         return NULL;
     }
-    ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, PyArray_DOUBLE, 0, 1);
-    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, PyArray_DOUBLE, 0, 1);
+    ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, NPY_DOUBLE, 0, 1);
+    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, NPY_DOUBLE, 0, 1);
     if ((ap_t == NULL || ap_c == NULL)) {
         goto fail;
     }
@@ -752,7 +752,7 @@ fitpack_spalde(PyObject *dummy, PyObject *args)
     c = (double *)ap_c->data;
     n = ap_t->dimensions[0];
     k1 = k + 1;
-    ap_d = (PyArrayObject *)PyArray_SimpleNew(1, &k1, PyArray_DOUBLE);
+    ap_d = (PyArrayObject *)PyArray_SimpleNew(1, &k1, NPY_DOUBLE);
     if (ap_d == NULL) {
         goto fail;
     }
@@ -783,8 +783,8 @@ fitpack_insert(PyObject *dummy, PyObject*args)
     if (!PyArg_ParseTuple(args, "iOOidi",&iopt,&t_py,&c_py,&k, &x, &m)) {
         return NULL;
     }
-    ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, PyArray_DOUBLE, 0, 1);
-    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, PyArray_DOUBLE, 0, 1);
+    ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, NPY_DOUBLE, 0, 1);
+    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, NPY_DOUBLE, 0, 1);
     if (ap_t == NULL || ap_c == NULL) {
         goto fail;
     }
@@ -792,8 +792,8 @@ fitpack_insert(PyObject *dummy, PyObject*args)
     c = (double *)ap_c->data;
     n = ap_t->dimensions[0];
     nest = n + m;
-    ap_tt = (PyArrayObject *)PyArray_SimpleNew(1, &nest, PyArray_DOUBLE);
-    ap_cc = (PyArrayObject *)PyArray_SimpleNew(1, &nest, PyArray_DOUBLE);
+    ap_tt = (PyArrayObject *)PyArray_SimpleNew(1, &nest, NPY_DOUBLE);
+    ap_cc = (PyArrayObject *)PyArray_SimpleNew(1, &nest, NPY_DOUBLE);
     if (ap_tt == NULL || ap_cc == NULL) {
         goto fail;
     }

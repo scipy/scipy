@@ -218,6 +218,123 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
 
 
     """
+    # handle fprime/approx_grad
+    if approx_grad:
+        fun = func
+        jac = None
+    elif fprime is None:
+        def fun(x):
+            return func(x, *args)[0]
+        def jac(x):
+            return func(x, *args)[1]
+    else:
+        fun = func
+        jac = fprime
+
+    if disp is not None: # disp takes precedence over messages
+        mesg_num = disp
+    else:
+        mesg_num = {0:MSG_NONE, 1:MSG_ITER, 2:MSG_INFO, 3:MSG_VERS,
+                    4:MSG_EXIT, 5:MSG_ALL}.get(messages, MSG_ALL)
+    # build options
+    opts = {'eps'  : epsilon,
+            'scale': scale,
+            'offset': offset,
+            'mesg_num': mesg_num,
+            'maxCGit': maxCGit,
+            'maxfev': maxfun,
+            'eta': eta,
+            'stepmx': stepmx,
+            'accuracy': accuracy,
+            'minfev': fmin,
+            'ftol': ftol,
+            'xtol': xtol,
+            'pgtol': pgtol,
+            'rescale': rescale,
+            'disp': False}
+
+    x, info = _minimize_tnc(fun, x0, args, jac, bounds, options=opts,
+                            full_output=True)
+
+    return x, info['nfev'], info['status']
+
+def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options={},
+                  full_output=False):
+    """
+    Minimize a scalar function of one or more variables using a truncated
+    Newton (TNC) algorithm.
+
+    Options for the TNC algorithm are:
+        eps: float
+            Step size used for numerical approximation of the jacobian.
+        scale : list of floats
+            Scaling factors to apply to each variable.  If None, the
+            factors are up-low for interval bounded variables and
+            1+|x] fo the others.  Defaults to None
+        offset : float
+            Value to substract from each variable.  If None, the
+            offsets are (up+low)/2 for interval bounded variables
+            and x for the others.
+        disp : bool
+           Set to True to print convergence messages.
+        maxCGit : int
+            Maximum number of hessian*vector evaluations per main
+            iteration.  If maxCGit == 0, the direction chosen is
+            -gradient if maxCGit < 0, maxCGit is set to
+            max(1,min(50,n/2)).  Defaults to -1.
+        maxfev : int
+            Maximum number of function evaluation.  if None, `maxfev` is
+            set to max(100, 10*len(x0)).  Defaults to None.
+        eta : float
+            Severity of the line search. if < 0 or > 1, set to 0.25.
+            Defaults to -1.
+        stepmx : float
+            Maximum step for the line search.  May be increased during
+            call.  If too small, it will be set to 10.0.  Defaults to 0.
+        accuracy : float
+            Relative precision for finite difference calculations.  If
+            <= machine_precision, set to sqrt(machine_precision).
+            Defaults to 0.
+        minfev : float
+            Minimum function value estimate.  Defaults to 0.
+        ftol : float
+            Precision goal for the value of f in the stoping criterion.
+            If ftol < 0.0, ftol is set to 0.0 defaults to -1.
+        xtol : float
+            Precision goal for the value of x in the stopping
+            criterion (after applying x scaling factors).  If xtol <
+            0.0, xtol is set to sqrt(machine_precision).  Defaults to
+            -1.
+        pgtol : float
+            Precision goal for the value of the projected gradient in
+            the stopping criterion (after applying x scaling factors).
+            If pgtol < 0.0, pgtol is set to 1e-2 * sqrt(accuracy).
+            Setting it to 0.0 is not recommended.  Defaults to -1.
+        rescale : float
+            Scaling factor (in log10) used to trigger f value
+            rescaling.  If 0, rescale at each iteration.  If a large
+            value, never rescale.  If < 0, rescale is set to 1.3.
+
+    This function is called by the `minimize` function with `method=TNC`.
+    It is not supposed to be called directly.
+    """
+    # retrieve useful options
+    epsilon  = options.get('eps', 1e-8)
+    scale    = options.get('scale')
+    offset   = options.get('offset')
+    mesg_num = options.get('mesg_num')
+    maxCGit  = options.get('maxCGit', -1)
+    maxfun   = options.get('maxfev')
+    eta      = options.get('eta', -1)
+    stepmx   = options.get('stepmx', 0)
+    accuracy = options.get('accuracy', 0)
+    fmin     = options.get('minfev', 0)
+    ftol     = options.get('ftol', -1)
+    xtol     = options.get('xtol', -1)
+    pgtol    = options.get('pgtol', -1)
+    rescale  = options.get('rescale', -1)
+    disp     = options.get('disp', False)
+
     x0 = asarray(x0, dtype=float).tolist()
     n = len(x0)
 
@@ -226,26 +343,25 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
     if len(bounds) != n:
         raise ValueError('length of x0 != length of bounds')
 
-    if disp is not None:
+    if mesg_num is not None:
         messages = {0:MSG_NONE, 1:MSG_ITER, 2:MSG_INFO, 3:MSG_VERS,
-                    4:MSG_EXIT, 5:MSG_ALL}.get(disp, MSG_ALL)
+                    4:MSG_EXIT, 5:MSG_ALL}.get(mesg_num, MSG_ALL)
+    elif disp:
+        messages = MSG_ALL
+    else:
+        messages = MSG_NONE
 
-    if approx_grad:
+    if jac is None:
         def func_and_grad(x):
             x = asarray(x)
-            f = func(x, *args)
-            g = approx_fprime(x, func, epsilon, *args)
-            return f, list(g)
-    elif fprime is None:
-        def func_and_grad(x):
-            x = asarray(x)
-            f, g = func(x, *args)
+            f = fun(x, *args)
+            g = approx_fprime(x, fun, epsilon, *args)
             return f, list(g)
     else:
         def func_and_grad(x):
             x = asarray(x)
-            f = func(x, *args)
-            g = fprime(x, *args)
+            f = fun(x, *args)
+            g = jac(x, *args)
             return f, list(g)
 
     """
@@ -281,7 +397,20 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
     rc, nf, x = moduleTNC.minimize(func_and_grad, x0, low, up, scale, offset,
             messages, maxCGit, maxfun, eta, stepmx, accuracy,
             fmin, ftol, xtol, pgtol, rescale)
-    return array(x), nf, rc
+
+    xopt = array(x)
+    if full_output:
+        funv, jacv = func_and_grad(xopt)
+        info = {'solution': xopt,
+                'fun': funv,
+                'jac': jacv,
+                'nfev': nf,
+                'status': rc,
+                'message': RCSTRINGS[rc],
+                'success': -1 < rc < 3}
+        return xopt, info
+    else:
+        return xopt
 
 if __name__ == '__main__':
     # Examples for TNC

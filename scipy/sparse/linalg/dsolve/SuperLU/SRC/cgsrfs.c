@@ -157,7 +157,7 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
     complex   *work;
     float   *rwork;
     int      *iwork;
-    extern double slamch_(char *);
+
     extern int clacon_(int *, complex *, complex *, float *, int *);
 #ifdef _CRAY
     extern int CCOPY(int *, complex *, int *, complex *, int *);
@@ -287,21 +287,21 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	       than SAFE2, then SAFE1 is added to the i-th component of the   
 	       numerator before dividing. */
 
-	    for (i = 0; i < A->nrow; ++i) rwork[i] = slu_c_abs1( &Bptr[i] );
+	    for (i = 0; i < A->nrow; ++i) rwork[i] = c_abs1( &Bptr[i] );
 	    
 	    /* Compute abs(op(A))*abs(X) + abs(B). */
 	    if (notran) {
 		for (k = 0; k < A->ncol; ++k) {
-		    xk = slu_c_abs1( &Xptr[k] );
+		    xk = c_abs1( &Xptr[k] );
 		    for (i = Astore->colptr[k]; i < Astore->colptr[k+1]; ++i)
-			rwork[Astore->rowind[i]] += slu_c_abs1(&Aval[i]) * xk;
+			rwork[Astore->rowind[i]] += c_abs1(&Aval[i]) * xk;
 		}
 	    } else {
 		for (k = 0; k < A->ncol; ++k) {
 		    s = 0.;
 		    for (i = Astore->colptr[k]; i < Astore->colptr[k+1]; ++i) {
 			irow = Astore->rowind[i];
-			s += slu_c_abs1(&Aval[i]) * slu_c_abs1(&Xptr[irow]);
+			s += c_abs1(&Aval[i]) * c_abs1(&Xptr[irow]);
 		    }
 		    rwork[k] += s;
 		}
@@ -309,9 +309,9 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	    s = 0.;
 	    for (i = 0; i < A->nrow; ++i) {
 		if (rwork[i] > safe2) {
-		    s = SUPERLU_MAX( s, slu_c_abs1(&work[i]) / rwork[i] );
+		    s = SUPERLU_MAX( s, c_abs1(&work[i]) / rwork[i] );
                 } else if ( rwork[i] != 0.0 ) {
-		    s = SUPERLU_MAX( s, (slu_c_abs1(&work[i]) + safe1) / rwork[i] );
+		    s = SUPERLU_MAX( s, (c_abs1(&work[i]) + safe1) / rwork[i] );
                 }
                 /* If rwork[i] is exactly 0.0, then we know the true 
                    residual also must be exactly 0.0. */
@@ -364,22 +364,22 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
              inv(op(A)) * diag(W),   
           where W = abs(R) + NZ*EPS*( abs(op(A))*abs(X)+abs(B) ))) */
 	
-	for (i = 0; i < A->nrow; ++i) rwork[i] = slu_c_abs1( &Bptr[i] );
+	for (i = 0; i < A->nrow; ++i) rwork[i] = c_abs1( &Bptr[i] );
 	
 	/* Compute abs(op(A))*abs(X) + abs(B). */
 	if ( notran ) {
 	    for (k = 0; k < A->ncol; ++k) {
-		xk = slu_c_abs1( &Xptr[k] );
+		xk = c_abs1( &Xptr[k] );
 		for (i = Astore->colptr[k]; i < Astore->colptr[k+1]; ++i)
-		    rwork[Astore->rowind[i]] += slu_c_abs1(&Aval[i]) * xk;
+		    rwork[Astore->rowind[i]] += c_abs1(&Aval[i]) * xk;
 	    }
 	} else {
 	    for (k = 0; k < A->ncol; ++k) {
 		s = 0.;
 		for (i = Astore->colptr[k]; i < Astore->colptr[k+1]; ++i) {
 		    irow = Astore->rowind[i];
-		    xk = slu_c_abs1( &Xptr[irow] );
-		    s += slu_c_abs1(&Aval[i]) * xk;
+		    xk = c_abs1( &Xptr[irow] );
+		    s += c_abs1(&Aval[i]) * xk;
 		}
 		rwork[k] += s;
 	    }
@@ -387,9 +387,9 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	
 	for (i = 0; i < A->nrow; ++i)
 	    if (rwork[i] > safe2)
-		rwork[i] = slu_c_abs(&work[i]) + (iwork[i]+1)*eps*rwork[i];
+		rwork[i] = c_abs(&work[i]) + (iwork[i]+1)*eps*rwork[i];
 	    else
-		rwork[i] = slu_c_abs(&work[i])+(iwork[i]+1)*eps*rwork[i]+safe1;
+		rwork[i] = c_abs(&work[i])+(iwork[i]+1)*eps*rwork[i]+safe1;
 	kase = 0;
 
 	do {
@@ -437,13 +437,13 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	lstres = 0.;
  	if ( notran && colequ ) {
 	    for (i = 0; i < A->nrow; ++i)
-	    	lstres = SUPERLU_MAX( lstres, C[i] * slu_c_abs1( &Xptr[i]) );
+	    	lstres = SUPERLU_MAX( lstres, C[i] * c_abs1( &Xptr[i]) );
   	} else if ( !notran && rowequ ) {
 	    for (i = 0; i < A->nrow; ++i)
-	    	lstres = SUPERLU_MAX( lstres, R[i] * slu_c_abs1( &Xptr[i]) );
+	    	lstres = SUPERLU_MAX( lstres, R[i] * c_abs1( &Xptr[i]) );
 	} else {
 	    for (i = 0; i < A->nrow; ++i)
-	    	lstres = SUPERLU_MAX( lstres, slu_c_abs1( &Xptr[i]) );
+	    	lstres = SUPERLU_MAX( lstres, c_abs1( &Xptr[i]) );
 	}
 	if ( lstres != 0. )
 	    ferr[j] /= lstres;

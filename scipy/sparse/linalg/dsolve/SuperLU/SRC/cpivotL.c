@@ -108,16 +108,12 @@ if ( jcol == MIN_COL ) {
        Also search for user-specified pivot, and diagonal element. */
     if ( *usepr ) *pivrow = iperm_r[jcol];
     diagind = iperm_c[jcol];
-#ifdef SCIPY_SPECIFIC_FIX
-    pivmax = -1.0;
-#else
     pivmax = 0.0;
-#endif
     pivptr = nsupc;
     diag = EMPTY;
     old_pivptr = nsupc;
     for (isub = nsupc; isub < nsupr; ++isub) {
-        rtemp = slu_c_abs1 (&lu_col_ptr[isub]);
+        rtemp = c_abs1 (&lu_col_ptr[isub]);
 	if ( rtemp > pivmax ) {
 	    pivmax = rtemp;
 	    pivptr = isub;
@@ -127,16 +123,18 @@ if ( jcol == MIN_COL ) {
     }
 
     /* Test for singularity */
-#ifdef SCIPY_SPECIFIC_FIX
-    if (pivmax < 0.0) {
-        perm_r[diagind] = jcol;
-        *usepr = 0;
-        return (jcol+1);
-    }
-#endif
     if ( pivmax == 0.0 ) {
 #if 1
+#if SCIPY_FIX
+	if (pivptr < nsupr) {
+	    *pivrow = lsub_ptr[pivptr];
+	}
+	else {
+	    *pivrow = diagind;
+	}
+#else
 	*pivrow = lsub_ptr[pivptr];
+#endif
 	perm_r[*pivrow] = jcol;
 #else
 	perm_r[diagind] = jcol;
@@ -149,7 +147,7 @@ if ( jcol == MIN_COL ) {
     
     /* Choose appropriate pivotal element by our policy. */
     if ( *usepr ) {
-        rtemp = slu_c_abs1 (&lu_col_ptr[old_pivptr]);
+        rtemp = c_abs1 (&lu_col_ptr[old_pivptr]);
 	if ( rtemp != 0.0 && rtemp >= thresh )
 	    pivptr = old_pivptr;
 	else
@@ -158,7 +156,7 @@ if ( jcol == MIN_COL ) {
     if ( *usepr == 0 ) {
 	/* Use diagonal pivot? */
 	if ( diag >= 0 ) { /* diagonal exists */
-            rtemp = slu_c_abs1 (&lu_col_ptr[diag]);
+            rtemp = c_abs1 (&lu_col_ptr[diag]);
 	    if ( rtemp != 0.0 && rtemp >= thresh ) pivptr = diag;
         }
 	*pivrow = lsub_ptr[pivptr];

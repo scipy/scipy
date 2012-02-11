@@ -58,7 +58,7 @@
    ===================================================================== 
 </pre>
 */
-double slamch_(char *cmach)
+float slamch_(char *cmach)
 {
 /* >>Start of File<<   
        Initialized data */
