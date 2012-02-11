@@ -1051,9 +1051,9 @@ static PyObject *scipy_special_SpecialFunctionWarning = NULL;
 
 void scipy_special_raise_warning(char *fmt, ...)
 {
-    NPY_ALLOW_C_API_DEF;
     char msg[1024];
     va_list ap;
+    NPY_ALLOW_C_API_DEF;
 
     va_start(ap, fmt);
     PyOS_vsnprintf(msg, 1024, fmt, ap);
