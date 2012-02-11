@@ -4,7 +4,7 @@
 import numpy as np
 from scipy import sparse
 
-from scipy.sparse.csgraph import cs_graph_laplacian
+from scipy.sparse import csgraph
 
 
 def test_graph_laplacian():
@@ -15,7 +15,7 @@ def test_graph_laplacian():
                ):
         sp_mat = sparse.csr_matrix(mat)
         for normed in (True, False):
-            laplacian = cs_graph_laplacian(mat, normed=normed)
+            laplacian = csgraph.laplacian(mat, normed=normed)
             n_nodes = mat.shape[0]
             if not normed:
                 np.testing.assert_array_almost_equal(laplacian.sum(axis=0),
@@ -24,4 +24,4 @@ def test_graph_laplacian():
                                                  laplacian)
             np.testing.assert_array_almost_equal(\
                 laplacian,
-                cs_graph_laplacian(sp_mat, normed=normed).todense())
+                csgraph.laplacian(sp_mat, normed=normed).todense())

@@ -2,24 +2,29 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['cs_graph_components',
-           'cs_graph_shortest_path',
+__all__ = ['components',
+           'cs_graph_components',
+           'laplacian',
+           'shortest_path',
            'floyd_warshall',
            'dijkstra',
-           'cs_graph_laplacian',
-           'cs_graph_breadth_first_order',
-           'cs_graph_depth_first_order',
-           'cs_graph_breadth_first_tree',
-           'cs_graph_depth_first_tree',
-           'cs_graph_minimum_spanning_tree']
+           'breadth_first_order',
+           'depth_first_order',
+           'breadth_first_tree',
+           'depth_first_tree',
+           'minimum_spanning_tree']
 
-from graph_components import cs_graph_components
-from graph_shortest_path import\
-    cs_graph_shortest_path, floyd_warshall, dijkstra
-from graph_laplacian import cs_graph_laplacian
-from graph_traversal import\
-    cs_graph_breadth_first_order, cs_graph_depth_first_order, \
-    cs_graph_breadth_first_tree, cs_graph_depth_first_tree
-from graph_min_spanning_tree import\
-    cs_graph_minimum_spanning_tree
+from _components import components
+from _laplacian import laplacian
+from _shortest_path import shortest_path, floyd_warshall, dijkstra
+from _traversal import breadth_first_order, depth_first_order, \
+    breadth_first_tree, depth_first_tree
+from _min_spanning_tree import minimum_spanning_tree
 from tools import construct_dist_matrix, reconstruct_path
+
+
+def cs_graph_components(*args, **kwargs):
+    """Deprecated function.  See csgraph.components"""
+    warnings.warn('cs_graph_components has been deprecated. '
+                  'Use csgraph.components instead')
+    return components(*args, **kwargs)

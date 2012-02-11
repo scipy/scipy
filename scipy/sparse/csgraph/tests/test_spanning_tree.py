@@ -1,7 +1,7 @@
 """Test the minimum spanning tree function"""
 import numpy as np
 from scipy.sparse import csr_matrix
-from scipy.sparse.csgraph import cs_graph_minimum_spanning_tree
+from scipy.sparse.csgraph import minimum_spanning_tree
 
 def construct_sparse_graph(N):
     csgraph = np.random.random((N, N))
@@ -12,5 +12,5 @@ def construct_sparse_graph(N):
 def test_minimum_spanning_tree():
     for N in (5, 10, 15, 20):
         csgraph = construct_sparse_graph(N)
-        mintree = cs_graph_minimum_spanning_tree(csgraph)
+        mintree = minimum_spanning_tree(csgraph)
         assert mintree.nnz < N

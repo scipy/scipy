@@ -181,7 +181,7 @@ from dok import *
 from coo import *
 from dia import *
 from bsr import *
-from csgraph import *
+from csgraph import cs_graph_components
 
 from construct import *
 from extract import *

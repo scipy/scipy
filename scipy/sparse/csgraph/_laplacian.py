@@ -1,12 +1,10 @@
 """
-Graph utilities and algorithms
-
-Graphs are represented with their adjacency matrices, preferably using
-sparse matrices.
+Laplacian of a compressed-sparse graph
 """
 
 # Authors: Aric Hagberg <hagberg@lanl.gov>
 #          Gael Varoquaux <gael.varoquaux@normalesup.org>
+#          Jake Vanderplas <vanderplas@astro.washington.edu>
 # License: BSD
 
 import numpy as np
@@ -68,8 +66,25 @@ def _graph_laplacian_dense(graph, normed=False, return_diag=False):
     return lap
 
 
-def cs_graph_laplacian(graph, normed=False, return_diag=False):
+def laplacian(graph, normed=False, return_diag=False):
     """ Return the Laplacian of the given graph.
+
+    Parameters
+    ----------
+    graph: array-like or sparse matrix, shape=(N, N)
+        directed compressed-sparse graph
+    normed: boolean (optional)
+        if True, then compute normalized Laplacian
+    return_diag: boolean (optional)
+        if True, then return diagonal as well as laplacian
+
+    Returns
+    -------
+    lap: ndarray, shape=(N, N)
+        the laplacian matrix of graph
+    
+    diag: ndarray, size=N [if return_diag == True]
+        the diagonal of the laplacian matrix
     """
     if normed and (np.issubdtype(graph.dtype, np.int)
                     or np.issubdtype(graph.dtype, np.uint)):

@@ -8,7 +8,7 @@ from scipy.sparse.base import isspmatrix
 _msg0 = 'x must be a symmetric square matrix!'
 _msg1 = _msg0 + '(has shape %s)'
 
-def cs_graph_components(x):
+def components(x):
     """
     Determine connected components of a graph stored as a compressed
     sparse row or column matrix.
@@ -43,14 +43,14 @@ def cs_graph_components(x):
 
     Examples
     --------
-    >>> from scipy.sparse import cs_graph_components
+    >>> from scipy.sparse import components
     >>> import numpy as np
     >>> D = np.eye(4)
     >>> D[0,1] = D[1,0] = 1
-    >>> cs_graph_components(D)
+    >>> components(D)
     (3, array([0, 0, 1, 2]))
     >>> from scipy.sparse import dok_matrix
-    >>> cs_graph_components(dok_matrix(D))
+    >>> components(dok_matrix(D))
     (3, array([0, 0, 1, 2]))
 
     """

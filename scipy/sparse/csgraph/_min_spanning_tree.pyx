@@ -15,7 +15,7 @@ ctypedef np.int32_t ITYPE_t
 
 cdef ITYPE_t NULL_IDX = -9999
 
-def cs_graph_minimum_spanning_tree(csgraph, overwrite=False):
+def minimum_spanning_tree(csgraph, overwrite=False):
     """Return a minimum spanning tree of an undirected graph
 
     A minimum spanning tree is a graph consisting of the subset of edges
@@ -59,12 +59,12 @@ def cs_graph_minimum_spanning_tree(csgraph, overwrite=False):
     representation, the solution looks like this:
 
     >>> from scipy.sparse import csr_matrix
-    >>> from scipy.sparse.csgraph import cs_graph_minimum_spanning_tree
+    >>> from scipy.sparse.csgraph import minimum_spanning_tree
     >>> X = csr_matrix([[0, 8, 0, 3],
     ...                 [0, 0, 2, 5],
     ...                 [0, 0, 0, 6],
     ...                 [0, 0, 0, 0]])
-    >>> Tcsr = cs_graph_minimum_spanning_tree(X)
+    >>> Tcsr = minimum_spanning_tree(X)
     >>> Tcsr.toarray().astype(int)
     array([[0, 0, 0, 3],
            [0, 0, 2, 5],
