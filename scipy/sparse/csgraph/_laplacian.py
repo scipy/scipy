@@ -67,7 +67,7 @@ def _graph_laplacian_dense(graph, normed=False, return_diag=False):
 
 
 def laplacian(graph, normed=False, return_diag=False):
-    """ Return the Laplacian of the given graph.
+    """ Return the Laplacian matrix of the given graph.
 
     Parameters
     ----------
@@ -85,6 +85,32 @@ def laplacian(graph, normed=False, return_diag=False):
     
     diag: ndarray, size=N [if return_diag == True]
         the diagonal of the laplacian matrix
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import csgraph
+    >>> G = np.arange(5) * np.arange(5)[:, np.newaxis]
+    >>> G
+    array([[ 0,  0,  0,  0,  0],
+           [ 0,  1,  2,  3,  4],
+           [ 0,  2,  4,  6,  8],
+           [ 0,  3,  6,  9, 12],
+           [ 0,  4,  8, 12, 16]])
+    >>> csgraph.laplacian(G, normed=False)
+    array([[  0,   0,   0,   0,   0],
+           [  0,   9,  -2,  -3,  -4],
+           [  0,  -2,  16,  -6,  -8],
+           [  0,  -3,  -6,  21, -12],
+           [  0,  -4,  -8, -12,  24]])
+
+    Notes
+    -----
+    The Laplacian matrix of a graph is sometimes referred to as the
+    "Kirchoff matrix" or the "admittance matrix", and is useful in many
+    parts of spectral graph theory.  In particular, the eigen-decomposition
+    of the laplacian matrix can give insight into many properties of the
+    graph.
     """
     if normed and (np.issubdtype(graph.dtype, np.int)
                     or np.issubdtype(graph.dtype, np.uint)):

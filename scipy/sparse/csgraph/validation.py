@@ -5,7 +5,8 @@ DTYPE = np.float64
 
 def validate_graph(csgraph, directed, dtype=DTYPE,
                    csr_output=True, dense_output=True,
-                   copy_if_dense=False, copy_if_sparse=False):
+                   copy_if_dense=False, copy_if_sparse=False,
+                   require_sorted_indices=True):
     """Routine for validation and conversion of csgraph inputs"""
     if not (csr_output or dense_output):
         raise ValueError("Internal: dense or csr output must be true")
@@ -21,6 +22,9 @@ def validate_graph(csgraph, directed, dtype=DTYPE,
                 csgraph = csr_matrix(csgraph, dtype=DTYPE)
             else:
                 csgraph = csgraph.tocsr().astype(dtype)
+
+            if require_sorted_indices and not csgraph.has_sorted_indices:
+                csgraph = csgraph.sorted_indices()
         else:
             csgraph = csgraph.toarray().astype(dtype)
     else:

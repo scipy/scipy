@@ -43,14 +43,14 @@ def connected_components(x):
 
     Examples
     --------
-    >>> from scipy.sparse import components
+    >>> from scipy.sparse.csgraph import connected_components
     >>> import numpy as np
     >>> D = np.eye(4)
     >>> D[0,1] = D[1,0] = 1
-    >>> components(D)
+    >>> connected_components(D)
     (3, array([0, 0, 1, 2]))
     >>> from scipy.sparse import dok_matrix
-    >>> components(dok_matrix(D))
+    >>> connected_components(dok_matrix(D))
     (3, array([0, 0, 1, 2]))
 
     """

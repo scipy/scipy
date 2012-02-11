@@ -104,6 +104,19 @@ def test_construct_shortest_path():
 
         assert_array_almost_equal(dist, dist2)
 
+def test_unweighted_path():
+    csgraph = generate_graph(20)
+    csgraph_ones = np.ones(csgraph.shape)
+    csgraph_ones[csgraph == 0] = 0
+
+    for directed in (True, False):
+        for method in ('FW', 'D'):
+            D1 = shortest_path(csgraph, method=method, directed=directed,
+                               unweighted=True)
+            D2 = shortest_path(csgraph_ones, method=method, directed=directed)
+            assert_array_almost_equal(D1, D2)
+        
+
 
 if __name__ == '__main__':
     import nose

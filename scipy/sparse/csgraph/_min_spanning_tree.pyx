@@ -7,13 +7,7 @@ cimport numpy as np
 from scipy.sparse import csr_matrix, isspmatrix_csc, isspmatrix
 from validation import validate_graph
 
-DTYPE = np.float64
-ctypedef np.float64_t DTYPE_t
-
-ITYPE = np.int32
-ctypedef np.int32_t ITYPE_t
-
-cdef ITYPE_t NULL_IDX = -9999
+include 'parameters.pxi'
 
 def minimum_spanning_tree(csgraph, overwrite=False):
     """Return a minimum spanning tree of an undirected graph
