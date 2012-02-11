@@ -46,6 +46,14 @@ Building sparse matrices:
    vstack - Stack sparse matrices vertically (row wise)
    rand - Random values in a given shape
 
+Submodules
+----------
+
+.. autosummary::
+   :toctree: generated/
+
+   csgraph - Compressed sparse graph routines
+
 Identifying sparse matrices:
 
 .. autosummary::

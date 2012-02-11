@@ -6,6 +6,7 @@ DTYPE = np.float64
 def validate_graph(csgraph, directed, dtype=DTYPE,
                    csr_output=True, dense_output=True,
                    copy_if_dense=False, copy_if_sparse=False):
+    """Routine for validation and conversion of csgraph inputs"""
     if not (csr_output or dense_output):
         raise ValueError("Internal: dense or csr output must be true")
 
