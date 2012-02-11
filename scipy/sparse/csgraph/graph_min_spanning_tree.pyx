@@ -37,12 +37,46 @@ def cs_graph_minimum_spanning_tree(csgraph, overwrite=False):
         The compressed-sparse representation of the undirected minimum spanning
         tree over the input (see notes below)
 
+    Examples
+    --------
+    The following example shows the computation of a minimum spanning tree
+    over a simple four-component graph::
+
+         input graph             minimum spanning tree
+
+             (0)                         (0)
+            /   \                       /
+           3     8                     3
+          /       \                   /
+        (3)---5---(1)               (3)---5---(1)
+          \       /                           /
+           6     2                           2
+            \   /                           /
+             (2)                         (2)
+
+    It is easy to see from inspection that the minimum spanning tree involves
+    removing the edges with weights 8 and 6.  In compressed sparse
+    representation, the solution looks like this:
+
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import cs_graph_minimum_spanning_tree
+    >>> X = csr_matrix([[0, 8, 0, 3],
+    ...                 [0, 0, 2, 5],
+    ...                 [0, 0, 0, 6],
+    ...                 [0, 0, 0, 0]])
+    >>> Tcsr = cs_graph_minimum_spanning_tree(X)
+    >>> Tcsr.toarray().astype(int)
+    array([[0, 0, 0, 3],
+           [0, 0, 2, 5],
+           [0, 0, 0, 0],
+           [0, 0, 0, 0]])
+
     Notes
     -----
     This routine uses undirected graphs as input and output.  That is, if
     graph[i, j] and graph[j, i] are both zero, then nodes i and j do not
     have an edge connecting them.  If either is nonzero, then the two are
-    connected by the lowest nonzero value of the two.
+    connected by the minimum nonzero value of the two.
     """
     global NULL_IDX
 

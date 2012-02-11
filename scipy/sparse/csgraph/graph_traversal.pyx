@@ -9,7 +9,8 @@ import numpy as np
 cimport numpy as np
 
 from scipy.sparse import csr_matrix, isspmatrix, isspmatrix_csr, isspmatrix_csc
-from .validation import validate_graph
+from validation import validate_graph
+from tools import reconstruct_path
 
 cimport cython
 
@@ -47,12 +48,49 @@ def cs_graph_breadth_first_tree(csgraph, i_start, directed=True):
     Returns
     -------
     cstree : csr matrix, shape=(N, N)
-        the compressed-sparse representation of the breadth-first tree
-        drawn from csgraph, starting at the specified node
+        the directed compressed-sparse representation of the breadth-first
+        tree drawn from csgraph, starting at the specified node
+
+    Examples
+    --------
+    The following example shows the computation of a depth-first tree
+    over a simple four-component graph, starting at node 0::
+
+         input graph          breadth first tree from (0)
+
+             (0)                         (0)
+            /   \                       /   \
+           3     8                     3     8
+          /       \                   /       \
+        (3)---5---(1)               (3)       (1)
+          \       /                           /
+           6     2                           2
+            \   /                           /
+             (2)                         (2)
+
+    It is easy to see from inspection that the minimum spanning tree involves
+    removing the edges with weights 8 and 6.  In compressed sparse
+    representation, the solution looks like this:
+
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import cs_graph_breadth_first_tree
+    >>> X = csr_matrix([[0, 8, 0, 3],
+    ...                 [0, 0, 2, 5],
+    ...                 [0, 0, 0, 6],
+    ...                 [0, 0, 0, 0]])
+    >>> Tcsr = cs_graph_breadth_first_tree(X, 0, directed=False)
+    >>> Tcsr.toarray().astype(int)
+    array([[0, 8, 0, 3],
+           [0, 0, 2, 0],
+           [0, 0, 0, 0],
+           [0, 0, 0, 0]])
+
+    Note that the resulting graph is a Directed Acyclic Graph which spans
+    the graph.  A breadth-first tree from a given node is unique.
     """
     node_list, predecessors = cs_graph_breadth_first_order(csgraph, i_start,
                                                            directed, True)
-    return cs_graph_reconstruct_path(csgraph, predecessors, directed)
+    return reconstruct_path(csgraph, predecessors, directed)
 
 
 def cs_graph_depth_first_tree(csgraph, i_start, directed=True):
@@ -78,59 +116,52 @@ def cs_graph_depth_first_tree(csgraph, i_start, directed=True):
     Returns
     -------
     cstree : csr matrix, shape=(N, N)
-        the compressed-sparse representation of the breadth-first tree
-        drawn from csgraph, starting at the specified node
+        the directed compressed-sparse representation of the breadth-first
+        tree drawn from csgraph, starting at the specified node
+
+    Examples
+    --------
+    The following example shows the computation of a depth-first tree
+    over a simple four-component graph, starting at node 0::
+
+         input graph           depth first tree from (0)
+
+             (0)                         (0)
+            /   \                           \
+           3     8                           8
+          /       \                           \
+        (3)---5---(1)               (3)       (1)
+          \       /                   \       /
+           6     2                     6     2
+            \   /                       \   /
+             (2)                         (2)
+
+    It is easy to see from inspection that the minimum spanning tree involves
+    removing the edges with weights 8 and 6.  In compressed sparse
+    representation, the solution looks like this:
+
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import cs_graph_depth_first_tree
+    >>> X = csr_matrix([[0, 8, 0, 3],
+    ...                 [0, 0, 2, 5],
+    ...                 [0, 0, 0, 6],
+    ...                 [0, 0, 0, 0]])
+    >>> Tcsr = cs_graph_depth_first_tree(X, 0, directed=False)
+    >>> Tcsr.toarray().astype(int)
+    array([[0, 8, 0, 0],
+           [0, 0, 2, 0],
+           [0, 0, 0, 6],
+           [0, 0, 0, 0]])
+
+    Note that the resulting graph is a Directed Acyclic Graph which spans
+    the graph.  Unlike a breadth-first tree, a depth-first tree of a given
+    graph is not unique if the graph contains cycles.  If the above solution
+    had begun with the edge connecting nodes 0 and 3, the result would have
+    been different.
     """
     node_list, predecessors = cs_graph_depth_first_order(csgraph, i_start,
                                                          directed, True)
-    return cs_graph_reconstruct_path(csgraph, predecessors, directed)
-
-
-def cs_graph_reconstruct_path(csgraph, predecessors, directed=True):
-    """Construct a tree from a graph and a predecessor list.
-
-    Parameters
-    ----------
-    csgraph : array-like or sparse matrix, shape=(N, N)
-        The graph from which the predecessors are drawn
-    predecessors : array-like, shape=(N,)
-        The indices of predecessors for the tree.  The index of the parent
-        of node i is given by predecessors[i]
-    directed : boolean, default=True
-        if True, then operate on a directed graph: only move from point i
-        to point j along paths csgraph[i, j]
-        if False, then find the shortest path on an undirected graph: the
-        algorithm can progress from point i to j along csgraph[i, j] or
-        csgraph[j, i]
-
-    Returns
-    -------
-    cstree : csr matrix, shape=(N, N)
-        the compressed-sparse representation of the tree drawn from csgraph
-        which is represented by the predecessor list.
-    """
-    csgraph = validate_graph(csgraph, directed, dense_output=False)
-
-    N = csgraph.shape[0]
-
-    nnull = (predecessors < 0).sum()
-
-    indices = np.argsort(predecessors)[nnull:]
-    pind = predecessors[indices]
-    indptr = pind.searchsorted(np.arange(N + 1))
-
-    if directed == True:
-        data = csgraph[pind, indices]
-    else:
-        data1 = csgraph[pind, indices]
-        data2 = csgraph[indices, pind]
-        data1[data1 == 0] = np.inf
-        data2[data2 == 0] = np.inf
-        data = np.minimum(data1, data2)
-
-    data = np.asarray(data).ravel()
-
-    return csr_matrix((data, indices, indptr), shape=(N, N))
+    return reconstruct_path(csgraph, predecessors, directed)
 
 
 def cs_graph_breadth_first_order(csgraph, i_start,

@@ -2,7 +2,6 @@ import numpy as np
 from numpy.testing import assert_, assert_equal
 from scipy.sparse import csr_matrix, cs_graph_components
 
-
 def test_cs_graph_components():
     D = np.eye(4, dtype=np.bool)
 

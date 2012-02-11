@@ -35,44 +35,6 @@ ctypedef np.int32_t ITYPE_t
 cdef ITYPE_t NULL_IDX = -9999
 
 
-def construct_dist_matrix(np.ndarray[DTYPE_t, ndim=2] graph,
-                          np.ndarray[ITYPE_t, ndim=2] predecessor_matrix,
-                          directed=True):
-    """construct distance matrix from a predecessor matrix"""
-    global NULL_IDX
-    assert graph.shape[0] == predecessor_matrix.shape[0]
-    assert graph.shape[1] == predecessor_matrix.shape[1]
-
-    cdef int i, j, k1, k2, N
-    N = graph.shape[0]
-
-    #------------------------------------------
-    # symmetrize matrix if necessary
-    if not directed:
-        graph = graph.copy()
-        graph[graph == 0] = np.inf
-        for i from 0 <= i < N:
-            for j from i + 1 <= j < N:
-                if graph[j, i] <= graph[i, j]:
-                    graph[i, j] = graph[j, i]
-                else:
-                    graph[j, i] = graph[i, j]
-    #------------------------------------------
-
-    dist_matrix = np.zeros((N, N))
-    for i from 0 <= i < N:
-        for j from 0 <= j < N:
-            k2 = j
-            while k2 != i:
-                k1 = predecessor_matrix[i, k2]
-                if k1 == NULL_IDX:
-                    break
-                dist_matrix[i, j] += graph[k1, k2]
-                k2 = k1
-
-    return dist_matrix
-
-
 def cs_graph_shortest_path(csgraph, method='auto',
                            directed=True,
                            return_predecessors=False,
@@ -127,7 +89,7 @@ def cs_graph_shortest_path(csgraph, method='auto',
         shortest paths from point i: each entry predecessors[i, j]
         gives the index of the previous node in the path from point i
         to point j.  If no path exists between point i and j, then
-        P[i, j] = -9999
+        predecessors[i, j] = -9999
 
     Notes
     -----
