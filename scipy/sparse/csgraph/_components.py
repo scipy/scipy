@@ -20,7 +20,7 @@ def connected_components(x):
 
     Parameters
     -----------
-    x: ndarray-like, 2 dimensions, or sparse matrix
+    x: array_like or sparse matrix, 2 dimensions
         The adjacency matrix of the graph. Only the upper triangular part
         is used.
 
@@ -44,7 +44,6 @@ def connected_components(x):
     Examples
     --------
     >>> from scipy.sparse.csgraph import connected_components
-    >>> import numpy as np
     >>> D = np.eye(4)
     >>> D[0,1] = D[1,0] = 1
     >>> connected_components(D)

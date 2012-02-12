@@ -71,20 +71,21 @@ def laplacian(graph, normed=False, return_diag=False):
 
     Parameters
     ----------
-    graph: array-like or sparse matrix, shape=(N, N)
-        directed compressed-sparse graph
-    normed: boolean (optional)
-        if True, then compute normalized Laplacian
-    return_diag: boolean (optional)
-        if True, then return diagonal as well as laplacian
+    graph: array_like or sparse matrix, 2 dimensions
+        Directed compressed-sparse graph, with shape (N, N).
+    normed: bool, optional
+        If True, then compute normalized Laplacian.
+    return_diag: bool, optional
+        If True, then return diagonal as well as laplacian.
 
     Returns
     -------
-    lap: ndarray, shape=(N, N)
-        the laplacian matrix of graph
+    lap: ndarray
+        The N x N laplacian matrix of graph.
     
-    diag: ndarray, size=N [if return_diag == True]
-        the diagonal of the laplacian matrix
+    diag: ndarray
+        The length-N diagonal of the laplacian matrix.
+        diag is returned only if return_diag is True.
 
     Notes
     -----
@@ -96,7 +97,6 @@ def laplacian(graph, normed=False, return_diag=False):
 
     Examples
     --------
-    >>> import numpy as np
     >>> from scipy.sparse import csgraph
     >>> G = np.arange(5) * np.arange(5)[:, np.newaxis]
     >>> G

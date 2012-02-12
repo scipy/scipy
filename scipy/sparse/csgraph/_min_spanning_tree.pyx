@@ -10,7 +10,7 @@ from _validation import validate_graph
 include 'parameters.pxi'
 
 def minimum_spanning_tree(csgraph, overwrite=False):
-    """Return a minimum spanning tree of an undirected graph
+    r"""Return a minimum spanning tree of an undirected graph
 
     A minimum spanning tree is a graph consisting of the subset of edges
     which together connect all connected nodes, while minimizing the total
@@ -18,18 +18,18 @@ def minimum_spanning_tree(csgraph, overwrite=False):
 
     Parameters
     ----------
-    csgraph: array-like or sparse matrix, shape = (N, N)
-        the matrix representing an undirected graph over N nodes.
-        (see notes below)
-    overwrite: boolean (optional)
+    csgraph: array_like or sparse matrix, 2 dimensions
+        The N x N matrix representing an undirected graph over N nodes
+        (see notes below).
+    overwrite: bool, optional
         if true, then parts of the input graph will be overwritten for
         efficiency.
 
     Returns
     -------
-    span_tree: csr matrix, shape = (N, N)
-        The compressed-sparse representation of the undirected minimum spanning
-        tree over the input (see notes below)
+    span_tree: csr matrix
+        The N x N compressed-sparse representation of the undirected minimum
+        spanning tree over the input (see notes below).
 
     Notes
     -----

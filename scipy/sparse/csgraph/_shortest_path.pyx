@@ -38,50 +38,51 @@ def shortest_path(csgraph, method='auto',
 
     Parameters
     ----------
-    csgraph : array, matrix, or sparse matrix, shape = (N,N)
-        Array of non-negative distances.
-        If vertex i is connected to vertex j, then csgraph[i,j] gives
-        the distance between the vertices.
-        If vertex i is not connected to vertex j, then csgraph[i,j] = 0
-    method : string ['auto'|'FW'|'D']
-        method to use.  Options are
-        'auto' : attempt to choose the best method for the current problem
-        'FW' : Floyd-Warshall algorithm.  O[N^3].
-               csgraph will be converted to a dense representation
-        'D' : Dijkstra's algorithm with Fibonacci heaps.  O[(k+log(N))N^2]
-              where k is the average number of connected edges per node.
-              csgraph will be converted to a csr representation
-    directed : boolean, default=True
-        if True, then find the shortest path on a directed graph: only
-        move from point i to point j along paths csgraph[i, j]
-        if False, then find the shortest path on an undirected graph: the
+    csgraph : array, matrix, or sparse matrix, 2 dimensions
+        The N x N array of non-negative distances representing the input graph.
+    method : string ['auto'|'FW'|'D'], optional
+        Algorithm to use for shortest paths.  Options are
+        
+           'auto' -- Attempt to choose the best method for the current problem.
+           'FW'   -- Floyd-Warshall algorithm.  Computational cost is
+                     approximately ``O[N^3]``.  The input csgraph will be
+                     converted to a dense representation.
+           'D'    -- Dijkstra's algorithm with Fibonacci heaps.  Computational
+                     cost is approximately ``O[(k+log(N))N^2]``, where ``k`` is
+                     the average number of connected edges per node. The input
+                     csgraph will be converted to a csr representation.
+
+    directed : bool, optional
+        If True (default), then find the shortest path on a directed graph:
+        only move from point i to point j along paths csgraph[i, j].
+        If False, then find the shortest path on an undirected graph: the
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i]
-    overwrite : bool (optional)
-        If True, overwrite csgraph with the result.  This applies only if
-        method == 'FW' and csgraph is a dense, c-ordered array with
-        dtype=float64.  Otherwise, the input will not be overwritten.
-    unweighted : bool (optional)
+    return_predecessors : bool, optional
+        If True, return the size (N, N) predecesor matrix
+    unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
         find the path such that the number of edges is minimized.
-    return_predecessors : bool (optional)
-        If True, return the size (N, N) predecesor matrix
+    overwrite : bool, optional
+        If True, overwrite csgraph with the result.  This applies only if
+        method == 'FW' and csgraph is a dense, c-ordered array with
+        dtype=float64.
 
     Returns
     -------
-    dist_matrix : np.ndarray, float, shape = [N,N]
-        dist_matrix[i,j] gives the shortest distance from point i to point j
-        along the graph.
+    dist_matrix : np.ndarray
+        The N x N matrix of distances between graph nodes. dist_matrix[i,j]
+        gives the shortest distance from point i to point j along the graph.
 
-    predecessors : ndarray, shape=(N, N)
-        returned only if return_predecessors == True.
-        Matrix of predecessors, which can be used to reconstruct the shortest
-        paths.  Row i of the predecessor matrix contains information on the
-        shortest paths from point i: each entry predecessors[i, j]
-        gives the index of the previous node in the path from point i
-        to point j.  If no path exists between point i and j, then
-        predecessors[i, j] = -9999
+    predecessors : ndarray
+        Returned only if return_predecessors == True.
+        The N x N matrix of predecessors, which can be used to reconstruct
+        the shortest paths.  Row i of the predecessor matrix contains
+        information on the shortest paths from point i: each entry
+        predecessors[i, j] gives the index of the previous node in the
+        path from point i to point j.  If no path exists between point
+        i and j, then predecessors[i, j] = -9999
 
     Notes
     -----
@@ -91,9 +92,9 @@ def shortest_path(csgraph, method='auto',
     both are nonzero, method='D' will not necessarily yield the correct
     result.
 
-    Also, these routines have not been tested for graphs with negative
-    distances.  Negative distances can lead to infinite cycles that must
-    be handled by specialized algorithms.
+    These routines are not suitable for graphs with negative distances.
+    Negative distances can lead to infinite cycles that must be handled
+    by specialized algorithms.
     """
     validate_graph(csgraph, directed, DTYPE)
 
@@ -132,51 +133,45 @@ def floyd_warshall(csgraph, directed=True,
 
     Parameters
     ----------
-    csgraph : array, matrix, or sparse matrix, shape=(N, N)
-        Array of positive distances.
-        If vertex i is connected to vertex j, then csgraph[i,j] gives
-        the distance between the vertices.
-        If vertex i is not connected to vertex j, then csgraph[i,j] = 0
-    directed : bool, default = False
-        if True, then find the shortest path on a directed graph: only
-        progress from a point to its neighbors, not the other way around.
-        if False, then find the shortest path on an undirected graph: the
-        algorithm can progress from a point to its neighbors and vice versa.
-    return_predecessors : bool (optional)
+    csgraph : array, matrix, or sparse matrix, 2 dimensions
+        The N x N array of non-negative distances representing the input graph.
+    directed : bool, optional
+        If True (default), then find the shortest path on a directed graph:
+        only move from point i to point j along paths csgraph[i, j].
+        If False, then find the shortest path on an undirected graph: the
+        algorithm can progress from point i to j along csgraph[i, j] or
+        csgraph[j, i]
+    return_predecessors : bool, optional
         If True, return the size (N, N) predecesor matrix
-    unweighted : bool (optional)
+    unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
         find the path such that the number of edges is minimized.
-    overwrite : bool, default=True
-        Overwrite csgraph with the result.  This applies only if
+    overwrite : bool, optional
+        If True, overwrite csgraph with the result.  This applies only if
         csgraph is a dense, c-ordered array with dtype=float64.
-        Otherwise, a copy will be made.
 
     Returns
     -------
-    dist_matrix : ndarray, shape=[N, N]
-        the matrix of shortest paths between points.
-        If no path exists, the path length is zero
+    dist_matrix : np.ndarray
+        The N x N matrix of distances between graph nodes. dist_matrix[i,j]
+        gives the shortest distance from point i to point j along the graph.
 
-    predecessors : ndarray, shape=(N, N)
-        returned only if return_predecessors == True.
-        Matrix of predecessors, which can be used to reconstruct the shortest
-        paths.  Row i of the predecessor matrix contains information on the
-        shortest paths from point i: each entry predecessors[i, j]
-        gives the index of the previous node in the path from point i
-        to point j.  If no path exists between point i and j, then
-        P[i, j] = -9999
+    predecessors : ndarray
+        Returned only if return_predecessors == True.
+        The N x N matrix of predecessors, which can be used to reconstruct
+        the shortest paths.  Row i of the predecessor matrix contains
+        information on the shortest paths from point i: each entry
+        predecessors[i, j] gives the index of the previous node in the
+        path from point i to point j.  If no path exists between point
+        i and j, then predecessors[i, j] = -9999
 
     Notes
     -----
-    Thes routine has been written for positive graphs only.
-    Negative distances can lead to infinite cycles that must
-    be handled by specialized algorithms.
+    This routine is not suitable for graphs with negative distances.
+    Negative distances can lead to infinite cycles that must be handled
+    by specialized algorithms.
     """
-    # graph needs to be a dense, C-ordered copy of csgraph with the
-    # correct dtype.  Addisionally, if overwrite is False, we need to
-    # assure that a copy is made.
     dist_matrix = validate_graph(csgraph, directed, DTYPE,
                                  csr_output=False,
                                  copy_if_dense= not overwrite)
@@ -289,45 +284,38 @@ def dijkstra(csgraph, directed=True, indices=None,
 
     Parameters
     ----------
-    csgraph : array, matrix, or sparse matrix, shape=(N, N)
-        Array of positive distances: this will be internally converted to
-        a csr_matrix with dtype=np.float64.
-        If vertex i is connected to vertex j, then csgraph[i,j] gives
-        the distance between the vertices.
-        If vertex i is not connected to vertex j, then csgraph[i,j] = 0
-    directed : bool, default = True
-        if True, then find the shortest path on a directed graph: only
-        progress from a point to its neighbors, not the other way around.
-        if False, then find the shortest path on an undirected graph: the
-        algorithm can progress from a point to its neighbors and vice versa.
-        If directed == False, then csgraph must be of a certain form:
-        see the notes below.
-    indices : 1d array or None
+    csgraph : array, matrix, or sparse matrix, 2 dimensions
+        The N x N array of non-negative distances representing the input graph.
+    directed : bool, optional
+        If True (default), then find the shortest path on a directed graph:
+        only move from point i to point j along paths csgraph[i, j].
+        If False, then find the shortest path on an undirected graph: the
+        algorithm can progress from point i to j along csgraph[i, j] or
+        csgraph[j, i]
+    indices : array-like or integer, optional
         if specified, only compute the paths for the points at the given
         indices.
-    return_predecessors : boolean (optional)
-        If True, return the size (Nint, N) predecesor matrix
-    unweighted : bool (optional)
+    return_predecessors : bool, optional
+        If True, return the size (N, N) predecesor matrix
+    unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
         find the path such that the number of edges is minimized.
 
     Returns
     -------
-    dist_matrix : array, shape = (Nind, N)
-        the matrix of shortest paths between points.
-        If no path exists, the path length is zero.
-        If indices == None, then Nind = N.
-        If indices is specified, then Nind = len(indices)
+    dist_matrix : np.ndarray
+        The matrix of distances between graph nodes. dist_matrix[i,j]
+        gives the shortest distance from point i to point j along the graph.
 
-    predecessors : array, shape = (Nind, N)
-        returned only if return_predecessors == True.
-        Matrix of predecessors, which can be used to reconstruct the shortest
-        paths.  Row i of the predecessor matrix contains information on the
-        shortest paths from point indices[i]: each entry predecessors[i, j]
-        gives the index of the previous node in the path from point indices[i]
-        to point j.  If no path exists between point indices[i] and j, then
-        P[i, j] = -9999
+    predecessors : ndarray
+        Returned only if return_predecessors == True.
+        The matrix of predecessors, which can be used to reconstruct
+        the shortest paths.  Row i of the predecessor matrix contains
+        information on the shortest paths from point i: each entry
+        predecessors[i, j] gives the index of the previous node in the
+        path from point i to point j.  If no path exists between point
+        i and j, then predecessors[i, j] = -9999
 
     Notes
     -----

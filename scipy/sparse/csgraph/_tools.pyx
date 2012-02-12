@@ -23,23 +23,23 @@ def reconstruct_path(csgraph, predecessors, directed=True):
 
     Parameters
     ----------
-    csgraph : array-like or sparse matrix, shape=(N, N)
-        The graph from which the predecessors are drawn
-    predecessors : array-like, shape=(N,)
-        The indices of predecessors for the tree.  The index of the parent
-        of node i is given by predecessors[i]
-    directed : boolean, default=True
-        if True, then operate on a directed graph: only move from point i
-        to point j along paths csgraph[i, j]
-        if False, then find the shortest path on an undirected graph: the
-        algorithm can progress from point i to j along csgraph[i, j] or
-        csgraph[j, i]
+    csgraph : array_like or sparse matrix
+        The N x N matrix representing the directed or undirected graph
+        from which the predecessors are drawn.
+    predecessors : array_like, one dimension
+        The length-N array of indices of predecessors for the tree.  The
+        index of the parent of node i is given by predecessors[i].
+    directed : bool, optional
+        If True (default), then operate on a directed graph: only move from
+        point i to point j along paths csgraph[i, j].
+        If False, then operate on an undirected graph: the algorithm can
+        progress from point i to j along csgraph[i, j] or csgraph[j, i].
 
     Returns
     -------
-    cstree : csr matrix, shape=(N, N)
-        the directed compressed-sparse representation of the tree drawn from
-        csgraph which is represented by the predecessor list.
+    cstree : csr matrix
+        The N x N directed compressed-sparse representation of the tree drawn
+        from csgraph which is encoded by the predecessor list.
     """
     csgraph = validate_graph(csgraph, directed, dense_output=False)
 
@@ -72,18 +72,21 @@ def construct_dist_matrix(graph,
 
     Parameters
     ----------
-    graph: array-like or sparse, shape=(N, N)
-        The matrix representation of a directed or undirected graph
-    predecessors: array-like, shape=(N, N)
-        The matrix of predecessors of each node
-    directed: bool (default=True)
-        Specify whether graph is directed or undirected
+    graph: array_like or sparse
+        The N x N matrix representation of a directed or undirected graph.
+    predecessors: array_like
+        The N x N matrix of predecessors of each node (see Notes below).
+    directed: bool, optional
+        If True (default), then operate on a directed graph: only move from
+        point i to point j along paths csgraph[i, j].
+        If False, then operate on an undirected graph: the algorithm can
+        progress from point i to j along csgraph[i, j] or csgraph[j, i].
 
     Returns
     -------
-    dist_matrix: ndarray, shape=(N, N)
-        The matrix of distances between nodes along the path specified by
-        the predecessor matrix.  If no path exists, the distance is zero.
+    dist_matrix: ndarray
+        The N x N matrix of distances between nodes along the path specified
+        by the predecessor matrix.  If no path exists, the distance is zero.
 
     Notes
     -----
