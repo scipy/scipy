@@ -39,6 +39,7 @@ Reference
    signal
    sparse
    sparse.linalg
+   sparse.csgraph
    spatial
    special
    stats
