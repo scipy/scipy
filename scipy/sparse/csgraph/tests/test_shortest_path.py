@@ -64,7 +64,7 @@ def test_dijkstra():
         assert_array_almost_equal(graph_D, graph_py)
 
 
-def test_dijkstra_ind():
+def test_dijkstra_indices():
     dist_matrix = generate_graph(20)
 
     indices = np.arange(5)
@@ -72,9 +72,6 @@ def test_dijkstra_ind():
     for directed in (True, False):
         graph_D = dijkstra(dist_matrix, directed, indices=indices)
         graph_FW = shortest_path(dist_matrix, 'FW', directed)
-
-        print graph_D
-        print graph_FW[:5]
 
         assert_array_almost_equal(graph_D, graph_FW[:5])
 
