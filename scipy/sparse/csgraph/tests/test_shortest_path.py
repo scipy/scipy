@@ -66,14 +66,16 @@ def test_dijkstra():
 
 def test_dijkstra_indices():
     dist_matrix = generate_graph(20)
-
-    indices = np.arange(5)
+    indices = np.arange(6)
 
     for directed in (True, False):
-        graph_D = dijkstra(dist_matrix, directed, indices=indices)
         graph_FW = shortest_path(dist_matrix, 'FW', directed)
-
-        assert_array_almost_equal(graph_D, graph_FW[:5])
+        for indshape in [(6,), (6, 1), (2, 3)]:
+            outshape = indshape + (20,)
+            graph_D = dijkstra(dist_matrix, directed,
+                               indices=indices.reshape(indshape))
+            assert_array_almost_equal(graph_D,
+                                      graph_FW[indices].reshape(outshape))
 
 
 def test_predecessors():
