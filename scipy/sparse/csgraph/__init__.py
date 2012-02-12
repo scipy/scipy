@@ -45,6 +45,7 @@ non-directed graph, traversal from node i to node j can be accomplished over
 either G[i, j] or G[j, i].  If both edges are nonzero and have unequal weights,
 then the smaller of the two is used.
 """
+import numpy
 
 __docformat__ = "restructuredtext en"
 
@@ -68,9 +69,6 @@ from _traversal import breadth_first_order, depth_first_order, \
 from _min_spanning_tree import minimum_spanning_tree
 from tools import construct_dist_matrix, reconstruct_path
 
-
-def cs_graph_components(*args, **kwargs):
-    """Deprecated function.  Use csgraph.connected_components"""
-    warnings.warn('scipy.sparse.cs_graph_components has been deprecated. '
-                  'Use scipy.sparse.csgraph.connected_components instead')
-    return connected_components(*args, **kwargs)
+cs_graph_components = numpy.deprecate(connected_components,
+                                      'cs_graph_components',
+                                      'csgraph.connected_components')
