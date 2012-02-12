@@ -25,3 +25,6 @@ from numpy import deprecate as _deprecate
 cs_graph_components = _deprecate(connected_components,
                                  'cs_graph_components',
                                  'csgraph.connected_components')
+
+from numpy.testing import Tester
+test = Tester().test
