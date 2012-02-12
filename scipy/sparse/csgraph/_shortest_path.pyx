@@ -71,7 +71,7 @@ def shortest_path(csgraph, method='auto',
 
     Returns
     -------
-    dist_matrix : np.ndarray
+    dist_matrix : ndarray
         The N x N matrix of distances between graph nodes. dist_matrix[i,j]
         gives the shortest distance from point i to point j along the graph.
 
@@ -153,7 +153,7 @@ def floyd_warshall(csgraph, directed=True,
 
     Returns
     -------
-    dist_matrix : np.ndarray
+    dist_matrix : ndarray
         The N x N matrix of distances between graph nodes. dist_matrix[i,j]
         gives the shortest distance from point i to point j along the graph.
 
@@ -304,7 +304,7 @@ def dijkstra(csgraph, directed=True, indices=None,
 
     Returns
     -------
-    dist_matrix : np.ndarray
+    dist_matrix : ndarray
         The matrix of distances between graph nodes. dist_matrix[i,j]
         gives the shortest distance from point i to point j along the graph.
 
