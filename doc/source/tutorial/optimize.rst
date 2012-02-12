@@ -48,6 +48,11 @@ problem of minimizing the Rosenbrock function of :math:`N` variables:
 The minimum value of this function is 0 which is achieved when
 :math:`x_{i}=1.`
 
+Note that the Rosenbrock function and its derivatives are included in
+`scipy.optimize`. The implementations shown in the following sections
+provide examples of how to define an objective function as well as its
+jacobian and hessian functions.
+
 Nelder-Mead Simplex algorithm (``method='Nelder-Mead'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
