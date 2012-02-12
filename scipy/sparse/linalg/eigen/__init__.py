@@ -1,6 +1,11 @@
-"Sparse eigenvalue solvers"
+"""
+Sparse Eigenvalue Solvers
+-------------------------
 
-from info import __doc__
+The submodules of sparse.linalg.eigen:
+    1. lobpcg: Locally Optimal Block Preconditioned Conjugate Gradient Method
+
+"""
 
 from arpack import *
 from lobpcg import *
