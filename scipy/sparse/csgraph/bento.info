@@ -5,5 +5,5 @@ Library:
         Sources: _traversal.c
     Extension: _min_spanning_tree
         Sources: _min_spanning_tree.c
-    Extension: tools
-        Sources: tools.c
+    Extension: _tools
+        Sources: _tools.c

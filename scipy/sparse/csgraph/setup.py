@@ -21,8 +21,8 @@ def configuration(parent_package='', top_path=None):
          sources=['_min_spanning_tree.c'],
          include_dirs=[numpy.get_include()])
 
-    config.add_extension('tools',
-         sources=['tools.c'],
+    config.add_extension('_tools',
+         sources=['_tools.c'],
          include_dirs=[numpy.get_include()])
 
     return config

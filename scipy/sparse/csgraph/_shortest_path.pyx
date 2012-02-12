@@ -19,7 +19,7 @@ import numpy as np
 cimport numpy as np
 
 from scipy.sparse import csr_matrix, isspmatrix, isspmatrix_csr, isspmatrix_csc
-from validation import validate_graph
+from _validation import validate_graph
 
 cimport cython
 
