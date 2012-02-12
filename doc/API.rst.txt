@@ -119,6 +119,7 @@ change is made.
 * scipy.sparse
 
   - linalg
+  - csgraph
 
 * scipy.spatial
 
