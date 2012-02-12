@@ -60,9 +60,7 @@ def breadth_first_tree(csgraph, i_start, directed=True):
             \   /                           /
              (2)                         (2)
 
-    It is easy to see from inspection that the minimum spanning tree involves
-    removing the edges with weights 8 and 6.  In compressed sparse
-    representation, the solution looks like this:
+    In compressed sparse representation, the solution looks like this:
 
     >>> from scipy.sparse import csr_matrix
     >>> from scipy.sparse.csgraph import breadth_first_tree
@@ -128,9 +126,7 @@ def depth_first_tree(csgraph, i_start, directed=True):
             \   /                       \   /
              (2)                         (2)
 
-    It is easy to see from inspection that the minimum spanning tree involves
-    removing the edges with weights 8 and 6.  In compressed sparse
-    representation, the solution looks like this:
+    In compressed sparse representation, the solution looks like this:
 
     >>> from scipy.sparse import csr_matrix
     >>> from scipy.sparse.csgraph import depth_first_tree

@@ -86,6 +86,14 @@ def laplacian(graph, normed=False, return_diag=False):
     diag: ndarray, size=N [if return_diag == True]
         the diagonal of the laplacian matrix
 
+    Notes
+    -----
+    The Laplacian matrix of a graph is sometimes referred to as the
+    "Kirchoff matrix" or the "admittance matrix", and is useful in many
+    parts of spectral graph theory.  In particular, the eigen-decomposition
+    of the laplacian matrix can give insight into many properties of the
+    graph.
+
     Examples
     --------
     >>> import numpy as np
@@ -103,14 +111,6 @@ def laplacian(graph, normed=False, return_diag=False):
            [  0,  -2,  16,  -6,  -8],
            [  0,  -3,  -6,  21, -12],
            [  0,  -4,  -8, -12,  24]])
-
-    Notes
-    -----
-    The Laplacian matrix of a graph is sometimes referred to as the
-    "Kirchoff matrix" or the "admittance matrix", and is useful in many
-    parts of spectral graph theory.  In particular, the eigen-decomposition
-    of the laplacian matrix can give insight into many properties of the
-    graph.
     """
     if normed and (np.issubdtype(graph.dtype, np.int)
                     or np.issubdtype(graph.dtype, np.uint)):

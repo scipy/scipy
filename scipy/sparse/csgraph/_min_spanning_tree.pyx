@@ -31,6 +31,13 @@ def minimum_spanning_tree(csgraph, overwrite=False):
         The compressed-sparse representation of the undirected minimum spanning
         tree over the input (see notes below)
 
+    Notes
+    -----
+    This routine uses undirected graphs as input and output.  That is, if
+    graph[i, j] and graph[j, i] are both zero, then nodes i and j do not
+    have an edge connecting them.  If either is nonzero, then the two are
+    connected by the minimum nonzero value of the two.
+
     Examples
     --------
     The following example shows the computation of a minimum spanning tree
@@ -64,13 +71,6 @@ def minimum_spanning_tree(csgraph, overwrite=False):
            [0, 0, 2, 5],
            [0, 0, 0, 0],
            [0, 0, 0, 0]])
-
-    Notes
-    -----
-    This routine uses undirected graphs as input and output.  That is, if
-    graph[i, j] and graph[j, i] are both zero, then nodes i and j do not
-    have an edge connecting them.  If either is nonzero, then the two are
-    connected by the minimum nonzero value of the two.
     """
     global NULL_IDX
 
