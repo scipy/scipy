@@ -10,6 +10,12 @@ include setup.py
 include scipy/*.py
 # Adding scons build related files not found by distutils
 recursive-include scipy SConstruct SConscript
+# Add files to allow Bento build
+include f2py.py
+include interface_gen.py
+include bscript bento.info
+recursive-include scipy bscript bento.info
+include scipy/special/tests/*.dat
 # Add py3tool
 include tools/py3tool.py
 # Add documentation: we don't use add_data_dir since we do not want to include
