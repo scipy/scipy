@@ -70,7 +70,6 @@ DataFiles: tests
         spatial/tests/*.py,
         spatial/tests/*.txt,
         special/tests/*.py,
-        special/tests/*.dat,
         special/tests/data/*.npz,
         stats/tests/*.py
 
