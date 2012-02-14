@@ -68,7 +68,7 @@ PyObject* compute_vq(PyObject* self, PyObject* args)
 
     typenum1 = PyArray_TYPE(obs);
     typenum2 = PyArray_TYPE(code);
-    if (typenum1 != typenum1) {
+    if (typenum1 != typenum2) {
 		PyErr_Format(PyExc_ValueError,
 			     "observation and code should have same type");
         return NULL;
