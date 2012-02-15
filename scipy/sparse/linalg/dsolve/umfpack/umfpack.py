@@ -296,6 +296,9 @@ class UmfpackContext( Struct ):
         self.funs.defaults( self.control )
         self.control[UMFPACK_PRL] = 3
 
+    def __del__(self):
+        self.free()
+
     ##
     # 30.11.2005, c
     def strControl( self ):
