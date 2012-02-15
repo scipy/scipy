@@ -5157,7 +5157,7 @@ tukeylambda = tukeylambda_gen(name='tukeylambda', shapes="lam")
 class uniform_gen(rv_continuous):
     """A uniform continuous random variable.
 
-    This distribution is constant between `loc` and ``loc = scale``.
+    This distribution is constant between `loc` and ``loc + scale``.
 
     %(before_notes)s
 
