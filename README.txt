@@ -90,7 +90,7 @@ follow the following conventions:
 
 For details, read:
 
-  http://projects.scipy.org/numpy/wiki/DistutilsDoc
+  https://github.com/numpy/numpy/blob/master/doc/DISTUTILS.rst.txt
 
 
 Documentation
