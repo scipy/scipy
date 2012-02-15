@@ -583,7 +583,6 @@ class _TestCommon:
     #    assert_array_equal(dense_dot_dense, dense_dot_sparse)
 
 
-
 class _TestInplaceArithmetic:
     def test_imul_scalar(self):
         a = self.datsp.copy()
@@ -731,7 +730,6 @@ class _TestVertSlicing:
         assert_(caught == 2)
 
 
-
 class _TestBothSlicing:
     """Tests vertical and horizontal slicing (e.g. [:,0:2]). Tests for
     individual sparse matrix types that implement this should derive from this
@@ -749,6 +747,7 @@ class _TestBothSlicing:
         F = self.spmatrix(E)
         assert_array_equal(E[1:2, 1:2], F[1:2, 1:2].todense())
         assert_array_equal(E[:, 1:], F[:, 1:].todense())
+
 
 class _TestFancyIndexing:
     """Tests fancy indexing features.  The tests for any matrix formats
@@ -982,7 +981,7 @@ class _Test2DSlicingRegression:
             self.spmatrix((500, 500))[0:100:2, 0:100:2]
         except ValueError:
             return
-        assert False  # Should not happen.
+        assert_(False)  # Should not happen.
 
 
 class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
@@ -1096,8 +1095,6 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
         assert_equal((asp + bsp).todense(), asp.todense() + bsp.todense())
 
 
-
-
 class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
         _TestInplaceArithmetic, _TestArithmetic,
         _TestHorizSlicing, _TestVertSlicing, _TestBothSlicing,
@@ -1184,6 +1181,7 @@ class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
         indptr  = array( [0, 2, 6] )
         bsp = csc_matrix( (data, indices, indptr), shape=(10,2) )
         assert_equal((asp + bsp).todense(), asp.todense() + bsp.todense())
+
 
 class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
     spmatrix = dok_matrix
@@ -1336,7 +1334,6 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
         b = dok_matrix((3,3))
         b[:,0] = 0
         assert_(len(b.keys())==0, "Unexpected entries in keys")
-
 
 
 class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
@@ -1575,7 +1572,6 @@ class TestDIA(_TestCommon, _TestArithmetic, TestCase):
         data    = np.array([[1,2,3,4]]).repeat(3,axis=0)
         offsets = np.array([0,-1,2])
         assert_equal(dia_matrix( (data,offsets), shape=(4,4)).todense(), D)
-
 
 
 class TestBSR(_TestCommon, _TestArithmetic, _TestInplaceArithmetic, TestCase):
