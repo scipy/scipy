@@ -118,8 +118,14 @@ def diags(diagonals, offsets, shape=None, format=None, dtype=None):
             [ 0.,  0.,  1., -2.]])
 
     """
+    # if offsets is not a sequence, assume that there's only one diagonal
+    try:
+        iter(offsets)
+    except TypeError:
+        diagonals = [np.atleast_1d(diagonals)]
+    else:
+        diagonals = map(np.atleast_1d, diagonals)
     offsets = np.atleast_1d(offsets)
-    diagonals = map(np.atleast_1d, diagonals)
 
     # Basic check
     if len(diagonals) != len(offsets):
