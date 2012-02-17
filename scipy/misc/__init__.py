@@ -51,11 +51,15 @@ del sys
 
 try:
     from pilutil import *
+    import pilutil
     __all__ += pilutil.__all__
+    del pilutil
 except ImportError:
     pass
 
+import common
 __all__ += common.__all__
+del common
 
 from numpy.testing import Tester
 test = Tester().test
