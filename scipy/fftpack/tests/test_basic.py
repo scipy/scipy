@@ -244,18 +244,18 @@ class _TestIFFTBase(TestCase):
             np.random.seed(1234)
             x = np.random.rand(size).astype(self.rdt)
             y = ifft(fft(x))
-            self.failUnless(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
+            self.assertTrue(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
                             (size, self.rdt))
             y = fft(ifft(x))
-            self.failUnless(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
+            self.assertTrue(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
                             (size, self.rdt))
 
             x = (x + 1j*np.random.rand(size)).astype(self.cdt)
             y = ifft(fft(x))
-            self.failUnless(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
+            self.assertTrue(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
                             (size, self.rdt))
             y = fft(ifft(x))
-            self.failUnless(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
+            self.assertTrue(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
                             (size, self.rdt))
 
 class TestDoubleIFFT(_TestIFFTBase):
@@ -367,10 +367,10 @@ class _TestIRFFTBase(TestCase):
             np.random.seed(1234)
             x = np.random.rand(size).astype(self.rdt)
             y = irfft(rfft(x))
-            self.failUnless(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
+            self.assertTrue(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
                             (size, self.rdt))
             y = rfft(irfft(x))
-            self.failUnless(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
+            self.assertTrue(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
                             (size, self.rdt))
 
 # self.ndec is bogus; we should have a assert_array_approx_equal for number of
@@ -420,7 +420,7 @@ class TestFftnSingle(TestCase):
             y1 = fftn(x.real.astype(np.float32))
             y2 = fftn(x.real.astype(np.float64)).astype(np.complex64)
 
-            self.failUnless(y1.dtype == np.complex64)
+            self.assertTrue(y1.dtype == np.complex64)
             assert_array_almost_equal_nulp(y1, y2, 2000)
 
         for size in LARGE_COMPOSITE_SIZES + LARGE_PRIME_SIZES:
@@ -429,7 +429,7 @@ class TestFftnSingle(TestCase):
             y1 = fftn(x.real.astype(np.float32))
             y2 = fftn(x.real.astype(np.float64)).astype(np.complex64)
 
-            self.failUnless(y1.dtype == np.complex64)
+            self.assertTrue(y1.dtype == np.complex64)
             assert_array_almost_equal_nulp(y1, y2, 2000)
 
 class TestFftn(TestCase):

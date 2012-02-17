@@ -1,3 +1,5 @@
+from __future__ import division
+
 import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_array_equal, assert_array_almost_equal, assert_array_less, assert_
@@ -86,11 +88,11 @@ class TestWavelets(TestCase):
             w = wavelets.ricker(length, 1.0)
             assert_(len(w) == length)
             max_loc = np.argmax(w)
-            assert_(max_loc == (length / 2))
+            assert_(max_loc == (length // 2))
 
         points = 100
         w = wavelets.ricker(points, 2.0)
-        half_vec = np.arange(0, points / 2)
+        half_vec = np.arange(0, points // 2)
         #Wavelet should be symmetric
         assert_array_almost_equal(w[half_vec], w[-(half_vec + 1)])
 
