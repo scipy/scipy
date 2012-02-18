@@ -1,12 +1,12 @@
 import numpy as np
 from scipy.sparse import csr_matrix, isspmatrix, isspmatrix_csc, isspmatrix_csr
+from _tools import csgraph_to_dense, csgraph_from_dense
 
 DTYPE = np.float64
 
 def validate_graph(csgraph, directed, dtype=DTYPE,
                    csr_output=True, dense_output=True,
-                   copy_if_dense=False, copy_if_sparse=False,
-                   require_sorted_indices=True):
+                   copy_if_dense=False, copy_if_sparse=False):
     """Routine for validation and conversion of csgraph inputs"""
     if not (csr_output or dense_output):
         raise ValueError("Internal: dense or csr output must be true")
@@ -22,11 +22,8 @@ def validate_graph(csgraph, directed, dtype=DTYPE,
                 csgraph = csr_matrix(csgraph, dtype=DTYPE)
             else:
                 csgraph = csgraph.tocsr().astype(dtype)
-
-            if require_sorted_indices and not csgraph.has_sorted_indices:
-                csgraph = csgraph.sorted_indices()
         else:
-            csgraph = csgraph.toarray().astype(dtype)
+            csgraph = csgraph_to_dense(csgraph, null_value=np.inf)
     else:
         if dense_output:
             if copy_if_dense:
@@ -34,7 +31,7 @@ def validate_graph(csgraph, directed, dtype=DTYPE,
             else:
                 csgraph = np.asarray(csgraph, dtype=dtype, order='C')
         else:
-            csgraph = csr_matrix(csgraph, dtype=dtype)
+            csgraph = csgraph_from_dense(csgraph)
 
     if csgraph.ndim != 2:
         raise ValueError("compressed-sparse graph must be two dimensional")

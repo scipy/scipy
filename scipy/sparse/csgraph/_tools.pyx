@@ -9,13 +9,185 @@ import numpy as np
 cimport numpy as np
 
 from scipy.sparse import csr_matrix, isspmatrix, isspmatrix_csr, isspmatrix_csc
-from _validation import validate_graph
-
-cimport cython
-
-from libc.stdlib cimport malloc, free
 
 include 'parameters.pxi'
+
+def csgraph_from_dense(graph,
+                       null_values=0,
+                       infinity_null=True):
+    """Construct a CSR-format sparse graph from a dense matrix.
+
+    Parameters
+    ----------
+    graph: array_like
+        Input graph.  Shape should be (n_nodes, n_nodes).
+    null_values: float, list, or None
+        Value or list of values that denote non-edges in the graph.  Default
+        is zero.  If infinite values represent null edges, then setting the
+        infinity_null flag is more efficient
+    infinity_null: bool
+        If True (default), then treat positive or negative infinite edges
+        as null edges.
+
+    Returns
+    -------
+    csgraph: csr_matrix
+        Compressed sparse representation of graph, 
+    """
+    graph = np.asarray(graph)
+
+    # make null_values a 1-d array
+    if null_values is None:
+        null_values = []
+    null_values = np.asarray(null_values, dtype=graph.dtype).ravel()
+
+    # check that graph is a square matrix
+    if graph.ndim != 2:
+        raise ValueError("graph should have two dimensions")
+    N = graph.shape[0]
+    if graph.shape[1] != N:
+        raise ValueError("graph should be a square array")
+    
+    # flag all the null edges
+    if null_values.shape[0] == 0:
+        flag = np.ones((N, N), dtype=bool)
+    else:
+        flag = np.logical_or.reduce([(graph == v) for v in null_values])
+
+    if infinity_null:
+        flag |= np.isinf(graph)
+
+    # construct the csr matrix using flag
+    flag = ~flag
+
+    data = np.asarray(graph[flag], dtype=DTYPE, order='c')
+
+    idx_grid = np.empty((N, N), dtype=ITYPE)
+    idx_grid[:] = np.arange(N, dtype=ITYPE)
+    indices = np.asarray(idx_grid[flag], dtype=ITYPE, order='c')
+
+    indptr = np.concatenate(([0], flag.sum(1).cumsum()))
+    indptr = np.asarray(indptr, dtype=ITYPE)
+
+    return csr_matrix((data, indices, indptr), (N, N))
+
+
+def csgraph_to_dense(csgraph, null_value=0):
+    """Convert a sparse graph representation to a dense representation
+
+    Parameters
+    ----------
+    csgraph: csr_matrix or csc_matrix
+        Sparse representation of a graph.
+    null_value: float, optional
+        The value used to indicate null edges in the dense representation.
+        Default is zero.
+
+    Returns
+    -------
+    graph: ndarray
+        The dense representation of the sparse graph.
+
+    Notes
+    -----
+    For canonical sparse representations, calling csgraph_to_dense with
+    null_value=0 produces an equivalent result to using dense format
+    conversions in the main sparse package.  When the sparse representations
+    have repeated values, however, the results will differ.  The tools in
+    scipy.sparse will add repeating values to obtain a final value.  This
+    function will select the minimum among repeating values to obtain a
+    final value.  For example, here we'll create a two-node directed sparse
+    graph with multiple edges from node 0 to node 1, of weights 2 and 3.
+    This illustrates the difference in behavior:
+
+    >>> from scipy.sparse import csr_matrix
+    >>> data = np.array([2, 3])
+    >>> indices = np.array([1, 1])
+    >>> indptr = np.array([0, 2, 2])
+    >>> M = csr_matrix((data, indices, indptr), shape=(2, 2))
+    >>> M.toarray()
+    array([[0, 5],
+           [0, 0]])
+    >>> csgraph_to_dense(M)
+    array([[0, 2],
+           [0, 0]])
+
+    The reason for this difference is to allow a compressed sparse graph to
+    represent multiple edges between any two nodes.  As most sparse graph
+    algorithms are concerned with the single lowest-cost edge between any
+    two nodes, the default scipy.sparse behavior of summming multiple weights
+    does not make sense in this context.
+
+    The other reason for using this routine is to allow for graphs with
+    zero-weight edges.  Let's look at the example of a two-node directed
+    graph, connected by an edge of weight zero:
+
+    >>> from scipy.sparse import csr_matrix
+    >>> data = np.array([0.0])
+    >>> indices = np.array([1])
+    >>> indptr = np.array([0, 2, 2])
+    >>> M = csr_matrix((data, indices, indptr), shape=(2, 2))
+    >>> M.toarray()
+    array([[0, 0],
+           [0, 0]])
+    >>> csgraph_to_dense(M, np.inf)
+    array([[ Inf,   0.],
+           [ Inf,  Inf]])
+
+    In the first case, the zero-weight edge gets lost in the dense
+    representation.  In the second case, we can choose a different null value
+    and see the true form of the graph.
+    """
+    # Allow only csr and csc matrices: other formats when converted to csr
+    # combine duplicated edges: we don't want this to happen in the background.
+    if isspmatrix_csc(csgraph):
+        csgraph = csgraph.tocsr()
+    elif not isspmatrix_csr(csgraph):
+        raise ValueError("csgraph must be csr or csc format")
+
+    N = csgraph.shape[0]
+    if csgraph.shape[1] != N:
+        raise ValueError('csgraph should be a square matrix')
+
+    # get attribute arrays
+    data = np.asarray(csgraph.data, dtype=DTYPE, order='C')
+    indices = np.asarray(csgraph.indices, dtype=ITYPE, order='C')
+    indptr = np.asarray(csgraph.indptr, dtype=ITYPE, order='C')
+
+    # create the output array
+    graph = np.empty(csgraph.shape, dtype=DTYPE)
+    graph.fill(np.inf)
+
+    # create a boolean array to keep track of the locations of null edges.
+    cdef np.ndarray null = np.ones(csgraph.shape, dtype=bool, order='C')
+
+    # There is no c type for numpy bool arrays, so we'll use a raw character
+    #  array instead
+    null_flag = _populate_graph(graph, data, indices, indptr)
+
+    graph[null_flag] = null_value
+
+    return graph
+
+
+cdef np.ndarray _populate_graph(np.ndarray[DTYPE_t, ndim=2, mode='c'] graph,
+                                np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
+                                np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
+                                np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr):
+    cdef unsigned int N = graph.shape[0]
+    cdef np.ndarray null = np.ones((N, N), dtype=bool, order='C')
+    cdef np.npy_bool* null_ptr = <np.npy_bool*> null.data
+    cdef unsigned int row, col, i
+
+    for row from 0 <= row < N:
+        for i from indptr[row] <= i < indptr[row + 1]:
+            col = indices[i]
+            null_ptr[col] = 0
+            if data[i] < graph[row, col]:
+                graph[row, col] = data[i]
+        null_ptr += N
+    
+    return null
 
 
 def reconstruct_path(csgraph, predecessors, directed=True):
@@ -41,6 +213,7 @@ def reconstruct_path(csgraph, predecessors, directed=True):
         The N x N directed compressed-sparse representation of the tree drawn
         from csgraph which is encoded by the predecessor list.
     """
+    from _validation import validate_graph
     csgraph = validate_graph(csgraph, directed, dense_output=False)
 
     N = csgraph.shape[0]
@@ -97,8 +270,10 @@ def construct_dist_matrix(graph,
     point i to point j.  If no path exists between point i and j, then
     predecessors[i, j] = -9999
     """
+    from _validation import validate_graph
     graph = validate_graph(graph, directed, dtype=DTYPE,
-                           csr_output=False, copy_if_dense=not directed)
+                           csr_output=False,
+                           copy_if_dense=not directed)
     predecessors = np.asarray(predecessors)
 
     if predecessors.shape != graph.shape:
