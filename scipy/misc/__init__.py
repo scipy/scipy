@@ -50,10 +50,12 @@ del sys
 
 try:
     from pilutil import *
+    import pilutil
     __all__ += pilutil.__all__
 except ImportError:
     pass
 
+import common
 __all__ += common.__all__
 
 from numpy.testing import Tester
