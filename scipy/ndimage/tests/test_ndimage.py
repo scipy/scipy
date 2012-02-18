@@ -27,6 +27,7 @@
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+from __future__ import division
 
 import math
 import numpy
@@ -46,10 +47,13 @@ class TestNdimage:
 
     def setUp(self):
         # list of numarray data types
-        self.types = [numpy.int8, numpy.uint8, numpy.int16,
-                      numpy.uint16, numpy.int32, numpy.uint32,
-                      numpy.int64, numpy.uint64,
-                      numpy.float32, numpy.float64]
+        self.integer_types = [numpy.int8, numpy.uint8, numpy.int16,
+                numpy.uint16, numpy.int32, numpy.uint32,
+                numpy.int64, numpy.uint64]
+
+        self.float_types = [numpy.float32, numpy.float64]
+
+        self.types = self.integer_types + self.float_types
 
         # list of boundary modes:
         self.modes = ['nearest', 'wrap', 'reflect', 'mirror', 'constant']
@@ -1144,7 +1148,10 @@ class TestNdimage:
             a = numpy.arange(12, dtype=type)
             a.shape = (3,4)
             r1 = ndimage.correlate(a, filter_ * footprint)
-            r1 /= 5
+            if type in self.float_types:
+                r1 /= 5
+            else:
+                r1 //= 5
             r2 = ndimage.generic_filter(a, _filter_func,
                             footprint=footprint, extra_arguments=(cf,),
                             extra_keywords={'total': cf.sum()})
