@@ -7,8 +7,10 @@
 
 import warnings
 import random
+
 from numpy.testing import TestCase, assert_array_almost_equal, dec, \
         decorate_methods
+from numpy.testing.utils import WarningManager
 
 from scipy import rand, matrix, diag, eye
 from scipy.sparse import csc_matrix, spdiags, SparseEfficiencyWarning
@@ -29,7 +31,17 @@ else:
 _umfpack_skip = dec.skipif(not _have_umfpack,
                            'UMFPACK appears not to be compiled')
 
-class TestSolvers(TestCase):
+class _DeprecationAccept:
+    def setUp(self):
+        self.mgr = WarningManager()
+        self.mgr.__enter__()
+        warnings.simplefilter("ignore", DeprecationWarning)
+
+    def tearDown(self):
+        self.mgr.__exit__()
+
+
+class TestSolvers(TestCase, _DeprecationAccept):
     """Tests inverting a sparse linear system"""
 
     def test_solve_complex_without_umfpack(self):
@@ -113,9 +125,9 @@ class TestSolvers(TestCase):
         self.b = np.array([1, 2, 3, 4, 5])
         self.b2 = np.array([5, 4, 3, 2, 1])
 
+        _DeprecationAccept.setUp(self)
 
-
-class TestFactorization(TestCase):
+class TestFactorization(TestCase, _DeprecationAccept):
     """Tests factorizing a sparse linear system"""
 
     def test_complex_lu(self):
@@ -174,6 +186,8 @@ class TestFactorization(TestCase):
                 in self.real_matrices]
         self.complex_matrices = [x.astype(np.complex128)
                                  for x in self.real_matrices]
+
+        _DeprecationAccept.setUp(self)
 
 # Skip methods if umfpack not present
 for cls in [TestSolvers, TestFactorization]:
