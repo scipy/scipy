@@ -54,6 +54,9 @@ A function for creating Pascal matrices, ``scipy.linalg.pascal``, was added.
 Deprecated features
 ===================
 
+``scipy.misc.radon`` has been deprecated.  A more full-featured radon transform
+can be found in scikits-image.
+
 
 Backwards incompatible changes
 ==============================

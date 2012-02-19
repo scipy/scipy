@@ -431,6 +431,11 @@ def imfilter(arr,ftype):
 
 
 def radon(arr,theta=None):
+    """`radon` is deprecated in scipy 0.11, and will be removed in 0.12
+
+    For this functionality, please use the "radon" function in scikits-image.
+
+    """
     if theta is None:
         theta = mgrid[0:180]
     s = zeros((arr.shape[1],len(theta)), float)
@@ -440,3 +445,5 @@ def radon(arr,theta=None):
         s[:,k] = sum(im,axis=0)
         k += 1
     return s
+
+radon = numpy.deprecate(radon, message=radon.__doc__)
