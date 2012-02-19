@@ -446,4 +446,5 @@ def radon(arr,theta=None):
         k += 1
     return s
 
-radon = numpy.deprecate(radon, message=radon.__doc__)
+
+radon = numpy.deprecate(radon)
