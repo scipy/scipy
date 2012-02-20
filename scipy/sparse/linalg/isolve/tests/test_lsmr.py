@@ -2,7 +2,7 @@
 Copyright (C) 2010 David Fong and Michael Saunders
 Distributed under the same license as Scipy
 
-Testing Code for LSMR. 
+Testing Code for LSMR.
 
 03 Jun 2010: First version release with lsmr.py
 
@@ -22,7 +22,7 @@ from numpy.testing import run_module_suite, assert_almost_equal
 
 from scipy.sparse import coo_matrix
 from scipy.sparse.linalg.interface import aslinearoperator
-from lsmr import lsmr
+from scipy.sparse.linalg import lsmr
 
 class TestLSMR:
     def setUp(self):
