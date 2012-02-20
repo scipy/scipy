@@ -18,6 +18,8 @@ __all__ = [
     'RectBivariateSpline',
     'RectSpherBivariateSpline']
 
+from types import NoneType
+
 import warnings
 from numpy import zeros, concatenate, alltrue, ravel, all, diff, array
 import numpy as np
@@ -738,39 +740,8 @@ class RectBivariateSpline(BivariateSpline):
         self.degrees = kx,ky
 
 
-_spfit_messages = {1:"""
-ERROR: the required storage space exceeds the available storage space, as 
-       specified by the parameters nuest and nvest.
-       probably causes : nuest or nvest too small. if these parameters are
-       already large, it may also indicate that s is too small.
-       the approximation returned is the least-squares spline according to the
-       current set of knots. the parameter fp gives the corresponding sum of
-       squared residuals (fp>s).""",
-                    2:"""
-ERROR: a theoretically impossible result was found during the iteration proces
-       for finding a smoothing spline with fp = s. 
-       probably causes : s too small.
-       there is an approximation returned but the corresponding sum of squared
-       residuals does not satisfy the condition abs(fp-s)/s < tol.""",
-                    3:"""
-ERROR: the maximal number of iterations maxit (set to 20 by the program)
-       allowed for finding a smoothing spline with fp=s has been reached.
-       probably causes : s too small
-       there is an approximation returned but the corresponding sum of squared
-       residuals does not satisfy the condition abs(fp-s)/s < tol.""",
-                    4:"""
-No more knots can be added because the number of b-spline coefficients
-(nx-kx-1)*(ny-ky-1) already exceeds the number of data points m: either s or m
-too small.
-The weighted least-squares spline corresponds to the current set of
-knots.""",
-                    5:"""
-No more knots can be added because the additional knot would (quasi)
-coincide with an old one: s too small or too large a weight to an
-inaccurate data point.
-The weighted least-squares spline corresponds to the current set of
-knots.""",
-                    10:"""
+_spfit_messages = _surfit_messages.copy()
+_spfit_messages[10] = """
 ERROR: on entry, the input data are controlled on validity
        the following restrictions must be satisfied.
           -1<=iopt(1)<=1, 0<=iopt(2)<=1, 0<=iopt(3)<=1,
@@ -795,16 +766,13 @@ ERROR: on entry, the input data are controlled on validity
           if s=0: nuest>=mu+6+iopt(2)+iopt(3), nvest>=mv+7
        if one of these conditions is found to be violated,control is
        immediately repassed to the calling program. in that case there is no
-       approximation returned.""",
-                    }
+       approximation returned."""
 
 
 class RectSpherBivariateSpline(BivariateSpline):
     """
     Bivariate spline approximation over a rectangular mesh on a sphere.
-
     Can be used for both smoothing and interpolating data.
-    
     For more information, see the FITPACK_ site about this function.
     
     .. _FITPACK: http://www.netlib.org/dierckx/spgrid.f
@@ -823,79 +791,65 @@ class RectSpherBivariateSpline(BivariateSpline):
     s : float, optional
         Positive smoothing factor defined for estimation condition (s=0. is for
         interpolation).
-    iopt : nd.array, optional
-        integer array of dimension 3, specifying different options.
-        iopt[0]: specify whether a least-squares spline (iopt[0]=-1) or a
-                 smoothing spline (iopt[0]=0 or 1) must be determined.
-        iopt[1]: iopt[1] must specify the requested order of continuity at the
-                 pole u=0. can have value 0 or 1
-        iopt[2]: iopt[2] must specify the requested order of continuity at the
-                 pole u=pi. can have value 0 or 1
-    ider : nd.array, optional
-        integer array of dimension 4, specifying different options.
-        ider[0]: specify whether (ider[0]=0 or 1) or not (ider[0]=-1) there is a
-                 data value r0 at the pole u=0. if ider[0]=1, r0 will be
-                 considered to be the right function value, and it will be
-                 fitted exactly (s(0,v)=r0). if ider[0]=0, r0 will be considered
-                 to be a data value just like the other data values r[i,j].
-        ider[1]: specify whether (ider[1]=1) or not (ider[1]=0) the
-                 approximation has vanishing derivatives dr(2) and dr(3) at the
-                 pole u=0  (in case iopt[1]=1).
-        ider[2]: specify whether (ider[2]=0 or 1) or not (ider[2]=-1) there is a
-                 data value r1 at the pole u=pi. if ider[2]=1, r1 will be
-                 considered to be the right function value, and it will be
-                 fitted exactly (s(pi,v)=r1). if ider[2]=0, r1 will be
-                 considered to be a data value just like the other data values
-                 r[i,j].
-        ider[3]: specify whether (ider[3]=1) or not (ider[3]=0) the
-                 approximation has vanishing derivatives dr(5) and dr(6) at the
-                 pole u=pi  (in case iopt[2]=1).
-    r0 : float, optional
-        specify the data value at the pole u=0
-    r1 : float, optional
-        specify the data value at the pole u=pi
+    least_squares : bool, optional
+        If ``True``, determine a least-squares spline. Otherwise, determine a
+        smoothing spline.
+    pole_continuity : (bool, bool), optional
+        Order of continuity at the poles u=0 (pole_continuity[0]) and u=pi
+        (pole_continuity[1]). The order of continuity at the pole will be 1 or 0
+        when this is ``True`` or ``False``, respectively.
+    pole_values : (float, float), optional
+        Data values at the poles u=0 and u=pi. Either the whole parameter or 
+        each individual element can be ``None``.
+    pole_exact : (bool, bool), optional
+        Data value exactness at the poles u=0 and u=pi. If ``True``, the value
+        is considered to be the right function value, and it will be fitted
+        exactly. If ``False``, the value will be considered to be a data value
+        just like the other data values.
+    pole_flat : (bool, bool), optional
+        For the poles at u=0 and u=pi, specify whether or not the approximation
+        has vanishing derivatives.
+    restart_smooth : bool, optional
+        If s>0, determine whether to restart from scratch (``True``) or to 
+        continue with the set of knots found at the last call of the routine.
+        Attention: a call with restart_smooth=True must always be immediately
+        preceded by another call s>0.
         
-    See Also from ``scipy.interpolate``
-    -----------------------------------
-    RectBivariateSpline : vivariate spline approximation over a rectangular mesh
-    bisplrep, bisplev : an older wrapping of FITPACK
+    See Also
+    --------
+    RectBivariateSpline : bivariate spline approximation over a rectangular mesh
     
     """
-    def __init__(self, u, v, r, s=0., iopt=np.array([0, 0, 0], dtype=int),
-                 ider=np.array([-1, 0, -1, 0], dtype=int), r0=None, r1=None):
+    def __init__(self, u, v, r, s=0., least_squares=False,
+                 pole_continuity=(False, False), pole_values=(None, None), 
+                 pole_exact=(False, False), pole_flat=(False, False),
+                 restart_smooth=True):
+        iopt = np.array([0, 0, 0], dtype=int)
+        ider = np.array([-1, 0, -1, 0], dtype=int)
+        if isinstance(pole_values, NoneType):
+            pole_values = (None, None)
+        r0, r1 = pole_values
+        iopt[0] = -1 if least_squares else not restart_smooth
+        iopt[1:] = pole_continuity
+        ider[0] = -1 if r0 is None else pole_exact[0]
+        ider[2] = -1 if r1 is None else pole_exact[1]
+        ider[1], ider[3] = pole_flat
         u, v = np.ravel(u), np.ravel(v)
         if not np.all(np.diff(u) > 0.0):
             raise TypeError('u must be strictly increasing')
         if not np.all(np.diff(v) > 0.0):
             raise TypeError('v must be strictly increasing')
-        if not ((u.min() == u[0]) and (u.max() == u[-1])):
-            raise TypeError('u must be strictly ascending')
-        if not ((v.min() == v[0]) and (v.max() == v[-1])):
-            raise TypeError('v must be strictly ascending')
         if not u.size == r.shape[0]:
             raise TypeError('u dimension of r must have same number of '
                             'elements as u')
         if not v.size == r.shape[1]:
             raise TypeError('v dimension of r must have same number of '
                             'elements as v')
-        if not iopt.size == 3:
-            raise TypeError("iopt must be of shape (3,)")
-        if not ider.size == 4:
-            raise TypeError("ider must be of shape (4,)")
-        if ider[0] > -1 and r0 == None:
-            raise TypeError("if ider[0] > -1, you must give r0.")
-        if ider[2] > -1 and r1 == None:
-            raise TypeError("if ider[2] > -1, you must give r1.")
         r = np.ravel(r)
-        print u
-        print v
-        print r
         nu,tu,nv,tv,c,fp,ier = dfitpack.regrid_smth_spher(iopt,ider,u.copy(),
                                                           v.copy(),r.copy(),r0,
                                                           r1,s)
-        if ier in [0,-1,-2]: # normal return
-            pass
-        else:
+        if not ier in [0,-1,-2]:
             message = _spfit_messages.get(ier, 'ier=%s' % (ier))
             warnings.warn(message)
             raise ValueError()
@@ -903,5 +857,4 @@ class RectSpherBivariateSpline(BivariateSpline):
         self.fp = fp
         self.tck = tu[:nu], tv[:nv], c[:(nu - 4) * (nv-4)]
         self.degrees = 3, 3
-
 
