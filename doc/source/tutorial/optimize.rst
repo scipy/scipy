@@ -306,7 +306,7 @@ subject to an equality and an inequality constraints defined as:
     :nowrap:
 
     \[ x^3 - y = 0 \]
-    \[ x - 1 \geq 0 \]
+    \[ y - 1 \geq 0 \]
 
 
 
