@@ -148,7 +148,8 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     # stores the num of singular values
     minDim = min([m, n])
 
-    if itnlim is None: itnlim = minDim
+    if itnlim is None:
+        itnlim = minDim
 
     if show:
         print ' '
@@ -210,7 +211,8 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     normb = beta
     istop = 0
     ctol = 0
-    if conlim > 0: ctol = 1 / conlim
+    if conlim > 0:
+        ctol = 1 / conlim
     normr = beta
 
     # Reverse the order here from the original matlab code because
@@ -341,16 +343,23 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         # The effect is equivalent to the normAl tests using
         # atol = eps,  btol = eps,  conlim = 1/eps.
 
-        if itn >= itnlim: istop = 7
-        if 1 + test3 <= 1: istop = 6
-        if 1 + test2 <= 1: istop = 5
-        if 1 + t1 <= 1: istop = 4
+        if itn >= itnlim:
+            istop = 7
+        if 1 + test3 <= 1:
+            istop = 6
+        if 1 + test2 <= 1:
+            istop = 5
+        if 1 + t1 <= 1:
+            istop = 4
 
         # Allow for tolerances set by the user.
 
-        if test3 <= ctol: istop = 3
-        if test2 <= atol: istop = 2
-        if test1 <= rtol: istop = 1
+        if test3 <= ctol:
+            istop = 3
+        if test2 <= atol:
+            istop = 2
+        if test1 <= rtol:
+            istop = 1
 
         # See if it is time to print something.
 
@@ -371,7 +380,8 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
                 str4 = ' %8.1e %8.1e' % (normA, condA)
                 print ''.join([str1, str2, str3, str4])
 
-        if istop > 0: break
+        if istop > 0:
+            break
 
     # Print the stopping condition.
 
