@@ -45,6 +45,7 @@ Iterative methods for least-squares problems:
    :toctree: generated/
 
    lsqr -- Find the least-squares solution to a sparse linear equation system
+   lsmr -- Find the least-squares solution to a sparse linear equation system
 
 Matrix factorizations
 ---------------------
