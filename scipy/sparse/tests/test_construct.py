@@ -170,6 +170,11 @@ class TestConstructUtils(TestCase):
         assert_equal(x.dtype, int)
         assert_equal(x.todense(), [[2, 0], [0, 2]])
 
+    def test_diags_one_diagonal(self):
+        d = np.random.rand(4)
+        k = np.random.randint(-5, 5)
+        assert_equal(construct.diags(d, k).toarray(), np.diag(d, k))
+
     def test_identity(self):
         assert_equal(construct.identity(1).toarray(), [[1]])
         assert_equal(construct.identity(2).toarray(), [[1,0],[0,1]])
