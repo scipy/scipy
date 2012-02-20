@@ -31,7 +31,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     """Iterative solver for least-squares problems.
 
     lsmr solves the system of linear equations A*x=b. If the system
-    is inconsistent, it solves the least-squares problem min ||b - Ax||_2. 
+    is inconsistent, it solves the least-squares problem min ||b - Ax||_2.
     A is a rectangular matrix of dimension m-by-n, where all cases are
     allowed: m=n, m>n, or m<n. B is a vector of length m.
     The matrix A may be dense or sparse (usually sparse).
@@ -45,12 +45,12 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     damp : float
         Damping factor for regularized least-squares. `lsmr` solves
         the regularized least-squares problem::
-        
-         min ||(b) - (  A   )x||  
+
+         min ||(b) - (  A   )x||
              ||(0)   (damp*I) ||_2
-             
+
         where damp is a scalar.  If damp is None or 0, the system
-        is solved without regularization. 
+        is solved without regularization.
     atol, btol : float
         Stopping tolerances. `lsmr` continues iterations until a
         certain backward error estimate is smaller than some quantity
@@ -91,7 +91,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         Least-square solution returned.
     istop : int
         istop gives the reason for stopping::
-        
+
           istop   = 0 means x=0 is a solution.
                   = 1 means x is an approximate solution to A*x = B,
                       according to atol and btol.
@@ -141,8 +141,8 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
 
     hdg1 = '   itn      x(1)       norm r    norm A''r'
     hdg2 = ' compatible   LS      norm A   cond A'
-    pfreq  = 20   # print frequency (for repeating the heading)
-    pcount = 0    # print counter
+    pfreq = 20   # print frequency (for repeating the heading)
+    pcount = 0   # print counter
 
     m, n = A.shape
 
@@ -153,15 +153,11 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
 
     if show:
         print ' '
-        print 'LSMR            Least-squares solution of  Ax = b'
-        str1 = 'The matrix A has %8g rows  and %8g cols' % (m, n)
-        str2 = 'damp = %20.14e' % (damp)
-        str3 = 'atol = %8.2e                 conlim = %8.2e'%( atol, conlim)
-        str4 = 'btol = %8.2e               itnlim = %8g'  %( btol, itnlim)
-        print str1
-        print str2
-        print str3
-        print str4
+        print 'LSMR            Least-squares solution of  Ax = b\n'
+        print 'The matrix A has %8g rows  and %8g cols' % (m, n)
+        print 'damp = %20.14e\n' % (damp)
+        print 'atol = %8.2e                 conlim = %8.2e\n' % (atol, conlim)
+        print 'btol = %8.2e               itnlim = %8g\n' % (btol, itnlim)
 
     u = b
     beta = norm(u)
@@ -180,43 +176,43 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
 
     # Initialize variables for 1st iteration.
 
-    itn      = 0
-    zetabar  = alpha * beta
+    itn = 0
+    zetabar = alpha * beta
     alphabar = alpha
-    rho      = 1
-    rhobar   = 1
-    cbar     = 1
-    sbar     = 0
+    rho = 1
+    rhobar = 1
+    cbar = 1
+    sbar = 0
 
-    h    = v.copy()
+    h = v.copy()
     hbar = zeros(n)
-    x    = zeros(n)
+    x = zeros(n)
 
     # Initialize variables for estimation of ||r||.
 
-    betadd      = beta
-    betad       = 0
-    rhodold     = 1
+    betadd = beta
+    betad = 0
+    rhodold = 1
     tautildeold = 0
-    thetatilde  = 0
-    zeta        = 0
-    d           = 0
+    thetatilde = 0
+    zeta = 0
+    d = 0
 
     # Initialize variables for estimation of ||A|| and cond(A)
 
-    normA2  = alpha * alpha
+    normA2 = alpha * alpha
     maxrbar = 0
     minrbar = 1e+100
-    normA   = sqrt(normA2)
-    condA   = 1
-    normx   = 0
+    normA = sqrt(normA2)
+    condA = 1
+    normx = 0
 
     # Items for use in stopping rules.
-    normb  = beta
-    istop  = 0
-    ctol   = 0
+    normb = beta
+    istop = 0
+    ctol = 0
     if conlim > 0: ctol = 1 / conlim
-    normr  = beta
+    normr = beta
 
     # Reverse the order here from the original matlab code because
     # there was an error on return when arnorm==0
@@ -229,10 +225,11 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     if show:
         print ' '
         print hdg1, hdg2
-        test1  = 1;             test2  = alpha / beta
-        str1   = '%6g %12.5e'    %(    itn,   x[0] )
-        str2   = ' %10.3e %10.3e'%(  normr, normar )
-        str3   = '  %8.1e %8.1e' %(  test1,  test2 )
+        test1 = 1
+        test2  = alpha / beta
+        str1 = '%6g %12.5e' % (itn, x[0])
+        str2 = ' %10.3e %10.3e' % (normr, normar)
+        str3 = '  %8.1e %8.1e' % (test1,  test2)
         print ''.join([str1, str2, str3])
 
     # Main iteration loop.
@@ -250,7 +247,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         if beta > 0:
             u = (1 / beta) * u
             v = A.rmatvec(u) - beta * v
-            alpha  = norm(v)
+            alpha = norm(v)
             if alpha > 0:
                 v = (1 / alpha) * v
 
@@ -262,7 +259,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
 
         # Use a plane rotation (Q_i) to turn B_i to R_i
 
-        rhoold   = rho
+        rhoold = rho
         c, s, rho = _sym_ortho(alphahat, beta)
         thetanew = s*alpha
         alphabar = c*alpha
@@ -292,7 +289,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         # Apply rotation Q_{k,k+1}.
         betahat = c * betaacute
         betadd = -s * betaacute
-          
+
         # Apply rotation Qtilde_{k-1}.
         # betad = betad_{k-1} here.
 
@@ -317,24 +314,24 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
 
         # Estimate cond(A).
         maxrbar = max(maxrbar, rhobarold)
-        if itn > 1: 
+        if itn > 1:
           minrbar= min(minrbar, rhobarold)
         condA = max(maxrbar, rhotemp) / min(minrbar, rhotemp)
 
         # Test for convergence.
 
         # Compute norms for convergence testing.
-        normar  = abs(zetabar)
-        normx   = norm(x)
+        normar = abs(zetabar)
+        normx = norm(x)
 
         # Now use these norms to estimate certain other quantities,
         # some of which will be small near a solution.
 
-        test1   = normr / normb
-        test2   = normar / (normA * normr)
-        test3   = 1 / condA
-        t1      = test1 / (1 + normA * normx / normb)
-        rtol    = btol + atol * normA * normx / normb
+        test1 = normr / normb
+        test2 = normar / (normA * normr)
+        test3 = 1 / condA
+        t1 = test1 / (1 + normA * normx / normb)
+        rtol = btol + atol * normA * normx / normb
 
         # The following tests guard against extremely small values of
         # atol, btol or ctol.  (The user may have set any or all of
@@ -356,17 +353,11 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         # See if it is time to print something.
 
         if show:
-            prnt = 0
-            if n <= 40 : prnt = 1
-            if itn <= 10 : prnt = 1
-            if itn >= itnlim-10: prnt = 1
-            if itn % 10 == 0 : prnt = 1
-            if test3 <= 1.1 * ctol : prnt = 1
-            if test2 <= 1.1 * atol : prnt = 1
-            if test1 <= 1.1 * rtol : prnt = 1
-            if istop != 0 : prnt = 1
+            if (n <= 40) or (itn <= 10) or (itn >= itnlim-10) or \
+               (itn % 10 == 0) or (test3 <= 1.1 * ctol) or \
+               (test2 <= 1.1 * atol) or (test1 <= 1.1 * rtol) or \
+               (istop != 0):
 
-            if prnt:
                 if pcount >= pfreq:
                     pcount = 0
                     print ' '
@@ -375,7 +366,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
                 str1 = '%6g %12.5e' % (itn, x[0])
                 str2 = ' %10.3e %10.3e' % (normr, normar)
                 str3 = '  %8.1e %8.1e' % (test1, test2)
-                str4 = ' %8.1e %8.1e'% (normA, condA)
+                str4 = ' %8.1e %8.1e' % (normA, condA)
                 print ''.join([str1, str2, str3, str4])
 
         if istop > 0: break
@@ -386,10 +377,10 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         print ' '
         print 'LSMR finished'
         print msg[istop]
-        str1 = 'istop =%8g    normr =%8.1e'      % (istop, normr)
-        str2 = '    normA =%8.1e    normAr =%8.1e' % (normA, normar)
-        str3 = 'itn   =%8g    condA =%8.1e'      % (itn, condA)
-        str4 = '    normx =%8.1e'                % (normx)
+        print 'istop =%8g    normr =%8.1e' % (istop, normr)
+        print '    normA =%8.1e    normAr =%8.1e' % (normA, normar)
+        print 'itn   =%8g    condA =%8.1e' % (itn, condA)
+        print '    normx =%8.1e' % (normx)
         print str1, str2
         print str3, str4
 
