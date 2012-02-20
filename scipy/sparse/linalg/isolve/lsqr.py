@@ -61,11 +61,10 @@ def _sym_ortho(a, b):
 
     Notes
     -----
-    Jeffery Kline: I added the routine 'SymOrtho' for numerical
-    stability. This is recommended by S.-C. Choi in [1]_. It removes
-    the unpleasant potential of ``1/eps`` in some important places
-    (see, for example text following "Compute the next
-    plane rotation Qk" in minres_py).
+    The routine 'SymOrtho' was added for numerical stability. This is
+    recommended by S.-C. Choi in [1]_. It removes the unpleasant potential of
+    ``1/eps`` in some important places (see, for example text following
+    "Compute the next plane rotation Qk" in minres_py).
 
     References
     ----------
