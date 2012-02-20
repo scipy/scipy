@@ -146,5 +146,4 @@ def lsmrtest(m, n, damp):
 if __name__ == "__main__":
     # Comment out the next line to run unit tests only
     lsmrtest(20,10,0)
-    print("Continuing to run some unit tests...")
     run_module_suite()
