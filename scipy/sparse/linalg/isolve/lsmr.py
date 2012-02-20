@@ -26,13 +26,13 @@ from scipy.sparse.linalg.interface import aslinearoperator
 from lsqr import _sym_ortho
 
 def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
-       itnlim=None, show=False):
+         itnlim=None, show=False):
     """Iterative solver for least-squares problems.
 
-    lsmr solves the system of linear equations A*x=b. If the system
-    is inconsistent, it solves the least-squares problem min ||b - Ax||_2.
+    lsmr solves the system of linear equations ``Ax = b``. If the system
+    is inconsistent, it solves the least-squares problem ``min ||b - Ax||_2``.
     A is a rectangular matrix of dimension m-by-n, where all cases are
-    allowed: m=n, m>n, or m<n. B is a vector of length m.
+    allowed: m = n, m > n, or m < n. B is a vector of length m.
     The matrix A may be dense or sparse (usually sparse).
 
     Parameters
@@ -53,12 +53,12 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     atol, btol : float
         Stopping tolerances. `lsmr` continues iterations until a
         certain backward error estimate is smaller than some quantity
-        depending on atol and btol.  Let ``r = b - A*x`` be the
+        depending on atol and btol.  Let ``r = b - Ax`` be the
         residual vector for the current approximate solution ``x``.
-        If ``A*x = b`` seems to be consistent, ``lsmr`` terminates
-        when ``norm(r) <= atol*norm(A)*norm(x) + btol*norm(b)``.
-        Otherwise, lsmr terminates when ``norm(A^{T}*r) <=
-        atol*norm(A)*norm(r)``.  If both tolerances are 1.0e-6 (say),
+        If ``Ax = b`` seems to be consistent, ``lsmr`` terminates
+        when ``norm(r) <= atol * norm(A) * norm(x) + btol * norm(b)``.
+        Otherwise, lsmr terminates when ``norm(A^{T} r) <=
+        atol * norm(A) * norm(r)``.  If both tolerances are 1.0e-6 (say),
         the final ``norm(r)`` should be accurate to about 6
         digits. (The final x will usually have fewer correct digits,
         depending on ``cond(A)`` and the size of LAMBDA.)  If `atol`
@@ -78,7 +78,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         iterations may then be excessive.
     itnlim : int
         `lsmr` terminates if the number of iterations reaches
-        `itnlim`.  The default is ``itnlim = min(m,n)``.  For
+        `itnlim`.  The default is ``itnlim = min(m, n)``.  For
         ill-conditioned systems, a larger value of `itnlim` may be
         needed.
     show : bool
@@ -107,9 +107,9 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     itn : int
         Number of iterations used.
     normr : float
-        ``norm(b-A*x)``
+        ``norm(b-Ax)``
     normar : float
-        ``norm(A^T *(b-A*x))``
+        ``norm(A^T (b - Ax))``
     norma : float
         ``norm(A)``
     conda : float
