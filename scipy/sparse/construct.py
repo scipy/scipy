@@ -117,6 +117,15 @@ def diags(diagonals, offsets, shape=None, format=None, dtype=None):
             [ 0.,  1., -2.,  1.],
             [ 0.,  0.,  1., -2.]])
 
+
+    If only one diagonal is wanted (as in `numpy.diag`), the following
+    works as well:
+
+    >>> diags([1, 2, 3], 1).todense()
+    matrix([[ 0.,  1.,  0.,  0.],
+            [ 0.,  0.,  2.,  0.],
+            [ 0.,  0.,  0.,  3.],
+            [ 0.,  0.,  0.,  0.]])
     """
     # if offsets is not a sequence, assume that there's only one diagonal
     try:
