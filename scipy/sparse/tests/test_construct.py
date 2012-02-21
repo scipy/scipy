@@ -69,7 +69,6 @@ class TestConstructUtils(TestCase):
         c = array([11, 12, 13, 14, 15])
 
         cases = []
-        cases.append( ([a[:1]],  0,  (1, 1), [[1]]) )
         cases.append( ([a[:1]], [0], (1, 1), [[1]]) )
         cases.append( ([a[:1]], [0], (2, 1), [[1],[0]]) )
         cases.append( ([a[:1]], [0], (1, 2), [[1,0]]) )

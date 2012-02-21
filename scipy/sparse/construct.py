@@ -122,7 +122,13 @@ def diags(diagonals, offsets, shape=None, format=None, dtype=None):
     try:
         iter(offsets)
     except TypeError:
-        diagonals = [np.atleast_1d(diagonals)]
+        # now check that there's actually only one diagonal
+        try:
+            iter(diagonals[0])
+        except TypeError:
+            diagonals = [np.atleast_1d(diagonals)]
+        else:
+            raise ValueError("Different number of diagonals and offsets.")
     else:
         diagonals = map(np.atleast_1d, diagonals)
     offsets = np.atleast_1d(offsets)
