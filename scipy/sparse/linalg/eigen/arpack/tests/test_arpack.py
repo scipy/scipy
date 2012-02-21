@@ -4,6 +4,8 @@ To run tests locally:
 
 """
 
+import warnings
+
 import numpy as np
 
 from numpy.testing import assert_allclose, \
@@ -18,6 +20,18 @@ from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
      ArpackNoConvergence
 
 from scipy.linalg import svd
+
+
+# eigs() and eigsh() are called many times, so apply a filter for the warnings
+# they generate here.
+_eigs_warn_msg = "Single-precision types in `eigs` and `eighs`"
+
+def setup_module():
+    warnings.filterwarnings("ignore", message=_eigs_warn_msg)
+
+def teardown_module():
+    warnings.filterwarnings("default", message=_eigs_warn_msg)
+
 
 # precision for tests
 _ndigits = {'f': 3, 'd': 11, 'F': 3, 'D': 11}
