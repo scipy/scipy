@@ -133,6 +133,7 @@ class TestConstructUtils(TestCase):
         cases.append( ([], [-4,2,-1], None) )
         cases.append( ([1], [-4], (4, 4)) )
         cases.append( ([a[:0]], [-1], (1, 2)) )
+        cases.append( ([a], 0, None))
 
         for d, o, shape in cases:
             try:
@@ -171,9 +172,10 @@ class TestConstructUtils(TestCase):
         assert_equal(x.todense(), [[2, 0], [0, 2]])
 
     def test_diags_one_diagonal(self):
-        d = np.random.rand(4)
-        k = np.random.randint(-5, 5)
-        assert_equal(construct.diags(d, k).toarray(), np.diag(d, k))
+        d = range(5)
+        for k in range(-5, 6):
+            assert_equal(construct.diags(d, k).toarray(),
+                         construct.diags([d], [k]).toarray())
 
     def test_identity(self):
         assert_equal(construct.identity(1).toarray(), [[1]])
