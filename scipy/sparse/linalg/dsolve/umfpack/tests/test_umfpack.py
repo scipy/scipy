@@ -8,7 +8,7 @@
 import warnings
 import random
 
-from numpy.testing import TestCase, assert_array_almost_equal, dec, \
+from numpy.testing import assert_array_almost_equal, dec, \
         decorate_methods
 from numpy.testing.utils import WarningManager
 
@@ -41,7 +41,7 @@ class _DeprecationAccept:
         self.mgr.__exit__()
 
 
-class TestSolvers(TestCase, _DeprecationAccept):
+class TestSolvers(_DeprecationAccept):
     """Tests inverting a sparse linear system"""
 
     def test_solve_complex_without_umfpack(self):
@@ -127,7 +127,7 @@ class TestSolvers(TestCase, _DeprecationAccept):
 
         _DeprecationAccept.setUp(self)
 
-class TestFactorization(TestCase, _DeprecationAccept):
+class TestFactorization(_DeprecationAccept):
     """Tests factorizing a sparse linear system"""
 
     def test_complex_lu(self):
