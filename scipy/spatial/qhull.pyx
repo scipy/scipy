@@ -29,6 +29,7 @@ cdef extern from "stdio.h":
 
 cdef extern from "math.h":
     double fabs(double x) nogil
+    double sqrt(double x) nogil
 
 cdef extern from "qhull/src/qset.h":
     ctypedef union setelemT:
@@ -123,8 +124,12 @@ _qhull_lock = threading.Lock()
 #------------------------------------------------------------------------------
 
 cdef extern from "qhull_blas.h":
-    void qh_dgesv(int *n, int *nrhs, double *a, int *lda, int *ipiv,
-                  double *b, int *ldb, int *info) nogil
+    void qh_dgetrf(int *m, int *n, double *a, int *lda, int *ipiv,
+                   int *info) nogil
+    void qh_dgetrs(char *trans, int *n, int *nrhs, double *a, int *lda,
+                   int *ipiv, double *b, int *ldb, int *info) nogil
+    void qh_dgecon(char *norm, int *n, double *a, int *lda, double *anorm,
+                   double *rcond, double *work, int *iwork, int *info) nogil
 
 
 #------------------------------------------------------------------------------
@@ -290,7 +295,8 @@ def _qhull_get_facet_array(int ndim, int numpoints):
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
-                                np.ndarray[np.npy_int, ndim=2] vertices):
+                                np.ndarray[np.npy_int, ndim=2] vertices,
+                                double eps):
     """
     Compute barycentric affine coordinate transformations for given
     simplices.
@@ -322,14 +328,19 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     These are stacked into the `Tinvs` returned.
 
     """
-
-    cdef np.ndarray[np.double_t, ndim=2] T
-    cdef np.ndarray[np.double_t, ndim=3] Tinvs
-    cdef int ivertex
+    cdef double[:,::1] T
+    cdef double[:,:,::1] Tinvs
+    cdef int isimplex
     cdef int i, j, n, nrhs, lda, ldb, info
     cdef int ipiv[NPY_MAXDIMS+1]
-    cdef int ndim, nvertex
-    cdef double nan
+    cdef int ndim, nsimplex
+    cdef double centroid[NPY_MAXDIMS], c[NPY_MAXDIMS+1]
+    cdef double *transform
+    cdef double anorm, rcond
+    cdef double nan, rcond_limit
+
+    cdef double work[4*NPY_MAXDIMS]
+    cdef int iwork[NPY_MAXDIMS]
 
     cdef double x1, x2, x3
     cdef double y1, y2, y3
@@ -337,71 +348,68 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
 
     nan = np.nan
     ndim = points.shape[1]
-    nvertex = vertices.shape[0]
+    nsimplex = vertices.shape[0]
 
     T = np.zeros((ndim, ndim), dtype=np.double)
-    Tinvs = np.zeros((nvertex, ndim+1, ndim), dtype=np.double)
+    Tinvs = np.zeros((nsimplex, ndim+1, ndim), dtype=np.double)
+
+    # Maximum inverse condition number to allow: we want at least half
+    # of the digits be significant, to be safe
+    rcond_limit = sqrt(eps)
 
     with nogil:
-        for ivertex in xrange(nvertex):
-            if ndim == 2:
-                # Manual unrolling of the generic barycentric transform
-                # code below. This is roughly 3.5x faster than the generic
-                # implementation; however, the time taken here is in any
-                # case a small fraction of `qh_new_qhull`, so optimization
-                # here is probably not very important.
+        for isimplex in xrange(nsimplex):
+            for i in xrange(ndim):
+                Tinvs[isimplex,ndim,i] = points[vertices[isimplex,ndim],i]
+                for j in xrange(ndim):
+                    T[i,j] = (points[vertices[isimplex,j],i]
+                              - Tinvs[isimplex,ndim,i])
+                Tinvs[isimplex,i,i] = 1
 
-                x1 = points[vertices[ivertex,0],0]
-                x2 = points[vertices[ivertex,1],0]
-                x3 = points[vertices[ivertex,2],0]
+            # compute 1-norm for estimating condition number
+            anorm = _matrix_norm1(T)
 
-                y1 = points[vertices[ivertex,0],1]
-                y2 = points[vertices[ivertex,1],1]
-                y3 = points[vertices[ivertex,2],1]
+            # LU decomposition
+            n = ndim
+            nrhs = ndim
+            lda = ndim
+            ldb = ndim
+            qh_dgetrf(&n, &n, <double*>T._data, &lda, ipiv, &info)
 
-                x1 -= x3
-                x2 -= x3
+            # Check condition number
+            if info == 0:
+                qh_dgecon("1", &n, <double*>T._data, &lda, &anorm, &rcond,
+                          work, iwork, &info)
 
-                y1 -= y3
-                y2 -= y3
-
-                det = x1*y2 - x2*y1
-
-                if det == 0:
+                if rcond < rcond_limit:
+                    # The transform seems singular
                     info = 1
-                else:
-                    info = 0
-                    Tinvs[ivertex,0,0] = y2/det
-                    Tinvs[ivertex,0,1] = -x2/det
-                    Tinvs[ivertex,1,0] = -y1/det
-                    Tinvs[ivertex,1,1] = x1/det
-                    Tinvs[ivertex,2,0] = x3
-                    Tinvs[ivertex,2,1] = y3
-            else:
-                # General dimensions
 
-                for i in xrange(ndim):
-                    Tinvs[ivertex,ndim,i] = points[vertices[ivertex,ndim],i]
-                    for j in xrange(ndim):
-                        T[i,j] = (points[vertices[ivertex,j],i]
-                                  - Tinvs[ivertex,ndim,i])
-                    Tinvs[ivertex,i,i] = 1
+            # Compute transform
+            if info == 0:
+                qh_dgetrs("N", &n, &nrhs, <double*>T._data, &lda, ipiv,
+                          (<double*>Tinvs._data) + ndim*(ndim+1)*isimplex,
+                          &ldb, &info)
 
-                n = ndim
-                nrhs = ndim
-                lda = ndim
-                ldb = ndim
-                qh_dgesv(&n, &nrhs, <double*>T.data, &lda, ipiv,
-                         (<double*>Tinvs.data) + ndim*(ndim+1)*ivertex,
-                         &ldb, &info)
-
+            # Deal with degenerate simplices
             if info != 0:
-                # degenerate simplex
-                for i in xrange(ndim+1):
-                    for j in xrange(ndim):
-                        Tinvs[ivertex,i,j] = nan
+                Tinvs[isimplex,:,:] = nan
 
-    return Tinvs
+    return np.asarray(Tinvs)
+
+@cython.boundscheck(False)
+cdef double _matrix_norm1(double[:,::1] a) nogil:
+    """Compute the 1-norm of a square matrix"""
+    cdef double maxsum = 0, colsum
+    cdef int i, j
+
+    for j in range(a.shape[1]):
+        colsum = 0
+        for i in range(a.shape[0]):
+            colsum += fabs(a[i,j])
+        if maxsum < colsum:
+            maxsum = colsum
+    return maxsum
 
 cdef int _barycentric_inside(int ndim, double *transform,
                              double *x, double *c, double eps) nogil:
@@ -979,7 +987,8 @@ class Delaunay(object):
         """
         if self._transform is None:
             self._transform = _get_barycentric_transforms(self.points,
-                                                          self.vertices)
+                                                          self.vertices,
+                                                          np.finfo(float).eps)
         return self._transform
 
     @property
@@ -1062,9 +1071,9 @@ class Delaunay(object):
         return out
 
     @cython.boundscheck(False)
-    def find_simplex(self, xi, bruteforce=False):
+    def find_simplex(self, xi, bruteforce=False, tol=None):
         """
-        find_simplex(self, xi, bruteforce=False)
+        find_simplex(self, xi, bruteforce=False, tol=None)
 
         Find the simplices containing the given points.
 
@@ -1076,6 +1085,9 @@ class Delaunay(object):
             Points to locate
         bruteforce : bool, optional
             Whether to only perform a brute-force search
+        tol : float, optional
+            Tolerance allowed in the inside-triangle check.
+            Default is ``sqrt(eps)``.
 
         Returns
         -------
@@ -1112,7 +1124,10 @@ class Delaunay(object):
 
         start = 0
 
-        eps = np.finfo(np.double).eps * 10
+        if tol is None:
+            eps = sqrt(np.finfo(np.double).eps)
+        else:
+            eps = tol
         out = np.zeros((xi.shape[0],), dtype=np.intc)
         out_ = out
         _get_delaunay_info(&info, self, 1, 0)
