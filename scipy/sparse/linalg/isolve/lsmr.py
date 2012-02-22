@@ -26,7 +26,7 @@ from scipy.sparse.linalg.interface import aslinearoperator
 from lsqr import _sym_ortho
 
 def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
-         itnlim=None, show=False):
+         maxiter=None, show=False):
     """Iterative solver for least-squares problems.
 
     lsmr solves the system of linear equations ``Ax = b``. If the system
@@ -76,10 +76,10 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         default value is 1e+8.  Maximum precision can be obtained by
         setting ``atol = btol = conlim = 0``, but the number of
         iterations may then be excessive.
-    itnlim : int
+    maxiter : int
         `lsmr` terminates if the number of iterations reaches
-        `itnlim`.  The default is ``itnlim = min(m, n)``.  For
-        ill-conditioned systems, a larger value of `itnlim` may be
+        `maxiter`.  The default is ``maxiter = min(m, n)``.  For
+        ill-conditioned systems, a larger value of `maxiter` may be
         needed.
     show : bool
         Print iterations logs if ``show=True``.
@@ -101,7 +101,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
                       precision)
                   = 5 is the same as 2 with atol = eps.
                   = 6 is the same as 3 with CONLIM = 1/eps.
-                  = 7 means ITN reached itnlim before the other stopping
+                  = 7 means ITN reached maxiter before the other stopping
                       conditions were satisfied.
 
     itn : int
@@ -148,8 +148,8 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     # stores the num of singular values
     minDim = min([m, n])
 
-    if itnlim is None:
-        itnlim = minDim
+    if maxiter is None:
+        maxiter = minDim
 
     if show:
         print ' '
@@ -157,7 +157,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         print 'The matrix A has %8g rows  and %8g cols' % (m, n)
         print 'damp = %20.14e\n' % (damp)
         print 'atol = %8.2e                 conlim = %8.2e\n' % (atol, conlim)
-        print 'btol = %8.2e               itnlim = %8g\n' % (btol, itnlim)
+        print 'btol = %8.2e             maxiter = %8g\n' % (btol, maxiter)
 
     u = b
     beta = norm(u)
@@ -234,7 +234,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         print ''.join([str1, str2, str3])
 
     # Main iteration loop.
-    while itn < itnlim:
+    while itn < maxiter:
         itn = itn + 1
 
         # Perform the next step of the bidiagonalization to obtain the
@@ -343,7 +343,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         # The effect is equivalent to the normAl tests using
         # atol = eps,  btol = eps,  conlim = 1/eps.
 
-        if itn >= itnlim:
+        if itn >= maxiter:
             istop = 7
         if 1 + test3 <= 1:
             istop = 6
@@ -364,7 +364,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         # See if it is time to print something.
 
         if show:
-            if (n <= 40) or (itn <= 10) or (itn >= itnlim-10) or \
+            if (n <= 40) or (itn <= 10) or (itn >= maxiter - 10) or \
                (itn % 10 == 0) or (test3 <= 1.1 * ctol) or \
                (test2 <= 1.1 * atol) or (test1 <= 1.1 * rtol) or \
                (istop != 0):
