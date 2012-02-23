@@ -10,30 +10,16 @@ the Floyd-Warshall algorithm, or Dykstra's algorithm with Fibonacci Heaps.
 # License: BSD, (C) 2011
 
 # TODO:
-#   currently finding the distance with unweighted=True is sub-optimal
-#   with Dijkstra's algorithm: a set of weights equal to 1 are passed to
-#   the routine.  This can fail when there are zeros explicitly stored in
-#   the matrix, and is also less efficient than if we re-wrote the _dijkstra
-#   routines specifically for this purpose.
+#   Tests for negative weights & negative cycles in all algorithms
 #
-#   Check on negative weights in Dijkstra, Floyd-Warshall and Bellman-Ford
+#   Dijkstra:
+#     - Check for negative indices
+#     - Use fill() to initialize predecessors
+#     - Clean up variable names
+#     - Fix bug when directed=False and path lengths are unequal
 #
-#   Check for negative indices in Dijkstra and Bellman-Ford
+#   Johnson: Implement, make tests, and add to shortest_path function
 #
-#   Write Bellman-Ford undirected without a matrix copy
-#
-#   Use fill() to initialize predecessors in Dijkstra & Bellman-Ford
-#
-#   Clean up variable names in Dijkstra
-#
-#   Implement Johnson's algorithm
-#
-#   Write tests for Bellman-Ford
-#
-#   Add Bellman-Ford (and Johnson) to shortest_path function
-#
-#   Why does Dyjkstra/directed=False return the wrong result a few
-#   times out of 100?
 
 import numpy as np
 cimport numpy as np
@@ -50,7 +36,7 @@ include 'parameters.pxi'
 
 class NegativeCycleError(Exception):
     def __init__(self, message=''):
-        self.message = message
+        Exception.__init__(self, message)
 
 
 def shortest_path(csgraph, method='auto',
@@ -477,7 +463,6 @@ cdef void _dijkstra(csgraph,
                               i, &heap, nodes)
 
 
-
 @cython.boundscheck(False)
 cdef void _dijkstra_directed_one_row(
                           unsigned int i_node,
@@ -703,55 +688,58 @@ def bellman_ford(csgraph, directed=True, indices=None,
     If all edge weights are positive, then Dijkstra's algorithm is a better
     choice.
     """
+    global NULL_IDX
+
+    #------------------------------
+    # validate csgraph and convert to csr matrix
     csgraph = validate_graph(csgraph, directed, DTYPE,
                              dense_output=False)
-
     N = csgraph.shape[0]
 
+    #------------------------------
+    # intitialize/validate indices
     if indices is None:
         indices = np.arange(N, dtype=ITYPE)
     else:
-        indices = np.asarray(indices, order='C', dtype=ITYPE)
-
+        indices = np.array(indices, order='C', dtype=ITYPE)
+        indices[indices < 0] += N
+        if np.any(indices < 0) or np.any(indices >= N):
+            raise ValueError("indices out of range 0...N")
     return_shape = indices.shape + (N,)
-
     indices = np.atleast_1d(indices).reshape(-1)
+
+    #------------------------------
+    # initialize dist_matrix for output
     dist_matrix = np.empty((len(indices), N), dtype=DTYPE)
     dist_matrix.fill(np.inf)
     dist_matrix[np.arange(len(indices)), indices] = 0
 
+    #------------------------------
+    # initialize predecessors for output
     if return_predecessors:
         predecessor_matrix = np.empty((len(indices), N), dtype=ITYPE)
+        predecessor_matrix.fill(NULL_IDX)
     else:
         predecessor_matrix = np.empty((0, N), dtype=ITYPE)
 
+    if unweighted:
+        csr_data = np.ones(csgraph.data.shape)
+    else:
+        csr_data = csgraph.data
+
     if directed:
-        if unweighted:
-            csr_data = np.ones(csgraph.data.shape)
-        else:
-            csr_data = csgraph.data
         ret = _bellman_ford_directed(indices,
                                      csr_data, csgraph.indices,
                                      csgraph.indptr,
                                      dist_matrix, predecessor_matrix)
     else:
-        csgraph_T = csgraph.T.tocsr()
-        if unweighted:
-            csr_data = np.ones(csgraph.data.shape)
-            csrT_data = csr_data
-        else:
-            csr_data = csgraph.data
-            csrT_data = csgraph_T.data
         ret = _bellman_ford_undirected(indices,
                                        csr_data, csgraph.indices,
                                        csgraph.indptr,
-                                       csrT_data, csgraph_T.indices,
-                                       csgraph_T.indptr,
                                        dist_matrix, predecessor_matrix)
 
     if ret >= 0:
-        print indices[ret]
-        raise NegativeCycleError("Cycle containing node %i" % indices[ret])
+        raise NegativeCycleError("Cycle contains node %i" % ret)
 
     if return_predecessors:
         return (dist_matrix.reshape(return_shape),
@@ -767,7 +755,7 @@ cdef int _bellman_ford_directed(
             np.ndarray[ITYPE_t, ndim=1, mode='c'] csr_indptr,
             np.ndarray[DTYPE_t, ndim=2, mode='c'] dist_matrix,
             np.ndarray[ITYPE_t, ndim=2, mode='c'] pred):
-    global NULL_IDX, DTYPE_EPS
+    global DTYPE_EPS
     cdef unsigned int Nind = dist_matrix.shape[0]
     cdef unsigned int N = dist_matrix.shape[1]
     cdef unsigned int i, j, k, j_source, count
@@ -779,17 +767,7 @@ cdef int _bellman_ford_directed(
     for i from 0 <= i < Nind:
         j_source = source_indices[i]
 
-        # initialize predecessors
-        if return_pred:
-            for j from 0 <= j < N:
-                pred[i, j] = NULL_IDX
-
-        # initialize distances
-        for j from 0 <= j < N:
-            dist_matrix[i, j] = np.inf
-        dist_matrix[i, j_source] = 0
-
-        # relax all edges repeatedly
+        # relax all edges N-1 times
         for count from 0 <= count < N - 1:
             for j from 0 <= j < N:
                 d1 = dist_matrix[i, j]
@@ -808,7 +786,7 @@ cdef int _bellman_ford_directed(
                 w12 = csr_weights[k]
                 d2 = dist_matrix[i, csr_indices[k]]
                 if d1 + w12 + DTYPE_EPS < d2:
-                    return i
+                    return j_source
 
     return -1
 
@@ -818,15 +796,12 @@ cdef int _bellman_ford_undirected(
             np.ndarray[DTYPE_t, ndim=1, mode='c'] csr_weights,
             np.ndarray[ITYPE_t, ndim=1, mode='c'] csr_indices,
             np.ndarray[ITYPE_t, ndim=1, mode='c'] csr_indptr,
-            np.ndarray[DTYPE_t, ndim=1, mode='c'] csrT_weights,
-            np.ndarray[ITYPE_t, ndim=1, mode='c'] csrT_indices,
-            np.ndarray[ITYPE_t, ndim=1, mode='c'] csrT_indptr,
             np.ndarray[DTYPE_t, ndim=2, mode='c'] dist_matrix,
             np.ndarray[ITYPE_t, ndim=2, mode='c'] pred):
-    global NULL_IDX, DTYPE_EPS
+    global DTYPE_EPS
     cdef unsigned int Nind = dist_matrix.shape[0]
     cdef unsigned int N = dist_matrix.shape[1]
-    cdef unsigned int i, j, k, j_source, count
+    cdef unsigned int i, j, k, j_source, ind_k, count
 
     cdef DTYPE_t d1, d2, w12
 
@@ -835,34 +810,22 @@ cdef int _bellman_ford_undirected(
     for i from 0 <= i < Nind:
         j_source = source_indices[i]
 
-        # initialize predecessors
-        if return_pred:
-            for j from 0 <= j < N:
-                pred[i, j] = NULL_IDX
-
-        # initialize distances
-        for j from 0 <= j < N:
-            dist_matrix[i, j] = np.inf
-        dist_matrix[i, j_source] = 0
-
-        # relax all edges repeatedly
+        # relax all edges N-1 times
         for count from 0 <= count < N - 1:
             for j from 0 <= j < N:
                 d1 = dist_matrix[i, j]
                 for k from csr_indptr[j] <= k < csr_indptr[j + 1]:
                     w12 = csr_weights[k]
-                    d2 = dist_matrix[i, csr_indices[k]]
+                    ind_k = csr_indices[k]
+                    d2 = dist_matrix[i, ind_k]
                     if d1 + w12 < d2:
-                        dist_matrix[i, csr_indices[k]] = d1 + w12
+                        dist_matrix[i, ind_k] = d2 = d1 + w12
                         if return_pred:
-                            pred[i, csr_indices[k]] = j
-                for k from csrT_indptr[j] <= k < csrT_indptr[j + 1]:
-                    w12 = csrT_weights[k]
-                    d2 = dist_matrix[i, csrT_indices[k]]
-                    if d1 + w12 < d2:
-                        dist_matrix[i, csrT_indices[k]] = d1 + w12
+                            pred[i, ind_k] = j
+                    if d2 + w12 < d1:
+                        dist_matrix[i, j] = d1 = d2 + w12
                         if return_pred:
-                            pred[i, csrT_indices[k]] = j
+                            pred[i, j] = ind_k
 
         # check for negative-weight cycles
         for j from 0 <= j < N:
@@ -870,13 +833,8 @@ cdef int _bellman_ford_undirected(
             for k from csr_indptr[j] <= k < csr_indptr[j + 1]:
                 w12 = csr_weights[k]
                 d2 = dist_matrix[i, csr_indices[k]]
-                if d1 + w12 + DTYPE_EPS < d2:
-                    return i
-            for k from csrT_indptr[j] <= k < csrT_indptr[j + 1]:
-                w12 = csrT_weights[k]
-                d2 = dist_matrix[i, csrT_indices[k]]
-                if d1 + w12 + DTYPE_EPS < d2:
-                    return i
+                if abs(d2 - d1) > w12 + DTYPE_EPS:
+                    return j_source
 
     return -1
         
