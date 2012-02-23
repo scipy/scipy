@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 from scipy.sparse.csgraph import \
-    shortest_path, dijkstra, floyd_warshall, construct_dist_matrix
+    shortest_path, dijkstra, floyd_warshall, bellman_ford, construct_dist_matrix
 
 
 def floyd_warshall_slow(graph, directed=False):
@@ -78,6 +78,33 @@ def test_dijkstra_indices():
             graph_D = dijkstra(dist_matrix, directed,
                                indices=indices.reshape(indshape))
             assert_array_almost_equal(graph_D,
+                                      graph_FW[indices].reshape(outshape))
+
+
+def test_bellman_ford():
+    dist_matrix = generate_graph(20)
+
+    for directed in (True, False):
+        graph_BF = shortest_path(dist_matrix, 'BF', directed)
+        graph_py = floyd_warshall_slow(dist_matrix.copy(), directed)
+
+        assert_array_almost_equal(graph_BF, graph_py)
+
+
+def test_bellman_ford_indices():
+    dist_matrix = generate_graph(20)
+    indices = np.arange(20, dtype=int)
+    np.random.seed(0)
+    np.random.shuffle(indices)
+    indices = indices[:6]
+
+    for directed in (True, False):
+        graph_FW = shortest_path(dist_matrix, 'FW', directed)
+        for indshape in [(6,), (6, 1), (2, 3)]:
+            outshape = indshape + (20,)
+            graph_BF = bellman_ford(dist_matrix, directed,
+                                    indices=indices.reshape(indshape))
+            assert_array_almost_equal(graph_BF,
                                       graph_FW[indices].reshape(outshape))
 
 

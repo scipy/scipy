@@ -20,11 +20,11 @@ the Floyd-Warshall algorithm, or Dykstra's algorithm with Fibonacci Heaps.
 #
 #   Check for negative indices in Dijkstra and Bellman-Ford
 #
+#   Write Bellman-Ford undirected without a matrix copy
+#
 #   Use fill() to initialize predecessors in Dijkstra & Bellman-Ford
 #
 #   Clean up variable names in Dijkstra
-#
-#   Return infinity in Dijkstra when no path exists
 #
 #   Implement Johnson's algorithm
 #
@@ -74,9 +74,15 @@ def shortest_path(csgraph, method='auto',
                      approximately ``O[N^3]``.  The input csgraph will be
                      converted to a dense representation.
            'D'    -- Dijkstra's algorithm with Fibonacci heaps.  Computational
-                     cost is approximately ``O[(k+log(N))N^2]``, where ``k`` is
-                     the average number of connected edges per node. The input
-                     csgraph will be converted to a csr representation.
+                     cost is approximately ``O[N(Nk + Nlog(N))]``, where ``k``
+                     is the average number of connected edges per node. The
+                     input csgraph will be converted to a csr representation.
+           'BF'   -- Bellman-Ford algorithm.  This algorithm can be used when
+                     weights are negative.  If a negative cycle is encountered,
+                     an error will be raised.  Computational cost is
+                     approximately ``O[N(N^2 k)]``, where ``k`` is the average
+                     number of connected edges per node. The input csgraph will
+                     be converted to a csr representation.
 
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
@@ -142,10 +148,17 @@ def shortest_path(csgraph, method='auto',
                               return_predecessors=return_predecessors,
                               unweighted=unweighted,
                               overwrite=overwrite)
+
     elif method == 'D':
         return dijkstra(csgraph, directed,
                         return_predecessors=return_predecessors,
                         unweighted=unweighted)
+
+    elif method == 'BF':
+        return bellman_ford(csgraph, directed,
+                            return_predecessors=return_predecessors,
+                            unweighted=unweighted)
+        
     else:
         raise ValueError("unrecognized method '%s'" % method)
 
@@ -705,7 +718,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
     indices = np.atleast_1d(indices).reshape(-1)
     dist_matrix = np.empty((len(indices), N), dtype=DTYPE)
     dist_matrix.fill(np.inf)
-    dist_matrix[(indices, indices)] = 0
+    dist_matrix[np.arange(len(indices)), indices] = 0
 
     if return_predecessors:
         predecessor_matrix = np.empty((len(indices), N), dtype=ITYPE)
