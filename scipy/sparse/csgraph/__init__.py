@@ -54,6 +54,7 @@ __all__ = ['connected_components',
            'shortest_path',
            'floyd_warshall',
            'dijkstra',
+           'bellman_ford',
            'breadth_first_order',
            'depth_first_order',
            'breadth_first_tree',
@@ -66,7 +67,8 @@ __all__ = ['connected_components',
 
 from _components import connected_components
 from _laplacian import laplacian
-from _shortest_path import shortest_path, floyd_warshall, dijkstra
+from _shortest_path import shortest_path, floyd_warshall, dijkstra,\
+    bellman_ford
 from _traversal import breadth_first_order, depth_first_order, \
     breadth_first_tree, depth_first_tree
 from _min_spanning_tree import minimum_spanning_tree

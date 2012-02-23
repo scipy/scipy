@@ -66,7 +66,10 @@ def test_dijkstra():
 
 def test_dijkstra_indices():
     dist_matrix = generate_graph(20)
-    indices = np.arange(6)
+    indices = np.arange(20, dtype=int)
+    np.random.seed(0)
+    np.random.shuffle(indices)
+    indices = indices[:6]
 
     for directed in (True, False):
         graph_FW = shortest_path(dist_matrix, 'FW', directed)
