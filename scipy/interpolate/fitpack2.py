@@ -648,35 +648,6 @@ class LSQBivariateSpline(BivariateSpline):
     UnivariateSpline : a similar class for univariate spline interpolation
     SmoothUnivariateSpline : To create a BivariateSpline through the given points
 
-    Examples
-    --------
-
-import numpy as np
-from scipy.interpolate import RectSpherBivariateSpline
-
-# setup input coordinates
-lats_orig = (np.linspace(-80., 80., 9) + 90.) * np.pi / 180.
-lons_orig = np.linspace(0., 350., 18) * np.pi / 180.
-
-# setup input data points
-data_orig = np.dot(np.atleast_2d(90. - abs(np.linspace(-80., 80., 18))).T,
-              np.atleast_2d(180. - abs(np.linspace(0., 350., 9)))).T
-
-# setup test coordinates
-lats = (np.linspace(-89., 89., 179) + 90.) * np.pi / 180.
-lons = np.linspace(0., 360., 361) * np.pi / 180.
-lats, lons = np.meshgrid(lats, lons)
-
-lut = RectSpherBivariateSpline(lats_orig, lons_orig, data_orig)
-data = lut.ev(lats.ravel(), lons.ravel())
-data = data.reshape((361, 179)).T
-
-fig = plt.figure()
-orig = fig.add_subplot(211)
-orig.pcolor(data_orig)
-interp = fig.add_subplot(212)
-interp.pcolor(data)
-
     """
 
     def __init__(self, x, y, z, tx, ty, w=None, bbox=[None]*4, kx=3, ky=3,
