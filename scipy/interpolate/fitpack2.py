@@ -938,8 +938,6 @@ class RectSpherBivariateSpline(BivariateSpline):
         ider[0] = -1 if r0 is None else pole_exact[0]
         ider[2] = -1 if r1 is None else pole_exact[1]
         ider[1], ider[3] = pole_flat
-        print "iopt: %s" % iopt
-        print "ider: %s" % ider
         u, v = np.ravel(u), np.ravel(v)
         if not np.all(np.diff(u) > 0.0):
             raise TypeError('u must be strictly increasing')
