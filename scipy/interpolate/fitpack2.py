@@ -849,7 +849,8 @@ class RectSpherBivariateSpline(BivariateSpline):
     
     >>> data = lut.ev(new_lats.ravel(), new_lons.ravel()).reshape((361, 179)).T
     
-    Looking at the original and the interpolated data, one can see that the interpolant reproduces the original data very well:
+    Looking at the original and the interpolated data, one can see that the
+    interpolant reproduces the original data very well:
 
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
