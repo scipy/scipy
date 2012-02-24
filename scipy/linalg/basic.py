@@ -4,7 +4,7 @@
 # w/ additions by Travis Oliphant, March 2002
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
-            'inv', 'det', 'lstsq', 'pinv', 'pinv2', 'solve_sylvester']
+            'inv', 'det', 'lstsq', 'pinv', 'pinv2']
 
 import numpy as np
 
@@ -548,56 +548,3 @@ def pinv2(a, cond=None, rcond=None):
     #XXX: use lapack/blas routines for dot
     return np.transpose(np.conjugate(np.dot(np.dot(u,psigma),vh)))
 
-def solve_sylvester(a,b,q):
-    """Computes a solution (X) to the Sylvester equation (AX + XB = Q).
-
-    Parameters
-    ----------
-    a : array, shape (M, M)
-        Leading matrix of the Sylvester equation
-    b : array, shape (N, N)
-        Trailing matrix of the Sylvester equation
-    q : array, shape (M, N)
-        Right-hand side
-
-    Returns
-    -------
-    x : array, shape (M, N)
-
-    Raises
-    ------
-    LinAlgError
-        If solution was not found
-
-    Notes
-    -----
-    Computes a solution to the Sylvester matrix equation via the Bartels-
-    Stewart algorithm.  The A and B matrices first undergo Schur
-    decompositions.  The resulting matrices are used to construct an
-    alternative Sylvester equation (RY + YS^T = F) where the R and S
-    matrices are in quasi-triangular form (or, when R, S or F are complex,
-    triangular form).  The simplified equation is then solved using *TRSYL
-    from LAPACK directly.
-    """
-
-    # Compute the Schur decomp form of a
-    r,u = schur(a,output='real')
-
-    # Compute the Schur decomp of b
-    s,v = schur(b.conj().transpose(), output='real')
-
-    # Construct f = u'*q*v
-    f = np.dot(np.dot(u.conj().transpose(), q), v)
-
-    # Call the Sylvester equation solver
-    trsyl, = get_lapack_funcs(('trsyl',), (r,s,f))
-    if trsyl == None:
-        raise RuntimeError('LAPACK implementation does not contain a proper Sylvester equation solver (TRSYL)')
-    y, scale, info = trsyl(r, s, f, tranb='C')
-
-    y = scale*y
-
-    if info < 0:
-        raise LinAlgError("Illegal value encountered in the %d term" % (-info,))
-
-    return np.dot(np.dot(u, y), v.conj().transpose())
