@@ -240,13 +240,15 @@ def reconstruct_path(csgraph, predecessors, directed=True):
 
 def construct_dist_matrix(graph,
                           predecessors,
-                          directed=True):
+                          directed=True,
+                          null_value=np.inf):
     """Construct distance matrix from a predecessor matrix
 
     Parameters
     ----------
     graph: array_like or sparse
         The N x N matrix representation of a directed or undirected graph.
+        If dense, then non-edges are indicated by zeros or infinities.
     predecessors: array_like
         The N x N matrix of predecessors of each node (see Notes below).
     directed: bool, optional
@@ -254,6 +256,9 @@ def construct_dist_matrix(graph,
         point i to point j along paths csgraph[i, j].
         If False, then operate on an undirected graph: the algorithm can
         progress from point i to j along csgraph[i, j] or csgraph[j, i].
+    null_value: bool, optional
+        value to use for distances between unconnected nodes.  Default is
+        np.inf
 
     Returns
     -------
@@ -277,11 +282,11 @@ def construct_dist_matrix(graph,
     predecessors = np.asarray(predecessors)
 
     if predecessors.shape != graph.shape:
-        raise ValueError("graph and predecessors "
-                         "must have the same shape")
+        raise ValueError("graph and predecessors must have the same shape")
 
     dist_matrix = np.zeros(graph.shape, dtype=DTYPE)
-    _construct_dist_matrix(graph, predecessors, dist_matrix, directed)
+    _construct_dist_matrix(graph, predecessors, dist_matrix,
+                           directed, null_value)
     
     return dist_matrix
 
@@ -289,12 +294,14 @@ def construct_dist_matrix(graph,
 cdef void _construct_dist_matrix(np.ndarray[DTYPE_t, ndim=2] graph,
                                  np.ndarray[ITYPE_t, ndim=2] pred,
                                  np.ndarray[DTYPE_t, ndim=2] dist,
-                                 directed=True):
+                                 int directed,
+                                 DTYPE_t null_value):
     # All matrices should be size N x N
     # note that graph will be modified if directed == False
+    # dist should be all zero on entry
     global NULL_IDX
 
-    cdef int i, j, k1, k2, N
+    cdef int i, j, k1, k2, N, null_path
     N = graph.shape[0]
 
     #------------------------------------------
@@ -311,10 +318,14 @@ cdef void _construct_dist_matrix(np.ndarray[DTYPE_t, ndim=2] graph,
 
     for i from 0 <= i < N:
         for j from 0 <= j < N:
+            null_path = True
             k2 = j
             while k2 != i:
                 k1 = pred[i, k2]
                 if k1 == NULL_IDX:
                     break
                 dist[i, j] += graph[k1, k2]
+                null_path = False
                 k2 = k1
+            if null_path and i != j:
+                dist[i, j] = null_value
