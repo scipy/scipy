@@ -21,17 +21,12 @@ def floyd_warshall_slow(graph, directed=False):
             for j in range(N):
                 graph[i, j] = min(graph[i, j], graph[i, k] + graph[k, j])
 
-    graph[np.where(np.isinf(graph))] = 0
-
     return graph
 
 
 def generate_graph(N=20):
     #sparse grid of distances
     dist_matrix = np.random.random((N, N))
-
-    #make symmetric: distances are not direction-dependent
-    dist_matrix += dist_matrix.T
 
     #make graph sparse
     i = (np.random.randint(N, size=N * N / 2),
