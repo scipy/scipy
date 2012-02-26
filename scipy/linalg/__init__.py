@@ -139,7 +139,7 @@ from decomp_schur import *
 from matfuncs import *
 from blas import *
 from special_matrices import *
-from solvers import *
+from _solvers import *
 
 __all__ = filter(lambda s: not s.startswith('_'), dir())
 
