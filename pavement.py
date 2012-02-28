@@ -65,6 +65,7 @@ import sys
 import subprocess
 import re
 import shutil
+import warnings
 try:
     from hash import md5
 except ImportError:
