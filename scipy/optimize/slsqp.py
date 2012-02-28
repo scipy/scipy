@@ -305,9 +305,9 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     bnds = array(bounds)
     if not bnds.any():
         xl, xu = array([-1.0E12]*n), array([1.0E12]*n)
-    elif bnds.shape[1] != n:
-        raise IndexError('SLSQP Error:  If bounds is specified, '
-                         'bounds.shape[1] == len(x0)')
+    elif bnds.shape[0] != n:
+        raise IndexError('SLSQP Error: the length of bounds is not '
+                         'compatible with that of x0.')
     else:
         bnderr = where(bnds[:, 0] > bnds[:, 1])[0]
         if bnderr.any():
