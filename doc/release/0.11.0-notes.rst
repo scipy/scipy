@@ -39,6 +39,13 @@ added to easily construct diagonal and block-diagonal sparse matrices
 respectively.
 
 
+LSMR iterative solver
+---------------------
+
+LSMR, an iterative method for solving (sparse) linear and linear
+least-squares systems, was added as ``scipy.sparse.linalg.lsmr``.
+
+
 Pascal matrix function
 ----------------------
 
