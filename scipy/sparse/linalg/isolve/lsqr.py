@@ -55,13 +55,16 @@ import numpy as np
 from math import sqrt
 from scipy.sparse.linalg.interface import aslinearoperator
 
-def _sym_ortho(a,b):
+def _sym_ortho(a, b):
     """
-    Jeffery Kline noted: I added the routine 'SymOrtho' for numerical
-    stability. This is recommended by S.-C. Choi in [1]_. It removes
-    the unpleasant potential of ``1/eps`` in some important places
-    (see, for example text following "Compute the next
-    plane rotation Qk" in minres_py).
+    Stable implementation of Givens rotation.
+
+    Notes
+    -----
+    The routine 'SymOrtho' was added for numerical stability. This is
+    recommended by S.-C. Choi in [1]_. It removes the unpleasant potential of
+    ``1/eps`` in some important places (see, for example text following
+    "Compute the next plane rotation Qk" in minres_py).
 
     References
     ----------
@@ -70,34 +73,18 @@ def _sym_ortho(a,b):
            http://www.stanford.edu/group/SOL/dissertations/sou-cheng-choi-thesis.pdf
 
     """
-    aa = abs(a)
-    ab = abs(b)
-    if b == 0.:
-        s = 0.
-        r = aa
-        if aa == 0.:
-            c = 1.
-        else:
-            c = a/aa
-    elif a == 0.:
-        c = 0.
-        s = b / ab
-        r = ab
-    elif ab >= aa:
-        sb = 1
-        if b < 0: sb=-1
-        tau = a/b
-        s = sb * (1 + tau**2)**-0.5
+    if b == 0: return np.sign(a), 0, abs(a)
+    elif a == 0: return 0, np.sign(b), abs(b)
+    elif abs(b) > abs(a):
+        tau = a / b
+        s = np.sign(b) / sqrt(1 + tau * tau)
         c = s * tau
         r = b / s
-    elif aa > ab:
-        sa = 1
-        if a < 0: sa = -1
+    else:
         tau = b / a
-        c = sa * (1 + tau**2)**-0.5
+        c = np.sign(a) / sqrt(1+tau*tau)
         s = c * tau
         r = a / c
-
     return c, s, r
 
 
