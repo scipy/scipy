@@ -170,10 +170,10 @@ class _cs_matrix(_data_matrix):
         # First check if argument is a scalar
         if isscalarlike(other):
             if other == 0:
-                return self
+                return self.copy()
             else: # Now we would add this scalar to every element.
-                raise NotImplementedError('adding a scalar to a sparse'
-                                          'matrix is not supported')
+                raise NotImplementedError('adding a nonzero scalar to a '
+                                          'sparse matrix is not supported')
         elif isspmatrix(other):
             if (other.shape != self.shape):
                 raise ValueError("inconsistent shapes")
@@ -192,10 +192,10 @@ class _cs_matrix(_data_matrix):
         # First check if argument is a scalar
         if isscalarlike(other):
             if other == 0:
-                return self
+                return self.copy()
             else: # Now we would add this scalar to every element.
-                raise NotImplementedError('adding a scalar to a sparse '
-                                          'matrix is not supported')
+                raise NotImplementedError('adding a nonzero scalar to a '
+                                          'sparse matrix is not supported')
         elif isspmatrix(other):
             if (other.shape != self.shape):
                 raise ValueError("inconsistent shapes")
@@ -211,10 +211,10 @@ class _cs_matrix(_data_matrix):
         #note: this can't be replaced by other + (-self) for unsigned types
         if isscalarlike(other):
             if other == 0:
-                return -self
+                return -self.copy()
             else: # Now we would add this scalar to every element.
-                raise NotImplementedError('adding a scalar to a sparse '
-                                          'matrix is not supported')
+                raise NotImplementedError('adding a nonzero scalar to a '
+                                          'sparse matrix is not supported')
         elif isdense(other):
             # Convert this matrix to a dense matrix and subtract them
             return other - self.todense()
