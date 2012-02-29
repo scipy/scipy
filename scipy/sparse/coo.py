@@ -36,7 +36,7 @@ class coo_matrix(_data_matrix):
                 2. ij[0][:]  the row indices of the matrix entries
                 3. ij[1][:]  the column indices of the matrix entries
 
-            Where ``A[ij[0][k], ij[1][k] = data[k]``.  When shape is
+            Where ``A[ij[0][k], ij[1][k]] = data[k]``.  When shape is
             not specified, it is inferred from the index arrays
 
     Attributes
