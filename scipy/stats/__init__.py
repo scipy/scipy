@@ -322,6 +322,7 @@ from stats import *
 from distributions import *
 from rv import *
 from morestats import *
+from _binned_statistic import *
 from kde import gaussian_kde
 import mstats
 from contingency import chi2_contingency
