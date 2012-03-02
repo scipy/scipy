@@ -62,6 +62,15 @@ class TestSLSQP(TestCase):
         """ Inequality constraint, derivative """
         return np.array([[1, -1]])
 
+    def f_ieqcon2(self, x):
+        """ Vector inequality constraint """
+        return np.asarray(x)
+
+    def fprime_ieqcon2(self, x):
+        """ Vector inequality constraint, derivative """
+        return np.identity(x.shape[0])
+
+
     # minimize
     def test_minimize_unbounded_approximated(self):
         """ Minimize, method='SLSQP': unbounded, approximated jacobian. """
@@ -131,6 +140,19 @@ class TestSLSQP(TestCase):
                            options=self.opts, full_output=True)
         assert_(info['success'], info['message'])
         assert_allclose(x, [2, 1], atol=1e-3)
+
+    def test_minimize_inequality_given_vector_constraints(self):
+        """ \
+        Minimize with method='SLSQP': vector inequality constraint, given jacobian.
+        """
+        x, info = minimize(self.fun, [-1.0, 1.0], jac=self.jac,
+                           method='SLSQP', args=(-1.0,),
+                           constraints={'type': 'ineq',
+                                        'fun': self.f_ieqcon2,
+                                        'jac': self.fprime_ieqcon2},
+                           options=self.opts, full_output=True)
+        assert_(info['success'], info['message'])
+        assert_allclose(x, [2, 1])
 
     def test_minimize_bound_equality_given2(self):
         """ \
