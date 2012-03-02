@@ -773,10 +773,8 @@ ERROR: on entry, the input data are controlled on validity
 class RectSpherBivariateSpline(BivariateSpline):
     """
     Bivariate spline approximation over a rectangular mesh on a sphere.
+
     Can be used for smoothing data.
-    For more information, see the FITPACK_ site about this function.
-    
-    .. _FITPACK: http://www.netlib.org/dierckx/spgrid.f
 
     Parameters
     ----------
@@ -791,64 +789,69 @@ class RectSpherBivariateSpline(BivariateSpline):
     r : array_like
         2-D array of data with shape (u.size, v.size).
     s : float, optional
-        Positive smoothing factor defined for estimation condition (s=0. is for
-        interpolation).
+        Positive smoothing factor defined for estimation condition
+        (``s=0`` is for interpolation).
     pole_continuity : bool or (bool, bool), optional
-        Order of continuity at the poles u=0 (pole_continuity[0]) and u=pi
-        (pole_continuity[1]). The order of continuity at the pole will be 1 or 0
-        when this is ``True`` or ``False``, respectively. Defaults to ``False``.
+        Order of continuity at the poles ``u=0`` (``pole_continuity[0]``) and
+        ``u=pi`` (``pole_continuity[1]``).  The order of continuity at the pole
+        will be 1 or 0 when this is True or False, respectively.
+        Defaults to False.
     pole_values : float or (float, float), optional
-        Data values at the poles u=0 and u=pi. Either the whole parameter or 
-        each individual element can be ``None``. Defaults to ``None``.
+        Data values at the poles ``u=0`` and ``u=pi``.  Either the whole
+        parameter or each individual element can be None.  Defaults to None.
     pole_exact : bool or (bool, bool), optional
-        Data value exactness at the poles u=0 and u=pi. If ``True``, the value
-        is considered to be the right function value, and it will be fitted
-        exactly. If ``False``, the value will be considered to be a data value
-        just like the other data values. Defaults to ``False``.
+        Data value exactness at the poles ``u=0`` and ``u=pi``.  If True, the
+        value is considered to be the right function value, and it will be
+        fitted exactly. If False, the value will be considered to be a data
+        value just like the other data values.  Defaults to False.
     pole_flat : bool or (bool, bool), optional
-        For the poles at u=0 and u=pi, specify whether or not the approximation
-        has vanishing derivatives. Defaults to ``False``.
-    
-    Notice
-    ------
-    Currently, only the smoothing spline approximation (``iopt[0]=0`` and
-    ``iopt[0]=1`` in the FITPACK routine) is supported. The exact least-squares
-    spline approximation is not implemented yet.
-
-    When actually performing the interpolation, the requested v values must lie
-    within the same length 2pi interval that the original v values were chosen
-    from.
+        For the poles at ``u=0`` and ``u=pi``, specify whether or not the
+        approximation has vanishing derivatives.  Defaults to False.
 
     See Also
     --------
     RectBivariateSpline : bivariate spline approximation over a rectangular mesh
-    
+
+    Notes
+    -----
+    Currently, only the smoothing spline approximation (``iopt[0] = 0`` and
+    ``iopt[0] = 1`` in the FITPACK routine) is supported.  The exact
+    least-squares spline approximation is not implemented yet.
+
+    When actually performing the interpolation, the requested `v` values must
+    lie within the same length 2pi interval that the original `v` values were
+    chosen from.
+
+    For more information, see the FITPACK_ site about this function.
+
+    .. _FITPACK: http://www.netlib.org/dierckx/spgrid.f
+
     Examples
     --------
     Suppose we have global data on a coarse grid
-    
+
     >>> from numpy import abs, atleast_2d, dot, linspace, meshgrid, pi
     >>> lats = (linspace(-80., 80., 9) + 90.) * pi / 180.
     >>> lons = linspace(0., 350., 18) * pi / 180.
     >>> data = dot(atleast_2d(90. - linspace(-80., 80., 18)).T,
                    atleast_2d(180. - abs(linspace(0., 350., 9)))).T
-    
+
     We want to interpolate it to a global one-degree grid
-    
+
     >>> lats = (linspace(-89., 89., 179) + 90.) * pi / 180.
     >>> lons = linspace(0., 360., 361) * pi / 180.
     >>> lats, lons = meshgrid(lats, lons)
-    
+
     We need to set up the interpolator object
-    
+
     >>> from scipy.interpolate import RectSpherBivariateSpline
     >>> lut = RectSpherBivariateSpline(lats, lons, data)
-    
-    Finally we interpolate the data. The ``RectSpherBivariateSpline`` object
-    only takes 1d arrays as input, therefore we need to do some reshaping.
-    
+
+    Finally we interpolate the data.  The `RectSpherBivariateSpline` object
+    only takes 1-D arrays as input, therefore we need to do some reshaping.
+
     >>> data = lut.ev(new_lats.ravel(), new_lons.ravel()).reshape((361, 179)).T
-    
+
     Looking at the original and the interpolated data, one can see that the
     interpolant reproduces the original data very well:
 
@@ -858,25 +861,25 @@ class RectSpherBivariateSpline(BivariateSpline):
     >>> orig.pcolor(data_orig)
     >>> interp = fig.add_subplot(212)
     >>> interp.pcolor(data)
-    
+
     Chosing the optimal value of ``s`` can be a delicate task. Recommended
     values for ``s`` depend on the accuracy of the data values.  If the user
     has an idea of the statistical errors on the data, she can also find a
     proper estimate for ``s``. By assuming that, if she specifies the
-    right ``s``, the interpolator will use a spline f(u,v) which exactly
-    reproduces the function underlying the data, she can evaluate the
-    sum((r(i,j)-s(u(i),v(j)))**2) to find a good estimate for this ``s``.  For
-    example, if she knows that the statistical errors on her r(i,j)- values are
-    not greater than 0.1, she may expect that a good ``s`` should have a value
-    not larger than u.size * v.size * (0.1)**2.
+    right ``s``, the interpolator will use a spline ``f(u,v)`` which exactly
+    reproduces the function underlying the data, she can evaluate
+    ``sum((r(i,j)-s(u(i),v(j)))**2)`` to find a good estimate for this ``s``.
+    For example, if she knows that the statistical errors on her
+    ``r(i,j)``-values are not greater than 0.1, she may expect that a good
+    ``s`` should have a value not larger than ``u.size * v.size * (0.1)**2``.
 
-    If nothing is known about the statistical error in r(i,j), ``s`` must be
-    determined by trial and error.  The best is then to start with a very large
-    value of ``s`` (to determine the least-squares polynomial and the
-    corresponding upper bound fp0 for ``s``) and then to progressively decrease
-    the value of ``s`` (say by a factor 10 in the beginning, i.e. s=fp0/10,
-    fp0/100, ...  and more carefully as the approximation shows more detail) to
-    obtain closer fits. 
+    If nothing is known about the statistical error in ``r(i,j)``, ``s`` must
+    be determined by trial and error.  The best is then to start with a very
+    large value of ``s`` (to determine the least-squares polynomial and the
+    corresponding upper bound ``fp0`` for ``s``) and then to progressively
+    decrease the value of ``s`` (say by a factor 10 in the beginning, i.e.
+    ``s = fp0 / 10, fp0 / 100, ...``  and more carefully as the approximation
+    shows more detail) to obtain closer fits.
 
     The interpolation results for different values of ``s`` give some insight
     into this process:
