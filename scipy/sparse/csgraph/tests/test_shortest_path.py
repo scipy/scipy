@@ -54,9 +54,9 @@ def test_dijkstra():
 
     for directed in (True, False):
         graph_D = shortest_path(dist_matrix, 'D', directed)
-        graph_py = floyd_warshall_slow(dist_matrix.copy(), directed)
+        graph_FW = shortest_path(dist_matrix, 'FW', directed)
 
-        assert_array_almost_equal(graph_D, graph_py)
+        assert_array_almost_equal(graph_D, graph_FW)
 
 
 def test_dijkstra_indices():
@@ -73,6 +73,33 @@ def test_dijkstra_indices():
             graph_D = dijkstra(dist_matrix, directed,
                                indices=indices.reshape(indshape))
             assert_array_almost_equal(graph_D,
+                                      graph_FW[indices].reshape(outshape))
+
+
+def test_johnson():
+    dist_matrix = generate_graph(20)
+
+    for directed in (True, False):
+        graph_J = shortest_path(dist_matrix, 'J', directed)
+        graph_FW = shortest_path(dist_matrix, 'FW', directed)
+
+        assert_array_almost_equal(graph_J, graph_FW)
+
+
+def test_johnson_indices():
+    dist_matrix = generate_graph(20)
+    indices = np.arange(20, dtype=int)
+    np.random.seed(0)
+    np.random.shuffle(indices)
+    indices = indices[:6]
+
+    for directed in (True, False):
+        graph_FW = shortest_path(dist_matrix, 'FW', directed)
+        for indshape in [(6,), (6, 1), (2, 3)]:
+            outshape = indshape + (20,)
+            graph_J = dijkstra(dist_matrix, directed,
+                               indices=indices.reshape(indshape))
+            assert_array_almost_equal(graph_J,
                                       graph_FW[indices].reshape(outshape))
 
 

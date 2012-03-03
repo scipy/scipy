@@ -12,14 +12,9 @@ the Floyd-Warshall algorithm, or Dykstra's algorithm with Fibonacci Heaps.
 # TODO:
 #   Tests for negative weights & negative cycles in all algorithms
 #
-#   Dijkstra:
-#     - Check for negative indices
-#     - Use fill() to initialize predecessors
-#     - Clean up variable names
-#     - Fix bug when directed=False and path lengths are unequal
-#
 #   Johnson: Implement, make tests, and add to shortest_path function
 #
+import warnings
 
 import numpy as np
 cimport numpy as np
@@ -53,9 +48,10 @@ def shortest_path(csgraph, method='auto',
     csgraph : array, matrix, or sparse matrix, 2 dimensions
         The N x N array of non-negative distances representing the input graph.
     method : string ['auto'|'FW'|'D'], optional
-        Algorithm to use for shortest paths.  Options are
+        Algorithm to use for shortest paths.  Options are:
         
-           'auto' -- Attempt to choose the best method for the current problem.
+           'auto' -- (default) select the best among 'FW', 'D', 'BF', or 'J' 
+                     based on the input data.
            'FW'   -- Floyd-Warshall algorithm.  Computational cost is
                      approximately ``O[N^3]``.  The input csgraph will be
                      converted to a dense representation.
@@ -69,6 +65,10 @@ def shortest_path(csgraph, method='auto',
                      approximately ``O[N(N^2 k)]``, where ``k`` is the average
                      number of connected edges per node. The input csgraph will
                      be converted to a csr representation.
+           'J'    -- Johnson's algorithm.  Like the Bellman-Ford algorithm,
+                     Johnson's algorithm is designed for use when the weights
+                     are negative.  It combines the Bellman-Ford algorithm
+                     with Dijkstra's algorithm for faster shortest paths.
 
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
@@ -102,17 +102,17 @@ def shortest_path(csgraph, method='auto',
         path from point i to point j.  If no path exists between point
         i and j, then predecessors[i, j] = -9999
 
+    Raises
+    ------
+    NegativeCycleError:
+        if there are negative cycles in the graph
+
     Notes
     -----
-    As currently implemented, Dijkstra's algorithm does not work for
-    graphs with direction-dependent distances when directed == False.
-    i.e., if csgraph[i,j] and csgraph[j,i] are not equal and
-    both are nonzero, method='D' will not necessarily yield the correct
-    result.
-
-    These routines are not suitable for graphs with negative distances.
-    Negative distances can lead to infinite cycles that must be handled
-    by specialized algorithms.
+    As currently implemented, Dijkstra's algorithm and Johnson's algorithm
+    do not work for graphs with direction-dependent distances when
+    directed == False.  i.e., if csgraph[i,j] and csgraph[j,i] are non-equal
+    edges, method='D' may yield an incorrect result.
     """
     validate_graph(csgraph, directed, DTYPE)
 
@@ -125,7 +125,11 @@ def shortest_path(csgraph, method='auto',
             Nk = np.sum(csgraph > 0)
 
         if Nk < N * N / 4:
-            method = 'D'
+            if ((isspmatrix(csgraph)
+                 and np.any(csgraph.data < 0)) or np.any(csgraph < 0)):
+                method = 'J'
+            else:
+                method = 'D'
         else:
             method = 'FW'
 
@@ -144,7 +148,12 @@ def shortest_path(csgraph, method='auto',
         return bellman_ford(csgraph, directed,
                             return_predecessors=return_predecessors,
                             unweighted=unweighted)
-        
+
+    elif method == 'J':
+        return johnson(csgraph, directed,
+                       return_predecessors=return_predecessors,
+                       unweighted=unweighted)
+
     else:
         raise ValueError("unrecognized method '%s'" % method)
 
@@ -191,6 +200,11 @@ def floyd_warshall(csgraph, directed=True,
         path from point i to point j.  If no path exists between point
         i and j, then predecessors[i, j] = -9999
 
+    Raises
+    ------
+    NegativeCycleError:
+        if there are negative cycles in the graph
+
     Notes
     -----
     This routine is not suitable for graphs with negative distances.
@@ -205,9 +219,6 @@ def floyd_warshall(csgraph, directed=True,
         nonzero = (dist_matrix != 0)
         dist_matrix[nonzero] = 1
 
-    if np.any(dist_matrix < 0):
-        raise ValueError("Negative graph weights are not supported")
-
     if return_predecessors:
         predecessor_matrix = np.empty(dist_matrix.shape,
                                       dtype=ITYPE, order='C')
@@ -217,6 +228,10 @@ def floyd_warshall(csgraph, directed=True,
     _floyd_warshall(dist_matrix,
                     predecessor_matrix,
                     int(directed))
+
+    if np.any(dist_matrix.diagonal() < 0):
+        raise NegativeCycleError("Negative cycle in nodes %s"
+                                 % np.where(dist_matrix.diagonal() < 0)[0])
 
     if return_predecessors:
         return dist_matrix, predecessor_matrix
@@ -361,7 +376,8 @@ def dijkstra(csgraph, directed=True, indices=None,
                              dense_output=False)
 
     if np.any(csgraph.data < 0):
-        raise ValueError("Negative graph weights are not supported")
+        warnings.warn("Graph has negative weights: dijkstra cannot identify "
+                      "negative cycles.  Consider johnson or bellman_ford.")
 
     N = csgraph.shape[0]
     
@@ -371,7 +387,7 @@ def dijkstra(csgraph, directed=True, indices=None,
         indices = np.arange(N, dtype=ITYPE)
         return_shape = indices.shape + (N,)
     else:
-        indices = np.array(indices, order='C', dtype=ITYPE)
+        indices = np.array(indices, order='C', dtype=ITYPE, copy=True)
         return_shape = indices.shape + (N,)
         indices = np.atleast_1d(indices).reshape(-1)
         indices[indices < 0] += N
@@ -556,8 +572,11 @@ cdef _dijkstra_undirected(
 def bellman_ford(csgraph, directed=True, indices=None,
                  return_predecessors=False,
                  unweighted=False):
-    """
-    Compute the shortest path lengths using the Floyd-Warshall algorithm
+    """Compute the shortest path lengths using the Bellman-Ford algorithm.
+    
+    The Bellman-ford algorithm can robustly deal with graphs with negative
+    weights.  If a negative cycle is detected, an error is raised.  For
+    graphs without negative cycles, dijkstra's algorithm may be faster.
 
     Parameters
     ----------
@@ -656,7 +675,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
                                        dist_matrix, predecessor_matrix)
 
     if ret >= 0:
-        raise NegativeCycleError("Cycle contains node %i" % ret)
+        raise NegativeCycleError("Negative cycle detected on node %i" % ret)
 
     if return_predecessors:
         return (dist_matrix.reshape(return_shape),
@@ -754,6 +773,242 @@ cdef int _bellman_ford_undirected(
                     return j_source
 
     return -1
+
+
+def johnson(csgraph, directed=True, indices=None,
+            return_predecessors=False,
+            unweighted=False):
+    """Compute the shortest path lengths using Johnson's algorithm.
+
+    Johnson's algorithm combines the Bellman-Ford algorithm and Dijkstra's
+    algorithm to quickly find shortest paths in a way that is robust to
+    the presence of negative cycles.  If a negative cycle is detected,
+    an error is raised.  For graphs without negative cycles, dijkstra()
+    may be faster.
+
+    Parameters
+    ----------
+    csgraph : array, matrix, or sparse matrix, 2 dimensions
+        The N x N array of non-negative distances representing the input graph.
+    directed : bool, optional
+        If True (default), then find the shortest path on a directed graph:
+        only move from point i to point j along paths csgraph[i, j].
+        If False, then find the shortest path on an undirected graph: the
+        algorithm can progress from point i to j along csgraph[i, j] or
+        csgraph[j, i]
+    indices : array-like or integer, optional
+        if specified, only compute the paths for the points at the given
+        indices.
+    return_predecessors : bool, optional
+        If True, return the size (N, N) predecesor matrix
+    unweighted : bool, optional
+        If True, then find unweighted distances.  That is, rather than finding
+        the path between each point such that the sum of weights is minimized,
+        find the path such that the number of edges is minimized.
+
+    Returns
+    -------
+    dist_matrix : ndarray
+        The N x N matrix of distances between graph nodes. dist_matrix[i,j]
+        gives the shortest distance from point i to point j along the graph.
+
+    predecessors : ndarray
+        Returned only if return_predecessors == True.
+        The N x N matrix of predecessors, which can be used to reconstruct
+        the shortest paths.  Row i of the predecessor matrix contains
+        information on the shortest paths from point i: each entry
+        predecessors[i, j] gives the index of the previous node in the
+        path from point i to point j.  If no path exists between point
+        i and j, then predecessors[i, j] = -9999
+
+    Raises
+    ------
+    NegativeCycleError:
+        if there are negative cycles in the graph
+
+    Notes
+    -----
+    This routine is specially designed for graphs with negative edge weights.
+    If all edge weights are positive, then Dijkstra's algorithm is a better
+    choice.
+    """
+    #------------------------------
+    # if unweighted, we just use dijkstra
+    if unweighted:
+        return dijkstra(csgraph, directed, indices,
+                        return_predecessors, unweighted)
+
+    #------------------------------
+    # validate csgraph and convert to csr matrix
+    csgraph = validate_graph(csgraph, directed, DTYPE,
+                             dense_output=False)
+    N = csgraph.shape[0]
+
+    #------------------------------
+    # intitialize/validate indices
+    if indices is None:
+        indices = np.arange(N, dtype=ITYPE)
+    else:
+        indices = np.array(indices, order='C', dtype=ITYPE)
+        indices[indices < 0] += N
+        if np.any(indices < 0) or np.any(indices >= N):
+            raise ValueError("indices out of range 0...N")
+    return_shape = indices.shape + (N,)
+    indices = np.atleast_1d(indices).reshape(-1)
+
+    #------------------------------
+    # initialize dist_matrix for output
+    dist_matrix = np.empty((len(indices), N), dtype=DTYPE)
+    dist_matrix.fill(np.inf)
+    dist_matrix[np.arange(len(indices)), indices] = 0
+
+    #------------------------------
+    # initialize predecessors for output
+    if return_predecessors:
+        predecessor_matrix = np.empty((len(indices), N), dtype=ITYPE)
+        predecessor_matrix.fill(NULL_IDX)
+    else:
+        predecessor_matrix = np.empty((0, N), dtype=ITYPE)
+
+    #------------------------------
+    # initialize distance array
+    dist_array = np.empty(N, dtype=DTYPE)
+
+    csr_data = csgraph.data.copy()
+
+    #------------------------------
+    # here we first add a single node to the graph, connected by a 
+    # directed edge of weight zero to each node, and perform bellman-ford
+    if directed:
+        ret = _johnson_directed(csr_data, csgraph.indices,
+                                csgraph.indptr, dist_array)
+    else:
+        ret = _johnson_undirected(csr_data, csgraph.indices,
+                                  csgraph.indptr, dist_array)
+
+    if ret >= 0:
+        raise NegativeCycleError("Negative cycle detected on node %i" % ret)
+
+    #------------------------------
+    # add the bellman-ford weights to the data
+    _johnson_add_weights(csr_data, csgraph.indices,
+                         csgraph.indptr, dist_array)
+
+    if directed:
+        _dijkstra_directed(indices,
+                           csr_data, csgraph.indices, csgraph.indptr,
+                           dist_matrix, predecessor_matrix)
+    else:
+        csgraphT = csr_matrix((csr_data, csgraph.indices, csgraph.indptr),
+                          csgraph.shape).T.tocsr()
+        _johnson_add_weights(csgraphT.data, csgraphT.indices,
+                             csgraphT.indptr, dist_array)
+        _dijkstra_undirected(indices,
+                             csr_data, csgraph.indices, csgraph.indptr,
+                             csgraphT.data, csgraphT.indices, csgraphT.indptr,
+                             dist_matrix, predecessor_matrix)
+
+    #------------------------------
+    # correct the distance matrix for the bellman-ford weights
+    dist_matrix += dist_array
+    dist_matrix -= dist_array[:, None]
+
+    if return_predecessors:
+        return (dist_matrix.reshape(return_shape),
+                predecessor_matrix.reshape(return_shape))
+    else:
+        return dist_matrix.reshape(return_shape)
+
+
+cdef void _johnson_add_weights(
+            np.ndarray[DTYPE_t, ndim=1, mode='c'] csr_weights,
+            np.ndarray[ITYPE_t, ndim=1, mode='c'] csr_indices,
+            np.ndarray[ITYPE_t, ndim=1, mode='c'] csr_indptr,
+            np.ndarray[DTYPE_t, ndim=1, mode='c'] dist_array):
+    # let w(u, v) = w(u, v) + h(u) - h(v)
+    cdef unsigned int j, k, N = dist_array.shape[0]
+    
+    for j from 0 <= j < N:
+        for k from csr_indptr[j] <= k < csr_indptr[j + 1]:
+            csr_weights[k] += dist_array[j]
+            csr_weights[k] -= dist_array[csr_indices[k]]
+
+
+cdef int _johnson_directed(
+            np.ndarray[DTYPE_t, ndim=1, mode='c'] csr_weights,
+            np.ndarray[ITYPE_t, ndim=1, mode='c'] csr_indices,
+            np.ndarray[ITYPE_t, ndim=1, mode='c'] csr_indptr,
+            np.ndarray[DTYPE_t, ndim=1, mode='c'] dist_array):
+    global DTYPE_EPS
+    cdef unsigned int N = dist_array.shape[0]
+    cdef unsigned int j, k, j_source, count
+
+    cdef DTYPE_t d1, d2, w12
+
+    # relax all edges (N+1) - 1 times
+    for count from 0 <= count < N:
+        for k from 0 <= k < N:
+            if dist_array[k] < 0:
+                dist_array[k] = 0
+
+        for j from 0 <= j < N:
+            d1 = dist_array[j]
+            for k from csr_indptr[j] <= k < csr_indptr[j + 1]:
+                w12 = csr_weights[k]
+                d2 = dist_array[csr_indices[k]]
+                if d1 + w12 < d2:
+                    dist_array[csr_indices[k]] = d1 + w12
+                    
+    # check for negative-weight cycles
+    for j from 0 <= j < N:
+        d1 = dist_array[j]
+        for k from csr_indptr[j] <= k < csr_indptr[j + 1]:
+            w12 = csr_weights[k]
+            d2 = dist_array[csr_indices[k]]
+            if d1 + w12 + DTYPE_EPS < d2:
+                return j
+
+    return -1
+
+
+cdef int _johnson_undirected(
+            np.ndarray[DTYPE_t, ndim=1, mode='c'] csr_weights,
+            np.ndarray[ITYPE_t, ndim=1, mode='c'] csr_indices,
+            np.ndarray[ITYPE_t, ndim=1, mode='c'] csr_indptr,
+            np.ndarray[DTYPE_t, ndim=1, mode='c'] dist_array):
+    global DTYPE_EPS
+    cdef unsigned int N = dist_array.shape[0]
+    cdef unsigned int j, k, j_source, count
+
+    cdef DTYPE_t d1, d2, w12
+
+    # relax all edges (N+1) - 1 times
+    for count from 0 <= count < N:
+        for k from 0 <= k < N:
+            if dist_array[k] < 0:
+                dist_array[k] = 0
+
+        for j from 0 <= j < N:
+            d1 = dist_array[j]
+            for k from csr_indptr[j] <= k < csr_indptr[j + 1]:
+                w12 = csr_weights[k]
+                ind_k = csr_indices[k]
+                d2 = dist_array[ind_k]
+                if d1 + w12 < d2:
+                    dist_array[ind_k] = d1 + w12
+                if d2 + w12 < d1:
+                    dist_array[j] = d1 = d2 + w12
+                    
+    # check for negative-weight cycles
+    for j from 0 <= j < N:
+        d1 = dist_array[j]
+        for k from csr_indptr[j] <= k < csr_indptr[j + 1]:
+            w12 = csr_weights[k]
+            d2 = dist_array[csr_indices[k]]
+            if abs(d2 - d1) > w12 + DTYPE_EPS:
+                return j
+
+    return -1
         
 
 ######################################################################
@@ -765,6 +1020,7 @@ cdef enum FibonacciState:
     SCANNED
     NOT_IN_HEAP
     IN_HEAP
+
 
 cdef struct FibonacciNode:
     unsigned int index
@@ -891,6 +1147,7 @@ cdef void decrease_val(FibonacciHeap* heap,
     #              - newval <= node.val
     #              - node is a valid pointer
     #              - node is not the child or sibling of another node
+    #              - node is in the heap
     node.val = newval
     if node.parent and (node.parent.val >= newval):
         remove(node)
