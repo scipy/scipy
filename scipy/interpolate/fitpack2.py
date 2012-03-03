@@ -27,6 +27,7 @@ import numpy as np
 import fitpack
 import dfitpack
 
+
 ################ Univariate spline ####################
 
 _curfit_messages = {1:"""
@@ -55,6 +56,7 @@ xb<=x[0]<x[1]<...<x[m-1]<=xe, w[i]>0, i=0..m-1
 if iopt=-1:
   xb<t[k+1]<t[k+2]<...<t[n-k-2]<xe"""
                     }
+
 
 class UnivariateSpline(object):
     """
@@ -271,6 +273,7 @@ class UnivariateSpline(object):
         raise NotImplementedError('finding roots unsupported for '
                                     'non-cubic splines')
 
+
 class InterpolatedUnivariateSpline(UnivariateSpline):
     """
     One-dimensional interpolating spline for a given set of data points.
@@ -339,6 +342,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
         self._data = dfitpack.fpcurf0(x,y,k,w=w,
                                       xb=bbox[0],xe=bbox[1],s=0)
         self._reset_class()
+
 
 class LSQUnivariateSpline(UnivariateSpline):
     """
@@ -557,6 +561,7 @@ class BivariateSpline(object):
         kx,ky = self.degrees
         return dfitpack.dblint(tx,ty,c,kx,ky,xa,xb,ya,yb)
 
+
 class SmoothBivariateSpline(BivariateSpline):
     """ Smooth bivariate spline approximation.
 
@@ -610,6 +615,7 @@ class SmoothBivariateSpline(BivariateSpline):
         self.fp = fp
         self.tck = tx[:nx],ty[:ny],c[:(nx-kx-1)*(ny-ky-1)]
         self.degrees = kx,ky
+
 
 class LSQBivariateSpline(BivariateSpline):
     """ Weighted least-squares bivariate spline approximation.
@@ -680,6 +686,7 @@ class LSQBivariateSpline(BivariateSpline):
         self.tck = tx1,ty1,c
         self.degrees = kx,ky
 
+
 class RectBivariateSpline(BivariateSpline):
     """ Bivariate spline approximation over a rectangular mesh.
 
@@ -710,7 +717,7 @@ class RectBivariateSpline(BivariateSpline):
 
     """
     def __init__(self, x, y, z, bbox = [None]*4, kx=3, ky=3, s=0):
-        x,y = ravel(x),ravel(y)
+        x,y = ravel(x), ravel(y)
         if not all(diff(x) > 0.0):
             raise TypeError('x must be strictly increasing')
         if not all(diff(y) > 0.0):
@@ -730,11 +737,10 @@ class RectBivariateSpline(BivariateSpline):
         nx,tx,ny,ty,c,fp,ier = dfitpack.regrid_smth(x,y,z,
                                                     xb,xe,yb,ye,
                                                     kx,ky,s)
-        if ier in [0,-1,-2]: # normal return
-            pass
-        else:
-            message = _surfit_messages.get(ier,'ier=%s' % (ier))
-            warnings.warn(message)
+
+        if not ier in [0,-1,-2]:
+            msg = _surfit_messages.get(ier, 'ier=%s' % (ier))
+            raise ValueError(msg)
 
         self.fp = fp
         self.tck = tx[:nx],ty[:ny],c[:(nx-kx-1)*(ny-ky-1)]
@@ -830,17 +836,16 @@ class RectSpherBivariateSpline(BivariateSpline):
     --------
     Suppose we have global data on a coarse grid
 
-    >>> from numpy import abs, atleast_2d, dot, linspace, meshgrid, pi
-    >>> lats = (linspace(-80., 80., 9) + 90.) * pi / 180.
-    >>> lons = linspace(0., 350., 18) * pi / 180.
-    >>> data = dot(atleast_2d(90. - linspace(-80., 80., 18)).T,
-                   atleast_2d(180. - abs(linspace(0., 350., 9)))).T
+    >>> lats = np.linspace(10, 170, 9) * np.pi / 180.
+    >>> lons = np.linspace(0, 350, 18) * np.pi / 180.
+    >>> data = np.dot(np.atleast_2d(90. - np.linspace(-80., 80., 18)).T,
+                      np.atleast_2d(180. - np.abs(np.linspace(0., 350., 9)))).T
 
     We want to interpolate it to a global one-degree grid
 
-    >>> lats = (linspace(-89., 89., 179) + 90.) * pi / 180.
-    >>> lons = linspace(0., 360., 361) * pi / 180.
-    >>> lats, lons = meshgrid(lats, lons)
+    >>> new_lats = np.linspace(1, 180, 180) * np.pi / 180
+    >>> new_lons = np.linspace(1, 360, 360) * np.pi / 180
+    >>> new_lats, new_lons = np.meshgrid(new_lats, new_lons)
 
     We need to set up the interpolator object
 
@@ -850,17 +855,18 @@ class RectSpherBivariateSpline(BivariateSpline):
     Finally we interpolate the data.  The `RectSpherBivariateSpline` object
     only takes 1-D arrays as input, therefore we need to do some reshaping.
 
-    >>> data = lut.ev(new_lats.ravel(), new_lons.ravel()).reshape((361, 179)).T
+    >>> data_interp = lut.ev(new_lats.ravel(),
+    ...                      new_lons.ravel()).reshape((360, 180)).T
 
     Looking at the original and the interpolated data, one can see that the
     interpolant reproduces the original data very well:
 
-    >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
-    >>> orig = fig.add_subplot(211)
-    >>> orig.pcolor(data_orig)
-    >>> interp = fig.add_subplot(212)
-    >>> interp.pcolor(data)
+    >>> ax1 = fig.add_subplot(211)
+    >>> ax1.imshow(data, interpolation='nearest')
+    >>> ax2 = fig.add_subplot(212)
+    >>> ax2.imshow(data_interp, interpolation='nearest')
+    >>> plt.show()
 
     Chosing the optimal value of ``s`` can be a delicate task. Recommended
     values for ``s`` depend on the accuracy of the data values.  If the user
@@ -884,14 +890,16 @@ class RectSpherBivariateSpline(BivariateSpline):
     The interpolation results for different values of ``s`` give some insight
     into this process:
 
-    >>> figs = plt.figure()
-    >>> s = [3E9, 2E9, 1E9, 1E8]
-    >>> for i in xrange(len(s)):
-    >>>     lut = RectSpherBivariateSpline(lats_orig, lons_orig, data_orig, s=s)
-    >>>     data = lut.ev(lats.ravel(), lons.ravel()).reshape((361, 179)).T
-    >>>     ax = figs.add_subplot(2, 2, i+1)
-    >>>     ax.pcolor(data)
-    >>>     ax.set_title("s = %g" % s)
+    >>> fig2 = plt.figure()
+    >>> s = [3e9, 2e9, 1e9, 1e8]
+    >>> for ii in xrange(len(s)):
+    >>>     lut = RectSpherBivariateSpline(lats, lons, data, s=s[ii])
+    >>>     data_interp = lut.ev(new_lats.ravel(),
+    ...                          new_lons.ravel()).reshape((360, 180)).T
+    >>>     ax = fig2.add_subplot(2, 2, ii+1)
+    >>>     ax.imshow(data_interp, interpolation='nearest')
+    >>>     ax.set_title("s = %g" % s[ii])
+    >>> plt.show()
 
     """
     def __init__(self, u, v, r, s=0., pole_continuity=False, pole_values=None,
@@ -908,36 +916,40 @@ class RectSpherBivariateSpline(BivariateSpline):
             pole_exact = (pole_exact, pole_exact)
         if isinstance(pole_flat, bool):
             pole_flat = (pole_flat, pole_flat)
+
         r0, r1 = pole_values
         iopt[1:] = pole_continuity
         ider[0] = -1 if r0 is None else pole_exact[0]
         ider[2] = -1 if r1 is None else pole_exact[1]
         ider[1], ider[3] = pole_flat
+
         u, v = np.ravel(u), np.ravel(v)
         if not np.all(np.diff(u) > 0.0):
             raise TypeError('u must be strictly increasing')
         if not np.all(np.diff(v) > 0.0):
             raise TypeError('v must be strictly increasing')
+
         if not u.size == r.shape[0]:
             raise TypeError('u dimension of r must have same number of '
                             'elements as u')
         if not v.size == r.shape[1]:
             raise TypeError('v dimension of r must have same number of '
                             'elements as v')
+
         if pole_continuity[1] is False and pole_flat[1] is True:
             raise TypeError('if pole_continuity is False, so must be pole_flat')
         if pole_continuity[0] is False and pole_flat[0] is True:
             raise TypeError('if pole_continuity is False, so must be pole_flat')
+
         r = np.ravel(r)
-        nu,tu,nv,tv,c,fp,ier = dfitpack.regrid_smth_spher(iopt,ider,u.copy(),
-                                                          v.copy(),r.copy(),r0,
-                                                          r1,s)
+        nu, tu, nv, tv, c, fp, ier = dfitpack.regrid_smth_spher(iopt, ider,
+                                        u.copy(), v.copy(), r.copy(), r0, r1, s)
+
         if not ier in [0,-1,-2]:
-            message = _spfit_messages.get(ier, 'ier=%s' % (ier))
-            warnings.warn(message)
-            raise ValueError()
+            msg = _spfit_messages.get(ier, 'ier=%s' % (ier))
+            raise ValueError(msg)
 
         self.fp = fp
         self.tck = tu[:nu], tv[:nv], c[:(nu - 4) * (nv-4)]
-        self.degrees = 3, 3
+        self.degrees = (3, 3)
 
