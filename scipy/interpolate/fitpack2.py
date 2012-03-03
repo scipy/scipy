@@ -919,8 +919,16 @@ class RectSpherBivariateSpline(BivariateSpline):
 
         r0, r1 = pole_values
         iopt[1:] = pole_continuity
-        ider[0] = -1 if r0 is None else pole_exact[0]
-        ider[2] = -1 if r1 is None else pole_exact[1]
+        if r0 is None:
+            ider[0] = -1
+        else:
+            ider[0] = pole_exact[0]
+
+        if r1 is None:
+            ider[2] = -1
+        else:
+            ider[2] = pole_exact[1]
+
         ider[1], ider[3] = pole_flat
 
         u, v = np.ravel(u), np.ravel(v)
