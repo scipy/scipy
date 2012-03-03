@@ -17,12 +17,6 @@ this distribution for specifics.
 
 NO WARRANTY IS EXPRESSED OR IMPLIED.  USE AT YOUR OWN RISK.
 
-Pearu Peterson
-
-Running test programs:
-    $ python fitpack.py 1 3    # run test programs 1, and 3
-    $ python fitpack.py        # run all available test programs
-
 TODO: Make interfaces to the following fitpack functions:
     For univariate splines: cocosp, concon, fourco, insert
     For bivariate splines: profil, regrid, parsur, surev

@@ -1,16 +1,5 @@
 #!/usr/bin/env python
 # Created by Pearu Peterson, June 2003
-""" Test functions for interpolate.fitpack2 module
-"""
-__usage__ = """
-Build interpolate:
-  python setup_interpolate.py build
-Run tests if scipy is installed:
-  python -c 'import scipy;scipy.interpolate.test(<level>)'
-Run tests if interpolate is not installed:
-  python tests/test_fitpack.py [<level>]
-"""
-#import libwadpy
 
 from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal, \
         assert_array_almost_equal, assert_allclose, TestCase, run_module_suite
