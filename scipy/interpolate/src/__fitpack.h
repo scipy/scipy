@@ -720,6 +720,7 @@ fitpack_sproot(PyObject *dummy, PyObject *args)
         PyErr_NoMemory();
         goto fail;
     }
+    m = 0;
     SPROOT(t,&n,c,z,&mest,&m,&ier);
     if (ier==10) {
         m = 0;
