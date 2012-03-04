@@ -8,20 +8,19 @@ import shutil
 
 from mako.template import Template
 
-f = open('interpnd.pyx', 'r')
+f = open('interpnd0.pyx', 'r') # open unprocessed file
 template = f.read()
 f.close()
+fn = 'interpnd.pyx' # processed file 
 
-tmp_dir = tempfile.mkdtemp()
 try:
     # Run templating engine
-    fn = os.path.join(tmp_dir, 'interpnd.pyx')
     f = open(fn, 'w')
     f.write(Template(template).render())
     f.close()
 
     # Run Cython
-    dst_fn = os.path.join(tmp_dir, 'interpnd.c')
+    dst_fn = 'interpnd.c'
     ret = subprocess.call(['cython', '-I', '../..', '-o', dst_fn, fn])
     if ret != 0:
         sys.exit(ret)
@@ -38,4 +37,4 @@ try:
     f.write(text)
     f.close()
 finally:
-    shutil.rmtree(tmp_dir)
+	os.unlink(fn)
