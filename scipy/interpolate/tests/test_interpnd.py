@@ -5,6 +5,8 @@ from numpy.testing import assert_equal, assert_allclose, assert_almost_equal, \
 import scipy.interpolate.interpnd as interpnd
 import scipy.spatial.qhull as qhull
 
+import pickle
+
 class TestLinearNDInterpolation(object):
     def test_smoketest(self):
         # Test at single points
@@ -78,6 +80,17 @@ class TestLinearNDInterpolation(object):
         zi = interpnd.LinearNDInterpolator(points, values)(xi)
 
         assert_almost_equal(zi, ip(xx, yy))
+
+    def test_pickle(self):
+        # Test at single points
+        np.random.seed(1234)
+        x = np.random.rand(30, 2)
+        y = np.random.rand(30) + 1j*np.random.rand(30)
+
+        ip = interpnd.LinearNDInterpolator(x, y)
+        ip2 = pickle.loads(pickle.dumps(ip))
+
+        assert_almost_equal(ip(0.5, 0.5), ip2(0.5, 0.5))
 
 class TestEstimateGradients2DGlobal(object):
     def test_smoketest(self):
@@ -186,6 +199,18 @@ class TestCloughTocher2DInterpolator(object):
         x = np.random.randn(30, 3)
         y = np.random.randn(30)
         assert_raises(ValueError, interpnd.CloughTocher2DInterpolator, x, y)
+
+
+    def test_pickle(self):
+        # Test at single points
+        np.random.seed(1234)
+        x = np.random.rand(30, 2)
+        y = np.random.rand(30) + 1j*np.random.rand(30)
+
+        ip = interpnd.CloughTocher2DInterpolator(x, y)
+        ip2 = pickle.loads(pickle.dumps(ip))
+
+        assert_almost_equal(ip(0.5, 0.5), ip2(0.5, 0.5))
 
 if __name__ == "__main__":
     run_module_suite()
