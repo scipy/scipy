@@ -523,17 +523,17 @@ class TestTnc(TestCase):
         self.opts = {'disp': False, 'maxfev': 200}
 
     # objective functions and jacobian for each test
-    def f1(self, x):
-        return 100.0 * pow((x[1] - pow(x[0], 2)), 2) + pow(1.0 - x[0], 2)
+    def f1(self, x, a=100.0):
+        return a * pow((x[1] - pow(x[0], 2)), 2) + pow(1.0 - x[0], 2)
 
-    def g1(self, x):
+    def g1(self, x, a=100.0):
         dif = [0, 0]
-        dif[1] = 200.0*(x[1] - pow(x[0], 2))
+        dif[1] = 2 * a * (x[1] - pow(x[0], 2))
         dif[0] = -2.0 * (x[0] * (dif[1] - 1.0) + 1.0)
         return dif
 
-    def fg1(self, x):
-        return self.f1(x), self.g1(x)
+    def fg1(self, x, a=100.0):
+        return self.f1(x, a), self.g1(x, a)
 
     def f3(self, x):
         return x[1] + pow(x[1] - x[0], 2) * 1.0e-5
@@ -692,7 +692,7 @@ class TestTnc(TestCase):
         fg, x, bounds = self.fg1, [-2, 1], ([-np.inf, None],[-1.5, None])
         xopt = [1, 1]
 
-        x, nf, rc = optimize.fmin_tnc(fg, x, bounds=bounds,
+        x, nf, rc = optimize.fmin_tnc(fg, x, bounds=bounds, args=(100.0, ),
                                       messages=optimize.tnc.MSG_NONE,
                                       maxfun=200)
 
