@@ -24,7 +24,7 @@ from cobyla import _minimize_cobyla
 from slsqp import _minimize_slsqp
 
 def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
-             bounds=None, constraints=(),
+             hessp=None, bounds=None, constraints=(),
              options=dict(), full_output=False, callback=None,
              retall=False):
     """
@@ -46,13 +46,14 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     jac : callable, optional
         Jacobian of objective function (if None, Jacobian will be
         estimated numerically). Only for CG, BFGS, Newton-CG.
-    hess : callable, optional
-        Hessian of objective function. Only for Newton-CG.
-        The function `hess` can either return the Hessian matrix of `fun`
-        or the Hessian matrix times an arbitrary vector, in which case
-        it accepts an extra argument `p` as `hess(x, p, *args)`.
-        If `hess` is None, the Hessian will be approximated using finite
-        differences on `jac`.
+    hess, hessp : callable, optional
+        Hessian of objective function or Hessian of objective function
+        times an arbitrary vector p.  Only for Newton-CG.
+        Only one of `hessp` or `hess` needs to be given.  If `hess` is
+        provided, then `hessp` will be ignored.  If neither `hess` nor
+        `hessp` is provided, then the hessian product will be approximated
+        using finite differences on `jac`. `hessp` must compute the Hessian
+        times an arbitrary vector.
     bounds : sequence, optional
         Bounds for variables (only for L-BFGS-B, TNC, COBYLA and SLSQP).
         ``(min, max)`` pairs for each element in ``x``, defining
@@ -327,7 +328,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         return _minimize_bfgs(fun, x0, args, jac, options, full_output,
                               retall, callback)
     elif meth == 'newton-cg':
-        return _minimize_newtoncg(fun, x0, args, jac, hess, options,
+        return _minimize_newtoncg(fun, x0, args, jac, hess, hessp, options,
                                   full_output, retall, callback)
     elif meth == 'anneal':
         return _minimize_anneal(fun, x0, args, options, full_output)
