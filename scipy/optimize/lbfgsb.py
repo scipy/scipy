@@ -134,9 +134,9 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         fun = func
         jac = None
     elif fprime is None:
-        def fun(x):
+        def fun(x, *args):
             return func(x, *args)[0]
-        def jac(x):
+        def jac(x, *args):
             return func(x, *args)[1]
     else:
         fun = func
