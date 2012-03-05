@@ -14,7 +14,8 @@ from warnings import warn
 
 # unconstrained minimization
 from optimize import _minimize_neldermead, _minimize_powell, \
-        _minimize_cg, _minimize_bfgs, _minimize_newtoncg
+        _minimize_cg, _minimize_bfgs, _minimize_newtoncg, \
+        MemoizeJac
 from anneal import _minimize_anneal
 
 # contrained minimization
@@ -44,8 +45,10 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
             {'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'Anneal',
              'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP'}.
     jac : callable, optional
-        Jacobian of objective function (if None, Jacobian will be
-        estimated numerically). Only for CG, BFGS, Newton-CG.
+        Jacobian of objective function. Only for CG, BFGS, Newton-CG.
+        If None, Jacobian will be estimated numerically. If the `jac==fun`,
+        `fun` is assumed to return the value of Jacobian along with the
+        objective function.
     hess : callable, optional
         Hessian of objective function. Only for Newton-CG.
         The function `hess` can either return the Hessian matrix of `fun`
@@ -313,6 +316,11 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
        retall:
         warn('Method %s does not support retall.' % method,
              RuntimeWarning)
+
+    # fun also returns the jacobian
+    if jac == fun:
+        fun = MemoizeJac(fun)
+        jac = fun.derivative
 
     if meth == 'nelder-mead':
         return _minimize_neldermead(fun, x0, args, options, full_output,
