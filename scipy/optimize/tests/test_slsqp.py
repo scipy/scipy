@@ -96,7 +96,7 @@ class TestSLSQP(TestCase):
         Minimize, method='SLSQP': unbounded, combined function and jacobian.
         """
         x, info = minimize(self.fun_and_jac, [-1.0, 1.0], args = (-1.0, ),
-                           jac=self.fun_and_jac, method='SLSQP',
+                           jac=True, method='SLSQP',
                            options=self.opts, full_output=True)
         assert_(info['success'], info['message'])
         assert_allclose(x, [2, 1])
