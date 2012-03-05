@@ -434,16 +434,26 @@ class TestLBFGSBBounds(TestCase):
         self.bounds = ((1, None), (None, None))
         self.solution = (1, 0)
 
-    def fun(self, x):
-        return 0.5 * (x[0]**2 + x[1]**2)
+    def fun(self, x, p=2.0):
+        return 1.0 / p * (x[0]**p + x[1]**p)
 
-    def jac(self, x):
-        return x
+    def jac(self, x, p=2.0):
+        return x**(p - 1)
+
+    def fj(self, x, p=2.0):
+        return self.fun(x, p), self.jac(x, p)
 
     def test_l_bfgs_b_bounds(self):
         """ L-BFGS-B with bounds """
         x, f, d = optimize.fmin_l_bfgs_b(self.fun, [0, -1],
                                          fprime=self.jac,
+                                         bounds=self.bounds)
+        assert_(d['warnflag'] == 0, d['task'])
+        assert_allclose(x, self.solution, atol=1e-6)
+
+    def test_l_bfgs_b_funjac(self):
+        """ L-BFGS-B with fun and jac combined and extra arguments """
+        x, f, d = optimize.fmin_l_bfgs_b(self.fj, [0, -1], args=(2.0, ),
                                          bounds=self.bounds)
         assert_(d['warnflag'] == 0, d['task'])
         assert_allclose(x, self.solution, atol=1e-6)
