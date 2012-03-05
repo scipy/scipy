@@ -31,7 +31,7 @@ evaluate the function; and it must return either a tuple, whose first element is
 value of the function, and whose second argument is the gradient of the function
 (as a list of values); or None, to abort the minimization.
 """
-from scipy.optimize import moduleTNC
+from scipy.optimize import moduleTNC, approx_fprime
 from numpy import asarray, inf, array
 
 __all__ = ['fmin_tnc']
@@ -77,9 +77,6 @@ RCSTRINGS = {
 
 # Changes to interface made by Travis Oliphant, Apr. 2004 for inclusion in
 #  SciPy
-
-import optimize
-approx_fprime = optimize.approx_fprime
 
 def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
              bounds=None, epsilon=1e-8, scale=None, offset=None,
