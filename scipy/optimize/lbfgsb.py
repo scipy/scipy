@@ -26,7 +26,7 @@
 
 from numpy import array, asarray, float64, int32, zeros
 import _lbfgsb
-from optimize import approx_fprime
+from optimize import approx_fprime, MemoizeJac
 from numpy.compat import asbytes
 
 __all__ = ['fmin_l_bfgs_b']
@@ -134,10 +134,8 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         fun = func
         jac = None
     elif fprime is None:
-        def fun(x):
-            return func(x, *args)[0]
-        def jac(x):
-            return func(x, *args)[1]
+        fun = MemoizeJac(func)
+        jac = fun.derivative
     else:
         fun = func
         jac = fprime
@@ -329,6 +327,11 @@ if __name__ == '__main__':
     def func_and_grad(x):
         return func(x), grad(x)
 
+
+    class Problem(object):
+        def fun(self, x):
+            return func_and_grad(x)
+
     factr = 1e7
     pgtol = 1e-5
 
@@ -355,6 +358,12 @@ if __name__ == '__main__':
     print f
     print d
     x, f, d = fmin_l_bfgs_b(func_and_grad, x0, approx_grad=0,
+                            m=m, factr=factr, pgtol=pgtol)
+    print x
+    print f
+    print d
+    p = Problem()
+    x, f, d = fmin_l_bfgs_b(p.fun, x0, approx_grad=0,
                             m=m, factr=factr, pgtol=pgtol)
     print x
     print f
