@@ -9,23 +9,18 @@ def test_csgraph_from_dense():
     some_nulls = (G < 0.4)
     all_nulls = (G < 0.8)
 
-    # test with single null value
-    G[all_nulls] = 0
-    G_csr = csgraph_from_dense(G, null_values=0)
-    assert_array_almost_equal(G, G_csr.toarray())
+    for null_value in [0, np.nan, np.inf]:
+        G[all_nulls] = null_value
+        G_csr = csgraph_from_dense(G, null_value=0)
+        G[all_nulls] = 0
+        assert_array_almost_equal(G, G_csr.toarray())
 
-    # test with multiple null values
-    G[some_nulls] = 10
-    G_csr = csgraph_from_dense(G, null_values=[0, 10])
-    G[all_nulls] = 0
-    assert_array_almost_equal(G, G_csr.toarray())
-
-    # test with infinities
-    G[all_nulls] = 10
-    G[some_nulls] = np.inf
-    G_csr = csgraph_from_dense(G, null_values=[0, 10])
-    G[all_nulls] = 0
-    assert_array_almost_equal(G, G_csr.toarray())
+    for null_value in [np.nan, np.inf]:
+        G[all_nulls] = 0
+        G[some_nulls] = null_value
+        G_csr = csgraph_from_dense(G, null_value=0)
+        G[all_nulls] = 0
+        assert_array_almost_equal(G, G_csr.toarray())
 
 
 def test_csgraph_to_dense():

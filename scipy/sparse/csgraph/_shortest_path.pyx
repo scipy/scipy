@@ -8,12 +8,6 @@ the Floyd-Warshall algorithm, or Dykstra's algorithm with Fibonacci Heaps.
 
 # Author: Jake Vanderplas  -- <vanderplas@astro.washington.edu>
 # License: BSD, (C) 2011
-
-# TODO:
-#   Tests for negative weights & negative cycles in all algorithms
-#
-#   Johnson: Implement, make tests, and add to shortest_path function
-#
 import warnings
 
 import numpy as np
@@ -213,11 +207,10 @@ def floyd_warshall(csgraph, directed=True,
     """
     dist_matrix = validate_graph(csgraph, directed, DTYPE,
                                  csr_output=False,
-                                 copy_if_dense= not overwrite)
+                                 copy_if_dense=not overwrite)
 
     if unweighted:
-        nonzero = (dist_matrix != 0)
-        dist_matrix[nonzero] = 1
+        dist_matrix[~np.isinf(dist_matrix)] = 1
 
     if return_predecessors:
         predecessor_matrix = np.empty(dist_matrix.shape,
@@ -833,7 +826,7 @@ def johnson(csgraph, directed=True, indices=None,
     choice.
     """
     #------------------------------
-    # if unweighted, we just use dijkstra
+    # if unweighted, there are no negative weights: we just use dijkstra
     if unweighted:
         return dijkstra(csgraph, directed, indices,
                         return_predecessors, unweighted)

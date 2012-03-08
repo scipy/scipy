@@ -13,7 +13,8 @@ from scipy.sparse import csr_matrix, isspmatrix, isspmatrix_csr, isspmatrix_csc
 include 'parameters.pxi'
 
 def csgraph_from_dense(graph,
-                       null_values=0,
+                       null_value=None,
+                       nan_null=True,
                        infinity_null=True):
     """Construct a CSR-format sparse graph from a dense matrix.
 
@@ -21,13 +22,15 @@ def csgraph_from_dense(graph,
     ----------
     graph: array_like
         Input graph.  Shape should be (n_nodes, n_nodes).
-    null_values: float, list, or None
-        Value or list of values that denote non-edges in the graph.  Default
+    null_value: float or None (optional)
+        Value that denotes non-edges in the graph.  Default
         is zero.  If infinite values represent null edges, then setting the
         infinity_null flag is more efficient
     infinity_null: bool
-        If True (default), then treat positive or negative infinite edges
-        as null edges.
+        If True (default), then infinite entries (both positive and negative)
+        are treated as null edges.
+    nan_null: bool
+        If True (default), then NaN entries are treated as non-edges
 
     Returns
     -------
@@ -36,26 +39,34 @@ def csgraph_from_dense(graph,
     """
     graph = np.asarray(graph)
 
-    # make null_values a 1-d array
-    if null_values is None:
-        null_values = []
-    null_values = np.asarray(null_values, dtype=graph.dtype).ravel()
-
     # check that graph is a square matrix
     if graph.ndim != 2:
         raise ValueError("graph should have two dimensions")
     N = graph.shape[0]
     if graph.shape[1] != N:
         raise ValueError("graph should be a square array")
+
+    # check whether null_value is infinity or NaN
+    if null_value is not None:
+        null_value = DTYPE(null_value)        
+        if np.isinf(null_value):
+            infinity_null = True
+            null_value = None
+        elif np.isnan(null_value):
+            nan_null = True
+            null_value = None
     
     # flag all the null edges
-    if null_values.shape[0] == 0:
-        flag = np.ones((N, N), dtype=bool)
+    if null_value is None:
+        flag = np.zeros(graph.shape, dtype=bool)
     else:
-        flag = np.logical_or.reduce([(graph == v) for v in null_values])
+        flag = (graph == null_value)
 
     if infinity_null:
         flag |= np.isinf(graph)
+
+    if nan_null:
+        flag |= np.isnan(graph)
 
     # construct the csr matrix using flag
     flag = ~flag
@@ -66,13 +77,13 @@ def csgraph_from_dense(graph,
     idx_grid[:] = np.arange(N, dtype=ITYPE)
     indices = np.asarray(idx_grid[flag], dtype=ITYPE, order='c')
 
-    indptr = np.concatenate(([0], flag.sum(1).cumsum()))
-    indptr = np.asarray(indptr, dtype=ITYPE)
+    indptr = np.zeros(N + 1, dtype=ITYPE)
+    indptr[1:] = flag.sum(1).cumsum()
 
     return csr_matrix((data, indices, indptr), (N, N))
 
 
-def csgraph_to_dense(csgraph, null_value=0):
+def csgraph_to_dense(csgraph, null_value=np.inf):
     """Convert a sparse graph representation to a dense representation
 
     Parameters
@@ -81,7 +92,7 @@ def csgraph_to_dense(csgraph, null_value=0):
         Sparse representation of a graph.
     null_value: float, optional
         The value used to indicate null edges in the dense representation.
-        Default is zero.
+        Default is infinity.
 
     Returns
     -------
@@ -158,25 +169,20 @@ def csgraph_to_dense(csgraph, null_value=0):
     graph = np.empty(csgraph.shape, dtype=DTYPE)
     graph.fill(np.inf)
 
-    # create a boolean array to keep track of the locations of null edges.
-    cdef np.ndarray null = np.ones(csgraph.shape, dtype=bool, order='C')
-
-    # There is no c type for numpy bool arrays, so we'll use a raw character
-    #  array instead
-    null_flag = _populate_graph(graph, data, indices, indptr)
-
-    graph[null_flag] = null_value
+    # null_flag is the location of null edges
+    _populate_graph(graph, data, indices, indptr, null_value)
 
     return graph
 
 
-cdef np.ndarray _populate_graph(np.ndarray[DTYPE_t, ndim=2, mode='c'] graph,
-                                np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
-                                np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
-                                np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr):
+cdef void _populate_graph(np.ndarray[DTYPE_t, ndim=2, mode='c'] graph,
+                          np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
+                          np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
+                          np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr,
+                          DTYPE_t null_value):
     cdef unsigned int N = graph.shape[0]
-    cdef np.ndarray null = np.ones((N, N), dtype=bool, order='C')
-    cdef np.npy_bool* null_ptr = <np.npy_bool*> null.data
+    cdef np.ndarray null_flag = np.ones((N, N), dtype=bool, order='C')
+    cdef np.npy_bool* null_ptr = <np.npy_bool*> null_flag.data
     cdef unsigned int row, col, i
 
     for row from 0 <= row < N:
@@ -187,7 +193,71 @@ cdef np.ndarray _populate_graph(np.ndarray[DTYPE_t, ndim=2, mode='c'] graph,
                 graph[row, col] = data[i]
         null_ptr += N
     
-    return null
+    graph[null_flag] = null_value
+
+
+def canonical_from_dense(graph,
+                         null_value=None,
+                         nan_null=True,
+                         infinity_null=True,
+                         overwrite=False):
+    """Construct a canonical-form dense graph from a dense matrix.
+
+    A canonical-form dense graph has +infinity at all null edges.  It also
+    has the correct dtype and is C-ordered.  This function will return the
+    same result as csgraph_to_dense(csgraph_from_dense(graph)).
+
+    Parameters
+    ----------
+    graph: array_like
+        Input graph.  Shape should be (n_nodes, n_nodes).
+    null_value: float or None (optional)
+        Value that denotes non-edges in the graph.  Default
+        is zero.  If infinite values represent null edges, then setting the
+        infinity_null flag is more efficient
+    infinity_null: bool (optional)
+        If True (default), then infinite entries (both positive and negative)
+        are treated as null edges.
+    nan_null: bool (optional)
+        If True (default), then NaN entries are treated as non-edges
+    overwrite: bool (optional)
+        If True, then overwrite the input with the canonical form
+
+    Returns
+    -------
+    csgraph: ndarray
+        Canonical dense representation of graph
+    """
+    graph = np.array(graph, dtype=DTYPE, order='C', copy=not overwrite)
+
+    # check that graph is a square matrix
+    if graph.ndim != 2:
+        raise ValueError("graph should have two dimensions")
+    N = graph.shape[0]
+    if graph.shape[1] != N:
+        raise ValueError("graph should be a square array")
+
+    # check whether null_value is infinity or NaN
+    if null_value is not None:
+        null_value = DTYPE(null_value)        
+        if np.isinf(null_value):
+            infinity_null = True
+            null_value = None
+        elif np.isnan(null_value):
+            nan_null = True
+            null_value = None
+
+    # this is because -inf needs to be set to inf
+    if infinity_null:
+        graph[np.isinf(graph)] = np.inf
+
+    if nan_null:
+        graph[np.isnan(graph)] = np.inf
+
+    if null_value is not None:
+        graph[graph == null_value] = np.inf
+
+    return graph
 
 
 def reconstruct_path(csgraph, predecessors, directed=True):

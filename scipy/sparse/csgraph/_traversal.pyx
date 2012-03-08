@@ -198,7 +198,7 @@ def breadth_first_order(csgraph, i_start,
     predecessors.fill(NULL_IDX)
 
     if directed:
-        length = _breadth_first(i_start,
+        length = _breadth_first_directed(i_start,
                                 csgraph.indices, csgraph.indptr,
                                 node_list, predecessors)
     else:
@@ -214,7 +214,7 @@ def breadth_first_order(csgraph, i_start,
         return node_list[:length]
     
 
-cdef unsigned int _breadth_first(
+cdef unsigned int _breadth_first_directed(
                            unsigned int head_node,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr,
@@ -361,7 +361,7 @@ def depth_first_order(csgraph, i_start,
     root_list.fill(NULL_IDX)
 
     if directed:
-        length = _depth_first(i_start,
+        length = _depth_first_directed(i_start,
                               csgraph.indices, csgraph.indptr,
                               node_list, predecessors,
                               root_list, flag)
@@ -379,7 +379,7 @@ def depth_first_order(csgraph, i_start,
         return node_list[:length]
     
 
-cdef unsigned int _depth_first(
+cdef unsigned int _depth_first_directed(
                            unsigned int head_node,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr,

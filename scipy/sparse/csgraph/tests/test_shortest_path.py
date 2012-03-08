@@ -1,7 +1,8 @@
 import numpy as np
-from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_array_almost_equal, assert_raises
 from scipy.sparse.csgraph import \
-    shortest_path, dijkstra, floyd_warshall, bellman_ford, construct_dist_matrix
+    shortest_path, dijkstra, floyd_warshall,\
+    bellman_ford, construct_dist_matrix, NegativeCycleError
 
 
 def floyd_warshall_slow(graph, directed=False):
@@ -31,7 +32,7 @@ def generate_graph(N=20):
     #make graph sparse
     i = (np.random.randint(N, size=N * N / 2),
          np.random.randint(N, size=N * N / 2))
-    dist_matrix[i] = 0
+    dist_matrix[i] = np.inf
 
     #set diagonal to zero
     dist_matrix.flat[::N + 1] = 0
@@ -158,16 +159,25 @@ def test_construct_shortest_path():
 def test_unweighted_path():
     csgraph = generate_graph(20)
     csgraph_ones = np.ones(csgraph.shape)
-    csgraph_ones[csgraph == 0] = 0
+    csgraph_ones[np.isinf(csgraph)] = np.inf
 
     for directed in (True, False):
-        for method in ('FW', 'D'):
+        for method in ('D', 'J', 'BF', 'FW'):
             D1 = shortest_path(csgraph, method=method, directed=directed,
                                unweighted=True)
             D2 = shortest_path(csgraph_ones, method=method, directed=directed)
             assert_array_almost_equal(D1, D2)
-        
 
+def test_negative_cycles():
+    # create a small graph with a negative cycle
+    graph = np.ones([5, 5])
+    graph.flat[::6] = 0
+    graph[1, 2] = -2
+    for method in ['FW', 'J', 'BF']:
+        for directed in True, False:
+            assert_raises(NegativeCycleError, shortest_path,
+                          graph, method=method, directed=directed)
+                      
 
 if __name__ == '__main__':
     import nose
