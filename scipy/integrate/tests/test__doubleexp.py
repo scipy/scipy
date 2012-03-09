@@ -2,7 +2,7 @@ import numpy as np
 from numpy import exp, sin, cos, log, sqrt, pi
 from numpy.testing import *
 from scipy.integrate import quad_de, quad
-import scipy.integrate.doubleexp
+import scipy.integrate._doubleexp
 
 def assert_de(value, expected, tol=1e-10):
     assert abs(value - expected) < tol, (value, expected, tol)
@@ -28,13 +28,13 @@ class TestDE(TestCase):
 
     def _check_convergence(self, f, a, b, error_formula, info="", plot=False,
                            exact=None):
-        num_levels = len(scipy.integrate.doubleexp._abscissas)
+        num_levels = len(scipy.integrate._doubleexp._abscissas)
 
         res = []
         N = [0]
         for level in xrange(num_levels):
             res.append(quad_de(f, a, b, max_level=level, tol=1e-99)[0])
-            N.append(N[-1] + len(scipy.integrate.doubleexp._abscissas[level]))
+            N.append(N[-1] + len(scipy.integrate._doubleexp._abscissas[level]))
         res = np.array(res)
         N = np.array(N[1:])
         if exact is None:

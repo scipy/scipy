@@ -137,7 +137,7 @@ def quad_de(func, a, b, args=(), tol=1e-10, vec_func=True, max_level=None):
     error = _initial_step_size * error_estimate
     return value, error
 
-# These are computed from doubleexp_generators.abw_m1_1() for the
+# These are computed from _generate_doubleexp.abw_m1_1() for the
 # transformed range [-3.155,3.155] (the abscissa at 3.155 is just above
 # 1-eps, above which point all abscissa become the same).
 #

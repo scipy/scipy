@@ -14,6 +14,7 @@ Integrating functions, given function object
    quad          -- General purpose integration.
    dblquad       -- General purpose double integration.
    tplquad       -- General purpose triple integration.
+   quad_de       -- Integrate function with double-exponential quadrature.
    fixed_quad    -- Integrate func(x) using Gaussian quadrature of order n.
    quadrature    -- Integrate with given tolerance using Gaussian quadrature.
    romberg       -- Integrate func using Romberg integration.
@@ -51,7 +52,7 @@ from quadrature import *
 from odepack import *
 from quadpack import *
 from _ode import *
-from doubleexp import *
+from _doubleexp import *
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
 from numpy.testing import Tester
