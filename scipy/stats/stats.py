@@ -722,7 +722,7 @@ def masked_var(am):
     n = am.count() - 1.0
     return s / n
 
-def tvar(a, limits=None, inclusive=(1,1)):
+def tvar(a, limits=None, inclusive=(True, True)):
     """
     Compute the trimmed variance
 
@@ -819,7 +819,7 @@ def tmax(a, upperlimit, axis=0, inclusive=True):
     am = mask_to_limits(a, (None, upperlimit), (False, inclusive))
     return ma.maximum.reduce(am, axis)
 
-def tstd(a, limits=None, inclusive=(1,1)):
+def tstd(a, limits=None, inclusive=(True, True)):
     """
     Compute the trimmed sample standard deviation
 
@@ -845,10 +845,10 @@ def tstd(a, limits=None, inclusive=(1,1)):
     tstd : float
 
     """
-    return np.sqrt(tvar(a,limits,inclusive))
+    return np.sqrt(tvar(a, limits, inclusive))
 
 
-def tsem(a, limits=None, inclusive=(True,True)):
+def tsem(a, limits=None, inclusive=(True, True)):
     """
     Compute the trimmed standard error of the mean
 
