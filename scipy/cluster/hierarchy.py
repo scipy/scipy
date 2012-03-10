@@ -1654,222 +1654,212 @@ def leaves_list(Z):
     return ML
 
 
-# Let's do a conditional import. If matplotlib is not available,
-try:
+# Maps number of leaves to text size.
+#
+# p <= 20, size="12"
+# 20 < p <= 30, size="10"
+# 30 < p <= 50, size="8"
+# 50 < p <= np.inf, size="6"
 
-    import matplotlib
+_dtextsizes = {20: 12, 30: 10, 50: 8, 85: 6, np.inf: 5}
+_drotation = {20: 0, 40: 45, np.inf: 90}
+_dtextsortedkeys = list(_dtextsizes.keys())
+_dtextsortedkeys.sort()
+_drotationsortedkeys = list(_drotation.keys())
+_drotationsortedkeys.sort()
+
+def _remove_dups(L):
+    """
+    Removes duplicates AND preserves the original order of the elements.
+    The set class is not guaranteed to do this.
+    """
+    seen_before = set([])
+    L2 = []
+    for i in L:
+        if i not in seen_before:
+            seen_before.add(i)
+            L2.append(i)
+    return L2
+
+def _get_tick_text_size(p):
+    for k in _dtextsortedkeys:
+        if p <= k:
+            return _dtextsizes[k]
+
+def _get_tick_rotation(p):
+    for k in _drotationsortedkeys:
+        if p <= k:
+            return _drotation[k]
+
+def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
+                     no_labels, color_list, leaf_font_size=None,
+                     leaf_rotation=None, contraction_marks=None):
+    # Import matplotlib here so that it's not imported unless dendrograms
+    # are plotted. Raise an informative error if importing fails.
     try:
         import matplotlib.pylab
         import matplotlib.patches
-    except RuntimeError, e:
-        # importing matplotlib.pylab can fail with a RuntimeError if installed
-        # but the graphic engine cannot be initialized (for example without X)
-        raise ImportError("Could not import matplotib (error was %s)" % str(e))
-    #import matplotlib.collections
-    _mpl = True
+        import matplotlib.collections
+    except ImportError:
+        raise ImportError("You must install the matplotlib library to plot the dendrogram. Use no_plot=True to calculate the dendrogram without plotting.")
 
-    # Maps number of leaves to text size.
-    #
-    # p <= 20, size="12"
-    # 20 < p <= 30, size="10"
-    # 30 < p <= 50, size="8"
-    # 50 < p <= np.inf, size="6"
+    axis = matplotlib.pylab.gca()
+    # Independent variable plot width
+    ivw = len(ivl) * 10
+    # Depenendent variable plot height
+    dvw = mh + mh * 0.05
+    ivticks = np.arange(5, len(ivl) * 10 + 5, 10)
+    if orientation == 'top':
+        axis.set_ylim([0, dvw])
+        axis.set_xlim([0, ivw])
+        xlines = icoords
+        ylines = dcoords
+        if no_labels:
+            axis.set_xticks([])
+            axis.set_xticklabels([])
+        else:
+            axis.set_xticks(ivticks)
+            axis.set_xticklabels(ivl)
+        axis.xaxis.set_ticks_position('bottom')
+        lbls = axis.get_xticklabels()
+        if leaf_rotation:
+            matplotlib.pylab.setp(lbls, 'rotation', leaf_rotation)
+        else:
+            matplotlib.pylab.setp(lbls, 'rotation',
+                                  float(_get_tick_rotation(len(ivl))))
+        if leaf_font_size:
+            matplotlib.pylab.setp(lbls, 'size', leaf_font_size)
+        else:
+            matplotlib.pylab.setp(lbls, 'size',
+                                  float(_get_tick_text_size(len(ivl))))
+#        txt.set_fontsize()
+#        txt.set_rotation(45)
+        # Make the tick marks invisible because they cover up the links
+        for line in axis.get_xticklines():
+            line.set_visible(False)
+    elif orientation == 'bottom':
+        axis.set_ylim([dvw, 0])
+        axis.set_xlim([0, ivw])
+        xlines = icoords
+        ylines = dcoords
+        if no_labels:
+            axis.set_xticks([])
+            axis.set_xticklabels([])
+        else:
+            axis.set_xticks(ivticks)
+            axis.set_xticklabels(ivl)
+        lbls = axis.get_xticklabels()
+        if leaf_rotation:
+            matplotlib.pylab.setp(lbls, 'rotation', leaf_rotation)
+        else:
+            matplotlib.pylab.setp(lbls, 'rotation',
+                                  float(_get_tick_rotation(p)))
+        if leaf_font_size:
+            matplotlib.pylab.setp(lbls, 'size', leaf_font_size)
+        else:
+            matplotlib.pylab.setp(lbls, 'size',
+                                  float(_get_tick_text_size(p)))
+        axis.xaxis.set_ticks_position('top')
+        # Make the tick marks invisible because they cover up the links
+        for line in axis.get_xticklines():
+            line.set_visible(False)
+    elif orientation == 'left':
+        axis.set_xlim([0, dvw])
+        axis.set_ylim([0, ivw])
+        xlines = dcoords
+        ylines = icoords
+        if no_labels:
+            axis.set_yticks([])
+            axis.set_yticklabels([])
+        else:
+            axis.set_yticks(ivticks)
+            axis.set_yticklabels(ivl)
 
-    _dtextsizes = {20: 12, 30: 10, 50: 8, 85: 6, np.inf: 5}
-    _drotation = {20: 0, 40: 45, np.inf: 90}
-    _dtextsortedkeys = list(_dtextsizes.keys())
-    _dtextsortedkeys.sort()
-    _drotationsortedkeys = list(_drotation.keys())
-    _drotationsortedkeys.sort()
+        lbls = axis.get_yticklabels()
+        if leaf_rotation:
+            matplotlib.pylab.setp(lbls, 'rotation', leaf_rotation)
+        if leaf_font_size:
+            matplotlib.pylab.setp(lbls, 'size', leaf_font_size)
+        axis.yaxis.set_ticks_position('left')
+        # Make the tick marks invisible because they cover up the
+        # links
+        for line in axis.get_yticklines():
+            line.set_visible(False)
+    elif orientation == 'right':
+        axis.set_xlim([dvw, 0])
+        axis.set_ylim([0, ivw])
+        xlines = dcoords
+        ylines = icoords
+        if no_labels:
+            axis.set_yticks([])
+            axis.set_yticklabels([])
+        else:
+            axis.set_yticks(ivticks)
+            axis.set_yticklabels(ivl)
+        lbls = axis.get_yticklabels()
+        if leaf_rotation:
+            matplotlib.pylab.setp(lbls, 'rotation', leaf_rotation)
+        if leaf_font_size:
+            matplotlib.pylab.setp(lbls, 'size', leaf_font_size)
+        axis.yaxis.set_ticks_position('right')
+        # Make the tick marks invisible because they cover up the links
+        for line in axis.get_yticklines():
+            line.set_visible(False)
 
-    def _remove_dups(L):
-        """
-        Removes duplicates AND preserves the original order of the elements.
-        The set class is not guaranteed to do this.
-        """
-        seen_before = set([])
-        L2 = []
-        for i in L:
-            if i not in seen_before:
-                seen_before.add(i)
-                L2.append(i)
-        return L2
+    # Let's use collections instead. This way there is a separate legend
+    # item for each tree grouping, rather than stupidly one for each line
+    # segment.
+    colors_used = _remove_dups(color_list)
+    color_to_lines = {}
+    for color in colors_used:
+        color_to_lines[color] = []
+    for (xline, yline, color) in zip(xlines, ylines, color_list):
+        color_to_lines[color].append(zip(xline, yline))
 
-    def _get_tick_text_size(p):
-        for k in _dtextsortedkeys:
-            if p <= k:
-                return _dtextsizes[k]
+    colors_to_collections = {}
+    # Construct the collections.
+    for color in colors_used:
+        coll = matplotlib.collections.LineCollection(color_to_lines[color],
+                                                     colors=(color,))
+        colors_to_collections[color] = coll
 
-    def _get_tick_rotation(p):
-        for k in _drotationsortedkeys:
-            if p <= k:
-                return _drotation[k]
+    # Add all the non-blue link groupings, i.e. those groupings below the
+    # color threshold.
 
-    def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
-                         no_labels, color_list, leaf_font_size=None,
-                         leaf_rotation=None, contraction_marks=None):
-        axis = matplotlib.pylab.gca()
-        # Independent variable plot width
-        ivw = len(ivl) * 10
-        # Depenendent variable plot height
-        dvw = mh + mh * 0.05
-        ivticks = np.arange(5, len(ivl) * 10 + 5, 10)
-        if orientation == 'top':
-            axis.set_ylim([0, dvw])
-            axis.set_xlim([0, ivw])
-            xlines = icoords
-            ylines = dcoords
-            if no_labels:
-                axis.set_xticks([])
-                axis.set_xticklabels([])
-            else:
-                axis.set_xticks(ivticks)
-                axis.set_xticklabels(ivl)
-            axis.xaxis.set_ticks_position('bottom')
-            lbls = axis.get_xticklabels()
-            if leaf_rotation:
-                matplotlib.pylab.setp(lbls, 'rotation', leaf_rotation)
-            else:
-                matplotlib.pylab.setp(lbls, 'rotation',
-                                      float(_get_tick_rotation(len(ivl))))
-            if leaf_font_size:
-                matplotlib.pylab.setp(lbls, 'size', leaf_font_size)
-            else:
-                matplotlib.pylab.setp(lbls, 'size',
-                                      float(_get_tick_text_size(len(ivl))))
-#            txt.set_fontsize()
-#            txt.set_rotation(45)
-            # Make the tick marks invisible because they cover up the links
-            for line in axis.get_xticklines():
-                line.set_visible(False)
-        elif orientation == 'bottom':
-            axis.set_ylim([dvw, 0])
-            axis.set_xlim([0, ivw])
-            xlines = icoords
-            ylines = dcoords
-            if no_labels:
-                axis.set_xticks([])
-                axis.set_xticklabels([])
-            else:
-                axis.set_xticks(ivticks)
-                axis.set_xticklabels(ivl)
-            lbls = axis.get_xticklabels()
-            if leaf_rotation:
-                matplotlib.pylab.setp(lbls, 'rotation', leaf_rotation)
-            else:
-                matplotlib.pylab.setp(lbls, 'rotation',
-                                      float(_get_tick_rotation(p)))
-            if leaf_font_size:
-                matplotlib.pylab.setp(lbls, 'size', leaf_font_size)
-            else:
-                matplotlib.pylab.setp(lbls, 'size',
-                                      float(_get_tick_text_size(p)))
-            axis.xaxis.set_ticks_position('top')
-            # Make the tick marks invisible because they cover up the links
-            for line in axis.get_xticklines():
-                line.set_visible(False)
-        elif orientation == 'left':
-            axis.set_xlim([0, dvw])
-            axis.set_ylim([0, ivw])
-            xlines = dcoords
-            ylines = icoords
-            if no_labels:
-                axis.set_yticks([])
-                axis.set_yticklabels([])
-            else:
-                axis.set_yticks(ivticks)
-                axis.set_yticklabels(ivl)
+    for color in colors_used:
+        if color != 'b':
+            axis.add_collection(colors_to_collections[color])
+    # If there is a blue grouping (i.e., links above the color threshold),
+    # it should go last.
+    if 'b' in colors_to_collections:
+        axis.add_collection(colors_to_collections['b'])
 
-            lbls = axis.get_yticklabels()
-            if leaf_rotation:
-                matplotlib.pylab.setp(lbls, 'rotation', leaf_rotation)
-            if leaf_font_size:
-                matplotlib.pylab.setp(lbls, 'size', leaf_font_size)
-            axis.yaxis.set_ticks_position('left')
-            # Make the tick marks invisible because they cover up the
-            # links
-            for line in axis.get_yticklines():
-                line.set_visible(False)
-        elif orientation == 'right':
-            axis.set_xlim([dvw, 0])
-            axis.set_ylim([0, ivw])
-            xlines = dcoords
-            ylines = icoords
-            if no_labels:
-                axis.set_yticks([])
-                axis.set_yticklabels([])
-            else:
-                axis.set_yticks(ivticks)
-                axis.set_yticklabels(ivl)
-            lbls = axis.get_yticklabels()
-            if leaf_rotation:
-                matplotlib.pylab.setp(lbls, 'rotation', leaf_rotation)
-            if leaf_font_size:
-                matplotlib.pylab.setp(lbls, 'size', leaf_font_size)
-            axis.yaxis.set_ticks_position('right')
-            # Make the tick marks invisible because they cover up the links
-            for line in axis.get_yticklines():
-                line.set_visible(False)
+    if contraction_marks is not None:
+        #xs=[x for (x, y) in contraction_marks]
+        #ys=[y for (x, y) in contraction_marks]
+        if orientation in ('left', 'right'):
+            for (x, y) in contraction_marks:
+                e = matplotlib.patches.Ellipse((y, x),
+                                               width=dvw / 100, height=1.0)
+                axis.add_artist(e)
+                e.set_clip_box(axis.bbox)
+                e.set_alpha(0.5)
+                e.set_facecolor('k')
+        if orientation in ('top', 'bottom'):
+            for (x, y) in contraction_marks:
+                e = matplotlib.patches.Ellipse((x, y),
+                                             width=1.0, height=dvw / 100)
+                axis.add_artist(e)
+                e.set_clip_box(axis.bbox)
+                e.set_alpha(0.5)
+                e.set_facecolor('k')
 
-        # Let's use collections instead. This way there is a separate legend
-        # item for each tree grouping, rather than stupidly one for each line
-        # segment.
-        colors_used = _remove_dups(color_list)
-        color_to_lines = {}
-        for color in colors_used:
-            color_to_lines[color] = []
-        for (xline, yline, color) in zip(xlines, ylines, color_list):
-            color_to_lines[color].append(zip(xline, yline))
+            #matplotlib.pylab.plot(xs, ys, 'go', markeredgecolor='k',
+            #                      markersize=3)
 
-        colors_to_collections = {}
-        # Construct the collections.
-        for color in colors_used:
-            coll = matplotlib.collections.LineCollection(color_to_lines[color],
-                                                         colors=(color,))
-            colors_to_collections[color] = coll
-
-        # Add all the non-blue link groupings, i.e. those groupings below the
-        # color threshold.
-
-        for color in colors_used:
-            if color != 'b':
-                axis.add_collection(colors_to_collections[color])
-        # If there is a blue grouping (i.e., links above the color threshold),
-        # it should go last.
-        if 'b' in colors_to_collections:
-            axis.add_collection(colors_to_collections['b'])
-
-        if contraction_marks is not None:
-            #xs=[x for (x, y) in contraction_marks]
-            #ys=[y for (x, y) in contraction_marks]
-            if orientation in ('left', 'right'):
-                for (x, y) in contraction_marks:
-                    e = matplotlib.patches.Ellipse((y, x),
-                                                   width=dvw / 100, height=1.0)
-                    axis.add_artist(e)
-                    e.set_clip_box(axis.bbox)
-                    e.set_alpha(0.5)
-                    e.set_facecolor('k')
-            if orientation in ('top', 'bottom'):
-                for (x, y) in contraction_marks:
-                    e = matplotlib.patches.Ellipse((x, y),
-                                                 width=1.0, height=dvw / 100)
-                    axis.add_artist(e)
-                    e.set_clip_box(axis.bbox)
-                    e.set_alpha(0.5)
-                    e.set_facecolor('k')
-
-                #matplotlib.pylab.plot(xs, ys, 'go', markeredgecolor='k',
-                #                      markersize=3)
-
-                #matplotlib.pylab.plot(ys, xs, 'go', markeredgecolor='k',
-                #                      markersize=3)
-        matplotlib.pylab.draw_if_interactive()
-except ImportError:
-    _mpl = False
-
-    def _plot_dendrogram(*args, **kwargs):
-        raise ImportError('matplotlib not available. Plot request denied.')
+            #matplotlib.pylab.plot(ys, xs, 'go', markeredgecolor='k',
+            #                      markersize=3)
+    matplotlib.pylab.draw_if_interactive()
 
 _link_line_colors = ['g', 'r', 'c', 'm', 'y', 'k']
 
