@@ -13,7 +13,7 @@ API changes in this release, which are documented below.  All users
 are encouraged to upgrade to this release, as there are a large number
 of bug-fixes and optimizations.  Moreover, our development attention
 will now shift to bug-fix releases on the 0.11.x branch, and on adding
-new features on the development trunk.
+new features on the master branch.
 
 This release requires Python 2.4-2.7 or 3.1- and NumPy 1.X.X or greater.
 
@@ -21,8 +21,18 @@ This release requires Python 2.4-2.7 or 3.1- and NumPy 1.X.X or greater.
 New features
 ============
 
-Unified interface to minimizers of multivariate functions (``scipy.optimize``)
-------------------------------------------------------------------------------
+``scipy.optimize`` improvements
+-------------------------------
+
+The optimize module has received a lot of attention this release.  In addition
+to added tests, documentation improvements, bug fixes and code clean-up, the
+following improvements were made:
+
+- A unified interface to minimizers of multivariate functions has been added.
+- The L-BFGS-B algorithm has been updated to version 3.0.
+
+Unified interface to minimizers of multivariate functions
+`````````````````````````````````````````````````````````
 
 A new function ``scipy.optimize.minimize`` was added to provide a common
 interface to minimizers of multivariate functions (unconstrained: `fmin`,
