@@ -218,6 +218,7 @@ class TestSmokeTests(TestCase):
         put("***************** bisplev")
         self.check_5()
 
+
 if __name__ == "__main__":
     __put_prints = True
     import nose

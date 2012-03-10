@@ -98,6 +98,8 @@ Christoph Gohlke for many bug fixes and help with Windows specific issues.
 Jacob Silterra for cwt-based peak finding in scipy.signal.
 Denis Laxalde for the unified interface to minimizers in scipy.optimize.
 David Fong for the sparse LSMR solver.
+Andreas Hilboll for wrapping FITPACK's spgrid.f
+
 
 Institutions
 ------------

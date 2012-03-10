@@ -3,9 +3,10 @@
 
 from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal, \
         assert_array_almost_equal, assert_allclose, TestCase, run_module_suite
-from numpy import array, diff, shape
+from numpy import array, diff, shape, linspace, pi
 from scipy.interpolate.fitpack2 import UnivariateSpline, LSQBivariateSpline, \
-    SmoothBivariateSpline, RectBivariateSpline
+    SmoothBivariateSpline, RectBivariateSpline, RectSpherBivariateSpline
+
 
 class TestUnivariateSpline(TestCase):
     def test_linear_constant(self):
@@ -135,6 +136,7 @@ class TestLSQBivariateSpline(TestCase):
 
         assert_array_equal(lut([], []), array([]))
 
+
 class TestSmoothBivariateSpline(TestCase):
     def test_linear_constant(self):
         x = [1,1,1,2,2,2,3,3,3]
@@ -179,6 +181,7 @@ class TestSmoothBivariateSpline(TestCase):
                     *(tz[:-1,:-1]+tz[1:,:-1]+tz[:-1,1:]+tz[1:,1:])).sum()
         assert_almost_equal(lut.integral(tx[0], tx[-2], ty[0], ty[-2]), trpz)
 
+
 class TestRectBivariateSpline(TestCase):
     def test_defaults(self):
         x = array([1,2,3,4,5])
@@ -199,6 +202,31 @@ class TestRectBivariateSpline(TestCase):
         zi2 = array([lut(xp, yp)[0,0] for xp, yp in zip(xi, yi)])
 
         assert_almost_equal(zi, zi2)
+
+
+class TestRectSpherBivariateSpline(TestCase):
+    def test_defaults(self):
+        y = linspace(0.01, 2*pi-0.01, 7)
+        x = linspace(0.01, pi-0.01, 7)
+        z = array([[1,2,1,2,1,2,1],[1,2,1,2,1,2,1],[1,2,3,2,1,2,1],
+                   [1,2,2,2,1,2,1],[1,2,1,2,1,2,1],[1,2,2,2,1,2,1],
+                   [1,2,1,2,1,2,1]])
+        lut = RectSpherBivariateSpline(x,y,z)
+        assert_array_almost_equal(lut(x,y),z)
+
+    def test_evaluate(self):
+        y = linspace(0.01, 2*pi-0.01, 7)
+        x = linspace(0.01, pi-0.01, 7)
+        z = array([[1,2,1,2,1,2,1],[1,2,1,2,1,2,1],[1,2,3,2,1,2,1],
+                   [1,2,2,2,1,2,1],[1,2,1,2,1,2,1],[1,2,2,2,1,2,1],
+                   [1,2,1,2,1,2,1]])
+        lut = RectSpherBivariateSpline(x,y,z)
+        yi = [0.2, 1, 2.3, 2.35, 3.0, 3.99, 5.25]
+        xi = [1.5, 0.4, 1.1, 0.45, 0.2345, 1., 0.0001]
+        zi = lut.ev(xi, yi)
+        zi2 = array([lut(xp, yp)[0,0] for xp, yp in zip(xi, yi)])
+        assert_almost_equal(zi, zi2)
+
 
 if __name__ == "__main__":
     run_module_suite()

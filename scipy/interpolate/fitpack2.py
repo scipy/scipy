@@ -15,7 +15,10 @@ __all__ = [
     'BivariateSpline',
     'LSQBivariateSpline',
     'SmoothBivariateSpline',
-    'RectBivariateSpline']
+    'RectBivariateSpline',
+    'RectSpherBivariateSpline']
+
+from types import NoneType
 
 import warnings
 from numpy import zeros, concatenate, alltrue, ravel, all, diff, array
@@ -23,6 +26,7 @@ import numpy as np
 
 import fitpack
 import dfitpack
+
 
 ################ Univariate spline ####################
 
@@ -52,6 +56,7 @@ xb<=x[0]<x[1]<...<x[m-1]<=xe, w[i]>0, i=0..m-1
 if iopt=-1:
   xb<t[k+1]<t[k+2]<...<t[n-k-2]<xe"""
                     }
+
 
 class UnivariateSpline(object):
     """
@@ -268,6 +273,7 @@ class UnivariateSpline(object):
         raise NotImplementedError('finding roots unsupported for '
                                     'non-cubic splines')
 
+
 class InterpolatedUnivariateSpline(UnivariateSpline):
     """
     One-dimensional interpolating spline for a given set of data points.
@@ -336,6 +342,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
         self._data = dfitpack.fpcurf0(x,y,k,w=w,
                                       xb=bbox[0],xe=bbox[1],s=0)
         self._reset_class()
+
 
 class LSQUnivariateSpline(UnivariateSpline):
     """
@@ -554,6 +561,7 @@ class BivariateSpline(object):
         kx,ky = self.degrees
         return dfitpack.dblint(tx,ty,c,kx,ky,xa,xb,ya,yb)
 
+
 class SmoothBivariateSpline(BivariateSpline):
     """ Smooth bivariate spline approximation.
 
@@ -608,6 +616,7 @@ class SmoothBivariateSpline(BivariateSpline):
         self.tck = tx[:nx],ty[:ny],c[:(nx-kx-1)*(ny-ky-1)]
         self.degrees = kx,ky
 
+
 class LSQBivariateSpline(BivariateSpline):
     """ Weighted least-squares bivariate spline approximation.
 
@@ -644,6 +653,7 @@ class LSQBivariateSpline(BivariateSpline):
     bisplrep, bisplev : an older wrapping of FITPACK
     UnivariateSpline : a similar class for univariate spline interpolation
     SmoothUnivariateSpline : To create a BivariateSpline through the given points
+
     """
 
     def __init__(self, x, y, z, tx, ty, w=None, bbox=[None]*4, kx=3, ky=3,
@@ -676,6 +686,7 @@ class LSQBivariateSpline(BivariateSpline):
         self.tck = tx1,ty1,c
         self.degrees = kx,ky
 
+
 class RectBivariateSpline(BivariateSpline):
     """ Bivariate spline approximation over a rectangular mesh.
 
@@ -703,10 +714,10 @@ class RectBivariateSpline(BivariateSpline):
     SmoothBivariateSpline : a smoothing bivariate spline for scattered data
     bisplrep, bisplev : an older wrapping of FITPACK
     UnivariateSpline : a similar class for univariate spline interpolation
-    """
 
+    """
     def __init__(self, x, y, z, bbox = [None]*4, kx=3, ky=3, s=0):
-        x,y = ravel(x),ravel(y)
+        x,y = ravel(x), ravel(y)
         if not all(diff(x) > 0.0):
             raise TypeError('x must be strictly increasing')
         if not all(diff(y) > 0.0):
@@ -726,12 +737,227 @@ class RectBivariateSpline(BivariateSpline):
         nx,tx,ny,ty,c,fp,ier = dfitpack.regrid_smth(x,y,z,
                                                     xb,xe,yb,ye,
                                                     kx,ky,s)
-        if ier in [0,-1,-2]: # normal return
-            pass
-        else:
-            message = _surfit_messages.get(ier,'ier=%s' % (ier))
-            warnings.warn(message)
+
+        if not ier in [0,-1,-2]:
+            msg = _surfit_messages.get(ier, 'ier=%s' % (ier))
+            raise ValueError(msg)
 
         self.fp = fp
         self.tck = tx[:nx],ty[:ny],c[:(nx-kx-1)*(ny-ky-1)]
         self.degrees = kx,ky
+
+
+_spfit_messages = _surfit_messages.copy()
+_spfit_messages[10] = """
+ERROR: on entry, the input data are controlled on validity
+       the following restrictions must be satisfied.
+          -1<=iopt(1)<=1, 0<=iopt(2)<=1, 0<=iopt(3)<=1,
+          -1<=ider(1)<=1, 0<=ider(2)<=1, ider(2)=0 if iopt(2)=0.
+          -1<=ider(3)<=1, 0<=ider(4)<=1, ider(4)=0 if iopt(3)=0.
+          mu >= mumin (see above), mv >= 4, nuest >=8, nvest >= 8,
+          kwrk>=5+mu+mv+nuest+nvest,
+          lwrk >= 12+nuest*(mv+nvest+3)+nvest*24+4*mu+8*mv+max(nuest,mv+nvest)
+          0< u(i-1)<u(i)< pi,i=2,..,mu,
+          -pi<=v(1)< pi, v(1)<v(i-1)<v(i)<v(1)+2*pi, i=3,...,mv
+          if iopt(1)=-1: 8<=nu<=min(nuest,mu+6+iopt(2)+iopt(3))
+                         0<tu(5)<tu(6)<...<tu(nu-4)< pi
+                         8<=nv<=min(nvest,mv+7)
+                         v(1)<tv(5)<tv(6)<...<tv(nv-4)<v(1)+2*pi
+                         the schoenberg-whitney conditions, i.e. there must be
+                         subset of grid co-ordinates uu(p) and vv(q) such that
+                            tu(p) < uu(p) < tu(p+4) ,p=1,...,nu-4
+                            (iopt(2)=1 and iopt(3)=1 also count for a uu-value
+                            tv(q) < vv(q) < tv(q+4) ,q=1,...,nv-4
+                            (vv(q) is either a value v(j) or v(j)+2*pi)
+          if iopt(1)>=0: s>=0
+          if s=0: nuest>=mu+6+iopt(2)+iopt(3), nvest>=mv+7
+       if one of these conditions is found to be violated,control is
+       immediately repassed to the calling program. in that case there is no
+       approximation returned."""
+
+
+class RectSpherBivariateSpline(BivariateSpline):
+    """
+    Bivariate spline approximation over a rectangular mesh on a sphere.
+
+    Can be used for smoothing data.
+
+    Parameters
+    ----------
+    u : array_like
+        1-D array of latitude coordinates in strictly ascending order.
+        Coordinates must be given in radians and lie within the interval
+        (0, pi).
+    v : array_like
+        1-D array of longitude coordinates in strictly ascending order.
+        Coordinates must be given in radians, and must lie within an interval of
+        length 2pi which in turn lies within the interval (-pi, 2pi).
+    r : array_like
+        2-D array of data with shape (u.size, v.size).
+    s : float, optional
+        Positive smoothing factor defined for estimation condition
+        (``s=0`` is for interpolation).
+    pole_continuity : bool or (bool, bool), optional
+        Order of continuity at the poles ``u=0`` (``pole_continuity[0]``) and
+        ``u=pi`` (``pole_continuity[1]``).  The order of continuity at the pole
+        will be 1 or 0 when this is True or False, respectively.
+        Defaults to False.
+    pole_values : float or (float, float), optional
+        Data values at the poles ``u=0`` and ``u=pi``.  Either the whole
+        parameter or each individual element can be None.  Defaults to None.
+    pole_exact : bool or (bool, bool), optional
+        Data value exactness at the poles ``u=0`` and ``u=pi``.  If True, the
+        value is considered to be the right function value, and it will be
+        fitted exactly. If False, the value will be considered to be a data
+        value just like the other data values.  Defaults to False.
+    pole_flat : bool or (bool, bool), optional
+        For the poles at ``u=0`` and ``u=pi``, specify whether or not the
+        approximation has vanishing derivatives.  Defaults to False.
+
+    See Also
+    --------
+    RectBivariateSpline : bivariate spline approximation over a rectangular mesh
+
+    Notes
+    -----
+    Currently, only the smoothing spline approximation (``iopt[0] = 0`` and
+    ``iopt[0] = 1`` in the FITPACK routine) is supported.  The exact
+    least-squares spline approximation is not implemented yet.
+
+    When actually performing the interpolation, the requested `v` values must
+    lie within the same length 2pi interval that the original `v` values were
+    chosen from.
+
+    For more information, see the FITPACK_ site about this function.
+
+    .. _FITPACK: http://www.netlib.org/dierckx/spgrid.f
+
+    Examples
+    --------
+    Suppose we have global data on a coarse grid
+
+    >>> lats = np.linspace(10, 170, 9) * np.pi / 180.
+    >>> lons = np.linspace(0, 350, 18) * np.pi / 180.
+    >>> data = np.dot(np.atleast_2d(90. - np.linspace(-80., 80., 18)).T,
+                      np.atleast_2d(180. - np.abs(np.linspace(0., 350., 9)))).T
+
+    We want to interpolate it to a global one-degree grid
+
+    >>> new_lats = np.linspace(1, 180, 180) * np.pi / 180
+    >>> new_lons = np.linspace(1, 360, 360) * np.pi / 180
+    >>> new_lats, new_lons = np.meshgrid(new_lats, new_lons)
+
+    We need to set up the interpolator object
+
+    >>> from scipy.interpolate import RectSpherBivariateSpline
+    >>> lut = RectSpherBivariateSpline(lats, lons, data)
+
+    Finally we interpolate the data.  The `RectSpherBivariateSpline` object
+    only takes 1-D arrays as input, therefore we need to do some reshaping.
+
+    >>> data_interp = lut.ev(new_lats.ravel(),
+    ...                      new_lons.ravel()).reshape((360, 180)).T
+
+    Looking at the original and the interpolated data, one can see that the
+    interpolant reproduces the original data very well:
+
+    >>> fig = plt.figure()
+    >>> ax1 = fig.add_subplot(211)
+    >>> ax1.imshow(data, interpolation='nearest')
+    >>> ax2 = fig.add_subplot(212)
+    >>> ax2.imshow(data_interp, interpolation='nearest')
+    >>> plt.show()
+
+    Chosing the optimal value of ``s`` can be a delicate task. Recommended
+    values for ``s`` depend on the accuracy of the data values.  If the user
+    has an idea of the statistical errors on the data, she can also find a
+    proper estimate for ``s``. By assuming that, if she specifies the
+    right ``s``, the interpolator will use a spline ``f(u,v)`` which exactly
+    reproduces the function underlying the data, she can evaluate
+    ``sum((r(i,j)-s(u(i),v(j)))**2)`` to find a good estimate for this ``s``.
+    For example, if she knows that the statistical errors on her
+    ``r(i,j)``-values are not greater than 0.1, she may expect that a good
+    ``s`` should have a value not larger than ``u.size * v.size * (0.1)**2``.
+
+    If nothing is known about the statistical error in ``r(i,j)``, ``s`` must
+    be determined by trial and error.  The best is then to start with a very
+    large value of ``s`` (to determine the least-squares polynomial and the
+    corresponding upper bound ``fp0`` for ``s``) and then to progressively
+    decrease the value of ``s`` (say by a factor 10 in the beginning, i.e.
+    ``s = fp0 / 10, fp0 / 100, ...``  and more carefully as the approximation
+    shows more detail) to obtain closer fits.
+
+    The interpolation results for different values of ``s`` give some insight
+    into this process:
+
+    >>> fig2 = plt.figure()
+    >>> s = [3e9, 2e9, 1e9, 1e8]
+    >>> for ii in xrange(len(s)):
+    >>>     lut = RectSpherBivariateSpline(lats, lons, data, s=s[ii])
+    >>>     data_interp = lut.ev(new_lats.ravel(),
+    ...                          new_lons.ravel()).reshape((360, 180)).T
+    >>>     ax = fig2.add_subplot(2, 2, ii+1)
+    >>>     ax.imshow(data_interp, interpolation='nearest')
+    >>>     ax.set_title("s = %g" % s[ii])
+    >>> plt.show()
+
+    """
+    def __init__(self, u, v, r, s=0., pole_continuity=False, pole_values=None,
+                 pole_exact=False, pole_flat=False):
+        iopt = np.array([0, 0, 0], dtype=int)
+        ider = np.array([-1, 0, -1, 0], dtype=int)
+        if isinstance(pole_values, NoneType):
+            pole_values = (None, None)
+        elif isinstance(pole_values, (float, np.float32, np.float64)):
+            pole_values = (pole_values, pole_values)
+        if isinstance(pole_continuity, bool):
+            pole_continuity = (pole_continuity, pole_continuity)
+        if isinstance(pole_exact, bool):
+            pole_exact = (pole_exact, pole_exact)
+        if isinstance(pole_flat, bool):
+            pole_flat = (pole_flat, pole_flat)
+
+        r0, r1 = pole_values
+        iopt[1:] = pole_continuity
+        if r0 is None:
+            ider[0] = -1
+        else:
+            ider[0] = pole_exact[0]
+
+        if r1 is None:
+            ider[2] = -1
+        else:
+            ider[2] = pole_exact[1]
+
+        ider[1], ider[3] = pole_flat
+
+        u, v = np.ravel(u), np.ravel(v)
+        if not np.all(np.diff(u) > 0.0):
+            raise TypeError('u must be strictly increasing')
+        if not np.all(np.diff(v) > 0.0):
+            raise TypeError('v must be strictly increasing')
+
+        if not u.size == r.shape[0]:
+            raise TypeError('u dimension of r must have same number of '
+                            'elements as u')
+        if not v.size == r.shape[1]:
+            raise TypeError('v dimension of r must have same number of '
+                            'elements as v')
+
+        if pole_continuity[1] is False and pole_flat[1] is True:
+            raise TypeError('if pole_continuity is False, so must be pole_flat')
+        if pole_continuity[0] is False and pole_flat[0] is True:
+            raise TypeError('if pole_continuity is False, so must be pole_flat')
+
+        r = np.ravel(r)
+        nu, tu, nv, tv, c, fp, ier = dfitpack.regrid_smth_spher(iopt, ider,
+                                        u.copy(), v.copy(), r.copy(), r0, r1, s)
+
+        if not ier in [0,-1,-2]:
+            msg = _spfit_messages.get(ier, 'ier=%s' % (ier))
+            raise ValueError(msg)
+
+        self.fp = fp
+        self.tck = tu[:nu], tv[:nv], c[:(nu - 4) * (nv-4)]
+        self.degrees = (3, 3)
+
