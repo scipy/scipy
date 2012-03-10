@@ -423,7 +423,7 @@ class KDTree(object):
             else:
                 raise ValueError("Requested %s nearest neighbors; acceptable numbers are integers greater than or equal to one, or None")
             for c in np.ndindex(retshape):
-                hits = self.__query(x[c], k=k, p=p, distance_upper_bound=distance_upper_bound)
+                hits = self.__query(x[c], k=k, eps=eps, p=p, distance_upper_bound=distance_upper_bound)
                 if k is None:
                     dd[c] = [d for (d,i) in hits]
                     ii[c] = [i for (d,i) in hits]
@@ -438,7 +438,7 @@ class KDTree(object):
                         ii[c] = self.n
             return dd, ii
         else:
-            hits = self.__query(x, k=k, p=p, distance_upper_bound=distance_upper_bound)
+            hits = self.__query(x, k=k, eps=eps, p=p, distance_upper_bound=distance_upper_bound)
             if k is None:
                 return [d for (d,i) in hits], [i for (d,i) in hits]
             elif k==1:
