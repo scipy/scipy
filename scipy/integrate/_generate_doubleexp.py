@@ -82,11 +82,9 @@ def print_abw_raw(*a, **kw):
     def array_str(arr):
         s = "[\n"
         for a in arr:
-            s += "  ["
+            s += "["
             for j, b in enumerate(a):
-                s += repr(b) + ", "
-                if j % 3 == 2:
-                    s += "\n   "
+                s += repr(b) + ","
             s += "],\n"
         s += "]\n"
         return s
