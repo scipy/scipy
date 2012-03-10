@@ -11,8 +11,10 @@ class TestDE(TestCase):
     def test_typical(self):
         def f(x):
             return exp(-x/5.0) * (2 + sin(2*x))
+
         def symbolic(x):
             return -5.0/101.0 * exp(-x/5.0) * (10*cos(2*x) + sin(2*x) + 202)
+
         assert_de(quad_de(f, 0, 10, tol=1e-10)[0], symbolic(10) - symbolic(0),
                   tol=1e-10)
 
