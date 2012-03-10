@@ -1,6 +1,6 @@
 # Contributed by Thouis Jones, 2009.
 from numpy import log, array, isfinite, inf
-from quadrature import vectorize1
+from quadrature import vectorize1, AccuracyWarning
 
 __all__ = ["quad_de"]
 
@@ -9,21 +9,23 @@ def quad_de(func, a, b, args=(), tol=1e-10, vec_func=True, max_level=None):
     Integrate a function over an interval using double exponential
     quadrature.
 
-    This method is well-suited to integrating analytic functions,
-    and tolerant for singularities at one or both endpoints.
-    It should not be used with functions with discontinuities.  
+    This method is well-suited to integrating analytic functions.  It
+    should not be used with functions with discontinuities, although
+    singularities at the endpoints are tolerated.
 
     If quad_de() encounters a singularity (+/-infinity or NaN) within
     the integration limits, it will raise a ValueError.
 
     Parameters
     ----------
-    func : function
+    func : callable
         The integrand
     a : float
         Lower integration limit.
     b : float
         Upper integration limit.
+    args : tuple, optional
+        Additional arguments to the function.
     tol : float, optional
         Desired absolute error tolerance.
     vec_func : bool, optional
@@ -59,6 +61,32 @@ def quad_de(func, a, b, args=(), tol=1e-10, vec_func=True, max_level=None):
     This is based on John D. Cook's implementation [FN, DE], used with
     permission.
 
+    Examples
+    --------
+    >>> from scipy.integrate import quad_de
+    >>> quad_de(lambda x: np.cos(x)/(1 + x**4), 0, np.inf)
+    (0.77218652541156108, 7.0590915539313116e-12)
+
+    Weak singularity:
+
+    >>> def f(x):
+    ...     return 1/((1 - x)**.5 * (1 + x)**.25)
+    >>> quad_de(f, -1, 1)
+    (2.8496737568265096, 1.8710389421139337e-09)
+
+    Strong singularity:
+
+    >>> def f(x):
+    ...     return 1/((1 - x)**.5 * (1 + x)**.9)
+    >>> quad_de(f, -1, 1)
+    (8.3860477551851123, 0.0030324420851587171)
+
+    Note that in this case, `quad_de` fails to achieve the desired
+    accuracy.  The error estimate is also only an estimate -- the
+    exact answer here is 8.581295... and the actual error is larger
+    than estimated. In these cases, you can use `quad` which may get
+    better results.
+
     References
     ----------
     .. [DE] http://www.johndcook.com/double_exponential_integration.html
@@ -73,7 +101,7 @@ def quad_de(func, a, b, args=(), tol=1e-10, vec_func=True, max_level=None):
     # vectorize func, and fold in args
     vfunc = vectorize1(func, args, vec_func=vec_func)
     
-    # linear change of variables from (a,b) to (-1, 1)
+    # linear change of variables from (a,b) to (-1, 1), (0, inf) or (-inf, inf)
     # Int[f(x), {x,a,b}] = c*Int[f(ct+d), {t,-1,1}]
 
     if isfinite(a) and isfinite(b):
@@ -161,6 +189,10 @@ def quad_de(func, a, b, args=(), tol=1e-10, vec_func=True, max_level=None):
 
         if error_estimate < 0.1 * tol:
             break
+
+    if error_estimate > tol:
+        import warnings
+        warnings.warn("Requested tolerance not satisfied", AccuracyWarning)
 
     value = c * integral * _initial_step_size
     error = abs(_initial_step_size * error_estimate)
