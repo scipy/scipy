@@ -15,11 +15,16 @@ __all__ = [
     'BivariateSpline',
     'LSQBivariateSpline',
     'SmoothBivariateSpline',
+<<<<<<< HEAD
     'RectBivariateSpline',
     'RectSpherBivariateSpline',
     'SmoothSpherBivariateSpline']
 
 from types import NoneType
+=======
+    'SmoothSpherBivariateSpline',
+    'RectBivariateSpline']
+>>>>>>> 1e4f3f760165f3b9bb1216283727cee4bd8df162
 
 import warnings
 from numpy import zeros, concatenate, alltrue, ravel, all, diff, array
