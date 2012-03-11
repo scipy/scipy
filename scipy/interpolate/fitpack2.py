@@ -15,6 +15,7 @@ __all__ = [
     'BivariateSpline',
     'LSQBivariateSpline',
     'SmoothBivariateSpline',
+    'SmoothSpherBivariateSpline',
     'RectBivariateSpline']
 
 import warnings
@@ -675,6 +676,39 @@ class LSQBivariateSpline(BivariateSpline):
         self.fp = fp
         self.tck = tx1,ty1,c
         self.degrees = kx,ky
+
+class SmoothSpherBivariateSpline(BivariateSpline):
+    """ Smooth bivariate spline approximation in spherical coordinates.
+
+    Parameters
+    ----------
+    theta, phi, r : array_like
+        1-D sequences of data points (order is not important).
+    w : array_like, optional
+        Positive 1-D sequence of weights.
+    s : float, optional
+        Positive smoothing factor defined for estimation condition:
+        ``sum((w(i)*(r(i)-s(theta(i),phi(i))))**2,axis=0) <= s``
+        Default ``s=len(w)`` which should be a good value if 1/w[i] is an
+        estimate of the standard deviation of r[i].
+    eps : float, optional
+        A threshold for determining the effective rank of an over-determined
+        linear system of equations. `eps` should have a value between 0 and 1,
+        the default is 1e-16.
+
+    """
+
+    def __init__(self, theta, phi, r, w=None, s=None, eps=None):
+        nt,tt,np,tp,c,fp,ier = dfitpack.spherfit_smth(theta,phi,r,w,s=s,eps=eps)
+        if ier in [0,-1,-2]: # normal return
+            pass
+        else:
+            message = _surfit_messages.get(ier,'ier=%s' % (ier))
+            warnings.warn(message)
+
+        self.fp = fp
+        self.tck = tt[:nt],tp[:np],c[:(ntest-4)*(npest-4)]
+        self.degrees = (3, 3)
 
 class RectBivariateSpline(BivariateSpline):
     """ Bivariate spline approximation over a rectangular mesh.

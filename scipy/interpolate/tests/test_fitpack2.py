@@ -3,9 +3,9 @@
 
 from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal, \
         assert_array_almost_equal, assert_allclose, TestCase, run_module_suite
-from numpy import array, diff, shape
+from numpy import array, diff, pi, shape
 from scipy.interpolate.fitpack2 import UnivariateSpline, LSQBivariateSpline, \
-    SmoothBivariateSpline, RectBivariateSpline
+    SmoothBivariateSpline, SmoothSpherBivariateSpline, RectBivariateSpline
 
 class TestUnivariateSpline(TestCase):
     def test_linear_constant(self):
@@ -178,6 +178,50 @@ class TestSmoothBivariateSpline(TestCase):
         trpz = .25*(diff(tx[:-1])[:,None]*diff(ty[:-1])[None,:]
                     *(tz[:-1,:-1]+tz[1:,:-1]+tz[:-1,1:]+tz[1:,1:])).sum()
         assert_almost_equal(lut.integral(tx[0], tx[-2], ty[0], ty[-2]), trpz)
+
+class TestSmoothSpherBivariateSpline(TestCase):
+    def test_linear_constant(self):
+        theta = [.25*pi,.25*pi,.25*pi,.5*pi,.5*pi,.5*pi,.75*pi,.75*pi,.75*pi]
+        phi = [.5*pi,pi,1.5*pi,.5*pi,pi,1.5*pi,.5*pi,pi,1.5*pi]
+        r = [3,3,3,3,3,3,3,3,3]
+        lut = SmoothSpherBivariateSpline(theta,phi,r)
+        assert_array_almost_equal(lut.get_knots(),([.25*pi,.25*pi,.75*pi,.75*pi],[.25*pi,.25*pi,.75*pi,.75*pi]))
+        assert_array_almost_equal(lut.get_coeffs(),[3,3,3,3])
+        assert_almost_equal(lut.get_residual(),0.0)
+        assert_array_almost_equal(lut([1,1.5,2],[1,1.5]),[[3,3],[3,3],[3,3]])
+
+#    def test_linear_1d(self):
+#        x = [1,1,1,2,2,2,3,3,3]
+#        y = [1,2,3,1,2,3,1,2,3]
+#        z = [0,0,0,2,2,2,4,4,4]
+#        lut = SmoothSpherBivariateSpline(x,y,z,kx=1,ky=1)
+#        assert_array_almost_equal(lut.get_knots(),([1,1,3,3],[1,1,3,3]))
+#        assert_array_almost_equal(lut.get_coeffs(),[0,0,4,4])
+#        assert_almost_equal(lut.get_residual(),0.0)
+#        assert_array_almost_equal(lut([1,1.5,2],[1,1.5]),[[0,0],[1,1],[2,2]])
+
+#    def test_integral(self):
+#        x = [1,1,1,2,2,2,4,4,4]
+#        y = [1,2,3,1,2,3,1,2,3]
+#        z = array([0,7,8,3,4,7,1,3,4])
+#
+#        lut = SmoothBivariateSpline(x,y,z,kx=1,ky=1,s=0)
+#        tx = [1,2,4]
+#        ty = [1,2,3]
+#
+#        tz = lut(tx, ty)
+#        trpz = .25*(diff(tx)[:,None]*diff(ty)[None,:]
+#                    *(tz[:-1,:-1]+tz[1:,:-1]+tz[:-1,1:]+tz[1:,1:])).sum()
+#        assert_almost_equal(lut.integral(tx[0], tx[-1], ty[0], ty[-1]), trpz)
+#
+#        lut2 = SmoothBivariateSpline(x,y,z,kx=2,ky=2,s=0)
+#        assert_almost_equal(lut2.integral(tx[0], tx[-1], ty[0], ty[-1]), trpz,
+#                            decimal=0) # the quadratures give 23.75 and 23.85
+#
+#        tz = lut(tx[:-1], ty[:-1])
+#        trpz = .25*(diff(tx[:-1])[:,None]*diff(ty[:-1])[None,:]
+#                    *(tz[:-1,:-1]+tz[1:,:-1]+tz[:-1,1:]+tz[1:,1:])).sum()
+#        assert_almost_equal(lut.integral(tx[0], tx[-2], ty[0], ty[-2]), trpz)
 
 class TestRectBivariateSpline(TestCase):
     def test_defaults(self):
