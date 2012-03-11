@@ -15,9 +15,9 @@ __all__ = [
     'BivariateSpline',
     'LSQBivariateSpline',
     'SmoothBivariateSpline',
+    'SmoothSpherBivariateSpline',
     'RectBivariateSpline',
-    'RectSpherBivariateSpline',
-    'SmoothSpherBivariateSpline']
+    'RectSpherBivariateSpline']
 
 from types import NoneType
 
