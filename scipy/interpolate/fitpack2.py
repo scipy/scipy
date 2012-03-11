@@ -22,7 +22,7 @@ __all__ = [
 from types import NoneType
 
 import warnings
-from numpy import zeros, concatenate, alltrue, ravel, all, diff, array
+from numpy import zeros, concatenate, alltrue, ravel, all, diff, array, ones
 import numpy as np
 
 import fitpack
@@ -708,8 +708,10 @@ class SmoothSpherBivariateSpline(BivariateSpline):
 
     """
 
-    def __init__(self, theta, phi, r, w=None, s=None, eps=None):
-        nt,tt,np,tp,c,fp,ier = dfitpack.spherfit_smth(theta,phi,r,w,s=s,eps=eps)
+    def __init__(self, theta, phi, r, w=1., s=0., eps=1E-16):
+        if isinstance(w, (float, np.float32, np.float64)):
+            w = ones(len(theta)) * w
+        nt_,tt_,np_,tp_,c,fp,ier = dfitpack.spherfit_smth(theta,phi,r,w=w,s=s,eps=eps)
         if ier in [0,-1,-2]: # normal return
             pass
         else:
@@ -717,7 +719,7 @@ class SmoothSpherBivariateSpline(BivariateSpline):
             warnings.warn(message)
 
         self.fp = fp
-        self.tck = tt[:nt],tp[:np],c[:(ntest-4)*(npest-4)]
+        self.tck = tt_[:nt_],tp_[:np_],c[:(ntest-4)*(npest-4)]
         self.degrees = (3, 3)
 
 class RectBivariateSpline(BivariateSpline):
