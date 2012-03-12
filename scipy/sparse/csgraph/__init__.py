@@ -94,7 +94,8 @@ of whether the 'directed' keyword is set to True or False.
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['connected_components',
+__all__ = ['cs_graph_components',
+           'connected_components',
            'cs_graph_components',
            'laplacian',
            'shortest_path',
@@ -114,12 +115,12 @@ __all__ = ['connected_components',
            'canonical_from_dense',
            'NegativeCycleError']
 
-from _components import connected_components
+from _components import cs_graph_components
 from _laplacian import laplacian
 from _shortest_path import shortest_path, floyd_warshall, dijkstra,\
     bellman_ford, johnson, NegativeCycleError
 from _traversal import breadth_first_order, depth_first_order, \
-    breadth_first_tree, depth_first_tree
+    breadth_first_tree, depth_first_tree, connected_components
 from _min_spanning_tree import minimum_spanning_tree
 from _tools import construct_dist_matrix, reconstruct_path,\
     csgraph_from_dense, csgraph_to_dense, canonical_from_dense

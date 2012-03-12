@@ -35,7 +35,7 @@ def _graph_laplacian_sparse(graph, normed=False, return_diag=False):
     w = -np.asarray(lap.sum(axis=1)).squeeze()
     if normed:
         w = np.sqrt(w)
-        w_zeros = w == 0
+        w_zeros = (w == 0)
         w[w_zeros] = 1
         lap.data /= w[lap.row]
         lap.data /= w[lap.col]
@@ -54,7 +54,7 @@ def _graph_laplacian_dense(graph, normed=False, return_diag=False):
     w = -lap.sum(axis=0)
     if normed:
         w = np.sqrt(w)
-        w_zeros = w == 0
+        w_zeros = (w == 0)
         w[w_zeros] = 1
         lap /= w
         lap /= w[:, np.newaxis]
