@@ -342,6 +342,11 @@ def linkcode_resolve(domain, info):
     except:
         fn = None
     if not fn:
+        try:
+            fn = inspect.getsourcefile(sys.modules[obj.__module__])
+        except:
+            fn = None
+    if not fn:
         return None
 
     try:
