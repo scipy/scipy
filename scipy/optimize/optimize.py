@@ -39,6 +39,27 @@ _status_message = {'success': 'Optimization terminated successfully.',
                    'pr_loss': 'Desired error not necessarily achieved due '
                               'to precision loss.'}
 
+class MemoizeJac(object):
+    """ Decorator that caches the value gradient of function each time it
+    is called. """
+    def __init__(self, fun):
+        self.fun = fun
+        self.jac = None
+        self.x = None
+
+    def __call__(self, x, *args):
+        self.x = numpy.asarray(x).copy()
+        fg = self.fun(x, *args)
+        self.jac = fg[1]
+        return fg[0]
+
+    def derivative(self, x, *args):
+        if all(x == self.x) and self.jac is not None:
+            return self.jac
+        else:
+            self(x, *args)
+            return self.jac
+
 # These have been copied from Numeric's MLab.py
 # I don't think they made the transition to scipy_core
 def max(m, axis=0):

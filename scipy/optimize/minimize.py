@@ -14,7 +14,8 @@ from warnings import warn
 
 # unconstrained minimization
 from optimize import _minimize_neldermead, _minimize_powell, \
-        _minimize_cg, _minimize_bfgs, _minimize_newtoncg
+        _minimize_cg, _minimize_bfgs, _minimize_newtoncg, \
+        MemoizeJac
 from anneal import _minimize_anneal
 
 # contrained minimization
@@ -43,9 +44,14 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         Type of solver.  Should be one of:
             {'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'Anneal',
              'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP'}.
-    jac : callable, optional
-        Jacobian of objective function (if None, Jacobian will be
-        estimated numerically). Only for CG, BFGS, Newton-CG.
+    jac : bool or callable, optional
+        Jacobian of objective function. Only for CG, BFGS, Newton-CG.
+        If `jac` is a Boolean and is True, `fun` is assumed to return the
+        value of Jacobian along with the objective function. If False, the
+        Jacobian will be estimated numerically.
+        `jac` can also be a callable returning the Jacobian of the
+        objective. In this case, it must accept the same arguments as
+        `fun`.
     hess, hessp : callable, optional
         Hessian of objective function or Hessian of objective function
         times an arbitrary vector p.  Only for Newton-CG.
@@ -285,8 +291,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     meth = method.lower()
     # check if optional parameters are supported by the selected method
     # - jac
-    if meth in ['nelder-mead', 'powell', 'anneal', 'cobyla'] and \
-       jac is not None:
+    if meth in ['nelder-mead', 'powell', 'anneal', 'cobyla'] and bool(jac):
         warn('Method %s does not use gradient information (jac).' % method,
              RuntimeWarning)
     # - hess
@@ -314,6 +319,14 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
        retall:
         warn('Method %s does not support retall.' % method,
              RuntimeWarning)
+
+    # fun also returns the jacobian
+    if not callable(jac):
+        if bool(jac):
+            fun = MemoizeJac(fun)
+            jac = fun.derivative
+        else:
+            jac = None
 
     if meth == 'nelder-mead':
         return _minimize_neldermead(fun, x0, args, options, full_output,

@@ -46,6 +46,9 @@ class TestSLSQP(TestCase):
         dfdy = sign*(2*x - 4*y)
         return np.array([dfdx, dfdy], float)
 
+    def fun_and_jac(self, d, sign=1.0):
+        return self.fun(d, sign), self.jac(d, sign)
+
     def f_eqcon(self, x, sign=1.0):
         """ Equality constraint """
         return np.array([x[0] - x[1]])
@@ -85,6 +88,16 @@ class TestSLSQP(TestCase):
         x, info = minimize(self.fun, [-1.0, 1.0], args = (-1.0, ),
                            jac=self.jac, method='SLSQP', options=self.opts,
                            full_output=True)
+        assert_(info['success'], info['message'])
+        assert_allclose(x, [2, 1])
+
+    def test_minimize_unbounded_combined(self):
+        """ \
+        Minimize, method='SLSQP': unbounded, combined function and jacobian.
+        """
+        x, info = minimize(self.fun_and_jac, [-1.0, 1.0], args = (-1.0, ),
+                           jac=True, method='SLSQP',
+                           options=self.opts, full_output=True)
         assert_(info['success'], info['message'])
         assert_allclose(x, [2, 1])
 

@@ -632,6 +632,15 @@ class TestTnc(TestCase):
                               bounds=bnds, options=self.opts)
         assert_allclose(self.f1(x), self.f1(xopt), atol=1e-4)
 
+    def test_minimize_tnc1c(self):
+        """Minimize, method=TNC, 1c (combined function and gradient)"""
+        x0, bnds = [-2, 1], ([-np.inf, None],[-1.5, None])
+        xopt = [1, 1]
+        x = optimize.minimize(self.fg1, x0, method='TNC',
+                              jac=True, bounds=bnds,
+                              options=self.opts)
+        assert_allclose(self.f1(x), self.f1(xopt), atol=1e-8)
+
     def test_minimize_tnc2(self):
         """Minimize, method=TNC, 2"""
         x0, bnds = [-2, 1], ([-np.inf, None], [1.5, None])
