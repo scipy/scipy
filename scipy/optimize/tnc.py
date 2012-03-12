@@ -223,9 +223,9 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         fun = func
         jac = None
     elif fprime is None:
-        def fun(x):
+        def fun(x, *args):
             return func(x, *args)[0]
-        def jac(x):
+        def jac(x, *args):
             return func(x, *args)[1]
     else:
         fun = func
