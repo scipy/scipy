@@ -296,6 +296,14 @@ class _TestCommon:
         assert_array_equal(A.todense() - self.datsp,A.todense() - self.dat)
         assert_array_equal(self.datsp - A.todense(),self.dat - A.todense())
 
+    def test_add0(self):
+        """ Adding 0 to a sparse matrix """
+        assert_array_equal((self.datsp + 0).todense(), self.dat)
+        # use sum (which takes 0 as a starting value)
+        sumS = sum([k * self.datsp for k in range(1, 3)])
+        sumD = sum([k * self.dat for k in range(1, 3)])
+        assert_almost_equal(sumS.todense(), sumD)
+
     def test_elementwise_multiply(self):
         # real/real
         A = array([[4,0,9],[2,-3,5]])
