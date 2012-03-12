@@ -477,10 +477,12 @@ def test_ball_point_ints():
     x, y = np.mgrid[0:4, 0:4]
     points = zip(x.ravel(), y.ravel())
     tree = KDTree(points)
-    assert_equal([4, 8, 9, 12], tree.query_ball_point((2, 0), 1))
+    assert_equal(sorted([4, 8, 9, 12]),
+                 sorted(tree.query_ball_point((2, 0), 1)))
     points = np.asarray(points, dtype=np.float)
     tree = KDTree(points)
-    assert_equal([4, 8, 9, 12], tree.query_ball_point((2, 0), 1))
+    assert_equal(sorted([4, 8, 9, 12]),
+                 sorted(tree.query_ball_point((2, 0), 1)))
 
 
 if __name__=="__main__":
