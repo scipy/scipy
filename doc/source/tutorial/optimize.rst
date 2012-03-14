@@ -5,6 +5,8 @@ Optimization (:mod:`scipy.optimize`)
 
 .. sectionauthor:: Pauli Virtanen
 
+.. sectionauthor:: Denis Laxalde
+
 .. currentmodule:: scipy.optimize
 
 The :mod:`scipy.optimize` package provides several commonly used
@@ -22,8 +24,8 @@ The module contains:
 3. Least-squares minimization (:func:`leastsq`) and curve fitting
    (:func:`curve_fit`) algorithms
 
-4. Scalar function minimizers and root finders (e.g., Brent's method
-   :func:`fminbound`, and :func:`newton`)
+4. Scalar univariate functions minimizers (:func:`minimize_scalar`) and
+   root finders (:func:`newton`)
 
 5. Multivariate equation system solvers (:func:`fsolve`)
 
@@ -459,48 +461,59 @@ This is shown in the following example:
 ..             :obj:`scipy.optimize.leastsq`
 
 
-Scalar function minimizers
---------------------------
+Univariate function minimizers (:func:`minimize_scalar`)
+--------------------------------------------------------
 
-Often only the minimum of a scalar function is needed (a scalar
-function is one that takes a scalar as input and returns a scalar
-output). In these circumstances, other optimization techniques have
-been developed that can work faster.
-
-
-Unconstrained minimization (:func:`brent`)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-There are actually two methods that can be used to minimize a scalar
-function (:obj:`brent` and :func:`golden`), but :obj:`golden` is
-included only for academic purposes and should rarely be used. The
-brent method uses Brent's algorithm for locating a minimum. Optimally
-a bracket should be given which contains the minimum desired. A
-bracket is a triple :math:`\left(a,b,c\right)` such that
-:math:`f\left(a\right)>f\left(b\right)<f\left(c\right)` and
-:math:`a<b<c` . If this is not given, then alternatively two starting
-points can be chosen and a bracket will be found from these points
-using a simple marching algorithm. If these two starting points are
-not provided 0 and 1 will be used (this may not be the right choice
-for your function and result in an unexpected minimum being returned).
+Often only the minimum of an univariate function (i.e. a function that
+takes a scalar as input) is needed. In these circumstances, other
+optimization techniques have been developed that can work faster. These are
+accessible from the :func:`minimize_scalar` function which proposes several
+algorithms.
 
 
-Bounded minimization (:func:`fminbound`)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Unconstrained minimization (``method='brent'``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Thus far all of the minimization routines described have been
-unconstrained minimization routines. Very often, however, there are
-constraints that can be placed on the solution space before
-minimization occurs. The :obj:`fminbound` function is an example of a
-constrained minimization procedure that provides a rudimentary
-interval constraint for scalar functions. The interval constraint
-allows the minimization to occur only between two fixed endpoints.
+There are actually two methods that can be used to minimize an univariate
+function: `brent` and `golden`, but `golden` is included only for academic
+purposes and should rarely be used. These can be respectively selected
+through the `method` parameter in :func:`minimize_scalar`. The `brent`
+method uses Brent's algorithm for locating a minimum. Optimally a bracket
+(the `bs` parameter) should be given which contains the minimum desired. A
+bracket is a triple :math:`\left( a, b, c \right)` such that :math:`f
+\left( a \right) > f \left( b \right) < f \left( c \right)` and :math:`a <
+b < c` . If this is not given, then alternatively two starting points can
+be chosen and a bracket will be found from these points using a simple
+marching algorithm. If these two starting points are not provided `0` and
+`1` will be used (this may not be the right choice for your function and
+result in an unexpected minimum being returned).
 
-For example, to find the minimum of :math:`J_{1}\left(x\right)` near :math:`x=5` , :obj:`fminbound` can be called using the interval :math:`\left[4,7\right]` as a constraint. The result is :math:`x_{\textrm{min}}=5.3314` :
+Here is an example:
+
+    >>> from scipy.optimize import minimize_scalar
+    >>> f = lambda x: (x - 2) * (x + 1)**2
+    >>> xmin = minimize_scalar(f, method='brent')
+    >>> print xmin
+    1.0
+
+
+Bounded minimization (``method='bounded'``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Very often, there are constraints that can be placed on the solution space
+before minimization occurs. The `bounded` method in :func:`minimize_scalar`
+is an example of a constrained minimization procedure that provides a
+rudimentary interval constraint for scalar functions. The interval
+constraint allows the minimization to occur only between two fixed
+endpoints, specified using the mandatory `bs` parameter.
+
+For example, to find the minimum of :math:`J_{1}\left( x \right)` near
+:math:`x=5` , :func:`minimize_scalar` can be called using the interval
+:math:`\left[ 4, 7 \right]` as a constraint. The result is
+:math:`x_{\textrm{min}}=5.3314` :
 
     >>> from scipy.special import j1
-    >>> from scipy.optimize import fminbound
-    >>> xmin = fminbound(j1, 4, 7)
+    >>> xmin = minimize_scalar(j1, bs=(4, 7), method='bounded')
     >>> print xmin
     5.33144184241
 
