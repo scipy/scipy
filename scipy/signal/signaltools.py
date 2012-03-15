@@ -1530,12 +1530,12 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
     x0 = axis_slice(ext, stop=1, axis=axis)
 
     # Forward filter.
-    (y, zf) = lfilter(b, a, ext, zi=zi * x0)
+    (y, zf) = lfilter(b, a, ext, axis=axis, zi=zi * x0)
 
     # Backward filter.
     # Create y0 so zi*y0 broadcasts appropriately.
     y0 = axis_slice(y, start=-1, axis=axis)
-    (y, zf) = lfilter(b, a, axis_reverse(y, axis=axis), zi=zi * y0)
+    (y, zf) = lfilter(b, a, axis_reverse(y, axis=axis), axis=axis, zi=zi * y0)
 
     # Reverse y.
     y = axis_reverse(y, axis=axis)
