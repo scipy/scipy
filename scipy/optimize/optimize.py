@@ -1377,6 +1377,11 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     numfunc : int
       The number of function calls made.
 
+    See also
+    --------
+    minimize_scalar: Interface to minimization algorithms for scalar
+        univariate functions. See the 'Bounded' `method` in particular.
+
     Notes
     -----
     Finds a local minimizer of the scalar function `func` in the
@@ -1700,6 +1705,11 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     funcalls : int
         Number of objective function evaluations made.
 
+    See also
+    --------
+    minimize_scalar: Interface to minimization algorithms for scalar
+        univariate functions. See the 'Brent' `method` in particular.
+
     Notes
     -----
     Uses inverse parabolic interpolation when possible to speed up
@@ -1757,6 +1767,11 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
         x tolerance stop criterion
     full_output : bool
         If True, return optional outputs.
+
+    See also
+    --------
+    minimize_scalar: Interface to minimization algorithms for scalar
+        univariate functions. See the 'Golden' `method` in particular.
 
     Notes
     -----
