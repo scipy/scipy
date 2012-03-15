@@ -107,6 +107,11 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         * d['grad'] is the gradient at the minimum (should be 0 ish)
         * d['funcalls'] is the number of function calls made.
 
+    See also
+    --------
+    minimize: Interface to minimization algorithms for multivariate
+        functions. See the 'L-BFGS-B' `method` in particular.
+
     Notes
     -----
     License of L-BFGS-B (Fortran code):

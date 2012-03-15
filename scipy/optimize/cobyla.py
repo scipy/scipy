@@ -55,6 +55,11 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
     x : ndarray
         The argument that minimises `f`.
 
+    See also
+    --------
+    minimize: Interface to minimization algorithms for multivariate
+        functions. See the 'COBYLA' `method` in particular.
+
     Notes
     -----
     This algorithm is based on linear approximations to the objective

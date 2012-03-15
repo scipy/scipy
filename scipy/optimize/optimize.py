@@ -262,9 +262,8 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
     See also
     --------
-    minimize: Interface to unconstrained minimization algorithms for
-        multivariate functions. See the 'Nelder-Mead' `method` in
-        particular.
+    minimize: Interface to minimization algorithms for multivariate
+        functions. See the 'Nelder-Mead' `method` in particular.
 
     Notes
     -----
@@ -651,8 +650,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 
     See also
     --------
-    minimize: Interface to unconstrained minimization algorithms for
-        multivariate functions. See the 'BFGS' `method` in particular.
+    minimize: Interface to minimization algorithms for multivariate
+        functions. See the 'BFGS' `method` in particular.
 
     Notes
     -----
@@ -904,8 +903,8 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
 
     See also
     --------
-    minimize: Interface to unconstrained minimization algorithms for
-        multivariate functions. See the 'CG' `method` in particular.
+    minimize: Interface to minimization algorithms for multivariate
+        functions. See the 'CG' `method` in particular.
 
     Notes
     -----
@@ -1136,8 +1135,8 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
 
     See also
     --------
-    minimize: Interface to unconstrained minimization algorithms for
-        multivariate functions. See the 'Newton-CG' `method` in particular.
+    minimize: Interface to minimization algorithms for multivariate
+        functions. See the 'Newton-CG' `method` in particular.
 
     Notes
     -----

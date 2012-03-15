@@ -180,6 +180,11 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         Return code as defined in the RCSTRINGS dict.
 
 
+    See also
+    --------
+    minimize: Interface to minimization algorithms for multivariate
+        functions. See the 'TNC' `method` in particular.
+
     Notes
     -----
     The underlying algorithm is truncated Newton, also called

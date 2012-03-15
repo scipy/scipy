@@ -224,6 +224,11 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
                 4 : Maximum accepted query locations reached
                 5 : Final point not the minimum amongst encountered points
 
+    See also
+    --------
+    minimize: Interface to minimization algorithms for multivariate
+        functions. See the 'Anneal' `method` in particular.
+
     Notes
     -----
     Simulated annealing is a random algorithm which uses no derivative
