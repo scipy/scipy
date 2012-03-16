@@ -13,7 +13,7 @@ from itertools import count
 from scipy.linalg import solve_triangular, qr, qr_multiply, norm
 from _qrsolv import qrsolv
 
-__all__ = ["Fit", "FitError", "InvalidParameter", "leastsq"]
+__all__ = ["Fit", "FitError", "InvalidParameter", "leastsq", "minimize"]
 
 class FitError(Exception):
     """ The error raised while fitting
@@ -656,6 +656,56 @@ class Fit(object):
         if x is None:
             x = self.params
         return sqrt(diagonal(self.covar(x, eps)))
+
+def minimize(fun, x0, args=(), method="maquardt-levenberg", jac=None,
+             options=dict(), full_output=False, callback=None, retall=False):
+    class MyFit(Fit):
+        def func(self, x):
+            return fun(x, *args)
+
+        if jac is not None:
+            def jacobian(self, x, fvec, ret):
+                return jac(x)
+
+        def plot(self, x, f, good):
+            if callback is not None:
+                callback(x)
+            if retall:
+                self.allvecs.append(x.copy())
+    fit = MyFit()
+    try:
+        fit.allvecs = [ ]
+        ret = fit.fit(x0, **options)
+        success = True
+    except FitError as e:
+        mesg = e.message
+        success = False
+    else:
+        mesg = [
+            "an unknown (typically user) error has occurred",
+            "both actual and predicted relative reductions "
+                "in the sum of squares are at most `ftol`.",
+            "relative error between two consecutive "
+                "iterates is at most `xtol`",
+            "the actual and predicted relative reductions "
+                "in the sum of squares are at most `ftol`, "
+                "and relative error between two consecutive "
+                "iterates is at most `xtol`",
+            "the cosine of the angle between function value and any "
+                "column of the Jacobian is at most `gtol` in absolute value."
+            ][fit.exitcode]
+    info = {
+            "solution": ret,
+            "success": success,
+            "status": fit.exitcode,
+            "message": mesg,
+            "fun": fit.fvec,
+            "nfev": fit.nfev,
+            "nit": fit.iterations
+        }
+    if retall:
+        info["allvecs"] = fit.allvecs
+    return ret, info
 
 def leastsq(func, x0, args=(), Dfun=None, full_output=0, col_deriv=0, **kwargs):
     """ Function equivalent to the class `Fit`
