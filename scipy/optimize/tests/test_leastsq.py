@@ -2,7 +2,7 @@ import unittest
 from numpy import array, arange, exp, linspace, empty, sqrt
 from numpy.random import standard_normal
 from numpy.testing import assert_equal, assert_almost_equal
-from scipy.optimize import Fit, InvalidParameter
+from scipy.optimize import Fit, InvalidParameter, Function, fitfunction
 from scipy.optimize.lmfit import minimize
 
 class TestGaussian(unittest.TestCase, Fit):
@@ -104,6 +104,28 @@ class TestGaussianJacobian(unittest.TestCase, Fit):
         r, info = minimize(self.func, [0.9, 2.1, 3.1, 4.1], jac=self.jacobian,
             retall=True)
         assert_almost_equal(r, [1, 2, 3, 4], decimal=2)
+
+class TestConvenience(unittest.TestCase):
+    x = arange(10)
+    y = array([0.1, 1.5, 2.7, 3.2, 4.8, 5.3, 4.4, 3.6, 2.9, 1.0])
+
+    def gauss(self, x, a, b, c):
+        return a * exp(-((x - b) / c) ** 2 / 2)
+
+    def test_class(self):
+        f = Function(self.gauss, a=1, b=5, c=2)
+        r = f.fit(self.x, self.y, a=1, b=4)
+        assert_almost_equal([r[v] for v in "ab"], [5.56, 5], decimal=2)
+
+    def test_decorator(self):
+        @fitfunction(a=1, b=2, c=2)
+        def gauss(x, a, b, c):
+            return a * exp(-((x - b) / c) ** 2 / 2)
+
+        r = gauss.fit(self.x, self.y, a=1, b=4)
+        assert_almost_equal([r[v] for v in "ab"], [5.56, 5], decimal=2)
+        r = gauss([1, 2, 3])
+        assert_almost_equal(r, [0.74, 1.79, 3.35], decimal=2)
 
 if __name__ == '__main__':
     unittest.main()
