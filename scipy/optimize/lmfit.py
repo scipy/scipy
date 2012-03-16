@@ -12,8 +12,10 @@ from numpy import (array, diagonal, dot, empty, eye, finfo, maximum, meshgrid,
 from itertools import count
 from scipy.linalg import solve_triangular, qr, qr_multiply, norm
 from _qrsolv import qrsolv
+import functools
 
-__all__ = ["Fit", "FitError", "InvalidParameter", "leastsq", "minimize"]
+__all__ = ["Fit", "FitError", "InvalidParameter", "leastsq",
+    "Function", "fitfunction"]
 
 class FitError(Exception):
     """ The error raised while fitting
@@ -706,6 +708,135 @@ def minimize(fun, x0, args=(), method="maquardt-levenberg", jac=None,
     if retall:
         info["allvecs"] = fit.allvecs
     return ret, info
+
+class Function(Fit, dict):
+    """Convenience class to fit to python functions
+
+    This class is a specialization of the `Fit` class,
+    if one wants to fit to a simple python function. A possibly
+    even simpler way to do so is the decorator `fitfunction`.
+
+    An example::
+
+        # define the function we want to fit to:
+        def gaussian(x, width, height, position):
+            return height * np.exp(-((x - position) / width) ** 2 / 2)
+
+        # make an object and define the functions parameters and their
+        # default values (they must coincide in name!)
+        fit = Function(gaussian, width=1, height=1, position=1)
+
+        x = np.arange(10)
+        y = np.array([0.1, 1.5, 2.7, 3.2, 4.8, 5.3, 4.4, 3.6, 2.9, 1.0])
+
+        # fit to the data. Give the starting values for width and
+        # height. As position is not mentioned, don't fit it, keep it
+        # constant.
+        fit.fit(x, y, width=1, height=1)
+
+        plt.plot(x, y, ".")
+        plt.plot(x, fit(x)) # one can simply use fit as a function!
+
+    Parameters
+    ----------
+    function : function
+        The function to fit to. See the attribute `function`.
+    additional parameters : must coincide with parameters to function
+        Gives the default values for the function's parameters.
+
+    Attributes
+    ----------
+    function : function
+        this is the function to call from this object. The first
+        parameter to this function is the variable to which we fit,
+        the others are the actual parameters.
+    parameters : list of strings
+        lists the names of the parameters of the fitting functions,
+        as they are declared. They are used both as attributes in the
+        object, as well as parameters to the function.
+    fitparameters : list of strings
+        while fitting, this is the list of parameters which are actually
+        fitted. All other parameters stay constant.  """
+
+    def __init__(self, function=None, **parameters):
+        self.function = function
+        dict.__init__(self, parameters)
+
+    def __call__(self, x):
+        """Call the user-supplied function
+
+        Here we call the user-supplied function with its variable `x`
+        and all parameters as currently stored in the object. """
+
+        try:
+            return self.function(x, **self)
+        except InvalidParameter as e:
+            if not isinstance(e.number, (list, tuple)):
+                e.number = e.number,
+            e.number = [self.fitparameters.index(n) for n in e.number]
+            raise
+
+    def func(self, x):
+        """The fitting function
+
+        This function sets the currently tried values of the 
+        fit to the local parameters, and then calls the user supplied
+        function. """
+
+        for p, xx in zip(self.fitparameters, x):
+            self[p] = xx
+        return self(self.datax) - self.datay
+
+    def fit(self, x, y, **parameters):
+        """Fit to data `x` and `y`.
+
+        This function performs the actual fit, by minimizing
+        ``|f(x) - y|``, varying the parameters to the user-supplied
+        function `f`. """
+
+        self.datax = x
+        self.datay = y
+        self.fitparameters, start = zip(*parameters.items())
+        ret = Fit.fit(self, start)
+        return dict(zip(self.fitparameters, ret))
+
+def fitfunction(**defaults):
+    """Decorator to turn a function into a fitting function
+
+    This decorator turns a normal function into a fittable function,
+    which is an object of the class `Function`. As parameters to this
+    decorator you give the default values for the fitted parameters.
+    An example::
+
+        @fitfunction(width=1, height=1, position=0)
+        def gaussian(x, width, height, position):
+            return height * exp(-((x - position) / width) ** 2 / 2)
+
+    gives you a function in one variable (`x`) that represents a Gaussian
+    with the parameters already set. So, by typing ::
+
+        >>> x = np.linspace(-20, 20, 101)
+        >>> plt.plot(x, gaussian(x))
+
+    you get a plot of this Gaussian. You may change the default values::
+
+        >>> gaussian["width"] = 2 
+
+    The whole point of this function then is to be able to fit to
+    data, e.g.  by ::
+
+        >>> x = np.arange(10)
+        >>> y = np.array([0.1, 1.5, 2.7, 3.2, 4.8, 5.3, 4.4, 3.6, 2.9, 1.0])
+        >>> gaussian.fit(x, y, width=1, height=2)
+
+    where the additional named parameters are the default values for
+    the parameters to fit. All other parameters are kept constant
+    at the previously defined value. """
+
+    def wrapper(f):
+        ret = Function(f, **defaults)
+        return functools.wraps(f)(ret)
+    return wrapper
 
 def leastsq(func, x0, args=(), Dfun=None, full_output=0, col_deriv=0, **kwargs):
     """ Function equivalent to the class `Fit`
