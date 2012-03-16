@@ -3,6 +3,7 @@ from numpy import array, arange, exp, linspace, empty, sqrt
 from numpy.random import standard_normal
 from numpy.testing import assert_equal, assert_almost_equal
 from scipy.optimize import Fit, InvalidParameter
+from scipy.optimize.lmfit import minimize
 
 class TestGaussian(unittest.TestCase, Fit):
     def setUp(self):
@@ -67,6 +68,42 @@ class TestGaussian(unittest.TestCase, Fit):
         assert_almost_equal(self.error(), [0.10, 0.33, 0.66, 0.59, 0],
             decimal=1)
         
+    def test_minimize(self):
+        self.x = linspace(-20, 20, 100)
+        self.y = standard_normal(len(self.x)) / 100
+        p = array([1., 2., 3., 4.])
+        self.y = self.func(p)
+        r, info = minimize(self.func, [0.9, 2.1, 3.1, 4.1])
+        assert_almost_equal(r, [1, 2, 3, 4], decimal=2)
+
+class TestGaussianJacobian(unittest.TestCase, Fit):
+    def func(self, p):
+        return p[0] + p[1] * exp(-((self.x - p[3]) / p[2]) ** 2 / 2) - self.y
+
+    def jacobian(self, p, fvec=None, ret=None):
+        if ret is None:
+            ret = empty((len(self.x), len(p)))
+        ret[:, 0] = 1
+        ex = exp(-((self.x - p[3]) / p[2]) ** 2 / 2)
+        ret[:, 1] = ex
+        ret[:, 2] = p[1] * ex * ((self.x - p[3]) ** 2 / p[2] ** 3)
+        ret[:, 3] = p[1] * ex * ((self.x - p[3]) / p[2] ** 2)
+        return ret
+
+    def test_gaussian(self):
+        self.y = array([0.1, 1.5, 2.7, 3.2, 4.8, 5.3, 4.4, 3.6, 2.9, 1.0])
+        self.x = arange(10.)
+        r = self.fit([1., 2, 3, 4])
+        assert_almost_equal(r, [-1.91, 6.87, 3.22, 4.99], decimal=2)
+
+    def test_minimize(self):
+        self.x = linspace(-20, 20, 100)
+        self.y = standard_normal(len(self.x)) / 100
+        p = array([1., 2., 3., 4.])
+        self.y = self.func(p)
+        r, info = minimize(self.func, [0.9, 2.1, 3.1, 4.1], jac=self.jacobian,
+            retall=True)
+        assert_almost_equal(r, [1, 2, 3, 4], decimal=2)
 
 if __name__ == '__main__':
     unittest.main()
