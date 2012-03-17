@@ -193,19 +193,31 @@ latex_documents = [
 # Additional stuff for the LaTeX preamble.
 latex_preamble = r'''
 \usepackage{amsmath}
+
 \DeclareUnicodeCharacter{00A0}{\nobreakspace}
 
-% In the parameters section, place a newline after the Parameters
-% header
+% In the parameters etc. sections, align uniformly, and adjust label emphasis
 \usepackage{expdlist}
 \let\latexdescription=\description
-\def\description{\latexdescription{}{} \breaklabel}
+\let\endlatexdescription=\enddescription
+\renewenvironment{description}%
+{\begin{latexdescription}[\setleftmargin{60pt}\breaklabel\setlabelstyle{\bfseries\itshape}]}%
+{\end{latexdescription}}
 
 % Make Examples/etc section headers smaller and more compact
 \makeatletter
 \titleformat{\paragraph}{\normalsize\py@HeaderFamily}%
             {\py@TitleColor}{0em}{\py@TitleColor}{\py@NormalColor}
 \titlespacing*{\paragraph}{0pt}{1ex}{0pt}
+\makeatother
+
+% Save vertical space in parameter lists and elsewhere
+\makeatletter
+\renewenvironment{quote}%
+               {\list{}{\topsep=0pt%
+                        \parsep \z@ \@plus\p@}%
+                \item\relax}%
+               {\endlist}
 \makeatother
 
 % Fix footer/header
