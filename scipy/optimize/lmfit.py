@@ -357,6 +357,7 @@ class Fit(object):
             ``A x = b,    sqrt(par) D x = 0``,
             for the output `par`. """
         dwarf = finfo(r.dtype).tiny
+
         # Compute and store in x the Gauss-Newton direction. If the
         # jacobian is rank-deficient, obtain a least squares solution.
         condition = diagonal(r) == 0
@@ -366,30 +367,35 @@ class Fit(object):
             nsing = r.shape[1]
         x = zeros_like(qtb)
         x[ipvt[:nsing]] = solve_triangular(r[:nsing, :nsing], qtb[:nsing])
+
         # Evaluate the function at the origin, and test
-        # for acceptance of the gauss-newton direction.
+        # for acceptance of the Gauss-Newton direction.
         dxnorm = norm(diag * x)
         fp = dxnorm - delta
         if fp < 0.1 * delta:
             return 0, x
-        # If the jacobian is not rank deficient, the Newton
+
+        # If the Jacobian is not rank deficient, the Newton
         # step provides a lower bound, parl, for the zero of
         # the function. Otherwise set this bound to zero.
         parl = 0
         if nsing == r.shape[0]:
             parl = fp / delta / (solve_triangular(r, 
                 (diag ** 2 * x)[ipvt] / dxnorm, trans=1) ** 2).sum()
+
         # Calculate an upper bound, paru, for the zero of the function.
         gnorm = norm(dot(qtb, r) / diag[ipvt])
         paru = gnorm / delta
         if paru == 0:
             paru = dwarf / min(delta, 0.1)
+
         # If the input par lies outside of the interval (parl, paru),
         # set par to the closer endpoint.
         par = max(par, parl)
         par = min(par, paru)
         if par == 0:
             par = gnorm / dxnorm 
+
         for iter in count():
             # Evaluate the function at the current value of par.
             if par == 0:
@@ -398,12 +404,14 @@ class Fit(object):
             dxnorm = norm(diag * x)
             temp = fp
             fp = dxnorm - delta
+
             # If the function is small enough, accept the current value
             # of par. Also test for the exceptional cases where parl
             # is zero or the number of iterations has reached 10.
             if (abs(fp) <= 0.1 * delta or (parl == 0 and fp <= temp < 0)
                     or iter == 10):
                 return par, x
+
             # Compute the Newton correction.
             parc = fp / delta / (
                 solve_triangular(s, (diag ** 2 * x)[ipvt] / dxnorm, trans=1
@@ -494,7 +502,8 @@ class Fit(object):
         self.eps = epsfcn
         self.running = True
         self.exitcode = 0
-        fjac = empty((len(self.fvec), len(x)), dtype=self.fvec.dtype, order="F")
+        fjac = empty((len(self.fvec), len(x)),
+                     dtype=self.fvec.dtype, order="F")
 
         for self.iterations in range(iterations):
             fjac = self.jacobian(x, self.fvec, fjac)
@@ -514,15 +523,19 @@ class Fit(object):
                 if delta == 0:
                     delta = factor 
             fjacnorm[fjacnorm == 0] = -1
+
             gnorm = 0 if fnorm == 0 else (
                 abs(dot(r.T, qtf) / fnorm) / fjacnorm[ipvt]).max()
             if gnorm <= gtol:
                 self.exitcode = 4
                 return x
+
             if diagin is None: 
                 self.scale = maximum(self.scale, fjacnorm) 
             ratio = 0
             while ratio < 0.0001:
+                # determine the LM parameter, and calculate function
+                # at new position. If that fails, reduce step bound
                 par, p = self._lmpar(r, qtf, ipvt, self.scale, delta, par)
                 testx = x - p
                 pnorm = norm(self.scale * p)
@@ -539,8 +552,12 @@ class Fit(object):
                         continue
                     else:
                         return x
+
+                # adjust the initial step bound
                 if self.iterations == 0:
                     delta = min(delta, pnorm)
+
+                # calculate the metrics for convergence
                 testfnorm = norm(testf)
                 actual_reduction = -1
                 if 0.1 * testfnorm < fnorm:
@@ -549,9 +566,10 @@ class Fit(object):
                 temp2 = sqrt(par) * pnorm / fnorm
                 predicted_reduction = temp1 ** 2 + 2 * temp2 ** 2
                 directional_deriv = -(temp1 ** 2 + temp2 ** 2)
-                ratio = 0
-                if predicted_reduction != 0:
-                    ratio = actual_reduction / predicted_reduction
+                ratio = (actual_reduction / predicted_reduction
+                    if predicted_reduction != 0 else 0)
+
+                # update the step bound
                 if ratio <= 0.25:
                     if actual_reduction > 0:
                         temp = 0.5
@@ -565,6 +583,8 @@ class Fit(object):
                 elif par == 0 or ratio > 0.75:
                     delta = 2 * pnorm
                     par = 0.5 * par
+
+                # if iteration is successful, update parameters
                 if ratio >= 0.0001:
                     x = testx
                     self.params = x
@@ -574,12 +594,16 @@ class Fit(object):
                     self.plot(x, self.fvec, True)
                 else:
                     self.plot(testx, testf, False)
+
+                # test for convergence
                 c1 = (abs(actual_reduction) <= ftol and
                       predicted_reduction <= ftol and ratio <= 2)
                 c2 = delta <= (xtol * xnorm)
                 self.exitcode = 2 * c2 + c1
                 if c1 or c2 or not self.running:
                     return x
+
+                # tests for termination and stringent tolerances.
                 if gnorm < epsmch:
                     self.exitcode = 8
                     raise FitError(8, "gtol=%f is too small, func(x) is " 
