@@ -444,19 +444,19 @@ class Fit(object):
         x : vector, length N
             an initial estimate of the solution vector
 
-        ftol : float, optional
+        ftol : float, >= 0, optional
             Termination occurs when both the actual and predicted
             relative reductions in the sum of squares are at most
             `ftol`.  Therefore, `ftol` measures the relative error
             desired in the sum of squares.
      
-        xtol : float, > 0, optional
+        xtol : float, >= 0, optional
             Termination occurs when the relative error between two
             consecutive iterates is at most `xtol`. Therefore, `xtol`
             measures the relative error desired in the approximate
             solution.
      
-        gtol : float, > 0, optional
+        gtol : float, >= 0, optional
             Termination occurs when the cosine of the angle between
             the function and any column of the jacobian is at most
             `gtol` in absolute value. Therefore, `gtol` measures the
@@ -466,7 +466,7 @@ class Fit(object):
         iterations : int, optional
             is the maximum number of iterations.
      
-        factor : float, > 0
+        factor : float, > 0, optional
             used in determining the initial step bound. this bound is
             set to the product of factor and the Euclidean norm of
             `diag * x` if nonzero, or else to factor itself. In most
