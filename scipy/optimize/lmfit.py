@@ -527,7 +527,7 @@ class Fit(object):
                 testx = x - p
                 pnorm = norm(self.scale * p)
                 try:
-                    self.nfev = 1
+                    self.nfev += 1
                     testf = self.func(testx)
                 except InvalidParameter as error:
                     if error.number is not None:
