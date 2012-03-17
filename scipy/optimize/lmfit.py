@@ -514,16 +514,16 @@ class Fit(object):
                 if delta == 0:
                     delta = factor 
             fjacnorm[fjacnorm == 0] = -1
-            gnorm = (abs(dot(r.T, qtf) / fnorm) / fjacnorm[ipvt]).max()
-            if gnorm < gtol:
+            gnorm = 0 if fnorm == 0 else (
+                abs(dot(r.T, qtf) / fnorm) / fjacnorm[ipvt]).max()
+            if gnorm <= gtol:
                 self.exitcode = 4
                 return x
             if diagin is None: 
                 self.scale = maximum(self.scale, fjacnorm) 
             ratio = 0
             while ratio < 0.0001:
-                par, p = self._lmpar(r, qtf, ipvt,
-                                    self.scale, delta, par)
+                par, p = self._lmpar(r, qtf, ipvt, self.scale, delta, par)
                 testx = x - p
                 pnorm = norm(self.scale * p)
                 try:
