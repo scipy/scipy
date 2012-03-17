@@ -856,7 +856,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0, col_deriv=0, **kwargs):
                     return Dfun(x).T
     fit = MyFit()
     try:
-        ret = fit.fit(x0, *kwargs)
+        ret = fit.fit(x0, **kwargs)
     except FitError as e:
         mesg = e.message
     except ValueError as e: # make the minpack tests happy
