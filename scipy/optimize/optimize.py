@@ -1376,6 +1376,11 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     numfunc : int
       The number of function calls made.
 
+    See also
+    --------
+    minimize_scalar: Interface to minimization algorithms for scalar
+        univariate functions. See the 'Bounded' `method` in particular.
+
     Notes
     -----
     Finds a local minimizer of the scalar function `func` in the
@@ -1383,8 +1388,29 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     for auto-bracketing).
 
     """
-    # Test bounds are of correct form
+    options = {'xtol': xtol,
+               'maxfev': maxfun,
+               'disp': disp}
 
+    out =  _minimize_scalar_bounded(func, (x1, x2), args, options,
+                                    full_output)
+    if full_output:
+        x, info = out
+        return x, info['fun'], info['status'], info['nfev']
+    else:
+        return out
+
+def _minimize_scalar_bounded(func, brack, args=(), options={},
+                             full_output=False):
+    # retrieve options
+    xtol = options.get('xtol', 1e-5)
+    maxfun = options.get('maxfev', 500)
+    disp = options.get('disp', 0)
+    # Test bounds are of correct form
+    try:
+        x1, x2 = brack
+    except TypeError:
+        raise ValueError('bounds must have two elements.')
     if not (is_array_scalar(x1) and is_array_scalar(x2)):
         raise ValueError("Optimisation bounds must be scalars"
                          " or array scalars.")
@@ -1485,20 +1511,22 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
 
         if num >= maxfun:
             flag = 1
-            fval = fx
-            if disp > 0:
-                _endprint(x, flag, fval, maxfun, xtol, disp)
-            if full_output:
-                return xf, fval, flag, num
-            else:
-                return xf
+            break
 
     fval = fx
     if disp > 0:
         _endprint(x, flag, fval, maxfun, xtol, disp)
 
     if full_output:
-        return xf, fval, flag, num
+        info = {'fun': fval,
+                'status': flag,
+                'success': flag == 0,
+                'message': {0: 'Solution found.',
+                            1: 'Maximum number of function '
+                               'calls reached.'}.get(flag, ''),
+                'nfev': num}
+
+        return xf, info
     else:
         return xf
 
@@ -1676,19 +1704,46 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     funcalls : int
         Number of objective function evaluations made.
 
+    See also
+    --------
+    minimize_scalar: Interface to minimization algorithms for scalar
+        univariate functions. See the 'Brent' `method` in particular.
+
     Notes
     -----
     Uses inverse parabolic interpolation when possible to speed up
     convergence of golden section method.
 
     """
+    options = {'ftol': tol,
+               'maxiter': maxiter}
+    out = _minimize_scalar_brent(func, brack, args, options, full_output)
+    if full_output:
+        x, info = out
+        return x, info['fun'], info['nit'], info['nfev']
+    else:
+        return out
+
+def _minimize_scalar_brent(func, brack=None, args=(), options={},
+                           full_output=False):
+    # retrieve options
+    tol = options.get('ftol', 1.48e-8)
+    maxiter = options.get('maxiter', 500)
+
 
     brent = Brent(func=func, args=args, tol=tol,
                   full_output=full_output, maxiter=maxiter)
     brent.set_bracket(brack)
     brent.optimize()
-    return brent.get_result(full_output=full_output)
-
+    out = brent.get_result(full_output=full_output)
+    if full_output:
+        x, fval, nit, nfev = out
+        info = {'fun': fval,
+                'nit': nit,
+                'nfev': nfev}
+        return x, info
+    else:
+        return out
 
 def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
     """ Given a function of one-variable and a possible bracketing interval,
@@ -1712,12 +1767,28 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
     full_output : bool
         If True, return optional outputs.
 
+    See also
+    --------
+    minimize_scalar: Interface to minimization algorithms for scalar
+        univariate functions. See the 'Golden' `method` in particular.
+
     Notes
     -----
     Uses analog of bisection method to decrease the bracketed
     interval.
 
     """
+    options = {'ftol': tol}
+    out = _minimize_scalar_golden(func, brack, args, options, full_output)
+    if full_output:
+        x, info = out
+        return x, info['fun'], info['nfev']
+    else:
+        return out
+
+def _minimize_scalar_golden(func, brack=None, args=(), options={},
+                            full_output=False):
+    tol = options.get('ftol', _epsilon)
     if brack is None:
         xa, xb, xc, fa, fb, fc, funcalls = bracket(func, args=args)
     elif len(brack) == 2:
@@ -1765,7 +1836,8 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
         xmin = x2
         fval = f2
     if full_output:
-        return xmin, fval, funcalls
+        info = {'fun': fval, 'nfev': funcalls}
+        return xmin, info
     else:
         return xmin
 
