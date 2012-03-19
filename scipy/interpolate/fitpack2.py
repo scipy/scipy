@@ -18,7 +18,7 @@ __all__ = [
     'LSQSphereBivariateSpline',
     'SmoothSphereBivariateSpline',
     'RectBivariateSpline',
-    'RectSpherBivariateSpline']
+    'RectSphereBivariateSpline']
 
 from types import NoneType
 
@@ -1061,7 +1061,7 @@ ERROR: on entry, the input data are controlled on validity
        approximation returned."""
 
 
-class RectSpherBivariateSpline(BivariateSpline):
+class RectSphereBivariateSpline(BivariateSpline):
     """
     Bivariate spline approximation over a rectangular mesh on a sphere.
 
@@ -1136,10 +1136,10 @@ class RectSpherBivariateSpline(BivariateSpline):
 
     We need to set up the interpolator object
 
-    >>> from scipy.interpolate import RectSpherBivariateSpline
-    >>> lut = RectSpherBivariateSpline(lats, lons, data)
+    >>> from scipy.interpolate import RectSphereBivariateSpline
+    >>> lut = RectSphereBivariateSpline(lats, lons, data)
 
-    Finally we interpolate the data.  The `RectSpherBivariateSpline` object
+    Finally we interpolate the data.  The `RectSphereBivariateSpline` object
     only takes 1-D arrays as input, therefore we need to do some reshaping.
 
     >>> data_interp = lut.ev(new_lats.ravel(),
@@ -1180,7 +1180,7 @@ class RectSpherBivariateSpline(BivariateSpline):
     >>> fig2 = plt.figure()
     >>> s = [3e9, 2e9, 1e9, 1e8]
     >>> for ii in xrange(len(s)):
-    >>>     lut = RectSpherBivariateSpline(lats, lons, data, s=s[ii])
+    >>>     lut = RectSphereBivariateSpline(lats, lons, data, s=s[ii])
     >>>     data_interp = lut.ev(new_lats.ravel(),
     ...                          new_lons.ravel()).reshape((360, 180)).T
     >>>     ax = fig2.add_subplot(2, 2, ii+1)
