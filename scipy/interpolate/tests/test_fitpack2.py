@@ -5,7 +5,7 @@ from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal,
         assert_array_almost_equal, assert_allclose, TestCase, run_module_suite
 from numpy import array, diff, shape, linspace, pi
 from scipy.interpolate.fitpack2 import UnivariateSpline, LSQBivariateSpline, \
-    SmoothBivariateSpline, RectBivariateSpline, RectSpherBivariateSpline
+    SmoothBivariateSpline, RectBivariateSpline, RectSphereBivariateSpline
 
 
 class TestUnivariateSpline(TestCase):
@@ -204,14 +204,14 @@ class TestRectBivariateSpline(TestCase):
         assert_almost_equal(zi, zi2)
 
 
-class TestRectSpherBivariateSpline(TestCase):
+class TestRectSphereBivariateSpline(TestCase):
     def test_defaults(self):
         y = linspace(0.01, 2*pi-0.01, 7)
         x = linspace(0.01, pi-0.01, 7)
         z = array([[1,2,1,2,1,2,1],[1,2,1,2,1,2,1],[1,2,3,2,1,2,1],
                    [1,2,2,2,1,2,1],[1,2,1,2,1,2,1],[1,2,2,2,1,2,1],
                    [1,2,1,2,1,2,1]])
-        lut = RectSpherBivariateSpline(x,y,z)
+        lut = RectSphereBivariateSpline(x,y,z)
         assert_array_almost_equal(lut(x,y),z)
 
     def test_evaluate(self):
@@ -220,7 +220,7 @@ class TestRectSpherBivariateSpline(TestCase):
         z = array([[1,2,1,2,1,2,1],[1,2,1,2,1,2,1],[1,2,3,2,1,2,1],
                    [1,2,2,2,1,2,1],[1,2,1,2,1,2,1],[1,2,2,2,1,2,1],
                    [1,2,1,2,1,2,1]])
-        lut = RectSpherBivariateSpline(x,y,z)
+        lut = RectSphereBivariateSpline(x,y,z)
         yi = [0.2, 1, 2.3, 2.35, 3.0, 3.99, 5.25]
         xi = [1.5, 0.4, 1.1, 0.45, 0.2345, 1., 0.0001]
         zi = lut.ev(xi, yi)

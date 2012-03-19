@@ -100,7 +100,7 @@ For data on a grid:
    :toctree: generated/
 
    RectBivariateSpline
-   RectSpherBivariateSpline
+   RectSphereBivariateSpline
 
 For unstructured data:
 
