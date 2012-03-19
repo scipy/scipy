@@ -1567,8 +1567,8 @@ def svds(A, k=6, ncv=None, tol=0):
     tol : float, optional
         Tolerance for singular values. Zero (default) means machine precision.
 
-    Note
-    ----
+    Notes
+    -----
     This is a naive implementation using an ARPACK as eigensolver on A.H * A
     or A * A.H, depending on which one is more efficient.
 

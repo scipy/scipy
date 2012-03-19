@@ -1362,7 +1362,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
 
 def squareform(X, force="no", checks=True):
-    r"""
+    """
     Converts a vector-form distance vector to a square-form distance
     matrix, and vice-versa.
 
@@ -1374,30 +1374,27 @@ def squareform(X, force="no", checks=True):
     Returns
     -------
        Y : ndarray
-           If a condensed distance matrix is passed, a redundant
-           one is returned, or if a redundant one is passed, a
-           condensed distance matrix is returned.
+           If a condensed distance matrix is passed, a redundant one is
+           returned, or if a redundant one is passed, a condensed distance
+           matrix is returned.
+       force : str, optional
+           As with MATLAB(TM), if force is equal to 'tovector' or 'tomatrix',
+           the input will be treated as a distance matrix or distance vector
+           respectively.
+       checks : bool, optional
+           If `checks` is set to False, no checks will be made for matrix
+           symmetry nor zero diagonals. This is useful if it is known that
+           ``X - X.T1`` is small and ``diag(X)`` is close to zero. These values
+           are ignored any way so they do not disrupt the squareform
+           transformation.
 
-       force : string
-           As with MATLAB(TM), if force is equal to 'tovector' or
-           'tomatrix', the input will be treated as a distance matrix
-           or distance vector respectively.
-
-       checks : bool
-           If ``checks`` is set to ``False``, no checks will be made
-           for matrix symmetry nor zero diagonals. This is useful if
-           it is known that ``X - X.T1`` is small and ``diag(X)`` is
-           close to zero. These values are ignored any way so they do
-           not disrupt the squareform transformation.
-
-
-    Calling Conventions
-    -------------------
+    Notes
+    -----
 
     1. v = squareform(X)
 
-       Given a square d by d symmetric distance matrix ``X``,
-       ``v=squareform(X)`` returns a :math:`d*(d-1)/2` (or
+       Given a square d-by-d symmetric distance matrix X,
+       ``v=squareform(X)`` returns a ``d * (d-1) / 2`` (or
        `${n \choose 2}$`) sized vector v.
 
       v[{n \choose 2}-{n-i \choose 2} + (j-i-1)] is the distance
