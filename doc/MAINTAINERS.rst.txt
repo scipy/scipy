@@ -1,0 +1,220 @@
+SciPy modules: maintainers & status
+===================================
+
+This document gives an overview of who the maintainers of modules within Scipy
+are, what their responsibilities are and what (in their view) are the current
+state and possible future directions for the modules.
+
+Maintainers will aim to:
+
+    - Respond to tickets, PRs and mailing list questions within a reasonable
+      time frame.
+    - Keep an overview of the current status and future directions of the
+      module up to date in this document.
+    - Indicate whether PRs are ready to be merged or not, and try to resolve
+      any differences of opinion on merging code if necessary.
+
+The above are listed as "aims" on purpose.  All developers work on Scipy in
+their free time and therefore, while we intend to do the best we can in the
+limited time available for our open source work, it is possible that we don't
+have the bandwidth to respond to every single issue.  The goal is to have more
+than one maintainer for each module, in which case this should rarely be an
+issue.
+
+
+Modules
+-------
+
+scipy.cluster        
+`````````````
+
+Maintainers:
+
+
+scipy.constants
+```````````````
+
+Maintainers: 
+
+    - Vincent Davis
+
+Status: 
+
+The constants module is up-to-date (NIST 2010 CODATA) and has no known bugs.
+
+
+scipy.fftpack
+`````````````
+
+Maintainers: 
+
+    - David Cournapeau
+
+Status: 
+
+The fftpack module is stable, with few known bugs and little development
+happening currently.
+
+
+scipy.integrate
+```````````````
+
+Maintainers: 
+
+
+scipy.interpolate
+`````````````````
+
+Maintainers: 
+
+    - Pauli Virtanen
+
+scipy.io
+````````
+
+Maintainers: 
+
+    - Matthew Brett (io.matlab)
+    - Thomas Robitaille (io.idl)
+    - David Cournapeau (io.harwell_boeing)
+    -                  (io.arff)
+    -                  (io.netcdf)
+    -                  (io.wavfile)
+
+Status:
+
+The io.idl module is stable and has no known bugs. It will need to be updated
+as needed if the IDL file format evolves, or if there are any bugs discovered.
+There is no real need for any new features.
+
+scipy.linalg         
+````````````
+
+Maintainers: 
+
+    - Pauli Virtanen
+
+
+scipy.misc
+``````````
+
+Maintainers: 
+
+    - Ralf Gommers
+
+
+scipy.ndimage        
+`````````````
+
+Maintainers:
+
+    - Stefan van der Walt
+
+
+scipy.odr
+`````````
+
+Maintainers: 
+
+
+scipy.optimize       
+``````````````
+
+Maintainers: 
+
+    - Denis Laxalde
+    - Pauli Virtanen
+
+
+scipy.signal         
+````````````
+
+Maintainers: 
+
+    - Warren Weckesser
+    - David Cournapeau
+
+
+scipy.sparse 
+````````````
+
+Maintainers:
+
+    - Jake Vanderplas
+    - Stefan van der Walt
+
+
+scipy.sparse.linalg
+```````````````````
+
+Maintainers: 
+
+    - Pauli Virtanen
+    - Jake Vanderplas
+
+
+scipy.spatial        
+`````````````
+
+Maintainers: 
+
+    - Waren Weckesser
+    - Pauli Virtanen (Qhull wrappers)
+
+
+scipy.special        
+`````````````
+
+Maintainers:
+
+    - Pauli Virtanen
+
+
+scipy.stats
+```````````
+
+Maintainers: 
+
+    - Josef Perktold
+    - Warren Weckesser
+    - Ralf Gommers
+
+
+scipy.weave          
+```````````
+
+Weave is unmaintained, and only kept for backwards compatibility.  
+For new development, it is recommended to use Cython.
+
+
+
+FAQ
+---
+Q: How can I keep track of tickets for a (part of a) module?
+
+A: Each module can have a default owner in Trac, who automatically gets an
+email for each new ticket.  Trac can also generate RSS feeds based on filters
+defined in the "Custom Query" tab (e.g. by component, status).  For example, to
+see all open tickets for scipy.optimize ordered by priority, use::
+
+       http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+       status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+       &format=rss&component=scipy.optimize&order=priority
+
+Q: How is this list of maintainers maintained, and how does one become a
+maintainer?
+
+A: This list is kept in the Scipy git repository.  Changes to it should be made
+by sending a pull request. For some changes (such as adding a new maintainer)
+it is expected that these are discussed on the scipy-dev mailing list first.
+To become a maintainer, someone should have an understanding of the code, have
+contributed at least a few features or bug fixes to that code, and express an
+interest in being a maintainer.
+
+Q: What is the relationship between the list of maintainers and the list of
+people with commit rights?
+
+A: Due to the distributed nature of git, it is easily possible to be a
+maintainer without having commit rights. In practice however, there will
+naturally be a large overlap between the group of maintainers and committers.
+
