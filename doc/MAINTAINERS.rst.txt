@@ -111,6 +111,7 @@ scipy.ndimage
 Maintainers:
 
     - Stefan van der Walt
+    - Thouis (Ray) Jones
 
 
 scipy.odr
