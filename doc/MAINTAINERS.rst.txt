@@ -22,6 +22,67 @@ than one maintainer for each module, in which case this should rarely be an
 issue.
 
 
+Some unwritten rules of SciPy development, written down
+-------------------------------------------------------
+
+Any significant decisions on adding (or not adding) new features, breaking
+backwards compatibility or making other significant changes to the codebase are
+made on this list after a discussion (preferably with full consensus).
+
+Any non-trivial change (where trivial means a typo, or a one-liner maintenance
+commit) has to go in through a pull request.  It has to be reviewed by another
+developer.
+
+Changes and new additions should be tested. Untested code is broken code.
+
+Who gets commit rights should always be discussed on the scipy-dev mailing list
+before the change is made.
+
+
+FAQ
+---
+Q: How can I keep track of tickets for a (part of a) module?
+
+A: Each module can have a default owner in Trac, who automatically gets an
+email for each new ticket.  Trac can also generate RSS feeds based on filters
+defined in the "Custom Query" tab (e.g. by component, status).  For example, to
+see all open tickets for scipy.optimize ordered by priority, use::
+
+       http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+       status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+       &format=rss&component=scipy.optimize&order=priority
+
+
+Q: How can I keep track of pull requests (PRs) and comments on Github?
+
+A: Only people listed as committers get email notifications for new PRs. And
+they don't get it for comments unless they have commented themselves on that PR
+before.  There are RSS feeds though that can be followed by anyone. 
+All chatter: http://new.scipy.org/scipy-chatter.xml
+Only new pull requests: http://new.scipy.org/scipy-pull.xml
+
+
+Q: How is this list of maintainers maintained, and how does one become a
+maintainer?
+
+A: This list is kept in the Scipy git repository.  Changes to it should be made
+by sending a pull request. For some changes (such as adding a new maintainer)
+it is expected that these are discussed on the scipy-dev mailing list first.
+To become a maintainer, someone should have an understanding of the code, have
+contributed at least a few features or bug fixes to that code, and express an
+interest in being a maintainer.
+
+
+Q: What is the relationship between the list of maintainers and the list of
+people with commit rights?
+
+A: Due to the distributed nature of git, it is easily possible to be a
+maintainer without having commit rights.  It is also very well possible to be a
+committer without being a maintainer for a specific module.  In practice
+however, there will naturally be a large overlap between the group of
+maintainers and committers.
+
+
 Modules
 -------
 
@@ -188,36 +249,4 @@ scipy.weave
 
 Weave is unmaintained, and only kept for backwards compatibility.  
 For new development, it is recommended to use Cython.
-
-
-
-FAQ
----
-Q: How can I keep track of tickets for a (part of a) module?
-
-A: Each module can have a default owner in Trac, who automatically gets an
-email for each new ticket.  Trac can also generate RSS feeds based on filters
-defined in the "Custom Query" tab (e.g. by component, status).  For example, to
-see all open tickets for scipy.optimize ordered by priority, use::
-
-       http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-       status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-       &format=rss&component=scipy.optimize&order=priority
-
-Q: How is this list of maintainers maintained, and how does one become a
-maintainer?
-
-A: This list is kept in the Scipy git repository.  Changes to it should be made
-by sending a pull request. For some changes (such as adding a new maintainer)
-it is expected that these are discussed on the scipy-dev mailing list first.
-To become a maintainer, someone should have an understanding of the code, have
-contributed at least a few features or bug fixes to that code, and express an
-interest in being a maintainer.
-
-Q: What is the relationship between the list of maintainers and the list of
-people with commit rights?
-
-A: Due to the distributed nature of git, it is easily possible to be a
-maintainer without having commit rights. In practice however, there will
-naturally be a large overlap between the group of maintainers and committers.
 
