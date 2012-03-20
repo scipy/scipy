@@ -25,10 +25,12 @@ issue.
 Modules
 -------
 
-scipy.cluster        
+scipy.cluster 
 `````````````
 
 Maintainers:
+
+    - David Warde-Farley
 
 
 scipy.constants
