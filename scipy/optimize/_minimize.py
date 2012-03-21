@@ -31,6 +31,8 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     """
     Minimization of scalar function of one or more variables.
 
+    .. versionadded:: 0.11.0
+
     Parameters
     ----------
     fun : callable
