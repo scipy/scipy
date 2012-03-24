@@ -124,6 +124,8 @@ scipy.integrate
 
 Maintainers: 
 
+    - Travis Oliphant
+
 
 scipy.interpolate
 `````````````````
@@ -131,6 +133,7 @@ scipy.interpolate
 Maintainers: 
 
     - Pauli Virtanen
+    - Travis Oliphant
 
 scipy.io
 ````````
@@ -197,6 +200,7 @@ Maintainers:
 
     - Warren Weckesser
     - David Cournapeau
+    - Travis Oliphant
 
 
 scipy.sparse 
