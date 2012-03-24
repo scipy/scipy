@@ -362,3 +362,67 @@ For new development, it is recommended to use Cython.
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
 &format=rss&component=scipy.weave&order=priority>`_
 
+
+
+Infrastructure and web presence
+-------------------------------
+
+Websites
+````````
+
+Maintainers:
+
+    - Scott Sinclair (scipy.github.com)
+
+Status:
+
+The scipy.org website is currently a wiki.  The plan is to convert the main
+page and most important content to a Sphinx-based static site.  Some progress
+has been made on this, visible at scipy.github.com.  Pull requests for this
+site should be made against https://github.com/scipy/scipy.org-new
+
+
+Documentation server/wiki
+`````````````````````````
+
+Maintainers:
+
+    - Pauli Virtanen
+    - Gael Varoquaux
+
+Trac
+````
+
+Maintainers:
+
+    - Pauli Virtanen
+
+
+Continuous Integration server
+`````````````````````````````
+
+Maintainers:
+
+    - Stefan van der Walt
+    - Chris Ball
+
+Status:
+
+This server is in the process of being set up.  After testing the setup is
+done, a request for build slaves will be sent to the scipy-dev mailing list.
+
+
+Build tools
+```````````
+
+Maintainers:
+
+    - David Cournapeau (Bento)
+
+
+Other
+`````
+
+    - Release manager: Ralf Gommers
+    - Planet SciPy: Gael Varoquaux
+
