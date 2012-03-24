@@ -57,16 +57,17 @@ Q: How can I keep track of pull requests (PRs) and comments on Github?
 
 A: Only people listed as committers get email notifications for new PRs. And
 they don't get it for comments unless they have commented themselves on that PR
-before.  There are RSS feeds though that can be followed by anyone. 
-All chatter: http://new.scipy.org/scipy-chatter.xml
-Only new pull requests: http://new.scipy.org/scipy-pull.xml
+before.  There are RSS feeds though that can be followed by anyone: 
+
+    - All chatter: http://new.scipy.org/scipy-chatter.xml
+    - Only new pull requests: http://new.scipy.org/scipy-pull.xml
 
 
 Q: How is this list of maintainers maintained, and how does one become a
 maintainer?
 
 A: This list is kept in the Scipy git repository.  Changes to it should be made
-by sending a pull request. For some changes (such as adding a new maintainer)
+by sending a pull request.  For some changes (such as adding a new maintainer)
 it is expected that these are discussed on the scipy-dev mailing list first.
 To become a maintainer, someone should have an understanding of the code, have
 contributed at least a few features or bug fixes to that code, and express an
@@ -93,6 +94,12 @@ Maintainers:
 
     - David Warde-Farley
 
+Status:
+
+`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.cluster&order=priority>`_
+
 
 scipy.constants
 ```````````````
@@ -104,6 +111,10 @@ Maintainers:
 Status: 
 
 The constants module is up-to-date (NIST 2010 CODATA) and has no known bugs.
+
+`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.constants&order=priority>`_
 
 
 scipy.fftpack
@@ -118,6 +129,10 @@ Status:
 The fftpack module is stable, with few known bugs and little development
 happening currently.
 
+`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.fftpack&order=priority>`_
+
 
 scipy.integrate
 ```````````````
@@ -125,6 +140,12 @@ scipy.integrate
 Maintainers: 
 
     - Travis Oliphant
+
+Status:
+
+`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.integrate&order=priority>`_
 
 
 scipy.interpolate
@@ -134,6 +155,13 @@ Maintainers:
 
     - Pauli Virtanen
     - Travis Oliphant
+
+Status:
+
+`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.interpolate&order=priority>`_
+
 
 scipy.io
 ````````
@@ -153,12 +181,22 @@ The io.idl module is stable and has no known bugs. It will need to be updated
 as needed if the IDL file format evolves, or if there are any bugs discovered.
 There is no real need for any new features.
 
+`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.io&order=priority>`_
+
 scipy.linalg         
 ````````````
 
 Maintainers: 
 
     - Pauli Virtanen
+
+Status:
+
+`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.linalg&order=priority>`_
 
 
 scipy.misc
@@ -167,6 +205,12 @@ scipy.misc
 Maintainers: 
 
     - Ralf Gommers
+
+Status:
+
+`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.misc&order=priority>`_
 
 
 scipy.ndimage        
@@ -177,11 +221,23 @@ Maintainers:
     - Stefan van der Walt
     - Thouis (Ray) Jones
 
+Status:
+
+`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.ndimage&order=priority>`_
+
 
 scipy.odr
 `````````
 
 Maintainers: 
+
+Status:
+
+`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.odr&order=priority>`_
 
 
 scipy.optimize       
@@ -191,6 +247,12 @@ Maintainers:
 
     - Denis Laxalde
     - Pauli Virtanen
+
+Status:
+
+`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.optimize&order=priority>`_
 
 
 scipy.signal         
@@ -202,6 +264,12 @@ Maintainers:
     - David Cournapeau
     - Travis Oliphant
 
+Status:
+
+`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.signal&order=priority>`_
+
 
 scipy.sparse 
 ````````````
@@ -210,6 +278,12 @@ Maintainers:
 
     - Jake Vanderplas
     - Stefan van der Walt
+
+Status:
+
+`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.sparse&order=priority>`_
 
 
 scipy.sparse.linalg
@@ -220,6 +294,12 @@ Maintainers:
     - Pauli Virtanen
     - Jake Vanderplas
 
+Status:
+
+`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.sparse.linalg&order=priority>`_
+
 
 scipy.spatial        
 `````````````
@@ -229,6 +309,12 @@ Maintainers:
     - Waren Weckesser
     - Pauli Virtanen (Qhull wrappers)
 
+Status:
+
+`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.spatial&order=priority>`_
+
 
 scipy.special        
 `````````````
@@ -236,6 +322,12 @@ scipy.special
 Maintainers:
 
     - Pauli Virtanen
+
+Status:
+
+`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.special&order=priority>`_
 
 
 scipy.stats
@@ -247,10 +339,22 @@ Maintainers:
     - Warren Weckesser
     - Ralf Gommers
 
+Status:
+
+`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.stats&order=priority>`_
+
 
 scipy.weave          
 ```````````
 
+Status:
+
 Weave is unmaintained, and only kept for backwards compatibility.  
 For new development, it is recommended to use Cython.
+
+`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.weave&order=priority>`_
 
