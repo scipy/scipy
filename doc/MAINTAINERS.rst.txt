@@ -48,9 +48,15 @@ FAQ
 Q: How can I keep track of tickets for a (part of a) module?
 
 A: Each module can have a default owner in Trac, who automatically gets an
-email for each new ticket.  Trac can also generate RSS feeds based on filters
+email for each new ticket.  Trac can also generate feeds based on filters
 defined in the "Custom Query" tab (e.g. by component, status).  For example, to
 see all open tickets for scipy.optimize ordered by priority, use::
+
+       http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+       status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+       &component=scipy.optimize&order=priority
+
+Or access the RSS feed at::
 
        http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
        status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
@@ -61,7 +67,7 @@ Q: How can I keep track of pull requests (PRs) and comments on Github?
 
 A: Only people listed as committers get email notifications for new PRs. And
 they don't get it for comments unless they have commented themselves on that PR
-before.  There are RSS feeds though that can be followed by anyone: 
+before.  There are RSS feeds though that can be followed by anyone:
 
     - All chatter: http://new.scipy.org/scipy-chatter.xml
     - Only new pull requests: http://new.scipy.org/scipy-pull.xml
@@ -91,7 +97,7 @@ maintainers and committers.
 Modules
 -------
 
-scipy.cluster 
+scipy.cluster
 `````````````
 
 Maintainers:
@@ -100,77 +106,92 @@ Maintainers:
 
 Status:
 
-`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.cluster&order=priority>`_
+&component=scipy.cluster&order=priority>`__
+| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.cluster&order=priority>`__
 
 
 scipy.constants
 ```````````````
 
-Maintainers: 
+Maintainers:
 
     - Vincent Davis
 
-Status: 
+Status:
 
 The constants module is up-to-date (NIST 2010 CODATA) and has no known bugs.
 
-`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.constants&order=priority>`_
+&component=scipy.constants&order=priority>`__
+| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.constants&order=priority>`__
 
 
 scipy.fftpack
 `````````````
 
-Maintainers: 
+Maintainers:
 
     - David Cournapeau
 
-Status: 
+Status:
 
 The fftpack module is stable, with few known bugs and little development
 happening currently.
 
-`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.fftpack&order=priority>`_
+&component=scipy.fftpack&order=priority>`__
+| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.fftpack&order=priority>`__
 
 
 scipy.integrate
 ```````````````
 
-Maintainers: 
+Maintainers:
 
     - Travis Oliphant
 
 Status:
 
-`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.integrate&order=priority>`_
+&component=scipy.integrate&order=priority>`__
+| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.integrate&order=priority>`__
 
 
 scipy.interpolate
 `````````````````
 
-Maintainers: 
+Maintainers:
 
     - Pauli Virtanen
     - Travis Oliphant
 
 Status:
 
-`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.interpolate&order=priority>`_
+&component=scipy.interpolate&order=priority>`__
+| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.interpolate&order=priority>`__
 
 
 scipy.io
 ````````
 
-Maintainers: 
+Maintainers:
 
     - Matthew Brett (io.matlab)
     - Thomas Robitaille (io.idl)
@@ -185,39 +206,48 @@ The io.idl module is stable and has no known bugs. It will need to be updated
 as needed if the IDL file format evolves, or if there are any bugs discovered.
 There is no real need for any new features.
 
-`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.io&order=priority>`_
+&component=scipy.io&order=priority>`__
+| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.io&order=priority>`__
 
-scipy.linalg         
+scipy.linalg
 ````````````
 
-Maintainers: 
+Maintainers:
 
     - Pauli Virtanen
 
 Status:
 
-`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.linalg&order=priority>`_
+&component=scipy.linalg&order=priority>`__
+| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.linalg&order=priority>`__
 
 
 scipy.misc
 ``````````
 
-Maintainers: 
+Maintainers:
 
     - Ralf Gommers
 
 Status:
 
-`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.misc&order=priority>`_
+&component=scipy.misc&order=priority>`__
+| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.misc&order=priority>`__
 
 
-scipy.ndimage        
+scipy.ndimage
 `````````````
 
 Maintainers:
@@ -227,42 +257,51 @@ Maintainers:
 
 Status:
 
-`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.ndimage&order=priority>`_
+&component=scipy.ndimage&order=priority>`__
+| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.ndimage&order=priority>`__
 
 
 scipy.odr
 `````````
 
-Maintainers: 
+Maintainers:
 
 Status:
 
-`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.odr&order=priority>`_
+&component=scipy.odr&order=priority>`__
+| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.odr&order=priority>`__
 
 
-scipy.optimize       
+scipy.optimize
 ``````````````
 
-Maintainers: 
+Maintainers:
 
     - Denis Laxalde
     - Pauli Virtanen
 
 Status:
 
-`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.optimize&order=priority>`_
+&component=scipy.optimize&order=priority>`__
+| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.optimize&order=priority>`__
 
 
-scipy.signal         
+scipy.signal
 ````````````
 
-Maintainers: 
+Maintainers:
 
     - Warren Weckesser
     - David Cournapeau
@@ -270,12 +309,15 @@ Maintainers:
 
 Status:
 
-`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.signal&order=priority>`_
+&component=scipy.signal&order=priority>`__
+| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.signal&order=priority>`__
 
 
-scipy.sparse 
+scipy.sparse
 ````````````
 
 Maintainers:
@@ -285,42 +327,51 @@ Maintainers:
 
 Status:
 
-`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.sparse&order=priority>`_
+&component=scipy.sparse&order=priority>`__
+| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.sparse&order=priority>`__
 
 
 scipy.sparse.linalg
 ```````````````````
 
-Maintainers: 
+Maintainers:
 
     - Pauli Virtanen
     - Jake Vanderplas
 
 Status:
 
-`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.sparse.linalg&order=priority>`_
+&component=scipy.sparse.linalg&order=priority>`__
+| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.sparse.linalg&order=priority>`__
 
 
-scipy.spatial        
+scipy.spatial
 `````````````
 
-Maintainers: 
+Maintainers:
 
     - Waren Weckesser
     - Pauli Virtanen (Qhull wrappers)
 
 Status:
 
-`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.spatial&order=priority>`_
+&component=scipy.spatial&order=priority>`__
+| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.spatial&order=priority>`__
 
 
-scipy.special        
+scipy.special
 `````````````
 
 Maintainers:
@@ -329,15 +380,18 @@ Maintainers:
 
 Status:
 
-`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.special&order=priority>`_
+&component=scipy.special&order=priority>`__
+| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.special&order=priority>`__
 
 
 scipy.stats
 ```````````
 
-Maintainers: 
+Maintainers:
 
     - Josef Perktold
     - Warren Weckesser
@@ -345,22 +399,28 @@ Maintainers:
 
 Status:
 
-`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.stats&order=priority>`_
+&component=scipy.stats&order=priority>`__
+| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.stats&order=priority>`__
 
 
-scipy.weave          
+scipy.weave
 ```````````
 
 Status:
 
-Weave is unmaintained, and only kept for backwards compatibility.  
+Weave is unmaintained, and only kept for backwards compatibility.
 For new development, it is recommended to use Cython.
 
-`Trac RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.weave&order=priority>`_
+&component=scipy.weave&order=priority>`__
+| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
+status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
+&format=rss&component=scipy.weave&order=priority>`__
 
 
 
@@ -425,4 +485,3 @@ Other
 
     - Release manager: Ralf Gommers
     - Planet SciPy: Gael Varoquaux
-
