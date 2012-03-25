@@ -590,7 +590,7 @@ A histogram is a useful tool for visualization (mainly because everyone
 understands it), but doesn't use the available data very efficiently.  Kernel
 density estimation (KDE) is a more efficient tool for the same task.  The
 :func:`gaussian_kde` estimator can be used to estimate the PDF of univariate as
-well as multi-variate data.  It works best if the data is uni-modal.
+well as multivariate data.  It works best if the data is unimodal.
 
 
 Univariate estimation
@@ -647,7 +647,7 @@ each data point.
 
 We now take a more realistic example, and look at the difference between the
 two available bandwidth selection rules.  Those rules are known to work well
-for (close to) normal distributions, but even for uni-modal distributions that
+for (close to) normal distributions, but even for unimodal distributions that
 are quite strongly non-normal they work reasonably well.  As a non-normal
 distribution we take a Student's T distribution with 5 degrees of freedom.
 
