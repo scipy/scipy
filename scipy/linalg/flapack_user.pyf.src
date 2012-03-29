@@ -6,3 +6,45 @@ python module gees__user__routines
         end function <prefix>select
     end interface
 end python module gees__user__routines
+
+python module zgges__user__routines 
+    interface
+        function zselect(e_alpha__i__e,e_beta__i__e)
+            complex*16 :: e_alpha__i__e
+            complex*16 :: e_beta__i__e
+            logical :: zselect
+        end function zselect
+    end interface 
+end python module zgges__user__routines
+
+python module dgges__user__routines 
+    interface
+        function dselect(e_alphar__i__e,e_alphai__i__e,e_beta__i__e)
+            double precision :: e_alphar__i__e
+            double precision :: e_alphai__i__e
+            double precision :: e_beta__i__e
+            logical :: dselect
+        end function dselect
+    end interface 
+end python module dgges__user__routines
+
+python module cgges__user__routines 
+    interface
+        function cselect(e_alpha__i__e,e_beta__i__e)
+            complex :: e_alpha__i__e
+            complex :: e_beta__i__e
+            logical :: zselect
+        end function zselect
+    end interface 
+end python module cgges__user__routines
+
+python module sgges__user__routines 
+    interface
+        function sselect(e_alphar__i__e,e_alphai__i__e,e_beta__i__e)
+            real :: e_alphar__i__e
+            real :: e_alphai__i__e
+            real :: e_beta__i__e
+            logical :: dselect
+        end function dselect
+    end interface 
+end python module sgges__user__routines
