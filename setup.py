@@ -20,10 +20,8 @@ DOCLINES = __doc__.split("\n")
 
 import os
 import sys
-import warnings
 import subprocess
 import shutil
-import re
 
 if sys.version_info[0] < 3:
     import __builtin__ as builtins
