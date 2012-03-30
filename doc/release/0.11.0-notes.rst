@@ -74,6 +74,9 @@ Deprecated features
 ``scipy.misc.radon`` has been deprecated.  A more full-featured radon transform
 can be found in scikits-image.
 
+``scipy.io.save_as_module`` has been deprecated.  A better way to save multiple
+Numpy arrays is the ``numpy.savez`` function.
+
 
 Backwards incompatible changes
 ==============================
