@@ -2,8 +2,9 @@
 Routines for performing shortest-path graph searches
 
 The main interface is in the function :func:`shortest_path`.  This
-calls cython routines that compute the shortest path using either
-the Floyd-Warshall algorithm, or Dykstra's algorithm with Fibonacci Heaps.
+calls cython routines that compute the shortest path using
+the Floyd-Warshall algorithm, Dykstra's algorithm with Fibonacci Heaps,
+the Bellman-Ford algorithm, or Johnson's Algorithm.
 """
 
 # Author: Jake Vanderplas  -- <vanderplas@astro.washington.edu>
@@ -40,7 +41,7 @@ def shortest_path(csgraph, method='auto',
     Parameters
     ----------
     csgraph : array, matrix, or sparse matrix, 2 dimensions
-        The N x N array of non-negative distances representing the input graph.
+        The N x N array of distances representing the input graph.
     method : string ['auto'|'FW'|'D'], optional
         Algorithm to use for shortest paths.  Options are:
         
@@ -50,9 +51,10 @@ def shortest_path(csgraph, method='auto',
                      approximately ``O[N^3]``.  The input csgraph will be
                      converted to a dense representation.
            'D'    -- Dijkstra's algorithm with Fibonacci heaps.  Computational
-                     cost is approximately ``O[N(Nk + Nlog(N))]``, where ``k``
-                     is the average number of connected edges per node. The
-                     input csgraph will be converted to a csr representation.
+                     cost is approximately ``O[N(N*k + N*log(N))]``, where
+		     ``k`` is the average number of connected edges per node.
+		     The input csgraph will be converted to a csr
+		     representation.
            'BF'   -- Bellman-Ford algorithm.  This algorithm can be used when
                      weights are negative.  If a negative cycle is encountered,
                      an error will be raised.  Computational cost is
@@ -62,7 +64,7 @@ def shortest_path(csgraph, method='auto',
            'J'    -- Johnson's algorithm.  Like the Bellman-Ford algorithm,
                      Johnson's algorithm is designed for use when the weights
                      are negative.  It combines the Bellman-Ford algorithm
-                     with Dijkstra's algorithm for faster shortest paths.
+                     with Dijkstra's algorithm for faster computation.
 
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
@@ -162,7 +164,7 @@ def floyd_warshall(csgraph, directed=True,
     Parameters
     ----------
     csgraph : array, matrix, or sparse matrix, 2 dimensions
-        The N x N array of non-negative distances representing the input graph.
+        The N x N array of distances representing the input graph.
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
         only move from point i to point j along paths csgraph[i, j].
@@ -198,12 +200,6 @@ def floyd_warshall(csgraph, directed=True,
     ------
     NegativeCycleError:
         if there are negative cycles in the graph
-
-    Notes
-    -----
-    This routine is not suitable for graphs with negative distances.
-    Negative distances can lead to infinite cycles that must be handled
-    by specialized algorithms.
     """
     dist_matrix = validate_graph(csgraph, directed, DTYPE,
                                  csr_output=False,
@@ -359,7 +355,8 @@ def dijkstra(csgraph, directed=True, indices=None,
 
     Also, this routine does not work for graphs with negative
     distances.  Negative distances can lead to infinite cycles that must
-    be handled by specialized algorithms.
+    be handled by specialized algorithms such as Bellman-Ford's algorithm
+    or Johnson's algorithm.    
     """
     global NULL_IDX
 
@@ -369,8 +366,9 @@ def dijkstra(csgraph, directed=True, indices=None,
                              dense_output=False)
 
     if np.any(csgraph.data < 0):
-        warnings.warn("Graph has negative weights: dijkstra cannot identify "
-                      "negative cycles.  Consider johnson or bellman_ford.")
+        warnings.warn("Graph has negative weights: dijkstra will give "
+                      "inaccurate results if the graph contains negative "
+                      "cycles. Consider johnson or bellman_ford.")
 
     N = csgraph.shape[0]
     
@@ -569,12 +567,12 @@ def bellman_ford(csgraph, directed=True, indices=None,
     
     The Bellman-ford algorithm can robustly deal with graphs with negative
     weights.  If a negative cycle is detected, an error is raised.  For
-    graphs without negative cycles, dijkstra's algorithm may be faster.
+    graphs without negative edge weights, dijkstra's algorithm may be faster.
 
     Parameters
     ----------
     csgraph : array, matrix, or sparse matrix, 2 dimensions
-        The N x N array of non-negative distances representing the input graph.
+        The N x N array of distances representing the input graph.
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
         only move from point i to point j along paths csgraph[i, j].
@@ -776,13 +774,13 @@ def johnson(csgraph, directed=True, indices=None,
     Johnson's algorithm combines the Bellman-Ford algorithm and Dijkstra's
     algorithm to quickly find shortest paths in a way that is robust to
     the presence of negative cycles.  If a negative cycle is detected,
-    an error is raised.  For graphs without negative cycles, dijkstra()
-    may be faster.
+    an error is raised.  For graphs without negative edge weights,
+    dijkstra() may be faster.
 
     Parameters
     ----------
     csgraph : array, matrix, or sparse matrix, 2 dimensions
-        The N x N array of non-negative distances representing the input graph.
+        The N x N array of distances representing the input graph.
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
         only move from point i to point j along paths csgraph[i, j].
