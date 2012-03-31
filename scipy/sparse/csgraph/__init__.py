@@ -32,52 +32,73 @@ This module uses graphs which are stored in a matrix format.  A
 graph with N nodes can be represented by an (N x N) adjacency matrix G.
 If there is a connection from node i to node j, then G[i, j] = w, where
 w is the weight of the connection.  For nodes i and j which are
-not connected, G[i, j] = :math:`\infty` (for dense representations) or
-is not defined (for sparse representations).
+not connected, the value depends on the representation:
 
-The representation of un-connected nodes (null edges) brings up a point of
-potential confusion for converting between sparse and dense graph
-representations.  Consider the following example::
+- for dense array representations, non-edges are represented by
+  G[i, j] = 0, infinity, or NaN.
 
+- for dense masked representations (of type np.ma.MaskedArray), non-edges
+  are represented by masked values.  This can be useful when graphs with
+  zero-weight edges are desired.
+
+- for sparse array representations, non-edges are represented by
+  non-entries in the matrix.  This sort of sparse representation also
+  allows for edges with zero weights.
+
+As a concrete example, imagine that you would like to represent the following
+undirected graph::
+
+              G
+
+             (0)
+            /   \
+           1     2
+          /       \
+        (2)       (1)
+
+This graph has three nodes, where node 0 and 1 are connected by an edge of
+weight 2, and nodes 0 and 2 are connected by an edge of weight 1.
+We can construct the dense, masked, and sparse representations as follows,
+keeping in mind that an undirected graph is represented by a symmetric matrix::
+
+    >>> G_dense = np.array([[0, 2, 1],
+    ...                     [2, 0, 0],
+    ...                     [1, 0, 0]])
+    >>> G_masked = np.ma.masked_values(G_dense, 0)
     >>> from scipy.sparse import csr_matrix
-    >>> X = np.array([[0, 1, 0],
-    ...               [1, 0, 2],
-    ...               [0, 2, 0]])
-    >>> Xcsr = csr_matrix(X)
+    >>> G_sparse = csr_matrix(G_dense)
 
-Here, ``X`` and ``Xcsr`` actually represent different graphs!  They
-represent the following undirected graph configurations::
+This becomes more difficult when zero edges are significant.  For example,
+consider the situation when we slightly modify the above graph::
 
-              X                  Xcsr
+             G2
 
-             (0)                  (0)
-            /   \                    \ 
-           0     1                    1 
-          /       \                    \ 
-        (2)---2---(1)        (2)---2---(1)
-    
-This is because the explicit zero-weights in the dense representation ``X``
-are removed in the conversion to sparse format. For this reason, the csgraph
-module includes utility routines to convert graphs to the canonical
-representation where null edges are indicated by infinite weights, and to
-efficiently switch between sparse and dense representations of graphs.
-We'll convert our non-canonical graph to canonical dense or sparse form by
-indicating that the null value is zero::
+             (0)
+            /   \
+           0     2
+          /       \
+        (2)       (1)
 
-    >>> from scipy.sparse import csgraph
-    >>> X_canonical = csgraph.canonical_from_dense(X, null_value=0)
-    >>> print X_canonical
-    [[ inf   1.  inf]
-     [  1.  inf   2.]
-     [ inf   2.  inf]]
-    >>> Xcsr = csgraph.csgraph_from_dense(X, null_value=0)
-    >>> print csgraph.csgraph_to_dense(Xcsr)
-    [[ inf   1.  inf]
-     [  1.  inf   2.]
-     [ inf   2.  inf]]
+This is identical to the previous graph, except nodes 0 and 2 are connected
+by an edge of zero weight.  In this case, the dense representation above
+leads to ambiguities: how can non-edges be represented if zero is a meaningful
+value?  In this case, either a masked or sparse representation must be used
+to elliminate the ambiguity::
 
-The routines in this module accept as input either sparse (csr or csr) graph
-representations, or dense representations in this canonical form.
+    >>> G2_data = np.array([[np.inf, 2,      0     ],
+    ...                     [2,      np.inf, np.inf],
+    ...                     [0,      np.inf, np.inf]])
+    >>> G2_masked = np.ma.masked_invalid(G2_data)
+    >>> from scipy.sparse.csgraph import csgraph_from_dense
+    >>> # G2_sparse = csr_matrix(G2_data) would give the wrong result
+    >>> G2_sparse = csgraph_from_dense(G2_data, null_value=np.inf)
+    >>> G2_sparse.data
+    array([ 2.,  0.,  2.,  0.])
+
+Here we have used a utility routine from the csgraph submodule in order to
+convert the dense representation to a sparse representation which can be
+understood by the algorithms in submodule.  By viewing the data array, we
+can see that the zero values are explicitly encoded in the graph.
 
 Directed vs. Undirected
 -----------------------
@@ -89,14 +110,18 @@ G[j, i].  In a non-directed graph, traversal from node i to node j can be
 accomplished over either G[i, j] or G[j, i].  If both edges are not null,
 and the two have unequal weights, then the smaller of the two is used.
 Note that a symmetric matrix will represent an undirected graph, regardless
-of whether the 'directed' keyword is set to True or False.
+of whether the 'directed' keyword is set to True or False.  In this case,
+using ``directed=True`` generally leads to more efficient computation.
+
+The routines in this module accept as input either scipy.sparse representations
+(csr, csc, or lil format), masked representations, or dense representations
+with non-edges indicated by zeros, infinities, and NaN entries.
 """
 
 __docformat__ = "restructuredtext en"
 
 __all__ = ['cs_graph_components',
            'connected_components',
-           'cs_graph_components',
            'laplacian',
            'shortest_path',
            'floyd_warshall',
@@ -111,8 +136,9 @@ __all__ = ['cs_graph_components',
            'construct_dist_matrix',
            'reconstruct_path',
            'csgraph_from_dense',
+           'csgraph_masked_from_dense',
            'csgraph_to_dense',
-           'canonical_from_dense',
+           'csgraph_to_masked',
            'NegativeCycleError']
 
 from _components import cs_graph_components
@@ -123,12 +149,17 @@ from _traversal import breadth_first_order, depth_first_order, \
     breadth_first_tree, depth_first_tree, connected_components
 from _min_spanning_tree import minimum_spanning_tree
 from _tools import construct_dist_matrix, reconstruct_path,\
-    csgraph_from_dense, csgraph_to_dense, canonical_from_dense
+    csgraph_from_dense, csgraph_to_dense, csgraph_masked_from_dense,\
+    csgraph_from_masked
 
 from numpy import deprecate as _deprecate
-cs_graph_components = _deprecate(connected_components,
-                                 'cs_graph_components',
-                                 'csgraph.connected_components')
+cs_graph_components = _deprecate(cs_graph_components,
+                                 message=("In the future, use "
+                                          "csgraph.connected_components. Note "
+                                          "that this new function has a "
+                                          "slightly different interface: see "
+                                          "the docstring for more "
+                                          "information."))
 
 from numpy.testing import Tester
 test = Tester().test

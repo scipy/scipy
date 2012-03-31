@@ -8,6 +8,7 @@ from scipy.sparse.base import isspmatrix
 _msg0 = 'x must be a symmetric square matrix!'
 _msg1 = _msg0 + '(has shape %s)'
 
+
 def cs_graph_components(x):
     """
     Determine connected components of a graph stored as a compressed

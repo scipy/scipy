@@ -8,24 +8,66 @@ Tools and utilities for working with compressed sparse graphs
 import numpy as np
 cimport numpy as np
 
-from scipy.sparse import csr_matrix, isspmatrix, isspmatrix_csr, isspmatrix_csc
+from scipy.sparse import csr_matrix, isspmatrix,\
+    isspmatrix_csr, isspmatrix_csc, isspmatrix_lil
 
 include 'parameters.pxi'
 
-def csgraph_from_dense(graph,
-                       null_value=None,
-                       nan_null=True,
-                       infinity_null=True):
-    """Construct a CSR-format sparse graph from a dense matrix.
+def csgraph_from_masked(graph):
+    """Construct a CSR-format graph from a masked array.
+
+    Parameters
+    ----------
+    graph: MaskedArray
+        Input graph.  Shape should be (n_nodes, n_nodes).
+
+    Returns
+    -------
+    csgraph: csr_matrix
+        Compressed sparse representation of graph, 
+    """
+    # check that graph is a square matrix
+    graph = np.ma.asarray(graph)
+
+    if graph.ndim != 2:
+        raise ValueError("graph should have two dimensions")
+    N = graph.shape[0]
+    if graph.shape[1] != N:
+        raise ValueError("graph should be a square array")
+
+    # construct the csr matrix using graph and mask
+    if np.ma.is_masked(graph):
+        data = graph.compressed()
+        mask = ~graph.mask
+    else:
+        data = graph.data
+        mask = np.ones(graph.shape, dtype='bool')
+
+    data = np.asarray(data, dtype=DTYPE, order='c')
+
+    idx_grid = np.empty((N, N), dtype=ITYPE)
+    idx_grid[:] = np.arange(N, dtype=ITYPE)
+    indices = np.asarray(idx_grid[mask], dtype=ITYPE, order='c')
+
+    indptr = np.zeros(N + 1, dtype=ITYPE)
+    indptr[1:] = mask.sum(1).cumsum()
+
+    return csr_matrix((data, indices, indptr), (N, N))
+
+
+def csgraph_masked_from_dense(graph,
+                              null_value=0,
+                              nan_null=True,
+                              infinity_null=True,
+                              copy=True):
+    """Construct a masked array graph representation from a dense matrix.
 
     Parameters
     ----------
     graph: array_like
         Input graph.  Shape should be (n_nodes, n_nodes).
     null_value: float or None (optional)
-        Value that denotes non-edges in the graph.  Default
-        is zero.  If infinite values represent null edges, then setting the
-        infinity_null flag is more efficient
+        Value that denotes non-edges in the graph.  Default is zero.
     infinity_null: bool
         If True (default), then infinite entries (both positive and negative)
         are treated as null edges.
@@ -34,10 +76,10 @@ def csgraph_from_dense(graph,
 
     Returns
     -------
-    csgraph: csr_matrix
-        Compressed sparse representation of graph, 
+    csgraph: MaskedArray
+        masked array representation of graph
     """
-    graph = np.asarray(graph)
+    graph = np.array(graph, copy=copy)
 
     # check that graph is a square matrix
     if graph.ndim != 2:
@@ -49,50 +91,68 @@ def csgraph_from_dense(graph,
     # check whether null_value is infinity or NaN
     if null_value is not None:
         null_value = DTYPE(null_value)        
-        if np.isinf(null_value):
-            infinity_null = True
-            null_value = None
-        elif np.isnan(null_value):
+        if np.isnan(null_value):
             nan_null = True
+            null_value = None
+        elif np.isinf(null_value):
+            infinity_null = True
             null_value = None
     
     # flag all the null edges
     if null_value is None:
-        flag = np.zeros(graph.shape, dtype=bool)
+        mask = np.zeros(graph.shape, dtype='bool')
+        graph = np.ma.masked_array(graph, mask, copy=False)
     else:
-        flag = (graph == null_value)
+        graph = np.ma.masked_values(graph, null_value, copy=False)
 
     if infinity_null:
-        flag |= np.isinf(graph)
+        graph.mask |= np.isinf(graph)
 
     if nan_null:
-        flag |= np.isnan(graph)
+        graph.mask |= np.isnan(graph)
 
-    # construct the csr matrix using flag
-    flag = ~flag
-
-    data = np.asarray(graph[flag], dtype=DTYPE, order='c')
-
-    idx_grid = np.empty((N, N), dtype=ITYPE)
-    idx_grid[:] = np.arange(N, dtype=ITYPE)
-    indices = np.asarray(idx_grid[flag], dtype=ITYPE, order='c')
-
-    indptr = np.zeros(N + 1, dtype=ITYPE)
-    indptr[1:] = flag.sum(1).cumsum()
-
-    return csr_matrix((data, indices, indptr), (N, N))
+    return graph
 
 
-def csgraph_to_dense(csgraph, null_value=np.inf):
+def csgraph_from_dense(graph,
+                       null_value=0,
+                       nan_null=True,
+                       infinity_null=True):
+    """Construct a CSR-format sparse graph from a dense matrix.
+
+    Parameters
+    ----------
+    graph: array_like
+        Input graph.  Shape should be (n_nodes, n_nodes).
+    null_value: float or None (optional)
+        Value that denotes non-edges in the graph.  Default is zero.
+    infinity_null: bool
+        If True (default), then infinite entries (both positive and negative)
+        are treated as null edges.
+    nan_null: bool
+        If True (default), then NaN entries are treated as non-edges
+
+    Returns
+    -------
+    csgraph: csr_matrix
+        Compressed sparse representation of graph, 
+    """
+    return csgraph_from_masked(csgraph_masked_from_dense(graph,
+                                                         null_value,
+                                                         nan_null,
+                                                         infinity_null))
+
+
+def csgraph_to_dense(csgraph, null_value=0):
     """Convert a sparse graph representation to a dense representation
 
     Parameters
     ----------
-    csgraph: csr_matrix or csc_matrix
+    csgraph: csr_matrix, csc_matrix, or lil_matrix
         Sparse representation of a graph.
     null_value: float, optional
         The value used to indicate null edges in the dense representation.
-        Default is infinity.
+        Default is 0.
 
     Returns
     -------
@@ -101,7 +161,7 @@ def csgraph_to_dense(csgraph, null_value=np.inf):
 
     Notes
     -----
-    For canonical sparse representations, calling csgraph_to_dense with
+    For normal sparse graph representations, calling csgraph_to_dense with
     null_value=0 produces an equivalent result to using dense format
     conversions in the main sparse package.  When the sparse representations
     have repeated values, however, the results will differ.  The tools in
@@ -149,12 +209,12 @@ def csgraph_to_dense(csgraph, null_value=np.inf):
     representation.  In the second case, we can choose a different null value
     and see the true form of the graph.
     """
-    # Allow only csr and csc matrices: other formats when converted to csr
+    # Allow only csr, lil and csc matrices: other formats when converted to csr
     # combine duplicated edges: we don't want this to happen in the background.
-    if isspmatrix_csc(csgraph):
+    if isspmatrix_csc(csgraph) or isspmatrix_lil(csgraph):
         csgraph = csgraph.tocsr()
     elif not isspmatrix_csr(csgraph):
-        raise ValueError("csgraph must be csr or csc format")
+        raise ValueError("csgraph must be lil, csr, or csc format")
 
     N = csgraph.shape[0]
     if csgraph.shape[1] != N:
@@ -168,18 +228,34 @@ def csgraph_to_dense(csgraph, null_value=np.inf):
     # create the output array
     graph = np.empty(csgraph.shape, dtype=DTYPE)
     graph.fill(np.inf)
-
-    # null_flag is the location of null edges
     _populate_graph(graph, data, indices, indptr, null_value)
-
     return graph
 
 
-cdef void _populate_graph(np.ndarray[DTYPE_t, ndim=2, mode='c'] graph,
-                          np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
+def csgraph_to_masked(csgraph):
+    """Convert a sparse graph representation to a masked array representation
+
+    Parameters
+    ----------
+    csgraph: csr_matrix, csc_matrix, or lil_matrix
+        Sparse representation of a graph.
+
+    Returns
+    -------
+    graph: MakedArray
+        The masked dense representation of the sparse graph.
+    """
+    return np.ma.masked_invalid(csgraph_to_dense(csgraph, np.nan))
+
+
+cdef void _populate_graph(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr,
+                          np.ndarray[DTYPE_t, ndim=2, mode='c'] graph,
                           DTYPE_t null_value):
+    # data, indices, indptr are the csr attributes of the sparse input.
+    # on input, graph should be filled with infinities, and should be
+    # of size [N, N], which is also the size of the sparse matrix
     cdef unsigned int N = graph.shape[0]
     cdef np.ndarray null_flag = np.ones((N, N), dtype=bool, order='C')
     cdef np.npy_bool* null_ptr = <np.npy_bool*> null_flag.data
@@ -189,75 +265,12 @@ cdef void _populate_graph(np.ndarray[DTYPE_t, ndim=2, mode='c'] graph,
         for i from indptr[row] <= i < indptr[row + 1]:
             col = indices[i]
             null_ptr[col] = 0
+            # in case of multiple edges, we'll choose the smallest
             if data[i] < graph[row, col]:
                 graph[row, col] = data[i]
         null_ptr += N
-    
+
     graph[null_flag] = null_value
-
-
-def canonical_from_dense(graph,
-                         null_value=None,
-                         nan_null=True,
-                         infinity_null=True,
-                         overwrite=False):
-    """Construct a canonical-form dense graph from a dense matrix.
-
-    A canonical-form dense graph has +infinity at all null edges.  It also
-    has the correct dtype and is C-ordered.  This function will return the
-    same result as csgraph_to_dense(csgraph_from_dense(graph)).
-
-    Parameters
-    ----------
-    graph: array_like
-        Input graph.  Shape should be (n_nodes, n_nodes).
-    null_value: float or None (optional)
-        Value that denotes non-edges in the graph.  Default
-        is zero.  If infinite values represent null edges, then setting the
-        infinity_null flag is more efficient
-    infinity_null: bool (optional)
-        If True (default), then infinite entries (both positive and negative)
-        are treated as null edges.
-    nan_null: bool (optional)
-        If True (default), then NaN entries are treated as non-edges
-    overwrite: bool (optional)
-        If True, then overwrite the input with the canonical form
-
-    Returns
-    -------
-    csgraph: ndarray
-        Canonical dense representation of graph
-    """
-    graph = np.array(graph, dtype=DTYPE, order='C', copy=not overwrite)
-
-    # check that graph is a square matrix
-    if graph.ndim != 2:
-        raise ValueError("graph should have two dimensions")
-    N = graph.shape[0]
-    if graph.shape[1] != N:
-        raise ValueError("graph should be a square array")
-
-    # check whether null_value is infinity or NaN
-    if null_value is not None:
-        null_value = DTYPE(null_value)        
-        if np.isinf(null_value):
-            infinity_null = True
-            null_value = None
-        elif np.isnan(null_value):
-            nan_null = True
-            null_value = None
-
-    # this is because -inf needs to be set to inf
-    if infinity_null:
-        graph[np.isinf(graph)] = np.inf
-
-    if nan_null:
-        graph[np.isnan(graph)] = np.inf
-
-    if null_value is not None:
-        graph[graph == null_value] = np.inf
-
-    return graph
 
 
 def reconstruct_path(csgraph, predecessors, directed=True):
