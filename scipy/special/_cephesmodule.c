@@ -174,6 +174,7 @@ static void * hankel2_data[] = { (void *)cbesh_wrap2, (void *)cbesh_wrap2,};
 static void * hankel2e_data[] = { (void *)cbesh_wrap2_e, (void *)cbesh_wrap2_e,};
 
 static void * ndtr_data[] = { (void *)ndtr, (void *)ndtr, };
+static void * log_ndtr_data[] = { (void *)log_ndtr, (void *)log_ndtr, };
 static void * erfc_data[] = { (void *)erfc, (void *)erfc, };
 static void * erf_data[] = { (void *)erf, (void *)erf, (void *)cerf_wrap, (void *)cerf_wrap};
 static void * ndtri_data[] = { (void *)ndtri, (void *)ndtri, };
@@ -705,6 +706,11 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	f = PyUFunc_FromFuncAndData(cephes1_functions, ndtr_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "ndtr", ndtr_doc, 0);
 	PyDict_SetItemString(dictionary, "ndtr", f);
 	Py_DECREF(f);
+
+        f = PyUFunc_FromFuncAndData(cephes1_functions, log_ndtr_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "log_ndtr", log_ndtr_doc, 0);
+	PyDict_SetItemString(dictionary, "log_ndtr", f);
+	Py_DECREF(f);
+
 
 	f = PyUFunc_FromFuncAndData(cephes1_functions, erfc_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "erfc", erfc_doc, 0);
 	PyDict_SetItemString(dictionary, "erfc", f);

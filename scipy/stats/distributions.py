@@ -2072,7 +2072,7 @@ def _norm_logpdf(x):
 def _norm_cdf(x):
     return special.ndtr(x)
 def _norm_logcdf(x):
-    return log(special.ndtr(x))
+    return special.log_ndtr(x)
 def _norm_ppf(q):
     return special.ndtri(q)
 class norm_gen(rv_continuous):

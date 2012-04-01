@@ -144,7 +144,6 @@ Copyright 1984, 1987, 1988, 1992 by Stephen L. Moshier
 Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 */
 
-
 #include "mconf.h"
 
 extern double SQRTH;
@@ -477,4 +476,18 @@ z = x * x;
 y = x * polevl( z, T, 4 ) / p1evl( z, U, 5 );
 return( y );
 
+}
+
+double log_ndtr(double a) {
+  double pi = 3.14159265358979323846264338327;
+  if (a > -10) {
+    return log(ndtr(a));
+  }
+  
+  /* for a <= -10, we use the Taylor series approximation of erf to compute 
+     the log CDF directly.
+  */   
+  
+  return -0.5*a*a - log(-a) - 0.5*log(2*pi);
+  
 }
