@@ -827,9 +827,9 @@ def test_tukeylambda_stats_ticket_1545():
 
 def test_powerlaw_stats():
     """Test the powerlaw stats function.
-    
+
     This unit test is also a regression test for ticket 1548.
-    
+
     The exact values are:
     mean:
         mu = a / (a + 1)
@@ -858,9 +858,25 @@ def test_powerlaw_stats():
     """
     cases = [(1.0, (0.5, 1./12 , 0.0, -1.2)),
              (2.0, (2./3, 2./36, -0.56568542494924734, -0.6))]
-    for a, exact_mvsk in cases: 
+    for a, exact_mvsk in cases:
         mvsk = stats.powerlaw.stats(a, moments="mvsk")
         assert_array_almost_equal(mvsk, exact_mvsk)
+
+
+def test_norm_logcdf():
+    """Test precision of the logcdf of the normal distribution.
+
+    This precision was enhanced in ticket 1614.
+    """
+    x = -np.asarray(range(0, 120, 4))
+    # Values from R
+    expected = [-0.69, -10.36, -35.01, -75.41, -131.70, -203.92, -292.10,
+                -396.25, -516.39, -652.50, -804.61, -972.70, -1156.79,
+                -1356.87, -1572.94, -1805.01, -2053.08, -2317.14, -2597.20,
+                -2893.25, -3205.30, -3533.35, -3877.40, -4237.44, -4613.48,
+                -5005.52, -5413.56, -5837.60, -6277.64, -6733.67]
+
+    assert_allclose(stats.norm().logcdf(x), expected, atol=0.01)
 
 
 if __name__ == "__main__":
