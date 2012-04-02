@@ -167,7 +167,46 @@ words in the smaller ones::
 These are all the three-letter words which do not connect to others via a word
 ladder.
 
+We might also be curious about which words are maximally separated.  Which
+two words take the most links to connect?  We can determine this by computing
+the matrix of all shortest paths.    Note that by convention, the
+distance between two non-connected points is reported to be infinity, so
+we'll need to remove these before finding the maximum::
+
+    >>> distances, predecessors = dijkstra(graph, return_predecessors=True)
+    >>> np.max(distances[~np.isinf(distances)])
+    13.0
+
+So there is at least one pair of words which takes 13 steps to get from one
+to the other!  Let's determine which these are::
+
+    >>> i1, i2 = np.where(distances == 13)
+    >>> zip(word_list[i1], word_list[i2])
+    [('imp', 'ohm'),
+     ('imp', 'ohs'),
+     ('ohm', 'imp'),
+     ('ohm', 'ump'),
+     ('ohs', 'imp'),
+     ('ohs', 'ump'),
+     ('ump', 'ohm'),
+     ('ump', 'ohs')]
+
+We see that there are two pairs of words which are maximally separated from
+each other: 'imp' and 'ump' on one hand, and 'ohm' and 'ohs' on the other
+hand.  We can find the connecting list in the same way as above::
+
+    >>> path = []
+    >>> i = i2[0]
+    >>> while i != i1[0]:
+    >>>     path.append(word_list[i])
+    >>>     i = predecessors[i1[0], i]
+    >>> path.append(word_list[i1[0]])
+    >>> print path[::-1]
+    ['imp', 'amp', 'asp', 'ask', 'ark', 'are', 'aye', 'rye', 'roe', 'woe', 'woo', 'who', 'oho', 'ohm']
+
+This gives us the path we desired to see.
+
 Word ladders are just one potential application of scipy's fast graph
 algorithms for sparse matrices.  Graph theory makes appearances in many
 areas of mathematics, data analysis, and machine learning.  The sparse graph
-tools are flexible to handle many of these situations.
+tools are flexible enough to handle many of these situations.
