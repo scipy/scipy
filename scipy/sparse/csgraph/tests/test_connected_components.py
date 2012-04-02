@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.testing import assert_, assert_array_almost_equal
 from scipy.sparse import csgraph
 
 def test_weak_connections():
@@ -13,8 +14,8 @@ def test_weak_connections():
             csgraph.connected_components(X, directed=True,
                                          connection='weak')
         
-        assert n_components == 2
-        assert np.allclose(labels, [0, 0, 1])
+        assert_(n_components == 2)
+        assert_array_almost_equal(labels, [0, 0, 1])
 
 def test_strong_connections():
     X1de = np.array([[0, 1, 0],
@@ -30,17 +31,17 @@ def test_strong_connections():
             csgraph.connected_components(X, directed=True,
                                          connection='strong')
         
-        assert n_components == 3
+        assert_(n_components == 3)
         labels.sort()
-        assert np.allclose(labels, [0, 1, 2])
+        assert_array_almost_equal(labels, [0, 1, 2])
 
     for X in X2sp, X2de:
         n_components, labels =\
             csgraph.connected_components(X, directed=True,
                                          connection='strong')
         
-        assert n_components == 2
+        assert_(n_components == 2)
         labels.sort()
-        assert np.allclose(labels, [0, 0, 1])
+        assert_array_almost_equal(labels, [0, 0, 1])
 
         

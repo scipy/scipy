@@ -83,7 +83,7 @@ This is identical to the previous graph, except nodes 0 and 2 are connected
 by an edge of zero weight.  In this case, the dense representation above
 leads to ambiguities: how can non-edges be represented if zero is a meaningful
 value?  In this case, either a masked or sparse representation must be used
-to elliminate the ambiguity::
+to eliminate the ambiguity::
 
     >>> G2_data = np.array([[np.inf, 2,      0     ],
     ...                     [2,      np.inf, np.inf],

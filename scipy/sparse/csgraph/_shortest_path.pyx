@@ -3,7 +3,7 @@ Routines for performing shortest-path graph searches
 
 The main interface is in the function :func:`shortest_path`.  This
 calls cython routines that compute the shortest path using
-the Floyd-Warshall algorithm, Dykstra's algorithm with Fibonacci Heaps,
+the Floyd-Warshall algorithm, Dijkstra's algorithm with Fibonacci Heaps,
 the Bellman-Ford algorithm, or Johnson's Algorithm.
 """
 

@@ -39,7 +39,7 @@ list you have available::
     >>> word_list = map(str.strip, word_list)
 
 We want to look at words of length 3, so let's select just those words of the
-correct length.  We'll also elliminate words which start with upper-case
+correct length.  We'll also eliminate words which start with upper-case
 (proper nouns) or contain non alpha-numeric characters like apostrophes and
 hyphens.  Finally, we'll make sure everything is lower-case for comparison
 later::
@@ -89,7 +89,7 @@ where :math:`N` is the number of letters, are connected in the word ladder::
     >>> graph = csr_matrix(squareform(hamming_dist < 1.5 / word_list.itemsize))
 
 When comparing the distances, we don't use an equality because this can be
-unstable for floating point values.  The inequality works produces the desired
+unstable for floating point values.  The inequality produces the desired
 result as long as no two entries of the word list are identical.  Now that our
 graph is set up, we'll use a shortest path search to find the path between
 any two words in the graph::
