@@ -30,14 +30,14 @@ class coo_matrix(_data_matrix):
             to construct an empty matrix with shape (M, N)
             dtype is optional, defaulting to dtype='d'.
 
-        coo_matrix((data, ij), [shape=(M, N)])
-            The arguments 'data' and 'ij' represent three arrays:
+        coo_matrix((data, (i, j)), [shape=(M, N)])
+            to construct from three arrays:
                 1. data[:]   the entries of the matrix, in any order
-                2. ij[0][:]  the row indices of the matrix entries
-                3. ij[1][:]  the column indices of the matrix entries
+                2. i[:]      the row indices of the matrix entries
+                3. j[:]      the column indices of the matrix entries
 
-            Where ``A[ij[0][k], ij[1][k]] = data[k]``.  When shape is
-            not specified, it is inferred from the index arrays
+            Where ``A[i[k], j[k]] = data[k]``.  When shape is not
+            specified, it is inferred from the index arrays
 
     Attributes
     ----------
