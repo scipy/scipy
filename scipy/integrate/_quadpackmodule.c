@@ -2,7 +2,6 @@
   From Multipack project
  */
 #include "quadpack.h"
-static PyObject *quadpack_error;
 #include "__quadpack.h"
 static struct PyMethodDef quadpack_module_methods[] = {
 {"_qagse", quadpack_qagse, METH_VARARGS, doc_qagse},
