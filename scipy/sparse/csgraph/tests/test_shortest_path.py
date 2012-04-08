@@ -27,6 +27,7 @@ def floyd_warshall_slow(graph, directed=False):
 
 def generate_graph(N=20):
     #sparse grid of distances
+    np.random.seed(123456)
     dist_matrix = np.random.random((N, N))
 
     #make graph sparse
@@ -177,7 +178,7 @@ def test_negative_cycles():
         for directed in True, False:
             assert_raises(NegativeCycleError, shortest_path,
                           graph, method=method, directed=directed)
-                      
+
 
 if __name__ == '__main__':
     import nose
