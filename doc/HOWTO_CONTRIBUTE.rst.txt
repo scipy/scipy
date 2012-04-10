@@ -38,7 +38,7 @@ tests and correct code style.
 
 1. Unit tests
     In principle you should aim to create unit tests that exercise all the code
-    that you are adding.  This gives some degree is confidence that your code
+    that you are adding.  This gives some degree of confidence that your code
     runs correctly, also on Python versions and hardware or OSes that you don't
     have available yourself.  An extensive description of how to write unit
     tests is given in the NumPy `testing guidelines`_.
@@ -92,14 +92,14 @@ again for review (after a reasonable amount of time, say a couple of weeks, has
 passed).  Once the review is completed, the PR is merged into the "master"
 branch of SciPy.
 
-The above describes the requirements and proces for adding code to SciPy.  It
-doesn't yet answer the question though how decisions are made exactly, and how
-makes them.  The basic answer is: decisions are made by consensus, by everyone
-who chooses to participate in the discussion on the mailing list.  This
-includes developers, other users and yourself.  Aiming for consensus in the
-discussion is important -- SciPy is a project by and for the scientific Python
-community.  In those rare cases that agreement cannot be reached, the
-`maintainers`_ of the module in question can decide the issue.
+The above describes the requirements and process for adding code to SciPy.  It
+doesn't yet answer the question though how decisions are made exactly.  The
+basic answer is: decisions are made by consensus, by everyone who chooses to
+participate in the discussion on the mailing list.  This includes developers,
+other users and yourself.  Aiming for consensus in the discussion is important
+-- SciPy is a project by and for the scientific Python community.  In those
+rare cases that agreement cannot be reached, the `maintainers`_ of the module
+in question can decide the issue.
 
 
 Contributing by helping maintain existing code
@@ -169,7 +169,7 @@ Checklist before submitting a PR
   - If you are a first-time contributor, did you add yourself to THANKS.txt?
     Please note that this is perfectly normal and desirable - the aim is to
     give every single contributor credit, and if you don't add yourself it's
-    simply extra work for the reviewer (or worse, he may forget).
+    simply extra work for the reviewer (or worse, the reviewer may forget).
 
 
 Useful SciPy documents
