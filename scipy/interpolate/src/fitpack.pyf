@@ -462,15 +462,15 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
        real*8 dimension(m),depend(m),check(len(phi)==m) :: phi
        real*8 dimension(m),depend(m),check(len(r)==m) :: r
        real*8 optional,dimension(m),depend(m),check(len(w)==m) :: w = 1.0
-       real*8 optional,check(0.0<=s),depend(m) :: s = m
+       real*8 optional,check(0.0<=s) :: s = m
        integer intent(hide),depend(m),check(ntest>=8) :: ntest = 8+sqrt(m/2)
        integer intent(hide),depend(m),check(npest>=8) :: npest = 8+sqrt(m/2)
        real*8 optional,check(0.0<eps && eps<1.0) :: eps = 1e-16
        integer intent(out) :: nt
-       real*8 dimension(nt),intent(out) :: tt
+       real*8 dimension(ntest),intent(out),depend(ntest) :: tt
        integer intent(out) :: np
-       real*8 dimension(np),intent(out) :: tp
-       real*8 dimension((ntest-4)*(npest-4)), 
+       real*8 dimension(npest),intent(out),depend(npest) :: tp
+       real*8 dimension((ntest-4)*(npest-4)), &
             depend(ntest,npest),intent(out) :: c
        real*8 intent(out) :: fp
        real*8 dimension(lwrk1),intent(cache,hide),depend(lwrk1) :: wrk1
