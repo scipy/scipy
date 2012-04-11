@@ -92,7 +92,7 @@ again for review (after a reasonable amount of time, say a couple of weeks, has
 passed).  Once the review is completed, the PR is merged into the "master"
 branch of SciPy.
 
-The above describes the requirements and proces for adding code to SciPy.  It
+The above describes the requirements and process for adding code to SciPy.  It
 doesn't yet answer the question though how decisions are made exactly.  The
 basic answer is: decisions are made by consensus, by everyone who chooses to
 participate in the discussion on the mailing list.  This includes developers,
