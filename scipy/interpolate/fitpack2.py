@@ -15,6 +15,7 @@ __all__ = [
     'BivariateSpline',
     'LSQBivariateSpline',
     'SmoothBivariateSpline',
+    'LSQSpherBivariateSpline',
     'SmoothSpherBivariateSpline',
     'RectBivariateSpline',
     'RectSpherBivariateSpline']
@@ -693,7 +694,9 @@ class SmoothSpherBivariateSpline(BivariateSpline):
     Parameters
     ----------
     theta, phi, r : array_like
-        1-D sequences of data points (order is not important).
+        1-D sequences of data points (order is not important). Coordinates
+        must be given in radians. Theta must lie within the interval (0, pi),
+        and phi must lie within the interval (0, 2pi).
     w : array_like, optional
         Positive 1-D sequence of weights.
     s : float, optional
@@ -708,8 +711,8 @@ class SmoothSpherBivariateSpline(BivariateSpline):
 
     """
 
-    def __init__(self, theta, phi, r, w=1., s=0., eps=1E-16):
-        if isinstance(w, (float, np.float32, np.float64)):
+    def __init__(self, theta, phi, r, w=None, s=0., eps=1E-16):
+        if np.issubclass_(w, float):
             w = ones(len(theta)) * w
         nt_,tt_,np_,tp_,c,fp,ier = dfitpack.spherfit_smth(theta,phi,r,w=w,s=s,
                                                           eps=eps)
@@ -721,6 +724,49 @@ class SmoothSpherBivariateSpline(BivariateSpline):
 
         self.fp = fp
         self.tck = tt_[:nt_],tp_[:np_],c[:(nt_-4)*(np_-4)]
+        self.degrees = (3, 3)
+
+class LSQSpherBivariateSpline(BivariateSpline):
+    """ Weighted least-squares bivariate spline approximation in spherical
+    coordinates.
+
+    Parameters
+    ----------
+    theta, phi, r : array_like
+        1-D sequences of data points (order is not important). Coordinates
+        must be given in radians. Theta must lie within the interval (0, pi),
+        and phi must lie within the interval (0, 2pi).
+    tt, tp : array_like
+        Strictly ordered 1-D sequences of knots coordinates.
+    w : array_like, optional
+        Positive 1-D sequence of weights.
+    eps : float, optional
+        A threshold for determining the effective rank of an over-determined
+        linear system of equations. `eps` should have a value between 0 and 1,
+        the default is 1e-16.
+
+    """
+
+    def __init__(self, theta, phi, r, tt, tp, w=None, eps=1E-16):
+        if np.issubclass_(w, float):
+            w = ones(len(theta)) * w
+        nt_, np_ = 8 + len(tt), 8 + len(tp)
+        tt_, tp_ = zeros((nt_,), float), zeros((np_,), float)
+        tt_[4:-4], tp_[4:-4] = tt, tp
+        tt_[-4:], tp_[-4:] = np.pi, 2*np.pi
+        tt_,tp_,c,fp,ier = dfitpack.spherfit_lsq(theta,phi,r,tt_,tp_,
+                                                 w=w,eps=eps)
+        if ier in [0,-1,-2]: # normal return
+            pass
+        elif ier < -2:
+            deficiency = 6+(nt_-8)*(np_-7)+ier
+            message = _surfit_messages.get(-3) % (deficiency)
+        else:
+            message = _surfit_messages.get(ier,'ier=%s' % (ier))
+            warnings.warn(message)
+
+        self.fp = fp
+        self.tck = tt_,tp_,c
         self.degrees = (3, 3)
 
 class RectBivariateSpline(BivariateSpline):
