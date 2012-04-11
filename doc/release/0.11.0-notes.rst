@@ -68,6 +68,15 @@ A function for creating Pascal matrices, ``scipy.linalg.pascal``, was added.
 ``misc.logsumexp`` now takes an optional ``axis`` keyword argument.
 
 
+``scipy.interpolate`` improvements
+----------------------------------
+
+For interpolation in spherical coordinates, the three classes
+``scipy.interpolate.SmoothSpherBivariateSpline``, 
+``scipy.interpolate.RectBivariateSpline``, and 
+``scipy.interpolate.RectSpherBivariateSpline`` have been added.
+
+
 Deprecated features
 ===================
 
