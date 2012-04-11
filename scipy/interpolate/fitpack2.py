@@ -688,6 +688,29 @@ class LSQBivariateSpline(BivariateSpline):
         self.tck = tx1,ty1,c
         self.degrees = kx,ky
 
+_spherefit_messages = _surfit_messages.copy()
+_spherefit_messages[10] = """
+ERROR. On entry, the input data are controlled on validity. The following
+       restrictions must be satisfied:
+            -1<=iopt<=1,  m>=2, ntest>=8 ,npest >=8, 0<eps<1,
+            0<=teta(i)<=pi, 0<=phi(i)<=2*pi, w(i)>0, i=1,...,m
+            lwrk1 >= 185+52*v+10*u+14*u*v+8*(u-1)*v**2+8*m
+            kwrk >= m+(ntest-7)*(npest-7)
+            if iopt=-1: 8<=nt<=ntest , 9<=np<=npest
+                        0<tt(5)<tt(6)<...<tt(nt-4)<pi
+                        0<tp(5)<tp(6)<...<tp(np-4)<2*pi
+            if iopt>=0: s>=0
+            if one of these conditions is found to be violated,control
+            is immediately repassed to the calling program. in that
+            case there is no approximation returned."""
+_spherefit_messages[-3] = """
+WARNING. The coefficients of the spline returned have been computed as the
+         minimal norm least-squares solution of a (numerically) rank
+         deficient system. (-ier) gives the rank. Especially if the rank
+         deficiency, which can be computed as 6+(nt-8)*(np-7)+ier, is large,
+         the results may be inaccurate. They could also seriously depend on
+         the value of eps."""
+
 class SmoothSpherBivariateSpline(BivariateSpline):
     """ Smooth bivariate spline approximation in spherical coordinates.
 
@@ -709,6 +732,55 @@ class SmoothSpherBivariateSpline(BivariateSpline):
         linear system of equations. `eps` should have a value between 0 and 1,
         the default is 1e-16.
 
+    Notes
+    -----
+    For more information, see the FITPACK_ site about this function.
+
+    .. _FITPACK: http://www.netlib.org/dierckx/sphere.f
+
+    Examples
+    --------
+    Suppose we have global data on a coarse grid (the input data does not
+    have to be on a grid):
+
+    >>> theta = np.linspace(0., np.pi, 7)
+    >>> phi = np.linspace(0., 2*np.pi, 9)
+    >>> data = np.empty((theta.shape[0], phi.shape[0]))
+    >>> data[:,0], data[0,:], data[-1,:] = 0., 0., 0.
+    >>> data[1:-1,1], data[1:-1,-1], data[1,1:-1], data[-2,1:-1] = 1., 1., 1., 1.
+    >>> data[2:-2,2], data[2:-2,-2], data[2,2:-2], data[-3,2:-2] = 2., 2., 2., 2.
+    >>> data[3,3:-2] = 3.
+    >>> data = np.roll(data, 4, 1)
+
+    We need to set up the interpolator object
+
+    >>> lats, lons = np.meshgrid(theta, phi)
+    >>> from scipy.interpolate import SmoothSpherBivariateSpline
+    >>> lut = SmoothSpherBivariateSpline(lats.ravel(), lons.ravel(),
+                                         data.T.ravel(),s=3.5)
+
+    As a first test, we'll see what the algorithm returns when run on the
+    input coordinates
+
+    >>> new_lats = theta.copy()
+    >>> new_lons = phi.copy()
+    >>> data_orig = lut(new_lats, new_lons)
+
+    Finally we interpolate the data to a finer grid
+
+    >>> fine_lats = np.linspace(0., np.pi, 70)
+    >>> fine_lons = np.linspace(0., 2*np.pi, 90)
+
+    >>> data_smth = lut(fine_lats, fine_lons)
+
+    >>> fig = plt.figure()
+    >>> ax1 = fig.add_subplot(131)
+    >>> ax1.imshow(data, interpolation='nearest')
+    >>> ax2 = fig.add_subplot(132)
+    >>> ax2.imshow(data_orig, interpolation='nearest')
+    >>> ax3 = fig.add_subplot(133)
+    >>> ax3.imshow(data_smth, interpolation='nearest')
+    >>> plt.show()
     """
 
     def __init__(self, theta, phi, r, w=None, s=0., eps=1E-16):
@@ -719,7 +791,7 @@ class SmoothSpherBivariateSpline(BivariateSpline):
         if ier in [0,-1,-2]: # normal return
             pass
         else:
-            message = _surfit_messages.get(ier,'ier=%s' % (ier))
+            message = _spherefit_messages.get(ier,'ier=%s' % (ier))
             warnings.warn(message)
 
         self.fp = fp
@@ -738,6 +810,7 @@ class LSQSpherBivariateSpline(BivariateSpline):
         and phi must lie within the interval (0, 2pi).
     tt, tp : array_like
         Strictly ordered 1-D sequences of knots coordinates.
+        Coordinates must satisfy 0<tt[i]<pi, 0<tp[i]<2*pi.
     w : array_like, optional
         Positive 1-D sequence of weights.
     eps : float, optional
@@ -745,6 +818,61 @@ class LSQSpherBivariateSpline(BivariateSpline):
         linear system of equations. `eps` should have a value between 0 and 1,
         the default is 1e-16.
 
+    Notes
+    -----
+    For more information, see the FITPACK_ site about this function.
+
+    .. _FITPACK: http://www.netlib.org/dierckx/sphere.f
+
+    Examples
+    --------
+    Suppose we have global data on a coarse grid (the input data does not
+    have to be on a grid):
+
+    >>> theta = np.linspace(0., np.pi, 7)
+    >>> phi = np.linspace(0., 2*np.pi, 9)
+    >>> data = np.empty((theta.shape[0], phi.shape[0]))
+    >>> data[:,0], data[0,:], data[-1,:] = 0., 0., 0.
+    >>> data[1:-1,1], data[1:-1,-1], data[1,1:-1], data[-2,1:-1] = 1., 1., 1., 1.
+    >>> data[2:-2,2], data[2:-2,-2], data[2,2:-2], data[-3,2:-2] = 2., 2., 2., 2.
+    >>> data[3,3:-2] = 3.
+    >>> data = np.roll(data, 4, 1)
+
+    We need to set up the interpolator object. Here, we must also specify the
+    coordinates of the knots to use.
+
+    >>> lats, lons = np.meshgrid(theta, phi)
+    >>> knotst, knotsp = theta.copy(), phi.copy()
+    >>> knotst[0] += .0001
+    >>> knotst[-1] -= .0001
+    >>> knotsp[0] += .0001
+    >>> knotsp[-1] -= .0001
+    >>> from scipy.interpolate import LSQSpherBivariateSpline
+    >>> lut = LSQSpherBivariateSpline(lats.ravel(), lons.ravel(),
+                                      data.T.ravel(),knotst,knotsp)
+
+    As a first test, we'll see what the algorithm returns when run on the
+    input coordinates
+
+    >>> new_lats = theta.copy()
+    >>> new_lons = phi.copy()
+    >>> data_orig = lut(new_lats, new_lons)
+
+    Finally we interpolate the data to a finer grid
+
+    >>> fine_lats = np.linspace(0., np.pi, 70)
+    >>> fine_lons = np.linspace(0., 2*np.pi, 90)
+
+    >>> data_lsq = lut(fine_lats, fine_lons)
+
+    >>> fig = plt.figure()
+    >>> ax1 = fig.add_subplot(131)
+    >>> ax1.imshow(data, interpolation='nearest')
+    >>> ax2 = fig.add_subplot(132)
+    >>> ax2.imshow(data_orig, interpolation='nearest')
+    >>> ax3 = fig.add_subplot(133)
+    >>> ax3.imshow(data_lsq, interpolation='nearest')
+    >>> plt.show()
     """
 
     def __init__(self, theta, phi, r, tt, tp, w=None, eps=1E-16):
@@ -760,9 +888,9 @@ class LSQSpherBivariateSpline(BivariateSpline):
             pass
         elif ier < -2:
             deficiency = 6+(nt_-8)*(np_-7)+ier
-            message = _surfit_messages.get(-3) % (deficiency)
+            message = _spherefit_messages.get(-3) % (deficiency)
         else:
-            message = _surfit_messages.get(ier,'ier=%s' % (ier))
+            message = _spherefit_messages.get(ier,'ier=%s' % (ier))
             warnings.warn(message)
 
         self.fp = fp
