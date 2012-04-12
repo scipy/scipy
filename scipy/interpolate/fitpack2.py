@@ -706,8 +706,8 @@ ERROR. On entry, the input data are controlled on validity. The following
 _spherefit_messages[-3] = """
 WARNING. The coefficients of the spline returned have been computed as the
          minimal norm least-squares solution of a (numerically) rank
-         deficient system. (-ier) gives the rank. Especially if the rank
-         deficiency, which can be computed as 6+(nt-8)*(np-7)+ier, is large,
+         deficient system (deficiency=%i, rank=%i). Especially if the rank
+         deficiency, which is computed by 6+(nt-8)*(np-7)+ier, is large,
          the results may be inaccurate. They could also seriously depend on
          the value of eps."""
 
@@ -797,6 +797,20 @@ class SmoothSpherBivariateSpline(BivariateSpline):
         self.fp = fp
         self.tck = tt_[:nt_],tp_[:np_],c[:(nt_-4)*(np_-4)]
         self.degrees = (3, 3)
+
+    def __call__(self, theta, phi, mth='array'):
+        if min(theta) < 0. or max(theta) > np.pi:
+            raise ValueError("requested theta out of bounds.")
+        if min(phi) < 0. or max(phi) > 2. * np.pi:
+            raise ValueError("requested phi out of bounds.")
+        return super(SmoothSpherBivariateSpline, self).__call__(theta, phi,
+
+    def ev(self, theta, phi):
+        if min(theta) < 0. or max(theta) > np.pi:
+            raise ValueError("requested theta out of bounds.")
+        if min(phi) < 0. or max(phi) > 2. * np.pi:
+            raise ValueError("requested phi out of bounds.")
+        return super(SmoothSpherBivariateSpline, self).ev(theta, phi)
 
 class LSQSpherBivariateSpline(BivariateSpline):
     """ Weighted least-squares bivariate spline approximation in spherical
@@ -888,14 +902,27 @@ class LSQSpherBivariateSpline(BivariateSpline):
             pass
         elif ier < -2:
             deficiency = 6+(nt_-8)*(np_-7)+ier
-            message = _spherefit_messages.get(-3) % (deficiency)
+            message = _spherefit_messages.get(-3) % (deficiency, -ier)
         else:
             message = _spherefit_messages.get(ier,'ier=%s' % (ier))
             warnings.warn(message)
-
         self.fp = fp
         self.tck = tt_,tp_,c
         self.degrees = (3, 3)
+
+    def __call__(self, theta, phi, mth='array'):
+        if min(theta) < 0. or max(theta) > np.pi:
+            raise ValueError("requested theta out of bounds.")
+        if min(phi) < 0. or max(phi) > 2. * np.pi:
+            raise ValueError("requested phi out of bounds.")
+        return super(LSQSpherBivariateSpline, self).__call__(theta, phi, mth)
+
+    def ev(self, theta, phi):
+        if min(theta) < 0. or max(theta) > np.pi:
+            raise ValueError("requested theta out of bounds.")
+        if min(phi) < 0. or max(phi) > 2. * np.pi:
+            raise ValueError("requested phi out of bounds.")
+        return super(LSQSpherBivariateSpline, self).ev(theta, phi)
 
 class RectBivariateSpline(BivariateSpline):
     """ Bivariate spline approximation over a rectangular mesh.
