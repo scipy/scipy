@@ -158,8 +158,7 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     if sort is None:
         sort_t = 0
         sfunction = lambda x : None
-    else: #TODO, how to specify the external user function?
-          #I don't think this works yet
+    else:
         sort_t = 1
         sfunction = _select_function(sort, typa)
 
