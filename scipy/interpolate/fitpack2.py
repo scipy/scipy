@@ -804,6 +804,7 @@ class SmoothSpherBivariateSpline(BivariateSpline):
         if min(phi) < 0. or max(phi) > 2. * np.pi:
             raise ValueError("requested phi out of bounds.")
         return super(SmoothSpherBivariateSpline, self).__call__(theta, phi,
+                                                                mth)
 
     def ev(self, theta, phi):
         if min(theta) < 0. or max(theta) > np.pi:
