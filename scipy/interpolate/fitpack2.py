@@ -688,6 +688,7 @@ class LSQBivariateSpline(BivariateSpline):
         self.tck = tx1,ty1,c
         self.degrees = kx,ky
 
+
 _spherefit_messages = _surfit_messages.copy()
 _spherefit_messages[10] = """
 ERROR. On entry, the input data are controlled on validity. The following
@@ -710,6 +711,7 @@ WARNING. The coefficients of the spline returned have been computed as the
          deficiency, which is computed by 6+(nt-8)*(np-7)+ier, is large,
          the results may be inaccurate. They could also seriously depend on
          the value of eps."""
+
 
 class SmoothSpherBivariateSpline(BivariateSpline):
     """ Smooth bivariate spline approximation in spherical coordinates.
@@ -747,8 +749,10 @@ class SmoothSpherBivariateSpline(BivariateSpline):
     >>> phi = np.linspace(0., 2*np.pi, 9)
     >>> data = np.empty((theta.shape[0], phi.shape[0]))
     >>> data[:,0], data[0,:], data[-1,:] = 0., 0., 0.
-    >>> data[1:-1,1], data[1:-1,-1], data[1,1:-1], data[-2,1:-1] = 1., 1., 1., 1.
-    >>> data[2:-2,2], data[2:-2,-2], data[2,2:-2], data[-3,2:-2] = 2., 2., 2., 2.
+    >>> data[1:-1,1], data[1:-1,-1] = 1., 1.
+    >>> data[1,1:-1], data[-2,1:-1] = 1., 1.
+    >>> data[2:-2,2], data[2:-2,-2] = 2., 2.
+    >>> data[2,2:-2], data[-3,2:-2] = 2., 2.
     >>> data[3,3:-2] = 3.
     >>> data = np.roll(data, 4, 1)
 
@@ -781,21 +785,22 @@ class SmoothSpherBivariateSpline(BivariateSpline):
     >>> ax3 = fig.add_subplot(133)
     >>> ax3.imshow(data_smth, interpolation='nearest')
     >>> plt.show()
-    """
 
+    """
     def __init__(self, theta, phi, r, w=None, s=0., eps=1E-16):
         if np.issubclass_(w, float):
             w = ones(len(theta)) * w
-        nt_,tt_,np_,tp_,c,fp,ier = dfitpack.spherfit_smth(theta,phi,r,w=w,s=s,
-                                                          eps=eps)
-        if ier in [0,-1,-2]: # normal return
+        nt_, tt_, np_, tp_, c, fp, ier = dfitpack.spherfit_smth(theta, phi,
+                                                                r, w=w, s=s,
+                                                                eps=eps)
+        if ier in [0, -1, -2]:  # normal return
             pass
         else:
-            message = _spherefit_messages.get(ier,'ier=%s' % (ier))
+            message = _spherefit_messages.get(ier, 'ier=%s' % (ier))
             warnings.warn(message)
 
         self.fp = fp
-        self.tck = tt_[:nt_],tp_[:np_],c[:(nt_-4)*(np_-4)]
+        self.tck = tt_[:nt_], tp_[:np_], c[:(nt_ - 4) * (np_ - 4)]
         self.degrees = (3, 3)
 
     def __call__(self, theta, phi, mth='array'):
@@ -812,6 +817,7 @@ class SmoothSpherBivariateSpline(BivariateSpline):
         if min(phi) < 0. or max(phi) > 2. * np.pi:
             raise ValueError("requested phi out of bounds.")
         return super(SmoothSpherBivariateSpline, self).ev(theta, phi)
+
 
 class LSQSpherBivariateSpline(BivariateSpline):
     """ Weighted least-squares bivariate spline approximation in spherical
@@ -848,8 +854,10 @@ class LSQSpherBivariateSpline(BivariateSpline):
     >>> phi = np.linspace(0., 2*np.pi, 9)
     >>> data = np.empty((theta.shape[0], phi.shape[0]))
     >>> data[:,0], data[0,:], data[-1,:] = 0., 0., 0.
-    >>> data[1:-1,1], data[1:-1,-1], data[1,1:-1], data[-2,1:-1] = 1., 1., 1., 1.
-    >>> data[2:-2,2], data[2:-2,-2], data[2,2:-2], data[-3,2:-2] = 2., 2., 2., 2.
+    >>> data[1:-1,1], data[1:-1,-1] = 1., 1.
+    >>> data[1,1:-1], data[-2,1:-1] = 1., 1.
+    >>> data[2:-2,2], data[2:-2,-2] = 2., 2.
+    >>> data[2,2:-2], data[-3,2:-2] = 2., 2.
     >>> data[3,3:-2] = 3.
     >>> data = np.roll(data, 4, 1)
 
@@ -896,19 +904,19 @@ class LSQSpherBivariateSpline(BivariateSpline):
         nt_, np_ = 8 + len(tt), 8 + len(tp)
         tt_, tp_ = zeros((nt_,), float), zeros((np_,), float)
         tt_[4:-4], tp_[4:-4] = tt, tp
-        tt_[-4:], tp_[-4:] = np.pi, 2*np.pi
-        tt_,tp_,c,fp,ier = dfitpack.spherfit_lsq(theta,phi,r,tt_,tp_,
-                                                 w=w,eps=eps)
-        if ier in [0,-1,-2]: # normal return
+        tt_[-4:], tp_[-4:] = np.pi, 2. * np.pi
+        tt_, tp_, c, fp, ier = dfitpack.spherfit_lsq(theta, phi, r, tt_, tp_,
+                                                     w=w, eps=eps)
+        if ier in [0, -1, -2]:  # normal return
             pass
         elif ier < -2:
-            deficiency = 6+(nt_-8)*(np_-7)+ier
+            deficiency = 6 + (nt_ - 8) * (np_ - 7) + ier
             message = _spherefit_messages.get(-3) % (deficiency, -ier)
         else:
-            message = _spherefit_messages.get(ier,'ier=%s' % (ier))
+            message = _spherefit_messages.get(ier, 'ier=%s' % (ier))
             warnings.warn(message)
         self.fp = fp
-        self.tck = tt_,tp_,c
+        self.tck = tt_, tp_, c
         self.degrees = (3, 3)
 
     def __call__(self, theta, phi, mth='array'):
@@ -924,6 +932,7 @@ class LSQSpherBivariateSpline(BivariateSpline):
         if min(phi) < 0. or max(phi) > 2. * np.pi:
             raise ValueError("requested phi out of bounds.")
         return super(LSQSpherBivariateSpline, self).ev(theta, phi)
+
 
 class RectBivariateSpline(BivariateSpline):
     """ Bivariate spline approximation over a rectangular mesh.
