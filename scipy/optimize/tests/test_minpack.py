@@ -29,67 +29,69 @@ def dummy_func(x, shape):
     """
     return np.ones(shape)
 
+# Function and jacobian for tests of solvers for systems of nonlinear
+# equations
+def pressure_network(flow_rates, Qtot, k):
+    """Evaluate non-linear equation system representing
+    the pressures and flows in a system of n parallel pipes::
 
-class TestFSolve(object):
-    def pressure_network(self, flow_rates, Qtot, k):
-        """Evaluate non-linear equation system representing
-        the pressures and flows in a system of n parallel pipes::
+        f_i = P_i - P_0, for i = 1..n
+        f_0 = sum(Q_i) - Qtot
 
-            f_i = P_i - P_0, for i = 1..n
-            f_0 = sum(Q_i) - Qtot
+    Where Q_i is the flow rate in pipe i and P_i the pressure in that pipe.
+    Pressure is modeled as a P=kQ**2 where k is a valve coefficient and
+    Q is the flow rate.
 
-        Where Q_i is the flow rate in pipe i and P_i the pressure in that pipe.
-        Pressure is modeled as a P=kQ**2 where k is a valve coefficient and
-        Q is the flow rate.
+    Parameters
+    ----------
+    flow_rates : float
+        A 1D array of n flow rates [kg/s].
+    k : float
+        A 1D array of n valve coefficients [1/kg m].
+    Qtot : float
+        A scalar, the total input flow rate [kg/s].
 
-        Parameters
-        ----------
-        flow_rates : float
-            A 1D array of n flow rates [kg/s].
-        k : float
-            A 1D array of n valve coefficients [1/kg m].
-        Qtot : float
-            A scalar, the total input flow rate [kg/s].
+    Returns
+    -------
+    F : float
+        A 1D array, F[i] == f_i.
 
-        Returns
-        -------
-        F : float
-            A 1D array, F[i] == f_i.
+    """
+    P = k * flow_rates**2
+    F = np.hstack((P[1:] - P[0], flow_rates.sum() - Qtot))
+    return F
 
-        """
-        P = k * flow_rates**2
-        F = np.hstack((P[1:] - P[0], flow_rates.sum() - Qtot))
-        return F
+def pressure_network_jacobian(flow_rates, Qtot, k):
+    """Return the jacobian of the equation system F(flow_rates)
+    computed by `pressure_network` with respect to
+    *flow_rates*. See `pressure_network` for the detailed
+    description of parrameters.
 
-    def pressure_network_jacobian(self, flow_rates, Qtot, k):
-        """Return the jacobian of the equation system F(flow_rates)
-        computed by `pressure_network` with respect to
-        *flow_rates*. See `pressure_network` for the detailed
-        description of parrameters.
+    Returns
+    -------
+    jac : float
+        *n* by *n* matrix ``df_i/dQ_i`` where ``n = len(flow_rates)``
+        and *f_i* and *Q_i* are described in the doc for `pressure_network`
+    """
+    n = len(flow_rates)
+    pdiff = np.diag(flow_rates[1:] * 2 * k[1:] - 2 * flow_rates[0] * k[0])
 
-        Returns
-        -------
-        jac : float
-            *n* by *n* matrix ``df_i/dQ_i`` where ``n = len(flow_rates)``
-            and *f_i* and *Q_i* are described in the doc for `pressure_network`
-        """
-        n = len(flow_rates)
-        pdiff = np.diag(flow_rates[1:] * 2 * k[1:] - 2 * flow_rates[0] * k[0])
+    jac = np.empty((n, n))
+    jac[:n-1, :n-1] = pdiff * 0
+    jac[:n-1, n-1] = 0
+    jac[n-1, :] = np.ones(n)
 
-        jac = np.empty((n, n))
-        jac[:n-1, :n-1] = pdiff
-        jac[:n-1, n-1] = 0
-        jac[n-1, :] = np.ones(n)
+    return jac
 
-        return jac
 
+class TestFSolve(TestCase):
     def test_pressure_network_no_gradient(self):
         """fsolve without gradient, equal pipes -> equal flows"""
         k = np.ones(4) * 0.5
         Qtot = 4
         initial_guess = array([2., 0., 2., 0.])
         final_flows = optimize.fsolve(
-            self.pressure_network, initial_guess, args=(Qtot, k))
+            pressure_network, initial_guess, args=(Qtot, k))
         assert_array_almost_equal(final_flows, np.ones(4))
 
     def test_pressure_network_with_gradient(self):
@@ -98,8 +100,8 @@ class TestFSolve(object):
         Qtot = 4
         initial_guess = array([2., 0., 2., 0.])
         final_flows = optimize.fsolve(
-            self.pressure_network, initial_guess, args=(Qtot, k),
-            fprime=self.pressure_network_jacobian)
+            pressure_network, initial_guess, args=(Qtot, k),
+            fprime=pressure_network_jacobian)
         assert_array_almost_equal(final_flows, np.ones(4))
 
     def test_wrong_shape_func_callable(self):
