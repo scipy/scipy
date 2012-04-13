@@ -73,8 +73,8 @@ A function for creating Pascal matrices, ``scipy.linalg.pascal``, was added.
 
 For interpolation in spherical coordinates, the three classes
 ``scipy.interpolate.SmoothSpherBivariateSpline``, 
-``scipy.interpolate.RectBivariateSpline``, and 
-``scipy.interpolate.RectSpherBivariateSpline`` have been added.
+``scipy.interpolate.LSQSpherBivariateSpline``, and 
+``scipy.interpolate.RectSphereBivariateSpline`` have been added.
 
 
 Deprecated features
