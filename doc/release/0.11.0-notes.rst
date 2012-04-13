@@ -72,8 +72,8 @@ A function for creating Pascal matrices, ``scipy.linalg.pascal``, was added.
 ----------------------------------
 
 For interpolation in spherical coordinates, the three classes
-``scipy.interpolate.SmoothSpherBivariateSpline``, 
-``scipy.interpolate.LSQSpherBivariateSpline``, and 
+``scipy.interpolate.SmoothSphereBivariateSpline``,
+``scipy.interpolate.LSQSphereBivariateSpline``, and
 ``scipy.interpolate.RectSphereBivariateSpline`` have been added.
 
 
@@ -92,8 +92,8 @@ Removal of ``scipy.maxentropy``
 
 The ``scipy.maxentropy`` module, which was deprecated in the 0.10.0 release,
 has been removed.  Logistic regression in scikits.learn is a good and modern
-alternative for this functionality.  
- 
+alternative for this functionality.
+
 
 Other changes
 =============

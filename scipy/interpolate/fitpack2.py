@@ -15,8 +15,8 @@ __all__ = [
     'BivariateSpline',
     'LSQBivariateSpline',
     'SmoothBivariateSpline',
-    'LSQSpherBivariateSpline',
-    'SmoothSpherBivariateSpline',
+    'LSQSphereBivariateSpline',
+    'SmoothSphereBivariateSpline',
     'RectBivariateSpline',
     'RectSpherBivariateSpline']
 
@@ -713,7 +713,7 @@ WARNING. The coefficients of the spline returned have been computed as the
          the value of eps."""
 
 
-class SmoothSpherBivariateSpline(BivariateSpline):
+class SmoothSphereBivariateSpline(BivariateSpline):
     """ Smooth bivariate spline approximation in spherical coordinates.
 
     Parameters
@@ -759,8 +759,8 @@ class SmoothSpherBivariateSpline(BivariateSpline):
     We need to set up the interpolator object
 
     >>> lats, lons = np.meshgrid(theta, phi)
-    >>> from scipy.interpolate import SmoothSpherBivariateSpline
-    >>> lut = SmoothSpherBivariateSpline(lats.ravel(), lons.ravel(),
+    >>> from scipy.interpolate import SmoothSphereBivariateSpline
+    >>> lut = SmoothSphereBivariateSpline(lats.ravel(), lons.ravel(),
                                          data.T.ravel(),s=3.5)
 
     As a first test, we'll see what the algorithm returns when run on the
@@ -808,7 +808,7 @@ class SmoothSpherBivariateSpline(BivariateSpline):
             raise ValueError("requested theta out of bounds.")
         if min(phi) < 0. or max(phi) > 2. * np.pi:
             raise ValueError("requested phi out of bounds.")
-        return super(SmoothSpherBivariateSpline, self).__call__(theta, phi,
+        return super(SmoothSphereBivariateSpline, self).__call__(theta, phi,
                                                                 mth)
 
     def ev(self, theta, phi):
@@ -816,10 +816,10 @@ class SmoothSpherBivariateSpline(BivariateSpline):
             raise ValueError("requested theta out of bounds.")
         if min(phi) < 0. or max(phi) > 2. * np.pi:
             raise ValueError("requested phi out of bounds.")
-        return super(SmoothSpherBivariateSpline, self).ev(theta, phi)
+        return super(SmoothSphereBivariateSpline, self).ev(theta, phi)
 
 
-class LSQSpherBivariateSpline(BivariateSpline):
+class LSQSphereBivariateSpline(BivariateSpline):
     """ Weighted least-squares bivariate spline approximation in spherical
     coordinates.
 
@@ -870,8 +870,8 @@ class LSQSpherBivariateSpline(BivariateSpline):
     >>> knotst[-1] -= .0001
     >>> knotsp[0] += .0001
     >>> knotsp[-1] -= .0001
-    >>> from scipy.interpolate import LSQSpherBivariateSpline
-    >>> lut = LSQSpherBivariateSpline(lats.ravel(), lons.ravel(),
+    >>> from scipy.interpolate import LSQSphereBivariateSpline
+    >>> lut = LSQSphereBivariateSpline(lats.ravel(), lons.ravel(),
                                       data.T.ravel(),knotst,knotsp)
 
     As a first test, we'll see what the algorithm returns when run on the
@@ -924,14 +924,14 @@ class LSQSpherBivariateSpline(BivariateSpline):
             raise ValueError("requested theta out of bounds.")
         if min(phi) < 0. or max(phi) > 2. * np.pi:
             raise ValueError("requested phi out of bounds.")
-        return super(LSQSpherBivariateSpline, self).__call__(theta, phi, mth)
+        return super(LSQSphereBivariateSpline, self).__call__(theta, phi, mth)
 
     def ev(self, theta, phi):
         if min(theta) < 0. or max(theta) > np.pi:
             raise ValueError("requested theta out of bounds.")
         if min(phi) < 0. or max(phi) > 2. * np.pi:
             raise ValueError("requested phi out of bounds.")
-        return super(LSQSpherBivariateSpline, self).ev(theta, phi)
+        return super(LSQSphereBivariateSpline, self).ev(theta, phi)
 
 
 class RectBivariateSpline(BivariateSpline):

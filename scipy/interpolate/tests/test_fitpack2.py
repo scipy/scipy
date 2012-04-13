@@ -6,7 +6,7 @@ from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal,
 from numpy import array, diff, linspace, meshgrid, ones, pi, shape
 from scipy.interpolate.fitpack2 import UnivariateSpline, LSQBivariateSpline, \
     SmoothBivariateSpline, RectBivariateSpline, RectSpherBivariateSpline, \
-    SmoothSpherBivariateSpline,LSQSpherBivariateSpline
+    SmoothSphereBivariateSpline,LSQSphereBivariateSpline
 
 class TestUnivariateSpline(TestCase):
     def test_linear_constant(self):
@@ -181,7 +181,7 @@ class TestSmoothBivariateSpline(TestCase):
                     *(tz[:-1,:-1]+tz[1:,:-1]+tz[:-1,1:]+tz[1:,1:])).sum()
         assert_almost_equal(lut.integral(tx[0], tx[-2], ty[0], ty[-2]), trpz)
 
-class TestLSQSpherBivariateSpline(TestCase):
+class TestLSQSphereBivariateSpline(TestCase):
     def test_linear_constant(self):
         # define the knots
         knotst, knotsp = linspace(0., pi, 7), linspace(0., 2.*pi, 9)
@@ -204,18 +204,18 @@ class TestLSQSpherBivariateSpline(TestCase):
         new_lons = lons.copy()
         lats, lons = meshgrid(lats, lons)
         # calculate spline coefficients
-        lut_lsq = LSQSpherBivariateSpline(lats.ravel(), lons.ravel(), data.T.ravel(),
+        lut_lsq = LSQSphereBivariateSpline(lats.ravel(), lons.ravel(), data.T.ravel(),
                                           knotst, knotsp)
         assert_almost_equal(lut_lsq.get_residual(),0.0)
         assert_array_almost_equal(lut_lsq(new_lats, new_lons),data)
 
 
-class TestSmoothSpherBivariateSpline(TestCase):
+class TestSmoothSphereBivariateSpline(TestCase):
     def test_linear_constant(self):
         theta = array([.25*pi,.25*pi,.25*pi,.5*pi,.5*pi,.5*pi,.75*pi,.75*pi,.75*pi])
         phi = array([.5*pi,pi,1.5*pi,.5*pi,pi,1.5*pi,.5*pi,pi,1.5*pi])
         r = array([3,3,3,3,3,3,3,3,3])
-        lut = SmoothSpherBivariateSpline(theta,phi,r,s=1E10)
+        lut = SmoothSphereBivariateSpline(theta,phi,r,s=1E10)
         assert_almost_equal(lut.get_residual(),0.0)
         assert_array_almost_equal(lut([1,1.5,2],[1,1.5]),[[3,3],[3,3],[3,3]])
 
