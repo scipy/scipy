@@ -141,6 +141,7 @@ Utility Functions
 
 from optimize import *
 from _minimize import *
+from _root import *
 from minpack import *
 from zeros import *
 from anneal import *
