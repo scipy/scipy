@@ -489,6 +489,20 @@ class TestOptimizeScalar(TestCase):
         x = optimize.brent(self.fun, brack = (-15, -1, 15))
         assert_allclose(x, self.solution, atol=1e-6)
 
+    def test_golden(self):
+        """ golden algorithm """
+        x = optimize.golden(self.fun)
+        assert_allclose(x, self.solution, atol=1e-6)
+
+        x = optimize.golden(self.fun, brack = (-3, -2))
+        assert_allclose(x, self.solution, atol=1e-6)
+
+        x = optimize.golden(self.fun, full_output=True)
+        assert_allclose(x[0], self.solution, atol=1e-6)
+
+        x = optimize.golden(self.fun, brack = (-15, -1, 15))
+        assert_allclose(x, self.solution, atol=1e-6)
+
     def test_fminbound(self):
         """Test fminbound """
         x = optimize.fminbound(self.fun, 0, 1)
@@ -524,6 +538,18 @@ class TestOptimizeScalar(TestCase):
 
         x = optimize.minimize_scalar(self.fun, bracket=(-15, -1, 15),
                                      args=(1.5, ), method='Brent')
+        assert_allclose(x, self.solution, atol=1e-6)
+
+        x = optimize.minimize_scalar(self.fun, bracket = (-3, -2),
+                                     args=(1.5, ), method='golden')
+        assert_allclose(x, self.solution, atol=1e-6)
+
+        x = optimize.minimize_scalar(self.fun, method='golden',
+                                     args=(1.5, ), full_output=True)[0]
+        assert_allclose(x, self.solution, atol=1e-6)
+
+        x = optimize.minimize_scalar(self.fun, bracket=(-15, -1, 15),
+                                     args=(1.5, ), method='golden')
         assert_allclose(x, self.solution, atol=1e-6)
 
         x = optimize.minimize_scalar(self.fun, bounds=(0, 1), args=(1.5,),
