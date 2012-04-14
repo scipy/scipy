@@ -50,6 +50,7 @@ Scalar function minimizers
 .. autosummary::
    :toctree: generated/
 
+   minimize_scalar - Unified interface for minimizers of univariate functions
    fminbound - Bounded minimization of a scalar function
    brent - 1-D function minimization using Brent method
    golden - 1-D function minimization using Golden Section method

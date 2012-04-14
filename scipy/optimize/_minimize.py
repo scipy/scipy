@@ -4,10 +4,11 @@ Unified interfaces to minimization algorithms.
 Functions
 ---------
 - minimize : minimization of a function of several variables.
+- minimize_scalar : minimization of a function of one variable.
 """
 
 
-__all__ = ['minimize', 'show_minimize_options']
+__all__ = ['minimize', 'minimize_scalar', 'show_minimize_options']
 
 
 from warnings import warn
@@ -15,6 +16,8 @@ from warnings import warn
 # unconstrained minimization
 from optimize import _minimize_neldermead, _minimize_powell, \
         _minimize_cg, _minimize_bfgs, _minimize_newtoncg, \
+        _minimize_scalar_brent, _minimize_scalar_bounded, \
+        _minimize_scalar_golden, \
         MemoizeJac
 from anneal import _minimize_anneal
 
@@ -132,6 +135,11 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
                 Number of tests accepted.
             allvecs : list
                 Solution at each iteration (if ``retall == True``).
+
+    See also
+    --------
+    minimize_scalar: Interface to minimization algorithms for scalar
+        univariate functions.
 
     Notes
     -----
@@ -359,6 +367,130 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     elif meth == 'slsqp':
         return _minimize_slsqp(fun, x0, args, jac, bounds,
                                constraints, options, full_output)
+    else:
+        raise ValueError('Unknown solver %s' % method)
+
+
+def minimize_scalar(fun, bracket=None, bounds=None, args=(),
+                    method='brent', options=dict(), full_output=False):
+    """
+    Minimization of scalar function of one variable.
+
+    .. versionadded:: 0.11.0
+
+    Parameters
+    ----------
+    fun : callable
+        Objective function.
+        Scalar function, must return a scalar.
+    bracket : sequence, optional
+        For methods 'brent' and 'golden', `bracket` defines the bracketing
+        interval and can either have three items `(a, b, c)` so that `a < b
+        < c` and `fun(b) < fun(a), fun(c)` or two items `a` and `c` which
+        are assumed to be a starting interval for a downhill bracket search
+        (see `bracket`); it doesn't always mean that the obtained solution
+        will satisfy `a <= x <= c`.
+    bounds : sequence, optional
+        For method 'bounded', `bounds` is mandatory and must have two items
+        corresponding to the optimization bounds.
+    args : tuple, optional
+        Extra arguments passed to the objective function.
+    method : str, optional
+        Type of solver.  Should be one of:
+            {'Brent', 'Bounded', 'Golden'}
+    options : dict, optional
+        A dictionary of solver options.
+            xtol : float
+                Relative error in solution `xopt` acceptable for
+                convergence.
+            ftol : float
+                Relative error in ``fun(xopt)`` acceptable for convergence.
+            maxiter : int
+                Maximum number of iterations to perform.
+            disp : bool
+                Set to True to print convergence messages.
+    full_output : bool, optional
+        If True, return optional outputs.  Default is False.
+
+    Returns
+    -------
+    xopt : ndarray
+        The solution.
+    info : dict
+        A dictionary of optional outputs (depending on the chosen method)
+        with the keys:
+            success : bool
+                Boolean flag indicating if a solution was found.
+            status : int
+                An integer flag indicating the type of termination.  Its
+                value depends on the underlying solver.  Refer to `message`
+                for more information.
+            message : str
+                A string message giving information about the cause of the
+                termination.
+            fun : float
+                Values of objective function.
+            nfev: int
+                Number of evaluations of the objective function.
+            nit: int
+                Number of iterations.
+
+    See also
+    --------
+    minimize: Interface to minimization algorithms for scalar multivariate
+        functions.
+
+    Notes
+    -----
+    This section describes the available solvers that can be selected by the
+    'method' parameter. The default method is *Brent*.
+
+    Method *Brent* uses Brent's algorithm to find a local minimum.
+    The algorithm uses inverse parabolic interpolation when possible to
+    speed up convergence of the golden section method.
+
+    Method *Golden* uses the golden section search technique. It uses
+    analog of the bisection method to decrease the bracketed interval. It
+    is usually preferable to use the *Brent* method.
+
+    Method *Bounded* can perform bounded minimization. It uses the Brent
+    method to find a local minimum in the interval x1 < xopt < x2.
+
+    Examples
+    --------
+    Consider the problem of minimizing the following function.
+
+    >>> def f(x):
+    ...     return (x - 2) * x * (x + 2)**2
+
+    Using the *Brent* method, we find the local minimum as:
+
+    >>> from scipy.optimize import minimize_scalar
+    >>> xl = minimize_scalar(f)
+    >>> xl
+    1.28077640403
+
+    Using the *Bounded* method, we find a local minimum with specified
+    bounds as:
+
+    >>> xc = minimize_scalar(f, bounds=(-3, -1), method='bounded')
+    >>> xc
+    -2.0000002026
+    """
+    meth = method.lower()
+
+    if meth == 'brent':
+        return _minimize_scalar_brent(fun, bracket, args, options,
+                                      full_output)
+    elif meth == 'bounded':
+        if bounds is None:
+            raise ValueError('The `bounds` parameter is mandatory for '
+                             'method `bounded`.')
+        return _minimize_scalar_bounded(fun, bounds, args, options,
+                                        full_output)
+    elif meth == 'golden':
+        return _minimize_scalar_golden(fun, bracket, args, options,
+                                       full_output)
     else:
         raise ValueError('Unknown solver %s' % method)
 
