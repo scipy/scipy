@@ -135,7 +135,7 @@ from decomp import *
 from decomp_lu import *
 from decomp_cholesky import *
 from decomp_qr import *
-from decomp_qz import *
+from _decomp_qz import *
 from decomp_svd import *
 from decomp_schur import *
 from matfuncs import *
