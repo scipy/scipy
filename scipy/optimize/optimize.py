@@ -1401,17 +1401,17 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     else:
         return out
 
-def _minimize_scalar_bounded(func, brack, args=(), options={},
+def _minimize_scalar_bounded(func, bounds, args=(), options={},
                              full_output=False):
     # retrieve options
     xtol = options.get('xtol', 1e-5)
     maxfun = options.get('maxfev', 500)
     disp = options.get('disp', 0)
     # Test bounds are of correct form
-    try:
-        x1, x2 = brack
-    except TypeError:
+    if len(bounds) != 2:
         raise ValueError('bounds must have two elements.')
+    x1, x2 = bounds
+
     if not (is_array_scalar(x1) and is_array_scalar(x2)):
         raise ValueError("Optimisation bounds must be scalars"
                          " or array scalars.")
