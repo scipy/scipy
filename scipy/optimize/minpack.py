@@ -224,7 +224,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         estimate of the jacobian around the solution.  ``None`` if a
         singular matrix encountered (indicates very flat curvature in
         some direction).  This matrix must be multiplied by the
-        residual standard deviation to get the covariance of the
+        residual variance to get the covariance of the
         parameter estimates -- see curve_fit.
     infodict : dict
         a dictionary of optional outputs with the key s::

@@ -2,6 +2,7 @@ Statistics (`scipy.stats`)
 ==========================
 
 .. sectionauthor:: Travis E. Oliphant
+.. sectionauthor:: Josef Perktold
 
 Introduction
 ------------
@@ -108,7 +109,7 @@ The main public methods are:
 * moment: non-central moments of the distribution
 
 The main additional methods of the not frozen distribution are related to the estimation
-of distrition parameters:
+of distribution parameters:
 
 * fit:   maximum likelihood estimation of distribution parameters, including location
          and scale
@@ -152,6 +153,43 @@ for 11 d.o.f. and the 1% tail for 12 d.o.f. by
     >>> stats.t.isf([0.1, 0.05, 0.01], [10, 11, 12])
     array([ 1.37218364,  1.79588482,  2.68099799])
 
+In the case of continuous distribution the cumulative distribution function
+is in most standard cases strictly monotonic in the bounds (a,b) and has
+therefore a unique inverse. The cdf of a discrete distribution is however
+a step function and the inverse of it, the percent point function, requires
+a different definition :ref:`(ppf of discrete random variables) <discrete-ppf>`:
+
+See the docs `here <http://docs.scipy.org/doc/scipy/reference/tutorial/stats/discrete.html#percent-point-function-inverse-cdf>`__.
+
+::
+
+    ppf(q) = min{x : cdf(x) >= q, x integer}
+
+We can look at the hypergeometric distribution as an example
+
+    >>> from scipy.stats import hypergeom
+    >>> [M, n, N] = [20, 7, 12]
+
+If we use the cdf at some integer points and then evaluate the ppf at those
+cdf values, we get the initial integers back, for example
+
+    >>> x = np.arange(4)*2
+    >>> x
+    array([0, 2, 4, 6])
+    >>> prb = hypergeom.cdf(x, M, n, N)
+    >>> prb
+    array([ 0.0001031991744066,  0.0521155830753351,  0.6083591331269301,
+            0.9897832817337386])
+    >>> hypergeom.ppf(prb, M, n, N)
+    array([ 0.,  2.,  4.,  6.])
+
+If we use values that are not at the kinks of the cdf step function, we get
+the next higher integer back:
+
+    >>> hypergeom.ppf(prb+1e-8, M, n, N)
+    array([ 1.,  3.,  5.,  7.])
+    >>> hypergeom.ppf(prb-1e-8, M, n, N)
+    array([ 0.,  2.,  4.,  6.])
 
 
 Performance and Remaining Issues
@@ -313,7 +351,7 @@ the Student t distribution:
     >>> x = stats.t.rvs(10, size=1000)
 
 Here, we set the required shape parameter of the t distribution, which
-in statistics corresponds to the degrees of freedom, to 10. Using size=100 means
+in statistics corresponds to the degrees of freedom, to 10. Using size=1000 means
 that our sample consists of 1000 independently drawn (pseudo) random numbers.
 Since we did not specify the keyword arguments `loc` and `scale`, those are
 set to their default values zero and one.

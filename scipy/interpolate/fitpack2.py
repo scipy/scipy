@@ -480,7 +480,8 @@ inaccurate. Deficiency may strongly depend on the value of eps."""
 
 
 class BivariateSpline(object):
-    """ Bivariate spline s(x,y) of degrees kx and ky on the rectangle
+    """
+    Bivariate spline s(x,y) of degrees kx and ky on the rectangle
     [xb,xe] x [yb, ye] calculated from a given set of data points
     (x,y,z).
 
@@ -488,10 +489,11 @@ class BivariateSpline(object):
     --------
     bisplrep, bisplev : an older wrapping of FITPACK
     UnivariateSpline : a similar class for univariate spline interpolation
-    SmoothUnivariateSpline :
+    SmoothBivariateSpline :
         to create a BivariateSpline through the given points
     LSQUnivariateSpline :
         to create a BivariateSpline using weighted least-squares fitting
+
     """
 
     def get_residual(self):
