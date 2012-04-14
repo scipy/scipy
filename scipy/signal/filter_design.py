@@ -1708,4 +1708,3 @@ band_dict = {'band': 'bandpass',
              'h': 'highpass'
              }
 
-warnings.simplefilter("always", BadCoefficients)

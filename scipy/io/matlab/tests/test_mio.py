@@ -28,6 +28,7 @@ from numpy.testing import \
      assert_array_almost_equal, \
      assert_equal, \
      assert_raises, run_module_suite
+from numpy.testing.utils import WarningManager
 
 from nose.tools import assert_true
 
@@ -393,14 +394,18 @@ def test_mat73():
 
 def test_warnings():
     fname = pjoin(test_data_path, 'testdouble_7.1_GLNX86.mat')
-    warnings.simplefilter('error')
-    # This should not generate a warning
-    mres = loadmat(fname, struct_as_record=True)
-    # This neither
-    mres = loadmat(fname, struct_as_record=False)
-    # This should - because of deprecated system path search
-    yield assert_raises, DeprecationWarning, find_mat_file, fname
-    warnings.resetwarnings()
+    warn_ctx = WarningManager()
+    warn_ctx.__enter__()
+    try:
+        warnings.simplefilter('error')
+        # This should not generate a warning
+        mres = loadmat(fname, struct_as_record=True)
+        # This neither
+        mres = loadmat(fname, struct_as_record=False)
+        # This should - because of deprecated system path search
+        yield assert_raises, DeprecationWarning, find_mat_file, fname
+    finally:
+        warn_ctx.__exit__()
 
 
 def test_regression_653():
@@ -522,32 +527,36 @@ def test_1d_shape():
     # Current 5 behavior is 1D -> column vector
     arr = np.arange(5)
     stream = BytesIO()
-    # silence warnings for tests
-    warnings.simplefilter('ignore')
-    savemat(stream, {'oned':arr}, format='5')
-    vals = loadmat(stream)
-    assert_equal(vals['oned'].shape, (5,1))
-    # Current 4 behavior is 1D -> row vector
-    stream = BytesIO()
-    savemat(stream, {'oned':arr}, format='4')
-    vals = loadmat(stream)
-    assert_equal(vals['oned'].shape, (1, 5))
-    for format in ('4', '5'):
-        # can be explicitly 'column' for oned_as
-        stream = BytesIO()
-        savemat(stream, {'oned':arr},
-                format=format,
-                oned_as='column')
+    warn_ctx = WarningManager()
+    warn_ctx.__enter__()
+    try:
+        # silence warnings for tests
+        warnings.simplefilter('ignore')
+        savemat(stream, {'oned':arr}, format='5')
         vals = loadmat(stream)
         assert_equal(vals['oned'].shape, (5,1))
-        # but different from 'row'
+        # Current 4 behavior is 1D -> row vector
         stream = BytesIO()
-        savemat(stream, {'oned':arr},
-                format=format,
-                oned_as='row')
+        savemat(stream, {'oned':arr}, format='4')
         vals = loadmat(stream)
-        assert_equal(vals['oned'].shape, (1,5))
-    warnings.resetwarnings()
+        assert_equal(vals['oned'].shape, (1, 5))
+        for format in ('4', '5'):
+            # can be explicitly 'column' for oned_as
+            stream = BytesIO()
+            savemat(stream, {'oned':arr},
+                    format=format,
+                    oned_as='column')
+            vals = loadmat(stream)
+            assert_equal(vals['oned'].shape, (5,1))
+            # but different from 'row'
+            stream = BytesIO()
+            savemat(stream, {'oned':arr},
+                    format=format,
+                    oned_as='row')
+            vals = loadmat(stream)
+            assert_equal(vals['oned'].shape, (1,5))
+    finally:
+        warn_ctx.__exit__()
 
 
 def test_compression():
@@ -741,14 +750,19 @@ def test_mat4_3d():
     # test behavior when writing 3D arrays to matlab 4 files
     stream = BytesIO()
     arr = np.arange(24).reshape((2,3,4))
-    warnings.simplefilter('error')
-    assert_raises(DeprecationWarning, savemat_future,
-                  stream, {'a': arr}, True, '4')
-    warnings.resetwarnings()
-    # For now, we save a 3D array as 2D
-    warnings.simplefilter('ignore')
-    savemat_future(stream, {'a': arr}, format='4')
-    warnings.resetwarnings()
+
+    warn_ctx = WarningManager()
+    warn_ctx.__enter__()
+    try:
+        warnings.simplefilter('error')
+        assert_raises(DeprecationWarning, savemat_future,
+                      stream, {'a': arr}, True, '4')
+        # For now, we save a 3D array as 2D
+        warnings.simplefilter('ignore')
+        savemat_future(stream, {'a': arr}, format='4')
+    finally:
+        warn_ctx.__exit__()
+
     d = loadmat(stream)
     assert_array_equal(d['a'], arr.reshape((6,4)))
 
