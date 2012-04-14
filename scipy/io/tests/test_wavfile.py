@@ -21,7 +21,9 @@ def test_read_2():
     assert_equal(data.shape, (800, 2))
 
 def test_read_fail():
-    assert_raises(ValueError, wavfile.read, datafile('example_1.nc'))
+    fp = open(datafile('example_1.nc'))
+    assert_raises(ValueError, wavfile.read, fp)
+    fp.close()
 
 def _check_roundtrip(rate, dtype, channels):
     fd, tmpfile = tempfile.mkstemp(suffix='.wav')

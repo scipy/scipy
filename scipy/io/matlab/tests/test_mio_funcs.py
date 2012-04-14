@@ -45,8 +45,8 @@ def read_minimat_vars(rdr):
     return mdict
 
 def read_workspace_vars(fname):
-    rdr = MatFile5Reader(open(fname, 'rb'),
-                         struct_as_record=True)
+    fp = open(fname, 'rb')
+    rdr = MatFile5Reader(fp, struct_as_record=True)
     vars = rdr.get_variables()
     fws = vars['__function_workspace__']
     ws_bs = BytesIO(fws.tostring())
@@ -56,7 +56,9 @@ def read_workspace_vars(fname):
     mi = rdr.mat_stream.read(2)
     rdr.byte_order = mi == asbytes('IM') and '<' or '>'
     rdr.mat_stream.read(4) # presumably byte padding
-    return read_minimat_vars(rdr)
+    mdict = read_minimat_vars(rdr)
+    fp.close()
+    return mdict
 
 
 def test_jottings():

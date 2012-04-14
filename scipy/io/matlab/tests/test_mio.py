@@ -197,9 +197,9 @@ case_table5.append(
     {'name': 'object',
      'expected': {'testobject': MO}
      })
-u_str = open(
-    pjoin(test_data_path, 'japanese_utf8.txt'),
-    'rb').read().decode('utf-8')
+fp_u_str = open(pjoin(test_data_path, 'japanese_utf8.txt'), 'rb')
+u_str = fp_u_str.read().decode('utf-8')
+fp_u_str.close()
 case_table5.append(
     {'name': 'unicode',
     'expected': {'testunicode': array([u_str])}
@@ -383,10 +383,12 @@ def test_mat73():
         pjoin(test_data_path, 'testhdf5*.mat'))
     assert_true(len(filenames)>0)
     for filename in filenames:
+        fp = open(filename, 'rb')
         assert_raises(NotImplementedError,
                       loadmat,
-                      filename,
+                      fp,
                       struct_as_record=True)
+        fp.close()
 
 
 def test_warnings():
@@ -607,6 +609,7 @@ def test_skip_variable():
     #
     d = factory.get_variables('second')
     yield assert_true, d.has_key('second')
+    factory.mat_stream.close()
 
 
 def test_empty_struct():
@@ -710,8 +713,10 @@ def test_read_opts():
 def test_empty_string():
     # make sure reading empty string does not raise error
     estring_fname = pjoin(test_data_path, 'single_empty_string.mat')
-    rdr = MatFile5Reader_future(open(estring_fname, 'rb'))
+    fp = open(estring_fname, 'rb')
+    rdr = MatFile5Reader_future(fp)
     d = rdr.get_variables()
+    fp.close()
     assert_array_equal(d['a'], np.array([], dtype='U1'))
     # empty string round trip.  Matlab cannot distiguish
     # between a string array that is empty, and a string array
@@ -729,6 +734,7 @@ def test_empty_string():
     rdr = MatFile5Reader_future(stream)
     d = rdr.get_variables()
     assert_array_equal(d['a'], np.array([], dtype='U1'))
+    stream.close()
 
 
 def test_mat4_3d():
@@ -749,8 +755,10 @@ def test_mat4_3d():
 
 def test_func_read():
     func_eg = pjoin(test_data_path, 'testfunc_7.4_GLNX86.mat')
-    rdr = MatFile5Reader_future(open(func_eg, 'rb'))
+    fp = open(func_eg, 'rb')
+    rdr = MatFile5Reader_future(fp)
     d = rdr.get_variables()
+    fp.close()
     yield assert_true, isinstance(d['testfunc'], MatlabFunction)
     stream = BytesIO()
     wtr = MatFile5Writer(stream, oned_as='row')
@@ -759,11 +767,16 @@ def test_func_read():
 
 def test_mat_dtype():
     double_eg = pjoin(test_data_path, 'testmatrix_6.1_SOL2.mat')
-    rdr = MatFile5Reader_future(open(double_eg, 'rb'), mat_dtype=False)
+    fp = open(double_eg, 'rb')
+    rdr = MatFile5Reader_future(fp, mat_dtype=False)
     d = rdr.get_variables()
+    fp.close()
     yield assert_equal, d['testmatrix'].dtype.kind, 'u'
-    rdr = MatFile5Reader_future(open(double_eg, 'rb'), mat_dtype=True)
+
+    fp = open(double_eg, 'rb')
+    rdr = MatFile5Reader_future(fp, mat_dtype=True)
     d = rdr.get_variables()
+    fp.close()
     yield assert_equal, d['testmatrix'].dtype.kind, 'f'
 
 
@@ -878,8 +891,10 @@ def test_varmats_from_mat():
 def test_one_by_zero():
     ''' Test 1x0 chars get read correctly '''
     func_eg = pjoin(test_data_path, 'one_by_zero_char.mat')
-    rdr = MatFile5Reader_future(open(func_eg, 'rb'))
+    fp = open(func_eg, 'rb')
+    rdr = MatFile5Reader_future(fp)
     d = rdr.get_variables()
+    fp.close()
     assert_equal(d['var'].shape, (0,))
 
 
