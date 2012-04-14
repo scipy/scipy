@@ -31,6 +31,7 @@ following improvements were made:
 - A unified interface to minimizers of multivariate functions has been added.
 - The L-BFGS-B algorithm has been updated to version 3.0.
 
+
 Unified interface to minimizers of multivariate functions
 `````````````````````````````````````````````````````````
 
@@ -39,6 +40,17 @@ interface to minimizers of multivariate functions (unconstrained: `fmin`,
 `fmin_powell`, `fmin_cg`, `fmin_ncg`, `fmin_bfgs` and `anneal` or
 constrained: `fmin_l_bfgs_b`, `fmin_tnc`, `fmin_cobyla` and `fmin_slsqp`).
 This allows for easier comparing and switching between solvers.
+
+
+New matrix equation solvers (``scipy.linalg``)
+----------------------------------------------
+
+Solvers for the Sylvester equation (``scipy.linalg.solve_sylvester``, discrete
+and continuous Lyapunov equations (``scipy.linalg.solve_lyapunov``,
+``scipy.linalg.solve_discrete_lyapunov``) and discrete and continuous algebraic
+Riccati equations (``scipy.linalg.solve_continuous_are``,
+``scipy.linalg.solve_discrete_are``) have been added to ``scipy.linalg``.
+These solvers are often used in the field of linear control theory.
 
 
 Constructing sparse matrices
@@ -54,6 +66,13 @@ LSMR iterative solver
 
 LSMR, an iterative method for solving (sparse) linear and linear
 least-squares systems, was added as ``scipy.sparse.linalg.lsmr``.
+
+
+Discrete Sine Transform
+-----------------------
+
+Bindings for the discrete sine transform functions have been added to
+``scipy.fftpack``.
 
 
 Pascal matrix function
@@ -91,6 +110,13 @@ alternative for this functionality.
 
 Other changes
 =============
+
+The SuperLU sources in ``scipy.sparse.linalg`` have been updated to version 4.3
+from upstream.
+
+The function ``scipy.linalg.qr_multiply``, which allows efficient computation
+of the matrix product of Q (from a QR decompostion) and a vector, has been
+added.
 
 
 Authors
