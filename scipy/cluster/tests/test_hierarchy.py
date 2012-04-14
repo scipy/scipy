@@ -42,7 +42,7 @@ from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage,
         num_obs_linkage, inconsistent, cophenet, fclusterdata, fcluster, \
         is_isomorphic, single, complete, weighted, centroid, leaders, \
         correspond, is_monotonic, maxdists, maxinconsts, maxRstat, \
-        is_valid_linkage, is_valid_im, to_tree, leaves_list
+        is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram
 from scipy.spatial.distance import squareform, pdist
 
 _tdist = np.array([[0,    662,  877,  255,  412,  996],
@@ -1378,6 +1378,17 @@ class TestMaxRStat(TestCase):
         eps = 1e-15
         expectedMD = calculate_maximum_inconsistencies(Z, R, 3)
         self.assertTrue(within_tol(MD, expectedMD, eps))
+
+class TestDendrogram(TestCase):
+
+    def test_dendrogram_single_linkage_tdist(self):
+        "Tests dendrogram calculation on single linkage of the tdist data set."
+        Z = linkage(_ytdist, 'single')
+
+        R = dendrogram(Z, no_plot=True)
+        leaves = R["leaves"]
+
+        self.assertEquals(leaves, [2, 5, 1, 0, 3, 4])
 
 def calculate_maximum_distances(Z):
     "Used for testing correctness of maxdists. Very slow."
