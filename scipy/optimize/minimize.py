@@ -374,6 +374,8 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     """
     Minimization of scalar function of one variable.
 
+    .. versionadded:: 0.11.0
+
     Parameters
     ----------
     fun : callable
