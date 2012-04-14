@@ -1,15 +1,25 @@
 import os
 import tempfile
-import numpy as np
+import warnings
 
+import numpy as np
 from numpy.testing import assert_equal, assert_, assert_raises, assert_array_equal
+from numpy.testing.utils import WarningManager
 from scipy.io import wavfile
+
 
 def datafile(fn):
     return os.path.join(os.path.dirname(__file__), 'data', fn)
 
 def test_read_1():
-    rate, data = wavfile.read(datafile('test-44100-le-1ch-4bytes.wav'))
+    warn_ctx = WarningManager()
+    warn_ctx.__enter__()
+    try:
+        warnings.simplefilter('ignore', wavfile.WavFileWarning)
+        rate, data = wavfile.read(datafile('test-44100-le-1ch-4bytes.wav'))
+    finally:
+        warn_ctx.__exit__()
+
     assert_equal(rate, 44100)
     assert_(np.issubdtype(data.dtype, np.int32))
     assert_equal(data.shape, (4410,))
