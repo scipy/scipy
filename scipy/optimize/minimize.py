@@ -442,11 +442,11 @@ def minimize_scalar(fun, bs=None, args=(), method='brent',
 
     Method *Brent* uses Brent's algorithm to find a local minimum.
     The algorithm uses inverse parabolic interpolation when possible to
-    speed up convergence of golden section method.
+    speed up convergence of the golden section method.
 
     Method *Golden* uses the golden section search technique. It uses
-    analog of bisection method to decrease the bracketed interval. It is
-    usually preferable to use the *Brent* method.
+    analog of the bisection method to decrease the bracketed interval. It
+    is usually preferable to use the *Brent* method.
 
     Method *Bounded* can perform bounded minimization. It uses the Brent
     method to find a local minimum in the interval x1 < xopt < x2.
@@ -462,14 +462,14 @@ def minimize_scalar(fun, bs=None, args=(), method='brent',
 
     >>> from scipy.optimize import minimize_scalar
     >>> xl = minimize_scalar(f)
-    >>> print xl
+    >>> xl
     1.28077640403
 
     Using the *Bounded* method, we find a local minimum with specified
     bounds as:
 
     >>> xc = minimize_scalar(f, bs=(-3, -1), method='bounded')
-    >>> print xc
+    >>> xc
     -2.0000002026
     """
     meth = method.lower()
