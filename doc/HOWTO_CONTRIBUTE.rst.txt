@@ -159,8 +159,10 @@ Checklist before submitting a PR
   - Are there unit tests with good code coverage?
   - Do all public function have docstrings including examples?
   - Is the code style correct (PEP8, pyflakes)
-  - Is the new functionality tagged with ``.. versionadded:: X.Y.Z``?
-  - Is the new functionality mentioned in the release notes of the next release?
+  - Is the new functionality tagged with ``.. versionadded:: X.Y.Z`` (with
+    X.Y.Z the version number of the next release - can be found in setup.py)?
+  - Is the new functionality mentioned in the release notes of the next
+    release?
   - Is the new functionality added to the reference guide?
   - In case of larger additions, is there a tutorial or more extensive
     module-level description?
