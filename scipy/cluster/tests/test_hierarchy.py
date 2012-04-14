@@ -96,6 +96,7 @@ _filenames = ["iris.txt",
               "linkage-Q-ward.txt"
               ]
 
+
 def load_testing_files():
     for fn in _filenames:
         name = fn.replace(".txt", "").replace("-ml", "")
@@ -106,8 +107,8 @@ def load_testing_files():
 
 load_testing_files()
 
-class TestLinkage(TestCase):
 
+class TestLinkage(TestCase):
     def test_linkage_empty_distance_matrix(self):
         "Tests linkage(Y) where Y is a 0x4 linkage matrix. Exception expected."
         y = np.zeros((0,))
@@ -136,7 +137,6 @@ class TestLinkage(TestCase):
         Zmlab = eo['linkage-average-tdist']
         eps = 1e-05
         expectedZ = from_mlab_linkage(Zmlab)
-        #print Z, expectedZ, np.abs(Z - expectedZ).max()
         self.assertTrue(within_tol(Z, expectedZ, eps))
 
     def test_linkage_weighted_tdist(self):
@@ -145,7 +145,6 @@ class TestLinkage(TestCase):
         Zmlab = eo['linkage-weighted-tdist']
         eps = 1e-10
         expectedZ = from_mlab_linkage(Zmlab)
-        #print Z, expectedZ, np.abs(Z - expectedZ).max()
         self.assertTrue(within_tol(Z, expectedZ, eps))
 
     ################### linkage on Q
@@ -156,7 +155,6 @@ class TestLinkage(TestCase):
         Zmlab = eo['linkage-Q-single']
         eps = 1e-06
         expectedZ = from_mlab_linkage(Zmlab)
-        #print abs(Z-expectedZ).max()
         self.assertTrue(within_tol(Z, expectedZ, eps))
 
     def test_linkage_complete_q(self):
@@ -166,7 +164,6 @@ class TestLinkage(TestCase):
         Zmlab = eo['linkage-Q-complete']
         eps = 1e-07
         expectedZ = from_mlab_linkage(Zmlab)
-        #print abs(Z-expectedZ).max()
         self.assertTrue(within_tol(Z, expectedZ, eps))
 
     def test_linkage_centroid_q(self):
@@ -176,7 +173,6 @@ class TestLinkage(TestCase):
         Zmlab = eo['linkage-Q-centroid']
         eps = 1e-07
         expectedZ = from_mlab_linkage(Zmlab)
-        #print abs(Z-expectedZ).max()
         self.assertTrue(within_tol(Z, expectedZ, eps))
 
     def test_linkage_weighted_q(self):
@@ -186,11 +182,10 @@ class TestLinkage(TestCase):
         Zmlab = eo['linkage-Q-weighted']
         eps = 1e-07
         expectedZ = from_mlab_linkage(Zmlab)
-        #print abs(Z-expectedZ).max()
         self.assertTrue(within_tol(Z, expectedZ, eps))
 
-class TestInconsistent(TestCase):
 
+class TestInconsistent(TestCase):
     def test_single_inconsistent_tdist_1(self):
         "Tests inconsistency matrix calculation (depth=1) on a single linkage."
         Y = squareform(_tdist)
@@ -198,7 +193,6 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 1)
         Rright = eo['inconsistent-single-tdist-depth-1']
         eps = 1e-15
-        #print np.abs(R - Rright).max()
         self.assertTrue(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_tdist_2(self):
@@ -208,7 +202,6 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 2)
         Rright = eo['inconsistent-single-tdist-depth-2']
         eps = 1e-05
-        #print np.abs(R - Rright).max()
         self.assertTrue(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_tdist_3(self):
@@ -218,7 +211,6 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 3)
         Rright = eo['inconsistent-single-tdist-depth-3']
         eps = 1e-05
-        #print np.abs(R - Rright).max()
         self.assertTrue(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_tdist_4(self):
@@ -228,11 +220,9 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 4)
         Rright = eo['inconsistent-single-tdist-depth-4']
         eps = 1e-05
-        #print np.abs(R - Rright).max()
         self.assertTrue(within_tol(R, Rright, eps))
 
     # with complete linkage...
-
     def test_complete_inconsistent_tdist_1(self):
         "Tests inconsistency matrix calculation (depth=1) on a complete linkage."
         Y = squareform(_tdist)
@@ -240,7 +230,6 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 1)
         Rright = eo['inconsistent-complete-tdist-depth-1']
         eps = 1e-15
-        #print np.abs(R - Rright).max()
         self.assertTrue(within_tol(R, Rright, eps))
 
     def test_complete_inconsistent_tdist_2(self):
@@ -250,7 +239,6 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 2)
         Rright = eo['inconsistent-complete-tdist-depth-2']
         eps = 1e-05
-        #print np.abs(R - Rright).max()
         self.assertTrue(within_tol(R, Rright, eps))
 
     def test_complete_inconsistent_tdist_3(self):
@@ -260,7 +248,6 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 3)
         Rright = eo['inconsistent-complete-tdist-depth-3']
         eps = 1e-05
-        #print np.abs(R - Rright).max()
         self.assertTrue(within_tol(R, Rright, eps))
 
     def test_complete_inconsistent_tdist_4(self):
@@ -270,11 +257,9 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 4)
         Rright = eo['inconsistent-complete-tdist-depth-4']
         eps = 1e-05
-        #print np.abs(R - Rright).max()
         self.assertTrue(within_tol(R, Rright, eps))
 
     # with single linkage and Q data set
-
     def test_single_inconsistent_Q_1(self):
         "Tests inconsistency matrix calculation (depth=1, dataset=Q) with single linkage."
         X = eo['Q-X']
@@ -282,7 +267,6 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 1)
         Rright = eo['inconsistent-Q-single-1']
         eps = 1e-06
-        #print np.abs(R - Rright).max()
         self.assertTrue(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_Q_2(self):
@@ -292,7 +276,6 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 2)
         Rright = eo['inconsistent-Q-single-2']
         eps = 1e-06
-        #print np.abs(R - Rright).max()
         self.assertTrue(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_Q_3(self):
@@ -302,7 +285,6 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 3)
         Rright = eo['inconsistent-Q-single-3']
         eps = 1e-05
-        #print np.abs(R - Rright).max()
         self.assertTrue(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_Q_4(self):
@@ -312,14 +294,14 @@ class TestInconsistent(TestCase):
         R = inconsistent(Z, 4)
         Rright = eo['inconsistent-Q-single-4']
         eps = 1e-05
-        #print np.abs(R - Rright).max()
         self.assertTrue(within_tol(R, Rright, eps))
 
-class TestCopheneticDistance(TestCase):
 
+class TestCopheneticDistance(TestCase):
     def test_linkage_cophenet_tdist_Z(self):
         "Tests cophenet(Z) on tdist data set."
-        expectedM = np.array([268, 295, 255, 255, 295, 295, 268, 268, 295, 295, 295, 138, 219, 295, 295]);
+        expectedM = np.array([268, 295, 255, 255, 295, 295, 268, 268, 295, 295,
+                              295, 138, 219, 295, 295])
         Z = linkage(_ytdist, 'single')
         M = cophenet(Z)
         eps = 1e-10
@@ -329,14 +311,15 @@ class TestCopheneticDistance(TestCase):
         "Tests cophenet(Z, Y) on tdist data set."
         Z = linkage(_ytdist, 'single')
         (c, M) = cophenet(Z, _ytdist)
-        expectedM = np.array([268, 295, 255, 255, 295, 295, 268, 268, 295, 295, 295, 138, 219, 295, 295]);
+        expectedM = np.array([268, 295, 255, 255, 295, 295, 268, 268, 295, 295,
+                              295, 138, 219, 295, 295])
         expectedc = 0.639931296433393415057366837573
         eps = 1e-10
         self.assertTrue(np.abs(c - expectedc) <= eps)
         self.assertTrue(within_tol(M, expectedM, eps))
 
-class TestFromMLabLinkage(TestCase):
 
+class TestFromMLabLinkage(TestCase):
     def test_from_mlab_linkage_empty(self):
         "Tests from_mlab_linkage on empty linkage array."
         X = np.asarray([])
@@ -361,12 +344,10 @@ class TestFromMLabLinkage(TestCase):
                                [   6.,    9.,  295.,    6.]],
                               dtype=np.double)
         ZS = from_mlab_linkage(Z)
-        #print expectedZS, ZS
         self.assertTrue((expectedZS == ZS).all())
 
 
 class TestToMLabLinkage(TestCase):
-
     def test_to_mlab_linkage_empty(self):
         "Tests to_mlab_linkage on empty linkage array."
         X = np.asarray([])
@@ -391,11 +372,10 @@ class TestToMLabLinkage(TestCase):
                       [   6.,    9.,  295.,    6.]],
                      dtype=np.double)
         ZM = to_mlab_linkage(Z)
-        #print expectedZM, ZM
         self.assertTrue((expectedZM == ZM).all())
 
-class TestFcluster(TestCase):
 
+class TestFcluster(TestCase):
     def test_fclusterdata_maxclusts_2(self):
         "Tests fclusterdata(X, criterion='maxclust', t=2) on a random 3-cluster data set."
         expectedT = np.int_(eo['fclusterdata-maxclusts-2'])
@@ -445,7 +425,6 @@ class TestFcluster(TestCase):
         self.assertTrue(is_isomorphic(T, expectedT))
 
 class TestLeaders(TestCase):
-
     def test_leaders_single(self):
         "Tests leaders using a flat clustering generated by single linkage."
         X = eo['Q-X']
@@ -454,11 +433,10 @@ class TestLeaders(TestCase):
         T = fcluster(Z, criterion='maxclust', t=3)
         Lright = (np.array([53, 55, 56]), np.array([2, 3, 1]))
         L = leaders(Z, T)
-        #print L, Lright, T
         self.assertTrue((L[0] == Lright[0]).all() and (L[1] == Lright[1]).all())
 
-class TestIsIsomorphic(TestCase):
 
+class TestIsIsomorphic(TestCase):
     def test_is_isomorphic_1(self):
         "Tests is_isomorphic on test case #1 (one flat cluster, different labellings)"
         a = [1, 1, 1]
@@ -544,8 +522,8 @@ class TestIsIsomorphic(TestCase):
         self.assertTrue(is_isomorphic(a, b) == (not noniso))
         self.assertTrue(is_isomorphic(b, a) == (not noniso))
 
-class TestIsValidLinkage(TestCase):
 
+class TestIsValidLinkage(TestCase):
     def test_is_valid_linkage_int_type(self):
         "Tests is_valid_linkage(Z) with integer type."
         Z = np.asarray([[0,   1, 3.0, 2],
@@ -627,8 +605,8 @@ class TestIsValidLinkage(TestCase):
             self.assertTrue(is_valid_linkage(Z) == False)
             self.assertRaises(ValueError, is_valid_linkage, Z, throw=True)
 
-class TestIsValidInconsistent(TestCase):
 
+class TestIsValidInconsistent(TestCase):
     def test_is_valid_im_int_type(self):
         "Tests is_valid_im(R) with integer type."
         R = np.asarray([[0,   1, 3.0, 2],
@@ -705,8 +683,8 @@ class TestIsValidInconsistent(TestCase):
             self.assertTrue(is_valid_im(R) == False)
             self.assertRaises(ValueError, is_valid_im, R, throw=True)
 
-class TestNumObsLinkage(TestCase):
 
+class TestNumObsLinkage(TestCase):
     def test_num_obs_linkage_empty(self):
         "Tests num_obs_linkage(Z) with empty linkage."
         Z = np.zeros((0, 4), dtype=np.double)
@@ -730,8 +708,8 @@ class TestNumObsLinkage(TestCase):
             Z = linkage(y)
             self.assertTrue(num_obs_linkage(Z) == i)
 
-class TestLeavesList(TestCase):
 
+class TestLeavesList(TestCase):
     def test_leaves_list_1x4(self):
         "Tests leaves_list(Z) on a 1x4 linkage."
         Z = np.asarray([[0,   1, 3.0, 2]], dtype=np.double)
@@ -793,8 +771,8 @@ class TestLeavesList(TestCase):
         node = to_tree(Z)
         self.assertTrue((node.pre_order() == leaves_list(Z)).all())
 
-class TestCorrespond(TestCase):
 
+class TestCorrespond(TestCase):
     def test_correspond_empty(self):
         "Tests correspond(Z, y) with empty linkage and condensed distance matrix."
         y = np.zeros((0,))
@@ -838,12 +816,10 @@ class TestCorrespond(TestCase):
             X = np.random.rand(n, 4)
             Y = pdist(X)
             Z = linkage(Y)
-            #print Z
-            #print A.shape, Y.shape, Yr.shape
             self.assertTrue(num_obs_linkage(Z) == n)
 
-class TestIsMonotonic(TestCase):
 
+class TestIsMonotonic(TestCase):
     def test_is_monotonic_empty(self):
         "Tests is_monotonic(Z) on an empty linkage."
         Z = np.zeros((0, 4))
@@ -912,8 +888,8 @@ class TestIsMonotonic(TestCase):
         Z = linkage(X, 'single')
         self.assertTrue(is_monotonic(Z) == True)
 
-class TestMaxDists(TestCase):
 
+class TestMaxDists(TestCase):
     def test_maxdists_empty_linkage(self):
         "Tests maxdists(Z) on empty linkage. Expecting exception."
         Z = np.zeros((0, 4), dtype=np.double)
@@ -977,8 +953,8 @@ class TestMaxDists(TestCase):
         expectedMD = calculate_maximum_distances(Z)
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
-class TestMaxInconsts(TestCase):
 
+class TestMaxInconsts(TestCase):
     def test_maxinconsts_empty_linkage(self):
         "Tests maxinconsts(Z, R) on empty linkage. Expecting exception."
         Z = np.zeros((0, 4), dtype=np.double)
@@ -1055,8 +1031,8 @@ class TestMaxInconsts(TestCase):
         expectedMD = calculate_maximum_inconsistencies(Z, R)
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
-class TestMaxRStat(TestCase):
 
+class TestMaxRStat(TestCase):
     def test_maxRstat_float_index(self):
         "Tests maxRstat(Z, R, 3.3). Expecting exception."
         Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
@@ -1379,16 +1355,15 @@ class TestMaxRStat(TestCase):
         expectedMD = calculate_maximum_inconsistencies(Z, R, 3)
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
-class TestDendrogram(TestCase):
 
+class TestDendrogram(TestCase):
     def test_dendrogram_single_linkage_tdist(self):
         "Tests dendrogram calculation on single linkage of the tdist data set."
         Z = linkage(_ytdist, 'single')
-
         R = dendrogram(Z, no_plot=True)
         leaves = R["leaves"]
+        self.assertEqual(leaves, [2, 5, 1, 0, 3, 4])
 
-        self.assertEquals(leaves, [2, 5, 1, 0, 3, 4])
 
 def calculate_maximum_distances(Z):
     "Used for testing correctness of maxdists. Very slow."
@@ -1407,12 +1382,12 @@ def calculate_maximum_distances(Z):
         B[i] = q.max()
     return B
 
+
 def calculate_maximum_inconsistencies(Z, R, k=3):
     "Used for testing correctness of maxinconsts. Very slow."
     n = Z.shape[0] + 1
     B = np.zeros((n-1,))
     q = np.zeros((3,))
-    #print R.shape
     for i in xrange(0, n - 1):
         q[:] = 0.0
         left = Z[i, 0]
@@ -1425,8 +1400,10 @@ def calculate_maximum_inconsistencies(Z, R, k=3):
         B[i] = q.max()
     return B
 
+
 def within_tol(a, b, tol):
     return np.abs(a - b).max() < tol
+
 
 if __name__ == "__main__":
     run_module_suite()
