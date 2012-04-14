@@ -369,8 +369,8 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         raise ValueError('Unknown solver %s' % method)
 
 
-def minimize_scalar(fun, bs=None, args=(), method='brent',
-                    options=dict(), full_output=False):
+def minimize_scalar(fun, bracket=None, bounds=None, args=(),
+                    method='brent', options=dict(), full_output=False):
     """
     Minimization of scalar function of one variable.
 
@@ -379,15 +379,16 @@ def minimize_scalar(fun, bs=None, args=(), method='brent',
     fun : callable
         Objective function.
         Scalar function, must return a scalar.
-    bs : sequence, optional
-        For methods 'brent' and 'golden', `bs` defines the bracketing
+    bracket : sequence, optional
+        For methods 'brent' and 'golden', `bracket` defines the bracketing
         interval and can either have three items `(a, b, c)` so that `a < b
         < c` and `fun(b) < fun(a), fun(c)` or two items `a` and `c` which
         are assumed to be a starting interval for a downhill bracket search
         (see `bracket`); it doesn't always mean that the obtained solution
         will satisfy `a <= x <= c`.
-        For 'bounded' method `bs` is mandatory and must have two items `x1`
-        and `x2` corresponding to the optimization bounds.
+    bounds : sequence, optional
+        For method 'bounded', `bounds` is mandatory and must have two items
+        corresponding to the optimization bounds.
     args : tuple, optional
         Extra arguments passed to the objective function.
     method : str, optional
@@ -468,18 +469,24 @@ def minimize_scalar(fun, bs=None, args=(), method='brent',
     Using the *Bounded* method, we find a local minimum with specified
     bounds as:
 
-    >>> xc = minimize_scalar(f, bs=(-3, -1), method='bounded')
+    >>> xc = minimize_scalar(f, bounds=(-3, -1), method='bounded')
     >>> xc
     -2.0000002026
     """
     meth = method.lower()
 
     if meth == 'brent':
-        return _minimize_scalar_brent(fun, bs, args, options, full_output)
+        return _minimize_scalar_brent(fun, bracket, args, options,
+                                      full_output)
     elif meth == 'bounded':
-        return _minimize_scalar_bounded(fun, bs, args, options, full_output)
+        if bounds is None:
+            raise ValueError('The `bounds` parameter is mandatory for '
+                             'method `bounded`.')
+        return _minimize_scalar_bounded(fun, bounds, args, options,
+                                        full_output)
     elif meth == 'golden':
-        return _minimize_scalar_golden(fun, bs, args, options, full_output)
+        return _minimize_scalar_golden(fun, bracket, args, options,
+                                       full_output)
     else:
         raise ValueError('Unknown solver %s' % method)
 
