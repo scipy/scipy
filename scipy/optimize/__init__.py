@@ -105,6 +105,7 @@ General nonlinear solvers:
 .. autosummary::
    :toctree: generated/
 
+   root - Unified interface for nonlinear solvers of multivariate functions
    fsolve - Non-linear multi-variable equation solver
    broyden1 - Broyden's first method
    broyden2 - Broyden's second method
