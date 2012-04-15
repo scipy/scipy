@@ -161,6 +161,10 @@ def fromimage(im, flatten=0):
         raise TypeError("Input is not a PIL image.")
     if flatten:
         im = im.convert('F')
+    elif im.mode == '1':
+        # workaround for crash in PIL, see #1613.
+        im.convert('L')
+
     return array(im)
 
 _errstr = "Mode is unknown or incompatible with input array shape."
