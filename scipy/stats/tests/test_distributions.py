@@ -488,6 +488,14 @@ class TestFitMethod(TestCase):
                 assert_(len(vals5) == 2+len(args))
                 assert_(vals5[2] == args[2])
 
+    def test_fix_fit_2args_lognorm(self):
+        """Regression test for #1551."""
+        np.random.seed(12345)
+        x = stats.lognorm.rvs(0.25, 0., 20.0, size=20)
+        assert_allclose(np.array(stats.lognorm.fit(x, floc=0, fscale=20)),
+                        [0.25888672, 0, 20], atol=1e-5)
+
+
 class TestFrozen(TestCase):
     """Test that a frozen distribution gives the same results as the original object.
 
