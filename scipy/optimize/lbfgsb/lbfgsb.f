@@ -487,11 +487,13 @@ c     ************
      +                 cpu1,cpu2,cachyt,sbtime,lnscht,time1,time2,
      +                 gd,gdold,stp,stpmx,time
       double precision one,zero
+      double precision dlamch
+      external         dlamch
       parameter        (one=1.0d0,zero=0.0d0)
       
       if (task .eq. 'START') then
 
-         epsmch = epsilon(one)
+         epsmch = 2 * dlamch('e')
 
          call timer(time1)
 
