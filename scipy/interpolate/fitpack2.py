@@ -18,9 +18,8 @@ __all__ = [
     'RectBivariateSpline',
     'RectSphereBivariateSpline']
 
-from types import NoneType
-
 import warnings
+
 from numpy import zeros, concatenate, alltrue, ravel, all, diff, array
 import numpy as np
 
@@ -906,7 +905,7 @@ class RectSphereBivariateSpline(BivariateSpline):
                  pole_exact=False, pole_flat=False):
         iopt = np.array([0, 0, 0], dtype=int)
         ider = np.array([-1, 0, -1, 0], dtype=int)
-        if isinstance(pole_values, NoneType):
+        if pole_values is None:
             pole_values = (None, None)
         elif isinstance(pole_values, (float, np.float32, np.float64)):
             pole_values = (pole_values, pole_values)
