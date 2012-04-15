@@ -26,10 +26,11 @@ be an existing project that can use the code.  Some scikits (`scikit-learn`_,
 narrower focus and because of that more domain-specific code than SciPy.
 
 Now if you have code that you would like to see included in SciPy, how do you
-go about it?  The first step is to discuss on the scipy-dev mailing list.  All
-new features, as well as changes to existing code, are discussed and decided on
-there.  You can, and probably should, already start this discussion before your
-code is finished.
+go about it?  After checking that your code can be distributed in SciPy under a
+compatible license (see FAQ for details), the first step is to discuss on the
+scipy-dev mailing list.  All new features, as well as changes to existing code,
+are discussed and decided on there.  You can, and probably should, already
+start this discussion before your code is finished.
 
 Assuming the outcome of the discussion on the mailing list is positive and you
 have a function or piece of code that does what you need it to do, what next?
@@ -172,6 +173,7 @@ Checklist before submitting a PR
     Please note that this is perfectly normal and desirable - the aim is to
     give every single contributor credit, and if you don't add yourself it's
     simply extra work for the reviewer (or worse, the reviewer may forget).
+  - Did you check that the code can be distributed under a BSD license?
 
 
 Useful SciPy documents
@@ -186,6 +188,17 @@ Useful SciPy documents
 
 FAQ
 ```
+
+*I based my code on existing Matlab/R/... code I found online, is this OK?*
+
+It depends.  SciPy is distributed under a BSD license, so if the code that you
+based your code on is also BSD licensed or has a BSD-compatible license (MIT,
+Apache, ...) then it's OK.  Code which is GPL-licensed, has no clear license,
+requires citation or is free for academic use only can't be included in SciPy.
+Therefore if you copied existing code with succh a license or made a direct
+translation to Python of it, your code can't be included.  See also `license
+compatibility`_.
+
 
 *Can I use a programming language other than Python to speed up my code?*
 
@@ -208,7 +221,6 @@ repository moved to Github, the preferred way to contribute code was to create
 a patch and attach it to a Trac ticket.  The overhead of this approach is much
 larger than sending a PR on Github, so please don't do this anymore.  Use Trac
 for bug reports, Github for patches.
-
 
 
 .. _scikit-learn: http://scikit-learn.org
@@ -246,3 +258,5 @@ for bug reports, Github for patches.
 .. _documentation wiki: http://docs.scipy.org/scipy/Front%20Page/
 
 .. _SciPy Central: http://scipy-central.org/
+
+.. _license compatibility: http://www.scipy.org/License_Compatibility
