@@ -12,7 +12,7 @@ from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
 
 
 class ReturnShape(object):
-    """This class exists to create a callable that does not have a 'func_name' attribute.
+    """This class exists to create a callable that does not have a '__name__' attribute.
 
     __init__ takes the argument 'shape', which should be a tuple of ints.  When an instance
     it called with a single argument 'x', it returns numpy.ones(shape).
@@ -105,7 +105,7 @@ class TestFSolve(TestCase):
         assert_array_almost_equal(final_flows, np.ones(4))
 
     def test_wrong_shape_func_callable(self):
-        """The callable 'func' has no 'func_name' attribute."""
+        """The callable 'func' has no '__name__' attribute."""
         func = ReturnShape(1)
         # x0 is a list of two elements, but func will return an array with
         # length 1, so this should result in a TypeError.
@@ -119,7 +119,7 @@ class TestFSolve(TestCase):
         assert_raises(TypeError, optimize.fsolve, dummy_func, x0, args=((1,),))
 
     def test_wrong_shape_fprime_callable(self):
-        """The callables 'func' and 'deriv_func' have no 'func_name' attribute."""
+        """The callables 'func' and 'deriv_func' have no '__name__' attribute."""
         func = ReturnShape(1)
         deriv_func = ReturnShape((2,2))
         assert_raises(TypeError, optimize.fsolve, func, x0=[0,1], fprime=deriv_func)
@@ -172,7 +172,7 @@ class TestLeastSq(TestCase):
         assert_array_equal(p0, p0_copy)
 
     def test_wrong_shape_func_callable(self):
-        """The callable 'func' has no 'func_name' attribute."""
+        """The callable 'func' has no '__name__' attribute."""
         func = ReturnShape(1)
         # x0 is a list of two elements, but func will return an array with
         # length 1, so this should result in a TypeError.
@@ -186,7 +186,7 @@ class TestLeastSq(TestCase):
         assert_raises(TypeError, optimize.leastsq, dummy_func, x0, args=((1,),))
 
     def test_wrong_shape_Dfun_callable(self):
-        """The callables 'func' and 'deriv_func' have no 'func_name' attribute."""
+        """The callables 'func' and 'deriv_func' have no '__name__' attribute."""
         func = ReturnShape(1)
         deriv_func = ReturnShape((2,2))
         assert_raises(TypeError, optimize.leastsq, func, x0=[0,1], Dfun=deriv_func)

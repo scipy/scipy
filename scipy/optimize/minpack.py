@@ -18,7 +18,7 @@ def _check_func(checker, argname, thefunc, x0, args, numinputs, output_shape=Non
                     return shape(res)
             msg = "%s: there is a mismatch between the input and output " \
                   "shape of the '%s' argument" % (checker, argname)
-            func_name = getattr(thefunc, 'func_name', None)
+            func_name = getattr(thefunc, '__name__', None)
             if func_name:
                 msg += " '%s'." % func_name
             else:
