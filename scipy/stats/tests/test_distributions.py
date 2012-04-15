@@ -825,11 +825,16 @@ def test_tukeylambda_stats_ticket_1545():
     assert_almost_equal(mv, expected, decimal=10)
 
 
+def test_poisson_logpmf_ticket_1436():
+    """Regression test for #1436, poisson.logpmf precision."""
+    assert_(np.isfinite(stats.poisson.logpmf(1500, 200)))
+
+
 def test_powerlaw_stats():
     """Test the powerlaw stats function.
-    
+
     This unit test is also a regression test for ticket 1548.
-    
+
     The exact values are:
     mean:
         mu = a / (a + 1)
@@ -858,7 +863,7 @@ def test_powerlaw_stats():
     """
     cases = [(1.0, (0.5, 1./12 , 0.0, -1.2)),
              (2.0, (2./3, 2./36, -0.56568542494924734, -0.6))]
-    for a, exact_mvsk in cases: 
+    for a, exact_mvsk in cases:
         mvsk = stats.powerlaw.stats(a, moments="mvsk")
         assert_array_almost_equal(mvsk, exact_mvsk)
 

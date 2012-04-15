@@ -6791,9 +6791,11 @@ for k >= 1
 class poisson_gen(rv_discrete):
     def _rvs(self, mu):
         return mtrand.poisson(mu, self._size)
-    def _pmf(self, k, mu):
+    def _logpmf(self, k, mu):
         Pk = k*log(mu)-gamln(k+1) - mu
-        return exp(Pk)
+        return Pk
+    def _pmf(self, k, mu):
+        return exp(self._logpmf(k, mu))
     def _cdf(self, x, mu):
         k = floor(x)
         return special.pdtr(k,mu)
