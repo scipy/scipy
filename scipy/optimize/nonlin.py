@@ -291,9 +291,9 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     eta_treshold = 0.1
     eta = 1e-3
 
-    status = 1
     for n in xrange(maxiter):
-        if condition.check(Fx, x, dx):
+        status = condition.check(Fx, x, dx)
+        if status:
             break
 
         # The tolerance, as computed for scipy.sparse.linalg.* routines
@@ -346,9 +346,11 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
                 'solution': _array_like(x, x0),
                 'status': status,
                 'success': status == 1,
-                'message': {1: 'A solution was found.',
+                'message': {1: 'A solution was found at the specified '
+                               'tolerance.',
                             2: 'The maximum number of iterations allowed '
-                               'has been reached.'}[status]
+                               'has been reached.'
+                           }[status]
                }
         return _array_like(x, x0), info
     else:
@@ -446,15 +448,17 @@ class TerminationCondition(object):
             self.f0_norm = f_norm
 
         if f_norm == 0:
-            return True
+            return 1
 
         if self.iter is not None:
             # backwards compatibility with Scipy 0.6.0
-            return self.iteration > self.iter
+            return 2 * (self.iteration > self.iter)
 
         # NB: condition must succeed for rtol=inf even if norm == 0
-        return ((f_norm <= self.f_tol and f_norm/self.f_rtol <= self.f0_norm)
-                and (dx_norm <= self.x_tol and dx_norm/self.x_rtol <= x_norm))
+        return int((f_norm <= self.f_tol
+                    and f_norm/self.f_rtol <= self.f0_norm)
+                   and (dx_norm <= self.x_tol
+                        and dx_norm/self.x_rtol <= x_norm))
 
 
 #------------------------------------------------------------------------------
