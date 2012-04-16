@@ -28,19 +28,33 @@ The optimize module has received a lot of attention this release.  In addition
 to added tests, documentation improvements, bug fixes and code clean-up, the
 following improvements were made:
 
-- A unified interface to minimizers of multivariate functions has been added.
+- A unified interface to minimizers of univariate and multivariate
+  functions has been added.
+- A unified interface to root finding algorithms for multivariate functions
+  has been added.
 - The L-BFGS-B algorithm has been updated to version 3.0.
 
 
-Unified interface to minimizers of multivariate functions
-`````````````````````````````````````````````````````````
+Unified interfaces to minimizers
+````````````````````````````````
 
-A new function ``scipy.optimize.minimize`` was added to provide a common
-interface to minimizers of multivariate functions (unconstrained: `fmin`,
-`fmin_powell`, `fmin_cg`, `fmin_ncg`, `fmin_bfgs` and `anneal` or
-constrained: `fmin_l_bfgs_b`, `fmin_tnc`, `fmin_cobyla` and `fmin_slsqp`).
+Two new functions ``scipy.optimize.minimize`` and
+``scipy.optimize.minimize_scalar`` were added to provide a common interface
+to minimizers of multivariate and univariate functions respectively.
+For multivariate functions, ``scipy.optimize.minimize`` provides an
+interface to methods for unconstrained optimization (`fmin`, `fmin_powell`,
+`fmin_cg`, `fmin_ncg`, `fmin_bfgs` and `anneal`) or constrained
+optimization (`fmin_l_bfgs_b`, `fmin_tnc`, `fmin_cobyla` and `fmin_slsqp`).
+For univariate functions, ``scipy.optimize.minimize_scalar`` provides an
+interface to methods for unconstrained and bounded optimization (`brent`,
+`golden`, `fminbound`).
 This allows for easier comparing and switching between solvers.
 
+Unified interface to root finding algorithms
+````````````````````````````````````````````
+The new function ``scipy.optimize.root`` provides a common interface to
+root finding algorithms for multivariate functions, embeding `fsolve`,
+`leastsq` and `nonlin` solvers.
 
 New matrix equation solvers (``scipy.linalg``)
 ----------------------------------------------
@@ -129,7 +143,7 @@ Removal of ``scipy.maxentropy``
 
 The ``scipy.maxentropy`` module, which was deprecated in the 0.10.0 release,
 has been removed.  Logistic regression in scikits.learn is a good and modern
-alternative for this functionality.  
+alternative for this functionality.
  
 
 Other changes
