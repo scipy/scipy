@@ -215,7 +215,7 @@ def _set_doc(obj):
 def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
                  maxiter=None, f_tol=None, f_rtol=None, x_tol=None, x_rtol=None,
                  tol_norm=None, line_search='armijo', callback=None,
-                 full_output=False):
+                 full_output=False, raise_exception=True):
     """
     Find a root of a function, in a way suitable for large-scale problems.
 
@@ -234,6 +234,8 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     full_output : bool
         If true, returns a dictionary `info` containing convergence
         information.
+    raise_exception : bool
+        If True, a `NoConvergence` exception is raise if no solution is found.
 
     See Also
     --------
@@ -289,6 +291,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     eta_treshold = 0.1
     eta = 1e-3
 
+    status = 1
     for n in xrange(maxiter):
         if condition.check(Fx, x, dx):
             break
@@ -332,13 +335,21 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
                 n, norm(Fx), s, eta))
             sys.stdout.flush()
     else:
-        raise NoConvergence(_array_like(x, x0))
+        if raise_exception:
+            raise NoConvergence(_array_like(x, x0))
+        else:
+            status = 2
 
     if full_output:
         info = {'nit': condition.iteration,
                 'fun': Fx,
                 'solution': _array_like(x, x0),
-                'success': True}
+                'status': status,
+                'success': status == 1,
+                'message': {1: 'A solution was found.',
+                            2: 'The maximum number of iterations allowed '
+                               'has been reached.'}[status]
+               }
         return _array_like(x, x0), info
     else:
         return _array_like(x, x0)
