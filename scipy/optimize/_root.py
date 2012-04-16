@@ -47,7 +47,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
                 Maximum number of iterations to perform.
             disp : bool
                 Set to True to print convergence messages.
-        For method-specific options, see `show_minimize_options`.
+        For method-specific options, see `show_options('root', method)`.
     full_output : bool, optional
         If True, return optional outputs.  Default is False.
     callback : function, optional
