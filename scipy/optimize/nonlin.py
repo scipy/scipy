@@ -214,7 +214,8 @@ def _set_doc(obj):
 
 def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
                  maxiter=None, f_tol=None, f_rtol=None, x_tol=None, x_rtol=None,
-                 tol_norm=None, line_search='armijo', callback=None):
+                 tol_norm=None, line_search='armijo', callback=None,
+                 full_output=False):
     """
     Find a root of a function, in a way suitable for large-scale problems.
 
@@ -230,6 +231,9 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
             diagbroyden, linearmixing, excitingmixing
 
     %(params_extra)s
+    full_output : bool
+        If true, returns a dictionary `info` containing convergence
+        information.
 
     See Also
     --------
@@ -330,7 +334,14 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     else:
         raise NoConvergence(_array_like(x, x0))
 
-    return _array_like(x, x0)
+    if full_output:
+        info = {'nit': condition.iteration,
+                'fun': Fx,
+                'solution': _array_like(x, x0),
+                'success': True}
+        return _array_like(x, x0), info
+    else:
+        return _array_like(x, x0)
 
 _set_doc(nonlin_solve)
 
