@@ -114,6 +114,8 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     Notes
     -----
     Q is transposed versus the equivalent function in Matlab.
+
+    .. versionadded:: 0.11.0
     """
     if not output in ['real','complex','r','c']:
         raise ValueError("argument must be 'real', or 'complex'")
