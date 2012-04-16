@@ -86,6 +86,13 @@ A function for creating Pascal matrices, ``scipy.linalg.pascal``, was added.
 
 ``misc.logsumexp`` now takes an optional ``axis`` keyword argument.
 
+QZ Decomposition
+----------------
+
+It is now possible to calculate the QZ, or Generalized Schur, decomposition
+using `scipy.linalg.qz`. This function wraps the LAPACK routines sgges, dgges,
+cgges, and zgges.
+
 Sparse Graph Submodule
 ----------------------
 The new submodule :mod:`scipy.sparse.csgraph` implements a number of efficient
