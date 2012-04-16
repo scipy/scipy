@@ -41,13 +41,8 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
         objective. In this case, it must accept the same arguments as
         `fun`.
     options : dict, optional
-        A dictionary of solver options. All methods accept the following
-        generic options:
-            maxiter : int
-                Maximum number of iterations to perform.
-            disp : bool
-                Set to True to print convergence messages.
-        For method-specific options, see `show_options('root', method)`.
+        A dictionary of solver options. E.g. `xtol` or `maxiter`, see
+        `show_options('root', method)` for details.
     full_output : bool, optional
         If True, return optional outputs.  Default is False.
     callback : function, optional
