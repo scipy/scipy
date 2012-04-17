@@ -30,16 +30,24 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
     args : tuple, optional
         Extra arguments passed to the objective function and its Jacobian.
     method : str, optional
-        Type of solver.  Should be one of: {'hybr', 'lm', 'broyden1',
-            'broyden2', 'anderson', 'linearmixing', 'diagbroyden',
-            'excitingmixing', 'krylov'}
+        Type of solver.  Should be one of
+
+            - 'hybr'
+            - 'lm'
+            - 'broyden1'
+            - 'broyden2'
+            - 'anderson'
+            - 'linearmixing'
+            - 'diagbroyden'
+            - 'excitingmixing'
+            - 'krylov'
+
     jac : bool or callable, optional
         If `jac` is a Boolean and is True, `fun` is assumed to return the
         value of Jacobian along with the objective function. If False, the
         Jacobian will be estimated numerically.
-        `jac` can also be a callable returning the Jacobian of the
-        objective. In this case, it must accept the same arguments as
-        `fun`.
+        `jac` can also be a callable returning the Jacobian of `fun`. In
+        this case, it must accept the same arguments as `fun`.
     options : dict, optional
         A dictionary of solver options. E.g. `xtol` or `maxiter`, see
         `show_options('root', method)` for details.
@@ -93,17 +101,17 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
     with backtracking or full line searches [2]_. Each method corresponds
     to a particular Jacobian approximations. See `nonlin` for details.
 
-     - Method *broyden1* uses Broyden's first Jacobian approximation, it is
-     known as Broyden's good method.
-     - Method *broyden2* uses Broyden's second Jacobian approximation, it
-     is known as Broyden's bad method.
-     - Method *anderson* uses (extended) Anderson mixing.
-     - Method *Krylov* uses Krylov approximation for inverse Jacobian. It
-     is suitable for large-scale problem.
-     - Method *diagbroyden* uses diagonal Broyden Jacobian approximation.
-     - Method *linearmixing* uses a scalar Jacobian approximation.
-     - Method *excitingmixing* uses a tuned diagonal Jacobian
-     approximation.
+    - Method *broyden1* uses Broyden's first Jacobian approximation, it is
+      known as Broyden's good method.
+    - Method *broyden2* uses Broyden's second Jacobian approximation, it
+      is known as Broyden's bad method.
+    - Method *anderson* uses (extended) Anderson mixing.
+    - Method *Krylov* uses Krylov approximation for inverse Jacobian. It
+      is suitable for large-scale problem.
+    - Method *diagbroyden* uses diagonal Broyden Jacobian approximation.
+    - Method *linearmixing* uses a scalar Jacobian approximation.
+    - Method *excitingmixing* uses a tuned diagonal Jacobian
+      approximation.
 
     .. warning::
 
@@ -124,9 +132,11 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
     --------
     The following functions define a system of nonlinear equations and its
     jacobian.
+
     >>> def fun(x):
     ...     return [x[0]  + 0.5 * (x[0] - x[1])**3 - 1.0,
     ...             0.5 * (x[1] - x[0])**3 + x[1]]
+
     >>> def jac(x):
     ...     return np.array([[1 + 1.5 * (x[0] - x[1])**2,
     ...                       -1.5 * (x[0] - x[1])**2],
@@ -134,6 +144,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
     ...                       1 + 1.5 * (x[1] - x[0])**2]])
 
     A solution can be obtained as follows.
+
     >>> x, info = root(fun, [0, 0], jac=jac, method='hybr')
     >>> x
     array([ 0.8411639,  0.1588361])
