@@ -436,10 +436,11 @@ Maintainers:
 
 Status:
 
-The scipy.org website is currently a wiki.  The plan is to convert the main
-page and most important content to a Sphinx-based static site.  Some progress
-has been made on this, visible at scipy.github.com.  Pull requests for this
-site should be made against https://github.com/scipy/scipy.org-new
+The scipy.org website is currently a wiki.  The plan is to convert the
+main page and most important content to a Sphinx-based static site.
+Some progress has been made on this, visible at
+http://scipy.github.com.  Pull requests for this site should be made
+against https://github.com/scipy/scipy.org-new
 
 
 Documentation server/wiki
