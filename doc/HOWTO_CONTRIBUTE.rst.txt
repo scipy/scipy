@@ -48,12 +48,12 @@ tests and correct code style.
     Clear and complete documentation is essential in order for users to be able
     to find and understand the code.  Documentation for individual functions
     and classes -- which includes at least a basic description, type and
-    meaning of all parameters and returns values, and usage examples -- is put
-    in docstrings.  Those docstrings can be read within the interpreter, and
-    are compiled into a reference guide in html and pdf format.  Higher-level
-    documentation for key (areas of) functionality is provided in tutorial
-    format and/or in module docstrings.  A guide on how to write documentation
-    is given in `how to document`_.
+    meaning of all parameters and returns values, and usage examples in
+    `doctest`_ format -- is put in docstrings.  Those docstrings can be read
+    within the interpreter, and are compiled into a reference guide in html and
+    pdf format.  Higher-level documentation for key (areas of) functionality is
+    provided in tutorial format and/or in module docstrings.  A guide on how to
+    write documentation is given in `how to document`_.
 
 3. Code style
     Uniformity of style in which code is written is important to others trying
@@ -195,7 +195,7 @@ It depends.  SciPy is distributed under a BSD license, so if the code that you
 based your code on is also BSD licensed or has a BSD-compatible license (MIT,
 Apache, ...) then it's OK.  Code which is GPL-licensed, has no clear license,
 requires citation or is free for academic use only can't be included in SciPy.
-Therefore if you copied existing code with succh a license or made a direct
+Therefore if you copied existing code with such a license or made a direct
 translation to Python of it, your code can't be included.  See also `license
 compatibility`_.
 
@@ -260,3 +260,5 @@ for bug reports, Github for patches.
 .. _SciPy Central: http://scipy-central.org/
 
 .. _license compatibility: http://www.scipy.org/License_Compatibility
+
+.. _doctest: http://www.doughellmann.com/PyMOTW/doctest/
