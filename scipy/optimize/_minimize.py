@@ -29,7 +29,7 @@ from slsqp import _minimize_slsqp
 
 def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
              hessp=None, bounds=None, constraints=(),
-             options=dict(), callback=None, retall=False):
+             options=dict(), callback=None):
     """
     Minimization of scalar function of one or more variables.
 
@@ -94,9 +94,6 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     callback : callable, optional
         Called after each iteration, as ``callback(xk)``, where ``xk`` is the
         current parameter vector.
-    retall : bool, optional
-        If True, return a list of the solution at each iteration.  This is only
-        done if `full_output` is True.
 
     Returns
     -------
@@ -131,7 +128,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
             accept : int
                 Number of tests accepted.
             allvecs : list
-                Solution at each iteration (if ``retall == True``).
+                Solution at each iteration (if ``options['return_all'] == True``).
 
     See also
     --------
@@ -320,10 +317,10 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
        callback is not None:
         warn('Method %s does not support callback.' % method,
              RuntimeWarning)
-    # - retall
+    # - return_all
     if meth in ['anneal', 'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'] and \
-       retall:
-        warn('Method %s does not support retall.' % method,
+       options.get('return_all', False):
+        warn('Method %s does not support the return_all option.' % method,
              RuntimeWarning)
 
     # fun also returns the jacobian
@@ -335,18 +332,16 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
             jac = None
 
     if meth == 'nelder-mead':
-        return _minimize_neldermead(fun, x0, args, options, retall,
-                                    callback)
+        return _minimize_neldermead(fun, x0, args, options, callback)
     elif meth == 'powell':
-        return _minimize_powell(fun, x0, args, options, retall, callback)
+        return _minimize_powell(fun, x0, args, options, callback)
     elif meth == 'cg':
-        return _minimize_cg(fun, x0, args, jac, options, retall, callback)
+        return _minimize_cg(fun, x0, args, jac, options, callback)
     elif meth == 'bfgs':
-        return _minimize_bfgs(fun, x0, args, jac, options, retall,
-                              callback)
+        return _minimize_bfgs(fun, x0, args, jac, options, callback)
     elif meth == 'newton-cg':
         return _minimize_newtoncg(fun, x0, args, jac, hess, hessp, options,
-                                  retall, callback)
+                                  callback)
     elif meth == 'anneal':
         return _minimize_anneal(fun, x0, args, options)
     elif meth == 'l-bfgs-b':
@@ -505,6 +500,9 @@ def show_minimize_options(method=None):
             Order of norm (Inf is max, -Inf is min).
         eps : float or ndarray
             If `jac` is approximated, use this value for the step size.
+        return_all : bool
+            If True, return a list of the solution at each iteration.  This is only
+            done if `full_output` is True.
 
     * Nelder-Mead options:
         xtol : float
@@ -513,6 +511,9 @@ def show_minimize_options(method=None):
             Relative error in ``fun(xopt)`` acceptable for convergence.
         maxfev : int
             Maximum number of function evaluations to make.
+        return_all : bool
+            If True, return a list of the solution at each iteration.  This is only
+            done if `full_output` is True.
 
     * Newton-CG options:
         xtol : float
@@ -520,6 +521,12 @@ def show_minimize_options(method=None):
             convergence.
         eps : float or ndarray
             If `jac` is approximated, use this value for the step size.
+        return_all : bool
+            If True, return a list of the solution at each iteration.  This is only
+            done if `full_output` is True.
+        return_all : bool
+            If True, return a list of the solution at each iteration.  This is only
+            done if `full_output` is True.
 
     * CG options:
         gtol : float
@@ -529,6 +536,9 @@ def show_minimize_options(method=None):
             Order of norm (Inf is max, -Inf is min).
         eps : float or ndarray
             If `jac` is approximated, use this value for the step size.
+        return_all : bool
+            If True, return a list of the solution at each iteration.  This is only
+            done if `full_output` is True.
 
     * Powell options:
         xtol : float
@@ -539,6 +549,9 @@ def show_minimize_options(method=None):
             Maximum number of function evaluations to make.
         direc : ndarray
             Initial set of direction vectors for the Powell method.
+        return_all : bool
+            If True, return a list of the solution at each iteration.  This is only
+            done if `full_output` is True.
 
     * Anneal options:
         schedule : str

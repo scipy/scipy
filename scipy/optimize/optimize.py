@@ -293,10 +293,10 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             'ftol': ftol,
             'maxiter': maxiter,
             'maxfev': maxfun,
-            'disp': disp}
+            'disp': disp,
+            'return_all': retall}
 
-    x, info = _minimize_neldermead(func, x0, args, opts, retall=retall,
-                                   callback=callback)
+    x, info = _minimize_neldermead(func, x0, args, opts, callback=callback)
     if full_output:
         retlist = x, info['fun'], info['nit'], info['nfev'], info['status']
         if retall:
@@ -308,8 +308,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         else:
             return x
 
-def _minimize_neldermead(func, x0, args=(), options={}, retall=0,
-                         callback=None):
+def _minimize_neldermead(func, x0, args=(), options={}, callback=None):
     """
     Minimization of scalar function of one or more variables using the
     Nelder-Mead algorithm.
@@ -335,6 +334,7 @@ def _minimize_neldermead(func, x0, args=(), options={}, retall=0,
     maxiter = options.get('maxiter')
     maxfun  = options.get('maxfev')
     disp    = options.get('disp', False)
+    retall  = options.get('return_all', False)
 
     fcalls, func = wrap_function(func, args)
     x0 = asfarray(x0).flatten()
@@ -658,10 +658,10 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             'norm': norm,
             'eps': epsilon,
             'disp': disp,
-            'maxiter': maxiter}
+            'maxiter': maxiter,
+            'return_all': retall}
 
-    x, info = _minimize_bfgs(f, x0, args, fprime, opts, retall=retall,
-                             callback=callback)
+    x, info = _minimize_bfgs(f, x0, args, fprime, opts, callback=callback)
 
     if full_output:
         retlist = x, info['fun'], info['jac'], info['hess'], \
@@ -675,8 +675,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         else:
             return x
 
-def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, retall=0,
-                   callback=None):
+def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, callback=None):
     """
     Minimization of scalar function of one or more variables using the
     BFGS algorithm.
@@ -705,6 +704,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, retall=0,
     epsilon = options.get('eps', _epsilon)
     maxiter = options.get('maxiter')
     disp    = options.get('disp', False)
+    retall  = options.get('return_all', False)
 
     x0 = asarray(x0).flatten()
     if x0.ndim == 0:
@@ -897,10 +897,10 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
             'norm': norm,
             'eps': epsilon,
             'disp': disp,
-            'maxiter': maxiter}
+            'maxiter': maxiter,
+            'return_all': retall}
 
-    x, info = _minimize_cg(f, x0, args, fprime, opts, retall=retall,
-                           callback=callback)
+    x, info = _minimize_cg(f, x0, args, fprime, opts, callback=callback)
 
     if full_output:
         retlist = x, info['fun'], info['nfev'], info['njev'], info['status']
@@ -913,8 +913,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
         else:
             return x
 
-def _minimize_cg(fun, x0, args=(), jac=None, options={}, retall=0,
-                 callback=None):
+def _minimize_cg(fun, x0, args=(), jac=None, options={}, callback=None):
     """
     Minimization of scalar function of one or more variables using the
     conjugate gradient algorithm.
@@ -943,6 +942,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, options={}, retall=0,
     epsilon = options.get('eps', _epsilon)
     maxiter = options.get('maxiter')
     disp    = options.get('disp', False)
+    retall  = options.get('return_all', False)
 
     x0 = asarray(x0).flatten()
     if maxiter is None:
@@ -1135,10 +1135,11 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     opts = {'xtol': avextol,
             'epsilon': epsilon,
             'maxiter': maxiter,
-            'disp': disp}
+            'disp': disp,
+            'return_all': retall}
 
     x, info = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p, opts,
-                                 retall=retall, callback=callback)
+                                 callback=callback)
 
     if full_output:
         retlist = x, info['fun'], info['nfev'], info['njev'], \
@@ -1153,7 +1154,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             return x
 
 def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
-                       options={}, retall=0, callback=None):
+                       options={}, callback=None):
     """
     Minimization of scalar function of one or more variables using the
     Newton-CG algorithm.
@@ -1185,6 +1186,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     epsilon = options.get('eps', _epsilon)
     maxiter = options.get('maxiter')
     disp    = options.get('disp', False)
+    retall  = options.get('return_all', False)
 
     x0 = asarray(x0).flatten()
     fcalls, f = wrap_function(f, args)
@@ -1986,10 +1988,10 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             'maxiter': maxiter,
             'maxfev': maxfun,
             'disp': disp,
-            'direc': direc}
+            'direc': direc,
+            'return_all': retall}
 
-    x, info = _minimize_powell(func, x0, args, opts, retall=retall,
-                               callback=callback)
+    x, info = _minimize_powell(func, x0, args, opts, callback=callback)
 
     if full_output:
         retlist = x, info['fun'], info['direc'], info['nit'], \
@@ -2003,8 +2005,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
         else:
             return x
 
-def _minimize_powell(func, x0, args=(), options={}, retall=0,
-                     callback=None):
+def _minimize_powell(func, x0, args=(), options={}, callback=None):
     """
     Minimization of scalar function of one or more variables using the
     modified Powell algorithm.
@@ -2033,6 +2034,7 @@ def _minimize_powell(func, x0, args=(), options={}, retall=0,
     maxfun  = options.get('maxfev')
     disp    = options.get('disp', False)
     direc   = options.get('direc')
+    retall  = options.get('return_all', False)
     # we need to use a mutable object here that we can update in the
     # wrapper function
     fcalls, func = wrap_function(func, args)
