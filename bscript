@@ -1,4 +1,3 @@
-import os
 import sys
 import os.path as op
 
@@ -13,9 +12,6 @@ from numpy.distutils.from_template \
         process_str as process_f_str, resolve_includes
 
 from bento.commands import hooks
-from bento.commands.extras.waf \
-    import \
-        ConfigureWafContext, BuildWafContext, register_options
 from bento.installed_package_description \
     import \
         InstalledSection
@@ -92,15 +88,6 @@ def process_write_config(self):
     tsk = self.create_task("write_module")
     tsk.set_outputs(output)
     return tsk
-
-@hooks.startup
-def startup(context):
-    context.register_context("configure", ConfigureWafContext)
-    context.register_context("build", BuildWafContext)
-
-@hooks.options
-def options(context):
-    register_options(context)
 
 @hooks.pre_configure
 def pre_configure(context):
