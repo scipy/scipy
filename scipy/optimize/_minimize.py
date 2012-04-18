@@ -363,7 +363,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
 
 
 def minimize_scalar(fun, bracket=None, bounds=None, args=(),
-                    method='brent', options=dict(), full_output=False):
+                    method='brent', options=dict()):
     """
     Minimization of scalar function of one variable.
 
@@ -400,15 +400,13 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
                 Maximum number of iterations to perform.
             disp : bool
                 Set to True to print convergence messages.
-    full_output : bool, optional
-        If True, return optional outputs.  Default is False.
 
     Returns
     -------
     xopt : ndarray
         The solution.
     info : dict
-        A dictionary of optional outputs (depending on the chosen method)
+        A dictionary of extra outputs (depending on the chosen method)
         with the keys:
             success : bool
                 Boolean flag indicating if a solution was found.
@@ -471,17 +469,14 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     meth = method.lower()
 
     if meth == 'brent':
-        return _minimize_scalar_brent(fun, bracket, args, options,
-                                      full_output)
+        return _minimize_scalar_brent(fun, bracket, args, options)
     elif meth == 'bounded':
         if bounds is None:
             raise ValueError('The `bounds` parameter is mandatory for '
                              'method `bounded`.')
-        return _minimize_scalar_bounded(fun, bounds, args, options,
-                                        full_output)
+        return _minimize_scalar_bounded(fun, bounds, args, options)
     elif meth == 'golden':
-        return _minimize_scalar_golden(fun, bracket, args, options,
-                                       full_output)
+        return _minimize_scalar_golden(fun, bracket, args, options)
     else:
         raise ValueError('Unknown solver %s' % method)
 

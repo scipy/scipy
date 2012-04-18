@@ -520,45 +520,45 @@ class TestOptimizeScalar(TestCase):
 
     def test_minimize_scalar(self):
         # combine all tests above for the minimize_scalar wrapper
-        x = optimize.minimize_scalar(self.fun)
+        x = optimize.minimize_scalar(self.fun)[0]
+        assert_allclose(x, self.solution, atol=1e-6)
+
+        x= optimize.minimize_scalar(self.fun, bracket = (-3, -2),
+                                    args=(1.5, ), method='Brent')[0]
+        assert_allclose(x, self.solution, atol=1e-6)
+
+        x= optimize.minimize_scalar(self.fun, method='Brent',
+                                    args=(1.5,))[0]
+        assert_allclose(x, self.solution, atol=1e-6)
+
+        x= optimize.minimize_scalar(self.fun, bracket=(-15, -1, 15),
+                                    args=(1.5, ), method='Brent')[0]
         assert_allclose(x, self.solution, atol=1e-6)
 
         x = optimize.minimize_scalar(self.fun, bracket = (-3, -2),
-                                     args=(1.5, ), method='Brent')
-        assert_allclose(x, self.solution, atol=1e-6)
-
-        x = optimize.minimize_scalar(self.fun, method='Brent',
-                                     args=(1.5, ), full_output=True)[0]
-        assert_allclose(x, self.solution, atol=1e-6)
-
-        x = optimize.minimize_scalar(self.fun, bracket=(-15, -1, 15),
-                                     args=(1.5, ), method='Brent')
-        assert_allclose(x, self.solution, atol=1e-6)
-
-        x = optimize.minimize_scalar(self.fun, bracket = (-3, -2),
-                                     args=(1.5, ), method='golden')
+                                     args=(1.5, ), method='golden')[0]
         assert_allclose(x, self.solution, atol=1e-6)
 
         x = optimize.minimize_scalar(self.fun, method='golden',
-                                     args=(1.5, ), full_output=True)[0]
+                                     args=(1.5,))[0]
         assert_allclose(x, self.solution, atol=1e-6)
 
         x = optimize.minimize_scalar(self.fun, bracket=(-15, -1, 15),
-                                     args=(1.5, ), method='golden')
+                                     args=(1.5, ), method='golden')[0]
         assert_allclose(x, self.solution, atol=1e-6)
 
         x = optimize.minimize_scalar(self.fun, bounds=(0, 1), args=(1.5,),
-                                     method='Bounded')
+                                     method='Bounded')[0]
         assert_allclose(x, 1, atol=1e-4)
 
-        x = optimize.minimize_scalar(self.fun, bounds=(1, 5), args=(1.5, ),
-                                     method='bounded')
+        x= optimize.minimize_scalar(self.fun, bounds=(1, 5), args=(1.5, ),
+                                    method='bounded')[0]
         assert_allclose(x, self.solution, atol=1e-6)
 
-        x = optimize.minimize_scalar(self.fun,
-                                     bounds=(np.array([1]), np.array([5])),
-                                     args=(np.array([1.5]), ),
-                                     method='bounded')
+        x= optimize.minimize_scalar(self.fun, bounds=(np.array([1]),
+                                                      np.array([5])),
+                                    args=(np.array([1.5]), ),
+                                    method='bounded')[0]
         assert_allclose(x, self.solution, atol=1e-6)
 
         assert_raises(ValueError, optimize.minimize_scalar, self.fun,
@@ -568,7 +568,7 @@ class TestOptimizeScalar(TestCase):
                       bounds=(np.zeros(2), 1), method='bounded', args=(1.5, ))
 
         x = optimize.minimize_scalar(self.fun, bounds=(1, np.array(5)),
-                                     method='bounded')
+                                     method='bounded')[0]
         assert_allclose(x, self.solution, atol=1e-6)
 
 class TestTnc(TestCase):

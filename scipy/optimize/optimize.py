@@ -1349,16 +1349,13 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
                'maxfev': maxfun,
                'disp': disp}
 
-    out =  _minimize_scalar_bounded(func, (x1, x2), args, options,
-                                    full_output)
+    x, info =  _minimize_scalar_bounded(func, (x1, x2), args, options)
     if full_output:
-        x, info = out
         return x, info['fun'], info['status'], info['nfev']
     else:
-        return out
+        return x
 
-def _minimize_scalar_bounded(func, bounds, args=(), options={},
-                             full_output=False):
+def _minimize_scalar_bounded(func, bounds, args=(), options={}):
     # retrieve options
     xtol = options.get('xtol', 1e-5)
     maxfun = options.get('maxfev', 500)
@@ -1474,18 +1471,15 @@ def _minimize_scalar_bounded(func, bounds, args=(), options={},
     if disp > 0:
         _endprint(x, flag, fval, maxfun, xtol, disp)
 
-    if full_output:
-        info = {'fun': fval,
-                'status': flag,
-                'success': flag == 0,
-                'message': {0: 'Solution found.',
-                            1: 'Maximum number of function '
-                               'calls reached.'}.get(flag, ''),
-                'nfev': num}
+    info = {'fun': fval,
+            'status': flag,
+            'success': flag == 0,
+            'message': {0: 'Solution found.',
+                        1: 'Maximum number of function '
+                           'calls reached.'}.get(flag, ''),
+            'nfev': num}
 
-        return xf, info
-    else:
-        return xf
+    return xf, info
 
 class Brent:
     #need to rethink design of __init__
@@ -1674,33 +1668,27 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     """
     options = {'ftol': tol,
                'maxiter': maxiter}
-    out = _minimize_scalar_brent(func, brack, args, options, full_output)
+    x, info = _minimize_scalar_brent(func, brack, args, options)
     if full_output:
-        x, info = out
         return x, info['fun'], info['nit'], info['nfev']
     else:
-        return out
+        return x
 
-def _minimize_scalar_brent(func, brack=None, args=(), options={},
-                           full_output=False):
+def _minimize_scalar_brent(func, brack=None, args=(), options={}):
     # retrieve options
     tol = options.get('ftol', 1.48e-8)
     maxiter = options.get('maxiter', 500)
 
 
     brent = Brent(func=func, args=args, tol=tol,
-                  full_output=full_output, maxiter=maxiter)
+                  full_output=True, maxiter=maxiter)
     brent.set_bracket(brack)
     brent.optimize()
-    out = brent.get_result(full_output=full_output)
-    if full_output:
-        x, fval, nit, nfev = out
-        info = {'fun': fval,
-                'nit': nit,
-                'nfev': nfev}
-        return x, info
-    else:
-        return out
+    x, fval, nit, nfev = brent.get_result(full_output=True)
+    info = {'fun': fval,
+            'nit': nit,
+            'nfev': nfev}
+    return x, info
 
 def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
     """ Given a function of one-variable and a possible bracketing interval,
@@ -1736,15 +1724,13 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
 
     """
     options = {'ftol': tol}
-    out = _minimize_scalar_golden(func, brack, args, options, full_output)
+    x, info = _minimize_scalar_golden(func, brack, args, options)
     if full_output:
-        x, info = out
         return x, info['fun'], info['nfev']
     else:
-        return out
+        return x
 
-def _minimize_scalar_golden(func, brack=None, args=(), options={},
-                            full_output=False):
+def _minimize_scalar_golden(func, brack=None, args=(), options={}):
     tol = options.get('ftol', _epsilon)
     if brack is None:
         xa, xb, xc, fa, fb, fc, funcalls = bracket(func, args=args)
@@ -1792,11 +1778,9 @@ def _minimize_scalar_golden(func, brack=None, args=(), options={},
     else:
         xmin = x2
         fval = f2
-    if full_output:
-        info = {'fun': fval, 'nfev': funcalls}
-        return xmin, info
-    else:
-        return xmin
+
+    info = {'fun': fval, 'nfev': funcalls}
+    return xmin, info
 
 
 def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
