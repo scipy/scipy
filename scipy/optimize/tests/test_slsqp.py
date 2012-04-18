@@ -78,16 +78,14 @@ class TestSLSQP(TestCase):
     def test_minimize_unbounded_approximated(self):
         """ Minimize, method='SLSQP': unbounded, approximated jacobian. """
         x, info = minimize(self.fun, [-1.0, 1.0], args = (-1.0, ),
-                           method='SLSQP', options=self.opts,
-                           full_output=True)
+                           method='SLSQP', options=self.opts)
         assert_(info['success'], info['message'])
         assert_allclose(x, [2, 1])
 
     def test_minimize_unbounded_given(self):
         """ Minimize, method='SLSQP': unbounded, given jacobian. """
         x, info = minimize(self.fun, [-1.0, 1.0], args = (-1.0, ),
-                           jac=self.jac, method='SLSQP', options=self.opts,
-                           full_output=True)
+                           jac=self.jac, method='SLSQP', options=self.opts)
         assert_(info['success'], info['message'])
         assert_allclose(x, [2, 1])
 
@@ -96,8 +94,7 @@ class TestSLSQP(TestCase):
         Minimize, method='SLSQP': unbounded, combined function and jacobian.
         """
         x, info = minimize(self.fun_and_jac, [-1.0, 1.0], args = (-1.0, ),
-                           jac=True, method='SLSQP',
-                           options=self.opts, full_output=True)
+                           jac=True, method='SLSQP', options=self.opts)
         assert_(info['success'], info['message'])
         assert_allclose(x, [2, 1])
 
@@ -109,8 +106,7 @@ class TestSLSQP(TestCase):
                            constraints={'type': 'eq',
                                         'fun': self.f_eqcon,
                                         'args': (-1.0, )},
-                           method='SLSQP', options=self.opts,
-                           full_output=True)
+                           method='SLSQP', options=self.opts)
         assert_(info['success'], info['message'])
         assert_allclose(x, [1, 1])
 
@@ -122,7 +118,7 @@ class TestSLSQP(TestCase):
                            method='SLSQP', args=(-1.0,),
                            constraints={'type': 'eq', 'fun':self.f_eqcon,
                                         'args': (-1.0, )},
-                           options=self.opts, full_output=True)
+                           options=self.opts)
         assert_(info['success'], info['message'])
         assert_allclose(x, [1, 1])
 
@@ -137,7 +133,7 @@ class TestSLSQP(TestCase):
                                         'fun': self.f_eqcon,
                                         'args': (-1.0, ),
                                         'jac': self.fprime_eqcon},
-                           options=self.opts, full_output=True)
+                           options=self.opts)
         assert_(info['success'], info['message'])
         assert_allclose(x, [1, 1])
 
@@ -150,7 +146,7 @@ class TestSLSQP(TestCase):
                            constraints={'type': 'ineq',
                                         'fun': self.f_ieqcon,
                                         'args': (-1.0, )},
-                           options=self.opts, full_output=True)
+                           options=self.opts)
         assert_(info['success'], info['message'])
         assert_allclose(x, [2, 1], atol=1e-3)
 
@@ -163,7 +159,7 @@ class TestSLSQP(TestCase):
                            constraints={'type': 'ineq',
                                         'fun': self.f_ieqcon2,
                                         'jac': self.fprime_ieqcon2},
-                           options=self.opts, full_output=True)
+                           options=self.opts)
         assert_(info['success'], info['message'])
         assert_allclose(x, [2, 1])
 
@@ -179,7 +175,7 @@ class TestSLSQP(TestCase):
                                         'fun': self.f_eqcon,
                                         'args': (-1.0, ),
                                         'jac': self.fprime_eqcon},
-                           options=self.opts, full_output=True)
+                           options=self.opts)
         assert_(info['success'], info['message'])
         assert_allclose(x, [0.8, 0.8], atol=1e-3)
 

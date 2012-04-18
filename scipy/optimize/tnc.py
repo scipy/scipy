@@ -254,13 +254,11 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
             'rescale': rescale,
             'disp': False}
 
-    x, info = _minimize_tnc(fun, x0, args, jac, bounds, options=opts,
-                            full_output=True)
+    x, info = _minimize_tnc(fun, x0, args, jac, bounds, options=opts)
 
     return x, info['nfev'], info['status']
 
-def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options={},
-                  full_output=False):
+def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options={}):
     """
     Minimize a scalar function of one or more variables using a truncated
     Newton (TNC) algorithm.
@@ -400,18 +398,15 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options={},
             fmin, ftol, xtol, pgtol, rescale)
 
     xopt = array(x)
-    if full_output:
-        funv, jacv = func_and_grad(xopt)
-        info = {'solution': xopt,
-                'fun': funv,
-                'jac': jacv,
-                'nfev': nf,
-                'status': rc,
-                'message': RCSTRINGS[rc],
-                'success': -1 < rc < 3}
-        return xopt, info
-    else:
-        return xopt
+    funv, jacv = func_and_grad(xopt)
+    info = {'solution': xopt,
+            'fun': funv,
+            'jac': jacv,
+            'nfev': nf,
+            'status': rc,
+            'message': RCSTRINGS[rc],
+            'success': -1 < rc < 3}
+    return xopt, info
 
 if __name__ == '__main__':
     # Examples for TNC

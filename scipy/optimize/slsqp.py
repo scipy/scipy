@@ -184,17 +184,15 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
         cons += ({'type': 'ineq', 'fun': f_ieqcons, 'jac': fprime_ieqcons,
                   'args': args}, )
 
-    out = _minimize_slsqp(func, x0, args, jac=fprime, bounds=bounds,
-                          constraints=cons, options=opts,
-                          full_output=full_output)
+    x, info = _minimize_slsqp(func, x0, args, jac=fprime, bounds=bounds,
+                              constraints=cons, options=opts)
     if full_output:
-        x, info = out
         return x, info['fun'], info['nit'], info['status'], info['message']
     else:
-        return out
+        return x
 
 def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
-                    constraints=(), options={}, full_output=False):
+                    constraints=(), options={}):
     """
     Minimize a scalar function of one or more variables using Sequential
     Least SQuares Programming (SLSQP).
@@ -405,19 +403,16 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         print "            Function evaluations:", feval[0]
         print "            Gradient evaluations:", geval[0]
 
-    if not full_output:
-        return x
-    else:
-        info = {'solution': x,
-                'fun'     : fx,
-                'jac'     : g,
-                'nit'     : int(majiter),
-                'nfev'    : feval[0],
-                'njev'    : geval[0],
-                'status'  : int(mode),
-                'message' : exit_modes[int(mode)],
-                'success' : mode == 0}
-        return x, info
+    info = {'solution': x,
+            'fun'     : fx,
+            'jac'     : g,
+            'nit'     : int(majiter),
+            'nfev'    : feval[0],
+            'njev'    : geval[0],
+            'status'  : int(mode),
+            'message' : exit_modes[int(mode)],
+            'success' : mode == 0}
+    return x, info
 
 if __name__ == '__main__':
 

@@ -31,7 +31,7 @@ class TestCobyla(TestCase):
         cons = ({'type': 'ineq', 'fun': self.con1},
                 {'type': 'ineq', 'fun': self.con2})
         x = minimize(self.fun, self.x0, method='cobyla', constraints=cons,
-                     options=self.opts)
+                     options=self.opts)[0]
         assert_allclose(x, self.solution, atol=1e-4)
 
 if __name__ == "__main__":

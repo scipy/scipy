@@ -29,8 +29,7 @@ from slsqp import _minimize_slsqp
 
 def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
              hessp=None, bounds=None, constraints=(),
-             options=dict(), full_output=False, callback=None,
-             retall=False):
+             options=dict(), callback=None, retall=False):
     """
     Minimization of scalar function of one or more variables.
 
@@ -92,8 +91,6 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
             disp : bool
                 Set to True to print convergence messages.
         For method-specific options, see `show_minimize_options`.
-    full_output : bool, optional
-        If True, return optional outputs.  Default is False.
     callback : callable, optional
         Called after each iteration, as ``callback(xk)``, where ``xk`` is the
         current parameter vector.
@@ -106,7 +103,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     xopt : ndarray
         The solution.
     info : dict
-        A dictionary of optional outputs (depending on the chosen method)
+        A dictionary of extra outputs (depending on the chosen method)
         with the keys:
             solution : ndarray
                 The solution (same as `xopt`).
@@ -249,7 +246,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     A simple application of the *Nelder-Mead* method is:
 
     >>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
-    >>> xopt = minimize(rosen, x0, method='Nelder-Mead')
+    >>> xopt = minimize(rosen, x0, method='Nelder-Mead')[0]
     Optimization terminated successfully.
          Current function value: 0.000066
          Iterations: 141
@@ -261,8 +258,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     options:
 
     >>> xopt, info = minimize(rosen, x0, method='BFGS', jac=rosen_der,
-    ...                       options={'gtol': 1e-6, 'disp': False},
-    ...                       full_output=True)
+    ...                       options={'gtol': 1e-6, 'disp': False})
 
     >>> print info['message']
     Optimization terminated successfully.
@@ -294,7 +290,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     The optimization problem is solved using the SLSQP method as:
 
     >>> xopt, info = minimize(fun, (2, 0), method='SLSQP', bounds=bnds,
-    ...                       constraints=cons, full_output=True)
+    ...                       constraints=cons)
 
     It should converge to the theoretical solution (1.4 ,1.7).
     """
@@ -339,34 +335,29 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
             jac = None
 
     if meth == 'nelder-mead':
-        return _minimize_neldermead(fun, x0, args, options, full_output,
-                                    retall, callback)
+        return _minimize_neldermead(fun, x0, args, options, retall,
+                                    callback)
     elif meth == 'powell':
-        return _minimize_powell(fun, x0, args, options, full_output,
-                                retall, callback)
+        return _minimize_powell(fun, x0, args, options, retall, callback)
     elif meth == 'cg':
-        return _minimize_cg(fun, x0, args, jac, options, full_output,
-                            retall, callback)
+        return _minimize_cg(fun, x0, args, jac, options, retall, callback)
     elif meth == 'bfgs':
-        return _minimize_bfgs(fun, x0, args, jac, options, full_output,
-                              retall, callback)
+        return _minimize_bfgs(fun, x0, args, jac, options, retall,
+                              callback)
     elif meth == 'newton-cg':
         return _minimize_newtoncg(fun, x0, args, jac, hess, hessp, options,
-                                  full_output, retall, callback)
+                                  retall, callback)
     elif meth == 'anneal':
-        return _minimize_anneal(fun, x0, args, options, full_output)
+        return _minimize_anneal(fun, x0, args, options)
     elif meth == 'l-bfgs-b':
-        return _minimize_lbfgsb(fun, x0, args, jac, bounds, options,
-                                full_output)
+        return _minimize_lbfgsb(fun, x0, args, jac, bounds, options)
     elif meth == 'tnc':
-        return _minimize_tnc(fun, x0, args, jac, bounds, options,
-                             full_output)
+        return _minimize_tnc(fun, x0, args, jac, bounds, options)
     elif meth == 'cobyla':
-        return _minimize_cobyla(fun, x0, args, constraints, options,
-                                full_output)
+        return _minimize_cobyla(fun, x0, args, constraints, options)
     elif meth == 'slsqp':
         return _minimize_slsqp(fun, x0, args, jac, bounds,
-                               constraints, options, full_output)
+                               constraints, options)
     else:
         raise ValueError('Unknown solver %s' % method)
 

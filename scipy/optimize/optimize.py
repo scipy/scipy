@@ -295,28 +295,21 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             'maxfev': maxfun,
             'disp': disp}
 
-    # force full_output if retall=True to preserve backwards compatibility
-    if retall and not full_output:
-        out = _minimize_neldermead(func, x0, args, opts, full_output=True,
-                                   retall=retall, callback=callback)
-    else:
-        out = _minimize_neldermead(func, x0, args, opts, full_output,
-                                   retall, callback)
+    x, info = _minimize_neldermead(func, x0, args, opts, retall=retall,
+                                   callback=callback)
     if full_output:
-        x, info = out
         retlist = x, info['fun'], info['nit'], info['nfev'], info['status']
         if retall:
             retlist += (info['allvecs'], )
         return retlist
     else:
         if retall:
-            x, info = out
             return x, info['allvecs']
         else:
-            return out
+            return x
 
-def _minimize_neldermead(func, x0, args=(), options={}, full_output=0,
-                         retall=0, callback=None):
+def _minimize_neldermead(func, x0, args=(), options={}, retall=0,
+                         callback=None):
     """
     Minimization of scalar function of one or more variables using the
     Nelder-Mead algorithm.
@@ -472,19 +465,16 @@ def _minimize_neldermead(func, x0, args=(), options={}, full_output=0,
             print "         Function evaluations: %d" % fcalls[0]
 
 
-    if full_output:
-        info = {'fun': fval,
-                'nit': iterations,
-                'nfev': fcalls[0],
-                'status': warnflag,
-                'success': warnflag == 0,
-                'message': msg,
-                'solution': x}
-        if retall:
-            info['allvecs'] = allvecs
-        return x, info
-    else:
-        return x
+    info = {'fun': fval,
+            'nit': iterations,
+            'nfev': fcalls[0],
+            'status': warnflag,
+            'success': warnflag == 0,
+            'message': msg,
+            'solution': x}
+    if retall:
+        info['allvecs'] = allvecs
+    return x, info
 
 
 def approx_fprime(xk, f, epsilon, *args):
@@ -670,16 +660,10 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             'disp': disp,
             'maxiter': maxiter}
 
-    # force full_output if retall=True to preserve backwards compatibility
-    if retall and not full_output:
-        out = _minimize_bfgs(f, x0, args, fprime, opts, full_output=True,
-                             retall=retall, callback=callback)
-    else:
-        out = _minimize_bfgs(f, x0, args, fprime, opts, full_output,
-                             retall, callback)
+    x, info = _minimize_bfgs(f, x0, args, fprime, opts, retall=retall,
+                             callback=callback)
 
     if full_output:
-        x, info = out
         retlist = x, info['fun'], info['jac'], info['hess'], \
                 info['nfev'], info['njev'], info['status']
         if retall:
@@ -687,13 +671,12 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         return retlist
     else:
         if retall:
-            x, info = out
             return x, info['allvecs']
         else:
-            return out
+            return x
 
-def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, full_output=0,
-                   retall=0, callback=None):
+def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, retall=0,
+                   callback=None):
     """
     Minimization of scalar function of one or more variables using the
     BFGS algorithm.
@@ -799,8 +782,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, full_output=0,
         Hk = numpy.dot(A1, numpy.dot(Hk, A2)) + rhok * sk[:, numpy.newaxis] \
                 * sk[numpy.newaxis, :]
 
-    if disp or full_output:
-        fval = old_fval
+    fval = old_fval
     if warnflag == 2:
         msg = _status_message['pr_loss']
         if disp:
@@ -828,21 +810,18 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, full_output=0,
             print "         Function evaluations: %d" % func_calls[0]
             print "         Gradient evaluations: %d" % grad_calls[0]
 
-    if full_output:
-        info = {'fun': fval,
-                'jac': gfk,
-                'hess': Hk,
-                'nfev': func_calls[0],
-                'njev': grad_calls[0],
-                'status': warnflag,
-                'success': warnflag == 0,
-                'message': msg,
-                'solution': xk}
-        if retall:
-            info['allvecs'] = allvecs
-        return xk, info
-    else:
-        return xk
+    info = {'fun': fval,
+            'jac': gfk,
+            'hess': Hk,
+            'nfev': func_calls[0],
+            'njev': grad_calls[0],
+            'status': warnflag,
+            'success': warnflag == 0,
+            'message': msg,
+            'solution': xk}
+    if retall:
+        info['allvecs'] = allvecs
+    return xk, info
 
 
 def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
@@ -920,28 +899,22 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
             'disp': disp,
             'maxiter': maxiter}
 
-    # force full_output if retall=True to preserve backwards compatibility
-    if retall and not full_output:
-        out = _minimize_cg(f, x0, args, fprime, opts, full_output=True,
-                           retall=retall, callback=callback)
-    else:
-        out = _minimize_cg(f, x0, args, fprime, opts, full_output, retall,
-                           callback)
+    x, info = _minimize_cg(f, x0, args, fprime, opts, retall=retall,
+                           callback=callback)
+
     if full_output:
-        x, info = out
         retlist = x, info['fun'], info['nfev'], info['njev'], info['status']
         if retall:
             retlist += (info['allvecs'], )
         return retlist
     else:
         if retall:
-            x, info = out
             return x, info['allvecs']
         else:
-            return out
+            return x
 
-def _minimize_cg(fun, x0, args=(), jac=None, options={}, full_output=0,
-                 retall=0, callback=None):
+def _minimize_cg(fun, x0, args=(), jac=None, options={}, retall=0,
+                 callback=None):
     """
     Minimization of scalar function of one or more variables using the
     conjugate gradient algorithm.
@@ -1025,8 +998,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, options={}, full_output=0,
         k += 1
 
 
-    if disp or full_output:
-        fval = old_fval
+    fval = old_fval
     if warnflag == 2:
         msg = _status_message['pr_loss']
         if disp:
@@ -1055,20 +1027,17 @@ def _minimize_cg(fun, x0, args=(), jac=None, options={}, full_output=0,
             print "         Gradient evaluations: %d" % grad_calls[0]
 
 
-    if full_output:
-        info = {'fun': fval,
-                'jac': gfk,
-                'nfev': func_calls[0],
-                'njev': grad_calls[0],
-                'status': warnflag,
-                'success': warnflag == 0,
-                'message': msg,
-                'solution': xk}
-        if retall:
-            info['allvecs'] = allvecs
-        return xk, info
-    else:
-        return xk
+    info = {'fun': fval,
+            'jac': gfk,
+            'nfev': func_calls[0],
+            'njev': grad_calls[0],
+            'status': warnflag,
+            'success': warnflag == 0,
+            'message': msg,
+            'solution': xk}
+    if retall:
+        info['allvecs'] = allvecs
+    return xk, info
 
 def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
              epsilon=_epsilon, maxiter=None, full_output=0, disp=1, retall=0,
@@ -1168,17 +1137,10 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             'maxiter': maxiter,
             'disp': disp}
 
-    # force full_output if retall=True to preserve backwards compatibility
-    if retall and not full_output:
-        out = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p, opts,
-                                 full_output=True, retall=retall,
-                                 callback=callback)
-    else:
-        out = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p, opts,
-                                 full_output, retall, callback)
+    x, info = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p, opts,
+                                 retall=retall, callback=callback)
 
     if full_output:
-        x, info = out
         retlist = x, info['fun'], info['nfev'], info['njev'], \
                 info['nhev'], info['status']
         if retall:
@@ -1186,13 +1148,12 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         return retlist
     else:
         if retall:
-            x, info = out
             return x, info['allvecs']
         else:
-            return out
+            return x
 
 def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
-                       options={}, full_output=0, retall=0, callback=None):
+                       options={}, retall=0, callback=None):
     """
     Minimization of scalar function of one or more variables using the
     Newton-CG algorithm.
@@ -1297,8 +1258,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             allvecs.append(xk)
         k += 1
 
-    if disp or full_output:
-        fval = old_fval
+    fval = old_fval
     if k >= maxiter:
         warnflag = 1
         msg = _status_message['maxiter']
@@ -1320,21 +1280,18 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             print "         Gradient evaluations: %d" % gcalls[0]
             print "         Hessian evaluations: %d" % hcalls
 
-    if full_output:
-        info = {'fun': fval,
-                'jac': gfk,
-                'nfev': fcalls[0],
-                'njev': gcalls[0],
-                'nhev': hcalls,
-                'status': warnflag,
-                'success': warnflag == 0,
-                'message': msg,
-                'solution': xk}
-        if retall:
-            info['allvecs'] = allvecs
-        return xk, info
-    else:
-        return xk
+    info = {'fun': fval,
+            'jac': gfk,
+            'nfev': fcalls[0],
+            'njev': gcalls[0],
+            'nhev': hcalls,
+            'status': warnflag,
+            'success': warnflag == 0,
+            'message': msg,
+            'solution': xk}
+    if retall:
+        info['allvecs'] = allvecs
+    return xk, info
 
 
 def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
@@ -2047,15 +2004,10 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             'disp': disp,
             'direc': direc}
 
-    # force full_output if retall=True to preserve backwards compatibility
-    if retall and not full_output:
-        out = _minimize_powell(func, x0, args, opts, full_output=True,
-                               retall=retall, callback=callback)
-    else:
-        out = _minimize_powell(func, x0, args, opts, full_output, retall,
-                               callback)
+    x, info = _minimize_powell(func, x0, args, opts, retall=retall,
+                               callback=callback)
+
     if full_output:
-        x, info = out
         retlist = x, info['fun'], info['direc'], info['nit'], \
                 info['nfev'], info['status']
         if retall:
@@ -2063,13 +2015,12 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
         return retlist
     else:
         if retall:
-            x, info = out
             return x, info['allvecs']
         else:
-            return out
+            return x
 
-def _minimize_powell(func, x0, args=(), options={}, full_output=0,
-                     retall=0, callback=None):
+def _minimize_powell(func, x0, args=(), options={}, retall=0,
+                     callback=None):
     """
     Minimization of scalar function of one or more variables using the
     modified Powell algorithm.
@@ -2182,20 +2133,17 @@ def _minimize_powell(func, x0, args=(), options={}, full_output=0,
 
     x = squeeze(x)
 
-    if full_output:
-        info = {'fun': fval,
-                'direc': direc,
-                'nit': iter,
-                'nfev': fcalls[0],
-                'status': warnflag,
-                'success': warnflag == 0,
-                'message': msg,
-                'solution': x}
-        if retall:
-            info['allvecs'] = allvecs
-        return x, info
-    else:
-        return x
+    info = {'fun': fval,
+            'direc': direc,
+            'nit': iter,
+            'nfev': fcalls[0],
+            'status': warnflag,
+            'success': warnflag == 0,
+            'message': msg,
+            'solution': x}
+    if retall:
+        info['allvecs'] = allvecs
+    return x, info
 
 
 def _endprint(x, flag, fval, maxfun, xtol, disp):

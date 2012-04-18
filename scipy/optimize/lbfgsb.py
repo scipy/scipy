@@ -161,7 +161,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
             'maxfev': maxfun}
 
     x, info = _minimize_lbfgsb(fun, x0, args=args, jac=jac, bounds=bounds,
-                               options=opts, full_output=True)
+                               options=opts)
     d = {'grad': info['jac'],
          'task': info['message'],
          'funcalls': info['nfev'],
@@ -170,8 +170,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     return x, f, d
 
-def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, options={},
-                     full_output=False):
+def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, options={}):
     """
     Minimize a scalar function of one or more variables using the L-BFGS-B
     algorithm.
@@ -303,17 +302,14 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, options={},
          'warnflag' : warnflag
         }
 
-    if full_output:
-        info = {'fun': f,
-                'jac': g,
-                'nfev': n_function_evals,
-                'status': warnflag,
-                'message': task_str,
-                'solution': x,
-                'success': warnflag==0}
-        return x, info
-    else:
-        return x
+    info = {'fun': f,
+            'jac': g,
+            'nfev': n_function_evals,
+            'status': warnflag,
+            'message': task_str,
+            'solution': x,
+            'success': warnflag==0}
+    return x, info
 
 
 if __name__ == '__main__':
