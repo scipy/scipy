@@ -1015,14 +1015,13 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         tt_[-4:], tp_[-4:] = np.pi, 2. * np.pi
         tt_, tp_, c, fp, ier = dfitpack.spherfit_lsq(theta, phi, r, tt_, tp_,
                                                      w=w, eps=eps)
-        if ier in [0, -1, -2]:  # normal return
-            pass
-        elif ier < -2:
+        if ier < -2:
             deficiency = 6 + (nt_ - 8) * (np_ - 7) + ier
             message = _spherefit_messages.get(-3) % (deficiency, -ier)
-        else:
-            message = _spherefit_messages.get(ier, 'ier=%s' % (ier))
             warnings.warn(message)
+        elif not ier in [0, -1, -2]:
+            message = _spherefit_messages.get(ier, 'ier=%s' % (ier))
+            raise ValueError(message)
         self.fp = fp
         self.tck = tt_, tp_, c
         self.degrees = (3, 3)
